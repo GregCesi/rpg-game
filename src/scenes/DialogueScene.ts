@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PORTRAIT_MODES, UI, VIEW, ZOOM } from '../config';
 import { characters, dialogues } from '../content';
+import { GameEvent } from '../events';
 import type { DialogueLine } from '../content/types';
 
 const K = Phaser.Input.Keyboard.KeyCodes;
@@ -9,7 +10,7 @@ const BORDER = 8;
 /**
  * Boîte de dialogue lancée par-dessus le monde. Portrait du personnage au-dessus du cadre, à gauche,
  * nom à côté, texte qui s'écrit lettre par lettre. E / Espace / Entrée / clic : finir la ligne, puis passer à la suivante.
- * Émet 'dialogue-end' sur le bus du jeu quand il se ferme.
+ * Émet GameEvent.DialogueEnd sur le bus du jeu quand il se ferme.
  */
 export class DialogueScene extends Phaser.Scene {
   /** Mode de portrait courant, gardé d'un dialogue à l'autre (touche P). */
@@ -108,7 +109,7 @@ export class DialogueScene extends Phaser.Scene {
     if (this.typing) return this.finishLine();
     this.index++;
     if (this.index < this.lines.length) return this.showLine();
-    this.game.events.emit('dialogue-end');
+    this.game.events.emit(GameEvent.DialogueEnd);
     this.scene.stop();
   }
 

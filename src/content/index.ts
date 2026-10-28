@@ -1,5 +1,7 @@
 // Point d'entrée unique du contenu. Une nouvelle carte = un fichier JSON + une ligne ici.
-import type { CharacterDef, DialogueDef, MapDef, PropDef, TileDef } from './types';
+// Chaque fichier est vérifié par son schéma au chargement : une faute de frappe plante tout de suite, avec le chemin exact.
+import { z } from 'zod';
+import { CharacterDefSchema, DialogueDefSchema, MapDefSchema, PropDefSchema, TileDefSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import ferme from './maps/ferme.json';
@@ -7,12 +9,18 @@ import maison from './maps/maison.json';
 import charactersJson from './characters.json';
 import dialoguesJson from './dialogues.json';
 
+function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.infer<T> {
+  const r = schema.safeParse(data);
+  if (!r.success) throw new Error(`${file} ne respecte pas son format :\n${z.prettifyError(r.error)}`);
+  return r.data;
+}
+
 /** Légendes des cartes, par jeu de tuiles. */
-export const tiles = tilesJson as Record<string, Record<string, TileDef>>;
-export const props = propsJson as unknown as Record<string, PropDef>;
-export const maps: Record<string, MapDef> = {
-  ferme: ferme as unknown as MapDef,
-  maison: maison as unknown as MapDef,
-};
-export const characters = charactersJson as Record<string, CharacterDef>;
-export const dialogues = dialoguesJson as Record<string, DialogueDef>;
+export const tiles = parse('tiles.json', z.record(z.string(), z.record(z.string().length(1), TileDefSchema)), tilesJson);
+export const props = parse('props.json', z.record(z.string().length(1), PropDefSchema), propsJson);
+export const maps = {
+  ferme: parse('maps/ferme.json', MapDefSchema, ferme),
+  maison: parse('maps/maison.json', MapDefSchema, maison),
+} as Record<string, z.infer<typeof MapDefSchema>>;
+export const characters = parse('characters.json', z.record(z.string(), CharacterDefSchema), charactersJson);
+export const dialogues = parse('dialogues.json', z.record(z.string(), DialogueDefSchema), dialoguesJson);

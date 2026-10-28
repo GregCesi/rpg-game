@@ -70,6 +70,11 @@ mkdirSync(OUT, { recursive: true });
 if (withPreview) mkdirSync(PREVIEW, { recursive: true });
 
 const imports: string[] = [];
+const catalog = {
+  spritesheets: [] as { key: string; animations: Record<string, unknown> }[],
+  tilesets: [] as { key: string; tiles: Record<string, number> }[],
+  images: [] as { key: string }[],
+};
 const spritesheets: string[] = [];
 const tilesets: string[] = [];
 const images: string[] = [];
@@ -90,6 +95,7 @@ for (const src of sources) {
       });
     }
     png = sheet(cells, src.frameW, src.frameH, src.palette);
+    catalog.spritesheets.push({ key: src.name, animations: anims });
     spritesheets.push(
       `  { key: '${src.name}', url: ${id}, frameWidth: ${src.frameW}, frameHeight: ${src.frameH}, animations: ${JSON.stringify(anims)} },`,
     );
@@ -98,12 +104,14 @@ for (const src of sources) {
     names.forEach((n) => check(src.tiles[n], src.tileSize, src.tileSize, src.palette, `${src.name}/${n}`));
     png = sheet(names.map((n) => src.tiles[n]), src.tileSize, src.tileSize, src.palette);
     const index = Object.fromEntries(names.map((n, i) => [n, i]));
+    catalog.tilesets.push({ key: src.name, tiles: index });
     tilesets.push(`  { key: '${src.name}', url: ${id}, tileSize: ${src.tileSize}, tiles: ${JSON.stringify(index)} },`);
   } else {
     const w = src.grid[0].length;
     const h = src.grid.length;
     check(src.grid, w, h, src.palette, src.name);
     png = sheet([src.grid], w, h, src.palette);
+    catalog.images.push({ key: src.name });
     images.push(`  { key: '${src.name}', url: ${id}, width: ${w}, height: ${h} },`);
   }
 
@@ -138,4 +146,6 @@ ${images.join('\n')}
 ];
 `;
 writeFileSync(join(OUT, 'assets.ts'), manifest);
+// Même catalogue sans les images, lisible par Node (npm run check)
+writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(catalog, null, 2));
 console.log(`art : ${sources.length} sources -> ${OUT}${withPreview ? ` (+ aperçus dans ${PREVIEW})` : ''}`);

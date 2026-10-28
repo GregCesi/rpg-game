@@ -5,10 +5,11 @@
   "scripts": {
     "art": "tsx tools/build-art.ts",
     "art:preview": "tsx tools/build-art.ts --preview",
+    "check": "npm run art && tsx tools/check.ts",
     "dev": "npm run art && vite",
     "typecheck": "npm run art && tsc --noEmit",
-    "build": "npm run typecheck && vite build",
-    "build:single": "npm run typecheck && vite build --mode single",
+    "build": "npm run check && tsc --noEmit && vite build",
+    "build:single": "npm run check && tsc --noEmit && vite build --mode single",
     "artifact": "npm run build:single && tsx tools/make-artifact.ts"
   },
   "keywords": [],
@@ -16,7 +17,8 @@
   "license": "ISC",
   "dependencies": {
     "@fontsource/pixelify-sans": "^5.3.0",
-    "phaser": "^3.90.0"
+    "phaser": "^3.90.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

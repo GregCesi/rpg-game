@@ -26,6 +26,23 @@ export const PORTRAIT_MODES = [
   { size: 64, scale: 2 },
 ];
 
+/**
+ * Ordre d'affichage. Entre le sol et la pénombre, la profondeur d'un personnage ou d'un objet = y de ses pieds.
+ * Toutes les profondeurs fixes sont ici, pour qu'on voie d'un coup d'œil qui passe devant qui.
+ */
+export const DEPTH = {
+  ground: -1,
+  decal: -0.9,
+  /** Objets posés à plat (tapis, tache de lumière) : sous les personnages. */
+  floor: -0.8,
+  /** Pénombre des intérieurs, au-dessus de tout le monde. */
+  ambient: 90000,
+  /** Lueurs (feux, soleil) : par-dessus la pénombre, pour qu'elle ne les éteigne pas. */
+  light: 90001,
+  /** Invite « touche E » au-dessus d'un objet. */
+  prompt: 100000,
+};
+
 /** Distance devant les pieds où l'on cherche un objet avec lequel interagir, et rayon de recherche (px). */
 export const INTERACT = { reach: 16, radius: 20 };
 
@@ -39,4 +56,4 @@ export const PLAYER = {
 };
 
 /** Ajouter ?debug à l'URL affiche les boîtes de collision. */
-export const DEBUG = new URLSearchParams(location.search).has('debug');
+export const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');

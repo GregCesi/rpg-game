@@ -6,5 +6,7 @@ Lis `README.md` (architecture et quatre règles) avant toute modification.
 - Ajouter du contenu (carte, tuile, objet) = éditer `src/content/` ; ne pas coder de contenu en dur dans les scènes.
 - Nouveau sprite : l'ajouter dans `art/`, le déclarer dans `art/index.ts`, vérifier l'aperçu avec `npm run art:preview` (images dans `.art-preview/`, à regarder).
 - Nouvelle capacité de personnage : un composant attaché à `Actor`, pas une sous-classe.
-- Fin de tâche : `npm run build` doit passer sans erreur.
+- Nouveau champ de contenu : le déclarer dans `src/content/types.ts` (schéma Zod) ; nouveau lien entre fichiers : le vérifier dans `src/content/validate.ts`.
+- Nouvelle mécanique du monde : un fichier dans `src/systems/`, appelé depuis `WorldScene.update` selon le mode. Événements entre scènes : constantes de `src/events.ts`.
+- Fin de tâche : `npm run build` doit passer sans erreur (il lance `npm run check`).
 - Langue du code : identifiants en anglais, commentaires et messages d'erreur en français.

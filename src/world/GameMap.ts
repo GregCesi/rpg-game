@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { TILE } from '../config';
-import { dialogues, maps, props as propDefs, tiles as tilesBySet } from '../content';
-import type { MapDef, PropDef, TileDef } from '../content/types';
+import { DEPTH, TILE } from '../config';
+import { props as propDefs, tiles as tilesBySet } from '../content';
+import type { MapDef, PropDef } from '../content/types';
 import { tilesets } from '../generated/assets';
 
 /** Hachage stable d'une position : la même case a toujours la même variante de tuile. */
@@ -19,12 +19,10 @@ export interface Interactable {
   dialogue: string;
 }
 
-/** Profondeur de la pénombre et des lueurs : au-dessus de tout le monde, sous l'interface. */
-const AMBIENT_DEPTH = 90000;
-
 /**
  * Construit une carte jouable à partir d'une MapDef : sol (tilemap), collisions, objets posés,
  * fumées, lueurs et pénombre. Ne connaît ni le joueur ni les PNJ.
+ * Le contenu est supposé valide : il est vérifié au démarrage (content/validate.ts).
  */
 export class GameMap {
   readonly ground: Phaser.Tilemaps.TilemapLayer;
@@ -34,26 +32,12 @@ export class GameMap {
   readonly width: number;
   readonly height: number;
 
-  private readonly tileDefs: Record<string, TileDef>;
-
   constructor(scene: Phaser.Scene, readonly def: MapDef) {
     const setKey = def.tileset ?? 'world';
     const tileDefs = tilesBySet[setKey];
-    if (!tileDefs) throw new Error(`Carte ${def.id} : jeu de tuiles '${setKey}' absent de tiles.json`);
-    this.tileDefs = tileDefs;
-    const rows = def.ground.length;
-    const cols = def.ground[0].length;
-    this.validate(rows, cols);
-    this.width = cols * TILE;
-    this.height = rows * TILE;
-
-    const tileset = tilesets.find((t) => t.key === setKey);
-    if (!tileset) throw new Error(`Carte ${def.id} : aucune image de tuiles '${setKey}' générée (art/)`);
-    const indexOf = (name: string) => {
-      const i = tileset.tiles[name];
-      if (i === undefined) throw new Error(`Tuile '${name}' absente du jeu de tuiles '${setKey}'`);
-      return i;
-    };
+    const tileset = tilesets.find((t) => t.key === setKey)!;
+    this.width = def.ground[0].length * TILE;
+    this.height = def.ground.length * TILE;
 
     // Sol
     const solid = new Set<number>();
@@ -74,7 +58,7 @@ export class GameMap {
         } else {
           name = t.tiles[hash(x, y) % t.tiles.length];
         }
-        const index = indexOf(name);
+        const index = tileset.tiles[name];
         if (t.solid) solid.add(index);
         return index;
       }),
@@ -82,7 +66,7 @@ export class GameMap {
     const map = scene.make.tilemap({ data, tileWidth: TILE, tileHeight: TILE });
     const ts = map.addTilesetImage(tileset.key, tileset.key, TILE, TILE, 0, 0)!;
     this.ground = map.createLayer(0, ts, 0, 0)!;
-    this.ground.setDepth(-1);
+    this.ground.setDepth(DEPTH.ground);
     this.ground.setCollision([...solid]);
 
     // Détails au sol, posés de façon stable (même carte = mêmes détails)
@@ -95,7 +79,7 @@ export class GameMap {
         const img = d.images[(h >>> 10) % d.images.length];
         const ox = ((h >>> 4) % 17) - 8;
         const oy = ((h >>> 8) % 13) - 6;
-        scene.add.image(x * TILE + TILE / 2 + ox, y * TILE + TILE / 2 + oy, img).setDepth(-0.9).setFlipX(((h >>> 14) & 1) === 1);
+        scene.add.image(x * TILE + TILE / 2 + ox, y * TILE + TILE / 2 + oy, img).setDepth(DEPTH.decal).setFlipX(((h >>> 14) & 1) === 1);
       }),
     );
 
@@ -109,7 +93,7 @@ export class GameMap {
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
     if (def.ambient) {
-      scene.add.rectangle(0, 0, this.width, this.height, 0x1a0e06, def.ambient).setOrigin(0).setDepth(AMBIENT_DEPTH);
+      scene.add.rectangle(0, 0, this.width, this.height, 0x1a0e06, def.ambient).setOrigin(0).setDepth(DEPTH.ambient);
     }
   }
 
@@ -120,8 +104,8 @@ export class GameMap {
     const obj = p.anim
       ? scene.add.sprite(ax, ay, p.image).play(`${p.image}-${p.anim}`)
       : scene.add.image(ax, ay, p.image);
-    obj.setOrigin(left ? 0 : 0.5, 1).setDepth(p.layer === 'floor' ? -0.8 : ay);
-    if (p.blend === 'add') obj.setBlendMode(Phaser.BlendModes.ADD).setDepth(AMBIENT_DEPTH + 1);
+    obj.setOrigin(left ? 0 : 0.5, 1).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
+    if (p.blend === 'add') obj.setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.light);
     // coin haut gauche de l'image, pour les coordonnées "dans l'image"
     const ox = left ? ax : ax - obj.width / 2;
     const oy = ay - obj.height;
@@ -157,7 +141,7 @@ export class GameMap {
         .setTint(0xffa040)
         .setScale(p.light.radius / 64)
         .setAlpha(0.32)
-        .setDepth(AMBIENT_DEPTH + 1);
+        .setDepth(DEPTH.light);
       scene.tweens.add({
         targets: glow,
         alpha: { from: 0.26, to: 0.4 },
@@ -167,32 +151,6 @@ export class GameMap {
         repeat: -1,
         ease: 'Sine.InOut',
       });
-    }
-  }
-
-  /** Erreurs lisibles plutôt qu'un plantage obscur quand une carte est mal saisie. */
-  private validate(rows: number, cols: number) {
-    const { id, ground, props } = this.def;
-    const tileDefs = this.tileDefs;
-    ground.forEach((row, y) => {
-      if (row.length !== cols) throw new Error(`Carte ${id} : ligne ${y} du sol fait ${row.length} cases au lieu de ${cols}`);
-      [...row].forEach((ch, x) => {
-        if (!tileDefs[ch]) throw new Error(`Carte ${id} : caractère de sol '${ch}' inconnu en (${x}, ${y})`);
-      });
-    });
-    if (props.length !== rows) throw new Error(`Carte ${id} : la couche objets fait ${props.length} lignes au lieu de ${rows}`);
-    props.forEach((row, y) => {
-      if (row.length !== cols) throw new Error(`Carte ${id} : ligne ${y} des objets fait ${row.length} cases au lieu de ${cols}`);
-      [...row].forEach((ch, x) => {
-        if (ch !== '.' && !propDefs[ch]) throw new Error(`Carte ${id} : objet '${ch}' inconnu en (${x}, ${y})`);
-        const dialogue = propDefs[ch]?.interact;
-        if (dialogue && !dialogues[dialogue]) throw new Error(`Objet '${ch}' : dialogue '${dialogue}' introuvable dans dialogues.json`);
-      });
-    });
-    for (const e of this.def.exits ?? []) {
-      const target = maps[e.to];
-      if (!target) throw new Error(`Carte ${id} : la sortie en (${e.x}, ${e.y}) mène à une carte inconnue '${e.to}'`);
-      if (!target.spawns[e.spawn]) throw new Error(`Carte ${id} : la sortie en (${e.x}, ${e.y}) vise le point '${e.spawn}', absent de la carte ${e.to}`);
     }
   }
 }
