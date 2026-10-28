@@ -5,9 +5,10 @@
   "scripts": {
     "art": "tsx tools/build-art.ts",
     "art:preview": "tsx tools/build-art.ts --preview",
-    "check": "npm run art && tsx tools/check.ts",
-    "dev": "npm run art && vite",
-    "typecheck": "npm run art && tsc --noEmit",
+    "maps": "tsx tools/build-maps.ts",
+    "check": "npm run art && npm run maps && tsx tools/check.ts",
+    "dev": "npm run art && npm run maps && vite",
+    "typecheck": "npm run art && npm run maps && tsc --noEmit",
     "build": "npm run check && tsc --noEmit && vite build",
     "build:single": "npm run check && tsc --noEmit && vite build --mode single",
     "artifact": "npm run build:single && tsx tools/make-artifact.ts"

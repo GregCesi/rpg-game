@@ -11,9 +11,17 @@ async function main() {
     console.error(`\n✗ ${(e as Error).message}\n`);
     process.exit(1);
   }
-  const { catalogFrom, validateContent } = await import('../src/content/validate');
+  const { catalogFrom, validateContent, validateMaps, validateTilesCatalog } = await import('../src/content/validate');
+  const { maps: tiledMaps } = await import('../src/generated/maps');
   const manifest = JSON.parse(readFileSync('src/generated/manifest.json', 'utf8'));
-  const errors = validateContent(content, catalogFrom(manifest));
+  const catalog = catalogFrom(manifest);
+  // le type d'un objet de carte est le nom de l'objet dans props.json
+  const propsByType = Object.fromEntries(Object.values(content.props).map((p) => [p.name, p]));
+  const errors = [
+    ...validateContent(content, catalog),
+    ...validateTilesCatalog(content.tilesCatalog, catalog),
+    ...validateMaps(tiledMaps, propsByType, content.dialogues, catalog),
+  ];
   if (errors.length) {
     console.error(`\n✗ ${errors.length} problème(s) dans le contenu :`);
     for (const e of errors) console.error(`  - ${e}`);
