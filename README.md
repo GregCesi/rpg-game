@@ -14,7 +14,7 @@ npm run build:single   # un seul fichier HTML autonome dans dist-single/
 npm run art:preview    # régénère les sprites + aperçus x4 dans .art-preview/
 ```
 
-Commandes : ZQSD, WASD ou flèches. Maj pour courir.
+Commandes : ZQSD, WASD ou flèches. Maj pour courir. E (ou Espace, Entrée) pour interagir et faire défiler un dialogue. P pendant un dialogue : change la taille du portrait (comparaison 96 / 64 / 64×2).
 
 ## Architecture
 
@@ -22,16 +22,18 @@ Commandes : ZQSD, WASD ou flèches. Maj pour courir.
 art/                 sources du pixel art (grilles de caractères + générateurs)
   palette.ts         palette commune
   characters/        personnages (xeros.ts)
+  portraits/         portraits de dialogue (une animation = une expression)
+  ui/                cadre de dialogue, flèche, touche E
   world/             tuiles et objets du décor
 tools/build-art.ts   art/ -> PNG + manifeste dans src/generated/ (jamais édité à la main)
 src/
   config.ts          constantes de gameplay (taille de tuile, vitesses)
-  content/           le contenu du jeu, en JSON : cartes, tuiles, objets
+  content/           le contenu du jeu, en JSON : cartes, tuiles, objets, personnages, dialogues
   world/GameMap.ts   construit une carte jouable à partir d'une MapDef
   entities/Actor.ts  le corps d'un personnage (sprite, collision, animations)
   entities/Player.ts Actor + clavier
   input/             lecture du clavier
-  scenes/            Boot (chargement) et World (la carte en jeu)
+  scenes/            Boot (chargement), World (la carte en jeu), Dialogue (par-dessus le monde)
 ```
 
 ### Les quatre règles
@@ -48,3 +50,6 @@ src/
 - Collisions : toujours au niveau des pieds, jamais sur le sprite entier.
 - Cartes : couche `ground` (sol) + couche `props` (objets), même taille, une lettre par case. Légendes dans `tiles.json` et `props.json`.
 - Clôtures : on écrit `F`, la bonne variante (16 combinaisons) est choisie selon les voisins.
+- Interactions : un objet de `props.json` avec `"interact": "<id>"` lance le dialogue `<id>` de `dialogues.json`.
+- Dialogues : chaque ligne a un `speaker` (clé de `characters.json`), une `expression` et un `text`. Le portrait affiché est `portrait-<portrait>-<taille>` avec l'animation `<expression>`.
+- Rendu : le canvas fait VIEW × ZOOM ; les caméras zooment de ZOOM. Le pixel art garde sa taille, le texte reste net.

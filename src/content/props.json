@@ -1,5 +1,6 @@
 {
   "T": { "name": "arbre", "image": "tree", "body": { "w": 18, "h": 10, "bottom": 7 } },
   "r": { "name": "rocher", "image": "rock", "body": { "w": 22, "h": 10, "bottom": 4 } },
-  "b": { "name": "buisson", "image": "bush", "body": { "w": 22, "h": 10, "bottom": 4 } }
+  "b": { "name": "buisson", "image": "bush", "body": { "w": 22, "h": 10, "bottom": 4 } },
+  "S": { "name": "seau", "image": "bucket", "body": { "w": 16, "h": 8, "bottom": 4 }, "interact": "seau" }
 }

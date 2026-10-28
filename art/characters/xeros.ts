@@ -1,4 +1,4 @@
-// Xéros — jeune paysan, coupe au bol brune, tunique teinte au pastel (bleu guède).
+// Xéros — 14 ans, jeune paysan. Coupe au bol brun foncé, côtés rasés, tunique de lin beige.
 // Frame 32x48. Les pieds touchent y=45, l'ombre est dessinée dessous.
 // Les vues face et dos sont dessinées en demi-grilles (gauche) puis symétrisées.
 // La vue gauche est la vue droite retournée.
@@ -13,19 +13,21 @@ const HEAD_Y = 14;
 
 const palette = {
   o: OUTLINE,
-  h: '#6e4326', // cheveux
-  H: '#91603a',
-  d: '#4a2b18',
-  s: '#eab68c', // peau
-  S: '#c98b64',
-  t: '#4d6a8c', // tunique
-  T: '#374e6b',
-  L: '#6a87a8',
-  c: '#d9c9a3', // col en lin
+  h: '#553220', // cheveux
+  H: '#74472c',
+  d: '#3a2013',
+  u: '#6e5040', // côtés rasés
+  U: '#5a3f31',
+  s: '#e9b993', // peau
+  S: '#cf9572',
+  t: '#c8b388', // tunique de lin
+  T: '#a8926a',
+  L: '#ddcca3',
+  c: '#e9b993', // encolure (peau)
   b: '#5a3a22', // ceinture
   B: '#c9a64a',
-  p: '#8a6a48', // pantalon
-  P: '#6b5035',
+  p: '#6f5640', // pantalon
+  P: '#57422f',
   k: '#3d2a1f', // bottes
   K: '#5c4130',
   x: '#00000038', // ombre au sol
@@ -43,10 +45,10 @@ const headFront = mirror([
   '..ohhhhhhh',
   '..ohdhhdhh',
   '..oddddddd',
-  '..ohhsssss',
-  '..ohhssoss',
-  '..ohhssoss',
-  '..oddsssss',
+  '..ouusssss',
+  '..ouussoss',
+  '..ouussoss',
+  '..ouusssss',
   '...oossssS',
   '.....oSsss',
   '......oooo',
@@ -77,11 +79,11 @@ const headBack = mirror([
   '..ohhhhhhh',
   '..ohhhhhhh',
   '..ohhhhhhh',
-  '..ohhhhhhh',
-  '..ohhhhhhh',
-  '..ohhdhhhd',
-  '..ohhdhhhd',
   '..oddddddd',
+  '..oUuuuuuu',
+  '..oUuuuuuu',
+  '..oUuuuuuu',
+  '..oUUuuuuu',
   '...ooSSSSS',
   '.....oSSSS',
   '......oooo',
@@ -122,12 +124,12 @@ const headSide: Grid = [
   'ohhhhhhhhhhhhhhho.',
   'ohhhhhhhhhhhhhhho.',
   'ohhhhhhdhhdhhdhho.',
-  'ohhhhhhhddddddddo.',
-  'ohhhhhhhSsssssso..',
-  'ohhhhhhhSsssosso..',
-  'ohhhhhhhSsssossso.',
-  'odhhhhhhSssssso...',
-  '.odddddoSsssSo....',
+  'odddddddddddddddo.',
+  'ouuuuuuuSsssssso..',
+  'ouuuuusSSsssosso..',
+  'ouuuuusSSsssossso.',
+  'oUuuuuuuSssssso...',
+  '.oUUUUUoSsssSo....',
   '..oooooooSsso.....',
   '.........ooo......',
 ];

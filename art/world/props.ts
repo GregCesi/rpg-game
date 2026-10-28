@@ -71,6 +71,33 @@ function bush(seed: number): Canvas {
   return c;
 }
 
+/** Seau en bois cerclé de fer, à moitié plein. */
+function bucket(): Canvas {
+  const c = new Canvas(32, 32);
+  // anse
+  for (let a = 0; a <= 20; a++) {
+    const t = Math.PI + (a / 20) * Math.PI;
+    c.set(Math.round(16 + Math.cos(t) * 8.5), Math.round(15 + Math.sin(t) * 8), 'z');
+  }
+  // corps : douelles
+  c.polygon([[7.5, 15], [24.5, 15], [23, 28], [9, 28]], 'm');
+  c.within('m', (c) => {
+    for (const x of [11, 14, 17, 20]) c.line(x, 15, x - (x - 16) * 0.12, 28, 'N');
+    c.polygon([[7.5, 15], [10, 15], [10.5, 28], [9, 28]], 'M');
+    c.polygon([[22, 15], [24.5, 15], [23, 28], [21.5, 28]], 'N');
+    // cerclages de fer
+    c.rect(0, 18, 32, 1, 'r').rect(0, 25, 32, 1, 'r');
+    c.rect(0, 19, 32, 1, 'z').rect(0, 26, 32, 1, 'z');
+  });
+  // ouverture : bord en bois et eau
+  c.ellipse(16, 15, 8.5, 2.6, 'M');
+  c.ellipse(16, 15.3, 7, 1.8, 'w');
+  c.set(13, 15, 'W').set(14, 15, 'W');
+  c.outline('o');
+  groundShadow(c, 16, 28.5, 10, 2);
+  return c;
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
-export default [img('tree', tree(7)), img('rock', rock()), img('bush', bush(3))];
+export default [img('tree', tree(7)), img('rock', rock()), img('bush', bush(3)), img('bucket', bucket())];

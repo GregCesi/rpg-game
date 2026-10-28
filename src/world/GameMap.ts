@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { TILE } from '../config';
-import { props as propDefs, tiles as tileDefs } from '../content';
+import { dialogues, props as propDefs, tiles as tileDefs } from '../content';
 import type { MapDef } from '../content/types';
 import { tilesets } from '../generated/assets';
 
@@ -11,6 +11,14 @@ function hash(x: number, y: number): number {
   return (h ^ (h >>> 16)) >>> 0;
 }
 
+/** Objet avec lequel le joueur peut interagir. (x, y) = centre de sa base au sol ; top = haut de l'image. */
+export interface Interactable {
+  x: number;
+  y: number;
+  top: number;
+  dialogue: string;
+}
+
 /**
  * Construit une carte jouable à partir d'une MapDef : sol (tilemap), collisions, objets posés.
  * Ne connaît ni le joueur ni les PNJ.
@@ -19,6 +27,7 @@ export class GameMap {
   readonly ground: Phaser.Tilemaps.TilemapLayer;
   /** Boîtes de collision des objets posés. */
   readonly obstacles: Phaser.Physics.Arcade.StaticGroup;
+  readonly interactables: Interactable[] = [];
   readonly width: number;
   readonly height: number;
 
@@ -68,11 +77,10 @@ export class GameMap {
         const p = propDefs[ch];
         const px = x * TILE + TILE / 2;
         const py = y * TILE + TILE;
-        scene.add.image(px, py, p.image).setOrigin(0.5, 1).setDepth(py);
-        if (p.body) {
-          const zone = scene.add.zone(px, py - p.body.bottom - p.body.h / 2, p.body.w, p.body.h);
-          this.obstacles.add(zone);
-        }
+        const image = scene.add.image(px, py, p.image).setOrigin(0.5, 1).setDepth(py);
+        const baseY = p.body ? py - p.body.bottom - p.body.h / 2 : py - 8;
+        if (p.body) this.obstacles.add(scene.add.zone(px, baseY, p.body.w, p.body.h));
+        if (p.interact) this.interactables.push({ x: px, y: baseY, top: py - image.height, dialogue: p.interact });
       }),
     );
   }
@@ -91,6 +99,8 @@ export class GameMap {
       if (row.length !== cols) throw new Error(`Carte ${id} : ligne ${y} des objets fait ${row.length} cases au lieu de ${cols}`);
       [...row].forEach((ch, x) => {
         if (ch !== '.' && !propDefs[ch]) throw new Error(`Carte ${id} : objet '${ch}' inconnu en (${x}, ${y})`);
+        const dialogue = propDefs[ch]?.interact;
+        if (dialogue && !dialogues[dialogue]) throw new Error(`Objet '${ch}' : dialogue '${dialogue}' introuvable dans dialogues.json`);
       });
     });
   }

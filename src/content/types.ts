@@ -15,6 +15,26 @@ export interface PropDef {
   image: string;
   /** Boîte de collision, posée en bas de l'image. bottom = marge entre le bas de l'image et le bas de la boîte. */
   body?: { w: number; h: number; bottom: number };
+  /** Identifiant du dialogue lancé quand le joueur interagit avec l'objet. */
+  interact?: string;
+}
+
+/** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
+export interface CharacterDef {
+  name: string;
+  portrait: string;
+}
+
+export interface DialogueLine {
+  /** Clé dans characters.json. */
+  speaker: string;
+  /** Nom de l'expression du portrait, ex. 'neutral'. */
+  expression: string;
+  text: string;
+}
+
+export interface DialogueDef {
+  lines: DialogueLine[];
 }
 
 export interface MapDef {

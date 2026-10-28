@@ -24,8 +24,60 @@ export class Canvas {
     return this.px[y][x];
   }
 
+  /** Si défini, on ne peint que sur les pixels dont la couleur est dans cette liste (ombrage "à l'intérieur"). */
+  private only: string | null = null;
+
   set(x: number, y: number, c: string): this {
-    if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.px[y][x] = c;
+    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return this;
+    if (this.only !== null && !this.only.includes(this.px[y][x])) return this;
+    this.px[y][x] = c;
+    return this;
+  }
+
+  /** Exécute `draw` en ne peignant que sur les couleurs de `allowed`. */
+  within(allowed: string, draw: (c: this) => void): this {
+    const prev = this.only;
+    this.only = allowed;
+    draw(this);
+    this.only = prev;
+    return this;
+  }
+
+  /** Remplit un polygone (points en pixels, testés au centre de chaque pixel). */
+  polygon(points: [number, number][], c: string): this {
+    const ys = points.map((p) => p[1]);
+    const xs = points.map((p) => p[0]);
+    for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++) {
+      for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+        const px = x + 0.5;
+        const py = y + 0.5;
+        let inside = false;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+          const [xi, yi] = points[i];
+          const [xj, yj] = points[j];
+          if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
+        }
+        if (inside) this.set(x, y, c);
+      }
+    }
+    return this;
+  }
+
+  /** Ligne d'un pixel d'épaisseur (Bresenham). */
+  line(x0: number, y0: number, x1: number, y1: number, c: string): this {
+    x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+    const dx = Math.abs(x1 - x0);
+    const dy = -Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx + dy;
+    for (;;) {
+      this.set(x0, y0, c);
+      if (x0 === x1 && y0 === y1) break;
+      const e2 = 2 * err;
+      if (e2 >= dy) { err += dy; x0 += sx; }
+      if (e2 <= dx) { err += dx; y0 += sy; }
+    }
     return this;
   }
 
