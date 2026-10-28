@@ -7,6 +7,8 @@ import { Actor } from './Actor';
 export class Player {
   readonly actor: Actor;
   readonly input: PlayerInput;
+  /** Direction demandée au dernier tour (0,0 si immobile). */
+  dir = new Phaser.Math.Vector2(0, 0);
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.actor = new Actor(scene, x, y, PLAYER.skin);
@@ -16,10 +18,12 @@ export class Player {
   /** enabled = false pendant un dialogue : le joueur reste immobile. */
   update(enabled = true): void {
     if (!enabled) {
-      this.actor.move(new Phaser.Math.Vector2(0, 0), PLAYER.walkSpeed);
+      this.dir.set(0, 0);
+      this.actor.move(this.dir, PLAYER.walkSpeed);
       return;
     }
     const { dir, running } = this.input.read();
+    this.dir = dir;
     this.actor.move(dir, running ? PLAYER.runSpeed : PLAYER.walkSpeed, PLAYER.walkSpeed);
   }
 

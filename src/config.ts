@@ -21,13 +21,16 @@ export const UI = {
 
 /** Tailles de portrait comparées en jeu (touche P pendant un dialogue). La première est celle par défaut. */
 export const PORTRAIT_MODES = [
-  { size: 96, scale: 1 },
   { size: 64, scale: 1 },
+  { size: 96, scale: 1 },
   { size: 64, scale: 2 },
 ];
 
 /** Distance devant les pieds où l'on cherche un objet avec lequel interagir, et rayon de recherche (px). */
 export const INTERACT = { reach: 16, radius: 20 };
+
+/** Où commence la partie : Xéros se réveille dans son cagibi. */
+export const START = { map: 'maison', spawn: 'reveil' };
 
 export const PLAYER = {
   skin: 'xeros',

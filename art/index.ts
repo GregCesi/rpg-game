@@ -5,5 +5,7 @@ import xerosPortraits from './portraits/xeros';
 import worldTiles from './world/tiles';
 import props from './world/props';
 import ui from './ui/dialog';
+import house from './world/house';
+import { furniture, interiorTiles } from './interior/house';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, worldTiles, ...props, ...ui];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, worldTiles, ...props, ...house, interiorTiles, ...furniture, ...ui];

@@ -37,6 +37,12 @@ export class Actor extends Phaser.Physics.Arcade.Sprite {
     this.play(this.animKey('walk'), true);
   }
 
+  /** Tourne le personnage sans le déplacer. */
+  face(facing: Facing): void {
+    this.facing = facing;
+    this.play(this.animKey('idle'), true);
+  }
+
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
     this.setDepth(this.y);

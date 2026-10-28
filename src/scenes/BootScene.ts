@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { START } from '../config';
 import { images, spritesheets, tilesets } from '../generated/assets';
 
 /** Charge tout ce que produit `npm run art` et déclare les animations. */
@@ -26,6 +27,21 @@ export class BootScene extends Phaser.Scene {
         });
       }
     }
-    this.scene.start('world', { mapId: 'ferme' });
+    this.makeGlow();
+    this.scene.start('world', { mapId: START.map, spawn: START.spawn });
+  }
+
+  /** Halo radial pour les lueurs de feu (effet de lumière, pas du pixel art : généré ici). */
+  private makeGlow(): void {
+    const size = 128;
+    const tex = this.textures.createCanvas('glow', size, size)!;
+    const ctx = tex.getContext();
+    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.4, 'rgba(255,255,255,0.45)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    tex.refresh();
   }
 }

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { INTERACT, TILE, ZOOM } from '../config';
+import { INTERACT, START, TILE, ZOOM } from '../config';
 import { maps } from '../content';
+import type { ExitDef } from '../content/types';
 import { Player } from '../entities/Player';
 import { GameMap, type Interactable } from '../world/GameMap';
 
@@ -8,7 +9,9 @@ import { GameMap, type Interactable } from '../world/GameMap';
 export class WorldScene extends Phaser.Scene {
   private player!: Player;
   private map!: GameMap;
-  private mapId = 'ferme';
+  private mapId = START.map;
+  private spawn = START.spawn;
+  private leaving = false;
   private prompt!: Phaser.GameObjects.Image;
   private target?: Interactable;
   private inDialogue = false;
@@ -19,8 +22,12 @@ export class WorldScene extends Phaser.Scene {
     super('world');
   }
 
-  init(data: { mapId?: string }): void {
+  init(data: { mapId?: string; spawn?: string }): void {
     if (data.mapId) this.mapId = data.mapId;
+    if (data.spawn) this.spawn = data.spawn;
+    this.leaving = false;
+    this.inDialogue = false;
+    this.target = undefined;
   }
 
   create(): void {
@@ -29,9 +36,10 @@ export class WorldScene extends Phaser.Scene {
     this.map = new GameMap(this, def);
 
     this.physics.world.setBounds(0, 0, this.map.width, this.map.height);
-    const sx = def.spawn.x * TILE + TILE / 2;
-    const sy = def.spawn.y * TILE + TILE - 2;
-    this.player = new Player(this, sx, sy);
+    const sp = def.spawns[this.spawn];
+    if (!sp) throw new Error(`Carte ${def.id} : point d'apparition '${this.spawn}' inconnu`);
+    this.player = new Player(this, sp.x * TILE + TILE / 2, sp.y * TILE + TILE - 4);
+    if (sp.facing) this.player.actor.face(sp.facing);
 
     this.physics.add.collider(this.player.actor, this.map.ground);
     this.physics.add.collider(this.player.actor, this.map.obstacles);
@@ -41,6 +49,7 @@ export class WorldScene extends Phaser.Scene {
     cam.setBounds(0, 0, this.map.width, this.map.height);
     cam.startFollow(this.player.actor, true, 0.15, 0.15);
     cam.setRoundPixels(true);
+    cam.fadeIn(220, 20, 14, 8);
 
     this.prompt = this.add.image(0, 0, 'ui-key-e').setOrigin(0.5, 1).setDepth(100000).setVisible(false);
 
@@ -50,11 +59,13 @@ export class WorldScene extends Phaser.Scene {
 
   update(time: number): void {
     const interact = this.player.input.interactPressed();
-    if (this.inDialogue) {
+    if (this.inDialogue || this.leaving) {
       this.player.update(false);
       return;
     }
     this.player.update();
+    const exit = this.exitUnderPlayer();
+    if (exit) return this.leave(exit);
     this.updateTarget();
     if (this.target) this.prompt.setPosition(this.target.x, this.target.top + 4 - Math.round((Math.sin(time / 220) + 1) / 2) * 2);
     if (interact && this.target && time >= this.interactLockedUntil) this.openDialogue(this.target.dialogue);
@@ -76,6 +87,26 @@ export class WorldScene extends Phaser.Scene {
       this.target = best;
       this.prompt.setVisible(!!best);
     }
+  }
+
+  /** Sortie dont la case contient les pieds de Xéros, s'il avance dans la bonne direction. */
+  private exitUnderPlayer(): ExitDef | undefined {
+    const { actor, dir } = this.player;
+    if (dir.lengthSq() === 0) return undefined;
+    const tx = Math.floor(actor.x / TILE);
+    const ty = Math.floor((actor.y - 3) / TILE);
+    return this.map.def.exits?.find((e) => e.x === tx && e.y === ty && e.facing === actor.facing);
+  }
+
+  private leave(exit: ExitDef): void {
+    this.leaving = true;
+    this.prompt.setVisible(false);
+    this.player.update(false);
+    const cam = this.cameras.main;
+    cam.fadeOut(200, 20, 14, 8);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.restart({ mapId: exit.to, spawn: exit.spawn });
+    });
   }
 
   private openDialogue(id: string): void {

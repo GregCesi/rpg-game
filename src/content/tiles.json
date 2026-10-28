@@ -1,8 +1,19 @@
 {
-  ".": { "tiles": ["grass", "grass", "grass2", "grass3"] },
-  ",": { "tiles": ["flowers", "flowers2"] },
-  "=": { "tiles": ["path", "path2"] },
-  "#": { "tiles": ["field"] },
-  "~": { "tiles": ["water", "water2"], "solid": true },
-  "F": { "tiles": [], "autotile": "fence", "solid": true }
+  "world": {
+    ".": {"tiles": ["grass", "grass2", "grass3", "grass4", "grass5", "grass6"]},
+    ",": {"tiles": ["flowers", "flowers2"]},
+    "=": {"tiles": [], "autotile": "path"},
+    "#": {"tiles": ["field"]},
+    "~": {"tiles": [], "autotile": "water", "solid": true},
+    "F": {"tiles": [], "autotile": "fence", "solid": true}
+  },
+  "interior": {
+    ".": {"tiles": ["floor", "floor2", "floor3"]},
+    "^": {"tiles": ["wall-top"], "solid": true},
+    "-": {"tiles": ["wall-face"], "solid": true},
+    "b": {"tiles": ["wall-door"], "solid": true},
+    "w": {"tiles": ["wall-window"], "solid": true},
+    "#": {"tiles": [], "autotile": "partition", "solid": true},
+    "X": {"tiles": ["void"], "solid": true}
+  }
 }

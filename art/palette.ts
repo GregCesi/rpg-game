@@ -1,43 +1,61 @@
 // Palette commune du jeu. Les sprites piochent dedans pour rester cohérents entre eux.
 // Un caractère = une couleur. '.' est réservé à la transparence.
 
-export const OUTLINE = '#2b1d16';
+// Direction "conte rustique" : tons terreux tirant vers l'ocre, ombres qui glissent vers le brun-violet,
+// lumières vers le jaune. Contours brun chaud plutôt que noirs.
+export const OUTLINE = '#3b2b20';
 
 export const world = {
-  // herbe
-  g: '#5f8f3e',
-  G: '#74a54a',
-  v: '#4c7633',
-  y: '#8dbb57',
+  // herbe (olive, un peu sèche)
+  g: '#7b8544',
+  G: '#949a52',
+  v: '#606a38',
+  V: '#4c5430',
+  y: '#b0a862',
   // terre / chemin
-  u: '#a27b50',
-  U: '#b68e5f',
-  n: '#8a6641',
+  u: '#a8855a',
+  U: '#bf9d6c',
+  n: '#8c6c48',
+  e: '#6f553a',
   // champ labouré
-  f: '#6b4a2e',
-  F: '#84603d',
+  f: '#6e4f33',
+  F: '#87643f',
   // eau
-  w: '#3d6e9e',
-  W: '#5a8dc0',
-  q: '#2f5a85',
-  // bois (clôtures, troncs)
-  m: '#7a5232',
-  M: '#9a6c43',
-  N: '#56391f',
+  w: '#56788a',
+  W: '#7e9ea8',
+  q: '#45627a',
+  // bois (clôtures, troncs, charpente)
+  m: '#86613e',
+  M: '#a67d51',
+  N: '#5f412b',
+  K: '#46301f',
   // feuillage
-  l: '#3f6b2c',
-  L: '#55893a',
-  j: '#6fa64a',
-  k: '#2d5020',
+  l: '#5d6e34',
+  L: '#76863f',
+  j: '#99a556',
+  k: '#45512b',
   // pierre
-  r: '#8b8a84',
-  R: '#a9a8a0',
-  z: '#6b6a66',
+  r: '#9a9384',
+  R: '#b8b09f',
+  z: '#787061',
+  Z: '#5d564a',
+  // chaume
+  t: '#b8954f',
+  T: '#97773c',
+  Y: '#d3b46d',
+  P: '#73592e',
+  // torchis
+  d: '#d8c6a1',
+  D: '#baa47f',
+  E: '#9a8664',
   // fleurs
-  a: '#f2ecd6',
-  b: '#e8c547',
-  c: '#c8584a',
-  // contour et ombre
+  a: '#efe6cc',
+  b: '#e0b94a',
+  c: '#b8584a',
+  // contour, ombre, lueur
   o: OUTLINE,
-  x: '#00000038',
+  x: '#2b1a1040',
+  h: '#e9a23b',
+  H: '#f6d36b',
+  i: '#c4542c',
 };

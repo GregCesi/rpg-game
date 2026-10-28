@@ -11,15 +11,53 @@ const T = 32;
 function grass(seed: number): Canvas {
   const r = rng(seed);
   const c = new Canvas(T, T, 'g');
-  for (let i = 0; i < 70; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), r() < 0.55 ? 'v' : 'G');
-  for (let i = 0; i < 9; i++) {
-    const x = Math.floor(r() * (T - 2));
-    const y = 2 + Math.floor(r() * (T - 3));
-    c.set(x, y, 'v');
-    c.set(x, y - 1, 'v');
-    c.set(x + 1, y - 2, r() < 0.3 ? 'y' : 'G');
+  for (let i = 0; i < 22; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), r() < 0.5 ? 'v' : 'G');
+  // touffes : trois brins, pointes claires, ombre au pied
+  const tufts = 2 + Math.floor(r() * 3);
+  for (let i = 0; i < tufts; i++) {
+    const x = 2 + Math.floor(r() * (T - 4));
+    const y = 3 + Math.floor(r() * (T - 5));
+    c.set(x - 1, y + 1, 'V').set(x, y + 1, 'V').set(x + 1, y + 1, 'V');
+    c.set(x - 1, y, 'G').set(x - 1, y - 1, 'y');
+    c.set(x, y, 'G').set(x, y - 1, 'G').set(x, y - 2, 'y');
+    c.set(x + 1, y, 'G').set(x + 1, y - 1, 'y');
   }
   return c;
+}
+
+/**
+ * Bord irrégulier : profondeur (en px) d'une bordure le long d'un côté, qui ondule.
+ * Périodique sur 32 px : deux tuiles voisines se raccordent sans marche.
+ */
+function edgeDepth(i: number, phase: number, base: number): number {
+  const a = (i / T) * Math.PI * 2;
+  return base + Math.round(Math.sin(a * 2 + phase) * 1.2 + Math.sin(a * 5 + phase * 3) * 0.8);
+}
+
+/**
+ * Pose une bordure d'herbe sur les côtés où la tuile n'a pas de voisin identique.
+ * mask : N=1, E=2, S=4, O=8 (bit à 1 = voisin identique de ce côté).
+ */
+function grassBorder(c: Canvas, mask: number, seed: number, rim: string, base = 3) {
+  const g = grass(seed + 500);
+  const sides: [number, (i: number, d: number) => [number, number]][] = [
+    [1, (i, d) => [i, d]],
+    [2, (i, d) => [T - 1 - d, i]],
+    [4, (i, d) => [i, T - 1 - d]],
+    [8, (i, d) => [d, i]],
+  ];
+  for (const [bit, at] of sides) {
+    if (mask & bit) continue;
+    for (let i = 0; i < T; i++) {
+      const depth = edgeDepth(i, bit, base);
+      for (let d = 0; d < depth; d++) {
+        const [x, y] = at(i, d);
+        c.set(x, y, g.get(x, y));
+      }
+      const [x, y] = at(i, depth);
+      c.set(x, y, rim);
+    }
+  }
 }
 
 function flowers(seed: number): Canvas {
@@ -36,15 +74,16 @@ function flowers(seed: number): Canvas {
   return c;
 }
 
-function path(seed: number): Canvas {
+function path(seed: number, mask = 15): Canvas {
   const r = rng(seed);
   const c = new Canvas(T, T, 'u');
-  for (let i = 0; i < 90; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), r() < 0.5 ? 'n' : 'U');
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 45; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), r() < 0.5 ? 'n' : 'U');
+  for (let i = 0; i < 3; i++) {
     const x = Math.floor(r() * (T - 2));
     const y = Math.floor(r() * (T - 2));
-    c.rect(x, y, 2, 2, 'r').set(x, y, 'R').set(x + 1, y + 1, 'z');
+    c.set(x, y, 'R').set(x + 1, y, 'r').set(x, y + 1, 'z').set(x + 1, y + 1, 'e');
   }
+  grassBorder(c, mask, seed, 'e');
   return c;
 }
 
@@ -60,14 +99,29 @@ function field(seed: number): Canvas {
   return c;
 }
 
-function water(seed: number): Canvas {
+function water(seed: number, mask = 15): Canvas {
   const r = rng(seed);
   const c = new Canvas(T, T, 'w');
-  for (let i = 0; i < 30; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), 'q');
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 20; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), 'q');
+  for (let i = 0; i < 5; i++) {
     const x = Math.floor(r() * (T - 5));
     const y = Math.floor(r() * T);
     c.rect(x, y, 3 + Math.floor(r() * 3), 1, 'W');
+  }
+  // berge : un liseré de terre, puis l'eau plus sombre au pied de la berge
+  const bank = new Canvas(T, T, '.');
+  grassBorder(bank, mask, seed, 'n', 3);
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    const b = bank.get(x, y);
+    if (b === '.') continue;
+    c.set(x, y, b);
+  }
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    if (c.get(x, y) !== 'n') continue;
+    for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) {
+      const n = c.get(x + dx, y + dy);
+      if (n === 'w' || n === 'W' || n === 'q') c.set(x + dx, y + dy, 'q');
+    }
   }
   return c;
 }
@@ -112,15 +166,18 @@ const tiles: TilesetSource['tiles'] = {
   grass: grass(1).toGrid(),
   grass2: grass(2).toGrid(),
   grass3: grass(3).toGrid(),
+  grass4: grass(4).toGrid(),
+  grass5: grass(5).toGrid(),
+  grass6: grass(6).toGrid(),
   flowers: flowers(10).toGrid(),
   flowers2: flowers(11).toGrid(),
-  path: path(20).toGrid(),
-  path2: path(21).toGrid(),
   field: field(30).toGrid(),
-  water: water(40).toGrid(),
-  water2: water(41).toGrid(),
 };
-for (let m = 0; m < 16; m++) tiles[`fence-${m}`] = fence(m).toGrid();
+for (let m = 0; m < 16; m++) {
+  tiles[`fence-${m}`] = fence(m).toGrid();
+  tiles[`path-${m}`] = path(20 + m, m).toGrid();
+  tiles[`water-${m}`] = water(40 + m, m).toGrid();
+}
 
 const tileset: TilesetSource = {
   kind: 'tileset',
