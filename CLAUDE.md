@@ -1,6 +1,6 @@
 # Xéros — consignes pour les agents de code
 
-Lis `README.md` (architecture et quatre règles) avant toute modification.
+Lis `README.md` (architecture et quatre règles) avant toute modification, et `docs/CONCEPTION.md` (univers, personnages, lieux, feuille de route) avant tout travail sur le contenu.
 
 - Ne jamais éditer `src/generated/` : modifier `art/` puis `npm run art`.
 - Ajouter du contenu (carte, tuile, objet) = éditer `src/content/` ; ne pas coder de contenu en dur dans les scènes.
