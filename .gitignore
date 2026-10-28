@@ -3,3 +3,4 @@ dist/
 dist-single/
 src/generated/
 .art-preview/
+.DS_Store
