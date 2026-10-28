@@ -1,4 +1,4 @@
-// Construit les fichiers que Tiled lit : tilesets (.tsj) et, plus loin, le fichier projet.
+// Construit les fichiers que Tiled lit : tilesets (.tsj) et fichier projet.
 // Tout ce qui sort d'ici est GÉNÉRÉ par build-art : on ne l'édite jamais, ni à la main ni dans Tiled.
 
 import type { TerrainDef } from '../../src/content/types';
@@ -6,9 +6,11 @@ import type { TerrainDef } from '../../src/content/types';
 export const GENERATED_NOTE =
   "GÉNÉRÉ par tools/build-art.ts à partir de art/ et de src/content/. Ne pas éditer, ni à la main ni dans Tiled : npm run art le réécrit.";
 
-/** Un jeu de tuiles ne peut pas dépasser ça : le tileset des objets commence à PROPS_FIRSTGID dans les cartes. */
+/**
+ * Un jeu de tuiles ne dépasse pas ça. C'est Tiled qui choisit le `firstgid` de chaque tileset dans une carte
+ * (build-maps détecte les chevauchements) : cette marge évite d'y arriver par accident.
+ */
 export const TILESET_MAX = 1000;
-export const PROPS_FIRSTGID = TILESET_MAX + 1;
 
 const TILED_VERSION = { version: '1.10', tiledversion: '1.11.0' };
 const OTHER_COLOR = '#9e9e9e';
@@ -73,7 +75,8 @@ function wangSet(t: TilesetExport, terrain: string, def: TerrainDef) {
 
 export function tilesetTsj(t: TilesetExport) {
   if (t.slots.length > TILESET_MAX) throw new Error(`Jeu de tuiles '${t.name}' : ${t.slots.length} tuiles, la limite est ${TILESET_MAX}`);
-  const terrainOf = (name: string) => Object.keys(t.terrains).find((k) => new RegExp(`^${k}-\\d+$`).test(name));
+  const terrainOf = (name: string) =>
+    Object.keys(t.terrains).find((k) => name.startsWith(`${k}-`) && /^\d+$/.test(name.slice(k.length + 1)) && Number(name.slice(k.length + 1)) < 16);
   const tiles = t.slots.flatMap((name, id) => {
     if (name === null) return [];
     const properties: Prop[] = [];

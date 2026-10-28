@@ -89,6 +89,13 @@ export function validateMaps(
       const at = `${where} : point '${name}' en (${s.x}, ${s.y})`;
       if (s.x < 0 || s.y < 0 || s.x >= W || s.y >= H) err(`${at} : hors de la carte`);
       else if (solidAt(s.x, s.y)) err(`${at} : posé sur une case bloquante (${Math.floor(s.x / TILE)}, ${Math.floor(s.y / TILE)})`);
+      // arrivé dans une sortie qu'il prendrait en avançant, le joueur repartirait aussitôt
+      for (const e of m.exits) {
+        const inside = s.x >= e.x && s.x < e.x + e.w && s.y - 3 >= e.y && s.y - 3 < e.y + e.h;
+        if (inside && (e.facing === undefined || e.facing === s.facing)) {
+          err(`${at} : dans la sortie en (${e.x}, ${e.y}) : le joueur repartirait aussitôt (donner à la sortie un 'facing' opposé à celui du point)`);
+        }
+      }
     }
     for (const e of m.exits) {
       const at = `${where} : sortie en (${e.x}, ${e.y})`;
@@ -121,6 +128,9 @@ export interface Content {
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
+/** Noms que les objets de props.json ne peuvent pas prendre : ce sont d'autres types de Tiled. */
+const RESERVED_TYPES = ['Spawn', 'Exit', 'Facing'];
+
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -136,6 +146,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Objets (la clé de props.json est le type d'un objet de carte)
   for (const [key, p] of Object.entries(c.props)) {
+    if (RESERVED_TYPES.includes(key)) err(`props.json '${key}' : nom réservé (types d'objets de Tiled : ${RESERVED_TYPES.join(', ')})`);
     if (!cat.textures.has(p.image)) err(`props.json '${key}' : image '${p.image}' non dessinée`);
     if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${key}' : animation '${p.anim}' absente de '${p.image}'`);
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);

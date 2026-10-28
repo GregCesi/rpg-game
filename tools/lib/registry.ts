@@ -6,10 +6,11 @@
 //   - une tuile retirée de art/ garde sa place (un « trou » transparent) : on ne renumérote jamais.
 // Renommer une tuile : changer son nom ici ET dans art/, à la même position.
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { z } from 'zod';
 
 export const REGISTRY_PATH = 'art/tile-registry.json';
+const MAPS_DIR = 'tiled/maps';
 
 const NOTE =
   "Numéro d'une tuile = sa position dans la liste (à partir de 0). Ne jamais réordonner ni supprimer : npm run art ajoute les nouvelles tuiles en fin de liste. Pour renommer une tuile, changer son nom ici et dans art/, à la même position.";
@@ -26,7 +27,12 @@ export interface Slots {
 }
 
 export function loadRegistry(): Registry {
-  if (!existsSync(REGISTRY_PATH)) return {};
+  if (!existsSync(REGISTRY_PATH)) {
+    // sans registre, les numéros repartiraient de zéro et les cartes déjà peintes changeraient de tuiles sans erreur
+    const hasMaps = existsSync(MAPS_DIR) && readdirSync(MAPS_DIR).some((f) => f.endsWith('.tmj'));
+    if (hasMaps) throw new Error(`${REGISTRY_PATH} est introuvable alors que des cartes existent dans ${MAPS_DIR} : le restaurer (git checkout), sinon les numéros de tuiles seraient renumérotés`);
+    return {};
+  }
   const { _lisez_moi: _ignored, ...rest } = JSON.parse(readFileSync(REGISTRY_PATH, 'utf8'));
   const r = RegistrySchema.safeParse(rest);
   if (!r.success) throw new Error(`${REGISTRY_PATH} ne respecte pas son format :\n${z.prettifyError(r.error)}`);

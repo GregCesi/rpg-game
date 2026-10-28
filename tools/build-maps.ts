@@ -54,7 +54,7 @@ function readTileset(mapPath: string, firstgid: number, source: string, err: (m:
   };
 }
 
-/** Valeur d'une propriété Tiled, en vérifiant son type. */
+/** Propriétés d'un objet ou d'une carte, par nom (les valeurs sont contrôlées par l'appelant). */
 function readProps(list: { name: string; type?: string; value?: unknown }[] | undefined) {
   return new Map((list ?? []).map((p) => [p.name, p.value]));
 }
@@ -113,8 +113,24 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   const spawns: Record<string, Spawn> = {};
   const exits: Exit[] = [];
 
+  // deux tilesets dont les numéros se chevauchent : l'un a grossi depuis la dernière sauvegarde de la carte dans Tiled
+  const sorted = [...uses].sort((a, b) => a.firstgid - b.firstgid);
+  sorted.slice(0, -1).forEach((u, i) => {
+    const span = u.kind === 'atlas' ? u.count : Math.max(-1, ...u.tiles.keys()) + 1;
+    if (u.firstgid + span > sorted[i + 1].firstgid) {
+      err(`tilesets '${u.key}' et '${sorted[i + 1].key}' se chevauchent : '${u.key}' a changé depuis la dernière sauvegarde de la carte, la rouvrir et l'enregistrer dans Tiled`);
+    }
+  });
+
   for (const layer of tmj.layers) {
+    if (layer.type !== 'imagelayer' && layer.type !== 'group' && (layer.offsetx !== 0 || layer.offsety !== 0)) {
+      err(`calque '${layer.name}' décalé de (${layer.offsetx}, ${layer.offsety}) : le décalage de calque n'est pas géré, le remettre à 0`);
+    }
     if (layer.type === 'tilelayer') {
+      if (layers[layer.name]) {
+        err(`calque de tuiles '${layer.name}' en double`);
+        continue;
+      }
       if (layer.name !== 'ground') {
         err(`calque de tuiles '${layer.name}' inconnu : seul 'ground' est géré pour l'instant`);
         continue;
@@ -160,7 +176,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   if (!layers.ground) err("calque de tuiles 'ground' manquant");
 
   function readObject(o: TmjObject) {
-    const cls = o.type ?? o.class ?? '';
+    const cls = o.type || o.class || '';
     const label = `${cls ? `« ${cls} »` : 'objet'}${o.name ? ` '${o.name}'` : ''} (n°${o.id}) en (${round(o.x)}, ${round(o.y)})`;
     const oerr = (m: string) => err(`${label} : ${m}`);
     if (o.ellipse || o.polygon || o.polyline || o.text) return oerr('forme non gérée (point, rectangle ou objet-tuile seulement)');
@@ -189,7 +205,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       spawns[o.name] = { x: o.x, y: o.y, ...(facing() ? { facing: facing() } : {}) };
     } else if (cls === 'Exit') {
       only(['to', 'spawn', 'facing']);
-      if (o.point || o.width <= 0 || o.height <= 0) return oerr('une sortie est un rectangle (outil « Insérer un rectangle »)');
+      if (o.point || o.gid !== undefined || o.width <= 0 || o.height <= 0) return oerr('une sortie est un rectangle (outil « Insérer un rectangle »)');
       const to = text('to');
       const spawn = text('spawn');
       if (!to) oerr("champ 'to' (carte d'arrivée) manquant");
@@ -202,7 +218,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       const u = owner(o.gid);
       if (!u || u.kind !== 'collection') return oerr(`l'image vient de '${u?.key ?? '?'}' : un objet se pose depuis le tileset d'images (props)`);
       const tile = u.tiles.get(o.gid - u.firstgid);
-      const key = tile && (tile.type ?? tile.class);
+      const key = tile && (tile.type || tile.class);
       if (!tile || !key) return oerr(`image n°${o.gid - u.firstgid} inconnue dans '${u.key}' : relancer npm run art`);
       if (cls && cls !== key) return oerr(`type « ${cls} » mais l'image est celle de « ${key} »`);
       if (o.width !== tile.imagewidth || o.height !== tile.imageheight) {

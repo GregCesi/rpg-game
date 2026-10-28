@@ -32,7 +32,7 @@ export const ObjectSchema = z.object({
   properties,
 });
 
-const layerBase = { id: z.number().int(), name: z.string() };
+const layerBase = { id: z.number().int(), name: z.string(), offsetx: z.number().default(0), offsety: z.number().default(0) };
 
 export const LayerSchema = z.discriminatedUnion('type', [
   z.object({
