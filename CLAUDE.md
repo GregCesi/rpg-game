@@ -8,6 +8,7 @@ Lis `README.md` (architecture et quatre règles) avant toute modification, et `d
 - Nouvelle carte : esquisse (`tiled/sketches/<id>.json`, lettres), `npm run sketch -- <id>`, puis retouches dans Tiled. Une carte existante ne se refait jamais depuis l'esquisse : le `.tmj` fait foi. Nouvelle lettre = `tiled/sketch-legend.json`.
 - Les numéros de tuiles vivent dans `art/tile-registry.json` (committé) : `npm run art` ajoute les nouvelles tuiles en fin de liste ; ne jamais réordonner ni supprimer une entrée, car les .tmj stockent ces numéros.
 - Nouvel objet posable : une entrée de `src/content/props.json` ; sa clé (anglais, kebab-case, reprend la clé d'image) est le type de l'objet dans Tiled, `name` est le nom affiché en français.
+- Tout dessin (nouveau sprite ou retouche dans `art/`) passe par le sous-agent `pixel-artist` (`.claude/agents/pixel-artist.md`, sur Opus), qui applique `docs/STYLE.md`.
 - Nouveau sprite : l'ajouter dans `art/`, le déclarer dans `art/index.ts`, vérifier l'aperçu avec `npm run art:preview` (images dans `.art-preview/`, à regarder).
 - Nouvelle capacité de personnage : un composant attaché à `Actor`, pas une sous-classe.
 - Nouveau champ de contenu : le déclarer dans `src/content/types.ts` (schéma Zod) ; nouveau lien entre fichiers : le vérifier dans `src/content/validate.ts`.
