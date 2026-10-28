@@ -1,0 +1,43 @@
+{
+  "ground": {
+    "world": {
+      ".": {"tiles": ["grass", "grass2", "grass3", "grass4", "grass5", "grass6"]},
+      ",": {"tiles": ["flowers", "flowers2"]},
+      "=": {"terrain": "path"},
+      "#": {"tiles": ["field"]},
+      "~": {"terrain": "water"},
+      "F": {"terrain": "fence"}
+    },
+    "interior": {
+      ".": {"tiles": ["floor", "floor2", "floor3", "floor4"]},
+      "O": {"tiles": ["wall-top"]},
+      "d": {"tiles": ["doorway"]},
+      "v": {"tiles": ["window-south"]},
+      "u": {"tiles": ["face-up-0", "face-up-1", "face-up-2", "face-up-3"], "cycle": true},
+      "l": {"tiles": ["face-low-0", "face-low-1", "face-low-2", "face-low-3"], "cycle": true},
+      "b": {"tiles": ["door-up"]},
+      "B": {"tiles": ["door-low"]},
+      "w": {"tiles": ["window-up"]},
+      "#": {"terrain": "partition", "connects": "Ol"},
+      "X": {"tiles": ["void"]}
+    }
+  },
+  "props": {
+    "T": "tree",
+    "r": "rock",
+    "b": "bush",
+    "S": "bucket",
+    "H": {"prop": "cottage", "anchor": "left"},
+    "L": "woodpile",
+    "C": {"prop": "fireplace", "anchor": "left"},
+    "P": {"prop": "worktable", "anchor": "left"},
+    "E": {"prop": "workbench", "anchor": "left"},
+    "l": "log",
+    "O": "stove",
+    "M": "bed",
+    "Z": "pallet",
+    "k": "sack",
+    "j": "jar",
+    "q": "sunpatch"
+  }
+}

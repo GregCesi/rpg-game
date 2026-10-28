@@ -6,3 +6,4 @@ src/generated/
 .DS_Store
 tiled/tilesets/
 *.tiled-session
+tiled/sketches/

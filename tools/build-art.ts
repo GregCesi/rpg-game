@@ -5,7 +5,7 @@
 //
 // Le numéro d'une tuile vient de art/tile-registry.json (voir tools/lib/registry.ts) : il ne change jamais.
 
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { z } from 'zod';
@@ -84,9 +84,10 @@ function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.i
   return r.data;
 }
 
-rmSync(OUT, { recursive: true, force: true });
-rmSync(TILED, { recursive: true, force: true });
+// src/generated/maps.ts est produit par build-maps (npm run maps) : on le garde, seul le reste est régénéré ici.
 mkdirSync(OUT, { recursive: true });
+for (const f of readdirSync(OUT)) if (f !== 'maps.ts') rmSync(join(OUT, f), { recursive: true, force: true });
+rmSync(TILED, { recursive: true, force: true });
 mkdirSync(join(TILED, 'images'), { recursive: true });
 if (withPreview) mkdirSync(PREVIEW, { recursive: true });
 

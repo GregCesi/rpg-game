@@ -7,10 +7,12 @@ export const GENERATED_NOTE =
   "GÉNÉRÉ par tools/build-art.ts à partir de art/ et de src/content/. Ne pas éditer, ni à la main ni dans Tiled : npm run art le réécrit.";
 
 /**
- * Un jeu de tuiles ne dépasse pas ça. C'est Tiled qui choisit le `firstgid` de chaque tileset dans une carte
- * (build-maps détecte les chevauchements) : cette marge évite d'y arriver par accident.
+ * Un jeu de tuiles ne dépasse pas ça. Les cartes créées par l'esquisse placent le tileset des objets juste
+ * au-dessus (PROPS_FIRSTGID), donc un jeu de tuiles qui grossit ne peut pas le recouvrir. Ensuite c'est le
+ * `firstgid` écrit dans chaque .tmj qui fait foi (build-maps détecte les chevauchements).
  */
 export const TILESET_MAX = 1000;
+export const PROPS_FIRSTGID = TILESET_MAX + 1;
 
 const TILED_VERSION = { version: '1.10', tiledversion: '1.11.0' };
 const OTHER_COLOR = '#9e9e9e';

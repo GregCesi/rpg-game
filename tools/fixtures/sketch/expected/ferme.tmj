@@ -1,0 +1,430 @@
+{
+  "type": "map",
+  "version": "1.10",
+  "tiledversion": "1.11.0",
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "infinite": false,
+  "width": 32,
+  "height": 22,
+  "tilewidth": 32,
+  "tileheight": 32,
+  "nextlayerid": 4,
+  "nextobjectid": 25,
+  "properties": [
+    {
+      "name": "name",
+      "type": "string",
+      "value": "La ferme"
+    }
+  ],
+  "tilesets": [
+    {
+      "firstgid": 1,
+      "source": "../tilesets/world.tsj"
+    },
+    {
+      "firstgid": 1001,
+      "source": "../tilesets/props.tsj"
+    }
+  ],
+  "layers": [
+    {
+      "id": 1,
+      "name": "ground",
+      "type": "tilelayer",
+      "width": 32,
+      "height": 22,
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "data": [
+        1,1,2,3,4,6,3,3,5,1,5,6,6,1,4,1,6,4,5,5,3,2,3,3,6,31,43,43,43,43,49,6,
+        4,1,6,5,3,6,1,5,5,3,3,6,3,6,6,3,2,5,2,2,5,1,2,4,5,25,9,9,9,9,25,2,
+        5,6,30,54,54,54,48,1,4,1,5,5,5,1,4,5,4,2,6,2,6,1,2,6,3,25,9,9,9,9,25,4,
+        4,30,57,57,57,57,57,54,48,4,4,6,6,5,1,3,2,2,4,3,2,2,5,4,2,19,34,3,16,40,37,6,
+        1,21,57,57,57,57,57,57,39,8,2,5,5,2,3,29,47,3,4,3,3,4,3,2,4,3,3,6,3,6,6,4,
+        5,3,21,57,57,57,57,39,7,8,2,2,1,6,1,32,50,6,4,5,2,2,1,3,1,5,5,6,2,2,3,1,
+        2,5,6,21,45,45,39,7,7,2,6,2,6,4,1,32,50,1,2,2,2,5,6,5,6,3,3,1,6,5,5,3,
+        4,4,5,5,8,8,8,3,1,2,6,3,4,6,4,32,50,1,4,5,3,1,5,1,3,4,3,4,6,4,2,6,
+        3,4,3,4,2,3,3,2,1,1,4,3,6,2,5,32,50,6,6,3,6,3,6,6,3,2,2,3,2,3,4,5,
+        1,1,6,1,1,4,3,1,5,1,5,6,1,2,4,32,50,3,29,47,1,5,3,2,3,5,2,5,5,5,1,6,
+        1,2,2,6,6,1,4,5,2,1,6,1,5,4,6,32,56,53,56,56,53,53,53,53,47,3,2,5,2,2,4,4,
+        3,6,2,1,5,1,2,1,6,1,4,6,3,4,3,32,56,44,44,44,44,44,44,44,50,1,3,3,6,3,2,3,
+        6,2,1,5,1,3,1,2,6,1,3,4,3,5,4,32,50,5,4,3,3,2,1,4,32,35,5,6,2,2,3,2,
+        4,4,4,6,3,6,3,2,4,2,4,2,4,1,5,32,50,3,3,5,28,40,34,17,38,16,40,40,40,46,5,4,
+        2,4,2,1,6,3,4,5,2,2,1,2,2,1,2,32,50,3,3,2,25,9,9,9,9,9,9,9,9,25,6,4,
+        6,5,6,2,7,1,3,1,6,1,5,3,2,4,4,32,50,3,1,6,25,9,9,9,9,9,9,9,9,25,3,6,
+        4,1,2,7,8,7,4,3,5,3,4,5,3,4,1,32,50,2,6,4,25,9,9,9,9,9,9,9,9,25,6,1,
+        5,6,1,6,8,4,4,2,2,3,3,3,1,3,4,32,50,6,1,5,25,9,9,9,9,9,9,9,9,25,1,5,
+        5,5,2,6,3,2,6,6,3,4,5,3,2,4,3,32,50,6,1,4,25,9,9,9,9,9,9,9,9,25,1,5,
+        4,5,5,2,4,5,2,3,5,6,2,5,2,1,1,32,50,6,1,4,19,40,40,40,40,40,40,40,40,37,2,2,
+        1,4,5,3,1,1,3,4,1,3,5,5,1,4,4,32,50,6,3,2,3,6,3,6,2,6,5,6,3,1,2,6,
+        5,5,2,5,3,5,3,6,3,1,4,1,3,3,3,32,50,5,2,2,2,2,1,3,4,5,6,4,4,6,3,2
+      ]
+    },
+    {
+      "id": 2,
+      "name": "objects",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {
+          "id": 1,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "tree",
+          "x": 48,
+          "y": 32,
+          "width": 64,
+          "height": 96,
+          "gid": 1001
+        },
+        {
+          "id": 2,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "tree",
+          "x": 240,
+          "y": 32,
+          "width": 64,
+          "height": 96,
+          "gid": 1001
+        },
+        {
+          "id": 3,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "bush",
+          "x": 352,
+          "y": 96,
+          "width": 32,
+          "height": 32,
+          "gid": 1003
+        },
+        {
+          "id": 4,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "woodpile",
+          "x": 728,
+          "y": 128,
+          "width": 48,
+          "height": 32,
+          "gid": 1006
+        },
+        {
+          "id": 5,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "tree",
+          "x": 976,
+          "y": 224,
+          "width": 64,
+          "height": 96,
+          "gid": 1001
+        },
+        {
+          "id": 6,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "rock",
+          "x": 320,
+          "y": 256,
+          "width": 32,
+          "height": 32,
+          "gid": 1002
+        },
+        {
+          "id": 7,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "bush",
+          "x": 160,
+          "y": 288,
+          "width": 32,
+          "height": 32,
+          "gid": 1003
+        },
+        {
+          "id": 8,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "tree",
+          "x": 912,
+          "y": 288,
+          "width": 64,
+          "height": 96,
+          "gid": 1001
+        },
+        {
+          "id": 9,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "bucket",
+          "x": 544,
+          "y": 320,
+          "width": 32,
+          "height": 32,
+          "gid": 1004
+        },
+        {
+          "id": 10,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "cottage",
+          "x": 576,
+          "y": 320,
+          "width": 332,
+          "height": 204,
+          "gid": 1005
+        },
+        {
+          "id": 11,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "bush",
+          "x": 960,
+          "y": 320,
+          "width": 32,
+          "height": 32,
+          "gid": 1003
+        },
+        {
+          "id": 12,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "tree",
+          "x": 48,
+          "y": 352,
+          "width": 64,
+          "height": 96,
+          "gid": 1001
+        },
+        {
+          "id": 13,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "bush",
+          "x": 288,
+          "y": 416,
+          "width": 32,
+          "height": 32,
+          "gid": 1003
+        },
+        {
+          "id": 14,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "tree",
+          "x": 112,
+          "y": 448,
+          "width": 64,
+          "height": 96,
+          "gid": 1001
+        },
+        {
+          "id": 15,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "tree",
+          "x": 48,
+          "y": 544,
+          "width": 64,
+          "height": 96,
+          "gid": 1001
+        },
+        {
+          "id": 16,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "rock",
+          "x": 384,
+          "y": 544,
+          "width": 32,
+          "height": 32,
+          "gid": 1002
+        },
+        {
+          "id": 17,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "tree",
+          "x": 144,
+          "y": 640,
+          "width": 64,
+          "height": 96,
+          "gid": 1001
+        },
+        {
+          "id": 18,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "tree",
+          "x": 272,
+          "y": 672,
+          "width": 64,
+          "height": 96,
+          "gid": 1001
+        },
+        {
+          "id": 19,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "bush",
+          "x": 864,
+          "y": 704,
+          "width": 32,
+          "height": 32,
+          "gid": 1003
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "zones",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {
+          "id": 20,
+          "rotation": 0,
+          "visible": true,
+          "name": "default",
+          "type": "Spawn",
+          "point": true,
+          "x": 496,
+          "y": 316,
+          "width": 0,
+          "height": 0
+        },
+        {
+          "id": 21,
+          "rotation": 0,
+          "visible": true,
+          "name": "porte",
+          "type": "Spawn",
+          "point": true,
+          "x": 592,
+          "y": 348,
+          "width": 0,
+          "height": 0,
+          "properties": [
+            {
+              "name": "facing",
+              "type": "string",
+              "propertytype": "Facing",
+              "value": "down"
+            }
+          ]
+        },
+        {
+          "id": 22,
+          "rotation": 0,
+          "visible": true,
+          "name": "jardin",
+          "type": "Spawn",
+          "point": true,
+          "x": 720,
+          "y": 124,
+          "width": 0,
+          "height": 0,
+          "properties": [
+            {
+              "name": "facing",
+              "type": "string",
+              "propertytype": "Facing",
+              "value": "up"
+            }
+          ]
+        },
+        {
+          "id": 23,
+          "rotation": 0,
+          "visible": true,
+          "name": "vers maison",
+          "type": "Exit",
+          "x": 576,
+          "y": 288,
+          "width": 32,
+          "height": 32,
+          "properties": [
+            {
+              "name": "to",
+              "type": "string",
+              "value": "maison"
+            },
+            {
+              "name": "spawn",
+              "type": "string",
+              "value": "entree"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "propertytype": "Facing",
+              "value": "up"
+            }
+          ]
+        },
+        {
+          "id": 24,
+          "rotation": 0,
+          "visible": true,
+          "name": "vers maison",
+          "type": "Exit",
+          "x": 704,
+          "y": 128,
+          "width": 32,
+          "height": 32,
+          "properties": [
+            {
+              "name": "to",
+              "type": "string",
+              "value": "maison"
+            },
+            {
+              "name": "spawn",
+              "type": "string",
+              "value": "porte-derriere"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "propertytype": "Facing",
+              "value": "down"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

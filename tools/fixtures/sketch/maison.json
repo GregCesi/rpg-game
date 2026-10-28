@@ -1,0 +1,43 @@
+{
+  "id": "maison",
+  "name": "La chaumière",
+  "tileset": "interior",
+  "ambient": 0.22,
+  "spawns": {
+    "reveil": {"x": 5, "y": 9, "facing": "left"},
+    "entree": {"x": 1, "y": 7, "facing": "up"},
+    "porte-derriere": {"x": 8, "y": 3, "facing": "down"}
+  },
+  "exits": [
+    {"x": 1, "y": 8, "facing": "down", "to": "ferme", "spawn": "porte"},
+    {"x": 8, "y": 3, "facing": "up", "to": "ferme", "spawn": "jardin"}
+  ],
+  "ground": [
+    "XXXOOOOOOOOOOOOOOOOOOOO",
+    "XXXOuuuubuuuuuuuuuuwuuO",
+    "XXXOllllBlllllllllllllO",
+    "XXXO...#........#.....O",
+    "OOOO...#........#.....O",
+    "OllO#.##........#.....O",
+    "O...............#.....O",
+    "O..O#.##...........###O",
+    "OdOO...#........#.....O",
+    "XXXO...#........#.....O",
+    "XXXO...#........#.....O",
+    "XXXOOvOOOOOOOOOOOOOvOOO"
+  ],
+  "props": [
+    ".......................",
+    ".......................",
+    ".......................",
+    "....k.j....C.P....E....",
+    ".....................l.",
+    ".......................",
+    ".......................",
+    "..................O....",
+    ".......................",
+    ".......................",
+    "....Zq.............q.M.",
+    "......................."
+  ]
+}

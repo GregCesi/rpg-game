@@ -9,8 +9,10 @@
     "check": "npm run art && npm run maps && tsx tools/check.ts",
     "dev": "npm run art && npm run maps && vite",
     "typecheck": "npm run art && npm run maps && tsc --noEmit",
-    "build": "npm run check && tsc --noEmit && vite build",
-    "build:single": "npm run check && tsc --noEmit && vite build --mode single",
+    "sketch": "npm run art && tsx tools/sketch.ts",
+    "test": "npm run art && tsx tools/test-sketch.ts",
+    "build": "npm run check && npm run test && tsc --noEmit && vite build",
+    "build:single": "npm run check && npm run test && tsc --noEmit && vite build --mode single",
     "artifact": "npm run build:single && tsx tools/make-artifact.ts"
   },
   "keywords": [],

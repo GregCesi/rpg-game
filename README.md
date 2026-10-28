@@ -11,8 +11,10 @@ npm install
 npm run dev            # http://localhost:5173  (?debug pour voir les collisions)
 npm run art            # art/ -> PNG, manifestes et tilesets Tiled (à lancer une fois avant d'ouvrir Tiled)
 npm run maps           # cartes Tiled (tiled/maps/*.tmj) -> src/generated/maps.ts
+npm run sketch -- <id> # fait naître tiled/maps/<id>.tmj depuis tiled/sketches/<id>.json (grille de lettres)
+npm run test           # test de non-régression de l'outil d'esquisse
 npm run check          # art, maps, puis vérifie tout le contenu sans lancer le jeu (formats + références croisées)
-npm run build          # check, puis build web dans dist/
+npm run build          # check, test, puis build web dans dist/
 npm run build:single   # un seul fichier HTML autonome dans dist-single/
 npm run art:preview    # régénère les sprites + aperçus x4 dans .art-preview/
 ```
@@ -36,9 +38,13 @@ tiled/               les cartes, faites avec Tiled
   xeros.tiled-project  projet Tiled (généré par build-art, committé) : types d'objets de props.json, Spawn, Exit
   maps/              les cartes (.tmj), éditées dans Tiled
   tilesets/          tilesets (.tsj + PNG) générés par build-art, ignorés par git, jamais édités
+  sketch-legend.json légende des esquisses : lettre -> tuiles, terrain ou objet
+  sketches/          esquisses (grilles de lettres) de cartes à faire naître ; ignoré par git
 tools/build-art.ts   art/ -> PNG + manifestes dans src/generated/, tilesets et projet dans tiled/ (jamais édités à la main)
 tools/build-maps.ts  tiled/maps/*.tmj -> src/generated/maps.ts, au format interne (MapSchema) ; lit Tiled, le jeu non
-tools/lib/           registre de tuiles, fichiers Tiled générés, schémas Zod du format Tiled
+tools/sketch.ts      npm run sketch : esquisse (lettres) -> carte Tiled, à la naissance d'une carte seulement
+tools/lib/           registre de tuiles, fichiers Tiled générés, schémas Zod du format Tiled, conversion des esquisses
+tools/test-sketch.ts npm run test ; ses fixtures (anciennes cartes à lettres + .tmj figés) sont dans tools/fixtures/sketch/
 tools/check.ts       npm run check : vérifie le contenu contre ce que art/ a produit
 src/
   config.ts          constantes de gameplay (taille de tuile, vitesses, profondeurs d'affichage)
@@ -73,6 +79,7 @@ Entre scènes, on passe par le bus du jeu avec les noms de `events.ts` (ex. `Gam
 - Ordre d'affichage : profondeur = position y des pieds (le joueur passe derrière un arbre). Les profondeurs fixes (sol, pénombre, lueurs, invite) sont dans `DEPTH` (`config.ts`).
 - Collisions : toujours au niveau des pieds, jamais sur le sprite entier.
 - Cartes : un fichier Tiled `tiled/maps/<id>.tmj` (l'id est le nom du fichier). Un calque de tuiles `ground` (le sol, toutes les cases peintes) et des calques d'objets au nom libre : c'est le **type** de chaque objet qui dit ce que c'est (`Spawn`, `Exit`, ou un objet de `props.json`). Propriétés de la carte : `name` (nom affiché) et `ambient` (pénombre des intérieurs, de 0 à 1). Le jeu de tuiles (`world` ou `interior`) se déduit du `.tsj` que la carte référence : un seul par carte, plus le tileset `props` pour poser les objets. Tuiles retournées, pivotées, intégrées ou redimensionnées : refusées avec un message.
+- Nouvelle carte : on **esquisse**, puis on retouche dans Tiled. `tiled/sketches/<id>.json` décrit la carte en lettres (sol et objets, une lettre par case, `spawns` et `exits` en cases : l'ancien format de carte) ; la légende des lettres (lettre de sol -> tuiles ou terrain à raccord automatique, lettre d'objet -> clé de `props.json` et ancrage `center` ou `left`) est dans `tiled/sketch-legend.json`. `npm run sketch -- <id>` écrit `tiled/maps/<id>.tmj` (raccords automatiques, variantes au hasard stables, objets ancrés), puis on ouvre le résultat dans Tiled (`open -a Tiled tiled/xeros.tiled-project tiled/maps/<id>.tmj`). L'outil refuse d'écrire si le `.tmj` existe : l'esquisse ne sert qu'à la naissance, ensuite c'est le `.tmj` qui fait foi (les esquisses ne sont pas committées). Une lettre inconnue donne un message avec la lettre et sa position. `npm run test`, lancé par `npm run build`, repasse les anciennes cartes ferme et maison (fixtures) dans l'outil et exige les mêmes calques, objets, points et sorties que des copies figées de leurs `.tmj`.
 - Le sol est peint avec son rendu final (pinceau terrain de Tiled) : le jeu affiche les tuiles telles quelles. Seuls les détails au hasard (touffes, paille…, `decals` de `tiles.json`) sont posés en jeu, de façon stable.
 - Objets : type = clé de `props.json` (identifiant anglais en kebab-case : `tree`, `woodpile` ; son champ `name` est le nom affiché, en français), position au pixel (coin bas gauche de l'image : c'est aussi la profondeur d'affichage). Champ `interact` facultatif pour changer le dialogue de cet exemplaire.
 - Points d'apparition : un point de type `Spawn`, son **nom** est son identifiant, `facing` facultatif. Position = les pieds du joueur.
