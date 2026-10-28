@@ -1,0 +1,8 @@
+{
+  ".": { "tiles": ["grass", "grass", "grass2", "grass3"] },
+  ",": { "tiles": ["flowers", "flowers2"] },
+  "=": { "tiles": ["path", "path2"] },
+  "#": { "tiles": ["field"] },
+  "~": { "tiles": ["water", "water2"], "solid": true },
+  "F": { "tiles": [], "autotile": "fence", "solid": true }
+}

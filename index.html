@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xéros</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #14110d; }
+      body { display: flex; flex-direction: column; }
+      #game { flex: 1; min-height: 0; }
+      #game canvas { image-rendering: pixelated; }
+      #hint {
+        font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace;
+        color: #b9a98a; text-align: center; padding: 8px 16px 10px;
+      }
+      #hint kbd {
+        border: 1px solid #5c4a33; border-bottom-width: 2px; border-radius: 3px;
+        padding: 0 5px; color: #e8dcc0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="hint">Se déplacer : <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches · courir : <kbd>Maj</kbd></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

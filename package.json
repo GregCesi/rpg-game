@@ -1,0 +1,31 @@
+{
+  "name": "xeros",
+  "version": "1.0.0",
+  "description": "Xéros — jeu d'aventure en pixel art (Phaser 3 + TypeScript)",
+  "scripts": {
+    "art": "tsx tools/build-art.ts",
+    "art:preview": "tsx tools/build-art.ts --preview",
+    "dev": "npm run art && vite",
+    "typecheck": "npm run art && tsc --noEmit",
+    "build": "npm run typecheck && vite build",
+    "build:single": "npm run typecheck && vite build --mode single",
+    "artifact": "npm run build:single && tsx tools/make-artifact.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/pngjs": "^6.0.5",
+    "pngjs": "^7.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vite-plugin-singlefile": "^2.3.4"
+  },
+  "private": true,
+  "type": "module"
+}
