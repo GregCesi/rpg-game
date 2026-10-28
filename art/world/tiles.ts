@@ -3,7 +3,7 @@
 // le chargeur de carte choisit la bonne variante.
 
 import { Canvas, rng } from '../lib/canvas';
-import type { TilesetSource } from '../lib/types';
+import type { ImageSource, TilesetSource } from '../lib/types';
 import { world } from '../palette';
 
 const T = 32;
@@ -11,9 +11,9 @@ const T = 32;
 function grass(seed: number): Canvas {
   const r = rng(seed);
   const c = new Canvas(T, T, 'g');
-  for (let i = 0; i < 22; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), r() < 0.5 ? 'v' : 'G');
+  for (let i = 0; i < 16; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), r() < 0.5 ? 'v' : 'G');
   // touffes : trois brins, pointes claires, ombre au pied
-  const tufts = 2 + Math.floor(r() * 3);
+  const tufts = Math.floor(r() * 2);
   for (let i = 0; i < tufts; i++) {
     const x = 2 + Math.floor(r() * (T - 4));
     const y = 3 + Math.floor(r() * (T - 5));
@@ -178,6 +178,80 @@ for (let m = 0; m < 16; m++) {
   tiles[`path-${m}`] = path(20 + m, m).toGrid();
   tiles[`water-${m}`] = water(40 + m, m).toGrid();
 }
+
+// ---------- Détails au sol (posés au hasard par la carte, ils cassent la grille) ----------
+
+function tufts(seed: number): Canvas {
+  const r = rng(seed);
+  const c = new Canvas(T, T);
+  for (let i = 0; i < 3; i++) {
+    const x = 6 + Math.floor(r() * 20);
+    const y = 10 + Math.floor(r() * 14);
+    c.set(x - 1, y + 1, 'V').set(x, y + 1, 'V').set(x + 1, y + 1, 'V');
+    c.set(x - 1, y, 'G').set(x - 1, y - 1, 'y');
+    c.set(x, y, 'G').set(x, y - 1, 'G').set(x, y - 2, 'y');
+    c.set(x + 1, y, 'G').set(x + 1, y - 1, 'y');
+  }
+  return c;
+}
+
+function pebbles(seed: number): Canvas {
+  const r = rng(seed);
+  const c = new Canvas(T, T);
+  for (let i = 0; i < 3; i++) {
+    const x = 8 + Math.floor(r() * 16);
+    const y = 10 + Math.floor(r() * 12);
+    c.set(x, y, 'R').set(x + 1, y, 'r').set(x, y + 1, 'z').set(x + 1, y + 1, 'Z');
+  }
+  return c;
+}
+
+function clover(seed: number): Canvas {
+  const r = rng(seed);
+  const c = new Canvas(T, T);
+  for (let i = 0; i < 3; i++) {
+    const x = 6 + Math.floor(r() * 20);
+    const y = 8 + Math.floor(r() * 16);
+    c.set(x, y, r() < 0.6 ? 'a' : 'b').set(x, y + 1, 'v');
+  }
+  return c;
+}
+
+/** Nappe d'herbe plus sombre ou plus claire, bord tramé : plus grande qu'une tuile. */
+function patch(seed: number, color: string): Canvas {
+  const r = rng(seed);
+  const c = new Canvas(64, 40);
+  // tramé : dense au centre, clairsemé au bord, jamais plein (sinon on dirait un trou)
+  for (let y = 0; y < 40; y++) for (let x = 0; x < 64; x++) {
+    const dx = (x - 32) / 28;
+    const dy = (y - 20) / 15;
+    const d = dx * dx + dy * dy;
+    if (d < 1 && r() < 0.42 * (1 - d)) c.set(x, y, color);
+  }
+  return c;
+}
+
+function dirt(seed: number): Canvas {
+  const r = rng(seed);
+  const c = new Canvas(T, T);
+  c.ellipse(16, 18, 6, 3.5, 'n');
+  c.within('n', (c) => {
+    for (let i = 0; i < 10; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), r() < 0.5 ? 'u' : '.');
+  });
+  return c;
+}
+
+const decal = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
+
+export const worldDecals = [
+  decal('decal-tufts', tufts(1)),
+  decal('decal-tufts2', tufts(2)),
+  decal('decal-pebbles', pebbles(3)),
+  decal('decal-clover', clover(4)),
+  decal('decal-patch-dark', patch(5, 'v')),
+  decal('decal-patch-light', patch(6, 'G')),
+  decal('decal-dirt', dirt(7)),
+];
 
 const tileset: TilesetSource = {
   kind: 'tileset',

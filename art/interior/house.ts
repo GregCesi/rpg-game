@@ -14,54 +14,100 @@ const palette = {
   g: '#a3814f', // couverture de laine de la mère
   G: '#7d4a38',
   B: '#a85f45',
+  q: '#d9b56a', // jour vu par une fenêtre
 };
 
 // ---------- Tuiles ----------
 
+/** Terre battue : base calme. La variété vient des détails posés par-dessus (paille, taches...). */
 function floor(seed: number): Canvas {
   const r = rng(seed);
   const c = new Canvas(T, T, 's');
-  for (let i = 0; i < 40; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), r() < 0.5 ? 'S' : 'A');
-  // brins de paille éparpillés
-  for (let i = 0; i < 4; i++) {
-    const x = Math.floor(r() * (T - 3));
-    const y = Math.floor(r() * T);
-    if (r() < 0.5) c.line(x, y, x + 2, y + (r() < 0.5 ? 0 : 1), 't');
-    else c.set(x, y, 'Y');
-  }
+  for (let i = 0; i < 18; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), r() < 0.5 ? 'S' : 'A');
   return c;
 }
 
-/** Bord du mur nord vu de dessus (haut de la cloison, sous le toit). */
+/** Dessus d'un mur épais (mur extérieur vu d'en haut). */
 function wallTop(): Canvas {
   const c = new Canvas(T, T, 'K');
-  for (let y = 4; y < T; y += 7) c.rect(0, y, T, 1, 'o');
-  c.rect(0, T - 3, T, 3, 'N');
+  for (let x = 3; x < T; x += 8) c.rect(x, 0, 1, T, 'o');
+  for (let i = 0; i < 12; i++) c.set((i * 13) % T, (i * 7) % T, 'N');
   return c;
 }
 
-/** Face du mur nord : torchis, un poteau, plinthe. variant : 'plain' | 'door' | 'window'. */
-function wallFace(variant: 'plain' | 'door' | 'window'): Canvas {
-  const c = new Canvas(T, T, 'd');
-  const r = rng(variant.length * 17);
-  for (let i = 0; i < 25; i++) c.set(Math.floor(r() * T), Math.floor(r() * T), 'D');
-  c.rect(0, 0, T, 4, 'N').rect(0, 3, T, 1, 'K');
-  c.rect(0, T - 4, T, 4, 'm').rect(0, T - 4, T, 1, 'M').rect(0, T - 1, T, 1, 'N');
-  c.rect(0, 0, 4, T - 4, 'm').rect(3, 0, 1, T - 4, 'N').rect(0, 0, 1, T - 4, 'M');
-  if (variant === 'door') {
-    c.rect(7, 5, 20, 27, 'K');
-    c.rect(9, 7, 16, 25, 'm');
-    for (let x = 12; x < 25; x += 4) c.rect(x, 7, 1, 25, 'N');
-    c.rect(9, 11, 16, 2, 'Z').rect(9, 25, 16, 2, 'Z');
-    c.set(22, 19, 'R');
+/** Ouverture de porte dans un mur épais : seuil de bois, sol visible. */
+function doorway(): Canvas {
+  const c = wallTop();
+  c.rect(5, 0, 22, T, 's');
+  c.rect(5, 12, 22, 6, 'M').rect(5, 12, 22, 1, 'Y').rect(5, 17, 22, 1, 'N');
+  c.rect(4, 0, 1, T, 'o').rect(27, 0, 1, T, 'o');
+  return c;
+}
+
+/** Fenêtre dans le mur sud, vue d'en haut : appui de bois, jour qui entre. */
+function southWindow(): Canvas {
+  const c = wallTop();
+  c.rect(8, 8, 16, 16, 'N');
+  c.rect(9, 9, 14, 12, 'q');
+  c.rect(9, 9, 14, 2, 'Y');
+  c.rect(4, 8, 4, 16, 'm').rect(24, 8, 4, 16, 'm');
+  c.rect(7, 21, 18, 3, 'M').rect(7, 21, 18, 1, 'Y');
+  return c;
+}
+
+/**
+ * Mur du fond (nord) : deux tuiles de haut, poteaux tous les 64 px, grands panneaux de torchis.
+ * On dessine un bloc de 64x64 puis on le découpe en quatre tuiles. braced : écharpe en diagonale.
+ */
+function wallBlock(braced: boolean, seed: number): Canvas {
+  const c = new Canvas(64, 64, 'd');
+  const r = rng(seed);
+  for (let i = 0; i < 70; i++) c.set(Math.floor(r() * 64), Math.floor(r() * 64), 'D');
+  c.rect(0, 50, 64, 8, 'D');
+  // sablière haute (sous le plafond) et son ombre
+  c.rect(0, 0, 64, 5, 'N').rect(0, 5, 64, 1, 'K');
+  c.within('dD', (c) => c.rect(0, 6, 64, 3, 'E'));
+  // lisse intermédiaire
+  c.rect(0, 30, 64, 4, 'm').rect(0, 30, 64, 1, 'M').rect(0, 33, 64, 1, 'N');
+  if (braced) {
+    c.line(7, 9, 62, 29, 'm').line(7, 10, 62, 30, 'm').line(7, 11, 62, 31, 'N');
   }
-  if (variant === 'window') {
-    c.rect(8, 7, 18, 14, 'N');
-    c.rect(9, 8, 16, 12, 'W');
-    c.rect(9, 8, 16, 3, 'R');
-    c.rect(16, 8, 2, 12, 'm');
-    c.rect(7, 21, 20, 2, 'M');
-  }
+  // plinthe
+  c.rect(0, 58, 64, 6, 'm').rect(0, 58, 64, 1, 'M').rect(0, 63, 64, 1, 'N');
+  // poteau
+  c.rect(0, 0, 6, 58, 'm').rect(0, 0, 1, 58, 'M').rect(5, 0, 1, 58, 'N');
+  return c;
+}
+
+/** Découpe une tuile 32x32 dans un bloc. */
+function cut(block: Canvas, x: number, y: number): Canvas {
+  const c = new Canvas(T, T);
+  for (let j = 0; j < T; j++) for (let i = 0; i < T; i++) c.set(i, j, block.get(x + i, y + j));
+  return c;
+}
+
+/** Porte de derrière dans le mur du fond : 1 tuile de large, 2 de haut. */
+function backDoor(): Canvas {
+  const c = new Canvas(T, 64, 'd');
+  c.rect(0, 0, T, 5, 'N').rect(0, 5, T, 1, 'K');
+  c.rect(0, 58, T, 6, 'm').rect(0, 58, T, 1, 'M');
+  c.rect(3, 12, 26, 52, 'K');
+  c.rect(5, 14, 22, 50, 'm');
+  for (let x = 9; x < 27; x += 5) c.rect(x, 14, 1, 50, 'N');
+  c.rect(5, 14, 1, 50, 'M');
+  c.rect(5, 22, 22, 2, 'Z').rect(5, 50, 22, 2, 'Z');
+  c.set(23, 38, 'R').set(23, 39, 'z');
+  return c;
+}
+
+/** Fenêtre haute dans le mur du fond (atelier). */
+function backWindow(): Canvas {
+  const c = cut(wallBlock(false, 99), 32, 0);
+  c.rect(5, 10, 22, 18, 'N');
+  c.rect(6, 11, 20, 16, 'W');
+  c.rect(6, 11, 20, 4, 'R');
+  c.rect(15, 11, 2, 16, 'm');
+  c.rect(4, 27, 24, 3, 'M');
   return c;
 }
 
@@ -96,19 +142,90 @@ function voidTile(): Canvas {
   return new Canvas(T, T, 'o');
 }
 
+const blockA = wallBlock(true, 7);
+const blockB = wallBlock(false, 8);
+const door = backDoor();
+
 const tiles: TilesetSource['tiles'] = {
   floor: floor(1).toGrid(),
   floor2: floor(2).toGrid(),
   floor3: floor(3).toGrid(),
+  floor4: floor(4).toGrid(),
   'wall-top': wallTop().toGrid(),
-  'wall-face': wallFace('plain').toGrid(),
-  'wall-door': wallFace('door').toGrid(),
-  'wall-window': wallFace('window').toGrid(),
+  doorway: doorway().toGrid(),
+  'window-south': southWindow().toGrid(),
+  'face-up-0': cut(blockA, 0, 0).toGrid(),
+  'face-up-1': cut(blockA, 32, 0).toGrid(),
+  'face-up-2': cut(blockB, 0, 0).toGrid(),
+  'face-up-3': cut(blockB, 32, 0).toGrid(),
+  'face-low-0': cut(blockA, 0, 32).toGrid(),
+  'face-low-1': cut(blockA, 32, 32).toGrid(),
+  'face-low-2': cut(blockB, 0, 32).toGrid(),
+  'face-low-3': cut(blockB, 32, 32).toGrid(),
+  'door-up': cut(door, 0, 0).toGrid(),
+  'door-low': cut(door, 0, 32).toGrid(),
+  'window-up': backWindow().toGrid(),
   void: voidTile().toGrid(),
 };
 for (let m = 0; m < 16; m++) tiles[`partition-${m}`] = partition(m, 10 + m).toGrid();
 
 export const interiorTiles: TilesetSource = { kind: 'tileset', name: 'interior', tileSize: T, palette, tiles };
+
+// ---------- Détails au sol (posés au hasard, ils cassent la répétition) ----------
+
+function straw(seed: number): Canvas {
+  const r = rng(seed);
+  const c = new Canvas(T, T);
+  for (let i = 0; i < 6; i++) {
+    const x = 6 + Math.floor(r() * 18);
+    const y = 8 + Math.floor(r() * 16);
+    const dx = r() < 0.5 ? 3 : -3;
+    c.line(x, y, x + dx, y + (r() < 0.5 ? 0 : 1), r() < 0.5 ? 't' : 'Y');
+  }
+  return c;
+}
+
+function stain(seed: number): Canvas {
+  const r = rng(seed);
+  const c = new Canvas(T, T);
+  // poussière plus claire, tramée
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    const dx = (x - 16) / 12;
+    const dy = (y - 16) / 6;
+    const d = dx * dx + dy * dy;
+    if (d < 1 && r() < 0.35 * (1 - d)) c.set(x, y, 'A');
+  }
+  return c;
+}
+
+function crack(): Canvas {
+  return new Canvas(T, T).line(6, 14, 12, 16, 'S').line(12, 16, 18, 15, 'S').line(18, 15, 25, 19, 'S').line(12, 16, 14, 21, 'S');
+}
+
+/** Rai de lumière posé au sol sous une fenêtre du mur sud. */
+function sunpatch(): Canvas {
+  const c = new Canvas(40, 30);
+  c.polygon([[10, 0], [30, 0], [38, 30], [2, 30]], 'J');
+  c.polygon([[13, 0], [27, 0], [32, 22], [8, 22]], 'I');
+  // bords et bas tramés : la lumière s'éteint en douceur
+  for (let y = 0; y < 30; y++) for (let x = 0; x < 40; x++) {
+    if (c.get(x, y) === 'J' && (x + y) % 2 === 0) c.set(x, y, '.');
+    if (c.get(x, y) === 'I' && y > 14 && (x + y) % 2 === 0) c.set(x, y, 'J');
+  }
+  return c;
+}
+
+// rai de lumière : couleurs ajoutées à l'image (mode additif), donc sombres ici
+const decalPalette = { ...palette, J: '#241a0c', I: '#3a2a14' };
+const decal = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: decalPalette, grid: c.toGrid() });
+
+export const interiorDecals = [
+  decal('decal-straw', straw(1)),
+  decal('decal-straw2', straw(2)),
+  decal('decal-stain', stain(3)),
+  decal('decal-crack', crack()),
+  decal('sunpatch', sunpatch()),
+];
 
 // ---------- Mobilier ----------
 
@@ -124,37 +241,37 @@ function flames(c: Canvas, cx: number, base: number, width: number, frame: numbe
   }
 }
 
-/** Cheminée de la cuisine, encastrée dans le mur nord : manteau, âtre, chaudron, feu animé. 64x64. */
+/** Cheminée de la cuisine, adossée au mur du fond : toute la hauteur du mur, âtre au sol. 64x96. */
 function fireplace(frame: number): Canvas {
-  const c = new Canvas(64, 64);
-  // massif de pierre
-  c.rect(2, 4, 60, 50, 'r');
+  const c = new Canvas(64, 96);
+  // massif de pierre, du plafond jusqu'au sol
+  c.rect(2, 0, 60, 86, 'r');
   const r = rng(5);
-  for (let y = 4; y < 54; y += 5) {
-    let x = 2 + ((y / 5) % 2) * 4;
+  for (let y = 0; y < 86; y += 6) {
+    let x = 2 + ((y / 6) % 2) * 5;
     while (x < 62) {
-      const w = 7 + Math.floor(r() * 5);
-      c.rect(x, y, 1, 5, 'Z').rect(x + 1, y, Math.min(w - 1, 62 - x - 1), 1, 'R');
+      const w = 8 + Math.floor(r() * 6);
+      c.rect(x, y, 1, 6, 'Z').rect(x + 1, y, Math.min(w - 1, 62 - x - 1), 1, 'R');
       x += w;
     }
-    c.rect(2, y + 4, 60, 1, 'z');
+    c.rect(2, y + 5, 60, 1, 'z');
   }
   // manteau de bois
-  c.rect(0, 14, 64, 6, 'm').rect(0, 14, 64, 1, 'M').rect(0, 19, 64, 1, 'N');
+  c.rect(0, 40, 64, 7, 'm').rect(0, 40, 64, 1, 'M').rect(0, 46, 64, 1, 'N');
   // foyer
-  c.rect(12, 21, 40, 33, 'o');
-  c.rect(14, 23, 36, 31, 'K');
-  c.ellipse(32, 50, 16, 5, 'N');
+  c.rect(10, 48, 44, 38, 'o');
+  c.rect(12, 50, 40, 36, 'K');
+  c.ellipse(32, 82, 17, 5, 'N');
   // bûches
-  c.rect(20, 49, 24, 3, 'm').rect(22, 47, 20, 2, 'N');
-  flames(c, 32, 48, 18, frame);
-  // chaudron suspendu
-  c.line(32, 23, 32, 31, 'Z');
-  c.ellipse(32, 37, 8, 6, 'o');
-  c.ellipse(32, 36.5, 7, 5, 'Z');
-  c.rect(25, 31, 15, 2, 'z');
+  c.rect(20, 81, 24, 3, 'm').rect(22, 79, 20, 2, 'N');
+  flames(c, 32, 80, 20, frame);
+  // crémaillère et chaudron
+  c.line(32, 50, 32, 60, 'Z');
+  c.ellipse(32, 66, 9, 6.5, 'o');
+  c.ellipse(32, 65.5, 8, 5.5, 'Z');
+  c.rect(24, 60, 17, 2, 'z');
   // dalle de l'âtre
-  c.rect(4, 54, 56, 9, 'r').rect(4, 54, 56, 1, 'R').rect(4, 62, 56, 1, 'Z');
+  c.rect(3, 86, 58, 9, 'r').rect(3, 86, 58, 1, 'R').rect(3, 94, 58, 1, 'Z');
   c.outline('o');
   return c;
 }
@@ -264,7 +381,7 @@ const anim = (name: string, w: number, h: number, draw: (f: number) => Canvas): 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
 export const furniture = [
-  anim('fireplace', 64, 64, fireplace),
+  anim('fireplace', 64, 96, fireplace),
   anim('stove', 32, 48, stove),
   img('worktable', worktable()),
   img('workbench', workbench()),

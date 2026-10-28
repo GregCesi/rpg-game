@@ -65,10 +65,12 @@ export class GameMap {
           // hors de la carte compte comme identique : un chemin qui sort de l'écran n'a pas de bordure
           const same = (dx: number, dy: number) => {
             const n = def.ground[y + dy]?.[x + dx];
-            return n === undefined || n === ch;
+            return n === undefined || n === ch || (t.connects ?? '').includes(n);
           };
           const mask = (same(0, -1) ? 1 : 0) | (same(1, 0) ? 2 : 0) | (same(0, 1) ? 4 : 0) | (same(-1, 0) ? 8 : 0);
           name = `${t.autotile}-${mask}`;
+        } else if (t.cycle) {
+          name = t.tiles[x % t.tiles.length];
         } else {
           name = t.tiles[hash(x, y) % t.tiles.length];
         }
@@ -82,6 +84,20 @@ export class GameMap {
     this.ground = map.createLayer(0, ts, 0, 0)!;
     this.ground.setDepth(-1);
     this.ground.setCollision([...solid]);
+
+    // Détails au sol, posés de façon stable (même carte = mêmes détails)
+    def.ground.forEach((row, y) =>
+      [...row].forEach((ch, x) => {
+        const d = tileDefs[ch].decals;
+        if (!d) return;
+        const h = hash(x * 3 + 7, y * 5 + 11);
+        if ((h % 1000) / 1000 >= d.chance) return;
+        const img = d.images[(h >>> 10) % d.images.length];
+        const ox = ((h >>> 4) % 17) - 8;
+        const oy = ((h >>> 8) % 13) - 6;
+        scene.add.image(x * TILE + TILE / 2 + ox, y * TILE + TILE / 2 + oy, img).setDepth(-0.9).setFlipX(((h >>> 14) & 1) === 1);
+      }),
+    );
 
     // Objets posés
     this.obstacles = scene.physics.add.staticGroup();
@@ -104,7 +120,8 @@ export class GameMap {
     const obj = p.anim
       ? scene.add.sprite(ax, ay, p.image).play(`${p.image}-${p.anim}`)
       : scene.add.image(ax, ay, p.image);
-    obj.setOrigin(left ? 0 : 0.5, 1).setDepth(ay);
+    obj.setOrigin(left ? 0 : 0.5, 1).setDepth(p.layer === 'floor' ? -0.8 : ay);
+    if (p.blend === 'add') obj.setBlendMode(Phaser.BlendModes.ADD).setDepth(AMBIENT_DEPTH + 1);
     // coin haut gauche de l'image, pour les coordonnées "dans l'image"
     const ox = left ? ax : ax - obj.width / 2;
     const oy = ay - obj.height;

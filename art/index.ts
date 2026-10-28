@@ -2,10 +2,10 @@
 import type { ArtSource } from './lib/types';
 import xeros from './characters/xeros';
 import xerosPortraits from './portraits/xeros';
-import worldTiles from './world/tiles';
+import worldTiles, { worldDecals } from './world/tiles';
 import props from './world/props';
 import ui from './ui/dialog';
 import house from './world/house';
-import { furniture, interiorTiles } from './interior/house';
+import { furniture, interiorDecals, interiorTiles } from './interior/house';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, worldTiles, ...props, ...house, interiorTiles, ...furniture, ...ui];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, worldTiles, ...worldDecals, ...props, ...house, interiorTiles, ...interiorDecals, ...furniture, ...ui];

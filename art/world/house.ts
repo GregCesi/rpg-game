@@ -13,8 +13,8 @@ export const COTTAGE = {
   h: 204,
   /** Sommets des conduits, d'où sort la fumée (coordonnées dans l'image). */
   smoke: [
-    [185, 6],
-    [248, 72],
+    [178, 2],
+    [260, 72],
   ] as [number, number][],
 };
 
@@ -116,10 +116,12 @@ function cottage(): Canvas {
   const { w, h } = COTTAGE;
   const c = new Canvas(w, h);
 
-  // --- cheminée de la cuisine (derrière le faîte : le toit la recouvre en bas) ---
-  c.rect(172, 10, 26, 50, 'r');
-  stones(c, 172, 10, 26, 50, 3);
-  c.rect(169, 6, 32, 5, 'z').rect(169, 6, 32, 1, 'R').rect(176, 6, 18, 2, 'K');
+  // --- cheminée de la cuisine : adossée au mur du fond, elle dépasse du faîte ---
+  // (au-dessus de la cheminée intérieure : même position relative dans la maison)
+  c.rect(163, 6, 30, 56, 'r');
+  stones(c, 163, 6, 30, 56, 3);
+  c.rect(163, 6, 4, 56, 'R').rect(189, 6, 4, 56, 'Z');
+  c.rect(159, 2, 38, 6, 'z').rect(159, 2, 38, 1, 'R').rect(159, 7, 38, 1, 'Z').rect(169, 2, 18, 2, 'K');
 
   // --- corps principal ---
   stones(c, 66, 186, 250, 10, 1);
@@ -149,9 +151,13 @@ function cottage(): Canvas {
     for (let d = 0; d < drop; d++) c.set(x, 152 + d, x % 2 ? 'P' : 'T');
   }
 
-  // --- conduit du poêle sur le pan droit ---
-  c.rect(244, 74, 10, 18, 'z').rect(244, 74, 2, 18, 'R').rect(252, 74, 2, 18, 'Z');
-  c.rect(243, 72, 12, 3, 'r').rect(246, 72, 6, 1, 'K');
+  // ombre portée de la cheminée sur le faîte (lumière venant de la gauche)
+  c.within('tTYP', (c) => c.polygon([[193, 36], [206, 36], [214, 52], [193, 52]], 'P'));
+
+  // --- conduit du poêle sur le pan droit (au-dessus du poêle intérieur) ---
+  c.rect(255, 74, 10, 18, 'z').rect(255, 74, 2, 18, 'R').rect(263, 74, 2, 18, 'Z');
+  c.rect(254, 72, 12, 3, 'r').rect(257, 72, 6, 1, 'K');
+  c.within('tTYP', (c) => c.polygon([[265, 80], [270, 80], [274, 92], [265, 92]], 'P'));
 
   // --- porche d'entrée à gauche ---
   stones(c, 4, 188, 58, 8, 2);

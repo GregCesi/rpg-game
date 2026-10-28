@@ -7,6 +7,12 @@ export interface TileDef {
   solid?: boolean;
   /** Choisit la tuile selon les voisins identiques : `${autotile}-${masque N=1 E=2 S=4 O=8}`. */
   autotile?: string;
+  /** Tuiles prises dans l'ordre selon la colonne (x % nombre) au lieu du hasard : motifs réguliers (poteaux d'un mur). */
+  cycle?: boolean;
+  /** Autres caractères avec lesquels ce raccord automatique se relie (ex. une cloison qui rejoint un mur épais). */
+  connects?: string;
+  /** Détails posés au hasard sur ce sol (touffes, paille...) : ils cassent la répétition des tuiles. */
+  decals?: { images: string[]; chance: number };
 }
 
 /** Rectangle en pixels, dans le repère de l'image (0,0 = coin haut gauche). */
@@ -31,6 +37,10 @@ export interface PropDef {
   anim?: string;
   /** Points d'où sort de la fumée, dans le repère de l'image. */
   smoke?: [number, number][];
+  /** 'floor' : dessiné à plat sur le sol, sous les personnages (tache de lumière, tapis...). */
+  layer?: 'floor';
+  /** 'add' : l'image éclaire ce qu'elle recouvre (lumière), posée au-dessus de la pénombre. */
+  blend?: 'add';
   /** Lueur chaude qui vacille (feu), dans le repère de l'image. */
   light?: { x: number; y: number; radius: number };
   /** Identifiant du dialogue lancé quand le joueur interagit avec l'objet. */
