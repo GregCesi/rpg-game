@@ -62,7 +62,7 @@ Ordre validé pour rendre le projet tenable dans la durée :
 
 1. ~~Dépôt GitHub~~ (fait)
 2. ~~`npm run check` : vérification du contenu avec Zod~~ (fait), ~~`WorldScene` découpée en systèmes~~ (fait)
-3. Cartes faites avec **Tiled** (format JSON). ~~Discussion d'architecture « étape 2, comment une carte devient jouable »~~ (faite le 28 octobre 2026, voir *Cartes avec Tiled*) ; reste à coder.
+3. ~~Cartes faites avec **Tiled** (format JSON)~~ (fait : chaîne Tiled → jeu en place, ferme et maison migrées sans changement visible ; voir *Cartes avec Tiled* et le README). ~~Discussion d'architecture « étape 2, comment une carte devient jouable »~~ (faite le 28 octobre 2026).
 4. Sprites au format JSON d'**Aseprite** (format commun, chargé nativement par Phaser) ; plus tard, lecture des fichiers `.aseprite`.
 5. État du jeu (inventaire, progression, sauvegarde) : avant le premier village, pas avant.
 6. Discussion d'architecture « étape 3, la boucle de jeu ».

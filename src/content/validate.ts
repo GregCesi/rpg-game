@@ -3,7 +3,7 @@
 // Utilisé par `npm run check` (Node) et au démarrage du jeu.
 
 import { PLAYER, PORTRAIT_MODES, START, TILE } from '../config';
-import type { CharacterDef, DialogueDef, MapData, MapDef, PropDef, TileDef, TilesetCatalog } from './types';
+import type { CharacterDef, DialogueDef, MapData, PropDef, TilesetCatalog } from './types';
 
 /** Ce que `npm run art` a produit : clés d'images, animations par planche, tuiles par jeu de tuiles. */
 export interface Catalog {
@@ -35,9 +35,9 @@ export function catalogFrom(m: ManifestLike): Catalog {
 export function validateTilesCatalog(catalogs: Record<string, TilesetCatalog>, cat: Catalog): string[] {
   const errors: string[] = [];
   for (const [set, c] of Object.entries(catalogs)) {
-    if (!cat.tiles.has(set)) errors.push(`tiles-catalog.json : aucun jeu de tuiles '${set}' n'a été dessiné dans art/`);
+    if (!cat.tiles.has(set)) errors.push(`tiles.json : aucun jeu de tuiles '${set}' n'a été dessiné dans art/`);
     for (const [name, d] of Object.entries(c.decals)) {
-      for (const img of d.images) if (!cat.textures.has(img)) errors.push(`tiles-catalog.json [${set}] détails '${name}' : image '${img}' non dessinée`);
+      for (const img of d.images) if (!cat.textures.has(img)) errors.push(`tiles.json [${set}] détails '${name}' : image '${img}' non dessinée`);
     }
   }
   return errors;
@@ -112,9 +112,9 @@ export function validateMaps(
 }
 
 export interface Content {
-  tiles: Record<string, Record<string, TileDef>>;
+  tiles: Record<string, TilesetCatalog>;
   props: Record<string, PropDef>;
-  maps: Record<string, MapDef>;
+  maps: Record<string, MapData>;
   characters: Record<string, CharacterDef>;
   dialogues: Record<string, DialogueDef>;
 }
@@ -125,6 +125,7 @@ const DIRECTIONS = ['down', 'up', 'left', 'right'];
 export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   const err = (msg: string) => errors.push(msg);
+  const addAll = (msgs: string[]) => errors.push(...msgs);
 
   // Joueur
   for (const state of ['idle', 'walk']) {
@@ -133,26 +134,11 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     }
   }
 
-  // Légendes de tuiles
-  for (const [set, legend] of Object.entries(c.tiles)) {
-    const known = cat.tiles.get(set);
-    if (!known) {
-      err(`tiles.json : aucun jeu de tuiles '${set}' n'a été dessiné dans art/`);
-      continue;
-    }
-    for (const [ch, t] of Object.entries(legend)) {
-      const names = t.autotile ? Array.from({ length: 16 }, (_, m) => `${t.autotile}-${m}`) : t.tiles;
-      if (!t.autotile && t.tiles.length === 0) err(`tiles.json [${set}] '${ch}' : aucune tuile`);
-      for (const n of names) if (!known.has(n)) err(`tiles.json [${set}] '${ch}' : tuile '${n}' absente du jeu '${set}'`);
-      for (const d of t.decals?.images ?? []) if (!cat.textures.has(d)) err(`tiles.json [${set}] '${ch}' : détail '${d}' non dessiné`);
-    }
-  }
-
-  // Objets
-  for (const [ch, p] of Object.entries(c.props)) {
-    if (!cat.textures.has(p.image)) err(`props.json '${ch}' (${p.name}) : image '${p.image}' non dessinée`);
-    if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${ch}' (${p.name}) : animation '${p.anim}' absente de '${p.image}'`);
-    if (p.interact && !c.dialogues[p.interact]) err(`props.json '${ch}' (${p.name}) : dialogue '${p.interact}' introuvable`);
+  // Objets (la clé de props.json est le type d'un objet de carte)
+  for (const [key, p] of Object.entries(c.props)) {
+    if (!cat.textures.has(p.image)) err(`props.json '${key}' : image '${p.image}' non dessinée`);
+    if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${key}' : animation '${p.anim}' absente de '${p.image}'`);
+    if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);
   }
 
   // Personnages et dialogues
@@ -173,45 +159,8 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     });
   }
 
-  // Cartes
-  if (!c.maps[START.map]?.spawns[START.spawn]) err(`config.ts START : point '${START.spawn}' introuvable sur la carte '${START.map}'`);
-  for (const [key, m] of Object.entries(c.maps)) {
-    const where = `Carte ${key}`;
-    if (m.id !== key) err(`${where} : son id vaut '${m.id}' alors qu'elle est déclarée sous '${key}'`);
-    const legend = c.tiles[m.tileset ?? 'world'];
-    if (!legend) {
-      err(`${where} : jeu de tuiles '${m.tileset}' absent de tiles.json`);
-      continue;
-    }
-    const rows = m.ground.length;
-    const cols = m.ground[0].length;
-    const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < cols && y < rows;
-    const solidAt = (x: number, y: number) => legend[m.ground[y][x]]?.solid === true;
-    m.ground.forEach((row, y) => {
-      if (row.length !== cols) err(`${where} : ligne ${y} du sol fait ${row.length} cases au lieu de ${cols}`);
-      [...row].forEach((ch, x) => {
-        if (!legend[ch]) err(`${where} : caractère de sol '${ch}' inconnu en (${x}, ${y})`);
-      });
-    });
-    if (m.props.length !== rows) err(`${where} : la couche objets fait ${m.props.length} lignes au lieu de ${rows}`);
-    m.props.forEach((row, y) => {
-      if (row.length !== cols) err(`${where} : ligne ${y} des objets fait ${row.length} cases au lieu de ${cols}`);
-      [...row].forEach((ch, x) => {
-        if (ch !== '.' && !c.props[ch]) err(`${where} : objet '${ch}' inconnu en (${x}, ${y})`);
-      });
-    });
-    for (const [name, s] of Object.entries(m.spawns)) {
-      if (!inside(s.x, s.y)) err(`${where} : point '${name}' hors de la carte`);
-      else if (solidAt(s.x, s.y)) err(`${where} : point '${name}' posé sur une case bloquante (${s.x}, ${s.y})`);
-    }
-    for (const e of m.exits ?? []) {
-      const at = `${where} : sortie en (${e.x}, ${e.y})`;
-      if (!inside(e.x, e.y)) err(`${at} hors de la carte`);
-      else if (solidAt(e.x, e.y)) err(`${at} sur une case bloquante : on ne pourra jamais y marcher`);
-      const target = c.maps[e.to];
-      if (!target) err(`${at} : carte '${e.to}' inconnue`);
-      else if (!target.spawns[e.spawn]) err(`${at} : point '${e.spawn}' absent de la carte '${e.to}'`);
-    }
-  }
+  // Cartes (issues de Tiled) et catalogue des tuiles
+  addAll(validateTilesCatalog(c.tiles, cat));
+  addAll(validateMaps(c.maps, c.props, c.dialogues, cat));
   return errors;
 }

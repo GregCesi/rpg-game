@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { sources } from '../art/index';
 import type { Grid, Palette } from '../art/lib/canvas';
 import propsJson from '../src/content/props.json';
-import tilesCatalogJson from '../src/content/tiles-catalog.json';
+import tilesCatalogJson from '../src/content/tiles.json';
 import { PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
 import type { DecalSet } from '../src/content/types';
 import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
@@ -91,7 +91,7 @@ mkdirSync(join(TILED, 'images'), { recursive: true });
 if (withPreview) mkdirSync(PREVIEW, { recursive: true });
 
 const registry = loadRegistry();
-const catalogs = parse('tiles-catalog.json', z.record(z.string(), TilesetCatalogSchema), tilesCatalogJson);
+const catalogs = parse('tiles.json', z.record(z.string(), TilesetCatalogSchema), tilesCatalogJson);
 const propDefs = parse('props.json', z.record(z.string(), PropDefSchema), propsJson);
 
 const imports: string[] = [];
@@ -143,9 +143,9 @@ for (const src of sources) {
     const solid = new Set(Object.entries(cat.tiles).flatMap(([n, t]) => (t.solid ? [n] : [])));
     const decalOf = new Map<string, string>();
     for (const [n, t] of Object.entries(cat.tiles)) {
-      if (!(n in index)) throw new Error(`tiles-catalog.json [${src.name}] : tuile '${n}' absente de art/`);
+      if (!(n in index)) throw new Error(`tiles.json [${src.name}] : tuile '${n}' absente de art/`);
       if (t.decals) {
-        if (!cat.decals[t.decals]) throw new Error(`tiles-catalog.json [${src.name}] tuile '${n}' : ensemble de détails '${t.decals}' inconnu`);
+        if (!cat.decals[t.decals]) throw new Error(`tiles.json [${src.name}] tuile '${n}' : ensemble de détails '${t.decals}' inconnu`);
         decalOf.set(n, t.decals);
       }
     }
@@ -195,14 +195,14 @@ for (const src of sources) {
 
 // Tileset « collection d'images » des objets : une tuile par entrée de props.json, numérotée par le registre.
 // Un objet dont l'image n'est pas dessinée est ignoré ici ; `npm run check` le signale.
-const propNames = Object.values(propDefs).filter((p) => firstFrames.has(p.image)).map((p) => p.name);
+const propNames = Object.entries(propDefs).filter(([, p]) => firstFrames.has(p.image)).map(([key]) => key);
 const propSlots = reconcile(registry, 'props', propNames);
 for (const n of propSlots.added) notes.push(`objet '${n}' : nouveau numéro ${registry.props.indexOf(n)}`);
 for (const n of propSlots.retired) notes.push(`ATTENTION objet '${n}' retiré de props.json : son numéro ${registry.props.indexOf(n)} reste réservé`);
 const propTiles: PropTile[] = [];
 propSlots.slots.forEach((name, id) => {
   if (name === null) return;
-  const def = Object.values(propDefs).find((p) => p.name === name)!;
+  const def = propDefs[name];
   const f = firstFrames.get(def.image)!;
   const file = `images/${def.image}.png`;
   writeFileSync(join(TILED, file), PNG.sync.write(sheet([f.grid], f.w, f.h, f.palette)));

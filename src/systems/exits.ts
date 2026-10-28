@@ -1,15 +1,16 @@
-import { TILE } from '../config';
-import type { ExitDef } from '../content/types';
+import type { Exit } from '../content/types';
 import type { Player } from '../entities/Player';
 
 /**
- * Sortie que Xéros est en train de prendre : ses pieds sont dans la case de la sortie
- * et il avance dans la direction qu'elle indique (on ne sort pas en reculant ni en longeant le mur).
+ * Sortie que Xéros est en train de prendre : ses pieds sont dans le rectangle de la sortie
+ * et, si elle indique une direction, il avance dans cette direction (on ne sort pas en reculant ni en longeant le mur).
  */
-export function findExit(player: Player, exits: readonly ExitDef[] = []): ExitDef | undefined {
+export function findExit(player: Player, exits: readonly Exit[] = []): Exit | undefined {
   const { actor, dir } = player;
   if (dir.lengthSq() === 0) return undefined;
-  const tx = Math.floor(actor.x / TILE);
-  const ty = Math.floor((actor.y - 3) / TILE);
-  return exits.find((e) => e.x === tx && e.y === ty && e.facing === actor.facing);
+  const px = actor.x;
+  const py = actor.y - 3;
+  return exits.find(
+    (e) => px >= e.x && px < e.x + e.w && py >= e.y && py < e.y + e.h && (e.facing === undefined || e.facing === actor.facing),
+  );
 }

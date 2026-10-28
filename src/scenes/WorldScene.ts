@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { START, TILE, ZOOM } from '../config';
+import { START, ZOOM } from '../config';
 import { maps } from '../content';
-import type { ExitDef } from '../content/types';
+import type { Exit } from '../content/types';
 import { Player } from '../entities/Player';
 import { GameEvent } from '../events';
 import { findExit } from '../systems/exits';
@@ -45,7 +45,7 @@ export class WorldScene extends Phaser.Scene {
     this.map = new GameMap(this, def);
     this.physics.world.setBounds(0, 0, this.map.width, this.map.height);
 
-    this.player = new Player(this, sp.x * TILE + TILE / 2, sp.y * TILE + TILE - 4);
+    this.player = new Player(this, sp.x, sp.y);
     if (sp.facing) this.player.actor.face(sp.facing);
     this.physics.add.collider(this.player.actor, this.map.ground);
     this.physics.add.collider(this.player.actor, this.map.obstacles);
@@ -74,7 +74,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Fondu au noir, puis la scène redémarre sur la carte d'arrivée. */
-  private travel(exit: ExitDef): void {
+  private travel(exit: Exit): void {
     this.mode = 'transition';
     const cam = this.cameras.main;
     cam.fadeOut(200, 20, 14, 8);

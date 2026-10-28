@@ -2,8 +2,11 @@
 
 Lis `README.md` (architecture et quatre règles) avant toute modification, et `docs/CONCEPTION.md` (univers, personnages, lieux, feuille de route) avant tout travail sur le contenu.
 
-- Ne jamais éditer `src/generated/` : modifier `art/` puis `npm run art`.
-- Ajouter du contenu (carte, tuile, objet) = éditer `src/content/` ; ne pas coder de contenu en dur dans les scènes.
+- Ne jamais éditer `src/generated/` ni `tiled/tilesets/` : modifier `art/` ou `src/content/`, puis `npm run art`.
+- Ajouter du contenu (tuile, objet, personnage, dialogue) = éditer `src/content/` ; ne pas coder de contenu en dur dans les scènes.
+- Une carte = un fichier Tiled `tiled/maps/<id>.tmj`, traduit par `npm run maps` (le jeu ne lit jamais Tiled). Règles de pose (calque `ground`, types `Spawn`, `Exit`, objets) dans le README.
+- Les numéros de tuiles vivent dans `art/tile-registry.json` (committé) : `npm run art` ajoute les nouvelles tuiles en fin de liste ; ne jamais réordonner ni supprimer une entrée, car les .tmj stockent ces numéros.
+- Nouvel objet posable : une entrée de `src/content/props.json` ; sa clé est le type de l'objet dans Tiled.
 - Nouveau sprite : l'ajouter dans `art/`, le déclarer dans `art/index.ts`, vérifier l'aperçu avec `npm run art:preview` (images dans `.art-preview/`, à regarder).
 - Nouvelle capacité de personnage : un composant attaché à `Actor`, pas une sous-classe.
 - Nouveau champ de contenu : le déclarer dans `src/content/types.ts` (schéma Zod) ; nouveau lien entre fichiers : le vérifier dans `src/content/validate.ts`.

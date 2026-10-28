@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 import { DEPTH, TILE } from '../config';
-import { props as propDefs, tiles as tilesBySet } from '../content';
-import type { MapDef, PropDef } from '../content/types';
+import { props as propDefs } from '../content';
+import type { MapData, MapObject, PropDef } from '../content/types';
 import { tilesets } from '../generated/assets';
 
-/** Hachage stable d'une position : la même case a toujours la même variante de tuile. */
+/** Hachage stable d'une position : la même case a toujours les mêmes détails au sol. */
 function hash(x: number, y: number): number {
   let h = (x * 374761393 + y * 668265263) >>> 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
@@ -20,8 +20,9 @@ export interface Interactable {
 }
 
 /**
- * Construit une carte jouable à partir d'une MapDef : sol (tilemap), collisions, objets posés,
+ * Construit une carte jouable à partir d'une MapData : sol (tilemap), collisions, objets posés,
  * fumées, lueurs et pénombre. Ne connaît ni le joueur ni les PNJ.
+ * Les tuiles du sol sont affichées telles que Tiled les a peintes ; seuls les détails au hasard sont calculés ici.
  * Le contenu est supposé valide : il est vérifié au démarrage (content/validate.ts).
  */
 export class GameMap {
@@ -32,64 +33,37 @@ export class GameMap {
   readonly width: number;
   readonly height: number;
 
-  constructor(scene: Phaser.Scene, readonly def: MapDef) {
-    const setKey = def.tileset ?? 'world';
-    const tileDefs = tilesBySet[setKey];
-    const tileset = tilesets.find((t) => t.key === setKey)!;
-    this.width = def.ground[0].length * TILE;
-    this.height = def.ground.length * TILE;
+  constructor(scene: Phaser.Scene, readonly def: MapData) {
+    const tileset = tilesets.find((t) => t.key === def.tileset)!;
+    this.width = def.width * TILE;
+    this.height = def.height * TILE;
 
-    // Sol
-    const solid = new Set<number>();
-    const data = def.ground.map((row, y) =>
-      [...row].map((ch, x) => {
-        const t = tileDefs[ch];
-        let name: string;
-        if (t.autotile) {
-          // hors de la carte compte comme identique : un chemin qui sort de l'écran n'a pas de bordure
-          const same = (dx: number, dy: number) => {
-            const n = def.ground[y + dy]?.[x + dx];
-            return n === undefined || n === ch || (t.connects ?? '').includes(n);
-          };
-          const mask = (same(0, -1) ? 1 : 0) | (same(1, 0) ? 2 : 0) | (same(0, 1) ? 4 : 0) | (same(-1, 0) ? 8 : 0);
-          name = `${t.autotile}-${mask}`;
-        } else if (t.cycle) {
-          name = t.tiles[x % t.tiles.length];
-        } else {
-          name = t.tiles[hash(x, y) % t.tiles.length];
-        }
-        const index = tileset.tiles[name];
-        if (t.solid) solid.add(index);
-        return index;
-      }),
-    );
+    // Sol : une ligne de tuiles par rangée
+    const cells = def.layers.ground;
+    const data = Array.from({ length: def.height }, (_, y) => cells.slice(y * def.width, (y + 1) * def.width));
     const map = scene.make.tilemap({ data, tileWidth: TILE, tileHeight: TILE });
     const ts = map.addTilesetImage(tileset.key, tileset.key, TILE, TILE, 0, 0)!;
     this.ground = map.createLayer(0, ts, 0, 0)!;
     this.ground.setDepth(DEPTH.ground);
-    this.ground.setCollision([...solid]);
+    this.ground.setCollision(tileset.solid);
 
     // Détails au sol, posés de façon stable (même carte = mêmes détails)
-    def.ground.forEach((row, y) =>
-      [...row].forEach((ch, x) => {
-        const d = tileDefs[ch].decals;
-        if (!d) return;
-        const h = hash(x * 3 + 7, y * 5 + 11);
-        if ((h % 1000) / 1000 >= d.chance) return;
-        const img = d.images[(h >>> 10) % d.images.length];
-        const ox = ((h >>> 4) % 17) - 8;
-        const oy = ((h >>> 8) % 13) - 6;
-        scene.add.image(x * TILE + TILE / 2 + ox, y * TILE + TILE / 2 + oy, img).setDepth(DEPTH.decal).setFlipX(((h >>> 14) & 1) === 1);
-      }),
-    );
+    cells.forEach((tile, i) => {
+      const d = tileset.decals[tile];
+      if (!d) return;
+      const x = i % def.width;
+      const y = Math.floor(i / def.width);
+      const h = hash(x * 3 + 7, y * 5 + 11);
+      if ((h % 1000) / 1000 >= d.chance) return;
+      const img = d.images[(h >>> 10) % d.images.length];
+      const ox = ((h >>> 4) % 17) - 8;
+      const oy = ((h >>> 8) % 13) - 6;
+      scene.add.image(x * TILE + TILE / 2 + ox, y * TILE + TILE / 2 + oy, img).setDepth(DEPTH.decal).setFlipX(((h >>> 14) & 1) === 1);
+    });
 
     // Objets posés
     this.obstacles = scene.physics.add.staticGroup();
-    def.props.forEach((row, y) =>
-      [...row].forEach((ch, x) => {
-        if (ch !== '.') this.placeProp(scene, propDefs[ch], x, y);
-      }),
-    );
+    for (const o of def.objects) this.placeProp(scene, propDefs[o.type], o);
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
     if (def.ambient) {
@@ -97,17 +71,14 @@ export class GameMap {
     }
   }
 
-  private placeProp(scene: Phaser.Scene, p: PropDef, x: number, y: number) {
-    const left = p.align === 'left';
-    const ax = left ? x * TILE : x * TILE + TILE / 2;
-    const ay = y * TILE + TILE;
-    const obj = p.anim
-      ? scene.add.sprite(ax, ay, p.image).play(`${p.image}-${p.anim}`)
-      : scene.add.image(ax, ay, p.image);
-    obj.setOrigin(left ? 0 : 0.5, 1).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
+  /** (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds). */
+  private placeProp(scene: Phaser.Scene, p: PropDef, o: MapObject) {
+    const ay = o.y;
+    const obj = p.anim ? scene.add.sprite(o.x, ay, p.image).play(`${p.image}-${p.anim}`) : scene.add.image(o.x, ay, p.image);
+    obj.setOrigin(0, 1).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
     if (p.blend === 'add') obj.setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.light);
     // coin haut gauche de l'image, pour les coordonnées "dans l'image"
-    const ox = left ? ax : ax - obj.width / 2;
+    const ox = o.x;
     const oy = ay - obj.height;
 
     let baseY = ay - 8;
@@ -119,7 +90,8 @@ export class GameMap {
       this.obstacles.add(scene.add.zone(ox + b.x + b.w / 2, oy + b.y + b.h / 2, b.w, b.h));
       baseY = Math.max(baseY, oy + b.y + b.h / 2);
     }
-    if (p.interact) this.interactables.push({ x: ox + obj.width / 2, y: baseY, top: oy, dialogue: p.interact });
+    const dialogue = o.interact ?? p.interact;
+    if (dialogue) this.interactables.push({ x: ox + obj.width / 2, y: baseY, top: oy, dialogue });
 
     for (const [sx, sy] of p.smoke ?? []) {
       scene.add
