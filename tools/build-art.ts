@@ -1,15 +1,27 @@
-// Transforme les sources de art/ en PNG + manifeste TypeScript dans src/generated/.
+// Transforme les sources de art/ en PNG + manifeste TypeScript dans src/generated/,
+// et en tilesets pour Tiled (.tsj + PNG) dans tiled/tilesets/.
 // Usage : npm run art            (génère)
 //         npm run art -- --preview  (génère aussi des aperçus agrandis x4 dans .art-preview/)
+//
+// Le numéro d'une tuile vient de art/tile-registry.json (voir tools/lib/registry.ts) : il ne change jamais.
 
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
+import { z } from 'zod';
 import { sources } from '../art/index';
 import type { Grid, Palette } from '../art/lib/canvas';
+import propsJson from '../src/content/props.json';
+import tilesCatalogJson from '../src/content/tiles-catalog.json';
+import { PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
+import type { DecalSet } from '../src/content/types';
+import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
+import { propsTsj, tilesetTsj } from './lib/tiled-files';
+import type { PropTile } from './lib/tiled-files';
 
 const OUT = 'src/generated';
 const PREVIEW = '.art-preview';
+const TILED = 'tiled/tilesets';
 const COLS = 8;
 const withPreview = process.argv.includes('--preview');
 
@@ -39,12 +51,12 @@ function blit(png: PNG, grid: Grid, ox: number, oy: number, palette: Palette) {
   });
 }
 
-function sheet(cells: Grid[], w: number, h: number, palette: Palette): PNG {
-  const cols = Math.min(COLS, cells.length);
+/** Planche de cellules (null = cellule vide), `cols` colonnes. */
+function sheet(cells: (Grid | null)[], w: number, h: number, palette: Palette, cols = Math.min(COLS, cells.length)): PNG {
   const rows = Math.ceil(cells.length / cols);
   const png = new PNG({ width: cols * w, height: rows * h });
   png.data.fill(0);
-  cells.forEach((g, i) => blit(png, g, (i % cols) * w, Math.floor(i / cols) * h, palette));
+  cells.forEach((g, i) => g && blit(png, g, (i % cols) * w, Math.floor(i / cols) * h, palette));
   return png;
 }
 
@@ -65,19 +77,34 @@ function scaled(src: PNG, k: number): PNG {
   return out;
 }
 
+function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.infer<T> {
+  const r = schema.safeParse(data);
+  if (!r.success) throw new Error(`${file} ne respecte pas son format :\n${z.prettifyError(r.error)}`);
+  return r.data;
+}
+
 rmSync(OUT, { recursive: true, force: true });
+rmSync(TILED, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
+mkdirSync(join(TILED, 'images'), { recursive: true });
 if (withPreview) mkdirSync(PREVIEW, { recursive: true });
+
+const registry = loadRegistry();
+const catalogs = parse('tiles-catalog.json', z.record(z.string(), TilesetCatalogSchema), tilesCatalogJson);
+const propDefs = parse('props.json', z.record(z.string(), PropDefSchema), propsJson);
 
 const imports: string[] = [];
 const catalog = {
   spritesheets: [] as { key: string; animations: Record<string, unknown> }[],
-  tilesets: [] as { key: string; tiles: Record<string, number> }[],
+  tilesets: [] as { key: string; tiles: Record<string, number>; count: number; solid: number[]; decals: Record<number, DecalSet> }[],
   images: [] as { key: string }[],
 };
 const spritesheets: string[] = [];
 const tilesets: string[] = [];
 const images: string[] = [];
+const notes: string[] = [];
+/** Première image de chaque image fixe ou planche animée : ce que Tiled montre pour un objet. */
+const firstFrames = new Map<string, { grid: Grid; w: number; h: number; palette: Palette }>();
 
 for (const src of sources) {
   let png: PNG;
@@ -95,6 +122,7 @@ for (const src of sources) {
       });
     }
     png = sheet(cells, src.frameW, src.frameH, src.palette);
+    firstFrames.set(src.name, { grid: cells[0], w: src.frameW, h: src.frameH, palette: src.palette });
     catalog.spritesheets.push({ key: src.name, animations: anims });
     spritesheets.push(
       `  { key: '${src.name}', url: ${id}, frameWidth: ${src.frameW}, frameHeight: ${src.frameH}, animations: ${JSON.stringify(anims)} },`,
@@ -102,15 +130,59 @@ for (const src of sources) {
   } else if (src.kind === 'tileset') {
     const names = Object.keys(src.tiles);
     names.forEach((n) => check(src.tiles[n], src.tileSize, src.tileSize, src.palette, `${src.name}/${n}`));
-    png = sheet(names.map((n) => src.tiles[n]), src.tileSize, src.tileSize, src.palette);
-    const index = Object.fromEntries(names.map((n, i) => [n, i]));
-    catalog.tilesets.push({ key: src.name, tiles: index });
-    tilesets.push(`  { key: '${src.name}', url: ${id}, tileSize: ${src.tileSize}, tiles: ${JSON.stringify(index)} },`);
+    const { slots, added, retired } = reconcile(registry, src.name, names);
+    for (const n of added) notes.push(`tuile '${n}' (${src.name}) : nouveau numéro ${slots.indexOf(n)}`);
+    for (const n of retired) notes.push(`ATTENTION tuile '${n}' (${src.name}) retirée de art/ : son numéro ${registry[src.name].indexOf(n)} reste réservé (trou)`);
+
+    png = sheet(slots.map((n) => (n === null ? null : src.tiles[n])), src.tileSize, src.tileSize, src.palette, COLS);
+    const index = Object.fromEntries(slots.flatMap((n, i) => (n === null ? [] : [[n, i]])));
+
+    // propriétés de tuile : celles du catalogue + celles des terrains (famille de 16 tuiles)
+    const cat = catalogs[src.name] ?? TilesetCatalogSchema.parse({});
+    const solid = new Set(Object.entries(cat.tiles).flatMap(([n, t]) => (t.solid ? [n] : [])));
+    const decalOf = new Map<string, string>();
+    for (const [n, t] of Object.entries(cat.tiles)) {
+      if (!(n in index)) throw new Error(`tiles-catalog.json [${src.name}] : tuile '${n}' absente de art/`);
+      if (t.decals) {
+        if (!cat.decals[t.decals]) throw new Error(`tiles-catalog.json [${src.name}] tuile '${n}' : ensemble de détails '${t.decals}' inconnu`);
+        decalOf.set(n, t.decals);
+      }
+    }
+    for (const [terrain, def] of Object.entries(cat.terrains)) {
+      for (let m = 0; m < 16; m++) if (def.solid) solid.add(`${terrain}-${m}`);
+    }
+    const tsj = tilesetTsj({
+      name: src.name,
+      tileSize: src.tileSize,
+      columns: COLS,
+      imageFile: `${src.name}.png`,
+      imageWidth: png.width,
+      imageHeight: png.height,
+      slots,
+      solid,
+      decals: decalOf,
+      terrains: cat.terrains,
+    });
+    writeFileSync(join(TILED, `${src.name}.tsj`), JSON.stringify(tsj, null, 2) + '\n');
+    writeFileSync(join(TILED, `${src.name}.png`), PNG.sync.write(png));
+
+    const entry = {
+      key: src.name,
+      tiles: index,
+      count: slots.length,
+      solid: [...solid].filter((n) => n in index).map((n) => index[n]).sort((a, b) => a - b),
+      decals: Object.fromEntries([...decalOf].map(([n, d]) => [index[n], cat.decals[d]])),
+    };
+    catalog.tilesets.push(entry);
+    tilesets.push(
+      `  { key: '${src.name}', url: ${id}, tileSize: ${src.tileSize}, tiles: ${JSON.stringify(index)}, solid: ${JSON.stringify(entry.solid)}, decals: ${JSON.stringify(entry.decals)} },`,
+    );
   } else {
     const w = src.grid[0].length;
     const h = src.grid.length;
     check(src.grid, w, h, src.palette, src.name);
     png = sheet([src.grid], w, h, src.palette);
+    firstFrames.set(src.name, { grid: src.grid, w, h, palette: src.palette });
     catalog.images.push({ key: src.name });
     images.push(`  { key: '${src.name}', url: ${id}, width: ${w}, height: ${h} },`);
   }
@@ -119,6 +191,26 @@ for (const src of sources) {
   imports.push(`import ${id} from './${src.name}.png';`);
   if (withPreview) writeFileSync(join(PREVIEW, `${src.name}.png`), PNG.sync.write(scaled(png, 4)));
 }
+
+// Tileset « collection d'images » des objets : une tuile par entrée de props.json, numérotée par le registre.
+// Un objet dont l'image n'est pas dessinée est ignoré ici ; `npm run check` le signale.
+const propNames = Object.values(propDefs).filter((p) => firstFrames.has(p.image)).map((p) => p.name);
+const propSlots = reconcile(registry, 'props', propNames);
+for (const n of propSlots.added) notes.push(`objet '${n}' : nouveau numéro ${registry.props.indexOf(n)}`);
+for (const n of propSlots.retired) notes.push(`ATTENTION objet '${n}' retiré de props.json : son numéro ${registry.props.indexOf(n)} reste réservé`);
+const propTiles: PropTile[] = [];
+propSlots.slots.forEach((name, id) => {
+  if (name === null) return;
+  const def = Object.values(propDefs).find((p) => p.name === name)!;
+  const f = firstFrames.get(def.image)!;
+  const file = `images/${def.image}.png`;
+  writeFileSync(join(TILED, file), PNG.sync.write(sheet([f.grid], f.w, f.h, f.palette)));
+  propTiles.push({ id, key: name, image: file, width: f.w, height: f.h });
+});
+writeFileSync(join(TILED, 'props.tsj'), JSON.stringify(propsTsj(propTiles), null, 2) + '\n');
+
+if (saveRegistry(registry)) notes.push('art/tile-registry.json modifié : à committer');
+for (const n of notes) console.log(`art : ${n}`);
 
 const manifest = `// GÉNÉRÉ par tools/build-art.ts à partir de art/. Ne pas modifier à la main.
 ${imports.join('\n')}
@@ -130,7 +222,17 @@ export interface SpriteSheetAsset {
   frameHeight: number;
   animations: Record<string, { frames: number[]; frameRate: number; repeat: number }>;
 }
-export interface TilesetAsset { key: string; url: string; tileSize: number; tiles: Record<string, number> }
+export interface TilesetAsset {
+  key: string;
+  url: string;
+  tileSize: number;
+  /** Nom de tuile -> numéro. */
+  tiles: Record<string, number>;
+  /** Numéros des tuiles bloquantes. */
+  solid: number[];
+  /** Numéro de tuile -> détails posés au hasard dessus. */
+  decals: Record<number, { images: string[]; chance: number }>;
+}
 export interface ImageAsset { key: string; url: string; width: number; height: number }
 
 export const spritesheets: SpriteSheetAsset[] = [
@@ -148,4 +250,4 @@ ${images.join('\n')}
 writeFileSync(join(OUT, 'assets.ts'), manifest);
 // Même catalogue sans les images, lisible par Node (npm run check)
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(catalog, null, 2));
-console.log(`art : ${sources.length} sources -> ${OUT}${withPreview ? ` (+ aperçus dans ${PREVIEW})` : ''}`);
+console.log(`art : ${sources.length} sources -> ${OUT} + ${TILED}${withPreview ? ` (+ aperçus dans ${PREVIEW})` : ''}`);

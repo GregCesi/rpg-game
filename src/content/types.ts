@@ -24,6 +24,34 @@ export const TileDefSchema = z.strictObject({
   decals: z.strictObject({ images: z.array(id).min(1), chance: z.number().min(0).max(1) }).optional(),
 });
 
+/** Détails posés au hasard sur un sol (touffes, paille...) : ils cassent la répétition des tuiles. */
+export const DecalSetSchema = z.strictObject({ images: z.array(id).min(1), chance: z.number().min(0).max(1) });
+
+/** Propriétés d'une tuile du tileset (celles qui ne sont pas dans un terrain). */
+export const TileInfoSchema = z.strictObject({
+  /** Bloque le passage. */
+  solid: z.boolean().optional(),
+  /** Nom d'un ensemble de `decals` du même jeu de tuiles. */
+  decals: id.optional(),
+});
+
+/**
+ * Famille de 16 tuiles `<terrain>-<masque>` (masque N=1 E=2 S=4 O=8 : un bit à 1 = le voisin est du même terrain).
+ * Devient un ensemble de terrains Wang dans le tileset de Tiled.
+ */
+export const TerrainDefSchema = z.strictObject({
+  /** Couleur du terrain dans Tiled (#rrggbb). */
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  solid: z.boolean().optional(),
+});
+
+/** Catalogue d'un jeu de tuiles : ce que `build-art` ajoute aux tuiles dessinées dans art/. */
+export const TilesetCatalogSchema = z.strictObject({
+  decals: z.record(id, DecalSetSchema).default({}),
+  tiles: z.record(id, TileInfoSchema).default({}),
+  terrains: z.record(id, TerrainDefSchema).default({}),
+});
+
 /** Rectangle en pixels, dans le repère de l'image (0,0 = coin haut gauche). */
 export const RectSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive() });
 
@@ -87,6 +115,9 @@ export const MapDefSchema = z.strictObject({
 
 export type Facing = z.infer<typeof FacingSchema>;
 export type TileDef = z.infer<typeof TileDefSchema>;
+export type DecalSet = z.infer<typeof DecalSetSchema>;
+export type TerrainDef = z.infer<typeof TerrainDefSchema>;
+export type TilesetCatalog = z.infer<typeof TilesetCatalogSchema>;
 export type Rect = z.infer<typeof RectSchema>;
 export type PropDef = z.infer<typeof PropDefSchema>;
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;

@@ -1,0 +1,48 @@
+{
+  "world": {
+    "decals": {
+      "grass": {"images": ["decal-tufts", "decal-tufts2", "decal-pebbles", "decal-clover", "decal-patch-dark", "decal-patch-light", "decal-patch-dark", "decal-dirt"], "chance": 0.22}
+    },
+    "tiles": {
+      "grass": {"decals": "grass"},
+      "grass2": {"decals": "grass"},
+      "grass3": {"decals": "grass"},
+      "grass4": {"decals": "grass"},
+      "grass5": {"decals": "grass"},
+      "grass6": {"decals": "grass"}
+    },
+    "terrains": {
+      "path": {"color": "#b8956a"},
+      "water": {"color": "#4a7fa8", "solid": true},
+      "fence": {"color": "#7a5a3e", "solid": true}
+    }
+  },
+  "interior": {
+    "decals": {
+      "floor": {"images": ["decal-straw", "decal-straw2", "decal-stain", "decal-crack"], "chance": 0.3}
+    },
+    "tiles": {
+      "floor": {"decals": "floor"},
+      "floor2": {"decals": "floor"},
+      "floor3": {"decals": "floor"},
+      "floor4": {"decals": "floor"},
+      "wall-top": {"solid": true},
+      "window-south": {"solid": true},
+      "face-up-0": {"solid": true},
+      "face-up-1": {"solid": true},
+      "face-up-2": {"solid": true},
+      "face-up-3": {"solid": true},
+      "face-low-0": {"solid": true},
+      "face-low-1": {"solid": true},
+      "face-low-2": {"solid": true},
+      "face-low-3": {"solid": true},
+      "door-up": {"solid": true},
+      "door-low": {"solid": true},
+      "window-up": {"solid": true},
+      "void": {"solid": true}
+    },
+    "terrains": {
+      "partition": {"color": "#9c7a52", "solid": true}
+    }
+  }
+}
