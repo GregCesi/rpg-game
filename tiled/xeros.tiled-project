@@ -71,7 +71,7 @@
     },
     {
       "id": 100,
-      "name": "arbre",
+      "name": "tree",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -88,7 +88,7 @@
     },
     {
       "id": 101,
-      "name": "rocher",
+      "name": "rock",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -105,7 +105,7 @@
     },
     {
       "id": 102,
-      "name": "buisson",
+      "name": "bush",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -122,7 +122,7 @@
     },
     {
       "id": 103,
-      "name": "seau",
+      "name": "bucket",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -139,7 +139,7 @@
     },
     {
       "id": 104,
-      "name": "chaumière",
+      "name": "cottage",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -156,7 +156,7 @@
     },
     {
       "id": 105,
-      "name": "tas de bois",
+      "name": "woodpile",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -173,7 +173,7 @@
     },
     {
       "id": 106,
-      "name": "cheminée",
+      "name": "fireplace",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -190,7 +190,7 @@
     },
     {
       "id": 107,
-      "name": "planche de cuisine",
+      "name": "worktable",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -207,7 +207,7 @@
     },
     {
       "id": 108,
-      "name": "établi",
+      "name": "workbench",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -224,7 +224,7 @@
     },
     {
       "id": 109,
-      "name": "bille de bois",
+      "name": "log",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -241,7 +241,7 @@
     },
     {
       "id": 110,
-      "name": "poêle",
+      "name": "stove",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -258,7 +258,7 @@
     },
     {
       "id": 111,
-      "name": "lit de la mère",
+      "name": "bed",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -275,7 +275,7 @@
     },
     {
       "id": 112,
-      "name": "paillasse de Xéros",
+      "name": "pallet",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -292,7 +292,7 @@
     },
     {
       "id": 113,
-      "name": "sac",
+      "name": "sack",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -309,7 +309,7 @@
     },
     {
       "id": 114,
-      "name": "jarre",
+      "name": "jar",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -326,7 +326,7 @@
     },
     {
       "id": 115,
-      "name": "rai de lumière",
+      "name": "sunpatch",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,

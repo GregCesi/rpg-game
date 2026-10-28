@@ -128,8 +128,8 @@ export interface Content {
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
-/** Noms que les objets de props.json ne peuvent pas prendre : ce sont d'autres types de Tiled. */
-const RESERVED_TYPES = ['Spawn', 'Exit', 'Facing'];
+/** Clés de props.json : minuscules ASCII, chiffres, tirets. Les majuscules sont réservées aux types de Tiled (Spawn, Exit, Facing). */
+const KEBAB_CASE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 export function validateContent(c: Content, cat: Catalog): string[] {
@@ -146,7 +146,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Objets (la clé de props.json est le type d'un objet de carte)
   for (const [key, p] of Object.entries(c.props)) {
-    if (RESERVED_TYPES.includes(key)) err(`props.json '${key}' : nom réservé (types d'objets de Tiled : ${RESERVED_TYPES.join(', ')})`);
+    if (!KEBAB_CASE.test(key)) err(`props.json '${key}' : la clé doit être un identifiant anglais en kebab-case (minuscules sans accent, chiffres, tirets : 'tree', 'tall-fence')`);
     if (!cat.textures.has(p.image)) err(`props.json '${key}' : image '${p.image}' non dessinée`);
     if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${key}' : animation '${p.anim}' absente de '${p.image}'`);
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);

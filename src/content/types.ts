@@ -40,8 +40,13 @@ export const TilesetCatalogSchema = z.strictObject({
 /** Rectangle en pixels, dans le repère de l'image (0,0 = coin haut gauche). */
 export const RectSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive() });
 
-/** Un objet du catalogue (arbre, rocher, maison, meuble...). Sa clé dans props.json est le type d'un objet de carte dans Tiled. */
+/**
+ * Un objet du catalogue (arbre, rocher, maison, meuble...). Sa clé dans props.json est son identifiant :
+ * en anglais, en kebab-case (vérifié par validate.ts) ; c'est aussi le type d'un objet de carte dans Tiled.
+ */
 export const PropDefSchema = z.strictObject({
+  /** Nom affiché, en français. */
+  name: id,
   image: id,
   /** Boîte de collision simple, centrée en bas de l'image. bottom = marge entre le bas de l'image et le bas de la boîte. */
   body: z.strictObject({ w: px.positive(), h: px.positive(), bottom: px }).optional(),
