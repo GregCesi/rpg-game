@@ -104,6 +104,42 @@ export function tilesetTsj(t: TilesetExport) {
   };
 }
 
+const DIRECTIONS = ['down', 'up', 'left', 'right'];
+
+type Member = { name: string; type: string; propertyType?: string; value: string };
+
+function objectClass(id: number, name: string, color: string, members: Member[]) {
+  return { id, name, type: 'class', color, drawFill: true, members, useAs: ['object'] };
+}
+
+/**
+ * Fichier projet Tiled : les types d'objets que Tiled propose dans l'éditeur de propriétés.
+ *   - une classe par objet de props.json (son nom = la clé du catalogue), avec les champs surchargeables ;
+ *   - `Spawn` : point d'apparition, son nom est son identifiant ;
+ *   - `Exit` : rectangle qui mène vers une autre carte.
+ * Un champ laissé vide n'est pas surchargé (le jeu prend la valeur de props.json, ou rien).
+ */
+export function projectFile(propKeys: { id: number; key: string }[]) {
+  const facing = { id: 1, name: 'Facing', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...DIRECTIONS] };
+  const text = (name: string): Member => ({ name, type: 'string', value: '' });
+  const direction: Member = { name: 'facing', type: 'string', propertyType: 'Facing', value: '' };
+  return {
+    _generated: GENERATED_NOTE,
+    automappingRulesFile: '',
+    commands: [],
+    extensionsPath: 'extensions',
+    folders: ['maps', 'tilesets'],
+    objectTypesFile: '',
+    propertyTypes: [
+      facing,
+      objectClass(2, 'Spawn', '#3fa34d', [direction]),
+      objectClass(3, 'Exit', '#d9534f', [text('to'), text('spawn'), direction]),
+      // numéros à partir de 100 : ceux du registre des objets, donc stables
+      ...propKeys.map((p) => objectClass(100 + p.id, p.key, '#a08060', [text('interact')])),
+    ],
+  };
+}
+
 /** Un objet de props.json vu par Tiled : une image par objet, son type est sa clé. */
 export interface PropTile {
   id: number;

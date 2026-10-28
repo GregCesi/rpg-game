@@ -16,12 +16,13 @@ import tilesCatalogJson from '../src/content/tiles-catalog.json';
 import { PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
 import type { DecalSet } from '../src/content/types';
 import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
-import { propsTsj, tilesetTsj } from './lib/tiled-files';
+import { projectFile, propsTsj, tilesetTsj } from './lib/tiled-files';
 import type { PropTile } from './lib/tiled-files';
 
 const OUT = 'src/generated';
 const PREVIEW = '.art-preview';
 const TILED = 'tiled/tilesets';
+const PROJECT = 'tiled/xeros.tiled-project';
 const COLS = 8;
 const withPreview = process.argv.includes('--preview');
 
@@ -208,6 +209,8 @@ propSlots.slots.forEach((name, id) => {
   propTiles.push({ id, key: name, image: file, width: f.w, height: f.h });
 });
 writeFileSync(join(TILED, 'props.tsj'), JSON.stringify(propsTsj(propTiles), null, 2) + '\n');
+// Fichier projet committé : il liste les types d'objets (objets de props.json, Spawn, Exit) que Tiled propose.
+writeFileSync(PROJECT, JSON.stringify(projectFile(propTiles), null, 2) + '\n');
 
 if (saveRegistry(registry)) notes.push('art/tile-registry.json modifié : à committer');
 for (const n of notes) console.log(`art : ${n}`);
