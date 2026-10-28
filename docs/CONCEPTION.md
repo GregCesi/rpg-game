@@ -62,10 +62,18 @@ Ordre validé pour rendre le projet tenable dans la durée :
 
 1. ~~Dépôt GitHub~~ (fait)
 2. ~~`npm run check` : vérification du contenu avec Zod~~ (fait), ~~`WorldScene` découpée en systèmes~~ (fait)
-3. Cartes faites avec **Tiled** (format JSON). Avant de coder : discussion d'architecture « étape 2, comment une carte devient jouable ».
+3. Cartes faites avec **Tiled** (format JSON). ~~Discussion d'architecture « étape 2, comment une carte devient jouable »~~ (faite le 28 octobre 2026, voir *Cartes avec Tiled*) ; reste à coder.
 4. Sprites au format JSON d'**Aseprite** (format commun, chargé nativement par Phaser) ; plus tard, lecture des fichiers `.aseprite`.
 5. État du jeu (inventaire, progression, sauvegarde) : avant le premier village, pas avant.
 6. Discussion d'architecture « étape 3, la boucle de jeu ».
+
+## Cartes avec Tiled (décidé le 28 octobre 2026)
+
+- **Tiled est un format source**, comme `art/`. Un outil de build traduit les cartes (`.tmj`) et les tilesets (`.tsj`) vers le format de carte du jeu ; le jeu ne lit jamais Tiled. Motif : le loader de Phaser ne lit pas les tilesets partagés, et les erreurs doivent rester lisibles.
+- **Le sol est peint avec son rendu final** (pinceau terrain de Tiled). Le jeu affiche les tuiles telles quelles ; seuls les détails au hasard restent calculés en jeu. Les numéros de tuiles ne changent jamais d'une génération à l'autre.
+- **Les objets sont un calque d'objets libres.** Chaque objet a un type (une entrée de `props.json`, qui reste le catalogue), une position au pixel et ses propriétés propres.
+- **Points d'apparition et sorties.** Un point d'apparition est un point de type `Spawn` (son nom est son identifiant, plus `facing`). Une sortie est un rectangle de type `Exit` (`to`, `spawn`, `facing` facultatif). Ce rectangle est le premier type de zone ; d'autres suivront (`Trigger`).
+- **Les tilesets sont générés par `build-art`** et jamais modifiés dans Tiled. Les collisions restent dans `props.json`, et `tiles.json` devient un catalogue de propriétés par tuile et par terrain.
 
 ## Façon de travailler
 
