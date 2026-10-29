@@ -946,6 +946,23 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 155,
+      "name": "shed-thatch",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

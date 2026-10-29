@@ -43,8 +43,8 @@ function stones(c: Canvas, x0: number, y0: number, w: number, h: number, seed: n
   }
 }
 
-/** Chaume : rangs de paille superposés aux pointes irrégulières, lumière à gauche, ombre en tramé à droite. */
-function thatch(c: Canvas, x0: number, x1: number, y0: number, y1: number, seed: number) {
+/** Chaume : rangs de paille superposés aux pointes irrégulières, lumière à gauche, ombre en tramé à droite. Repris par la couverture de l'abri (building.ts). */
+export function thatch(c: Canvas, x0: number, x1: number, y0: number, y1: number, seed: number) {
   const r = rng(seed);
   const span = x1 - x0;
   c.within('t', (c) => {

@@ -4,10 +4,11 @@
 // Lumière nord-ouest ; contour d'un pixel : teinte la plus sombre de la matière en haut et à gauche, OUTLINE (o) en bas
 // et à droite.
 
-import { Canvas } from '../lib/canvas';
+import { Canvas, EMPTY, rng } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { hewnTone } from './wood';
+import { thatch } from './house';
 
 const palette = { ...world };
 
@@ -124,6 +125,83 @@ function shedRafter(): Canvas {
   return c;
 }
 
+// ---------- Couverture de chaume ----------
+
+/** Rangées vides sous la couverture, dans son image : la hauteur qui la sépare du sol au bord sud de l'avant-toit. */
+const THATCH_BELOW = 42;
+
+/**
+ * Couverture de chaume de l'abri (`shed-thatch`), appentis de 360 × 390 cm, 30 cm d'épaisseur, côté haut au nord :
+ * pièce `ground`, silhouette 72 × 94 px collée en haut de l'image, puis THATCH_BELOW rangées vides (bas de l'image au
+ * sol, un pixel au sud de l'avant-toit). Rangées 0 à 87 : le dessus, le même chaume que la chaumière (`thatch` de
+ * house.ts : rangs de paille est-ouest tous les 9 px, pointes P, brins clairs Y à gauche, tramé T à droite) ; bords
+ * nord, est et ouest rognés d'un pixel par endroits (mèches). Rangées 88 à 93 : la tranche de l'avant-toit sud, 30 cm de
+ * bouts de paille coupés (T, P, quelques t éclairés en haut), bord bas qui retombe inégal. Contour d'un pixel pris dans
+ * la silhouette : P (le plus sombre du chaume) en haut et à gauche, OUTLINE en bas et à droite.
+ */
+function shedThatch(): Canvas {
+  const W = 72;
+  const TOP = 88; // rangées du dessus
+  const SIL = 94;
+  const c = new Canvas(W, SIL + THATCH_BELOW);
+  // la forme : bords rognés par endroits, tirés au sort une fois pour toutes (même graine, même dessin)
+  const r = rng(23);
+  const runs = (n: number, p: number, len: number) => {
+    const out: number[] = Array(n).fill(0);
+    for (let i = 0; i < n; ) {
+      if (r() < p) {
+        const l = 1 + Math.floor(r() * len);
+        for (let j = i; j < Math.min(n, i + l); j++) out[j] = 1;
+        i += l + 2;
+      } else i++;
+    }
+    return out;
+  };
+  const north = runs(W, 0.18, 3); // mèches du faîte nord
+  const west = runs(SIL, 0.08, 3);
+  const east = runs(SIL, 0.1, 3);
+  const drop = runs(W, 0.22, 2); // bord bas de la tranche : là où la paille retombe moins
+  const inside = (x: number, y: number) => {
+    if (x < 0 || x >= W || y < 0 || y >= SIL) return false;
+    if (y < north[x] || (y === SIL - 1 && drop[x])) return false;
+    if (x < west[y] || x > W - 1 - east[y]) return false;
+    // coins du nord arrondis d'un pixel
+    if (y <= 1 && (x === 0 || x === W - 1)) return false;
+    return true;
+  };
+  for (let y = 0; y < SIL; y++) for (let x = 0; x < W; x++) if (inside(x, y)) c.set(x, y, 't');
+  // ombre douce vers l'est, en tramé léger, que le chaume de la chaumière prolonge (passage moins brusque sur 72 px)
+  c.within('t', (c) => {
+    for (let y = 0; y < TOP; y++) for (let x = 0; x < W; x++) {
+      const k = x / (W - 1);
+      if (k > 0.3 && r() < (k - 0.3) * 0.55) c.set(x, y, 'T');
+    }
+  });
+  // le dessus : le chaume de la chaumière, à la même échelle de rangs
+  thatch(c, 0, W - 1, 0, TOP - 1, 19);
+  // la tranche de l'avant-toit sud : bouts de paille coupés, plus sombres ; arête éclairée en haut à gauche
+  for (let x = 0; x < W; x++) {
+    const strand = r() < 0.3; // brin plus sombre sur toute la tranche
+    for (let y = TOP; y < SIL; y++) {
+      if (c.get(x, y) === EMPTY) continue;
+      let col = strand ? 'P' : 'T';
+      if (y === TOP) col = r() < 0.75 - x / W ? 't' : 'T';
+      else if (y === TOP + 1 && !strand && r() < 0.4 - x / W) col = 't';
+      else if (y >= SIL - 2 && r() < 0.6) col = 'P';
+      c.set(x, y, col);
+    }
+  }
+  // contour pris dans la silhouette : P côté lumière (haut, gauche), OUTLINE côté ombre (bas, droite)
+  const out: [number, number, string][] = [];
+  for (let y = 0; y < SIL; y++) for (let x = 0; x < W; x++) {
+    if (!inside(x, y)) continue;
+    if (!inside(x + 1, y) || !inside(x, y + 1)) out.push([x, y, 'o']);
+    else if (!inside(x - 1, y) || !inside(x, y - 1)) out.push([x, y, 'P']);
+  }
+  for (const [x, y, col] of out) c.px[y][x] = col;
+  return c;
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
 export default [
@@ -134,4 +212,5 @@ export default [
   img('shed-plate-south', shedPlateEW(39, 23)),
   img('shed-plate-side', shedPlateSide()),
   img('shed-rafter', shedRafter()),
+  img('shed-thatch', shedThatch()),
 ];
