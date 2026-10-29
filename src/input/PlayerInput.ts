@@ -61,6 +61,11 @@ export class PlayerInput {
     return this.take('hands');
   }
 
+  /** La touche des mains (E ou Entrée) est enfoncée en ce moment : E maintenu (nouer, dénouer). */
+  handsDown(): boolean {
+    return CODES.hands.some((c) => this.held.has(c));
+  }
+
   /** Utiliser ce qu'on tient (Espace) : vrai une seule fois par appui. */
   usePressed(): boolean {
     return this.take('use');

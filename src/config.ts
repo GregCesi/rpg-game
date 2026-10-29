@@ -41,6 +41,15 @@ export const DEPTH = {
 /** Distance devant les pieds où l'on cherche un objet avec lequel interagir, et rayon de recherche (px). */
 export const INTERACT = { reach: 16, radius: 20 };
 
+/**
+ * E maintenu (nouer, dénouer) : durée de l'appui (ms) ; avant, relâcher E fait le geste court (reprendre une pièce).
+ * La jauge (`ui-gauge`) se remplit au-dessus de la tête de Xéros, `above` px au-dessus de ses pieds (bas de la jauge).
+ */
+export const LONG_PRESS = { ms: 500, above: 35 };
+
+/** Nombre de pièces d'un tas (`count` de piles.json) : affiché quand les pieds de Xéros sont à moins de `near` px du tas au sol. */
+export const PILE_COUNT = { near: 12 };
+
 /** Poser devant soi : écart entre la collision de Xéros et ce qu'il pose (px). */
 export const PUT_DOWN = { gap: 2 };
 

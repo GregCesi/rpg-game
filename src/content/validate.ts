@@ -224,6 +224,39 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
 }
 
 /**
+ * Longueur, objets qu'on pose dessus et objets portés (le rouleau de corde, le billot qui le porte) : la pièce coupée
+ * existe, l'objet porté a une longueur et se prend, le porteur redevient l'objet qui l'accepte, et la coupe se fait à
+ * l'outil, sans rien d'autre de la récolte.
+ */
+function validateRope(key: string, p: PropDef, c: Content): string[] {
+  const errors: string[] = [];
+  const err = (msg: string) => errors.push(`props.json '${key}' : ${msg}`);
+  if (p.length) {
+    if (!c.items[p.length.piece]) err(`length : pièce '${p.length.piece}' absente de items.json`);
+    if (p.length.cut > p.length.start) err(`length : 'cut' (${p.length.cut}) plus long que 'start' (${p.length.start})`);
+  }
+  for (const [held, becomes] of Object.entries(p.rest ?? {})) {
+    const h = c.props[held];
+    const b = c.props[becomes];
+    if (!h?.take) err(`rest : '${held}' n'est pas un objet de props.json qui se prend`);
+    else if (h.take.hands !== 1) err(`rest : '${held}' se tient à deux mains (on pose ce que tient la main active)`);
+    if (!b) err(`rest : '${becomes}' absent de props.json`);
+    else if (b.bears?.prop !== held || b.bears.empty !== key) err(`rest : '${becomes}' doit avoir "bears": {"prop": "${held}", "empty": "${key}"}`);
+  }
+  if (p.bears) {
+    const borne = c.props[p.bears.prop];
+    if (!borne?.length) err(`bears : '${p.bears.prop}' n'a pas de longueur ('length')`);
+    if (!borne?.take) err(`bears : '${p.bears.prop}' ne se prend pas (pas de 'take')`);
+    if (!c.props[p.bears.empty]) err(`bears : '${p.bears.empty}' (empty) absent de props.json`);
+    const h = p.harvest;
+    if (!h?.tool) err("bears : il faut un 'harvest' avec un outil pour couper ce qu'il porte");
+    else if (h.becomes || h.drops.length || h.spawns.length || h.fall) err("bears : sa récolte coupe ce qu'il porte, sans 'becomes', 'drops', 'spawns' ni 'fall'");
+    if (p.take || p.interact) err(`bears : avec '${p.take ? 'take' : 'interact'}' (E reprend ce qu'il porte)`);
+  }
+  return errors;
+}
+
+/**
  * Images d'état des pièces de tronc couché (`notch`) : `-n1`... par profondeur et `-cut-right` pour celles qui ont une encoche ;
  * `-cut-left` (et `-cut-left-n1`...) pour celles qui ne sont pas les premières de leur chaîne. Toutes de la taille de la pièce.
  */
@@ -401,6 +434,26 @@ function validatePiles(c: Content, cat: Catalog): string[] {
     if (pile.turned) shapes.push([`${at} turned`, pile.turned]);
     for (const [where, shape] of shapes) errors.push(...validatePileShape(where, shape, pile.blockFrom, cat));
   }
+  // le lien (les branches) : un objet possédable à une main qui ne s'entrepose pas, dessiné sous le tas ; le tas noué
+  // devient un objet qui se prend à deux mains et s'entrepose dans un autre genre (le fagot), d'un seul genre qui le noue
+  for (const [key, pile] of Object.entries(c.piles)) {
+    const tie = pile.tie;
+    if (!tie) continue;
+    const at = `piles.json '${key}' tie`;
+    const it = c.items[tie.item];
+    if (!it) err(`${at} : objet possédable '${tie.item}' introuvable dans items.json`);
+    else if (it.hands !== 1 || it.pile) err(`${at} : '${tie.item}' doit se tenir à une main et ne pas s'entreposer (pas de 'pile')`);
+    if (!cat.textures.has(tie.image)) err(`${at} : image '${tie.image}' non dessinée`);
+    if (pile.turned) err(`${at} : un genre lié ne se tourne pas (le lien n'a pas de forme tournée)`);
+    const into = c.props[tie.into];
+    if (!into) err(`${at} : objet '${tie.into}' (into) introuvable dans props.json`);
+    else if (!into.take?.pile || !c.piles[into.take.pile]) err(`${at} : '${tie.into}' doit se prendre et s'entreposer dans un tas ('take' avec 'pile')`);
+    else if (into.take.pile === key) err(`${at} : '${tie.into}' ne peut pas s'entreposer dans le tas qui le noue`);
+    const others = Object.keys(c.piles).filter((k) => k !== key && c.piles[k].tie?.item === tie.item);
+    if (others.length) err(`${at} : '${tie.item}' lie déjà le genre '${others[0]}' (un lien, un genre)`);
+    const intoOthers = Object.keys(c.piles).filter((k) => k !== key && c.piles[k].tie?.into === tie.into);
+    if (intoOthers.length) err(`${at} : '${tie.into}' se dénouerait aussi en '${intoOthers[0]}'`);
+  }
   const member = (at: string, pile: string | undefined) => {
     if (pile && !c.piles[pile]) err(`${at} : genre de tas '${pile}' introuvable dans piles.json`);
   };
@@ -473,6 +526,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.take && !cat.textures.has(p.take.icon)) err(`props.json '${key}' : icône '${p.take.icon}' non dessinée`);
     // E sur l'objet : le prendre, le récolter ou ouvrir son dialogue, pas deux à la fois
     if (p.take && (p.harvest || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
+    addAll(validateRope(key, p, c));
   }
 
   // Gabarit : taille de chaque objet d'après ses dimensions réelles
@@ -491,6 +545,10 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));
+
+  // Interface : la jauge de E maintenu (de vide à plein) et les chiffres du nombre de pièces d'un tas
+  if (!cat.animations.get('ui-gauge')?.has('fill')) err("Interface : planche 'ui-gauge' et son animation 'fill' non dessinées (jauge de E maintenu)");
+  for (let d = 0; d <= 9; d++) if (!cat.textures.has(`ui-digit-${d}`)) err(`Interface : chiffre 'ui-digit-${d}' non dessiné (nombre de pièces d'un tas)`);
 
   // Personnages et dialogues
   for (const [key, ch] of Object.entries(c.characters)) {

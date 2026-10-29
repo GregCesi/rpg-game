@@ -122,6 +122,7 @@ function missingContent(save: Save): string | undefined {
       const places = (p.turned && def.turned ? def.turned : def).places;
       const bad = p.places.find((q) => !places[q]);
       if (bad) return `la place « ${bad} » du tas « ${p.pile} »`;
+      if (p.tie && !def.tie) return `le lien du tas « ${p.pile} »`;
     }
   }
   return undefined;

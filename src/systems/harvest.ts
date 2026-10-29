@@ -29,12 +29,13 @@ function notchInReach(player: Player, p: PlacedProp): boolean {
 
 /**
  * Ce qu'a donné un coup : rien à frapper, mauvais outil (`tool` = l'outil qu'il faut), ou un coup porté.
- * `given` : objets mis directement dans les mains ; `overflow` : mains pas libres, ils sont tombés au sol.
+ * `given` : objets mis directement dans les mains ; `overflow` : mains pas libres, ils sont tombés au sol ;
+ * `cut` : l'objet porté qu'on vient de couper (le rouleau) et ce qui en reste (cm), s'il y en avait un.
  */
 export type HitResult =
   | { kind: 'none' }
   | { kind: 'missing'; tool: string }
-  | { kind: 'hit'; done: boolean; given: number; overflow: boolean };
+  | { kind: 'hit'; done: boolean; given: number; overflow: boolean; cut?: { prop: string; remaining: number } };
 
 /**
  * La récolte, pour tout ce qui porte un composant `harvest` dans props.json (arbre, rocher, baies, billot).
@@ -104,6 +105,7 @@ export class HarvestSystem {
     if (h.tool && h.tool !== tool) return { kind: 'missing', tool: h.tool };
     if (!h.tool && tool) return { kind: 'none' };
     if (h.notch) return this.notchHit(prop, facing);
+    if (prop.def.bears) return this.cutBorne(prop, facing);
     prop.hits++;
     if (h.impact) this.chips(prop, h.impact, facing);
     if (prop.hits < h.hits) {
@@ -133,6 +135,37 @@ export class HarvestSystem {
     if (prop.chain) this.separate(prop.chain.group);
     this.map.refreshTrunk();
     return { kind: 'hit', done: true, given, overflow };
+  }
+
+  /**
+   * Un coup sur un objet qui en porte un autre qui a une longueur (le billot et son rouleau) : l'objet porté perd
+   * `length.cut`, sa pièce (`length.piece`, le lien) tombe au sol à côté ; vidé, il disparaît et le porteur redevient
+   * `bears.empty` (le billot nu). La longueur est notée dans GameState.
+   */
+  private cutBorne(prop: PlacedProp, facing: Facing): HitResult {
+    const { bears, harvest: h } = prop.def;
+    const len = props[bears!.prop].length!;
+    const remaining = Math.max(0, (prop.length ?? len.start) - len.cut);
+    if (h!.impact) this.chips(prop, h!.impact, facing);
+    this.shake(prop);
+    const mapId = this.map.def.id;
+    const { x, y } = prop;
+    let at: PlacedProp = prop;
+    if (remaining > 0) {
+      prop.length = remaining;
+      const change = { type: prop.type, x, y, length: remaining };
+      if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
+      else changeObject(game, mapId, prop.id, change);
+    } else {
+      this.map.removeProp(prop);
+      at = this.map.placeProp({ id: prop.id, type: bears!.empty, x, y }, { spawned: prop.spawned });
+      const change = { type: bears!.empty, x, y };
+      if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
+      else changeObject(game, mapId, prop.id, change);
+    }
+    const { dropped } = this.dropAll([{ item: len.piece, min: 1, max: 1, give: false }], at.baseX, at.baseY);
+    for (const g of dropped) this.pop(g, at.baseX, at.baseY);
+    return { kind: 'hit', done: remaining === 0, given: 0, overflow: false, cut: { prop: bears!.prop, remaining } };
   }
 
   /** Chaque pièce de la chaîne dont l'encoche est coupée et qui est séparée à gauche devient sa bille, à la même place. */

@@ -11,6 +11,9 @@ import { findExit } from '../systems/exits';
 import { HarvestSystem, type HitResult } from '../systems/harvest';
 import { HandsSystem } from '../systems/hands';
 import { InteractionSystem } from '../systems/InteractionSystem';
+import { KnotSystem } from '../systems/knot';
+import { LongPress } from '../systems/longPress';
+import { PileCount } from '../systems/pileCount';
 import {
   canTake,
   clearSave,
@@ -50,6 +53,11 @@ function holdOf(h: Held): { stance: Stance; look: Look } {
   return { stance, look: { image: it.hold?.image, icon: it.icon } };
 }
 
+/** Une longueur en centimètres, dite en mètres : « 8 m », « 1,5 m ». */
+function metres(cm: number): string {
+  return `${String(Math.round(cm) / 100).replace('.', ',')} m`;
+}
+
 /**
  * Une carte avec le joueur dedans. La scène assemble et arbitre : chaque système fait une chose
  * (repérer un objet, trouver une sortie...) et c'est ici qu'on décide quoi en faire selon le mode.
@@ -60,6 +68,9 @@ export class WorldScene extends Phaser.Scene {
   private interaction!: InteractionSystem;
   private harvest!: HarvestSystem;
   private handsSystem!: HandsSystem;
+  private knots!: KnotSystem;
+  private press!: LongPress;
+  private pileCount!: PileCount;
   private autosave!: AutoSave;
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
   private talking?: Npc;
@@ -106,12 +117,18 @@ export class WorldScene extends Phaser.Scene {
       top: n.actor.y - n.actor.height,
       action: { kind: 'talk', dialogue: n.dialogue, npc: n },
     }));
-    // les deux mains prises par un seul objet : E ne fait que parler, ou reposer ce qu'on tient
-    this.interaction = new InteractionSystem(this, this.player, () =>
-      game.both ? talkable : [...this.map.interactables(), ...talkable],
-    );
+    // les deux mains prises par un seul objet : E ne fait que parler, ou reposer ce qu'on tient ; un objet du monde dans
+    // la main active (le rouleau) peut se poser sur ce qui l'accepte (le billot)
+    this.interaction = new InteractionSystem(this, this.player, () => {
+      if (game.both) return talkable;
+      const h = game.hands[game.active];
+      return [...this.map.interactables(h && 'prop' in h ? h.prop : undefined), ...talkable];
+    });
     this.harvest = new HarvestSystem(this, this.map);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
+    this.knots = new KnotSystem(this.map, this.handsSystem);
+    this.press = new LongPress(this);
+    this.pileCount = new PileCount(this, this.map);
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
 
@@ -158,14 +175,21 @@ export class WorldScene extends Phaser.Scene {
     this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : heldItem(game), this.mode === 'play');
     // ce qu'on tient et qui s'entrepose : sa pièce en transparence, là où elle ira
     this.handsSystem.updatePreview(this.player, this.mode === 'play');
-    if (this.mode !== 'play') return;
+    this.pileCount.update(this.player, this.mode === 'play');
+    if (this.mode !== 'play') return this.press.cancel();
     if (swap) {
       switchHand(game);
       this.handsChanged();
     }
     // R : la bille portée tourne ; le fantôme suit à l'image suivante
     if (turn) this.handsSystem.turn();
-    if (e.pressed && e.target) this.hands(e.target);
+    // E devant ce qui se noue ou se dénoue : l'appui attend, court (reprendre) ou maintenu (nouer, dénouer)
+    const press = this.press.update(time, input.handsDown(), e.target, this.player);
+    if (press?.kind === 'short') this.hands(press.target);
+    else if (press?.kind === 'long') this.knot(press.target);
+    else if (this.press.pending) return;
+    else if (e.pressed && e.target && this.knots.holds(e.target.action)) this.press.begin(e.target, time);
+    else if (e.pressed && e.target) this.hands(e.target);
     // E dans le vide (ou devant ce qu'on ne peut pas prendre) : reposer ce qu'on tient à deux mains
     else if (e.pressed && game.both) this.putDown();
     else if (drop) this.putDown();
@@ -190,9 +214,23 @@ export class WorldScene extends Phaser.Scene {
     } else if (a.kind === 'pile') {
       if (!this.handsSystem.takeFromPile(a.pile, a.place)) return this.notice('Les mains pleines.');
       this.handsChanged();
+    } else if (a.kind === 'tie') {
+      if (!this.handsSystem.takeTie(a.pile)) return this.notice('Les mains pleines.');
+      this.handsChanged();
+    } else if (a.kind === 'rest') {
+      if (this.handsSystem.rest(a.prop)) this.handsChanged();
+    } else if (a.kind === 'unload') {
+      if (!this.handsSystem.unload(a.prop)) return this.notice('Les mains pleines.');
+      this.handsChanged();
     } else {
       this.pickUp(a.ground);
     }
+  }
+
+  /** E maintenu devant un tas ou un fagot : nouer ou dénouer ; sinon, ce qui manque se dit. */
+  private knot(target: Interactable): void {
+    const why = this.knots.act(target.action);
+    if (why) this.notice(why);
   }
 
   /** Q, ou E quand on tient à deux mains : pose devant soi ce que tient la main active (en tas s'il s'entrepose), s'il y a la place. */
@@ -245,6 +283,12 @@ export class WorldScene extends Phaser.Scene {
     if (r.kind !== 'hit') return;
     if (r.given) this.handsChanged();
     if (r.overflow) this.game.events.emit(GameEvent.Notice, 'Les mains pleines.');
+    // ce qui reste de ce qu'on vient de couper (le rouleau sur le billot)
+    if (r.cut) {
+      const name = props[r.cut.prop].name;
+      const label = name[0].toUpperCase() + name.slice(1);
+      this.notice(r.cut.remaining > 0 ? `${label} : ${metres(r.cut.remaining)} restants.` : `${label} : vide.`);
+    }
   }
 
   /** Prend un objet au sol dans une main libre (les deux s'il le demande). */
@@ -285,11 +329,11 @@ export class WorldScene extends Phaser.Scene {
         break;
       }
       case 'prop':
-        if (!this.handsSystem.placeInFront(this.player, cmd.prop)) this.notice('Pas la place ici.');
+        if (!this.handsSystem.placeInFront(this.player, cmd.prop, cmd.length)) this.notice('Pas la place ici.');
         break;
       case 'pile': {
-        const n = this.handsSystem.pileInFront(this.player, cmd.pile, cmd.count, cmd.turned);
-        if (!n) this.notice('Pas la place ici.');
+        const n = this.handsSystem.pileInFront(this.player, cmd.pile, cmd.count, cmd.turned, cmd.tie);
+        if (n < 0) this.notice('Pas la place ici.');
         else if (n < cmd.count) this.notice(`Place pour ${n} seulement.`);
         break;
       }

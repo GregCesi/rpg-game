@@ -16,12 +16,14 @@ export const GameEvent = {
 
 /**
  * Ce que demande le panneau des outils de test (src/dieu/panel.ts) : donner un objet en main (ce que tenaient les mains
- * disparaît), poser devant Xéros un objet du monde ou un tas, aller sur une carte, remettre la carte ou la partie à zéro.
+ * disparaît ; un rouleau avec sa longueur, `length` de Held), poser devant Xéros un objet du monde (`length` : sa
+ * longueur, s'il en a une) ou un tas (`tie` : avec son lien dessous, `count` pouvant alors être 0), aller sur une carte,
+ * remettre la carte ou la partie à zéro.
  */
 export type DieuCommand =
   | { kind: 'give'; held: Held }
-  | { kind: 'prop'; prop: string }
-  | { kind: 'pile'; pile: string; count: number; turned: boolean }
+  | { kind: 'prop'; prop: string; length?: number }
+  | { kind: 'pile'; pile: string; count: number; turned: boolean; tie: boolean }
   | { kind: 'map'; map: string }
   | { kind: 'reset-map' }
   | { kind: 'reset-game' };

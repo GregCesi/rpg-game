@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 18,
+  "nextobjectid": 19,
   "properties": [
     {
       "name": "name",
@@ -200,6 +200,18 @@
           "width": 32,
           "height": 56,
           "gid": 1012
+        },
+        {
+          "id": 18,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "rope-coil",
+          "x": 168,
+          "y": 150,
+          "width": 7,
+          "height": 6,
+          "gid": 1047
         }
       ]
     },

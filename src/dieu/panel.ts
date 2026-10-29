@@ -73,6 +73,36 @@ function select(groups: [string, [string, string][]][]): HTMLSelectElement {
   return s;
 }
 
+/** Champ de longueur, en mètres, pour un objet qui en a une (`length` de props.json, ou celui qu'il porte). */
+function lengthInput(): { input: HTMLInputElement; label: HTMLLabelElement } {
+  const input = el('input', { type: 'number', min: '0.5', step: '0.5' });
+  return { input, label: el('label', {}, [input, 'm']) };
+}
+
+/** La longueur d'un objet de props.json : la sienne (le rouleau) ou celle de ce qu'il porte (le billot et son rouleau). */
+function lengthDef(key: string | undefined) {
+  const d = key ? props[key] : undefined;
+  return d?.length ?? (d?.bears ? props[d.bears.prop].length : undefined);
+}
+
+/** Montre le champ de longueur seulement pour un objet qui en a une, rempli de sa longueur neuve. */
+function syncLength(f: { input: HTMLInputElement; label: HTMLLabelElement }, key: string | undefined): void {
+  const len = lengthDef(key);
+  f.label.style.display = len ? '' : 'none';
+  if (len) {
+    f.input.max = String(len.start / 100);
+    f.input.value = String(len.start / 100);
+  }
+}
+
+/** La longueur choisie, en centimètres, pour l'objet `key` (undefined s'il n'en a pas), entre 50 cm et la longueur neuve. */
+function lengthOf(f: { input: HTMLInputElement }, key: string): number | undefined {
+  const len = lengthDef(key);
+  if (!len) return undefined;
+  const m = Math.min(Math.max(0.5, Number(f.input.value) || len.start / 100), len.start / 100);
+  return Math.round(m * 100);
+}
+
 /** Monte le panneau à côté du jeu (dans #stage) ; `send` transmet une commande à la scène du monde. */
 export function mountPanel(send: (cmd: DieuCommand) => void): void {
   document.head.append(el('style', { textContent: CSS }));
@@ -82,33 +112,51 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     ['Objets possédables', Object.entries(items).map(([k, d]) => [`item:${k}`, `${d.name} (${k})`])],
     ['Objets du monde à porter', Object.entries(props).filter(([, d]) => d.take).map(([k, d]) => [`prop:${k}`, `${d.name} (${k})`])],
   ]);
+  // la longueur d'un objet qui en a une (le rouleau de corde, en mètres), pour le donner ou le poser
+  const giveLength = lengthInput();
+  const syncGive = () => syncLength(giveLength, give.value.startsWith('prop:') ? give.value.slice(5) : undefined);
+  give.addEventListener('change', syncGive);
+  syncGive();
   const giveButton = button('Donner', () => {
     const [kind, key] = give.value.split(/:(.*)/);
-    send({ kind: 'give', held: kind === 'item' ? { item: key } : { prop: key } });
+    const length = lengthOf(giveLength, key);
+    send({ kind: 'give', held: kind === 'item' ? { item: key } : { prop: key, ...(length !== undefined ? { length } : {}) } });
   });
 
   // poser devant Xéros : tout objet du monde de props.json
   const prop = select([['Objets du monde', Object.entries(props).map(([k, d]) => [k, `${d.name} (${k})`])]]);
-  const propButton = button('Poser', () => send({ kind: 'prop', prop: prop.value }));
+  const propLength = lengthInput();
+  const syncProp = () => syncLength(propLength, prop.value);
+  prop.addEventListener('change', syncProp);
+  syncProp();
+  const propButton = button('Poser', () => send({ kind: 'prop', prop: prop.value, length: lengthOf(propLength, prop.value) }));
 
   // un tas : genre, nombre de pièces (au plus ses places), sens nord-sud si le genre se tourne
   const pile = select([['Genres de tas', Object.entries(piles).map(([k, d]) => [k, `${d.name} (${k})`])]]);
+  // avec son lien dessous, si le genre en a un (les branches) : 0 pièce = le lien seul
   const count = el('input', { type: 'number', min: '1', value: '5' });
   const turned = el('input', { type: 'checkbox' });
   const turnedLabel = el('label', {}, [turned, 'nord-sud']);
+  const tie = el('input', { type: 'checkbox' });
+  const tieLabel = el('label', {}, [tie, 'avec lien']);
   const syncPile = () => {
     const def = piles[pile.value];
     count.max = String(Object.keys(def.places).length);
     turned.disabled = !def.turned;
     if (!def.turned) turned.checked = false;
+    tie.disabled = !def.tie;
+    if (!def.tie) tie.checked = false;
+    count.min = tie.checked ? '0' : '1';
   };
   pile.addEventListener('change', syncPile);
+  tie.addEventListener('change', syncPile);
   syncPile();
   const pileButton = button('Poser le tas', () => {
     const max = Number(count.max);
-    const n = Math.min(Math.max(1, Math.round(Number(count.value) || 1)), max);
+    const min = Number(count.min);
+    const n = Math.min(Math.max(min, Math.round(Number(count.value) || 0)), max);
     count.value = String(n);
-    send({ kind: 'pile', pile: pile.value, count: n, turned: turned.checked });
+    send({ kind: 'pile', pile: pile.value, count: n, turned: turned.checked, tie: tie.checked });
   });
 
   const mapButtons = Object.entries(maps).map(([id, m]) => button(m.name, () => send({ kind: 'map', map: id })));
@@ -117,13 +165,13 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('h2', { textContent: 'Outils de test' }),
     el('h3', { textContent: 'Donner en main' }),
     give,
-    giveButton,
+    el('div', { className: 'row' }, [giveLength.label, giveButton]),
     el('h3', { textContent: 'Poser devant Xéros' }),
     prop,
-    propButton,
+    el('div', { className: 'row' }, [propLength.label, propButton]),
     el('h3', { textContent: 'Tas devant Xéros' }),
     pile,
-    el('div', { className: 'row' }, [count, el('span', { textContent: ' pièces ' }), turnedLabel]),
+    el('div', { className: 'row' }, [count, el('span', { textContent: ' pièces ' }), turnedLabel, tieLabel]),
     pileButton,
     el('h3', { textContent: 'Aller sur une carte' }),
     el('div', { className: 'row' }, mapButtons),

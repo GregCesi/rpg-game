@@ -47,6 +47,23 @@ export function footprint(def: PropDef, w: number, h: number, flip: boolean): Bo
   };
 }
 
+/** Milieu de l'emprise au sol de toutes les places au sol d'un tas (repère du tas) : où se vise et se centre le tas entier. */
+export function groundCenter(def: PileDef): [number, number] {
+  const b = groundBox(def);
+  return [(b.left + b.right) / 2, (b.top + b.bottom) / 2];
+}
+
+/** Emprise au sol de toutes les places au sol d'un tas (repère du tas). */
+export function groundBox(def: PileDef): Box {
+  const bodies = Object.values(def.places).flatMap((q) => (q.body ? [q.body] : []));
+  return {
+    left: Math.min(...bodies.map((b) => b.x)),
+    top: Math.min(...bodies.map((b) => b.y)),
+    right: Math.max(...bodies.map((b) => b.x + b.w)),
+    bottom: Math.max(...bodies.map((b) => b.y + b.h)),
+  };
+}
+
 /** Hachage stable d'une position : la même case a toujours les mêmes détails au sol. */
 function hash(x: number, y: number): number {
   let h = (x * 374761393 + y * 668265263) >>> 0;
@@ -88,6 +105,11 @@ export interface PlacedProp {
   interact?: string;
   /** Coups déjà reçus (récolte en cours) ; repart de zéro quand on revient sur la carte. */
   hits: number;
+  /**
+   * Longueur restante (cm) de ce qu'il est (le rouleau, `length` de props.json) ou de ce qu'il porte (le billot et son
+   * rouleau, `bears`) ; undefined pour le reste.
+   */
+  length?: number;
 }
 
 /** Un objet possédable posé au sol, affiché. */
@@ -96,9 +118,9 @@ export interface PlacedGround {
   image: Phaser.GameObjects.Image;
 }
 
-/** Un tas posé, affiché : une image par pièce posée, à sa place, et la collision des pièces au sol. */
+/** Un tas posé, affiché : son lien dessous, une image par pièce posée, à sa place, et la collision des pièces au sol. */
 export interface PlacedPile {
-  /** L'état du tas dans GameState (genre, point au sol, places prises, sens). */
+  /** L'état du tas dans GameState (genre, point au sol, places prises, sens, lien). */
   pile: Pile;
   /** La forme du tas dans son sens (`shapeOf`) : ses places sont celles-ci. */
   def: PileDef;
@@ -110,13 +132,24 @@ export interface PlacedPile {
   parts: Phaser.GameObjects.GameObject[];
 }
 
-/** Ce que fait la touche E devant une cible. */
+/**
+ * Ce que fait la touche E devant une cible. `rest` : poser ce qu'on tient sur l'objet (le rouleau sur le billot) ;
+ * `unload` : reprendre ce qu'il porte ; `tie` : reprendre le lien d'un tas qui n'a plus de pièce.
+ */
 export type Action =
   | { kind: 'talk'; dialogue: string; npc?: Npc }
   | { kind: 'harvest'; prop: PlacedProp }
   | { kind: 'pickup'; ground: PlacedGround }
   | { kind: 'take'; prop: PlacedProp }
-  | { kind: 'pile'; pile: PlacedPile; place: string };
+  | { kind: 'pile'; pile: PlacedPile; place: string }
+  | { kind: 'rest'; prop: PlacedProp }
+  | { kind: 'unload'; prop: PlacedProp }
+  | { kind: 'tie'; pile: PlacedPile };
+
+/** Longueur d'un objet neuf (posé dans Tiled) : celle de son `length`, ou de l'objet qu'il porte (`bears`). */
+function startLength(def: PropDef): number | undefined {
+  return def.length?.start ?? (def.bears ? propDefs[def.bears.prop].length?.start : undefined);
+}
 
 /** Ce avec quoi le joueur peut interagir avec E. (x, y) = centre de sa base au sol ; top = haut de l'image. */
 export interface Interactable {
@@ -180,9 +213,9 @@ export class GameMap {
     for (const o of def.objects) {
       const c = changes.changes[o.id];
       if (!c) this.placeProp(o);
-      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip });
+      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length });
     }
-    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, hits: o.hits });
+    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, hits: o.hits, length: o.length });
     this.refreshTrunk();
     for (const g of changes.ground) this.placeGround(g);
     for (const pile of changes.piles) this.placePile(pile);
@@ -193,12 +226,19 @@ export class GameMap {
     }
   }
 
-  /** Ce que E peut viser en ce moment : dialogues, récoltes à la main, objets à prendre, objets au sol. */
-  interactables(): Interactable[] {
+  /**
+   * Ce que E peut viser en ce moment : dialogues, récoltes à la main, objets à prendre, objets au sol, pièces de tas,
+   * lien seul d'un tas, objets qui portent quelque chose ; et, `held` étant l'objet du monde dans la main active (le
+   * rouleau), les objets sur lesquels le poser (`rest`).
+   */
+  interactables(held?: string): Interactable[] {
     const list: Interactable[] = [];
     for (const p of this.props) {
       const dialogue = p.interact ?? p.def.interact;
-      if (dialogue) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'talk', dialogue } });
+      if (held && p.def.rest?.[held]) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'rest', prop: p } });
+      else if (dialogue) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'talk', dialogue } });
+      // ce qu'il porte se reprend avec E (le rouleau sur le billot) ; on le coupe avec l'outil (Espace)
+      else if (p.def.bears) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'unload', prop: p } });
       else if (p.def.harvest && !p.def.harvest.tool) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'harvest', prop: p } });
       // un objet à prendre (la bille) se vise au centre de sa collision ; caché (il attend la fin d'une chute), il ne se prend pas
       else if (p.def.take && p.image.visible) {
@@ -208,6 +248,12 @@ export class GameMap {
     }
     // E reprend la pièce la plus haute d'un tas : chacune des plus hautes se vise à son point visé, au-dessus de son image
     for (const p of this.piles) {
+      // le lien seul, sans pièce dessus : il se reprend, visé au milieu de l'emprise au sol du tas
+      if (!p.pile.places.length) {
+        const [ax, ay] = groundCenter(p.def);
+        list.push({ x: p.pile.x + ax, y: p.pile.y + ay, top: p.pile.y + p.def.tie!.y - this.textureSize(p.def.tie!.image).h, action: { kind: 'tie', pile: p } });
+        continue;
+      }
       for (const place of topPieces(p.def, p.pile.places)) {
         const [ax, ay] = placeAim(p.def, place);
         const q = p.def.places[place];
@@ -301,11 +347,15 @@ export class GameMap {
   placePile(pile: Pile): PlacedPile {
     const def = shapeOf(pileDefs[pile.pile], !!pile.turned);
     const ground = pile.places.map((id) => def.places[id]).filter((q) => q.body);
-    const depth = Math.max(...pile.places.map((id) => pile.y + def.places[id].y));
+    const tie = pile.tie ? def.tie : undefined;
+    // le lien seul est à la profondeur de son propre bas
+    const depth = Math.max(...pile.places.map((id) => pile.y + def.places[id].y), tie ? pile.y + tie.y : -Infinity);
     const parts: Phaser.GameObjects.GameObject[] = drawOrder(def, pile.places).map((id, i) => {
       const q = def.places[id];
-      return this.scene.add.image(pile.x + q.x, pile.y + q.y, q.image).setOrigin(0, 1).setDepth(depth + i / 1000);
+      return this.scene.add.image(pile.x + q.x, pile.y + q.y, q.image).setOrigin(0, 1).setDepth(depth + (i + 1) / 1000);
     });
+    // le lien ceinture le tas par-dessous : sous toutes les pièces
+    if (tie) parts.push(this.scene.add.image(pile.x + tie.x, pile.y + tie.y, tie.image).setOrigin(0, 1).setDepth(depth));
     const zones = pileBlocks(def, pile.places) ? ground.map((q) => this.addObstacle(pile.x + q.body!.x + q.body!.w / 2, pile.y + q.body!.y + q.body!.h / 2, q.body!.w, q.body!.h)) : [];
     parts.push(...zones);
     const placed = { pile, def, zones, depth, parts };
@@ -329,7 +379,7 @@ export class GameMap {
    * (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds).
    * `flip` : version couchée vers la gauche (image `-left`) ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
    */
-  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain; hits?: number } = {}): PlacedProp {
+  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain; hits?: number; length?: number } = {}): PlacedProp {
     const flip = !!opts.flip;
     const scene = this.scene;
     const p = propDefs[o.type];
@@ -382,6 +432,7 @@ export class GameMap {
       parts,
       hits: opts.hits ?? 0,
       interact: o.interact,
+      length: opts.length ?? startLength(p),
     };
     this.props.push(placed);
 

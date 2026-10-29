@@ -3,7 +3,23 @@ import { DEPTH, INTERACT, PUT_DOWN } from '../config';
 import { items, piles, props } from '../content';
 import type { Facing } from '../content/types';
 import type { Player } from '../entities/Player';
-import { changeObject, changeSpawned, dropItem, emptyPlace, fillPlace, game, held, release, spawnObject, startPile, take, turnHeld, type Held } from '../state';
+import {
+  addPile,
+  changeObject,
+  changeSpawned,
+  dropItem,
+  emptyPlace,
+  fillPlace,
+  game,
+  held,
+  release,
+  setPileTie,
+  spawnObject,
+  startPile,
+  take,
+  turnHeld,
+  type Held,
+} from '../state';
 import { footprint, type Box, type GameMap, type PlacedPile, type PlacedProp } from '../world/GameMap';
 import { openPlaces, placeAim, shapeOf } from '../world/pileShape';
 
@@ -23,6 +39,14 @@ const turnedOf = (what: Held) => 'prop' in what && !!what.turned;
 function pileOf(what: Held): string | undefined {
   return 'item' in what ? items[what.item].pile : props[what.prop].take?.pile;
 }
+
+/** Genre de tas que lie ce qu'on tient (le lien : `tie.item` d'un genre de piles.json), s'il en lie un. */
+function tieOf(what: Held): string | undefined {
+  return 'item' in what ? Object.keys(piles).find((k) => piles[k].tie?.item === what.item) : undefined;
+}
+
+/** Où ira le lien qu'on pose : sous un tas posé qui n'en a pas, ou par terre, en (x, y), où il commence un tas. */
+type TieTarget = { pile: PlacedPile } | { genre: string; x: number; y: number };
 
 /**
  * Coin haut gauche d'une boîte de fw × fh qui touche presque la collision `b` de Xéros (écart `PUT_DOWN.gap`), du côté
@@ -69,6 +93,8 @@ export class HandsSystem {
    */
   updatePreview(player: Player, active: boolean): void {
     const what = held(game);
+    const tied = active && what ? tieOf(what) : undefined;
+    if (tied) return this.tiePreview(player, tied);
     const genre = what && pileOf(what);
     const t = active && genre ? this.pileTarget(player, genre, turnedOf(what)) : undefined;
     if (!t) {
@@ -88,7 +114,9 @@ export class HandsSystem {
    * (objet né retiré, objet de Tiled noté disparu). Renvoie false si les mains ne sont pas libres.
    */
   takeProp(p: PlacedProp): boolean {
-    if (!take(game, { prop: p.type, ...(p.flip ? { flip: true } : {}) }, p.def.take!.hands)) return false;
+    // ce qui a une longueur (le rouleau) l'emporte avec lui
+    const length = p.def.length ? { length: p.length ?? p.def.length.start } : {};
+    if (!take(game, { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length }, p.def.take!.hands)) return false;
     const mapId = this.map.def.id;
     if (p.spawned) changeSpawned(game, mapId, p.id, { x: p.x, y: p.y });
     else changeObject(game, mapId, p.id, { x: p.x, y: p.y });
@@ -108,9 +136,53 @@ export class HandsSystem {
     // une bille reprise d'un tas nord-sud reste tournée
     if (!take(game, 'prop' in piece && p.pile.turned ? { ...piece, turned: true } : { ...piece }, hands)) return false;
     emptyPlace(game, this.map.def.id, p.pile.id, place);
-    if (!p.pile.places.length) this.map.removePile(p);
+    if (!p.pile.places.length && !p.pile.tie) this.map.removePile(p);
     else this.map.refreshPile(p);
     return true;
+  }
+
+  /** Reprend le lien d'un tas qui n'a plus de pièce : le tas disparaît. Renvoie false si aucune main n'est libre. */
+  takeTie(p: PlacedPile): boolean {
+    const item = p.def.tie!.item;
+    if (!take(game, { item }, items[item].hands)) return false;
+    setPileTie(game, this.map.def.id, p.pile.id, false);
+    this.map.removePile(p);
+    return true;
+  }
+
+  /**
+   * Pose ce que tient la main active sur l'objet `p` (le rouleau sur le billot) : il devient l'objet de son `rest` qui
+   * le porte, avec sa longueur. Renvoie false si la main active ne tient pas ce qu'il accepte.
+   */
+  rest(p: PlacedProp): boolean {
+    const what = game.both ? undefined : game.hands[game.active];
+    const becomes = what && 'prop' in what ? p.def.rest?.[what.prop] : undefined;
+    if (!what || !('prop' in what) || !becomes) return false;
+    release(game);
+    this.replace(p, becomes, what.length ?? props[what.prop].length?.start);
+    return true;
+  }
+
+  /**
+   * Reprend ce que porte l'objet `p` (le rouleau sur le billot), avec sa longueur : il redevient `bears.empty`.
+   * Renvoie false si les mains ne sont pas libres.
+   */
+  unload(p: PlacedProp): boolean {
+    const { prop, empty } = p.def.bears!;
+    const def = props[prop];
+    if (!take(game, { prop, ...(p.length !== undefined ? { length: p.length } : {}) }, def.take!.hands)) return false;
+    this.replace(p, empty, undefined);
+    return true;
+  }
+
+  /** L'objet `p` devient `type`, à la même place, avec sa longueur (`length`) : à l'écran et dans GameState. */
+  private replace(p: PlacedProp, type: string, length: number | undefined): void {
+    const { x, y } = p;
+    this.map.removeProp(p);
+    this.map.placeProp({ id: p.id, type, x, y }, { spawned: p.spawned, length });
+    const change = { type, x, y, ...(length !== undefined ? { length } : {}) };
+    if (p.spawned) changeSpawned(game, this.map.def.id, p.id, change);
+    else changeObject(game, this.map.def.id, p.id, change);
   }
 
   /**
@@ -120,6 +192,8 @@ export class HandsSystem {
   putDown(player: Player): PutDownResult {
     const what = held(game);
     if (!what) return 'empty';
+    const tied = tieOf(what);
+    if (tied) return this.putTie(player, tied);
     const pile = pileOf(what);
     if (pile) return this.putOnPile(player, pile, turnedOf(what));
     const spot = 'item' in what ? this.groundSpot(player) : this.propSpot(player, what);
@@ -127,7 +201,10 @@ export class HandsSystem {
     release(game);
     const mapId = this.map.def.id;
     if ('item' in what) this.map.placeGround(dropItem(game, mapId, what.item, spot.x, spot.y));
-    else this.map.placeProp(spawnObject(game, mapId, what.prop, spot.x, spot.y, !!what.flip), { flip: what.flip, spawned: true });
+    else {
+      const o = spawnObject(game, mapId, what.prop, spot.x, spot.y, !!what.flip, undefined, what.length);
+      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length });
+    }
     return 'done';
   }
 
@@ -147,19 +224,20 @@ export class HandsSystem {
    * Outils de test (?dieu) : pose devant Xéros un objet du monde de props.json, comme on poserait une bille (objet né,
    * noté dans GameState). Renvoie false s'il n'y a pas la place.
    */
-  placeInFront(player: Player, type: string): boolean {
+  placeInFront(player: Player, type: string, length?: number): boolean {
     const spot = this.propSpot(player, { prop: type });
     if (!spot) return false;
-    this.map.placeProp(spawnObject(game, this.map.def.id, type, spot.x, spot.y, false), { spawned: true });
+    this.map.placeProp(spawnObject(game, this.map.def.id, type, spot.x, spot.y, false, undefined, length), { spawned: true, length });
     return true;
   }
 
   /**
    * Outils de test (?dieu) : un tas du genre `genre` de `count` pièces devant Xéros, dans le sens `turned`, toute son
    * emprise au sol devant lui. Les places sont prises comme on les prendrait à la main, la couche du bas d'abord, une place au sol seulement si elle est
-   * libre. Renvoie le nombre de pièces posées (0 : pas la place).
+   * libre ; `tie` : avec son lien dessous (`count` peut alors être 0, le lien seul). Renvoie le nombre de pièces posées
+   * (-1 : pas la place).
    */
-  pileInFront(player: Player, genre: string, count: number, turned: boolean): number {
+  pileInFront(player: Player, genre: string, count: number, turned: boolean, tie: boolean): number {
     const def = shapeOf(piles[genre], turned);
     const bodies = [...this.others, player.actor.body];
     // toute l'emprise au sol du tas devant Xéros, pas seulement sa première pièce : les autres places au sol ne
@@ -171,8 +249,8 @@ export class HandsSystem {
     const h = Math.max(...ground.map((b) => b.y + b.h)) - top;
     const [l, t] = frontCorner(player.actor.body, player.actor.facing, w, h);
     const spot = { x: Math.round(l - left), y: Math.round(t - top) };
-    if (!this.groundFree(this.boxAt(def.places[def.start].body!, spot.x, spot.y), bodies)) return 0;
-    const taken = [def.start];
+    if (!this.groundFree(this.boxAt(def.places[def.start].body!, spot.x, spot.y), bodies)) return -1;
+    const taken = count > 0 ? [def.start] : [];
     while (taken.length < count) {
       const next = openPlaces(def, taken)
         .filter((q) => {
@@ -183,11 +261,79 @@ export class HandsSystem {
       if (!next) break;
       taken.push(next);
     }
-    const mapId = this.map.def.id;
-    const pile = startPile(game, mapId, genre, spot.x, spot.y, def.start, turned);
-    for (const q of taken.slice(1)) fillPlace(game, mapId, pile.id, q);
-    this.map.placePile(pile);
+    this.map.placePile(addPile(game, this.map.def.id, { pile: genre, x: spot.x, y: spot.y, places: taken, turned, tie: tie && !!def.tie }));
     return taken.length;
+  }
+
+  /**
+   * Un tas du genre `genre` tiendrait au sol en (x, y) avec les pièces `places` : leurs places au sol (forme `turned`)
+   * sont libres (personnages compris, Xéros non : il est collé à ce qu'il noue, et le tas le repousse d'un pixel au
+   * besoin), hors de ce qu'il remplace : le tas `own`, ou l'objet `prop` (un fagot posé hors d'un tas). Pour nouer et
+   * dénouer (systems/knot.ts).
+   */
+  pileFree(genre: string, turned: boolean, x: number, y: number, places: string[], own?: PlacedPile, prop?: PlacedProp): boolean {
+    const def = shapeOf(piles[genre], turned);
+    const bodies = this.others;
+    const ignore = [...(own?.zones ?? []), ...(prop?.parts ?? [])];
+    return places.every((q) => {
+      const b = def.places[q].body;
+      return !b || this.groundFree(this.boxAt(b, x, y), bodies, own, ignore);
+    });
+  }
+
+  /**
+   * Pose le lien (`tieOf`) : sous le tas visé, ou par terre devant Xéros, où il commence un tas du genre `genre` qui
+   * n'a encore aucune pièce. Sans place, rien ne bouge.
+   */
+  private putTie(player: Player, genre: string): PutDownResult {
+    const t = this.tieTarget(player, genre);
+    if (!t) return 'blocked';
+    release(game);
+    const mapId = this.map.def.id;
+    if ('pile' in t) {
+      setPileTie(game, mapId, t.pile.pile.id, true);
+      this.map.refreshPile(t.pile);
+    } else this.map.placePile(addPile(game, mapId, { pile: genre, x: t.x, y: t.y, places: [], tie: true }));
+    this.ghost.setVisible(false);
+    return 'done';
+  }
+
+  /**
+   * Où ira le lien : sous le tas du genre `genre` sans lien dont une pièce est la plus près du point que regarde Xéros,
+   * à portée ; sinon par terre, la première place d'un nouveau tas juste devant lui, si elle est libre.
+   */
+  private tieTarget(player: Player, genre: string): TieTarget | undefined {
+    const probe = player.probe(INTERACT.reach);
+    let best: PlacedPile | undefined;
+    let bestD: number = INTERACT.radius;
+    for (const p of this.map.piles) {
+      if (p.pile.pile !== genre || p.pile.tie) continue;
+      for (const place of p.pile.places) {
+        const [ax, ay] = placeAim(p.def, place);
+        const d = Math.hypot(p.pile.x + ax - probe.x, p.pile.y + ay - probe.y);
+        if (d < bestD) {
+          best = p;
+          bestD = d;
+        }
+      }
+    }
+    if (best) return { pile: best };
+    const spot = this.newPileSpot(player, genre, false);
+    return spot && { genre, ...spot };
+  }
+
+  /** Le lien en transparence, là où il ira : sous le tas visé, ou par terre devant Xéros. */
+  private tiePreview(player: Player, genre: string): void {
+    const t = this.tieTarget(player, genre);
+    if (!t) {
+      this.ghost.setVisible(false);
+      return;
+    }
+    const tie = piles[genre].tie!;
+    const [x, y] = 'pile' in t ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
+    // sous les pièces du tas visé ; par terre, à sa propre profondeur
+    const depth = 'pile' in t ? t.pile.depth : y + tie.y;
+    this.ghost.setTexture(tie.image).setPosition(x + tie.x, y + tie.y).setDepth(Math.min(depth, DEPTH.prompt - 1)).setVisible(true);
   }
 
   /**
@@ -255,8 +401,8 @@ export class HandsSystem {
    * d'un tas, même d'un tas qui ne bloque pas encore le passage. Les collisions du tas `own` ne comptent pas : ses
    * places sont faites pour aller ensemble.
    */
-  private groundFree(box: Box, bodies: Phaser.Physics.Arcade.Body[], own?: PlacedPile): boolean {
-    if (!this.map.areaFree(box, bodies, own?.zones)) return false;
+  private groundFree(box: Box, bodies: Phaser.Physics.Arcade.Body[], own?: PlacedPile, ignore: readonly Phaser.GameObjects.GameObject[] = own?.zones ?? []): boolean {
+    if (!this.map.areaFree(box, bodies, ignore)) return false;
     return !this.map.piles.some(
       (p) =>
         p !== own &&

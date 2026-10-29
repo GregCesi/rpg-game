@@ -6,14 +6,18 @@ import { z } from 'zod';
 
 const id = z.string().min(1);
 
+/** Longueur restante d'une quantité mesurée (le rouleau de corde, `length` de props.json), en centimètres. */
+const length = z.number().int().nonnegative().optional();
+
 /**
  * Ce que tient une main : un objet possédable (`item`, clé de items.json), ou un objet du monde pris sur une carte
  * (`prop`, clé de props.json : la bille ; `flip` : sa version couchée vers la gauche ; `turned` : tournée nord-sud, R,
- * pour le tas qu'elle commencera). Pas de besace : les mains sont tout l'inventaire.
+ * pour le tas qu'elle commencera ; `length` : sa longueur restante, le rouleau de corde). Pas de besace : les mains sont
+ * tout l'inventaire.
  */
 export const HeldSchema = z.union([
   z.strictObject({ item: id }),
-  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional() }),
+  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length }),
 ]);
 
 /** Une main : 0 = la gauche, 1 = la droite. */
@@ -21,9 +25,10 @@ export const HandSchema = z.union([z.literal(0), z.literal(1)]);
 
 /**
  * Un objet de carte changé : il est devenu `type` (clé de props.json), posé en (x, y) (coin bas gauche) ; `type` absent = disparu.
- * `flip` : image retournée (ce qui est tombé vers la gauche).
+ * `flip` : image retournée (ce qui est tombé vers la gauche) ; `length` : longueur restante de ce qu'il est ou porte (le
+ * rouleau, le billot qui porte le rouleau).
  */
-export const WorldChangeSchema = z.strictObject({ type: id.optional(), x: z.number(), y: z.number(), flip: z.boolean().optional() });
+export const WorldChangeSchema = z.strictObject({ type: id.optional(), x: z.number(), y: z.number(), flip: z.boolean().optional(), length });
 
 /** Place d'un objet né dans la chaîne de ce qui est né avec lui (les pièces de l'arbre couché, bout à bout). */
 export const ChainSchema = z.strictObject({
@@ -46,6 +51,8 @@ export const SpawnedSchema = z.strictObject({
   chain: ChainSchema.optional(),
   /** Coups déjà reçus (profondeur de l'encoche d'une pièce de tronc) : l'entaille se retrouve au retour sur la carte. */
   hits: z.number().int().positive().optional(),
+  /** Longueur restante de ce qu'il est ou porte (le rouleau posé, le billot qui porte le rouleau). */
+  length,
 });
 
 /** Un objet possédable posé au sol : (x, y) = son point au sol. */
@@ -53,17 +60,21 @@ export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegativ
 
 /**
  * Un tas posé pendant la partie : un seul objet du monde, son genre (`pile`, clé de piles.json), son point au sol (x, y :
- * l'origine du repère de ses places), ses places prises (`places`, identifiants de piles.json) et son sens (`turned` :
- * nord-sud, les places de `turned` dans piles.json), fixé par sa première pièce.
+ * l'origine du repère de ses places), ses places prises (`places`, identifiants de piles.json), son sens (`turned` :
+ * nord-sud, les places de `turned` dans piles.json), fixé par sa première pièce, et son lien (`tie` : le lien qui le
+ * ceinture par-dessous, `tie` du genre dans piles.json). Un tas lié peut n'avoir aucune pièce : le lien seul, par terre.
  */
-export const PileSchema = z.strictObject({
-  id: z.number().int().nonnegative(),
-  pile: id,
-  x: z.number(),
-  y: z.number(),
-  places: z.array(id).min(1),
-  turned: z.boolean().optional(),
-});
+export const PileSchema = z
+  .strictObject({
+    id: z.number().int().nonnegative(),
+    pile: id,
+    x: z.number(),
+    y: z.number(),
+    places: z.array(id),
+    turned: z.boolean().optional(),
+    tie: z.boolean().optional(),
+  })
+  .refine((p) => p.places.length > 0 || p.tie, { message: 'un tas sans pièce ni lien' });
 
 /** Ce qui a changé sur une carte. */
 export const MapStateSchema = z.strictObject({
@@ -198,9 +209,9 @@ export function removeGroundItem(s: GameState, mapId: string, groundId: number):
   revision++;
 }
 
-/** Fait naître un objet sur une carte ; renvoie ce qui a été noté. */
-export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, flip: boolean, chain?: Chain): Spawned {
-  const o = { id: s.nextSpawnId++, type, x, y, ...(flip ? { flip } : {}), ...(chain ? { chain } : {}) };
+/** Fait naître un objet sur une carte (`length` : sa longueur restante, le rouleau) ; renvoie ce qui a été noté. */
+export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, flip: boolean, chain?: Chain, length?: number): Spawned {
+  const o = { id: s.nextSpawnId++, type, x, y, ...(flip ? { flip } : {}), ...(chain ? { chain } : {}), ...(length !== undefined ? { length } : {}) };
   mapState(s, mapId).spawned.push(o);
   revision++;
   return o;
@@ -215,7 +226,15 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
   else {
     // nouvel objet : sa place dans la chaîne reste, ses coups repartent de zéro
     const chain = m.spawned[i].chain;
-    m.spawned[i] = { id: spawnId, type: change.type, x: change.x, y: change.y, ...(change.flip ? { flip: true } : {}), ...(chain ? { chain } : {}) };
+    m.spawned[i] = {
+      id: spawnId,
+      type: change.type,
+      x: change.x,
+      y: change.y,
+      ...(change.flip ? { flip: true } : {}),
+      ...(chain ? { chain } : {}),
+      ...(change.length !== undefined ? { length: change.length } : {}),
+    };
   }
   revision++;
 }
@@ -242,13 +261,50 @@ export function fillPlace(s: GameState, mapId: string, pileId: number, place: st
   revision++;
 }
 
-/** La pièce de la place `place` est reprise ; sans pièce, le tas disparaît de la carte. */
+/** La pièce de la place `place` est reprise ; sans pièce ni lien, le tas disparaît de la carte. */
 export function emptyPlace(s: GameState, mapId: string, pileId: number, place: string): void {
   const m = mapState(s, mapId);
   const i = m.piles.findIndex((q) => q.id === pileId);
   if (i < 0) return;
   m.piles[i].places = m.piles[i].places.filter((q) => q !== place);
-  if (!m.piles[i].places.length) m.piles.splice(i, 1);
+  if (!m.piles[i].places.length && !m.piles[i].tie) m.piles.splice(i, 1);
+  revision++;
+}
+
+/**
+ * Pose un tas tout fait : genre, point au sol, places prises, sens et lien (un lien seul par terre, un fagot dénoué en
+ * branches, un tas noué en fagot) ; renvoie ce qui a été noté.
+ */
+export function addPile(s: GameState, mapId: string, pile: Omit<Pile, 'id'>): Pile {
+  const p: Pile = {
+    id: s.nextPileId++,
+    pile: pile.pile,
+    x: pile.x,
+    y: pile.y,
+    places: [...pile.places],
+    ...(pile.turned ? { turned: true } : {}),
+    ...(pile.tie ? { tie: true } : {}),
+  };
+  mapState(s, mapId).piles.push(p);
+  revision++;
+  return p;
+}
+
+/** Retire un tas entier de la carte (noué en fagot, fagot dénoué). */
+export function removePile(s: GameState, mapId: string, pileId: number): void {
+  const m = mapState(s, mapId);
+  m.piles = m.piles.filter((q) => q.id !== pileId);
+  revision++;
+}
+
+/** Le lien passe sous le tas (`tie` = true), ou en est repris (false) : sans pièce ni lien, le tas disparaît. */
+export function setPileTie(s: GameState, mapId: string, pileId: number, tie: boolean): void {
+  const m = mapState(s, mapId);
+  const i = m.piles.findIndex((q) => q.id === pileId);
+  if (i < 0) return;
+  if (tie) m.piles[i].tie = true;
+  else delete m.piles[i].tie;
+  if (!m.piles[i].places.length && !m.piles[i].tie) m.piles.splice(i, 1);
   revision++;
 }
 
