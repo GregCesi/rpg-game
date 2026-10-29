@@ -135,6 +135,9 @@ export class WorldScene extends Phaser.Scene {
 
   private report(r: HitResult): void {
     if (r.kind === 'missing') this.game.events.emit(GameEvent.Notice, `Sans ${items[r.tool].name}, rien à faire.`);
+    if (r.kind !== 'hit') return;
+    if (r.given) this.game.events.emit(GameEvent.InventoryChanged);
+    if (r.overflow) this.game.events.emit(GameEvent.Notice, 'Plus de place.');
   }
 
   /** Ramasse un objet au sol, un seul, s'il reste de la place. */

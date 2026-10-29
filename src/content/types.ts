@@ -41,7 +41,13 @@ export const TilesetCatalogSchema = z.strictObject({
 export const RectSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive() });
 
 /** Ce qui tombe d'un objet récolté : `min` à `max` exemplaires de l'objet possédable `item` (clé de items.json). */
-export const DropSchema = z.strictObject({ item: id, min: z.number().int().min(0), max: z.number().int().min(1) });
+export const DropSchema = z.strictObject({
+  item: id,
+  min: z.number().int().min(0),
+  max: z.number().int().min(1),
+  /** Va directement dans l'inventaire au lieu de tomber au sol (s'il est plein, tombe au sol quand même). */
+  give: z.boolean().default(false),
+});
 
 /**
  * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.

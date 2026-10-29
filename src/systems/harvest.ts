@@ -1,11 +1,18 @@
 import Phaser from 'phaser';
 import { HARVEST, INTERACT, TILE } from '../config';
 import type { Player } from '../entities/Player';
-import { changeObject, dropItem, game } from '../state';
+import { items } from '../content';
+import { addItem, changeObject, dropItem, game } from '../state';
 import type { GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
 
-/** Ce qu'a donné un coup : rien à frapper, mauvais outil (`tool` = l'outil qu'il faut), ou un coup porté. */
-export type HitResult = { kind: 'none' } | { kind: 'missing'; tool: string } | { kind: 'hit'; done: boolean };
+/**
+ * Ce qu'a donné un coup : rien à frapper, mauvais outil (`tool` = l'outil qu'il faut), ou un coup porté.
+ * `given` : objets mis directement dans l'inventaire ; `overflow` : inventaire plein, ils sont tombés au sol.
+ */
+export type HitResult =
+  | { kind: 'none' }
+  | { kind: 'missing'; tool: string }
+  | { kind: 'hit'; done: boolean; given: number; overflow: boolean };
 
 /**
  * La récolte, pour tout ce qui porte un composant `harvest` dans props.json (arbre, rocher, baies, billot).
@@ -48,10 +55,9 @@ export class HarvestSystem {
     prop.hits++;
     if (prop.hits < h.hits) {
       this.shake(prop);
-      return { kind: 'hit', done: false };
+      return { kind: 'hit', done: false, given: 0, overflow: false };
     }
-    this.finish(prop);
-    return { kind: 'hit', done: true };
+    return { kind: 'hit', done: true, ...this.finish(prop) };
   }
 
   private shake(prop: PlacedProp): void {
@@ -71,7 +77,7 @@ export class HarvestSystem {
   }
 
   /** Dernier coup : chute éventuelle, remplacement, objets lâchés. */
-  private finish(prop: PlacedProp): void {
+  private finish(prop: PlacedProp): { given: number; overflow: boolean } {
     const h = prop.def.harvest!;
     const [dx, dy] = h.at ?? [0, 0];
     const x = prop.x + dx;
@@ -83,9 +89,18 @@ export class HarvestSystem {
 
     // les objets lâchés entrent dans GameState tout de suite : quitter la carte pendant la chute ne les perd pas
     const dropped: PlacedGround[] = [];
+    let given = 0;
+    let overflow = false;
     for (const d of h.drops) {
       const n = Phaser.Math.Between(d.min, d.max);
       for (let i = 0; i < n; i++) {
+        if (d.give) {
+          if (addItem(game, d.item, items[d.item])) {
+            given++;
+            continue;
+          }
+          overflow = true;
+        }
         const [gx, gy] = this.freeSpot(baseX, baseY);
         dropped.push(this.map.placeGround(dropItem(game, this.map.def.id, d.item, gx, gy)));
       }
@@ -94,7 +109,10 @@ export class HarvestSystem {
     const scatter = () => {
       for (const g of dropped) this.pop(g, baseX, baseY);
     };
-    if (!h.fall) return scatter();
+    if (!h.fall) {
+      scatter();
+      return { given, overflow };
+    }
     // la chute se joue à la place de l'objet ; le remplaçant (la souche) n'apparaît qu'à la fin
     next?.image.setVisible(false);
     const fall = this.scene.add
@@ -107,6 +125,7 @@ export class HarvestSystem {
       fall.destroy();
       scatter();
     });
+    return { given, overflow };
   }
 
   /** Fait sauter un objet lâché depuis (bx, by) jusqu'à sa place. */

@@ -14,7 +14,7 @@
   "woodpile": {"name": "tas de bois", "image": "woodpile", "body": {"w": 40, "h": 12, "bottom": 2}},
   "chopping-block": {"name": "billot", "image": "chopping-block", "body": {"w": 16, "h": 6, "bottom": 4}},
   "chopping-block-axe": {"name": "billot et hache", "image": "chopping-block-axe", "body": {"w": 16, "h": 6, "bottom": 4},
-    "harvest": {"hits": 1, "becomes": "chopping-block", "drops": [{"item": "axe", "min": 1, "max": 1}]}},
+    "harvest": {"hits": 1, "becomes": "chopping-block", "drops": [{"item": "axe", "min": 1, "max": 1, "give": true}]}},
   "fireplace": {"name": "cheminée", "image": "fireplace", "anim": "burn", "bodies": [{"x": 0, "y": 70, "w": 64, "h": 26}], "light": {"x": 32, "y": 76, "radius": 100}},
   "worktable": {"name": "planche de cuisine", "image": "worktable", "bodies": [{"x": 2, "y": 10, "w": 60, "h": 20}]},
   "workbench": {"name": "établi", "image": "workbench", "bodies": [{"x": 1, "y": 8, "w": 62, "h": 22}]},
