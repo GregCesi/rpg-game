@@ -123,7 +123,7 @@ export class WorldScene extends Phaser.Scene {
     cam.fadeIn(220, 20, 14, 8);
 
     // la partie est écrite à l'arrivée sur la carte, puis à chaque changement, et quand la page se cache ou se ferme
-    this.autosave = new AutoSave(def.id, this.player);
+    this.autosave = new AutoSave(def, this.player);
     this.autosave.update(true);
     const saveNow = () => this.autosave.update(true);
     const saveIfHidden = () => document.visibilityState === 'hidden' && saveNow();

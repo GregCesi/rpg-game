@@ -38,6 +38,29 @@ function button(text: string, onClick: () => void): HTMLButtonElement {
   return b;
 }
 
+/** Délai (ms) pendant lequel un bouton à confirmer attend son second clic, avant de reprendre son texte. */
+const CONFIRM_MS = 3000;
+
+/** Un bouton à confirmer : le premier clic le change en « Vraiment ? », le second agit ; sans second clic, il revient. */
+function confirmButton(text: string, onConfirm: () => void): HTMLButtonElement {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const reset = () => {
+    clearTimeout(timer);
+    timer = undefined;
+    b.textContent = text;
+  };
+  const b = button(text, () => {
+    if (!timer) {
+      b.textContent = 'Vraiment ?';
+      timer = setTimeout(reset, CONFIRM_MS);
+      return;
+    }
+    reset();
+    onConfirm();
+  });
+  return b;
+}
+
 /** Une liste déroulante, rangée par groupes ; elle rend aussi le clavier au jeu après un choix. */
 function select(groups: [string, [string, string][]][]): HTMLSelectElement {
   const s = el('select');
@@ -107,7 +130,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('h3', { textContent: 'Remettre à zéro' }),
     el('div', { className: 'row' }, [
       button('Cette carte', () => send({ kind: 'reset-map' })),
-      button('Toute la partie', () => send({ kind: 'reset-game' })),
+      confirmButton('Toute la partie', () => send({ kind: 'reset-game' })),
     ]),
   ]);
   document.getElementById('stage')!.append(panel);
