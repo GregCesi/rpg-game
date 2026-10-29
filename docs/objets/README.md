@@ -1,0 +1,56 @@
+# Fiches d'objets
+
+Décidé le 29 octobre 2026 : **tout nouvel objet a sa fiche ici avant d'être construit.** Une fiche par objet,
+`docs/objets/<clé>.md`, qui remplit le modèle ci-dessous, rubrique par rubrique. Une rubrique sans objet le dit
+(« aucune », « pas encore ») plutôt que de disparaître : on voit qu'on y a pensé.
+
+La fiche décrit l'objet tel qu'il doit être ; le contenu (`src/content/`) et les dessins (`art/`) en découlent. Quand
+l'objet change, la fiche change d'abord.
+
+Fiches : [rouleau de corde](rope-coil.md), [lien](rope-tie.md), [fagot](faggot.md).
+
+## Modèle
+
+```markdown
+# <Nom affiché> (`<clé>`)
+
+## Identité
+- Clé : `<clé>` (anglais, kebab-case ; c'est aussi la clé d'image).
+- Nom affiché : <nom, en français>.
+- Nature : objet possédable (`items.json`) ou objet du monde (`props.json`, avec ou sans `take`).
+- Mains : une ou deux (deux s'il est lourd ou long).
+
+## Dimensions (gabarit, docs/STYLE.md section 8)
+- Dimensions réelles, contour compris : largeur, profondeur, hauteur (ou longueur, diamètre), en cm.
+- Forme et sens : boîte, cylindre (`ew`, `ns`, `up`), à plat.
+- Taille à l'écran qui en découle (calcul du gabarit), en px.
+
+## Vues
+Chaque vue : son image, sa taille, ce qu'on y voit.
+- Au sol (posé seul).
+- En main, dans les 4 directions (bas, haut, droite ; la gauche est le miroir de la droite).
+- Case d'interface (icône 16×16 des mains).
+- Fantôme (prévisualisation en transparence de l'endroit où il ira).
+- Porté (posture : `hand`, `shoulder`, `carry`).
+- Autres vues propres à l'objet (dans un tas, posé sur un autre objet...).
+
+## Regroupement
+Seul, en tas (genre de `piles.json`, forme, maximum), ou quantité mesurée (ce qui est mesuré, son unité, où c'est gardé).
+
+## Gestes
+- E court :
+- E maintenu :
+- Espace :
+- R :
+- (et Q, lâcher, s'il fait autre chose que d'habitude)
+
+## Origine
+Trouvé (où), acheté, récolté (sur quoi), fabriqué (comment). Ce qui n'est pas encore construit le dit.
+
+## Devenir
+Ce qu'il devient, ce qu'on en tire, comment il disparaît.
+
+## Vérification
+- Aperçu : les images à regarder dans `.art-preview/` (`npm run art:preview`), à côté des étalons (`gabarit.png`).
+- En jeu : la liste des gestes à faire et de ce qu'on doit voir.
+```

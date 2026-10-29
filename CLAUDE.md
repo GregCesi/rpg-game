@@ -3,6 +3,7 @@
 Lis `README.md` (architecture et quatre règles) avant toute modification, et `docs/CONCEPTION.md` (univers, personnages, lieux, feuille de route) avant tout travail sur le contenu.
 
 - Ne jamais éditer `src/generated/` ni `tiled/tilesets/` : modifier `art/` ou `src/content/`, puis `npm run art`.
+- Nouvel objet : sa fiche dans docs/objets/ d'abord (modèle dans `docs/objets/README.md` : identité, dimensions, toutes ses vues, regroupement, gestes, origine, devenir, vérification).
 - Ajouter du contenu (propriétés de tuile, objet, personnage, dialogue) = éditer `src/content/` (une tuile se dessine d'abord dans `art/`) ; ne pas coder de contenu en dur dans les scènes.
 - Une carte = un fichier Tiled `tiled/maps/<id>.tmj`, traduit par `npm run maps` (le jeu ne lit jamais Tiled). Règles de pose (calque `ground`, types `Spawn`, `Exit`, `Npc`, objets) dans le README.
 - Nouvelle carte : esquisse (`tiled/sketches/<id>.json`, lettres), `npm run sketch -- <id>`, puis retouches dans Tiled. Une carte existante ne se refait jamais depuis l'esquisse : le `.tmj` fait foi. Nouvelle lettre = `tiled/sketch-legend.json`.
