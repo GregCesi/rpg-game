@@ -124,6 +124,14 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - **Une bille peut être tournée** (décidé le 29 octobre 2026). R (lu par sa place sur le clavier) tourne la bille portée entre est-ouest et nord-sud ; le fantôme suit. La première bille d'un tas fixe le sens du tas ; les suivantes s'y alignent d'elles-mêmes. Un tas nord-sud se construit face à lui : Xéros se tient au sud et se déplace d'est en ouest pour choisir le sol ou le creux ; on y voit le triangle des faces coupées.
 - **Les genres ne se mélangent pas.** Un tas de branches bloque le passage à partir de 3 pièces, un tas de billes toujours. Pas de recul de Xéros : sans place, « Pas la place ici. ». Les branches tombées d'une récolte restent éparpillées.
 
+## Sauvegarde et outils de test (décidé le 29 octobre 2026)
+
+- **La partie se sauvegarde toute seule.** `GameState` est écrit dans le navigateur à chaque changement (objet pris, posé, coupé, tas modifié, changement de carte), avec la carte et la position de Xéros. Au lancement, la partie reprend là où elle était. Pas de bouton « sauvegarder » pour l'instant.
+- **Le format porte un numéro de version et se lit par un schéma Zod.** Une sauvegarde abîmée ou d'une autre version ne plante pas le jeu : un message clair le dit, et une partie neuve commence.
+- **`?reset` dans l'adresse** efface la sauvegarde et repart du réveil dans le cagibi.
+- **`?dieu` dans l'adresse** ouvre des outils de test, à côté du jeu, hors du canevas : donner un objet en main, poser un objet du monde ou un tas devant Xéros, aller sur une carte, remettre une carte ou toute la partie à zéro. Sans `?dieu`, ils n'existent pas : le joueur ne les voit jamais.
+- **Plus tard, la sauvegarde du joueur au cagibi** (Xéros se couche, la partie est gardée) reposera sur le même mécanisme : même format, même lecture.
+
 ## Façon de travailler
 
 - Avant un nouveau lieu : plan annoté, validé avant de dessiner.
