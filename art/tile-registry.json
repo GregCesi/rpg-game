@@ -122,6 +122,13 @@
     "rock-rubble",
     "lantern",
     "wall-torch",
-    "candle"
+    "candle",
+    "barrel",
+    "crate",
+    "hay-bale",
+    "chest",
+    "table",
+    "stool",
+    "well"
   ]
 }

@@ -20,5 +20,12 @@
   "sunpatch": {"name": "rai de lumière", "image": "sunpatch", "blend": "add"},
   "lantern": {"name": "lanterne", "image": "lantern", "body": {"w": 8, "h": 4, "bottom": 3}, "light": {"x": 8, "y": 9, "radius": 48}},
   "wall-torch": {"name": "torche", "image": "wall-torch", "anim": "burn", "light": {"x": 8, "y": 8, "radius": 64}},
-  "candle": {"name": "bougie", "image": "candle", "anim": "burn", "light": {"x": 7, "y": 4, "radius": 32}}
+  "candle": {"name": "bougie", "image": "candle", "anim": "burn", "light": {"x": 7, "y": 4, "radius": 32}},
+  "barrel": {"name": "tonneau", "image": "barrel", "body": {"w": 16, "h": 8, "bottom": 3}},
+  "crate": {"name": "caisse", "image": "crate", "body": {"w": 16, "h": 8, "bottom": 3}},
+  "hay-bale": {"name": "botte de foin", "image": "hay-bale", "body": {"w": 26, "h": 8, "bottom": 4}},
+  "chest": {"name": "coffre", "image": "chest", "body": {"w": 22, "h": 8, "bottom": 3}},
+  "table": {"name": "table de ferme", "image": "table", "body": {"w": 40, "h": 8, "bottom": 3}},
+  "stool": {"name": "tabouret", "image": "stool", "body": {"w": 12, "h": 6, "bottom": 3}},
+  "well": {"name": "puits", "image": "well", "body": {"w": 34, "h": 12, "bottom": 4}}
 }
