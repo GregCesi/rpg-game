@@ -74,5 +74,13 @@ export const PLAYER = {
   carrySpeed: 55,
 };
 
+const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
+
 /** Ajouter ?debug à l'URL affiche les boîtes de collision. */
-export const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
+export const DEBUG = params.has('debug');
+
+/** ?reset efface la sauvegarde et repart du réveil (le mot est ensuite retiré de l'adresse, voir resumeGame). */
+export const RESET = params.has('reset');
+
+/** ?dieu ouvre les outils de test, à côté du jeu (src/dieu/). Sans lui, ils n'existent pas. */
+export const DIEU = params.has('dieu');
