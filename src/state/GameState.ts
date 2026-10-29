@@ -38,6 +38,8 @@ export const SpawnedSchema = z.strictObject({
   y: z.number(),
   flip: z.boolean().optional(),
   chain: ChainSchema.optional(),
+  /** Coups déjà reçus (profondeur de l'encoche d'une pièce de tronc) : l'entaille se retrouve au retour sur la carte. */
+  hits: z.number().int().positive().optional(),
 });
 
 /** Un objet possédable posé au sol : (x, y) = son point au sol. */
@@ -136,7 +138,14 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
   if (i < 0) return;
   if (!change.type) m.spawned.splice(i, 1);
   else {
+    // nouvel objet : sa place dans la chaîne reste, ses coups repartent de zéro
     const chain = m.spawned[i].chain;
     m.spawned[i] = { id: spawnId, type: change.type, x: change.x, y: change.y, ...(change.flip ? { flip: true } : {}), ...(chain ? { chain } : {}) };
   }
+}
+
+/** Coups reçus par un objet né (profondeur d'une encoche). */
+export function setSpawnedHits(s: GameState, mapId: string, spawnId: number, hits: number): void {
+  const o = mapState(s, mapId).spawned.find((x) => x.id === spawnId);
+  if (o) o.hits = hits;
 }

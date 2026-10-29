@@ -32,6 +32,11 @@ export const families: Family[] = [
     keys: ['tree', 'tree-stump', 'tree-fall', 'felled-section-1', 'felled-section-2', 'felled-section-3', 'felled-crown', 'felled-head', 'felled-log', 'rock', 'rock-rubble', 'bush', 'bush-berries'],
     allFrames: ['tree-fall'],
   },
+  {
+    title: 'Arbre couché : entailles et billes',
+    ground: 'grass',
+    keys: ['felled-section-2', 'felled-section-2-n1', 'felled-section-2-n2', 'felled-section-2-cut-right', 'felled-section-2-cut-left', 'felled-crown-cut-left', 'felled-head-cut-left', 'felled-head-n2', 'felled-log-1', 'felled-log-2', 'felled-log-3', 'felled-log-4'],
+  },
   { title: 'Lumière', ground: 'floor', keys: ['lantern', 'wall-torch', 'candle'] },
   { title: 'Personnages', ground: 'floor', keys: ['mother', 'portrait-mother-64'] },
   { title: 'Outil en main', ground: 'grass', keys: ['tool-axe'], allFrames: ['tool-axe'] },

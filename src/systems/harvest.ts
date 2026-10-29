@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import { DEPTH, HARVEST, INTERACT, TILE } from '../config';
 import type { Player } from '../entities/Player';
 import { items, props } from '../content';
-import type { Facing } from '../content/types';
-import { addItem, changeObject, changeSpawned, dropItem, game, spawnObject } from '../state';
-import { promptTop } from '../world/GameMap';
+import type { Drop, Facing } from '../content/types';
+import { addItem, changeObject, changeSpawned, dropItem, game, setSpawnedHits, spawnObject } from '../state';
+import { notchCut, promptTop } from '../world/GameMap';
 import type { GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
 
 /**
@@ -57,7 +57,8 @@ export class HarvestSystem {
     let best: PlacedProp | undefined;
     let bestD = INTERACT.radius;
     for (const p of this.map.props) {
-      if (!p.def.harvest) continue;
+      // une encoche déjà coupée n'est plus une cible
+      if (!p.def.harvest || notchCut(p)) continue;
       const d = Phaser.Math.Distance.Between(probe.x, probe.y, p.aimX, p.aimY);
       if (d < bestD) {
         best = p;
@@ -78,6 +79,7 @@ export class HarvestSystem {
     if (!prop || !h || !this.map.props.includes(prop)) return { kind: 'none' };
     if (h.tool && h.tool !== tool) return { kind: 'missing', tool: h.tool };
     if (!h.tool && tool) return { kind: 'none' };
+    if (h.notch) return this.notchHit(prop, facing);
     prop.hits++;
     if (h.impact) this.chips(prop, h.impact, facing);
     if (prop.hits < h.hits) {
@@ -85,6 +87,73 @@ export class HarvestSystem {
       return { kind: 'hit', done: false, given: 0, overflow: false };
     }
     return { kind: 'hit', done: true, ...this.finish(prop, facing) };
+  }
+
+  /**
+   * Un coup dans l'encoche d'une pièce de tronc couché : l'entaille se creuse (une image par profondeur, notée dans GameState).
+   * Au dernier coup l'encoche est coupée : ses `drops` tombent, et chaque morceau de la chaîne séparé aux deux bouts
+   * devient sa bille, à la même place. La pièce ne bouge pas : pas de tremblement, seule l'entaille change.
+   */
+  private notchHit(prop: PlacedProp, facing: Facing): HitResult {
+    const h = prop.def.harvest!;
+    if (notchCut(prop)) return { kind: 'none' };
+    prop.hits++;
+    if (prop.spawned) setSpawnedHits(game, this.map.def.id, prop.id, prop.hits);
+    if (h.impact) this.chips(prop, h.impact, facing);
+    if (prop.hits < h.hits) {
+      this.map.refreshTrunk();
+      return { kind: 'hit', done: false, given: 0, overflow: false };
+    }
+    const { given, overflow, dropped } = this.dropAll(h.drops, prop.aimX, prop.aimY);
+    for (const g of dropped) this.pop(g, prop.aimX, prop.aimY);
+    if (prop.chain) this.separate(prop.chain.group);
+    this.map.refreshTrunk();
+    return { kind: 'hit', done: true, given, overflow };
+  }
+
+  /** Chaque pièce de la chaîne dont l'encoche est coupée et qui est séparée à gauche devient sa bille, à la même place. */
+  private separate(group: number): void {
+    for (const p of this.map.props.filter((q) => q.chain?.group === group)) {
+      const h = p.def.harvest;
+      if (!h?.becomes || !notchCut(p) || !this.map.separatedLeft(p)) continue;
+      const [ax, dy] = h.at ?? [0, 0];
+      const w = this.imageWidth(h.becomes);
+      // retournée, la pièce se lit de droite à gauche : le décalage se retourne dans son image
+      const x = p.x + (p.flip ? p.image.width - ax - w : ax);
+      const y = p.y + dy;
+      this.map.removeProp(p);
+      this.map.placeProp({ id: p.id, type: h.becomes, x, y }, { flip: p.flip, spawned: p.spawned, chain: p.chain });
+      const change = { type: h.becomes, x, y, ...(p.flip ? { flip: true } : {}) };
+      if (p.spawned) changeSpawned(game, this.map.def.id, p.id, change);
+      else changeObject(game, this.map.def.id, p.id, change);
+    }
+  }
+
+  /**
+   * Ce que lâche un objet récolté, près de (bx, by) : dans l'inventaire si `give` (au sol si plein), sinon au sol.
+   * Entre dans GameState tout de suite ; les objets au sol sont posés cachés, à montrer avec pop().
+   */
+  private dropAll(drops: Drop[], bx: number, by: number): { given: number; overflow: boolean; dropped: PlacedGround[] } {
+    const dropped: PlacedGround[] = [];
+    let given = 0;
+    let overflow = false;
+    for (const d of drops) {
+      const n = Phaser.Math.Between(d.min, d.max);
+      for (let i = 0; i < n; i++) {
+        if (d.give) {
+          if (addItem(game, d.item, items[d.item])) {
+            given++;
+            continue;
+          }
+          overflow = true;
+        }
+        const [gx, gy] = this.freeSpot(bx, by);
+        const g = this.map.placeGround(dropItem(game, this.map.def.id, d.item, gx, gy));
+        g.image.setVisible(false);
+        dropped.push(g);
+      }
+    }
+    return { given, overflow, dropped };
   }
 
   /**
@@ -160,27 +229,10 @@ export class HarvestSystem {
       const o = spawnObject(game, mapId, sp.type, prop.x + place(sp.x, this.imageWidth(sp.type)), prop.y + sp.y, flip, chain);
       return this.map.placeProp(o, { flip, spawned: true, chain });
     });
-    this.map.refreshCuts();
+    this.map.refreshTrunk();
 
     // les objets lâchés entrent dans GameState tout de suite : quitter la carte pendant la chute ne les perd pas
-    const dropped: PlacedGround[] = [];
-    let given = 0;
-    let overflow = false;
-    for (const d of h.drops) {
-      const n = Phaser.Math.Between(d.min, d.max);
-      for (let i = 0; i < n; i++) {
-        if (d.give) {
-          if (addItem(game, d.item, items[d.item])) {
-            given++;
-            continue;
-          }
-          overflow = true;
-        }
-        const [gx, gy] = this.freeSpot(baseX, baseY);
-        dropped.push(this.map.placeGround(dropItem(game, this.map.def.id, d.item, gx, gy)));
-      }
-    }
-    for (const g of dropped) g.image.setVisible(false);
+    const { given, overflow, dropped } = this.dropAll(h.drops, baseX, baseY);
     const scatter = () => {
       for (const g of dropped) this.pop(g, baseX, baseY);
     };

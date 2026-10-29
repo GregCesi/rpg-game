@@ -6,6 +6,17 @@ import type { Chain, GroundItem, MapState } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
 
+/** Pièce de tronc couché : elle a une encoche, ou devient une pièce qui en a une (le houppier devient la tête). */
+export function isTrunk(def: PropDef): boolean {
+  const h = def.harvest;
+  return !!h && (h.notch || (!!h.becomes && !!propDefs[h.becomes].harvest?.notch));
+}
+
+/** L'encoche du bout droit de cette pièce est coupée. */
+export function notchCut(p: PlacedProp): boolean {
+  return !!p.def.harvest?.notch && p.hits >= p.def.harvest.hits;
+}
+
 /** Haut de l'invite au-dessus d'un objet : sur le point visé s'il en a un, sinon au-dessus de l'image. */
 export function promptTop(p: PlacedProp): number {
   return p.def.aim ? p.aimY - 2 : p.top;
@@ -124,8 +135,8 @@ export class GameMap {
       if (!c) this.placeProp(o);
       else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip });
     }
-    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain });
-    this.refreshCuts();
+    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, hits: o.hits });
+    this.refreshTrunk();
     for (const g of changes.ground) this.placeGround(g);
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
@@ -147,23 +158,32 @@ export class GameMap {
     return list;
   }
 
+  /** La pièce de la même chaîne à `index`, si elle est posée. */
+  chainPiece(group: number, index: number): PlacedProp | undefined {
+    return this.props.find((p) => p.chain?.group === group && p.chain.index === index);
+  }
+
   /**
-   * Bouts coupés : chaque pièce d'une chaîne (`cut` dans props.json) montre l'image qui convient selon que ses voisines
-   * de gauche et de droite (dans l'image dessinée) sont encore du tronc. Les bouts de la chaîne n'ont pas de voisine à perdre.
-   * À appeler quand une pièce change ou naît.
+   * Pièce séparée de sa voisine de gauche : première de sa chaîne (bout scié contre la souche), voisine partie,
+   * devenue bille, ou encoche de la voisine coupée.
    */
-  refreshCuts(): void {
-    const trunk = new Map<string, boolean>();
-    for (const p of this.props) if (p.chain) trunk.set(`${p.chain.group}:${p.chain.index}`, !!p.def.cut);
+  separatedLeft(p: PlacedProp): boolean {
+    if (!p.chain || p.chain.index === 0) return true;
+    const left = this.chainPiece(p.chain.group, p.chain.index - 1);
+    return !left || !isTrunk(left.def) || notchCut(left);
+  }
+
+  /**
+   * Images des pièces de tronc couché selon leur état : face de coupe à gauche si la voisine est séparée,
+   * profondeur de l'encoche, encoche coupée (voir `notch` dans types.ts). À appeler quand une pièce change, naît ou est frappée.
+   */
+  refreshTrunk(): void {
     for (const p of this.props) {
-      const cut = p.def.cut;
-      if (!p.chain || !cut) continue;
-      const { group, index, size } = p.chain;
-      const lost = (i: number) => i >= 0 && i < size && !trunk.get(`${group}:${i}`);
-      const left = lost(index - 1);
-      const right = lost(index + 1);
-      const image = left && right ? (cut.both ?? cut.left ?? cut.right) : left ? cut.left : right ? cut.right : undefined;
-      p.image.setTexture(image ?? p.def.image);
+      if (!p.chain || !isTrunk(p.def)) continue;
+      const left = p.chain.index > 0 && this.separatedLeft(p) ? '-cut-left' : '';
+      const max = p.def.harvest!.hits;
+      const image = !p.def.harvest!.notch ? `${p.def.image}${left}` : p.hits >= max ? `${p.def.image}-cut-right` : `${p.def.image}${left}${p.hits > 0 ? `-n${p.hits}` : ''}`;
+      p.image.setTexture(image);
     }
   }
 
@@ -192,7 +212,7 @@ export class GameMap {
    * (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds).
    * `flip` : image retournée ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
    */
-  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain } = {}): PlacedProp {
+  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain; hits?: number } = {}): PlacedProp {
     const flip = !!opts.flip;
     const scene = this.scene;
     const p = propDefs[o.type];
@@ -232,7 +252,7 @@ export class GameMap {
       aimY: p.aim ? oy + p.aim[1] : baseY,
       image: obj,
       parts,
-      hits: 0,
+      hits: opts.hits ?? 0,
       interact: o.interact,
     };
     this.props.push(placed);

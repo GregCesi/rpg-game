@@ -66,6 +66,14 @@ export const HarvestSchema = z.strictObject({
    */
   gesture: z.enum(['use', 'chop']).default('use'),
   /**
+   * Pièce de tronc couché : frapper creuse l'encoche de son bout droit, à la jonction avec la pièce suivante de sa chaîne.
+   * Un coup = une profondeur (image `<image>-n1`, `-n2`...), le dernier coupe (`<image>-cut-right`). Quand la pièce de gauche
+   * est séparée, la pièce montre sa face de coupe à gauche (`<image>-cut-left`, `-cut-left-n1`...). Un morceau séparé aux
+   * deux bouts devient `becomes` (sa bille, même image coupée, même place) ; `drops` tombent quand l'encoche est coupée.
+   * La première pièce d'une chaîne est déjà séparée à gauche (le bout scié contre la souche).
+   */
+  notch: z.boolean().default(false),
+  /**
    * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. Elle est dessinée vers la droite.
    * `x`, `y` : décalage du coin bas gauche d'une image de la chute par rapport à celui de l'objet, chute vers la droite
    * (le pied de l'arbre est en x = 33 dans `tree`, en x = 47 dans `tree-fall` : x = -14).
@@ -84,7 +92,7 @@ export const HarvestSchema = z.strictObject({
    * Objets de props.json qui naissent à la fin (l'arbre couché : houppier et sections). (x, y) : coin bas gauche
    * de chacun par rapport à celui de l'objet récolté, pour une chute vers la droite ; vers la gauche, ils sont
    * retournés autour du pied (`fall.foot`), comme la chute. Ils sont notés dans GameState comme objets nés,
-   * et forment une chaîne bout à bout dans cet ordre (de gauche à droite dans l'image) : voir `cut`.
+   * et forment une chaîne bout à bout dans cet ordre (de gauche à droite dans l'image) : voir `notch`.
    */
   spawns: z.array(z.strictObject({ type: id, x: px, y: px })).default([]),
 });
@@ -129,12 +137,6 @@ export const PropDefSchema = z.strictObject({
    * Absent : le centre de la base.
    */
   aim: z.tuple([px, px]).optional(),
-  /**
-   * Pièce d'une chaîne née d'une récolte (sections du tronc couché) : images à montrer quand la voisine de gauche,
-   * de droite ou les deux ne sont plus là (« bout coupé »), de la même taille que `image`. Gauche et droite
-   * s'entendent dans l'image dessinée ; une voisine compte tant qu'elle a elle-même un `cut`.
-   */
-  cut: z.strictObject({ left: id.optional(), right: id.optional(), both: id.optional() }).optional(),
   /** Ce qui se récolte : voir HarvestSchema. */
   harvest: HarvestSchema.optional(),
 });

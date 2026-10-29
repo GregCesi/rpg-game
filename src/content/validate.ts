@@ -213,6 +213,47 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
   return errors;
 }
 
+/**
+ * Images d'état des pièces de tronc couché (`notch`) : `-n1`... par profondeur et `-cut-right` pour celles qui ont une encoche ;
+ * `-cut-left` (et `-cut-left-n1`...) pour celles qui ne sont pas les premières de leur chaîne. Toutes de la taille de la pièce.
+ */
+function validateTrunk(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const isTrunk = (t: string) => {
+    const h = c.props[t]?.harvest;
+    return !!h && (h.notch || (!!h.becomes && !!c.props[h.becomes]?.harvest?.notch));
+  };
+  // pièces qui ont une voisine à gauche : nées après la première d'une chaîne, et ce qu'elles deviennent en restant du tronc
+  const later = new Set<string>();
+  for (const p of Object.values(c.props)) for (const sp of p.harvest?.spawns.slice(1) ?? []) later.add(sp.type);
+  for (const t of [...later]) {
+    const next = c.props[t]?.harvest?.becomes;
+    if (next && isTrunk(next)) later.add(next);
+  }
+  for (const [key, p] of Object.entries(c.props)) {
+    if (!isTrunk(key)) continue;
+    const h = p.harvest!;
+    const depths = h.notch ? Array.from({ length: h.hits - 1 }, (_, i) => `-n${i + 1}`) : [];
+    const lefts = later.has(key) ? ['-cut-left', ...depths.map((d) => `-cut-left${d}`)] : [];
+    const base = cat.sizes.get(p.image);
+    for (const suffix of [...depths, ...(h.notch ? ['-cut-right'] : []), ...lefts]) {
+      const img = `${p.image}${suffix}`;
+      const size = cat.sizes.get(img);
+      if (!size) errors.push(`props.json '${key}' : image d'état '${img}' non dessinée`);
+      else if (base && (size.w !== base.w || size.h !== base.h)) {
+        errors.push(`props.json '${key}' : '${img}' fait ${size.w}×${size.h}, '${p.image}' ${base.w}×${base.h} (même taille attendue)`);
+      }
+    }
+    if (h.notch && h.becomes) {
+      const log = c.props[h.becomes] && cat.sizes.get(c.props[h.becomes].image);
+      if (log && base && (log.w !== base.w || log.h !== base.h || h.at)) {
+        errors.push(`props.json '${key}' : sa bille '${h.becomes}' doit avoir la taille et la place exactes de la pièce (${base.w}×${base.h}, sans 'at')`);
+      }
+    }
+  }
+  return errors;
+}
+
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -259,15 +300,10 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${key}' : animation '${p.anim}' absente de '${p.image}'`);
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);
     if (p.harvest) addAll(validateHarvest(key, p, c, cat));
-    for (const [side, img] of Object.entries(p.cut ?? {})) {
-      const size = cat.sizes.get(img);
-      const base = cat.sizes.get(p.image);
-      if (!size) err(`props.json '${key}' : bout coupé '${side}' : image '${img}' non dessinée`);
-      else if (base && (size.w !== base.w || size.h !== base.h)) {
-        err(`props.json '${key}' : bout coupé '${side}' : '${img}' fait ${size.w}×${size.h}, '${p.image}' ${base.w}×${base.h} (même taille attendue)`);
-      }
-    }
   }
+
+  // Pièces de tronc couché : une image par état de l'encoche et du bout gauche, de la taille de la pièce (voir `notch`)
+  addAll(validateTrunk(c, cat));
 
   // Objets possédables
   for (const [key, it] of Object.entries(c.items)) {
