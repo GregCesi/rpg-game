@@ -29,14 +29,14 @@ export const families: Family[] = [
   {
     title: 'Nature',
     ground: 'grass',
-    keys: ['tree', 'tree-stump', 'tree-fall', 'rock', 'rock-rubble', 'bush', 'bush-berries'],
+    keys: ['tree', 'tree-stump', 'tree-fall', 'felled-section-1', 'felled-section-2', 'felled-section-3', 'felled-crown', 'felled-head', 'felled-log', 'rock', 'rock-rubble', 'bush', 'bush-berries'],
     allFrames: ['tree-fall'],
   },
   { title: 'Lumière', ground: 'floor', keys: ['lantern', 'wall-torch', 'candle'] },
   { title: 'Personnages', ground: 'floor', keys: ['mother', 'portrait-mother-64'] },
   { title: 'Outil en main', ground: 'grass', keys: ['tool-axe'], allFrames: ['tool-axe'] },
   { title: "Éclats d'impact", ground: 'grass', keys: ['fx-wood', 'fx-stone', 'fx-leaves'], allFrames: ['fx-wood', 'fx-stone', 'fx-leaves'] },
-  { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-box', 'ui-key-e'] },
+  { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-box', 'ui-key-e', 'ui-key-space'] },
   { title: 'Mobilier et ferme', ground: 'grass', keys: ['barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'woodpile', 'chopping-block', 'chopping-block-axe'] },
   { title: 'Intérieur', ground: 'floor', keys: ['bed', 'pallet', 'sack', 'jar', 'worktable', 'workbench'] },
 ];

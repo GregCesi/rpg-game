@@ -1,4 +1,4 @@
-// Éléments d'interface : cadre en bois et parchemin (étiré en 9 parties), flèche "suite", touche E.
+// Éléments d'interface : cadre en bois et parchemin (étiré en 9 parties), flèche "suite", touches E et Espace.
 
 import { Canvas } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
@@ -53,6 +53,25 @@ function keyE(): Canvas {
 }
 
 /**
+ * Touche Espace, même facture que la touche E mais en barre large, marquée du signe ␣ :
+ * affichée sur l'encoche visée quand Xéros tient la hache.
+ */
+function keySpace(): Canvas {
+  return Canvas.from([
+    '.ooooooooooooooooo.',
+    'oaaaaaaaaaaaaaaaaao',
+    'oaaaaaaaaaaaaaaaaao',
+    'oaaaaaaaaaaaaaaaaao',
+    'oaaaoaaaaaaaaaoaaao',
+    'oaaaoaaaaaaaaaoaaao',
+    'oaaaoooooooooooaaao',
+    'oaaaaaaaaaaaaaaaaao',
+    'oAAAAAAAAAAAAAAAAAo',
+    '.ooooooooooooooooo.',
+  ]);
+}
+
+/**
  * Case de la barre d'objets, 24x24 : cadre de bois, creux de parchemin de 18x18 où l'icône 16x16
  * se pose en (4, 4), avec un pixel de marge tout autour. Huit cases côte à côte font 192 px.
  * `active` : la case de l'objet en main, cadre doré et fond plus clair.
@@ -74,4 +93,4 @@ function slot(active: boolean): Canvas {
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
-export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true))];
+export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-key-space', keySpace()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true))];

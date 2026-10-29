@@ -325,6 +325,48 @@ export const USE_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
   right: USE_BODY.right.map((b) => b.tool),
 };
 
+// Geste de haut en bas (chop-*), sur ce qui est couché ou posé au sol : le fer monte droit au-dessus de la tête,
+// puis s'abat devant les pieds, bras tendus vers le sol ; au dernier temps, on le dégage du bois.
+// Même corps, mêmes couches que use-* ; seule la trajectoire des mains change.
+
+/** Image de l'impact dans les animations chop-* (0 à 3). */
+export const CHOP_IMPACT = 2;
+export const CHOP_FRAME_RATE = 9;
+
+const CHOP_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
+  // de face : le fer passe devant le visage, monte haut derrière la tête, s'abat juste devant les pieds
+  // (sur le tronc couché au sud), puis on le dégage
+  down: [
+    pose([16, 30], 'n', 'cw', false, [[9, 34], [22, 34]]),
+    pose([16, 10], 'n', 'cw', true, [[7, 20], [24, 20]], 'head'),
+    pose([16, 42], 's', 'ccw', false, [[12, 37], [20, 37]]),
+    pose([16, 39], 's', 'ccw', false, [[11, 36], [21, 36]]),
+  ],
+  // de dos : le fer se lève devant lui (caché par le corps, la tête du fer dépasse), monte au-dessus de la tête,
+  // puis s'abat devant lui, au nord, sur le tronc : caché par le corps, seuls les coudes dépassent
+  up: [
+    pose([16, 28], 'n', 'cw', true, [[9, 32], [23, 32]], 'body'),
+    pose([16, 10], 'n', 'cw', false, [[8, 21], [24, 21]], 'head'),
+    pose([16, 37], 'n', 'cw', true, [[9, 37], [23, 37]], 'body'),
+    pose([16, 35], 'n', 'cw', true, [[9, 36], [23, 36]], 'body'),
+  ],
+  // de profil : le fer se dresse devant le visage, bascule au-dessus de la tête vers l'arrière, s'abat devant lui
+  // sur le dessus de ce qui est couché (un tronc couché a le dessus à une dizaine de pixels du sol), puis on le dégage
+  right: [
+    pose([20, 27], 'n', 'cw', false, [[18, 33]]),
+    pose([14, 10], 'w', 'cw', true, [[10, 21]]),
+    pose([22, 34], 'se', 'cw', false, [[18, 35]]),
+    pose([21, 32], 'se', 'cw', false, [[17, 34]]),
+  ],
+};
+
+/** Pose de l'outil pour chaque image des animations chop-down, chop-up et chop-right. */
+export const CHOP_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
+  down: CHOP_BODY.down.map((b) => b.tool),
+  up: CHOP_BODY.up.map((b) => b.tool),
+  right: CHOP_BODY.right.map((b) => b.tool),
+};
+
 /** Tout ce qui n'est ni vide, ni ombre au sol, ni contour. */
 const isMatter = (ch: string) => ch !== EMPTY && ch !== 'x' && ch !== 'o';
 
@@ -413,6 +455,9 @@ function useSide(b: UseBody): Grid {
 const useDown = USE_BODY.down.map((b) => useFrontal('down', b));
 const useUp = USE_BODY.up.map((b) => useFrontal('up', b));
 const useRight = USE_BODY.right.map(useSide);
+const chopDown = CHOP_BODY.down.map((b) => useFrontal('down', b));
+const chopUp = CHOP_BODY.up.map((b) => useFrontal('up', b));
+const chopRight = CHOP_BODY.right.map(useSide);
 
 const walkFrontal = (f: Facing) => [
   frontal(f, 0, -2, 0),
@@ -442,6 +487,10 @@ const xeros: SpriteSheetSource = {
     'use-up': { frames: useUp, frameRate: USE_FRAME_RATE, repeat: 0 },
     'use-right': { frames: useRight, frameRate: USE_FRAME_RATE, repeat: 0 },
     'use-left': { frames: useRight.map(flipX), frameRate: USE_FRAME_RATE, repeat: 0 },
+    'chop-down': { frames: chopDown, frameRate: CHOP_FRAME_RATE, repeat: 0 },
+    'chop-up': { frames: chopUp, frameRate: CHOP_FRAME_RATE, repeat: 0 },
+    'chop-right': { frames: chopRight, frameRate: CHOP_FRAME_RATE, repeat: 0 },
+    'chop-left': { frames: chopRight.map(flipX), frameRate: CHOP_FRAME_RATE, repeat: 0 },
   },
 };
 

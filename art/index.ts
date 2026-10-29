@@ -7,6 +7,7 @@ import motherPortrait from './portraits/mother';
 import worldTiles, { worldDecals } from './world/tiles';
 import props from './world/props';
 import trees from './world/trees';
+import felled from './world/felled';
 import rocksBushes from './world/rocks-bushes';
 import ui from './ui/dialog';
 import resources from './items/resources';
@@ -18,4 +19,4 @@ import lights from './interior/light';
 import farm from './world/farm';
 import fx from './world/fx';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...resources, ...tools, ...heldTools, ...fx];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...resources, ...tools, ...heldTools, ...fx];

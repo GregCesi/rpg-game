@@ -122,20 +122,28 @@ export function heldImage(art: ToolArt, head: Dir8, edge: Edge): Grid {
   return lightUp(zones.toGrid(), art.materials);
 }
 
+/** Un geste du corps : les poses de l'outil par direction (4 temps chacune) et sa cadence. */
+export interface HeldGesture {
+  poses: Record<'down' | 'up' | 'right', ToolPose[]>;
+  frameRate: number;
+}
+
 /**
- * Planche `tool-<nom>` : 12 images, rangées par direction puis par temps (down 0-3, up 0-3, right 0-3),
- * une animation par direction. La gauche est le miroir de la droite : le jeu retourne l'image.
+ * Planche `tool-<nom>` : pour chaque geste, dans l'ordre donné (use d'abord), une animation par direction,
+ * `<geste>-down`, `<geste>-up`, `<geste>-right`. La gauche est le miroir de la droite : le jeu retourne l'image.
+ * L'ordre des images de use-* ne change pas quand on ajoute un geste : les nouveaux viennent après.
  */
 export function heldToolSheet(
   name: string,
   art: ToolArt,
   palette: Palette,
-  poses: Record<'down' | 'up' | 'right', ToolPose[]>,
-  frameRate: number,
+  gestures: Record<string, HeldGesture>,
 ): SpriteSheetSource {
   const animations: SpriteSheetSource['animations'] = {};
-  for (const dir of ['down', 'up', 'right'] as const) {
-    animations[`use-${dir}`] = { frames: poses[dir].map((p) => heldImage(art, p.head, p.edge)), frameRate, repeat: 0 };
+  for (const [gesture, { poses, frameRate }] of Object.entries(gestures)) {
+    for (const dir of ['down', 'up', 'right'] as const) {
+      animations[`${gesture}-${dir}`] = { frames: poses[dir].map((p) => heldImage(art, p.head, p.edge)), frameRate, repeat: 0 };
+    }
   }
   return { kind: 'spritesheet', name: `tool-${name}`, frameW: HELD_SIZE, frameH: HELD_SIZE, palette, animations };
 }
