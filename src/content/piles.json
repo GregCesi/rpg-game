@@ -13,10 +13,10 @@
   }},
   "logs": {"name": "tas de billes", "piece": {"prop": "felled-log"}, "start": "g1", "blockFrom": 1, "places": {
     "g1": {"layer": 0, "image": "felled-log", "x": 0, "y": -11, "body": {"x": 1, "y": -25, "w": 18, "h": 11}},
-    "g0": {"layer": 0, "image": "felled-log", "x": 2, "y": -22, "body": {"x": 3, "y": -36, "w": 18, "h": 11}},
-    "g2": {"layer": 0, "image": "felled-log", "x": 1, "y": 0, "body": {"x": 2, "y": -14, "w": 18, "h": 11}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "felled-log", "x": 1, "y": -26},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "felled-log", "x": -1, "y": -15},
+    "g0": {"layer": 0, "image": "felled-log", "x": 0, "y": -22, "body": {"x": 1, "y": -36, "w": 18, "h": 11}},
+    "g2": {"layer": 0, "image": "felled-log", "x": 0, "y": 0, "body": {"x": 1, "y": -14, "w": 18, "h": 11}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "felled-log", "x": 0, "y": -26},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "felled-log", "x": 0, "y": -15},
     "top": {"layer": 2, "on": ["u01", "u12"], "image": "felled-log", "x": 0, "y": -30}
   }}
 }
