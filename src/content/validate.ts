@@ -13,6 +13,8 @@ export interface Catalog {
   animations: Map<string, Set<string>>;
   /** Nombre d'images de chaque animation, par planche. */
   frameCounts: Map<string, Map<string, number>>;
+  /** Taille d'une image (d'une image de planche pour une planche animée), en pixels. */
+  sizes: Map<string, { w: number; h: number }>;
   tiles: Map<string, Set<string>>;
   /** Numéros de tuiles qui existent (hors trous) et numéros bloquants, par jeu de tuiles. */
   tileNumbers: Map<string, Set<number>>;
@@ -20,15 +22,19 @@ export interface Catalog {
 }
 
 interface ManifestLike {
-  spritesheets: { key: string; animations: Record<string, { frames: unknown[] }> }[];
+  spritesheets: { key: string; frameWidth: number; frameHeight: number; animations: Record<string, { frames: unknown[] }> }[];
   tilesets: { key: string; tiles: Record<string, number>; solid: number[] }[];
-  images: { key: string }[];
+  images: { key: string; width: number; height: number }[];
 }
 
 export function catalogFrom(m: ManifestLike): Catalog {
   return {
     textures: new Set([...m.spritesheets, ...m.tilesets, ...m.images].map((a) => a.key)),
     animations: new Map(m.spritesheets.map((s) => [s.key, new Set(Object.keys(s.animations))])),
+    sizes: new Map([
+      ...m.spritesheets.map((s) => [s.key, { w: s.frameWidth, h: s.frameHeight }] as const),
+      ...m.images.map((i) => [i.key, { w: i.width, h: i.height }] as const),
+    ]),
     frameCounts: new Map(m.spritesheets.map((s) => [s.key, new Map(Object.entries(s.animations).map(([k, a]) => [k, a.frames.length]))])),
     tiles: new Map(m.tilesets.map((t) => [t.key, new Set(Object.keys(t.tiles))])),
     tileNumbers: new Map(m.tilesets.map((t) => [t.key, new Set(Object.values(t.tiles))])),
@@ -46,6 +52,27 @@ export function validateTilesCatalog(catalogs: Record<string, TilesetCatalog>, c
     }
   }
   return errors;
+}
+
+/**
+ * Emprise horizontale d'une chute, par rapport au coin bas gauche de l'objet : [x début, x fin (exclu)], la chute
+ * et tout ce qui naît (l'arbre couché) compris, vers la droite ou retournée autour du pied vers la gauche.
+ * undefined si l'objet ne tombe pas ou si une image manque (signalé ailleurs).
+ */
+function fallExtent(props: Record<string, PropDef>, type: string, left: boolean, cat: Catalog): [number, number] | undefined {
+  const h = props[type]?.harvest;
+  if (!h?.fall) return undefined;
+  const foot = h.fall.foot;
+  const pieces = [{ image: h.fall.image, x: h.fall.x }, ...h.spawns.map((sp) => ({ image: props[sp.type]?.image, x: sp.x }))];
+  let box: [number, number] = [Infinity, -Infinity];
+  for (const p of pieces) {
+    const size = p.image ? cat.sizes.get(p.image) : undefined;
+    if (!size) return undefined;
+    // retournée autour du pied : [x, x + w[ devient [2 × foot − (x + w − 1), 2 × foot − x + 1[
+    const x0 = left ? 2 * foot - (p.x + size.w - 1) : p.x;
+    box = [Math.min(box[0], x0), Math.max(box[1], x0 + size.w)];
+  }
+  return box;
 }
 
 /**
@@ -86,8 +113,14 @@ export function validateMaps(
     const solidAt = (px: number, py: number) => solid.has(ground[Math.floor(py / TILE) * m.width + Math.floor(px / TILE)]);
 
     for (const o of m.objects) {
-      const at = `${where} : objet « ${o.type} » en (${o.x}, ${o.y})`;
+      const at = `${where} : objet « ${o.type} » n°${o.id} en (${o.x}, ${o.y})`;
       if (!propsByType[o.type]) err(`${at} : absent de props.json`);
+      else for (const side of ['droite', 'gauche'] as const) {
+        const box = fallExtent(propsByType, o.type, side === 'gauche', cat);
+        if (!box) continue;
+        const [x0, x1] = [o.x + box[0], o.x + box[1]];
+        if (x0 < 0 || x1 > W) err(`${at} : pas la place de tomber à ${side} dans la carte (la chute et l'arbre couché vont de x = ${x0} à ${x1}, la carte fait ${W} px de large)`);
+      }
       if (o.x < 0 || o.y < 0 || o.x > W || o.y > H) err(`${at} : hors de la carte`);
       if (o.interact && !dialogues[o.interact]) err(`${at} : dialogue '${o.interact}' introuvable`);
     }

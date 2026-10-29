@@ -100,9 +100,9 @@ const propDefs = parse('props.json', z.record(z.string(), PropDefSchema), propsJ
 
 const imports: string[] = [];
 const catalog = {
-  spritesheets: [] as { key: string; animations: Record<string, unknown> }[],
+  spritesheets: [] as { key: string; frameWidth: number; frameHeight: number; animations: Record<string, unknown> }[],
   tilesets: [] as { key: string; tiles: Record<string, number>; count: number; solid: number[]; decals: Record<number, DecalSet> }[],
-  images: [] as { key: string }[],
+  images: [] as { key: string; width: number; height: number }[],
 };
 const spritesheets: string[] = [];
 const tilesets: string[] = [];
@@ -128,7 +128,7 @@ for (const src of sources) {
     }
     png = sheet(cells, src.frameW, src.frameH, src.palette);
     firstFrames.set(src.name, { grid: cells[0], w: src.frameW, h: src.frameH, palette: src.palette });
-    catalog.spritesheets.push({ key: src.name, animations: anims });
+    catalog.spritesheets.push({ key: src.name, frameWidth: src.frameW, frameHeight: src.frameH, animations: anims });
     spritesheets.push(
       `  { key: '${src.name}', url: ${id}, frameWidth: ${src.frameW}, frameHeight: ${src.frameH}, animations: ${JSON.stringify(anims)} },`,
     );
@@ -188,7 +188,7 @@ for (const src of sources) {
     check(src.grid, w, h, src.palette, src.name);
     png = sheet([src.grid], w, h, src.palette);
     firstFrames.set(src.name, { grid: src.grid, w, h, palette: src.palette });
-    catalog.images.push({ key: src.name });
+    catalog.images.push({ key: src.name, width: w, height: h });
     images.push(`  { key: '${src.name}', url: ${id}, width: ${w}, height: ${h} },`);
   }
 
