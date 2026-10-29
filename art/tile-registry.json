@@ -119,6 +119,9 @@
     "tall_fence",
     "tree-stump",
     "bush-berries",
-    "rock-rubble"
+    "rock-rubble",
+    "lantern",
+    "wall-torch",
+    "candle"
   ]
 }

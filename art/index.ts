@@ -11,5 +11,6 @@ import resources from './items/resources';
 import tools from './items/tools';
 import house from './world/house';
 import { furniture, interiorDecals, interiorTiles } from './interior/house';
+import lights from './interior/light';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, worldTiles, ...worldDecals, ...props, ...trees, ...rocksBushes, ...house, interiorTiles, ...interiorDecals, ...furniture, ...ui, ...resources, ...tools];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, worldTiles, ...worldDecals, ...props, ...trees, ...rocksBushes, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...resources, ...tools];
