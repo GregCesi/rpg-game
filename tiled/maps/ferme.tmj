@@ -128,8 +128,8 @@
           "visible": true,
           "name": "",
           "type": "chopping-block-axe",
-          "x": 780,
-          "y": 128,
+          "x": 736,
+          "y": 80,
           "width": 32,
           "height": 32,
           "gid": 1035
