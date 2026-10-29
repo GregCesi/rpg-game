@@ -2,15 +2,15 @@ import Phaser from 'phaser';
 import { PLAYER } from '../config';
 import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
-import { Carry } from './Carry';
+import { Hold } from './Hold';
 import { ToolUse } from './ToolUse';
 
-/** Le joueur = un Actor piloté par le clavier, avec les composants du geste d'outil et du portage à deux mains. */
+/** Le joueur = un Actor piloté par le clavier, avec les composants du geste d'outil et de ce qu'il tient (Hold). */
 export class Player {
   readonly actor: Actor;
   readonly input: PlayerInput;
   readonly tools: ToolUse;
-  readonly carry: Carry;
+  readonly hold: Hold;
   /** Direction demandée au dernier tour (0,0 si immobile). */
   dir = new Phaser.Math.Vector2(0, 0);
 
@@ -18,7 +18,7 @@ export class Player {
     this.actor = new Actor(scene, x, y, PLAYER.skin);
     this.input = new PlayerInput(scene);
     this.tools = new ToolUse(scene, this.actor);
-    this.carry = new Carry(scene, this.actor);
+    this.hold = new Hold(scene, this.actor, () => this.tools.busy);
   }
 
   /** enabled = false pendant un dialogue : le joueur reste immobile. */
@@ -36,7 +36,7 @@ export class Player {
     const { dir, running } = this.input.read();
     this.dir = dir;
     // chargé, il marche lentement et ne court pas (l'animation carry-walk a déjà sa cadence lente)
-    if (this.carry.busy) this.actor.move(dir, PLAYER.carrySpeed);
+    if (this.hold.loaded) this.actor.move(dir, PLAYER.carrySpeed);
     else this.actor.move(dir, running ? PLAYER.runSpeed : PLAYER.walkSpeed, PLAYER.walkSpeed);
   }
 

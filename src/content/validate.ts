@@ -3,7 +3,7 @@
 // Utilisé par `npm run check` (Node) et au démarrage du jeu.
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
-import type { Carry, CharacterDef, DialogueDef, Gesture, ItemDef, MapData, PropDef, TilesetCatalog } from './types';
+import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PropDef, TilesetCatalog } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -179,7 +179,7 @@ export interface Content {
   props: Record<string, PropDef>;
   items: Record<string, ItemDef>;
   gestures: Record<string, Gesture>;
-  carry: Carry;
+  hold: HoldPoses;
   maps: Record<string, MapData>;
   characters: Record<string, CharacterDef>;
   dialogues: Record<string, DialogueDef>;
@@ -273,6 +273,18 @@ function validateTrunk(c: Content, cat: Catalog): string[] {
   return errors;
 }
 
+/** Un objet tenu : sa posture va avec ses mains (une main : `hand` ; deux : `shoulder` ou `carry`), sa planche a ses trois vues. */
+function validateHold(at: string, h: Hold, hands: 1 | 2, cat: Catalog): string[] {
+  const errors: string[] = [];
+  if ((h.stance === 'hand') !== (hands === 1)) errors.push(`${at} : posture '${h.stance}' pour un objet à ${hands} main${hands > 1 ? 's' : ''}`);
+  if (h.image) {
+    for (const dir of ['down', 'up', 'right']) {
+      if (!cat.animations.get(h.image)?.has(dir)) errors.push(`${at} : animation '${dir}' absente de la planche '${h.image}' (ou planche non dessinée)`);
+    }
+  }
+  return errors;
+}
+
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -299,14 +311,17 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     }
   }
 
-  // Porter : une animation `carry-<état>-<direction>` par direction, autant d'images que de points d'accroche
-  for (const state of ['idle', 'walk'] as const) {
-    for (const dir of DIRECTIONS) {
-      const anim = `carry-${state}-${dir}`;
-      const frames = cat.frameCounts.get(PLAYER.skin)?.get(anim);
-      const poses = c.carry[state][dir === 'left' ? 'right' : (dir as 'down' | 'up' | 'right')];
-      if (frames === undefined) err(`carry.json : animation '${anim}' manquante dans le sprite '${PLAYER.skin}'`);
-      else if (frames !== poses.length) err(`carry.json ${state} ${dir} : ${poses.length} points d'accroche pour ${frames} images dans '${PLAYER.skin}-${anim}'`);
+  // Objets tenus : pour chaque posture, une animation `<posture>-<état>-<direction>` du corps (bras pendants : `<état>-<direction>`),
+  // autant d'images que de points d'accroche dans hold.json
+  for (const [stance, motions] of Object.entries(c.hold)) {
+    for (const state of ['idle', 'walk'] as const) {
+      for (const dir of DIRECTIONS) {
+        const anim = `${stance === 'hand' ? '' : `${stance}-`}${state}-${dir}`;
+        const frames = cat.frameCounts.get(PLAYER.skin)?.get(anim);
+        const points = motions[state][dir === 'left' ? 'right' : (dir as 'down' | 'up' | 'right')];
+        if (frames === undefined) err(`hold.json '${stance}' : animation '${anim}' manquante dans le sprite '${PLAYER.skin}'`);
+        else if (frames !== points.length) err(`hold.json '${stance}' ${state} ${dir} : ${points.length} points d'accroche pour ${frames} images dans '${PLAYER.skin}-${anim}'`);
+      }
     }
   }
 
@@ -330,6 +345,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${key}' : animation '${p.anim}' absente de '${p.image}'`);
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);
     if (p.harvest) addAll(validateHarvest(key, p, c, cat));
+    if (p.take) addAll(validateHold(`props.json '${key}' take`, p.take.hold, p.take.hands, cat));
     if (p.take && !cat.textures.has(p.take.icon)) err(`props.json '${key}' : icône '${p.take.icon}' non dessinée`);
     // E sur l'objet : le prendre, le récolter ou ouvrir son dialogue, pas deux à la fois
     if (p.take && (p.harvest || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
@@ -340,6 +356,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Objets possédables
   for (const [key, it] of Object.entries(c.items)) {
+    if (it.hold) addAll(validateHold(`items.json '${key}'`, it.hold, it.hands, cat));
     if (!KEBAB_CASE.test(key)) err(`items.json '${key}' : la clé doit être un identifiant anglais en kebab-case`);
     if (!cat.textures.has(it.icon)) err(`items.json '${key}' : icône '${it.icon}' non dessinée`);
   }

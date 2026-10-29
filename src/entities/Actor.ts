@@ -11,8 +11,8 @@ export class Actor extends Phaser.Physics.Arcade.Sprite {
   /** Attente ou marche : la dernière animation demandée par move(). */
   motion: 'idle' | 'walk' = 'idle';
   /**
-   * Posture qui change les animations d'attente et de marche : `carry` joue `carry-idle-*` et `carry-walk-*` (il porte à deux mains).
-   * Vide : `idle-*` et `walk-*`. Posée par un composant (Carry), jamais par une sous-classe.
+   * Posture qui change les animations d'attente et de marche : `carry` joue `carry-idle-*` et `carry-walk-*` (il porte à deux mains), `shoulder` joue `shoulder-*` (la hache sur l'épaule).
+   * Vide : `idle-*` et `walk-*`. Posée par un composant (Hold), jamais par une sous-classe.
    */
   stance = '';
   declare body: Phaser.Physics.Arcade.Body;

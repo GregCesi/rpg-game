@@ -111,14 +111,14 @@ export const HandsSchema = z.union([z.literal(1), z.literal(2)]);
 
 /**
  * Objet du monde qu'on prend dans les mains avec E (la bille) : il quitte la carte, et Xéros le porte devant lui
- * (animations `carry-*`, l'image de l'objet posée sur ses mains d'après carry.json). Reposé, il retrouve la carte à sa nouvelle place.
+ * (voir `hold`). Reposé, il retrouve la carte à sa nouvelle place.
  */
 export const TakeSchema = z.strictObject({
   hands: HandsSchema,
   /** Icône 16×16 affichée dans les cases des mains (`item-<…>` : la même pour toutes les billes, `item-felled-log`). */
   icon: id,
-  /** Point de l'image tenu par les mains ; absent : le centre de sa collision (de l'image s'il n'en a pas). */
-  grip: z.tuple([px, px]).optional(),
+  /** Comment il se voit sur Xéros quand il le tient (la bille : `carry`, `held-felled-log`). */
+  hold: z.lazy(() => HoldSchema),
 });
 
 /** Un objet possédable (dans les mains, au sol) : sa clé dans items.json est son identifiant. Une main en tient un seul. */
@@ -130,6 +130,8 @@ export const ItemDefSchema = z.strictObject({
   kind: z.enum(['tool', 'weapon', 'resource']),
   /** Mains qu'il faut pour le tenir : 2 pour ce qui est lourd ou long (la hache de bûcheron). */
   hands: HandsSchema.default(1),
+  /** Comment il se voit sur Xéros quand il le tient : voir HoldSchema. */
+  hold: z.lazy(() => HoldSchema).optional(),
 });
 
 /**
@@ -203,16 +205,37 @@ export const GestureSchema = z.strictObject({
   poses: z.strictObject({ down: z.array(PoseSchema), up: z.array(PoseSchema), right: z.array(PoseSchema) }),
 });
 
-/** Point d'accroche de ce que Xéros porte, pour une image : (dx, dy) depuis les pieds. `behind` : derrière le corps (de dos, derrière la tête). */
-export const CarryPoseSchema = z.strictObject({ dx: px, dy: px, behind: z.boolean().default(false) });
+/** Point d'accroche d'un objet tenu, pour une image : (dx, dy) depuis les pieds. `behind` : derrière le corps à cette image. */
+export const HoldPointSchema = z.strictObject({ dx: px, dy: px, behind: z.boolean().default(false) });
+
+/** Par direction (la gauche en miroir de la droite), un point par image ; pour l'attente (`idle`) et la marche (`walk`). */
+const holdMotions = <T extends z.ZodType>(point: T) => {
+  const dirs = z.strictObject({ down: z.array(point), up: z.array(point), right: z.array(point) });
+  return z.strictObject({ idle: dirs, walk: dirs });
+};
 
 /**
- * Porter à deux mains (carry.json) : pour l'attente (`idle`) et la marche (`walk`), le point d'accroche de chaque image
- * des animations `carry-<état>-<direction>` du corps. La gauche est le miroir de la droite. L'objet porté (son point `grip`)
- * est posé sur ce point, par-dessus le corps, comme l'outil en main pendant un geste.
+ * Où se voit ce que Xéros tient, à l'attente et à la marche (hold.json), selon la posture :
+ * `hand` : bras pendants (`idle-*`, `walk-*`), un point par main de Xéros (`left`, `right`) ;
+ * `shoulder` : sur l'épaule (`shoulder-idle-*`, `shoulder-walk-*`), la hache ;
+ * `carry` : porté à deux mains devant lui (`carry-idle-*`, `carry-walk-*`), la bille.
+ * L'image de l'objet est posée par son centre sur le point, comme l'outil d'un geste. Vers la gauche, tout est le miroir
+ * de la droite, et les mains s'échangent : la main de Xéros côté spectateur n'est plus la même.
  */
-const carryPoses = z.strictObject({ down: z.array(CarryPoseSchema), up: z.array(CarryPoseSchema), right: z.array(CarryPoseSchema) });
-export const CarrySchema = z.strictObject({ idle: carryPoses, walk: carryPoses });
+export const HoldPosesSchema = z.strictObject({
+  hand: holdMotions(z.strictObject({ left: HoldPointSchema, right: HoldPointSchema })),
+  shoulder: holdMotions(HoldPointSchema),
+  carry: holdMotions(HoldPointSchema),
+});
+
+export const StanceSchema = z.enum(['hand', 'shoulder', 'carry']);
+
+/**
+ * Comment un objet tenu se voit sur Xéros : sa posture (voir HoldPosesSchema) et sa planche `held-<…>` (animations `down`,
+ * `up`, `right` d'une image, le point d'accroche au centre ; la gauche = la droite retournée). Sans planche : son icône,
+ * à la main. Absent d'un objet possédable : `hand` avec son icône (à deux mains : `carry`).
+ */
+export const HoldSchema = z.strictObject({ stance: StanceSchema, image: id.optional() });
 
 /** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
 export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
@@ -295,8 +318,10 @@ export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type Take = z.infer<typeof TakeSchema>;
 export type Pose = z.infer<typeof PoseSchema>;
 export type Gesture = z.infer<typeof GestureSchema>;
-export type CarryPose = z.infer<typeof CarryPoseSchema>;
-export type Carry = z.infer<typeof CarrySchema>;
+export type HoldPoint = z.infer<typeof HoldPointSchema>;
+export type HoldPoses = z.infer<typeof HoldPosesSchema>;
+export type Hold = z.infer<typeof HoldSchema>;
+export type Stance = z.infer<typeof StanceSchema>;
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 export type DialogueLine = z.infer<typeof DialogueLineSchema>;
 export type DialogueDef = z.infer<typeof DialogueDefSchema>;

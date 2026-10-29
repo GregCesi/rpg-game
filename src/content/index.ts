@@ -2,12 +2,12 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { CarrySchema, CharacterDefSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, PropDefSchema, TilesetCatalogSchema } from './types';
+import { CharacterDefSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, PropDefSchema, TilesetCatalogSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import itemsJson from './items.json';
 import gesturesJson from './gestures.json';
-import carryJson from './carry.json';
+import holdJson from './hold.json';
 import charactersJson from './characters.json';
 import dialoguesJson from './dialogues.json';
 export { maps } from '../generated/maps';
@@ -26,7 +26,7 @@ export const props = parse('props.json', z.record(z.string().min(1), PropDefSche
 export const items = parse('items.json', z.record(z.string().min(1), ItemDefSchema), itemsJson);
 /** Gestes du corps (`use`) et place de l'outil en main à chaque image. */
 export const gestures = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson);
-/** Porter à deux mains : point d'accroche de l'objet porté, image par image. */
-export const carry = parse('carry.json', CarrySchema, carryJson);
+/** Objets tenus sur Xéros : point d'accroche par posture, image par image. */
+export const hold = parse('hold.json', HoldPosesSchema, holdJson);
 export const characters = parse('characters.json', z.record(z.string(), CharacterDefSchema), charactersJson);
 export const dialogues = parse('dialogues.json', z.record(z.string(), DialogueDefSchema), dialoguesJson);

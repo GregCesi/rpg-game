@@ -1,0 +1,38 @@
+{
+  "hand": {
+    "idle": {
+      "down": [{"left": {"dx": 5, "dy": -11}, "right": {"dx": -7, "dy": -11}}],
+      "up": [{"left": {"dx": -7, "dy": -11, "behind": true}, "right": {"dx": 5, "dy": -11, "behind": true}}],
+      "right": [{"left": {"dx": -3, "dy": -11, "behind": true}, "right": {"dx": -2, "dy": -10}}]
+    },
+    "walk": {
+      "down": [{"left": {"dx": 5, "dy": -11}, "right": {"dx": -7, "dy": -12}}, {"left": {"dx": 5, "dy": -12}, "right": {"dx": -7, "dy": -12}}, {"left": {"dx": 5, "dy": -12}, "right": {"dx": -7, "dy": -11}}, {"left": {"dx": 5, "dy": -12}, "right": {"dx": -7, "dy": -12}}],
+      "up": [{"left": {"dx": -7, "dy": -12, "behind": true}, "right": {"dx": 5, "dy": -11, "behind": true}}, {"left": {"dx": -7, "dy": -12, "behind": true}, "right": {"dx": 5, "dy": -12, "behind": true}}, {"left": {"dx": -7, "dy": -11, "behind": true}, "right": {"dx": 5, "dy": -12, "behind": true}}, {"left": {"dx": -7, "dy": -12, "behind": true}, "right": {"dx": 5, "dy": -12, "behind": true}}],
+      "right": [{"left": {"dx": -2, "dy": -11, "behind": true}, "right": {"dx": -3, "dy": -10}}, {"left": {"dx": -3, "dy": -12, "behind": true}, "right": {"dx": -2, "dy": -11}}, {"left": {"dx": -4, "dy": -11, "behind": true}, "right": {"dx": -1, "dy": -10}}, {"left": {"dx": -3, "dy": -12, "behind": true}, "right": {"dx": -2, "dy": -11}}]
+    }
+  },
+  "shoulder": {
+    "idle": {
+      "down": [{"dx": -4, "dy": -15}],
+      "up": [{"dx": 3, "dy": -15}],
+      "right": [{"dx": 0, "dy": -14}]
+    },
+    "walk": {
+      "down": [{"dx": -4, "dy": -15}, {"dx": -4, "dy": -16}, {"dx": -4, "dy": -15}, {"dx": -4, "dy": -16}],
+      "up": [{"dx": 3, "dy": -15}, {"dx": 3, "dy": -16}, {"dx": 3, "dy": -15}, {"dx": 3, "dy": -16}],
+      "right": [{"dx": 0, "dy": -14}, {"dx": 0, "dy": -15}, {"dx": 0, "dy": -14}, {"dx": 0, "dy": -15}]
+    }
+  },
+  "carry": {
+    "idle": {
+      "down": [{"dx": 0, "dy": -11}],
+      "up": [{"dx": 0, "dy": -18, "behind": true}],
+      "right": [{"dx": 5, "dy": -12}]
+    },
+    "walk": {
+      "down": [{"dx": 0, "dy": -11}, {"dx": 0, "dy": -12}, {"dx": 0, "dy": -11}, {"dx": 0, "dy": -12}],
+      "up": [{"dx": 0, "dy": -18, "behind": true}, {"dx": 0, "dy": -19, "behind": true}, {"dx": 0, "dy": -18, "behind": true}, {"dx": 0, "dy": -19, "behind": true}],
+      "right": [{"dx": 5, "dy": -12}, {"dx": 5, "dy": -13}, {"dx": 5, "dy": -12}, {"dx": 5, "dy": -13}]
+    }
+  }
+}

@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { START, ZOOM } from '../config';
-import { items, maps } from '../content';
-import type { Exit } from '../content/types';
+import { items, maps, props } from '../content';
+import type { Exit, Stance } from '../content/types';
+import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
 import { GameEvent } from '../events';
@@ -9,7 +10,7 @@ import { findExit } from '../systems/exits';
 import { HarvestSystem, type HitResult } from '../systems/harvest';
 import { HandsSystem } from '../systems/hands';
 import { InteractionSystem } from '../systems/InteractionSystem';
-import { canTake, game, heldItem, mapState, removeGroundItem, switchHand, take } from '../state';
+import { canTake, game, heldItem, mapState, removeGroundItem, switchHand, take, type Held } from '../state';
 import { GameMap } from '../world/GameMap';
 import type { Interactable, PlacedGround } from '../world/GameMap';
 
@@ -19,6 +20,17 @@ import type { Interactable, PlacedGround } from '../world/GameMap';
  * `use` : Xéros fait un geste (outil ou mains), il ne marche pas et ne prend pas de sortie.
  */
 type Mode = 'play' | 'use' | 'dialogue' | 'transition';
+
+/** Comment un objet tenu se voit sur Xéros : son `hold` (items.json, ou `take` de props.json), sinon son icône à la main. */
+function holdOf(h: Held): { stance: Stance; look: Look } {
+  if ('prop' in h) {
+    const t = props[h.prop].take!;
+    return { stance: t.hold.stance, look: { image: t.hold.image, icon: t.icon } };
+  }
+  const it = items[h.item];
+  const stance = it.hold?.stance ?? (it.hands === 2 ? 'carry' : 'hand');
+  return { stance, look: { image: it.hold?.image, icon: it.icon } };
+}
 
 /**
  * Une carte avec le joueur dedans. La scène assemble et arbitre : chaque système fait une chose
@@ -104,7 +116,7 @@ export class WorldScene extends Phaser.Scene {
     const drop = input.dropPressed();
     const swap = input.swapPressed();
     const e = this.interaction.update(time, this.mode === 'play');
-    this.harvest.updatePrompt(time, this.player, this.player.carry.busy ? undefined : heldItem(game), this.mode === 'play');
+    this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : heldItem(game), this.mode === 'play');
     if (this.mode !== 'play') return;
     if (swap) {
       switchHand(game);
@@ -144,10 +156,14 @@ export class WorldScene extends Phaser.Scene {
     if (r === 'done') this.handsChanged();
   }
 
-  /** Les mains ont changé : le HUD se redessine, Xéros porte (ou non) l'objet du monde qu'il tient à deux mains. */
+  /** Les mains ont changé : le HUD se redessine, ce que tient Xéros se voit sur lui. */
   private handsChanged(): void {
-    const b = game.both;
-    this.player.carry.hold(b && 'prop' in b ? { type: b.prop, flip: b.flip } : undefined);
+    const [l, r] = game.hands;
+    if (game.both) {
+      const { stance, look } = holdOf(game.both);
+      // à deux mains, la posture est `shoulder` ou `carry` (validate.ts)
+      this.player.hold.set({ both: look, stance: stance as 'shoulder' | 'carry' });
+    } else this.player.hold.set({ left: l ? holdOf(l).look : undefined, right: r ? holdOf(r).look : undefined });
     this.game.events.emit(GameEvent.HandsChanged);
   }
 
@@ -157,7 +173,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Espace : le geste avec ce qu'on tient, même dans le vide. Une ressource en main ne fait rien ; chargé, rien non plus. */
   private useHeld(): void {
-    if (this.player.carry.busy) return;
+    if (this.player.hold.loaded) return;
     const tool = heldItem(game);
     if (!tool || items[tool].kind === 'resource') {
       // mains vides devant ce qui demande un outil : on le dit

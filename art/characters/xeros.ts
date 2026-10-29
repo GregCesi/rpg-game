@@ -481,14 +481,14 @@ const chopDown = CHOP_BODY.down.map((b) => useFrontal('down', b));
 const chopUp = CHOP_BODY.up.map((b) => useFrontal('up', b));
 const chopRight = CHOP_BODY.right.map(useSide);
 
-const walkFrontal = (f: Facing) => [
-  frontal(f, 0, -2, 0),
-  frontal(f, 0, 0, -1),
-  frontal(f, -2, 0, 0),
-  frontal(f, 0, 0, -1),
-];
+/** Images de walk-down et walk-up : [legL, legR, bob] de frontal. */
+const WALK_FRONTAL: [number, number, number][] = [[0, -2, 0], [0, 0, -1], [-2, 0, 0], [0, 0, -1]];
+/** Images de walk-right : [spread, arm, bob, swapLegs] de side. */
+const WALK_SIDE: [number, number, number, boolean][] = [[1, -1, 0, false], [0, 0, -1, false], [1, 1, 0, true], [0, 0, -1, false]];
 
-const walkRight = [side(1, -1, 0), side(0, 0, -1), side(1, 1, 0, true), side(0, 0, -1)];
+const walkFrontal = (f: Facing) => WALK_FRONTAL.map(([l, r, bob]) => frontal(f, l, r, bob));
+
+const walkRight = WALK_SIDE.map(([spread, arm, bob, swap]) => side(spread, arm, bob, swap));
 
 // ---------- Porter (carry-*) ----------
 // Une charge lourde tenue à deux mains contre soi (une bille d'un mètre). La charge est une image à part que le jeu
@@ -583,6 +583,135 @@ export const CARRY_HANDS: Record<'down' | 'up' | 'right', { idle: { dx: number; 
   return { down: dir('down'), up: dir('up'), right: dir('right') };
 })();
 
+// ---------- Mains à l'attente et à la marche (idle-*, walk-*) ----------
+// Un objet tenu d'une main (une branche) est une image à part que le jeu pose sur la main, image par image.
+
+/** Point d'accroche depuis les pieds (dx = x − 16, dy = y − 48 dans la frame) ; `behind` : l'objet passe sous le corps. */
+export interface HoldPoint { dx: number; dy: number; behind: boolean }
+/** Les deux mains de Xéros (sa gauche et sa droite, pas celles de l'image). */
+export interface HandPair { left: HoldPoint; right: HoldPoint }
+
+const holdAt = ([x, y]: Vec, behind: boolean): HoldPoint => ({ dx: x - 16, dy: y - 48, behind });
+
+/**
+ * Mains pendantes de face et de dos, pour frontal(legL, legR, bob) : le poing fait 2 × 2 px, le point est son pixel
+ * en bas à gauche (bras gauche de l'image : x = 9 ; bras droit de l'image : x = 21). La main remonte d'un pixel
+ * quand le bras part en avant. De face, la main droite de Xéros est à gauche de l'image ; de dos, à droite. De dos, ce
+ * qu'il tient passe sous le corps : la main le recouvre, seul ce qui dépasse de la silhouette se voit.
+ */
+function frontalHands(facing: Facing, legL: number, legR: number, bob: number): HandPair {
+  const imgLeft = holdAt([9, 37 + bob - (legR < 0 ? 1 : 0)], facing === 'up');
+  const imgRight = holdAt([21, 37 + bob - (legL < 0 ? 1 : 0)], facing === 'up');
+  return facing === 'down' ? { right: imgLeft, left: imgRight } : { left: imgLeft, right: imgRight };
+}
+
+/**
+ * Profil droit, pour side(spread, arm, bob) : la main droite est celle du bras côté spectateur (armSide, poing en
+ * x = 14..15, y = 37..38, point en bas à gauche) ; la gauche est de l'autre côté du corps, cachée, un pixel plus haut (plus loin) et balancée
+ * à l'opposé.
+ */
+function sideHands(arm: number, bob: number): HandPair {
+  return { right: holdAt([14 + arm, 38 + bob], false), left: holdAt([13 - arm, 37 + bob], true) };
+}
+
+/**
+ * Point de chaque main pour idle-* (`idle`) et chaque image de walk-* (`walk`), dans l'ordre des images.
+ * La gauche de l'écran est le miroir de la droite : dx opposé, image de l'objet retournée ; une fois retourné, le bras
+ * côté spectateur est sa main gauche, si bien que la main gauche de Xéros vers la gauche est le miroir de sa main
+ * droite vers la droite (et inversement).
+ */
+export const HAND_POINTS: Record<'down' | 'up' | 'right', { idle: HandPair; walk: HandPair[] }> = {
+  down: { idle: frontalHands('down', 0, 0, 0), walk: WALK_FRONTAL.map(([l, r, b]) => frontalHands('down', l, r, b)) },
+  up: { idle: frontalHands('up', 0, 0, 0), walk: WALK_FRONTAL.map(([l, r, b]) => frontalHands('up', l, r, b)) },
+  right: { idle: sideHands(0, 0), walk: WALK_SIDE.map(([, arm, bob]) => sideHands(arm, bob)) },
+};
+
+// ---------- La hache sur l'épaule (shoulder-*) ----------
+// La main droite remonte tenir le manche devant la poitrine, le manche posé sur l'épaule droite, le fer derrière
+// elle, au-dessus de l'épaule ; l'autre bras pend et balance comme à la marche. La hache est une image à part
+// (held-axe, art/items/carried.ts), centrée sur le poing droit. Même pas et même cadence que walk-*.
+
+interface ShoulderBody {
+  /** Poing droit, dans la frame, au repos : le centre de l'image de la hache. */
+  hand: Vec;
+  /** Coude droit. */
+  elbow: Vec;
+}
+
+const SHOULDER_BODY: Record<'down' | 'up' | 'right', ShoulderBody> = {
+  // de face : sa droite est à gauche de l'image ; le coude reste au flanc, le poing remonte devant l'épaule
+  down: { hand: [12, 33], elbow: [9, 36] },
+  // de dos : sa droite est à droite de l'image ; le poing est devant lui, caché ; le coude dépasse du flanc
+  up: { hand: [19, 33], elbow: [22, 36] },
+  // de profil : le coude contre la taille, le poing devant la poitrine
+  right: { hand: [16, 34], elbow: [15, 37] },
+};
+
+function shoulderFrontal(facing: Facing, legL: number, legR: number, bob: number): Grid {
+  const b = SHOULDER_BODY[facing];
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = 6;
+  const legY = BODY_Y + 10;
+  c.stamp(legLeft, ox + 5, legY + legL);
+  c.stamp(legRight, ox + 11, legY + legR);
+  const torso = facing === 'down' ? torsoFront : torsoBack;
+  // le bras qui pend : à droite de l'image de face (sa gauche), à gauche de dos (sa gauche aussi)
+  const hanging = facing === 'down'
+    ? torso.map((row, y) => '.....' + row + armRight(legL < 0)[y])
+    : torso.map((row, y) => armLeft(legR < 0)[y] + row + '.....');
+  const shoulder = facing === 'down' ? SHOULDER_L : SHOULDER_R;
+  const raised = () => {
+    rim(c);
+    arm(c, [down1(shoulder, bob), down1(b.elbow, bob), down1(b.hand, bob)], facing === 'down' ? 't' : 'T', facing === 'down' ? 'L' : 't');
+  };
+  if (facing === 'up') raised();
+  c.stamp(hanging, ox, BODY_Y + bob);
+  c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y + bob);
+  if (facing === 'down') raised();
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+function shoulderSide(spread: number, bob: number, swapLegs = false): Grid {
+  const b = SHOULDER_BODY.right;
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = 7;
+  const legY = BODY_Y + 10;
+  const back = swapLegs ? legSide : backLeg(legSide);
+  const front = swapLegs ? backLeg(legSide) : legSide;
+  c.stamp(back, ox + 4 - spread, legY);
+  c.stamp(front, ox + 6 + spread, legY);
+  c.stamp(bodySide, ox, BODY_Y + bob);
+  c.stamp(headSide, ox, HEAD_Y + bob);
+  rim(c);
+  arm(c, [down1(SHOULDER_SIDE, bob), down1(b.elbow, bob), down1(b.hand, bob)], 't', 'L');
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+const shoulderWalkFrontal = (f: Facing) => WALK_FRONTAL.map(([l, r, bob]) => shoulderFrontal(f, l, r, bob));
+const shoulderWalkRight = WALK_SIDE.map(([spread, , bob, swap]) => shoulderSide(spread, bob, swap));
+
+/**
+ * Où le jeu pose le centre de l'image held-axe, pour shoulder-idle-* (`idle`) et chaque image de shoulder-walk-*
+ * (`walk`) : le poing droit, qui suit le rebond de la marche. De face et de profil, la hache passe devant le corps (le
+ * poing se dessine dans son image) ; de dos aussi : le fer est derrière lui, donc de notre côté, et l'image ne montre
+ * pas ce que le corps cache. La gauche est le miroir de la droite (la hache passe alors sur l'épaule côté spectateur).
+ */
+export const SHOULDER_POINTS: Record<'down' | 'up' | 'right', { idle: HoldPoint; walk: HoldPoint[] }> = (() => {
+  const dir = (d: 'down' | 'up' | 'right', bobs: number[]) => ({
+    idle: holdAt(SHOULDER_BODY[d].hand, false),
+    walk: bobs.map((bob) => holdAt(down1(SHOULDER_BODY[d].hand, bob), false)),
+  });
+  return {
+    down: dir('down', WALK_FRONTAL.map(([, , b]) => b)),
+    up: dir('up', WALK_FRONTAL.map(([, , b]) => b)),
+    right: dir('right', WALK_SIDE.map(([, , b]) => b)),
+  };
+})();
+
 const xeros: SpriteSheetSource = {
   kind: 'spritesheet',
   name: 'xeros',
@@ -614,6 +743,14 @@ const xeros: SpriteSheetSource = {
     'carry-walk-up': { frames: carryWalkFrontal('up'), frameRate: CARRY_FRAME_RATE, repeat: -1 },
     'carry-walk-right': { frames: carryWalkRight, frameRate: CARRY_FRAME_RATE, repeat: -1 },
     'carry-walk-left': { frames: carryWalkRight.map(flipX), frameRate: CARRY_FRAME_RATE, repeat: -1 },
+    'shoulder-idle-down': { frames: [shoulderFrontal('down', 0, 0, 0)], frameRate: 1, repeat: 0 },
+    'shoulder-idle-up': { frames: [shoulderFrontal('up', 0, 0, 0)], frameRate: 1, repeat: 0 },
+    'shoulder-idle-right': { frames: [shoulderSide(0, 0)], frameRate: 1, repeat: 0 },
+    'shoulder-idle-left': { frames: [flipX(shoulderSide(0, 0))], frameRate: 1, repeat: 0 },
+    'shoulder-walk-down': { frames: shoulderWalkFrontal('down'), frameRate: 8, repeat: -1 },
+    'shoulder-walk-up': { frames: shoulderWalkFrontal('up'), frameRate: 8, repeat: -1 },
+    'shoulder-walk-right': { frames: shoulderWalkRight, frameRate: 8, repeat: -1 },
+    'shoulder-walk-left': { frames: shoulderWalkRight.map(flipX), frameRate: 8, repeat: -1 },
   },
 };
 
