@@ -290,14 +290,18 @@ interface UseBody {
 }
 
 const pose = (
-  hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front',
-  view: View = 'side', grip: Vec = hand,
-): UseBody => ({ hands: hand, tool: { hand: grip, head, edge, behind, ...(view === 'flat' ? { view } : {}) }, elbows, arms });
+  hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer, view: View, grip: Vec,
+): UseBody => ({ hands: hand, tool: { hand: grip, head, edge, behind, ...(view === 'edge' ? { view } : {}) }, elbows, arms });
 
-/** Pose d'un coup horizontal : l'outil est vu du dessus (art/lib/held.ts, dessins `flat*`). */
-const flat = (
+/** Pose d'un coup horizontal : on voit la face de l'outil, de profil (art/lib/held.ts, dessins `diag` et `upright`). */
+const face = (
   hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front', grip: Vec = hand,
-) => pose(hand, head, edge, behind, elbows, arms, 'flat', grip);
+) => pose(hand, head, edge, behind, elbows, arms, 'face', grip);
+
+/** Pose d'un coup vertical : on voit l'outil par la tranche (art/lib/held.ts, dessins `flat*`). */
+const edgeOn = (
+  hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front', grip: Vec = hand,
+) => pose(hand, head, edge, behind, elbows, arms, 'edge', grip);
 
 // Épaules, dans la frame : face/dos à gauche et à droite du torse, profil au milieu du dos.
 const SHOULDER_L: Vec = [11, BODY_Y + 2];
@@ -305,33 +309,33 @@ const SHOULDER_R: Vec = [20, BODY_Y + 2];
 const SHOULDER_SIDE: Vec = [14, BODY_Y + 2];
 
 // Coup horizontal (use-*), sur ce qui est debout : la hache tourne à plat autour de Xéros, à hauteur de tronc
-// (mains à hauteur de ceinture). Vue du dessus, elle se présente par la tranche : le fer n'est qu'un bloc sombre au
-// bout du manche, et le tranchant mène le coup. Armée sur le côté, elle passe devant lui puis mord le tronc.
+// (mains à hauteur de ceinture). On voit la face du fer, de profil : le tranchant en éventail mène le coup (côté 'ccw' :
+// la hache tourne dans le sens inverse des aiguilles d'une montre, vue d'en haut). Armée sur le côté, elle passe devant
+// lui puis mord le tronc.
 const USE_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
   // de face (l'arbre au sud) : armée à sa droite (à gauche de l'image), le fer tourne vers nous et mord le tronc
   // devant lui ; puis on le dégage
   down: [
-    flat([10, 34], 'nw', 'cw', true, [[8, 36], [16, 37]]),
-    flat([12, 37], 'w', 'ccw', false, [[9, 37], [18, 38]]),
-    flat([16, 38], 'sw', 'ccw', false, [[11, 38], [20, 38]], 'front', [18, 37]),
-    flat([14, 37], 'sw', 'ccw', false, [[10, 38], [19, 38]], 'front', [16, 36]),
+    face([10, 34], 'nw', 'ccw', true, [[8, 36], [16, 37]]),
+    face([12, 37], 'w', 'ccw', false, [[9, 37], [18, 38]]),
+    face([16, 38], 'sw', 'ccw', false, [[11, 38], [20, 38]], 'front', [18, 37]),
+    face([14, 37], 'sw', 'ccw', false, [[10, 38], [19, 38]], 'front', [16, 36]),
   ],
   // de dos (l'arbre au nord) : armée en arrière à sa droite, le fer vers nous ; il tourne par la droite et mord
-  // le tronc devant lui, à droite de la tête (tête vers le nord-est : droit au nord, le fer, étroit vu par la
-  // tranche, disparaîtrait derrière la tête), puis revient
+  // le tronc devant lui, à droite de la tête, puis revient
   up: [
-    flat([22, 37], 'se', 'cw', false, [[12, 37], [23, 35]], 'body'),
-    flat([24, 34], 'e', 'cw', false, [[12, 36], [24, 32]], 'body'),
-    flat([21, 31], 'ne', 'ccw', true, [[12, 35], [23, 33]], 'body'),
-    flat([23, 33], 'ne', 'ccw', true, [[12, 36], [24, 34]], 'body'),
+    face([22, 37], 'se', 'ccw', false, [[12, 37], [23, 35]], 'body'),
+    face([24, 34], 'e', 'ccw', false, [[12, 36], [24, 32]], 'body'),
+    face([21, 31], 'ne', 'ccw', true, [[12, 35], [23, 33]], 'body'),
+    face([23, 33], 'ne', 'ccw', true, [[12, 36], [24, 34]], 'body'),
   ],
   // de profil : armée derrière son dos, elle tourne par le côté proche de nous (fer vers le spectateur),
-  // mord le tronc devant lui manche en long, puis on la dégage d'un pixel
+  // mord le tronc devant lui, puis on la dégage d'un pixel
   right: [
-    flat([11, 35], 'w', 'ccw', false, [[14, 36]]),
-    flat([18, 37], 'se', 'cw', false, [[16, 36]]),
-    flat([22, 34], 'ne', 'ccw', false, [[18, 35]]),
-    flat([20, 35], 'ne', 'ccw', false, [[17, 35]]),
+    face([11, 35], 'w', 'ccw', false, [[14, 36]]),
+    face([18, 37], 'se', 'ccw', false, [[16, 36]]),
+    face([22, 34], 'ne', 'ccw', false, [[18, 35]]),
+    face([20, 35], 'ne', 'ccw', false, [[17, 35]]),
   ],
 };
 
@@ -342,9 +346,9 @@ export const USE_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
   right: USE_BODY.right.map((b) => b.tool),
 };
 
-// Coup vertical (chop-*), de haut en bas sur ce qui est couché ou posé au sol : la hache est vue de côté,
-// silhouette complète du manche et du fer. Armée au-dessus de la tête, elle s'abat ; à l'impact le manche est
-// vertical et le fer est dans l'encoche, au sol devant Xéros ; puis on le dégage.
+// Coup vertical (chop-*), de haut en bas sur ce qui est couché ou posé au sol : on voit la hache par la tranche,
+// un bloc de fer étroit et sombre au bout du manche. Armée au-dessus de la tête, elle s'abat ; à l'impact le manche est
+// vertical et le bloc est dans l'encoche, au sol devant Xéros ; puis on le dégage.
 
 /** Image de l'impact dans les animations chop-* (0 à 3). */
 export const CHOP_IMPACT = 2;
@@ -354,27 +358,27 @@ const CHOP_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
   // de face (le tronc au sud) : armée haut derrière la tête, elle revient devant le front, puis le fer frappe
   // le dessus du tronc quelques pixels sous les pieds, manche vertical, et on le dégage
   down: [
-    pose([16, 11], 'n', 'cw', true, [[7, 21], [24, 21]], 'head'),
-    pose([16, 18], 'n', 'cw', false, [[8, 26], [24, 26]]),
-    pose([16, 42], 's', 'ccw', false, [[12, 38], [20, 38]], 'front', 'side', [16, 35]),
-    pose([16, 39], 's', 'ccw', false, [[11, 37], [21, 37]], 'front', 'side', [16, 33]),
+    edgeOn([16, 11], 'n', 'cw', true, [[7, 21], [24, 21]], 'head'),
+    edgeOn([16, 18], 'n', 'cw', false, [[8, 26], [24, 26]]),
+    edgeOn([16, 42], 's', 'ccw', false, [[12, 38], [20, 38]], 'front', [16, 35]),
+    edgeOn([16, 39], 's', 'ccw', false, [[11, 37], [21, 37]], 'front', [16, 33]),
   ],
   // de dos (le tronc au nord, son dessus 18 à 22 px au-dessus des pieds, derrière la taille et le dos) : le fer est
   // armé derrière la tête, pendu vers nous ; il passe au-dessus de la tête, puis frappe l'encoche derrière le corps.
   // Les mains sont décalées à droite : le manche vertical et le fer dépassent du flanc droit
   up: [
-    pose([18, 12], 's', 'ccw', false, [[8, 21], [25, 21]], 'head'),
-    pose([21, 10], 'n', 'cw', true, [[9, 21], [26, 20]], 'head'),
-    pose([24, 37], 'n', 'cw', true, [[14, 39], [20, 39]], 'body', 'side', [24, 39]),
-    pose([24, 35], 'n', 'cw', true, [[14, 38], [20, 38]], 'body', 'side', [24, 37]),
+    edgeOn([18, 12], 's', 'ccw', false, [[8, 21], [25, 21]], 'head'),
+    edgeOn([21, 10], 'n', 'cw', true, [[9, 21], [26, 20]], 'head'),
+    edgeOn([24, 37], 'n', 'cw', true, [[14, 39], [20, 39]], 'body', [24, 39]),
+    edgeOn([24, 35], 'n', 'cw', true, [[14, 38], [20, 38]], 'body', [24, 37]),
   ],
   // de profil : armée derrière la tête, elle repart en avant au-dessus de lui, puis le fer frappe le dessus de la
   // bille posée devant lui, manche vertical, et on le dégage
   right: [
-    pose([12, 12], 'nw', 'cw', true, [[6, 23]], 'head'),
-    pose([22, 21], 'ne', 'cw', false, [[19, 28]]),
-    pose([24, 29], 'se', 'cw', false, [[19, 32]], 'front', 'side', [23, 26]),
-    pose([23, 27], 'se', 'cw', false, [[19, 31]], 'front', 'side', [22, 25]),
+    edgeOn([12, 12], 'nw', 'cw', true, [[6, 23]], 'head'),
+    edgeOn([22, 21], 'ne', 'ccw', false, [[19, 28]]),
+    edgeOn([24, 29], 'se', 'cw', false, [[19, 32]], 'front', [23, 26]),
+    edgeOn([23, 27], 'se', 'cw', false, [[19, 31]], 'front', [22, 25]),
   ],
 };
 

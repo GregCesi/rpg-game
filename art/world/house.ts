@@ -247,7 +247,8 @@ function choppingBlock(): Canvas {
  * Billot, la hache plantée dans la coupe : tête vers le bas à gauche, tranchant vers le bas à droite, enfoncé dans le
  * bois près du bord avant ; le long manche monte vers le haut à droite. Seul le talon, l'œil et un liseré de la joue
  * dépassent : la partie enfouie est retirée avant l'éclairage, si bien que le contour ne court que là où la hache est en
- * l'air, et la fente sombre prend sa place à l'entrée du fer.
+ * l'air, et la fente sombre prend sa place à l'entrée du fer. Le fer est celui de la hache en main, de profil : presque
+ * noir, talon court et carré ; le fil, enfoui, ne se voit pas.
  */
 function choppingBlockAxe(): Canvas {
   const c = shadedOutline(blockBody());
@@ -267,9 +268,9 @@ function choppingBlockAxe(): Canvas {
   for (let y = 0; y < zones.h; y++) for (let x = 0; x < zones.w; x++) {
     const k = zones.get(x, y);
     if (k === EMPTY) continue;
-    // profondeur vers le tranchant (bas à droite), depuis l'œil : au-delà d'un pixel, le fer est dans le bois
+    // profondeur vers le tranchant (bas à droite), depuis l'œil : au-delà de deux pixels, le fer est dans le bois
     const depth = (x - ex + (y - ey)) * Math.SQRT1_2;
-    (('12'.includes(k) || k === '3') && depth > 3 ? buried : visible).set(x + ox, y + oy, k);
+    ('14'.includes(k) && depth > 2 ? buried : visible).set(x + ox, y + oy, k);
   }
   const lit = Canvas.from(lightUp(visible.toGrid(), art.materials));
   for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
@@ -284,7 +285,7 @@ function choppingBlockAxe(): Canvas {
     }
     if (!air && buried.get(x + 1, y + 1) !== EMPTY) continue;
     // sous le fer, posé à ras de la coupe, pas de trait de contour (en bas, à droite) mais l'ombre du bois
-    const ironBeside = [[-1, 0], [0, -1], [1, 0], [0, 1]].some(([dx, dy]) => '123e'.includes(visible.get(x + 1 + dx, y + 1 + dy)) && visible.get(x + 1 + dx, y + 1 + dy) !== EMPTY);
+    const ironBeside = [[-1, 0], [0, -1], [1, 0], [0, 1]].some(([dx, dy]) => '14e'.includes(visible.get(x + 1 + dx, y + 1 + dy)) && visible.get(x + 1 + dx, y + 1 + dy) !== EMPTY);
     if (!air && k === 'o' && ironBeside && 'YtT'.includes(c.get(x, y))) {
       c.set(x, y, 'T');
       continue;

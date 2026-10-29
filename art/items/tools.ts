@@ -4,7 +4,7 @@
 // Contour d'un pixel : teinte la plus sombre de la matière en haut et à gauche, OUTLINE en bas et à droite.
 
 import { Canvas } from '../lib/canvas';
-import { FLAT_DEPTH, GRIP, TOOL_SIZE, type ToolArt } from '../lib/held';
+import { GRIP, TOOL_SIZE, type ToolArt } from '../lib/held';
 import type { Material, Materials } from '../lib/light';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
@@ -19,6 +19,9 @@ export const toolPalette = {
   '2': '#a7a69c', // fer clair
   '3': '#7d7e7a', // fer
   '4': '#504b46', // fer dans l'ombre, contour côté lumière (Z tiré vers le brun-violet)
+  // fer forgé brut de la hache, presque noir (docs/references/hache-vue-de-cote.png) : un gris froid, tiré vers le
+  // bleu-violet pour ne pas se fondre dans OUTLINE (brun chaud) ni dans le bois sombre du tronc (N K)
+  '0': '#35343a',
   // rouille, comme le minerai de fer
   '5': '#a65a34',
   '6': '#7a4430',
@@ -32,7 +35,7 @@ export const toolPalette = {
 /** Teinte la plus sombre de chaque matière, pour le contour côté lumière. */
 const dark = darkest({
   M: 'K', m: 'K', N: 'K', K: 'K', U: 'N', u: 'N', n: 'N', e: 'K',
-  '1': '4', '2': '4', '3': '4', '4': '4', '5': '6', '6': '6',
+  '1': '4', '2': '4', '3': '4', '4': '4', '0': '0', '5': '6', '6': '6',
   '7': '8', '8': '8', c: '9', '9': '9', a: 'E', d: 'E',
 }, 'o');
 
@@ -65,10 +68,11 @@ function crossbar(c: Canvas, x: number, y: number, n: number, top: string, botto
 }
 
 // ---------- Hache ----------
-// Hache de bûcheron, à deux mains : un seul fer, tranchant d'un côté, talon plat (le marteau) de l'autre,
-// l'œil entre les deux. En main, elle est à l'échelle du jeu (5 cm par pixel) : le manche fait 18 px de la
-// prise au fer (90 cm), et dépasse de deux pixels derrière, sous la seconde main. Le fer est grossi du double
-// (40 cm du talon au fil) pour se lire. L'icône d'inventaire n'est pas à l'échelle.
+// Hache de bûcheron, à deux mains : un seul fer, tranchant d'un côté, talon court et carré de l'autre, l'œil entre
+// les deux (docs/references/hache-vue-de-cote.png). En main, elle est à l'échelle du jeu (5 cm par pixel) : le manche
+// fait 18 px de la prise au fer (90 cm), et dépasse de deux pixels derrière, sous la seconde main. Le fer est grossi
+// du double (40 cm du talon au fil) pour se lire. L'icône d'inventaire n'est pas à l'échelle.
+// Le fer est presque noir (fer forgé brut, `0`), avec un fil clair (`1`) sur tout le tranchant.
 
 /** De la prise (main la plus proche du fer) au milieu de l'œil, le long du manche, en pixels (bord du fer à 17). */
 const AXE_EYE = 18.5;
@@ -76,38 +80,41 @@ const AXE_EYE = 18.5;
 const AXE_TAIL = -3;
 
 /**
- * Le fer dessiné pixel à pixel, vu de côté, tête en haut et tranchant à gauche : fil (1), joue amincie (2),
- * collet (3), œil autour du manche (e, les deux colonnes du manche), talon plat (3). Le haut se creuse vers la
- * pointe, la barbe descend plus bas. 9 px du talon au fil, 8 px de haut au fil, 3 à l'œil.
+ * Le fer dessiné pixel à pixel, vu de profil (la face du fer), tête en haut et tranchant à gauche : fil (1), fer
+ * presque noir (zone 4, peinte en 0), œil autour du manche (e, les deux colonnes du manche), talon (4, une colonne). Asymétrique : côté
+ * tranchant, le fer s'évase en éventail (la pointe monte de deux pixels, la barbe descend de trois, un creux la sépare
+ * du manche) ; côté talon, un bloc carré qui ne dépasse le manche que d'un pixel. 9 px du talon au fil, 8 de haut au
+ * fil, 3 à l'œil.
  */
 const AXE_IRON = [
-  '12.......',
-  '122......',
-  '12233ee33',
-  '12233ee33',
-  '12233ee33',
-  '1223.....',
-  '12.......',
+  '14.......',
+  '1444.....',
+  '144444ee4',
+  '144444ee4',
+  '144444ee4',
+  '1444.....',
+  '144......',
   '1........',
 ];
 
 /**
  * Le fer en un point, en coordonnées du fer : `t` le long du manche depuis le milieu de l'œil (vers la tête), `b` en
  * travers depuis l'axe du manche, vers le tranchant. Lu dans AXE_IRON (au plus proche) : debout, un pixel du dessin
- * est un pixel de l'image ; les autres vues (diagonale, à plat) l'échantillonnent.
+ * est un pixel de l'image.
  */
 function axeIron(t: number, b: number): string | null {
   const row = AXE_IRON[Math.round(3 - t)];
-  const k = row?.[Math.round(5.5 - b)];
+  const k = row?.[Math.round(6.5 - b)];
   return k && k !== '.' ? k : null;
 }
 
 /**
  * Zone de la hache en un point, en coordonnées du manche : `a` le long du manche depuis la prise (vers le fer),
- * `b` en travers vers le tranchant. `half` : demi-épaisseur du manche à l'écran.
+ * `b` en travers vers le tranchant. `half` : demi-épaisseur du manche à l'écran. `withIron` : false pour le manche
+ * seul (en diagonale, le fer vient de axeIronDiag).
  */
-function axeAt(a: number, b: number, half = 1): string | null {
-  const iron = axeIron(a - AXE_EYE, b);
+function axeAt(a: number, b: number, half = 1, withIron = true): string | null {
+  const iron = withIron ? axeIron(a - AXE_EYE, b) : null;
   if (iron) return iron;
   if (Math.abs(b) > half || a < AXE_TAIL || a > AXE_EYE + 1.5) return null;
   if (a < AXE_TAIL + 1) return 'N'; // bout du manche, bois de bout
@@ -115,26 +122,22 @@ function axeAt(a: number, b: number, half = 1): string | null {
 }
 
 /**
- * Le même fer que AXE_IRON, en contour continu, pour la vue de côté en diagonale : échantillonné pixel à pixel,
+ * Le même fer que AXE_IRON, en contour continu, pour la vue de profil en diagonale : échantillonné pixel à pixel,
  * AXE_IRON s'y émiette en marches et en trous. `t` le long du manche depuis le milieu de l'œil, `b` en travers
- * vers le tranchant. Œil et talon : trois pixels de haut ; de l'œil au fil, le fer s'évase, un peu vers la tête,
- * beaucoup vers la prise (la barbe).
+ * vers le tranchant. Côté talon, un bloc carré de trois pixels qui dépasse à peine le manche ; côté tranchant, le fer
+ * s'évase de l'œil au fil, un peu vers la tête, beaucoup vers la prise (la barbe).
  */
 function axeIronDiag(t: number, b: number): string | null {
-  if (b < -3.2 || b > 5.6) return null;
-  const f = Math.max(0, (b - 0.9) / 4.7); // 0 au collet, 1 au fil
-  const top = 1.6 + 1.9 * f * f;
-  const bottom = -1.6 - 3.2 * f ** 1.4;
-  if (t > top || t < bottom) return null;
-  if (b > 4.3) return '1';
-  if (b > 2.6) return '2';
-  return Math.abs(b) <= 1.1 ? 'e' : '3';
+  if (b < -1.9 || b > 6.3) return null;
+  if (b <= 1.1) return Math.abs(t) <= 1.5 ? (Math.abs(b) <= 1.1 ? 'e' : '4') : null; // œil et talon
+  const f = (b - 1.1) / 5.2; // 0 au collet, 1 au fil
+  if (t > 1.5 + 1.5 * f * f || t < -1.5 - 3.3 * f ** 1.4) return null;
+  return b > 5.6 ? '1' : '4';
 }
-
 /**
- * La hache vue de côté, en zones, tête vers `deg` à l'écran (90 = haut, 45 = haut à droite), tranchant du côté
- * 'ccw' (à gauche de la tête). L'axe du manche passe par le coin bas droit du pixel tenu GRIP : deux pixels
- * d'épaisseur debout, un escalier de deux pixels en diagonale.
+ * La hache vue de profil (la face du fer), en zones, tête vers `deg` à l'écran (90 = haut, 45 = haut à droite),
+ * tranchant du côté 'ccw' (à gauche de la tête). L'axe du manche passe par le coin bas droit du pixel tenu GRIP :
+ * deux pixels d'épaisseur debout, un escalier de deux pixels en diagonale.
  */
 function axeSideZones(deg: number): Canvas {
   const c = new Canvas(TOOL_SIZE, TOOL_SIZE);
@@ -147,24 +150,25 @@ function axeSideZones(deg: number): Canvas {
     const a = px * ux + py * uy;
     const b = px * uy - py * ux; // à gauche de la tête
     // en diagonale, le manche est l'escalier x + y = s ou s + 1 : centré un demi-pixel plus bas
-    const k = diagonal ? axeIronDiag(a - AXE_EYE, b + 0.35) ?? axeAt(a, b + 0.35, 0.72) : axeAt(a, b);
+    const k = diagonal ? axeIronDiag(a - AXE_EYE, b + 0.35) ?? axeAt(a, b + 0.35, 0.72, false) : axeAt(a, b);
     if (k) c.set(x, y, k);
   }
   return c;
 }
 
-// Vue du dessus (coup horizontal, use-*) : la hache se présente par la tranche. On ne voit jamais la lame
-// déployée : le fer n'est qu'un bloc étroit et sombre au bout du manche, un peu plus large que lui, d'où dépasse
-// le bout du manche. Le pied du bloc pousse d'un pixel vers la prise du côté du tranchant (la pointe de la barbe).
+// Par la tranche (coup vertical, chop-*, docs/references/hache-vue-de-dessus.png) : on ne voit jamais la lame
+// déployée. Le fer n'est qu'un bloc étroit et sombre au bout du manche, un pixel plus large que lui de chaque côté,
+// d'où dépasse le bout du manche. Le pied du bloc pousse d'un pixel vers la prise du côté du tranchant (la pointe de la
+// barbe, vue par la tranche). Le coup a lieu dans un plan vertical : rien n'est raccourci, le manche garde sa longueur.
 
 /** Le bloc de fer vu par la tranche, le long du manche depuis la prise : du pied à la tête (5 px, 25 cm). */
 const AXE_BLOCK: [number, number] = [15, 20];
 
-/** Zone du manche ou du fer vu par la tranche, en `a` le long du manche (pixels de manche réel), `side` en travers. */
+/** Zone du manche ou du fer vu par la tranche, en `a` le long du manche, `side` en travers. */
 function axeEdgeOn(a: number, side: 'shaft' | 'block' | 'toe' | 'out'): string | null {
   const [foot, top] = AXE_BLOCK;
   if (side === 'out' || a < AXE_TAIL) return null;
-  if (a >= foot && a < top) return side === 'shaft' || side === 'block' || side === 'toe' ? 'f' : null;
+  if (a >= foot && a < top) return 'f';
   if (side === 'toe' && a >= foot - 1 && a < foot) return 'f'; // pied de la barbe, côté tranchant
   if (side !== 'shaft') return null;
   if (a >= top && a < top + 1) return 'N'; // bout du manche, qui dépasse du fer
@@ -173,20 +177,17 @@ function axeEdgeOn(a: number, side: 'shaft' | 'block' | 'toe' | 'out'): string |
 }
 
 /**
- * La hache vue du dessus, par la tranche, pour un coup horizontal (art/lib/held.ts) : tête vers l'est (0), le
- * nord-est (45) ou le nord (90) au sol, tranchant du côté 'ccw'. La vue trois quarts raccourcit de FLAT_DEPTH ce qui
- * pointe vers le nord ; le manche (2 px) et le bloc (4 px) gardent leur largeur à l'écran. En diagonale, le manche
- * est l'escalier de deux pixels à 45° de l'écran, comme vu de côté : un trait propre plutôt qu'un angle exact.
- * La main tient le manche au pixel GRIP.
+ * La hache par la tranche, pour un coup vertical (art/lib/held.ts) : tête vers l'est (0), le nord-est (45) ou le
+ * haut (90) à l'écran, tranchant du côté 'ccw'. Le manche (2 px) et le bloc (4 px) gardent leur largeur à l'écran.
+ * En diagonale, le manche est l'escalier de deux pixels à 45°, comme de profil. La main tient le manche au pixel GRIP.
  */
 function axeFlatZones(deg: 0 | 45 | 90): Canvas {
   const c = new Canvas(TOOL_SIZE, TOOL_SIZE);
   const [gx, gy] = GRIP;
   if (deg === 45) {
     // escalier à 45° : v = x + y - (gx + gy) en travers (le manche sur v = 0 et 1, le tranchant vers les v petits),
-    // u = x - y - (gx - gy) le long du manche (2 par pas de diagonale). Le bloc est un rectangle tourné, aux bouts
-    // d'équerre avec le manche : six valeurs de v (quatre pixels en travers, comme vu de face), huit de u. Raccourci
-    // par la vue, il ne couvrirait que trois rangées et se lirait comme un nœud du manche : on l'allonge un peu.
+    // u = x - y - (gx - gy) le long du manche (2 par pas de diagonale, soit 1,4 px). Le bloc est un rectangle tourné,
+    // aux bouts d'équerre avec le manche : six valeurs de v (quatre pixels en travers, comme debout), huit de u.
     // Pas de pied de barbe ici : en escalier, il effilerait le bloc en pointe de lance.
     for (let y = 0; y < TOOL_SIZE; y++) for (let x = 0; x < TOOL_SIZE; x++) {
       const u = x - y - (gx - gy), v = x + y - (gx + gy);
@@ -200,12 +201,10 @@ function axeFlatZones(deg: 0 | 45 | 90): Canvas {
     return c;
   }
   // est : le manche sur les rangées gy et gy + 1, la tête vers les x croissants, le tranchant en haut ;
-  // nord : le manche sur les colonnes gx et gx + 1, la tête vers le haut, raccourcie, le tranchant à gauche
-  const depth = deg === 90 ? FLAT_DEPTH : 1;
+  // haut : le manche sur les colonnes gx et gx + 1, la tête vers le haut, le tranchant à gauche
   for (let y = 0; y < TOOL_SIZE; y++) for (let x = 0; x < TOOL_SIZE; x++) {
-    const along = deg === 90 ? gy + 1 - (y + 0.5) : x + 0.5 - gx;
+    const a = deg === 90 ? gy + 1 - (y + 0.5) : x + 0.5 - gx;
     const across = deg === 90 ? x - gx : y - gy; // 0 et 1 : le manche ; négatif : côté tranchant
-    const a = along / depth;
     const side = across === 0 || across === 1 ? 'shaft' : across === -1 ? 'toe' : across === 2 ? 'block' : 'out';
     const z = axeEdgeOn(a, side);
     if (z) c.set(x, y, z);
@@ -214,35 +213,39 @@ function axeFlatZones(deg: 0 | 45 | 90): Canvas {
 }
 
 /**
- * Icône de la hache, 16×16, pas à l'échelle : long manche en diagonale, fer en haut à droite, tranchant évasé vers
- * le haut à gauche, talon plat et court vers le bas à droite.
+ * Icône de la hache, 16×16, pas à l'échelle : long manche en diagonale, fer de profil en haut à droite, presque noir,
+ * tranchant évasé vers le haut à gauche avec son fil clair, talon court et carré vers le bas à droite.
  */
 function axe(): Canvas {
   const c = new Canvas(S, S);
-  shaft(c, 15, 14, 3, 'M', 'm');
+  shaft(c, 15, 14, 5, 'M', 'm');
   c.within('M', (c) => c.set(2, 13, 'm').set(3, 12, 'm')); // poignée patinée par la main
   c.set(1, 14, 'N').set(2, 14, 'N'); // bout du manche
-  local(c, 11.5, 5, (a, b) => {
+  local(c, ICON_EYE[0], ICON_EYE[1], (a, b) => {
     // même fer qu'en main, ramené à l'icône
-    const k = axeIron(a * 1.05, b * 1.05 + 0.2);
-    return k === 'e' ? '3' : k;
+    const k = axeIronDiag(a / ICON_SCALE, b / ICON_SCALE);
+    return k === 'e' || k === '4' ? '0' : k;
   });
   return outline(c, dark);
 }
 
+/** Milieu de l'œil du fer dans l'icône, et réduction du fer en main. */
+const ICON_EYE: [number, number] = [11.5, 6];
+const ICON_SCALE = 0.9;
+
 /** Matières de la hache en main : chaque zone retrouve sa rampe, éclairée après rotation. */
 const axeMaterials: Materials = (() => {
-  const iron: Material = { light: '2', base: '3', shade: '4', dark: '4' };
+  // fer forgé brut, presque noir (0), à peine relevé (4) sur ce qui fait face à la lumière ; contour côté lumière en 0
+  const iron: Material = { light: '4', base: '0', shade: '0', dark: '0' };
   const wood: Material = { light: 'M', base: 'M', shade: 'm', dark: 'K' };
   return {
-    '1': { light: '1', base: '1', shade: '2', dark: '4' }, // fil de la lame, poli : reste le plus clair
-    '2': { light: '2', base: '2', shade: '3', dark: '4' }, // joue, l'acier aminci près du fil : jamais très sombre
-    '3': iron, '4': iron,
+    '1': { light: '1', base: '1', shade: '2', dark: '0' }, // fil de la lame, poli : un trait clair sur tout le tranchant
+    '4': iron,
     M: wood, m: wood,
     w: { light: 'm', base: 'm', shade: 'N', dark: 'K' }, // bois patiné de la poignée
     N: { light: 'N', base: 'N', shade: 'N', dark: 'K' }, // bout du manche, bois de bout
-    e: { light: '3', base: '3', shade: '4', dark: '4' }, // œil du fer, autour du manche
-    f: { light: '3', base: '4', shade: '4', dark: '4' }, // fer vu par la tranche : bloc sombre
+    e: iron, // œil du fer, autour du manche
+    f: iron, // fer vu par la tranche : bloc sombre
   };
 })();
 
@@ -388,10 +391,10 @@ function woodenSword(): Canvas {
 
 /** Hache tenue en main : les cinq dessins du geste en zones, et leurs matières (art/lib/held.ts). */
 export const axeArt = (): ToolArt => ({
-  // vue de côté, pour un coup vertical
+  // de profil (la face du fer), pour un coup horizontal
   diag: axeSideZones(45).toGrid(),
   upright: axeSideZones(90).toGrid(),
-  // vue du dessus, à plat, pour un coup horizontal
+  // par la tranche, pour un coup vertical
   flat: axeFlatZones(0).toGrid(),
   flatDiag: axeFlatZones(45).toGrid(),
   flatEnd: axeFlatZones(90).toGrid(),

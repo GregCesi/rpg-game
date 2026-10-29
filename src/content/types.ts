@@ -160,8 +160,8 @@ export const PoseSchema = z.strictObject({
    */
   angle: z.number(),
   /**
-   * Dessin de base dont l'image d'outil est tirée (art/lib/held.ts) : vu de côté pour un coup vertical (`diag`, `upright`),
-   * vu du dessus pour un coup horizontal (`flat`, `flatDiag`, `flatEnd`). Pour qui dessine un nouvel outil.
+   * Dessin de base dont l'image d'outil est tirée (art/lib/held.ts) : de profil, la face de l'outil, pour un coup horizontal
+   * (`diag`, `upright`) ; par la tranche pour un coup vertical (`flat`, `flatDiag`, `flatEnd`). Pour qui dessine un nouvel outil.
    */
   base: z.enum(['diag', 'upright', 'flat', 'flatDiag', 'flatEnd']),
   /** L'outil passe derrière le corps. */

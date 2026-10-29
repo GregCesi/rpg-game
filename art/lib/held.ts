@@ -1,28 +1,30 @@
 // Outil tenu en main pendant un geste (coup de hache, de pioche, de houe...).
 //
+// RÈGLE DE VUE. Coup horizontal (use-* : de côté, sur ce qui est debout) : on voit la face de l'outil, de profil,
+// silhouette complète (docs/references/hache-vue-de-cote.png). Coup vertical (chop-* : de haut en bas, sur ce qui est
+// couché) : on le voit par la tranche, un bloc étroit et sombre au bout du manche (docs/references/hache-vue-de-dessus.png).
+//
 // Le geste appartient au corps (art/characters/xeros.ts) : pour chaque image, il dit où sont les mains,
 // vers où pointe la tête de l'outil, de quel côté est le tranchant, si l'outil passe derrière le corps et dans
 // quel plan il frappe. L'outil fournit deux familles de dessins de TOOL_SIZE de côté, dans une convention commune.
 // Un outil long (la hache de bûcheron : 18 px de la prise au fer) y tient dans toutes les orientations.
 //
-// Vu de côté, pour un coup dans un plan vertical (chop-* : de haut en bas sur ce qui est couché) : on voit la
-// silhouette complète du manche et du fer.
+// De face (vue `face`, coup horizontal) : silhouette complète du manche et du fer, de profil.
 //   - `diag`    : la tête vers le haut à droite (manche du bas à gauche vers le haut à droite, comme l'icône
 //                 d'inventaire), tranchant vers le haut à gauche ; la main tient le manche au pixel DIAG_GRIP ;
 //   - `upright` : la tête en haut, manche vertical, tranchant à gauche ; main au pixel UPRIGHT_GRIP.
-//   Toutes les orientations s'en déduisent sans perte, par quarts de tour et miroir.
+//   Toutes les orientations s'en déduisent sans perte, par quarts de tour et miroir. La tête pointe vers une
+//   direction au sol, dessinée telle quelle à l'écran (la vue trois quarts ne raccourcit pas l'outil).
 //
-// Vu du dessus, pour un coup dans un plan horizontal (use-* : de côté sur ce qui est debout) : la hache se
-// présente par la tranche (docs/references/hache-vue-de-dessus.png). On ne voit jamais la lame déployée : le fer
-// n'est qu'un bloc étroit et sombre au bout du manche, d'où dépasse le bout du manche. La vue trois quarts
-// raccourcit de FLAT_DEPTH ce qui pointe vers le nord ; le manche et le bloc gardent leur largeur à l'écran.
-//   - `flat`     : tête vers la droite (est), manche en long ; main au pixel FLAT_GRIP ;
-//   - `flatDiag` : tête vers le nord-est, manche en escalier à 45° de l'écran ; main au pixel FLAT_DIAG_GRIP ;
-//   - `flatEnd`  : tête vers le haut (nord, loin du spectateur), manche raccourci ; main au pixel FLAT_END_GRIP.
-//   Le côté du tranchant ('ccw' dans ces dessins) ne se lit plus qu'au pied du bloc, qui pousse d'un pixel vers
-//   la prise de ce côté-là (pas en diagonale).
-//   Ces trois-là ne tournent pas (un quart de tour mêlerait la longueur raccourcie et la largeur) : seuls les miroirs
-//   gauche-droite et haut-bas, qui gardent la vue trois quarts, en tirent les autres orientations.
+// Par la tranche (vue `edge`, coup vertical) : on ne voit jamais la lame déployée ; le fer n'est qu'un bloc étroit
+// et sombre au bout du manche, d'où dépasse le bout du manche. Le coup a lieu dans un plan vertical : la tête pointe
+// vers une direction de l'écran et le manche garde toute sa longueur.
+//   - `flat`     : tête vers la droite, manche horizontal ; main au pixel FLAT_GRIP ;
+//   - `flatDiag` : tête vers le haut à droite, manche en escalier à 45° ; main au pixel FLAT_DIAG_GRIP ;
+//   - `flatEnd`  : tête vers le haut, manche vertical ; main au pixel FLAT_END_GRIP.
+//   Le côté du tranchant ('ccw' dans ces dessins) ne se lit qu'au pied du bloc, qui pousse d'un pixel vers la prise
+//   de ce côté-là (pas en diagonale). Seuls les miroirs gauche-droite et haut-bas en tirent les autres orientations ;
+//   en diagonale, le tranchant n'y a donc qu'un côté par direction, sans effet visible.
 //
 // Les dessins ne portent ni ombre ni contour : ils disent seulement de quelle matière est chaque pixel
 // (zones, avec leur table `materials`). L'image est éclairée après la rotation (art/lib/light.ts), si bien
@@ -51,15 +53,10 @@ export const FLAT_GRIP: Vec = GRIP;
 export const FLAT_DIAG_GRIP: Vec = GRIP;
 /** Pixel tenu par la main dans le dessin `flatEnd`. */
 export const FLAT_END_GRIP: Vec = GRIP;
-/**
- * Écrasement de la profondeur au sol par la vue trois quarts : un segment posé à plat, pointé vers le nord,
- * paraît FLAT_DEPTH fois sa longueur à l'écran.
- */
-export const FLAT_DEPTH = 0.7;
 
 export type Vec = [number, number];
 
-/** Huit directions de l'écran (n = haut). Vu du dessus, une diagonale est une diagonale au sol. */
+/** Huit directions de l'écran (n = haut). De face, une direction au sol se dessine telle quelle à l'écran. */
 export type Dir8 = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw';
 const DIRS: Dir8[] = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']; // sens horaire, par huitièmes de tour
 
@@ -69,8 +66,8 @@ const DIRS: Dir8[] = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']; // sens horai
  */
 export type Edge = 'cw' | 'ccw';
 
-/** Plan du coup : vertical, l'outil vu de côté (`side`), ou horizontal, l'outil vu du dessus (`flat`). */
-export type View = 'side' | 'flat';
+/** Ce que la caméra voit de l'outil : sa face, de profil (`face`, coup horizontal), ou sa tranche (`edge`, coup vertical). */
+export type View = 'face' | 'edge';
 
 /** Les dessins qu'un outil fournit, en zones de matière, sans ombre ni contour (voir l'en-tête). */
 export interface ToolArt {
@@ -99,7 +96,7 @@ type Base = 'diag' | 'upright' | 'flat' | 'flatDiag' | 'flatEnd';
 const GRIPS: Record<Base, Vec> = {
   diag: DIAG_GRIP, upright: UPRIGHT_GRIP, flat: FLAT_GRIP, flatDiag: FLAT_DIAG_GRIP, flatEnd: FLAT_END_GRIP,
 };
-/** Tête de chaque dessin vu du dessus (tranchant côté 'ccw'). */
+/** Tête de chaque dessin vu par la tranche (tranchant côté 'ccw'). */
 const FLAT_HEADS: [Base, Dir8][] = [['flat', 'e'], ['flatDiag', 'ne'], ['flatEnd', 'n']];
 
 interface Transform { base: Base; turns: number; flip: boolean; flipY: boolean }
@@ -107,17 +104,17 @@ interface Transform { base: Base; turns: number; flip: boolean; flipY: boolean }
 /**
  * Transformation qui amène un des dessins à l'orientation voulue : quarts de tour horaires, puis miroirs.
  * Les dessins de base ont le tranchant côté 'ccw' ; chaque miroir le change de côté.
- * Vu du dessus, pas de quart de tour : `flatDiag` n'existe que tête ne/sw tranchant 'ccw', nw/se tranchant 'cw'.
+ * Par la tranche, pas de quart de tour : `flatDiag` n'existe que tête ne/sw tranchant 'ccw', nw/se tranchant 'cw'.
  */
-function transformFor(head: Dir8, edge: Edge, view: View = 'side'): Transform {
-  if (view === 'flat') {
+function transformFor(head: Dir8, edge: Edge, view: View = 'face'): Transform {
+  if (view === 'edge') {
     for (const [base, h] of FLAT_HEADS) for (const flip of [false, true]) for (const flipY of [false, true]) {
       let d = h;
       if (flip) d = mirrorDir(d);
       if (flipY) d = flipDirY(d);
       if (d === head && (flip !== flipY ? 'cw' : 'ccw') === edge) return { base, turns: 0, flip, flipY };
     }
-    throw new Error(`held : pas de dessin vu du dessus tête vers « ${head} », tranchant « ${edge} »`);
+    throw new Error(`held : pas de dessin par la tranche tête vers « ${head} », tranchant « ${edge} »`);
   }
   const flip = edge === 'cw';
   const target = flip ? mirrorDir(head) : head;
@@ -135,13 +132,13 @@ function mapPx(p: Vec, t: Transform): Vec {
 }
 
 /** Pixel tenu par la main, dans l'image orientée. */
-export function gripOf(head: Dir8, edge: Edge, view: View = 'side'): Vec {
+export function gripOf(head: Dir8, edge: Edge, view: View = 'face'): Vec {
   const t = transformFor(head, edge, view);
   return mapPx(GRIPS[t.base], t);
 }
 
 /** Zones de l'outil orientées (sans lumière) : tête vers `head`, tranchant du côté `edge`. */
-function orientZones(art: ToolArt, head: Dir8, edge: Edge, view: View = 'side'): Grid {
+function orientZones(art: ToolArt, head: Dir8, edge: Edge, view: View = 'face'): Grid {
   const t = transformFor(head, edge, view);
   const src = art[t.base];
   const out = new Canvas(TOOL_SIZE, TOOL_SIZE);
@@ -153,7 +150,7 @@ function orientZones(art: ToolArt, head: Dir8, edge: Edge, view: View = 'side'):
 }
 
 /**
- * Zones de l'outil orienté, vu de côté, sans lumière ni contour, dans un carré de TOOL_SIZE (prise au pixel `gripOf`) :
+ * Zones de l'outil orienté, de profil, sans lumière ni contour, dans un carré de TOOL_SIZE (prise au pixel `gripOf`) :
  * pour un objet posé qui le montre en partie (la hache plantée dans le billot). L'appelant cache ce qui est enfoui,
  * puis éclaire le reste avec lightUp (art/lib/light.ts), si bien que le contour ne court que là où l'outil est en l'air.
  */
@@ -163,12 +160,12 @@ export const orientedZones = (art: ToolArt, head: Dir8, edge: Edge): Grid => ori
 export interface ToolPose {
   /** Pixel des mains jointes sur le manche, dans la frame du personnage. */
   hand: Vec;
-  /** Direction de la main vers la tête de l'outil (vu du dessus : direction au sol). */
+  /** Direction de la main vers la tête de l'outil (de face : direction au sol, dessinée telle quelle à l'écran). */
   head: Dir8;
   edge: Edge;
   /** L'outil se dessine derrière le corps. */
   behind: boolean;
-  /** Plan du coup (`side` si absent) : vertical vu de côté, ou horizontal vu du dessus. */
+  /** Vue de l'outil (`face` si absent) : de profil pour un coup horizontal, par la tranche pour un coup vertical. */
   view?: View;
 }
 
@@ -184,7 +181,7 @@ export const HELD_SIZE = 48;
 export const HELD_GRIP: Vec = [HELD_SIZE / 2, HELD_SIZE / 2];
 
 /** Image de la planche : l'outil orienté, sa prise posée sur HELD_GRIP, éclairé une fois en place. */
-export function heldImage(art: ToolArt, head: Dir8, edge: Edge, view: View = 'side'): Grid {
+export function heldImage(art: ToolArt, head: Dir8, edge: Edge, view: View = 'face'): Grid {
   const [gx, gy] = gripOf(head, edge, view);
   const zones = new Canvas(HELD_SIZE, HELD_SIZE).stamp(orientZones(art, head, edge, view), HELD_GRIP[0] - gx, HELD_GRIP[1] - gy);
   return lightUp(zones.toGrid(), art.materials);
