@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { DEPTH, TILE } from '../config';
-import { items, props as propDefs } from '../content';
-import type { MapData, MapObject, PropDef } from '../content/types';
-import type { Chain, GroundItem, MapState } from '../state';
+import { items, piles as pileDefs, props as propDefs } from '../content';
+import type { MapData, MapObject, PileDef, PropDef } from '../content/types';
+import type { Chain, GroundItem, MapState, Pile } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
 
@@ -43,6 +43,26 @@ export function footprint(def: PropDef, w: number, h: number, flip: boolean): Bo
     right: Math.max(...rects.map((r) => fx(r.x, r.w) + r.w)),
     top: Math.min(...rects.map((r) => r.y)),
     bottom: Math.max(...rects.map((r) => r.y + r.h)),
+  };
+}
+
+/** Image d'une pièce de tas : le dessin de l'objet entreposé (l'icône d'un objet possédable, l'image d'un objet du monde). */
+export function pieceImage(def: PileDef): string {
+  return 'item' in def.piece ? items[def.piece.item].icon : propDefs[def.piece.prop].image;
+}
+
+/**
+ * Collision d'un tas de `count` pièces dont le point au sol est (x, y) : réunion des collisions de ses pièces, au sol
+ * (une pièce posée sur d'autres, `z`, a sa collision sous elle). `imageH` = hauteur de l'image d'une pièce.
+ */
+export function pileBox(def: PileDef, count: number, x: number, y: number, imageH: number): Box {
+  const b = def.body;
+  const layout = def.layouts[count - 1];
+  return {
+    left: Math.min(...layout.map((q) => x + q.x + b.x)),
+    right: Math.max(...layout.map((q) => x + q.x + b.x + b.w)),
+    top: Math.min(...layout.map((q) => y + q.y - imageH + b.y)),
+    bottom: Math.max(...layout.map((q) => y + q.y - imageH + b.y + b.h)),
   };
 }
 
@@ -95,12 +115,26 @@ export interface PlacedGround {
   image: Phaser.GameObjects.Image;
 }
 
+/** Un tas posé, affiché : une image par pièce, une collision qui suit sa taille. */
+export interface PlacedPile {
+  /** L'état du tas dans GameState (genre, nombre, point au sol). */
+  pile: Pile;
+  def: PileDef;
+  /** Collision du tas (réunion de celles de ses pièces). */
+  box: Box;
+  /** Haut de la pièce la plus haute. */
+  top: number;
+  /** Images des pièces et collision : détruites quand le tas change. */
+  parts: Phaser.GameObjects.GameObject[];
+}
+
 /** Ce que fait la touche E devant une cible. */
 export type Action =
   | { kind: 'talk'; dialogue: string; npc?: Npc }
   | { kind: 'harvest'; prop: PlacedProp }
   | { kind: 'pickup'; ground: PlacedGround }
-  | { kind: 'take'; prop: PlacedProp };
+  | { kind: 'take'; prop: PlacedProp }
+  | { kind: 'pile'; pile: PlacedPile };
 
 /** Ce avec quoi le joueur peut interagir avec E. (x, y) = centre de sa base au sol ; top = haut de l'image. */
 export interface Interactable {
@@ -123,6 +157,7 @@ export class GameMap {
   readonly obstacles: Phaser.Physics.Arcade.StaticGroup;
   readonly props: PlacedProp[] = [];
   readonly ground: PlacedGround[] = [];
+  readonly piles: PlacedPile[] = [];
   readonly width: number;
   readonly height: number;
 
@@ -168,6 +203,7 @@ export class GameMap {
     for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, hits: o.hits });
     this.refreshTrunk();
     for (const g of changes.ground) this.placeGround(g);
+    for (const pile of changes.piles) this.placePile(pile);
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
     if (def.ambient) {
@@ -188,6 +224,8 @@ export class GameMap {
         list.push({ x, y: p.baseY, top: p.top, action: { kind: 'take', prop: p } });
       }
     }
+    // un tas se vise au centre de sa collision ; E en reprend une pièce
+    for (const p of this.piles) list.push({ x: (p.box.left + p.box.right) / 2, y: (p.box.top + p.box.bottom) / 2, top: p.top, action: { kind: 'pile', pile: p } });
     // un objet encore caché (il attend la fin d'une chute) ne se ramasse pas
     for (const g of this.ground) if (g.image.visible) list.push({ x: g.item.x, y: g.item.y - 4, top: g.image.y - g.image.height, action: { kind: 'pickup', ground: g } });
     return list;
@@ -225,9 +263,9 @@ export class GameMap {
 
   /**
    * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante, sur aucune collision d'objet
-   * ni sur l'un des corps `others` (les personnages).
+   * ni sur l'un des corps `others` (les personnages). Les collisions de `ignore` ne comptent pas (le tas qui grandit).
    */
-  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = []): boolean {
+  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = [], ignore: readonly Phaser.GameObjects.GameObject[] = []): boolean {
     if (b.left < 0 || b.top < 0 || b.right > this.width || b.bottom > this.height) return false;
     for (let ty = Math.floor(b.top / TILE); ty <= Math.floor((b.bottom - 0.01) / TILE); ty++) {
       for (let tx = Math.floor(b.left / TILE); tx <= Math.floor((b.right - 0.01) / TILE); tx++) {
@@ -235,7 +273,7 @@ export class GameMap {
       }
     }
     const overlaps = (l: number, t: number, r: number, bo: number) => b.left < r && b.right > l && b.top < bo && b.bottom > t;
-    const zones = this.obstacles.getChildren() as Phaser.GameObjects.Zone[];
+    const zones = (this.obstacles.getChildren() as Phaser.GameObjects.Zone[]).filter((z) => !ignore.includes(z));
     if (zones.some((z) => overlaps(z.x - z.width / 2, z.y - z.height / 2, z.x + z.width / 2, z.y + z.height / 2))) return false;
     return !others.some((o) => overlaps(o.left, o.top, o.right, o.bottom));
   }
@@ -259,6 +297,40 @@ export class GameMap {
   removeGround(g: PlacedGround): void {
     g.image.destroy();
     this.ground.splice(this.ground.indexOf(g), 1);
+  }
+
+  /**
+   * Affiche un tas : chaque pièce de sa forme (`layouts` de piles.json pour son nombre), dans l'ordre donné, `z` pixels
+   * au-dessus de sa place au sol ; tout le tas est à la profondeur de son bord avant. Sa collision est celle de ses pièces.
+   */
+  placePile(pile: Pile): PlacedPile {
+    const def = pileDefs[pile.pile];
+    const image = pieceImage(def);
+    const h = (this.scene.textures.get(image).getSourceImage() as HTMLImageElement).height;
+    const box = pileBox(def, pile.count, pile.x, pile.y, h);
+    const layout = def.layouts[pile.count - 1];
+    const depth = Math.max(...layout.map((q) => pile.y + q.y));
+    // l'ordre de la liste est l'ordre d'affichage : à profondeur égale, la suivante passe devant
+    const parts: Phaser.GameObjects.GameObject[] = layout.map((q, i) =>
+      this.scene.add.image(pile.x + q.x, pile.y + q.y - q.z, image).setOrigin(0, 1).setDepth(depth + i / 1000),
+    );
+    parts.push(this.addObstacle((box.left + box.right) / 2, (box.top + box.bottom) / 2, box.right - box.left, box.bottom - box.top));
+    const top = Math.min(...layout.map((q) => pile.y + q.y - q.z - h));
+    const placed = { pile, def, box, top, parts };
+    this.piles.push(placed);
+    return placed;
+  }
+
+  /** Retire un tas affiché (images et collision). */
+  removePile(p: PlacedPile): void {
+    for (const part of p.parts) part.destroy();
+    this.piles.splice(this.piles.indexOf(p), 1);
+  }
+
+  /** Le tas a changé de nombre (GameState) : il est redessiné à sa nouvelle forme, avec sa nouvelle collision. */
+  refreshPile(p: PlacedPile): PlacedPile {
+    this.removePile(p);
+    return this.placePile(p.pile);
   }
 
   /**

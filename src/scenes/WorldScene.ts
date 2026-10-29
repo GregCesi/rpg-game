@@ -129,7 +129,7 @@ export class WorldScene extends Phaser.Scene {
     else if (use && time >= this.useLockedUntil) this.useHeld();
   }
 
-  /** E devant une cible : parler, récolter à la main, prendre un objet du monde, ramasser. */
+  /** E devant une cible : parler, récolter à la main, prendre un objet du monde, reprendre d'un tas, ramasser. */
   private hands(target: Interactable): void {
     const a = target.action;
     if (a.kind === 'talk') {
@@ -144,12 +144,15 @@ export class WorldScene extends Phaser.Scene {
     } else if (a.kind === 'take') {
       if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
       this.handsChanged();
+    } else if (a.kind === 'pile') {
+      if (!this.handsSystem.takeFromPile(a.pile)) return this.notice('Les mains pleines.');
+      this.handsChanged();
     } else {
       this.pickUp(a.ground);
     }
   }
 
-  /** Q, ou E quand on tient à deux mains : pose devant soi ce que tient la main active, s'il y a la place. */
+  /** Q, ou E quand on tient à deux mains : pose devant soi ce que tient la main active (en tas s'il s'entrepose), s'il y a la place. */
   private putDown(): void {
     const r = this.handsSystem.putDown(this.player);
     if (r === 'blocked') this.notice('Pas la place ici.');
