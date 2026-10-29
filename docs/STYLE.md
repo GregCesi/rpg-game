@@ -9,7 +9,7 @@ La référence de qualité est le portrait de Xéros (`portrait-xeros-64`) : tou
 - Vue de dessus en trois quarts, comme Stardew Valley : on voit le dessus d'un objet et sa face avant (côté sud).
 - Les tuiles de sol se voient strictement de dessus. Tout ce qui a une hauteur montre sa face sud : lit, table, coffre, caisse, rocher, clôture, mur.
 - Un meuble n'est jamais dessiné en plan. Un lit montre le dessus (couverture, oreiller au nord) et le bois du pied de lit sur sa face sud.
-- Échelle : Xéros fait 31 px de haut (de y=14 à y=45 dans sa frame de 32×48) pour 1,60 m, soit environ 5 cm par pixel. Un lit de 50 cm de haut a une face sud d'une dizaine de pixels. Comparer chaque objet à Xéros avant de le valider.
+- Échelle : 5 cm par pixel. Xéros fait 32 px de haut (rangées 14 à 45 de sa frame de 32×48, contour compris) pour 1,60 m. Les tailles se calculent avec le gabarit (section 8) ; comparer chaque objet aux étalons avant de le valider.
 
 ## 2. Lumière
 
@@ -56,3 +56,31 @@ Après `npm run art:preview`, ouvrir `.art-preview/<clé>.png` et, à côté, `.
 5. Couleurs prises dans la palette.
 6. Silhouette reconnaissable en aplat, distincte des objets voisins.
 7. Aucun pixel isolé non voulu.
+8. Taille conforme au gabarit (section 8) : `npm run check` le vérifie, et l'objet tient à côté des étalons.
+
+## 8. Gabarit
+
+Règle de dimensions et de perspective, tirée des billes (`felled-log`, `felled-log-ns`), qui font référence. Un objet part de ses dimensions réelles en centimètres (`dims` dans `src/content/props.json`) ; sa taille à l'écran en découle. Code : `src/content/gabarit.ts`. Étalons : `.art-preview/gabarit.png`.
+
+**La projection.**
+
+- 5 cm par pixel, sur les trois axes : largeur (est-ouest), profondeur au sol (nord-sud), hauteur.
+- Le sol se voit à plat, sans raccourci : une case de 32 px fait 1,60 m sur 1,60 m. L'empreinte d'un objet, ses collisions et l'écart entre deux objets se comptent au sol à 5 cm par pixel (deux billes voisines d'un tas sont à 11 px, un diamètre).
+- Une face tournée vers le sud se voit en vraie grandeur : largeur × hauteur.
+- Un dessus (face horizontale) et une face vue en raccourci (la face est ou ouest, le bout d'une bille est-ouest) se dessinent à la moitié de leur profondeur : coefficient ½.
+- Ancrage : le bas de la silhouette est le bord sud de l'objet, posé au sol. L'ombre portée (`x`) est en dessous et ne compte pas dans la taille.
+- Une taille se mesure sur la silhouette : pixels opaques, contour compris, ombre et lueurs exclues. Tolérance : 2 px.
+
+Vérifications : la bille est-ouest (95 × 55 cm) mesure 19 × 13 px, ses bouts sont des ovales de 5 px de large pour 11 de haut (11 × ½) ; la bille nord-sud mesure 13 × 19 px, le dessus d'écorce fait 10 px entre ses deux ronds (19 × ½ = 9,5) ; Xéros fait 32 px pour 1,60 m, la mère 34 px pour 1,70 m (un personnage n'a pas de dessus visible : sa taille à l'écran est sa hauteur) ; la case fait 32 px pour 1,60 m.
+
+**Les formes de base** (W largeur, D profondeur, H hauteur, L longueur, Ø diamètre, en pixels = centimètres ÷ 5).
+
+| Forme | Largeur à l'écran | Hauteur à l'écran | Exemple |
+| --- | --- | --- | --- |
+| Boîte | W | H + D/2 (face sud H, dessus D/2) | cube de 50 cm : 10 × (10 + 5) = **10 × 15** |
+| Cylindre couché est-ouest | L | Ø × 1,12 (le rond cisaillé par le dessus : √(1 + ¼)) ; bouts en ovales de Ø/2 × Ø | bille de 95 × 55 cm : 19 × 12,3, dessinée **19 × 13** |
+| Cylindre couché nord-sud | Ø | Ø + L/2 (face de coupe au sud, Ø × Ø ; dessus L/2) | la même bille : 11 × (11 + 9,5) = 11 × 20,5, dessinée **13 × 19** |
+| Cylindre debout | Ø | H + Ø/2 (corps H, dessus en ovale Ø × Ø/2) | billot de Ø 55 cm, 45 cm de haut : 11 × (9 + 5,5) = **11 × 14,5** |
+| À plat sur le sol | W | D | éclats de pierre de 135 × 75 cm : **27 × 15** |
+
+Un objet qui n'est pas une forme de base (arbre, buisson, rocher) prend la boîte qui l'englobe. Un objet qui ne suit pas encore la règle est nommé dans `EXCEPTIONS` (`src/content/validate.ts`) avec sa taille dessinée ; on ne l'y ajoute pas pour un dessin neuf : on dessine à la bonne taille.

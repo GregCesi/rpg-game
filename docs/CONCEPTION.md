@@ -26,7 +26,7 @@ La technique (architecture, conventions) est dans `README.md` et `CLAUDE.md`.
 
 - Xéros vit seul avec elle : pas de père, pas de frère ni sœur.
 - Elle travaille à la ferme commune d'un paysan plus riche, cuisine, et sculpte le bois (son atelier est dans la maison).
-- Physique : environ 35 ans, un peu plus grande que Xéros (33 px contre 31 dans le jeu), mains de travailleuse. Même famille de couleurs de peau que lui.
+- Physique : environ 35 ans, un peu plus grande que Xéros (34 px contre 32 dans le jeu, contour compris : 1,70 m contre 1,60 m), mains de travailleuse. Même famille de couleurs de peau que lui.
 - Tenue : foulard de lin noué sur des cheveux châtain foncé, robe de laine bleu-gris délavé (teinture à la guède), tablier écru, manches retroussées.
 - Portrait de dialogue en 64 px (`portrait-mother-64`), expression `neutral` ; la taille 96 et l'entrée dans `characters.json` viendront avec ses dialogues.
 
