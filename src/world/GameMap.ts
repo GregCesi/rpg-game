@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { DEPTH, TILE } from '../config';
 import { items, props as propDefs } from '../content';
 import type { MapData, MapObject, PropDef } from '../content/types';
-import type { GroundItem, MapState } from '../state';
+import type { Chain, GroundItem, MapState } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
 
@@ -26,6 +26,8 @@ export interface PlacedProp {
   spawned: boolean;
   /** Image retournée (tombé vers la gauche) : collisions, point visé, fumées et lueurs le sont aussi. */
   flip: boolean;
+  /** Place dans la chaîne de ce qui est né avec lui (pièces du tronc couché) : choisit l'image « bout coupé ». */
+  chain?: Chain;
   type: string;
   def: PropDef;
   /** Coin bas gauche de l'image. */
@@ -122,7 +124,8 @@ export class GameMap {
       if (!c) this.placeProp(o);
       else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip });
     }
-    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true });
+    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain });
+    this.refreshCuts();
     for (const g of changes.ground) this.placeGround(g);
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
@@ -142,6 +145,26 @@ export class GameMap {
     // un objet encore caché (il attend la fin d'une chute) ne se ramasse pas
     for (const g of this.ground) if (g.image.visible) list.push({ x: g.item.x, y: g.item.y - 4, top: g.image.y - g.image.height, action: { kind: 'pickup', ground: g } });
     return list;
+  }
+
+  /**
+   * Bouts coupés : chaque pièce d'une chaîne (`cut` dans props.json) montre l'image qui convient selon que ses voisines
+   * de gauche et de droite (dans l'image dessinée) sont encore du tronc. Les bouts de la chaîne n'ont pas de voisine à perdre.
+   * À appeler quand une pièce change ou naît.
+   */
+  refreshCuts(): void {
+    const trunk = new Map<string, boolean>();
+    for (const p of this.props) if (p.chain) trunk.set(`${p.chain.group}:${p.chain.index}`, !!p.def.cut);
+    for (const p of this.props) {
+      const cut = p.def.cut;
+      if (!p.chain || !cut) continue;
+      const { group, index, size } = p.chain;
+      const lost = (i: number) => i >= 0 && i < size && !trunk.get(`${group}:${i}`);
+      const left = lost(index - 1);
+      const right = lost(index + 1);
+      const image = left && right ? (cut.both ?? cut.left ?? cut.right) : left ? cut.left : right ? cut.right : undefined;
+      p.image.setTexture(image ?? p.def.image);
+    }
   }
 
   /** Retire un objet posé (image, collisions, fumées, lueurs). */
@@ -169,7 +192,7 @@ export class GameMap {
    * (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds).
    * `flip` : image retournée ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
    */
-  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean } = {}): PlacedProp {
+  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain } = {}): PlacedProp {
     const flip = !!opts.flip;
     const scene = this.scene;
     const p = propDefs[o.type];
@@ -197,6 +220,7 @@ export class GameMap {
       id: o.id,
       spawned: !!opts.spawned,
       flip,
+      chain: opts.chain,
       type: o.type,
       def: p,
       x: o.x,

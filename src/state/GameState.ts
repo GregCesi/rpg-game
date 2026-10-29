@@ -19,8 +19,26 @@ export const SlotSchema = z.strictObject({ item: id, count: z.number().int().pos
  */
 export const WorldChangeSchema = z.strictObject({ type: id.optional(), x: z.number(), y: z.number(), flip: z.boolean().optional() });
 
-/** Un objet né pendant la partie (une pièce de l'arbre couché) : identifiant propre, type de props.json, coin bas gauche, image retournée. */
-export const SpawnedSchema = z.strictObject({ id: z.number().int().nonnegative(), type: id, x: z.number(), y: z.number(), flip: z.boolean().optional() });
+/** Place d'un objet né dans la chaîne de ce qui est né avec lui (les pièces de l'arbre couché, bout à bout). */
+export const ChainSchema = z.strictObject({
+  /** Identifiant du premier objet né de la chaîne. */
+  group: z.number().int().nonnegative(),
+  index: z.number().int().nonnegative(),
+  size: z.number().int().positive(),
+});
+
+/**
+ * Un objet né pendant la partie (une pièce de l'arbre couché) : identifiant propre, type de props.json, coin bas gauche,
+ * image retournée, place dans sa chaîne.
+ */
+export const SpawnedSchema = z.strictObject({
+  id: z.number().int().nonnegative(),
+  type: id,
+  x: z.number(),
+  y: z.number(),
+  flip: z.boolean().optional(),
+  chain: ChainSchema.optional(),
+});
 
 /** Un objet possédable posé au sol : (x, y) = son point au sol. */
 export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number() });
@@ -51,6 +69,7 @@ export type Slot = z.infer<typeof SlotSchema>;
 export type WorldChange = z.infer<typeof WorldChangeSchema>;
 export type GroundItem = z.infer<typeof GroundItemSchema>;
 export type Spawned = z.infer<typeof SpawnedSchema>;
+export type Chain = z.infer<typeof ChainSchema>;
 export type MapState = z.infer<typeof MapStateSchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
 
@@ -104,17 +123,20 @@ export function removeGroundItem(s: GameState, mapId: string, groundId: number):
 }
 
 /** Fait naître un objet sur une carte ; renvoie ce qui a été noté. */
-export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, flip: boolean): Spawned {
-  const o = { id: s.nextSpawnId++, type, x, y, ...(flip ? { flip } : {}) };
+export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, flip: boolean, chain?: Chain): Spawned {
+  const o = { id: s.nextSpawnId++, type, x, y, ...(flip ? { flip } : {}), ...(chain ? { chain } : {}) };
   mapState(s, mapId).spawned.push(o);
   return o;
 }
 
-/** Un objet né a changé : il devient `type` en (x, y), ou disparaît (`type` absent). */
+/** Un objet né a changé : il devient `type` en (x, y), ou disparaît (`type` absent). Il garde sa place dans sa chaîne. */
 export function changeSpawned(s: GameState, mapId: string, spawnId: number, change: WorldChange): void {
   const m = mapState(s, mapId);
   const i = m.spawned.findIndex((o) => o.id === spawnId);
   if (i < 0) return;
   if (!change.type) m.spawned.splice(i, 1);
-  else m.spawned[i] = { id: spawnId, type: change.type, x: change.x, y: change.y, ...(change.flip ? { flip: true } : {}) };
+  else {
+    const chain = m.spawned[i].chain;
+    m.spawned[i] = { id: spawnId, type: change.type, x: change.x, y: change.y, ...(change.flip ? { flip: true } : {}), ...(chain ? { chain } : {}) };
+  }
 }

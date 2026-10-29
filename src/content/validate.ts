@@ -259,6 +259,14 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${key}' : animation '${p.anim}' absente de '${p.image}'`);
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);
     if (p.harvest) addAll(validateHarvest(key, p, c, cat));
+    for (const [side, img] of Object.entries(p.cut ?? {})) {
+      const size = cat.sizes.get(img);
+      const base = cat.sizes.get(p.image);
+      if (!size) err(`props.json '${key}' : bout coupé '${side}' : image '${img}' non dessinée`);
+      else if (base && (size.w !== base.w || size.h !== base.h)) {
+        err(`props.json '${key}' : bout coupé '${side}' : '${img}' fait ${size.w}×${size.h}, '${p.image}' ${base.w}×${base.h} (même taille attendue)`);
+      }
+    }
   }
 
   // Objets possédables

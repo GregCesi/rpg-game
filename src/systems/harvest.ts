@@ -149,15 +149,18 @@ export class HarvestSystem {
     const y = prop.y + dy;
     const { baseX, baseY } = prop;
     this.map.removeProp(prop);
-    const next = h.becomes ? this.map.placeProp({ id: prop.id, type: h.becomes, x, y }, { flip, spawned: prop.spawned }) : undefined;
+    const next = h.becomes ? this.map.placeProp({ id: prop.id, type: h.becomes, x, y }, { flip, spawned: prop.spawned, chain: prop.chain }) : undefined;
     const change = h.becomes ? { type: h.becomes, x, y, ...(flip ? { flip } : {}) } : { x, y };
     if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
     else changeObject(game, mapId, prop.id, change);
     // ce qui naît (l'arbre couché) : noté tout de suite, montré à la fin de la chute
-    const born = h.spawns.map((sp) => {
-      const o = spawnObject(game, mapId, sp.type, prop.x + place(sp.x, this.imageWidth(sp.type)), prop.y + sp.y, flip);
-      return this.map.placeProp(o, { flip, spawned: true });
+    const group = game.nextSpawnId;
+    const born = h.spawns.map((sp, index) => {
+      const chain = { group, index, size: h.spawns.length };
+      const o = spawnObject(game, mapId, sp.type, prop.x + place(sp.x, this.imageWidth(sp.type)), prop.y + sp.y, flip, chain);
+      return this.map.placeProp(o, { flip, spawned: true, chain });
     });
+    this.map.refreshCuts();
 
     // les objets lâchés entrent dans GameState tout de suite : quitter la carte pendant la chute ne les perd pas
     const dropped: PlacedGround[] = [];

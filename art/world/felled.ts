@@ -190,14 +190,18 @@ const FISSURES_DARK: [number, number, number][] = [
 const FISSURES_LIGHT: [number, number, number][] = [[63, 77, 4], [84, 77, 4], [104, 77, 4], [117, 77, 3]];
 
 /** Encoche en V entaillée dans le dessus du tronc : flanc gauche dans l'ombre, flanc droit vers la lumière. */
-function notch(c: Canvas, x: number) {
+function notch(c: Canvas, x: number, lo = 0, hi = c.w - 1) {
   const y = TRUNK_TOP;
+  // on ne peint qu'entre les colonnes lo et hi : au-delà, un bout coupé a déjà retiré le bois
+  const set = (X: number, Y: number, col: string) => {
+    if (X >= lo && X <= hi) c.set(X, Y, col);
+  };
   // l'entaille dans la silhouette (le contour y descend d'un pixel), le fond du V dans l'ombre,
   // puis les deux flancs de bois clair
-  for (let i = -2; i < 2; i++) c.px[y][x + i] = EMPTY;
-  c.set(x - 1, y + 1, 'K').set(x, y + 1, 'K');
-  c.set(x - 3, y, 'T').set(x - 3, y + 1, 'T').set(x - 2, y + 1, 'T').set(x - 2, y + 2, 'T').set(x - 1, y + 2, 'T').set(x - 1, y + 3, 'T');
-  c.set(x + 2, y, 'Y').set(x + 2, y + 1, 'Y').set(x + 1, y + 1, 'Y').set(x + 1, y + 2, 'Y').set(x, y + 2, 'Y').set(x, y + 3, 'Y');
+  for (let i = -2; i < 2; i++) set(x + i, y, EMPTY);
+  set(x - 1, y + 1, 'K'); set(x, y + 1, 'K');
+  for (const [dx, dy] of [[-3, 0], [-3, 1], [-2, 1], [-2, 2], [-1, 2], [-1, 3]]) set(x + dx, y + dy, 'T');
+  for (const [dx, dy] of [[2, 0], [2, 1], [1, 1], [1, 2], [0, 2], [0, 3]]) set(x + dx, y + dy, 'Y');
 }
 
 /** Bout scié : disque du tronc vu de biais, au pied (gauche, vers la lumière) ou en tête (droite, dans l'ombre). */
@@ -279,10 +283,32 @@ const CROWN_SHADOW = new Canvas(FALL_W, FALL_H).ellipse(BUTT_X + 81, 90.5, 21, 3
 
 const inRange = (X: number, k: number) => X >= PIECE_X[k] && X < PIECE_X[k + 1];
 
-/** Pièce k (0 à 3) dans la frame entière. `head` : la 4e pièce ébranchée. */
-function piece(k: number, head = false): Canvas {
+/** Bouts coupés d'une pièce : la voisine de ce côté est partie (devenue bille), le tronc s'y termine. */
+interface Cuts { left?: boolean; right?: boolean }
+
+/**
+ * Tronc de la pièce k avec un bout coupé à gauche et/ou à droite, contour compris. Le bois s'arrête une colonne
+ * avant le bord de la pièce, pour que le contour tienne dans l'image ; la face de coupe est celle de la bille
+ * (claire à gauche, vers la lumière ; plus sombre à droite). L'encoche est repeinte par-dessus.
+ */
+function cutTrunk(k: number, head: boolean, cuts: Cuts): Canvas {
+  const c = trunkBody(head);
+  const lo = cuts.left ? PIECE_X[k] + 1 : 0;
+  const hi = cuts.right ? PIECE_X[k + 1] - 2 : FALL_W - 1;
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) if (X < lo || X > hi) c.px[Y][X] = EMPTY;
+  if (cuts.left) sawnEnd(c, lo, 'left');
+  if (cuts.right) sawnEnd(c, hi + 1, 'right');
+  notch(c, NOTCH_X[k], lo, hi);
+  return shadedOutline(despeckle(c, 'KYTt'));
+}
+
+/** Pièce k (0 à 3) dans la frame entière. `head` : la 4e pièce ébranchée. `cuts` : ses bouts coupés. */
+function piece(k: number, head = false, cuts: Cuts = {}): Canvas {
   const c = new Canvas(FALL_W, FALL_H);
-  const trunk = head ? TRUNK_STUBS : TRUNK;
+  const cut = cuts.left || cuts.right;
+  const trunk = cut ? cutTrunk(k, head, cuts) : head ? TRUNK_STUBS : TRUNK;
+  // ombre du tronc : comme sous la bille, elle commence deux colonnes après un bout coupé à gauche (et quatre au bord)
+  const bandFrom = (Y: number) => (cuts.left ? PIECE_X[k] + (Y >= TRUNK_BOTTOM + 3 ? 4 : 2) : 0);
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     if (inRange(X, k)) c.set(X, Y, trunk.get(X, Y));
     if (k !== 3 || head) continue;
@@ -294,7 +320,7 @@ function piece(k: number, head = false): Canvas {
   }
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     if (c.get(X, Y) !== EMPTY) continue;
-    if (inRange(X, k) && BAND.get(X, Y) !== EMPTY) c.set(X, Y, 'x');
+    if (inRange(X, k) && X >= bandFrom(Y) && BAND.get(X, Y) !== EMPTY) c.set(X, Y, 'x');
     else if (k === 3 && !head && CROWN_SHADOW.get(X, Y) !== EMPTY && BAND.get(X, Y) === EMPTY && TRUNK.get(X, Y) === EMPTY) c.set(X, Y, 'x');
   }
   return c;
@@ -337,6 +363,13 @@ function crop(c: Canvas): { canvas: Canvas; x: number; y: number } {
 const PIECE_NAMES = ['felled-section-1', 'felled-section-2', 'felled-section-3', 'felled-crown'];
 const PIECES = [0, 1, 2, 3].map((k) => piece(k));
 const HEAD = piece(3, true);
+
+/** Recadre `c` exactement comme la pièce d'origine : même taille, même place (le jeu ne change que la texture). */
+function cropLike(c: Canvas, like: { x: number; y: number; canvas: Canvas }): Canvas {
+  const out = new Canvas(like.canvas.w, like.canvas.h);
+  for (let Y = 0; Y < out.h; Y++) for (let X = 0; X < out.w; X++) out.px[Y][X] = c.get(like.x + X, like.y + Y);
+  return out;
+}
 
 /**
  * Où vont les pièces, pour props.json : repère = coin bas gauche de l'image `tree` posée sur la carte
@@ -400,9 +433,29 @@ const treeFall: SpriteSheetSource = {
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
+/**
+ * Variantes « bout coupé » : la pièce quand sa voisine de gauche, de droite ou des deux côtés est devenue bille.
+ * La 1re section a déjà son bout scié à gauche, la tête et le houppier ont la cime à droite.
+ */
+const CUT_SIDES: [number, boolean, ('left' | 'right' | 'both')[]][] = [
+  [0, false, ['right']],
+  [1, false, ['left', 'right', 'both']],
+  [2, false, ['left', 'right', 'both']],
+  [3, false, ['left']],
+  [3, true, ['left']],
+];
+const cutImages: ImageSource[] = CUT_SIDES.flatMap(([k, head, sides]) => {
+  const base = head ? FELLED_LAYOUT.head : FELLED_LAYOUT.pieces[k];
+  return sides.map((side) => {
+    const cuts = { left: side !== 'right', right: side !== 'left' };
+    return img(`${base.name}-cut-${side}`, cropLike(piece(k, head, cuts), base.frame));
+  });
+});
+
 export default [
   treeFall,
   ...FELLED_LAYOUT.pieces.map((p) => img(p.name, p.frame.canvas)),
   img('felled-head', FELLED_LAYOUT.head.frame.canvas),
   img('felled-log', FELLED_LAYOUT.log.canvas),
+  ...cutImages,
 ];
