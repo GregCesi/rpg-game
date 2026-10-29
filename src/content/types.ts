@@ -105,6 +105,27 @@ export const PropDefSchema = z.strictObject({
   harvest: HarvestSchema.optional(),
 });
 
+/** Où est la main pendant une image d'un geste. (dx, dy) : par rapport aux pieds du personnage (milieu bas de son image). */
+export const PoseSchema = z.strictObject({
+  dx: px,
+  dy: px,
+  /** Angle du manche dessiné dans l'image d'outil (degrés), pour qui dessine un nouvel outil. */
+  angle: z.number(),
+  /** L'outil passe derrière le corps. */
+  behind: z.boolean().default(false),
+});
+
+/**
+ * Un geste du corps (`use-<direction>` dans la planche du personnage) et la place de l'outil à chaque image.
+ * La gauche est le miroir de la droite. Un outil = une planche `tool-<objet>` de 4 × 3 images (down, up, right),
+ * la prise du manche au centre de chaque image : ajouter un outil ne demande que cette planche.
+ */
+export const GestureSchema = z.strictObject({
+  /** Image (à partir de 0) où le coup porte. */
+  impact: z.number().int().min(0),
+  poses: z.strictObject({ down: z.array(PoseSchema), up: z.array(PoseSchema), right: z.array(PoseSchema) }),
+});
+
 /** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
 export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
 
@@ -183,6 +204,8 @@ export type PropDef = z.infer<typeof PropDefSchema>;
 export type Harvest = z.infer<typeof HarvestSchema>;
 export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;
+export type Pose = z.infer<typeof PoseSchema>;
+export type Gesture = z.infer<typeof GestureSchema>;
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 export type DialogueLine = z.infer<typeof DialogueLineSchema>;
 export type DialogueDef = z.infer<typeof DialogueDefSchema>;

@@ -3,7 +3,7 @@
 // Utilisé par `npm run check` (Node) et au démarrage du jeu.
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
-import type { CharacterDef, DialogueDef, ItemDef, MapData, PropDef, TilesetCatalog } from './types';
+import type { CharacterDef, DialogueDef, Gesture, ItemDef, MapData, PropDef, TilesetCatalog } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -11,6 +11,8 @@ const DIRECTIONS = ['down', 'up', 'left', 'right'];
 export interface Catalog {
   textures: Set<string>;
   animations: Map<string, Set<string>>;
+  /** Nombre d'images de chaque animation, par planche. */
+  frameCounts: Map<string, Map<string, number>>;
   tiles: Map<string, Set<string>>;
   /** Numéros de tuiles qui existent (hors trous) et numéros bloquants, par jeu de tuiles. */
   tileNumbers: Map<string, Set<number>>;
@@ -18,7 +20,7 @@ export interface Catalog {
 }
 
 interface ManifestLike {
-  spritesheets: { key: string; animations: Record<string, unknown> }[];
+  spritesheets: { key: string; animations: Record<string, { frames: unknown[] }> }[];
   tilesets: { key: string; tiles: Record<string, number>; solid: number[] }[];
   images: { key: string }[];
 }
@@ -27,6 +29,7 @@ export function catalogFrom(m: ManifestLike): Catalog {
   return {
     textures: new Set([...m.spritesheets, ...m.tilesets, ...m.images].map((a) => a.key)),
     animations: new Map(m.spritesheets.map((s) => [s.key, new Set(Object.keys(s.animations))])),
+    frameCounts: new Map(m.spritesheets.map((s) => [s.key, new Map(Object.entries(s.animations).map(([k, a]) => [k, a.frames.length]))])),
     tiles: new Map(m.tilesets.map((t) => [t.key, new Set(Object.keys(t.tiles))])),
     tileNumbers: new Map(m.tilesets.map((t) => [t.key, new Set(Object.values(t.tiles))])),
     solid: new Map(m.tilesets.map((t) => [t.key, new Set(t.solid)])),
@@ -138,6 +141,7 @@ export interface Content {
   tiles: Record<string, TilesetCatalog>;
   props: Record<string, PropDef>;
   items: Record<string, ItemDef>;
+  gestures: Record<string, Gesture>;
   maps: Record<string, MapData>;
   characters: Record<string, CharacterDef>;
   dialogues: Record<string, DialogueDef>;
@@ -181,6 +185,19 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   for (const state of ['idle', 'walk']) {
     for (const dir of DIRECTIONS) {
       if (!cat.animations.get(PLAYER.skin)?.has(`${state}-${dir}`)) err(`Sprite '${PLAYER.skin}' : animation '${state}-${dir}' manquante`);
+    }
+  }
+
+  // Gestes du joueur : une animation `<geste>-<direction>` par direction, autant d'images que de poses de l'outil
+  for (const [name, g] of Object.entries(c.gestures)) {
+    for (const dir of DIRECTIONS) {
+      const anim = `${name}-${dir}`;
+      const frames = cat.frameCounts.get(PLAYER.skin)?.get(anim);
+      // la gauche reprend les poses de la droite, en miroir
+      const poses = g.poses[dir === 'left' ? 'right' : (dir as 'down' | 'up' | 'right')];
+      if (frames === undefined) err(`gestures.json '${name}' : animation '${anim}' manquante dans le sprite '${PLAYER.skin}'`);
+      else if (frames !== poses.length) err(`gestures.json '${name}' ${dir} : ${poses.length} poses d'outil pour ${frames} images dans '${PLAYER.skin}-${anim}'`);
+      if (g.impact >= poses.length) err(`gestures.json '${name}' ${dir} : image d'impact ${g.impact} au-delà des ${poses.length} poses`);
     }
   }
 

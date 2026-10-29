@@ -6,6 +6,7 @@ import { catalogFrom, validateContent } from './content/validate';
 import * as assets from './generated/assets';
 import { BootScene } from './scenes/BootScene';
 import { DialogueScene } from './scenes/DialogueScene';
+import { HudScene } from './scenes/HudScene';
 import { WorldScene } from './scenes/WorldScene';
 
 async function start() {
@@ -36,7 +37,8 @@ async function start() {
     backgroundColor: '#14110d',
     physics: { default: 'arcade', arcade: { debug: DEBUG } },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    scene: [BootScene, WorldScene, DialogueScene],
+    // ordre d'affichage : le monde, la barre d'objets par-dessus, puis le dialogue
+    scene: [BootScene, WorldScene, HudScene, DialogueScene],
   });
 
   // Accès depuis la console du navigateur pour déboguer.

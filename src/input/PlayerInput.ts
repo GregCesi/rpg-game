@@ -2,11 +2,15 @@ import Phaser from 'phaser';
 
 const K = Phaser.Input.Keyboard.KeyCodes;
 
-/** Traduit le clavier en intention : direction, course, interaction. ZQSD (AZERTY), WASD (QWERTY) et flèches. */
+/**
+ * Traduit le clavier en intention : direction, course, et les deux gestes. ZQSD (AZERTY), WASD (QWERTY) et flèches.
+ * E (ou Entrée) : les mains (parler, ramasser, prendre, cueillir). Espace : utiliser l'objet en main.
+ */
 export class PlayerInput {
   private keys: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key[]>;
   private run: Phaser.Input.Keyboard.Key;
-  private interactKeys: Phaser.Input.Keyboard.Key[];
+  private handKeys: Phaser.Input.Keyboard.Key[];
+  private useKey: Phaser.Input.Keyboard.Key;
 
   constructor(scene: Phaser.Scene) {
     const kb = scene.input.keyboard!;
@@ -18,13 +22,19 @@ export class PlayerInput {
       right: add(K.D, K.RIGHT),
     };
     this.run = kb.addKey(K.SHIFT);
-    this.interactKeys = add(K.E, K.SPACE, K.ENTER);
+    this.handKeys = add(K.E, K.ENTER);
+    this.useKey = kb.addKey(K.SPACE);
   }
 
-  /** Vrai une seule fois par appui (E, Espace ou Entrée). */
-  interactPressed(): boolean {
+  /** Les mains (E ou Entrée) : vrai une seule fois par appui. */
+  handsPressed(): boolean {
     // pas de some() : chaque touche doit être lue pour remettre son état "vient d'être pressée" à zéro
-    return this.interactKeys.map((k) => Phaser.Input.Keyboard.JustDown(k)).includes(true);
+    return this.handKeys.map((k) => Phaser.Input.Keyboard.JustDown(k)).includes(true);
+  }
+
+  /** Utiliser l'objet en main (Espace) : vrai une seule fois par appui. */
+  usePressed(): boolean {
+    return Phaser.Input.Keyboard.JustDown(this.useKey);
   }
 
   read(): { dir: Phaser.Math.Vector2; running: boolean } {

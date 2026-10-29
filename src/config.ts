@@ -41,6 +41,12 @@ export const DEPTH = {
 /** Distance devant les pieds où l'on cherche un objet avec lequel interagir, et rayon de recherche (px). */
 export const INTERACT = { reach: 16, radius: 20 };
 
+/** Récolte : tremblement d'un objet frappé, saut des objets lâchés, où ils retombent (px, autour de la base). */
+export const HARVEST = { shakeMs: 160, dropMs: 320, dropRadius: [12, 24] as [number, number], dropSpacing: 9 };
+
+/** Barre d'objets : durée d'un message court (ms). */
+export const HUD = { noticeMs: 1800 };
+
 /** Où commence la partie : Xéros se réveille dans son cagibi. */
 export const START = { map: 'maison', spawn: 'reveil' };
 

@@ -29,6 +29,7 @@ export class BootScene extends Phaser.Scene {
     }
     this.makeGlow();
     this.scene.start('world', { mapId: START.map, spawn: START.spawn });
+    this.scene.launch('hud');
   }
 
   /** Halo radial pour les lueurs de feu (effet de lumière, pas du pixel art : généré ici). */

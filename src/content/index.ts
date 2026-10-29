@@ -2,10 +2,11 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { CharacterDefSchema, DialogueDefSchema, ItemDefSchema, PropDefSchema, TilesetCatalogSchema } from './types';
+import { CharacterDefSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, PropDefSchema, TilesetCatalogSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import itemsJson from './items.json';
+import gesturesJson from './gestures.json';
 import charactersJson from './characters.json';
 import dialoguesJson from './dialogues.json';
 export { maps } from '../generated/maps';
@@ -22,5 +23,7 @@ export const tiles = parse('tiles.json', z.record(z.string(), TilesetCatalogSche
 export const props = parse('props.json', z.record(z.string().min(1), PropDefSchema), propsJson);
 /** Objets possédables (inventaire, sol) : la clé est l'identifiant de l'objet. */
 export const items = parse('items.json', z.record(z.string().min(1), ItemDefSchema), itemsJson);
-export const characters =parse('characters.json', z.record(z.string(), CharacterDefSchema), charactersJson);
+/** Gestes du corps (`use`) et place de l'outil en main à chaque image. */
+export const gestures = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson);
+export const characters = parse('characters.json', z.record(z.string(), CharacterDefSchema), charactersJson);
 export const dialogues = parse('dialogues.json', z.record(z.string(), DialogueDefSchema), dialoguesJson);

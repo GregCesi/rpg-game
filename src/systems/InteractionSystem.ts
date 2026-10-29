@@ -4,8 +4,8 @@ import type { Player } from '../entities/Player';
 import type { Interactable } from '../world/GameMap';
 
 /**
- * Repère l'objet devant Xéros, affiche l'invite (touche E) au-dessus,
- * et signale quand le joueur l'utilise. Ne sait pas ce que fait l'objet : c'est la scène qui décide.
+ * Repère ce qui est devant Xéros (objet, personnage, objet au sol), affiche l'invite (touche E) au-dessus,
+ * et signale quand le joueur appuie sur E. Ne sait pas ce que fait la cible : c'est la scène qui décide.
  */
 export class InteractionSystem {
   private target?: Interactable;
@@ -15,7 +15,8 @@ export class InteractionSystem {
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly player: Player,
-    private readonly items: readonly Interactable[],
+    /** Les cibles possibles en ce moment : la liste change quand un objet est récolté ou ramassé. */
+    private readonly items: () => readonly Interactable[],
   ) {
     this.prompt = scene.add.image(0, 0, 'ui-key-e').setOrigin(0.5, 1).setDepth(DEPTH.prompt).setVisible(false);
   }
@@ -26,7 +27,7 @@ export class InteractionSystem {
    */
   update(time: number, active: boolean): Interactable | undefined {
     // Toujours lue, même inactif : sinon un appui fait pendant un dialogue ressortirait juste après.
-    const pressed = this.player.input.interactPressed();
+    const pressed = this.player.input.handsPressed();
     this.setTarget(active ? this.nearest() : undefined);
     if (!this.target) return undefined;
     const bob = Math.round((Math.sin(time / 220) + 1) / 2) * 2;
@@ -44,7 +45,7 @@ export class InteractionSystem {
     const probe = this.player.probe(INTERACT.reach);
     let best: Interactable | undefined;
     let bestD = INTERACT.radius;
-    for (const it of this.items) {
+    for (const it of this.items()) {
       const d = Phaser.Math.Distance.Between(probe.x, probe.y, it.x, it.y);
       if (d < bestD) {
         best = it;

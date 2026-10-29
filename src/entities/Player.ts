@@ -2,21 +2,29 @@ import Phaser from 'phaser';
 import { PLAYER } from '../config';
 import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
+import { ToolUse } from './ToolUse';
 
-/** Le joueur = un Actor piloté par le clavier. */
+/** Le joueur = un Actor piloté par le clavier, avec le composant du geste d'outil. */
 export class Player {
   readonly actor: Actor;
   readonly input: PlayerInput;
+  readonly tools: ToolUse;
   /** Direction demandée au dernier tour (0,0 si immobile). */
   dir = new Phaser.Math.Vector2(0, 0);
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.actor = new Actor(scene, x, y, PLAYER.skin);
     this.input = new PlayerInput(scene);
+    this.tools = new ToolUse(scene, this.actor);
   }
 
   /** enabled = false pendant un dialogue : le joueur reste immobile. */
   update(enabled = true): void {
+    // pendant un geste, le corps reste sur place et garde son animation
+    if (this.tools.busy) {
+      this.dir.set(0, 0);
+      return;
+    }
     if (!enabled) {
       this.dir.set(0, 0);
       this.actor.move(this.dir, PLAYER.walkSpeed);

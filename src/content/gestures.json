@@ -1,0 +1,10 @@
+{
+  "use": {
+    "impact": 2,
+    "poses": {
+      "down": [{"dx": 0, "dy": -17, "angle": 90}, {"dx": 0, "dy": -35, "angle": 90, "behind": true}, {"dx": 0, "dy": -9, "angle": 270}, {"dx": 1, "dy": -12, "angle": 315}],
+      "up": [{"dx": 5, "dy": -14, "angle": 45, "behind": true}, {"dx": 9, "dy": -29, "angle": 135}, {"dx": 0, "dy": -14, "angle": 90, "behind": true}, {"dx": 2, "dy": -12, "angle": 45, "behind": true}],
+      "right": [{"dx": 5, "dy": -15, "angle": 45}, {"dx": -3, "dy": -35, "angle": 180, "behind": true}, {"dx": 7, "dy": -11, "angle": 315}, {"dx": 7, "dy": -14, "angle": 0}]
+    }
+  }
+}
