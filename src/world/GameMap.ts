@@ -35,7 +35,10 @@ export interface PlacedProp {
   id: number;
   /** Objet né pendant la partie (pièce de l'arbre couché) : ses changements vont dans la liste des objets nés. */
   spawned: boolean;
-  /** Image retournée (tombé vers la gauche) : collisions, point visé, fumées et lueurs le sont aussi. */
+  /**
+   * Couché vers la gauche : l'image est `<image>-left` (dessinée, jamais retournée), et sa géométrie est le miroir de la
+   * version de droite : collisions, point visé, fumées et lueurs sont retournés dans l'image.
+   */
   flip: boolean;
   /** Place dans la chaîne de ce qui est né avec lui (pièces du tronc couché) : choisit l'image « bout coupé ». */
   chain?: Chain;
@@ -184,7 +187,8 @@ export class GameMap {
       if (!p.chain || !isTrunk(p.def)) continue;
       const left = p.chain.index > 0 && this.separatedLeft(p) ? '-cut-left' : '';
       const max = p.def.harvest!.hits;
-      const image = !p.def.harvest!.notch ? `${p.def.image}${left}` : p.hits >= max ? `${p.def.image}-cut-right` : `${p.def.image}${left}${p.hits > 0 ? `-n${p.hits}` : ''}`;
+      const base = p.flip ? `${p.def.image}-left` : p.def.image;
+      const image = !p.def.harvest!.notch ? `${base}${left}` : p.hits >= max ? `${base}-cut-right` : `${base}${left}${p.hits > 0 ? `-n${p.hits}` : ''}`;
       p.image.setTexture(image);
     }
   }
@@ -212,21 +216,22 @@ export class GameMap {
 
   /**
    * (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds).
-   * `flip` : image retournée ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
+   * `flip` : version couchée vers la gauche (image `-left`) ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
    */
   placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain; hits?: number } = {}): PlacedProp {
     const flip = !!opts.flip;
     const scene = this.scene;
     const p = propDefs[o.type];
     const ay = o.y;
-    const obj = p.anim ? scene.add.sprite(o.x, ay, p.image).play(`${p.image}-${p.anim}`) : scene.add.image(o.x, ay, p.image);
-    obj.setOrigin(0, 1).setFlipX(flip).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
+    const image = flip ? `${p.image}-left` : p.image;
+    const obj = p.anim ? scene.add.sprite(o.x, ay, image).play(`${image}-${p.anim}`) : scene.add.image(o.x, ay, image);
+    obj.setOrigin(0, 1).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
     if (p.blend === 'add') obj.setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.light);
     const parts: Phaser.GameObjects.GameObject[] = [obj];
     // coin haut gauche de l'image, pour les coordonnées "dans l'image"
     const ox = o.x;
     const oy = ay - obj.height;
-    // abscisse dans l'image, retournée si besoin : un rectangle [x, x + w[ devient [W - x - w, W - x[
+    // abscisse dans l'image, en miroir pour la version de gauche : un rectangle [x, x + w[ devient [W - x - w, W - x[
     const fx = (x: number, w = 1) => (flip ? obj.width - x - w : x);
 
     let baseY = ay - 8;

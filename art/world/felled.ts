@@ -10,7 +10,8 @@
 // (même image, même place : la 4e bille nue, puis la pointe avec ses chicots). Chaque pièce est une future bille
 // et porte une encoche à son bout droit, sur la jonction avec la suivante, qui se creuse à chaque coup (`-n1`, `-n2`)
 // puis se coupe (`-cut-right` ; la voisine passe en `-cut-left`). La bille `felled-log-k` est la pièce k coupée aux
-// deux bouts, même image, même place. La chute vers la gauche est le miroir de tout cela (le jeu retourne les images).
+// deux bouts, même image, même place. La chute vers la gauche (`tree-fall-left`, pièces `-left`) a sa propre
+// section en fin de fichier : géométrie en miroir, dessin et lumière refaits.
 
 import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
@@ -37,8 +38,8 @@ const TRUNK_FROM = 70;
 /** Allongement du tronc couché : vu de dessus, il montre toute sa longueur (environ 34 px sous le houppier). */
 const EXT = 24;
 
-function withStump(c: Canvas): Canvas {
-  c.stamp(stumpBody().toGrid(), STUMP_AT[0] + OFF, STUMP_AT[1]);
+function withStump(c: Canvas, off = OFF): Canvas {
+  c.stamp(stumpBody().toGrid(), STUMP_AT[0] + off, STUMP_AT[1]);
   return c;
 }
 
@@ -78,7 +79,7 @@ interface Pose {
 }
 
 /**
- * Dessine le haut de l'arbre selon `pose` (tourné de `deg` degrés vers la droite), avec la lumière
+ * Dessine le haut de l'arbre selon `pose` (tourné de `deg` degrés vers la droite, vers la gauche si `deg` < 0), avec la lumière
  * nord-ouest de l'écran ramenée dans le repère de l'arbre, puis le bout scié au pied du tronc.
  */
 function drawFalling(c: Canvas, p: Pose) {
@@ -103,8 +104,10 @@ function drawFalling(c: Canvas, p: Pose) {
     const q = src.get(Math.floor(FOOT[0] + inv(g)), Math.floor(cut - h));
     if (q !== EMPTY) layer.set(X, Y, q);
   }
-  // bout scié : disque du tronc vu de biais, tourné vers le bas-gauche, donc vers la lumière
-  const minor = 0.9 + 1.1 * sin;
+  // bout scié : disque du tronc vu de biais, tourné vers le bas-gauche (vers la lumière) quand l'arbre tombe
+  // à droite, vers le bas-droite (dans l'ombre) quand il tombe à gauche
+  const minor = 0.9 + 1.1 * Math.abs(sin);
+  const [rim, heart] = p.deg >= 0 ? ['Y', 't'] : ['t', 'T'];
   const face = (rx: number, ry: number, col: string) => {
     for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
       if (layer.get(X, Y) === EMPTY) continue;
@@ -119,14 +122,14 @@ function drawFalling(c: Canvas, p: Pose) {
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     if (layer.get(X, Y) !== EMPTY && local(X, Y)[0] < 1) layer.set(X, Y, 'N');
   }
-  face(5.6, minor + 0.4, 'Y');
-  if (minor > 1.5) face(2.4, minor * 0.6, 't');
+  face(5.6, minor + 0.4, rim);
+  if (minor > 1.5) face(2.4, minor * 0.6, heart);
   c.stamp(layer.toGrid(), 0, 0);
 }
 
 /** Image de la chute : souche fixe, haut de l'arbre dans la pose donnée, contour, ombres. */
-function fallFrame(p: Pose, shadows: [number, number, number, number][]): Canvas {
-  const c = withStump(new Canvas(FALL_W, FALL_H));
+function fallFrame(p: Pose, shadows: [number, number, number, number][], off = OFF): Canvas {
+  const c = withStump(new Canvas(FALL_W, FALL_H), off);
   drawFalling(c, p);
   despeckle(c, 'KY');
   shadedOutline(c);
@@ -244,6 +247,14 @@ function sawnEnd(c: Canvas, x: number, side: 'left' | 'right', axisY = AXIS_Y) {
  * `withStubs` : ébranché, avec les chicots sur la pointe (au-delà de la 4e bille) et la cime coupée net.
  */
 function trunkBody(withStubs: boolean): Canvas {
+  const c = trunkCore();
+  sawnEnd(c, BUTT_X, 'left');
+  if (withStubs) stubs(c, (x) => x);
+  return c;
+}
+
+/** Tronc couché vers la droite, sans bout scié ni chicots : profil d'écorce, amincissement, fentes. */
+function trunkCore(): Canvas {
   const profile = treeBody(LYING_LIGHT).px[77];
   const c = new Canvas(FALL_W, FALL_H);
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
@@ -255,19 +266,25 @@ function trunkBody(withStubs: boolean): Canvas {
   }
   c.within('m', (c) => FISSURES_DARK.forEach(([x, y, n]) => c.line(x, y, x + n - 1, y, 'N')));
   c.within('M', (c) => FISSURES_LIGHT.forEach(([x, y, n]) => c.line(x, y, x + n - 1, y, 'm')));
-  sawnEnd(c, BUTT_X, 'left');
-  if (withStubs) {
-    // chicots : moignons de branches coupées au ras, deux vers le nord (éclairés), un vers le sud (ombre)
-    c.line(139, 75, 142, 72, 'M').line(140, 75, 143, 72, 'm').line(140, 76, 143, 73, 'm');
-    c.set(142, 71, 'Y').set(143, 71, 'Y').set(144, 72, 'Y');
-    c.line(147, 77, 149, 75, 'M').line(148, 77, 150, 75, 'm');
-    c.set(149, 74, 'Y').set(150, 74, 'Y').set(151, 75, 'Y');
-    c.line(142, 86, 143, 87, 'N').line(143, 86, 144, 87, 'N').line(144, 86, 145, 87, 'K');
-    c.set(144, 88, 't').set(145, 88, 't');
-    // pointe de la cime, coupée net
-    for (let Y = 0; Y < FALL_H; Y++) if (c.get(BUTT_X + TRUNK_LEN, Y) !== EMPTY) c.set(BUTT_X + TRUNK_LEN, Y, 't');
-  }
   return c;
+}
+
+/**
+ * Chicots de la pointe et cime coupée net. `at` place une colonne du tronc couché vers la droite à l'écran
+ * (l'identité, ou le miroir pour le tronc couché vers la gauche) : les chicots montent en biais vers la cime,
+ * leur flanc du haut reste le plus clair dans les deux sens.
+ */
+function stubs(c: Canvas, at: (x: number) => number) {
+  // chicots : moignons de branches coupées au ras, deux vers le nord (éclairés), un vers le sud (ombre)
+  c.line(at(139), 75, at(142), 72, 'M').line(at(140), 75, at(143), 72, 'm').line(at(140), 76, at(143), 73, 'm');
+  c.set(at(142), 71, 'Y').set(at(143), 71, 'Y').set(at(144), 72, 'Y');
+  c.line(at(147), 77, at(149), 75, 'M').line(at(148), 77, at(150), 75, 'm');
+  c.set(at(149), 74, 'Y').set(at(150), 74, 'Y').set(at(151), 75, 'Y');
+  c.line(at(142), 86, at(143), 87, 'N').line(at(143), 86, at(144), 87, 'N').line(at(144), 86, at(145), 87, 'K');
+  c.set(at(144), 88, 't').set(at(145), 88, 't');
+  // pointe de la cime, coupée net
+  const tip = at(BUTT_X + TRUNK_LEN);
+  for (let Y = 0; Y < FALL_H; Y++) if (c.get(tip, Y) !== EMPTY) c.set(tip, Y, 't');
 }
 
 /** Houppier couché, sans contour : les masses de feuillage de l'arbre, raccourcies le long du tronc, aplaties en travers. */
@@ -481,6 +498,248 @@ const treeFall: SpriteSheetSource = {
   },
 };
 
+// ---------- Chute vers la gauche ----------
+// Pas un miroir de la chute à droite : l'arbre debout reste `tree` tel quel, il pivote vers la gauche autour du bord
+// gauche de sa coupe, et la souche reste `tree-stump`, à la même place. Seules la géométrie des pièces couchées
+// (silhouettes, encoches, cadres) est le miroir exact de celle de droite autour du pied de l'arbre, pour que le jeu
+// en déduise positions et collisions (x' = 66 - (x + w - 1) dans le repère de `tree`) ; le dessin est refait avec
+// la lumière en haut à gauche : faces de coupe, entailles, houppier, contour.
+//
+// Frame de même taille que la chute à droite, miroir de la sienne : l'arbre debout y est à OFF_L, le tronc couché
+// s'étend vers la gauche. Une colonne X de la frame de droite devient la colonne mx(X) de celle de gauche.
+
+/** Décalage de l'arbre dans la frame de la chute à gauche : coin bas gauche de la frame à x = -OFF_L de celui de `tree`. */
+export const OFF_L = FALL_W - 1 - OFF - 66;
+const mx = (X: number) => FALL_W - 1 - X;
+/** Charnière de la chute à gauche : bord gauche de la coupe (le tronc va de 28 à 37 sous le houppier). */
+const HINGE_L: Vec = [28, CUT_Y];
+
+/** Pose pivotée vers la gauche autour du bord gauche de la coupe. */
+function pivotLeft(deg: number): Pose {
+  const t = (-deg * Math.PI) / 180;
+  const s = Math.abs(Math.sin(t));
+  const d = FOOT[0] - HINGE_L[0];
+  return {
+    deg: -deg,
+    base: [HINGE_L[0] + OFF_L + d * Math.cos(t), HINGE_L[1] - d * s],
+    ext: Math.round(EXT * s),
+    squash: 1 - 0.64 * s * s,
+  };
+}
+
+/** Miroir horizontal d'une image de la frame. */
+const flipFrame = (c: Canvas): Canvas => Canvas.from(c.toGrid().map((r) => [...r].reverse().join('')));
+
+/**
+ * Entaille au bout gauche d'une pièce couchée à gauche (miroir de NOTCH en forme, calée à gauche sur la première
+ * colonne après la jonction). Le flanc en biais regarde ici le haut à gauche, vers la lumière : bois frais plus
+ * clair que dans l'entaille de droite. La colonne de la jonction reste le fond de la fente, dans l'ombre.
+ */
+const NOTCH_L: string[][] = [
+  ['..  ', 'KY  '],
+  ['.... ', 'KtY  ', 'Kt   ', 'K    '],
+  ['......', '..... ', 'KtYYY ', 'KttY  ', 'KTt   ', 'KT    ', 'K     '],
+];
+NOTCH_L.forEach((p, d) => {
+  const ref = NOTCH[d];
+  const same = p.length === ref.length && p.every((row, r) =>
+    row.length === ref[r].length && [...row].every((ch, i) => (ch === '.') === (ref[r][row.length - 1 - i] === '.')));
+  if (!same) throw new Error(`felled : l'entaille gauche ${d} n'est pas le miroir de l'entaille droite`);
+});
+
+function notchLeft(c: Canvas, first: number, depth: number) {
+  NOTCH_L[depth].forEach((row, r) => {
+    for (let i = 0; i < row.length; i++) {
+      const col = row[i];
+      if (col === ' ') continue;
+      const X = first + i;
+      if (c.get(X, TRUNK_TOP + r) !== EMPTY) c.set(X, TRUNK_TOP + r, col);
+    }
+  });
+}
+
+/** Tronc couché vers la gauche, sans contour : bout scié au pied à droite (dans l'ombre), chicots vers la gauche. */
+function trunkBodyLeft(withStubs: boolean): Canvas {
+  const c = flipFrame(trunkCore());
+  sawnEnd(c, FALL_W - BUTT_X, 'right');
+  if (withStubs) stubs(c, mx);
+  return c;
+}
+
+/**
+ * Houppier couché vers la gauche, sans contour : mêmes pixels de l'arbre que le houppier de droite, en miroir
+ * (silhouette identique retournée), mais éclairés pour ce sens. Le miroir envoie le haut de l'écran sur la gauche
+ * de l'arbre, comme à droite, et la gauche de l'écran vers sa cime : la lumière nord-ouest y redevient celle de
+ * l'arbre debout.
+ */
+function crownBodyLeft(): Canvas {
+  const lit = treeBody();
+  const ref = treeBody(LYING_LIGHT);
+  const k = (CROWN_END - F0) / (66 - 12);
+  const half = 5.5;
+  const inv = (g: number) => (Math.abs(g) <= half ? g : Math.sign(g) * (half + (Math.abs(g) - half) / SQUASH));
+  const c = new Canvas(FALL_W, FALL_H);
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    const [h, g] = lying(mx(X), Y);
+    if (h < F0) continue;
+    const sx = Math.floor(FOOT[0] + inv(g));
+    const sy = Math.floor(66 - (h - F0) / k);
+    if (!'jLlk'.includes(ref.get(sx, sy))) continue;
+    const q = lit.get(sx, sy);
+    // un pixel que le nettoyage de l'arbre a rendu au tronc dans ce sens garde la teinte moyenne du feuillage
+    c.set(X, Y, 'jLlk'.includes(q) ? q : 'l');
+  }
+  despeckle(c);
+  // pixels seuls au bord du feuillage (que despeckle laisse, ils touchent le vide) : la teinte voisine la plus courante
+  const fix: [number, number, string][] = [];
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    const p = c.get(X, Y);
+    if (p === EMPTY) continue;
+    const ns = [c.get(X + 1, Y), c.get(X - 1, Y), c.get(X, Y + 1), c.get(X, Y - 1)].filter((n) => n !== EMPTY);
+    if (ns.length === 0 || ns.includes(p)) continue;
+    const count: Record<string, number> = {};
+    for (const n of ns) count[n] = (count[n] ?? 0) + 1;
+    fix.push([X, Y, Object.entries(count).sort((a, b) => b[1] - a[1])[0][0]]);
+  }
+  for (const [X, Y, col] of fix) c.px[Y][X] = col;
+  return c;
+}
+
+/** Ombre au sol du tronc couché à gauche : décalée vers la droite, comme toutes les ombres. */
+function trunkShadowLeft(): Canvas {
+  const tip = mx(BUTT_X + TRUNK_LEN + 1); // colonne du contour de la pointe
+  const butt = mx(BUTT_X - 1); // colonne du contour du bout scié, contre la souche
+  const c = new Canvas(FALL_W, FALL_H);
+  c.rect(tip + 2, TRUNK_BOTTOM + 1, butt - 1 - (tip + 2) + 1, 2, 'x').rect(tip + 4, TRUNK_BOTTOM + 3, butt - 3 - (tip + 4) + 1, 1, 'x');
+  return c;
+}
+
+const TRUNK_L = shadedOutline(despeckle(trunkBodyLeft(false), 'KYTt'));
+const CROWN_L = shadedOutline(crownBodyLeft());
+const BAND_L = trunkShadowLeft();
+/** Colonne la plus à droite du houppier couché à gauche (son ombre ne déborde pas de son image). */
+const CROWN_L_RIGHT = mx(Math.min(...[...Array(FALL_W).keys()].filter((X) => CROWN.px.some((r) => r[X] !== EMPTY))));
+const CROWN_SHADOW_L = new Canvas(FALL_W, FALL_H).ellipse(mx(BUTT_X + 81) + 13, 90.5, 21, 3.5, 'x');
+
+/** Pièce k couchée à gauche : X de la frame de gauche, dans la pièce k (miroir de inRange). */
+const inRangeL = (X: number, k: number) => inRange(mx(X), k);
+/**
+ * Souche posée dans la frame de gauche. L'ombre d'une pièce ne se pose jamais sur elle : dans la frame, `stamp`
+ * remplacerait le pixel de la souche par l'ombre (herbe ombrée), alors qu'en jeu l'ombre translucide se fond
+ * avec la souche (pixel sombre). Sans ombre à cet endroit, les deux donnent la souche.
+ */
+const STUMP_L = new Canvas(FALL_W, FALL_H).stamp(stump().toGrid(), STUMP_AT[0] + OFF_L, STUMP_AT[1]);
+
+/**
+ * Tronc de la pièce k couchée à gauche, contour compris. Les états parlent de la chaîne : `left` est le bout côté
+ * souche (à droite à l'écran, face de coupe dans l'ombre), `right` le bout côté cime (à gauche à l'écran, face de
+ * coupe vers la lumière, entaille).
+ */
+function pieceTrunkLeft(k: number, head: boolean, st: State): Canvas {
+  const c = trunkBodyLeft(head);
+  const hi = st.left ? mx(PIECE_X[k] + 1) : FALL_W - 1;
+  const lo = st.right === 'cut' ? mx(JUNCTION[k] - 2) : 0;
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) if (X < lo || X > hi) c.px[Y][X] = EMPTY;
+  if (st.left) sawnEnd(c, hi + 1, 'right');
+  if (st.right === 'cut') sawnEnd(c, lo, 'left');
+  else notchLeft(c, FALL_W - JUNCTION[k], st.right ?? 0);
+  return shadedOutline(despeckle(c, 'KYTt'));
+}
+
+/** Pièce k (0 à 3) couchée à gauche, dans la frame entière. */
+function pieceLeft(k: number, head = false, st: State = {}): Canvas {
+  const c = new Canvas(FALL_W, FALL_H);
+  const trunk = pieceTrunkLeft(k, head, st);
+  const crown = k === 3 && !head;
+  // ombre du tronc : décalée vers la droite, elle commence deux colonnes après un bout coupé à gauche à l'écran
+  // (quatre au bord) et s'arrête au contour d'un bout coupé à droite
+  const bandFrom = (Y: number) => (st.right === 'cut' ? FALL_W - JUNCTION[k] + (Y >= TRUNK_BOTTOM + 3 ? 4 : 2) : 0);
+  const bandTo = st.left ? mx(PIECE_X[k]) : FALL_W;
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    if (inRangeL(X, k)) c.set(X, Y, trunk.get(X, Y));
+    if (!crown) continue;
+    const f = CROWN_L.get(X, Y);
+    if (f === EMPTY) continue;
+    const t = TRUNK_L.get(X, Y);
+    if (t === EMPTY || (mx(X) >= PIECE_X[3] && mx(X) >= overAt(Y))) c.set(X, Y, f);
+  }
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    if (c.get(X, Y) !== EMPTY) continue;
+    if (STUMP_L.get(X, Y) !== EMPTY) continue;
+    if (inRangeL(X, k) && X >= bandFrom(Y) && X <= bandTo && BAND_L.get(X, Y) !== EMPTY) c.set(X, Y, 'x');
+    else if (crown && X <= CROWN_L_RIGHT && CROWN_SHADOW_L.get(X, Y) !== EMPTY && BAND_L.get(X, Y) === EMPTY && TRUNK_L.get(X, Y) === EMPTY) c.set(X, Y, 'x');
+  }
+  return c;
+}
+
+/** Variantes d'une pièce couchée à gauche : la clé de la pièce, puis `-left`, puis le suffixe d'état. */
+function variantsLeft(k: number, head: boolean): [string, Canvas][] {
+  const base = head ? 'felled-head' : PIECE_NAMES[k];
+  return variants(k, head).map(([name]): [string, Canvas] => {
+    const suffix = name.slice(base.length);
+    const left = suffix.startsWith('-cut-left');
+    const right = suffix.endsWith('-n1') ? 1 : suffix.endsWith('-n2') ? 2 : suffix === '-cut-right' ? 'cut' : undefined;
+    return [`${base}-left${suffix}`, pieceLeft(k, head, { left, right })];
+  });
+}
+
+const SETS_L = [0, 1, 2].map((k) => variantsLeft(k, false));
+const CROWN_SET_L = variantsLeft(3, false);
+const HEAD_SET_L = variantsLeft(3, true);
+const LOGS_L: Canvas[] = [0, 1, 2, 3].map((k) => pieceLeft(k, k === 3, { left: k > 0, right: 'cut' }));
+/** Cadres de gauche : miroirs exacts des cadres de droite (même taille, même y). */
+const FRAMES_L: Frame[] = FRAMES.map((f) => ({ ...f, x: FALL_W - f.x - f.w }));
+
+// Garde-fou : chaque image de gauche tient dans son cadre et a la silhouette exacte, retournée, de son image de droite
+// (ombre portée mise à part : elle reste décalée vers la droite).
+{
+  const solid = (c: Canvas, X: number, Y: number) => c.get(X, Y) !== EMPTY && c.get(X, Y) !== 'x';
+  const pairs: [string, Canvas, Canvas, Frame, Frame][] = [
+    ...SETS.flatMap((s, k) => s.map(([n, c], i): [string, Canvas, Canvas, Frame, Frame] => [n, c, SETS_L[k][i][1], FRAMES[k], FRAMES_L[k]])),
+    ...[...CROWN_SET, ...HEAD_SET].map(([n, c], i): [string, Canvas, Canvas, Frame, Frame] => [n, c, [...CROWN_SET_L, ...HEAD_SET_L][i][1], FRAMES[3], FRAMES_L[3]]),
+    ...LOGS.map((c, k): [string, Canvas, Canvas, Frame, Frame] => [`felled-log-${k + 1}`, c, LOGS_L[k], FRAMES[k], FRAMES_L[k]]),
+  ];
+  for (const [name, r, l, , fl] of pairs) {
+    for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+      if (solid(l, X, Y) !== solid(r, mx(X), Y)) throw new Error(`felled : ${name}-left n'est pas le miroir de ${name} en (${X}, ${Y})`);
+      if (l.get(X, Y) !== EMPTY && (X < fl.x || X >= fl.x + fl.w || Y < fl.y || Y >= fl.y + fl.h)) {
+        throw new Error(`felled : ${name}-left déborde de son cadre en (${X}, ${Y})`);
+      }
+    }
+  }
+}
+
+/** Dernière image de la chute à gauche : la souche et les quatre pièces couchées à gauche, posées comme par le jeu. */
+function lyingFrameLeft(): Canvas {
+  const c = new Canvas(FALL_W, FALL_H);
+  c.stamp(stump().toGrid(), STUMP_AT[0] + OFF_L, STUMP_AT[1]);
+  const pieces = [...SETS_L.map((s) => s[0][1]), CROWN_SET_L[0][1]];
+  // garde-fou : une ombre translucide posée sur un pixel déjà peint donnerait en jeu un mélange que `stamp` ne rend pas
+  for (const p of pieces) for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    const under = c.get(X, Y);
+    if (p.get(X, Y) === 'x' && under !== EMPTY && under !== 'x') throw new Error(`felled : ombre d'une pièce gauche sur un pixel peint en (${X}, ${Y})`);
+  }
+  for (const p of pieces) c.stamp(p.toGrid(), 0, 0);
+  return c;
+}
+
+const FOOT_XL = FOOT[0] + OFF_L;
+
+const framesLeft = [
+  new Canvas(FALL_W, FALL_H).stamp(standingTree().toGrid(), OFF_L, 0),
+  fallFrame(pivotLeft(10), [[FOOT_XL + 3, 89.5, 17, 4], [FOOT_XL - 8, 90, 16, 3.5]], OFF_L),
+  fallFrame(pivotLeft(45), [[FOOT_XL + 3, 89.5, 14, 3.5], [FOOT_XL - 38, 90.5, 26, 4]], OFF_L),
+  lyingFrameLeft(),
+];
+
+const treeFallLeft: SpriteSheetSource = {
+  ...treeFall,
+  name: 'tree-fall-left',
+  animations: {
+    fall: { ...treeFall.animations.fall, frames: framesLeft.map((f) => f.toGrid()) },
+  },
+};
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
 export default [
@@ -489,4 +748,8 @@ export default [
   ...[...CROWN_SET, ...HEAD_SET].map(([name, c]) => img(name, cut(c, FRAMES[3]))),
   ...LOGS.map((c, k) => img(`felled-log-${k + 1}`, cut(c, FRAMES[k]))),
   img('felled-log', ((l) => cut(l, bounds([l])))(felledLog())),
+  treeFallLeft,
+  ...SETS_L.flatMap((s, k) => s.map(([name, c]) => img(name, cut(c, FRAMES_L[k])))),
+  ...[...CROWN_SET_L, ...HEAD_SET_L].map(([name, c]) => img(name, cut(c, FRAMES_L[3]))),
+  ...LOGS_L.map((c, k) => img(`felled-log-${k + 1}-left`, cut(c, FRAMES_L[k]))),
 ];

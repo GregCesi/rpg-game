@@ -37,6 +37,17 @@ export const families: Family[] = [
     ground: 'grass',
     keys: ['felled-section-2', 'felled-section-2-n1', 'felled-section-2-n2', 'felled-section-2-cut-right', 'felled-section-2-cut-left', 'felled-crown-cut-left', 'felled-head-cut-left', 'felled-head-n2', 'felled-log-1', 'felled-log-2', 'felled-log-3', 'felled-log-4'],
   },
+  {
+    title: 'Chute vers la gauche',
+    ground: 'grass',
+    keys: ['tree-fall-left', 'felled-section-1-left', 'felled-section-2-left', 'felled-section-3-left', 'felled-crown-left', 'felled-head-left'],
+    allFrames: ['tree-fall-left'],
+  },
+  {
+    title: 'Arbre couché à gauche : entailles et billes',
+    ground: 'grass',
+    keys: ['felled-section-2-left', 'felled-section-2-left-n1', 'felled-section-2-left-n2', 'felled-section-2-left-cut-right', 'felled-section-2-left-cut-left', 'felled-section-2-left-cut-left-n2', 'felled-crown-left-cut-left', 'felled-head-left-cut-left', 'felled-head-left-n2', 'felled-head-left-cut-right', 'felled-log-1-left', 'felled-log-2-left', 'felled-log-3-left', 'felled-log-4-left'],
+  },
   { title: 'Lumière', ground: 'floor', keys: ['lantern', 'wall-torch', 'candle'] },
   { title: 'Personnages', ground: 'floor', keys: ['mother', 'portrait-mother-64'] },
   { title: 'Outil en main', ground: 'grass', keys: ['tool-axe'], allFrames: ['tool-axe'] },

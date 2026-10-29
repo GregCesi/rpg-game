@@ -1,6 +1,6 @@
 {
   "tree": {"name": "arbre", "image": "tree", "body": {"w": 18, "h": 10, "bottom": 7},
-    "harvest": {"tool": "axe", "hits": 4, "impact": "wood", "fall": {"image": "tree-fall", "anim": "fall", "x": -14, "foot": 33}, "becomes": "tree-stump", "at": [17, -2],
+    "harvest": {"tool": "axe", "hits": 4, "impact": "wood", "fall": {"image": "tree-fall", "anim": "fall", "x": -14, "foot": 33, "left": {"image": "tree-fall-left", "x": -79}}, "becomes": "tree-stump", "at": [17, -2],
       "spawns": [{"type": "felled-section-1", "x": 45, "y": -6}, {"type": "felled-section-2", "x": 64, "y": -6}, {"type": "felled-section-3", "x": 83, "y": -6}, {"type": "felled-crown", "x": 93, "y": 0}]}},
   "felled-section-1": {"name": "tronc couché", "image": "felled-section-1", "body": {"w": 19, "h": 10, "bottom": 3}, "aim": [18, 2],
     "harvest": {"tool": "axe", "hits": 3, "impact": "wood", "gesture": "chop", "notch": true, "becomes": "felled-log-1"}},

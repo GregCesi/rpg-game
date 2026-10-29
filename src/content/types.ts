@@ -74,14 +74,23 @@ export const HarvestSchema = z.strictObject({
    */
   notch: z.boolean().default(false),
   /**
-   * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. Elle est dessinée vers la droite.
-   * `x`, `y` : décalage du coin bas gauche d'une image de la chute par rapport à celui de l'objet, chute vers la droite
-   * (le pied de l'arbre est en x = 33 dans `tree`, en x = 47 dans `tree-fall` : x = -14).
-   * `foot` : colonne du pied dans l'image de l'objet. Vers la gauche, le jeu retourne la chute autour de ce pied :
-   * décalage = 2 × foot − (x + largeur d'une image − 1) ; le remplaçant aussi : at.x = 2 × foot − (at.x + sa largeur − 1).
+   * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. `image`, `x`, `y` : la chute vers la droite,
+   * avec le décalage du coin bas gauche d'une de ses images par rapport à celui de l'objet (le pied de l'arbre est en x = 33
+   * dans `tree`, en x = 47 dans `tree-fall` : x = -14). `left` : la chute vers la gauche, une planche à part (pas de miroir),
+   * avec la même animation `anim`. `foot` : colonne du pied dans l'image de l'objet ; ce qui naît vers la gauche est posé
+   * en miroir de la droite autour de ce pied (x' = 2 × foot − (x + largeur − 1)), avec ses images `-left`.
    * L'objet tombe du côté opposé à celui qui frappe ; frappé d'en haut ou d'en bas, d'un côté au hasard.
    */
-  fall: z.strictObject({ image: id, anim: id, x: px.default(0), y: px.default(0), foot: px }).optional(),
+  fall: z
+    .strictObject({
+      image: id,
+      anim: id,
+      x: px.default(0),
+      y: px.default(0),
+      foot: px,
+      left: z.strictObject({ image: id, x: px, y: px.default(0) }),
+    })
+    .optional(),
   /** Objet de props.json qui le remplace ; absent = il disparaît. */
   becomes: id.optional(),
   /** Décalage du coin bas gauche de `becomes` par rapport à celui de l'objet récolté. */
@@ -91,7 +100,7 @@ export const HarvestSchema = z.strictObject({
   /**
    * Objets de props.json qui naissent à la fin (l'arbre couché : houppier et sections). (x, y) : coin bas gauche
    * de chacun par rapport à celui de l'objet récolté, pour une chute vers la droite ; vers la gauche, ils sont
-   * retournés autour du pied (`fall.foot`), comme la chute. Ils sont notés dans GameState comme objets nés,
+   * posés en miroir autour du pied (`fall.foot`) avec leurs images `-left` (dessinées, pas retournées). Ils sont notés dans GameState comme objets nés,
    * et forment une chaîne bout à bout dans cet ordre (de gauche à droite dans l'image) : voir `notch`.
    */
   spawns: z.array(z.strictObject({ type: id, x: px, y: px })).default([]),

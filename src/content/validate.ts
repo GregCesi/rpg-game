@@ -63,13 +63,17 @@ function fallExtent(props: Record<string, PropDef>, type: string, left: boolean,
   const h = props[type]?.harvest;
   if (!h?.fall) return undefined;
   const foot = h.fall.foot;
-  const pieces = [{ image: h.fall.image, x: h.fall.x }, ...h.spawns.map((sp) => ({ image: props[sp.type]?.image, x: sp.x }))];
-  let box: [number, number] = [Infinity, -Infinity];
-  for (const p of pieces) {
-    const size = p.image ? cat.sizes.get(p.image) : undefined;
+  // la chute de chaque côté a sa planche ; ce qui naît vers la gauche est posé en miroir autour du pied
+  const frame = left ? h.fall.left : h.fall;
+  const frameSize = cat.sizes.get(frame.image);
+  if (!frameSize) return undefined;
+  let box: [number, number] = [frame.x, frame.x + frameSize.w];
+  for (const sp of h.spawns) {
+    const image = props[sp.type]?.image;
+    const size = image ? cat.sizes.get(image) : undefined;
     if (!size) return undefined;
-    // retournée autour du pied : [x, x + w[ devient [2 × foot − (x + w − 1), 2 × foot − x + 1[
-    const x0 = left ? 2 * foot - (p.x + size.w - 1) : p.x;
+    // [x, x + w[ devient [2 × foot − (x + w − 1), 2 × foot − x + 1[
+    const x0 = left ? 2 * foot - (sp.x + size.w - 1) : sp.x;
     box = [Math.min(box[0], x0), Math.max(box[1], x0 + size.w)];
   }
   return box;
@@ -194,8 +198,8 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
     else if (tool.kind !== 'tool') err(`'${h.tool}' n'est pas un outil (kind '${tool.kind}' dans items.json)`);
   }
   if (h.impact && !cat.textures.has(`fx-${h.impact}`)) err(`éclats : planche 'fx-${h.impact}' non dessinée`);
-  if (h.fall && !cat.animations.get(h.fall.image)?.has(h.fall.anim)) {
-    err(`chute : animation '${h.fall.anim}' absente de la planche '${h.fall.image}' (ou planche non dessinée)`);
+  for (const image of h.fall ? [h.fall.image, h.fall.left.image] : []) {
+    if (!cat.animations.get(image)?.has(h.fall!.anim)) err(`chute : animation '${h.fall!.anim}' absente de la planche '${image}' (ou planche non dessinée)`);
   }
   if (h.becomes !== undefined) {
     if (!c.props[h.becomes]) err(`'becomes' : objet '${h.becomes}' absent de props.json`);
@@ -230,6 +234,24 @@ function validateTrunk(c: Content, cat: Catalog): string[] {
     const next = c.props[t]?.harvest?.becomes;
     if (next && isTrunk(next)) later.add(next);
   }
+  // ce qui naît d'une chute (et ce que ça devient) a aussi sa version couchée vers la gauche : `<image>-left` + suffixe d'état
+  const born = new Set<string>();
+  for (const p of Object.values(c.props)) if (p.harvest?.fall) for (const sp of p.harvest.spawns) born.add(sp.type);
+  for (const t of [...born]) {
+    const next = c.props[t]?.harvest?.becomes;
+    if (next) born.add(next);
+  }
+  const sizeErr = (key: string, img: string, base: { w: number; h: number } | undefined, what: string) => {
+    const size = cat.sizes.get(img);
+    if (!size) errors.push(`props.json '${key}' : ${what} '${img}' non dessinée`);
+    else if (base && (size.w !== base.w || size.h !== base.h)) {
+      errors.push(`props.json '${key}' : '${img}' fait ${size.w}×${size.h}, '${c.props[key].image}' ${base.w}×${base.h} (même taille attendue)`);
+    }
+  };
+  for (const key of born) {
+    const p = c.props[key];
+    if (p) sizeErr(key, `${p.image}-left`, cat.sizes.get(p.image), 'image couchée vers la gauche');
+  }
   for (const [key, p] of Object.entries(c.props)) {
     if (!isTrunk(key)) continue;
     const h = p.harvest!;
@@ -237,12 +259,8 @@ function validateTrunk(c: Content, cat: Catalog): string[] {
     const lefts = later.has(key) ? ['-cut-left', ...depths.map((d) => `-cut-left${d}`)] : [];
     const base = cat.sizes.get(p.image);
     for (const suffix of [...depths, ...(h.notch ? ['-cut-right'] : []), ...lefts]) {
-      const img = `${p.image}${suffix}`;
-      const size = cat.sizes.get(img);
-      if (!size) errors.push(`props.json '${key}' : image d'état '${img}' non dessinée`);
-      else if (base && (size.w !== base.w || size.h !== base.h)) {
-        errors.push(`props.json '${key}' : '${img}' fait ${size.w}×${size.h}, '${p.image}' ${base.w}×${base.h} (même taille attendue)`);
-      }
+      sizeErr(key, `${p.image}${suffix}`, base, "image d'état");
+      if (born.has(key)) sizeErr(key, `${p.image}-left${suffix}`, base, "image d'état couchée vers la gauche");
     }
     if (h.notch && h.becomes) {
       const log = c.props[h.becomes] && cat.sizes.get(c.props[h.becomes].image);

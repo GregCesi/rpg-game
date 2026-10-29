@@ -231,26 +231,26 @@ export class HarvestSystem {
     const mapId = this.map.def.id;
     // Xéros à gauche (tourné vers la droite) : chute à droite ; à droite : à gauche ; d'en haut ou d'en bas : au hasard
     const fallLeft = !!h.fall && (facing === 'left' || (facing !== 'right' && Math.random() < 0.5));
-    // ce qui le remplace et ce qui naît est retourné si la chute part à gauche, ou si l'objet l'était déjà
+    // ce qui naît vers la gauche (l'arbre couché) prend ses images `-left` ; le remplaçant (la souche) ne dépend pas du côté
     const flip = prop.flip !== fallLeft;
-    // abscisse (dans le repère de l'objet) d'une image de largeur w décalée de `off`, une fois retournée :
-    // autour du pied pour une chute vers la gauche, autour de l'objet lui-même s'il était retourné
-    const place = (off: number, w: number) =>
-      fallLeft ? 2 * h.fall!.foot - (off + w - 1) : prop.flip ? prop.image.width - off - w : off;
+    // abscisse (dans le repère de l'objet) d'une image de largeur w décalée de `off`, côté gauche :
+    // en miroir autour du pied pour ce qui naît d'une chute vers la gauche, autour de l'objet lui-même s'il était à gauche
+    const mirror = (off: number, w: number) => (prop.flip ? prop.image.width - off - w : off);
+    const spawnX = (off: number, w: number) => (fallLeft ? 2 * h.fall!.foot - (off + w - 1) : mirror(off, w));
     const [ax, dy] = h.at ?? [0, 0];
-    const x = prop.x + (h.becomes ? place(ax, this.imageWidth(h.becomes)) : ax);
+    const x = prop.x + (h.becomes ? mirror(ax, this.imageWidth(h.becomes)) : ax);
     const y = prop.y + dy;
     const { baseX, baseY } = prop;
     this.map.removeProp(prop);
-    const next = h.becomes ? this.map.placeProp({ id: prop.id, type: h.becomes, x, y }, { flip, spawned: prop.spawned, chain: prop.chain }) : undefined;
-    const change = h.becomes ? { type: h.becomes, x, y, ...(flip ? { flip } : {}) } : { x, y };
+    const next = h.becomes ? this.map.placeProp({ id: prop.id, type: h.becomes, x, y }, { flip: prop.flip, spawned: prop.spawned, chain: prop.chain }) : undefined;
+    const change = h.becomes ? { type: h.becomes, x, y, ...(prop.flip ? { flip: true } : {}) } : { x, y };
     if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
     else changeObject(game, mapId, prop.id, change);
     // ce qui naît (l'arbre couché) : noté tout de suite, montré à la fin de la chute
     const group = game.nextSpawnId;
     const born = h.spawns.map((sp, index) => {
       const chain = { group, index, size: h.spawns.length };
-      const o = spawnObject(game, mapId, sp.type, prop.x + place(sp.x, this.imageWidth(sp.type)), prop.y + sp.y, flip, chain);
+      const o = spawnObject(game, mapId, sp.type, prop.x + spawnX(sp.x, this.imageWidth(sp.type)), prop.y + sp.y, flip, chain);
       return this.map.placeProp(o, { flip, spawned: true, chain });
     });
     this.map.refreshTrunk();
@@ -267,9 +267,10 @@ export class HarvestSystem {
     // la chute se joue à la place de l'objet ; le remplaçant (la souche) et l'arbre couché n'apparaissent qu'à la fin
     const shown = [next, ...born].filter((p) => p !== undefined);
     for (const p of shown) p.image.setVisible(false);
-    const fall = this.scene.add.sprite(0, 0, h.fall.image).setOrigin(0, 1).setFlipX(fallLeft).setDepth(prop.y);
-    fall.setPosition(prop.x + place(h.fall.x, fall.width), prop.y + h.fall.y);
-    fall.play(`${h.fall.image}-${h.fall.anim}`);
+    // vers la gauche : sa propre planche, dessinée (pas de miroir)
+    const f = fallLeft ? h.fall.left : h.fall;
+    const fall = this.scene.add.sprite(prop.x + f.x, prop.y + f.y, f.image).setOrigin(0, 1).setDepth(prop.y);
+    fall.play(`${f.image}-${h.fall.anim}`);
     fall.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       // une pièce a pu être récoltée pendant la chute : on ne montre que ce qui est encore posé
       for (const p of shown) if (this.map.props.includes(p)) p.image.setVisible(true);
