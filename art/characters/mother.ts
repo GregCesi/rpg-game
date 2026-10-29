@@ -44,7 +44,7 @@ const palette = {
 // Côté droit dans l'ombre : sur les demi-grilles symétrisées, on éteint les reflets à droite du milieu.
 const SHADE_RIGHT: Record<string, string> = { F: 'f', R: 'r', H: 'h' };
 function shadeRight(g: Grid, from = 16): Grid {
-  return g.map((row, y) => [...row].map((ch, x) => (x >= from ? SHADE_RIGHT[ch] ?? ch : ch)).join(''));
+  return g.map((row) => [...row].map((ch, x) => (x >= from ? SHADE_RIGHT[ch] ?? ch : ch)).join(''));
 }
 
 // ---------- Vue de face ----------
