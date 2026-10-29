@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { HARVEST, INTERACT, TILE } from '../config';
+import { DEPTH, HARVEST, INTERACT, TILE } from '../config';
 import type { Player } from '../entities/Player';
 import { items, props } from '../content';
 import type { Facing } from '../content/types';
-import { addItem, changeObject, dropItem, game } from '../state';
+import { addItem, changeObject, changeSpawned, dropItem, game, spawnObject } from '../state';
+import { promptTop } from '../world/GameMap';
 import type { GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
 
 /**
@@ -22,19 +23,42 @@ export type HitResult =
  * Ne lit pas le clavier : la scène dit quand un coup part et avec quoi.
  */
 export class HarvestSystem {
+  /** Invite « Espace » sur ce que l'outil en main peut frapper. */
+  private readonly prompt: Phaser.GameObjects.Image;
+
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly map: GameMap,
-  ) {}
+  ) {
+    this.prompt = scene.add.image(0, 0, 'ui-key-space').setOrigin(0.5, 1).setDepth(DEPTH.prompt).setVisible(false);
+  }
 
-  /** Objet récoltable devant Xéros (avec ou sans outil), s'il est à portée. */
+  /**
+   * À appeler à chaque image : montre l'invite « Espace » sur la cible devant Xéros (sur l'encoche visée s'il y en a une)
+   * quand l'objet en main est l'outil qu'elle demande. `active` = false pendant un geste, un dialogue ou un changement de carte.
+   */
+  updatePrompt(time: number, player: Player, held: string | undefined, active: boolean): void {
+    const t = active && held ? this.target(player) : undefined;
+    const ok = !!t && t.image.visible && t.def.harvest?.tool === held;
+    this.prompt.setVisible(ok);
+    if (!ok) return;
+    const bob = Math.round((Math.sin(time / 220) + 1) / 2) * 2;
+    this.prompt.setPosition(t.aimX, promptTop(t) + 4 - bob);
+  }
+
+  /** Largeur de l'image d'un objet de props.json. */
+  private imageWidth(type: string): number {
+    return this.scene.textures.get(props[type].image).getSourceImage().width;
+  }
+
+  /** Objet récoltable devant Xéros (avec ou sans outil), s'il est à portée : son point visé (l'encoche) ou sa base. */
   target(player: Player): PlacedProp | undefined {
     const probe = player.probe(INTERACT.reach);
     let best: PlacedProp | undefined;
     let bestD = INTERACT.radius;
     for (const p of this.map.props) {
       if (!p.def.harvest) continue;
-      const d = Phaser.Math.Distance.Between(probe.x, probe.y, p.baseX, p.baseY);
+      const d = Phaser.Math.Distance.Between(probe.x, probe.y, p.aimX, p.aimY);
       if (d < bestD) {
         best = p;
         bestD = d;
@@ -71,8 +95,9 @@ export class HarvestSystem {
     const c = HARVEST.chips;
     // côté où Xéros se tient : l'inverse de la direction où il regarde
     const [sx, sy] = { right: [-1, 0], left: [1, 0], up: [0, 1], down: [0, -1] }[facing];
-    const x = prop.baseX + sx * 7;
-    const y = prop.baseY - 6 + sy * 5;
+    // sur une encoche (tronc couché), les éclats partent de l'encoche ; sinon du côté de Xéros, à hauteur de coup
+    const x = prop.def.aim ? prop.aimX : prop.baseX + sx * 7;
+    const y = prop.def.aim ? prop.aimY : prop.baseY - 6 + sy * 5;
     // éventail ouvert vers Xéros et vers le haut (angles de Phaser : 0 = droite, -90 = haut)
     const toward = sx !== 0 ? (sx > 0 ? -45 : -135) : -90;
     const texture = `fx-${impact}`;
@@ -110,17 +135,29 @@ export class HarvestSystem {
   /** Dernier coup : chute éventuelle, remplacement, objets lâchés. */
   private finish(prop: PlacedProp, facing: Facing): { given: number; overflow: boolean } {
     const h = prop.def.harvest!;
+    const mapId = this.map.def.id;
     // Xéros à gauche (tourné vers la droite) : chute à droite ; à droite : à gauche ; d'en haut ou d'en bas : au hasard
-    const left = facing === 'left' || (facing !== 'right' && Math.random() < 0.5);
-    const mirror = (offset: number, width: number) => (h.fall && left ? 2 * h.fall.foot - (offset + width - 1) : offset);
+    const fallLeft = !!h.fall && (facing === 'left' || (facing !== 'right' && Math.random() < 0.5));
+    // ce qui le remplace et ce qui naît est retourné si la chute part à gauche, ou si l'objet l'était déjà
+    const flip = prop.flip !== fallLeft;
+    // abscisse (dans le repère de l'objet) d'une image de largeur w décalée de `off`, une fois retournée :
+    // autour du pied pour une chute vers la gauche, autour de l'objet lui-même s'il était retourné
+    const place = (off: number, w: number) =>
+      fallLeft ? 2 * h.fall!.foot - (off + w - 1) : prop.flip ? prop.image.width - off - w : off;
     const [ax, dy] = h.at ?? [0, 0];
-    const dx = h.becomes ? mirror(ax, this.scene.textures.get(props[h.becomes].image).getSourceImage().width) : ax;
-    const x = prop.x + dx;
+    const x = prop.x + (h.becomes ? place(ax, this.imageWidth(h.becomes)) : ax);
     const y = prop.y + dy;
     const { baseX, baseY } = prop;
     this.map.removeProp(prop);
-    const next = h.becomes ? this.map.placeProp({ id: prop.id, type: h.becomes, x, y }) : undefined;
-    changeObject(game, this.map.def.id, prop.id, h.becomes ? { type: h.becomes, x, y } : { x, y });
+    const next = h.becomes ? this.map.placeProp({ id: prop.id, type: h.becomes, x, y }, { flip, spawned: prop.spawned }) : undefined;
+    const change = h.becomes ? { type: h.becomes, x, y, ...(flip ? { flip } : {}) } : { x, y };
+    if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
+    else changeObject(game, mapId, prop.id, change);
+    // ce qui naît (l'arbre couché) : noté tout de suite, montré à la fin de la chute
+    const born = h.spawns.map((sp) => {
+      const o = spawnObject(game, mapId, sp.type, prop.x + place(sp.x, this.imageWidth(sp.type)), prop.y + sp.y, flip);
+      return this.map.placeProp(o, { flip, spawned: true });
+    });
 
     // les objets lâchés entrent dans GameState tout de suite : quitter la carte pendant la chute ne les perd pas
     const dropped: PlacedGround[] = [];
@@ -148,13 +185,15 @@ export class HarvestSystem {
       scatter();
       return { given, overflow };
     }
-    // la chute se joue à la place de l'objet ; le remplaçant (la souche) n'apparaît qu'à la fin
-    next?.image.setVisible(false);
-    const fall = this.scene.add.sprite(0, 0, h.fall.image).setOrigin(0, 1).setFlipX(left).setDepth(prop.y);
-    fall.setPosition(prop.x + mirror(h.fall.x, fall.width), prop.y + h.fall.y);
+    // la chute se joue à la place de l'objet ; le remplaçant (la souche) et l'arbre couché n'apparaissent qu'à la fin
+    const shown = [next, ...born].filter((p) => p !== undefined);
+    for (const p of shown) p.image.setVisible(false);
+    const fall = this.scene.add.sprite(0, 0, h.fall.image).setOrigin(0, 1).setFlipX(fallLeft).setDepth(prop.y);
+    fall.setPosition(prop.x + place(h.fall.x, fall.width), prop.y + h.fall.y);
     fall.play(`${h.fall.image}-${h.fall.anim}`);
     fall.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-      next?.image.setVisible(true);
+      // une pièce a pu être récoltée pendant la chute : on ne montre que ce qui est encore posé
+      for (const p of shown) if (this.map.props.includes(p)) p.image.setVisible(true);
       fall.destroy();
       scatter();
     });

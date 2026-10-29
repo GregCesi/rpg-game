@@ -3,20 +3,21 @@ import { gestures } from '../content';
 import type { Pose } from '../content/types';
 import type { Actor } from './Actor';
 
-/** Le geste d'outil : clé dans gestures.json, et préfixe des animations du corps (`use-down`...). */
-const GESTURE = 'use';
-/** Images par direction dans une planche d'outil `tool-<objet>` : down, up, right, dans cet ordre. */
-const ORDER = ['down', 'up', 'right'] as const;
 
 /**
- * Composant attaché à un Actor : le geste d'outil (animation `use-<direction>` du corps), avec l'outil en main
- * posé image par image (planche `tool-<objet>`, place de la main dans gestures.json). Sans planche pour l'objet tenu,
- * le geste se joue les mains vides. Un nouvel outil = une nouvelle planche, rien à changer ici.
+ * Composant attaché à un Actor : un geste d'outil (clé de gestures.json : `use` de côté, `chop` de haut en bas),
+ * soit l'animation `<geste>-<direction>` du corps, avec l'outil en main posé image par image : l'animation
+ * `<geste>-<direction>` de la planche `tool-<objet>` (la gauche = la droite retournée), placée sur la main d'après gestures.json.
+ * Sans planche ou sans cette animation pour l'objet tenu, le geste se joue les mains vides.
+ * Un nouvel outil = une nouvelle planche, rien à changer ici.
  */
 export class ToolUse {
   /** Vrai pendant le geste : le personnage ne marche pas. */
   busy = false;
   private readonly tool: Phaser.GameObjects.Image;
+  /** Geste en cours et animation de l'outil (sans la direction), ex. 'chop' et 'tool-axe-chop'. */
+  private gesture = 'use';
+  private toolAnim?: string;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -28,19 +29,22 @@ export class ToolUse {
   }
 
   /**
-   * Joue le geste avec l'objet `item` en main (undefined = mains nues).
+   * Joue le geste `gesture` (clé de gestures.json) avec l'objet `item` en main (undefined = mains nues).
    * `onImpact` est appelé à l'image où le coup porte, `onDone` à la fin du geste.
    */
-  swing(item: string | undefined, onImpact: () => void, onDone: () => void): void {
-    const g = gestures[GESTURE];
-    const sheet = item && this.scene.textures.exists(`tool-${item}`) ? `tool-${item}` : undefined;
+  swing(gesture: string, item: string | undefined, onImpact: () => void, onDone: () => void): void {
+    const g = gestures[gesture];
+    const dir = this.actor.facing === 'left' ? 'right' : this.actor.facing;
+    const anim = `tool-${item}-${gesture}`;
+    this.gesture = gesture;
+    this.toolAnim = item && this.scene.anims.exists(`${anim}-${dir}`) ? anim : undefined;
     this.busy = true;
     this.actor.body.setVelocity(0, 0);
     this.actor.anims.timeScale = 1;
-    this.tool.setVisible(!!sheet);
-    if (sheet) this.tool.setTexture(sheet, 0);
+    this.tool.setVisible(!!this.toolAnim);
+    if (this.toolAnim) this.tool.setTexture(`tool-${item}`);
 
-    const key = `${this.actor.skin}-${GESTURE}-${this.actor.facing}`;
+    const key = `${this.actor.skin}-${gesture}-${this.actor.facing}`;
     const onFrame = (_a: Phaser.Animations.Animation, frame: Phaser.Animations.AnimationFrame) => {
       if (frame.index - 1 === g.impact) onImpact();
     };
@@ -58,18 +62,19 @@ export class ToolUse {
 
   /** Pose l'outil sur la main, pour l'image en cours du geste. */
   private place(): void {
-    if (!this.busy || !this.tool.visible) return;
+    if (!this.busy || !this.tool.visible || !this.toolAnim) return;
     const step = (this.actor.anims.currentFrame?.index ?? 1) - 1;
     const left = this.actor.facing === 'left';
-    const dir = left ? 'right' : (this.actor.facing as (typeof ORDER)[number]);
-    const poses = gestures[GESTURE].poses[dir];
-    const pose: Pose = poses[step];
+    const dir = left ? 'right' : (this.actor.facing as 'down' | 'up' | 'right');
+    const pose: Pose = gestures[this.gesture].poses[dir][step];
+    const frame = this.scene.anims.get(`${this.toolAnim}-${dir}`).frames[step].frame;
     this.tool
-      .setFrame(ORDER.indexOf(dir) * poses.length + step)
+      .setFrame(frame.name)
       .setFlipX(left)
       // prise du manche au centre de l'image d'outil (arrondie vers le bas), posée sur la main
       .setOrigin(Math.floor(this.tool.width / 2) / this.tool.width, Math.floor(this.tool.height / 2) / this.tool.height)
       .setPosition(this.actor.x + (left ? -pose.dx : pose.dx), this.actor.y + pose.dy)
-      .setDepth(this.actor.y + (pose.behind ? -0.01 : 0.01));
+      // derrière le corps, devant lui, ou devant ce qui est frappé au sud des pieds (`ahead`)
+      .setDepth(this.actor.y + (pose.behind ? -0.01 : Math.max(0.01, pose.ahead)));
   }
 }

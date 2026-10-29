@@ -93,6 +93,7 @@ export class WorldScene extends Phaser.Scene {
     // Espace toujours lu, comme E : sinon un appui fait pendant un dialogue ressortirait juste après
     const use = this.player.input.usePressed();
     const used = this.interaction.update(time, this.mode === 'play');
+    this.harvest.updatePrompt(time, this.player, held(game)?.item, this.mode === 'play');
     if (this.mode !== 'play') return;
     if (used) this.hands(used);
     else if (use && time >= this.useLockedUntil) this.useHeld();
@@ -106,7 +107,7 @@ export class WorldScene extends Phaser.Scene {
       this.talking?.faceToward(this.player.actor.x, this.player.actor.y);
       this.openDialogue(a.dialogue);
     } else if (a.kind === 'harvest') {
-      this.gesture(undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
+      this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
     } else {
       this.pickUp(a.ground);
     }
@@ -122,13 +123,15 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     const tool = slot.item;
+    // le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ; dans le vide, de côté
+    const gesture = this.harvest.target(this.player)?.def.harvest?.gesture ?? 'use';
     // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
-    this.gesture(tool, () => this.report(this.harvest.hit(this.harvest.target(this.player), tool, this.player.actor.facing)));
+    this.gesture(gesture, tool, () => this.report(this.harvest.hit(this.harvest.target(this.player), tool, this.player.actor.facing)));
   }
 
-  private gesture(item: string | undefined, onImpact: () => void): void {
+  private gesture(gesture: string, item: string | undefined, onImpact: () => void): void {
     this.mode = 'use';
-    this.player.tools.swing(item, onImpact, () => {
+    this.player.tools.swing(gesture, item, onImpact, () => {
       if (this.mode === 'use') this.mode = 'play';
     });
   }

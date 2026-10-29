@@ -1,5 +1,5 @@
 // Aperçus composés de npm run art:preview : ce que le jeu assemble à partir de plusieurs images.
-// - xeros-use-<outil>.png : le geste use-* du corps avec l'outil posé sur la main, image par image,
+// - xeros-<geste>-<outil>.png : chaque geste (use, chop...) du corps avec l'outil posé sur la main, image par image,
 //   une rangée par direction (bas, haut, droite, gauche). Les poses viennent de src/content/gestures.json,
 //   comme dans le jeu (entities/ToolUse.ts) : l'aperçu montre exactement ce que l'on verra.
 // - item-bar.png : maquette de la barre d'objets (8 cases, la 2e active, quelques icônes).
@@ -72,24 +72,24 @@ function grassOf(sources: ArtSource[]): { grid: Grid; palette: Palette } | undef
 }
 
 /**
- * Le geste `use` du personnage `body` avec la planche d'outil `tool` (12 images : down, up, right × 4 temps,
+ * Le geste `name` du personnage `body` avec la planche d'outil `tool` (animations `<geste>-down/up/right`,
  * prise du manche au centre). Même calcul que ToolUse : main = pieds + (dx, dy) ; à gauche, tout est retourné.
  */
-export function gesturePreview(sources: ArtSource[], body: SpriteSheetSource, tool: SpriteSheetSource, gesture: Gesture): PNG {
+export function gesturePreview(sources: ArtSource[], body: SpriteSheetSource, tool: SpriteSheetSource, name: string, gesture: Gesture): PNG {
   const fw = body.frameW;
   const fh = body.frameH;
   const cw = fw + 24;
   const ch = fh + 24;
-  const tools = Object.values(tool.animations).flatMap((a) => a.frames);
   const steps = gesture.poses.down.length;
   const board = new Board(cw * steps, ch * 4, grassOf(sources));
   (['down', 'up', 'right', 'left'] as const).forEach((dir, row) => {
     const left = dir === 'left';
     const src = left ? 'right' : dir;
-    const frames = body.animations[`use-${dir}`]?.frames ?? [];
+    const frames = body.animations[`${name}-${dir}`]?.frames ?? [];
+    const tools = tool.animations[`${name}-${src}`]?.frames ?? [];
     for (let step = 0; step < steps; step++) {
       const pose = gesture.poses[src][step];
-      let tg = tools[['down', 'up', 'right'].indexOf(src) * steps + step];
+      let tg = tools[step];
       if (!tg || !frames[step]) continue;
       if (left) tg = flipX(tg);
       const bx = step * cw + 12;

@@ -259,13 +259,15 @@ writeFileSync(join(OUT, 'assets.ts'), manifest);
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(catalog, null, 2));
 if (withPreview) {
   writeFileSync(join(PREVIEW, 'collection.png'), PNG.sync.write(buildCollectionBoard(sources)));
-  // aperçus composés : le geste use-* avec chaque outil en main (planches tool-*), et la barre d'objets
-  const gesture = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson).use;
+  // aperçus composés : chaque geste avec chaque outil en main (planches tool-*), et la barre d'objets
+  const gestures = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson);
   const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');
   for (const tool of sources) {
-    if (!gesture || body?.kind !== 'spritesheet' || tool.kind !== 'spritesheet' || !tool.name.startsWith('tool-')) continue;
-    const png = gesturePreview(sources, body, tool, gesture);
-    writeFileSync(join(PREVIEW, `xeros-use-${tool.name.slice('tool-'.length)}.png`), PNG.sync.write(png));
+    if (body?.kind !== 'spritesheet' || tool.kind !== 'spritesheet' || !tool.name.startsWith('tool-')) continue;
+    for (const [name, gesture] of Object.entries(gestures)) {
+      const png = gesturePreview(sources, body, tool, name, gesture);
+      writeFileSync(join(PREVIEW, `xeros-${name}-${tool.name.slice('tool-'.length)}.png`), PNG.sync.write(png));
+    }
   }
   const bar = itemBarPreview(sources);
   if (bar) writeFileSync(join(PREVIEW, 'item-bar.png'), PNG.sync.write(bar));

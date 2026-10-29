@@ -6,6 +6,11 @@ import type { GroundItem, MapState } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
 
+/** Haut de l'invite au-dessus d'un objet : sur le point visé s'il en a un, sinon au-dessus de l'image. */
+export function promptTop(p: PlacedProp): number {
+  return p.def.aim ? p.aimY - 2 : p.top;
+}
+
 /** Hachage stable d'une position : la même case a toujours les mêmes détails au sol. */
 function hash(x: number, y: number): number {
   let h = (x * 374761393 + y * 668265263) >>> 0;
@@ -15,8 +20,12 @@ function hash(x: number, y: number): number {
 
 /** Un objet de props.json posé sur la carte, tel qu'il est maintenant (après les changements de GameState). */
 export interface PlacedProp {
-  /** Identifiant de l'objet dans Tiled : clé des changements dans GameState. */
+  /** Identifiant de l'objet dans Tiled (clé des changements dans GameState), ou de l'objet né si `spawned`. */
   id: number;
+  /** Objet né pendant la partie (pièce de l'arbre couché) : ses changements vont dans la liste des objets nés. */
+  spawned: boolean;
+  /** Image retournée (tombé vers la gauche) : collisions, point visé, fumées et lueurs le sont aussi. */
+  flip: boolean;
   type: string;
   def: PropDef;
   /** Coin bas gauche de l'image. */
@@ -26,6 +35,9 @@ export interface PlacedProp {
   baseX: number;
   baseY: number;
   top: number;
+  /** Point visé (l'encoche, `aim` de props.json), sinon la base : Xéros vise ce point et l'invite s'y affiche. */
+  aimX: number;
+  aimY: number;
   image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
   /** Tout ce qui a été créé pour lui (image, collisions, fumées, lueurs) : détruit quand il change. */
   parts: Phaser.GameObjects.GameObject[];
@@ -108,8 +120,9 @@ export class GameMap {
     for (const o of def.objects) {
       const c = changes.changes[o.id];
       if (!c) this.placeProp(o);
-      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y });
+      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip });
     }
+    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true });
     for (const g of changes.ground) this.placeGround(g);
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
@@ -124,7 +137,7 @@ export class GameMap {
     for (const p of this.props) {
       const dialogue = p.interact ?? p.def.interact;
       if (dialogue) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'talk', dialogue } });
-      else if (p.def.harvest && !p.def.harvest.tool) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'harvest', prop: p } });
+      else if (p.def.harvest && !p.def.harvest.tool) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'harvest', prop: p } });
     }
     // un objet encore caché (il attend la fin d'une chute) ne se ramasse pas
     for (const g of this.ground) if (g.image.visible) list.push({ x: g.item.x, y: g.item.y - 4, top: g.image.y - g.image.height, action: { kind: 'pickup', ground: g } });
@@ -152,18 +165,24 @@ export class GameMap {
     this.ground.splice(this.ground.indexOf(g), 1);
   }
 
-  /** (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds). */
-  placeProp(o: MapObject): PlacedProp {
+  /**
+   * (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds).
+   * `flip` : image retournée ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
+   */
+  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean } = {}): PlacedProp {
+    const flip = !!opts.flip;
     const scene = this.scene;
     const p = propDefs[o.type];
     const ay = o.y;
     const obj = p.anim ? scene.add.sprite(o.x, ay, p.image).play(`${p.image}-${p.anim}`) : scene.add.image(o.x, ay, p.image);
-    obj.setOrigin(0, 1).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
+    obj.setOrigin(0, 1).setFlipX(flip).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
     if (p.blend === 'add') obj.setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.light);
     const parts: Phaser.GameObjects.GameObject[] = [obj];
     // coin haut gauche de l'image, pour les coordonnées "dans l'image"
     const ox = o.x;
     const oy = ay - obj.height;
+    // abscisse dans l'image, retournée si besoin : un rectangle [x, x + w[ devient [W - x - w, W - x[
+    const fx = (x: number, w = 1) => (flip ? obj.width - x - w : x);
 
     let baseY = ay - 8;
     if (p.body) {
@@ -171,11 +190,13 @@ export class GameMap {
       parts.push(this.addObstacle(ox + obj.width / 2, baseY, p.body.w, p.body.h));
     }
     for (const b of p.bodies ?? []) {
-      parts.push(this.addObstacle(ox + b.x + b.w / 2, oy + b.y + b.h / 2, b.w, b.h));
+      parts.push(this.addObstacle(ox + fx(b.x, b.w) + b.w / 2, oy + b.y + b.h / 2, b.w, b.h));
       baseY = Math.max(baseY, oy + b.y + b.h / 2);
     }
     const placed: PlacedProp = {
       id: o.id,
+      spawned: !!opts.spawned,
+      flip,
       type: o.type,
       def: p,
       x: o.x,
@@ -183,6 +204,8 @@ export class GameMap {
       baseX: ox + obj.width / 2,
       baseY,
       top: oy,
+      aimX: p.aim ? ox + fx(p.aim[0]) + 0.5 : ox + obj.width / 2,
+      aimY: p.aim ? oy + p.aim[1] : baseY,
       image: obj,
       parts,
       hits: 0,
@@ -192,7 +215,7 @@ export class GameMap {
 
     for (const [sx, sy] of p.smoke ?? []) {
       const smoke = scene.add
-        .particles(ox + sx, oy + sy, 'smoke', {
+        .particles(ox + fx(sx), oy + sy, 'smoke', {
           speedY: { min: -18, max: -10 },
           speedX: { min: -2, max: 7 },
           lifespan: 3000,
@@ -206,7 +229,7 @@ export class GameMap {
 
     if (p.light) {
       const glow = scene.add
-        .image(ox + p.light.x, oy + p.light.y, 'glow')
+        .image(ox + fx(p.light.x), oy + p.light.y, 'glow')
         .setBlendMode(Phaser.BlendModes.ADD)
         .setTint(0xffa040)
         .setScale(p.light.radius / 64)
