@@ -2,13 +2,16 @@
 // - xeros-<geste>-<outil>.png : chaque geste (use, chop...) du corps avec l'outil posé sur la main, image par image,
 //   une rangée par direction (bas, haut, droite, gauche). Les poses viennent de src/content/gestures.json,
 //   comme dans le jeu (entities/ToolUse.ts) : l'aperçu montre exactement ce que l'on verra.
-// - item-bar.png : maquette de la barre d'objets (8 cases, la 2e active, quelques icônes).
+// - hands.png : les deux mains comme dans le HUD.
+// - piles.png : chaque genre de tas (src/content/piles.json), une rangée par genre, un tas par nombre de pièces (de 1 au
+//   maximum), avec Xéros à l'échelle au début de la rangée et la collision du tas en liseré rouge : même calcul que
+//   GameMap.placePile (pièce = coin bas gauche au point du tas + (x, y), dessinée z px plus haut, dans l'ordre de la liste).
 
 import { PNG } from 'pngjs';
 import { flipX } from '../../art/lib/canvas';
 import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
-import type { Gesture } from '../../src/content/types';
+import type { Gesture, ItemDef, PileDef, PropDef } from '../../src/content/types';
 
 const SCALE = 4;
 
@@ -51,6 +54,16 @@ class Board {
         p[2] = Math.round(b * a + p[2] * (1 - a));
       }),
     );
+  }
+
+  /** Liseré d'un rectangle [left, right[ × [top, bottom[ (pixels du jeu). */
+  outline(left: number, top: number, right: number, bottom: number, rgb: [number, number, number]): void {
+    for (let X = left; X < right; X++) for (const Y of [top, bottom - 1]) this.dot(X, Y, rgb);
+    for (let Y = top; Y < bottom; Y++) for (const X of [left, right - 1]) this.dot(X, Y, rgb);
+  }
+
+  private dot(X: number, Y: number, rgb: [number, number, number]): void {
+    if (X >= 0 && Y >= 0 && X < this.w && Y < this.h) this.px[Y * this.w + X] = [...rgb];
   }
 
   toPng(): PNG {
@@ -128,6 +141,69 @@ export function handsPreview(sources: ArtSource[]): PNG | undefined {
     const icon = image(key);
     // icône centrée dans la case, comme dans HudScene
     if (icon) board.blit(icon.grid, icon.palette, x + (size - icon.grid[0].length) / 2, 8 + (size - icon.grid.length) / 2);
+  });
+  return board.toPng();
+}
+
+/**
+ * Les tas de chaque genre à chaque nombre de pièces : une rangée par genre, Xéros (attente de face) au début pour
+ * l'échelle, puis le tas de 1 au maximum, posé sur l'herbe, sa collision en liseré rouge (une pièce sur d'autres a la
+ * sienne au sol, sous elle).
+ */
+export function pilesPreview(
+  sources: ArtSource[],
+  piles: Record<string, PileDef>,
+  props: Record<string, PropDef>,
+  items: Record<string, ItemDef>,
+): PNG | undefined {
+  const image = (name: string) => {
+    const s = sources.find((x) => x.name === name);
+    return s?.kind === 'image' ? s : undefined;
+  };
+  const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');
+  const xeros = body?.kind === 'spritesheet' ? body.animations['idle-down']?.frames[0] : undefined;
+  const rows = Object.values(piles).map((def) => {
+    const src = image('item' in def.piece ? items[def.piece.item].icon : props[def.piece.prop].image);
+    if (!src) return undefined;
+    const w = src.grid[0].length;
+    const h = src.grid.length;
+    // étendue de toutes les formes autour du point du tas : la même case pour chaque nombre
+    const all = def.layouts.flat();
+    const ext = {
+      left: Math.min(...all.map((q) => q.x)),
+      right: Math.max(...all.map((q) => q.x + w)),
+      top: Math.min(...all.map((q) => q.y - q.z - h)),
+      bottom: Math.max(...all.map((q) => q.y)),
+    };
+    return { def, src, w, h, ext };
+  });
+  if (rows.some((r) => !r)) return undefined;
+  const ok = rows as NonNullable<(typeof rows)[number]>[];
+  const pad = 8;
+  const xw = body?.kind === 'spritesheet' ? body.frameW : 0;
+  const xh = body?.kind === 'spritesheet' ? body.frameH : 0;
+  const cellW = Math.max(...ok.map((r) => r.ext.right - r.ext.left)) + pad;
+  const most = Math.max(...ok.map((r) => r.def.layouts.length));
+  const rowH = ok.map((r) => Math.max(r.ext.bottom - r.ext.top, xh) + 2 * pad);
+  const board = new Board(pad + xw + pad + most * cellW, rowH.reduce((a, b) => a + b, 0), undefined);
+  let y0 = 0;
+  ok.forEach((r, row) => {
+    // ligne de base commune : le point du tas, et les pieds de Xéros
+    const base = y0 + rowH[row] - pad - r.ext.bottom;
+    if (xeros && body?.kind === 'spritesheet') board.blit(xeros, body.palette, pad, base - xh + r.ext.bottom);
+    r.def.layouts.forEach((layout, i) => {
+      const px = pad + xw + pad + i * cellW - r.ext.left;
+      for (const q of layout) board.blit(r.src.grid, r.src.palette, px + q.x, base + q.y - q.z - r.h);
+      const b = r.def.body;
+      board.outline(
+        Math.min(...layout.map((q) => px + q.x + b.x)),
+        Math.min(...layout.map((q) => base + q.y - r.h + b.y)),
+        Math.max(...layout.map((q) => px + q.x + b.x + b.w)),
+        Math.max(...layout.map((q) => base + q.y - r.h + b.y + b.h)),
+        [200, 40, 40],
+      );
+    });
+    y0 += rowH[row];
   });
   return board.toPng();
 }
