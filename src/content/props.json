@@ -58,5 +58,6 @@
   "shed-plate-north": {"name": "sablière haute", "image": "shed-plate-north", "dims": {"w": 320, "d": 15, "h": 15, "shape": "box"}},
   "shed-plate-south": {"name": "sablière basse", "image": "shed-plate-south", "dims": {"w": 320, "d": 15, "h": 15, "shape": "box"}},
   "shed-plate-side": {"name": "sablière de côté", "image": "shed-plate-side", "dims": {"w": 15, "d": 320, "h": 55, "shape": "box", "ground": true}},
+  "shed-rafter": {"name": "chevron", "image": "shed-rafter", "dims": {"w": 10, "d": 380, "h": 57.5, "shape": "box", "ground": true}, "roof": true},
   "well": {"name": "puits", "image": "well", "dims": {"w": 235, "d": 160, "h": 250, "shape": "box"}, "body": {"w": 34, "h": 12, "bottom": 4}}
 }

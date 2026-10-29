@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 38,
+  "nextobjectid": 43,
   "properties": [
     {
       "name": "name",
@@ -469,6 +469,66 @@
           "width": 64,
           "height": 44,
           "gid": 1053
+        },
+        {
+          "id": 38,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-rafter",
+          "x": 608,
+          "y": 137,
+          "width": 2,
+          "height": 128,
+          "gid": 1055
+        },
+        {
+          "id": 39,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-rafter",
+          "x": 623,
+          "y": 137,
+          "width": 2,
+          "height": 128,
+          "gid": 1055
+        },
+        {
+          "id": 40,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-rafter",
+          "x": 639,
+          "y": 137,
+          "width": 2,
+          "height": 128,
+          "gid": 1055
+        },
+        {
+          "id": 41,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-rafter",
+          "x": 654,
+          "y": 137,
+          "width": 2,
+          "height": 128,
+          "gid": 1055
+        },
+        {
+          "id": 42,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-rafter",
+          "x": 670,
+          "y": 137,
+          "width": 2,
+          "height": 128,
+          "gid": 1055
         }
       ]
     },

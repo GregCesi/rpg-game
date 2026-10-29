@@ -102,6 +102,28 @@ function shedPlateSide(): Canvas {
   return c;
 }
 
+// ---------- Chevrons ----------
+
+/**
+ * Chevron de l'abri (`shed-rafter`), 10 × 10 cm, nord-sud sur les deux sablières est-ouest, en pente : pièce `ground`,
+ * silhouette 2 × 88 px (2 de large ; 76 de long au sol plus 11,5 d'épaisseur et de pente), puis 40 rangées vides (bas
+ * de l'image au sol, un pixel au sud de son bout). À 2 px, un contour complet ne laisserait pas de bois : on garde le
+ * côté ombre, et la lumière fait le côté gauche. Colonne 0 : le dessus, bois clair au fil vertical (flache par endroits) ;
+ * colonne 1 : OUTLINE, l'arête est dans l'ombre. Ainsi le chevron se lit clair-sombre, quand la sablière de côté qu'il
+ * recouvre aux bords se lit sombre-clair-sombre (N, bois, OUTLINE). Rangée 0 : le contour du bout nord ; rangée 85 :
+ * l'arête du bout sud ; rangées 86 et 87 : la face de coupe (bois de bout Y, t), à l'ombre en bas à droite.
+ */
+function shedRafter(): Canvas {
+  const sil = 88;
+  const c = new Canvas(2, sil + 40);
+  c.set(0, 0, 'N').set(1, 0, 'o');
+  for (let y = 1; y < sil - 3; y++) c.set(0, y, topTone(y + 5, 'lit')).set(1, y, 'o');
+  c.set(0, sil - 3, 'T').set(1, sil - 3, 'o');
+  c.set(0, sil - 2, 'Y').set(1, sil - 2, 't');
+  c.set(0, sil - 1, 't').set(1, sil - 1, 'o');
+  return c;
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
 export default [
@@ -111,4 +133,5 @@ export default [
   img('shed-plate-north', shedPlateEW(46, 0)),
   img('shed-plate-south', shedPlateEW(39, 23)),
   img('shed-plate-side', shedPlateSide()),
+  img('shed-rafter', shedRafter()),
 ];

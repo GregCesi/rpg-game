@@ -929,6 +929,23 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 154,
+      "name": "shed-rafter",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

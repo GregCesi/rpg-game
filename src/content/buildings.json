@@ -5,7 +5,8 @@
     "steps": [
       {"name": "les dés", "pieces": ["footing-stone"]},
       {"name": "les poteaux", "pieces": ["shed-post-high", "shed-post-low"]},
-      {"name": "les sablières", "pieces": ["shed-plate-north", "shed-plate-south", "shed-plate-side"]}
+      {"name": "les sablières", "pieces": ["shed-plate-north", "shed-plate-south", "shed-plate-side"]},
+      {"name": "les chevrons", "pieces": ["shed-rafter"]}
     ]
   }
 }
