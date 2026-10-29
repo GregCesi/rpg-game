@@ -10,7 +10,7 @@
   "egg": {"name": "œuf", "icon": "item-egg", "kind": "resource", "stack": 99},
   "apple": {"name": "pomme", "icon": "item-apple", "kind": "resource", "stack": 99},
   "wool": {"name": "laine", "icon": "item-wool", "kind": "resource", "stack": 99},
-  "axe": {"name": "hache", "icon": "item-axe", "kind": "tool", "stack": 1},
+  "axe": {"name": "hache", "icon": "item-axe", "kind": "tool", "stack": 1, "hands": 2},
   "pickaxe": {"name": "pioche", "icon": "item-pickaxe", "kind": "tool", "stack": 1},
   "hoe": {"name": "houe", "icon": "item-hoe", "kind": "tool", "stack": 1},
   "sickle": {"name": "faucille", "icon": "item-sickle", "kind": "tool", "stack": 1},

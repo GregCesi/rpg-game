@@ -106,6 +106,19 @@ export const HarvestSchema = z.strictObject({
   spawns: z.array(z.strictObject({ type: id, x: px, y: px })).default([]),
 });
 
+/** Nombre de mains que demande un objet qu'on prend : une, ou les deux (lourd ou long). */
+export const HandsSchema = z.union([z.literal(1), z.literal(2)]);
+
+/**
+ * Objet du monde qu'on prend dans les mains avec E (la bille) : il quitte la carte, et Xéros le porte devant lui
+ * (animations `carry-*`, l'image de l'objet posée sur ses mains d'après carry.json). Reposé, il retrouve la carte à sa nouvelle place.
+ */
+export const TakeSchema = z.strictObject({
+  hands: HandsSchema,
+  /** Point de l'image tenu par les mains ; absent : le centre de sa collision (de l'image s'il n'en a pas). */
+  grip: z.tuple([px, px]).optional(),
+});
+
 /** Un objet possédable (inventaire, sol) : sa clé dans items.json est son identifiant. */
 export const ItemDefSchema = z.strictObject({
   /** Nom affiché, en français. */
@@ -115,6 +128,8 @@ export const ItemDefSchema = z.strictObject({
   kind: z.enum(['tool', 'weapon', 'resource']),
   /** Nombre maximal d'exemplaires dans une case. */
   stack: z.number().int().positive(),
+  /** Mains qu'il faut pour le tenir : 2 pour ce qui est lourd ou long (la hache de bûcheron). */
+  hands: HandsSchema.default(1),
 });
 
 /**
@@ -148,6 +163,8 @@ export const PropDefSchema = z.strictObject({
   aim: z.tuple([px, px]).optional(),
   /** Ce qui se récolte : voir HarvestSchema. */
   harvest: HarvestSchema.optional(),
+  /** Ce qui se prend dans les mains : voir TakeSchema. */
+  take: TakeSchema.optional(),
 });
 
 /** Où est la main pendant une image d'un geste. (dx, dy) : par rapport aux pieds du personnage (milieu bas de son image). */
@@ -264,6 +281,7 @@ export type PropDef = z.infer<typeof PropDefSchema>;
 export type Harvest = z.infer<typeof HarvestSchema>;
 export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;
+export type Take = z.infer<typeof TakeSchema>;
 export type Pose = z.infer<typeof PoseSchema>;
 export type Gesture = z.infer<typeof GestureSchema>;
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
