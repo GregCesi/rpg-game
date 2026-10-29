@@ -220,6 +220,13 @@ export const PileDefSchema = z.strictObject({
   order: z.enum(['layers', 'depth']).default('layers'),
   /** Les places, par identifiant ; l'ordre est celui d'une construction type (aperçu). */
   places: z.record(id, PilePlaceSchema),
+  /**
+   * Le tas tourné (les billes nord-sud, vues par le bout) : ses propres places, sa place de départ et son ordre
+   * d'affichage. Absent : le genre ne se tourne pas (R ne fait rien). Le reste (pièce, blockFrom) est celui du genre.
+   */
+  turned: z
+    .strictObject({ start: id, order: z.enum(['layers', 'depth']).default('layers'), places: z.record(id, PilePlaceSchema) })
+    .optional(),
 });
 
 /** Où est la main pendant une image d'un geste. (dx, dy) : par rapport aux pieds du personnage (milieu bas de son image). */

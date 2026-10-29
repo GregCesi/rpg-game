@@ -18,5 +18,12 @@
     "u01": {"layer": 1, "on": ["g0", "g1"], "image": "felled-log", "x": 0, "y": -19},
     "u12": {"layer": 1, "on": ["g1", "g2"], "image": "felled-log", "x": 0, "y": -11},
     "top": {"layer": 2, "on": ["u01", "u12"], "image": "felled-log", "x": 0, "y": -22}
-  }}
+  }, "turned": {"start": "g1", "order": "depth", "places": {
+    "g1": {"layer": 0, "image": "felled-log-ns", "x": 12, "y": 0, "body": {"x": 13, "y": -17, "w": 12, "h": 15}},
+    "g0": {"layer": 0, "image": "felled-log-ns", "x": 0, "y": 0, "body": {"x": 1, "y": -17, "w": 12, "h": 15}},
+    "g2": {"layer": 0, "image": "felled-log-ns", "x": 24, "y": 0, "body": {"x": 25, "y": -17, "w": 12, "h": 15}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "felled-log-ns", "x": 6, "y": -7},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "felled-log-ns", "x": 18, "y": -7},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "felled-log-ns", "x": 12, "y": -14}
+  }}}
 }

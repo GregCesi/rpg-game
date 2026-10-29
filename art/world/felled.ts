@@ -386,6 +386,56 @@ function felledLog(): Canvas {
   return c;
 }
 
+/**
+ * La même bille couchée nord-sud (`felled-log-ns`, tas tourné de piles.json), vue par le bout : 11 px de diamètre
+ * (55 cm) en largeur ; en hauteur, la face de coupe et la profondeur se raccourcissent comme dans le tas est-ouest,
+ * où 55 cm au sol font 8 px (facteur 0,73) et une montée de 55 cm × √3/2 fait 7 px (facteur 0,68). Le rond fait donc
+ * 11 × 9 px (un peu moins écrasé que le calcul, pour qu'il se lise rond), le corps 1 m × 0,73 = 15 px vers le haut de
+ * l'écran. Devant, la face de coupe (liseré d'écorce, bois clair éclairé en haut à gauche, un cerne, le cœur) ; derrière,
+ * le dessus d'écorce, modelé comme le tronc debout (clair à gauche, sombre à droite). L'ombre tombe sous la face, décalée
+ * à droite, sans dépasser le bord droit du corps (colonne 12) : posée dans un creux, elle ne tombe pas sur l'herbe.
+ */
+export const LOG_NS = { w: 13, h: 28, cx: 6.5, back: 5.5, front: 20.5, rx: 5.5, ry: 4.5 } as const;
+function felledLogNS(): Canvas {
+  const { w, h, cx, back, front, rx, ry } = LOG_NS;
+  const profile = treeBody().px[77]; // tronc debout, 11 px : 27 à 37, centré sur 32,5
+  const c = new Canvas(w, h);
+  const inDisk = (X: number, Y: number, cy: number) => ((X + 0.5 - cx) / rx) ** 2 + ((Y + 0.5 - cy) / ry) ** 2 <= 1;
+  // dessus d'écorce : du rond du fond au rond de devant
+  for (let Y = 0; Y < h; Y++) for (let X = 0; X < w; X++) {
+    const body = Math.abs(X + 0.5 - cx) <= rx && Y + 0.5 >= back && Y + 0.5 <= front;
+    if (!body && !inDisk(X, Y, back)) continue;
+    const q = profile[Math.floor(32.5 + X + 0.5 - cx)];
+    if (q && q !== EMPTY) c.set(X, Y, q);
+  }
+  // fentes d'écorce, dans le sens de la bille
+  c.within('m', (c) => c.line(5, 4, 5, 8, 'N').line(7, 9, 7, 13, 'N').line(4, 11, 4, 14, 'N'));
+  c.within('M', (c) => c.line(2, 6, 2, 10, 'm'));
+  // face de coupe
+  for (let Y = 0; Y < h; Y++) for (let X = 0; X < w; X++) {
+    if (!inDisk(X, Y, front)) continue;
+    const u = (X + 0.5 - cx) / rx;
+    const v = (Y + 0.5 - front) / ry;
+    const r = Math.hypot(u, v);
+    let col: string;
+    if (r > 0.76) col = 'N'; // liseré d'écorce
+    else if (r < 0.3) col = 'T'; // cœur
+    else if (r > 0.5 && r < 0.64 && u + v > -0.9) col = 't'; // cerne, ouvert vers la lumière
+    else col = u + v < 0.35 ? 'Y' : 't'; // éclairé en haut à gauche
+    c.set(X, Y, col);
+  }
+  despeckle(c, 'KYTtN');
+  shadedOutline(c);
+  // ombre au sol sous la face, décalée vers la droite, jamais au-delà du bord droit du corps
+  for (let Y = Math.ceil(front); Y < h; Y++) for (let X = 2; X < w; X++) {
+    if (c.get(X, Y) !== EMPTY) continue;
+    if (Y >= h - 2 && X < 3) continue;
+    if (Y === h - 1 && X > w - 2) continue;
+    c.set(X, Y, 'x');
+  }
+  return c;
+}
+
 interface Frame { x: number; y: number; w: number; h: number }
 
 /** Cadre minimal commun à plusieurs images de la frame (toutes les variantes d'une pièce y tiennent). */
@@ -752,6 +802,7 @@ export default [
   // largeur gardée à LOG_LEN + 3 (20 px, dernière colonne vide depuis que l'ombre ne dépasse plus) : collision et
   // places du tas en dépendent
   img('felled-log', ((l) => cut(l, { ...bounds([l]), w: LOG_LEN + 3 }))(felledLog())),
+  img('felled-log-ns', felledLogNS()),
   treeFallLeft,
   ...SETS_L.flatMap((s, k) => s.map(([name, c]) => img(name, cut(c, FRAMES_L[k])))),
   ...[...CROWN_SET_L, ...HEAD_SET_L].map(([name, c]) => img(name, cut(c, FRAMES_L[3]))),

@@ -4,7 +4,7 @@
 //   comme dans le jeu (entities/ToolUse.ts) : l'aperçu montre exactement ce que l'on verra.
 // - hands.png : les deux mains comme dans le HUD.
 // - piles.png : chaque genre de tas (src/content/piles.json), étape par étape (construction type, puis tous les états
-//   possibles s'ils sont peu nombreux), Xéros à l'échelle en tête de rangée, collisions des pièces au sol en liseré :
+//   possibles s'ils sont peu nombreux), puis sa forme tournée (`turned`, les billes nord-sud), Xéros à l'échelle en tête de rangée, collisions des pièces au sol en liseré :
 //   même calcul que GameMap.placePile (pièce = coin bas gauche au point du tas + (x, y), dans l'ordre de drawOrder).
 
 import { PNG } from 'pngjs';
@@ -12,7 +12,7 @@ import { flipX } from '../../art/lib/canvas';
 import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
 import type { Gesture, PileDef } from '../../src/content/types';
-import { drawOrder, pileBlocks, pileStates } from '../../src/world/pileShape';
+import { drawOrder, pileBlocks, pileStates, shapeOf } from '../../src/world/pileShape';
 
 const SCALE = 4;
 
@@ -167,7 +167,9 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
   const perRow = 8;
   type Row = { def: PileDef; states: string[][]; ext: { left: number; right: number; top: number; bottom: number } };
   const rows: Row[] = [];
-  for (const def of Object.values(piles)) {
+  // chaque genre, puis sa forme tournée s'il en a une (les billes nord-sud)
+  const shapes = Object.values(piles).flatMap((d) => (d.turned ? [d, shapeOf(d, true)] : [d]));
+  for (const def of shapes) {
     const places = Object.entries(def.places);
     if (places.some(([, q]) => !image(q.image))) return undefined;
     // étendue de toutes les places autour du point du tas : la même case pour chaque état

@@ -2,6 +2,11 @@
 // dans quel ordre on les dessine. Utilisé par le jeu (GameMap, systems/hands.ts) et par l'aperçu (npm run art:preview).
 import type { PileDef } from '../content/types';
 
+/** La forme du tas dans son sens : celle du genre, ou, tourné, celle de `turned` (ses places, son départ, son ordre). */
+export function shapeOf(def: PileDef, turned: boolean): PileDef {
+  return turned && def.turned ? { ...def, ...def.turned, turned: undefined } : def;
+}
+
 /**
  * Une place peut recevoir une pièce : elle est libre et toutes celles qui la portent sont prises ; au sol, elle touche
  * (à 1 px près) une pièce déjà posée au sol, pour que le tas grandisse sans trou.

@@ -286,6 +286,34 @@ function validateHold(at: string, h: Hold, hands: 1 | 2, cat: Catalog): string[]
   return errors;
 }
 
+/** Une forme de tas (celle du genre, ou sa forme tournée) : départ au sol, images, collisions au sol, porteuses. */
+function validatePileShape(at: string, shape: { start: string; places: PileDef['places'] }, blockFrom: number, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const err = (msg: string) => errors.push(msg);
+  const start = shape.places[shape.start];
+  if (!start) err(`${at} : place de départ '${shape.start}' introuvable`);
+  else if (start.layer !== 0) err(`${at} : la place de départ '${shape.start}' doit être au sol (couche 0)`);
+  if (blockFrom > Object.keys(shape.places).length) err(`${at} : 'blockFrom' (${blockFrom}) au-delà du nombre de places`);
+  for (const [id, q] of Object.entries(shape.places)) {
+    const pa = `${at} place '${id}'`;
+    if (!cat.textures.has(q.image)) err(`${pa} : image '${q.image}' non dessinée`);
+    if (![q.x, q.y].every(Number.isInteger)) err(`${pa} : position au pixel entier attendue`);
+    if (q.layer === 0) {
+      if (!q.body) err(`${pa} : une place au sol a sa collision ('body')`);
+      if (q.on.length) err(`${pa} : une place au sol n'est portée par rien ('on' vide)`);
+    } else {
+      if (q.body) err(`${pa} : seule une place au sol a une collision ('body') : celle du dessus repose sur ses porteuses`);
+      if (!q.on.length) err(`${pa} : une place de la couche ${q.layer} est portée par des places ('on')`);
+      for (const o of q.on) {
+        const under = shape.places[o];
+        if (!under) err(`${pa} : place porteuse '${o}' introuvable`);
+        else if (under.layer !== q.layer - 1) err(`${pa} : sa porteuse '${o}' est en couche ${under.layer}, pas ${q.layer - 1}`);
+      }
+    }
+  }
+  return errors;
+}
+
 /**
  * Genres de tas : la pièce reprise existe, se prend dans les mains et s'entrepose dans ce genre ; chaque place a son
  * image dessinée, une collision au sol si elle est au sol, des places qui la portent dans la couche juste en dessous
@@ -308,27 +336,10 @@ function validatePiles(c: Content, cat: Catalog): string[] {
       else if (!p.take) err(`${at} : '${piece.prop}' (props.json) ne se prend pas (pas de 'take')`);
       else if (p.take.pile !== key) err(`${at} : '${piece.prop}' (props.json) doit avoir "pile": "${key}" dans 'take' pour s'y entreposer`);
     }
-    const start = pile.places[pile.start];
-    if (!start) err(`${at} : place de départ '${pile.start}' introuvable`);
-    else if (start.layer !== 0) err(`${at} : la place de départ '${pile.start}' doit être au sol (couche 0)`);
-    if (pile.blockFrom > Object.keys(pile.places).length) err(`${at} : 'blockFrom' (${pile.blockFrom}) au-delà du nombre de places`);
-    for (const [id, q] of Object.entries(pile.places)) {
-      const pa = `${at} place '${id}'`;
-      if (!cat.textures.has(q.image)) err(`${pa} : image '${q.image}' non dessinée`);
-      if (![q.x, q.y].every(Number.isInteger)) err(`${pa} : position au pixel entier attendue`);
-      if (q.layer === 0) {
-        if (!q.body) err(`${pa} : une place au sol a sa collision ('body')`);
-        if (q.on.length) err(`${pa} : une place au sol n'est portée par rien ('on' vide)`);
-      } else {
-        if (q.body) err(`${pa} : seule une place au sol a une collision ('body') : celle du dessus repose sur ses porteuses`);
-        if (!q.on.length) err(`${pa} : une place de la couche ${q.layer} est portée par des places ('on')`);
-        for (const o of q.on) {
-          const under = pile.places[o];
-          if (!under) err(`${pa} : place porteuse '${o}' introuvable`);
-          else if (under.layer !== q.layer - 1) err(`${pa} : sa porteuse '${o}' est en couche ${under.layer}, pas ${q.layer - 1}`);
-        }
-      }
-    }
+    // la forme du genre, et sa forme tournée s'il en a une : mêmes règles
+    const shapes: [string, { start: string; places: PileDef['places'] }][] = [[at, pile]];
+    if (pile.turned) shapes.push([`${at} turned`, pile.turned]);
+    for (const [where, shape] of shapes) errors.push(...validatePileShape(where, shape, pile.blockFrom, cat));
   }
   const member = (at: string, pile: string | undefined) => {
     if (pile && !c.piles[pile]) err(`${at} : genre de tas '${pile}' introuvable dans piles.json`);
