@@ -40,6 +40,43 @@ export const TilesetCatalogSchema = z.strictObject({
 /** Rectangle en pixels, dans le repère de l'image (0,0 = coin haut gauche). */
 export const RectSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive() });
 
+/** Ce qui tombe d'un objet récolté : `min` à `max` exemplaires de l'objet possédable `item` (clé de items.json). */
+export const DropSchema = z.strictObject({ item: id, min: z.number().int().min(0), max: z.number().int().min(1) });
+
+/**
+ * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.
+ * Avec `tool`, on frappe avec Espace, l'outil en main ; sans, on récolte à la main avec E.
+ */
+export const HarvestSchema = z.strictObject({
+  /** Objet possédable nécessaire (clé de items.json, de type 'tool') ; absent = à la main. */
+  tool: id.optional(),
+  /** Nombre de coups. L'objet tremble à chaque coup. */
+  hits: z.number().int().positive(),
+  /**
+   * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. `x`, `y` : décalage
+   * du coin bas gauche d'une image de la chute par rapport à celui de l'objet (le pied de l'arbre est
+   * en x = 33 dans `tree`, en x = 47 dans `tree-fall` : x = -14).
+   */
+  fall: z.strictObject({ image: id, anim: id, x: px.default(0), y: px.default(0) }).optional(),
+  /** Objet de props.json qui le remplace ; absent = il disparaît. */
+  becomes: id.optional(),
+  /** Décalage du coin bas gauche de `becomes` par rapport à celui de l'objet récolté. */
+  at: z.tuple([px, px]).optional(),
+  /** Objets lâchés au sol, autour de lui. */
+  drops: z.array(DropSchema).default([]),
+});
+
+/** Un objet possédable (inventaire, sol) : sa clé dans items.json est son identifiant. */
+export const ItemDefSchema = z.strictObject({
+  /** Nom affiché, en français. */
+  name: id,
+  /** Image 16×16, `item-<clé>`. */
+  icon: id,
+  kind: z.enum(['tool', 'weapon', 'resource']),
+  /** Nombre maximal d'exemplaires dans une case. */
+  stack: z.number().int().positive(),
+});
+
 /**
  * Un objet du catalogue (arbre, rocher, maison, meuble...). Sa clé dans props.json est son identifiant :
  * en anglais, en kebab-case (vérifié par validate.ts) ; c'est aussi le type d'un objet de carte dans Tiled.
@@ -64,6 +101,8 @@ export const PropDefSchema = z.strictObject({
   light: z.strictObject({ x: px, y: px, radius: px.positive() }).optional(),
   /** Identifiant du dialogue lancé quand le joueur interagit avec l'objet. */
   interact: id.optional(),
+  /** Ce qui se récolte : voir HarvestSchema. */
+  harvest: HarvestSchema.optional(),
 });
 
 /** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
@@ -84,6 +123,8 @@ export const DialogueDefSchema = z.strictObject({ lines: z.array(DialogueLineSch
 
 /** Objet posé : `type` est une clé de props.json ; (x, y) = coin bas gauche de l'image. */
 export const MapObjectSchema = z.strictObject({
+  /** Identifiant de l'objet dans Tiled (unique dans la carte) : GameState y range les changements du monde. */
+  id: z.number().int().nonnegative(),
   type: id,
   x: px,
   y: px,
@@ -139,6 +180,9 @@ export type DecalSet = z.infer<typeof DecalSetSchema>;
 export type TerrainDef = z.infer<typeof TerrainDefSchema>;
 export type TilesetCatalog = z.infer<typeof TilesetCatalogSchema>;
 export type PropDef = z.infer<typeof PropDefSchema>;
+export type Harvest = z.infer<typeof HarvestSchema>;
+export type Drop = z.infer<typeof DropSchema>;
+export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 export type DialogueLine = z.infer<typeof DialogueLineSchema>;
 export type DialogueDef = z.infer<typeof DialogueDefSchema>;

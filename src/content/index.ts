@@ -2,9 +2,10 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { CharacterDefSchema, DialogueDefSchema, PropDefSchema, TilesetCatalogSchema } from './types';
+import { CharacterDefSchema, DialogueDefSchema, ItemDefSchema, PropDefSchema, TilesetCatalogSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
+import itemsJson from './items.json';
 import charactersJson from './characters.json';
 import dialoguesJson from './dialogues.json';
 export { maps } from '../generated/maps';
@@ -19,5 +20,7 @@ function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.i
 export const tiles = parse('tiles.json', z.record(z.string(), TilesetCatalogSchema), tilesJson);
 /** Catalogue des objets : la clé est le type d'un objet de carte dans Tiled. */
 export const props = parse('props.json', z.record(z.string().min(1), PropDefSchema), propsJson);
-export const characters = parse('characters.json', z.record(z.string(), CharacterDefSchema), charactersJson);
+/** Objets possédables (inventaire, sol) : la clé est l'identifiant de l'objet. */
+export const items = parse('items.json', z.record(z.string().min(1), ItemDefSchema), itemsJson);
+export const characters =parse('characters.json', z.record(z.string(), CharacterDefSchema), charactersJson);
 export const dialogues = parse('dialogues.json', z.record(z.string(), DialogueDefSchema), dialoguesJson);

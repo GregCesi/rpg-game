@@ -234,7 +234,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
         return oerr(`taille ${o.width}x${o.height} au lieu de ${tile.imagewidth}x${tile.imageheight} : redimensionner un objet n'est pas géré`);
       }
       const interact = text('interact');
-      objects.push({ type: key, x: o.x, y: o.y, ...(interact ? { interact } : {}) });
+      objects.push({ id: o.id, type: key, x: o.x, y: o.y, ...(interact ? { interact } : {}) });
     }
   }
 

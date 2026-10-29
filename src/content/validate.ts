@@ -3,7 +3,7 @@
 // Utilisé par `npm run check` (Node) et au démarrage du jeu.
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
-import type { CharacterDef, DialogueDef, MapData, PropDef, TilesetCatalog } from './types';
+import type { CharacterDef, DialogueDef, ItemDef, MapData, PropDef, TilesetCatalog } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -137,6 +137,7 @@ export function validateMaps(
 export interface Content {
   tiles: Record<string, TilesetCatalog>;
   props: Record<string, PropDef>;
+  items: Record<string, ItemDef>;
   maps: Record<string, MapData>;
   characters: Record<string, CharacterDef>;
   dialogues: Record<string, DialogueDef>;
@@ -144,6 +145,31 @@ export interface Content {
 
 /** Clés de props.json : minuscules ASCII, chiffres, tirets. Les majuscules sont réservées aux types de Tiled (Spawn, Exit, Facing). */
 const KEBAB_CASE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+
+/** Récolte d'un objet de props.json : outil, chute, remplaçant et objets lâchés doivent exister. */
+function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const err = (msg: string) => errors.push(`props.json '${key}' récolte : ${msg}`);
+  const h = p.harvest!;
+  if (h.tool) {
+    const tool = c.items[h.tool];
+    if (!tool) err(`outil '${h.tool}' absent de items.json`);
+    else if (tool.kind !== 'tool') err(`'${h.tool}' n'est pas un outil (kind '${tool.kind}' dans items.json)`);
+  }
+  if (h.fall && !cat.animations.get(h.fall.image)?.has(h.fall.anim)) {
+    err(`chute : animation '${h.fall.anim}' absente de la planche '${h.fall.image}' (ou planche non dessinée)`);
+  }
+  if (h.becomes !== undefined) {
+    if (!c.props[h.becomes]) err(`'becomes' : objet '${h.becomes}' absent de props.json`);
+    else if (h.becomes === key) err("'becomes' : l'objet ne peut pas devenir lui-même");
+  }
+  if (h.at && h.becomes === undefined) err("'at' sans 'becomes' : il n'y a rien à placer");
+  h.drops.forEach((d, i) => {
+    if (!c.items[d.item]) err(`objet lâché n°${i + 1} : '${d.item}' absent de items.json`);
+    if (d.min > d.max) err(`objet lâché '${d.item}' : min (${d.min}) plus grand que max (${d.max})`);
+  });
+  return errors;
+}
 
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 export function validateContent(c: Content, cat: Catalog): string[] {
@@ -164,6 +190,13 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (!cat.textures.has(p.image)) err(`props.json '${key}' : image '${p.image}' non dessinée`);
     if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${key}' : animation '${p.anim}' absente de '${p.image}'`);
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);
+    if (p.harvest) addAll(validateHarvest(key, p, c, cat));
+  }
+
+  // Objets possédables
+  for (const [key, it] of Object.entries(c.items)) {
+    if (!KEBAB_CASE.test(key)) err(`items.json '${key}' : la clé doit être un identifiant anglais en kebab-case`);
+    if (!cat.textures.has(it.icon)) err(`items.json '${key}' : icône '${it.icon}' non dessinée`);
   }
 
   // Personnages et dialogues

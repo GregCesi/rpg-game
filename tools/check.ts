@@ -22,7 +22,7 @@ async function main() {
   }
   const n = (o: object) => Object.keys(o).length;
   console.log(
-    `✓ contenu valide : ${n(content.maps)} cartes, ${n(content.props)} objets, ${n(content.dialogues)} dialogues, ${n(content.characters)} personnages`,
+    `✓ contenu valide : ${n(content.maps)} cartes, ${n(content.props)} objets, ${n(content.items)} objets possédables, ${n(content.dialogues)} dialogues, ${n(content.characters)} personnages`,
   );
 }
 
