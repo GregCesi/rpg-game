@@ -110,11 +110,12 @@ export class WorldScene extends Phaser.Scene {
       const exit = findExit(this.player, this.map.def.exits);
       if (exit) this.travel(exit);
     }
-    // Espace, Q et Tab toujours lus, comme E : sinon un appui fait pendant un dialogue ressortirait juste après
+    // Espace, Q, Tab et R toujours lus, comme E : sinon un appui fait pendant un dialogue ressortirait juste après
     const { input } = this.player;
     const use = input.usePressed();
     const drop = input.dropPressed();
     const swap = input.swapPressed();
+    const turn = input.turnPressed();
     const e = this.interaction.update(time, this.mode === 'play');
     this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : heldItem(game), this.mode === 'play');
     // ce qu'on tient et qui s'entrepose : sa pièce en transparence, là où elle ira
@@ -124,6 +125,8 @@ export class WorldScene extends Phaser.Scene {
       switchHand(game);
       this.handsChanged();
     }
+    // R : la bille portée tourne ; le fantôme suit à l'image suivante
+    if (turn) this.handsSystem.turn();
     if (e.pressed && e.target) this.hands(e.target);
     // E dans le vide (ou devant ce qu'on ne peut pas prendre) : reposer ce qu'on tient à deux mains
     else if (e.pressed && game.both) this.putDown();

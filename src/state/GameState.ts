@@ -8,9 +8,13 @@ const id = z.string().min(1);
 
 /**
  * Ce que tient une main : un objet possédable (`item`, clé de items.json), ou un objet du monde pris sur une carte
- * (`prop`, clé de props.json : la bille ; `flip` : sa version couchée vers la gauche). Pas de besace : les mains sont tout l'inventaire.
+ * (`prop`, clé de props.json : la bille ; `flip` : sa version couchée vers la gauche ; `turned` : tournée nord-sud, R,
+ * pour le tas qu'elle commencera). Pas de besace : les mains sont tout l'inventaire.
  */
-export const HeldSchema = z.union([z.strictObject({ item: id }), z.strictObject({ prop: id, flip: z.boolean().optional() })]);
+export const HeldSchema = z.union([
+  z.strictObject({ item: id }),
+  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional() }),
+]);
 
 /** Une main : 0 = la gauche, 1 = la droite. */
 export const HandSchema = z.union([z.literal(0), z.literal(1)]);
@@ -49,7 +53,8 @@ export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegativ
 
 /**
  * Un tas posé pendant la partie : un seul objet du monde, son genre (`pile`, clé de piles.json), son point au sol (x, y :
- * l'origine du repère de ses places) et ses places prises (`places`, identifiants de piles.json).
+ * l'origine du repère de ses places), ses places prises (`places`, identifiants de piles.json) et son sens (`turned` :
+ * nord-sud, les places de `turned` dans piles.json), fixé par sa première pièce.
  */
 export const PileSchema = z.strictObject({
   id: z.number().int().nonnegative(),
@@ -57,6 +62,7 @@ export const PileSchema = z.strictObject({
   x: z.number(),
   y: z.number(),
   places: z.array(id).min(1),
+  turned: z.boolean().optional(),
 });
 
 /** Ce qui a changé sur une carte. */
@@ -143,6 +149,14 @@ export function release(s: GameState): Held | undefined {
   return what;
 }
 
+/** Tourne l'objet du monde que tient Xéros (la bille) entre est-ouest et nord-sud ; sans objet du monde en main, rien. */
+export function turnHeld(s: GameState): void {
+  const h = held(s);
+  if (!h || !('prop' in h)) return;
+  if (h.turned) delete h.turned;
+  else h.turned = true;
+}
+
 /** Change de main active. */
 export function switchHand(s: GameState): void {
   s.active = (1 - s.active) as Hand;
@@ -192,9 +206,9 @@ export function setSpawnedHits(s: GameState, mapId: string, spawnId: number, hit
   if (o) o.hits = hits;
 }
 
-/** Commence un tas d'une pièce, posée à la place `place` ; renvoie ce qui a été noté. */
-export function startPile(s: GameState, mapId: string, pile: string, x: number, y: number, place: string): Pile {
-  const p = { id: s.nextPileId++, pile, x, y, places: [place] };
+/** Commence un tas d'une pièce, posée à la place `place`, dans son sens (`turned` : nord-sud) ; renvoie ce qui a été noté. */
+export function startPile(s: GameState, mapId: string, pile: string, x: number, y: number, place: string, turned: boolean): Pile {
+  const p = { id: s.nextPileId++, pile, x, y, places: [place], ...(turned ? { turned } : {}) };
   mapState(s, mapId).piles.push(p);
   return p;
 }

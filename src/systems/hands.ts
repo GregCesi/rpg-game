@@ -3,15 +3,21 @@ import { DEPTH, INTERACT, PUT_DOWN } from '../config';
 import { items, piles, props } from '../content';
 import type { Facing } from '../content/types';
 import type { Player } from '../entities/Player';
-import { changeObject, changeSpawned, dropItem, emptyPlace, fillPlace, game, held, release, spawnObject, startPile, take, type Held } from '../state';
+import { changeObject, changeSpawned, dropItem, emptyPlace, fillPlace, game, held, release, spawnObject, startPile, take, turnHeld, type Held } from '../state';
 import { footprint, type Box, type GameMap, type PlacedPile, type PlacedProp } from '../world/GameMap';
-import { openPlaces, placeAim } from '../world/pileShape';
+import { openPlaces, placeAim, shapeOf } from '../world/pileShape';
 
 /** Ce qu'a donné « poser devant soi » : rien en main, pas de place libre devant, ou posé. */
 export type PutDownResult = 'empty' | 'blocked' | 'done';
 
-/** Où ira la pièce qu'on pose en tas : une place d'un tas posé, ou la première place d'un nouveau tas, au point (x, y). */
-type PileTarget = { pile: PlacedPile; place: string } | { genre: string; x: number; y: number; place: string };
+/**
+ * Où ira la pièce qu'on pose en tas : une place d'un tas posé (dans le sens du tas), ou la première place d'un nouveau
+ * tas au point (x, y), dans le sens de ce qu'on tient (`turned`).
+ */
+type PileTarget = { pile: PlacedPile; place: string } | { genre: string; x: number; y: number; place: string; turned: boolean };
+
+/** Ce qu'on tient est tourné nord-sud (R). */
+const turnedOf = (what: Held) => 'prop' in what && !!what.turned;
 
 /** Genre de tas où s'entrepose ce qu'on tient (`pile` de items.json, ou du `take` de props.json), s'il en a un. */
 function pileOf(what: Held): string | undefined {
@@ -64,12 +70,12 @@ export class HandsSystem {
   updatePreview(player: Player, active: boolean): void {
     const what = held(game);
     const genre = what && pileOf(what);
-    const t = active && genre ? this.pileTarget(player, genre) : undefined;
+    const t = active && genre ? this.pileTarget(player, genre, turnedOf(what)) : undefined;
     if (!t) {
       this.ghost.setVisible(false);
       return;
     }
-    const def = piles['pile' in t ? t.pile.pile.pile : t.genre];
+    const def = 'pile' in t ? t.pile.def : shapeOf(piles[t.genre], t.turned);
     const q = def.places[t.place];
     const [x, y] = 'pile' in t ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
     // par-dessus le tas qu'il complète ; un nouveau tas, à sa propre profondeur
@@ -99,7 +105,8 @@ export class HandsSystem {
   takeFromPile(p: PlacedPile, place: string): boolean {
     const piece = p.def.piece;
     const hands = 'item' in piece ? items[piece.item].hands : props[piece.prop].take!.hands;
-    if (!take(game, { ...piece }, hands)) return false;
+    // une bille reprise d'un tas nord-sud reste tournée
+    if (!take(game, 'prop' in piece && p.pile.turned ? { ...piece, turned: true } : { ...piece }, hands)) return false;
     emptyPlace(game, this.map.def.id, p.pile.id, place);
     if (!p.pile.places.length) this.map.removePile(p);
     else this.map.refreshPile(p);
@@ -114,7 +121,7 @@ export class HandsSystem {
     const what = held(game);
     if (!what) return 'empty';
     const pile = pileOf(what);
-    if (pile) return this.putOnPile(player, pile);
+    if (pile) return this.putOnPile(player, pile, turnedOf(what));
     const spot = 'item' in what ? this.groundSpot(player) : this.propSpot(player, what);
     if (!spot) return 'blocked';
     release(game);
@@ -124,26 +131,42 @@ export class HandsSystem {
     return 'done';
   }
 
-  /** Pose en tas du genre `genre`, à la place que montre la prévisualisation ; sans place, rien ne bouge. */
-  private putOnPile(player: Player, genre: string): PutDownResult {
-    const t = this.pileTarget(player, genre);
+  /**
+   * Tourne ce qu'on tient entre est-ouest et nord-sud (R), si son genre de tas a une forme tournée (`turned` de
+   * piles.json : la bille). Renvoie false si ce qu'on tient ne se tourne pas.
+   */
+  turn(): boolean {
+    const what = held(game);
+    const genre = what && pileOf(what);
+    if (!what || !('prop' in what) || !genre || !piles[genre].turned) return false;
+    turnHeld(game);
+    return true;
+  }
+
+  /**
+   * Pose en tas du genre `genre`, à la place que montre la prévisualisation ; sans place, rien ne bouge. Sur un tas
+   * posé, la pièce prend le sens du tas ; un nouveau tas prend le sens de ce qu'on tient (`turned`).
+   */
+  private putOnPile(player: Player, genre: string, turned: boolean): PutDownResult {
+    const t = this.pileTarget(player, genre, turned);
     if (!t) return 'blocked';
     release(game);
     const mapId = this.map.def.id;
     if ('pile' in t) {
       fillPlace(game, mapId, t.pile.pile.id, t.place);
       this.map.refreshPile(t.pile);
-    } else this.map.placePile(startPile(game, mapId, genre, t.x, t.y, t.place));
+    } else this.map.placePile(startPile(game, mapId, genre, t.x, t.y, t.place, t.turned));
     this.ghost.setVisible(false);
     return 'done';
   }
 
   /**
    * La place où ira une pièce du genre `genre` : parmi les places disponibles des tas de ce genre (libres, portées, et,
-   * au sol, à une place libre), celle dont le point visé est le plus près du point que regarde Xéros, à portée ; sinon
-   * la première place (`start`) d'un nouveau tas, sa pièce au sol juste devant lui, si la place est libre.
+   * au sol, à une place libre), celle dont le point visé est le plus près du point que regarde Xéros, à portée, quel
+   * que soit le sens de ce qu'on tient (la pièce s'aligne sur le tas) ; sinon la première place (`start`) d'un nouveau
+   * tas dans le sens `turned`, sa pièce au sol juste devant lui, si la place est libre.
    */
-  private pileTarget(player: Player, genre: string): PileTarget | undefined {
+  private pileTarget(player: Player, genre: string, turned: boolean): PileTarget | undefined {
     const probe = player.probe(INTERACT.reach);
     const bodies = [...this.others, player.actor.body];
     let best: PileTarget | undefined;
@@ -161,12 +184,12 @@ export class HandsSystem {
       }
     }
     if (best) return best;
-    const def = piles[genre];
+    const def = shapeOf(piles[genre], turned);
     const body = def.places[def.start].body!;
     const [l, t] = frontCorner(player.actor.body, player.actor.facing, body.w, body.h);
     const x = Math.round(l - body.x);
     const y = Math.round(t - body.y);
-    return this.groundFree(this.boxAt(body, x, y), bodies) ? { genre, x, y, place: def.start } : undefined;
+    return this.groundFree(this.boxAt(body, x, y), bodies) ? { genre, x, y, place: def.start, turned } : undefined;
   }
 
   /** Une collision de place (repère du tas) dans le repère de la carte, pour un tas dont le point est (x, y). */

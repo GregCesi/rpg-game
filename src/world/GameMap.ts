@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { DEPTH, TILE } from '../config';
 import { items, piles as pileDefs, props as propDefs } from '../content';
 import type { MapData, MapObject, PileDef, PropDef } from '../content/types';
-import { drawOrder, pileBlocks, placeAim, topPieces } from './pileShape';
+import { drawOrder, pileBlocks, placeAim, shapeOf, topPieces } from './pileShape';
 import type { Chain, GroundItem, MapState, Pile } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
@@ -98,8 +98,9 @@ export interface PlacedGround {
 
 /** Un tas posé, affiché : une image par pièce posée, à sa place, et la collision des pièces au sol. */
 export interface PlacedPile {
-  /** L'état du tas dans GameState (genre, point au sol, places prises). */
+  /** L'état du tas dans GameState (genre, point au sol, places prises, sens). */
   pile: Pile;
+  /** La forme du tas dans son sens (`shapeOf`) : ses places sont celles-ci. */
   def: PileDef;
   /** Collisions des pièces posées au sol (aucune tant que le tas a moins de `blockFrom` pièces). */
   zones: Phaser.GameObjects.Zone[];
@@ -298,7 +299,7 @@ export class GameMap {
    * tout le tas est à la profondeur du bas de sa pièce la plus en avant. Chaque pièce au sol a sa collision, dès `blockFrom` pièces.
    */
   placePile(pile: Pile): PlacedPile {
-    const def = pileDefs[pile.pile];
+    const def = shapeOf(pileDefs[pile.pile], !!pile.turned);
     const ground = pile.places.map((id) => def.places[id]).filter((q) => q.body);
     const depth = Math.max(...pile.places.map((id) => pile.y + def.places[id].y));
     const parts: Phaser.GameObjects.GameObject[] = drawOrder(def, pile.places).map((id, i) => {

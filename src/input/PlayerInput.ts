@@ -17,6 +17,7 @@ const CODES = {
   use: ['Space'],
   drop: ['KeyQ'],
   swap: ['Tab'],
+  turn: ['KeyR'],
 } as const;
 
 type Action = keyof typeof CODES;
@@ -25,6 +26,7 @@ type Action = keyof typeof CODES;
  * Traduit le clavier en intention : direction, course, et les gestes des mains.
  * E (ou Entrée) : prendre dans une main libre, parler, cueillir, ou reposer ce qu'on tient à deux mains.
  * Espace : utiliser ce qu'on tient. Q (A en AZERTY) : lâcher ce que tient la main active. Tab : changer de main active.
+ * R : tourner la bille portée (est-ouest, nord-sud).
  */
 export class PlayerInput {
   /** Touches enfoncées (codes). */
@@ -72,6 +74,11 @@ export class PlayerInput {
   /** Changer de main active (Tab) : vrai une seule fois par appui. */
   swapPressed(): boolean {
     return this.take('swap');
+  }
+
+  /** Tourner la bille portée (R) : vrai une seule fois par appui. */
+  turnPressed(): boolean {
+    return this.take('turn');
   }
 
   read(): { dir: Phaser.Math.Vector2; running: boolean } {
