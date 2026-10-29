@@ -1,5 +1,5 @@
 // L'état de la partie : tout ce qui change pendant qu'on joue (les mains, monde modifié, objets au sol).
-// Un objet à nous, décrit avec Zod et indépendant de Phaser : la sauvegarde consistera à l'écrire.
+// Un objet à nous, décrit avec Zod et indépendant de Phaser : la sauvegarde l'écrit tel quel (save.ts).
 // Les cartes décrivent le monde au début de la partie ; GameState dit seulement ce qui a changé.
 
 import { z } from 'zod';
@@ -103,6 +103,17 @@ export type Pile = z.infer<typeof PileSchema>;
 export type MapState = z.infer<typeof MapStateSchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
 
+/**
+ * Compteur de changements, hors du schéma : chaque fonction qui modifie la partie l'avance, et la sauvegarde automatique
+ * (systems/autosave.ts) écrit la partie quand il a bougé. Ne jamais modifier GameState sans passer par ces fonctions.
+ */
+let revision = 0;
+
+/** Numéro du dernier changement de la partie. */
+export function revisionOf(): number {
+  return revision;
+}
+
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 export function newGame(): GameState {
   return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0 };
@@ -138,6 +149,7 @@ export function take(s: GameState, what: Held, hands: 1 | 2): boolean {
   if (!canTake(s, hands)) return false;
   if (hands === 2) s.both = what;
   else s.hands[s.hands[s.active] ? ((1 - s.active) as Hand) : s.active] = what;
+  revision++;
   return true;
 }
 
@@ -146,6 +158,7 @@ export function release(s: GameState): Held | undefined {
   const what = held(s);
   if (s.both) s.both = null;
   else s.hands[s.active] = null;
+  revision++;
   return what;
 }
 
@@ -155,22 +168,26 @@ export function turnHeld(s: GameState): void {
   if (!h || !('prop' in h)) return;
   if (h.turned) delete h.turned;
   else h.turned = true;
+  revision++;
 }
 
 /** Change de main active. */
 export function switchHand(s: GameState): void {
   s.active = (1 - s.active) as Hand;
+  revision++;
 }
 
 /** Note qu'un objet de carte est devenu un autre (ou a disparu, `type` absent). */
 export function changeObject(s: GameState, mapId: string, objectId: number, change: WorldChange): void {
   mapState(s, mapId).changes[objectId] = change;
+  revision++;
 }
 
 /** Pose un objet possédable au sol ; renvoie ce qui a été posé. */
 export function dropItem(s: GameState, mapId: string, item: string, x: number, y: number): GroundItem {
   const g = { id: s.nextGroundId++, item, x, y };
   mapState(s, mapId).ground.push(g);
+  revision++;
   return g;
 }
 
@@ -178,12 +195,14 @@ export function dropItem(s: GameState, mapId: string, item: string, x: number, y
 export function removeGroundItem(s: GameState, mapId: string, groundId: number): void {
   const m = mapState(s, mapId);
   m.ground = m.ground.filter((g) => g.id !== groundId);
+  revision++;
 }
 
 /** Fait naître un objet sur une carte ; renvoie ce qui a été noté. */
 export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, flip: boolean, chain?: Chain): Spawned {
   const o = { id: s.nextSpawnId++, type, x, y, ...(flip ? { flip } : {}), ...(chain ? { chain } : {}) };
   mapState(s, mapId).spawned.push(o);
+  revision++;
   return o;
 }
 
@@ -198,18 +217,21 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
     const chain = m.spawned[i].chain;
     m.spawned[i] = { id: spawnId, type: change.type, x: change.x, y: change.y, ...(change.flip ? { flip: true } : {}), ...(chain ? { chain } : {}) };
   }
+  revision++;
 }
 
 /** Coups reçus par un objet né (profondeur d'une encoche). */
 export function setSpawnedHits(s: GameState, mapId: string, spawnId: number, hits: number): void {
   const o = mapState(s, mapId).spawned.find((x) => x.id === spawnId);
   if (o) o.hits = hits;
+  revision++;
 }
 
 /** Commence un tas d'une pièce, posée à la place `place`, dans son sens (`turned` : nord-sud) ; renvoie ce qui a été noté. */
 export function startPile(s: GameState, mapId: string, pile: string, x: number, y: number, place: string, turned: boolean): Pile {
   const p = { id: s.nextPileId++, pile, x, y, places: [place], ...(turned ? { turned } : {}) };
   mapState(s, mapId).piles.push(p);
+  revision++;
   return p;
 }
 
@@ -217,6 +239,7 @@ export function startPile(s: GameState, mapId: string, pile: string, x: number, 
 export function fillPlace(s: GameState, mapId: string, pileId: number, place: string): void {
   const p = mapState(s, mapId).piles.find((q) => q.id === pileId);
   if (p && !p.places.includes(place)) p.places.push(place);
+  revision++;
 }
 
 /** La pièce de la place `place` est reprise ; sans pièce, le tas disparaît de la carte. */
@@ -226,4 +249,24 @@ export function emptyPlace(s: GameState, mapId: string, pileId: number, place: s
   if (i < 0) return;
   m.piles[i].places = m.piles[i].places.filter((q) => q !== place);
   if (!m.piles[i].places.length) m.piles.splice(i, 1);
+  revision++;
+}
+
+/** Vide les deux mains : ce qu'elles tenaient disparaît (outils de test, ?dieu). */
+export function emptyHands(s: GameState): void {
+  s.hands = [null, null];
+  s.both = null;
+  revision++;
+}
+
+/** Remet une carte dans son état d'origine : ses changements, objets au sol, objets nés et tas sont oubliés. */
+export function resetMap(s: GameState, mapId: string): void {
+  delete s.maps[mapId];
+  revision++;
+}
+
+/** Remplace toute la partie par `next` (une sauvegarde relue, ou une partie neuve) : l'objet `s` reste le même. */
+export function replaceState(s: GameState, next: GameState): void {
+  Object.assign(s, structuredClone(next));
+  revision++;
 }

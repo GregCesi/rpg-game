@@ -33,7 +33,8 @@ export class HudScene extends Phaser.Scene {
     super('hud');
   }
 
-  create(): void {
+  /** `notice` : message à afficher dès le lancement, plus longtemps qu'un message court (sauvegarde refusée). */
+  create(data: { notice?: string } = {}): void {
     this.cameras.main.setZoom(ZOOM).centerOn(VIEW.width / 2, VIEW.height / 2);
     const size = this.textures.get('ui-slot').getSourceImage().width;
     const x0 = Math.round((VIEW.width - (2 * size + GAP)) / 2);
@@ -62,6 +63,7 @@ export class HudScene extends Phaser.Scene {
       this.game.events.off(GameEvent.Notice, this.showNotice, this);
     });
     this.redraw();
+    if (data.notice) this.showNotice(data.notice, HUD.longNoticeMs);
   }
 
   update(): void {
@@ -78,9 +80,9 @@ export class HudScene extends Phaser.Scene {
     });
   }
 
-  private showNotice(text: string): void {
+  private showNotice(text: string, ms: number = HUD.noticeMs): void {
     this.tweens.killTweensOf(this.notice);
     this.notice.setText(text).setAlpha(1);
-    this.tweens.add({ targets: this.notice, alpha: 0, delay: HUD.noticeMs, duration: 300 });
+    this.tweens.add({ targets: this.notice, alpha: 0, delay: ms, duration: 300 });
   }
 }

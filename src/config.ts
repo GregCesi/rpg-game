@@ -60,8 +60,8 @@ export const HARVEST = {
   chips: { count: 6, lifespan: 420, speed: [50, 110] as [number, number], gravity: 420 },
 };
 
-/** Les mains à l'écran : durée d'un message court (ms). */
-export const HUD = { noticeMs: 1800 };
+/** Les mains à l'écran : durée d'un message court (ms), et d'un message important (sauvegarde refusée). */
+export const HUD = { noticeMs: 1800, longNoticeMs: 7000 };
 
 /** Où commence la partie : Xéros se réveille dans son cagibi. */
 export const START = { map: 'maison', spawn: 'reveil' };

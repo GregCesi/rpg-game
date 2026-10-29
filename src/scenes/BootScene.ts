@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { START } from '../config';
 import { images, spritesheets, tilesets } from '../generated/assets';
+import { resumeGame } from '../state';
+import type { WorldStart } from './WorldScene';
 
 /** Charge tout ce que produit `npm run art` et déclare les animations. */
 export class BootScene extends Phaser.Scene {
@@ -28,8 +30,11 @@ export class BootScene extends Phaser.Scene {
       }
     }
     this.makeGlow();
-    this.scene.start('world', { mapId: START.map, spawn: START.spawn });
-    this.scene.launch('hud');
+    // la partie reprend là où elle était ; une sauvegarde refusée est dite par le HUD, et la partie est neuve
+    const { where, notice } = resumeGame();
+    const start: WorldStart = where ? { mapId: where.map, at: where } : { mapId: START.map, spawn: START.spawn };
+    this.scene.start('world', start);
+    this.scene.launch('hud', { notice });
   }
 
   /** Halo radial pour les lueurs de feu (effet de lumière, pas du pixel art : généré ici). */

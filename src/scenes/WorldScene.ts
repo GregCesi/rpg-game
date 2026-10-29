@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import { START, ZOOM } from '../config';
 import { items, maps, props } from '../content';
-import type { Exit, Stance } from '../content/types';
+import type { Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
 import { GameEvent } from '../events';
+import { AutoSave } from '../systems/autosave';
 import { findExit } from '../systems/exits';
 import { HarvestSystem, type HitResult } from '../systems/harvest';
 import { HandsSystem } from '../systems/hands';
@@ -20,6 +21,9 @@ import type { Interactable, PlacedGround } from '../world/GameMap';
  * `use` : Xéros fait un geste (outil ou mains), il ne marche pas et ne prend pas de sortie.
  */
 type Mode = 'play' | 'use' | 'dialogue' | 'transition';
+
+/** Ce que reçoit la scène à son lancement : la carte, et le point d'apparition ou la position exacte (`at`, sauvegarde). */
+export type WorldStart = { mapId: string; spawn?: string; at?: { x: number; y: number; facing: Facing } };
 
 /** Comment un objet tenu se voit sur Xéros : son `hold` (items.json, ou `take` de props.json), sinon son icône à la main. */
 function holdOf(h: Held): { stance: Stance; look: Look } {
@@ -42,6 +46,7 @@ export class WorldScene extends Phaser.Scene {
   private interaction!: InteractionSystem;
   private harvest!: HarvestSystem;
   private handsSystem!: HandsSystem;
+  private autosave!: AutoSave;
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
   private talking?: Npc;
   private mode: Mode = 'play';
@@ -49,14 +54,17 @@ export class WorldScene extends Phaser.Scene {
   private useLockedUntil = 0;
   private mapId = START.map;
   private spawn = START.spawn;
+  /** Position exacte où reprendre (sauvegarde) ; sinon le point d'apparition. */
+  private at?: WorldStart['at'];
 
   constructor() {
     super('world');
   }
 
-  init(data: { mapId?: string; spawn?: string }): void {
+  init(data: Partial<WorldStart>): void {
     if (data.mapId) this.mapId = data.mapId;
     if (data.spawn) this.spawn = data.spawn;
+    this.at = data.at;
     this.mode = 'play';
     this.talking = undefined;
   }
@@ -64,7 +72,7 @@ export class WorldScene extends Phaser.Scene {
   create(): void {
     const def = maps[this.mapId];
     if (!def) throw new Error(`Carte inconnue : ${this.mapId}`);
-    const sp = def.spawns[this.spawn];
+    const sp = this.at ?? def.spawns[this.spawn];
     if (!sp) throw new Error(`Carte ${def.id} : point d'apparition '${this.spawn}' inconnu`);
 
     // la carte telle que la partie l'a laissée : objets récoltés, objets au sol
@@ -100,11 +108,25 @@ export class WorldScene extends Phaser.Scene {
     cam.setRoundPixels(true);
     cam.fadeIn(220, 20, 14, 8);
 
+    // la partie est écrite à l'arrivée sur la carte, puis à chaque changement, et quand la page se cache ou se ferme
+    this.autosave = new AutoSave(def.id, this.player);
+    this.autosave.update(true);
+    const saveNow = () => this.autosave.update(true);
+    const saveIfHidden = () => document.visibilityState === 'hidden' && saveNow();
+    window.addEventListener('pagehide', saveNow);
+    document.addEventListener('visibilitychange', saveIfHidden);
+
     this.game.events.on(GameEvent.DialogueEnd, this.onDialogueEnd, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(GameEvent.DialogueEnd, this.onDialogueEnd, this));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off(GameEvent.DialogueEnd, this.onDialogueEnd, this);
+      window.removeEventListener('pagehide', saveNow);
+      document.removeEventListener('visibilitychange', saveIfHidden);
+    });
   }
 
   update(time: number): void {
+    // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
+    this.autosave.update();
     this.player.update(this.mode === 'play');
     if (this.mode === 'play') {
       const exit = findExit(this.player, this.map.def.exits);
