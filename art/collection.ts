@@ -18,7 +18,7 @@ export const families: Family[] = [
     title: 'Ressources',
     ground: 'grass',
     keys: [],
-    icons: ['log', 'branch', 'stone', 'iron-ore', 'straw', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool'].map((n) => `item-${n}`),
+    icons: ['branch', 'stone', 'iron-ore', 'straw', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool'].map((n) => `item-${n}`),
   },
   {
     title: 'Outils et armes',

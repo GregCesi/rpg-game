@@ -480,16 +480,6 @@ function jar(): Canvas {
   return c;
 }
 
-/** Bille de bois qui attend d'être sculptée. 32x32. */
-function log(): Canvas {
-  const c = new Canvas(32, 32);
-  c.rect(8, 10, 16, 16, 'm').rect(8, 10, 3, 16, 'M').rect(21, 10, 3, 16, 'N');
-  c.ellipse(16, 10, 8, 3, 'Y');
-  c.ellipse(16, 10, 4, 1.5, 'M');
-  c.outline('o');
-  return c;
-}
-
 const anim = (name: string, w: number, h: number, draw: (f: number) => Canvas): SpriteSheetSource => ({
   kind: 'spritesheet',
   name,
@@ -510,5 +500,4 @@ export const furniture = [
   img('pallet', pallet()),
   img('sack', sack()),
   img('jar', jar()),
-  img('log', log()),
 ];

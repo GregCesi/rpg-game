@@ -251,23 +251,6 @@
       ]
     },
     {
-      "id": 109,
-      "name": "log",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
       "id": 110,
       "name": "stove",
       "type": "class",

@@ -119,7 +119,7 @@ export function itemBarPreview(sources: ArtSource[]): PNG | undefined {
   if (!slot || !active) return undefined;
   const size = slot.grid[0].length;
   const gap = 2;
-  const icons = ['item-axe', 'item-log', 'item-stone', null, 'item-berries', null, 'item-pickaxe', null];
+  const icons = ['item-axe', 'item-branch', 'item-stone', null, 'item-berries', null, 'item-pickaxe', null];
   const board = new Board(8 * size + 7 * gap + 16, size + 16, grassOf(sources));
   icons.forEach((key, i) => {
     const x = 8 + i * (size + gap);

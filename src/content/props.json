@@ -29,7 +29,6 @@
   "fireplace": {"name": "cheminée", "image": "fireplace", "anim": "burn", "bodies": [{"x": 0, "y": 70, "w": 64, "h": 26}], "light": {"x": 32, "y": 76, "radius": 100}},
   "worktable": {"name": "planche de cuisine", "image": "worktable", "bodies": [{"x": 2, "y": 10, "w": 60, "h": 20}]},
   "workbench": {"name": "établi", "image": "workbench", "bodies": [{"x": 1, "y": 8, "w": 62, "h": 22}]},
-  "log": {"name": "bille de bois", "image": "log", "body": {"w": 16, "h": 10, "bottom": 5}},
   "stove": {"name": "poêle", "image": "stove", "anim": "burn", "bodies": [{"x": 4, "y": 26, "w": 24, "h": 20}], "light": {"x": 16, "y": 34, "radius": 56}},
   "bed": {"name": "lit de la mère", "image": "bed", "bodies": [{"x": 2, "y": 8, "w": 28, "h": 44}]},
   "pallet": {"name": "paillasse de Xéros", "image": "pallet", "bodies": [{"x": 6, "y": 9, "w": 36, "h": 17}]},

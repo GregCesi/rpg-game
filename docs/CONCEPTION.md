@@ -105,7 +105,7 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - **Chaque section coupée devient une bille** d'environ 1 m, qui reste au sol et bloque le passage tant qu'on ne la déplace pas.
 - Ébrancher et tronçonner se font **dans l'ordre qu'on veut** ; la dernière section garde le houppier tant qu'il n'est pas coupé.
 - **Porter** : une seule série d'animations « porter » pour Xéros (bras levés, marche et attente dans les 4 directions), avec l'objet porté posé par-dessus à un point d'accroche, devant lui ou derrière sa tête selon la direction. Xéros marche plus lentement, ne fait rien d'autre, et repose l'objet avec E. Un nouvel objet portable n'a besoin que de son sprite.
-- La bûche actuelle (`item-log`, 99 par case) contredit le principe : elle disparaîtra quand la chaîne sera construite.
+- La bûche (`item-log`, 99 par case) contredisait le principe : retirée le 29 octobre 2026, avec l'ancien objet `log` (la bille de l'atelier est maintenant une `felled-log`).
 - Pas encore discuté : ce qu'on fait des billes ensuite (fendage sur le billot, tas de bois, brouette).
 
 ## Façon de travailler

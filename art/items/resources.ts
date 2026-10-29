@@ -23,26 +23,6 @@ const palette = {
   '8': '#74303a', // rouge d'ombre (vers le brun-violet)
 };
 
-// ---------- Bûche ----------
-
-/** Bûche couchée en diagonale, bout scié tourné vers le spectateur (en bas à gauche). */
-function log(): Canvas {
-  const c = new Canvas(S, S);
-  // écorce : bande claire en haut, sombre en bas
-  capsule(c, 4.8, 10.4, 11.2, 4.9, 3.6, (_, a) => (a < -0.4 ? 'm' : a < 0.4 ? 'N' : 'K'));
-  // stries d'écorce le long de l'axe
-  c.within('mN', (c) => c.line(8, 5, 10, 3, 'N').line(10, 7, 12, 5, 'K'));
-  // bout scié : cerne d'écorce, bois clair, cernes
-  c.ellipse(4.8, 10.4, 3.5, 3.6, 'N');
-  c.ellipse(4.8, 10.4, 2.7, 2.8, 'U');
-  c.within('U', (c) => {
-    c.polygon([[7.5, 9], [7.5, 14], [3, 14]], 'u');
-    c.set(4, 10, 'n').set(5, 10, 'n').set(5, 11, 'n');
-    c.set(3, 9, 'd').set(4, 8, 'd').set(3, 10, 'd');
-  });
-  return outline(c, 'K');
-}
-
 // ---------- Branche ----------
 
 /** Branche sèche : une tige en diagonale, deux rameaux, sans feuille. */
@@ -297,7 +277,6 @@ function wool(): Canvas {
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
 export default [
-  img('item-log', log()),
   img('item-branch', branch()),
   img('item-stone', stone()),
   img('item-iron-ore', ironOre()),

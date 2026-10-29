@@ -1,5 +1,4 @@
 {
-  "log": {"name": "bûche", "icon": "item-log", "kind": "resource", "stack": 99},
   "branch": {"name": "branche", "icon": "item-branch", "kind": "resource", "stack": 99},
   "stone": {"name": "pierre", "icon": "item-stone", "kind": "resource", "stack": 99},
   "iron-ore": {"name": "minerai de fer", "icon": "item-iron-ore", "kind": "resource", "stack": 99},

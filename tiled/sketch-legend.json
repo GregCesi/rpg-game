@@ -32,7 +32,7 @@
     "C": {"prop": "fireplace", "anchor": "left"},
     "P": {"prop": "worktable", "anchor": "left"},
     "E": {"prop": "workbench", "anchor": "left"},
-    "l": "log",
+    "l": "felled-log",
     "O": "stove",
     "M": "bed",
     "Z": "pallet",
