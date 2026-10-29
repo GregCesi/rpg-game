@@ -15,7 +15,8 @@ Lis `README.md` (architecture et quatre règles) avant toute modification, et `d
 - Nouveau champ de contenu : le déclarer dans `src/content/types.ts` (schéma Zod) ; nouveau lien entre fichiers : le vérifier dans `src/content/validate.ts`.
 - Nouvelle mécanique du monde : un fichier dans `src/systems/`, appelé depuis `WorldScene.update` selon le mode. Événements entre scènes : constantes de `src/events.ts`.
 - Ce qui change pendant la partie (inventaire, objet récolté, objet au sol) vit dans `GameState` (`src/state/`), rangé par carte et par identifiant d'objet Tiled ; ne pas le garder dans une scène ni dans le registry de Phaser.
-- Nouvel objet possédable : une entrée de `src/content/items.json` (icône `item-<clé>`). Nouvelle récolte : un composant `harvest` dans `props.json`, pas de code.
+- Nouvel objet possédable : une entrée de `src/content/items.json` (icône `item-<clé>`). Nouvelle récolte : un composant `harvest` dans `props.json`, pas de code (ce qui naît d'une récolte : `spawns` ; le geste : `gesture`).
+- Nouveau geste : une entrée de `src/content/gestures.json`, les animations `<geste>-<direction>` du corps dans `art/characters/xeros.ts` et le geste ajouté à `heldToolSheet` (`art/items/held.ts`) ; le jeu choisit les images d'outil par nom d'animation, jamais par indice.
 - Nouvel outil en main : deux dessins 16×16 en zones de matière (`diag`, `upright`) et leur table `materials`, déclarés dans `art/items/held.ts` : la planche `tool-<objet>` (12 poses du geste, `src/content/gestures.json`) est tournée puis éclairée en haut à gauche par `art/lib/light.ts` ; ne pas toucher au geste du corps.
 - Fin de tâche : `npm run build` doit passer sans erreur (il lance `npm run check`).
 - Langue du code : identifiants en anglais, commentaires et messages d'erreur en français.
