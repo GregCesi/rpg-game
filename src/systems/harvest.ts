@@ -1,11 +1,27 @@
 import Phaser from 'phaser';
-import { DEPTH, HARVEST, INTERACT, TILE } from '../config';
+import { DEPTH, HARVEST, INTERACT, NOTCH_AIM, TILE } from '../config';
 import type { Player } from '../entities/Player';
 import { items, props } from '../content';
 import type { Drop, Facing } from '../content/types';
 import { addItem, changeObject, changeSpawned, dropItem, game, setSpawnedHits, spawnObject } from '../state';
 import { notchCut, promptTop } from '../world/GameMap';
 import type { GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
+
+/**
+ * Xéros peut viser l'encoche de cette pièce : collé au tronc (au-dessus ou en dessous), tourné vers lui,
+ * et son centre à moins d'une demi-section de l'encoche (NOTCH_AIM).
+ */
+function notchInReach(player: Player, p: PlacedProp): boolean {
+  const { actor } = player;
+  const b = actor.body;
+  const box = p.box;
+  if (!box) return false;
+  const aligned = Math.abs(actor.x - p.aimX) < NOTCH_AIM.align;
+  // au-dessus du tronc, tourné vers le bas : le bas de sa collision touche le haut de celle du tronc ; en dessous, l'inverse
+  const above = actor.facing === 'down' && Math.abs(box.top - b.bottom) <= NOTCH_AIM.gap;
+  const below = actor.facing === 'up' && Math.abs(b.top - box.bottom) <= NOTCH_AIM.gap;
+  return aligned && (above || below);
+}
 
 /**
  * Ce qu'a donné un coup : rien à frapper, mauvais outil (`tool` = l'outil qu'il faut), ou un coup porté.
@@ -51,7 +67,10 @@ export class HarvestSystem {
     return this.scene.textures.get(props[type].image).getSourceImage().width;
   }
 
-  /** Objet récoltable devant Xéros (avec ou sans outil), s'il est à portée : son point visé (l'encoche) ou sa base. */
+  /**
+   * Objet récoltable devant Xéros (avec ou sans outil), s'il est à portée : son point visé (l'encoche) ou sa base.
+   * Une encoche du tronc couché ne se vise que de près : voir notchInReach.
+   */
   target(player: Player): PlacedProp | undefined {
     const probe = player.probe(INTERACT.reach);
     let best: PlacedProp | undefined;
@@ -59,6 +78,7 @@ export class HarvestSystem {
     for (const p of this.map.props) {
       // une encoche déjà coupée n'est plus une cible
       if (!p.def.harvest || notchCut(p)) continue;
+      if (p.def.harvest.notch && !notchInReach(player, p)) continue;
       const d = Phaser.Math.Distance.Between(probe.x, probe.y, p.aimX, p.aimY);
       if (d < bestD) {
         best = p;

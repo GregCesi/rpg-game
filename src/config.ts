@@ -41,6 +41,12 @@ export const DEPTH = {
 /** Distance devant les pieds où l'on cherche un objet avec lequel interagir, et rayon de recherche (px). */
 export const INTERACT = { reach: 16, radius: 20 };
 
+/**
+ * Viser une encoche du tronc couché : Xéros doit être collé au tronc (au plus `gap` px entre sa collision et celle du tronc),
+ * tourné vers lui (haut ou bas), et son centre à moins de `align` px de l'encoche (une demi-section : 19 px / 2).
+ */
+export const NOTCH_AIM = { gap: 3, align: 9.5 };
+
 /** Récolte : tremblement d'un objet frappé, saut des objets lâchés, où ils retombent (px, autour de la base). */
 export const HARVEST = {
   shakeMs: 160,

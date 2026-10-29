@@ -48,6 +48,8 @@ export interface PlacedProp {
   baseX: number;
   baseY: number;
   top: number;
+  /** Boîte de collision (réunion de ses boîtes), si l'objet bloque le passage. */
+  box?: { left: number; right: number; top: number; bottom: number };
   /** Point visé (l'encoche, `aim` de props.json), sinon la base : Xéros vise ce point et l'invite s'y affiche. */
   aimX: number;
   aimY: number;
@@ -236,6 +238,15 @@ export class GameMap {
       parts.push(this.addObstacle(ox + fx(b.x, b.w) + b.w / 2, oy + b.y + b.h / 2, b.w, b.h));
       baseY = Math.max(baseY, oy + b.y + b.h / 2);
     }
+    const zones = parts.filter((q): q is Phaser.GameObjects.Zone => q instanceof Phaser.GameObjects.Zone);
+    const box = zones.length
+      ? {
+          left: Math.min(...zones.map((z) => z.x - z.width / 2)),
+          right: Math.max(...zones.map((z) => z.x + z.width / 2)),
+          top: Math.min(...zones.map((z) => z.y - z.height / 2)),
+          bottom: Math.max(...zones.map((z) => z.y + z.height / 2)),
+        }
+      : undefined;
     const placed: PlacedProp = {
       id: o.id,
       spawned: !!opts.spawned,
@@ -248,6 +259,7 @@ export class GameMap {
       baseX: ox + obj.width / 2,
       baseY,
       top: oy,
+      box,
       aimX: p.aim ? ox + fx(p.aim[0]) + 0.5 : ox + obj.width / 2,
       aimY: p.aim ? oy + p.aim[1] : baseY,
       image: obj,
