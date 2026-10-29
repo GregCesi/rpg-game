@@ -3,7 +3,7 @@
 // Tous les manches vont en diagonale, du bas à gauche vers le haut à droite : l'inventaire se lit d'un coup d'œil.
 // Contour d'un pixel : teinte la plus sombre de la matière en haut et à gauche, OUTLINE en bas et à droite.
 
-import { Canvas, EMPTY } from '../lib/canvas';
+import { Canvas } from '../lib/canvas';
 import { FLAT_DEPTH, GRIP, TOOL_SIZE, type ToolArt } from '../lib/held';
 import type { Material, Materials } from '../lib/light';
 import type { ImageSource } from '../lib/types';
@@ -115,6 +115,23 @@ function axeAt(a: number, b: number, half = 1): string | null {
 }
 
 /**
+ * Le même fer que AXE_IRON, en contour continu, pour la vue de côté en diagonale : échantillonné pixel à pixel,
+ * AXE_IRON s'y émiette en marches et en trous. `t` le long du manche depuis le milieu de l'œil, `b` en travers
+ * vers le tranchant. Œil et talon : trois pixels de haut ; de l'œil au fil, le fer s'évase, un peu vers la tête,
+ * beaucoup vers la prise (la barbe).
+ */
+function axeIronDiag(t: number, b: number): string | null {
+  if (b < -3.2 || b > 5.6) return null;
+  const f = Math.max(0, (b - 0.9) / 4.7); // 0 au collet, 1 au fil
+  const top = 1.6 + 1.9 * f * f;
+  const bottom = -1.6 - 3.2 * f ** 1.4;
+  if (t > top || t < bottom) return null;
+  if (b > 4.3) return '1';
+  if (b > 2.6) return '2';
+  return Math.abs(b) <= 1.1 ? 'e' : '3';
+}
+
+/**
  * La hache vue de côté, en zones, tête vers `deg` à l'écran (90 = haut, 45 = haut à droite), tranchant du côté
  * 'ccw' (à gauche de la tête). L'axe du manche passe par le coin bas droit du pixel tenu GRIP : deux pixels
  * d'épaisseur debout, un escalier de deux pixels en diagonale.
@@ -130,50 +147,68 @@ function axeSideZones(deg: number): Canvas {
     const a = px * ux + py * uy;
     const b = px * uy - py * ux; // à gauche de la tête
     // en diagonale, le manche est l'escalier x + y = s ou s + 1 : centré un demi-pixel plus bas
-    const k = diagonal ? axeAt(a, b + 0.35, 0.72) : axeAt(a, b);
+    const k = diagonal ? axeIronDiag(a - AXE_EYE, b + 0.35) ?? axeAt(a, b + 0.35, 0.72) : axeAt(a, b);
     if (k) c.set(x, y, k);
   }
   return c;
 }
 
+// Vue du dessus (coup horizontal, use-*) : la hache se présente par la tranche. On ne voit jamais la lame
+// déployée : le fer n'est qu'un bloc étroit et sombre au bout du manche, un peu plus large que lui, d'où dépasse
+// le bout du manche. Le pied du bloc pousse d'un pixel vers la prise du côté du tranchant (la pointe de la barbe).
+
+/** Le bloc de fer vu par la tranche, le long du manche depuis la prise : du pied à la tête (5 px, 25 cm). */
+const AXE_BLOCK: [number, number] = [15, 20];
+
+/** Zone du manche ou du fer vu par la tranche, en `a` le long du manche (pixels de manche réel), `side` en travers. */
+function axeEdgeOn(a: number, side: 'shaft' | 'block' | 'toe' | 'out'): string | null {
+  const [foot, top] = AXE_BLOCK;
+  if (side === 'out' || a < AXE_TAIL) return null;
+  if (a >= foot && a < top) return side === 'shaft' || side === 'block' || side === 'toe' ? 'f' : null;
+  if (side === 'toe' && a >= foot - 1 && a < foot) return 'f'; // pied de la barbe, côté tranchant
+  if (side !== 'shaft') return null;
+  if (a >= top && a < top + 1) return 'N'; // bout du manche, qui dépasse du fer
+  if (a >= top) return null;
+  return a < AXE_TAIL + 1 ? 'N' : a < 1.5 ? 'w' : 'M';
+}
+
 /**
- * La hache posée à plat, vue du dessus en trois quarts, pour un coup horizontal (art/lib/held.ts) : tête vers
- * `deg` au sol (0 = est, 90 = nord), tranchant du côté 'ccw'. Le manche est un cylindre : sa ligne est
- * raccourcie par la vue mais il garde ses deux pixels d'épaisseur. Le fer est une plaque couchée : sa
- * profondeur est écrasée de FLAT_DEPTH, il se présente de biais. La main tient le manche au pixel GRIP.
+ * La hache vue du dessus, par la tranche, pour un coup horizontal (art/lib/held.ts) : tête vers l'est (0), le
+ * nord-est (45) ou le nord (90) au sol, tranchant du côté 'ccw'. La vue trois quarts raccourcit de FLAT_DEPTH ce qui
+ * pointe vers le nord ; le manche (2 px) et le bloc (4 px) gardent leur largeur à l'écran. En diagonale, le manche
+ * est l'escalier de deux pixels à 45° de l'écran, comme vu de côté : un trait propre plutôt qu'un angle exact.
+ * La main tient le manche au pixel GRIP.
  */
-function axeFlatZones(deg: number): Canvas {
+function axeFlatZones(deg: 0 | 45 | 90): Canvas {
   const c = new Canvas(TOOL_SIZE, TOOL_SIZE);
-  const t = (deg * Math.PI) / 180;
-  const cos = Math.cos(t), sin = Math.sin(t);
-  // axe du manche : il passe par le coin bas droit du pixel tenu, pour faire deux pixels d'épaisseur
-  const ox = GRIP[0] + 1, oy = GRIP[1] + 1;
-  const hx = cos, hy = -sin * FLAT_DEPTH; // la tête, vue à l'écran
-  const len = Math.hypot(hx, hy);
-  const ux = hx / len, uy = hy / len;
-  const fer = new Canvas(TOOL_SIZE, TOOL_SIZE);
-  for (let y = 0; y < TOOL_SIZE; y++) for (let x = 0; x < TOOL_SIZE; x++) {
-    const px = x + 0.5 - ox, py = y + 0.5 - oy;
-    // manche : distance à l'axe, à l'écran ; position le long du manche, en pixels de manche réel
-    const along = (px * ux + py * uy) / len;
-    const wood = axeAt(along, px * uy - py * ux);
-    if (wood && !'123e'.includes(wood)) c.set(x, y, wood);
-    // fer : le point du sol (à hauteur de main) sous ce pixel, en coordonnées du fer
-    const sx = px, sy = py / FLAT_DEPTH;
-    const a = sx * cos - sy * sin; // le long du manche, depuis la prise
-    const b = -sx * sin - sy * cos; // en travers, vers le tranchant
-    const k = axeIron(a - AXE_EYE, b);
-    if (k) fer.set(x, y, k);
+  const [gx, gy] = GRIP;
+  if (deg === 45) {
+    // escalier à 45° : v = x + y - (gx + gy) en travers (le manche sur v = 0 et 1, le tranchant vers les v petits),
+    // u = x - y - (gx - gy) le long du manche (2 par pas de diagonale). Le bloc est un rectangle tourné, aux bouts
+    // d'équerre avec le manche : six valeurs de v (quatre pixels en travers, comme vu de face), huit de u. Raccourci
+    // par la vue, il ne couvrirait que trois rangées et se lirait comme un nœud du manche : on l'allonge un peu.
+    // Pas de pied de barbe ici : en escalier, il effilerait le bloc en pointe de lance.
+    for (let y = 0; y < TOOL_SIZE; y++) for (let x = 0; x < TOOL_SIZE; x++) {
+      const u = x - y - (gx - gy), v = x + y - (gx + gy);
+      const shaft = v === 0 || v === 1;
+      let z: string | null = null;
+      if (u >= 20 && u <= 27 && v >= -2 && v <= 3) z = 'f';
+      else if (shaft && u >= 28 && u <= 29) z = 'N'; // bout du manche, au-dessus du fer
+      else if (shaft && u >= -4 && u < 20) z = u <= -3 ? 'N' : u <= 2 ? 'w' : 'M';
+      if (z) c.set(x, y, z);
+    }
+    return c;
   }
-  // le fil, écrasé par la vue, peut tomber entre deux rangées : tout pixel du fer qui n'a plus de fer
-  // du côté du tranchant est sur le fil
-  const ex = -sin, ey = -cos * FLAT_DEPTH;
-  const el = Math.hypot(ex, ey);
-  const sx = Math.round(ex / el), sy = Math.round(ey / el);
+  // est : le manche sur les rangées gy et gy + 1, la tête vers les x croissants, le tranchant en haut ;
+  // nord : le manche sur les colonnes gx et gx + 1, la tête vers le haut, raccourcie, le tranchant à gauche
+  const depth = deg === 90 ? FLAT_DEPTH : 1;
   for (let y = 0; y < TOOL_SIZE; y++) for (let x = 0; x < TOOL_SIZE; x++) {
-    const k = fer.get(x, y);
-    if (k === EMPTY) continue;
-    c.set(x, y, fer.get(x + sx, y + sy) === EMPTY && k !== 'e' && k !== '3' ? '1' : k);
+    const along = deg === 90 ? gy + 1 - (y + 0.5) : x + 0.5 - gx;
+    const across = deg === 90 ? x - gx : y - gy; // 0 et 1 : le manche ; négatif : côté tranchant
+    const a = along / depth;
+    const side = across === 0 || across === 1 ? 'shaft' : across === -1 ? 'toe' : across === 2 ? 'block' : 'out';
+    const z = axeEdgeOn(a, side);
+    if (z) c.set(x, y, z);
   }
   return c;
 }
@@ -207,6 +242,7 @@ const axeMaterials: Materials = (() => {
     w: { light: 'm', base: 'm', shade: 'N', dark: 'K' }, // bois patiné de la poignée
     N: { light: 'N', base: 'N', shade: 'N', dark: 'K' }, // bout du manche, bois de bout
     e: { light: '3', base: '3', shade: '4', dark: '4' }, // œil du fer, autour du manche
+    f: { light: '3', base: '4', shade: '4', dark: '4' }, // fer vu par la tranche : bloc sombre
   };
 })();
 

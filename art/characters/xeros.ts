@@ -305,11 +305,11 @@ const SHOULDER_R: Vec = [20, BODY_Y + 2];
 const SHOULDER_SIDE: Vec = [14, BODY_Y + 2];
 
 // Coup horizontal (use-*), sur ce qui est debout : la hache tourne à plat autour de Xéros, à hauteur de tronc
-// (mains à hauteur de ceinture). Vue du dessus : le fer se présente de biais, raccourci par la vue trois quarts,
-// et le tranchant mène le coup. Armée sur le côté, elle passe devant lui puis mord le tronc.
+// (mains à hauteur de ceinture). Vue du dessus, elle se présente par la tranche : le fer n'est qu'un bloc sombre au
+// bout du manche, et le tranchant mène le coup. Armée sur le côté, elle passe devant lui puis mord le tronc.
 const USE_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
   // de face (l'arbre au sud) : armée à sa droite (à gauche de l'image), le fer tourne vers nous et mord le tronc
-  // devant lui, manche raccourci, fer de toute sa largeur ; puis on le dégage
+  // devant lui ; puis on le dégage
   down: [
     flat([10, 34], 'nw', 'cw', true, [[8, 36], [16, 37]]),
     flat([12, 37], 'w', 'ccw', false, [[9, 37], [18, 38]]),
@@ -317,12 +317,13 @@ const USE_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
     flat([14, 37], 'sw', 'ccw', false, [[10, 38], [19, 38]], 'front', [16, 36]),
   ],
   // de dos (l'arbre au nord) : armée en arrière à sa droite, le fer vers nous ; il tourne par la droite et mord
-  // le tronc devant lui, à droite de la tête, puis revient
+  // le tronc devant lui, à droite de la tête (tête vers le nord-est : droit au nord, le fer, étroit vu par la
+  // tranche, disparaîtrait derrière la tête), puis revient
   up: [
     flat([22, 37], 'se', 'cw', false, [[12, 37], [23, 35]], 'body'),
     flat([24, 34], 'e', 'cw', false, [[12, 36], [24, 32]], 'body'),
-    flat([21, 31], 'n', 'cw', true, [[12, 35], [23, 33]], 'body'),
-    flat([23, 33], 'n', 'cw', true, [[12, 36], [24, 34]], 'body'),
+    flat([21, 31], 'ne', 'ccw', true, [[12, 35], [23, 33]], 'body'),
+    flat([23, 33], 'ne', 'ccw', true, [[12, 36], [24, 34]], 'body'),
   ],
   // de profil : armée derrière son dos, elle tourne par le côté proche de nous (fer vers le spectateur),
   // mord le tronc devant lui manche en long, puis on la dégage d'un pixel

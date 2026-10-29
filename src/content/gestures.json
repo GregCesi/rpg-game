@@ -3,7 +3,7 @@
     "impact": 2,
     "poses": {
       "down": [{"dx": -6, "dy": -14, "angle": 135, "base": "flatDiag", "behind": true}, {"dx": -4, "dy": -11, "angle": 180, "base": "flat", "ahead": 16}, {"dx": 2, "dy": -11, "angle": 225, "base": "flatDiag", "ahead": 16}, {"dx": 0, "dy": -12, "angle": 225, "base": "flatDiag", "ahead": 16}],
-      "up": [{"dx": 6, "dy": -11, "angle": 315, "base": "flatDiag"}, {"dx": 8, "dy": -14, "angle": 0, "base": "flat"}, {"dx": 5, "dy": -17, "angle": 90, "base": "flatEnd", "behind": true}, {"dx": 7, "dy": -15, "angle": 90, "base": "flatEnd", "behind": true}],
+      "up": [{"dx": 6, "dy": -11, "angle": 315, "base": "flatDiag"}, {"dx": 8, "dy": -14, "angle": 0, "base": "flat"}, {"dx": 5, "dy": -17, "angle": 45, "base": "flatDiag", "behind": true}, {"dx": 7, "dy": -15, "angle": 45, "base": "flatDiag", "behind": true}],
       "right": [{"dx": -5, "dy": -13, "angle": 180, "base": "flat"}, {"dx": 2, "dy": -11, "angle": 315, "base": "flatDiag", "ahead": 8}, {"dx": 6, "dy": -14, "angle": 45, "base": "flatDiag", "ahead": 8}, {"dx": 4, "dy": -13, "angle": 45, "base": "flatDiag", "ahead": 8}]
     }
   },

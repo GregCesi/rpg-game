@@ -12,15 +12,16 @@
 //   - `upright` : la tête en haut, manche vertical, tranchant à gauche ; main au pixel UPRIGHT_GRIP.
 //   Toutes les orientations s'en déduisent sans perte, par quarts de tour et miroir.
 //
-// Vu du dessus, pour un coup dans un plan horizontal (use-* : de côté sur ce qui est debout) : l'outil est
-// à plat, à hauteur de tronc, et la vue trois quarts écrase sa profondeur (FLAT_DEPTH). Le fer se présente de
-// biais, raccourci ; le manche, rond, garde son épaisseur.
-//   - `flat`     : tête vers la droite (est), manche en long, fer raccourci, tranchant vers le haut (nord) ;
-//                  main au pixel FLAT_GRIP ;
-//   - `flatDiag` : tête vers le nord-est au sol, tranchant vers le nord-ouest ; main au pixel FLAT_DIAG_GRIP ;
-//   - `flatEnd`  : tête vers le haut (nord, loin du spectateur), manche raccourci, fer de toute sa largeur,
-//                  tranchant à gauche ; main au pixel FLAT_END_GRIP.
-//   Ces trois-là ne tournent pas (un quart de tour mêlerait la largeur et la profondeur) : seuls les miroirs
+// Vu du dessus, pour un coup dans un plan horizontal (use-* : de côté sur ce qui est debout) : la hache se
+// présente par la tranche (docs/references/hache-vue-de-dessus.png). On ne voit jamais la lame déployée : le fer
+// n'est qu'un bloc étroit et sombre au bout du manche, d'où dépasse le bout du manche. La vue trois quarts
+// raccourcit de FLAT_DEPTH ce qui pointe vers le nord ; le manche et le bloc gardent leur largeur à l'écran.
+//   - `flat`     : tête vers la droite (est), manche en long ; main au pixel FLAT_GRIP ;
+//   - `flatDiag` : tête vers le nord-est, manche en escalier à 45° de l'écran ; main au pixel FLAT_DIAG_GRIP ;
+//   - `flatEnd`  : tête vers le haut (nord, loin du spectateur), manche raccourci ; main au pixel FLAT_END_GRIP.
+//   Le côté du tranchant ('ccw' dans ces dessins) ne se lit plus qu'au pied du bloc, qui pousse d'un pixel vers
+//   la prise de ce côté-là (pas en diagonale).
+//   Ces trois-là ne tournent pas (un quart de tour mêlerait la longueur raccourcie et la largeur) : seuls les miroirs
 //   gauche-droite et haut-bas, qui gardent la vue trois quarts, en tirent les autres orientations.
 //
 // Les dessins ne portent ni ombre ni contour : ils disent seulement de quelle matière est chaque pixel
