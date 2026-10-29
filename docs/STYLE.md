@@ -43,6 +43,7 @@ La référence de qualité est le portrait de Xéros (`portrait-xeros-64`) : tou
 - Mêmes couleurs que le portrait pour les cheveux, la peau et la tunique : le portrait fait référence.
 - De profil, on voit un œil, le nez, l'oreille et la nuque rasée sous le bol. Le bras côté spectateur est visible. La hauteur et la carrure restent celles de la vue de face.
 - Toutes les frames d'une animation gardent la même tête, à la même hauteur, sauf le rebond voulu de la marche.
+- À l'échelle du jeu (environ 5 cm par pixel), un détail de moins de 3 cm n'existe pas. Les côtés rasés de Xéros se dessinent en couleur de peau ; seul le bol de cheveux se voit, et il s'arrête net au-dessus des oreilles.
 
 ## 7. Vérification sur l'aperçu
 
