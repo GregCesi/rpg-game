@@ -10,9 +10,9 @@
   "chop": {
     "impact": 2,
     "poses": {
-      "down": [{"dx": 0, "dy": -18, "angle": 90}, {"dx": 0, "dy": -38, "angle": 90, "behind": true}, {"dx": 0, "dy": -6, "angle": 270, "ahead": 24}, {"dx": 0, "dy": -9, "angle": 270, "ahead": 24}],
-      "up": [{"dx": 0, "dy": -20, "angle": 90, "behind": true}, {"dx": 0, "dy": -38, "angle": 90}, {"dx": 0, "dy": -11, "angle": 90, "behind": true}, {"dx": 0, "dy": -13, "angle": 90, "behind": true}],
-      "right": [{"dx": 4, "dy": -21, "angle": 90}, {"dx": -2, "dy": -38, "angle": 180, "behind": true}, {"dx": 6, "dy": -14, "angle": 315, "ahead": 12}, {"dx": 5, "dy": -16, "angle": 315, "ahead": 12}]
+      "down": [{"dx": 0, "dy": -37, "angle": 90, "behind": true}, {"dx": 0, "dy": -23, "angle": 90}, {"dx": 0, "dy": -6, "angle": 270, "ahead": 24}, {"dx": 0, "dy": -9, "angle": 270, "ahead": 24}],
+      "up": [{"dx": 0, "dy": -35, "angle": 90}, {"dx": 0, "dy": -33, "angle": 90, "behind": true}, {"dx": 0, "dy": -11, "angle": 90, "behind": true}, {"dx": 0, "dy": -13, "angle": 90, "behind": true}],
+      "right": [{"dx": -4, "dy": -37, "angle": 90, "behind": true}, {"dx": 6, "dy": -27, "angle": 45}, {"dx": 7, "dy": -19, "angle": 315, "ahead": 12}, {"dx": 6, "dy": -21, "angle": 315, "ahead": 12}]
     }
   }
 }

@@ -285,7 +285,8 @@ interface UseBody {
 
 const pose = (
   hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front',
-): UseBody => ({ tool: { hand, head, edge, behind }, elbows, arms });
+  short = false,
+): UseBody => ({ tool: { hand, head, edge, behind, ...(short ? { short } : {}) }, elbows, arms });
 
 // Épaules, dans la frame : face/dos à gauche et à droite du torse, profil au milieu du dos.
 const SHOULDER_L: Vec = [11, BODY_Y + 2];
@@ -325,38 +326,41 @@ export const USE_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
   right: USE_BODY.right.map((b) => b.tool),
 };
 
-// Geste de haut en bas (chop-*), sur ce qui est couché ou posé au sol : le fer monte droit au-dessus de la tête,
-// puis s'abat devant les pieds, bras tendus vers le sol ; au dernier temps, on le dégage du bois.
-// Même corps, mêmes couches que use-* ; seule la trajectoire des mains change.
+// Geste de haut en bas (chop-*), sur ce qui est couché ou posé au sol. La hache suit l'arc du coup :
+// armée derrière la tête manche vertical, elle redescend en arc, manche oblique, puis le fer frappe l'encoche
+// et on le dégage. Elle n'est jamais dessinée à l'horizontale pendant la descente.
+// De face et de dos, l'arc fuit vers le spectateur ou s'en éloigne : le manche oblique se voit raccourci
+// (dessin `short`), il ne bascule pas sur le côté. Même corps, mêmes couches que use-*.
 
 /** Image de l'impact dans les animations chop-* (0 à 3). */
 export const CHOP_IMPACT = 2;
 export const CHOP_FRAME_RATE = 9;
 
 const CHOP_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
-  // de face : le fer passe devant le visage, monte haut derrière la tête, s'abat juste devant les pieds
-  // (sur le tronc couché au sud), puis on le dégage
+  // de face (le tronc couché au sud) : le fer est armé haut derrière la tête, revient vers nous en raccourci
+  // devant le visage, frappe le dessus du tronc quelques pixels sous les pieds, puis on le dégage
   down: [
-    pose([16, 30], 'n', 'cw', false, [[9, 34], [22, 34]]),
-    pose([16, 10], 'n', 'cw', true, [[7, 20], [24, 20]], 'head'),
+    pose([16, 11], 'n', 'cw', true, [[7, 21], [24, 21]], 'head'),
+    pose([16, 25], 'n', 'cw', false, [[9, 30], [22, 30]], 'front', true),
     pose([16, 42], 's', 'ccw', false, [[12, 37], [20, 37]]),
     pose([16, 39], 's', 'ccw', false, [[11, 36], [21, 36]]),
   ],
-  // de dos : le fer se lève devant lui (caché par le corps, la tête du fer dépasse), monte au-dessus de la tête,
-  // puis s'abat devant lui, au nord, sur le tronc : caché par le corps, seuls les coudes dépassent
+  // de dos (le tronc au nord) : le fer est armé derrière la tête, vers nous, en raccourci par-dessus les cheveux ;
+  // il part en avant au-dessus de la tête, passe derrière elle, puis frappe devant lui, caché par le corps
   up: [
-    pose([16, 28], 'n', 'cw', true, [[9, 32], [23, 32]], 'body'),
-    pose([16, 10], 'n', 'cw', false, [[8, 21], [24, 21]], 'head'),
+    pose([16, 13], 'n', 'cw', false, [[8, 22], [24, 22]], 'head', true),
+    pose([16, 15], 'n', 'cw', true, [[7, 23], [25, 23]], 'head'),
     pose([16, 37], 'n', 'cw', true, [[9, 37], [23, 37]], 'body'),
     pose([16, 35], 'n', 'cw', true, [[9, 36], [23, 36]], 'body'),
   ],
-  // de profil : le fer se dresse devant le visage, bascule au-dessus de la tête vers l'arrière, s'abat devant lui
-  // sur le dessus de ce qui est couché (un tronc couché a le dessus à une dizaine de pixels du sol), puis on le dégage
+  // de profil : le fer est armé au-dessus de la tête, manche vertical, les bras passent derrière elle ;
+  // il redescend en avant, manche oblique, puis frappe le dessus de la bille posée devant lui (une dizaine
+  // de pixels au-dessus du sol), et on le dégage
   right: [
-    pose([20, 27], 'n', 'cw', false, [[18, 33]]),
-    pose([14, 10], 'w', 'cw', true, [[10, 21]]),
-    pose([22, 34], 'se', 'cw', false, [[18, 35]]),
-    pose([21, 32], 'se', 'cw', false, [[17, 34]]),
+    pose([12, 11], 'n', 'cw', true, [[6, 23]], 'head'),
+    pose([22, 21], 'ne', 'cw', false, [[19, 28]]),
+    pose([23, 29], 'se', 'cw', false, [[19, 33]]),
+    pose([22, 27], 'se', 'cw', false, [[18, 31]]),
   ],
 };
 
