@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 17,
+  "nextobjectid": 18,
   "properties": [
     {
       "name": "name",
@@ -328,6 +328,36 @@
               "type": "string",
               "propertytype": "Facing",
               "value": "up"
+            }
+          ]
+        },
+        {
+          "id": 17,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Npc",
+          "point": true,
+          "x": 448,
+          "y": 152,
+          "width": 0,
+          "height": 0,
+          "properties": [
+            {
+              "name": "character",
+              "type": "string",
+              "value": "mother"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "propertytype": "Facing",
+              "value": "down"
+            },
+            {
+              "name": "dialogue",
+              "type": "string",
+              "value": "mother-morning"
             }
           ]
         }

@@ -21,7 +21,7 @@ npm run art:preview    # régénère les sprites + aperçus x4 dans .art-preview
 
 Les cartes se font dans [Tiled](https://www.mapeditor.org/) : ouvrir `tiled/xeros.tiled-project`. Après une modification d'une carte, relancer `npm run dev` (ou `npm run maps`) pour la voir en jeu.
 
-Commandes : ZQSD, WASD ou flèches. Maj pour courir. E (ou Espace, Entrée) pour interagir et faire défiler un dialogue. P pendant un dialogue : change la taille du portrait (comparaison 96 / 64 / 64×2).
+Commandes : ZQSD, WASD ou flèches. Maj pour courir. E (ou Espace, Entrée) pour interagir et faire défiler un dialogue.
 
 ## Architecture
 
@@ -56,6 +56,7 @@ src/
   systems/           une mécanique du monde par fichier : interactions, sorties...
   entities/Actor.ts  le corps d'un personnage (sprite, collision, animations)
   entities/Player.ts Actor + clavier
+  entities/Npc.ts    Actor + contrôleur immobile : un personnage non joueur qui se tourne vers Xéros quand il lui parle
   input/             lecture du clavier
   scenes/            Boot (chargement), World (la carte en jeu), Dialogue (par-dessus le monde)
 ```
@@ -83,6 +84,7 @@ Entre scènes, on passe par le bus du jeu avec les noms de `events.ts` (ex. `Gam
 - Le sol est peint avec son rendu final (pinceau terrain de Tiled) : le jeu affiche les tuiles telles quelles. Seuls les détails au hasard (touffes, paille…, `decals` de `tiles.json`) sont posés en jeu, de façon stable.
 - Objets : type = clé de `props.json` (identifiant anglais en kebab-case : `tree`, `woodpile` ; son champ `name` est le nom affiché, en français), position au pixel (coin bas gauche de l'image : c'est aussi la profondeur d'affichage). Champ `interact` facultatif pour changer le dialogue de cet exemplaire.
 - Points d'apparition : un point de type `Spawn`, son **nom** est son identifiant, `facing` facultatif. Position = les pieds du joueur.
+- Personnages non joueurs : un point de type `Npc` (position = ses pieds), propriétés `character` (clé de `characters.json`, qui est aussi la clé de son sprite : il lui faut les animations `idle-down/up/left/right`), `dialogue` (clé de `dialogues.json`) et `facing` facultatif (`down` par défaut). Il est immobile, bloque le passage par ses pieds, se tourne vers Xéros pendant le dialogue puis reprend sa direction. `build-maps` le traduit en `npcs` de la carte ; `validate.ts` vérifie le personnage, le dialogue et les animations (message : carte, personnage, position). Pas encore de déplacement ni de journée type : un contrôleur d'IA viendra se brancher sur le même `Actor`.
 - Sorties : un rectangle de type `Exit` (`to` = carte, `spawn` = point d'arrivée, `facing` facultatif). On la prend quand les pieds sont dedans, en avançant dans la direction `facing` si elle est donnée. C'est le premier type de zone ; d'autres suivront.
 - Les tilesets de `tiled/tilesets/` et le fichier projet sont **générés** par `build-art` : on ne les modifie jamais dans Tiled (ils seraient réécrits). Pour changer une tuile ou un objet : `art/`, `tiles.json` ou `props.json`, puis `npm run art`.
 - Numéros de tuiles : `art/tile-registry.json` (committé) donne à chaque tuile sa place, et les `.tmj` stockent ces numéros. Une tuile nouvelle est ajoutée en fin de liste par `npm run art` (committer le fichier) ; une tuile retirée de `art/` laisse un trou et ne peut plus être posée ; ne jamais réordonner. Renommer une tuile = changer son nom dans le registre **et** dans `art/`, à la même position.
@@ -91,5 +93,5 @@ Entre scènes, on passe par le bus du jeu avec les noms de `events.ts` (ex. `Gam
 - Objets (`props.json`) : `bodies` pour des collisions de forme libre, `anim` pour un objet animé (feu), `smoke` et `light` pour la fumée et les lueurs. Les collisions restent ici, pas dans Tiled.
 - Tuiles (`tiles.json`) : `solid` (bloque le passage), `decals` (nom d'un ensemble de détails au hasard) et `terrains`. Les propriétés `solid` et `decals` apparaissent aussi comme propriétés de tuile dans le tileset de Tiled.
 - Interactions : un objet de `props.json` avec `"interact": "<id>"` lance le dialogue `<id>` de `dialogues.json`.
-- Dialogues : chaque ligne a un `speaker` (clé de `characters.json`), une `expression` et un `text`. Le portrait affiché est `portrait-<portrait>-<taille>` avec l'animation `<expression>`.
+- Dialogues : chaque ligne a un `speaker` (clé de `characters.json`), une `expression` et un `text`. Le portrait affiché est `portrait-<portrait>-64` (une seule taille, `PORTRAIT_SIZE` dans `config.ts`) avec l'animation `<expression>`.
 - Rendu : le canvas fait VIEW × ZOOM ; les caméras zooment de ZOOM. Le pixel art garde sa taille, le texte reste net.

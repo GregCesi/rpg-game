@@ -12,5 +12,14 @@
         "text": "Si Mère le trouve là ce soir, j'aurai droit à un sermon. Je le ramènerai à l'étable en passant."
       }
     ]
+  },
+  "mother-morning": {
+    "lines": [
+      {
+        "speaker": "mother",
+        "expression": "neutral",
+        "text": "Te voilà debout. Mange un morceau avant de sortir, la journée sera longue."
+      }
+    ]
   }
 }

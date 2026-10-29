@@ -7,7 +7,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { TILE } from '../src/config';
 import { MapSchema } from '../src/content/types';
-import type { Exit, MapData, MapObject, Spawn } from '../src/content/types';
+import type { Exit, MapData, MapObject, Npc, Spawn } from '../src/content/types';
 import { TmjSchema, TsjSchema } from './lib/tiled-schema';
 import type { Tmj, TmjObject, Tsj } from './lib/tiled-schema';
 
@@ -112,6 +112,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   const objects: MapObject[] = [];
   const spawns: Record<string, Spawn> = {};
   const exits: Exit[] = [];
+  const npcs: Npc[] = [];
 
   // deux tilesets dont les numéros se chevauchent : l'un a grossi depuis la dernière sauvegarde de la carte dans Tiled
   const sorted = [...uses].sort((a, b) => a.firstgid - b.firstgid);
@@ -211,9 +212,17 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (!to) oerr("champ 'to' (carte d'arrivée) manquant");
       if (!spawn) oerr("champ 'spawn' (point d'arrivée) manquant");
       if (to && spawn) exits.push({ x: o.x, y: o.y, w: o.width, h: o.height, to, spawn, ...(facing() ? { facing: facing() } : {}) });
+    } else if (cls === 'Npc') {
+      only(['character', 'facing', 'dialogue']);
+      if (!o.point) return oerr('un personnage est un point (outil « Insérer un point ») : ses pieds');
+      const character = text('character');
+      const dialogue = text('dialogue');
+      if (!character) oerr("champ 'character' (clé de characters.json) manquant");
+      if (!dialogue) oerr("champ 'dialogue' (clé de dialogues.json) manquant");
+      if (character && dialogue) npcs.push({ x: o.x, y: o.y, character, dialogue, ...(facing() ? { facing: facing() } : {}) });
     } else {
       only(['interact']);
-      if (o.gid === undefined) return oerr("objet sans image : type inconnu (attendus : Spawn, Exit, ou un objet posé depuis le tileset 'props')");
+      if (o.gid === undefined) return oerr("objet sans image : type inconnu (attendus : Spawn, Exit, Npc, ou un objet posé depuis le tileset 'props')");
       if (o.gid > 0x0fffffff || (o.gid & FLIP_BITS) !== 0) return oerr('image retournée ou pivotée, non gérée');
       const u = owner(o.gid);
       if (!u || u.kind !== 'collection') return oerr(`l'image vient de '${u?.key ?? '?'}' : un objet se pose depuis le tileset d'images (props)`);
@@ -241,6 +250,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
     objects,
     spawns,
     exits,
+    npcs,
   });
   if (!map.success) {
     err(`format interne invalide :\n${indent(z.prettifyError(map.error))}`);

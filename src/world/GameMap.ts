@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DEPTH, TILE } from '../config';
 import { props as propDefs } from '../content';
 import type { MapData, MapObject, PropDef } from '../content/types';
+import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
 
 /** Hachage stable d'une position : la même case a toujours les mêmes détails au sol. */
@@ -11,12 +12,14 @@ function hash(x: number, y: number): number {
   return (h ^ (h >>> 16)) >>> 0;
 }
 
-/** Objet avec lequel le joueur peut interagir. (x, y) = centre de sa base au sol ; top = haut de l'image. */
+/** Objet ou personnage avec lequel le joueur peut interagir. (x, y) = centre de sa base au sol ; top = haut de l'image. */
 export interface Interactable {
   x: number;
   y: number;
   top: number;
   dialogue: string;
+  /** Présent si c'est un personnage : il se tourne vers Xéros pendant le dialogue. */
+  npc?: Npc;
 }
 
 /**

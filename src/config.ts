@@ -19,12 +19,8 @@ export const UI = {
   typeSpeed: 45,
 };
 
-/** Tailles de portrait comparées en jeu (touche P pendant un dialogue). La première est celle par défaut. */
-export const PORTRAIT_MODES = [
-  { size: 64, scale: 1 },
-  { size: 96, scale: 1 },
-  { size: 64, scale: 2 },
-];
+/** Portrait de dialogue : une seule taille (64 px), choisie face au 96. Chaque personnage n'a besoin que de `portrait-<nom>-64`. */
+export const PORTRAIT_SIZE = 64;
 
 /**
  * Ordre d'affichage. Entre le sol et la pénombre, la profondeur d'un personnage ou d'un objet = y de ses pieds.

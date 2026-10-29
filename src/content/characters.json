@@ -1,3 +1,4 @@
 {
-  "xeros": { "name": "Xéros", "portrait": "xeros" }
+  "xeros": { "name": "Xéros", "portrait": "xeros" },
+  "mother": { "name": "Mère", "portrait": "mother" }
 }

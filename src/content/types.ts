@@ -105,6 +105,16 @@ export const ExitSchema = z.strictObject({
   facing: FacingSchema.optional(),
 });
 
+/** Personnage non joueur : (x, y) = position de ses pieds. `character` = clé de characters.json, qui est aussi la clé de son sprite. */
+export const NpcSchema = z.strictObject({
+  x: px,
+  y: px,
+  character: id,
+  facing: FacingSchema.optional(),
+  /** Dialogue lancé quand Xéros lui parle. */
+  dialogue: id,
+});
+
 export const MapSchema = z.strictObject({
   /** Nom du fichier .tmj. */
   id,
@@ -121,6 +131,7 @@ export const MapSchema = z.strictObject({
   objects: z.array(MapObjectSchema),
   spawns: z.record(id, SpawnSchema),
   exits: z.array(ExitSchema),
+  npcs: z.array(NpcSchema),
 });
 
 export type Facing = z.infer<typeof FacingSchema>;
@@ -135,4 +146,5 @@ export type DialogueDef = z.infer<typeof DialogueDefSchema>;
 export type MapObject = z.infer<typeof MapObjectSchema>;
 export type Spawn = z.infer<typeof SpawnSchema>;
 export type Exit = z.infer<typeof ExitSchema>;
+export type Npc = z.infer<typeof NpcSchema>;
 export type MapData = z.infer<typeof MapSchema>;

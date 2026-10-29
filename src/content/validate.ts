@@ -2,8 +2,10 @@
 // (une sortie vers une carte qui n'existe pas, un objet dont l'image n'a pas été dessinée...).
 // Utilisé par `npm run check` (Node) et au démarrage du jeu.
 
-import { PLAYER, PORTRAIT_MODES, START, TILE } from '../config';
+import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import type { CharacterDef, DialogueDef, MapData, PropDef, TilesetCatalog } from './types';
+
+const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
 /** Ce que `npm run art` a produit : clés d'images, animations par planche, tuiles par jeu de tuiles. */
 export interface Catalog {
@@ -51,6 +53,7 @@ export function validateMaps(
   maps: Record<string, MapData>,
   propsByType: Record<string, PropDef>,
   dialogues: Record<string, DialogueDef>,
+  characters: Record<string, CharacterDef>,
   cat: Catalog,
 ): string[] {
   const errors: string[] = [];
@@ -97,6 +100,19 @@ export function validateMaps(
         }
       }
     }
+    for (const n of m.npcs) {
+      const at = `${where} : personnage « ${n.character} » en (${n.x}, ${n.y})`;
+      if (!characters[n.character]) err(`${at} : absent de characters.json`);
+      else {
+        // le sprite d'un personnage a la clé du personnage ; un PNJ immobile n'a besoin que des animations idle
+        for (const dir of DIRECTIONS) {
+          if (!cat.animations.get(n.character)?.has(`idle-${dir}`)) err(`${at} : animation 'idle-${dir}' manquante dans le sprite '${n.character}'`);
+        }
+      }
+      if (!dialogues[n.dialogue]) err(`${at} : dialogue '${n.dialogue}' introuvable`);
+      if (n.x < 0 || n.y < 0 || n.x >= W || n.y >= H) err(`${at} : hors de la carte`);
+      else if (solidAt(n.x, n.y)) err(`${at} : posé sur une case bloquante (${Math.floor(n.x / TILE)}, ${Math.floor(n.y / TILE)})`);
+    }
     for (const e of m.exits) {
       const at = `${where} : sortie en (${e.x}, ${e.y})`;
       if (e.x < 0 || e.y < 0 || e.x + e.w > W || e.y + e.h > H) err(`${at} : hors de la carte`);
@@ -126,8 +142,6 @@ export interface Content {
   dialogues: Record<string, DialogueDef>;
 }
 
-const DIRECTIONS = ['down', 'up', 'left', 'right'];
-
 /** Clés de props.json : minuscules ASCII, chiffres, tirets. Les majuscules sont réservées aux types de Tiled (Spawn, Exit, Facing). */
 const KEBAB_CASE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
@@ -154,24 +168,20 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Personnages et dialogues
   for (const [key, ch] of Object.entries(c.characters)) {
-    for (const { size } of PORTRAIT_MODES) {
-      if (!cat.animations.has(`portrait-${ch.portrait}-${size}`)) err(`characters.json '${key}' : portrait 'portrait-${ch.portrait}-${size}' non dessiné`);
-    }
+    if (!cat.animations.has(`portrait-${ch.portrait}-${PORTRAIT_SIZE}`)) err(`characters.json '${key}' : portrait 'portrait-${ch.portrait}-${PORTRAIT_SIZE}' non dessiné`);
   }
   for (const [id, d] of Object.entries(c.dialogues)) {
     d.lines.forEach((line, i) => {
       const who = c.characters[line.speaker];
       if (!who) return err(`dialogues.json '${id}' ligne ${i + 1} : personnage '${line.speaker}' inconnu`);
-      for (const { size } of PORTRAIT_MODES) {
-        if (!cat.animations.get(`portrait-${who.portrait}-${size}`)?.has(line.expression)) {
-          err(`dialogues.json '${id}' ligne ${i + 1} : expression '${line.expression}' absente du portrait ${who.portrait} (${size} px)`);
-        }
+      if (!cat.animations.get(`portrait-${who.portrait}-${PORTRAIT_SIZE}`)?.has(line.expression)) {
+        err(`dialogues.json '${id}' ligne ${i + 1} : expression '${line.expression}' absente du portrait ${who.portrait} (${PORTRAIT_SIZE} px)`);
       }
     });
   }
 
   // Cartes (issues de Tiled) et catalogue des tuiles
   addAll(validateTilesCatalog(c.tiles, cat));
-  addAll(validateMaps(c.maps, c.props, c.dialogues, cat));
+  addAll(validateMaps(c.maps, c.props, c.dialogues, c.characters, cat));
   return errors;
 }

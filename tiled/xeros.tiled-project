@@ -70,6 +70,34 @@
       ]
     },
     {
+      "id": 4,
+      "name": "Npc",
+      "type": "class",
+      "color": "#4a78c2",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "character",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "facing",
+          "type": "string",
+          "propertyType": "Facing",
+          "value": ""
+        },
+        {
+          "name": "dialogue",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
       "id": 100,
       "name": "tree",
       "type": "class",

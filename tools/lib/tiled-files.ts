@@ -121,7 +121,8 @@ function objectClass(id: number, name: string, color: string, members: Member[])
  * Fichier projet Tiled : les types d'objets que Tiled propose dans l'éditeur de propriétés.
  *   - une classe par objet de props.json (son nom = la clé du catalogue), avec les champs surchargeables ;
  *   - `Spawn` : point d'apparition, son nom est son identifiant ;
- *   - `Exit` : rectangle qui mène vers une autre carte.
+ *   - `Exit` : rectangle qui mène vers une autre carte ;
+ *   - `Npc` : point où se tient un personnage non joueur (ses pieds).
  * Un champ laissé vide n'est pas surchargé (le jeu prend la valeur de props.json, ou rien).
  */
 export function projectFile(propKeys: { id: number; key: string }[]) {
@@ -139,6 +140,7 @@ export function projectFile(propKeys: { id: number; key: string }[]) {
       facing,
       objectClass(2, 'Spawn', '#3fa34d', [direction]),
       objectClass(3, 'Exit', '#d9534f', [text('to'), text('spawn'), direction]),
+      objectClass(4, 'Npc', '#4a78c2', [text('character'), direction, text('dialogue')]),
       // numéros à partir de 100 : ceux du registre des objets, donc stables
       ...propKeys.map((p) => objectClass(100 + p.id, p.key, '#a08060', [text('interact')])),
     ],

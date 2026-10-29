@@ -2,11 +2,13 @@ import Phaser from 'phaser';
 import { START, ZOOM } from '../config';
 import { maps } from '../content';
 import type { Exit } from '../content/types';
+import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
 import { GameEvent } from '../events';
 import { findExit } from '../systems/exits';
 import { InteractionSystem } from '../systems/InteractionSystem';
 import { GameMap } from '../world/GameMap';
+import type { Interactable } from '../world/GameMap';
 
 /**
  * Ce que fait le monde en ce moment. Une seule valeur à la fois : le joueur ne peut pas
@@ -22,6 +24,8 @@ export class WorldScene extends Phaser.Scene {
   private player!: Player;
   private map!: GameMap;
   private interaction!: InteractionSystem;
+  /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
+  private talking?: Npc;
   private mode: Mode = 'play';
   private mapId = START.map;
   private spawn = START.spawn;
@@ -34,6 +38,7 @@ export class WorldScene extends Phaser.Scene {
     if (data.mapId) this.mapId = data.mapId;
     if (data.spawn) this.spawn = data.spawn;
     this.mode = 'play';
+    this.talking = undefined;
   }
 
   create(): void {
@@ -50,7 +55,16 @@ export class WorldScene extends Phaser.Scene {
     this.physics.add.collider(this.player.actor, this.map.ground);
     this.physics.add.collider(this.player.actor, this.map.obstacles);
 
-    this.interaction = new InteractionSystem(this, this.player, this.map.interactables);
+    const npcs = def.npcs.map((n) => new Npc(this, n));
+    for (const n of npcs) this.physics.add.collider(this.player.actor, n.actor);
+    const talkable: Interactable[] = npcs.map((n) => ({
+      x: n.actor.x,
+      y: n.actor.y - 4, // au centre de la collision des pieds
+      top: n.actor.y - n.actor.height,
+      dialogue: n.dialogue,
+      npc: n,
+    }));
+    this.interaction = new InteractionSystem(this, this.player, [...this.map.interactables, ...talkable]);
 
     const cam = this.cameras.main;
     cam.setZoom(ZOOM);
@@ -70,7 +84,11 @@ export class WorldScene extends Phaser.Scene {
       if (exit) this.travel(exit);
     }
     const used = this.interaction.update(time, this.mode === 'play');
-    if (used) this.openDialogue(used.dialogue);
+    if (used) {
+      this.talking = used.npc;
+      this.talking?.faceToward(this.player.actor.x, this.player.actor.y);
+      this.openDialogue(used.dialogue);
+    }
   }
 
   /** Fondu au noir, puis la scène redémarre sur la carte d'arrivée. */
@@ -90,6 +108,8 @@ export class WorldScene extends Phaser.Scene {
 
   private onDialogueEnd(): void {
     this.mode = 'play';
+    this.talking?.resume();
+    this.talking = undefined;
     this.interaction.lock(200);
   }
 }
