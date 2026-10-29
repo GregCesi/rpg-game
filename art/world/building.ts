@@ -7,6 +7,7 @@
 import { Canvas } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
+import { hewnTone } from './wood';
 
 const palette = { ...world };
 
@@ -29,6 +30,32 @@ function footingStone(): Canvas {
   ]);
 }
 
+// ---------- Poteaux ----------
+
+/** Rangées vides sous un poteau, dans son image : la hauteur du dé (15 cm) sur lequel il se dresse. */
+const FOOTING_ROWS = 3;
+
+/**
+ * Poteau équarri de 15 × 15 cm (`shed-post-high`, `shed-post-low`), boîte debout : silhouette 3 × `sil` px, à la
+ * taille réelle (sans plancher de lisibilité). Rangée 0 : le contour du haut ; rangée 1 : le dessus, bois de bout
+ * éclairé (Y) ; puis la face sud, une colonne de bois équarri (fil vertical, plaques d'écorce par endroits, `phase`
+ * pour que deux poteaux diffèrent) entre le contour gauche (N, la teinte la plus sombre du bois de coupe) et OUTLINE à
+ * droite ; dernière rangée : le contour du bas, le pied, posé sur la rangée du haut du dé. Sous lui, FOOTING_ROWS
+ * rangées vides. Pas d'ombre portée : le dé la porte.
+ */
+function shedPost(sil: number, phase: number): Canvas {
+  const c = new Canvas(3, sil + FOOTING_ROWS);
+  c.set(0, 0, 'N').set(1, 0, 'N').set(2, 0, 'o');
+  c.set(0, 1, 'N').set(1, 1, 'Y').set(2, 1, 'o');
+  for (let y = 2; y < sil - 1; y++) c.set(0, y, 'N').set(1, y, hewnTone(y + phase, 0, 1, 'lit')).set(2, y, 'o');
+  for (let x = 0; x < 3; x++) c.set(x, sil - 1, 'o');
+  return c;
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
-export default [img('footing-stone', footingStone())];
+export default [
+  img('footing-stone', footingStone()),
+  img('shed-post-high', shedPost(44, 12)),
+  img('shed-post-low', shedPost(36, 30)),
+];

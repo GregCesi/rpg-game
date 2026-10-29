@@ -3,7 +3,8 @@
     "name": "abri à bois",
     "map": "ferme",
     "steps": [
-      {"name": "les dés", "pieces": ["footing-stone"]}
+      {"name": "les dés", "pieces": ["footing-stone"]},
+      {"name": "les poteaux", "pieces": ["shed-post-high", "shed-post-low"]}
     ]
   }
 }

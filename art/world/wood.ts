@@ -138,3 +138,72 @@ export function logByTheEnd(c: Canvas, cx: number, back: number, front: number, 
   }
   return paintFace(c, cx, front, rx, ry, { all: true });
 }
+
+// ---------- Bois équarri ----------
+//
+// Poteaux, sablières, chevrons : le même bois que l'arbre, taillé à la hache. Les faces équarries montrent le bois
+// clair des faces de coupe (Y t T, comme le bois de bout des billes), le fil dans le sens de la pièce, et par endroits
+// un reste d'écorce (la rampe M m N K) sur une arête, là où la hache n'a pas mordu (la flache).
+// - Teinte de fond d'une face (`s` de 0, bord tourné vers la lumière, à 1, bord dans l'ombre ; `width` la largeur de
+//   la face en pixels) : t ; sur une face d'au moins 3 px, Y sur le premier pixel côté lumière, T sur le dernier.
+// - Fil : des tirets d'un cran plus sombres (Y -> t, t -> T), de 3 à 4 px, le long de la pièce, de périodes
+//   différentes par couloir (un couloir tous les 3 px en travers) pour ne jamais s'aligner ; un pixel de bois clair
+//   les sépare toujours d'une plaque d'écorce.
+// - Flache : des plaques d'écorce de 4 à 5 px le long d'une arête (`wane` : 'lit', l'arête éclairée, en m ; 'shade',
+//   l'arête dans l'ombre, en N), finies d'un pixel plus sombre vers le bas de l'image (le bord de l'écorce) ; sur
+//   une face de moins de 3 px, la plaque prend toute la largeur. Une pièce de 3 px de large (le poteau : contour,
+//   une colonne de bois, contour) n'a qu'une colonne : la flache s'y lit comme une plaque brune sur le bois clair,
+//   le contour gauche reste N (teinte la plus sombre du bois de coupe, comme dans trees.ts).
+// `along` se compte en pixels le long de la pièce ; le décaler (`phase`) donne une autre pièce du même bois.
+
+/** Couloirs du fil : période, longueur du tiret, décalage. */
+const GRAIN: [number, number, number][] = [
+  [13, 3, 4],
+  [11, 4, 7],
+  [14, 3, 1],
+];
+
+/** Plaques d'écorce sur une arête : période, longueur, décalage (deux suites mêlées, pour qu'elles tombent au hasard). */
+const WANE: [number, number, number][] = [
+  [23, 5, 0],
+  [53, 3, 30],
+];
+
+/** Teinte de bois clair un cran plus sombre. */
+const HEWN_DARKER: Record<string, string> = { Y: 't', t: 'T', T: 'T' };
+
+/** Le pixel (`along` le long de la pièce) est-il dans une plaque d'écorce ? Rend sa place dans la plaque, ou -1. */
+function waneAt(along: number): { i: number; n: number } | null {
+  const a = Math.floor(along);
+  for (const [p, n, ph] of WANE) {
+    const pos = (((a + ph) % p) + p) % p;
+    if (pos < n) return { i: pos, n };
+  }
+  return null;
+}
+
+/**
+ * Teinte d'une face équarrie au pixel (`along` le long de la pièce, `col` de 0 à `width` − 1 en travers, colonne 0
+ * côté lumière). `wane` : l'arête qui garde de l'écorce par endroits (aucune si absent).
+ */
+export function hewnTone(along: number, col: number, width: number, wane?: 'lit' | 'shade'): string {
+  const a = Math.floor(along);
+  // flache : sur l'arête choisie, toute la largeur si la face est étroite
+  if (wane) {
+    const w = waneAt(a);
+    const onEdge = width < 3 || (wane === 'lit' ? col === 0 : col === width - 1);
+    if (w && onEdge) {
+      const last = w.i === w.n - 1;
+      if (wane === 'lit') return last ? 'N' : 'm';
+      return last ? 'K' : 'N';
+    }
+  }
+  let k = width >= 3 && col === 0 ? 'Y' : width >= 3 && col === width - 1 ? 'T' : 't';
+  // un couloir de fil tous les 3 px en travers, au milieu du couloir (ou sur toute face étroite)
+  const [p, n, ph] = GRAIN[Math.floor(col / 3) % GRAIN.length];
+  const pos = (((a + ph) % p) + p) % p;
+  // le fil s'écarte de la flache d'un pixel : une plaque d'écorce garde du bois clair autour d'elle
+  const nearWane = wane && (waneAt(a - 1) || waneAt(a + 1));
+  if (pos < n && !nearWane && (width < 3 || col % 3 === 1)) k = HEWN_DARKER[k];
+  return k;
+}

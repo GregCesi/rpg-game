@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 30,
+  "nextobjectid": 34,
   "properties": [
     {
       "name": "name",
@@ -373,6 +373,54 @@
           "width": 7,
           "height": 7,
           "gid": 1049
+        },
+        {
+          "id": 30,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-post-high",
+          "x": 608,
+          "y": 67,
+          "width": 3,
+          "height": 47,
+          "gid": 1050
+        },
+        {
+          "id": 31,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-post-high",
+          "x": 669,
+          "y": 67,
+          "width": 3,
+          "height": 47,
+          "gid": 1050
+        },
+        {
+          "id": 32,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-post-low",
+          "x": 608,
+          "y": 128,
+          "width": 3,
+          "height": 39,
+          "gid": 1051
+        },
+        {
+          "id": 33,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-post-low",
+          "x": 669,
+          "y": 128,
+          "width": 3,
+          "height": 39,
+          "gid": 1051
         }
       ]
     },

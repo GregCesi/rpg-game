@@ -410,7 +410,7 @@ export function buildingPreview(sources: ArtSource[], building: BuildingDef, map
   const inRight = Math.max(...inner.map((s) => s.o.x + s.w));
   const inBottom = Math.max(...inner.map((s) => s.o.y));
   const inTop = Math.min(...inner.map((s) => s.o.y));
-  const beside = { x: inLeft - 14, y: Math.round((inTop + inBottom) / 2) };
+  const beside = { x: inLeft - 14, y: inBottom };
   const under = { x: Math.round((inLeft + inRight) / 2), y: Math.round((inTop + inBottom) / 2) + 6 };
   const roofed = mine.some((s) => props[s.o.type].roof);
   const frames = building.steps.map((_, i) => ({ upTo: i, at: beside, fade: false }));
