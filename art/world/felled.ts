@@ -379,7 +379,9 @@ function felledLog(): Canvas {
   sawnEnd(c, LOG_LEN + 1, 'right', axis);
   despeckle(c, 'KYTt');
   shadedOutline(c);
-  for (let X = 2; X <= LOG_LEN + 2; X++) for (const Y of [13, 14]) if (c.get(X, Y) === EMPTY) c.set(X, Y, 'x');
+  // ombre au sol, décalée vers la droite par la lumière : elle s'arrête au bord droit du corps (colonne LOG_LEN + 1),
+  // sans le dépasser, pour ne pas tomber sur l'herbe à côté des porteuses quand la bille est posée dans un creux du tas
+  for (let X = 2; X <= LOG_LEN + 1; X++) for (const Y of [13, 14]) if (c.get(X, Y) === EMPTY) c.set(X, Y, 'x');
   for (let X = 4; X <= LOG_LEN; X++) if (c.get(X, 15) === EMPTY) c.set(X, 15, 'x');
   return c;
 }
@@ -747,7 +749,9 @@ export default [
   ...SETS.flatMap((s, k) => s.map(([name, c]) => img(name, cut(c, FRAMES[k])))),
   ...[...CROWN_SET, ...HEAD_SET].map(([name, c]) => img(name, cut(c, FRAMES[3]))),
   ...LOGS.map((c, k) => img(`felled-log-${k + 1}`, cut(c, FRAMES[k]))),
-  img('felled-log', ((l) => cut(l, bounds([l])))(felledLog())),
+  // largeur gardée à LOG_LEN + 3 (20 px, dernière colonne vide depuis que l'ombre ne dépasse plus) : collision et
+  // places du tas en dépendent
+  img('felled-log', ((l) => cut(l, { ...bounds([l]), w: LOG_LEN + 3 }))(felledLog())),
   treeFallLeft,
   ...SETS_L.flatMap((s, k) => s.map(([name, c]) => img(name, cut(c, FRAMES_L[k])))),
   ...[...CROWN_SET_L, ...HEAD_SET_L].map(([name, c]) => img(name, cut(c, FRAMES_L[3]))),
