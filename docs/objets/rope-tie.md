@@ -51,8 +51,8 @@ Sous un tas de branches plein (10 branches), E maintenu une demi-seconde noue la
      rouleau (Q), prendre la hache (E), la poser (E), reprendre le rouleau (E). Face au billot nu, rouleau dans la main
      active, E : le rouleau est sur le billot (`chopping-block-rope`), la main est vide.
   3. Reprendre la hache, face au billot : invite « Espace ». Espace : geste de haut
-     en bas, un lien tombe à côté du billot, « Il reste 8 m de corde. ». Quatre coups de plus : « Plus de corde. », le
-     billot est nu.
+     en bas, un lien tombe à côté du billot, « Rouleau de corde : 8 m restants. ». Quatre coups de plus :
+     « Rouleau de corde : vide. », le billot est nu.
   4. Variante : billot qui porte le rouleau, mains libres, E : on reprend le rouleau, avec sa longueur (le message de la
      coupe suivante le prouve).
   5. Poser la hache, ramasser un lien (E), Q par terre dans un coin libre : le lien seul au sol, le fantôme le montrait

@@ -124,6 +124,16 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - **Une bille peut être tournée** (décidé le 29 octobre 2026). R (lu par sa place sur le clavier) tourne la bille portée entre est-ouest et nord-sud ; le fantôme suit. La première bille d'un tas fixe le sens du tas ; les suivantes s'y alignent d'elles-mêmes. Un tas nord-sud se construit face à lui : Xéros se tient au sud et se déplace d'est en ouest pour choisir le sol ou le creux ; on y voit le triangle des faces coupées.
 - **Les genres ne se mélangent pas.** Un tas de branches bloque le passage à partir de 3 pièces, un tas de billes toujours. Pas de recul de Xéros : sans place, « Pas la place ici. ». Les branches tombées d'une récolte restent éparpillées.
 
+## La corde et le fagot (décidé le 29 octobre 2026)
+
+- **Une fiche par objet, avant de le construire** (`docs/objets/`) : identité, dimensions réelles, toutes ses vues, regroupement, gestes, origine, devenir, vérification.
+- **Le rouleau de corde** (chanvre, Ø 30 × 10 cm, une main) porte sa longueur restante, 10 m au départ, gardée par la partie. Il ne se range pas en tas. On le trouve dans la réserve de la maison ; plus tard il s'achètera ou se fabriquera.
+- **Couper un lien** : on pose le rouleau sur le billot (E, rouleau en main, face au billot), puis Espace avec la hache. Un lien de 2 m tombe au sol, le rouleau perd 2 m ; vide, il disparaît. On peut reprendre le rouleau posé sur le billot (E, mains libres).
+- **Le lien** (2 m, une main) se pose par terre, où il commence un tas de branches sur lui, ou sous un tas de branches qui n'en a pas, qu'il ceinture par-dessous. Il reste visible sous le tas.
+- **Nouer et dénouer** : E maintenu environ une demi-seconde, mains libres, une jauge au-dessus de Xéros. E court garde son rôle (une branche, le fagot entier). Un tas de 10 branches lié se noue en fagot, à sa place ; sinon « Il faut un lien. » ou « Pas assez de branches. ». Un fagot seul se dénoue en un tas de 10 branches avec son lien ; dans un tas de fagots, « Un seul fagot à la fois. ».
+- **Le fagot** (130 × Ø 50 cm, deux mains) ralentit comme la bille ; il se pose seul ou en tas, même forme que les billes (6 au plus), et se tourne avec R.
+- **Le nombre de branches** d'un tas s'affiche en tout petit en bas à droite du tas, seulement quand Xéros est tout près.
+
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 
 - **La partie se sauvegarde toute seule.** `GameState` est écrit dans le navigateur à chaque changement (objet pris, posé, coupé, tas modifié, changement de carte), avec la carte et la position de Xéros. Au lancement, la partie reprend là où elle était. Pas de bouton « sauvegarder » pour l'instant.
