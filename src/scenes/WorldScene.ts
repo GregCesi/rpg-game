@@ -14,6 +14,7 @@ import { InteractionSystem } from '../systems/InteractionSystem';
 import { KnotSystem } from '../systems/knot';
 import { LongPress } from '../systems/longPress';
 import { PileCount } from '../systems/pileCount';
+import { Roofs } from '../systems/roofs';
 import {
   canTake,
   clearSave,
@@ -71,6 +72,7 @@ export class WorldScene extends Phaser.Scene {
   private knots!: KnotSystem;
   private press!: LongPress;
   private pileCount!: PileCount;
+  private roofs!: Roofs;
   private autosave!: AutoSave;
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
   private talking?: Npc;
@@ -129,6 +131,7 @@ export class WorldScene extends Phaser.Scene {
     this.knots = new KnotSystem(this.map, this.handsSystem);
     this.press = new LongPress(this);
     this.pileCount = new PileCount(this, this.map);
+    this.roofs = new Roofs(this.map);
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
 
@@ -157,10 +160,12 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  update(time: number): void {
+  update(time: number, delta: number): void {
     // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
     this.autosave.update();
     this.player.update(this.mode === 'play');
+    // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes
+    this.roofs.update(this.player, delta);
     if (this.mode === 'play') {
       const exit = findExit(this.player, this.map.def.exits);
       if (exit) this.travel(exit);
