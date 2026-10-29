@@ -340,6 +340,227 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 120,
+      "name": "tree-stump",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 121,
+      "name": "bush-berries",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 122,
+      "name": "rock-rubble",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 123,
+      "name": "lantern",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 124,
+      "name": "wall-torch",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 125,
+      "name": "candle",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 126,
+      "name": "barrel",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 127,
+      "name": "crate",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 128,
+      "name": "hay-bale",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 129,
+      "name": "chest",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 130,
+      "name": "table",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 131,
+      "name": "stool",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 132,
+      "name": "well",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

@@ -18,6 +18,7 @@ import type { DecalSet } from '../src/content/types';
 import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
 import { projectFile, propsTsj, tilesetTsj } from './lib/tiled-files';
 import type { PropTile } from './lib/tiled-files';
+import { buildCollectionBoard } from './lib/collection-board';
 
 const OUT = 'src/generated';
 const PREVIEW = '.art-preview';
@@ -254,4 +255,5 @@ ${images.join('\n')}
 writeFileSync(join(OUT, 'assets.ts'), manifest);
 // Même catalogue sans les images, lisible par Node (npm run check)
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(catalog, null, 2));
+if (withPreview) writeFileSync(join(PREVIEW, 'collection.png'), PNG.sync.write(buildCollectionBoard(sources)));
 console.log(`art : ${sources.length} sources -> ${OUT} + ${TILED}${withPreview ? ` (+ aperçus dans ${PREVIEW})` : ''}`);
