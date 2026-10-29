@@ -47,6 +47,18 @@ export const SpawnedSchema = z.strictObject({
 /** Un objet possédable posé au sol : (x, y) = son point au sol. */
 export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number() });
 
+/**
+ * Un tas posé pendant la partie : un seul objet du monde, son genre (`pile`, clé de piles.json) et son nombre de pièces ;
+ * (x, y) = son point au sol (les pièces sont placées par rapport à lui, voir `layouts` dans piles.json).
+ */
+export const PileSchema = z.strictObject({
+  id: z.number().int().nonnegative(),
+  pile: id,
+  count: z.number().int().positive(),
+  x: z.number(),
+  y: z.number(),
+});
+
 /** Ce qui a changé sur une carte. */
 export const MapStateSchema = z.strictObject({
   /** Par identifiant d'objet Tiled. */
@@ -54,6 +66,8 @@ export const MapStateSchema = z.strictObject({
   ground: z.array(GroundItemSchema),
   /** Objets nés sur cette carte, tels qu'ils sont maintenant (un objet né récolté change ici, ou disparaît de la liste). */
   spawned: z.array(SpawnedSchema),
+  /** Tas posés sur cette carte ; un tas vidé disparaît de la liste. */
+  piles: z.array(PileSchema),
 });
 
 export const GameStateSchema = z.strictObject({
@@ -69,6 +83,8 @@ export const GameStateSchema = z.strictObject({
   nextGroundId: z.number().int().nonnegative(),
   /** Prochain identifiant d'objet né (unique dans toute la partie, distinct des identifiants Tiled). */
   nextSpawnId: z.number().int().nonnegative(),
+  /** Prochain identifiant de tas (unique dans toute la partie). */
+  nextPileId: z.number().int().nonnegative(),
 });
 
 export type Held = z.infer<typeof HeldSchema>;
@@ -77,17 +93,18 @@ export type WorldChange = z.infer<typeof WorldChangeSchema>;
 export type GroundItem = z.infer<typeof GroundItemSchema>;
 export type Spawned = z.infer<typeof SpawnedSchema>;
 export type Chain = z.infer<typeof ChainSchema>;
+export type Pile = z.infer<typeof PileSchema>;
 export type MapState = z.infer<typeof MapStateSchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
 export function mapState(s: GameState, mapId: string): MapState {
-  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [] });
+  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [] });
 }
 
 /** Ce que tient la main active (ou les deux mains), ou undefined. */
@@ -173,4 +190,20 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
 export function setSpawnedHits(s: GameState, mapId: string, spawnId: number, hits: number): void {
   const o = mapState(s, mapId).spawned.find((x) => x.id === spawnId);
   if (o) o.hits = hits;
+}
+
+/** Commence un tas d'une pièce sur une carte ; renvoie ce qui a été noté. */
+export function startPile(s: GameState, mapId: string, pile: string, x: number, y: number): Pile {
+  const p = { id: s.nextPileId++, pile, count: 1, x, y };
+  mapState(s, mapId).piles.push(p);
+  return p;
+}
+
+/** Change le nombre de pièces d'un tas (une de plus, une de moins) ; à 0, le tas disparaît de la carte. */
+export function setPileCount(s: GameState, mapId: string, pileId: number, count: number): void {
+  const m = mapState(s, mapId);
+  const i = m.piles.findIndex((p) => p.id === pileId);
+  if (i < 0) return;
+  if (count <= 0) m.piles.splice(i, 1);
+  else m.piles[i].count = count;
 }
