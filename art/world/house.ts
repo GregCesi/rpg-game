@@ -4,7 +4,10 @@
 // Derrière le faîte, la cheminée de pierre de la cuisine ; sur le pan droit, le conduit du poêle.
 // L'image est ancrée en bas à gauche (voir props.json).
 
-import { Canvas, rng } from '../lib/canvas';
+import { Canvas, EMPTY, rng } from '../lib/canvas';
+import { orient } from '../lib/held';
+import { axeArt, toolPalette } from '../items/tools';
+import { shadedOutline } from './trees';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 
@@ -192,6 +195,76 @@ function woodpile(): Canvas {
   return c;
 }
 
+// ---------- Billot ----------
+// Une bille de chêne debout, à côté du tas de bois : on y fend les bûches. 32x32, base en y=27.
+// Environ 80 cm de large pour 45 de haut (16 px sur 9 de face sud), plus bas et plus large qu'une souche,
+// sans racines, la coupe du dessus marquée par la hache. Deux images de même taille : vide, et hache plantée.
+
+/** Ombre portée : ne remplit que les pixels encore vides. */
+function groundShadow(c: Canvas, cx: number, cy: number, rx: number, ry: number) {
+  const s = new Canvas(c.w, c.h).ellipse(cx, cy, rx, ry, 'x');
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    if (s.get(x, y) !== EMPTY && c.get(x, y) === EMPTY) c.set(x, y, 'x');
+  }
+}
+
+/** Centre et rayons de la coupe du dessus, base de la face sud. */
+const BLOCK = { cx: 16, top: 18, rx: 8, ry: 3.5, base: 27 };
+
+function blockBody(): Canvas {
+  const c = new Canvas(32, 32);
+  const { cx, top, rx, ry, base } = BLOCK;
+  // face sud : écorce, claire à gauche, sombre à droite, ventre un peu bombé
+  c.rect(cx - rx, top, rx * 2, base - top, 'm');
+  c.ellipse(cx, base - 0.5, rx, 2, 'm');
+  c.within('m', (c) => {
+    c.rect(cx - rx, top, 3, base - top + 2, 'M');
+    c.rect(cx + rx - 4, top, 4, base - top + 2, 'N');
+    // fentes d'écorce
+    c.line(cx - 2, top + 3, cx - 2, top + 6, 'N').line(cx + 2, top + 5, cx + 2, top + 8, 'N');
+  });
+  c.within('N', (c) => c.line(cx + rx - 2, top + 3, cx + rx - 2, top + 7, 'K'));
+  // coupe du dessus : bois clair, cernes, entailles de la hache
+  c.ellipse(cx, top, rx, ry, 'Y');
+  c.within('Y', (c) => {
+    c.ellipse(cx + 0.5, top + 0.3, rx - 2.2, ry - 1.2, 't');
+    c.ellipse(cx + 0.5, top + 0.3, rx - 4.5, ry - 2.3, 'Y');
+    c.line(cx - 5, top - 1, cx - 2, top + 1, 'T'); // entaille
+    c.line(cx + 3, top + 2, cx + 6, top, 'T');
+  });
+  return c;
+}
+
+/** Billot vide. */
+function choppingBlock(): Canvas {
+  const c = shadedOutline(blockBody());
+  groundShadow(c, 17.5, 28, 10, 2.4);
+  return c;
+}
+
+/** Billot, la hache plantée dans la coupe, le manche qui monte vers la droite. */
+function choppingBlockAxe(): Canvas {
+  const body = blockBody();
+  const c = shadedOutline(blockBody());
+  groundShadow(c, 17.5, 28, 10, 2.4);
+  // hache tête vers le bas à gauche, tranchant vers le bas à droite, enfoncé dans le bois
+  const axe = orient(axeArt(), 'sw', 'ccw');
+  c.stamp(axe, 9, 1);
+  // le fer disparaît sous la coupe : tout ce qui tombe sous le bord avant reprend le dessin du billot
+  const { cx, top, rx, ry } = BLOCK;
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+    const dx = (x + 0.5 - cx) / rx;
+    if (Math.abs(dx) >= 1) continue;
+    const rim = top + ry * Math.sqrt(1 - dx * dx) * 0.2;
+    if (y + 0.5 > rim && body.get(x, y) !== EMPTY) c.set(x, y, body.get(x, y));
+  }
+  // fente sombre là où le fer entre dans le bois
+  for (let y = 1; y < 32; y++) for (let x = 0; x < 32; x++) {
+    if ('Yt'.includes(c.get(x, y)) && '1234'.includes(c.get(x, y - 1))) c.set(x, y, 'P');
+  }
+  return c;
+}
+
 /** Bouffée de fumée (particule). */
 function smoke(): Canvas {
   return Canvas.from([
@@ -209,5 +282,7 @@ const smokePalette = { a: '#d9d2c6' };
 export default [
   { kind: 'image', name: 'cottage', palette: world, grid: cottage().toGrid() },
   { kind: 'image', name: 'woodpile', palette: world, grid: woodpile().toGrid() },
+  { kind: 'image', name: 'chopping-block', palette: world, grid: choppingBlock().toGrid() },
+  { kind: 'image', name: 'chopping-block-axe', palette: toolPalette, grid: choppingBlockAxe().toGrid() },
   { kind: 'image', name: 'smoke', palette: smokePalette, grid: smoke().toGrid() },
 ] satisfies ImageSource[];

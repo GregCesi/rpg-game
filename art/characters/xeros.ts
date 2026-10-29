@@ -6,7 +6,9 @@
 // d'en haut à gauche, la moitié droite est plus sombre. Le contour suit selOut, comme la mère.
 // La vue gauche est la vue droite retournée.
 
-import { Canvas, flipX, selOut, type Grid } from '../lib/canvas';
+import { Canvas, EMPTY, flipX, selOut, type Grid } from '../lib/canvas';
+import type { ToolPose, Vec } from '../lib/held';
+import { capsule } from '../items/lib';
 import type { SpriteSheetSource } from '../lib/types';
 import { OUTLINE } from '../palette';
 import { palette as portrait } from '../portraits/xeros';
@@ -65,13 +67,14 @@ const bowlTop: [string, string][] = [
   ['..ohhhhhhh', 'hhhhhhdo..'],
 ];
 
-// Face : le bord du bol s'arrête au-dessus des oreilles (y=22) et descend en frange sur le front (y=23).
-// Tempes rasées en peau, oreilles qui dépassent, un pixel d'œil de chaque côté.
+// Face : le bord du bol s'arrête au-dessus des oreilles et la frange au-dessus des yeux (y=22),
+// avec une mèche plus longue au milieu du front. Tempes rasées en peau, oreilles qui dépassent,
+// un pixel d'œil de chaque côté, sous une rangée de front dégagée.
 const headFront = halves([
   ...bowlTop,
   ['..ohhhhdhh', 'hhhdhhdo..'],
-  ['..oddhhdhh', 'hhhdhddo..'],
-  ['..ossddddd', 'dddddsSo..'],
+  ['..osdddddd', 'dddddsSo..'],
+  ['..osssssdd', 'ssssssSo..'],
   ['.oSssssoss', 'ssosssSSo.'],
   ['.oSssssoss', 'ssosssSSo.'],
   ['..osssssss', 'sssssSSo..'],
@@ -80,17 +83,19 @@ const headFront = halves([
   ['......oooo', 'oooo......'],
 ]);
 
-// Dos : le bol vu de derrière, même bord ; dessous, l'arrière du crâne rasé et la nuque, claire.
+// Dos : le bol vu de derrière descend jusqu'aux oreilles (y=25) ; dessous, l'arrière du crâne rasé garde
+// la silhouette de la mâchoire vue de face, une seule rangée claire, le reste dans l'ombre de la tête.
 const headBack = halves([
   ...bowlTop,
   ['..ohhhhhhh', 'hhhhhhdo..'],
   ['..ohhhhhhh', 'hhhhhhdo..'],
-  ['..oddhhhhh', 'hhhhhddo..'],
-  ['.oSssddddd', 'dddddsSSo.'],
-  ['.oSsssssss', 'ssssssSSo.'],
-  ['...ossssss', 'sssssSo...'],
-  ['.......oos', 'Soo.......'],
-  ['........os', 'So........'],
+  ['..ohhhhhhh', 'hhhhhhdo..'],
+  ['.oSdhhhhhh', 'hhhhhhdSo.'],
+  ['.oSsdddddd', 'ddddddsSo.'],
+  ['..osssssss', 'sssssSSo..'],
+  ['...osSSSSS', 'SSSSSSo...'],
+  ['.....oSSSS', 'SSSSo.....'],
+  ['......oooS', 'Sooo......'],
 ]);
 
 // ---------- Corps, face et dos ----------
@@ -258,6 +263,157 @@ function side(spread: number, arm: number, bob: number, swapLegs = false): Grid 
   return selOut(c.toGrid(), DARK);
 }
 
+
+// ---------- Geste d'outil (hache, pioche, houe...) ----------
+// Le corps seul : l'outil est une image à part (planche tool-<objet>, art/lib/held.ts) que le jeu pose
+// sur les mains, devant ou derrière le corps. Quatre temps : lever, armer, frapper (impact), retour.
+// La tête ne bouge pas ; les jambes restent plantées.
+
+/** Image de l'impact dans les animations use-* (0 à 3). */
+export const USE_IMPACT = 2;
+export const USE_FRAME_RATE = 10;
+
+/** Où passent les bras : devant tout, sous la tête seulement (bras levés), ou sous le corps (vue de dos). */
+type ArmLayer = 'front' | 'head' | 'body';
+
+interface UseBody {
+  tool: ToolPose;
+  /** Coudes (face et dos : gauche puis droit ; profil : le bras côté spectateur). */
+  elbows: Vec[];
+  arms: ArmLayer;
+}
+
+const pose = (
+  hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front',
+): UseBody => ({ tool: { hand, head, edge, behind }, elbows, arms });
+
+// Épaules, dans la frame : face/dos à gauche et à droite du torse, profil au milieu du dos.
+const SHOULDER_L: Vec = [11, BODY_Y + 2];
+const SHOULDER_R: Vec = [20, BODY_Y + 2];
+const SHOULDER_SIDE: Vec = [14, BODY_Y + 2];
+
+const USE_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
+  // de face : le fer monte devant le visage, passe derrière la tête, s'abat vers le spectateur, remonte un peu
+  down: [
+    pose([16, 31], 'n', 'cw', false, [[9, 35], [22, 35]]),
+    pose([16, 13], 'n', 'cw', true, [[7, 22], [24, 22]], 'head'),
+    pose([16, 39], 's', 'ccw', false, [[11, 37], [20, 37]]),
+    pose([17, 36], 'se', 'ccw', false, [[10, 36], [21, 35]]),
+  ],
+  // de dos, les bras passent sous le corps : le fer se lève à droite, passe au-dessus de la tête,
+  // puis frappe devant lui, caché par le corps (seuls les coudes dépassent)
+  up: [
+    pose([21, 34], 'ne', 'cw', true, [[10, 36], [22, 37]], 'body'),
+    pose([25, 19], 'nw', 'ccw', false, [[9, 30], [26, 27]], 'body'),
+    pose([16, 34], 'n', 'cw', true, [[9, 35], [22, 35]], 'body'),
+    pose([18, 36], 'ne', 'cw', true, [[9, 37], [22, 37]], 'body'),
+  ],
+  // de profil : le fer se lève devant, passe au-dessus de la tête vers l'arrière, s'abat au sol devant les pieds,
+  // remonte à l'horizontale
+  right: [
+    pose([21, 33], 'ne', 'cw', false, [[16, 36]]),
+    pose([13, 13], 'w', 'cw', true, [[8, 23]]),
+    pose([23, 37], 'se', 'cw', false, [[18, 35]]),
+    pose([23, 34], 'e', 'cw', false, [[18, 35]]),
+  ],
+};
+
+/** Pose de l'outil pour chaque image des animations use-down, use-up et use-right. */
+export const USE_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
+  down: USE_BODY.down.map((b) => b.tool),
+  up: USE_BODY.up.map((b) => b.tool),
+  right: USE_BODY.right.map((b) => b.tool),
+};
+
+/** Tout ce qui n'est ni vide, ni ombre au sol, ni contour. */
+const isMatter = (ch: string) => ch !== EMPTY && ch !== 'x' && ch !== 'o';
+
+/** Contour d'un pixel autour de la matière (sur le vide et l'ombre au sol). */
+function rim(c: Canvas) {
+  const add: Vec[] = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const ch = c.get(x, y);
+    if (ch !== EMPTY && ch !== 'x') continue;
+    if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isMatter(c.get(x + dx, y + dy)))) add.push([x, y]);
+  }
+  for (const [x, y] of add) c.set(x, y, 'o');
+}
+
+/**
+ * Bras de l'épaule à la main, par le coude : manche de lin, mains de peau jointes sur le manche.
+ * Bordé de contour sur le vide, et de la teinte la plus sombre de ce qu'il recouvre ailleurs
+ * (pas de contour intérieur).
+ */
+function arm(c: Canvas, pts: Vec[], sleeve: string, sleeveLight: string) {
+  const a = new Canvas(W, H);
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [x0, y0] = pts[i];
+    const [x1, y1] = pts[i + 1];
+    capsule(a, x0 + 0.5, y0 + 0.5, x1 + 0.5, y1 + 0.5, 1.05, (_t, across) => (across < -0.2 ? sleeveLight : sleeve));
+  }
+  const [hx, hy] = pts[pts.length - 1];
+  a.rect(hx - 1, hy - 1, 3, 3, 's').rect(hx + 1, hy - 1, 1, 3, 'S').set(hx - 1, hy + 1, 'S').set(hx, hy + 1, 'S');
+  const border: [number, number, string][] = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (a.get(x, y) !== EMPTY) continue;
+    if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => a.get(x + dx, y + dy) !== EMPTY)) continue;
+    const under = c.get(x, y);
+    border.push([x, y, isMatter(under) ? DARK[under] ?? 'o' : 'o']);
+  }
+  c.stamp(a.toGrid(), 0, 0);
+  for (const [x, y, k] of border) c.set(x, y, k);
+}
+
+/** Torse sans bras pendants : seul le bord de l'épaule reste. */
+const bareTorso = (torso: Grid): Grid => torso.map((row) => '.....' + row + '.....');
+
+function useFrontal(facing: Facing, b: UseBody): Grid {
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = 6;
+  const legY = BODY_Y + 10;
+  c.stamp(legLeft, ox + 5, legY);
+  c.stamp(legRight, ox + 11, legY);
+  const torso = () => c.stamp(bareTorso(facing === 'down' ? torsoFront : torsoBack), ox, BODY_Y);
+  const head = () => c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y);
+  const arms = () => {
+    rim(c);
+    const [el, er] = b.elbows;
+    arm(c, [SHOULDER_L, el, b.tool.hand], 't', 'L');
+    arm(c, [SHOULDER_R, er, b.tool.hand], 'T', 't');
+  };
+  if (b.arms === 'body') arms();
+  torso();
+  if (b.arms === 'head') arms();
+  head();
+  if (b.arms === 'front') arms();
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+function useSide(b: UseBody): Grid {
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = 7;
+  const legY = BODY_Y + 10;
+  c.stamp(backLeg(legSide), ox + 3, legY);
+  c.stamp(legSide, ox + 7, legY);
+  c.stamp(bodySide, ox, BODY_Y);
+  const arms = () => {
+    rim(c);
+    arm(c, [SHOULDER_SIDE, b.elbows[0], b.tool.hand], 't', 'L');
+  };
+  if (b.arms !== 'front') arms();
+  c.stamp(headSide, ox, HEAD_Y);
+  if (b.arms === 'front') arms();
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+const useDown = USE_BODY.down.map((b) => useFrontal('down', b));
+const useUp = USE_BODY.up.map((b) => useFrontal('up', b));
+const useRight = USE_BODY.right.map(useSide);
+
 const walkFrontal = (f: Facing) => [
   frontal(f, 0, -2, 0),
   frontal(f, 0, 0, -1),
@@ -282,6 +438,10 @@ const xeros: SpriteSheetSource = {
     'walk-up': { frames: walkFrontal('up'), frameRate: 8, repeat: -1 },
     'walk-right': { frames: walkRight, frameRate: 8, repeat: -1 },
     'walk-left': { frames: walkRight.map(flipX), frameRate: 8, repeat: -1 },
+    'use-down': { frames: useDown, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'use-up': { frames: useUp, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'use-right': { frames: useRight, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'use-left': { frames: useRight.map(flipX), frameRate: USE_FRAME_RATE, repeat: 0 },
   },
 };
 

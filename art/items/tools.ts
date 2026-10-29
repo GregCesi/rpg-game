@@ -10,7 +10,7 @@ import { darkest, outline } from './lib';
 
 const S = 16;
 
-const palette = {
+export const toolPalette = {
   ...world,
   // fer forgé, usé : dérivé de la pierre (R r z Z), refroidi d'un cran
   '1': '#d6d3c4', // fil de la lame, arête éclairée (R éclairci)
@@ -64,24 +64,45 @@ function crossbar(c: Canvas, x: number, y: number, n: number, top: string, botto
 
 // ---------- Hache ----------
 
+/**
+ * Fer de hache en coordonnées locales : `a` le long du manche, `b` en travers, vers le tranchant.
+ * Étroit au collet, évasé au tranchant ; arête claire au fil.
+ */
+function axeHead(a: number, b: number): string | null {
+  if (b < -2.0) return null;
+  const w = b < 1.2 ? 1.2 : 1.2 + (b - 1.2) * 0.75;
+  if (Math.abs(a) > w) return null;
+  const edge = 5.4 - 0.06 * a * a;
+  if (b > edge) return null;
+  if (b > edge - 1.2) return '1';
+  if (b < -0.9) return '4';
+  if (a < -w + 1.0) return '4';
+  return b > 2.6 ? '2' : '3';
+}
+
 /** Hache de bûcheron : fer au tranchant évasé tourné vers le haut à gauche, talon court, manche usé. */
 function axe(): Canvas {
   const c = new Canvas(S, S);
   shaft(c, 15, 14, 3, 'M', 'm');
   c.within('M', (c) => c.set(2, 13, 'm').set(3, 12, 'm')); // poignée patinée par la main
   c.set(13, 2, 'N').set(12, 2, 'm');
-  // fer : axe local centré sur l'œil du manche ; étroit au collet, évasé au tranchant
-  local(c, 10.5, 6, (a, b) => {
-    if (b < -2.0) return null;
-    const w = b < 1.2 ? 1.2 : 1.2 + (b - 1.2) * 0.75;
-    if (Math.abs(a) > w) return null;
-    const edge = 5.4 - 0.06 * a * a;
-    if (b > edge) return null;
-    if (b > edge - 1.2) return '1';
-    if (b < -0.9) return '4';
-    if (a < -w + 1.0) return '4';
-    return b > 2.6 ? '2' : '3';
-  });
+  // fer : axe local centré sur l'œil du manche
+  local(c, 10.5, 6, axeHead);
+  return outline(c, dark);
+}
+
+/**
+ * La même hache, manche vertical (tête en haut, tranchant à gauche), pour l'outil en main
+ * (art/lib/held.ts). La main la tient au pixel UPRIGHT_GRIP.
+ */
+function axeUpright(): Canvas {
+  const c = new Canvas(S, S);
+  c.rect(7, 3, 1, 12, 'M').rect(8, 3, 1, 12, 'm');
+  c.set(7, 12, 'm').set(7, 13, 'm'); // poignée patinée
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const k = axeHead(4.5 - (y + 0.5), 8 - (x + 0.5));
+    if (k) c.set(x, y, k);
+  }
   return outline(c, dark);
 }
 
@@ -225,7 +246,10 @@ function woodenSword(): Canvas {
   return outline(c, dark);
 }
 
-const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
+/** Hache tenue en main : les deux dessins du geste (art/lib/held.ts). */
+export const axeArt = () => ({ diag: axe().toGrid(), upright: axeUpright().toGrid() });
+
+const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: toolPalette, grid: c.toGrid() });
 
 export default [
   img('item-axe', axe()),

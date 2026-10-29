@@ -11,9 +11,10 @@ import rocksBushes from './world/rocks-bushes';
 import ui from './ui/dialog';
 import resources from './items/resources';
 import tools from './items/tools';
+import heldTools from './items/held';
 import house from './world/house';
 import { furniture, interiorDecals, interiorTiles } from './interior/house';
 import lights from './interior/light';
 import farm from './world/farm';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...resources, ...tools];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...resources, ...tools, ...heldTools];

@@ -129,6 +129,8 @@
     "chest",
     "table",
     "stool",
-    "well"
+    "well",
+    "chopping-block",
+    "chopping-block-axe"
   ]
 }

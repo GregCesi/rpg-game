@@ -34,6 +34,8 @@ export const families: Family[] = [
   },
   { title: 'Lumière', ground: 'floor', keys: ['lantern', 'wall-torch', 'candle'] },
   { title: 'Personnages', ground: 'floor', keys: ['mother', 'portrait-mother-64'] },
-  { title: 'Mobilier et ferme', ground: 'grass', keys: ['barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'well'] },
+  { title: 'Outil en main', ground: 'grass', keys: ['tool-axe'], allFrames: ['tool-axe'] },
+  { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-box', 'ui-key-e'] },
+  { title: 'Mobilier et ferme', ground: 'grass', keys: ['barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'woodpile', 'chopping-block', 'chopping-block-axe'] },
   { title: 'Intérieur', ground: 'floor', keys: ['bed', 'pallet', 'sack', 'jar', 'worktable', 'workbench'] },
 ];
