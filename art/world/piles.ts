@@ -4,10 +4,14 @@
 // Une pièce du dessus est donc toujours peinte par-dessus les pièces du sol.
 //
 // Billes : pas de dessin ici. Toutes les places du tas de billes affichent la bille au sol de la coupe
-// (`felled-log`, art/world/felled.ts, 20x16), si bien qu'une bille reprise puis reposée garde son aspect. Les
-// positions dans piles.json font le reste : trois au sol, 11 px (55 cm) de l'une à l'autre du nord au sud ; une
-// bille d'un creux monte de 9,5 px au-dessus du milieu de ses porteuses, et son ombre (rangées du bas de
-// felled-log, semi-transparentes) tombe sur ses porteuses comme une ombre de contact.
+// (`felled-log`, art/world/felled.ts, 20x16 ; tournée, `felled-log-ns`, 14x21), si bien qu'une bille reprise puis
+// reposée garde son aspect. Les positions dans piles.json font le reste. Au sol, la profondeur compte 5 cm par pixel,
+// comme la largeur : trois billes est-ouest à 11 px (55 cm, leur diamètre) l'une de l'autre du nord au sud, la bille
+// de devant ne cachant que le contour et la rangée d'écorce sombre du bas de celle de derrière. Une bille d'un creux
+// monte de 9,5 px (55 cm × √3/2, la hauteur comptée comme Xéros) au-dessus du milieu de ses porteuses : entre elle et
+// la bille de devant reste une fente sombre, le bas de la bille de derrière, sous son ombre de contact. Tournées
+// (nord-sud), les billes sont côte à côte à 12 px (11 et un contour commun) ; une bille du creux monte de 6 px, ce qui
+// fait se toucher les faces de coupe (ovales de 11 × 7) en triangle.
 //
 // Branches : la branche sèche (dessin commun dans art/items/branch.ts, comme branch-ground, held-branch et
 // item-branch), couchée est-ouest. 22 à 28 px (1,1 à 1,4 m) ;

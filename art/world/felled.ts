@@ -367,15 +367,17 @@ function felledLog(): Canvas {
 }
 
 /**
- * La même bille couchée nord-sud (`felled-log-ns`, tas tourné de piles.json), vue par le bout : 11 px de diamètre
- * (55 cm) en largeur, comme la hauteur de la bille est-ouest ; en hauteur, la face de coupe et la profondeur se
- * raccourcissent comme dans le tas est-ouest, où 55 cm au sol font 8 px (facteur 0,73) et une montée de 55 cm × √3/2
- * fait 7 px (facteur 0,68). Le rond fait donc 11 × 9 px, le corps 1 m × 0,73 = 15 px vers le haut de l'écran.
+ * La même bille couchée nord-sud (`felled-log-ns`, tas tourné de piles.json), vue par le bout : la bille est-ouest
+ * tournée d'un quart de tour. Elle tient dans la même boîte, transposée : 13 px de large (11 de diamètre, 55 cm, et le
+ * contour) et 19 px de haut, comme la bille est-ouest et la pièce du tronc font 19 px de long (95 cm). Au sol, le jeu
+ * compte la profondeur à 5 cm par pixel, comme la largeur (collisions de props.json, tas est-ouest à 11 px d'une
+ * bille à l'autre) : la bille couvre donc 19 px du nord au sud, face de coupe comprise. Dans ces 19 px : le contour,
+ * 10 rangées d'écorce (du rond du fond au haut de la face) et la face de coupe, ovale de 11 × 7 px, puis le contour.
  * Matière commune (art/world/wood.ts) : écorce éclairée à gauche, sillons en long, le bord du bout lointain en haut,
  * la face de coupe devant. L'ombre au sol tombe le long du flanc droit (colonne 13, la seule au-delà du contour) et
  * sous la face, décalée à droite. Posée dans un creux du tas, ce flanc d'ombre tombe sur la bille de dessous.
  */
-export const LOG_NS = { w: 14, h: 28, cx: 6.5, back: 5.5, front: 20.5, rx: 5.5, ry: 4.5 } as const;
+export const LOG_NS = { w: 14, h: 21, cx: 6.5, back: 4.5, front: 14.5, rx: 5.5, ry: 3.5 } as const;
 function felledLogNS(): Canvas {
   const { w, h, cx, back, front, rx, ry } = LOG_NS;
   const c = logByTheEnd(new Canvas(w, h), cx, back, front, rx, ry);
