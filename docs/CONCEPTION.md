@@ -114,16 +114,13 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - **Deux sortes d'arbres** (décidé le 29 octobre 2026). L'arbre actuel est le **gros** : ses billes se fendront en quatre sur le billot (posée debout, un coup en deux, un second en quatre). Un **arbre normal**, plus fin, viendra plus tard : ses billes, de la grosseur d'un bras, restent entières. Ni l'un ni l'autre n'est construit dans le chantier des deux mains.
 - Pas encore discuté : la brouette. Le tas : voir *Les tas*.
 
-## Les tas (décidé le 29 octobre 2026)
+## Les tas (décidé le 29 octobre 2026, repris le même jour)
 
-On entrepose ce qu'on porte en tas.
-
-- **Un seul mécanisme pour tous les genres.** Poser un objet sur un tas du même genre, devant soi, l'y ajoute ; E sur un tas, mains libres, en reprend un, et le tas rétrécit.
-- **Chaque genre a sa forme et son maximum** : les branches en vrac (8 au plus), les billes en pyramide (3 couchées côte à côte, 2 dessus, 1 au sommet : 6).
-- Au-delà du maximum, ou contre un tas d'un autre genre, poser commence un nouveau tas à une place libre, ou dit « Pas la place ici. ».
-- **Les genres ne se mélangent pas.**
-- Un tas se compose des dessins existants (la bille, la branche), placés à des positions décrites en données pour chaque nombre, avec leur ordre d'affichage : pas d'image de tas. Toutes les billes forment un même genre : dans un tas, et quand on la reprend, une bille est la bille ordinaire.
-- Un tas est un seul objet du monde, avec son genre et son nombre, gardé par carte dans `GameState`. Sa collision suit sa taille ; la place libre stricte reste la règle.
+- **On construit un tas pièce par pièce, comme en vrai.** Un tas a des places, décrites en données : leur position, leur couche, et les places qui les portent (une place du dessus n'existe que quand celles qui la portent sont prises). Chaque place a sa propre pièce, dessinée pour cette position ; le tas s'affiche couche par couche, du bas vers le haut.
+- **Poser** : la place visée dépend de l'endroit où se tient Xéros le long du tas. Au centre entre deux pièces posées, la pièce monte dans le creux ; décalé, elle va au sol à côté. Une prévisualisation en transparence montre la pièce à la place exacte où elle ira, et suit Xéros. **Reprendre** (E, mains libres) enlève la pièce la plus haute accessible.
+- **Billes** : toutes parallèles, dans le sens où elles reposent après la coupe. 3 au sol côte à côte, 2 dessus dans les creux, 1 au sommet : 6. Le tas plein ressemble à un petit tas de bois.
+- **Branches** : toutes parallèles, posées tête-bêche (le gros bout alterne d'un côté et de l'autre), côte à côte puis par couches. Dimensions réalistes : une branche fait 1 à 1,5 m. Le tas plein a à peu près le volume d'une bille : c'est la future matière d'un fagot.
+- **Les genres ne se mélangent pas.** Un tas de branches bloque le passage à partir de 3 pièces, un tas de billes toujours. Pas de recul de Xéros : sans place, « Pas la place ici. ». Les branches tombées d'une récolte restent éparpillées.
 
 ## Façon de travailler
 
