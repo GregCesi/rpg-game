@@ -52,10 +52,63 @@ function shedPost(sil: number, phase: number): Canvas {
   return c;
 }
 
+// ---------- Sablières ----------
+
+/** Bois équarri d'un dessus, tourné vers la lumière : un cran plus clair que la face (t -> Y, T -> t), écorce gardée. */
+const LIGHTER: Record<string, string> = { t: 'Y', T: 't' };
+const topTone = (along: number, wane?: 'lit' | 'shade') => {
+  const k = hewnTone(along, 0, 1, wane);
+  return LIGHTER[k] ?? k;
+};
+
+/**
+ * Sablière est-ouest (`shed-plate-north`, `shed-plate-south`), boîte de 320 × 15 × 15 cm : silhouette 64 × 5 px collée en
+ * haut de l'image, `below` rangées vides dessous (la hauteur qui la sépare du sol, bas de l'image au sol). Rangée 0 : le
+ * contour du haut (N) ; rangée 1 : le dessus, bois clair (Y, fil en t) ; rangées 2 et 3 : la face sud (t, fil en T),
+ * l'écorce de l'arête du haut par endroits ; rangée 4 : le contour du bas. Contour gauche N, droit OUTLINE ; aux bouts, rien
+ * (ils sont sur les poteaux). `phase` : une autre pièce du même bois.
+ */
+function shedPlateEW(below: number, phase: number): Canvas {
+  const W = 64;
+  const c = new Canvas(W, 5 + below);
+  for (let x = 0; x < W; x++) {
+    const a = x + phase;
+    const edge = x === 0 ? 'N' : x === W - 1 ? 'o' : null;
+    c.set(x, 0, x === W - 1 ? 'o' : 'N');
+    c.set(x, 1, edge ?? topTone(a));
+    c.set(x, 2, edge ?? hewnTone(a + 17, 0, 1, 'lit'));
+    c.set(x, 3, edge ?? hewnTone(a + 41, 0, 1));
+    c.set(x, 4, 'o');
+  }
+  return c;
+}
+
+/**
+ * Sablière de côté (`shed-plate-side`), nord-sud, en pente de la tête d'un poteau haut à celle d'un poteau bas : pièce
+ * `ground`, silhouette 3 × 75 px (3 de large ; 64 de long au sol plus 11 d'épaisseur et de pente), puis 38 rangées
+ * vides. Rangée 0 : le contour du haut ; rangées 1 à 70 : le dessus, une bande de bois clair (fil vertical, flache par
+ * endroits) entre le contour gauche N et OUTLINE ; rangée 71 : l'arête du bout ; rangées 72 et 73 : la face de coupe
+ * au sud (bois de bout, Y sur t, comme le dessus des poteaux) ; rangée 74 : le contour du bas.
+ */
+function shedPlateSide(): Canvas {
+  const sil = 75;
+  const c = new Canvas(3, sil + 38);
+  c.set(0, 0, 'N').set(1, 0, 'N').set(2, 0, 'o');
+  for (let y = 1; y < sil - 4; y++) c.set(0, y, 'N').set(1, y, topTone(y + 5, 'lit')).set(2, y, 'o');
+  c.set(0, sil - 4, 'N').set(1, sil - 4, 'T').set(2, sil - 4, 'o');
+  c.set(0, sil - 3, 'N').set(1, sil - 3, 'Y').set(2, sil - 3, 'o');
+  c.set(0, sil - 2, 'N').set(1, sil - 2, 't').set(2, sil - 2, 'o');
+  for (let x = 0; x < 3; x++) c.set(x, sil - 1, 'o');
+  return c;
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
 export default [
   img('footing-stone', footingStone()),
   img('shed-post-high', shedPost(44, 12)),
   img('shed-post-low', shedPost(36, 30)),
+  img('shed-plate-north', shedPlateEW(46, 0)),
+  img('shed-plate-south', shedPlateEW(39, 23)),
+  img('shed-plate-side', shedPlateSide()),
 ];

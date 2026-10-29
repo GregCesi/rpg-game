@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 34,
+  "nextobjectid": 38,
   "properties": [
     {
       "name": "name",
@@ -421,6 +421,54 @@
           "width": 3,
           "height": 39,
           "gid": 1051
+        },
+        {
+          "id": 34,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-plate-north",
+          "x": 608,
+          "y": 68,
+          "width": 64,
+          "height": 51,
+          "gid": 1052
+        },
+        {
+          "id": 35,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-plate-side",
+          "x": 608,
+          "y": 129,
+          "width": 3,
+          "height": 113,
+          "gid": 1054
+        },
+        {
+          "id": 36,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-plate-side",
+          "x": 669,
+          "y": 129,
+          "width": 3,
+          "height": 113,
+          "gid": 1054
+        },
+        {
+          "id": 37,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "shed-plate-south",
+          "x": 608,
+          "y": 130,
+          "width": 64,
+          "height": 44,
+          "gid": 1053
         }
       ]
     },

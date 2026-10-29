@@ -55,5 +55,8 @@
   "footing-stone": {"name": "dé de pierre", "image": "footing-stone", "dims": {"w": 30, "d": 30, "h": 15, "shape": "box"}, "layer": "floor"},
   "shed-post-high": {"name": "poteau (côté haut)", "image": "shed-post-high", "dims": {"w": 15, "d": 15, "h": 210, "shape": "box"}, "body": {"w": 3, "h": 3, "bottom": 0}},
   "shed-post-low": {"name": "poteau (côté bas)", "image": "shed-post-low", "dims": {"w": 15, "d": 15, "h": 170, "shape": "box"}, "body": {"w": 3, "h": 3, "bottom": 0}},
+  "shed-plate-north": {"name": "sablière haute", "image": "shed-plate-north", "dims": {"w": 320, "d": 15, "h": 15, "shape": "box"}},
+  "shed-plate-south": {"name": "sablière basse", "image": "shed-plate-south", "dims": {"w": 320, "d": 15, "h": 15, "shape": "box"}},
+  "shed-plate-side": {"name": "sablière de côté", "image": "shed-plate-side", "dims": {"w": 15, "d": 320, "h": 55, "shape": "box", "ground": true}},
   "well": {"name": "puits", "image": "well", "dims": {"w": 235, "d": 160, "h": 250, "shape": "box"}, "body": {"w": 34, "h": 12, "bottom": 4}}
 }
