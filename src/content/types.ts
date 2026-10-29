@@ -178,6 +178,11 @@ export const PoseSchema = z.strictObject({
 export const GestureSchema = z.strictObject({
   /** Image (à partir de 0) où le coup porte. */
   impact: z.number().int().min(0),
+  /**
+   * Décalage horizontal du fer à l'impact par rapport aux pieds, par direction (la gauche en miroir de la droite) :
+   * c'est ce point que Xéros aligne sur l'encoche visée. Absent : la main de l'image d'impact.
+   */
+  strike: z.strictObject({ down: px, up: px, right: px }).optional(),
   poses: z.strictObject({ down: z.array(PoseSchema), up: z.array(PoseSchema), right: z.array(PoseSchema) }),
 });
 

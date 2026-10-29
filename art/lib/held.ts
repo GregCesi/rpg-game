@@ -2,7 +2,8 @@
 //
 // Le geste appartient au corps (art/characters/xeros.ts) : pour chaque image, il dit où sont les mains,
 // vers où pointe la tête de l'outil, de quel côté est le tranchant, si l'outil passe derrière le corps et dans
-// quel plan il frappe. L'outil fournit deux familles de dessins de 16×16, dans une convention commune.
+// quel plan il frappe. L'outil fournit deux familles de dessins de TOOL_SIZE de côté, dans une convention commune.
+// Un outil long (la hache de bûcheron : 18 px de la prise au fer) y tient dans toutes les orientations.
 //
 // Vu de côté, pour un coup dans un plan vertical (chop-* : de haut en bas sur ce qui est couché) : on voit la
 // silhouette complète du manche et du fer.
@@ -32,18 +33,23 @@ import { Canvas, type Grid, type Palette } from './canvas';
 import { lightUp, type Materials } from './light';
 import type { SpriteSheetSource } from './types';
 
-/** Côté d'une image d'outil en main. */
-export const TOOL_SIZE = 16;
+/** Côté d'un dessin de base d'outil en main. */
+export const TOOL_SIZE = 48;
+/**
+ * Pixel tenu par la main la plus proche du fer, dans les cinq dessins de base : au centre, pour que l'outil y tienne
+ * quelle que soit sa direction. L'autre main tient le bout du manche, juste derrière.
+ */
+export const GRIP: Vec = [24, 24];
 /** Pixel tenu par la main dans le dessin `diag`. */
-export const DIAG_GRIP: Vec = [3, 12];
+export const DIAG_GRIP: Vec = GRIP;
 /** Pixel tenu par la main dans le dessin `upright`. */
-export const UPRIGHT_GRIP: Vec = [7, 12];
+export const UPRIGHT_GRIP: Vec = GRIP;
 /** Pixel tenu par la main dans le dessin `flat`. */
-export const FLAT_GRIP: Vec = [2, 9];
+export const FLAT_GRIP: Vec = GRIP;
 /** Pixel tenu par la main dans le dessin `flatDiag`. */
-export const FLAT_DIAG_GRIP: Vec = [2, 11];
+export const FLAT_DIAG_GRIP: Vec = GRIP;
 /** Pixel tenu par la main dans le dessin `flatEnd`. */
-export const FLAT_END_GRIP: Vec = [9, 12];
+export const FLAT_END_GRIP: Vec = GRIP;
 /**
  * Écrasement de la profondeur au sol par la vue trois quarts : un segment posé à plat, pointé vers le nord,
  * paraît FLAT_DEPTH fois sa longueur à l'écran.
@@ -146,13 +152,11 @@ function orientZones(art: ToolArt, head: Dir8, edge: Edge, view: View = 'side'):
 }
 
 /**
- * Image 16×16 de l'outil orienté, vu de côté, éclairée en haut à gauche et contournée (pour un objet posé,
- * comme le billot). Éclairée avec une marge d'un pixel, puis recadrée : le contour qui déborde du carré est perdu.
+ * Zones de l'outil orienté, vu de côté, sans lumière ni contour, dans un carré de TOOL_SIZE (prise au pixel `gripOf`) :
+ * pour un objet posé qui le montre en partie (la hache plantée dans le billot). L'appelant cache ce qui est enfoui,
+ * puis éclaire le reste avec lightUp (art/lib/light.ts), si bien que le contour ne court que là où l'outil est en l'air.
  */
-export function orient(art: ToolArt, head: Dir8, edge: Edge): Grid {
-  const pad = new Canvas(TOOL_SIZE + 2, TOOL_SIZE + 2).stamp(orientZones(art, head, edge), 1, 1);
-  return lightUp(pad.toGrid(), art.materials).slice(1, -1).map((row) => row.slice(1, -1));
-}
+export const orientedZones = (art: ToolArt, head: Dir8, edge: Edge): Grid => orientZones(art, head, edge);
 
 /** Pose de l'outil pour une image d'un geste, telle que le corps la décrit. */
 export interface ToolPose {
@@ -170,8 +174,11 @@ export interface ToolPose {
 /** Dessin de base employé pour une pose (pour l'aide de gestures.json). */
 export const baseOf = (p: ToolPose): Base => transformFor(p.head, p.edge, p.view).base;
 
-/** Côté d'une image de la planche `tool-<objet>`. La prise du manche y est toujours au pixel HELD_GRIP. */
-export const HELD_SIZE = 32;
+/**
+ * Côté d'une image de la planche `tool-<objet>` (carré pair). La prise du manche y est toujours au pixel HELD_GRIP ;
+ * l'outil s'étend jusqu'à 22 px autour (fer et contour compris).
+ */
+export const HELD_SIZE = 48;
 /** Centre de l'image, arrondi vers le bas : le jeu pose ce pixel sur la main. */
 export const HELD_GRIP: Vec = [HELD_SIZE / 2, HELD_SIZE / 2];
 

@@ -9,17 +9,17 @@ import type { GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
 
 /**
  * Xéros peut viser l'encoche de cette pièce : collé au tronc (au-dessus ou en dessous), tourné vers lui,
- * et le fer à l'impact (sa main à l'image d'impact du geste) à moins d'une demi-section de l'encoche (NOTCH_AIM).
+ * et le fer à l'impact (`strike` du geste) à moins d'une demi-section de l'encoche (NOTCH_AIM).
  */
 function notchInReach(player: Player, p: PlacedProp): boolean {
   const { actor } = player;
   const b = actor.body;
   const box = p.box;
   if (!box) return false;
-  // ce qui doit être aligné sur l'encoche, c'est le fer à l'impact : la main du geste à cette image (gestures.json)
+  // ce qui doit être aligné sur l'encoche, c'est le fer à l'impact (`strike` de gestures.json, sinon la main à cette image)
   const gesture = gestures[p.def.harvest!.gesture];
   const dir = actor.facing === 'left' ? 'right' : (actor.facing as 'down' | 'up' | 'right');
-  const hit = gesture.poses[dir][gesture.impact].dx * (actor.facing === 'left' ? -1 : 1);
+  const hit = (gesture.strike?.[dir] ?? gesture.poses[dir][gesture.impact].dx) * (actor.facing === 'left' ? -1 : 1);
   const aligned = Math.abs(actor.x + hit - p.aimX) < NOTCH_AIM.align;
   // au-dessus du tronc, tourné vers le bas : le bas de sa collision touche le haut de celle du tronc ; en dessous, l'inverse
   const above = actor.facing === 'down' && Math.abs(box.top - b.bottom) <= NOTCH_AIM.gap;

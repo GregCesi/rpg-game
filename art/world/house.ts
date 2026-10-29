@@ -5,7 +5,8 @@
 // L'image est ancrée en bas à gauche (voir props.json).
 
 import { Canvas, EMPTY, rng } from '../lib/canvas';
-import { orient } from '../lib/held';
+import { orientedZones } from '../lib/held';
+import { lightUp } from '../lib/light';
 import { axeArt, toolPalette } from '../items/tools';
 import { shadedOutline } from './trees';
 import type { ImageSource } from '../lib/types';
@@ -242,25 +243,53 @@ function choppingBlock(): Canvas {
   return c;
 }
 
-/** Billot, la hache plantée dans la coupe, le manche qui monte vers la droite. */
+/**
+ * Billot, la hache plantée dans la coupe : tête vers le bas à gauche, tranchant vers le bas à droite, enfoncé dans le
+ * bois près du bord avant ; le long manche monte vers le haut à droite. Seul le talon, l'œil et un liseré de la joue
+ * dépassent : la partie enfouie est retirée avant l'éclairage, si bien que le contour ne court que là où la hache est en
+ * l'air, et la fente sombre prend sa place à l'entrée du fer.
+ */
 function choppingBlockAxe(): Canvas {
-  const body = blockBody();
   const c = shadedOutline(blockBody());
   groundShadow(c, 17.5, 28, 10, 2.4);
-  // hache tête vers le bas à gauche, tranchant vers le bas à droite, enfoncé dans le bois
-  const axe = orient(axeArt(), 'sw', 'ccw');
-  c.stamp(axe, 9, 1);
-  // le fer disparaît sous la coupe : tout ce qui tombe sous le bord avant reprend le dessin du billot
-  const { cx, top, rx, ry } = BLOCK;
-  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
-    const dx = (x + 0.5 - cx) / rx;
-    if (Math.abs(dx) >= 1) continue;
-    const rim = top + ry * Math.sqrt(1 - dx * dx) * 0.2;
-    if (y + 0.5 > rim && body.get(x, y) !== EMPTY) c.set(x, y, body.get(x, y));
+  const art = axeArt();
+  const zones = Canvas.from(orientedZones(art, 'sw', 'ccw'));
+  // milieu de l'œil, dans le dessin orienté (moyenne des pixels d'œil), posé sur l'entrée du fer dans la coupe
+  const eye: [number, number][] = [];
+  for (let y = 0; y < zones.h; y++) for (let x = 0; x < zones.w; x++) if (zones.get(x, y) === 'e') eye.push([x, y]);
+  const ex = eye.reduce((s, p) => s + p[0], 0) / eye.length;
+  const ey = eye.reduce((s, p) => s + p[1], 0) / eye.length;
+  const ENTRY = { x: 13, y: 18 };
+  // la hache dans l'image du billot, avec un pixel de marge tout autour pour le contour
+  const ox = Math.round(ENTRY.x - ex - 0.5) + 1, oy = Math.round(ENTRY.y - ey - 0.5) + 1;
+  const visible = new Canvas(34, 34);
+  const buried = new Canvas(34, 34);
+  for (let y = 0; y < zones.h; y++) for (let x = 0; x < zones.w; x++) {
+    const k = zones.get(x, y);
+    if (k === EMPTY) continue;
+    // profondeur vers le tranchant (bas à droite), depuis l'œil : au-delà d'un pixel, le fer est dans le bois
+    const depth = (x - ex + (y - ey)) * Math.SQRT1_2;
+    (('12'.includes(k) || k === '3') && depth > 3 ? buried : visible).set(x + ox, y + oy, k);
   }
-  // fente sombre là où le fer entre dans le bois
-  for (let y = 1; y < 32; y++) for (let x = 0; x < 32; x++) {
-    if ('Yt'.includes(c.get(x, y)) && '1234'.includes(c.get(x, y - 1))) c.set(x, y, 'P');
+  const lit = Canvas.from(lightUp(visible.toGrid(), art.materials));
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+    const k = lit.get(x + 1, y + 1);
+    if (k === EMPTY) continue;
+    const air = visible.get(x + 1, y + 1) !== EMPTY;
+    // contour posé sur le bois, au ras du fer enfoui : c'est l'entrée de la fente, pas un bord de la hache en l'air
+    const nearBuried = [-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => buried.get(x + 1 + dx, y + 1 + dy) !== EMPTY));
+    if (!air && nearBuried && 'YtT'.includes(c.get(x, y))) {
+      c.set(x, y, 'P');
+      continue;
+    }
+    if (!air && buried.get(x + 1, y + 1) !== EMPTY) continue;
+    // sous le fer, posé à ras de la coupe, pas de trait de contour (en bas, à droite) mais l'ombre du bois
+    const ironBeside = [[-1, 0], [0, -1], [1, 0], [0, 1]].some(([dx, dy]) => '123e'.includes(visible.get(x + 1 + dx, y + 1 + dy)) && visible.get(x + 1 + dx, y + 1 + dy) !== EMPTY);
+    if (!air && k === 'o' && ironBeside && 'YtT'.includes(c.get(x, y))) {
+      c.set(x, y, 'T');
+      continue;
+    }
+    c.set(x, y, k);
   }
   return c;
 }

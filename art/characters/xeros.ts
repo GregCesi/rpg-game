@@ -277,6 +277,12 @@ export const USE_FRAME_RATE = 10;
 type ArmLayer = 'front' | 'head' | 'body';
 
 interface UseBody {
+  /** Mains jointes, dans la frame : là où finissent les bras. */
+  hands: Vec;
+  /**
+   * Pose de l'outil. Sa prise (`tool.hand`, la main la plus proche du fer) est sur les mains, ou décalée de quelques
+   * pixels le long du manche quand un outil long doit atteindre sa cible sans toucher au corps.
+   */
   tool: ToolPose;
   /** Coudes (face et dos : gauche puis droit ; profil : le bras côté spectateur). */
   elbows: Vec[];
@@ -285,12 +291,13 @@ interface UseBody {
 
 const pose = (
   hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front',
-  view: View = 'side',
-): UseBody => ({ tool: { hand, head, edge, behind, ...(view === 'flat' ? { view } : {}) }, elbows, arms });
+  view: View = 'side', grip: Vec = hand,
+): UseBody => ({ hands: hand, tool: { hand: grip, head, edge, behind, ...(view === 'flat' ? { view } : {}) }, elbows, arms });
 
 /** Pose d'un coup horizontal : l'outil est vu du dessus (art/lib/held.ts, dessins `flat*`). */
-const flat = (hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front') =>
-  pose(hand, head, edge, behind, elbows, arms, 'flat');
+const flat = (
+  hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front', grip: Vec = hand,
+) => pose(hand, head, edge, behind, elbows, arms, 'flat', grip);
 
 // Épaules, dans la frame : face/dos à gauche et à droite du torse, profil au milieu du dos.
 const SHOULDER_L: Vec = [11, BODY_Y + 2];
@@ -304,26 +311,26 @@ const USE_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
   // de face (l'arbre au sud) : armée à sa droite (à gauche de l'image), le fer tourne vers nous et mord le tronc
   // devant lui, manche raccourci, fer de toute sa largeur ; puis on le dégage
   down: [
-    flat([10, 34], 'w', 'ccw', false, [[8, 36], [16, 37]]),
-    flat([12, 37], 'sw', 'ccw', false, [[9, 37], [18, 38]]),
-    flat([16, 38], 's', 'ccw', false, [[11, 38], [20, 38]]),
-    flat([14, 37], 'sw', 'ccw', false, [[10, 38], [19, 38]]),
+    flat([10, 34], 'nw', 'cw', true, [[8, 36], [16, 37]]),
+    flat([12, 37], 'w', 'ccw', false, [[9, 37], [18, 38]]),
+    flat([16, 38], 'sw', 'ccw', false, [[11, 38], [20, 38]], 'front', [18, 37]),
+    flat([14, 37], 'sw', 'ccw', false, [[10, 38], [19, 38]], 'front', [16, 36]),
   ],
   // de dos (l'arbre au nord) : armée en arrière à sa droite, le fer vers nous ; il tourne par la droite et mord
   // le tronc devant lui, à droite de la tête, puis revient
   up: [
-    flat([22, 37], 's', 'ccw', false, [[12, 37], [23, 35]], 'body'),
-    flat([24, 34], 'e', 'ccw', false, [[12, 36], [24, 32]], 'body'),
-    flat([21, 31], 'ne', 'ccw', true, [[12, 35], [23, 33]], 'body'),
-    flat([23, 33], 'e', 'ccw', false, [[12, 36], [24, 34]], 'body'),
+    flat([22, 37], 'se', 'cw', false, [[12, 37], [23, 35]], 'body'),
+    flat([24, 34], 'e', 'cw', false, [[12, 36], [24, 32]], 'body'),
+    flat([21, 31], 'n', 'cw', true, [[12, 35], [23, 33]], 'body'),
+    flat([23, 33], 'n', 'cw', true, [[12, 36], [24, 34]], 'body'),
   ],
   // de profil : armée derrière son dos, elle tourne par le côté proche de nous (fer vers le spectateur),
   // mord le tronc devant lui manche en long, puis on la dégage d'un pixel
   right: [
     flat([11, 35], 'w', 'ccw', false, [[14, 36]]),
-    flat([18, 37], 's', 'ccw', false, [[16, 36]]),
-    flat([22, 34], 'e', 'ccw', false, [[18, 35]]),
-    flat([20, 35], 'e', 'ccw', false, [[17, 35]]),
+    flat([18, 37], 'se', 'cw', false, [[16, 36]]),
+    flat([22, 34], 'ne', 'ccw', false, [[18, 35]]),
+    flat([20, 35], 'ne', 'ccw', false, [[17, 35]]),
   ],
 };
 
@@ -348,8 +355,8 @@ const CHOP_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
   down: [
     pose([16, 11], 'n', 'cw', true, [[7, 21], [24, 21]], 'head'),
     pose([16, 18], 'n', 'cw', false, [[8, 26], [24, 26]]),
-    pose([16, 42], 's', 'ccw', false, [[12, 38], [20, 38]]),
-    pose([16, 39], 's', 'ccw', false, [[11, 37], [21, 37]]),
+    pose([16, 42], 's', 'ccw', false, [[12, 38], [20, 38]], 'front', 'side', [16, 35]),
+    pose([16, 39], 's', 'ccw', false, [[11, 37], [21, 37]], 'front', 'side', [16, 33]),
   ],
   // de dos (le tronc au nord, son dessus 18 à 22 px au-dessus des pieds, derrière la taille et le dos) : le fer est
   // armé derrière la tête, pendu vers nous ; il passe au-dessus de la tête, puis frappe l'encoche derrière le corps.
@@ -357,16 +364,16 @@ const CHOP_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
   up: [
     pose([18, 12], 's', 'ccw', false, [[8, 21], [25, 21]], 'head'),
     pose([21, 10], 'n', 'cw', true, [[9, 21], [26, 20]], 'head'),
-    pose([24, 37], 'n', 'cw', true, [[14, 39], [20, 39]], 'body'),
-    pose([24, 35], 'n', 'cw', true, [[14, 38], [20, 38]], 'body'),
+    pose([24, 37], 'n', 'cw', true, [[14, 39], [20, 39]], 'body', 'side', [24, 39]),
+    pose([24, 35], 'n', 'cw', true, [[14, 38], [20, 38]], 'body', 'side', [24, 37]),
   ],
   // de profil : armée derrière la tête, elle repart en avant au-dessus de lui, puis le fer frappe le dessus de la
   // bille posée devant lui, manche vertical, et on le dégage
   right: [
     pose([12, 12], 'nw', 'cw', true, [[6, 23]], 'head'),
     pose([22, 21], 'ne', 'cw', false, [[19, 28]]),
-    pose([24, 29], 's', 'ccw', false, [[19, 32]]),
-    pose([23, 27], 's', 'ccw', false, [[19, 31]]),
+    pose([24, 29], 'se', 'cw', false, [[19, 32]], 'front', 'side', [23, 26]),
+    pose([23, 27], 'se', 'cw', false, [[19, 31]], 'front', 'side', [22, 25]),
   ],
 };
 
@@ -431,8 +438,8 @@ function useFrontal(facing: Facing, b: UseBody): Grid {
   const arms = () => {
     rim(c);
     const [el, er] = b.elbows;
-    arm(c, [SHOULDER_L, el, b.tool.hand], 't', 'L');
-    arm(c, [SHOULDER_R, er, b.tool.hand], 'T', 't');
+    arm(c, [SHOULDER_L, el, b.hands], 't', 'L');
+    arm(c, [SHOULDER_R, er, b.hands], 'T', 't');
   };
   if (b.arms === 'body') arms();
   torso();
@@ -453,7 +460,7 @@ function useSide(b: UseBody): Grid {
   c.stamp(bodySide, ox, BODY_Y);
   const arms = () => {
     rim(c);
-    arm(c, [SHOULDER_SIDE, b.elbows[0], b.tool.hand], 't', 'L');
+    arm(c, [SHOULDER_SIDE, b.elbows[0], b.hands], 't', 'L');
   };
   if (b.arms !== 'front') arms();
   c.stamp(headSide, ox, HEAD_Y);
