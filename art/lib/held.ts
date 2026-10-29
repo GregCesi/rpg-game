@@ -1,19 +1,31 @@
 // Outil tenu en main pendant un geste (coup de hache, de pioche, de houe...).
 //
 // Le geste appartient au corps (art/characters/xeros.ts) : pour chaque image, il dit où sont les mains,
-// vers où pointe la tête de l'outil, de quel côté est le tranchant et si l'outil passe derrière le corps.
-// L'outil, lui, ne fournit que trois dessins de 16×16, dans une convention commune :
+// vers où pointe la tête de l'outil, de quel côté est le tranchant, si l'outil passe derrière le corps et dans
+// quel plan il frappe. L'outil fournit deux familles de dessins de 16×16, dans une convention commune.
+//
+// Vu de côté, pour un coup dans un plan vertical (chop-* : de haut en bas sur ce qui est couché) : on voit la
+// silhouette complète du manche et du fer.
 //   - `diag`    : la tête vers le haut à droite (manche du bas à gauche vers le haut à droite, comme l'icône
 //                 d'inventaire), tranchant vers le haut à gauche ; la main tient le manche au pixel DIAG_GRIP ;
-//   - `upright` : la tête en haut, manche vertical, tranchant à gauche ; main au pixel UPRIGHT_GRIP ;
-//   - `short`   : le même, manche raccourci : l'outil penche vers le spectateur ou s'en éloigne (coup de haut
-//                 en bas vu de face ou de dos, qui ne passe jamais par l'horizontale) ; main au pixel SHORT_GRIP.
-// Toutes les autres orientations s'en déduisent sans perte, par quarts de tour et miroir (`short` : seulement
-// vers n, e, s, w).
-// Les deux dessins ne portent ni ombre ni contour : ils disent seulement de quelle matière est chaque pixel
+//   - `upright` : la tête en haut, manche vertical, tranchant à gauche ; main au pixel UPRIGHT_GRIP.
+//   Toutes les orientations s'en déduisent sans perte, par quarts de tour et miroir.
+//
+// Vu du dessus, pour un coup dans un plan horizontal (use-* : de côté sur ce qui est debout) : l'outil est
+// à plat, à hauteur de tronc, et la vue trois quarts écrase sa profondeur (FLAT_DEPTH). Le fer se présente de
+// biais, raccourci ; le manche, rond, garde son épaisseur.
+//   - `flat`     : tête vers la droite (est), manche en long, fer raccourci, tranchant vers le haut (nord) ;
+//                  main au pixel FLAT_GRIP ;
+//   - `flatDiag` : tête vers le nord-est au sol, tranchant vers le nord-ouest ; main au pixel FLAT_DIAG_GRIP ;
+//   - `flatEnd`  : tête vers le haut (nord, loin du spectateur), manche raccourci, fer de toute sa largeur,
+//                  tranchant à gauche ; main au pixel FLAT_END_GRIP.
+//   Ces trois-là ne tournent pas (un quart de tour mêlerait la largeur et la profondeur) : seuls les miroirs
+//   gauche-droite et haut-bas, qui gardent la vue trois quarts, en tirent les autres orientations.
+//
+// Les dessins ne portent ni ombre ni contour : ils disent seulement de quelle matière est chaque pixel
 // (zones, avec leur table `materials`). L'image est éclairée après la rotation (art/lib/light.ts), si bien
 // que la lumière vient du haut à gauche dans toutes les orientations, et le contour suit la même règle.
-// Un nouvel outil = ces trois dessins, puis `heldToolSheet` : aucune animation du corps à refaire.
+// Un nouvel outil = ces cinq dessins, puis `heldToolSheet` : aucune animation du corps à refaire.
 // Le jeu pose le centre de chaque image de la planche (la prise du manche) sur la main du geste.
 
 import { Canvas, type Grid, type Palette } from './canvas';
@@ -26,12 +38,21 @@ export const TOOL_SIZE = 16;
 export const DIAG_GRIP: Vec = [3, 12];
 /** Pixel tenu par la main dans le dessin `upright`. */
 export const UPRIGHT_GRIP: Vec = [7, 12];
-/** Pixel tenu par la main dans le dessin `short`. */
-export const SHORT_GRIP: Vec = [7, 12];
+/** Pixel tenu par la main dans le dessin `flat`. */
+export const FLAT_GRIP: Vec = [2, 9];
+/** Pixel tenu par la main dans le dessin `flatDiag`. */
+export const FLAT_DIAG_GRIP: Vec = [2, 11];
+/** Pixel tenu par la main dans le dessin `flatEnd`. */
+export const FLAT_END_GRIP: Vec = [9, 12];
+/**
+ * Écrasement de la profondeur au sol par la vue trois quarts : un segment posé à plat, pointé vers le nord,
+ * paraît FLAT_DEPTH fois sa longueur à l'écran.
+ */
+export const FLAT_DEPTH = 0.7;
 
 export type Vec = [number, number];
 
-/** Huit directions de l'écran (n = haut). */
+/** Huit directions de l'écran (n = haut). Vu du dessus, une diagonale est une diagonale au sol. */
 export type Dir8 = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw';
 const DIRS: Dir8[] = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']; // sens horaire, par huitièmes de tour
 
@@ -41,12 +62,16 @@ const DIRS: Dir8[] = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']; // sens horai
  */
 export type Edge = 'cw' | 'ccw';
 
-/** Les trois dessins qu'un outil fournit, en zones de matière, sans ombre ni contour, un pixel de marge au bord. */
+/** Plan du coup : vertical, l'outil vu de côté (`side`), ou horizontal, l'outil vu du dessus (`flat`). */
+export type View = 'side' | 'flat';
+
+/** Les dessins qu'un outil fournit, en zones de matière, sans ombre ni contour (voir l'en-tête). */
 export interface ToolArt {
   diag: Grid;
   upright: Grid;
-  /** `upright` raccourci par la perspective : l'outil penche vers le spectateur ou s'en éloigne. */
-  short: Grid;
+  flat: Grid;
+  flatDiag: Grid;
+  flatEnd: Grid;
   /** Zone -> matière (rampe et contour), pour l'éclairage après rotation. */
   materials: Materials;
 }
@@ -56,55 +81,73 @@ export const angleOf = (d: Dir8): number => (450 - DIRS.indexOf(d) * 45) % 360;
 
 /** Direction vue dans un miroir vertical (gauche <-> droite). */
 export const mirrorDir = (d: Dir8): Dir8 => DIRS[(8 - DIRS.indexOf(d)) % 8];
+/** Direction vue dans un miroir horizontal (haut <-> bas). */
+const flipDirY = (d: Dir8): Dir8 => DIRS[(12 - DIRS.indexOf(d)) % 8];
 
 const rotCW = ([x, y]: Vec): Vec => [TOOL_SIZE - 1 - y, x];
 const flipPx = ([x, y]: Vec): Vec => [TOOL_SIZE - 1 - x, y];
+const flipPy = ([x, y]: Vec): Vec => [x, TOOL_SIZE - 1 - y];
 
-type Base = 'diag' | 'upright' | 'short';
-const GRIPS: Record<Base, Vec> = { diag: DIAG_GRIP, upright: UPRIGHT_GRIP, short: SHORT_GRIP };
+type Base = 'diag' | 'upright' | 'flat' | 'flatDiag' | 'flatEnd';
+const GRIPS: Record<Base, Vec> = {
+  diag: DIAG_GRIP, upright: UPRIGHT_GRIP, flat: FLAT_GRIP, flatDiag: FLAT_DIAG_GRIP, flatEnd: FLAT_END_GRIP,
+};
+/** Tête de chaque dessin vu du dessus (tranchant côté 'ccw'). */
+const FLAT_HEADS: [Base, Dir8][] = [['flat', 'e'], ['flatDiag', 'ne'], ['flatEnd', 'n']];
+
+interface Transform { base: Base; turns: number; flip: boolean; flipY: boolean }
 
 /**
- * Transformation qui amène un des trois dessins à l'orientation voulue : quarts de tour horaires,
- * puis miroir. Les dessins de base ont le tranchant côté 'ccw' ; un miroir le passe côté 'cw'.
- * `short` : le dessin raccourci, qui n'existe que tête vers n, e, s ou w.
+ * Transformation qui amène un des dessins à l'orientation voulue : quarts de tour horaires, puis miroirs.
+ * Les dessins de base ont le tranchant côté 'ccw' ; chaque miroir le change de côté.
+ * Vu du dessus, pas de quart de tour : `flatDiag` n'existe que tête ne/sw tranchant 'ccw', nw/se tranchant 'cw'.
  */
-function transformFor(head: Dir8, edge: Edge, short = false): { base: Base; turns: number; flip: boolean } {
+function transformFor(head: Dir8, edge: Edge, view: View = 'side'): Transform {
+  if (view === 'flat') {
+    for (const [base, h] of FLAT_HEADS) for (const flip of [false, true]) for (const flipY of [false, true]) {
+      let d = h;
+      if (flip) d = mirrorDir(d);
+      if (flipY) d = flipDirY(d);
+      if (d === head && (flip !== flipY ? 'cw' : 'ccw') === edge) return { base, turns: 0, flip, flipY };
+    }
+    throw new Error(`held : pas de dessin vu du dessus tête vers « ${head} », tranchant « ${edge} »`);
+  }
   const flip = edge === 'cw';
   const target = flip ? mirrorDir(head) : head;
   const i = DIRS.indexOf(target);
-  if (short && i % 2 === 1) throw new Error(`held : pas de dessin raccourci tête vers « ${head} » (n, e, s ou w seulement)`);
-  const base: Base = short ? 'short' : i % 2 === 0 ? 'upright' : 'diag';
+  const base: Base = i % 2 === 0 ? 'upright' : 'diag';
   const from = base === 'diag' ? 1 : 0; // ne ou n
-  return { base, turns: ((i - from) / 2 + 4) % 4, flip };
+  return { base, turns: ((i - from) / 2 + 4) % 4, flip, flipY: false };
 }
 
-function mapPx(p: Vec, turns: number, flip: boolean): Vec {
+function mapPx(p: Vec, t: Transform): Vec {
   let q = p;
-  for (let k = 0; k < turns; k++) q = rotCW(q);
-  return flip ? flipPx(q) : q;
+  for (let k = 0; k < t.turns; k++) q = rotCW(q);
+  if (t.flip) q = flipPx(q);
+  return t.flipY ? flipPy(q) : q;
 }
 
 /** Pixel tenu par la main, dans l'image orientée. */
-export function gripOf(head: Dir8, edge: Edge, short = false): Vec {
-  const t = transformFor(head, edge, short);
-  return mapPx(GRIPS[t.base], t.turns, t.flip);
+export function gripOf(head: Dir8, edge: Edge, view: View = 'side'): Vec {
+  const t = transformFor(head, edge, view);
+  return mapPx(GRIPS[t.base], t);
 }
 
 /** Zones de l'outil orientées (sans lumière) : tête vers `head`, tranchant du côté `edge`. */
-function orientZones(art: ToolArt, head: Dir8, edge: Edge, short = false): Grid {
-  const t = transformFor(head, edge, short);
+function orientZones(art: ToolArt, head: Dir8, edge: Edge, view: View = 'side'): Grid {
+  const t = transformFor(head, edge, view);
   const src = art[t.base];
   const out = new Canvas(TOOL_SIZE, TOOL_SIZE);
   src.forEach((row, y) => [...row].forEach((ch, x) => {
-    const [u, v] = mapPx([x, y], t.turns, t.flip);
+    const [u, v] = mapPx([x, y], t);
     out.set(u, v, ch);
   }));
   return out.toGrid();
 }
 
 /**
- * Image 16×16 de l'outil orienté, éclairée en haut à gauche et contournée (pour un objet posé, comme le billot).
- * Éclairée avec une marge d'un pixel, puis recadrée : le contour qui déborde du carré est perdu.
+ * Image 16×16 de l'outil orienté, vu de côté, éclairée en haut à gauche et contournée (pour un objet posé,
+ * comme le billot). Éclairée avec une marge d'un pixel, puis recadrée : le contour qui déborde du carré est perdu.
  */
 export function orient(art: ToolArt, head: Dir8, edge: Edge): Grid {
   const pad = new Canvas(TOOL_SIZE + 2, TOOL_SIZE + 2).stamp(orientZones(art, head, edge), 1, 1);
@@ -115,14 +158,17 @@ export function orient(art: ToolArt, head: Dir8, edge: Edge): Grid {
 export interface ToolPose {
   /** Pixel des mains jointes sur le manche, dans la frame du personnage. */
   hand: Vec;
-  /** Direction de la main vers la tête de l'outil. */
+  /** Direction de la main vers la tête de l'outil (vu du dessus : direction au sol). */
   head: Dir8;
   edge: Edge;
   /** L'outil se dessine derrière le corps. */
   behind: boolean;
-  /** Dessin raccourci (`short`) : l'outil penche vers le spectateur ou s'en éloigne. */
-  short?: boolean;
+  /** Plan du coup (`side` si absent) : vertical vu de côté, ou horizontal vu du dessus. */
+  view?: View;
 }
+
+/** Dessin de base employé pour une pose (pour l'aide de gestures.json). */
+export const baseOf = (p: ToolPose): Base => transformFor(p.head, p.edge, p.view).base;
 
 /** Côté d'une image de la planche `tool-<objet>`. La prise du manche y est toujours au pixel HELD_GRIP. */
 export const HELD_SIZE = 32;
@@ -130,9 +176,9 @@ export const HELD_SIZE = 32;
 export const HELD_GRIP: Vec = [HELD_SIZE / 2, HELD_SIZE / 2];
 
 /** Image de la planche : l'outil orienté, sa prise posée sur HELD_GRIP, éclairé une fois en place. */
-export function heldImage(art: ToolArt, head: Dir8, edge: Edge, short = false): Grid {
-  const [gx, gy] = gripOf(head, edge, short);
-  const zones = new Canvas(HELD_SIZE, HELD_SIZE).stamp(orientZones(art, head, edge, short), HELD_GRIP[0] - gx, HELD_GRIP[1] - gy);
+export function heldImage(art: ToolArt, head: Dir8, edge: Edge, view: View = 'side'): Grid {
+  const [gx, gy] = gripOf(head, edge, view);
+  const zones = new Canvas(HELD_SIZE, HELD_SIZE).stamp(orientZones(art, head, edge, view), HELD_GRIP[0] - gx, HELD_GRIP[1] - gy);
   return lightUp(zones.toGrid(), art.materials);
 }
 
@@ -156,7 +202,7 @@ export function heldToolSheet(
   const animations: SpriteSheetSource['animations'] = {};
   for (const [gesture, { poses, frameRate }] of Object.entries(gestures)) {
     for (const dir of ['down', 'up', 'right'] as const) {
-      animations[`${gesture}-${dir}`] = { frames: poses[dir].map((p) => heldImage(art, p.head, p.edge, p.short)), frameRate, repeat: 0 };
+      animations[`${gesture}-${dir}`] = { frames: poses[dir].map((p) => heldImage(art, p.head, p.edge, p.view)), frameRate, repeat: 0 };
     }
   }
   return { kind: 'spritesheet', name: `tool-${name}`, frameW: HELD_SIZE, frameH: HELD_SIZE, palette, animations };

@@ -145,8 +145,16 @@ export const PropDefSchema = z.strictObject({
 export const PoseSchema = z.strictObject({
   dx: px,
   dy: px,
-  /** Angle du manche dessiné dans l'image d'outil (degrés), pour qui dessine un nouvel outil. */
+  /**
+   * Angle de l'outil (degrés, 0 = est, 90 = nord) : direction de la tête, à l'écran pour un dessin vu de côté,
+   * au sol pour un dessin vu du dessus. Pour qui dessine un nouvel outil.
+   */
   angle: z.number(),
+  /**
+   * Dessin de base dont l'image d'outil est tirée (art/lib/held.ts) : vu de côté pour un coup vertical (`diag`, `upright`),
+   * vu du dessus pour un coup horizontal (`flat`, `flatDiag`, `flatEnd`). Pour qui dessine un nouvel outil.
+   */
+  base: z.enum(['diag', 'upright', 'flat', 'flatDiag', 'flatEnd']),
   /** L'outil passe derrière le corps. */
   behind: z.boolean().default(false),
   /** L'outil passe devant ce qui est posé jusqu'à `ahead` px au sud des pieds (le tronc couché que frappe le fer). */

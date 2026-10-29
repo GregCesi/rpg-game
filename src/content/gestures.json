@@ -2,17 +2,17 @@
   "use": {
     "impact": 2,
     "poses": {
-      "down": [{"dx": 0, "dy": -17, "angle": 90}, {"dx": 0, "dy": -35, "angle": 90, "behind": true}, {"dx": 0, "dy": -9, "angle": 270}, {"dx": 1, "dy": -12, "angle": 315}],
-      "up": [{"dx": 5, "dy": -14, "angle": 45, "behind": true}, {"dx": 9, "dy": -29, "angle": 135}, {"dx": 0, "dy": -14, "angle": 90, "behind": true}, {"dx": 2, "dy": -12, "angle": 45, "behind": true}],
-      "right": [{"dx": 5, "dy": -15, "angle": 45}, {"dx": -3, "dy": -35, "angle": 180, "behind": true}, {"dx": 7, "dy": -11, "angle": 315}, {"dx": 7, "dy": -14, "angle": 0}]
+      "down": [{"dx": -6, "dy": -14, "angle": 180, "base": "flat"}, {"dx": -4, "dy": -11, "angle": 225, "ahead": 16, "base": "flatDiag"}, {"dx": 0, "dy": -10, "angle": 270, "ahead": 16, "base": "flatEnd"}, {"dx": -2, "dy": -11, "angle": 225, "ahead": 16, "base": "flatDiag"}],
+      "up": [{"dx": 6, "dy": -11, "angle": 270, "base": "flatEnd"}, {"dx": 8, "dy": -14, "angle": 0, "base": "flat"}, {"dx": 5, "dy": -17, "angle": 45, "behind": true, "base": "flatDiag"}, {"dx": 7, "dy": -15, "angle": 0, "base": "flat"}],
+      "right": [{"dx": -5, "dy": -13, "angle": 180, "base": "flat"}, {"dx": 2, "dy": -11, "angle": 270, "base": "flatEnd"}, {"dx": 6, "dy": -14, "angle": 0, "base": "flat"}, {"dx": 4, "dy": -13, "angle": 0, "base": "flat"}]
     }
   },
   "chop": {
     "impact": 2,
     "poses": {
-      "down": [{"dx": 0, "dy": -37, "angle": 90, "behind": true}, {"dx": 0, "dy": -23, "angle": 90}, {"dx": 0, "dy": -6, "angle": 270, "ahead": 24}, {"dx": 0, "dy": -9, "angle": 270, "ahead": 24}],
-      "up": [{"dx": 0, "dy": -35, "angle": 90}, {"dx": 0, "dy": -33, "angle": 90, "behind": true}, {"dx": 0, "dy": -11, "angle": 90, "behind": true}, {"dx": 0, "dy": -13, "angle": 90, "behind": true}],
-      "right": [{"dx": -4, "dy": -37, "angle": 90, "behind": true}, {"dx": 6, "dy": -27, "angle": 45}, {"dx": 7, "dy": -19, "angle": 315, "ahead": 12}, {"dx": 6, "dy": -21, "angle": 315, "ahead": 12}]
+      "down": [{"dx": 0, "dy": -37, "angle": 90, "behind": true, "base": "upright"}, {"dx": 0, "dy": -30, "angle": 90, "base": "upright"}, {"dx": 0, "dy": -6, "angle": 270, "ahead": 24, "base": "upright"}, {"dx": 0, "dy": -9, "angle": 270, "ahead": 24, "base": "upright"}],
+      "up": [{"dx": 2, "dy": -36, "angle": 270, "base": "upright"}, {"dx": 5, "dy": -38, "angle": 90, "behind": true, "base": "upright"}, {"dx": 8, "dy": -11, "angle": 90, "behind": true, "base": "upright"}, {"dx": 8, "dy": -13, "angle": 90, "behind": true, "base": "upright"}],
+      "right": [{"dx": -4, "dy": -36, "angle": 135, "behind": true, "base": "diag"}, {"dx": 6, "dy": -27, "angle": 45, "base": "diag"}, {"dx": 8, "dy": -19, "angle": 270, "ahead": 12, "base": "upright"}, {"dx": 7, "dy": -21, "angle": 270, "ahead": 12, "base": "upright"}]
     }
   }
 }

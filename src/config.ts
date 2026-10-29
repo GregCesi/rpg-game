@@ -43,7 +43,7 @@ export const INTERACT = { reach: 16, radius: 20 };
 
 /**
  * Viser une encoche du tronc couché : Xéros doit être collé au tronc (au plus `gap` px entre sa collision et celle du tronc),
- * tourné vers lui (haut ou bas), et son centre à moins de `align` px de l'encoche (une demi-section : 19 px / 2).
+ * tourné vers lui (haut ou bas), et le fer à l'impact à moins de `align` px de l'encoche (une demi-section : 19 px / 2).
  */
 export const NOTCH_AIM = { gap: 3, align: 9.5 };
 

@@ -3,8 +3,8 @@
 // Tous les manches vont en diagonale, du bas à gauche vers le haut à droite : l'inventaire se lit d'un coup d'œil.
 // Contour d'un pixel : teinte la plus sombre de la matière en haut et à gauche, OUTLINE en bas et à droite.
 
-import { Canvas } from '../lib/canvas';
-import type { ToolArt } from '../lib/held';
+import { Canvas, EMPTY } from '../lib/canvas';
+import { FLAT_DEPTH, FLAT_DIAG_GRIP, FLAT_END_GRIP, FLAT_GRIP, type ToolArt, type Vec } from '../lib/held';
 import type { Material, Materials } from '../lib/light';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
@@ -104,25 +104,61 @@ function axe(): Canvas {
 
 /**
  * La même hache en zones, manche vertical (tête en haut, tranchant à gauche), pour l'outil en main
- * (art/lib/held.ts). La main la tient au pixel UPRIGHT_GRIP. `lift` rapproche le fer de la main (dessin raccourci).
+ * (art/lib/held.ts). La main la tient au pixel UPRIGHT_GRIP.
  */
-function axeUprightZones(lift = 0): Canvas {
+function axeUprightZones(): Canvas {
   const c = new Canvas(S, S);
-  c.rect(7, 3 + lift, 1, 12 - lift, 'M').rect(8, 3 + lift, 1, 12 - lift, 'm');
+  c.rect(7, 3, 1, 12, 'M').rect(8, 3, 1, 12, 'm');
   c.set(7, 12, 'w').set(7, 13, 'w'); // poignée patinée
   for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-    const k = axeHead(4.5 + lift - (y + 0.5), 8 - (x + 0.5));
+    const k = axeHead(4.5 - (y + 0.5), 8 - (x + 0.5));
     if (k) c.set(x, y, k);
   }
   return c;
 }
 
 /**
- * La hache manche vertical, raccourcie par la perspective : elle penche vers le spectateur ou s'en éloigne
- * (coup de haut en bas vu de face ou de dos). Même fer, le manche ne montre plus que la poignée.
- * La main la tient au pixel SHORT_GRIP.
+ * La hache posée à plat, vue du dessus en trois quarts, pour un coup horizontal (art/lib/held.ts) : tête vers
+ * `deg` au sol (0 = est, 90 = nord), tranchant du côté 'ccw'. Le manche est un cylindre : sa ligne est
+ * raccourcie par la vue mais il garde ses deux pixels d'épaisseur. Le fer est une plaque couchée : sa
+ * profondeur est écrasée de FLAT_DEPTH, il se présente de biais. La main tient le manche au pixel `grip`.
  */
-const SHORTEN = 4;
+function axeFlatZones(deg: number, [gx, gy]: Vec): Canvas {
+  const c = new Canvas(S, S);
+  const t = (deg * Math.PI) / 180;
+  const cos = Math.cos(t), sin = Math.sin(t);
+  // axe du manche : il passe par le coin bas droit du pixel tenu, pour faire deux pixels d'épaisseur
+  const ox = gx + 1, oy = gy + 1;
+  const hx = cos, hy = -sin * FLAT_DEPTH; // la tête, vue à l'écran
+  const len = Math.hypot(hx, hy);
+  const ux = hx / len, uy = hy / len;
+  const fer = new Canvas(S, S);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const px = x + 0.5 - ox, py = y + 0.5 - oy;
+    // manche : distance à l'axe, à l'écran ; position le long du manche, en pixels de manche réel
+    const along = (px * ux + py * uy) / len;
+    if (Math.abs(px * uy - py * ux) <= 1 && along >= -2.5 && along <= 9.5) {
+      c.set(x, y, along >= -1.5 && along <= 0.5 ? 'w' : 'M');
+    }
+    // fer : le point du sol (à hauteur de main) sous ce pixel, en coordonnées du fer
+    const sx = px, sy = py / FLAT_DEPTH;
+    const a = sx * cos - sy * sin - 8; // le long du manche, depuis l'œil
+    const b = -sx * sin - sy * cos; // en travers, vers le tranchant
+    const k = axeHead(a, b);
+    if (k) fer.set(x, y, k);
+  }
+  // le fil, écrasé par la vue, peut tomber entre deux rangées : tout pixel du fer qui n'a plus de fer
+  // du côté du tranchant est sur le fil
+  const ex = -sin, ey = -cos * FLAT_DEPTH;
+  const el = Math.hypot(ex, ey);
+  const sx = Math.round(ex / el), sy = Math.round(ey / el);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const k = fer.get(x, y);
+    if (k === EMPTY) continue;
+    c.set(x, y, fer.get(x + sx, y + sy) === EMPTY && k !== '4' ? '1' : k);
+  }
+  return c;
+}
 
 /** Matières de la hache en main : chaque zone de l'icône retrouve sa rampe, éclairée après rotation. */
 const axeMaterials: Materials = (() => {
@@ -279,13 +315,16 @@ function woodenSword(): Canvas {
   return outline(c, dark);
 }
 
-/** Hache tenue en main : les trois dessins du geste en zones, et leurs matières (art/lib/held.ts). */
+/** Hache tenue en main : les cinq dessins du geste en zones, et leurs matières (art/lib/held.ts). */
 export const axeArt = (): ToolArt => ({
-  // l'œil du fer, entre la joue et le bout du manche : un trou sur l'icône (le contour le comble),
+  // vue de côté. L'œil du fer, entre la joue et le bout du manche : un trou sur l'icône (le contour le comble),
   // une matière ici, pour que l'éclairage voie un seul volume
   diag: axeZones().rect(10, 2, 2, 2, 'e').toGrid(),
   upright: axeUprightZones().set(6, 6, 'e').toGrid(),
-  short: axeUprightZones(SHORTEN).set(6, 6 + SHORTEN, 'e').toGrid(),
+  // vue du dessus, à plat
+  flat: axeFlatZones(0, FLAT_GRIP).toGrid(),
+  flatDiag: axeFlatZones(45, FLAT_DIAG_GRIP).toGrid(),
+  flatEnd: axeFlatZones(90, FLAT_END_GRIP).toGrid(),
   materials: axeMaterials,
 });
 
