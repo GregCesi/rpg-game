@@ -175,7 +175,7 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
   const xh = body?.kind === 'spritesheet' ? body.frameH : 0;
   const pad = 8;
   const perRow = 8;
-  type Row = { def: PileDef; states: string[][]; ext: { left: number; right: number; top: number; bottom: number } };
+  type Row = { def: PileDef; states: string[][]; ext: { left: number; right: number; top: number; bottom: number }; tied?: boolean };
   const rows: Row[] = [];
   // chaque genre, puis sa forme tournée s'il en a une (les billes nord-sud)
   const shapes = Object.values(piles).flatMap((d) => (d.turned ? [d, shapeOf(d, true)] : [d]));
@@ -183,15 +183,22 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
     const places = Object.entries(def.places);
     if (places.some(([, q]) => !image(q.image))) return undefined;
     // étendue de toutes les places autour du point du tas : la même case pour chaque état
+    // le lien sous le tas (les branches), s'il est dessiné, compte dans l'étendue
+    const tie = def.tie && image(def.tie.image) ? { ...def.tie, grid: image(def.tie.image)!.grid } : undefined;
     const ext = {
-      left: Math.min(...places.map(([, q]) => q.x)),
-      right: Math.max(...places.map(([, q]) => q.x + image(q.image)!.grid[0].length)),
-      top: Math.min(...places.map(([, q]) => q.y - image(q.image)!.grid.length)),
-      bottom: Math.max(...places.map(([, q]) => Math.max(q.y, q.body ? q.body.y + q.body.h : q.y))),
+      left: Math.min(...places.map(([, q]) => q.x), tie ? tie.x : Infinity),
+      right: Math.max(...places.map(([, q]) => q.x + image(q.image)!.grid[0].length), tie ? tie.x + tie.grid[0].length : -Infinity),
+      top: Math.min(...places.map(([, q]) => q.y - image(q.image)!.grid.length), tie ? tie.y - tie.grid.length : Infinity),
+      bottom: Math.max(...places.map(([, q]) => Math.max(q.y, q.body ? q.body.y + q.body.h : q.y)), tie ? tie.y : -Infinity),
     };
     const keys = places.map(([id]) => id);
     const typical = keys.map((_, i) => keys.slice(0, i + 1));
     for (let i = 0; i < typical.length; i += perRow) rows.push({ def, states: typical.slice(i, i + perRow), ext });
+    // lié : le lien seul, puis la construction type sur lui
+    if (tie) {
+      const tied = [[], ...typical];
+      for (let i = 0; i < tied.length; i += perRow) rows.push({ def, states: tied.slice(i, i + perRow), ext, tied: true });
+    }
     const all = pileStates(def, ALL_STATES + 1);
     if (all.length <= ALL_STATES) for (let i = 0; i < all.length; i += perRow) rows.push({ def, states: all.slice(i, i + perRow), ext });
   }
@@ -205,6 +212,9 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
     if (xeros && body?.kind === 'spritesheet') board.blit(xeros, body.palette, pad, base + r.ext.bottom - xh);
     r.states.forEach((taken, i) => {
       const px = pad + xw + pad + i * cellW - r.ext.left;
+      // le lien passe sous toutes les pièces
+      const tieSrc = r.tied && r.def.tie ? image(r.def.tie.image) : undefined;
+      if (tieSrc && r.def.tie) board.blit(tieSrc.grid, tieSrc.palette, px + r.def.tie.x, base + r.def.tie.y - tieSrc.grid.length);
       for (const id of drawOrder(r.def, taken)) {
         const q = r.def.places[id];
         const src = image(q.image)!;

@@ -53,6 +53,14 @@ export const families: Family[] = [
   { title: 'Outil en main', ground: 'grass', keys: ['tool-axe'], allFrames: ['tool-axe'] },
   { title: "Éclats d'impact", ground: 'grass', keys: ['fx-wood', 'fx-stone', 'fx-leaves'], allFrames: ['fx-wood', 'fx-stone', 'fx-leaves'] },
   { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-box', 'ui-key-e', 'ui-key-space'], icons: ['ui-hand-left', 'ui-hand-right', 'ui-hands-both'] },
+  {
+    title: 'Corde et fagot',
+    ground: 'grass',
+    keys: ['rope-coil', 'rope-tie-ground', 'chopping-block', 'chopping-block-rope', 'pile-branch-tie', 'faggot', 'faggot-ns', 'felled-log', 'felled-log-ns'],
+    icons: ['item-rope-coil', 'item-rope-tie', 'item-faggot'],
+  },
+  { title: 'Jauge et chiffres (herbe)', ground: 'grass', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },
+  { title: 'Jauge et chiffres (plancher)', ground: 'floor', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },
   { title: 'Mobilier et ferme', ground: 'grass', keys: ['barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'woodpile', 'chopping-block', 'chopping-block-axe'] },
   { title: 'Intérieur', ground: 'floor', keys: ['bed', 'pallet', 'sack', 'jar', 'worktable', 'workbench'] },
 ];

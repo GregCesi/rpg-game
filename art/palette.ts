@@ -52,6 +52,12 @@ export const world = {
   a: '#efe6cc',
   b: '#e0b94a',
   c: '#b8584a',
+  // chanvre (corde) : plus jaune et plus saturé que le lin de la tunique de Xéros (portrait L t T), pour s'en
+  // détacher quand il pend à sa main ; plus pâle que la paille (Y t). X : le plus sombre, contour côté lumière et creux.
+  J: '#ddc58d',
+  O: '#b99c62',
+  C: '#8c7244',
+  X: '#5f4a2b',
   // contour, ombre, lueur
   o: OUTLINE,
   x: '#2b1a1040',

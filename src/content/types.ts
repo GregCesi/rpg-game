@@ -190,6 +190,23 @@ export const PropDefSchema = z.strictObject({
   harvest: HarvestSchema.optional(),
   /** Ce qui se prend dans les mains : voir TakeSchema. */
   take: TakeSchema.optional(),
+  /**
+   * Quantité mesurée (le rouleau de corde) : une longueur, en centimètres, gardée par GameState (`length` de ce qu'on
+   * tient, d'un objet né ou changé). `start` : la longueur d'un objet neuf (posé dans Tiled) ; `cut` : ce qu'enlève une
+   * coupe ; `piece` : l'objet possédable (items.json) qui tombe au sol à chaque coupe (le lien). Coupé à zéro, il disparaît.
+   */
+  length: z.strictObject({ start: z.number().int().positive(), cut: z.number().int().positive(), piece: id }).optional(),
+  /**
+   * Ce qu'on peut poser dessus avec E, en le tenant dans la main active (le rouleau sur le billot) : objet de props.json
+   * tenu -> objet de props.json que devient celui-ci, qui le porte (voir `bears`).
+   */
+  rest: z.record(id, id).optional(),
+  /**
+   * Il porte un objet posé dessus (le billot et son rouleau) : `prop`, l'objet porté, qui a une longueur (`length`), et
+   * `empty`, ce qu'il redevient quand on le reprend (E) ou qu'il est vide. Son `harvest` (outil, geste) coupe l'objet porté :
+   * chaque coup réussi en enlève `length.cut` et lâche `length.piece` ; `becomes`, `drops`, `spawns` et `fall` n'y servent pas.
+   */
+  bears: z.strictObject({ prop: id, empty: id }).optional(),
 });
 
 /**
@@ -244,6 +261,15 @@ export const PileDefSchema = z.strictObject({
   turned: z
     .strictObject({ start: id, order: z.enum(['layers', 'depth']).default('layers'), places: z.record(id, PilePlaceSchema) })
     .optional(),
+  /**
+   * Le lien qui ceinture le tas par-dessous (les branches) : `item`, l'objet possédable qu'on pose (Q) par terre, où il
+   * commence un tas sur lui, ou sur un tas de ce genre qui n'en a pas ; `image`, son dessin sous le tas, en (`x`, `y`),
+   * coin bas gauche, repère du tas ; `into`, l'objet de props.json que devient le tas plein et lié quand on le noue (E
+   * maintenu) : le fagot, qui se dénoue en un tas plein de ce genre avec son lien.
+   */
+  tie: z.strictObject({ item: id, image: id, x: px, y: px, into: id }).optional(),
+  /** Le nombre de pièces s'affiche en tout petit en bas à droite du tas quand Xéros est tout près (les branches). */
+  count: z.boolean().default(false),
 });
 
 /** Où est la main pendant une image d'un geste. (dx, dy) : par rapport aux pieds du personnage (milieu bas de son image). */

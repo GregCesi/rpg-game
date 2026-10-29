@@ -24,7 +24,9 @@ import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { branch, finishBranch, branchBody, BASE, type Branch } from '../items/branch';
+import { tieUnder } from '../items/rope';
 
+const BW_TIE = 32;
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
 // ---------- Branches ----------
@@ -58,4 +60,16 @@ function groundBranch(): Canvas {
   return Canvas.from(c.toGrid().slice(top));
 }
 
-export default [...branches, img('branch-ground', groundBranch())];
+// ---------- Lien sous le tas ----------
+// Le lien (rope-tie, art/items/rope.ts) passé sous le tas de branches, dessiné dans le repère du tas : le jeu le pose
+// en (`x`, `y`) = `tie` de piles.json `branches` (coin bas gauche ; image de TIE_H rangées, de TIE_TOP à TIE_TOP +
+// TIE_H − 1 dans le repère du tas), sous toutes les branches. La corde doublée passe du nord au sud sous le milieu du
+// tas (colonnes 14 et 16, entre les gros bouts et les pointes) : au sol, la boucle dépasse derrière (rangée −22, au-dessus
+// de la branche du sommet, pour se voir aussi sous le tas plein), le nœud lâche et les deux bouts devant (rangées −1 à 3).
+// Elle fait 20 px du nord au sud (1 m, doublée : 2 m de corde avec le nœud).
+export const TIE_TOP = -24;
+export const TIE_H = 29;
+const TIE_X = 14;
+const tie = tieUnder(BW_TIE, TIE_H, TIE_X, -22 - TIE_TOP, -1 - TIE_TOP);
+
+export default [...branches, img('branch-ground', groundBranch()), img('pile-branch-tie', tie)];

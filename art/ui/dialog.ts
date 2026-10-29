@@ -1,7 +1,7 @@
 // Éléments d'interface : cadre en bois et parchemin (étiré en 9 parties), flèche "suite", touches E et Espace.
 
 import { Canvas, EMPTY } from '../lib/canvas';
-import type { ImageSource } from '../lib/types';
+import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { palette as portrait } from '../portraits/xeros';
 import { outline } from '../items/lib';
@@ -178,6 +178,56 @@ function bothHands(): Canvas {
   return outline(c, '3');
 }
 
+// ---------- Jauge ----------
+
+/** Nombre d'images de la jauge, de vide (0) à plein (GAUGE_STEPS − 1). */
+const GAUGE_STEPS = 9;
+
+/**
+ * Jauge d'un geste maintenu (E maintenu), au-dessus de la tête de Xéros : 14 × 4 px, cadre sombre (OUTLINE, coins
+ * arrondis), creux de bois sombre (N K) que remplit l'or de la case active (H en haut, b en bas), de gauche à droite.
+ * Image k : k/8 des 12 colonnes du creux.
+ */
+function gauge(k: number): Canvas {
+  const c = new Canvas(14, 4, 'o');
+  c.set(0, 0, EMPTY).set(13, 0, EMPTY).set(0, 3, EMPTY).set(13, 3, EMPTY);
+  c.rect(1, 1, 12, 1, 'N').rect(1, 2, 12, 1, 'K');
+  const n = Math.round((12 * k) / (GAUGE_STEPS - 1));
+  c.rect(1, 1, n, 1, 'H').rect(1, 2, n, 1, 'b');
+  return c;
+}
+
+function gaugeSheet(): SpriteSheetSource {
+  const frames = Array.from({ length: GAUGE_STEPS }, (_, k) => gauge(k).toGrid());
+  return { kind: 'spritesheet', name: 'ui-gauge', frameW: 14, frameH: 4, palette, animations: { fill: { frames, frameRate: 16, repeat: 0 } } };
+}
+
+// ---------- Chiffres ----------
+
+/**
+ * Chiffres minuscules de 3 × 5 px (le nombre de branches d'un tas, en bas à droite du tas), en parchemin clair (a)
+ * cerclé d'un contour sombre d'un pixel, diagonales comprises (OUTLINE) : 5 × 7 px, lisibles sur l'herbe comme sur le
+ * plancher. Mêmes couleurs que la touche E.
+ */
+const DIGITS: string[][] = [
+  ['###', '#.#', '#.#', '#.#', '###'],
+  ['.#.', '##.', '.#.', '.#.', '###'],
+  ['###', '..#', '###', '#..', '###'],
+  ['###', '..#', '.##', '..#', '###'],
+  ['#.#', '#.#', '###', '..#', '..#'],
+  ['###', '#..', '###', '..#', '###'],
+  ['###', '#..', '###', '#.#', '###'],
+  ['###', '..#', '.#.', '.#.', '.#.'],
+  ['###', '#.#', '###', '#.#', '###'],
+  ['###', '#.#', '###', '..#', '###'],
+];
+
+function digit(n: number): Canvas {
+  const c = new Canvas(5, 7);
+  DIGITS[n].forEach((row, y) => [...row].forEach((k, x) => { if (k === '#') c.set(x + 1, y + 1, 'a'); }));
+  return c.outline('o', true);
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
-export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-key-space', keySpace()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true)), img('ui-hand-left', emptyHand(true)), img('ui-hand-right', emptyHand(false)), img('ui-hands-both', bothHands())];
+export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-key-space', keySpace()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true)), img('ui-hand-left', emptyHand(true)), img('ui-hand-right', emptyHand(false)), img('ui-hands-both', bothHands()), gaugeSheet(), ...DIGITS.map((_, n) => img(`ui-digit-${n}`, digit(n)))];

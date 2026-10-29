@@ -8,6 +8,7 @@ import { Canvas, EMPTY, rng } from '../lib/canvas';
 import { orientedZones } from '../lib/held';
 import { lightUp } from '../lib/light';
 import { axeArt, toolPalette } from '../items/tools';
+import { ROPE_COIL } from '../items/rope';
 import { shadedOutline } from './trees';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
@@ -199,7 +200,7 @@ function woodpile(): Canvas {
 // ---------- Billot ----------
 // Une bille de chêne debout, à côté du tas de bois : on y fend les bûches. 32x32, base en y=27.
 // Environ 80 cm de large pour 45 de haut (16 px sur 9 de face sud), plus bas et plus large qu'une souche,
-// sans racines, la coupe du dessus marquée par la hache. Deux images de même taille : vide, et hache plantée.
+// sans racines, la coupe du dessus marquée par la hache. Trois images de même taille : vide, hache plantée, rouleau de corde posé.
 
 /** Ombre portée : ne remplit que les pixels encore vides. */
 function groundShadow(c: Canvas, cx: number, cy: number, rx: number, ry: number) {
@@ -240,6 +241,22 @@ function blockBody(): Canvas {
 function choppingBlock(): Canvas {
   const c = shadedOutline(blockBody());
   groundShadow(c, 17.5, 28, 10, 2.4);
+  return c;
+}
+
+/**
+ * Billot, le rouleau de corde (art/items/rope.ts) posé à plat sur la coupe, au milieu : le billot nu tel quel, même
+ * image (32×32), même base, même largeur, si bien que rien ne saute quand le rouleau arrive ou s'en va. Le rouleau
+ * fait 6 px (30 cm) sur un billot de 18 : on voit la coupe tout autour. Son ombre de contact assombrit le bois (T)
+ * à sa droite et sous lui.
+ */
+function choppingBlockRope(): Canvas {
+  const c = choppingBlock();
+  const ox = BLOCK.cx - 3, oy = BLOCK.top - 2;
+  for (const [dx, dy] of [[5, 4], [6, 3], [6, 2], [2, 5], [3, 5], [4, 5], [5, 5]]) {
+    if ('Yt'.includes(c.get(ox + dx, oy + dy))) c.set(ox + dx, oy + dy, 'T');
+  }
+  c.stamp(ROPE_COIL, ox, oy);
   return c;
 }
 
@@ -313,6 +330,7 @@ export default [
   { kind: 'image', name: 'cottage', palette: world, grid: cottage().toGrid() },
   { kind: 'image', name: 'woodpile', palette: world, grid: woodpile().toGrid() },
   { kind: 'image', name: 'chopping-block', palette: world, grid: choppingBlock().toGrid() },
+  { kind: 'image', name: 'chopping-block-rope', palette: world, grid: choppingBlockRope().toGrid() },
   { kind: 'image', name: 'chopping-block-axe', palette: toolPalette, grid: choppingBlockAxe().toGrid() },
   { kind: 'image', name: 'smoke', palette: smokePalette, grid: smoke().toGrid() },
 ] satisfies ImageSource[];

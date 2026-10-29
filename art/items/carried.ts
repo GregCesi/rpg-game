@@ -16,6 +16,7 @@ import { darkest, outline } from './lib';
 import { branchBody, finishBranch, shearDown, transpose, type Branch } from './branch';
 import { axeArt, toolPalette } from './tools';
 import xeros, { SHOULDER_POINTS } from '../characters/xeros';
+import { bundleByTheEnd, faggotBody, outlineBundle } from '../world/faggot';
 
 type View = 'down' | 'up' | 'right';
 
@@ -181,4 +182,112 @@ const heldFelledLog = (): SpriteSheetSource => {
   return sheet('held-felled-log', LOG_SIZE, world, { down: lengthwise, up: lengthwise, right: logEnd() });
 };
 
-export default [heldAxe(), heldBranch(), heldFelledLog()];
+// ---------- Rouleau de corde ----------
+// Le rouleau (art/items/rope.ts, Ø 30 cm, 10 cm d'épaisseur) pend au poing, le long de la jambe : la main le tient par
+// le haut de l'anneau. De profil, on le voit à plat : un anneau de 6 px, le creux au milieu, éclairé en haut à gauche.
+// De face et de dos, par la tranche : un ovale étroit de 4 × 6 px. Le poing (2 × 2, le point d'accroche est son pixel
+// du bas côté extérieur) passe par-dessus le haut de l'anneau.
+
+const COIL_SIZE = 15;
+const COIL_C = Math.floor(COIL_SIZE / 2);
+
+const COIL_FLAT: Grid = [
+  '.XXXX.',
+  'XJJOOo',
+  'XJ..Oo',
+  'XO..Co',
+  'XOCCCo',
+  '.oooo.',
+];
+const COIL_EDGE: Grid = [
+  '.XX.',
+  'XJOo',
+  'XJOo',
+  'XJCo',
+  'XOCo',
+  '.oo.',
+];
+
+function heldCoilView(view: View): Grid {
+  const C = COIL_C;
+  const c = new Canvas(COIL_SIZE, COIL_SIZE);
+  // le haut de l'anneau dans le poing (rangées C − 1 et C)
+  if (view === 'right') c.stamp(COIL_FLAT, C - 2, C - 1);
+  else c.stamp(COIL_EDGE, C - 1, C - 1);
+  return view === 'up' ? c.toGrid() : fistGap(c.toGrid(), C, BRANCH_FIST);
+}
+
+const heldRopeCoil = (): SpriteSheetSource =>
+  sheet('held-rope-coil', COIL_SIZE, world, { down: heldCoilView('down'), up: heldCoilView('up'), right: heldCoilView('right') });
+
+// ---------- Lien ----------
+// L'écheveau plié (2 m de corde, art/items/rope.ts) pend du poing : un faisceau de brins de 10 px, serré de quelques
+// tours (C) sous la main, ouvert en deux boucles en bas. De profil, les deux boucles s'écartent un peu.
+
+const TIE_FRONT: Grid = [
+  '.XX.',
+  'XJOo',
+  'XJOo',
+  'XCCo',
+  'XJOo',
+  'XJOo',
+  'XJOo',
+  'XJCo',
+  'XJCo',
+  '.Oo.',
+  '..o.',
+];
+const TIE_SIDE: Grid = [
+  '.XX..',
+  'XJOo.',
+  'XJOo.',
+  'XCCo.',
+  'XJOo.',
+  'XJoOo',
+  'XJ.Oo',
+  'XJ.Oo',
+  'XJoOo',
+  '.OoCo',
+  '..oo.',
+];
+
+const TIE_SIZE = 19;
+
+function heldTieView(view: View): Grid {
+  const C = Math.floor(TIE_SIZE / 2);
+  const c = new Canvas(TIE_SIZE, TIE_SIZE);
+  c.stamp(view === 'right' ? TIE_SIDE : TIE_FRONT, C - 1, C - 2);
+  return view === 'up' ? c.toGrid() : fistGap(c.toGrid(), C, BRANCH_FIST);
+}
+
+const heldRopeTie = (): SpriteSheetSource =>
+  sheet('held-rope-tie', TIE_SIZE, world, { down: heldTieView('down'), up: heldTieView('up'), right: heldTieView('right') });
+
+// ---------- Fagot porté ----------
+// Le fagot (art/world/faggot.ts) porté à deux mains devant lui, comme la bille. De face et de dos, en longueur : le
+// fagot est-ouest sans son ombre. De profil, par le bout : la face des gros bouts (10 × 9 px, moins aplatie qu'au sol,
+// il est à hauteur de poitrine), le dessus du faisceau qui fuit derrière, le lien en travers.
+
+const FAGGOT_SIZE = 29;
+const FAGGOT_C = Math.floor(FAGGOT_SIZE / 2);
+
+function faggotLengthwise(): Grid {
+  const body = faggotBody().toGrid().filter((r) => /[^.]/.test(r));
+  const c = new Canvas(FAGGOT_SIZE, FAGGOT_SIZE);
+  // le milieu du faisceau (sans ses rameaux, deux rangées au-dessus) sur la prise
+  c.stamp(body, FAGGOT_C - Math.floor(body[0].length / 2), FAGGOT_C - 1 - Math.floor((body.length - 2) / 2));
+  return c.toGrid();
+}
+
+function faggotEnd(): Grid {
+  const C = FAGGOT_C;
+  const c = bundleByTheEnd(new Canvas(FAGGOT_SIZE, FAGGOT_SIZE), C + 1, C - 3, C + 2, 4, 3.5, C - 4, 84);
+  return outlineBundle(c).toGrid();
+}
+
+const heldFaggot = (): SpriteSheetSource => {
+  const lengthwise = faggotLengthwise();
+  return sheet('held-faggot', FAGGOT_SIZE, world, { down: lengthwise, up: lengthwise, right: faggotEnd() });
+};
+
+export default [heldAxe(), heldBranch(), heldFelledLog(), heldRopeCoil(), heldRopeTie(), heldFaggot()];
