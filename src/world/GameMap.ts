@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DEPTH, TILE } from '../config';
 import { items, piles as pileDefs, props as propDefs } from '../content';
 import type { MapData, MapObject, PileDef, PropDef } from '../content/types';
+import { drawOrder, pileBlocks, placeAim, topPieces } from './pileShape';
 import type { Chain, GroundItem, MapState, Pile } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
@@ -43,26 +44,6 @@ export function footprint(def: PropDef, w: number, h: number, flip: boolean): Bo
     right: Math.max(...rects.map((r) => fx(r.x, r.w) + r.w)),
     top: Math.min(...rects.map((r) => r.y)),
     bottom: Math.max(...rects.map((r) => r.y + r.h)),
-  };
-}
-
-/** Image d'une pièce de tas : le dessin de l'objet entreposé (l'icône d'un objet possédable, l'image d'un objet du monde). */
-export function pieceImage(def: PileDef): string {
-  return 'item' in def.piece ? items[def.piece.item].icon : propDefs[def.piece.prop].image;
-}
-
-/**
- * Collision d'un tas de `count` pièces dont le point au sol est (x, y) : réunion des collisions de ses pièces, au sol
- * (une pièce posée sur d'autres, `z`, a sa collision sous elle). `imageH` = hauteur de l'image d'une pièce.
- */
-export function pileBox(def: PileDef, count: number, x: number, y: number, imageH: number): Box {
-  const b = def.body;
-  const layout = def.layouts[count - 1];
-  return {
-    left: Math.min(...layout.map((q) => x + q.x + b.x)),
-    right: Math.max(...layout.map((q) => x + q.x + b.x + b.w)),
-    top: Math.min(...layout.map((q) => y + q.y - imageH + b.y)),
-    bottom: Math.max(...layout.map((q) => y + q.y - imageH + b.y + b.h)),
   };
 }
 
@@ -115,16 +96,16 @@ export interface PlacedGround {
   image: Phaser.GameObjects.Image;
 }
 
-/** Un tas posé, affiché : une image par pièce, une collision qui suit sa taille. */
+/** Un tas posé, affiché : une image par pièce posée, à sa place, et la collision des pièces au sol. */
 export interface PlacedPile {
-  /** L'état du tas dans GameState (genre, nombre, point au sol). */
+  /** L'état du tas dans GameState (genre, point au sol, places prises). */
   pile: Pile;
   def: PileDef;
-  /** Collision du tas (réunion de celles de ses pièces). */
-  box: Box;
-  /** Haut de la pièce la plus haute. */
-  top: number;
-  /** Images des pièces et collision : détruites quand le tas change. */
+  /** Collisions des pièces posées au sol (aucune tant que le tas a moins de `blockFrom` pièces). */
+  zones: Phaser.GameObjects.Zone[];
+  /** Profondeur d'affichage du tas : le bas de l'image de sa pièce la plus en avant. */
+  depth: number;
+  /** Images et collisions : détruites quand le tas change. */
   parts: Phaser.GameObjects.GameObject[];
 }
 
@@ -134,7 +115,7 @@ export type Action =
   | { kind: 'harvest'; prop: PlacedProp }
   | { kind: 'pickup'; ground: PlacedGround }
   | { kind: 'take'; prop: PlacedProp }
-  | { kind: 'pile'; pile: PlacedPile };
+  | { kind: 'pile'; pile: PlacedPile; place: string };
 
 /** Ce avec quoi le joueur peut interagir avec E. (x, y) = centre de sa base au sol ; top = haut de l'image. */
 export interface Interactable {
@@ -224,8 +205,15 @@ export class GameMap {
         list.push({ x, y: p.baseY, top: p.top, action: { kind: 'take', prop: p } });
       }
     }
-    // un tas se vise au centre de sa collision ; E en reprend une pièce
-    for (const p of this.piles) list.push({ x: (p.box.left + p.box.right) / 2, y: (p.box.top + p.box.bottom) / 2, top: p.top, action: { kind: 'pile', pile: p } });
+    // E reprend la pièce la plus haute d'un tas : chacune des plus hautes se vise à son point visé, au-dessus de son image
+    for (const p of this.piles) {
+      for (const place of topPieces(p.def, p.pile.places)) {
+        const [ax, ay] = placeAim(p.def, place);
+        const q = p.def.places[place];
+        const top = p.pile.y + q.y - this.textureSize(q.image).h;
+        list.push({ x: p.pile.x + ax, y: p.pile.y + ay, top, action: { kind: 'pile', pile: p, place } });
+      }
+    }
     // un objet encore caché (il attend la fin d'une chute) ne se ramasse pas
     for (const g of this.ground) if (g.image.visible) list.push({ x: g.item.x, y: g.item.y - 4, top: g.image.y - g.image.height, action: { kind: 'pickup', ground: g } });
     return list;
@@ -299,35 +287,38 @@ export class GameMap {
     this.ground.splice(this.ground.indexOf(g), 1);
   }
 
+  /** Taille d'une image (une image de planche pour une planche). */
+  textureSize(key: string): { w: number; h: number } {
+    const f = this.scene.textures.getFrame(key);
+    return { w: f.width, h: f.height };
+  }
+
   /**
-   * Affiche un tas : chaque pièce de sa forme (`layouts` de piles.json pour son nombre), dans l'ordre donné, `z` pixels
-   * au-dessus de sa place au sol ; tout le tas est à la profondeur de son bord avant. Sa collision est celle de ses pièces.
+   * Affiche un tas : la pièce de chaque place prise, à sa place, couche par couche, du bas vers le haut (`drawOrder`) ;
+   * tout le tas est à la profondeur du bas de sa pièce la plus en avant. Chaque pièce au sol a sa collision, dès `blockFrom` pièces.
    */
   placePile(pile: Pile): PlacedPile {
     const def = pileDefs[pile.pile];
-    const image = pieceImage(def);
-    const h = (this.scene.textures.get(image).getSourceImage() as HTMLImageElement).height;
-    const box = pileBox(def, pile.count, pile.x, pile.y, h);
-    const layout = def.layouts[pile.count - 1];
-    const depth = Math.max(...layout.map((q) => pile.y + q.y));
-    // l'ordre de la liste est l'ordre d'affichage : à profondeur égale, la suivante passe devant
-    const parts: Phaser.GameObjects.GameObject[] = layout.map((q, i) =>
-      this.scene.add.image(pile.x + q.x, pile.y + q.y - q.z, image).setOrigin(0, 1).setDepth(depth + i / 1000),
-    );
-    parts.push(this.addObstacle((box.left + box.right) / 2, (box.top + box.bottom) / 2, box.right - box.left, box.bottom - box.top));
-    const top = Math.min(...layout.map((q) => pile.y + q.y - q.z - h));
-    const placed = { pile, def, box, top, parts };
+    const ground = pile.places.map((id) => def.places[id]).filter((q) => q.body);
+    const depth = Math.max(...pile.places.map((id) => pile.y + def.places[id].y));
+    const parts: Phaser.GameObjects.GameObject[] = drawOrder(def, pile.places).map((id, i) => {
+      const q = def.places[id];
+      return this.scene.add.image(pile.x + q.x, pile.y + q.y, q.image).setOrigin(0, 1).setDepth(depth + i / 1000);
+    });
+    const zones = pileBlocks(def, pile.places) ? ground.map((q) => this.addObstacle(pile.x + q.body!.x + q.body!.w / 2, pile.y + q.body!.y + q.body!.h / 2, q.body!.w, q.body!.h)) : [];
+    parts.push(...zones);
+    const placed = { pile, def, zones, depth, parts };
     this.piles.push(placed);
     return placed;
   }
 
-  /** Retire un tas affiché (images et collision). */
+  /** Retire un tas affiché (images et collisions). */
   removePile(p: PlacedPile): void {
     for (const part of p.parts) part.destroy();
     this.piles.splice(this.piles.indexOf(p), 1);
   }
 
-  /** Le tas a changé de nombre (GameState) : il est redessiné à sa nouvelle forme, avec sa nouvelle collision. */
+  /** Le tas a changé (GameState) : il est redessiné avec ses pièces et ses collisions. */
   refreshPile(p: PlacedPile): PlacedPile {
     this.removePile(p);
     return this.placePile(p.pile);

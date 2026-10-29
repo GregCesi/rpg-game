@@ -12,10 +12,9 @@ import { z } from 'zod';
 import { sources } from '../art/index';
 import type { Grid, Palette } from '../art/lib/canvas';
 import propsJson from '../src/content/props.json';
-import itemsJson from '../src/content/items.json';
 import pilesJson from '../src/content/piles.json';
 import tilesCatalogJson from '../src/content/tiles.json';
-import { GestureSchema, ItemDefSchema, PileDefSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
+import { GestureSchema, PileDefSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
 import type { DecalSet } from '../src/content/types';
 import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
 import { projectFile, propsTsj, tilesetTsj } from './lib/tiled-files';
@@ -273,10 +272,9 @@ if (withPreview) {
   }
   const hands = handsPreview(sources);
   if (hands) writeFileSync(join(PREVIEW, 'hands.png'), PNG.sync.write(hands));
-  // les tas, de 1 pièce au maximum, pour chaque genre
+  // les tas, étape par étape, pour chaque genre
   const pileDefs = parse('piles.json', z.record(z.string(), PileDefSchema), pilesJson);
-  const itemDefs = parse('items.json', z.record(z.string(), ItemDefSchema), itemsJson);
-  const pilesPng = pilesPreview(sources, pileDefs, propDefs, itemDefs);
+  const pilesPng = pilesPreview(sources, pileDefs);
   if (pilesPng) writeFileSync(join(PREVIEW, 'piles.png'), PNG.sync.write(pilesPng));
 }
 console.log(`art : ${sources.length} sources -> ${OUT} + ${TILED}${withPreview ? ` (+ aperçus dans ${PREVIEW})` : ''}`);

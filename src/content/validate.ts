@@ -287,8 +287,9 @@ function validateHold(at: string, h: Hold, hands: 1 | 2, cat: Catalog): string[]
 }
 
 /**
- * Genres de tas : la pièce existe, se prend dans les mains et s'entrepose dans ce genre ; son dessin est fait ; la forme
- * pour n pièces a n pièces, au pixel entier ; les objets qui disent s'entreposer ici le peuvent (genre connu).
+ * Genres de tas : la pièce reprise existe, se prend dans les mains et s'entrepose dans ce genre ; chaque place a son
+ * image dessinée, une collision au sol si elle est au sol, des places qui la portent dans la couche juste en dessous
+ * sinon ; la première place d'un nouveau tas est au sol ; les objets qui disent s'entreposer ici le peuvent.
  */
 function validatePiles(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -297,29 +298,37 @@ function validatePiles(c: Content, cat: Catalog): string[] {
     const at = `piles.json '${key}'`;
     if (!KEBAB_CASE.test(key)) err(`${at} : la clé doit être un identifiant anglais en kebab-case`);
     const piece = pile.piece;
-    let image: string | undefined;
     if ('item' in piece) {
       const it = c.items[piece.item];
       if (!it) err(`${at} : objet possédable '${piece.item}' introuvable dans items.json`);
       else if (it.pile !== key) err(`${at} : '${piece.item}' (items.json) doit avoir "pile": "${key}" pour s'y entreposer`);
-      image = it?.icon;
     } else {
       const p = c.props[piece.prop];
       if (!p) err(`${at} : objet '${piece.prop}' introuvable dans props.json`);
       else if (!p.take) err(`${at} : '${piece.prop}' (props.json) ne se prend pas (pas de 'take')`);
       else if (p.take.pile !== key) err(`${at} : '${piece.prop}' (props.json) doit avoir "pile": "${key}" dans 'take' pour s'y entreposer`);
-      image = p?.image;
     }
-    const size = image ? cat.sizes.get(image) : undefined;
-    if (image && !size) err(`${at} : image '${image}' de la pièce non dessinée`);
-    const b = pile.body;
-    if (size && (b.x < 0 || b.y < 0 || b.x + b.w > size.w || b.y + b.h > size.h)) err(`${at} : collision 'body' hors de l'image de la pièce (${size.w}×${size.h})`);
-    pile.layouts.forEach((layout, i) => {
-      if (layout.length !== i + 1) err(`${at} : la forme ${i + 1} (layouts[${i}]) a ${layout.length} pièces au lieu de ${i + 1}`);
-      layout.forEach((q, j) => {
-        if (![q.x, q.y, q.z].every(Number.isInteger)) err(`${at} : forme ${i + 1}, pièce ${j + 1} : position au pixel entier attendue`);
-      });
-    });
+    const start = pile.places[pile.start];
+    if (!start) err(`${at} : place de départ '${pile.start}' introuvable`);
+    else if (start.layer !== 0) err(`${at} : la place de départ '${pile.start}' doit être au sol (couche 0)`);
+    if (pile.blockFrom > Object.keys(pile.places).length) err(`${at} : 'blockFrom' (${pile.blockFrom}) au-delà du nombre de places`);
+    for (const [id, q] of Object.entries(pile.places)) {
+      const pa = `${at} place '${id}'`;
+      if (!cat.textures.has(q.image)) err(`${pa} : image '${q.image}' non dessinée`);
+      if (![q.x, q.y].every(Number.isInteger)) err(`${pa} : position au pixel entier attendue`);
+      if (q.layer === 0) {
+        if (!q.body) err(`${pa} : une place au sol a sa collision ('body')`);
+        if (q.on.length) err(`${pa} : une place au sol n'est portée par rien ('on' vide)`);
+      } else {
+        if (q.body) err(`${pa} : seule une place au sol a une collision ('body') : celle du dessus repose sur ses porteuses`);
+        if (!q.on.length) err(`${pa} : une place de la couche ${q.layer} est portée par des places ('on')`);
+        for (const o of q.on) {
+          const under = pile.places[o];
+          if (!under) err(`${pa} : place porteuse '${o}' introuvable`);
+          else if (under.layer !== q.layer - 1) err(`${pa} : sa porteuse '${o}' est en couche ${under.layer}, pas ${q.layer - 1}`);
+        }
+      }
+    }
   }
   const member = (at: string, pile: string | undefined) => {
     if (pile && !c.piles[pile]) err(`${at} : genre de tas '${pile}' introuvable dans piles.json`);

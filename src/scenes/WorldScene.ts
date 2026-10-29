@@ -117,6 +117,8 @@ export class WorldScene extends Phaser.Scene {
     const swap = input.swapPressed();
     const e = this.interaction.update(time, this.mode === 'play');
     this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : heldItem(game), this.mode === 'play');
+    // ce qu'on tient et qui s'entrepose : sa pièce en transparence, là où elle ira
+    this.handsSystem.updatePreview(this.player, this.mode === 'play');
     if (this.mode !== 'play') return;
     if (swap) {
       switchHand(game);
@@ -145,7 +147,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'pile') {
-      if (!this.handsSystem.takeFromPile(a.pile)) return this.notice('Les mains pleines.');
+      if (!this.handsSystem.takeFromPile(a.pile, a.place)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else {
       this.pickUp(a.ground);

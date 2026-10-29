@@ -3,15 +3,16 @@
 //   une rangée par direction (bas, haut, droite, gauche). Les poses viennent de src/content/gestures.json,
 //   comme dans le jeu (entities/ToolUse.ts) : l'aperçu montre exactement ce que l'on verra.
 // - hands.png : les deux mains comme dans le HUD.
-// - piles.png : chaque genre de tas (src/content/piles.json), une rangée par genre, un tas par nombre de pièces (de 1 au
-//   maximum), avec Xéros à l'échelle au début de la rangée et la collision du tas en liseré rouge : même calcul que
-//   GameMap.placePile (pièce = coin bas gauche au point du tas + (x, y), dessinée z px plus haut, dans l'ordre de la liste).
+// - piles.png : chaque genre de tas (src/content/piles.json), étape par étape (construction type, puis tous les états
+//   possibles s'ils sont peu nombreux), Xéros à l'échelle en tête de rangée, collisions des pièces au sol en liseré :
+//   même calcul que GameMap.placePile (pièce = coin bas gauche au point du tas + (x, y), dans l'ordre de drawOrder).
 
 import { PNG } from 'pngjs';
 import { flipX } from '../../art/lib/canvas';
 import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
-import type { Gesture, ItemDef, PileDef, PropDef } from '../../src/content/types';
+import type { Gesture, PileDef } from '../../src/content/types';
+import { drawOrder, pileBlocks, pileStates } from '../../src/world/pileShape';
 
 const SCALE = 4;
 
@@ -146,62 +147,62 @@ export function handsPreview(sources: ArtSource[]): PNG | undefined {
 }
 
 /**
- * Les tas de chaque genre à chaque nombre de pièces : une rangée par genre, Xéros (attente de face) au début pour
- * l'échelle, puis le tas de 1 au maximum, posé sur l'herbe, sa collision en liseré rouge (une pièce sur d'autres a la
- * sienne au sol, sous elle).
+ * Les tas de chaque genre, étape par étape : pour chaque genre, une rangée « construction type » (les places dans
+ * l'ordre de piles.json, une pièce de plus par case), puis, s'il y en a au plus `ALL_STATES`, tous les états possibles
+ * (chaque ensemble de places prises où chaque pièce est portée), comme dans le jeu : `drawOrder`, collisions des pièces
+ * au sol en liseré rouge quand le tas bloque le passage, grises sinon. Xéros (attente de face) en tête de rangée, pour l'échelle.
  */
-export function pilesPreview(
-  sources: ArtSource[],
-  piles: Record<string, PileDef>,
-  props: Record<string, PropDef>,
-  items: Record<string, ItemDef>,
-): PNG | undefined {
+const ALL_STATES = 40;
+
+export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef>): PNG | undefined {
   const image = (name: string) => {
     const s = sources.find((x) => x.name === name);
     return s?.kind === 'image' ? s : undefined;
   };
   const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');
   const xeros = body?.kind === 'spritesheet' ? body.animations['idle-down']?.frames[0] : undefined;
-  const rows = Object.values(piles).map((def) => {
-    const src = image('item' in def.piece ? items[def.piece.item].icon : props[def.piece.prop].image);
-    if (!src) return undefined;
-    const w = src.grid[0].length;
-    const h = src.grid.length;
-    // étendue de toutes les formes autour du point du tas : la même case pour chaque nombre
-    const all = def.layouts.flat();
-    const ext = {
-      left: Math.min(...all.map((q) => q.x)),
-      right: Math.max(...all.map((q) => q.x + w)),
-      top: Math.min(...all.map((q) => q.y - q.z - h)),
-      bottom: Math.max(...all.map((q) => q.y)),
-    };
-    return { def, src, w, h, ext };
-  });
-  if (rows.some((r) => !r)) return undefined;
-  const ok = rows as NonNullable<(typeof rows)[number]>[];
-  const pad = 8;
   const xw = body?.kind === 'spritesheet' ? body.frameW : 0;
   const xh = body?.kind === 'spritesheet' ? body.frameH : 0;
-  const cellW = Math.max(...ok.map((r) => r.ext.right - r.ext.left)) + pad;
-  const most = Math.max(...ok.map((r) => r.def.layouts.length));
-  const rowH = ok.map((r) => Math.max(r.ext.bottom - r.ext.top, xh) + 2 * pad);
-  const board = new Board(pad + xw + pad + most * cellW, rowH.reduce((a, b) => a + b, 0), undefined);
+  const pad = 8;
+  const perRow = 8;
+  type Row = { def: PileDef; states: string[][]; ext: { left: number; right: number; top: number; bottom: number } };
+  const rows: Row[] = [];
+  for (const def of Object.values(piles)) {
+    const places = Object.entries(def.places);
+    if (places.some(([, q]) => !image(q.image))) return undefined;
+    // étendue de toutes les places autour du point du tas : la même case pour chaque état
+    const ext = {
+      left: Math.min(...places.map(([, q]) => q.x)),
+      right: Math.max(...places.map(([, q]) => q.x + image(q.image)!.grid[0].length)),
+      top: Math.min(...places.map(([, q]) => q.y - image(q.image)!.grid.length)),
+      bottom: Math.max(...places.map(([, q]) => Math.max(q.y, q.body ? q.body.y + q.body.h : q.y))),
+    };
+    const keys = places.map(([id]) => id);
+    const typical = keys.map((_, i) => keys.slice(0, i + 1));
+    for (let i = 0; i < typical.length; i += perRow) rows.push({ def, states: typical.slice(i, i + perRow), ext });
+    const all = pileStates(def, ALL_STATES + 1);
+    if (all.length <= ALL_STATES) for (let i = 0; i < all.length; i += perRow) rows.push({ def, states: all.slice(i, i + perRow), ext });
+  }
+  const cellW = Math.max(...rows.map((r) => r.ext.right - r.ext.left)) + pad;
+  const rowH = rows.map((r) => Math.max(r.ext.bottom - r.ext.top, xh) + 2 * pad);
+  const board = new Board(pad + xw + pad + perRow * cellW, rowH.reduce((a, b) => a + b, 0), undefined);
   let y0 = 0;
-  ok.forEach((r, row) => {
-    // ligne de base commune : le point du tas, et les pieds de Xéros
+  rows.forEach((r, row) => {
+    // ligne de base commune : le point du tas (y = 0 du repère des places) et les pieds de Xéros
     const base = y0 + rowH[row] - pad - r.ext.bottom;
-    if (xeros && body?.kind === 'spritesheet') board.blit(xeros, body.palette, pad, base - xh + r.ext.bottom);
-    r.def.layouts.forEach((layout, i) => {
+    if (xeros && body?.kind === 'spritesheet') board.blit(xeros, body.palette, pad, base + r.ext.bottom - xh);
+    r.states.forEach((taken, i) => {
       const px = pad + xw + pad + i * cellW - r.ext.left;
-      for (const q of layout) board.blit(r.src.grid, r.src.palette, px + q.x, base + q.y - q.z - r.h);
-      const b = r.def.body;
-      board.outline(
-        Math.min(...layout.map((q) => px + q.x + b.x)),
-        Math.min(...layout.map((q) => base + q.y - r.h + b.y)),
-        Math.max(...layout.map((q) => px + q.x + b.x + b.w)),
-        Math.max(...layout.map((q) => base + q.y - r.h + b.y + b.h)),
-        [200, 40, 40],
-      );
+      for (const id of drawOrder(r.def, taken)) {
+        const q = r.def.places[id];
+        const src = image(q.image)!;
+        board.blit(src.grid, src.palette, px + q.x, base + q.y - src.grid.length);
+      }
+      const color: [number, number, number] = pileBlocks(r.def, taken) ? [200, 40, 40] : [150, 150, 150];
+      for (const id of taken) {
+        const b = r.def.places[id].body;
+        if (b) board.outline(px + b.x, base + b.y, px + b.x + b.w, base + b.y + b.h, color);
+      }
     });
     y0 += rowH[row];
   });

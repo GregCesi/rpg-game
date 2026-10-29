@@ -1,13 +1,17 @@
 import type Phaser from 'phaser';
-import { PUT_DOWN, TILE } from '../config';
+import { DEPTH, INTERACT, PUT_DOWN } from '../config';
 import { items, piles, props } from '../content';
-import type { Facing, PileDef } from '../content/types';
+import type { Facing } from '../content/types';
 import type { Player } from '../entities/Player';
-import { changeObject, changeSpawned, dropItem, game, held, release, setPileCount, spawnObject, startPile, take, type Held } from '../state';
-import { footprint, pieceImage, pileBox, type Box, type GameMap, type PlacedPile, type PlacedProp } from '../world/GameMap';
+import { changeObject, changeSpawned, dropItem, emptyPlace, fillPlace, game, held, release, spawnObject, startPile, take, type Held } from '../state';
+import { footprint, type Box, type GameMap, type PlacedPile, type PlacedProp } from '../world/GameMap';
+import { openPlaces, placeAim } from '../world/pileShape';
 
 /** Ce qu'a donné « poser devant soi » : rien en main, pas de place libre devant, ou posé. */
 export type PutDownResult = 'empty' | 'blocked' | 'done';
+
+/** Où ira la pièce qu'on pose en tas : une place d'un tas posé, ou la première place d'un nouveau tas, au point (x, y). */
+type PileTarget = { pile: PlacedPile; place: string } | { genre: string; x: number; y: number; place: string };
 
 /** Genre de tas où s'entrepose ce qu'on tient (`pile` de items.json, ou du `take` de props.json), s'il en a un. */
 function pileOf(what: Held): string | undefined {
@@ -33,18 +37,45 @@ const overlaps = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.t
 
 /**
  * Les mains de Xéros sur la carte : prendre un objet du monde (la bille), poser ou lâcher devant soi ce qu'on tient,
- * entreposer en tas et reprendre d'un tas. Ce qui a un genre de tas (piles.json) se pose toujours en tas : sur le tas du
- * même genre devant soi s'il n'est pas plein, sinon en commençant un tas d'une pièce à une place libre.
+ * construire un tas pièce par pièce et en reprendre. Ce qui a un genre de tas (piles.json) se pose toujours en tas : à la
+ * place disponible d'un tas du même genre la plus proche du point que regarde Xéros (le creux quand il est au centre
+ * entre deux pièces, le sol à côté quand il est décalé), sinon à la première place d'un nouveau tas, devant lui. Une
+ * prévisualisation en transparence montre la pièce là où elle ira.
  * Les objets pris quittent la carte, ceux qu'on pose y reviennent à leur nouvelle place : tout est noté dans GameState.
  * Ramasser un objet au sol et récolter restent ailleurs (WorldScene, harvest.ts). Ne lit pas le clavier.
  */
 export class HandsSystem {
+  /** La pièce en transparence, à la place où ira ce qu'on tient. */
+  private readonly ghost: Phaser.GameObjects.Image;
+
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly map: GameMap,
     /** Corps où l'on ne pose rien (les personnages). */
     private readonly others: Phaser.Physics.Arcade.Body[],
-  ) {}
+  ) {
+    this.ghost = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 1).setAlpha(0.5).setVisible(false);
+  }
+
+  /**
+   * À appeler à chaque image : montre en transparence la pièce de ce qu'on tient, à la place exacte où elle ira si on
+   * la pose, s'il s'entrepose en tas. `active` = false pendant un geste, un dialogue ou un changement de carte.
+   */
+  updatePreview(player: Player, active: boolean): void {
+    const what = held(game);
+    const genre = what && pileOf(what);
+    const t = active && genre ? this.pileTarget(player, genre) : undefined;
+    if (!t) {
+      this.ghost.setVisible(false);
+      return;
+    }
+    const def = piles['pile' in t ? t.pile.pile.pile : t.genre];
+    const q = def.places[t.place];
+    const [x, y] = 'pile' in t ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
+    // par-dessus le tas qu'il complète ; un nouveau tas, à sa propre profondeur
+    const depth = 'pile' in t ? t.pile.depth + 0.999 : y + q.y;
+    this.ghost.setTexture(q.image).setPosition(x + q.x, y + q.y).setDepth(Math.min(depth, DEPTH.prompt - 1)).setVisible(true);
+  }
 
   /**
    * Prend un objet du monde dans les mains (les deux s'il le demande) : il quitte la carte et GameState l'oublie là
@@ -62,16 +93,15 @@ export class HandsSystem {
   }
 
   /**
-   * Reprend une pièce d'un tas dans les mains (la pièce ordinaire du genre : la bille, la branche) ; le tas rétrécit,
-   * et disparaît à la dernière. Renvoie false si les mains ne sont pas libres.
+   * Reprend la pièce de la place `place` d'un tas (la pièce ordinaire du genre : la bille, la branche) ; le tas disparaît
+   * à la dernière. Renvoie false si les mains ne sont pas libres.
    */
-  takeFromPile(p: PlacedPile): boolean {
+  takeFromPile(p: PlacedPile, place: string): boolean {
     const piece = p.def.piece;
     const hands = 'item' in piece ? items[piece.item].hands : props[piece.prop].take!.hands;
     if (!take(game, { ...piece }, hands)) return false;
-    const last = p.pile.count === 1;
-    setPileCount(game, this.map.def.id, p.pile.id, p.pile.count - 1);
-    if (last) this.map.removePile(p);
+    emptyPlace(game, this.map.def.id, p.pile.id, place);
+    if (!p.pile.places.length) this.map.removePile(p);
     else this.map.refreshPile(p);
     return true;
   }
@@ -94,91 +124,71 @@ export class HandsSystem {
     return 'done';
   }
 
-  /**
-   * Pose en tas du genre `pile` : sur le tas du même genre devant Xéros s'il n'a pas atteint son maximum (et si sa forme
-   * suivante tient à une place libre), sinon commence un tas d'une pièce à une place libre devant lui.
-   */
-  private putOnPile(player: Player, pile: string): PutDownResult {
-    const def = piles[pile];
-    const mapId = this.map.def.id;
-    const front = this.pileInFront(player, def);
-    if (front && front.pile.pile === pile && front.pile.count < def.layouts.length) {
-      const grown = pileBox(def, front.pile.count + 1, front.pile.x, front.pile.y, this.pieceHeight(def));
-      if (!this.map.areaFree(grown, this.others, front.parts)) return 'blocked';
-      // le tas qui grandit vers Xéros : il recule d'autant, si sa place derrière lui est libre
-      if (!this.stepBack(player, grown)) return 'blocked';
-      release(game);
-      setPileCount(game, mapId, front.pile.id, front.pile.count + 1);
-      this.map.refreshPile(front);
-      return 'done';
-    }
-    const spot = this.newPileSpot(player, def, !!front);
-    if (!spot) return 'blocked';
+  /** Pose en tas du genre `genre`, à la place que montre la prévisualisation ; sans place, rien ne bouge. */
+  private putOnPile(player: Player, genre: string): PutDownResult {
+    const t = this.pileTarget(player, genre);
+    if (!t) return 'blocked';
     release(game);
-    this.map.placePile(startPile(game, mapId, pile, spot.x, spot.y));
+    const mapId = this.map.def.id;
+    if ('pile' in t) {
+      fillPlace(game, mapId, t.pile.pile.id, t.place);
+      this.map.refreshPile(t.pile);
+    } else this.map.placePile(startPile(game, mapId, genre, t.x, t.y, t.place));
+    this.ghost.setVisible(false);
     return 'done';
   }
 
   /**
-   * Si la boîte `box` (le tas à sa forme suivante) mord sur Xéros, il recule à l'opposé de son regard juste assez pour
-   * garder l'écart de pose. Renvoie false si sa place en reculant n'est pas libre (rien n'a bougé).
+   * La place où ira une pièce du genre `genre` : parmi les places disponibles des tas de ce genre (libres, portées, et,
+   * au sol, à une place libre), celle dont le point visé est le plus près du point que regarde Xéros, à portée ; sinon
+   * la première place (`start`) d'un nouveau tas, sa pièce au sol juste devant lui, si la place est libre.
    */
-  private stepBack(player: Player, box: Box): boolean {
-    const b = player.actor.body;
-    const body: Box = { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
-    const g = PUT_DOWN.gap;
-    const near: Box = { left: box.left - g, top: box.top - g, right: box.right + g, bottom: box.bottom + g };
-    if (!overlaps(near, body)) return true;
-    const moves: Record<Facing, [number, number]> = {
-      down: [0, Math.min(0, near.top - body.bottom)],
-      up: [0, Math.max(0, near.bottom - body.top)],
-      right: [Math.min(0, near.left - body.right), 0],
-      left: [Math.max(0, near.right - body.left), 0],
-    };
-    const [dx, dy] = moves[player.actor.facing];
-    const moved: Box = { left: body.left + dx, top: body.top + dy, right: body.right + dx, bottom: body.bottom + dy };
-    if (overlaps(near, moved) || !this.map.areaFree(moved, this.others)) return false;
-    // le sprite et sa collision bougent ensemble (Body.reset recalerait la collision sur l'origine du sprite)
-    player.actor.setPosition(player.actor.x + dx, player.actor.y + dy);
-    for (const v of [b.position, b.prev, b.prevFrame]) v.set(v.x + dx, v.y + dy);
-    b.updateCenter();
-    return true;
+  private pileTarget(player: Player, genre: string): PileTarget | undefined {
+    const probe = player.probe(INTERACT.reach);
+    const bodies = [...this.others, player.actor.body];
+    let best: PileTarget | undefined;
+    let bestD: number = INTERACT.radius;
+    for (const p of this.map.piles) {
+      if (p.pile.pile !== genre) continue;
+      for (const place of openPlaces(p.def, p.pile.places)) {
+        const [ax, ay] = placeAim(p.def, place);
+        const d = Math.hypot(p.pile.x + ax - probe.x, p.pile.y + ay - probe.y);
+        if (d >= bestD) continue;
+        const body = p.def.places[place].body;
+        if (body && !this.groundFree(this.boxAt(body, p.pile.x, p.pile.y), bodies, p)) continue;
+        best = { pile: p, place };
+        bestD = d;
+      }
+    }
+    if (best) return best;
+    const def = piles[genre];
+    const body = def.places[def.start].body!;
+    const [l, t] = frontCorner(player.actor.body, player.actor.facing, body.w, body.h);
+    const x = Math.round(l - body.x);
+    const y = Math.round(t - body.y);
+    return this.groundFree(this.boxAt(body, x, y), bodies) ? { genre, x, y, place: def.start } : undefined;
   }
 
-  private pieceHeight(def: PileDef): number {
-    return (this.scene.textures.get(pieceImage(def)).getSourceImage() as HTMLImageElement).height;
-  }
-
-  /** Point au sol d'un tas d'une pièce posé juste devant Xéros, décalé de `shift` px sur le côté (perpendiculairement à son regard). */
-  private pileSpotAt(player: Player, def: PileDef, shift: number): { x: number; y: number; box: Box } {
-    const f = pileBox(def, 1, 0, 0, this.pieceHeight(def));
-    const facing = player.actor.facing;
-    const [l, t] = frontCorner(player.actor.body, facing, f.right - f.left, f.bottom - f.top);
-    const side = facing === 'up' || facing === 'down';
-    const x = Math.round(l - f.left + (side ? shift : 0));
-    const y = Math.round(t - f.top + (side ? 0 : shift));
-    return { x, y, box: { left: x + f.left, top: y + f.top, right: x + f.right, bottom: y + f.bottom } };
-  }
-
-  /** Le tas (de n'importe quel genre) qui occupe la place devant Xéros, s'il y en a un. */
-  private pileInFront(player: Player, def: PileDef): PlacedPile | undefined {
-    const { box } = this.pileSpotAt(player, def, 0);
-    return this.map.piles.find((p) => overlaps(p.box, box));
+  /** Une collision de place (repère du tas) dans le repère de la carte, pour un tas dont le point est (x, y). */
+  private boxAt(b: { x: number; y: number; w: number; h: number }, x: number, y: number): Box {
+    return { left: x + b.x, top: y + b.y, right: x + b.x + b.w, bottom: y + b.y + b.h };
   }
 
   /**
-   * Point au sol d'un nouveau tas d'une pièce : juste devant Xéros si la place est libre ; si un tas l'occupe (plein ou
-   * d'un autre genre), la première place libre à côté, en glissant sur le côté jusqu'à une case. undefined sinon.
+   * Une pièce au sol tiendrait là : place libre (carte, cases bloquantes, objets, `bodies`), et sur aucune pièce au sol
+   * d'un tas, même d'un tas qui ne bloque pas encore le passage. Les collisions du tas `own` ne comptent pas : ses
+   * places sont faites pour aller ensemble.
    */
-  private newPileSpot(player: Player, def: PileDef, besidePile: boolean): { x: number; y: number } | undefined {
-    const bodies = [...this.others, player.actor.body];
-    const shifts = [0];
-    if (besidePile) for (let d = 1; d <= TILE; d++) shifts.push(-d, d);
-    for (const shift of shifts) {
-      const spot = this.pileSpotAt(player, def, shift);
-      if (this.map.areaFree(spot.box, bodies)) return spot;
-    }
-    return undefined;
+  private groundFree(box: Box, bodies: Phaser.Physics.Arcade.Body[], own?: PlacedPile): boolean {
+    if (!this.map.areaFree(box, bodies, own?.zones)) return false;
+    return !this.map.piles.some(
+      (p) =>
+        p !== own &&
+        p.pile.places.some((id) => {
+          const b = p.def.places[id].body;
+          return !!b && overlaps(box, this.boxAt(b, p.pile.x, p.pile.y));
+        }),
+    );
   }
 
   /** Point au sol juste devant Xéros pour un objet possédable, s'il est libre (un petit carré autour). */

@@ -1,22 +1,22 @@
 {
-  "branches": {"name": "tas de branches", "piece": {"item": "branch"}, "body": {"x": 2, "y": 4, "w": 12, "h": 9},
-    "layouts": [
-      [{"x":0,"y":0}],
-      [{"x":8,"y":-1},{"x":0,"y":0}],
-      [{"x":4,"y":-5},{"x":8,"y":-1},{"x":0,"y":0}],
-      [{"x":4,"y":-5},{"x":8,"y":-1},{"x":0,"y":0},{"x":3,"y":1,"z":2}],
-      [{"x":4,"y":-5},{"x":8,"y":-1},{"x":0,"y":0},{"x":10,"y":-3,"z":2},{"x":3,"y":1,"z":2}],
-      [{"x":4,"y":-5},{"x":8,"y":-1},{"x":0,"y":0},{"x":10,"y":-3,"z":2},{"x":3,"y":1,"z":2},{"x":6,"y":-2,"z":3}],
-      [{"x":4,"y":-5},{"x":8,"y":-1},{"x":0,"y":0},{"x":10,"y":-3,"z":2},{"x":3,"y":1,"z":2},{"x":6,"y":-2,"z":3},{"x":1,"y":-4,"z":4}],
-      [{"x":4,"y":-5},{"x":8,"y":-1},{"x":0,"y":0},{"x":10,"y":-3,"z":2},{"x":3,"y":1,"z":2},{"x":6,"y":-2,"z":3},{"x":1,"y":-4,"z":4},{"x":6,"y":0,"z":5}]
-    ]},
-  "logs": {"name": "tas de billes", "piece": {"prop": "felled-log"}, "body": {"x": 1, "y": 3, "w": 18, "h": 10},
-    "layouts": [
-      [{"x":0,"y":0}],
-      [{"x":0,"y":-6},{"x":0,"y":0}],
-      [{"x":0,"y":-12},{"x":0,"y":-6},{"x":0,"y":0}],
-      [{"x":0,"y":-12},{"x":0,"y":-6},{"x":1,"y":-3,"z":5},{"x":0,"y":0}],
-      [{"x":0,"y":-12},{"x":0,"y":-9,"z":5},{"x":0,"y":-6},{"x":1,"y":-3,"z":5},{"x":0,"y":0}],
-      [{"x":0,"y":-12},{"x":0,"y":-9,"z":5},{"x":0,"y":-6},{"x":1,"y":-6,"z":10},{"x":1,"y":-3,"z":5},{"x":0,"y":0}]
-    ]}
+  "branches": {"name": "tas de branches", "piece": {"item": "branch"}, "start": "g1", "blockFrom": 3, "places": {
+    "g1": {"layer": 0, "image": "item-branch", "x": 0, "y": 3, "body": {"x": 1, "y": 0, "w": 14, "h": 3}},
+    "g0": {"layer": 0, "image": "item-branch", "x": 0, "y": 0, "body": {"x": 1, "y": -3, "w": 14, "h": 3}},
+    "g2": {"layer": 0, "image": "item-branch", "x": 0, "y": 6, "body": {"x": 1, "y": 3, "w": 14, "h": 3}},
+    "g3": {"layer": 0, "image": "item-branch", "x": 0, "y": 9, "body": {"x": 1, "y": 6, "w": 14, "h": 3}},
+    "l1-0": {"layer": 1, "on": ["g0", "g1"], "image": "item-branch", "x": 0, "y": 0},
+    "l1-1": {"layer": 1, "on": ["g1", "g2"], "image": "item-branch", "x": 0, "y": 2},
+    "l1-2": {"layer": 1, "on": ["g2", "g3"], "image": "item-branch", "x": 0, "y": 6},
+    "l2-0": {"layer": 2, "on": ["l1-0", "l1-1"], "image": "item-branch", "x": 0, "y": -1},
+    "l2-1": {"layer": 2, "on": ["l1-1", "l1-2"], "image": "item-branch", "x": 0, "y": 2},
+    "l3-0": {"layer": 3, "on": ["l2-0", "l2-1"], "image": "item-branch", "x": 0, "y": -2}
+  }},
+  "logs": {"name": "tas de billes", "piece": {"prop": "felled-log"}, "start": "g1", "blockFrom": 1, "places": {
+    "g1": {"layer": 0, "image": "felled-log", "x": 0, "y": -10, "body": {"x": 1, "y": -23, "w": 18, "h": 10}},
+    "g0": {"layer": 0, "image": "felled-log", "x": 0, "y": -20, "body": {"x": 1, "y": -33, "w": 18, "h": 10}},
+    "g2": {"layer": 0, "image": "felled-log", "x": 0, "y": 0, "body": {"x": 1, "y": -13, "w": 18, "h": 10}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "felled-log", "x": 0, "y": -23},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "felled-log", "x": 0, "y": -13},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "felled-log", "x": 0, "y": -26}
+  }}
 }

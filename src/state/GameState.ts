@@ -48,15 +48,15 @@ export const SpawnedSchema = z.strictObject({
 export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number() });
 
 /**
- * Un tas posé pendant la partie : un seul objet du monde, son genre (`pile`, clé de piles.json) et son nombre de pièces ;
- * (x, y) = son point au sol (les pièces sont placées par rapport à lui, voir `layouts` dans piles.json).
+ * Un tas posé pendant la partie : un seul objet du monde, son genre (`pile`, clé de piles.json), son point au sol (x, y :
+ * l'origine du repère de ses places) et ses places prises (`places`, identifiants de piles.json).
  */
 export const PileSchema = z.strictObject({
   id: z.number().int().nonnegative(),
   pile: id,
-  count: z.number().int().positive(),
   x: z.number(),
   y: z.number(),
+  places: z.array(id).min(1),
 });
 
 /** Ce qui a changé sur une carte. */
@@ -192,18 +192,24 @@ export function setSpawnedHits(s: GameState, mapId: string, spawnId: number, hit
   if (o) o.hits = hits;
 }
 
-/** Commence un tas d'une pièce sur une carte ; renvoie ce qui a été noté. */
-export function startPile(s: GameState, mapId: string, pile: string, x: number, y: number): Pile {
-  const p = { id: s.nextPileId++, pile, count: 1, x, y };
+/** Commence un tas d'une pièce, posée à la place `place` ; renvoie ce qui a été noté. */
+export function startPile(s: GameState, mapId: string, pile: string, x: number, y: number, place: string): Pile {
+  const p = { id: s.nextPileId++, pile, x, y, places: [place] };
   mapState(s, mapId).piles.push(p);
   return p;
 }
 
-/** Change le nombre de pièces d'un tas (une de plus, une de moins) ; à 0, le tas disparaît de la carte. */
-export function setPileCount(s: GameState, mapId: string, pileId: number, count: number): void {
+/** Une pièce est posée à la place `place` d'un tas. */
+export function fillPlace(s: GameState, mapId: string, pileId: number, place: string): void {
+  const p = mapState(s, mapId).piles.find((q) => q.id === pileId);
+  if (p && !p.places.includes(place)) p.places.push(place);
+}
+
+/** La pièce de la place `place` est reprise ; sans pièce, le tas disparaît de la carte. */
+export function emptyPlace(s: GameState, mapId: string, pileId: number, place: string): void {
   const m = mapState(s, mapId);
-  const i = m.piles.findIndex((p) => p.id === pileId);
+  const i = m.piles.findIndex((q) => q.id === pileId);
   if (i < 0) return;
-  if (count <= 0) m.piles.splice(i, 1);
-  else m.piles[i].count = count;
+  m.piles[i].places = m.piles[i].places.filter((q) => q !== place);
+  if (!m.piles[i].places.length) m.piles.splice(i, 1);
 }

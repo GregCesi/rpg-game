@@ -174,27 +174,43 @@ export const PropDefSchema = z.strictObject({
 });
 
 /**
- * Une pièce d'un tas : coin bas gauche de son image par rapport au point du tas (`x`, `y`, au sol), et `z`, sa hauteur
- * au-dessus du sol (une bille posée sur deux autres) : l'image est dessinée `z` pixels plus haut, sa collision reste au sol.
+ * Une place d'un tas (piles.json) : la pièce qui s'y pose est dessinée pour elle (`image`). Coordonnées dans le repère
+ * du tas, dont le point (0, 0) est au sol.
  */
-export const PilePieceSchema = z.strictObject({ x: px, y: px, z: px.nonnegative().default(0) });
+export const PilePlaceSchema = z.strictObject({
+  /** Couche : 0 au sol, 1 posée sur des pièces de la couche 0, etc. */
+  layer: z.number().int().nonnegative(),
+  /** Places qui la portent : elle n'existe que quand elles sont toutes prises (vide au sol). */
+  on: z.array(id).default([]),
+  /** Image de la pièce à cette place. */
+  image: id,
+  /** Coin bas gauche de l'image, telle qu'elle s'affiche (hauteur de la couche comprise). */
+  x: px,
+  y: px,
+  /** Collision de la pièce au sol (couche 0 seulement) ; une pièce du dessus repose sur celles qui la portent. */
+  body: RectSchema.optional(),
+  /**
+   * Point visé, au sol : Xéros pose sur la place disponible la plus proche du point qu'il regarde, et reprend la pièce
+   * la plus haute. Absent : le centre de `body` au sol, le milieu des points visés des places qui la portent au-dessus.
+   */
+  aim: z.tuple([px, px]).optional(),
+});
 
 /**
- * Un genre de tas (piles.json) : ce qu'on y entrepose, sa forme pour chaque nombre de pièces, et donc son maximum.
- * Pas d'image de tas : chaque pièce est le dessin de l'objet entreposé (la bille ordinaire, la branche).
+ * Un genre de tas (piles.json) : ce qu'on y entrepose et ses places. Le maximum est le nombre de places. Le tas
+ * s'affiche couche par couche, du bas vers le haut ; dans une couche, de l'arrière (bas de l'image le plus haut) vers l'avant.
  */
 export const PileDefSchema = z.strictObject({
   /** Nom affiché, en français. */
   name: id,
-  /** Ce qu'on en reprend, et dont le dessin fait chaque pièce : un objet possédable (`item`, son icône) ou un objet du monde (`prop`, son image). */
+  /** Ce qu'on en reprend : un objet possédable (`item`) ou un objet du monde (`prop`), toujours l'ordinaire du genre. */
   piece: z.union([z.strictObject({ item: id }), z.strictObject({ prop: id })]),
-  /** Collision d'une pièce, dans le repère de son image ; celle du tas est la réunion de celles de ses pièces, au sol. */
-  body: RectSchema,
-  /**
-   * Forme du tas pour chaque nombre : `layouts[n - 1]` = les n pièces, dans l'ordre d'affichage (la première derrière
-   * les autres). Le maximum du genre est le nombre de formes.
-   */
-  layouts: z.array(z.array(PilePieceSchema).min(1)).min(1),
+  /** Place de la première pièce d'un nouveau tas (au sol). */
+  start: id,
+  /** Nombre de pièces à partir duquel le tas bloque le passage. */
+  blockFrom: z.number().int().positive().default(1),
+  /** Les places, par identifiant ; l'ordre est celui d'une construction type (aperçu). */
+  places: z.record(id, PilePlaceSchema),
 });
 
 /** Où est la main pendant une image d'un geste. (dx, dy) : par rapport aux pieds du personnage (milieu bas de son image). */
@@ -344,7 +360,7 @@ export type Harvest = z.infer<typeof HarvestSchema>;
 export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type Take = z.infer<typeof TakeSchema>;
-export type PilePiece = z.infer<typeof PilePieceSchema>;
+export type PilePlace = z.infer<typeof PilePlaceSchema>;
 export type PileDef = z.infer<typeof PileDefSchema>;
 export type Pose = z.infer<typeof PoseSchema>;
 export type Gesture = z.infer<typeof GestureSchema>;
