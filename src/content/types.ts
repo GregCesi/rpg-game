@@ -119,6 +119,8 @@ export const TakeSchema = z.strictObject({
   icon: id,
   /** Comment il se voit sur Xéros quand il le tient (la bille : `carry`, `held-felled-log`). */
   hold: z.lazy(() => HoldSchema),
+  /** Genre de tas où il s'entrepose (clé de piles.json) : posé sur un tas du même genre, il s'y ajoute. */
+  pile: id.optional(),
 });
 
 /** Un objet possédable (dans les mains, au sol) : sa clé dans items.json est son identifiant. Une main en tient un seul. */
@@ -132,6 +134,8 @@ export const ItemDefSchema = z.strictObject({
   hands: HandsSchema.default(1),
   /** Comment il se voit sur Xéros quand il le tient : voir HoldSchema. */
   hold: z.lazy(() => HoldSchema).optional(),
+  /** Genre de tas où il s'entrepose (clé de piles.json) : posé sur un tas du même genre, il s'y ajoute. */
+  pile: id.optional(),
 });
 
 /**
@@ -167,6 +171,30 @@ export const PropDefSchema = z.strictObject({
   harvest: HarvestSchema.optional(),
   /** Ce qui se prend dans les mains : voir TakeSchema. */
   take: TakeSchema.optional(),
+});
+
+/**
+ * Une pièce d'un tas : coin bas gauche de son image par rapport au point du tas (`x`, `y`, au sol), et `z`, sa hauteur
+ * au-dessus du sol (une bille posée sur deux autres) : l'image est dessinée `z` pixels plus haut, sa collision reste au sol.
+ */
+export const PilePieceSchema = z.strictObject({ x: px, y: px, z: px.nonnegative().default(0) });
+
+/**
+ * Un genre de tas (piles.json) : ce qu'on y entrepose, sa forme pour chaque nombre de pièces, et donc son maximum.
+ * Pas d'image de tas : chaque pièce est le dessin de l'objet entreposé (la bille ordinaire, la branche).
+ */
+export const PileDefSchema = z.strictObject({
+  /** Nom affiché, en français. */
+  name: id,
+  /** Ce qu'on en reprend, et dont le dessin fait chaque pièce : un objet possédable (`item`, son icône) ou un objet du monde (`prop`, son image). */
+  piece: z.union([z.strictObject({ item: id }), z.strictObject({ prop: id })]),
+  /** Collision d'une pièce, dans le repère de son image ; celle du tas est la réunion de celles de ses pièces, au sol. */
+  body: RectSchema,
+  /**
+   * Forme du tas pour chaque nombre : `layouts[n - 1]` = les n pièces, dans l'ordre d'affichage (la première derrière
+   * les autres). Le maximum du genre est le nombre de formes.
+   */
+  layouts: z.array(z.array(PilePieceSchema).min(1)).min(1),
 });
 
 /** Où est la main pendant une image d'un geste. (dx, dy) : par rapport aux pieds du personnage (milieu bas de son image). */
@@ -316,6 +344,8 @@ export type Harvest = z.infer<typeof HarvestSchema>;
 export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type Take = z.infer<typeof TakeSchema>;
+export type PilePiece = z.infer<typeof PilePieceSchema>;
+export type PileDef = z.infer<typeof PileDefSchema>;
 export type Pose = z.infer<typeof PoseSchema>;
 export type Gesture = z.infer<typeof GestureSchema>;
 export type HoldPoint = z.infer<typeof HoldPointSchema>;

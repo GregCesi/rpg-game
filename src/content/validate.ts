@@ -3,7 +3,7 @@
 // Utilisé par `npm run check` (Node) et au démarrage du jeu.
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
-import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PropDef, TilesetCatalog } from './types';
+import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PropDef, TilesetCatalog } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -178,6 +178,7 @@ export interface Content {
   tiles: Record<string, TilesetCatalog>;
   props: Record<string, PropDef>;
   items: Record<string, ItemDef>;
+  piles: Record<string, PileDef>;
   gestures: Record<string, Gesture>;
   hold: HoldPoses;
   maps: Record<string, MapData>;
@@ -285,6 +286,49 @@ function validateHold(at: string, h: Hold, hands: 1 | 2, cat: Catalog): string[]
   return errors;
 }
 
+/**
+ * Genres de tas : la pièce existe, se prend dans les mains et s'entrepose dans ce genre ; son dessin est fait ; la forme
+ * pour n pièces a n pièces, au pixel entier ; les objets qui disent s'entreposer ici le peuvent (genre connu).
+ */
+function validatePiles(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const err = (msg: string) => errors.push(msg);
+  for (const [key, pile] of Object.entries(c.piles)) {
+    const at = `piles.json '${key}'`;
+    if (!KEBAB_CASE.test(key)) err(`${at} : la clé doit être un identifiant anglais en kebab-case`);
+    const piece = pile.piece;
+    let image: string | undefined;
+    if ('item' in piece) {
+      const it = c.items[piece.item];
+      if (!it) err(`${at} : objet possédable '${piece.item}' introuvable dans items.json`);
+      else if (it.pile !== key) err(`${at} : '${piece.item}' (items.json) doit avoir "pile": "${key}" pour s'y entreposer`);
+      image = it?.icon;
+    } else {
+      const p = c.props[piece.prop];
+      if (!p) err(`${at} : objet '${piece.prop}' introuvable dans props.json`);
+      else if (!p.take) err(`${at} : '${piece.prop}' (props.json) ne se prend pas (pas de 'take')`);
+      else if (p.take.pile !== key) err(`${at} : '${piece.prop}' (props.json) doit avoir "pile": "${key}" dans 'take' pour s'y entreposer`);
+      image = p?.image;
+    }
+    const size = image ? cat.sizes.get(image) : undefined;
+    if (image && !size) err(`${at} : image '${image}' de la pièce non dessinée`);
+    const b = pile.body;
+    if (size && (b.x < 0 || b.y < 0 || b.x + b.w > size.w || b.y + b.h > size.h)) err(`${at} : collision 'body' hors de l'image de la pièce (${size.w}×${size.h})`);
+    pile.layouts.forEach((layout, i) => {
+      if (layout.length !== i + 1) err(`${at} : la forme ${i + 1} (layouts[${i}]) a ${layout.length} pièces au lieu de ${i + 1}`);
+      layout.forEach((q, j) => {
+        if (![q.x, q.y, q.z].every(Number.isInteger)) err(`${at} : forme ${i + 1}, pièce ${j + 1} : position au pixel entier attendue`);
+      });
+    });
+  }
+  const member = (at: string, pile: string | undefined) => {
+    if (pile && !c.piles[pile]) err(`${at} : genre de tas '${pile}' introuvable dans piles.json`);
+  };
+  for (const [key, it] of Object.entries(c.items)) member(`items.json '${key}'`, it.pile);
+  for (const [key, p] of Object.entries(c.props)) member(`props.json '${key}' take`, p.take?.pile);
+  return errors;
+}
+
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -360,6 +404,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (!KEBAB_CASE.test(key)) err(`items.json '${key}' : la clé doit être un identifiant anglais en kebab-case`);
     if (!cat.textures.has(it.icon)) err(`items.json '${key}' : icône '${it.icon}' non dessinée`);
   }
+
+  // Tas : genres, pièces, formes
+  addAll(validatePiles(c, cat));
 
   // Personnages et dialogues
   for (const [key, ch] of Object.entries(c.characters)) {
