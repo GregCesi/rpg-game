@@ -7,8 +7,9 @@ import { Player } from '../entities/Player';
 import { GameEvent } from '../events';
 import { findExit } from '../systems/exits';
 import { HarvestSystem, type HitResult } from '../systems/harvest';
+import { HandsSystem } from '../systems/hands';
 import { InteractionSystem } from '../systems/InteractionSystem';
-import { game, heldItem, mapState, removeGroundItem, take } from '../state';
+import { canTake, game, heldItem, mapState, removeGroundItem, switchHand, take } from '../state';
 import { GameMap } from '../world/GameMap';
 import type { Interactable, PlacedGround } from '../world/GameMap';
 
@@ -28,6 +29,7 @@ export class WorldScene extends Phaser.Scene {
   private map!: GameMap;
   private interaction!: InteractionSystem;
   private harvest!: HarvestSystem;
+  private handsSystem!: HandsSystem;
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
   private talking?: Npc;
   private mode: Mode = 'play';
@@ -70,8 +72,14 @@ export class WorldScene extends Phaser.Scene {
       top: n.actor.y - n.actor.height,
       action: { kind: 'talk', dialogue: n.dialogue, npc: n },
     }));
-    this.interaction = new InteractionSystem(this, this.player, () => [...this.map.interactables(), ...talkable]);
+    // les deux mains prises par un seul objet : E ne fait que parler, ou reposer ce qu'on tient
+    this.interaction = new InteractionSystem(this, this.player, () =>
+      game.both ? talkable : [...this.map.interactables(), ...talkable],
+    );
     this.harvest = new HarvestSystem(this, this.map);
+    this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
+    // ce qu'il portait sur la carte d'avant
+    this.handsChanged();
 
     const cam = this.cameras.main;
     cam.setZoom(ZOOM);
@@ -90,16 +98,26 @@ export class WorldScene extends Phaser.Scene {
       const exit = findExit(this.player, this.map.def.exits);
       if (exit) this.travel(exit);
     }
-    // Espace toujours lu, comme E : sinon un appui fait pendant un dialogue ressortirait juste après
-    const use = this.player.input.usePressed();
-    const used = this.interaction.update(time, this.mode === 'play');
-    this.harvest.updatePrompt(time, this.player, heldItem(game), this.mode === 'play');
+    // Espace, Q et Tab toujours lus, comme E : sinon un appui fait pendant un dialogue ressortirait juste après
+    const { input } = this.player;
+    const use = input.usePressed();
+    const drop = input.dropPressed();
+    const swap = input.swapPressed();
+    const e = this.interaction.update(time, this.mode === 'play');
+    this.harvest.updatePrompt(time, this.player, this.player.carry.busy ? undefined : heldItem(game), this.mode === 'play');
     if (this.mode !== 'play') return;
-    if (used) this.hands(used);
+    if (swap) {
+      switchHand(game);
+      this.handsChanged();
+    }
+    if (e.pressed && e.target) this.hands(e.target);
+    // E dans le vide (ou devant ce qu'on ne peut pas prendre) : reposer ce qu'on tient à deux mains
+    else if (e.pressed && game.both) this.putDown();
+    else if (drop) this.putDown();
     else if (use && time >= this.useLockedUntil) this.useHeld();
   }
 
-  /** E devant une cible : parler, récolter à la main, ramasser. */
+  /** E devant une cible : parler, récolter à la main, prendre un objet du monde, ramasser. */
   private hands(target: Interactable): void {
     const a = target.action;
     if (a.kind === 'talk') {
@@ -107,14 +125,39 @@ export class WorldScene extends Phaser.Scene {
       this.talking?.faceToward(this.player.actor.x, this.player.actor.y);
       this.openDialogue(a.dialogue);
     } else if (a.kind === 'harvest') {
+      // ce qui va directement dans les mains (la hache du billot) : il faut les mains libres avant le geste
+      const gives = a.prop.def.harvest!.drops.filter((d) => d.give);
+      if (gives.some((d) => !canTake(game, items[d.item].hands))) return this.notice('Les mains pleines.');
       this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
+    } else if (a.kind === 'take') {
+      if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
+      this.handsChanged();
     } else {
       this.pickUp(a.ground);
     }
   }
 
-  /** Espace : le geste avec l'objet en main, même dans le vide. Une ressource en main ne fait rien. */
+  /** Q, ou E quand on tient à deux mains : pose devant soi ce que tient la main active, s'il y a la place. */
+  private putDown(): void {
+    const r = this.handsSystem.putDown(this.player);
+    if (r === 'blocked') this.notice('Pas la place ici.');
+    if (r === 'done') this.handsChanged();
+  }
+
+  /** Les mains ont changé : le HUD se redessine, Xéros porte (ou non) l'objet du monde qu'il tient à deux mains. */
+  private handsChanged(): void {
+    const b = game.both;
+    this.player.carry.hold(b && 'prop' in b ? { type: b.prop, flip: b.flip } : undefined);
+    this.game.events.emit(GameEvent.HandsChanged);
+  }
+
+  private notice(text: string): void {
+    this.game.events.emit(GameEvent.Notice, text);
+  }
+
+  /** Espace : le geste avec ce qu'on tient, même dans le vide. Une ressource en main ne fait rien ; chargé, rien non plus. */
   private useHeld(): void {
+    if (this.player.carry.busy) return;
     const tool = heldItem(game);
     if (!tool || items[tool].kind === 'resource') {
       // mains vides devant ce qui demande un outil : on le dit
@@ -138,19 +181,16 @@ export class WorldScene extends Phaser.Scene {
   private report(r: HitResult): void {
     if (r.kind === 'missing') this.game.events.emit(GameEvent.Notice, `Sans ${items[r.tool].name}, rien à faire.`);
     if (r.kind !== 'hit') return;
-    if (r.given) this.game.events.emit(GameEvent.HandsChanged);
+    if (r.given) this.handsChanged();
     if (r.overflow) this.game.events.emit(GameEvent.Notice, 'Les mains pleines.');
   }
 
   /** Prend un objet au sol dans une main libre (les deux s'il le demande). */
   private pickUp(g: PlacedGround): void {
-    if (!take(game, { item: g.item.item }, items[g.item.item].hands)) {
-      this.game.events.emit(GameEvent.Notice, 'Les mains pleines.');
-      return;
-    }
+    if (!take(game, { item: g.item.item }, items[g.item.item].hands)) return this.notice('Les mains pleines.');
     removeGroundItem(game, this.map.def.id, g.item.id);
     this.map.removeGround(g);
-    this.game.events.emit(GameEvent.HandsChanged);
+    this.handsChanged();
   }
 
   /** Fondu au noir, puis la scène redémarre sur la carte d'arrivée. */

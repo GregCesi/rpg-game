@@ -22,6 +22,30 @@ export function promptTop(p: PlacedProp): number {
   return p.def.aim ? p.aimY - 2 : p.top;
 }
 
+/** Rectangle dans le repère d'une image (0,0 = coin haut gauche). */
+export interface Box {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/**
+ * Collision d'un objet de props.json dans le repère de son image (w × h), retournée pour sa version de gauche ;
+ * undefined s'il ne bloque pas le passage. Mêmes règles que placeProp : `body` centré en bas, `bodies` libres.
+ */
+export function footprint(def: PropDef, w: number, h: number, flip: boolean): Box | undefined {
+  const rects = def.body ? [{ x: (w - def.body.w) / 2, y: h - def.body.bottom - def.body.h, w: def.body.w, h: def.body.h }] : (def.bodies ?? []);
+  if (!rects.length) return undefined;
+  const fx = (x: number, rw: number) => (flip ? w - x - rw : x);
+  return {
+    left: Math.min(...rects.map((r) => fx(r.x, r.w))),
+    right: Math.max(...rects.map((r) => fx(r.x, r.w) + r.w)),
+    top: Math.min(...rects.map((r) => r.y)),
+    bottom: Math.max(...rects.map((r) => r.y + r.h)),
+  };
+}
+
 /** Hachage stable d'une position : la même case a toujours les mêmes détails au sol. */
 function hash(x: number, y: number): number {
   let h = (x * 374761393 + y * 668265263) >>> 0;
@@ -52,7 +76,7 @@ export interface PlacedProp {
   baseY: number;
   top: number;
   /** Boîte de collision (réunion de ses boîtes), si l'objet bloque le passage. */
-  box?: { left: number; right: number; top: number; bottom: number };
+  box?: Box;
   /** Point visé (l'encoche, `aim` de props.json), sinon la base : Xéros vise ce point et l'invite s'y affiche. */
   aimX: number;
   aimY: number;
@@ -75,7 +99,8 @@ export interface PlacedGround {
 export type Action =
   | { kind: 'talk'; dialogue: string; npc?: Npc }
   | { kind: 'harvest'; prop: PlacedProp }
-  | { kind: 'pickup'; ground: PlacedGround };
+  | { kind: 'pickup'; ground: PlacedGround }
+  | { kind: 'take'; prop: PlacedProp };
 
 /** Ce avec quoi le joueur peut interagir avec E. (x, y) = centre de sa base au sol ; top = haut de l'image. */
 export interface Interactable {
@@ -150,13 +175,18 @@ export class GameMap {
     }
   }
 
-  /** Ce que E peut viser en ce moment : dialogues, récoltes à la main, objets au sol. */
+  /** Ce que E peut viser en ce moment : dialogues, récoltes à la main, objets à prendre, objets au sol. */
   interactables(): Interactable[] {
     const list: Interactable[] = [];
     for (const p of this.props) {
       const dialogue = p.interact ?? p.def.interact;
       if (dialogue) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'talk', dialogue } });
       else if (p.def.harvest && !p.def.harvest.tool) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'harvest', prop: p } });
+      // un objet à prendre (la bille) se vise au centre de sa collision ; caché (il attend la fin d'une chute), il ne se prend pas
+      else if (p.def.take && p.image.visible) {
+        const x = p.box ? (p.box.left + p.box.right) / 2 : p.baseX;
+        list.push({ x, y: p.baseY, top: p.top, action: { kind: 'take', prop: p } });
+      }
     }
     // un objet encore caché (il attend la fin d'une chute) ne se ramasse pas
     for (const g of this.ground) if (g.image.visible) list.push({ x: g.item.x, y: g.item.y - 4, top: g.image.y - g.image.height, action: { kind: 'pickup', ground: g } });
@@ -191,6 +221,23 @@ export class GameMap {
       const image = !p.def.harvest!.notch ? `${base}${left}` : p.hits >= max ? `${base}-cut-right` : `${base}${left}${p.hits > 0 ? `-n${p.hits}` : ''}`;
       p.image.setTexture(image);
     }
+  }
+
+  /**
+   * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante, sur aucune collision d'objet
+   * ni sur l'un des corps `others` (les personnages).
+   */
+  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = []): boolean {
+    if (b.left < 0 || b.top < 0 || b.right > this.width || b.bottom > this.height) return false;
+    for (let ty = Math.floor(b.top / TILE); ty <= Math.floor((b.bottom - 0.01) / TILE); ty++) {
+      for (let tx = Math.floor(b.left / TILE); tx <= Math.floor((b.right - 0.01) / TILE); tx++) {
+        if (this.floor.getTileAt(tx, ty)?.collides) return false;
+      }
+    }
+    const overlaps = (l: number, t: number, r: number, bo: number) => b.left < r && b.right > l && b.top < bo && b.bottom > t;
+    const zones = this.obstacles.getChildren() as Phaser.GameObjects.Zone[];
+    if (zones.some((z) => overlaps(z.x - z.width / 2, z.y - z.height / 2, z.x + z.width / 2, z.y + z.height / 2))) return false;
+    return !others.some((o) => overlaps(o.left, o.top, o.right, o.bottom));
   }
 
   /** Retire un objet posé (image, collisions, fumées, lueurs). */

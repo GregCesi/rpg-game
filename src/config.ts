@@ -41,6 +41,9 @@ export const DEPTH = {
 /** Distance devant les pieds où l'on cherche un objet avec lequel interagir, et rayon de recherche (px). */
 export const INTERACT = { reach: 16, radius: 20 };
 
+/** Poser devant soi : écart entre la collision de Xéros et ce qu'il pose (px). */
+export const PUT_DOWN = { gap: 2 };
+
 /**
  * Viser une encoche du tronc couché : Xéros doit être collé au tronc (au plus `gap` px entre sa collision et celle du tronc),
  * tourné vers lui (haut ou bas), et le fer à l'impact à moins de `align` px de l'encoche (une demi-section : 19 px / 2).
@@ -57,7 +60,7 @@ export const HARVEST = {
   chips: { count: 6, lifespan: 420, speed: [50, 110] as [number, number], gravity: 420 },
 };
 
-/** Barre d'objets : durée d'un message court (ms). */
+/** Les mains à l'écran : durée d'un message court (ms). */
 export const HUD = { noticeMs: 1800 };
 
 /** Où commence la partie : Xéros se réveille dans son cagibi. */
@@ -67,6 +70,8 @@ export const PLAYER = {
   skin: 'xeros',
   walkSpeed: 100, // px/s, environ 3 tuiles par seconde
   runSpeed: 165,
+  /** Portant à deux mains (une bille) : lent, pas de course. */
+  carrySpeed: 55,
 };
 
 /** Ajouter ?debug à l'URL affiche les boîtes de collision. */

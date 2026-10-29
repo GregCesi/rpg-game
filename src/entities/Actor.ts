@@ -8,6 +8,13 @@ export type Facing = 'down' | 'up' | 'left' | 'right';
  */
 export class Actor extends Phaser.Physics.Arcade.Sprite {
   facing: Facing = 'down';
+  /** Attente ou marche : la dernière animation demandée par move(). */
+  motion: 'idle' | 'walk' = 'idle';
+  /**
+   * Posture qui change les animations d'attente et de marche : `carry` joue `carry-idle-*` et `carry-walk-*` (il porte à deux mains).
+   * Vide : `idle-*` et `walk-*`. Posée par un composant (Carry), jamais par une sous-classe.
+   */
+  stance = '';
   declare body: Phaser.Physics.Arcade.Body;
 
   constructor(scene: Phaser.Scene, x: number, y: number, readonly skin: string) {
@@ -27,12 +34,14 @@ export class Actor extends Phaser.Physics.Arcade.Sprite {
   move(dir: Phaser.Math.Vector2, speed: number, baseSpeed = speed): void {
     if (dir.lengthSq() === 0) {
       this.body.setVelocity(0, 0);
+      this.motion = 'idle';
       this.play(this.animKey('idle'), true);
       return;
     }
     const v = dir.clone().normalize().scale(speed);
     this.body.setVelocity(v.x, v.y);
     this.facing = this.pickFacing(dir);
+    this.motion = 'walk';
     this.anims.timeScale = speed / baseSpeed;
     this.play(this.animKey('walk'), true);
   }
@@ -40,6 +49,7 @@ export class Actor extends Phaser.Physics.Arcade.Sprite {
   /** Tourne le personnage sans le déplacer. */
   face(facing: Facing): void {
     this.facing = facing;
+    this.motion = 'idle';
     this.play(this.animKey('idle'), true);
   }
 
@@ -49,7 +59,7 @@ export class Actor extends Phaser.Physics.Arcade.Sprite {
   }
 
   private animKey(state: 'idle' | 'walk'): string {
-    return `${this.skin}-${state}-${this.facing}`;
+    return `${this.skin}-${this.stance ? `${this.stance}-` : ''}${state}-${this.facing}`;
   }
 
   /** En diagonale, on garde l'orientation actuelle si elle reste valable : évite le clignotement. */
