@@ -827,6 +827,23 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 148,
+      "name": "footing-stone",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

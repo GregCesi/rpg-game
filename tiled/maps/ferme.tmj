@@ -9,8 +9,8 @@
   "height": 22,
   "tilewidth": 32,
   "tileheight": 32,
-  "nextlayerid": 4,
-  "nextobjectid": 26,
+  "nextlayerid": 5,
+  "nextobjectid": 30,
   "properties": [
     {
       "name": "name",
@@ -313,6 +313,66 @@
           "width": 32,
           "height": 32,
           "gid": 1003
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "abri",
+      "type": "objectgroup",
+      "draworder": "index",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {
+          "id": 26,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "footing-stone",
+          "x": 607,
+          "y": 70,
+          "width": 7,
+          "height": 7,
+          "gid": 1049
+        },
+        {
+          "id": 27,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "footing-stone",
+          "x": 668,
+          "y": 70,
+          "width": 7,
+          "height": 7,
+          "gid": 1049
+        },
+        {
+          "id": 28,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "footing-stone",
+          "x": 607,
+          "y": 131,
+          "width": 7,
+          "height": 7,
+          "gid": 1049
+        },
+        {
+          "id": 29,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "footing-stone",
+          "x": 668,
+          "y": 131,
+          "width": 7,
+          "height": 7,
+          "gid": 1049
         }
       ]
     },

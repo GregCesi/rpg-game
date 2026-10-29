@@ -1,1 +1,9 @@
-{}
+{
+  "woodshed": {
+    "name": "abri à bois",
+    "map": "ferme",
+    "steps": [
+      {"name": "les dés", "pieces": ["footing-stone"]}
+    ]
+  }
+}

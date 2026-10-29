@@ -52,5 +52,6 @@
   "chest": {"name": "coffre", "image": "chest", "dims": {"w": 90, "d": 50, "h": 55, "shape": "box"}, "body": {"w": 22, "h": 8, "bottom": 3}},
   "table": {"name": "table de ferme", "image": "table", "dims": {"w": 210, "d": 90, "h": 78, "shape": "box"}, "body": {"w": 40, "h": 8, "bottom": 3}},
   "stool": {"name": "tabouret", "image": "stool", "dims": {"w": 35, "d": 35, "h": 45, "shape": "cylinder", "axis": "up"}, "body": {"w": 12, "h": 6, "bottom": 3}},
+  "footing-stone": {"name": "dé de pierre", "image": "footing-stone", "dims": {"w": 30, "d": 30, "h": 15, "shape": "box"}, "layer": "floor"},
   "well": {"name": "puits", "image": "well", "dims": {"w": 235, "d": 160, "h": 250, "shape": "box"}, "body": {"w": 34, "h": 12, "bottom": 4}}
 }
