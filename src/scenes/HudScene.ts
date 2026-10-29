@@ -8,17 +8,24 @@ import { game, type Held } from '../state';
 const GAP = 4;
 const BOTTOM = 10;
 
+/** Ce que montre une main vide : une main ouverte, gauche ou droite. */
+const EMPTY = ['ui-hand-left', 'ui-hand-right'];
+
 /**
- * Les deux mains, au-dessus du monde : main gauche (G) et main droite (D), la case active marquée.
- * Ce qu'on tient à deux mains s'affiche à cheval sur les deux cases, toutes deux marquées.
+ * Les deux mains, au-dessus du monde : main gauche (G) et main droite (D), la case active marquée ; une main vide montre
+ * une main ouverte. Ce qu'on tient à deux mains s'affiche dans la case droite, la gauche montre alors « deux mains »
+ * (`ui-hands-both`), et les deux cases sont marquées.
  * Affiche aussi les messages courts (GameEvent.Notice). Lit GameState ; se redessine sur GameEvent.HandsChanged.
  * Cachée pendant un dialogue (il prend le bas de l'écran).
  */
+/** Icône d'un objet possédable, ou celle d'un objet du monde porté (`icon` de son `take`). */
+function icon(h: Held): string {
+  return 'item' in h ? items[h.item].icon : props[h.prop].take!.icon;
+}
+
 export class HudScene extends Phaser.Scene {
   private slots: Phaser.GameObjects.Image[] = [];
   private icons: Phaser.GameObjects.Image[] = [];
-  /** Ce qu'on tient à deux mains, entre les deux cases. */
-  private bothIcon!: Phaser.GameObjects.Image;
   private notice!: Phaser.GameObjects.Text;
   private bar!: Phaser.GameObjects.Container;
 
@@ -36,14 +43,12 @@ export class HudScene extends Phaser.Scene {
     ['G', 'D'].forEach((name, i) => {
       const x = x0 + i * (size + GAP);
       const slot = this.add.image(x, y0, 'ui-slot').setOrigin(0);
-      const icon = this.add.image(x + size / 2, y0 + size / 2, '__DEFAULT').setVisible(false);
+      const icon = this.add.image(x + size / 2, y0 + size / 2, EMPTY[i]);
       const text = this.add.text(x + size / 2, y0 + size + 1, name, label).setOrigin(0.5, 0).setResolution(ZOOM);
       this.slots.push(slot);
       this.icons.push(icon);
       this.bar.add([slot, icon, text]);
     });
-    this.bothIcon = this.add.image(x0 + size + GAP / 2, y0 + size / 2, '__DEFAULT').setVisible(false);
-    this.bar.add(this.bothIcon);
     this.notice = this.add
       .text(VIEW.width / 2, y0 - 6, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
@@ -66,17 +71,11 @@ export class HudScene extends Phaser.Scene {
   }
 
   private redraw(): void {
-    game.hands.forEach((h, i) => {
+    const shown = game.both ? ['ui-hands-both', icon(game.both)] : game.hands.map((h, i) => (h ? icon(h) : EMPTY[i]));
+    shown.forEach((key, i) => {
       this.slots[i].setTexture(game.both || i === game.active ? 'ui-slot-active' : 'ui-slot');
-      this.show(this.icons[i], h);
+      this.icons[i].setTexture(key);
     });
-    this.show(this.bothIcon, game.both);
-  }
-
-  /** Icône d'un objet possédable, ou celle d'un objet du monde porté (`icon` de son `take`). */
-  private show(image: Phaser.GameObjects.Image, h: Held | null): void {
-    image.setVisible(!!h);
-    if (h) image.setTexture('item' in h ? items[h.item].icon : props[h.prop].take!.icon);
   }
 
   private showNotice(text: string): void {
