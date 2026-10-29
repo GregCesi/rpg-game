@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 25,
+  "nextobjectid": 26,
   "properties": [
     {
       "name": "name",
@@ -121,6 +121,18 @@
           "width": 48,
           "height": 32,
           "gid": 1006
+        },
+        {
+          "id": 25,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "chopping-block-axe",
+          "x": 780,
+          "y": 128,
+          "width": 32,
+          "height": 32,
+          "gid": 1035
         },
         {
           "id": 5,
