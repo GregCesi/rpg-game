@@ -131,6 +131,12 @@
     "stool",
     "well",
     "chopping-block",
-    "chopping-block-axe"
+    "chopping-block-axe",
+    "felled-section-1",
+    "felled-section-2",
+    "felled-section-3",
+    "felled-crown",
+    "felled-head",
+    "felled-log"
   ]
 }
