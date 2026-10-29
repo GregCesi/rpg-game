@@ -8,7 +8,7 @@ Phaser 3 + TypeScript + Vite. Tuiles 32×32.
 
 ```bash
 npm install
-npm run dev            # http://localhost:5173  (?debug pour voir les collisions)
+npm run dev            # http://localhost:5173  (?debug : collisions ; ?reset : efface la sauvegarde ; ?dieu : outils de test)
 npm run art            # art/ -> PNG, manifestes et tilesets Tiled (à lancer une fois avant d'ouvrir Tiled)
 npm run maps           # cartes Tiled (tiled/maps/*.tmj) -> src/generated/maps.ts
 npm run sketch -- <id> # fait naître tiled/maps/<id>.tmj depuis tiled/sketches/<id>.json (grille de lettres)
@@ -18,6 +18,8 @@ npm run build          # check, test, puis build web dans dist/
 npm run build:single   # un seul fichier HTML autonome dans dist-single/
 npm run art:preview    # régénère les sprites + aperçus x4 dans .art-preview/ (planche collection.png, xeros-<geste>-<outil>.png pour chaque geste et chaque outil en main, les deux mains hands.png, les tas piles.png : chaque genre étape par étape, collisions en liseré ; les étalons du gabarit gabarit.png : Xéros, cube de 50 cm, bille est-ouest, bille nord-sud, cylindre debout de 50 cm, et la taille attendue en liseré)
 ```
+
+Adresses de test (à combiner : `?dieu&debug`) : `?debug` montre les collisions ; `?reset` efface la sauvegarde et repart du réveil dans le cagibi (le mot est ensuite retiré de l'adresse : un rechargement reprend la nouvelle partie) ; `?dieu` ouvre à droite du jeu un panneau d'outils de test, à la souris (donner un objet en main, poser un objet du monde ou un tas devant Xéros, aller sur une carte, remettre la carte ou la partie à zéro). Sans `?dieu`, le panneau n'existe pas.
 
 Les cartes se font dans [Tiled](https://www.mapeditor.org/) : ouvrir `tiled/xeros.tiled-project`. Après une modification d'une carte, relancer `npm run dev` (ou `npm run maps`) pour la voir en jeu.
 
@@ -57,7 +59,7 @@ src/
     piles.json       genres de tas : ce qu'on y entrepose, ses places (couche, porteuses, pièce dessinée, collision)
     gestures.json    geste d'outil : place de la main et de l'outil à chaque image
     hold.json        objets tenus sur Xéros : point d'accroche par posture (main, épaule, porter) à chaque image
-  state/             GameState : l'état de la partie (les deux mains, changements du monde, objets au sol), en mémoire
+  state/             GameState : l'état de la partie (les deux mains, changements du monde, objets au sol) ; save.ts : sa sauvegarde (localStorage, version, schéma Zod)
   world/GameMap.ts   construit une carte jouable à partir d'une MapData
   world/pileShape.ts la forme d'un tas, sans Phaser : places ouvertes, pièces à reprendre, ordre d'affichage
   systems/           une mécanique du monde par fichier : interactions, sorties, récolte (harvest.ts), prendre, poser et les tas (hands.ts)...
@@ -67,6 +69,7 @@ src/
   entities/Hold.ts   composant : ce qu'il tient se voit sur lui (posture du corps, objet posé au point d'accroche image par image)
   entities/Npc.ts    Actor + contrôleur immobile : un personnage non joueur qui se tourne vers Xéros quand il lui parle
   input/             lecture du clavier
+  dieu/panel.ts      outils de test (?dieu) : panneau HTML hors du canevas, qui envoie des commandes à WorldScene
   scenes/            Boot (chargement), World (la carte en jeu), Hud (les deux mains, messages courts), Dialogue (par-dessus le monde)
 ```
 
@@ -78,7 +81,15 @@ Entre scènes, on passe par le bus du jeu avec les noms de `events.ts` (ex. `Gam
 
 ### L'état de la partie
 
-Les cartes décrivent le monde au début de la partie ; `GameState` (`src/state/`, schéma Zod, indépendant de Phaser) dit ce qui a changé : les **deux mains** (`hands` : gauche et droite, chacune un objet ou rien ; `both` : ce qu'on tient à deux mains ; `active` : la main qui utilise et qui lâche ; un objet tenu est un objet possédable `{ item }` ou un objet du monde pris sur la carte `{ prop, flip }`, la bille), les objets de carte changés, rangés par carte et par **identifiant d'objet Tiled** (« objet 12 de la ferme : devenu `tree-stump` »), les objets posés au sol, par carte, et les **objets nés** pendant la partie (les pièces d'un arbre couché), par carte, avec leur identifiant propre, et les **tas** (`piles` : genre, point au sol, places prises, sens), par carte ; un objet changé ou né peut être retourné (`flip`, ce qui est tombé vers la gauche). La construction d'une carte (`GameMap`) applique ses changements et repose les objets nés. En mémoire seulement : la sauvegarde consistera à l'écrire. On le modifie par les fonctions de `state/GameState.ts` (`take`, `release`, `switchHand`, `changeObject`, `dropItem`, `spawnObject`, `changeSpawned`, `startPile`, `fillPlace`, `emptyPlace`, `turnHeld`...), jamais à la main depuis une scène.
+Les cartes décrivent le monde au début de la partie ; `GameState` (`src/state/`, schéma Zod, indépendant de Phaser) dit ce qui a changé : les **deux mains** (`hands` : gauche et droite, chacune un objet ou rien ; `both` : ce qu'on tient à deux mains ; `active` : la main qui utilise et qui lâche ; un objet tenu est un objet possédable `{ item }` ou un objet du monde pris sur la carte `{ prop, flip }`, la bille), les objets de carte changés, rangés par carte et par **identifiant d'objet Tiled** (« objet 12 de la ferme : devenu `tree-stump` »), les objets posés au sol, par carte, et les **objets nés** pendant la partie (les pièces d'un arbre couché), par carte, avec leur identifiant propre, et les **tas** (`piles` : genre, point au sol, places prises, sens), par carte ; un objet changé ou né peut être retourné (`flip`, ce qui est tombé vers la gauche). La construction d'une carte (`GameMap`) applique ses changements et repose les objets nés. On le modifie par les fonctions de `state/GameState.ts` (`take`, `release`, `switchHand`, `changeObject`, `dropItem`, `spawnObject`, `changeSpawned`, `startPile`, `fillPlace`, `emptyPlace`, `turnHeld`, `emptyHands`, `resetMap`, `replaceState`...), jamais à la main depuis une scène : chacune avance un compteur de changements (`revisionOf`), et c'est lui qui déclenche la sauvegarde.
+
+### La sauvegarde
+
+La partie se sauvegarde toute seule, dans le navigateur (`localStorage['xeros-partie']`, `state/save.ts`) : `{ version, savedAt, where, state }`, `where` étant la carte, les pieds et la direction de Xéros, `state` le `GameState` tel quel. `systems/autosave.ts`, appelé au début de chaque `WorldScene.update`, l'écrit dès que le compteur a bougé (objet pris, posé, coupé, tas modifié...) ; la scène l'écrit aussi à l'arrivée sur une carte et quand la page se cache ou se ferme (`pagehide`, rechargement compris), pour garder la dernière position. Au lancement, `BootScene` appelle `resumeGame` (`state/index.ts`) : la partie reprend à la position exacte (`at` de `WorldStart`), sinon au réveil (`START`). La lecture (`readSave`) ne plante jamais : sauvegarde illisible, d'une autre version (`SAVE_VERSION`), refusée par `SaveSchema`, ou qui nomme une carte, un objet ou une place de tas disparus du contenu : elle est mise de côté dans `localStorage['xeros-partie-abimee']` (détail en console), le HUD le dit en clair et la partie est neuve. **Changer le format de `GameState` d'une façon que l'ancien ne lit plus = augmenter `SAVE_VERSION`** (les anciennes sauvegardes sont alors refusées proprement). `?reset` passe par `clearSave`. La future sauvegarde au cagibi utilisera les mêmes fonctions.
+
+### Les outils de test (`?dieu`)
+
+`main.ts` ne charge `dieu/panel.ts` qu'avec `?dieu` et le monte à droite du canevas (`#stage` de `index.html`). Le panneau ne touche pas la partie : chaque bouton envoie une `DieuCommand` (`events.ts`) sur `GameEvent.Dieu`, que `WorldScene.dieu` exécute par les fonctions de `GameState`, donc tout est sauvegardé comme en jeu (refusé hors du mode `play`). Donner en main vide d'abord les mains (ce qu'elles tenaient disparaît) ; poser un objet du monde ou un tas passe par `HandsSystem.placeInFront` et `pileInFront` (même place libre que pour poser à la main ; le tas met toute son emprise au sol devant Xéros, places prises du bas vers le haut) ; aller sur une carte mène à son premier point d'apparition ; remettre la carte à zéro (`resetMap`) recharge la carte autour de Xéros ; réinitialiser la partie efface la sauvegarde et repart du réveil. Nouvel outil de test = une variante de `DieuCommand`, un bouton dans le panneau, un cas dans `WorldScene.dieu`.
 
 ### Les quatre règles
 
@@ -101,7 +112,7 @@ Les cartes décrivent le monde au début de la partie ; `GameState` (`src/state/
 - Sorties : un rectangle de type `Exit` (`to` = carte, `spawn` = point d'arrivée, `facing` facultatif). On la prend quand les pieds sont dedans, en avançant dans la direction `facing` si elle est donnée. C'est le premier type de zone ; d'autres suivront.
 - Les tilesets de `tiled/tilesets/` et le fichier projet sont **générés** par `build-art` : on ne les modifie jamais dans Tiled (ils seraient réécrits). Pour changer une tuile ou un objet : `art/`, `tiles.json` ou `props.json`, puis `npm run art`.
 - Numéros de tuiles : `art/tile-registry.json` (committé) donne à chaque tuile sa place, et les `.tmj` stockent ces numéros. Une tuile nouvelle est ajoutée en fin de liste par `npm run art` (committer le fichier) ; une tuile retirée de `art/` laisse un trou et ne peut plus être posée ; ne jamais réordonner. Renommer une tuile = changer son nom dans le registre **et** dans `art/`, à la même position.
-- Départ de la partie : `START` dans `config.ts`.
+- Départ de la partie : `START` dans `config.ts` (une partie sauvegardée reprend là où elle était, voir *La sauvegarde*).
 - Raccords automatiques : clôtures, chemins, eau et cloisons (intérieur) sont des **terrains** (`terrains` de `tiles.json`) : une famille de 16 tuiles `<terrain>-<masque>` (masque N=1 E=2 S=4 O=8, un bit à 1 = le voisin est du même terrain). Dans le tileset de Tiled, chacun devient un ensemble Wang de type bord à deux couleurs : le terrain et « autre ». Une arête à 0 voudrait dire « indifférente » pour Tiled : elle n'est jamais utilisée, une arête absente du masque prend la couleur « autre », et les 16 `wangid` sont tous différents (vérifié par `build-art`). Limites connues : la cloison ne se raccorde pas d'elle-même aux murs, on pose la tuile d'accroche à la main ; en bord de carte, c'est le pinceau de Tiled qui choisit la tuile (une arête sans voisin), alors que l'ancien code comptait « hors de la carte » comme du même terrain : vérifier à l'œil les chemins qui sortent de l'écran.
 - Objets (`props.json`) : `dims` (obligatoire) donne ses dimensions réelles en centimètres (`w` largeur, `d` profondeur, `h` hauteur, `shape` : `box`, `cylinder` avec `axis` `ew`/`ns`/`up`, ou `flat`) ; `validate.ts` en tire la taille attendue de sa silhouette d'après le gabarit (`src/content/gabarit.ts`, docs/STYLE.md section 8 : 5 cm par pixel, dessus et faces en raccourci à ½) et refuse un écart de plus de 2 px, sauf pour les objets anciens de `EXCEPTIONS` (`validate.ts`). La silhouette (pixels opaques, contour compris, ombre exclue) est calculée par `build-art` et notée dans le manifeste. `bodies` pour des collisions de forme libre, `anim` pour un objet animé (feu), `smoke` et `light` pour la fumée et les lueurs. Les collisions restent ici, pas dans Tiled.
 - Tuiles (`tiles.json`) : `solid` (bloque le passage), `decals` (nom d'un ensemble de détails au hasard) et `terrains`. Les propriétés `solid` et `decals` apparaissent aussi comme propriétés de tuile dans le tileset de Tiled.
