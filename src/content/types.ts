@@ -61,6 +61,11 @@ export const HarvestSchema = z.strictObject({
   /** Matière frappée : à chaque coup, des éclats de la planche `fx-<matière>` jaillissent du point d'impact. */
   impact: z.enum(['wood', 'stone', 'leaves']).optional(),
   /**
+   * Geste de Xéros (clé de gestures.json) : `use`, de côté, sur ce qui est debout ;
+   * `chop`, de haut en bas, sur ce qui est couché ou posé.
+   */
+  gesture: z.enum(['use', 'chop']).default('use'),
+  /**
    * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. Elle est dessinée vers la droite.
    * `x`, `y` : décalage du coin bas gauche d'une image de la chute par rapport à celui de l'objet, chute vers la droite
    * (le pied de l'arbre est en x = 33 dans `tree`, en x = 47 dans `tree-fall` : x = -14).
@@ -75,6 +80,12 @@ export const HarvestSchema = z.strictObject({
   at: z.tuple([px, px]).optional(),
   /** Objets lâchés au sol, autour de lui. */
   drops: z.array(DropSchema).default([]),
+  /**
+   * Objets de props.json qui naissent à la fin (l'arbre couché : houppier et sections). (x, y) : coin bas gauche
+   * de chacun par rapport à celui de l'objet récolté, pour une chute vers la droite ; vers la gauche, ils sont
+   * retournés autour du pied (`fall.foot`), comme la chute. Ils sont notés dans GameState comme objets nés.
+   */
+  spawns: z.array(z.strictObject({ type: id, x: px, y: px })).default([]),
 });
 
 /** Un objet possédable (inventaire, sol) : sa clé dans items.json est son identifiant. */
@@ -112,6 +123,11 @@ export const PropDefSchema = z.strictObject({
   light: z.strictObject({ x: px, y: px, radius: px.positive() }).optional(),
   /** Identifiant du dialogue lancé quand le joueur interagit avec l'objet. */
   interact: id.optional(),
+  /**
+   * Point visé, dans le repère de l'image (l'encoche d'une section de tronc) : Xéros vise ce point et l'invite s'y affiche.
+   * Absent : le centre de la base.
+   */
+  aim: z.tuple([px, px]).optional(),
   /** Ce qui se récolte : voir HarvestSchema. */
   harvest: HarvestSchema.optional(),
 });
@@ -124,6 +140,8 @@ export const PoseSchema = z.strictObject({
   angle: z.number(),
   /** L'outil passe derrière le corps. */
   behind: z.boolean().default(false),
+  /** L'outil passe devant ce qui est posé jusqu'à `ahead` px au sud des pieds (le tronc couché que frappe le fer). */
+  ahead: z.number().min(0).default(0),
 });
 
 /**

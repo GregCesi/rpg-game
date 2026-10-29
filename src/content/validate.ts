@@ -169,6 +169,10 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
     else if (h.becomes === key) err("'becomes' : l'objet ne peut pas devenir lui-même");
   }
   if (h.at && h.becomes === undefined) err("'at' sans 'becomes' : il n'y a rien à placer");
+  if (!c.gestures[h.gesture]) err(`geste '${h.gesture}' absent de gestures.json`);
+  for (const sp of h.spawns) {
+    if (!c.props[sp.type]) err(`objet né '${sp.type}' absent de props.json`);
+  }
   h.drops.forEach((d, i) => {
     if (!c.items[d.item]) err(`objet lâché n°${i + 1} : '${d.item}' absent de items.json`);
     if (d.min > d.max) err(`objet lâché '${d.item}' : min (${d.min}) plus grand que max (${d.max})`);
@@ -199,6 +203,19 @@ export function validateContent(c: Content, cat: Catalog): string[] {
       if (frames === undefined) err(`gestures.json '${name}' : animation '${anim}' manquante dans le sprite '${PLAYER.skin}'`);
       else if (frames !== poses.length) err(`gestures.json '${name}' ${dir} : ${poses.length} poses d'outil pour ${frames} images dans '${PLAYER.skin}-${anim}'`);
       if (g.impact >= poses.length) err(`gestures.json '${name}' ${dir} : image d'impact ${g.impact} au-delà des ${poses.length} poses`);
+    }
+  }
+
+  // Outils en main : chaque planche tool-<objet> a, pour chaque geste, une animation par direction (la gauche est le miroir
+  // de la droite), avec autant d'images que de poses
+  for (const [sheet, anims] of cat.frameCounts) {
+    if (!sheet.startsWith('tool-')) continue;
+    for (const [name, g] of Object.entries(c.gestures)) {
+      for (const dir of ['down', 'up', 'right'] as const) {
+        const n = anims.get(`${name}-${dir}`);
+        if (n === undefined) err(`Planche '${sheet}' : animation '${name}-${dir}' manquante (geste '${name}' de gestures.json)`);
+        else if (n !== g.poses[dir].length) err(`Planche '${sheet}' : '${name}-${dir}' a ${n} images pour ${g.poses[dir].length} poses dans gestures.json`);
+      }
     }
   }
 
