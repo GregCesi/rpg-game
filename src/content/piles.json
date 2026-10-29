@@ -1,22 +1,22 @@
 {
   "branches": {"name": "tas de branches", "piece": {"item": "branch"}, "start": "g1", "blockFrom": 3, "places": {
-    "g1": {"layer": 0, "image": "item-branch", "x": 0, "y": 3, "body": {"x": 1, "y": 0, "w": 14, "h": 3}},
-    "g0": {"layer": 0, "image": "item-branch", "x": 0, "y": 0, "body": {"x": 1, "y": -3, "w": 14, "h": 3}},
-    "g2": {"layer": 0, "image": "item-branch", "x": 0, "y": 6, "body": {"x": 1, "y": 3, "w": 14, "h": 3}},
-    "g3": {"layer": 0, "image": "item-branch", "x": 0, "y": 9, "body": {"x": 1, "y": 6, "w": 14, "h": 3}},
-    "l1-0": {"layer": 1, "on": ["g0", "g1"], "image": "item-branch", "x": 0, "y": 0},
-    "l1-1": {"layer": 1, "on": ["g1", "g2"], "image": "item-branch", "x": 0, "y": 2},
-    "l1-2": {"layer": 1, "on": ["g2", "g3"], "image": "item-branch", "x": 0, "y": 6},
-    "l2-0": {"layer": 2, "on": ["l1-0", "l1-1"], "image": "item-branch", "x": 0, "y": -1},
-    "l2-1": {"layer": 2, "on": ["l1-1", "l1-2"], "image": "item-branch", "x": 0, "y": 2},
-    "l3-0": {"layer": 3, "on": ["l2-0", "l2-1"], "image": "item-branch", "x": 0, "y": -2}
+    "g1": {"layer": 0, "image": "pile-branch-g1", "x": 0, "y": -6, "body": {"x": 5, "y": -11, "w": 24, "h": 3}},
+    "g0": {"layer": 0, "image": "pile-branch-g0", "x": 0, "y": -9, "body": {"x": 2, "y": -14, "w": 26, "h": 3}},
+    "g2": {"layer": 0, "image": "pile-branch-g2", "x": 0, "y": -3, "body": {"x": 0, "y": -8, "w": 28, "h": 3}},
+    "g3": {"layer": 0, "image": "pile-branch-g3", "x": 0, "y": 0, "body": {"x": 4, "y": -5, "w": 25, "h": 3}},
+    "l1-0": {"layer": 1, "on": ["g0", "g1"], "image": "pile-branch-l1-0", "x": 0, "y": -11},
+    "l1-1": {"layer": 1, "on": ["g1", "g2"], "image": "pile-branch-l1-1", "x": 0, "y": -8},
+    "l1-2": {"layer": 1, "on": ["g2", "g3"], "image": "pile-branch-l1-2", "x": 0, "y": -5},
+    "l2-0": {"layer": 2, "on": ["l1-0", "l1-1"], "image": "pile-branch-l2-0", "x": 0, "y": -13},
+    "l2-1": {"layer": 2, "on": ["l1-1", "l1-2"], "image": "pile-branch-l2-1", "x": 0, "y": -10},
+    "l3-0": {"layer": 3, "on": ["l2-0", "l2-1"], "image": "pile-branch-l3-0", "x": 0, "y": -15}
   }},
   "logs": {"name": "tas de billes", "piece": {"prop": "felled-log"}, "start": "g1", "blockFrom": 1, "places": {
-    "g1": {"layer": 0, "image": "felled-log", "x": 0, "y": -10, "body": {"x": 1, "y": -23, "w": 18, "h": 10}},
-    "g0": {"layer": 0, "image": "felled-log", "x": 0, "y": -20, "body": {"x": 1, "y": -33, "w": 18, "h": 10}},
-    "g2": {"layer": 0, "image": "felled-log", "x": 0, "y": 0, "body": {"x": 1, "y": -13, "w": 18, "h": 10}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "felled-log", "x": 0, "y": -23},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "felled-log", "x": 0, "y": -13},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "felled-log", "x": 0, "y": -26}
+    "g1": {"layer": 0, "image": "pile-log-g1", "x": 0, "y": -11, "body": {"x": 1, "y": -25, "w": 18, "h": 11}},
+    "g0": {"layer": 0, "image": "pile-log-g0", "x": 2, "y": -22, "body": {"x": 3, "y": -36, "w": 18, "h": 11}},
+    "g2": {"layer": 0, "image": "pile-log-g2", "x": 1, "y": 0, "body": {"x": 2, "y": -14, "w": 18, "h": 11}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "pile-log-u01", "x": 2, "y": -27},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "pile-log-u12", "x": -1, "y": -16},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "pile-log-top", "x": 1, "y": -31}
   }}
 }
