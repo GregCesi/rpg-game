@@ -94,7 +94,7 @@ function massShape(m: Mass): Canvas {
  * L'arbre dans son repère, sans contour ni ombre.
  * `light` : direction de la lumière dans ce repère (vers la source), pour garder le nord-ouest après rotation.
  */
-export function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
+function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
   const c = new Canvas(64, 96);
   const [lx, ly] = light;
 

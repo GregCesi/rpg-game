@@ -14,12 +14,11 @@ export const ZOOM = 2;
 export const UI = {
   font: '"Pixelify Sans", monospace',
   ink: '#3b2a1c',
-  inkSoft: '#7a6646',
   /** Lettres par seconde pour l'effet machine à écrire. */
   typeSpeed: 45,
 };
 
-/** Portrait de dialogue : une seule taille (64 px), choisie face au 96. Chaque personnage n'a besoin que de `portrait-<nom>-64`. */
+/** Portrait de dialogue : une seule taille (64 px). Chaque personnage n'a besoin que de `portrait-<nom>-64`. */
 export const PORTRAIT_SIZE = 64;
 
 /**

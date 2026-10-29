@@ -8,7 +8,7 @@ import { Canvas, rng } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 
-export const COTTAGE = {
+const COTTAGE = {
   w: 332,
   h: 204,
   /** Sommets des conduits, d'où sort la fumée (coordonnées dans l'image). */

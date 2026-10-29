@@ -138,7 +138,6 @@ export type Facing = z.infer<typeof FacingSchema>;
 export type DecalSet = z.infer<typeof DecalSetSchema>;
 export type TerrainDef = z.infer<typeof TerrainDefSchema>;
 export type TilesetCatalog = z.infer<typeof TilesetCatalogSchema>;
-export type Rect = z.infer<typeof RectSchema>;
 export type PropDef = z.infer<typeof PropDefSchema>;
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 export type DialogueLine = z.infer<typeof DialogueLineSchema>;
