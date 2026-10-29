@@ -90,8 +90,12 @@ Première boucle : Xéros prend la hache sur le billot, abat un arbre, ramasse l
 - **La hache est plantée dans un billot**, près du tas de bois de la maison. Le billot porte `harvest` sans outil, en un coup, devient `chopping-block` et donne la hache, directement dans l'inventaire (`give` sur l'objet lâché) : un seul E.
 - **Les objets possédables sont décrits dans `items.json`** : nom, icône `item-<id>`, `stack`, `kind` (`tool`, `resource`...).
 - **Un objet tombé reste au sol**, enregistré dans `GameState`, et se ramasse un par un avec E. Pas de ramassage automatique (choix de Grégoire).
-- **Deux gestes.** E (ou Entrée) : les mains (parler, ramasser, prendre, cueillir). Espace : utiliser l'objet en main, même dans le vide. Sans le bon outil, un message court l'indique.
-- **Barre de 8 cases** en bas de l'écran, touches 1 à 8 et molette ; la case active est l'objet en main. C'est tout l'inventaire pour l'instant.
+- **Deux gestes.** E (ou Entrée) : les mains (parler, ramasser, prendre, cueillir). Espace : utiliser l'objet en main, même dans le vide. Sans le bon outil, un message court l'indique ; les mains prises, « Les mains pleines. ».
+- ~~Barre de 8 cases~~, remplacée le 29 octobre 2026 par **deux mains** (voir ci-dessous).
+- **Deux mains** (décidé le 29 octobre 2026). Xéros a une main gauche et une main droite, chacune tient un objet. Un objet lourd ou long prend les deux mains : la bille, la hache de bûcheron. Pas de besace pour l'instant : les mains sont tout l'inventaire.
+  - Touches : **E** prend dans une main libre, ou repose devant soi ce qu'on tient à deux mains ; **Q** lâche l'objet de la main active devant soi ; **Tab** change de main active ; **Espace** utilise ce qu'on tient.
+  - Un objet lâché reste au sol, enregistré dans `GameState`.
+  - À l'écran : deux cases (main gauche, main droite) et la marque de la main active.
 - **Le coup d'outil se compose** : une animation de geste pour le corps de Xéros, plus un petit sprite par outil posé dans la main image par image. Un nouvel outil = un sprite d'outil, pas une nouvelle animation du corps.
 
 ## Abattre un arbre (décidé le 29 octobre 2026)
@@ -106,7 +110,8 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - Ébrancher et tronçonner se font **dans l'ordre qu'on veut** ; la dernière section garde le houppier tant qu'il n'est pas coupé.
 - **Porter** : une seule série d'animations « porter » pour Xéros (bras levés, marche et attente dans les 4 directions), avec l'objet porté posé par-dessus à un point d'accroche, devant lui ou derrière sa tête selon la direction. Xéros marche plus lentement, ne fait rien d'autre, et repose l'objet avec E. Un nouvel objet portable n'a besoin que de son sprite.
 - La bûche (`item-log`, 99 par case) contredisait le principe : retirée le 29 octobre 2026, avec l'ancien objet `log` (la bille de l'atelier est maintenant une `felled-log`).
-- Pas encore discuté : ce qu'on fait des billes ensuite (fendage sur le billot, tas de bois, brouette).
+- **Deux sortes d'arbres** (décidé le 29 octobre 2026). L'arbre actuel est le **gros** : ses billes se fendront en quatre sur le billot (posée debout, un coup en deux, un second en quatre). Un **arbre normal**, plus fin, viendra plus tard : ses billes, de la grosseur d'un bras, restent entières. Ni l'un ni l'autre n'est construit dans le chantier des deux mains.
+- Pas encore discuté : le tas de bois, la brouette.
 
 ## Façon de travailler
 
