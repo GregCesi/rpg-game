@@ -284,28 +284,28 @@ function validateTrunk(c: Content, cat: Catalog): string[] {
  * à la bonne taille. Redessiné, il sort de la liste (validate.ts le demande dès que son image change).
  */
 export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
-  // taille dessinée ; en commentaire, la taille attendue et l'écart (dessiné − attendu, largeur × hauteur)
-  'tree': { w: 54, h: 79 }, // attendu 54 × 140 : +0 × -61 px
+  // taille dessinée ; en commentaire, la taille attendue (de la taille réelle au plancher de lisibilité) et l'écart
+  // (dessiné − attendu, hors de cette plage, largeur × hauteur)
+  'tree': { w: 54, h: 79 }, // attendu 54 × 140 : 0 × -61 px (sa longueur couchée, 5,65 m, fait foi ; à redessiner)
   'felled-crown': { w: 52, h: 30 }, // attendu 53 × 57 : -1 × -27 px
   'tree-stump': { w: 26, h: 16 }, // attendu 14 × 15 : +12 × +1 px
   'bucket': { w: 20, h: 23 }, // attendu 6 × 9 : +14 × +14 px
   'chopping-block': { w: 18, h: 15 }, // attendu 11 × 14,5 : +7 × +0,5 px
   'chopping-block-axe': { w: 23, h: 28 }, // attendu 11 × 14,5 : +12 × +13,5 px
-  'workbench': { w: 64, h: 29 }, // attendu 64 × 24 : +0 × +5 px
-  'stove': { w: 24, h: 47 }, // attendu 16 × 47 : +8 × +0 px
-  'bed': { w: 30, h: 54 }, // attendu 30 × 32 : +0 × +22 px
+  'workbench': { w: 64, h: 29 }, // attendu 64 × 24 : 0 × +5 px
+  'stove': { w: 24, h: 47 }, // attendu 16 × 47 : +8 × 0 px
+  'bed': { w: 30, h: 54 }, // attendu 30 × 32 : 0 × +22 px
   'pallet': { w: 43, h: 24 }, // attendu 40 × 13 : +3 × +11 px
   'sack': { w: 22, h: 24 }, // attendu 10 × 18 : +12 × +6 px
   'jar': { w: 18, h: 25 }, // attendu 9 × 16,5 : +9 × +8,5 px
-  'lantern': { w: 10, h: 15 }, // attendu 3 × 7,5 : +7 × +7,5 px
-  'wall-torch': { w: 8, h: 29 }, // attendu 3 × 15,5 : +5 × +13,5 px
-  'candle': { w: 13, h: 13 }, // attendu 1,6 × 4,8 : +11,4 × +8,2 px
+  'lantern': { w: 10, h: 15 }, // attendu 3 à 6 × 7,5 à 15 : +4 × 0 px
+  'candle': { w: 13, h: 13 }, // attendu 1,6 à 6 × 4,8 à 18 : +7 × 0 px
   'barrel': { w: 19, h: 23 }, // attendu 12 × 24 : +7 × -1 px
   'crate': { w: 19, h: 19 }, // attendu 12 × 18 : +7 × +1 px
   'hay-bale': { w: 31, h: 18 }, // attendu 20 × 13 : +11 × +5 px
   'chest': { w: 25, h: 20 }, // attendu 18 × 16 : +7 × +4 px
   'stool': { w: 15, h: 17 }, // attendu 7 × 12,5 : +8 × +4,5 px
-  'well': { w: 47, h: 59 }, // attendu 47 × 66 : +0 × -7 px
+  'well': { w: 47, h: 59 }, // attendu 47 × 66 : 0 × -7 px
 };
 
 /** Gabarit : la silhouette de l'image d'un objet a la taille que donnent ses dimensions réelles, à TOLERANCE px près. */
@@ -316,9 +316,12 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
     const drawn = cat.silhouettes.get(p.image);
     if (!drawn) continue; // image non dessinée : signalé ailleurs
     const want = expectedSize(p.dims);
-    const fits = Math.abs(want.w - drawn.w) <= TOLERANCE && Math.abs(want.h - drawn.h) <= TOLERANCE;
+    // entre la taille réelle et l'agrandissement au plancher de lisibilité, à TOLERANCE px près
+    const within = (n: number, lo: number, hi: number) => n >= lo - TOLERANCE && n <= hi + TOLERANCE;
+    const fits = within(drawn.w, want.w, want.wMax) && within(drawn.h, want.h, want.hMax);
     const f = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
-    const sizes = `attendu ${f(want.w)} × ${f(want.h)} px (${p.dims.w} × ${p.dims.d} × ${p.dims.h} cm, ${p.dims.shape}${p.dims.axis ? ` ${p.dims.axis}` : ''}, ${CM_PER_PX} cm par pixel), dessiné ${drawn.w} × ${drawn.h} px`;
+    const range = (lo: number, hi: number) => (hi > lo ? `${f(lo)} à ${f(hi)}` : f(lo));
+    const sizes = `attendu ${range(want.w, want.wMax)} × ${range(want.h, want.hMax)} px (${p.dims.w} × ${p.dims.d} × ${p.dims.h} cm, ${p.dims.shape}${p.dims.axis ? ` ${p.dims.axis}` : ''}, ${CM_PER_PX} cm par pixel), dessiné ${drawn.w} × ${drawn.h} px`;
     const at = `props.json '${key}' (image '${p.image}') hors gabarit`;
     const ex = EXCEPTIONS[key];
     if (!ex) {
