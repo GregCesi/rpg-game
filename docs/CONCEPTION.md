@@ -94,6 +94,7 @@ Première boucle : Xéros prend la hache sur le billot, abat un arbre, ramasse l
 - ~~Barre de 8 cases~~, remplacée le 29 octobre 2026 par **deux mains** (voir ci-dessous).
 - **Deux mains** (décidé le 29 octobre 2026). Xéros a une main gauche et une main droite, chacune tient un objet. Un objet lourd ou long prend les deux mains : la bille, la hache de bûcheron. Pas de besace pour l'instant : les mains sont tout l'inventaire.
   - Touches : **E** prend dans une main libre, ou repose devant soi ce qu'on tient à deux mains ; **Q** lâche l'objet de la main active devant soi ; **Tab** change de main active ; **Espace** utilise ce qu'on tient.
+  - Les touches se lisent par leur place sur le clavier : **lâcher est la touche à la place du Q d'un QWERTY, soit A sur AZERTY** (confirmé le 29 octobre 2026), pour ne pas croiser le Q de ZQSD.
   - Un objet lâché reste au sol, enregistré dans `GameState`.
   - À l'écran : deux cases (main gauche, main droite) et la marque de la main active.
 - **Le coup d'outil se compose** : une animation de geste pour le corps de Xéros, plus un petit sprite par outil posé dans la main image par image. Un nouvel outil = un sprite d'outil, pas une nouvelle animation du corps.
