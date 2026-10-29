@@ -21,7 +21,7 @@ npm run art:preview    # régénère les sprites + aperçus x4 dans .art-preview
 
 Les cartes se font dans [Tiled](https://www.mapeditor.org/) : ouvrir `tiled/xeros.tiled-project`. Après une modification d'une carte, relancer `npm run dev` (ou `npm run maps`) pour la voir en jeu.
 
-Commandes : ZQSD, WASD ou flèches. Maj pour courir. E (ou Espace, Entrée) pour interagir et faire défiler un dialogue.
+Commandes : ZQSD, WASD ou flèches. Maj pour courir. E (ou Entrée) : les mains (parler, ramasser, prendre, cueillir). Espace : utiliser l'objet en main. Touches 1 à 8 ou molette : changer d'objet en main. E, Espace ou Entrée font défiler un dialogue.
 
 ## Architecture
 
@@ -31,7 +31,8 @@ art/                 sources du pixel art (grilles de caractères + générateur
   palette.ts         palette commune
   characters/        personnages (xeros.ts)
   portraits/         portraits de dialogue (une animation = une expression)
-  ui/                cadre de dialogue, flèche, touche E
+  ui/                cadre de dialogue, flèche, touche E, cases de la barre d'objets
+  items/             icônes 16×16 des objets possédables, outils en main (`tool-<objet>`)
   world/             tuiles et objets du décor extérieur, chaumière
   interior/          tuiles et mobilier de l'intérieur
 tiled/               les cartes, faites avec Tiled
@@ -52,20 +53,28 @@ src/
   content/           le contenu du jeu, en JSON : tuiles (propriétés), objets, personnages, dialogues
     types.ts         formats du contenu (schémas Zod = types TypeScript + vérification), dont le format interne des cartes
     validate.ts      vérifications croisées (une sortie vers une carte qui existe, une image dessinée...)
+    items.json       objets possédables (inventaire, sol)
+    gestures.json    geste d'outil : place de la main et de l'outil à chaque image
+  state/             GameState : l'état de la partie (inventaire, changements du monde, objets au sol), en mémoire
   world/GameMap.ts   construit une carte jouable à partir d'une MapData
-  systems/           une mécanique du monde par fichier : interactions, sorties...
+  systems/           une mécanique du monde par fichier : interactions, sorties, récolte (harvest.ts)...
   entities/Actor.ts  le corps d'un personnage (sprite, collision, animations)
-  entities/Player.ts Actor + clavier
+  entities/Player.ts Actor + clavier + ToolUse
+  entities/ToolUse.ts composant : le geste d'outil, l'outil posé dans la main image par image
   entities/Npc.ts    Actor + contrôleur immobile : un personnage non joueur qui se tourne vers Xéros quand il lui parle
   input/             lecture du clavier
-  scenes/            Boot (chargement), World (la carte en jeu), Dialogue (par-dessus le monde)
+  scenes/            Boot (chargement), World (la carte en jeu), Hud (barre d'objets, messages courts), Dialogue (par-dessus le monde)
 ```
 
 ### Comment tourne une image du monde
 
-`WorldScene` assemble la carte, le joueur et les systèmes, puis arbitre selon son **mode** (`play`, `dialogue`, `transition`) : un seul à la fois. Chaque système fait une chose et rend son résultat à la scène (`InteractionSystem` dit quel objet a été utilisé, `findExit` dit quelle sortie est prise) ; c'est la scène qui décide quoi en faire. Une nouvelle mécanique = un fichier dans `systems/` + quelques lignes dans `WorldScene.update`.
+`WorldScene` assemble la carte, le joueur et les systèmes, puis arbitre selon son **mode** (`play`, `use`, `dialogue`, `transition`) : un seul à la fois. Chaque système fait une chose et rend son résultat à la scène (`InteractionSystem` dit quel objet a été utilisé, `findExit` dit quelle sortie est prise) ; c'est la scène qui décide quoi en faire. Une nouvelle mécanique = un fichier dans `systems/` + quelques lignes dans `WorldScene.update`.
 
-Entre scènes, on passe par le bus du jeu avec les noms de `events.ts` (ex. `GameEvent.DialogueEnd`). À l'intérieur d'une scène, pas d'événements : des appels directs, plus faciles à suivre.
+Entre scènes, on passe par le bus du jeu avec les noms de `events.ts` (ex. `GameEvent.DialogueEnd`, `GameEvent.InventoryChanged`, `GameEvent.Notice`). À l'intérieur d'une scène, pas d'événements : des appels directs, plus faciles à suivre.
+
+### L'état de la partie
+
+Les cartes décrivent le monde au début de la partie ; `GameState` (`src/state/`, schéma Zod, indépendant de Phaser) dit ce qui a changé : l'inventaire (8 cases, la case active est l'objet en main), les objets de carte changés, rangés par carte et par **identifiant d'objet Tiled** (« objet 12 de la ferme : devenu `tree-stump` »), et les objets posés au sol, par carte. La construction d'une carte (`GameMap`) applique ses changements. En mémoire seulement : la sauvegarde consistera à l'écrire. On le modifie par les fonctions de `state/GameState.ts` (`addItem`, `changeObject`, `dropItem`...), jamais à la main depuis une scène.
 
 ### Les quatre règles
 
@@ -93,5 +102,8 @@ Entre scènes, on passe par le bus du jeu avec les noms de `events.ts` (ex. `Gam
 - Objets (`props.json`) : `bodies` pour des collisions de forme libre, `anim` pour un objet animé (feu), `smoke` et `light` pour la fumée et les lueurs. Les collisions restent ici, pas dans Tiled.
 - Tuiles (`tiles.json`) : `solid` (bloque le passage), `decals` (nom d'un ensemble de détails au hasard) et `terrains`. Les propriétés `solid` et `decals` apparaissent aussi comme propriétés de tuile dans le tileset de Tiled.
 - Interactions : un objet de `props.json` avec `"interact": "<id>"` lance le dialogue `<id>` de `dialogues.json`.
+- Objets possédables (`items.json`) : clé en anglais kebab-case, `name` en français, `icon` (`item-<clé>`, 16×16), `kind` (`tool`, `weapon`, `resource`), `stack` (nombre maximal par case). Un objet au sol se ramasse avec E, un par un.
+- Récolte : un objet de `props.json` avec un composant `harvest` (`tool` : objet de `items.json` de type `tool`, absent = à la main avec E ; `hits` ; `fall` : planche et animation de fin, avec son décalage `x`, `y` par rapport à l'objet ; `becomes` : objet qui le remplace, à `at` près ; `drops` : `item`, `min`, `max`). Un seul système pour tout : `systems/harvest.ts`. L'objet tremble à chaque coup ; sans le bon outil, un message court le dit.
+- Geste d'outil : le corps joue `use-<direction>` (4 images, la gauche en miroir) ; l'outil en main est une planche `tool-<objet>` de 12 images (down, up, right × 4 temps), la prise du manche au centre de chaque image, posée sur la main d'après `gestures.json` (`dx`, `dy` depuis les pieds, `behind`, `impact` = l'image où le coup porte). **Ajouter un outil = dessiner sa planche `tool-<objet>` dans les mêmes poses**, rien d'autre. Sans planche, le geste se joue mains vides.
 - Dialogues : chaque ligne a un `speaker` (clé de `characters.json`), une `expression` et un `text`. Le portrait affiché est `portrait-<portrait>-64` (une seule taille, `PORTRAIT_SIZE` dans `config.ts`) avec l'animation `<expression>`.
 - Rendu : le canvas fait VIEW × ZOOM ; les caméras zooment de ZOOM. Le pixel art garde sa taille, le texte reste net.

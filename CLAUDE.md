@@ -14,5 +14,8 @@ Lis `README.md` (architecture et quatre règles) avant toute modification, et `d
 - Nouveau personnage parlant : une entrée de `src/content/characters.json` (clé = clé du sprite ; portrait 64 px seulement, `portrait-<nom>-64`), puis, pour le poser sur une carte, un point Tiled de type `Npc` (`character`, `dialogue`, `facing`) ; ne pas coder de PNJ dans les scènes.
 - Nouveau champ de contenu : le déclarer dans `src/content/types.ts` (schéma Zod) ; nouveau lien entre fichiers : le vérifier dans `src/content/validate.ts`.
 - Nouvelle mécanique du monde : un fichier dans `src/systems/`, appelé depuis `WorldScene.update` selon le mode. Événements entre scènes : constantes de `src/events.ts`.
+- Ce qui change pendant la partie (inventaire, objet récolté, objet au sol) vit dans `GameState` (`src/state/`), rangé par carte et par identifiant d'objet Tiled ; ne pas le garder dans une scène ni dans le registry de Phaser.
+- Nouvel objet possédable : une entrée de `src/content/items.json` (icône `item-<clé>`). Nouvelle récolte : un composant `harvest` dans `props.json`, pas de code.
+- Nouvel outil en main : seulement une planche `tool-<objet>` dans `art/`, dans les 12 poses du geste (`src/content/gestures.json`) ; ne pas toucher au geste du corps.
 - Fin de tâche : `npm run build` doit passer sans erreur (il lance `npm run check`).
 - Langue du code : identifiants en anglais, commentaires et messages d'erreur en français.
