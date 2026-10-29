@@ -7,7 +7,9 @@
     <style>
       html, body { margin: 0; height: 100%; background: #14110d; }
       body { display: flex; flex-direction: column; }
-      #game { flex: 1; min-height: 0; }
+      /* le jeu, et à sa droite le panneau des outils de test quand l'adresse porte ?dieu (src/dieu/panel.ts) */
+      #stage { flex: 1; min-height: 0; display: flex; }
+      #game { flex: 1; min-width: 0; }
       #game canvas { image-rendering: pixelated; }
       #hint {
         font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace;
@@ -20,7 +22,7 @@
     </style>
   </head>
   <body>
-    <div id="game"></div>
+    <div id="stage"><div id="game"></div></div>
     <div id="hint">Se déplacer : <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches · courir : <kbd>Maj</kbd> · prendre, poser : <kbd>E</kbd> · lâcher : <kbd>A</kbd> (QWERTY : <kbd>Q</kbd>) · changer de main : <kbd>Tab</kbd> · tourner : <kbd>R</kbd> · utiliser : <kbd>Espace</kbd></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

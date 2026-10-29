@@ -5,13 +5,27 @@ import type { Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
-import { GameEvent } from '../events';
+import { GameEvent, type DieuCommand } from '../events';
 import { AutoSave } from '../systems/autosave';
 import { findExit } from '../systems/exits';
 import { HarvestSystem, type HitResult } from '../systems/harvest';
 import { HandsSystem } from '../systems/hands';
 import { InteractionSystem } from '../systems/InteractionSystem';
-import { canTake, game, heldItem, mapState, removeGroundItem, switchHand, take, type Held } from '../state';
+import {
+  canTake,
+  clearSave,
+  emptyHands,
+  game,
+  heldItem,
+  mapState,
+  newGame,
+  removeGroundItem,
+  replaceState,
+  resetMap,
+  switchHand,
+  take,
+  type Held,
+} from '../state';
 import { GameMap } from '../world/GameMap';
 import type { Interactable, PlacedGround } from '../world/GameMap';
 
@@ -117,8 +131,10 @@ export class WorldScene extends Phaser.Scene {
     document.addEventListener('visibilitychange', saveIfHidden);
 
     this.game.events.on(GameEvent.DialogueEnd, this.onDialogueEnd, this);
+    this.game.events.on(GameEvent.Dieu, this.dieu, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(GameEvent.DialogueEnd, this.onDialogueEnd, this);
+      this.game.events.off(GameEvent.Dieu, this.dieu, this);
       window.removeEventListener('pagehide', saveNow);
       document.removeEventListener('visibilitychange', saveIfHidden);
     });
@@ -239,14 +255,57 @@ export class WorldScene extends Phaser.Scene {
     this.handsChanged();
   }
 
-  /** Fondu au noir, puis la scène redémarre sur la carte d'arrivée. */
+  /** Une sortie est prise : la carte d'arrivée, à son point d'apparition. */
   private travel(exit: Exit): void {
+    this.fadeTo({ mapId: exit.to, spawn: exit.spawn });
+  }
+
+  /** Fondu au noir, puis la scène redémarre sur `start`. */
+  private fadeTo(start: WorldStart): void {
     this.mode = 'transition';
     const cam = this.cameras.main;
     cam.fadeOut(200, 20, 14, 8);
-    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-      this.scene.restart({ mapId: exit.to, spawn: exit.spawn });
-    });
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart(start));
+  }
+
+  /**
+   * Outils de test (?dieu, GameEvent.Dieu) : tout passe par GameState, donc tout est sauvegardé comme le reste. Hors du
+   * mode `play` (geste, dialogue, changement de carte), la commande est refusée.
+   */
+  private dieu(cmd: DieuCommand): void {
+    if (this.mode !== 'play') return this.notice('Pas pendant un geste ou un dialogue.');
+    const mapId = this.map.def.id;
+    const { x, y, facing } = this.player.actor;
+    switch (cmd.kind) {
+      case 'give': {
+        const h = cmd.held;
+        emptyHands(game);
+        take(game, h, 'item' in h ? items[h.item].hands : props[h.prop].take!.hands);
+        this.handsChanged();
+        break;
+      }
+      case 'prop':
+        if (!this.handsSystem.placeInFront(this.player, cmd.prop)) this.notice('Pas la place ici.');
+        break;
+      case 'pile': {
+        const n = this.handsSystem.pileInFront(this.player, cmd.pile, cmd.count, cmd.turned);
+        if (!n) this.notice('Pas la place ici.');
+        else if (n < cmd.count) this.notice(`Place pour ${n} seulement.`);
+        break;
+      }
+      case 'map':
+        this.fadeTo({ mapId: cmd.map, spawn: Object.keys(maps[cmd.map].spawns)[0] });
+        break;
+      case 'reset-map':
+        resetMap(game, mapId);
+        this.fadeTo({ mapId, at: { x, y, facing } });
+        break;
+      case 'reset-game':
+        clearSave();
+        replaceState(game, newGame());
+        this.fadeTo({ mapId: START.map, spawn: START.spawn });
+        break;
+    }
   }
 
   private openDialogue(id: string): void {

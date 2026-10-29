@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import '@fontsource/pixelify-sans/latin-400.css';
-import { DEBUG, UI, VIEW, ZOOM } from './config';
+import { DEBUG, DIEU, UI, VIEW, ZOOM } from './config';
 import * as content from './content';
 import { catalogFrom, validateContent } from './content/validate';
+import { GameEvent } from './events';
 import * as assets from './generated/assets';
 import { BootScene } from './scenes/BootScene';
 import { DialogueScene } from './scenes/DialogueScene';
@@ -27,7 +28,11 @@ async function start() {
     // police indisponible : le texte s'affichera avec la police de secours
   }
 
-  const game = new Phaser.Game({
+  // ?dieu : le panneau des outils de test, monté avant le jeu pour que le canevas prenne la place qui reste
+  let game: Phaser.Game | undefined;
+  if (DIEU) (await import('./dieu/panel')).mountPanel((cmd) => game?.events.emit(GameEvent.Dieu, cmd));
+
+  game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
     width: VIEW.width * ZOOM,

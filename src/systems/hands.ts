@@ -144,6 +144,53 @@ export class HandsSystem {
   }
 
   /**
+   * Outils de test (?dieu) : pose devant Xéros un objet du monde de props.json, comme on poserait une bille (objet né,
+   * noté dans GameState). Renvoie false s'il n'y a pas la place.
+   */
+  placeInFront(player: Player, type: string): boolean {
+    const spot = this.propSpot(player, { prop: type });
+    if (!spot) return false;
+    this.map.placeProp(spawnObject(game, this.map.def.id, type, spot.x, spot.y, false), { spawned: true });
+    return true;
+  }
+
+  /**
+   * Outils de test (?dieu) : un tas du genre `genre` de `count` pièces devant Xéros, dans le sens `turned`, toute son
+   * emprise au sol devant lui. Les places sont prises comme on les prendrait à la main, la couche du bas d'abord, une place au sol seulement si elle est
+   * libre. Renvoie le nombre de pièces posées (0 : pas la place).
+   */
+  pileInFront(player: Player, genre: string, count: number, turned: boolean): number {
+    const def = shapeOf(piles[genre], turned);
+    const bodies = [...this.others, player.actor.body];
+    // toute l'emprise au sol du tas devant Xéros, pas seulement sa première pièce : les autres places au sol ne
+    // tombent pas sur lui
+    const ground = Object.values(def.places).flatMap((q) => (q.body ? [q.body] : []));
+    const left = Math.min(...ground.map((b) => b.x));
+    const top = Math.min(...ground.map((b) => b.y));
+    const w = Math.max(...ground.map((b) => b.x + b.w)) - left;
+    const h = Math.max(...ground.map((b) => b.y + b.h)) - top;
+    const [l, t] = frontCorner(player.actor.body, player.actor.facing, w, h);
+    const spot = { x: Math.round(l - left), y: Math.round(t - top) };
+    if (!this.groundFree(this.boxAt(def.places[def.start].body!, spot.x, spot.y), bodies)) return 0;
+    const taken = [def.start];
+    while (taken.length < count) {
+      const next = openPlaces(def, taken)
+        .filter((q) => {
+          const b = def.places[q].body;
+          return !b || this.groundFree(this.boxAt(b, spot.x, spot.y), bodies);
+        })
+        .sort((a, b) => def.places[a].layer - def.places[b].layer)[0];
+      if (!next) break;
+      taken.push(next);
+    }
+    const mapId = this.map.def.id;
+    const pile = startPile(game, mapId, genre, spot.x, spot.y, def.start, turned);
+    for (const q of taken.slice(1)) fillPlace(game, mapId, pile.id, q);
+    this.map.placePile(pile);
+    return taken.length;
+  }
+
+  /**
    * Pose en tas du genre `genre`, à la place que montre la prévisualisation ; sans place, rien ne bouge. Sur un tas
    * posé, la pièce prend le sens du tas ; un nouveau tas prend le sens de ce qu'on tient (`turned`).
    */
@@ -184,12 +231,18 @@ export class HandsSystem {
       }
     }
     if (best) return best;
+    const spot = this.newPileSpot(player, genre, turned);
+    return spot && { genre, ...spot, place: shapeOf(piles[genre], turned).start, turned };
+  }
+
+  /** Point (x, y) d'un nouveau tas du genre `genre`, sa première pièce au sol juste devant Xéros, si la place est libre. */
+  private newPileSpot(player: Player, genre: string, turned: boolean): { x: number; y: number } | undefined {
     const def = shapeOf(piles[genre], turned);
     const body = def.places[def.start].body!;
     const [l, t] = frontCorner(player.actor.body, player.actor.facing, body.w, body.h);
     const x = Math.round(l - body.x);
     const y = Math.round(t - body.y);
-    return this.groundFree(this.boxAt(body, x, y), bodies) ? { genre, x, y, place: def.start, turned } : undefined;
+    return this.groundFree(this.boxAt(body, x, y), [...this.others, player.actor.body]) ? { x, y } : undefined;
   }
 
   /** Une collision de place (repère du tas) dans le repère de la carte, pour un tas dont le point est (x, y). */
