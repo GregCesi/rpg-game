@@ -490,6 +490,99 @@ const walkFrontal = (f: Facing) => [
 
 const walkRight = [side(1, -1, 0), side(0, 0, -1), side(1, 1, 0, true), side(0, 0, -1)];
 
+// ---------- Porter (carry-*) ----------
+// Une charge lourde tenue à deux mains contre soi (une bille d'un mètre). La charge est une image à part que le jeu
+// pose sur les mains : devant le corps de face et de profil, derrière le corps de dos. On dessine le corps seul :
+// bras tendus vers l'avant, mains jointes à hauteur de ventre ; le pas de la marche, plus court, un peu plus lent ;
+// de profil, la tête recule d'un pixel (dos cambré pour équilibrer la charge).
+
+export const CARRY_FRAME_RATE = 6;
+
+interface CarryBody {
+  /** Mains jointes, dans la frame, avant le rebond de la marche. */
+  hands: Vec;
+  /** Coudes (face et dos : gauche puis droit ; profil : le bras côté spectateur). */
+  elbows: Vec[];
+}
+
+const CARRY_BODY: Record<'down' | 'up' | 'right', CarryBody> = {
+  // de face : les bras descendent le long des flancs et reviennent devant le ventre, raccourcis par la perspective
+  down: { hands: [16, 37], elbows: [[9, 36], [22, 36]] },
+  // de dos : les mains sont devant lui, cachées par le corps ; seuls les coudes dépassent des flancs
+  up: { hands: [16, 36], elbows: [[9, 35], [22, 35]] },
+  // de profil : le bras descend sous l'épaule, coude contre la taille, l'avant-bras part devant le ventre
+  right: { hands: [21, 36], elbows: [[16, 37]] },
+};
+
+/** Rebond de chaque image de la marche chargée (0 au repos) : celui de la marche. */
+const CARRY_BOB = [0, -1, 0, -1];
+
+const down1 = (v: Vec, bob: number): Vec => [v[0], v[1] + bob];
+
+// Bras partis vers l'avant : ils naissent un pixel sous le haut de l'épaule, qui garde son contour.
+const CARRY_SHOULDER_L: Vec = [SHOULDER_L[0], SHOULDER_L[1] + 1];
+const CARRY_SHOULDER_R: Vec = [SHOULDER_R[0], SHOULDER_R[1] + 1];
+const CARRY_SHOULDER_SIDE: Vec = [SHOULDER_SIDE[0], SHOULDER_SIDE[1] + 1];
+
+function carryFrontal(facing: Facing, legL: number, legR: number, bob: number): Grid {
+  const b = CARRY_BODY[facing];
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = 6;
+  const legY = BODY_Y + 10;
+  c.stamp(legLeft, ox + 5, legY + legL);
+  c.stamp(legRight, ox + 11, legY + legR);
+  const arms = () => {
+    rim(c);
+    const [el, er] = b.elbows;
+    arm(c, [down1(CARRY_SHOULDER_L, bob), down1(el, bob), down1(b.hands, bob)], 't', 'L');
+    arm(c, [down1(CARRY_SHOULDER_R, bob), down1(er, bob), down1(b.hands, bob)], 'T', 't');
+  };
+  if (facing === 'up') arms();
+  c.stamp(bareTorso(facing === 'down' ? torsoFront : torsoBack), ox, BODY_Y + bob);
+  c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y + bob);
+  if (facing === 'down') arms();
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+function carrySide(spread: number, bob: number, swapLegs = false): Grid {
+  const b = CARRY_BODY.right;
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = 7;
+  const legY = BODY_Y + 10;
+  const back = swapLegs ? legSide : backLeg(legSide);
+  const front = swapLegs ? backLeg(legSide) : legSide;
+  c.stamp(back, ox + 4 - spread, legY);
+  c.stamp(front, ox + 6 + spread, legY);
+  c.stamp(bodySide, ox, BODY_Y + bob);
+  c.stamp(headSide, ox - 1, HEAD_Y + bob);
+  rim(c);
+  arm(c, [down1(CARRY_SHOULDER_SIDE, bob), down1(b.elbows[0], bob), down1(b.hands, bob)], 't', 'L');
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+// Pas plus court que la marche : la jambe ne se lève que d'un pixel.
+const carryWalkFrontal = (f: Facing) => [
+  carryFrontal(f, 0, -1, CARRY_BOB[0]),
+  carryFrontal(f, 0, 0, CARRY_BOB[1]),
+  carryFrontal(f, -1, 0, CARRY_BOB[2]),
+  carryFrontal(f, 0, 0, CARRY_BOB[3]),
+];
+const carryWalkRight = [carrySide(1, CARRY_BOB[0]), carrySide(0, CARRY_BOB[1]), carrySide(1, CARRY_BOB[2], true), carrySide(0, CARRY_BOB[3])];
+
+/**
+ * Point des mains, depuis les pieds (dx = x − 16, dy = y − 48 dans la frame, comme src/content/gestures.json) :
+ * `idle` pour carry-idle-*, `walk` pour chaque image de carry-walk-*. La gauche est le miroir de la droite (dx opposé).
+ */
+export const CARRY_HANDS: Record<'down' | 'up' | 'right', { idle: { dx: number; dy: number }; walk: { dx: number; dy: number }[] }> = (() => {
+  const at = ([x, y]: Vec, bob: number) => ({ dx: x - 16, dy: y + bob - 48 });
+  const dir = (d: 'down' | 'up' | 'right') => ({ idle: at(CARRY_BODY[d].hands, 0), walk: CARRY_BOB.map((bob) => at(CARRY_BODY[d].hands, bob)) });
+  return { down: dir('down'), up: dir('up'), right: dir('right') };
+})();
+
 const xeros: SpriteSheetSource = {
   kind: 'spritesheet',
   name: 'xeros',
@@ -513,6 +606,14 @@ const xeros: SpriteSheetSource = {
     'chop-up': { frames: chopUp, frameRate: CHOP_FRAME_RATE, repeat: 0 },
     'chop-right': { frames: chopRight, frameRate: CHOP_FRAME_RATE, repeat: 0 },
     'chop-left': { frames: chopRight.map(flipX), frameRate: CHOP_FRAME_RATE, repeat: 0 },
+    'carry-idle-down': { frames: [carryFrontal('down', 0, 0, 0)], frameRate: 1, repeat: 0 },
+    'carry-idle-up': { frames: [carryFrontal('up', 0, 0, 0)], frameRate: 1, repeat: 0 },
+    'carry-idle-right': { frames: [carrySide(0, 0)], frameRate: 1, repeat: 0 },
+    'carry-idle-left': { frames: [flipX(carrySide(0, 0))], frameRate: 1, repeat: 0 },
+    'carry-walk-down': { frames: carryWalkFrontal('down'), frameRate: CARRY_FRAME_RATE, repeat: -1 },
+    'carry-walk-up': { frames: carryWalkFrontal('up'), frameRate: CARRY_FRAME_RATE, repeat: -1 },
+    'carry-walk-right': { frames: carryWalkRight, frameRate: CARRY_FRAME_RATE, repeat: -1 },
+    'carry-walk-left': { frames: carryWalkRight.map(flipX), frameRate: CARRY_FRAME_RATE, repeat: -1 },
   },
 };
 

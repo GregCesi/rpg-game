@@ -3,7 +3,7 @@
 // Utilisé par `npm run check` (Node) et au démarrage du jeu.
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
-import type { CharacterDef, DialogueDef, Gesture, ItemDef, MapData, PropDef, TilesetCatalog } from './types';
+import type { Carry, CharacterDef, DialogueDef, Gesture, ItemDef, MapData, PropDef, TilesetCatalog } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -179,6 +179,7 @@ export interface Content {
   props: Record<string, PropDef>;
   items: Record<string, ItemDef>;
   gestures: Record<string, Gesture>;
+  carry: Carry;
   maps: Record<string, MapData>;
   characters: Record<string, CharacterDef>;
   dialogues: Record<string, DialogueDef>;
@@ -295,6 +296,17 @@ export function validateContent(c: Content, cat: Catalog): string[] {
       if (frames === undefined) err(`gestures.json '${name}' : animation '${anim}' manquante dans le sprite '${PLAYER.skin}'`);
       else if (frames !== poses.length) err(`gestures.json '${name}' ${dir} : ${poses.length} poses d'outil pour ${frames} images dans '${PLAYER.skin}-${anim}'`);
       if (g.impact >= poses.length) err(`gestures.json '${name}' ${dir} : image d'impact ${g.impact} au-delà des ${poses.length} poses`);
+    }
+  }
+
+  // Porter : une animation `carry-<état>-<direction>` par direction, autant d'images que de points d'accroche
+  for (const state of ['idle', 'walk'] as const) {
+    for (const dir of DIRECTIONS) {
+      const anim = `carry-${state}-${dir}`;
+      const frames = cat.frameCounts.get(PLAYER.skin)?.get(anim);
+      const poses = c.carry[state][dir === 'left' ? 'right' : (dir as 'down' | 'up' | 'right')];
+      if (frames === undefined) err(`carry.json : animation '${anim}' manquante dans le sprite '${PLAYER.skin}'`);
+      else if (frames !== poses.length) err(`carry.json ${state} ${dir} : ${poses.length} points d'accroche pour ${frames} images dans '${PLAYER.skin}-${anim}'`);
     }
   }
 

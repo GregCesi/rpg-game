@@ -1,0 +1,12 @@
+{
+  "idle": {
+    "down": [{"dx": 0, "dy": -11}],
+    "up": [{"dx": 0, "dy": -18, "behind": true}],
+    "right": [{"dx": 5, "dy": -12}]
+  },
+  "walk": {
+    "down": [{"dx": 0, "dy": -11}, {"dx": 0, "dy": -12}, {"dx": 0, "dy": -11}, {"dx": 0, "dy": -12}],
+    "up": [{"dx": 0, "dy": -18, "behind": true}, {"dx": 0, "dy": -19, "behind": true}, {"dx": 0, "dy": -18, "behind": true}, {"dx": 0, "dy": -19, "behind": true}],
+    "right": [{"dx": 5, "dy": -12}, {"dx": 5, "dy": -13}, {"dx": 5, "dy": -12}, {"dx": 5, "dy": -13}]
+  }
+}

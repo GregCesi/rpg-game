@@ -201,6 +201,17 @@ export const GestureSchema = z.strictObject({
   poses: z.strictObject({ down: z.array(PoseSchema), up: z.array(PoseSchema), right: z.array(PoseSchema) }),
 });
 
+/** Point d'accroche de ce que Xéros porte, pour une image : (dx, dy) depuis les pieds. `behind` : derrière le corps (de dos, derrière la tête). */
+export const CarryPoseSchema = z.strictObject({ dx: px, dy: px, behind: z.boolean().default(false) });
+
+/**
+ * Porter à deux mains (carry.json) : pour l'attente (`idle`) et la marche (`walk`), le point d'accroche de chaque image
+ * des animations `carry-<état>-<direction>` du corps. La gauche est le miroir de la droite. L'objet porté (son point `grip`)
+ * est posé sur ce point, par-dessus le corps, comme l'outil en main pendant un geste.
+ */
+const carryPoses = z.strictObject({ down: z.array(CarryPoseSchema), up: z.array(CarryPoseSchema), right: z.array(CarryPoseSchema) });
+export const CarrySchema = z.strictObject({ idle: carryPoses, walk: carryPoses });
+
 /** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
 export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
 
@@ -282,6 +293,8 @@ export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type Take = z.infer<typeof TakeSchema>;
 export type Pose = z.infer<typeof PoseSchema>;
 export type Gesture = z.infer<typeof GestureSchema>;
+export type CarryPose = z.infer<typeof CarryPoseSchema>;
+export type Carry = z.infer<typeof CarrySchema>;
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 export type DialogueLine = z.infer<typeof DialogueLineSchema>;
 export type DialogueDef = z.infer<typeof DialogueDefSchema>;
