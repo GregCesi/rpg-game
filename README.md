@@ -16,7 +16,7 @@ npm run test           # test de non-régression de l'outil d'esquisse
 npm run check          # art, maps, puis vérifie tout le contenu sans lancer le jeu (formats + références croisées)
 npm run build          # check, test, puis build web dans dist/
 npm run build:single   # un seul fichier HTML autonome dans dist-single/
-npm run art:preview    # régénère les sprites + aperçus x4 dans .art-preview/
+npm run art:preview    # régénère les sprites + aperçus x4 dans .art-preview/ (planche collection.png, geste xeros-use-<outil>.png par outil en main, barre item-bar.png)
 ```
 
 Les cartes se font dans [Tiled](https://www.mapeditor.org/) : ouvrir `tiled/xeros.tiled-project`. Après une modification d'une carte, relancer `npm run dev` (ou `npm run maps`) pour la voir en jeu.

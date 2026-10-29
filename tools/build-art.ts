@@ -13,12 +13,14 @@ import { sources } from '../art/index';
 import type { Grid, Palette } from '../art/lib/canvas';
 import propsJson from '../src/content/props.json';
 import tilesCatalogJson from '../src/content/tiles.json';
-import { PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
+import { GestureSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
 import type { DecalSet } from '../src/content/types';
 import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
 import { projectFile, propsTsj, tilesetTsj } from './lib/tiled-files';
 import type { PropTile } from './lib/tiled-files';
 import { buildCollectionBoard } from './lib/collection-board';
+import { gesturePreview, itemBarPreview } from './lib/composite-previews';
+import gesturesJson from '../src/content/gestures.json';
 
 const OUT = 'src/generated';
 const PREVIEW = '.art-preview';
@@ -255,5 +257,17 @@ ${images.join('\n')}
 writeFileSync(join(OUT, 'assets.ts'), manifest);
 // Même catalogue sans les images, lisible par Node (npm run check)
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(catalog, null, 2));
-if (withPreview) writeFileSync(join(PREVIEW, 'collection.png'), PNG.sync.write(buildCollectionBoard(sources)));
+if (withPreview) {
+  writeFileSync(join(PREVIEW, 'collection.png'), PNG.sync.write(buildCollectionBoard(sources)));
+  // aperçus composés : le geste use-* avec chaque outil en main (planches tool-*), et la barre d'objets
+  const gesture = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson).use;
+  const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');
+  for (const tool of sources) {
+    if (!gesture || body?.kind !== 'spritesheet' || tool.kind !== 'spritesheet' || !tool.name.startsWith('tool-')) continue;
+    const png = gesturePreview(sources, body, tool, gesture);
+    writeFileSync(join(PREVIEW, `xeros-use-${tool.name.slice('tool-'.length)}.png`), PNG.sync.write(png));
+  }
+  const bar = itemBarPreview(sources);
+  if (bar) writeFileSync(join(PREVIEW, 'item-bar.png'), PNG.sync.write(bar));
+}
 console.log(`art : ${sources.length} sources -> ${OUT} + ${TILED}${withPreview ? ` (+ aperçus dans ${PREVIEW})` : ''}`);
