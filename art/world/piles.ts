@@ -10,17 +10,18 @@
 // ses propres fentes d'écorce ; celles du dessus n'ont pas d'ombre au sol mais une ombre de contact de deux rangées,
 // peinte sur leurs porteuses (toujours présentes), qui creuse le joint.
 //
-// Branches : la branche sèche de item-branch et held-branch, couchée est-ouest. 22 à 28 px (1,1 à 1,4 m) ;
+// Branches : la branche sèche (dessin commun dans art/items/branch.ts, comme branch-ground, held-branch et
+// item-branch), couchée est-ouest. 22 à 28 px (1,1 à 1,4 m) ;
 // gros bout de 2 px (10 cm), cassé net en bois clair, puis une tige d'1 px vers la pointe, des rameaux. Tête-bêche :
 // le gros bout change de côté d'une place à la voisine et d'une couche à l'autre. Au sol, 3 px (15 cm) d'une
 // branche à l'autre ; une couche monte de 3 px. Les rameaux qui partent vers le bas de l'image sont couchés vers
 // le sud (sous la branche de devant, qui les cache) ; ceux qui partent vers le haut se dressent.
 
-import { Canvas, EMPTY, rng } from '../lib/canvas';
+import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import felled from './felled';
-import { outline } from '../items/lib';
+import { branch, finishBranch, branchBody, BASE, type Branch } from '../items/branch';
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
@@ -70,55 +71,6 @@ const logs = [
 
 // ---------- Branches ----------
 
-const BW = 32;
-const BH = 13;
-/** Rangée du contour du bas du gros bout ; la base de la branche (bas de sa collision) est la rangée suivante. */
-const BASE = 10;
-
-interface Twig { at: number; up: boolean; len: number; fork?: boolean }
-interface Branch { len: number; thickLeft: boolean; thick: number; twigs: Twig[]; seed: number }
-
-/**
- * Une branche dans une image BW × BH, son gros bout à `x0` ou à `x0 + len - 1`. Gros bout : rangées BASE-2 (M) et
- * BASE-1 (m) ; tige fine : rangée BASE-1. Les rameaux partent de la tige vers la pointe.
- */
-function branch(b: Branch, x0: number, ground: boolean): Canvas {
-  const c = new Canvas(BW, BH);
-  const r = rng(b.seed);
-  const dir = b.thickLeft ? 1 : -1;
-  const start = b.thickLeft ? x0 : x0 + b.len - 1;
-  const X = (i: number) => start + dir * i; // i : distance depuis le gros bout
-  // rameaux d'abord, la tige passe par-dessus
-  for (const t of b.twigs) {
-    const sx = X(Math.round(t.at * b.len));
-    const sy = BASE - 1;
-    const dy = t.up ? -1 : 1;
-    const rise = t.up ? Math.min(3, Math.ceil(t.len / 2)) : Math.min(2, Math.ceil(t.len / 3));
-    const ex = sx + dir * t.len;
-    const ey = sy + dy * rise;
-    c.line(sx, sy, ex, ey, 'm');
-    if (t.fork) c.line(ex - dir, ey, ex + dir, ey + dy, 'm');
-  }
-  // tige : gros bout sur 2 rangées, puis 1 rangée jusqu'à la pointe
-  for (let i = 0; i < b.len; i++) {
-    if (i < b.thick) c.set(X(i), BASE - 2, 'M').set(X(i), BASE - 1, 'm');
-    // la pointe se relève d'un pixel sur ses quatre derniers
-    else c.set(X(i), i >= b.len - 4 ? BASE - 2 : BASE - 1, 'm');
-  }
-  // une fente sombre sur le flanc du gros bout, un nœud clair sur le dessus
-  for (let i = 3; i < Math.min(b.thick - 2, 3 + 3 + Math.floor(r() * 3)); i++) c.set(X(i), BASE - 1, 'N');
-  // bout cassé : bois clair, éclairé à gauche, dans l'ombre à droite
-  c.set(X(0), BASE - 2, b.thickLeft ? 'U' : 'u').set(X(0), BASE - 1, 'u');
-  outline(c, 'N');
-  if (ground) {
-    // ombre au sol, une rangée sous la branche, décalée vers la droite
-    for (let x = 1; x < BW; x++) {
-      for (const y of [BASE + 1]) if (c.get(x, y) === EMPTY && c.get(x - 1, y - 1) !== EMPTY && c.get(x - 1, y - 1) !== 'x') c.set(x, y, 'x');
-    }
-  }
-  return c;
-}
-
 /** Places des branches : longueur, côté du gros bout (tête-bêche), rameaux, décalage du gros bout dans l'image. */
 export const BRANCHES: Record<string, Branch & { x0: number }> = {
   g0: { len: 26, thickLeft: true, thick: 11, x0: 2, seed: 11, twigs: [{ at: 0.4, up: true, len: 6, fork: true }, { at: 0.7, up: false, len: 5 }] },
@@ -135,4 +87,17 @@ export const BRANCHES: Record<string, Branch & { x0: number }> = {
 
 const branches = Object.entries(BRANCHES).map(([p, b]) => img(`pile-branch-${p}`, branch(b, b.x0, p.startsWith('g'))));
 
-export default [...logs, ...branches];
+// ---------- Branche au sol ----------
+// Une branche tombée d'une récolte, seule, couchée est-ouest : le jeu la pose bas milieu sur son point au sol
+// (`ground` de src/content/items.json). Pas de rameau fourchu vers le bas : il sortirait de l'image. Les rangées vides
+// du haut sont retirées ; le bas de l'image est la rangée sous l'ombre.
+const GROUND_BRANCH: Branch = { len: 25, thickLeft: true, thick: 11, seed: 51, twigs: [{ at: 0.42, up: true, len: 6, fork: true }, { at: 0.68, up: false, len: 5 }] };
+
+function groundBranch(): Canvas {
+  const c = finishBranch(branchBody(GROUND_BRANCH, 3), BASE + 1);
+  let top = 0;
+  while (c.px[top].every((k) => k === EMPTY)) top++;
+  return Canvas.from(c.toGrid().slice(top));
+}
+
+export default [...logs, ...branches, img('branch-ground', groundBranch())];

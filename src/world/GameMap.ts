@@ -273,10 +273,10 @@ export class GameMap {
     this.props.splice(this.props.indexOf(p), 1);
   }
 
-  /** Affiche un objet possédable posé au sol (son point au sol en bas de l'icône). */
+  /** Affiche un objet possédable posé au sol : son image au sol (`ground`), sinon son icône, son point au sol en bas, au milieu. */
   placeGround(item: GroundItem): PlacedGround {
-    const icon = items[item.item].icon;
-    const image = this.scene.add.image(item.x, item.y, icon).setOrigin(0.5, 1).setDepth(item.y);
+    const def = items[item.item];
+    const image = this.scene.add.image(item.x, item.y, def.ground ?? def.icon).setOrigin(0.5, 1).setDepth(item.y);
     const g = { item, image };
     this.ground.push(g);
     return g;

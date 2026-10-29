@@ -412,6 +412,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (it.hold) addAll(validateHold(`items.json '${key}'`, it.hold, it.hands, cat));
     if (!KEBAB_CASE.test(key)) err(`items.json '${key}' : la clé doit être un identifiant anglais en kebab-case`);
     if (!cat.textures.has(it.icon)) err(`items.json '${key}' : icône '${it.icon}' non dessinée`);
+    if (it.ground && !cat.textures.has(it.ground)) err(`items.json '${key}' : image au sol '${it.ground}' non dessinée`);
   }
 
   // Tas : genres, pièces, formes

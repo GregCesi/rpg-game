@@ -127,8 +127,10 @@ export const TakeSchema = z.strictObject({
 export const ItemDefSchema = z.strictObject({
   /** Nom affiché, en français. */
   name: id,
-  /** Image 16×16, `item-<clé>`. */
+  /** Image 16×16, `item-<clé>` : dans les cases des mains, et au sol faute de `ground`. */
   icon: id,
+  /** Image de l'objet couché au sol, à l'échelle (la branche : le même dessin que dans le tas). Absente : l'icône. */
+  ground: id.optional(),
   kind: z.enum(['tool', 'weapon', 'resource']),
   /** Mains qu'il faut pour le tenir : 2 pour ce qui est lourd ou long (la hache de bûcheron). */
   hands: HandsSchema.default(1),

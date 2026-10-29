@@ -1,5 +1,5 @@
 {
-  "branch": {"name": "branche", "icon": "item-branch", "kind": "resource", "hold": {"stance": "hand", "image": "held-branch"}, "pile": "branches"},
+  "branch": {"name": "branche", "icon": "item-branch", "kind": "resource", "hold": {"stance": "hand", "image": "held-branch"}, "ground": "branch-ground", "pile": "branches"},
   "stone": {"name": "pierre", "icon": "item-stone", "kind": "resource"},
   "iron-ore": {"name": "minerai de fer", "icon": "item-iron-ore", "kind": "resource"},
   "straw": {"name": "paille", "icon": "item-straw", "kind": "resource"},

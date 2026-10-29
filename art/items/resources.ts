@@ -4,6 +4,7 @@
 
 import { Canvas, EMPTY } from '../lib/canvas';
 import { ball, capsule, darkest, outline } from './lib';
+import { branchBody, centerIn, diagonal, finishBranch, type Branch } from './branch';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 
@@ -25,19 +26,18 @@ const palette = {
 
 // ---------- Branche ----------
 
-/** Branche sèche : une tige en diagonale, deux rameaux, sans feuille. */
+/**
+ * La branche sèche du tas et du sol (art/items/branch.ts), réduite pour la case : 13 px au lieu de 22 à 28, en
+ * diagonale, gros bout cassé clair en bas à gauche, pointe en haut à droite. Les rameaux se tracent après la mise en
+ * diagonale, pour qu'ils s'écartent de la tige comme sur la branche couchée : un fourchu à gauche, un court à droite.
+ */
 function branch(): Canvas {
-  const c = new Canvas(S, S);
-  // rameau gauche (vers le haut) et rameau droit (vers le bas), sous la tige
-  capsule(c, 6.5, 9.0, 4.2, 3.4, 0.8, (_, a) => (a < 0 ? 'M' : 'm'));
-  capsule(c, 4.2, 3.4, 2.6, 1.9, 0.6, () => 'm');
-  capsule(c, 9.6, 6.2, 13.2, 10.8, 0.8, (_, a) => (a < 0 ? 'm' : 'N'));
-  // tige
-  capsule(c, 2.4, 13.4, 13.6, 2.4, 1.3, (_, a) => (a < -0.15 ? 'M' : a < 0.5 ? 'm' : 'N'));
-  // bout cassé (bois clair) et nœud
-  c.set(13, 2, 'U').set(12, 2, 'M');
-  c.within('m', (c) => c.set(7, 8, 'N').set(8, 8, 'N'));
-  return outline(c, 'N');
+  const b: Branch = { len: 13, thickLeft: true, thick: 6, seed: 71, twigs: [] };
+  // tige à plat sur la rangée 5, puis en diagonale : le pixel (x, 5) passe en (x, 21 - x)
+  const c = diagonal(branchBody(b, 1, 16, 8, 6));
+  c.line(5, 16, 5, 12, 'm').line(5, 12, 4, 11, 'm').line(5, 12, 6, 11, 'm');
+  c.line(9, 12, 12, 11, 'm');
+  return finishBranch(centerIn(c, S, S));
 }
 
 // ---------- Pierre ----------

@@ -12,6 +12,7 @@ import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import felled from '../world/felled';
 import { darkest, outline } from './lib';
+import { branchBody, finishBranch, shearDown, transpose, type Branch } from './branch';
 import { axeArt, toolPalette } from './tools';
 import xeros, { SHOULDER_POINTS } from '../characters/xeros';
 
@@ -106,59 +107,44 @@ const heldAxe = (): SpriteSheetSource => {
 };
 
 // ---------- Branche ----------
-// La branche sèche de l'icône item-branch : une tige de deux pixels (environ 10 cm), un rameau, un bout cassé clair.
-// Tenue par le gros bout dans le poing, elle pend un peu en avant : de face elle descend vers nous, de dos elle
-// s'éloigne (raccourcie, sous le corps), de profil elle part en avant et vers le bas.
+// La branche sèche du tas et du sol (art/items/branch.ts) : mêmes matières, gros bout cassé clair, tige, rameaux, 1,1 à
+// 1,4 m. Xéros la tient par le gros bout, le bout cassé dépassant de deux pixels derrière le poing, la pointe qui
+// descend en avant vers le sol.
+// - De profil : la branche entière (24 px, 1,2 m), penchée d'un pixel tous les quatre, la pointe près du sol devant lui.
+// - De face : elle vient vers nous et descend ; vue presque dans l'axe, elle se raccourcit (18 px), dressée, la pointe
+//   en bas, posée au sol devant ses pieds ; le bout cassé dépasse au-dessus du poing.
+// - De dos : elle s'éloigne et descend devant lui, raccourcie (10 px), cachée par le corps (l'image passe dessous) ; on
+//   voit le bout cassé sous le poing, et ce qui déborde de la silhouette.
 
-const BRANCH_SIZE = 19;
+const BRANCH_SIZE = 47;
 const BRANCH_C = Math.floor(BRANCH_SIZE / 2);
 
-const wood: Materials = {
-  M: { light: 'M', base: 'm', shade: 'N', dark: 'N' },
-  U: { light: 'U', base: 'U', shade: 'u', dark: 'N' }, // bout cassé, bois clair
+const HELD_BRANCH: Record<View, Branch> = {
+  right: { len: 24, thickLeft: true, thick: 9, seed: 61, twigs: [{ at: 0.4, up: true, len: 6, fork: true }, { at: 0.7, up: false, len: 3 }] },
+  down: { len: 18, thickLeft: true, thick: 7, seed: 62, twigs: [{ at: 0.4, up: true, len: 5, fork: true }, { at: 0.65, up: false, len: 3 }] },
+  up: { len: 10, thickLeft: false, thick: 5, seed: 63, twigs: [{ at: 0.5, up: true, len: 4 }, { at: 0.6, up: false, len: 3 }] },
 };
 
-/** Une tige en zones : des segments de 2 px de large (le pixel donné et celui de droite), du point a au point b. */
-function stick(c: Canvas, pts: [number, number][], width = 2) {
-  for (let i = 0; i + 1 < pts.length; i++) {
-    const [x0, y0] = pts[i];
-    const [x1, y1] = pts[i + 1];
-    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
-    for (let k = 0; k <= n; k++) {
-      const x = Math.round(x0 + ((x1 - x0) * k) / n);
-      const y = Math.round(y0 + ((y1 - y0) * k) / n);
-      for (let w = 0; w < width; w++) c.set(x + w, y, 'M');
-    }
+/** Le poing (2 × 2 ; le point d'accroche est son pixel du bas côté extérieur) se voit par-dessus la tige. */
+const BRANCH_FIST: [number, number][] = [[0, 0], [1, 0], [0, -1], [1, -1]];
+
+function heldBranchView(view: View): Grid {
+  const C = BRANCH_C, S = BRANCH_SIZE;
+  const b = HELD_BRANCH[view];
+  if (view === 'right') {
+    // gros bout sur les deux rangées du poing (M en C-1, m en C), le bout cassé deux pixels derrière
+    const body = shearDown(branchBody(b, C - 2, S, S, C + 1), C, 4);
+    return fistGap(finishBranch(body).toGrid(), C, BRANCH_FIST);
   }
+  // dressée : le gros bout sur les deux colonnes du poing (M en C, m en C+1)
+  const x0 = view === 'down' ? C - 2 : C + 2 - b.len; // de dos, le gros bout en bas, vers nous
+  const body = transpose(branchBody(b, x0, S, S, C + 2));
+  const g = finishBranch(body).toGrid();
+  return view === 'down' ? fistGap(g, C, BRANCH_FIST) : g;
 }
 
-function branchZones(view: View): Canvas {
-  const c = new Canvas(BRANCH_SIZE, BRANCH_SIZE);
-  const C = BRANCH_C;
-  if (view === 'down') {
-    stick(c, [[C, C - 3], [C, C + 2], [C + 1, C + 6]]);
-    stick(c, [[C + 1, C + 3], [C + 3, C + 5]], 1); // rameau vers le dehors
-    c.set(C + 1, C + 7, 'U').set(C + 2, C + 7, 'U');
-  } else if (view === 'up') {
-    stick(c, [[C, C - 2], [C, C + 4]]);
-    stick(c, [[C + 1, C + 2], [C + 3, C + 4]], 1);
-    c.set(C, C + 5, 'U').set(C + 1, C + 5, 'U');
-  } else {
-    stick(c, [[C - 1, C - 2], [C, C], [C + 5, C + 5]]);
-    stick(c, [[C + 3, C + 3], [C + 6, C + 3], [C + 7, C + 2]], 1); // rameau vers l'avant
-    c.set(C + 6, C + 6, 'U').set(C + 5, C + 6, 'U');
-  }
-  return c;
-}
-
-const heldBranch = (): SpriteSheetSource => {
-  const views = {} as Record<View, Grid>;
-  for (const v of ['down', 'up', 'right'] as const) views[v] = lightUp(branchZones(v).toGrid(), wood);
-  // le poing (2 × 2, le point est son pixel du bas côté extérieur) se voit par-dessus la tige
-  views.down = fistGap(views.down, BRANCH_C, [[0, 0], [1, 0], [0, -1], [1, -1]]);
-  views.right = fistGap(views.right, BRANCH_C, [[0, 0], [1, 0], [0, -1], [1, -1]]);
-  return sheet('held-branch', BRANCH_SIZE, world, views);
-};
+const heldBranch = (): SpriteSheetSource =>
+  sheet('held-branch', BRANCH_SIZE, world, { down: heldBranchView('down'), up: heldBranchView('up'), right: heldBranchView('right') });
 
 // ---------- Bille portée ----------
 // La bille felled-log-1 (art/world/felled.ts) portée à deux mains devant lui. De face et de dos, en longueur : la
