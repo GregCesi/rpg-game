@@ -11,6 +11,7 @@ import { lightUp, type Materials } from '../lib/light';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import felled from '../world/felled';
+import { logByTheEnd } from '../world/wood';
 import { darkest, outline } from './lib';
 import { branchBody, finishBranch, shearDown, transpose, type Branch } from './branch';
 import { axeArt, toolPalette } from './tools';
@@ -148,8 +149,8 @@ const heldBranch = (): SpriteSheetSource =>
 
 // ---------- Bille portée ----------
 // La bille felled-log-1 (art/world/felled.ts) portée à deux mains devant lui. De face et de dos, en longueur : la
-// bille couchée elle-même, sans son ombre au sol. De profil, on la voit par le bout : la face de coupe ronde (11 px de
-// diamètre, 55 cm), ses cernes et l'écorce autour, avec le dessus de l'écorce qui fuit derrière elle.
+// bille couchée elle-même, sans son ombre au sol. De profil, on la voit par le bout, comme la bille nord-sud du tas :
+// la face de coupe (11 px de diamètre, 55 cm), son cerne et l'écorce autour, le dessus de l'écorce qui fuit derrière.
 
 const LOG_SIZE = 25;
 const LOG_C = Math.floor(LOG_SIZE / 2);
@@ -165,35 +166,14 @@ function logLengthwise(): Grid {
 }
 
 /**
- * Par le bout : la face de coupe, un disque de 11 px (bois de bout clair en haut à gauche, cernes en anneaux, cœur
- * sombre), cerclée d'écorce ; au-dessus, le dessus de l'écorce qui fuit derrière elle (la bille s'éloigne de nous),
- * éclairé à gauche. Le disque est sous la prise : les mains le tiennent par-dessous.
+ * Par le bout : la bille nord-sud du tas, raccourcie (la matière commune de art/world/wood.ts) : la face de coupe ovale
+ * de 11 × 9 px (55 cm), cerclée d'écorce, son cerne et son cœur ; au-dessus, le dessus de l'écorce qui fuit derrière
+ * elle (la bille s'éloigne de nous), éclairé à gauche, et le bord du bout lointain. La face est sous la prise : les
+ * mains la tiennent par-dessous.
  */
 function logEnd(): Grid {
-  const c = new Canvas(LOG_SIZE, LOG_SIZE);
-  const cx = LOG_C + 0.5, cy = LOG_C + 2.5, r = 5.5, back = 5;
-  // dessus de l'écorce, de la face au bout lointain
-  for (let y = 0; y < LOG_SIZE; y++) for (let x = 0; x < LOG_SIZE; x++) {
-    const u = (x + 0.5 - cx) / r;
-    if (Math.abs(u) > 1) continue;
-    const top = cy - back - r * Math.sqrt(1 - u * u) * 0.5; // bout lointain, arrondi
-    if (y + 0.5 < top || y + 0.5 > cy) continue;
-    c.set(x, y, u < 0.2 ? 'M' : u < 0.65 ? 'm' : 'N'); // le dessus fait face à la lumière
-  }
-  c.within('M', (c) => c.line(LOG_C - 2, LOG_C - 4, LOG_C, LOG_C - 4, 'm')); // fente d'écorce
-  // face de coupe
-  for (let y = 0; y < LOG_SIZE; y++) for (let x = 0; x < LOG_SIZE; x++) {
-    const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
-    const d = Math.hypot(dx, dy);
-    if (d > r) continue;
-    const lit = dx + dy < -1; // côté lumière, en haut à gauche
-    // écorce : son bord du haut, en arc sombre, détache la face du dessus ; à gauche, elle prend la lumière
-    if (d > r - 1) c.set(x, y, dx < -2.5 && dy > -2 ? 'm' : 'N');
-    else if (d < 0.8) c.set(x, y, 'T'); // cœur, un pixel voulu
-    else if (d > 2.6 && d < 3.4) c.set(x, y, lit ? 't' : 'T'); // cerne
-    else c.set(x, y, lit ? 'Y' : 't');
-  }
-  return outline(c, darkest({ M: 'K', m: 'K', N: 'K', Y: 'N', t: 'N', T: 'N' }, 'o')).toGrid();
+  const c = logByTheEnd(new Canvas(LOG_SIZE, LOG_SIZE), LOG_C + 0.5, LOG_C - 2.5, LOG_C + 2.5, 5.5, 4.5);
+  return outline(c, darkest({ M: 'K', m: 'K', N: 'K', K: 'K', Y: 'N', t: 'N', T: 'N' }, 'o')).toGrid();
 }
 
 const heldFelledLog = (): SpriteSheetSource => {

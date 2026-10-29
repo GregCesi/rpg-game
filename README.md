@@ -33,7 +33,7 @@ art/                 sources du pixel art (grilles de caractères + générateur
   portraits/         portraits de dialogue (une animation = une expression)
   ui/                cadre de dialogue, flèche, touche E, cases des deux mains
   items/             icônes 16×16 des objets possédables, outils en main (`tool-<objet>`)
-  world/             tuiles et objets du décor extérieur, chaumière
+  world/             tuiles et objets du décor extérieur, chaumière ; wood.ts : la matière bois commune (écorce, sillons, face de coupe) de toute la chaîne de l'arbre, de l'arbre debout à la bille
   interior/          tuiles et mobilier de l'intérieur
 tiled/               les cartes, faites avec Tiled
   xeros.tiled-project  projet Tiled (généré par build-art, committé) : types d'objets de props.json, Spawn, Exit

@@ -5,6 +5,7 @@
 import { Canvas, rng, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
+import { bark, faceTone } from './wood';
 
 export type Vec = [number, number];
 
@@ -65,6 +66,36 @@ export function groundShadow(c: Canvas, cx: number, cy: number, rx: number, ry: 
   }
 }
 
+/**
+ * Tronc vertical : `shape` dessine sa silhouette (n'importe quelle couleur) ; chaque pixel prend l'écorce commune, avec
+ * `s` mesuré en travers de sa rangée (0 au bord gauche, éclairé ; 1 au bord droit) et `along` le long du tronc
+ * (rangée + `from`, pour que le tronc couché, qui reprend ces rangées, garde les mêmes sillons).
+ */
+function barkRows(c: Canvas, shape: (t: Canvas) => void, from = 0) {
+  const t = new Canvas(c.w, c.h);
+  shape(t);
+  for (let y = 0; y < c.h; y++) {
+    const xs = [...Array(c.w).keys()].filter((x) => t.get(x, y) !== EMPTY);
+    if (!xs.length) continue;
+    const x0 = xs[0];
+    const w = xs[xs.length - 1] - x0 + 1;
+    // au pied, la rangée s'élargit (évasement, racines) : la rampe s'étire avec elle
+    for (const x of xs) c.set(x, y, bark(y + from, (x + 0.5 - x0) / w));
+  }
+}
+
+/** Face de coupe commune peinte sur une forme ovale (`c` : ses pixels peints), centrée, de demi-axes rx, ry. */
+function paintFaceOnMask(c: Canvas, rx: number, ry: number) {
+  const cx = c.w / 2, cy = c.h / 2;
+  const out: [number, number, string][] = [];
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    if (c.get(x, y) === EMPTY) continue;
+    const rim = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => c.get(x + dx, y + dy) === EMPTY);
+    out.push([x, y, faceTone((x + 0.5 - cx) / rx, (y + 0.5 - cy) / ry, rim)]);
+  }
+  for (const [x, y, k] of out) c.px[y][x] = k;
+}
+
 interface Mass { cx: number; cy: number; rx: number; ry: number; seed: number; dim: number }
 
 // Cinq masses de feuillage, de la plus lointaine (en haut) à la plus proche (en bas) : asymétriques.
@@ -98,25 +129,15 @@ export function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
   const c = new Canvas(64, 96);
   const [lx, ly] = light;
 
-  // Tronc : légère courbe, évasé au pied, deux racines.
-  c.polygon([[28, 54], [37, 54], [37.5, 70], [38, 80], [40.5, 85], [42, 89], [24, 89], [26, 85], [27.5, 79], [27.5, 68]], 'm');
-  c.polygon([[38, 86], [44, 87.5], [45, 89], [39, 89]], 'm'); // racine droite
-  c.polygon([[26, 86], [21, 88], [20.5, 89], [26, 89]], 'm'); // racine gauche
-  c.polygon([[36, 58], [44, 50], [46, 51], [37.5, 62]], 'm'); // branche vers la masse de droite
-  c.within('m', (c) => {
-    // côté éclairé (gauche) et côté ombre (droite)
-    c.polygon([[28, 54], [30.5, 54], [30.5, 80], [27, 89], [24, 89], [26, 85], [27.5, 79], [27.5, 68]], 'M');
-    c.polygon([[35, 54], [38, 54], [38, 80], [40.5, 85], [42, 89], [37, 89], [36, 80]], 'N');
-    c.polygon([[38, 86], [44, 87.5], [45, 89], [39, 89]], 'N');
-    c.polygon([[40, 52], [46, 51], [37.5, 62], [37, 58]], 'N');
-    // écorce : quelques fentes verticales en teinte d'ombre
-    c.line(32, 64, 32, 70, 'N').line(33, 71, 33, 74, 'N');
-    c.line(31, 78, 31, 83, 'N');
-    c.line(29, 60, 29, 63, 'm');
-    c.line(29, 72, 29, 75, 'm');
-  });
-  c.within('N', (c) => {
-    c.line(37, 66, 37, 83, 'K').line(38, 83, 40, 87, 'K').line(41, 88, 43, 88, 'K');
+  // Tronc : légère courbe, évasé au pied, deux racines, une branche vers la masse de droite.
+  // La branche garde son ombrage ; le tronc et les racines prennent l'écorce commune (art/world/wood.ts) : rampe en
+  // travers de chaque rangée (lumière à gauche), sillons dans le sens du tronc.
+  c.polygon([[36, 58], [44, 50], [46, 51], [37.5, 62]], 'm');
+  c.within('m', (c) => c.polygon([[40, 52], [46, 51], [37.5, 62], [37, 58]], 'N'));
+  barkRows(c, (t) => {
+    t.polygon([[28, 54], [37, 54], [37.5, 70], [38, 80], [40.5, 85], [42, 89], [24, 89], [26, 85], [27.5, 79], [27.5, 68]], 'm');
+    t.polygon([[38, 86], [44, 87.5], [45, 89], [39, 89]], 'm'); // racine droite
+    t.polygon([[26, 86], [21, 88], [20.5, 89], [26, 89]], 'm'); // racine gauche
   });
 
   // Feuillage : chaque masse est découpée en grappes (cellules de Voronoï), ombrées selon la lumière.
@@ -166,7 +187,7 @@ export function standingTree(): Canvas {
 
 // ---------- Souche ----------
 
-/** Dessus de la souche : coupe nette, bois clair, un cerne et le cœur. */
+/** Forme du dessus de la souche (10 × 6) : la face de coupe commune s'y peint (art/world/wood.ts). */
 const CUT = [
   '..NNNNNN..',
   '.NYYYYYYN.',
@@ -179,17 +200,15 @@ const CUT = [
 /** Souche sans contour ni ombre, 32x32, pied du tronc en y=26 ; même tronc que l'arbre (10 px, évasé au pied). */
 export function stumpBody(): Canvas {
   const c = new Canvas(32, 32);
-  c.polygon([[11, 16], [21, 16], [21.5, 22], [23.5, 25], [25, 27], [7, 27], [8.5, 25], [10.5, 22]], 'm');
-  c.polygon([[21, 24], [27, 25.5], [28, 27], [22, 27]], 'm'); // racine droite
-  c.polygon([[10, 24.5], [5, 26], [4, 27], [10, 27]], 'm'); // racine gauche
-  c.within('m', (c) => {
-    c.polygon([[11, 16], [13.5, 16], [13.5, 23], [11, 27], [7, 27], [8.5, 25], [10.5, 22]], 'M');
-    c.polygon([[18, 16], [21, 16], [21.5, 22], [23.5, 25], [25, 27], [20, 27], [18.5, 23]], 'N');
-    c.polygon([[21, 24], [27, 25.5], [28, 27], [22, 27]], 'N');
-    c.line(15, 20, 15, 23, 'N');
-  });
-  c.within('N', (c) => c.line(20, 19, 20, 23, 'K').line(21, 24, 23, 26, 'K'));
-  c.stamp(CUT, 11, 13);
+  barkRows(c, (t) => {
+    t.polygon([[11, 16], [21, 16], [21.5, 22], [23.5, 25], [25, 27], [7, 27], [8.5, 25], [10.5, 22]], 'm');
+    t.polygon([[21, 24], [27, 25.5], [28, 27], [22, 27]], 'm'); // racine droite
+    t.polygon([[10, 24.5], [5, 26], [4, 27], [10, 27]], 'm'); // racine gauche
+  }, 70);
+  // dessus : la face de coupe commune, sur la forme de CUT
+  const face = Canvas.from(CUT.map((r) => r.replace(/[^.]/g, 'm')));
+  paintFaceOnMask(face, 5, 3);
+  c.stamp(face.toGrid(), 11, 13);
   return c;
 }
 

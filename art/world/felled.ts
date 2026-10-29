@@ -17,6 +17,7 @@ import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { FOOT, type Vec, despeckle, groundShadow, shadedOutline, standingTree, stump, stumpBody, treeBody } from './trees';
+import { DIAMETER, bark, faceTone, logByTheEnd, logEnd } from './wood';
 
 // ---------- Chute ----------
 
@@ -37,6 +38,8 @@ const HINGE: Vec = [38, CUT_Y];
 const TRUNK_FROM = 70;
 /** Allongement du tronc couché : vu de dessus, il montre toute sa longueur (environ 34 px sous le houppier). */
 const EXT = 24;
+/** Première colonne du tronc debout sous le houppier (rangée 77 de treeBody : 11 px, de 27 à 37). */
+const PROFILE_X0 = 27;
 
 function withStump(c: Canvas, off = OFF): Canvas {
   c.stamp(stumpBody().toGrid(), STUMP_AT[0] + off, STUMP_AT[1]);
@@ -53,19 +56,12 @@ function fallingPart(light: Vec, ext: number): { src: Canvas; cut: number } {
   const cut = CUT_Y + ext;
   const src = new Canvas(64, cut);
   for (let y = 0; y < TRUNK_FROM; y++) for (let x = 0; x < 64; x++) src.px[y][x] = body.get(x, y);
-  // profil propre du tronc (sans fente), pris juste sous la coupe
+  // le tronc ajouté : la silhouette du tronc juste sous la coupe, l'écorce commune (art/world/wood.ts), ses sillons
+  // continuant ceux du tronc au-dessus
   const profile = body.px[77];
-  for (let y = TRUNK_FROM; y < cut; y++) for (let x = 0; x < 64; x++) src.px[y][x] = profile[x];
-  src.within('m', (c) => {
-    for (const [x, y0, n] of [[32, 0, 6], [33, 9, 4], [31, 15, 6], [33, 24, 4]] as const) {
-      if (y0 + n <= cut - TRUNK_FROM - 2) c.line(x, TRUNK_FROM + y0, x, TRUNK_FROM + y0 + n - 1, 'N');
-    }
-  });
-  src.within('M', (c) => {
-    for (const [x, y0, n] of [[29, 3, 4], [29, 19, 4]] as const) {
-      if (y0 + n <= cut - TRUNK_FROM - 2) c.line(x, TRUNK_FROM + y0, x, TRUNK_FROM + y0 + n - 1, 'm');
-    }
-  });
+  for (let y = TRUNK_FROM; y < cut; y++) for (let x = 0; x < 64; x++) {
+    src.px[y][x] = profile[x] === EMPTY ? EMPTY : bark(y, (x - PROFILE_X0 + 0.5) / DIAMETER);
+  }
   return { src, cut };
 }
 
@@ -106,24 +102,27 @@ function drawFalling(c: Canvas, p: Pose) {
   }
   // bout scié : disque du tronc vu de biais, tourné vers le bas-gauche (vers la lumière) quand l'arbre tombe
   // à droite, vers le bas-droite (dans l'ombre) quand il tombe à gauche
+  // face commune (art/world/wood.ts), dans l'ombre quand l'arbre tombe à gauche
   const minor = 0.9 + 1.1 * Math.abs(sin);
-  const [rim, heart] = p.deg >= 0 ? ['Y', 't'] : ['t', 'T'];
-  const face = (rx: number, ry: number, col: string) => {
-    for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
-      if (layer.get(X, Y) === EMPTY) continue;
-      const [h, g] = local(X, Y);
-      if (h < 1) continue;
-      const a = (g + 0.3) / rx;
-      const b = (h - 1) / ry;
-      if (a * a + b * b <= 1) layer.set(X, Y, col);
-    }
-  };
+  const rx = 5.6, ry = minor + 0.4;
+  const inFace = (h: number, g: number) => h >= 1 && ((g + 0.3) / rx) ** 2 + ((h - 1) / ry) ** 2 <= 1;
   // la rangée du bas : bord d'écorce du disque, qui sépare le bout scié du dessus de la souche
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     if (layer.get(X, Y) !== EMPTY && local(X, Y)[0] < 1) layer.set(X, Y, 'N');
   }
-  face(5.6, minor + 0.4, rim);
-  if (minor > 1.5) face(2.4, minor * 0.6, heart);
+  const paint: [number, number, string][] = [];
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    if (layer.get(X, Y) === EMPTY) continue;
+    const [h, g] = local(X, Y);
+    if (!inFace(h, g)) continue;
+    const rim = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => {
+      const [h2, g2] = local(X + dx, Y + dy);
+      return layer.get(X + dx, Y + dy) === EMPTY || (!inFace(h2, g2) && h2 >= 1);
+    });
+    // u en travers du tronc, v le long (vers la cime) : la face regarde le bas de l'écran
+    paint.push([X, Y, faceTone((g + 0.3) / rx, -(h - 1) / ry, rim, p.deg < 0)]);
+  }
+  for (const [X, Y, k] of paint) layer.set(X, Y, k);
   c.stamp(layer.toGrid(), 0, 0);
 }
 
@@ -192,12 +191,6 @@ const overAt = (y: number) => OVER[y - (TRUNK_TOP - 1)] ?? 0;
 /** Distance au pied (h) et au travers de l'axe (g) d'un pixel de la frame. */
 const lying = (X: number, Y: number): Vec => [X + 0.5 - BUTT_X, Y + 0.5 - AXIS_Y];
 
-/** Fentes d'écorce (x, y, longueur), au milieu de chaque pièce : loin des faces de coupe et des entailles. */
-const FISSURES_DARK: [number, number, number][] = [
-  [64, 80, 5], [70, 82, 4], [83, 82, 5], [89, 79, 4], [102, 80, 5], [107, 82, 4], [121, 82, 5], [124, 79, 3],
-];
-const FISSURES_LIGHT: [number, number, number][] = [[66, 77, 3], [85, 77, 3], [104, 77, 3]];
-
 /**
  * Entaille au bout droit d'une pièce, par profondeur (0 : marquée, 1 : un tiers, 2 : deux tiers). Une rangée par
  * rangée du tronc à partir de TRUNK_TOP, calée à droite sur la dernière colonne avant la jonction.
@@ -223,23 +216,16 @@ function notch(c: Canvas, junction: number, depth: number) {
   });
 }
 
-/** Bout scié : disque du tronc vu de biais, au pied (gauche, vers la lumière) ou en tête (droite, dans l'ombre). */
-function sawnEnd(c: Canvas, x: number, side: 'left' | 'right', axisY = AXIS_Y) {
-  const dir = side === 'left' ? 1 : -1;
-  const [face, heart] = side === 'left' ? ['Y', 't'] : ['t', 'T'];
-  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
-    if (c.get(X, Y) === EMPTY) continue;
-    const h = (X + 0.5 - x) * dir;
-    const g = Y + 0.5 - axisY;
-    if (h < 0) continue;
-    if (h < 1) { c.set(X, Y, 'N'); continue; }
-    const a = (g + 0.3) / 5.6;
-    const b = (h - 1) / 2.4;
-    if (a * a + b * b <= 1) c.set(X, Y, face);
-    const a2 = (g + 0.3) / 2.4;
-    const b2 = (h - 1) / 1.2;
-    if (a2 * a2 + b2 * b2 <= 1) c.set(X, Y, heart);
-  }
+/** Centre du tronc couché en hauteur (11 rangées de bois à partir de TRUNK_TOP). */
+const LOG_CY = TRUNK_TOP + DIAMETER / 2;
+
+/**
+ * Bout coupé d'un tronc couché (bout commun de art/world/wood.ts) : coins arrondis en ovale ; le bout de gauche, tourné
+ * vers la lumière, montre la face de coupe, celui de droite l'écorce qui s'enroule. `x` : première colonne de bois
+ * (bout gauche) ou colonne qui suit la dernière (bout droit).
+ */
+function sawnEnd(c: Canvas, x: number, side: 'left' | 'right', cy = LOG_CY) {
+  logEnd(c, x, side, cy, side === 'left');
 }
 
 /**
@@ -261,11 +247,9 @@ function trunkCore(): Canvas {
     const [h, g] = lying(X, Y);
     if (h < 0 || h > TRUNK_LEN) continue;
     const s = h <= TAPER_FROM ? 1 : 1 - (0.55 * (h - TAPER_FROM)) / (TRUNK_LEN - TAPER_FROM);
-    const q = profile[Math.floor(FOOT[0] + g / s)];
-    if (q && q !== EMPTY) c.set(X, Y, q);
+    const i = Math.floor(FOOT[0] + g / s);
+    if (profile[i] && profile[i] !== EMPTY) c.set(X, Y, bark(X - BUTT_X, (i - PROFILE_X0 + 0.5) / DIAMETER));
   }
-  c.within('m', (c) => FISSURES_DARK.forEach(([x, y, n]) => c.line(x, y, x + n - 1, y, 'N')));
-  c.within('M', (c) => FISSURES_LIGHT.forEach(([x, y, n]) => c.line(x, y, x + n - 1, y, 'm')));
   return c;
 }
 
@@ -362,22 +346,18 @@ function piece(k: number, head = false, st: State = {}): Canvas {
   return c;
 }
 
-/** Bille de l'atelier (`felled-log`), indépendante de l'arbre couché : 17 px de bois entre deux contours. */
+/**
+ * Bille seule (`felled-log`, celle du tas et de l'atelier) : la même que les billes du tronc, 17 px de bois entre deux
+ * contours, 11 de diamètre. Un cylindre : l'écorce commune en travers (lumière en haut), les sillons en long, les coins
+ * arrondis, la face de coupe en ovale au bout gauche, vers la lumière, et l'écorce enroulée au bout droit.
+ */
 const LOG_LEN = 17;
 function felledLog(): Canvas {
-  const profile = treeBody(LYING_LIGHT).px[77];
-  const top = TRUNK_TOP - 1; // rangée du contour du haut, dans la frame
-  const axis = AXIS_Y - top;
   const c = new Canvas(LOG_LEN + 4, 17);
-  for (let Y = 0; Y < c.h; Y++) for (let X = 1; X <= LOG_LEN; X++) {
-    const q = profile[Math.floor(FOOT[0] + Y + 0.5 - axis)];
-    if (q && q !== EMPTY) c.set(X, Y, q);
-  }
-  c.within('m', (c) => c.line(4, 6, 8, 6, 'N').line(10, 8, 13, 8, 'N'));
-  c.within('M', (c) => c.line(6, 3, 9, 3, 'm'));
-  sawnEnd(c, 1, 'left', axis);
-  sawnEnd(c, LOG_LEN + 1, 'right', axis);
-  despeckle(c, 'KYTt');
+  for (let Y = 1; Y <= DIAMETER; Y++) for (let X = 1; X <= LOG_LEN; X++) c.set(X, Y, bark(X + 30, (Y - 1 + 0.5) / DIAMETER));
+  sawnEnd(c, 1, 'left', 1 + DIAMETER / 2);
+  sawnEnd(c, LOG_LEN + 1, 'right', 1 + DIAMETER / 2);
+  despeckle(c, 'KYTtN');
   shadedOutline(c);
   // ombre au sol, décalée vers la droite par la lumière : elle s'arrête au bord droit du corps (colonne LOG_LEN + 1),
   // sans le dépasser, pour ne pas tomber sur l'herbe à côté des porteuses quand la bille est posée dans un creux du tas
@@ -388,49 +368,24 @@ function felledLog(): Canvas {
 
 /**
  * La même bille couchée nord-sud (`felled-log-ns`, tas tourné de piles.json), vue par le bout : 11 px de diamètre
- * (55 cm) en largeur ; en hauteur, la face de coupe et la profondeur se raccourcissent comme dans le tas est-ouest,
- * où 55 cm au sol font 8 px (facteur 0,73) et une montée de 55 cm × √3/2 fait 7 px (facteur 0,68). Le rond fait donc
- * 11 × 9 px (un peu moins écrasé que le calcul, pour qu'il se lise rond), le corps 1 m × 0,73 = 15 px vers le haut de
- * l'écran. Devant, la face de coupe (liseré d'écorce, bois clair éclairé en haut à gauche, un cerne, le cœur) ; derrière,
- * le dessus d'écorce, modelé comme le tronc debout (clair à gauche, sombre à droite). L'ombre tombe sous la face, décalée
- * à droite, sans dépasser le bord droit du corps (colonne 12) : posée dans un creux, elle ne tombe pas sur l'herbe.
+ * (55 cm) en largeur, comme la hauteur de la bille est-ouest ; en hauteur, la face de coupe et la profondeur se
+ * raccourcissent comme dans le tas est-ouest, où 55 cm au sol font 8 px (facteur 0,73) et une montée de 55 cm × √3/2
+ * fait 7 px (facteur 0,68). Le rond fait donc 11 × 9 px, le corps 1 m × 0,73 = 15 px vers le haut de l'écran.
+ * Matière commune (art/world/wood.ts) : écorce éclairée à gauche, sillons en long, le bord du bout lointain en haut,
+ * la face de coupe devant. L'ombre au sol tombe le long du flanc droit (colonne 13, la seule au-delà du contour) et
+ * sous la face, décalée à droite. Posée dans un creux du tas, ce flanc d'ombre tombe sur la bille de dessous.
  */
-export const LOG_NS = { w: 13, h: 28, cx: 6.5, back: 5.5, front: 20.5, rx: 5.5, ry: 4.5 } as const;
+export const LOG_NS = { w: 14, h: 28, cx: 6.5, back: 5.5, front: 20.5, rx: 5.5, ry: 4.5 } as const;
 function felledLogNS(): Canvas {
   const { w, h, cx, back, front, rx, ry } = LOG_NS;
-  const profile = treeBody().px[77]; // tronc debout, 11 px : 27 à 37, centré sur 32,5
-  const c = new Canvas(w, h);
-  const inDisk = (X: number, Y: number, cy: number) => ((X + 0.5 - cx) / rx) ** 2 + ((Y + 0.5 - cy) / ry) ** 2 <= 1;
-  // dessus d'écorce : du rond du fond au rond de devant
-  for (let Y = 0; Y < h; Y++) for (let X = 0; X < w; X++) {
-    const body = Math.abs(X + 0.5 - cx) <= rx && Y + 0.5 >= back && Y + 0.5 <= front;
-    if (!body && !inDisk(X, Y, back)) continue;
-    const q = profile[Math.floor(32.5 + X + 0.5 - cx)];
-    if (q && q !== EMPTY) c.set(X, Y, q);
-  }
-  // fentes d'écorce, dans le sens de la bille
-  c.within('m', (c) => c.line(5, 4, 5, 8, 'N').line(7, 9, 7, 13, 'N').line(4, 11, 4, 14, 'N'));
-  c.within('M', (c) => c.line(2, 6, 2, 10, 'm'));
-  // face de coupe
-  for (let Y = 0; Y < h; Y++) for (let X = 0; X < w; X++) {
-    if (!inDisk(X, Y, front)) continue;
-    const u = (X + 0.5 - cx) / rx;
-    const v = (Y + 0.5 - front) / ry;
-    const r = Math.hypot(u, v);
-    let col: string;
-    if (r > 0.76) col = 'N'; // liseré d'écorce
-    else if (r < 0.3) col = 'T'; // cœur
-    else if (r > 0.5 && r < 0.64 && u + v > -0.9) col = 't'; // cerne, ouvert vers la lumière
-    else col = u + v < 0.35 ? 'Y' : 't'; // éclairé en haut à gauche
-    c.set(X, Y, col);
-  }
+  const c = logByTheEnd(new Canvas(w, h), cx, back, front, rx, ry);
   despeckle(c, 'KYTtN');
   shadedOutline(c);
-  // ombre au sol sous la face, décalée vers la droite, jamais au-delà du bord droit du corps
-  for (let Y = Math.ceil(front); Y < h; Y++) for (let X = 2; X < w; X++) {
-    if (c.get(X, Y) !== EMPTY) continue;
-    if (Y >= h - 2 && X < 3) continue;
-    if (Y === h - 1 && X > w - 2) continue;
+  // ombre au sol : le corps contourné, décalé d'un pixel vers la droite et de deux vers le bas
+  const body = Canvas.from(c.toGrid());
+  for (let Y = 0; Y < h; Y++) for (let X = 2; X < w; X++) {
+    if (c.get(X, Y) !== EMPTY || body.get(X - 1, Y - 2) === EMPTY) continue;
+    if (Y < back + 2) continue;
     c.set(X, Y, 'x');
   }
   return c;
