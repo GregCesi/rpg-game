@@ -263,11 +263,23 @@ export const PileDefSchema = z.strictObject({
     .optional(),
   /**
    * Le lien qui ceinture le tas par-dessous (les branches) : `item`, l'objet possédable qu'on pose (Q) par terre, où il
-   * commence un tas sur lui, ou sur un tas de ce genre qui n'en a pas ; `image`, son dessin sous le tas, en (`x`, `y`),
-   * coin bas gauche, repère du tas ; `into`, l'objet de props.json que devient le tas plein et lié quand on le noue (E
+   * commence un tas sur lui, ou sur un tas de ce genre qui n'en a pas. Sous des pièces, on n'en voit que les deux bouts
+   * courts : `north` dépasse derrière la pièce au sol la plus au nord, `south` devant la plus au sud ; chacun a son
+   * `image`, son `x` (repère du tas) et son `dy` : le bas de l'image est à `dy` du bord nord de la collision de la pièce
+   * la plus au nord (`north`), du bord sud de celle de la plus au sud (`south`), si bien que les bouts suivent la taille
+   * du tas. `alone` : son dessin quand le tas n'a encore aucune pièce (une boucle lâche par terre), coin bas gauche en
+   * (`x`, `y`), repère du tas. `into` : l'objet de props.json que devient le tas plein et lié quand on le noue (E
    * maintenu) : le fagot, qui se dénoue en un tas plein de ce genre avec son lien.
    */
-  tie: z.strictObject({ item: id, image: id, x: px, y: px, into: id }).optional(),
+  tie: z
+    .strictObject({
+      item: id,
+      north: z.strictObject({ image: id, x: px, dy: px }),
+      south: z.strictObject({ image: id, x: px, dy: px }),
+      alone: z.strictObject({ image: id, x: px, y: px }),
+      into: id,
+    })
+    .optional(),
   /** Le nombre de pièces s'affiche en tout petit en bas à droite du tas quand Xéros est tout près (les branches). */
   count: z.boolean().default(false),
 });

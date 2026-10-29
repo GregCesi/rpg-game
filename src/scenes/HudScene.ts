@@ -8,6 +8,15 @@ import { game, type Held } from '../state';
 const GAP = 4;
 const BOTTOM = 10;
 
+/**
+ * Signes (images `ui-digit-<signe>`) de la longueur restante d'un objet tenu, en mètres : « 8 m » donne 8 puis m,
+ * « 1,5 m » donne 1, virgule, 5 puis m.
+ */
+function lengthGlyphs(cm: number): string[] {
+  const digits = String(Math.round(cm) / 100).split('').map((c) => (c === '.' ? 'comma' : c));
+  return [...digits, 'm'];
+}
+
 /** Ce que montre une main vide : une main ouverte, gauche ou droite. */
 const EMPTY = ['ui-hand-left', 'ui-hand-right'];
 
@@ -26,6 +35,10 @@ function icon(h: Held): string {
 export class HudScene extends Phaser.Scene {
   private slots: Phaser.GameObjects.Image[] = [];
   private icons: Phaser.GameObjects.Image[] = [];
+  /** Longueur restante de ce que tient chaque main (le rouleau de corde), en petits signes en bas de la case. */
+  private lengths: Phaser.GameObjects.Image[][] = [[], []];
+  /** Coin bas droit de chaque case, où s'aligne la longueur. */
+  private corners: [number, number][] = [];
   private notice!: Phaser.GameObjects.Text;
   private bar!: Phaser.GameObjects.Container;
 
@@ -48,6 +61,7 @@ export class HudScene extends Phaser.Scene {
       const text = this.add.text(x + size / 2, y0 + size + 1, name, label).setOrigin(0.5, 0).setResolution(ZOOM);
       this.slots.push(slot);
       this.icons.push(icon);
+      this.corners.push([x + size - 1, y0 + size - 1]);
       this.bar.add([slot, icon, text]);
     });
     this.notice = this.add
@@ -77,7 +91,29 @@ export class HudScene extends Phaser.Scene {
     shown.forEach((key, i) => {
       this.slots[i].setTexture(game.both || i === game.active ? 'ui-slot-active' : 'ui-slot');
       this.icons[i].setTexture(key);
+      // ce qu'on tient à deux mains s'affiche dans la case droite
+      const h = game.both ? (i === 1 ? game.both : null) : game.hands[i];
+      const length = h && 'prop' in h && props[h.prop].length ? (h.length ?? props[h.prop].length!.start) : undefined;
+      this.showLength(i, length);
     });
+  }
+
+  /** Écrit la longueur `cm` (ou rien) en bas à droite de la case `i`, comme le nombre de pièces d'un tas. */
+  private showLength(i: number, cm: number | undefined): void {
+    for (const g of this.lengths[i]) g.destroy();
+    this.lengths[i] = [];
+    if (cm === undefined) return;
+    const glyphs = lengthGlyphs(cm);
+    let [x] = this.corners[i];
+    const bottom = this.corners[i][1];
+    for (let k = glyphs.length - 1; k >= 0; k--) {
+      const g = this.add.image(0, 0, `ui-digit-${glyphs[k]}`).setOrigin(0, 1);
+      // contours voisins confondus ; un pixel d'écart avant le m, comme une espace
+      x -= g.width - (k < glyphs.length - 1 ? (glyphs[k + 1] === 'm' ? -1 : 1) : 0);
+      g.setPosition(x, bottom);
+      this.lengths[i].push(g);
+      this.bar.add(g);
+    }
   }
 
   private showNotice(text: string, ms: number = HUD.noticeMs): void {

@@ -24,9 +24,9 @@ import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { branch, finishBranch, branchBody, BASE, type Branch } from '../items/branch';
-import { tieUnder } from '../items/rope';
+import { tieNorth, tieSouth } from '../items/rope';
 
-const BW_TIE = 32;
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
 // ---------- Branches ----------
@@ -61,15 +61,19 @@ function groundBranch(): Canvas {
 }
 
 // ---------- Lien sous le tas ----------
-// Le lien (rope-tie, art/items/rope.ts) passé sous le tas de branches, dessiné dans le repère du tas : le jeu le pose
-// en (`x`, `y`) = `tie` de piles.json `branches` (coin bas gauche ; image de TIE_H rangées, de TIE_TOP à TIE_TOP +
-// TIE_H − 1 dans le repère du tas), sous toutes les branches. La corde doublée passe du nord au sud sous le milieu du
-// tas (colonnes 14 et 16, entre les gros bouts et les pointes) : au sol, la boucle dépasse derrière (rangée −22, au-dessus
-// de la branche du sommet, pour se voir aussi sous le tas plein), le nœud lâche et les deux bouts devant (rangées −1 à 3).
-// Elle fait 20 px du nord au sud (1 m, doublée : 2 m de corde avec le nœud).
-export const TIE_TOP = -24;
-export const TIE_H = 29;
-const TIE_X = 14;
-const tie = tieUnder(BW_TIE, TIE_H, TIE_X, -22 - TIE_TOP, -1 - TIE_TOP);
+// Le lien (rope-tie, art/items/rope.ts) passé du nord au sud sous le tas de branches, sous toutes les branches ; on
+// n'en voit que les deux bouts, deux images que le jeu accroche à la taille réelle du tas (`tieImages`,
+// src/world/pileShape.ts ; `tie.north`, `tie.south` de piles.json) :
+// - `pile-branch-tie-north`, la boucle (10 × 7), le bas de l'image au bord nord de la collision de la branche du sol la
+//   plus au nord (dy 0) : sa dernière rangée est sous le contour du haut de cette branche, la boucle dépasse derrière
+//   sur 5 rangées. Sur un tas de plusieurs couches, les branches du dessus la cachent en partie, c'est voulu.
+// - `pile-branch-tie-south`, le nœud et ses deux bouts (10 × 8, l'ombre comprise), sa première rangée sur le contour
+//   du bas de la branche du sol la plus au sud (le bas de l'image à dy 7 du bord sud de sa collision).
+// Colonnes : x 11 pour les deux, les brins sur les colonnes 13 à 17 du tas, au milieu des branches.
 
-export default [...branches, img('branch-ground', groundBranch()), img('pile-branch-tie', tie)];
+// ---------- Lien seul ----------
+// Le lien seul par terre (rope-tie dans un tas qui n'a encore aucune branche) : `tie.alone` de piles.json, posé au
+// milieu de l'emprise au sol du tas (les corps des branches du sol : colonnes 0 à 29, rangées −14 à −2), le centre de
+// la boucle vers (15, −8).
+
+export default [...branches, img('branch-ground', groundBranch()), img('pile-branch-tie-north', tieNorth()), img('pile-branch-tie-south', tieSouth())];

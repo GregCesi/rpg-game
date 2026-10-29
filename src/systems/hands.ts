@@ -21,7 +21,7 @@ import {
   type Held,
 } from '../state';
 import { footprint, type Box, type GameMap, type PlacedPile, type PlacedProp } from '../world/GameMap';
-import { openPlaces, placeAim, shapeOf } from '../world/pileShape';
+import { openPlaces, placeAim, shapeOf, tieImages } from '../world/pileShape';
 
 /** Ce qu'a donné « poser devant soi » : rien en main, pas de place libre devant, ou posé. */
 export type PutDownResult = 'empty' | 'blocked' | 'done';
@@ -329,7 +329,8 @@ export class HandsSystem {
       this.ghost.setVisible(false);
       return;
     }
-    const tie = piles[genre].tie!;
+    // sous un tas, son bout de devant, là où il dépassera ; par terre, la boucle du lien seul
+    const tie = 'pile' in t ? tieImages(t.pile.def, t.pile.pile.places)[1] : piles[genre].tie!.alone;
     const [x, y] = 'pile' in t ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
     // sous les pièces du tas visé ; par terre, à sa propre profondeur
     const depth = 'pile' in t ? t.pile.depth : y + tie.y;

@@ -21,7 +21,9 @@
   ombre portée dessous. Pas de version `-left`.
 - En main (`held-rope-coil`, posture `hand`) : le rouleau pend au poing, le long de la jambe. De profil (`right`, et `left`
   en miroir) on le voit à plat, un anneau de 6 px ; de face (`down`) et de dos (`up`), par la tranche, un ovale étroit.
-- Case d'interface : `item-rope-coil`, 16×16, le rouleau vu de trois quarts, plus grand qu'au sol.
+- Case d'interface : `item-rope-coil`, 16×16, le rouleau vu de trois quarts, plus grand qu'au sol ; sa longueur restante
+  en petits signes en bas à droite de la case (« 10 m », « 8 m », « 1,5 m » : `ui-digit-<chiffre>`, `-comma`, `-m`),
+  dans le style du nombre de pièces d'un tas.
 - Fantôme : aucun (il ne se range pas en tas ; Q le pose juste devant Xéros, comme une bille hors d'un tas).
 - Porté : à une main (`hand`), l'autre main reste libre.
 - Posé sur le billot : `chopping-block-rope`, le billot nu (`chopping-block`) avec le rouleau à plat sur sa face de coupe.

@@ -10,18 +10,22 @@
 - 2 m de corde de chanvre, Ø environ 1,5 cm (moins de 3 cm : un pixel de large, pour qu'elle existe).
 - Au sol, plié en écheveau : environ 50 × 15 cm, à plat. À l'écran : **10 × 3 px** (objet possédable : taille vérifiée à
   l'œil, `validate.ts` ne mesure que les objets de `props.json`).
-- Sous un tas de branches : une corde passée du nord au sud sous le milieu du tas, qui dépasse devant (ses deux bouts, noués
-  lâche) et derrière.
+- Sous un tas de branches : une corde passée du nord au sud sous le milieu du tas ; on n'en voit que les deux bouts, courts,
+  qui dépassent de chaque côté du tas (devant et derrière).
 
 ## Vues
 - Au sol : `rope-tie-ground`, l'écheveau couché, son ombre.
 - En main (`held-rope-tie`, posture `hand`) : l'écheveau plié pend du poing, environ 10 px ; de face, de dos et de profil
   (la gauche en miroir).
-- Case d'interface : `item-rope-tie`, 16×16, l'écheveau noué.
-- Fantôme : `pile-branch-tie` en transparence, là où il ira : sous le tas visé, ou par terre devant Xéros.
+- Case d'interface : `item-rope-tie`, 16×16, une petite boucle de corde.
+- Fantôme : en transparence, là où il ira : son bout de devant (`pile-branch-tie-south`) sous le tas visé, ou sa boucle
+  (`pile-branch-tie-alone`) par terre devant Xéros.
 - Porté : à une main (`hand`).
-- Sous le tas : `pile-branch-tie`, dessiné dans le repère du tas de branches (`tie` de `piles.json`, `x`, `y`), toujours
-  sous toutes les branches, visible devant et derrière le tas.
+- Seul par terre (un tas lié sans branche) : `pile-branch-tie-alone`, une petite boucle de corde lâche (`tie.alone` de
+  `piles.json`, `x`, `y`, repère du tas).
+- Sous le tas : ses deux bouts courts, `pile-branch-tie-north` derrière la branche au sol la plus au nord et
+  `pile-branch-tie-south` (le nœud lâche) devant la plus au sud (`tie.north`, `tie.south` de `piles.json` : `x`, `dy`),
+  toujours sous toutes les branches ; ils suivent la taille du tas, d'une branche au tas plein.
 
 ## Regroupement
 Seul. Il ne compte pas comme une pièce du tas : c'est un attribut du tas de branches (`tie` dans GameState), un seul par tas.
@@ -42,11 +46,11 @@ Sous un tas de branches plein (10 branches), E maintenu une demi-seconde noue la
 [fagot](faggot.md). Dénouer un fagot rend le tas de 10 branches et son lien.
 
 ## Vérification
-- Aperçu : `.art-preview/collection.png` (rope-tie-ground, item-rope-tie, pile-branch-tie), `.art-preview/hands.png`
+- Aperçu : `.art-preview/collection.png` (rope-tie-ground, item-rope-tie, pile-branch-tie-north, pile-branch-tie-south, pile-branch-tie-alone), `.art-preview/hands.png`
   (held-rope-tie), `.art-preview/piles.png` (rangées « lié » : le lien seul, puis la construction type sur lui).
 - En jeu, de la corde au fagot (`?reset`, ou `?dieu` pour aller plus vite) :
   1. Au réveil, aller dans la réserve (en haut à gauche de la maison) : un rouleau de corde au sol. E : il est dans une
-     main, l'icône dans sa case ; Xéros le tient au bout du bras dans les 4 directions.
+     main, l'icône dans sa case avec « 10 m » en petit en bas ; Xéros le tient au bout du bras dans les 4 directions.
   2. Sortir vers la ferme, jusqu'au billot où est plantée la hache. Il faut les deux mains pour la hache : poser le
      rouleau (Q), prendre la hache (E), la poser (E), reprendre le rouleau (E). Face au billot nu, rouleau dans la main
      active, E : le rouleau est sur le billot (`chopping-block-rope`), la main est vide.

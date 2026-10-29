@@ -222,12 +222,24 @@ const DIGITS: string[][] = [
   ['###', '#.#', '###', '..#', '###'],
 ];
 
-function digit(n: number): Canvas {
-  const c = new Canvas(5, 7);
-  DIGITS[n].forEach((row, y) => [...row].forEach((k, x) => { if (k === '#') c.set(x + 1, y + 1, 'a'); }));
+/**
+ * Signes de la longueur d'une corde (« 8 m », « 1,5 m », dans la case de la main) : le m minuscule (5 px de large, la
+ * hauteur des minuscules, 3 px, posé sur la ligne des chiffres) et la virgule (2 px en biais, sa queue tournée vers la gauche
+ * sur la ligne : le jeu aligne les signes par le bas, elle ne descend pas dessous). Images de 7 px de haut, comme les
+ * chiffres.
+ */
+const SIGNS: Record<string, string[]> = {
+  m: ['.....', '.....', '####.', '#.#.#', '#.#.#'],
+  comma: ['..', '..', '..', '.#', '#.'],
+};
+
+function glyph(rows: string[]): Canvas {
+  const c = new Canvas(rows[0].length + 2, rows.length + 2);
+  rows.forEach((row, y) => [...row].forEach((k, x) => { if (k === '#') c.set(x + 1, y + 1, 'a'); }));
   return c.outline('o', true);
 }
+const digit = (n: number) => glyph(DIGITS[n]);
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
-export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-key-space', keySpace()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true)), img('ui-hand-left', emptyHand(true)), img('ui-hand-right', emptyHand(false)), img('ui-hands-both', bothHands()), gaugeSheet(), ...DIGITS.map((_, n) => img(`ui-digit-${n}`, digit(n)))];
+export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-key-space', keySpace()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true)), img('ui-hand-left', emptyHand(true)), img('ui-hand-right', emptyHand(false)), img('ui-hands-both', bothHands()), gaugeSheet(), ...DIGITS.map((_, n) => img(`ui-digit-${n}`, digit(n))), ...Object.entries(SIGNS).map(([k, rows]) => img(`ui-digit-${k}`, glyph(rows)))];

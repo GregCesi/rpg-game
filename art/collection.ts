@@ -56,7 +56,7 @@ export const families: Family[] = [
   {
     title: 'Corde et fagot',
     ground: 'grass',
-    keys: ['rope-coil', 'rope-tie-ground', 'chopping-block', 'chopping-block-rope', 'pile-branch-tie', 'faggot', 'faggot-ns', 'felled-log', 'felled-log-ns'],
+    keys: ['rope-coil', 'rope-tie-ground', 'chopping-block', 'chopping-block-rope', 'pile-branch-tie-north', 'pile-branch-tie-south', 'pile-branch-tie-alone', 'faggot', 'faggot-ns', 'felled-log', 'felled-log-ns'],
     icons: ['item-rope-coil', 'item-rope-tie', 'item-faggot'],
   },
   { title: 'Jauge et chiffres (herbe)', ground: 'grass', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },

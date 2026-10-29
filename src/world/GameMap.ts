@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { DEPTH, TILE } from '../config';
 import { items, piles as pileDefs, props as propDefs } from '../content';
 import type { MapData, MapObject, PileDef, PropDef } from '../content/types';
-import { drawOrder, pileBlocks, placeAim, shapeOf, topPieces } from './pileShape';
+import { drawOrder, pileBlocks, placeAim, shapeOf, tieImages, topPieces } from './pileShape';
 import type { Chain, GroundItem, MapState, Pile } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
@@ -251,7 +251,8 @@ export class GameMap {
       // le lien seul, sans pièce dessus : il se reprend, visé au milieu de l'emprise au sol du tas
       if (!p.pile.places.length) {
         const [ax, ay] = groundCenter(p.def);
-        list.push({ x: p.pile.x + ax, y: p.pile.y + ay, top: p.pile.y + p.def.tie!.y - this.textureSize(p.def.tie!.image).h, action: { kind: 'tie', pile: p } });
+        const alone = p.def.tie!.alone;
+        list.push({ x: p.pile.x + ax, y: p.pile.y + ay, top: p.pile.y + alone.y - this.textureSize(alone.image).h, action: { kind: 'tie', pile: p } });
         continue;
       }
       for (const place of topPieces(p.def, p.pile.places)) {
@@ -347,15 +348,16 @@ export class GameMap {
   placePile(pile: Pile): PlacedPile {
     const def = shapeOf(pileDefs[pile.pile], !!pile.turned);
     const ground = pile.places.map((id) => def.places[id]).filter((q) => q.body);
-    const tie = pile.tie ? def.tie : undefined;
+    // le lien seul par terre a son propre dessin ; sous des pièces, on n'en voit que les deux bouts
+    const ties = pile.tie ? tieImages(def, pile.places) : [];
     // le lien seul est à la profondeur de son propre bas
-    const depth = Math.max(...pile.places.map((id) => pile.y + def.places[id].y), tie ? pile.y + tie.y : -Infinity);
+    const depth = Math.max(...pile.places.map((id) => pile.y + def.places[id].y), ...ties.map((t) => pile.y + t.y));
     const parts: Phaser.GameObjects.GameObject[] = drawOrder(def, pile.places).map((id, i) => {
       const q = def.places[id];
       return this.scene.add.image(pile.x + q.x, pile.y + q.y, q.image).setOrigin(0, 1).setDepth(depth + (i + 1) / 1000);
     });
     // le lien ceinture le tas par-dessous : sous toutes les pièces
-    if (tie) parts.push(this.scene.add.image(pile.x + tie.x, pile.y + tie.y, tie.image).setOrigin(0, 1).setDepth(depth));
+    for (const t of ties) parts.push(this.scene.add.image(pile.x + t.x, pile.y + t.y, t.image).setOrigin(0, 1).setDepth(depth));
     const zones = pileBlocks(def, pile.places) ? ground.map((q) => this.addObstacle(pile.x + q.body!.x + q.body!.w / 2, pile.y + q.body!.y + q.body!.h / 2, q.body!.w, q.body!.h)) : [];
     parts.push(...zones);
     const placed = { pile, def, zones, depth, parts };

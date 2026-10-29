@@ -21,7 +21,7 @@ import type { Gesture, PileDef } from '../../src/content/types';
 import { CM_PER_PX, RACCOURCI, expectedSize, silhouette } from '../../src/content/gabarit';
 import type { Dims } from '../../src/content/gabarit';
 import { world } from '../../art/palette';
-import { drawOrder, pileBlocks, pileStates, shapeOf } from '../../src/world/pileShape';
+import { drawOrder, pileBlocks, pileStates, shapeOf, tieImages } from '../../src/world/pileShape';
 
 const SCALE = 4;
 
@@ -184,12 +184,20 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
     if (places.some(([, q]) => !image(q.image))) return undefined;
     // étendue de toutes les places autour du point du tas : la même case pour chaque état
     // le lien sous le tas (les branches), s'il est dessiné, compte dans l'étendue
-    const tie = def.tie && image(def.tie.image) ? { ...def.tie, grid: image(def.tie.image)!.grid } : undefined;
+    const tie = def.tie && [def.tie.north, def.tie.south, def.tie.alone].every((t) => image(t.image)) ? def.tie : undefined;
+    const keys0 = places.map(([id]) => id);
+    // ses dessins dans chaque état de la construction type (la boucle seule, puis les bouts) : coin bas gauche et taille
+    const tieBoxes = tie
+      ? keys0
+          .map((_, i) => keys0.slice(0, i))
+          .flatMap((taken) => tieImages(def, taken))
+          .map((t) => ({ x: t.x, y: t.y, w: image(t.image)!.grid[0].length, h: image(t.image)!.grid.length }))
+      : [];
     const ext = {
-      left: Math.min(...places.map(([, q]) => q.x), tie ? tie.x : Infinity),
-      right: Math.max(...places.map(([, q]) => q.x + image(q.image)!.grid[0].length), tie ? tie.x + tie.grid[0].length : -Infinity),
-      top: Math.min(...places.map(([, q]) => q.y - image(q.image)!.grid.length), tie ? tie.y - tie.grid.length : Infinity),
-      bottom: Math.max(...places.map(([, q]) => Math.max(q.y, q.body ? q.body.y + q.body.h : q.y)), tie ? tie.y : -Infinity),
+      left: Math.min(...places.map(([, q]) => q.x), ...tieBoxes.map((b) => b.x)),
+      right: Math.max(...places.map(([, q]) => q.x + image(q.image)!.grid[0].length), ...tieBoxes.map((b) => b.x + b.w)),
+      top: Math.min(...places.map(([, q]) => q.y - image(q.image)!.grid.length), ...tieBoxes.map((b) => b.y - b.h)),
+      bottom: Math.max(...places.map(([, q]) => Math.max(q.y, q.body ? q.body.y + q.body.h : q.y)), ...tieBoxes.map((b) => b.y)),
     };
     const keys = places.map(([id]) => id);
     const typical = keys.map((_, i) => keys.slice(0, i + 1));
@@ -213,8 +221,11 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
     r.states.forEach((taken, i) => {
       const px = pad + xw + pad + i * cellW - r.ext.left;
       // le lien passe sous toutes les pièces
-      const tieSrc = r.tied && r.def.tie ? image(r.def.tie.image) : undefined;
-      if (tieSrc && r.def.tie) board.blit(tieSrc.grid, tieSrc.palette, px + r.def.tie.x, base + r.def.tie.y - tieSrc.grid.length);
+      // le lien seul par terre a son propre dessin
+      for (const t of r.tied ? tieImages(r.def, taken) : []) {
+        const src = image(t.image)!;
+        board.blit(src.grid, src.palette, px + t.x, base + t.y - src.grid.length);
+      }
       for (const id of drawOrder(r.def, taken)) {
         const q = r.def.places[id];
         const src = image(q.image)!;

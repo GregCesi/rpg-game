@@ -1,6 +1,6 @@
 {
   "branches": {"name": "tas de branches", "piece": {"item": "branch"}, "start": "g1", "blockFrom": 3, "count": true,
-    "tie": {"item": "rope-tie", "image": "pile-branch-tie", "x": 0, "y": 5, "into": "faggot"}, "places": {
+    "tie": {"item": "rope-tie", "north": {"image": "pile-branch-tie-north", "x": 11, "dy": 0}, "south": {"image": "pile-branch-tie-south", "x": 11, "dy": 7}, "alone": {"image": "pile-branch-tie-alone", "x": 7, "y": 0}, "into": "faggot"}, "places": {
     "g1": {"layer": 0, "image": "pile-branch-g1", "x": 0, "y": -6, "body": {"x": 5, "y": -11, "w": 24, "h": 3}},
     "g0": {"layer": 0, "image": "pile-branch-g0", "x": 0, "y": -9, "body": {"x": 2, "y": -14, "w": 26, "h": 3}},
     "g2": {"layer": 0, "image": "pile-branch-g2", "x": 0, "y": -3, "body": {"x": 0, "y": -8, "w": 28, "h": 3}},

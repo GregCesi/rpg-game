@@ -443,7 +443,9 @@ function validatePiles(c: Content, cat: Catalog): string[] {
     const it = c.items[tie.item];
     if (!it) err(`${at} : objet possédable '${tie.item}' introuvable dans items.json`);
     else if (it.hands !== 1 || it.pile) err(`${at} : '${tie.item}' doit se tenir à une main et ne pas s'entreposer (pas de 'pile')`);
-    if (!cat.textures.has(tie.image)) err(`${at} : image '${tie.image}' non dessinée`);
+    for (const [part, t] of Object.entries({ north: tie.north, south: tie.south, alone: tie.alone })) {
+      if (!cat.textures.has(t.image)) err(`${at} ${part} : image '${t.image}' non dessinée`);
+    }
     if (pile.turned) err(`${at} : un genre lié ne se tourne pas (le lien n'a pas de forme tournée)`);
     const into = c.props[tie.into];
     if (!into) err(`${at} : objet '${tie.into}' (into) introuvable dans props.json`);
@@ -548,7 +550,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Interface : la jauge de E maintenu (de vide à plein) et les chiffres du nombre de pièces d'un tas
   if (!cat.animations.get('ui-gauge')?.has('fill')) err("Interface : planche 'ui-gauge' et son animation 'fill' non dessinées (jauge de E maintenu)");
-  for (let d = 0; d <= 9; d++) if (!cat.textures.has(`ui-digit-${d}`)) err(`Interface : chiffre 'ui-digit-${d}' non dessiné (nombre de pièces d'un tas)`);
+  for (const d of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'm', 'comma']) {
+    if (!cat.textures.has(`ui-digit-${d}`)) err(`Interface : signe 'ui-digit-${d}' non dessiné (nombre de pièces d'un tas, longueur du rouleau)`);
+  }
 
   // Personnages et dialogues
   for (const [key, ch] of Object.entries(c.characters)) {
