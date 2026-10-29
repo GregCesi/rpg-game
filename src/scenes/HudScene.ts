@@ -1,24 +1,26 @@
 import Phaser from 'phaser';
 import { HUD, UI, VIEW, ZOOM } from '../config';
-import { items } from '../content';
+import { items, props } from '../content';
 import { GameEvent } from '../events';
-import { game, SLOTS } from '../state';
+import { game, type Held } from '../state';
 
-const K = Phaser.Input.Keyboard.KeyCodes;
-const DIGITS = [K.ONE, K.TWO, K.THREE, K.FOUR, K.FIVE, K.SIX, K.SEVEN, K.EIGHT];
-/** Écart entre deux cases (px) et marge sous la barre. */
-const GAP = 2;
-const BOTTOM = 6;
+/** Écart entre les deux cases (px) et marge sous les cases. */
+const GAP = 4;
+const BOTTOM = 10;
+/** Côté de l'image dans une case : un objet du monde porté (la bille) est réduit pour y tenir. */
+const ICON_MAX = 22;
 
 /**
- * La barre d'objets, au-dessus du monde : 8 cases, la case active est l'objet en main.
- * Touches 1 à 8 et molette pour changer de case. Affiche aussi les messages courts (GameEvent.Notice).
- * Lit GameState ; se redessine sur GameEvent.InventoryChanged. Cachée pendant un dialogue (il prend le bas de l'écran).
+ * Les deux mains, au-dessus du monde : main gauche (G) et main droite (D), la case active marquée.
+ * Ce qu'on tient à deux mains s'affiche à cheval sur les deux cases, toutes deux marquées.
+ * Affiche aussi les messages courts (GameEvent.Notice). Lit GameState ; se redessine sur GameEvent.HandsChanged.
+ * Cachée pendant un dialogue (il prend le bas de l'écran).
  */
 export class HudScene extends Phaser.Scene {
   private slots: Phaser.GameObjects.Image[] = [];
   private icons: Phaser.GameObjects.Image[] = [];
-  private counts: Phaser.GameObjects.Text[] = [];
+  /** Ce qu'on tient à deux mains, entre les deux cases. */
+  private bothIcon!: Phaser.GameObjects.Image;
   private notice!: Phaser.GameObjects.Text;
   private bar!: Phaser.GameObjects.Container;
 
@@ -29,39 +31,31 @@ export class HudScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setZoom(ZOOM).centerOn(VIEW.width / 2, VIEW.height / 2);
     const size = this.textures.get('ui-slot').getSourceImage().width;
-    const total = SLOTS * size + (SLOTS - 1) * GAP;
-    const x0 = Math.round((VIEW.width - total) / 2);
+    const x0 = Math.round((VIEW.width - (2 * size + GAP)) / 2);
     const y0 = VIEW.height - BOTTOM - size;
     this.bar = this.add.container(0, 0);
-    for (let i = 0; i < SLOTS; i++) {
+    const label = { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 };
+    ['G', 'D'].forEach((name, i) => {
       const x = x0 + i * (size + GAP);
       const slot = this.add.image(x, y0, 'ui-slot').setOrigin(0);
       const icon = this.add.image(x + size / 2, y0 + size / 2, '__DEFAULT').setVisible(false);
-      const count = this.add
-        .text(x + size - 2, y0 + size - 1, '', { fontFamily: UI.font, fontSize: '9px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
-        .setOrigin(1, 1)
-        .setResolution(ZOOM);
+      const text = this.add.text(x + size / 2, y0 + size + 1, name, label).setOrigin(0.5, 0).setResolution(ZOOM);
       this.slots.push(slot);
       this.icons.push(icon);
-      this.counts.push(count);
-      this.bar.add([slot, icon, count]);
-    }
+      this.bar.add([slot, icon, text]);
+    });
+    this.bothIcon = this.add.image(x0 + size + GAP / 2, y0 + size / 2, '__DEFAULT').setVisible(false);
+    this.bar.add(this.bothIcon);
     this.notice = this.add
       .text(VIEW.width / 2, y0 - 6, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setResolution(ZOOM)
       .setAlpha(0);
 
-    const kb = this.input.keyboard!;
-    DIGITS.forEach((code, i) => kb.addKey(code).on('down', () => this.select(i)));
-    this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => {
-      if (dy !== 0) this.select((game.active + Math.sign(dy) + SLOTS) % SLOTS);
-    });
-
-    this.game.events.on(GameEvent.InventoryChanged, this.redraw, this);
+    this.game.events.on(GameEvent.HandsChanged, this.redraw, this);
     this.game.events.on(GameEvent.Notice, this.showNotice, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.game.events.off(GameEvent.InventoryChanged, this.redraw, this);
+      this.game.events.off(GameEvent.HandsChanged, this.redraw, this);
       this.game.events.off(GameEvent.Notice, this.showNotice, this);
     });
     this.redraw();
@@ -73,19 +67,23 @@ export class HudScene extends Phaser.Scene {
     if (talking) this.notice.setAlpha(0);
   }
 
-  private select(i: number): void {
-    if (this.scene.isActive('dialogue') || i === game.active) return;
-    game.active = i;
-    this.game.events.emit(GameEvent.InventoryChanged);
+  private redraw(): void {
+    game.hands.forEach((h, i) => {
+      this.slots[i].setTexture(game.both || i === game.active ? 'ui-slot-active' : 'ui-slot');
+      this.show(this.icons[i], h);
+    });
+    this.show(this.bothIcon, game.both);
   }
 
-  private redraw(): void {
-    game.inventory.forEach((slot, i) => {
-      this.slots[i].setTexture(i === game.active ? 'ui-slot-active' : 'ui-slot');
-      this.icons[i].setVisible(!!slot);
-      if (slot) this.icons[i].setTexture(items[slot.item].icon);
-      this.counts[i].setText(slot && slot.count > 1 ? String(slot.count) : '');
-    });
+  /** Icône d'un objet possédable, ou image réduite d'un objet du monde porté. */
+  private show(image: Phaser.GameObjects.Image, h: Held | null): void {
+    image.setVisible(!!h);
+    if (!h) return;
+    if ('item' in h) image.setTexture(items[h.item].icon).setScale(1);
+    else {
+      image.setTexture(h.flip ? `${props[h.prop].image}-left` : props[h.prop].image);
+      image.setScale(Math.min(1, ICON_MAX / image.width, ICON_MAX / image.height));
+    }
   }
 
   private showNotice(text: string): void {

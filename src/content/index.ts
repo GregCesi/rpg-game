@@ -21,7 +21,7 @@ function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.i
 export const tiles = parse('tiles.json', z.record(z.string(), TilesetCatalogSchema), tilesJson);
 /** Catalogue des objets : la clé est le type d'un objet de carte dans Tiled. */
 export const props = parse('props.json', z.record(z.string().min(1), PropDefSchema), propsJson);
-/** Objets possédables (inventaire, sol) : la clé est l'identifiant de l'objet. */
+/** Objets possédables (dans les mains, au sol) : la clé est l'identifiant de l'objet. */
 export const items = parse('items.json', z.record(z.string().min(1), ItemDefSchema), itemsJson);
 /** Gestes du corps (`use`) et place de l'outil en main à chaque image. */
 export const gestures = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson);

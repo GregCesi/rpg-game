@@ -45,7 +45,7 @@ export const DropSchema = z.strictObject({
   item: id,
   min: z.number().int().min(0),
   max: z.number().int().min(1),
-  /** Va directement dans l'inventaire au lieu de tomber au sol (s'il est plein, tombe au sol quand même). */
+  /** Va directement dans les mains au lieu de tomber au sol (si elles ne sont pas libres, tombe au sol quand même). */
   give: z.boolean().default(false),
 });
 
@@ -119,15 +119,13 @@ export const TakeSchema = z.strictObject({
   grip: z.tuple([px, px]).optional(),
 });
 
-/** Un objet possédable (inventaire, sol) : sa clé dans items.json est son identifiant. */
+/** Un objet possédable (dans les mains, au sol) : sa clé dans items.json est son identifiant. Une main en tient un seul. */
 export const ItemDefSchema = z.strictObject({
   /** Nom affiché, en français. */
   name: id,
   /** Image 16×16, `item-<clé>`. */
   icon: id,
   kind: z.enum(['tool', 'weapon', 'resource']),
-  /** Nombre maximal d'exemplaires dans une case. */
-  stack: z.number().int().positive(),
   /** Mains qu'il faut pour le tenir : 2 pour ce qui est lourd ou long (la hache de bûcheron). */
   hands: HandsSchema.default(1),
 });

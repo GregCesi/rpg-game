@@ -8,7 +8,7 @@ import { GameEvent } from '../events';
 import { findExit } from '../systems/exits';
 import { HarvestSystem, type HitResult } from '../systems/harvest';
 import { InteractionSystem } from '../systems/InteractionSystem';
-import { addItem, game, held, mapState, removeGroundItem } from '../state';
+import { game, heldItem, mapState, removeGroundItem, take } from '../state';
 import { GameMap } from '../world/GameMap';
 import type { Interactable, PlacedGround } from '../world/GameMap';
 
@@ -93,7 +93,7 @@ export class WorldScene extends Phaser.Scene {
     // Espace toujours lu, comme E : sinon un appui fait pendant un dialogue ressortirait juste après
     const use = this.player.input.usePressed();
     const used = this.interaction.update(time, this.mode === 'play');
-    this.harvest.updatePrompt(time, this.player, held(game)?.item, this.mode === 'play');
+    this.harvest.updatePrompt(time, this.player, heldItem(game), this.mode === 'play');
     if (this.mode !== 'play') return;
     if (used) this.hands(used);
     else if (use && time >= this.useLockedUntil) this.useHeld();
@@ -115,14 +115,13 @@ export class WorldScene extends Phaser.Scene {
 
   /** Espace : le geste avec l'objet en main, même dans le vide. Une ressource en main ne fait rien. */
   private useHeld(): void {
-    const slot = held(game);
-    if (!slot || items[slot.item].kind === 'resource') {
+    const tool = heldItem(game);
+    if (!tool || items[tool].kind === 'resource') {
       // mains vides devant ce qui demande un outil : on le dit
       const t = this.harvest.target(this.player)?.def.harvest?.tool;
       if (t) this.report({ kind: 'missing', tool: t });
       return;
     }
-    const tool = slot.item;
     // le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ; dans le vide, de côté
     const gesture = this.harvest.target(this.player)?.def.harvest?.gesture ?? 'use';
     // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
@@ -139,20 +138,19 @@ export class WorldScene extends Phaser.Scene {
   private report(r: HitResult): void {
     if (r.kind === 'missing') this.game.events.emit(GameEvent.Notice, `Sans ${items[r.tool].name}, rien à faire.`);
     if (r.kind !== 'hit') return;
-    if (r.given) this.game.events.emit(GameEvent.InventoryChanged);
-    if (r.overflow) this.game.events.emit(GameEvent.Notice, 'Plus de place.');
+    if (r.given) this.game.events.emit(GameEvent.HandsChanged);
+    if (r.overflow) this.game.events.emit(GameEvent.Notice, 'Les mains pleines.');
   }
 
-  /** Ramasse un objet au sol, un seul, s'il reste de la place. */
+  /** Prend un objet au sol dans une main libre (les deux s'il le demande). */
   private pickUp(g: PlacedGround): void {
-    const def = items[g.item.item];
-    if (!addItem(game, g.item.item, def)) {
-      this.game.events.emit(GameEvent.Notice, 'Plus de place.');
+    if (!take(game, { item: g.item.item }, items[g.item.item].hands)) {
+      this.game.events.emit(GameEvent.Notice, 'Les mains pleines.');
       return;
     }
     removeGroundItem(game, this.map.def.id, g.item.id);
     this.map.removeGround(g);
-    this.game.events.emit(GameEvent.InventoryChanged);
+    this.game.events.emit(GameEvent.HandsChanged);
   }
 
   /** Fondu au noir, puis la scène redémarre sur la carte d'arrivée. */

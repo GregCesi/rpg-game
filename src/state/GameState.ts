@@ -1,17 +1,19 @@
-// L'état de la partie : tout ce qui change pendant qu'on joue (inventaire, monde modifié, objets au sol).
+// L'état de la partie : tout ce qui change pendant qu'on joue (les mains, monde modifié, objets au sol).
 // Un objet à nous, décrit avec Zod et indépendant de Phaser : la sauvegarde consistera à l'écrire.
 // Les cartes décrivent le monde au début de la partie ; GameState dit seulement ce qui a changé.
 
 import { z } from 'zod';
-import type { ItemDef } from '../content/types';
 
 const id = z.string().min(1);
 
-/** Nombre de cases de la barre d'objets : c'est tout l'inventaire pour l'instant. */
-export const SLOTS = 8;
+/**
+ * Ce que tient une main : un objet possédable (`item`, clé de items.json), ou un objet du monde pris sur une carte
+ * (`prop`, clé de props.json : la bille ; `flip` : sa version couchée vers la gauche). Pas de besace : les mains sont tout l'inventaire.
+ */
+export const HeldSchema = z.union([z.strictObject({ item: id }), z.strictObject({ prop: id, flip: z.boolean().optional() })]);
 
-/** Une case occupée : `count` exemplaires de l'objet `item` (clé de items.json). */
-export const SlotSchema = z.strictObject({ item: id, count: z.number().int().positive() });
+/** Une main : 0 = la gauche, 1 = la droite. */
+export const HandSchema = z.union([z.literal(0), z.literal(1)]);
 
 /**
  * Un objet de carte changé : il est devenu `type` (clé de props.json), posé en (x, y) (coin bas gauche) ; `type` absent = disparu.
@@ -55,10 +57,12 @@ export const MapStateSchema = z.strictObject({
 });
 
 export const GameStateSchema = z.strictObject({
-  /** Cases de la barre, `null` = vide. */
-  inventory: z.array(SlotSchema.nullable()).length(SLOTS),
-  /** Case active : l'objet en main. */
-  active: z.number().int().min(0).max(SLOTS - 1),
+  /** Ce que tient chaque main (gauche, droite), `null` = libre. */
+  hands: z.tuple([HeldSchema.nullable(), HeldSchema.nullable()]),
+  /** Ce que Xéros tient à deux mains (la hache, une bille) ; les deux cases de `hands` sont alors libres. */
+  both: HeldSchema.nullable(),
+  /** Main active : celle qui utilise (Espace) et qui lâche (Q). */
+  active: HandSchema,
   /** Par identifiant de carte. */
   maps: z.record(id, MapStateSchema),
   /** Prochain identifiant d'objet au sol (unique dans toute la partie). */
@@ -67,7 +71,8 @@ export const GameStateSchema = z.strictObject({
   nextSpawnId: z.number().int().nonnegative(),
 });
 
-export type Slot = z.infer<typeof SlotSchema>;
+export type Held = z.infer<typeof HeldSchema>;
+export type Hand = z.infer<typeof HandSchema>;
 export type WorldChange = z.infer<typeof WorldChangeSchema>;
 export type GroundItem = z.infer<typeof GroundItemSchema>;
 export type Spawned = z.infer<typeof SpawnedSchema>;
@@ -75,9 +80,9 @@ export type Chain = z.infer<typeof ChainSchema>;
 export type MapState = z.infer<typeof MapStateSchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
 
-/** Une partie qui commence : inventaire vide, monde tel que les cartes le décrivent. */
+/** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 export function newGame(): GameState {
-  return { inventory: Array.from({ length: SLOTS }, () => null), active: 0, maps: {}, nextGroundId: 0, nextSpawnId: 0 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
@@ -85,25 +90,45 @@ export function mapState(s: GameState, mapId: string): MapState {
   return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [] });
 }
 
-/** Objet en main (case active), ou undefined. */
-export function held(s: GameState): Slot | undefined {
-  return s.inventory[s.active] ?? undefined;
+/** Ce que tient la main active (ou les deux mains), ou undefined. */
+export function held(s: GameState): Held | undefined {
+  return s.both ?? s.hands[s.active] ?? undefined;
+}
+
+/** L'objet possédable que tient la main active (ou les deux mains) : ce qu'Espace utilise. Un objet du monde porté n'en est pas un. */
+export function heldItem(s: GameState): string | undefined {
+  const h = held(s);
+  return h && 'item' in h ? h.item : undefined;
+}
+
+/** Les mains peuvent prendre un objet qui demande `hands` mains : les deux libres pour 2, une libre pour 1. */
+export function canTake(s: GameState, hands: 1 | 2): boolean {
+  if (s.both) return false;
+  return hands === 2 ? !s.hands[0] && !s.hands[1] : !s.hands[0] || !s.hands[1];
 }
 
 /**
- * Range un exemplaire de `item` : d'abord sur une pile du même objet qui a de la place, sinon dans la première case vide.
- * Renvoie false si l'inventaire est plein (rien n'est changé).
+ * Prend un objet : à deux mains si `hands` = 2, sinon dans la main active si elle est libre, ou dans l'autre.
+ * Renvoie false si les mains ne sont pas libres (rien n'est changé).
  */
-export function addItem(s: GameState, item: string, def: ItemDef): boolean {
-  const pile = s.inventory.find((c) => c?.item === item && c.count < def.stack);
-  if (pile) {
-    pile.count++;
-    return true;
-  }
-  const free = s.inventory.indexOf(null);
-  if (free < 0) return false;
-  s.inventory[free] = { item, count: 1 };
+export function take(s: GameState, what: Held, hands: 1 | 2): boolean {
+  if (!canTake(s, hands)) return false;
+  if (hands === 2) s.both = what;
+  else s.hands[s.hands[s.active] ? ((1 - s.active) as Hand) : s.active] = what;
   return true;
+}
+
+/** Lâche ce que tient la main active (ou les deux mains) ; renvoie ce qui a été lâché. */
+export function release(s: GameState): Held | undefined {
+  const what = held(s);
+  if (s.both) s.both = null;
+  else s.hands[s.active] = null;
+  return what;
+}
+
+/** Change de main active. */
+export function switchHand(s: GameState): void {
+  s.active = (1 - s.active) as Hand;
 }
 
 /** Note qu'un objet de carte est devenu un autre (ou a disparu, `type` absent). */

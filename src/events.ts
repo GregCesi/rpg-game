@@ -5,8 +5,8 @@
 export const GameEvent = {
   /** Le dialogue en cours vient de se fermer. */
   DialogueEnd: 'dialogue-end',
-  /** L'inventaire ou la case active a changé (ramassage, récolte, touches 1 à 8, molette) : la barre se redessine. */
-  InventoryChanged: 'inventory-changed',
-  /** Message court à afficher au-dessus de la barre (argument : le texte). Ex. l'outil manque. */
+  /** Ce que tiennent les mains, ou la main active, a changé (prendre, lâcher, poser, Tab) : les deux cases se redessinent. */
+  HandsChanged: 'hands-changed',
+  /** Message court à afficher au-dessus des mains (argument : le texte). Ex. l'outil manque. */
   Notice: 'notice',
 } as const;

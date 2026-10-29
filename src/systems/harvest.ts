@@ -3,7 +3,7 @@ import { DEPTH, HARVEST, INTERACT, NOTCH_AIM, TILE } from '../config';
 import type { Player } from '../entities/Player';
 import { gestures, items, props } from '../content';
 import type { Drop, Facing } from '../content/types';
-import { addItem, changeObject, changeSpawned, dropItem, game, setSpawnedHits, spawnObject } from '../state';
+import { changeObject, changeSpawned, dropItem, game, setSpawnedHits, spawnObject, take } from '../state';
 import { notchCut, promptTop } from '../world/GameMap';
 import type { GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
 
@@ -29,7 +29,7 @@ function notchInReach(player: Player, p: PlacedProp): boolean {
 
 /**
  * Ce qu'a donné un coup : rien à frapper, mauvais outil (`tool` = l'outil qu'il faut), ou un coup porté.
- * `given` : objets mis directement dans l'inventaire ; `overflow` : inventaire plein, ils sont tombés au sol.
+ * `given` : objets mis directement dans les mains ; `overflow` : mains pas libres, ils sont tombés au sol.
  */
 export type HitResult =
   | { kind: 'none' }
@@ -154,7 +154,7 @@ export class HarvestSystem {
   }
 
   /**
-   * Ce que lâche un objet récolté, près de (bx, by) : dans l'inventaire si `give` (au sol si plein), sinon au sol.
+   * Ce que lâche un objet récolté, près de (bx, by) : dans les mains si `give` (au sol si elles ne sont pas libres), sinon au sol.
    * Entre dans GameState tout de suite ; les objets au sol sont posés cachés, à montrer avec pop().
    */
   private dropAll(drops: Drop[], bx: number, by: number): { given: number; overflow: boolean; dropped: PlacedGround[] } {
@@ -165,7 +165,7 @@ export class HarvestSystem {
       const n = Phaser.Math.Between(d.min, d.max);
       for (let i = 0; i < n; i++) {
         if (d.give) {
-          if (addItem(game, d.item, items[d.item])) {
+          if (take(game, { item: d.item }, items[d.item].hands)) {
             given++;
             continue;
           }
