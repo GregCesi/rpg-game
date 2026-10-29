@@ -59,11 +59,14 @@ export const HarvestSchema = z.strictObject({
   /** Nombre de coups. L'objet tremble à chaque coup. */
   hits: z.number().int().positive(),
   /**
-   * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. `x`, `y` : décalage
-   * du coin bas gauche d'une image de la chute par rapport à celui de l'objet (le pied de l'arbre est
-   * en x = 33 dans `tree`, en x = 47 dans `tree-fall` : x = -14).
+   * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. Elle est dessinée vers la droite.
+   * `x`, `y` : décalage du coin bas gauche d'une image de la chute par rapport à celui de l'objet, chute vers la droite
+   * (le pied de l'arbre est en x = 33 dans `tree`, en x = 47 dans `tree-fall` : x = -14).
+   * `foot` : colonne du pied dans l'image de l'objet. Vers la gauche, le jeu retourne la chute autour de ce pied :
+   * décalage = 2 × foot − (x + largeur d'une image − 1) ; le remplaçant aussi : at.x = 2 × foot − (at.x + sa largeur − 1).
+   * L'objet tombe du côté opposé à celui qui frappe ; frappé d'en haut ou d'en bas, d'un côté au hasard.
    */
-  fall: z.strictObject({ image: id, anim: id, x: px.default(0), y: px.default(0) }).optional(),
+  fall: z.strictObject({ image: id, anim: id, x: px.default(0), y: px.default(0), foot: px }).optional(),
   /** Objet de props.json qui le remplace ; absent = il disparaît. */
   becomes: id.optional(),
   /** Décalage du coin bas gauche de `becomes` par rapport à celui de l'objet récolté. */

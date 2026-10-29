@@ -106,7 +106,7 @@ export class WorldScene extends Phaser.Scene {
       this.talking?.faceToward(this.player.actor.x, this.player.actor.y);
       this.openDialogue(a.dialogue);
     } else if (a.kind === 'harvest') {
-      this.gesture(undefined, () => this.report(this.harvest.hit(a.prop, undefined)));
+      this.gesture(undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
     } else {
       this.pickUp(a.ground);
     }
@@ -123,7 +123,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const tool = slot.item;
     // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
-    this.gesture(tool, () => this.report(this.harvest.hit(this.harvest.target(this.player), tool)));
+    this.gesture(tool, () => this.report(this.harvest.hit(this.harvest.target(this.player), tool, this.player.actor.facing)));
   }
 
   private gesture(item: string | undefined, onImpact: () => void): void {

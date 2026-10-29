@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { HARVEST, INTERACT, TILE } from '../config';
 import type { Player } from '../entities/Player';
-import { items } from '../content';
+import { items, props } from '../content';
+import type { Facing } from '../content/types';
 import { addItem, changeObject, dropItem, game } from '../state';
 import type { GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
 
@@ -45,8 +46,9 @@ export class HarvestSystem {
   /**
    * Un coup porté à `prop` avec l'objet `tool` en main (undefined = à mains nues).
    * Un objet qui se récolte à la main ignore les outils ; un objet qui demande un outil refuse les autres.
+   * `facing` : la direction de celui qui frappe ; l'objet tombe de l'autre côté.
    */
-  hit(prop: PlacedProp | undefined, tool: string | undefined): HitResult {
+  hit(prop: PlacedProp | undefined, tool: string | undefined, facing: Facing): HitResult {
     const h = prop?.def.harvest;
     // l'objet a pu être récolté entre le début du geste et le coup
     if (!prop || !h || !this.map.props.includes(prop)) return { kind: 'none' };
@@ -57,7 +59,7 @@ export class HarvestSystem {
       this.shake(prop);
       return { kind: 'hit', done: false, given: 0, overflow: false };
     }
-    return { kind: 'hit', done: true, ...this.finish(prop) };
+    return { kind: 'hit', done: true, ...this.finish(prop, facing) };
   }
 
   private shake(prop: PlacedProp): void {
@@ -77,9 +79,13 @@ export class HarvestSystem {
   }
 
   /** Dernier coup : chute éventuelle, remplacement, objets lâchés. */
-  private finish(prop: PlacedProp): { given: number; overflow: boolean } {
+  private finish(prop: PlacedProp, facing: Facing): { given: number; overflow: boolean } {
     const h = prop.def.harvest!;
-    const [dx, dy] = h.at ?? [0, 0];
+    // Xéros à gauche (tourné vers la droite) : chute à droite ; à droite : à gauche ; d'en haut ou d'en bas : au hasard
+    const left = facing === 'left' || (facing !== 'right' && Math.random() < 0.5);
+    const mirror = (offset: number, width: number) => (h.fall && left ? 2 * h.fall.foot - (offset + width - 1) : offset);
+    const [ax, dy] = h.at ?? [0, 0];
+    const dx = h.becomes ? mirror(ax, this.scene.textures.get(props[h.becomes].image).getSourceImage().width) : ax;
     const x = prop.x + dx;
     const y = prop.y + dy;
     const { baseX, baseY } = prop;
@@ -115,10 +121,8 @@ export class HarvestSystem {
     }
     // la chute se joue à la place de l'objet ; le remplaçant (la souche) n'apparaît qu'à la fin
     next?.image.setVisible(false);
-    const fall = this.scene.add
-      .sprite(prop.x + h.fall.x, prop.y + h.fall.y, h.fall.image)
-      .setOrigin(0, 1)
-      .setDepth(prop.y);
+    const fall = this.scene.add.sprite(0, 0, h.fall.image).setOrigin(0, 1).setFlipX(left).setDepth(prop.y);
+    fall.setPosition(prop.x + mirror(h.fall.x, fall.width), prop.y + h.fall.y);
     fall.play(`${h.fall.image}-${h.fall.anim}`);
     fall.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       next?.image.setVisible(true);

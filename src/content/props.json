@@ -1,6 +1,6 @@
 {
   "tree": {"name": "arbre", "image": "tree", "body": {"w": 18, "h": 10, "bottom": 7},
-    "harvest": {"tool": "axe", "hits": 4, "fall": {"image": "tree-fall", "anim": "fall", "x": -14}, "becomes": "tree-stump", "at": [17, -2],
+    "harvest": {"tool": "axe", "hits": 4, "fall": {"image": "tree-fall", "anim": "fall", "x": -14, "foot": 33}, "becomes": "tree-stump", "at": [17, -2],
       "drops": [{"item": "log", "min": 3, "max": 4}, {"item": "branch", "min": 1, "max": 2}]}},
   "tree-stump": {"name": "souche", "image": "tree-stump", "body": {"w": 18, "h": 8, "bottom": 5}},
   "rock": {"name": "rocher", "image": "rock", "body": {"w": 22, "h": 10, "bottom": 4},
