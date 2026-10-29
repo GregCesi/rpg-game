@@ -1,7 +1,10 @@
 {
   "tree": {"name": "arbre", "image": "tree", "body": {"w": 18, "h": 10, "bottom": 7}},
+  "tree-stump": {"name": "souche", "image": "tree-stump", "body": {"w": 18, "h": 8, "bottom": 5}},
   "rock": {"name": "rocher", "image": "rock", "body": {"w": 22, "h": 10, "bottom": 4}},
   "bush": {"name": "buisson", "image": "bush", "body": {"w": 22, "h": 10, "bottom": 4}},
+  "bush-berries": {"name": "buisson de baies", "image": "bush-berries", "body": {"w": 22, "h": 10, "bottom": 4}},
+  "rock-rubble": {"name": "éclats de pierre", "image": "rock-rubble", "layer": "floor"},
   "bucket": {"name": "seau", "image": "bucket", "body": {"w": 16, "h": 8, "bottom": 4}, "interact": "seau"},
   "cottage": {"name": "chaumière", "image": "cottage", "bodies": [{"x": 56, "y": 40, "w": 276, "h": 156}, {"x": 0, "y": 104, "w": 72, "h": 92}], "smoke": [[178, 2], [260, 72]]},
   "woodpile": {"name": "tas de bois", "image": "woodpile", "body": {"w": 40, "h": 12, "bottom": 2}},
