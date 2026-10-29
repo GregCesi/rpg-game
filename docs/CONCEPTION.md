@@ -58,6 +58,8 @@ Extérieur :
 - Direction B, « conte rustique » : tons terreux, légèrement ocrés.
 - Intérieurs dans une pénombre chaude, feux qui vacillent, rais de soleil par les fenêtres sud.
 - Sol varié avec des détails posés au hasard, pour casser la répétition.
+- **Échelle réaliste partout** (décidé le 29 octobre 2026) : environ 5 cm par pixel, une case d'environ 1,65 m. Une maison a la même taille dedans et dehors ; une longère paysanne tient sur environ 9 × 4 cases.
+- **Jeu cosy et lent** : les gestes répétés et les étapes réalistes sont assumés. La progression passe par de meilleurs outils qui raccourcissent les étapes (une scie, plus tard une brouette).
 
 ## Feuille de route
 
@@ -91,6 +93,20 @@ Première boucle : Xéros prend la hache sur le billot, abat un arbre, ramasse l
 - **Deux gestes.** E (ou Entrée) : les mains (parler, ramasser, prendre, cueillir). Espace : utiliser l'objet en main, même dans le vide. Sans le bon outil, un message court l'indique.
 - **Barre de 8 cases** en bas de l'écran, touches 1 à 8 et molette ; la case active est l'objet en main. C'est tout l'inventaire pour l'instant.
 - **Le coup d'outil se compose** : une animation de geste pour le corps de Xéros, plus un petit sprite par outil posé dans la main image par image. Un nouvel outil = un sprite d'outil, pas une nouvelle animation du corps.
+
+## Abattre un arbre (décidé le 29 octobre 2026)
+
+Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux mains. Rien de volumineux ne se range dans l'inventaire.
+
+- **L'arbre tombe du côté opposé à Xéros**, à gauche ou à droite seulement, et laisse sa souche.
+- **L'arbre couché est un nouvel objet** qui garde la taille et la forme de l'arbre, à l'horizontale, et bloque le passage sur toute sa longueur. Il est fait d'**un houppier et de 4 ou 5 sections de tronc** posés bout à bout, chacun réagissant pour lui-même.
+- **Le houppier**, frappé à la hache, donne des branches ; les feuilles disparaissent avec lui. Il laisse le tronc nu, avec des chicots.
+- **Les sections se coupent de haut en bas**, à des encoches dessinées sur le tronc. Xéros se place au-dessus ou en dessous du tronc, face à une encoche ; l'invite apparaît sur l'encoche. Le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ou posé.
+- **Chaque section coupée devient une bille** d'environ 1 m, qui reste au sol et bloque le passage tant qu'on ne la déplace pas.
+- Ébrancher et tronçonner se font **dans l'ordre qu'on veut** ; la dernière section garde le houppier tant qu'il n'est pas coupé.
+- **Porter** : une seule série d'animations « porter » pour Xéros (bras levés, marche et attente dans les 4 directions), avec l'objet porté posé par-dessus à un point d'accroche, devant lui ou derrière sa tête selon la direction. Xéros marche plus lentement, ne fait rien d'autre, et repose l'objet avec E. Un nouvel objet portable n'a besoin que de son sprite.
+- La bûche actuelle (`item-log`, 99 par case) contredit le principe : elle disparaîtra quand la chaîne sera construite.
+- Pas encore discuté : ce qu'on fait des billes ensuite (fendage sur le billot, tas de bois, brouette).
 
 ## Façon de travailler
 
