@@ -19,7 +19,7 @@ import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
 import { projectFile, propsTsj, tilesetTsj } from './lib/tiled-files';
 import type { PropTile } from './lib/tiled-files';
 import { buildCollectionBoard } from './lib/collection-board';
-import { gesturePreview, itemBarPreview } from './lib/composite-previews';
+import { gesturePreview, handsPreview } from './lib/composite-previews';
 import gesturesJson from '../src/content/gestures.json';
 
 const OUT = 'src/generated';
@@ -259,7 +259,7 @@ writeFileSync(join(OUT, 'assets.ts'), manifest);
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(catalog, null, 2));
 if (withPreview) {
   writeFileSync(join(PREVIEW, 'collection.png'), PNG.sync.write(buildCollectionBoard(sources)));
-  // aperçus composés : chaque geste avec chaque outil en main (planches tool-*), et la barre d'objets
+  // aperçus composés : chaque geste avec chaque outil en main (planches tool-*), et les deux mains
   const gestures = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson);
   const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');
   for (const tool of sources) {
@@ -269,7 +269,7 @@ if (withPreview) {
       writeFileSync(join(PREVIEW, `xeros-${name}-${tool.name.slice('tool-'.length)}.png`), PNG.sync.write(png));
     }
   }
-  const bar = itemBarPreview(sources);
-  if (bar) writeFileSync(join(PREVIEW, 'item-bar.png'), PNG.sync.write(bar));
+  const hands = handsPreview(sources);
+  if (hands) writeFileSync(join(PREVIEW, 'hands.png'), PNG.sync.write(hands));
 }
 console.log(`art : ${sources.length} sources -> ${OUT} + ${TILED}${withPreview ? ` (+ aperçus dans ${PREVIEW})` : ''}`);

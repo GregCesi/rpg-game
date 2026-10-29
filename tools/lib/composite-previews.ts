@@ -108,8 +108,8 @@ export function gesturePreview(sources: ArtSource[], body: SpriteSheetSource, to
   return board.toPng();
 }
 
-/** Maquette de la barre d'objets : 8 cases, la 2e active, quelques icônes, sur l'herbe. */
-export function itemBarPreview(sources: ArtSource[]): PNG | undefined {
+/** Les deux mains comme dans HudScene : une branche dans la main gauche, une pierre dans la droite, la droite active. */
+export function handsPreview(sources: ArtSource[]): PNG | undefined {
   const image = (name: string) => {
     const s = sources.find((x) => x.name === name);
     return s?.kind === 'image' ? s : undefined;
@@ -118,14 +118,14 @@ export function itemBarPreview(sources: ArtSource[]): PNG | undefined {
   const active = image('ui-slot-active');
   if (!slot || !active) return undefined;
   const size = slot.grid[0].length;
-  const gap = 2;
-  const icons = ['item-axe', 'item-branch', 'item-stone', null, 'item-berries', null, 'item-pickaxe', null];
-  const board = new Board(8 * size + 7 * gap + 16, size + 16, grassOf(sources));
+  const gap = 4;
+  const icons = ['item-branch', 'item-stone'];
+  const board = new Board(2 * size + gap + 16, size + 16, grassOf(sources));
   icons.forEach((key, i) => {
     const x = 8 + i * (size + gap);
     const s = i === 1 ? active : slot;
     board.blit(s.grid, s.palette, x, 8);
-    const icon = key ? image(key) : undefined;
+    const icon = image(key);
     // icône centrée dans la case, comme dans HudScene
     if (icon) board.blit(icon.grid, icon.palette, x + (size - icon.grid[0].length) / 2, 8 + (size - icon.grid.length) / 2);
   });
