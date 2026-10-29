@@ -160,6 +160,7 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
     if (!tool) err(`outil '${h.tool}' absent de items.json`);
     else if (tool.kind !== 'tool') err(`'${h.tool}' n'est pas un outil (kind '${tool.kind}' dans items.json)`);
   }
+  if (h.impact && !cat.textures.has(`fx-${h.impact}`)) err(`éclats : planche 'fx-${h.impact}' non dessinée`);
   if (h.fall && !cat.animations.get(h.fall.image)?.has(h.fall.anim)) {
     err(`chute : animation '${h.fall.anim}' absente de la planche '${h.fall.image}' (ou planche non dessinée)`);
   }

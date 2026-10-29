@@ -58,6 +58,8 @@ export const HarvestSchema = z.strictObject({
   tool: id.optional(),
   /** Nombre de coups. L'objet tremble à chaque coup. */
   hits: z.number().int().positive(),
+  /** Matière frappée : à chaque coup, des éclats de la planche `fx-<matière>` jaillissent du point d'impact. */
+  impact: z.enum(['wood', 'stone', 'leaves']).optional(),
   /**
    * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. Elle est dessinée vers la droite.
    * `x`, `y` : décalage du coin bas gauche d'une image de la chute par rapport à celui de l'objet, chute vers la droite

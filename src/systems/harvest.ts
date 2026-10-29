@@ -55,11 +55,40 @@ export class HarvestSystem {
     if (h.tool && h.tool !== tool) return { kind: 'missing', tool: h.tool };
     if (!h.tool && tool) return { kind: 'none' };
     prop.hits++;
+    if (h.impact) this.chips(prop, h.impact, facing);
     if (prop.hits < h.hits) {
       this.shake(prop);
       return { kind: 'hit', done: false, given: 0, overflow: false };
     }
     return { kind: 'hit', done: true, ...this.finish(prop, facing) };
+  }
+
+  /**
+   * Éclats de la matière frappée : ils jaillissent du côté de Xéros, vers lui et vers le haut, puis retombent.
+   * Une variante au hasard (image de la planche `fx-<matière>`) pour chacun.
+   */
+  private chips(prop: PlacedProp, impact: string, facing: Facing): void {
+    const c = HARVEST.chips;
+    // côté où Xéros se tient : l'inverse de la direction où il regarde
+    const [sx, sy] = { right: [-1, 0], left: [1, 0], up: [0, 1], down: [0, -1] }[facing];
+    const x = prop.baseX + sx * 7;
+    const y = prop.baseY - 6 + sy * 5;
+    // éventail ouvert vers Xéros et vers le haut (angles de Phaser : 0 = droite, -90 = haut)
+    const toward = sx !== 0 ? (sx > 0 ? -45 : -135) : -90;
+    const texture = `fx-${impact}`;
+    const emitter = this.scene.add
+      .particles(x, y, texture, {
+        frame: this.scene.textures.get(texture).getFrameNames(),
+        angle: { min: toward - 40, max: toward + 40 },
+        speed: { min: c.speed[0], max: c.speed[1] },
+        gravityY: c.gravity,
+        lifespan: c.lifespan,
+        alpha: { start: 1, end: 0.6 },
+        emitting: false,
+      })
+      .setDepth(prop.y + 1);
+    emitter.explode(c.count);
+    this.scene.time.delayedCall(c.lifespan + 50, () => emitter.destroy());
   }
 
   private shake(prop: PlacedProp): void {

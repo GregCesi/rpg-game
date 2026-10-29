@@ -4,6 +4,8 @@
 // Contour d'un pixel : teinte la plus sombre de la matière en haut et à gauche, OUTLINE en bas et à droite.
 
 import { Canvas } from '../lib/canvas';
+import type { ToolArt } from '../lib/held';
+import type { Material, Materials } from '../lib/light';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { darkest, outline } from './lib';
@@ -80,31 +82,55 @@ function axeHead(a: number, b: number): string | null {
   return b > 2.6 ? '2' : '3';
 }
 
-/** Hache de bûcheron : fer au tranchant évasé tourné vers le haut à gauche, talon court, manche usé. */
-function axe(): Canvas {
+/**
+ * Hache de bûcheron en zones, sans contour : fer au tranchant évasé tourné vers le haut à gauche, talon court,
+ * manche usé. Les zones sont les teintes de l'icône (fil 1, fer 2 3 4, bois M m, bout du manche N),
+ * plus `w` pour la poignée patinée par la main (m sur l'icône).
+ */
+function axeZones(): Canvas {
   const c = new Canvas(S, S);
   shaft(c, 15, 14, 3, 'M', 'm');
-  c.within('M', (c) => c.set(2, 13, 'm').set(3, 12, 'm')); // poignée patinée par la main
+  c.within('M', (c) => c.set(2, 13, 'w').set(3, 12, 'w')); // poignée patinée par la main
   c.set(13, 2, 'N').set(12, 2, 'm');
   // fer : axe local centré sur l'œil du manche
   local(c, 10.5, 6, axeHead);
-  return outline(c, dark);
+  return c;
+}
+
+/** Hache de l'icône : ombrage dessiné pour cette seule orientation. */
+function axe(): Canvas {
+  return outline(axeZones().recolor({ w: 'm' }), dark);
 }
 
 /**
- * La même hache, manche vertical (tête en haut, tranchant à gauche), pour l'outil en main
+ * La même hache en zones, manche vertical (tête en haut, tranchant à gauche), pour l'outil en main
  * (art/lib/held.ts). La main la tient au pixel UPRIGHT_GRIP.
  */
-function axeUpright(): Canvas {
+function axeUprightZones(): Canvas {
   const c = new Canvas(S, S);
   c.rect(7, 3, 1, 12, 'M').rect(8, 3, 1, 12, 'm');
-  c.set(7, 12, 'm').set(7, 13, 'm'); // poignée patinée
+  c.set(7, 12, 'w').set(7, 13, 'w'); // poignée patinée
   for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
     const k = axeHead(4.5 - (y + 0.5), 8 - (x + 0.5));
     if (k) c.set(x, y, k);
   }
-  return outline(c, dark);
+  return c;
 }
+
+/** Matières de la hache en main : chaque zone de l'icône retrouve sa rampe, éclairée après rotation. */
+const axeMaterials: Materials = (() => {
+  const iron: Material = { light: '2', base: '3', shade: '4', dark: '4' };
+  const wood: Material = { light: 'M', base: 'M', shade: 'm', dark: 'K' };
+  return {
+    '1': { light: '1', base: '1', shade: '2', dark: '4' }, // fil de la lame, poli : reste le plus clair
+    '2': { light: '2', base: '2', shade: '3', dark: '4' }, // joue, l'acier aminci près du fil : jamais très sombre
+    '3': iron, '4': iron,
+    M: wood, m: wood,
+    w: { light: 'm', base: 'm', shade: 'N', dark: 'K' }, // bois patiné de la poignée
+    N: { light: 'N', base: 'N', shade: 'N', dark: 'K' }, // bout du manche, bois de bout
+    e: { light: '3', base: '4', shade: '4', dark: '4' }, // œil du fer, creux où entre le manche
+  };
+})();
 
 // ---------- Pioche ----------
 
@@ -246,8 +272,14 @@ function woodenSword(): Canvas {
   return outline(c, dark);
 }
 
-/** Hache tenue en main : les deux dessins du geste (art/lib/held.ts). */
-export const axeArt = () => ({ diag: axe().toGrid(), upright: axeUpright().toGrid() });
+/** Hache tenue en main : les deux dessins du geste en zones, et leurs matières (art/lib/held.ts). */
+export const axeArt = (): ToolArt => ({
+  // l'œil du fer, entre la joue et le bout du manche : un trou sur l'icône (le contour le comble),
+  // une matière ici, pour que l'éclairage voie un seul volume
+  diag: axeZones().rect(10, 2, 2, 2, 'e').toGrid(),
+  upright: axeUprightZones().set(6, 6, 'e').toGrid(),
+  materials: axeMaterials,
+});
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: toolPalette, grid: c.toGrid() });
 

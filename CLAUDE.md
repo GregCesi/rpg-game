@@ -16,6 +16,6 @@ Lis `README.md` (architecture et quatre règles) avant toute modification, et `d
 - Nouvelle mécanique du monde : un fichier dans `src/systems/`, appelé depuis `WorldScene.update` selon le mode. Événements entre scènes : constantes de `src/events.ts`.
 - Ce qui change pendant la partie (inventaire, objet récolté, objet au sol) vit dans `GameState` (`src/state/`), rangé par carte et par identifiant d'objet Tiled ; ne pas le garder dans une scène ni dans le registry de Phaser.
 - Nouvel objet possédable : une entrée de `src/content/items.json` (icône `item-<clé>`). Nouvelle récolte : un composant `harvest` dans `props.json`, pas de code.
-- Nouvel outil en main : seulement une planche `tool-<objet>` dans `art/`, dans les 12 poses du geste (`src/content/gestures.json`) ; ne pas toucher au geste du corps.
+- Nouvel outil en main : deux dessins 16×16 en zones de matière (`diag`, `upright`) et leur table `materials`, déclarés dans `art/items/held.ts` : la planche `tool-<objet>` (12 poses du geste, `src/content/gestures.json`) est tournée puis éclairée en haut à gauche par `art/lib/light.ts` ; ne pas toucher au geste du corps.
 - Fin de tâche : `npm run build` doit passer sans erreur (il lance `npm run check`).
 - Langue du code : identifiants en anglais, commentaires et messages d'erreur en français.

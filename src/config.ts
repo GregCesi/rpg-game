@@ -42,7 +42,14 @@ export const DEPTH = {
 export const INTERACT = { reach: 16, radius: 20 };
 
 /** Récolte : tremblement d'un objet frappé, saut des objets lâchés, où ils retombent (px, autour de la base). */
-export const HARVEST = { shakeMs: 160, dropMs: 320, dropRadius: [12, 24] as [number, number], dropSpacing: 9 };
+export const HARVEST = {
+  shakeMs: 160,
+  dropMs: 320,
+  dropRadius: [12, 24] as [number, number],
+  dropSpacing: 9,
+  /** Éclats d'impact : nombre par coup, durée de vie (ms), vitesse (px/s), pesanteur (px/s²). */
+  chips: { count: 6, lifespan: 420, speed: [50, 110] as [number, number], gravity: 420 },
+};
 
 /** Barre d'objets : durée d'un message court (ms). */
 export const HUD = { noticeMs: 1800 };

@@ -7,10 +7,14 @@
 //                 d'inventaire), tranchant vers le haut à gauche ; la main tient le manche au pixel DIAG_GRIP ;
 //   - `upright` : la tête en haut, manche vertical, tranchant à gauche ; main au pixel UPRIGHT_GRIP.
 // Toutes les autres orientations s'en déduisent sans perte, par quarts de tour et miroir.
+// Les deux dessins ne portent ni ombre ni contour : ils disent seulement de quelle matière est chaque pixel
+// (zones, avec leur table `materials`). L'image est éclairée après la rotation (art/lib/light.ts), si bien
+// que la lumière vient du haut à gauche dans toutes les orientations, et le contour suit la même règle.
 // Un nouvel outil = ces deux dessins, puis `heldToolSheet` : aucune animation du corps à refaire.
 // Le jeu pose le centre de chaque image de la planche (la prise du manche) sur la main du geste.
 
 import { Canvas, type Grid, type Palette } from './canvas';
+import { lightUp, type Materials } from './light';
 import type { SpriteSheetSource } from './types';
 
 /** Côté d'une image d'outil en main. */
@@ -32,10 +36,12 @@ const DIRS: Dir8[] = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']; // sens horai
  */
 export type Edge = 'cw' | 'ccw';
 
-/** Les deux dessins qu'un outil fournit. */
+/** Les deux dessins qu'un outil fournit, en zones de matière, sans ombre ni contour, un pixel de marge au bord. */
 export interface ToolArt {
   diag: Grid;
   upright: Grid;
+  /** Zone -> matière (rampe et contour), pour l'éclairage après rotation. */
+  materials: Materials;
 }
 
 /** Angle en degrés d'une direction : 0 = droite, 90 = haut (sens trigonométrique, à l'écran). */
@@ -51,7 +57,7 @@ const flipPx = ([x, y]: Vec): Vec => [TOOL_SIZE - 1 - x, y];
  * Transformation qui amène un des deux dessins à l'orientation voulue : quarts de tour horaires,
  * puis miroir. Les dessins de base ont le tranchant côté 'ccw' ; un miroir le passe côté 'cw'.
  */
-function transformFor(head: Dir8, edge: Edge): { base: keyof ToolArt; turns: number; flip: boolean } {
+function transformFor(head: Dir8, edge: Edge): { base: 'diag' | 'upright'; turns: number; flip: boolean } {
   const flip = edge === 'cw';
   const target = flip ? mirrorDir(head) : head;
   const i = DIRS.indexOf(target);
@@ -72,8 +78,8 @@ export function gripOf(head: Dir8, edge: Edge): Vec {
   return mapPx(t.base === 'upright' ? UPRIGHT_GRIP : DIAG_GRIP, t.turns, t.flip);
 }
 
-/** Image de l'outil orientée : tête vers `head`, tranchant du côté `edge`. */
-export function orient(art: ToolArt, head: Dir8, edge: Edge): Grid {
+/** Zones de l'outil orientées (sans lumière) : tête vers `head`, tranchant du côté `edge`. */
+function orientZones(art: ToolArt, head: Dir8, edge: Edge): Grid {
   const t = transformFor(head, edge);
   const src = art[t.base];
   const out = new Canvas(TOOL_SIZE, TOOL_SIZE);
@@ -82,6 +88,15 @@ export function orient(art: ToolArt, head: Dir8, edge: Edge): Grid {
     out.set(u, v, ch);
   }));
   return out.toGrid();
+}
+
+/**
+ * Image 16×16 de l'outil orienté, éclairée en haut à gauche et contournée (pour un objet posé, comme le billot).
+ * Éclairée avec une marge d'un pixel, puis recadrée : le contour qui déborde du carré est perdu.
+ */
+export function orient(art: ToolArt, head: Dir8, edge: Edge): Grid {
+  const pad = new Canvas(TOOL_SIZE + 2, TOOL_SIZE + 2).stamp(orientZones(art, head, edge), 1, 1);
+  return lightUp(pad.toGrid(), art.materials).slice(1, -1).map((row) => row.slice(1, -1));
 }
 
 /** Pose de l'outil pour une image d'un geste, telle que le corps la décrit. */
@@ -100,10 +115,11 @@ export const HELD_SIZE = 32;
 /** Centre de l'image, arrondi vers le bas : le jeu pose ce pixel sur la main. */
 export const HELD_GRIP: Vec = [HELD_SIZE / 2, HELD_SIZE / 2];
 
-/** Image de la planche : l'outil orienté, sa prise posée sur HELD_GRIP. */
+/** Image de la planche : l'outil orienté, sa prise posée sur HELD_GRIP, éclairé une fois en place. */
 export function heldImage(art: ToolArt, head: Dir8, edge: Edge): Grid {
   const [gx, gy] = gripOf(head, edge);
-  return new Canvas(HELD_SIZE, HELD_SIZE).stamp(orient(art, head, edge), HELD_GRIP[0] - gx, HELD_GRIP[1] - gy).toGrid();
+  const zones = new Canvas(HELD_SIZE, HELD_SIZE).stamp(orientZones(art, head, edge), HELD_GRIP[0] - gx, HELD_GRIP[1] - gy);
+  return lightUp(zones.toGrid(), art.materials);
 }
 
 /**
