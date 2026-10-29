@@ -141,6 +141,21 @@ export const ItemDefSchema = z.strictObject({
 });
 
 /**
+ * Dimensions réelles d'un objet, en centimètres (gabarit, docs/STYLE.md section 8) : `w` largeur (est-ouest), `d`
+ * profondeur (nord-sud), `h` hauteur ; `shape` : `box`, `cylinder` (avec `axis` : `ew` couché est-ouest, `ns` couché
+ * nord-sud, `up` debout) ou `flat` (à plat sur le sol). validate.ts en tire la taille attendue de l'image.
+ */
+export const DimsSchema = z
+  .strictObject({
+    w: z.number().positive(),
+    d: z.number().positive(),
+    h: z.number().nonnegative(),
+    shape: z.enum(['box', 'cylinder', 'flat']),
+    axis: z.enum(['ew', 'ns', 'up']).optional(),
+  })
+  .refine((d) => (d.shape === 'cylinder') === (d.axis !== undefined), { message: "'axis' pour un cylindre, et pour lui seul" });
+
+/**
  * Un objet du catalogue (arbre, rocher, maison, meuble...). Sa clé dans props.json est son identifiant :
  * en anglais, en kebab-case (vérifié par validate.ts) ; c'est aussi le type d'un objet de carte dans Tiled.
  */
@@ -148,6 +163,8 @@ export const PropDefSchema = z.strictObject({
   /** Nom affiché, en français. */
   name: id,
   image: id,
+  /** Dimensions réelles, en centimètres : voir DimsSchema. */
+  dims: DimsSchema,
   /** Boîte de collision simple, centrée en bas de l'image. bottom = marge entre le bas de l'image et le bas de la boîte. */
   body: z.strictObject({ w: px.positive(), h: px.positive(), bottom: px }).optional(),
   /** Boîtes de collision libres, dans le repère de l'image (pour les formes complexes : maison...). */

@@ -22,6 +22,7 @@ import type { PropTile } from './lib/tiled-files';
 import { buildCollectionBoard } from './lib/collection-board';
 import { gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import gesturesJson from '../src/content/gestures.json';
+import { silhouette } from '../src/content/gabarit';
 
 const OUT = 'src/generated';
 const PREVIEW = '.art-preview';
@@ -99,11 +100,14 @@ const registry = loadRegistry();
 const catalogs = parse('tiles.json', z.record(z.string(), TilesetCatalogSchema), tilesCatalogJson);
 const propDefs = parse('props.json', z.record(z.string(), PropDefSchema), propsJson);
 
+/** Silhouette d'une image (gabarit) : pixels opaques, contour compris, ombre et lueurs exclues. */
+type Box = { x: number; y: number; w: number; h: number };
+
 const imports: string[] = [];
 const catalog = {
-  spritesheets: [] as { key: string; frameWidth: number; frameHeight: number; animations: Record<string, unknown> }[],
+  spritesheets: [] as { key: string; frameWidth: number; frameHeight: number; animations: Record<string, unknown>; silhouette: Box }[],
   tilesets: [] as { key: string; tiles: Record<string, number>; count: number; solid: number[]; decals: Record<number, DecalSet> }[],
-  images: [] as { key: string; width: number; height: number }[],
+  images: [] as { key: string; width: number; height: number; silhouette: Box }[],
 };
 const spritesheets: string[] = [];
 const tilesets: string[] = [];
@@ -129,9 +133,11 @@ for (const src of sources) {
     }
     png = sheet(cells, src.frameW, src.frameH, src.palette);
     firstFrames.set(src.name, { grid: cells[0], w: src.frameW, h: src.frameH, palette: src.palette });
-    catalog.spritesheets.push({ key: src.name, frameWidth: src.frameW, frameHeight: src.frameH, animations: anims });
+    // silhouette de la première image : celle que Tiled montre
+    const sil = silhouette(cells[0], src.palette);
+    catalog.spritesheets.push({ key: src.name, frameWidth: src.frameW, frameHeight: src.frameH, animations: anims, silhouette: sil });
     spritesheets.push(
-      `  { key: '${src.name}', url: ${id}, frameWidth: ${src.frameW}, frameHeight: ${src.frameH}, animations: ${JSON.stringify(anims)} },`,
+      `  { key: '${src.name}', url: ${id}, frameWidth: ${src.frameW}, frameHeight: ${src.frameH}, animations: ${JSON.stringify(anims)}, silhouette: ${JSON.stringify(sil)} },`,
     );
   } else if (src.kind === 'tileset') {
     const names = Object.keys(src.tiles);
@@ -189,8 +195,9 @@ for (const src of sources) {
     check(src.grid, w, h, src.palette, src.name);
     png = sheet([src.grid], w, h, src.palette);
     firstFrames.set(src.name, { grid: src.grid, w, h, palette: src.palette });
-    catalog.images.push({ key: src.name, width: w, height: h });
-    images.push(`  { key: '${src.name}', url: ${id}, width: ${w}, height: ${h} },`);
+    const sil = silhouette(src.grid, src.palette);
+    catalog.images.push({ key: src.name, width: w, height: h, silhouette: sil });
+    images.push(`  { key: '${src.name}', url: ${id}, width: ${w}, height: ${h}, silhouette: ${JSON.stringify(sil)} },`);
   }
 
   writeFileSync(join(OUT, `${src.name}.png`), PNG.sync.write(png));
@@ -229,6 +236,8 @@ export interface SpriteSheetAsset {
   frameWidth: number;
   frameHeight: number;
   animations: Record<string, { frames: number[]; frameRate: number; repeat: number }>;
+  /** Silhouette de la première image (gabarit) : pixels opaques, contour compris, ombre et lueurs exclues. */
+  silhouette: { x: number; y: number; w: number; h: number };
 }
 export interface TilesetAsset {
   key: string;
@@ -241,7 +250,7 @@ export interface TilesetAsset {
   /** Numéro de tuile -> détails posés au hasard dessus. */
   decals: Record<number, { images: string[]; chance: number }>;
 }
-export interface ImageAsset { key: string; url: string; width: number; height: number }
+export interface ImageAsset { key: string; url: string; width: number; height: number; silhouette: { x: number; y: number; w: number; h: number } }
 
 export const spritesheets: SpriteSheetAsset[] = [
 ${spritesheets.join('\n')}

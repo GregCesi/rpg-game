@@ -3,6 +3,7 @@
 // Utilisé par `npm run check` (Node) et au démarrage du jeu.
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
+import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
 import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PropDef, TilesetCatalog } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
@@ -15,6 +16,8 @@ export interface Catalog {
   frameCounts: Map<string, Map<string, number>>;
   /** Taille d'une image (d'une image de planche pour une planche animée), en pixels. */
   sizes: Map<string, { w: number; h: number }>;
+  /** Silhouette d'une image (de la première image pour une planche) : pixels opaques, contour compris, sans l'ombre. */
+  silhouettes: Map<string, { w: number; h: number }>;
   tiles: Map<string, Set<string>>;
   /** Numéros de tuiles qui existent (hors trous) et numéros bloquants, par jeu de tuiles. */
   tileNumbers: Map<string, Set<number>>;
@@ -22,9 +25,9 @@ export interface Catalog {
 }
 
 interface ManifestLike {
-  spritesheets: { key: string; frameWidth: number; frameHeight: number; animations: Record<string, { frames: unknown[] }> }[];
+  spritesheets: { key: string; frameWidth: number; frameHeight: number; animations: Record<string, { frames: unknown[] }>; silhouette: { w: number; h: number } }[];
   tilesets: { key: string; tiles: Record<string, number>; solid: number[] }[];
-  images: { key: string; width: number; height: number }[];
+  images: { key: string; width: number; height: number; silhouette: { w: number; h: number } }[];
 }
 
 export function catalogFrom(m: ManifestLike): Catalog {
@@ -35,6 +38,7 @@ export function catalogFrom(m: ManifestLike): Catalog {
       ...m.spritesheets.map((s) => [s.key, { w: s.frameWidth, h: s.frameHeight }] as const),
       ...m.images.map((i) => [i.key, { w: i.width, h: i.height }] as const),
     ]),
+    silhouettes: new Map([...m.spritesheets, ...m.images].map((a) => [a.key, { w: a.silhouette.w, h: a.silhouette.h }] as const)),
     frameCounts: new Map(m.spritesheets.map((s) => [s.key, new Map(Object.entries(s.animations).map(([k, a]) => [k, a.frames.length]))])),
     tiles: new Map(m.tilesets.map((t) => [t.key, new Set(Object.keys(t.tiles))])),
     tileNumbers: new Map(m.tilesets.map((t) => [t.key, new Set(Object.values(t.tiles))])),
@@ -274,6 +278,59 @@ function validateTrunk(c: Content, cat: Catalog): string[] {
   return errors;
 }
 
+/**
+ * Objets dessinés avant le gabarit (docs/STYLE.md section 8) et qui ne le respectent pas : taille de leur silhouette
+ * au moment où ils ont été listés. On ne les redessine pas pour l'instant ; un objet ne s'ajoute pas ici, il se dessine
+ * à la bonne taille. Redessiné, il sort de la liste (validate.ts le demande dès que son image change).
+ */
+export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
+  // taille dessinée ; en commentaire, la taille attendue et l'écart (dessiné − attendu, largeur × hauteur)
+  'tree': { w: 54, h: 79 }, // attendu 54 × 140 : +0 × -61 px
+  'felled-crown': { w: 52, h: 30 }, // attendu 53 × 57 : -1 × -27 px
+  'tree-stump': { w: 26, h: 16 }, // attendu 14 × 15 : +12 × +1 px
+  'bucket': { w: 20, h: 23 }, // attendu 6 × 9 : +14 × +14 px
+  'chopping-block': { w: 18, h: 15 }, // attendu 11 × 14,5 : +7 × +0,5 px
+  'chopping-block-axe': { w: 23, h: 28 }, // attendu 11 × 14,5 : +12 × +13,5 px
+  'workbench': { w: 64, h: 29 }, // attendu 64 × 24 : +0 × +5 px
+  'stove': { w: 24, h: 47 }, // attendu 16 × 47 : +8 × +0 px
+  'bed': { w: 30, h: 54 }, // attendu 30 × 32 : +0 × +22 px
+  'pallet': { w: 43, h: 24 }, // attendu 40 × 13 : +3 × +11 px
+  'sack': { w: 22, h: 24 }, // attendu 10 × 18 : +12 × +6 px
+  'jar': { w: 18, h: 25 }, // attendu 9 × 16,5 : +9 × +8,5 px
+  'lantern': { w: 10, h: 15 }, // attendu 3 × 7,5 : +7 × +7,5 px
+  'wall-torch': { w: 8, h: 29 }, // attendu 3 × 15,5 : +5 × +13,5 px
+  'candle': { w: 13, h: 13 }, // attendu 1,6 × 4,8 : +11,4 × +8,2 px
+  'barrel': { w: 19, h: 23 }, // attendu 12 × 24 : +7 × -1 px
+  'crate': { w: 19, h: 19 }, // attendu 12 × 18 : +7 × +1 px
+  'hay-bale': { w: 31, h: 18 }, // attendu 20 × 13 : +11 × +5 px
+  'chest': { w: 25, h: 20 }, // attendu 18 × 16 : +7 × +4 px
+  'stool': { w: 15, h: 17 }, // attendu 7 × 12,5 : +8 × +4,5 px
+  'well': { w: 47, h: 59 }, // attendu 47 × 66 : +0 × -7 px
+};
+
+/** Gabarit : la silhouette de l'image d'un objet a la taille que donnent ses dimensions réelles, à TOLERANCE px près. */
+function validateGabarit(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  for (const key of Object.keys(EXCEPTIONS)) if (!c.props[key]) errors.push(`validate.ts EXCEPTIONS : '${key}' absent de props.json`);
+  for (const [key, p] of Object.entries(c.props)) {
+    const drawn = cat.silhouettes.get(p.image);
+    if (!drawn) continue; // image non dessinée : signalé ailleurs
+    const want = expectedSize(p.dims);
+    const fits = Math.abs(want.w - drawn.w) <= TOLERANCE && Math.abs(want.h - drawn.h) <= TOLERANCE;
+    const f = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
+    const sizes = `attendu ${f(want.w)} × ${f(want.h)} px (${p.dims.w} × ${p.dims.d} × ${p.dims.h} cm, ${p.dims.shape}${p.dims.axis ? ` ${p.dims.axis}` : ''}, ${CM_PER_PX} cm par pixel), dessiné ${drawn.w} × ${drawn.h} px`;
+    const at = `props.json '${key}' (image '${p.image}') hors gabarit`;
+    const ex = EXCEPTIONS[key];
+    if (!ex) {
+      if (!fits) errors.push(`${at} : ${sizes} (tolérance ${TOLERANCE} px)`);
+    } else if (fits) errors.push(`validate.ts EXCEPTIONS : '${key}' respecte maintenant le gabarit (${sizes}) : le retirer de la liste`);
+    else if (ex.w !== drawn.w || ex.h !== drawn.h) {
+      errors.push(`${at} : son image a changé depuis son entrée dans EXCEPTIONS (${ex.w} × ${ex.h}) ; un dessin repris suit le gabarit : ${sizes}`);
+    }
+  }
+  return errors;
+}
+
 /** Un objet tenu : sa posture va avec ses mains (une main : `hand` ; deux : `shoulder` ou `carry`), sa planche a ses trois vues. */
 function validateHold(at: string, h: Hold, hands: 1 | 2, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -414,6 +471,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     // E sur l'objet : le prendre, le récolter ou ouvrir son dialogue, pas deux à la fois
     if (p.take && (p.harvest || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
   }
+
+  // Gabarit : taille de chaque objet d'après ses dimensions réelles
+  addAll(validateGabarit(c, cat));
 
   // Pièces de tronc couché : une image par état de l'encoche et du bout gauche, de la taille de la pièce (voir `notch`)
   addAll(validateTrunk(c, cat));
