@@ -134,6 +134,30 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - **Le fagot** (130 × Ø 50 cm, deux mains) ralentit comme la bille ; il se pose seul ou en tas, même forme que les billes (6 au plus), et se tourne avec R.
 - **Le nombre de branches** d'un tas s'affiche en tout petit en bas à droite du tas, seulement quand Xéros est tout près.
 
+## Construire (décidé le 29 octobre 2026)
+
+- **On apprend à bâtir comme en vrai**, en trois bâtiments, chacun ajoutant une technique au précédent :
+  1. **Un abri à bois ouvert** : des dés de pierre, des poteaux de bois équarri, des sablières, des chevrons et un toit de
+     chaume à une seule pente (appentis), sans mur. On y range le bois au sec.
+  2. **Une cabane fermée** : la même charpente, plus des murs de clayonnage (branches tressées entre des piquets) enduits de
+     torchis, et une porte.
+  3. **La maison** : un solin de pierre sous les murs, une longère d'environ 9 × 4 cases, des fenêtres, une cheminée.
+- **Méthode : un jeu de pièces.** Chaque pièce (dé, poteau, sablière, chevron, couverture...) est un objet du catalogue,
+  avec sa fiche (`docs/objets/`) et ses dimensions réelles, dessiné selon le gabarit et comparé aux étalons. Un bâtiment
+  s'assemble dans Tiled, pièce par pièce, **dans l'ordre réel du chantier** (les dés, les poteaux, les sablières, les
+  chevrons, la couverture) ; l'ordre est noté en données (`src/content/buildings.json`) et l'aperçu montre le bâtiment
+  monter, étape par étape.
+- **Une pièce posée sur la carte se voit à sa place réelle.** Les pièces sont posées sur le sol à leur emprise exacte
+  (5 cm par pixel) ; une pièce en hauteur (sablière, chevron, chaume) garde sous elle, dans son image, la hauteur qui la
+  sépare du sol, pour que l'ordre d'affichage reste celui de son pied. Une pièce qui relie des appuis posés au sol (une
+  sablière nord-sud, un chevron, la couverture) se voit avec sa profondeur au sol, sans raccourci, pour rejoindre ses
+  poteaux (gabarit, `ground`).
+- **On passe sous un toit.** Seuls les poteaux bloquent le passage ; Xéros entre sous l'abri. Le toit (chevrons, chaume)
+  se dessine au-dessus de lui et devient en partie transparent quand il est dessous ou caché derrière. On peut entasser
+  sous un abri comme ailleurs.
+- **Chantier en cours : l'abri à bois seulement**, posé tout construit dans la ferme, à côté du tas de bois, sur environ
+  2 × 2 cases (3,2 m sur 3,2 m). Construire soi-même (porter les pièces, les poser dans l'ordre) n'est pas encore construit.
+
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 
 - **La partie se sauvegarde toute seule.** `GameState` est écrit dans le navigateur à chaque changement (objet pris, posé, coupé, tas modifié, changement de carte), avec la carte et la position de Xéros. Au lancement, la partie reprend là où elle était. Pas de bouton « sauvegarder » pour l'instant.
