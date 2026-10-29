@@ -20,7 +20,7 @@ import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
 import { projectFile, propsTsj, tilesetTsj } from './lib/tiled-files';
 import type { PropTile } from './lib/tiled-files';
 import { buildCollectionBoard } from './lib/collection-board';
-import { gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
+import { gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
 
@@ -285,5 +285,8 @@ if (withPreview) {
   const pileDefs = parse('piles.json', z.record(z.string(), PileDefSchema), pilesJson);
   const pilesPng = pilesPreview(sources, pileDefs);
   if (pilesPng) writeFileSync(join(PREVIEW, 'piles.png'), PNG.sync.write(pilesPng));
+  // les étalons du gabarit (docs/STYLE.md section 8)
+  const gabarit = gabaritPreview(sources);
+  if (gabarit) writeFileSync(join(PREVIEW, 'gabarit.png'), PNG.sync.write(gabarit));
 }
 console.log(`art : ${sources.length} sources -> ${OUT} + ${TILED}${withPreview ? ` (+ aperçus dans ${PREVIEW})` : ''}`);
