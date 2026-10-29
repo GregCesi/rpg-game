@@ -159,10 +159,10 @@
           "visible": true,
           "name": "",
           "type": "pallet",
-          "x": 128,
+          "x": 120,
           "y": 352,
-          "width": 32,
-          "height": 48,
+          "width": 48,
+          "height": 32,
           "gid": 1013
         },
         {

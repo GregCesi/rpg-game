@@ -316,28 +316,149 @@ function workbench(): Canvas {
   return c;
 }
 
-/** Lit de la mère : cadre de bois, paillasse, couverture de laine. 32x56. */
-function bed(): Canvas {
-  const c = new Canvas(32, 56);
-  c.rect(2, 2, 28, 50, 'm').rect(2, 2, 28, 2, 'M');
-  c.rect(5, 6, 22, 42, 't');
-  c.rect(7, 8, 18, 8, 'a').rect(7, 15, 18, 1, 'D');
-  c.rect(4, 20, 24, 28, 'g').rect(4, 20, 24, 2, 'B');
-  for (let y = 24; y < 48; y += 4) c.rect(4, y, 24, 1, 'G');
-  c.rect(2, 48, 28, 4, 'N');
+/**
+ * Contour d'un pixel selon le guide : `OUTLINE` en bas et à droite, `dark` (teinte la plus sombre
+ * de la matière) en haut et à gauche, côté lumière.
+ */
+function litOutline(c: Canvas, dark: string): Canvas {
+  const before = c.toGrid();
+  const was = (i: number, j: number) => i >= 0 && j >= 0 && i < c.w && j < c.h && before[j][i] !== '.';
   c.outline('o');
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    if (was(x, y) || c.get(x, y) !== 'o') continue;
+    const top = !was(x, y - 1) && was(x, y + 1);
+    const left = !was(x - 1, y) && was(x + 1, y) && was(x + 1, y + 1);
+    if (top || left) c.set(x, y, dark);
+  }
   return c;
 }
 
-/** Paillasse de Xéros, posée au sol, une couverture rêche. 32x48. */
+/** Ombre portée translucide sous la base, décalée vers la droite, sans recouvrir l'objet. */
+function groundShadow(c: Canvas, x: number, y: number, w: number, h: number): Canvas {
+  return c.within('.', (c) => c.rect(x, y, w, h, 'x'));
+}
+
+/**
+ * Lit de la mère, en bois, vu de trois quarts. 32x56.
+ * Tête de lit à montants au nord, longs pans du cadre sur les côtés, oreiller et couverture
+ * de laine rouge sur le dessus ; face sud : traverse du pied de lit et quatre pieds.
+ */
+function bed(): Canvas {
+  const c = new Canvas(32, 56);
+  // longs pans du cadre (vus de dessus), de la tête au pied
+  c.rect(2, 11, 3, 33, 'M').rect(4, 11, 1, 33, 'm');
+  c.rect(27, 11, 3, 33, 'm').rect(29, 11, 1, 33, 'N');
+  // matelas : drap de lin
+  c.rect(5, 11, 22, 33, 'd');
+  c.rect(26, 11, 1, 33, 'D');
+  // oreiller au nord
+  c.rect(7, 12, 18, 6, 'a').rect(8, 11, 16, 1, 'a');
+  c.rect(7, 17, 18, 1, 'D').rect(24, 13, 1, 5, 'D').rect(23, 17, 2, 1, 'E');
+  c.rect(7, 18, 18, 1, 'E');
+  // couverture de laine : drap rabattu dessus, corps rouge, ombre à droite, deux plis
+  c.rect(5, 21, 22, 23, 'B');
+  c.rect(5, 21, 22, 2, 'd').rect(24, 21, 3, 2, 'D');
+  c.rect(5, 23, 22, 1, 'G');
+  c.rect(24, 24, 3, 20, 'G');
+  c.line(6, 30, 17, 32, 'G');
+  c.line(12, 38, 22, 36, 'G');
+  // la couverture retombe sur la traverse du pied
+  c.rect(5, 44, 22, 2, 'G').rect(5, 44, 19, 1, 'B');
+  // tête de lit : montants et planches, face sud visible
+  c.rect(2, 1, 3, 11, 'm').rect(2, 1, 1, 11, 'M').rect(2, 1, 3, 1, 'M');
+  c.rect(27, 1, 3, 11, 'm').rect(29, 1, 1, 11, 'N').rect(27, 1, 3, 1, 'M');
+  c.rect(5, 3, 22, 8, 'm').rect(5, 3, 22, 1, 'M').rect(5, 4, 22, 1, 'N');
+  for (const x of [10, 16, 21]) c.rect(x, 5, 1, 6, 'N');
+  c.rect(5, 10, 22, 1, 'K');
+  // face sud : traverse du pied de lit, sous la couverture
+  c.rect(3, 44, 26, 6, 'm').rect(3, 49, 26, 1, 'N').rect(3, 46, 26, 1, 'N');
+  c.within('m', (c) => c.rect(5, 44, 22, 2, 'G'));
+  c.rect(5, 44, 19, 1, 'B');
+  // pieds du lit, plus sombres que la traverse
+  c.rect(2, 42, 3, 11, 'm').rect(2, 42, 1, 11, 'M').rect(2, 42, 3, 1, 'M').rect(2, 50, 3, 3, 'N');
+  c.rect(27, 42, 3, 11, 'm').rect(29, 42, 1, 11, 'N').rect(27, 42, 3, 1, 'M').rect(27, 50, 3, 3, 'N');
+  litOutline(c, 'K');
+  groundShadow(c, 4, 51, 28, 3);
+  return c;
+}
+
+/** Arrondit un rectangle plein : retire les pixels de coin au-delà d'un rayon r. */
+function roundRect(c: Canvas, x: number, y: number, w: number, h: number, r: number, col: string): Canvas {
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const dx = Math.max(0, r - i - 0.5, i + 0.5 - (w - r));
+    const dy = Math.max(0, r - j - 0.5, j + 0.5 - (h - r));
+    if (dx * dx + dy * dy <= r * r) c.set(x + i, y + j, col);
+  }
+  return c;
+}
+
+/**
+ * Paillasse de Xéros : une couche de paille tassée sous une toile, posée à même le sol, sans cadre ni pieds,
+ * couchée est-ouest (36 px, environ 1,80 m). Dessus large et plat, bords affaissés, face sud de 1 px.
+ * Baluchon de lin à l'ouest (contre le mur), couverture brune rabattue sur la moitié est. 48x32.
+ */
 function pallet(): Canvas {
-  const c = new Canvas(32, 48);
-  c.rect(3, 6, 26, 38, 't');
-  for (let i = 0; i < 40; i++) c.set(3 + ((i * 7) % 26), 6 + ((i * 11) % 38), i % 2 ? 'Y' : 'T');
-  c.rect(5, 8, 14, 7, 'D').rect(5, 14, 14, 1, 'E');
-  c.rect(4, 20, 24, 22, 'D').rect(4, 20, 24, 1, 'd');
-  for (let y = 24; y < 42; y += 5) c.rect(4, y, 24, 1, 'E');
-  c.outline('o');
+  const c = new Canvas(48, 32);
+  const r = rng(21);
+  const x0 = 6;
+  const x1 = 41;
+  // volume mou : coins très arrondis, bords nord et sud légèrement creusés par endroits
+  roundRect(c, x0, 7, x1 - x0 + 1, 19, 5, 'Y');
+  const sagTop = (x: number) => (x >= 15 && x <= 20) || (x >= 31 && x <= 35);
+  const sagBottom = (x: number) => x >= 21 && x <= 27;
+  for (let x = x0; x <= x1; x++) {
+    if (sagTop(x)) c.set(x, 7, '.');
+    if (sagBottom(x)) c.set(x, 25, '.');
+  }
+  // face sud (1 px) et rangée affaissée juste au-dessus, colonne par colonne
+  for (let x = x0; x <= x1; x++) {
+    let y = 25;
+    while (y > 0 && c.get(x, y) === '.') y--;
+    c.set(x, y, 'T');
+    c.set(x, y - 1, 't');
+  }
+  // bout est dans l'ombre
+  for (let y = 8; y < 25; y++) {
+    let x = x1;
+    while (x > 0 && c.get(x, y) === '.') x--;
+    if (c.get(x, y) === 'Y') c.set(x, y, 't');
+  }
+  // baluchon de lin à l'ouest, roulé dans le sens nord-sud
+  roundRect(c, 8, 10, 7, 12, 3, 'd');
+  c.rect(14, 12, 1, 8, 'D').rect(9, 21, 5, 1, 'D');
+  c.within('Y', (c) => c.rect(15, 11, 1, 10, 't'));
+  // couverture brune rabattue sur la moitié est, un peu de travers, en retrait des bords
+  c.within('Yt', (c) => c.polygon([[24, 9], [36, 8.5], [39, 10], [40.5, 13], [40.5, 20], [38, 23], [22, 23]], 'n'));
+  c.within('n', (c) => {
+    c.line(24, 9, 22, 22, 'u').line(25, 9, 23, 22, 'u'); // revers rabattu, côté lumière
+    c.line(26, 9, 24, 22, 'e'); // ombre sous le revers
+    c.line(29, 14, 35, 16, 'e');
+  });
+  // ombre de la couverture : bord sud et bout est
+  for (let y = 9; y < 24; y++) {
+    let x = x1;
+    while (x > 0 && c.get(x, y) !== 'n') x--;
+    if (x > 30) c.set(x, y, 'e');
+  }
+  for (let x = 27; x <= x1; x++) {
+    let y = 24;
+    while (y > 0 && c.get(x, y) !== 'n' && c.get(x, y) !== 'e') y--;
+    if (y > 9) c.set(x, y, 'e');
+  }
+  // texture de paille : brins de trois pixels sur la paille nue
+  for (let i = 0; i < 40; i++) {
+    const x = x0 + 1 + Math.floor(r() * 34);
+    const y = 8 + Math.floor(r() * 15);
+    const dy = r() < 0.5 ? 0 : 1;
+    const pts: [number, number][] = [[x, y], [x + 1, y + dy], [x + 2, y + dy]];
+    if (pts.every(([px, py]) => c.get(px, py) === 'Y' && c.get(px, py - 1) !== 't' && c.get(px, py + 1) !== 't')) {
+      for (const [px, py] of pts) c.set(px, py, 't');
+    }
+  }
+  litOutline(c, 'P');
+  groundShadow(c, 9, 26, 36, 2);
+  // quelques brins tombés au sol
+  c.within('.x', (c) => c.line(3, 19, 4, 21, 't').line(43, 13, 45, 14, 'Y').line(30, 28, 32, 29, 't'));
   return c;
 }
 

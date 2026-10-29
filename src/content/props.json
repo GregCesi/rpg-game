@@ -10,8 +10,8 @@
   "workbench": {"name": "établi", "image": "workbench", "bodies": [{"x": 1, "y": 8, "w": 62, "h": 22}]},
   "log": {"name": "bille de bois", "image": "log", "body": {"w": 16, "h": 10, "bottom": 5}},
   "stove": {"name": "poêle", "image": "stove", "anim": "burn", "bodies": [{"x": 4, "y": 26, "w": 24, "h": 20}], "light": {"x": 16, "y": 34, "radius": 56}},
-  "bed": {"name": "lit de la mère", "image": "bed", "bodies": [{"x": 2, "y": 2, "w": 28, "h": 50}]},
-  "pallet": {"name": "paillasse de Xéros", "image": "pallet", "bodies": [{"x": 3, "y": 6, "w": 26, "h": 38}]},
+  "bed": {"name": "lit de la mère", "image": "bed", "bodies": [{"x": 2, "y": 8, "w": 28, "h": 44}]},
+  "pallet": {"name": "paillasse de Xéros", "image": "pallet", "bodies": [{"x": 6, "y": 9, "w": 36, "h": 17}]},
   "sack": {"name": "sac", "image": "sack", "body": {"w": 20, "h": 10, "bottom": 3}},
   "jar": {"name": "jarre", "image": "jar", "body": {"w": 16, "h": 10, "bottom": 3}},
   "sunpatch": {"name": "rai de lumière", "image": "sunpatch", "blend": "add"}
