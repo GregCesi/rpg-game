@@ -152,6 +152,12 @@ export const DimsSchema = z
     h: z.number().nonnegative(),
     shape: z.enum(['box', 'cylinder', 'flat']),
     axis: z.enum(['ew', 'ns', 'up']).optional(),
+    /**
+     * Pièce de bâtiment qui relie des appuis posés au sol (sablière nord-sud, chevron, couverture) : sa profondeur se voit
+     * à l'échelle du sol, sans raccourci (hauteur à l'écran H + D au lieu de H + D/2), pour qu'elle rejoigne ses poteaux.
+     * `h` est alors la hauteur de sa boîte englobante : épaisseur plus pente.
+     */
+    ground: z.literal(true).optional(),
   })
   .refine((d) => (d.shape === 'cylinder') === (d.axis !== undefined), { message: "'axis' pour un cylindre, et pour lui seul" });
 
@@ -173,7 +179,7 @@ export const PropDefSchema = z.strictObject({
   anim: id.optional(),
   /** Points d'où sort de la fumée, dans le repère de l'image. */
   smoke: z.array(z.tuple([px, px])).optional(),
-  /** 'floor' : dessiné à plat sur le sol, sous les personnages (tache de lumière, tapis...). */
+  /** 'floor' : dessiné à plat sur le sol, sous les personnages (tache de lumière, tapis, dé de pierre...). */
   layer: z.literal('floor').optional(),
   /** 'add' : l'image éclaire ce qu'elle recouvre (lumière), posée au-dessus de la pénombre. */
   blend: z.literal('add').optional(),
@@ -207,6 +213,31 @@ export const PropDefSchema = z.strictObject({
    * chaque coup réussi en enlève `length.cut` et lâche `length.piece` ; `becomes`, `drops`, `spawns` et `fall` n'y servent pas.
    */
   bears: z.strictObject({ prop: id, empty: id }).optional(),
+  /**
+   * Pièce d'un toit (chevron, chaume) : quand Xéros est dessous ou caché derrière, elle devient en partie transparente,
+   * avec les autres pièces de toit qu'elle touche (`systems/roofs.ts`). Son image garde sous elle, vide, la hauteur qui la
+   * sépare du sol : le bas de l'image est au sol, au sud de l'avant-toit, et c'est sa profondeur d'affichage.
+   */
+  roof: z.literal(true).optional(),
+});
+
+/** Une étape d'un chantier (buildings.json) : son nom et les pièces (objets de props.json) qu'on y pose. */
+export const BuildStepSchema = z.strictObject({
+  /** Nom de l'étape, en français : « les dés », « les poteaux »... */
+  name: id,
+  pieces: z.array(id).min(1),
+});
+
+/**
+ * Un bâtiment (buildings.json) : ses pièces, étape par étape, dans l'ordre réel du chantier. Il est posé tout construit
+ * sur `map` (pièces de Tiled) ; l'aperçu (npm run art:preview) le montre monter, une étape de plus par image.
+ */
+export const BuildingDefSchema = z.strictObject({
+  /** Nom affiché, en français. */
+  name: id,
+  /** Carte où il est posé (ses pièces y sont des objets de Tiled). */
+  map: id,
+  steps: z.array(BuildStepSchema).min(1),
 });
 
 /**
@@ -433,6 +464,7 @@ export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type Take = z.infer<typeof TakeSchema>;
 export type PilePlace = z.infer<typeof PilePlaceSchema>;
 export type PileDef = z.infer<typeof PileDefSchema>;
+export type BuildingDef = z.infer<typeof BuildingDefSchema>;
 export type Pose = z.infer<typeof PoseSchema>;
 export type Gesture = z.infer<typeof GestureSchema>;
 export type HoldPoint = z.infer<typeof HoldPointSchema>;

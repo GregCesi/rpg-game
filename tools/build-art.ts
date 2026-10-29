@@ -5,7 +5,7 @@
 //
 // Le numéro d'une tuile vient de art/tile-registry.json (voir tools/lib/registry.ts) : il ne change jamais.
 
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { z } from 'zod';
@@ -13,14 +13,16 @@ import { sources } from '../art/index';
 import type { Grid, Palette } from '../art/lib/canvas';
 import propsJson from '../src/content/props.json';
 import pilesJson from '../src/content/piles.json';
+import buildingsJson from '../src/content/buildings.json';
 import tilesCatalogJson from '../src/content/tiles.json';
-import { GestureSchema, PileDefSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
+import { BuildingDefSchema, GestureSchema, PileDefSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
 import type { DecalSet } from '../src/content/types';
 import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
 import { projectFile, propsTsj, tilesetTsj } from './lib/tiled-files';
 import type { PropTile } from './lib/tiled-files';
 import { buildCollectionBoard } from './lib/collection-board';
-import { gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
+import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
+import type { PreviewMap } from './lib/composite-previews';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
 
@@ -285,8 +287,37 @@ if (withPreview) {
   const pileDefs = parse('piles.json', z.record(z.string(), PileDefSchema), pilesJson);
   const pilesPng = pilesPreview(sources, pileDefs);
   if (pilesPng) writeFileSync(join(PREVIEW, 'piles.png'), PNG.sync.write(pilesPng));
+  // les bâtiments qui montent, étape par étape, à leur place sur leur carte Tiled
+  const buildings = parse('buildings.json', z.record(z.string(), BuildingDefSchema), buildingsJson);
+  for (const [key, b] of Object.entries(buildings)) {
+    const pngs = buildingPreview(sources, b, previewMap(b.map), propDefs);
+    pngs.forEach((png, i) => writeFileSync(join(PREVIEW, i === pngs.length - 1 ? `${key}.png` : `${key}-${i + 1}.png`), PNG.sync.write(png)));
+  }
   // les étalons du gabarit (docs/STYLE.md section 8)
   const gabarit = gabaritPreview(sources);
   if (gabarit) writeFileSync(join(PREVIEW, 'gabarit.png'), PNG.sync.write(gabarit));
 }
+/**
+ * Une carte Tiled lue pour l'aperçu d'un bâtiment : le sol (numéros du registre -> grilles du jeu de tuiles de la carte)
+ * et les objets posés depuis le tileset props (numéro -> clé de props.json, par le registre des objets).
+ */
+function previewMap(id: string): PreviewMap {
+  const tmj = JSON.parse(readFileSync(`tiled/maps/${id}.tmj`, 'utf8'));
+  const firstgid = (name: string) => tmj.tilesets.find((t: { source: string }) => t.source.endsWith(`/${name}.tsj`))?.firstgid as number | undefined;
+  const set = sources.find((s) => s.kind === 'tileset' && firstgid(s.name) !== undefined);
+  const groundGid = set ? firstgid(set.name)! : 1;
+  const propsGid = firstgid('props') ?? Infinity;
+  const ground = tmj.layers.find((l: { name: string }) => l.name === 'ground').data.map((gid: number) => {
+    const name = set?.kind === 'tileset' ? registry[set.name][gid - groundGid] : null;
+    return set?.kind === 'tileset' && name ? set.tiles[name] : undefined;
+  });
+  const objects = tmj.layers
+    .filter((l: { type: string }) => l.type === 'objectgroup')
+    .flatMap((l: { objects: { gid?: number; x: number; y: number }[] }) => l.objects)
+    .filter((o: { gid?: number }) => o.gid !== undefined && o.gid >= propsGid)
+    .map((o: { gid: number; x: number; y: number }) => ({ type: propSlots.slots[o.gid - propsGid] ?? '', x: o.x, y: o.y }))
+    .filter((o: { type: string }) => o.type);
+  return { width: tmj.width, ground, objects };
+}
+
 console.log(`art : ${sources.length} sources -> ${OUT} + ${TILED}${withPreview ? ` (+ aperçus dans ${PREVIEW})` : ''}`);

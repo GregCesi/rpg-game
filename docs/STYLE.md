@@ -72,10 +72,11 @@ Règle de dimensions et de perspective, tirée des billes (`felled-log`, `felled
 - La face de coupe d'un cylindre couché nord-sud se dessine aplatie, pour qu'on lise l'objet couché : sa hauteur est son diamètre × 7/11 (≈ 0,64, l'ovale de 11 × 7 px des billes).
 - Une taille se mesure sur la silhouette : pixels opaques, contour compris, ombre et lueurs exclues. Les dimensions réelles se comptent aussi contour compris : la bille fait 95 cm de long et 65 de diamètre. Tolérance : 2 px.
 
-**Deux exceptions.**
+**Trois exceptions.**
 
-- Plancher de lisibilité : un objet dont la silhouette ferait moins de 6 px de large peut être agrandi, en gardant ses proportions, jusqu'à 6 px de large, pas au-delà (une bougie de Ø 8 cm, 1,6 px à la taille réelle, se dessine jusqu'à 6 px).
+- Plancher de lisibilité : un objet dont la silhouette ferait moins de 6 px de large peut être agrandi, en gardant ses proportions, jusqu'à 6 px de large, pas au-delà (une bougie de Ø 8 cm, 1,6 px à la taille réelle, se dessine jusqu'à 6 px). C'est permis, pas obligé : le poteau de l'abri (15 cm, 3 px) reste à sa taille réelle.
 - Les personnages gardent leur largeur stylisée (Xéros : 18 px) ; seule leur hauteur suit le gabarit.
+- Pièces de bâtiment qui relient des appuis posés au sol (une sablière nord-sud, un chevron, une couverture : `ground: true` dans `dims`) : leur profondeur se voit **à l'échelle du sol, sans raccourci**, hauteur à l'écran H + D au lieu de H + D/2. Les appuis (poteaux) sont posés sur la carte à leur place réelle, à 5 cm par pixel au sol : une pièce raccourcie de moitié ne les rejoindrait pas. `h` est la hauteur de sa boîte englobante (épaisseur plus pente). Une telle pièce garde sous elle, dans son image, la hauteur qui la sépare du sol (vide, hors silhouette) : le bas de l'image est au sol, c'est sa profondeur d'affichage. Projection d'un point au sol (x, y) à la hauteur z : à l'écran (x, y − z).
 
 Vérifications : la bille est-ouest (95 × 65 cm) mesure 19 × 13 px, ses bouts sont des ovales de 5 px de large pour 11 de haut (11 × ½) ; la bille nord-sud mesure 13 × 19 px, le dessus d'écorce fait 10 px entre ses deux ronds (19 × ½ = 9,5), la face de coupe 11 × 7 ; Xéros fait 32 px pour 1,60 m, la mère 34 px pour 1,70 m (un personnage n'a pas de dessus visible : sa taille à l'écran est sa hauteur) ; la case fait 32 px pour 1,60 m.
 
@@ -88,5 +89,6 @@ Vérifications : la bille est-ouest (95 × 65 cm) mesure 19 × 13 px, ses bouts 
 | Cylindre couché nord-sud | Ø | Ø × 7/11 + L/2 (face de coupe au sud aplatie, Ø × Ø × 7/11 ; dessus L/2) | la même bille : 13 × (8,3 + 9,5) = 13 × 17,8, dessinée **13 × 19** |
 | Cylindre debout | Ø | H + Ø/2 (corps H, dessus en ovale Ø × Ø/2) | billot de Ø 55 cm, 45 cm de haut : 11 × (9 + 5,5) = **11 × 14,5** |
 | À plat sur le sol | W | D | éclats de pierre de 135 × 75 cm : **27 × 15** |
+| Pièce de bâtiment au sol (`ground`) | W | H + D | chaume de l'abri, 360 × 390 × 78,75 cm : 72 × (15,75 + 78) = **72 × 94** |
 
 Un objet qui n'est pas une forme de base (arbre, buisson, rocher) prend la boîte qui l'englobe. Un objet qui ne suit pas encore la règle est nommé dans `EXCEPTIONS` (`src/content/validate.ts`) avec sa taille dessinée ; on ne l'y ajoute pas pour un dessin neuf : on dessine à la bonne taille.

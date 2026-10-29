@@ -4,7 +4,7 @@
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
-import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PropDef, TilesetCatalog } from './types';
+import type { BuildingDef, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PropDef, TilesetCatalog } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -183,6 +183,7 @@ export interface Content {
   props: Record<string, PropDef>;
   items: Record<string, ItemDef>;
   piles: Record<string, PileDef>;
+  buildings: Record<string, BuildingDef>;
   gestures: Record<string, Gesture>;
   hold: HoldPoses;
   maps: Record<string, MapData>;
@@ -464,6 +465,36 @@ function validatePiles(c: Content, cat: Catalog): string[] {
   return errors;
 }
 
+/**
+ * Bâtiments : chaque pièce est un objet de props.json, nommée dans une seule étape, et posée au moins une fois sur la
+ * carte du bâtiment ; une pièce de toit (`roof`) ne bloque pas le passage.
+ */
+function validateBuildings(c: Content): string[] {
+  const errors: string[] = [];
+  for (const [key, b] of Object.entries(c.buildings)) {
+    const at = `buildings.json '${key}'`;
+    if (!KEBAB_CASE.test(key)) errors.push(`${at} : la clé doit être un identifiant anglais en kebab-case`);
+    const map = c.maps[b.map];
+    if (!map) errors.push(`${at} : carte '${b.map}' introuvable`);
+    const seen = new Set<string>();
+    b.steps.forEach((step, i) => {
+      for (const piece of step.pieces) {
+        const where = `${at} étape ${i + 1} (« ${step.name} »), pièce '${piece}'`;
+        if (seen.has(piece)) errors.push(`${where} : déjà nommée dans une autre étape`);
+        seen.add(piece);
+        const def = c.props[piece];
+        if (!def) {
+          errors.push(`${where} : absente de props.json`);
+          continue;
+        }
+        if (map && !map.objects.some((o) => o.type === piece)) errors.push(`${where} : posée nulle part sur la carte '${b.map}'`);
+        if (def.roof && (def.body || def.bodies)) errors.push(`${where} : une pièce de toit ('roof') ne bloque pas le passage`);
+      }
+    });
+  }
+  return errors;
+}
+
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -547,6 +578,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));
+
+  // Bâtiments : pièces, étapes du chantier, carte
+  addAll(validateBuildings(c));
 
   // Interface : la jauge de E maintenu (de vide à plein) et les chiffres du nombre de pièces d'un tas
   if (!cat.animations.get('ui-gauge')?.has('fill')) err("Interface : planche 'ui-gauge' et son animation 'fill' non dessinées (jauge de E maintenu)");

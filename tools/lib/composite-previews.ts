@@ -6,6 +6,11 @@
 // - piles.png : chaque genre de tas (src/content/piles.json), étape par étape (construction type, puis tous les états
 //   possibles s'ils sont peu nombreux), puis sa forme tournée (`turned`, les billes nord-sud), Xéros à l'échelle en tête de rangée, collisions des pièces au sol en liseré :
 //   même calcul que GameMap.placePile (pièce = coin bas gauche au point du tas + (x, y), dans l'ordre de drawOrder).
+// - <bâtiment>-<n>.png : un bâtiment de buildings.json qui monte, étape par étape, à sa place sur sa carte (le sol de
+//   Tiled, les objets voisins) : l'image n montre les pièces des étapes 1 à n, posées comme dans Tiled ; Xéros à côté,
+//   pour l'échelle. Pour un bâtiment qui a un toit (`roof`), une image de plus : Xéros dessous, le toit effacé comme
+//   en jeu (ROOF.alpha). <bâtiment>.png les met côte à côte. Même ordre d'affichage que GameMap : `floor` d'abord, puis
+//   le bas de chaque image (y de Tiled), à égalité dans l'ordre de la carte.
 // - gabarit.png : les étalons du gabarit (docs/STYLE.md section 8), posés sur une même ligne de sol, de gauche à droite :
 //   Xéros, un cube de 50 cm, la bille est-ouest (felled-log), la bille nord-sud (felled-log-ns), un cylindre debout de
 //   50 cm (Ø 50, 50 de haut). Le cube et le cylindre sont tracés d'après les formules de src/content/gabarit.ts. En
@@ -17,7 +22,8 @@ import { Canvas, EMPTY } from '../../art/lib/canvas';
 import { flipX } from '../../art/lib/canvas';
 import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
-import type { Gesture, PileDef } from '../../src/content/types';
+import type { BuildingDef, Gesture, PileDef, PropDef } from '../../src/content/types';
+import { ROOF } from '../../src/config';
 import { CM_PER_PX, RACCOURCI, expectedSize, silhouette } from '../../src/content/gabarit';
 import type { Dims } from '../../src/content/gabarit';
 import { world } from '../../art/palette';
@@ -49,7 +55,8 @@ class Board {
     });
   }
 
-  blit(grid: Grid, palette: Palette, ox: number, oy: number): void {
+  /** Pose une image ; `alpha` atténue toute l'image (un toit qui s'efface). */
+  blit(grid: Grid, palette: Palette, ox: number, oy: number, alpha = 1): void {
     grid.forEach((line, y) =>
       [...line].forEach((ch, x) => {
         if (ch === '.') return;
@@ -57,7 +64,7 @@ class Board {
         const Y = oy + y;
         if (X < 0 || Y < 0 || X >= this.w || Y >= this.h) return;
         const [r, g, b, a8] = hexToRgba(palette[ch]);
-        const a = a8 / 255;
+        const a = (a8 / 255) * alpha;
         const p = this.px[Y * this.w + X];
         p[0] = Math.round(r * a + p[0] * (1 - a));
         p[1] = Math.round(g * a + p[1] * (1 - a));
@@ -75,6 +82,11 @@ class Board {
   /** Un pixel, en couleur pleine. */
   dot(X: number, Y: number, rgb: [number, number, number]): void {
     if (X >= 0 && Y >= 0 && X < this.w && Y < this.h) this.px[Y * this.w + X] = [...rgb];
+  }
+
+  /** Recopie une autre planche, coin haut gauche en (ox, oy). */
+  paste(b: Board, ox: number, oy: number): void {
+    for (let Y = 0; Y < b.h; Y++) for (let X = 0; X < b.w; X++) this.dot(ox + X, oy + Y, b.px[Y * b.w + X]);
   }
 
   toPng(): PNG {
@@ -347,4 +359,94 @@ export function gabaritPreview(sources: ArtSource[]): PNG | undefined {
     });
   }
   return board.toPng();
+}
+
+/** Un objet d'une carte Tiled tel que l'aperçu le pose : son type (clé de props.json), coin bas gauche de son image. */
+export interface PreviewObject {
+  type: string;
+  x: number;
+  y: number;
+}
+
+/** Ce qu'il faut d'une carte pour l'aperçu d'un bâtiment : sa largeur en cases, ses tuiles de sol (grilles), ses objets. */
+export interface PreviewMap {
+  width: number;
+  ground: (Grid | undefined)[];
+  objects: PreviewObject[];
+}
+
+/**
+ * Un bâtiment qui monte, étape par étape (voir l'en-tête) : une image par étape, plus une avec Xéros sous le toit
+ * effacé si le bâtiment en a un ; la dernière de la liste met toutes les autres côte à côte.
+ */
+export function buildingPreview(sources: ArtSource[], building: BuildingDef, map: PreviewMap, props: Record<string, PropDef>): PNG[] {
+  const image = (name: string) => {
+    const s = sources.find((x) => x.name === name);
+    return s?.kind === 'image' ? s : undefined;
+  };
+  const world = sources.find((s) => s.kind === 'tileset' && s.name === 'world');
+  const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');
+  if (world?.kind !== 'tileset' || body?.kind !== 'spritesheet') return [];
+  const xeros = body.animations['idle-down'].frames[0];
+  const stepOf = new Map(building.steps.flatMap((s, i) => s.pieces.map((p) => [p, i] as const)));
+  const pieces = map.objects.filter((o) => stepOf.has(o.type));
+  const sized = (o: PreviewObject) => {
+    const src = image(props[o.type]?.image);
+    return src ? { o, src, w: src.grid[0].length, h: src.grid.length } : undefined;
+  };
+  const all = map.objects.map(sized).filter((s) => !!s);
+  const mine = all.filter((s) => stepOf.has(s.o.type));
+  if (!pieces.length || mine.length < pieces.length) return [];
+  // cadre : les images des pièces, plus une marge ; les pieds de Xéros au sud-ouest du bâtiment, ou dessous
+  const pad = 20;
+  const left = Math.min(...mine.map((s) => s.o.x)) - pad - 16;
+  const right = Math.max(...mine.map((s) => s.o.x + s.w)) + pad;
+  const top = Math.min(...mine.map((s) => s.o.y - s.h)) - pad;
+  const bottom = Math.max(...mine.map((s) => s.o.y)) + pad;
+  // ce qui bloque le passage (les poteaux) : leur cadre au sol dit où est l'intérieur
+  const blocking = mine.filter((s) => props[s.o.type].body || props[s.o.type].bodies);
+  const inner = blocking.length ? blocking : mine;
+  const inLeft = Math.min(...inner.map((s) => s.o.x));
+  const inRight = Math.max(...inner.map((s) => s.o.x + s.w));
+  const inBottom = Math.max(...inner.map((s) => s.o.y));
+  const inTop = Math.min(...inner.map((s) => s.o.y));
+  const beside = { x: inLeft - 14, y: Math.round((inTop + inBottom) / 2) };
+  const under = { x: Math.round((inLeft + inRight) / 2), y: Math.round((inTop + inBottom) / 2) + 6 };
+  const roofed = mine.some((s) => props[s.o.type].roof);
+  const frames = building.steps.map((_, i) => ({ upTo: i, at: beside, fade: false }));
+  if (roofed) frames.push({ upTo: building.steps.length - 1, at: under, fade: true });
+
+  const shots = frames.map(({ upTo, at, fade }) => {
+    const board = new Board(right - left, bottom - top, undefined);
+    // le sol, tel que Tiled l'a peint
+    for (let Y = 0; Y < board.h; Y++) for (let X = 0; X < board.w; X++) {
+      const mx = left + X;
+      const my = top + Y;
+      const g = map.ground[Math.floor(my / 32) * map.width + Math.floor(mx / 32)];
+      const ch = g?.[((my % 32) + 32) % 32][((mx % 32) + 32) % 32];
+      if (ch && ch !== '.') board.blit([ch], world.palette, X, Y);
+    }
+    const shown = all.filter((s) => !stepOf.has(s.o.type) || stepOf.get(s.o.type)! <= upTo);
+    type Draw = { depth: number; order: number; draw: () => void };
+    const draws: Draw[] = shown.map((s, order) => ({
+      depth: props[s.o.type].layer === 'floor' ? -Infinity : s.o.y,
+      order,
+      draw: () => board.blit(s.src.grid, s.src.palette, s.o.x - left, s.o.y - s.h - top, fade && props[s.o.type].roof ? ROOF.alpha : 1),
+    }));
+    // Xéros : pieds au milieu du bas de sa frame (origine 0,5 ; 1, comme Actor)
+    draws.push({ depth: at.y, order: Infinity, draw: () => board.blit(xeros, body.palette, at.x - body.frameW / 2 - left, at.y - body.frameH - top) });
+    draws.sort((a, b) => a.depth - b.depth || a.order - b.order);
+    for (const d of draws) d.draw();
+    return board;
+  });
+  // côte à côte, séparées d'une bande sombre
+  const gap = 4;
+  const strip = new Board(shots.reduce((a, b) => a + b.w + gap, -gap), shots[0].h, undefined);
+  for (let Y = 0; Y < strip.h; Y++) for (let X = 0; X < strip.w; X++) strip.dot(X, Y, [40, 32, 24]);
+  let x = 0;
+  for (const b of shots) {
+    strip.paste(b, x, 0);
+    x += b.w + gap;
+  }
+  return [...shots.map((b) => b.toPng()), strip.toPng()];
 }

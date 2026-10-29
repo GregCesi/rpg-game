@@ -13,6 +13,8 @@
 // - La face de coupe d'un cylindre couché nord-sud se dessine aplatie, pour qu'on lise l'objet couché : FACE_NS.
 // - Plancher de lisibilité : un objet de moins de LISIBLE px de large peut être agrandi jusqu'à LISIBLE px, pas au-delà
 //   (en gardant ses proportions). Les personnages gardent leur largeur stylisée : seule leur hauteur suit le gabarit.
+// - Pièce de bâtiment qui relie des appuis posés au sol (sablière nord-sud, chevron, couverture : `ground`) : sa
+//   profondeur se voit à l'échelle du sol, sans raccourci, pour qu'elle rejoigne ses poteaux posés à leur place.
 //
 // Mesures des références (silhouette, contour compris) :
 // - felled-log (est-ouest, 95 × 65 cm) : 19 × 13 ; bouts ovales de 5 px de large pour 11 de haut (≈ 11 × ½).
@@ -46,7 +48,7 @@ export type Shape = 'box' | 'cylinder' | 'flat';
 export type Axis = 'ew' | 'ns' | 'up';
 
 /** Dimensions réelles d'un objet, en centimètres : largeur (est-ouest), profondeur (nord-sud), hauteur. */
-export interface Dims { w: number; d: number; h: number; shape: Shape; axis?: Axis }
+export interface Dims { w: number; d: number; h: number; shape: Shape; axis?: Axis; ground?: boolean }
 
 /**
  * Taille attendue de la silhouette à l'écran, en pixels (non arrondie) : `w` × `h` à la taille réelle, jusqu'à
@@ -68,6 +70,8 @@ function realSize(dims: Dims): { w: number; h: number } {
   if (dims.shape === 'cylinder' && dims.axis === 'ew') return { w: W, h: H * Math.hypot(1, RACCOURCI) };
   // couché nord-sud : la face de coupe au sud, aplatie, et le dessus qui fuit vers le nord, raccourci de moitié
   if (dims.shape === 'cylinder' && dims.axis === 'ns') return { w: W, h: H * FACE_NS + D * RACCOURCI };
+  // pièce de bâtiment qui relie des appuis posés au sol : sa profondeur à l'échelle du sol, comme les cases
+  if (dims.ground) return { w: W, h: H + D };
   // boîte, cylindre debout (dessus en ovale D × D/2) : la face sud en vraie grandeur, le dessus raccourci de moitié
   return { w: W, h: H + D * RACCOURCI };
 }

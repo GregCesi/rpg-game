@@ -50,6 +50,12 @@ export const LONG_PRESS = { ms: 500, above: 35 };
 /** Nombre de pièces d'un tas (`count` de piles.json) : affiché quand les pieds de Xéros sont à moins de `near` px du tas au sol. */
 export const PILE_COUNT = { near: 12 };
 
+/**
+ * Toits (pièces `roof` de props.json : chevrons, chaume) : opacité quand Xéros est dessous ou caché derrière, et durée
+ * du fondu (ms) pour aller d'opaque à cette opacité.
+ */
+export const ROOF = { alpha: 0.35, fadeMs: 250 };
+
 /** Poser devant soi : écart entre la collision de Xéros et ce qu'il pose (px). */
 export const PUT_DOWN = { gap: 2 };
 
