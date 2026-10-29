@@ -18,7 +18,7 @@ export const families: Family[] = [
     title: 'Ressources',
     ground: 'grass',
     keys: [],
-    icons: ['branch', 'stone', 'iron-ore', 'straw', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool'].map((n) => `item-${n}`),
+    icons: ['branch', 'stone', 'iron-ore', 'straw', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'felled-log'].map((n) => `item-${n}`),
   },
   {
     title: 'Outils et armes',
@@ -52,7 +52,7 @@ export const families: Family[] = [
   { title: 'Personnages', ground: 'floor', keys: ['mother', 'portrait-mother-64'] },
   { title: 'Outil en main', ground: 'grass', keys: ['tool-axe'], allFrames: ['tool-axe'] },
   { title: "Éclats d'impact", ground: 'grass', keys: ['fx-wood', 'fx-stone', 'fx-leaves'], allFrames: ['fx-wood', 'fx-stone', 'fx-leaves'] },
-  { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-box', 'ui-key-e', 'ui-key-space'] },
+  { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-box', 'ui-key-e', 'ui-key-space'], icons: ['ui-hand-left', 'ui-hand-right', 'ui-hands-both'] },
   { title: 'Mobilier et ferme', ground: 'grass', keys: ['barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'woodpile', 'chopping-block', 'chopping-block-axe'] },
   { title: 'Intérieur', ground: 'floor', keys: ['bed', 'pallet', 'sack', 'jar', 'worktable', 'workbench'] },
 ];

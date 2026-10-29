@@ -115,6 +115,8 @@ export const HandsSchema = z.union([z.literal(1), z.literal(2)]);
  */
 export const TakeSchema = z.strictObject({
   hands: HandsSchema,
+  /** Icône 16×16 affichée dans les cases des mains (`item-<…>` : la même pour toutes les billes, `item-felled-log`). */
+  icon: id,
   /** Point de l'image tenu par les mains ; absent : le centre de sa collision (de l'image s'il n'en a pas). */
   grip: z.tuple([px, px]).optional(),
 });

@@ -274,6 +274,31 @@ function wool(): Canvas {
   return outline(c, 'E');
 }
 
+// ---------- Bille de bois ----------
+
+/**
+ * Bille (tronçon d'un mètre) couchée, un peu de biais : écorce du tronc (M m N) clair en haut, sombre en bas,
+ * fentes le long du fil ; bout scié tourné vers la lumière, bois clair (Y) et cernes (t) autour du cœur (T).
+ */
+function felledLog(): Canvas {
+  const c = new Canvas(S, S);
+  const [x0, y0, x1, y1] = [4.4, 9.4, 11.4, 6.8];
+  capsule(c, x0, y0, x1, y1, 3.4, (_, a) => (a < -0.35 ? 'M' : a < 0.4 ? 'm' : 'N'));
+  // fentes de l'écorce, le long du fil
+  c.within('m', (c) => c.line(7, 9, 9, 8, 'N').line(9, 6, 11, 5, 'N'));
+  c.within('M', (c) => c.line(8, 5, 10, 4, 'm'));
+  c.within('N', (c) => c.line(9, 10, 11, 9, 'K'));
+  // bout scié : liseré d'écorce, bois clair, un cerne, le cœur
+  c.ellipse(x0 - 0.6, y0, 2.4, 3.5, 'N');
+  c.ellipse(x0 - 0.8, y0, 1.8, 2.9, 'Y');
+  c.ellipse(x0 - 0.8, y0 + 0.2, 1.2, 1.9, 't');
+  c.ellipse(x0 - 0.8, y0 + 0.2, 0.7, 1.1, 'Y');
+  c.set(Math.floor(x0 - 0.8), Math.floor(y0 + 0.2), 'T');
+  // retouches : bosse d'un pixel sur le dos de l'écorce, liseré du bout scié complet à gauche
+  c.set(11, 3, EMPTY).set(1, 10, 'N');
+  return outline(c, 'K');
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
 export default [
@@ -288,4 +313,5 @@ export default [
   img('item-egg', egg()),
   img('item-apple', apple()),
   img('item-wool', wool()),
+  img('item-felled-log', felledLog()),
 ];

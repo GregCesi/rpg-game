@@ -7,8 +7,6 @@ import { game, type Held } from '../state';
 /** Écart entre les deux cases (px) et marge sous les cases. */
 const GAP = 4;
 const BOTTOM = 10;
-/** Côté de l'image dans une case : un objet du monde porté (la bille) est réduit pour y tenir. */
-const ICON_MAX = 22;
 
 /**
  * Les deux mains, au-dessus du monde : main gauche (G) et main droite (D), la case active marquée.
@@ -75,15 +73,10 @@ export class HudScene extends Phaser.Scene {
     this.show(this.bothIcon, game.both);
   }
 
-  /** Icône d'un objet possédable, ou image réduite d'un objet du monde porté. */
+  /** Icône d'un objet possédable, ou celle d'un objet du monde porté (`icon` de son `take`). */
   private show(image: Phaser.GameObjects.Image, h: Held | null): void {
     image.setVisible(!!h);
-    if (!h) return;
-    if ('item' in h) image.setTexture(items[h.item].icon).setScale(1);
-    else {
-      image.setTexture(h.flip ? `${props[h.prop].image}-left` : props[h.prop].image);
-      image.setScale(Math.min(1, ICON_MAX / image.width, ICON_MAX / image.height));
-    }
+    if (h) image.setTexture('item' in h ? items[h.item].icon : props[h.prop].take!.icon);
   }
 
   private showNotice(text: string): void {

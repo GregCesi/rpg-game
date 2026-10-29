@@ -330,6 +330,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${key}' : animation '${p.anim}' absente de '${p.image}'`);
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);
     if (p.harvest) addAll(validateHarvest(key, p, c, cat));
+    if (p.take && !cat.textures.has(p.take.icon)) err(`props.json '${key}' : icône '${p.take.icon}' non dessinée`);
     // E sur l'objet : le prendre, le récolter ou ouvrir son dialogue, pas deux à la fois
     if (p.take && (p.harvest || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
   }
