@@ -59,3 +59,13 @@ export const world = {
   H: '#f6d36b',
   i: '#c4542c',
 };
+
+// Laine teinte à la guède, délavée (robe de la mère). Le bleu de l'eau (W w q) éteint vers le gris
+// de la pierre (R r z) : la lumière glisse vers le jaune-gris, l'ombre vers le brun-violet.
+// Assez claire et froide pour se détacher de la terre battue et des cheveux châtain.
+export const woad = {
+  light: '#94a29f',
+  base: '#728390',
+  shade: '#56637a',
+  deep: '#443f55',
+};

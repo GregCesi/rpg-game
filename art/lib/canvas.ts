@@ -137,6 +137,28 @@ export class Canvas {
   }
 }
 
+/**
+ * Contour côté lumière (STYLE, section 3) : un pixel de contour `outline` qui touche le vide en haut ou à gauche,
+ * et la matière en bas et à droite, prend la teinte la plus sombre de cette matière (`dark[matière]`).
+ * Le contour du bas et de la droite reste `outline`. `empty` : couleurs comptées comme vide (ombre au sol).
+ */
+export function selOut(grid: Grid, dark: Record<string, string>, outline = 'o', empty = '.x'): Grid {
+  const at = (x: number, y: number) => grid[y]?.[x] ?? EMPTY;
+  const isEmpty = (ch: string) => ch === EMPTY || empty.includes(ch);
+  return grid.map((row, y) =>
+    [...row]
+      .map((ch, x) => {
+        if (ch !== outline) return ch;
+        if (!isEmpty(at(x - 1, y)) && !isEmpty(at(x, y - 1))) return ch;
+        const right = at(x + 1, y);
+        const below = at(x, y + 1);
+        if (isEmpty(right) || isEmpty(below)) return ch;
+        return dark[right] ?? dark[below] ?? ch;
+      })
+      .join(''),
+  );
+}
+
 /** Demi-grille gauche -> grille symétrique complète. */
 export function mirror(half: Grid): Grid {
   return half.map((row) => row + [...row].reverse().join(''));

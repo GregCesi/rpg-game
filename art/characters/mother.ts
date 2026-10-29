@@ -1,13 +1,15 @@
-// La mère de Xéros — environ 35 ans. Cheveux châtain foncé noués sous un foulard de lin,
-// robe de laine brune, tablier écru, manches retroussées.
-// Frame 32x48, construite comme Xéros : pieds à y=45, ombre dessous, vues face et dos en demi-grilles
-// symétrisées (puis le côté droit est assombri), vue gauche = vue droite retournée.
+// La mère de Xéros — environ 35 ans. Cheveux châtain foncé sous un foulard de lin noué sur la nuque,
+// robe de laine bleu-gris délavé (teinte à la guède), tablier écru, manches retroussées.
+// Frame 32x48, construite comme Xéros : pieds à y=45, ombre dessous. Têtes écrites en grilles complètes
+// (le foulard n'est pas symétrique), buste et jupe en demi-grilles symétrisées puis assombries à droite.
+// Vue gauche = vue droite retournée.
 // Un peu plus grande que Xéros : 33 px (de y=12 à y=45) contre 31.
-// Pas de marche : seulement la respiration (le haut du corps descend d'1 px, les pieds ne bougent pas).
+// Pas de marche : seulement la respiration (tête et épaules descendent d'1 px, le tablier se creuse,
+// les pans du foulard suivent ; les pieds ne bougent pas).
 
-import { Canvas, flipX, mirror, type Grid } from '../lib/canvas';
+import { Canvas, flipX, mirror, selOut, type Grid } from '../lib/canvas';
 import type { SpriteSheetSource } from '../lib/types';
-import { OUTLINE } from '../palette';
+import { OUTLINE, woad } from '../palette';
 
 const W = 32;
 const H = 48;
@@ -16,22 +18,24 @@ const BODY_Y = HEAD_Y + 16;
 
 const palette = {
   o: OUTLINE,
-  // foulard de lin (mêmes teintes que la tunique de Xéros)
-  f: '#c8b388',
+  // foulard de lin (teintes de la tunique de Xéros) ; Y trace les plis profonds et le dessous du nœud
   F: '#ddcca3',
+  f: '#c8b388',
   T: '#a8926a',
   Y: '#85704f',
   // cheveux châtain foncé, un peu plus roux que ceux de Xéros
   h: '#6b3d24',
   H: '#8a5434',
   d: '#45261a',
-  // peau (celle de Xéros)
+  // peau (celle de Xéros) ; D = ombre profonde du portrait, sert au contour côté lumière
   s: '#e9b993',
   S: '#cf9572',
-  // robe de laine brune
-  r: '#6d4532',
-  R: '#8a5b3f',
-  q: '#4f3024',
+  D: '#a86b50',
+  // robe de laine teinte à la guède (palette commune)
+  R: woad.light,
+  r: woad.base,
+  q: woad.shade,
+  Q: woad.deep,
   // tablier écru
   a: '#e6dcc2',
   A: '#c7b994',
@@ -41,32 +45,43 @@ const palette = {
   x: '#00000038', // ombre au sol
 };
 
+// Contour côté lumière : teinte la plus sombre de chaque matière.
+const DARK: Record<string, string> = {
+  F: 'Y', f: 'Y', T: 'Y', Y: 'Y',
+  h: 'd', H: 'd', d: 'd',
+  s: 'D', S: 'D', D: 'D',
+  R: 'Q', r: 'Q', q: 'Q', Q: 'Q',
+  a: 'A', A: 'A',
+};
+
 // Côté droit dans l'ombre : sur les demi-grilles symétrisées, on éteint les reflets à droite du milieu.
-const SHADE_RIGHT: Record<string, string> = { F: 'f', R: 'r', H: 'h' };
+const SHADE_RIGHT: Record<string, string> = { R: 'r', H: 'h' };
 function shadeRight(g: Grid, from = 16): Grid {
   return g.map((row) => [...row].map((ch, x) => (x >= from ? SHADE_RIGHT[ch] ?? ch : ch)).join(''));
 }
 
 // ---------- Vue de face ----------
 
-const headFront = mirror([
-  '.......ooo',
-  '.....ooFFF',
-  '....oFFfff',
-  '...oFfffff',
-  '..oFffffff',
-  '..offfffff',
-  '..offfffff',
-  '..oTfFFFFF',
-  '..oThhHhhd',
-  '..oThhssss',
-  '..ohhssoss',
-  '..ohhssoss',
-  '..ohhsssss',
-  '...ohssssS',
-  '....ooSsss',
-  '......oooo',
-]);
+// Foulard : dôme de lin éclairé en haut à gauche, plis qui filent vers la nuque, ourlet roulé sur le front
+// (bande claire, dessous ombré), pans qui descendent derrière les tempes. Raie des cheveux sous l'ourlet.
+const headFront: Grid = [
+  '.......oooooo.......',
+  '.....ooFFFFffoo.....',
+  '....oFFFFFFffffo....',
+  '...oFFFFFffffTffo...',
+  '..oFFFTFffffTfffYo..',
+  '..oFTTTTTTTTTTTTYo..',
+  '..oFFFFFFFFFFfffYo..',
+  '..oThHHhhdhhhhhhYo..',
+  '..oThhhssssssshhYo..',
+  '..oThhsssssssshhYo..',
+  '..oThssossssosshYo..',
+  '..oThssossssosshYo..',
+  '..oThsssssssssshYo..',
+  '...oTssssSSssssSYo..',
+  '....ooSssssssSSoo...',
+  '......oooooooo......',
+];
 
 // Haut du corps : buste, bavette du tablier, bras aux manches retroussées.
 const torsoFront = mirror([
@@ -99,24 +114,25 @@ const skirtFront = mirror([
 
 // ---------- Vue de dos ----------
 
-const headBack = mirror([
-  '.......ooo',
-  '.....ooFFF',
-  '....oFFfff',
-  '...oFfffff',
-  '..oFffffff',
-  '..offfffff',
-  '..offfffff',
-  '..oTffffff',
-  '..oTTfffff',
-  '..ohTTTfFF',
-  '..ohhhoTfF',
-  '..ohHhhoTf',
-  '..ohhhhhoT',
-  '...ohhhhho',
-  '.....oSSSS',
-  '......oooo',
-]);
+// Le foulard couvre l'arrière du crâne ; les plis convergent vers le nœud, sur la nuque.
+const headBack: Grid = [
+  '.......oooooo.......',
+  '.....ooFFFFffoo.....',
+  '....oFFFFFFffffo....',
+  '...oFFFFFffffffTo...',
+  '..oFFTFFfffffTfffo..',
+  '..oFFFTFffffTffffo..',
+  '..oFFFFTfffTfffffo..',
+  '..oFFFFFTfTffffffo..',
+  '..oTFFFFTTTfffffYo..',
+  '..oTTTYFfYFfYTTTYo..',
+  '..ohhhYFfYFTYhhhho..',
+  '..ohHhhhYfYhhhhhho..',
+  '..ohhhhhYFfYhhhhho..',
+  '...ohhhYFfYTYhhho...',
+  '.....oSYFYYTYSo.....',
+  '......oYFYoYTYo.....',
+];
 
 const torsoBack = mirror([
   '........oS',
@@ -140,10 +156,16 @@ const skirtBack = mirror([
   '.oqrrrrrrq',
   '.oqrrrrrrq',
   '.oqrrrrrrq',
-  '.oqqqqqqqq',
+  '.oqQqqqqqq',
   '.ooookKooo',
   '....oooo..',
 ]);
+
+// Pans du foulard qui pendent du nœud sur le haut du dos (clair à gauche, ombre à droite).
+const tailsBack: Grid = [
+  'YFY..YTY',
+  'YY....YY',
+];
 
 // Noeud et pans du tablier, au creux des reins.
 const apronBow: Grid = [
@@ -155,18 +177,19 @@ const apronBow: Grid = [
 
 // ---------- Vue de profil (droite) ----------
 
+// Ourlet en diagonale du front vers la nuque, cheveux et oreille dessous, plis qui partent du nœud.
 const headSide: Grid = [
   '.....oooooo.......',
-  '...ooFFFFffoo.....',
-  '..oFFfffffffTo....',
-  '.oFffffffffffTo...',
-  '.offfffffffffTo...',
-  'offffffffffffTTo..',
-  'offffffffffffFFFo.',
-  'oTfffffffFFFFhhho.',
-  'oTTffffFFhhhHhhho.',
-  'ohTTTFFhhhssssso..',
-  'ohhhhhsSSsssosso..',
+  '...ooFFFFFFoo.....',
+  '..oFFFFFFFfffo....',
+  '.oFFFFFFfffffTo...',
+  '.oFTFFFffffffTo...',
+  'oFFFTFfffffffffo..',
+  'oFfffTffffFFFFFFo.',
+  'oTffffTFFFFFTTTTo.',
+  'oTTfTFFFTTTThhhho.',
+  'oYTFFTTThhhssssso.',
+  'oYhhhhsSSsssosso..',
   'ohhhhhsSSsssossso.',
   'ohhhhhhhSssssso...',
   '.ohhhhhhSsssSo....',
@@ -174,18 +197,20 @@ const headSide: Grid = [
   '.........ooo......',
 ];
 
-// Noeud du foulard sur la nuque, qui dépasse derrière la tête.
+// Noeud du foulard sur la nuque et ses deux pans, qui dépassent derrière la tête.
 const knotSide: Grid = [
   '.oo.',
   'oFfo',
-  'oTfo',
-  '.oTo',
+  'oFTo',
+  'oTfY',
+  '.oTY',
+  '.oYo',
   '..o.',
 ];
 
 const torsoSide: Grid = [
   '.......oSSo.......',
-  '...oooooooqsoo....',
+  '...ooooQQQqsoo....',
   '..oRrrrrrrrraAo...',
   '..oRrrrrrrrraAo...',
   '..oRrrrrrrrraAo...',
@@ -203,21 +228,22 @@ const skirtSide: Grid = [
   '.oRrrrrrrrrraaAo..',
   '.oRrrrrrrrrraaaAo.',
   'oRrrrrrrrrrraaaAo.',
-  'oqqqqqqqqqqqqAAAo.',
+  'oqqqqQqqqqqqqAAAo.',
   'oooooooookkkKKoo..',
   '........ooooooo...',
 ];
 
+// Le bras est posé sur la robe : ses bords sont dans les ombres de la laine et de la peau, pas en contour.
 const armSide: Grid = [
-  '.oo.',
-  'oRro',
-  'oRro',
-  'oRro',
-  'oRRo',
-  'osSo',
-  'osSo',
-  'oSSo',
-  '.oo.',
+  '.QQ.',
+  'QRrQ',
+  'QRrQ',
+  'QRqQ',
+  'QRqQ',
+  'DsSD',
+  'DsSD',
+  'DSSD',
+  '.DD.',
 ];
 
 // ---------- Composition ----------
@@ -236,8 +262,14 @@ function frontal(facing: Facing, bob: number): Grid {
   c.stamp(facing === 'down' ? skirtFront : skirtBack, ox, BODY_Y + 8);
   c.stamp(facing === 'down' ? torsoFront : torsoBack, ox, BODY_Y + bob);
   if (facing === 'up') c.stamp(apronBow, ox + 8, BODY_Y + 8 + bob);
-  c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y + bob);
-  return shadeRight(c.toGrid());
+  if (facing === 'down' && bob) {
+    // expiration : la bavette du tablier se creuse sous la poitrine
+    c.within('a', (c) => c.line(ox + 8, BODY_Y + 5, ox + 11, BODY_Y + 5, 'A'));
+  }
+  const head = facing === 'down' ? headFront : headBack;
+  c.stamp(head, ox, HEAD_Y + bob);
+  if (facing === 'up') c.stamp(tailsBack, ox + 6, HEAD_Y + 16 + bob);
+  return selOut(shadeRight(c.toGrid()), DARK);
 }
 
 /** Profil droit. */
@@ -250,7 +282,7 @@ function side(bob: number): Grid {
   c.stamp(armSide, ox + 6, BODY_Y + 2 + bob);
   c.stamp(knotSide, ox - 2, HEAD_Y + 7 + bob);
   c.stamp(headSide, ox, HEAD_Y + bob);
-  return c.toGrid();
+  return selOut(c.toGrid(), DARK);
 }
 
 const breathe = <T>(f: (bob: number) => T) => [f(0), f(1)];

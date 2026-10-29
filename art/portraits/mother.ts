@@ -1,11 +1,13 @@
 // Portrait de dialogue de la mère de Xéros : buste de face, 64 px.
 // Construit comme celui de Xéros (formes pensées sur 64 px, détails fins en grilles écrites à la main),
-// même peau, même contour. Foulard de lin sur des cheveux châtain foncé, robe de laine brune, tablier écru.
+// même peau, même contour. Foulard de lin noué sur la nuque (ourlet roulé sur le front, pans qui couvrent
+// les oreilles, nœud et pans derrière l'épaule droite) sur des cheveux châtain foncé, robe de laine
+// bleu-gris délavé (guède), tablier écru. Contour côté lumière dans la teinte sombre de chaque matière.
 // Une animation = une expression. Pour l'instant : 'neutral'.
 
-import { Canvas, flipX, type Grid } from '../lib/canvas';
+import { Canvas, flipX, selOut, type Grid } from '../lib/canvas';
 import type { SpriteSheetSource } from '../lib/types';
-import { OUTLINE } from '../palette';
+import { OUTLINE, woad } from '../palette';
 import { palette as xerosPalette } from './xeros';
 
 const palette = {
@@ -36,10 +38,11 @@ const palette = {
   F: xerosPalette.L,
   T: xerosPalette.T,
   Y: xerosPalette.Y,
-  // robe de laine brune
-  r: '#6d4532',
-  R: '#8a5b3f',
-  k: '#4f3024',
+  // robe de laine teinte à la guède (palette commune)
+  R: woad.light,
+  r: woad.base,
+  k: woad.shade,
+  K: woad.deep,
   // tablier écru
   a: '#e6dcc2',
   A: '#c7b994',
@@ -80,16 +83,17 @@ function draw(): Canvas {
     return out;
   };
 
-  // --- Robe ---
+  // --- Robe de laine (guède) ---
   c.polygon([[4, 64], [9, 55], [19, 50.5], [45, 50.5], [55, 55], [60, 64]], 'r');
   c.within('r', (c) => {
     c.polygon([[46, 51], [55, 55], [60, 64], [48, 64], [44, 56]], 'k');
+    c.polygon([[52, 56], [56, 57], [60, 64], [54, 64]], 'K');
     c.polygon([[4, 64], [9, 55], [13, 53], [12, 64]], 'k');
     c.polygon([[10, 54], [19, 51], [24, 51], [16, 55]], 'R');
   });
   // plis de la laine
   c.line(19, 57, 17, 64, 'k');
-  c.line(45, 58, 47, 64, 'k');
+  c.line(45, 58, 47, 64, 'K');
 
   // --- Tablier : bavette et bretelles ---
   c.polygon([[21, 55], [43, 55], [44, 64], [20, 64]], 'a');
@@ -101,8 +105,10 @@ function draw(): Canvas {
   for (let x = 23; x < 42; x += 2) c.set(x, 56, 'A');
 
   // --- Pans du foulard, noués sur la nuque, qui pendent derrière l'épaule droite ---
-  c.polygon([[42, 38], [48, 36], [51, 47], [47, 51], [43, 49]], 'T');
-  c.within('T', (c) => c.line(46, 39, 48, 48, 'Y'));
+  c.polygon([[44, 39], [49, 38], [52, 48], [49.5, 51], [46, 49]], 'T');
+  c.polygon([[41.5, 41], [45, 40], [46.5, 50], [44, 52], [42, 48]], 'f');
+  c.within('T', (c) => c.line(48, 40, 50, 48, 'Y'));
+  c.within('f', (c) => c.line(42.5, 42, 43.5, 48, 'F'));
 
   // --- Cou ---
   c.rect(28, 40, 8, 12, 's');
@@ -113,18 +119,15 @@ function draw(): Canvas {
   // encolure de la robe
   c.ellipse(32, 50.5, 7.5, 3.2, 'k');
   c.within('k', (c) => c.ellipse(32, 50, 6.5, 2.4, 's'));
-
-  // --- Tête : la chevelure tirée en arrière déborde du visage sur les côtés ---
-  c.ellipse(32, 29, 15.8, 14.5, 'h');
-  c.within('h', (c) => {
-    c.ellipse(37, 31, 13, 13, 'j');
-    c.ellipse(28, 27, 10, 10, 'h');
+  // l'encolure s'arrête aux épaules : pas de bande sur le cou
+  c.within('k', (c) => {
+    c.rect(24, 46, 9, 4, 's');
+    c.rect(33, 46, 7, 4, 'S');
   });
-  // oreilles
-  c.ellipse(18.6, 34.3, 2.3, 3.6, 's');
-  c.ellipse(45.4, 34.3, 2.3, 3.6, 'S');
-  c.set(19, 34, 'S');
-  c.set(45, 34, 'D');
+
+  // --- Tête : masse des cheveux (cachée en grande partie par le foulard) ---
+  c.ellipse(32, 29, 15.8, 14.5, 'h');
+  c.within('h', (c) => c.ellipse(37, 31, 13, 13, 'j'));
 
   // --- Visage : un peu plus étroit et plus long que celui de Xéros ---
   c.ellipse(32, 30.5, 11.8, 12.5, 's');
@@ -141,25 +144,56 @@ function draw(): Canvas {
     c.line(22, 28, 29, 23.5, 'H');
     c.line(23, 28, 26, 26, 'G');
     c.polygon([[35, 23], [44, 26], [44, 33], [41, 28]], 'j');
+    c.line(32, 20, 32, 24, 'j'); // raie
   });
 
-  // --- Foulard noué sur la nuque : couvre le dessus de la tête, bord roulé sur le front ---
-  const dome = arc(32, 36, 17.6, 27);
-  c.polygon([...dome, ...arc(32, 36, 17.4, 16).reverse()], 'f');
-  c.within('f', (c) => {
-    c.ellipse(47, 20, 6, 10, 'T');
-    c.ellipse(25, 14, 7, 3.4, 'F');
-    // bord roulé : bande claire, ombre au-dessus
-    c.polygon([...arc(32, 36, 17.4, 16), ...arc(32, 36, 17.4, 17.8).reverse()], 'F');
-    c.polygon([...arc(32, 36, 17.4, 17.8), ...arc(32, 36, 17.4, 18.8).reverse()], 'T');
-    // pli
-    c.line(38, 12, 44, 16, 'T');
+  // --- Foulard noué sur la nuque ---
+  // Dôme sur le dessus de la tête, et deux pans qui descendent sur les tempes, couvrent les oreilles
+  // et filent derrière la mâchoire vers le nœud.
+  const hemRx = 17.4;
+  const hemRy = 16;
+  c.polygon([...arc(32, 36, 17.6, 27), ...arc(32, 36, hemRx, hemRy).reverse()], 'f');
+  c.polygon([[14.2, 24], [21.2, 24], [20.9, 31], [21.3, 37], [20.4, 41], [17.5, 41.5], [15, 38.5], [14.3, 32]], 'f');
+  c.polygon([[49.8, 24], [42.8, 24], [43.1, 31], [42.7, 37], [43.6, 41], [46.5, 41.5], [49, 38.5], [49.7, 32]], 'T');
+  // derrière la mâchoire, les pans cachent la nuque jusqu'au nœud
+  c.within('hjHG', (c) => {
+    c.polygon([[14, 35], [26, 35], [26, 47], [14, 47]], 'f');
+    c.polygon([[38, 35], [50, 35], [50, 47], [38, 47]], 'T');
   });
-  // à droite, côté ombre, le bord roulé s'éteint
+  c.within('fT', (c) => {
+    // ombre : côté droit du dôme, creux du pan droit
+    c.polygon([[41, 9], [50, 18], [50, 30], [44, 24], [43, 16]], 'T');
+    c.polygon([[45.5, 27], [49.6, 28], [49, 38.5], [46.5, 41.5], [45, 36]], 'Y');
+    // lumière en haut à gauche
+    c.ellipse(25, 13.5, 7, 3.2, 'F');
+    c.ellipse(21, 17, 3, 2, 'F');
+    // plis : ils partent des tempes et filent vers la nuque
+    c.line(19, 13, 16, 20, 'T');
+    c.line(23, 11, 19, 18, 'T');
+    c.line(16, 26, 17, 34, 'T');
+    c.line(40, 10, 46, 15, 'T');
+    c.line(44, 10, 49, 17, 'Y');
+    c.line(47, 26, 48, 35, 'T');
+  });
+  // ourlet roulé : pli d'ombre au-dessus, bande claire du rouleau, ombre portée sur les cheveux en dessous
+  c.within('f', (c) => {
+    c.polygon([...arc(32, 36, hemRx, hemRy + 2.4), ...arc(32, 36, hemRx, hemRy + 3.4).reverse()], 'T');
+    c.polygon([...arc(32, 36, hemRx, hemRy), ...arc(32, 36, hemRx, hemRy + 2.4).reverse()], 'F');
+  });
+  // le rouleau suit le bord des pans jusqu'à la mâchoire
+  c.within('f', (c) => c.line(21, 24, 20.5, 39, 'F'));
+  c.within('T', (c) => c.line(43, 25, 43.5, 39, 'f'));
+  // nœud sur la nuque, qui dépasse derrière la mâchoire, au-dessus des pans
+  c.ellipse(47, 40, 3, 2.4, 'f');
+  c.within('f', (c) => {
+    c.set(45, 39, 'F');
+    c.set(46, 39, 'F');
+    c.line(47, 39, 48, 42, 'Y');
+    c.set(49, 40, 'T');
+  });
+  // côté droit, le rouleau passe à l'ombre
   c.within('F', (c) => c.rect(40, 0, 24, 64, 'f'));
-  c.within('T', (c) => c.rect(44, 15, 20, 20, 'Y'));
-  // ombre portée du foulard sur la raie
-  c.within('h', (c) => c.line(32, 20, 32, 23, 'j'));
+  c.within('h', (c) => c.polygon([...arc(32, 36, hemRx - 0.2, hemRy - 0.1), ...arc(32, 36, hemRx - 0.2, hemRy - 1.2).reverse()], 'j'));
 
   // --- Détails du visage ---
   const eyeY = 31;
@@ -182,6 +216,15 @@ function draw(): Canvas {
   return c;
 }
 
+// Contour côté lumière : teinte la plus sombre de chaque matière.
+const DARK: Record<string, string> = {
+  F: 'Y', f: 'Y', T: 'Y', Y: 'Y',
+  h: 'j', H: 'j', G: 'j', j: 'j',
+  s: 'D', S: 'D', D: 'D', l: 'D',
+  R: 'K', r: 'K', k: 'K', K: 'K',
+  a: 'A', A: 'A',
+};
+
 const portrait: SpriteSheetSource = {
   kind: 'spritesheet',
   name: 'portrait-mother-64',
@@ -189,7 +232,7 @@ const portrait: SpriteSheetSource = {
   frameH: 64,
   palette,
   animations: {
-    neutral: { frames: [draw().toGrid()], frameRate: 1, repeat: 0 },
+    neutral: { frames: [selOut(draw().toGrid(), DARK)], frameRate: 1, repeat: 0 },
   },
 };
 

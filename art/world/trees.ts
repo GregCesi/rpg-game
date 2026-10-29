@@ -203,14 +203,21 @@ function stump(): Canvas {
 
 const FALL_W = 160;
 const FALL_H = 96;
-/** Décalage de l'arbre (64 de large) dans la frame (160) : le pied reste centré en bas, comme dans `tree`. */
-const OFF = (FALL_W - 64) / 2;
+/**
+ * Décalage de l'arbre (64 de large) dans la frame : l'arbre debout est à gauche (pied en x = OFF + 33)
+ * pour laisser au tronc couché, puis au houppier, la place de s'étendre vers la droite.
+ */
+const OFF = 14;
 /** La souche se pose sous le tronc : décalage du repère de la souche dans celui de l'arbre. */
 const STUMP_AT: Vec = [17, 62];
 /** Hauteur de la coupe dans le repère de l'arbre : tout ce qui est au-dessus tombe. */
 const CUT_Y = 76;
 /** Charnière : bord droit de la coupe, côté où l'arbre tombe. */
 const HINGE: Vec = [38, CUT_Y];
+/** Rangée sous le houppier à partir de laquelle le tronc s'allonge quand il se couche. */
+const TRUNK_FROM = 70;
+/** Allongement du tronc couché : vu de dessus, il montre toute sa longueur (environ 34 px sous le houppier). */
+const EXT = 24;
 
 function withStump(c: Canvas): Canvas {
   c.stamp(stumpBody().toGrid(), STUMP_AT[0] + OFF, STUMP_AT[1]);
@@ -218,58 +225,120 @@ function withStump(c: Canvas): Canvas {
 }
 
 /**
- * Le haut de l'arbre (au-dessus de la coupe), tourné de `deg` degrés vers la droite autour de la charnière.
- * `under` : rangées gardées sous la coupe, pour que le tronc à peine penché cache encore le dessus de la souche.
+ * Le haut de l'arbre (au-dessus de la coupe), avec un tronc allongé de `ext` rangées.
+ * Le tronc ajouté reprend le profil d'écorce de l'arbre (clair à gauche, sombre à droite) et quelques fentes.
+ * Rend le canevas et la rangée de coupe dans ce canevas.
  */
-function fallFrame(deg: number, under = 0): Canvas {
-  const t = (deg * Math.PI) / 180;
+function fallingPart(light: Vec, ext: number): { src: Canvas; cut: number } {
+  const body = treeBody(light);
+  const cut = CUT_Y + ext;
+  const src = new Canvas(64, cut);
+  for (let y = 0; y < TRUNK_FROM; y++) for (let x = 0; x < 64; x++) src.px[y][x] = body.get(x, y);
+  // profil propre du tronc (sans fente), pris juste sous la coupe
+  const profile = body.px[77];
+  for (let y = TRUNK_FROM; y < cut; y++) for (let x = 0; x < 64; x++) src.px[y][x] = profile[x];
+  src.within('m', (c) => {
+    for (const [x, y0, n] of [[32, 0, 6], [33, 9, 4], [31, 15, 6], [33, 24, 4]] as const) {
+      if (y0 + n <= cut - TRUNK_FROM - 2) c.line(x, TRUNK_FROM + y0, x, TRUNK_FROM + y0 + n - 1, 'N');
+    }
+  });
+  src.within('M', (c) => {
+    for (const [x, y0, n] of [[29, 3, 4], [29, 19, 4]] as const) {
+      if (y0 + n <= cut - TRUNK_FROM - 2) c.line(x, TRUNK_FROM + y0, x, TRUNK_FROM + y0 + n - 1, 'm');
+    }
+  });
+  return { src, cut };
+}
+
+interface Pose {
+  deg: number;
+  /** Position à l'écran du centre de la coupe du tronc qui tombe. */
+  base: Vec;
+  ext: number;
+  /** Écrasement du houppier de part et d'autre du tronc (1 = aucun) : vu de dessus, il s'aplatit au sol. */
+  squash: number;
+}
+
+/**
+ * Dessine le haut de l'arbre selon `pose` (tourné de `deg` degrés vers la droite), avec la lumière
+ * nord-ouest de l'écran ramenée dans le repère de l'arbre, puis le bout scié au pied du tronc.
+ */
+function drawFalling(c: Canvas, p: Pose) {
+  const t = (p.deg * Math.PI) / 180;
   const cos = Math.cos(t);
   const sin = Math.sin(t);
-  // lumière nord-ouest de l'écran ramenée dans le repère de l'arbre
   const S: Vec = [-Math.SQRT1_2, -Math.SQRT1_2];
-  const src = treeBody([S[0] * cos + S[1] * sin, -S[0] * sin + S[1] * cos]);
-  const c = withStump(new Canvas(FALL_W, FALL_H));
+  const { src, cut } = fallingPart([S[0] * cos + S[1] * sin, -S[0] * sin + S[1] * cos], p.ext);
+  const half = 5.5; // demi-largeur du tronc, jamais écrasée
+  const inv = (g: number) => (Math.abs(g) <= half ? g : Math.sign(g) * (half + (Math.abs(g) - half) / p.squash));
+  // calque à part : le bout scié ne se peint que sur le tronc qui tombe, jamais sur la souche
+  const layer = new Canvas(FALL_W, FALL_H);
+  // axe du tronc (vers la cime) : (sin, -cos) ; travers (côté droit de l'arbre) : (cos, sin)
+  const local = (X: number, Y: number): Vec => {
+    const U = X + 0.5 - p.base[0];
+    const V = Y + 0.5 - p.base[1];
+    return [U * sin - V * cos, U * cos + V * sin];
+  };
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
-    const U = X + 0.5 - (HINGE[0] + OFF);
-    const V = Y + 0.5 - HINGE[1];
-    const dx = U * cos + V * sin;
-    const h = U * sin - V * cos;
-    const sy = Math.floor(HINGE[1] - h);
-    if (sy >= CUT_Y + under) continue;
-    const p = src.get(Math.floor(HINGE[0] + dx), sy);
-    if (p !== EMPTY) c.set(X, Y, p);
+    const [h, g] = local(X, Y);
+    if (h < 0) continue;
+    const q = src.get(Math.floor(FOOT[0] + inv(g)), Math.floor(cut - h));
+    if (q !== EMPTY) layer.set(X, Y, q);
   }
-  despeckle(c, 'K');
+  // bout scié : disque du tronc vu de biais, tourné vers le bas-gauche, donc vers la lumière
+  const minor = 0.9 + 1.1 * sin;
+  const face = (rx: number, ry: number, col: string) => {
+    for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+      if (layer.get(X, Y) === EMPTY) continue;
+      const [h, g] = local(X, Y);
+      if (h < 1) continue;
+      const a = (g + 0.3) / rx;
+      const b = (h - 1) / ry;
+      if (a * a + b * b <= 1) layer.set(X, Y, col);
+    }
+  };
+  // la rangée du bas : bord d'écorce du disque, qui sépare le bout scié du dessus de la souche
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    if (layer.get(X, Y) !== EMPTY && local(X, Y)[0] < 1) layer.set(X, Y, 'N');
+  }
+  face(5.6, minor + 0.4, 'Y');
+  if (minor > 1.5) face(2.4, minor * 0.6, 't');
+  c.stamp(layer.toGrid(), 0, 0);
+}
+
+/** Image de la chute : souche fixe, haut de l'arbre dans la pose donnée, contour, ombres. */
+function fallFrame(p: Pose, shadows: [number, number, number, number][]): Canvas {
+  const c = withStump(new Canvas(FALL_W, FALL_H));
+  drawFalling(c, p);
+  despeckle(c, 'KY');
   shadedOutline(c);
-  // ombre : sous la souche, et sous la projection du houppier au sol
-  groundShadow(c, FOOT[0] + OFF + 3, 89.5, 15, 3.5);
-  groundShadow(c, FOOT[0] + OFF + 3 + 50 * sin, 90, 16 + 8 * sin, 3 + sin);
+  for (const [x, y, rx, ry] of shadows) groundShadow(c, x, y, rx, ry);
   return c;
 }
 
-/** Arbre couché à droite de sa souche : le houppier aplati sur le sol (vu de dessus), le tronc gardant son épaisseur. */
-function fallenFrame(): Canvas {
-  const src = treeBody([-Math.SQRT1_2, Math.SQRT1_2]);
-  const c = withStump(new Canvas(FALL_W, FALL_H));
-  const yc = 82.5; // axe du tronc couché
-  const x0 = OFF + 41; // début du tronc couché, juste après la racine droite de la souche
-  const k = 0.36; // écrasement du houppier hors du tronc
-  const inv = (f: number) => (Math.abs(f) <= 5 ? f : Math.sign(f) * (5 + (Math.abs(f) - 5) / k));
-  for (let Y = 0; Y < FALL_H; Y++) for (let X = x0; X < FALL_W; X++) {
-    const dx = inv(Y + 0.5 - yc);
-    const sy = Math.floor(CUT_Y - (X + 0.5 - x0));
-    const p = src.get(Math.floor(FOOT[0] + dx), sy);
-    if (p !== EMPTY) c.set(X, Y, p);
-  }
-  // bout scié du tronc couché, tourné vers l'ouest donc éclairé
-  c.ellipse(x0 + 1, yc, 1.6, 4.6, 'Y');
-  c.rect(x0 + 1, Math.floor(yc) - 1, 1, 2, 't');
-  despeckle(c, 'K');
-  shadedOutline(c);
-  groundShadow(c, x0 + 36, 91, 40, 3.5);
-  groundShadow(c, FOOT[0] + OFF + 3, 89.5, 13, 3);
-  return c;
+/** Pose pivotée autour de la charnière (bord droit de la coupe), qui reste sur la souche. */
+function pivot(deg: number): Pose {
+  const t = (deg * Math.PI) / 180;
+  const s = Math.sin(t);
+  // centre de la coupe : 5 px à gauche de la charnière, dans le repère tourné
+  const d = HINGE[0] - FOOT[0];
+  return {
+    deg,
+    base: [HINGE[0] + OFF - d * Math.cos(t), HINGE[1] - d * s],
+    ext: Math.round(EXT * s),
+    squash: 1 - 0.64 * s * s,
+  };
 }
+
+const FOOT_X = FOOT[0] + OFF;
+
+const frames = [
+  new Canvas(FALL_W, FALL_H).stamp(standingTree().toGrid(), OFF, 0),
+  fallFrame(pivot(10), [[FOOT_X + 3, 89.5, 17, 4], [FOOT_X + 12, 90, 16, 3.5]]),
+  fallFrame(pivot(45), [[FOOT_X + 3, 89.5, 14, 3.5], [FOOT_X + 46, 90.5, 26, 4]]),
+  // couché : le bout scié contre la racine droite de la souche, l'axe du tronc à 6 px au-dessus du sol
+  fallFrame({ deg: 90, base: [FOOT_X + 13, 81.5], ext: EXT, squash: 0.32 }, [[FOOT_X + 3, 89.5, 13, 3], [FOOT_X + 62, 91, 52, 3.5]]),
+];
 
 const treeFall: SpriteSheetSource = {
   kind: 'spritesheet',
@@ -278,11 +347,7 @@ const treeFall: SpriteSheetSource = {
   frameH: FALL_H,
   palette: world,
   animations: {
-    fall: {
-      frames: [new Canvas(FALL_W, FALL_H).stamp(standingTree().toGrid(), OFF, 0), fallFrame(10, 5), fallFrame(45), fallenFrame()].map((f) => f.toGrid()),
-      frameRate: 6,
-      repeat: 0,
-    },
+    fall: { frames: frames.map((f) => f.toGrid()), frameRate: 6, repeat: 0 },
   },
 };
 
