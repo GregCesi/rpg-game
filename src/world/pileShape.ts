@@ -43,13 +43,20 @@ export function placeAim(def: PileDef, id: string): [number, number] {
   return [under.reduce((a, q) => a + q[0], 0) / under.length, under.reduce((a, q) => a + q[1], 0) / under.length];
 }
 
-/** Ordre d'affichage des pièces prises : couche par couche, du bas vers le haut ; dans une couche, de l'arrière vers l'avant. */
+/**
+ * Ordre d'affichage des pièces prises (`order` du genre). `layers` : couche par couche, du bas vers le haut ; dans une
+ * couche, de l'arrière (bas de l'image le plus haut) vers l'avant. `depth` : de l'arrière vers l'avant d'après le point
+ * visé au sol, à égalité la couche du bas d'abord : la pièce de devant cache le bas de celle qui repose derrière elle.
+ */
 export function drawOrder(def: PileDef, taken: readonly string[]): string[] {
   const keys = Object.keys(def.places);
+  const ground = (id: string) => placeAim(def, id)[1];
   return [...taken].sort((a, b) => {
     const pa = def.places[a];
     const pb = def.places[b];
-    return pa.layer - pb.layer || pa.y - pb.y || keys.indexOf(a) - keys.indexOf(b);
+    const tie = keys.indexOf(a) - keys.indexOf(b);
+    if (def.order === 'depth') return ground(a) - ground(b) || pa.layer - pb.layer || tie;
+    return pa.layer - pb.layer || pa.y - pb.y || tie;
   });
 }
 
@@ -58,16 +65,22 @@ export function pileBlocks(def: PileDef, taken: readonly string[]): boolean {
   return taken.length >= def.blockFrom;
 }
 
-/** Tous les états possibles d'un tas (ensembles de places prises où chaque pièce est portée), du plus petit au plus grand. */
+/**
+ * Tous les états possibles d'un tas, en posant et en reprenant des pièces depuis le tas vide (un sol troué, par
+ * exemple, ne s'obtient qu'en reprenant), du plus petit au plus grand.
+ */
 export function pileStates(def: PileDef, limit = 200): string[][] {
-  const seen = new Set<string>();
+  const keys = Object.keys(def.places);
+  const norm = (t: readonly string[]) => keys.filter((k) => t.includes(k));
+  const seen = new Set<string>(['']);
   const out: string[][] = [];
   let frontier: string[][] = [[]];
   while (frontier.length && out.length < limit) {
     const next: string[][] = [];
     for (const taken of frontier) {
-      for (const id of openPlaces(def, taken)) {
-        const t = Object.keys(def.places).filter((k) => taken.includes(k) || k === id);
+      const moves = [...openPlaces(def, taken).map((id) => [...taken, id]), ...freePieces(def, taken).map((id) => taken.filter((t) => t !== id))];
+      for (const m of moves) {
+        const t = norm(m);
         const key = t.join(',');
         if (seen.has(key)) continue;
         seen.add(key);
@@ -77,5 +90,5 @@ export function pileStates(def: PileDef, limit = 200): string[][] {
     }
     frontier = next;
   }
-  return out.slice(0, limit);
+  return out.sort((a, b) => a.length - b.length).slice(0, limit);
 }

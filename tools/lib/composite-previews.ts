@@ -152,7 +152,7 @@ export function handsPreview(sources: ArtSource[]): PNG | undefined {
  * (chaque ensemble de places prises où chaque pièce est portée), comme dans le jeu : `drawOrder`, collisions des pièces
  * au sol en liseré rouge quand le tas bloque le passage, grises sinon. Xéros (attente de face) en tête de rangée, pour l'échelle.
  */
-const ALL_STATES = 40;
+const ALL_STATES = 60;
 
 export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef>): PNG | undefined {
   const image = (name: string) => {

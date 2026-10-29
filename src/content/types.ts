@@ -199,8 +199,8 @@ export const PilePlaceSchema = z.strictObject({
 });
 
 /**
- * Un genre de tas (piles.json) : ce qu'on y entrepose et ses places. Le maximum est le nombre de places. Le tas
- * s'affiche couche par couche, du bas vers le haut ; dans une couche, de l'arrière (bas de l'image le plus haut) vers l'avant.
+ * Un genre de tas (piles.json) : ce qu'on y entrepose et ses places. Le maximum est le nombre de places. L'ordre
+ * d'affichage des pièces est donné par `order`.
  */
 export const PileDefSchema = z.strictObject({
   /** Nom affiché, en français. */
@@ -211,6 +211,13 @@ export const PileDefSchema = z.strictObject({
   start: id,
   /** Nombre de pièces à partir duquel le tas bloque le passage. */
   blockFrom: z.number().int().positive().default(1),
+  /**
+   * Ordre d'affichage des pièces. `layers` : couche par couche, du bas vers le haut, et dans une couche de l'arrière
+   * vers l'avant (une pièce du dessus passe devant toutes celles du sol). `depth` : de l'arrière vers l'avant, d'après le
+   * point visé au sol de chaque place, et à égalité la couche du bas d'abord. Une pièce du dessus est alors cachée en bas
+   * par la pièce posée devant elle, comme une bille dans un creux derrière la bille de devant.
+   */
+  order: z.enum(['layers', 'depth']).default('layers'),
   /** Les places, par identifiant ; l'ordre est celui d'une construction type (aperçu). */
   places: z.record(id, PilePlaceSchema),
 });

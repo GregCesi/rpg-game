@@ -11,12 +11,12 @@
     "l2-1": {"layer": 2, "on": ["l1-1", "l1-2"], "image": "pile-branch-l2-1", "x": 0, "y": -10},
     "l3-0": {"layer": 3, "on": ["l2-0", "l2-1"], "image": "pile-branch-l3-0", "x": 0, "y": -15}
   }},
-  "logs": {"name": "tas de billes", "piece": {"prop": "felled-log"}, "start": "g1", "blockFrom": 1, "places": {
-    "g1": {"layer": 0, "image": "felled-log", "x": 0, "y": -11, "body": {"x": 1, "y": -25, "w": 18, "h": 11}},
-    "g0": {"layer": 0, "image": "felled-log", "x": 0, "y": -22, "body": {"x": 1, "y": -36, "w": 18, "h": 11}},
-    "g2": {"layer": 0, "image": "felled-log", "x": 0, "y": 0, "body": {"x": 1, "y": -14, "w": 18, "h": 11}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "felled-log", "x": 0, "y": -26},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "felled-log", "x": 0, "y": -15},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "felled-log", "x": 0, "y": -30}
+  "logs": {"name": "tas de billes", "piece": {"prop": "felled-log"}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
+    "g1": {"layer": 0, "image": "felled-log", "x": 0, "y": -8, "body": {"x": 1, "y": -19, "w": 18, "h": 8}},
+    "g0": {"layer": 0, "image": "felled-log", "x": 0, "y": -16, "body": {"x": 1, "y": -27, "w": 18, "h": 8}},
+    "g2": {"layer": 0, "image": "felled-log", "x": 0, "y": 0, "body": {"x": 1, "y": -11, "w": 18, "h": 8}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "felled-log", "x": 0, "y": -19},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "felled-log", "x": 0, "y": -11},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "felled-log", "x": 0, "y": -22}
   }}
 }

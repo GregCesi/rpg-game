@@ -294,7 +294,7 @@ export class GameMap {
   }
 
   /**
-   * Affiche un tas : la pièce de chaque place prise, à sa place, couche par couche, du bas vers le haut (`drawOrder`) ;
+   * Affiche un tas : la pièce de chaque place prise, à sa place, dans l'ordre d'affichage du genre (`drawOrder`) ;
    * tout le tas est à la profondeur du bas de sa pièce la plus en avant. Chaque pièce au sol a sa collision, dès `blockFrom` pièces.
    */
   placePile(pile: Pile): PlacedPile {
