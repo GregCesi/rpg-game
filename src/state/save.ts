@@ -13,7 +13,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -72,6 +72,10 @@ export function readSave(): ReadResult {
  * fendage (coups reçus par un objet de carte changé, bille coin planté, demi-billes, quartiers, tas de quartiers) n'ajoute que
  * des champs facultatifs et des clés de contenu : une partie de la version 3 se relit telle quelle, seul le numéro change.
  * Version 4 -> 5 : les chantiers (`sites` de chaque carte, `knownPlans`, `nextSiteId`) apparaissent : aucun plan connu, aucun chantier.
+ * Version 5 -> 6 : le bois d'œuvre (équarrissage). L'arbre normal ne se couche plus en sections à encoches fixes : ses sections,
+ * son houppier, sa tête ébranchée et ses billes numérotées deviennent des rondins de 95 cm (`normal-felled-log`) à la même place
+ * (la 5e bille, sous le houppier ou dans la tête, là où elle était dessinée ; les entailles commencées et les branches du houppier
+ * sont perdues) ; une bille numérotée tenue en main devient la bille ordinaire.
  */
 function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -84,7 +88,45 @@ function upgrade(data: unknown): unknown {
     const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, sites: [] }]));
     d = { ...d, version: 5, state: { ...d.state, maps, knownPlans: [], nextSiteId: 0 } };
   }
+  if (d?.version === 5 && d.state && typeof d.state === 'object') d = { ...d, version: 6, state: normalPiecesToLogs(d.state as V5State) };
   return d;
+}
+
+/** Ce que la conversion 5 -> 6 lit d'une partie : seulement ce qui peut nommer une pièce de l'arbre normal. */
+type V5Piece = { type?: string; x: number; y: number; flip?: boolean; chain?: unknown; hits?: number; length?: number };
+type V5Held = { prop?: string } | null;
+type V5State = { hands?: V5Held[]; both?: V5Held; maps?: Record<string, { changes?: Record<string, V5Piece>; spawned?: V5Piece[] }> };
+
+/**
+ * Les pièces de l'arbre normal d'avant le bois d'œuvre, et où était dessinée leur bille dans leur image (décalage du coin bas
+ * gauche du rondin de 95 cm, couché vers la droite et vers la gauche) : les sections et les billes 1 à 4 avaient l'image du
+ * rondin ; le houppier, la tête et la bille 5 (85 × 22 px) portaient la 5e bille à 21 px du bord, 6 px au-dessus du bas.
+ */
+const OLD_NORMAL: Record<string, { right: [number, number]; left: [number, number] }> = {
+  ...Object.fromEntries(
+    [1, 2, 3, 4].flatMap((k) => [`normal-felled-section-${k}`, `normal-felled-log-${k}`]).map((t) => [t, { right: [0, 0] as [number, number], left: [0, 0] as [number, number] }]),
+  ),
+  ...Object.fromEntries(
+    ['normal-felled-crown', 'normal-felled-head', 'normal-felled-log-5'].map((t) => [t, { right: [21, -6] as [number, number], left: [45, -6] as [number, number] }]),
+  ),
+};
+
+function normalPiecesToLogs(state: V5State): V5State {
+  const piece = (o: V5Piece): V5Piece => {
+    const old = o.type && OLD_NORMAL[o.type];
+    if (!old) return o;
+    const [dx, dy] = o.flip ? old.left : old.right;
+    const { flip: _f, chain: _c, hits: _h, ...rest } = o;
+    return { ...rest, type: 'normal-felled-log', x: o.x + dx, y: o.y + dy, length: 95 };
+  };
+  const held = (h: V5Held | undefined) => (h && h.prop && /^normal-felled-log-\d$/.test(h.prop) ? { ...h, prop: 'normal-felled-log' } : h);
+  const maps = Object.fromEntries(
+    Object.entries(state.maps ?? {}).map(([id, m]) => [
+      id,
+      { ...m, changes: Object.fromEntries(Object.entries(m.changes ?? {}).map(([k, c]) => [k, piece(c)])), spawned: (m.spawned ?? []).map(piece) },
+    ]),
+  );
+  return { ...state, hands: (state.hands ?? []).map((h) => held(h) ?? null), both: held(state.both) ?? null, maps };
 }
 
 /** Écrit la partie et la position de Xéros. Un stockage plein ou bloqué ne plante pas le jeu : on le note en console. */
