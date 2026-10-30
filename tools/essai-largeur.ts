@@ -8,6 +8,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
 import type { Grid, Palette } from '../art/lib/canvas';
 import { sources } from '../art/index';
+import xeros18 from './lib/xeros-18px';
 import xeros from '../art/characters/xeros';
 import { interiorTiles } from '../art/interior/house';
 import { world } from '../art/palette';
@@ -24,7 +25,7 @@ const PALE: [number, number, number] = [225, 225, 200];
 interface Cell { grid: Grid; palette: Palette; label: string; group?: string }
 
 const VIEWS: [View, string][] = [['down', 'FACE'], ['right', 'PROFIL'], ['up', 'DOS']];
-const current = (v: View): Grid => xeros.animations[`idle-${v}`].frames[0];
+const current = (v: View): Grid => xeros18.animations[`idle-${v}`].frames[0];
 const frame = (w: 18 | 14 | 12, v: View) => (w === 18 ? current(v) : essaiFrame(w, v));
 
 function image(name: string): { grid: Grid; palette: Palette } {

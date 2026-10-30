@@ -1,14 +1,14 @@
 {
   "hand": {
     "idle": {
-      "down": [{"left": {"dx": 5, "dy": -11}, "right": {"dx": -7, "dy": -11}}],
-      "up": [{"left": {"dx": -7, "dy": -11, "behind": true}, "right": {"dx": 5, "dy": -11, "behind": true}}],
-      "right": [{"left": {"dx": -3, "dy": -11, "behind": true}, "right": {"dx": -2, "dy": -10}}]
+      "down": [{"left": {"dx": 3, "dy": -11}, "right": {"dx": -5, "dy": -11}}],
+      "up": [{"left": {"dx": -5, "dy": -11, "behind": true}, "right": {"dx": 3, "dy": -11, "behind": true}}],
+      "right": [{"left": {"dx": -2, "dy": -11, "behind": true}, "right": {"dx": -1, "dy": -10}}]
     },
     "walk": {
-      "down": [{"left": {"dx": 5, "dy": -11}, "right": {"dx": -7, "dy": -12}}, {"left": {"dx": 5, "dy": -12}, "right": {"dx": -7, "dy": -12}}, {"left": {"dx": 5, "dy": -12}, "right": {"dx": -7, "dy": -11}}, {"left": {"dx": 5, "dy": -12}, "right": {"dx": -7, "dy": -12}}],
-      "up": [{"left": {"dx": -7, "dy": -12, "behind": true}, "right": {"dx": 5, "dy": -11, "behind": true}}, {"left": {"dx": -7, "dy": -12, "behind": true}, "right": {"dx": 5, "dy": -12, "behind": true}}, {"left": {"dx": -7, "dy": -11, "behind": true}, "right": {"dx": 5, "dy": -12, "behind": true}}, {"left": {"dx": -7, "dy": -12, "behind": true}, "right": {"dx": 5, "dy": -12, "behind": true}}],
-      "right": [{"left": {"dx": -2, "dy": -11, "behind": true}, "right": {"dx": -3, "dy": -10}}, {"left": {"dx": -3, "dy": -12, "behind": true}, "right": {"dx": -2, "dy": -11}}, {"left": {"dx": -4, "dy": -11, "behind": true}, "right": {"dx": -1, "dy": -10}}, {"left": {"dx": -3, "dy": -12, "behind": true}, "right": {"dx": -2, "dy": -11}}]
+      "down": [{"left": {"dx": 3, "dy": -11}, "right": {"dx": -5, "dy": -12}}, {"left": {"dx": 3, "dy": -12}, "right": {"dx": -5, "dy": -12}}, {"left": {"dx": 3, "dy": -12}, "right": {"dx": -5, "dy": -11}}, {"left": {"dx": 3, "dy": -12}, "right": {"dx": -5, "dy": -12}}],
+      "up": [{"left": {"dx": -5, "dy": -12, "behind": true}, "right": {"dx": 3, "dy": -11, "behind": true}}, {"left": {"dx": -5, "dy": -12, "behind": true}, "right": {"dx": 3, "dy": -12, "behind": true}}, {"left": {"dx": -5, "dy": -11, "behind": true}, "right": {"dx": 3, "dy": -12, "behind": true}}, {"left": {"dx": -5, "dy": -12, "behind": true}, "right": {"dx": 3, "dy": -12, "behind": true}}],
+      "right": [{"left": {"dx": -1, "dy": -11, "behind": true}, "right": {"dx": -2, "dy": -10}}, {"left": {"dx": -2, "dy": -12, "behind": true}, "right": {"dx": -1, "dy": -11}}, {"left": {"dx": -3, "dy": -11, "behind": true}, "right": {"dx": 0, "dy": -10}}, {"left": {"dx": -2, "dy": -12, "behind": true}, "right": {"dx": -1, "dy": -11}}]
     }
   },
   "shoulder": {

@@ -98,7 +98,7 @@ function behindHead(g: Grid, view: View): Grid {
   return out.toGrid();
 }
 /** Première rangée sous la tête de Xéros, dans sa frame. */
-const HEAD_BOTTOM = 30;
+const HEAD_BOTTOM = 29;
 
 const heldAxe = (): SpriteSheetSource => {
   const m: Materials = axeArt().materials;

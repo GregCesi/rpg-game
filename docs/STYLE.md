@@ -75,10 +75,10 @@ Règle de dimensions et de perspective, tirée des billes (`big-felled-log`, `bi
 **Trois exceptions.**
 
 - Plancher de lisibilité : un objet dont la silhouette ferait moins de 6 px de large peut être agrandi, en gardant ses proportions, jusqu'à 6 px de large, pas au-delà (une bougie de Ø 8 cm, 1,6 px à la taille réelle, se dessine jusqu'à 6 px). C'est permis, pas obligé : le poteau de l'abri (15 cm, 3 px) reste à sa taille réelle.
-- Les personnages gardent leur largeur stylisée (Xéros : 18 px) ; seule leur hauteur suit le gabarit.
+- Les personnages suivent le gabarit en hauteur et ont une largeur de 12 px (60 cm, bras compris : un peu plus que des épaules réelles de 45-50 cm, pour que les bras se lisent) ; leur collision aux pieds fait 10 × 8 px (50 × 40 cm).
 - Pièces de bâtiment qui relient des appuis posés au sol (une sablière nord-sud, un chevron, une couverture : `ground: true` dans `dims`) : leur profondeur se voit **à l'échelle du sol, sans raccourci**, hauteur à l'écran H + D au lieu de H + D/2. Les appuis (poteaux) sont posés sur la carte à leur place réelle, à 5 cm par pixel au sol : une pièce raccourcie de moitié ne les rejoindrait pas. `h` est la hauteur de sa boîte englobante (épaisseur plus pente). Une telle pièce garde sous elle, dans son image, la hauteur qui la sépare du sol (vide, hors silhouette) : le bas de l'image est au sol, c'est sa profondeur d'affichage. Projection d'un point au sol (x, y) à la hauteur z : à l'écran (x, y − z).
 
-Vérifications : la bille est-ouest (95 × 65 cm) mesure 19 × 13 px, ses bouts sont des ovales de 5 px de large pour 11 de haut (11 × ½) ; la bille nord-sud mesure 13 × 19 px, le dessus d'écorce fait 10 px entre ses deux ronds (19 × ½ = 9,5), la face de coupe 11 × 7 ; Xéros fait 32 px pour 1,60 m, la mère 34 px pour 1,70 m (un personnage n'a pas de dessus visible : sa taille à l'écran est sa hauteur) ; la case fait 32 px pour 1,60 m.
+Vérifications : la bille est-ouest (95 × 65 cm) mesure 19 × 13 px, ses bouts sont des ovales de 5 px de large pour 11 de haut (11 × ½) ; la bille nord-sud mesure 13 × 19 px, le dessus d'écorce fait 10 px entre ses deux ronds (19 × ½ = 9,5), la face de coupe 11 × 7 ; Xéros et la mère font 32 px pour 1,60 m, sur 12 px de large (un personnage n'a pas de dessus visible : sa taille à l'écran est sa hauteur) ; la case fait 32 px pour 1,60 m.
 
 **Les formes de base** (W largeur, D profondeur, H hauteur, L longueur, Ø diamètre, en pixels = centimètres ÷ 5).
 

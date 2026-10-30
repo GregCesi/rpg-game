@@ -12,7 +12,8 @@
 //   réelles aussi se comptent contour compris (la bille : 95 cm de long, 65 de diamètre).
 // - La face de coupe d'un cylindre couché nord-sud se dessine aplatie, pour qu'on lise l'objet couché : FACE_NS.
 // - Plancher de lisibilité : un objet de moins de LISIBLE px de large peut être agrandi jusqu'à LISIBLE px, pas au-delà
-//   (en gardant ses proportions). Les personnages gardent leur largeur stylisée : seule leur hauteur suit le gabarit.
+//   (en gardant ses proportions). Les personnages font 12 px de large (60 cm, bras compris) ;
+//   leur hauteur suit le gabarit.
 // - Pièce de bâtiment qui relie des appuis posés au sol (sablière nord-sud, chevron, couverture : `ground`) : sa
 //   profondeur se voit à l'échelle du sol, sans raccourci, pour qu'elle rejoigne ses poteaux posés à leur place.
 //
@@ -20,7 +21,7 @@
 // - big-felled-log (est-ouest, 95 × 65 cm) : 19 × 13 ; bouts ovales de 5 px de large pour 11 de haut (≈ 11 × ½).
 // - big-felled-log-ns (nord-sud) : 13 × 19 ; dessus d'écorce de 10 px entre les deux ronds (95 cm × ½ = 9,5) ; face de
 //   coupe en ovale de 11 × 7 (FACE_NS = 7/11).
-// - Xéros : 32 px de haut (1,60 m) ; la mère : 34 px (1,70 m).
+// - Xéros et la mère : 32 px de haut (1,60 m), 12 px de large (60 cm).
 
 import type { Grid, Palette } from '../../art/lib/canvas';
 

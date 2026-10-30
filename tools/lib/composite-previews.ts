@@ -328,7 +328,7 @@ export function gabaritPreview(sources: ArtSource[]): PNG | undefined {
   const upright: Dims = { w: 50, d: 50, h: 50, shape: 'cylinder', axis: 'up' };
   const log: Dims = { w: 95, d: 65, h: 65, shape: 'cylinder', axis: 'ew' };
   const logNS: Dims = { w: 65, d: 95, h: 65, shape: 'cylinder', axis: 'ns' };
-  const xerosDims: Dims = { w: 90, d: 30, h: 160, shape: 'flat' }; // une personne : sa hauteur, sans dessus (h = 32 px)
+  const xerosDims: Dims = { w: 60, d: 30, h: 160, shape: 'flat' }; // une personne : sa hauteur, sans dessus (h = 32 px)
   const gauges: { grid: Grid; palette: Palette; dims: Dims; person?: boolean }[] = [
     { grid: body.animations['idle-down'].frames[0], palette: body.palette, dims: xerosDims, person: true },
     { grid: gaugeBox(cube).toGrid(), palette: world, dims: cube },

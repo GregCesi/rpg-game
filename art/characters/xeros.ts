@@ -1,10 +1,15 @@
 // Xéros — 14 ans, jeune paysan sec et maigre. Coupe au bol brun foncé, côtés rasés (dessinés en peau :
 // à ~5 cm par pixel, 3-6 mm de repousse ne se voient pas), tunique de lin beige serrée à la ceinture.
-// Frame 32x48. Les pieds touchent y=45, l'ombre est dessinée dessous. 31 px de haut (y=14 à y=45).
+// Frame 32x48. Les pieds touchent y=45, l'ombre est dessinée dessous. 32 px de haut (y=14 à y=45, 1,60 m) et 12 px de
+// large (x=10 à 21, 60 cm : la carrure d'un adolescent maigre, bras compris).
 // Couleurs du portrait 64 px (peau, cheveux, lin), qui fait référence.
-// Les grilles de face et de dos sont écrites en deux moitiés (gauche | droite) : la lumière vient
-// d'en haut à gauche, la moitié droite est plus sombre. Le contour suit selOut, comme la mère.
+// La lumière vient d'en haut à gauche : la moitié droite est plus sombre. Le contour suit selOut, comme la mère.
 // La vue gauche est la vue droite retournée.
+//
+// Repères (dans la frame) : tête y=14 à 28 (15 rangées), cou y=29, épaules y=30 à 32, ceinture y=36, mains pendantes
+// y=36-37, ourlet y=38-39, jambes y=40 à 45. De face : yeux en x=14 et 17 (y=23-24), oreilles en x=10 et 21, bras
+// en x=11-12 et 19-20, torse en x=13 à 18, jambes en x=12-15 et 16-19. De profil : nez en x=21 (y=24), œil en x=17,
+// oreille en x=13-14, bras côté spectateur en x=14 à 17.
 
 import { Canvas, EMPTY, flipX, selOut, type Grid } from '../lib/canvas';
 import type { ToolPose, Vec, View } from '../lib/held';
@@ -16,7 +21,11 @@ import { palette as portrait } from '../portraits/xeros';
 const W = 32;
 const H = 48;
 const HEAD_Y = 14;
-const BODY_Y = HEAD_Y + 16;
+const BODY_Y = HEAD_Y + 15;
+/** Colonne gauche de la silhouette de face et de dos (12 px de large, centrée sur la frame). */
+const FRONT_X = 10;
+/** Colonne gauche de la grille de profil (tête de 12 px, nez compris). */
+const SIDE_X = 10;
 
 const palette = {
   o: OUTLINE,
@@ -51,99 +60,99 @@ const DARK: Record<string, string> = {
   k: 'k', K: 'k',
 };
 
-/** Assemble des moitiés gauche | droite (10 + 10 colonnes). */
-const halves = (rows: [string, string][]): Grid => rows.map(([l, r]) => l + r);
-
 // ---------- Tête ----------
+// Crâne de 10 px contour compris, oreilles d'un pixel de chaque côté : 12 px.
 
-// Bol commun aux vues de face et de dos : reflet en haut à gauche, ombre à droite.
-const bowlTop: [string, string][] = [
-  ['.......ooo', 'ooo.......'],
-  ['.....oohhh', 'hhhoo.....'],
-  ['....ohHHHH', 'hhhhho....'],
-  ['...ohHHHhh', 'hhhhhdo...'],
-  ['..ohHHhhhh', 'hhhhhhdo..'],
-  ['..ohHhhhhh', 'hhhhhhdo..'],
-  ['..ohhhhhhh', 'hhhhhhdo..'],
+// Face : le bord du bol s'arrête au-dessus des oreilles et la frange au-dessus des yeux, avec une mèche plus longue
+// au milieu du front. Tempes rasées en peau, oreilles qui dépassent, un pixel d'œil de chaque côté (deux rangées),
+// deux pixels de joue de part et d'autre, deux entre les yeux.
+const headFront: Grid = [
+  '...oooooo...',
+  '..ohHHhhho..',
+  '.ohHHHhhhdo.',
+  '.ohHHhhhhdo.',
+  '.ohHhhhhhdo.',
+  '.ohhhhhhhdo.',
+  '.ohhhdhhhdo.', // mèches de la frange
+  '.osddddddSo.', // bord du bol, tempes rasées
+  '.osssddssSo.', // mèche plus longue au milieu du front
+  'oSssossosSSo', // yeux, oreilles
+  'oSssossosSSo',
+  '.osssssssSo.',
+  '..ossssSSo..',
+  '...osssSo...',
+  '....oooo....',
 ];
 
-// Face : le bord du bol s'arrête au-dessus des oreilles et la frange au-dessus des yeux (y=22),
-// avec une mèche plus longue au milieu du front. Tempes rasées en peau, oreilles qui dépassent,
-// un pixel d'œil de chaque côté, sous une rangée de front dégagée.
-const headFront = halves([
-  ...bowlTop,
-  ['..ohhhhdhh', 'hhhdhhdo..'],
-  ['..osdddddd', 'dddddsSo..'],
-  ['..osssssdd', 'ssssssSo..'],
-  ['.oSssssoss', 'ssosssSSo.'],
-  ['.oSssssoss', 'ssosssSSo.'],
-  ['..osssssss', 'sssssSSo..'],
-  ['...osssssS', 'SsssSSo...'],
-  ['.....ossss', 'sssSo.....'],
-  ['......oooo', 'oooo......'],
-]);
-
-// Dos : le bol vu de derrière descend jusqu'aux oreilles (y=25) ; dessous, l'arrière du crâne rasé garde
-// la silhouette de la mâchoire vue de face, une seule rangée claire, le reste dans l'ombre de la tête.
-const headBack = halves([
-  ...bowlTop,
-  ['..ohhhhhhh', 'hhhhhhdo..'],
-  ['..ohhhhhhh', 'hhhhhhdo..'],
-  ['..ohhhhhhh', 'hhhhhhdo..'],
-  ['.oSdhhhhhh', 'hhhhhhdSo.'],
-  ['.oSsdddddd', 'ddddddsSo.'],
-  ['..osssssss', 'sssssSSo..'],
-  ['...osSSSSS', 'SSSSSSo...'],
-  ['.....oSSSS', 'SSSSo.....'],
-  ['......oooS', 'Sooo......'],
-]);
+// Dos : le bol vu de derrière descend jusqu'aux oreilles ; dessous, l'arrière du crâne rasé garde la silhouette de la
+// mâchoire vue de face, une seule rangée claire, le reste dans l'ombre de la tête.
+const headBack: Grid = [
+  '...oooooo...',
+  '..ohHHhhho..',
+  '.ohHHHhhhdo.',
+  '.ohHHhhhhdo.',
+  '.ohHhhhhhdo.',
+  '.ohhhhhhhdo.',
+  '.ohhhhhhhdo.',
+  '.ohhhhhhhdo.',
+  '.ohhhhhhhdo.',
+  'oSdhhhhhhdSo',
+  'oSsddddddsSo',
+  '.ossssssSSo.',
+  '..osSSSSSo..',
+  '...oSSSSo...',
+  '....oooo....',
+];
 
 // ---------- Corps, face et dos ----------
-// Colonnes : 0-4 bras gauche, 5-14 torse, 15-19 bras droit. Le torse fait 10 px aux épaules,
-// 8 à la taille (un pixel d'ombre le sépare des bras) et s'évase à 10 sous la ceinture.
+// Torse de 6 px (x=13 à 18) entre deux bras de 2 px (manche claire, ombre) ; une colonne d'ombre du lin sépare le bras
+// du torse, sans contour intérieur. Sous les mains, l'ourlet.
 
 const torsoFront: Grid = [
-  '...osSo...', // cou
-  'oooosSoooo', // épaules, encolure
-  'LLLtTTtttt', // fente de l'encolure
-  'LLttttttTT',
-  'YLttttttTY',
-  'YLttttttTY',
-  'YbbbbbbbbY', // ceinture
-  'YLtttttTTY',
-  'LttttttTTT', // l'ourlet s'évase
-  'LtttttTTTT',
-  'oooooooooo',
+  '.osSo.', // cou
+  'oosSoo', // épaules, encolure
+  'LtTTtt', // fente de l'encolure
+  'Lttttt',
+  'YLttTY',
+  'YLttTY',
+  'YLttTY',
+  'YbbbbY', // ceinture
+  'YLttTY',
+  'LttTTT', // l'ourlet, sous les mains
+  'LtTTTT',
+  'oooooo',
 ];
 
 // Dos : pas d'encolure, un pli qui descend de l'omoplate droite et reprend sous la ceinture.
 const torsoBack: Grid = [
-  '...osSo...',
-  'oooottoooo',
-  'LLLtttTttt',
-  'LLttttTttT',
-  'YLttttTtTY',
-  'YLtttttTTY',
-  'YbbbbbbbbY',
-  'YLttttTtTY',
-  'LtttttTTTT',
-  'LttttTTTTT',
-  'oooooooooo',
+  '.osSo.',
+  'oottoo',
+  'LttTtT',
+  'LttTtt',
+  'YLtTtY',
+  'YLttTY',
+  'YLttTY',
+  'YbbbbY',
+  'YLtTtY',
+  'LttTTT',
+  'LtTTTT',
+  'oooooo',
 ];
 
-// Bras pendants. `raised` : la main remonte d'un pixel (bras qui part vers l'avant pendant la marche).
+// Bras pendants (3 colonnes : contour et manche de 2 px). `raised` : la main remonte d'un pixel (bras qui part vers
+// l'avant pendant la marche).
 function armLeft(raised: boolean): Grid {
-  const top = ['.....', '....o', '...oL', '..oLL', '..oLt'];
+  const top = ['...', '..o', '.oL', 'oLL'];
   return raised
-    ? [...top, '..osS', '..osS', '..ooo', '....o', '....o', '.....']
-    : [...top, '..oLt', '..osS', '..osS', '..ooo', '....o', '.....'];
+    ? [...top, 'oLt', 'oLt', 'osS', 'osS', 'ooo', '..o', '..o', '...']
+    : [...top, 'oLt', 'oLt', 'oLt', 'osS', 'osS', 'ooo', '..o', '...'];
 }
 
 function armRight(raised: boolean): Grid {
-  const top = ['.....', 'o....', 'to...', 'tTo..', 'tTo..'];
+  const top = ['...', 'o..', 'To.', 'TTo'];
   return raised
-    ? [...top, 'sSo..', 'sSo..', 'ooo..', 'o....', 'o....', '.....']
-    : [...top, 'tTo..', 'sSo..', 'sSo..', 'ooo..', 'o....', '.....'];
+    ? [...top, 'tTo', 'tTo', 'sSo', 'sSo', 'ooo', 'o..', 'o..', '...']
+    : [...top, 'tTo', 'tTo', 'tTo', 'sSo', 'sSo', 'ooo', 'o..', '...'];
 }
 
 function bodyFrontal(torso: Grid, leftRaised: boolean, rightRaised: boolean): Grid {
@@ -152,58 +161,64 @@ function bodyFrontal(torso: Grid, leftRaised: boolean, rightRaised: boolean): Gr
   return torso.map((row, y) => l[y] + row + r[y]);
 }
 
-// Jambes fines, bien séparées ; bottes de cuir.
+// Jambes fines, jointes (le contour de chacune les sépare) ; bottes de cuir.
 const legLeft: Grid = ['opPo', 'opPo', 'opPo', 'oKko', 'oKko', 'oooo'];
 const legRight: Grid = ['opPo', 'opPo', 'oPPo', 'oKko', 'okko', 'oooo'];
+/** Colonnes des jambes de face, depuis FRONT_X. */
+const LEG_L = 2;
+const LEG_R = 6;
 
 // ---------- Vue de profil (droite) ----------
 
-// Le bol couvre le crâne jusqu'au-dessus de l'oreille et descend un peu plus bas derrière ;
-// dessous, une petite bande rasée à la nuque. Œil, nez qui dépasse, oreille, mâchoire ombrée,
-// cou court (2 px) qui disparaît dans le col.
+// Le bol couvre le crâne et s'arrête au-dessus du front (une rangée de front dégagée devant) ; derrière, il descend
+// plus bas, jusqu'à l'oreille, puis une petite bande rasée à la nuque. Oreille en C (S clair, creux D), œil, nez qui
+// dépasse, mâchoire ombrée, cou court qui disparaît dans le col.
 const headSide: Grid = [
-  '.....oooooo.......',
-  '...oohhhhhhoo.....',
-  '..ohHHHHhhhhho....',
-  '.ohHHHhhhhhhhho...',
-  '.ohHHhhhhhhhhhho..',
-  'ohHhhhhhhhhhhhhho.',
-  'ohhhhhhhhhhhhhhho.',
-  'ohhhhhhhhhhhhhhho.',
-  'ohhhhhhhhhhdhhdho.',
-  'ohhhddddddddddddo.',
-  'ohhdsSSsssssossso.',
-  'ohsssSDsssssosssso',
-  '.osssSDssssssssSo.',
-  '..osssssssssssSo..',
-  '...ossssSDDSSoo...',
-  '....osSDoooo......',
+  '...ooooo....',
+  '.oohHHhhoo..',
+  '.ohHHHhhhho.',
+  'ohHHhhhhhho.',
+  'ohHhhhhhhho.',
+  'ohhhhhhhhho.',
+  'ohhhhhhdhdo.', // mèches de la frange
+  'ohhhddddddo.', // bord du bol
+  'ohhdsssssso.', // front dégagé ; derrière, le bol descend
+  'ohdSsssosso.', // oreille, œil
+  'ohsSDssossso', // le nez dépasse
+  '.osSsssssSo.',
+  '..ossssssSo.',
+  '...ossDDSo..', // dessous de la mâchoire
+  '....osDooo..', // cou
 ];
 
-// Torse de profil : col montant autour du cou, épaules plus larges que la taille,
-// ourlet qui s'évase sous la ceinture. Dos éclairé à gauche.
+// Torse de profil : col montant autour du cou, poitrine en avant, ourlet qui s'évase sous la ceinture. Dos éclairé à
+// gauche.
 const bodySide: Grid = [
-  '...oLLttTTo.......',
-  '..oLLttttttTo.....',
-  '..oLtttttttTTo....',
-  '..oLtttttttTTo....',
-  '...oLttttttTo.....',
-  '...oLttttttTo.....',
-  '...obbbbbbbbo.....',
-  '...oLtttttttTo....',
-  '..oLttttttttTo....',
-  '..oLttttttttTTo...',
-  '..ooooooooooooo...',
+  '...oLtTo....',
+  '..oLLtttTo..',
+  '..oLttttTTo.',
+  '..oLttttTTo.',
+  '...oLtttTo..',
+  '...oLtttTo..',
+  '...oLtttTo..',
+  '...obbbbbo..',
+  '...oLttttTo.',
+  '..oLtttttTo.',
+  '..oLttttttTo',
+  '..oooooooooo',
 ];
+/** Colonne du bras de profil, depuis SIDE_X. */
+const ARM_SIDE_X = 4;
 
-// Bras côté spectateur, bordé de l'ombre du lin pour se détacher du torse ; il pend le long
-// du corps, la main au bas de la tunique.
+// Bras côté spectateur, bordé de l'ombre du lin pour se détacher du torse ; il pend le long du corps, la main au bas
+// de la tunique.
 const armSide: Grid = [
   'YLLY',
   'YLLY',
   'YLLY',
-  'YLLY',
-  'YLLY',
+  'YLtY',
+  'YLtY',
+  'YLtY',
   'YLtY',
   'DsSD',
   'DSSD',
@@ -218,6 +233,8 @@ const legSide: Grid = [
   'okkko',
   'ooooo',
 ];
+/** Colonnes des jambes de profil (fond, devant), depuis SIDE_X, jambes jointes. */
+const LEG_SIDE: [number, number] = [3, 5];
 
 // La jambe du fond est plus sombre pour qu'on lise la profondeur.
 const backLeg = (g: Grid) => Canvas.from(g).recolor({ p: 'P', K: 'k' }).toGrid();
@@ -225,7 +242,7 @@ const backLeg = (g: Grid) => Canvas.from(g).recolor({ p: 'P', K: 'k' }).toGrid()
 // ---------- Composition ----------
 
 function shadow(c: Canvas) {
-  c.ellipse(16.5, 45.5, 7, 2, 'x');
+  c.ellipse(16.5, 45.5, 5.5, 2, 'x');
 }
 
 type Facing = 'down' | 'up';
@@ -237,10 +254,10 @@ type Facing = 'down' | 'up';
 function frontal(facing: Facing, legL: number, legR: number, bob: number): Grid {
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 6;
-  const legY = BODY_Y + 10;
-  c.stamp(legLeft, ox + 5, legY + legL);
-  c.stamp(legRight, ox + 11, legY + legR);
+  const ox = FRONT_X;
+  const legY = BODY_Y + 11;
+  c.stamp(legLeft, ox + LEG_L, legY + legL);
+  c.stamp(legRight, ox + LEG_R, legY + legR);
   const torso = facing === 'down' ? torsoFront : torsoBack;
   c.stamp(bodyFrontal(torso, legR < 0, legL < 0), ox, BODY_Y + bob);
   c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y + bob);
@@ -251,14 +268,14 @@ function frontal(facing: Facing, legL: number, legR: number, bob: number): Grid 
 function side(spread: number, arm: number, bob: number, swapLegs = false): Grid {
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 7;
-  const legY = BODY_Y + 10;
+  const ox = SIDE_X;
+  const legY = BODY_Y + 11;
   const back = swapLegs ? legSide : backLeg(legSide);
   const front = swapLegs ? backLeg(legSide) : legSide;
-  c.stamp(back, ox + 4 - spread, legY);
-  c.stamp(front, ox + 6 + spread, legY);
+  c.stamp(back, ox + LEG_SIDE[0] - spread, legY);
+  c.stamp(front, ox + LEG_SIDE[1] + spread, legY);
   c.stamp(bodySide, ox, BODY_Y + bob);
-  c.stamp(armSide, ox + 6 + arm, BODY_Y + 1 + bob);
+  c.stamp(armSide, ox + ARM_SIDE_X + arm, BODY_Y + 1 + bob);
   c.stamp(headSide, ox, HEAD_Y + bob);
   return selOut(c.toGrid(), DARK);
 }
@@ -303,10 +320,10 @@ const edgeOn = (
   hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front', grip: Vec = hand,
 ) => pose(hand, head, edge, behind, elbows, arms, 'edge', grip);
 
-// Épaules, dans la frame : face/dos à gauche et à droite du torse, profil au milieu du dos.
-const SHOULDER_L: Vec = [11, BODY_Y + 2];
-const SHOULDER_R: Vec = [20, BODY_Y + 2];
-const SHOULDER_SIDE: Vec = [14, BODY_Y + 2];
+// Épaules, dans la frame : face/dos à gauche et à droite du torse (sur la manche), profil au milieu du dos.
+const SHOULDER_L: Vec = [12, BODY_Y + 2];
+const SHOULDER_R: Vec = [19, BODY_Y + 2];
+const SHOULDER_SIDE: Vec = [15, BODY_Y + 2];
 
 // Coup horizontal (use-*), sur ce qui est debout : la hache tourne à plat autour de Xéros, à hauteur de tronc
 // (mains à hauteur de ceinture). On voit la face du fer, de profil : le tranchant en éventail mène le coup (côté 'ccw' :
@@ -316,26 +333,26 @@ const USE_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
   // de face (l'arbre au sud) : armée à sa droite (à gauche de l'image), le fer tourne vers nous et mord le tronc
   // devant lui ; puis on le dégage
   down: [
-    face([10, 34], 'nw', 'ccw', true, [[8, 36], [16, 37]]),
-    face([12, 37], 'w', 'ccw', false, [[9, 37], [18, 38]]),
-    face([16, 38], 'sw', 'ccw', false, [[11, 38], [20, 38]], 'front', [18, 37]),
-    face([14, 37], 'sw', 'ccw', false, [[10, 38], [19, 38]], 'front', [16, 36]),
+    face([10, 34], 'nw', 'ccw', true, [[10, 36], [16, 37]]),
+    face([12, 37], 'w', 'ccw', false, [[11, 37], [18, 38]]),
+    face([16, 38], 'sw', 'ccw', false, [[12, 38], [19, 38]], 'front', [18, 37]),
+    face([14, 37], 'sw', 'ccw', false, [[12, 38], [18, 38]], 'front', [16, 36]),
   ],
   // de dos (l'arbre au nord) : armée en arrière à sa droite, le fer vers nous ; il tourne par la droite et mord
   // le tronc devant lui, à droite de la tête, puis revient
   up: [
-    face([22, 37], 'se', 'ccw', false, [[12, 37], [23, 35]], 'body'),
-    face([24, 34], 'e', 'ccw', false, [[12, 36], [24, 32]], 'body'),
-    face([21, 31], 'ne', 'ccw', true, [[12, 35], [23, 33]], 'body'),
-    face([23, 33], 'ne', 'ccw', true, [[12, 36], [24, 34]], 'body'),
+    face([22, 37], 'se', 'ccw', false, [[13, 37], [21, 35]], 'body'),
+    face([24, 34], 'e', 'ccw', false, [[13, 36], [22, 32]], 'body'),
+    face([21, 31], 'ne', 'ccw', true, [[13, 35], [21, 33]], 'body'),
+    face([23, 33], 'ne', 'ccw', true, [[13, 36], [22, 34]], 'body'),
   ],
   // de profil : armée derrière son dos, elle tourne par le côté proche de nous (fer vers le spectateur),
   // mord le tronc devant lui, puis on la dégage d'un pixel
   right: [
-    face([11, 35], 'w', 'ccw', false, [[14, 36]]),
-    face([18, 37], 'se', 'ccw', false, [[16, 36]]),
-    face([22, 34], 'ne', 'ccw', false, [[18, 35]]),
-    face([20, 35], 'ne', 'ccw', false, [[17, 35]]),
+    face([11, 35], 'w', 'ccw', false, [[15, 36]]),
+    face([18, 37], 'se', 'ccw', false, [[17, 36]]),
+    face([22, 34], 'ne', 'ccw', false, [[19, 35]]),
+    face([20, 35], 'ne', 'ccw', false, [[18, 35]]),
   ],
 };
 
@@ -358,27 +375,27 @@ const CHOP_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
   // de face (le tronc au sud) : armée haut derrière la tête, elle revient devant le front, puis le fer frappe
   // le dessus du tronc quelques pixels sous les pieds, manche vertical, et on le dégage
   down: [
-    edgeOn([16, 11], 'n', 'cw', true, [[7, 21], [24, 21]], 'head'),
-    edgeOn([16, 18], 'n', 'cw', false, [[8, 26], [24, 26]]),
-    edgeOn([16, 42], 's', 'ccw', false, [[12, 38], [20, 38]], 'front', [16, 35]),
-    edgeOn([16, 39], 's', 'ccw', false, [[11, 37], [21, 37]], 'front', [16, 33]),
+    edgeOn([16, 11], 'n', 'cw', true, [[9, 21], [22, 21]], 'head'),
+    edgeOn([16, 18], 'n', 'cw', false, [[10, 26], [21, 26]]),
+    edgeOn([16, 42], 's', 'ccw', false, [[13, 38], [19, 38]], 'front', [16, 35]),
+    edgeOn([16, 39], 's', 'ccw', false, [[12, 37], [19, 37]], 'front', [16, 33]),
   ],
   // de dos (le tronc au nord, son dessus 18 à 22 px au-dessus des pieds, derrière la taille et le dos) : le fer est
   // armé derrière la tête, pendu vers nous ; il passe au-dessus de la tête, puis frappe l'encoche derrière le corps.
   // Les mains sont décalées à droite : le manche vertical et le fer dépassent du flanc droit
   up: [
-    edgeOn([18, 12], 's', 'ccw', false, [[8, 21], [25, 21]], 'head'),
-    edgeOn([21, 10], 'n', 'cw', true, [[9, 21], [26, 20]], 'head'),
-    edgeOn([24, 37], 'n', 'cw', true, [[14, 39], [20, 39]], 'body', [24, 39]),
-    edgeOn([24, 35], 'n', 'cw', true, [[14, 38], [20, 38]], 'body', [24, 37]),
+    edgeOn([18, 12], 's', 'ccw', false, [[9, 21], [22, 21]], 'head'),
+    edgeOn([21, 10], 'n', 'cw', true, [[9, 21], [23, 20]], 'head'),
+    edgeOn([24, 37], 'n', 'cw', true, [[14, 39], [19, 39]], 'body', [24, 39]),
+    edgeOn([24, 35], 'n', 'cw', true, [[14, 38], [19, 38]], 'body', [24, 37]),
   ],
   // de profil : armée derrière la tête, elle repart en avant au-dessus de lui, puis le fer frappe le dessus de la
   // bille posée devant lui, manche vertical, et on le dégage
   right: [
-    edgeOn([12, 12], 'nw', 'cw', true, [[6, 23]], 'head'),
-    edgeOn([22, 21], 'ne', 'ccw', false, [[19, 28]]),
-    edgeOn([24, 29], 'se', 'cw', false, [[19, 32]], 'front', [23, 26]),
-    edgeOn([23, 27], 'se', 'cw', false, [[19, 31]], 'front', [22, 25]),
+    edgeOn([12, 12], 'nw', 'cw', true, [[9, 23]], 'head'),
+    edgeOn([22, 21], 'ne', 'ccw', false, [[20, 28]]),
+    edgeOn([24, 29], 'se', 'cw', false, [[20, 32]], 'front', [23, 26]),
+    edgeOn([23, 27], 'se', 'cw', false, [[20, 31]], 'front', [22, 25]),
   ],
 };
 
@@ -429,15 +446,15 @@ function arm(c: Canvas, pts: Vec[], sleeve: string, sleeveLight: string) {
 }
 
 /** Torse sans bras pendants : seul le bord de l'épaule reste. */
-const bareTorso = (torso: Grid): Grid => torso.map((row) => '.....' + row + '.....');
+const bareTorso = (torso: Grid): Grid => torso.map((row) => '...' + row + '...');
 
 function useFrontal(facing: Facing, b: UseBody): Grid {
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 6;
-  const legY = BODY_Y + 10;
-  c.stamp(legLeft, ox + 5, legY);
-  c.stamp(legRight, ox + 11, legY);
+  const ox = FRONT_X;
+  const legY = BODY_Y + 11;
+  c.stamp(legLeft, ox + LEG_L, legY);
+  c.stamp(legRight, ox + LEG_R, legY);
   const torso = () => c.stamp(bareTorso(facing === 'down' ? torsoFront : torsoBack), ox, BODY_Y);
   const head = () => c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y);
   const arms = () => {
@@ -458,10 +475,10 @@ function useFrontal(facing: Facing, b: UseBody): Grid {
 function useSide(b: UseBody): Grid {
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 7;
-  const legY = BODY_Y + 10;
-  c.stamp(backLeg(legSide), ox + 3, legY);
-  c.stamp(legSide, ox + 7, legY);
+  const ox = SIDE_X;
+  const legY = BODY_Y + 11;
+  c.stamp(backLeg(legSide), ox + LEG_SIDE[0] - 1, legY);
+  c.stamp(legSide, ox + LEG_SIDE[1] + 1, legY);
   c.stamp(bodySide, ox, BODY_Y);
   const arms = () => {
     rim(c);
@@ -507,11 +524,11 @@ interface CarryBody {
 
 const CARRY_BODY: Record<'down' | 'up' | 'right', CarryBody> = {
   // de face : les bras descendent le long des flancs et reviennent devant le ventre, raccourcis par la perspective
-  down: { hands: [16, 37], elbows: [[9, 36], [22, 36]] },
+  down: { hands: [16, 37], elbows: [[11, 36], [20, 36]] },
   // de dos : les mains sont devant lui, cachées par le corps ; seuls les coudes dépassent des flancs
-  up: { hands: [16, 36], elbows: [[9, 35], [22, 35]] },
+  up: { hands: [16, 36], elbows: [[11, 35], [20, 35]] },
   // de profil : le bras descend sous l'épaule, coude contre la taille, l'avant-bras part devant le ventre
-  right: { hands: [21, 36], elbows: [[16, 37]] },
+  right: { hands: [21, 36], elbows: [[17, 37]] },
 };
 
 /** Rebond de chaque image de la marche chargée (0 au repos) : celui de la marche. */
@@ -528,10 +545,10 @@ function carryFrontal(facing: Facing, legL: number, legR: number, bob: number): 
   const b = CARRY_BODY[facing];
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 6;
-  const legY = BODY_Y + 10;
-  c.stamp(legLeft, ox + 5, legY + legL);
-  c.stamp(legRight, ox + 11, legY + legR);
+  const ox = FRONT_X;
+  const legY = BODY_Y + 11;
+  c.stamp(legLeft, ox + LEG_L, legY + legL);
+  c.stamp(legRight, ox + LEG_R, legY + legR);
   const arms = () => {
     rim(c);
     const [el, er] = b.elbows;
@@ -550,12 +567,12 @@ function carrySide(spread: number, bob: number, swapLegs = false): Grid {
   const b = CARRY_BODY.right;
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 7;
-  const legY = BODY_Y + 10;
+  const ox = SIDE_X;
+  const legY = BODY_Y + 11;
   const back = swapLegs ? legSide : backLeg(legSide);
   const front = swapLegs ? backLeg(legSide) : legSide;
-  c.stamp(back, ox + 4 - spread, legY);
-  c.stamp(front, ox + 6 + spread, legY);
+  c.stamp(back, ox + LEG_SIDE[0] - spread, legY);
+  c.stamp(front, ox + LEG_SIDE[1] + spread, legY);
   c.stamp(bodySide, ox, BODY_Y + bob);
   c.stamp(headSide, ox - 1, HEAD_Y + bob);
   rim(c);
@@ -595,23 +612,23 @@ const holdAt = ([x, y]: Vec, behind: boolean): HoldPoint => ({ dx: x - 16, dy: y
 
 /**
  * Mains pendantes de face et de dos, pour frontal(legL, legR, bob) : le poing fait 2 × 2 px, le point est son pixel
- * en bas à gauche (bras gauche de l'image : x = 9 ; bras droit de l'image : x = 21). La main remonte d'un pixel
+ * en bas à gauche (bras gauche de l'image : x = 11 ; bras droit de l'image : x = 19). La main remonte d'un pixel
  * quand le bras part en avant. De face, la main droite de Xéros est à gauche de l'image ; de dos, à droite. De dos, ce
  * qu'il tient passe sous le corps : la main le recouvre, seul ce qui dépasse de la silhouette se voit.
  */
 function frontalHands(facing: Facing, legL: number, legR: number, bob: number): HandPair {
-  const imgLeft = holdAt([9, 37 + bob - (legR < 0 ? 1 : 0)], facing === 'up');
-  const imgRight = holdAt([21, 37 + bob - (legL < 0 ? 1 : 0)], facing === 'up');
+  const imgLeft = holdAt([11, 37 + bob - (legR < 0 ? 1 : 0)], facing === 'up');
+  const imgRight = holdAt([19, 37 + bob - (legL < 0 ? 1 : 0)], facing === 'up');
   return facing === 'down' ? { right: imgLeft, left: imgRight } : { left: imgLeft, right: imgRight };
 }
 
 /**
  * Profil droit, pour side(spread, arm, bob) : la main droite est celle du bras côté spectateur (armSide, poing en
- * x = 14..15, y = 37..38, point en bas à gauche) ; la gauche est de l'autre côté du corps, cachée, un pixel plus haut (plus loin) et balancée
+ * x = 15..16, y = 37..38, point en bas à gauche) ; la gauche est de l'autre côté du corps, cachée, un pixel plus haut (plus loin) et balancée
  * à l'opposé.
  */
 function sideHands(arm: number, bob: number): HandPair {
-  return { right: holdAt([14 + arm, 38 + bob], false), left: holdAt([13 - arm, 37 + bob], true) };
+  return { right: holdAt([15 + arm, 38 + bob], false), left: holdAt([14 - arm, 37 + bob], true) };
 }
 
 /**
@@ -640,26 +657,26 @@ interface ShoulderBody {
 
 const SHOULDER_BODY: Record<'down' | 'up' | 'right', ShoulderBody> = {
   // de face : sa droite est à gauche de l'image ; le coude reste au flanc, le poing remonte devant l'épaule
-  down: { hand: [12, 33], elbow: [9, 36] },
+  down: { hand: [12, 33], elbow: [11, 36] },
   // de dos : sa droite est à droite de l'image ; le poing est devant lui, caché ; le coude dépasse du flanc
-  up: { hand: [19, 33], elbow: [22, 36] },
+  up: { hand: [19, 33], elbow: [20, 36] },
   // de profil : le coude contre la taille, le poing devant la poitrine
-  right: { hand: [16, 34], elbow: [15, 37] },
+  right: { hand: [16, 34], elbow: [16, 37] },
 };
 
 function shoulderFrontal(facing: Facing, legL: number, legR: number, bob: number): Grid {
   const b = SHOULDER_BODY[facing];
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 6;
-  const legY = BODY_Y + 10;
-  c.stamp(legLeft, ox + 5, legY + legL);
-  c.stamp(legRight, ox + 11, legY + legR);
+  const ox = FRONT_X;
+  const legY = BODY_Y + 11;
+  c.stamp(legLeft, ox + LEG_L, legY + legL);
+  c.stamp(legRight, ox + LEG_R, legY + legR);
   const torso = facing === 'down' ? torsoFront : torsoBack;
   // le bras qui pend : à droite de l'image de face (sa gauche), à gauche de dos (sa gauche aussi)
   const hanging = facing === 'down'
-    ? torso.map((row, y) => '.....' + row + armRight(legL < 0)[y])
-    : torso.map((row, y) => armLeft(legR < 0)[y] + row + '.....');
+    ? torso.map((row, y) => '...' + row + armRight(legL < 0)[y])
+    : torso.map((row, y) => armLeft(legR < 0)[y] + row + '...');
   const shoulder = facing === 'down' ? SHOULDER_L : SHOULDER_R;
   const raised = () => {
     rim(c);
@@ -677,12 +694,12 @@ function shoulderSide(spread: number, bob: number, swapLegs = false): Grid {
   const b = SHOULDER_BODY.right;
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 7;
-  const legY = BODY_Y + 10;
+  const ox = SIDE_X;
+  const legY = BODY_Y + 11;
   const back = swapLegs ? legSide : backLeg(legSide);
   const front = swapLegs ? backLeg(legSide) : legSide;
-  c.stamp(back, ox + 4 - spread, legY);
-  c.stamp(front, ox + 6 + spread, legY);
+  c.stamp(back, ox + LEG_SIDE[0] - spread, legY);
+  c.stamp(front, ox + LEG_SIDE[1] + spread, legY);
   c.stamp(bodySide, ox, BODY_Y + bob);
   c.stamp(headSide, ox, HEAD_Y + bob);
   rim(c);
@@ -734,7 +751,7 @@ function pushLeg(c: Canvas, hip: Vec, ankle: Vec, back: boolean) {
 function pushSide(backX: number, frontX: number, lift: 'back' | 'front' | null, swap: boolean): Grid {
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 7;
+  const ox = SIDE_X;
   // buste penché : le haut du torse avance de deux pixels, la poitrine d'un, la ceinture reste sur les hanches
   const LEAN = [2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0];
   const leaned = bodySide.map((row, y) => '.'.repeat(LEAN[y]) + row);
@@ -743,8 +760,8 @@ function pushSide(backX: number, frontX: number, lift: 'back' | 'front' | null, 
   const legs = () => {
     const ankleY = 43 - 1;
     const y = (which: 'back' | 'front') => ankleY - (lift === which ? 1 : 0);
-    pushLeg(c, [12, 40], [backX, y('back')], !swap);
-    pushLeg(c, [14, 40], [frontX, y('front')], swap);
+    pushLeg(c, [14, 40], [backX, y('back')], !swap);
+    pushLeg(c, [16, 40], [frontX, y('front')], swap);
   };
   legs();
   rim(c);
@@ -764,25 +781,25 @@ function pushSide(backX: number, frontX: number, lift: 'back' | 'front' | null, 
 function pushFrontal(facing: Facing, legL: number, legR: number): Grid {
   const c = new Canvas(W, H);
   shadow(c);
-  const ox = 6;
-  const legY = BODY_Y + 10;
+  const ox = FRONT_X;
+  const legY = BODY_Y + 11;
   // jambes écartées d'un pixel de plus qu'au repos
-  c.stamp(legLeft, ox + 4, legY + legL);
-  c.stamp(legRight, ox + 12, legY + legR);
+  c.stamp(legLeft, ox + LEG_L - 1, legY + legL);
+  c.stamp(legRight, ox + LEG_R + 1, legY + legR);
   // épaules plus basses : le torse descend d'un pixel sous la tête, raccourci d'une rangée de tunique (le buste
   // penché vers nous ou loin de nous), si bien que l'ourlet reste où il est
   const torso = facing === 'down' ? torsoFront : torsoBack;
-  const hunched = [...torso.slice(0, 7), ...torso.slice(8)];
+  const hunched = [...torso.slice(0, 8), ...torso.slice(9)];
   const shL: Vec = [SHOULDER_L[0], SHOULDER_L[1] + 2];
   const shR: Vec = [SHOULDER_R[0], SHOULDER_R[1] + 2];
   const arms = () => {
     rim(c);
     if (facing === 'down') {
-      arm(c, [shL, [9, 36], [12, 39]], 't', 'L');
-      arm(c, [shR, [22, 36], [19, 39]], 'T', 't');
+      arm(c, [shL, [11, 36], [12, 39]], 't', 'L');
+      arm(c, [shR, [20, 36], [19, 39]], 'T', 't');
     } else {
-      arm(c, [shL, [9, 35], [13, 34]], 't', 'L');
-      arm(c, [shR, [22, 35], [18, 34]], 'T', 't');
+      arm(c, [shL, [11, 35], [13, 34]], 't', 'L');
+      arm(c, [shR, [20, 35], [18, 34]], 'T', 't');
     }
   };
   if (facing === 'up') arms();
@@ -797,10 +814,10 @@ function pushFrontal(facing: Facing, legL: number, legR: number): Grid {
 const pushWalkFrontal = (f: Facing) => [pushFrontal(f, 0, -1), pushFrontal(f, 0, 0), pushFrontal(f, -1, 0), pushFrontal(f, 0, 0)];
 // De profil : grand écart, la jambe arrière ramenée (levée) sous le corps, puis l'autre jambe devant.
 const pushWalkRight = [
-  pushSide(9, 18, null, false),
-  pushSide(13, 17, 'back', false),
-  pushSide(9, 18, null, true),
-  pushSide(13, 17, 'back', true),
+  pushSide(10, 19, null, false),
+  pushSide(14, 18, 'back', false),
+  pushSide(10, 19, null, true),
+  pushSide(14, 18, 'back', true),
 ];
 
 const xeros: SpriteSheetSource = {
@@ -844,8 +861,8 @@ const xeros: SpriteSheetSource = {
     'shoulder-walk-left': { frames: shoulderWalkRight.map(flipX), frameRate: 8, repeat: -1 },
     'push-idle-down': { frames: [pushFrontal('down', 0, 0)], frameRate: 1, repeat: 0 },
     'push-idle-up': { frames: [pushFrontal('up', 0, 0)], frameRate: 1, repeat: 0 },
-    'push-idle-right': { frames: [pushSide(9, 18, null, false)], frameRate: 1, repeat: 0 },
-    'push-idle-left': { frames: [flipX(pushSide(9, 18, null, false))], frameRate: 1, repeat: 0 },
+    'push-idle-right': { frames: [pushSide(10, 19, null, false)], frameRate: 1, repeat: 0 },
+    'push-idle-left': { frames: [flipX(pushSide(10, 19, null, false))], frameRate: 1, repeat: 0 },
     'push-walk-down': { frames: pushWalkFrontal('down'), frameRate: PUSH_FRAME_RATE, repeat: -1 },
     'push-walk-up': { frames: pushWalkFrontal('up'), frameRate: PUSH_FRAME_RATE, repeat: -1 },
     'push-walk-right': { frames: pushWalkRight, frameRate: PUSH_FRAME_RATE, repeat: -1 },

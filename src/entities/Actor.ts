@@ -2,6 +2,9 @@ import Phaser from 'phaser';
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 
+/** Largeur de la collision aux pieds, en px. */
+const BODY_W = 10;
+
 /**
  * Le corps d'un personnage : sprite, collision aux pieds, orientation, animations.
  * Il ne décide rien : un contrôleur (clavier pour le joueur, IA pour un PNJ) lui dit où aller.
@@ -23,9 +26,10 @@ export class Actor extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     // Origine aux pieds : y est la position au sol, utilisée pour l'ordre d'affichage.
     this.setOrigin(0.5, 1);
-    // Collision limitée aux pieds, comme dans Stardew : on peut passer "derrière" un arbre.
-    this.body.setSize(14, 8);
-    this.body.setOffset((this.width - 14) / 2, this.height - 10);
+    // Collision limitée aux pieds, comme dans Stardew : on peut passer "derrière" un arbre. 10 × 8 px = 50 × 40 cm
+    // (le corps fait 12 px de large, 60 cm bras compris), centrée sous lui, au bas de la frame.
+    this.body.setSize(BODY_W, 8);
+    this.body.setOffset((this.width - BODY_W) / 2, this.height - 10);
     this.body.setCollideWorldBounds(true);
     this.play(this.animKey('idle'));
   }

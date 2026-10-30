@@ -26,7 +26,7 @@ La technique (architecture, conventions) est dans `README.md` et `CLAUDE.md`.
 
 - Xéros vit seul avec elle : pas de père, pas de frère ni sœur.
 - Elle travaille à la ferme commune d'un paysan plus riche, cuisine, et sculpte le bois (son atelier est dans la maison).
-- Physique : environ 35 ans, un peu plus grande que Xéros (34 px contre 32 dans le jeu, contour compris : 1,70 m contre 1,60 m), mains de travailleuse. Même famille de couleurs de peau que lui.
+- Physique : environ 35 ans, de la taille de Xéros dans le jeu (32 px de haut et 12 de large, contour compris : 1,60 m sur 60 cm), mains de travailleuse. Même famille de couleurs de peau que lui.
 - Tenue : foulard de lin noué sur des cheveux châtain foncé, robe de laine bleu-gris délavé (teinture à la guède), tablier écru, manches retroussées.
 - Portrait de dialogue en 64 px (`portrait-mother-64`), expression `neutral` ; la taille 96 et l'entrée dans `characters.json` viendront avec ses dialogues.
 
@@ -59,7 +59,7 @@ Extérieur :
 - Intérieurs dans une pénombre chaude, feux qui vacillent, rais de soleil par les fenêtres sud.
 - Sol varié avec des détails posés au hasard, pour casser la répétition.
 - **Échelle réaliste partout** (décidé le 29 octobre 2026) : environ 5 cm par pixel, une case d'environ 1,65 m. Une maison a la même taille dedans et dehors ; une longère paysanne tient sur environ 9 × 4 cases.
-- **Gabarit** (décidé le 29 octobre 2026) : une règle de dimensions et de perspective pour tous les objets, tirée des billes (`docs/STYLE.md`, section 8). Dimensions réelles contour compris, taille réelle pour tous les objets, plancher de lisibilité à 6 px de large, largeur stylisée des personnages ; la face de coupe d'un cylindre couché nord-sud est aplatie (× 7/11) pour qu'on le lise couché. Pour l'arbre, sa longueur couchée (5,65 m) fait foi.
+- **Gabarit** (décidé le 29 octobre 2026) : une règle de dimensions et de perspective pour tous les objets, tirée des billes (`docs/STYLE.md`, section 8). Dimensions réelles contour compris, taille réelle pour tous les objets, plancher de lisibilité à 6 px de large, personnages de 12 px de large (60 cm, bras compris) ; la face de coupe d'un cylindre couché nord-sud est aplatie (× 7/11) pour qu'on le lise couché. Pour l'arbre, sa longueur couchée (5,65 m) fait foi.
 - **Jeu cosy et lent** : les gestes répétés et les étapes réalistes sont assumés. La progression passe par de meilleurs outils qui raccourcissent les étapes (une scie, plus tard une brouette).
 
 ## Feuille de route
