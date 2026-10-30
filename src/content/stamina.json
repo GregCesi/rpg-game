@@ -12,6 +12,7 @@
     "knot": 1.5,
     "hewPerM": 0.333,
     "turnPerKg": 0.03,
+    "raisePerKg": 0.06,
     "carryPerKgSec": 0.034,
     "pushPerKgSec": 0.014,
     "runPerSec": 0.2

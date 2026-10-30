@@ -268,13 +268,13 @@ await playtest('implantation', async ({ page, errors, load }) => {
       out.statusDone = statusText()[0];
       out.ghostsPosts = ghostKeys();
       await shot('5-quatre-des');
-      // les poteaux se voient mais ne se remplissent pas encore
+      // les poteaux sont ouverts ; le poteau haut ne se porte pas : E devant sa place dit ce qu'il faut (une poutre au pied du dé), un piquet en main ou non
       await give({ item: 'stake' });
       const post = sp.placeGround(site(), plan.steps[1].places['post-nw']);
       await lookAt(post.x, post.y);
       await press('KeyE');
-      out.soonNotice = notices.at(-1);
-      out.soonPlaced = Object.keys(site().placed).length;
+      out.postNotice = notices.at(-1);
+      out.postPlaced = Object.keys(site().placed).length;
       await sleep(400);
       out.stateKept = JSON.stringify(site());
       return out;
@@ -351,8 +351,8 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.equal(r.statusHalf, 'Abri à bois : dés, 2 sur 4');
   assert.equal(r.statusDone, 'Abri à bois : poteaux, 0 sur 4');
   assert.deepEqual(r.ghostsPosts, ['shed-post-high', 'shed-post-high', 'shed-post-low', 'shed-post-low'], 'les poteaux en fantôme');
-  assert.equal(r.soonNotice, 'Cette étape viendra plus tard.', 'les poteaux ne se remplissent pas encore');
-  assert.equal(r.soonPlaced, 4);
+  assert.equal(r.postNotice, "Il faut d'abord une poutre de 3 m au pied du dé.", 'le poteau haut demande de l’aide : une poutre au pied du dé');
+  assert.equal(r.postPlaced, 4);
 
   // 7. la page rechargée : le chantier est retrouvé (plan, pièces posées, ligne d'état)
   await page.reload();

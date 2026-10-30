@@ -55,6 +55,9 @@ export const INTERACT = { reach: 16, radius: 20 };
  */
 export const LONG_PRESS = { ms: 500, above: 35 };
 
+/** L'aide de la mère pour dresser une poutre trop lourde (systems/site.ts) : durée du fondu (ms) et temps passé dans le noir, le temps de lire « Ta mère vient t'aider. ». */
+export const HELP = { fade: 500, hold: 1600 };
+
 /** R maintenu (pivoter une bille couchée, systems/turnLog.ts) : durée de l'appui (ms), avec la même jauge que pour nouer. */
 export const TURN_PRESS = { ms: 1000 };
 

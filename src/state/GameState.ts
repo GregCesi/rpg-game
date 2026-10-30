@@ -93,7 +93,8 @@ export const PileSchema = z
 /**
  * Un chantier posé sur une carte : le plan (`plan`, clé de plans.json), le point au sol du piquet nord-ouest (x, y), les coins où
  * un piquet est planté (`stakes`), s'il est né (`born` : les quatre piquets plantés, l'emprise libre) et les pièces posées
- * (`placed` : place du plan -> identifiant de l'objet né qui la montre). Avant sa naissance, le tracé n'a que ses piquets.
+ * (`placed` : place du plan -> identifiant de l'objet né qui la montre) et, pour celles qui viennent d'une pièce de bois (un poteau),
+ * la pièce d'origine (`pieces` : place -> ses réglages, longueur et diamètre d'arbre). Avant sa naissance, le tracé n'a que ses piquets.
  */
 export const SiteSchema = z.strictObject({
   id: z.number().int().nonnegative(),
@@ -103,6 +104,7 @@ export const SiteSchema = z.strictObject({
   stakes: z.array(CornerSchema),
   born: z.boolean(),
   placed: z.record(id, z.number().int().nonnegative()),
+  pieces: z.record(id, WoodPieceSchema),
 });
 
 /** Ce qui a changé sur une carte. */
@@ -408,7 +410,7 @@ export function learnPlan(s: GameState, plan: string): boolean {
 
 /** Commence un chantier : le premier piquet (le coin nord-ouest) est planté en (x, y) ; renvoie ce qui a été noté. */
 export function startSite(s: GameState, mapId: string, plan: string, x: number, y: number): Site {
-  const site: Site = { id: s.nextSiteId++, plan, x, y, stakes: ['nw'], born: false, placed: {} };
+  const site: Site = { id: s.nextSiteId++, plan, x, y, stakes: ['nw'], born: false, placed: {}, pieces: {} };
   mapState(s, mapId).sites.push(site);
   revision++;
   return site;
@@ -432,10 +434,13 @@ export function pullSiteStake(s: GameState, mapId: string, siteId: number, corne
   revision++;
 }
 
-/** Une pièce est posée à la place `place` du plan du chantier : `spawnId`, l'objet né qui la montre. */
-export function placeSitePiece(s: GameState, mapId: string, siteId: number, place: string, spawnId: number): void {
+/** Une pièce est posée à la place `place` du plan du chantier : `spawnId`, l'objet né qui la montre, et `wood`, la pièce de bois dont elle vient. */
+export function placeSitePiece(s: GameState, mapId: string, siteId: number, place: string, spawnId: number, wood?: WoodPiece): void {
   const site = mapState(s, mapId).sites.find((q) => q.id === siteId);
-  if (site) site.placed[place] = spawnId;
+  if (site) {
+    site.placed[place] = spawnId;
+    if (wood) site.pieces[place] = structuredClone(wood);
+  }
   revision++;
 }
 

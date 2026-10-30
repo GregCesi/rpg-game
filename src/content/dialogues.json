@@ -22,6 +22,24 @@
       }
     ]
   },
+  "call-mother": {
+    "lines": [
+      {
+        "speaker": "xeros",
+        "expression": "neutral",
+        "text": "Appeler ta mère pour la dresser ?",
+        "choices": [
+          {
+            "text": "Oui",
+            "action": "help"
+          },
+          {
+            "text": "Non"
+          }
+        ]
+      }
+    ]
+  },
   "pallet-sleep": {
     "lines": [
       {
