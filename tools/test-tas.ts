@@ -3,7 +3,7 @@
 // de 1,20 m nord-sud en rangées tête-bêche, des poutres de 1,80 m en rangées) ; leur forme (nombre de pièces, pièces par couche) ;
 // le refus de mélanger (un rondin visé sur un tas de quartiers est posé seul, sans message) ; une pièce de plus de 70 kg (portée
 // avec la force doublée) qui ne fait pas de tas contre sa jumelle ; la pose d'une pierre plate et d'une hachette à la place de leur
-// fantôme ; puis la page rechargée : tout est retrouvé.
+// fantôme, et de la hachette tournée par R (sa vue r1, gardée quand on la reprend) ; puis la page rechargée : tout est retrouvé.
 // Usage : npm run test:tas (lancé aussi par npm run test).
 
 import assert from 'node:assert/strict';
@@ -226,6 +226,24 @@ await playtest('tas', async ({ page, errors }) => {
       const tool = w().map.ground.find((q: any) => q.item.item === 'hatchet' && q.item.x === gh.x + gh.w / 2 && q.item.y === gh.y);
       out.tool = { ghost: gh.visible, key: gh.key, want: def.ground ?? def.icon, at: !!tool, hands: JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both) };
     }
+    // R tourne un objet possédable couché d'un quart de tour : la hachette se pose tête au sud (sa vue r1), et le garde reprise
+    {
+      const [x, y] = find(60, 60);
+      await give({ item: 'hatchet' });
+      await standAt(x + 30, y, 'right');
+      await press('KeyR');
+      await sleep(100);
+      const gh = ghost();
+      await press('KeyE');
+      const tool = w().map.ground.find((q: any) => q.item.item === 'hatchet' && q.item.view === 1);
+      await standAt(x + 30, y, 'right');
+      if (tool) w().pickUp(tool);
+      await sleep(100);
+      out.turned = { key: gh.key, image: tool?.image.texture.key, heldView: (gs.held(gs.game) as any)?.view };
+      gs.emptyHands(gs.game);
+      w().handsChanged();
+      await sleep(120);
+    }
     // sans rien en main, pas de fantôme
     await sleep(100);
     out.ghostEmpty = ghost()?.visible ?? false;
@@ -278,6 +296,9 @@ await playtest('tas', async ({ page, errors }) => {
   assert.equal(r.tool.key, r.tool.want);
   assert.equal(r.tool.at, true, 'posée à la place de son fantôme');
   assert.equal(r.tool.hands, '[null,null]null');
+  assert.equal(r.turned.key, 'hatchet-ground-r1', 'R : le fantôme de la hachette tourne d\'un quart de tour (tête au sud)');
+  assert.equal(r.turned.image, 'hatchet-ground-r1', 'posée dans le sens de son fantôme');
+  assert.equal(r.turned.heldView, 1, 'reprise, elle garde son sens');
   assert.equal(r.ghostEmpty, false, 'mains vides : pas de fantôme');
 
   // la page rechargée : les tas, leurs pièces, la pierre et la hachette sont retrouvés
