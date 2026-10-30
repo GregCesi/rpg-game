@@ -12,7 +12,7 @@ Constat d'ensemble : sur les 68 objets de `props.json`, seuls 9 sont nommés dan
 
 ### (a) La largeur de Xéros — ✔ corrigé
 
-Décision : option (2), 12 px (60 cm) ; essai `.art-preview/essai-largeur.png` (`npm run art:essai`). Tout ce qui suit décrit l'état avant correction.
+Décision : option (2), 12 px (60 cm), après un essai à 18, 14 et 12 px (outil supprimé depuis). Tout ce qui suit décrit l'état avant correction.
 
 - Silhouette de Xéros : 18 × 32 px = **90 × 160 cm** (la mère : 18 × 34 px = 90 × 170 cm). Un adulte fait 45 à 50 cm d'épaule à épaule : la silhouette est environ **1,8 à 2 fois trop large**. Rapport largeur / hauteur : 0,56 (réel : ≈ 0,28-0,30). Le gabarit le prévoit (« les personnages gardent leur largeur stylisée »), c'est un choix, pas une erreur de mesure.
 - Collision de Xéros : `body.setSize(14, 8)` (`src/entities/Actor.ts`) = **70 × 40 cm**, centrée : 2 px de sprite dépassent de chaque côté. 70 cm est une largeur de passage vraisemblable (un adulte + bras + vêtements : 55-65 cm) ; c'est la silhouette qui est large, pas la collision.
