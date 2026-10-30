@@ -27,8 +27,9 @@ non plus un dessin à part. Même assemblage que la couchée (la tête en haut, 
 `wood-normal-up`, parties `<aspect>-start|mid|end`), même teinte et mêmes faces d'un état donné (rond : écorce ; équarri : faces
 claires dressées), la tête montrant le bois de bout, ses cernes, vu de dessus. Géométrie : `up` de chaque aspect du normal dans
 `wood.json` (largeur `w`, rangées de tête `extra`, parties `start` et `end`, `lift` rangées vides sous le pied : le dé de 15 cm,
-`body` : la collision au pied). Taille : largeur = section (4 px pour la poutre de 20 cm, 6 px pour le rondin), hauteur = longueur +
-la moitié de la profondeur : poutre de 3 m **4 × 62**, de 1,80 m **4 × 38** (plus les 3 rangées du dé). Debout, la pièce ne se
+`body` : la collision au pied). Taille (règle D étendue, STYLE.md section 8) : largeur = l'épaisseur de la même pièce couchée est-ouest, **8 px** pour
+la poutre comme pour le rondin ; hauteur = longueur + la tête (4 px) : poutre de 3 m **8 × 64**, de 1,80 m **8 × 40** (plus les 3
+rangées du dé). Debout, la pièce ne se
 prend pas, ne roule pas, ne pivote pas, ne se coupe ni ne s'équarrit (`woodDef` : pas de `take`, `roll`, `turn`). Seul le normal se
 dresse. Elle ne vient que des places d'un plan (`accepts.wood`) : `lay` de `systems/site.ts`, `uprightOf` de `world/woodPiece.ts`
 (diamètre, longueur et faces de la pièce posée ; ni coupe ni coin). Le chantier garde aussi la pièce d'origine (`pieces`).

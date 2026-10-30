@@ -4,18 +4,18 @@
 - Clé : `flat-stone` (objet du monde, `props.json`, avec `take`).
 - Nom affiché : pierre plate.
 - Nature : objet du monde qu'on prend. Une fois posée sur une place du chantier, elle devient le dé de pierre (`footing-stone`, voir [footing-stone.md](footing-stone.md)).
-- Mains : deux (35 kg).
+- Mains : deux (62,4 kg).
 
 ## Masse
-- **35 kg**, calculée : la boîte de ses `dims` (30 × 30 × 15 cm = 0,0135 m³) × la densité de la pierre, 2 600 kg/m³ (`STONE_DENSITY`, `src/content/mass.ts`, à côté de celle du bois). Xéros la porte (jusqu'à 70 kg), mais au-delà de 25 kg : pas de course, une marche lente, de l'endurance par kg de trop.
+- **62,4 kg**, calculée : la boîte de ses `dims` (40 × 40 × 15 cm = 0,024 m³) × la densité de la pierre, 2 600 kg/m³ (`STONE_DENSITY`, `src/content/mass.ts`, à côté de celle du bois). Xéros la porte (jusqu'à 70 kg), mais au-delà de 25 kg : pas de course, une marche lente, de l'endurance par kg de trop.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
-- Pierre plate, à peu près cubique, à plat : 30 × 30 × 15 cm, contour compris. Boîte (`box`).
-- À l'écran : W = 6 px ; H + D/2 = 3 + 3 = **6 × 6** (le même gabarit que le dé : 6 × 6).
+- Pierre plate, à peu près cubique, à plat : 40 × 40 × 15 cm, contour compris (30 × 30 avant le 31 octobre 2026 ; pas 45 : 79 kg, plus que Xéros ne porte). Boîte (`box`).
+- À l'écran : W = 8 px ; H + D/2 = 3 + 4 = **8 × 7** (le même gabarit que le dé).
 
 ## Vues
-- Symétrie : ronde (`views: "round"`, une vue) : à 6 × 6 px, une pierre plate tournée ne se distingue pas ; R ne la tourne pas.
-- Au sol : `flat-stone`, 6 × 6 px, le dessus clair, la face sud plus sombre, un coin émoussé, jamais un œuf ; ombre portée dessous, à droite. C'est le dessin du dé de pierre (`footing-stone`, 7 × 7 avec son ombre) : même pierre, même lumière.
+- Symétrie : ronde (`views: "round"`, une vue) : à 8 × 7 px, une pierre plate tournée ne se distingue pas ; R ne la tourne pas.
+- Au sol : `flat-stone`, 8 × 7 px, le dessus clair, la face sud plus sombre, un coin émoussé, jamais un œuf ; ombre portée dessous, à droite. C'est le dessin du dé de pierre (`footing-stone`, 7 × 7 avec son ombre) : même pierre, même lumière.
 - En main (`held-flat-stone`, posture `carry`, vues `down`, `up`, `right`) : portée à deux mains devant le ventre ; de face, la face sud ; de dos, cachée par le corps ; de profil, de côté.
 - Case d'interface : `item-flat-stone`, 16 × 16, la pierre en trois quarts.
 - Fantôme : le dé (`footing-stone`) en transparence sur les places libres de l'étape « les dés ».

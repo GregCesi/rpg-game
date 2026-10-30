@@ -45,7 +45,7 @@ export function woodMass(piece: WoodPiece): number {
   return woodSection(piece) * (piece.length / 100) * woodDef.density;
 }
 
-/** Masse d'une pierre de ces dimensions (la boîte de ses `dims`, contour compris), en kg : 30 × 30 × 15 cm donne 35 kg. */
+/** Masse d'une pierre de ces dimensions (la boîte de ses `dims`, contour compris), en kg : 40 × 40 × 15 cm donne 62 kg. */
 export function stoneMass(d: Dims): number {
   return (d.w / 100) * (d.d / 100) * (d.h / 100) * STONE_DENSITY;
 }

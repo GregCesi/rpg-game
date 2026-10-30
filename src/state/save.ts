@@ -15,7 +15,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -82,6 +82,8 @@ export function readSave(): ReadResult {
  * Version 7 -> 8 : les tas de bois se calculent d'après leur pièce (voir `woodPilesFromGenres`).
  * Version 8 -> 9 : un chantier garde la pièce de bois d'où vient chacune de ses pièces posées (`pieces`) : les chantiers anciens n'en ont aucune.
  * Version 9 -> 10 : un chantier montre les vraies pièces posées (voir `postsAsWood`) : les poteaux deviennent des pièces de bois dressées.
+ * Version 10 -> 11 : la pièce debout a l'épaisseur de la couchée (règle D étendue) et le dé grandit (40 cm) : les pièces posées d'un
+ * chantier reprennent la place que leur donne le plan (voir `replacePlaced`).
  */
 function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -99,7 +101,33 @@ function upgrade(data: unknown): unknown {
   if (d?.version === 7 && d.state && typeof d.state === 'object') d = { ...d, version: 8, state: woodPilesFromGenres(d.state as V7State) };
   if (d?.version === 8 && d.state && typeof d.state === 'object') d = { ...d, version: 9, state: sitesWithPieces(d.state as V8State) };
   if (d?.version === 9 && d.state && typeof d.state === 'object') d = { ...d, version: 10, state: postsAsWood(d.state as V9State) };
+  if (d?.version === 10 && d.state && typeof d.state === 'object') d = { ...d, version: 11, state: replacePlaced(d.state as V9State & V10Sites) };
   return d;
+}
+
+/** Ce que la conversion 10 -> 11 lit en plus : la position du chantier (son piquet nord-ouest) et les objets nés (x, y). */
+type V10Sites = { maps?: Record<string, { spawned?: { id: number; x: number; y: number }[]; sites?: { plan: string; x: number; y: number; placed?: Record<string, number> }[] }> };
+
+/**
+ * Version 10 -> 11 : chaque pièce posée d'un chantier (dé, poteau) est replacée à l'endroit où le plan la met aujourd'hui (le coin
+ * bas gauche de son image : le piquet nord-ouest plus `at` en cm, 5 cm par pixel), puisque ses dimensions ont changé.
+ */
+function replacePlaced(state: V10Sites): V10Sites {
+  const maps = Object.fromEntries(
+    Object.entries(state.maps ?? {}).map(([id, m]) => {
+      const spawned = (m.spawned ?? []).map((o) => ({ ...o }));
+      for (const site of m.sites ?? []) {
+        const places = Object.fromEntries((plans[site.plan]?.steps ?? []).flatMap((st) => Object.entries(st.places)));
+        for (const [place, spawnId] of Object.entries(site.placed ?? {})) {
+          const o = spawned.find((q) => q.id === spawnId);
+          const at = places[place]?.at;
+          if (o && at) [o.x, o.y] = [Math.round(site.x + at[0] / 5), Math.round(site.y + at[1] / 5)];
+        }
+      }
+      return [id, { ...m, spawned }];
+    }),
+  );
+  return { ...state, maps };
 }
 
 /** Ce que la conversion 9 -> 10 lit d'une partie : par carte, les objets nés et les chantiers (place -> objet né, place -> pièce d'origine). */

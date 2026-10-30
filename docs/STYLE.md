@@ -88,7 +88,7 @@ Vérifications : la bille est-ouest (1 m × 65 cm) mesure 20 × 13 px, ses bouts
 | Cylindre couché nord-sud | Ø × 1,12 | L (règle D : l'image est-ouest tournée d'un quart de tour ; le bout coupé, une bande de Ø × Ø/2 au sud) | la bille de 1 m : **13 × 20** |
 | Boîte couchée nord-sud (demi, quartier, poutre, outil au sol) | la hauteur de l'est-ouest | la largeur de l'est-ouest | le quartier de 1 m : 20 × 11 est-ouest, **11 × 20** nord-sud |
 | Cylindre debout | Ø | H + Ø/2 (corps H, dessus en ovale Ø × Ø/2) | billot de Ø 55 cm, 45 cm de haut : 11 × (9 + 5,5) = **11 × 14,5** |
-| Pièce de bois debout (poteau) | section (4 px pour 20 cm) | L + section/2 (le dessus, en ovale ou en carré de section × section/2) ; sous le pied, les rangées vides du dé | poutre de 20 × 20 cm sur 3 m : **4 × 62** ; sur 1,80 m : **4 × 38** |
+| Pièce de bois debout (poteau) | l'épaisseur de la même pièce couchée est-ouest (8 px pour la poutre et le rondin du normal : règle D étendue) | L + 4 (la tête : le bois de bout, 8 × 4) ; sous le pied, les rangées vides du dé | poutre sur 3 m : **8 × 64** ; sur 1,80 m : **8 × 40** |
 | À plat sur le sol | W | D | éclats de pierre de 135 × 75 cm : **27 × 15** |
 | Pièce de bâtiment au sol (`ground`) | W | H + D | toit de planches de l'abri, 365 × 445 × 165 cm : 73 × (33 + 89) = **73 × 122** |
 
@@ -109,11 +109,17 @@ Vérifications : la bille est-ouest (1 m × 65 cm) mesure 20 × 13 px, ses bouts
   depuis) : le premier, la règle stricte (nord-sud raccourci, l'objet change de taille en tournant) ; le deuxième, la règle C
   (profondeur au sol entière, hauteur empilée, cylindre est-ouest à Ø × 1,1 : cohérente, mais le nord-sud restait plus fin) ; le
   troisième, C contre D, côte à côte, avec les tas et une petite scène : D l'a emporté.
-- La pièce de bois **debout** (`axis: 'up'`, un poteau de chantier) suit le cylindre ou la boîte debout : largeur = section (sans
-  contour ajouté : 20 cm font 4 px, un rondin de 30 cm 6), hauteur = longueur + la moitié de la profondeur (3 m + 10 cm : 62 px) ;
-  sa tête est le bois de bout vu de dessus (ses cernes), son pied pose sur le dé, 3 rangées vides dessous. `validate.ts` mesure
-  la silhouette à 60 cm, 1 m, 1,80 m, 2 m, 3 m et 4 m (`woodSilhouettes`, axe `up`). Même bois que la pièce couchée de même état :
-  `.art-preview/bois.png` les met côte à côte.
+- **Extension de la règle D au sens debout** (décidée le 31 octobre 2026, après un premier essai à la section réelle) : une pièce
+  de bois **debout** (`axis: 'up'`, un poteau de chantier) a, à l'écran, **la largeur de l'épaisseur de la même pièce couchée
+  est-ouest** (même état, même diamètre) : 8 px pour la poutre de 20 × 20 cm comme pour le rondin du normal (le dessus et le flanc
+  empilés de la couchée font 8 px ; la section réelle ferait 4 px et la pièce ne se reconnaîtrait plus). C'est la même triche
+  assumée que la règle D : une pièce qu'on dresse doit rester la même pièce à l'œil. La hauteur reste la longueur plus la tête,
+  le bois de bout vu de dessus (8 × 4 px : ses cernes doivent se lire) ; son pied pose sur le dé, 3 rangées vides dessous. Les
+  `dims` d'une pièce debout sont donc 40 × 40 cm (`woodDims`, l'épaisseur × 5 cm), pas sa section. `validate.ts` vérifie la
+  largeur debout = l'épaisseur couchée (± 1 px) et la silhouette entière à 60 cm, 1 m, 1,80 m, 2 m, 3 m et 4 m (`woodSilhouettes`,
+  axe `up`). `.art-preview/bois.png` met côte à côte la couchée est-ouest, nord-sud et debout, à la même échelle.
+  Le dé de pierre (la pierre plate posée) fait 40 × 40 × 15 cm (8 × 7 px) pour que le poteau de 8 px tienne dessus sans déborder
+  (`validate.ts` le vérifie sur le plan) ; à 45 cm, la pierre pèserait 79 kg, plus que ce que Xéros porte.
 - Les objets debout (meubles, arbres, bâtiments) gardent le gabarit de toujours : une vue dessinée par côté, chacune à la taille
   de ses dimensions vues de ce côté (largeur et profondeur échangées pour une vue de côté).
 

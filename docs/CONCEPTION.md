@@ -228,9 +228,9 @@ précède) :
   permet de changer d'emplacement. Au quatrième piquet, le chantier naît si toute l'emprise est libre (pas d'objet, d'eau, de
   mur, de tas ni d'objet au sol ; Xéros lui-même ne compte pas) ; sinon « Il y a quelque chose dans le passage. » et le
   quatrième piquet reste en main.
-- **Les dés de pierre.** La pierre plate (`flat-stone`, fiche `docs/objets/flat-stone.md`) fait environ 30 × 30 × 15 cm. Sa
+- **Les dés de pierre.** La pierre plate (`flat-stone`, fiche `docs/objets/flat-stone.md`) fait environ 40 × 40 × 15 cm (30 × 30 jusqu'au 31 octobre 2026 ; 40 pour que le poteau debout de 8 px tienne sur le dé sans déborder, pas 45 : 79 kg, trop pour Xéros). Sa
   masse est calculée avec une densité de pierre de 2 600 kg/m³ (`STONE_DENSITY`, `src/content/mass.ts`, à côté de celle du bois) :
-  35 kg, portée à deux mains, lentement (au-dessus de 25 kg : pas de course). La ferme a un étang : les pierres sont sur sa berge
+  62 kg, portée à deux mains, lentement (au-dessus de 25 kg : pas de course). La ferme a un étang : les pierres sont sur sa berge
   (six, posées dans Tiled : quatre pour l'abri, deux de marge), pas dans un pierrier. Une pierre posée sur une place du chantier
   devient un dé (`footing-stone`).
 - **Le chantier.** On voit en fantôme seulement les places de l'étape en cours : les quatre dés, aux coins. Pierre en main, E sur
@@ -277,9 +277,10 @@ précède) :
   autre bois) sont retirés de `props.json` et de `art/` (leurs numéros restent réservés dans `art/tile-registry.json`).
   - **La pièce de bois debout** (`axis: 'up'`, `up` de chaque aspect du normal dans `wood.json`) : le même assemblage que la
     couchée (pied, milieu répété, tête), la même teinte et les mêmes faces d'un état donné (rond : l'écorce ; équarri : les faces
-    claires dressées), la tête montrant le bois de bout avec ses cernes, vu de dessus. Largeur = section (4 px pour 20 cm, 6 px pour
-    un rondin de 30 cm), hauteur = longueur + la moitié de la profondeur (une poutre de 3 m : 4 × 62 px ; de 1,80 m : 4 × 38), et
-    sous son pied les 3 rangées vides du dé. Debout, elle ne se prend, ne roule, ne pivote, ne se coupe ni ne s'équarrit : elle porte.
+    claires dressées), la tête montrant le bois de bout avec ses cernes, vu de dessus. Largeur = l'épaisseur de la même pièce couchée est-ouest
+    (**règle D étendue**, 31 octobre 2026 : 8 px pour la poutre comme pour le rondin ; la section réelle, 4 px, ne se reconnaissait pas),
+    hauteur = longueur + la tête de 4 px (une poutre de 3 m : 8 × 64 px ; de 1,80 m : 8 × 40), et sous son pied les 3 rangées vides du dé
+    (de 40 × 40 × 15 cm, 8 × 7 px : le poteau tient dessus sans déborder). Debout, elle ne se prend, ne roule, ne pivote, ne se coupe ni ne s'équarrit : elle porte.
     Seul le normal se dresse (le gros bois n'a pas de `up`).
   - **Le plan dit la pièce** : une place qui demande une poutre (`accepts.wood`) a pour `piece` `wood-piece` et pour `orientation`
     `upright` ; l'emprise au sol est sa section. `validate.ts` le vérifie.
@@ -302,7 +303,7 @@ Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter
 - **Masses** (`src/content/mass.ts`). Tout objet qu'on prend, pose ou roule a une masse en kg (`validate.ts` l'exige). Saisie pour les
   objets simples (hache 2,5 kg, branche 2,5 kg, lien 0,2 kg, rouleau de corde 1 kg les 10 m, au prorata de sa longueur). **Calculée
   pour le bois** : volume du tronc tiré des `dims` (le diamètre est celui des dimensions moins le contour d'un pixel de chaque côté :
-  65 cm contour compris = 55 cm de bois) × une seule densité, 900 kg/m³ de bois vert. **Calculée pour la pierre** (30 octobre 2026) : le volume de la boîte de ses `dims` × 2 600 kg/m³ (`STONE_DENSITY`, à côté de la densité du bois), soit 35 kg pour la pierre plate de 30 × 30 × 15 cm. Ce qui donne **203 kg** pour une bille du gros
+  65 cm contour compris = 55 cm de bois) × une seule densité, 900 kg/m³ de bois vert. **Calculée pour la pierre** (30 octobre 2026) : le volume de la boîte de ses `dims` × 2 600 kg/m³ (`STONE_DENSITY`, à côté de la densité du bois), soit 62 kg pour la pierre plate de 40 × 40 × 15 cm (35 kg à 30 × 30). Ce qui donne **203 kg** pour une bille du gros
   arbre (95 cm × Ø 55) et **60 kg** pour une bille de l'arbre normal (95 cm × Ø 30) ; avec des billes d'un mètre pile, on trouverait
   214 et 64 kg : l'ordre de grandeur est le bon. Le fagot pèse la somme de ses dix branches et de son lien (25,2 kg).
 - **Force** (`src/content/strength.json`, composant `Strength` du joueur). Il **porte jusqu'à 70 kg** (les deux mains ensemble), **marche

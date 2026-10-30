@@ -9,24 +9,25 @@
 - Mains : aucune (il ne se prend pas : c'est la pierre plate qu'on porte).
 
 ## Dimensions (gabarit)
-- Pierre plate, à peu près cubique, posée à plat : 30 × 30 cm, 15 cm de haut, contour compris.
+- Pierre plate, à peu près cubique, posée à plat : **40 × 40 cm**, 15 cm de haut, contour compris (30 × 30 jusqu'au 31 octobre 2026 : le poteau debout fait maintenant 8 px de large, l'épaisseur de la poutre couchée, STYLE.md section 8, et doit tenir sur son dé sans déborder ; 45 cm auraient donné 79 kg, plus que Xéros ne porte).
 - Boîte (`box`).
-- À l'écran : W = 6 px ; H + D/2 = 3 + 3 = **6 px** : **6 × 6**, le dessus en 3 rangées, la face sud en 3.
+- À l'écran : W = 8 px ; H + D/2 = 3 + 4 = **7 px** : **8 × 7**, le dessus en 4 rangées, la face sud en 3.
 - Il isole le poteau de l'humidité du sol : le bois ne pourrit pas par le pied.
 - Sous l'abri : quatre dés, aux coins d'un rectangle de 61 px (3,05 m) d'est en ouest et 71 px (3,55 m) du nord au sud,
   d'axe en axe (le rang sud reculé pour la pente de 20° du toit). Dans `plans.json` (`woodshed`, en cm depuis le piquet
-  nord-ouest, coin bas gauche de l'image de 7 × 7) : (-15, 15), (290, 15), (290, 370), (-15, 370).
+  nord-ouest, coin bas gauche de l'image) : (-20, 20), (285, 20), (285, 375), (-20, 375). `validate.ts` vérifie que le poteau
+  tient sur son dé.
 
 ## Masse
-- Pas déplaçable une fois posé : pas de masse. La pierre plate dont il naît pèse 35 kg (30 × 30 × 15 cm × 2 600 kg/m³ :
+- Pas déplaçable une fois posé : pas de masse. La pierre plate dont il naît pèse 62,4 kg (40 × 40 × 15 cm × 2 600 kg/m³ :
   [pierre plate](flat-stone.md)).
 
 ## Vues
-- Au sol : `footing-stone`, 6 × 6 px, pierre de la palette (`R r z Z`), dessus clair, face sud plus sombre, un coin
+- Au sol : `footing-stone`, 8 × 7 px, pierre de la palette (`R r z Z`), dessus clair, face sud plus sombre, un coin
   émoussé, jamais un œuf ; ombre portée `x` dessous, à droite.
 - En main, case d'interface, fantôme, porté : aucun (il ne se prend pas encore).
-- Sous un poteau : le poteau (20 × 20 cm, 4 px) se dessine par-dessus, centré, son pied sur le dessus du dé ; on voit
-  encore une colonne de pierre de chaque côté, les rangées de devant du dessus et la face sud.
+- Sous un poteau : le poteau (8 px de large comme le dé) se dessine par-dessus, son pied sur le dessus du dé ; on voit
+  encore les rangées de devant du dessus et la face sud.
 
 ## Regroupement
 Seul. Quatre par abri, un sous chaque poteau.

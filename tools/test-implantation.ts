@@ -301,7 +301,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.equal(r.alreadyKnown, 'Xéros connaît déjà ce plan.');
   assert.equal(r.tabletStays, 1, 'la planchette reste en place');
   assert.ok(r.stonesOnMap >= 6, `six pierres plates sur la berge : ${r.stonesOnMap}`);
-  assert.ok(Math.abs(r.stoneMass - 35.1) < 0.2, `masse de la pierre plate : ${r.stoneMass}`);
+  assert.ok(Math.abs(r.stoneMass - 62.4) < 0.2, `masse de la pierre plate : ${r.stoneMass}`);
   assert.equal(r.noBranchNotice, "Tiens la branche debout sur le billot, de l'autre main.", 'sans branche dans l\'autre main : refusé');
   assert.equal(r.noBranchMode, 'play', 'refus sans geste');
   assert.equal(r.noBranchCost, 0, 'un refus ne coûte rien');

@@ -322,8 +322,8 @@
           "type": "flat-stone",
           "x": 110,
           "y": 244,
-          "width": 7,
-          "height": 7,
+          "width": 9,
+          "height": 8,
           "gid": 1091
         },
         {
@@ -334,8 +334,8 @@
           "type": "flat-stone",
           "x": 138,
           "y": 250,
-          "width": 7,
-          "height": 7,
+          "width": 9,
+          "height": 8,
           "gid": 1091
         },
         {
@@ -346,8 +346,8 @@
           "type": "flat-stone",
           "x": 166,
           "y": 242,
-          "width": 7,
-          "height": 7,
+          "width": 9,
+          "height": 8,
           "gid": 1091
         },
         {
@@ -358,8 +358,8 @@
           "type": "flat-stone",
           "x": 194,
           "y": 248,
-          "width": 7,
-          "height": 7,
+          "width": 9,
+          "height": 8,
           "gid": 1091
         },
         {
@@ -370,8 +370,8 @@
           "type": "flat-stone",
           "x": 222,
           "y": 244,
-          "width": 7,
-          "height": 7,
+          "width": 9,
+          "height": 8,
           "gid": 1091
         },
         {
@@ -382,8 +382,8 @@
           "type": "flat-stone",
           "x": 250,
           "y": 250,
-          "width": 7,
-          "height": 7,
+          "width": 9,
+          "height": 8,
           "gid": 1091
         }
       ]

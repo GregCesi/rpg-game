@@ -6,6 +6,8 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { Accept, Corner, PlanDef, PlanPlace, PlanStep } from '../content/types';
 import type { Site } from '../state';
 import { openPlaces, type PlaceSet } from './places';
+import { woodDims } from './woodPiece';
+import { BEAM_SIZE, WOOD } from './woodShape';
 
 /** Une place du plan avec son étape. */
 export interface PlanSlot {
@@ -27,11 +29,13 @@ export function placeCorner(site: Pick<Site, 'x' | 'y'>, place: PlanPlace): { x:
 
 /**
  * L'emprise au sol d'une place (cm) : celle de son objet (`dims` de props.json), sauf une place qui demande une poutre
- * (`accepts.wood`) : la pièce de bois y est dressée (`axis: 'up'`), son emprise est sa section.
+ * (`accepts.wood`) : la pièce de bois y est dressée (`axis: 'up'`), son emprise est celle de la pièce debout (`woodDims`).
  */
 export function placeDims(place: PlanPlace, step?: PlanStep): { w: number; d: number } {
   const beam = (place.accepts ?? step?.accepts)?.wood;
-  return beam ? { w: beam.section, d: beam.section } : props[place.piece].dims;
+  if (!beam) return props[place.piece].dims;
+  const { w, d } = woodDims({ size: BEAM_SIZE, length: beam.length, shape: 'round', hewn: WOOD.hew.faces * WOOD.hew.perFace, axis: 'up' });
+  return { w, d };
 }
 
 /** Le point au sol visé pour poser une pièce : le milieu de son emprise au-dessus de son coin bas gauche. */

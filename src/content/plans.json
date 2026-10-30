@@ -12,19 +12,19 @@
         "name": "dés",
         "accepts": {"prop": "flat-stone", "refuse": "Il faut une pierre plate."},
         "places": {
-          "footing-nw": {"piece": "footing-stone", "at": [-15, 15], "orientation": "flat", "corner": "nw"},
-          "footing-ne": {"piece": "footing-stone", "at": [290, 15], "orientation": "flat", "corner": "ne"},
-          "footing-se": {"piece": "footing-stone", "at": [290, 370], "orientation": "flat", "corner": "se"},
-          "footing-sw": {"piece": "footing-stone", "at": [-15, 370], "orientation": "flat", "corner": "sw"}
+          "footing-nw": {"piece": "footing-stone", "at": [-20, 20], "orientation": "flat", "corner": "nw"},
+          "footing-ne": {"piece": "footing-stone", "at": [285, 20], "orientation": "flat", "corner": "ne"},
+          "footing-se": {"piece": "footing-stone", "at": [285, 375], "orientation": "flat", "corner": "se"},
+          "footing-sw": {"piece": "footing-stone", "at": [-20, 375], "orientation": "flat", "corner": "sw"}
         }
       },
       {
         "name": "poteaux",
         "places": {
-          "post-nw": {"piece": "wood-piece", "at": [-10, 5], "orientation": "upright", "on": ["footing-nw"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
-          "post-ne": {"piece": "wood-piece", "at": [295, 5], "orientation": "upright", "on": ["footing-ne"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
-          "post-se": {"piece": "wood-piece", "at": [295, 360], "orientation": "upright", "on": ["footing-se"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
-          "post-sw": {"piece": "wood-piece", "at": [-10, 360], "orientation": "upright", "on": ["footing-sw"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}}
+          "post-nw": {"piece": "wood-piece", "at": [-20, 10], "orientation": "upright", "on": ["footing-nw"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
+          "post-ne": {"piece": "wood-piece", "at": [285, 10], "orientation": "upright", "on": ["footing-ne"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
+          "post-se": {"piece": "wood-piece", "at": [285, 365], "orientation": "upright", "on": ["footing-se"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
+          "post-sw": {"piece": "wood-piece", "at": [-20, 365], "orientation": "upright", "on": ["footing-sw"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}}
         }
       },
       {

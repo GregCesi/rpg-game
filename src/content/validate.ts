@@ -333,6 +333,15 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
       }
       continue;
     }
+    // debout (règle D étendue, STYLE.md section 8) : la largeur à l'écran est l'épaisseur de la même pièce couchée est-ouest, à 1 px près
+    if (piece.axis === 'up') {
+      const lying = cat.woodSilhouettes.find(
+        (o) => o.piece.axis === 'ew' && o.piece.size === piece.size && o.piece.length === piece.length && lookOf(o.piece) === lookOf(piece) && o.piece.shape === piece.shape,
+      );
+      if (lying && Math.abs(w - lying.h) > 1) {
+        errors.push(`pièce de bois ${piece.size} ${lookOf(piece)} debout de ${piece.length} cm : ${w} px de large, attendu ${lying.h} (l'épaisseur de la même pièce couchée est-ouest, règle D étendue, à 1 px près)`);
+      }
+    }
     // les faces dressées en cours (f1 à f3) sont entre le rond et la poutre : pas de forme de base, seul leur nord-sud se contrôle
     if (['f1', 'f2', 'f3'].includes(lookOf(piece))) continue;
     const want = expectedSize(woodDims(piece));
@@ -639,6 +648,13 @@ function validatePlans(c: Content): string[] {
           const wd = c.wood;
           if (w.section !== wd.hew.beam) errors.push(`${pw} : section de ${w.section} cm, la poutre de wood.json fait ${wd.hew.beam} cm`);
           if (w.length % wd.grid !== 0 || w.length < wd.min) errors.push(`${pw} : longueur de ${w.length} cm hors de la grille de ${wd.grid} cm (au moins ${wd.min} cm)`);
+          // le poteau tient sur ses dés sans déborder (dessinés à 5 cm par pixel, comme la pièce debout)
+          const post = woodDims({ size: Object.keys(c.wood.sizes).find((k) => c.wood.sizes[k].looks.beam?.up) ?? '', length: w.length, shape: 'round', hewn: c.wood.hew.faces * c.wood.hew.perFace, axis: 'up' });
+          for (const o of place.on) {
+            const under = plan.steps.flatMap((st) => Object.entries(st.places)).find(([k]) => k === o)?.[1];
+            const dims = under && c.props[under.piece]?.dims;
+            if (under && dims && (place.at[0] < under.at[0] || place.at[0] + post.w > under.at[0] + dims.w)) errors.push(`${pw} : le poteau (${post.w} cm de large, en x ${place.at[0]}) déborde de son dé '${o}' (${dims.w} cm, en x ${under.at[0]})`);
+          }
           // ce qu'on voit est ce qu'on a posé : la pièce de bois elle-même, dressée (`upright`), pas un dessin à part
           if (place.piece !== 'wood-piece') errors.push(`${pw} : une poutre est la pièce de bois ('wood-piece'), pas '${place.piece}'`);
           if (place.orientation !== 'upright') errors.push(`${pw} : une poutre se dresse (orientation 'upright') ; les autres sens viendront avec leur étape`);

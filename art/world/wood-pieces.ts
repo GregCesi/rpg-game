@@ -996,37 +996,37 @@ function normalSheet(axis: LyingAxis): SheetParts {
 }
 
 // ---------- Debout (le poteau, `axis: 'up'`) ----------
-// La pièce couchée nord-sud qu'on dresse par son bout nord : son dessus (`nNsTop`, de l'ouest à l'est) devient la face qu'on voit,
-// de gauche à droite ; mêmes teintes, même écorce (anneau `NORMAL_RING`, sillons le long de la pièce, périodiques sur 24 px), même
-// fil (`grain`). Rond, f1, f2, f3 : 6 colonnes contour compris (4 de bois) ; poutre : 4 (2 de bois). La tête (`start`) : le bois de
-// bout vu de dessus, `up.extra` rangées contour compris (le dessus en raccourci : 6 × 3, poutre 4 × 2), Y t T cerclé de N (le contour
-// du haut et de gauche, l'écorce à l'est, un cran plus sombre au bord avant), le cœur en bas à droite ; ses coins sont carrés du côté
-// des faces dressées. Le pied (`end`) : le contour du bas, carré si la face sud est dressée (f3, poutre), arrondi sinon. Pas d'ombre :
-// le dé la porte. Les `lift` rangées sous le pied restent vides.
+// Règle D étendue : debout, une pièce garde la largeur de l'épaisseur de la même pièce couchée est-ouest, 8 colonnes contour
+// compris pour les cinq aspects. C'est la couchée est-ouest redressée : sa colonne (contour du haut, dessus en rangées 1-2, flanc en
+// 3-6, contour du bas : `nEwColumn`) devient la rangée du poteau, de gauche (côté lumière) à droite ; mêmes teintes, même écorce
+// (anneau `NORMAL_RING`, sillons le long de la pièce, périodiques sur 24 px), même fil (`grain`). Rond : l'écorce sur 6 colonnes
+// (M M m m N N) ; poutre et f3 : le dessus clair (Y, fil c) à gauche, le flanc (t, fil b) puis T à droite, contour N à gauche ;
+// f1, f2 : la face dressée claire à gauche (comme le flanc dressé de la couchée), l'écorce à droite, et pour f2 la seconde face dans
+// l'ombre (T) au bord droit. La tête (`start`, avec 3 rangées de corps) : le bois de bout vu de dessus, `up.extra` = 4 rangées contour
+// compris (8 × 4 : la section en raccourci), Y clair en haut à gauche, un cerne t autour du cœur T, cerclé de N sur les côtés ronds
+// (le contour du haut et de gauche, l'écorce à droite et devant) ; la rangée sous la tête un cran plus sombre (l'arête) ; coins
+// carrés du côté des faces dressées. Le pied (`end`) : le contour du bas, carré si la face sud est dressée (f3, poutre), arrondi
+// sinon. Pas d'ombre : le dé la porte. Les `lift` rangées sous le pied restent vides.
 
-/** Le bois en travers d'une pièce debout, colonne `i` (0 à gauche, côté lumière), rangée `Y` (le long de la pièce). */
+/** Le bois en travers d'une pièce debout, colonne `i` (0 à 5, 0 à gauche, côté lumière), rangée `Y` (le long de la pièce). */
 function nUpColumn(look: NormalLook, i: number, Y: number): string {
-  // l'écorce sur 4 colonnes : la rampe M m m N, les sillons des couloirs de l'anneau (rangées visibles 0, 1, 4, 5)
-  const bark = (j: number) => {
-    const b = barkTone([0.1, 0.4, 0.6, 0.85][j]);
-    return furrow(NORMAL_RING, Y, [0, 1, 4, 5][j], 0) ? DARKER[b] : b;
-  };
+  const bark = (v: number) => nBark(Y, v, 0);
   switch (look) {
-    case 'round': return bark(i);
-    case 'f1': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'c', 'Y') : bark(i);
-    case 'f2': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'c', 'Y') : i === 2 ? bark(2) : 'T';
-    case 'f3': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'a', 'Y') : i === 2 ? grain(Y, 'b', 't') : 'T';
-    default: return i === 0 ? grain(Y, 'a', 'Y') : grain(Y, 'b', 't');
+    // la face dressée claire à gauche, l'écorce à droite (ses rangées d'ombre)
+    case 'f1': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'c', 'Y') : i === 2 ? grain(Y, 'a', 't') : i === 3 ? grain(Y, 'b', 't') : bark(i);
+    case 'f2': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'c', 'Y') : i === 2 ? grain(Y, 'a', 't') : i === 5 ? 'T' : bark(i);
+    // rond, f3, poutre : la colonne de la couchée est-ouest, redressée
+    default: return nEwColumn(look, Y, 0)[i + 1];
   }
 }
 
-/** La tête vue de dessus, rangées de bois (sous le contour du haut), colonnes de bois de gauche à droite. */
+/** La tête vue de dessus, rangées de bois (sous le contour du haut), colonnes de bois de gauche à droite (6 × 3). */
 const N_UP_HEAD: Record<NormalLook, Grid> = {
-  round: ['YYtN', 'YtTN'],
-  f1: ['YYtN', 'YtTN'],
-  f2: ['YYtt', 'YtTt'],
-  f3: ['YYtt', 'YtTt'],
-  beam: ['Yt'],
+  round: ['YYYYtN', 'YtTTtN', 'NtttNN'],
+  f1: ['YYYYtN', 'YtTTtN', 'YtttNN'],
+  f2: ['YYYYtt', 'YtTTtt', 'YtttNt'],
+  f3: ['YYYYtt', 'YtTTtt', 'YtttTt'],
+  beam: ['YYYYtt', 'YtTTtt', 'ttttTT'],
 };
 /** Coins carrés (faces dressées) : en haut à gauche, en haut à droite, en bas. */
 const N_UP_SQUARE: Record<NormalLook, { tl: boolean; tr: boolean; bottom: boolean }> = {
@@ -1064,7 +1064,7 @@ function normalUpSheet(): SheetParts {
   for (const look of NORMAL_LOOKS) {
     const u = lookDef('normal', look).up;
     if (!u) throw new Error(`wood-pieces : le normal « ${look} » n'a pas de géométrie debout (up)`);
-    if (u.w !== (look === 'beam' ? 4 : 6) || u.extra !== N_UP_HEAD[look].length + 1 || u.start !== 5 || u.end !== 4) {
+    if (u.w !== 8 || u.extra !== N_UP_HEAD[look].length + 1 || u.start !== u.extra + 3 || u.end !== 4) {
       throw new Error(`wood-pieces : géométrie debout du normal « ${look} » hors des dessins`);
     }
     const parts = cut3(nUpFull(look, refTotal(u.start, u.end)), 'up', u.start, u.end, `normal-${look}-up`);

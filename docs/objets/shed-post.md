@@ -15,11 +15,11 @@ Une fiche pour les poteaux de l'abri à bois : la même pièce, à deux hauteurs
   ouest, 3,05 m d'axe en axe (61 px) ; 3,25 m hors tout (65 px, de la face ouest du poteau ouest à la face est du poteau
   est).
 - Boîte (`box`), debout (`woodDims` : section 20 × 20, hauteur = longueur).
-- À l'écran : W = 4 px ; H + D/2 = 60 + 2 = **4 × 62** (haut), 36 + 2 = **4 × 38** (bas).
+- À l'écran : W = 8 px (l'épaisseur de la poutre couchée, règle D étendue) ; H + tête = 60 + 4 = **8 × 64** (haut), 36 + 4 = **8 × 40** (bas).
 - Sous lui, dans son image, 3 rangées vides : la hauteur du dé. Le bas de l'image est le bord sud du poteau au sol
   (c'est sa profondeur d'affichage) ; son pied se dessine sur le dessus du dé.
-- Dans `plans.json` (en cm depuis le piquet nord-ouest : (−10, 5), (295, 5) au nord, (−10, 360), (295, 360) au sud ; ancien emplacement dans `ferme.tmj`, coin bas gauche de l'image) : hauts en (608, 68) et (669, 68), images de 4 × 65 ; bas en (608, 139)
-  et (669, 139), images de 4 × 39. Chacun centré sur son dé, à un pixel du bord sud du dé.
+- Dans `plans.json` (en cm depuis le piquet nord-ouest, coin bas gauche de l'image de 8 px de large) : (−20, 10) et (285, 10) au nord,
+  (−20, 365) et (285, 365) au sud, chacun exactement sur son dé de 40 cm (même largeur, pied sur la face du dessus). `validate.ts` le vérifie.
 
 ## Masse
 - Pas déplaçable une fois dressé : pas de masse saisie. La poutre dont il vient pèse, bois vert de 900 kg/m³ : 20 × 20 × 300 cm,

@@ -15,7 +15,7 @@ import { footingStone } from './building';
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
 // ---------- Pierre plate ----------
-// Le dessin du dé de pierre (art/world/building.ts) : même pierre, même lumière, 6 × 6 px (30 × 30 × 15 cm), coin
+// Le dessin du dé de pierre (art/world/building.ts) : même pierre, même lumière, 8 × 7 px (40 × 40 × 15 cm), coin
 // nord-est émoussé, ombre portée en bas à droite. Posée sur une place du chantier, elle devient ce dé sans changer.
 
 function flatStone(): Canvas {
@@ -24,7 +24,7 @@ function flatStone(): Canvas {
 
 /** La pierre sans son ombre portée. */
 function stoneBody(): Grid {
-  return footingStone().toGrid().map((r) => r.replace(/x/g, '.')).filter((r) => /[^.]/.test(r)).map((r) => r.slice(0, 6));
+  return footingStone().toGrid().map((r) => r.replace(/x/g, '.')).filter((r) => /[^.]/.test(r)).map((r) => r.slice(0, 8));
 }
 
 // ---------- Icône de la pierre plate ----------
@@ -57,7 +57,7 @@ function itemFlatStone(): Canvas {
 // ---------- Pierre plate portée ----------
 // Portée à deux mains devant le ventre (posture `carry`, CARRY_HANDS de art/characters/xeros.ts). Une pierre carrée
 // se voit pareille de tous côtés : de face, sa face sud et son dessus ; de profil, son côté, le même dessin ; de dos,
-// le même, que le corps cache (6 px de large derrière un torse de 12). Les mains la tiennent par-dessous : la prise est
+// le même, que le corps cache (8 px de large derrière un torse de 12). Les mains la tiennent par-dessous : la prise est
 // sur sa dernière rangée de pierre.
 
 const STONE_SIZE = 15;
@@ -66,7 +66,8 @@ const SC = Math.floor(STONE_SIZE / 2);
 function carriedStone(): Grid {
   const body = stoneBody();
   const c = new Canvas(STONE_SIZE, STONE_SIZE);
-  c.stamp(body, SC - 3, SC - 4);
+  // la dernière rangée de pierre (la prise) à la même place qu'avant : rangée SC + 1
+  c.stamp(body, SC - 4, SC + 2 - body.length);
   return c.toGrid();
 }
 

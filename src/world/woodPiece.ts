@@ -3,7 +3,7 @@
 // props.json. Une seule clé d'objet, `wood-piece` ; le reste est dans ses réglages (GameState) et dans wood.json.
 
 import { props as propDefs } from '../content';
-import { CONTOUR_CM } from '../content/gabarit';
+import { CM_PER_PX, CONTOUR_CM } from '../content/gabarit';
 import type { PropDef, WoodPiece } from '../content/types';
 import { facesOf, lookDef, lookOf, sizeOf, upOf, woodBody, WOOD } from './woodShape';
 
@@ -28,9 +28,10 @@ export function woodOf(base: PropDef, wood?: WoodPiece): WoodPiece {
 export function woodDims(piece: WoodPiece): PropDef['dims'] {
   const d = sizeOf(piece.size).diameter;
   const look = lookOf(piece);
-  // debout : sa section au sol (sans contour : la largeur à l'écran est celle de la section), sa longueur en hauteur
+  // debout (règle D étendue, STYLE.md section 8) : à l'écran, l'épaisseur de la même pièce couchée est-ouest (`up.w` px) ; sa
+  // longueur en hauteur
   if (piece.axis === 'up') {
-    const s = look === 'beam' ? WOOD.hew.beam : d;
+    const s = upOf(piece.size, look).w * CM_PER_PX;
     return { w: s, d: s, h: piece.length, shape: look === 'beam' ? 'box' : 'cylinder', ...(look === 'beam' ? {} : { axis: 'up' as const }) };
   }
   const across = piece.shape === 'quarter' ? d / 2 : look === 'beam' ? WOOD.hew.beam : d;

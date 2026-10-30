@@ -4,7 +4,7 @@
 // sans poutre au pied du dé on le dit, avec elle E maintenu appelle la mère (fondu, « Ta mère vient t'aider. », la moitié de
 // l'effort) ; les quatre poteaux posés, la ligne passe aux sablières ; la page rechargée les retrouve avec leur pièce d'origine.
 // Un chantier montre les vraies pièces posées : un poteau dressé est la pièce de bois debout (même état, même longueur, même clé
-// d'image que son fantôme), et sa silhouette a la taille au gabarit (une poutre de 1,80 m : 4 × 38 px ; de 3 m : 4 × 62).
+// d'image que son fantôme), et sa silhouette a la taille au gabarit (une poutre de 1,80 m : 8 × 40 px ; de 3 m : 8 × 64), et sa largeur est l'épaisseur de la même poutre couchée (règle D étendue).
 // Usage : npm run test:poteaux (lancé aussi par npm run test).
 
 import assert from 'node:assert/strict';
@@ -27,6 +27,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const shapeUrl = '/src/world/woodShape.ts';
       const pieceUrl = '/src/world/woodPiece.ts';
       const gabaritUrl = '/src/content/gabarit.ts';
+      const texUrl = '/src/world/woodTexture.ts';
       const gs = await import(stateUrl);
       const sp = await import(planUrl);
       const content = await import(contentUrl);
@@ -34,6 +35,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const shape = await import(shapeUrl);
       const woodPiece = await import(pieceUrl);
       const gabarit = await import(gabaritUrl);
+      const tex = await import(texUrl);
       const emit = (c: unknown) => g.events.emit('dieu', c);
       const notices: string[] = [];
       g.events.on('notice', (t: string) => notices.push(t));
@@ -74,18 +76,25 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const upright = (length: number) => ({ size: 'normal', length, shape: 'round', hewn: 12, axis: 'up' });
       const upKey = (length: number) => shape.woodKey(upright(length));
       const posts = (length?: number) => w().map.props.filter((p: any) => p.type === 'wood-piece' && p.wood?.axis === 'up' && (length === undefined || p.wood.length === length));
-      const silhouette = (p: any) => {
-        const f = p.image.frame;
-        const cv = p.image.texture.getSourceImage();
-        const px = cv.getContext('2d').getImageData(f.cutX, f.cutY, f.cutWidth, f.cutHeight).data;
-        let [x0, y0, x1, y1] = [f.cutWidth, f.cutHeight, -1, -1];
-        for (let y = 0; y < f.cutHeight; y++) for (let x = 0; x < f.cutWidth; x++) if (px[(y * f.cutWidth + x) * 4 + 3] > 0) [x0, y0, x1, y1] = [Math.min(x0, x), Math.min(y0, y), Math.max(x1, x), Math.max(y1, y)];
+      // la silhouette d'une image : le cadre de ses pixels opaques (l'ombre translucide ne compte pas)
+      const silOf = (texture: any, frame: any) => {
+        const cv = texture.getSourceImage();
+        const px = cv.getContext('2d').getImageData(frame.cutX, frame.cutY, frame.cutWidth, frame.cutHeight).data;
+        let [x0, y0, x1, y1] = [frame.cutWidth, frame.cutHeight, -1, -1];
+        for (let y = 0; y < frame.cutHeight; y++) for (let x = 0; x < frame.cutWidth; x++) if (px[(y * frame.cutWidth + x) * 4 + 3] === 255) [x0, y0, x1, y1] = [Math.min(x0, x), Math.min(y0, y), Math.max(x1, x), Math.max(y1, y)];
         return { w: x1 - x0 + 1, h: y1 - y0 + 1 };
+      };
+      const silhouette = (p: any) => silOf(p.image.texture, p.image.frame);
+      // la même pièce couchée est-ouest (même état, même longueur) : son épaisseur à l'écran
+      const lyingThickness = (length: number) => {
+        const key = tex.woodTexture(w(), { size: 'normal', length, shape: 'round', hewn: 12, axis: 'ew' });
+        const t = w().textures.get(key);
+        return silOf(t, t.get('0')).h;
       };
       const lookOf = (length: number) => {
         const list = posts(length);
         const want = gabarit.expectedSize(woodPiece.woodDims(upright(length)));
-        return { count: list.length, keys: [...new Set(list.map((p: any) => p.image.texture.key))], pieces: [...new Set(list.map((p: any) => JSON.stringify(p.wood)))], sil: list.map(silhouette), width: list.map((p: any) => p.image.width), height: list.map((p: any) => p.image.height), want: { w: want.w, h: want.h } };
+        return { count: list.length, keys: [...new Set(list.map((p: any) => p.image.texture.key))], pieces: [...new Set(list.map((p: any) => JSON.stringify(p.wood)))], sil: list.map(silhouette), width: list.map((p: any) => p.image.width), height: list.map((p: any) => p.image.height), lying: lyingThickness(length), want: { w: want.w, h: want.h } };
       };
       const ghost = (key: string) => w().site.ghosts.images.filter((i: any) => i.visible && i.texture.key === key).map((i: any) => [i.x, i.y]);
       const out: Record<string, any> = {};
@@ -283,8 +292,9 @@ await playtest('poteaux', async ({ page, errors, load }) => {
     assert.deepEqual(d.pieces, ['{"size":"normal","length":180,"shape":"round","hewn":12,"axis":"up"}'], 'le poteau bas est la poutre de 1,80 m, équarrie, debout');
     assert.deepEqual(d.keys, [r.upKeys[1]], 'son image est celle de la pièce de bois debout (celle de son fantôme)');
     assert.ok(d.sil.every((s: any) => Math.abs(s.w - d.want.w) <= 2 && Math.abs(s.h - d.want.h) <= 2), `une poutre de 1,80 m dressée fait la taille au gabarit : ${JSON.stringify(d.sil)}, attendu ${JSON.stringify(d.want)}`);
-    assert.deepEqual(d.want, { w: 4, h: 38 }, 'le gabarit : 4 × 38 px (1,80 m + la moitié de 20 cm de profondeur)');
-    assert.ok(d.height.every((h: number) => h === 38 + 3), 'son image : 38 rangées et les 3 du dé');
+    assert.deepEqual(d.want, { w: 8, h: 40 }, 'le gabarit : 8 × 40 px (1,80 m + la tête de 4 px)');
+    assert.ok(d.sil.every((s: any) => Math.abs(s.w - d.lying) <= 1), `règle D étendue : debout, la largeur (${JSON.stringify(d.sil)}) est l'épaisseur de la même pièce couchée (${d.lying} px), à 1 px près`);
+    assert.ok(d.height.every((h: number) => h === 40 + 3), 'son image : 40 rangées et les 3 du dé');
   }
   const kept = JSON.parse(r.kept);
   assert.deepEqual(Object.keys(kept).sort(), ['post-se', 'post-sw'], 'les poteaux posés gardent leur pièce d’origine');
@@ -327,6 +337,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
     assert.deepEqual(d.pieces, ['{"size":"normal","length":300,"shape":"round","hewn":12,"axis":"up"}'], 'le poteau haut est la poutre de 3 m, équarrie, debout');
     assert.deepEqual(d.keys, [r.upKeys[0]], 'son image est celle de la pièce de bois debout');
     assert.ok(d.sil.every((s: any) => Math.abs(s.w - d.want.w) <= 2 && Math.abs(s.h - d.want.h) <= 2), `une poutre de 3 m dressée fait la taille au gabarit : ${JSON.stringify(d.sil)}, attendu ${JSON.stringify(d.want)}`);
+    assert.ok(d.sil.every((s: any) => Math.abs(s.w - d.lying) <= 1), `la poutre de 3 m debout (${JSON.stringify(d.sil)}) a l'épaisseur de la même couchée (${d.lying} px)`);
   }
   assert.equal(r.status, 'Abri à bois : sablières, 0 sur 4', 'quatre poteaux : la ligne passe aux sablières');
   assert.equal(r.ghostsPlates.length, 4, 'les quatre sablières en fantôme');

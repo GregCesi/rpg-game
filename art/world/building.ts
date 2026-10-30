@@ -25,19 +25,20 @@ import { hewnTone } from './wood';
 // ---------- Dé de pierre ----------
 
 /**
- * Dé de pierre (`footing-stone`), boîte de 30 × 30 × 15 cm : silhouette 6 × 6 px, dessus en 3 rangées (contour du
- * haut et deux rangées de pierre claire R r, où se pose le pied du poteau), face sud en 3 rangées (z Z, puis le
- * contour du bas). Coin nord-est émoussé. Ombre portée sous la base, décalée à droite.
+ * Dé de pierre (`footing-stone`), boîte de 40 × 40 × 15 cm : silhouette 8 × 7 px (gabarit : W 8 ; H + D/2 = 3 + 4), dessus en
+ * 4 rangées (contour du haut et trois rangées de pierre claire R r, où se pose le pied du poteau, 8 px, sans déborder), face
+ * sud en 3 rangées (z Z, puis le contour du bas). Coin nord-est émoussé. Ombre portée sous la base, décalée à droite.
  */
 export function footingStone(): Canvas {
   return Canvas.from([
-    'ZZZZZ..',
-    'ZRRRro.',
-    'ZRRrro.',
-    'ZzzzZox',
-    'ZzzZZox',
-    'oooooox',
-    '.xxxxxx',
+    'ZZZZZZ...',
+    'ZRRRRRro.',
+    'ZRRRRrro.',
+    'ZRRRrrro.',
+    'ZzzzzzZox',
+    'ZzzzzZZox',
+    'oooooooox',
+    '.xxxxxxxx',
   ]);
 }
 
