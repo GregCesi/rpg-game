@@ -2,7 +2,7 @@
 // appuis de touches (Espace, R), comme le joueur. De la grosse bille de 1 m posée par ?dieu (une pièce de bois `big`, ronde)
 // jusqu'aux quatre quartiers : refus (cognée sur une pièce trop courte pour être recoupée, masse sans coin), planter le coin,
 // trois coups de masse, demi-billes, coin lâché, quartiers, masses, endurance, coups gardés dans GameState (les réglages de la
-// pièce), quartier tourné et tas de quartiers.
+// pièce), une bille de 2 m (un seul coin, 6 coups), quartier tourné et tas de quartiers.
 // Usage : npm run test:fendage (lancé aussi par npm run test). Le Chromium et le serveur : tools/lib/playtest.ts.
 
 import assert from 'node:assert/strict';
@@ -182,6 +182,42 @@ await playtest('fendage', async ({ page, errors, load }) => {
     }
     out.ends = ends;
 
+    // 4 ter. une bille de 2 m : un seul coin dans le bout, 6 coups de masse (3 par mètre), la fente court et le coin s'enfonce
+    {
+      emit({ kind: 'reset-map' });
+      await sleep(1700);
+      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'wood', wood: { ...wood('round'), length: 200 } });
+      await sleep(200);
+      await give('splitting-wedge');
+      notices.length = 0;
+      await standAt(pieces('round').at(-1), 'west');
+      await press('Space');
+      await sleep(300);
+      const planted = wedged().length;
+      await give('maul');
+      const hits: number[] = [];
+      const images: string[] = [];
+      for (let i = 0; i < 6; i++) {
+        await standAt(wedged()[0], 'west');
+        await press('Space');
+        await settled();
+        const p = wedged()[0];
+        hits.push(p ? p.wood.wedge.hits : -1);
+        if (p) images.push(p.image.texture.key);
+      }
+      const halves = pieces('half');
+      out.long = {
+        planted,
+        hits,
+        images: new Set(images).size,
+        halves: halves.length,
+        lengths: halves.map((p: any) => p.wood.length),
+        notices: [...notices],
+        cost: Math.round((100 - w().player.stamina.value) * 10) / 10,
+      };
+    }
+
     // 5. un quartier tenu se tourne (R) et s'empile : un tas plein de six (dehors, à la ferme : de la place devant Xéros)
     emit({ kind: 'map', map: 'ferme' });
     await sleep(2200);
@@ -245,5 +281,12 @@ await playtest('fendage', async ({ page, errors, load }) => {
   }
   assert.equal(r.turned, '{"prop":"wood-piece","wood":{"size":"big","length":100,"shape":"quarter","axis":"ns"}}', 'R tourne le quartier tenu');
   assert.ok(r.pile.includes('quarter-100:6'), `tas de quartiers : ${r.pile}`);
+  assert.equal(r.long.planted, 1, 'le coin se plante dans une bille de 2 m');
+  assert.deepEqual(r.long.hits, [1, 2, 3, 4, 5, -1], '6 coups de masse pour 2 m : la fente court à chaque coup, le 6e la fend');
+  assert.equal(r.long.images, 5, "chaque coup change l'image (la fente s'allonge, le coin s'enfonce)");
+  assert.equal(r.long.halves, 2, 'deux demi-billes');
+  assert.deepEqual(r.long.lengths, [200, 200], 'de 2 m');
+  assert.ok(!r.long.notices.some((n: string) => /Trop longue/.test(n)), `plus de « Trop longue pour un seul coin. » : ${r.long.notices}`);
+  assert.equal(r.long.cost, 5.8, `planter (1) et 6 coups (0,8) : ${r.long.cost}`);
   console.log('  ✓ fendage : de la grosse bille aux quatre quartiers');
 });

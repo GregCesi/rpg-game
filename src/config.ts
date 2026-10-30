@@ -81,8 +81,11 @@ export const SHADOW = { dx: 0.25, dy: 0.1, color: 0x2b1a10, alpha: 0x40 / 255 };
  */
 export const SITE = { snap: 12, near: 110, ghost: 0.35, aimed: 0.7 };
 
-/** Poser devant soi : écart entre la collision de Xéros et ce qu'il pose (px). */
-export const PUT_DOWN = { gap: 2 };
+/**
+ * Poser devant soi : écart entre la collision de Xéros et ce qu'il pose (`gap`, px) ; si la place juste devant lui est prise, on
+ * cherche la plus proche à côté, par pas de `step` px, en travers puis en s'éloignant, jusqu'à `reach` px (systems/hands.ts).
+ */
+export const PUT_DOWN = { gap: 2, step: 2, reach: 24 };
 
 /**
  * Viser une pièce de bois (systems/wood.ts) : Xéros doit être collé à elle, tourné vers elle : au plus `gap` px entre sa collision

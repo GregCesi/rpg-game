@@ -481,23 +481,41 @@ export class HandsSystem {
   }
 
   /**
-   * Où poser `what` seul devant Xéros, s'il y a la place (carte, cases bloquantes, objets, personnages ; Xéros aussi pour un objet
-   * du monde) : un objet possédable, son point au sol juste au-delà de sa collision ; un objet du monde (dans le sens où il est
-   * tenu), le coin bas gauche de son image, sa collision presque collée à celle de Xéros, du côté où il regarde, centrée sur lui.
+   * Où poser `what` seul devant Xéros (voir `layFront`) ; si la place juste devant lui est prise (un tas d'autre chose, une pièce),
+   * la plus proche à côté, en glissant de `PUT_DOWN.step` px en travers puis en s'éloignant, au plus `PUT_DOWN.reach` px ; libre
+   * de la carte, des cases bloquantes, des objets, des personnages (de Xéros aussi pour un objet du monde) ; sinon undefined.
    */
   private laySpot(player: Player, what: Held): { x: number; y: number } | undefined {
+    const [x0, y0] = this.layFront(player, what);
+    const [sx, sy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.actor.facing];
+    const bodies = 'item' in what ? this.others : [...this.others, player.actor.body];
+    const { step, reach } = PUT_DOWN;
+    for (let away = 0; away <= reach; away += step) {
+      for (let side = 0; side <= reach; side += step) {
+        for (const s of side ? [-side, side] : [0]) {
+          const x = x0 + sx * away + Math.abs(sy) * s;
+          const y = y0 + sy * away + Math.abs(sx) * s;
+          if (this.map.areaFree(this.layBox(what, x, y), bodies)) return { x, y };
+        }
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * La place de `what` posé juste devant Xéros : un objet possédable, son point au sol juste au-delà de sa collision ; un objet du
+   * monde (dans le sens où il est tenu), le coin bas gauche de son image, sa collision presque collée à celle de Xéros, du côté où
+   * il regarde, centrée sur lui.
+   */
+  private layFront(player: Player, what: Held): [number, number] {
     const b = player.actor.body;
     if ('item' in what) {
       const [sx, sy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.actor.facing];
-      const x = Math.round(b.center.x + sx * (b.width / 2 + PUT_DOWN.gap + 4));
-      const y = Math.round(b.center.y + sy * (b.height / 2 + PUT_DOWN.gap + 4) + 3);
-      return this.map.areaFree(this.layBox(what, x, y), this.others) ? { x, y } : undefined;
+      return [Math.round(b.center.x + sx * (b.width / 2 + PUT_DOWN.gap + 4)), Math.round(b.center.y + sy * (b.height / 2 + PUT_DOWN.gap + 4) + 3)];
     }
     const { f, h } = this.footprint(what);
     const [l, t] = frontCorner(b, player.actor.facing, f.right - f.left, f.bottom - f.top);
-    const x = Math.round(l - f.left);
-    const y = Math.round(t - f.top + h);
-    return this.map.areaFree(this.layBox(what, x, y), [...this.others, b]) ? { x, y } : undefined;
+    return [Math.round(l - f.left), Math.round(t - f.top + h)];
   }
 
   /** L'emprise au sol de `what` posé seul en (x, y) : un petit carré autour du point d'un objet possédable, la collision d'un objet du monde. */
