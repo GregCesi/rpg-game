@@ -15,6 +15,7 @@ import normalFall from './world/normal-fall';
 import normalLogs from './world/normal-logs';
 import rocksBushes from './world/rocks-bushes';
 import ui from './ui/dialog';
+import stamina from './ui/stamina';
 import resources from './items/resources';
 import tools from './items/tools';
 import heldTools from './items/held';
@@ -30,4 +31,4 @@ import faggot from './world/faggot';
 import building from './world/building';
 import roll from './world/roll';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...roll];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...stamina, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...roll];

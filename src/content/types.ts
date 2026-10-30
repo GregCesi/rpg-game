@@ -451,12 +451,20 @@ export const StaminaSchema = z.strictObject({
 /** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
 export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
 
+/** Ce qu'un choix de dialogue peut déclencher quand le dialogue se ferme : `sleep`, passer la nuit (WorldScene). */
+export const DialogueActionSchema = z.enum(['sleep']);
+
+/** Un choix offert à la fin d'une ligne (« Oui », « Non ») ; sans `action`, il ferme simplement le dialogue. */
+export const DialogueChoiceSchema = z.strictObject({ text: id, action: DialogueActionSchema.optional() });
+
 export const DialogueLineSchema = z.strictObject({
   /** Clé dans characters.json. */
   speaker: id,
   /** Nom de l'expression du portrait, ex. 'neutral'. */
   expression: id,
   text: z.string().min(1),
+  /** Choix offerts quand la ligne est dite (la dernière du dialogue seulement : validate.ts) ; celui qu'on prend ferme le dialogue. */
+  choices: z.array(DialogueChoiceSchema).min(2).max(3).optional(),
 });
 
 export const DialogueDefSchema = z.strictObject({ lines: z.array(DialogueLineSchema).min(1) });
@@ -530,6 +538,7 @@ export type Take = z.infer<typeof TakeSchema>;
 export type Mass = z.infer<typeof MassSchema>;
 export type Roll = z.infer<typeof RollSchema>;
 export type Strength = z.infer<typeof StrengthSchema>;
+export type DialogueAction = z.infer<typeof DialogueActionSchema>;
 export type StaminaDef = z.infer<typeof StaminaSchema>;
 export type PilePlace = z.infer<typeof PilePlaceSchema>;
 export type PileDef = z.infer<typeof PileDefSchema>;

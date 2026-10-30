@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { HUD, UI, VIEW, ZOOM } from '../config';
-import { items, props } from '../content';
+import { items, props, stamina } from '../content';
 import { GameEvent } from '../events';
 import { game, type Held } from '../state';
 
@@ -41,6 +41,10 @@ export class HudScene extends Phaser.Scene {
   private corners: [number, number][] = [];
   private notice!: Phaser.GameObjects.Text;
   private bar!: Phaser.GameObjects.Container;
+  /** Jauge d'endurance : le cadre et ses images (fond, remplissage rogné), à droite des deux cases. */
+  private energy!: Phaser.GameObjects.Container;
+  private energyFill!: Phaser.GameObjects.Image;
+  private energyX = 0;
 
   constructor() {
     super('hud');
@@ -64,6 +68,7 @@ export class HudScene extends Phaser.Scene {
       this.corners.push([x + size - 1, y0 + size - 1]);
       this.bar.add([slot, icon, text]);
     });
+    this.makeEnergy(x0 + 2 * size + GAP, y0 + size);
     this.notice = this.add
       .text(VIEW.width / 2, y0 - 6, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
@@ -71,9 +76,13 @@ export class HudScene extends Phaser.Scene {
       .setAlpha(0);
 
     this.game.events.on(GameEvent.HandsChanged, this.redraw, this);
+    this.game.events.on(GameEvent.Stamina, this.showEnergy, this);
+    this.game.events.on(GameEvent.StaminaDenied, this.shakeEnergy, this);
     this.game.events.on(GameEvent.Notice, this.showNotice, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(GameEvent.HandsChanged, this.redraw, this);
+      this.game.events.off(GameEvent.Stamina, this.showEnergy, this);
+      this.game.events.off(GameEvent.StaminaDenied, this.shakeEnergy, this);
       this.game.events.off(GameEvent.Notice, this.showNotice, this);
     });
     this.redraw();
@@ -84,6 +93,33 @@ export class HudScene extends Phaser.Scene {
     const talking = this.scene.isActive('dialogue');
     this.bar.setVisible(!talking);
     if (talking) this.notice.setAlpha(0);
+  }
+
+  /** La jauge d'endurance, à droite des cases, son bas aligné sur le bas des cases (art/ui/stamina.ts : creux de 6 × 36 en (3, 3)). */
+  private makeEnergy(x: number, bottom: number): void {
+    const frame = this.textures.get('ui-stamina-frame').getSourceImage();
+    const inner = { x: 3, y: 3 };
+    const back = this.add.image(inner.x, inner.y, 'ui-stamina-back').setOrigin(0);
+    this.energyFill = this.add.image(inner.x, inner.y, 'ui-stamina-fill').setOrigin(0);
+    const top = this.add.image(0, 0, 'ui-stamina-frame').setOrigin(0);
+    this.energy = this.add.container(x + GAP, bottom - frame.height, [back, this.energyFill, top]);
+    this.bar.add(this.energy);
+    this.energyX = this.energy.x;
+    this.showEnergy(game.stamina / stamina.max);
+  }
+
+  /** Le remplissage montre la part `fraction` de la jauge (rogné par le haut), rouge sous le seuil de fatigue. */
+  private showEnergy(fraction: number): void {
+    const h = 36;
+    const shown = fraction <= 0 ? 0 : Math.max(1, Math.round(h * fraction));
+    this.energyFill.setTexture(fraction < stamina.tired ? 'ui-stamina-fill-low' : 'ui-stamina-fill').setCrop(0, h - shown, 6, shown).setVisible(shown > 0);
+  }
+
+  /** Un effort a été refusé : la jauge tremble un instant. */
+  private shakeEnergy(): void {
+    const x = this.energyX;
+    this.tweens.killTweensOf(this.energy);
+    this.tweens.add({ targets: this.energy, x: { from: x - 2, to: x + 2 }, duration: 45, yoyo: true, repeat: 3, onComplete: () => (this.energy.x = x) });
   }
 
   private redraw(): void {

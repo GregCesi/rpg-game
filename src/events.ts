@@ -4,7 +4,7 @@
 import type { Held } from './state';
 
 export const GameEvent = {
-  /** Le dialogue en cours vient de se fermer. */
+  /** Le dialogue en cours vient de se fermer (argument : l'action du choix pris, s'il y en a une : `DialogueAction`). */
   DialogueEnd: 'dialogue-end',
   /** Ce que tiennent les mains, ou la main active, a changé (prendre, lâcher, poser, Tab) : les deux cases se redessinent. */
   HandsChanged: 'hands-changed',

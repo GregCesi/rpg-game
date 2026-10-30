@@ -632,6 +632,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   }
   for (const [id, d] of Object.entries(c.dialogues)) {
     d.lines.forEach((line, i) => {
+      if (line.choices && i < d.lines.length - 1) err(`dialogues.json '${id}' ligne ${i + 1} : des choix ne se proposent qu'à la dernière ligne`);
       const who = c.characters[line.speaker];
       if (!who) return err(`dialogues.json '${id}' ligne ${i + 1} : personnage '${line.speaker}' inconnu`);
       if (!cat.animations.get(`portrait-${who.portrait}-${PORTRAIT_SIZE}`)?.has(line.expression)) {

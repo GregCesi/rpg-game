@@ -58,7 +58,7 @@
   "workbench": {"name": "établi", "image": "workbench", "dims": {"w": 320, "d": 70, "h": 85, "shape": "box"}, "bodies": [{"x": 0, "y": 10, "w": 64, "h": 14}]},
   "stove": {"name": "poêle", "image": "stove", "dims": {"w": 80, "d": 70, "h": 200, "shape": "box"}, "anim": "burn", "bodies": [{"x": 0, "y": 33, "w": 16, "h": 14}], "light": {"x": 8, "y": 35, "radius": 56}},
   "bed": {"name": "lit de la mère", "image": "bed", "dims": {"w": 150, "d": 200, "h": 80, "shape": "box"}, "bodies": [{"x": 0, "y": -4, "w": 30, "h": 40}]},
-  "pallet": {"name": "paillasse de Xéros", "image": "pallet", "dims": {"w": 200, "d": 90, "h": 20, "shape": "box"}, "bodies": [{"x": 0, "y": -5, "w": 40, "h": 18}]},
+  "pallet": {"name": "paillasse de Xéros", "image": "pallet", "interact": "pallet-sleep", "dims": {"w": 200, "d": 90, "h": 20, "shape": "box"}, "bodies": [{"x": 0, "y": -5, "w": 40, "h": 18}]},
   "sack": {"name": "sac", "image": "sack", "dims": {"w": 50, "d": 40, "h": 70, "shape": "box"}, "bodies": [{"x": 0, "y": 10, "w": 10, "h": 8}]},
   "jar": {"name": "jarre", "image": "jar", "dims": {"w": 45, "d": 45, "h": 60, "shape": "cylinder", "axis": "up"}, "bodies": [{"x": 0, "y": 7, "w": 9, "h": 9}]},
   "sunpatch": {"name": "rai de lumière", "image": "sunpatch", "dims": {"w": 180, "d": 150, "h": 0, "shape": "flat"}, "blend": "add"},

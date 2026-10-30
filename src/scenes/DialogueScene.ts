@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { PORTRAIT_SIZE, UI, VIEW, ZOOM } from '../config';
 import { characters, dialogues } from '../content';
 import { GameEvent } from '../events';
-import type { DialogueLine } from '../content/types';
+import type { DialogueAction, DialogueLine } from '../content/types';
 
 const K = Phaser.Input.Keyboard.KeyCodes;
 const BORDER = 8;
@@ -26,6 +26,9 @@ export class DialogueScene extends Phaser.Scene {
   private portrait!: Phaser.GameObjects.Sprite;
   private namePlate!: Phaser.GameObjects.NineSlice;
   private nameText!: Phaser.GameObjects.Text;
+  /** Choix de la ligne en cours (« Oui », « Non ») : un texte chacun, le choisi précédé d'une flèche. */
+  private choices: Phaser.GameObjects.Text[] = [];
+  private picked = 0;
 
   constructor() {
     super('dialogue');
@@ -56,7 +59,13 @@ export class DialogueScene extends Phaser.Scene {
 
     const kb = this.input.keyboard!;
     for (const code of [K.E, K.SPACE, K.ENTER]) kb.addKey(code).on('down', () => this.advance());
-    this.input.on('pointerdown', () => this.advance());
+    this.input.on('pointerdown', () => !this.lines[this.index].choices && this.advance());
+    // monter, descendre parmi les choix (touches lues par leur place, comme PlayerInput : ZQSD/WASD ou flèches)
+    kb.on('keydown', (e: KeyboardEvent) => {
+      if (!this.choices.length) return;
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') this.pick(this.picked - 1);
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') this.pick(this.picked + 1);
+    });
 
     this.showLine();
     // entrée en douceur
@@ -76,6 +85,7 @@ export class DialogueScene extends Phaser.Scene {
     this.shown = 0;
     this.text.setText('');
     this.next.setVisible(false);
+    this.clearChoices();
     this.typing?.remove();
     this.typing = this.time.addEvent({
       delay: 1000 / UI.typeSpeed,
@@ -93,15 +103,53 @@ export class DialogueScene extends Phaser.Scene {
     this.typing = undefined;
     this.shown = this.full.length;
     this.text.setText(this.full);
-    this.next.setVisible(true);
+    if (this.lines[this.index].choices) this.showChoices(this.lines[this.index].choices!);
+    else this.next.setVisible(true);
   }
 
   private advance(): void {
     if (this.typing) return this.finishLine();
+    // à une question, E (ou Espace, Entrée) valide le choix marqué
+    const line = this.lines[this.index];
+    if (line.choices) return this.end(line.choices[this.picked].action);
     this.index++;
     if (this.index < this.lines.length) return this.showLine();
-    this.game.events.emit(GameEvent.DialogueEnd);
+    this.end();
+  }
+
+  /** Ferme le dialogue ; `action` : ce que déclenche le choix pris (voir GameEvent.DialogueEnd). */
+  private end(action?: DialogueAction): void {
+    this.game.events.emit(GameEvent.DialogueEnd, action);
     this.scene.stop();
+  }
+
+  /** Les choix de la ligne, l'un sous l'autre à droite du cadre ; le premier est marqué. */
+  private showChoices(choices: NonNullable<DialogueLine['choices']>): void {
+    const x = this.box.x + this.box.width - 90;
+    this.choices = choices.map((_c, i) => {
+      const t = this.label(x, this.box.y + 18 + i * 18, 12, UI.ink).setInteractive({ useHandCursor: true });
+      t.on('pointerover', () => this.pick(i));
+      t.on('pointerdown', () => {
+        this.pick(i);
+        this.advance();
+      });
+      return t;
+    });
+    this.picked = 0;
+    this.pick(0);
+  }
+
+  private pick(i: number): void {
+    const n = this.choices.length;
+    if (!n) return;
+    this.picked = (i + n) % n;
+    const choices = this.lines[this.index].choices!;
+    this.choices.forEach((t, k) => t.setText(`${k === this.picked ? '> ' : '  '}${choices[k].text}`));
+  }
+
+  private clearChoices(): void {
+    for (const t of this.choices) t.destroy();
+    this.choices = [];
   }
 
   /** Portrait (au-dessus du cadre, à gauche) et plaque du nom. */

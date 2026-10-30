@@ -21,5 +21,23 @@
         "text": "Te voilà debout. Mange un morceau avant de sortir, la journée sera longue."
       }
     ]
+  },
+  "pallet-sleep": {
+    "lines": [
+      {
+        "speaker": "xeros",
+        "expression": "neutral",
+        "text": "Dormir ?",
+        "choices": [
+          {
+            "text": "Oui",
+            "action": "sleep"
+          },
+          {
+            "text": "Non"
+          }
+        ]
+      }
+    ]
   }
 }

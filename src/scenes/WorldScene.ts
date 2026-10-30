@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import { START, ZOOM } from '../config';
+import { HUD, START, ZOOM } from '../config';
 import { items, maps, props } from '../content';
 import { heldMass, itemMass, propMass } from '../content/mass';
-import type { Exit, Facing, Stance } from '../content/types';
+import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
@@ -31,6 +31,7 @@ import {
   removeGroundItem,
   replaceState,
   resetMap,
+  sleep,
   switchHand,
   take,
   type Held,
@@ -46,7 +47,7 @@ import type { Interactable, PlacedGround } from '../world/GameMap';
 type Mode = 'play' | 'use' | 'dialogue' | 'transition';
 
 /** Ce que reçoit la scène à son lancement : la carte, et le point d'apparition ou la position exacte (`at`, sauvegarde). */
-export type WorldStart = { mapId: string; spawn?: string; at?: { x: number; y: number; facing: Facing } };
+export type WorldStart = { mapId: string; spawn?: string; at?: { x: number; y: number; facing: Facing }; wake?: boolean };
 
 /** Comment un objet tenu se voit sur Xéros : son `hold` (items.json, ou `take` de props.json), sinon son icône à la main. */
 function holdOf(h: Held): { stance: Stance; look: Look } {
@@ -94,6 +95,8 @@ export class WorldScene extends Phaser.Scene {
   private spawn = START.spawn;
   /** Position exacte où reprendre (sauvegarde) ; sinon le point d'apparition. */
   private at?: WorldStart['at'];
+  /** On arrive d'une nuit de sommeil : le jour est dit à l'écran. */
+  private wake = false;
 
   constructor() {
     super('world');
@@ -103,6 +106,7 @@ export class WorldScene extends Phaser.Scene {
     if (data.mapId) this.mapId = data.mapId;
     if (data.spawn) this.spawn = data.spawn;
     this.at = data.at;
+    this.wake = !!data.wake;
     this.mode = 'play';
     this.talking = undefined;
   }
@@ -152,6 +156,7 @@ export class WorldScene extends Phaser.Scene {
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
     this.game.events.emit(GameEvent.Stamina, this.player.stamina.fraction);
+    if (this.wake) this.game.events.emit(GameEvent.Notice, `Jour ${game.day}`, HUD.longNoticeMs / 2);
 
     const cam = this.cameras.main;
     cam.setZoom(ZOOM);
@@ -371,11 +376,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Fondu au noir, puis la scène redémarre sur `start`. */
-  private fadeTo(start: WorldStart): void {
+  private fadeTo(start: WorldStart, ms = 200): void {
     this.mode = 'transition';
     this.player.stamina.flush();
     const cam = this.cameras.main;
-    cam.fadeOut(200, 20, 14, 8);
+    cam.fadeOut(ms, 20, 14, 8);
     cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart(start));
   }
 
@@ -436,8 +441,17 @@ export class WorldScene extends Phaser.Scene {
     this.scene.launch('dialogue', { id });
   }
 
-  private onDialogueEnd(): void {
+  /** « Dormir ? » -> Oui : fondu au noir, jauge pleine, un jour de plus, réveil dans le cagibi (la partie s'écrit à l'arrivée). */
+  private sleepNow(): void {
+    this.talking = undefined;
+    this.player.stamina.flush();
+    sleep(game);
+    this.fadeTo({ mapId: START.map, spawn: START.spawn, wake: true }, 1400);
+  }
+
+  private onDialogueEnd(action?: DialogueAction): void {
     this.mode = 'play';
+    if (action === 'sleep') return this.sleepNow();
     this.talking?.resume();
     this.talking = undefined;
     this.interaction.lock(200);
