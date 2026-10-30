@@ -8,8 +8,20 @@ import { CornerSchema } from '../content/types';
 
 const id = z.string().min(1);
 
-/** Longueur restante d'une quantité mesurée (le rouleau de corde, `length` de props.json), en centimètres. */
+/**
+ * Longueur, en centimètres : celle qui reste d'une quantité mesurée (le rouleau de corde, `length` de props.json), ou celle
+ * d'une pièce de bois d'œuvre (le rondin, la poutre, `timber` de props.json ; absente : la longueur de ses `dims`).
+ */
 const length = z.number().int().nonnegative().optional();
+
+/** Coups de doloire déjà reçus par un rondin qu'on équarrit (`hew` de `timber`) : les faces dressées s'en déduisent. */
+const hewn = z.number().int().positive().optional();
+
+/**
+ * L'encoche d'une coupe commencée dans un rondin (`cut` de `timber`) : à `at` cm de son bout ouest (nord pour un rondin
+ * nord-sud), creusée de `hits` coups (un tiers, deux tiers ; le dernier coupe).
+ */
+export const NotchSchema = z.strictObject({ at: z.number().int().positive(), hits: z.number().int().positive() });
 
 /**
  * Ce que tient une main : un objet possédable (`item`, clé de items.json), ou un objet du monde pris sur une carte
@@ -19,7 +31,7 @@ const length = z.number().int().nonnegative().optional();
  */
 export const HeldSchema = z.union([
   z.strictObject({ item: id }),
-  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length }),
+  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length, hewn }),
 ]);
 
 /** Une main : 0 = la gauche, 1 = la droite. */
@@ -38,6 +50,9 @@ export const WorldChangeSchema = z.strictObject({
   length,
   /** Coups déjà reçus (la fente d'une bille qu'on frappe à la masse) : voir `staged` de harvest, SpawnedSchema.hits. */
   hits: z.number().int().positive().optional(),
+  /** La coupe commencée dans ce rondin, et les coups de doloire qu'il a reçus. */
+  notch: NotchSchema.optional(),
+  hewn,
 });
 
 /** Place d'un objet né dans la chaîne de ce qui est né avec lui (les pièces de l'arbre couché, bout à bout). */
@@ -61,8 +76,11 @@ export const SpawnedSchema = z.strictObject({
   chain: ChainSchema.optional(),
   /** Coups déjà reçus (profondeur de l'encoche d'une pièce de tronc) : l'entaille se retrouve au retour sur la carte. */
   hits: z.number().int().positive().optional(),
-  /** Longueur restante de ce qu'il est ou porte (le rouleau posé, le billot qui porte le rouleau). */
+  /** Longueur restante de ce qu'il est ou porte (le rouleau posé, le billot qui porte le rouleau), ou longueur du rondin. */
   length,
+  /** La coupe commencée dans ce rondin, et les coups de doloire qu'il a reçus. */
+  notch: NotchSchema.optional(),
+  hewn,
 });
 
 /** Un objet possédable posé au sol : (x, y) = son point au sol. */
@@ -140,6 +158,7 @@ export const GameStateSchema = z.strictObject({
 });
 
 export type Held = z.infer<typeof HeldSchema>;
+export type Notch = z.infer<typeof NotchSchema>;
 export type Hand = z.infer<typeof HandSchema>;
 export type WorldChange = z.infer<typeof WorldChangeSchema>;
 export type GroundItem = z.infer<typeof GroundItemSchema>;
@@ -264,9 +283,12 @@ export function removeGroundItem(s: GameState, mapId: string, groundId: number):
   revision++;
 }
 
-/** Fait naître un objet sur une carte (`length` : sa longueur restante, le rouleau) ; renvoie ce qui a été noté. */
-export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, flip: boolean, chain?: Chain, length?: number): Spawned {
-  const o = { id: s.nextSpawnId++, type, x, y, ...(flip ? { flip } : {}), ...(chain ? { chain } : {}), ...(length !== undefined ? { length } : {}) };
+/**
+ * Fait naître un objet sur une carte (`length` : sa longueur restante, le rouleau, ou celle du rondin ; `hewn` : les coups de
+ * doloire d'un rondin qu'on équarrit) ; renvoie ce qui a été noté.
+ */
+export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, flip: boolean, chain?: Chain, length?: number, hewn?: number): Spawned {
+  const o = { id: s.nextSpawnId++, type, x, y, ...(flip ? { flip } : {}), ...(chain ? { chain } : {}), ...(length !== undefined ? { length } : {}), ...(hewn ? { hewn } : {}) };
   mapState(s, mapId).spawned.push(o);
   revision++;
   return o;
@@ -289,6 +311,8 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
       ...(change.flip ? { flip: true } : {}),
       ...(chain ? { chain } : {}),
       ...(change.length !== undefined ? { length: change.length } : {}),
+      ...(change.notch ? { notch: { ...change.notch } } : {}),
+      ...(change.hewn ? { hewn: change.hewn } : {}),
     };
   }
   revision++;
@@ -298,6 +322,22 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
 export function setSpawnedHits(s: GameState, mapId: string, spawnId: number, hits: number): void {
   const o = mapState(s, mapId).spawned.find((x) => x.id === spawnId);
   if (o) o.hits = hits;
+  revision++;
+}
+
+/**
+ * Le rondin (objet né, ou objet de carte changé) a une coupe commencée (`notch`, absente : aucune) et `hewn` coups de doloire
+ * (0 : aucun). Sa place, son type et sa longueur ne changent pas.
+ */
+export function setTimber(s: GameState, mapId: string, id: number, spawned: boolean, notch: Notch | undefined, hewn: number): void {
+  const m = mapState(s, mapId);
+  const o = spawned ? m.spawned.find((x) => x.id === id) : m.changes[id];
+  if (o) {
+    if (notch) o.notch = { ...notch };
+    else delete o.notch;
+    if (hewn) o.hewn = hewn;
+    else delete o.hewn;
+  }
   revision++;
 }
 

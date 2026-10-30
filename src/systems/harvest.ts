@@ -18,6 +18,8 @@ export function effortOf(h: Harvest, tool: string, bears: boolean): NonNullable<
 export type End = 'west' | 'east' | 'north' | 'south';
 import { changeObject, changeSpawned, dropItem, game, replaceHeld, setChangeHits, setSpawnedHits, spawnObject, take, type Hand } from '../state';
 import { footprint, notchCut, promptTop } from '../world/GameMap';
+import { timberSize } from '../world/timberShape';
+import { woodShape } from '../content/mass';
 import type { Box, GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
 
 /**
@@ -370,12 +372,18 @@ export class HarvestSystem {
    * Une variante au hasard (image de la planche `fx-<matière>`) pour chacun.
    */
   private chips(prop: PlacedProp, impact: string, facing: Facing): void {
-    const c = HARVEST.chips;
     // côté où Xéros se tient : l'inverse de la direction où il regarde
     const [sx, sy] = { right: [-1, 0], left: [1, 0], up: [0, 1], down: [0, -1] }[facing];
     // sur une encoche (tronc couché), les éclats partent de l'encoche ; sinon du côté de Xéros, à hauteur de coup
     const x = prop.def.aim ? prop.aimX : prop.baseX + sx * 7;
     const y = prop.def.aim ? prop.aimY : prop.baseY - 6 + sy * 5;
+    this.chipsAt(x, y, prop.y + 1, impact, facing);
+  }
+
+  /** Éclats de la matière `impact` qui jaillissent de (x, y), à la profondeur `depth`, vers Xéros (le coup sur un rondin, systems/timber.ts). */
+  chipsAt(x: number, y: number, depth: number, impact: string, facing: Facing): void {
+    const c = HARVEST.chips;
+    const [sx] = { right: [-1, 0], left: [1, 0], up: [0, 1], down: [0, -1] }[facing];
     // éventail ouvert vers Xéros et vers le haut (angles de Phaser : 0 = droite, -90 = haut)
     const toward = sx !== 0 ? (sx > 0 ? -45 : -135) : -90;
     const texture = `fx-${impact}`;
@@ -389,7 +397,7 @@ export class HarvestSystem {
         alpha: { start: 1, end: 0.6 },
         emitting: false,
       })
-      .setDepth(prop.y + 1);
+      .setDepth(depth);
     emitter.explode(c.count);
     this.scene.time.delayedCall(c.lifespan + 50, () => emitter.destroy());
   }
@@ -430,12 +438,18 @@ export class HarvestSystem {
     // planté depuis un bout : l'objet qui en naît est celui de ce bout (le coin et la fente partent de là)
     const becomes = h.becomesAt?.[END_OF_FACING[facing]] ?? h.becomes;
     const keep = prop.flip && !!becomes && hasLeft(becomes);
-    const x = prop.x + (becomes ? mirror(ax, this.imageWidth(becomes), keep) : ax);
+    // du bois d'œuvre (le tronc ébranché devient un rondin de `length` cm) : jamais retourné, mais posé en miroir quand
+    // l'arbre est tombé vers la gauche, sur le tronc
+    const timber = becomes ? props[becomes].timber : undefined;
+    const length = timber ? h.length : undefined;
+    // le rondin se reflète par son corps, sans sa colonne d'ombre : son bout scié retombe sur celui du tronc
+    const width = !becomes ? 0 : timber ? timberSize(timber.axis, length ?? woodShape(props[becomes].dims).length).w - 1 : this.imageWidth(becomes);
+    const x = prop.x + (becomes ? mirror(ax, width, keep || (!!timber && prop.flip)) : ax);
     const y = prop.y + dy;
     const { baseX, baseY } = prop;
     this.map.removeProp(prop);
-    const next = becomes ? this.map.placeProp({ id: prop.id, type: becomes, x, y }, { flip: keep, spawned: prop.spawned, chain: prop.chain }) : undefined;
-    const change = becomes ? { type: becomes, x, y, ...(keep ? { flip: true } : {}) } : { x, y };
+    const next = becomes ? this.map.placeProp({ id: prop.id, type: becomes, x, y }, { flip: keep, spawned: prop.spawned, chain: prop.chain, length }) : undefined;
+    const change = becomes ? { type: becomes, x, y, ...(keep ? { flip: true } : {}), ...(length !== undefined ? { length } : {}) } : { x, y };
     if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
     else changeObject(game, mapId, prop.id, change);
     // ce qui naît (l'arbre couché) : noté tout de suite, montré à la fin de la chute

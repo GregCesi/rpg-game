@@ -3,6 +3,7 @@ import { HUD, UI, VIEW, ZOOM } from '../config';
 import { items, props, stamina } from '../content';
 import { GameEvent } from '../events';
 import { game, type Held } from '../state';
+import { timberLength } from '../world/GameMap';
 
 /** Écart entre les deux cases (px) et marge sous les cases. */
 const GAP = 4;
@@ -129,7 +130,9 @@ export class HudScene extends Phaser.Scene {
       this.icons[i].setTexture(key);
       // ce qu'on tient à deux mains s'affiche dans la case droite
       const h = game.both ? (i === 1 ? game.both : null) : game.hands[i];
-      const length = h && 'prop' in h && props[h.prop].length ? (h.length ?? props[h.prop].length!.start) : undefined;
+      // la longueur de ce qu'on tient : ce qui reste du rouleau, ou celle du rondin, de la poutre
+      const def = h && 'prop' in h ? props[h.prop] : undefined;
+      const length = def?.length ? ((h as { length?: number }).length ?? def.length.start) : def?.timber ? timberLength(def, (h as { length?: number }).length) : undefined;
       this.showLength(i, length);
     });
   }

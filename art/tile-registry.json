@@ -190,6 +190,9 @@
     "flat-stone",
     "plan-tablet",
     "hatchet-ground",
-    "broadaxe-ground"
+    "broadaxe-ground",
+    "normal-felled-tree",
+    "normal-beam",
+    "normal-beam-ns"
   ]
 }

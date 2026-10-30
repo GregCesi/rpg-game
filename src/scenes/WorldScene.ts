@@ -19,6 +19,7 @@ import { PileCount } from '../systems/pileCount';
 import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
 import { SiteSystem } from '../systems/site';
+import { TimberSystem } from '../systems/timber';
 import { TurnSystem } from '../systems/turnLog';
 import { carriedMass, heavyNotice } from '../systems/weight';
 import {
@@ -86,6 +87,7 @@ export class WorldScene extends Phaser.Scene {
   private effort!: EffortSystem;
   private turns!: TurnSystem;
   private site!: SiteSystem;
+  private timber!: TimberSystem;
   /** R maintenu : pivoter une bille couchée. */
   private turnPress!: LongPress;
   /** Champ « force » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
@@ -150,6 +152,7 @@ export class WorldScene extends Phaser.Scene {
       return [...this.map.interactables(h && 'prop' in h ? h.prop : undefined), ...this.site.interactables(), ...talkable];
     });
     this.harvest = new HarvestSystem(this, this.map);
+    this.timber = new TimberSystem(this, this.map, this.harvest);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
     this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body));
     this.knots = new KnotSystem(this.map, this.handsSystem);
@@ -220,6 +223,8 @@ export class WorldScene extends Phaser.Scene {
     const turn = input.turnPressed();
     const e = this.interaction.update(time, this.mode === 'play');
     this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
+    // la coupe visée sur un rondin et ses deux longueurs, ou la face qu'on dresse
+    this.timber.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
     // ce qu'on tient et qui s'entrepose : sa pièce en transparence, là où elle ira
     this.handsSystem.updatePreview(this.player, this.mode === 'play');
     // les chantiers : piquets, places à remplir en fantôme, ligne d'état
@@ -267,7 +272,8 @@ export class WorldScene extends Phaser.Scene {
       if (gives.some((d) => !canTake(game, items[d.item].hands))) return this.notice('Les mains pleines.');
       this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
     } else if (a.kind === 'take') {
-      const kg = propMass(a.prop.type, a.prop.length);
+      if (a.prop.notch) return this.notice("Finis d'abord la coupe.");
+      const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.hewn);
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(a.prop.def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();
       if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
@@ -390,6 +396,13 @@ export class WorldScene extends Phaser.Scene {
       if (t) this.report({ kind: 'missing', tool: t });
       return;
     }
+    // contre le flanc d'un rondin : la cognée le coupe où l'on vise, la doloire en dresse une face (de haut en bas)
+    const aim = this.timber.target(this.player, tool);
+    if (aim) {
+      if (aim.refusal) return this.notice(aim.refusal);
+      if (!this.effort.afford(this.player, this.timber.cost(this.player, aim))) return;
+      return this.gesture('chop', tool, () => this.timberHit(tool));
+    }
     // le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ; dans le vide, de côté
     const target = this.harvest.target(this.player, tool);
     const h = target?.def.harvest;
@@ -410,6 +423,16 @@ export class WorldScene extends Phaser.Scene {
     // le coin se plante d'un coup, sans geste ; sinon la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
     if (h?.plant && h.tool === tool) return impact();
     this.gesture(gesture, tool, impact);
+  }
+
+  /** L'impact d'un coup sur un rondin : la coupe se creuse ou s'achève, une face se dresse, la poutre est finie. */
+  private timberHit(tool: string): void {
+    const r = this.timber.hit(this.player, tool, this.player.actor.facing);
+    if (r?.split) this.notice(`Coupé : ${metres(r.split[0])} et ${metres(r.split[1])}.`);
+    if (r?.face) this.notice(`Une face dressée (${r.face} sur 4).`);
+    if (r?.beam) this.notice(`Poutre équarrie : ${metres(r.beam.length)}.`);
+    // un morceau qui déborde (le rondin nord-sud coupé) repousse Xéros s'il le recouvre
+    this.harvest.settle(this.player);
   }
 
   private gesture(gesture: string, item: string | undefined, onImpact: () => void): void {

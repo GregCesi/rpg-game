@@ -5,6 +5,9 @@
 // compris = 40 cm), « de la grosseur d'un bras ». Matière commune `NORMAL_WOOD` (art/world/wood.ts) : deux couloirs de
 // sillons, bouts en ovales de 4 px de large ; une face si étroite n'a pas de cerne (paintFace le retire sous 7 px).
 // La bille portée et l'icône (art/items/carried.ts, art/items/resources.ts) partent de ces dessins.
+// Les images du jeu (`normal-felled-log`, `normal-felled-log-ns` et leurs planches de roulement) sont désormais
+// assemblées par art/world/timber.ts (le rondin de 95 cm, mêmes tailles) : ce fichier ne garde que les constructions
+// d'origine, dont la bille portée part encore.
 
 import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
@@ -77,7 +80,10 @@ function cropLog(c: Canvas): Canvas {
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
-export default [
+/** Plus d'image exportée d'ici : voir art/world/timber.ts. Les anciennes restent constructibles (`legacyLogs`). */
+export const legacyLogs = (): ImageSource[] => [
   img('normal-felled-log', cropLog(normalFelledLog())),
   img('normal-felled-log-ns', normalFelledLogNS()),
 ];
+
+export default [] as ImageSource[];

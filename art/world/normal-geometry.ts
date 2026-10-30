@@ -8,11 +8,13 @@
 // Fichiers et ce qu'ils s'échangent :
 // - normal-tree.ts   : arbre debout (`normal-tree`) et souche (`normal-tree-stump`) ; exporte `treeBody(light)`,
 //                      `standingTree()`, `stumpBody()`, `stump()`.
-// - normal-felled.ts : pièces du tronc couché, entailles, bouts coupés, billes de la chaîne, à droite et à gauche ;
-//                      exporte `lyingFrame()` et `lyingFrameLeft()` (dernière image de chaque chute) et `FELLED_LAYOUT`.
+// - normal-felled.ts : l'arbre couché d'un seul tenant (`normal-felled-tree`, `-left`), sans sections ni entailles ;
+//                      exporte `lyingFrame()` et `lyingFrameLeft()` (dernière image de chaque chute) et `FELLED_TREE`
+//                      (sa place, ses collisions, la place du rondin de 500 cm qu'il devient une fois ébranché).
 // - normal-fall.ts   : planches `normal-tree-fall` et `normal-tree-fall-left` ; importe les deux `lyingFrame*`.
-// - normal-logs.ts   : bille seule `normal-felled-log`, bille nord-sud `normal-felled-log-ns`, et (carried.ts,
-//                      resources.ts) la bille portée et l'icône.
+// - timber.ts        : le rondin (30 cm à 5 m) et la poutre qu'on en tire, dont la bille de 95 cm `normal-felled-log`
+//                      et `normal-felled-log-ns` ; normal-logs.ts garde la construction d'origine de la bille, dont
+//                      partent encore la bille portée et l'icône (carried.ts, resources.ts).
 
 import type { Vec } from './big-tree';
 
@@ -56,12 +58,13 @@ export const BUTT_X = OFF + FOOT[0] + 9;
 export const DIAMETER = 6;
 export const TRUNK_TOP = 152;
 export const TRUNK_BOTTOM = TRUNK_TOP + DIAMETER;
-/** Longueur d'une pièce, donc d'une bille : 19 colonnes (95 cm). */
+/** Longueur d'une bille de 95 cm : 19 colonnes (la bille portée de normal-logs.ts). */
 export const SEC = 19;
-/** Pièces du tronc : 4 sections de tronc nu (`normal-felled-section-1..4`) puis le houppier (`normal-felled-crown`, `normal-felled-head`) : 5 billes. */
-export const SECTIONS = 4;
-export const LOGS = SECTIONS + 1;
-/** Première colonne de chaque pièce (la 1re prend le contour du bout scié), puis la fin de la frame. */
-export const PIECE_X = [...Array(LOGS).keys()].map((k) => BUTT_X - 1 + k * SEC).concat(FALL_W);
+/**
+ * Colonne de la frame à partir de laquelle le houppier couché passe par-dessus le tronc (avec la frontière festonnée de
+ * normal-felled.ts) ; avant, il ne se pose que sur le vide. Ébranché, le tronc laisse un rondin de 500 cm (100 px) à
+ * partir du bout scié.
+ */
+export const CROWN_OVER_X = BUTT_X - 1 + 76;
 /** Longueur totale du tronc couché, du bout scié à la pointe (le arbre fait environ 7 m : 140 px, houppier compris). */
 export const TREE_LEN = 140;

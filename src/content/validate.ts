@@ -318,7 +318,8 @@ function validateTrunk(c: Content, cat: Catalog): string[] {
   for (const p of Object.values(c.props)) if (p.harvest?.fall) for (const sp of p.harvest.spawns) born.add(sp.type);
   for (const t of [...born]) {
     const next = c.props[t]?.harvest?.becomes;
-    if (next) born.add(next);
+    // le bois d'œuvre n'est jamais retourné (il est posé en miroir, dessiné face de coupe à gauche) : pas de version -left
+    if (next && !c.props[next]?.timber) born.add(next);
   }
   const sizeErr = (key: string, img: string, base: { w: number; h: number } | undefined, what: string) => {
     const size = cat.sizes.get(img);
@@ -552,6 +553,43 @@ function validatePlans(c: Content): string[] {
 }
 
 /**
+ * Bois d'œuvre (`timber`, world/timberShape.ts) : les deux planches de parties (`<sheet>` est-ouest, `<sheet>-ns` nord-sud) ont
+ * chaque aspect en trois parties (le rond en 4 images de roulement), et les deux bandes d'encoche ; la coupe et l'équarrissage
+ * nomment des outils ; la poutre que donne l'équarrissage est du bois d'œuvre du même sens ; ce qui roule est le rond ;
+ * l'image de l'objet est celle de sa longueur de `dims`.
+ */
+function validateTimber(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  for (const [key, p] of Object.entries(c.props)) {
+    const t = p.timber;
+    if (!t) continue;
+    const err = (msg: string) => errors.push(`props.json '${key}' timber : ${msg}`);
+    const sheet = t.axis === 'ew' ? t.sheet : `${t.sheet}-ns`;
+    const looks = t.look === 'beam' ? ['beam'] : ['round', ...(t.hew ? ['f1', 'f2', 'f3'] : [])];
+    for (const look of looks) {
+      for (const part of ['start', 'mid', 'end']) {
+        const n = cat.frameCounts.get(sheet)?.get(`${look}-${part}`);
+        const want = look === 'round' ? 4 : 1;
+        if (n === undefined) err(`planche '${sheet}' : animation '${look}-${part}' non dessinée`);
+        else if (n !== want) err(`planche '${sheet}' : '${look}-${part}' a ${n} images, il en faut ${want}`);
+      }
+    }
+    if (t.cut) for (const notch of ['notch1', 'notch2']) if (cat.frameCounts.get(sheet)?.get(notch) !== 4) err(`planche '${sheet}' : '${notch}' doit avoir 4 images (une par image de roulement)`);
+    if (t.cut && t.cut.hits !== 3) err(`'cut.hits' : 3 coups (un tiers, deux tiers, coupé : les bandes notch1 et notch2)`);
+    for (const tool of [t.cut?.tool, t.hew?.tool]) if (tool && c.items[tool]?.kind !== 'tool') err(`'${tool}' n'est pas un outil de items.json`);
+    if (t.hew) {
+      const into = c.props[t.hew.into];
+      if (!into?.timber || into.timber.look !== 'beam' || into.timber.axis !== t.axis) err(`'hew.into' : '${t.hew.into}' doit être une poutre ('timber', look 'beam') du même sens`);
+    }
+    if (p.roll && t.look !== 'round') err(`seul le rondin rond roule ('roll')`);
+    if ((p.dims.shape === 'cylinder' ? p.dims.axis : undefined) !== t.axis && p.dims.shape === 'cylinder') err(`dims d'axe '${p.dims.axis}' pour une pièce couchée '${t.axis}'`);
+    if (p.body || p.bodies) err(`pas de 'body' : sa collision suit sa longueur (timberBody)`);
+    if (!p.mass) err(`une masse ('"mass": "wood"', à sa longueur)`);
+  }
+  return errors;
+}
+
+/**
  * Masses et roulement : tout objet qu'on prend, pose ou roule a une masse (items.json : un nombre ; props.json : un nombre,
  * `"wood"` pour une pièce de bois cylindrique, ou `{ "pile": genre }`) ; ce qui roule est un cylindre couché, a sa collision,
  * sa planche de roulement (animation `roll` de 4 images, de la taille de l'objet), et l'objet ordinaire qu'il devient (`into`).
@@ -564,7 +602,7 @@ function validateMasses(c: Content, cat: Catalog): string[] {
     const at = `props.json '${key}'`;
     const weighs = !!p.take || !!p.roll;
     if (weighs && p.mass === undefined) err(`${at} : pas de masse ('mass') : tout objet qu'on prend ou qu'on roule en a une`);
-    if (p.mass === 'wood' && !(p.dims.shape === 'cylinder')) err(`${at} : 'mass: "wood"' est le calcul d'une pièce de bois cylindrique (dims.shape 'cylinder')`);
+    if (p.mass === 'wood' && !(p.dims.shape === 'cylinder' || (p.timber && p.dims.shape === 'box'))) err(`${at} : 'mass: "wood"' est le calcul d'une pièce de bois cylindrique (dims.shape 'cylinder'), ou d'une poutre ('timber', boîte)`);
     if (p.mass === 'stone' && p.dims.shape !== 'box') err(`${at} : 'mass: "stone"' est le calcul d'une pierre en boîte (dims.shape 'box')`);
     if (typeof p.mass === 'object' && 'pile' in p.mass && !c.piles[p.mass.pile]) err(`${at} : masse d'un tas '${p.mass.pile}' introuvable dans piles.json`);
     if (typeof p.mass === 'object' && 'share' in p.mass && c.props[p.mass.of]?.mass !== 'wood') err(`${at} : masse en part de '${p.mass.of}', qui doit être une pièce de bois ('mass: "wood"')`);
@@ -578,14 +616,16 @@ function validateMasses(c: Content, cat: Catalog): string[] {
     }
     if (p.turn) {
       const t = c.props[p.turn.into];
+      // ce qui pivote roule (la bille), ou est du bois d'œuvre (la poutre, qui ne roule pas) : couché dans l'autre sens
+      const axis = (q: PropDef) => q.roll?.axis ?? q.timber?.axis;
       if (!t) err(`${at} : 'turn' vers '${p.turn.into}' introuvable dans props.json`);
-      else if (!p.roll || !t.roll || t.roll.axis === p.roll.axis) err(`${at} : 'turn' vers '${p.turn.into}' : il doit rouler et être couché dans l'autre sens`);
+      else if (!axis(p) || !axis(t) || axis(t) === axis(p)) err(`${at} : 'turn' vers '${p.turn.into}' : il doit rouler (ou être du bois d'œuvre) et être couché dans l'autre sens`);
       else if (!t.turn || t.turn.into === undefined) err(`${at} : '${p.turn.into}' doit pouvoir se retourner à son tour ('turn')`);
     }
     const r = p.roll;
     if (!r) continue;
     if (p.dims.shape !== 'cylinder' || p.dims.axis !== r.axis) err(`${at} : 'roll' d'axe '${r.axis}' demande des dims de cylindre couché '${r.axis}'`);
-    if (!p.body && !p.bodies) err(`${at} : un objet qui roule a sa collision ('body')`);
+    if (!p.body && !p.bodies && !p.timber) err(`${at} : un objet qui roule a sa collision ('body')`);
     const frames = cat.frameCounts.get(r.sheet)?.get('roll');
     if (frames === undefined) err(`${at} : planche de roulement '${r.sheet}' (animation 'roll') non dessinée`);
     else if (frames !== 4) err(`${at} : planche '${r.sheet}' : 'roll' a ${frames} images, il en faut 4 (un tour)`);
@@ -693,6 +733,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Masses, roulement, pose pousser
   addAll(validateMasses(c, cat));
+
+  // Bois d'œuvre : planches de parties, outils, poutre
+  addAll(validateTimber(c, cat));
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));

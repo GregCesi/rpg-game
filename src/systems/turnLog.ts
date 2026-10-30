@@ -3,9 +3,8 @@ import { props } from '../content';
 import { propMass } from '../content/mass';
 import type { Facing } from '../content/types';
 import type { Player } from '../entities/Player';
-import { images } from '../generated/assets';
 import { changeObject, changeSpawned, game } from '../state';
-import { footprint, type Box, type GameMap, type Interactable, type PlacedProp } from '../world/GameMap';
+import { propFootprint, propSize, stateOf, type Box, type GameMap, type Interactable, type PlacedProp } from '../world/GameMap';
 import type { RollSystem } from './roll';
 
 const SIDES: Facing[] = ['down', 'up', 'left', 'right'];
@@ -38,14 +37,16 @@ export class TurnSystem {
 
   /** Masse de la bille visée, en kg. */
   mass(p: PlacedProp): number {
-    return propMass(p.type, p.length);
+    return propMass(p.type, p.length, undefined, p.hewn);
   }
 
   /** Fait pivoter `p`. Renvoie le message à dire si elle n'a pas la place, sinon undefined. */
   act(player: Player, p: PlacedProp): string | undefined {
+    if (p.notch) return "Finis d'abord la coupe.";
     const into = p.def.turn!.into;
-    const img = images.find((i) => i.key === props[into].image)!;
-    const nb = footprint(props[into], img.width, img.height, false)!;
+    // à sa longueur pour le bois d'œuvre (le rondin de 3 m tourné reste un rondin de 3 m)
+    const img = propSize(this.scene, props[into], { length: p.length });
+    const nb = propFootprint(this.scene, props[into], { length: p.length })!;
     const ob = p.box!;
     const cx = (ob.left + ob.right) / 2;
     const cy = (ob.top + ob.bottom) / 2;
@@ -58,10 +59,10 @@ export class TurnSystem {
     const push = this.pushAway(player, box);
     if (push === null) return nope;
 
-    const spawned = { spawned: p.spawned, chain: p.chain, length: p.length };
+    const spawned = { spawned: p.spawned, chain: p.chain, length: p.length, hewn: p.hewn };
     this.map.removeProp(p);
-    const placed = this.map.placeProp({ id: p.id, type: into, x, y: top + img.height }, spawned);
-    const change = { type: into, x: placed.x, y: placed.y, ...(p.length !== undefined ? { length: p.length } : {}) };
+    const placed = this.map.placeProp({ id: p.id, type: into, x, y: top + img.h }, spawned);
+    const change = stateOf(placed);
     if (p.spawned) changeSpawned(game, this.map.def.id, p.id, change);
     else changeObject(game, this.map.def.id, p.id, change);
     if (push) player.actor.body.reset(player.actor.x + push.dx, player.actor.y + push.dy);

@@ -141,6 +141,8 @@ export const HarvestSchema = z.strictObject({
     .optional(),
   /** Objet de props.json qui le remplace ; absent = il disparaît. */
   becomes: id.optional(),
+  /** Longueur (cm) de ce qu'il devient, s'il devient du bois d'œuvre (`timber` : le tronc ébranché devient un rondin de 5 m). */
+  length: z.number().int().positive().optional(),
   /** Décalage du coin bas gauche de `becomes` par rapport à celui de l'objet récolté. */
   at: z.tuple([px, px]).optional(),
   /** Objets lâchés au sol, autour de lui. */
@@ -185,6 +187,29 @@ export const RollSchema = z.strictObject({ axis: z.enum(['ew', 'ns']), sheet: id
  * proportionnel à sa masse (`turnPerKg` de stamina.json).
  */
 export const TurnSchema = z.strictObject({ into: id });
+
+/**
+ * Bois d'œuvre de longueur quelconque (le rondin de l'arbre normal, la poutre équarrie) : sa longueur (cm) est gardée par
+ * GameState (`length` de ce qu'on tient, d'un objet né ou changé ; absent : la longueur de ses `dims`, 95 cm, la bille), et
+ * son image s'assemble à la volée selon `world/timberShape.ts` dans les planches `sheet` (est-ouest) et `<sheet>-ns`
+ * (nord-sud), d'après `axis`. `look` : ce qu'il est, rond (`round`, le rondin, qui roule) ou poutre (`beam`). Sa collision
+ * et sa masse suivent sa longueur ; sa masse, son état d'équarrissage (`hewn` de GameState).
+ * `cut` (le rondin) : l'outil coupe une encoche à l'endroit visé, au pas de `step` cm, jamais à moins de `min` cm d'un bout ;
+ * `hits` coups (un tiers, deux tiers, coupé), et le rondin devient deux rondins. `hew` (le rondin) : l'outil dresse une face en
+ * `perFace` coups, `faces` faces ; la dernière finie, il devient `into` (la poutre, même sens, même longueur) ; il faut un
+ * diamètre d'au moins `min` cm ; chaque coup coûte `hewPerM` de stamina.json par mètre de longueur.
+ */
+export const TimberSchema = z.strictObject({
+  sheet: id,
+  axis: z.enum(['ew', 'ns']),
+  look: z.enum(['round', 'beam']),
+  cut: z
+    .strictObject({ tool: id, hits: z.number().int().positive(), min: z.number().int().positive(), step: z.number().int().positive() })
+    .optional(),
+  hew: z
+    .strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), into: id, min: z.number().positive() })
+    .optional(),
+});
 
 /** Nombre de mains que demande un objet qu'on prend : une, ou les deux (lourd ou long). */
 export const HandsSchema = z.union([z.literal(1), z.literal(2)]);
@@ -291,6 +316,10 @@ export const PropDefSchema = z.strictObject({
   teaches: id.optional(),
   /** Ce qui pivote d'un quart de tour au sol (R maintenu, mains vides) : voir TurnSchema. */
   turn: TurnSchema.optional(),
+  /** Bois d'œuvre de longueur quelconque (rondin, poutre) : voir TimberSchema. */
+  timber: TimberSchema.optional(),
+  /** Genre du nom (`name`), pour les messages : `f` (« la bille », par défaut) ou `m` (« le rondin »). */
+  gender: z.enum(['m', 'f']).default('f'),
   /**
    * Quantité mesurée (le rouleau de corde) : une longueur, en centimètres, gardée par GameState (`length` de ce qu'on
    * tient, d'un objet né ou changé). `start` : la longueur d'un objet neuf (posé dans Tiled) ; `cut` : ce qu'enlève une
@@ -542,7 +571,7 @@ export const StrengthSchema = z
  * (les « PerSec » se paient chaque seconde de l'effort, les « PerKg » sont proportionnels à la masse en kg) ; marcher ne coûte rien.
  * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `plant` planter
  * le coin de fendage, `whittle` tailler un piquet à la hachette, `stake` planter un piquet de tracé, `maul` un coup de masse sur le coin, `knot`
- * nouer ou dénouer, `turnPerKg` pivoter une bille, `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
+ * nouer ou dénouer, `hewPerM` un coup de doloire, par mètre de la pièce qu'on équarrit, `turnPerKg` pivoter une bille, `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
  * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir.
  */
 export const StaminaSchema = z.strictObject({
@@ -557,6 +586,7 @@ export const StaminaSchema = z.strictObject({
     whittle: z.number().nonnegative(),
     maul: z.number().nonnegative(),
     knot: z.number().nonnegative(),
+    hewPerM: z.number().nonnegative(),
     turnPerKg: z.number().nonnegative(),
     carryPerKgSec: z.number().nonnegative(),
     pushPerKgSec: z.number().nonnegative(),
@@ -648,6 +678,7 @@ export type TerrainDef = z.infer<typeof TerrainDefSchema>;
 export type TilesetCatalog = z.infer<typeof TilesetCatalogSchema>;
 export type PropDef = z.infer<typeof PropDefSchema>;
 export type Harvest = z.infer<typeof HarvestSchema>;
+export type TimberDef = z.infer<typeof TimberSchema>;
 export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type Take = z.infer<typeof TakeSchema>;

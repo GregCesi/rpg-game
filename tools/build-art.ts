@@ -25,6 +25,7 @@ import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPre
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
 import { fendagePreview } from './lib/fendage-preview';
+import { timberPreview } from './lib/timber-preview';
 import { auditPreview } from './lib/audit-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
@@ -300,6 +301,9 @@ if (withPreview) {
   // le fendage : la bille, le coin, les trois fentes, les demi-billes, les quartiers, les outils, le tas de quartiers
   const fendage = fendagePreview(sources, propDefs, pileDefs);
   if (fendage) writeFileSync(join(PREVIEW, 'fendage.png'), PNG.sync.write(fendage));
+  // le bois d'œuvre de l'arbre normal : rondins de toute longueur, encoches, roulement, équarrissage, poutre portée
+  const timber = timberPreview(sources);
+  if (timber) writeFileSync(join(PREVIEW, 'timber.png'), PNG.sync.write(timber));
   // les bâtiments qui montent, étape par étape : chaque plan de plans.json posé sur la ferme, son piquet nord-ouest en PLAN_PREVIEW
   const plans = parse('plans.json', z.record(z.string(), PlanSchema), plansJson);
   const base = previewMap(PLAN_PREVIEW.map);

@@ -4,7 +4,7 @@ import { propMass } from '../content/mass';
 import type { Facing } from '../content/types';
 import type { Player } from '../entities/Player';
 import { changeObject, changeSpawned, game } from '../state';
-import type { GameMap, PlacedProp } from '../world/GameMap';
+import { stateOf, timberLook, type GameMap, type PlacedProp } from '../world/GameMap';
 import { EXHAUSTED } from './effort';
 
 /** Écart (px) sous lequel Xéros touche une bille, et recouvrement minimal (px) le long d'elle pour la pousser. */
@@ -72,7 +72,7 @@ export class RollSystem {
     player.actor.stance = 'push';
     const none = player.dir.clone().set(0, 0);
     if (this.charge < ROLL.startMs) return player.actor.move(none, 0);
-    const mass = propMass(target.type, target.length);
+    const mass = propMass(target.type, target.length, undefined, target.hewn);
     const speed = PLAYER.walkSpeed * player.strength.rollFactor(mass);
     // pousser puise dans la jauge, proportionnellement à la masse (stamina.json)
     player.stamina.drain(player.stamina.pushRate(mass), delta);
@@ -86,24 +86,34 @@ export class RollSystem {
     this.commit();
   }
 
-  /** Pourquoi la bille ne roule pas, ou undefined : sens de l'axe, mains prises, trop lourde. */
+  /**
+   * Pourquoi la pièce ne roule pas, ou undefined : la poutre (carrée), le rondin dont une face est dressée ou qu'on est en train
+   * de couper, le sens de l'axe, les mains prises, trop lourde. Les messages s'accordent au nom (`gender` : le rondin, la bille).
+   */
   private refusal(player: Player, p: PlacedProp, dir: Facing): string | undefined {
+    const m = p.def.gender === 'm';
+    if (p.def.timber && !p.def.roll) return 'Elle ne roule pas : elle est carrée.';
+    if (p.def.timber && timberLook(p.def, p.hewn) !== 'round') return 'Il ne roule plus : une face est dressée.';
+    if (p.notch) return "Finis d'abord la coupe.";
     const across = p.def.roll!.axis === 'ew' ? dir === 'up' || dir === 'down' : dir === 'left' || dir === 'right';
-    if (!across) return 'Elle ne roule pas dans ce sens.';
+    if (!across) return m ? 'Il ne roule pas dans ce sens.' : 'Elle ne roule pas dans ce sens.';
     if (game.both || game.hands[0] || game.hands[1]) return "Pose d'abord ce que tu tiens.";
-    if (!player.strength.canRoll(propMass(p.type, p.length))) return 'Trop lourde, elle ne bouge pas.';
+    if (!player.strength.canRoll(propMass(p.type, p.length, undefined, p.hewn))) return m ? 'Trop lourd, il ne bouge pas.' : 'Trop lourde, elle ne bouge pas.';
     if (player.stamina.empty) return EXHAUSTED;
     return undefined;
   }
 
-  /** La bille roulante que touche Xéros en poussant vers `dir` (celle qu'il recouvre le plus), s'il y en a une. */
+  /**
+   * La bille roulante que touche Xéros en poussant vers `dir` (celle qu'il recouvre le plus), s'il y en a une ; une pièce de bois
+   * d'œuvre compte aussi, même si elle ne roule pas (la poutre : elle le dit).
+   */
   touching(player: Player, dir: Facing): PlacedProp | undefined {
     const b = player.actor.body;
     let best: PlacedProp | undefined;
     let bestOverlap = TOUCH.overlap - 1e-6;
     for (const p of this.map.props) {
       const k = p.box;
-      if (!p.def.roll || !k || !p.image.visible) continue;
+      if (!(p.def.roll || p.def.timber) || !k || !p.image.visible) continue;
       const vertical = dir === 'up' || dir === 'down';
       const gap = dir === 'down' ? k.top - b.bottom : dir === 'up' ? b.top - k.bottom : dir === 'right' ? k.left - b.right : b.left - k.right;
       const overlap = vertical ? Math.min(b.right, k.right) - Math.max(b.left, k.left) : Math.min(b.bottom, k.bottom) - Math.max(b.top, k.top);
@@ -168,7 +178,7 @@ export class RollSystem {
   }
 
   private record(p: PlacedProp): void {
-    const change = { type: p.type, x: p.x, y: p.y, ...(p.length !== undefined ? { length: p.length } : {}) };
+    const change = stateOf(p);
     if (p.spawned) changeSpawned(game, this.map.def.id, p.id, change);
     else changeObject(game, this.map.def.id, p.id, change);
   }

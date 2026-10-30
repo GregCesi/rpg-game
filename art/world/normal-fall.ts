@@ -5,8 +5,8 @@
 // 1. l'arbre debout (`standingTree` de normal-tree.ts) posé en (OFF, 0) ;
 // 2. le haut de l'arbre pivoté de 10° autour de la charnière (bord de la coupe du côté où il tombe), sur la souche ;
 // 3. pivoté de 45° ;
-// 4. l'arbre couché lui-même : `lyingFrame()` de normal-felled.ts, la souche et les pièces exactement comme le jeu les
-//    posera, pour que rien ne saute au remplacement.
+// 4. l'arbre couché lui-même : `lyingFrame()` de normal-felled.ts, la souche et `normal-felled-tree` exactement comme le
+//    jeu les posera, pour que rien ne saute au remplacement.
 //
 // En tombant, l'arbre passe de la vue de face (debout, hauteur en vraie grandeur) à la vue de dessus (couché) : le tronc
 // nu s'allonge (EXT) et le houppier, vu de plus en plus par-dessus, se raccourcit le long du tronc (CROWN_K) et

@@ -1,15 +1,15 @@
-// Billes qui roulent : quatre planches d'une animation `roll` de 4 images, une par bille couchée
-// (`big-felled-log`, `big-felled-log-ns`, `normal-felled-log`, `normal-felled-log-ns`). Chaque planche a le canevas,
-// la silhouette, l'ancrage et l'ombre de son image fixe (art/world/big-felled.ts, art/world/normal-logs.ts) : seule
-// la matière bouge.
+// Billes qui roulent : deux planches d'une animation `roll` de 4 images, une par bille couchée du gros arbre
+// (`big-felled-log`, `big-felled-log-ns`). Chaque planche a le canevas, la silhouette, l'ancrage et l'ombre de son image
+// fixe (art/world/big-felled.ts) : seule la matière bouge. Les billes de l'arbre normal roulent dans art/world/timber.ts
+// (rondins de toute longueur, mêmes règles).
 //
 // Règle de rotation : 4 images = un tour complet ; l'image k+1 montre la bille tournée d'un quart de tour de plus que
-// l'image k (le jeu avance d'une image tous les π × Ø ÷ 4 de roulement : 8,6 px pour le gros, 4,7 px pour le normal).
+// l'image k (le jeu avance d'une image tous les π × Ø ÷ 4 de roulement : 8,6 px pour le gros).
 // L'image avance quand la bille roule vers le sud (est-ouest) ou vers l'est (nord-sud) ; le jeu lit la planche à
 // l'envers pour l'autre sens.
 //
 // - L'écorce : ses sillons (parallèles à l'axe) sont posés sur un anneau qui fait tout le tour du tronc, deux fois la
-//   face visible (22 rangées de texture pour le gros, 12 pour le normal). La lumière, elle, ne tourne pas : la rampe
+//   face visible (22 rangées de texture pour le gros). La lumière, elle, ne tourne pas : la rampe
 //   M m N K reste en place, seuls les sillons défilent, d'un quart d'anneau par image (vers le bas pour une bille
 //   est-ouest qui roule vers le sud, vers la droite pour une bille nord-sud qui roule vers l'est). Les couloirs visibles
 //   à l'image 0 sont exactement ceux de la matière commune (art/world/wood.ts) : l'image 0 est la bille fixe. Les
@@ -23,10 +23,8 @@ import type { SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { despeckle, shadedOutline } from './big-tree';
 import { LOG_NS as BIG_NS } from './big-felled';
-import { LOG_NS as NORMAL_NS } from './normal-logs';
-import { BIG_WOOD, DARKER, NORMAL_WOOD, type Wood, barkTone, logEnd, paintFace } from './wood';
+import { BIG_WOOD, DARKER, type Wood, barkTone, logEnd, paintFace } from './wood';
 import bigFelled from './big-felled';
-import normalLogs from './normal-logs';
 
 /** Anneau d'écorce : nombre de rangées de texture sur tout le tour, couloirs de sillons (rangée, période, tiret, décalage). */
 interface Ring { size: number; furrows: [number, number, number, number][] }
@@ -45,19 +43,9 @@ const BIG_RING: Ring = {
   ],
 };
 
-/** Arbre normal : 12 rangées (deux fois les 6 visibles), couloirs 1 et 4 (ceux de NORMAL_WOOD), puis 7 et 10. */
-const NORMAL_RING: Ring = {
-  size: 12,
-  furrows: [
-    ...NORMAL_WOOD.furrows,
-    [7, 9, 3, 4],
-    [10, 15, 6, 9],
-  ],
-};
-
 const mod = (a: number, n: number) => ((a % n) + n) % n;
 
-/** Décalage de l'anneau à l'image k : un quart de tour par image, arrondi (5 ou 6 rangées pour le gros, 3 pour le normal). */
+/** Décalage de l'anneau à l'image k : un quart de tour par image, arrondi (5 ou 6 rangées pour le gros). */
 const shiftAt = (ring: Ring, k: number) => Math.round((k * ring.size) / 4);
 
 /**
@@ -95,7 +83,7 @@ function crop(c: Canvas, x: number, y: number, w: number, h: number): Canvas {
 // ---------- Billes est-ouest ----------
 
 /**
- * Bille est-ouest à l'image k, construite comme `felledLog` (gros) ou `normalFelledLog` (normal) : écorce en travers,
+ * Bille est-ouest à l'image k, construite comme `felledLog` (big-felled.ts) : écorce en travers,
  * bouts en ovale (face de coupe à gauche, écorce enroulée à droite), contour, ombre au sol sur deux rangées décalée vers
  * la droite ; puis découpée comme l'image fixe (largeur LOG_LEN + 3).
  */
@@ -110,9 +98,9 @@ function rollingLogEW(wood: Wood, ring: Ring, k: number): Canvas {
   logEnd(c, len + 1, 'right', cy, false, D / 2, wood.endA);
   despeckle(c, 'KYTtN');
   shadedOutline(c);
-  // ombre au sol : deux rangées pleines puis une plus courte pour le gros, une pleine et une courte pour le normal
+  // ombre au sol : deux rangées pleines puis une plus courte
   const bottom = D + 1;
-  const full = wood === NORMAL_WOOD ? 1 : 2;
+  const full = 2;
   for (let i = 1; i <= full; i++) for (let X = 2; X <= len + 1; X++) if (c.get(X, bottom + i) === EMPTY) c.set(X, bottom + i, 'x');
   for (let X = 4; X <= len; X++) if (c.get(X, bottom + full + 1) === EMPTY) c.set(X, bottom + full + 1, 'x');
   const b = bounds(c);
@@ -187,14 +175,12 @@ function sheet(name: string, frames: Canvas[]): SpriteSheetSource {
 const SHEETS: [string, Canvas[]][] = [
   ['big-felled-log', FRAMES.map((k) => rollingLogEW(BIG_WOOD, BIG_RING, k))],
   ['big-felled-log-ns', FRAMES.map((k) => rollingLogNS(BIG_NS, BIG_WOOD, BIG_RING, k, { from: 0.3, to: 0.95 }))],
-  ['normal-felled-log', FRAMES.map((k) => rollingLogEW(NORMAL_WOOD, NORMAL_RING, k))],
-  ['normal-felled-log-ns', FRAMES.map((k) => rollingLogNS(NORMAL_NS, NORMAL_WOOD, NORMAL_RING, k, { from: 0.3, to: 0.95 }))],
 ];
 
 // Garde-fou : chaque image a le canevas et la silhouette exacts (ombre comprise) de l'image fixe de sa bille.
 {
   const fixed = new Map<string, string[]>();
-  for (const s of [...bigFelled, ...normalLogs]) if (s.kind === 'image') fixed.set(s.name, s.grid);
+  for (const s of bigFelled) if (s.kind === 'image') fixed.set(s.name, s.grid);
   for (const [name, frames] of SHEETS) {
     const ref = fixed.get(name);
     if (!ref) throw new Error(`roll : pas d'image fixe ${name}`);
