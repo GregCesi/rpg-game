@@ -91,12 +91,12 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "big-tree",
-          "x": 240,
+          "type": "normal-tree",
+          "x": 249,
           "y": 32,
-          "width": 64,
-          "height": 96,
-          "gid": 1001
+          "width": 48,
+          "height": 168,
+          "gid": 1057
         },
         {
           "id": 3,
@@ -175,12 +175,12 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "big-tree",
-          "x": 320,
+          "type": "normal-tree",
+          "x": 329,
           "y": 480,
-          "width": 64,
-          "height": 96,
-          "gid": 1001
+          "width": 48,
+          "height": 168,
+          "gid": 1057
         },
         {
           "id": 9,
@@ -283,24 +283,24 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "big-tree",
-          "x": 144,
+          "type": "normal-tree",
+          "x": 153,
           "y": 640,
-          "width": 64,
-          "height": 96,
-          "gid": 1001
+          "width": 48,
+          "height": 168,
+          "gid": 1057
         },
         {
           "id": 18,
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "big-tree",
-          "x": 272,
+          "type": "normal-tree",
+          "x": 281,
           "y": 672,
-          "width": 64,
-          "height": 96,
-          "gid": 1001
+          "width": 48,
+          "height": 168,
+          "gid": 1057
         },
         {
           "id": 19,

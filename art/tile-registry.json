@@ -152,6 +152,20 @@
     "shed-plate-south",
     "shed-plate-side",
     "shed-rafter",
-    "shed-thatch"
+    "shed-thatch",
+    "normal-tree",
+    "normal-felled-section-1",
+    "normal-felled-section-2",
+    "normal-felled-section-3",
+    "normal-felled-section-4",
+    "normal-felled-crown",
+    "normal-felled-head",
+    "normal-felled-log-1",
+    "normal-felled-log-2",
+    "normal-felled-log-3",
+    "normal-felled-log-4",
+    "normal-felled-log-5",
+    "normal-felled-log",
+    "normal-tree-stump"
   ]
 }
