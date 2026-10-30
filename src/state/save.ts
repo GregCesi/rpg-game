@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { items, maps, piles, plans, props, stamina, wood } from '../content';
 import { FacingSchema, type End, type PileWood, type WoodPiece } from '../content/types';
 import { kindOf, pileDefOf } from '../world/pileShape';
-import { lookOf } from '../world/woodShape';
+import { BEAM_SIZE, lookOf } from '../world/woodShape';
 import { GameStateSchema, type GameState, type Held } from './GameState';
 
 /** Clé de la sauvegarde dans localStorage. */
@@ -15,7 +15,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -81,6 +81,7 @@ export function readSave(): ReadResult {
  * Version 6 -> 7 : la pièce de bois (voir `woodPiecesFromKeys`).
  * Version 7 -> 8 : les tas de bois se calculent d'après leur pièce (voir `woodPilesFromGenres`).
  * Version 8 -> 9 : un chantier garde la pièce de bois d'où vient chacune de ses pièces posées (`pieces`) : les chantiers anciens n'en ont aucune.
+ * Version 9 -> 10 : un chantier montre les vraies pièces posées (voir `postsAsWood`) : les poteaux deviennent des pièces de bois dressées.
  */
 function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -97,7 +98,52 @@ function upgrade(data: unknown): unknown {
   if (d?.version === 6 && d.state && typeof d.state === 'object') d = { ...d, version: 7, state: woodPiecesFromKeys(d.state as V6State) };
   if (d?.version === 7 && d.state && typeof d.state === 'object') d = { ...d, version: 8, state: woodPilesFromGenres(d.state as V7State) };
   if (d?.version === 8 && d.state && typeof d.state === 'object') d = { ...d, version: 9, state: sitesWithPieces(d.state as V8State) };
+  if (d?.version === 9 && d.state && typeof d.state === 'object') d = { ...d, version: 10, state: postsAsWood(d.state as V9State) };
   return d;
+}
+
+/** Ce que la conversion 9 -> 10 lit d'une partie : par carte, les objets nés et les chantiers (place -> objet né, place -> pièce d'origine). */
+type V9State = {
+  maps?: Record<
+    string,
+    {
+      spawned?: { id: number; type: string; wood?: WoodPiece }[];
+      sites?: { plan: string; placed?: Record<string, number>; pieces?: Record<string, WoodPiece> }[];
+    }
+  >;
+};
+
+/** Les poteaux d'avant la pièce de bois, dessinés à part : ils deviennent la pièce de bois dressée que le plan demandait. */
+const OLD_POSTS = ['shed-post-high', 'shed-post-low'];
+
+/**
+ * Version 9 -> 10 : un chantier montre les vraies pièces posées. Un poteau dressé sous l'ancien dessin (`shed-post-high`,
+ * `shed-post-low`) devient une pièce de bois dressée (`wood-piece`, `axis: 'up'`) à la même place, de la pièce d'origine du chantier
+ * (`pieces`) ; s'il n'en a pas gardé (poteau dressé avant la version 9), la conversion la complète avec la poutre que le plan demande
+ * à cette place (équarrie sur ses quatre faces, la longueur du plan).
+ */
+function postsAsWood(state: V9State): V9State {
+  const maps = Object.fromEntries(
+    Object.entries(state.maps ?? {}).map(([id, m]) => {
+      const spawned = (m.spawned ?? []).map((o) => ({ ...o }));
+      const sites = (m.sites ?? []).map((site) => {
+        const pieces = { ...(site.pieces ?? {}) };
+        for (const [place, spawnId] of Object.entries(site.placed ?? {})) {
+          const o = spawned.find((q) => q.id === spawnId);
+          if (!o || !OLD_POSTS.includes(o.type)) continue;
+          const beam = plans[site.plan]?.steps.flatMap((st) => Object.entries(st.places).map(([k, pl]) => ({ k, rule: (pl.accepts ?? st.accepts)?.wood }))).find((q) => q.k === place)?.rule;
+          const piece: WoodPiece | undefined = pieces[place] ?? (beam && { size: BEAM_SIZE, length: beam.length, shape: 'round', hewn: wood.hew.faces * wood.hew.perFace, axis: 'ew' });
+          if (!piece) continue;
+          pieces[place] = piece;
+          o.type = 'wood-piece';
+          o.wood = { size: piece.size, length: piece.length, shape: 'round', ...(piece.hewn ? { hewn: piece.hewn } : {}), axis: 'up' };
+        }
+        return { ...site, pieces };
+      });
+      return [id, { ...m, spawned, sites }];
+    }),
+  );
+  return { ...state, maps };
 }
 
 /** Ce que la conversion 8 -> 9 lit d'une partie : les chantiers de chaque carte. */
@@ -292,7 +338,9 @@ function damaged(raw: string, why: string): ReadResult {
 function woodMissing(w: WoodPiece): string | undefined {
   const size = wood.sizes[w.size];
   if (!size) return `le bois « ${w.size} »`;
-  return size.looks[lookOf(w)] ? undefined : `la forme « ${lookOf(w)} » du bois « ${w.size} »`;
+  const look = size.looks[lookOf(w)];
+  if (!look) return `la forme « ${lookOf(w)} » du bois « ${w.size} »`;
+  return w.axis === 'up' && !look.up ? `la forme « ${lookOf(w)} » du bois « ${w.size} » debout` : undefined;
 }
 
 /**
