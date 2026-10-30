@@ -1,5 +1,7 @@
 # Audit des tailles
 
+> **Mise à jour (chantier « largeur », 30 octobre 2026)** : corrigés, marqués **✔ corrigé** plus bas : Xéros et la mère amincis à 12 px (60 cm), la mère à 32 px (160 cm), collision de Xéros 10 × 8 px ; tonneau, caisse, coffre, tabouret, botte de foin, bougie, lanterne redessinés à leur vraie taille ; puits déclaré à 215 cm. Tous sortis d'`EXCEPTIONS` (seul reste `big-pollard`). Non touchés, pour le chantier « maison » : cheminée, tables, murs, portes, `maison.tmj`. Les mesures et verdicts ci-dessous sont ceux de l'audit d'origine.
+
 Rapport de lecture : aucun dessin, aucune dimension de `props.json`, aucune `EXCEPTIONS` n'a été changé. Mesures prises le 30 octobre 2026 sur la branche `realisme` (`npm run art`, `src/generated/manifest.json`, `expectedSize` de `src/content/gabarit.ts`). Image : `.art-preview/audit-tailles.png` (`npm run art:preview`, outil `tools/lib/audit-preview.ts`) : chaque objet hors gabarit à côté de Xéros, à la même échelle, avec en jaune la taille attendue d'après les dimensions déclarées et en cyan celle d'après les dimensions proposées ici.
 
 Conventions : 5 cm par pixel ; « dessiné » = silhouette contour compris (ombre exclue) ; « attendu » = `expectedSize` (de la taille réelle au plancher de lisibilité de 6 px) ; écart = dessiné − attendu, en px, largeur × hauteur ; tolérance 2 px. Verdicts : **conforme**, **à redessiner**, **stylisé, à décider par Grégoire**.
@@ -8,7 +10,9 @@ Constat d'ensemble : sur les 68 objets de `props.json`, seuls 9 sont nommés dan
 
 ## Les deux sujets connus
 
-### (a) La largeur de Xéros
+### (a) La largeur de Xéros — ✔ corrigé
+
+Décision : option (2), 12 px (60 cm) ; essai `.art-preview/essai-largeur.png` (`npm run art:essai`). Tout ce qui suit décrit l'état avant correction.
 
 - Silhouette de Xéros : 18 × 32 px = **90 × 160 cm** (la mère : 18 × 34 px = 90 × 170 cm). Un adulte fait 45 à 50 cm d'épaule à épaule : la silhouette est environ **1,8 à 2 fois trop large**. Rapport largeur / hauteur : 0,56 (réel : ≈ 0,28-0,30). Le gabarit le prévoit (« les personnages gardent leur largeur stylisée »), c'est un choix, pas une erreur de mesure.
 - Collision de Xéros : `body.setSize(14, 8)` (`src/entities/Actor.ts`) = **70 × 40 cm**, centrée : 2 px de sprite dépassent de chaque côté. 70 cm est une largeur de passage vraisemblable (un adulte + bras + vêtements : 55-65 cm) ; c'est la silhouette qui est large, pas la collision.
@@ -68,7 +72,7 @@ Constat d'ensemble : sur les 68 objets de `props.json`, seuls 9 sont nommés dan
 | shed-plate-side | 20 × 375 × 145 `ground` | conserver | 4 × 104 | 4-6 × 104-156 | 0 × 0 | conforme |
 | shed-rafter | 10 × 445 × 171 `ground` | conserver | 2 × 123 | 2-6 × 123-370 | 0 × −0,2 | conforme |
 | shed-roof | 365 × 445 × 165 `ground` | conserver | 73 × 121 | 73 × 122 | 0 × −1 | conforme |
-| well (EXC) | 235 × 160 × 250 | 235 × 160 × 215 (margelle Ø 130 h 90, deux montants et chevron) | 47 × 59 | 47 × 59 (proposé) ; 47 × 66 (déclaré) | 0 × 0 (proposé) ; 0 × −7 (déclaré) | conforme si on déclare 215 cm de haut ; sinon stylisé. Dims à corriger, pas le dessin |
+| well (EXC) | 235 × 160 × 250 | 235 × 160 × 215 (margelle Ø 130 h 90, deux montants et chevron) | 47 × 59 | 47 × 59 (proposé) ; 47 × 66 (déclaré) | 0 × 0 (proposé) ; 0 × −7 (déclaré) | conforme si on déclare 215 cm de haut ; sinon stylisé. Dims à corriger, pas le dessin — **✔ corrigé (chantier largeur)** |
 | sunpatch | 180 × 150 × 0 à plat | n/a (lumière) | 36 × 30 | 36 × 30 | 0 × 0 | conforme |
 
 Note arbres : `big-tree` (« le gros grand ») est **plus bas** que `normal-tree` (5,65 m contre 7 m) alors que son tronc est presque deux fois plus gros ; et aucun des deux n'approche un vrai arbre (12-20 m). C'est une compression de l'écran (un chêne de 14 m ferait 300 px, soit 80 % de la hauteur de vue de 360 px), pas une erreur de dessin. À décider par Grégoire : arbres stylisés (conforme à leurs boîtes), mais `big-tree` devrait au moins dépasser `normal-tree` (≈ 8 m = 180 px).
@@ -84,15 +88,15 @@ Note arbres : `big-tree` (« le gros grand ») est **plus bas** que `normal-tree
 | bed (lit de la mère) | 150 × 200 × 80 | conserver ; lit à cadre 140-150 × 190-200, tête de lit | 30 × 36 | 30 × 36 | 0 × 0 | conforme |
 | pallet (paillasse) | 200 × 90 × 20 | 190 × 80 × 20 ; conserver (écart 10 cm) | 40 × 13 | 40 × 13 | 0 × 0 | conforme |
 | table | 210 × 90 × 78 | conserver ; table de ferme 2 m | 43 × 26 | 42 × 24,6 | +1 × +1,4 | conforme |
-| stool (EXC) | 35 × 35 × 45 cyl. | 32 × 32 × 45 (tabouret à trois pieds, assise Ø 30) | 15 × 17 | 7 × 12,5 | **+8 × +4,5** | **à redessiner** (75 cm de large : plus large que la moitié de Xéros) |
-| chest (EXC, coffre) | 90 × 50 × 55 | conserver ; coffre de bois ferré 90-100 × 45-50 × 55 | 25 × 20 | 18 × 16 | **+7 × +4** | **à redessiner** (125 cm de large) |
-| barrel (EXC, tonneau) | 60 × 60 × 90 cyl. | conserver ; tonneau 60 × 90 | 19 × 23 | 12 × 24 | **+7 × −1** | **à redessiner** (largeur 95 cm : un fût trapu) ; ou stylisé si on le déclare 95 × 95 × 75 (cuve) |
-| crate (EXC, caisse) | 60 × 60 × 60 | 60 × 50 × 50 ; caisse de planches (rare au Moyen Âge : coffre ou panier) | 19 × 19 | 12 × 18 | **+7 × +1** | **à redessiner** (95 cm de large) |
-| hay-bale (EXC, botte de foin) | 100 × 50 × 40 | 90 × 45 × 35 ; botte de paille liée | 31 × 18 | 20 × 13 | **+11 × +5** | **à redessiner** (155 cm de large : l'écart le plus fort en largeur) |
+| stool (EXC) | 35 × 35 × 45 cyl. | 32 × 32 × 45 (tabouret à trois pieds, assise Ø 30) | 15 × 17 | 7 × 12,5 | **+8 × +4,5** | **à redessiner** (75 cm de large : plus large que la moitié de Xéros) — **✔ corrigé (chantier largeur)** |
+| chest (EXC, coffre) | 90 × 50 × 55 | conserver ; coffre de bois ferré 90-100 × 45-50 × 55 | 25 × 20 | 18 × 16 | **+7 × +4** | **à redessiner** (125 cm de large) — **✔ corrigé (chantier largeur)** |
+| barrel (EXC, tonneau) | 60 × 60 × 90 cyl. | conserver ; tonneau 60 × 90 | 19 × 23 | 12 × 24 | **+7 × −1** | **à redessiner** (largeur 95 cm : un fût trapu) ; ou stylisé si on le déclare 95 × 95 × 75 (cuve) — **✔ corrigé (chantier largeur)** |
+| crate (EXC, caisse) | 60 × 60 × 60 | 60 × 50 × 50 ; caisse de planches (rare au Moyen Âge : coffre ou panier) | 19 × 19 | 12 × 18 | **+7 × +1** | **à redessiner** (95 cm de large) — **✔ corrigé (chantier largeur)** |
+| hay-bale (EXC, botte de foin) | 100 × 50 × 40 | 90 × 45 × 35 ; botte de paille liée | 31 × 18 | 20 × 13 | **+11 × +5** | **à redessiner** (155 cm de large : l'écart le plus fort en largeur) — **✔ corrigé (chantier largeur)** |
 | sack (sac) | 50 × 40 × 70 | conserver ; sac de grain debout (le sac plein couché : 80 × 40) | 10 × 18 | 10 × 18 | 0 × 0 | conforme |
 | jar (jarre) | 45 × 45 × 60 cyl. | conserver ; jarre de stockage Ø 40-50 | 9 × 16 | 9 × 16,5 | 0 × −0,5 | conforme |
-| lantern (EXC) | 15 × 15 × 30 cyl. | conserver ; lanterne de corne et de fer 15 × 25 | 10 × 15 | 3-6 × 7,5-15 | **+4 × 0** (au-delà de 6 px) | **à redessiner** (50 cm de large ; la lueur est peut-être dans la silhouette) |
-| candle (EXC, bougie) | 8 × 8 × 20 cyl. | conserver ; chandelle de suif, Ø 3 sur un plat de 12 | 13 × 13 | 1,6-6 × 4,8-18 | **+7 × 0** | **à redessiner** (65 cm de large : plat, flamme et reflet) |
+| lantern (EXC) | 15 × 15 × 30 cyl. | conserver ; lanterne de corne et de fer 15 × 25 | 10 × 15 | 3-6 × 7,5-15 | **+4 × 0** (au-delà de 6 px) | **à redessiner** (50 cm de large ; la lueur est peut-être dans la silhouette) — **✔ corrigé (chantier largeur)** |
+| candle (EXC, bougie) | 8 × 8 × 20 cyl. | conserver ; chandelle de suif, Ø 3 sur un plat de 12 | 13 × 13 | 1,6-6 × 4,8-18 | **+7 × 0** | **à redessiner** (65 cm de large : plat, flamme et reflet) — **✔ corrigé (chantier largeur)** |
 | wall-torch (torche) | 15 × 15 × 70 | conserver ; torche de résine 60-70 cm | 8 × 29 | 3-6 × 15,5-31 | +2 × 0 (dans la tolérance) | conforme (limite) |
 
 ## Objets en main et au sol (`items.json`)
@@ -133,8 +137,8 @@ Voir le sujet (b). Résumé : l'objet `cottage` extérieur (332 × 200 px) est c
 
 | Objet | Décl. | Dims réelles proposées | Dessiné | Attendu | Écart | Verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| xeros | hauteur 160 cm (gabarit : 32 px) ; largeur stylisée 90 cm | 160 cm ; épaules 45-50 cm (≈ 10 px) ; collision 70 × 40 cm (14 × 8 px) | 18 × 32 | 10 × 32 (largeur réelle) / 18 (stylisée) | 0 × 0 (hauteur) ; +8 en largeur par rapport au réel | hauteur : conforme ; largeur : stylisé, à décider (sujet a) |
-| mother | hauteur 170 cm (34 px) ; largeur 90 cm | 155-160 cm (femme médiévale moyenne, plus petite que Xéros adulte) ; épaules 40 cm | 18 × 34 | 8 × 32 | +10 en largeur ; +2 px de hauteur par rapport à 160 cm | hauteur : stylisé, à décider (170 cm est grand pour l'époque) ; largeur : sujet a |
+| xeros | hauteur 160 cm (gabarit : 32 px) ; largeur stylisée 90 cm | 160 cm ; épaules 45-50 cm (≈ 10 px) ; collision 70 × 40 cm (14 × 8 px) | 18 × 32 | 10 × 32 (largeur réelle) / 18 (stylisée) | 0 × 0 (hauteur) ; +8 en largeur par rapport au réel | hauteur : conforme ; largeur : stylisé, à décider (sujet a) — **✔ corrigé : 12 × 32 px (60 × 160 cm), collision 10 × 8 px** |
+| mother | hauteur 170 cm (34 px) ; largeur 90 cm | 155-160 cm (femme médiévale moyenne, plus petite que Xéros adulte) ; épaules 40 cm | 18 × 34 | 8 × 32 | +10 en largeur ; +2 px de hauteur par rapport à 160 cm | hauteur : stylisé, à décider (170 cm est grand pour l'époque) ; largeur : sujet a — **✔ corrigé : 12 × 32 px (60 × 160 cm), collision 10 × 8 px** ; la mère à 32 px |
 | portraits 64 px | n/a | portraits d'interface (`portrait-xeros-64` 58 × 55, `portrait-mother-64` 58 × 56) | n/a | n/a | n/a | conforme (hors échelle de monde) |
 
 ## Autres images
