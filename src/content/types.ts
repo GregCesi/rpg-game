@@ -214,11 +214,17 @@ export const PropDefSchema = z.strictObject({
    */
   bears: z.strictObject({ prop: id, empty: id }).optional(),
   /**
-   * Pièce d'un toit (chevron, chaume) : quand Xéros est dessous ou caché derrière, elle devient en partie transparente,
+   * Pièce d'un toit (chevron, toit de planches) : quand Xéros est dessous ou caché derrière, elle devient en partie transparente,
    * avec les autres pièces de toit qu'elle touche (`systems/roofs.ts`). Son image garde sous elle, vide, la hauteur qui la
    * sépare du sol : le bas de l'image est au sol, au sud de l'avant-toit, et c'est sa profondeur d'affichage.
    */
   roof: z.literal(true).optional(),
+  /**
+   * Ombre portée d'un toit (la couverture, pièce `roof` et `ground`), calculée par le jeu (`world/roofShadow.ts`) : son
+   * emprise au sol (largeur `dims.w`, profondeur `dims.d`, bord sud au bas de l'image) projetée sur le sol, décalée selon
+   * la lumière (`SHADOW` de config.ts). `south`, `north` : hauteur du dessus du toit à son bord sud et à son bord nord, en cm.
+   */
+  shadow: z.strictObject({ south: z.number().positive(), north: z.number().positive() }).optional(),
 });
 
 /** Une étape d'un chantier (buildings.json) : son nom et les pièces (objets de props.json) qu'on y pose. */

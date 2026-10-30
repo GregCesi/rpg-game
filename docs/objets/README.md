@@ -9,7 +9,7 @@ l'objet change, la fiche change d'abord.
 
 Fiches : l'[arbre normal](normal-tree.md) et sa [bille](normal-felled-log.md) ; [rouleau de corde](rope-coil.md), [lien](rope-tie.md), [fagot](faggot.md) ; les pièces de l'abri à bois, dans
 l'ordre du chantier : [dé de pierre](footing-stone.md), [poteaux](shed-post.md), [sablières](shed-plate.md),
-[chevron](shed-rafter.md), [couverture de chaume](shed-thatch.md). Les pièces d'un même genre (les deux poteaux, les trois
+[chevron](shed-rafter.md), [toit de planches](shed-roof.md). Les pièces d'un même genre (les deux poteaux, les trois
 sablières) partagent une fiche, qui nomme toutes leurs clés.
 
 ## Modèle

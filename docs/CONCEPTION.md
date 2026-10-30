@@ -138,7 +138,7 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 
 - **On apprend à bâtir comme en vrai**, en trois bâtiments, chacun ajoutant une technique au précédent :
   1. **Un abri à bois ouvert** : des dés de pierre, des poteaux de bois équarri, des sablières, des chevrons et un toit de
-     chaume à une seule pente (appentis), sans mur. On y range le bois au sec.
+     planches à une seule pente (appentis à environ 20°), sans mur. On y range le bois au sec.
   2. **Une cabane fermée** : la même charpente, plus des murs de clayonnage (branches tressées entre des piquets) enduits de
      torchis, et une porte.
   3. **La maison** : un solin de pierre sous les murs, une longère d'environ 9 × 4 cases, des fenêtres, une cheminée.
@@ -148,13 +148,16 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
   chevrons, la couverture) ; l'ordre est noté en données (`src/content/buildings.json`) et l'aperçu montre le bâtiment
   monter, étape par étape.
 - **Une pièce posée sur la carte se voit à sa place réelle.** Les pièces sont posées sur le sol à leur emprise exacte
-  (5 cm par pixel) ; une pièce en hauteur (sablière, chevron, chaume) garde sous elle, dans son image, la hauteur qui la
+  (5 cm par pixel) ; une pièce en hauteur (sablière, chevron, toit) garde sous elle, dans son image, la hauteur qui la
   sépare du sol, pour que l'ordre d'affichage reste celui de son pied. Une pièce qui relie des appuis posés au sol (une
   sablière nord-sud, un chevron, la couverture) se voit avec sa profondeur au sol, sans raccourci, pour rejoindre ses
   poteaux (gabarit, `ground`).
-- **On passe sous un toit.** Seuls les poteaux bloquent le passage ; Xéros entre sous l'abri. Le toit (chevrons, chaume)
+- **On passe sous un toit.** Seuls les poteaux bloquent le passage ; Xéros entre sous l'abri. Le toit (chevrons, planches)
   se dessine au-dessus de lui et devient en partie transparent quand il est dessous ou caché derrière. On peut entasser
   sous un abri comme ailleurs.
+- **L'abri repris** (30 octobre 2026) : toit de planches posées dans le sens de la pente, avec un avant-toit visible, appentis
+  à environ 20° (poteaux de 3 m au nord, 1,70 m au sud), poteaux de 20 × 20 cm ; l'ombre portée du toit est calculée par le
+  jeu (sa projection au sol, décalée selon la lumière), sous les poteaux et sous Xéros, et s'efface avec le toit.
 - **Chantier en cours : l'abri à bois seulement**, posé tout construit dans la ferme, à côté du tas de bois, sur environ
   2 × 2 cases (3,2 m sur 3,2 m). Construire soi-même (porter les pièces, les poser dans l'ordre) n'est pas encore construit.
 

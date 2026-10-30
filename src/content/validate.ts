@@ -345,6 +345,8 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   for (const key of Object.keys(EXCEPTIONS)) if (!c.props[key]) errors.push(`validate.ts EXCEPTIONS : '${key}' absent de props.json`);
   for (const [key, p] of Object.entries(c.props)) {
+    // l'ombre portée se calcule sur l'emprise au sol d'une couverture : une pièce de toit vue à l'échelle du sol
+    if (p.shadow && !(p.roof && p.dims.ground)) errors.push(`props.json '${key}' : 'shadow' est l'ombre d'une couverture, pièce 'roof' avec 'dims.ground'`);
     const drawn = cat.silhouettes.get(p.image);
     if (!drawn) continue; // image non dessinée : signalé ailleurs
     const want = expectedSize(p.dims);

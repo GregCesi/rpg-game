@@ -357,7 +357,7 @@
           "name": "",
           "type": "footing-stone",
           "x": 607,
-          "y": 131,
+          "y": 141,
           "width": 7,
           "height": 7,
           "gid": 1049
@@ -369,7 +369,7 @@
           "name": "",
           "type": "footing-stone",
           "x": 668,
-          "y": 131,
+          "y": 141,
           "width": 7,
           "height": 7,
           "gid": 1049
@@ -381,9 +381,9 @@
           "name": "",
           "type": "shed-post-high",
           "x": 608,
-          "y": 67,
-          "width": 3,
-          "height": 47,
+          "y": 68,
+          "width": 4,
+          "height": 65,
           "gid": 1050
         },
         {
@@ -393,9 +393,9 @@
           "name": "",
           "type": "shed-post-high",
           "x": 669,
-          "y": 67,
-          "width": 3,
-          "height": 47,
+          "y": 68,
+          "width": 4,
+          "height": 65,
           "gid": 1050
         },
         {
@@ -405,8 +405,8 @@
           "name": "",
           "type": "shed-post-low",
           "x": 608,
-          "y": 128,
-          "width": 3,
+          "y": 139,
+          "width": 4,
           "height": 39,
           "gid": 1051
         },
@@ -417,8 +417,8 @@
           "name": "",
           "type": "shed-post-low",
           "x": 669,
-          "y": 128,
-          "width": 3,
+          "y": 139,
+          "width": 4,
           "height": 39,
           "gid": 1051
         },
@@ -429,9 +429,9 @@
           "name": "",
           "type": "shed-plate-north",
           "x": 608,
-          "y": 68,
-          "width": 64,
-          "height": 51,
+          "y": 69,
+          "width": 65,
+          "height": 69,
           "gid": 1052
         },
         {
@@ -441,9 +441,9 @@
           "name": "",
           "type": "shed-plate-side",
           "x": 608,
-          "y": 129,
-          "width": 3,
-          "height": 113,
+          "y": 140,
+          "width": 4,
+          "height": 142,
           "gid": 1054
         },
         {
@@ -453,9 +453,9 @@
           "name": "",
           "type": "shed-plate-side",
           "x": 669,
-          "y": 129,
-          "width": 3,
-          "height": 113,
+          "y": 140,
+          "width": 4,
+          "height": 142,
           "gid": 1054
         },
         {
@@ -465,8 +465,8 @@
           "name": "",
           "type": "shed-plate-south",
           "x": 608,
-          "y": 130,
-          "width": 64,
+          "y": 141,
+          "width": 65,
           "height": 44,
           "gid": 1053
         },
@@ -476,10 +476,10 @@
           "visible": true,
           "name": "",
           "type": "shed-rafter",
-          "x": 608,
-          "y": 137,
+          "x": 610,
+          "y": 146,
           "width": 2,
-          "height": 128,
+          "height": 161,
           "gid": 1055
         },
         {
@@ -488,10 +488,10 @@
           "visible": true,
           "name": "",
           "type": "shed-rafter",
-          "x": 623,
-          "y": 137,
+          "x": 625,
+          "y": 146,
           "width": 2,
-          "height": 128,
+          "height": 161,
           "gid": 1055
         },
         {
@@ -500,10 +500,10 @@
           "visible": true,
           "name": "",
           "type": "shed-rafter",
-          "x": 639,
-          "y": 137,
+          "x": 641,
+          "y": 146,
           "width": 2,
-          "height": 128,
+          "height": 161,
           "gid": 1055
         },
         {
@@ -512,10 +512,10 @@
           "visible": true,
           "name": "",
           "type": "shed-rafter",
-          "x": 654,
-          "y": 137,
+          "x": 656,
+          "y": 146,
           "width": 2,
-          "height": 128,
+          "height": 161,
           "gid": 1055
         },
         {
@@ -524,10 +524,10 @@
           "visible": true,
           "name": "",
           "type": "shed-rafter",
-          "x": 670,
-          "y": 137,
+          "x": 671,
+          "y": 146,
           "width": 2,
-          "height": 128,
+          "height": 161,
           "gid": 1055
         },
         {
@@ -535,12 +535,12 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "shed-thatch",
+          "type": "shed-roof",
           "x": 604,
-          "y": 139,
-          "width": 72,
-          "height": 136,
-          "gid": 1056
+          "y": 147,
+          "width": 73,
+          "height": 162,
+          "gid": 1071
         }
       ]
     },

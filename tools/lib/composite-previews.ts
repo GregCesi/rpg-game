@@ -25,6 +25,7 @@ import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
 import type { BuildingDef, Gesture, PileDef, PropDef } from '../../src/content/types';
 import { ROOF } from '../../src/config';
+import { roofShadow } from '../../src/world/roofShadow';
 import { CM_PER_PX, RACCOURCI, expectedSize, silhouette } from '../../src/content/gabarit';
 import type { Dims } from '../../src/content/gabarit';
 import { world } from '../../art/palette';
@@ -391,6 +392,23 @@ export interface PreviewMap {
  * Un bâtiment qui monte, étape par étape (voir l'en-tête) : une image par étape, plus une avec Xéros sous le toit
  * effacé si le bâtiment en a un ; la dernière de la liste met toutes les autres côte à côte.
  */
+/** Un polygone convexe (coins dans l'ordre) rempli de `x`, l'ombre portée de la palette, sur une grille w × h dont le coin haut gauche est (left, top). */
+function polygonGrid(quad: { x: number; y: number }[], left: number, top: number, w: number, h: number): Grid {
+  const inside = (X: number, Y: number) => {
+    let sign = 0;
+    for (let i = 0; i < quad.length; i++) {
+      const a = quad[i];
+      const b = quad[(i + 1) % quad.length];
+      const cross = (b.x - a.x) * (Y - a.y) - (b.y - a.y) * (X - a.x);
+      if (cross === 0) continue;
+      if (sign && Math.sign(cross) !== sign) return false;
+      sign = Math.sign(cross);
+    }
+    return true;
+  };
+  return Array.from({ length: h }, (_, Y) => Array.from({ length: w }, (_, X) => (inside(left + X + 0.5, top + Y + 0.5) ? 'x' : '.')).join(''));
+}
+
 export function buildingPreview(sources: ArtSource[], building: BuildingDef, map: PreviewMap, props: Record<string, PropDef>): PNG[] {
   const image = (name: string) => {
     const s = sources.find((x) => x.name === name);
@@ -445,6 +463,12 @@ export function buildingPreview(sources: ArtSource[], building: BuildingDef, map
       order,
       draw: () => board.blit(s.src.grid, s.src.palette, s.o.x - left, s.o.y - s.h - top, fade && props[s.o.type].roof ? ROOF.alpha : 1),
     }));
+    // l'ombre portée d'un toit (`shadow`), calculée comme en jeu (world/roofShadow.ts) : sur le sol et les pièces posées à
+    // plat, sous tout le reste ; elle s'efface avec le toit
+    for (const s of shown.filter((s) => props[s.o.type].shadow)) {
+      const quad = roofShadow(props[s.o.type], s.o.x, s.o.y);
+      draws.push({ depth: -Infinity, order: Infinity, draw: () => board.blit(polygonGrid(quad, left, top, board.w, board.h), world.palette, 0, 0, fade ? ROOF.alpha : 1) });
+    }
     // Xéros : pieds au milieu du bas de sa frame (origine 0,5 ; 1, comme Actor)
     draws.push({ depth: at.y, order: Infinity, draw: () => board.blit(xeros, body.palette, at.x - body.frameW / 2 - left, at.y - body.frameH - top) });
     draws.sort((a, b) => a.depth - b.depth || a.order - b.order);

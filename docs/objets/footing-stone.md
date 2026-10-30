@@ -12,13 +12,16 @@
 - Boîte (`box`).
 - À l'écran : W = 6 px ; H + D/2 = 3 + 3 = **6 px** : **6 × 6**, le dessus en 3 rangées, la face sud en 3.
 - Il isole le poteau de l'humidité du sol : le bois ne pourrit pas par le pied.
+- Sous l'abri : quatre dés, aux coins d'un rectangle de 61 px (3,05 m) d'est en ouest et 71 px (3,55 m) du nord au sud,
+  d'axe en axe (le rang sud reculé pour la pente de 20° du toit). Dans `ferme.tmj` : (607, 70), (668, 70), (607, 141),
+  (668, 141), coin bas gauche de l'image de 7 × 7.
 
 ## Vues
 - Au sol : `footing-stone`, 6 × 6 px, pierre de la palette (`R r z Z`), dessus clair, face sud plus sombre, un coin
   émoussé, jamais un œuf ; ombre portée `x` dessous, à droite.
 - En main, case d'interface, fantôme, porté : aucun (il ne se prend pas encore).
-- Sous un poteau : le poteau se dessine par-dessus, son pied sur le fond du dessus du dé ; on voit encore les rangées de
-  devant du dessus et la face sud.
+- Sous un poteau : le poteau (20 × 20 cm, 4 px) se dessine par-dessus, centré, son pied sur le dessus du dé ; on voit
+  encore une colonne de pierre de chaque côté, les rangées de devant du dessus et la face sud.
 
 ## Regroupement
 Seul. Quatre par abri, un sous chaque poteau.

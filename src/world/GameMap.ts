@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { DEPTH, TILE } from '../config';
+import { DEPTH, SHADOW, TILE } from '../config';
+import { roofShadow } from './roofShadow';
 import { items, piles as pileDefs, props as propDefs } from '../content';
 import type { MapData, MapObject, PileDef, PropDef } from '../content/types';
 import { drawOrder, pileBlocks, placeAim, shapeOf, tieImages, topPieces } from './pileShape';
@@ -99,6 +100,8 @@ export interface PlacedProp {
   aimX: number;
   aimY: number;
   image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
+  /** Ombre portée d'un toit (`shadow` de props.json), au sol ; elle suit l'opacité du toit. */
+  shadow?: Phaser.GameObjects.Graphics;
   /** Tout ce qui a été créé pour lui (image, collisions, fumées, lueurs) : détruit quand il change. */
   parts: Phaser.GameObjects.GameObject[];
   /** Dialogue propre à cet exemplaire (propriété `interact` dans Tiled). */
@@ -450,6 +453,16 @@ export class GameMap {
         })
         .setDepth(ay + 1);
       parts.push(smoke);
+    }
+
+    if (p.shadow) {
+      // l'ombre du toit au sol, sous les poteaux et sous Xéros ; elle s'efface avec le toit (systems/roofs.ts)
+      placed.shadow = scene.add
+        .graphics()
+        .fillStyle(SHADOW.color, SHADOW.alpha)
+        .fillPoints(roofShadow(p, o.x, ay), true)
+        .setDepth(DEPTH.shadow);
+      parts.push(placed.shadow);
     }
 
     if (p.light) {

@@ -948,23 +948,6 @@
       ]
     },
     {
-      "id": 155,
-      "name": "shed-thatch",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
       "id": 156,
       "name": "normal-tree",
       "type": "class",
@@ -1188,6 +1171,23 @@
     {
       "id": 169,
       "name": "normal-tree-stump",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 170,
+      "name": "shed-roof",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,

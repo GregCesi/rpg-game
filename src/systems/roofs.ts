@@ -6,10 +6,10 @@ import type { GameMap, PlacedProp } from '../world/GameMap';
 const HEAD = 34;
 
 /**
- * Les toits (pièces `roof` de props.json : chevrons, chaume). Un toit se dessine par-dessus Xéros quand il est dessous
+ * Les toits (pièces `roof` de props.json : chevrons, toit de planches). Un toit se dessine par-dessus Xéros quand il est dessous
  * (l'ordre d'affichage suffit : le bas de son image est au sol, au sud de l'avant-toit). Quand Xéros est dessous ou
  * caché derrière, le toit devient en partie transparent (ROOF.alpha), avec toutes les pièces de toit qu'il touche ;
- * dès qu'il en sort, il redevient opaque. Le fondu prend ROOF.fadeMs.
+ * dès qu'il en sort, il redevient opaque. Son ombre portée (`shadow`, posée par GameMap) suit son opacité. Le fondu prend ROOF.fadeMs.
  */
 export class Roofs {
   constructor(private readonly map: GameMap) {}
@@ -22,7 +22,7 @@ export class Roofs {
     // les pièces de toit qui cachent Xéros : ses pieds dans la largeur de l'image, au nord de son bas (le sol au sud de
     // l'avant-toit), et assez bas pour que le toit cache au moins sa tête
     const over = roofs.filter((p) => x >= p.x && x <= p.x + p.image.width && y < p.y && y > p.top - HEAD / 2);
-    // et toutes celles qu'elles touchent : le chaume entraîne ses chevrons
+    // et toutes celles qu'elles touchent : le toit entraîne ses chevrons
     const faded = new Set(over);
     for (const p of roofs) if (over.some((q) => touches(p, q))) faded.add(p);
     const step = ((1 - ROOF.alpha) * delta) / ROOF.fadeMs;
@@ -30,6 +30,8 @@ export class Roofs {
       const target = faded.has(p) ? ROOF.alpha : 1;
       const a = p.image.alpha;
       p.image.setAlpha(a < target ? Math.min(target, a + step) : Math.max(target, a - step));
+      // son ombre portée s'efface avec lui
+      p.shadow?.setAlpha(p.image.alpha);
     }
   }
 }

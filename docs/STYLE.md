@@ -89,6 +89,6 @@ Vérifications : la bille est-ouest (95 × 65 cm) mesure 19 × 13 px, ses bouts 
 | Cylindre couché nord-sud | Ø | Ø × 7/11 + L/2 (face de coupe au sud aplatie, Ø × Ø × 7/11 ; dessus L/2) | la même bille : 13 × (8,3 + 9,5) = 13 × 17,8, dessinée **13 × 19** |
 | Cylindre debout | Ø | H + Ø/2 (corps H, dessus en ovale Ø × Ø/2) | billot de Ø 55 cm, 45 cm de haut : 11 × (9 + 5,5) = **11 × 14,5** |
 | À plat sur le sol | W | D | éclats de pierre de 135 × 75 cm : **27 × 15** |
-| Pièce de bâtiment au sol (`ground`) | W | H + D | chaume de l'abri, 360 × 390 × 78,75 cm : 72 × (15,75 + 78) = **72 × 94** |
+| Pièce de bâtiment au sol (`ground`) | W | H + D | toit de planches de l'abri, 365 × 445 × 165 cm : 73 × (33 + 89) = **73 × 122** |
 
 Un objet qui n'est pas une forme de base (arbre, buisson, rocher) prend la boîte qui l'englobe. Un objet qui ne suit pas encore la règle est nommé dans `EXCEPTIONS` (`src/content/validate.ts`) avec sa taille dessinée ; on ne l'y ajoute pas pour un dessin neuf : on dessine à la bonne taille.

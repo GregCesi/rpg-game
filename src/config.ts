@@ -30,6 +30,8 @@ export const DEPTH = {
   decal: -0.9,
   /** Objets posés à plat (tapis, tache de lumière) : sous les personnages. */
   floor: -0.8,
+  /** Ombres portées des toits : sur le sol et ce qui y est posé à plat, sous les poteaux et les personnages. */
+  shadow: -0.7,
   /** Pénombre des intérieurs, au-dessus de tout le monde. */
   ambient: 90000,
   /** Lueurs (feux, soleil) : par-dessus la pénombre, pour qu'elle ne les éteigne pas. */
@@ -51,10 +53,17 @@ export const LONG_PRESS = { ms: 500, above: 35 };
 export const PILE_COUNT = { near: 12 };
 
 /**
- * Toits (pièces `roof` de props.json : chevrons, chaume) : opacité quand Xéros est dessous ou caché derrière, et durée
+ * Toits (pièces `roof` de props.json : chevrons, toit de planches) : opacité quand Xéros est dessous ou caché derrière, et durée
  * du fondu (ms) pour aller d'opaque à cette opacité.
  */
 export const ROOF = { alpha: 0.35, fadeMs: 250 };
+
+/**
+ * Ombre portée d'un toit (`shadow` de props.json) : la lumière vient du nord-ouest, d'en haut (docs/STYLE.md section 2) ;
+ * un point à z px de haut tombe au sol décalé de z × `dx` vers l'est et z × `dy` vers le sud. Couleur et opacité : celles
+ * de l'ombre portée des sprites (`x` de la palette, #2b1a10 à 0x40).
+ */
+export const SHADOW = { dx: 0.25, dy: 0.1, color: 0x2b1a10, alpha: 0x40 / 255 };
 
 /** Poser devant soi : écart entre la collision de Xéros et ce qu'il pose (px). */
 export const PUT_DOWN = { gap: 2 };
