@@ -41,28 +41,29 @@ function groundShadow(c: Canvas, x: number, y: number, w: number, h: number): Ca
 
 // ---------- Lanterne ----------
 
-/** Lanterne de fer et de verre posée au sol, une bougie allumée dedans. 16x20. */
+/**
+ * Lanterne de corne et de fer posée au sol (15 × 15 × 30 cm, cylindre debout). Gabarit : 3 × 7,5 px à la taille
+ * réelle, agrandie au plancher de lisibilité (6 px de large, jusqu'à 15 de haut) : 6 × 14. Anneau de portage, chapeau
+ * de fer, deux montants, vitres de corne ambrée éclairées par la flamme de la bougie (h, H), socle. Image 10 × 17.
+ */
 function lantern(): Canvas {
-  const c = new Canvas(16, 20);
-  const oy = 2;
-  // chapeau de fer en pyramide, vu un peu de dessus
-  c.rect(6, oy + 3, 4, 1, 'r').rect(6, oy + 3, 2, 1, 'R');
-  c.rect(5, oy + 4, 6, 1, 'r').rect(5, oy + 4, 2, 1, 'R').rect(10, oy + 4, 1, 1, 'z');
-  c.rect(4, oy + 5, 8, 1, 'z').rect(11, oy + 5, 1, 1, 'Z');
-  // cage : montants de fer, vitres ambrées éclairées de l'intérieur
-  c.rect(5, oy + 6, 6, 6, 't').rect(9, oy + 6, 2, 6, 'T');
-  c.rect(4, oy + 6, 1, 6, 'r').rect(11, oy + 6, 1, 6, 'Z');
-  // bougie au centre
-  c.rect(7, oy + 9, 2, 3, 'a').rect(8, oy + 9, 1, 3, 'd');
-  // socle
-  c.rect(4, oy + 12, 8, 1, 'r').rect(4, oy + 12, 2, 1, 'R');
-  c.rect(4, oy + 13, 8, 1, 'z').rect(11, oy + 12, 1, 2, 'Z');
+  const c = new Canvas(10, 17);
+  c.stamp([
+    '.rr.',
+    'RrzZ',
+    'zzZZ',
+    'rYtZ',
+    'rhtZ',
+    'rHTZ',
+    'rYTZ',
+    'rtTZ',
+    'RrzZ',
+    'zzZZ',
+  ], 3, 3);
   litOutline(c);
-  // flamme de la bougie, derrière le verre mais plus claire que lui
-  c.set(7, oy + 6, 'h').set(7, oy + 7, 'H').set(8, oy + 7, 'h').set(7, oy + 8, 'a').set(8, oy + 8, 'H');
   // anneau de portage, fin, sans contour
-  c.set(7, oy, 'Z').set(8, oy, 'Z').set(6, oy + 1, 'Z').set(9, oy + 1, 'Z').set(6, oy + 2, 'Z').set(9, oy + 2, 'Z');
-  groundShadow(c, 5, oy + 14, 9, 2);
+  c.set(4, 0, 'Z').set(5, 0, 'Z').set(3, 1, 'Z').set(6, 1, 'Z');
+  groundShadow(c, 4, 14, 5, 2);
   return c;
 }
 
@@ -143,22 +144,26 @@ const candleFlames: Grid[] = [
   ['h.', 'h.', 'Hh', 'aH'],
 ];
 
-/** Bougie de suif sur un bougeoir de terre cuite à anse, pour une table. 14x16. */
+/**
+ * Chandelle de suif sur son plat de terre cuite (8 × 8 × 20 cm, cylindre debout). Gabarit : 1,6 × 4,8 px à la taille
+ * réelle, agrandie au plancher de lisibilité : 6 px de large (le plat), jusqu'à 18 de haut. Image 8 × 15.
+ */
 function candle(frame: number): Canvas {
-  const c = new Canvas(14, 16);
-  // bougeoir : coupelle vue de trois quarts, dessus clair, flanc sud sombre, anse à droite
-  c.rect(11, 11, 2, 1, 'n').rect(12, 12, 1, 1, 'e');
-  c.ellipse(6.5, 12.5, 4.5, 2, 'n');
-  c.rect(3, 14, 7, 1, 'e');
-  c.ellipse(6.5, 12, 4, 1.5, 'u');
-  c.rect(3, 11, 3, 1, 'U');
-  // bougie de suif
-  c.rect(6, 7, 2, 5, 'a').rect(7, 7, 1, 5, 'd').set(7, 11, 'D');
+  const c = new Canvas(8, 15);
+  c.stamp([
+    '.ad.',
+    '.ad.',
+    '.ad.',
+    '.ad.',
+    '.aD.',
+    'UuuU',
+    'nnne',
+  ], 2, 5);
   litOutline(c);
-  c.set(6, 6, 'K');
+  c.set(3, 4, 'K'); // mèche
   const f = candleFlames[frame];
-  c.stamp(f, 6, 6 - f.length);
-  groundShadow(c, 5, 15, 9, 1);
+  c.stamp(f, 3, 4 - f.length);
+  groundShadow(c, 3, 13, 5, 1);
   return c;
 }
 
@@ -174,4 +179,4 @@ const burn = (name: string, w: number, h: number, draw: (f: number) => Canvas): 
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
-export default [img('lantern', lantern()), burn('wall-torch', 16, 32, wallTorch), burn('candle', 14, 16, candle)];
+export default [img('lantern', lantern()), burn('wall-torch', 16, 32, wallTorch), burn('candle', 8, 15, candle)];

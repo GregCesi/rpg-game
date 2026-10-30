@@ -1,8 +1,9 @@
 // Mobilier et objets de ferme posables (tonneau, caisse, botte de foin, coffre, table, tabouret, puits).
+// Les petits meubles sont dessinés à leur taille réelle (gabarit, docs/STYLE.md section 8 : 5 cm par pixel).
 // Vue de trois quarts, lumière nord-ouest, ancrage en bas au centre, ombre portée `x` décalée vers la droite.
 // Contour d'un pixel : teinte la plus sombre de la matière en haut et à gauche, OUTLINE en bas et à droite.
 
-import { Canvas, EMPTY } from '../lib/canvas';
+import { Canvas, EMPTY, type Grid } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 
@@ -44,181 +45,131 @@ function groundShadow(c: Canvas, cx: number, cy: number, rx: number, ry: number)
   return c;
 }
 
+// ---------- Petits meubles, dessinés à la main à leur taille réelle ----------
+
+/**
+ * Petit meuble dessiné pixel par pixel : `fill` est la matière seule, sans contour (silhouette = fill + 2 px).
+ * Image : 2 px de marge à gauche et à droite (le `body` de props.json est centré sur l'image), la silhouette en haut,
+ * deux rangées d'ombre portée dessous : le bas de la silhouette est à 3 rangées du bas de l'image.
+ */
+function furniture(fill: Grid, darkest = WOOD_DARKEST): Canvas {
+  const c = new Canvas(fill[0].length + 6, fill.length + 4);
+  c.stamp(fill, 3, 1);
+  shadedOutline(c, darkest);
+  return furnitureShadow(c, fill[0].length);
+}
+
+/** Ombre portée sous un petit meuble, décalée vers la droite. */
+function furnitureShadow(c: Canvas, fw: number): Canvas {
+  return groundShadow(c, 3 + fw / 2 + 1.5, c.h - 2, fw / 2 + 1.5, 1.6);
+}
+
 // ---------- Tonneau ----------
 
 /**
- * Tonneau cerclé de fer, debout. 24x32. Douelles bombées (plus large au milieu),
- * fond supérieur vu de dessus, deux paires de cercles de fer qui suivent la courbure.
+ * Tonneau cerclé de fer, debout (Ø 60 cm, 90 cm de haut, cylindre debout). Gabarit : 12 × (18 + 6) = 12 × 24 px.
+ * Fond supérieur vu de dessus (jable clair, fond en retrait, bonde), quatre douelles et leurs joints, ventre plus
+ * large que les bouts, deux cercles de fer qui plongent au milieu (la courbure vue de trois quarts). Image 16 × 26.
  */
 function barrel(): Canvas {
-  const c = new Canvas(24, 32);
-  const cx = 11.5;
-  const top = 10; // ligne médiane du fond supérieur
-  const base = 25; // bas des douelles au bord (le centre descend de `bow`)
-  const bow = 2.6; // courbure vue de trois quarts
-  const half = (y: number) => 7 + 2 * Math.sin((Math.PI * (y - top)) / (base + bow - top));
-  const curve = (x: number) => {
-    const u = (x + 0.5 - cx) / 9;
-    return bow * Math.sqrt(Math.max(0, 1 - u * u));
-  };
-  // corps : douelles, modelées par colonne (M éclairé à gauche, m, N, K à droite)
-  for (let y = top; y < 32; y++) for (let x = 0; x < c.w; x++) {
-    const dx = x + 0.5 - cx;
-    if (Math.abs(dx) > half(y)) continue;
-    if (y > base + curve(x)) continue;
-    const u = dx / half(y);
-    c.set(x, y, u < -0.45 ? 'M' : u < 0.3 ? 'm' : u < 0.72 ? 'N' : 'K');
-  }
-  // joints des douelles, un ton sous la douelle
-  const darker: Record<string, string> = { M: 'm', m: 'N', N: 'K', K: 'K' };
-  for (const u0 of [-0.62, -0.2, 0.22, 0.6]) {
-    for (let y = top; y < 32; y++) {
-      const x = Math.floor(cx + u0 * half(y));
-      const p = c.get(x, y);
-      if (p in darker) c.set(x, y, darker[p]);
-    }
-  }
-  // cercles de fer : deux bandes de 2 px, en haut et en bas, qui suivent la courbe
-  for (const yb of [top + 1, base - 4]) {
-    for (let x = 0; x < c.w; x++) {
-      const y = yb + Math.round(curve(x));
-      if (c.get(x, y) === EMPTY) continue;
-      const u = (x + 0.5 - cx) / half(y);
-      c.set(x, y, u < -0.3 ? 'R' : u < 0.45 ? 'r' : 'z');
-      if (c.get(x, y + 1) !== EMPTY) c.set(x, y + 1, u < 0.45 ? 'z' : 'Z');
-    }
-  }
-  // fond supérieur : jable clair, fond en retrait, deux joints et la bonde
-  c.ellipse(cx, top, 7.6, 3.1, 'M');
-  c.ellipse(cx + 0.4, top + 0.5, 6, 2.2, 'm');
-  c.within('m', (c) => c.rect(0, top - 2, 24, 1, 'N')); // ombre du jable sur le fond, côté nord
-  c.within('M', (c) => c.rect(13, top + 2, 6, 1, 'm')); // jable sud, plus sombre que le nord
-  c.rect(14, top, 2, 1, 'K'); // bonde
-  c.within('M', (c) => c.rect(5, top - 3, 6, 1, 'Y')); // reflet du jable au nord-ouest
-  shadedOutline(c);
-  groundShadow(c, cx + 2, 28.5, 10, 2.2);
-  return c;
+  return furniture([
+    '..MYYYMm..',
+    '.MNNNNNNm.',
+    '.MmmmmKmm.',
+    '.MMMMmmmN.',
+    '.MmMmNmNK.',
+    'RRmMmNmNZZ',
+    'zzRrrrzzZZ',
+    'MMzzzzZZKK',
+    'MMmMmNmNKK',
+    'MYmMmNmNKK',
+    'MYmMmNmNKK',
+    'MYmMmNmNKK',
+    'MMmMmNmNKK',
+    'MMmMmNmNKK',
+    'MMmMmNmNKK',
+    'MMmMmNmNKK',
+    'RRmMmNmNZZ',
+    'zzRrrrzzZZ',
+    'MMzzzzZZKK',
+    '.MmMmNmNK.',
+    '.MmMmNmNK.',
+    '..mMmNmN..',
+  ]);
 }
 
 // ---------- Caisse ----------
 
-/** Caisse en planches clouées : dessus à lattes, face sud à cadre et écharpe en diagonale. 24x24. */
+/**
+ * Caisse de planches clouées (60 × 50 × 50 cm, boîte). Gabarit : 12 × (10 + 5) = 12 × 15 px.
+ * Dessus à lattes est-ouest dans le bois clair ; face sud dans l'ombre, cadre et écharpe en diagonale. Image 16 × 17.
+ */
 function crate(): Canvas {
-  const c = new Canvas(24, 24);
-  const x0 = 3;
-  const x1 = 19; // inclus
-  const w = x1 - x0 + 1;
-  // dessus : lattes est-ouest, dans le bois clair
-  const t0 = 4;
-  const t1 = 10; // dernière ligne du dessus
-  c.rect(x0, t0, w, t1 - t0 + 1, 'M');
-  c.rect(x0, t0, w, 1, 'Y');
-  for (const y of [6, 8]) c.rect(x0, y, w, 1, 'm');
-  c.rect(x1, t0, 1, t1 - t0 + 1, 'm');
-  // face sud, dans l'ombre : panneau en retrait, cadre et écharpe
-  const f0 = t1 + 1;
-  const f1 = 20;
-  c.rect(x0, f0, w, f1 - f0 + 1, 'N');
-  c.rect(x0, f0 + 4, w, 1, 'K').rect(x0, f0 + 7, w, 1, 'K'); // joints des planches du panneau
-  c.line(x0 + 2, f1 - 1, x1 - 2, f0 + 1, 'M').line(x0 + 3, f1 - 1, x1 - 1, f0 + 1, 'm'); // écharpe
-  c.line(x0 + 4, f1 - 1, x1, f0 + 1, 'K');
-  c.rect(x0, f0, w, 2, 'm').rect(x0, f0, w, 1, 'M'); // traverse haute
-  c.rect(x0, f1 - 1, w, 2, 'm').rect(x0, f1, w, 1, 'N'); // traverse basse
-  c.rect(x0, f0, 2, f1 - f0 + 1, 'm').rect(x0, f0, 1, f1 - f0 + 1, 'M'); // montant ouest, éclairé
-  c.rect(x1 - 1, f0, 2, f1 - f0 + 1, 'm').rect(x1, f0, 1, f1 - f0 + 1, 'N'); // montant est
-  c.rect(x0 + 1, f0, w - 1, 1, 'M'); // arête entre dessus et face
-  // clous des traverses
-  for (const [x, y] of [[x0 + 1, f0 + 1], [x1 - 1, f0 + 1], [x0 + 1, f1 - 1], [x1 - 1, f1 - 1]]) c.set(x, y, 'K');
-  shadedOutline(c);
-  groundShadow(c, 12.5, f1 + 1.5, 10, 1.8);
-  return c;
+  return furniture([
+    'MYYYYYYMMm',
+    'MMMMMMMMMm',
+    'mmmmmmmmmN',
+    'MMMMMMMMMm',
+    'mmmmmmmmmN',
+    'mNNNNNNmmN',
+    'mNNNNNmmKN',
+    'mNNNNmmKNN',
+    'mNNNmmKNNN',
+    'mNNmmKNNNN',
+    'mNmmKNNNNN',
+    'mmmmmmmmmN',
+    'NNNNNNNNNK',
+  ]);
 }
 
 // ---------- Botte de foin ----------
 
-/** Botte de foin rectangulaire, liée de deux ficelles, couchée est-ouest. 32x24. */
+/**
+ * Botte de paille liée de deux ficelles, couchée est-ouest (90 × 45 × 35 cm, boîte). Gabarit : 18 × (7 + 4,5) = 18 × 11,5 px.
+ * Dessus clair, face sud et bout est dans l'ombre, brins couchés dans le sens de la botte. Image 22 × 14.
+ */
 function hayBale(): Canvas {
-  const c = new Canvas(32, 24);
-  const x0 = 2;
-  const x1 = 28; // inclus
-  const w = x1 - x0 + 1;
-  const t0 = 5;
-  const t1 = 11; // dessus
-  const f1 = 19; // bas de la face sud
-  // volume : dessus Y, face sud t, bout est T ; coins adoucis
-  c.rect(x0, t0, w, t1 - t0 + 1, 'Y');
-  c.rect(x0, t1 + 1, w, f1 - t1, 't');
-  c.rect(x1 - 1, t0, 2, f1 - t0 + 1, 'T');
-  c.rect(x0, f1 - 1, w, 2, 'T');
-  c.rect(x0, t1 + 1, w, 1, 'T'); // arête : la paille tourne vers l'ombre
-  for (const [x, y] of [[x0, t0], [x1, t0], [x0, f1], [x1, f1]]) c.set(x, y, EMPTY);
-  // texture de paille : brins de trois pixels, couchés dans le sens de la botte
-  const strands: [number, number, string][] = [
-    [5, 7, 't'], [12, 6, 't'], [17, 9, 't'], [23, 7, 't'], [4, 10, 't'],
-    [3, 14, 'T'], [11, 14, 'T'], [16, 15, 'T'], [23, 14, 'T'], [5, 16, 'T'], [13, 17, 'T'], [18, 17, 'T'],
-  ];
-  for (const [x, y, col] of strands) c.within('Yt', (c) => c.rect(x, y, 3, 1, col));
-  // brins qui dépassent aux deux bouts
-  c.set(x0 - 1, 8, 'Y').set(x0 - 1, 14, 't').set(x1 + 1, 9, 'T').set(x1 + 1, 15, 'T');
-  c.set(6, t0 - 1, 'Y').set(15, t0 - 1, 'Y').set(16, t0 - 1, 'Y').set(25, t0 - 1, 'Y'); // brins ébouriffés sur le dessus
-  // deux ficelles : sur le dessus (nord-sud) puis sur la face sud
-  for (const x of [9, 21]) {
-    c.rect(x, t0, 1, f1 - t0 + 1, 'N');
-    c.rect(x + 1, t0, 1, f1 - t0 + 1, 'P'); // creux de la paille serrée, côté ombre
-    c.set(x, t1 + 1, 'M'); // ficelle qui accroche la lumière sur l'arête
-  }
-  c.set(x0, t0, EMPTY);
-  shadedOutline(c);
-  groundShadow(c, 17, f1 + 1.5, 14, 1.8);
+  const c = furniture([
+    '.YYYNPYYYYYNPYt.',
+    'YtttNPYYYtttNPYT',
+    'YYYYNPYttYYYNPtT',
+    'YYYYNPYYYYYYNPYT',
+    'tTTTMPTTTTTTMPTT',
+    'tttTNPttTTTtNPtT',
+    'tttttPtTTTttNPtT',
+    'TTttNPtttTTtNPTT',
+    'tTTTNPTTTttTNPTT',
+    '.TTTNPTTTTTTNPT.',
+  ], DARKEST);
+  // brins ébouriffés, posés sur le contour du dessus (ils n'agrandissent pas la silhouette)
+  c.set(6, 0, 'Y').set(12, 0, 'Y');
   return c;
 }
 
 // ---------- Coffre ----------
 
-/** Coffre de bois ferré : couvercle bombé, deux pentures de fer, serrure au milieu. 28x24. */
+/**
+ * Coffre de bois ferré (90 × 50 × 55 cm, boîte). Gabarit : 18 × (11 + 5) = 18 × 16 px.
+ * Couvercle bombé (dessus clair, flanc sud qui tourne vers l'ombre, lèvre), caisse en planches, deux pentures de fer,
+ * moraillon et serrure au milieu, coins ferrés. Image 22 × 18.
+ */
 function chest(): Canvas {
-  const c = new Canvas(28, 24);
-  const x0 = 2;
-  const x1 = 24; // inclus
-  const w = x1 - x0 + 1;
-  // couvercle bombé : demi-cylindre couché est-ouest, coins arrondis
-  const l0 = 3;
-  const l1 = 11; // bas du couvercle
-  c.rect(x0, l0 + 2, w, l1 - l0 - 1, 'm');
-  c.rect(x0 + 1, l0 + 1, w - 2, 1, 'M');
-  c.rect(x0 + 2, l0, w - 4, 1, 'M');
-  c.rect(x0 + 1, l0 + 2, w - 2, 2, 'M'); // dessus, face au ciel
-  c.rect(x0 + 3, l0 + 1, w - 7, 1, 'Y'); // reflet
-  c.rect(x0, l1 - 2, w, 2, 'N'); // flanc sud du couvercle
-  c.rect(x0, l1, w, 1, 'K'); // lèvre
-  c.rect(x1, l0 + 2, 1, l1 - l0 - 1, 'N');
-  // caisse : planches horizontales
-  const b0 = l1 + 1;
-  const b1 = 20;
-  c.rect(x0, b0, w, b1 - b0 + 1, 'm');
-  c.rect(x0, b0, w, 1, 'M');
-  c.rect(x0, b0 + 4, w, 1, 'N');
-  c.rect(x0, b1, w, 1, 'N');
-  c.rect(x1 - 1, b0, 2, b1 - b0 + 1, 'N');
-  // pentures de fer, du couvercle au bas de la caisse
-  for (const x of [x0 + 3, x1 - 4]) {
-    for (let y = l0; y <= b1; y++) {
-      if (c.get(x, y) === EMPTY) continue;
-      c.set(x, y, y < l1 - 2 ? 'R' : 'r');
-      c.set(x + 1, y, y < l1 - 2 ? 'r' : 'z');
-    }
-    c.set(x, l1, 'z').set(x + 1, l1, 'Z');
-  }
-  // coins ferrés en bas
-  c.rect(x0, b1 - 1, 2, 2, 'z').rect(x1 - 1, b1 - 1, 2, 2, 'Z');
-  // moraillon et serrure
-  const sx = 12;
-  c.rect(sx, l1 - 2, 3, 3, 'r').rect(sx, l1 - 2, 3, 1, 'R');
-  c.rect(sx - 1, b0, 5, 4, 'r').rect(sx - 1, b0, 5, 1, 'R').rect(sx + 3, b0, 1, 4, 'z');
-  c.set(sx + 1, b0 + 1, 'Z').set(sx + 1, b0 + 2, 'Z');
-  shadedOutline(c);
-  groundShadow(c, 15, b1 + 1.5, 13, 1.8);
-  return c;
+  return furniture([
+    '..RrYYYYYMMMRrm.',
+    '.MRrYMMMMMMMRrmm',
+    'MMRrMMMMMMMMRrmm',
+    'mmrzmmmmmmmmrzmN',
+    'NNrzNNNrrNNNrzNN',
+    'KKzZKKKrzKKKzZKK',
+    'MMrzMMRrrzMMrzNN',
+    'mmrzmmrZrzmmrzNN',
+    'mmrzmmzzzZmmrzNN',
+    'NNrzNNNNNNNNrzNN',
+    'mmrzmmmmmmmmrzNN',
+    'mmrzmmmmmmmmrzNN',
+    'zzrzmmmmmmmmrzZZ',
+    'zzzZNNNNNNNNzZZZ',
+  ]);
 }
 
 // ---------- Table de ferme ----------
@@ -271,23 +222,27 @@ function table(): Canvas {
 
 // ---------- Tabouret ----------
 
-/** Tabouret à trois pieds, 16x20 : assise ronde vue de dessus, chant, pieds écartés. */
+/**
+ * Tabouret à trois pieds (assise Ø 30 cm, 32 × 32 × 45 cm, cylindre debout). Gabarit : 6,4 × (9 + 3,2) ≈ 6 × 12 px,
+ * dessiné 8 × 12 (pieds écartés, pied de devant de 2 px : à 7 px de large, l'assise se lit en champignon). Assise ronde vue de dessus, chant dans l'ombre ; trois pieds d'un pixel (5 cm) : les deux du fond
+ * écartés vers l'ouest et vers l'est touchent le sol plus haut, celui de devant descend jusqu'au bas. Image 12 × 15.
+ */
 function stool(): Canvas {
-  const c = new Canvas(16, 20);
-  const cx = 7.5;
-  // pieds : deux en arrière sur les côtés (ils touchent le sol plus haut), un devant ; tous écartés
-  c.line(4, 8, 2, 15, 'M').line(5, 8, 3, 15, 'm');
-  c.line(10, 8, 12, 15, 'N').line(11, 8, 13, 15, 'K');
-  c.rect(7, 9, 2, 8, 'm').rect(7, 9, 1, 8, 'M');
-  // assise : chant de 2 px (face sud, dans l'ombre) puis dessus rond, vus de trois quarts
-  c.ellipse(cx, 6.6, 7, 3, 'N');
-  c.within('N', (c) => c.rect(11, 0, 5, 12, 'K')); // chant est
-  c.ellipse(cx, 4.8, 7, 3, 'm');
-  c.ellipse(cx - 0.8, 4.4, 6, 2.5, 'M'); // dessus, liseré sud-est qui tourne vers l'ombre
-  c.rect(3, 3, 4, 1, 'Y'); // reflet au nord-ouest
+  const c = new Canvas(12, 15);
+  // assise, contour compris : rangées 0 à 5 de la silhouette
+  c.stamp(['.MYYm.', 'MMMMmm', 'NNNNNK'], 3, 1);
   shadedOutline(c, WOOD_DARKEST);
-  groundShadow(c, 9, 16.6, 6.5, 1.6);
-  return c;
+  // pieds, sous le chant : fond ouest éclairé (K), fond est dans l'ombre (o), devant éclairé à l'ouest
+  c.stamp([
+    '.K.mN.o.',
+    '.K.mN.o.',
+    '.K.mN.o.',
+    'K..mN..o',
+    'K..mN..o',
+    '...mN...',
+    '...oo...',
+  ], 2, 5);
+  return furnitureShadow(c, 6);
 }
 
 // ---------- Puits ----------

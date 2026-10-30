@@ -321,14 +321,6 @@ function validateTrunk(c: Content, cat: Catalog): string[] {
 export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
   // taille dessinée ; en commentaire, la taille attendue (de la taille réelle au plancher de lisibilité) et l'écart
   // (dessiné − attendu, hors de cette plage, largeur × hauteur)
-  'lantern': { w: 10, h: 15 }, // attendu 3 à 6 × 7,5 à 15 : +4 × 0 px
-  'candle': { w: 13, h: 13 }, // attendu 1,6 à 6 × 4,8 à 18 : +7 × 0 px
-  'barrel': { w: 19, h: 23 }, // attendu 12 × 24 : +7 × -1 px
-  'crate': { w: 19, h: 19 }, // attendu 12 × 18 : +7 × +1 px
-  'hay-bale': { w: 31, h: 18 }, // attendu 20 × 13 : +11 × +5 px
-  'chest': { w: 25, h: 20 }, // attendu 18 × 16 : +7 × +4 px
-  'stool': { w: 15, h: 17 }, // attendu 7 × 12,5 : +8 × +4,5 px
-  'well': { w: 47, h: 59 }, // attendu 47 × 66 : 0 × -7 px
   'big-pollard': { w: 54, h: 79 }, // attendu 54 × 86 : 0 × -7 px ; tête stylisée, choix de Grégoire
 };
 
