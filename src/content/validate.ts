@@ -502,7 +502,16 @@ function validatePlans(c: Content): string[] {
           errors.push(`${pw} : rien n'est dit de la pièce à apporter ('accepts', sur la place ou sur l'étape)`);
           continue;
         }
-        if (accepts.prop) {
+        if (accepts.wood) {
+          // une poutre : la pièce du plan a sa section et sa longueur ; trop lourde à porter, elle se dresse avec de l'aide
+          const w = accepts.wood;
+          const wd = c.wood;
+          if (w.section !== wd.hew.beam) errors.push(`${pw} : section de ${w.section} cm, la poutre de wood.json fait ${wd.hew.beam} cm`);
+          if (w.length % wd.grid !== 0 || w.length < wd.min) errors.push(`${pw} : longueur de ${w.length} cm hors de la grille de ${wd.grid} cm (au moins ${wd.min} cm)`);
+          if (piece && (piece.dims.w !== w.section || piece.dims.d !== w.section || piece.dims.h !== w.length)) {
+            errors.push(`${pw} : la pièce '${place.piece}' fait ${piece.dims.w} × ${piece.dims.d} × ${piece.dims.h} cm, la poutre demandée ${w.section} × ${w.section} × ${w.length} cm`);
+          }
+        } else if (accepts.prop) {
           const held = c.props[accepts.prop];
           if (!held) errors.push(`${pw} : '${accepts.prop}' (accepts) absent de props.json`);
           else if (!held.take) errors.push(`${pw} : '${accepts.prop}' (accepts) ne se prend pas (pas de 'take')`);

@@ -20,9 +20,9 @@ export function pileOf(what: Held): PileKind | undefined {
   return pile ? { pile } : undefined;
 }
 
-/** Ce que présente ce qu'on tient : sa clé (objet possédable ou objet du monde) et ce qu'entreposerait son tas (`kindKey`). */
+/** Ce que présente ce qu'on tient : sa clé (objet possédable ou objet du monde), ce qu'entreposerait son tas (`kindKey`) et, pour une pièce de bois, ses réglages. */
 export function offerOf(what: Held | undefined): Offer | undefined {
   if (!what) return undefined;
   const kind = pileOf(what);
-  return { genre: kind && kindKey(kind), ...('item' in what ? { item: what.item } : { prop: what.prop }) };
+  return { genre: kind && kindKey(kind), ...('item' in what ? { item: what.item } : { prop: what.prop, wood: what.wood }) };
 }

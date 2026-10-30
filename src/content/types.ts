@@ -415,12 +415,19 @@ export const CornerSchema = z.enum(['nw', 'ne', 'se', 'sw']);
 
 /**
  * Ce qu'une place de chantier accepte : une pièce précise, par sa clé (`prop` : un objet du monde qu'on porte, `item` : un
- * objet possédable). `refuse` : ce qu'on dit à qui lui en présente une autre. Plus tard, des mesures (longueur, section, état)
- * s'ajouteront ici sans toucher au reste ; les places d'un tas, elles, acceptent un genre (`genre` de piles.json).
+ * objet possédable), ou une poutre (`wood` : une pièce de bois équarrie sur ses quatre faces, de cette `section` (côté, en cm) et
+ * de cette `length` exacte). `refuse` : ce qu'on dit à qui présente autre chose (« Il faut une pierre plate. », « Ce n'est pas une
+ * poutre. ») ; pour une poutre, « Il faut l'équarrir d'abord. » et « Il faut une poutre de 3 m. » sont dits d'après ses réglages.
+ * Les places d'un tas, elles, acceptent un genre (`genre` de piles.json).
  */
 export const AcceptSchema = z
-  .strictObject({ prop: id.optional(), item: id.optional(), refuse: id })
-  .refine((a) => (a.prop === undefined) !== (a.item === undefined), { message: "'accepts' nomme une pièce : soit 'prop', soit 'item'" });
+  .strictObject({
+    prop: id.optional(),
+    item: id.optional(),
+    wood: z.strictObject({ length: z.number().int().positive(), section: z.number().int().positive() }).optional(),
+    refuse: id,
+  })
+  .refine((a) => [a.prop, a.item, a.wood].filter((q) => q !== undefined).length === 1, { message: "'accepts' nomme une pièce : soit 'prop', soit 'item', soit 'wood' (une poutre)" });
 
 /**
  * Une place d'un plan (plans.json) : la pièce qui s'y pose (`piece`, un objet de props.json, qui paraît sur la carte), où
@@ -634,7 +641,7 @@ export const StrengthSchema = z
  * (les « PerSec » se paient chaque seconde de l'effort, les « PerKg » sont proportionnels à la masse en kg) ; marcher ne coûte rien.
  * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `plant` planter
  * le coin de fendage, `whittle` tailler un piquet à la hachette, `stake` planter un piquet de tracé, `maul` un coup de masse sur le coin, `knot`
- * nouer ou dénouer, `hewPerM` un coup de doloire, par mètre de la pièce qu'on équarrit, `turnPerKg` pivoter une bille, `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
+ * nouer ou dénouer, `hewPerM` un coup de doloire, par mètre de la pièce qu'on équarrit, `turnPerKg` pivoter une bille, `raisePerKg` dresser une poutre sur son appui (par kg ; avec l'aide de la mère, la moitié), `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
  * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir.
  */
 export const StaminaSchema = z.strictObject({
@@ -651,6 +658,7 @@ export const StaminaSchema = z.strictObject({
     knot: z.number().nonnegative(),
     hewPerM: z.number().nonnegative(),
     turnPerKg: z.number().nonnegative(),
+    raisePerKg: z.number().nonnegative(),
     carryPerKgSec: z.number().nonnegative(),
     pushPerKgSec: z.number().nonnegative(),
     runPerSec: z.number().nonnegative(),
@@ -660,8 +668,8 @@ export const StaminaSchema = z.strictObject({
 /** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
 export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
 
-/** Ce qu'un choix de dialogue peut déclencher quand le dialogue se ferme : `sleep`, passer la nuit (WorldScene). */
-export const DialogueActionSchema = z.enum(['sleep']);
+/** Ce qu'un choix de dialogue peut déclencher quand le dialogue se ferme : `sleep`, passer la nuit, `help`, dresser avec l'aide de la mère la poutre d'un chantier (WorldScene). */
+export const DialogueActionSchema = z.enum(['sleep', 'help']);
 
 /** Un choix offert à la fin d'une ligne (« Oui », « Non ») ; sans `action`, il ferme simplement le dialogue. */
 export const DialogueChoiceSchema = z.strictObject({ text: id, action: DialogueActionSchema.optional() });

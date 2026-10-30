@@ -2,7 +2,10 @@
 // couches et des dépendances (une place du dessus repose sur d'autres : `on`) ; on dit lesquelles sont ouvertes, lesquelles se
 // reprennent (la plus haute), laquelle est visée, dans quel ordre on les dessine, et si une place accepte ce qu'on apporte.
 // Un tas l'utilise avec des places qui acceptent un genre (`genre`) ; un chantier avec des places qui acceptent une pièce
-// précise (`prop` ou `item`, plus tard des mesures : longueur, section, état), avec un message de refus clair.
+// précise (`prop` ou `item`) ou une poutre mesurée (`wood` : équarrie, section, longueur exacte), avec un message de refus clair.
+
+import type { WoodPiece } from '../content/types';
+import { facesOf, WOOD } from './woodShape';
 
 /** Rectangle dans le repère de l'ensemble de places. */
 export interface PlaceRect {
@@ -34,19 +37,43 @@ export interface PlaceSet {
   order?: 'layers' | 'depth';
 }
 
-/** Ce qu'une place accepte : un genre de tas, ou une pièce précise par sa clé. */
-export type Accepts = { genre: string } | { prop: string } | { item: string };
+/** Ce qu'une place accepte : un genre de tas, une pièce précise par sa clé, ou une poutre (équarrie, de cette section et de cette longueur). */
+export type Accepts = { genre: string } | { prop: string } | { item: string } | { wood: BeamRule };
 
-/** Ce qu'on apporte : la clé de l'objet (du monde ou possédable) et, s'il s'entrepose, son genre de tas. */
+/** Une poutre demandée : côté de sa section et longueur exacte, en centimètres. */
+export interface BeamRule {
+  length: number;
+  section: number;
+}
+
+/** Ce qu'on apporte : la clé de l'objet (du monde ou possédable), s'il s'entrepose son genre de tas, et, si c'est une pièce de bois, ses réglages. */
 export interface Offer {
   genre?: string;
   prop?: string;
   item?: string;
+  wood?: WoodPiece;
+}
+
+/** Une longueur de poutre dite en mètres : « 3 m », « 1,80 m ». */
+export function beamLength(cm: number): string {
+  return `${cm % 100 === 0 ? String(cm / 100) : (cm / 100).toFixed(2).replace('.', ',')} m`;
+}
+
+/**
+ * Pourquoi cette pièce n'est pas la poutre demandée, ou undefined si elle l'est. Dans l'ordre : pas une pièce de bois ronde à l'origine
+ * (`refuse` : « Ce n'est pas une poutre. »), pas équarrie sur ses quatre faces, pas de la bonne longueur.
+ */
+export function beamRefusal(rule: BeamRule, refuse: string, wood: WoodPiece | undefined): string | undefined {
+  if (!wood || wood.shape !== 'round' || WOOD.hew.beam !== rule.section) return refuse;
+  if (facesOf(wood) < WOOD.hew.faces) return "Il faut l'équarrir d'abord.";
+  if (wood.length !== rule.length) return `Il faut une poutre de ${beamLength(rule.length)}.`;
+  return undefined;
 }
 
 /** La place accepte-t-elle ce qu'on apporte ? */
 export function accepts(rule: Accepts, offer: Offer | undefined): boolean {
   if (!offer) return false;
+  if ('wood' in rule) return !beamRefusal(rule.wood, '', offer.wood);
   if ('genre' in rule) return offer.genre === rule.genre;
   if ('prop' in rule) return offer.prop === rule.prop;
   return offer.item === rule.item;
@@ -54,6 +81,7 @@ export function accepts(rule: Accepts, offer: Offer | undefined): boolean {
 
 /** Pourquoi la place refuse ce qu'on apporte, dit par `refuse` (« Il faut une pierre plate. »), ou undefined si elle l'accepte. */
 export function refusal(rule: Accepts & { refuse: string }, offer: Offer | undefined): string | undefined {
+  if ('wood' in rule) return beamRefusal(rule.wood, rule.refuse, offer?.wood);
   return accepts(rule, offer) ? undefined : rule.refuse;
 }
 
