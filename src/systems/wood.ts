@@ -6,7 +6,7 @@ import type { Player } from '../entities/Player';
 import { changeObject, changeSpawned, game, setWood, spawnObject } from '../state';
 import { footprint, stateOf, type Box, type GameMap, type PlacedProp } from '../world/GameMap';
 import { capitalName, hewnFaces, WOOD_PIECE } from '../world/woodPiece';
-import { cmAt, cutPixel, lengthPx, lookOf, metresLabel, sizeOf, woodBody, woodSize } from '../world/woodShape';
+import { cmAt, cutPixel, lengthPx, lookOf, metresLabel, sizeOf, splitHits, woodBody, woodSize } from '../world/woodShape';
 import { woodTexture } from '../world/woodTexture';
 import type { HarvestSystem } from './harvest';
 
@@ -51,7 +51,8 @@ const END_OF_FACING: Record<Facing, End> = { right: 'west', left: 'east', down: 
  *   la ligne au-dessus de la coupe visée donne les deux longueurs (« 3 m | 2,6 m ») ; `cut.hits` coups, et deux pièces ;
  * - équarrir à la doloire : contre le flanc d'une pièce ronde ; une face tous les `perFace` coups, la poutre à 4 faces ;
  * - fendre : le coin se plante d'un coup, sans geste, dans le bois de bout où se tient Xéros (une pièce qui se fend : `split` de son
- *   diamètre) ; la masse frappe depuis ce même bout, `split.hits` coups (la fente court sur la longueur), et la pièce devient deux
+ *   diamètre) ; la masse frappe depuis ce même bout, `split.hits` coups par mètre commencé (la fente court sur la longueur, le coin
+ *   s'enfonce), et la pièce devient deux
  *   morceaux (`split` : demi-billes, puis quartiers), le coin retombe au sol.
  * Chaque coup est noté dans GameState (les réglages de la pièce). Ne lit pas le clavier.
  */
@@ -225,7 +226,7 @@ export class WoodSystem {
     return { x: p.x + Math.floor(w / 2), y: p.y - 6 };
   }
 
-  /** Planter le coin au bout `end` : une pièce qui se fend, sans coupe en cours, sans coin déjà planté, pas plus longue que `longest`. */
+  /** Planter le coin au bout `end` : une pièce qui se fend, sans coupe en cours, sans coin déjà planté, de toute longueur. */
   private plantAim(p: PlacedProp, end: End): WoodAim {
     const piece = p.wood!;
     const size = sizeOf(piece.size);
@@ -234,7 +235,6 @@ export class WoodSystem {
     else if (!size.split[piece.shape as 'round' | 'half'] || piece.hewn) refusal = 'Trop mince pour le coin.';
     else if (piece.notch) refusal = "Finis d'abord la coupe.";
     else if (piece.wedge) refusal = 'Le coin est déjà planté.';
-    else if (piece.length > W.split.longest) refusal = 'Trop longue pour un seul coin.';
     return { prop: p, piece, work: 'plant', at: 0, end, ...this.endAim(p, end), refusal };
   }
 
@@ -244,7 +244,7 @@ export class WoodSystem {
     let refusal: string | undefined;
     if (!piece.wedge) refusal = "Il faut d'abord un coin.";
     else if (piece.wedge.end !== end) refusal = 'Les coups se donnent sur le bout, là où le coin est planté.';
-    else if (piece.wedge.hits >= W.split.hits - 1 && !this.splitFree(p)) refusal = 'Pas la place pour la fendre.';
+    else if (piece.wedge.hits >= splitHits(piece) - 1 && !this.splitFree(p)) refusal = 'Pas la place pour la fendre.';
     return { prop: p, piece, work: 'maul', at: 0, end, ...this.endAim(p, end), refusal };
   }
 
@@ -416,12 +416,12 @@ export class WoodSystem {
   private maulHit(p: PlacedProp): WoodHit {
     const piece = p.wood!;
     const hits = piece.wedge!.hits + 1;
-    if (hits < W.split.hits) {
+    if (hits < splitHits(piece)) {
       this.update(p, { ...piece, wedge: { ...piece.wedge!, hits } });
       return {};
     }
     const [first, second] = this.halves(p);
-    const open = this.scene.add.image(p.x, p.y, woodTexture(this.scene, piece, true), '0').setOrigin(0, 1).setDepth(p.y);
+    const open = this.scene.add.image(p.x, p.y, woodTexture(this.scene, piece, { open: true }), '0').setOrigin(0, 1).setDepth(p.y);
     const [cx, cy] = [p.x + Math.floor(open.width / 2), p.y - 4];
     const a = this.replace(p, first.piece, first);
     const b = this.born(second.piece, second);

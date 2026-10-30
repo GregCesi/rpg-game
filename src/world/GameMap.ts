@@ -438,7 +438,7 @@ export class GameMap {
     const ay = o.y;
     const image = flip ? `${p.image}-left` : p.image;
     const obj = wood
-      ? scene.add.image(o.x, ay, woodTexture(scene, wood, opts.open), '0')
+      ? scene.add.image(o.x, ay, woodTexture(scene, wood, { open: opts.open }), '0')
       : p.anim
         ? scene.add.sprite(o.x, ay, image).play(`${image}-${p.anim}`)
         : scene.add.image(o.x, ay, image);

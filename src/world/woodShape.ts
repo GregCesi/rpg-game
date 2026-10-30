@@ -13,7 +13,9 @@
 // - pour un aspect qui se fend (`split` du diamètre) : `wedge-<aspect>-start`, `wedge-<aspect>-end`, le bout où le coin est
 //   planté (il remplace la partie de ce bout) ; `crack-<aspect>-start|mid|end`, la fente (transparente ailleurs, posée par-dessus,
 //   sur la partie de la longueur déjà fendue depuis le bout du coin) ; `open-<aspect>-start|mid|end`, le bois grand ouvert du
-//   dernier coup (il remplace les parties de l'aspect).
+//   dernier coup (il remplace les parties de l'aspect). Le coin a `WEDGE_FRAMES` images : il s'enfonce au fil des coups ;
+// - `<aspect>-rev-start|mid|end` : l'aspect retourné sur son axe long (le quartier écorce dessus), pour les rangées tête-bêche
+//   d'un tas (world/woodPile.ts).
 // Dans la planche, chaque partie est calée en haut à gauche de son image (cadre commun, assez grand pour la plus grande).
 
 import { CM_PER_PX } from '../content/gabarit';
@@ -129,10 +131,40 @@ export type DrawOp =
   | { kind: 'part'; anim: string; frame: number; at: number; size: number; clip?: [number, number] }
   | { kind: 'clear'; at: number; size: number };
 
-/** Ce qu'on assemble d'une pièce au-delà de ses réglages : l'image du roulement, la fente grande ouverte du dernier coup. */
+/** Ce qu'on assemble d'une pièce au-delà de ses réglages : l'image du roulement, la fente grande ouverte du dernier coup, la pièce retournée d'un tas tête-bêche. */
 export interface ComposeOpts {
   frame?: number;
   open?: boolean;
+  rev?: boolean;
+}
+
+/** Images du coin planté (`wedge-…`) : il sort de moins en moins du bout à chaque coup de masse. */
+export const WEDGE_FRAMES = 3;
+
+/** Coups de masse pour fendre une pièce : `split.hits` par mètre commencé (3 pour 1 m, 6 pour 2 m), un seul coin dans le bout. */
+export function splitHits(piece: Pick<WoodPiece, 'length'>): number {
+  return Math.ceil(piece.length / 100) * WOOD.split.hits;
+}
+
+/** L'image du coin planté après `hits` coups sur `total` : il s'enfonce par paliers, de 0 (planté) à WEDGE_FRAMES - 1. */
+export function wedgeFrame(hits: number, total: number): number {
+  return Math.min(WEDGE_FRAMES - 1, Math.floor((WEDGE_FRAMES * hits) / total));
+}
+
+/** Clé décrivant une pièce et ce qu'on en montre (la même pièce donne la même image) : la texture du jeu, la place d'un tas. */
+export function woodKey(piece: WoodPiece, opts: Pick<ComposeOpts, 'open' | 'rev'> = {}): string {
+  const { size, length, axis, notch, wedge } = piece;
+  return [
+    'wood',
+    size,
+    lookOf(piece),
+    axis,
+    length,
+    notch ? `n${notch.hits}@${notch.at}` : '',
+    wedge ? `w${wedge.end}${wedge.hits}/${splitHits(piece)}` : '',
+    opts.open ? 'open' : '',
+    opts.rev ? 'rev' : '',
+  ].join(':');
 }
 
 /**
@@ -147,17 +179,22 @@ export function composeOps(piece: WoodPiece, opts: ComposeOpts = {}): DrawOp[] {
   const { size, axis, length } = piece;
   const places = placements(size, look, axis, length);
   const wedgePart = piece.wedge ? partOfEnd(piece.wedge.end) : undefined;
-  const ops: DrawOp[] = places.map((p) => ({
-    kind: 'part',
-    anim: p.part === wedgePart && !opts.open ? `wedge-${look}-${p.part}` : `${opts.open ? 'open-' : ''}${look}-${p.part}`,
-    frame: k,
-    at: p.at,
-    size: p.size,
-  }));
+  const hits = splitHits(piece);
+  const aspect = opts.rev ? `${look}-rev` : look;
+  const ops: DrawOp[] = places.map((p) => {
+    const wedged = p.part === wedgePart && !opts.open;
+    return {
+      kind: 'part',
+      anim: wedged ? `wedge-${look}-${p.part}` : `${opts.open ? 'open-' : ''}${aspect}-${p.part}`,
+      frame: wedged ? wedgeFrame(piece.wedge!.hits, hits) : k,
+      at: p.at,
+      size: p.size,
+    };
+  });
   if (piece.wedge && piece.wedge.hits > 0 && !opts.open) {
     const { w, h } = woodSize(size, look, axis, length);
     const total = axis === 'ew' ? w : h;
-    const run = Math.round((total * piece.wedge.hits) / WOOD.split.hits);
+    const run = Math.round((total * piece.wedge.hits) / hits);
     const clip: [number, number] = wedgePart === 'start' ? [0, run] : [total - run, total];
     for (const p of places) ops.push({ kind: 'part', anim: `crack-${look}-${p.part}`, frame: 0, at: p.at, size: p.size, clip });
   }

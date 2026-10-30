@@ -6,25 +6,10 @@
 
 import type Phaser from 'phaser';
 import type { WoodPiece } from '../content/types';
-import { composeOps, framesOf, lookDef, lookOf, sizeOf, woodSize, type ComposeOpts } from './woodShape';
+import { composeOps, framesOf, lookDef, lookOf, sizeOf, woodKey, woodSize, type ComposeOpts } from './woodShape';
 
 /** Couleur de l'ombre au sol (`x` de la palette `world`) : ôtée de la pièce portée, qui ne touche pas le sol. */
 const SHADOW_RGBA = [0x2b, 0x1a, 0x10, 0x40] as const;
-
-/** Clé décrivant une pièce et ce qu'on en montre : la même pièce donne la même texture. */
-function keyOf(piece: WoodPiece, open: boolean): string {
-  const { size, length, axis, notch, wedge } = piece;
-  return [
-    'wood',
-    size,
-    lookOf(piece),
-    axis,
-    length,
-    notch ? `n${notch.hits}@${notch.at}` : '',
-    wedge ? `w${wedge.end}${wedge.hits}` : '',
-    open ? 'open' : '',
-  ].join(':');
-}
 
 /** Dessine les opérations d'une pièce dans `ctx`, décalées de `ox` (l'image de roulement `frame`). */
 function paint(scene: Phaser.Scene, ctx: CanvasRenderingContext2D, piece: WoodPiece, ox: number, opts: ComposeOpts): void {
@@ -50,17 +35,17 @@ function paint(scene: Phaser.Scene, ctx: CanvasRenderingContext2D, piece: WoodPi
 
 /**
  * Clé de la texture d'une pièce posée, assemblée au premier besoin. Ses images : '0' (et '1' à '3' pour le rond qui peut rouler).
- * `open` : le bois grand ouvert du dernier coup de masse (une image).
+ * `open` : le bois grand ouvert du dernier coup de masse (une image) ; `rev` : la pièce retournée d'un tas tête-bêche.
  */
-export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, open = false): string {
-  const key = keyOf(piece, open);
+export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, opts: Pick<ComposeOpts, 'open' | 'rev'> = {}): string {
+  const key = woodKey(piece, opts);
   if (scene.textures.exists(key)) return key;
   const { w, h } = woodSize(piece.size, lookOf(piece), piece.axis, piece.length);
-  const count = piece.wedge || open ? 1 : framesOf(lookOf(piece));
+  const count = piece.wedge || opts.open || opts.rev ? 1 : framesOf(lookOf(piece));
   const tex = scene.textures.createCanvas(key, w * count, h)!;
   const ctx = tex.getContext();
   for (let k = 0; k < count; k++) {
-    paint(scene, ctx, piece, k * w, { frame: k, open });
+    paint(scene, ctx, piece, k * w, { ...opts, frame: k });
     tex.add(String(k), 0, k * w, 0, w, h);
   }
   tex.refresh();
@@ -74,7 +59,7 @@ export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, open = false)
  */
 export function heldWoodTexture(scene: Phaser.Scene, wood: WoodPiece): string {
   const piece: WoodPiece = { size: wood.size, length: wood.length, shape: wood.shape, axis: 'ew', ...(wood.hewn ? { hewn: wood.hewn } : {}) };
-  const key = `held:${keyOf(piece, false)}`;
+  const key = `held:${woodKey(piece)}`;
   if (scene.textures.exists(key)) return key;
   const held = lookDef(piece.size, lookOf(piece)).held;
   const view = (dir: string) => scene.anims.get(`${held}-${dir}`).frames[0].frame;

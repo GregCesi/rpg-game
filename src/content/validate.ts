@@ -5,6 +5,7 @@
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
 import { propMass } from './mass';
+import { WEDGE_FRAMES } from '../world/woodShape';
 import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
@@ -516,7 +517,7 @@ function validateWood(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   const err = (msg: string) => errors.push(`wood.json : ${msg}`);
   const W = c.wood;
-  if (W.min % W.grid || W.split.longest % W.grid) err(`'min' et 'split.longest' sont des multiples de 'grid' (${W.grid} cm)`);
+  if (W.min % W.grid) err(`'min' est un multiple de 'grid' (${W.grid} cm)`);
   if (W.cut.hits !== 3) err(`'cut.hits' : 3 coups (un tiers, deux tiers, coupé : les bandes notch1 et notch2)`);
   for (const tool of [W.cut.tool, W.hew.tool, W.split.wedge, W.split.maul]) if (c.items[tool]?.kind !== 'tool') err(`'${tool}' n'est pas un outil de items.json`);
   if (c.items[W.split.wedge]?.hands === 2) err(`le coin '${W.split.wedge}' se tient à une main (il se plante et quitte la main)`);
@@ -534,7 +535,7 @@ function validateWood(c: Content, cat: Catalog): string[] {
       for (const [look, rule] of Object.entries(size.split)) {
         if (!size.looks[look as WoodLook]) err(`${at} : 'split' d'un aspect '${look}' qu'il n'a pas`);
         if (!size.looks[rule.into]) err(`${at} : 'split.${look}' devient '${rule.into}', un aspect qu'il n'a pas`);
-        for (const part of ['start', 'end']) want(`wedge-${look}-${part}`, 1);
+        for (const part of ['start', 'end']) want(`wedge-${look}-${part}`, WEDGE_FRAMES);
         for (const part of ['start', 'mid', 'end']) {
           want(`crack-${look}-${part}`, 1);
           want(`open-${look}-${part}`, 1);

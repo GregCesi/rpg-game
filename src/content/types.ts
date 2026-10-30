@@ -180,6 +180,17 @@ export const WoodPieceSchema = z.strictObject({
   wedge: z.strictObject({ end: EndSchema, hits: z.number().int().nonnegative() }).optional(),
 });
 
+/**
+ * La pièce de bois d'un tas, ce qui la rend identique à une autre : diamètre, forme, longueur, coups de doloire (le sens est celui
+ * du tas ; ni coupe ni coin). Un tas de bois n'accepte que des pièces identiques à sa première.
+ */
+export const PileWoodSchema = z.strictObject({
+  size: id,
+  shape: z.enum(['round', 'half', 'quarter']),
+  length: z.number().int().positive(),
+  hewn: z.number().int().positive().optional(),
+});
+
 /** Géométrie des parties d'un aspect, dans le sens est-ouest : voir WoodSizeSchema. */
 const WoodEwSchema = z.strictObject({
   h: z.number().int().positive(),
@@ -242,7 +253,7 @@ export const WoodSizeSchema = z.strictObject({
  * Le bois (wood.json) : `density` du bois vert (kg/m³) ; `grid` (cm) : la coupe s'aimante tous les `grid` cm depuis le bout le plus
  * proche de Xéros ; `min` (cm) : aucune pièce plus courte ; `cut` : l'outil qui coupe et ses coups ; `hew` : l'outil qui équarrit,
  * `perFace` coups par face, `faces` faces, `beam` le côté de la poutre (cm de bois) ; `split` : le coin, la masse, les coups de masse
- * par fente et la plus longue pièce qu'un seul coin fend (`longest`, cm) ; `sizes` : les diamètres.
+ * par mètre commencé (`hits` : 3 pour 1 m, 6 pour 2 m ; un seul coin, planté dans le bout, quelle que soit la longueur) ; `sizes` : les diamètres.
  */
 export const WoodSchema = z.strictObject({
   density: z.number().positive(),
@@ -250,7 +261,7 @@ export const WoodSchema = z.strictObject({
   min: z.number().int().positive(),
   cut: z.strictObject({ tool: id, hits: z.number().int().positive() }),
   hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive() }),
-  split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive(), longest: z.number().int().positive() }),
+  split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive() }),
   sizes: z.record(id, WoodSizeSchema),
 });
 
@@ -481,14 +492,10 @@ export const PileDefSchema = z.strictObject({
   name: id,
   /**
    * Ce qui s'y entrepose et ce qu'on en reprend : un objet possédable (`item`), un objet du monde (`prop`), ou une pièce de bois
-   * (`wood` : son diamètre, sa forme, sa longueur ; ronde sans face dressée, sans coupe ni coin). Pour l'instant, les tas de bois
-   * n'acceptent que des pièces de 1 m.
+   * (`wood` : `PileWoodSchema`). Les tas de bois ne s'écrivent pas dans piles.json : leur forme se calcule d'après leur première
+   * pièce (world/woodPile.ts) ; piles.json ne garde que ce qui ne se calcule pas (branches, fagots, liens).
    */
-  piece: z.union([
-    z.strictObject({ item: id }),
-    z.strictObject({ prop: id }),
-    z.strictObject({ wood: z.strictObject({ size: id, shape: z.enum(['round', 'half', 'quarter']), length: z.number().int().positive() }) }),
-  ]),
+  piece: z.union([z.strictObject({ item: id }), z.strictObject({ prop: id }), z.strictObject({ wood: z.lazy(() => PileWoodSchema) })]),
   /** Place de la première pièce d'un nouveau tas (au sol). */
   start: id,
   /** Nombre de pièces à partir duquel le tas bloque le passage. */
@@ -763,6 +770,7 @@ export type MapData = z.infer<typeof MapSchema>;
 export type End = z.infer<typeof EndSchema>;
 export type WoodLook = z.infer<typeof WoodLookSchema>;
 export type WoodPiece = z.infer<typeof WoodPieceSchema>;
+export type PileWood = z.infer<typeof PileWoodSchema>;
 export type WoodLookDef = z.infer<typeof WoodLookDefSchema>;
 export type WoodSize = z.infer<typeof WoodSizeSchema>;
 export type WoodDef = z.infer<typeof WoodSchema>;
