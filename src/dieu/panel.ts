@@ -75,34 +75,44 @@ function select(groups: [string, [string, string][]][]): HTMLSelectElement {
   return s;
 }
 
-/** Champ de longueur, en mètres, pour un objet qui en a une (`length` de props.json, ou celui qu'il porte). */
+/** Champ de longueur, en mètres, pour un objet qui en a une (`length` de props.json, ou celui qu'il porte, ou le bois d'œuvre). */
 function lengthInput(): { input: HTMLInputElement; label: HTMLLabelElement } {
   const input = el('input', { type: 'number', min: '0.5', step: '0.5' });
   return { input, label: el('label', {}, [input, 'm']) };
 }
 
-/** La longueur d'un objet de props.json : la sienne (le rouleau) ou celle de ce qu'il porte (le billot et son rouleau). */
-function lengthDef(key: string | undefined) {
+/** Le bois d'œuvre se pose de 30 cm (la plus courte coupe) à 7 m (un arbre normal entier), au décimètre ; 3 m d'abord. */
+const TIMBER_RANGE = { start: 300, min: 30, max: 700, step: 10 };
+
+/**
+ * Les longueurs qu'on peut choisir pour un objet de props.json, en cm : celles du rouleau (ou de celui que porte le billot), de
+ * 50 cm à neuf, par demi-mètre ; celles d'un rondin ou d'une poutre (`timber`) ; undefined s'il n'a pas de longueur.
+ */
+function lengthDef(key: string | undefined): { start: number; min: number; max: number; step: number } | undefined {
   const d = key ? props[key] : undefined;
-  return d?.length ?? (d?.bears?.prop ? props[d.bears.prop].length : undefined);
+  if (d?.timber) return TIMBER_RANGE;
+  const len = d?.length ?? (d?.bears?.prop ? props[d.bears.prop].length : undefined);
+  return len && { start: len.start, min: 50, max: len.start, step: 50 };
 }
 
-/** Montre le champ de longueur seulement pour un objet qui en a une, rempli de sa longueur neuve. */
+/** Montre le champ de longueur seulement pour un objet qui en a une, rempli de sa longueur de départ. */
 function syncLength(f: { input: HTMLInputElement; label: HTMLLabelElement }, key: string | undefined): void {
   const len = lengthDef(key);
   f.label.style.display = len ? '' : 'none';
   if (len) {
-    f.input.max = String(len.start / 100);
+    f.input.min = String(len.min / 100);
+    f.input.max = String(len.max / 100);
+    f.input.step = String(len.step / 100);
     f.input.value = String(len.start / 100);
   }
 }
 
-/** La longueur choisie, en centimètres, pour l'objet `key` (undefined s'il n'en a pas), entre 50 cm et la longueur neuve. */
+/** La longueur choisie, en centimètres, pour l'objet `key` (undefined s'il n'en a pas), bornée et au pas de son champ. */
 function lengthOf(f: { input: HTMLInputElement }, key: string): number | undefined {
   const len = lengthDef(key);
   if (!len) return undefined;
-  const m = Math.min(Math.max(0.5, Number(f.input.value) || len.start / 100), len.start / 100);
-  return Math.round(m * 100);
+  const cm = Math.min(Math.max(len.min, Math.round((Number(f.input.value) * 100 || len.start) / len.step) * len.step), len.max);
+  return Math.round(cm);
 }
 
 /** Monte le panneau à côté du jeu (dans #stage) ; `send` transmet une commande à la scène du monde. */
