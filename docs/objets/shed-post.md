@@ -5,8 +5,8 @@ Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hau
 ## Identité
 - Clés : `shed-post-high` (les deux poteaux du nord, côté haut), `shed-post-low` (les deux du sud, côté bas).
 - Noms affichés : poteau (côté haut), poteau (côté bas).
-- Nature : objets du monde (`props.json`), sans `take` : pièces de bâtiment, places de l'étape « les poteaux » du plan `woodshed` (`plans.json`, étape « à venir » : les fantômes paraissent quand les quatre dés sont posés).
-- Mains : aucune pour l'instant.
+- Nature : objets du monde (`props.json`), sans `take` : pièces de bâtiment, places de l'étape « les poteaux » du plan `woodshed` (`plans.json`, étape ouverte : les fantômes paraissent quand les quatre dés sont posés, chaque place demande une poutre équarrie de la longueur du poteau).
+- Mains : aucune une fois dressé ; la poutre qui le devient se porte à deux mains (1,80 m) ou ne se porte pas (3 m).
 
 ## Dimensions (gabarit)
 - Bois équarri à la hache, section 20 × 20 cm. Hauteur hors dé : **3,00 m** au nord, **1,80 m** au sud (1,70 m jusqu'au 30 octobre 2026 : la grille de 20 cm du bois, voir CONCEPTION *Le bois* ; pente de 18,7°) ; il repose sur
@@ -22,8 +22,8 @@ Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hau
   et (669, 139), images de 4 × 39. Chacun centré sur son dé, à un pixel du bord sud du dé.
 
 ## Masse
-- Pas encore déplaçable (pièce du chantier posée tout construite) : pas de masse saisie. Ordre de grandeur, bois vert de
-  900 kg/m³ : 20 × 20 × 300 cm, environ 108 kg (côté haut) ; 20 × 20 × 180 cm, environ 65 kg (côté bas).
+- Pas déplaçable une fois dressé : pas de masse saisie. La poutre dont il vient pèse, bois vert de 900 kg/m³ : 20 × 20 × 300 cm,
+  108 kg (côté haut : trop lourde pour Xéros, qui porte 70 kg, la mère aide) ; 20 × 20 × 180 cm, 65 kg (côté bas : portée).
 
 ## Vues
 - Debout : `shed-post-high`, `shed-post-low`. Les faces équarries montrent le bois de la matière commune
@@ -39,8 +39,9 @@ Seul ; quatre par abri, aux quatre coins : nord-ouest, nord-est, sud-ouest, sud-
 - E court, E maintenu, Espace, R, Q : rien.
 
 ## Origine
-Places du plan `woodshed` (étape « à venir »). Plus tard : une bille équarrie à la hache sur le billot, portée à deux mains, dressée
-sur son dé : pas encore construit.
+Places du plan `woodshed`. Une poutre équarrie à la doloire (arbre normal abattu, ébranché, coupé à 1,80 m ou 3 m, 12 coups) :
+le poteau bas est porté et dressé avec E sur son dé ; le poteau haut est équarri au pied de son dé, puis dressé avec l'aide de la
+mère (E maintenu, fondu). Le chantier garde la pièce de bois d'origine (`pieces`).
 
 ## Devenir
 Porte les sablières. **C'est la seule pièce de l'abri qui bloque le passage** : une collision de 4 × 4 px (20 × 20 cm)
@@ -49,5 +50,6 @@ Porte les sablières. **C'est la seule pièce de l'abri qui bloque le passage** 
 ## Vérification
 - Aperçu : `.art-preview/shed-post-high.png`, `shed-post-low.png`, `.art-preview/woodshed-2.png` (les quatre poteaux sur
   leurs dés), avec Xéros à côté : le poteau haut le dépasse d'environ 30 px, le bas d'environ 6 (sa tête à 1,85 m).
+- `npm run test:poteaux` (captures : `POTEAUX_SHOTS=1`, `.art-preview/poteaux-*.png`).
 - En jeu : se cogner à chaque poteau ; passer entre deux poteaux ; passer derrière un poteau (il cache Xéros) et devant
   (Xéros le cache).

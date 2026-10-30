@@ -1,9 +1,12 @@
 import Phaser from 'phaser';
-import { DEPTH, INTERACT, SITE, UI, ZOOM_STEPS } from '../config';
-import { items, plans, props } from '../content';
-import type { Corner, PlanDef } from '../content/types';
+import { DEPTH, INTERACT, SITE, TILE, UI, ZOOM_STEPS } from '../config';
+import { items, plans, props, wood } from '../content';
+import { heldMass, woodMass } from '../content/mass';
+import type { Corner, PlanDef, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
+import type { Strength } from '../entities/Strength';
 import {
+  changeObject,
   changeSpawned,
   clearHeld,
   dropItem,
@@ -21,10 +24,11 @@ import {
   take,
   type Site,
 } from '../state';
-import type { Box, GameMap, Interactable } from '../world/GameMap';
+import type { Box, GameMap, Interactable, PlacedProp } from '../world/GameMap';
 import { offerOf } from '../world/offer';
-import { refusal, type Accepts } from '../world/places';
+import { beamLength, beamRefusal, refusal, type Accepts, type BeamRule } from '../world/places';
 import { acceptOf, cornerPoint, footprintBox, openSlots, placeCorner, placeGround, progress, statusLine, type PlanSlot } from '../world/sitePlan';
+import { WOOD_PIECE } from '../world/woodPiece';
 import { Ghosts } from './ghost';
 
 const CORNERS: Corner[] = ['nw', 'ne', 'se', 'sw'];
@@ -34,11 +38,20 @@ const overlaps = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.t
 /** Ce qu'a donné l'essai de planter un piquet : refusé (avec le message), ou possible (`commit` le fait, une fois l'effort payé). */
 export type PlantResult = { ok: false; message: string } | { ok: true; commit: () => void };
 
+/** Ce qu'a donné l'essai de poser une pièce : refusé (avec le message), ou possible (`kg` : la masse à dresser, 0 si rien à soulever ; `commit` le fait). */
+export type PlaceResult = { ok: false; message: string } | { ok: true; kg: number; commit: () => void };
+
+/** Ce qu'a donné l'essai de dresser une pièce avec de l'aide : refusé, ou possible (`kg` : la masse de la poutre ; `commit` la dresse). */
+export type HelpResult = { ok: false; message: string } | { ok: true; kg: number; commit: () => void };
+
 /**
  * Les chantiers : tracer l'emprise d'un plan avec des piquets, puis y poser les pièces, étape par étape. Tout le plan est dans
  * plans.json (en cm) ; l'état est dans GameState (`sites` de la carte). Les places du plan sont celles du moteur commun
  * (world/places.ts) : l'étape en cours montre ses places en fantôme, la place visée est mise en avant quand ce qu'on tient lui
  * convient, et une pièce qui ne convient pas est refusée avec le message du plan (« Il faut une pierre plate. »).
+ * Une place dont la pièce est une poutre (`accepts.wood`) vérifie les réglages de la pièce en main. Si cette poutre pèse plus que
+ * Xéros ne porte, la place accepte l'aide de la mère : la poutre couchée au sol près de la place (son bout à moins d'une case)
+ * est dressée sans être portée (`help`). La règle est celle du plan, pas d'une pièce : toute place trop lourde pour Xéros.
  * Ne lit pas le clavier : la scène dit quand.
  */
 export class SiteSystem {
@@ -55,6 +68,8 @@ export class SiteSystem {
     private readonly map: GameMap,
     /** Corps où l'on ne trace rien (les personnages). */
     private readonly others: Phaser.Physics.Arcade.Body[],
+    /** La force de Xéros : ce qu'il porte décide des places qui se remplissent avec de l'aide. */
+    private readonly strength: Strength,
   ) {
     this.ghosts = new Ghosts(scene, SITE.ghost);
   }
@@ -94,20 +109,24 @@ export class SiteSystem {
           const p = cornerPoint(site, plan, corner);
           list.push({ x: p.x, y: p.y - 2, top: p.y - this.map.textureSize(props[plan.planted].image).h, action: { kind: 'stake', site: site.id, corner } });
         }
-      } else if (holding) {
+      } else {
         for (const slot of openSlots(site, plan)) {
           const g = placeGround(site, slot.place);
-          list.push({ x: g.x, y: g.y, top: g.y - 12, action: { kind: 'site-place', site: site.id, place: slot.id } });
+          // trop lourd pour Xéros : E maintenu appelle la mère, quoi qu'il tienne ; sinon la pièce se pose si on la tient
+          if (this.needsHelp(plan, slot)) list.push({ x: g.x, y: g.y, top: g.y - 12, action: { kind: 'site-help', site: site.id, place: slot.id } });
+          else if (holding) list.push({ x: g.x, y: g.y, top: g.y - 12, action: { kind: 'site-place', site: site.id, place: slot.id } });
         }
       }
     }
     return list;
   }
 
-  /** Le chantier et la place de l'étape en cours (jouable) que vise Xéros avec ce qu'il tient, si cela lui convient. */
+  /**
+   * Le chantier et la place de l'étape en cours (jouable) que vise Xéros, si cela lui convient : avec ce qu'il tient, ou, pour
+   * une place qui se dresse avec de l'aide, quand une poutre qui convient est couchée près d'elle.
+   */
   private aimed(player: Player): { site: Site; slot: PlanSlot } | undefined {
     const what = held(game);
-    if (!what) return undefined;
     const probe = player.probe(INTERACT.reach);
     let best: { site: Site; slot: PlanSlot } | undefined;
     let bestD: number = INTERACT.radius;
@@ -117,10 +136,11 @@ export class SiteSystem {
       for (const slot of openSlots(site, plan)) {
         const g = placeGround(site, slot.place);
         const d = Math.hypot(g.x - probe.x, g.y - probe.y);
-        if (d < bestD && !this.refusalOf(plan, slot, what)) {
-          best = { site, slot };
-          bestD = d;
-        }
+        if (d >= bestD) continue;
+        const ok = this.needsHelp(plan, slot) ? !!this.beamNear(site, plan, slot) : !!what && !this.refusalOf(plan, slot, what);
+        if (!ok) continue;
+        best = { site, slot };
+        bestD = d;
       }
     }
     return best;
@@ -252,10 +272,11 @@ export class SiteSystem {
   // --- poser les pièces ---
 
   /**
-   * E sur une place du chantier avec ce qu'on tient : la pièce est posée (un objet né à la place du plan), et si la place est celle
-   * d'un coin, le piquet de ce coin est arraché et retombe au sol à côté, réutilisable. Renvoie le message du refus, ou undefined.
+   * E sur une place du chantier avec ce qu'on tient : refusée avec le message du plan (rien ne change, la pièce reste en main), ou
+   * possible. `commit` pose la pièce (un objet né à la place du plan) ; si la place est celle d'un coin, le piquet de ce coin est
+   * arraché et retombe au sol à côté, réutilisable. `kg` : la masse d'une poutre à dresser (la scène fait payer l'effort), sinon 0.
    */
-  placePiece(siteId: number, placeId: string): string | undefined {
+  tryPlace(siteId: number, placeId: string): PlaceResult | undefined {
     const site = this.sites.find((s) => s.id === siteId);
     const what = held(game);
     if (!site || !what) return undefined;
@@ -263,13 +284,25 @@ export class SiteSystem {
     const slot = openSlots(site, plan).find((s) => s.id === placeId);
     if (!slot) return undefined;
     const why = this.refusalOf(plan, slot, what);
-    if (why) return why;
-    release(game);
+    if (why) return { ok: false, message: why };
+    const beam = !!acceptOf(plan.steps[slot.step], slot.place)?.wood;
+    return {
+      ok: true,
+      kg: beam ? heldMass(what) : 0,
+      commit: () => {
+        release(game);
+        this.lay(site, plan, slot, beam && 'wood' in what ? what.wood : undefined);
+      },
+    };
+  }
+
+  /** La pièce de la place est née sur la carte, notée dans le chantier avec la pièce de bois d'où elle vient (`from`, si c'en est une). */
+  private lay(site: Site, plan: PlanDef, slot: PlanSlot, from?: WoodPiece): void {
     const mapId = this.map.def.id;
     const c = placeCorner(site, slot.place);
     const o = spawnObject(game, mapId, slot.place.piece, c.x, c.y);
     this.map.placeProp(o, { spawned: true });
-    placeSitePiece(game, mapId, site.id, slot.id, o.id);
+    placeSitePiece(game, mapId, site.id, slot.id, o.id, from);
     const corner = slot.place.corner;
     if (corner && site.stakes.includes(corner)) {
       pullSiteStake(game, mapId, site.id, corner);
@@ -277,7 +310,99 @@ export class SiteSystem {
       const p = cornerPoint(site, plan, corner);
       this.map.placeGround(dropItem(game, mapId, plan.stake, Math.round(p.x + 7), Math.round(p.y + 4)));
     }
-    return undefined;
+  }
+
+  // --- dresser avec de l'aide ---
+
+  /** La poutre qu'une place demande, en pièce de bois (diamètre et sens pour l'exemple : la masse d'une poutre ne dépend que de sa section). */
+  private beamOf(rule: BeamRule): WoodPiece {
+    return { size: Object.keys(wood.sizes)[0], length: rule.length, shape: 'round', hewn: wood.hew.faces * wood.hew.perFace, axis: 'ew' };
+  }
+
+  /** La poutre demandée par une place jouable de l'étape en cours, ou undefined (une autre pièce, ou une étape « à venir »). */
+  private ruleOf(plan: PlanDef, slot: PlanSlot): BeamRule | undefined {
+    const step = plan.steps[slot.step];
+    return step.soon ? undefined : acceptOf(step, slot.place)?.wood;
+  }
+
+  /** La place demande une poutre plus lourde que ce que Xéros porte : elle se dresse avec de l'aide (règle commune à toutes les places). */
+  private needsHelp(plan: PlanDef, slot: PlanSlot): boolean {
+    const rule = this.ruleOf(plan, slot);
+    return !!rule && woodMass(this.beamOf(rule)) > this.strength.carry + 1e-9;
+  }
+
+  /** Les deux bouts d'une pièce couchée, au sol (px) : les extrémités de son image le long de son axe, sur la ligne de sa base. */
+  private endsOf(p: PlacedProp): { x: number; y: number }[] {
+    const { width, height } = p.image;
+    return p.def.wood!.axis === 'ew'
+      ? [{ x: p.x, y: p.baseY }, { x: p.x + width, y: p.baseY }]
+      : [{ x: p.baseX, y: p.y - height }, { x: p.baseX, y: p.y }];
+  }
+
+  /** La poutre qui convient à la place, couchée au sol, dont un bout est à moins d'une case de la place (la plus proche), s'il y en a une. */
+  private beamNear(site: Site, plan: PlanDef, slot: PlanSlot): PlacedProp | undefined {
+    const rule = this.ruleOf(plan, slot);
+    if (!rule) return undefined;
+    const g = placeGround(site, slot.place);
+    let best: PlacedProp | undefined;
+    let bestD: number = TILE;
+    for (const p of this.map.props) {
+      if (p.type !== WOOD_PIECE || !p.image.visible || beamRefusal(rule, '', p.def.wood)) continue;
+      const d = Math.min(...this.endsOf(p).map((e) => Math.hypot(e.x - g.x, e.y - g.y)));
+      if (d < bestD) {
+        best = p;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * E maintenu devant une place qui se dresse avec de l'aide : refusé sans poutre qui convienne au pied de la place (le message dit
+   * laquelle), sinon possible. `commit` ôte la poutre couchée et dresse le poteau à sa place, avec la pièce d'origine notée.
+   */
+  help(siteId: number, placeId: string): HelpResult | undefined {
+    const site = this.sites.find((s) => s.id === siteId);
+    if (!site) return undefined;
+    const plan = plans[site.plan];
+    const slot = openSlots(site, plan).find((s) => s.id === placeId);
+    const rule = slot && this.ruleOf(plan, slot);
+    if (!slot || !rule) return undefined;
+    const beam = this.beamNear(site, plan, slot);
+    if (!beam) return { ok: false, message: `Il faut d'abord une poutre de ${beamLength(rule.length)} au pied du dé.` };
+    const piece = structuredClone(beam.def.wood!);
+    const mapId = this.map.def.id;
+    return {
+      ok: true,
+      kg: woodMass(piece),
+      commit: () => {
+        if (beam.spawned) changeSpawned(game, mapId, beam.id, { x: beam.x, y: beam.y });
+        else changeObject(game, mapId, beam.id, { x: beam.x, y: beam.y });
+        this.map.removeProp(beam);
+        this.lay(site, plan, slot, piece);
+      },
+    };
+  }
+
+  /**
+   * Outils de test (?dieu) : remplit d'un coup l'étape en cours (jouable) de chaque chantier né, sans rien porter. Une poutre
+   * demandée est posée avec les réglages du plan. Renvoie ce qu'on dit si rien ne s'est fait.
+   */
+  skipStep(): string | undefined {
+    let done = false;
+    for (const site of this.sites) {
+      if (!site.born) continue;
+      const plan = plans[site.plan];
+      const p = progress(site, plan);
+      if (p.step < 0) continue;
+      if (plan.steps[p.step].soon) return 'Cette étape viendra plus tard.';
+      for (const slot of openSlots(site, plan)) {
+        const rule = this.ruleOf(plan, slot);
+        this.lay(site, plan, slot, rule && this.beamOf(rule));
+        done = true;
+      }
+    }
+    return done ? undefined : 'Aucune étape à sauter.';
   }
 
   // --- le plan ---

@@ -168,7 +168,7 @@ export interface PlacedPile {
 /**
  * Ce que fait la touche E devant une cible. `rest` : poser ce qu'on tient sur l'objet (le rouleau, la branche sur le billot) ;
  * `unload` : reprendre ce qu'il porte ; `tie` : reprendre le lien d'un tas qui n'a plus de pièce ; `learn` : l'objet enseigne un
- * plan (la planchette) ; `stake` : reprendre un piquet planté ; `site-place` : poser ce qu'on tient à une place du chantier.
+ * plan (la planchette) ; `stake` : reprendre un piquet planté ; `site-place` : poser ce qu'on tient à une place du chantier ; `site-help` : une place dont la pièce est trop lourde à porter, qu'on dresse avec l'aide de la mère.
  */
 export type Action =
   | { kind: 'talk'; dialogue: string; npc?: Npc }
@@ -182,7 +182,8 @@ export type Action =
   | { kind: 'turn'; prop: PlacedProp }
   | { kind: 'learn'; prop: PlacedProp; plan: string }
   | { kind: 'stake'; site: number; corner: Corner }
-  | { kind: 'site-place'; site: number; place: string };
+  | { kind: 'site-place'; site: number; place: string }
+  | { kind: 'site-help'; site: number; place: string };
 
 /** Longueur d'un objet neuf (posé dans Tiled) : celle de son `length`, ou de l'objet qu'il porte (`bears`). */
 function startLength(def: PropDef): number | undefined {

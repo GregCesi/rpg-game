@@ -20,12 +20,11 @@
       },
       {
         "name": "poteaux",
-        "soon": true,
         "places": {
-          "post-nw": {"piece": "shed-post-high", "at": [-10, 5], "orientation": "upright", "on": ["footing-nw"]},
-          "post-ne": {"piece": "shed-post-high", "at": [295, 5], "orientation": "upright", "on": ["footing-ne"]},
-          "post-se": {"piece": "shed-post-low", "at": [295, 360], "orientation": "upright", "on": ["footing-se"]},
-          "post-sw": {"piece": "shed-post-low", "at": [-10, 360], "orientation": "upright", "on": ["footing-sw"]}
+          "post-nw": {"piece": "shed-post-high", "at": [-10, 5], "orientation": "upright", "on": ["footing-nw"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
+          "post-ne": {"piece": "shed-post-high", "at": [295, 5], "orientation": "upright", "on": ["footing-ne"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
+          "post-se": {"piece": "shed-post-low", "at": [295, 360], "orientation": "upright", "on": ["footing-se"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
+          "post-sw": {"piece": "shed-post-low", "at": [-10, 360], "orientation": "upright", "on": ["footing-sw"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}}
         }
       },
       {

@@ -15,7 +15,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -80,6 +80,7 @@ export function readSave(): ReadResult {
  * sont perdues) ; une bille numérotée tenue en main devient la bille ordinaire.
  * Version 6 -> 7 : la pièce de bois (voir `woodPiecesFromKeys`).
  * Version 7 -> 8 : les tas de bois se calculent d'après leur pièce (voir `woodPilesFromGenres`).
+ * Version 8 -> 9 : un chantier garde la pièce de bois d'où vient chacune de ses pièces posées (`pieces`) : les chantiers anciens n'en ont aucune.
  */
 function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -95,7 +96,17 @@ function upgrade(data: unknown): unknown {
   if (d?.version === 5 && d.state && typeof d.state === 'object') d = { ...d, version: 6, state: normalPiecesToLogs(d.state as V5State) };
   if (d?.version === 6 && d.state && typeof d.state === 'object') d = { ...d, version: 7, state: woodPiecesFromKeys(d.state as V6State) };
   if (d?.version === 7 && d.state && typeof d.state === 'object') d = { ...d, version: 8, state: woodPilesFromGenres(d.state as V7State) };
+  if (d?.version === 8 && d.state && typeof d.state === 'object') d = { ...d, version: 9, state: sitesWithPieces(d.state as V8State) };
   return d;
+}
+
+/** Ce que la conversion 8 -> 9 lit d'une partie : les chantiers de chaque carte. */
+type V8State = { maps?: Record<string, { sites?: object[] }> };
+
+/** 8 -> 9 : chaque chantier reçoit ses `pieces`, vides (les dés et les poteaux d'avant n'ont pas de pièce d'origine). */
+function sitesWithPieces(state: V8State): V8State {
+  const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, sites: (m.sites ?? []).map((site) => ({ pieces: {}, ...site })) }]));
+  return { ...state, maps };
 }
 
 /** Ce que la conversion 7 -> 8 lit d'une partie : les tas de chaque carte. */
@@ -310,6 +321,10 @@ function missingContent(save: Save): string | undefined {
       const places = def.steps.flatMap((st) => Object.keys(st.places));
       const bad = Object.keys(site.placed).find((q) => !places.includes(q));
       if (bad) return `la place « ${bad} » du plan « ${site.plan} »`;
+      for (const w of Object.values(site.pieces)) {
+        const missing = woodMissing(w);
+        if (missing) return missing;
+      }
     }
     for (const c of Object.values(m.changes)) if (c.type && !props[c.type]) return `l'objet « ${c.type} »`;
     for (const o of m.spawned) if (!props[o.type]) return `l'objet « ${o.type} »`;

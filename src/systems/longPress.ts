@@ -19,6 +19,7 @@ function subject(a: Action): unknown {
     case 'stake':
       return `${a.site}:${a.corner}`;
     case 'site-place':
+    case 'site-help':
       return `${a.site}:${a.place}`;
     default:
       return a.prop;

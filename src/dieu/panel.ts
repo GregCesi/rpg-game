@@ -283,7 +283,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
       button('4 pierres plates au sol', supply('flat-stone', 4)),
     ]),
     known,
-    el('div', { className: 'row' }, [confirmButton('Effacer les chantiers', () => send({ kind: 'erase-sites' }))]),
+    el('div', { className: 'row' }, [button('Sauter l\'étape du chantier', () => send({ kind: 'skip-step' })), confirmButton('Effacer les chantiers', () => send({ kind: 'erase-sites' }))]),
     el('h3', { textContent: 'Aller sur une carte' }),
     el('div', { className: 'row' }, mapButtons),
     el('h3', { textContent: 'Remettre à zéro' }),

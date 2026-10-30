@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { HUD, START, TURN_PRESS } from '../config';
+import { HELP, HUD, START, TURN_PRESS } from '../config';
 import { items, maps, props } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -164,7 +164,7 @@ export class WorldScene extends Phaser.Scene {
     this.harvest = new HarvestSystem(this, this.map);
     this.wood = new WoodSystem(this, this.map, this.harvest);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
-    this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body));
+    this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body), this.player.strength);
     this.knots = new KnotSystem(this.map, this.handsSystem);
     this.press = new LongPress(this);
     this.pileCount = new PileCount(this, this.map);
@@ -262,9 +262,12 @@ export class WorldScene extends Phaser.Scene {
     // E devant ce qui se noue ou se dénoue : l'appui attend, court (reprendre) ou maintenu (nouer, dénouer)
     const press = this.press.update(time, input.handsDown(), e.target, this.player);
     if (press?.kind === 'short') this.hands(press.target);
-    else if (press?.kind === 'long') this.knot(press.target);
+    else if (press?.kind === 'long') {
+      if (press.target.action.kind === 'site-help') this.callMother(press.target.action);
+      else this.knot(press.target);
+    }
     else if (this.press.pending) return;
-    else if (e.pressed && e.target && this.knots.holds(e.target.action)) this.press.begin(e.target, time);
+    else if (e.pressed && e.target && (this.knots.holds(e.target.action) || e.target.action.kind === 'site-help')) this.press.begin(e.target, time);
     else if (e.pressed && e.target) this.hands(e.target);
     // E dans le vide (ou devant ce qu'on ne peut pas prendre) : poser ce que tient la main active, là où le montre le fantôme
     else if (e.pressed && held(game)) this.putDown();
@@ -316,10 +319,60 @@ export class WorldScene extends Phaser.Scene {
       if (!this.site.takeStake(a.site, a.corner)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'site-place') {
-      const why = this.site.placePiece(a.site, a.place);
-      if (why) return this.notice(why);
+      const r = this.site.tryPlace(a.site, a.place);
+      if (!r) return;
+      if (!r.ok) return this.notice(r.message);
+      // dresser une poutre se paie selon sa masse ; une pierre qu'on pose, rien
+      if (r.kg > 0 && !this.effort.afford(this.player, this.player.stamina.raiseCost(r.kg))) return;
+      r.commit();
       this.handsChanged();
+    } else if (a.kind === 'site-help') {
+      // E court : dire ce qui manque, ou comment appeler la mère
+      const r = this.site.help(a.site, a.place);
+      if (r) this.notice(r.ok ? 'Maintiens E pour appeler ta mère.' : r.message);
     }
+  }
+
+  /** La place dont Xéros demande l'aide à sa mère (le dialogue « Appeler ta mère pour la dresser ? » est ouvert). */
+  private helpAt?: { site: number; place: string };
+
+  /** E maintenu devant une place trop lourde pour Xéros : sans poutre qui convienne au pied de la place, on le dit ; sinon on demande s'il appelle sa mère. */
+  private callMother(a: Extract<Interactable['action'], { kind: 'site-help' }>): void {
+    const r = this.site.help(a.site, a.place);
+    if (!r) return;
+    if (!r.ok) return this.notice(r.message);
+    if (this.player.stamina.empty) return this.effort.exhausted();
+    this.helpAt = { site: a.site, place: a.place };
+    this.openDialogue('call-mother');
+  }
+
+  /**
+   * « Oui » : fondu au noir, « Ta mère vient t'aider. », et au retour la poutre est dressée sur son appui. Xéros paie la moitié de
+   * l'effort qu'il aurait fait seul. La mère n'est pas montrée : elle vient et repart pendant que l'écran est noir (plus tard, elle
+   * marchera jusqu'au chantier).
+   */
+  private helpNow(): void {
+    const at = this.helpAt;
+    this.helpAt = undefined;
+    const r = at && this.site.help(at.site, at.place);
+    if (!r) return;
+    if (!r.ok) return this.notice(r.message);
+    if (!this.effort.afford(this.player, this.player.stamina.raiseCost(r.kg, true))) return;
+    this.mode = 'transition';
+    const cam = this.cameras.main;
+    cam.fadeOut(HELP.fade, 20, 14, 8);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.notice("Ta mère vient t'aider.");
+      this.time.delayedCall(HELP.hold, () => {
+        r.commit();
+        cam.fadeIn(HELP.fade, 20, 14, 8);
+        cam.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
+          this.mode = 'play';
+          this.interaction.lock(200);
+          this.useLockedUntil = this.time.now + 200;
+        });
+      });
+    });
   }
 
   /** Espace avec un piquet : le planter au tracé d'un plan connu (rien n'est dépensé tant qu'il est refusé). */
@@ -552,6 +605,11 @@ export class WorldScene extends Phaser.Scene {
       case 'erase-sites':
         this.site.erase();
         break;
+      case 'skip-step': {
+        const why = this.site.skipStep();
+        if (why) this.notice(why);
+        break;
+      }
       case 'force':
         this.force = cmd.multiplier;
         this.player.strength.multiplier = cmd.multiplier;
@@ -594,6 +652,7 @@ export class WorldScene extends Phaser.Scene {
   private onDialogueEnd(action?: DialogueAction): void {
     this.mode = 'play';
     if (action === 'sleep') return this.sleepNow();
+    if (action === 'help') return this.helpNow();
     this.talking?.resume();
     this.talking = undefined;
     this.interaction.lock(200);
