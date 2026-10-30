@@ -13,7 +13,8 @@
 //   le bas de chaque image (y de Tiled), à égalité dans l'ordre de la carte.
 // - gabarit.png : les étalons du gabarit (docs/STYLE.md section 8), posés sur une même ligne de sol, de gauche à droite :
 //   Xéros, un cube de 50 cm, la bille est-ouest (big-felled-log), la bille nord-sud (big-felled-log-ns), un cylindre debout de
-//   50 cm (Ø 50, 50 de haut). Le cube et le cylindre sont tracés d'après les formules de src/content/gabarit.ts. En
+//   50 cm (Ø 50, 50 de haut).
+// - arbres.png (tools/lib/trees-preview.ts) : les deux arbres côte à côte à chaque étape, le gros au-dessus du normal. Le cube et le cylindre sont tracés d'après les formules de src/content/gabarit.ts. En
 //   dessous, les mêmes avec, en liseré jaune, la taille que donne le gabarit. Une règle à gauche : un trait tous les
 //   10 px (50 cm), un long tous les 20 px (1 m) ; le quadrillage du fond est celui des cases (32 px, 1,60 m).
 
@@ -38,7 +39,7 @@ function hexToRgba(hex: string): [number, number, number, number] {
 }
 
 /** Image en pixels du jeu, posée sur l'herbe, agrandie ×SCALE à l'écriture. */
-class Board {
+export class Board {
   private readonly px: [number, number, number][];
 
   constructor(
@@ -84,6 +85,17 @@ class Board {
     if (X >= 0 && Y >= 0 && X < this.w && Y < this.h) this.px[Y * this.w + X] = [...rgb];
   }
 
+  /** Les pixels qui diffèrent de ceux d'une autre planche de même taille : liste de (x, y). */
+  diff(b: Board): [number, number][] {
+    const out: [number, number][] = [];
+    for (let i = 0; i < this.px.length; i++) {
+      const p = this.px[i];
+      const q = b.px[i];
+      if (p[0] !== q[0] || p[1] !== q[1] || p[2] !== q[2]) out.push([i % this.w, Math.floor(i / this.w)]);
+    }
+    return out;
+  }
+
   /** Recopie une autre planche, coin haut gauche en (ox, oy). */
   paste(b: Board, ox: number, oy: number): void {
     for (let Y = 0; Y < b.h; Y++) for (let X = 0; X < b.w; X++) this.dot(ox + X, oy + Y, b.px[Y * b.w + X]);
@@ -101,7 +113,7 @@ class Board {
   }
 }
 
-function grassOf(sources: ArtSource[]): { grid: Grid; palette: Palette } | undefined {
+export function grassOf(sources: ArtSource[]): { grid: Grid; palette: Palette } | undefined {
   const world = sources.find((s) => s.kind === 'tileset' && s.name === 'world');
   if (world?.kind !== 'tileset' || !world.tiles.grass) return undefined;
   return { grid: world.tiles.grass, palette: world.palette };

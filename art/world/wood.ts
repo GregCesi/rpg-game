@@ -41,7 +41,7 @@ export const BIG_WOOD: Wood = {
 /**
  * L'arbre normal : tronc de 30 cm, 6 px d'écorce. Deux couloirs seulement (rangées 1 et 4 sur 6, le tiret descend
  * d'un pixel à mi-longueur : les rangées 1-2 et 4-5 ne se touchent jamais), de périodes différentes. La rampe d'écorce
- * de `barkTone` donne sur 6 px : 2 M, 2 m, 1 N, 1 K. Bouts ovales de 4 px de large (Ø 40 cm contour compris ÷ 2).
+ * de `barkTone` donne sur 6 px : 2 M, 2 m, 2 N (le K ne vient que des sillons). Bouts ovales de 4 px de large (Ø 40 cm contour compris ÷ 2).
  */
 export const NORMAL_WOOD: Wood = {
   diameter: 6,

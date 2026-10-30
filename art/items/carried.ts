@@ -11,7 +11,8 @@ import { lightUp, type Materials } from '../lib/light';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import felled from '../world/big-felled';
-import { logByTheEnd } from '../world/wood';
+import { NORMAL_WOOD, logByTheEnd } from '../world/wood';
+import { normalFelledLog } from '../world/normal-logs';
 import { darkest, outline } from './lib';
 import { branchBody, finishBranch, shearDown, transpose, type Branch } from './branch';
 import { axeArt, toolPalette } from './tools';
@@ -182,6 +183,34 @@ const heldFelledLog = (): SpriteSheetSource => {
   return sheet('held-big-felled-log', LOG_SIZE, world, { down: lengthwise, up: lengthwise, right: logEnd() });
 };
 
+// ---------- Bille portée de l'arbre normal ----------
+// La bille normal-felled-log (art/world/normal-logs.ts, 95 cm, Ø 30 cm d'écorce, 8 px contour compris) portée à deux
+// mains devant lui, comme celle du gros et dans la même image (LOG_SIZE) : mêmes cadrages, bille plus fine. De face et
+// de dos, en longueur : la bille couchée elle-même, sans son ombre au sol, le milieu sur la prise. De profil, par le
+// bout : la face de coupe ovale de 6 × 5 px (moins aplatie qu'au sol, elle est à hauteur de poitrine), sans cerne, et
+// le dessus de l'écorce qui fuit derrière, aussi long que sur la grosse.
+
+function normalLogLengthwise(): Grid {
+  const g = normalFelledLog().toGrid().map((r) => r.replace(/x/g, EMPTY));
+  const rows = g.filter((r) => /[^.]/.test(r));
+  const x0 = Math.min(...rows.map((r) => r.search(/[^.]/)));
+  const x1 = Math.max(...rows.map((r) => r.length - 1 - [...r].reverse().join('').search(/[^.]/)));
+  const body = rows.map((r) => r.slice(x0, x1 + 1));
+  const c = new Canvas(LOG_SIZE, LOG_SIZE);
+  c.stamp(body, LOG_C - Math.floor(body[0].length / 2), LOG_C - Math.floor(body.length / 2));
+  return c.toGrid();
+}
+
+function normalLogEnd(): Grid {
+  const c = logByTheEnd(new Canvas(LOG_SIZE, LOG_SIZE), LOG_C, LOG_C - 2.5, LOG_C + 2.5, 3, 2.5, NORMAL_WOOD);
+  return outline(c, darkest({ M: 'K', m: 'K', N: 'K', K: 'K', Y: 'N', t: 'N', T: 'N' }, 'o')).toGrid();
+}
+
+const heldNormalFelledLog = (): SpriteSheetSource => {
+  const lengthwise = normalLogLengthwise();
+  return sheet('held-normal-felled-log', LOG_SIZE, world, { down: lengthwise, up: lengthwise, right: normalLogEnd() });
+};
+
 // ---------- Rouleau de corde ----------
 // Le rouleau (art/items/rope.ts, Ø 30 cm, 10 cm d'épaisseur) pend au poing, le long de la jambe : la main le tient par
 // le haut de l'anneau. De profil, on le voit à plat : un anneau de 6 px, le creux au milieu, éclairé en haut à gauche.
@@ -290,4 +319,4 @@ const heldFaggot = (): SpriteSheetSource => {
   return sheet('held-faggot', FAGGOT_SIZE, world, { down: lengthwise, up: lengthwise, right: faggotEnd() });
 };
 
-export default [heldAxe(), heldBranch(), heldFelledLog(), heldRopeCoil(), heldRopeTie(), heldFaggot()];
+export default [heldAxe(), heldBranch(), heldFelledLog(), heldNormalFelledLog(), heldRopeCoil(), heldRopeTie(), heldFaggot()];

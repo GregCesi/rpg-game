@@ -23,6 +23,7 @@ import type { PropTile } from './lib/tiled-files';
 import { buildCollectionBoard } from './lib/collection-board';
 import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import type { PreviewMap } from './lib/composite-previews';
+import { treesPreview } from './lib/trees-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
 
@@ -287,6 +288,10 @@ if (withPreview) {
   const pileDefs = parse('piles.json', z.record(z.string(), PileDefSchema), pilesJson);
   const pilesPng = pilesPreview(sources, pileDefs);
   if (pilesPng) writeFileSync(join(PREVIEW, 'piles.png'), PNG.sync.write(pilesPng));
+  // les deux arbres côte à côte, étape par étape ; et la vérification de la dernière image de chaque chute
+  const trees = treesPreview(sources, propDefs, pileDefs);
+  if (trees.png) writeFileSync(join(PREVIEW, 'arbres.png'), PNG.sync.write(trees.png));
+  for (const p of trees.problems) console.warn(`art : ATTENTION arbres : ${p}`);
   // les bâtiments qui montent, étape par étape, à leur place sur leur carte Tiled
   const buildings = parse('buildings.json', z.record(z.string(), BuildingDefSchema), buildingsJson);
   for (const [key, b] of Object.entries(buildings)) {

@@ -7,7 +7,7 @@ import { ball, capsule, darkest, outline } from './lib';
 import { branchBody, centerIn, diagonal, finishBranch, type Branch } from './branch';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
-import { bark, paintFace } from '../world/wood';
+import { NORMAL_WOOD, bark, paintFace } from '../world/wood';
 
 const S = 16;
 
@@ -294,6 +294,20 @@ function felledLog(): Canvas {
   return outline(c, 'K');
 }
 
+/**
+ * Bille de l'arbre normal (art/world/normal-logs.ts) : la même que celle du gros, même cadrage, même biais, même
+ * longueur (95 cm), mais de la grosseur d'un bras : 30 cm d'écorce au lieu de 55. Matière `NORMAL_WOOD` (deux couloirs
+ * de sillons) ; bout scié en bas à gauche, ovale étroit sans cerne.
+ */
+function normalFelledLogIcon(): Canvas {
+  const c = new Canvas(S, S);
+  const [x0, y0, x1, y1] = [4.4, 9.4, 11.4, 6.8];
+  const r = 2.2;
+  capsule(c, x0, y0, x1, y1, r, (t, a) => bark(t * 16, (a + 1) / 2, NORMAL_WOOD));
+  paintFace(c, x0 - 0.6, y0 + 0.1, 1.6, 2.4, { all: true });
+  return outline(c, 'K');
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
 export default [
@@ -309,4 +323,5 @@ export default [
   img('item-apple', apple()),
   img('item-wool', wool()),
   img('item-big-felled-log', felledLog()),
+  img('item-normal-felled-log', normalFelledLogIcon()),
 ];
