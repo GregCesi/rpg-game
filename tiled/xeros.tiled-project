@@ -1558,6 +1558,23 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 193,
+      "name": "broadaxe-ground",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

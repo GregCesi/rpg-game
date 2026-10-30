@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 24,
+  "nextobjectid": 25,
   "properties": [
     {
       "name": "name",
@@ -272,6 +272,18 @@
           "width": 8,
           "height": 5,
           "gid": 1093
+        },
+        {
+          "id": 24,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "broadaxe-ground",
+          "x": 192,
+          "y": 160,
+          "width": 12,
+          "height": 6,
+          "gid": 1094
         }
       ]
     },

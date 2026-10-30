@@ -117,5 +117,6 @@
   "flat-stone": {"name": "pierre plate", "image": "flat-stone", "dims": {"w": 30, "d": 30, "h": 15, "shape": "box"}, "mass": "stone",
     "take": {"hands": 2, "icon": "item-flat-stone", "hold": {"stance": "carry", "image": "held-flat-stone"}}},
   "plan-tablet": {"name": "planchette gravée", "image": "plan-tablet", "dims": {"w": 30, "d": 20, "h": 2, "shape": "box"}, "teaches": "woodshed"},
-  "hatchet-ground": {"name": "hachette", "image": "hatchet-ground", "dims": {"w": 40, "d": 12, "h": 5, "shape": "box"}, "harvest": {"hits": 1, "drops": [{"item": "hatchet", "min": 1, "max": 1, "give": true}]}}
+  "hatchet-ground": {"name": "hachette", "image": "hatchet-ground", "dims": {"w": 40, "d": 12, "h": 5, "shape": "box"}, "harvest": {"hits": 1, "drops": [{"item": "hatchet", "min": 1, "max": 1, "give": true}]}},
+  "broadaxe-ground": {"name": "doloire", "image": "broadaxe-ground", "dims": {"w": 60, "d": 25, "h": 6, "shape": "box"}, "harvest": {"hits": 1, "drops": [{"item": "broadaxe", "min": 1, "max": 1, "give": true}]}}
 }
