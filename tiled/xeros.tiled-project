@@ -1422,6 +1422,74 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 184,
+      "name": "big-wedged-log-east",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 185,
+      "name": "big-wedged-log-ns-north",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 186,
+      "name": "big-wedged-half-log-east",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 187,
+      "name": "big-wedged-half-log-ns-north",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

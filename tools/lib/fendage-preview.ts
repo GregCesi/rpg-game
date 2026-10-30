@@ -1,5 +1,5 @@
 // fendage.png de npm run art:preview : toute la suite du fendage, à côté de Xéros pour l'échelle, posée comme le jeu la pose.
-// Une rangée par sens (est-ouest, puis nord-sud) : la bille, le coin planté, les trois fentes, les deux demi-billes (là où
+// Une rangée par bout d'où l'on plante (ouest, est, sud, nord) : la bille, le coin planté, les trois fentes, les deux demi-billes (là où
 // naissent `becomes` et `spawns` de la bille), la demi-bille coin planté, ses trois fentes, les deux quartiers. Puis une
 // rangée des outils (icônes, au sol), du quartier en main, et le tas plein de quartiers, est-ouest et nord-sud.
 // Rien n'est dessiné à part ici : tout se lit dans props.json (`harvest` : `becomes`, `at`, `spawns`), piles.json et art/.
@@ -14,10 +14,12 @@ import { Board, grassOf } from './composite-previews';
 interface Placed { grid: Grid; palette: Palette; x: number; y: number }
 interface Cell { items: Placed[]; w: number; h: number }
 
-/** Les deux sens : la bille de départ (grosse bille ordinaire) et sa bille coin planté dans props.json. */
+/** Les quatre bouts d'où l'on plante : la bille de départ (grosse bille ordinaire), sa bille coin planté et sa demi-bille coin planté, dans props.json. */
 const ROWS = [
-  { log: 'big-felled-log', wedged: 'big-wedged-log' },
-  { log: 'big-felled-log-ns', wedged: 'big-wedged-log-ns' },
+  { log: 'big-felled-log', wedged: 'big-wedged-log', half: 'big-wedged-half-log' },
+  { log: 'big-felled-log', wedged: 'big-wedged-log-east', half: 'big-wedged-half-log-east' },
+  { log: 'big-felled-log-ns', wedged: 'big-wedged-log-ns', half: 'big-wedged-half-log-ns' },
+  { log: 'big-felled-log-ns', wedged: 'big-wedged-log-ns-north', half: 'big-wedged-half-log-ns-north' },
 ] as const;
 
 export function fendagePreview(sources: ArtSource[], props: Record<string, PropDef>, piles: Record<string, PileDef>): PNG | undefined {
@@ -63,8 +65,7 @@ export function fendagePreview(sources: ArtSource[], props: Record<string, PropD
     }
     cells.push(result(r.wedged));
     // la demi-bille (même sens que la bille), coin planté, trois fentes, puis les quartiers
-    const half = props[r.wedged]?.harvest?.becomes;
-    const halfWedged = half ? props[half]?.harvest?.becomes : undefined;
+    const halfWedged = r.half;
     const wh = halfWedged ? props[halfWedged] : undefined;
     for (const suffix of ['', '-n1', '-n2', '-n3']) {
       const s = image(wh && `${wh.image}${suffix}`);

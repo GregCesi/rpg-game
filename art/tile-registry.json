@@ -180,6 +180,10 @@
     "big-quarter-log",
     "big-quarter-log-ns",
     "maul-ground",
-    "splitting-wedge-ground"
+    "splitting-wedge-ground",
+    "big-wedged-log-east",
+    "big-wedged-log-ns-north",
+    "big-wedged-half-log-east",
+    "big-wedged-half-log-ns-north"
   ]
 }

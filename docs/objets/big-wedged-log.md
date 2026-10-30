@@ -3,6 +3,7 @@
 La grosse bille (95 × Ø 55 cm, 203 kg) dans laquelle on a planté le coin, puis qu'on frappe à la masse. Elle sert aussi pour la demi-bille (`big-wedged-half-log`, `-ns`, voir `big-half-log.md`), dont les images suivent les mêmes règles.
 
 ## Identité
+- Quatre versions, une par bout d'où l'on plante (le type garde le bout dans GameState) : `big-wedged-log` (depuis l'ouest, on voit la face coupée), `big-wedged-log-east` (depuis l'est : la face coupée est cachée, on voit la tête du coin dépasser au bord et la fente courir sur le dessus), `big-wedged-log-ns` (depuis le sud, face coupée visible), `big-wedged-log-ns-north` (depuis le nord, tête au bord haut). Mêmes tailles, mêmes collisions, mêmes étapes `-n1` à `-n3` ; les coups ne se donnent que depuis le bout choisi.
 - Clés : `big-wedged-log` (est-ouest), `big-wedged-log-ns` (nord-sud). Étapes : `<clé>-n1`, `<clé>-n2`, `<clé>-n3`.
 - Nom affiché : bille fendue (coin planté).
 - Nature : objet du monde (`props.json`), sans `take` ni `roll` : une bille coin planté ne se porte pas et ne roule pas.

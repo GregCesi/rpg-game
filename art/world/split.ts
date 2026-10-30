@@ -93,17 +93,19 @@ function vPath(y0: number, y1: number, x: number, jog: number[]): [number, numbe
 const OUT: Record<Stage, number> = { 0: 3, 1: 2, 2: 1, 3: 0 };
 
 /**
- * La fente d'une pièce coin planté : `face`, le trait qui traverse le bout par son milieu, en travers du coin (dès le
- * premier coup) ; `along`, son chemin le long de la pièce, du bout où est le coin vers l'autre bout : 3 pixels au
- * premier coup, la moitié au deuxième, tout au troisième, où le bois bâille (la lèvre, côté `lip`, montre le bois frais).
+ * La fente d'une pièce coin planté : `face`, le trait qui traverse le bout du coin par son milieu, en travers du coin
+ * (dès le premier coup ; absent quand ce bout est caché, à l'est ou au nord) ; `along`, son chemin le long de la pièce,
+ * du bout du coin vers l'autre bout : 3 pixels au premier coup, la moitié au deuxième, tout au troisième, où le bois
+ * bâille (la lèvre, côté `lip`, montre le bois frais) ; `far` : au troisième coup, elle descend le bout opposé.
  */
-interface Split { face: [number, number][]; along: [number, number][]; lip: [number, number] }
+interface Split { face?: [number, number][]; along: [number, number][]; far?: [number, number][]; lip: [number, number] }
 
 function splitStage(c: Canvas, sp: Split, s: Stage) {
   if (s === 0) return;
-  crack(c, sp.face, sp.face.length);
+  if (sp.face) crack(c, sp.face, sp.face.length);
   const n = s === 1 ? 3 : s === 2 ? Math.ceil(sp.along.length / 2) : sp.along.length;
   crack(c, sp.along, n, s === 3, sp.lip);
+  if (s === 3 && sp.far) crack(c, sp.far, sp.far.length);
 }
 
 // ---------- Bille coin planté ----------
@@ -137,6 +139,41 @@ function wedgedLogNS(s: Stage): Canvas {
     lip: [1, 0],
   }, s);
   wedge(c, 6, 14, OUT[s], [0, 1]);
+  return c;
+}
+
+/**
+ * Bille est-ouest plantée depuis l'est : le bout est est caché derrière la bille, on n'en voit que l'écorce qui
+ * s'enroule. La tête du coin sort au bord droit, à hauteur du milieu de la face cachée (rangées 6-7) : elle n'a pas de
+ * place hors de l'image (même taille que la bille), elle se pose donc sur le bord du bout, sa pointe sur le contour
+ * (colonnes 16 à 18 au départ, puis 17-18, 18, et à fond un seul pixel de fer au ras du bord). La fente court sur le
+ * dessus éclairé, de l'est vers l'ouest, et au troisième coup descend la face de coupe du bout gauche.
+ */
+function wedgedLogEast(s: Stage): Canvas {
+  const c = Canvas.from(felledGrid('big-felled-log-1'));
+  splitStage(c, {
+    along: hPath(16, 5, 3, [0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0]),
+    far: vPath(1, 11, 3, [0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1]),
+    lip: [0, 1],
+  }, s);
+  const [x, out] = ([[16, 2], [17, 1], [18, 0], [17, 0]] as const)[s];
+  wedge(c, x, 6, out, [1, 0]);
+  return c;
+}
+
+/**
+ * Bille nord-sud plantée depuis le nord : la face coupée nord est cachée ; la tête du coin sort au bord haut (le rond
+ * du fond, colonnes 6-7), vers le nord, donc vers le haut de l'écran ; la fente court sur la crête d'écorce du nord
+ * au sud et, au troisième coup, descend la face de coupe sud.
+ */
+function wedgedLogNSNorth(s: Stage): Canvas {
+  const c = Canvas.from(felledGrid('big-felled-log-ns'));
+  splitStage(c, {
+    along: vPath(4, 10, 6, [0, 0, 1, 1, 0, 0, 0]),
+    far: vPath(11, 17, 6, [0, 0, 1, 0, 0, 0, 0]),
+    lip: [1, 0],
+  }, s);
+  wedge(c, 6, 3, OUT[s], [0, -1]);
   return c;
 }
 
@@ -309,6 +346,37 @@ function wedgedHalfNS(s: Stage): Canvas {
   return c;
 }
 
+/**
+ * Demi-bille est-ouest plantée depuis l'est : le coin au bord est de la face plate (rangées 3-4), sa tête qui sort à
+ * droite (la colonne vide de l'image lui laisse un pixel hors du contour) ; la fente court sur la face plate vers
+ * l'ouest et, au troisième coup, descend le bout gauche.
+ */
+function wedgedHalfEast(s: Stage): Canvas {
+  const c = halfLog();
+  splitStage(c, {
+    along: hPath(14, 1, 3, [0, 0, 0, 1, 1, 0, 0, 0, -1, -1, 0, 0, 0, 0]),
+    far: vPath(4, 10, 2, [0, 0, 0, 0, 1, 1, 1]),
+    lip: [0, 1],
+  }, s);
+  wedge(c, 15, 3, OUT[s], [1, 0]);
+  return c;
+}
+
+/**
+ * Demi-bille nord-sud plantée depuis le nord : le coin au bord nord de la face plate (colonnes 6-7), sa tête qui sort
+ * vers le haut de l'écran ; la fente descend la face plate vers le sud et, au troisième coup, la demi-lune.
+ */
+function wedgedHalfNSNorth(s: Stage): Canvas {
+  const c = halfLogNS();
+  splitStage(c, {
+    along: vPath(4, 9, 6, [0, 0, 1, 1, 0, 0]),
+    far: vPath(10, 14, 6, [0, 0, 1, 0, 0]),
+    lip: [1, 0],
+  }, s);
+  wedge(c, 6, 3, OUT[s], [0, -1]);
+  return c;
+}
+
 // ---------- Icône et quartier porté ----------
 
 /**
@@ -386,10 +454,14 @@ function stages(key: string, draw: (s: Stage) => Canvas): ImageSource[] {
 const sources: ArtSource[] = [
   ...stages('big-wedged-log', wedgedLog),
   ...stages('big-wedged-log-ns', wedgedLogNS),
+  ...stages('big-wedged-log-east', wedgedLogEast),
+  ...stages('big-wedged-log-ns-north', wedgedLogNSNorth),
   img('big-half-log', halfLog()),
   img('big-half-log-ns', halfLogNS()),
   ...stages('big-wedged-half-log', wedgedHalf),
   ...stages('big-wedged-half-log-ns', wedgedHalfNS),
+  ...stages('big-wedged-half-log-east', wedgedHalfEast),
+  ...stages('big-wedged-half-log-ns-north', wedgedHalfNSNorth),
   img('big-quarter-log', quarterLog()),
   img('big-quarter-log-ns', quarterLogNS()),
   img('item-big-quarter-log', quarterIcon()),

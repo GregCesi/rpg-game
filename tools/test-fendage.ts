@@ -75,13 +75,23 @@ try {
     };
     const props = (re: RegExp) => w().map.props.filter((p: any) => re.test(p.type));
     const spawned = () => gs.mapState(gs.game, w().map.def.id).spawned;
-    // Xéros au bout ouest du morceau (est-ouest), tourné vers sa face coupée, collé à sa collision : le coin et la masse s'y donnent
-    const stand = async (p: any) => {
+    // Xéros à un bout du morceau, tourné vers sa face coupée, collé à sa collision : le coin et la masse s'y donnent
+    const standAt = async (p: any, end: string) => {
       const a = w().player.actor;
-      a.body.reset(Math.round(p.box.left - 7), Math.round((p.box.top + p.box.bottom) / 2 + 3));
-      a.face('right');
+      const cx = Math.round((p.box.left + p.box.right) / 2);
+      const cy = Math.round((p.box.top + p.box.bottom) / 2);
+      const spots: Record<string, [number, number, string]> = {
+        west: [Math.round(p.box.left - 7), cy + 3, 'right'],
+        east: [Math.round(p.box.right + 7), cy + 3, 'left'],
+        north: [cx, Math.round(p.box.top - 4), 'down'],
+        south: [cx, Math.round(p.box.bottom + 11), 'up'],
+      };
+      const [x, y, face] = spots[end];
+      a.body.reset(x, y);
+      a.face(face);
       await sleep(150);
     };
+    const stand = (p: any) => standAt(p, 'west');
     // Xéros au nord du morceau, tourné vers son flanc
     const standFlank = async (p: any) => {
       const a = w().player.actor;
@@ -162,6 +172,42 @@ try {
     out.stamina = w().player.stamina.value;
     out.noRoom = notices.filter((n) => /Pas la place/.test(n));
 
+    // 4 bis. le coin se plante depuis chacun des quatre bouts : la bille qui en naît est celle de ce bout, les coups
+    // ne se donnent que depuis lui (depuis l'autre bout : le message), et trois coups fendent en deux demi-billes
+    const ENDS = [
+      ['big-felled-log-2', 'west', 'big-wedged-log', 'east'],
+      ['big-felled-log-2', 'east', 'big-wedged-log-east', 'west'],
+      ['big-felled-log-ns', 'south', 'big-wedged-log-ns', 'north'],
+      ['big-felled-log-ns', 'north', 'big-wedged-log-ns-north', 'south'],
+    ];
+    const ends: unknown[] = [];
+    for (const [logType, end, want, other] of ENDS) {
+      emit({ kind: 'reset-map' });
+      await sleep(1700);
+      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'prop', prop: logType });
+      await sleep(200);
+      await give('splitting-wedge');
+      await standAt(props(new RegExp(`^${logType}$`)).at(-1), end);
+      await press('Space');
+      await sleep(300);
+      const planted = props(/wedged/).map((p: any) => p.type);
+      await give('maul');
+      await standAt(props(/wedged/)[0], other);
+      notices.length = 0;
+      await press('Space');
+      await sleep(300);
+      const wrongNotice = notices.at(-1);
+      const hitsWrong = spawned().find((o: any) => /wedged/.test(o.type))?.hits;
+      for (let i = 0; i < 3; i++) {
+        await standAt(props(/wedged/)[0], end);
+        await press('Space');
+        await settled();
+      }
+      ends.push({ end, want, planted, wrongNotice, hitsWrong, halves: props(/half-log/).length });
+    }
+    out.ends = ends;
+
     // 5. un quartier tenu se tourne (R) et s'empile : un tas plein de six (dehors, à la ferme : de la place devant Xéros)
     emit({ kind: 'map', map: 'ferme' });
     await sleep(2200);
@@ -217,6 +263,12 @@ try {
   assert.equal(r.quarters, 4, 'quatre quartiers');
   assert.ok(Math.abs(r.quarterMass - 50.8) < 1, `masse d'un quartier : ${r.quarterMass}`);
   assert.deepEqual(r.noRoom, [], 'la place ne manque pas');
+  for (const e of r.ends) {
+    assert.deepEqual(e.planted, [e.want], `planté depuis ${e.end} : ${e.want}`);
+    assert.equal(e.wrongNotice, 'Les coups se donnent sur le bout, là où le coin est planté.', `coups depuis l'autre bout de ${e.end} : refusés`);
+    assert.equal(e.hitsWrong, undefined, 'aucun coup noté depuis l\'autre bout');
+    assert.equal(e.halves, 2, `trois coups depuis ${e.end} : deux demi-billes`);
+  }
   assert.equal(r.turned, '{"prop":"big-quarter-log","turned":true}', 'R tourne le quartier tenu');
   assert.ok(r.pile.includes('big-quarters:6'), `tas de quartiers : ${r.pile}`);
   console.log('  ✓ fendage : de la grosse bille aux quatre quartiers');

@@ -82,6 +82,16 @@ export const HarvestSchema = z.strictObject({
    * nord ou au sud d'une pièce nord-sud (d'après ses \`dims\`), tourné vers elle ; ailleurs, le texte est le message dit au joueur.
    */
   ends: id.optional(),
+  /**
+   * Avec \`ends\` : le bout depuis lequel cet objet se frappe (le coin est planté de ce côté : la fente part de ce bout, l'image est
+   * dessinée pour lui). Xéros à l'est, à l'ouest, au nord ou au sud de la pièce ; depuis un autre bout, c'est le message de \`ends\`.
+   */
+  side: z.enum(['west', 'east', 'north', 'south']).optional(),
+  /**
+   * Quand on plante (\`plant\`) : l'objet que devient celui-ci selon le bout depuis lequel Xéros plante (le bout où il se tient :
+   * le coin et la fente partent de là). Sans entrée pour ce bout, \`becomes\`.
+   */
+  becomesAt: z.partialRecord(z.enum(['west', 'east', 'north', 'south']), id).optional(),
   /** Prix du coup en endurance : une clé de `costs` de stamina.json. Absent : `chop` (`cutTie` pour le billot qui porte une corde). */
   effort: z.enum(['chop', 'cutTie', 'plant', 'maul']).optional(),
   /**

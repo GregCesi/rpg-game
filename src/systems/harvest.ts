@@ -3,6 +3,9 @@ import { DEPTH, HARVEST, INTERACT, NOTCH_AIM, TILE } from '../config';
 import type { Player } from '../entities/Player';
 import { gestures, items, props } from '../content';
 import type { Drop, Facing } from '../content/types';
+
+/** Un bout d'une pièce couchée : l'ouest, l'est, le nord ou le sud. */
+export type End = 'west' | 'east' | 'north' | 'south';
 import { changeObject, changeSpawned, dropItem, game, setChangeHits, setSpawnedHits, spawnObject, take } from '../state';
 import { footprint, notchCut, promptTop } from '../world/GameMap';
 import type { Box, GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
@@ -28,21 +31,26 @@ function notchInReach(player: Player, p: PlacedProp): boolean {
 }
 
 /**
- * Xéros est à un bout de la pièce, tourné vers sa face coupée : à l'est ou à l'ouest d'une pièce est-ouest (plus large que
+ * Le bout de la pièce où se tient Xéros (\`west\`, \`east\`, \`north\`, \`south\`), tourné vers sa face coupée : à l'est ou à l'ouest d'une pièce est-ouest (plus large que
  * profonde, d'après ses \`dims\`), au nord ou au sud d'une pièce nord-sud, face à elle, et à hauteur de sa collision.
  */
-export function atEnd(player: Player, p: PlacedProp): boolean {
+export function endOf(player: Player, p: PlacedProp): End | undefined {
   const box = p.box;
-  if (!box) return false;
+  if (!box) return undefined;
   const b = player.actor.body;
   const f = player.actor.facing;
   const cx = (box.left + box.right) / 2;
   const cy = (box.top + box.bottom) / 2;
   if (p.def.dims.w >= p.def.dims.d) {
-    return b.bottom > box.top && b.top < box.bottom && ((f === 'right' && b.center.x < cx) || (f === 'left' && b.center.x > cx));
+    if (!(b.bottom > box.top && b.top < box.bottom)) return undefined;
+    return f === 'right' && b.center.x < cx ? 'west' : f === 'left' && b.center.x > cx ? 'east' : undefined;
   }
-  return b.right > box.left && b.left < box.right && ((f === 'down' && b.center.y < cy) || (f === 'up' && b.center.y > cy));
+  if (!(b.right > box.left && b.left < box.right)) return undefined;
+  return f === 'down' && b.center.y < cy ? 'north' : f === 'up' && b.center.y > cy ? 'south' : undefined;
 }
+
+/** Le bout où se tient celui qui frappe, d'après la direction où il regarde (vers la droite : il est à l'ouest). */
+const END_OF_FACING: Record<Facing, End> = { right: 'west', left: 'east', down: 'north', up: 'south' };
 
 /**
  * Ce qu'a donné un coup : rien à frapper, mauvais outil (`tool` = l'outil qu'il faut), ou un coup porté.
@@ -127,7 +135,10 @@ export class HarvestSystem {
     const h = prop.def.harvest;
     if (!h || !tool) return undefined;
     if (tool !== h.tool && h.refuse[tool]) return h.refuse[tool];
-    if (tool === h.tool && h.ends && player && !atEnd(player, prop)) return h.ends;
+    if (tool === h.tool && h.ends && player) {
+      const end = endOf(player, prop);
+      if (!end || (h.side && h.side !== end)) return h.ends;
+    }
     if (tool === h.tool && h.staged && prop.hits >= h.hits - 1 && !this.splitFree(prop)) return 'Pas la place pour la fendre.';
     return undefined;
   }
@@ -380,13 +391,15 @@ export class HarvestSystem {
     const spawnFlip = (type: string) => flip && (!!h.fall || hasLeft(type));
     const spawnX = (type: string, off: number, w: number) => (fallLeft ? 2 * h.fall!.foot - (off + w - 1) : mirror(off, w, spawnFlip(type)));
     const [ax, dy] = h.at ?? [0, 0];
-    const keep = prop.flip && !!h.becomes && hasLeft(h.becomes);
-    const x = prop.x + (h.becomes ? mirror(ax, this.imageWidth(h.becomes), keep) : ax);
+    // planté depuis un bout : l'objet qui en naît est celui de ce bout (le coin et la fente partent de là)
+    const becomes = h.becomesAt?.[END_OF_FACING[facing]] ?? h.becomes;
+    const keep = prop.flip && !!becomes && hasLeft(becomes);
+    const x = prop.x + (becomes ? mirror(ax, this.imageWidth(becomes), keep) : ax);
     const y = prop.y + dy;
     const { baseX, baseY } = prop;
     this.map.removeProp(prop);
-    const next = h.becomes ? this.map.placeProp({ id: prop.id, type: h.becomes, x, y }, { flip: keep, spawned: prop.spawned, chain: prop.chain }) : undefined;
-    const change = h.becomes ? { type: h.becomes, x, y, ...(keep ? { flip: true } : {}) } : { x, y };
+    const next = becomes ? this.map.placeProp({ id: prop.id, type: becomes, x, y }, { flip: keep, spawned: prop.spawned, chain: prop.chain }) : undefined;
+    const change = becomes ? { type: becomes, x, y, ...(keep ? { flip: true } : {}) } : { x, y };
     if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
     else changeObject(game, mapId, prop.id, change);
     // ce qui naît (l'arbre couché) : noté tout de suite, montré à la fin de la chute
