@@ -18,18 +18,6 @@ import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { hewnTone } from './wood';
 
-/**
- * Palette des pièces : la palette commune, plus la rampe du bois grisé par les intempéries (le toit de planches). Elle
- * en dérive : chaque teinte est le mélange à moitié d'une teinte du bois (M m N) et de la pierre de même rang (R r z Z),
- * pour un bois brut qui a pris la pluie, moins jaune que le bois équarri frais (Y t T) et que le chaume.
- */
-const palette = {
-  ...world,
-  S: '#af976f', // M + R : la planche la plus claire, au faîte
-  A: '#a0886a', // M + r : planche claire
-  B: '#7f684f', // m + z : planche ordinaire
-  Q: '#5e4b3a', // N + Z : planche à l'ombre, fil, tranche
-};
 
 // ---------- Dé de pierre ----------
 
@@ -272,7 +260,7 @@ function shedRoof(): Canvas {
   return c;
 }
 
-const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
+const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
 export default [
   img('footing-stone', footingStone()),

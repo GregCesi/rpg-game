@@ -29,6 +29,14 @@ export const world = {
   M: '#a67d51',
   N: '#5f412b',
   K: '#46301f',
+  // bois grisé par les intempéries (toit de planches de l'abri, bois brut de la cabane et de la maison) : chaque teinte
+  // est le mélange à moitié d'une teinte du bois (M m N) et de la pierre de même rang (R r z Z), moins jaune que le bois
+  // équarri frais (Y t T) et que le chaume. Du plus clair au plus sombre ; K pour les joints. Quelques palettes locales
+  // (portraits, personnages, intérieur, dialogue) redonnent leur propre sens à S, A, B ou Q.
+  S: '#af976f', // M + R : la planche la plus claire, au faîte
+  A: '#a0886a', // M + r : planche claire
+  B: '#7f684f', // m + z : planche ordinaire
+  Q: '#5e4b3a', // N + Z : planche à l'ombre, fil, tranche
   // feuillage
   l: '#5d6e34',
   L: '#76863f',
