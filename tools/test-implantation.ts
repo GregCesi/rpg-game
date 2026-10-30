@@ -23,10 +23,12 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const stateUrl = '/src/state/index.ts';
       const massUrl = '/src/content/mass.ts';
       const planUrl = '/src/world/sitePlan.ts';
+      const shapeUrl = '/src/world/woodShape.ts';
       const contentUrl = '/src/content/index.ts';
       const gs = await import(stateUrl);
       const mass = await import(massUrl);
       const sp = await import(planUrl);
+      const shape = await import(shapeUrl);
       const content = await import(contentUrl);
       const emit = (c: unknown) => g.events.emit('dieu', c);
       const notices: string[] = [];
@@ -267,6 +269,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       out.dice = dice;
       out.statusDone = statusText()[0];
       out.ghostsPosts = ghostKeys();
+      out.upKeys = [300, 180].map((length) => shape.woodKey({ size: 'normal', length, shape: 'round', hewn: 12, axis: 'up' }));
       await shot('5-quatre-des');
       // les poteaux sont ouverts ; le poteau haut ne se porte pas : E devant sa place dit ce qu'il faut (une poutre au pied du dé), un piquet en main ou non
       await give({ item: 'stake' });
@@ -350,7 +353,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
   }
   assert.equal(r.statusHalf, 'Abri à bois : dés, 2 sur 4');
   assert.equal(r.statusDone, 'Abri à bois : poteaux, 0 sur 4');
-  assert.deepEqual(r.ghostsPosts, ['shed-post-high', 'shed-post-high', 'shed-post-low', 'shed-post-low'], 'les poteaux en fantôme');
+  assert.deepEqual(r.ghostsPosts, [r.upKeys[0], r.upKeys[0], r.upKeys[1], r.upKeys[1]].sort(), 'les poteaux en fantôme : la pièce de bois debout attendue (poutre de 3 m au nord, de 1,80 m au sud)');
   assert.equal(r.postNotice, "Il faut d'abord une poutre de 3 m au pied du dé.", 'le poteau haut demande de l’aide : une poutre au pied du dé');
   assert.equal(r.postPlaced, 4);
 

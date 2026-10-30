@@ -3,6 +3,8 @@
 // poteaux bas (1,80 m, 65 kg) se dressent portés, au prix de l'effort ; les deux poteaux hauts (3 m, 108 kg) ne se portent pas :
 // sans poutre au pied du dé on le dit, avec elle E maintenu appelle la mère (fondu, « Ta mère vient t'aider. », la moitié de
 // l'effort) ; les quatre poteaux posés, la ligne passe aux sablières ; la page rechargée les retrouve avec leur pièce d'origine.
+// Un chantier montre les vraies pièces posées : un poteau dressé est la pièce de bois debout (même état, même longueur, même clé
+// d'image que son fantôme), et sa silhouette a la taille au gabarit (une poutre de 1,80 m : 4 × 38 px ; de 3 m : 4 × 62).
 // Usage : npm run test:poteaux (lancé aussi par npm run test).
 
 import assert from 'node:assert/strict';
@@ -22,10 +24,16 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const planUrl = '/src/world/sitePlan.ts';
       const contentUrl = '/src/content/index.ts';
       const massUrl = '/src/content/mass.ts';
+      const shapeUrl = '/src/world/woodShape.ts';
+      const pieceUrl = '/src/world/woodPiece.ts';
+      const gabaritUrl = '/src/content/gabarit.ts';
       const gs = await import(stateUrl);
       const sp = await import(planUrl);
       const content = await import(contentUrl);
       const mass = await import(massUrl);
+      const shape = await import(shapeUrl);
+      const woodPiece = await import(pieceUrl);
+      const gabarit = await import(gabaritUrl);
       const emit = (c: unknown) => g.events.emit('dieu', c);
       const notices: string[] = [];
       g.events.on('notice', (t: string) => notices.push(t));
@@ -54,7 +62,6 @@ await playtest('poteaux', async ({ page, errors, load }) => {
         await sleep(400);
       };
       const mapId = () => w().map.def.id;
-      const props = (re: RegExp) => w().map.props.filter((p: any) => re.test(p.type));
       const site = () => gs.mapState(gs.game, mapId()).sites[0];
       const plan = content.plans.woodshed;
       const hands = () => JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both);
@@ -62,7 +69,24 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const stamina = () => w().player.stamina.value;
       const shot = (name: string) => (window as any).shot(name);
       const beam = (length: number, hewn = 12) => ({ prop: 'wood-piece', wood: { size: 'normal', length, shape: 'round', ...(hewn ? { hewn } : {}), axis: 'ew' } });
-      const aim = (id: string) => sp.placeGround(site(), plan.steps[1].places[id]);
+      const aim = (id: string) => sp.placeGround(site(), plan.steps[1].places[id], plan.steps[1]);
+      // la pièce de bois dressée d'une poutre de `length` cm, sa clé d'image, ses poteaux sur la carte, sa silhouette dessinée
+      const upright = (length: number) => ({ size: 'normal', length, shape: 'round', hewn: 12, axis: 'up' });
+      const upKey = (length: number) => shape.woodKey(upright(length));
+      const posts = (length?: number) => w().map.props.filter((p: any) => p.type === 'wood-piece' && p.wood?.axis === 'up' && (length === undefined || p.wood.length === length));
+      const silhouette = (p: any) => {
+        const f = p.image.frame;
+        const cv = p.image.texture.getSourceImage();
+        const px = cv.getContext('2d').getImageData(f.cutX, f.cutY, f.cutWidth, f.cutHeight).data;
+        let [x0, y0, x1, y1] = [f.cutWidth, f.cutHeight, -1, -1];
+        for (let y = 0; y < f.cutHeight; y++) for (let x = 0; x < f.cutWidth; x++) if (px[(y * f.cutWidth + x) * 4 + 3] > 0) [x0, y0, x1, y1] = [Math.min(x0, x), Math.min(y0, y), Math.max(x1, x), Math.max(y1, y)];
+        return { w: x1 - x0 + 1, h: y1 - y0 + 1 };
+      };
+      const lookOf = (length: number) => {
+        const list = posts(length);
+        const want = gabarit.expectedSize(woodPiece.woodDims(upright(length)));
+        return { count: list.length, keys: [...new Set(list.map((p: any) => p.image.texture.key))], pieces: [...new Set(list.map((p: any) => JSON.stringify(p.wood)))], sil: list.map(silhouette), width: list.map((p: any) => p.image.width), height: list.map((p: any) => p.image.height), want: { w: want.w, h: want.h } };
+      };
       const ghost = (key: string) => w().site.ghosts.images.filter((i: any) => i.visible && i.texture.key === key).map((i: any) => [i.x, i.y]);
       const out: Record<string, any> = {};
 
@@ -84,8 +108,9 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       emit({ kind: 'skip-step' });
       await sleep(300);
       out.start = JSON.stringify({ placed: Object.keys(site().placed).length, status: statusText() });
-      out.ghostsHigh = ghost('shed-post-high');
-      out.ghostsLow = ghost('shed-post-low');
+      out.ghostsHigh = ghost(upKey(300));
+      out.ghostsLow = ghost(upKey(180));
+      out.upKeys = [upKey(300), upKey(180)];
 
       // 1. les refus, avec une force doublée pour pouvoir tenir une poutre de 2 m ou de 3 m : rien ne se dépense, la pièce reste en main
       emit({ kind: 'force', multiplier: 2 });
@@ -125,13 +150,14 @@ await playtest('poteaux', async ({ page, errors, load }) => {
         await sleep(200);
       }
       out.low = low;
-      out.postsLow = props(/^shed-post-low$/).length;
+      out.postsLow = posts(180).length;
+      out.lookLow = lookOf(180);
       out.massLow = mass.woodMass({ size: 'normal', length: 180, shape: 'round', hewn: 12, axis: 'ew' });
       out.kept = JSON.stringify(site().pieces);
       out.statusLow = statusText();
       // un poteau dressé est exactement où était son fantôme (la même image, le même coin)
-      const placedAt = (type: string) => props(new RegExp(`^${type}$`)).map((p: any) => [p.image.x, p.image.y]).sort();
-      out.lowAtGhost = JSON.stringify({ ghosts: out.ghostsLow.slice().sort(), posts: placedAt('shed-post-low') });
+      const placedAt = (length: number) => posts(length).map((p: any) => [p.image.x, p.image.y]).sort();
+      out.lowAtGhost = JSON.stringify({ ghosts: out.ghostsLow.slice().sort(), posts: placedAt(180) });
       await shot('1-bas');
 
       // 3. les poteaux hauts : trop lourds à porter (la force ne suffit pas), on les équarrit sur place, la mère aide
@@ -181,7 +207,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       out.motherNotice = notices.at(-1);
       await shot('3-fondu');
       await settled();
-      out.helped = JSON.stringify({ mode: w().mode, hands: hands(), posts: props(/^shed-post-high$/).length, status: statusText(), cost: 100 - stamina(), beamOnGround: props(/^wood-piece$/).length });
+      out.helped = JSON.stringify({ mode: w().mode, hands: hands(), posts: posts(300).length, status: statusText(), cost: 100 - stamina(), beamOnGround: w().map.props.filter((p: any) => p.type === 'wood-piece' && p.wood?.axis !== 'up').length });
       out.highPieces = JSON.stringify(site().pieces['post-nw']);
       out.massHigh = site().pieces['post-nw'] ? mass.woodMass(site().pieces['post-nw']) : -1;
       await shot('4-pose');
@@ -196,12 +222,13 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       await press('KeyE');
       await press('KeyE');
       await settled();
-      out.secondHigh = JSON.stringify({ posts: props(/^shed-post-high$/).length, cost: 100 - stamina(), placed: Object.keys(site().placed).length });
+      out.secondHigh = JSON.stringify({ posts: posts(300).length, cost: 100 - stamina(), placed: Object.keys(site().placed).length });
 
       // 4. les quatre poteaux : la ligne passe aux sablières, dont les fantômes paraissent (étape encore « à venir »)
       out.status = statusText();
       out.ghostsPlates = w().site.ghosts.images.filter((i: any) => i.visible).map((i: any) => i.texture.key).sort();
-      out.highAtGhost = JSON.stringify({ ghosts: out.ghostsHigh.slice().sort(), posts: placedAt('shed-post-high') });
+      out.highAtGhost = JSON.stringify({ ghosts: out.ghostsHigh.slice().sort(), posts: placedAt(300) });
+      out.lookHigh = lookOf(300);
       await give({ item: 'stake' });
       const plate = sp.placeGround(site(), plan.steps[2].places['plate-north']);
       await lookAt(plate.x, plate.y);
@@ -249,6 +276,16 @@ await playtest('poteaux', async ({ page, errors, load }) => {
     assert.equal(d.status, 'Abri à bois : poteaux, ' + (i + 1) + ' sur 4');
   }
   assert.equal(r.postsLow, 2, 'deux poteaux bas sur la carte');
+  // ce qu'on pose est ce qu'on voit : le poteau est la pièce de bois debout, de même état et de même longueur que la poutre posée
+  {
+    const d = r.lookLow;
+    assert.equal(d.count, 2);
+    assert.deepEqual(d.pieces, ['{"size":"normal","length":180,"shape":"round","hewn":12,"axis":"up"}'], 'le poteau bas est la poutre de 1,80 m, équarrie, debout');
+    assert.deepEqual(d.keys, [r.upKeys[1]], 'son image est celle de la pièce de bois debout (celle de son fantôme)');
+    assert.ok(d.sil.every((s: any) => Math.abs(s.w - d.want.w) <= 2 && Math.abs(s.h - d.want.h) <= 2), `une poutre de 1,80 m dressée fait la taille au gabarit : ${JSON.stringify(d.sil)}, attendu ${JSON.stringify(d.want)}`);
+    assert.deepEqual(d.want, { w: 4, h: 38 }, 'le gabarit : 4 × 38 px (1,80 m + la moitié de 20 cm de profondeur)');
+    assert.ok(d.height.every((h: number) => h === 38 + 3), 'son image : 38 rangées et les 3 du dé');
+  }
   const kept = JSON.parse(r.kept);
   assert.deepEqual(Object.keys(kept).sort(), ['post-se', 'post-sw'], 'les poteaux posés gardent leur pièce d’origine');
   assert.deepEqual(kept['post-sw'], { size: 'normal', length: 180, shape: 'round', hewn: 12, axis: 'ew' });
@@ -284,6 +321,13 @@ await playtest('poteaux', async ({ page, errors, load }) => {
     assert.equal(d.placed, 8);
     assert.ok(Math.abs(d.cost - 0.5 * 0.06 * 108) < 1e-6, `deuxième poteau haut : ${d.cost}`);
   }
+  {
+    const d = r.lookHigh;
+    assert.equal(d.count, 2);
+    assert.deepEqual(d.pieces, ['{"size":"normal","length":300,"shape":"round","hewn":12,"axis":"up"}'], 'le poteau haut est la poutre de 3 m, équarrie, debout');
+    assert.deepEqual(d.keys, [r.upKeys[0]], 'son image est celle de la pièce de bois debout');
+    assert.ok(d.sil.every((s: any) => Math.abs(s.w - d.want.w) <= 2 && Math.abs(s.h - d.want.h) <= 2), `une poutre de 3 m dressée fait la taille au gabarit : ${JSON.stringify(d.sil)}, attendu ${JSON.stringify(d.want)}`);
+  }
   assert.equal(r.status, 'Abri à bois : sablières, 0 sur 4', 'quatre poteaux : la ligne passe aux sablières');
   assert.equal(r.ghostsPlates.length, 4, 'les quatre sablières en fantôme');
   assert.ok(r.ghostsPlates.every((k: string) => k.startsWith('shed-plate')), `fantômes de sablière : ${r.ghostsPlates}`);
@@ -306,7 +350,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       map: w.map.def.id,
       placed: Object.keys(sites[0].placed).length,
       pieces: Object.fromEntries(Object.entries(sites[0].pieces).map(([k, v]: [string, any]) => [k, v.length])),
-      posts: w.map.props.filter((p: any) => /^shed-post-(high|low)$/.test(p.type)).length,
+      posts: w.map.props.filter((p: any) => p.type === 'wood-piece' && p.wood?.axis === 'up').length,
       status: w.site.texts.map((t: any) => t.text.text),
     };
   });
