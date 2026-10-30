@@ -5,6 +5,7 @@
   "scripts": {
     "art": "tsx tools/build-art.ts",
     "art:preview": "tsx tools/build-art.ts --preview",
+    "art:essai": "tsx tools/essai-largeur.ts",
     "maps": "tsx tools/build-maps.ts",
     "check": "npm run art && npm run maps && tsx tools/check.ts",
     "dev": "npm run art && npm run maps && vite",

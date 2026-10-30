@@ -46,7 +46,7 @@ const GLYPHS: Record<string, string> = {
 
 type Rgb = [number, number, number];
 
-class Sheet {
+export class Sheet {
   readonly png: PNG;
   constructor(readonly w: number, readonly h: number, bg: Rgb) {
     this.png = new PNG({ width: w, height: h });
