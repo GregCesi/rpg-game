@@ -11,7 +11,9 @@ du rondin et de la poutre. Le contenu est dans `src/content/wood.json` ; voir CO
 - Réglages (GameState, `WoodPieceSchema` de `src/content/types.ts`) : `size`, le diamètre (`big` : 55 cm de bois, le gros arbre et
   le têtard ; `normal` : 30 cm) ; `length` en cm (sur la grille de 20 cm, 60 cm au moins) ; `shape` (`round`, `half`, `quarter`) ;
   `hewn` (coups de doloire : une face tous les 3, la poutre à 12) ; `axis` (`ew` est-ouest, `ns` nord-sud) ; `notch` (la coupe
-  commencée : `at` cm du bout ouest ou nord, `hits`) ; `wedge` (le coin planté : `end`, le bout, `hits`, les coups de masse).
+  commencée : `at` cm du bout ouest ou nord, `hits`) ; `wedge` (le coin planté : `end`, le bout, `hits`, les coups de masse) ;
+  `face` (le quartier seulement : le côté de sa face fendue debout, `north` ou `south` est-ouest, `east` ou `west` nord-sud ;
+  absent, sud ou est).
 - Nom affiché, selon le diamètre et l'aspect (wood.json, `looks`) : bille, demi-bille, quartier (le gros) ; rondin, poutre (le
   normal). Genre du nom pour les messages : « elle » (bille, demi-bille, poutre), « il » (quartier, rondin).
 - Nature : objet du monde (`props.json`), qui se prend quand il n'est pas trop lourd. Sa définition complète (dimensions,
@@ -29,8 +31,11 @@ du rondin et de la poutre. Le contenu est dans `src/content/wood.json` ; voir CO
 - Seuils de Xéros (`strength.json`) : porté jusqu'à 70 kg, marche normale jusqu'à 25 kg, roulé jusqu'à 300 kg.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
-- Contour compris : longueur L ; diamètre 65 cm (gros), 40 cm (normal) ; demi : la moitié en hauteur ; quart : la moitié en
-  largeur et en hauteur ; poutre : 30 × 30 cm (20 × 20 de bois).
+- Contour compris : longueur L ; diamètre 65 cm (gros), 40 cm (normal) ; demi : la moitié en hauteur ; poutre : 30 × 30 cm
+  (20 × 20 de bois). Le quartier, un quart de rond posé sur un rayon, sans contour : 27,5 × 27,5 cm (le rayon de la bille), soit
+  20 × 8 px à 1 m est-ouest, 6 × 16 px nord-sud, la même épaisseur dans les deux sens. `validate.ts` vérifie la silhouette de la
+  demi-bille, du quartier (ses quatre positions) et de la poutre, dans les deux sens, à 60 cm, 1 m, 2 m et 3 m (`woodSilhouettes`
+  du manifeste, tirées par build-art des pièces assemblées).
 - Est-ouest : L/5 px de long, plus une colonne d'ombre (21 px pour 1 m) ; hauteur de l'image selon l'aspect (`ew.h` : 16 pour
   la bille du gros, 10 pour le rondin). Nord-sud : largeur selon l'aspect (`ns.w` : 14, 9), hauteur `extra` + L/10 px (le dessus
   vu à ½). La bille de 1 m du gros, étalon du gabarit : 20 × 13 px de silhouette (`dims` de `wood-piece` : 100 × 65 × 65).
@@ -41,37 +46,47 @@ du rondin et de la poutre. Le contenu est dans `src/content/wood.json` ; voir CO
   (`wood-big`, `wood-normal`, et `-ns`), par les opérations de `src/world/woodShape.ts` (`composeOps`) : le jeu à la volée
   (`src/world/woodTexture.ts`), le dessin pour les images de 1 m (`art/world/wood-pieces.ts`). Jamais retournée.
 - Aspects : rond (4 images de roulement), demi, quart (le gros) ; une, deux, trois faces dressées, poutre (le normal).
+- Le quartier dans ses quatre positions, lumière toujours en haut à gauche, sans miroir (`quarter-<face>-…`) : est-ouest face debout
+  au sud, la face fendue claire et ses cernes en face sud, l'écorce qui descend vers le nord ; est-ouest face debout au nord, le
+  dessus de l'arête et l'écorce en face sud ; nord-sud, le bout sud montre la part de tarte, la face debout à l'est ou à l'ouest.
 - Encoche : une bande à sa place (un tiers, deux tiers).
 - Coin planté : la partie du bout où il est planté est remplacée (coin dans la face de coupe vue, tête qui dépasse au bout caché) ;
-  la fente court sur un tiers, deux tiers de la longueur depuis ce bout ; au dernier coup, le bois grand ouvert un instant.
+  il s'enfonce à chaque coup (3 images : il sort de 3, 2, 1 px) ; la fente court depuis ce bout sur la part de la longueur déjà
+  fendue (coups reçus sur coups à donner) ; au dernier coup, le bois grand ouvert un instant.
 - Portée (`carry`), dans le sens de la marche : de face et de dos, par le bout (`held-wood-<diamètre>-<aspect>`, vue qui ne
   dépend pas de la longueur) ; de profil, la pièce assemblée à sa longueur, sans ombre, son milieu dans les mains.
 - Case d'interface : `item-wood-<diamètre>-<aspect>`, et sa longueur écrite en bas de la case (« 1 m »).
-- Fantôme : la pièce d'un tas, à sa place.
+- Fantôme : la pièce en transparence là où E la posera, dans son sens : seule au sol, contre une pièce identique (le tas qui naît),
+  ou à la place d'un tas.
 - Invite de coupe : « Espace » sur la coupe visée et, au-dessus, les deux longueurs (« 3 m | 2,8 m »).
 
 ## Regroupement
-Seule, ou en tas pour les pièces de **1 m** (pour l'instant) : la bille ronde du gros (`big-logs`), le rondin rond du normal
-(`normal-logs`), le quartier (`big-quarters`), chacun 3 au sol, 2 dans les creux, 1 au sommet, est-ouest ou nord-sud.
+Seule, ou en tas si elle se porte (70 kg ou moins), de toute longueur et de tout état. Un tas naît quand on la pose contre une pièce
+identique seule au sol, et prend tout d'elle (diamètre, état, longueur, sens) ; il n'accepte que des pièces identiques. Sa forme se
+calcule d'après la section (`src/world/woodPile.ts`) : pyramide de 6 pour le rond (même entamé à la doloire), rangées de 3 × 3 pour
+la demi-bille, le quartier (tête-bêche : la face debout d'un côté puis de l'autre) et la poutre ; est-ouest ou nord-sud. Exemples :
+bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1,20 m (64 kg), demi-bille de 60 cm, poutre jusqu'à
+1,80 m.
 
 ## Gestes
 - E court : la prendre à deux mains si elle pèse 70 kg ou moins (sinon « Trop lourd(e) à porter. Pousse-le (-la) pour le (la)
   faire rouler. ») ; pas pendant une coupe ni avec un coin planté.
 - Pousser (mains libres, contre elle) : la pièce ronde roule perpendiculairement à son axe jusqu'à 300 kg ; la poutre (« Elle ne
   roule pas : elle est carrée. »), une pièce à une face dressée, la demi-bille et le quartier (à plat) ne roulent pas.
-- R maintenu au contact, mains libres : un quart de tour (est-ouest <-> nord-sud), à toute longueur, s'il y a la place. R en main :
-  elle sera posée dans l'autre sens.
+- R maintenu au contact, mains libres : un quart de tour dans le sens des aiguilles d'une montre (est-ouest <-> nord-sud ; la face
+  debout d'un quartier suit : nord, est, sud, ouest), à toute longueur, s'il y a la place. R en main : de même, elle sera posée
+  dans ce sens.
+- E dans le vide (ou Q) : la poser là où le montre son fantôme (seule, contre une pièce identique, ou sur son tas).
 - Espace, la cognée, contre son flanc : la coupe s'aimante tous les 20 cm depuis le bout le plus proche de Xéros ; refusée si un
   morceau ferait moins de 60 cm (« Le bout serait trop court. »), sur une pièce de moins de 1,20 m (« Trop court pour être
   recoupé. »), sur une demi ou un quart (« On coupe avant de fendre. »), sur une pièce dressée (« On coupe avant d'équarrir. ») ;
   trois coups, deux pièces. 0,8 point le coup.
 - Espace, la doloire, contre le flanc d'une pièce ronde du normal : une face tous les 3 coups, la poutre à 12 ; le gros : « Trop
   grosse pour une poutre. » ; 0,333 point par coup et par mètre.
-- Espace, le coin, à un bout d'une bille ou d'une demi-bille du gros (1 m au plus, « Trop longue pour un seul coin. ») : il se
-  plante d'un coup, sans geste ; depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. » ; le quartier :
+- Espace, le coin, à un bout d'une bille ou d'une demi-bille du gros, de toute longueur : il se plante d'un coup, sans geste ; depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. » ; le quartier :
   « Trop mince pour le coin. » ; le normal : « Ce bois ne se fend pas : il se coupe et s'équarrit. ». 1 point.
-- Espace, la masse, depuis le bout du coin : trois coups (la fente court), et deux morceaux (demi-billes, puis quartiers), le coin
-  au sol ; sans coin : « Il faut d'abord un coin. » ; depuis l'autre bout : « Les coups se donnent sur le bout, là où le coin est
+- Espace, la masse, depuis le bout du coin : 3 coups par mètre commencé (6 pour 2 m ; la fente court, le coin s'enfonce), et deux
+  morceaux (demi-billes, puis quartiers, nés faces debout opposées), le coin au sol ; sans coin : « Il faut d'abord un coin. » ; depuis l'autre bout : « Les coups se donnent sur le bout, là où le coin est
   planté. » ; sans place : « Pas la place pour la fendre. ». 0,8 point le coup.
 
 ## Origine
@@ -80,12 +95,13 @@ Un arbre abattu puis ébranché : son tronc devient une seule pièce ronde de sa
 mère), avec des réglages en propriétés (`size`, `length`, `shape`, `axis`, `hewn`) ou ceux de props.json.
 
 ## Devenir
-Les billes de 1 m vont en tas pour le chauffage, ou se fendent en quartiers ; les rondins du normal deviennent les poteaux de l'abri
+Les billes, quartiers et rondins qui se portent vont en tas pour le chauffage, ou se fendent en quartiers ; les rondins du normal deviennent les poteaux de l'abri
 (3 m et 1,80 m), équarris au pied du chantier.
 
 ## Vérification
 - Aperçu : `.art-preview/bois.png` (chaque diamètre et aspect, plusieurs longueurs, roulement, encoche, coin et fente, vues
   portées, icônes), `.art-preview/arbres.png`, `.art-preview/piles.png`, `.art-preview/gabarit.png`.
-- Tests : `npm run test:fendage`, `npm run test:equarrissage`.
+- Tests : `npm run test:fendage` (dont une bille de 2 m, et un tour complet du quartier avec R), `npm run test:equarrissage`,
+  `npm run test:tas`.
 - En jeu (`?dieu`, « Pièce de bois ») : poser des pièces de chaque diamètre, longueur, état et sens ; les couper, les rouler, les
   pivoter, les porter, les fendre, les équarrir.

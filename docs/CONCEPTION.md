@@ -122,7 +122,42 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
   Les billes des gros (95 cm) se fendent en quatre sur place (voir *Fendre*) ; plus tard, les quartiers se refendront en bûches sur le billot. Tous se coupent de la même façon : ils tombent du côté opposé à Xéros, s'ébranchent, se tronçonnent aux encoches, et leurs billes se portent, se tournent et s'empilent, chacune en tas de sa propre sorte (les billes des deux gros vont ensemble, celles du normal à part). Chaque pièce porte le nom de sa sorte en tête de clé (`big-tree`, `big-pollard`, `normal-tree`, `big-felled-log`, `normal-felled-log`...). Depuis l'équarrissage (30 octobre 2026), l'arbre normal ne se tronçonne plus aux encoches : ébranché, il devient un rondin de 5 m qu'on coupe où l'on veut (voir *Bois d'œuvre*).
 - Pas encore discuté : la brouette. Le tas : voir *Les tas*.
 
-## Les tas (décidé le 29 octobre 2026, repris le même jour)
+## Les tas (décidé le 29 octobre 2026, repris le même jour, puis le 30 octobre 2026, « tas »)
+
+Repris le 30 octobre 2026 (chantier « tas ») : depuis la pièce de bois, on tirait des pièces de toutes longueurs et de plusieurs états,
+mais seules celles de 1 m s'empilaient, et beaucoup d'objets n'avaient ni fantôme ni pose à côté. En jouant, ça cassait le geste de
+base : ranger ce qu'on vient de faire.
+
+- **Tout se pose, avec son fantôme.** Tout ce qu'on porte (pièce de bois de toute longueur et de tout état, pierre plate, piquet,
+  branche, corde, outils, fagot...) se pose avec E dans le vide (ou Q), là où le montre un fantôme en transparence : où il va tomber,
+  dans quel sens (R le tourne avant de poser). Si la place juste devant Xéros est prise, il se pose à côté, à la place libre la plus
+  proche ; sans aucune place, « Pas la place ici. ». Un seul chemin de pose pour tout (`systems/hands.ts`). Le fantôme ne se montre
+  pas quand E vise autre chose (E agirait alors sur la cible).
+- **La règle de la première pièce.** Un tas naît quand on pose une pièce contre une pièce identique déjà seule au sol, ou s'agrandit
+  quand on la pose sur un tas commencé. Il prend tout de sa première pièce : diamètre, état, longueur, sens (et elle reste à sa place
+  exacte). On n'y ajoute que des pièces identiques ; une autre pièce visée sur le tas est posée à côté, avec son fantôme, sans
+  message d'erreur. Une pièce posée seule reste une pièce (elle se coupe, se fend, roule, pivote) : seule la deuxième fait le tas.
+- **Des formes calculées, pas écrites.** La forme d'un tas de bois se calcule à partir de la section de sa pièce, pour toute
+  longueur (`src/world/woodPile.ts`) : une section ronde (bille, rondin, même entamé à la doloire) fait une pyramide (3 au sol, 2
+  dans les creux, 1 au sommet) ; les sections plates ou carrées (demi-bille, quartier, poutre) font des rangées droites de 3 de large
+  sur 3 de haut, les quartiers tête-bêche (la face fendue debout d'un côté, puis de l'autre, comme un vrai tas de bois fendu). Au
+  sol, les pièces sont côte à côte à la largeur de leur collision ; une couche monte de la hauteur de la section (√3/2 dans les creux
+  d'une pyramide). Le dessin du tas s'assemble pour toute longueur, comme les pièces.
+- **Ce qui va en tas : ce qui se porte.** Seule une pièce de 70 kg ou moins (ce que porte Xéros, `carry` de strength.json, sans le
+  multiplicateur de ?dieu) va en tas ; une pièce plus lourde se pose seule, ou se roule. **Pourquoi** : un tas se construit en
+  portant ses pièces une à une, et on le défait de même ; une pièce que Xéros ne soulève pas ne monte pas sur un tas, et ne s'en
+  reprendrait pas. Le fendage rend la grosse bille empilable (quartiers de 53,5 kg à 1 m) ; une pièce plus courte se porte aussi
+  (le rondin de 1 m, 63,6 kg ; la demi-bille de 60 cm, 64 kg).
+- **Ce qui reste écrit à la main** (`piles.json`) : ce qui ne se calcule pas, parce que chaque place a son propre dessin ou que la
+  pièce n'est pas du bois : les branches (10 places tête-bêche dessinées une à une, leur lien et leur compte), les fagots (6 places,
+  nord-sud avec R). Les anciens tas de billes, de rondins et de quartiers de 1 m sont des tas calculés (sauvegarde : `SAVE_VERSION` 8,
+  convertie ; les quartiers passent de la pyramide aux rangées).
+- Le reste ne change pas : reprendre (E, mains libres) enlève la pièce la plus haute, la place visée dépend de l'endroit où se tient
+  Xéros (le creux au centre, le sol à côté), un tas bloque le passage dès sa première pièce (les branches à 3), le lien et le nœud
+  des fagots sont les mêmes.
+
+Ce qui suit est la décision du 29 octobre 2026, gardée pour mémoire (les tas de 1 m écrits à la main y sont remplacés par ce qui
+précède) :
 
 - **On construit un tas pièce par pièce, comme en vrai.** Un tas a des places, décrites en données : leur position, leur couche, et les places qui les portent (une place du dessus n'existe que quand celles qui la portent sont prises). Chaque place a sa pièce ; le tas s'affiche couche par couche, du bas vers le haut, sauf les billes, affichées de l'arrière vers l'avant : la bille de devant se voit entière et ne cache de celle de derrière que ce qu'elle cacherait vraiment (précisé le 29 octobre 2026). Une bille a la même longueur (19 px, 95 cm, celle de la pièce du tronc) et le même diamètre (13 px contour compris, 65 cm, dont 11 px d'écorce) dans les deux sens ; au sol, deux billes voisines sont à 11 px l'une de l'autre.
 - **Poser** : la place visée dépend de l'endroit où se tient Xéros le long du tas. Au centre entre deux pièces posées, la pièce monte dans le creux ; décalé, elle va au sol à côté. Une prévisualisation en transparence montre la pièce à la place exacte où elle ira, et suit Xéros. **Reprendre** (E, mains libres) enlève la pièce la plus haute accessible.
@@ -258,6 +293,18 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 
 ## Fendre (décidé le 30 octobre 2026)
 
+Repris le 30 octobre 2026 (« tas ») : **toute longueur se fend**, toujours avec un seul coin planté dans le bout. Il faut **3 coups de
+masse par mètre**, arrondis au mètre au-dessus (3 pour 1 m, 6 pour 2 m, 9 pour 2,4 m) ; « Trop longue pour un seul coin. »
+disparaît. À chaque coup, la fente s'allonge sur les morceaux du milieu, du bout du coin jusqu'à l'autre bout, et **le coin
+s'enfonce** un peu (trois profondeurs dessinées : il sort de 3, 2, puis 1 px du bout) ; au dernier coup, le bois s'ouvre. Pourquoi un
+seul coin : c'est le bois de bout qui s'ouvre le long des fibres, et la fente court d'elle-même sur la longueur à force de coups ; il
+faut seulement plus de coups pour une pièce plus longue. **Le quartier** est un quart de rond couché sur une de ses faces fendues,
+l'autre face debout d'un côté, l'écorce qui descend en arrondi de l'autre : la pièce garde le côté de sa face debout (`face` : nord ou
+sud est-ouest, est ou ouest nord-sud) ; R (ou le pivot au sol) le tourne d'un quart de tour dans le sens des aiguilles d'une montre,
+la face suit (nord, est, sud, ouest). Les deux quartiers d'une demi-bille naissent côte à côte faces debout opposées, tournées l'une
+vers l'autre : ils reforment la demi-bille. Section : 27,5 × 27,5 cm (le rayon de la bille), soit 20 × 8 px à 1 m est-ouest et
+6 × 16 px nord-sud ; la même épaisseur dans les deux sens.
+
 Repris par *Le bois* (30 octobre 2026) : la bille, la demi-bille et le quartier sont des formes de la pièce de bois du gros, le coin planté un de ses réglages (son bout et ses coups) ; à 1 m, 107 kg la demi-bille, 53,5 kg le quartier.
 
 Une grosse bille pèse 203 kg : on ne la soulève pas. Alors on la fend **là où elle est couchée**, comme en vrai : un coin de fer planté dans le fil, des coups de masse dessus, et le bois s'ouvre. En deux, puis chaque moitié en deux : quatre quartiers d'environ 51 kg qui, eux, se portent.
@@ -322,7 +369,7 @@ longueurs libres et le fendage. On garde la coupe libre et on change la façon d
   peut les donner en propriétés.
 - **Les règles sont du contenu** (`src/content/wood.json`) : la densité (900 kg/m³), la grille, la plus courte pièce, la coupe (la
   cognée, 3 coups), l'équarrissage (la doloire, 3 coups par face, 4 faces, poutre de 20 cm), le fendage (le coin, la masse, 3 coups
-  par fente, une pièce de 1 m au plus par coin), et par diamètre ce qu'on a le droit de faire : **seul le gros se fend** (la bille en
+  par mètre commencé, un seul coin dans le bout, à toute longueur), et par diamètre ce qu'on a le droit de faire : **seul le gros se fend** (la bille en
   deux demi-billes, la demi-bille en deux quartiers) ; **on n'équarrit qu'une pièce ronde**, et seulement le normal (« Trop grosse
   pour une poutre. ») ; une demi ou un quart ne s'équarrit pas ; on coupe avant de fendre et avant d'équarrir.
 - **La masse se calcule** à partir des réglages (section × longueur × densité ; la demi, la moitié ; le quart, le quart ; une face
@@ -344,7 +391,7 @@ longueurs libres et le fendage. On garde la coupe libre et on change la façon d
   têtard 2 m, 428 kg ; le normal 5,8 m, 369 kg), qui se coupe où l'on veut sur la grille. Le têtard a le diamètre du gros : ses
   pièces sont des pièces « gros », sans rien de particulier. Un tronc entier ne bouge pas : c'est le calcul qui le dit (le tronc du
   gros pèse 855 kg et non 1,2 t : sa longueur utile s'arrête sous le houppier) ; il roulera plus tard, avec plus de force ou un outil.
-- **Les tas** n'acceptent pour l'instant que des pièces de 1 m (billes du gros, rondins du normal, quartiers), est-ouest ou nord-sud.
+- **Les tas** acceptent toute pièce qui se porte, de toute longueur et de tout état (voir *Les tas*, repris le 30 octobre 2026).
 - **L'abri suit la grille** : poteaux de 3 m au nord, **1,80 m** au sud (pente de 18,7°, 1,95 m sous la sablière basse).
 - **Sauvegarde** : `SAVE_VERSION` 7 ; une partie de la version 6 est convertie : toutes les anciennes clés de bois deviennent des
   pièces de bois équivalentes au même endroit (95 cm deviennent 1 m, les longueurs des rondins sont ramenées sur la grille, les
@@ -353,7 +400,7 @@ longueurs libres et le fendage. On garde la coupe libre et on change la façon d
 - **Outils de test** (`?dieu`, « Pièce de bois ») : poser ou donner une pièce en choisissant le diamètre, la longueur (sur la grille,
   de 60 cm à 7 m), l'état (rond, demi, quart, une à trois faces, poutre) et le sens.
 - **Nouveau bois = un diamètre ou un aspect dans le contenu** (wood.json, et ses dessins), **pas une nouvelle clé**.
-- **Ce qui vient** : les tas de toutes longueurs et le fendage de toute longueur (plusieurs coins) ; refendre le quartier en bûches
+- **Ce qui vient** : refendre le quartier en bûches
   sur le billot ; rouler un tronc entier avec plus de force ou un outil ; la scie.
 
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
