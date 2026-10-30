@@ -288,7 +288,7 @@ if (withPreview) {
   const pileDefs = parse('piles.json', z.record(z.string(), PileDefSchema), pilesJson);
   const pilesPng = pilesPreview(sources, pileDefs);
   if (pilesPng) writeFileSync(join(PREVIEW, 'piles.png'), PNG.sync.write(pilesPng));
-  // les deux arbres côte à côte, étape par étape ; et la vérification de la dernière image de chaque chute
+  // les arbres (KINDS de trees-preview.ts), étape par étape ; et la vérification de la première et de la dernière image de chaque chute
   const trees = treesPreview(sources, propDefs, pileDefs);
   if (trees.png) writeFileSync(join(PREVIEW, 'arbres.png'), PNG.sync.write(trees.png));
   for (const p of trees.problems) console.warn(`art : ATTENTION arbres : ${p}`);

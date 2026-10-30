@@ -1,8 +1,11 @@
-// arbres.png de npm run art:preview : les deux arbres côte à côte à chaque étape, le gros au-dessus du normal, au même
-// pas (même échelle, même sol). De haut en bas : debout (avec sa souche, et Xéros pour l'échelle), la chute à droite
-// (images 2 à 4), la chute à gauche, l'arbre couché tel que le jeu le pose (souche + pièces de `spawns`, d'après props.json),
-// l'entaille de la section 2 (rien, 1 coup, 2 coups, coupée, et sa voisine), les billes du tronc (1 à n) et la bille
-// ordinaire est-ouest et nord-sud, enfin le tas plein de billes, est-ouest et nord-sud.
+// arbres.png de npm run art:preview : les trois arbres de KINDS à chaque étape, l'un sous l'autre dans cet ordre (le gros
+// grand, le têtard, le normal), au même pas (même échelle, même sol). De haut en bas : debout (avec sa souche, et Xéros
+// pour l'échelle), la chute à droite (images 2 à 4), la chute à gauche, l'arbre couché tel que le jeu le pose (souche +
+// pièces de `spawns`, d'après props.json), l'entaille d'une section (rien, 1 coup, 2 coups, coupée, et sa voisine), les
+// billes du tronc et la bille ordinaire est-ouest et nord-sud, enfin le tas plein de billes, est-ouest et nord-sud.
+// Chaque arbre n'est connu que par la clé de l'arbre debout et son genre de tas : sa souche, ses planches de chute, ses
+// pièces couchées et ses billes se lisent dans props.json (`harvest` : `becomes`, `fall`, `spawns`, puis la chaîne des
+// `becomes` de chaque pièce jusqu'à l'objet qu'on prend), la bille ordinaire dans piles.json (`piece`, `turned`).
 // Vérification : la première image de chaque chute doit être, pixel pour pixel, l'arbre debout posé, et la dernière l'arbre couché posé par le jeu ; les
 // écarts sont rendus à l'appelant (rien ne doit sauter au moment où la chute laisse la place aux objets).
 
@@ -13,21 +16,33 @@ import type { PileDef, PropDef } from '../../src/content/types';
 import { drawOrder, shapeOf } from '../../src/world/pileShape';
 import { Board, grassOf } from './composite-previews';
 
-/** Les deux sortes : préfixe des clés, clé du genre de tas. */
+/** Les arbres montrés, dans l'ordre : clé de l'arbre debout dans props.json, clé du genre de tas de ses billes. */
 export const KINDS = [
-  { prefix: 'big', logs: 'big-logs' },
-  { prefix: 'normal', logs: 'normal-logs' },
+  { tree: 'big-tree', logs: 'big-logs' },
+  { tree: 'big-pollard', logs: 'big-logs' },
+  { tree: 'normal-tree', logs: 'normal-logs' },
 ] as const;
+
+/** Bille née d'une pièce couchée : la chaîne de ses `becomes`, jusqu'à l'objet qu'on prend. */
+function logOf(props: Record<string, PropDef>, type: string): string | undefined {
+  for (let t: string | undefined = type, n = 0; t && n < 8; n++) {
+    const p: PropDef | undefined = props[t];
+    if (!p) return undefined;
+    if (p.take) return p.image;
+    t = p.harvest?.becomes;
+  }
+  return undefined;
+}
 
 interface Placed { grid: Grid; palette: Palette; x: number; y: number }
 
 /** Un arbre couché, posé comme le jeu le fait : la souche puis les pièces, coin haut gauche de chacune dans le repère de l'arbre debout. */
-function lying(sources: ArtSource[], props: Record<string, PropDef>, prefix: string, left: boolean): Placed[] | undefined {
-  const image = (name: string) => {
+function lying(sources: ArtSource[], props: Record<string, PropDef>, key: string, left: boolean): Placed[] | undefined {
+  const image = (name: string | undefined) => {
     const s = sources.find((x) => x.name === name);
     return s?.kind === 'image' ? s : undefined;
   };
-  const tree = props[`${prefix}-tree`];
+  const tree = props[key];
   const img = image(tree?.image);
   const h = tree?.harvest;
   if (!tree || !img || !h?.at || !h.becomes) return undefined;
@@ -55,13 +70,18 @@ export interface TreesResult {
 }
 
 export function treesPreview(sources: ArtSource[], props: Record<string, PropDef>, piles: Record<string, PileDef>): TreesResult {
-  const image = (name: string) => {
+  const image = (name: string | undefined) => {
     const s = sources.find((x) => x.name === name);
     return s?.kind === 'image' ? s : undefined;
   };
   const sheet = (name: string) => {
     const s = sources.find((x) => x.name === name);
     return s?.kind === 'spritesheet' ? s : undefined;
+  };
+  /** Planche de chute d'un arbre, d'un côté, d'après son `harvest.fall`. */
+  const fallSheet = (key: string, left: boolean) => {
+    const f = props[key]?.harvest?.fall;
+    return f ? sheet(left ? f.left.image : f.image) : undefined;
   };
   const problems: string[] = [];
   const body = sheet('xeros');
@@ -80,23 +100,24 @@ export function treesPreview(sources: ArtSource[], props: Record<string, PropDef
 
   // 1. debout : l'arbre, sa souche, Xéros
   step((k) => {
-    const t = image(`${k.prefix}-tree`);
-    const st = image(`${k.prefix}-tree-stump`);
+    const t = image(props[k.tree]?.image);
+    const becomes = props[k.tree]?.harvest?.becomes;
+    const st = becomes ? image(props[becomes]?.image) : undefined;
     if (!t || !st) return undefined;
     return [single(t), single(st), ...(xeros && body ? [single({ grid: xeros, palette: body.palette })] : [])];
   });
   // 2. chute à droite, 3. chute à gauche : 10°, 45°, couchée
   for (const side of ['', '-left']) {
     step((k) => {
-      const s = sheet(`${k.prefix}-tree-fall${side}`);
+      const s = fallSheet(k.tree, side === '-left');
       return s ? frames(s, [1, 2, 3]) : undefined;
     });
   }
   // vérification : la première image de chaque chute est l'arbre debout, posé à sa place (bas aligné, décalage x de la planche)
   for (const k of KINDS) for (const left of [false, true]) {
-    const s = sheet(`${k.prefix}-tree-fall${left ? '-left' : ''}`);
-    const tree = image(`${k.prefix}-tree`);
-    const fx = props[`${k.prefix}-tree`]?.harvest?.fall;
+    const s = fallSheet(k.tree, left);
+    const tree = image(props[k.tree]?.image);
+    const fx = props[k.tree]?.harvest?.fall;
     if (!s || !tree || !fx) continue;
     const first = s.animations.fall.frames[0];
     const offX = left ? fx.left.x : fx.x;
@@ -107,19 +128,19 @@ export function treesPreview(sources: ArtSource[], props: Record<string, PropDef
     a.blit(first, s.palette, 0, 0);
     b.blit(tree.grid, tree.palette, -offX, H - tree.grid.length);
     const diff = a.diff(b);
-    const where = `${k.prefix}${left ? ' à gauche' : ''}`;
+    const where = `${k.tree}${left ? ' à gauche' : ''}`;
     if (tree.grid.length > H) problems.push(`${where} : l'arbre debout (${tree.grid.length} px) est plus haut que les images de la chute (${H} px)`);
     else if (diff.length) problems.push(`${where} : ${diff.length} pixels diffèrent entre la première image de la chute et l'arbre debout posé (premier en (${diff[0][0]}, ${diff[0][1]}))`);
   }
   // 4. arbre couché posé par le jeu, à droite puis à gauche ; en même temps, vérification contre la dernière image
   for (const left of [false, true]) {
     step((k) => {
-      const placed = lying(sources, props, k.prefix, left);
-      const s = sheet(`${k.prefix}-tree-fall${left ? '-left' : ''}`);
-      const tree = image(`${k.prefix}-tree`);
+      const placed = lying(sources, props, k.tree, left);
+      const s = fallSheet(k.tree, left);
+      const tree = image(props[k.tree]?.image);
       if (!placed || !s || !tree) return undefined;
       const last = s.animations.fall.frames[s.animations.fall.frames.length - 1];
-      const fx = props[`${k.prefix}-tree`].harvest!.fall!;
+      const fx = props[k.tree].harvest!.fall!;
       // frame posée dans le repère de l'arbre : décalage x de la planche
       const offX = left ? fx.left.x : fx.x;
       const W = last[0].length;
@@ -129,22 +150,31 @@ export function treesPreview(sources: ArtSource[], props: Record<string, PropDef
       a.blit(last, s.palette, 0, 0);
       for (const p of placed) b.blit(p.grid, p.palette, p.x - offX, p.y - (tree.grid.length - H));
       const diff = a.diff(b);
-      if (diff.length) problems.push(`${k.prefix}${left ? ' à gauche' : ''} : ${diff.length} pixels diffèrent entre la dernière image de la chute et l'arbre posé (premier en (${diff[0][0]}, ${diff[0][1]}))`);
+      if (diff.length) problems.push(`${k.tree}${left ? ' à gauche' : ''} : ${diff.length} pixels diffèrent entre la dernière image de la chute et l'arbre posé (premier en (${diff[0][0]}, ${diff[0][1]}))`);
       return [{ items: placed.map((p) => ({ ...p, x: p.x - offX, y: p.y - (tree.grid.length - H) })), w: W, h: H }];
     });
   }
-  // 5. l'entaille de la section 2 et sa voisine
+  // 5. l'entaille d'une section et sa voisine : la 2e pièce couchée s'il y en a plus de deux, sinon la 1re
   step((k) => {
-    const names = [`${k.prefix}-felled-section-2`, `${k.prefix}-felled-section-2-n1`, `${k.prefix}-felled-section-2-n2`, `${k.prefix}-felled-section-2-cut-right`, `${k.prefix}-felled-section-3-cut-left`];
+    const spawns = props[k.tree]?.harvest?.spawns ?? [];
+    const i = spawns.length > 2 ? 1 : 0;
+    const cur = props[spawns[i]?.type]?.image;
+    const next = props[spawns[i + 1]?.type]?.image;
+    if (!cur || !next) return undefined;
+    const names = [cur, `${cur}-n1`, `${cur}-n2`, `${cur}-cut-right`, `${next}-cut-left`];
     const imgs = names.map(image);
     return imgs.every((i) => i) ? (imgs as ImageSource[]).map(single) : undefined;
   });
   // 6. les billes du tronc, puis la bille ordinaire (est-ouest, nord-sud)
   step((k) => {
-    const logs: ImageSource[] = [];
-    for (let i = 1; image(`${k.prefix}-felled-log-${i}`); i++) logs.push(image(`${k.prefix}-felled-log-${i}`)!);
-    const plain = [image(`${k.prefix}-felled-log`), image(`${k.prefix}-felled-log-ns`)];
-    return plain.every((i) => i) && logs.length ? [...logs, ...(plain as ImageSource[])].map(single) : undefined;
+    const spawns = props[k.tree]?.harvest?.spawns ?? [];
+    const logs = spawns.map((s) => image(logOf(props, s.type)));
+    if (logs.some((l) => !l)) return undefined;
+    const def = piles[k.logs];
+    const turned = def?.turned;
+    const pieceProp = def && 'prop' in def.piece ? def.piece.prop : undefined;
+    const plain = [image(pieceProp ? props[pieceProp]?.image : undefined), turned ? image(turned.places[turned.start]?.image) : undefined];
+    return plain.every((i) => i) && logs.length ? [...(logs as ImageSource[]), ...(plain as ImageSource[])].map(single) : undefined;
   });
   // 7. le tas plein, est-ouest puis nord-sud
   step((k) => {

@@ -1201,6 +1201,23 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 171,
+      "name": "big-pollard",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

@@ -24,8 +24,8 @@ import { DIAMETER, bark, faceTone, logByTheEnd, logEnd } from './wood';
 
 // ---------- Chute ----------
 
-const FALL_W = 160;
-const FALL_H = 96;
+export const FALL_W = 160;
+export const FALL_H = 96;
 /** Hauteur des images de la planche de chute : celle de l'arbre debout ; la frame des pièces (FALL_H) en occupe le bas. */
 const FALL_HT = TALL_H;
 /** Décalage des rangées du repère 64x96 (et de la frame des pièces) dans le grand repère et dans la planche. */
@@ -34,7 +34,7 @@ const DY = TALL_DY;
  * Décalage de l'arbre (64 de large) dans la frame : l'arbre debout est à gauche (pied en x = OFF + 33)
  * pour laisser au tronc couché, puis au houppier, la place de s'étendre vers la droite.
  */
-const OFF = 14;
+export const OFF = 14;
 /** La souche se pose sous le tronc : décalage du repère de la souche dans celui de l'arbre. */
 const STUMP_AT: Vec = [17, 62];
 /** Hauteur de la coupe dans le repère de l'arbre : tout ce qui est au-dessus tombe. */
@@ -44,14 +44,23 @@ const HINGE: Vec = [38, CUT_Y];
 /** Première colonne du tronc debout sous le houppier (rangée 77 de treeBody : 11 px, de 27 à 37). */
 const PROFILE_X0 = 27;
 
-/** Feuillage de l'arbre debout dans le grand repère : première et dernière rangées. */
-const TALL_CROWN = (() => {
-  const body = tallTreeBody();
+/**
+ * Ce qui tombe : le corps d'un arbre debout dans son repère (64 de large, pied en FOOT[0]), la rangée de la coupe
+ * dans ce repère, et les rangées extrêmes de son feuillage. Le gros arbre (`big-tree`) tombe depuis `tallTreeBody`,
+ * le têtard (`big-pollard`, art/world/big-pollard.ts) depuis `treeBody`.
+ */
+export interface Faller { body: (light: Vec) => Canvas; cut: number; crown: { top: number; bottom: number } }
+
+/** Feuillage d'un arbre debout : première et dernière rangées. */
+export function crownRows(body: Canvas): { top: number; bottom: number } {
   const rows = body.px.map((r, y) => (r.some((q) => 'jLlk'.includes(q)) ? y : -1)).filter((y) => y >= 0);
   return { top: rows[0], bottom: rows[rows.length - 1] };
-})();
+}
 
-interface Pose {
+/** Le gros arbre, dans son grand repère. */
+const TALL: Faller = { body: tallTreeBody, cut: CUT_Y + DY, crown: crownRows(tallTreeBody()) };
+
+export interface Pose {
   deg: number;
   /** Position à l'écran du centre de la coupe du tronc qui tombe. */
   base: Vec;
@@ -65,15 +74,15 @@ interface Pose {
  * Dessine le haut de l'arbre selon `pose` (tourné de `deg` degrés vers la droite, vers la gauche si `deg` < 0), avec la lumière
  * nord-ouest de l'écran ramenée dans le repère de l'arbre, puis le bout scié au pied du tronc.
  */
-function drawFalling(c: Canvas, p: Pose) {
+function drawFalling(c: Canvas, p: Pose, f: Faller) {
   const t = (p.deg * Math.PI) / 180;
   const cos = Math.cos(t);
   const sin = Math.sin(t);
   const S: Vec = [-Math.SQRT1_2, -Math.SQRT1_2];
-  const src = tallTreeBody([S[0] * cos + S[1] * sin, -S[0] * sin + S[1] * cos]);
-  const cut = CUT_Y + DY;
+  const src = f.body([S[0] * cos + S[1] * sin, -S[0] * sin + S[1] * cos]);
+  const cut = f.cut;
   // distance de la coupe au bas du feuillage : au-delà, le feuillage se raccourcit
-  const hc = cut - TALL_CROWN.bottom;
+  const hc = cut - f.crown.bottom;
   const row = (h: number) => Math.floor(cut - (h <= hc ? h : hc + (h - hc) / p.along));
   const half = 5.5; // demi-largeur du tronc, jamais écrasée
   const inv = (g: number) => (Math.abs(g) <= half ? g : Math.sign(g) * (half + (Math.abs(g) - half) / p.squash));
@@ -118,35 +127,40 @@ function drawFalling(c: Canvas, p: Pose) {
 }
 
 /**
- * Image de la chute (FALL_W x FALL_HT) : souche fixe, haut de l'arbre dans la pose donnée, contour, ombres.
- * Les ombres sont données dans la frame des pièces (y de 0 à FALL_H), comme la souche.
+ * Image de la chute (FALL_W x `h`, FALL_HT par défaut) : souche fixe, haut de l'arbre `f` dans la pose donnée, contour,
+ * ombres. Les ombres sont données dans la frame des pièces (y de 0 à FALL_H), comme la souche ; la frame des pièces
+ * occupe le bas de l'image.
  */
-function fallFrame(p: Pose, shadows: [number, number, number, number][], off = OFF): Canvas {
-  const c = new Canvas(FALL_W, FALL_HT);
-  c.stamp(stumpBody().toGrid(), STUMP_AT[0] + off, STUMP_AT[1] + DY);
-  drawFalling(c, p);
+export function fallFrame(p: Pose, shadows: [number, number, number, number][], off = OFF, f: Faller = TALL, h = FALL_HT): Canvas {
+  const dy = h - FALL_H;
+  const c = new Canvas(FALL_W, h);
+  c.stamp(stumpBody().toGrid(), STUMP_AT[0] + off, STUMP_AT[1] + dy);
+  drawFalling(c, p, f);
   despeckle(c, 'KY');
   shadedOutline(c);
-  for (const [x, y, rx, ry] of shadows) groundShadow(c, x, y + DY, rx, ry);
+  for (const [x, y, rx, ry] of shadows) groundShadow(c, x, y + dy, rx, ry);
   return c;
 }
 
 /** Raccourcissement du feuillage selon le sinus de l'angle : 1 debout, longueur du houppier couché / hauteur du feuillage debout couché. */
-function alongAt(s: number): number {
-  const lying = (CROWN_END - F0) / (TALL_CROWN.bottom - TALL_CROWN.top + 1);
+function alongAt(s: number, f: Faller): number {
+  const lying = (CROWN_END - F0) / (f.crown.bottom - f.crown.top + 1);
   return 1 - (1 - lying) * s * s;
 }
 
-/** Pose pivotée autour de la charnière (bord droit de la coupe), qui reste sur la souche. */
-function pivot(deg: number): Pose {
+/**
+ * Pose pivotée autour de la charnière (bord droit de la coupe), qui reste sur la souche. `dy` : décalage des rangées
+ * du repère 64x96 dans l'image de la chute (celle du gros arbre par défaut).
+ */
+export function pivot(deg: number, f: Faller = TALL, dy = DY): Pose {
   const t = (deg * Math.PI) / 180;
   const s = Math.sin(t);
   // centre de la coupe : 5 px à gauche de la charnière, dans le repère tourné
   const d = HINGE[0] - FOOT[0];
   return {
     deg,
-    base: [HINGE[0] + OFF - d * Math.cos(t), HINGE[1] + DY - d * s],
-    along: alongAt(s),
+    base: [HINGE[0] + OFF - d * Math.cos(t), HINGE[1] + dy - d * s],
+    along: alongAt(s, f),
     squash: 1 - 0.64 * s * s,
   };
 }
@@ -171,7 +185,7 @@ const TRUNK_TOP = 75;
 /** Rangée du contour du bas du tronc. */
 const TRUNK_BOTTOM = TRUNK_TOP + 11;
 /** Longueur d'une pièce, donc d'une bille : 19 colonnes (17 de bois entre deux contours), environ 1 m. */
-const SEC = 19;
+export const SEC = 19;
 /** Première colonne de chaque pièce (la 1re prend le contour du bout scié), puis la fin de la frame. */
 const PIECE_X = [BUTT_X - 1, BUTT_X - 1 + SEC, BUTT_X - 1 + 2 * SEC, BUTT_X - 1 + 3 * SEC, FALL_W];
 /** Jonction au bout droit de chaque pièce (1re colonne de la suivante) ; pour la tête, entre la 4e bille et la pointe. */
@@ -394,7 +408,7 @@ function felledLogNS(): Canvas {
   return c;
 }
 
-interface Frame { x: number; y: number; w: number; h: number }
+export interface Frame { x: number; y: number; w: number; h: number }
 
 /** Cadre minimal commun à plusieurs images de la frame (toutes les variantes d'une pièce y tiennent). */
 function bounds(cs: Canvas[]): Frame {
@@ -414,7 +428,8 @@ function cut(c: Canvas, f: Frame): Canvas {
 }
 
 const PIECE_NAMES = ['big-felled-section-1', 'big-felled-section-2', 'big-felled-section-3', 'big-felled-crown'];
-const PIECES = [0, 1, 2, 3].map((k) => piece(k));
+/** Les quatre pièces couchées vers la droite (sections 1 à 3, houppier), chacune dans la frame entière. */
+export const PIECES = [0, 1, 2, 3].map((k) => piece(k));
 
 /**
  * Toutes les images d'une pièce, dans la frame entière : clé -> canevas. La 1re section n'a pas de bout gauche
@@ -442,7 +457,7 @@ const SETS = [0, 1, 2].map((k) => variants(k, false));
 const CROWN_SET = variants(3, false);
 const HEAD_SET = variants(3, true);
 /** Cadre de chaque pièce : le houppier, la tête et la 4e bille partagent le même (même image, même place). */
-const FRAMES: Frame[] = [
+export const FRAMES: Frame[] = [
   ...SETS.map((s, k) => bounds([...s.map(([, c]) => c), LOGS[k]])),
   bounds([...CROWN_SET, ...HEAD_SET].map(([, c]) => c).concat(LOGS[3])),
 ];
@@ -525,14 +540,14 @@ const mx = (X: number) => FALL_W - 1 - X;
 const HINGE_L: Vec = [28, CUT_Y];
 
 /** Pose pivotée vers la gauche autour du bord gauche de la coupe. */
-function pivotLeft(deg: number): Pose {
+export function pivotLeft(deg: number, f: Faller = TALL, dy = DY): Pose {
   const t = (-deg * Math.PI) / 180;
   const s = Math.abs(Math.sin(t));
   const d = FOOT[0] - HINGE_L[0];
   return {
     deg: -deg,
-    base: [HINGE_L[0] + OFF_L + d * Math.cos(t), HINGE_L[1] + DY - d * s],
-    along: alongAt(s),
+    base: [HINGE_L[0] + OFF_L + d * Math.cos(t), HINGE_L[1] + dy - d * s],
+    along: alongAt(s, f),
     squash: 1 - 0.64 * s * s,
   };
 }
@@ -696,9 +711,11 @@ function variantsLeft(k: number, head: boolean): [string, Canvas][] {
 const SETS_L = [0, 1, 2].map((k) => variantsLeft(k, false));
 const CROWN_SET_L = variantsLeft(3, false);
 const HEAD_SET_L = variantsLeft(3, true);
+/** Les quatre pièces couchées vers la gauche, chacune dans la frame entière (même ordre que PIECES). */
+export const PIECES_L = [...SETS_L.map((s) => s[0][1]), CROWN_SET_L[0][1]];
 const LOGS_L: Canvas[] = [0, 1, 2, 3].map((k) => pieceLeft(k, k === 3, { left: k > 0, right: 'cut' }));
 /** Cadres de gauche : miroirs exacts des cadres de droite (même taille, même y). */
-const FRAMES_L: Frame[] = FRAMES.map((f) => ({ ...f, x: FALL_W - f.x - f.w }));
+export const FRAMES_L: Frame[] = FRAMES.map((f) => ({ ...f, x: FALL_W - f.x - f.w }));
 
 // Garde-fou : chaque image de gauche tient dans son cadre et a la silhouette exacte, retournée, de son image de droite
 // (ombre portée mise à part : elle reste décalée vers la droite).
@@ -723,7 +740,7 @@ const FRAMES_L: Frame[] = FRAMES.map((f) => ({ ...f, x: FALL_W - f.x - f.w }));
 function lyingFrameLeft(): Canvas {
   const c = new Canvas(FALL_W, FALL_H);
   c.stamp(stump().toGrid(), STUMP_AT[0] + OFF_L, STUMP_AT[1]);
-  const pieces = [...SETS_L.map((s) => s[0][1]), CROWN_SET_L[0][1]];
+  const pieces = PIECES_L;
   // garde-fou : une ombre translucide posée sur un pixel déjà peint donnerait en jeu un mélange que `stamp` ne rend pas
   for (const p of pieces) for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     const under = c.get(X, Y);

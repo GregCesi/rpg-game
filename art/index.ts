@@ -7,6 +7,7 @@ import motherPortrait from './portraits/mother';
 import worldTiles, { worldDecals } from './world/tiles';
 import props from './world/props';
 import trees from './world/big-tree';
+import pollard from './world/big-pollard';
 import felled from './world/big-felled';
 import normalTree from './world/normal-tree';
 import normalFelled from './world/normal-felled';
@@ -28,4 +29,4 @@ import rope from './items/rope';
 import faggot from './world/faggot';
 import building from './world/building';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building];

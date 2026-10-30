@@ -29,8 +29,8 @@ export const families: Family[] = [
   {
     title: 'Nature',
     ground: 'grass',
-    keys: ['big-tree', 'big-tree-stump', 'big-tree-fall', 'big-felled-section-1', 'big-felled-section-2', 'big-felled-section-3', 'big-felled-crown', 'big-felled-head', 'big-felled-log', 'rock', 'rock-rubble', 'bush', 'bush-berries'],
-    allFrames: ['big-tree-fall'],
+    keys: ['big-tree', 'big-tree-stump', 'big-tree-fall', 'big-pollard', 'big-pollard-fall', 'big-felled-section-1', 'big-felled-section-2', 'big-felled-section-3', 'big-felled-crown', 'big-felled-head', 'big-felled-log', 'rock', 'rock-rubble', 'bush', 'bush-berries'],
+    allFrames: ['big-tree-fall', 'big-pollard-fall'],
   },
   {
     title: 'Arbre couché : entailles et billes',
@@ -40,8 +40,8 @@ export const families: Family[] = [
   {
     title: 'Chute vers la gauche',
     ground: 'grass',
-    keys: ['big-tree-fall-left', 'big-felled-section-1-left', 'big-felled-section-2-left', 'big-felled-section-3-left', 'big-felled-crown-left', 'big-felled-head-left'],
-    allFrames: ['big-tree-fall-left'],
+    keys: ['big-tree-fall-left', 'big-pollard-fall-left', 'big-felled-section-1-left', 'big-felled-section-2-left', 'big-felled-section-3-left', 'big-felled-crown-left', 'big-felled-head-left'],
+    allFrames: ['big-tree-fall-left', 'big-pollard-fall-left'],
   },
   {
     title: 'Arbre couché à gauche : entailles et billes',
