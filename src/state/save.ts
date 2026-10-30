@@ -13,7 +13,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -68,14 +68,17 @@ export function readSave(): ReadResult {
 
 /**
  * Met une sauvegarde d'un format plus ancien au format actuel, si on sait le faire (sinon elle est rendue telle quelle et
- * refusée plus loin). Version 2 -> 3 : l'endurance et le jour apparaissent, jauge pleine et jour 1.
+ * refusée plus loin). Version 2 -> 3 : l'endurance et le jour apparaissent, jauge pleine et jour 1. Version 3 -> 4 : le
+ * fendage (coups reçus par un objet de carte changé, bille coin planté, demi-billes, quartiers, tas de quartiers) n'ajoute que
+ * des champs facultatifs et des clés de contenu : une partie de la version 3 se relit telle quelle, seul le numéro change.
  */
 function upgrade(data: unknown): unknown {
-  const d = data as { version?: unknown; state?: unknown } | null;
+  let d = data as { version?: unknown; state?: unknown } | null;
   if (d?.version === 2 && d.state && typeof d.state === 'object') {
-    return { ...d, version: 3, state: { ...d.state, stamina: stamina.max, day: 1 } };
+    d = { ...d, version: 3, state: { ...d.state, stamina: stamina.max, day: 1 } };
   }
-  return data;
+  if (d?.version === 3) d = { ...d, version: 4 };
+  return d;
 }
 
 /** Écrit la partie et la position de Xéros. Un stockage plein ou bloqué ne plante pas le jeu : on le note en console. */

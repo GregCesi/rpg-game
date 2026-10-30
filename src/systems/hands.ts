@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { DEPTH, INTERACT, PUT_DOWN } from '../config';
 import { items, piles, props } from '../content';
-import type { Facing } from '../content/types';
+import type { Facing, PropDef } from '../content/types';
 import type { Player } from '../entities/Player';
 import {
   addPile,
@@ -31,6 +31,12 @@ export type PutDownResult = 'empty' | 'blocked' | 'done';
  * tas au point (x, y), dans le sens de ce qu'on tient (`turned`).
  */
 type PileTarget = { pile: PlacedPile; place: string } | { genre: string; x: number; y: number; place: string; turned: boolean };
+
+/**
+ * La forme nord-sud (tournée) de l'objet ordinaire de son genre de tas : celle qui roule nord-sud (la bille), ou marquée
+ * `turned` dans son `take` (le quartier, qui ne roule pas).
+ */
+const isTurnedForm = (d: PropDef) => d.roll?.axis === 'ns' || !!d.take?.turned;
 
 /** Ce qu'on tient est tourné nord-sud (R). */
 const turnedOf = (what: Held) => 'prop' in what && !!what.turned;
@@ -116,8 +122,8 @@ export class HandsSystem {
   takeProp(p: PlacedProp): boolean {
     // ce qui a une longueur (le rouleau) l'emporte avec lui
     const length = p.def.length ? { length: p.length ?? p.def.length.start } : {};
-    // une bille posée nord-sud est, dans les mains, la bille ordinaire tournée (R)
-    const pile = p.def.roll?.axis === 'ns' ? p.def.take!.pile : undefined;
+    // une bille ou un quartier posé nord-sud est, dans les mains, la pièce ordinaire tournée (R)
+    const pile = isTurnedForm(p.def) ? p.def.take!.pile : undefined;
     const piece = pile ? piles[pile].piece : undefined;
     const what: Held = piece && 'prop' in piece ? { prop: piece.prop, turned: true } : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length };
     if (!take(game, what, p.def.take!.hands)) return false;
@@ -236,7 +242,7 @@ export class HandsSystem {
       this.map.placeGround(dropItem(game, mapId, what.item, spot.x, spot.y));
       return;
     }
-    const ns = what.turned ? Object.keys(props).find((k) => props[k].roll?.axis === 'ns' && props[k].take?.pile === props[what.prop].take?.pile) : undefined;
+    const ns = what.turned ? Object.keys(props).find((k) => isTurnedForm(props[k]) && props[k].take?.pile === props[what.prop].take?.pile) : undefined;
     const type = ns ?? what.prop;
     const spot = this.propSpot(player, { prop: type }) ?? feet;
     const o = spawnObject(game, mapId, type, spot.x, spot.y, false, undefined, what.length);

@@ -29,6 +29,7 @@ import {
   heldItem,
   mapState,
   newGame,
+  release,
   removeGroundItem,
   replaceState,
   resetMap,
@@ -352,12 +353,23 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     // le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ; dans le vide, de côté
-    const target = this.harvest.target(this.player);
-    const gesture = target?.def.harvest?.gesture ?? 'use';
+    const target = this.harvest.target(this.player, tool);
+    const h = target?.def.harvest;
+    const gesture = h?.gesture ?? 'use';
+    // un outil que la cible écarte (la hache sur une grosse bille) ou une fente sans la place de s'ouvrir : on le dit, sans geste ni dépense
+    const why = target && this.harvest.refusal(target, tool);
+    if (why) return this.notice(why);
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
-    if (target?.def.harvest?.tool === tool && !this.effort.afford(this.player, target.def.bears ? this.player.stamina.costs.cutTie : this.player.stamina.costs.chop)) return;
-    // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
-    this.gesture(gesture, tool, () => this.report(this.harvest.hit(this.harvest.target(this.player), tool, this.player.actor.facing)));
+    const costs = this.player.stamina.costs;
+    if (h?.tool === tool && !this.effort.afford(this.player, costs[h.effort ?? (target!.def.bears ? 'cutTie' : 'chop')])) return;
+    const impact = () => {
+      this.report(this.harvest.hit(this.harvest.target(this.player, tool), tool, this.player.actor.facing));
+      // les morceaux d'une bille fendue débordent de sa place : Xéros est repoussé s'ils le recouvrent
+      this.harvest.settle(this.player);
+    };
+    // le coin se plante d'un coup, sans geste ; sinon la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
+    if (h?.plant && h.tool === tool) return impact();
+    this.gesture(gesture, tool, impact);
   }
 
   private gesture(gesture: string, item: string | undefined, onImpact: () => void): void {
@@ -369,7 +381,13 @@ export class WorldScene extends Phaser.Scene {
 
   private report(r: HitResult): void {
     if (r.kind === 'missing') this.game.events.emit(GameEvent.Notice, `Sans ${items[r.tool].name}, rien à faire.`);
+    if (r.kind === 'refused') this.notice(r.message);
     if (r.kind !== 'hit') return;
+    // l'outil est resté dans l'objet (le coin planté) : la main est libre
+    if (r.released) {
+      release(game);
+      this.handsChanged();
+    }
     if (r.given) this.handsChanged();
     if (r.overflow) this.game.events.emit(GameEvent.Notice, 'Les mains pleines.');
     // ce qui reste de ce qu'on vient de couper (le rouleau sur le billot)

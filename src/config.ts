@@ -83,6 +83,8 @@ export const HARVEST = {
   dropMs: 320,
   dropRadius: [12, 24] as [number, number],
   dropSpacing: 9,
+  /** Fendage : durée (ms) de la fente grande ouverte avant que les deux morceaux paraissent. */
+  splitMs: 380,
   /** Éclats d'impact : nombre par coup, durée de vie (ms), vitesse (px/s), pesanteur (px/s²). */
   chips: { count: 6, lifespan: 420, speed: [50, 110] as [number, number], gravity: 420 },
 };

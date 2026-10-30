@@ -29,7 +29,15 @@ export const HandSchema = z.union([z.literal(0), z.literal(1)]);
  * `flip` : image retournée (ce qui est tombé vers la gauche) ; `length` : longueur restante de ce qu'il est ou porte (le
  * rouleau, le billot qui porte le rouleau).
  */
-export const WorldChangeSchema = z.strictObject({ type: id.optional(), x: z.number(), y: z.number(), flip: z.boolean().optional(), length });
+export const WorldChangeSchema = z.strictObject({
+  type: id.optional(),
+  x: z.number(),
+  y: z.number(),
+  flip: z.boolean().optional(),
+  length,
+  /** Coups déjà reçus (la fente d'une bille qu'on frappe à la masse) : voir `staged` de harvest, SpawnedSchema.hits. */
+  hits: z.number().int().positive().optional(),
+});
 
 /** Place d'un objet né dans la chaîne de ce qui est né avec lui (les pièces de l'arbre couché, bout à bout). */
 export const ChainSchema = z.strictObject({
@@ -261,6 +269,13 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
 export function setSpawnedHits(s: GameState, mapId: string, spawnId: number, hits: number): void {
   const o = mapState(s, mapId).spawned.find((x) => x.id === spawnId);
   if (o) o.hits = hits;
+  revision++;
+}
+
+/** Coups reçus par un objet de carte changé (la fente d'une bille de Tiled devenue bille coin planté). */
+export function setChangeHits(s: GameState, mapId: string, objectId: number, hits: number): void {
+  const c = mapState(s, mapId).changes[objectId];
+  if (c) c.hits = hits;
   revision++;
 }
 

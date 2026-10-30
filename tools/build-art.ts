@@ -24,6 +24,7 @@ import { buildCollectionBoard } from './lib/collection-board';
 import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
+import { fendagePreview } from './lib/fendage-preview';
 import { auditPreview } from './lib/audit-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
@@ -293,6 +294,9 @@ if (withPreview) {
   const trees = treesPreview(sources, propDefs, pileDefs);
   if (trees.png) writeFileSync(join(PREVIEW, 'arbres.png'), PNG.sync.write(trees.png));
   for (const p of trees.problems) console.warn(`art : ATTENTION arbres : ${p}`);
+  // le fendage : la bille, le coin, les trois fentes, les demi-billes, les quartiers, les outils, le tas de quartiers
+  const fendage = fendagePreview(sources, propDefs, pileDefs);
+  if (fendage) writeFileSync(join(PREVIEW, 'fendage.png'), PNG.sync.write(fendage));
   // les bâtiments qui montent, étape par étape, à leur place sur leur carte Tiled
   const buildings = parse('buildings.json', z.record(z.string(), BuildingDefSchema), buildingsJson);
   for (const [key, b] of Object.entries(buildings)) {

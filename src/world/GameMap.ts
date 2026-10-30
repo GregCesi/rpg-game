@@ -219,7 +219,7 @@ export class GameMap {
     for (const o of def.objects) {
       const c = changes.changes[o.id];
       if (!c) this.placeProp(o);
-      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length });
+      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length, hits: c.hits });
     }
     for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, hits: o.hits, length: o.length });
     this.refreshTrunk();
@@ -444,7 +444,9 @@ export class GameMap {
     const scene = this.scene;
     const p = propDefs[o.type];
     const ay = o.y;
-    const image = flip ? `${p.image}-left` : p.image;
+    // ce qui se fend montre la fente déjà ouverte (coups notés dans GameState) ; la dernière image d'étape ne dure qu'un instant
+    const stage = p.harvest?.staged && opts.hits ? `-n${Math.min(opts.hits, p.harvest.hits - 1)}` : '';
+    const image = (flip ? `${p.image}-left` : p.image) + stage;
     const obj = p.anim ? scene.add.sprite(o.x, ay, image).play(`${image}-${p.anim}`) : scene.add.image(o.x, ay, image);
     obj.setOrigin(0, 1).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
     if (p.blend === 'add') obj.setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.light);
