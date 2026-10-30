@@ -5,9 +5,10 @@
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
 import { propMass } from './mass';
+import { crosswise, viewImages } from './views';
 import { lookOf, WEDGE_FRAMES } from '../world/woodShape';
 import { woodDims } from '../world/woodPiece';
-import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece } from './types';
+import type { Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -354,6 +355,138 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
   return errors;
 }
 
+/**
+ * Objets d'avant la règle « toutes les faces » (docs/STYLE.md section 8) qui n'ont pas encore toutes leurs vues : la raison. Le
+ * build passe, mais `npm run check` dit à chaque fois combien d'objets et de dessins restent (`viewsTodo`). Un objet sort de la
+ * liste dès que ses vues sont dessinées (validate.ts le demande) ; un objet nouveau ne s'y ajoute pas : il naît avec ses vues.
+ */
+export const VIEWS_TODO: Record<string, string> = {
+  // les meubles : au chantier de la maison
+  bed: 'meuble : au chantier de la maison',
+  pallet: 'meuble : au chantier de la maison',
+  chest: 'meuble : au chantier de la maison',
+  table: 'meuble : au chantier de la maison',
+  crate: 'meuble : au chantier de la maison',
+  workbench: 'meuble : au chantier de la maison',
+  worktable: 'meuble : au chantier de la maison',
+  'hay-bale': 'meuble : au chantier de la maison',
+  stove: 'meuble : au chantier de la maison',
+  'wall-torch': 'meuble (torche au mur) : au chantier de la maison',
+  // les objets fixés dans le monde : leurs vues serviront à les poser tournés dans Tiled
+  cottage: 'objet fixé du monde : pour le poser tourné dans Tiled',
+  well: 'objet fixé du monde : pour le poser tourné dans Tiled',
+  fireplace: 'objet fixé du monde : pour le poser tourné dans Tiled',
+  woodpile: 'objet fixé du monde (ancien tas de décor) : pour le poser tourné dans Tiled',
+  'chopping-block-axe': 'objet fixé du monde (la hache plantée) : pour le poser tourné dans Tiled',
+  'plan-tablet': 'objet fixé du monde (sur la table de la mère) : pour la poser tournée dans Tiled',
+  'big-felled-tree': 'arbre couché : ses chutes vers le nord et le sud (le demi-tour est -left)',
+  'big-pollard-felled-tree': 'arbre couché : ses chutes vers le nord et le sud (le demi-tour est -left)',
+  'normal-felled-tree': 'arbre couché : ses chutes vers le nord et le sud (le demi-tour est -left)',
+  'shed-plate-north': "abri construit : pour un plan orienté autrement",
+  'shed-plate-south': "abri construit : pour un plan orienté autrement",
+  'shed-plate-side': "abri construit : pour un plan orienté autrement",
+  'shed-rafter': "abri construit : pour un plan orienté autrement",
+  'shed-roof': "abri construit : pour un plan orienté autrement",
+  // les outils qui ne sont pas encore en jeu : leur image au sol et ses vues, avec leur chantier
+  pickaxe: "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
+  hoe: "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
+  sickle: "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
+  'watering-can': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
+  'fishing-rod': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
+  sword: "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
+  'wooden-sword': "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
+  // à dessiner dans ce chantier (perspective, étape 3) : la règle D pour tout ce qui est couché
+  'wood-piece': 'couché : à redessiner en nord-sud (règle D)',
+  faggot: 'couché : à redessiner en nord-sud (règle D)',
+  'maul-ground': 'couché : ses quatre vues (règle D)',
+  'splitting-wedge-ground': 'couché : ses quatre vues (règle D)',
+  'hatchet-ground': 'couché : ses quatre vues (règle D)',
+  'broadaxe-ground': 'couché : ses quatre vues (règle D)',
+  branch: 'couché : ses quatre vues (règle D)',
+  'rope-tie': 'couché : ses deux vues (règle D)',
+  stake: 'couché : ses quatre vues (règle D)',
+  axe: 'couché : son image au sol et ses quatre vues (règle D)',
+  maul: 'couché : ses quatre vues (règle D)',
+  'splitting-wedge': 'couché : ses quatre vues (règle D)',
+  hatchet: 'couché : ses quatre vues (règle D)',
+  broadaxe: 'couché : ses quatre vues (règle D)',
+};
+
+/**
+ * Un objet et ses vues : où il est (props.json, items.json), sa symétrie, ses images (vue 0 d'abord), celles qui manquent, et
+ * celles qui sont dessinées mais pas à leur taille (`wrong` : le message ; elles sont à redessiner).
+ */
+interface ObjectViews {
+  at: string;
+  key: string;
+  views: Views;
+  images: string[];
+  missing: string[];
+  wrong: { image: string; message: string }[];
+}
+
+/**
+ * Les vues de chaque objet de props.json et items.json (un objet possédable : son image au sol, sinon son icône s'il est rond).
+ * Couché, ses vues nord-sud ont la silhouette de l'est-ouest inversée, et son demi-tour la même, à 1 px près (règle D) ; debout,
+ * chaque vue de côté suit le gabarit de ses dimensions vues de ce côté (largeur et profondeur échangées).
+ */
+function objectViews(c: Content, cat: Catalog): ObjectViews[] {
+  const has = (k: string) => cat.textures.has(k);
+  const f = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
+  const entries: { at: string; key: string; views: Views; lying: boolean; base: string; dims?: PropDef['dims'] }[] = [
+    ...Object.entries(c.props).map(([key, p]) => ({ at: `props.json '${key}'`, key, views: p.views, lying: !!p.lying, base: p.image, dims: p.dims })),
+    // sans image au sol, un objet rond se montre par son icône ; un autre n'a encore aucune de ses vues au sol
+    ...Object.entries(c.items).map(([key, it]) => ({ at: `items.json '${key}'`, key, views: it.views, lying: !!it.lying, base: it.ground ?? (it.views === 'round' ? it.icon : `${key}-ground`) })),
+  ];
+  return entries.map((e) => {
+    const images = viewImages(e.base, e.views, has);
+    const wrong: ObjectViews['wrong'] = [];
+    const base = cat.silhouettes.get(images[0]);
+    images.forEach((img, k) => {
+      const s = cat.silhouettes.get(img);
+      if (!s || !base || k === 0) return;
+      const cross = crosswise(e.views, k);
+      if (e.lying) {
+        const [w, h] = cross ? [base.h, base.w] : [base.w, base.h];
+        if (Math.abs(s.w - w) > 1 || Math.abs(s.h - h) > 1) {
+          wrong.push({ image: img, message: `vue '${img}' de ${s.w} × ${s.h} px, attendu ${w} × ${h} (${cross ? "l'image tournée d'un quart de tour, dimensions inversées" : "l'image retournée, mêmes dimensions"}, règle D, à 1 px près)` });
+        }
+      } else if (e.dims && cross && !EXCEPTIONS[e.key]) {
+        const want = expectedSize({ ...e.dims, w: e.dims.d, d: e.dims.w });
+        const within = (n: number, lo: number, hi: number) => n >= lo - TOLERANCE && n <= hi + TOLERANCE;
+        if (!within(s.w, want.w, want.wMax) || !within(s.h, want.h, want.hMax)) {
+          wrong.push({ image: img, message: `vue de côté '${img}' hors gabarit : attendu ${f(want.w)} × ${f(want.h)} px (largeur et profondeur échangées), dessiné ${s.w} × ${s.h} px` });
+        }
+      }
+    });
+    return { at: e.at, key: e.key, views: e.views, images, missing: images.filter((k) => !has(k)), wrong };
+  });
+}
+
+/** Toutes les faces : chaque objet a les vues de sa symétrie, à leur taille ; sinon il est dans VIEWS_TODO. */
+function validateViews(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  for (const key of Object.keys(VIEWS_TODO)) if (!c.props[key] && !c.items[key]) errors.push(`validate.ts VIEWS_TODO : '${key}' absent de props.json et d'items.json`);
+  for (const o of objectViews(c, cat)) {
+    const todo = VIEWS_TODO[o.key];
+    if (todo) {
+      if (!o.missing.length && !o.wrong.length) errors.push(`validate.ts VIEWS_TODO : '${o.key}' a maintenant toutes ses vues : le retirer de la liste`);
+      continue;
+    }
+    if (o.missing.length) errors.push(`${o.at} (${o.views}) : vue${o.missing.length > 1 ? 's' : ''} non dessinée${o.missing.length > 1 ? 's' : ''} : ${o.missing.map((k) => `'${k}'`).join(', ')}`);
+    for (const w of o.wrong) errors.push(`${o.at} : ${w.message}`);
+  }
+  return errors;
+}
+
+/** Ce qui reste de VIEWS_TODO : chaque objet et ses dessins manquants ou à reprendre, et le total (une image partagée compte une fois). */
+export function viewsTodo(c: Content, cat: Catalog): { objects: { key: string; missing: string[]; reason: string }[]; drawings: number } {
+  const objects = objectViews(c, cat)
+    .filter((o) => VIEWS_TODO[o.key] && (o.missing.length || o.wrong.length))
+    .map((o) => ({ key: o.key, missing: [...o.missing, ...o.wrong.map((w) => w.image)], reason: VIEWS_TODO[o.key] }));
+  return { objects, drawings: new Set(objects.flatMap((o) => o.missing)).size };
+}
+
 /** Un objet tenu : sa posture va avec ses mains (une main : `hand` ; deux : `shoulder` ou `carry`), sa planche a ses trois vues. */
 function validateHold(at: string, h: Hold, hands: 1 | 2, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -682,6 +815,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Gabarit : taille de chaque objet d'après ses dimensions réelles
   addAll(validateGabarit(c, cat));
+  addAll(validateViews(c, cat));
 
   // Ce qui naît d'une chute : sa version couchée vers la gauche
   addAll(validateFallLeft(c, cat));

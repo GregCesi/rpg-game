@@ -288,6 +288,14 @@ export const TakeSchema = z.strictObject({
   pile: id.optional(),
 });
 
+/**
+ * La symétrie d'un objet, qui dit ses vues au sol (toutes dessinées dès sa création, docs/objets/README.md, STYLE.md section 8) :
+ * `round` une vue (pareil de tous côtés : seau, billot) ; `symmetric` deux (est-ouest `<image>`, nord-sud `<image>-ns` : table,
+ * caisse, fagot) ; `four` quatre (`<image>`, puis `<image>-r1`, `-r2`, `-r3`, un quart de tour de plus dans le sens des
+ * aiguilles d'une montre à chaque fois : coffre, lit, outil, branche ; ce qui tombe a son demi-tour en `<image>-left`).
+ */
+export const ViewsSchema = z.enum(['round', 'symmetric', 'four']);
+
 /** Un objet possédable (dans les mains, au sol) : sa clé dans items.json est son identifiant. Une main en tient un seul. */
 export const ItemDefSchema = z.strictObject({
   /** Nom affiché, en français. */
@@ -296,6 +304,10 @@ export const ItemDefSchema = z.strictObject({
   icon: id,
   /** Image de l'objet couché au sol, à l'échelle (la branche : le même dessin que dans le tas). Absente : l'icône. */
   ground: id.optional(),
+  /** Sa symétrie : ses vues au sol (`ground`, sinon l'icône), voir ViewsSchema. */
+  views: ViewsSchema,
+  /** Couché au sol (outil, branche, piquet) : ses vues nord-sud ont les dimensions de l'est-ouest inversées (règle D). */
+  lying: z.boolean().optional(),
   kind: z.enum(['tool', 'weapon', 'resource']),
   /** Mains qu'il faut pour le tenir : 2 pour ce qui est lourd ou long (la hache de bûcheron). */
   hands: HandsSchema.default(1),
@@ -338,6 +350,10 @@ export const PropDefSchema = z.strictObject({
   image: id,
   /** Dimensions réelles, en centimètres : voir DimsSchema. */
   dims: DimsSchema,
+  /** Sa symétrie : ses vues (`image` et les autres), voir ViewsSchema. */
+  views: ViewsSchema,
+  /** Couché au sol (la pièce de bois, le fagot, un outil posé) : ses vues nord-sud ont les dimensions de l'est-ouest inversées (règle D). */
+  lying: z.boolean().optional(),
   /** Boîte de collision simple, centrée en bas de l'image. bottom = marge entre le bas de l'image et le bas de la boîte. */
   body: z.strictObject({ w: px.positive(), h: px.positive(), bottom: px }).optional(),
   /** Boîtes de collision libres, dans le repère de l'image (pour les formes complexes : maison...). */
@@ -742,6 +758,7 @@ export type DecalSet = z.infer<typeof DecalSetSchema>;
 export type TerrainDef = z.infer<typeof TerrainDefSchema>;
 export type TilesetCatalog = z.infer<typeof TilesetCatalogSchema>;
 export type PropDef = z.infer<typeof PropDefSchema>;
+export type Views = z.infer<typeof ViewsSchema>;
 export type Harvest = z.infer<typeof HarvestSchema>;
 export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;

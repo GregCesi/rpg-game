@@ -11,9 +11,10 @@ async function main() {
     console.error(`\n✗ ${(e as Error).message}\n`);
     process.exit(1);
   }
-  const { catalogFrom, validateContent } = await import('../src/content/validate');
+  const { catalogFrom, validateContent, viewsTodo } = await import('../src/content/validate');
   const manifest = JSON.parse(readFileSync('src/generated/manifest.json', 'utf8'));
-  const errors = validateContent(content, catalogFrom(manifest));
+  const cat = catalogFrom(manifest);
+  const errors = validateContent(content, cat);
   if (errors.length) {
     console.error(`\n✗ ${errors.length} problème(s) dans le contenu :`);
     for (const e of errors) console.error(`  - ${e}`);
@@ -24,6 +25,12 @@ async function main() {
   console.log(
     `✓ contenu valide : ${n(content.maps)} cartes, ${n(content.props)} objets, ${n(content.items)} objets possédables, ${n(content.dialogues)} dialogues, ${n(content.characters)} personnages`,
   );
+  // toutes les faces : ce qui reste à dessiner (VIEWS_TODO, validate.ts), redit à chaque vérification
+  const todo = viewsTodo(content, cat);
+  if (todo.objects.length) {
+    console.log(`… vues à dessiner (VIEWS_TODO) : ${todo.objects.length} objets, ${todo.drawings} dessins`);
+    for (const o of todo.objects) console.log(`    ${o.key} : ${o.missing.length} (${o.reason})`);
+  }
 }
 
 main();
