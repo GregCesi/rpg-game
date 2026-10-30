@@ -302,8 +302,9 @@ faut seulement plus de coups pour une pièce plus longue. **Le quartier** est un
 l'autre face debout d'un côté, l'écorce qui descend en arrondi de l'autre : la pièce garde le côté de sa face debout (`face` : nord ou
 sud est-ouest, est ou ouest nord-sud) ; R (ou le pivot au sol) le tourne d'un quart de tour dans le sens des aiguilles d'une montre,
 la face suit (nord, est, sud, ouest). Les deux quartiers d'une demi-bille naissent côte à côte faces debout opposées, tournées l'une
-vers l'autre : ils reforment la demi-bille. Section : 27,5 × 27,5 cm (le rayon de la bille), soit 20 × 8 px à 1 m est-ouest et
-6 × 16 px nord-sud ; la même épaisseur dans les deux sens.
+vers l'autre : ils reforment la demi-bille. Section : 27,5 × 27,5 cm (le rayon de la bille), 37,5 cm contour compris comme toutes les
+pièces (gabarit), soit environ 20 × 11 px à 1 m est-ouest et 8 × 18 px nord-sud ; la même épaisseur dans les deux sens. Nord-sud, la
+face coupée au sud (la part de tarte, claire, ses cernes, le cœur du côté de la face debout) fait lire la pièce couchée et non debout.
 
 Repris par *Le bois* (30 octobre 2026) : la bille, la demi-bille et le quartier sont des formes de la pièce de bois du gros, le coin planté un de ses réglages (son bout et ses coups) ; à 1 m, 107 kg la demi-bille, 53,5 kg le quartier.
 

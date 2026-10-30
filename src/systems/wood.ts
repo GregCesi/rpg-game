@@ -89,8 +89,8 @@ export class WoodSystem {
   /**
    * La pièce que l'outil `tool` travaillerait, et ce qu'il y ferait : contre son flanc (couper, équarrir) ou à un de ses bouts
    * (le coin, la masse ; contre le flanc, ils sont refusés : ils se donnent dans le bout). Quand plusieurs pièces se touchent (les
-   * deux demi-billes côte à côte), celle où le travail est possible l'emporte ; sinon le refus de la première. Rien si Xéros n'est
-   * collé à aucune pièce.
+   * deux demi-billes côte à côte), celle où le travail est possible l'emporte ; sinon le refus de la pièce coin planté pour la masse,
+   * ou de la première. Rien si Xéros n'est collé à aucune pièce.
    */
   target(player: Player, tool: string | undefined): WoodAim | undefined {
     const work = WoodSystem.workOf(tool);
@@ -100,7 +100,8 @@ export class WoodSystem {
       if (!p.wood || !p.box || !p.image.visible) continue;
       const aim = this.aimAt(player, p, work);
       if (aim && !aim.refusal) return aim;
-      refused ??= aim;
+      // la masse : le refus de la pièce où le coin est planté (« Pas la place pour la fendre. ») passe avant celui d'une voisine
+      if (aim && (!refused || (work === 'maul' && p.wood.wedge))) refused = aim;
     }
     return refused;
   }

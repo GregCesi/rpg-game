@@ -123,6 +123,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     out.halfMass = mass.woodMass(wood('half'));
 
     // 4. chaque moitié : le coin, puis trois coups de masse
+    const before4 = notices.length;
     for (let k = 0; k < 2; k++) {
       await give('splitting-wedge');
       await stand(pieces('half')[0]);
@@ -136,6 +137,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
       }
     }
     out.quarters = pieces('quarter').length;
+    out.splitNotices = notices.slice(before4);
     out.quarterFaces = pieces('quarter').map((p: any) => p.wood.face).sort();
     out.quarterMass = mass.woodMass(wood('quarter'));
     // le quartier ne se refend pas ici

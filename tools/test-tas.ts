@@ -10,6 +10,10 @@ import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';
 
 await playtest('tas', async ({ page, errors }) => {
+  // TAS_SHOTS=1 : des captures aux moments clés, dans .art-preview/tas-<nom>.png (à regarder)
+  await page.exposeFunction('shot', async (name: string) => {
+    if (process.env.TAS_SHOTS) await page.screenshot({ path: `.art-preview/tas-${name}.png` });
+  });
   const r = (await page.evaluate(async () => {
     const sleep = (t: number) => new Promise((res) => setTimeout(res, t));
     const g = (window as any).game;
@@ -71,6 +75,10 @@ await playtest('tas', async ({ page, errors }) => {
       const n: number[] = [];
       for (const id of pile.places) n[def.places[id].layer] = (n[def.places[id].layer] ?? 0) + 1;
       return n;
+    };
+    const ghost = () => {
+      const i = w().handsSystem.ghost.images[0];
+      return i && { visible: i.visible, key: i.texture.key, x: i.x, y: i.y, w: i.width };
     };
     const out: Record<string, unknown> = {};
     emit({ kind: 'map', map: 'ferme' });
@@ -148,6 +156,30 @@ await playtest('tas', async ({ page, errors }) => {
       };
     }
 
+    // 2 bis. pas de sens mêlés : un quartier tenu nord-sud, visé sur un tas de quartiers est-ouest commencé, prend le sens du tas ;
+    // chaque pièce du tas est dessinée est-ouest, le fantôme aussi
+    {
+      const [x, y] = find(60, 60);
+      const ew = gs.addPile(gs.game, mapId(), { wood: quartier, x: x + 10, y: y + 50, places: ['g1', 'g0', 'g2'] });
+      w().map.placePile(ew);
+      const def = shape(ew);
+      await give({ prop: 'wood-piece', wood: { ...quartier, axis: 'ns', face: 'east' } });
+      const [ax, ay] = ps.placeAim(def, 'l1-1');
+      await lookAt(ew.x + ax, ew.y + ay);
+      await sleep(100);
+      const gh = ghost();
+      await (window as any).shot('sens');
+      await press('KeyE');
+      const placed = w().map.piles.find((p: any) => p.pile.id === ew.id);
+      out.senses = {
+        ghost: gh.key,
+        places: placed.pile.places.length,
+        turned: !!placed.pile.turned,
+        images: placed.parts.filter((o: any) => o.type === 'Image').map((o: any) => o.texture.key.split(':')[3]),
+        both: gs.game.both,
+      };
+    }
+
     // 3. plus de 70 kg : un rondin de 1,40 m (89 kg), porté avec la force doublée, posé contre son jumeau, reste seul
     {
       const lourd = { size: 'normal', shape: 'round', length: 140 };
@@ -173,10 +205,6 @@ await playtest('tas', async ({ page, errors }) => {
     }
 
     // 4. la pose avec fantôme d'une pierre plate (objet du monde) et d'une hachette (objet possédable)
-    const ghost = () => {
-      const i = w().handsSystem.ghost.images[0];
-      return i && { visible: i.visible, key: i.texture.key, x: i.x, y: i.y, w: i.width };
-    };
     {
       const [x, y] = find(60, 60);
       await give({ prop: 'flat-stone' });
@@ -231,6 +259,11 @@ await playtest('tas', async ({ page, errors }) => {
   assert.equal(r.mixed.rondinAlone, 1, 'il est posé seul à côté');
   assert.deepEqual(r.mixed.notices, [], 'sans message');
   assert.equal(r.mixed.both, null);
+  assert.equal(r.senses.ghost.split(':')[3], 'ew', 'le fantôme sur un tas est-ouest est est-ouest, quel que soit le sens tenu');
+  assert.equal(r.senses.places, 4, 'la pièce va sur le tas');
+  assert.equal(r.senses.turned, false);
+  assert.deepEqual([...new Set(r.senses.images)], ['ew'], 'aucune pièce nord-sud dans un tas est-ouest');
+  assert.equal(r.senses.both, null);
   assert.ok(r.heavyMass > 70, `le rondin de 1,40 m pèse plus de 70 kg : ${r.heavyMass}`);
   assert.equal(r.heavy.piles, 0, 'plus de 70 kg : pas de tas');
   assert.equal(r.heavy.lone, 2, 'posé seul à côté de son jumeau');

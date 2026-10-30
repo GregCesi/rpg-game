@@ -292,8 +292,8 @@ function bigFlatEnd(x1: number, y1: number, endH: number): Grid {
  * l'arc d'écorce en haut à gauche. La prise sur l'arête entre le dessus et la part.
  */
 function quarterEnd(): Grid {
-  const h = 13;
-  return onGrip(trim(quarterNS(h, 'east').toGrid()), h - 8);
+  const h = 14;
+  return onGrip(trim(quarterNS(h, 'east').toGrid()), h - 9);
 }
 
 /** Quartier en long : le quartier est-ouest de wood-pieces.ts, face debout au sud (une rangée d'écorce, la face fendue). */
