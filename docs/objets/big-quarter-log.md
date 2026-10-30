@@ -11,7 +11,7 @@
 
 ## Dimensions (gabarit)
 - Un quart de cylindre couché : 95 × 33 × 33 cm (est-ouest) ou 33 × 95 × 33 cm (nord-sud), boîte. À l'écran : 19 × 10 px (est-ouest : 33 / 5 + 33 / 10) ; 7 × 16 px (nord-sud : largeur 33 / 5, hauteur 33 / 5 + 95 / 10).
-- Images : est-ouest 19 × 12 px (silhouette en haut à gauche, 2 rangées vides dessous), nord-sud 8 × 18 px (une colonne et 2 rangées vides) ; collisions : 19 × 6 à 2 px du bas (est-ouest), 6 × 15 à 2 px du bas (nord-sud).
+- Images : est-ouest 19 × 12 px (silhouette en haut à gauche, 2 rangées vides dessous), nord-sud 8 × 18 px (une colonne et 2 rangées vides) ; collisions : 19 × 5 à 2 px du bas (est-ouest : deux quartiers tiennent dans les 10 px de la demi-bille), 6 × 15 à 2 px du bas (nord-sud).
 - Section : un quart de disque, une face plate en haut (celle de la demi-bille d'où il vient), une face plate de côté (la fente), le dos arrondi d'écorce.
 
 ## Vues

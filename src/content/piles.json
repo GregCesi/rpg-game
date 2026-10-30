@@ -43,12 +43,12 @@
     "top": {"layer": 2, "on": ["u01", "u12"], "image": "normal-felled-log-ns", "x": 6, "y": -6}
   }}},
   "big-quarters": {"name": "tas de quartiers", "piece": {"prop": "big-quarter-log"}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
-    "g1": {"layer": 0, "image": "big-quarter-log", "x": 0, "y": -7, "body": {"x": 0, "y": -15, "w": 19, "h": 6}},
-    "g0": {"layer": 0, "image": "big-quarter-log", "x": 0, "y": -14, "body": {"x": 0, "y": -22, "w": 19, "h": 6}},
-    "g2": {"layer": 0, "image": "big-quarter-log", "x": 0, "y": 0, "body": {"x": 0, "y": -8, "w": 19, "h": 6}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "big-quarter-log", "x": 0, "y": -18},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "big-quarter-log", "x": 0, "y": -11},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "big-quarter-log", "x": 0, "y": -22}
+    "g1": {"layer": 0, "image": "big-quarter-log", "x": 0, "y": -6, "body": {"x": 0, "y": -13, "w": 19, "h": 5}},
+    "g0": {"layer": 0, "image": "big-quarter-log", "x": 0, "y": -12, "body": {"x": 0, "y": -19, "w": 19, "h": 5}},
+    "g2": {"layer": 0, "image": "big-quarter-log", "x": 0, "y": 0, "body": {"x": 0, "y": -7, "w": 19, "h": 5}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "big-quarter-log", "x": 0, "y": -16},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "big-quarter-log", "x": 0, "y": -10},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "big-quarter-log", "x": 0, "y": -20}
   }, "turned": {"start": "g1", "order": "depth", "places": {
     "g1": {"layer": 0, "image": "big-quarter-log-ns", "x": 7, "y": 0, "body": {"x": 8, "y": -17, "w": 6, "h": 15}},
     "g0": {"layer": 0, "image": "big-quarter-log-ns", "x": 0, "y": 0, "body": {"x": 1, "y": -17, "w": 6, "h": 15}},

@@ -10,7 +10,8 @@
     "dev": "npm run art && npm run maps && vite",
     "typecheck": "npm run art && npm run maps && tsc --noEmit",
     "sketch": "npm run art && tsx tools/sketch.ts",
-    "test": "npm run art && tsx tools/test-sketch.ts",
+    "test": "npm run art && tsx tools/test-sketch.ts && npm run maps && tsx tools/test-fendage.ts",
+    "test:fendage": "npm run art && npm run maps && tsx tools/test-fendage.ts",
     "build": "npm run check && npm run test && tsc --noEmit && vite build",
     "build:single": "npm run check && npm run test && tsc --noEmit && vite build --mode single",
     "artifact": "npm run build:single && tsx tools/make-artifact.ts"
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@types/pngjs": "^6.0.5",
+    "playwright-core": "^1.64.1",
     "pngjs": "^7.0.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

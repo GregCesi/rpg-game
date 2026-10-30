@@ -215,7 +215,7 @@ export class WorldScene extends Phaser.Scene {
     const swap = input.swapPressed();
     const turn = input.turnPressed();
     const e = this.interaction.update(time, this.mode === 'play');
-    this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : heldItem(game), this.mode === 'play');
+    this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
     // ce qu'on tient et qui s'entrepose : sa pièce en transparence, là où elle ira
     this.handsSystem.updatePreview(this.player, this.mode === 'play');
     this.pileCount.update(this.player, this.mode === 'play');
@@ -342,10 +342,21 @@ export class WorldScene extends Phaser.Scene {
     this.game.events.emit(GameEvent.Notice, text);
   }
 
+  /**
+   * L'objet possédable que l'Espace utilise : celui de la main active, sinon celui de l'autre main (le coin pris dans la main
+   * qui n'est pas la main active ne doit pas rester sans effet) ; rien à deux mains pour un objet du monde porté.
+   */
+  private usable(): string | undefined {
+    const own = heldItem(game);
+    if (own || game.both || game.hands[game.active]) return own;
+    const other = game.hands[1 - game.active];
+    return other && 'item' in other ? other.item : undefined;
+  }
+
   /** Espace : le geste avec ce qu'on tient, même dans le vide. Une ressource en main ne fait rien ; chargé, rien non plus. */
   private useHeld(): void {
     if (this.player.hold.loaded) return;
-    const tool = heldItem(game);
+    const tool = this.usable();
     if (!tool || items[tool].kind === 'resource') {
       // mains vides devant ce qui demande un outil : on le dit
       const t = this.harvest.target(this.player)?.def.harvest?.tool;
@@ -359,6 +370,8 @@ export class WorldScene extends Phaser.Scene {
     // un outil que la cible écarte (la hache sur une grosse bille) ou une fente sans la place de s'ouvrir : on le dit, sans geste ni dépense
     const why = target && this.harvest.refusal(target, tool);
     if (why) return this.notice(why);
+    // un outil qu'on plante (le coin) ne se joue pas dans le vide : sans cible à portée, on le dit
+    if (!target && tool && Object.values(props).some((p) => p.harvest?.plant && p.harvest.tool === tool)) return this.notice('Rien où le planter : colle-toi à une grosse bille couchée.');
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
     const costs = this.player.stamina.costs;
     if (h?.tool === tool && !this.effort.afford(this.player, costs[h.effort ?? (target!.def.bears ? 'cutTie' : 'chop')])) return;
