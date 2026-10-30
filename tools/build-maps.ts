@@ -6,7 +6,8 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { TILE } from '../src/config';
-import { MapSchema } from '../src/content/types';
+import { MapSchema, WoodPieceSchema } from '../src/content/types';
+import propsJson from '../src/content/props.json';
 import type { Exit, MapData, MapObject, Npc, Spawn } from '../src/content/types';
 import { TmjSchema, TsjSchema } from './lib/tiled-schema';
 import type { Tmj, TmjObject, Tsj } from './lib/tiled-schema';
@@ -55,6 +56,35 @@ function readTileset(mapPath: string, firstgid: number, source: string, err: (m:
 }
 
 /** Propriétés d'un objet ou d'une carte, par nom (les valeurs sont contrôlées par l'appelant). */
+/** Les propriétés Tiled d'une pièce de bois : ses réglages (WoodPieceSchema), chacun facultatif. */
+const WOOD_FIELDS = ['size', 'length', 'shape', 'axis', 'hewn'];
+
+/**
+ * Les réglages d'une pièce de bois posée dans Tiled : ceux de props.json complétés par ses propriétés (`size`, `length`, `shape`,
+ * `axis`, `hewn` ; du texte, les nombres en chiffres). Aucune propriété : undefined (le jeu prend ceux de props.json). Une propriété
+ * sur un objet qui n'est pas une pièce de bois, ou des réglages qui ne tiennent pas : une erreur.
+ */
+function readWood(key: string, props: Map<string, unknown>, oerr: (m: string) => void): MapObject['wood'] {
+  const given = WOOD_FIELDS.filter((k) => props.get(k) !== undefined && props.get(k) !== '');
+  if (!given.length) return undefined;
+  const base = (propsJson as Record<string, { wood?: object }>)[key]?.wood;
+  if (!base) {
+    oerr(`propriétés ${given.join(', ')} : seule une pièce de bois en a`);
+    return undefined;
+  }
+  const raw: Record<string, unknown> = { ...base };
+  for (const k of given) {
+    const v = props.get(k);
+    raw[k] = k === 'length' || k === 'hewn' ? Number(v) : v;
+  }
+  const r = WoodPieceSchema.safeParse(raw);
+  if (!r.success) {
+    oerr(`réglages de bois invalides : ${z.prettifyError(r.error)}`);
+    return undefined;
+  }
+  return r.data;
+}
+
 function readProps(list: { name: string; type?: string; value?: unknown }[] | undefined) {
   return new Map((list ?? []).map((p) => [p.name, p.value]));
 }
@@ -221,7 +251,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (!dialogue) oerr("champ 'dialogue' (clé de dialogues.json) manquant");
       if (character && dialogue) npcs.push({ x: o.x, y: o.y, character, dialogue, ...(facing() ? { facing: facing() } : {}) });
     } else {
-      only(['interact']);
+      only(['interact', ...WOOD_FIELDS]);
       if (o.gid === undefined) return oerr("objet sans image : type inconnu (attendus : Spawn, Exit, Npc, ou un objet posé depuis le tileset 'props')");
       if (o.gid > 0x0fffffff || (o.gid & FLIP_BITS) !== 0) return oerr('image retournée ou pivotée, non gérée');
       const u = owner(o.gid);
@@ -234,7 +264,8 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
         return oerr(`taille ${o.width}x${o.height} au lieu de ${tile.imagewidth}x${tile.imageheight} : redimensionner un objet n'est pas géré`);
       }
       const interact = text('interact');
-      objects.push({ id: o.id, type: key, x: o.x, y: o.y, ...(interact ? { interact } : {}) });
+      const wood = readWood(key, props, oerr);
+      objects.push({ id: o.id, type: key, x: o.x, y: o.y, ...(interact ? { interact } : {}), ...(wood ? { wood } : {}) });
     }
   }
 

@@ -1,74 +1,44 @@
 // arbres.png de npm run art:preview : les trois arbres de KINDS à chaque étape, l'un sous l'autre dans cet ordre (le gros
 // grand, le têtard, le normal), au même pas (même échelle, même sol). De haut en bas : debout (avec sa souche, et Xéros
-// pour l'échelle), la chute à droite (images 2 à 4), la chute à gauche, l'arbre couché tel que le jeu le pose (souche +
-// pièces de `spawns`, d'après props.json), l'entaille d'une section (rien, 1 coup, 2 coups, coupée, et sa voisine), les
-// billes du tronc et la bille ordinaire est-ouest et nord-sud, enfin le tas plein de billes, est-ouest et nord-sud.
-// Chaque arbre n'est connu que par la clé de l'arbre debout et son genre de tas : sa souche, ses planches de chute, ses
-// pièces couchées et ses billes se lisent dans props.json (`harvest` : `becomes`, `fall`, `spawns`, puis la chaîne des
-// `becomes` de chaque pièce jusqu'à l'objet qu'on prend), la bille ordinaire dans piles.json (`piece`, `turned`).
-// Vérification : la première image de chaque chute doit être, pixel pour pixel, l'arbre debout posé, et la dernière l'arbre couché posé par le jeu ; les
-// écarts sont rendus à l'appelant (rien ne doit sauter au moment où la chute laisse la place aux objets).
+// pour l'échelle), la chute à droite (images 2 à 4), la chute à gauche, l'arbre couché d'un seul tenant tel que le jeu le
+// pose (souche + arbre couché de `spawns`), à droite puis à gauche ; ébranché (la pièce de bois ronde de sa longueur utile,
+// posée par `at`), à droite et à gauche ; coupé à 1 m du bout scié (deux pièces, 100 cm et le reste) ; la bille de 1 m
+// est-ouest et nord-sud ; enfin le tas plein de billes, est-ouest et nord-sud (piles.json).
+// Les places se lisent dans props.json (`harvest` de l'arbre debout : `becomes`, `at`, `fall`, `spawns` ; `harvest` de
+// l'arbre couché : `at`, `wood`) ; tant que props.json ne connaît pas encore l'arbre couché, la géométrie calculée par le
+// dessin (art/world/big-felled.ts, big-pollard.ts, normal-felled.ts) en tient lieu, et tout écart entre les deux est signalé.
+// Vérification : la première image de chaque chute doit être, pixel pour pixel, l'arbre debout posé, et la dernière l'arbre
+// couché posé par le jeu ; les écarts sont rendus à l'appelant (rien ne doit sauter au moment où la chute laisse la place
+// aux objets).
 
 import { PNG } from 'pngjs';
 import type { Grid, Palette } from '../../art/lib/canvas';
-import type { ArtSource, ImageSource, SpriteSheetSource } from '../../art/lib/types';
+import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
 import type { PileDef, PropDef } from '../../src/content/types';
 import { drawOrder, shapeOf } from '../../src/world/pileShape';
+import { lengthPx } from '../../src/world/woodShape';
 import { Board, grassOf } from './composite-previews';
 import { FELLED_TREE } from '../../art/world/normal-felled';
-import { composeTimber } from '../../art/world/timber';
-import { lengthPx } from '../../src/world/timberShape';
+import { BIG_FELLED, BIG_TREE_CM } from '../../art/world/big-felled';
+import { POLLARD_CM, POLLARD_FELLED } from '../../art/world/big-pollard';
+import { composeWood } from '../../art/world/wood-pieces';
 
-/** Les arbres montrés, dans l'ordre : clé de l'arbre debout dans props.json, clé du genre de tas de ses billes. */
-export const KINDS = [
-  { tree: 'big-tree', logs: 'big-logs' },
-  { tree: 'big-pollard', logs: 'big-logs' },
-  { tree: 'normal-tree', logs: 'normal-logs', whole: 'normal-felled-tree' },
-] as const;
+type Vec = [number, number];
+/** Géométrie de l'arbre couché tirée du dessin : place de son image (droite) et place de la pièce de bois dans celle-ci. */
+interface Geometry { spawn: Vec; at: Vec; size: string; cm: number }
 
-/** Bille née d'une pièce couchée : la chaîne de ses `becomes`, jusqu'à l'objet qu'on prend. */
-function logOf(props: Record<string, PropDef>, type: string): string | undefined {
-  for (let t: string | undefined = type, n = 0; t && n < 8; n++) {
-    const p: PropDef | undefined = props[t];
-    if (!p) return undefined;
-    if (p.take) return p.image;
-    t = p.harvest?.becomes;
-  }
-  return undefined;
-}
+/** Les arbres montrés, dans l'ordre : clé de l'arbre debout, de l'arbre couché, du genre de tas de ses billes, et sa géométrie dessinée. */
+export const KINDS: { tree: string; lying: string; logs: string; geometry: Geometry }[] = [
+  { tree: 'big-tree', lying: 'big-felled-tree', logs: 'big-logs', geometry: { spawn: BIG_FELLED.layout.spawn, at: BIG_FELLED.layout.at, size: 'big', cm: BIG_TREE_CM } },
+  { tree: 'big-pollard', lying: 'big-pollard-felled-tree', logs: 'big-logs', geometry: { spawn: POLLARD_FELLED.layout.spawn, at: POLLARD_FELLED.layout.at, size: 'big', cm: POLLARD_CM } },
+  { tree: 'normal-tree', lying: 'normal-felled-tree', logs: 'normal-logs', geometry: { spawn: FELLED_TREE.right.at, at: FELLED_TREE.right.log, size: 'normal', cm: 580 } },
+];
 
 interface Placed { grid: Grid; palette: Palette; x: number; y: number }
 
-/** Un arbre couché, posé comme le jeu le fait : la souche puis les pièces, coin haut gauche de chacune dans le repère de l'arbre debout. */
-function lying(sources: ArtSource[], props: Record<string, PropDef>, key: string, left: boolean): Placed[] | undefined {
-  const image = (name: string | undefined) => {
-    const s = sources.find((x) => x.name === name);
-    return s?.kind === 'image' ? s : undefined;
-  };
-  const tree = props[key];
-  const img = image(tree?.image);
-  const h = tree?.harvest;
-  if (!tree || !img || !h?.at || !h.becomes) return undefined;
-  const H = img.grid.length;
-  const foot = h.fall!.foot;
-  const out: Placed[] = [];
-  // la souche ne dépend pas du côté ; une pièce couchée vers la gauche prend l'image `-left`, posée en miroir autour du
-  // pied (x' = 2 × pied − (x + largeur − 1))
-  const put = (type: string, x: number, y: number, mirrored: boolean) => {
-    const p = props[type];
-    const src = image(mirrored ? `${p.image}-left` : p.image);
-    if (!src) return;
-    const X = mirrored ? 2 * foot - (x + src.grid[0].length - 1) : x;
-    out.push({ grid: src.grid, palette: src.palette, x: X, y: H + y - src.grid.length });
-  };
-  put(h.becomes, h.at[0], h.at[1], false);
-  for (const s of h.spawns) put(s.type, s.x, s.y, left);
-  return out;
-}
-
 export interface TreesResult {
   png: PNG | undefined;
-  /** Écarts entre la dernière image de la chute et l'arbre couché posé par le jeu : une ligne par sorte et par côté. */
+  /** Écarts : chutes contre arbre debout et arbre couché posé, props.json contre la géométrie dessinée. */
   problems: string[];
 }
 
@@ -89,22 +59,74 @@ export function treesPreview(sources: ArtSource[], props: Record<string, PropDef
   const problems: string[] = [];
   const body = sheet('xeros');
   const xeros = body?.animations['idle-down'].frames[0];
+  const woodPalette = image('wood-big-round-100')?.palette;
   const pad = 6;
 
+  /**
+   * L'arbre `k` couché d'un côté, dans le repère de l'arbre debout (coin haut gauche de chaque image) : la souche, puis
+   * selon `stage` l'arbre couché entier, la pièce de bois ébranchée, ou les deux pièces coupées à 1 m du bout scié.
+   */
+  const lyingScene = (k: (typeof KINDS)[number], left: boolean, stage: 'whole' | 'trunk' | 'cut'): Placed[] | undefined => {
+    const tree = image(props[k.tree]?.image);
+    const h = props[k.tree]?.harvest;
+    const stump = image(h?.becomes ? props[h.becomes]?.image : undefined);
+    const whole = image(left ? `${k.lying}-left` : k.lying);
+    if (!tree || !h?.at || !h.fall || !stump || !whole || !woodPalette) return undefined;
+    const H = tree.grid.length;
+    const sp = h.spawns.find((s) => s.type === k.lying);
+    const spawn: Vec = sp ? [sp.x, sp.y] : k.geometry.spawn;
+    const lh = props[k.lying]?.harvest;
+    const at: Vec = lh?.at ?? k.geometry.at;
+    const cm = lh?.wood?.length ?? k.geometry.cm;
+    const size = lh?.wood?.size ?? k.geometry.size;
+    const W = whole.grid[0].length;
+    const x = left ? 2 * h.fall.foot - (spawn[0] + W - 1) : spawn[0];
+    const bottom = H + spawn[1];
+    const out: Placed[] = [{ grid: stump.grid, palette: stump.palette, x: h.at[0], y: H + h.at[1] - stump.grid.length }];
+    if (stage === 'whole') {
+      out.push({ grid: whole.grid, palette: whole.palette, x, y: bottom - whole.grid.length });
+      return out;
+    }
+    // la pièce : jamais retournée, posée en miroir dans l'image couchée quand l'arbre est tombé à gauche (harvest.ts, `finish`)
+    const n = lengthPx(cm);
+    const px = x + (left ? W - at[0] - n : at[0]);
+    const py = bottom + at[1];
+    // coupée à 1 m du bout scié : à l'ouest (le pied) à droite, à l'est à gauche
+    const lengths = stage === 'trunk' ? [cm] : left ? [cm - 100, 100] : [100, cm - 100];
+    let cx = px;
+    for (const l of lengths) {
+      const g = composeWood({ size, shape: 'round', axis: 'ew', length: l }).toGrid();
+      out.push({ grid: g, palette: woodPalette, x: cx, y: py - g.length });
+      cx += lengthPx(l);
+    }
+    return out;
+  };
+
+  // props.json contre la géométrie dessinée
+  for (const k of KINDS) {
+    const sp = props[k.tree]?.harvest?.spawns.find((s) => s.type === k.lying);
+    const lh = props[k.lying]?.harvest;
+    if (!sp) problems.push(`${k.tree} : props.json ne fait pas naître ${k.lying} (dessin : spawns ${JSON.stringify({ type: k.lying, x: k.geometry.spawn[0], y: k.geometry.spawn[1] })})`);
+    else if (sp.x !== k.geometry.spawn[0] || sp.y !== k.geometry.spawn[1]) problems.push(`${k.tree} : ${k.lying} né en (${sp.x}, ${sp.y}) dans props.json, en (${k.geometry.spawn}) d'après le dessin`);
+    if (!lh?.at) problems.push(`${k.lying} : pas de harvest.at dans props.json (dessin : [${k.geometry.at}])`);
+    else if (lh.at[0] !== k.geometry.at[0] || lh.at[1] !== k.geometry.at[1]) problems.push(`${k.lying} : at [${lh.at}] dans props.json, [${k.geometry.at}] d'après le dessin`);
+    if (lh?.wood && lh.wood.length !== k.geometry.cm) problems.push(`${k.lying} : pièce de ${lh.wood.length} cm dans props.json, ${k.geometry.cm} cm d'après le dessin`);
+  }
+
   type Cell = { items: Placed[]; w: number; h: number };
-  // une rangée de cases par sorte ; chaque case : des images posées dans un repère local, bas aligné
   const rows: Cell[][][] = []; // [étape][sorte][cases]
   const step = (cells: (kind: (typeof KINDS)[number]) => Cell[] | undefined) => {
-    const r = KINDS.map((k) => cells(k));
-    if (r.every((c) => c && c.length)) rows.push(r as Cell[][]);
-  };
-  /** Rangée où seules certaines sortes ont quelque chose à montrer (les autres restent vides). */
-  const stepSome = (cells: (kind: (typeof KINDS)[number]) => Cell[] | undefined) => {
     const r = KINDS.map((k) => cells(k) ?? []);
     if (r.some((c) => c.length)) rows.push(r);
   };
   const single = (src: { grid: Grid; palette: Palette }): Cell => ({ items: [{ ...src, x: 0, y: 0 }], w: src.grid[0].length, h: src.grid.length });
   const frames = (s: SpriteSheetSource, which: number[]): Cell[] => which.map((i) => single({ grid: s.animations.fall.frames[i], palette: s.palette }));
+  /** Une case d'images posées, recadrée sur elles. */
+  const cellOf = (items: Placed[]): Cell => {
+    const minX = Math.min(...items.map((i) => i.x)), minY = Math.min(...items.map((i) => i.y));
+    const maxX = Math.max(...items.map((i) => i.x + i.grid[0].length)), maxY = Math.max(...items.map((i) => i.y + i.grid.length));
+    return { items: items.map((i) => ({ ...i, x: i.x - minX, y: i.y - minY })), w: maxX - minX, h: maxY - minY };
+  };
 
   // 1. debout : l'arbre, sa souche, Xéros
   step((k) => {
@@ -115,142 +137,63 @@ export function treesPreview(sources: ArtSource[], props: Record<string, PropDef
     return [single(t), single(st), ...(xeros && body ? [single({ grid: xeros, palette: body.palette })] : [])];
   });
   // 2. chute à droite, 3. chute à gauche : 10°, 45°, couchée
-  for (const side of ['', '-left']) {
+  for (const left of [false, true]) {
     step((k) => {
-      const s = fallSheet(k.tree, side === '-left');
+      const s = fallSheet(k.tree, left);
       return s ? frames(s, [1, 2, 3]) : undefined;
     });
   }
-  // vérification : la première image de chaque chute est l'arbre debout, posé à sa place (bas aligné, décalage x de la planche)
+  // vérification : première image = arbre debout posé ; dernière = souche et arbre couché posés par le jeu
   for (const k of KINDS) for (const left of [false, true]) {
     const s = fallSheet(k.tree, left);
     const tree = image(props[k.tree]?.image);
     const fx = props[k.tree]?.harvest?.fall;
     if (!s || !tree || !fx) continue;
-    const first = s.animations.fall.frames[0];
     const offX = left ? fx.left.x : fx.x;
-    const W = first[0].length;
-    const H = first.length;
-    const a = new Board(W, H, undefined);
-    const b = new Board(W, H, undefined);
-    a.blit(first, s.palette, 0, 0);
-    b.blit(tree.grid, tree.palette, -offX, H - tree.grid.length);
-    const diff = a.diff(b);
+    const fs = s.animations.fall.frames;
+    const W = fs[0][0].length;
+    const H = fs[0].length;
     const where = `${k.tree}${left ? ' à gauche' : ''}`;
-    if (tree.grid.length > H) problems.push(`${where} : l'arbre debout (${tree.grid.length} px) est plus haut que les images de la chute (${H} px)`);
-    else if (diff.length) problems.push(`${where} : ${diff.length} pixels diffèrent entre la première image de la chute et l'arbre debout posé (premier en (${diff[0][0]}, ${diff[0][1]}))`);
-  }
-  // 4. arbre couché posé par le jeu, à droite puis à gauche ; en même temps, vérification contre la dernière image
-  for (const left of [false, true]) {
-    step((k) => {
-      const placed = lying(sources, props, k.tree, left);
-      const s = fallSheet(k.tree, left);
-      const tree = image(props[k.tree]?.image);
-      if (!placed || !s || !tree) return undefined;
-      const last = s.animations.fall.frames[s.animations.fall.frames.length - 1];
-      const fx = props[k.tree].harvest!.fall!;
-      // frame posée dans le repère de l'arbre : décalage x de la planche
-      const offX = left ? fx.left.x : fx.x;
-      const W = last[0].length;
-      const H = last.length;
+    const compare = (frame: Grid, items: Placed[], what: string) => {
       const a = new Board(W, H, undefined);
       const b = new Board(W, H, undefined);
-      a.blit(last, s.palette, 0, 0);
-      for (const p of placed) b.blit(p.grid, p.palette, p.x - offX, p.y - (tree.grid.length - H));
+      a.blit(frame, s.palette, 0, 0);
+      for (const p of items) b.blit(p.grid, p.palette, p.x - offX, p.y - (tree.grid.length - H));
       const diff = a.diff(b);
-      if (diff.length) problems.push(`${k.tree}${left ? ' à gauche' : ''} : ${diff.length} pixels diffèrent entre la dernière image de la chute et l'arbre posé (premier en (${diff[0][0]}, ${diff[0][1]}))`);
-      return [{ items: placed.map((p) => ({ ...p, x: p.x - offX, y: p.y - (tree.grid.length - H) })), w: W, h: H }];
+      if (diff.length) problems.push(`${where} : ${diff.length} pixels diffèrent entre ${what} (premier en (${diff[0][0]}, ${diff[0][1]}))`);
+    };
+    if (tree.grid.length > H) problems.push(`${where} : l'arbre debout (${tree.grid.length} px) est plus haut que les images de la chute (${H} px)`);
+    else compare(fs[0], [{ grid: tree.grid, palette: tree.palette, x: 0, y: 0 }], "la première image de la chute et l'arbre debout posé");
+    const placed = lyingScene(k, left, 'whole');
+    if (!placed) problems.push(`${where} : arbre couché introuvable (${k.lying}${left ? '-left' : ''})`);
+    else compare(fs[fs.length - 1], placed, "la dernière image de la chute et l'arbre couché posé");
+  }
+  // 4. couché d'un seul tenant, à droite puis à gauche ; 5. ébranché ; 6. coupé à 1 m du bout scié
+  for (const stage of ['whole', 'trunk', 'cut'] as const) {
+    step((k) => {
+      const cells = [false, true].map((left) => lyingScene(k, left, stage)).filter((p): p is Placed[] => !!p).map(cellOf);
+      return cells.length ? cells : undefined;
     });
   }
-  // 4 bis. bois d'œuvre (arbre normal) : couché d'un seul tenant (`normal-felled-tree`, à sa place près de la souche),
-  // ébranché (le rondin de 500 cm posé sur son tronc, FELLED_TREE.log), coupé à 300 cm (deux rondins)
-  {
-    const timberPalette = image('normal-felled-log')?.palette;
-    const lyingWhole = (k: (typeof KINDS)[number], logs: number[] | null): Cell[] | undefined => {
-      if (!('whole' in k) || !timberPalette) return undefined;
-      const tree = image(props[k.tree]?.image);
-      const h = props[k.tree]?.harvest;
-      const stump = image(h?.becomes ? props[h.becomes]?.image : undefined);
-      const whole = image(k.whole);
-      if (!tree || !h?.at || !stump || !whole) return undefined;
-      const H = tree.grid.length;
-      const ft = FELLED_TREE.right;
-      const items: Placed[] = [{ grid: stump.grid, palette: stump.palette, x: h.at[0], y: H + h.at[1] - stump.grid.length }];
-      const x0 = ft.at[0], bottom = H + ft.at[1];
-      if (!logs) items.push({ grid: whole.grid, palette: whole.palette, x: x0, y: bottom - whole.grid.length });
-      else {
-        let x = x0 + ft.log[0];
-        for (const cm of logs) {
-          const g = composeTimber('ew', 'round', cm).toGrid();
-          items.push({ grid: g, palette: timberPalette, x, y: bottom + ft.log[1] - g.length });
-          x += lengthPx(cm);
-        }
-      }
-      const minX = Math.min(...items.map((i) => i.x)), minY = Math.min(...items.map((i) => i.y));
-      const maxX = Math.max(...items.map((i) => i.x + i.grid[0].length)), maxY = Math.max(...items.map((i) => i.y + i.grid.length));
-      return [{ items: items.map((i) => ({ ...i, x: i.x - minX, y: i.y - minY })), w: maxX - minX, h: maxY - minY }];
-    };
-    stepSome((k) => lyingWhole(k, null));
-    stepSome((k) => lyingWhole(k, [500]));
-    stepSome((k) => lyingWhole(k, [300, 200]));
-    // vérification : l'arbre couché entier est la dernière image de la chute, sans la souche
-    for (const k of KINDS) {
-      if (!('whole' in k)) continue;
-      for (const left of [false, true]) {
-        const s = fallSheet(k.tree, left);
-        const whole = image(left ? `${k.whole}-left` : k.whole);
-        const fx = props[k.tree]?.harvest?.fall;
-        const tree = image(props[k.tree]?.image);
-        if (!s || !whole || !fx || !tree) continue;
-        const last = s.animations.fall.frames[s.animations.fall.frames.length - 1];
-        const ft = left ? FELLED_TREE.left : FELLED_TREE.right;
-        const ox = ft.at[0] - (left ? fx.left.x : fx.x);
-        const oy = last.length + ft.at[1] - whole.grid.length;
-        let bad = 0;
-        whole.grid.forEach((row, y) => [...row].forEach((q, x) => { if (q !== '.' && last[oy + y]?.[ox + x] !== q) bad++; }));
-        if (bad) problems.push(`${k.whole}${left ? '-left' : ''} : ${bad} pixels diffèrent de la dernière image de la chute`);
-      }
-    }
-  }
-  // 5. l'entaille d'une section et sa voisine : la 2e pièce couchée s'il y en a plus de deux, sinon la 1re
+  // 7. la bille de 1 m, est-ouest et nord-sud
   step((k) => {
-    const spawns = props[k.tree]?.harvest?.spawns ?? [];
-    const i = spawns.length > 2 ? 1 : 0;
-    const cur = props[spawns[i]?.type]?.image;
-    const next = props[spawns[i + 1]?.type]?.image;
-    if (!cur || !next) return undefined;
-    const names = [cur, `${cur}-n1`, `${cur}-n2`, `${cur}-cut-right`, `${next}-cut-left`];
-    const imgs = names.map(image);
-    return imgs.every((i) => i) ? (imgs as ImageSource[]).map(single) : undefined;
-  });
-  // 6. les billes du tronc, puis la bille ordinaire (est-ouest, nord-sud)
-  step((k) => {
-    const spawns = props[k.tree]?.harvest?.spawns ?? [];
-    const logs = spawns.map((s) => image(logOf(props, s.type)));
-    if (logs.some((l) => !l)) return undefined;
     const def = piles[k.logs];
-    const turned = def?.turned;
-    const pieceProp = def && 'prop' in def.piece ? def.piece.prop : undefined;
-    const plain = [image(pieceProp ? props[pieceProp]?.image : undefined), turned ? image(turned.places[turned.start]?.image) : undefined];
-    return plain.every((i) => i) && logs.length ? [...(logs as ImageSource[]), ...(plain as ImageSource[])].map(single) : undefined;
+    const ew = def ? image(def.places[def.start]?.image) : undefined;
+    const ns = def?.turned ? image(def.turned.places[def.turned.start]?.image) : undefined;
+    return ew && ns ? [single(ew), single(ns)] : undefined;
   });
-  // 7. le tas plein, est-ouest puis nord-sud
+  // 8. le tas plein, est-ouest puis nord-sud
   step((k) => {
     const def = piles[k.logs];
     if (!def) return undefined;
     return [false, true].map((turned): Cell => {
       const shape = shapeOf(def, turned);
       const taken = Object.keys(shape.places);
-      const items = drawOrder(shape, taken).map((id) => {
+      return cellOf(drawOrder(shape, taken).map((id) => {
         const q = shape.places[id];
         const src = image(q.image)!;
         return { grid: src.grid, palette: src.palette, x: q.x, y: q.y - src.grid.length };
-      });
-      const x0 = Math.min(...items.map((i) => i.x));
-      const y0 = Math.min(...items.map((i) => i.y));
-      const x1 = Math.max(...items.map((i) => i.x + i.grid[0].length));
-      const y1 = Math.max(...items.map((i) => i.y + i.grid.length));
-      return { items: items.map((i) => ({ ...i, x: i.x - x0, y: i.y - y0 })), w: x1 - x0, h: y1 - y0 };
+      }));
     });
   });
 

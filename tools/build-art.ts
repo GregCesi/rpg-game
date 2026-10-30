@@ -24,8 +24,7 @@ import { buildCollectionBoard } from './lib/collection-board';
 import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
-import { fendagePreview } from './lib/fendage-preview';
-import { timberPreview } from './lib/timber-preview';
+import { woodPreview } from './lib/wood-preview';
 import { auditPreview } from './lib/audit-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
@@ -227,7 +226,7 @@ propSlots.slots.forEach((name, id) => {
   const f = firstFrames.get(def.image)!;
   const file = `images/${def.image}.png`;
   writeFileSync(join(TILED, file), PNG.sync.write(sheet([f.grid], f.w, f.h, f.palette)));
-  propTiles.push({ id, key: name, image: file, width: f.w, height: f.h });
+  propTiles.push({ id, key: name, image: file, width: f.w, height: f.h, ...(def.wood ? { wood: true } : {}) });
 });
 writeFileSync(join(TILED, 'props.tsj'), JSON.stringify(propsTsj(propTiles), null, 2) + '\n');
 // Fichier projet committé : il liste les types d'objets (objets de props.json, Spawn, Exit) que Tiled propose.
@@ -298,12 +297,9 @@ if (withPreview) {
   const trees = treesPreview(sources, propDefs, pileDefs);
   if (trees.png) writeFileSync(join(PREVIEW, 'arbres.png'), PNG.sync.write(trees.png));
   for (const p of trees.problems) console.warn(`art : ATTENTION arbres : ${p}`);
-  // le fendage : la bille, le coin, les trois fentes, les demi-billes, les quartiers, les outils, le tas de quartiers
-  const fendage = fendagePreview(sources, propDefs, pileDefs);
-  if (fendage) writeFileSync(join(PREVIEW, 'fendage.png'), PNG.sync.write(fendage));
-  // le bois d'œuvre de l'arbre normal : rondins de toute longueur, encoches, roulement, équarrissage, poutre portée
-  const timber = timberPreview(sources);
-  if (timber) writeFileSync(join(PREVIEW, 'timber.png'), PNG.sync.write(timber));
+  // le bois : chaque diamètre et chaque aspect assemblés à plusieurs longueurs, l'encoche, le coin planté et la fente, les vues portées
+  const bois = woodPreview(sources);
+  if (bois) writeFileSync(join(PREVIEW, 'bois.png'), PNG.sync.write(bois));
   // les bâtiments qui montent, étape par étape : chaque plan de plans.json posé sur la ferme, son piquet nord-ouest en PLAN_PREVIEW
   const plans = parse('plans.json', z.record(z.string(), PlanSchema), plansJson);
   const base = previewMap(PLAN_PREVIEW.map);

@@ -79,10 +79,10 @@ export const SITE = { snap: 12, near: 110, ghost: 0.35, aimed: 0.7 };
 export const PUT_DOWN = { gap: 2 };
 
 /**
- * Viser une encoche du tronc couché : Xéros doit être collé au tronc (au plus `gap` px entre sa collision et celle du tronc),
- * tourné vers lui (haut ou bas), et le fer à l'impact à moins de `align` px de l'encoche (une demi-section : 19 px / 2).
+ * Viser une pièce de bois (systems/wood.ts) : Xéros doit être collé à elle, tourné vers elle : au plus `gap` px entre sa collision
+ * et celle de la pièce contre son flanc (couper, équarrir), `end` px à un de ses bouts (planter le coin, frapper à la masse).
  */
-export const NOTCH_AIM = { gap: 3, align: 9.5 };
+export const WOOD_AIM = { gap: 3, end: 6 };
 
 /** Récolte : tremblement d'un objet frappé, saut des objets lâchés, où ils retombent (px, autour de la base). */
 export const HARVEST = {

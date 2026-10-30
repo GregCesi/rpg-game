@@ -193,6 +193,9 @@
     "broadaxe-ground",
     "normal-felled-tree",
     "normal-beam",
-    "normal-beam-ns"
+    "normal-beam-ns",
+    "wood-piece",
+    "big-felled-tree",
+    "big-pollard-felled-tree"
   ]
 }

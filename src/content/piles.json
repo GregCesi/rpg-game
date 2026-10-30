@@ -12,50 +12,50 @@
     "l2-1": {"layer": 2, "on": ["l1-1", "l1-2"], "image": "pile-branch-l2-1", "x": 0, "y": -10},
     "l3-0": {"layer": 3, "on": ["l2-0", "l2-1"], "image": "pile-branch-l3-0", "x": 0, "y": -15}
   }},
-  "big-logs": {"name": "tas de billes", "piece": {"prop": "big-felled-log"}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
-    "g1": {"layer": 0, "image": "big-felled-log", "x": 0, "y": -11, "body": {"x": 1, "y": -24, "w": 18, "h": 10}},
-    "g0": {"layer": 0, "image": "big-felled-log", "x": 0, "y": -22, "body": {"x": 1, "y": -35, "w": 18, "h": 10}},
-    "g2": {"layer": 0, "image": "big-felled-log", "x": 0, "y": 0, "body": {"x": 1, "y": -13, "w": 18, "h": 10}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "big-felled-log", "x": 0, "y": -26},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "big-felled-log", "x": 0, "y": -15},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "big-felled-log", "x": 0, "y": -30}
+  "big-logs": {"name": "tas de billes", "piece": {"wood": {"size": "big", "shape": "round", "length": 100}}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
+    "g1": {"layer": 0, "image": "wood-big-round-100", "x": 0, "y": -11, "body": {"x": 1, "y": -24, "w": 19, "h": 10}},
+    "g0": {"layer": 0, "image": "wood-big-round-100", "x": 0, "y": -22, "body": {"x": 1, "y": -35, "w": 19, "h": 10}},
+    "g2": {"layer": 0, "image": "wood-big-round-100", "x": 0, "y": 0, "body": {"x": 1, "y": -13, "w": 19, "h": 10}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "wood-big-round-100", "x": 0, "y": -26},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "wood-big-round-100", "x": 0, "y": -15},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "wood-big-round-100", "x": 0, "y": -30}
   }, "turned": {"start": "g1", "order": "depth", "places": {
-    "g1": {"layer": 0, "image": "big-felled-log-ns", "x": 12, "y": 0, "body": {"x": 13, "y": -19, "w": 12, "h": 17}},
-    "g0": {"layer": 0, "image": "big-felled-log-ns", "x": 0, "y": 0, "body": {"x": 1, "y": -19, "w": 12, "h": 17}},
-    "g2": {"layer": 0, "image": "big-felled-log-ns", "x": 24, "y": 0, "body": {"x": 25, "y": -19, "w": 12, "h": 17}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "big-felled-log-ns", "x": 6, "y": -6},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "big-felled-log-ns", "x": 18, "y": -6},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "big-felled-log-ns", "x": 12, "y": -12}
+    "g1": {"layer": 0, "image": "wood-big-round-100-ns", "x": 12, "y": 0, "body": {"x": 13, "y": -19, "w": 12, "h": 17}},
+    "g0": {"layer": 0, "image": "wood-big-round-100-ns", "x": 0, "y": 0, "body": {"x": 1, "y": -19, "w": 12, "h": 17}},
+    "g2": {"layer": 0, "image": "wood-big-round-100-ns", "x": 24, "y": 0, "body": {"x": 25, "y": -19, "w": 12, "h": 17}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "wood-big-round-100-ns", "x": 6, "y": -6},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "wood-big-round-100-ns", "x": 18, "y": -6},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "wood-big-round-100-ns", "x": 12, "y": -12}
   }}},
-  "normal-logs": {"name": "tas de billes normales", "piece": {"prop": "normal-felled-log"}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
-    "g1": {"layer": 0, "image": "normal-felled-log", "x": 0, "y": -6, "body": {"x": 1, "y": -13, "w": 17, "h": 5}},
-    "g0": {"layer": 0, "image": "normal-felled-log", "x": 0, "y": -12, "body": {"x": 1, "y": -19, "w": 17, "h": 5}},
-    "g2": {"layer": 0, "image": "normal-felled-log", "x": 0, "y": 0, "body": {"x": 1, "y": -7, "w": 17, "h": 5}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "normal-felled-log", "x": 0, "y": -14},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "normal-felled-log", "x": 0, "y": -8},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "normal-felled-log", "x": 0, "y": -16}
+  "normal-logs": {"name": "tas de billes normales", "piece": {"wood": {"size": "normal", "shape": "round", "length": 100}}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
+    "g1": {"layer": 0, "image": "wood-normal-round-100", "x": 0, "y": -6, "body": {"x": 1, "y": -13, "w": 18, "h": 5}},
+    "g0": {"layer": 0, "image": "wood-normal-round-100", "x": 0, "y": -12, "body": {"x": 1, "y": -19, "w": 18, "h": 5}},
+    "g2": {"layer": 0, "image": "wood-normal-round-100", "x": 0, "y": 0, "body": {"x": 1, "y": -7, "w": 18, "h": 5}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "wood-normal-round-100", "x": 0, "y": -14},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "wood-normal-round-100", "x": 0, "y": -8},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "wood-normal-round-100", "x": 0, "y": -16}
   }, "turned": {"start": "g1", "order": "depth", "places": {
-    "g1": {"layer": 0, "image": "normal-felled-log-ns", "x": 6, "y": 0, "body": {"x": 7, "y": -15, "w": 6, "h": 13}},
-    "g0": {"layer": 0, "image": "normal-felled-log-ns", "x": 0, "y": 0, "body": {"x": 1, "y": -15, "w": 6, "h": 13}},
-    "g2": {"layer": 0, "image": "normal-felled-log-ns", "x": 12, "y": 0, "body": {"x": 13, "y": -15, "w": 6, "h": 13}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "normal-felled-log-ns", "x": 3, "y": -3},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "normal-felled-log-ns", "x": 9, "y": -3},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "normal-felled-log-ns", "x": 6, "y": -6}
+    "g1": {"layer": 0, "image": "wood-normal-round-100-ns", "x": 6, "y": 0, "body": {"x": 7, "y": -15, "w": 6, "h": 13}},
+    "g0": {"layer": 0, "image": "wood-normal-round-100-ns", "x": 0, "y": 0, "body": {"x": 1, "y": -15, "w": 6, "h": 13}},
+    "g2": {"layer": 0, "image": "wood-normal-round-100-ns", "x": 12, "y": 0, "body": {"x": 13, "y": -15, "w": 6, "h": 13}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "wood-normal-round-100-ns", "x": 3, "y": -3},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "wood-normal-round-100-ns", "x": 9, "y": -3},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "wood-normal-round-100-ns", "x": 6, "y": -6}
   }}},
-  "big-quarters": {"name": "tas de quartiers", "piece": {"prop": "big-quarter-log"}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
-    "g1": {"layer": 0, "image": "big-quarter-log", "x": 0, "y": -6, "body": {"x": 0, "y": -13, "w": 19, "h": 5}},
-    "g0": {"layer": 0, "image": "big-quarter-log", "x": 0, "y": -12, "body": {"x": 0, "y": -19, "w": 19, "h": 5}},
-    "g2": {"layer": 0, "image": "big-quarter-log", "x": 0, "y": 0, "body": {"x": 0, "y": -7, "w": 19, "h": 5}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "big-quarter-log", "x": 0, "y": -16},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "big-quarter-log", "x": 0, "y": -10},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "big-quarter-log", "x": 0, "y": -20}
+  "big-quarters": {"name": "tas de quartiers", "piece": {"wood": {"size": "big", "shape": "quarter", "length": 100}}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
+    "g1": {"layer": 0, "image": "wood-big-quarter-100", "x": 0, "y": -6, "body": {"x": 0, "y": -13, "w": 20, "h": 5}},
+    "g0": {"layer": 0, "image": "wood-big-quarter-100", "x": 0, "y": -12, "body": {"x": 0, "y": -19, "w": 20, "h": 5}},
+    "g2": {"layer": 0, "image": "wood-big-quarter-100", "x": 0, "y": 0, "body": {"x": 0, "y": -7, "w": 20, "h": 5}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "wood-big-quarter-100", "x": 0, "y": -16},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "wood-big-quarter-100", "x": 0, "y": -10},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "wood-big-quarter-100", "x": 0, "y": -20}
   }, "turned": {"start": "g1", "order": "depth", "places": {
-    "g1": {"layer": 0, "image": "big-quarter-log-ns", "x": 7, "y": 0, "body": {"x": 8, "y": -17, "w": 6, "h": 15}},
-    "g0": {"layer": 0, "image": "big-quarter-log-ns", "x": 0, "y": 0, "body": {"x": 1, "y": -17, "w": 6, "h": 15}},
-    "g2": {"layer": 0, "image": "big-quarter-log-ns", "x": 14, "y": 0, "body": {"x": 15, "y": -17, "w": 6, "h": 15}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "big-quarter-log-ns", "x": 4, "y": -7},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "big-quarter-log-ns", "x": 11, "y": -7},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "big-quarter-log-ns", "x": 8, "y": -14}
+    "g1": {"layer": 0, "image": "wood-big-quarter-100-ns", "x": 7, "y": 0, "body": {"x": 8, "y": -17, "w": 6, "h": 15}},
+    "g0": {"layer": 0, "image": "wood-big-quarter-100-ns", "x": 0, "y": 0, "body": {"x": 1, "y": -17, "w": 6, "h": 15}},
+    "g2": {"layer": 0, "image": "wood-big-quarter-100-ns", "x": 14, "y": 0, "body": {"x": 15, "y": -17, "w": 6, "h": 15}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "wood-big-quarter-100-ns", "x": 4, "y": -7},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "wood-big-quarter-100-ns", "x": 11, "y": -7},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "wood-big-quarter-100-ns", "x": 8, "y": -14}
   }}},
   "faggots": {"name": "tas de fagots", "piece": {"prop": "faggot"}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
     "g1": {"layer": 0, "image": "faggot", "x": 0, "y": -9, "body": {"x": 2, "y": -19, "w": 24, "h": 8}},

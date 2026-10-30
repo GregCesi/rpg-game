@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { HUD, START, TURN_PRESS, ZOOM } from '../config';
 import { items, maps, props } from '../content';
-import { heldMass, itemMass, propMass } from '../content/mass';
+import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
@@ -19,7 +19,7 @@ import { PileCount } from '../systems/pileCount';
 import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
 import { SiteSystem } from '../systems/site';
-import { TimberSystem } from '../systems/timber';
+import { WoodSystem } from '../systems/wood';
 import { TurnSystem } from '../systems/turnLog';
 import { carriedMass, heavyNotice } from '../systems/weight';
 import {
@@ -31,7 +31,6 @@ import {
   heldItem,
   mapState,
   newGame,
-  release,
   removeGroundItem,
   replaceState,
   resetMap,
@@ -41,6 +40,8 @@ import {
   type Held,
 } from '../state';
 import { GameMap } from '../world/GameMap';
+import { defOf, WOOD_PIECE } from '../world/woodPiece';
+import { heldWoodTexture } from '../world/woodTexture';
 import type { Interactable, PlacedGround } from '../world/GameMap';
 
 /**
@@ -53,11 +54,15 @@ type Mode = 'play' | 'use' | 'dialogue' | 'transition';
 /** Ce que reçoit la scène à son lancement : la carte, et le point d'apparition ou la position exacte (`at`, sauvegarde). */
 export type WorldStart = { mapId: string; spawn?: string; at?: { x: number; y: number; facing: Facing }; wake?: boolean };
 
-/** Comment un objet tenu se voit sur Xéros : son `hold` (items.json, ou `take` de props.json), sinon son icône à la main. */
-function holdOf(h: Held): { stance: Stance; look: Look } {
+/**
+ * Comment un objet tenu se voit sur Xéros : son `hold` (items.json, ou `take` de props.json ; la pièce de bois, sa vue portée
+ * assemblée à sa longueur), sinon son icône à la main.
+ */
+function holdOf(scene: Phaser.Scene, h: Held): { stance: Stance; look: Look } {
   if ('prop' in h) {
-    const t = props[h.prop].take!;
-    return { stance: t.hold.stance, look: { image: t.hold.image, icon: t.icon } };
+    const t = defOf(h.prop, h.wood).take!;
+    const texture = h.wood ? heldWoodTexture(scene, h.wood) : undefined;
+    return { stance: t.hold.stance, look: { image: t.hold.image, icon: t.icon, ...(texture ? { texture } : {}) } };
   }
   const it = items[h.item];
   const stance = it.hold?.stance ?? (it.hands === 2 ? 'carry' : 'hand');
@@ -87,7 +92,7 @@ export class WorldScene extends Phaser.Scene {
   private effort!: EffortSystem;
   private turns!: TurnSystem;
   private site!: SiteSystem;
-  private timber!: TimberSystem;
+  private wood!: WoodSystem;
   /** R maintenu : pivoter une bille couchée. */
   private turnPress!: LongPress;
   /** Champ « force » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
@@ -152,7 +157,7 @@ export class WorldScene extends Phaser.Scene {
       return [...this.map.interactables(h && 'prop' in h ? h.prop : undefined), ...this.site.interactables(), ...talkable];
     });
     this.harvest = new HarvestSystem(this, this.map);
-    this.timber = new TimberSystem(this, this.map, this.harvest);
+    this.wood = new WoodSystem(this, this.map, this.harvest);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
     this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body));
     this.knots = new KnotSystem(this.map, this.handsSystem);
@@ -223,8 +228,8 @@ export class WorldScene extends Phaser.Scene {
     const turn = input.turnPressed();
     const e = this.interaction.update(time, this.mode === 'play');
     this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
-    // la coupe visée sur un rondin et ses deux longueurs, ou la face qu'on dresse
-    this.timber.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
+    // la coupe visée sur une pièce de bois et ses deux longueurs, la face qu'on dresse, le bout où planter ou frapper le coin
+    this.wood.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
     // ce qu'on tient et qui s'entrepose : sa pièce en transparence, là où elle ira
     this.handsSystem.updatePreview(this.player, this.mode === 'play');
     // les chantiers : piquets, places à remplir en fantôme, ligne d'état
@@ -272,16 +277,18 @@ export class WorldScene extends Phaser.Scene {
       if (gives.some((d) => !canTake(game, items[d.item].hands))) return this.notice('Les mains pleines.');
       this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
     } else if (a.kind === 'take') {
-      if (a.prop.notch) return this.notice("Finis d'abord la coupe.");
-      const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.hewn);
+      if (a.prop.wood?.notch) return this.notice("Finis d'abord la coupe.");
+      if (a.prop.wood?.wedge) return this.notice('Le coin est planté : finis de la fendre.');
+      const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.wood);
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(a.prop.def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();
       if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'pile') {
       const piece = a.pile.def.piece;
-      const kg = 'item' in piece ? itemMass(piece.item) : propMass(piece.prop);
-      if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice('prop' in piece ? props[piece.prop] : undefined, kg, this.player.strength));
+      const kg = pieceMass(piece);
+      const def = 'wood' in piece ? defOf(WOOD_PIECE, { ...piece.wood, axis: 'ew' }) : 'prop' in piece ? props[piece.prop] : undefined;
+      if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();
       if (!this.handsSystem.takeFromPile(a.pile, a.place)) return this.notice('Les mains pleines.');
       this.handsChanged();
@@ -361,10 +368,10 @@ export class WorldScene extends Phaser.Scene {
     this.player.strength.load = carriedMass(game);
     const [l, r] = game.hands;
     if (game.both) {
-      const { stance, look } = holdOf(game.both);
+      const { stance, look } = holdOf(this, game.both);
       // à deux mains, la posture est `shoulder` ou `carry` (validate.ts)
       this.player.hold.set({ both: look, stance: stance as 'shoulder' | 'carry' });
-    } else this.player.hold.set({ left: l ? holdOf(l).look : undefined, right: r ? holdOf(r).look : undefined });
+    } else this.player.hold.set({ left: l ? holdOf(this, l).look : undefined, right: r ? holdOf(this, r).look : undefined });
     this.game.events.emit(GameEvent.HandsChanged);
   }
 
@@ -396,42 +403,47 @@ export class WorldScene extends Phaser.Scene {
       if (t) this.report({ kind: 'missing', tool: t });
       return;
     }
-    // contre le flanc d'un rondin : la cognée le coupe où l'on vise, la doloire en dresse une face (de haut en bas)
-    const aim = this.timber.target(this.player, tool);
+    // une pièce de bois : la cognée la coupe où l'on vise, la doloire en dresse une face (de haut en bas, contre le flanc) ; le
+    // coin se plante dans le bout, d'un coup, sans geste ; la masse frappe le coin depuis ce bout
+    const aim = this.wood.target(this.player, tool);
     if (aim) {
       if (aim.refusal) return this.notice(aim.refusal);
-      if (!this.effort.afford(this.player, this.timber.cost(this.player, aim))) return;
-      return this.gesture('chop', tool, () => this.timberHit(tool));
+      if (!this.effort.afford(this.player, this.wood.cost(this.player, aim))) return;
+      const gesture = WoodSystem.gestureOf(aim);
+      return gesture ? this.gesture(gesture, tool, () => this.woodHit(tool)) : this.woodHit(tool);
     }
+    // un outil du bois sans pièce à portée : le coin ne se joue pas dans le vide
+    if (WoodSystem.workOf(tool) === 'plant') return this.notice('Rien où le planter : colle-toi au bout d’une grosse bille couchée.');
     // le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ; dans le vide, de côté
     const target = this.harvest.target(this.player, tool);
     const h = target?.def.harvest;
     const gesture = h?.gesture ?? 'use';
     // un outil que la cible écarte (la hache sur une grosse bille) ou une fente sans la place de s'ouvrir : on le dit, sans geste ni dépense
-    const why = target && this.harvest.refusal(target, tool, this.player);
+    const why = target && this.harvest.refusal(target, tool);
     if (why) return this.notice(why);
-    // un outil qu'on plante (le coin) ne se joue pas dans le vide : sans cible à portée, on le dit
-    if (!target && tool && Object.values(props).some((p) => p.harvest?.plant && p.harvest.tool === tool)) return this.notice('Rien où le planter : colle-toi à une grosse bille couchée.');
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
     const costs = this.player.stamina.costs;
     if (h && wields(h, tool) && !this.effort.afford(this.player, costs[effortOf(h, tool, !!target!.def.bears?.prop)])) return;
-    const impact = () => {
-      this.report(this.harvest.hit(this.harvest.target(this.player, tool), tool, this.player.actor.facing));
-      // les morceaux d'une bille fendue débordent de sa place : Xéros est repoussé s'ils le recouvrent
-      this.harvest.settle(this.player);
-    };
-    // le coin se plante d'un coup, sans geste ; sinon la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
-    if (h?.plant && h.tool === tool) return impact();
-    this.gesture(gesture, tool, impact);
+    // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
+    this.gesture(gesture, tool, () => this.report(this.harvest.hit(this.harvest.target(this.player, tool), tool, this.player.actor.facing)));
   }
 
-  /** L'impact d'un coup sur un rondin : la coupe se creuse ou s'achève, une face se dresse, la poutre est finie. */
-  private timberHit(tool: string): void {
-    const r = this.timber.hit(this.player, tool, this.player.actor.facing);
+  /**
+   * L'impact d'un coup sur une pièce de bois : la coupe se creuse ou s'achève, une face se dresse, la poutre est finie, le coin est
+   * planté (la main qui le tenait est libre), la fente s'allonge ou la pièce s'ouvre en deux.
+   */
+  private woodHit(tool: string): void {
+    const r = this.wood.hit(this.player, tool, this.player.actor.facing);
     if (r?.split) this.notice(`Coupé : ${metres(r.split[0])} et ${metres(r.split[1])}.`);
     if (r?.face) this.notice(`Une face dressée (${r.face} sur 4).`);
     if (r?.beam) this.notice(`Poutre équarrie : ${metres(r.beam.length)}.`);
-    // un morceau qui déborde (le rondin nord-sud coupé) repousse Xéros s'il le recouvre
+    if (r?.planted) {
+      // le coin est resté dans le bois : la main qui le tenait (l'active, ou l'autre) est libre
+      const slot = game.both && 'item' in game.both && game.both.item === tool ? 'both' : ([0, 1] as const).find((i) => { const x = game.hands[i]; return !!x && 'item' in x && x.item === tool; });
+      if (slot !== undefined) clearHeld(game, slot);
+      this.handsChanged();
+    }
+    // les morceaux qui débordent (les demi-billes, la pièce nord-sud coupée) repoussent Xéros s'ils le recouvrent
     this.harvest.settle(this.player);
   }
 
@@ -446,11 +458,6 @@ export class WorldScene extends Phaser.Scene {
     if (r.kind === 'missing') this.game.events.emit(GameEvent.Notice, `Sans ${items[r.tool].name}, rien à faire.`);
     if (r.kind === 'refused') this.notice(r.message);
     if (r.kind !== 'hit') return;
-    // l'outil est resté dans l'objet (le coin planté) : la main est libre
-    if (r.released) {
-      release(game);
-      this.handsChanged();
-    }
     if (r.given) this.handsChanged();
     if (r.overflow) this.game.events.emit(GameEvent.Notice, 'Les mains pleines.');
     // ce qui reste de ce qu'on vient de couper (le rouleau sur le billot)
@@ -502,14 +509,18 @@ export class WorldScene extends Phaser.Scene {
     switch (cmd.kind) {
       case 'give': {
         const h = cmd.held;
-        if (heldMass(h) > this.player.strength.carry) return this.notice(heavyNotice('prop' in h ? props[h.prop] : undefined, heldMass(h), this.player.strength));
+        const def = 'prop' in h ? defOf(h.prop, h.wood) : undefined;
+        if (heldMass(h) > this.player.strength.carry) return this.notice(heavyNotice(def, heldMass(h), this.player.strength));
         emptyHands(game);
-        take(game, h, 'item' in h ? items[h.item].hands : props[h.prop].take!.hands);
+        take(game, h, 'item' in h ? items[h.item].hands : def!.take!.hands);
         this.handsChanged();
         break;
       }
       case 'prop':
         if (!this.handsSystem.placeInFront(this.player, cmd.prop, cmd.length)) this.notice('Pas la place ici.');
+        break;
+      case 'wood':
+        if (!this.handsSystem.placeInFront(this.player, WOOD_PIECE, undefined, cmd.wood)) this.notice('Pas la place ici.');
         break;
       case 'pile': {
         const n = this.handsSystem.pileInFront(this.player, cmd.pile, cmd.count, cmd.turned, cmd.tie);

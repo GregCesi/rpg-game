@@ -5,13 +5,11 @@
 // compris = 40 cm), « de la grosseur d'un bras ». Matière commune `NORMAL_WOOD` (art/world/wood.ts) : deux couloirs de
 // sillons, bouts en ovales de 4 px de large ; une face si étroite n'a pas de cerne (paintFace le retire sous 7 px).
 // La bille portée et l'icône (art/items/carried.ts, art/items/resources.ts) partent de ces dessins.
-// Les images du jeu (`normal-felled-log`, `normal-felled-log-ns` et leurs planches de roulement) sont désormais
-// assemblées par art/world/timber.ts (le rondin de 95 cm, mêmes tailles) : ce fichier ne garde que les constructions
-// d'origine, dont la bille portée part encore.
+// Les pièces de bois du jeu sont désormais assemblées par art/world/wood-pieces.ts (`composeWood`) : ce fichier ne garde
+// que les constructions d'origine, dont la bille portée part encore.
 
 import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
-import { world } from '../palette';
 import { despeckle, shadedOutline } from './big-tree';
 import { NORMAL_WOOD, bark, logByTheEnd, logEnd } from './wood';
 import { DIAMETER, SEC } from './normal-geometry';
@@ -65,25 +63,5 @@ export function normalFelledLogNS(): Canvas {
   }
   return c;
 }
-
-/** Découpe la bille est-ouest à sa hauteur utile, largeur gardée à LOG_LEN + 3 (20 px) comme la bille du gros. */
-function cropLog(c: Canvas): Canvas {
-  let y0 = c.h, y1 = -1, x0 = c.w;
-  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
-    if (c.get(X, Y) === EMPTY) continue;
-    y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); x0 = Math.min(x0, X);
-  }
-  const out = new Canvas(LOG_LEN + 3, y1 - y0 + 1);
-  for (let Y = 0; Y < out.h; Y++) for (let X = 0; X < out.w; X++) out.px[Y][X] = c.get(x0 + X, y0 + Y);
-  return out;
-}
-
-const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
-
-/** Plus d'image exportée d'ici : voir art/world/timber.ts. Les anciennes restent constructibles (`legacyLogs`). */
-export const legacyLogs = (): ImageSource[] => [
-  img('normal-felled-log', cropLog(normalFelledLog())),
-  img('normal-felled-log-ns', normalFelledLogNS()),
-];
 
 export default [] as ImageSource[];

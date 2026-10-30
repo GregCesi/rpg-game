@@ -4,7 +4,7 @@
 // Une pièce du dessus est donc toujours peinte par-dessus les pièces du sol.
 //
 // Billes : pas de dessin ici. Toutes les places du tas de billes affichent la bille au sol de la coupe
-// (`big-felled-log`, art/world/big-felled.ts, 20x16 ; tournée, `big-felled-log-ns`, 14x21), si bien qu'une bille reprise puis
+// (`wood-big-round-100`, art/world/wood-pieces.ts, 21x16 ; tournée, `wood-big-round-100-ns`, 14x21), si bien qu'une bille reprise puis
 // reposée garde son aspect. Les positions dans piles.json font le reste. Au sol, la profondeur compte 5 cm par pixel,
 // comme la largeur : trois billes est-ouest à 11 px (55 cm, leur diamètre) l'une de l'autre du nord au sud, la bille
 // de devant ne cachant que le contour et la rangée d'écorce sombre du bas de celle de derrière. Une bille d'un creux

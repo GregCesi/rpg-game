@@ -3,7 +3,7 @@ import { HUD, UI, VIEW, ZOOM } from '../config';
 import { items, props, stamina } from '../content';
 import { GameEvent } from '../events';
 import { game, type Held } from '../state';
-import { timberLength } from '../world/GameMap';
+import { defOf } from '../world/woodPiece';
 
 /** Écart entre les deux cases (px) et marge sous les cases. */
 const GAP = 4;
@@ -30,7 +30,7 @@ const EMPTY = ['ui-hand-left', 'ui-hand-right'];
  */
 /** Icône d'un objet possédable, ou celle d'un objet du monde porté (`icon` de son `take`). */
 function icon(h: Held): string {
-  return 'item' in h ? items[h.item].icon : props[h.prop].take!.icon;
+  return 'item' in h ? items[h.item].icon : defOf(h.prop, h.wood).take!.icon;
 }
 
 export class HudScene extends Phaser.Scene {
@@ -130,9 +130,10 @@ export class HudScene extends Phaser.Scene {
       this.icons[i].setTexture(key);
       // ce qu'on tient à deux mains s'affiche dans la case droite
       const h = game.both ? (i === 1 ? game.both : null) : game.hands[i];
-      // la longueur de ce qu'on tient : ce qui reste du rouleau, ou celle du rondin, de la poutre
-      const def = h && 'prop' in h ? props[h.prop] : undefined;
-      const length = def?.length ? ((h as { length?: number }).length ?? def.length.start) : def?.timber ? timberLength(def, (h as { length?: number }).length) : undefined;
+      // la longueur de ce qu'on tient : ce qui reste du rouleau, ou celle de la pièce de bois
+      const p = h && 'prop' in h ? h : undefined;
+      const def = p ? props[p.prop] : undefined;
+      const length = p?.wood ? p.wood.length : def?.length ? (p!.length ?? def.length.start) : undefined;
       this.showLength(i, length);
     });
   }

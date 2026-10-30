@@ -1,5 +1,5 @@
 // Gabarit : la règle commune de dimensions et de perspective (docs/STYLE.md, section « Gabarit »).
-// Tirée des billes (big-felled-log, big-felled-log-ns, art/world/big-felled.ts), vérifiée sur Xéros, la mère et les cases du sol.
+// Tirée des billes de 95 cm d'avant (aujourd'hui la pièce de bois du gros, art/world/wood-pieces.ts), vérifiée sur Xéros, la mère et les cases du sol.
 //
 // - 5 cm par pixel, sur les trois axes : largeur (est-ouest), hauteur (verticale), profondeur au sol (nord-sud).
 // - Le sol se voit à plat : une case de 32 px fait 1,60 m sur 1,60 m ; empreinte, collisions, écarts entre objets

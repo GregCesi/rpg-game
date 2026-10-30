@@ -1,6 +1,7 @@
 // Événements échangés entre scènes sur le bus du jeu (this.game.events).
 // Un événement = une constante ici, jamais une chaîne tapée à la main : une faute de frappe devient une erreur de compilation.
 // À l'intérieur d'une scène, pas d'événements : la scène appelle ses systèmes directement, c'est plus facile à suivre.
+import type { WoodPiece } from './content/types';
 import type { Held } from './state';
 
 export const GameEvent = {
@@ -25,11 +26,13 @@ export const GameEvent = {
  * remettre la carte ou la partie à zéro, apprendre un plan (`learn-plan`), mettre au sol autour de Xéros des piquets ou des pierres
  * plates (`supply` : `what` est la clé d'un objet possédable ou d'un objet du monde), effacer les chantiers de la carte
  * (`erase-sites`), multiplier la force de Xéros (`force` : tester les seuils de masse), régler son endurance (`stamina`, en points) ou la
- * rendre infinie (`stamina-infinite`).
+ * rendre infinie (`stamina-infinite`), poser devant Xéros une pièce de bois de réglages choisis (`wood` : diamètre, longueur sur la
+ * grille, forme, faces, sens).
  */
 export type DieuCommand =
   | { kind: 'give'; held: Held }
   | { kind: 'prop'; prop: string; length?: number }
+  | { kind: 'wood'; wood: WoodPiece }
   | { kind: 'pile'; pile: string; count: number; turned: boolean; tie: boolean }
   | { kind: 'force'; multiplier: number }
   | { kind: 'stamina'; value: number }

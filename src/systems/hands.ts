@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { INTERACT, PUT_DOWN } from '../config';
 import { items, piles, props } from '../content';
-import type { Facing, PropDef } from '../content/types';
+import type { Facing, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
 import {
   addPile,
@@ -22,6 +22,7 @@ import {
 } from '../state';
 import { propFootprint, propSize, type Box, type GameMap, type PlacedPile, type PlacedProp } from '../world/GameMap';
 import { pileOf } from '../world/offer';
+import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { accepts, nearestOpenPlace, openPlaces, placeAim } from '../world/places';
 import { shapeOf, tieImages } from '../world/pileShape';
 import { Ghosts } from './ghost';
@@ -35,23 +36,8 @@ export type PutDownResult = 'empty' | 'blocked' | 'done';
  */
 type PileTarget = { pile: PlacedPile; place: string } | { genre: string; x: number; y: number; place: string; turned: boolean };
 
-/**
- * La forme nord-sud (tournée) de l'objet ordinaire de son genre de tas : celle qui roule nord-sud (la bille), ou marquée
- * `turned` dans son `take` (le quartier, qui ne roule pas).
- */
-const isTurnedForm = (d: PropDef) => d.roll?.axis === 'ns' || !!d.take?.turned;
-
-/**
- * L'objet du monde que devient ce qu'on tient une fois posé hors d'un tas : lui-même, ou, pour un rondin tourné (R), le même
- * couché dans l'autre sens (`turn` de props.json).
- */
-function laidType(what: Extract<Held, { prop: string }>): string {
-  const def = props[what.prop];
-  return what.turned && def.timber && def.turn ? def.turn.into : what.prop;
-}
-
-/** Ce qu'on tient est tourné nord-sud (R). */
-const turnedOf = (what: Held) => 'prop' in what && !!what.turned;
+/** Ce qu'on tient est tourné nord-sud (R) : la pièce de bois dans ce sens, ou le reste (le fagot) noté tourné. */
+const turnedOf = (what: Held) => 'prop' in what && (what.wood ? what.wood.axis === 'ns' : !!what.turned);
 
 /** Genre de tas que lie ce qu'on tient (le lien : `tie.item` d'un genre de piles.json), s'il en lie un. */
 function tieOf(what: Held): string | undefined {
@@ -127,21 +113,14 @@ export class HandsSystem {
    * (objet né retiré, objet de Tiled noté disparu). Renvoie false si les mains ne sont pas libres.
    */
   takeProp(p: PlacedProp): boolean {
-    // ce qui a une longueur (le rouleau, le rondin) l'emporte avec lui, et le rondin ses faces dressées
-    const length = p.def.length || (p.def.timber && p.length !== undefined) ? { length: p.length ?? p.def.length!.start } : {};
-    const hewn = p.hewn ? { hewn: p.hewn } : {};
-    // une bille ou un quartier posé nord-sud est, dans les mains, la pièce ordinaire tournée (R)
-    const pile = isTurnedForm(p.def) ? p.def.take!.pile : undefined;
-    const piece = pile ? piles[pile].piece : undefined;
-    const what: Held =
-      piece && 'prop' in piece ? { prop: piece.prop, turned: true, ...length, ...hewn } : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length, ...hewn };
+    // ce qui a une longueur (le rouleau) l'emporte avec lui ; la pièce de bois, tous ses réglages, son sens compris
+    const length = p.def.length ? { length: p.length ?? p.def.length.start } : {};
+    const what: Held = p.wood ? { prop: p.type, wood: structuredClone(p.wood) } : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length };
     if (!take(game, what, p.def.take!.hands)) return false;
     const mapId = this.map.def.id;
     if (p.spawned) changeSpawned(game, mapId, p.id, { x: p.x, y: p.y });
     else changeObject(game, mapId, p.id, { x: p.x, y: p.y });
     this.map.removeProp(p);
-    // la voisine d'un tronc couché montre sa face de coupe
-    this.map.refreshTrunk();
     return true;
   }
 
@@ -151,9 +130,15 @@ export class HandsSystem {
    */
   takeFromPile(p: PlacedPile, place: string): boolean {
     const piece = p.def.piece;
-    const hands = 'item' in piece ? items[piece.item].hands : props[piece.prop].take!.hands;
-    // une bille reprise d'un tas nord-sud reste tournée
-    if (!take(game, 'prop' in piece && p.pile.turned ? { ...piece, turned: true } : { ...piece }, hands)) return false;
+    // une pièce reprise d'un tas nord-sud reste tournée
+    const what: Held =
+      'item' in piece
+        ? { ...piece }
+        : 'wood' in piece
+          ? { prop: WOOD_PIECE, wood: { ...piece.wood, axis: p.pile.turned ? 'ns' : 'ew' } }
+          : { ...piece, ...(p.pile.turned ? { turned: true } : {}) };
+    const hands = 'item' in piece ? items[piece.item].hands : 'wood' in piece ? 2 : props[piece.prop].take!.hands;
+    if (!take(game, what, hands)) return false;
     emptyPlace(game, this.map.def.id, p.pile.id, place);
     if (!p.pile.places.length && !p.pile.tie) this.map.removePile(p);
     else this.map.refreshPile(p);
@@ -215,29 +200,28 @@ export class HandsSystem {
     if (tied) return this.putTie(player, tied);
     const pile = pileOf(what);
     if (pile) return this.putOnPile(player, pile, turnedOf(what));
-    const laid = 'item' in what ? undefined : { ...what, prop: laidType(what) };
+    const laid = 'item' in what ? undefined : what;
     const spot = laid ? this.propSpot(player, laid) : this.groundSpot(player);
     if (!spot) return 'blocked';
     release(game);
     const mapId = this.map.def.id;
     if (!laid) this.map.placeGround(dropItem(game, mapId, (what as { item: string }).item, spot.x, spot.y));
     else {
-      const o = spawnObject(game, mapId, laid.prop, spot.x, spot.y, !!laid.flip, undefined, laid.length, laid.hewn);
-      this.map.placeProp(o, { flip: laid.flip, spawned: true, length: laid.length, hewn: laid.hewn });
+      const o = spawnObject(game, mapId, laid.prop, spot.x, spot.y, { flip: !!laid.flip, length: laid.length, wood: laid.wood });
+      this.map.placeProp(o, { flip: laid.flip, spawned: true, length: laid.length, wood: laid.wood });
     }
     return 'done';
   }
 
   /**
-   * Tourne ce qu'on tient entre est-ouest et nord-sud (R), si son genre de tas a une forme tournée (`turned` de
-   * piles.json : la bille). Renvoie false si ce qu'on tient ne se tourne pas.
+   * Tourne ce qu'on tient entre est-ouest et nord-sud (R) : une pièce de bois (elle sera posée dans l'autre sens, en tas comme
+   * seule), ou ce dont le genre de tas a une forme tournée (`turned` de piles.json : le fagot). Renvoie false si ce qu'on tient ne
+   * se tourne pas.
    */
   turn(): boolean {
     const what = held(game);
     const genre = what && pileOf(what);
-    // un rondin qui ne va pas au tas se tourne quand même : il sera posé dans l'autre sens
-    const timber = !!what && 'prop' in what && !!props[what.prop].timber && !!props[what.prop].turn;
-    if (!what || !('prop' in what) || !((genre && piles[genre].turned) || timber)) return false;
+    if (!what || !('prop' in what) || !(what.wood || (genre && piles[genre].turned))) return false;
     turnHeld(game);
     return true;
   }
@@ -254,21 +238,19 @@ export class HandsSystem {
       this.map.placeGround(dropItem(game, mapId, what.item, spot.x, spot.y));
       return;
     }
-    const ns = what.turned && !props[what.prop].timber ? Object.keys(props).find((k) => isTurnedForm(props[k]) && props[k].take?.pile === props[what.prop].take?.pile) : undefined;
-    const type = ns ?? laidType(what);
-    const spot = this.propSpot(player, { prop: type, length: what.length }) ?? feet;
-    const o = spawnObject(game, mapId, type, spot.x, spot.y, false, undefined, what.length, what.hewn);
-    this.map.placeProp(o, { spawned: true, length: what.length, hewn: what.hewn });
+    const spot = this.propSpot(player, what) ?? feet;
+    const o = spawnObject(game, mapId, what.prop, spot.x, spot.y, { length: what.length, wood: what.wood });
+    this.map.placeProp(o, { spawned: true, length: what.length, wood: what.wood });
   }
 
   /**
-   * Outils de test (?dieu) : pose devant Xéros un objet du monde de props.json, comme on poserait une bille (objet né,
-   * noté dans GameState). Renvoie false s'il n'y a pas la place.
+   * Outils de test (?dieu) : pose devant Xéros un objet du monde de props.json, comme on le poserait (objet né, noté dans
+   * GameState), avec sa longueur (le rouleau) ou ses réglages (la pièce de bois). Renvoie false s'il n'y a pas la place.
    */
-  placeInFront(player: Player, type: string, length?: number): boolean {
-    const spot = this.propSpot(player, { prop: type, length });
+  placeInFront(player: Player, type: string, length?: number, wood?: WoodPiece): boolean {
+    const spot = this.propSpot(player, { prop: type, length, wood });
     if (!spot) return false;
-    this.map.placeProp(spawnObject(game, this.map.def.id, type, spot.x, spot.y, false, undefined, length), { spawned: true, length });
+    this.map.placeProp(spawnObject(game, this.map.def.id, type, spot.x, spot.y, { length, wood }), { spawned: true, length, wood });
     return true;
   }
 
@@ -292,7 +274,7 @@ export class HandsSystem {
         const size = this.scene.textures.getFrame(props[what].image);
         const box: Box = { left: x, top: y - size.height, right: x + size.width, bottom: y };
         if (!this.map.areaFree(box, [...this.others, b])) continue;
-        this.map.placeProp(spawnObject(game, mapId, what, x, y, false), { spawned: true });
+        this.map.placeProp(spawnObject(game, mapId, what, x, y), { spawned: true });
       }
       placed++;
     }
@@ -496,11 +478,11 @@ export class HandsSystem {
    * regarde, centrée sur lui ; undefined si la place n'est pas libre (carte, cases bloquantes, objets, personnages).
    */
   private propSpot(player: Player, what: Extract<Held, { prop: string }>): { x: number; y: number } | undefined {
-    const def = props[what.prop];
+    const def = defOf(what.prop, what.wood);
     const flip = !!what.flip;
-    // le bois d'œuvre a la taille de sa longueur
-    const { w, h } = propSize(this.scene, def, { flip, length: what.length });
-    const f = propFootprint(this.scene, def, { flip, length: what.length }) ?? { left: 0, top: 0, right: w, bottom: h };
+    // la pièce de bois a la taille de ses réglages
+    const { w, h } = propSize(this.scene, def, { flip });
+    const f = propFootprint(this.scene, def, { flip }) ?? { left: 0, top: 0, right: w, bottom: h };
     const b = player.actor.body;
     const [l, t] = frontCorner(b, player.actor.facing, f.right - f.left, f.bottom - f.top);
     const x = Math.round(l - f.left);

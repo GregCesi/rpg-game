@@ -1,10 +1,10 @@
 import type Phaser from 'phaser';
-import { props } from '../content';
 import { propMass } from '../content/mass';
 import type { Facing } from '../content/types';
 import type { Player } from '../entities/Player';
 import { changeObject, changeSpawned, game } from '../state';
 import { propFootprint, propSize, stateOf, type Box, type GameMap, type Interactable, type PlacedProp } from '../world/GameMap';
+import { defOf } from '../world/woodPiece';
 import type { RollSystem } from './roll';
 
 const SIDES: Facing[] = ['down', 'up', 'left', 'right'];
@@ -37,16 +37,19 @@ export class TurnSystem {
 
   /** Masse de la bille visée, en kg. */
   mass(p: PlacedProp): number {
-    return propMass(p.type, p.length, undefined, p.hewn);
+    return propMass(p.type, p.length, undefined, p.wood);
   }
 
   /** Fait pivoter `p`. Renvoie le message à dire si elle n'a pas la place, sinon undefined. */
   act(player: Player, p: PlacedProp): string | undefined {
-    if (p.notch) return "Finis d'abord la coupe.";
+    if (p.wood?.notch) return "Finis d'abord la coupe.";
+    if (p.wood?.wedge) return 'Le coin est planté : finis de la fendre.';
     const into = p.def.turn!.into;
-    // à sa longueur pour le bois d'œuvre (le rondin de 3 m tourné reste un rondin de 3 m)
-    const img = propSize(this.scene, props[into], { length: p.length });
-    const nb = propFootprint(this.scene, props[into], { length: p.length })!;
+    // la pièce de bois garde tous ses réglages, seul son sens change (le rondin de 3 m tourné reste un rondin de 3 m)
+    const wood = p.wood && { ...p.wood, axis: p.wood.axis === 'ew' ? ('ns' as const) : ('ew' as const) };
+    const def = defOf(into, wood);
+    const img = propSize(this.scene, def);
+    const nb = propFootprint(this.scene, def)!;
     const ob = p.box!;
     const cx = (ob.left + ob.right) / 2;
     const cy = (ob.top + ob.bottom) / 2;
@@ -59,7 +62,7 @@ export class TurnSystem {
     const push = this.pushAway(player, box);
     if (push === null) return nope;
 
-    const spawned = { spawned: p.spawned, chain: p.chain, length: p.length, hewn: p.hewn };
+    const spawned = { spawned: p.spawned, chain: p.chain, length: p.length, wood };
     this.map.removeProp(p);
     const placed = this.map.placeProp({ id: p.id, type: into, x, y: top + img.h }, spawned);
     const change = stateOf(placed);

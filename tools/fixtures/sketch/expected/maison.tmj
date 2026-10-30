@@ -134,12 +134,12 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "big-felled-log",
-          "x": 678,
+          "type": "wood-piece",
+          "x": 677.5,
           "y": 160,
-          "width": 20,
+          "width": 21,
           "height": 16,
-          "gid": 1041
+          "gid": 1098
         },
         {
           "id": 7,

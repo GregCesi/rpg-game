@@ -608,176 +608,6 @@
       ]
     },
     {
-      "id": 135,
-      "name": "big-felled-section-1",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 136,
-      "name": "big-felled-section-2",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 137,
-      "name": "big-felled-section-3",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 138,
-      "name": "big-felled-crown",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 139,
-      "name": "big-felled-head",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 140,
-      "name": "big-felled-log",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 141,
-      "name": "big-felled-log-1",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 142,
-      "name": "big-felled-log-2",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 143,
-      "name": "big-felled-log-3",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 144,
-      "name": "big-felled-log-4",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
       "id": 145,
       "name": "chopping-block-rope",
       "type": "class",
@@ -965,23 +795,6 @@
       ]
     },
     {
-      "id": 168,
-      "name": "normal-felled-log",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
       "id": 169,
       "name": "normal-tree-stump",
       "type": "class",
@@ -1033,176 +846,6 @@
       ]
     },
     {
-      "id": 172,
-      "name": "big-felled-log-ns",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 173,
-      "name": "normal-felled-log-ns",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 174,
-      "name": "big-wedged-log",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 175,
-      "name": "big-wedged-log-ns",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 176,
-      "name": "big-half-log",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 177,
-      "name": "big-half-log-ns",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 178,
-      "name": "big-wedged-half-log",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 179,
-      "name": "big-wedged-half-log-ns",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 180,
-      "name": "big-quarter-log",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 181,
-      "name": "big-quarter-log-ns",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
       "id": 182,
       "name": "maul-ground",
       "type": "class",
@@ -1222,74 +865,6 @@
     {
       "id": 183,
       "name": "splitting-wedge-ground",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 184,
-      "name": "big-wedged-log-east",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 185,
-      "name": "big-wedged-log-ns-north",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 186,
-      "name": "big-wedged-half-log-east",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 187,
-      "name": "big-wedged-half-log-ns-north",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -1407,8 +982,50 @@
       ]
     },
     {
-      "id": 195,
-      "name": "normal-beam",
+      "id": 197,
+      "name": "wood-piece",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "size",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "length",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "shape",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "axis",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "hewn",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 198,
+      "name": "big-felled-tree",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -1424,8 +1041,8 @@
       ]
     },
     {
-      "id": 196,
-      "name": "normal-beam-ns",
+      "id": 199,
+      "name": "big-pollard-felled-tree",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,

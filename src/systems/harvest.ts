@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { DEPTH, HARVEST, INTERACT, NOTCH_AIM, TILE } from '../config';
+import { DEPTH, HARVEST, INTERACT, TILE } from '../config';
 import type { Player } from '../entities/Player';
-import { gestures, items, props } from '../content';
+import { items, props } from '../content';
 import type { Drop, Facing, Harvest } from '../content/types';
 
 /** L'outil `tool` fait ce travail : c'est l'outil de la récolte, ou l'un de ses `also` (la hachette sur le rouleau posé). */
@@ -14,68 +14,24 @@ export function effortOf(h: Harvest, tool: string, bears: boolean): NonNullable<
   return h.also[tool] ?? h.effort ?? (bears ? 'cutTie' : 'chop');
 }
 
-/** Un bout d'une pièce couchée : l'ouest, l'est, le nord ou le sud. */
-export type End = 'west' | 'east' | 'north' | 'south';
-import { changeObject, changeSpawned, dropItem, game, replaceHeld, setChangeHits, setSpawnedHits, spawnObject, take, type Hand } from '../state';
-import { footprint, notchCut, promptTop } from '../world/GameMap';
-import { timberSize } from '../world/timberShape';
-import { woodShape } from '../content/mass';
-import type { Box, GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
-
-/**
- * Xéros peut viser l'encoche de cette pièce : collé au tronc (au-dessus ou en dessous), tourné vers lui,
- * et le fer à l'impact (`strike` du geste) à moins d'une demi-section de l'encoche (NOTCH_AIM).
- */
-function notchInReach(player: Player, p: PlacedProp): boolean {
-  const { actor } = player;
-  const b = actor.body;
-  const box = p.box;
-  if (!box) return false;
-  // ce qui doit être aligné sur l'encoche, c'est le fer à l'impact (`strike` de gestures.json, sinon la main à cette image)
-  const gesture = gestures[p.def.harvest!.gesture];
-  const dir = actor.facing === 'left' ? 'right' : (actor.facing as 'down' | 'up' | 'right');
-  const hit = (gesture.strike?.[dir] ?? gesture.poses[dir][gesture.impact].dx) * (actor.facing === 'left' ? -1 : 1);
-  const aligned = Math.abs(actor.x + hit - p.aimX) < NOTCH_AIM.align;
-  // au-dessus du tronc, tourné vers le bas : le bas de sa collision touche le haut de celle du tronc ; en dessous, l'inverse
-  const above = actor.facing === 'down' && Math.abs(box.top - b.bottom) <= NOTCH_AIM.gap;
-  const below = actor.facing === 'up' && Math.abs(b.top - box.bottom) <= NOTCH_AIM.gap;
-  return aligned && (above || below);
-}
-
-/**
- * Le bout de la pièce où se tient Xéros (\`west\`, \`east\`, \`north\`, \`south\`), tourné vers sa face coupée : à l'est ou à l'ouest d'une pièce est-ouest (plus large que
- * profonde, d'après ses \`dims\`), au nord ou au sud d'une pièce nord-sud, face à elle, et à hauteur de sa collision.
- */
-export function endOf(player: Player, p: PlacedProp): End | undefined {
-  const box = p.box;
-  if (!box) return undefined;
-  const b = player.actor.body;
-  const f = player.actor.facing;
-  const cx = (box.left + box.right) / 2;
-  const cy = (box.top + box.bottom) / 2;
-  if (p.def.dims.w >= p.def.dims.d) {
-    if (!(b.bottom > box.top && b.top < box.bottom)) return undefined;
-    return f === 'right' && b.center.x < cx ? 'west' : f === 'left' && b.center.x > cx ? 'east' : undefined;
-  }
-  if (!(b.right > box.left && b.left < box.right)) return undefined;
-  return f === 'down' && b.center.y < cy ? 'north' : f === 'up' && b.center.y > cy ? 'south' : undefined;
-}
-
-/** Le bout où se tient celui qui frappe, d'après la direction où il regarde (vers la droite : il est à l'ouest). */
-const END_OF_FACING: Record<Facing, End> = { right: 'west', left: 'east', down: 'north', up: 'south' };
+import { changeObject, changeSpawned, dropItem, game, replaceHeld, spawnObject, take, type Hand } from '../state';
+import { promptTop } from '../world/GameMap';
+import { WOOD_PIECE } from '../world/woodPiece';
+import { woodSize } from '../world/woodShape';
+import type { WoodPiece } from '../content/types';
+import type { GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
 
 /**
  * Ce qu'a donné un coup : rien à frapper, mauvais outil (`tool` = l'outil qu'il faut), ou un coup porté.
  * `given` : objets mis directement dans les mains ; `overflow` : mains pas libres, ils sont tombés au sol ;
- * `cut` : l'objet porté qu'on vient de couper (le rouleau) et ce qui en reste (cm), s'il y en avait un ;
- * `released` : l'outil est resté dans l'objet (le coin planté), la main est à libérer ; `refused` : cet outil ne convient pas
- * ou plus, `message` dit pourquoi (`refuse` de harvest).
+ * `cut` : l'objet porté qu'on vient de couper (le rouleau) et ce qui en reste (cm), s'il y en avait un ; `refused` : cet outil ne
+ * convient pas, `message` dit pourquoi (`refuse` de harvest).
  */
 export type HitResult =
   | { kind: 'none' }
   | { kind: 'missing'; tool: string }
   | { kind: 'refused'; message: string }
-  | { kind: 'hit'; done: boolean; given: number; overflow: boolean; cut?: { prop: string; remaining: number }; released?: boolean };
+  | { kind: 'hit'; done: boolean; given: number; overflow: boolean; cut?: { prop: string; remaining: number } };
 
 /**
  * La récolte, pour tout ce qui porte un composant `harvest` dans props.json (arbre, rocher, baies, billot).
@@ -113,9 +69,8 @@ export class HarvestSystem {
   }
 
   /**
-   * Objet récoltable devant Xéros (avec ou sans outil), s'il est à portée : son point visé (l'encoche) ou sa base.
-   * Une encoche du tronc couché ne se vise que de près : voir notchInReach. Quand deux objets sont à portée, celui que
-   * l'outil `tool` en main récolte l'emporte (la hache vise l'encoche, pas la grosse bille voisine qui la refuserait).
+   * Objet récoltable devant Xéros (avec ou sans outil), s'il est à portée : son point visé ou sa base. Quand deux objets sont à
+   * portée, celui que l'outil `tool` en main récolte l'emporte.
    */
   target(player: Player, tool?: string): PlacedProp | undefined {
     const probe = player.probe(INTERACT.reach);
@@ -123,9 +78,7 @@ export class HarvestSystem {
     let bestD = INTERACT.radius;
     let bestFits = false;
     for (const p of this.map.props) {
-      // une encoche déjà coupée n'est plus une cible
-      if (!p.def.harvest || notchCut(p)) continue;
-      if (p.def.harvest.notch && !notchInReach(player, p)) continue;
+      if (!p.def.harvest) continue;
       const d = Phaser.Math.Distance.Between(probe.x, probe.y, p.aimX, p.aimY);
       if (d >= INTERACT.radius) continue;
       const fits = wields(p.def.harvest, tool);
@@ -139,20 +92,14 @@ export class HarvestSystem {
   }
 
   /**
-   * Pourquoi `tool` ne peut pas frapper `prop` en ce moment, dit en français, ou undefined : l'outil que `refuse` de harvest écarte
-   * (la hache sur une grosse bille, le coin déjà planté), ou la fente qui n'a pas la place de s'ouvrir au dernier coup.
-   * À demander avant le geste : rien n'est joué ni dépensé.
+   * Pourquoi `tool` ne peut pas frapper `prop` en ce moment, dit en français, ou undefined : l'outil que `refuse` de harvest écarte,
+   * ou la branche qui manque dans l'autre main. À demander avant le geste : rien n'est joué ni dépensé.
    */
-  refusal(prop: PlacedProp, tool: string | undefined, player?: Player): string | undefined {
+  refusal(prop: PlacedProp, tool: string | undefined): string | undefined {
     const h = prop.def.harvest;
     if (!h || !tool) return undefined;
     if (!wields(h, tool) && h.refuse[tool]) return h.refuse[tool];
     if (tool === h.tool && h.convert && this.partner(tool) === undefined) return h.convert.refuse;
-    if (tool === h.tool && h.ends && player) {
-      const end = endOf(player, prop);
-      if (!end || (h.side && h.side !== end)) return h.ends;
-    }
-    if (tool === h.tool && h.staged && prop.hits >= h.hits - 1 && !this.splitFree(prop)) return 'Pas la place pour la fendre.';
     return undefined;
   }
 
@@ -167,30 +114,9 @@ export class HarvestSystem {
     return x && 'item' in x && x.item === from ? other : undefined;
   }
 
-  /** Où naissent, au dernier coup, `becomes` et `spawns` d'un objet qui se fend : coin bas gauche de chaque image. */
-  private splitSpots(prop: PlacedProp): { type: string; x: number; y: number }[] {
-    const h = prop.def.harvest!;
-    const [ax, dy] = h.at ?? [0, 0];
-    return [
-      ...(h.becomes ? [{ type: h.becomes, x: prop.x + ax, y: prop.y + dy }] : []),
-      ...h.spawns.map((sp) => ({ type: sp.type, x: prop.x + sp.x, y: prop.y + sp.y })),
-    ];
-  }
-
-  /** Les morceaux tiendraient à leur place (carte, cases bloquantes, objets) : la collision de l'objet qui se fend ne compte pas. */
-  private splitFree(prop: PlacedProp): boolean {
-    const own = prop.parts.filter((q): q is Phaser.GameObjects.Zone => q instanceof Phaser.GameObjects.Zone);
-    return this.splitSpots(prop).every(({ type, x, y }) => {
-      const size = this.scene.textures.getFrame(props[type].image);
-      const f = footprint(props[type], size.width, size.height, false);
-      if (!f) return true;
-      const box: Box = { left: x + f.left, right: x + f.right, top: y - size.height + f.top, bottom: y - size.height + f.bottom };
-      return this.map.areaFree(box, [], own);
-    });
-  }
-
   /**
-   * Après un coup qui a fait naître de nouvelles collisions autour de Xéros (les demi-billes dont l'emprise le déborde) : le
+   * Après un coup qui a fait naître de nouvelles collisions autour de Xéros (les demi-billes dont l'emprise le déborde, le
+   * morceau d'une pièce nord-sud coupée) : le
    * repousse hors de ce qui le recouvre, du côté où il en sort le plus court, s'il y a la place.
    */
   settle(player: Player): void {
@@ -226,8 +152,6 @@ export class HarvestSystem {
     }
     if (!h.tool && tool) return { kind: 'none' };
     if (h.convert) return this.whittleHit(prop, tool!, facing);
-    if (h.notch) return this.notchHit(prop, facing);
-    if (h.staged) return this.stagedHit(prop, facing);
     if (prop.def.bears?.prop) return this.cutBorne(prop, facing);
     prop.hits++;
     if (h.impact) this.chips(prop, h.impact, facing);
@@ -249,46 +173,6 @@ export class HarvestSystem {
     if (h.impact) this.chips(prop, h.impact, facing);
     replaceHeld(game, slot, { item: h.convert!.into });
     return { kind: 'hit', done: true, given: 1, overflow: false };
-  }
-
-  /**
-   * Un coup sur ce qui se fend (le coin planté dans la bille, frappé à la masse) : la fente s'allonge (image `<image>-n<coups>`, les
-   * coups sont notés dans GameState). Au dernier coup l'objet devient `becomes` et `spawns` (les deux moitiés) et lâche ses `drops`
-   * (le coin) : voir `finish`.
-   */
-  private stagedHit(prop: PlacedProp, facing: Facing): HitResult {
-    const h = prop.def.harvest!;
-    prop.hits++;
-    if (prop.spawned) setSpawnedHits(game, this.map.def.id, prop.id, prop.hits);
-    else setChangeHits(game, this.map.def.id, prop.id, prop.hits);
-    if (h.impact) this.chips(prop, h.impact, facing);
-    if (prop.hits < h.hits) {
-      prop.image.setTexture(`${prop.def.image}-n${prop.hits}`);
-      return { kind: 'hit', done: false, given: 0, overflow: false };
-    }
-    return { kind: 'hit', done: true, ...this.finish(prop, facing) };
-  }
-
-  /**
-   * Un coup dans l'encoche d'une pièce de tronc couché : l'entaille se creuse (une image par profondeur, notée dans GameState).
-   * Au dernier coup l'encoche est coupée : ses `drops` tombent, et chaque morceau de la chaîne séparé aux deux bouts
-   * devient sa bille, à la même place. La pièce ne bouge pas : pas de tremblement, seule l'entaille change.
-   */
-  private notchHit(prop: PlacedProp, facing: Facing): HitResult {
-    const h = prop.def.harvest!;
-    if (notchCut(prop)) return { kind: 'none' };
-    prop.hits++;
-    if (prop.spawned) setSpawnedHits(game, this.map.def.id, prop.id, prop.hits);
-    if (h.impact) this.chips(prop, h.impact, facing);
-    if (prop.hits < h.hits) {
-      this.map.refreshTrunk();
-      return { kind: 'hit', done: false, given: 0, overflow: false };
-    }
-    const { given, overflow, dropped } = this.dropAll(h.drops, prop.aimX, prop.aimY);
-    for (const g of dropped) this.pop(g, prop.aimX, prop.aimY);
-    if (prop.chain) this.separate(prop.chain.group);
-    this.map.refreshTrunk();
-    return { kind: 'hit', done: true, given, overflow };
   }
 
   /**
@@ -322,29 +206,11 @@ export class HarvestSystem {
     return { kind: 'hit', done: remaining === 0, given: 0, overflow: false, cut: { prop: bears!.prop!, remaining } };
   }
 
-  /** Chaque pièce de la chaîne dont l'encoche est coupée et qui est séparée à gauche devient sa bille, à la même place. */
-  private separate(group: number): void {
-    for (const p of this.map.props.filter((q) => q.chain?.group === group)) {
-      const h = p.def.harvest;
-      if (!h?.becomes || !notchCut(p) || !this.map.separatedLeft(p)) continue;
-      const [ax, dy] = h.at ?? [0, 0];
-      const w = this.imageWidth(h.becomes);
-      // retournée, la pièce se lit de droite à gauche : le décalage se retourne dans son image
-      const x = p.x + (p.flip ? p.image.width - ax - w : ax);
-      const y = p.y + dy;
-      this.map.removeProp(p);
-      this.map.placeProp({ id: p.id, type: h.becomes, x, y }, { flip: p.flip, spawned: p.spawned, chain: p.chain });
-      const change = { type: h.becomes, x, y, ...(p.flip ? { flip: true } : {}) };
-      if (p.spawned) changeSpawned(game, this.map.def.id, p.id, change);
-      else changeObject(game, this.map.def.id, p.id, change);
-    }
-  }
-
   /**
    * Ce que lâche un objet récolté, près de (bx, by) : dans les mains si `give` (au sol si elles ne sont pas libres), sinon au sol.
    * Entre dans GameState tout de suite ; les objets au sol sont posés cachés, à montrer avec pop().
    */
-  private dropAll(drops: Drop[], bx: number, by: number): { given: number; overflow: boolean; dropped: PlacedGround[] } {
+  dropAll(drops: Drop[], bx: number, by: number): { given: number; overflow: boolean; dropped: PlacedGround[] } {
     const dropped: PlacedGround[] = [];
     let given = 0;
     let overflow = false;
@@ -380,7 +246,7 @@ export class HarvestSystem {
     this.chipsAt(x, y, prop.y + 1, impact, facing);
   }
 
-  /** Éclats de la matière `impact` qui jaillissent de (x, y), à la profondeur `depth`, vers Xéros (le coup sur un rondin, systems/timber.ts). */
+  /** Éclats de la matière `impact` qui jaillissent de (x, y), à la profondeur `depth`, vers Xéros (le coup sur une pièce de bois, systems/wood.ts). */
   chipsAt(x: number, y: number, depth: number, impact: string, facing: Facing): void {
     const c = HARVEST.chips;
     const [sx] = { right: [-1, 0], left: [1, 0], up: [0, 1], down: [0, -1] }[facing];
@@ -419,7 +285,7 @@ export class HarvestSystem {
   }
 
   /** Dernier coup : chute éventuelle, remplacement, objets lâchés. */
-  private finish(prop: PlacedProp, facing: Facing): { given: number; overflow: boolean; released: boolean } {
+  private finish(prop: PlacedProp, facing: Facing): { given: number; overflow: boolean } {
     const h = prop.def.harvest!;
     const mapId = this.map.def.id;
     // un objet qui n'a pas de version dessinée vers la gauche (la bille coin planté) ne se retourne pas
@@ -435,55 +301,38 @@ export class HarvestSystem {
     const spawnFlip = (type: string) => flip && (!!h.fall || hasLeft(type));
     const spawnX = (type: string, off: number, w: number) => (fallLeft ? 2 * h.fall!.foot - (off + w - 1) : mirror(off, w, spawnFlip(type)));
     const [ax, dy] = h.at ?? [0, 0];
-    // planté depuis un bout : l'objet qui en naît est celui de ce bout (le coin et la fente partent de là)
-    const becomes = h.becomesAt?.[END_OF_FACING[facing]] ?? h.becomes;
-    const keep = prop.flip && !!becomes && hasLeft(becomes);
-    // du bois d'œuvre (le tronc ébranché devient un rondin de `length` cm) : jamais retourné, mais posé en miroir quand
-    // l'arbre est tombé vers la gauche, sur le tronc
-    const timber = becomes ? props[becomes].timber : undefined;
-    const length = timber ? h.length : undefined;
-    // le rondin se reflète par son corps, sans sa colonne d'ombre : son bout scié retombe sur celui du tronc
-    const width = !becomes ? 0 : timber ? timberSize(timber.axis, length ?? woodShape(props[becomes].dims).length).w - 1 : this.imageWidth(becomes);
-    const x = prop.x + (becomes ? mirror(ax, width, keep || (!!timber && prop.flip)) : ax);
+    const becomes = h.becomes;
+    // le tronc ébranché devient une pièce de bois ronde, est-ouest, de sa longueur utile : jamais retournée, mais posée en miroir
+    // quand l'arbre est tombé vers la gauche, sur le tronc
+    const wood: WoodPiece | undefined = becomes === WOOD_PIECE && h.wood ? { ...h.wood, shape: 'round', axis: 'ew' } : undefined;
+    const keep = prop.flip && !!becomes && !wood && hasLeft(becomes);
+    // la pièce se reflète par son corps, sans sa colonne d'ombre : son bout scié retombe sur celui du tronc
+    const width = !becomes ? 0 : wood ? woodSize(wood.size, 'round', 'ew', wood.length).w - 1 : this.imageWidth(becomes);
+    const x = prop.x + (becomes ? mirror(ax, width, keep || (!!wood && prop.flip)) : ax);
     const y = prop.y + dy;
     const { baseX, baseY } = prop;
     this.map.removeProp(prop);
-    const next = becomes ? this.map.placeProp({ id: prop.id, type: becomes, x, y }, { flip: keep, spawned: prop.spawned, chain: prop.chain, length }) : undefined;
-    const change = becomes ? { type: becomes, x, y, ...(keep ? { flip: true } : {}), ...(length !== undefined ? { length } : {}) } : { x, y };
+    const next = becomes ? this.map.placeProp({ id: prop.id, type: becomes, x, y }, { flip: keep, spawned: prop.spawned, chain: prop.chain, wood }) : undefined;
+    const change = becomes ? { type: becomes, x, y, ...(keep ? { flip: true } : {}), ...(wood ? { wood } : {}) } : { x, y };
     if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
     else changeObject(game, mapId, prop.id, change);
     // ce qui naît (l'arbre couché) : noté tout de suite, montré à la fin de la chute
     const group = game.nextSpawnId;
     const born = h.spawns.map((sp, index) => {
-      // les moitiés d'une bille fendue ne sont pas les pièces d'un tronc : pas de chaîne
-      const chain = h.staged ? undefined : { group, index, size: h.spawns.length };
+      const chain = { group, index, size: h.spawns.length };
       const f = spawnFlip(sp.type);
-      const o = spawnObject(game, mapId, sp.type, prop.x + spawnX(sp.type, sp.x, this.imageWidth(sp.type)), prop.y + sp.y, f, chain);
+      const o = spawnObject(game, mapId, sp.type, prop.x + spawnX(sp.type, sp.x, this.imageWidth(sp.type)), prop.y + sp.y, { flip: f, chain });
       return this.map.placeProp(o, { flip: f, spawned: true, chain });
     });
-    this.map.refreshTrunk();
 
     // les objets lâchés entrent dans GameState tout de suite : quitter la carte pendant la chute ne les perd pas
     const { given, overflow, dropped } = this.dropAll(h.drops, baseX, baseY);
     const scatter = () => {
       for (const g of dropped) this.pop(g, baseX, baseY);
     };
-    const released = !!h.plant;
-    if (h.staged) {
-      // la fente s'ouvre un instant (dernière image d'étape), puis les morceaux paraissent et l'outil tombe
-      const shown = [next, ...born].filter((p) => p !== undefined);
-      for (const p of shown) p.image.setVisible(false);
-      const open = this.scene.add.image(prop.x, prop.y, `${prop.def.image}-n${h.hits}`).setOrigin(0, 1).setDepth(prop.y);
-      this.scene.time.delayedCall(HARVEST.splitMs, () => {
-        for (const p of shown) if (this.map.props.includes(p)) p.image.setVisible(true);
-        open.destroy();
-        scatter();
-      });
-      return { given, overflow, released };
-    }
     if (!h.fall) {
       scatter();
-      return { given, overflow, released };
+      return { given, overflow };
     }
     // la chute se joue à la place de l'objet ; le remplaçant (la souche) et l'arbre couché n'apparaissent qu'à la fin
     const shown = [next, ...born].filter((p) => p !== undefined);
@@ -498,11 +347,11 @@ export class HarvestSystem {
       fall.destroy();
       scatter();
     });
-    return { given, overflow, released };
+    return { given, overflow };
   }
 
   /** Fait sauter un objet lâché depuis (bx, by) jusqu'à sa place. */
-  private pop(g: PlacedGround, bx: number, by: number): void {
+  pop(g: PlacedGround, bx: number, by: number): void {
     const { x, y } = g.item;
     // ramassé avant d'avoir été montré : rien à faire
     if (!this.map.ground.includes(g)) return;

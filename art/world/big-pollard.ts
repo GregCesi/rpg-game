@@ -4,22 +4,22 @@
 // (33, 89)), tronc de 55 cm (le même que le gros arbre, donc la même souche), tête touffue juste au-dessus de la coupe.
 // Il ne se retouche pas.
 //
-// Couché, il réutilise telles quelles les pièces du gros arbre (art/world/big-felled.ts) : `big-felled-section-1`,
-// puis `big-felled-crown` posé bout à bout, deux sections (2 × SEC = 38 px) plus près du pied que chez le gros arbre.
-// Deux pièces, donc deux billes (`big-felled-log-1`, puis la tête ébranchée `big-felled-head` donne `big-felled-log-4`).
-// Sa longueur couchée, du pied au bout du houppier, est sa hauteur debout : 74 px (370 cm).
+// Couché, il est d'un seul tenant (`big-pollard-felled-tree`, `-left`), comme le gros grand (`felledTree` de
+// art/world/big-felled.ts) : un tronc de 2 m (sa longueur utile, une ancienne bille et la tête), au pixel près la pièce de
+// bois `big` ronde de 200 cm que le jeu pose quand on a coupé le houppier, et le houppier du gros grand par-dessus, rapproché
+// du pied de 2 m (CROWN_SHIFT).
 //
 // Chutes (`big-pollard-fall`, `big-pollard-fall-left`) : même mécanique que celles du gros arbre (pivot autour de la
 // charnière sur la souche, lumière ramenée au nord-ouest), mais tirées de `treeBody`. Première image : `big-pollard`
-// posé ; dernière : la souche et les deux pièces, exactement comme le jeu les pose (props.json, `spawns`). Les images
-// sont composées dans la frame 160x96 des pièces couchées, puis recadrées à POLLARD_W colonnes : côté gauche de la
-// frame pour la chute à droite, côté droit pour la chute à gauche.
+// posé ; dernière : la souche et l'arbre couché, exactement comme le jeu les pose. Les images sont composées dans la
+// frame 160x96, puis recadrées à POLLARD_W colonnes : côté gauche de la frame pour la chute à droite, côté droit pour la
+// chute à gauche.
 
 import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
-import { FOOT, STUMP_AT, groundShadow, shadedOutline, stump, treeBody } from './big-tree';
-import { FALL_H, FALL_W, FRAMES, OFF, OFF_L, PIECES, PIECES_L, SEC, type Faller, crownRows, fallFrame, pivot, pivotLeft } from './big-felled';
+import { FOOT, groundShadow, shadedOutline, treeBody } from './big-tree';
+import { FALL_H, FALL_W, OFF, OFF_L, type Faller, crownRows, fallFrame, felledImages, felledTree, lyingFrame, pivot, pivotLeft } from './big-felled';
 
 /** Le têtard debout, 64x96 : image `big-pollard` (le dessin d'origine du gros arbre). */
 export function standingPollard(): Canvas {
@@ -31,8 +31,12 @@ export function standingPollard(): Canvas {
 /** Ce qui tombe : le haut de `treeBody`, coupé à la rangée 76 (comme le gros arbre, rangées du repère 64x96). */
 const POLLARD: Faller = { body: treeBody, cut: 76, crown: crownRows(treeBody()) };
 
-/** Décalage du houppier couché du têtard par rapport à celui du gros arbre : deux sections de moins. */
-export const CROWN_SHIFT = -2 * SEC;
+/** Longueur utile du têtard (cm). */
+export const POLLARD_CM = 200;
+/** Décalage du houppier couché du têtard par rapport à celui du gros arbre : 2 m de tronc de moins (40 px). */
+export const CROWN_SHIFT = -40;
+/** Le têtard couché. */
+export const POLLARD_FELLED = felledTree(POLLARD_CM, CROWN_SHIFT, 'big-pollard-felled-tree');
 
 /** Largeur des images des chutes du têtard (recadrées dans la frame de 160) : tout l'arbre couché et son ombre. */
 const POLLARD_W = 126;
@@ -51,22 +55,7 @@ function crop(c: Canvas, from: number, what: string): Canvas {
   return out;
 }
 
-/** Dernière image : la souche, la section 1, puis le houppier décalé, posés comme le jeu les pose (même ordre). */
-function lying(left: boolean): Canvas {
-  const c = new Canvas(FALL_W, FALL_H);
-  c.stamp(stump().toGrid(), STUMP_AT[0] + (left ? OFF_L : OFF), STUMP_AT[1]);
-  const [section, crown] = left ? [PIECES_L[0], PIECES_L[3]] : [PIECES[0], PIECES[3]];
-  const shift = left ? -CROWN_SHIFT : CROWN_SHIFT;
-  for (const [p, dx] of [[section, 0], [crown, shift]] as const) {
-    // garde-fou : une ombre translucide posée sur un pixel déjà peint donnerait en jeu un mélange que `stamp` ne rend pas
-    for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
-      const under = c.get(X + dx, Y);
-      if (p.get(X, Y) === 'x' && under !== EMPTY) throw new Error(`big-pollard : ombre d'une pièce sur un pixel peint en (${X + dx}, ${Y})`);
-    }
-    c.stamp(p.toGrid(), dx, 0);
-  }
-  return c;
-}
+const lying = (left: boolean) => lyingFrame(POLLARD_FELLED, left);
 
 const FOOT_X = FOOT[0] + OFF;
 const FOOT_XL = FOOT[0] + OFF_L;
@@ -86,15 +75,8 @@ const left = [
   lying(true),
 ].map((c, i) => crop(c, LEFT_FROM, `image ${i + 1} de la chute à gauche`));
 
-/**
- * Données pour props.json (repère : coin bas gauche de l'image `big-pollard` posée), calculées : décalage x de chaque
- * planche, place de la section 1 et du houppier (ceux du gros arbre, le houppier décalé de CROWN_SHIFT).
- */
-export const POLLARD_LAYOUT = {
-  fall: { x: -OFF, left: { x: -(OFF_L - LEFT_FROM) }, foot: FOOT[0] },
-  section: { x: FRAMES[0].x - OFF, y: FRAMES[0].y + FRAMES[0].h - FALL_H },
-  crown: { x: FRAMES[3].x - OFF + CROWN_SHIFT, y: FRAMES[3].y + FRAMES[3].h - FALL_H },
-};
+/** Décalages x des planches de chute, pour props.json (repère : coin bas gauche de l'image `big-pollard` posée). */
+export const POLLARD_FALL = { x: -OFF, left: { x: -(OFF_L - LEFT_FROM) }, foot: FOOT[0] };
 
 const sheet = (name: string, frames: Canvas[]): SpriteSheetSource => ({
   kind: 'spritesheet',
@@ -111,4 +93,5 @@ export default [
   img('big-pollard', standingPollard()),
   sheet('big-pollard-fall', right),
   sheet('big-pollard-fall-left', left),
+  ...felledImages('big-pollard-felled-tree', POLLARD_FELLED),
 ];

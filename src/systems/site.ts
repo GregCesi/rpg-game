@@ -266,7 +266,7 @@ export class SiteSystem {
     release(game);
     const mapId = this.map.def.id;
     const c = placeCorner(site, slot.place);
-    const o = spawnObject(game, mapId, slot.place.piece, c.x, c.y, false);
+    const o = spawnObject(game, mapId, slot.place.piece, c.x, c.y);
     this.map.placeProp(o, { spawned: true });
     placeSitePiece(game, mapId, site.id, slot.id, o.id);
     const corner = slot.place.corner;

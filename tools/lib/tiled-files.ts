@@ -125,7 +125,7 @@ function objectClass(id: number, name: string, color: string, members: Member[])
  *   - `Npc` : point où se tient un personnage non joueur (ses pieds).
  * Un champ laissé vide n'est pas surchargé (le jeu prend la valeur de props.json, ou rien).
  */
-export function projectFile(propKeys: { id: number; key: string }[]) {
+export function projectFile(propKeys: { id: number; key: string; wood?: boolean }[]) {
   const facing = { id: 1, name: 'Facing', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...DIRECTIONS] };
   const text = (name: string): Member => ({ name, type: 'string', value: '' });
   const direction: Member = { name: 'facing', type: 'string', propertyType: 'Facing', value: '' };
@@ -142,7 +142,11 @@ export function projectFile(propKeys: { id: number; key: string }[]) {
       objectClass(3, 'Exit', '#d9534f', [text('to'), text('spawn'), direction]),
       objectClass(4, 'Npc', '#4a78c2', [text('character'), direction, text('dialogue')]),
       // numéros à partir de 100 : ceux du registre des objets, donc stables
-      ...propKeys.map((p) => objectClass(100 + p.id, p.key, '#a08060', [text('interact')])),
+      // la pièce de bois : ses réglages (wood.json : diamètre `big`/`normal`, longueur en cm, forme `round`/`half`/`quarter`,
+      // sens `ew`/`ns`, coups de doloire), vides : ceux de props.json
+      ...propKeys.map((p) =>
+        objectClass(100 + p.id, p.key, '#a08060', [text('interact'), ...(p.wood ? ['size', 'length', 'shape', 'axis', 'hewn'].map(text) : [])]),
+      ),
     ],
   };
 }
@@ -155,6 +159,8 @@ export interface PropTile {
   image: string;
   width: number;
   height: number;
+  /** C'est la pièce de bois : Tiled propose ses réglages. */
+  wood?: boolean;
 }
 
 export function propsTsj(tiles: PropTile[]) {

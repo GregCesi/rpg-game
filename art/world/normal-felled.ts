@@ -5,8 +5,8 @@
 // à l'échelle du normal (contrat : art/world/normal-geometry.ts) : tronc de 30 cm (6 rangées d'écorce, 8 px contour
 // compris), environ 7 m couché (TREE_LEN = 140 px, houppier compris), matière `NORMAL_WOOD` de wood.ts.
 //
-// L'arbre couché n'a plus de sections : ébranché, il devient un seul rondin de 500 cm (art/world/timber.ts, contrat
-// src/world/timberShape.ts) posé sur son tronc, qu'on coupe ensuite où l'on veut. Il ne porte donc aucune entaille.
+// L'arbre couché n'a plus de sections : ébranché, il devient une seule pièce de bois ronde de 580 cm (`composeWood`,
+// art/world/wood-pieces.ts, contrat src/world/woodShape.ts) posée sur son tronc, qu'on coupe ensuite où l'on veut. Il ne porte donc aucune entaille.
 // Vers la gauche : géométrie en miroir exact autour du pied, dessin et lumière refaits en haut à gauche.
 //
 // Exports : pour la chute (normal-fall.ts), `lyingFrame()` et `lyingFrameLeft()` (la souche et l'arbre couché, dernière
@@ -36,7 +36,7 @@ const LOG_CY = AXIS_Y;
 const HALF = DIAMETER / 2;
 /** Longueur du tronc, du bout scié à la pointe cachée sous le houppier (120 px, 6 m). */
 const TRUNK_LEN = 120;
-/** Distance au pied où le tronc commence à s'amincir : il garde ses 6 rangées sur les 5 m du rondin. */
+/** Distance au pied où le tronc commence à s'amincir : il garde ses 6 rangées sur les 4,8 premiers mètres ; au-delà, la pièce de 5,8 m passe sous le houppier. */
 const TAPER_FROM = 96;
 /**
  * Le houppier commence à F0 px du pied et finit à CROWN_END (le haut de l'arbre, centre de son dernier pixel). Du
@@ -341,7 +341,7 @@ export function lyingFrameLeft(): Canvas {
 // ---------- Arbre couché entier ----------
 // `normal-felled-tree` et `normal-felled-tree-left` : l'arbre couché d'un seul tenant (tronc et houppier), pixel pour
 // pixel la dernière image de `normal-tree-fall` (`-left`) sans la souche (objet à part, `normal-tree-stump`), recadrée
-// sur ses pixels peints. Ébranché, il laisse un rondin de 500 cm (art/world/timber.ts) posé sur son tronc, bout scié sur
+// sur ses pixels peints. Ébranché, il laisse une pièce de bois ronde de 580 cm (art/world/wood-pieces.ts) posée sur son tronc, bout scié sur
 // bout scié : le rondin n'a pas de version gauche, sa face de coupe est toujours à gauche (à gauche, elle tombe donc
 // côté cime, et son bout droit sur le bout scié).
 
@@ -352,7 +352,7 @@ function wholeTree(left: boolean): { c: Canvas; f: Frame } {
 }
 
 /** Longueur du rondin né de l'arbre ébranché (cm) et sa longueur en pixels, contour compris. */
-const TIMBER_CM = 500;
+const TIMBER_CM = 580;
 const TIMBER_N = TIMBER_CM / 5;
 
 /**
@@ -360,7 +360,7 @@ const TIMBER_N = TIMBER_CM / 5;
  * `normal-tree` posée sur la carte (x vers la droite, y vers le bas : négatif au-dessus) ; le coin
  * bas gauche d'une image est (sa colonne de gauche, la rangée qui suit sa dernière). Dans l'image : `butt`, colonne du
  * contour du bout scié ; `top`, rangée du contour du haut du tronc ; `bodies`, collisions (x, y, w, h) du tronc et du
- * houppier ; `log`, décalage [dx, dy] du coin bas gauche du rondin est-ouest de 500 cm (image 101 × 10, rangées 0 à 7 le
+ * houppier ; `log`, décalage [dx, dy] du coin bas gauche du rondin est-ouest de 580 cm (image 117 × 10, rangées 0 à 7 le
  * corps) par rapport au coin bas gauche de l'image, pour qu'il recouvre le tronc.
  */
 export const FELLED_TREE = (() => {

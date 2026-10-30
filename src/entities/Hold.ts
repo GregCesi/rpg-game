@@ -3,9 +3,13 @@ import { hold } from '../content';
 import type { HoldPoint, Stance } from '../content/types';
 import type { Actor } from './Actor';
 
-/** Ce qui se voit d'un objet tenu : sa planche `held-<…>` (vues `down`, `up`, `right`), sinon son icône. */
+/**
+ * Ce qui se voit d'un objet tenu : sa planche `held-<…>` (vues `down`, `up`, `right`), ou une texture assemblée dont les images
+ * s'appellent `down`, `up`, `right` (`texture` : la pièce de bois portée, à sa longueur), sinon son icône.
+ */
 export interface Look {
   image?: string;
+  texture?: string;
   icon: string;
 }
 
@@ -87,7 +91,8 @@ export class Hold {
   private show(image: Phaser.GameObjects.Image, look: Look | undefined, p: HoldPoint, dir: string, left: boolean): void {
     image.setVisible(!!look);
     if (!look) return;
-    if (look.image) image.setTexture(look.image, this.scene.anims.get(`${look.image}-${dir}`).frames[0].frame.name);
+    if (look.texture) image.setTexture(look.texture, dir);
+    else if (look.image) image.setTexture(look.image, this.scene.anims.get(`${look.image}-${dir}`).frames[0].frame.name);
     else image.setTexture(look.icon);
     image
       .setFlipX(left)

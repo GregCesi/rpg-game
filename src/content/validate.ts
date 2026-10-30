@@ -5,7 +5,7 @@
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
 import { propMass } from './mass';
-import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog } from './types';
+import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -191,6 +191,7 @@ export interface Content {
   maps: Record<string, MapData>;
   characters: Record<string, CharacterDef>;
   dialogues: Record<string, DialogueDef>;
+  wood: WoodDef;
 }
 
 /** Clés de props.json : minuscules ASCII, chiffres, tirets. Les majuscules sont réservées aux types de Tiled (Spawn, Exit, Facing). */
@@ -225,24 +226,6 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
     if (!c.props[sp.type]) err(`objet né '${sp.type}' absent de props.json`);
   }
   for (const tool of Object.keys(h.refuse)) if (!c.items[tool]) err(`'refuse' : outil '${tool}' absent de items.json`);
-  if (h.plant) {
-    if (!h.tool) err("'plant' : il faut l'outil qu'on plante ('tool')");
-    if (h.becomes === undefined) err("'plant' : l'objet devient autre chose une fois l'outil planté ('becomes')");
-    if (h.hits !== 1) err("'plant' : un seul coup (l'outil se plante d'un coup)");
-    if (c.items[h.tool ?? '']?.hands === 2) err("'plant' : l'outil planté se tient à une main");
-  }
-  if (h.staged) {
-    if (!h.tool) err("'staged' : il faut un outil ('tool')");
-    if (h.hits < 2) err("'staged' : au moins deux coups");
-    if (h.notch) err("'staged' avec 'notch' : une seule façon de montrer les coups");
-    // une image par coup, de la taille de l'objet : rien ne saute quand la fente s'allonge
-    const base = cat.sizes.get(p.image);
-    for (let k = 1; k <= h.hits; k++) {
-      const size = cat.sizes.get(`${p.image}-n${k}`);
-      if (!size) err(`étape ${k} : image '${p.image}-n${k}' non dessinée`);
-      else if (base && (size.w !== base.w || size.h !== base.h)) err(`étape ${k} : '${p.image}-n${k}' fait ${size.w}×${size.h}, '${p.image}' ${base.w}×${base.h} (même taille attendue)`);
-    }
-  }
   if (h.convert) {
     const k = h.convert;
     if (!h.tool) err("'convert' : il faut l'outil qui taille ('tool')");
@@ -250,7 +233,7 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
     if (!c.items[k.into]) err(`'convert' : '${k.into}' (into) absent de items.json`);
     if (c.items[h.tool ?? '']?.hands === 2) err("'convert' : l'outil se tient à une main (l'autre tient ce qu'on taille)");
     if (h.hits !== 1) err("'convert' : un seul coup");
-    if (h.becomes !== undefined || h.drops.length || h.spawns.length || h.fall || h.plant || h.staged || h.notch) err("'convert' : sans 'becomes', 'drops', 'spawns', 'fall', 'plant', 'staged' ni 'notch'");
+    if (h.becomes !== undefined || h.drops.length || h.spawns.length || h.fall) err("'convert' : sans 'becomes', 'drops', 'spawns' ni 'fall'");
   }
   h.drops.forEach((d, i) => {
     if (!c.items[d.item]) err(`objet lâché n°${i + 1} : '${d.item}' absent de items.json`);
@@ -297,57 +280,21 @@ function validateRope(key: string, p: PropDef, c: Content): string[] {
 }
 
 /**
- * Images d'état des pièces de tronc couché (`notch`) : `-n1`... par profondeur et `-cut-right` pour celles qui ont une encoche ;
- * `-cut-left` (et `-cut-left-n1`...) pour celles qui ne sont pas les premières de leur chaîne. Toutes de la taille de la pièce.
+ * Ce qui naît d'une chute (l'arbre couché) a sa version couchée vers la gauche, `<image>-left`, de la même taille, dessinée et
+ * non retournée ; la pièce de bois, jamais retournée (elle est posée en miroir), n'en a pas.
  */
-function validateTrunk(c: Content, cat: Catalog): string[] {
+function validateFallLeft(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
-  const isTrunk = (t: string) => {
-    const h = c.props[t]?.harvest;
-    return !!h && (h.notch || (!!h.becomes && !!c.props[h.becomes]?.harvest?.notch));
-  };
-  // pièces qui ont une voisine à gauche : nées après la première d'une chaîne, et ce qu'elles deviennent en restant du tronc
-  const later = new Set<string>();
-  for (const p of Object.values(c.props)) for (const sp of p.harvest?.spawns.slice(1) ?? []) later.add(sp.type);
-  for (const t of [...later]) {
-    const next = c.props[t]?.harvest?.becomes;
-    if (next && isTrunk(next)) later.add(next);
-  }
-  // ce qui naît d'une chute (et ce que ça devient) a aussi sa version couchée vers la gauche : `<image>-left` + suffixe d'état
   const born = new Set<string>();
   for (const p of Object.values(c.props)) if (p.harvest?.fall) for (const sp of p.harvest.spawns) born.add(sp.type);
-  for (const t of [...born]) {
-    const next = c.props[t]?.harvest?.becomes;
-    // le bois d'œuvre n'est jamais retourné (il est posé en miroir, dessiné face de coupe à gauche) : pas de version -left
-    if (next && !c.props[next]?.timber) born.add(next);
-  }
-  const sizeErr = (key: string, img: string, base: { w: number; h: number } | undefined, what: string) => {
-    const size = cat.sizes.get(img);
-    if (!size) errors.push(`props.json '${key}' : ${what} '${img}' non dessinée`);
-    else if (base && (size.w !== base.w || size.h !== base.h)) {
-      errors.push(`props.json '${key}' : '${img}' fait ${size.w}×${size.h}, '${c.props[key].image}' ${base.w}×${base.h} (même taille attendue)`);
-    }
-  };
   for (const key of born) {
     const p = c.props[key];
-    if (p) sizeErr(key, `${p.image}-left`, cat.sizes.get(p.image), 'image couchée vers la gauche');
-  }
-  for (const [key, p] of Object.entries(c.props)) {
-    if (!isTrunk(key)) continue;
-    const h = p.harvest!;
-    const depths = h.notch ? Array.from({ length: h.hits - 1 }, (_, i) => `-n${i + 1}`) : [];
-    const lefts = later.has(key) ? ['-cut-left', ...depths.map((d) => `-cut-left${d}`)] : [];
+    if (!p || p.wood) continue;
+    const img = `${p.image}-left`;
+    const size = cat.sizes.get(img);
     const base = cat.sizes.get(p.image);
-    for (const suffix of [...depths, ...(h.notch ? ['-cut-right'] : []), ...lefts]) {
-      sizeErr(key, `${p.image}${suffix}`, base, "image d'état");
-      if (born.has(key)) sizeErr(key, `${p.image}-left${suffix}`, base, "image d'état couchée vers la gauche");
-    }
-    if (h.notch && h.becomes) {
-      const log = c.props[h.becomes] && cat.sizes.get(c.props[h.becomes].image);
-      if (log && base && (log.w !== base.w || log.h !== base.h || h.at)) {
-        errors.push(`props.json '${key}' : sa bille '${h.becomes}' doit avoir la taille et la place exactes de la pièce (${base.w}×${base.h}, sans 'at')`);
-      }
-    }
+    if (!size) errors.push(`props.json '${key}' : image couchée vers la gauche '${img}' non dessinée`);
+    else if (base && (size.w !== base.w || size.h !== base.h)) errors.push(`props.json '${key}' : '${img}' fait ${size.w}×${size.h}, '${p.image}' ${base.w}×${base.h} (même taille attendue)`);
   }
   return errors;
 }
@@ -447,6 +394,11 @@ function validatePiles(c: Content, cat: Catalog): string[] {
       const it = c.items[piece.item];
       if (!it) err(`${at} : objet possédable '${piece.item}' introuvable dans items.json`);
       else if (it.pile !== key) err(`${at} : '${piece.item}' (items.json) doit avoir "pile": "${key}" pour s'y entreposer`);
+    } else if ('wood' in piece) {
+      const size = c.wood.sizes[piece.wood.size];
+      if (!size) err(`${at} : diamètre '${piece.wood.size}' introuvable dans wood.json`);
+      else if (!size.looks[piece.wood.shape]) err(`${at} : le diamètre '${piece.wood.size}' n'a pas d'aspect '${piece.wood.shape}'`);
+      if (piece.wood.length % c.wood.grid || piece.wood.length < c.wood.min) err(`${at} : longueur ${piece.wood.length} cm hors de la grille (multiple de ${c.wood.grid}, au moins ${c.wood.min})`);
     } else {
       const p = c.props[piece.prop];
       if (!p) err(`${at} : objet '${piece.prop}' introuvable dans props.json`);
@@ -553,46 +505,67 @@ function validatePlans(c: Content): string[] {
 }
 
 /**
- * Bois d'œuvre (`timber`, world/timberShape.ts) : les deux planches de parties (`<sheet>` est-ouest, `<sheet>-ns` nord-sud) ont
- * chaque aspect en trois parties (le rond en 4 images de roulement), et les deux bandes d'encoche ; la coupe et l'équarrissage
- * nomment des outils ; la poutre que donne l'équarrissage est du bois d'œuvre du même sens ; ce qui roule est le rond ;
- * l'image de l'objet est celle de sa longueur de `dims`.
+ * Le bois (wood.json, world/woodShape.ts) : chaque diamètre a ses deux planches de parties (`<sheet>` est-ouest, `<sheet>-ns`
+ * nord-sud), chaque aspect en trois parties (le rond en 4 images de roulement), les deux bandes d'encoche (4 images), et pour un
+ * aspect qui se fend son coin planté à chaque bout, sa fente et son bois ouvert ; chaque aspect a son icône et sa vue portée ; les
+ * outils sont des outils ; les longueurs sont sur la grille. La pièce de bois de props.json (`wood`) n'a que ses réglages par
+ * défaut : sa collision, sa prise, son roulement se tirent de ses réglages (world/woodPiece.ts) ; une récolte qui donne du bois
+ * (`harvest.wood`) devient cette pièce.
  */
-function validateTimber(c: Content, cat: Catalog): string[] {
+function validateWood(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
-  for (const [key, p] of Object.entries(c.props)) {
-    const t = p.timber;
-    if (!t) continue;
-    const err = (msg: string) => errors.push(`props.json '${key}' timber : ${msg}`);
-    const sheet = t.axis === 'ew' ? t.sheet : `${t.sheet}-ns`;
-    const looks = t.look === 'beam' ? ['beam'] : ['round', ...(t.hew ? ['f1', 'f2', 'f3'] : [])];
-    for (const look of looks) {
-      for (const part of ['start', 'mid', 'end']) {
-        const n = cat.frameCounts.get(sheet)?.get(`${look}-${part}`);
-        const want = look === 'round' ? 4 : 1;
-        if (n === undefined) err(`planche '${sheet}' : animation '${look}-${part}' non dessinée`);
-        else if (n !== want) err(`planche '${sheet}' : '${look}-${part}' a ${n} images, il en faut ${want}`);
+  const err = (msg: string) => errors.push(`wood.json : ${msg}`);
+  const W = c.wood;
+  if (W.min % W.grid || W.split.longest % W.grid) err(`'min' et 'split.longest' sont des multiples de 'grid' (${W.grid} cm)`);
+  if (W.cut.hits !== 3) err(`'cut.hits' : 3 coups (un tiers, deux tiers, coupé : les bandes notch1 et notch2)`);
+  for (const tool of [W.cut.tool, W.hew.tool, W.split.wedge, W.split.maul]) if (c.items[tool]?.kind !== 'tool') err(`'${tool}' n'est pas un outil de items.json`);
+  if (c.items[W.split.wedge]?.hands === 2) err(`le coin '${W.split.wedge}' se tient à une main (il se plante et quitte la main)`);
+  for (const [key, size] of Object.entries(W.sizes)) {
+    const at = `diamètre '${key}'`;
+    for (const sheet of [size.sheet, `${size.sheet}-ns`]) {
+      const anims = cat.frameCounts.get(sheet);
+      const want = (anim: string, n: number) => {
+        const got = anims?.get(anim);
+        if (got === undefined) err(`${at} : planche '${sheet}' : animation '${anim}' non dessinée`);
+        else if (got !== n) err(`${at} : planche '${sheet}' : '${anim}' a ${got} images, il en faut ${n}`);
+      };
+      for (const look of Object.keys(size.looks) as WoodLook[]) for (const part of ['start', 'mid', 'end']) want(`${look}-${part}`, look === 'round' ? 4 : 1);
+      for (const notch of ['notch1', 'notch2']) want(notch, 4);
+      for (const [look, rule] of Object.entries(size.split)) {
+        if (!size.looks[look as WoodLook]) err(`${at} : 'split' d'un aspect '${look}' qu'il n'a pas`);
+        if (!size.looks[rule.into]) err(`${at} : 'split.${look}' devient '${rule.into}', un aspect qu'il n'a pas`);
+        for (const part of ['start', 'end']) want(`wedge-${look}-${part}`, 1);
+        for (const part of ['start', 'mid', 'end']) {
+          want(`crack-${look}-${part}`, 1);
+          want(`open-${look}-${part}`, 1);
+        }
       }
     }
-    if (t.cut) for (const notch of ['notch1', 'notch2']) if (cat.frameCounts.get(sheet)?.get(notch) !== 4) err(`planche '${sheet}' : '${notch}' doit avoir 4 images (une par image de roulement)`);
-    if (t.cut && t.cut.hits !== 3) err(`'cut.hits' : 3 coups (un tiers, deux tiers, coupé : les bandes notch1 et notch2)`);
-    for (const tool of [t.cut?.tool, t.hew?.tool]) if (tool && c.items[tool]?.kind !== 'tool') err(`'${tool}' n'est pas un outil de items.json`);
-    if (t.hew) {
-      const into = c.props[t.hew.into];
-      if (!into?.timber || into.timber.look !== 'beam' || into.timber.axis !== t.axis) err(`'hew.into' : '${t.hew.into}' doit être une poutre ('timber', look 'beam') du même sens`);
+    for (const [look, l] of Object.entries(size.looks)) {
+      if (!cat.textures.has(l.icon)) err(`${at} '${look}' : icône '${l.icon}' non dessinée`);
+      errors.push(...validateHold(`wood.json ${at} '${look}'`, { stance: 'carry', image: l.held }, 2, cat));
     }
-    if (p.roll && t.look !== 'round') err(`seul le rondin rond roule ('roll')`);
-    if ((p.dims.shape === 'cylinder' ? p.dims.axis : undefined) !== t.axis && p.dims.shape === 'cylinder') err(`dims d'axe '${p.dims.axis}' pour une pièce couchée '${t.axis}'`);
-    if (p.body || p.bodies) err(`pas de 'body' : sa collision suit sa longueur (timberBody)`);
-    if (!p.mass) err(`une masse ('"mass": "wood"', à sa longueur)`);
+  }
+  for (const [key, p] of Object.entries(c.props)) {
+    const at = `props.json '${key}'`;
+    if (p.wood) {
+      if (!W.sizes[p.wood.size]?.looks[p.wood.shape]) err(`${at} : réglages par défaut d'un bois qui n'existe pas ('${p.wood.size}', '${p.wood.shape}')`);
+      if (p.mass !== 'wood') errors.push(`${at} : la pièce de bois a '"mass": "wood"' (calculée par ses réglages)`);
+      if (p.take || p.roll || p.turn || p.body || p.bodies || p.harvest) errors.push(`${at} : sa prise, son roulement, son pivot et sa collision se tirent de ses réglages (world/woodPiece.ts) : ni 'take', 'roll', 'turn', 'body', 'bodies' ni 'harvest'`);
+    } else if (p.roll || p.mass === 'wood') errors.push(`${at} : seule la pièce de bois ('wood') roule ou a '"mass": "wood"'`);
+    const h = p.harvest;
+    if (h?.wood) {
+      if (!h.becomes || !c.props[h.becomes]?.wood) errors.push(`${at} : 'harvest.wood' : il devient une pièce de bois ('becomes' : l'objet de props.json qui a 'wood')`);
+      if (!W.sizes[h.wood.size]) errors.push(`${at} : 'harvest.wood' : diamètre '${h.wood.size}' introuvable dans wood.json`);
+      if (h.wood.length % W.grid || h.wood.length < W.min) errors.push(`${at} : 'harvest.wood' : longueur ${h.wood.length} cm hors de la grille (multiple de ${W.grid}, au moins ${W.min})`);
+    } else if (h?.becomes && c.props[h.becomes]?.wood) errors.push(`${at} : il devient une pièce de bois : son diamètre et sa longueur ('harvest.wood')`);
   }
   return errors;
 }
 
 /**
- * Masses et roulement : tout objet qu'on prend, pose ou roule a une masse (items.json : un nombre ; props.json : un nombre,
- * `"wood"` pour une pièce de bois cylindrique, ou `{ "pile": genre }`) ; ce qui roule est un cylindre couché, a sa collision,
- * sa planche de roulement (animation `roll` de 4 images, de la taille de l'objet), et l'objet ordinaire qu'il devient (`into`).
+ * Masses : tout objet qu'on prend, pose ou roule a une masse (items.json : un nombre ; props.json : un nombre, `"wood"` pour la
+ * pièce de bois, `"stone"`, ou `{ "pile": genre }`) ; la pose « pousser » de Xéros existe.
  */
 function validateMasses(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -602,10 +575,8 @@ function validateMasses(c: Content, cat: Catalog): string[] {
     const at = `props.json '${key}'`;
     const weighs = !!p.take || !!p.roll;
     if (weighs && p.mass === undefined) err(`${at} : pas de masse ('mass') : tout objet qu'on prend ou qu'on roule en a une`);
-    if (p.mass === 'wood' && !(p.dims.shape === 'cylinder' || (p.timber && p.dims.shape === 'box'))) err(`${at} : 'mass: "wood"' est le calcul d'une pièce de bois cylindrique (dims.shape 'cylinder'), ou d'une poutre ('timber', boîte)`);
     if (p.mass === 'stone' && p.dims.shape !== 'box') err(`${at} : 'mass: "stone"' est le calcul d'une pierre en boîte (dims.shape 'box')`);
     if (typeof p.mass === 'object' && 'pile' in p.mass && !c.piles[p.mass.pile]) err(`${at} : masse d'un tas '${p.mass.pile}' introuvable dans piles.json`);
-    if (typeof p.mass === 'object' && 'share' in p.mass && c.props[p.mass.of]?.mass !== 'wood') err(`${at} : masse en part de '${p.mass.of}', qui doit être une pièce de bois ('mass: "wood"')`);
     if (p.mass !== undefined && p.length && typeof p.mass !== 'number') err(`${at} : un objet à longueur mesurée a une masse saisie (celle de sa longueur neuve)`);
     if (p.mass !== undefined) {
       try {
@@ -614,32 +585,7 @@ function validateMasses(c: Content, cat: Catalog): string[] {
         err(`${at} : ${(e as Error).message}`);
       }
     }
-    if (p.turn) {
-      const t = c.props[p.turn.into];
-      // ce qui pivote roule (la bille), ou est du bois d'œuvre (la poutre, qui ne roule pas) : couché dans l'autre sens
-      const axis = (q: PropDef) => q.roll?.axis ?? q.timber?.axis;
-      if (!t) err(`${at} : 'turn' vers '${p.turn.into}' introuvable dans props.json`);
-      else if (!axis(p) || !axis(t) || axis(t) === axis(p)) err(`${at} : 'turn' vers '${p.turn.into}' : il doit rouler (ou être du bois d'œuvre) et être couché dans l'autre sens`);
-      else if (!t.turn || t.turn.into === undefined) err(`${at} : '${p.turn.into}' doit pouvoir se retourner à son tour ('turn')`);
-    }
-    const r = p.roll;
-    if (!r) continue;
-    if (p.dims.shape !== 'cylinder' || p.dims.axis !== r.axis) err(`${at} : 'roll' d'axe '${r.axis}' demande des dims de cylindre couché '${r.axis}'`);
-    if (!p.body && !p.bodies && !p.timber) err(`${at} : un objet qui roule a sa collision ('body')`);
-    const frames = cat.frameCounts.get(r.sheet)?.get('roll');
-    if (frames === undefined) err(`${at} : planche de roulement '${r.sheet}' (animation 'roll') non dessinée`);
-    else if (frames !== 4) err(`${at} : planche '${r.sheet}' : 'roll' a ${frames} images, il en faut 4 (un tour)`);
-    // l'objet ordinaire (lui-même, ou celui qu'il devient) a la taille des images de la planche : rien ne saute quand il roule
-    const ordinary = r.into ? c.props[r.into] : p;
-    if (!ordinary) err(`${at} : 'into' '${r.into}' introuvable dans props.json`);
-    else {
-      if (r.into && (ordinary.roll?.into || ordinary.roll?.axis !== r.axis || ordinary.roll?.sheet !== r.sheet)) {
-        err(`${at} : 'into' '${r.into}' doit être l'objet ordinaire du même roulement (même axe et même planche, sans 'into')`);
-      }
-      const a = cat.sizes.get(r.sheet);
-      const b = cat.sizes.get(ordinary.image);
-      if (a && b && (a.w !== b.w || a.h !== b.h)) err(`${at} : planche '${r.sheet}' (${a.w} × ${a.h}) de taille différente de l'image '${ordinary.image}' (${b.w} × ${b.h})`);
-    }
+    if (p.turn && !c.props[p.turn.into]) err(`${at} : 'turn' vers '${p.turn.into}' introuvable dans props.json`);
   }
   // la pose « pousser » de Xéros : une attente et une marche, dans les 4 directions
   for (const state of ['idle', 'walk']) {
@@ -720,8 +666,8 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   // Gabarit : taille de chaque objet d'après ses dimensions réelles
   addAll(validateGabarit(c, cat));
 
-  // Pièces de tronc couché : une image par état de l'encoche et du bout gauche, de la taille de la pièce (voir `notch`)
-  addAll(validateTrunk(c, cat));
+  // Ce qui naît d'une chute : sa version couchée vers la gauche
+  addAll(validateFallLeft(c, cat));
 
   // Objets possédables
   for (const [key, it] of Object.entries(c.items)) {
@@ -734,8 +680,8 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   // Masses, roulement, pose pousser
   addAll(validateMasses(c, cat));
 
-  // Bois d'œuvre : planches de parties, outils, poutre
-  addAll(validateTimber(c, cat));
+  // Le bois : planches de parties de chaque diamètre et aspect, icônes, vues portées, outils, grille
+  addAll(validateWood(c, cat));
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));

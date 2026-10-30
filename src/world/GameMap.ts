@@ -4,44 +4,37 @@ import { roofShadow } from './roofShadow';
 import { items, piles as pileDefs, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PileDef, PropDef } from '../content/types';
 import { drawOrder, pileBlocks, placeAim, shapeOf, tieImages, topPieces } from './pileShape';
-import type { Chain, GroundItem, MapState, Notch, Pile, WorldChange } from '../state';
+import type { Chain, GroundItem, MapState, Pile, WorldChange } from '../state';
 import type { Npc } from '../entities/Npc';
-import { images, tilesets } from '../generated/assets';
+import { tilesets } from '../generated/assets';
 import { CM_PER_PX } from '../content/gabarit';
-import { woodShape } from '../content/mass';
-import { lookOf, timberBody, timberSize, type TimberLook } from './timberShape';
-import { timberTexture } from './timberTexture';
-
-/** Longueur (cm) d'une pièce de bois d'œuvre : celle que garde la partie, sinon celle de ses `dims` (95 cm, la bille). */
-export function timberLength(def: PropDef, length?: number): number {
-  return length ?? woodShape(def.dims).length;
-}
-
-/** L'aspect d'une pièce de bois d'œuvre : la poutre, ou le rondin selon ses faces dressées (`hewn` coups de doloire). */
-export function timberLook(def: PropDef, hewn = 0): TimberLook {
-  if (def.timber!.look === 'beam') return 'beam';
-  const hew = def.timber!.hew;
-  return hew ? lookOf(hewn, hew.perFace, hew.faces) : 'round';
-}
+import type { WoodPiece } from '../content/types';
+import { woodDef, woodOf } from './woodPiece';
+import { lookOf, sizeOf, woodBody, woodSize } from './woodShape';
+import { woodTexture } from './woodTexture';
 
 /**
- * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois d'œuvre, celle de sa
- * longueur (`timberShape.ts`).
+ * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois, celle de ses réglages
+ * (`wood`, sinon ceux de sa définition).
  */
-export function propSize(scene: Phaser.Scene, def: PropDef, opts: { flip?: boolean; length?: number } = {}): { w: number; h: number } {
-  if (def.timber) return timberSize(def.timber.axis, timberLength(def, opts.length));
+export function propSize(scene: Phaser.Scene, def: PropDef, opts: { flip?: boolean; wood?: WoodPiece } = {}): { w: number; h: number } {
+  if (def.wood) {
+    const w = opts.wood ?? def.wood;
+    return woodSize(w.size, lookOf(w), w.axis, w.length);
+  }
   const f = scene.textures.getFrame(opts.flip ? `${def.image}-left` : def.image);
   return { w: f.width, h: f.height };
 }
 
-/** Collision d'un objet dans le repère de son image (voir `footprint`), à sa longueur pour le bois d'œuvre. */
-export function propFootprint(scene: Phaser.Scene, def: PropDef, opts: { flip?: boolean; length?: number } = {}): Box | undefined {
+/** Collision d'un objet dans le repère de son image (voir `footprint`), selon ses réglages pour une pièce de bois. */
+export function propFootprint(scene: Phaser.Scene, def: PropDef, opts: { flip?: boolean; wood?: WoodPiece } = {}): Box | undefined {
   const { w, h } = propSize(scene, def, opts);
-  const body = def.timber ? timberBody(def.timber.axis, timberLength(def, opts.length)) : def.body;
-  return footprint({ ...def, body }, w, h, !!opts.flip);
+  const piece = def.wood ? (opts.wood ?? def.wood) : undefined;
+  const body = piece ? woodBody(piece.size, lookOf(piece), piece.axis, piece.length) : def.body;
+  return footprint({ ...def, body, ...(piece ? { bodies: undefined } : {}) }, w, h, !!opts.flip);
 }
 
-/** Ce qu'il faut noter dans GameState d'un objet posé pour le retrouver tel quel (type, place, longueur, coupe, équarrissage). */
+/** Ce qu'il faut noter dans GameState d'un objet posé pour le retrouver tel quel (type, place, longueur, réglages de bois). */
 export function stateOf(p: PlacedProp): WorldChange {
   return {
     type: p.type,
@@ -49,20 +42,8 @@ export function stateOf(p: PlacedProp): WorldChange {
     y: p.y,
     ...(p.flip ? { flip: true } : {}),
     ...(p.length !== undefined ? { length: p.length } : {}),
-    ...(p.notch ? { notch: { ...p.notch } } : {}),
-    ...(p.hewn ? { hewn: p.hewn } : {}),
+    ...(p.wood ? { wood: structuredClone(p.wood) } : {}),
   };
-}
-
-/** Pièce de tronc couché : elle a une encoche, ou devient une pièce qui en a une (le houppier devient la tête). */
-export function isTrunk(def: PropDef): boolean {
-  const h = def.harvest;
-  return !!h && (h.notch || (!!h.becomes && !!propDefs[h.becomes].harvest?.notch));
-}
-
-/** L'encoche du bout droit de cette pièce est coupée. */
-export function notchCut(p: PlacedProp): boolean {
-  return !!p.def.harvest?.notch && p.hits >= p.def.harvest.hits;
 }
 
 /** Haut de l'invite au-dessus d'un objet : sur le point visé s'il en a un, sinon au-dessus de l'image. */
@@ -129,7 +110,7 @@ export interface PlacedProp {
    * version de droite : collisions, point visé, fumées et lueurs sont retournés dans l'image.
    */
   flip: boolean;
-  /** Place dans la chaîne de ce qui est né avec lui (pièces du tronc couché) : choisit l'image « bout coupé ». */
+  /** Place dans la chaîne de ce qui est né avec lui (les objets nés d'une même récolte). */
   chain?: Chain;
   type: string;
   def: PropDef;
@@ -159,9 +140,8 @@ export interface PlacedProp {
    * rouleau, `bears`) ; undefined pour le reste.
    */
   length?: number;
-  /** Pièce de bois d'œuvre : la coupe commencée (encoche), les coups de doloire reçus (0 : aucun). */
-  notch?: Notch;
-  hewn: number;
+  /** Pièce de bois : ses réglages (diamètre, longueur, forme, faces, sens, coupe commencée, coin planté). */
+  wood?: WoodPiece;
 }
 
 /** Un objet possédable posé au sol, affiché. */
@@ -205,7 +185,6 @@ export type Action =
 
 /** Longueur d'un objet neuf (posé dans Tiled) : celle de son `length`, ou de l'objet qu'il porte (`bears`). */
 function startLength(def: PropDef): number | undefined {
-  if (def.timber) return timberLength(def);
   return def.length?.start ?? (def.bears?.prop ? propDefs[def.bears.prop].length?.start : undefined);
 }
 
@@ -271,10 +250,9 @@ export class GameMap {
     for (const o of def.objects) {
       const c = changes.changes[o.id];
       if (!c) this.placeProp(o);
-      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length, hits: c.hits, notch: c.notch, hewn: c.hewn });
+      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length, wood: c.wood });
     }
-    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, hits: o.hits, length: o.length, notch: o.notch, hewn: o.hewn });
-    this.refreshTrunk();
+    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, length: o.length, wood: o.wood });
     for (const g of changes.ground) this.placeGround(g);
     for (const pile of changes.piles) this.placePile(pile);
 
@@ -326,37 +304,8 @@ export class GameMap {
     return list;
   }
 
-  /** La pièce de la même chaîne à `index`, si elle est posée. */
-  chainPiece(group: number, index: number): PlacedProp | undefined {
-    return this.props.find((p) => p.chain?.group === group && p.chain.index === index);
-  }
-
   /**
-   * Pièce séparée de sa voisine de gauche : première de sa chaîne (bout scié contre la souche), voisine partie,
-   * devenue bille, ou encoche de la voisine coupée.
-   */
-  separatedLeft(p: PlacedProp): boolean {
-    if (!p.chain || p.chain.index === 0) return true;
-    const left = this.chainPiece(p.chain.group, p.chain.index - 1);
-    return !left || !isTrunk(left.def) || notchCut(left);
-  }
-
-  /**
-   * Images des pièces de tronc couché selon leur état : face de coupe à gauche si la voisine est séparée,
-   * profondeur de l'encoche, encoche coupée (voir `notch` dans types.ts). À appeler quand une pièce change, naît ou est frappée.
-   */
-  refreshTrunk(): void {
-    for (const p of this.props) {
-      if (!p.chain || !isTrunk(p.def)) continue;
-      const left = p.chain.index > 0 && this.separatedLeft(p) ? '-cut-left' : '';
-      const max = p.def.harvest!.hits;
-      const base = p.flip ? `${p.def.image}-left` : p.def.image;
-      const image = !p.def.harvest!.notch ? `${base}${left}` : p.hits >= max ? `${base}-cut-right` : `${base}${left}${p.hits > 0 ? `-n${p.hits}` : ''}`;
-      p.image.setTexture(image);
-    }
-  }
-
-  /**
+   * Le rectangle (repère de la carte) est libre  /**
    * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante, sur aucune collision d'objet
    * ni sur l'un des corps `others` (les personnages). Les collisions de `ignore` ne comptent pas (le tas qui grandit).
    */
@@ -374,21 +323,17 @@ export class GameMap {
   }
 
   /**
-   * Ce qui roule (`roll` de props.json) montre l'image de sa planche que donne sa position : un tour complet (π × diamètre
-   * du tronc, au gabarit de 5 cm par pixel) = les 4 images, dans le sens où il avance ; à l'arrêt comme en route, donc l'écorce
-   * tourne exactement du chemin parcouru. L'objet qui n'est pas encore l'ordinaire (`into`) garde son dessin.
+   * La pièce de bois qui roule montre l'image de sa texture que donne sa position : un tour complet (π × diamètre du tronc, au
+   * gabarit de 5 cm par pixel) = les 4 images, dans le sens où elle avance ; à l'arrêt comme en route, donc l'écorce tourne
+   * exactement du chemin parcouru. Une pièce qui ne roule pas (dressée, demi, quart, coin planté) garde son image.
    */
   rollFrame(p: PlacedProp): void {
     const r = p.def.roll;
-    if (!r || r.into) return;
-    // un rondin dont une face est dressée ne roule plus : il garde son image
-    if (p.def.timber && timberLook(p.def, p.hewn) !== 'round') return;
-    const turn = (Math.PI * woodShape(p.def.dims).diameter) / CM_PER_PX;
+    if (!r || !p.wood || p.wood.wedge) return;
+    const turn = (Math.PI * sizeOf(p.wood.size).diameter) / CM_PER_PX;
     const at = r.axis === 'ew' ? p.y : p.x;
     const i = Math.min(3, Math.floor((((at % turn) + turn) % turn) / (turn / 4)));
-    // le bois d'œuvre roule dans sa propre texture, assemblée à sa longueur (images '0' à '3')
-    if (p.def.timber) p.image.setFrame(String(i));
-    else p.image.setTexture(r.sheet, this.scene.anims.get(`${r.sheet}-roll`).frames[i].frame.name);
+    p.image.setFrame(String(i));
   }
 
   /** Déplace un objet posé de (dx, dy) pixels : image, collisions et repères. L'état de la partie n'est pas touché. */
@@ -414,19 +359,6 @@ export class GameMap {
     }
     if (p.def.layer !== 'floor') p.image.setDepth(p.y);
     this.rollFrame(p);
-  }
-
-  /**
-   * L'objet `p` devient `type` (la pièce du tronc devient la bille ronde qui roule) en gardant sa silhouette au même endroit
-   * (coin bas gauche de la silhouette). Renvoie le nouvel objet ; l'état de la partie n'est pas touché.
-   */
-  convertProp(p: PlacedProp, type: string): PlacedProp {
-    const old = images.find((i) => i.key === (p.flip ? `${p.def.image}-left` : p.def.image))!;
-    const next = images.find((i) => i.key === propDefs[type].image)!;
-    const x = p.x + old.silhouette.x - next.silhouette.x;
-    const y = p.y - old.height + old.silhouette.y + old.silhouette.h - (next.silhouette.y + next.silhouette.h) + next.height;
-    this.removeProp(p);
-    return this.placeProp({ id: p.id, type, x, y }, { spawned: p.spawned, chain: p.chain, length: p.length });
   }
 
   /** Retire un objet posé (image, collisions, fumées, lueurs). */
@@ -496,19 +428,17 @@ export class GameMap {
    * (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds).
    * `flip` : version couchée vers la gauche (image `-left`) ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
    */
-  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain; hits?: number; length?: number; notch?: Notch; hewn?: number } = {}): PlacedProp {
+  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain; length?: number; wood?: WoodPiece; open?: boolean } = {}): PlacedProp {
     const scene = this.scene;
-    const def = propDefs[o.type];
-    // le bois d'œuvre : son image assemblée à sa longueur, son encoche et ses faces ; sa collision suit sa longueur ; jamais retourné
-    const flip = !!opts.flip && !def.timber;
-    const length = def.timber ? timberLength(def, opts.length) : undefined;
-    const p: PropDef = def.timber ? { ...def, body: timberBody(def.timber.axis, length!) } : def;
+    const base = propDefs[o.type];
+    // la pièce de bois : sa définition et son image assemblée tirées de ses réglages (GameState, Tiled, sinon props.json) ; jamais retournée
+    const wood = base.wood ? woodOf(base, opts.wood ?? o.wood) : undefined;
+    const p: PropDef = wood ? woodDef(base, wood) : base;
+    const flip = !!opts.flip && !wood;
     const ay = o.y;
-    // ce qui se fend montre la fente déjà ouverte (coups notés dans GameState) ; la dernière image d'étape ne dure qu'un instant
-    const stage = p.harvest?.staged && opts.hits ? `-n${Math.min(opts.hits, p.harvest.hits - 1)}` : '';
-    const image = (flip ? `${p.image}-left` : p.image) + stage;
-    const obj = p.timber
-      ? scene.add.image(o.x, ay, timberTexture(scene, p.timber.sheet, p.timber.axis, timberLook(p, opts.hewn), length!, opts.notch && { cm: opts.notch.at, depth: opts.notch.hits }), '0')
+    const image = flip ? `${p.image}-left` : p.image;
+    const obj = wood
+      ? scene.add.image(o.x, ay, woodTexture(scene, wood, opts.open), '0')
       : p.anim
         ? scene.add.sprite(o.x, ay, image).play(`${image}-${p.anim}`)
         : scene.add.image(o.x, ay, image);
@@ -556,11 +486,10 @@ export class GameMap {
       aimY: p.aim ? oy + p.aim[1] : baseY,
       image: obj,
       parts,
-      hits: opts.hits ?? 0,
+      hits: 0,
       interact: o.interact,
       length: opts.length ?? startLength(p),
-      notch: opts.notch,
-      hewn: opts.hewn ?? 0,
+      wood,
     };
     this.props.push(placed);
     this.rollFrame(placed);

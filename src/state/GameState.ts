@@ -4,34 +4,22 @@
 
 import { z } from 'zod';
 import { stamina } from '../content';
-import { CornerSchema } from '../content/types';
+import { CornerSchema, WoodPieceSchema, type WoodPiece } from '../content/types';
 
 const id = z.string().min(1);
 
-/**
- * Longueur, en centimètres : celle qui reste d'une quantité mesurée (le rouleau de corde, `length` de props.json), ou celle
- * d'une pièce de bois d'œuvre (le rondin, la poutre, `timber` de props.json ; absente : la longueur de ses `dims`).
- */
+/** Longueur restante, en centimètres, d'une quantité mesurée (le rouleau de corde, `length` de props.json). */
 const length = z.number().int().nonnegative().optional();
-
-/** Coups de doloire déjà reçus par un rondin qu'on équarrit (`hew` de `timber`) : les faces dressées s'en déduisent. */
-const hewn = z.number().int().positive().optional();
-
-/**
- * L'encoche d'une coupe commencée dans un rondin (`cut` de `timber`) : à `at` cm de son bout ouest (nord pour un rondin
- * nord-sud), creusée de `hits` coups (un tiers, deux tiers ; le dernier coupe).
- */
-export const NotchSchema = z.strictObject({ at: z.number().int().positive(), hits: z.number().int().positive() });
 
 /**
  * Ce que tient une main : un objet possédable (`item`, clé de items.json), ou un objet du monde pris sur une carte
- * (`prop`, clé de props.json : la bille ; `flip` : sa version couchée vers la gauche ; `turned` : tournée nord-sud, R,
- * pour le tas qu'elle commencera ; `length` : sa longueur restante, le rouleau de corde). Pas de besace : les mains sont
- * tout l'inventaire.
+ * (`prop`, clé de props.json ; `flip` : sa version couchée vers la gauche ; `turned` : tournée nord-sud, R, pour le tas qu'elle
+ * commencera (le fagot) ; `length` : sa longueur restante, le rouleau de corde ; `wood` : les réglages d'une pièce de bois, dont
+ * le sens où elle sera posée, que R change). Pas de besace : les mains sont tout l'inventaire.
  */
 export const HeldSchema = z.union([
   z.strictObject({ item: id }),
-  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length, hewn }),
+  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length, wood: WoodPieceSchema.optional() }),
 ]);
 
 /** Une main : 0 = la gauche, 1 = la droite. */
@@ -48,11 +36,8 @@ export const WorldChangeSchema = z.strictObject({
   y: z.number(),
   flip: z.boolean().optional(),
   length,
-  /** Coups déjà reçus (la fente d'une bille qu'on frappe à la masse) : voir `staged` de harvest, SpawnedSchema.hits. */
-  hits: z.number().int().positive().optional(),
-  /** La coupe commencée dans ce rondin, et les coups de doloire qu'il a reçus. */
-  notch: NotchSchema.optional(),
-  hewn,
+  /** Les réglages de la pièce de bois qu'il est (diamètre, longueur, forme, faces, sens, coupe commencée, coin planté). */
+  wood: WoodPieceSchema.optional(),
 });
 
 /** Place d'un objet né dans la chaîne de ce qui est né avec lui (les pièces de l'arbre couché, bout à bout). */
@@ -74,13 +59,10 @@ export const SpawnedSchema = z.strictObject({
   y: z.number(),
   flip: z.boolean().optional(),
   chain: ChainSchema.optional(),
-  /** Coups déjà reçus (profondeur de l'encoche d'une pièce de tronc) : l'entaille se retrouve au retour sur la carte. */
-  hits: z.number().int().positive().optional(),
-  /** Longueur restante de ce qu'il est ou porte (le rouleau posé, le billot qui porte le rouleau), ou longueur du rondin. */
+  /** Longueur restante de ce qu'il est ou porte (le rouleau posé, le billot qui porte le rouleau). */
   length,
-  /** La coupe commencée dans ce rondin, et les coups de doloire qu'il a reçus. */
-  notch: NotchSchema.optional(),
-  hewn,
+  /** Les réglages de la pièce de bois qu'il est. */
+  wood: WoodPieceSchema.optional(),
 });
 
 /** Un objet possédable posé au sol : (x, y) = son point au sol. */
@@ -158,7 +140,6 @@ export const GameStateSchema = z.strictObject({
 });
 
 export type Held = z.infer<typeof HeldSchema>;
-export type Notch = z.infer<typeof NotchSchema>;
 export type Hand = z.infer<typeof HandSchema>;
 export type WorldChange = z.infer<typeof WorldChangeSchema>;
 export type GroundItem = z.infer<typeof GroundItemSchema>;
@@ -228,11 +209,15 @@ export function release(s: GameState): Held | undefined {
   return what;
 }
 
-/** Tourne l'objet du monde que tient Xéros (la bille) entre est-ouest et nord-sud ; sans objet du monde en main, rien. */
+/**
+ * Tourne l'objet du monde que tient Xéros entre est-ouest et nord-sud : la pièce de bois change de sens, le reste (le fagot)
+ * est noté tourné ; sans objet du monde en main, rien.
+ */
 export function turnHeld(s: GameState): void {
   const h = held(s);
   if (!h || !('prop' in h)) return;
-  if (h.turned) delete h.turned;
+  if (h.wood) h.wood = { ...h.wood, axis: h.wood.axis === 'ew' ? 'ns' : 'ew' };
+  else if (h.turned) delete h.turned;
   else h.turned = true;
   revision++;
 }
@@ -283,12 +268,27 @@ export function removeGroundItem(s: GameState, mapId: string, groundId: number):
   revision++;
 }
 
-/**
- * Fait naître un objet sur une carte (`length` : sa longueur restante, le rouleau, ou celle du rondin ; `hewn` : les coups de
- * doloire d'un rondin qu'on équarrit) ; renvoie ce qui a été noté.
- */
-export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, flip: boolean, chain?: Chain, length?: number, hewn?: number): Spawned {
-  const o = { id: s.nextSpawnId++, type, x, y, ...(flip ? { flip } : {}), ...(chain ? { chain } : {}), ...(length !== undefined ? { length } : {}), ...(hewn ? { hewn } : {}) };
+/** Ce qu'un objet né porte avec lui : retourné, sa chaîne, sa longueur restante (le rouleau), ses réglages de pièce de bois. */
+export interface SpawnOpts {
+  flip?: boolean;
+  chain?: Chain;
+  length?: number;
+  wood?: WoodPiece;
+}
+
+/** Fait naître un objet sur une carte ; renvoie ce qui a été noté. */
+export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, opts: SpawnOpts = {}): Spawned {
+  const { flip, chain, length, wood } = opts;
+  const o = {
+    id: s.nextSpawnId++,
+    type,
+    x,
+    y,
+    ...(flip ? { flip } : {}),
+    ...(chain ? { chain } : {}),
+    ...(length !== undefined ? { length } : {}),
+    ...(wood ? { wood: structuredClone(wood) } : {}),
+  };
   mapState(s, mapId).spawned.push(o);
   revision++;
   return o;
@@ -301,7 +301,7 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
   if (i < 0) return;
   if (!change.type) m.spawned.splice(i, 1);
   else {
-    // nouvel objet : sa place dans la chaîne reste, ses coups repartent de zéro
+    // nouvel objet : sa place dans la chaîne reste
     const chain = m.spawned[i].chain;
     m.spawned[i] = {
       id: spawnId,
@@ -311,40 +311,20 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
       ...(change.flip ? { flip: true } : {}),
       ...(chain ? { chain } : {}),
       ...(change.length !== undefined ? { length: change.length } : {}),
-      ...(change.notch ? { notch: { ...change.notch } } : {}),
-      ...(change.hewn ? { hewn: change.hewn } : {}),
+      ...(change.wood ? { wood: structuredClone(change.wood) } : {}),
     };
   }
   revision++;
 }
 
-/** Coups reçus par un objet né (profondeur d'une encoche). */
-export function setSpawnedHits(s: GameState, mapId: string, spawnId: number, hits: number): void {
-  const o = mapState(s, mapId).spawned.find((x) => x.id === spawnId);
-  if (o) o.hits = hits;
-  revision++;
-}
-
 /**
- * Le rondin (objet né, ou objet de carte changé) a une coupe commencée (`notch`, absente : aucune) et `hewn` coups de doloire
- * (0 : aucun). Sa place, son type et sa longueur ne changent pas.
+ * La pièce de bois (objet né, ou objet de carte changé) a de nouveaux réglages (une coupe commencée, un coup de doloire, le coin
+ * planté, un coup de masse) ; sa place et son type ne changent pas.
  */
-export function setTimber(s: GameState, mapId: string, id: number, spawned: boolean, notch: Notch | undefined, hewn: number): void {
+export function setWood(s: GameState, mapId: string, id: number, spawned: boolean, wood: WoodPiece): void {
   const m = mapState(s, mapId);
   const o = spawned ? m.spawned.find((x) => x.id === id) : m.changes[id];
-  if (o) {
-    if (notch) o.notch = { ...notch };
-    else delete o.notch;
-    if (hewn) o.hewn = hewn;
-    else delete o.hewn;
-  }
-  revision++;
-}
-
-/** Coups reçus par un objet de carte changé (la fente d'une bille de Tiled devenue bille coin planté). */
-export function setChangeHits(s: GameState, mapId: string, objectId: number, hits: number): void {
-  const c = mapState(s, mapId).changes[objectId];
-  if (c) c.hits = hits;
+  if (o) o.wood = structuredClone(wood);
   revision++;
 }
 

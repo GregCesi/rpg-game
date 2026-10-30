@@ -8,11 +8,10 @@
 import { Canvas, EMPTY, type Grid, type Palette } from '../lib/canvas';
 import { orientedZones, gripOf } from '../lib/held';
 import { lightUp, type Materials } from '../lib/light';
-import type { ImageSource, SpriteSheetSource } from '../lib/types';
+import type { SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
-import felled from '../world/big-felled';
-import { NORMAL_WOOD, logByTheEnd } from '../world/wood';
-import { normalFelledLog } from '../world/normal-logs';
+import { DARKER, DIAMETER, NORMAL_WOOD, bark, faceTone, logByTheEnd, logEnd } from '../world/wood';
+import { despeckle, shadedOutline } from '../world/big-tree';
 import { darkest, outline } from './lib';
 import { branchBody, finishBranch, shearDown, transpose, type Branch } from './branch';
 import { axeArt, toolPalette } from './tools';
@@ -150,67 +149,260 @@ function heldBranchView(view: View): Grid {
 const heldBranch = (): SpriteSheetSource =>
   sheet('held-branch', BRANCH_SIZE, world, { down: heldBranchView('down'), up: heldBranchView('up'), right: heldBranchView('right') });
 
-// ---------- Bille portée ----------
-// La bille big-felled-log-1 (art/world/big-felled.ts) portée à deux mains devant lui. De face et de dos, en longueur : la
-// bille couchée elle-même, sans son ombre au sol. De profil, on la voit par le bout, comme la bille nord-sud du tas :
-// la face de coupe (11 px de diamètre, 55 cm), son cerne et l'écorce autour, le dessus de l'écorce qui fuit derrière.
+// ---------- Pièce de bois portée ----------
+// La pièce de bois (src/content/wood.json : diamètre `big` ou `normal`, aspect) portée à deux mains devant lui (posture
+// `carry`), dans le sens de la marche. Une planche `held-wood-<diamètre>-<aspect>` par aspect, image carrée de 25 px.
+// - De face (`down`) et de dos (`up`), par le bout : la face de coupe (ou la section dressée) sous les mains, le dessus
+//   qui fuit derrière elle en raccourci, comme la pièce nord-sud au sol, plus courte (elle s'éloigne vers le haut de
+//   l'écran) ; la même vue quelle que soit la longueur. De dos, le jeu la glisse sous le corps : on n'en voit que ce qui
+//   dépasse.
+// - De profil (`right`), en long : la pièce couchée est-ouest, sans ombre, ici pour 1 m (20 px contour compris), le
+//   milieu sur la prise ; le jeu la remplace par la pièce assemblée à sa vraie longueur. Le bout éclairé (la face de
+//   coupe) est à gauche, contre Xéros.
+// Matière commune (art/world/wood.ts) : écorce M m N K éclairée en haut à gauche, sillons en long, bois de bout Y t T ;
+// bois de fente (demi, quart) et faces dressées en Y t T, fibres en long. Contour : K ou N côté lumière, o côté ombre.
+// Ces dessins ne dépendent pas des planches au sol (art/world/wood-pieces.ts) : ils reprennent la matière de wood.ts et
+// les tracés de l'ancienne bille portée, de la demi-bille et du quartier (split.ts), du rondin et de la poutre (timber.ts).
 
-const LOG_SIZE = 25;
-const LOG_C = Math.floor(LOG_SIZE / 2);
+const WOOD_SIZE = 25;
+const WC = Math.floor(WOOD_SIZE / 2);
+/** Longueur de l'aperçu de profil : 1 m, 20 px contour compris. */
+const PREVIEW_LEN = 20;
+const mod = (a: number, n: number) => ((a % n) + n) % n;
 
-function logLengthwise(): Grid {
-  const src = (felled as (ImageSource | SpriteSheetSource)[]).find((s) => s.name === 'big-felled-log-1');
-  if (!src || src.kind !== 'image') throw new Error('carried : big-felled-log-1 introuvable');
-  const body = src.grid.map((r) => r.replace(/x/g, EMPTY)).filter((r) => /[^.]/.test(r));
-  const c = new Canvas(LOG_SIZE, LOG_SIZE);
-  // le milieu de la bille sur la prise
-  c.stamp(body, LOG_C - Math.floor(body[0].length / 2), LOG_C - Math.floor(body.length / 2));
-  return c.toGrid();
+/** Recadre une silhouette (sans ombre) sur ses pixels pleins. */
+function trim(g: Grid): Grid {
+  const rows = g.map((r) => r.replace(/x/g, EMPTY)).filter((r) => /[^.]/.test(r));
+  const x0 = Math.min(...rows.map((r) => r.search(/[^.]/)));
+  const x1 = Math.max(...rows.map((r) => r.length - 1 - [...r].reverse().join('').search(/[^.]/)));
+  return rows.map((r) => r.slice(x0, x1 + 1));
+}
+
+/** `g` dans l'image de la pièce portée, son milieu (ou la rangée `gripRow` de `g`) sur la prise. */
+function onGrip(g: Grid, gripRow = Math.floor(g.length / 2)): Grid {
+  return new Canvas(WOOD_SIZE, WOOD_SIZE).stamp(g, WC - Math.floor(g[0].length / 2), WC - gripRow).toGrid();
 }
 
 /**
- * Par le bout : la bille nord-sud du tas, raccourcie (la matière commune de art/world/wood.ts) : la face de coupe ovale
- * de 11 × 9 px (55 cm), cerclée d'écorce, son cerne et son cœur ; au-dessus, le dessus de l'écorce qui fuit derrière
- * elle (la bille s'éloigne de nous), éclairé à gauche, et le bord du bout lointain. La face est sous la prise : les
- * mains la tiennent par-dessous.
+ * Bois frais de la fente, sur une face plate : `along` le long de la pièce, `across` en travers (0 côté lumière). Fond t,
+ * le bord côté lumière en Y ; fibres : tirets Y un couloir sur deux, de périodes différentes, et çà et là une fibre
+ * arrachée (T) ; jamais de cerne. (Le bois de fente de split.ts.)
  */
-function logEnd(): Grid {
-  const c = logByTheEnd(new Canvas(LOG_SIZE, LOG_SIZE), LOG_C + 0.5, LOG_C - 2.5, LOG_C + 2.5, 5.5, 4.5);
+function splitWood(along: number, across: number): string {
+  const a = Math.floor(along);
+  if (across === 0) return 'Y';
+  const lanes: [number, number, number][] = [[9, 5, 2], [13, 4, 8], [11, 6, 5], [12, 3, 0], [10, 5, 7]];
+  const [p, n, ph] = lanes[across % lanes.length];
+  const pos = mod(a + ph, p);
+  if (across % 2 === 1 && pos < n) return 'Y';
+  if (across % 2 === 0 && pos === Math.floor(p / 2)) return 'T';
+  return 't';
+}
+
+// ----- Gros bois (55 cm) -----
+
+/** Rond, par le bout : la bille nord-sud raccourcie, face de coupe de 11 × 9 sous les mains (l'ancienne vue de profil). */
+function bigRoundEnd(): Grid {
+  const c = logByTheEnd(new Canvas(WOOD_SIZE, WOOD_SIZE), WC + 0.5, WC - 2.5, WC + 2.5, 5.5, 4.5);
   return outline(c, darkest({ M: 'K', m: 'K', N: 'K', K: 'K', Y: 'N', t: 'N', T: 'N' }, 'o')).toGrid();
 }
 
-const heldFelledLog = (): SpriteSheetSource => {
-  const lengthwise = logLengthwise();
-  return sheet('held-big-felled-log', LOG_SIZE, world, { down: lengthwise, up: lengthwise, right: logEnd() });
-};
-
-// ---------- Bille portée de l'arbre normal ----------
-// La bille normal-felled-log (art/world/normal-logs.ts, 95 cm, Ø 30 cm d'écorce, 8 px contour compris) portée à deux
-// mains devant lui, comme celle du gros et dans la même image (LOG_SIZE) : mêmes cadrages, bille plus fine. De face et
-// de dos, en longueur : la bille couchée elle-même, sans son ombre au sol, le milieu sur la prise. De profil, par le
-// bout : la face de coupe ovale de 6 × 5 px (moins aplatie qu'au sol, elle est à hauteur de poitrine), sans cerne, et
-// le dessus de l'écorce qui fuit derrière, aussi long que sur la grosse.
-
-function normalLogLengthwise(): Grid {
-  const g = normalFelledLog().toGrid().map((r) => r.replace(/x/g, EMPTY));
-  const rows = g.filter((r) => /[^.]/.test(r));
-  const x0 = Math.min(...rows.map((r) => r.search(/[^.]/)));
-  const x1 = Math.max(...rows.map((r) => r.length - 1 - [...r].reverse().join('').search(/[^.]/)));
-  const body = rows.map((r) => r.slice(x0, x1 + 1));
-  const c = new Canvas(LOG_SIZE, LOG_SIZE);
-  c.stamp(body, LOG_C - Math.floor(body[0].length / 2), LOG_C - Math.floor(body.length / 2));
-  return c.toGrid();
+/** Rond, en long : 18 px d'écorce entre deux contours, 11 de diamètre, la face de coupe à gauche, l'écorce enroulée à droite. */
+function bigRoundLong(): Grid {
+  const len = PREVIEW_LEN - 2;
+  const c = new Canvas(len + 4, 15);
+  for (let Y = 1; Y <= DIAMETER; Y++) for (let X = 1; X <= len; X++) c.set(X, Y, bark(X + 30, (Y - 1 + 0.5) / DIAMETER));
+  logEnd(c, 1, 'left', 1 + DIAMETER / 2, true);
+  logEnd(c, len + 1, 'right', 1 + DIAMETER / 2, false);
+  despeckle(c, 'KYTtN');
+  return onGrip(trim(shadedOutline(c).toGrid()));
 }
 
-function normalLogEnd(): Grid {
-  const c = logByTheEnd(new Canvas(LOG_SIZE, LOG_SIZE), LOG_C, LOG_C - 2.5, LOG_C + 2.5, 3, 2.5, NORMAL_WOOD);
+/**
+ * Demi et quart en long (le tracé de la demi-bille et du quartier couchés, split.ts, sans ombre) : la face de fente en
+ * haut (rangées 1 à `top`, la première est le liseré d'écorce du bord), le dos d'écorce dessous jusqu'à `bottom`, ses
+ * bouts arrondis en demi-ovale (`endA` de large) ; le bout gauche montre le bois de bout, le droit l'écorce enroulée.
+ */
+function bigFlatLong(top: number, bottom: number, endA: number): Grid {
+  const x1 = PREVIEW_LEN - 2;
+  const c = new Canvas(x1 + 3, bottom + 3);
+  const back = bottom - top;
+  for (let X = 1; X <= x1; X++) for (let Y = 1; Y <= bottom; Y++) {
+    if (Y === 1) c.set(X, Y, 'M');
+    else if (Y <= top) c.set(X, Y, splitWood(X + 3, Y - 2));
+    else c.set(X, Y, bark(X + 30, 0.42 + (0.58 * (Y - top - 0.5)) / back));
+  }
+  const ry = back + 0.5, cy = top + 0.5;
+  const inside = (X: number, Y: number, ox: number) => ((X + 0.5 - ox) / endA) ** 2 + ((Y + 0.5 - cy) / ry) ** 2 <= 1;
+  for (let Y = top + 1; Y <= bottom; Y++) for (let X = 1; X <= x1; X++) {
+    const left = X + 0.5 - 1 < endA, right = x1 + 1 - (X + 0.5) < endA;
+    if ((left && !inside(X, Y, 1 + endA)) || (right && !inside(X, Y, x1 + 1 - endA))) c.px[Y][X] = EMPTY;
+  }
+  // bout gauche, vers la lumière : le bois de bout en demi-lune, cerclé d'écorce
+  const ox = 1 + endA;
+  for (let Y = top + 1; Y <= bottom; Y++) for (let X = 1; X < 1 + 2 * endA; X++) {
+    if (!inside(X, Y, ox) || c.get(X, Y) === EMPTY) continue;
+    const rim = !inside(X - 1, Y, ox) || !inside(X, Y + 1, ox) || !inside(X + 1, Y, ox);
+    c.set(X, Y, faceTone((X + 0.5 - ox) / endA, (Y + 0.5 - cy) / ry, rim, false, false));
+  }
+  // bout droit : l'écorce qui s'enroule, un cran plus sombre
+  for (let Y = top + 1; Y <= bottom; Y++) {
+    let X = x1;
+    while (X > 0 && c.get(X, Y) === EMPTY) X--;
+    if (X > 0) c.set(X, Y, DARKER[c.get(X, Y)] ?? c.get(X, Y));
+  }
+  despeckle(c, 'KYTtNM');
+  return onGrip(trim(shadedOutline(c).toGrid()));
+}
+
+/**
+ * Bout d'un quartier (5 px de bois), au pixel : un quart de disque, le cœur (T) dans l'angle haut droit contre la fente
+ * et la face plate, un cerne, le bois de bout éclairé à gauche (Y), l'écorce (N) sur l'arc (split.ts).
+ */
+const QUARTER_END: Grid = ['NTttT', 'NYtTT', 'NYYtT', '.NYtT', '..NtT', '...NN'];
+
+/**
+ * Demi et quart par le bout (la pièce nord-sud de split.ts, raccourcie) : le dessus plat de fente qui fuit derrière
+ * (`y1` rangées, fibres en long, liseré d'écorce sur les bords), puis la face de coupe sous les mains : demi-lune de
+ * bois de bout (`quarter` : le quart de disque, la fente à droite, sans écorce).
+ */
+function bigFlatEnd(x1: number, y1: number, endH: number, quarter: boolean): Grid {
+  const c = new Canvas(x1 + 3, y1 + endH + 4);
+  for (let Y = 1; Y <= y1; Y++) for (let X = 1; X <= x1; X++) {
+    if (X === 1) c.set(X, Y, 'M');
+    else if (X === x1 && !quarter) c.set(X, Y, 'm');
+    else c.set(X, Y, splitWood(Y * 1.3 + 4, X - 2));
+  }
+  if (quarter) c.stamp(QUARTER_END, 1, y1 + 1);
+  else {
+    // la demi-lune : le bas de l'ovale de la face de coupe, le cœur au bord de la face plate
+    const cx = (x1 + 2) / 2, cy = y1 + 1, rx = x1 / 2, ry = endH - 0.1;
+    const inside = (X: number, Y: number) => Y >= cy && ((X + 0.5 - cx) / rx) ** 2 + ((Y + 0.5 - cy) / ry) ** 2 <= 1;
+    for (let Y = Math.floor(cy); Y <= Math.ceil(cy + ry); Y++) for (let X = Math.floor(cx - rx); X <= Math.ceil(cx + rx); X++) {
+      if (!inside(X, Y)) continue;
+      const rim = !inside(X, Y + 1) || !inside(X - 1, Y) || !inside(X + 1, Y);
+      let k = faceTone((X + 0.5 - cx) / rx, (Y + 0.5 - cy) / ry, rim, false, true);
+      if (Y === Math.floor(cy)) k = ({ Y: 't', t: 'T' } as Record<string, string>)[k] ?? k;
+      c.set(X, Y, k);
+    }
+  }
+  despeckle(c, 'KYTtNM');
+  const g = trim(shadedOutline(c).toGrid());
+  // la prise sur l'arête entre le dessus et la face (rangée y1 + 1 de la pièce, contour du haut compris)
+  return onGrip(g, y1 + 1);
+}
+
+// ----- Bois normal (30 cm) -----
+// Les aspects de la doloire : f1 la face ouest dressée (à gauche, vers la lumière), f2 la face est en plus, f3 le dessus
+// en plus, la poutre enfin (20 × 20 cm, la section carrée). C'est l'ordre de la pièce nord-sud au sol (timber.ts), que
+// la vue par le bout reprend : la pièce portée est une pièce nord-sud qui s'éloigne de nous.
+
+type NormalLook = 'round' | 'f1' | 'f2' | 'f3' | 'beam';
+
+/** Fil du bois dressé : tirets [début, longueur] d'un cran plus sombres, sur 24 px, par couloir (timber.ts). */
+const GRAIN: Record<string, [number, number][]> = { a: [[3, 4], [16, 3]], b: [[10, 4], [21, 3]], c: [[6, 3], [18, 4]] };
+function grain(along: number, lane: keyof typeof GRAIN, base: string): string {
+  const a = mod(along, 24);
+  return GRAIN[lane].some(([s, n]) => mod(a - s, 24) < n) ? ({ Y: 't', t: 'T', T: 'T' } as Record<string, string>)[base] : base;
+}
+
+/** Écorce du rondin (6 px), `v` de 0 (côté lumière) à 5. */
+const normalBark = (along: number, v: number) => bark(along, (v + 0.5) / NORMAL_WOOD.diameter, NORMAL_WOOD);
+
+/** Par le bout, rond : la bille nord-sud raccourcie, face de coupe de 6 × 5 sous les mains (l'ancienne vue de profil). */
+function normalRoundEnd(): Grid {
+  const c = logByTheEnd(new Canvas(WOOD_SIZE, WOOD_SIZE), WC, WC - 2.5, WC + 2.5, 3, 2.5, NORMAL_WOOD);
   return outline(c, darkest({ M: 'K', m: 'K', N: 'K', K: 'K', Y: 'N', t: 'N', T: 'N' }, 'o')).toGrid();
 }
 
-const heldNormalFelledLog = (): SpriteSheetSource => {
-  const lengthwise = normalLogLengthwise();
-  return sheet('held-normal-felled-log', LOG_SIZE, world, { down: lengthwise, up: lengthwise, right: normalLogEnd() });
+/**
+ * Par le bout, dressé (les bouts nord et sud de la pièce nord-sud, timber.ts) : le rond du fond, le dessus qui fuit,
+ * la face de bout de 4 rangées et le contour. Colonnes : contour K à gauche ; la face ouest dressée (f1 et après) est
+ * la colonne Y côté lumière ; la face est (f2 et après), la colonne T ; le dessus (f3, poutre), bois clair Y Y t.
+ */
+const NORMAL_BACK: Record<Exclude<NormalLook, 'round'>, Grid> = {
+  f1: ['..KKKK..', '.KYNNNo.', '.KYNNNNo'],
+  f2: ['..KKKK..', '.KYNNTo.', '.KYNNTo.'],
+  f3: ['..KKKK..', '.KYYYto.', '.KYYYto.'],
+  beam: ['..KKKK..', '.KYYYto.', '.KYYYto.'],
 };
+const NORMAL_FRONT: Record<Exclude<NormalLook, 'round'>, Grid> = {
+  f1: ['.KYNNNNo', '.KYYttNo', '.KYtTtNo', '.otNNNo.', '..oooo..'],
+  f2: ['.KYNNTo.', '.KYYtTo.', '.KYtTTo.', '.otNNTo.', '..oooo..'],
+  f3: ['.KtttTo.', '.KYtTTo.', '.KttTTo.', '.otNNTo.', '..oooo..'],
+  beam: ['.KtttTo.', '.KYtTTo.', '.KttTTo.', '.KtTTTo.', '..oooo..'],
+};
+/** Une rangée du dessus, entre le fond et la face (`along` : la rangée). */
+function normalTopRow(look: Exclude<NormalLook, 'round'>, along: number): string {
+  if (look === 'f1') return `.KY${[2, 3, 4, 5].map((v) => normalBark(along, v)).join('')}o`;
+  if (look === 'f2') return `.KY${[2, 3].map((v) => normalBark(along, v)).join('')}To.`;
+  return `.KY${grain(along, 'a', 'Y')}${grain(along, 'b', 'Y')}to.`;
+}
+/** Rangées du dessus entre le fond et la face : la pièce s'éloigne, raccourcie comme la bille portée. */
+const NORMAL_TOP_ROWS = 3;
+
+function normalHewnEnd(look: Exclude<NormalLook, 'round'>): Grid {
+  const rows = [...NORMAL_BACK[look]];
+  for (let i = 0; i < NORMAL_TOP_ROWS; i++) rows.push(normalTopRow(look, i + 5));
+  rows.push(...NORMAL_FRONT[look]);
+  // la prise sur l'arête entre le dessus et la face de bout
+  return onGrip(trim(rows), NORMAL_BACK[look].length + NORMAL_TOP_ROWS);
+}
+
+/**
+ * En long (le rondin est-ouest de timber.ts, sans ombre) : rangée 0 contour du haut, 1-6 le corps (écorce M M m m N N ;
+ * dressé : dessus 1-2, face sud 3-6), 7 contour du bas. Le bout gauche montre la face de coupe (ou la section), le
+ * droit l'écorce enroulée (ou le bois de bout dans l'ombre). Pour la vue de profil, la pièce portée montre son flanc :
+ * les faces de côté de la vue par le bout deviennent ici le dessus et la face sud, comme la pièce est-ouest au sol.
+ */
+const NORMAL_EW_START: Record<NormalLook, Grid> = {
+  round: ['..KKK', '.KNNM', 'KNYtN', 'KNYtN', 'KNtTN', 'KNttN', '.oNNN', '..ooo'],
+  f1: ['..KKK', '.KNNM', 'KNYtN', 'KNYtT', 'KNtTT', 'KNttT', '.oNNT', '..ooo'],
+  f2: ['.KKKK', 'KNNNM', 'KYYtN', 'KYYtT', 'KYtTT', 'KtttT', '.oNNT', '..ooo'],
+  f3: ['.KKKK', 'KYYYt', 'KYYtt', 'KYYtT', 'KYtTT', 'KtttT', '.oNNT', '..ooo'],
+  beam: ['.KKKK', 'KYYYt', 'KYttt', 'KYtTT', 'KttTT', 'KtTTT', 'KtTTT', '.oooo'],
+};
+const NORMAL_EW_END: Record<NormalLook, Grid> = {
+  round: ['K..', 'mo.', 'Mmo', 'mNo', 'mNo', 'NKo', 'Ko.', 'o..'],
+  f1: ['K..', 'mo.', 'Mmo', 'tTo', 'tTo', 'tTo', 'TTo', 'oo.'],
+  f2: ['KK.', 'MNo', 'MNo', 'tTo', 'tTo', 'tTo', 'TTo', 'oo.'],
+  f3: ['KK.', 'YTo', 'YTo', 'tTo', 'tTo', 'tTo', 'TTo', 'oo.'],
+  beam: ['KK.', 'YTo', 'YTo', 'tTo', 'tTo', 'tTo', 'TTo', 'oo.'],
+};
+function normalColumn(look: NormalLook, along: number): string[] {
+  const col = ['K'];
+  for (let v = 0; v < NORMAL_WOOD.diameter; v++) {
+    const row = v + 1;
+    if (look === 'round') col.push(normalBark(along, v));
+    else if (row <= 2) col.push(look === 'f1' || look === 'f2' ? normalBark(along, v) : row === 2 ? grain(along, 'c', 'Y') : 'Y');
+    else col.push(row === 6 ? 'T' : row === 5 ? grain(along, 'b', 't') : 't');
+  }
+  col.push('o');
+  return col;
+}
+function normalLong(look: NormalLook): Grid {
+  const start = NORMAL_EW_START[look], end = NORMAL_EW_END[look];
+  const mid = PREVIEW_LEN + 1 - start[0].length - 4; // le bout d'arrivée de timber.ts fait 4 colonnes, la dernière vide
+  const rows = Array.from({ length: 8 }, () => '');
+  for (let r = 0; r < 8; r++) rows[r] += start[r];
+  for (let i = 0; i < mid; i++) normalColumn(look, i + 5).forEach((q, r) => (rows[r] += q));
+  for (let r = 0; r < 8; r++) rows[r] += end[r];
+  return onGrip(trim(rows));
+}
+
+// ----- Les planches -----
+
+const woodSheet = (name: string, end: Grid, long: Grid): SpriteSheetSource =>
+  sheet(name, WOOD_SIZE, world, { down: end, up: end, right: long });
+
+const heldWood = (): SpriteSheetSource[] => [
+  woodSheet('held-wood-big-round', bigRoundEnd(), bigRoundLong()),
+  woodSheet('held-wood-big-half', bigFlatEnd(11, 4, 6, false), bigFlatLong(5, 11, 2.5)),
+  woodSheet('held-wood-big-quarter', bigFlatEnd(5, 4, 6, true), bigFlatLong(3, 8, 1.75)),
+  woodSheet('held-wood-normal-round', normalRoundEnd(), normalLong('round')),
+  ...(['f1', 'f2', 'f3'] as const).map((l) => woodSheet(`held-wood-normal-${l}`, normalHewnEnd(l), normalLong(l))),
+  woodSheet('held-wood-normal-beam', normalHewnEnd('beam'), normalLong('beam')),
+];
 
 // ---------- Rouleau de corde ----------
 // Le rouleau (art/items/rope.ts, Ø 30 cm, 10 cm d'épaisseur) pend au poing, le long de la jambe : la main le tient par
@@ -320,4 +512,4 @@ const heldFaggot = (): SpriteSheetSource => {
   return sheet('held-faggot', FAGGOT_SIZE, world, { down: lengthwise, up: lengthwise, right: faggotEnd() });
 };
 
-export default [heldAxe(), heldBranch(), heldFelledLog(), heldNormalFelledLog(), heldRopeCoil(), heldRopeTie(), heldFaggot()];
+export default [heldAxe(), heldBranch(), ...heldWood(), heldRopeCoil(), heldRopeTie(), heldFaggot()];

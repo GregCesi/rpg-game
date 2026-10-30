@@ -50,7 +50,7 @@ export const DropSchema = z.strictObject({
 });
 
 /** Prix d'un coup en endurance : une clé de `costs` de stamina.json. */
-const EffortSchema = z.enum(['chop', 'cutTie', 'plant', 'maul', 'whittle']);
+const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
 
 /**
  * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.
@@ -67,40 +67,13 @@ export const HarvestSchema = z.strictObject({
    * Geste de Xéros (clé de gestures.json) : `use`, de côté, sur ce qui est debout ;
    * `chop`, de haut en bas, sur ce qui est couché ou posé.
    */
-  gesture: z.enum(['use', 'chop', 'maul']).default('use'),
-  /**
-   * Fendage : chaque coup change l'image de l'objet (`<image>-n1`, `-n2`... après 1, 2... coups ; la dernière, `-n<hits>`, se
-   * voit un instant avant que l'objet devienne `becomes` et `spawns`). Les coups reçus sont notés dans GameState (l'objet
-   * né ou changé garde ses `hits`) : la fente se retrouve au retour sur la carte. Sans `staged`, un coup ne change pas l'image.
-   */
-  staged: z.boolean().default(false),
-  /**
-   * On plante l'outil dans l'objet (le coin) : sans geste, d'un coup, et l'outil quitte la main ; l'objet devient `becomes`.
-   * L'outil réapparaît quand on le lâche par `drops` (le dernier coup de masse).
-   */
-  plant: z.boolean().default(false),
+  gesture: z.enum(['use', 'chop']).default('use'),
   /**
    * Tailler : le coup change l'objet possédable tenu dans l'AUTRE main (`from`) en un autre (`into`) : la branche tenue debout sur le
    * billot devient un piquet, dans la même main. `refuse` : ce qu'on dit si l'autre main ne tient pas `from`. Un seul coup, avec
    * l'outil `tool` dans la première main ; ni `becomes` ni `drops` n'y servent.
    */
   convert: z.strictObject({ from: id, into: id, refuse: id }).optional(),
-  /**
-   * Cet objet ne se frappe que par un bout de sa longueur (la bille : le coin se plante dans le bois de bout, là où on voit les
-   * cernes, et les coups de masse se donnent depuis ce même bout). Xéros se tient à l'est ou à l'ouest d'une pièce est-ouest, au
-   * nord ou au sud d'une pièce nord-sud (d'après ses \`dims\`), tourné vers elle ; ailleurs, le texte est le message dit au joueur.
-   */
-  ends: id.optional(),
-  /**
-   * Avec \`ends\` : le bout depuis lequel cet objet se frappe (le coin est planté de ce côté : la fente part de ce bout, l'image est
-   * dessinée pour lui). Xéros à l'est, à l'ouest, au nord ou au sud de la pièce ; depuis un autre bout, c'est le message de \`ends\`.
-   */
-  side: z.enum(['west', 'east', 'north', 'south']).optional(),
-  /**
-   * Quand on plante (\`plant\`) : l'objet que devient celui-ci selon le bout depuis lequel Xéros plante (le bout où il se tient :
-   * le coin et la fente partent de là). Sans entrée pour ce bout, \`becomes\`.
-   */
-  becomesAt: z.partialRecord(z.enum(['west', 'east', 'north', 'south']), id).optional(),
   /** Prix du coup en endurance : une clé de `costs` de stamina.json. Absent : `chop` (`cutTie` pour le billot qui porte une corde). */
   effort: EffortSchema.optional(),
   /**
@@ -109,18 +82,10 @@ export const HarvestSchema = z.strictObject({
    */
   also: z.record(id, EffortSchema).default({}),
   /**
-   * Ce qu'on dit quand on frappe avec cet outil (clé de items.json) alors qu'il ne convient pas ou plus : la hache sur une grosse
-   * bille, le coin déjà planté. Le geste ne se joue pas, rien n'est dépensé.
+   * Ce qu'on dit quand on frappe avec cet outil (clé de items.json) alors qu'il ne convient pas. Le geste ne se joue pas, rien
+   * n'est dépensé.
    */
   refuse: z.record(id, id).default({}),
-  /**
-   * Pièce de tronc couché : frapper creuse l'encoche de son bout droit, à la jonction avec la pièce suivante de sa chaîne.
-   * Un coup = une profondeur (image `<image>-n1`, `-n2`...), le dernier coupe (`<image>-cut-right`). Quand la pièce de gauche
-   * est séparée, la pièce montre sa face de coupe à gauche (`<image>-cut-left`, `-cut-left-n1`...). Un morceau séparé aux
-   * deux bouts devient `becomes` (sa bille, même image coupée, même place) ; `drops` tombent quand l'encoche est coupée.
-   * La première pièce d'une chaîne est déjà séparée à gauche (le bout scié contre la souche).
-   */
-  notch: z.boolean().default(false),
   /**
    * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. `image`, `x`, `y` : la chute vers la droite,
    * avec le décalage du coin bas gauche d'une de ses images par rapport à celui de l'objet (le pied de l'arbre est en x = 33
@@ -141,8 +106,11 @@ export const HarvestSchema = z.strictObject({
     .optional(),
   /** Objet de props.json qui le remplace ; absent = il disparaît. */
   becomes: id.optional(),
-  /** Longueur (cm) de ce qu'il devient, s'il devient du bois d'œuvre (`timber` : le tronc ébranché devient un rondin de 5 m). */
-  length: z.number().int().positive().optional(),
+  /**
+   * S'il devient une pièce de bois (`becomes` : `wood-piece`) : son diamètre et sa longueur (le tronc ébranché devient une seule
+   * pièce ronde, est-ouest, de sa longueur utile).
+   */
+  wood: z.strictObject({ size: id, length: z.number().int().positive() }).optional(),
   /** Décalage du coin bas gauche de `becomes` par rapport à celui de l'objet récolté. */
   at: z.tuple([px, px]).optional(),
   /** Objets lâchés au sol, autour de lui. */
@@ -150,18 +118,17 @@ export const HarvestSchema = z.strictObject({
   /**
    * Objets de props.json qui naissent à la fin (l'arbre couché : houppier et sections). (x, y) : coin bas gauche
    * de chacun par rapport à celui de l'objet récolté, pour une chute vers la droite ; vers la gauche, ils sont
-   * posés en miroir autour du pied (`fall.foot`) avec leurs images `-left` (dessinées, pas retournées). Ils sont notés dans GameState comme objets nés,
-   * et forment une chaîne bout à bout dans cet ordre (de gauche à droite dans l'image) : voir `notch`.
+   * posés en miroir autour du pied (`fall.foot`) avec leurs images `-left` (dessinées, pas retournées). Ils sont notés dans GameState
+   * comme objets nés, et forment une chaîne dans cet ordre.
    */
   spawns: z.array(z.strictObject({ type: id, x: px, y: px })).default([]),
 });
 
 /**
- * Masse d'un objet, en kilogrammes. Un nombre : masse saisie. `"wood"` : pièce de bois cylindrique, masse calculée par ses
- * `dims` (volume × densité du bois vert, `mass.ts`). `"stone"` : une pierre, la boîte de ses `dims` × la densité de la pierre.
- * `{ "pile": genre }` : la somme d'un tas plein de ce genre de `piles.json`
- * plus son lien (le fagot : ses dix branches et son lien). `{ "share": 0.25, "of": objet }` : cette part de la masse d'un autre
- * objet de bois (le quartier : un quart de la bille). Un objet qu'on prend, pose ou roule en a une (validate.ts).
+ * Masse d'un objet, en kilogrammes. Un nombre : masse saisie. `"wood"` : la pièce de bois, masse calculée par ses réglages
+ * (volume × densité du bois vert de wood.json, `mass.ts`). `"stone"` : une pierre, la boîte de ses `dims` × la densité de la pierre.
+ * `{ "pile": genre }` : la somme d'un tas plein de ce genre de `piles.json` plus son lien (le fagot : ses dix branches et son lien).
+ * Un objet qu'on prend, pose ou roule en a une (validate.ts).
  */
 export const MassSchema = z.union([
   z.number().positive(),
@@ -169,46 +136,122 @@ export const MassSchema = z.union([
   // une pierre : le volume de sa boîte (`dims`) × la densité de la pierre (mass.ts)
   z.literal('stone'),
   z.strictObject({ pile: id }),
-  // une part d'un autre objet de bois : la demi-bille et le quartier, `share` de la bille dont ils sont taillés
-  z.strictObject({ share: z.number().gt(0).lt(1), of: id }),
 ]);
 
 /**
- * Ce qui roule quand Xéros le pousse (la bille couchée) : `axis` de la pièce couchée (est-ouest : elle roule vers le
- * nord ou le sud ; nord-sud : vers l'est ou l'ouest) ; `sheet` : la planche animée (animation `roll`, 4 images, un tour) ;
- * `into` : l'objet ordinaire qu'elle devient quand elle se met à rouler (la pièce du tronc, dessinée avec son bout coupé,
- * devient la bille ronde), absent pour l'objet ordinaire lui-même. Son diamètre et sa masse viennent de `dims` (`mass.ts`).
+ * Ce qui roule quand Xéros le pousse (la pièce de bois ronde : `roll` de sa définition tirée de ses réglages, world/woodPiece.ts) :
+ * `axis` de la pièce couchée (est-ouest : elle roule vers le nord ou le sud ; nord-sud : vers l'est ou l'ouest) ; `sheet` : la planche
+ * de ses parties (son image s'assemble à sa longueur, 4 images = un tour). Son diamètre et sa masse viennent de ses réglages.
  */
-export const RollSchema = z.strictObject({ axis: z.enum(['ew', 'ns']), sheet: id, into: id.optional() });
+export const RollSchema = z.strictObject({ axis: z.enum(['ew', 'ns']), sheet: id });
 
 /**
- * Ce qui pivote d'un quart de tour quand Xéros, mains vides, maintient R à son contact (la bille couchée) : `into`, l'objet
- * qu'elle devient, couché dans l'autre sens (est-ouest <-> nord-sud), centré au même endroit. Le coût en endurance est
+ * Ce qui pivote d'un quart de tour quand Xéros, mains vides, maintient R à son contact (la pièce de bois couchée) : `into`, l'objet
+ * qu'elle devient, couché dans l'autre sens (est-ouest <-> nord-sud), centré au même endroit (la pièce de bois reste une pièce de
+ * bois : seul son sens change). Le coût en endurance est
  * proportionnel à sa masse (`turnPerKg` de stamina.json).
  */
 export const TurnSchema = z.strictObject({ into: id });
 
+/** Un bout d'une pièce couchée : l'ouest, l'est (est-ouest), le nord, le sud (nord-sud). */
+export const EndSchema = z.enum(['west', 'east', 'north', 'south']);
+
 /**
- * Bois d'œuvre de longueur quelconque (le rondin de l'arbre normal, la poutre équarrie) : sa longueur (cm) est gardée par
- * GameState (`length` de ce qu'on tient, d'un objet né ou changé ; absent : la longueur de ses `dims`, 95 cm, la bille), et
- * son image s'assemble à la volée selon `world/timberShape.ts` dans les planches `sheet` (est-ouest) et `<sheet>-ns`
- * (nord-sud), d'après `axis`. `look` : ce qu'il est, rond (`round`, le rondin, qui roule) ou poutre (`beam`). Sa collision
- * et sa masse suivent sa longueur ; sa masse, son état d'équarrissage (`hewn` de GameState).
- * `cut` (le rondin) : l'outil coupe une encoche à l'endroit visé, au pas de `step` cm, jamais à moins de `min` cm d'un bout ;
- * `hits` coups (un tiers, deux tiers, coupé), et le rondin devient deux rondins. `hew` (le rondin) : l'outil dresse une face en
- * `perFace` coups, `faces` faces ; la dernière finie, il devient `into` (la poutre, même sens, même longueur) ; il faut un
- * diamètre d'au moins `min` cm ; chaque coup coûte `hewPerM` de stamina.json par mètre de longueur.
+ * Aspect d'une pièce de bois, ce que montre son dessin : ronde (`round`), demi (`half`), quart (`quarter`), une à trois faces
+ * dressées à la doloire (`f1`, `f2`, `f3`), équarrie (`beam`, la poutre). L'aspect se déduit des réglages (forme, coups de doloire).
  */
-export const TimberSchema = z.strictObject({
-  sheet: id,
+export const WoodLookSchema = z.enum(['round', 'half', 'quarter', 'f1', 'f2', 'f3', 'beam']);
+
+/**
+ * Une pièce de bois (la seule sorte d'objet de bois du monde, `wood-piece` de props.json), décrite par ses réglages et non par
+ * une clé : `size`, son diamètre (clé de `sizes` de wood.json : celui de l'arbre d'où elle vient, `big` 55 cm, `normal` 30 cm) ;
+ * `length` en cm ; `shape` : ronde, demi ou quart (le fendage) ; `hewn` : coups de doloire reçus (une face tous les `perFace`
+ * coups, la poutre à 4 faces) ; `axis` : couchée est-ouest ou nord-sud ; `notch` : la coupe commencée (`at` cm du bout ouest ou
+ * nord, `hits` coups) ; `wedge` : le coin planté (`end`, le bout d'où il est planté et d'où se donnent les coups, `hits` coups de
+ * masse reçus). GameState garde ces réglages pour chaque pièce posée ou tenue ; Tiled peut les donner en propriétés.
+ */
+export const WoodPieceSchema = z.strictObject({
+  size: id,
+  length: z.number().int().positive(),
+  shape: z.enum(['round', 'half', 'quarter']),
+  hewn: z.number().int().positive().optional(),
   axis: z.enum(['ew', 'ns']),
-  look: z.enum(['round', 'beam']),
-  cut: z
-    .strictObject({ tool: id, hits: z.number().int().positive(), min: z.number().int().positive(), step: z.number().int().positive() })
-    .optional(),
-  hew: z
-    .strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), into: id, min: z.number().positive() })
-    .optional(),
+  notch: z.strictObject({ at: z.number().int().positive(), hits: z.number().int().positive() }).optional(),
+  wedge: z.strictObject({ end: EndSchema, hits: z.number().int().nonnegative() }).optional(),
+});
+
+/** Géométrie des parties d'un aspect, dans le sens est-ouest : voir WoodSizeSchema. */
+const WoodEwSchema = z.strictObject({
+  h: z.number().int().positive(),
+  start: z.number().int().positive(),
+  end: z.number().int().positive(),
+  /** Collision au sol : toute la longueur moins un pixel, `h` de profondeur, `bottom` px au-dessus du bas de l'image. */
+  body: z.strictObject({ h: z.number().int().positive(), bottom: z.number().int().nonnegative() }),
+});
+/** Géométrie des parties d'un aspect, dans le sens nord-sud : voir WoodSizeSchema. */
+const WoodNsSchema = z.strictObject({
+  w: z.number().int().positive(),
+  extra: z.number().int().nonnegative(),
+  back: z.number().int().nonnegative(),
+  start: z.number().int().positive(),
+  end: z.number().int().positive(),
+  /** Collision au sol : `w` de large, la moitié de la longueur (px) plus `extra` de haut, `bottom` px au-dessus du bas de l'image. */
+  body: z.strictObject({ w: z.number().int().positive(), extra: z.number().int().nonnegative(), bottom: z.number().int().nonnegative() }),
+});
+
+/**
+ * Un aspect d'un diamètre : son nom et son genre (les messages), son icône 16×16 (`item-…`), sa planche portée (`held-…` :
+ * vues `down` et `up` par le bout, ne dépendant pas de la longueur ; `right`, la pièce de 1 m de profil, que le jeu remplace par la
+ * pièce assemblée à sa longueur), et la géométrie de ses parties (contrat entre le dessin et le jeu, `world/woodShape.ts`).
+ */
+export const WoodLookDefSchema = z.strictObject({
+  name: id,
+  gender: z.enum(['m', 'f']),
+  icon: id,
+  held: id,
+  ew: WoodEwSchema,
+  ns: WoodNsSchema,
+});
+
+/** Fendre un aspect : ce qu'il devient (`into`, deux pièces), et le coin bas gauche de chacune par rapport à la pièce fendue, par sens. */
+const WoodSplitSchema = z.strictObject({
+  into: z.enum(['half', 'quarter']),
+  ew: z.tuple([z.tuple([px, px]), z.tuple([px, px])]),
+  ns: z.tuple([z.tuple([px, px]), z.tuple([px, px])]),
+});
+
+/**
+ * Un diamètre de bois (wood.json, `sizes`) : `diameter` du bois en cm (sans le contour), `sheet` la planche des parties (`<sheet>`
+ * est-ouest, `<sheet>-ns` nord-sud), `tile` la longueur d'un milieu répété (px), `notch` la bande d'encoche de la coupe, `hew` :
+ * présent, la doloire est refusée avec ce message (le gros bois ne fait pas de poutre) ; `split` : les aspects qui se fendent et ce
+ * qu'ils deviennent (vide : ce diamètre ne se fend pas) ; `looks` : ses aspects dessinés. Un nouveau bois = un diamètre ou un aspect
+ * ici, avec ses dessins, pas une nouvelle clé d'objet.
+ */
+export const WoodSizeSchema = z.strictObject({
+  name: id,
+  diameter: z.number().positive(),
+  sheet: id,
+  tile: z.number().int().positive(),
+  notch: z.strictObject({ ew: z.strictObject({ w: z.number().int().positive(), at: z.number().int().nonnegative() }), ns: z.strictObject({ h: z.number().int().positive(), at: z.number().int().nonnegative() }) }),
+  hew: id.optional(),
+  split: z.partialRecord(z.enum(['round', 'half']), WoodSplitSchema),
+  looks: z.partialRecord(WoodLookSchema, WoodLookDefSchema),
+});
+
+/**
+ * Le bois (wood.json) : `density` du bois vert (kg/m³) ; `grid` (cm) : la coupe s'aimante tous les `grid` cm depuis le bout le plus
+ * proche de Xéros ; `min` (cm) : aucune pièce plus courte ; `cut` : l'outil qui coupe et ses coups ; `hew` : l'outil qui équarrit,
+ * `perFace` coups par face, `faces` faces, `beam` le côté de la poutre (cm de bois) ; `split` : le coin, la masse, les coups de masse
+ * par fente et la plus longue pièce qu'un seul coin fend (`longest`, cm) ; `sizes` : les diamètres.
+ */
+export const WoodSchema = z.strictObject({
+  density: z.number().positive(),
+  grid: z.number().int().positive(),
+  min: z.number().int().positive(),
+  cut: z.strictObject({ tool: id, hits: z.number().int().positive() }),
+  hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive() }),
+  split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive(), longest: z.number().int().positive() }),
+  sizes: z.record(id, WoodSizeSchema),
 });
 
 /** Nombre de mains que demande un objet qu'on prend : une, ou les deux (lourd ou long). */
@@ -220,17 +263,12 @@ export const HandsSchema = z.union([z.literal(1), z.literal(2)]);
  */
 export const TakeSchema = z.strictObject({
   hands: HandsSchema,
-  /** Icône 16×16 affichée dans les cases des mains (`item-<…>` : la même pour toutes les billes, `item-big-felled-log`). */
+  /** Icône 16×16 affichée dans les cases des mains (`item-<…>`). */
   icon: id,
-  /** Comment il se voit sur Xéros quand il le tient (la bille : `carry`, `held-big-felled-log`). */
+  /** Comment il se voit sur Xéros quand il le tient (le fagot : `carry`, `held-faggot`). */
   hold: z.lazy(() => HoldSchema),
   /** Genre de tas où il s'entrepose (clé de piles.json) : posé sur un tas du même genre, il s'y ajoute. */
   pile: id.optional(),
-  /**
-   * C'est la forme nord-sud (tournée, R) de l'objet ordinaire de son genre de tas, sans rouler (le quartier) : pris, il
-   * devient la pièce ordinaire du genre, tournée. Pour ce qui roule, c'est l'axe `ns` de `roll` qui le dit.
-   */
-  turned: z.boolean().optional(),
 });
 
 /** Un objet possédable (dans les mains, au sol) : sa clé dans items.json est son identifiant. Une main en tient un seul. */
@@ -316,9 +354,13 @@ export const PropDefSchema = z.strictObject({
   teaches: id.optional(),
   /** Ce qui pivote d'un quart de tour au sol (R maintenu, mains vides) : voir TurnSchema. */
   turn: TurnSchema.optional(),
-  /** Bois d'œuvre de longueur quelconque (rondin, poutre) : voir TimberSchema. */
-  timber: TimberSchema.optional(),
-  /** Genre du nom (`name`), pour les messages : `f` (« la bille », par défaut) ou `m` (« le rondin »). */
+  /**
+   * La pièce de bois (`wood-piece`, le seul objet de bois du monde) : ses réglages par défaut, ceux d'une pièce posée dans Tiled
+   * sans propriétés (une pièce née ou changée garde les siens dans GameState). Sa définition complète (dimensions, collision, masse,
+   * roulement, prise, tas) se tire de ses réglages : world/woodPiece.ts.
+   */
+  wood: z.lazy(() => WoodPieceSchema).optional(),
+  /** Genre du nom (`name`), pour les messages : `f` (« la pierre », par défaut) ou `m`. */
   gender: z.enum(['m', 'f']).default('f'),
   /**
    * Quantité mesurée (le rouleau de corde) : une longueur, en centimètres, gardée par GameState (`length` de ce qu'on
@@ -437,8 +479,16 @@ export const PilePlaceSchema = z.strictObject({
 export const PileDefSchema = z.strictObject({
   /** Nom affiché, en français. */
   name: id,
-  /** Ce qu'on en reprend : un objet possédable (`item`) ou un objet du monde (`prop`), toujours l'ordinaire du genre. */
-  piece: z.union([z.strictObject({ item: id }), z.strictObject({ prop: id })]),
+  /**
+   * Ce qui s'y entrepose et ce qu'on en reprend : un objet possédable (`item`), un objet du monde (`prop`), ou une pièce de bois
+   * (`wood` : son diamètre, sa forme, sa longueur ; ronde sans face dressée, sans coupe ni coin). Pour l'instant, les tas de bois
+   * n'acceptent que des pièces de 1 m.
+   */
+  piece: z.union([
+    z.strictObject({ item: id }),
+    z.strictObject({ prop: id }),
+    z.strictObject({ wood: z.strictObject({ size: id, shape: z.enum(['round', 'half', 'quarter']), length: z.number().int().positive() }) }),
+  ]),
   /** Place de la première pièce d'un nouveau tas (au sol). */
   start: id,
   /** Nombre de pièces à partir duquel le tas bloque le passage. */
@@ -627,6 +677,8 @@ export const MapObjectSchema = z.strictObject({
   y: px,
   /** Remplace le dialogue de props.json pour cet exemplaire. */
   interact: id.optional(),
+  /** Réglages d'une pièce de bois (`wood-piece`), tirés de ses propriétés Tiled ; absents : ceux de props.json. */
+  wood: z.lazy(() => WoodPieceSchema).optional(),
 });
 
 /** Point d'apparition : (x, y) = position des pieds du joueur. */
@@ -678,7 +730,6 @@ export type TerrainDef = z.infer<typeof TerrainDefSchema>;
 export type TilesetCatalog = z.infer<typeof TilesetCatalogSchema>;
 export type PropDef = z.infer<typeof PropDefSchema>;
 export type Harvest = z.infer<typeof HarvestSchema>;
-export type TimberDef = z.infer<typeof TimberSchema>;
 export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type Take = z.infer<typeof TakeSchema>;
@@ -709,3 +760,9 @@ export type Spawn = z.infer<typeof SpawnSchema>;
 export type Exit = z.infer<typeof ExitSchema>;
 export type Npc = z.infer<typeof NpcSchema>;
 export type MapData = z.infer<typeof MapSchema>;
+export type End = z.infer<typeof EndSchema>;
+export type WoodLook = z.infer<typeof WoodLookSchema>;
+export type WoodPiece = z.infer<typeof WoodPieceSchema>;
+export type WoodLookDef = z.infer<typeof WoodLookDefSchema>;
+export type WoodSize = z.infer<typeof WoodSizeSchema>;
+export type WoodDef = z.infer<typeof WoodSchema>;

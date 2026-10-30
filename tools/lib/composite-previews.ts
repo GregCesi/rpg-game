@@ -12,7 +12,7 @@
 //   en jeu (ROOF.alpha). <bâtiment>.png les met côte à côte. Même ordre d'affichage que GameMap : `floor` d'abord, puis
 //   le bas de chaque image (y de Tiled), à égalité dans l'ordre de la carte.
 // - gabarit.png : les étalons du gabarit (docs/STYLE.md section 8), posés sur une même ligne de sol, de gauche à droite :
-//   Xéros, un cube de 50 cm, la bille est-ouest (big-felled-log), la bille nord-sud (big-felled-log-ns), un cylindre debout de
+//   Xéros, un cube de 50 cm, la bille de 1 m est-ouest (wood-big-round-100), nord-sud (wood-big-round-100-ns), un cylindre debout de
 //   50 cm (Ø 50, 50 de haut).
 // - arbres.png (tools/lib/trees-preview.ts) : les deux arbres côte à côte à chaque étape, le gros au-dessus du normal. Le cube et le cylindre sont tracés d'après les formules de src/content/gabarit.ts. En
 //   dessous, les mêmes avec, en liseré jaune, la taille que donne le gabarit. Une règle à gauche : un trait tous les
@@ -321,13 +321,13 @@ export function gabaritPreview(sources: ArtSource[]): PNG | undefined {
     return s?.kind === 'image' ? s : undefined;
   };
   const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');
-  const ew = image('big-felled-log');
-  const ns = image('big-felled-log-ns');
+  const ew = image('wood-big-round-100');
+  const ns = image('wood-big-round-100-ns');
   if (body?.kind !== 'spritesheet' || !ew || !ns) return undefined;
   const cube: Dims = { w: 50, d: 50, h: 50, shape: 'box' };
   const upright: Dims = { w: 50, d: 50, h: 50, shape: 'cylinder', axis: 'up' };
-  const log: Dims = { w: 95, d: 65, h: 65, shape: 'cylinder', axis: 'ew' };
-  const logNS: Dims = { w: 65, d: 95, h: 65, shape: 'cylinder', axis: 'ns' };
+  const log: Dims = { w: 100, d: 65, h: 65, shape: 'cylinder', axis: 'ew' };
+  const logNS: Dims = { w: 65, d: 100, h: 65, shape: 'cylinder', axis: 'ns' };
   const xerosDims: Dims = { w: 60, d: 30, h: 160, shape: 'flat' }; // une personne : sa hauteur, sans dessus (h = 32 px)
   const gauges: { grid: Grid; palette: Palette; dims: Dims; person?: boolean }[] = [
     { grid: body.animations['idle-down'].frames[0], palette: body.palette, dims: xerosDims, person: true },

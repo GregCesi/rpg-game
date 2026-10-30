@@ -1,0 +1,44 @@
+{
+  "density": 900,
+  "grid": 20,
+  "min": 60,
+  "cut": {"tool": "axe", "hits": 3},
+  "hew": {"tool": "broadaxe", "perFace": 3, "faces": 4, "beam": 20},
+  "split": {"wedge": "splitting-wedge", "maul": "maul", "hits": 3, "longest": 100},
+  "sizes": {
+    "big": {
+      "name": "gros", "diameter": 55, "sheet": "wood-big", "tile": 24,
+      "notch": {"ew": {"w": 7, "at": 5}, "ns": {"h": 4, "at": 2}},
+      "hew": "Trop grosse pour une poutre.",
+      "split": {
+        "round": {"into": "half", "ew": [[0, -5], [0, 5]], "ns": [[-6, 0], [6, 0]]},
+        "half": {"into": "quarter", "ew": [[0, -6], [0, -1]], "ns": [[0, 0], [6, 0]]}
+      },
+      "looks": {
+        "round": {"name": "bille", "gender": "f", "icon": "item-wood-big-round", "held": "held-wood-big-round",
+          "ew": {"h": 16, "start": 6, "end": 5, "body": {"h": 10, "bottom": 3}}, "ns": {"w": 14, "extra": 11, "back": 5, "start": 7, "end": 11, "body": {"w": 12, "extra": 7, "bottom": 2}}},
+        "half": {"name": "demi-bille", "gender": "f", "icon": "item-wood-big-half", "held": "held-wood-big-half",
+          "ew": {"h": 16, "start": 6, "end": 5, "body": {"h": 10, "bottom": 3}}, "ns": {"w": 14, "extra": 8, "back": 4, "start": 6, "end": 8, "body": {"w": 12, "extra": 5, "bottom": 2}}},
+        "quarter": {"name": "quartier", "gender": "m", "icon": "item-wood-big-quarter", "held": "held-wood-big-quarter",
+          "ew": {"h": 12, "start": 5, "end": 4, "body": {"h": 5, "bottom": 2}}, "ns": {"w": 8, "extra": 8, "back": 3, "start": 5, "end": 8, "body": {"w": 6, "extra": 5, "bottom": 2}}}
+      }
+    },
+    "normal": {
+      "name": "normal", "diameter": 30, "sheet": "wood-normal", "tile": 24,
+      "notch": {"ew": {"w": 5, "at": 4}, "ns": {"h": 3, "at": 2}},
+      "split": {},
+      "looks": {
+        "round": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-round",
+          "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 9, "extra": 7, "back": 3, "start": 5, "end": 8, "body": {"w": 6, "extra": 3, "bottom": 2}}},
+        "f1": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-f1",
+          "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 9, "extra": 7, "back": 3, "start": 5, "end": 8, "body": {"w": 6, "extra": 3, "bottom": 2}}},
+        "f2": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-f2",
+          "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 9, "extra": 7, "back": 3, "start": 5, "end": 8, "body": {"w": 6, "extra": 3, "bottom": 2}}},
+        "f3": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-f3",
+          "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 9, "extra": 7, "back": 3, "start": 5, "end": 8, "body": {"w": 6, "extra": 3, "bottom": 2}}},
+        "beam": {"name": "poutre", "gender": "f", "icon": "item-wood-normal-beam", "held": "held-wood-normal-beam",
+          "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 9, "extra": 7, "back": 3, "start": 5, "end": 8, "body": {"w": 6, "extra": 3, "bottom": 2}}}
+      }
+    }
+  }
+}

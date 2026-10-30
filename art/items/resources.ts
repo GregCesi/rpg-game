@@ -8,6 +8,7 @@ import { branchBody, centerIn, diagonal, finishBranch, type Branch } from './bra
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { NORMAL_WOOD, bark, paintFace } from '../world/wood';
+import { shadedOutline } from '../world/big-tree';
 
 const S = 16;
 
@@ -275,14 +276,17 @@ function wool(): Canvas {
   return outline(c, 'E');
 }
 
-// ---------- Bille de bois ----------
+// ---------- Pièce de bois ----------
+// Les icônes de la pièce de bois (src/content/wood.json : `icon` de chaque aspect), une par aspect qui se voit dans la
+// case : le gros bois rond, demi, quart ; le bois normal rond (le rondin, avec ses faces dressées une à trois) et la poutre.
+// Toutes de biais, le bout tourné vers la lumière en bas à gauche, la pièce qui fuit vers le haut à droite, contour K.
 
 /**
- * Bille (tronçon d'un mètre) couchée, un peu de biais, réduite pour la case : la matière commune (art/world/wood.ts),
+ * Gros bois rond (la bille d'un mètre) couché de biais, réduit pour la case : la matière commune (art/world/wood.ts),
  * écorce claire en haut, sombre en bas, sillons le long du fil ; bout scié tourné vers la lumière, ovale cerclé
  * d'écorce, bois de bout éclairé en haut à gauche et le cœur.
  */
-function felledLog(): Canvas {
+function bigRoundIcon(): Canvas {
   const c = new Canvas(S, S);
   const [x0, y0, x1, y1] = [4.4, 9.4, 11.4, 6.8];
   const r = 3.4;
@@ -295,16 +299,88 @@ function felledLog(): Canvas {
 }
 
 /**
- * Bille de l'arbre normal (art/world/normal-logs.ts) : la même que celle du gros, même cadrage, même biais, même
- * longueur (95 cm), mais de la grosseur d'un bras : 30 cm d'écorce au lieu de 55. Matière `NORMAL_WOOD` (deux couloirs
- * de sillons) ; bout scié en bas à gauche, ovale étroit sans cerne.
+ * Demi-bille : la bille fendue en deux, face de fente en haut. Même biais que le rond : devant, en bas à gauche, le bout
+ * en demi-lune (le cœur au milieu de son bord droit du haut, contre la fente, un cerne, l'écorce N sur l'arc) ; la face
+ * de fente, la plus claire (Y, fibres t en long), fuit vers le haut à droite ; le dos d'écorce dessous, à droite, de m à
+ * K vers le bas.
  */
-function normalFelledLogIcon(): Canvas {
+const HALF_ICON = [
+  '................',
+  '................',
+  '........YYYtYYY.',
+  '.......YtYYYYtm.',
+  '......YYYtYYYmm.',
+  '....YYtYYYtYmmN.',
+  '..YYYYYtYYYmmNN.',
+  '.NtttTttNmmNNNK.',
+  '.NYtTTTtNmNNNK..',
+  '..NYtttNNNNKK...',
+  '...NNNNNNNK.....',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+];
+const bigHalfIcon = (): Canvas => shadedOutline(Canvas.from(HALF_ICON));
+
+/**
+ * Quartier (le quart de la bille, art/world/split.ts) de biais : devant, en bas à gauche, son bout en quart de disque :
+ * le cœur (T) dans l'angle du haut à gauche, un cerne en arc, le bois de bout (t), l'écorce (N) sur l'arc. Le dessus
+ * plat, le plus clair (Y, fibres t en long), fuit vers le haut à droite ; le dos d'écorce dessous, à droite.
+ */
+const QUARTER_ICON = [
+  '................',
+  '................',
+  '........YYtYYY..',
+  '.......YtYYYtm..',
+  '.....YYYtYYmmN..',
+  '....YYtYYYmmNN..',
+  '..TTtTtNmmNNK...',
+  '..TttTtNmNNK....',
+  '..ttTtNNNNK.....',
+  '..TTttNNK.......',
+  '..ttNNK.........',
+  '..NNN...........',
+  '................',
+  '................',
+  '................',
+  '................',
+];
+const bigQuarterIcon = (): Canvas => shadedOutline(Canvas.from(QUARTER_ICON));
+
+/**
+ * Bois normal rond (le rondin, de la grosseur d'un bras : 30 cm au lieu de 55) : même cadrage, même biais que le gros.
+ * Matière `NORMAL_WOOD` (deux couloirs de sillons) ; bout scié en bas à gauche, ovale étroit sans cerne. Sert aussi au
+ * rondin dont la doloire a dressé une à trois faces (wood.json).
+ */
+function normalRoundIcon(): Canvas {
   const c = new Canvas(S, S);
   const [x0, y0, x1, y1] = [4.4, 9.4, 11.4, 6.8];
   const r = 2.2;
   capsule(c, x0, y0, x1, y1, r, (t, a) => bark(t * 16, (a + 1) / 2, NORMAL_WOOD));
   paintFace(c, x0 - 0.6, y0 + 0.1, 1.6, 2.4, { all: true });
+  return outline(c, 'K');
+}
+
+/**
+ * La poutre (20 × 20 cm) en biais : la face de bout carrée en bas à gauche (bois de bout, le cœur), le dessus éclairé
+ * qui monte vers la droite, le flanc dans l'ombre dessous (l'icône de art/world/timber.ts).
+ */
+function beamIcon(): Canvas {
+  const c = new Canvas(S, S);
+  const L: [number, number] = [9, -4.5];
+  const A: [number, number] = [1.5, 7.5], B: [number, number] = [5.5, 7.5], C: [number, number] = [5.5, 11.5], D: [number, number] = [1.5, 11.5];
+  const add = (p: [number, number]): [number, number] => [p[0] + L[0], p[1] + L[1]];
+  c.polygon([A, add(A), add(B), B], 'Y');
+  c.polygon([B, add(B), add(C), C], 't');
+  c.polygon([A, B, C, D], 'Y');
+  // flanc : le pied plus sombre
+  for (let X = 0; X < S; X++) for (let Y = 0; Y < S; Y++) {
+    if (c.get(X, Y) === 't' && c.get(X, Y + 1) === EMPTY) c.set(X, Y, 'T');
+  }
+  // face de bout : le cœur et l'ombre du bas à droite
+  c.set(3, 9, 'T').set(4, 9, 'T').set(4, 10, 't').set(3, 10, 't').set(2, 10, 't').set(4, 8, 't');
   return outline(c, 'K');
 }
 
@@ -322,6 +398,9 @@ export default [
   img('item-egg', egg()),
   img('item-apple', apple()),
   img('item-wool', wool()),
-  img('item-big-felled-log', felledLog()),
-  img('item-normal-felled-log', normalFelledLogIcon()),
+  img('item-wood-big-round', bigRoundIcon()),
+  img('item-wood-big-half', bigHalfIcon()),
+  img('item-wood-big-quarter', bigQuarterIcon()),
+  img('item-wood-normal-round', normalRoundIcon()),
+  img('item-wood-normal-beam', beamIcon()),
 ];

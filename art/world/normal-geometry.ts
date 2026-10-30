@@ -10,7 +10,7 @@
 //                      `standingTree()`, `stumpBody()`, `stump()`.
 // - normal-felled.ts : l'arbre couché d'un seul tenant (`normal-felled-tree`, `-left`), sans sections ni entailles ;
 //                      exporte `lyingFrame()` et `lyingFrameLeft()` (dernière image de chaque chute) et `FELLED_TREE`
-//                      (sa place, ses collisions, la place du rondin de 500 cm qu'il devient une fois ébranché).
+//                      (sa place, ses collisions, la place de la pièce de bois de 580 cm qu'il devient une fois ébranché).
 // - normal-fall.ts   : planches `normal-tree-fall` et `normal-tree-fall-left` ; importe les deux `lyingFrame*`.
 // - timber.ts        : le rondin (30 cm à 5 m) et la poutre qu'on en tire, dont la bille de 95 cm `normal-felled-log`
 //                      et `normal-felled-log-ns` ; normal-logs.ts garde la construction d'origine de la bille, dont
@@ -62,7 +62,7 @@ export const TRUNK_BOTTOM = TRUNK_TOP + DIAMETER;
 export const SEC = 19;
 /**
  * Colonne de la frame à partir de laquelle le houppier couché passe par-dessus le tronc (avec la frontière festonnée de
- * normal-felled.ts) ; avant, il ne se pose que sur le vide. Ébranché, le tronc laisse un rondin de 500 cm (100 px) à
+ * normal-felled.ts) ; avant, il ne se pose que sur le vide. Ébranché, le tronc laisse une pièce de bois de 580 cm (116 px) à
  * partir du bout scié.
  */
 export const CROWN_OVER_X = BUTT_X - 1 + 76;
