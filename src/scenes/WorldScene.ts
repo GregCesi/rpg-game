@@ -29,6 +29,7 @@ import {
   clearSave,
   emptyHands,
   game,
+  held,
   heldItem,
   mapState,
   newGame,
@@ -43,6 +44,7 @@ import {
 import { GameMap } from '../world/GameMap';
 import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { heldWoodTexture } from '../world/woodTexture';
+import { pileWoodOf } from '../world/woodPile';
 import type { Interactable, PlacedGround } from '../world/GameMap';
 
 /**
@@ -236,8 +238,8 @@ export class WorldScene extends Phaser.Scene {
     this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
     // la coupe visée sur une pièce de bois et ses deux longueurs, la face qu'on dresse, le bout où planter ou frapper le coin
     this.wood.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
-    // ce qu'on tient et qui s'entrepose : sa pièce en transparence, là où elle ira
-    this.handsSystem.updatePreview(this.player, this.mode === 'play');
+    // ce qu'on tient, en transparence, là où E ou Q le poserait (pas quand E vise autre chose : il agirait sur la cible)
+    this.handsSystem.updatePreview(this.player, this.mode === 'play' && !e.target);
     // les chantiers : piquets, places à remplir en fantôme, ligne d'état
     this.site.update(this.player, this.mode === 'play');
     this.pileCount.update(this.player, this.mode === 'play');
@@ -264,8 +266,8 @@ export class WorldScene extends Phaser.Scene {
     else if (this.press.pending) return;
     else if (e.pressed && e.target && this.knots.holds(e.target.action)) this.press.begin(e.target, time);
     else if (e.pressed && e.target) this.hands(e.target);
-    // E dans le vide (ou devant ce qu'on ne peut pas prendre) : reposer ce qu'on tient à deux mains
-    else if (e.pressed && game.both) this.putDown();
+    // E dans le vide (ou devant ce qu'on ne peut pas prendre) : poser ce que tient la main active, là où le montre le fantôme
+    else if (e.pressed && held(game)) this.putDown();
     else if (drop) this.putDown();
     else if (use && time >= this.useLockedUntil) this.useHeld();
   }
@@ -348,7 +350,7 @@ export class WorldScene extends Phaser.Scene {
     else this.player.stamina.spend(this.player.stamina.costs.knot);
   }
 
-  /** Q, ou E quand on tient à deux mains : pose devant soi ce que tient la main active (en tas s'il s'entrepose), s'il y a la place. */
+  /** Q, ou E dans le vide : pose devant soi ce que tient la main active, là où le montre le fantôme (HandsSystem.putDown), s'il y a la place. */
   private putDown(): void {
     const r = this.handsSystem.putDown(this.player);
     if (r === 'blocked') this.notice('Pas la place ici.');
@@ -529,7 +531,12 @@ export class WorldScene extends Phaser.Scene {
         if (!this.handsSystem.placeInFront(this.player, WOOD_PIECE, undefined, cmd.wood)) this.notice('Pas la place ici.');
         break;
       case 'pile': {
-        const n = this.handsSystem.pileInFront(this.player, cmd.pile, cmd.count, cmd.turned, cmd.tie);
+        // un tas de bois : seulement d'une pièce qui va en tas (ni coupe, ni coin, pas plus de ce que porte Xéros)
+        if (cmd.wood && !pileWoodOf({ ...cmd.wood, axis: 'ew' })) {
+          this.notice('Trop lourde pour un tas : elle se pose seule.');
+          break;
+        }
+        const n = this.handsSystem.pileInFront(this.player, cmd.wood ? { wood: cmd.wood } : { pile: cmd.pile! }, cmd.count, cmd.turned, cmd.tie);
         if (n < 0) this.notice('Pas la place ici.');
         else if (n < cmd.count) this.notice(`Place pour ${n} seulement.`);
         break;

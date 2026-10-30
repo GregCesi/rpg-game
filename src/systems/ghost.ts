@@ -14,10 +14,10 @@ export class Ghosts {
     private readonly alpha = 0.5,
   ) {}
 
-  /** Montre le fantôme n° `i` : l'image `key`, son coin bas gauche en (x, y), à la profondeur `depth`. */
-  show(i: number, key: string, x: number, y: number, depth: number, alpha = this.alpha): void {
+  /** Montre le fantôme n° `i` : l'image `key` (son image `frame` pour une planche), son coin bas gauche en (x, y), à la profondeur `depth`. */
+  show(i: number, key: string, x: number, y: number, depth: number, alpha = this.alpha, frame?: string): void {
     while (this.images.length <= i) this.images.push(this.scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 1).setVisible(false));
-    this.images[i].setTexture(key).setPosition(x, y).setDepth(Math.min(depth, DEPTH.prompt - 1)).setAlpha(alpha).setVisible(true);
+    this.images[i].setTexture(key, frame).setPosition(x, y).setDepth(Math.min(depth, DEPTH.prompt - 1)).setAlpha(alpha).setVisible(true);
   }
 
   /** Cache les fantômes à partir du n° `from` (0 : tous). */

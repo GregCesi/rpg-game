@@ -13,39 +13,46 @@ import {
   game,
   held,
   release,
+  removeGroundItem,
   setPileTie,
   spawnObject,
-  startPile,
   take,
   turnHeld,
   type Held,
 } from '../state';
-import { propFootprint, propSize, type Box, type GameMap, type PlacedPile, type PlacedProp } from '../world/GameMap';
+import { groundBox, propFootprint, propSize, type Box, type GameMap, type PlacedGround, type PlacedPile, type PlacedProp } from '../world/GameMap';
 import { pileOf } from '../world/offer';
 import { defOf, WOOD_PIECE } from '../world/woodPiece';
-import { accepts, nearestOpenPlace, openPlaces, placeAim } from '../world/places';
-import { shapeOf, tieImages } from '../world/pileShape';
+import { nearestOpenPlace, openPlaces, placeAim } from '../world/places';
+import { kindOf, pileDefOf, sameKind, shapeOf, tieImages, type PileKind, type PileShape } from '../world/pileShape';
+import { woodTexture } from '../world/woodTexture';
 import { Ghosts } from './ghost';
 
 /** Ce qu'a donné « poser devant soi » : rien en main, pas de place libre devant, ou posé. */
 export type PutDownResult = 'empty' | 'blocked' | 'done';
 
-/**
- * Où ira la pièce qu'on pose en tas : une place d'un tas posé (dans le sens du tas), ou la première place d'un nouveau
- * tas au point (x, y), dans le sens de ce qu'on tient (`turned`).
- */
-type PileTarget = { pile: PlacedPile; place: string } | { genre: string; x: number; y: number; place: string; turned: boolean };
+/** Une pièce seule au sol, qui peut commencer un tas : un objet du monde posé (la pièce de bois, le fagot), ou un objet possédable (la branche). */
+type Lone = { prop: PlacedProp } | { ground: PlacedGround };
 
-/** Ce qu'on tient est tourné nord-sud (R) : la pièce de bois dans ce sens, ou le reste (le fagot) noté tourné. */
-const turnedOf = (what: Held) => 'prop' in what && (what.wood ? what.wood.axis === 'ns' : !!what.turned);
+/**
+ * Où ira ce qu'on pose (E, Q) : le seul chemin de pose, pour tout ce qu'on porte.
+ * - `pile` : à une place d'un tas commencé qui entrepose la même chose (dans le sens du tas) ;
+ * - `join` : contre une pièce identique seule au sol : un tas naît, qui prend tout de cette première pièce (sa place `lonePlace`,
+ *   son sens), et la pièce posée va à la place `place` ;
+ * - `tie` : le lien sous un tas qui n'en a pas ; `tie-alone` : le lien par terre, où il commence un tas sans pièce ;
+ * - `lay` : seul, au sol, devant Xéros (un objet du monde à son coin bas gauche, un objet possédable à son point au sol).
+ */
+type Drop =
+  | { kind: 'pile'; pile: PlacedPile; place: string }
+  | { kind: 'join'; lone: Lone; pile: PileKind; x: number; y: number; turned: boolean; lonePlace: string; place: string }
+  | { kind: 'tie'; pile: PlacedPile }
+  | { kind: 'tie-alone'; genre: string; x: number; y: number }
+  | { kind: 'lay'; x: number; y: number };
 
 /** Genre de tas que lie ce qu'on tient (le lien : `tie.item` d'un genre de piles.json), s'il en lie un. */
 function tieOf(what: Held): string | undefined {
   return 'item' in what ? Object.keys(piles).find((k) => piles[k].tie?.item === what.item) : undefined;
 }
-
-/** Où ira le lien qu'on pose : sous un tas posé qui n'en a pas, ou par terre, en (x, y), où il commence un tas. */
-type TieTarget = { pile: PlacedPile } | { genre: string; x: number; y: number };
 
 /**
  * Coin haut gauche d'une boîte de fw × fh qui touche presque la collision `b` de Xéros (écart `PUT_DOWN.gap`), du côté
@@ -65,16 +72,17 @@ function frontCorner(b: Phaser.Physics.Arcade.Body, facing: Facing, fw: number, 
 const overlaps = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 
 /**
- * Les mains de Xéros sur la carte : prendre un objet du monde (la bille), poser ou lâcher devant soi ce qu'on tient,
- * construire un tas pièce par pièce et en reprendre. Ce qui a un genre de tas (piles.json) se pose toujours en tas : à la
- * place disponible d'un tas du même genre la plus proche du point que regarde Xéros (le creux quand il est au centre
- * entre deux pièces, le sol à côté quand il est décalé), sinon à la première place d'un nouveau tas, devant lui. Une
- * prévisualisation en transparence montre la pièce là où elle ira.
- * Les objets pris quittent la carte, ceux qu'on pose y reviennent à leur nouvelle place : tout est noté dans GameState.
- * Ramasser un objet au sol et récolter restent ailleurs (WorldScene, harvest.ts). Ne lit pas le clavier.
+ * Les mains de Xéros sur la carte : prendre un objet du monde (la bille), poser ou lâcher devant soi ce qu'on tient, construire un
+ * tas pièce par pièce et en reprendre. Poser n'a qu'un chemin, pour tout ce qu'on porte (`dropTarget`, `put`) : à la place
+ * disponible d'un tas qui entrepose la même chose, la plus proche du point que regarde Xéros (le creux quand il est au centre entre
+ * deux pièces, le sol à côté quand il est décalé) ; contre une pièce identique seule au sol, où un tas naît ; le lien sous un tas
+ * ou par terre ; sinon seul, au sol devant lui. Un fantôme en transparence montre où et dans quel sens il ira (R le tourne) ; sans
+ * place, rien ne bouge (« Pas la place ici. »). Les objets pris quittent la carte, ceux qu'on pose y reviennent à leur nouvelle
+ * place : tout est noté dans GameState. Ramasser un objet au sol et récolter restent ailleurs (WorldScene, harvest.ts). Ne lit pas
+ * le clavier.
  */
 export class HandsSystem {
-  /** La pièce en transparence, à la place où ira ce qu'on tient. */
+  /** Ce qu'on tient, en transparence, là où il ira. */
   private readonly ghost: Ghosts;
 
   constructor(
@@ -87,25 +95,15 @@ export class HandsSystem {
   }
 
   /**
-   * À appeler à chaque image : montre en transparence la pièce de ce qu'on tient, à la place exacte où elle ira si on
-   * la pose, s'il s'entrepose en tas. `active` = false pendant un geste, un dialogue ou un changement de carte.
+   * À appeler à chaque image : montre en transparence ce qu'on tient, à la place exacte où il ira si on le pose, dans son sens.
+   * `active` = false pendant un geste, un dialogue, un changement de carte, ou quand E vise autre chose (E agirait sur la cible).
    */
   updatePreview(player: Player, active: boolean): void {
     const what = held(game);
-    const tied = active && what ? tieOf(what) : undefined;
-    if (tied) return this.tiePreview(player, tied);
-    const genre = what && pileOf(what);
-    const t = active && genre ? this.pileTarget(player, genre, turnedOf(what)) : undefined;
-    if (!t) {
-      this.ghost.hideFrom(0);
-      return;
-    }
-    const def = 'pile' in t ? t.pile.def : shapeOf(piles[t.genre], t.turned);
-    const q = def.places[t.place];
-    const [x, y] = 'pile' in t ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
-    // par-dessus le tas qu'il complète ; un nouveau tas, à sa propre profondeur
-    const depth = 'pile' in t ? t.pile.depth + 0.999 : y + q.y;
-    this.ghost.show(0, q.image, x + q.x, y + q.y, depth);
+    const t = active && what ? this.dropTarget(player, what) : undefined;
+    if (!what || !t) return this.ghost.hideFrom(0);
+    const g = this.ghostOf(what, t);
+    this.ghost.show(0, g.key, g.x, g.y, g.depth, undefined, g.frame);
   }
 
   /**
@@ -189,68 +187,49 @@ export class HandsSystem {
     else changeObject(game, this.map.def.id, p.id, change);
   }
 
-  /**
-   * Pose devant Xéros ce que tient la main active (ou les deux mains), à une place libre seulement :
-   * en tas s'il a un genre de tas, sinon un objet possédable au sol, un objet du monde sur la carte (objet né, à sa nouvelle place).
-   */
+  /** Pose devant Xéros ce que tient la main active (ou les deux mains), là où le montre le fantôme : le seul chemin de pose. */
   putDown(player: Player): PutDownResult {
     const what = held(game);
     if (!what) return 'empty';
-    const tied = tieOf(what);
-    if (tied) return this.putTie(player, tied);
-    const pile = pileOf(what);
-    if (pile) return this.putOnPile(player, pile, turnedOf(what));
-    const laid = 'item' in what ? undefined : what;
-    const spot = laid ? this.propSpot(player, laid) : this.groundSpot(player);
-    if (!spot) return 'blocked';
+    const t = this.dropTarget(player, what);
+    if (!t) return 'blocked';
     release(game);
-    const mapId = this.map.def.id;
-    if (!laid) this.map.placeGround(dropItem(game, mapId, (what as { item: string }).item, spot.x, spot.y));
-    else {
-      const o = spawnObject(game, mapId, laid.prop, spot.x, spot.y, { flip: !!laid.flip, length: laid.length, wood: laid.wood });
-      this.map.placeProp(o, { flip: laid.flip, spawned: true, length: laid.length, wood: laid.wood });
-    }
+    this.put(what, t);
+    this.ghost.hideFrom(0);
     return 'done';
   }
 
   /**
-   * Tourne ce qu'on tient entre est-ouest et nord-sud (R) : une pièce de bois (elle sera posée dans l'autre sens, en tas comme
-   * seule), ou ce dont le genre de tas a une forme tournée (`turned` de piles.json : le fagot). Renvoie false si ce qu'on tient ne
-   * se tourne pas.
+   * Tourne ce qu'on tient entre est-ouest et nord-sud (R) : une pièce de bois (elle sera posée dans l'autre sens, seule ou en tas),
+   * ou ce dont le genre de tas a une forme tournée (`turned` de piles.json : le fagot). Renvoie false si ce qu'on tient ne se
+   * tourne pas.
    */
   turn(): boolean {
     const what = held(game);
-    const genre = what && pileOf(what);
-    if (!what || !('prop' in what) || !(what.wood || (genre && piles[genre].turned))) return false;
+    const kind = what && pileOf(what);
+    if (!what || !('prop' in what) || !(what.wood || (kind && pileDefOf(kind).turned))) return false;
     turnHeld(game);
     return true;
   }
 
   /**
-   * Pose au sol devant Xéros ce qu'il tient et ne peut plus porter (une sauvegarde d'avant les masses) : devant lui s'il y a la
-   * place, sinon sur lui. Une bille tournée devient la bille nord-sud posée. Ne touche pas aux mains : l'appelant les vide.
+   * Pose au sol ce qu'il tient et ne peut plus porter (une sauvegarde d'avant les masses) : seul, devant lui s'il y a la place,
+   * sinon à ses pieds. Ne touche pas aux mains : l'appelant les vide.
    */
   layDown(player: Player, what: Held): void {
-    const mapId = this.map.def.id;
     const feet = { x: Math.round(player.actor.x), y: Math.round(player.actor.y) };
-    if ('item' in what) {
-      const spot = this.groundSpot(player) ?? feet;
-      this.map.placeGround(dropItem(game, mapId, what.item, spot.x, spot.y));
-      return;
-    }
-    const spot = this.propSpot(player, what) ?? feet;
-    const o = spawnObject(game, mapId, what.prop, spot.x, spot.y, { length: what.length, wood: what.wood });
-    this.map.placeProp(o, { spawned: true, length: what.length, wood: what.wood });
+    this.put(what, { kind: 'lay', ...(this.laySpot(player, what) ?? feet) });
   }
 
   /**
-   * Outils de test (?dieu) : pose devant Xéros un objet du monde de props.json, comme on le poserait (objet né, noté dans
+   * Outils de test (?dieu) : pose devant Xéros un objet du monde de props.json, seul, comme on le poserait (objet né, noté dans
    * GameState), avec sa longueur (le rouleau) ou ses réglages (la pièce de bois). Renvoie false s'il n'y a pas la place.
    */
   placeInFront(player: Player, type: string, length?: number, wood?: WoodPiece): boolean {
-    const spot = this.propSpot(player, { prop: type, length, wood });
+    const what: Held = { prop: type, ...(length !== undefined ? { length } : {}), ...(wood ? { wood } : {}) };
+    const spot = this.laySpot(player, what);
     if (!spot) return false;
-    this.map.placeProp(spawnObject(game, this.map.def.id, type, spot.x, spot.y, { length, wood }), { spawned: true, length, wood });
+    this.put(what, { kind: 'lay', ...spot });
     return true;
   }
 
@@ -260,45 +239,34 @@ export class HandsSystem {
    */
   supplyAround(player: Player, what: string, count: number): number {
     const b = player.actor.body;
-    const mapId = this.map.def.id;
     let placed = 0;
     for (let i = 0; i < count * 4 && placed < count; i++) {
       // une rangée devant lui, puis la suivante un peu plus loin
       const row = Math.floor(i / 6);
       const x = Math.round(b.center.x + ((i % 6) - 2.5) * 10);
       const y = Math.round(b.bottom + 12 + row * 14);
-      if (what in items) {
-        if (!this.map.areaFree({ left: x - 4, top: y - 6, right: x + 4, bottom: y }, this.others)) continue;
-        this.map.placeGround(dropItem(game, mapId, what, x, y));
-      } else {
-        const size = this.scene.textures.getFrame(props[what].image);
-        const box: Box = { left: x, top: y - size.height, right: x + size.width, bottom: y };
-        if (!this.map.areaFree(box, [...this.others, b])) continue;
-        this.map.placeProp(spawnObject(game, mapId, what, x, y), { spawned: true });
-      }
+      const held: Held = what in items ? { item: what } : { prop: what };
+      if (!this.map.areaFree(this.layBox(held, x, y), what in items ? this.others : [...this.others, b])) continue;
+      this.put(held, { kind: 'lay', x, y });
       placed++;
     }
     return placed;
   }
 
   /**
-   * Outils de test (?dieu) : un tas du genre `genre` de `count` pièces devant Xéros, dans le sens `turned`, toute son
-   * emprise au sol devant lui. Les places sont prises comme on les prendrait à la main, la couche du bas d'abord, une place au sol seulement si elle est
-   * libre ; `tie` : avec son lien dessous (`count` peut alors être 0, le lien seul). Renvoie le nombre de pièces posées
-   * (-1 : pas la place).
+   * Outils de test (?dieu) : un tas de `count` pièces de `kind` (un genre écrit, ou une pièce de bois) devant Xéros, dans le sens
+   * `turned`, toute son emprise au sol devant lui. Les places sont prises comme on les prendrait à la main, la couche du bas
+   * d'abord, une place au sol seulement si elle est libre ; `tie` : avec son lien dessous (`count` peut alors être 0, le lien
+   * seul). Renvoie le nombre de pièces posées (-1 : pas la place).
    */
-  pileInFront(player: Player, genre: string, count: number, turned: boolean, tie: boolean): number {
-    const def = shapeOf(piles[genre], turned);
+  pileInFront(player: Player, kind: PileKind, count: number, turned: boolean, tie: boolean): number {
+    const def = shapeOf(pileDefOf(kind), turned);
     const bodies = [...this.others, player.actor.body];
     // toute l'emprise au sol du tas devant Xéros, pas seulement sa première pièce : les autres places au sol ne
     // tombent pas sur lui
-    const ground = Object.values(def.places).flatMap((q) => (q.body ? [q.body] : []));
-    const left = Math.min(...ground.map((b) => b.x));
-    const top = Math.min(...ground.map((b) => b.y));
-    const w = Math.max(...ground.map((b) => b.x + b.w)) - left;
-    const h = Math.max(...ground.map((b) => b.y + b.h)) - top;
-    const [l, t] = frontCorner(player.actor.body, player.actor.facing, w, h);
-    const spot = { x: Math.round(l - left), y: Math.round(t - top) };
+    const ground = groundBox(def);
+    const [l, t] = frontCorner(player.actor.body, player.actor.facing, ground.right - ground.left, ground.bottom - ground.top);
+    const spot = { x: Math.round(l - ground.left), y: Math.round(t - ground.top) };
     if (!this.groundFree(this.boxAt(def.places[def.start].body!, spot.x, spot.y), bodies)) return -1;
     const taken = count > 0 ? [def.start] : [];
     while (taken.length < count) {
@@ -311,48 +279,162 @@ export class HandsSystem {
       if (!next) break;
       taken.push(next);
     }
-    this.map.placePile(addPile(game, this.map.def.id, { pile: genre, x: spot.x, y: spot.y, places: taken, turned, tie: tie && !!def.tie }));
+    this.map.placePile(addPile(game, this.map.def.id, { ...kind, x: spot.x, y: spot.y, places: taken, turned, tie: tie && !!def.tie }));
     return taken.length;
   }
 
   /**
-   * Un tas du genre `genre` tiendrait au sol en (x, y) avec les pièces `places` : leurs places au sol (forme `turned`)
+   * Un tas du genre écrit `genre` tiendrait au sol en (x, y) avec les pièces `places` : leurs places au sol (forme `turned`)
    * sont libres (personnages compris, Xéros non : il est collé à ce qu'il noue, et le tas le repousse d'un pixel au
    * besoin), hors de ce qu'il remplace : le tas `own`, ou l'objet `prop` (un fagot posé hors d'un tas). Pour nouer et
    * dénouer (systems/knot.ts).
    */
   pileFree(genre: string, turned: boolean, x: number, y: number, places: string[], own?: PlacedPile, prop?: PlacedProp): boolean {
-    const def = shapeOf(piles[genre], turned);
-    const bodies = this.others;
+    const def = shapeOf(pileDefOf({ pile: genre }), turned);
     const ignore = [...(own?.zones ?? []), ...(prop?.parts ?? [])];
     return places.every((q) => {
       const b = def.places[q].body;
-      return !b || this.groundFree(this.boxAt(b, x, y), bodies, own, ignore);
+      return !b || this.groundFree(this.boxAt(b, x, y), this.others, own, ignore);
     });
   }
 
   /**
-   * Pose le lien (`tieOf`) : sous le tas visé, ou par terre devant Xéros, où il commence un tas du genre `genre` qui
-   * n'a encore aucune pièce. Sans place, rien ne bouge.
+   * Où ira ce qu'on tient si on le pose maintenant (voir `Drop`), ou undefined s'il n'y a pas la place. Le lien va sous le tas de
+   * son genre sans lien le plus proche, sinon par terre ; ce qui va en tas va à la place la plus proche du point que regarde Xéros,
+   * à portée, parmi celles des tas qui entreposent la même chose et celles d'un tas qui naîtrait d'une pièce identique seule au
+   * sol ; sinon tout se pose seul, devant lui.
    */
-  private putTie(player: Player, genre: string): PutDownResult {
-    const t = this.tieTarget(player, genre);
-    if (!t) return 'blocked';
-    release(game);
-    const mapId = this.map.def.id;
-    if ('pile' in t) {
-      setPileTie(game, mapId, t.pile.pile.id, true);
-      this.map.refreshPile(t.pile);
-    } else this.map.placePile(addPile(game, mapId, { pile: genre, x: t.x, y: t.y, places: [], tie: true }));
-    this.ghost.hideFrom(0);
-    return 'done';
+  private dropTarget(player: Player, what: Held): Drop | undefined {
+    const tied = tieOf(what);
+    if (tied) return this.tieTarget(player, tied);
+    const kind = pileOf(what);
+    const near = kind && this.nearestPlace(player, kind);
+    if (near) return near;
+    const spot = this.laySpot(player, what);
+    return spot && { kind: 'lay', ...spot };
   }
 
   /**
-   * Où ira le lien : sous le tas du genre `genre` sans lien dont une pièce est la plus près du point que regarde Xéros,
-   * à portée ; sinon par terre, la première place d'un nouveau tas juste devant lui, si elle est libre.
+   * La place la plus proche du point que regarde Xéros, à portée, où ira une pièce de `kind` : une place disponible d'un tas qui
+   * entrepose la même chose (libre, portée, et au sol, à une place libre ; la pièce prend le sens du tas), ou la place voisine
+   * d'une pièce identique seule au sol, dans le tas qui naîtrait d'elle (dans son sens, elle à l'une de ses places au sol).
    */
-  private tieTarget(player: Player, genre: string): TieTarget | undefined {
+  private nearestPlace(player: Player, kind: PileKind): Drop | undefined {
+    const probe = player.probe(INTERACT.reach);
+    const bodies = [...this.others, player.actor.body];
+    let best: Drop | undefined;
+    let bestD: number = INTERACT.radius;
+    for (const p of this.map.piles) {
+      if (!sameKind(kindOf(p.pile), kind)) continue;
+      const hit = nearestOpenPlace(p.def, p.pile.places, [p.pile.x, p.pile.y], probe, bestD, (place) => {
+        const body = p.def.places[place].body;
+        return !body || this.groundFree(this.boxAt(body, p.pile.x, p.pile.y), bodies, p);
+      });
+      if (!hit) continue;
+      best = { kind: 'pile', pile: p, place: hit.place };
+      bestD = hit.d;
+    }
+    for (const lone of this.lonePieces(kind)) {
+      const def = shapeOf(pileDefOf(kind), lone.turned);
+      const ignore = 'prop' in lone.lone ? lone.lone.prop.parts : [];
+      for (const [lonePlace, q] of Object.entries(def.places)) {
+        if (q.layer > 0) continue;
+        // le tas dont la place `lonePlace` tombe exactement sur la pièce seule
+        const x = lone.x - q.x;
+        const y = lone.y - q.y;
+        const hit = nearestOpenPlace(def, [lonePlace], [x, y], probe, bestD, (place) => {
+          const body = def.places[place].body;
+          return !body || this.groundFree(this.boxAt(body, x, y), bodies, undefined, ignore);
+        });
+        if (!hit) continue;
+        best = { kind: 'join', lone: lone.lone, pile: kind, x, y, turned: lone.turned, lonePlace, place: hit.place };
+        bestD = hit.d;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Les pièces seules au sol identiques à `kind` (même genre, ou pièce de bois identique qui va en tas), avec le coin bas gauche de
+   * leur image (une place de tas s'y posera exactement) et leur sens.
+   */
+  private lonePieces(kind: PileKind): { lone: Lone; x: number; y: number; turned: boolean }[] {
+    const out: { lone: Lone; x: number; y: number; turned: boolean }[] = [];
+    for (const p of this.map.props) {
+      if (!p.def.take || !p.image.visible) continue;
+      const k = pileOf(p.wood ? { prop: p.type, wood: p.wood } : { prop: p.type });
+      if (k && sameKind(k, kind)) out.push({ lone: { prop: p }, x: p.x, y: p.y, turned: p.wood?.axis === 'ns' });
+    }
+    for (const g of this.map.ground) {
+      const k = pileOf({ item: g.item.item });
+      if (!k || !sameKind(k, kind) || !g.image.visible) continue;
+      // un objet au sol est posé par le milieu du bas de son image
+      out.push({ lone: { ground: g }, x: Math.round(g.item.x - g.image.width / 2), y: g.item.y, turned: false });
+    }
+    return out;
+  }
+
+  /** Pose `what` (déjà sorti des mains) là où le dit `t`, dans GameState et à l'écran. */
+  private put(what: Held, t: Drop): void {
+    const mapId = this.map.def.id;
+    if (t.kind === 'pile') {
+      fillPlace(game, mapId, t.pile.pile.id, t.place);
+      this.map.refreshPile(t.pile);
+    } else if (t.kind === 'join') {
+      // la pièce seule quitte la carte : elle devient la première pièce du tas, à la même place
+      if ('prop' in t.lone) {
+        const p = t.lone.prop;
+        if (p.spawned) changeSpawned(game, mapId, p.id, { x: p.x, y: p.y });
+        else changeObject(game, mapId, p.id, { x: p.x, y: p.y });
+        this.map.removeProp(p);
+      } else {
+        removeGroundItem(game, mapId, t.lone.ground.item.id);
+        this.map.removeGround(t.lone.ground);
+      }
+      this.map.placePile(addPile(game, mapId, { ...t.pile, x: t.x, y: t.y, places: [t.lonePlace, t.place], ...(t.turned ? { turned: true } : {}) }));
+    } else if (t.kind === 'tie') {
+      setPileTie(game, mapId, t.pile.pile.id, true);
+      this.map.refreshPile(t.pile);
+    } else if (t.kind === 'tie-alone') {
+      this.map.placePile(addPile(game, mapId, { pile: t.genre, x: t.x, y: t.y, places: [], tie: true }));
+    } else if ('item' in what) {
+      this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y));
+    } else {
+      const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood });
+      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood });
+    }
+  }
+
+  /** Le fantôme de `what` posé là où le dit `t` : image (et image de planche), coin bas gauche, profondeur. */
+  private ghostOf(what: Held, t: Drop): { key: string; frame?: string; x: number; y: number; depth: number } {
+    if (t.kind === 'pile' || t.kind === 'join') {
+      const def = t.kind === 'pile' ? t.pile.def : shapeOf(pileDefOf(t.pile), t.turned);
+      const q = def.places[t.place];
+      const [x, y] = t.kind === 'pile' ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
+      // par-dessus le tas qu'il complète ; à côté de la pièce seule, à sa propre profondeur
+      const depth = t.kind === 'pile' ? t.pile.depth + 0.999 : y + q.y + 0.5;
+      return { key: this.map.placeImage(q), frame: q.wood ? '0' : undefined, x: x + q.x, y: y + q.y, depth };
+    }
+    if (t.kind === 'tie' || t.kind === 'tie-alone') {
+      // sous un tas, son bout de devant, là où il dépassera ; par terre, la boucle du lien seul
+      const tie = t.kind === 'tie' ? tieImages(t.pile.def, t.pile.pile.places)[1] : piles[t.genre].tie!.alone;
+      const [x, y] = t.kind === 'tie' ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
+      return { key: tie.image, x: x + tie.x, y: y + tie.y, depth: t.kind === 'tie' ? t.pile.depth : y + tie.y };
+    }
+    if ('item' in what) {
+      const key = items[what.item].ground ?? items[what.item].icon;
+      return { key, x: t.x - this.scene.textures.getFrame(key).width / 2, y: t.y, depth: t.y };
+    }
+    if (what.wood) return { key: woodTexture(this.scene, what.wood), frame: '0', x: t.x, y: t.y, depth: t.y };
+    const image = props[what.prop].image;
+    return { key: what.flip ? `${image}-left` : image, x: t.x, y: t.y, depth: t.y };
+  }
+
+  /**
+   * Où va le lien : sous le tas du genre `genre` sans lien dont une pièce est la plus près du point que regarde Xéros, à portée ;
+   * sinon par terre, là où commencerait un tas de ce genre juste devant lui, si la place est libre.
+   */
+  private tieTarget(player: Player, genre: string): Drop | undefined {
     const probe = player.probe(INTERACT.reach);
     let best: PlacedPile | undefined;
     let bestD: number = INTERACT.radius;
@@ -367,77 +449,13 @@ export class HandsSystem {
         }
       }
     }
-    if (best) return { pile: best };
-    const spot = this.newPileSpot(player, genre, false);
-    return spot && { genre, ...spot };
-  }
-
-  /** Le lien en transparence, là où il ira : sous le tas visé, ou par terre devant Xéros. */
-  private tiePreview(player: Player, genre: string): void {
-    const t = this.tieTarget(player, genre);
-    if (!t) {
-      this.ghost.hideFrom(0);
-      return;
-    }
-    // sous un tas, son bout de devant, là où il dépassera ; par terre, la boucle du lien seul
-    const tie = 'pile' in t ? tieImages(t.pile.def, t.pile.pile.places)[1] : piles[genre].tie!.alone;
-    const [x, y] = 'pile' in t ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
-    // sous les pièces du tas visé ; par terre, à sa propre profondeur
-    const depth = 'pile' in t ? t.pile.depth : y + tie.y;
-    this.ghost.show(0, tie.image, x + tie.x, y + tie.y, depth);
-  }
-
-  /**
-   * Pose en tas du genre `genre`, à la place que montre la prévisualisation ; sans place, rien ne bouge. Sur un tas
-   * posé, la pièce prend le sens du tas ; un nouveau tas prend le sens de ce qu'on tient (`turned`).
-   */
-  private putOnPile(player: Player, genre: string, turned: boolean): PutDownResult {
-    const t = this.pileTarget(player, genre, turned);
-    if (!t) return 'blocked';
-    release(game);
-    const mapId = this.map.def.id;
-    if ('pile' in t) {
-      fillPlace(game, mapId, t.pile.pile.id, t.place);
-      this.map.refreshPile(t.pile);
-    } else this.map.placePile(startPile(game, mapId, genre, t.x, t.y, t.place, t.turned));
-    this.ghost.hideFrom(0);
-    return 'done';
-  }
-
-  /**
-   * La place où ira une pièce du genre `genre` : parmi les places disponibles des tas de ce genre (libres, portées, et,
-   * au sol, à une place libre), celle dont le point visé est le plus près du point que regarde Xéros, à portée, quel
-   * que soit le sens de ce qu'on tient (la pièce s'aligne sur le tas) ; sinon la première place (`start`) d'un nouveau
-   * tas dans le sens `turned`, sa pièce au sol juste devant lui, si la place est libre.
-   */
-  private pileTarget(player: Player, genre: string, turned: boolean): PileTarget | undefined {
-    const probe = player.probe(INTERACT.reach);
-    const bodies = [...this.others, player.actor.body];
-    let best: PileTarget | undefined;
-    let bestD: number = INTERACT.radius;
-    for (const p of this.map.piles) {
-      if (!accepts({ genre: p.pile.pile }, { genre })) continue;
-      const hit = nearestOpenPlace(p.def, p.pile.places, [p.pile.x, p.pile.y], probe, bestD, (place) => {
-        const body = p.def.places[place].body;
-        return !body || this.groundFree(this.boxAt(body, p.pile.x, p.pile.y), bodies, p);
-      });
-      if (!hit) continue;
-      best = { pile: p, place: hit.place };
-      bestD = hit.d;
-    }
-    if (best) return best;
-    const spot = this.newPileSpot(player, genre, turned);
-    return spot && { genre, ...spot, place: shapeOf(piles[genre], turned).start, turned };
-  }
-
-  /** Point (x, y) d'un nouveau tas du genre `genre`, sa première pièce au sol juste devant Xéros, si la place est libre. */
-  private newPileSpot(player: Player, genre: string, turned: boolean): { x: number; y: number } | undefined {
-    const def = shapeOf(piles[genre], turned);
+    if (best) return { kind: 'tie', pile: best };
+    const def = piles[genre] as PileShape;
     const body = def.places[def.start].body!;
     const [l, t] = frontCorner(player.actor.body, player.actor.facing, body.w, body.h);
     const x = Math.round(l - body.x);
     const y = Math.round(t - body.y);
-    return this.groundFree(this.boxAt(body, x, y), [...this.others, player.actor.body]) ? { x, y } : undefined;
+    return this.groundFree(this.boxAt(body, x, y), [...this.others, player.actor.body]) ? { kind: 'tie-alone', genre, x, y } : undefined;
   }
 
   /** Une collision de place (repère du tas) dans le repère de la carte, pour un tas dont le point est (x, y). */
@@ -462,32 +480,38 @@ export class HandsSystem {
     );
   }
 
-  /** Point au sol juste devant Xéros pour un objet possédable, s'il est libre (un petit carré autour). */
-  private groundSpot(player: Player): { x: number; y: number } | undefined {
-    const b = player.actor.body;
-    const [sx, sy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.actor.facing];
-    // juste au-delà de sa collision, du côté où il regarde ; (x, y) = le point au sol, en bas de l'icône
-    const x = Math.round(b.center.x + sx * (b.width / 2 + PUT_DOWN.gap + 4));
-    const y = Math.round(b.center.y + sy * (b.height / 2 + PUT_DOWN.gap + 4) + 3);
-    const free = this.map.areaFree({ left: x - 4, top: y - 6, right: x + 4, bottom: y }, this.others);
-    return free ? { x, y } : undefined;
-  }
-
   /**
-   * Coin bas gauche où poser l'objet du monde `what` pour que sa collision touche presque celle de Xéros, du côté où il
-   * regarde, centrée sur lui ; undefined si la place n'est pas libre (carte, cases bloquantes, objets, personnages).
+   * Où poser `what` seul devant Xéros, s'il y a la place (carte, cases bloquantes, objets, personnages ; Xéros aussi pour un objet
+   * du monde) : un objet possédable, son point au sol juste au-delà de sa collision ; un objet du monde (dans le sens où il est
+   * tenu), le coin bas gauche de son image, sa collision presque collée à celle de Xéros, du côté où il regarde, centrée sur lui.
    */
-  private propSpot(player: Player, what: Extract<Held, { prop: string }>): { x: number; y: number } | undefined {
-    const def = defOf(what.prop, what.wood);
-    const flip = !!what.flip;
-    // la pièce de bois a la taille de ses réglages
-    const { w, h } = propSize(this.scene, def, { flip });
-    const f = propFootprint(this.scene, def, { flip }) ?? { left: 0, top: 0, right: w, bottom: h };
+  private laySpot(player: Player, what: Held): { x: number; y: number } | undefined {
     const b = player.actor.body;
+    if ('item' in what) {
+      const [sx, sy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.actor.facing];
+      const x = Math.round(b.center.x + sx * (b.width / 2 + PUT_DOWN.gap + 4));
+      const y = Math.round(b.center.y + sy * (b.height / 2 + PUT_DOWN.gap + 4) + 3);
+      return this.map.areaFree(this.layBox(what, x, y), this.others) ? { x, y } : undefined;
+    }
+    const { f, h } = this.footprint(what);
     const [l, t] = frontCorner(b, player.actor.facing, f.right - f.left, f.bottom - f.top);
     const x = Math.round(l - f.left);
     const y = Math.round(t - f.top + h);
-    const box: Box = { left: x + f.left, top: y - h + f.top, right: x + f.right, bottom: y - h + f.bottom };
-    return this.map.areaFree(box, [...this.others, b]) ? { x, y } : undefined;
+    return this.map.areaFree(this.layBox(what, x, y), [...this.others, b]) ? { x, y } : undefined;
+  }
+
+  /** L'emprise au sol de `what` posé seul en (x, y) : un petit carré autour du point d'un objet possédable, la collision d'un objet du monde. */
+  private layBox(what: Held, x: number, y: number): Box {
+    if ('item' in what) return { left: x - 4, top: y - 6, right: x + 4, bottom: y };
+    const { f, h } = this.footprint(what);
+    return { left: x + f.left, top: y - h + f.top, right: x + f.right, bottom: y - h + f.bottom };
+  }
+
+  /** La collision d'un objet du monde dans son image (la pièce de bois à la taille de ses réglages), et la hauteur de l'image. */
+  private footprint(what: Extract<Held, { prop: string }>): { f: Box; h: number } {
+    const def = defOf(what.prop, what.wood);
+    const flip = !!what.flip;
+    const { w, h } = propSize(this.scene, def, { flip });
+    return { f: propFootprint(this.scene, def, { flip }) ?? { left: 0, top: 0, right: w, bottom: h }, h };
   }
 }
