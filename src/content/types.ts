@@ -142,13 +142,16 @@ export const HarvestSchema = z.strictObject({
 
 /**
  * Masse d'un objet, en kilogrammes. Un nombre : masse saisie. `"wood"` : pièce de bois cylindrique, masse calculée par ses
- * `dims` (volume × densité du bois vert, `mass.ts`). `{ "pile": genre }` : la somme d'un tas plein de ce genre de `piles.json`
+ * `dims` (volume × densité du bois vert, `mass.ts`). `"stone"` : une pierre, la boîte de ses `dims` × la densité de la pierre.
+ * `{ "pile": genre }` : la somme d'un tas plein de ce genre de `piles.json`
  * plus son lien (le fagot : ses dix branches et son lien). `{ "share": 0.25, "of": objet }` : cette part de la masse d'un autre
  * objet de bois (le quartier : un quart de la bille). Un objet qu'on prend, pose ou roule en a une (validate.ts).
  */
 export const MassSchema = z.union([
   z.number().positive(),
   z.literal('wood'),
+  // une pierre : le volume de sa boîte (`dims`) × la densité de la pierre (mass.ts)
+  z.literal('stone'),
   z.strictObject({ pile: id }),
   // une part d'un autre objet de bois : la demi-bille et le quartier, `share` de la bille dont ils sont taillés
   z.strictObject({ share: z.number().gt(0).lt(1), of: id }),
@@ -270,6 +273,8 @@ export const PropDefSchema = z.strictObject({
   mass: MassSchema.optional(),
   /** Ce qui roule quand on le pousse : voir RollSchema. */
   roll: RollSchema.optional(),
+  /** Il enseigne un plan (clé de plans.json) : E dessus, et Xéros le connaît (la planchette gravée de la mère). L'objet reste en place. */
+  teaches: id.optional(),
   /** Ce qui pivote d'un quart de tour au sol (R maintenu, mains vides) : voir TurnSchema. */
   turn: TurnSchema.optional(),
   /**
@@ -284,11 +289,15 @@ export const PropDefSchema = z.strictObject({
    */
   rest: z.record(id, id).optional(),
   /**
-   * Il porte un objet posé dessus (le billot et son rouleau) : `prop`, l'objet porté, qui a une longueur (`length`), et
-   * `empty`, ce qu'il redevient quand on le reprend (E) ou qu'il est vide. Son `harvest` (outil, geste) coupe l'objet porté :
-   * chaque coup réussi en enlève `length.cut` et lâche `length.piece` ; `becomes`, `drops`, `spawns` et `fall` n'y servent pas.
+   * Il porte un objet posé dessus : `empty`, ce qu'il redevient quand on le reprend (E). `prop` : un objet du monde qui a une
+   * longueur (le rouleau sur le billot) ; son `harvest` (outil, geste) le coupe : chaque coup réussi en enlève `length.cut` et
+   * lâche `length.piece` ; `becomes`, `drops`, `spawns` et `fall` n'y servent pas. `item` : un objet possédable (la branche sur
+   * le billot), que le `harvest` ordinaire du porteur transforme (`becomes`, `drops` : le piquet taillé).
    */
-  bears: z.strictObject({ prop: id, empty: id }).optional(),
+  bears: z
+    .strictObject({ prop: id.optional(), item: id.optional(), empty: id })
+    .refine((b) => (b.prop === undefined) !== (b.item === undefined), { message: "'bears' porte soit un objet du monde ('prop'), soit un objet possédable ('item')" })
+    .optional(),
   /**
    * Pièce d'un toit (chevron, toit de planches) : quand Xéros est dessous ou caché derrière, elle devient en partie transparente,
    * avec les autres pièces de toit qu'elle touche (`systems/roofs.ts`). Son image garde sous elle, vide, la hauteur qui la
@@ -303,23 +312,60 @@ export const PropDefSchema = z.strictObject({
   shadow: z.strictObject({ south: z.number().positive(), north: z.number().positive() }).optional(),
 });
 
-/** Une étape d'un chantier (buildings.json) : son nom et les pièces (objets de props.json) qu'on y pose. */
-export const BuildStepSchema = z.strictObject({
-  /** Nom de l'étape, en français : « les dés », « les poteaux »... */
+/** Les quatre coins d'une emprise : nord-ouest, nord-est, sud-est, sud-ouest. */
+export const CornerSchema = z.enum(['nw', 'ne', 'se', 'sw']);
+
+/**
+ * Ce qu'une place de chantier accepte : une pièce précise, par sa clé (`prop` : un objet du monde qu'on porte, `item` : un
+ * objet possédable). `refuse` : ce qu'on dit à qui lui en présente une autre. Plus tard, des mesures (longueur, section, état)
+ * s'ajouteront ici sans toucher au reste ; les places d'un tas, elles, acceptent un genre (`genre` de piles.json).
+ */
+export const AcceptSchema = z
+  .strictObject({ prop: id.optional(), item: id.optional(), refuse: id })
+  .refine((a) => (a.prop === undefined) !== (a.item === undefined), { message: "'accepts' nomme une pièce : soit 'prop', soit 'item'" });
+
+/**
+ * Une place d'un plan (plans.json) : la pièce qui s'y pose (`piece`, un objet de props.json, qui paraît sur la carte), où
+ * (`at`, en centimètres depuis le piquet nord-ouest : le coin bas gauche de l'image de la pièce, comme dans Tiled), comment
+ * (`orientation`), sur quelles places elle repose (`on`, des places du plan : elle n'existe que quand elles sont posées) ;
+ * `corner` : le piquet de ce coin est arraché quand elle est posée ; `accepts` : la pièce qu'on y apporte (sinon celle de l'étape).
+ */
+export const PlanPlaceSchema = z.strictObject({
+  piece: id,
+  at: z.tuple([px, px]),
+  orientation: z.enum(['flat', 'upright', 'ew', 'ns', 'slope']),
+  on: z.array(id).default([]),
+  corner: CornerSchema.optional(),
+  accepts: AcceptSchema.optional(),
+});
+
+/** Une étape d'un plan : son nom (« les dés »), ses places, et `soon` : déclarée mais pas encore jouable (« à venir »). */
+export const PlanStepSchema = z.strictObject({
   name: id,
-  pieces: z.array(id).min(1),
+  soon: z.literal(true).optional(),
+  /** Ce que toutes les places de l'étape acceptent, sauf celles qui disent autre chose. */
+  accepts: AcceptSchema.optional(),
+  places: z.record(id, PlanPlaceSchema),
 });
 
 /**
- * Un bâtiment (buildings.json) : ses pièces, étape par étape, dans l'ordre réel du chantier. Il est posé tout construit
- * sur `map` (pièces de Tiled) ; l'aperçu (npm run art:preview) le montre monter, une étape de plus par image.
+ * Un plan (plans.json) : tout ce qu'il faut pour bâtir, en centimètres, sans code. `stake` : le piquet (objet possédable) qui
+ * trace l'emprise ; `facing` : le côté haut du toit (l'abri n'est dessiné que dans ce sens : le nord) ; `footprint` : l'emprise
+ * entre les axes des coins ; `corners` : les quatre coins depuis le piquet nord-ouest ; `steps` : les étapes dans l'ordre réel
+ * du chantier (dés, poteaux, sablières, chevrons, toit), chacune avec ses places.
  */
-export const BuildingDefSchema = z.strictObject({
-  /** Nom affiché, en français. */
+export const PlanSchema = z.strictObject({
+  /** Nom affiché, en français : « abri à bois ». */
   name: id,
-  /** Carte où il est posé (ses pièces y sont des objets de Tiled). */
-  map: id,
-  steps: z.array(BuildStepSchema).min(1),
+  /** Ce que dit Xéros quand il apprend le plan (E sur la planchette) : « Xéros connaît maintenant le plan de l'abri à bois. » */
+  learned: id,
+  stake: id,
+  /** L'objet du monde (props.json) qui montre un piquet planté aux coins du tracé, et en fantôme là où il en reste à planter. */
+  planted: id,
+  facing: z.literal('north'),
+  footprint: z.strictObject({ w: z.number().positive(), d: z.number().positive() }),
+  corners: z.strictObject({ nw: z.tuple([px, px]), ne: z.tuple([px, px]), se: z.tuple([px, px]), sw: z.tuple([px, px]) }),
+  steps: z.array(PlanStepSchema).min(1),
 });
 
 /**
@@ -485,7 +531,7 @@ export const StrengthSchema = z
  * court plus et sa marche est ralentie à la part `tiredWalk` de la normale. `costs` : le prix de chaque effort, en points
  * (les « PerSec » se paient chaque seconde de l'effort, les « PerKg » sont proportionnels à la masse en kg) ; marcher ne coûte rien.
  * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `plant` planter
- * le coin de fendage, `maul` un coup de masse sur le coin, `knot`
+ * le coin de fendage, `stake` planter un piquet de tracé, `maul` un coup de masse sur le coin, `knot`
  * nouer ou dénouer, `turnPerKg` pivoter une bille, `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
  * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir.
  */
@@ -497,6 +543,7 @@ export const StaminaSchema = z.strictObject({
     chop: z.number().nonnegative(),
     cutTie: z.number().nonnegative(),
     plant: z.number().nonnegative(),
+    stake: z.number().nonnegative(),
     maul: z.number().nonnegative(),
     knot: z.number().nonnegative(),
     turnPerKg: z.number().nonnegative(),
@@ -601,7 +648,11 @@ export type DialogueAction = z.infer<typeof DialogueActionSchema>;
 export type StaminaDef = z.infer<typeof StaminaSchema>;
 export type PilePlace = z.infer<typeof PilePlaceSchema>;
 export type PileDef = z.infer<typeof PileDefSchema>;
-export type BuildingDef = z.infer<typeof BuildingDefSchema>;
+export type Corner = z.infer<typeof CornerSchema>;
+export type Accept = z.infer<typeof AcceptSchema>;
+export type PlanPlace = z.infer<typeof PlanPlaceSchema>;
+export type PlanStep = z.infer<typeof PlanStepSchema>;
+export type PlanDef = z.infer<typeof PlanSchema>;
 export type Pose = z.infer<typeof PoseSchema>;
 export type Gesture = z.infer<typeof GestureSchema>;
 export type HoldPoint = z.infer<typeof HoldPointSchema>;

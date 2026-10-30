@@ -2,12 +2,12 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { BuildingDefSchema, CharacterDefSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, PileDefSchema, PropDefSchema, StaminaSchema, StrengthSchema, TilesetCatalogSchema } from './types';
+import { CharacterDefSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, PileDefSchema, PlanSchema, PropDefSchema, StaminaSchema, StrengthSchema, TilesetCatalogSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import itemsJson from './items.json';
 import pilesJson from './piles.json';
-import buildingsJson from './buildings.json';
+import plansJson from './plans.json';
 import gesturesJson from './gestures.json';
 import holdJson from './hold.json';
 import strengthJson from './strength.json';
@@ -30,8 +30,8 @@ export const props = parse('props.json', z.record(z.string().min(1), PropDefSche
 export const items = parse('items.json', z.record(z.string().min(1), ItemDefSchema), itemsJson);
 /** Genres de tas : ce qu'on y entrepose et leur forme pour chaque nombre de pièces. */
 export const piles = parse('piles.json', z.record(z.string().min(1), PileDefSchema), pilesJson);
-/** Bâtiments : leurs pièces, étape par étape, dans l'ordre du chantier. */
-export const buildings = parse('buildings.json', z.record(z.string().min(1), BuildingDefSchema), buildingsJson);
+/** Plans de bâtiment : emprise, coins, étapes dans l'ordre du chantier, places de chaque pièce (en cm). Un bâtiment = un plan. */
+export const plans = parse('plans.json', z.record(z.string().min(1), PlanSchema), plansJson);
 /** Gestes du corps (`use`) et place de l'outil en main à chaque image. */
 export const gestures = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson);
 /** Objets tenus sur Xéros : point d'accroche par posture, image par image. */

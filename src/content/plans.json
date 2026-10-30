@@ -1,0 +1,61 @@
+{
+  "woodshed": {
+    "name": "abri à bois",
+    "learned": "Xéros connaît maintenant le plan de l'abri à bois.",
+    "stake": "stake",
+    "planted": "planted-stake",
+    "facing": "north",
+    "footprint": {"w": 305, "d": 355},
+    "corners": {"nw": [0, 0], "ne": [305, 0], "se": [305, 355], "sw": [0, 355]},
+    "steps": [
+      {
+        "name": "dés",
+        "accepts": {"prop": "flat-stone", "refuse": "Il faut une pierre plate."},
+        "places": {
+          "footing-nw": {"piece": "footing-stone", "at": [-15, 15], "orientation": "flat", "corner": "nw"},
+          "footing-ne": {"piece": "footing-stone", "at": [290, 15], "orientation": "flat", "corner": "ne"},
+          "footing-se": {"piece": "footing-stone", "at": [290, 370], "orientation": "flat", "corner": "se"},
+          "footing-sw": {"piece": "footing-stone", "at": [-15, 370], "orientation": "flat", "corner": "sw"}
+        }
+      },
+      {
+        "name": "poteaux",
+        "soon": true,
+        "places": {
+          "post-nw": {"piece": "shed-post-high", "at": [-10, 5], "orientation": "upright", "on": ["footing-nw"]},
+          "post-ne": {"piece": "shed-post-high", "at": [295, 5], "orientation": "upright", "on": ["footing-ne"]},
+          "post-se": {"piece": "shed-post-low", "at": [295, 360], "orientation": "upright", "on": ["footing-se"]},
+          "post-sw": {"piece": "shed-post-low", "at": [-10, 360], "orientation": "upright", "on": ["footing-sw"]}
+        }
+      },
+      {
+        "name": "sablières",
+        "soon": true,
+        "places": {
+          "plate-north": {"piece": "shed-plate-north", "at": [-10, 10], "orientation": "ew", "on": ["post-nw", "post-ne"]},
+          "plate-east": {"piece": "shed-plate-side", "at": [295, 365], "orientation": "ns", "on": ["post-ne", "post-se"]},
+          "plate-west": {"piece": "shed-plate-side", "at": [-10, 365], "orientation": "ns", "on": ["post-nw", "post-sw"]},
+          "plate-south": {"piece": "shed-plate-south", "at": [-10, 370], "orientation": "ew", "on": ["post-sw", "post-se"]}
+        }
+      },
+      {
+        "name": "chevrons",
+        "soon": true,
+        "places": {
+          "rafter-1": {"piece": "shed-rafter", "at": [0, 395], "orientation": "slope", "on": ["plate-north", "plate-south"]},
+          "rafter-2": {"piece": "shed-rafter", "at": [75, 395], "orientation": "slope", "on": ["plate-north", "plate-south"]},
+          "rafter-3": {"piece": "shed-rafter", "at": [155, 395], "orientation": "slope", "on": ["plate-north", "plate-south"]},
+          "rafter-4": {"piece": "shed-rafter", "at": [230, 395], "orientation": "slope", "on": ["plate-north", "plate-south"]},
+          "rafter-5": {"piece": "shed-rafter", "at": [305, 395], "orientation": "slope", "on": ["plate-north", "plate-south"]}
+        }
+      },
+      {
+        "name": "toit",
+        "soon": true,
+        "places": {
+          "roof": {"piece": "shed-roof", "at": [-30, 400], "orientation": "slope", "on": ["rafter-1", "rafter-2", "rafter-3", "rafter-4", "rafter-5"]}
+        }
+      }
+    ]
+  }
+}

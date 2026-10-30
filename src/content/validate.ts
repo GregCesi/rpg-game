@@ -5,7 +5,7 @@
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
 import { propMass } from './mass';
-import type { BuildingDef, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PropDef, TilesetCatalog } from './types';
+import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -184,7 +184,8 @@ export interface Content {
   props: Record<string, PropDef>;
   items: Record<string, ItemDef>;
   piles: Record<string, PileDef>;
-  buildings: Record<string, BuildingDef>;
+  plans: Record<string, PlanDef>;
+  strength: Strength;
   gestures: Record<string, Gesture>;
   hold: HoldPoses;
   maps: Record<string, MapData>;
@@ -257,22 +258,42 @@ function validateRope(key: string, p: PropDef, c: Content): string[] {
     if (p.length.cut > p.length.start) err(`length : 'cut' (${p.length.cut}) plus long que 'start' (${p.length.start})`);
   }
   for (const [held, becomes] of Object.entries(p.rest ?? {})) {
+    // ce qu'on pose dessus : un objet du monde qui se prend (le rouleau), ou un objet possédable (la branche)
     const h = c.props[held];
+    const it = c.items[held];
     const b = c.props[becomes];
-    if (!h?.take) err(`rest : '${held}' n'est pas un objet de props.json qui se prend`);
-    else if (h.take.hands !== 1) err(`rest : '${held}' se tient à deux mains (on pose ce que tient la main active)`);
+    if (h && it) err(`rest : '${held}' est à la fois dans props.json et items.json (ambigu)`);
+    else if (h) {
+      if (!h.take) err(`rest : '${held}' n'est pas un objet de props.json qui se prend`);
+      else if (h.take.hands !== 1) err(`rest : '${held}' se tient à deux mains (on pose ce que tient la main active)`);
+    } else if (it) {
+      if (it.hands !== 1) err(`rest : '${held}' se tient à deux mains (on pose ce que tient la main active)`);
+    } else err(`rest : '${held}' absent de props.json et d'items.json`);
     if (!b) err(`rest : '${becomes}' absent de props.json`);
-    else if (b.bears?.prop !== held || b.bears.empty !== key) err(`rest : '${becomes}' doit avoir "bears": {"prop": "${held}", "empty": "${key}"}`);
+    else if ((b.bears?.prop ?? b.bears?.item) !== held || b.bears?.empty !== key) {
+      err(`rest : '${becomes}' doit avoir "bears": {"${it ? 'item' : 'prop'}": "${held}", "empty": "${key}"}`);
+    }
   }
-  if (p.bears) {
-    const borne = c.props[p.bears.prop];
-    if (!borne?.length) err(`bears : '${p.bears.prop}' n'a pas de longueur ('length')`);
-    if (!borne?.take) err(`bears : '${p.bears.prop}' ne se prend pas (pas de 'take')`);
+  if (p.bears?.item) {
+    // un objet possédable posé dessus (la branche sur le billot) : le porteur se récolte comme n'importe quel objet
+    if (!c.items[p.bears.item]) err(`bears : '${p.bears.item}' absent de items.json`);
+    if (!c.props[p.bears.empty]) err(`bears : '${p.bears.empty}' (empty) absent de props.json`);
+    if (!p.harvest?.tool) err("bears : il faut un 'harvest' avec un outil pour travailler ce qu'il porte");
+    if (p.take || p.interact) err(`bears : avec '${p.take ? 'take' : 'interact'}' (E reprend ce qu'il porte)`);
+  } else if (p.bears) {
+    const prop = p.bears.prop!;
+    const borne = c.props[prop];
+    if (!borne?.length) err(`bears : '${prop}' n'a pas de longueur ('length')`);
+    if (!borne?.take) err(`bears : '${prop}' ne se prend pas (pas de 'take')`);
     if (!c.props[p.bears.empty]) err(`bears : '${p.bears.empty}' (empty) absent de props.json`);
     const h = p.harvest;
     if (!h?.tool) err("bears : il faut un 'harvest' avec un outil pour couper ce qu'il porte");
     else if (h.becomes || h.drops.length || h.spawns.length || h.fall) err("bears : sa récolte coupe ce qu'il porte, sans 'becomes', 'drops', 'spawns' ni 'fall'");
     if (p.take || p.interact) err(`bears : avec '${p.take ? 'take' : 'interact'}' (E reprend ce qu'il porte)`);
+  }
+  if (p.teaches) {
+    if (!c.plans[p.teaches]) err(`teaches : plan '${p.teaches}' absent de plans.json`);
+    if (p.take || p.interact || p.harvest) err(`teaches : avec '${p.take ? 'take' : p.interact ? 'interact' : 'harvest'}' (E ne peut faire qu'une chose)`);
   }
   return errors;
 }
@@ -469,31 +490,65 @@ function validatePiles(c: Content, cat: Catalog): string[] {
 }
 
 /**
- * Bâtiments : chaque pièce est un objet de props.json, nommée dans une seule étape, et posée au moins une fois sur la
- * carte du bâtiment ; une pièce de toit (`roof`) ne bloque pas le passage.
+ * Plans de bâtiment : un coin pour chaque angle de l'emprise, des places aux noms uniques, des places qui reposent sur des places
+ * d'étapes d'avant. Une étape ouverte (sans `soon`) est jouable : ses pièces existent, ce qu'elle accepte se prend et se porte,
+ * chaque place dit quoi apporter ; les étapes « à venir » (`soon`) sont déclarées, leurs pièces seront vérifiées quand elles
+ * s'ouvriront. Une pièce de toit ne bloque pas le passage.
  */
-function validateBuildings(c: Content): string[] {
+function validatePlans(c: Content): string[] {
   const errors: string[] = [];
-  for (const [key, b] of Object.entries(c.buildings)) {
-    const at = `buildings.json '${key}'`;
-    if (!KEBAB_CASE.test(key)) errors.push(`${at} : la clé doit être un identifiant anglais en kebab-case`);
-    const map = c.maps[b.map];
-    if (!map) errors.push(`${at} : carte '${b.map}' introuvable`);
-    const seen = new Set<string>();
-    b.steps.forEach((step, i) => {
-      for (const piece of step.pieces) {
-        const where = `${at} étape ${i + 1} (« ${step.name} »), pièce '${piece}'`;
-        if (seen.has(piece)) errors.push(`${where} : déjà nommée dans une autre étape`);
-        seen.add(piece);
-        const def = c.props[piece];
-        if (!def) {
-          errors.push(`${where} : absente de props.json`);
+  for (const [key, plan] of Object.entries(c.plans)) {
+    const at = `plans.json '${key}'`;
+    const err = (msg: string) => errors.push(`${at} : ${msg}`);
+    if (!KEBAB_CASE.test(key)) err('la clé doit être un identifiant anglais en kebab-case');
+    const stake = c.items[plan.stake];
+    if (!stake) err(`piquet '${plan.stake}' absent de items.json`);
+    else if (stake.hands !== 1) err(`piquet '${plan.stake}' : il se tient à une main`);
+    if (!c.props[plan.planted]) err(`piquet planté '${plan.planted}' absent de props.json`);
+    else if (c.props[plan.planted].take || c.props[plan.planted].body || c.props[plan.planted].bodies) err(`piquet planté '${plan.planted}' : ni 'take' ni collision (il se plante, il ne gêne pas)`);
+    const { w, d } = plan.footprint;
+    const want = { nw: [0, 0], ne: [w, 0], se: [w, d], sw: [0, d] };
+    for (const [corner, xy] of Object.entries(want)) {
+      const got = plan.corners[corner as keyof typeof want];
+      if (got[0] !== xy[0] || got[1] !== xy[1]) err(`coin '${corner}' en (${got}) : l'emprise de ${w} × ${d} cm le met en (${xy})`);
+    }
+    const earlier = new Set<string>();
+    const cornersUsed = new Set<string>();
+    let sawSoon = false;
+    plan.steps.forEach((step, i) => {
+      const where = `${at} étape ${i + 1} (« ${step.name} »)`;
+      if (step.soon) sawSoon = true;
+      else if (sawSoon) errors.push(`${where} : ouverte après une étape à venir (les étapes ouvertes viennent d'abord)`);
+      const here = new Set<string>();
+      for (const [id, place] of Object.entries(step.places)) {
+        const pw = `${where}, place '${id}'`;
+        if (earlier.has(id) || here.has(id)) errors.push(`${pw} : nom déjà pris dans ce plan`);
+        here.add(id);
+        for (const o of place.on) if (!earlier.has(o)) errors.push(`${pw} : repose sur '${o}', qui n'est pas une place d'une étape d'avant`);
+        if (place.corner) {
+          if (cornersUsed.has(place.corner)) errors.push(`${pw} : le coin '${place.corner}' est déjà celui d'une autre place`);
+          cornersUsed.add(place.corner);
+        }
+        if (step.soon) continue;
+        const piece = c.props[place.piece];
+        if (!piece) errors.push(`${pw} : pièce '${place.piece}' absente de props.json`);
+        else if (piece.roof && (piece.body || piece.bodies)) errors.push(`${pw} : une pièce de toit ('roof') ne bloque pas le passage`);
+        const accepts = place.accepts ?? step.accepts;
+        if (!accepts) {
+          errors.push(`${pw} : rien n'est dit de la pièce à apporter ('accepts', sur la place ou sur l'étape)`);
           continue;
         }
-        if (map && !map.objects.some((o) => o.type === piece)) errors.push(`${where} : posée nulle part sur la carte '${b.map}'`);
-        if (def.roof && (def.body || def.bodies)) errors.push(`${where} : une pièce de toit ('roof') ne bloque pas le passage`);
+        if (accepts.prop) {
+          const held = c.props[accepts.prop];
+          if (!held) errors.push(`${pw} : '${accepts.prop}' (accepts) absent de props.json`);
+          else if (!held.take) errors.push(`${pw} : '${accepts.prop}' (accepts) ne se prend pas (pas de 'take')`);
+          else if (propMass(accepts.prop, undefined, c) > c.strength.carry) errors.push(`${pw} : '${accepts.prop}' pèse plus que Xéros ne porte (${c.strength.carry} kg)`);
+        } else if (!c.items[accepts.item!]) errors.push(`${pw} : '${accepts.item}' (accepts) absent de items.json`);
       }
+      for (const id of here) earlier.add(id);
     });
+    if (plan.steps.every((s) => s.soon)) err('aucune étape ouverte : le chantier ne peut pas commencer');
+    if (!plan.steps[0].soon && Object.values(plan.steps[0].places).some((p) => p.on.length)) err('la première étape se pose sur le sol : ses places ne reposent sur rien');
   }
   return errors;
 }
@@ -512,6 +567,7 @@ function validateMasses(c: Content, cat: Catalog): string[] {
     const weighs = !!p.take || !!p.roll;
     if (weighs && p.mass === undefined) err(`${at} : pas de masse ('mass') : tout objet qu'on prend ou qu'on roule en a une`);
     if (p.mass === 'wood' && !(p.dims.shape === 'cylinder')) err(`${at} : 'mass: "wood"' est le calcul d'une pièce de bois cylindrique (dims.shape 'cylinder')`);
+    if (p.mass === 'stone' && p.dims.shape !== 'box') err(`${at} : 'mass: "stone"' est le calcul d'une pierre en boîte (dims.shape 'box')`);
     if (typeof p.mass === 'object' && 'pile' in p.mass && !c.piles[p.mass.pile]) err(`${at} : masse d'un tas '${p.mass.pile}' introuvable dans piles.json`);
     if (typeof p.mass === 'object' && 'share' in p.mass && c.props[p.mass.of]?.mass !== 'wood') err(`${at} : masse en part de '${p.mass.of}', qui doit être une pièce de bois ('mass: "wood"')`);
     if (p.mass !== undefined && p.length && typeof p.mass !== 'number') err(`${at} : un objet à longueur mesurée a une masse saisie (celle de sa longueur neuve)`);
@@ -643,8 +699,8 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));
 
-  // Bâtiments : pièces, étapes du chantier, carte
-  addAll(validateBuildings(c));
+  // Plans de bâtiment : emprise, étapes du chantier, places
+  addAll(validatePlans(c));
 
   // Interface : la jauge de E maintenu (de vide à plein) et les chiffres du nombre de pièces d'un tas
   if (!cat.animations.get('ui-gauge')?.has('fill')) err("Interface : planche 'ui-gauge' et son animation 'fill' non dessinées (jauge de E maintenu)");
