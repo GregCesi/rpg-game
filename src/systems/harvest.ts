@@ -203,7 +203,7 @@ export class HarvestSystem {
     if (!h.tool && tool) return { kind: 'none' };
     if (h.notch) return this.notchHit(prop, facing);
     if (h.staged) return this.stagedHit(prop, facing);
-    if (prop.def.bears) return this.cutBorne(prop, facing);
+    if (prop.def.bears?.prop) return this.cutBorne(prop, facing);
     prop.hits++;
     if (h.impact) this.chips(prop, h.impact, facing);
     if (prop.hits < h.hits) {
@@ -260,7 +260,7 @@ export class HarvestSystem {
    */
   private cutBorne(prop: PlacedProp, facing: Facing): HitResult {
     const { bears, harvest: h } = prop.def;
-    const len = props[bears!.prop].length!;
+    const len = props[bears!.prop!].length!;
     const remaining = Math.max(0, (prop.length ?? len.start) - len.cut);
     if (h!.impact) this.chips(prop, h!.impact, facing);
     this.shake(prop);
@@ -281,7 +281,7 @@ export class HarvestSystem {
     }
     const { dropped } = this.dropAll([{ item: len.piece, min: 1, max: 1, give: false }], at.baseX, at.baseY);
     for (const g of dropped) this.pop(g, at.baseX, at.baseY);
-    return { kind: 'hit', done: remaining === 0, given: 0, overflow: false, cut: { prop: bears!.prop, remaining } };
+    return { kind: 'hit', done: remaining === 0, given: 0, overflow: false, cut: { prop: bears!.prop!, remaining } };
   }
 
   /** Chaque pièce de la chaîne dont l'encoche est coupée et qui est séparée à gauche devient sa bille, à la même place. */

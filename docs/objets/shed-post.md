@@ -5,7 +5,7 @@ Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hau
 ## Identité
 - Clés : `shed-post-high` (les deux poteaux du nord, côté haut), `shed-post-low` (les deux du sud, côté bas).
 - Noms affichés : poteau (côté haut), poteau (côté bas).
-- Nature : objets du monde (`props.json`), sans `take` : pièces de bâtiment posées dans Tiled, étape « les poteaux ».
+- Nature : objets du monde (`props.json`), sans `take` : pièces de bâtiment, places de l'étape « les poteaux » du plan `woodshed` (`plans.json`, étape « à venir » : les fantômes paraissent quand les quatre dés sont posés).
 - Mains : aucune pour l'instant.
 
 ## Dimensions (gabarit)
@@ -18,7 +18,7 @@ Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hau
 - À l'écran : W = 4 px ; H + D/2 = 60 + 2 = **4 × 62** (haut), 34 + 2 = **4 × 36** (bas).
 - Sous lui, dans son image, 3 rangées vides : la hauteur du dé. Le bas de l'image est le bord sud du poteau au sol
   (c'est sa profondeur d'affichage) ; son pied se dessine sur le dessus du dé.
-- Dans `ferme.tmj` (coin bas gauche de l'image) : hauts en (608, 68) et (669, 68), images de 4 × 65 ; bas en (608, 139)
+- Dans `plans.json` (en cm depuis le piquet nord-ouest : (−10, 5), (295, 5) au nord, (−10, 360), (295, 360) au sud ; ancien emplacement dans `ferme.tmj`, coin bas gauche de l'image) : hauts en (608, 68) et (669, 68), images de 4 × 65 ; bas en (608, 139)
   et (669, 139), images de 4 × 39. Chacun centré sur son dé, à un pixel du bord sud du dé.
 
 ## Masse
@@ -39,7 +39,7 @@ Seul ; quatre par abri, aux quatre coins : nord-ouest, nord-est, sud-ouest, sud-
 - E court, E maintenu, Espace, R, Q : rien.
 
 ## Origine
-Posés dans `ferme.tmj` avec l'abri. Plus tard : une bille équarrie à la hache sur le billot, portée à deux mains, dressée
+Places du plan `woodshed` (étape « à venir »). Plus tard : une bille équarrie à la hache sur le billot, portée à deux mains, dressée
 sur son dé : pas encore construit.
 
 ## Devenir

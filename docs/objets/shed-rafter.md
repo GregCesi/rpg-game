@@ -3,7 +3,7 @@
 ## Identité
 - Clé : `shed-rafter`.
 - Nom affiché : chevron.
-- Nature : objet du monde (`props.json`), sans `take` : pièce de bâtiment posée dans Tiled, étape « les chevrons »,
+- Nature : objet du monde (`props.json`), sans `take` : pièce de bâtiment, place de l'étape « les chevrons » du plan `woodshed` (`plans.json`, étape « à venir »),
   cinq fois. Pièce du toit (`roof`) : elle s'efface avec lui.
 - Mains : aucune pour l'instant.
 
@@ -17,7 +17,7 @@
   dessiné 2 × 123. Plus étroit que le plancher de lisibilité : dessiné à sa taille réelle.
 - Dans son image, sous lui, la hauteur qui le sépare du sol (38 rangées vides) ; le bas de l'image est un pixel au sud de
   son bout sud au sol (sa profondeur d'affichage, au-dessus des sablières qu'il couvre).
-- Dans `ferme.tmj` (coin bas gauche de l'image, 2 × 161) : x = 610, 625, 641, 656, 671 ; y = 146. Les deux de rive sont
+- Dans `plans.json` (en cm depuis le piquet nord-ouest, coin bas gauche de l'image, 2 × 161) : x = 0, 75, 155, 230, 305 ; y = 395 (reprise de l'abri d'avant, qui était posé dans `ferme.tmj`). Les deux de rive sont
   sur le côté droit des sablières de côté (leur contour sombre tombe sur celui de la sablière).
 
 ## Masse
@@ -36,7 +36,7 @@ Seul ; cinq par abri, tous les 75 à 80 cm (deux de rive sur les sablières de c
 - E court, E maintenu, Espace, R, Q : rien.
 
 ## Origine
-Posés dans `ferme.tmj` avec l'abri. Plus tard : une perche équarrie (un arbre normal, plus fin) : pas encore construit.
+Places du plan `woodshed` (étape « à venir » : le chantier ne les ouvre pas encore). Plus tard : une perche équarrie (un arbre normal, plus fin) : pas encore construit.
 
 ## Devenir
 Porte le toit de planches. Ne bloque pas le passage. Pièce du toit : quand Xéros est sous le toit (ou caché derrière),

@@ -184,6 +184,10 @@
     "big-wedged-log-east",
     "big-wedged-log-ns-north",
     "big-wedged-half-log-east",
-    "big-wedged-half-log-ns-north"
+    "big-wedged-half-log-ns-north",
+    "planted-stake",
+    "chopping-block-branch",
+    "flat-stone",
+    "plan-tablet"
   ]
 }

@@ -1,6 +1,7 @@
 // Les masses : tout objet qu'on prend, pose ou roule a une masse en kg (validate.ts l'exige). Sans Phaser.
 // - saisie (`mass` : un nombre dans items.json ou props.json) ;
 // - calculée pour le bois : volume du tronc tiré de `dims` × densité du bois vert (`"mass": "wood"`) ;
+// - calculée pour la pierre : volume de la boîte de `dims` × densité de la pierre (`"mass": "stone"`) ;
 // - une part d'un autre objet de bois (`{ "share": 0.25, "of": "big-felled-log" }` : le quartier, un quart de la bille) ;
 // - calculée pour un fagot : la somme des branches d'un tas plein de son genre plus son lien (`{ "pile": genre }`) ;
 // - au prorata de sa longueur pour une quantité mesurée (le rouleau de corde : 1 kg les 10 m).
@@ -12,6 +13,9 @@ import type { ItemDef, PileDef, PropDef } from './types';
 
 /** Densité du bois vert, kg/m³ : une seule constante pour toutes les pièces de bois. */
 export const WOOD_DENSITY = 900;
+
+/** Densité de la pierre, kg/m³ : une seule constante pour toutes les pierres, à côté de celle du bois. */
+export const STONE_DENSITY = 2600;
 
 /** Ce qu'il faut du contenu pour peser : mêmes tables que `src/content/index.ts` (validate.ts passe les siennes). */
 export interface MassCatalog {
@@ -40,6 +44,11 @@ export function woodMass(d: Dims): number {
   return Math.PI * (diameter / 200) ** 2 * (length / 100) * WOOD_DENSITY;
 }
 
+/** Masse d'une pierre de ces dimensions (la boîte de ses `dims`, contour compris), en kg : 30 × 30 × 15 cm donne 35 kg. */
+export function stoneMass(d: Dims): number {
+  return (d.w / 100) * (d.d / 100) * (d.h / 100) * STONE_DENSITY;
+}
+
 /** Nombre de places d'un genre de tas (son maximum). */
 const capacity = (g: PileDef) => Object.keys(g.places).length;
 
@@ -65,6 +74,7 @@ export function propMass(key: string, length?: number, cat: MassCatalog = CONTEN
   if (m === undefined) throw new Error(`props.json '${key}' : pas de masse`);
   let kg: number;
   if (m === 'wood') kg = woodMass(def.dims);
+  else if (m === 'stone') kg = stoneMass(def.dims);
   else if (typeof m === 'number') kg = m;
   else if ('share' in m) kg = m.share * propMass(m.of, undefined, cat);
   else {

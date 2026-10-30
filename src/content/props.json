@@ -46,7 +46,7 @@
   "bucket": {"name": "seau", "image": "bucket", "dims": {"w": 30, "d": 30, "h": 30, "shape": "cylinder", "axis": "up"}, "body": {"w": 6, "h": 3, "bottom": 3}, "interact": "seau"},
   "cottage": {"name": "chaumière", "image": "cottage", "dims": {"w": 1660, "d": 780, "h": 610, "shape": "box"}, "bodies": [{"x": 56, "y": 40, "w": 276, "h": 156}, {"x": 0, "y": 104, "w": 72, "h": 92}], "smoke": [[178, 2], [260, 72]]},
   "woodpile": {"name": "tas de bois", "image": "woodpile", "dims": {"w": 195, "d": 60, "h": 90, "shape": "box"}, "body": {"w": 40, "h": 12, "bottom": 2}},
-  "chopping-block": {"name": "billot", "image": "chopping-block", "dims": {"w": 55, "d": 55, "h": 45, "shape": "cylinder", "axis": "up"}, "body": {"w": 10, "h": 5, "bottom": 4}, "rest": {"rope-coil": "chopping-block-rope"}},
+  "chopping-block": {"name": "billot", "image": "chopping-block", "dims": {"w": 55, "d": 55, "h": 45, "shape": "cylinder", "axis": "up"}, "body": {"w": 10, "h": 5, "bottom": 4}, "rest": {"rope-coil": "chopping-block-rope", "branch": "chopping-block-branch"}},
   "chopping-block-rope": {"name": "billot et rouleau de corde", "image": "chopping-block-rope", "dims": {"w": 55, "d": 55, "h": 55, "shape": "cylinder", "axis": "up"}, "body": {"w": 10, "h": 5, "bottom": 4}, "bears": {"prop": "rope-coil", "empty": "chopping-block"},
     "harvest": {"tool": "axe", "hits": 1, "impact": "wood", "gesture": "chop"}},
   "rope-coil": {"name": "rouleau de corde", "image": "rope-coil", "dims": {"w": 30, "d": 30, "h": 10, "shape": "cylinder", "axis": "up"}, "mass": 1, "take": {"hands": 1, "icon": "item-rope-coil", "hold": {"stance": "hand", "image": "held-rope-coil"}}, "length": {"start": 1000, "cut": 200, "piece": "rope-tie"}},
@@ -111,5 +111,12 @@
   "big-quarter-log-ns": {"name": "quartier (nord-sud)", "image": "big-quarter-log-ns", "dims": {"w": 33, "d": 95, "h": 33, "shape": "box"}, "mass": {"share": 0.25, "of": "big-felled-log"}, "body": {"w": 6, "h": 15, "bottom": 2}, "take": {"hands": 2, "icon": "item-big-quarter-log", "hold": {"stance": "carry", "image": "held-big-quarter-log"}, "pile": "big-quarters", "turned": true}},
   "maul-ground": {"name": "masse de bûcheron", "image": "maul-ground", "dims": {"w": 80, "d": 15, "h": 8, "shape": "box"}, "harvest": {"hits": 1, "drops": [{"item": "maul", "min": 1, "max": 1, "give": true}]}},
   "splitting-wedge-ground": {"name": "coin de fendage", "image": "splitting-wedge-ground", "dims": {"w": 20, "d": 7, "h": 4, "shape": "box"}, "harvest": {"hits": 1, "drops": [{"item": "splitting-wedge", "min": 1, "max": 1, "give": true}]}},
-  "well": {"name": "puits", "image": "well", "dims": {"w": 235, "d": 160, "h": 215, "shape": "box"}, "body": {"w": 34, "h": 12, "bottom": 4}}
+  "well": {"name": "puits", "image": "well", "dims": {"w": 235, "d": 160, "h": 215, "shape": "box"}, "body": {"w": 34, "h": 12, "bottom": 4}},
+  "planted-stake": {"name": "piquet planté", "image": "planted-stake", "dims": {"w": 5, "d": 5, "h": 75, "shape": "box"}},
+  "chopping-block-branch": {"name": "billot et branche", "image": "chopping-block-branch", "dims": {"w": 100, "d": 55, "h": 50, "shape": "box"}, "body": {"w": 10, "h": 5, "bottom": 4},
+    "bears": {"item": "branch", "empty": "chopping-block"},
+    "harvest": {"tool": "axe", "hits": 1, "impact": "wood", "gesture": "chop", "effort": "chop", "becomes": "chopping-block", "drops": [{"item": "stake", "min": 1, "max": 1}]}},
+  "flat-stone": {"name": "pierre plate", "image": "flat-stone", "dims": {"w": 30, "d": 30, "h": 15, "shape": "box"}, "mass": "stone",
+    "take": {"hands": 2, "icon": "item-flat-stone", "hold": {"stance": "carry", "image": "held-flat-stone"}}},
+  "plan-tablet": {"name": "planchette gravée", "image": "plan-tablet", "dims": {"w": 30, "d": 20, "h": 2, "shape": "box"}, "teaches": "woodshed"}
 }

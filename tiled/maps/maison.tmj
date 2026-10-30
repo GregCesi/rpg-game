@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 21,
+  "nextobjectid": 23,
   "properties": [
     {
       "name": "name",
@@ -236,6 +236,30 @@
           "width": 6,
           "height": 5,
           "gid": 1084
+        },
+        {
+          "id": 21,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "table",
+          "x": 556,
+          "y": 326,
+          "width": 48,
+          "height": 32,
+          "gid": 1031
+        },
+        {
+          "id": 22,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "plan-tablet",
+          "x": 576,
+          "y": 326,
+          "width": 7,
+          "height": 20,
+          "gid": 1092
         }
       ]
     },

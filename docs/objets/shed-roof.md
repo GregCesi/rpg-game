@@ -23,7 +23,7 @@
   l'avant-toit est devant.
 - **Emprise au sol dans le repère de l'image** (pour l'ombre portée) : x = 0, y = 72, largeur 73 px, profondeur 89 px
   (rangées 72 à 160 ; la rangée 161 est le pixel de marge au sud). Dans la carte : x de 604 à 676, y de 57 à 145.
-- Dans `ferme.tmj` : coin bas gauche de l'image en (604, 147), 73 × 162. Le haut de l'image est à y = −15 : les 15
+- Dans `plans.json` : coin bas gauche de l'image en (−30, 400) cm depuis le piquet nord-ouest, 73 × 162 (reprise de l'abri d'avant, qui était posé dans `ferme.tmj`). Le haut de l'image est à y = −15 : les 15
   rangées du haut du toit (le bord nord) dépassent du haut de la carte.
 
 ## Masse
@@ -49,7 +49,7 @@ Seul ; un par abri.
 - E court, E maintenu, Espace, R, Q : rien.
 
 ## Origine
-Posé dans `ferme.tmj` avec l'abri. Plus tard : des planches refendues dans une bille (coins et maillet), clouées sur des
+Place du plan `woodshed` (étape « à venir » : le chantier ne l'ouvre pas encore). Plus tard : des planches refendues dans une bille (coins et maillet), clouées sur des
 liteaux, de bas en haut : pas encore construit.
 
 ## Devenir

@@ -3,9 +3,10 @@
 ## Identité
 - Clé : `footing-stone`.
 - Nom affiché : dé de pierre.
-- Nature : objet du monde (`props.json`), sans `take` : une pièce de bâtiment, posée dans Tiled. Premier geste du chantier
-  de l'abri à bois (`buildings.json`, étape « les dés »). Il resservira sous les poteaux de la cabane.
-- Mains : aucune pour l'instant (il ne se prend pas).
+- Nature : objet du monde (`props.json`), sans `take` : une pièce de bâtiment. Il n'est plus posé dans Tiled : il naît quand Xéros
+  pose une pierre plate (`flat-stone`) sur une place de l'étape « les dés » du plan (`plans.json`, `woodshed`). Il resservira sous
+  les poteaux de la cabane.
+- Mains : aucune (il ne se prend pas : c'est la pierre plate qu'on porte).
 
 ## Dimensions (gabarit)
 - Pierre plate, à peu près cubique, posée à plat : 30 × 30 cm, 15 cm de haut, contour compris.
@@ -13,12 +14,12 @@
 - À l'écran : W = 6 px ; H + D/2 = 3 + 3 = **6 px** : **6 × 6**, le dessus en 3 rangées, la face sud en 3.
 - Il isole le poteau de l'humidité du sol : le bois ne pourrit pas par le pied.
 - Sous l'abri : quatre dés, aux coins d'un rectangle de 61 px (3,05 m) d'est en ouest et 71 px (3,55 m) du nord au sud,
-  d'axe en axe (le rang sud reculé pour la pente de 20° du toit). Dans `ferme.tmj` : (607, 70), (668, 70), (607, 141),
-  (668, 141), coin bas gauche de l'image de 7 × 7.
+  d'axe en axe (le rang sud reculé pour la pente de 20° du toit). Dans `plans.json` (`woodshed`, en cm depuis le piquet
+  nord-ouest, coin bas gauche de l'image de 7 × 7) : (-15, 15), (290, 15), (290, 370), (-15, 370).
 
 ## Masse
-- Pas encore déplaçable (le chantier est posé tout construit) : pas de masse saisie. Ordre de grandeur : 30 × 30 × 15 cm de pierre
-  (2 400 kg/m³), environ 32 kg ; à saisir quand on pourra le porter.
+- Pas déplaçable une fois posé : pas de masse. La pierre plate dont il naît pèse 35 kg (30 × 30 × 15 cm × 2 600 kg/m³ :
+  [pierre plate](flat-stone.md)).
 
 ## Vues
 - Au sol : `footing-stone`, 6 × 6 px, pierre de la palette (`R r z Z`), dessus clair, face sud plus sombre, un coin
@@ -34,14 +35,14 @@ Seul. Quatre par abri, un sous chaque poteau.
 - E court, E maintenu, Espace, R, Q : rien.
 
 ## Origine
-Posé dans `ferme.tmj` avec l'abri. Plus tard, ramassé dans les champs (épierrage) ou au rocher, porté et posé de niveau :
-pas encore construit.
+Naît d'une pierre plate posée sur une place du chantier (E, la pierre portée à deux mains), la pierre trouvée sur la berge de la
+ferme. Le piquet du coin est arraché au même moment.
 
 ## Devenir
 Reste sous son poteau. Ne bloque pas le passage (seul le poteau bloque) ; il est dessiné à plat sous les personnages
 (`layer: floor`), comme ce qui dépasse à peine du sol.
 
 ## Vérification
-- Aperçu : `.art-preview/footing-stone.png`, `.art-preview/woodshed-1.png` (les quatre dés en place), à côté de
+- Aperçu : `.art-preview/footing-stone.png`, `.art-preview/woodshed-1.png` (les quatre dés en place, d'après le plan), à côté de
   `gabarit.png` (le cube de 50 cm est un peu plus grand).
 - En jeu : marcher sur un dé sans être arrêté ; il reste sous les pieds de Xéros.

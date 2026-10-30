@@ -26,7 +26,7 @@ import { hewnTone } from './wood';
  * haut et deux rangées de pierre claire R r, où se pose le pied du poteau), face sud en 3 rangées (z Z, puis le
  * contour du bas). Coin nord-est émoussé. Ombre portée sous la base, décalée à droite.
  */
-function footingStone(): Canvas {
+export function footingStone(): Canvas {
   return Canvas.from([
     'ZZZZZ..',
     'ZRRRro.',

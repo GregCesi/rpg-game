@@ -7,7 +7,7 @@ Une fiche pour les quatre sablières de l'abri à bois : les poutres posées en 
   est-ouest, sur les poteaux du sud), `shed-plate-side` (sablière de côté, nord-sud, posée deux fois : à l'ouest et à
   l'est, de la tête d'un poteau haut à celle d'un poteau bas, donc en pente, à 20°).
 - Noms affichés : sablière haute, sablière basse, sablière de côté.
-- Nature : objets du monde (`props.json`), sans `take` : pièces de bâtiment posées dans Tiled, étape « les sablières ».
+- Nature : objets du monde (`props.json`), sans `take` : pièces de bâtiment, places de l'étape « les sablières » du plan `woodshed` (`plans.json`, étape « à venir »).
 - Mains : aucune pour l'instant (deux, plus tard : pièce longue).
 
 ## Dimensions (gabarit)
@@ -25,7 +25,7 @@ Une fiche pour les quatre sablières de l'abri à bois : les poutres posées en 
 - Dans son image, sous elle, la hauteur qui la sépare du sol (vide). Le bas de l'image est sa profondeur d'affichage :
   un pixel au sud du pied des poteaux pour la haute (elle couvre leur tête) et pour celles de côté, deux pour la basse
   (elle passe devant le bout des sablières de côté).
-- Dans `ferme.tmj` (coin bas gauche de l'image) : haute en (608, 69), image de 65 × 69 (64 rangées vides) ; basse en
+- Dans `plans.json` (en cm depuis le piquet nord-ouest : −10 cm, 10 cm au nord ; −10, 365 pour les côtés ; −10, 370 au sud ; ancien emplacement dans `ferme.tmj`, coin bas gauche de l'image) : haute en (608, 69), image de 65 × 69 (64 rangées vides) ; basse en
   (608, 141), 65 × 44 (39 rangées vides) ; de côté en (608, 140) et (669, 140), 4 × 142 (38 rangées vides).
 
 ## Masse
@@ -46,7 +46,7 @@ Seules ; quatre par abri, en cadre sur la tête des poteaux (assemblage à mi-bo
 - E court, E maintenu, Espace, R, Q : rien.
 
 ## Origine
-Posées dans `ferme.tmj` avec l'abri. Plus tard : un tronc équarri, porté à deux, posé sur les poteaux : pas encore
+Places du plan `woodshed` (étape « à venir »). Plus tard : un tronc équarri, porté à deux, posé sur les poteaux : pas encore
 construit.
 
 ## Devenir

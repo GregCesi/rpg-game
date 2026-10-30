@@ -1,6 +1,7 @@
 {
   "branch": {"name": "branche", "icon": "item-branch", "kind": "resource", "hold": {"stance": "hand", "image": "held-branch"}, "ground": "branch-ground", "pile": "branches", "mass": 2.5},
   "rope-tie": {"name": "lien", "icon": "item-rope-tie", "kind": "resource", "hold": {"stance": "hand", "image": "held-rope-tie"}, "ground": "rope-tie-ground", "mass": 0.2},
+  "stake": {"name": "piquet", "icon": "item-stake", "kind": "resource", "hold": {"stance": "hand", "image": "held-stake"}, "ground": "stake-ground", "mass": 1},
   "stone": {"name": "pierre", "icon": "item-stone", "kind": "resource", "mass": 1.5},
   "iron-ore": {"name": "minerai de fer", "icon": "item-iron-ore", "kind": "resource", "mass": 2},
   "straw": {"name": "paille", "icon": "item-straw", "kind": "resource", "mass": 0.3},

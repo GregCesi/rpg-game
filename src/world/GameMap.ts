@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { DEPTH, SHADOW, TILE } from '../config';
 import { roofShadow } from './roofShadow';
 import { items, piles as pileDefs, props as propDefs } from '../content';
-import type { MapData, MapObject, PileDef, PropDef } from '../content/types';
+import type { Corner, MapData, MapObject, PileDef, PropDef } from '../content/types';
 import { drawOrder, pileBlocks, placeAim, shapeOf, tieImages, topPieces } from './pileShape';
 import type { Chain, GroundItem, MapState, Pile } from '../state';
 import type { Npc } from '../entities/Npc';
@@ -138,8 +138,9 @@ export interface PlacedPile {
 }
 
 /**
- * Ce que fait la touche E devant une cible. `rest` : poser ce qu'on tient sur l'objet (le rouleau sur le billot) ;
- * `unload` : reprendre ce qu'il porte ; `tie` : reprendre le lien d'un tas qui n'a plus de pièce.
+ * Ce que fait la touche E devant une cible. `rest` : poser ce qu'on tient sur l'objet (le rouleau, la branche sur le billot) ;
+ * `unload` : reprendre ce qu'il porte ; `tie` : reprendre le lien d'un tas qui n'a plus de pièce ; `learn` : l'objet enseigne un
+ * plan (la planchette) ; `stake` : reprendre un piquet planté ; `site-place` : poser ce qu'on tient à une place du chantier.
  */
 export type Action =
   | { kind: 'talk'; dialogue: string; npc?: Npc }
@@ -150,11 +151,14 @@ export type Action =
   | { kind: 'rest'; prop: PlacedProp }
   | { kind: 'unload'; prop: PlacedProp }
   | { kind: 'tie'; pile: PlacedPile }
-  | { kind: 'turn'; prop: PlacedProp };
+  | { kind: 'turn'; prop: PlacedProp }
+  | { kind: 'learn'; prop: PlacedProp; plan: string }
+  | { kind: 'stake'; site: number; corner: Corner }
+  | { kind: 'site-place'; site: number; place: string };
 
 /** Longueur d'un objet neuf (posé dans Tiled) : celle de son `length`, ou de l'objet qu'il porte (`bears`). */
 function startLength(def: PropDef): number | undefined {
-  return def.length?.start ?? (def.bears ? propDefs[def.bears.prop].length?.start : undefined);
+  return def.length?.start ?? (def.bears?.prop ? propDefs[def.bears.prop].length?.start : undefined);
 }
 
 /** Ce avec quoi le joueur peut interagir avec E. (x, y) = centre de sa base au sol ; top = haut de l'image. */
@@ -234,8 +238,8 @@ export class GameMap {
 
   /**
    * Ce que E peut viser en ce moment : dialogues, récoltes à la main, objets à prendre, objets au sol, pièces de tas,
-   * lien seul d'un tas, objets qui portent quelque chose ; et, `held` étant l'objet du monde dans la main active (le
-   * rouleau), les objets sur lesquels le poser (`rest`).
+   * lien seul d'un tas, objets qui portent quelque chose ; et, `held` étant la clé de ce que tient la main active (le
+   * rouleau, la branche), les objets sur lesquels le poser (`rest`).
    */
   interactables(held?: string): Interactable[] {
     const list: Interactable[] = [];
@@ -243,6 +247,7 @@ export class GameMap {
       const dialogue = p.interact ?? p.def.interact;
       if (held && p.def.rest?.[held]) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'rest', prop: p } });
       else if (dialogue) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'talk', dialogue } });
+      else if (p.def.teaches) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'learn', prop: p, plan: p.def.teaches } });
       // ce qu'il porte se reprend avec E (le rouleau sur le billot) ; on le coupe avec l'outil (Espace)
       else if (p.def.bears) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'unload', prop: p } });
       else if (p.def.harvest && !p.def.harvest.tool) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'harvest', prop: p } });
