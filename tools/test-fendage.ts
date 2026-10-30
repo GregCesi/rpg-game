@@ -1,7 +1,8 @@
 // Test de scénario du fendage, dans le vrai jeu : un Chromium sans écran pilote le jeu servi par Vite, avec de vrais
-// appuis de touches (Espace, R), comme le joueur. De la grosse bille posée par ?dieu jusqu'aux quatre quartiers :
-// refus (hache, masse sans coin), planter le coin, trois coups de masse, demi-billes, coin lâché, quartiers, masses,
-// endurance, coups gardés dans GameState, quartier tourné et tas de quartiers.
+// appuis de touches (Espace, R), comme le joueur. De la grosse bille de 1 m posée par ?dieu (une pièce de bois `big`, ronde)
+// jusqu'aux quatre quartiers : refus (cognée sur une pièce trop courte pour être recoupée, masse sans coin), planter le coin,
+// trois coups de masse, demi-billes, coin lâché, quartiers, masses, endurance, coups gardés dans GameState (les réglages de la
+// pièce), quartier tourné et tas de quartiers.
 // Usage : npm run test:fendage (lancé aussi par npm run test). Le Chromium et le serveur : tools/lib/playtest.ts.
 
 import assert from 'node:assert/strict';
@@ -33,7 +34,10 @@ await playtest('fendage', async ({ page, errors, load }) => {
       for (let i = 0; i < 100 && w().mode !== 'play'; i++) await sleep(50);
       await sleep(600);
     };
-    const props = (re: RegExp) => w().map.props.filter((p: any) => re.test(p.type));
+    // les pièces de bois posées, d'une forme donnée, et celles où un coin est planté
+    const pieces = (shape: string) => w().map.props.filter((p: any) => p.wood?.shape === shape && !p.wood.wedge);
+    const wedged = () => w().map.props.filter((p: any) => p.wood?.wedge);
+    const wood = (shape: string, axis = 'ew') => ({ size: 'big', length: 100, shape, axis });
     const spawned = () => gs.mapState(gs.game, w().map.def.id).spawned;
     // Xéros à un bout du morceau, tourné vers sa face coupée, collé à sa collision : le coin et la masse s'y donnent
     const standAt = async (p: any, end: string) => {
@@ -52,10 +56,11 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await sleep(150);
     };
     const stand = (p: any) => standAt(p, 'west');
-    // Xéros au nord du morceau, tourné vers son flanc
+    // Xéros au nord du morceau, collé à son flanc, tourné vers lui
     const standFlank = async (p: any) => {
       const a = w().player.actor;
-      a.body.reset(Math.round((p.box.left + p.box.right) / 2), Math.round(p.box.top - 4));
+      // collé au flanc : le bas de sa collision touche le haut de celle du morceau
+      a.body.reset(Math.round((p.box.left + p.box.right) / 2), Math.round(p.box.top - (a.body.bottom - a.y) - 0.5));
       a.face('down');
       await sleep(150);
     };
@@ -67,17 +72,20 @@ await playtest('fendage', async ({ page, errors, load }) => {
 
     emit({ kind: 'stamina', value: 100 });
     // une grosse bille posée devant Xéros, comme avec ?dieu
-    emit({ kind: 'prop', prop: 'big-felled-log-2' });
+    emit({ kind: 'wood', wood: wood('round') });
     await sleep(200);
-    await stand(props(/^big-felled-log-2$/).at(-1));
+    await stand(pieces('round').at(-1));
 
-    // 1. refus : la hache, puis la masse sans coin ; ni geste ni dépense
+    // 1. refus : la cognée contre le flanc (1 m ne se recoupe pas : deux bouts de moins de 60 cm), puis la masse sans coin ; ni
+    // geste ni dépense
     await give('axe');
+    await standFlank(pieces('round').at(-1));
     await press('Space');
     await sleep(300);
     out.axeNotice = notices.at(-1);
     out.axeMode = w().mode;
     await give('maul');
+    await stand(pieces('round').at(-1));
     await press('Space');
     await sleep(300);
     out.maulNotice = notices.at(-1);
@@ -85,16 +93,16 @@ await playtest('fendage', async ({ page, errors, load }) => {
 
     // 2. depuis le flanc, le coin ne se plante pas (la bille reste) ; depuis le bout, face à la coupe, si
     await give('splitting-wedge');
-    await standFlank(props(/^big-felled-log-2$/).at(-1));
+    await standFlank(pieces('round').at(-1));
     await press('Space');
     await sleep(300);
     out.flankNotice = notices.at(-1);
-    out.flankPlanted = props(/wedged/).length;
+    out.flankPlanted = wedged().length;
     out.flankHands = JSON.stringify(gs.game.hands);
-    await stand(props(/^big-felled-log-2$/).at(-1));
+    await stand(pieces('round').at(-1));
     await press('Space');
     await sleep(300);
-    out.planted = props(/wedged/).map((p: any) => p.type);
+    out.planted = wedged().map((p: any) => p.wood.wedge.end);
     out.handsAfterPlant = JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both);
     out.plantCost = 100 - w().player.stamina.value;
 
@@ -102,69 +110,75 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await give('maul');
     const hitCosts: number[] = [];
     for (let i = 1; i <= 3; i++) {
-      await stand(props(/^big-wedged-log$/)[0]);
+      await stand(wedged()[0]);
       const s = w().player.stamina.value;
       await press('Space');
       await settled();
       hitCosts.push(s - w().player.stamina.value);
-      if (i === 1) out.hitsKept = spawned().find((q: any) => q.type === 'big-wedged-log')?.hits;
+      if (i === 1) out.hitsKept = spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits;
     }
     out.hitCosts = hitCosts;
-    out.halves = props(/^big-half-log$/).length;
+    out.halves = pieces('half').length;
     out.wedgeOnGround = gs.mapState(gs.game, w().map.def.id).ground.filter((q: any) => q.item === 'splitting-wedge').length;
-    out.halfMass = mass.propMass('big-half-log');
+    out.halfMass = mass.woodMass(wood('half'));
 
     // 4. chaque moitié : le coin, puis trois coups de masse
     for (let k = 0; k < 2; k++) {
       await give('splitting-wedge');
-      await stand(props(/^big-half-log$/)[0]);
+      await stand(pieces('half')[0]);
       await press('Space');
       await sleep(300);
       await give('maul');
       for (let i = 0; i < 3; i++) {
-        await stand(props(/^big-wedged-half-log$/)[0]);
+        await stand(wedged()[0]);
         await press('Space');
         await settled();
       }
     }
-    out.quarters = props(/^big-quarter-log$/).length;
-    out.quarterMass = mass.propMass('big-quarter-log');
+    out.quarters = pieces('quarter').length;
+    out.quarterMass = mass.woodMass(wood('quarter'));
+    // le quartier ne se refend pas ici
+    await give('splitting-wedge');
+    await stand(pieces('quarter')[0]);
+    await press('Space');
+    await sleep(300);
+    out.quarterWedge = notices.at(-1);
     out.stamina = w().player.stamina.value;
     out.noRoom = notices.filter((n) => /Pas la place/.test(n));
 
-    // 4 bis. le coin se plante depuis chacun des quatre bouts : la bille qui en naît est celle de ce bout, les coups
-    // ne se donnent que depuis lui (depuis l'autre bout : le message), et trois coups fendent en deux demi-billes
+    // 4 bis. le coin se plante depuis chacun des quatre bouts : la pièce garde ce bout, les coups ne se donnent que depuis lui
+    // (depuis l'autre bout : le message), et trois coups fendent en deux demi-billes
     const ENDS = [
-      ['big-felled-log-2', 'west', 'big-wedged-log', 'east'],
-      ['big-felled-log-2', 'east', 'big-wedged-log-east', 'west'],
-      ['big-felled-log-ns', 'south', 'big-wedged-log-ns', 'north'],
-      ['big-felled-log-ns', 'north', 'big-wedged-log-ns-north', 'south'],
+      ['ew', 'west', 'east'],
+      ['ew', 'east', 'west'],
+      ['ns', 'south', 'north'],
+      ['ns', 'north', 'south'],
     ];
     const ends: unknown[] = [];
-    for (const [logType, end, want, other] of ENDS) {
+    for (const [axis, end, other] of ENDS) {
       emit({ kind: 'reset-map' });
       await sleep(1700);
       emit({ kind: 'stamina', value: 100 });
-      emit({ kind: 'prop', prop: logType });
+      emit({ kind: 'wood', wood: wood('round', axis) });
       await sleep(200);
       await give('splitting-wedge');
-      await standAt(props(new RegExp(`^${logType}$`)).at(-1), end);
+      await standAt(pieces('round').at(-1), end);
       await press('Space');
       await sleep(300);
-      const planted = props(/wedged/).map((p: any) => p.type);
+      const planted = wedged().map((p: any) => p.wood.wedge.end);
       await give('maul');
-      await standAt(props(/wedged/)[0], other);
+      await standAt(wedged()[0], other);
       notices.length = 0;
       await press('Space');
       await sleep(300);
       const wrongNotice = notices.at(-1);
-      const hitsWrong = spawned().find((o: any) => /wedged/.test(o.type))?.hits;
+      const hitsWrong = spawned().find((o: any) => o.wood?.wedge)?.wood.wedge.hits;
       for (let i = 0; i < 3; i++) {
-        await standAt(props(/wedged/)[0], end);
+        await standAt(wedged()[0], end);
         await press('Space');
         await settled();
       }
-      ends.push({ end, want, planted, wrongNotice, hitsWrong, halves: props(/half-log/).length });
+      ends.push({ end, planted, wrongNotice, hitsWrong, halves: pieces('half').length });
     }
     out.ends = ends;
 
@@ -182,7 +196,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
       w().player.actor.face('down');
       await sleep(150);
     }
-    emit({ kind: 'give', held: { prop: 'big-quarter-log' } });
+    emit({ kind: 'give', held: { prop: 'wood-piece', wood: wood('quarter') } });
     await sleep(150);
     await press('KeyR');
     await sleep(150);
@@ -204,31 +218,32 @@ await playtest('fendage', async ({ page, errors, load }) => {
   console.log(JSON.stringify(result));
   const r = result as Record<string, any>;
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
-  assert.equal(r.axeNotice, 'Trop grosse pour la hache. Il faut le coin et la masse.', 'la hache est refusée');
+  assert.equal(r.axeNotice, 'Trop court pour être recoupé.', 'la cognée ne recoupe pas une bille de 1 m');
   assert.equal(r.axeMode, 'play', 'refus sans geste');
   assert.equal(r.maulNotice, "Il faut d'abord un coin.");
   assert.equal(r.refusedCost, 0, 'un refus ne coûte rien');
   assert.equal(r.flankNotice, 'Le coin se plante dans le bout, là où on voit les cernes.', 'depuis le flanc : refusé, avec ce message');
   assert.equal(r.flankPlanted, 0, 'depuis le flanc, rien n\'est planté');
   assert.equal(r.flankHands, '[null,{"item":"splitting-wedge"}]', 'le coin reste en main');
-  assert.deepEqual(r.planted, ['big-wedged-log'], 'Espace plante le coin depuis le bout');
+  assert.deepEqual(r.planted, ['west'], 'Espace plante le coin depuis le bout');
   assert.equal(r.handsAfterPlant, '[null,null]null', 'la main est libérée');
   assert.ok(Math.abs(r.plantCost - 1) < 1e-6, `coût du plantage : ${r.plantCost}`);
   assert.equal(r.hitsKept, 1, 'le premier coup est noté dans GameState');
   assert.ok(r.hitCosts.every((c: number) => Math.abs(c - 0.8) < 1e-6), `coût des coups : ${r.hitCosts}`);
   assert.equal(r.halves, 2, 'deux demi-billes');
   assert.ok(r.wedgeOnGround >= 1, 'le coin tombe au sol');
-  assert.ok(Math.abs(r.halfMass - 101.5) < 1, `masse d'une demi-bille : ${r.halfMass}`);
+  assert.ok(Math.abs(r.halfMass - 106.9) < 0.1, `masse d'une demi-bille de 1 m : ${r.halfMass}`);
   assert.equal(r.quarters, 4, 'quatre quartiers');
-  assert.ok(Math.abs(r.quarterMass - 50.8) < 1, `masse d'un quartier : ${r.quarterMass}`);
+  assert.ok(Math.abs(r.quarterMass - 53.5) < 0.1, `masse d'un quartier de 1 m : ${r.quarterMass}`);
+  assert.equal(r.quarterWedge, 'Trop mince pour le coin.', 'le quartier ne se refend pas au coin');
   assert.deepEqual(r.noRoom, [], 'la place ne manque pas');
   for (const e of r.ends) {
-    assert.deepEqual(e.planted, [e.want], `planté depuis ${e.end} : ${e.want}`);
+    assert.deepEqual(e.planted, [e.end], `planté depuis ${e.end}`);
     assert.equal(e.wrongNotice, 'Les coups se donnent sur le bout, là où le coin est planté.', `coups depuis l'autre bout de ${e.end} : refusés`);
-    assert.equal(e.hitsWrong, undefined, 'aucun coup noté depuis l\'autre bout');
+    assert.equal(e.hitsWrong, 0, 'aucun coup noté depuis l\'autre bout');
     assert.equal(e.halves, 2, `trois coups depuis ${e.end} : deux demi-billes`);
   }
-  assert.equal(r.turned, '{"prop":"big-quarter-log","turned":true}', 'R tourne le quartier tenu');
+  assert.equal(r.turned, '{"prop":"wood-piece","wood":{"size":"big","length":100,"shape":"quarter","axis":"ns"}}', 'R tourne le quartier tenu');
   assert.ok(r.pile.includes('big-quarters:6'), `tas de quartiers : ${r.pile}`);
   console.log('  ✓ fendage : de la grosse bille aux quatre quartiers');
 });
