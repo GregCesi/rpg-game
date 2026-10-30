@@ -12,7 +12,7 @@ npm run dev            # http://localhost:5173  (?debug : collisions ; ?reset : 
 npm run art            # art/ -> PNG, manifestes et tilesets Tiled (à lancer une fois avant d'ouvrir Tiled)
 npm run maps           # cartes Tiled (tiled/maps/*.tmj) -> src/generated/maps.ts
 npm run sketch -- <id> # fait naître tiled/maps/<id>.tmj depuis tiled/sketches/<id>.json (grille de lettres)
-npm run test           # tests : l'outil d'esquisse, puis quatre scénarios dans le vrai jeu (Chromium sans écran : npm run test:fendage, npm run test:implantation, npm run test:equarrissage, npm run test:tas)
+npm run test           # tests : l'outil d'esquisse, puis cinq scénarios dans le vrai jeu (Chromium sans écran : npm run test:fendage, npm run test:implantation, npm run test:equarrissage, npm run test:tas, npm run test:poteaux)
 npm run check          # art, maps, puis vérifie tout le contenu sans lancer le jeu (formats + références croisées)
 npm run build          # check, test, puis build web dans dist/
 npm run build:single   # un seul fichier HTML autonome dans dist-single/

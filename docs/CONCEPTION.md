@@ -236,8 +236,7 @@ précède) :
 - **Le chantier.** On voit en fantôme seulement les places de l'étape en cours : les quatre dés, aux coins. Pierre en main, E sur
   une place : le dé est posé, et le piquet de ce coin est arraché et retombe au sol à côté, réutilisable. Autre chose en main :
   « Il faut une pierre plate. » Près du chantier, une petite ligne d'état : « Abri à bois : dés, 2 sur 4 ». Les quatre dés
-  posés : « Abri à bois : poteaux, 0 sur 4 », et les poteaux apparaissent en fantôme, même si on ne peut pas encore les poser (« Cette
-  étape viendra plus tard. »). Le chantier (plan, position du piquet nord-ouest, coins plantés, pièces posées) est dans GameState
+  posés : « Abri à bois : poteaux, 0 sur 4 », et les poteaux apparaissent en fantôme. Le chantier (plan, position du piquet nord-ouest, coins plantés, pièces posées) est dans GameState
   (`sites` de la carte) : il se retrouve après un rechargement ; `SAVE_VERSION` 5, les parties de la version 4 sont converties
   (aucun plan connu, aucun chantier).
 - **Un moteur de places commun** (`src/world/places.ts`, sans Phaser). Les tas et les chantiers partagent le même mécanisme :
@@ -247,7 +246,31 @@ précède) :
   des places qui acceptent une pièce précise, par sa clé d'objet (et plus tard des mesures : longueur, section, état), avec
   un message de refus clair. La mécanique du chantier est dans `src/systems/site.ts`, la géométrie du plan sur la carte dans
   `src/world/sitePlan.ts`.
-- **Ce qui viendra** : les poteaux (le bois est équarri depuis le 30 octobre 2026, voir *Bois d'œuvre* ; restent mesurer et tenir debout), les sablières, les chevrons, le toit de planches ;
+- **Les poteaux** (décidé le 30 octobre 2026, « poteaux »). Deuxième étape de l'abri : quatre poutres équarries de 20 × 20 cm
+  dressées sur les dés, deux de **3 m** au nord (108 kg), deux de **1,80 m** au sud (65 kg). Une place de chantier peut demander
+  une poutre (`accepts.wood` de `plans.json` : section et longueur exacte) et vérifie les réglages de la pièce de bois en main :
+  « Ce n'est pas une poutre. » (autre chose qu'une pièce de bois ronde), « Il faut l'équarrir d'abord. » (moins de quatre faces),
+  « Il faut une poutre de 3 m. » ou « de 1,80 m. » (longueur différente) ; la pièce reste en main, rien ne se dépense. Le poteau
+  dressé est l'objet de `props.json` de la place (`shed-post-low`, `shed-post-high`), exactement où était son fantôme ; le chantier
+  garde dans `pieces` (GameState) la pièce de bois d'origine de chaque poteau (longueur, diamètre d'arbre, faces), ce qui lui
+  permettra plus tard de savoir d'où vient le bois ; `SAVE_VERSION` 9, les chantiers de la version 8 n'ont aucune pièce d'origine.
+  - **Le poteau bas** (1,80 m, 65 kg) se porte à deux mains : face à sa place, E, et la poutre est dressée sur le dé. Dresser
+    coûte de l'endurance, proportionnellement à la masse de la poutre (`raisePerKg`, 0,06 point par kg : 3,9 points pour 1,80 m).
+  - **Le poteau haut** (3 m, 108 kg) ne se porte pas (Xéros porte 70 kg) : on équarrit la poutre sur place, couchée au pied du dé
+    (un de ses bouts à moins d'une case, 32 px, de la place), puis, face à la place, **E maintenu** (même jauge que nouer) : la
+    question « Appeler ta mère pour la dresser ? ». Sans poutre qui convienne au pied du dé (rondin, mauvaise longueur, trop
+    loin) : « Il faut d'abord une poutre de 3 m au pied du dé. » ; E court dit la même chose, ou « Maintiens E pour appeler ta
+    mère. » quand la poutre est là. Oui : fondu au noir, « Ta mère vient t'aider. », et au retour la poutre couchée a disparu, le
+    poteau est debout sur le dé ; Xéros paie **la moitié** de l'effort qu'il aurait fait seul (3,2 points). La mère n'est pas
+    montrée : elle vient et repart pendant que l'écran est noir.
+  - **La règle de l'aide est générale** : toute place dont la poutre pèse plus que ce que Xéros porte (`strength.json`, × la force
+    des outils de test) accepte l'aide de la même façon, sans code propre au poteau ; elle resservira pour les sablières. Pour une
+    place qui n'a pas de dé dessous, le message « au pied du dé » sera à dire autrement.
+  - Quatre poteaux posés : « Abri à bois : sablières, 0 sur 4 » et les fantômes des sablières paraissent (étape encore « à venir »).
+  - `?dieu` : « Donner » ou « Poser » une pièce de bois, aspect « poutre », de la longueur voulue (au pas de 20 cm) ; « Sauter l'étape
+    du chantier » remplit d'un coup l'étape en cours (les poteaux avec leur pièce d'origine). `npm run test:poteaux`.
+- **Ce qui viendra** : la mère qui marche jusqu'au chantier, se voit, aide et repart (pour l'instant elle n'apparaît pas : fondu
+  seulement) ; un geste de Xéros pour dresser (il n'a pas d'animation propre) ; les sablières, les chevrons, le toit de planches ;
   d'autres orientations ; le pierrier, s'il n'y a pas d'étang ; tourner un plan ; défaire un chantier.
 
 ## Poids et force (décidé le 30 octobre 2026)
