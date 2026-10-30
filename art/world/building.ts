@@ -1,13 +1,14 @@
 // Pièces de bâtiment : dés, poteaux, sablières, chevrons, couvertures ; l'abri à bois d'abord.
 //
-// L'abri à bois (fiches docs/objets/footing-stone.md, shed-*.md) : appentis à 20°, toit de planches. Repère commun, en
-// pixels de la carte (5 cm par pixel), projection (x, y, z) -> (x, y - z) pour poser les pièces :
-// - poteaux de 20 × 20 cm, sur des dés de 15 cm ; rang nord 3 m hors dé (tête à 3,15 m, 63 px), rang sud 1,70 m (tête
-//   à 1,85 m, 37 px) ; 71 px (3,55 m) d'entraxe nord-sud : chute de 1,30 m, pente atan(26 / 71) = 20,1° ;
-// - sablières de 15 × 15 cm sur la tête des poteaux (dessus à 66 px au nord, 40 px au sud) ;
+// L'abri à bois (fiches docs/objets/footing-stone.md, shed-*.md) : appentis à environ 20°, toit de planches. Repère
+// commun, en pixels de la carte (5 cm par pixel), projection (x, y, z) -> (x, y - z) pour poser les pièces :
+// - poteaux de 20 × 20 cm, sur des dés de 15 cm ; rang nord 3 m hors dé (tête à 3,15 m, 63 px), rang sud 1,80 m (tête
+//   à 1,95 m, 39 px : le bois se coupe sur une grille de 20 cm, src/content/wood.json) ; 71 px (3,55 m) d'entraxe
+//   nord-sud : chute de 1,20 m, pente atan(24 / 71) = 18,7° ;
+// - sablières de 15 × 15 cm sur la tête des poteaux (dessus à 66 px au nord, 42 px au sud) ;
 // - chevrons de 10 × 10 cm sur les sablières, du bord nord au bord sud du toit ; planches de 5 cm dessus ;
 // - toit : 73 × 89 px au sol (débord de 20 cm à l'est et à l'ouest, 35 cm au nord et au sud des poteaux), dessus à
-//   3,60 m au bord nord, 2,00 m au bord sud.
+//   3,60 m au bord nord, 2,10 m au bord sud (chute de 30 px sur 89).
 // Chaque pièce suit le gabarit (docs/STYLE.md, section 8) ; sa silhouette est collée en haut à gauche de l'image
 // (x = 0, y = 0), l'ombre portée `x` en dessous et à droite, hors silhouette.
 // Lumière nord-ouest ; contour d'un pixel : teinte la plus sombre de la matière en haut et à gauche, OUTLINE (o) en bas
@@ -93,9 +94,9 @@ function shedPlateEW(below: number, phase: number): Canvas {
   return c;
 }
 
-/** Sablière de côté : silhouette (75 px au sol + 26 de pente + 3 d'épaisseur) et rangées vides dessous. */
-const SIDE_SIL = 104;
-const SIDE_BELOW = 38;
+/** Sablière de côté : silhouette (75 px au sol + 24 de pente + 3 d'épaisseur) et rangées vides dessous. */
+const SIDE_SIL = 102;
+const SIDE_BELOW = 40;
 
 /**
  * Sablière de côté (`shed-plate-side`), 20 × 15 cm, nord-sud, en pente de la tête d'un poteau haut à celle d'un poteau
@@ -120,9 +121,9 @@ function shedPlateSide(): Canvas {
 
 // ---------- Chevrons ----------
 
-/** Chevron : silhouette (89 px au sol + 34 de pente et d'épaisseur) et rangées vides dessous. */
-const RAFTER_SIL = 123;
-const RAFTER_BELOW = 38;
+/** Chevron : silhouette (89 px au sol + 32 de pente et d'épaisseur) et rangées vides dessous. */
+const RAFTER_SIL = 121;
+const RAFTER_BELOW = 40;
 
 /**
  * Chevron de l'abri (`shed-rafter`), 10 × 10 cm, nord-sud sur les deux sablières est-ouest, en pente, du bord nord au
@@ -145,10 +146,10 @@ function shedRafter(): Canvas {
 
 // ---------- Toit de planches ----------
 
-/** Toit : largeur (365 cm), silhouette (89 px au sol + 32 de pente et d'épaisseur), rangées vides dessous. */
+/** Toit : largeur (365 cm), silhouette (89 px au sol + 30 de pente et d'épaisseur), rangées vides dessous. */
 const ROOF_W = 73;
-const ROOF_SIL = 121;
-const ROOF_BELOW = 41;
+const ROOF_SIL = 119;
+const ROOF_BELOW = 43;
 
 /** Bois grisé, du plus clair au plus sombre ; K (le bois le plus sombre) pour les joints, en ombre. */
 const WEATHERED = ['S', 'A', 'B', 'Q', 'K'];
@@ -265,9 +266,9 @@ const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, pa
 export default [
   img('footing-stone', footingStone()),
   img('shed-post-high', shedPost(62, 12)),
-  img('shed-post-low', shedPost(36, 30)),
+  img('shed-post-low', shedPost(38, 30)),
   img('shed-plate-north', shedPlateEW(64, 0)),
-  img('shed-plate-south', shedPlateEW(39, 23)),
+  img('shed-plate-south', shedPlateEW(41, 23)),
   img('shed-plate-side', shedPlateSide()),
   img('shed-rafter', shedRafter()),
   img('shed-roof', shedRoof()),

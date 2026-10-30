@@ -9,7 +9,7 @@ Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hau
 - Mains : aucune pour l'instant.
 
 ## Dimensions (gabarit)
-- Bois équarri à la hache, section 20 × 20 cm. Hauteur hors dé : **3,00 m** au nord, **1,70 m** au sud ; il repose sur
+- Bois équarri à la hache, section 20 × 20 cm. Hauteur hors dé : **3,00 m** au nord, **1,80 m** au sud (1,70 m jusqu'au 30 octobre 2026 : la grille de 20 cm du bois, voir CONCEPTION *Le bois* ; pente de 18,7°) ; il repose sur
   son dé (15 cm), donc sa tête est à 3,15 m et 1,85 m du sol. Contour compris.
 - La chute de 1,30 m sur 3,55 m d'entraxe nord-sud (71 px) donne la pente du toit : atan(130 / 355) = 20,1°. D'est en
   ouest, 3,05 m d'axe en axe (61 px) ; 3,25 m hors tout (65 px, de la face ouest du poteau ouest à la face est du poteau
@@ -23,7 +23,7 @@ Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hau
 
 ## Masse
 - Pas encore déplaçable (pièce du chantier posée tout construite) : pas de masse saisie. Ordre de grandeur, bois vert de
-  900 kg/m³ : 20 × 20 × 300 cm, environ 108 kg (côté haut) ; 20 × 20 × 170 cm, environ 61 kg (côté bas).
+  900 kg/m³ : 20 × 20 × 300 cm, environ 108 kg (côté haut) ; 20 × 20 × 180 cm, environ 65 kg (côté bas).
 
 ## Vues
 - Debout : `shed-post-high`, `shed-post-low`. Les faces équarries montrent le bois de la matière commune
