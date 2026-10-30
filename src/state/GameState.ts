@@ -3,6 +3,7 @@
 // Les cartes décrivent le monde au début de la partie ; GameState dit seulement ce qui a changé.
 
 import { z } from 'zod';
+import { stamina } from '../content';
 
 const id = z.string().min(1);
 
@@ -102,6 +103,10 @@ export const GameStateSchema = z.strictObject({
   nextSpawnId: z.number().int().nonnegative(),
   /** Prochain identifiant de tas (unique dans toute la partie). */
   nextPileId: z.number().int().nonnegative(),
+  /** Endurance de Xéros : la fatigue de la journée, de 0 (épuisé) au maximum de stamina.json (le sommeil la remplit). */
+  stamina: z.number().nonnegative(),
+  /** Numéro du jour : 1 au départ, +1 à chaque nuit (il servira au temps et aux saisons). */
+  day: z.number().int().positive(),
 });
 
 export type Held = z.infer<typeof HeldSchema>;
@@ -127,7 +132,7 @@ export function revisionOf(): number {
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: stamina.max, day: 1 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
@@ -179,6 +184,19 @@ export function turnHeld(s: GameState): void {
   if (!h || !('prop' in h)) return;
   if (h.turned) delete h.turned;
   else h.turned = true;
+  revision++;
+}
+
+/** L'endurance de Xéros vaut `value` (bornée de 0 au maximum). */
+export function setStamina(s: GameState, value: number): void {
+  s.stamina = Math.min(stamina.max, Math.max(0, value));
+  revision++;
+}
+
+/** Une nuit de sommeil : l'endurance est pleine, le jour suivant commence. */
+export function sleep(s: GameState): void {
+  s.stamina = stamina.max;
+  s.day++;
   revision++;
 }
 

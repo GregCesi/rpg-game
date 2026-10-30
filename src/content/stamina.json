@@ -1,0 +1,14 @@
+{
+  "max": 100,
+  "tired": 0.15,
+  "tiredWalk": 0.85,
+  "costs": {
+    "chop": 0.8,
+    "cutTie": 0.5,
+    "knot": 1.5,
+    "turnPerKg": 0.03,
+    "carryPerKgSec": 0.034,
+    "pushPerKgSec": 0.014,
+    "runPerSec": 1
+  }
+}

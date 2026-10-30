@@ -4,7 +4,7 @@
 // La future sauvegarde au cagibi passera par ces mêmes fonctions.
 
 import { z } from 'zod';
-import { items, maps, piles, props } from '../content';
+import { items, maps, piles, props, stamina } from '../content';
 import { FacingSchema } from '../content/types';
 import { GameStateSchema, type GameState, type Held } from './GameState';
 
@@ -13,7 +13,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -51,6 +51,7 @@ export function readSave(): ReadResult {
   } catch {
     return damaged(raw, 'Sauvegarde abîmée (illisible)');
   }
+  data = upgrade(data);
   const version = (data as { version?: unknown } | null)?.version;
   if (version !== SAVE_VERSION) {
     return damaged(raw, `Sauvegarde d'une autre version (${typeof version === 'number' ? version : 'sans numéro'}, attendue ${SAVE_VERSION})`);
@@ -63,6 +64,18 @@ export function readSave(): ReadResult {
   const missing = missingContent(r.data);
   if (missing) return damaged(raw, `Sauvegarde périmée (${missing} n'existe plus)`);
   return { save: r.data };
+}
+
+/**
+ * Met une sauvegarde d'un format plus ancien au format actuel, si on sait le faire (sinon elle est rendue telle quelle et
+ * refusée plus loin). Version 2 -> 3 : l'endurance et le jour apparaissent, jauge pleine et jour 1.
+ */
+function upgrade(data: unknown): unknown {
+  const d = data as { version?: unknown; state?: unknown } | null;
+  if (d?.version === 2 && d.state && typeof d.state === 'object') {
+    return { ...d, version: 3, state: { ...d.state, stamina: stamina.max, day: 1 } };
+  }
+  return data;
 }
 
 /** Écrit la partie et la position de Xéros. Un stockage plein ou bloqué ne plante pas le jeu : on le note en console. */

@@ -2,7 +2,7 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { BuildingDefSchema, CharacterDefSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, PileDefSchema, PropDefSchema, StrengthSchema, TilesetCatalogSchema } from './types';
+import { BuildingDefSchema, CharacterDefSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, PileDefSchema, PropDefSchema, StaminaSchema, StrengthSchema, TilesetCatalogSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import itemsJson from './items.json';
@@ -11,6 +11,7 @@ import buildingsJson from './buildings.json';
 import gesturesJson from './gestures.json';
 import holdJson from './hold.json';
 import strengthJson from './strength.json';
+import staminaJson from './stamina.json';
 import charactersJson from './characters.json';
 import dialoguesJson from './dialogues.json';
 export { maps } from '../generated/maps';
@@ -39,3 +40,5 @@ export const characters = parse('characters.json', z.record(z.string(), Characte
 export const dialogues = parse('dialogues.json', z.record(z.string(), DialogueDefSchema), dialoguesJson);
 /** La force de Xéros : ce qu'il porte, ce avec quoi il marche normalement, ce qu'il fait rouler. */
 export const strength = parse('strength.json', StrengthSchema, strengthJson);
+/** L'endurance de Xéros : son maximum, le seuil de fatigue et le prix de chaque effort. */
+export const stamina = parse('stamina.json', StaminaSchema, staminaJson);

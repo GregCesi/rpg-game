@@ -425,6 +425,29 @@ export const StrengthSchema = z
   })
   .refine((s) => s.walk < s.carry, { message: "'walk' doit être au-dessous de 'carry'" });
 
+/**
+ * L'endurance de Xéros (stamina.json), la fatigue de la journée : `max` points ; sous la part `tired` du maximum, il ne
+ * court plus et sa marche est ralentie à la part `tiredWalk` de la normale. `costs` : le prix de chaque effort, en points
+ * (les « PerSec » se paient chaque seconde de l'effort, les « PerKg » sont proportionnels à la masse en kg) ; marcher ne coûte rien.
+ * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `knot`
+ * nouer ou dénouer, `turnPerKg` pivoter une bille, `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
+ * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir.
+ */
+export const StaminaSchema = z.strictObject({
+  max: z.number().positive(),
+  tired: z.number().gt(0).lt(1),
+  tiredWalk: z.number().gt(0).lte(1),
+  costs: z.strictObject({
+    chop: z.number().nonnegative(),
+    cutTie: z.number().nonnegative(),
+    knot: z.number().nonnegative(),
+    turnPerKg: z.number().nonnegative(),
+    carryPerKgSec: z.number().nonnegative(),
+    pushPerKgSec: z.number().nonnegative(),
+    runPerSec: z.number().nonnegative(),
+  }),
+});
+
 /** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
 export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
 
@@ -507,6 +530,7 @@ export type Take = z.infer<typeof TakeSchema>;
 export type Mass = z.infer<typeof MassSchema>;
 export type Roll = z.infer<typeof RollSchema>;
 export type Strength = z.infer<typeof StrengthSchema>;
+export type StaminaDef = z.infer<typeof StaminaSchema>;
 export type PilePlace = z.infer<typeof PilePlaceSchema>;
 export type PileDef = z.infer<typeof PileDefSchema>;
 export type BuildingDef = z.infer<typeof BuildingDefSchema>;
