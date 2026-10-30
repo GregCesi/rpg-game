@@ -328,6 +328,7 @@ export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
   'chest': { w: 25, h: 20 }, // attendu 18 × 16 : +7 × +4 px
   'stool': { w: 15, h: 17 }, // attendu 7 × 12,5 : +8 × +4,5 px
   'well': { w: 47, h: 59 }, // attendu 47 × 66 : 0 × -7 px
+  'big-pollard': { w: 54, h: 79 }, // attendu 54 × 86 : 0 × -7 px ; tête stylisée, choix de Grégoire
 };
 
 /** Gabarit : la silhouette de l'image d'un objet a la taille que donnent ses dimensions réelles, à TOLERANCE px près. */

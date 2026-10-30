@@ -15,9 +15,10 @@ Seuls l'arbre debout et ses deux chutes lui sont propres. Le gros grand, ses pi�
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
 - Tronc de 55 cm : 11 px d'écorce, 13 px (65 cm) contour compris, comme le gros grand.
-- Arbre debout : 270 × 50 × 370 cm (boîte) : silhouette **54 × 79 px** (74 + 5), juste. La hauteur est sa longueur couchée
-  (du pied au bout du houppier couché : 74 px, 3,70 m). La profondeur de 50 cm découle du dessin, dont la tête montre peu
-  de dessus : elle n'est pas réaliste pour un houppier de 2,70 m (à reprendre si le dessin change).
+- Arbre debout : 270 × 120 × 370 cm (boîte), la vraie profondeur de sa tête (celle du houppier couché) : le gabarit attend
+  54 × 86 px (74 + 12), il est dessiné **54 × 79 px**. La hauteur est sa longueur couchée (du pied au bout du houppier
+  couché : 74 px, 3,70 m). Il est dans `EXCEPTIONS` (validate.ts) : tête stylisée, qui montre peu de dessus, choix de
+  Grégoire ; le dessin ne change pas.
 - Couché : 2 sections de tronc, donc 2 billes de 95 × 65 cm : la section 1, puis le houppier (la 2e bille et la pointe,
   sous les feuilles).
 
