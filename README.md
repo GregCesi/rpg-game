@@ -24,7 +24,7 @@ Adresses de test (à combiner : `?dieu&debug`) : `?debug` montre les collisions 
 
 Les cartes se font dans [Tiled](https://www.mapeditor.org/) : ouvrir `tiled/xeros.tiled-project`. Après une modification d'une carte, relancer `npm run dev` (ou `npm run maps`) pour la voir en jeu.
 
-Commandes (touches lues par leur place sur le clavier, `KeyboardEvent.code` : même place en AZERTY et en QWERTY) : ZQSD (WASD en QWERTY) ou flèches. Maj pour courir. E (ou Entrée) : prendre dans une main libre (ramasser, prendre une bille, reprendre d'un tas, cueillir), parler, poser ce que tient la main active sur ce qui l'accepte (le rouleau sur le billot), ou reposer devant soi ce qu'on tient à deux mains. E maintenu une demi-seconde, mains libres, devant un tas de branches ou un fagot : nouer, dénouer (une jauge se remplit au-dessus de Xéros ; relâché avant, c'est E court). Q d'un clavier QWERTY, soit **A en AZERTY** (pour ne pas croiser le Q de ZQSD) : lâcher devant soi ce que tient la main active. Tab : changer de main active. R : tourner la bille portée (est-ouest, nord-sud). Espace : utiliser ce qu'on tient. E, Espace ou Entrée font défiler un dialogue.
+Commandes (touches lues par leur place sur le clavier, `KeyboardEvent.code` : même place en AZERTY et en QWERTY) : ZQSD (WASD en QWERTY) ou flèches. Maj pour courir. E (ou Entrée) : prendre dans une main libre (ramasser, prendre une bille, reprendre d'un tas, cueillir), parler, poser ce que tient la main active sur ce qui l'accepte (le rouleau sur le billot), ou reposer devant soi ce qu'on tient à deux mains. E maintenu une demi-seconde, mains libres, devant un tas de branches ou un fagot : nouer, dénouer (une jauge se remplit au-dessus de Xéros ; relâché avant, c'est E court). Q d'un clavier QWERTY, soit **A en AZERTY** (pour ne pas croiser le Q de ZQSD) : lâcher devant soi ce que tient la main active. Tab : changer de main active. R : tourner la bille portée (est-ouest, nord-sud) ; R maintenu une seconde, mains vides, au contact d'une bille couchée : la faire pivoter d'un quart de tour. E sur la paillasse du cagibi : dormir (jauge d'endurance pleine, jour suivant). Espace : utiliser ce qu'on tient. E, Espace ou Entrée font défiler un dialogue.
 
 ## Architecture
 
@@ -60,6 +60,7 @@ src/
     items.json       objets possédables (dans les mains, au sol)
     piles.json       genres de tas : ce qu'on y entrepose, ses places (couche, porteuses, pièce dessinée, collision)
     buildings.json   bâtiments : leurs pièces (objets de props.json), étape par étape dans l'ordre du chantier, et la carte où ils sont posés
+    stamina.json     l'endurance de Xéros : maximum, seuil de fatigue, prix de chaque effort (points)
     strength.json    la force de Xéros : ce qu'il porte, ce avec quoi il marche normalement, ce qu'il fait rouler (kg)
     mass.ts          les masses (saisies, calculées pour le bois et le fagot), sans Phaser
     gestures.json    geste d'outil : place de la main et de l'outil à chaque image
@@ -67,10 +68,11 @@ src/
   state/             GameState : l'état de la partie (les deux mains, changements du monde, objets au sol) ; save.ts : sa sauvegarde (localStorage, version, schéma Zod)
   world/GameMap.ts   construit une carte jouable à partir d'une MapData
   world/pileShape.ts la forme d'un tas, sans Phaser : places ouvertes, pièces à reprendre, ordre d'affichage
-  systems/           une mécanique du monde par fichier : interactions, sorties, récolte et coupe de la corde (harvest.ts), prendre, poser, les tas et le lien (hands.ts), nouer et dénouer (knot.ts), E maintenu et sa jauge (longPress.ts), nombre de pièces d'un tas (pileCount.ts), toits qui s'effacent (roofs.ts), faire rouler une bille (roll.ts), le poids des mains et les messages « trop lourd » (weight.ts)...
+  systems/           une mécanique du monde par fichier : interactions, sorties, récolte et coupe de la corde (harvest.ts), prendre, poser, les tas et le lien (hands.ts), nouer et dénouer (knot.ts), E maintenu et sa jauge (longPress.ts), nombre de pièces d'un tas (pileCount.ts), toits qui s'effacent (roofs.ts), faire rouler une bille (roll.ts), le poids des mains et les messages « trop lourd » (weight.ts), le prix des efforts et le message « épuisé » (effort.ts), pivoter une bille (turnLog.ts)...
   entities/Actor.ts  le corps d'un personnage (sprite, collision, animations)
   entities/Player.ts Actor + clavier + ToolUse + Hold
   entities/ToolUse.ts composant : le geste d'outil, l'outil posé dans la main image par image
+  entities/Stamina.ts composant : l'endurance (la jauge du jour, ses dépenses, GameState en est écrit tous les points)
   entities/Strength.ts composant : la force (porter, marcher chargé, rouler), seuils de strength.json × le multiplicateur de ?dieu
   entities/Hold.ts   composant : ce qu'il tient se voit sur lui (posture du corps, objet posé au point d'accroche image par image)
   entities/Npc.ts    Actor + contrôleur immobile : un personnage non joueur qui se tourne vers Xéros quand il lui parle

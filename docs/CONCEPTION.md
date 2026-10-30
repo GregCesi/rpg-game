@@ -190,7 +190,20 @@ Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter
   roulent jusqu'à leur place ; le fendage (en quatre sur le billot, des quartiers de 50 kg qui se portent) viendra, et c'est lui qui
   les rendra empilables. Les billes de l'arbre normal (60 kg) se portent et s'empilent comme avant. Un tas de grosses billes déjà
   posé reste, mais on n'en reprend plus.
+- **Pivoter une bille au sol** (`src/systems/turnLog.ts`, `turn` de props.json, `TURN_PRESS` de config.ts). Mains vides, au contact d'une bille couchée de n'importe quel côté, R maintenu une seconde (la jauge de l'appui long, la même que pour nouer) la fait pivoter d'un quart de tour (est-ouest <-> nord-sud) autour du centre de sa collision. Avant, la nouvelle emprise doit être libre (carte, objets, tas, personnages) ; Xéros, que le bout de la bille toucherait, est repoussé d'autant s'il y a la place ; sinon « Pas la place pour la tourner. » et rien ne bouge. Un petit nuage (la fumée du jeu, teintée de terre) se lève au pivot. Le coût en endurance est proportionnel à la masse (0,03 point par kg : 6 points pour une bille du gros arbre, 1,8 pour une du normal). R en main (tourner la bille portée) ne change pas.
 - Une sauvegarde où Xéros tient plus qu'il ne porte (d'avant les masses) : l'objet est posé au sol devant lui au chargement.
+
+## Endurance (décidé le 30 octobre 2026)
+
+La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'essoufflement d'une course ou d'une charge, qui se reprend en quelques secondes) viendra plus tard comme **deuxième jauge**, à côté de celle-ci : l'endurance baisse tout le jour et ne remonte qu'en dormant.
+
+- **La jauge** : 100 points au maximum (`src/content/stamina.json`, composant `entities/Stamina.ts`, mécanique `src/systems/effort.ts`). Elle est dans GameState (`stamina`) et se sauvegarde avec la partie ; à l'écran, une jauge verticale à droite des deux cases des mains (`art/ui/stamina.ts`), rouge sous le seuil de fatigue, qui tremble quand un effort est refusé.
+- **Ce qui coûte** (tout est dans `stamina.json`, rien en dur) : un coup d'outil (hache sur l'arbre debout, le houppier, une encoche), la coupe d'un lien sur le billot, nouer et dénouer, pivoter une bille (par kg), et par seconde : marcher en portant au-delà de 25 kg (par kg de trop), pousser une bille (par kg), courir. **Marcher ne coûte rien**, ni à vide ni chargé en dessous de 25 kg. Un coup dans le vide ou sans le bon outil ne coûte rien.
+- **Fatigué** (sous 15 %) : pas de course, marche à 85 % de la normale. **Épuisé** (0) : toute action qui coûte est refusée, une fois, par « Xéros est épuisé. Il faut dormir. » (la jauge tremble) ; il peut toujours marcher, mais ne soulève plus ce qui le ferait porter au-delà de 25 kg. Les coûts se règlent avec la force : le fardeau est compté au-delà du seuil de marche de `strength.json`, donc une force plus grande coûte moins.
+- **Dormir** : E sur la paillasse du cagibi (`pallet`, dialogue `pallet-sleep`) propose « Dormir ? » (premier dialogue à choix : `choices` d'une ligne, `action: "sleep"`). Oui : fondu au noir, jauge pleine, un jour de plus, réveil dans le cagibi, partie sauvegardée, « Jour 2 » à l'écran.
+- **Compteur de jours** : `day` de GameState (jour 1 au départ, +1 à chaque nuit). Pas encore d'horloge ; il servira au temps et aux saisons.
+- **Sauvegarde** : `SAVE_VERSION` 3 ; une partie de la version 2 est convertie à la lecture (jauge pleine, jour 1), sans repartir à neuf.
+- **Outils de test** (`?dieu`) : un champ pour régler l'endurance, une case « endurance infinie ».
 
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 
