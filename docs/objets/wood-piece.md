@@ -18,7 +18,20 @@ du rondin et de la poutre. Le contenu est dans `src/content/wood.json` ; voir CO
   normal). Genre du nom pour les messages : « elle » (bille, demi-bille, poutre), « il » (quartier, rondin).
 - Nature : objet du monde (`props.json`), qui se prend quand il n'est pas trop lourd. Sa définition complète (dimensions,
   collision, prise, roulement, pivot, tas) se tire de ses réglages : `src/world/woodPiece.ts`.
-- Mains : deux.
+- Mains : deux (couchée ; debout, aucune : voir *Debout*).
+
+## Debout (`axis: 'up'`)
+Décidé le 30 octobre 2026 (chantier « abri en vraies pièces »). Un chantier montre les vraies pièces posées : le poteau dressé de
+l'abri est la pièce de bois elle-même, debout (`wood-piece` avec `axis: 'up'`, réglages gardés par GameState comme les autres), et
+non plus un dessin à part. Même assemblage que la couchée (la tête en haut, le milieu répété, le pied en bas ; planche
+`wood-normal-up`, parties `<aspect>-start|mid|end`), même teinte et mêmes faces d'un état donné (rond : écorce ; équarri : faces
+claires dressées), la tête montrant le bois de bout, ses cernes, vu de dessus. Géométrie : `up` de chaque aspect du normal dans
+`wood.json` (largeur `w`, rangées de tête `extra`, parties `start` et `end`, `lift` rangées vides sous le pied : le dé de 15 cm,
+`body` : la collision au pied). Taille : largeur = section (4 px pour la poutre de 20 cm, 6 px pour le rondin), hauteur = longueur +
+la moitié de la profondeur : poutre de 3 m **4 × 62**, de 1,80 m **4 × 38** (plus les 3 rangées du dé). Debout, la pièce ne se
+prend pas, ne roule pas, ne pivote pas, ne se coupe ni ne s'équarrit (`woodDef` : pas de `take`, `roll`, `turn`). Seul le normal se
+dresse. Elle ne vient que des places d'un plan (`accepts.wood`) : `lay` de `systems/site.ts`, `uprightOf` de `world/woodPiece.ts`
+(diamètre, longueur et faces de la pièce posée ; ni coupe ni coin). Le chantier garde aussi la pièce d'origine (`pieces`).
 
 ## Masse
 - Calculée (`"mass": "wood"`, `src/content/mass.ts`) : section du bois × longueur × 900 kg/m³ (`density` de wood.json). Section :
@@ -102,7 +115,7 @@ Les billes, quartiers et rondins qui se portent vont en tas pour le chauffage, o
 
 ## Vérification
 - Aperçu : `.art-preview/bois.png` (chaque diamètre et aspect, plusieurs longueurs, roulement, encoche, coin et fente, vues
-  portées, icônes), `.art-preview/arbres.png`, `.art-preview/piles.png`, `.art-preview/gabarit.png`.
+  portées, icônes, et chaque aspect du normal couché à côté de la même pièce debout), `.art-preview/arbres.png`, `.art-preview/piles.png`, `.art-preview/gabarit.png`.
 - Tests : `npm run test:fendage` (dont une bille de 2 m, et un tour complet du quartier avec R), `npm run test:equarrissage`,
   `npm run test:tas`.
 - En jeu (`?dieu`, « Pièce de bois ») : poser des pièces de chaque diamètre, longueur, état et sens ; les couper, les rouler, les

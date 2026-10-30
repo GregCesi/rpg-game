@@ -1,11 +1,11 @@
-# Poteau de l'abri (`shed-post-high`, `shed-post-low`)
+# Poteau de l'abri (la pièce de bois debout)
 
-Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hauteurs (le toit penche vers le sud, à 20°).
+Une fiche pour les poteaux de l'abri à bois : la même pièce, à deux hauteurs (le toit penche vers le sud, à 20°). Depuis le 30 octobre 2026 (« abri en vraies pièces »), **un poteau n'est plus un objet à part** : c'est la poutre posée, la pièce de bois debout (`wood-piece`, `axis: 'up'`, fiche `wood-piece.md`, section *Debout*). Les anciens `shed-post-high` et `shed-post-low` sont retirés (leurs numéros restent réservés dans le registre des tuiles).
 
 ## Identité
-- Clés : `shed-post-high` (les deux poteaux du nord, côté haut), `shed-post-low` (les deux du sud, côté bas).
-- Noms affichés : poteau (côté haut), poteau (côté bas).
-- Nature : objets du monde (`props.json`), sans `take` : pièces de bâtiment, places de l'étape « les poteaux » du plan `woodshed` (`plans.json`, étape ouverte : les fantômes paraissent quand les quatre dés sont posés, chaque place demande une poutre équarrie de la longueur du poteau).
+- Clé : `wood-piece` (réglages `axis: 'up'`, `length` 300 au nord, 180 au sud, équarrie), les deux du nord côté haut, les deux du sud côté bas.
+- Nom affiché : poteau.
+- Nature : la pièce de bois dressée, sans `take` : pièces de bâtiment, places de l'étape « les poteaux » du plan `woodshed` (`plans.json`, étape ouverte : les fantômes paraissent quand les quatre dés sont posés, chaque place demande une poutre équarrie de la longueur du poteau).
 - Mains : aucune une fois dressé ; la poutre qui le devient se porte à deux mains (1,80 m) ou ne se porte pas (3 m).
 
 ## Dimensions (gabarit)
@@ -14,8 +14,8 @@ Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hau
 - La chute de 1,30 m sur 3,55 m d'entraxe nord-sud (71 px) donne la pente du toit : atan(130 / 355) = 20,1°. D'est en
   ouest, 3,05 m d'axe en axe (61 px) ; 3,25 m hors tout (65 px, de la face ouest du poteau ouest à la face est du poteau
   est).
-- Boîte (`box`), debout.
-- À l'écran : W = 4 px ; H + D/2 = 60 + 2 = **4 × 62** (haut), 34 + 2 = **4 × 36** (bas).
+- Boîte (`box`), debout (`woodDims` : section 20 × 20, hauteur = longueur).
+- À l'écran : W = 4 px ; H + D/2 = 60 + 2 = **4 × 62** (haut), 36 + 2 = **4 × 38** (bas).
 - Sous lui, dans son image, 3 rangées vides : la hauteur du dé. Le bas de l'image est le bord sud du poteau au sol
   (c'est sa profondeur d'affichage) ; son pied se dessine sur le dessus du dé.
 - Dans `plans.json` (en cm depuis le piquet nord-ouest : (−10, 5), (295, 5) au nord, (−10, 360), (295, 360) au sud ; ancien emplacement dans `ferme.tmj`, coin bas gauche de l'image) : hauts en (608, 68) et (669, 68), images de 4 × 65 ; bas en (608, 139)
@@ -26,10 +26,9 @@ Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hau
   108 kg (côté haut : trop lourde pour Xéros, qui porte 70 kg, la mère aide) ; 20 × 20 × 180 cm, 65 kg (côté bas : portée).
 
 ## Vues
-- Debout : `shed-post-high`, `shed-post-low`. Les faces équarries montrent le bois de la matière commune
-  (`art/world/wood.ts`) : deux colonnes de bois clair au fil vertical, la gauche (côté lumière) un cran plus claire, avec
-  un reste d'écorce par endroits sur l'arête ; le dessus en bois de bout (Y) ; contour N à gauche et en haut, OUTLINE à
-  droite et en bas (STYLE.md section 3). Pas d'ombre portée : le dé la porte.
+- Debout : l'image assemblée de la pièce (`woodTexture`, planche `wood-normal-up`, aspect `beam`), la même poutre que la couchée :
+  mêmes faces claires dressées, la tête en bois de bout avec ses cernes. Pas d'ombre portée : le dé la porte. Le fantôme de la place
+  est cette même image en transparence.
 - En main, case d'interface, fantôme, porté : aucun (pas encore).
 
 ## Regroupement
@@ -48,8 +47,8 @@ Porte les sablières. **C'est la seule pièce de l'abri qui bloque le passage** 
 à son pied (`body`).
 
 ## Vérification
-- Aperçu : `.art-preview/shed-post-high.png`, `shed-post-low.png`, `.art-preview/woodshed-2.png` (les quatre poteaux sur
-  leurs dés), avec Xéros à côté : le poteau haut le dépasse d'environ 30 px, le bas d'environ 6 (sa tête à 1,85 m).
+- Aperçu : `.art-preview/bois.png` (la poutre couchée à côté de la même debout), `.art-preview/woodshed-2.png` (les quatre poteaux sur
+  leurs dés, refaits avec les vraies pièces), avec Xéros à côté : le poteau haut le dépasse d'environ 30 px, le bas d'environ 6 (sa tête à 1,85 m).
 - `npm run test:poteaux` (captures : `POTEAUX_SHOTS=1`, `.art-preview/poteaux-*.png`).
 - En jeu : se cogner à chaque poteau ; passer entre deux poteaux ; passer derrière un poteau (il cache Xéros) et devant
   (Xéros le cache).

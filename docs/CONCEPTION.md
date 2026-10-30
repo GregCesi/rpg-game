@@ -251,9 +251,10 @@ précède) :
   une poutre (`accepts.wood` de `plans.json` : section et longueur exacte) et vérifie les réglages de la pièce de bois en main :
   « Ce n'est pas une poutre. » (autre chose qu'une pièce de bois ronde), « Il faut l'équarrir d'abord. » (moins de quatre faces),
   « Il faut une poutre de 3 m. » ou « de 1,80 m. » (longueur différente) ; la pièce reste en main, rien ne se dépense. Le poteau
-  dressé est l'objet de `props.json` de la place (`shed-post-low`, `shed-post-high`), exactement où était son fantôme ; le chantier
-  garde dans `pieces` (GameState) la pièce de bois d'origine de chaque poteau (longueur, diamètre d'arbre, faces), ce qui lui
-  permettra plus tard de savoir d'où vient le bois ; `SAVE_VERSION` 9, les chantiers de la version 8 n'ont aucune pièce d'origine.
+  dressé est la pièce de bois elle-même, debout (voir *Un chantier montre ses vraies pièces* plus bas), exactement où était son
+  fantôme ; le chantier garde dans `pieces` (GameState) la pièce de bois d'origine de chaque poteau (longueur, diamètre d'arbre,
+  faces), ce qui lui permettra plus tard de savoir d'où vient le bois ; `SAVE_VERSION` 9, les chantiers de la version 8 n'ont aucune
+  pièce d'origine.
   - **Le poteau bas** (1,80 m, 65 kg) se porte à deux mains : face à sa place, E, et la poutre est dressée sur le dé. Dresser
     coûte de l'endurance, proportionnellement à la masse de la poutre (`raisePerKg`, 0,06 point par kg : 3,9 points pour 1,80 m).
   - **Le poteau haut** (3 m, 108 kg) ne se porte pas (Xéros porte 70 kg) : on équarrit la poutre sur place, couchée au pied du dé
@@ -269,6 +270,25 @@ précède) :
   - Quatre poteaux posés : « Abri à bois : sablières, 0 sur 4 » et les fantômes des sablières paraissent (étape encore « à venir »).
   - `?dieu` : « Donner » ou « Poser » une pièce de bois, aspect « poutre », de la longueur voulue (au pas de 20 cm) ; « Sauter l'étape
     du chantier » remplit d'un coup l'étape en cours (les poteaux avec leur pièce d'origine). `npm run test:poteaux`.
+- **Un chantier montre ses vraies pièces** (décidé le 30 octobre 2026, « abri en vraies pièces »). Ce qu'on pose est ce qu'on voit :
+  une place remplie dessine la pièce enregistrée dans GameState, dans le sens que demande le plan, à la position du plan, et le
+  fantôme d'une place montre la pièce attendue dans le même dessin, en transparence. Plus de dessin propre à l'abri pour ce qui est
+  une pièce de bois : les anciens `shed-post-high` et `shed-post-low` (faits avant la pièce de bois, d'une autre couleur et d'un
+  autre bois) sont retirés de `props.json` et de `art/` (leurs numéros restent réservés dans `art/tile-registry.json`).
+  - **La pièce de bois debout** (`axis: 'up'`, `up` de chaque aspect du normal dans `wood.json`) : le même assemblage que la
+    couchée (pied, milieu répété, tête), la même teinte et les mêmes faces d'un état donné (rond : l'écorce ; équarri : les faces
+    claires dressées), la tête montrant le bois de bout avec ses cernes, vu de dessus. Largeur = section (4 px pour 20 cm, 6 px pour
+    un rondin de 30 cm), hauteur = longueur + la moitié de la profondeur (une poutre de 3 m : 4 × 62 px ; de 1,80 m : 4 × 38), et
+    sous son pied les 3 rangées vides du dé. Debout, elle ne se prend, ne roule, ne pivote, ne se coupe ni ne s'équarrit : elle porte.
+    Seul le normal se dresse (le gros bois n'a pas de `up`).
+  - **Le plan dit la pièce** : une place qui demande une poutre (`accepts.wood`) a pour `piece` `wood-piece` et pour `orientation`
+    `upright` ; l'emprise au sol est sa section. `validate.ts` le vérifie.
+  - **Ce qui reste dessiné à part, en fantôme jusqu'à son chantier** : les dés restent la pierre plate posée (dessinée comme la
+    pierre plate). Les étapes « à venir » portent une `note` dans `plans.json` : les **sablières** seront des poutres couchées en
+    hauteur, posées sur la tête des poteaux ; les **chevrons** des perches ; le **toit** des planches ou des bardeaux. En attendant,
+    elles gardent leurs dessins (`shed-plate-*`, `shed-rafter`, `shed-roof`) en fantôme.
+  - **Sauvegarde** : `SAVE_VERSION` 10. Un poteau d'une partie plus ancienne (dessiné `shed-post-…`) devient la pièce de bois debout de
+    sa pièce d'origine ; s'il n'en a pas gardé, la conversion la complète avec la poutre que le plan demande à sa place.
 - **Ce qui viendra** : la mère qui marche jusqu'au chantier, se voit, aide et repart (pour l'instant elle n'apparaît pas : fondu
   seulement) ; un geste de Xéros pour dresser (il n'a pas d'animation propre) ; les sablières, les chevrons, le toit de planches ;
   d'autres orientations ; le pierrier, s'il n'y a pas d'étang ; tourner un plan ; défaire un chantier.
