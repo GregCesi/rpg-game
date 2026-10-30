@@ -52,7 +52,7 @@ function groundShadow(c: Canvas, cx: number, cy: number, rx: number, ry: number)
  * Image : 2 px de marge à gauche et à droite (le `body` de props.json est centré sur l'image), la silhouette en haut,
  * deux rangées d'ombre portée dessous : le bas de la silhouette est à 3 rangées du bas de l'image.
  */
-function furniture(fill: Grid, darkest = WOOD_DARKEST): Canvas {
+function furniture(fill: Grid, darkest: Record<string, string> = WOOD_DARKEST): Canvas {
   const c = new Canvas(fill[0].length + 6, fill.length + 4);
   c.stamp(fill, 3, 1);
   shadedOutline(c, darkest);
