@@ -24,6 +24,7 @@ import { buildCollectionBoard } from './lib/collection-board';
 import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
+import { auditPreview } from './lib/audit-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
 
@@ -301,6 +302,9 @@ if (withPreview) {
   // les étalons du gabarit (docs/STYLE.md section 8)
   const gabarit = gabaritPreview(sources);
   if (gabarit) writeFileSync(join(PREVIEW, 'gabarit.png'), PNG.sync.write(gabarit));
+  // l'audit des tailles : les objets hors gabarit à côté de Xéros (docs/audit-tailles.md)
+  const audit = auditPreview(sources, propDefs);
+  if (audit) writeFileSync(join(PREVIEW, 'audit-tailles.png'), PNG.sync.write(audit));
 }
 /**
  * Une carte Tiled lue pour l'aperçu d'un bâtiment : le sol (numéros du registre -> grilles du jeu de tuiles de la carte)
