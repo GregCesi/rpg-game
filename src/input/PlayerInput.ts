@@ -22,17 +22,23 @@ const CODES = {
 
 type Action = keyof typeof CODES;
 
+/** Zoom au pavé numérique (les + et − du clavier principal sont lus par leur signe). */
+const ZOOM_IN = ['NumpadAdd'];
+const ZOOM_OUT = ['NumpadSubtract'];
+
 /**
  * Traduit le clavier en intention : direction, course, et les gestes des mains.
  * E (ou Entrée) : prendre dans une main libre, parler, cueillir, ou reposer ce qu'on tient à deux mains.
  * Espace : utiliser ce qu'on tient. Q (A en AZERTY) : lâcher ce que tient la main active. Tab : changer de main active.
- * R : tourner la bille portée (est-ouest, nord-sud).
+ * R : tourner la bille portée (est-ouest, nord-sud). Molette, + et − : le zoom.
  */
 export class PlayerInput {
   /** Touches enfoncées (codes). */
   private readonly held = new Set<string>();
   /** Actions dont la touche vient d'être pressée, pas encore lues. */
   private readonly pressed = new Set<Action>();
+  /** Crans de zoom demandés (molette, + et −), pas encore lus : positif pour s'approcher. */
+  private zoom = 0;
 
   constructor(scene: Phaser.Scene) {
     const kb = scene.input.keyboard!;
@@ -40,18 +46,27 @@ export class PlayerInput {
     kb.addCapture([K.TAB, K.SPACE, K.UP, K.DOWN, K.LEFT, K.RIGHT]);
     const onDown = (e: KeyboardEvent) => {
       this.held.add(e.code);
+      // + et − : lus par leur signe (ils ne sont pas à la même place en AZERTY et en QWERTY), ou sur le pavé numérique ; maintenus, ils répètent
+      if (ZOOM_IN.includes(e.code) || e.key === '+' || e.key === '=') this.zoom++;
+      if (ZOOM_OUT.includes(e.code) || e.key === '-') this.zoom--;
       if (e.repeat) return;
       for (const [action, codes] of Object.entries(CODES)) if ((codes as readonly string[]).includes(e.code)) this.pressed.add(action as Action);
     };
     const onUp = (e: KeyboardEvent) => this.held.delete(e.code);
     // fenêtre quittée : les touches relâchées ailleurs ne reviendront pas
     const onBlur = () => this.held.clear();
+    // la molette : vers l'avant, on s'approche
+    const onWheel = (_p: unknown, _o: unknown, _dx: number, dy: number) => {
+      if (dy) this.zoom += dy < 0 ? 1 : -1;
+    };
     kb.on('keydown', onDown);
     kb.on('keyup', onUp);
+    scene.input.on('wheel', onWheel);
     scene.game.events.on(Phaser.Core.Events.BLUR, onBlur);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       kb.off('keydown', onDown);
       kb.off('keyup', onUp);
+      scene.input.off('wheel', onWheel);
       scene.game.events.off(Phaser.Core.Events.BLUR, onBlur);
     });
   }
@@ -95,6 +110,13 @@ export class PlayerInput {
     const down = (a: Action) => (CODES[a].some((c) => this.held.has(c)) ? 1 : 0);
     const dir = new Phaser.Math.Vector2(down('right') - down('left'), down('down') - down('up'));
     return { dir, running: down('run') === 1 };
+  }
+
+  /** Le zoom demandé depuis la dernière lecture : +1 (s'approcher), -1 (s'éloigner) ou 0. */
+  zoomPressed(): 1 | -1 | 0 {
+    const z = Math.sign(this.zoom) as 1 | -1 | 0;
+    this.zoom = 0;
+    return z;
   }
 
   private take(a: Action): boolean {

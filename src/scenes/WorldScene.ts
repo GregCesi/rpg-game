@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { HUD, START, TURN_PRESS, ZOOM } from '../config';
+import { HUD, START, TURN_PRESS } from '../config';
 import { items, maps, props } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -20,6 +20,7 @@ import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
 import { SiteSystem } from '../systems/site';
 import { WoodSystem } from '../systems/wood';
+import { ZoomControl } from '../systems/zoom';
 import { TurnSystem } from '../systems/turnLog';
 import { carriedMass, heavyNotice } from '../systems/weight';
 import {
@@ -100,6 +101,8 @@ export class WorldScene extends Phaser.Scene {
   /** Case « endurance infinie » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
   private infinite = false;
   private autosave!: AutoSave;
+  /** Le zoom de la caméra du monde, par paliers entiers. */
+  private zoom!: ZoomControl;
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
   private talking?: Npc;
   private mode: Mode = 'play';
@@ -178,8 +181,8 @@ export class WorldScene extends Phaser.Scene {
     if (this.wake) this.game.events.emit(GameEvent.Notice, `Jour ${game.day}`, HUD.longNoticeMs / 2);
 
     const cam = this.cameras.main;
-    cam.setZoom(ZOOM);
     cam.setBounds(0, 0, this.map.width, this.map.height);
+    this.zoom = new ZoomControl(cam, this.map.width, this.map.height);
     cam.startFollow(this.player.actor, true, 0.15, 0.15);
     cam.setRoundPixels(true);
     cam.fadeIn(220, 20, 14, 8);
@@ -226,6 +229,9 @@ export class WorldScene extends Phaser.Scene {
     const drop = input.dropPressed();
     const swap = input.swapPressed();
     const turn = input.turnPressed();
+    // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
+    const zoom = input.zoomPressed();
+    if (zoom) this.zoom.step(zoom);
     const e = this.interaction.update(time, this.mode === 'play');
     this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
     // la coupe visée sur une pièce de bois et ses deux longueurs, la face qu'on dresse, le bout où planter ou frapper le coin

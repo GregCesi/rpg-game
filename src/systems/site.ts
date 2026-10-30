@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, INTERACT, SITE, UI, ZOOM } from '../config';
+import { DEPTH, INTERACT, SITE, UI, ZOOM_STEPS } from '../config';
 import { items, plans, props } from '../content';
 import type { Corner, PlanDef } from '../content/types';
 import type { Player } from '../entities/Player';
@@ -165,7 +165,8 @@ export class SiteSystem {
       const text = this.scene.add
         .text(site.x + plan.footprint.w / 10, bottom + 12, statusLine(site, plan), { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
         .setOrigin(0.5, 0)
-        .setResolution(ZOOM)
+        // net au palier de zoom le plus proche
+        .setResolution(ZOOM_STEPS.max)
         .setDepth(DEPTH.prompt - 3)
         .setVisible(false);
       this.texts.push({ site, plan, text });

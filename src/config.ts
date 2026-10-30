@@ -11,6 +11,12 @@ export const VIEW = { width: 640, height: 360 };
  */
 export const ZOOM = 2;
 
+/**
+ * Paliers du zoom de la caméra du monde (molette, + et −, systems/zoom.ts) : des entiers seulement, d'un cran sous `ZOOM` à trois
+ * au-dessus (les petits objets, à leur vraie taille, se voient de près). Le plus bas est relevé sur une carte trop petite pour lui.
+ */
+export const ZOOM_STEPS = { min: ZOOM - 1, max: ZOOM + 3 };
+
 export const UI = {
   font: '"Pixelify Sans", monospace',
   ink: '#3b2a1c',
