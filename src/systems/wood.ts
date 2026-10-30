@@ -97,7 +97,8 @@ export class WoodSystem {
     if (!work) return undefined;
     let refused: WoodAim | undefined;
     for (const p of this.map.props) {
-      if (!p.wood || !p.box || !p.image.visible) continue;
+      // une pièce dressée (un poteau de chantier) porte le bâtiment : ni coupe, ni doloire, ni coin
+      if (!p.wood || p.wood.axis === 'up' || !p.box || !p.image.visible) continue;
       const aim = this.aimAt(player, p, work);
       if (aim && !aim.refusal) return aim;
       // la masse : le refus de la pièce où le coin est planté (« Pas la place pour la fendre. ») passe avant celui d'une voisine

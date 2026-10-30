@@ -52,7 +52,7 @@ export function sameWood(a: PileWood, b: PileWood): boolean {
 }
 
 /** Les places d'un tas de bois dans un sens. */
-function woodPlaces(w: PileWood, axis: WoodAxis): Record<string, ShapePlace> {
+function woodPlaces(w: PileWood, axis: Exclude<WoodAxis, 'up'>): Record<string, ShapePlace> {
   const piece: WoodPiece = { ...w, axis };
   const look = lookOf(piece);
   const img = woodSize(w.size, look, axis, w.length);

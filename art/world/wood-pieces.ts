@@ -3,8 +3,9 @@
 // diamètre et par aspect. Contrat : src/world/woodShape.ts (tailles, placements, `composeOps`) et la géométrie de
 // src/content/wood.json. Le jeu assemble à la volée avec les mêmes opérations que `composeWood` ci-dessous.
 //
-// Quatre planches, une par diamètre et par sens : `wood-big`, `wood-big-ns`, `wood-normal`, `wood-normal-ns`. Chaque partie
-// est calée en haut à gauche d'un cadre commun. Animations :
+// Cinq planches, une par diamètre et par sens : `wood-big`, `wood-big-ns`, `wood-normal`, `wood-normal-ns`, et debout (le poteau,
+// le normal seulement) `wood-normal-up` (rond, f1, f2, f3, poutre : `<aspect>-start|mid|end`, une image chacune, `normalUpSheet`).
+// Chaque partie est calée en haut à gauche d'un cadre commun. Animations :
 // - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` (gros : round, half ; normal : round, f1, f2, f3, beam) ; le rond a
 //   4 images (le roulement, un tour), les autres une ;
 // - gros seulement, le quartier : une partie par côté de sa face fendue debout (une image chacune), `quarter-north|south-
@@ -71,6 +72,8 @@ const TILE = 24;
 for (const s of Object.values(WOOD.sizes)) if (s.tile !== TILE) throw new Error('wood-pieces : écorce et fibres périodiques sur 24 px (tile)');
 
 type Part = 'start' | 'mid' | 'end';
+/** Les sens couchés (le debout, `up`, a sa planche à part : `normalUpSheet`). */
+type LyingAxis = Exclude<WoodAxis, 'up'>;
 const PARTS: Part[] = ['start', 'mid', 'end'];
 
 // ---------- Écorce qui roule ----------
@@ -698,7 +701,7 @@ function drawOpen(c: Canvas, sd: SplitDraw) {
  * Tracés du fendage du gros bois, sur une pièce de référence de longueur `total` (px le long de la pièce), pour le rond
  * et la demi-bille, est-ouest et nord-sud.
  */
-function bigSplitDraw(look: 'round' | 'half', axis: WoodAxis, total: number): SplitDraw {
+function bigSplitDraw(look: 'round' | 'half', axis: LyingAxis, total: number): SplitDraw {
   if (axis === 'ew') {
     const n = total - 1;
     if (look === 'round') {
@@ -759,7 +762,7 @@ function bigSplitDraw(look: 'round' | 'half', axis: WoodAxis, total: number): Sp
 const WEDGE_OUT = [3, 2, 1];
 
 /** Les parties d'un aspect qui se fend : `wedge-…-start|end`, `crack-…-start|mid|end`, `open-…-start|mid|end`. */
-function splitParts(look: 'round' | 'half', axis: WoodAxis, anims: Record<string, Grid[]>) {
+function splitParts(look: 'round' | 'half', axis: LyingAxis, anims: Record<string, Grid[]>) {
   const g = lookDef('big', look)[axis];
   const total = refTotal(g.start, g.end);
   const sd = bigSplitDraw(look, axis, total);
@@ -829,7 +832,7 @@ const nsNotch = (ew: Record<1 | 2, Grid[]>, w: number): Record<1 | 2, Grid[]> =>
   ({ 1: ew[1].map((g) => transposeBand(g, w)), 2: ew[2].map((g) => transposeBand(g, w)) });
 
 /** Les planches du gros bois. */
-function bigSheet(axis: WoodAxis): SheetParts {
+function bigSheet(axis: LyingAxis): SheetParts {
   const anims: Record<string, Grid[]> = {};
   for (const look of ['round', 'half'] as const) {
     const g = lookDef('big', look)[axis];
@@ -977,7 +980,7 @@ const N_EW_NOTCH: Record<1 | 2, Grid[]> = {
     ['K..KK', 'MK.KM', 'MMKMM', 'mmmmm', 'mmmmm', 'NNNNN', 'NNNNN', 'ooooo', 'xxxxx', 'xxxxx'],
   ],
 };
-function normalSheet(axis: WoodAxis): SheetParts {
+function normalSheet(axis: LyingAxis): SheetParts {
   const anims: Record<string, Grid[]> = {};
   for (const look of NORMAL_LOOKS) {
     const g = lookDef('normal', look)[axis];
@@ -992,6 +995,84 @@ function normalSheet(axis: WoodAxis): SheetParts {
   return { axis, frame: frameOf('normal', axis), anims };
 }
 
+// ---------- Debout (le poteau, `axis: 'up'`) ----------
+// La pièce couchée nord-sud qu'on dresse par son bout nord : son dessus (`nNsTop`, de l'ouest à l'est) devient la face qu'on voit,
+// de gauche à droite ; mêmes teintes, même écorce (anneau `NORMAL_RING`, sillons le long de la pièce, périodiques sur 24 px), même
+// fil (`grain`). Rond, f1, f2, f3 : 6 colonnes contour compris (4 de bois) ; poutre : 4 (2 de bois). La tête (`start`) : le bois de
+// bout vu de dessus, `up.extra` rangées contour compris (le dessus en raccourci : 6 × 3, poutre 4 × 2), Y t T cerclé de N (le contour
+// du haut et de gauche, l'écorce à l'est, un cran plus sombre au bord avant), le cœur en bas à droite ; ses coins sont carrés du côté
+// des faces dressées. Le pied (`end`) : le contour du bas, carré si la face sud est dressée (f3, poutre), arrondi sinon. Pas d'ombre :
+// le dé la porte. Les `lift` rangées sous le pied restent vides.
+
+/** Le bois en travers d'une pièce debout, colonne `i` (0 à gauche, côté lumière), rangée `Y` (le long de la pièce). */
+function nUpColumn(look: NormalLook, i: number, Y: number): string {
+  // l'écorce sur 4 colonnes : la rampe M m m N, les sillons des couloirs de l'anneau (rangées visibles 0, 1, 4, 5)
+  const bark = (j: number) => {
+    const b = barkTone([0.1, 0.4, 0.6, 0.85][j]);
+    return furrow(NORMAL_RING, Y, [0, 1, 4, 5][j], 0) ? DARKER[b] : b;
+  };
+  switch (look) {
+    case 'round': return bark(i);
+    case 'f1': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'c', 'Y') : bark(i);
+    case 'f2': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'c', 'Y') : i === 2 ? bark(2) : 'T';
+    case 'f3': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'a', 'Y') : i === 2 ? grain(Y, 'b', 't') : 'T';
+    default: return i === 0 ? grain(Y, 'a', 'Y') : grain(Y, 'b', 't');
+  }
+}
+
+/** La tête vue de dessus, rangées de bois (sous le contour du haut), colonnes de bois de gauche à droite. */
+const N_UP_HEAD: Record<NormalLook, Grid> = {
+  round: ['YYtN', 'YtTN'],
+  f1: ['YYtN', 'YtTN'],
+  f2: ['YYtt', 'YtTt'],
+  f3: ['YYtt', 'YtTt'],
+  beam: ['Yt'],
+};
+/** Coins carrés (faces dressées) : en haut à gauche, en haut à droite, en bas. */
+const N_UP_SQUARE: Record<NormalLook, { tl: boolean; tr: boolean; bottom: boolean }> = {
+  round: { tl: false, tr: false, bottom: false },
+  f1: { tl: true, tr: false, bottom: false },
+  f2: { tl: true, tr: true, bottom: false },
+  f3: { tl: true, tr: true, bottom: true },
+  beam: { tl: true, tr: true, bottom: true },
+};
+
+/** Pièce normale debout de `total` rangées (sa silhouette, sans les rangées vides du dé). */
+function nUpFull(look: NormalLook, total: number): Canvas {
+  const u = lookDef('normal', look).up!;
+  const W = u.w;
+  const c = new Canvas(W, total);
+  const head = N_UP_HEAD[look];
+  for (let Y = 1; Y <= total - 2; Y++) for (let X = 1; X <= W - 2; X++) {
+    const r = Y - 1;
+    if (r < head.length) { c.set(X, Y, head[r][X - 1]); continue; }
+    let q = nUpColumn(look, X - 1, Y);
+    // le bord avant de la tête, un cran plus sombre : l'écorce (l'anneau qui cercle le bois de bout), l'arête d'une face dressée
+    if (r === head.length) q = DARKER[q] ?? HEWN_DARKER[q] ?? q;
+    c.set(X, Y, q);
+  }
+  shadedOutline(c);
+  const sq = N_UP_SQUARE[look];
+  if (sq.tl) c.set(0, 0, 'N');
+  if (sq.tr) c.set(W - 1, 0, 'o');
+  if (sq.bottom) { c.set(0, total - 1, 'o'); c.set(W - 1, total - 1, 'o'); }
+  return c;
+}
+
+function normalUpSheet(): SheetParts {
+  const anims: Record<string, Grid[]> = {};
+  for (const look of NORMAL_LOOKS) {
+    const u = lookDef('normal', look).up;
+    if (!u) throw new Error(`wood-pieces : le normal « ${look} » n'a pas de géométrie debout (up)`);
+    if (u.w !== (look === 'beam' ? 4 : 6) || u.extra !== N_UP_HEAD[look].length + 1 || u.start !== 5 || u.end !== 4) {
+      throw new Error(`wood-pieces : géométrie debout du normal « ${look} » hors des dessins`);
+    }
+    const parts = cut3(nUpFull(look, refTotal(u.start, u.end)), 'up', u.start, u.end, `normal-${look}-up`);
+    for (const part of PARTS) anims[`${look}-${part}`] = [parts[part]];
+  }
+  return { axis: 'up', frame: frameOf('normal', 'up'), anims };
+}
+
 // =====================================================================================================================
 // Planches et assemblage
 // =====================================================================================================================
@@ -1003,12 +1084,17 @@ function frameOf(size: string, axis: WoodAxis): { w: number; h: number } {
   if (axis === 'ew') {
     return { w: Math.max(TILE, s.notch.ew.w, ...looks.flatMap((l) => [l!.ew.start, l!.ew.end])), h: Math.max(...looks.map((l) => l!.ew.h)) };
   }
+  if (axis === 'up') {
+    const ups = looks.flatMap((l) => (l!.up ? [l!.up] : []));
+    return { w: Math.max(...ups.map((u) => u.w)), h: Math.max(TILE, ...ups.flatMap((u) => [u.start, u.end])) };
+  }
   return { w: Math.max(...looks.map((l) => l!.ns.w)), h: Math.max(TILE, s.notch.ew.w, ...looks.flatMap((l) => [l!.ns.start, l!.ns.end])) };
 }
 
-const SHEETS: Record<string, Record<WoodAxis, SheetParts>> = {
+/** Les planches par diamètre et par sens ; debout (`up`), seulement le normal (le gros ne se dresse pas). */
+const SHEETS: Record<string, Partial<Record<WoodAxis, SheetParts>>> = {
   big: { ew: bigSheet('ew'), ns: bigSheet('ns') },
-  normal: { ew: normalSheet('ew'), ns: normalSheet('ns') },
+  normal: { ew: normalSheet('ew'), ns: normalSheet('ns'), up: normalUpSheet() },
 };
 
 /**
@@ -1020,7 +1106,7 @@ export function composeWood(piece: WoodPiece, opts: ComposeOpts = {}): Canvas {
   const { w, h } = woodSize(piece.size, lookOf(piece), piece.axis, piece.length);
   const c = new Canvas(w, h);
   const sheet = SHEETS[piece.size]?.[piece.axis];
-  if (!sheet) throw new Error(`wood-pieces : pas de planche pour « ${piece.size} »`);
+  if (!sheet) throw new Error(`wood-pieces : pas de planche pour « ${piece.size} » (${piece.axis})`);
   const ew = piece.axis === 'ew';
   for (const op of composeOps(piece, opts)) {
     if (op.kind === 'clear') {
@@ -1051,7 +1137,7 @@ function sheetSource(size: string, sp: SheetParts): SpriteSheetSource {
   }
   return {
     kind: 'spritesheet',
-    name: `${sizeOf(size).sheet}${sp.axis === 'ns' ? '-ns' : ''}`,
+    name: `${sizeOf(size).sheet}${sp.axis === 'ew' ? '' : `-${sp.axis}`}`,
     frameW: sp.frame.w,
     frameH: sp.frame.h,
     // le fer du coin de fendage (2 3 0) vient de la palette des outils, qui reprend toute la palette `world`
@@ -1065,10 +1151,12 @@ const piece = (size: string, shape: WoodPiece['shape'], axis: WoodAxis, length =
   ({ size, shape, axis, length, ...(face ? { face } : {}) });
 
 export default [
-  sheetSource('big', SHEETS.big.ew),
-  sheetSource('big', SHEETS.big.ns),
-  sheetSource('normal', SHEETS.normal.ew),
-  sheetSource('normal', SHEETS.normal.ns),
+  sheetSource('big', SHEETS.big.ew!),
+  sheetSource('big', SHEETS.big.ns!),
+  sheetSource('normal', SHEETS.normal.ew!),
+  sheetSource('normal', SHEETS.normal.ns!),
+  sheetSource('normal', SHEETS.normal.up!),
+  img('wood-normal-beam-300-up', composeWood({ size: 'normal', shape: 'round', axis: 'up', length: 300, hewn: WOOD.hew.faces * WOOD.hew.perFace })),
   img('wood-big-round-100', composeWood(piece('big', 'round', 'ew'))),
   img('wood-big-round-100-ns', composeWood(piece('big', 'round', 'ns'))),
   img('wood-normal-round-100', composeWood(piece('normal', 'round', 'ew'))),

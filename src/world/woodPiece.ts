@@ -5,7 +5,7 @@
 import { props as propDefs } from '../content';
 import { CONTOUR_CM } from '../content/gabarit';
 import type { PropDef, WoodPiece } from '../content/types';
-import { facesOf, lookDef, lookOf, sizeOf, woodBody, WOOD } from './woodShape';
+import { facesOf, lookDef, lookOf, sizeOf, upOf, woodBody, WOOD } from './woodShape';
 
 /** La clé de la pièce de bois dans props.json. */
 export const WOOD_PIECE = 'wood-piece';
@@ -28,6 +28,11 @@ export function woodOf(base: PropDef, wood?: WoodPiece): WoodPiece {
 export function woodDims(piece: WoodPiece): PropDef['dims'] {
   const d = sizeOf(piece.size).diameter;
   const look = lookOf(piece);
+  // debout : sa section au sol (sans contour : la largeur à l'écran est celle de la section), sa longueur en hauteur
+  if (piece.axis === 'up') {
+    const s = look === 'beam' ? WOOD.hew.beam : d;
+    return { w: s, d: s, h: piece.length, shape: look === 'beam' ? 'box' : 'cylinder', ...(look === 'beam' ? {} : { axis: 'up' as const }) };
+  }
   const across = piece.shape === 'quarter' ? d / 2 : look === 'beam' ? WOOD.hew.beam : d;
   const high = piece.shape === 'round' ? (look === 'beam' ? WOOD.hew.beam : d) : d / 2;
   const [w, dd] = piece.axis === 'ew' ? [piece.length, across + CONTOUR_CM] : [across + CONTOUR_CM, piece.length];
@@ -44,6 +49,21 @@ export function woodDims(piece: WoodPiece): PropDef['dims'] {
 export function woodDef(base: PropDef, piece: WoodPiece): PropDef {
   const look = lookOf(piece);
   const l = lookDef(piece.size, look);
+  // dressée (un poteau), la pièce ne se prend ni ne roule ni ne pivote : elle porte le bâtiment
+  if (piece.axis === 'up') {
+    return {
+      ...base,
+      name: upOf(piece.size, look).name,
+      gender: 'm',
+      dims: woodDims(piece),
+      body: woodBody(piece.size, look, 'up', piece.length),
+      bodies: undefined,
+      take: undefined,
+      roll: undefined,
+      turn: undefined,
+      wood: piece,
+    };
+  }
   return {
     ...base,
     name: l.name,
@@ -74,4 +94,12 @@ export function hewnFaces(piece: WoodPiece): { faces: number; beam: boolean } {
 export function capitalName(piece: WoodPiece): string {
   const name = lookDef(piece.size, lookOf(piece)).name;
   return name[0].toUpperCase() + name.slice(1);
+}
+
+/**
+ * La pièce de bois dressée à partir d'une pièce (un poteau de chantier) : son diamètre, sa longueur et ses faces dressées ; ni coupe,
+ * ni coin, ni face de quartier. C'est ce qu'un chantier garde de la poutre posée et ce qu'il dessine.
+ */
+export function uprightOf(piece: WoodPiece): WoodPiece {
+  return { size: piece.size, length: piece.length, shape: 'round', ...(piece.hewn ? { hewn: piece.hewn } : {}), axis: 'up' };
 }

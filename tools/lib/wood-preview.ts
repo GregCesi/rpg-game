@@ -4,7 +4,7 @@
 // (un tiers, deux tiers) à 1 m du bout d'une pièce de 2 m ; chaque aspect à 1 m puis à 3 m ; pour ce qui se fend, depuis chaque bout,
 // le coin planté, la fente après un et deux coups, le bois ouvert du dernier, et les deux morceaux posés comme le jeu les pose
 // (`split` de wood.json, `splitPieces` : les quartiers faces debout opposées) ; le quartier dans ses quatre positions (face debout au
-// nord, à l'est, au sud, à l'ouest : un tour de R), à 1 m et 2 m. Enfin les vues portées (de face, de dos, de profil à 1 m) et l'icône de chaque aspect.
+// nord, à l'est, au sud, à l'ouest : un tour de R), à 1 m et 2 m ; debout (le poteau), chaque aspect qui se dresse couché à 1 m et 3 m puis debout à 1 m, 1,80 m et 3 m. Enfin les vues portées (de face, de dos, de profil à 1 m) et l'icône de chaque aspect.
 
 import type { PNG } from 'pngjs';
 import type { Grid, Palette } from '../../art/lib/canvas';
@@ -29,7 +29,7 @@ export function woodPreview(sources: ArtSource[]): PNG | undefined {
   const palette = sheet.palette;
   const one = (grid: Grid, pal: Palette = palette): Cell => ({ items: [{ grid, x: 0, y: 0 }], palette: pal, w: grid[0].length, h: grid.length });
   const xeros = one(body.animations['idle-down'].frames[0], body.palette);
-  const piece = (size: string, axis: 'ew' | 'ns', length: number, look: WoodLook = 'round', more: Partial<WoodPiece> = {}): WoodPiece => {
+  const piece = (size: string, axis: WoodPiece['axis'], length: number, look: WoodLook = 'round', more: Partial<WoodPiece> = {}): WoodPiece => {
     const shape = look === 'half' || look === 'quarter' ? look : 'round';
     return { size, length, shape, axis, ...(FACES[look] ? { hewn: FACES[look] * WOOD.hew.perFace } : {}), ...more };
   };
@@ -72,6 +72,15 @@ export function woodPreview(sources: ArtSource[]): PNG | undefined {
       for (const cm of [100, 200]) {
         rows.push([xeros, ...(['north', 'east', 'south', 'west'] as const).map((face) => cell(piece(size, face === 'north' || face === 'south' ? 'ew' : 'ns', cm, 'quarter', { face })))]);
       }
+    }
+    // debout (le poteau) : chaque aspect qui se dresse, couché (1 m, 3 m) à côté du même debout (1 m, 1,80 m, 3 m)
+    for (const look of looks) {
+      if (!def.looks[look]!.up) continue;
+      rows.push([
+        xeros,
+        ...[100, 300].map((cm) => cell(piece(size, 'ew', cm, look))),
+        ...[100, 180, 300].map((cm) => cell(piece(size, 'up', cm, look))),
+      ]);
     }
     const held: Cell[] = [];
     for (const look of looks) {

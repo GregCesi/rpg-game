@@ -14,7 +14,7 @@ const SHADOW_RGBA = [0x2b, 0x1a, 0x10, 0x40] as const;
 /** Dessine les opérations d'une pièce dans `ctx`, décalées de `ox` (l'image de roulement `frame`). */
 function paint(scene: Phaser.Scene, ctx: CanvasRenderingContext2D, piece: WoodPiece, ox: number, opts: ComposeOpts): void {
   const { axis } = piece;
-  const src = axis === 'ew' ? sizeOf(piece.size).sheet : `${sizeOf(piece.size).sheet}-ns`;
+  const src = axis === 'ew' ? sizeOf(piece.size).sheet : `${sizeOf(piece.size).sheet}-${axis}`;
   const { w, h } = woodSize(piece.size, lookOf(piece), axis, piece.length);
   for (const op of composeOps(piece, opts)) {
     if (op.kind === 'clear') {
@@ -41,7 +41,7 @@ export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, opts: Pick<Co
   const key = woodKey(piece, opts);
   if (scene.textures.exists(key)) return key;
   const { w, h } = woodSize(piece.size, lookOf(piece), piece.axis, piece.length);
-  const count = piece.wedge || opts.open ? 1 : framesOf(lookOf(piece));
+  const count = piece.wedge || opts.open || piece.axis === 'up' ? 1 : framesOf(lookOf(piece));
   const tex = scene.textures.createCanvas(key, w * count, h)!;
   const ctx = tex.getContext();
   for (let k = 0; k < count; k++) {

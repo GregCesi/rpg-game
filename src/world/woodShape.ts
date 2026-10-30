@@ -8,6 +8,9 @@
 // ou sud), posé en dernier, par-dessus le départ quand la pièce est plus courte que ses deux bouts. Animations de la planche :
 // - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` : les trois parties de chaque aspect (4 images pour le rond, qui roule : un
 //   tour ; une pour les autres) ;
+// - debout (`up`, un poteau : planche `<sheet>-up`, seulement pour les aspects qui ont `up` dans wood.json) : mêmes parties, prises en
+//   hauteur : `start` est la tête (bois de bout vu de dessus, avec ses cernes), `end` le pied ; sous le pied, `lift` rangées vides
+//   (le dé) ; pas d'encoche ni de fente ;
 // - `notch1`, `notch2` : la bande d'encoche d'une coupe (un tiers, deux tiers ; 4 images comme le rond), qui remplace à sa place
 //   les colonnes (est-ouest) ou les rangées (nord-sud) de l'image ;
 // - pour un aspect qui se fend (`split` du diamètre) : `wedge-<aspect>-start`, `wedge-<aspect>-end`, le bout où le coin est
@@ -22,7 +25,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import woodJson from '../content/wood.json';
 import { WoodSchema, type End, type WoodLook, type WoodLookDef, type WoodPiece, type WoodSize } from '../content/types';
 
-export type WoodAxis = 'ew' | 'ns';
+export type WoodAxis = 'ew' | 'ns' | 'up';
 
 /** Le bois de wood.json (lu ici sans passer par content/index.ts, pour que le dessin s'en serve sans les cartes générées). */
 export const WOOD = WoodSchema.parse(woodJson);
@@ -39,6 +42,13 @@ export function lookDef(size: string, look: WoodLook): WoodLookDef {
   const l = sizeOf(size).looks[look];
   if (!l) throw new Error(`wood.json : le diamètre « ${size} » n'a pas d'aspect « ${look} »`);
   return l;
+}
+
+/** La géométrie dressée de l'aspect `look` du diamètre `size` ; refusée s'il ne se dresse pas. */
+export function upOf(size: string, look: WoodLook): NonNullable<WoodLookDef['up']> {
+  const u = lookDef(size, look).up;
+  if (!u) throw new Error(`wood.json : le diamètre « ${size} » n'a pas d'aspect « ${look} » debout (up)`);
+  return u;
 }
 
 /** Images d'un aspect : 4 pour le rond (il roule), 1 pour les autres. */
@@ -66,6 +76,10 @@ export function lookOf(piece: Pick<WoodPiece, 'shape' | 'hewn'>): WoodLook {
 export function woodSize(size: string, look: WoodLook, axis: WoodAxis, cm: number): { w: number; h: number } {
   const n = lengthPx(cm);
   const g = lookDef(size, look);
+  if (axis === 'up') {
+    const u = upOf(size, look);
+    return { w: u.w, h: n + u.extra + u.lift };
+  }
   return axis === 'ew' ? { w: n + 1, h: g.ew.h } : { w: g.ns.w, h: n + g.ns.extra };
 }
 
@@ -76,6 +90,7 @@ export function woodSize(size: string, look: WoodLook, axis: WoodAxis, cm: numbe
 export function woodBody(size: string, look: WoodLook, axis: WoodAxis, cm: number): { w: number; h: number; bottom: number } {
   const n = lengthPx(cm);
   const g = lookDef(size, look);
+  if (axis === 'up') return { ...upOf(size, look).body, bottom: 0 };
   return axis === 'ew'
     ? { w: Math.max(1, n - 1), h: g.ew.body.h, bottom: g.ew.body.bottom }
     : { w: g.ew.body.h, h: Math.max(1, n - 1), bottom: g.ns.bottom };
@@ -91,10 +106,11 @@ export interface Placement {
 /** Les parties d'une image de `cm` centimètres, dans l'ordre où on les pose (le bout d'arrivée en dernier). */
 export function placements(size: string, look: WoodLook, axis: WoodAxis, cm: number): Placement[] {
   const g = lookDef(size, look);
-  const ends = axis === 'ew' ? g.ew : g.ns;
+  const ends = axis === 'ew' ? g.ew : axis === 'ns' ? g.ns : upOf(size, look);
   const tile = sizeOf(size).tile;
   const { w, h } = woodSize(size, look, axis, cm);
-  const total = axis === 'ew' ? w : h;
+  // debout, les rangées vides sous le pied (`lift`) ne font pas partie de la pièce
+  const total = axis === 'ew' ? w : axis === 'ns' ? h : h - upOf(size, look).lift;
   const out: Placement[] = [{ part: 'start', at: 0, size: Math.min(ends.start, total) }];
   for (let at = ends.start; at < total - ends.end; at += tile) out.push({ part: 'mid', at, size: Math.min(tile, total - ends.end - at) });
   const end = Math.max(0, total - ends.end);
@@ -151,6 +167,7 @@ export function faceOf(piece: Pick<WoodPiece, 'axis' | 'face'>): End {
  * quartier garde sa face debout du côté qui suit (nord -> est -> sud -> ouest -> nord).
  */
 export function turnedWood(piece: WoodPiece): WoodPiece {
+  if (piece.axis === 'up') return piece;
   const axis = piece.axis === 'ew' ? 'ns' : 'ew';
   if (piece.shape !== 'quarter') return { ...piece, axis };
   return { ...piece, axis, face: CLOCKWISE[(CLOCKWISE.indexOf(faceOf(piece)) + 1) % 4] };
@@ -164,10 +181,12 @@ export function turnedWood(piece: WoodPiece): WoodPiece {
 export function splitPieces(piece: WoodPiece): { piece: WoodPiece; dx: number; dy: number }[] {
   const { wedge: _w, ...rest } = piece;
   const rule = sizeOf(piece.size).split[piece.shape as 'round' | 'half']!;
-  const at = rule[piece.axis];
-  const along = piece.axis === 'ew' ? 1 : 0;
+  // une pièce dressée ne se fend pas : seules les couchées
+  const axis = piece.axis as Exclude<WoodAxis, 'up'>;
+  const at = rule[axis];
+  const along = axis === 'ew' ? 1 : 0;
   const first = at[0][along] <= at[1][along] ? 0 : 1;
-  const faces: End[] = piece.axis === 'ew' ? ['south', 'north'] : ['east', 'west'];
+  const faces: End[] = axis === 'ew' ? ['south', 'north'] : ['east', 'west'];
   return at.map(([dx, dy], i) => ({
     piece: { ...rest, shape: rule.into, ...(rule.into === 'quarter' ? { face: faces[i === first ? 0 : 1] } : {}) },
     dx,
@@ -255,3 +274,6 @@ export function composeOps(piece: WoodPiece, opts: ComposeOpts = {}): DrawOp[] {
 export function metresLabel(cm: number): string {
   return `${String(Math.round(cm / 10) / 10).replace('.', ',')} m`;
 }
+
+/** Le diamètre dont la poutre se dresse (le normal) : celui des poteaux d'un chantier. */
+export const BEAM_SIZE = Object.keys(WOOD.sizes).find((k) => WOOD.sizes[k].looks.beam?.up) ?? Object.keys(WOOD.sizes)[0];

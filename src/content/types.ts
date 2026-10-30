@@ -166,7 +166,7 @@ export const WoodLookSchema = z.enum(['round', 'half', 'quarter', 'f1', 'f2', 'f
  * Une pièce de bois (la seule sorte d'objet de bois du monde, `wood-piece` de props.json), décrite par ses réglages et non par
  * une clé : `size`, son diamètre (clé de `sizes` de wood.json : celui de l'arbre d'où elle vient, `big` 55 cm, `normal` 30 cm) ;
  * `length` en cm ; `shape` : ronde, demi ou quart (le fendage) ; `hewn` : coups de doloire reçus (une face tous les `perFace`
- * coups, la poutre à 4 faces) ; `axis` : couchée est-ouest ou nord-sud ; `notch` : la coupe commencée (`at` cm du bout ouest ou
+ * coups, la poutre à 4 faces) ; `axis` : couchée est-ouest ou nord-sud, ou debout (`up` : un poteau, sur son dé) ; `notch` : la coupe commencée (`at` cm du bout ouest ou
  * nord, `hits` coups) ; `face` : le côté de la face debout d'un quartier ; `wedge` : le coin planté (`end`, le bout d'où il est planté et d'où se donnent les coups, `hits` coups de
  * masse reçus). GameState garde ces réglages pour chaque pièce posée ou tenue ; Tiled peut les donner en propriétés.
  */
@@ -175,7 +175,7 @@ export const WoodPieceSchema = z.strictObject({
   length: z.number().int().positive(),
   shape: z.enum(['round', 'half', 'quarter']),
   hewn: z.number().int().positive().optional(),
-  axis: z.enum(['ew', 'ns']),
+  axis: z.enum(['ew', 'ns', 'up']),
   notch: z.strictObject({ at: z.number().int().positive(), hits: z.number().int().positive() }).optional(),
   wedge: z.strictObject({ end: EndSchema, hits: z.number().int().nonnegative() }).optional(),
   /**
@@ -222,6 +222,22 @@ const WoodNsSchema = z.strictObject({
 });
 
 /**
+ * Géométrie d'un aspect dressé (`axis: 'up'`, un poteau sur son dé), dans la planche `<sheet>-up` : l'image fait `w` colonnes sur
+ * la longueur en pixels plus `extra` rangées (la tête, le bois de bout vu de dessus : la moitié de la profondeur, gabarit), plus
+ * `lift` rangées vides dessous (la hauteur du dé, 15 cm : le bas de l'image est au sol, le pied sur le dé). `start` : les rangées de
+ * la tête, `end` : celles du pied (avant `lift`). `body` : la collision au sol, au pied. `name` : ce qu'est la pièce debout.
+ */
+const WoodUpSchema = z.strictObject({
+  name: id,
+  w: z.number().int().positive(),
+  extra: z.number().int().positive(),
+  start: z.number().int().positive(),
+  end: z.number().int().positive(),
+  lift: z.number().int().nonnegative(),
+  body: z.strictObject({ w: z.number().int().positive(), h: z.number().int().positive() }),
+});
+
+/**
  * Un aspect d'un diamètre : son nom et son genre (les messages), son icône 16×16 (`item-…`), sa planche portée (`held-…` :
  * vues `down` et `up` par le bout, ne dépendant pas de la longueur ; `right`, la pièce de 1 m de profil, que le jeu remplace par la
  * pièce assemblée à sa longueur), et la géométrie de ses parties (contrat entre le dessin et le jeu, `world/woodShape.ts`).
@@ -233,6 +249,8 @@ export const WoodLookDefSchema = z.strictObject({
   held: id,
   ew: WoodEwSchema,
   ns: WoodNsSchema,
+  /** Debout (poteau) : absent, cet aspect ne se dresse pas. */
+  up: WoodUpSchema.optional(),
 });
 
 /** Fendre un aspect : ce qu'il devient (`into`, deux pièces), et le coin bas gauche de chacune par rapport à la pièce fendue, par sens. */
@@ -470,6 +488,8 @@ export const PlanPlaceSchema = z.strictObject({
 export const PlanStepSchema = z.strictObject({
   name: id,
   soon: z.literal(true).optional(),
+  /** Ce que seront les pièces de cette étape quand elle s'ouvrira (une étape `soon` garde ses dessins actuels en fantôme jusqu'alors). */
+  note: z.string().optional(),
   /** Ce que toutes les places de l'étape acceptent, sauf celles qui disent autre chose. */
   accepts: AcceptSchema.optional(),
   places: z.record(id, PlanPlaceSchema),

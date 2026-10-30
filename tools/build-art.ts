@@ -34,6 +34,7 @@ import type { WoodLook, WoodPiece } from '../src/content/types';
 import { WOOD } from '../src/world/woodShape';
 import { composeWood } from '../art/world/wood-pieces';
 import { world } from '../art/palette';
+import type { ArtSource } from '../art/lib/types';
 
 /** Où l'aperçu pose un plan : la carte, et le point au sol de son piquet nord-ouest (px). */
 const PLAN_PREVIEW = { map: 'ferme', corner: [568, 99] };
@@ -126,8 +127,9 @@ const catalog = {
 };
 // Le gabarit des pièces de bois assemblées (validate.ts) : la silhouette de chaque aspect de chaque diamètre (le quartier dans ses
 // quatre positions), dans les deux sens, à plusieurs longueurs, telles que le jeu les assemble (composeWood) : l'est-ouest suit le
-// gabarit, le nord-sud a ses dimensions inversées (règle D).
-for (const length of [60, 100, 200, 300, 400]) {
+// gabarit, le nord-sud a ses dimensions inversées (règle D), et debout (les aspects qui se dressent) : sa section en largeur, sa
+// longueur plus la moitié de sa profondeur en hauteur.
+for (const length of [60, 100, 180, 200, 300, 400]) {
   for (const [size, def] of Object.entries(WOOD.sizes)) {
     for (const look of Object.keys(def.looks) as WoodLook[]) {
       const shape = look === 'half' || look === 'quarter' ? look : 'round';
@@ -139,7 +141,7 @@ for (const length of [60, 100, 200, 300, 400]) {
               ...(['north', 'south'] as const).map((face): WoodPiece => ({ ...base, face })),
               ...(['east', 'west'] as const).map((face): WoodPiece => ({ ...base, axis: 'ns', face })),
             ]
-          : [base, { ...base, axis: 'ns' }];
+          : [base, { ...base, axis: 'ns' }, ...(def.looks[look]!.up ? [{ ...base, axis: 'up' as const }] : [])];
       for (const piece of samples) {
         const s = silhouette(composeWood(piece).toGrid(), world);
         catalog.woodSilhouettes.push({ piece, w: s.w, h: s.h });
@@ -342,11 +344,21 @@ if (withPreview) {
   const plans = parse('plans.json', z.record(z.string(), PlanSchema), plansJson);
   const base = previewMap(PLAN_PREVIEW.map);
   for (const [key, plan] of Object.entries(plans)) {
+    // un chantier montre les vraies pièces posées : une place qui demande une poutre montre la pièce de bois dressée, assemblée comme en jeu
+    const standing: ArtSource[] = [];
     const placed = plan.steps.flatMap((step) =>
-      Object.values(step.places).map((p) => ({ type: p.piece, x: PLAN_PREVIEW.corner[0] + p.at[0] / 5, y: PLAN_PREVIEW.corner[1] + p.at[1] / 5 })),
+      Object.values(step.places).map((p) => {
+        const beam = (p.accepts ?? step.accepts)?.wood;
+        const at = { x: PLAN_PREVIEW.corner[0] + p.at[0] / 5, y: PLAN_PREVIEW.corner[1] + p.at[1] / 5 };
+        if (!beam) return { type: p.piece, ...at };
+        const piece: WoodPiece = { size: Object.keys(WOOD.sizes).find((s) => WOOD.sizes[s].looks.beam?.up)!, length: beam.length, shape: 'round', hewn: WOOD.hew.faces * WOOD.hew.perFace, axis: 'up' };
+        const name = `wood-up-${beam.length}`;
+        if (!standing.some((q) => q.name === name)) standing.push({ kind: 'image', name, palette: world, grid: composeWood(piece).toGrid() });
+        return { type: p.piece, ...at, image: name, blocks: true };
+      }),
     );
     const steps = plan.steps.map((step) => ({ pieces: [...new Set(Object.values(step.places).map((p) => p.piece))] }));
-    const pngs = buildingPreview(sources, { steps }, { ...base, objects: [...base.objects, ...placed] }, propDefs);
+    const pngs = buildingPreview([...sources, ...standing], { steps }, { ...base, objects: [...base.objects, ...placed] }, propDefs);
     pngs.forEach((png, i) => writeFileSync(join(PREVIEW, i === pngs.length - 1 ? `${key}.png` : `${key}-${i + 1}.png`), PNG.sync.write(png)));
   }
   // les étalons du gabarit (docs/STYLE.md section 8)
