@@ -150,7 +150,7 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - **Méthode : un jeu de pièces.** Chaque pièce (dé, poteau, sablière, chevron, couverture...) est un objet du catalogue,
   avec sa fiche (`docs/objets/`) et ses dimensions réelles, dessiné selon le gabarit et comparé aux étalons. Un bâtiment
   s'assemble dans Tiled, pièce par pièce, **dans l'ordre réel du chantier** (les dés, les poteaux, les sablières, les
-  chevrons, la couverture) ; l'ordre est noté en données (`src/content/buildings.json`) et l'aperçu montre le bâtiment
+  chevrons, la couverture) ; l'ordre est noté en données (le plan, `src/content/plans.json`) et l'aperçu montre le bâtiment
   monter, étape par étape.
 - **Une pièce posée sur la carte se voit à sa place réelle.** Les pièces sont posées sur le sol à leur emprise exacte
   (5 cm par pixel) ; une pièce en hauteur (sablière, chevron, toit) garde sous elle, dans son image, la hauteur qui la
@@ -163,8 +163,51 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - **L'abri repris** (30 octobre 2026) : toit de planches posées dans le sens de la pente, avec un avant-toit visible, appentis
   à environ 20° (poteaux de 3 m au nord, 1,70 m au sud), poteaux de 20 × 20 cm ; l'ombre portée du toit est calculée par le
   jeu (sa projection au sol, décalée selon la lumière), sous les poteaux et sous Xéros, et s'efface avec le toit.
-- **Chantier en cours : l'abri à bois seulement**, posé tout construit dans la ferme, à côté du tas de bois, sur environ
-  2 × 2 cases (3,2 m sur 3,2 m). Construire soi-même (porter les pièces, les poser dans l'ordre) n'est pas encore construit.
+- **Chantier en cours : l'abri à bois seulement, et seulement ses fondations** (décidé le 30 octobre 2026, « implantation »).
+  L'abri n'est plus posé tout construit dans la ferme : Xéros le bâtit, comme en vrai, en commençant par apprendre le plan,
+  tracer l'emprise au sol avec des piquets, puis poser les dés de pierre. Les poteaux, sablières, chevrons et toit
+  viendront dans d'autres chantiers ; celui-ci prépare le moteur qui les portera.
+- **Le plan.** Une planchette de bois où la mère, qui sculpte, a gravé le plan de l'abri (`plan-tablet`), posée sur une table
+  de sa chambre (`maison.tmj`). E dessus : « Xéros connaît maintenant le plan de l'abri à bois. » ; la planchette reste en place.
+  Les plans connus sont dans GameState (`knownPlans`). Un plan est un fichier de contenu (`src/content/plans.json`), en
+  centimètres : son emprise (305 × 355 cm entre les axes des coins), ses quatre coins, le piquet qui le trace, puis ses étapes
+  dans l'ordre réel (dés, poteaux, sablières, chevrons, toit). Chaque étape a ses places ; chaque place dit sa pièce, sa
+  position (le coin bas gauche de l'image depuis le piquet nord-ouest, reprise de l'abri d'avant), son orientation, la place
+  sur laquelle elle repose, et la pièce qu'elle accepte. Seule l'étape des dés est jouable ; les autres sont déclarées et
+  marquées « à venir » (`soon`) : `validate.ts` vérifiera leurs pièces quand elles seront ouvertes. L'orientation est fixe
+  pour l'instant : le côté haut du toit au nord, l'abri n'est dessiné que dans ce sens. **Un nouveau bâtiment = un plan
+  dans `plans.json`, sans code nouveau.**
+- **Le piquet** (`stake`, fiche `docs/objets/stake.md`) : une branche posée sur le billot (E), un coup de hache (Espace, comme
+  la coupe d'un lien) : elle devient un piquet taillé en pointe, environ 100 × 5 × 5 cm, 1 kg, tenu à une main ; le coup coûte
+  autant qu'un coup de hache. La branche se reprend avec E. Planter un piquet coûte 0,5 point d'endurance.
+- **Tracer.** Piquet en main, plan connu, Espace sur le sol : le piquet se plante. Sans plan connu : « Xéros ne sait pas encore
+  quoi tracer. » Le premier piquet fixe le coin nord-ouest de l'emprise ; les trois autres coins apparaissent en fantôme, et
+  les piquets suivants ne se plantent que là (un coin à moins de 12 px du point visé aimante le piquet ; ailleurs : « Les
+  piquets se plantent aux coins du tracé. »). E sur un piquet planté, tant que le chantier n'est pas né : on le reprend, ce qui
+  permet de changer d'emplacement. Au quatrième piquet, le chantier naît si toute l'emprise est libre (pas d'objet, d'eau, de
+  mur, de tas ni d'objet au sol ; Xéros lui-même ne compte pas) ; sinon « Il y a quelque chose dans le passage. » et le
+  quatrième piquet reste en main.
+- **Les dés de pierre.** La pierre plate (`flat-stone`, fiche `docs/objets/flat-stone.md`) fait environ 30 × 30 × 15 cm. Sa
+  masse est calculée avec une densité de pierre de 2 600 kg/m³ (`STONE_DENSITY`, `src/content/mass.ts`, à côté de celle du bois) :
+  35 kg, portée à deux mains, lentement (au-dessus de 25 kg : pas de course). La ferme a un étang : les pierres sont sur sa berge
+  (six, posées dans Tiled : quatre pour l'abri, deux de marge), pas dans un pierrier. Une pierre posée sur une place du chantier
+  devient un dé (`footing-stone`).
+- **Le chantier.** On voit en fantôme seulement les places de l'étape en cours : les quatre dés, aux coins. Pierre en main, E sur
+  une place : le dé est posé, et le piquet de ce coin est arraché et retombe au sol à côté, réutilisable. Autre chose en main :
+  « Il faut une pierre plate. » Près du chantier, une petite ligne d'état : « Abri à bois : dés, 2 sur 4 ». Les quatre dés
+  posés : « Abri à bois : poteaux, 0 sur 4 », et les poteaux apparaissent en fantôme, même si on ne peut pas encore les poser (« Cette
+  étape viendra plus tard. »). Le chantier (plan, position du piquet nord-ouest, coins plantés, pièces posées) est dans GameState
+  (`sites` de la carte) : il se retrouve après un rechargement ; `SAVE_VERSION` 5, les parties de la version 4 sont converties
+  (aucun plan connu, aucun chantier).
+- **Un moteur de places commun** (`src/world/places.ts`, sans Phaser). Les tas et les chantiers partagent le même mécanisme :
+  des places avec des couches et des dépendances (une place du dessus repose sur d'autres), celles qui sont ouvertes, la plus
+  haute qu'on reprend, la place visée la plus proche, l'ordre d'affichage, le fantôme (`systems/ghost.ts`), et ce que la place
+  accepte (`accepts`, `refusal`, `world/offer.ts`). Un tas l'utilise avec des places qui acceptent un genre ; un chantier avec
+  des places qui acceptent une pièce précise, par sa clé d'objet (et plus tard des mesures : longueur, section, état), avec
+  un message de refus clair. La mécanique du chantier est dans `src/systems/site.ts`, la géométrie du plan sur la carte dans
+  `src/world/sitePlan.ts`.
+- **Ce qui viendra** : les poteaux (équarrir le bois, mesurer, tenir debout), les sablières, les chevrons, le toit de planches ;
+  d'autres orientations ; le pierrier, s'il n'y a pas d'étang ; tourner un plan ; défaire un chantier.
 
 ## Poids et force (décidé le 30 octobre 2026)
 
@@ -173,7 +216,7 @@ Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter
 - **Masses** (`src/content/mass.ts`). Tout objet qu'on prend, pose ou roule a une masse en kg (`validate.ts` l'exige). Saisie pour les
   objets simples (hache 2,5 kg, branche 2,5 kg, lien 0,2 kg, rouleau de corde 1 kg les 10 m, au prorata de sa longueur). **Calculée
   pour le bois** : volume du tronc tiré des `dims` (le diamètre est celui des dimensions moins le contour d'un pixel de chaque côté :
-  65 cm contour compris = 55 cm de bois) × une seule densité, 900 kg/m³ de bois vert. Ce qui donne **203 kg** pour une bille du gros
+  65 cm contour compris = 55 cm de bois) × une seule densité, 900 kg/m³ de bois vert. **Calculée pour la pierre** (30 octobre 2026) : le volume de la boîte de ses `dims` × 2 600 kg/m³ (`STONE_DENSITY`, à côté de la densité du bois), soit 35 kg pour la pierre plate de 30 × 30 × 15 cm. Ce qui donne **203 kg** pour une bille du gros
   arbre (95 cm × Ø 55) et **60 kg** pour une bille de l'arbre normal (95 cm × Ø 30) ; avec des billes d'un mètre pile, on trouverait
   214 et 64 kg : l'ordre de grandeur est le bon. Le fagot pèse la somme de ses dix branches et de son lien (25,2 kg).
 - **Force** (`src/content/strength.json`, composant `Strength` du joueur). Il **porte jusqu'à 70 kg** (les deux mains ensemble), **marche
@@ -198,12 +241,12 @@ Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter
 La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'essoufflement d'une course ou d'une charge, qui se reprend en quelques secondes) viendra plus tard comme **deuxième jauge**, à côté de celle-ci : l'endurance baisse tout le jour et ne remonte qu'en dormant.
 
 - **La jauge** : 100 points au maximum (`src/content/stamina.json`, composant `entities/Stamina.ts`, mécanique `src/systems/effort.ts`). Elle est dans GameState (`stamina`) et se sauvegarde avec la partie ; à l'écran, une jauge verticale à droite des deux cases des mains (`art/ui/stamina.ts`), rouge sous le seuil de fatigue, qui tremble quand un effort est refusé.
-- **Ce qui coûte** (tout est dans `stamina.json`, rien en dur) : un coup d'outil (hache sur l'arbre debout, le houppier, une encoche), la coupe d'un lien sur le billot, nouer et dénouer, pivoter une bille (par kg), planter le coin et frapper à la masse (voir *Fendre*), et par seconde : marcher en portant au-delà de 25 kg (par kg de trop), pousser une bille (par kg), courir (0,2 point par seconde depuis le 30 octobre 2026 ; c'était 1). **Marcher ne coûte rien**, ni à vide ni chargé en dessous de 25 kg. Un coup dans le vide ou sans le bon outil ne coûte rien.
+- **Ce qui coûte** (tout est dans `stamina.json`, rien en dur) : un coup d'outil (hache sur l'arbre debout, le houppier, une encoche, la branche taillée en piquet), la coupe d'un lien sur le billot, planter un piquet de tracé (0,5 point), nouer et dénouer, pivoter une bille (par kg), planter le coin et frapper à la masse (voir *Fendre*), et par seconde : marcher en portant au-delà de 25 kg (par kg de trop), pousser une bille (par kg), courir (0,2 point par seconde depuis le 30 octobre 2026 ; c'était 1). **Marcher ne coûte rien**, ni à vide ni chargé en dessous de 25 kg. Un coup dans le vide ou sans le bon outil ne coûte rien.
 - **Fatigué** (sous 15 %) : pas de course, marche à 85 % de la normale. **Épuisé** (0) : toute action qui coûte est refusée, une fois, par « Xéros est épuisé. Il faut dormir. » (la jauge tremble) ; il peut toujours marcher, mais ne soulève plus ce qui le ferait porter au-delà de 25 kg. Les coûts se règlent avec la force : le fardeau est compté au-delà du seuil de marche de `strength.json`, donc une force plus grande coûte moins.
 - **Dormir** : E sur la paillasse du cagibi (`pallet`, dialogue `pallet-sleep`) propose « Dormir ? » (premier dialogue à choix : `choices` d'une ligne, `action: "sleep"`). Oui : fondu au noir, jauge pleine, un jour de plus, réveil dans le cagibi, partie sauvegardée, « Jour 2 » à l'écran.
 - **Compteur de jours** : `day` de GameState (jour 1 au départ, +1 à chaque nuit). Pas encore d'horloge ; il servira au temps et aux saisons.
-- **Sauvegarde** : `SAVE_VERSION` 4 ; une partie de la version 2 est convertie à la lecture (jauge pleine, jour 1), une partie de la version 3 aussi (le fendage ne fait qu'ajouter des champs facultatifs), sans repartir à neuf.
-- **Outils de test** (`?dieu`) : un champ pour régler l'endurance, une case « endurance infinie ».
+- **Sauvegarde** : `SAVE_VERSION` 5 ; une partie de la version 2 est convertie à la lecture (jauge pleine, jour 1), une partie de la version 3 aussi (le fendage ne fait qu'ajouter des champs facultatifs), une partie de la version 4 aussi (les chantiers : aucun plan connu, aucun chantier), sans repartir à neuf.
+- **Outils de test** (`?dieu`) : un champ pour régler l'endurance, une case « endurance infinie » ; pour l'implantation : apprendre un plan, mettre quatre piquets ou quatre pierres plates au sol devant Xéros, effacer les chantiers de la carte.
 
 ## Fendre (décidé le 30 octobre 2026)
 

@@ -13,9 +13,9 @@ import { sources } from '../art/index';
 import type { Grid, Palette } from '../art/lib/canvas';
 import propsJson from '../src/content/props.json';
 import pilesJson from '../src/content/piles.json';
-import buildingsJson from '../src/content/buildings.json';
+import plansJson from '../src/content/plans.json';
 import tilesCatalogJson from '../src/content/tiles.json';
-import { BuildingDefSchema, GestureSchema, PileDefSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
+import { GestureSchema, PileDefSchema, PlanSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
 import type { DecalSet } from '../src/content/types';
 import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
 import { projectFile, propsTsj, tilesetTsj } from './lib/tiled-files';
@@ -28,6 +28,9 @@ import { fendagePreview } from './lib/fendage-preview';
 import { auditPreview } from './lib/audit-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
+
+/** Où l'aperçu pose un plan : la carte, et le point au sol de son piquet nord-ouest (px). */
+const PLAN_PREVIEW = { map: 'ferme', corner: [568, 99] };
 
 const OUT = 'src/generated';
 const PREVIEW = '.art-preview';
@@ -297,10 +300,15 @@ if (withPreview) {
   // le fendage : la bille, le coin, les trois fentes, les demi-billes, les quartiers, les outils, le tas de quartiers
   const fendage = fendagePreview(sources, propDefs, pileDefs);
   if (fendage) writeFileSync(join(PREVIEW, 'fendage.png'), PNG.sync.write(fendage));
-  // les bâtiments qui montent, étape par étape, à leur place sur leur carte Tiled
-  const buildings = parse('buildings.json', z.record(z.string(), BuildingDefSchema), buildingsJson);
-  for (const [key, b] of Object.entries(buildings)) {
-    const pngs = buildingPreview(sources, b, previewMap(b.map), propDefs);
+  // les bâtiments qui montent, étape par étape : chaque plan de plans.json posé sur la ferme, son piquet nord-ouest en PLAN_PREVIEW
+  const plans = parse('plans.json', z.record(z.string(), PlanSchema), plansJson);
+  const base = previewMap(PLAN_PREVIEW.map);
+  for (const [key, plan] of Object.entries(plans)) {
+    const placed = plan.steps.flatMap((step) =>
+      Object.values(step.places).map((p) => ({ type: p.piece, x: PLAN_PREVIEW.corner[0] + p.at[0] / 5, y: PLAN_PREVIEW.corner[1] + p.at[1] / 5 })),
+    );
+    const steps = plan.steps.map((step) => ({ pieces: [...new Set(Object.values(step.places).map((p) => p.piece))] }));
+    const pngs = buildingPreview(sources, { steps }, { ...base, objects: [...base.objects, ...placed] }, propDefs);
     pngs.forEach((png, i) => writeFileSync(join(PREVIEW, i === pngs.length - 1 ? `${key}.png` : `${key}-${i + 1}.png`), PNG.sync.write(png)));
   }
   // les étalons du gabarit (docs/STYLE.md section 8)

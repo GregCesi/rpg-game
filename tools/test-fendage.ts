@@ -2,52 +2,12 @@
 // appuis de touches (Espace, R), comme le joueur. De la grosse bille posée par ?dieu jusqu'aux quatre quartiers :
 // refus (hache, masse sans coin), planter le coin, trois coups de masse, demi-billes, coin lâché, quartiers, masses,
 // endurance, coups gardés dans GameState, quartier tourné et tas de quartiers.
-// Usage : npm run test:fendage (lancé aussi par npm run test). Il faut un Chromium : celui de Playwright
-// (~/Library/Caches/ms-playwright, `npx playwright-core install chromium`), ou FENDAGE_CHROME=<exécutable>.
-// Sans Chromium le test dit qu'il est ignoré (FENDAGE_REQUIRED=1 le rend obligatoire).
+// Usage : npm run test:fendage (lancé aussi par npm run test). Le Chromium et le serveur : tools/lib/playtest.ts.
 
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
-import { chromium } from 'playwright-core';
-import { createServer } from 'vite';
+import { playtest } from './lib/playtest';
 
-function findChrome(): string | undefined {
-  if (process.env.FENDAGE_CHROME) return process.env.FENDAGE_CHROME;
-  const root = join(homedir(), 'Library/Caches/ms-playwright'); // macOS ; ailleurs : FENDAGE_CHROME
-  if (!existsSync(root)) return undefined;
-  for (const dir of readdirSync(root).filter((d) => d.startsWith('chromium'))) {
-    for (const sub of readdirSync(join(root, dir))) {
-      for (const exe of ['chrome-headless-shell', 'Chromium.app/Contents/MacOS/Chromium', 'chrome']) {
-        const p = join(root, dir, sub, exe);
-        if (existsSync(p)) return p;
-      }
-    }
-  }
-  return undefined;
-}
-
-const chrome = findChrome();
-if (!chrome) {
-  console.log('fendage : test ignoré (aucun Chromium trouvé ; FENDAGE_CHROME=<exécutable>).');
-  process.exit(process.env.FENDAGE_REQUIRED ? 1 : 0);
-}
-
-const server = await createServer({ logLevel: 'error', server: { port: 0 } });
-await server.listen();
-const url = server.resolvedUrls!.local[0];
-const browser = await chromium.launch({ executablePath: chrome, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
-let failed = false;
-try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-  const errors: string[] = [];
-  page.on('pageerror', (e) => errors.push(e.message));
-  // tsx ajoute des appels à __name aux fonctions : la page doit le connaître pour exécuter le scénario
-  await page.addInitScript('window.__name = (f) => f;');
-  await page.goto(`${url}?dieu&reset`);
-  await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
-
+await playtest('fendage', async ({ page, errors, load }) => {
   // Tout ce qui suit s'exécute dans la page : les touches sont de vrais KeyboardEvent sur window, lus par leur place.
   // Vite recharge parfois la page au premier lancement (dépendances optimisées) : le scénario est alors rejoué une fois
   const scenario = async () => {
@@ -237,8 +197,7 @@ try {
   };
   const result = await scenario().catch(async (e: Error) => {
     if (!/context was destroyed|navigation/.test(e.message)) throw e;
-    await page.goto(`${url}?dieu&reset`);
-    await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
+    await load();
     return scenario();
   });
 
@@ -272,11 +231,4 @@ try {
   assert.equal(r.turned, '{"prop":"big-quarter-log","turned":true}', 'R tourne le quartier tenu');
   assert.ok(r.pile.includes('big-quarters:6'), `tas de quartiers : ${r.pile}`);
   console.log('  ✓ fendage : de la grosse bille aux quatre quartiers');
-} catch (e) {
-  failed = true;
-  console.error(`  ✗ fendage : ${(e as Error).message}`);
-} finally {
-  await browser.close();
-  await server.close();
-}
-process.exit(failed ? 1 : 0);
+});

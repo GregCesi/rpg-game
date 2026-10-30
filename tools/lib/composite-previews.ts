@@ -6,7 +6,7 @@
 // - piles.png : chaque genre de tas (src/content/piles.json), étape par étape (construction type, puis tous les états
 //   possibles s'ils sont peu nombreux), puis sa forme tournée (`turned`, les billes nord-sud), Xéros à l'échelle en tête de rangée, collisions des pièces au sol en liseré :
 //   même calcul que GameMap.placePile (pièce = coin bas gauche au point du tas + (x, y), dans l'ordre de drawOrder).
-// - <bâtiment>-<n>.png : un bâtiment de buildings.json qui monte, étape par étape, à sa place sur sa carte (le sol de
+// - <bâtiment>-<n>.png : un plan de plans.json qui monte, étape par étape, à sa place sur sa carte (le sol de
 //   Tiled, les objets voisins) : l'image n montre les pièces des étapes 1 à n, posées comme dans Tiled ; Xéros à côté,
 //   pour l'échelle. Pour un bâtiment qui a un toit (`roof`), une image de plus : Xéros dessous, le toit effacé comme
 //   en jeu (ROOF.alpha). <bâtiment>.png les met côte à côte. Même ordre d'affichage que GameMap : `floor` d'abord, puis
@@ -23,7 +23,7 @@ import { Canvas, EMPTY } from '../../art/lib/canvas';
 import { flipX } from '../../art/lib/canvas';
 import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
-import type { BuildingDef, Gesture, PileDef, PropDef } from '../../src/content/types';
+import type { Gesture, PileDef, PropDef } from '../../src/content/types';
 import { ROOF } from '../../src/config';
 import { roofShadow } from '../../src/world/roofShadow';
 import { CM_PER_PX, RACCOURCI, expectedSize, silhouette } from '../../src/content/gabarit';
@@ -409,7 +409,12 @@ function polygonGrid(quad: { x: number; y: number }[], left: number, top: number
   return Array.from({ length: h }, (_, Y) => Array.from({ length: w }, (_, X) => (inside(left + X + 0.5, top + Y + 0.5) ? 'x' : '.')).join(''));
 }
 
-export function buildingPreview(sources: ArtSource[], building: BuildingDef, map: PreviewMap, props: Record<string, PropDef>): PNG[] {
+/** Les étapes d'un bâtiment à montrer : les pièces (objets de props.json) de chacune, dans l'ordre du chantier. */
+export interface PreviewBuilding {
+  steps: { pieces: string[] }[];
+}
+
+export function buildingPreview(sources: ArtSource[], building: PreviewBuilding, map: PreviewMap, props: Record<string, PropDef>): PNG[] {
   const image = (name: string) => {
     const s = sources.find((x) => x.name === name);
     return s?.kind === 'image' ? s : undefined;

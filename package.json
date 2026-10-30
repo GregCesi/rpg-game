@@ -10,8 +10,9 @@
     "dev": "npm run art && npm run maps && vite",
     "typecheck": "npm run art && npm run maps && tsc --noEmit",
     "sketch": "npm run art && tsx tools/sketch.ts",
-    "test": "npm run art && tsx tools/test-sketch.ts && npm run maps && tsx tools/test-fendage.ts",
+    "test": "npm run art && tsx tools/test-sketch.ts && npm run maps && tsx tools/test-fendage.ts && tsx tools/test-implantation.ts",
     "test:fendage": "npm run art && npm run maps && tsx tools/test-fendage.ts",
+    "test:implantation": "npm run art && npm run maps && tsx tools/test-implantation.ts",
     "build": "npm run check && npm run test && tsc --noEmit && vite build",
     "build:single": "npm run check && npm run test && tsc --noEmit && vite build --mode single",
     "artifact": "npm run build:single && tsx tools/make-artifact.ts"
