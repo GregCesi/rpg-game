@@ -1,6 +1,7 @@
 # Fiches d'objets
 
-Décidé le 29 octobre 2026 (rubrique « Masse » ajoutée le 30 octobre 2026 : tout objet qu'on prend, pose ou roule a une masse) : **tout nouvel objet a sa fiche ici avant d'être construit.** Une fiche par objet,
+Décidé le 29 octobre 2026 (rubrique « Masse » ajoutée le 30 octobre 2026 : tout objet qu'on prend, pose ou roule a une masse ;
+le même jour, toutes ses vues : un objet se crée vu de ses quatre côtés, selon sa symétrie) : **tout nouvel objet a sa fiche ici avant d'être construit.** Une fiche par objet,
 `docs/objets/<clé>.md`, qui remplit le modèle ci-dessous, rubrique par rubrique. Une rubrique sans objet le dit
 (« aucune », « pas encore ») plutôt que de disparaître : on voit qu'on y a pensé.
 
@@ -35,6 +36,13 @@ sablières) partagent une fiche, qui nomme toutes leurs clés.
 
 ## Vues
 Chaque vue : son image, sa taille, ce qu'on y voit.
+- Symétrie (`views` dans props.json ou items.json) et ses vues au sol, toutes dessinées dès la création : par défaut **quatre**
+  (nord, est, sud, ouest : `four`, images `<image>`, `<image>-r1`, `-r2`, `-r3`, chacune un quart de tour de plus dans le sens
+  des aiguilles d'une montre), sauf symétrie déclarée : **rond** (`round`, une vue, pareil de tous côtés : seau, tonneau,
+  billot), **symétrique** (`symmetric`, deux vues, est-ouest `<image>` et nord-sud `<image>-ns` : une table, une caisse).
+  **Quatre** vaut aussi pour un objet qui a un devant et un dos (coffre, lit) ou un bout différent de l'autre (outil, branche).
+  Couché (`lying`) : chaque vue nord-sud a les dimensions de l'est-ouest inversées (règle D, docs/STYLE.md section 8) ; debout :
+  chaque vue suit le gabarit de ses dimensions vues de ce côté.
 - Au sol (posé seul).
 - En main, dans les 4 directions (bas, haut, droite ; la gauche est le miroir de la droite).
 - Case d'interface (icône 16×16 des mains).

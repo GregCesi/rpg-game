@@ -59,7 +59,7 @@ Extérieur :
 - Intérieurs dans une pénombre chaude, feux qui vacillent, rais de soleil par les fenêtres sud.
 - Sol varié avec des détails posés au hasard, pour casser la répétition.
 - **Échelle réaliste partout** (décidé le 29 octobre 2026) : environ 5 cm par pixel, une case d'environ 1,65 m. Une maison a la même taille dedans et dehors ; une longère paysanne tient sur environ 9 × 4 cases.
-- **Gabarit** (décidé le 29 octobre 2026) : une règle de dimensions et de perspective pour tous les objets, tirée des billes (`docs/STYLE.md`, section 8). Dimensions réelles contour compris, taille réelle pour tous les objets, plancher de lisibilité à 6 px de large, personnages de 12 px de large (60 cm, bras compris) ; la face de coupe d'un cylindre couché nord-sud est aplatie (× 7/11) pour qu'on le lise couché. Pour l'arbre, sa longueur couchée (5,65 m) fait foi.
+- **Gabarit** (décidé le 29 octobre 2026) : une règle de dimensions et de perspective pour tous les objets, tirée des billes (`docs/STYLE.md`, section 8). Dimensions réelles contour compris, taille réelle pour tous les objets, plancher de lisibilité à 6 px de large, personnages de 12 px de large (60 cm, bras compris) ; la face de coupe d'un cylindre couché nord-sud était aplatie (× 7/11) pour qu'on le lise couché (remplacé le 30 octobre 2026 par la règle D, voir *La perspective*). Pour l'arbre, sa longueur couchée (5,65 m) fait foi.
 - **Jeu cosy et lent** : les gestes répétés et les étapes réalistes sont assumés. La progression passe par de meilleurs outils qui raccourcissent les étapes (une scie, plus tard une brouette).
 
 ## Feuille de route
@@ -403,6 +403,20 @@ longueurs libres et le fendage. On garde la coupe libre et on change la façon d
 - **Nouveau bois = un diamètre ou un aspect dans le contenu** (wood.json, et ses dessins), **pas une nouvelle clé**.
 - **Ce qui vient** : refendre le quartier en bûches
   sur le billot ; rouler un tronc entier avec plus de force ou un outil ; la scie.
+
+## La perspective (décidé le 30 octobre 2026, « perspective »)
+
+- **Règle D, rotation pure, pour tout ce qui est couché** : une pièce tournée d'un quart de tour garde exactement sa taille ; l'image
+  nord-sud a les dimensions de l'image est-ouest inversées, sa collision l'emprise inversée ; un tas nord-sud monte de la même
+  hauteur par couche que l'est-ouest. L'est-ouest garde sa taille (cylindre couché : épaisseur Ø × 1,1). Triche assumée, préférée
+  à l'œil : une pièce tournée doit rester la même pièce ; la règle stricte la faisait plus courte ou plus fine en nord-sud. Trois
+  essais l'ont tranché (docs/STYLE.md section 8). Les objets debout gardent le gabarit, une vue dessinée par côté.
+- **Toutes les faces** : chaque objet est créé avec toutes ses vues, vu de ses quatre côtés, selon sa symétrie déclarée (rond : une,
+  symétrique : deux, quatre). C'est long, mais c'est ce qui garde chaque objet logique. Les objets d'avant qui n'ont pas toutes
+  leurs vues sont listés (`VIEWS_TODO`, validate.ts) : les meubles se feront au chantier de la maison, les objets fixés du monde
+  quand on voudra les poser tournés dans Tiled.
+- R tourne à la pose tout ce qui a plusieurs vues (un quart de tour dans le sens des aiguilles d'une montre) : la pièce de bois, le
+  fagot, la branche, le piquet, le lien, les outils.
 
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 

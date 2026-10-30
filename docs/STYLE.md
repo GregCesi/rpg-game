@@ -69,7 +69,6 @@ Règle de dimensions et de perspective, tirée des billes (la pièce de bois du 
 - Une face tournée vers le sud se voit en vraie grandeur : largeur × hauteur.
 - Un dessus (face horizontale) et une face vue en raccourci (la face est ou ouest, le bout d'une bille est-ouest) se dessinent à la moitié de leur profondeur : coefficient ½.
 - Ancrage : le bas de la silhouette est le bord sud de l'objet, posé au sol. L'ombre portée (`x`) est en dessous et ne compte pas dans la taille.
-- La face de coupe d'un cylindre couché nord-sud se dessine aplatie, pour qu'on lise l'objet couché : sa hauteur est son diamètre × 7/11 (≈ 0,64, l'ovale de 11 × 7 px des billes).
 - Une taille se mesure sur la silhouette : pixels opaques, contour compris, ombre et lueurs exclues. Les dimensions réelles se comptent aussi contour compris : la bille fait 95 cm de long et 65 de diamètre. Tolérance : 2 px.
 
 **Trois exceptions.**
@@ -78,7 +77,7 @@ Règle de dimensions et de perspective, tirée des billes (la pièce de bois du 
 - Les personnages suivent le gabarit en hauteur et ont une largeur de 12 px (60 cm, bras compris : un peu plus que des épaules réelles de 45-50 cm, pour que les bras se lisent) ; leur collision aux pieds fait 10 × 8 px (50 × 40 cm).
 - Pièces de bâtiment qui relient des appuis posés au sol (une sablière nord-sud, un chevron, une couverture : `ground: true` dans `dims`) : leur profondeur se voit **à l'échelle du sol, sans raccourci**, hauteur à l'écran H + D au lieu de H + D/2. Les appuis (poteaux) sont posés sur la carte à leur place réelle, à 5 cm par pixel au sol : une pièce raccourcie de moitié ne les rejoindrait pas. `h` est la hauteur de sa boîte englobante (épaisseur plus pente). Une telle pièce garde sous elle, dans son image, la hauteur qui la sépare du sol (vide, hors silhouette) : le bas de l'image est au sol, c'est sa profondeur d'affichage. Projection d'un point au sol (x, y) à la hauteur z : à l'écran (x, y − z).
 
-Vérifications : la bille est-ouest (95 × 65 cm) mesure 19 × 13 px, ses bouts sont des ovales de 5 px de large pour 11 de haut (11 × ½) ; la bille nord-sud mesure 13 × 19 px, le dessus d'écorce fait 10 px entre ses deux ronds (19 × ½ = 9,5), la face de coupe 11 × 7 ; Xéros et la mère font 32 px pour 1,60 m, sur 12 px de large (un personnage n'a pas de dessus visible : sa taille à l'écran est sa hauteur) ; la case fait 32 px pour 1,60 m.
+Vérifications : la bille est-ouest (1 m × 65 cm) mesure 20 × 13 px, ses bouts sont des ovales de 5 px de large pour 11 de haut (11 × ½) ; la bille nord-sud mesure 13 × 20 px (règle D), le bout coupé est une bande de 11 × 5 au sud ; Xéros et la mère font 32 px pour 1,60 m, sur 12 px de large (un personnage n'a pas de dessus visible : sa taille à l'écran est sa hauteur) ; la case fait 32 px pour 1,60 m.
 
 **Les formes de base** (W largeur, D profondeur, H hauteur, L longueur, Ø diamètre, en pixels = centimètres ÷ 5).
 
@@ -86,9 +85,36 @@ Vérifications : la bille est-ouest (95 × 65 cm) mesure 19 × 13 px, ses bouts 
 | --- | --- | --- | --- |
 | Boîte | W | H + D/2 (face sud H, dessus D/2) | cube de 50 cm : 10 × (10 + 5) = **10 × 15** |
 | Cylindre couché est-ouest | L | Ø × 1,12 (le rond cisaillé par le dessus : √(1 + ¼)) ; bouts en ovales de Ø/2 × Ø | bille de 95 × 65 cm : 19 × 14,5, dessinée **19 × 13** |
-| Cylindre couché nord-sud | Ø | Ø × 7/11 + L/2 (face de coupe au sud aplatie, Ø × Ø × 7/11 ; dessus L/2) | la même bille : 13 × (8,3 + 9,5) = 13 × 17,8, dessinée **13 × 19** |
+| Cylindre couché nord-sud | Ø × 1,12 | L (règle D : l'image est-ouest tournée d'un quart de tour ; le bout coupé, une bande de Ø × Ø/2 au sud) | la bille de 1 m : **13 × 20** |
+| Boîte couchée nord-sud (demi, quartier, poutre, outil au sol) | la hauteur de l'est-ouest | la largeur de l'est-ouest | le quartier de 1 m : 20 × 11 est-ouest, **11 × 20** nord-sud |
 | Cylindre debout | Ø | H + Ø/2 (corps H, dessus en ovale Ø × Ø/2) | billot de Ø 55 cm, 45 cm de haut : 11 × (9 + 5,5) = **11 × 14,5** |
 | À plat sur le sol | W | D | éclats de pierre de 135 × 75 cm : **27 × 15** |
 | Pièce de bâtiment au sol (`ground`) | W | H + D | toit de planches de l'abri, 365 × 445 × 165 cm : 73 × (33 + 89) = **73 × 122** |
+
+**Les objets couchés : la règle D, rotation pure** (décidée le 30 octobre 2026, chantier « perspective »).
+
+- Tout ce qui est couché au sol (la pièce de bois sous tous ses aspects, ses tas, le fagot, la branche, le piquet, le lien, les
+  outils posés) : **une pièce tournée d'un quart de tour garde exactement sa taille.** L'image nord-sud a les dimensions de
+  l'image est-ouest inversées (largeur et hauteur échangées, à 1 px près), sa collision l'emprise au sol inversée. L'est-ouest
+  garde la règle des formes de base (le cylindre couché : épaisseur Ø × 1,12, dessinée Ø × 1,1 à 1 px près).
+- Ce n'est pas une rotation de pixels : la vue nord-sud est **dessinée**, une vraie face, avec la lumière en haut à gauche (le
+  contour clair au nord et à l'ouest, sombre au sud et à l'est ; le bout coupé nord-sud est une bande au sud, avec ses cernes,
+  comme le bout ouest d'une pièce est-ouest).
+- Un tas nord-sud : une couche monte de la même hauteur qu'en est-ouest ; l'emprise au sol est la vraie (pièces côte à côte à
+  l'écart de l'est-ouest).
+- **Pourquoi** : c'est une triche assumée, préférée à l'œil par Grégoire. La règle stricte (dessus en raccourci à ½, face de
+  coupe aplatie) faisait d'une pièce tournée une autre pièce : plus courte (la bille de 4 m tombait à 13 × 49 px) ou plus fine.
+  Une pièce qu'on tourne doit rester la même pièce. Trois essais l'ont tranché (outils `tools/essai-perspective*.ts`, supprimés
+  depuis) : le premier, la règle stricte (nord-sud raccourci, l'objet change de taille en tournant) ; le deuxième, la règle C
+  (profondeur au sol entière, hauteur empilée, cylindre est-ouest à Ø × 1,1 : cohérente, mais le nord-sud restait plus fin) ; le
+  troisième, C contre D, côte à côte, avec les tas et une petite scène : D l'a emporté.
+- Les objets debout (meubles, arbres, bâtiments) gardent le gabarit de toujours : une vue dessinée par côté, chacune à la taille
+  de ses dimensions vues de ce côté (largeur et profondeur échangées pour une vue de côté).
+
+**Toutes les faces** (règle de Grégoire pour tout le jeu, même jour) : chaque objet est créé avec toutes ses vues, vu de ses
+quatre côtés, selon sa symétrie (`views` dans `props.json` et `items.json`, modèle de fiche `docs/objets/README.md`) : `round`
+(une vue : seau, tonneau, billot), `symmetric` (deux : est-ouest et nord-sud, `<image>-ns`), `four` (quatre : `<image>`,
+`<image>-r1`, `-r2`, `-r3`, un quart de tour de plus dans le sens des aiguilles d'une montre à chaque fois). C'est long, mais
+c'est ce qui garde chaque objet logique. `validate.ts` le vérifie ; ce qui manque encore est dans `VIEWS_TODO`.
 
 Un objet qui n'est pas une forme de base (arbre, buisson, rocher) prend la boîte qui l'englobe. Un objet qui ne suit pas encore la règle est nommé dans `EXCEPTIONS` (`src/content/validate.ts`) avec sa taille dessinée ; on ne l'y ajoute pas pour un dessin neuf : on dessine à la bonne taille.
