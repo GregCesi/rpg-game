@@ -18,6 +18,7 @@ import { LongPress } from '../systems/longPress';
 import { PileCount } from '../systems/pileCount';
 import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
+import { SiteSystem } from '../systems/site';
 import { TurnSystem } from '../systems/turnLog';
 import { carriedMass, heavyNotice } from '../systems/weight';
 import {
@@ -84,6 +85,7 @@ export class WorldScene extends Phaser.Scene {
   private roll!: RollSystem;
   private effort!: EffortSystem;
   private turns!: TurnSystem;
+  private site!: SiteSystem;
   /** R maintenu : pivoter une bille couchée. */
   private turnPress!: LongPress;
   /** Champ « force » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
@@ -142,12 +144,14 @@ export class WorldScene extends Phaser.Scene {
     // les deux mains prises par un seul objet : E ne fait que parler, ou reposer ce qu'on tient ; un objet du monde dans
     // la main active (le rouleau) peut se poser sur ce qui l'accepte (le billot)
     this.interaction = new InteractionSystem(this, this.player, () => {
-      if (game.both) return talkable;
+      // un chantier offre ses piquets à reprendre et, avec une pièce en main (même à deux mains : la pierre), ses places à remplir
+      if (game.both) return [...talkable, ...this.site.interactables()];
       const h = game.hands[game.active];
-      return [...this.map.interactables(h && 'prop' in h ? h.prop : undefined), ...talkable];
+      return [...this.map.interactables(h ? ('prop' in h ? h.prop : h.item) : undefined), ...this.site.interactables(), ...talkable];
     });
     this.harvest = new HarvestSystem(this, this.map);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
+    this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body));
     this.knots = new KnotSystem(this.map, this.handsSystem);
     this.press = new LongPress(this);
     this.pileCount = new PileCount(this, this.map);
@@ -218,6 +222,8 @@ export class WorldScene extends Phaser.Scene {
     this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
     // ce qu'on tient et qui s'entrepose : sa pièce en transparence, là où elle ira
     this.handsSystem.updatePreview(this.player, this.mode === 'play');
+    // les chantiers : piquets, places à remplir en fantôme, ligne d'état
+    this.site.update(this.player, this.mode === 'play');
     this.pileCount.update(this.player, this.mode === 'play');
     if (this.mode !== 'play') {
       this.turnPress.cancel();
@@ -283,7 +289,25 @@ export class WorldScene extends Phaser.Scene {
       this.handsChanged();
     } else if (a.kind === 'pickup') {
       this.pickUp(a.ground);
+    } else if (a.kind === 'learn') {
+      this.notice(this.site.learn(a.plan));
+    } else if (a.kind === 'stake') {
+      if (!this.site.takeStake(a.site, a.corner)) return this.notice('Les mains pleines.');
+      this.handsChanged();
+    } else if (a.kind === 'site-place') {
+      const why = this.site.placePiece(a.site, a.place);
+      if (why) return this.notice(why);
+      this.handsChanged();
     }
+  }
+
+  /** Espace avec un piquet : le planter au tracé d'un plan connu (rien n'est dépensé tant qu'il est refusé). */
+  private plantStake(item: string): void {
+    const r = this.site.plantStake(this.player, item);
+    if (!r.ok) return this.notice(r.message);
+    if (!this.effort.afford(this.player, this.player.stamina.costs.stake)) return;
+    r.commit();
+    this.handsChanged();
   }
 
   /** R maintenu jusqu'au bout devant une bille : elle pivote (si elle a la place), et cela coûte de l'endurance selon sa masse. */
@@ -357,6 +381,7 @@ export class WorldScene extends Phaser.Scene {
   private useHeld(): void {
     if (this.player.hold.loaded) return;
     const tool = this.usable();
+    if (tool && SiteSystem.traces(tool)) return this.plantStake(tool);
     if (!tool || items[tool].kind === 'resource') {
       // mains vides devant ce qui demande un outil : on le dit
       const t = this.harvest.target(this.player)?.def.harvest?.tool;
@@ -374,7 +399,7 @@ export class WorldScene extends Phaser.Scene {
     if (!target && tool && Object.values(props).some((p) => p.harvest?.plant && p.harvest.tool === tool)) return this.notice('Rien où le planter : colle-toi à une grosse bille couchée.');
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
     const costs = this.player.stamina.costs;
-    if (h?.tool === tool && !this.effort.afford(this.player, costs[h.effort ?? (target!.def.bears ? 'cutTie' : 'chop')])) return;
+    if (h?.tool === tool && !this.effort.afford(this.player, costs[h.effort ?? (target!.def.bears?.prop ? 'cutTie' : 'chop')])) return;
     const impact = () => {
       this.report(this.harvest.hit(this.harvest.target(this.player, tool), tool, this.player.actor.facing));
       // les morceaux d'une bille fendue débordent de sa place : Xéros est repoussé s'ils le recouvrent
@@ -467,6 +492,15 @@ export class WorldScene extends Phaser.Scene {
         else if (n < cmd.count) this.notice(`Place pour ${n} seulement.`);
         break;
       }
+      case 'learn-plan':
+        this.notice(this.site.learn(cmd.plan));
+        break;
+      case 'supply':
+        if (this.handsSystem.supplyAround(this.player, cmd.what, cmd.count) < cmd.count) this.notice('Pas toute la place ici.');
+        break;
+      case 'erase-sites':
+        this.site.erase();
+        break;
       case 'force':
         this.force = cmd.multiplier;
         this.player.strength.multiplier = cmd.multiplier;

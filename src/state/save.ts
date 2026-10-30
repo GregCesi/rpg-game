@@ -4,7 +4,7 @@
 // La future sauvegarde au cagibi passera par ces mêmes fonctions.
 
 import { z } from 'zod';
-import { items, maps, piles, props, stamina } from '../content';
+import { items, maps, piles, plans, props, stamina } from '../content';
 import { FacingSchema } from '../content/types';
 import { GameStateSchema, type GameState, type Held } from './GameState';
 
@@ -13,7 +13,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -71,6 +71,7 @@ export function readSave(): ReadResult {
  * refusée plus loin). Version 2 -> 3 : l'endurance et le jour apparaissent, jauge pleine et jour 1. Version 3 -> 4 : le
  * fendage (coups reçus par un objet de carte changé, bille coin planté, demi-billes, quartiers, tas de quartiers) n'ajoute que
  * des champs facultatifs et des clés de contenu : une partie de la version 3 se relit telle quelle, seul le numéro change.
+ * Version 4 -> 5 : les chantiers (`sites` de chaque carte, `knownPlans`, `nextSiteId`) apparaissent : aucun plan connu, aucun chantier.
  */
 function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -78,6 +79,11 @@ function upgrade(data: unknown): unknown {
     d = { ...d, version: 3, state: { ...d.state, stamina: stamina.max, day: 1 } };
   }
   if (d?.version === 3) d = { ...d, version: 4 };
+  if (d?.version === 4 && d.state && typeof d.state === 'object') {
+    const state = d.state as { maps?: Record<string, object> };
+    const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, sites: [] }]));
+    d = { ...d, version: 5, state: { ...d.state, maps, knownPlans: [], nextSiteId: 0 } };
+  }
   return d;
 }
 
@@ -127,8 +133,16 @@ function missingContent(save: Save): string | undefined {
     const m = heldMissing(h);
     if (m) return m;
   }
+  for (const plan of state.knownPlans) if (!plans[plan]) return `le plan « ${plan} »`;
   for (const [mapId, m] of Object.entries(state.maps)) {
     if (!maps[mapId]) return `la carte « ${mapId} »`;
+    for (const site of m.sites) {
+      const def = plans[site.plan];
+      if (!def) return `le plan « ${site.plan} »`;
+      const places = def.steps.flatMap((st) => Object.keys(st.places));
+      const bad = Object.keys(site.placed).find((q) => !places.includes(q));
+      if (bad) return `la place « ${bad} » du plan « ${site.plan} »`;
+    }
     for (const c of Object.values(m.changes)) if (c.type && !props[c.type]) return `l'objet « ${c.type} »`;
     for (const o of m.spawned) if (!props[o.type]) return `l'objet « ${o.type} »`;
     for (const g of m.ground) if (!items[g.item]) return `l'objet « ${g.item} »`;

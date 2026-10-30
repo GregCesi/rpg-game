@@ -1,7 +1,7 @@
 // Outils de test (?dieu) : un panneau HTML à côté du jeu, hors du canevas, cliquable à la souris. Il n'existe pas sans
 // ?dieu : main.ts ne charge ce fichier que dans ce cas. Il ne touche jamais à la partie lui-même : chaque bouton envoie
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
-import { items, maps, piles, props, stamina, strength } from '../content';
+import { items, maps, piles, plans, props, stamina, strength } from '../content';
 import { heldMass } from '../content/mass';
 import type { DieuCommand } from '../events';
 import { game } from '../state';
@@ -84,7 +84,7 @@ function lengthInput(): { input: HTMLInputElement; label: HTMLLabelElement } {
 /** La longueur d'un objet de props.json : la sienne (le rouleau) ou celle de ce qu'il porte (le billot et son rouleau). */
 function lengthDef(key: string | undefined) {
   const d = key ? props[key] : undefined;
-  return d?.length ?? (d?.bears ? props[d.bears.prop].length : undefined);
+  return d?.length ?? (d?.bears?.prop ? props[d.bears.prop].length : undefined);
 }
 
 /** Montre le champ de longueur seulement pour un objet qui en a une, rempli de sa longueur neuve. */
@@ -197,6 +197,17 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   showEnergy();
   setInterval(showEnergy, 200);
 
+  // l'implantation : apprendre un plan, avoir sous la main de quoi tracer et bâtir, effacer les chantiers de la carte
+  const plan = select([['Plans', Object.entries(plans).map(([k, d]) => [k, `${d.name} (${k})`])]]);
+  const known = el('div', { className: 'row' });
+  const showKnown = () => {
+    known.textContent = `Plans connus : ${game.knownPlans.length ? game.knownPlans.map((k) => plans[k]?.name ?? k).join(', ') : 'aucun'}`;
+  };
+  showKnown();
+  setInterval(showKnown, 300);
+  const supply = (what: string, count: number) => () => send({ kind: 'supply', what, count });
+  const stakeOf = () => plans[plan.value].stake;
+
   const mapButtons = Object.entries(maps).map(([id, m]) => button(m.name, () => send({ kind: 'map', map: id })));
 
   const panel = el('aside', { id: 'dieu' }, [
@@ -218,6 +229,15 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('div', { className: 'row' }, [el('label', {}, [energy, 'points']), energyButton]),
     el('div', { className: 'row' }, [el('label', {}, [infinite, 'endurance infinie'])]),
     energyNow,
+    el('h3', { textContent: 'Implantation' }),
+    plan,
+    el('div', { className: 'row' }, [
+      button('Apprendre le plan', () => send({ kind: 'learn-plan', plan: plan.value })),
+      button('4 piquets au sol', () => supply(stakeOf(), 4)()),
+      button('4 pierres plates au sol', supply('flat-stone', 4)),
+    ]),
+    known,
+    el('div', { className: 'row' }, [confirmButton('Effacer les chantiers', () => send({ kind: 'erase-sites' }))]),
     el('h3', { textContent: 'Aller sur une carte' }),
     el('div', { className: 'row' }, mapButtons),
     el('h3', { textContent: 'Remettre à zéro' }),

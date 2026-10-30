@@ -68,6 +68,13 @@ export const ROOF = { alpha: 0.35, fadeMs: 250 };
  */
 export const SHADOW = { dx: 0.25, dy: 0.1, color: 0x2b1a10, alpha: 0x40 / 255 };
 
+/**
+ * Chantiers (systems/site.ts) : les piquets suivants s'aimantent au coin du tracé le plus près s'il est à moins de `snap` px du
+ * point que regarde Xéros ; la ligne d'état « Abri à bois : dés, 2 sur 4 » paraît quand Xéros est à moins de `near` px de
+ * l'emprise ; `ghost` et `aimed` : opacité des places à remplir, et de celle que vise Xéros avec une pièce qui lui convient.
+ */
+export const SITE = { snap: 12, near: 110, ghost: 0.35, aimed: 0.7 };
+
 /** Poser devant soi : écart entre la collision de Xéros et ce qu'il pose (px). */
 export const PUT_DOWN = { gap: 2 };
 

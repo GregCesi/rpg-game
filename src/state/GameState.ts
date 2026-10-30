@@ -4,6 +4,7 @@
 
 import { z } from 'zod';
 import { stamina } from '../content';
+import { CornerSchema } from '../content/types';
 
 const id = z.string().min(1);
 
@@ -85,6 +86,21 @@ export const PileSchema = z
   })
   .refine((p) => p.places.length > 0 || p.tie, { message: 'un tas sans pièce ni lien' });
 
+/**
+ * Un chantier posé sur une carte : le plan (`plan`, clé de plans.json), le point au sol du piquet nord-ouest (x, y), les coins où
+ * un piquet est planté (`stakes`), s'il est né (`born` : les quatre piquets plantés, l'emprise libre) et les pièces posées
+ * (`placed` : place du plan -> identifiant de l'objet né qui la montre). Avant sa naissance, le tracé n'a que ses piquets.
+ */
+export const SiteSchema = z.strictObject({
+  id: z.number().int().nonnegative(),
+  plan: id,
+  x: z.number(),
+  y: z.number(),
+  stakes: z.array(CornerSchema),
+  born: z.boolean(),
+  placed: z.record(id, z.number().int().nonnegative()),
+});
+
 /** Ce qui a changé sur une carte. */
 export const MapStateSchema = z.strictObject({
   /** Par identifiant d'objet Tiled. */
@@ -94,6 +110,8 @@ export const MapStateSchema = z.strictObject({
   spawned: z.array(SpawnedSchema),
   /** Tas posés sur cette carte ; un tas vidé disparaît de la liste. */
   piles: z.array(PileSchema),
+  /** Chantiers posés sur cette carte (un tracé de piquets, ou un chantier né). */
+  sites: z.array(SiteSchema),
 });
 
 export const GameStateSchema = z.strictObject({
@@ -115,6 +133,10 @@ export const GameStateSchema = z.strictObject({
   stamina: z.number().nonnegative(),
   /** Numéro du jour : 1 au départ, +1 à chaque nuit (il servira au temps et aux saisons). */
   day: z.number().int().positive(),
+  /** Les plans que Xéros connaît (clés de plans.json) : appris sur la planchette de la mère. */
+  knownPlans: z.array(id),
+  /** Prochain identifiant de chantier (unique dans toute la partie). */
+  nextSiteId: z.number().int().nonnegative(),
 });
 
 export type Held = z.infer<typeof HeldSchema>;
@@ -124,6 +146,7 @@ export type GroundItem = z.infer<typeof GroundItemSchema>;
 export type Spawned = z.infer<typeof SpawnedSchema>;
 export type Chain = z.infer<typeof ChainSchema>;
 export type Pile = z.infer<typeof PileSchema>;
+export type Site = z.infer<typeof SiteSchema>;
 export type MapState = z.infer<typeof MapStateSchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
 
@@ -140,12 +163,12 @@ export function revisionOf(): number {
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: stamina.max, day: 1 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: stamina.max, day: 1, knownPlans: [], nextSiteId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
 export function mapState(s: GameState, mapId: string): MapState {
-  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [] });
+  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [] });
 }
 
 /** Ce que tient la main active (ou les deux mains), ou undefined. */
@@ -338,6 +361,54 @@ export function setPileTie(s: GameState, mapId: string, pileId: number, tie: boo
   if (tie) m.piles[i].tie = true;
   else delete m.piles[i].tie;
   if (!m.piles[i].places.length && !m.piles[i].tie) m.piles.splice(i, 1);
+  revision++;
+}
+
+/** Xéros apprend un plan ; renvoie false s'il le connaissait déjà. */
+export function learnPlan(s: GameState, plan: string): boolean {
+  if (s.knownPlans.includes(plan)) return false;
+  s.knownPlans.push(plan);
+  revision++;
+  return true;
+}
+
+/** Commence un chantier : le premier piquet (le coin nord-ouest) est planté en (x, y) ; renvoie ce qui a été noté. */
+export function startSite(s: GameState, mapId: string, plan: string, x: number, y: number): Site {
+  const site: Site = { id: s.nextSiteId++, plan, x, y, stakes: ['nw'], born: false, placed: {} };
+  mapState(s, mapId).sites.push(site);
+  revision++;
+  return site;
+}
+
+/** Un piquet est planté à ce coin du tracé ; au quatrième, le chantier naît (`born`). */
+export function plantSiteStake(s: GameState, mapId: string, siteId: number, corner: Site['stakes'][number]): void {
+  const site = mapState(s, mapId).sites.find((q) => q.id === siteId);
+  if (site && !site.stakes.includes(corner)) site.stakes.push(corner);
+  if (site && site.stakes.length === 4) site.born = true;
+  revision++;
+}
+
+/** Le piquet de ce coin est repris ou arraché ; un tracé qui n'a plus de piquet disparaît (un chantier né reste). */
+export function pullSiteStake(s: GameState, mapId: string, siteId: number, corner: Site['stakes'][number]): void {
+  const m = mapState(s, mapId);
+  const i = m.sites.findIndex((q) => q.id === siteId);
+  if (i < 0) return;
+  m.sites[i].stakes = m.sites[i].stakes.filter((c) => c !== corner);
+  if (!m.sites[i].born && !m.sites[i].stakes.length) m.sites.splice(i, 1);
+  revision++;
+}
+
+/** Une pièce est posée à la place `place` du plan du chantier : `spawnId`, l'objet né qui la montre. */
+export function placeSitePiece(s: GameState, mapId: string, siteId: number, place: string, spawnId: number): void {
+  const site = mapState(s, mapId).sites.find((q) => q.id === siteId);
+  if (site) site.placed[place] = spawnId;
+  revision++;
+}
+
+/** Efface un chantier de la carte (outils de test) ; ses pièces posées, objets nés, sont à retirer par l'appelant. */
+export function removeSite(s: GameState, mapId: string, siteId: number): void {
+  const m = mapState(s, mapId);
+  m.sites = m.sites.filter((q) => q.id !== siteId);
   revision++;
 }
 

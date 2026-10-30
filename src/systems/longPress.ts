@@ -16,6 +16,10 @@ function subject(a: Action): unknown {
       return a.ground;
     case 'talk':
       return a.npc ?? a.dialogue;
+    case 'stake':
+      return `${a.site}:${a.corner}`;
+    case 'site-place':
+      return `${a.site}:${a.place}`;
     default:
       return a.prop;
   }

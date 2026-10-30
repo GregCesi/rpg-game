@@ -22,7 +22,9 @@ export const GameEvent = {
  * Ce que demande le panneau des outils de test (src/dieu/panel.ts) : donner un objet en main (ce que tenaient les mains
  * disparaît ; un rouleau avec sa longueur, `length` de Held), poser devant Xéros un objet du monde (`length` : sa
  * longueur, s'il en a une) ou un tas (`tie` : avec son lien dessous, `count` pouvant alors être 0), aller sur une carte,
- * remettre la carte ou la partie à zéro, multiplier la force de Xéros (`force` : tester les seuils de masse), régler son endurance (`stamina`, en points) ou la
+ * remettre la carte ou la partie à zéro, apprendre un plan (`learn-plan`), mettre au sol autour de Xéros des piquets ou des pierres
+ * plates (`supply` : `what` est la clé d'un objet possédable ou d'un objet du monde), effacer les chantiers de la carte
+ * (`erase-sites`), multiplier la force de Xéros (`force` : tester les seuils de masse), régler son endurance (`stamina`, en points) ou la
  * rendre infinie (`stamina-infinite`).
  */
 export type DieuCommand =
@@ -32,6 +34,9 @@ export type DieuCommand =
   | { kind: 'force'; multiplier: number }
   | { kind: 'stamina'; value: number }
   | { kind: 'stamina-infinite'; on: boolean }
+  | { kind: 'learn-plan'; plan: string }
+  | { kind: 'supply'; what: string; count: number }
+  | { kind: 'erase-sites' }
   | { kind: 'map'; map: string }
   | { kind: 'reset-map' }
   | { kind: 'reset-game' };
