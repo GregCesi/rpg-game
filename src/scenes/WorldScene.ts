@@ -147,7 +147,7 @@ export class WorldScene extends Phaser.Scene {
       // un chantier offre ses piquets à reprendre et, avec une pièce en main (même à deux mains : la pierre), ses places à remplir
       if (game.both) return [...talkable, ...this.site.interactables()];
       const h = game.hands[game.active];
-      return [...this.map.interactables(h ? ('prop' in h ? h.prop : h.item) : undefined), ...this.site.interactables(), ...talkable];
+      return [...this.map.interactables(h && 'prop' in h ? h.prop : undefined), ...this.site.interactables(), ...talkable];
     });
     this.harvest = new HarvestSystem(this, this.map);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
@@ -372,8 +372,10 @@ export class WorldScene extends Phaser.Scene {
    */
   private usable(): string | undefined {
     const own = heldItem(game);
-    if (own || game.both || game.hands[game.active]) return own;
+    // la branche dans la main active, la hachette dans l'autre : c'est l'outil qui sert
     const other = game.hands[1 - game.active];
+    if (own && items[own].kind === 'resource' && other && 'item' in other && items[other.item].kind === 'tool') return other.item;
+    if (own || game.both || game.hands[game.active]) return own;
     return other && 'item' in other ? other.item : undefined;
   }
 

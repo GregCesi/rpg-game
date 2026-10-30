@@ -4,6 +4,7 @@
 
 import { heldToolSheet } from '../lib/held';
 import { CHOP_FRAME_RATE, CHOP_POSES, MAUL_FRAME_RATE, MAUL_POSES, USE_FRAME_RATE, USE_POSES } from '../characters/xeros';
+import { hatchetArt } from './hatchet';
 import { maulArt } from './splitting-tools';
 import { axeArt, toolPalette } from './tools';
 
@@ -16,6 +17,13 @@ export default [
   }),
   // la masse de bûcheron : use et chop pour que la planche ait tous les gestes ; elle sert au geste maul
   heldToolSheet('maul', maulArt(), toolPalette, {
+    use: { poses: USE_POSES, frameRate: USE_FRAME_RATE },
+    chop: { poses: CHOP_POSES, frameRate: CHOP_FRAME_RATE },
+    maul: { poses: MAUL_POSES, frameRate: MAUL_FRAME_RATE },
+  }),
+  // la hachette (docs/objets/hatchet.md) : elle sert au geste chop (tailler la pointe d'un piquet) ; use et maul pour
+  // que la planche ait tous les gestes
+  heldToolSheet('hatchet', hatchetArt(), toolPalette, {
     use: { poses: USE_POSES, frameRate: USE_FRAME_RATE },
     chop: { poses: CHOP_POSES, frameRate: CHOP_FRAME_RATE },
     maul: { poses: MAUL_POSES, frameRate: MAUL_FRAME_RATE },

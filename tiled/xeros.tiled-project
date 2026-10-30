@@ -1509,23 +1509,6 @@
       ]
     },
     {
-      "id": 189,
-      "name": "chopping-block-branch",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
       "id": 190,
       "name": "flat-stone",
       "type": "class",
@@ -1545,6 +1528,23 @@
     {
       "id": 191,
       "name": "plan-tablet",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 192,
+      "name": "hatchet-ground",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,

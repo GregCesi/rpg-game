@@ -15,6 +15,7 @@
   "axe": {"name": "hache", "icon": "item-axe", "kind": "tool", "hands": 2, "hold": {"stance": "shoulder", "image": "held-axe"}, "mass": 2.5},
   "maul": {"name": "masse de bûcheron", "icon": "item-maul", "ground": "maul-ground", "kind": "tool", "hands": 2, "hold": {"stance": "shoulder", "image": "held-maul"}, "mass": 4},
   "splitting-wedge": {"name": "coin de fendage", "icon": "item-splitting-wedge", "ground": "splitting-wedge-ground", "kind": "tool", "hold": {"stance": "hand", "image": "held-splitting-wedge"}, "mass": 2},
+  "hatchet": {"name": "hachette", "icon": "item-hatchet", "ground": "hatchet-ground", "kind": "tool", "hold": {"stance": "hand", "image": "held-hatchet"}, "mass": 1},
   "pickaxe": {"name": "pioche", "icon": "item-pickaxe", "kind": "tool", "mass": 3},
   "hoe": {"name": "houe", "icon": "item-hoe", "kind": "tool", "mass": 1.5},
   "sickle": {"name": "faucille", "icon": "item-sickle", "kind": "tool", "mass": 0.4},

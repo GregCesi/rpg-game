@@ -6,7 +6,7 @@ import type { Drop, Facing } from '../content/types';
 
 /** Un bout d'une pièce couchée : l'ouest, l'est, le nord ou le sud. */
 export type End = 'west' | 'east' | 'north' | 'south';
-import { changeObject, changeSpawned, dropItem, game, setChangeHits, setSpawnedHits, spawnObject, take } from '../state';
+import { changeObject, changeSpawned, dropItem, game, replaceHeld, setChangeHits, setSpawnedHits, spawnObject, take, type Hand } from '../state';
 import { footprint, notchCut, promptTop } from '../world/GameMap';
 import type { Box, GameMap, PlacedGround, PlacedProp } from '../world/GameMap';
 
@@ -135,12 +135,24 @@ export class HarvestSystem {
     const h = prop.def.harvest;
     if (!h || !tool) return undefined;
     if (tool !== h.tool && h.refuse[tool]) return h.refuse[tool];
+    if (tool === h.tool && h.convert && this.partner(tool) === undefined) return h.convert.refuse;
     if (tool === h.tool && h.ends && player) {
       const end = endOf(player, prop);
       if (!end || (h.side && h.side !== end)) return h.ends;
     }
     if (tool === h.tool && h.staged && prop.hits >= h.hits - 1 && !this.splitFree(prop)) return 'Pas la place pour la fendre.';
     return undefined;
+  }
+
+  /** La main qui tient l'objet taillé : l'autre que celle de l'outil `tool`, si elle tient ce que son `convert` attend (la branche), sinon undefined. */
+  private partner(tool: string): Hand | undefined {
+    const target = this.map.props.find((p) => p.def.harvest?.convert && p.def.harvest.tool === tool);
+    const from = target?.def.harvest?.convert?.from;
+    const mine = ([0, 1] as const).find((i) => { const x = game.hands[i]; return !!x && 'item' in x && x.item === tool; });
+    if (mine === undefined) return undefined;
+    const other = (1 - mine) as Hand;
+    const x = game.hands[other];
+    return x && 'item' in x && x.item === from ? other : undefined;
   }
 
   /** Où naissent, au dernier coup, `becomes` et `spawns` d'un objet qui se fend : coin bas gauche de chaque image. */
@@ -201,6 +213,7 @@ export class HarvestSystem {
       return message ? { kind: 'refused', message } : { kind: 'missing', tool: h.tool };
     }
     if (!h.tool && tool) return { kind: 'none' };
+    if (h.convert) return this.whittleHit(prop, tool!, facing);
     if (h.notch) return this.notchHit(prop, facing);
     if (h.staged) return this.stagedHit(prop, facing);
     if (prop.def.bears?.prop) return this.cutBorne(prop, facing);
@@ -211,6 +224,19 @@ export class HarvestSystem {
       return { kind: 'hit', done: false, given: 0, overflow: false };
     }
     return { kind: 'hit', done: true, ...this.finish(prop, facing) };
+  }
+
+  /**
+   * Un coup de hachette sur le billot : l'objet tenu dans l'autre main (la branche) devient `convert.into` (le piquet), dans la même
+   * main ; sans lui, rien ne se passe (la scène a déjà refusé avec le message de `convert.refuse`).
+   */
+  private whittleHit(prop: PlacedProp, tool: string, facing: Facing): HitResult {
+    const h = prop.def.harvest!;
+    const slot = this.partner(tool);
+    if (slot === undefined) return { kind: 'refused', message: h.convert!.refuse };
+    if (h.impact) this.chips(prop, h.impact, facing);
+    replaceHeld(game, slot, { item: h.convert!.into });
+    return { kind: 'hit', done: true, given: 1, overflow: false };
   }
 
   /**

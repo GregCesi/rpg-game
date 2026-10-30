@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 23,
+  "nextobjectid": 24,
   "properties": [
     {
       "name": "name",
@@ -260,6 +260,18 @@
           "width": 7,
           "height": 20,
           "gid": 1092
+        },
+        {
+          "id": 23,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "hatchet-ground",
+          "x": 214,
+          "y": 154,
+          "width": 8,
+          "height": 5,
+          "gid": 1093
         }
       ]
     },

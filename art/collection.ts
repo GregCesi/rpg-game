@@ -50,7 +50,7 @@ export const families: Family[] = [
   },
   { title: 'Lumière', ground: 'floor', keys: ['lantern', 'wall-torch', 'candle'] },
   { title: 'Personnages', ground: 'floor', keys: ['mother', 'portrait-mother-64'] },
-  { title: 'Outil en main', ground: 'grass', keys: ['tool-axe'], allFrames: ['tool-axe'] },
+  { title: 'Outil en main', ground: 'grass', keys: ['tool-axe', 'tool-hatchet'], allFrames: ['tool-axe', 'tool-hatchet'] },
   { title: "Éclats d'impact", ground: 'grass', keys: ['fx-wood', 'fx-stone', 'fx-leaves'], allFrames: ['fx-wood', 'fx-stone', 'fx-leaves'] },
   { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-stamina-frame', 'ui-stamina-back', 'ui-stamina-fill', 'ui-stamina-fill-low', 'ui-box', 'ui-key-e', 'ui-key-space'], icons: ['ui-hand-left', 'ui-hand-right', 'ui-hands-both'] },
   {
@@ -65,8 +65,8 @@ export const families: Family[] = [
   {
     title: 'Implantation',
     ground: 'grass',
-    keys: ['stake-ground', 'planted-stake', 'chopping-block', 'chopping-block-branch', 'chopping-block-rope', 'flat-stone', 'footing-stone', 'table', 'plan-tablet'],
-    icons: ['item-stake', 'item-flat-stone', 'item-branch'],
+    keys: ['stake-ground', 'planted-stake', 'hatchet-ground', 'chopping-block', 'chopping-block-rope', 'flat-stone', 'footing-stone', 'table', 'plan-tablet'],
+    icons: ['item-stake', 'item-hatchet', 'item-flat-stone', 'item-branch'],
   },
   { title: 'Intérieur', ground: 'floor', keys: ['bed', 'pallet', 'sack', 'jar', 'worktable', 'workbench'] },
 ];

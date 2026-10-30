@@ -231,6 +231,12 @@ export function sleep(s: GameState): void {
   revision++;
 }
 
+/** Ce que tient la main `slot` devient `what` (la branche taillée devient un piquet, dans la même main). */
+export function replaceHeld(s: GameState, slot: Hand, what: Held): void {
+  s.hands[slot] = what;
+  revision++;
+}
+
 /** Change de main active. */
 export function switchHand(s: GameState): void {
   s.active = (1 - s.active) as Hand;

@@ -77,6 +77,12 @@ export const HarvestSchema = z.strictObject({
    */
   plant: z.boolean().default(false),
   /**
+   * Tailler : le coup change l'objet possédable tenu dans l'AUTRE main (`from`) en un autre (`into`) : la branche tenue debout sur le
+   * billot devient un piquet, dans la même main. `refuse` : ce qu'on dit si l'autre main ne tient pas `from`. Un seul coup, avec
+   * l'outil `tool` dans la première main ; ni `becomes` ni `drops` n'y servent.
+   */
+  convert: z.strictObject({ from: id, into: id, refuse: id }).optional(),
+  /**
    * Cet objet ne se frappe que par un bout de sa longueur (la bille : le coin se plante dans le bois de bout, là où on voit les
    * cernes, et les coups de masse se donnent depuis ce même bout). Xéros se tient à l'est ou à l'ouest d'une pièce est-ouest, au
    * nord ou au sud d'une pièce nord-sud (d'après ses \`dims\`), tourné vers elle ; ailleurs, le texte est le message dit au joueur.
@@ -93,7 +99,7 @@ export const HarvestSchema = z.strictObject({
    */
   becomesAt: z.partialRecord(z.enum(['west', 'east', 'north', 'south']), id).optional(),
   /** Prix du coup en endurance : une clé de `costs` de stamina.json. Absent : `chop` (`cutTie` pour le billot qui porte une corde). */
-  effort: z.enum(['chop', 'cutTie', 'plant', 'maul']).optional(),
+  effort: z.enum(['chop', 'cutTie', 'plant', 'maul', 'whittle']).optional(),
   /**
    * Ce qu'on dit quand on frappe avec cet outil (clé de items.json) alors qu'il ne convient pas ou plus : la hache sur une grosse
    * bille, le coin déjà planté. Le geste ne se joue pas, rien n'est dépensé.
@@ -289,15 +295,11 @@ export const PropDefSchema = z.strictObject({
    */
   rest: z.record(id, id).optional(),
   /**
-   * Il porte un objet posé dessus : `empty`, ce qu'il redevient quand on le reprend (E). `prop` : un objet du monde qui a une
-   * longueur (le rouleau sur le billot) ; son `harvest` (outil, geste) le coupe : chaque coup réussi en enlève `length.cut` et
-   * lâche `length.piece` ; `becomes`, `drops`, `spawns` et `fall` n'y servent pas. `item` : un objet possédable (la branche sur
-   * le billot), que le `harvest` ordinaire du porteur transforme (`becomes`, `drops` : le piquet taillé).
+   * Il porte un objet posé dessus (le billot et son rouleau) : `prop`, l'objet porté, qui a une longueur (`length`), et
+   * `empty`, ce qu'il redevient quand on le reprend (E) ou qu'il est vide. Son `harvest` (outil, geste) coupe l'objet porté :
+   * chaque coup réussi en enlève `length.cut` et lâche `length.piece` ; `becomes`, `drops`, `spawns` et `fall` n'y servent pas.
    */
-  bears: z
-    .strictObject({ prop: id.optional(), item: id.optional(), empty: id })
-    .refine((b) => (b.prop === undefined) !== (b.item === undefined), { message: "'bears' porte soit un objet du monde ('prop'), soit un objet possédable ('item')" })
-    .optional(),
+  bears: z.strictObject({ prop: id, empty: id }).optional(),
   /**
    * Pièce d'un toit (chevron, toit de planches) : quand Xéros est dessous ou caché derrière, elle devient en partie transparente,
    * avec les autres pièces de toit qu'elle touche (`systems/roofs.ts`). Son image garde sous elle, vide, la hauteur qui la
@@ -531,7 +533,7 @@ export const StrengthSchema = z
  * court plus et sa marche est ralentie à la part `tiredWalk` de la normale. `costs` : le prix de chaque effort, en points
  * (les « PerSec » se paient chaque seconde de l'effort, les « PerKg » sont proportionnels à la masse en kg) ; marcher ne coûte rien.
  * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `plant` planter
- * le coin de fendage, `stake` planter un piquet de tracé, `maul` un coup de masse sur le coin, `knot`
+ * le coin de fendage, `whittle` tailler un piquet à la hachette, `stake` planter un piquet de tracé, `maul` un coup de masse sur le coin, `knot`
  * nouer ou dénouer, `turnPerKg` pivoter une bille, `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
  * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir.
  */
@@ -544,6 +546,7 @@ export const StaminaSchema = z.strictObject({
     cutTie: z.number().nonnegative(),
     plant: z.number().nonnegative(),
     stake: z.number().nonnegative(),
+    whittle: z.number().nonnegative(),
     maul: z.number().nonnegative(),
     knot: z.number().nonnegative(),
     turnPerKg: z.number().nonnegative(),

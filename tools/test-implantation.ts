@@ -1,5 +1,5 @@
 // Test de scénario de l'implantation, dans le vrai jeu (voir tools/lib/playtest.ts) : refus sans plan, lire la planchette chez la
-// mère, tailler un piquet sur le billot, tracer l'emprise (un piquet refusé hors des coins, un tracé gêné par un rocher), le
+// mère, tailler un piquet à la hachette (refus sans branche dans l'autre main), tracer l'emprise (un piquet refusé hors des coins, un tracé gêné par un rocher), le
 // chantier qui naît, un objet refusé par une place, quatre pierres plates portées depuis la berge jusqu'aux quatre dés, le
 // piquet arraché de chaque coin, la ligne d'état, les poteaux en fantôme, puis la page rechargée : le chantier est retrouvé.
 // Usage : npm run test:implantation (lancé aussi par npm run test).
@@ -102,25 +102,35 @@ await playtest('implantation', async ({ page, errors, load }) => {
       await standAt(block[0], block[1], 'down');
       emit({ kind: 'prop', prop: 'chopping-block' });
       await sleep(250);
-      // la branche se pose sur le billot, se reprend, se repose
-      await give({ item: 'branch' });
-      await press('KeyE');
-      out.rested = props(/^chopping-block-branch$/).length;
-      out.restedHands = hands();
-      await press('KeyE');
-      out.unloadedHands = hands();
-      await press('KeyE');
-      out.restedAgain = props(/^chopping-block-branch$/).length;
-      // un coup de hache taille le piquet : il tombe au sol, le billot redevient nu
-      await give({ item: 'axe' });
+      // la hachette seule, face au billot : refusé, sans geste ni dépense
       emit({ kind: 'stamina', value: 100 });
-      await sleep(100);
+      await give({ item: 'hatchet' });
+      await press('Space');
+      await sleep(300);
+      out.noBranchNotice = notices.at(-1);
+      out.noBranchMode = w().mode;
+      out.noBranchCost = 100 - w().player.stamina.value;
+      // la branche dans une main, la hachette dans l'autre : un coup, la branche devient un piquet dans la même main
+      const twoHands = async (first: string, second: string) => {
+        gs.emptyHands(gs.game);
+        gs.take(gs.game, { item: first }, 1);
+        gs.take(gs.game, { item: second }, 1);
+        w().handsChanged();
+        await sleep(100);
+      };
+      await twoHands('hatchet', 'branch');
+      out.beforeCut = hands();
       await press('Space');
       await settled();
+      out.afterCut = hands();
       out.cutCost = 100 - w().player.stamina.value;
-      out.stakesOnGround = ground('stake');
       out.blockBare = props(/^chopping-block$/).length;
-      out.blockBranch = props(/^chopping-block-branch$/).length;
+      // et dans l'autre ordre : la branche dans la main active, la hachette dans l'autre
+      await twoHands('branch', 'hatchet');
+      out.beforeCut2 = hands();
+      await press('Space');
+      await settled();
+      out.afterCut2 = hands();
 
       // 4. tracer : le coin nord-ouest, un piquet refusé hors des coins, le nord-est (aimanté, repris, replanté), le sud-est
       const origin = find(61, 71, 90)!;
@@ -244,14 +254,14 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.equal(r.tabletStays, 1, 'la planchette reste en place');
   assert.ok(r.stonesOnMap >= 6, `six pierres plates sur la berge : ${r.stonesOnMap}`);
   assert.ok(Math.abs(r.stoneMass - 35.1) < 0.2, `masse de la pierre plate : ${r.stoneMass}`);
-  assert.equal(r.rested, 1, 'la branche est posée sur le billot');
-  assert.equal(r.restedHands, '[null,null]null', 'la main est libre');
-  assert.equal(r.unloadedHands, '[null,{"item":"branch"}]null', 'E reprend la branche');
-  assert.equal(r.restedAgain, 1, 'et la repose');
-  assert.ok(Math.abs(r.cutCost - 0.8) < 1e-6, `un coup de hache coûte 0,8 : ${r.cutCost}`);
-  assert.equal(r.stakesOnGround, 1, 'le piquet tombe au sol');
-  assert.equal(r.blockBare, 1, 'le billot redevient nu');
-  assert.equal(r.blockBranch, 0, 'plus de branche dessus');
+  assert.equal(r.noBranchNotice, "Tiens la branche debout sur le billot, de l'autre main.", 'sans branche dans l\'autre main : refusé');
+  assert.equal(r.noBranchMode, 'play', 'refus sans geste');
+  assert.equal(r.noBranchCost, 0, 'un refus ne coûte rien');
+  assert.equal(r.beforeCut, '[{"item":"branch"},{"item":"hatchet"}]null');
+  assert.equal(r.afterCut, '[{"item":"stake"},{"item":"hatchet"}]null', 'la branche devient un piquet, dans la même main');
+  assert.ok(Math.abs(r.cutCost - 0.4) < 1e-6, `tailler coûte 0,4, moins qu'un coup de cognée : ${r.cutCost}`);
+  assert.equal(r.blockBare, 1, 'le billot ne change pas');
+  assert.equal(r.afterCut2, '[{"item":"hatchet"},{"item":"stake"}]null', 'dans l\'autre ordre aussi : le piquet reste dans la main de la branche');
   assert.ok(Math.abs(r.plantCost - 0.5) < 1e-6, `planter un piquet coûte 0,5 : ${r.plantCost}`);
   assert.equal(r.firstSite, JSON.stringify({ stakes: ['nw'], x: JSON.parse(r.firstSite).x, y: JSON.parse(r.firstSite).y, born: false }), 'le premier piquet fixe le coin nord-ouest');
   assert.equal(r.firstHands, '[null,null]null');
@@ -276,7 +286,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
     assert.equal(d.placed, i + 1);
     assert.equal(d.footings, i + 1, 'un dé de plus sur la carte');
     assert.equal(d.stakes.length, 3 - i, 'le piquet de ce coin est arraché');
-    assert.ok(d.fallen >= i + 2, `et retombe au sol, réutilisable : ${d.fallen}`);
+    assert.ok(d.fallen >= i + 1, `et retombe au sol, réutilisable : ${d.fallen}`);
   }
   assert.equal(r.statusHalf, 'Abri à bois : dés, 2 sur 4');
   assert.equal(r.statusDone, 'Abri à bois : poteaux, 0 sur 4');

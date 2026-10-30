@@ -177,9 +177,13 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
   marquées « à venir » (`soon`) : `validate.ts` vérifiera leurs pièces quand elles seront ouvertes. L'orientation est fixe
   pour l'instant : le côté haut du toit au nord, l'abri n'est dessiné que dans ce sens. **Un nouveau bâtiment = un plan
   dans `plans.json`, sans code nouveau.**
-- **Le piquet** (`stake`, fiche `docs/objets/stake.md`) : une branche posée sur le billot (E), un coup de hache (Espace, comme
-  la coupe d'un lien) : elle devient un piquet taillé en pointe, environ 100 × 5 × 5 cm, 1 kg, tenu à une main ; le coup coûte
-  autant qu'un coup de hache. La branche se reprend avec E. Planter un piquet coûte 0,5 point d'endurance.
+- **Le piquet** (`stake`, fiche `docs/objets/stake.md`), corrigé le 30 octobre 2026 : en vrai, on ne frappe pas une branche couchée à la
+  cognée. On tient la branche debout d'une main, la pointe appuyée sur le billot, et on taille la pointe avec **la hachette**
+  (`hatchet`, fiche `docs/objets/hatchet.md` : fer d'environ 12 × 8 cm, manche de 40 cm, 1 kg, une main, trouvée dans la réserve de la
+  maison avec la masse et le coin ; la cognée, à deux mains, ne change pas) dans l'autre. Face au billot, Espace : un coup (le geste
+  `chop`, sans nouvelle pose) et la branche devient un piquet taillé en pointe, environ 100 × 5 × 5 cm, 1 kg, qui reste dans la main
+  qui la tenait. Le coup coûte 0,4 point (`whittle`), la moitié d'un coup de cognée. Si l'autre main ne tient pas une branche : « Tiens la
+  branche debout sur le billot, de l'autre main. » Planter un piquet coûte 0,5 point d'endurance.
 - **Tracer.** Piquet en main, plan connu, Espace sur le sol : le piquet se plante. Sans plan connu : « Xéros ne sait pas encore
   quoi tracer. » Le premier piquet fixe le coin nord-ouest de l'emprise ; les trois autres coins apparaissent en fantôme, et
   les piquets suivants ne se plantent que là (un coin à moins de 12 px du point visé aimante le piquet ; ailleurs : « Les
@@ -241,7 +245,7 @@ Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter
 La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'essoufflement d'une course ou d'une charge, qui se reprend en quelques secondes) viendra plus tard comme **deuxième jauge**, à côté de celle-ci : l'endurance baisse tout le jour et ne remonte qu'en dormant.
 
 - **La jauge** : 100 points au maximum (`src/content/stamina.json`, composant `entities/Stamina.ts`, mécanique `src/systems/effort.ts`). Elle est dans GameState (`stamina`) et se sauvegarde avec la partie ; à l'écran, une jauge verticale à droite des deux cases des mains (`art/ui/stamina.ts`), rouge sous le seuil de fatigue, qui tremble quand un effort est refusé.
-- **Ce qui coûte** (tout est dans `stamina.json`, rien en dur) : un coup d'outil (hache sur l'arbre debout, le houppier, une encoche, la branche taillée en piquet), la coupe d'un lien sur le billot, planter un piquet de tracé (0,5 point), nouer et dénouer, pivoter une bille (par kg), planter le coin et frapper à la masse (voir *Fendre*), et par seconde : marcher en portant au-delà de 25 kg (par kg de trop), pousser une bille (par kg), courir (0,2 point par seconde depuis le 30 octobre 2026 ; c'était 1). **Marcher ne coûte rien**, ni à vide ni chargé en dessous de 25 kg. Un coup dans le vide ou sans le bon outil ne coûte rien.
+- **Ce qui coûte** (tout est dans `stamina.json`, rien en dur) : un coup d'outil (hache sur l'arbre debout, le houppier, une encoche, la coupe d'un lien sur le billot, tailler un piquet à la hachette (0,4 point), planter un piquet de tracé (0,5 point), nouer et dénouer, pivoter une bille (par kg), planter le coin et frapper à la masse (voir *Fendre*), et par seconde : marcher en portant au-delà de 25 kg (par kg de trop), pousser une bille (par kg), courir (0,2 point par seconde depuis le 30 octobre 2026 ; c'était 1). **Marcher ne coûte rien**, ni à vide ni chargé en dessous de 25 kg. Un coup dans le vide ou sans le bon outil ne coûte rien.
 - **Fatigué** (sous 15 %) : pas de course, marche à 85 % de la normale. **Épuisé** (0) : toute action qui coûte est refusée, une fois, par « Xéros est épuisé. Il faut dormir. » (la jauge tremble) ; il peut toujours marcher, mais ne soulève plus ce qui le ferait porter au-delà de 25 kg. Les coûts se règlent avec la force : le fardeau est compté au-delà du seuil de marche de `strength.json`, donc une force plus grande coûte moins.
 - **Dormir** : E sur la paillasse du cagibi (`pallet`, dialogue `pallet-sleep`) propose « Dormir ? » (premier dialogue à choix : `choices` d'une ligne, `action: "sleep"`). Oui : fondu au noir, jauge pleine, un jour de plus, réveil dans le cagibi, partie sauvegardée, « Jour 2 » à l'écran.
 - **Compteur de jours** : `day` de GameState (jour 1 au départ, +1 à chaque nuit). Pas encore d'horloge ; il servira au temps et aux saisons.

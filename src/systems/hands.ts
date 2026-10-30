@@ -159,28 +159,26 @@ export class HandsSystem {
   }
 
   /**
-   * Pose ce que tient la main active sur l'objet `p` (le rouleau sur le billot, la branche sur le billot) : il devient l'objet de
-   * son `rest` qui le porte, avec sa longueur s'il en a une. Renvoie false si la main active ne tient pas ce qu'il accepte.
+   * Pose ce que tient la main active sur l'objet `p` (le rouleau sur le billot) : il devient l'objet de son `rest` qui
+   * le porte, avec sa longueur. Renvoie false si la main active ne tient pas ce qu'il accepte.
    */
   rest(p: PlacedProp): boolean {
     const what = game.both ? undefined : game.hands[game.active];
-    const becomes = what ? p.def.rest?.['prop' in what ? what.prop : what.item] : undefined;
-    if (!what || !becomes) return false;
+    const becomes = what && 'prop' in what ? p.def.rest?.[what.prop] : undefined;
+    if (!what || !('prop' in what) || !becomes) return false;
     release(game);
-    this.replace(p, becomes, 'prop' in what ? (what.length ?? props[what.prop].length?.start) : undefined);
+    this.replace(p, becomes, what.length ?? props[what.prop].length?.start);
     return true;
   }
 
   /**
-   * Reprend ce que porte l'objet `p` (le rouleau sur le billot, avec sa longueur ; la branche) : il redevient `bears.empty`.
+   * Reprend ce que porte l'objet `p` (le rouleau sur le billot), avec sa longueur : il redevient `bears.empty`.
    * Renvoie false si les mains ne sont pas libres.
    */
   unload(p: PlacedProp): boolean {
-    const { prop, item, empty } = p.def.bears!;
-    const ok = item
-      ? take(game, { item }, items[item].hands)
-      : take(game, { prop: prop!, ...(p.length !== undefined ? { length: p.length } : {}) }, props[prop!].take!.hands);
-    if (!ok) return false;
+    const { prop, empty } = p.def.bears!;
+    const def = props[prop];
+    if (!take(game, { prop, ...(p.length !== undefined ? { length: p.length } : {}) }, def.take!.hands)) return false;
     this.replace(p, empty, undefined);
     return true;
   }

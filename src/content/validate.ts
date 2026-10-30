@@ -238,6 +238,15 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
       else if (base && (size.w !== base.w || size.h !== base.h)) err(`étape ${k} : '${p.image}-n${k}' fait ${size.w}×${size.h}, '${p.image}' ${base.w}×${base.h} (même taille attendue)`);
     }
   }
+  if (h.convert) {
+    const k = h.convert;
+    if (!h.tool) err("'convert' : il faut l'outil qui taille ('tool')");
+    if (!c.items[k.from]) err(`'convert' : '${k.from}' (from) absent de items.json`);
+    if (!c.items[k.into]) err(`'convert' : '${k.into}' (into) absent de items.json`);
+    if (c.items[h.tool ?? '']?.hands === 2) err("'convert' : l'outil se tient à une main (l'autre tient ce qu'on taille)");
+    if (h.hits !== 1) err("'convert' : un seul coup");
+    if (h.becomes !== undefined || h.drops.length || h.spawns.length || h.fall || h.plant || h.staged || h.notch) err("'convert' : sans 'becomes', 'drops', 'spawns', 'fall', 'plant', 'staged' ni 'notch'");
+  }
   h.drops.forEach((d, i) => {
     if (!c.items[d.item]) err(`objet lâché n°${i + 1} : '${d.item}' absent de items.json`);
     if (d.min > d.max) err(`objet lâché '${d.item}' : min (${d.min}) plus grand que max (${d.max})`);
@@ -258,33 +267,17 @@ function validateRope(key: string, p: PropDef, c: Content): string[] {
     if (p.length.cut > p.length.start) err(`length : 'cut' (${p.length.cut}) plus long que 'start' (${p.length.start})`);
   }
   for (const [held, becomes] of Object.entries(p.rest ?? {})) {
-    // ce qu'on pose dessus : un objet du monde qui se prend (le rouleau), ou un objet possédable (la branche)
     const h = c.props[held];
-    const it = c.items[held];
     const b = c.props[becomes];
-    if (h && it) err(`rest : '${held}' est à la fois dans props.json et items.json (ambigu)`);
-    else if (h) {
-      if (!h.take) err(`rest : '${held}' n'est pas un objet de props.json qui se prend`);
-      else if (h.take.hands !== 1) err(`rest : '${held}' se tient à deux mains (on pose ce que tient la main active)`);
-    } else if (it) {
-      if (it.hands !== 1) err(`rest : '${held}' se tient à deux mains (on pose ce que tient la main active)`);
-    } else err(`rest : '${held}' absent de props.json et d'items.json`);
+    if (!h?.take) err(`rest : '${held}' n'est pas un objet de props.json qui se prend`);
+    else if (h.take.hands !== 1) err(`rest : '${held}' se tient à deux mains (on pose ce que tient la main active)`);
     if (!b) err(`rest : '${becomes}' absent de props.json`);
-    else if ((b.bears?.prop ?? b.bears?.item) !== held || b.bears?.empty !== key) {
-      err(`rest : '${becomes}' doit avoir "bears": {"${it ? 'item' : 'prop'}": "${held}", "empty": "${key}"}`);
-    }
+    else if (b.bears?.prop !== held || b.bears.empty !== key) err(`rest : '${becomes}' doit avoir "bears": {"prop": "${held}", "empty": "${key}"}`);
   }
-  if (p.bears?.item) {
-    // un objet possédable posé dessus (la branche sur le billot) : le porteur se récolte comme n'importe quel objet
-    if (!c.items[p.bears.item]) err(`bears : '${p.bears.item}' absent de items.json`);
-    if (!c.props[p.bears.empty]) err(`bears : '${p.bears.empty}' (empty) absent de props.json`);
-    if (!p.harvest?.tool) err("bears : il faut un 'harvest' avec un outil pour travailler ce qu'il porte");
-    if (p.take || p.interact) err(`bears : avec '${p.take ? 'take' : 'interact'}' (E reprend ce qu'il porte)`);
-  } else if (p.bears) {
-    const prop = p.bears.prop!;
-    const borne = c.props[prop];
-    if (!borne?.length) err(`bears : '${prop}' n'a pas de longueur ('length')`);
-    if (!borne?.take) err(`bears : '${prop}' ne se prend pas (pas de 'take')`);
+  if (p.bears) {
+    const borne = c.props[p.bears.prop];
+    if (!borne?.length) err(`bears : '${p.bears.prop}' n'a pas de longueur ('length')`);
+    if (!borne?.take) err(`bears : '${p.bears.prop}' ne se prend pas (pas de 'take')`);
     if (!c.props[p.bears.empty]) err(`bears : '${p.bears.empty}' (empty) absent de props.json`);
     const h = p.harvest;
     if (!h?.tool) err("bears : il faut un 'harvest' avec un outil pour couper ce qu'il porte");

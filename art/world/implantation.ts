@@ -1,6 +1,6 @@
-// L'implantation de l'abri à bois : le billot chargé d'une branche à tailler en piquet, la pierre plate qui devient un dé,
-// la planchette où la mère a gravé le plan. Fiches : docs/objets/chopping-block-branch.md, flat-stone.md,
-// plan-tablet.md. Le piquet lui-même : art/items/stake.ts.
+// L'implantation de l'abri à bois : la pierre plate qui devient un dé, la planchette où la mère a gravé le plan.
+// Fiches : docs/objets/flat-stone.md, plan-tablet.md. Le piquet : art/items/stake.ts ; la hachette qui le taille :
+// art/items/hatchet.ts.
 //
 // Échelle du jeu (5 cm par pixel, gabarit de docs/STYLE.md section 8), lumière en haut à gauche, contour d'un pixel :
 // teinte la plus sombre de la matière en haut et à gauche, OUTLINE (o) en bas et à droite.
@@ -10,41 +10,9 @@ import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { outline } from '../items/lib';
 import { sheet } from '../items/carried';
-import { choppingBlock } from './house';
 import { footingStone } from './building';
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
-
-// ---------- Billot et branche ----------
-// Le billot nu (art/world/house.ts), au même pixel que dans ses autres images : rien ne bouge quand on pose la branche.
-// La branche (100 cm, Ø 5 cm, matière de la branche sèche, art/items/branch.ts : dessus M, flanc m) est couchée
-// est-ouest en travers de la coupe, un peu en arrière du milieu de l'ovale ; ses bouts dépassent du billot de 4 à 5 px
-// de chaque côté, en l'air. Une seule rangée de bois (5 cm), comme le piquet (art/items/stake.ts) : à gauche le gros
-// bout cassé net (U), à droite le bout plus fin (m). Gabarit : la boîte qui l'englobe, 100 × 55 × 50 cm, 20 × 15,5 :
-// dessinée 20 × 15 (son contour du haut sur celui du billot). Son ombre de contact assombrit le bois de bout (T) sous
-// elle ; on voit la coupe devant elle et ses deux bouts.
-
-/** Colonnes de la branche (bois, sans contour) dans l'image du billot (le billot occupe x 11 à 21). */
-const BRANCH_X0 = 7;
-const BRANCH_LEN = 18;
-/** Rangée du bois de la branche (une seule : 5 cm), entre son contour du haut et celui du bas. */
-const BRANCH_ROW = 15;
-
-function choppingBlockBranch(): Canvas {
-  const c = choppingBlock();
-  // ombre de contact sur la coupe, juste sous la branche
-  for (let x = BRANCH_X0; x < BRANCH_X0 + BRANCH_LEN; x++) {
-    if ('Yt'.includes(c.get(x, BRANCH_ROW + 2))) c.set(x, BRANCH_ROW + 2, 'T');
-  }
-  // la branche seule, contournée à part, puis posée sur le billot : gros bout cassé clair (U) à gauche, une fente (m),
-  // le bout fin (m) à droite
-  const b = new Canvas(c.w, c.h);
-  for (let i = 0; i < BRANCH_LEN; i++) b.set(BRANCH_X0 + i, BRANCH_ROW, i === 0 ? 'U' : 'M');
-  for (const i of [5, 6, 7, BRANCH_LEN - 3, BRANCH_LEN - 2, BRANCH_LEN - 1]) b.set(BRANCH_X0 + i, BRANCH_ROW, 'm');
-  outline(b, 'N');
-  for (let y = 0; y < b.h; y++) for (let x = 0; x < b.w; x++) if (b.px[y][x] !== '.') c.set(x, y, b.px[y][x]);
-  return c;
-}
 
 // ---------- Pierre plate ----------
 // Le dessin du dé de pierre (art/world/building.ts) : même pierre, même lumière, 6 × 6 px (30 × 30 × 15 cm), coin
@@ -130,7 +98,6 @@ function planTablet(): Canvas {
 }
 
 export default [
-  img('chopping-block-branch', choppingBlockBranch()),
   img('flat-stone', flatStone()),
   img('item-flat-stone', itemFlatStone()),
   heldFlatStone(),
