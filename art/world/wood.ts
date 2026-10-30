@@ -13,8 +13,44 @@
 
 import { Canvas, EMPTY } from '../lib/canvas';
 
-/** Diamètre du tronc en pixels : la référence des couloirs de sillons. */
+/** Diamètre du tronc du gros arbre en pixels : la référence des couloirs de sillons. */
 export const DIAMETER = 11;
+
+/**
+ * Une sorte de tronc : son diamètre d'écorce (sans contour), les couloirs de sillons (rangée, période, longueur du
+ * tiret, décalage : assez écartés pour que deux tirets ne se touchent jamais) et la demi-largeur de l'ovale de ses
+ * bouts (Ø/2 en largeur à l'écran, gabarit).
+ */
+export interface Wood {
+  diameter: number;
+  furrows: [number, number, number, number][];
+  endA: number;
+}
+
+/** Le gros arbre : tronc de 55 cm, 11 px d'écorce. */
+export const BIG_WOOD: Wood = {
+  diameter: DIAMETER,
+  furrows: [
+    [2, 13, 5, 0],
+    [5, 11, 6, 6],
+    [8, 12, 5, 3],
+  ],
+  endA: 2.5,
+};
+
+/**
+ * L'arbre normal : tronc de 30 cm, 6 px d'écorce. Deux couloirs seulement (rangées 1 et 4 sur 6, le tiret descend
+ * d'un pixel à mi-longueur : les rangées 1-2 et 4-5 ne se touchent jamais), de périodes différentes. La rampe d'écorce
+ * de `barkTone` donne sur 6 px : 2 M, 2 m, 1 N, 1 K. Bouts ovales de 4 px de large (Ø 40 cm contour compris ÷ 2).
+ */
+export const NORMAL_WOOD: Wood = {
+  diameter: 6,
+  furrows: [
+    [1, 13, 4, 0],
+    [4, 11, 5, 6],
+  ],
+  endA: 2,
+};
 
 /** Écorce, de la lumière à l'ombre (palette `world`). */
 export const BARK = ['M', 'm', 'N', 'K'] as const;
@@ -27,18 +63,11 @@ export function barkTone(s: number): string {
   return s < 0.28 ? 'M' : s < 0.7 ? 'm' : s < 0.92 ? 'N' : 'K';
 }
 
-/** Couloirs de sillons : rangée (sur 11), période, longueur du tiret, décalage le long du tronc. */
-const FURROWS: [number, number, number, number][] = [
-  [2, 13, 5, 0],
-  [5, 11, 6, 6],
-  [8, 12, 5, 3],
-];
-
 /** Le pixel (`along` le long du tronc, `s` en travers) est-il dans un sillon ? */
-export function furrowAt(along: number, s: number): boolean {
-  const row = Math.floor(s * DIAMETER);
+export function furrowAt(along: number, s: number, wood: Wood = BIG_WOOD): boolean {
+  const row = Math.floor(s * wood.diameter);
   const a = Math.floor(along);
-  return FURROWS.some(([r, p, n, ph]) => {
+  return wood.furrows.some(([r, p, n, ph]) => {
     const pos = (((a + ph) % p) + p) % p;
     if (pos >= n) return false;
     return row === r + (pos >= Math.ceil(n / 2) ? 1 : 0);
@@ -46,9 +75,9 @@ export function furrowAt(along: number, s: number): boolean {
 }
 
 /** Écorce en un point du tronc : la rampe, creusée par les sillons. */
-export function bark(along: number, s: number): string {
+export function bark(along: number, s: number, wood: Wood = BIG_WOOD): string {
   const b = barkTone(s);
-  return furrowAt(along, s) ? DARKER[b] : b;
+  return furrowAt(along, s, wood) ? DARKER[b] : b;
 }
 
 /**
@@ -85,8 +114,8 @@ export function paintFace(c: Canvas, cx: number, cy: number, rx: number, ry: num
   return c;
 }
 
-/** Demi-largeur (le long du tronc) de l'ovale d'un bout de tronc couché est-ouest : 5 px de large. */
-export const END_A = 2.5;
+/** Demi-largeur (le long du tronc) de l'ovale d'un bout de tronc couché est-ouest du gros arbre : 5 px de large. */
+export const END_A = BIG_WOOD.endA;
 
 /**
  * Bout d'un tronc ou d'une bille couchés est-ouest, dont le bois commence à la colonne `x` (`side` 'left' : le bois
@@ -95,19 +124,19 @@ export const END_A = 2.5;
  * arrondis. Tourné vers la lumière (`face`), on y voit la face de coupe ; sinon l'écorce s'y enroule, un cran plus
  * sombre sur son bord.
  */
-export function logEnd(c: Canvas, x: number, side: 'left' | 'right', cy: number, face: boolean, r = DIAMETER / 2): Canvas {
+export function logEnd(c: Canvas, x: number, side: 'left' | 'right', cy: number, face: boolean, r = DIAMETER / 2, a = END_A): Canvas {
   const dir = side === 'left' ? 1 : -1;
-  const ox = side === 'left' ? x + END_A : x - END_A; // centre de l'ovale
-  const inside = (X: number, Y: number) => ((X + 0.5 - ox) / END_A) ** 2 + ((Y + 0.5 - cy) / r) ** 2 <= 1;
+  const ox = side === 'left' ? x + a : x - a; // centre de l'ovale
+  const inside = (X: number, Y: number) => ((X + 0.5 - ox) / a) ** 2 + ((Y + 0.5 - cy) / r) ** 2 <= 1;
   const near = (X: number) => {
     const h = (X + 0.5 - x) * dir;
-    return h >= 0 && h < END_A;
+    return h >= 0 && h < a;
   };
   // coins arrondis
   for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
     if (near(X) && c.get(X, Y) !== EMPTY && !inside(X, Y)) c.px[Y][X] = EMPTY;
   }
-  if (face) return paintFace(c, ox, cy, END_A, r);
+  if (face) return paintFace(c, ox, cy, a, r);
   // bout dans l'ombre : l'écorce qui s'enroule, plus sombre sur le pourtour
   const edge: [number, number][] = [];
   for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
@@ -124,14 +153,14 @@ export function logEnd(c: Canvas, x: number, side: 'left' | 'right', cy: number,
  * Pas de contour ni d'ombre. Le corps porte la même écorce que le tronc debout (lumière à gauche), sillons dans le sens
  * de la bille.
  */
-export function logByTheEnd(c: Canvas, cx: number, back: number, front: number, rx: number, ry: number): Canvas {
+export function logByTheEnd(c: Canvas, cx: number, back: number, front: number, rx: number, ry: number, wood: Wood = BIG_WOOD): Canvas {
   const inDisk = (X: number, Y: number, cy: number) => ((X + 0.5 - cx) / rx) ** 2 + ((Y + 0.5 - cy) / ry) ** 2 <= 1;
   for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
     const body = Math.abs(X + 0.5 - cx) <= rx && Y + 0.5 >= back && Y + 0.5 <= front;
     if (!body && !inDisk(X, Y, back)) continue;
     const s = (X + 0.5 - (cx - rx)) / (2 * rx);
     // la bille fuit vers le haut de l'écran : le sillon se lit le long de Y, raccourci
-    let k = bark(Y * 1.2, s);
+    let k = bark(Y * 1.2, s, wood);
     // bord du bout lointain : le haut du rond du fond, qu'on ne voit pas sous le rond décalé d'un pixel et demi
     if (Y + 0.5 < back && !inDisk(X, Y - 1.5, back)) k = k === 'K' ? 'K' : 'N';
     c.set(X, Y, k);
