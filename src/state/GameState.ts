@@ -200,11 +200,21 @@ export function take(s: GameState, what: Held, hands: 1 | 2): boolean {
   return true;
 }
 
+/**
+ * La règle unique de la main active : quand elle se vide et que l'autre main tient un objet, la main active passe sur l'autre
+ * (comme Tab). Appelée par chaque fonction qui vide une main (`release`, `clearHeld`) : poser, lâcher, planter un piquet ou le
+ * coin, utiliser un lien, tout geste qui consomme ou libère l'objet tenu y passe. Les deux mains vides : rien ne change.
+ */
+function followHeld(s: GameState): void {
+  if (!s.both && !s.hands[s.active] && s.hands[1 - s.active]) s.active = (1 - s.active) as Hand;
+}
+
 /** Lâche ce que tient la main active (ou les deux mains) ; renvoie ce qui a été lâché. */
 export function release(s: GameState): Held | undefined {
   const what = held(s);
   if (s.both) s.both = null;
   else s.hands[s.active] = null;
+  followHeld(s);
   revision++;
   return what;
 }
@@ -442,6 +452,7 @@ export function removeSite(s: GameState, mapId: string, siteId: number): void {
 export function clearHeld(s: GameState, slot: 'both' | Hand): void {
   if (slot === 'both') s.both = null;
   else s.hands[slot] = null;
+  followHeld(s);
   revision++;
 }
 

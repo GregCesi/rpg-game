@@ -132,6 +132,22 @@ await playtest('implantation', async ({ page, errors, load }) => {
       await press('Space');
       await settled();
       out.afterCut2 = hands();
+      // deux objets en main : lâcher celui de la main active (Q, A en AZERTY), la main active passe sur l'autre
+      await twoHands('branch', 'hatchet');
+      const activeBefore = gs.game.active;
+      w().player.actor.face('up');
+      await sleep(100);
+      await press('KeyQ');
+      out.dropFollow = JSON.stringify({ before: activeBefore, active: gs.game.active, hands: hands() });
+      // la branche lâchée ôtée, Xéros de nouveau face au billot
+      for (const gr of w().map.ground.filter((q: any) => q.item.item === 'branch')) {
+        gs.removeGroundItem(gs.game, mapId(), gr.item.id);
+        w().map.removeGround(gr);
+      }
+      w().player.actor.face('down');
+      // la main droite de nouveau active, comme au départ (la suite du scénario en dépend)
+      if (gs.game.active !== 1) gs.switchHand(gs.game);
+      await sleep(100);
       // le rouleau de corde posé sur le billot (E), puis coupé à la hachette (un lien de 2 m, 0,4 point), puis à la cognée
       gs.emptyHands(gs.game);
       await give({ prop: 'rope-coil' });
@@ -178,10 +194,19 @@ await playtest('implantation', async ({ page, errors, load }) => {
       out.neTaken = JSON.stringify({ stakes: site().stakes, hands: hands() });
       await press('Space');
       out.neAgain = [...site().stakes];
-      await give({ item: 'stake' });
+      // le piquet dans la main active, une branche dans l'autre : planté, la main active passe sur la branche
+      gs.emptyHands(gs.game);
+      gs.take(gs.game, { item: 'stake' }, 1);
+      gs.take(gs.game, { item: 'branch' }, 1);
+      w().handsChanged();
+      const stakeHand = gs.game.active;
       await lookAt(corner.se[0], corner.se[1]);
       await press('Space');
       out.seStakes = [...site().stakes];
+      out.plantFollow = JSON.stringify({ before: stakeHand, active: gs.game.active, held: gs.game.hands[gs.game.active] });
+      gs.emptyHands(gs.game);
+      if (gs.game.active !== 1) gs.switchHand(gs.game);
+      w().handsChanged();
 
       // 5. une emprise gênée : le dernier piquet est refusé et reste en main ; dégagée, le chantier naît
       const rock = gs.spawnObject(gs.game, mapId(), 'rock', ox + 25, oy + 40, false);
@@ -282,6 +307,11 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.ok(Math.abs(r.cutCost - 0.4) < 1e-6, `tailler coûte 0,4, moins qu'un coup de cognée : ${r.cutCost}`);
   assert.equal(r.blockBare, 1, 'le billot ne change pas');
   assert.equal(r.afterCut2, '[{"item":"hatchet"},{"item":"stake"}]null', 'dans l\'autre ordre aussi : le piquet reste dans la main de la branche');
+  {
+    const d = JSON.parse(r.dropFollow);
+    assert.equal(d.active, 1 - d.before, 'lâcher la main active : elle passe sur l\'autre main, qui tient la hachette');
+    assert.equal(d.hands, d.before === 1 ? '[{"item":"hatchet"},null]null' : '[null,{"item":"hatchet"}]null');
+  }
   assert.equal(r.ropeRested, JSON.stringify({ hands: '[null,null]null', block: 1 }), 'E pose le rouleau sur le billot');
   assert.equal(r.ropeHatchet, JSON.stringify({ length: 800, ties: 1, notice: 'Rouleau de corde : 8 m restants.' }), 'la hachette coupe un lien de 2 m');
   assert.ok(Math.abs(r.ropeHatchetCost - 0.4) < 1e-6, `un coup de hachette coûte 0,4 : ${r.ropeHatchetCost}`);
@@ -298,6 +328,11 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.deepEqual(JSON.parse(r.neTaken).stakes, ['nw'], 'le coin est libre à nouveau');
   assert.deepEqual(r.neAgain, ['nw', 'ne'], 'et se replante');
   assert.deepEqual(r.seStakes, ['nw', 'ne', 'se']);
+  {
+    const d = JSON.parse(r.plantFollow);
+    assert.equal(d.active, 1 - d.before, 'le piquet planté, la main active passe sur la branche');
+    assert.deepEqual(d.held, { item: 'branch' });
+  }
   assert.equal(r.blockedNotice, 'Il y a quelque chose dans le passage.', 'une emprise gênée refuse le dernier piquet');
   assert.equal(r.blockedState, JSON.stringify({ stakes: 3, born: false, hands: '[null,{"item":"stake"}]null' }), 'le 4e piquet reste en main');
   assert.equal(r.born, JSON.stringify({ stakes: 4, born: true, hands: '[null,null]null' }), 'dégagée, le chantier naît');
