@@ -406,6 +406,59 @@ export const CHOP_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
   right: CHOP_BODY.right.map((b) => b.tool),
 };
 
+// Frapper à la masse (maul-*), de haut en bas sur le coin planté dans une bille couchée devant lui : un coup vertical à
+// deux mains comme chop, mais plus lourd. La masse se lève plus haut que la hache, le corps se cambre (buste et tête
+// remontent d'un pixel, de profil ils reculent) ; elle s'abat par-dessus la tête ; à l'impact le corps se penche (buste
+// tassé de deux pixels, tête baissée, de profil le haut du corps avance), les bras tendus, la tête de la masse sur le
+// milieu du dessus de la bille ; puis elle rebondit d'un ou deux pixels. Pieds écartés, plantés. Plus lent que chop.
+// On voit la masse par la tranche (le bloc carré de sa tête), comme la hache dans chop.
+
+/** Image de l'impact dans les animations maul-* (0 à 3). */
+export const MAUL_IMPACT = 2;
+export const MAUL_FRAME_RATE = 8;
+
+interface MaulBody extends UseBody {
+  /** −1 : cambré (buste et tête remontent, de profil ils reculent) ; 0 : droit ; 1, 2 : penché vers le coup. */
+  lean: number;
+}
+
+const maul = (b: UseBody, lean: number): MaulBody => ({ ...b, lean });
+
+const MAUL_BODY: Record<'down' | 'up' | 'right', MaulBody[]> = {
+  // de face (la bille au sud) : levée tout en haut, derrière la tête, le corps cambré ; elle repasse devant le front ;
+  // puis la tête frappe le coin au milieu de la bille, sous ses pieds, bras tendus et buste penché ; elle rebondit
+  down: [
+    maul(edgeOn([16, 8], 'n', 'cw', true, [[9, 19], [22, 19]], 'head'), -1),
+    maul(edgeOn([16, 15], 'n', 'cw', false, [[10, 24], [21, 24]]), 0),
+    maul(edgeOn([16, 40], 's', 'ccw', false, [[12, 37], [20, 37]]), 2),
+    maul(edgeOn([16, 38], 's', 'ccw', false, [[12, 36], [20, 36]]), 1),
+  ],
+  // de dos (la bille au nord, son dessus derrière les épaules) : armée tout en haut, la tête pendue derrière lui (vers
+  // nous) au-dessus de sa tête ; elle repasse au-dessus de la tête ; puis frappe la bille devant lui, cachée par le corps :
+  // les mains sont décalées à droite, la masse dépasse du flanc droit, comme la hache
+  up: [
+    maul(edgeOn([17, 8], 's', 'ccw', false, [[9, 19], [22, 19]], 'head'), -1),
+    maul(edgeOn([20, 9], 'n', 'cw', true, [[9, 20], [23, 18]], 'head'), 0),
+    maul(edgeOn([23, 38], 'n', 'cw', true, [[14, 39], [20, 39]], 'body'), 2),
+    maul(edgeOn([23, 36], 'n', 'cw', true, [[14, 38], [20, 38]], 'body'), 1),
+  ],
+  // de profil : levée derrière la tête, la masse pend dans le dos, le corps cambré ; elle repart par-dessus lui ; puis
+  // la tête frappe le dessus de la bille devant lui, bras tendus, buste penché ; elle rebondit
+  right: [
+    maul(edgeOn([12, 9], 'sw', 'ccw', true, [[10, 20]], 'head'), -1),
+    maul(edgeOn([20, 13], 'ne', 'ccw', false, [[20, 22]]), 0),
+    maul(edgeOn([24, 35], 'se', 'cw', false, [[21, 33]]), 2),
+    maul(edgeOn([23, 33], 'se', 'cw', false, [[20, 32]]), 1),
+  ],
+};
+
+/** Pose de l'outil pour chaque image des animations maul-down, maul-up et maul-right. */
+export const MAUL_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
+  down: MAUL_BODY.down.map((b) => b.tool),
+  up: MAUL_BODY.up.map((b) => b.tool),
+  right: MAUL_BODY.right.map((b) => b.tool),
+};
+
 /** Tout ce qui n'est ni vide, ni ombre au sol, ni contour. */
 const isMatter = (ch: string) => ch !== EMPTY && ch !== 'x' && ch !== 'o';
 
@@ -486,6 +539,70 @@ function useSide(b: UseBody): Grid {
   };
   if (b.arms !== 'front') arms();
   c.stamp(headSide, ox, HEAD_Y);
+  if (b.arms === 'front') arms();
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+/**
+ * Torse de face ou de dos pour maul-* : cambré (lean −1), une rangée de tunique de plus (le buste s'étire) ; penché
+ * (lean 1 ou 2), une ou deux rangées de moins (le buste se tasse), si bien que l'ourlet reste en place.
+ */
+function maulTorso(torso: Grid, lean: number): Grid {
+  if (lean < 0) return [...torso.slice(0, 5), torso[4], ...torso.slice(5)];
+  if (lean === 0) return torso;
+  const drop = lean >= 2 ? [4, 8] : [8];
+  return torso.filter((_, i) => !drop.includes(i));
+}
+
+function maulFrontal(facing: Facing, b: MaulBody): Grid {
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = FRONT_X;
+  const legY = BODY_Y + 11;
+  // pieds écartés d'un pixel de plus qu'au repos, plantés
+  c.stamp(legLeft, ox + LEG_L - 1, legY);
+  c.stamp(legRight, ox + LEG_R + 1, legY);
+  const dy = b.lean < 0 ? -1 : b.lean; // haut du torse et tête
+  const torso = () => c.stamp(bareTorso(maulTorso(facing === 'down' ? torsoFront : torsoBack, b.lean)), ox, BODY_Y + dy);
+  const head = () => c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y + dy);
+  const arms = () => {
+    rim(c);
+    const [el, er] = b.elbows;
+    arm(c, [down1(SHOULDER_L, dy), el, b.hands], 't', 'L');
+    arm(c, [down1(SHOULDER_R, dy), er, b.hands], 'T', 't');
+  };
+  if (b.arms === 'body') arms();
+  torso();
+  if (b.arms === 'head') arms();
+  head();
+  if (b.arms === 'front') arms();
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+function maulSide(b: MaulBody): Grid {
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = SIDE_X;
+  const legY = BODY_Y + 11;
+  c.stamp(backLeg(legSide), ox + LEG_SIDE[0] - 1, legY);
+  c.stamp(legSide, ox + LEG_SIDE[1] + 1, legY);
+  // le haut du torse recule (cambré) ou avance (penché), la ceinture reste sur les hanches
+  const shift = b.lean < 0 ? [-1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0]
+    : b.lean >= 2 ? [2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+      : b.lean === 1 ? [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0] : Array(12).fill(0);
+  const body = bodySide.map((row, y) => (shift[y] >= 0 ? '.'.repeat(shift[y]) + row : row.slice(-shift[y]) + '.'.repeat(-shift[y])));
+  const headDx = b.lean < 0 ? -1 : b.lean >= 2 ? 2 : b.lean;
+  const headDy = b.lean >= 1 ? 1 : 0;
+  const shoulder: Vec = [SHOULDER_SIDE[0] + shift[2], SHOULDER_SIDE[1] + headDy];
+  const arms = () => {
+    rim(c);
+    arm(c, [shoulder, b.elbows[0], b.hands], 't', 'L');
+  };
+  c.stamp(body, ox, BODY_Y);
+  if (b.arms !== 'front') arms();
+  c.stamp(headSide, ox + headDx, HEAD_Y + headDy);
   if (b.arms === 'front') arms();
   rim(c);
   return selOut(c.toGrid(), DARK);
@@ -820,6 +937,10 @@ const pushWalkRight = [
   pushSide(14, 18, 'back', true),
 ];
 
+const maulDown = MAUL_BODY.down.map((b) => maulFrontal('down', b));
+const maulUp = MAUL_BODY.up.map((b) => maulFrontal('up', b));
+const maulRight = MAUL_BODY.right.map(maulSide);
+
 const xeros: SpriteSheetSource = {
   kind: 'spritesheet',
   name: 'xeros',
@@ -843,6 +964,10 @@ const xeros: SpriteSheetSource = {
     'chop-up': { frames: chopUp, frameRate: CHOP_FRAME_RATE, repeat: 0 },
     'chop-right': { frames: chopRight, frameRate: CHOP_FRAME_RATE, repeat: 0 },
     'chop-left': { frames: chopRight.map(flipX), frameRate: CHOP_FRAME_RATE, repeat: 0 },
+    'maul-down': { frames: maulDown, frameRate: MAUL_FRAME_RATE, repeat: 0 },
+    'maul-up': { frames: maulUp, frameRate: MAUL_FRAME_RATE, repeat: 0 },
+    'maul-right': { frames: maulRight, frameRate: MAUL_FRAME_RATE, repeat: 0 },
+    'maul-left': { frames: maulRight.map(flipX), frameRate: MAUL_FRAME_RATE, repeat: 0 },
     'carry-idle-down': { frames: [carryFrontal('down', 0, 0, 0)], frameRate: 1, repeat: 0 },
     'carry-idle-up': { frames: [carryFrontal('up', 0, 0, 0)], frameRate: 1, repeat: 0 },
     'carry-idle-right': { frames: [carrySide(0, 0)], frameRate: 1, repeat: 0 },

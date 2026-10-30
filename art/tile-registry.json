@@ -170,6 +170,16 @@
     "shed-roof",
     "big-pollard",
     "big-felled-log-ns",
-    "normal-felled-log-ns"
+    "normal-felled-log-ns",
+    "big-wedged-log",
+    "big-wedged-log-ns",
+    "big-half-log",
+    "big-half-log-ns",
+    "big-wedged-half-log",
+    "big-wedged-half-log-ns",
+    "big-quarter-log",
+    "big-quarter-log-ns",
+    "maul-ground",
+    "splitting-wedge-ground"
   ]
 }

@@ -21,7 +21,7 @@ import { bundleByTheEnd, faggotBody, outlineBundle } from '../world/faggot';
 
 type View = 'down' | 'up' | 'right';
 
-function sheet(name: string, size: number, palette: Palette, views: Record<View, Grid>): SpriteSheetSource {
+export function sheet(name: string, size: number, palette: Palette, views: Record<View, Grid>): SpriteSheetSource {
   const animations: SpriteSheetSource['animations'] = {};
   for (const v of ['down', 'up', 'right'] as const) {
     const g = views[v];
@@ -32,7 +32,7 @@ function sheet(name: string, size: number, palette: Palette, views: Record<View,
 }
 
 /** Efface le poing (3 × 3 autour du centre) : la main du corps, dessous, se voit à travers et serre le manche. */
-function fistGap(g: Grid, c: number, cells: [number, number][]): Grid {
+export function fistGap(g: Grid, c: number, cells: [number, number][]): Grid {
   const out = Canvas.from(g);
   for (const [dx, dy] of cells) out.set(c + dx, c + dy, EMPTY);
   return out.toGrid();
@@ -78,19 +78,20 @@ function axeSide(): Canvas {
   return new Canvas(AXE_SIZE, AXE_SIZE).stamp(zones, AXE_C - gx, AXE_C - gy);
 }
 
-const FIST: [number, number][] = [[-1, -1], [0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+export const FIST: [number, number][] = [[-1, -1], [0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
 
 /**
  * Le manche passe derrière la tête : on efface de l'image ce que la tête de Xéros recouvre dans la posture
  * shoulder-idle-<vue> (la tête et le point suivent ensemble le rebond de la marche, si bien que l'effacement vaut pour
  * toutes les images).
  */
-function behindHead(g: Grid, view: View): Grid {
+export function behindHead(g: Grid, view: View): Grid {
   const frame = xeros.animations[`shoulder-idle-${view}`].frames[0];
   const { dx, dy } = SHOULDER_POINTS[view].idle;
   const out = Canvas.from(g);
-  for (let y = 0; y < AXE_SIZE; y++) for (let x = 0; x < AXE_SIZE; x++) {
-    const fx = 16 + dx + x - AXE_C, fy = 48 + dy + y - AXE_C;
+  const size = g.length, c = Math.floor(size / 2);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const fx = 16 + dx + x - c, fy = 48 + dy + y - c;
     if (fy >= HEAD_BOTTOM) continue;
     const k = frame[fy]?.[fx];
     if (k && k !== EMPTY) out.set(x, y, EMPTY);
@@ -129,7 +130,7 @@ const HELD_BRANCH: Record<View, Branch> = {
 };
 
 /** Le poing (2 × 2 ; le point d'accroche est son pixel du bas côté extérieur) se voit par-dessus la tige. */
-const BRANCH_FIST: [number, number][] = [[0, 0], [1, 0], [0, -1], [1, -1]];
+export const BRANCH_FIST: [number, number][] = [[0, 0], [1, 0], [0, -1], [1, -1]];
 
 function heldBranchView(view: View): Grid {
   const C = BRANCH_C, S = BRANCH_SIZE;

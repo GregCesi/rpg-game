@@ -15,5 +15,14 @@
       "up": [{"dx": 2, "dy": -36, "angle": 270, "base": "flatEnd"}, {"dx": 5, "dy": -38, "angle": 90, "base": "flatEnd", "behind": true}, {"dx": 8, "dy": -9, "angle": 90, "base": "flatEnd", "behind": true}, {"dx": 8, "dy": -11, "angle": 90, "base": "flatEnd", "behind": true}],
       "right": [{"dx": -4, "dy": -36, "angle": 135, "base": "flatDiag", "behind": true}, {"dx": 6, "dy": -27, "angle": 45, "base": "flatDiag"}, {"dx": 7, "dy": -22, "angle": 315, "base": "flatDiag", "ahead": 12}, {"dx": 6, "dy": -23, "angle": 315, "base": "flatDiag", "ahead": 12}]
     }
+  },
+  "maul": {
+    "impact": 2,
+    "strike": {"down": 0, "up": 7, "right": 16},
+    "poses": {
+      "down": [{"dx": 0, "dy": -40, "angle": 90, "base": "flatEnd", "behind": true}, {"dx": 0, "dy": -33, "angle": 90, "base": "flatEnd"}, {"dx": 0, "dy": -8, "angle": 270, "base": "flatEnd", "ahead": 24}, {"dx": 0, "dy": -10, "angle": 270, "base": "flatEnd", "ahead": 24}],
+      "up": [{"dx": 1, "dy": -40, "angle": 270, "base": "flatEnd"}, {"dx": 4, "dy": -39, "angle": 90, "base": "flatEnd", "behind": true}, {"dx": 7, "dy": -10, "angle": 90, "base": "flatEnd", "behind": true}, {"dx": 7, "dy": -12, "angle": 90, "base": "flatEnd", "behind": true}],
+      "right": [{"dx": -4, "dy": -39, "angle": 225, "base": "flatDiag", "behind": true}, {"dx": 4, "dy": -35, "angle": 45, "base": "flatDiag"}, {"dx": 8, "dy": -13, "angle": 315, "base": "flatDiag", "ahead": 12}, {"dx": 7, "dy": -15, "angle": 315, "base": "flatDiag", "ahead": 12}]
+    }
   }
 }

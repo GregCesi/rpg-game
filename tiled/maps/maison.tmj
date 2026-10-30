@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 19,
+  "nextobjectid": 21,
   "properties": [
     {
       "name": "name",
@@ -212,6 +212,30 @@
           "width": 7,
           "height": 6,
           "gid": 1047
+        },
+        {
+          "id": 19,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "maul-ground",
+          "x": 148,
+          "y": 154,
+          "width": 16,
+          "height": 5,
+          "gid": 1083
+        },
+        {
+          "id": 20,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "splitting-wedge-ground",
+          "x": 184,
+          "y": 152,
+          "width": 6,
+          "height": 5,
+          "gid": 1084
         }
       ]
     },
