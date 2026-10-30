@@ -167,7 +167,7 @@ export const WoodLookSchema = z.enum(['round', 'half', 'quarter', 'f1', 'f2', 'f
  * une clé : `size`, son diamètre (clé de `sizes` de wood.json : celui de l'arbre d'où elle vient, `big` 55 cm, `normal` 30 cm) ;
  * `length` en cm ; `shape` : ronde, demi ou quart (le fendage) ; `hewn` : coups de doloire reçus (une face tous les `perFace`
  * coups, la poutre à 4 faces) ; `axis` : couchée est-ouest ou nord-sud ; `notch` : la coupe commencée (`at` cm du bout ouest ou
- * nord, `hits` coups) ; `wedge` : le coin planté (`end`, le bout d'où il est planté et d'où se donnent les coups, `hits` coups de
+ * nord, `hits` coups) ; `face` : le côté de la face debout d'un quartier ; `wedge` : le coin planté (`end`, le bout d'où il est planté et d'où se donnent les coups, `hits` coups de
  * masse reçus). GameState garde ces réglages pour chaque pièce posée ou tenue ; Tiled peut les donner en propriétés.
  */
 export const WoodPieceSchema = z.strictObject({
@@ -178,6 +178,12 @@ export const WoodPieceSchema = z.strictObject({
   axis: z.enum(['ew', 'ns']),
   notch: z.strictObject({ at: z.number().int().positive(), hits: z.number().int().positive() }).optional(),
   wedge: z.strictObject({ end: EndSchema, hits: z.number().int().nonnegative() }).optional(),
+  /**
+   * Le quartier seulement : le côté de sa face fendue debout (il repose sur l'autre, l'écorce descend en arrondi du côté opposé) ;
+   * `north` ou `south` couché est-ouest, `east` ou `west` nord-sud. R le tourne d'un quart de tour dans le sens des aiguilles d'une
+   * montre (nord, est, sud, ouest). Absent : `south` est-ouest, `east` nord-sud (`faceOf`, world/woodShape.ts).
+   */
+  face: EndSchema.optional(),
 });
 
 /**

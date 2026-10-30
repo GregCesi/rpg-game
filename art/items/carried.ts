@@ -17,6 +17,7 @@ import { branchBody, finishBranch, shearDown, transpose, type Branch } from './b
 import { axeArt, toolPalette } from './tools';
 import xeros, { SHOULDER_POINTS } from '../characters/xeros';
 import { bundleByTheEnd, faggotBody, outlineBundle } from '../world/faggot';
+import { quarterEW, quarterNS } from '../world/wood-pieces';
 
 type View = 'down' | 'up' | 'right';
 
@@ -219,7 +220,7 @@ function bigRoundLong(): Grid {
 }
 
 /**
- * Demi et quart en long (le tracé de la demi-bille et du quartier couchés, split.ts, sans ombre) : la face de fente en
+ * Demi-bille en long (le tracé de la demi-bille couchée, split.ts, sans ombre) : la face de fente en
  * haut (rangées 1 à `top`, la première est le liseré d'écorce du bord), le dos d'écorce dessous jusqu'à `bottom`, ses
  * bouts arrondis en demi-ovale (`endA` de large) ; le bout gauche montre le bois de bout, le droit l'écorce enroulée.
  */
@@ -256,25 +257,18 @@ function bigFlatLong(top: number, bottom: number, endA: number): Grid {
 }
 
 /**
- * Bout d'un quartier (5 px de bois), au pixel : un quart de disque, le cœur (T) dans l'angle haut droit contre la fente
- * et la face plate, un cerne, le bois de bout éclairé à gauche (Y), l'écorce (N) sur l'arc (split.ts).
- */
-const QUARTER_END: Grid = ['NTttT', 'NYtTT', 'NYYtT', '.NYtT', '..NtT', '...NN'];
-
-/**
- * Demi et quart par le bout (la pièce nord-sud de split.ts, raccourcie) : le dessus plat de fente qui fuit derrière
+ * Demi-bille par le bout (la pièce nord-sud de split.ts, raccourcie) : le dessus plat de fente qui fuit derrière
  * (`y1` rangées, fibres en long, liseré d'écorce sur les bords), puis la face de coupe sous les mains : demi-lune de
- * bois de bout (`quarter` : le quart de disque, la fente à droite, sans écorce).
+ * bois de bout.
  */
-function bigFlatEnd(x1: number, y1: number, endH: number, quarter: boolean): Grid {
+function bigFlatEnd(x1: number, y1: number, endH: number): Grid {
   const c = new Canvas(x1 + 3, y1 + endH + 4);
   for (let Y = 1; Y <= y1; Y++) for (let X = 1; X <= x1; X++) {
     if (X === 1) c.set(X, Y, 'M');
-    else if (X === x1 && !quarter) c.set(X, Y, 'm');
+    else if (X === x1) c.set(X, Y, 'm');
     else c.set(X, Y, splitWood(Y * 1.3 + 4, X - 2));
   }
-  if (quarter) c.stamp(QUARTER_END, 1, y1 + 1);
-  else {
+  {
     // la demi-lune : le bas de l'ovale de la face de coupe, le cœur au bord de la face plate
     const cx = (x1 + 2) / 2, cy = y1 + 1, rx = x1 / 2, ry = endH - 0.1;
     const inside = (X: number, Y: number) => Y >= cy && ((X + 0.5 - cx) / rx) ** 2 + ((Y + 0.5 - cy) / ry) ** 2 <= 1;
@@ -290,6 +284,21 @@ function bigFlatEnd(x1: number, y1: number, endH: number, quarter: boolean): Gri
   const g = trim(shadedOutline(c).toGrid());
   // la prise sur l'arête entre le dessus et la face (rangée y1 + 1 de la pièce, contour du haut compris)
   return onGrip(g, y1 + 1);
+}
+
+/**
+ * Quartier par le bout (le quartier nord-sud de wood-pieces.ts, raccourci, face debout à l'est) : l'écorce du dessus qui
+ * fuit derrière, puis la part de tarte sous les mains, posée sur un rayon, le cœur en bas à droite contre la face debout,
+ * l'arc d'écorce en haut à gauche. La prise sur l'arête entre le dessus et la part.
+ */
+function quarterEnd(): Grid {
+  const h = 13;
+  return onGrip(trim(quarterNS(h, 'east').toGrid()), h - 8);
+}
+
+/** Quartier en long : le quartier est-ouest de wood-pieces.ts, face debout au sud (une rangée d'écorce, la face fendue). */
+function quarterLong(): Grid {
+  return onGrip(trim(quarterEW(PREVIEW_LEN + 1, 'south').toGrid()));
 }
 
 // ----- Bois normal (30 cm) -----
@@ -397,8 +406,8 @@ const woodSheet = (name: string, end: Grid, long: Grid): SpriteSheetSource =>
 
 const heldWood = (): SpriteSheetSource[] => [
   woodSheet('held-wood-big-round', bigRoundEnd(), bigRoundLong()),
-  woodSheet('held-wood-big-half', bigFlatEnd(11, 4, 6, false), bigFlatLong(5, 11, 2.5)),
-  woodSheet('held-wood-big-quarter', bigFlatEnd(5, 4, 6, true), bigFlatLong(3, 8, 1.75)),
+  woodSheet('held-wood-big-half', bigFlatEnd(11, 4, 6), bigFlatLong(5, 11, 2.5)),
+  woodSheet('held-wood-big-quarter', quarterEnd(), quarterLong()),
   woodSheet('held-wood-normal-round', normalRoundEnd(), normalLong('round')),
   ...(['f1', 'f2', 'f3'] as const).map((l) => woodSheet(`held-wood-normal-${l}`, normalHewnEnd(l), normalLong(l))),
   woodSheet('held-wood-normal-beam', normalHewnEnd('beam'), normalLong('beam')),

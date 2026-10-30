@@ -20,7 +20,7 @@
         "half": {"name": "demi-bille", "gender": "f", "icon": "item-wood-big-half", "held": "held-wood-big-half",
           "ew": {"h": 16, "start": 6, "end": 5, "body": {"h": 10, "bottom": 3}}, "ns": {"w": 14, "extra": 8, "back": 4, "start": 6, "end": 8, "body": {"w": 12, "extra": 5, "bottom": 2}}},
         "quarter": {"name": "quartier", "gender": "m", "icon": "item-wood-big-quarter", "held": "held-wood-big-quarter",
-          "ew": {"h": 12, "start": 5, "end": 4, "body": {"h": 5, "bottom": 2}}, "ns": {"w": 8, "extra": 8, "back": 3, "start": 5, "end": 8, "body": {"w": 6, "extra": 5, "bottom": 2}}}
+          "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 5, "bottom": 2}}, "ns": {"w": 7, "extra": 8, "back": 2, "start": 5, "end": 8, "body": {"w": 5, "extra": 5, "bottom": 2}}}
       }
     },
     "normal": {

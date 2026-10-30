@@ -22,11 +22,18 @@ export function woodOf(base: PropDef, wood?: WoodPiece): WoodPiece {
 
 /**
  * Dimensions réelles d'une pièce (cm, contour compris : le tronc de 55 cm fait 65 cm), comme `dims` de props.json : un cylindre
- * couché pour la pièce ronde, une boîte couchée pour la demi (face plate en haut), le quart et la pièce équarrie.
+ * couché pour la pièce ronde, une boîte couchée pour la demi (face plate en haut), le quart et la pièce équarrie. Le quartier, un
+ * quart de rond posé sur un rayon, se mesure sans contour : sa section est le rayon de la bille dans les deux sens (27,5 × 27,5 cm
+ * pour le gros, 20 × 8 px à 1 m est-ouest, 6 × 16 px nord-sud, chiffres de Grégoire, 30 octobre 2026) ; la boîte contour compris
+ * (37,5 cm) le donnerait aussi épais qu'une demi-bille.
  */
 export function woodDims(piece: WoodPiece): PropDef['dims'] {
   const d = sizeOf(piece.size).diameter;
   const look = lookOf(piece);
+  if (look === 'quarter') {
+    const r = d / 2;
+    return piece.axis === 'ew' ? { w: piece.length, d: r, h: r, shape: 'box' } : { w: r, d: piece.length, h: r, shape: 'box' };
+  }
   const across = piece.shape === 'quarter' ? d / 2 : look === 'beam' ? WOOD.hew.beam : d;
   const high = piece.shape === 'round' ? (look === 'beam' ? WOOD.hew.beam : d) : d / 2;
   const [w, dd] = piece.axis === 'ew' ? [piece.length, across + CONTOUR_CM] : [across + CONTOUR_CM, piece.length];

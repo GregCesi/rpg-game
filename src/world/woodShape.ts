@@ -14,8 +14,8 @@
 //   planté (il remplace la partie de ce bout) ; `crack-<aspect>-start|mid|end`, la fente (transparente ailleurs, posée par-dessus,
 //   sur la partie de la longueur déjà fendue depuis le bout du coin) ; `open-<aspect>-start|mid|end`, le bois grand ouvert du
 //   dernier coup (il remplace les parties de l'aspect). Le coin a `WEDGE_FRAMES` images : il s'enfonce au fil des coups ;
-// - `<aspect>-rev-start|mid|end` : l'aspect retourné sur son axe long (le quartier écorce dessus), pour les rangées tête-bêche
-//   d'un tas (world/woodPile.ts).
+// - le quartier n'a pas de parties `quarter-…` : une par côté de sa face fendue debout, `quarter-north|south-start|mid|end` dans
+//   la planche est-ouest, `quarter-east|west-…` dans la planche nord-sud (`drawnLook`, `faceOf`).
 // Dans la planche, chaque partie est calée en haut à gauche de son image (cadre commun, assez grand pour la plus grande).
 
 import { CM_PER_PX } from '../content/gabarit';
@@ -131,11 +131,53 @@ export type DrawOp =
   | { kind: 'part'; anim: string; frame: number; at: number; size: number; clip?: [number, number] }
   | { kind: 'clear'; at: number; size: number };
 
-/** Ce qu'on assemble d'une pièce au-delà de ses réglages : l'image du roulement, la fente grande ouverte du dernier coup, la pièce retournée d'un tas tête-bêche. */
+/** Ce qu'on assemble d'une pièce au-delà de ses réglages : l'image du roulement, la fente grande ouverte du dernier coup. */
 export interface ComposeOpts {
   frame?: number;
   open?: boolean;
-  rev?: boolean;
+}
+
+/** Les quatre côtés, dans le sens des aiguilles d'une montre : R fait passer de l'un au suivant. */
+export const CLOCKWISE: readonly End[] = ['north', 'east', 'south', 'west'];
+
+/** Le côté de la face debout d'un quartier (`face`), sinon celui par défaut de son sens : sud est-ouest, est nord-sud. */
+export function faceOf(piece: Pick<WoodPiece, 'axis' | 'face'>): End {
+  return piece.face ?? (piece.axis === 'ew' ? 'south' : 'east');
+}
+
+/**
+ * La pièce tournée d'un quart de tour dans le sens des aiguilles d'une montre : son sens change (est-ouest <-> nord-sud) ; un
+ * quartier garde sa face debout du côté qui suit (nord -> est -> sud -> ouest -> nord).
+ */
+export function turnedWood(piece: WoodPiece): WoodPiece {
+  const axis = piece.axis === 'ew' ? 'ns' : 'ew';
+  if (piece.shape !== 'quarter') return { ...piece, axis };
+  return { ...piece, axis, face: CLOCKWISE[(CLOCKWISE.indexOf(faceOf(piece)) + 1) % 4] };
+}
+
+/**
+ * Les deux morceaux d'une pièce qui se fend (`split` de son diamètre) : leurs réglages et le coin bas gauche de chacun par rapport à
+ * la pièce. Deux quartiers naissent faces debout opposées, tournées l'une vers l'autre, pour reformer la demi-bille : celui du nord
+ * (de l'ouest) a sa face au sud (à l'est), l'autre au nord (à l'ouest).
+ */
+export function splitPieces(piece: WoodPiece): { piece: WoodPiece; dx: number; dy: number }[] {
+  const { wedge: _w, ...rest } = piece;
+  const rule = sizeOf(piece.size).split[piece.shape as 'round' | 'half']!;
+  const at = rule[piece.axis];
+  const along = piece.axis === 'ew' ? 1 : 0;
+  const first = at[0][along] <= at[1][along] ? 0 : 1;
+  const faces: End[] = piece.axis === 'ew' ? ['south', 'north'] : ['east', 'west'];
+  return at.map(([dx, dy], i) => ({
+    piece: { ...rest, shape: rule.into, ...(rule.into === 'quarter' ? { face: faces[i === first ? 0 : 1] } : {}) },
+    dx,
+    dy,
+  }));
+}
+
+/** L'aspect tel qu'il est dessiné dans la planche : le quartier a une partie par côté de sa face debout (`quarter-south`). */
+export function drawnLook(piece: WoodPiece): string {
+  const look = lookOf(piece);
+  return look === 'quarter' ? `quarter-${faceOf(piece)}` : look;
 }
 
 /** Images du coin planté (`wedge-…`) : il sort de moins en moins du bout à chaque coup de masse. */
@@ -152,7 +194,7 @@ export function wedgeFrame(hits: number, total: number): number {
 }
 
 /** Clé décrivant une pièce et ce qu'on en montre (la même pièce donne la même image) : la texture du jeu, la place d'un tas. */
-export function woodKey(piece: WoodPiece, opts: Pick<ComposeOpts, 'open' | 'rev'> = {}): string {
+export function woodKey(piece: WoodPiece, opts: Pick<ComposeOpts, 'open'> = {}): string {
   const { size, length, axis, notch, wedge } = piece;
   return [
     'wood',
@@ -162,8 +204,8 @@ export function woodKey(piece: WoodPiece, opts: Pick<ComposeOpts, 'open' | 'rev'
     length,
     notch ? `n${notch.hits}@${notch.at}` : '',
     wedge ? `w${wedge.end}${wedge.hits}/${splitHits(piece)}` : '',
+    piece.shape === 'quarter' ? faceOf(piece) : '',
     opts.open ? 'open' : '',
-    opts.rev ? 'rev' : '',
   ].join(':');
 }
 
@@ -180,7 +222,7 @@ export function composeOps(piece: WoodPiece, opts: ComposeOpts = {}): DrawOp[] {
   const places = placements(size, look, axis, length);
   const wedgePart = piece.wedge ? partOfEnd(piece.wedge.end) : undefined;
   const hits = splitHits(piece);
-  const aspect = opts.rev ? `${look}-rev` : look;
+  const aspect = drawnLook(piece);
   const ops: DrawOp[] = places.map((p) => {
     const wedged = p.part === wedgePart && !opts.open;
     return {

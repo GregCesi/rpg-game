@@ -125,7 +125,7 @@ await playtest('tas', async ({ page, errors }) => {
     out.poutres = await build(poutre, 'ew', 9);
     {
       const def = shape(piles().find((q: any) => q.wood?.shape === 'quarter'));
-      out.headToTail = ['g0', 'g1', 'g2', 'l1-0', 'l1-1'].map((id) => !!def.places[id].rev);
+      out.headToTail = ['g0', 'g1', 'g2', 'l1-0', 'l1-1'].map((id) => def.places[id].wood.face);
     }
 
     // 2. ne pas mélanger : un rondin de 80 cm visé sur la place ouverte d'un tas de quartiers commencé est posé seul, sans message
@@ -226,7 +226,7 @@ await playtest('tas', async ({ page, errors }) => {
     assert.equal(s.handsEnd, null);
   }
   assert.equal(r.quartiers.born.turned, true, 'le tas de quartiers prend le sens de sa première pièce (nord-sud)');
-  assert.deepEqual(r.headToTail, [false, true, false, true, false], 'les quartiers tête-bêche : un sur deux retourné');
+  assert.deepEqual(r.headToTail, ['east', 'west', 'east', 'west', 'east'], 'les quartiers tête-bêche (nord-sud) : la face debout à l\'est, puis à l\'ouest');
   assert.equal(r.mixed.started, '["g1"]', 'le rondin ne va pas sur le tas de quartiers');
   assert.equal(r.mixed.rondinAlone, 1, 'il est posé seul à côté');
   assert.deepEqual(r.mixed.notices, [], 'sans message');

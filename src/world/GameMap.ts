@@ -414,7 +414,7 @@ export class GameMap {
 
   /** Clé de l'image d'une place de tas : celle de piles.json, ou la pièce de bois assemblée à sa longueur (image '0'). */
   placeImage(q: ShapePlace): string {
-    return q.wood ? woodTexture(this.scene, q.wood, { rev: q.rev }) : q.image;
+    return q.wood ? woodTexture(this.scene, q.wood) : q.image;
   }
 
   /** Retire un tas affiché (images et collisions). */

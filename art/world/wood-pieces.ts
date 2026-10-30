@@ -5,15 +5,15 @@
 //
 // Quatre planches, une par diamètre et par sens : `wood-big`, `wood-big-ns`, `wood-normal`, `wood-normal-ns`. Chaque partie
 // est calée en haut à gauche d'un cadre commun. Animations :
-// - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` (gros : round, half, quarter ; normal : round, f1, f2, f3, beam) ; le
-//   rond a 4 images (le roulement, un tour), les autres une ;
+// - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` (gros : round, half ; normal : round, f1, f2, f3, beam) ; le rond a
+//   4 images (le roulement, un tour), les autres une ;
+// - gros seulement, le quartier : une partie par côté de sa face fendue debout (une image chacune), `quarter-north|south-
+//   start|mid|end` dans la planche est-ouest, `quarter-east|west-start|mid|end` dans la planche nord-sud ;
 // - `notch1`, `notch2` : la bande d'encoche de la coupe à la cognée (un tiers, deux tiers), 4 images comme le rond ;
 // - gros seulement, pour le rond et la demi-bille (les aspects qui se fendent) : `wedge-<aspect>-start|end` (le bout où
 //   le coin est planté, 3 images : le coin sort de 3, 2 puis 1 px, il s'enfonce à chaque coup ; le jeu prend l'image
 //   min(2, ⌊3 × coups / coups totaux⌋)), `crack-<aspect>-start|mid|end` (la fente seule, transparente ailleurs),
 //   `open-<aspect>-start|mid|end` (le bois grand ouvert du dernier coup de masse) ;
-// - gros seulement : `quarter-rev-start|mid|end`, le quartier retourné (une image), posé à la place de `quarter-<partie>`
-//   (mêmes placements, même cadre, même ombre) pour ranger les quartiers tête-bêche dans un tas.
 //
 // Méthode : chaque aspect se dessine d'un tenant sur une pièce de référence (bout de départ, deux milieux, bout d'arrivée),
 // avec une écorce et des fibres périodiques sur `tile` (24 px) le long de la pièce ; les parties en sont découpées. Un
@@ -28,11 +28,12 @@
 //   lumière reste en place ; la fente de la face de coupe nord-sud tourne d'un quart de tour par image.
 // - Demi-bille : posée face plate en haut (bois frais de la fente, fibres en long, pas de cerne), un liseré d'écorce au
 //   bord nord, le dos d'écorce dessous ; à l'ouest, le bout en demi-lune de bois de bout ; nord-sud, la demi-lune au sud.
-// - Quartier : comme la demi-bille, plus bas (est-ouest) ou plus étroit (nord-sud, la fente à l'est, le cœur dans l'angle).
-// - Quartier retourné : le même quartier après un demi-tour sur son axe long : le dos d'écorce dessus, les deux faces
-//   fendues dessous en V, l'arête du cœur au sol. Est-ouest : l'écorce sur cinq rangées, la face fendue sud du V dans
-//   l'ombre (T, fibres t) sur trois ; à l'ouest, le bout en quart de rond pointe en bas. Nord-sud : le dos d'écorce vu
-//   de dessus (éclairé à l'ouest), le bout lointain arrondi, au sud le quart de rond pointe en bas, le cœur à la pointe.
+// - Quartier : un quart de rond couché sur un rayon (section de 27,5 × 27,5 cm, 5 px de bois dans les deux sens), une face
+//   fendue au sol, l'autre debout du côté `face`, l'écorce qui descend en arrondi de l'autre. Est-ouest (20 × 8 px à 1 m) :
+//   face au sud, une rangée d'écorce dessus et la face fendue claire sur 5 rangées (cernes en long, cœur au sol) ; face au
+//   nord, l'arête en haut et tout le dos d'écorce ; à l'ouest, la part de tarte du bout. Nord-sud (6 × 16 px à 1 m) : le
+//   dessus d'écorce en long, le liseré de la face debout du côté dit, au sud la part de tarte de 4 × 5, le cœur en bas du
+//   côté de la face. Deux quartiers faces debout l'une contre l'autre (split.half de wood.json) reforment la demi-bille.
 // - Normal (`NORMAL_WOOD`, 6 px d'écorce) : les dessins du rondin et de la poutre de l'ancien art/world/timber.ts, repris
 //   tels quels (bouts au pixel, faces dressées f1 à f3, poutre).
 // - Coin de fendage : la tête de fer (2 px de large, la rampe 2 3 0 de tools.ts) qui sort de 3, 2 ou 1 px du bout (le
@@ -42,8 +43,9 @@
 //   frais, et traverse les deux bouts.
 //
 // Images tirées d'ici par `composeWood` : les pièces de 1 m des tas (`wood-big-round-100`, `-ns`, `wood-normal-round-100`,
-// `-ns`, `wood-big-quarter-100`, `-ns`), l'image de l'objet dans Tiled (`wood-piece`, la bille du gros, 1 m, est-ouest)
-// et deux images de contrôle du quartier retourné de 1 m (`wood-big-quarter-rev-100`, `-ns`).
+// `-ns`), l'image de l'objet dans Tiled (`wood-piece`, la bille du gros, 1 m, est-ouest) et quatre images de contrôle du
+// quartier de 1 m, une par côté de sa face debout (`wood-big-quarter-north-100`, `-south-100`, `-east-100-ns`, `-west-100-ns`).
+// `quarterEW`, `quarterNS` et `pie` servent aussi à la vue portée et à l'icône du quartier (items/carried.ts, resources.ts).
 
 import { Canvas, EMPTY, type Grid } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
@@ -274,92 +276,157 @@ function southEnd(c: Canvas, cx: number, cy: number, rx: number, ry: number) {
   }
 }
 
-/** Bout d'un quartier nord-sud, au pixel : le quart de disque, le cœur dans l'angle haut droit (contre la fente). */
-const QUARTER_END = ['NTttT', 'NYtTT', '.NYtT', '..NtT', '...NN'];
-
 /**
- * Pièce nord-sud face plate en haut, image `w` × `h` : face plate de X = 1 à `x1`, rangées 1 à h − 9 (fibres en long,
- * liseré d'écorce à gauche, et à droite pour la demi-bille), puis le bout coupé au sud. `quarter` : à droite, la fente,
- * sans écorce ; le bout est un quart de disque.
+ * Pièce nord-sud face plate en haut (la demi-bille), image `w` × `h` : face plate de X = 1 à `x1`, rangées 1 à h − 9
+ * (fibres en long, liseré d'écorce à gauche et à droite), puis le bout coupé au sud, la demi-lune.
  */
-function flatNS(w: number, h: number, x1: number, quarter: boolean): Canvas {
+function flatNS(w: number, h: number, x1: number): Canvas {
   const c = new Canvas(w, h);
   const y1 = h - 9;
   for (let Y = 1; Y <= y1; Y++) for (let X = 1; X <= x1; X++) {
     if (X === 1) c.set(X, Y, 'M');
-    else if (X === x1 && !quarter) c.set(X, Y, 'm');
+    else if (X === x1) c.set(X, Y, 'm');
     else c.set(X, Y, splitWood(Y, X - 2));
   }
-  if (quarter) c.stamp(QUARTER_END, 1, y1 + 1);
-  else southEnd(c, (x1 + 2) / 2, y1 + 1, x1 / 2, 5.4);
+  southEnd(c, (x1 + 2) / 2, y1 + 1, x1 / 2, 5.4);
   despeckle(c, 'KYTtNM');
   shadedOutline(c);
   nsShadow(c, 3);
   return c;
 }
 
-// ---------- Le quartier retourné ----------
+// ---------- Le quartier ----------
+// Un quart de rond couché sur un de ses rayons : une face fendue au sol, l'autre debout d'un côté (`face`), l'écorce qui
+// descend en arrondi de l'autre. Section de 27,5 × 27,5 cm (le rayon de la bille), 5 px de bois dans les deux sens : la
+// face debout fait 5 rangées en est-ouest (face sud) comme la part de tarte du bout sud en nord-sud.
+
+type QuarterFace = 'north' | 'south' | 'east' | 'west';
 
 /**
- * Bois frais d'une face fendue tournée vers le bas (le V sous le quartier retourné), dans l'ombre : fond T, des fibres
- * d'un cran plus claires (t) sur les deux rangées du haut, l'arête du cœur toute en T.
+ * La part de tarte au pixel, par taille de boîte (`<w>x<h>`) et par coin du cœur (`br` en bas à droite, `bl` en bas à
+ * gauche) : l'arc d'écorce (N) en face du cœur, le bois de bout clair (Y) côté lumière, un cerne (t), le cœur (T) dans
+ * l'angle droit entre la face debout et la face au sol. « . » : hors de la part.
  */
-function shadedSplit(along: number, across: number): string {
-  const a = mod(Math.floor(along), TILE);
-  const hit = SPLIT_LANES[(across + 1) % SPLIT_LANES.length].some(([s, n]) => mod(a - s, TILE) < n);
-  return hit && across < 2 ? 't' : 'T';
+const PIES: Record<string, Record<'bl' | 'br', string[]>> = {
+  // le bout sud d'un quartier nord-sud, la vue portée par le bout
+  '4x5': {
+    br: ['...N', '.NNY', 'NYYt', 'NYtT', 'NtTT'],
+    bl: ['N...', 'YNN.', 'tYYN', 'TtYN', 'TTtN'],
+  },
+  // le bout ouest d'un quartier est-ouest
+  '4x6': {
+    br: ['..NN', '.NYY', '.NYt', 'NYtT', 'NttT', 'NtTT'],
+    bl: ['NN..', 'YYN.', 'tYN.', 'TtYN', 'TttN', 'TTtN'],
+  },
+  // l'icône
+  '5x5': {
+    br: ['...NN', '.NNYY', 'NYYYt', 'NYYtT', 'NYtTT'],
+    bl: ['NN...', 'YYNN.', 'tYYYN', 'TtYYN', 'TTtYN'],
+  },
+};
+
+/**
+ * Bois de bout en part de tarte dans la boîte (x0, y0, w, h), le cœur dans le coin `corner` (`PIES`). Chaque pixel de la
+ * boîte hors de la part est passé à `outside` (effacé : la silhouette s'arrondit), sinon laissé tel quel.
+ */
+export function pie(c: Canvas, x0: number, y0: number, w: number, h: number, corner: 'bl' | 'br', outside?: (X: number, Y: number) => void) {
+  const rows = PIES[`${w}x${h}`]?.[corner];
+  if (!rows) throw new Error(`wood-pieces : pas de part de tarte de ${w} × ${h}`);
+  rows.forEach((row, i) => [...row].forEach((q, j) => {
+    if (q === '.') outside?.(x0 + j, y0 + i);
+    else c.set(x0 + j, y0 + i, q);
+  }));
 }
 
 /**
- * Quartier retourné est-ouest (le quartier tête-bêche des tas), image `w` × 12, même cadre que le quartier : bois de X = 1
- * à w − 3, rangées 1 à 8. Rangées 1 à 5 : le dos d'écorce dessus (le haut éclairé, le bas de l'arrondi dans l'ombre) ;
- * 6 à 8 : la face fendue sud du V, dans l'ombre, l'arête du cœur au sol. Les bouts sont larges en haut et se pincent vers
- * l'arête en bas ; à l'ouest, le bout coupé : le quart de rond pointe en bas, cerclé de N, le cœur (T) vers la pointe.
+ * Face fendue debout tournée vers le sud (quartier est-ouest, `quarter-south`), rangée `row` de 0 (sous l'écorce) à 4 (le
+ * cœur, au sol) : bois frais clair (Y), deux cernes en long (t, des tirets T sur le second), le cœur en T.
  */
-function quarterRevEW(w: number): Canvas {
-  const c = new Canvas(w, 12);
+function standingFace(along: number, row: number): string {
+  const a = mod(Math.floor(along), TILE);
+  const lane = (i: number) => SPLIT_LANES[i].some(([s, n]) => mod(a - s, TILE) < n);
+  switch (row) {
+    case 0: return lane(1) ? 't' : 'Y';
+    case 1: return lane(0) ? 'Y' : 't';
+    case 2: return lane(3) ? 't' : 'Y';
+    case 3: return lane(4) ? 'T' : 't';
+    default: return lane(2) ? 't' : 'T';
+  }
+}
+
+/** Écorce du quartier est-ouest face debout au nord (le dos tourné vers nous), rangées 1 à 6 : l'arête éclairée en haut. */
+const NORTH_BARK = [0, 0.04, 0.18, 0.36, 0.52, 0.68, 0.86];
+
+/**
+ * Quartier est-ouest, image `w` × 10 : bois de X = 1 à w − 3, rangées 1 à 6 (contour 0 et 7, ombre 8 et 9).
+ * - `south` : la face debout au sud, vers nous : une rangée d'écorce dessus (l'arrondi qui descend vers le nord, vu par
+ *   son haut), puis la face fendue sur 5 rangées (cernes en long, le cœur au sol). À l'ouest, le bout : la part de tarte,
+ *   le cœur en bas à droite contre la face, l'arc en haut à gauche (la silhouette s'y arrondit) ; à l'est, l'arrondi
+ *   d'écorce répond, un cran plus sombre.
+ * - `north` : la face debout au nord, cachée : on voit l'arête en haut et tout le dos d'écorce qui descend vers nous
+ *   (éclairé en haut, dans l'ombre au pied). À l'ouest, la part de tarte, le cœur en bas à gauche, l'arc en haut à droite
+ *   contre l'écorce ; à l'est, l'écorce qui s'enroule, un cran plus sombre, l'arrondi au pied.
+ */
+export function quarterEW(w: number, face: 'north' | 'south'): Canvas {
+  const c = new Canvas(w, 10);
   const x1 = w - 3;
-  // bout ouest (colonnes 1 à 4) : le quart de rond retourné, vu en raccourci : large en haut sous l'arrondi d'écorce,
-  // pincé en bas vers la pointe (le cœur), cerclé de N ; « . » : hors de la pièce
-  const WEST = ['', '.NNN', 'NYYN', 'NYtN', 'NYtN', '.NtN', '.NTN', '..NN', '...N'];
-  // bout est : la silhouette arrondie en haut, pincée en bas (retrait par rangée ; la partie d'arrivée n'a que deux
-  // colonnes de bois)
-  const EAST = [0, 1, 0, 0, 0, 0, 0, 1, 1];
-  const BARK_S = [0, 0.05, 0.2, 0.4, 0.6, 0.85];
-  for (let Y = 1; Y <= 8; Y++) for (let X = 1; X <= x1 - EAST[Y]; X++) {
-    const w = WEST[Y][X - 1];
-    if (w === '.') continue;
-    c.set(X, Y, w ?? (Y <= 5 ? barkS(BIG_RING, X, BARK_S[Y], 0) : shadedSplit(X, Y - 6)));
+  for (let X = 1; X <= x1; X++) for (let Y = 1; Y <= 6; Y++) {
+    if (face === 'south') c.set(X, Y, Y === 1 ? barkS(BIG_RING, X, 0.2, 0) : standingFace(X, Y - 2));
+    else c.set(X, Y, barkS(BIG_RING, X, NORTH_BARK[Y], 0));
   }
-  // bout est : le dernier pixel de chaque rangée un cran plus sombre (l'écorce et la fente qui tournent)
   const DARK: Record<string, string> = { ...DARKER, Y: 't', t: 'T' };
-  for (let Y = 1; Y <= 8; Y++) {
-    const X = x1 - EAST[Y];
-    c.set(X, Y, DARK[c.get(X, Y)] ?? c.get(X, Y));
+  if (face === 'south') {
+    pie(c, 1, 1, 4, 6, 'br', (X, Y) => { c.px[Y][X] = EMPTY; });
+    // est : l'arrondi du haut, le bord un cran plus sombre
+    c.px[1][x1] = EMPTY;
+    c.px[2][x1] = EMPTY;
+  } else {
+    pie(c, 1, 1, 4, 6, 'bl');
+    // est : l'écorce s'enroule au pied
+    c.px[6][x1] = EMPTY;
   }
-  despeckle(c, 'KYTtNM');
+  for (let Y = 1; Y <= 6; Y++) {
+    let X = x1;
+    while (X > 0 && c.get(X, Y) === EMPTY) X--;
+    if (X > 4) c.set(X, Y, DARK[c.get(X, Y)] ?? c.get(X, Y));
+  }
   shadedOutline(c);
-  ewShadowRows(c, 10, 2, x1 + 1);
+  ewShadowRows(c, 8, 2, x1 + 1);
   return c;
 }
 
-/** Bout sud d'un quartier retourné nord-sud, au pixel : le quart de rond pointe en bas, le cœur (T) à la pointe. */
-const QUARTER_REV_END = ['MNNNN', 'NYYtN', 'NYttN', '.NtT.', '..N..'];
+/** Écorce du dessus d'un quartier nord-sud, colonnes 1 à 4 (`null` : le liseré de la face debout). */
+const NS_TOP: Record<'east' | 'west', (number | null)[]> = {
+  // face à l'est : l'écorce monte de l'ouest (éclairée) vers l'arête, à l'est le liseré de la face, dans l'ombre
+  east: [0, 0.08, 0.2, 0.42, null],
+  // face à l'ouest : le liseré de la face, éclairé, à l'arête ; l'écorce descend vers l'est, dans l'ombre
+  west: [0, null, 0.3, 0.58, 0.84],
+};
 
 /**
- * Quartier retourné nord-sud, image 8 × `h` (le cadre du quartier) : le dos d'écorce vu de dessus, de X = 1 à 5 (éclairé
- * à l'ouest, dans l'ombre à l'est, les sillons en long), le bout lointain arrondi, puis le bout coupé au sud.
+ * Quartier nord-sud, image 7 × `h` : bois de X = 1 à 4, le dessus vu de dessus (l'écorce en long, le liseré de la face
+ * debout du côté dit, la fibre en long), puis le bout sud : la part de tarte de 4 × 5, le cœur en bas du côté de la face
+ * debout, l'arc d'écorce de l'autre côté. Le bout nord, plus haut d'une demi-longueur, s'arrondit d'un pixel du côté de
+ * l'écorce.
  */
-function quarterRevNS(h: number): Canvas {
-  const c = new Canvas(8, h);
-  const y1 = h - 9;
-  const S = [0, 0.08, 0.24, 0.42, 0.6, 0.8];
-  for (let Y = 1; Y <= y1; Y++) for (let X = 1; X <= 5; X++) {
-    if (Y === 1 && (X === 1 || X === 5)) continue;
-    c.set(X, Y, Y === 1 ? (X === 4 ? 'N' : 'm') : barkS(BIG_RING, Y, S[X], 0));
+export function quarterNS(h: number, face: 'east' | 'west'): Canvas {
+  const c = new Canvas(7, h);
+  const yN = h - 8;
+  const corner = face === 'east' ? 'br' : 'bl';
+  // la part de tarte, pour savoir où l'arc coupe chaque colonne
+  const probe = new Canvas(7, 5);
+  for (let Y = 0; Y < 5; Y++) for (let X = 1; X <= 4; X++) probe.set(X, Y, 'Y');
+  pie(probe, 1, 0, 4, 5, corner, (X, Y) => { probe.px[Y][X] = EMPTY; });
+  // le bout nord, plus haut d'une demi-longueur : l'arc à peine marqué (un pixel), sans pointe d'arête
+  const top = (X: number) => { let r = 0; while (r < 5 && probe.get(X, r) === EMPTY) r++; return 1 + Math.max(0, r - 1); };
+  for (let X = 1; X <= 4; X++) for (let Y = top(X); Y < yN + 5; Y++) {
+    const s = NS_TOP[face][X];
+    if (s === null) {
+      const fiber = SPLIT_LANES[1].some(([a, n]) => mod(Y - a, TILE) < n);
+      c.set(X, Y, face === 'east' ? (fiber ? 't' : 'T') : (fiber ? 't' : 'Y'));
+    } else c.set(X, Y, barkS(BIG_RING, Y, s, 0));
   }
-  c.stamp(QUARTER_REV_END, 1, y1 + 1);
-  despeckle(c, 'KYTtNM');
+  pie(c, 1, yN, 4, 5, corner);
   shadedOutline(c);
   nsShadow(c, 3);
   return c;
@@ -515,7 +582,7 @@ function bigSplitDraw(look: 'round' | 'half', axis: WoodAxis, total: number): Sp
       notches: [[6, 0], [6, 1]],
     };
   }
-  const base = flatNS(14, h, 11, false);
+  const base = flatNS(14, h, 11);
   const along: [number, number][] = [];
   for (let Y = 1; Y <= h - 9; Y++) along.push([6 + jog(Y), Y]);
   const face: [number, number][] = [];
@@ -613,27 +680,25 @@ const BIG_NS_NOTCH: Record<1 | 2, Grid[]> = {
 /** Les planches du gros bois. */
 function bigSheet(axis: WoodAxis): SheetParts {
   const anims: Record<string, Grid[]> = {};
-  const looks = ['round', 'half', 'quarter'] as const;
-  for (const look of looks) {
+  for (const look of ['round', 'half'] as const) {
     const g = lookDef('big', look)[axis];
     const total = refTotal(g.start, g.end);
     const frames = [...Array(framesOf(look)).keys()].map((k) => {
       let c: Canvas;
-      if (axis === 'ew') {
-        const n = total - 1;
-        c = look === 'round' ? bigRoundEW(n, k) : look === 'half' ? flatEW(n + 1, 16, 5, 11, 2.5) : flatEW(n + 1, 12, 3, 8, 1.75);
-      } else {
-        c = look === 'round' ? bigRoundNS(total, k) : look === 'half' ? flatNS(14, total, 11, false) : flatNS(8, total, 5, true);
-      }
+      if (axis === 'ew') c = look === 'round' ? bigRoundEW(total - 1, k) : flatEW(total, 16, 5, 11, 2.5);
+      else c = look === 'round' ? bigRoundNS(total, k) : flatNS(14, total, 11);
       return cut3(c, axis, g.start, g.end, `${look}-${axis}-${k}`);
     });
     for (const part of PARTS) anims[`${look}-${part}`] = frames.map((p) => p[part]);
   }
-  // le quartier retourné (tête-bêche dans les tas) : les mêmes cotes que le quartier
+  // le quartier : une partie par côté de sa face debout (nord et sud en est-ouest, est et ouest en nord-sud), mêmes cotes
   const q = lookDef('big', 'quarter')[axis];
   const qTotal = refTotal(q.start, q.end);
-  const rev = cut3(axis === 'ew' ? quarterRevEW(qTotal) : quarterRevNS(qTotal), axis, q.start, q.end, `quarter-rev-${axis}`);
-  for (const part of PARTS) anims[`quarter-rev-${part}`] = [rev[part]];
+  for (const face of (axis === 'ew' ? ['north', 'south'] : ['east', 'west']) as QuarterFace[]) {
+    const c = axis === 'ew' ? quarterEW(qTotal, face as 'north' | 'south') : quarterNS(qTotal, face as 'east' | 'west');
+    const parts = cut3(c, axis, q.start, q.end, `quarter-${face}-${axis}`);
+    for (const part of PARTS) anims[`quarter-${face}-${part}`] = [parts[part]];
+  }
   for (const d of [1, 2] as const) anims[`notch${d}`] = (axis === 'ew' ? BIG_EW_NOTCH : BIG_NS_NOTCH)[d];
   for (const look of ['round', 'half'] as const) splitParts(look, axis, anims);
   return { axis, frame: frameOf('big', axis), anims };
@@ -837,7 +902,7 @@ const SHEETS: Record<string, Record<WoodAxis, SheetParts>> = {
 /**
  * L'image d'une pièce, exactement comme le jeu l'assemble (`composeOps`) : une partie pose les pixels [0, size[ de son
  * image le long de la pièce à `at` (seulement ceux qui tombent dans `clip` s'il est donné), le travers entier ; `clear`
- * efface la bande. `reversed` : le quartier retourné, `quarter-rev-<partie>` à la place de `quarter-<partie>`.
+ * efface la bande. Le quartier prend les parties du côté de sa face debout (`face`, sinon sud en est-ouest, est en nord-sud).
  */
 export function composeWood(piece: WoodPiece, opts: ComposeOpts = {}): Canvas {
   const { w, h } = woodSize(piece.size, lookOf(piece), piece.axis, piece.length);
@@ -884,7 +949,8 @@ function sheetSource(size: string, sp: SheetParts): SpriteSheetSource {
 }
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
-const piece = (size: string, shape: WoodPiece['shape'], axis: WoodAxis, length = 100): WoodPiece => ({ size, shape, axis, length });
+const piece = (size: string, shape: WoodPiece['shape'], axis: WoodAxis, length = 100, face?: WoodPiece['face']): WoodPiece =>
+  ({ size, shape, axis, length, ...(face ? { face } : {}) });
 
 export default [
   sheetSource('big', SHEETS.big.ew),
@@ -895,10 +961,10 @@ export default [
   img('wood-big-round-100-ns', composeWood(piece('big', 'round', 'ns'))),
   img('wood-normal-round-100', composeWood(piece('normal', 'round', 'ew'))),
   img('wood-normal-round-100-ns', composeWood(piece('normal', 'round', 'ns'))),
-  img('wood-big-quarter-100', composeWood(piece('big', 'quarter', 'ew'))),
-  img('wood-big-quarter-100-ns', composeWood(piece('big', 'quarter', 'ns'))),
-  img('wood-big-quarter-rev-100', composeWood(piece('big', 'quarter', 'ew'), { rev: true })),
-  img('wood-big-quarter-rev-100-ns', composeWood(piece('big', 'quarter', 'ns'), { rev: true })),
+  img('wood-big-quarter-north-100', composeWood(piece('big', 'quarter', 'ew', 100, 'north'))),
+  img('wood-big-quarter-south-100', composeWood(piece('big', 'quarter', 'ew', 100, 'south'))),
+  img('wood-big-quarter-east-100-ns', composeWood(piece('big', 'quarter', 'ns', 100, 'east'))),
+  img('wood-big-quarter-west-100-ns', composeWood(piece('big', 'quarter', 'ns', 100, 'west'))),
   img('wood-piece', composeWood(piece('big', 'round', 'ew'))),
 ];
 

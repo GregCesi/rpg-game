@@ -28,6 +28,9 @@ import { woodPreview } from './lib/wood-preview';
 import { auditPreview } from './lib/audit-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
+import type { WoodPiece } from '../src/content/types';
+import { composeWood } from '../art/world/wood-pieces';
+import { world } from '../art/palette';
 
 /** Où l'aperçu pose un plan : la carte, et le point au sol de son piquet nord-ouest (px). */
 const PLAN_PREVIEW = { map: 'ferme', corner: [568, 99] };
@@ -116,7 +119,24 @@ const catalog = {
   spritesheets: [] as { key: string; frameWidth: number; frameHeight: number; animations: Record<string, unknown>; silhouette: Box }[],
   tilesets: [] as { key: string; tiles: Record<string, number>; count: number; solid: number[]; decals: Record<number, DecalSet> }[],
   images: [] as { key: string; width: number; height: number; silhouette: Box }[],
+  woodSilhouettes: [] as { piece: WoodPiece; w: number; h: number }[],
 };
+// Le gabarit des pièces de bois assemblées (validate.ts) : la silhouette de la demi-bille, du quartier dans ses quatre positions et
+// de la poutre, dans les deux sens, à plusieurs longueurs, telles que le jeu les assemble (composeWood).
+for (const length of [60, 100, 200, 300]) {
+  const samples: WoodPiece[] = [
+    { size: 'big', shape: 'half', axis: 'ew', length },
+    { size: 'big', shape: 'half', axis: 'ns', length },
+    ...(['north', 'south'] as const).map((face): WoodPiece => ({ size: 'big', shape: 'quarter', axis: 'ew', face, length })),
+    ...(['east', 'west'] as const).map((face): WoodPiece => ({ size: 'big', shape: 'quarter', axis: 'ns', face, length })),
+    { size: 'normal', shape: 'round', hewn: 12, axis: 'ew', length },
+    { size: 'normal', shape: 'round', hewn: 12, axis: 'ns', length },
+  ];
+  for (const piece of samples) {
+    const s = silhouette(composeWood(piece).toGrid(), world);
+    catalog.woodSilhouettes.push({ piece, w: s.w, h: s.h });
+  }
+}
 const spritesheets: string[] = [];
 const tilesets: string[] = [];
 const images: string[] = [];
@@ -236,6 +256,7 @@ if (saveRegistry(registry)) notes.push('art/tile-registry.json modifié : à com
 for (const n of notes) console.log(`art : ${n}`);
 
 const manifest = `// GÉNÉRÉ par tools/build-art.ts à partir de art/. Ne pas modifier à la main.
+import type { WoodPiece } from '../content/types';
 ${imports.join('\n')}
 
 export interface SpriteSheetAsset {
@@ -271,6 +292,9 @@ ${tilesets.join('\n')}
 export const images: ImageAsset[] = [
 ${images.join('\n')}
 ];
+
+/** Silhouettes de pièces de bois assemblées (gabarit, validate.ts). */
+export const woodSilhouettes: { piece: WoodPiece; w: number; h: number }[] = ${JSON.stringify(catalog.woodSilhouettes)};
 `;
 writeFileSync(join(OUT, 'assets.ts'), manifest);
 // Même catalogue sans les images, lisible par Node (npm run check)

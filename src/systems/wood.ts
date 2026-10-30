@@ -6,7 +6,7 @@ import type { Player } from '../entities/Player';
 import { changeObject, changeSpawned, game, setWood, spawnObject } from '../state';
 import { footprint, stateOf, type Box, type GameMap, type PlacedProp } from '../world/GameMap';
 import { capitalName, hewnFaces, WOOD_PIECE } from '../world/woodPiece';
-import { cmAt, cutPixel, lengthPx, lookOf, metresLabel, sizeOf, splitHits, woodBody, woodSize } from '../world/woodShape';
+import { cmAt, cutPixel, lengthPx, lookOf, metresLabel, sizeOf, splitHits, splitPieces, woodBody, woodSize } from '../world/woodShape';
 import { woodTexture } from '../world/woodTexture';
 import type { HarvestSystem } from './harvest';
 
@@ -390,11 +390,9 @@ export class WoodSystem {
     return { planted: true };
   }
 
-  /** Où naissent les deux morceaux d'une pièce qui se fend (coin bas gauche de chacun) et ce qu'ils sont. */
+  /** Où naissent les deux morceaux d'une pièce qui se fend (coin bas gauche de chacun) et ce qu'ils sont (`splitPieces`). */
   private halves(p: PlacedProp): { piece: WoodPiece; x: number; y: number }[] {
-    const { wedge: _w, ...piece } = p.wood!;
-    const rule = sizeOf(piece.size).split[piece.shape as 'round' | 'half']!;
-    return rule[piece.axis].map(([dx, dy]) => ({ piece: { ...piece, shape: rule.into }, x: p.x + dx, y: p.y + dy }));
+    return splitPieces(p.wood!).map(({ piece, dx, dy }) => ({ piece, x: p.x + dx, y: p.y + dy }));
   }
 
   /** Les deux morceaux tiendraient à leur place (carte, cases bloquantes, objets) : la collision de la pièce fendue ne compte pas. */

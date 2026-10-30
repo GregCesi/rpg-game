@@ -6,7 +6,8 @@
 // La forme vient de la section de la pièce :
 // - section ronde (la bille, le rondin, même entamé à la doloire) : une pyramide, 3 au sol, 2 dans les creux, 1 au sommet ;
 // - section plate ou carrée (la demi-bille, le quartier, la poutre) : des rangées droites, 3 de large sur 3 de haut, chaque
-//   pièce sur celle du dessous ; les quartiers tête-bêche (un sur deux retourné, écorce dessus, `rev`).
+//   pièce sur celle du dessous ; les quartiers tête-bêche (un sur deux la face debout de l'autre côté : sud et nord en est-ouest,
+//   est et ouest en nord-sud, `face`).
 // Au sol, les pièces sont côte à côte, à la largeur de leur collision (`woodBody`) : est-ouest, l'une derrière l'autre (plus
 // un pixel, pour que le contour du bas de celle de derrière se lise) ; nord-sud, l'une à côté de l'autre. Une couche monte de la
 // hauteur de la section rapportée à sa largeur (`woodDims`) : dans les creux, √3/2 de plus (des cercles qui se touchent) ; en
@@ -19,8 +20,8 @@ import type { PileDef, PilePlace, PileWood, WoodPiece } from '../content/types';
 import { woodDims } from './woodPiece';
 import { lookDef, lookOf, woodBody, woodKey, woodSize, type WoodAxis } from './woodShape';
 
-/** Une place de tas telle que le jeu la lit : celle de piles.json, ou celle d'un tas de bois, dont la pièce s'assemble (`wood`, `rev`). */
-export type ShapePlace = PilePlace & { wood?: WoodPiece; rev?: boolean };
+/** Une place de tas telle que le jeu la lit : celle de piles.json, ou celle d'un tas de bois, dont la pièce s'assemble (`wood`). */
+export type ShapePlace = PilePlace & { wood?: WoodPiece };
 
 /** Un genre de tas tel que le jeu le lit : écrit dans piles.json, ou calculé pour une pièce de bois. */
 export type PileShape = Omit<PileDef, 'places' | 'turned'> & {
@@ -30,8 +31,10 @@ export type PileShape = Omit<PileDef, 'places' | 'turned'> & {
 
 /** Les aspects qui se rangent en rangées droites (section plate ou carrée) ; les autres font une pyramide. */
 const ROWS = new Set(['half', 'quarter', 'beam']);
-/** Les aspects rangés tête-bêche : un sur deux retourné. */
-export const HEAD_TO_TAIL = new Set(['quarter']);
+/** Les aspects rangés tête-bêche : un sur deux la face debout de l'autre côté. */
+const HEAD_TO_TAIL = new Set(['quarter']);
+/** Les deux côtés de la face debout d'un quartier tête-bêche, par sens : le premier, puis l'autre. */
+const FACES = { ew: ['south', 'north'], ns: ['east', 'west'] } as const;
 /** Largeur d'un tas (pièces au sol), et hauteur des rangées. */
 const WIDE = 3;
 
@@ -61,9 +64,10 @@ function woodPlaces(w: PileWood, axis: WoodAxis): Record<string, ShapePlace> {
   const step = axis === 'ew' ? body.h + 1 : body.w;
   const lift = step * ratio * (rows ? 1 : Math.sqrt(3) / 2) * (axis === 'ew' ? 1 : 0.5);
   // une place à la position `f` en travers (0 à 2, demi-valeurs dans les creux), à la couche `layer`
-  const place = (f: number, layer: number, on: string[], rev = false): ShapePlace => {
+  const place = (f: number, layer: number, on: string[], other = false): ShapePlace => {
     const [x, y] = axis === 'ew' ? [0, Math.round(-(WIDE - 1 - f) * step - layer * lift)] : [Math.round(f * step), Math.round(-layer * lift)];
-    const q: ShapePlace = { layer, on, image: woodKey(piece, { rev }), x, y, wood: piece, ...(rev ? { rev } : {}) };
+    const wood: WoodPiece = flip ? { ...piece, face: FACES[axis][other ? 1 : 0] } : piece;
+    const q: ShapePlace = { layer, on, image: woodKey(wood), x, y, wood };
     if (layer === 0) q.body = { x: x + Math.floor((img.w - body.w) / 2), y: y - body.bottom - body.h, w: body.w, h: body.h };
     return q;
   };

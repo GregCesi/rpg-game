@@ -5,6 +5,7 @@ import type { Player } from '../entities/Player';
 import { changeObject, changeSpawned, game } from '../state';
 import { propFootprint, propSize, stateOf, type Box, type GameMap, type Interactable, type PlacedProp } from '../world/GameMap';
 import { defOf } from '../world/woodPiece';
+import { turnedWood } from '../world/woodShape';
 import type { RollSystem } from './roll';
 
 const SIDES: Facing[] = ['down', 'up', 'left', 'right'];
@@ -46,7 +47,7 @@ export class TurnSystem {
     if (p.wood?.wedge) return 'Le coin est planté : finis de la fendre.';
     const into = p.def.turn!.into;
     // la pièce de bois garde tous ses réglages, seul son sens change (le rondin de 3 m tourné reste un rondin de 3 m)
-    const wood = p.wood && { ...p.wood, axis: p.wood.axis === 'ew' ? ('ns' as const) : ('ew' as const) };
+    const wood = p.wood && turnedWood(p.wood);
     const def = defOf(into, wood);
     const img = propSize(this.scene, def);
     const nb = propFootprint(this.scene, def)!;

@@ -3,14 +3,15 @@
 // puis nord-sud : les pièces rondes de 60 cm, 1 m, 2 m et 4 m ; les 4 images du roulement d'une pièce de 1 m et l'encoche d'une coupe
 // (un tiers, deux tiers) à 1 m du bout d'une pièce de 2 m ; chaque aspect à 1 m puis à 3 m ; pour ce qui se fend, depuis chaque bout,
 // le coin planté, la fente après un et deux coups, le bois ouvert du dernier, et les deux morceaux posés comme le jeu les pose
-// (`split` de wood.json). Enfin les vues portées (de face, de dos, de profil à 1 m) et l'icône de chaque aspect.
+// (`split` de wood.json, `splitPieces` : les quartiers faces debout opposées) ; le quartier dans ses quatre positions (face debout au
+// nord, à l'est, au sud, à l'ouest : un tour de R), à 1 m et 2 m. Enfin les vues portées (de face, de dos, de profil à 1 m) et l'icône de chaque aspect.
 
 import type { PNG } from 'pngjs';
 import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource } from '../../art/lib/types';
 import { composeWood } from '../../art/world/wood-pieces';
 import type { End, WoodLook, WoodPiece } from '../../src/content/types';
-import { WOOD } from '../../src/world/woodShape';
+import { splitPieces, WOOD } from '../../src/world/woodShape';
 import { Board, grassOf } from './composite-previews';
 
 interface Placed { grid: Grid; x: number; y: number }
@@ -58,12 +59,18 @@ export function woodPreview(sources: ArtSource[]): PNG | undefined {
         ...[1, 2].map((hits) => cell(piece(size, axis, 200, 'round', { notch: { at: 100, hits } }))),
       ]);
       rows.push([xeros, ...looks.map((l) => cell(piece(size, axis, 100, l))), ...looks.map((l) => cell(piece(size, axis, 300, l)))]);
-      for (const [look, rule] of Object.entries(def.split)) {
+      for (const look of Object.keys(def.split)) {
         for (const end of ends) {
           const p = piece(size, axis, 100, look as WoodLook);
-          const halves = group(rule[axis].map(([x, y]) => ({ p: { ...p, shape: rule.into }, x, y })));
+          const halves = group(splitPieces(p).map(({ piece: q, dx, dy }) => ({ p: q, x: dx, y: dy })));
           rows.push([xeros, ...[0, 1, 2].map((hits) => cell({ ...p, wedge: { end, hits } })), cell({ ...p, wedge: { end, hits: 2 } }, 0, true), halves]);
         }
+      }
+    }
+    // le quartier dans ses quatre positions, un quart de tour à chaque fois (R) : face debout au nord, à l'est, au sud, à l'ouest
+    if (def.looks.quarter) {
+      for (const cm of [100, 200]) {
+        rows.push([xeros, ...(['north', 'east', 'south', 'west'] as const).map((face) => cell(piece(size, face === 'north' || face === 'south' ? 'ew' : 'ns', cm, 'quarter', { face })))]);
       }
     }
     const held: Cell[] = [];

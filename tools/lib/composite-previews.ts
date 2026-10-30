@@ -206,7 +206,7 @@ const PILE_WOOD: PileWood[] = [
 
 /** L'image d'une place de tas : celle des sources (piles.json), ou la pièce de bois assemblée à sa longueur (comme GameMap.placeImage). */
 export function placeImage(q: ShapePlace, image: (name: string) => { grid: Grid; palette: Palette } | undefined): { grid: Grid; palette: Palette } | undefined {
-  return q.wood ? { grid: composeWood(q.wood, { rev: q.rev }).toGrid(), palette: world } : image(q.image);
+  return q.wood ? { grid: composeWood(q.wood).toGrid(), palette: world } : image(q.image);
 }
 
 export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef>): PNG | undefined {

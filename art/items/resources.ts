@@ -9,6 +9,7 @@ import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { NORMAL_WOOD, bark, paintFace } from '../world/wood';
 import { shadedOutline } from '../world/big-tree';
+import { pie } from '../world/wood-pieces';
 
 const S = 16;
 
@@ -325,29 +326,31 @@ const HALF_ICON = [
 const bigHalfIcon = (): Canvas => shadedOutline(Canvas.from(HALF_ICON));
 
 /**
- * Quartier (le quart de la bille, art/world/split.ts) de biais : devant, en bas à gauche, son bout en quart de disque :
- * le cœur (T) dans l'angle du haut à gauche, un cerne en arc, le bois de bout (t), l'écorce (N) sur l'arc. Le dessus
- * plat, le plus clair (Y, fibres t en long), fuit vers le haut à droite ; le dos d'écorce dessous, à droite.
+ * Quartier de biais (le quart de la bille, art/world/wood-pieces.ts), posé sur un rayon : devant, en bas à gauche, son
+ * bout, la part de tarte (le cœur en bas à droite, l'arc d'écorce en haut à gauche) ; la pièce fuit vers le haut à
+ * droite : le dos d'écorce dessus (éclairé en haut), la face fendue debout à droite (bois frais, fibres en long).
  */
-const QUARTER_ICON = [
-  '................',
-  '................',
-  '........YYtYYY..',
-  '.......YtYYYtm..',
-  '.....YYYtYYmmN..',
-  '....YYtYYYmmNN..',
-  '..TTtTtNmmNNK...',
-  '..TttTtNmNNK....',
-  '..ttTtNNNNK.....',
-  '..TTttNNK.......',
-  '..ttNNK.........',
-  '..NNN...........',
-  '................',
-  '................',
-  '................',
-  '................',
-];
-const bigQuarterIcon = (): Canvas => shadedOutline(Canvas.from(QUARTER_ICON));
+function bigQuarterIcon(): Canvas {
+  const c = new Canvas(S, S);
+  const [x0, y0, w, h] = [2, 8, 5, 5];
+  const mask = new Canvas(S, S);
+  for (let Y = y0; Y < y0 + h; Y++) for (let X = x0; X < x0 + w; X++) mask.set(X, Y, 'Y');
+  pie(mask, x0, y0, w, h, 'br', (X, Y) => { mask.px[Y][X] = EMPTY; });
+  // la pièce qui fuit : la part posée de loin en près, son bord droit en bois frais, le reste en écorce
+  const steps = 7;
+  for (let k = steps; k >= 1; k--) {
+    const dx = k, dy = -Math.round((k * 5) / 7);
+    for (let Y = y0; Y < y0 + h; Y++) for (let X = x0; X < x0 + w; X++) {
+      if (mask.get(X, Y) === EMPTY) continue;
+      const right = X === x0 + w - 1;
+      const top = Y - y0;
+      const q = right ? ((X + Y + k) % 4 === 0 ? 'Y' : 't') : bark(k * 2 + Y, Math.min(0.95, 0.05 + (top + (X - x0)) / 9));
+      c.set(X + dx, Y + dy, q);
+    }
+  }
+  pie(c, x0, y0, w, h, 'br');
+  return shadedOutline(c);
+}
 
 /**
  * Bois normal rond (le rondin, de la grosseur d'un bras : 30 cm au lieu de 55) : même cadrage, même biais que le gros.

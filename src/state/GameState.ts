@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { stamina } from '../content';
 import { CornerSchema, PileWoodSchema, WoodPieceSchema, type WoodPiece } from '../content/types';
+import { turnedWood } from '../world/woodShape';
 
 const id = z.string().min(1);
 
@@ -223,13 +224,14 @@ export function release(s: GameState): Held | undefined {
 }
 
 /**
- * Tourne l'objet du monde que tient Xéros entre est-ouest et nord-sud : la pièce de bois change de sens, le reste (le fagot)
+ * Tourne l'objet du monde que tient Xéros entre est-ouest et nord-sud : la pièce de bois change de sens d'un quart de tour dans le
+ * sens des aiguilles d'une montre (la face debout d'un quartier suit, `turnedWood`), le reste (le fagot)
  * est noté tourné ; sans objet du monde en main, rien.
  */
 export function turnHeld(s: GameState): void {
   const h = held(s);
   if (!h || !('prop' in h)) return;
-  if (h.wood) h.wood = { ...h.wood, axis: h.wood.axis === 'ew' ? 'ns' : 'ew' };
+  if (h.wood) h.wood = turnedWood(h.wood);
   else if (h.turned) delete h.turned;
   else h.turned = true;
   revision++;

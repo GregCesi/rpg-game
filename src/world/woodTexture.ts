@@ -35,13 +35,13 @@ function paint(scene: Phaser.Scene, ctx: CanvasRenderingContext2D, piece: WoodPi
 
 /**
  * Clé de la texture d'une pièce posée, assemblée au premier besoin. Ses images : '0' (et '1' à '3' pour le rond qui peut rouler).
- * `open` : le bois grand ouvert du dernier coup de masse (une image) ; `rev` : la pièce retournée d'un tas tête-bêche.
+ * `open` : le bois grand ouvert du dernier coup de masse (une image).
  */
-export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, opts: Pick<ComposeOpts, 'open' | 'rev'> = {}): string {
+export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, opts: Pick<ComposeOpts, 'open'> = {}): string {
   const key = woodKey(piece, opts);
   if (scene.textures.exists(key)) return key;
   const { w, h } = woodSize(piece.size, lookOf(piece), piece.axis, piece.length);
-  const count = piece.wedge || opts.open || opts.rev ? 1 : framesOf(lookOf(piece));
+  const count = piece.wedge || opts.open ? 1 : framesOf(lookOf(piece));
   const tex = scene.textures.createCanvas(key, w * count, h)!;
   const ctx = tex.getContext();
   for (let k = 0; k < count; k++) {
@@ -58,7 +58,7 @@ export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, opts: Pick<Co
  * longueur, sans son ombre au sol, rognée à son corps (son centre est la prise).
  */
 export function heldWoodTexture(scene: Phaser.Scene, wood: WoodPiece): string {
-  const piece: WoodPiece = { size: wood.size, length: wood.length, shape: wood.shape, axis: 'ew', ...(wood.hewn ? { hewn: wood.hewn } : {}) };
+  const piece: WoodPiece = { size: wood.size, length: wood.length, shape: wood.shape, axis: 'ew', ...(wood.hewn ? { hewn: wood.hewn } : {}), ...(wood.shape === 'quarter' ? { face: 'south' as const } : {}) };
   const key = `held:${woodKey(piece)}`;
   if (scene.textures.exists(key)) return key;
   const held = lookDef(piece.size, lookOf(piece)).held;

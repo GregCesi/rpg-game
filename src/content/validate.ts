@@ -5,9 +5,9 @@
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
 import { propMass } from './mass';
-import { WEDGE_FRAMES } from '../world/woodShape';
-import { HEAD_TO_TAIL } from '../world/woodPile';
-import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook } from './types';
+import { lookOf, WEDGE_FRAMES } from '../world/woodShape';
+import { woodDims } from '../world/woodPiece';
+import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -21,6 +21,8 @@ export interface Catalog {
   sizes: Map<string, { w: number; h: number }>;
   /** Silhouette d'une image (de la première image pour une planche) : pixels opaques, contour compris, sans l'ombre. */
   silhouettes: Map<string, { w: number; h: number }>;
+  /** Silhouettes de pièces de bois assemblées à plusieurs longueurs (build-art) : le gabarit de la demi-bille, du quartier, de la poutre. */
+  woodSilhouettes: readonly { piece: WoodPiece; w: number; h: number }[];
   tiles: Map<string, Set<string>>;
   /** Numéros de tuiles qui existent (hors trous) et numéros bloquants, par jeu de tuiles. */
   tileNumbers: Map<string, Set<number>>;
@@ -31,6 +33,7 @@ interface ManifestLike {
   spritesheets: { key: string; frameWidth: number; frameHeight: number; animations: Record<string, { frames: unknown[] }>; silhouette: { w: number; h: number } }[];
   tilesets: { key: string; tiles: Record<string, number>; solid: number[] }[];
   images: { key: string; width: number; height: number; silhouette: { w: number; h: number } }[];
+  woodSilhouettes?: readonly { piece: WoodPiece; w: number; h: number }[];
 }
 
 export function catalogFrom(m: ManifestLike): Catalog {
@@ -42,6 +45,7 @@ export function catalogFrom(m: ManifestLike): Catalog {
       ...m.images.map((i) => [i.key, { w: i.width, h: i.height }] as const),
     ]),
     silhouettes: new Map([...m.spritesheets, ...m.images].map((a) => [a.key, { w: a.silhouette.w, h: a.silhouette.h }] as const)),
+    woodSilhouettes: m.woodSilhouettes ?? [],
     frameCounts: new Map(m.spritesheets.map((s) => [s.key, new Map(Object.entries(s.animations).map(([k, a]) => [k, a.frames.length]))])),
     tiles: new Map(m.tilesets.map((t) => [t.key, new Set(Object.keys(t.tiles))])),
     tileNumbers: new Map(m.tilesets.map((t) => [t.key, new Set(Object.values(t.tiles))])),
@@ -316,6 +320,16 @@ export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
 function validateGabarit(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   for (const key of Object.keys(EXCEPTIONS)) if (!c.props[key]) errors.push(`validate.ts EXCEPTIONS : '${key}' absent de props.json`);
+  // les pièces de bois assemblées : leur silhouette a la taille de leurs dimensions (woodDims), dans les deux sens, à toute longueur
+  for (const { piece, w, h } of cat.woodSilhouettes) {
+    const want = expectedSize(woodDims(piece));
+    const ok = (n: number, lo: number, hi: number) => n >= lo - TOLERANCE && n <= hi + TOLERANCE;
+    if (ok(w, want.w, want.wMax) && ok(h, want.h, want.hMax)) continue;
+    const f = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
+    errors.push(
+      `pièce de bois ${piece.size} ${lookOf(piece)}${piece.face ? ` face ${piece.face}` : ''} ${piece.axis} de ${piece.length} cm hors gabarit : attendu ${f(want.w)} × ${f(want.h)} px, dessiné ${w} × ${h} px (tolérance ${TOLERANCE} px)`,
+    );
+  }
   for (const [key, p] of Object.entries(c.props)) {
     // l'ombre portée se calcule sur l'emprise au sol d'une couverture : une pièce de toit vue à l'échelle du sol
     if (p.shadow && !(p.roof && p.dims.ground)) errors.push(`props.json '${key}' : 'shadow' est l'ombre d'une couverture, pièce 'roof' avec 'dims.ground'`);
@@ -528,10 +542,12 @@ function validateWood(c: Content, cat: Catalog): string[] {
         if (got === undefined) err(`${at} : planche '${sheet}' : animation '${anim}' non dessinée`);
         else if (got !== n) err(`${at} : planche '${sheet}' : '${anim}' a ${got} images, il en faut ${n}`);
       };
-      for (const look of Object.keys(size.looks) as WoodLook[]) for (const part of ['start', 'mid', 'end']) want(`${look}-${part}`, look === 'round' ? 4 : 1);
+      // le quartier : une partie par côté de sa face debout (nord et sud en est-ouest, est et ouest en nord-sud)
+      const faces = sheet === size.sheet ? ['north', 'south'] : ['east', 'west'];
+      for (const look of Object.keys(size.looks) as WoodLook[]) {
+        for (const drawn of look === 'quarter' ? faces.map((f) => `quarter-${f}`) : [look]) for (const part of ['start', 'mid', 'end']) want(`${drawn}-${part}`, look === 'round' ? 4 : 1);
+      }
       for (const notch of ['notch1', 'notch2']) want(notch, 4);
-      // l'aspect retourné des tas tête-bêche (world/woodPile.ts)
-      for (const look of Object.keys(size.looks).filter((l) => HEAD_TO_TAIL.has(l))) for (const part of ['start', 'mid', 'end']) want(`${look}-rev-${part}`, 1);
       for (const [look, rule] of Object.entries(size.split)) {
         if (!size.looks[look as WoodLook]) err(`${at} : 'split' d'un aspect '${look}' qu'il n'a pas`);
         if (!size.looks[rule.into]) err(`${at} : 'split.${look}' devient '${rule.into}', un aspect qu'il n'a pas`);
