@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { DEPTH, INTERACT, PUT_DOWN } from '../config';
+import { INTERACT, PUT_DOWN } from '../config';
 import { items, piles, props } from '../content';
 import type { Facing, PropDef } from '../content/types';
 import type { Player } from '../entities/Player';
@@ -21,7 +21,10 @@ import {
   type Held,
 } from '../state';
 import { footprint, type Box, type GameMap, type PlacedPile, type PlacedProp } from '../world/GameMap';
-import { openPlaces, placeAim, shapeOf, tieImages } from '../world/pileShape';
+import { pileOf } from '../world/offer';
+import { accepts, nearestOpenPlace, openPlaces, placeAim } from '../world/places';
+import { shapeOf, tieImages } from '../world/pileShape';
+import { Ghosts } from './ghost';
 
 /** Ce qu'a donné « poser devant soi » : rien en main, pas de place libre devant, ou posé. */
 export type PutDownResult = 'empty' | 'blocked' | 'done';
@@ -40,11 +43,6 @@ const isTurnedForm = (d: PropDef) => d.roll?.axis === 'ns' || !!d.take?.turned;
 
 /** Ce qu'on tient est tourné nord-sud (R). */
 const turnedOf = (what: Held) => 'prop' in what && !!what.turned;
-
-/** Genre de tas où s'entrepose ce qu'on tient (`pile` de items.json, ou du `take` de props.json), s'il en a un. */
-function pileOf(what: Held): string | undefined {
-  return 'item' in what ? items[what.item].pile : props[what.prop].take?.pile;
-}
 
 /** Genre de tas que lie ce qu'on tient (le lien : `tie.item` d'un genre de piles.json), s'il en lie un. */
 function tieOf(what: Held): string | undefined {
@@ -82,7 +80,7 @@ const overlaps = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.t
  */
 export class HandsSystem {
   /** La pièce en transparence, à la place où ira ce qu'on tient. */
-  private readonly ghost: Phaser.GameObjects.Image;
+  private readonly ghost: Ghosts;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -90,7 +88,7 @@ export class HandsSystem {
     /** Corps où l'on ne pose rien (les personnages). */
     private readonly others: Phaser.Physics.Arcade.Body[],
   ) {
-    this.ghost = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 1).setAlpha(0.5).setVisible(false);
+    this.ghost = new Ghosts(scene);
   }
 
   /**
@@ -104,7 +102,7 @@ export class HandsSystem {
     const genre = what && pileOf(what);
     const t = active && genre ? this.pileTarget(player, genre, turnedOf(what)) : undefined;
     if (!t) {
-      this.ghost.setVisible(false);
+      this.ghost.hideFrom(0);
       return;
     }
     const def = 'pile' in t ? t.pile.def : shapeOf(piles[t.genre], t.turned);
@@ -112,7 +110,7 @@ export class HandsSystem {
     const [x, y] = 'pile' in t ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
     // par-dessus le tas qu'il complète ; un nouveau tas, à sa propre profondeur
     const depth = 'pile' in t ? t.pile.depth + 0.999 : y + q.y;
-    this.ghost.setTexture(q.image).setPosition(x + q.x, y + q.y).setDepth(Math.min(depth, DEPTH.prompt - 1)).setVisible(true);
+    this.ghost.show(0, q.image, x + q.x, y + q.y, depth);
   }
 
   /**
@@ -161,26 +159,28 @@ export class HandsSystem {
   }
 
   /**
-   * Pose ce que tient la main active sur l'objet `p` (le rouleau sur le billot) : il devient l'objet de son `rest` qui
-   * le porte, avec sa longueur. Renvoie false si la main active ne tient pas ce qu'il accepte.
+   * Pose ce que tient la main active sur l'objet `p` (le rouleau sur le billot, la branche sur le billot) : il devient l'objet de
+   * son `rest` qui le porte, avec sa longueur s'il en a une. Renvoie false si la main active ne tient pas ce qu'il accepte.
    */
   rest(p: PlacedProp): boolean {
     const what = game.both ? undefined : game.hands[game.active];
-    const becomes = what && 'prop' in what ? p.def.rest?.[what.prop] : undefined;
-    if (!what || !('prop' in what) || !becomes) return false;
+    const becomes = what ? p.def.rest?.['prop' in what ? what.prop : what.item] : undefined;
+    if (!what || !becomes) return false;
     release(game);
-    this.replace(p, becomes, what.length ?? props[what.prop].length?.start);
+    this.replace(p, becomes, 'prop' in what ? (what.length ?? props[what.prop].length?.start) : undefined);
     return true;
   }
 
   /**
-   * Reprend ce que porte l'objet `p` (le rouleau sur le billot), avec sa longueur : il redevient `bears.empty`.
+   * Reprend ce que porte l'objet `p` (le rouleau sur le billot, avec sa longueur ; la branche) : il redevient `bears.empty`.
    * Renvoie false si les mains ne sont pas libres.
    */
   unload(p: PlacedProp): boolean {
-    const { prop, empty } = p.def.bears!;
-    const def = props[prop];
-    if (!take(game, { prop, ...(p.length !== undefined ? { length: p.length } : {}) }, def.take!.hands)) return false;
+    const { prop, item, empty } = p.def.bears!;
+    const ok = item
+      ? take(game, { item }, items[item].hands)
+      : take(game, { prop: prop!, ...(p.length !== undefined ? { length: p.length } : {}) }, props[prop!].take!.hands);
+    if (!ok) return false;
     this.replace(p, empty, undefined);
     return true;
   }
@@ -261,6 +261,33 @@ export class HandsSystem {
   }
 
   /**
+   * Outils de test (?dieu) : met `count` exemplaires de `what` (un objet possédable, mis au sol ; un objet du monde, posé comme
+   * si on le posait) sur une rangée devant Xéros, en commençant à sa gauche. Renvoie combien ont trouvé une place.
+   */
+  supplyAround(player: Player, what: string, count: number): number {
+    const b = player.actor.body;
+    const mapId = this.map.def.id;
+    let placed = 0;
+    for (let i = 0; i < count * 4 && placed < count; i++) {
+      // une rangée devant lui, puis la suivante un peu plus loin
+      const row = Math.floor(i / 6);
+      const x = Math.round(b.center.x + ((i % 6) - 2.5) * 10);
+      const y = Math.round(b.bottom + 12 + row * 14);
+      if (what in items) {
+        if (!this.map.areaFree({ left: x - 4, top: y - 6, right: x + 4, bottom: y }, this.others)) continue;
+        this.map.placeGround(dropItem(game, mapId, what, x, y));
+      } else {
+        const size = this.scene.textures.getFrame(props[what].image);
+        const box: Box = { left: x, top: y - size.height, right: x + size.width, bottom: y };
+        if (!this.map.areaFree(box, [...this.others, b])) continue;
+        this.map.placeProp(spawnObject(game, mapId, what, x, y, false), { spawned: true });
+      }
+      placed++;
+    }
+    return placed;
+  }
+
+  /**
    * Outils de test (?dieu) : un tas du genre `genre` de `count` pièces devant Xéros, dans le sens `turned`, toute son
    * emprise au sol devant lui. Les places sont prises comme on les prendrait à la main, la couche du bas d'abord, une place au sol seulement si elle est
    * libre ; `tie` : avec son lien dessous (`count` peut alors être 0, le lien seul). Renvoie le nombre de pièces posées
@@ -323,7 +350,7 @@ export class HandsSystem {
       setPileTie(game, mapId, t.pile.pile.id, true);
       this.map.refreshPile(t.pile);
     } else this.map.placePile(addPile(game, mapId, { pile: genre, x: t.x, y: t.y, places: [], tie: true }));
-    this.ghost.setVisible(false);
+    this.ghost.hideFrom(0);
     return 'done';
   }
 
@@ -355,7 +382,7 @@ export class HandsSystem {
   private tiePreview(player: Player, genre: string): void {
     const t = this.tieTarget(player, genre);
     if (!t) {
-      this.ghost.setVisible(false);
+      this.ghost.hideFrom(0);
       return;
     }
     // sous un tas, son bout de devant, là où il dépassera ; par terre, la boucle du lien seul
@@ -363,7 +390,7 @@ export class HandsSystem {
     const [x, y] = 'pile' in t ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
     // sous les pièces du tas visé ; par terre, à sa propre profondeur
     const depth = 'pile' in t ? t.pile.depth : y + tie.y;
-    this.ghost.setTexture(tie.image).setPosition(x + tie.x, y + tie.y).setDepth(Math.min(depth, DEPTH.prompt - 1)).setVisible(true);
+    this.ghost.show(0, tie.image, x + tie.x, y + tie.y, depth);
   }
 
   /**
@@ -379,7 +406,7 @@ export class HandsSystem {
       fillPlace(game, mapId, t.pile.pile.id, t.place);
       this.map.refreshPile(t.pile);
     } else this.map.placePile(startPile(game, mapId, genre, t.x, t.y, t.place, t.turned));
-    this.ghost.setVisible(false);
+    this.ghost.hideFrom(0);
     return 'done';
   }
 
@@ -395,16 +422,14 @@ export class HandsSystem {
     let best: PileTarget | undefined;
     let bestD: number = INTERACT.radius;
     for (const p of this.map.piles) {
-      if (p.pile.pile !== genre) continue;
-      for (const place of openPlaces(p.def, p.pile.places)) {
-        const [ax, ay] = placeAim(p.def, place);
-        const d = Math.hypot(p.pile.x + ax - probe.x, p.pile.y + ay - probe.y);
-        if (d >= bestD) continue;
+      if (!accepts({ genre: p.pile.pile }, { genre })) continue;
+      const hit = nearestOpenPlace(p.def, p.pile.places, [p.pile.x, p.pile.y], probe, bestD, (place) => {
         const body = p.def.places[place].body;
-        if (body && !this.groundFree(this.boxAt(body, p.pile.x, p.pile.y), bodies, p)) continue;
-        best = { pile: p, place };
-        bestD = d;
-      }
+        return !body || this.groundFree(this.boxAt(body, p.pile.x, p.pile.y), bodies, p);
+      });
+      if (!hit) continue;
+      best = { pile: p, place: hit.place };
+      bestD = hit.d;
     }
     if (best) return best;
     const spot = this.newPileSpot(player, genre, turned);
