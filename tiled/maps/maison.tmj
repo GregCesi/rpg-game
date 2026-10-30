@@ -75,10 +75,10 @@
           "visible": true,
           "name": "",
           "type": "sack",
-          "x": 128,
-          "y": 128,
-          "width": 32,
-          "height": 32,
+          "x": 139,
+          "y": 129,
+          "width": 12,
+          "height": 20,
           "gid": 1014
         },
         {
@@ -87,10 +87,10 @@
           "visible": true,
           "name": "",
           "type": "jar",
-          "x": 192,
-          "y": 128,
-          "width": 32,
-          "height": 32,
+          "x": 204,
+          "y": 129,
+          "width": 11,
+          "height": 19,
           "gid": 1015
         },
         {
@@ -124,9 +124,9 @@
           "name": "",
           "type": "workbench",
           "x": 576,
-          "y": 128,
-          "width": 64,
-          "height": 32,
+          "y": 129,
+          "width": 66,
+          "height": 26,
           "gid": 1009
         },
         {
@@ -147,10 +147,10 @@
           "visible": true,
           "name": "",
           "type": "stove",
-          "x": 576,
-          "y": 256,
-          "width": 32,
-          "height": 48,
+          "x": 584,
+          "y": 257,
+          "width": 18,
+          "height": 49,
           "gid": 1011
         },
         {
@@ -159,10 +159,10 @@
           "visible": true,
           "name": "",
           "type": "pallet",
-          "x": 128,
+          "x": 132,
           "y": 352,
-          "width": 48,
-          "height": 32,
+          "width": 42,
+          "height": 15,
           "gid": 1013
         },
         {
@@ -195,10 +195,10 @@
           "visible": true,
           "name": "",
           "type": "bed",
-          "x": 672,
+          "x": 673,
           "y": 352,
           "width": 32,
-          "height": 56,
+          "height": 38,
           "gid": 1012
         },
         {

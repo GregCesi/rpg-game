@@ -276,18 +276,36 @@ function fireplace(frame: number): Canvas {
   return c;
 }
 
-/** Petit poêle de pierre et d'argile entre l'atelier et le lit de la mère. 32x48. */
+/**
+ * Petit poêle paysan maçonné, bloc d'argile sur un socle de pierre, entre l'atelier et le lit de la mère (80 × 70 × 200 cm, conduit compris).
+ * Gabarit : 16 × (40 + 7) = 16 × 47 px. Corps carré de 110 cm (socle compris), dessus plat (70 cm × ½), conduit de 20 cm
+ * qui monte de l'arrière du dessus jusqu'à 2 m. Bouche voûtée au sud, le feu dedans. Image 18 × 49.
+ */
 function stove(frame: number): Canvas {
-  const c = new Canvas(32, 48);
-  c.rect(14, 0, 5, 16, 'N').rect(14, 0, 1, 16, 'm');
-  c.ellipse(16, 30, 11, 14, 'e');
-  c.ellipse(15, 28, 9, 12, 'n');
-  c.ellipse(13, 24, 4, 5, 'u');
-  c.rect(11, 30, 10, 9, 'o');
-  c.rect(12, 31, 8, 8, 'K');
-  flames(c, 16, 38, 7, frame);
-  c.rect(5, 42, 22, 4, 'Z').rect(5, 42, 22, 1, 'z');
-  c.outline('o');
+  const c = new Canvas(18, 49);
+  // corps maçonné : bloc d'argile à angles presque droits, face sud rangées 25 à 40, éclairé à gauche
+  c.rect(1, 18, 14, 23, 'n');
+  c.rect(1, 25, 2, 16, 'u').rect(13, 25, 2, 16, 'e');
+  // dessus plat (70 cm × ½ = 7 rangées), clair, coins à peine abattus, bord droit dans l'ombre
+  c.rect(1, 18, 14, 7, 'U').rect(12, 18, 3, 7, 'u');
+  c.set(1, 18, '.').set(14, 18, '.');
+  c.rect(1, 24, 14, 1, 'u').rect(1, 25, 14, 1, 'e'); // chant du dessus et son ombre sur la face
+  // quelques pierres prises dans l'argile de la face
+  c.rect(3, 27, 3, 1, 'e').rect(10, 27, 3, 1, 'e');
+  // conduit d'argile : part de l'arrière du dessus, deux bagues
+  c.rect(6, 1, 4, 20, 'n').rect(6, 1, 1, 20, 'u').rect(9, 1, 1, 20, 'e');
+  c.rect(5, 1, 6, 2, 'n').rect(5, 1, 6, 1, 'u').rect(10, 1, 1, 2, 'e');
+  c.rect(6, 10, 4, 1, 'e');
+  c.rect(5, 20, 6, 1, 'u').rect(10, 20, 1, 1, 'e'); // collet au pied du conduit, posé sur le dessus
+  // bouche voûtée au sud, foyer sombre, feu
+  roundRect(c, 4, 29, 8, 11, 3, 'e');
+  roundRect(c, 5, 30, 6, 10, 2, 'K');
+  flames(c, 8, 39, 5, frame);
+  // socle de pierre, un rang plus large que rien : il porte le corps
+  c.rect(1, 41, 14, 5, 'r').rect(1, 41, 14, 1, 'R').rect(1, 45, 14, 1, 'z').rect(12, 42, 3, 3, 'z');
+  c.rect(5, 42, 1, 3, 'Z').rect(10, 43, 1, 2, 'Z');
+  litOutline(c, 'e');
+  groundShadow(c, 3, 47, 15, 2);
   return c;
 }
 
@@ -303,16 +321,35 @@ function worktable(): Canvas {
   return c;
 }
 
-/** Établi de la mère : grosse planche, gouge, maillet, une figurine commencée, copeaux. 64x32. */
+/**
+ * Établi de la mère : grosse planche sur quatre pieds, gouge, maillet, une figurine commencée, copeaux
+ * (320 × 70 × 85 cm). Gabarit : 64 × (17 + 7) = 64 × 24 px. Dessus de 7 rangées (70 cm × ½), chant de la planche,
+ * pieds de 15 cm et traverse ; au sol, sous la planche, son ombre et des copeaux. Image 66 × 26.
+ */
 function workbench(): Canvas {
-  const c = new Canvas(64, 32);
-  c.rect(4, 18, 4, 12, 'N').rect(56, 18, 4, 12, 'N').rect(4, 24, 56, 2, 'N');
-  c.rect(1, 8, 62, 10, 'm').rect(1, 8, 62, 2, 'M').rect(1, 16, 62, 2, 'N');
-  c.line(10, 11, 20, 11, 'R').rect(21, 10, 5, 3, 'N');
-  c.rect(30, 10, 8, 4, 'M').rect(33, 13, 2, 4, 'N');
-  c.ellipse(50, 9, 3, 5, 'Y').ellipse(50, 5, 2, 2, 'Y');
-  c.outline('o');
-  for (const [x, y] of [[12, 29], [20, 30], [40, 28], [47, 30], [52, 29]]) c.set(x, y, 'Y').set(x + 1, y, 't');
+  const c = new Canvas(66, 26);
+  // pieds (avant ; ceux de l'arrière sont cachés derrière) et traverse
+  c.rect(2, 9, 3, 14, 'm').rect(2, 9, 1, 14, 'M').rect(4, 9, 1, 14, 'N');
+  c.rect(59, 9, 3, 14, 'm').rect(59, 9, 1, 14, 'M').rect(61, 9, 1, 14, 'N');
+  c.rect(5, 16, 54, 2, 'm').rect(5, 17, 54, 1, 'N');
+  // dessus de la planche : bois clair, un joint, éclairé au nord
+  c.rect(1, 1, 62, 6, 'M').rect(1, 1, 62, 1, 'Y').rect(1, 4, 62, 1, 'm');
+  // chant de la planche, face sud
+  c.rect(1, 7, 62, 1, 'm').rect(1, 8, 62, 1, 'N');
+  // gouge : fer et manche
+  c.rect(7, 3, 4, 1, 'R').rect(11, 2, 5, 2, 'N').rect(11, 2, 5, 1, 'm');
+  // maillet couché : tête et manche
+  c.rect(21, 2, 3, 3, 'm').rect(21, 2, 3, 1, 'M').rect(23, 3, 1, 2, 'N').rect(24, 3, 5, 1, 'N');
+  // copeaux sur la planche
+  c.rect(36, 2, 3, 1, 'Y').rect(37, 3, 3, 1, 't').rect(41, 5, 3, 1, 'Y');
+  // figurine commencée, debout (20 cm) : tête, corps, ombre à droite
+  c.rect(49, 1, 2, 2, 'Y').rect(48, 3, 3, 3, 'Y').rect(50, 3, 1, 3, 't').rect(51, 4, 1, 2, 'P');
+  litOutline(c, 'K');
+  // copeaux tombés au sol, sous la planche
+  for (const [x, y] of [[10, 21], [27, 22], [43, 20], [52, 22]]) c.set(x, y, 'Y').set(x + 1, y, 't').set(x + 2, y, 'Y');
+  // ombre de la planche au sol (sous elle, jusqu'à son bord sud) et ombre portée
+  c.within('.', (k) => k.rect(5, 15, 54, 8, 'x'));
+  groundShadow(c, 3, 24, 63, 1);
   return c;
 }
 
@@ -339,46 +376,42 @@ function groundShadow(c: Canvas, x: number, y: number, w: number, h: number): Ca
 }
 
 /**
- * Lit de la mère, en bois, vu de trois quarts. 32x56.
- * Tête de lit à montants au nord, longs pans du cadre sur les côtés, oreiller et couverture
- * de laine rouge sur le dessus ; face sud : traverse du pied de lit et quatre pieds.
+ * Lit de la mère, en bois, vu de trois quarts (150 × 200 × 80 cm, tête de lit comprise).
+ * Gabarit : 30 × (16 + 20) = 30 × 36 px. Dessus de 20 rangées (200 cm × ½) : longs pans du cadre, oreiller au nord,
+ * couverture de laine rouge ; tête de lit à montants au nord, qui dépasse le matelas de 30 cm ; face sud : traverse
+ * du pied de lit sous la couverture qui retombe, deux pieds, le sol dans l'ombre sous le lit. Image 32 × 38.
  */
 function bed(): Canvas {
-  const c = new Canvas(32, 56);
-  // longs pans du cadre (vus de dessus), de la tête au pied
-  c.rect(2, 11, 3, 33, 'M').rect(4, 11, 1, 33, 'm');
-  c.rect(27, 11, 3, 33, 'm').rect(29, 11, 1, 33, 'N');
-  // matelas : drap de lin
-  c.rect(5, 11, 22, 33, 'd');
-  c.rect(26, 11, 1, 33, 'D');
+  const c = new Canvas(32, 38);
+  // longs pans du cadre (10 cm), vus de dessus
+  c.rect(1, 5, 2, 21, 'M').rect(2, 5, 1, 21, 'm');
+  c.rect(27, 5, 2, 21, 'm').rect(28, 5, 1, 21, 'N');
+  // matelas : drap de lin, ombre à droite
+  c.rect(3, 6, 24, 20, 'd').rect(25, 6, 2, 20, 'D');
   // oreiller au nord
-  c.rect(7, 12, 18, 6, 'a').rect(8, 11, 16, 1, 'a');
-  c.rect(7, 17, 18, 1, 'D').rect(24, 13, 1, 5, 'D').rect(23, 17, 2, 1, 'E');
-  c.rect(7, 18, 18, 1, 'E');
-  // couverture de laine : drap rabattu dessus, corps rouge, ombre à droite, deux plis
-  c.rect(5, 21, 22, 23, 'B');
-  c.rect(5, 21, 22, 2, 'd').rect(24, 21, 3, 2, 'D');
-  c.rect(5, 23, 22, 1, 'G');
-  c.rect(24, 24, 3, 20, 'G');
-  c.line(6, 30, 17, 32, 'G');
-  c.line(12, 38, 22, 36, 'G');
-  // la couverture retombe sur la traverse du pied
-  c.rect(5, 44, 22, 2, 'G').rect(5, 44, 19, 1, 'B');
-  // tête de lit : montants et planches, face sud visible
-  c.rect(2, 1, 3, 11, 'm').rect(2, 1, 1, 11, 'M').rect(2, 1, 3, 1, 'M');
-  c.rect(27, 1, 3, 11, 'm').rect(29, 1, 1, 11, 'N').rect(27, 1, 3, 1, 'M');
-  c.rect(5, 3, 22, 8, 'm').rect(5, 3, 22, 1, 'M').rect(5, 4, 22, 1, 'N');
-  for (const x of [10, 16, 21]) c.rect(x, 5, 1, 6, 'N');
-  c.rect(5, 10, 22, 1, 'K');
-  // face sud : traverse du pied de lit, sous la couverture
-  c.rect(3, 44, 26, 6, 'm').rect(3, 49, 26, 1, 'N').rect(3, 46, 26, 1, 'N');
-  c.within('m', (c) => c.rect(5, 44, 22, 2, 'G'));
-  c.rect(5, 44, 19, 1, 'B');
-  // pieds du lit, plus sombres que la traverse
-  c.rect(2, 42, 3, 11, 'm').rect(2, 42, 1, 11, 'M').rect(2, 42, 3, 1, 'M').rect(2, 50, 3, 3, 'N');
-  c.rect(27, 42, 3, 11, 'm').rect(29, 42, 1, 11, 'N').rect(27, 42, 3, 1, 'M').rect(27, 50, 3, 3, 'N');
+  c.rect(5, 6, 19, 4, 'a').rect(5, 9, 19, 1, 'D').rect(21, 6, 3, 4, 'D').rect(5, 10, 19, 1, 'E');
+  // couverture de laine : drap rabattu, corps rouge, ombre à droite, deux plis
+  c.rect(3, 12, 24, 14, 'B');
+  c.rect(3, 12, 24, 2, 'd').rect(24, 12, 3, 2, 'D').rect(3, 14, 24, 1, 'G');
+  c.rect(23, 15, 4, 11, 'G');
+  c.line(4, 18, 13, 20, 'G').line(5, 18, 13, 19, 'G');
+  c.line(10, 23, 20, 21, 'G').line(11, 23, 20, 22, 'G');
+  // tête de lit : deux montants et un panneau de planches, face sud
+  c.rect(1, 1, 3, 6, 'm').rect(1, 1, 1, 6, 'M').rect(1, 1, 3, 1, 'M');
+  c.rect(26, 1, 3, 6, 'm').rect(28, 1, 1, 6, 'N').rect(26, 1, 3, 1, 'M');
+  c.rect(4, 2, 22, 4, 'm').rect(4, 2, 22, 1, 'M');
+  for (const x of [9, 15, 20]) c.rect(x, 3, 1, 3, 'N');
+  c.rect(4, 5, 22, 1, 'K');
+  // face sud : traverse du pied de lit, couverture qui retombe dessus
+  c.rect(4, 26, 22, 4, 'm').rect(4, 29, 22, 1, 'N');
+  c.rect(3, 25, 24, 3, 'G').rect(3, 25, 20, 1, 'B');
+  // pieds du lit (55 cm, ils dépassent un peu le cadre)
+  c.rect(1, 24, 3, 11, 'm').rect(1, 24, 1, 11, 'M').rect(1, 24, 3, 1, 'M').rect(3, 25, 1, 10, 'N');
+  c.rect(26, 24, 3, 11, 'm').rect(28, 24, 1, 11, 'N').rect(26, 24, 3, 1, 'M');
   litOutline(c, 'K');
-  groundShadow(c, 4, 51, 28, 3);
+  // le sol sous le lit, dans son ombre, et l'ombre portée
+  c.within('.', (k) => k.rect(4, 30, 22, 5, 'x'));
+  groundShadow(c, 2, 36, 30, 2);
   return c;
 }
 
@@ -393,90 +426,112 @@ function roundRect(c: Canvas, x: number, y: number, w: number, h: number, r: num
 }
 
 /**
- * Paillasse de Xéros : une couche de paille tassée sous une toile, posée à même le sol, sans cadre ni pieds,
- * couchée est-ouest (36 px, environ 1,80 m). Dessus large et plat, bords affaissés, face sud de 1 px.
- * Baluchon de lin à l'ouest (contre le mur), couverture brune rabattue sur la moitié est. 48x32.
+ * Paillasse de Xéros : une couche de paille tassée sous une toile, à même le sol, sans cadre ni pieds, couchée
+ * est-ouest (200 × 90 × 20 cm). Gabarit : 40 × (4 + 9) = 40 × 13 px : un dessus large et plat, une face sud de 20 cm.
+ * Baluchon de lin à l'ouest (contre le mur), couverture brune rabattue sur la moitié est. Image 42 × 15.
  */
 function pallet(): Canvas {
-  const c = new Canvas(48, 32);
+  const c = new Canvas(42, 15);
   const r = rng(21);
-  const x0 = 6;
-  const x1 = 41;
-  // volume mou : coins très arrondis, bords nord et sud légèrement creusés par endroits
-  roundRect(c, x0, 7, x1 - x0 + 1, 19, 5, 'Y');
-  const sagTop = (x: number) => (x >= 15 && x <= 20) || (x >= 31 && x <= 35);
-  const sagBottom = (x: number) => x >= 21 && x <= 27;
-  for (let x = x0; x <= x1; x++) {
-    if (sagTop(x)) c.set(x, 7, '.');
-    if (sagBottom(x)) c.set(x, 25, '.');
-  }
-  // face sud (1 px) et rangée affaissée juste au-dessus, colonne par colonne
-  for (let x = x0; x <= x1; x++) {
-    let y = 25;
+  // volume mou : coins arrondis, bord nord un peu creusé
+  roundRect(c, 1, 1, 38, 11, 3, 'Y');
+  for (let x = 14; x <= 18; x++) c.set(x, 1, '.');
+  for (let x = 28; x <= 31; x++) c.set(x, 1, '.');
+  // face sud (20 cm, 3 rangées) dans l'ombre, colonne par colonne sous le bord
+  for (let x = 1; x <= 38; x++) {
+    let y = 11;
     while (y > 0 && c.get(x, y) === '.') y--;
-    c.set(x, y, 'T');
-    c.set(x, y - 1, 't');
+    c.set(x, y, 'P').set(x, y - 1, 'T').set(x, y - 2, 'T');
   }
   // bout est dans l'ombre
-  for (let y = 8; y < 25; y++) {
-    let x = x1;
-    while (x > 0 && c.get(x, y) === '.') x--;
-    if (c.get(x, y) === 'Y') c.set(x, y, 't');
-  }
-  // baluchon de lin à l'ouest, roulé dans le sens nord-sud
-  roundRect(c, 8, 10, 7, 12, 3, 'd');
-  c.rect(14, 12, 1, 8, 'D').rect(9, 21, 5, 1, 'D');
-  c.within('Y', (c) => c.rect(15, 11, 1, 10, 't'));
-  // couverture brune rabattue sur la moitié est, un peu de travers, en retrait des bords
-  c.within('Yt', (c) => c.polygon([[24, 9], [36, 8.5], [39, 10], [40.5, 13], [40.5, 20], [38, 23], [22, 23]], 'n'));
-  c.within('n', (c) => {
-    c.line(24, 9, 22, 22, 'u').line(25, 9, 23, 22, 'u'); // revers rabattu, côté lumière
-    c.line(26, 9, 24, 22, 'e'); // ombre sous le revers
-    c.line(29, 14, 35, 16, 'e');
-  });
-  // ombre de la couverture : bord sud et bout est
-  for (let y = 9; y < 24; y++) {
-    let x = x1;
-    while (x > 0 && c.get(x, y) !== 'n') x--;
-    if (x > 30) c.set(x, y, 'e');
-  }
-  for (let x = 27; x <= x1; x++) {
-    let y = 24;
-    while (y > 0 && c.get(x, y) !== 'n' && c.get(x, y) !== 'e') y--;
-    if (y > 9) c.set(x, y, 'e');
-  }
-  // texture de paille : brins de trois pixels sur la paille nue
-  for (let i = 0; i < 40; i++) {
-    const x = x0 + 1 + Math.floor(r() * 34);
-    const y = 8 + Math.floor(r() * 15);
-    const dy = r() < 0.5 ? 0 : 1;
-    const pts: [number, number][] = [[x, y], [x + 1, y + dy], [x + 2, y + dy]];
+  c.within('Y', (k) => k.rect(37, 1, 2, 8, 't'));
+  // texture de paille : brins de trois pixels sur la paille nue du dessus
+  for (let i = 0; i < 30; i++) {
+    const x = 2 + Math.floor(r() * 34);
+    const y = 2 + Math.floor(r() * 6);
+    const pts: [number, number][] = [[x, y], [x + 1, y], [x + 2, y + (r() < 0.5 ? 0 : 1)]];
     if (pts.every(([px, py]) => c.get(px, py) === 'Y' && c.get(px, py - 1) !== 't' && c.get(px, py + 1) !== 't')) {
       for (const [px, py] of pts) c.set(px, py, 't');
     }
   }
+  // baluchon de lin à l'ouest
+  roundRect(c, 3, 2, 7, 6, 2, 'd');
+  c.rect(8, 3, 2, 4, 'D').rect(4, 7, 5, 1, 'D');
+  c.within('Yt', (k) => k.rect(4, 8, 6, 1, 'T')); // son ombre sur la paille
+  // couverture brune rabattue sur la moitié est, qui retombe sur la face sud
+  c.within('YtT', (k) => k.polygon([[22, 1.5], [36, 1], [38, 3], [38, 11], [21, 11]], 'n'));
+  c.within('n', (k) => {
+    k.line(22, 2, 21, 10, 'u').line(23, 2, 22, 10, 'u'); // revers rabattu, côté lumière
+    k.line(24, 2, 23, 10, 'e'); // ombre sous le revers
+    k.line(28, 4, 34, 6, 'e');
+    k.rect(21, 9, 18, 3, 'e'); // la part qui retombe sur la face sud, dans l'ombre
+    k.rect(36, 1, 3, 8, 'e');
+  });
   litOutline(c, 'P');
-  groundShadow(c, 9, 26, 36, 2);
-  // quelques brins tombés au sol
-  c.within('.x', (c) => c.line(3, 19, 4, 21, 't').line(43, 13, 45, 14, 'Y').line(30, 28, 32, 29, 't'));
+  groundShadow(c, 3, 13, 38, 1);
   return c;
 }
 
+/**
+ * Sac de grain en toile de lin, lié au col, posé debout (50 × 40 × 70 cm). Gabarit : 10 × (14 + 4) = 10 × 18 px.
+ * Tassé : épaules larges et affaissées, ventre large au pied, col court noué d'une cordelette de chanvre, toupet de toile. Image 12 × 20.
+ */
 function sack(): Canvas {
-  const c = new Canvas(32, 32);
-  c.ellipse(16, 21, 10, 9, 'D');
-  c.ellipse(14, 19, 6, 6, 'd');
-  c.rect(13, 8, 6, 6, 'D').rect(12, 12, 8, 2, 'N');
-  c.outline('o');
+  const c = Canvas.from([
+    '............',
+    '..dD.DE.....',
+    '..dDDDE.....',
+    '...XCC......',
+    '.ddddDDE....',
+    '.daadDDDE...',
+    '.daddDDDE...',
+    '.ddddDDDE...',
+    '.dDDDdDEE...',
+    '.ddddDDEE...',
+    '.dddDDDEE...',
+    '.dDDDdDEE...',
+    '.ddDDDEEE...',
+    '.dDDDDEEE...',
+    '.DDDDEEEE...',
+    '.DDDEEEEE...',
+    '..EEEEEE....',
+    '............',
+    '............',
+    '............',
+  ]);
+  litOutline(c, 'E');
+  groundShadow(c, 3, 18, 8, 1);
   return c;
 }
 
+/**
+ * Jarre de terre cuite (Ø 45 cm, 60 cm de haut, cylindre debout). Gabarit : 9 × (12 + 4,5) = 9 × 16,5 px.
+ * Lèvre et goulot sombre vus d'en haut, épaule, ventre éclairé à gauche, pied resserré. Image 11 × 19.
+ */
 function jar(): Canvas {
-  const c = new Canvas(32, 32);
-  c.ellipse(16, 20, 8, 9, 'n');
-  c.ellipse(14, 18, 4, 5, 'u');
-  c.rect(12, 7, 8, 5, 'n').rect(11, 6, 10, 2, 'u');
-  c.outline('o');
+  const c = Canvas.from([
+    '...........',
+    '..uuUue....',
+    '..uKKKe....',
+    '...unn.....',
+    '..uunne....',
+    '.uUunnee...',
+    '.uUunnee...',
+    '.uunnnee...',
+    '.uunnnee...',
+    '.uunnnee...',
+    '.unnnnee...',
+    '.unnneee...',
+    '..nneee....',
+    '..nneee....',
+    '...eee.....',
+    '...........',
+    '...........',
+    '...........',
+    '...........',
+  ]);
+  litOutline(c, 'e');
+  groundShadow(c, 3, 16, 7, 1);
   return c;
 }
 
@@ -493,7 +548,7 @@ const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, pa
 
 export const furniture = [
   anim('fireplace', 64, 96, fireplace),
-  anim('stove', 32, 48, stove),
+  anim('stove', 18, 49, stove),
   img('worktable', worktable()),
   img('workbench', workbench()),
   img('bed', bed()),

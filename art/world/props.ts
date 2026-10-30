@@ -13,30 +13,31 @@ function groundShadow(c: Canvas, cx: number, cy: number, rx: number, ry: number)
   }
 }
 
-/** Seau en bois cerclé de fer, à moitié plein. */
+/**
+ * Seau en bois cerclé de fer, à moitié plein d'eau. Gabarit : cylindre debout de Ø 30 cm, 30 cm de haut, soit 6 × 9 px
+ * contour compris (corps 6 rangées, ouverture en ovale 6 × 3), plus l'anse en arceau qui dépasse de deux rangées
+ * (10 cm) : 6 × 11. Dessiné à la taille exacte, pixel par pixel (à cette taille, une primitive arrondie ne tombe
+ * jamais juste). Image 32 × 32 gardée (même ancrage sur les cartes) : le seau occupe les colonnes 13 à 18, du rang 18 (anse) au rang 28 (fond).
+ * Contour : K (bois le plus sombre) en haut et à gauche, `o` en bas et à droite ; l'anse est un fil de fer (z).
+ */
+const BUCKET = [
+  '..zz..', // anse : un fil de fer en arceau, accroché aux deux oreilles
+  '.z..z.',
+  'zKKKKz', // bord arrière de l'ouverture
+  'KWwwwo', // l'eau (reflet à gauche, vers la lumière)
+  'KMMMNo', // bord avant de l'ouverture
+  'KrrzZo', // cercle de fer
+  'KMmmNo', // douelles
+  'KMmNNo',
+  'KrrzZo', // cercle de fer
+  'KMmNNo',
+  '.oooo.', // fond
+];
+
 function bucket(): Canvas {
   const c = new Canvas(32, 32);
-  // anse
-  for (let a = 0; a <= 20; a++) {
-    const t = Math.PI + (a / 20) * Math.PI;
-    c.set(Math.round(16 + Math.cos(t) * 8.5), Math.round(15 + Math.sin(t) * 8), 'z');
-  }
-  // corps : douelles
-  c.polygon([[7.5, 15], [24.5, 15], [23, 28], [9, 28]], 'm');
-  c.within('m', (c) => {
-    for (const x of [11, 14, 17, 20]) c.line(x, 15, x - (x - 16) * 0.12, 28, 'N');
-    c.polygon([[7.5, 15], [10, 15], [10.5, 28], [9, 28]], 'M');
-    c.polygon([[22, 15], [24.5, 15], [23, 28], [21.5, 28]], 'N');
-    // cerclages de fer
-    c.rect(0, 18, 32, 1, 'r').rect(0, 25, 32, 1, 'r');
-    c.rect(0, 19, 32, 1, 'z').rect(0, 26, 32, 1, 'z');
-  });
-  // ouverture : bord en bois et eau
-  c.ellipse(16, 15, 8.5, 2.6, 'M');
-  c.ellipse(16, 15.3, 7, 1.8, 'w');
-  c.set(13, 15, 'W').set(14, 15, 'W');
-  c.outline('o');
-  groundShadow(c, 16, 28.5, 10, 2);
+  c.stamp(BUCKET, 13, 18);
+  groundShadow(c, 17, 29, 4, 1.2);
   return c;
 }
 

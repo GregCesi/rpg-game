@@ -10,11 +10,10 @@
 - Corde de chanvre lovée en rouleau : Ø 30 cm, 10 cm d'épaisseur, contour compris.
 - Cylindre debout (`up`), couché à plat sur le sol.
 - À l'écran : Ø/5 = **6 px** de large, H + Ø/2 = 2 + 3 = **5 px** de haut.
-- Posé sur le billot (`chopping-block-rope`) : le rouleau (10 cm) tient dans la coupe sans dépasser le bord du fond ; le
-  billot qui le porte garde la taille du billot. Le billot nu est un objet ancien (`EXCEPTIONS`), dessiné à 18 × 15 px au
-  lieu de 11 × 14,5 : le billot et son rouleau reprennent ce dessin, décrit tel qu'il est (`dims` 90 × 70 × 45 cm, attendu
-  18 × 16). À reprendre ensemble (billot, billot et hache, billot et rouleau, Ø 55 cm) le jour où le billot sort des
-  exceptions.
+- Posé sur le billot (`chopping-block-rope`) : le rouleau est posé à plat au milieu de la face de coupe du billot
+  (Ø 55 × 45 cm, 11 × 15 px), à la même échelle que seul (6 × 5 px) ; il couvre l'essentiel du dessus et dépasse d'1 px le
+  bord arrière. Billot et rouleau : `dims` 55 × 55 × 55 cm (45 + 10), cylindre debout, attendu 11 × 16,5, dessiné 11 × 16.
+  Le billot est au même pixel dans ses trois images (vide, à hache, à rouleau) : rien ne bouge quand on pose le rouleau.
 
 ## Vues
 - Au sol : `rope-coil`, 6 × 5 px, le dessus du rouleau (les tours de corde, un trou sombre au milieu) et sa tranche au sud ;

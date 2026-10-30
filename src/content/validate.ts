@@ -320,16 +320,6 @@ function validateTrunk(c: Content, cat: Catalog): string[] {
 export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
   // taille dessinée ; en commentaire, la taille attendue (de la taille réelle au plancher de lisibilité) et l'écart
   // (dessiné − attendu, hors de cette plage, largeur × hauteur)
-  'big-tree-stump': { w: 26, h: 16 }, // attendu 14 × 15 : +12 × +1 px
-  'bucket': { w: 20, h: 23 }, // attendu 6 × 9 : +14 × +14 px
-  'chopping-block': { w: 18, h: 15 }, // attendu 11 × 14,5 : +7 × +0,5 px
-  'chopping-block-axe': { w: 23, h: 28 }, // attendu 11 × 14,5 : +12 × +13,5 px
-  'workbench': { w: 64, h: 29 }, // attendu 64 × 24 : 0 × +5 px
-  'stove': { w: 24, h: 47 }, // attendu 16 × 47 : +8 × 0 px
-  'bed': { w: 30, h: 54 }, // attendu 30 × 32 : 0 × +22 px
-  'pallet': { w: 43, h: 24 }, // attendu 40 × 13 : +3 × +11 px
-  'sack': { w: 22, h: 24 }, // attendu 10 × 18 : +12 × +6 px
-  'jar': { w: 18, h: 25 }, // attendu 9 × 16,5 : +9 × +8,5 px
   'lantern': { w: 10, h: 15 }, // attendu 3 à 6 × 7,5 à 15 : +4 × 0 px
   'candle': { w: 13, h: 13 }, // attendu 1,6 à 6 × 4,8 à 18 : +7 × 0 px
   'barrel': { w: 19, h: 23 }, // attendu 12 × 24 : +7 × -1 px

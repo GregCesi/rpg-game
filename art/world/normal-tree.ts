@@ -8,13 +8,14 @@
 // STUMP_*). Le pied (FOOT) est la rangée du contour sous le tronc ; l'écorce s'arrête la rangée au-dessus.
 //
 // Gabarit (dims de props.json : 190 × 190 × 700 cm, boîte) : 38 × 159 px, contour compris, du haut du houppier
-// (rangée 3) au pied (rangée 161). Souche : cylindre debout de Ø 55 cm, 40 cm de haut : 11 × 13,5 px.
+// (rangée 3) au pied (rangée 161). Souche : le pied évasé coupé à 40 cm, racines comprises, boîte de 60 × 55 × 40 cm :
+// 12 × 13,5 px (dessinée 12 × 14).
 
 import { Canvas, rng, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
-import { shadedOutline, despeckle, groundShadow, type Vec } from './big-tree';
-import { bark, paintFace, NORMAL_WOOD } from './wood';
+import { shadedOutline, despeckle, groundShadow, slantedCut, type Vec } from './big-tree';
+import { bark, NORMAL_WOOD } from './wood';
 import { CROWN_BOTTOM, FOOT, STUMP_FOOT, STUMP_SIZE, TREE_H, TREE_W, TRUNK_X0 } from './normal-geometry';
 
 const [FX, FY] = FOOT;
@@ -198,22 +199,25 @@ export function standingTree(): Canvas {
 /** Décalage du repère de l'arbre à celui de la souche (pied sur pied). */
 const SDX = FX - STUMP_FOOT[0];
 const SDY = FY - STUMP_FOOT[1];
-/** Dessus de la souche : la face de coupe, ovale de 6 × 4 px posé sur le tronc (rangées 7 à 10). */
-const CUT_CY = 9;
-const CUT_RY = 2;
+/**
+ * Coupe en biais, comme celle du gros (`slantedCut` de big-tree.ts) : ovale de 6 colonnes (l'écorce du tronc) sur 5
+ * rangées, plus bas à gauche (trait d'abattage, côté lumière), plus haut à droite (charnière), centré à la rangée
+ * CUT_CY ; trop petit pour des cernes.
+ */
+const CUT_CY = 9.3;
+const CUT_RY = 2.4;
+const CUT_SLOPE = 0.15;
 
 /** Souche sans contour ni ombre, STUMP_SIZE, pied en STUMP_FOOT : le pied de l'arbre, coupé à 40 cm. */
 export function stumpBody(): Canvas {
   const c = new Canvas(STUMP_SIZE[0], STUMP_SIZE[1]);
   barkRows(c, (y) => {
-    if (y < CUT_CY) return null;
+    if (y < CUT_CY - CUT_RY - 1) return null;
     const sp = trunkSpan(y + SDY);
     return sp && [sp[0] - SDX, sp[1] - SDX];
   }, SDY);
-  // dessus : la face de coupe commune (sur moins de 7 px, les cernes deviennent des rayures)
   const cx = TRUNK_X0 - SDX + NORMAL_WOOD.diameter / 2;
-  paintFace(c, cx, CUT_CY, NORMAL_WOOD.diameter / 2, CUT_RY, { all: true });
-  return c;
+  return slantedCut(c, cx, CUT_CY, NORMAL_WOOD.diameter / 2 + 0.1, CUT_RY, CUT_SLOPE, false);
 }
 
 /** La souche, avec contour et ombre : image `normal-tree-stump`. */

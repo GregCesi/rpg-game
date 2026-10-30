@@ -17,7 +17,8 @@ se nomme `normal-…`. La bille et le tas ont la leur : [bille normale](normal-f
 - Tronc de 30 cm : 6 px d'écorce, 8 px (40 cm) contour compris. Le gros : 55 cm, 11 px d'écorce, 13 px (65 cm) contour compris.
 - Arbre debout : 190 × 190 × 700 cm (boîte) : silhouette **38 × 159 px**, contre 54 × 79 (exception) pour le gros. Il se lit plus
   haut (7 m, la hauteur de la silhouette fait foi) et plus fin ; le houppier couvre les rangées 3 à 100, le tronc nu 3 m dessous.
-- Souche : 55 × 55 × 40 cm (cylindre debout) : **11 × 13,5 px**.
+- Souche : 60 × 55 × 40 cm (boîte : le pied évasé, racines comprises, fait 60 cm d'est en ouest ; le fût, 40 cm contour
+  compris) : **12 × 13,5 px**, dessinée 12 × 14.
 - Pièce de tronc couché (section) : 95 × 40 × 40 cm (cylindre est-ouest) : 19 px de long, environ 9 de haut. Chaque pièce est
   exactement une future bille de même image et même place. Le houppier et la tête, plus larges (leurs `dims` sont ceux de leur
   boîte).
@@ -28,7 +29,10 @@ se nomme `normal-…`. La bille et le tas ont la leur : [bille normale](normal-f
 - Debout : `normal-tree`, 48 × 168, pied du tronc en (24, 161) ; houppier étroit et haut (masses asymétriques), tronc nu
   droit et vertical (colonnes 21 à 26 du pied au houppier, sans courbe ni coude : l'arbre de la charpente), une branche à
   droite sous le houppier, deux racines.
-- Souche : `normal-tree-stump`, 24 × 24, pied en (12, 19) ; face de coupe sans cernes (trop étroite), rayures.
+- Souche : `normal-tree-stump`, 24 × 24, pied en (12, 19) : le pied de l'arbre debout (mêmes colonnes d'écorce, même
+  évasement, mêmes racines), coupé en biais comme celle du gros (`slantedCut` de big-tree.ts : plus bas à gauche, plus
+  haut à droite, côté charnière) ; face de coupe claire sans cernes (trop étroite). Collision 10 × 6, celle du pied de
+  l'arbre.
 - Chute : `normal-tree-fall` (à droite) et `normal-tree-fall-left` (à gauche, dessinée avec sa propre lumière en haut à
   gauche, pas un miroir), 192 × 168, animation `fall` de 4 images : la première est l'arbre debout, les deux suivantes
   le même tronc droit pivoté autour du pied (10°, 45°), la dernière est l'arbre couché lui-même.

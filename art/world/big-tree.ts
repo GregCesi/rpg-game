@@ -84,18 +84,6 @@ function barkRows(c: Canvas, shape: (t: Canvas) => void, from = 0) {
   }
 }
 
-/** Face de coupe commune peinte sur une forme ovale (`c` : ses pixels peints), centrée, de demi-axes rx, ry. */
-function paintFaceOnMask(c: Canvas, rx: number, ry: number) {
-  const cx = c.w / 2, cy = c.h / 2;
-  const out: [number, number, string][] = [];
-  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
-    if (c.get(x, y) === EMPTY) continue;
-    const rim = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => c.get(x + dx, y + dy) === EMPTY);
-    out.push([x, y, faceTone((x + 0.5 - cx) / rx, (y + 0.5 - cy) / ry, rim)]);
-  }
-  for (const [x, y, k] of out) c.px[y][x] = k;
-}
-
 interface Mass { cx: number; cy: number; rx: number; ry: number; seed: number; dim: number }
 
 // Cinq masses de feuillage, de la plus lointaine (en haut) à la plus proche (en bas) : asymétriques.
@@ -239,35 +227,64 @@ export function standingTree(): Canvas {
 }
 
 // ---------- Souche ----------
+// La souche est le pied de l'arbre debout coupé : ses pixels d'écorce sont ceux de `tallTreeBody` (même tronc de 11 px
+// d'écorce, 13 contour compris, même évasement, mêmes racines, mêmes sillons), découpés sous la coupe. La coupe est en
+// biais : plus basse à gauche (le trait d'abattage, côté lumière), plus haute à droite (la charnière, où l'arbre a
+// cassé en tombant), face claire commune (art/world/wood.ts). L'arbre normal (normal-tree.ts) fait de même.
+// Gabarit : le pied évasé, racines comprises, fait 26 px de large (130 cm) ; le fût 13 px (65 cm) ; la coupe est à
+// 40 cm. Dims de props.json : boîte de 130 × 65 × 40 cm, soit 26 × (8 + 6,5) px.
 
-/** Forme du dessus de la souche (10 × 6) : la face de coupe commune s'y peint (art/world/wood.ts). */
-const CUT = [
-  '..NNNNNN..',
-  '.NYYYYYYN.',
-  'NYYttttYYN',
-  'NYtYTTYtYN',
-  'NYYttttYYN',
-  '.NYYYYYYN.',
-];
+/** Coin haut gauche de la souche (image 32 x 32) dans le repère 64x96 de l'arbre ; pied du tronc en (16, 26). */
+export const STUMP_AT: Vec = [17, 62];
 
-/** Souche sans contour ni ombre, 32x32, pied du tronc en y=26 ; même tronc que l'arbre (10 px, évasé au pied). */
-export function stumpBody(): Canvas {
-  const c = new Canvas(32, 32);
-  barkRows(c, (t) => {
-    t.polygon([[11, 16], [21, 16], [21.5, 22], [23.5, 25], [25, 27], [7, 27], [8.5, 25], [10.5, 22]], 'm');
-    t.polygon([[21, 24], [27, 25.5], [28, 27], [22, 27]], 'm'); // racine droite
-    t.polygon([[10, 24.5], [5, 26], [4, 27], [10, 27]], 'm'); // racine gauche
-  }, 70);
-  // dessus : la face de coupe commune, sur la forme de CUT
-  const face = Canvas.from(CUT.map((r) => r.replace(/[^.]/g, 'm')));
-  paintFaceOnMask(face, 5, 3);
-  c.stamp(face.toGrid(), 11, 13);
+/** Coupe : centre de l'ovale (colonne au milieu des 11 colonnes d'écorce, rangée), demi-axes, pente (rangées par colonne, vers le haut à droite). */
+const CUT_CX = 15.5;
+const CUT_CY = 16.8;
+const CUT_RX = 5.6;
+const CUT_RY = 2.8;
+const CUT_SLOPE = 0.15;
+
+/**
+ * Face de coupe en biais sur un tronc vertical (`c` : l'écorce déjà posée) : ovale de centre (cx, cy), demi-axes rx,
+ * ry, dont la ligne médiane monte de `slope` rangée par colonne vers la droite. L'écorce au-dessus de la ligne médiane
+ * s'efface (elle est partie avec l'arbre), puis la face commune s'y peint, son bord en N. Partagée avec la souche de
+ * l'arbre normal.
+ */
+export function slantedCut(c: Canvas, cx: number, cy: number, rx: number, ry: number, slope: number, rings = true): Canvas {
+  const mid = (x: number) => cy - (x + 0.5 - cx) * slope;
+  const inside = (x: number, y: number) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - mid(x)) / ry) ** 2 <= 1;
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) if (y + 0.5 < mid(x) && !inside(x, y)) c.px[y][x] = EMPTY;
+  const out: [number, number, string][] = [];
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    if (!inside(x, y)) continue;
+    const rim = !inside(x + 1, y) || !inside(x - 1, y) || !inside(x, y + 1) || !inside(x, y - 1);
+    out.push([x, y, faceTone((x + 0.5 - cx) / rx, (y + 0.5 - mid(x)) / ry, rim, false, rings)]);
+  }
+  for (const [x, y, k] of out) c.px[y][x] = k;
   return c;
+}
+
+let stumpCache: Canvas | undefined;
+
+/** Souche sans contour ni ombre, 32x32, pied du tronc en y=26 : le pied de `tallTreeBody`, coupé en biais. */
+export function stumpBody(): Canvas {
+  if (!stumpCache) {
+    const tree = tallTreeBody();
+    const c = new Canvas(32, 32);
+    const top = CUT_CY - CUT_RY - 2; // au-dessus, rien : l'arbre est parti
+    for (let y = Math.floor(top); y < c.h; y++) for (let x = 0; x < c.w; x++) {
+      const p = tree.get(x + STUMP_AT[0], y + STUMP_AT[1] + TALL_DY);
+      if ('MmNK'.includes(p)) c.px[y][x] = p;
+    }
+    slantedCut(c, CUT_CX, CUT_CY, CUT_RX, CUT_RY, CUT_SLOPE);
+    stumpCache = c;
+  }
+  return Canvas.from(stumpCache.toGrid());
 }
 
 export function stump(): Canvas {
   const c = shadedOutline(stumpBody());
-  groundShadow(c, 18, 27.5, 11, 2.6);
+  groundShadow(c, 18, 27.5, 12, 2.6);
   return c;
 }
 

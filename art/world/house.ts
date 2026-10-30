@@ -198,9 +198,12 @@ function woodpile(): Canvas {
 }
 
 // ---------- Billot ----------
-// Une bille de chêne debout, à côté du tas de bois : on y fend les bûches. 32x32, base en y=27.
-// Environ 80 cm de large pour 45 de haut (16 px sur 9 de face sud), plus bas et plus large qu'une souche,
-// sans racines, la coupe du dessus marquée par la hache. Trois images de même taille : vide, hache plantée, rouleau de corde posé.
+// Une bille de chêne debout, à côté du tas de bois : on y fend les bûches. Image 32x32, silhouette en x 11 à 21, y 14 à
+// 28 (bas de la silhouette au sol, à son bord sud, en y=28, comme avant la reprise : rien ne bouge sur la carte).
+// Gabarit (docs/STYLE.md, section 8), cylindre debout de Ø 55 cm, 45 cm de haut : 11 px de large, 9 de face sud
+// (écorce) plus le dessus en ovale de 11 × 5,5, soit 11 × 14,5, dessiné 11 × 15, contour compris. Sans racines, plus
+// bas qu'une souche, la coupe du dessus marquée par la hache. Trois images de même taille, le billot au même pixel :
+// vide, hache plantée, rouleau de corde posé.
 
 /** Ombre portée : ne remplit que les pixels encore vides. */
 function groundShadow(c: Canvas, cx: number, cy: number, rx: number, ry: number) {
@@ -210,50 +213,56 @@ function groundShadow(c: Canvas, cx: number, cy: number, rx: number, ry: number)
   }
 }
 
-/** Centre et rayons de la coupe du dessus, base de la face sud. */
-const BLOCK = { cx: 16, top: 18, rx: 8, ry: 3.5, base: 27 };
+/**
+ * Le billot sans contour (9 × 13), dessiné au pixel. Dessus (rangées 0 à 3) : bois de bout clair (Y), un cerne (t) autour
+ * du cœur (T), deux entailles de hache (T) ; la rangée 3 est le bord avant de la coupe, l'écorce commence à ses deux
+ * bouts. Face sud (rangées 4 à 12) : écorce claire à gauche (M), moyenne (m), dans l'ombre à droite (N), fentes (N sur
+ * m, K sur N) ; la rangée 12 est le bas arrondi.
+ */
+const BLOCK_ART = [
+  '.YYYYYYY.',
+  'YYYtttYYY',
+  'YYtYTYtTY',
+  'MYYtttTYN',
+  'MMmmmmmNN',
+  'MMmNmmmNN',
+  'MMmNmmmKN',
+  'MMmNmmmKN',
+  'MMmmmmmKN',
+  'MMmmmNmNN',
+  'MMmmmNmNN',
+  'MMmmmNmNN',
+  '.MmmmmmN.',
+];
 
+/** Coin haut gauche du dessin sans contour dans l'image ; centre du dessus (milieu de l'ovale, contour compris). */
+const BLOCK = { x: 12, y: 15, cx: 16, top: 16.75 };
+
+/** Le billot, contour et ombre portée compris : le même dans les trois images. */
 function blockBody(): Canvas {
   const c = new Canvas(32, 32);
-  const { cx, top, rx, ry, base } = BLOCK;
-  // face sud : écorce, claire à gauche, sombre à droite, ventre un peu bombé
-  c.rect(cx - rx, top, rx * 2, base - top, 'm');
-  c.ellipse(cx, base - 0.5, rx, 2, 'm');
-  c.within('m', (c) => {
-    c.rect(cx - rx, top, 3, base - top + 2, 'M');
-    c.rect(cx + rx - 4, top, 4, base - top + 2, 'N');
-    // fentes d'écorce
-    c.line(cx - 2, top + 3, cx - 2, top + 6, 'N').line(cx + 2, top + 5, cx + 2, top + 8, 'N');
-  });
-  c.within('N', (c) => c.line(cx + rx - 2, top + 3, cx + rx - 2, top + 7, 'K'));
-  // coupe du dessus : bois clair, cernes, entailles de la hache
-  c.ellipse(cx, top, rx, ry, 'Y');
-  c.within('Y', (c) => {
-    c.ellipse(cx + 0.5, top + 0.3, rx - 2.2, ry - 1.2, 't');
-    c.ellipse(cx + 0.5, top + 0.3, rx - 4.5, ry - 2.3, 'Y');
-    c.line(cx - 5, top - 1, cx - 2, top + 1, 'T'); // entaille
-    c.line(cx + 3, top + 2, cx + 6, top, 'T');
-  });
+  c.stamp(BLOCK_ART, BLOCK.x, BLOCK.y);
+  shadedOutline(c);
+  groundShadow(c, 18, 28.4, 6.5, 1.8);
   return c;
 }
 
 /** Billot vide. */
 function choppingBlock(): Canvas {
-  const c = shadedOutline(blockBody());
-  groundShadow(c, 17.5, 28, 10, 2.4);
-  return c;
+  return blockBody();
 }
 
 /**
- * Billot, le rouleau de corde (art/items/rope.ts) posé à plat sur la coupe, au milieu : le billot nu tel quel, même
- * image (32×32), même base, même largeur, si bien que rien ne saute quand le rouleau arrive ou s'en va. Le rouleau
- * fait 6 px (30 cm) sur un billot de 18 : on voit la coupe tout autour. Son ombre de contact assombrit le bois (T)
- * à sa droite et sous lui.
+ * Billot, le rouleau de corde (art/items/rope.ts, Ø 30 × 10 cm : 6 × 5 px, même échelle) posé à plat au milieu de la
+ * coupe : le billot nu tel quel, au même pixel, si bien que rien ne saute quand le rouleau arrive ou s'en va. Le pied du
+ * rouleau est au milieu du dessus, un pixel et demi en avant de son centre (son rayon raccourci) ; ses 10 cm d'épaisseur
+ * et son propre dessus le font dépasser d'un pixel au-dessus du bord arrière de la coupe. On voit la coupe tout autour.
+ * Son ombre de contact assombrit le bois (T) à sa droite et sous lui.
  */
 function choppingBlockRope(): Canvas {
   const c = choppingBlock();
-  const ox = BLOCK.cx - 3, oy = BLOCK.top - 2;
-  for (const [dx, dy] of [[5, 4], [6, 3], [6, 2], [2, 5], [3, 5], [4, 5], [5, 5]]) {
+  const ox = BLOCK.cx - 3, oy = 13;
+  for (const [dx, dy] of [[6, 2], [6, 3], [6, 4], [2, 5], [3, 5], [4, 5], [5, 5]]) {
     if ('Yt'.includes(c.get(ox + dx, oy + dy))) c.set(ox + dx, oy + dy, 'T');
   }
   c.stamp(ROPE_COIL, ox, oy);
@@ -261,15 +270,15 @@ function choppingBlockRope(): Canvas {
 }
 
 /**
- * Billot, la hache plantée dans la coupe : tête vers le bas à gauche, tranchant vers le bas à droite, enfoncé dans le
- * bois près du bord avant ; le long manche monte vers le haut à droite. Seul le talon, l'œil et un liseré de la joue
+ * Billot, la hache plantée dans la coupe : la hache tenue (art/items/tools.ts, même échelle, 5 cm par pixel), tête vers le
+ * bas à gauche, tranchant vers le bas à droite, enfoncé dans le bois un peu à gauche du milieu ; le long manche monte vers
+ * le haut à droite, dans le plan de la face sud (vu en vraie grandeur). Seuls le talon, l'œil et un liseré de la joue
  * dépassent : la partie enfouie est retirée avant l'éclairage, si bien que le contour ne court que là où la hache est en
  * l'air, et la fente sombre prend sa place à l'entrée du fer. Le fer est celui de la hache en main, de profil : presque
  * noir, talon court et carré ; le fil, enfoui, ne se voit pas.
  */
 function choppingBlockAxe(): Canvas {
-  const c = shadedOutline(blockBody());
-  groundShadow(c, 17.5, 28, 10, 2.4);
+  const c = blockBody();
   const art = axeArt();
   const zones = Canvas.from(orientedZones(art, 'sw', 'ccw'));
   // milieu de l'œil, dans le dessin orienté (moyenne des pixels d'œil), posé sur l'entrée du fer dans la coupe
@@ -277,7 +286,7 @@ function choppingBlockAxe(): Canvas {
   for (let y = 0; y < zones.h; y++) for (let x = 0; x < zones.w; x++) if (zones.get(x, y) === 'e') eye.push([x, y]);
   const ex = eye.reduce((s, p) => s + p[0], 0) / eye.length;
   const ey = eye.reduce((s, p) => s + p[1], 0) / eye.length;
-  const ENTRY = { x: 13, y: 18 };
+  const ENTRY = AXE_ENTRY;
   // la hache dans l'image du billot, avec un pixel de marge tout autour pour le contour
   const ox = Math.round(ENTRY.x - ex - 0.5) + 1, oy = Math.round(ENTRY.y - ey - 0.5) + 1;
   const visible = new Canvas(34, 34);
@@ -287,7 +296,7 @@ function choppingBlockAxe(): Canvas {
     if (k === EMPTY) continue;
     // profondeur vers le tranchant (bas à droite), depuis l'œil : au-delà de deux pixels, le fer est dans le bois
     const depth = (x - ex + (y - ey)) * Math.SQRT1_2;
-    ('14'.includes(k) && depth > 2 ? buried : visible).set(x + ox, y + oy, k);
+    ('14'.includes(k) && depth > AXE_DEPTH ? buried : visible).set(x + ox, y + oy, k);
   }
   const lit = Canvas.from(lightUp(visible.toGrid(), art.materials));
   for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
@@ -301,6 +310,8 @@ function choppingBlockAxe(): Canvas {
       continue;
     }
     if (!air && buried.get(x + 1, y + 1) !== EMPTY) continue;
+    // le fer ne descend pas sur l'écorce de la face sud : son contour n'y a rien à faire
+    if (!air && y >= BLOCK.y + 4) continue;
     // sous le fer, posé à ras de la coupe, pas de trait de contour (en bas, à droite) mais l'ombre du bois
     const ironBeside = [[-1, 0], [0, -1], [1, 0], [0, 1]].some(([dx, dy]) => '14e'.includes(visible.get(x + 1 + dx, y + 1 + dy)) && visible.get(x + 1 + dx, y + 1 + dy) !== EMPTY);
     if (!air && k === 'o' && ironBeside && 'YtT'.includes(c.get(x, y))) {
@@ -311,6 +322,13 @@ function choppingBlockAxe(): Canvas {
   }
   return c;
 }
+
+/**
+ * Entrée du fer dans la coupe (milieu de l'œil, repère des images de 32 de haut) et profondeur, depuis l'œil vers le
+ * tranchant, à partir de laquelle il est dans le bois.
+ */
+const AXE_ENTRY = { x: 14, y: 17 };
+const AXE_DEPTH = 2;
 
 /** Bouffée de fumée (particule). */
 function smoke(): Canvas {
