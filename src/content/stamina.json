@@ -9,6 +9,6 @@
     "turnPerKg": 0.03,
     "carryPerKgSec": 0.034,
     "pushPerKgSec": 0.014,
-    "runPerSec": 1
+    "runPerSec": 0.2
   }
 }
