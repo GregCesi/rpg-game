@@ -502,6 +502,12 @@ function validateMasses(c: Content, cat: Catalog): string[] {
         err(`${at} : ${(e as Error).message}`);
       }
     }
+    if (p.turn) {
+      const t = c.props[p.turn.into];
+      if (!t) err(`${at} : 'turn' vers '${p.turn.into}' introuvable dans props.json`);
+      else if (!p.roll || !t.roll || t.roll.axis === p.roll.axis) err(`${at} : 'turn' vers '${p.turn.into}' : il doit rouler et être couché dans l'autre sens`);
+      else if (!t.turn || t.turn.into === undefined) err(`${at} : '${p.turn.into}' doit pouvoir se retourner à son tour ('turn')`);
+    }
     const r = p.roll;
     if (!r) continue;
     if (p.dims.shape !== 'cylinder' || p.dims.axis !== r.axis) err(`${at} : 'roll' d'axe '${r.axis}' demande des dims de cylindre couché '${r.axis}'`);

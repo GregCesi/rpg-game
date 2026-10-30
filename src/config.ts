@@ -49,6 +49,9 @@ export const INTERACT = { reach: 16, radius: 20 };
  */
 export const LONG_PRESS = { ms: 500, above: 35 };
 
+/** R maintenu (pivoter une bille couchée, systems/turnLog.ts) : durée de l'appui (ms), avec la même jauge que pour nouer. */
+export const TURN_PRESS = { ms: 1000 };
+
 /** Nombre de pièces d'un tas (`count` de piles.json) : affiché quand les pieds de Xéros sont à moins de `near` px du tas au sol. */
 export const PILE_COUNT = { near: 12 };
 

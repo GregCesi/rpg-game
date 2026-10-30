@@ -121,6 +121,13 @@ export const MassSchema = z.union([z.number().positive(), z.literal('wood'), z.s
  */
 export const RollSchema = z.strictObject({ axis: z.enum(['ew', 'ns']), sheet: id, into: id.optional() });
 
+/**
+ * Ce qui pivote d'un quart de tour quand Xéros, mains vides, maintient R à son contact (la bille couchée) : `into`, l'objet
+ * qu'elle devient, couché dans l'autre sens (est-ouest <-> nord-sud), centré au même endroit. Le coût en endurance est
+ * proportionnel à sa masse (`turnPerKg` de stamina.json).
+ */
+export const TurnSchema = z.strictObject({ into: id });
+
 /** Nombre de mains que demande un objet qu'on prend : une, ou les deux (lourd ou long). */
 export const HandsSchema = z.union([z.literal(1), z.literal(2)]);
 
@@ -217,6 +224,8 @@ export const PropDefSchema = z.strictObject({
   mass: MassSchema.optional(),
   /** Ce qui roule quand on le pousse : voir RollSchema. */
   roll: RollSchema.optional(),
+  /** Ce qui pivote d'un quart de tour au sol (R maintenu, mains vides) : voir TurnSchema. */
+  turn: TurnSchema.optional(),
   /**
    * Quantité mesurée (le rouleau de corde) : une longueur, en centimètres, gardée par GameState (`length` de ce qu'on
    * tient, d'un objet né ou changé). `start` : la longueur d'un objet neuf (posé dans Tiled) ; `cut` : ce qu'enlève une
@@ -536,6 +545,7 @@ export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type Take = z.infer<typeof TakeSchema>;
 export type Mass = z.infer<typeof MassSchema>;
+export type Turn = z.infer<typeof TurnSchema>;
 export type Roll = z.infer<typeof RollSchema>;
 export type Strength = z.infer<typeof StrengthSchema>;
 export type DialogueAction = z.infer<typeof DialogueActionSchema>;

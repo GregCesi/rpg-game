@@ -34,7 +34,11 @@ export class LongPress {
   /** Images de la jauge, de vide à plein. */
   private readonly frames: (string | number)[];
 
-  constructor(scene: Phaser.Scene) {
+  /** `ms` : durée de l'appui (par défaut celle d'E maintenu, `LONG_PRESS`). */
+  constructor(
+    scene: Phaser.Scene,
+    private readonly ms: number = LONG_PRESS.ms,
+  ) {
     this.frames = scene.anims.get('ui-gauge-fill').frames.map((f) => f.frame.name);
     this.gauge = scene.add.image(0, 0, 'ui-gauge', this.frames[0]).setOrigin(0.5, 1).setDepth(DEPTH.prompt).setVisible(false);
   }
@@ -67,7 +71,7 @@ export class LongPress {
       this.cancel();
       return undefined;
     }
-    const t = (time - this.start) / LONG_PRESS.ms;
+    const t = (time - this.start) / this.ms;
     if (!down || t >= 1) {
       this.cancel();
       return { kind: t >= 1 ? 'long' : 'short', target };

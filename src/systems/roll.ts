@@ -97,7 +97,7 @@ export class RollSystem {
   }
 
   /** La bille roulante que touche Xéros en poussant vers `dir` (celle qu'il recouvre le plus), s'il y en a une. */
-  private touching(player: Player, dir: Facing): PlacedProp | undefined {
+  touching(player: Player, dir: Facing): PlacedProp | undefined {
     const b = player.actor.body;
     let best: PlacedProp | undefined;
     let bestOverlap = TOUCH.overlap - 1e-6;

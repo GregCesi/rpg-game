@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { HUD, START, ZOOM } from '../config';
+import { HUD, START, TURN_PRESS, ZOOM } from '../config';
 import { items, maps, props } from '../content';
 import { heldMass, itemMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -18,6 +18,7 @@ import { LongPress } from '../systems/longPress';
 import { PileCount } from '../systems/pileCount';
 import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
+import { TurnSystem } from '../systems/turnLog';
 import { carriedMass, heavyNotice } from '../systems/weight';
 import {
   canTake,
@@ -81,6 +82,9 @@ export class WorldScene extends Phaser.Scene {
   private roofs!: Roofs;
   private roll!: RollSystem;
   private effort!: EffortSystem;
+  private turns!: TurnSystem;
+  /** R maintenu : pivoter une bille couchée. */
+  private turnPress!: LongPress;
   /** Champ « force » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
   private force = 1;
   /** Case « endurance infinie » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
@@ -149,6 +153,8 @@ export class WorldScene extends Phaser.Scene {
     this.roofs = new Roofs(this.map);
     this.effort = new EffortSystem((t) => this.notice(t), () => this.game.events.emit(GameEvent.StaminaDenied));
     this.roll = new RollSystem(this.map, npcs.map((n) => n.actor.body), (t) => this.notice(t), () => this.effort.exhausted());
+    this.turns = new TurnSystem(this.map, this.roll, npcs.map((n) => n.actor.body), this);
+    this.turnPress = new LongPress(this, TURN_PRESS.ms);
     this.player.strength.multiplier = this.force;
     this.player.stamina.infinite = this.infinite;
     this.player.stamina.onChange = () => this.game.events.emit(GameEvent.Stamina, this.player.stamina.fraction);
@@ -212,11 +218,20 @@ export class WorldScene extends Phaser.Scene {
     // ce qu'on tient et qui s'entrepose : sa pièce en transparence, là où elle ira
     this.handsSystem.updatePreview(this.player, this.mode === 'play');
     this.pileCount.update(this.player, this.mode === 'play');
-    if (this.mode !== 'play') return this.press.cancel();
+    if (this.mode !== 'play') {
+      this.turnPress.cancel();
+      return this.press.cancel();
+    }
     if (swap) {
       switchHand(game);
       this.handsChanged();
     }
+    // R maintenu, mains vides, au contact d'une bille couchée : elle pivote d'un quart de tour (jauge comme pour nouer)
+    const turnTarget = this.turns.target(this.player);
+    const turned = this.turnPress.update(time, input.turnDown(), turnTarget, this.player);
+    if (turned?.kind === 'long') this.turnLog(turned.target);
+    if (this.turnPress.pending) return;
+    if (turn && turnTarget) return this.turnPress.begin(turnTarget, time);
     // R : la bille portée tourne ; le fantôme suit à l'image suivante
     if (turn) this.handsSystem.turn();
     // E devant ce qui se noue ou se dénoue : l'appui attend, court (reprendre) ou maintenu (nouer, dénouer)
@@ -265,9 +280,20 @@ export class WorldScene extends Phaser.Scene {
     } else if (a.kind === 'unload') {
       if (!this.handsSystem.unload(a.prop)) return this.notice('Les mains pleines.');
       this.handsChanged();
-    } else {
+    } else if (a.kind === 'pickup') {
       this.pickUp(a.ground);
     }
+  }
+
+  /** R maintenu jusqu'au bout devant une bille : elle pivote (si elle a la place), et cela coûte de l'endurance selon sa masse. */
+  private turnLog(target: Interactable): void {
+    const a = target.action;
+    if (a.kind !== 'turn') return;
+    if (this.player.stamina.empty) return this.effort.exhausted();
+    const kg = this.turns.mass(a.prop);
+    const why = this.turns.act(this.player, a.prop);
+    if (why) return this.notice(why);
+    this.player.stamina.spend(this.player.stamina.turnCost(kg));
   }
 
   /** E maintenu devant un tas ou un fagot : nouer ou dénouer ; sinon, ce qui manque se dit. */

@@ -86,6 +86,11 @@ export class PlayerInput {
     return this.take('turn');
   }
 
+  /** La touche R est enfoncée en ce moment : R maintenu (pivoter une bille couchée). */
+  turnDown(): boolean {
+    return CODES.turn.some((c) => this.held.has(c));
+  }
+
   read(): { dir: Phaser.Math.Vector2; running: boolean } {
     const down = (a: Action) => (CODES[a].some((c) => this.held.has(c)) ? 1 : 0);
     const dir = new Phaser.Math.Vector2(down('right') - down('left'), down('down') - down('up'));

@@ -149,7 +149,8 @@ export type Action =
   | { kind: 'pile'; pile: PlacedPile; place: string }
   | { kind: 'rest'; prop: PlacedProp }
   | { kind: 'unload'; prop: PlacedProp }
-  | { kind: 'tie'; pile: PlacedPile };
+  | { kind: 'tie'; pile: PlacedPile }
+  | { kind: 'turn'; prop: PlacedProp };
 
 /** Longueur d'un objet neuf (posé dans Tiled) : celle de son `length`, ou de l'objet qu'il porte (`bears`). */
 function startLength(def: PropDef): number | undefined {
