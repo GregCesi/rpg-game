@@ -1,5 +1,6 @@
 // Test de scénario de l'implantation, dans le vrai jeu (voir tools/lib/playtest.ts) : refus sans plan, lire la planchette chez la
-// mère, tailler un piquet à la hachette (refus sans branche dans l'autre main), tracer l'emprise (un piquet refusé hors des coins, un tracé gêné par un rocher), le
+// mère, tailler un piquet à la hachette (refus sans branche dans l'autre main), poser le rouleau de corde
+// sur le billot et en couper un lien à la hachette puis à la cognée, tracer l'emprise (un piquet refusé hors des coins, un tracé gêné par un rocher), le
 // chantier qui naît, un objet refusé par une place, quatre pierres plates portées depuis la berge jusqu'aux quatre dés, le
 // piquet arraché de chaque coin, la ligne d'état, les poteaux en fantôme, puis la page rechargée : le chantier est retrouvé.
 // Usage : npm run test:implantation (lancé aussi par npm run test).
@@ -131,6 +132,25 @@ await playtest('implantation', async ({ page, errors, load }) => {
       await press('Space');
       await settled();
       out.afterCut2 = hands();
+      // le rouleau de corde posé sur le billot (E), puis coupé à la hachette (un lien de 2 m, 0,4 point), puis à la cognée
+      gs.emptyHands(gs.game);
+      await give({ prop: 'rope-coil' });
+      await press('KeyE');
+      out.ropeRested = JSON.stringify({ hands: hands(), block: props(/^chopping-block-rope$/).length });
+      const ropeLength = () => props(/^chopping-block-rope$/)[0]?.length;
+      const ties = () => ground('rope-tie');
+      emit({ kind: 'stamina', value: 100 });
+      await give({ item: 'hatchet' });
+      await press('Space');
+      await settled();
+      out.ropeHatchet = JSON.stringify({ length: ropeLength(), ties: ties(), notice: notices.at(-1) });
+      out.ropeHatchetCost = 100 - w().player.stamina.value;
+      emit({ kind: 'stamina', value: 100 });
+      await give({ item: 'axe' });
+      await press('Space');
+      await settled();
+      out.ropeAxe = JSON.stringify({ length: ropeLength(), ties: ties(), notice: notices.at(-1) });
+      out.ropeAxeCost = 100 - w().player.stamina.value;
 
       // 4. tracer : le coin nord-ouest, un piquet refusé hors des coins, le nord-est (aimanté, repris, replanté), le sud-est
       const origin = find(61, 71, 90)!;
@@ -262,6 +282,11 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.ok(Math.abs(r.cutCost - 0.4) < 1e-6, `tailler coûte 0,4, moins qu'un coup de cognée : ${r.cutCost}`);
   assert.equal(r.blockBare, 1, 'le billot ne change pas');
   assert.equal(r.afterCut2, '[{"item":"hatchet"},{"item":"stake"}]null', 'dans l\'autre ordre aussi : le piquet reste dans la main de la branche');
+  assert.equal(r.ropeRested, JSON.stringify({ hands: '[null,null]null', block: 1 }), 'E pose le rouleau sur le billot');
+  assert.equal(r.ropeHatchet, JSON.stringify({ length: 800, ties: 1, notice: 'Rouleau de corde : 8 m restants.' }), 'la hachette coupe un lien de 2 m');
+  assert.ok(Math.abs(r.ropeHatchetCost - 0.4) < 1e-6, `un coup de hachette coûte 0,4 : ${r.ropeHatchetCost}`);
+  assert.equal(r.ropeAxe, JSON.stringify({ length: 600, ties: 2, notice: 'Rouleau de corde : 6 m restants.' }), 'la cognée aussi');
+  assert.ok(Math.abs(r.ropeAxeCost - 0.5) < 1e-6, `un coup de cognée sur la corde coûte 0,5 : ${r.ropeAxeCost}`);
   assert.ok(Math.abs(r.plantCost - 0.5) < 1e-6, `planter un piquet coûte 0,5 : ${r.plantCost}`);
   assert.equal(r.firstSite, JSON.stringify({ stakes: ['nw'], x: JSON.parse(r.firstSite).x, y: JSON.parse(r.firstSite).y, born: false }), 'le premier piquet fixe le coin nord-ouest');
   assert.equal(r.firstHands, '[null,null]null');

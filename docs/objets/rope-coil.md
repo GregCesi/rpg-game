@@ -38,7 +38,8 @@ né ou changé, ou sur le billot qui le porte). 10 m au départ (`length.start` 
 - E court : le prendre dans une main libre (au sol) ; rouleau dans la main active, face au billot nu : le poser dessus ;
   face au billot qui le porte, mains libres : le reprendre, avec sa longueur.
 - E maintenu : rien.
-- Espace : rien en main (c'est une ressource) ; posé sur le billot, la hache en main coupe un lien (voir Devenir).
+- Espace : rien en main (c'est une ressource) ; posé sur le billot, la hachette (l'outil naturel, une main) ou la cognée en
+  main coupe un lien (voir Devenir).
 - R : rien.
 - Q : le pose devant Xéros (objet né, sa longueur notée).
 
@@ -47,11 +48,15 @@ Trouvé : un rouleau posé dans la réserve de la maison (`maison.tmj`). Plus ta
 encore construit.
 
 ## Devenir
-Posé sur le billot, chaque coup de hache (Espace, geste de haut en bas) en coupe un lien : 2 m (`length.cut` = 200), un
+Posé sur le billot, chaque coup de hachette ou de cognée (Espace, face au billot, geste de haut en bas) en coupe un lien : 2 m (`length.cut` = 200), un
 `rope-tie` tombe au sol à côté du billot, le rouleau perd 2 m (« Rouleau de corde : 8 m restants. »). À zéro il disparaît, le
 billot redevient nu (« Rouleau de corde : vide. ») : un rouleau de 10 m donne 5 liens.
+Le coup de hachette coûte 0,4 point d'endurance (`whittle`, `also` du `harvest` de `chopping-block-rope`), celui de la cognée
+0,5 (`cutTie`). Ajouté le 30 octobre 2026 : la hachette est l'outil naturel pour couper une corde.
 
 ## Vérification
 - Aperçu : `.art-preview/collection.png` (rope-coil, chopping-block-rope, item-rope-coil), `.art-preview/hands.png`
   (held-rope-coil dans les deux mains, 4 directions), à côté de `gabarit.png`. `npm run check` vérifie 6 × 5 et 18 × 16.
 - En jeu : voir la liste de [la corde au fagot](rope-tie.md#vérification).
+- Test : `npm run test:implantation` pose le rouleau sur le billot (E), en coupe un lien à la hachette (8 m restants, 0,4 point)
+  puis à la cognée (6 m, 0,5 point).

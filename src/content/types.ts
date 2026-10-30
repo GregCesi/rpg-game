@@ -49,6 +49,9 @@ export const DropSchema = z.strictObject({
   give: z.boolean().default(false),
 });
 
+/** Prix d'un coup en endurance : une clé de `costs` de stamina.json. */
+const EffortSchema = z.enum(['chop', 'cutTie', 'plant', 'maul', 'whittle']);
+
 /**
  * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.
  * Avec `tool`, on frappe avec Espace, l'outil en main ; sans, on récolte à la main avec E.
@@ -99,7 +102,12 @@ export const HarvestSchema = z.strictObject({
    */
   becomesAt: z.partialRecord(z.enum(['west', 'east', 'north', 'south']), id).optional(),
   /** Prix du coup en endurance : une clé de `costs` de stamina.json. Absent : `chop` (`cutTie` pour le billot qui porte une corde). */
-  effort: z.enum(['chop', 'cutTie', 'plant', 'maul', 'whittle']).optional(),
+  effort: EffortSchema.optional(),
+  /**
+   * D'autres outils (clés de items.json) qui font le même travail que `tool`, chacun avec le prix de son coup : la hachette coupe un
+   * lien du rouleau posé sur le billot comme la cognée, pour moins cher (`whittle`).
+   */
+  also: z.record(id, EffortSchema).default({}),
   /**
    * Ce qu'on dit quand on frappe avec cet outil (clé de items.json) alors qu'il ne convient pas ou plus : la hache sur une grosse
    * bille, le coin déjà planté. Le geste ne se joue pas, rien n'est dépensé.

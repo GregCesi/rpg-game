@@ -10,7 +10,7 @@ import { GameEvent, type DieuCommand } from '../events';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
-import { HarvestSystem, type HitResult } from '../systems/harvest';
+import { HarvestSystem, effortOf, wields, type HitResult } from '../systems/harvest';
 import { HandsSystem } from '../systems/hands';
 import { InteractionSystem } from '../systems/InteractionSystem';
 import { KnotSystem } from '../systems/knot';
@@ -401,7 +401,7 @@ export class WorldScene extends Phaser.Scene {
     if (!target && tool && Object.values(props).some((p) => p.harvest?.plant && p.harvest.tool === tool)) return this.notice('Rien où le planter : colle-toi à une grosse bille couchée.');
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
     const costs = this.player.stamina.costs;
-    if (h?.tool === tool && !this.effort.afford(this.player, costs[h.effort ?? (target!.def.bears?.prop ? 'cutTie' : 'chop')])) return;
+    if (h && wields(h, tool) && !this.effort.afford(this.player, costs[effortOf(h, tool, !!target!.def.bears?.prop)])) return;
     const impact = () => {
       this.report(this.harvest.hit(this.harvest.target(this.player, tool), tool, this.player.actor.facing));
       // les morceaux d'une bille fendue débordent de sa place : Xéros est repoussé s'ils le recouvrent

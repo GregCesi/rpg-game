@@ -2,7 +2,17 @@ import Phaser from 'phaser';
 import { DEPTH, HARVEST, INTERACT, NOTCH_AIM, TILE } from '../config';
 import type { Player } from '../entities/Player';
 import { gestures, items, props } from '../content';
-import type { Drop, Facing } from '../content/types';
+import type { Drop, Facing, Harvest } from '../content/types';
+
+/** L'outil `tool` fait ce travail : c'est l'outil de la récolte, ou l'un de ses `also` (la hachette sur le rouleau posé). */
+export function wields(h: Harvest, tool: string | undefined): boolean {
+  return !!tool && (tool === h.tool || tool in h.also);
+}
+
+/** Prix d'un coup de `tool` en endurance (clé de `costs`) : celui de son `also`, sinon `effort` (absent : `cutTie` sur ce qui porte une corde, `chop`). */
+export function effortOf(h: Harvest, tool: string, bears: boolean): NonNullable<Harvest['effort']> {
+  return h.also[tool] ?? h.effort ?? (bears ? 'cutTie' : 'chop');
+}
 
 /** Un bout d'une pièce couchée : l'ouest, l'est, le nord ou le sud. */
 export type End = 'west' | 'east' | 'north' | 'south';
@@ -88,7 +98,7 @@ export class HarvestSystem {
    */
   updatePrompt(time: number, player: Player, held: string | undefined, active: boolean): void {
     const t = active && held ? this.target(player, held) : undefined;
-    const ok = !!t && t.image.visible && t.def.harvest?.tool === held;
+    const ok = !!t && t.image.visible && !!t.def.harvest && wields(t.def.harvest, held);
     this.prompt.setVisible(ok);
     if (!ok) return;
     const bob = Math.round((Math.sin(time / 220) + 1) / 2) * 2;
@@ -116,7 +126,7 @@ export class HarvestSystem {
       if (p.def.harvest.notch && !notchInReach(player, p)) continue;
       const d = Phaser.Math.Distance.Between(probe.x, probe.y, p.aimX, p.aimY);
       if (d >= INTERACT.radius) continue;
-      const fits = !!tool && p.def.harvest.tool === tool;
+      const fits = wields(p.def.harvest, tool);
       if ((fits && !bestFits) || (fits === bestFits && d < bestD)) {
         best = p;
         bestD = d;
@@ -134,7 +144,7 @@ export class HarvestSystem {
   refusal(prop: PlacedProp, tool: string | undefined, player?: Player): string | undefined {
     const h = prop.def.harvest;
     if (!h || !tool) return undefined;
-    if (tool !== h.tool && h.refuse[tool]) return h.refuse[tool];
+    if (!wields(h, tool) && h.refuse[tool]) return h.refuse[tool];
     if (tool === h.tool && h.convert && this.partner(tool) === undefined) return h.convert.refuse;
     if (tool === h.tool && h.ends && player) {
       const end = endOf(player, prop);
@@ -208,7 +218,7 @@ export class HarvestSystem {
     const h = prop?.def.harvest;
     // l'objet a pu être récolté entre le début du geste et le coup
     if (!prop || !h || !this.map.props.includes(prop)) return { kind: 'none' };
-    if (h.tool && h.tool !== tool) {
+    if (h.tool && !wields(h, tool)) {
       const message = tool ? h.refuse[tool] : undefined;
       return message ? { kind: 'refused', message } : { kind: 'missing', tool: h.tool };
     }

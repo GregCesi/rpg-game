@@ -49,7 +49,7 @@
   "chopping-block": {"name": "billot", "image": "chopping-block", "dims": {"w": 55, "d": 55, "h": 45, "shape": "cylinder", "axis": "up"}, "body": {"w": 10, "h": 5, "bottom": 4}, "rest": {"rope-coil": "chopping-block-rope"},
     "harvest": {"tool": "hatchet", "hits": 1, "impact": "wood", "gesture": "chop", "effort": "whittle", "convert": {"from": "branch", "into": "stake", "refuse": "Tiens la branche debout sur le billot, de l'autre main."}}},
   "chopping-block-rope": {"name": "billot et rouleau de corde", "image": "chopping-block-rope", "dims": {"w": 55, "d": 55, "h": 55, "shape": "cylinder", "axis": "up"}, "body": {"w": 10, "h": 5, "bottom": 4}, "bears": {"prop": "rope-coil", "empty": "chopping-block"},
-    "harvest": {"tool": "axe", "hits": 1, "impact": "wood", "gesture": "chop"}},
+    "harvest": {"tool": "axe", "also": {"hatchet": "whittle"}, "hits": 1, "impact": "wood", "gesture": "chop"}},
   "rope-coil": {"name": "rouleau de corde", "image": "rope-coil", "dims": {"w": 30, "d": 30, "h": 10, "shape": "cylinder", "axis": "up"}, "mass": 1, "take": {"hands": 1, "icon": "item-rope-coil", "hold": {"stance": "hand", "image": "held-rope-coil"}}, "length": {"start": 1000, "cut": 200, "piece": "rope-tie"}},
   "faggot": {"name": "fagot", "image": "faggot", "dims": {"w": 130, "d": 50, "h": 50, "shape": "cylinder", "axis": "ew"}, "mass": {"pile": "branches"}, "body": {"w": 24, "h": 8, "bottom": 2}, "take": {"hands": 2, "icon": "item-faggot", "hold": {"stance": "carry", "image": "held-faggot"}, "pile": "faggots"}},
   "chopping-block-axe": {"name": "billot et hache", "image": "chopping-block-axe", "dims": {"w": 100, "d": 55, "h": 125, "shape": "box"}, "body": {"w": 10, "h": 5, "bottom": 4},

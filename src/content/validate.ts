@@ -206,6 +206,11 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
     if (!tool) err(`outil '${h.tool}' absent de items.json`);
     else if (tool.kind !== 'tool') err(`'${h.tool}' n'est pas un outil (kind '${tool.kind}' dans items.json)`);
   }
+  for (const other of Object.keys(h.also)) {
+    if (!h.tool) err(`'also' : il faut d'abord l'outil principal ('tool')`);
+    if (c.items[other]?.kind !== 'tool') err(`'also' : '${other}' n'est pas un outil de items.json`);
+    if (other === h.tool) err(`'also' : '${other}' est déjà l'outil principal`);
+  }
   if (h.impact && !cat.textures.has(`fx-${h.impact}`)) err(`éclats : planche 'fx-${h.impact}' non dessinée`);
   for (const image of h.fall ? [h.fall.image, h.fall.left.image] : []) {
     if (!cat.animations.get(image)?.has(h.fall!.anim)) err(`chute : animation '${h.fall!.anim}' absente de la planche '${image}' (ou planche non dessinée)`);
