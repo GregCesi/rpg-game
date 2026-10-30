@@ -368,7 +368,7 @@ export class WorldScene extends Phaser.Scene {
     const h = target?.def.harvest;
     const gesture = h?.gesture ?? 'use';
     // un outil que la cible écarte (la hache sur une grosse bille) ou une fente sans la place de s'ouvrir : on le dit, sans geste ni dépense
-    const why = target && this.harvest.refusal(target, tool);
+    const why = target && this.harvest.refusal(target, tool, this.player);
     if (why) return this.notice(why);
     // un outil qu'on plante (le coin) ne se joue pas dans le vide : sans cible à portée, on le dit
     if (!target && tool && Object.values(props).some((p) => p.harvest?.plant && p.harvest.tool === tool)) return this.notice('Rien où le planter : colle-toi à une grosse bille couchée.');

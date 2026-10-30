@@ -49,7 +49,9 @@ try {
   await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
 
   // Tout ce qui suit s'exécute dans la page : les touches sont de vrais KeyboardEvent sur window, lus par leur place.
-  const result = await page.evaluate(async () => {
+  // Vite recharge parfois la page au premier lancement (dépendances optimisées) : le scénario est alors rejoué une fois
+  const scenario = async () => {
+    return page.evaluate(async () => {
     const sleep = (t: number) => new Promise((r) => setTimeout(r, t));
     const g = (window as any).game;
     const w = () => g.scene.getScene('world');
@@ -73,8 +75,15 @@ try {
     };
     const props = (re: RegExp) => w().map.props.filter((p: any) => re.test(p.type));
     const spawned = () => gs.mapState(gs.game, w().map.def.id).spawned;
-    // Xéros au nord du morceau, tourné vers lui, collé à sa collision
+    // Xéros au bout ouest du morceau (est-ouest), tourné vers sa face coupée, collé à sa collision : le coin et la masse s'y donnent
     const stand = async (p: any) => {
+      const a = w().player.actor;
+      a.body.reset(Math.round(p.box.left - 7), Math.round((p.box.top + p.box.bottom) / 2 + 3));
+      a.face('right');
+      await sleep(150);
+    };
+    // Xéros au nord du morceau, tourné vers son flanc
+    const standFlank = async (p: any) => {
       const a = w().player.actor;
       a.body.reset(Math.round((p.box.left + p.box.right) / 2), Math.round(p.box.top - 4));
       a.face('down');
@@ -104,8 +113,15 @@ try {
     out.maulNotice = notices.at(-1);
     out.refusedCost = 100 - w().player.stamina.value;
 
-    // 2. planter le coin : Espace, le coin dans la main active
+    // 2. depuis le flanc, le coin ne se plante pas (la bille reste) ; depuis le bout, face à la coupe, si
     await give('splitting-wedge');
+    await standFlank(props(/^big-felled-log-2$/).at(-1));
+    await press('Space');
+    await sleep(300);
+    out.flankNotice = notices.at(-1);
+    out.flankPlanted = props(/wedged/).length;
+    out.flankHands = JSON.stringify(gs.game.hands);
+    await stand(props(/^big-felled-log-2$/).at(-1));
     await press('Space');
     await sleep(300);
     out.planted = props(/wedged/).map((p: any) => p.type);
@@ -171,6 +187,13 @@ try {
     out.pileNotices = notices.slice(-3);
     out.at = [Math.round(w().player.actor.x), Math.round(w().player.actor.y), w().map.def.id];
     return out;
+    });
+  };
+  const result = await scenario().catch(async (e: Error) => {
+    if (!/context was destroyed|navigation/.test(e.message)) throw e;
+    await page.goto(`${url}?dieu&reset`);
+    await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
+    return scenario();
   });
 
   console.log(JSON.stringify(result));
@@ -180,7 +203,10 @@ try {
   assert.equal(r.axeMode, 'play', 'refus sans geste');
   assert.equal(r.maulNotice, "Il faut d'abord un coin.");
   assert.equal(r.refusedCost, 0, 'un refus ne coûte rien');
-  assert.deepEqual(r.planted, ['big-wedged-log'], 'Espace plante le coin');
+  assert.equal(r.flankNotice, 'Le coin se plante dans le bout, là où on voit les cernes.', 'depuis le flanc : refusé, avec ce message');
+  assert.equal(r.flankPlanted, 0, 'depuis le flanc, rien n\'est planté');
+  assert.equal(r.flankHands, '[null,{"item":"splitting-wedge"}]', 'le coin reste en main');
+  assert.deepEqual(r.planted, ['big-wedged-log'], 'Espace plante le coin depuis le bout');
   assert.equal(r.handsAfterPlant, '[null,null]null', 'la main est libérée');
   assert.ok(Math.abs(r.plantCost - 1) < 1e-6, `coût du plantage : ${r.plantCost}`);
   assert.equal(r.hitsKept, 1, 'le premier coup est noté dans GameState');

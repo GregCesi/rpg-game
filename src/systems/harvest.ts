@@ -28,6 +28,23 @@ function notchInReach(player: Player, p: PlacedProp): boolean {
 }
 
 /**
+ * Xéros est à un bout de la pièce, tourné vers sa face coupée : à l'est ou à l'ouest d'une pièce est-ouest (plus large que
+ * profonde, d'après ses \`dims\`), au nord ou au sud d'une pièce nord-sud, face à elle, et à hauteur de sa collision.
+ */
+export function atEnd(player: Player, p: PlacedProp): boolean {
+  const box = p.box;
+  if (!box) return false;
+  const b = player.actor.body;
+  const f = player.actor.facing;
+  const cx = (box.left + box.right) / 2;
+  const cy = (box.top + box.bottom) / 2;
+  if (p.def.dims.w >= p.def.dims.d) {
+    return b.bottom > box.top && b.top < box.bottom && ((f === 'right' && b.center.x < cx) || (f === 'left' && b.center.x > cx));
+  }
+  return b.right > box.left && b.left < box.right && ((f === 'down' && b.center.y < cy) || (f === 'up' && b.center.y > cy));
+}
+
+/**
  * Ce qu'a donné un coup : rien à frapper, mauvais outil (`tool` = l'outil qu'il faut), ou un coup porté.
  * `given` : objets mis directement dans les mains ; `overflow` : mains pas libres, ils sont tombés au sol ;
  * `cut` : l'objet porté qu'on vient de couper (le rouleau) et ce qui en reste (cm), s'il y en avait un ;
@@ -106,10 +123,11 @@ export class HarvestSystem {
    * (la hache sur une grosse bille, le coin déjà planté), ou la fente qui n'a pas la place de s'ouvrir au dernier coup.
    * À demander avant le geste : rien n'est joué ni dépensé.
    */
-  refusal(prop: PlacedProp, tool: string | undefined): string | undefined {
+  refusal(prop: PlacedProp, tool: string | undefined, player?: Player): string | undefined {
     const h = prop.def.harvest;
     if (!h || !tool) return undefined;
     if (tool !== h.tool && h.refuse[tool]) return h.refuse[tool];
+    if (tool === h.tool && h.ends && player && !atEnd(player, prop)) return h.ends;
     if (tool === h.tool && h.staged && prop.hits >= h.hits - 1 && !this.splitFree(prop)) return 'Pas la place pour la fendre.';
     return undefined;
   }

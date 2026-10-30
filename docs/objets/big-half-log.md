@@ -16,14 +16,14 @@
 
 ## Vues
 - Au sol : le dessus plat blond (bois frais, fibres dans le sens de la longueur), les bords arrondis d'écorce sur le côté sud (est-ouest) ou le bout coupé en demi-lune tourné vers le sud (nord-sud).
-- Coin planté : mêmes quatre images que la bille (`<clé>`, `-n1`, `-n2`, `-n3`) : le coin sur la face plate, au milieu, dans le sens de la longueur ; la fente sur la face plate.
+- Coin planté : mêmes quatre images que la bille (`<clé>`, `-n1`, `-n2`, `-n3`) : le coin dans le bout, au milieu de la face plate (le bout est une demi-lune de bois de bout) ; la fente part de là et s'allonge sur la face plate.
 - Pas de vue en main, pas de fantôme, pas de tas.
 
 ## Regroupement
 Seule.
 
 ## Gestes
-- Espace avec le coin : il se plante (comme sur la bille), la main est libérée.
+- Espace avec le coin, depuis un bout (comme pour la bille) : il se plante dans le bout, la main est libérée.
 - Espace avec la masse, coin planté : un coup ; trois coups pour fendre en deux quartiers (`big-quarter-log`).
 - Espace avec la hache : « Trop grosse pour la hache. Il faut le coin et la masse. »
 

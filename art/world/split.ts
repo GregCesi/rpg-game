@@ -2,20 +2,21 @@
 // big-half-log.md, big-quarter-log.md).
 //
 // - Bille coin planté (`big-wedged-log`, `-ns`) : la bille ordinaire elle-même (`big-felled-log-1`, `big-felled-log-ns`
-//   de big-felled.ts), le coin planté au milieu du dessus, dans le sens de la longueur. Le coin (art/items/
-//   splitting-tools.ts : fer de 7 cm de large, 4 d'épaisseur) n'en montre que la tête, 2 px de large (plancher de
-//   lisibilité) ; la rampe du fer de tools.ts (2 3 0). À chaque coup (`-n1`, `-n2`, `-n3`) il s'enfonce d'un pixel et
-//   la fente court plus loin sur le dessus, depuis le coin ; au troisième, elle traverse et descend la face de coupe,
-//   le bois bâille (la lèvre de la fente montre le bois frais). Est-ouest, la tête dépasse du haut de la bille :
-//   l'image a deux rangées de plus en haut (19 × 18 au lieu de 19 × 16), bas et coin gauche ceux de la bille.
+//   de big-felled.ts), même image, même taille, le coin planté dans le BOIS DE BOUT, au milieu de la face de coupe (le
+//   coup pousse dans le sens de la longueur : la bille ne roule pas, le bois s'ouvre le long de ses fibres). Le coin
+//   (art/items/splitting-tools.ts : fer de 7 cm de large) en montre la tête, 2 px de large (plancher de lisibilité),
+//   qui sort du bout : vers l'ouest en est-ouest, vers nous en nord-sud ; la rampe du fer de tools.ts (2 3 0). À chaque
+//   coup (`-n1`, `-n2`, `-n3`) il s'enfonce d'un pixel ; la fente traverse le bout par son milieu dès le premier coup,
+//   puis court le long de la bille sur le dessus, du bout du coin vers l'autre bout : courte, à mi-longueur, jusqu'au
+//   bout, où le bois bâille (la lèvre de la fente montre le bois frais).
 // - Demi-bille (`big-half-log`, `-ns`) : couchée face plate en haut, boîte 95 × 65 × 33 cm (19 × 13 px de silhouette ;
 //   nord-sud 13 × 16). Le dessus est le bois frais de la fente (Y t T, comme le bois de coupe de wood.ts) : fibres le
 //   long de la bille, arrachées par endroits, pas de cerne (ce n'est pas un trait de scie) ; un liseré d'écorce sur son
 //   bord. Est-ouest, sous le dessus, le dos arrondi d'écorce (la rampe M m N K, côté ombre de la bille) et le bout
 //   gauche en demi-lune de bois de bout ; nord-sud, le bout coupé en demi-lune au sud, avec son cerne et son cœur en
 //   haut, au milieu de la face plate.
-// - Demi-bille coin planté (`big-wedged-half-log`, `-ns`) : la demi-bille, le coin planté au milieu de la face plate, la
-//   fente sur la face plate, mêmes quatre états.
+// - Demi-bille coin planté (`big-wedged-half-log`, `-ns`) : la demi-bille, le coin planté dans le bout, au milieu du
+//   bord de la face plate ; la fente descend le bout puis court sur la face plate, mêmes quatre états.
 // - Quartier (`big-quarter-log`, `-ns`) : un quart de cylindre, boîte 95 × 33 × 33 cm (19 × 10 ; nord-sud 7 × 16) : le
 //   dessus plat de bois frais, le dos d'écorce au sud (est-ouest), le bout en quart de disque, cœur dans l'angle
 //   (nord-sud). Son icône et sa planche portée à deux mains (`item-big-quarter-log`, `held-big-quarter-log`).
@@ -43,19 +44,20 @@ function felledGrid(name: string): string[] {
 // ---------- Le coin et la fente ----------
 
 /**
- * Coin planté : sa tête, 2 px de large (colonnes x et x + 1), qui dépasse de `up` pixels au-dessus de la rangée `y` où il
- * entre dans le bois. Fer éclairé à gauche (3), ombre à droite (0), le dessus de la tête plus clair (2) ; la rangée
- * d'entrée est la fente qui le serre, sombre. Enfoncé à fond (`up` = 0), seule la tête affleure.
+ * Coin planté dans un bout : sa tête de fer, 2 px (la largeur du coin, 7 cm, au plancher de lisibilité), qui sort de
+ * la face de coupe de `out` pixels. Il entre en (x, y) ; `dir` : la direction dans laquelle il sort, à l'écran
+ * ([-1, 0] : vers l'ouest, hors du bout gauche d'une pièce est-ouest, les 2 px l'un au-dessus de l'autre ; [0, 1] :
+ * vers le sud, vers nous, hors du bout d'une pièce nord-sud, les 2 px côte à côte). Fer de tools.ts : le côté éclairé
+ * (2, le dessus ou la gauche), l'autre côté dans l'ombre (3), le bout de la tête et le pixel d'entrée sombres (0).
  */
-function wedge(c: Canvas, x: number, y: number, up: number, across = true) {
-  for (let r = 0; r <= up; r++) {
-    const Y = y - r;
-    const top = r === up;
-    c.set(x, Y, top ? '2' : '3').set(x + 1, Y, top && up > 0 ? '3' : '0');
+function wedge(c: Canvas, x: number, y: number, out: number, dir: [number, number]) {
+  const side: [number, number] = dir[0] !== 0 ? [0, 1] : [1, 0]; // le deuxième pixel de la largeur
+  for (let k = 0; k <= out; k++) {
+    const X = x + dir[0] * k, Y = y + dir[1] * k;
+    const end = k === out && out > 0;
+    c.set(X, Y, end ? '3' : k === 0 && out > 0 ? '3' : '2');
+    c.set(X + side[0], Y + side[1], end || k === 0 ? '0' : '3');
   }
-  // l'entrée : la fente serre le fer, un pixel sombre de chaque côté (est-ouest : la fente court en travers de l'écran ;
-  // nord-sud, elle court vers le haut et le bas, la fente elle-même le montre)
-  if (up > 0 && across) c.set(x - 1, y, 'K').set(x + 2, y, 'K');
 }
 
 /**
@@ -87,60 +89,54 @@ function vPath(y0: number, y1: number, x: number, jog: number[]): [number, numbe
   return out;
 }
 
-/** Hauteur de la tête du coin au-dessus de son entrée, à chaque étape : il s'enfonce d'un pixel par coup. */
-const HEAD_UP: Record<Stage, number> = { 0: 2, 1: 1, 2: 0, 3: 0 };
+/** Longueur de la tête du coin hors du bout, à chaque étape : il s'enfonce d'un pixel par coup. */
+const OUT: Record<Stage, number> = { 0: 3, 1: 2, 2: 1, 3: 0 };
 
 /**
- * Une pièce coin planté : la fente part du coin vers les deux bouts. `west`/`east` (ou `north`/`south`) : les chemins
- * du coin vers chaque bout ; à l'étape 1 la fente fait `short` pixels de chaque côté, à l'étape 2 la moitié du
- * chemin, à l'étape 3 tout ; `face` : le prolongement sur la face de coupe à l'étape 3.
+ * La fente d'une pièce coin planté : `face`, le trait qui traverse le bout par son milieu, en travers du coin (dès le
+ * premier coup) ; `along`, son chemin le long de la pièce, du bout où est le coin vers l'autre bout : 3 pixels au
+ * premier coup, la moitié au deuxième, tout au troisième, où le bois bâille (la lèvre, côté `lip`, montre le bois frais).
  */
-interface Split { a: [number, number][]; b: [number, number][]; face?: [number, number][]; lip: [number, number] }
+interface Split { face: [number, number][]; along: [number, number][]; lip: [number, number] }
 
 function splitStage(c: Canvas, sp: Split, s: Stage) {
   if (s === 0) return;
-  const len = (p: [number, number][]) => (s === 1 ? 2 : s === 2 ? Math.ceil(p.length / 2) : p.length);
-  crack(c, sp.a, len(sp.a), s === 3, sp.lip);
-  crack(c, sp.b, len(sp.b), s === 3, sp.lip);
-  if (s === 3 && sp.face) crack(c, sp.face, sp.face.length, true, [1, 0]);
+  crack(c, sp.face, sp.face.length);
+  const n = s === 1 ? 3 : s === 2 ? Math.ceil(sp.along.length / 2) : sp.along.length;
+  crack(c, sp.along, n, s === 3, sp.lip);
 }
 
 // ---------- Bille coin planté ----------
 
-/** Rangées ajoutées en haut de la bille est-ouest pour la tête du coin. */
-const EW_UP = 2;
-
+/**
+ * Bille est-ouest : le coin au milieu du bout gauche (l'ovale de bois de bout, colonnes 1 à 4, centre en colonne 3,
+ * rangées 6-7), qui sort vers l'ouest ; la fente descend la face par son milieu, puis court sur le dessus éclairé (la
+ * rangée 3, l'écorce éclairée où elle se lit) vers le bout droit.
+ */
 function wedgedLog(s: Stage): Canvas {
-  const log = felledGrid('big-felled-log-1');
-  const c = new Canvas(log[0].length, log.length + EW_UP);
-  c.stamp(log, 0, EW_UP);
-  // la crête du dessus est la première rangée d'écorce, sous le contour : le coin y entre et dépasse au-dessus de la
-  // bille (EW_UP rangées au plus, d'un pixel de plus que sur une face plate) ; la fente court une rangée plus bas, sur
-  // l'écorce éclairée, où elle se lit
-  const y = EW_UP + 2;
-  // fente : du coin (colonnes 9-10) vers le bout gauche (face de coupe, colonnes 1-4) et le bout droit
+  const c = Canvas.from(felledGrid('big-felled-log-1'));
   splitStage(c, {
-    a: hPath(8, 5, y, [0, 0, 0, 1]),
-    b: hPath(11, 16, y, [0, 0, 1, 1, 1, 0]),
-    // la fente descend la face de coupe du bout gauche, par son milieu
-    face: vPath(y, EW_UP + 11, 3, [0, 0, 0, 0, 1, 1, 1, 0, 0, 0]),
+    face: vPath(1, 11, 3, [0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1]),
+    along: hPath(4, 17, 3, [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0]),
     lip: [0, 1],
   }, s);
-  wedge(c, 9, y - 1, HEAD_UP[s] + 1);
+  wedge(c, 3, 6, OUT[s], [-1, 0]);
   return c;
 }
 
+/**
+ * Bille nord-sud : sa face de coupe est au sud (l'ovale de 11 × 7, rangées 11 à 17, centre en colonne 6, rangée 14) ;
+ * le coin en sort vers nous (vers le bas de l'écran). La fente la traverse de haut en bas, puis remonte sur le dessus
+ * d'écorce par la crête (colonne 6), du haut de la face jusqu'au rond du fond (rangée 2).
+ */
 function wedgedLogNS(s: Stage): Canvas {
   const c = Canvas.from(felledGrid('big-felled-log-ns'));
-  // le dessus d'écorce court du rond du fond (rangée 2) au haut de la face de coupe (rangée 11), par la crête (colonne 6)
-  const y = 7;
   splitStage(c, {
-    a: vPath(y - 1, 2, 6, [0, 0, 1, 1, 0]),
-    b: vPath(y + 1, 11, 6, [0, 1, 1, 0]),
-    face: vPath(12, 16, 6, [0, 1, 1, 0, 0]),
+    face: vPath(11, 17, 6, [0, 0, 1, 0, 0, 0, 0]),
+    along: vPath(10, 2, 6, [0, 0, 1, 1, 0, 0, 0, 1, 0]),
     lip: [1, 0],
   }, s);
-  wedge(c, 5, y, HEAD_UP[s], false);
+  wedge(c, 6, 14, OUT[s], [0, 1]);
   return c;
 }
 
@@ -283,28 +279,33 @@ const quarterLogNS = () => flatNS(8, 18, 5, 9, 5.5, true);
 
 // ---------- Demi-bille coin planté ----------
 
+/**
+ * Demi-bille est-ouest : le coin dans le bout gauche, au milieu du bord de la face plate (rangées 3-4), qui sort vers
+ * l'ouest ; la fente descend le bout, puis court sur la face plate (rangée 3) vers le bout droit.
+ */
 function wedgedHalf(s: Stage): Canvas {
   const c = halfLog();
-  const y = 3; // milieu du dessus plat
   splitStage(c, {
-    a: hPath(8, 1, y, [0, 0, 0, 1, 1, 0, 0, 0]),
-    b: hPath(11, 17, y, [0, 0, -1, -1, 0, 0, 0]),
+    face: vPath(5, 11, 2, [0, 0, 0, 0, 1, 1, 1]),
+    along: hPath(4, 17, 3, [0, 0, 0, 1, 1, 0, 0, 0, -1, -1, 0, 0, 0, 0]),
     lip: [0, 1],
   }, s);
-  wedge(c, 9, y, HEAD_UP[s]);
+  wedge(c, 3, 3, OUT[s], [-1, 0]);
   return c;
 }
 
+/**
+ * Demi-bille nord-sud : le coin dans le bout sud, au milieu du bord de la face plate (le haut de la demi-lune, rangée
+ * 10, colonnes 6-7), qui sort vers nous ; la fente descend la demi-lune, puis remonte la face plate vers le nord.
+ */
 function wedgedHalfNS(s: Stage): Canvas {
   const c = halfLogNS();
-  const y = 5;
   splitStage(c, {
-    a: vPath(y - 1, 1, 6, [0, 0, 1, 1, 0]),
-    b: vPath(y + 1, 9, 6, [0, 1, 1, 0]),
-    face: vPath(10, 14, 6, [0, 1, 0]),
+    face: vPath(10, 14, 6, [0, 0, 1, 0, 0]),
+    along: vPath(9, 1, 6, [0, 0, 1, 1, 0, 0, 0, 1, 0]),
     lip: [1, 0],
   }, s);
-  wedge(c, 5, y, HEAD_UP[s], false);
+  wedge(c, 6, 10, OUT[s], [0, 1]);
   return c;
 }
 

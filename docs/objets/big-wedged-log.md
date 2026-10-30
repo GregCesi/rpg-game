@@ -18,17 +18,17 @@ La grosse bille (95 × Ø 55 cm, 203 kg) dans laquelle on a planté le coin, pui
 
 ## Vues
 Quatre images par sens, de la même taille, qui se suivent :
-- `<clé>` : le coin planté sur le dessus, au milieu, dans le sens de la longueur (fer sombre, 1 à 2 px de haut, la tête plate visible) ; pas de fente.
-- `<clé>-n1` : après un coup, une fente courte sort du coin, le coin s'est enfoncé d'un demi-pixel.
-- `<clé>-n2` : après deux coups, la fente a gagné la moitié de la longueur, le coin est presque enfoncé.
-- `<clé>-n3` : après trois coups, la fente traverse toute la longueur et le bois commence à s'ouvrir (image montrée une fraction de seconde avant les deux demi-billes).
+- `<clé>` : le coin planté dans le bois de bout (la face coupée, avec les cernes), au milieu, la pointe dans le sens de la fente (fer bleuté, la tête dépasse du plan de la coupe) ; pas de fente.
+- `<clé>-n1` : après un coup, la fente part de la face coupée, par le milieu, en travers du coin, et s'allonge un peu sur la longueur, le coin s'est enfoncé d'un demi-pixel.
+- `<clé>-n2` : après deux coups, la fente a gagné la moitié de la longueur de la bille, le coin est presque enfoncé.
+- `<clé>-n3` : après trois coups, la fente a gagné l'autre bout et le bois commence à s'ouvrir (image montrée une fraction de seconde avant les deux demi-billes).
 Chaque image est éclairée en haut à gauche, dans la matière de `wood.ts` (`BIG_WOOD`), avec les fibres de la bille ordinaire. Il n'y a pas de version « vers la gauche » : une bille qu'on plante perd son sens de chute.
 
 ## Regroupement
 Seule. Ne s'entrepose pas.
 
 ## Gestes
-- Espace avec la masse : un coup (Xéros au contact, tourné vers elle, d'où il veut) ; trois coups pour fendre.
+- Espace avec la masse : un coup, depuis le même bout que le coin (Xéros à l'est ou à l'ouest d'une bille est-ouest, au nord ou au sud d'une bille nord-sud, face à la coupe ; depuis le flanc : « Les coups se donnent sur le bout, là où le coin est planté. ») ; trois coups pour fendre.
 - Espace avec la hache : « Trop grosse pour la hache. Il faut le coin et la masse. »
 - Espace avec le coin : « Le coin est déjà planté. »
 - E : rien.

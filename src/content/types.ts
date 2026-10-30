@@ -76,6 +76,12 @@ export const HarvestSchema = z.strictObject({
    * L'outil réapparaît quand on le lâche par `drops` (le dernier coup de masse).
    */
   plant: z.boolean().default(false),
+  /**
+   * Cet objet ne se frappe que par un bout de sa longueur (la bille : le coin se plante dans le bois de bout, là où on voit les
+   * cernes, et les coups de masse se donnent depuis ce même bout). Xéros se tient à l'est ou à l'ouest d'une pièce est-ouest, au
+   * nord ou au sud d'une pièce nord-sud (d'après ses \`dims\`), tourné vers elle ; ailleurs, le texte est le message dit au joueur.
+   */
+  ends: id.optional(),
   /** Prix du coup en endurance : une clé de `costs` de stamina.json. Absent : `chop` (`cutTie` pour le billot qui porte une corde). */
   effort: z.enum(['chop', 'cutTie', 'plant', 'maul']).optional(),
   /**
