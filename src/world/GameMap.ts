@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import { DEPTH, SHADOW, TILE } from '../config';
 import { roofShadow } from './roofShadow';
-import { items, piles as pileDefs, props as propDefs } from '../content';
-import type { Corner, MapData, MapObject, PileDef, PropDef } from '../content/types';
-import { drawOrder, pileBlocks, placeAim, shapeOf, tieImages, topPieces } from './pileShape';
+import { items, props as propDefs } from '../content';
+import type { Corner, MapData, MapObject, PropDef } from '../content/types';
+import { drawOrder, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
 import type { Chain, GroundItem, MapState, Pile, WorldChange } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
@@ -76,13 +76,13 @@ export function footprint(def: PropDef, w: number, h: number, flip: boolean): Bo
 }
 
 /** Milieu de l'emprise au sol de toutes les places au sol d'un tas (repère du tas) : où se vise et se centre le tas entier. */
-export function groundCenter(def: PileDef): [number, number] {
+export function groundCenter(def: PileShape): [number, number] {
   const b = groundBox(def);
   return [(b.left + b.right) / 2, (b.top + b.bottom) / 2];
 }
 
 /** Emprise au sol de toutes les places au sol d'un tas (repère du tas). */
-export function groundBox(def: PileDef): Box {
+export function groundBox(def: PileShape): Box {
   const bodies = Object.values(def.places).flatMap((q) => (q.body ? [q.body] : []));
   return {
     left: Math.min(...bodies.map((b) => b.x)),
@@ -155,7 +155,7 @@ export interface PlacedPile {
   /** L'état du tas dans GameState (genre, point au sol, places prises, sens, lien). */
   pile: Pile;
   /** La forme du tas dans son sens (`shapeOf`) : ses places sont celles-ci. */
-  def: PileDef;
+  def: PileShape;
   /** Collisions des pièces posées au sol (aucune tant que le tas a moins de `blockFrom` pièces). */
   zones: Phaser.GameObjects.Zone[];
   /** Profondeur d'affichage du tas : le bas de l'image de sa pièce la plus en avant. */
@@ -393,7 +393,7 @@ export class GameMap {
    * tout le tas est à la profondeur du bas de sa pièce la plus en avant. Chaque pièce au sol a sa collision, dès `blockFrom` pièces.
    */
   placePile(pile: Pile): PlacedPile {
-    const def = shapeOf(pileDefs[pile.pile], !!pile.turned);
+    const def = shapeOf(pileDefOf(kindOf(pile)), !!pile.turned);
     const ground = pile.places.map((id) => def.places[id]).filter((q) => q.body);
     // le lien seul par terre a son propre dessin ; sous des pièces, on n'en voit que les deux bouts
     const ties = pile.tie ? tieImages(def, pile.places) : [];
@@ -401,7 +401,7 @@ export class GameMap {
     const depth = Math.max(...pile.places.map((id) => pile.y + def.places[id].y), ...ties.map((t) => pile.y + t.y));
     const parts: Phaser.GameObjects.GameObject[] = drawOrder(def, pile.places).map((id, i) => {
       const q = def.places[id];
-      return this.scene.add.image(pile.x + q.x, pile.y + q.y, q.image).setOrigin(0, 1).setDepth(depth + (i + 1) / 1000);
+      return this.scene.add.image(pile.x + q.x, pile.y + q.y, this.placeImage(q), q.wood ? '0' : undefined).setOrigin(0, 1).setDepth(depth + (i + 1) / 1000);
     });
     // le lien ceinture le tas par-dessous : sous toutes les pièces
     for (const t of ties) parts.push(this.scene.add.image(pile.x + t.x, pile.y + t.y, t.image).setOrigin(0, 1).setDepth(depth));
@@ -410,6 +410,11 @@ export class GameMap {
     const placed = { pile, def, zones, depth, parts };
     this.piles.push(placed);
     return placed;
+  }
+
+  /** Clé de l'image d'une place de tas : celle de piles.json, ou la pièce de bois assemblée à sa longueur (image '0'). */
+  placeImage(q: ShapePlace): string {
+    return q.wood ? woodTexture(this.scene, q.wood, { rev: q.rev }) : q.image;
   }
 
   /** Retire un tas affiché (images et collisions). */

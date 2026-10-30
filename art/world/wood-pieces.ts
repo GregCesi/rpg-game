@@ -839,7 +839,7 @@ const SHEETS: Record<string, Record<WoodAxis, SheetParts>> = {
  * image le long de la pièce à `at` (seulement ceux qui tombent dans `clip` s'il est donné), le travers entier ; `clear`
  * efface la bande. `reversed` : le quartier retourné, `quarter-rev-<partie>` à la place de `quarter-<partie>`.
  */
-export function composeWood(piece: WoodPiece, opts: ComposeOpts = {}, reversed = false): Canvas {
+export function composeWood(piece: WoodPiece, opts: ComposeOpts = {}): Canvas {
   const { w, h } = woodSize(piece.size, lookOf(piece), piece.axis, piece.length);
   const c = new Canvas(w, h);
   const sheet = SHEETS[piece.size]?.[piece.axis];
@@ -853,10 +853,8 @@ export function composeWood(piece: WoodPiece, opts: ComposeOpts = {}, reversed =
       }
       continue;
     }
-    // le quartier retourné se pose aux places du quartier (mêmes placements)
-    const anim = reversed ? op.anim.replace(/^quarter-/, 'quarter-rev-') : op.anim;
-    const frames = sheet.anims[anim];
-    if (!frames) throw new Error(`wood-pieces : partie « ${anim} » absente de la planche ${piece.size}-${piece.axis}`);
+    const frames = sheet.anims[op.anim];
+    if (!frames) throw new Error(`wood-pieces : partie « ${op.anim} » absente de la planche ${piece.size}-${piece.axis}`);
     const part = frames[op.frame];
     for (let i = 0; i < op.size; i++) {
       const at = op.at + i;
@@ -899,8 +897,8 @@ export default [
   img('wood-normal-round-100-ns', composeWood(piece('normal', 'round', 'ns'))),
   img('wood-big-quarter-100', composeWood(piece('big', 'quarter', 'ew'))),
   img('wood-big-quarter-100-ns', composeWood(piece('big', 'quarter', 'ns'))),
-  img('wood-big-quarter-rev-100', composeWood(piece('big', 'quarter', 'ew'), {}, true)),
-  img('wood-big-quarter-rev-100-ns', composeWood(piece('big', 'quarter', 'ns'), {}, true)),
+  img('wood-big-quarter-rev-100', composeWood(piece('big', 'quarter', 'ew'), { rev: true })),
+  img('wood-big-quarter-rev-100-ns', composeWood(piece('big', 'quarter', 'ns'), { rev: true })),
   img('wood-piece', composeWood(piece('big', 'round', 'ew'))),
 ];
 

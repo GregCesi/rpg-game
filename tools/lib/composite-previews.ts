@@ -3,9 +3,11 @@
 //   une rangée par direction (bas, haut, droite, gauche). Les poses viennent de src/content/gestures.json,
 //   comme dans le jeu (entities/ToolUse.ts) : l'aperçu montre exactement ce que l'on verra.
 // - hands.png : les deux mains comme dans le HUD.
-// - piles.png : chaque genre de tas (src/content/piles.json), étape par étape (construction type, puis tous les états
-//   possibles s'ils sont peu nombreux), puis sa forme tournée (`turned`, les billes nord-sud), Xéros à l'échelle en tête de rangée, collisions des pièces au sol en liseré :
-//   même calcul que GameMap.placePile (pièce = coin bas gauche au point du tas + (x, y), dans l'ordre de drawOrder).
+// - piles.png : chaque genre de tas écrit (src/content/piles.json), puis des tas de bois calculés de plusieurs longueurs et états
+//   (`PILE_WOOD` : billes, rondins, quartiers tête-bêche, demi-billes, poutres ; world/woodPile.ts), étape par étape (construction
+//   type, puis tous les états possibles s'ils sont peu nombreux), chacun suivi de sa forme tournée (`turned`, nord-sud), Xéros à
+//   l'échelle en tête de rangée, collisions des pièces au sol en liseré : même calcul que GameMap.placePile (pièce = coin bas
+//   gauche au point du tas + (x, y), dans l'ordre de drawOrder ; une pièce de bois assemblée à sa longueur par composeWood).
 // - <bâtiment>-<n>.png : un plan de plans.json qui monte, étape par étape, à sa place sur sa carte (le sol de
 //   Tiled, les objets voisins) : l'image n montre les pièces des étapes 1 à n, posées comme dans Tiled ; Xéros à côté,
 //   pour l'échelle. Pour un bâtiment qui a un toit (`roof`), une image de plus : Xéros dessous, le toit effacé comme
@@ -23,13 +25,15 @@ import { Canvas, EMPTY } from '../../art/lib/canvas';
 import { flipX } from '../../art/lib/canvas';
 import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
-import type { Gesture, PileDef, PropDef } from '../../src/content/types';
+import type { Gesture, PileDef, PileWood, PropDef } from '../../src/content/types';
 import { ROOF } from '../../src/config';
 import { roofShadow } from '../../src/world/roofShadow';
 import { CM_PER_PX, RACCOURCI, expectedSize, silhouette } from '../../src/content/gabarit';
 import type { Dims } from '../../src/content/gabarit';
 import { world } from '../../art/palette';
-import { drawOrder, pileBlocks, pileStates, shapeOf, tieImages } from '../../src/world/pileShape';
+import { drawOrder, pileBlocks, pileStates, shapeOf, tieImages, type PileShape, type ShapePlace } from '../../src/world/pileShape';
+import { woodPileDef } from '../../src/world/woodPile';
+import { composeWood } from '../../art/world/wood-pieces';
 
 const SCALE = 4;
 
@@ -189,10 +193,31 @@ export function handsPreview(sources: ArtSource[]): PNG | undefined {
  */
 const ALL_STATES = 60;
 
+/** Les tas de bois montés dans piles.png : plusieurs diamètres, longueurs et états (ceux du test de npm run test:tas compris). */
+const PILE_WOOD: PileWood[] = [
+  { size: 'big', shape: 'round', length: 100 },
+  { size: 'normal', shape: 'round', length: 80 },
+  { size: 'normal', shape: 'round', length: 100 },
+  { size: 'big', shape: 'quarter', length: 120 },
+  { size: 'big', shape: 'half', length: 60 },
+  { size: 'normal', shape: 'round', length: 180, hewn: 12 },
+  { size: 'normal', shape: 'round', length: 100, hewn: 6 },
+];
+
+/** L'image d'une place de tas : celle des sources (piles.json), ou la pièce de bois assemblée à sa longueur (comme GameMap.placeImage). */
+export function placeImage(q: ShapePlace, image: (name: string) => { grid: Grid; palette: Palette } | undefined): { grid: Grid; palette: Palette } | undefined {
+  return q.wood ? { grid: composeWood(q.wood, { rev: q.rev }).toGrid(), palette: world } : image(q.image);
+}
+
 export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef>): PNG | undefined {
-  const image = (name: string) => {
+  const named = (name: string) => {
     const s = sources.find((x) => x.name === name);
     return s?.kind === 'image' ? s : undefined;
+  };
+  const cache = new Map<ShapePlace, { grid: Grid; palette: Palette } | undefined>();
+  const of = (q: ShapePlace) => {
+    if (!cache.has(q)) cache.set(q, placeImage(q, named));
+    return cache.get(q);
   };
   const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');
   const xeros = body?.kind === 'spritesheet' ? body.animations['idle-down']?.frames[0] : undefined;
@@ -200,13 +225,15 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
   const xh = body?.kind === 'spritesheet' ? body.frameH : 0;
   const pad = 8;
   const perRow = 8;
-  type Row = { def: PileDef; states: string[][]; ext: { left: number; right: number; top: number; bottom: number }; tied?: boolean };
+  type Row = { def: PileShape; states: string[][]; ext: { left: number; right: number; top: number; bottom: number }; tied?: boolean };
   const rows: Row[] = [];
-  // chaque genre, puis sa forme tournée s'il en a une (les billes nord-sud)
-  const shapes = Object.values(piles).flatMap((d) => (d.turned ? [d, shapeOf(d, true)] : [d]));
+  // chaque genre écrit, puis chaque tas de bois calculé, chacun suivi de sa forme tournée s'il en a une (nord-sud)
+  const defs: PileShape[] = [...Object.values(piles).map((d) => d as PileShape), ...PILE_WOOD.map(woodPileDef)];
+  const shapes = defs.flatMap((d) => (d.turned ? [d, shapeOf(d, true)] : [d]));
   for (const def of shapes) {
     const places = Object.entries(def.places);
-    if (places.some(([, q]) => !image(q.image))) return undefined;
+    if (places.some(([, q]) => !of(q))) return undefined;
+    const image = named;
     // étendue de toutes les places autour du point du tas : la même case pour chaque état
     // le lien sous le tas (les branches), s'il est dessiné, compte dans l'étendue
     const tie = def.tie && [def.tie.north, def.tie.south, def.tie.alone].every((t) => image(t.image)) ? def.tie : undefined;
@@ -220,8 +247,8 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
       : [];
     const ext = {
       left: Math.min(...places.map(([, q]) => q.x), ...tieBoxes.map((b) => b.x)),
-      right: Math.max(...places.map(([, q]) => q.x + image(q.image)!.grid[0].length), ...tieBoxes.map((b) => b.x + b.w)),
-      top: Math.min(...places.map(([, q]) => q.y - image(q.image)!.grid.length), ...tieBoxes.map((b) => b.y - b.h)),
+      right: Math.max(...places.map(([, q]) => q.x + of(q)!.grid[0].length), ...tieBoxes.map((b) => b.x + b.w)),
+      top: Math.min(...places.map(([, q]) => q.y - of(q)!.grid.length), ...tieBoxes.map((b) => b.y - b.h)),
       bottom: Math.max(...places.map(([, q]) => Math.max(q.y, q.body ? q.body.y + q.body.h : q.y)), ...tieBoxes.map((b) => b.y)),
     };
     const keys = places.map(([id]) => id);
@@ -248,12 +275,12 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
       // le lien passe sous toutes les pièces
       // le lien seul par terre a son propre dessin
       for (const t of r.tied ? tieImages(r.def, taken) : []) {
-        const src = image(t.image)!;
+        const src = named(t.image)!;
         board.blit(src.grid, src.palette, px + t.x, base + t.y - src.grid.length);
       }
       for (const id of drawOrder(r.def, taken)) {
         const q = r.def.places[id];
-        const src = image(q.image)!;
+        const src = of(q)!;
         board.blit(src.grid, src.palette, px + q.x, base + q.y - src.grid.length);
       }
       const color: [number, number, number] = pileBlocks(r.def, taken) ? [200, 40, 40] : [150, 150, 150];

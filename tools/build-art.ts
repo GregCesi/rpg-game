@@ -294,7 +294,7 @@ if (withPreview) {
   const pilesPng = pilesPreview(sources, pileDefs);
   if (pilesPng) writeFileSync(join(PREVIEW, 'piles.png'), PNG.sync.write(pilesPng));
   // les arbres (KINDS de trees-preview.ts), étape par étape ; et la vérification de la première et de la dernière image de chaque chute
-  const trees = treesPreview(sources, propDefs, pileDefs);
+  const trees = treesPreview(sources, propDefs);
   if (trees.png) writeFileSync(join(PREVIEW, 'arbres.png'), PNG.sync.write(trees.png));
   for (const p of trees.problems) console.warn(`art : ATTENTION arbres : ${p}`);
   // le bois : chaque diamètre et chaque aspect assemblés à plusieurs longueurs, l'encoche, le coin planté et la fente, les vues portées

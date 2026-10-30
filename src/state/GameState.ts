@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { stamina } from '../content';
-import { CornerSchema, WoodPieceSchema, type WoodPiece } from '../content/types';
+import { CornerSchema, PileWoodSchema, WoodPieceSchema, type WoodPiece } from '../content/types';
 
 const id = z.string().min(1);
 
@@ -69,22 +69,25 @@ export const SpawnedSchema = z.strictObject({
 export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number() });
 
 /**
- * Un tas posé pendant la partie : un seul objet du monde, son genre (`pile`, clé de piles.json), son point au sol (x, y :
- * l'origine du repère de ses places), ses places prises (`places`, identifiants de piles.json), son sens (`turned` :
- * nord-sud, les places de `turned` dans piles.json), fixé par sa première pièce, et son lien (`tie` : le lien qui le
- * ceinture par-dessous, `tie` du genre dans piles.json). Un tas lié peut n'avoir aucune pièce : le lien seul, par terre.
+ * Un tas posé pendant la partie : un seul objet du monde, ce qu'il entrepose, son point au sol (x, y : l'origine du repère de
+ * ses places), ses places prises (`places`), son sens (`turned` : nord-sud, la forme `turned`), fixé par sa première pièce, et
+ * son lien (`tie` : le lien qui le ceinture par-dessous, `tie` du genre dans piles.json). Ce qu'il entrepose : un genre écrit
+ * (`pile`, clé de piles.json : branches, fagots), ou une pièce de bois (`wood` : diamètre, forme, longueur, faces ; sa forme se
+ * calcule, world/woodPile.ts) ; l'un ou l'autre. Un tas lié peut n'avoir aucune pièce : le lien seul, par terre.
  */
 export const PileSchema = z
   .strictObject({
     id: z.number().int().nonnegative(),
-    pile: id,
+    pile: id.optional(),
+    wood: PileWoodSchema.optional(),
     x: z.number(),
     y: z.number(),
     places: z.array(id),
     turned: z.boolean().optional(),
     tie: z.boolean().optional(),
   })
-  .refine((p) => p.places.length > 0 || p.tie, { message: 'un tas sans pièce ni lien' });
+  .refine((p) => p.places.length > 0 || p.tie, { message: 'un tas sans pièce ni lien' })
+  .refine((p) => !p.pile !== !p.wood, { message: "un tas entrepose un genre ('pile') ou une pièce de bois ('wood'), l'un ou l'autre" });
 
 /**
  * Un chantier posé sur une carte : le plan (`plan`, clé de plans.json), le point au sol du piquet nord-ouest (x, y), les coins où
@@ -338,14 +341,6 @@ export function setWood(s: GameState, mapId: string, id: number, spawned: boolea
   revision++;
 }
 
-/** Commence un tas d'une pièce, posée à la place `place`, dans son sens (`turned` : nord-sud) ; renvoie ce qui a été noté. */
-export function startPile(s: GameState, mapId: string, pile: string, x: number, y: number, place: string, turned: boolean): Pile {
-  const p = { id: s.nextPileId++, pile, x, y, places: [place], ...(turned ? { turned } : {}) };
-  mapState(s, mapId).piles.push(p);
-  revision++;
-  return p;
-}
-
 /** Une pièce est posée à la place `place` d'un tas. */
 export function fillPlace(s: GameState, mapId: string, pileId: number, place: string): void {
   const p = mapState(s, mapId).piles.find((q) => q.id === pileId);
@@ -364,13 +359,14 @@ export function emptyPlace(s: GameState, mapId: string, pileId: number, place: s
 }
 
 /**
- * Pose un tas tout fait : genre, point au sol, places prises, sens et lien (un lien seul par terre, un fagot dénoué en
- * branches, un tas noué en fagot) ; renvoie ce qui a été noté.
+ * Pose un tas : ce qu'il entrepose (`pile` ou `wood`), point au sol, places prises, sens et lien (un tas né de deux pièces
+ * identiques, un lien seul par terre, un fagot dénoué en branches, un tas noué en fagot) ; renvoie ce qui a été noté.
  */
 export function addPile(s: GameState, mapId: string, pile: Omit<Pile, 'id'>): Pile {
   const p: Pile = {
     id: s.nextPileId++,
-    pile: pile.pile,
+    ...(pile.pile ? { pile: pile.pile } : {}),
+    ...(pile.wood ? { wood: { ...pile.wood } } : {}),
     x: pile.x,
     y: pile.y,
     places: [...pile.places],

@@ -165,8 +165,15 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   };
   const woodPlace = button('Poser', () => send({ kind: 'wood', wood: chosenWood() }));
   const woodGive = button('Donner', () => send({ kind: 'give', held: { prop: 'wood-piece', wood: chosenWood() } }));
+  // un tas de cette pièce (sa forme se calcule), de `woodCount` pièces, dans son sens ; refusé si elle ne va pas en tas (plus de 70 kg)
+  const woodCount = el('input', { type: 'number', min: '1', max: '9', value: '6' });
+  const woodPile = button('Poser en tas', () => {
+    const w = chosenWood();
+    const { axis, ...piece } = w;
+    send({ kind: 'pile', wood: piece, count: Math.min(9, Math.max(1, Math.round(Number(woodCount.value) || 1))), turned: axis === 'ns', tie: false });
+  });
 
-  // un tas : genre, nombre de pièces (au plus ses places), sens nord-sud si le genre se tourne
+  // un tas d'un genre écrit (piles.json : branches, fagots) : genre, nombre de pièces (au plus ses places), sens nord-sud si le genre se tourne
   const pile = select([['Genres de tas', Object.entries(piles).map(([k, d]) => [k, `${d.name} (${k})`])]]);
   // avec son lien dessous, si le genre en a un (les branches) : 0 pièce = le lien seul
   const count = el('input', { type: 'number', min: '1', value: '5' });
@@ -256,6 +263,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     woodLook,
     woodAxis,
     el('div', { className: 'row' }, [el('label', {}, [woodLength, 'm']), woodPlace, woodGive]),
+    el('div', { className: 'row' }, [el('label', {}, [woodCount, 'pièces']), woodPile]),
     el('h3', { textContent: 'Tas devant Xéros' }),
     pile,
     el('div', { className: 'row' }, [count, el('span', { textContent: ' pièces ' }), turnedLabel, tieLabel]),

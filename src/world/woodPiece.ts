@@ -2,9 +2,9 @@
 // coin), pour que tout le reste du jeu (prendre, poser, rouler, pivoter, peser, entasser) la traite comme n'importe quel objet de
 // props.json. Une seule clé d'objet, `wood-piece` ; le reste est dans ses réglages (GameState) et dans wood.json.
 
-import { piles as pileDefs, props as propDefs } from '../content';
+import { props as propDefs } from '../content';
 import { CONTOUR_CM } from '../content/gabarit';
-import type { PileDef, PropDef, WoodPiece } from '../content/types';
+import type { PropDef, WoodPiece } from '../content/types';
 import { facesOf, lookDef, lookOf, sizeOf, woodBody, WOOD } from './woodShape';
 
 /** La clé de la pièce de bois dans props.json. */
@@ -34,24 +34,15 @@ export function woodDims(piece: WoodPiece): PropDef['dims'] {
   return { w, d: dd, h: Math.round(high + CONTOUR_CM), shape: 'box' };
 }
 
-/** Une pièce va au tas de ce genre : ronde (ou demi, ou quart) sans face dressée, sans coupe ni coin, du diamètre et de la longueur du genre. */
-export function woodPile(piece: WoodPiece, piles: Record<string, PileDef> = pileDefs): string | undefined {
-  if (piece.hewn || piece.notch || piece.wedge) return undefined;
-  return Object.keys(piles).find((k) => {
-    const p = piles[k].piece;
-    return 'wood' in p && p.wood.size === piece.size && p.wood.shape === piece.shape && p.wood.length === piece.length;
-  });
-}
-
 /**
  * La définition d'une pièce de bois d'après ses réglages : nom et genre de son aspect (la bille, le rondin, la demi-bille, le
- * quartier, la poutre), dimensions, collision, prise à deux mains (icône et vue portée de son aspect, son genre de tas), roulement
+ * quartier, la poutre), dimensions, collision, prise à deux mains (icône et vue portée de son aspect ; son tas se calcule,
+ * world/woodPile.ts), roulement
  * (ronde, sans face dressée), pivot. `base` : l'entrée `wood-piece` de props.json.
  */
 export function woodDef(base: PropDef, piece: WoodPiece): PropDef {
   const look = lookOf(piece);
   const l = lookDef(piece.size, look);
-  const pile = woodPile(piece);
   return {
     ...base,
     name: l.name,
@@ -59,7 +50,7 @@ export function woodDef(base: PropDef, piece: WoodPiece): PropDef {
     dims: woodDims(piece),
     body: woodBody(piece.size, look, piece.axis, piece.length),
     bodies: undefined,
-    take: { hands: 2, icon: l.icon, hold: { stance: 'carry', image: l.held }, ...(pile ? { pile } : {}) },
+    take: { hands: 2, icon: l.icon, hold: { stance: 'carry', image: l.held } },
     ...(look === 'round' ? { roll: { axis: piece.axis, sheet: sizeOf(piece.size).sheet } } : { roll: undefined }),
     turn: { into: WOOD_PIECE },
     wood: piece,

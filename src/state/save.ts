@@ -5,7 +5,9 @@
 
 import { z } from 'zod';
 import { items, maps, piles, plans, props, stamina, wood } from '../content';
-import { FacingSchema, type End, type WoodPiece } from '../content/types';
+import { FacingSchema, type End, type PileWood, type WoodPiece } from '../content/types';
+import { kindOf, pileDefOf } from '../world/pileShape';
+import { lookOf } from '../world/woodShape';
 import { GameStateSchema, type GameState, type Held } from './GameState';
 
 /** Clé de la sauvegarde dans localStorage. */
@@ -13,7 +15,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -77,6 +79,7 @@ export function readSave(): ReadResult {
  * (la 5e bille, sous le houppier ou dans la tête, là où elle était dessinée ; les entailles commencées et les branches du houppier
  * sont perdues) ; une bille numérotée tenue en main devient la bille ordinaire.
  * Version 6 -> 7 : la pièce de bois (voir `woodPiecesFromKeys`).
+ * Version 7 -> 8 : les tas de bois se calculent d'après leur pièce (voir `woodPilesFromGenres`).
  */
 function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -91,7 +94,41 @@ function upgrade(data: unknown): unknown {
   }
   if (d?.version === 5 && d.state && typeof d.state === 'object') d = { ...d, version: 6, state: normalPiecesToLogs(d.state as V5State) };
   if (d?.version === 6 && d.state && typeof d.state === 'object') d = { ...d, version: 7, state: woodPiecesFromKeys(d.state as V6State) };
+  if (d?.version === 7 && d.state && typeof d.state === 'object') d = { ...d, version: 8, state: woodPilesFromGenres(d.state as V7State) };
   return d;
+}
+
+/** Ce que la conversion 7 -> 8 lit d'une partie : les tas de chaque carte. */
+type V7State = { maps?: Record<string, { piles?: { pile?: string; places?: string[] }[] }> };
+
+/**
+ * Les anciens genres de tas de bois de piles.json (des pièces de 1 m) et la pièce de bois qu'ils entreposent. Les billes gardent
+ * leurs places (la pyramide calculée a les mêmes : g0 g1 g2, u01 u12, top) ; les quartiers passent de la pyramide aux rangées
+ * tête-bêche : les pièces du sol restent, celles des creux montent sur la pièce de gauche (u01 -> l1-0, u12 -> l1-1, top -> l2-0).
+ */
+const OLD_WOOD_PILES: Record<string, { wood: PileWood; places?: Record<string, string> }> = {
+  'big-logs': { wood: { size: 'big', shape: 'round', length: 100 } },
+  'normal-logs': { wood: { size: 'normal', shape: 'round', length: 100 } },
+  'big-quarters': { wood: { size: 'big', shape: 'quarter', length: 100 }, places: { u01: 'l1-0', u12: 'l1-1', top: 'l2-0' } },
+};
+
+/** Version 7 -> 8 : un tas d'un ancien genre de bois (big-logs, normal-logs, big-quarters) entrepose la pièce de bois équivalente. */
+function woodPilesFromGenres(state: V7State): V7State {
+  const maps = Object.fromEntries(
+    Object.entries(state.maps ?? {}).map(([id, m]) => [
+      id,
+      {
+        ...m,
+        piles: (m.piles ?? []).map((p) => {
+          const old = p.pile ? OLD_WOOD_PILES[p.pile] : undefined;
+          if (!old) return p;
+          const { pile: _genre, ...rest } = p;
+          return { ...rest, wood: { ...old.wood }, places: (p.places ?? []).map((q) => old.places?.[q] ?? q) };
+        }),
+      },
+    ]),
+  );
+  return { ...state, maps };
 }
 
 /** Ce que la conversion 5 -> 6 lit d'une partie : seulement ce qui peut nommer une pièce de l'arbre normal. */
@@ -244,7 +281,7 @@ function damaged(raw: string, why: string): ReadResult {
 function woodMissing(w: WoodPiece): string | undefined {
   const size = wood.sizes[w.size];
   if (!size) return `le bois « ${w.size} »`;
-  return size.looks[w.shape] ? undefined : `la forme « ${w.shape} » du bois « ${w.size} »`;
+  return size.looks[lookOf(w)] ? undefined : `la forme « ${lookOf(w)} » du bois « ${w.size} »`;
 }
 
 /**
@@ -282,12 +319,14 @@ function missingContent(save: Save): string | undefined {
     }
     for (const g of m.ground) if (!items[g.item]) return `l'objet « ${g.item} »`;
     for (const p of m.piles) {
-      const def = piles[p.pile];
-      if (!def) return `le tas « ${p.pile} »`;
+      const missing = p.wood ? woodMissing({ ...p.wood, axis: 'ew' }) : piles[p.pile!] ? undefined : `le tas « ${p.pile} »`;
+      if (missing) return missing;
+      const def = pileDefOf(kindOf(p));
+      const name = p.pile ?? def.name;
       const places = (p.turned && def.turned ? def.turned : def).places;
       const bad = p.places.find((q) => !places[q]);
-      if (bad) return `la place « ${bad} » du tas « ${p.pile} »`;
-      if (p.tie && !def.tie) return `le lien du tas « ${p.pile} »`;
+      if (bad) return `la place « ${bad} » du tas « ${name} »`;
+      if (p.tie && !def.tie) return `le lien du tas « ${name} »`;
     }
   }
   return undefined;

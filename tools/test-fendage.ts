@@ -201,9 +201,9 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await press('KeyR');
     await sleep(150);
     out.turned = JSON.stringify(gs.game.both);
-    emit({ kind: 'pile', pile: 'big-quarters', count: 6, turned: false, tie: false });
+    emit({ kind: 'pile', wood: { size: 'big', shape: 'quarter', length: 100 }, count: 6, turned: false, tie: false });
     await sleep(300);
-    out.pile = gs.mapState(gs.game, w().map.def.id).piles.map((p: any) => `${p.pile}:${p.places.length}`);
+    out.pile = gs.mapState(gs.game, w().map.def.id).piles.map((p: any) => `${p.pile ?? `${p.wood.shape}-${p.wood.length}`}:${p.places.length}`);
     out.pileNotices = notices.slice(-3);
     out.at = [Math.round(w().player.actor.x), Math.round(w().player.actor.y), w().map.def.id];
     return out;
@@ -244,6 +244,6 @@ await playtest('fendage', async ({ page, errors, load }) => {
     assert.equal(e.halves, 2, `trois coups depuis ${e.end} : deux demi-billes`);
   }
   assert.equal(r.turned, '{"prop":"wood-piece","wood":{"size":"big","length":100,"shape":"quarter","axis":"ns"}}', 'R tourne le quartier tenu');
-  assert.ok(r.pile.includes('big-quarters:6'), `tas de quartiers : ${r.pile}`);
+  assert.ok(r.pile.includes('quarter-100:6'), `tas de quartiers : ${r.pile}`);
   console.log('  ✓ fendage : de la grosse bille aux quatre quartiers');
 });

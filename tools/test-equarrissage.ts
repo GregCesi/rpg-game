@@ -190,9 +190,9 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.billeHeld = JSON.stringify(gs.game.both);
       await standAt(a().x, a().y + 30, 'down');
       await press('KeyQ');
-      out.billePile = gs.mapState(gs.game, w().map.def.id)
-        .piles.filter((p: any) => p.pile === 'normal-logs')
-        .map((p: any) => p.places.length);
+      // seule : un tas ne naît que contre une pièce identique déjà au sol
+      out.billePile = gs.mapState(gs.game, w().map.def.id).piles.filter((p: any) => p.wood).length;
+      out.billeLaid = logs().filter((p: any) => p.wood.length === 100 && p.wood.size === 'normal').length;
       out.handsEnd = JSON.stringify(gs.game.both);
 
       // 7. le gros arbre et le têtard : abattus, ébranchés (une seule pièce ronde du gros diamètre, de leur longueur utile), coupés à 1 m
@@ -285,7 +285,8 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.beamTakeNotice, 'Trop lourde à porter.', 'la poutre de 3 m ne se porte pas');
   assert.equal(r.billeMass, 63.6, 'la bille de 1 m pèse 64 kg');
   assert.match(r.billeHeld, /"prop":"wood-piece","wood":\{"size":"normal","length":100/, 'la bille se porte');
-  assert.deepEqual(r.billePile, [1], 'et va en tas');
+  assert.equal(r.billePile, 0, 'posée seule : pas de tas sans une pièce identique à côté');
+  assert.equal(r.billeLaid, 1, 'elle est au sol, seule');
   assert.equal(r.handsEnd, 'null');
   assert.deepEqual(r.big['big-tree'], { trunk: { length: 400, kg: 855 }, label: '1 m | 3 m', cut: [100, 300] }, 'le gros arbre : 4 m, 855 kg, coupé à 1 m');
   assert.deepEqual(r.big['big-pollard'], { trunk: { length: 200, kg: 428 }, label: '1 m | 1 m', cut: [100, 100] }, 'le têtard : 2 m, coupé à 1 m');
@@ -307,13 +308,13 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
           .map((p: any) => [p.x, p.y, p.wood.size, p.wood.length])
           .sort(),
       }),
-      piles: gs.mapState(gs.game, w.map.def.id).piles.filter((p: any) => p.pile === 'normal-logs').length,
+      piles: gs.mapState(gs.game, w.map.def.id).piles.filter((p: any) => p.wood).length,
     };
   });
   console.log(JSON.stringify(after));
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   assert.equal(after.map, 'ferme');
   assert.equal(after.before, r.before, 'la poutre et les rondins sont retrouvés, à leur place et à leur longueur');
-  assert.equal(after.piles, 1, 'le tas de billes aussi');
+  assert.equal(after.piles, 0, 'toujours pas de tas');
   console.log("  ✓ équarrissage : de l'arbre normal à la poutre de 3 m, le gros arbre et le têtard coupés à 1 m, et tout retrouvé après rechargement");
 });

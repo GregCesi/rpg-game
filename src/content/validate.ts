@@ -6,6 +6,7 @@ import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
 import { propMass } from './mass';
 import { WEDGE_FRAMES } from '../world/woodShape';
+import { HEAD_TO_TAIL } from '../world/woodPile';
 import type { CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
@@ -396,10 +397,7 @@ function validatePiles(c: Content, cat: Catalog): string[] {
       if (!it) err(`${at} : objet possédable '${piece.item}' introuvable dans items.json`);
       else if (it.pile !== key) err(`${at} : '${piece.item}' (items.json) doit avoir "pile": "${key}" pour s'y entreposer`);
     } else if ('wood' in piece) {
-      const size = c.wood.sizes[piece.wood.size];
-      if (!size) err(`${at} : diamètre '${piece.wood.size}' introuvable dans wood.json`);
-      else if (!size.looks[piece.wood.shape]) err(`${at} : le diamètre '${piece.wood.size}' n'a pas d'aspect '${piece.wood.shape}'`);
-      if (piece.wood.length % c.wood.grid || piece.wood.length < c.wood.min) err(`${at} : longueur ${piece.wood.length} cm hors de la grille (multiple de ${c.wood.grid}, au moins ${c.wood.min})`);
+      err(`${at} : un tas de bois ne s'écrit pas dans piles.json, sa forme se calcule d'après sa première pièce (src/world/woodPile.ts)`);
     } else {
       const p = c.props[piece.prop];
       if (!p) err(`${at} : objet '${piece.prop}' introuvable dans props.json`);
@@ -532,6 +530,8 @@ function validateWood(c: Content, cat: Catalog): string[] {
       };
       for (const look of Object.keys(size.looks) as WoodLook[]) for (const part of ['start', 'mid', 'end']) want(`${look}-${part}`, look === 'round' ? 4 : 1);
       for (const notch of ['notch1', 'notch2']) want(notch, 4);
+      // l'aspect retourné des tas tête-bêche (world/woodPile.ts)
+      for (const look of Object.keys(size.looks).filter((l) => HEAD_TO_TAIL.has(l))) for (const part of ['start', 'mid', 'end']) want(`${look}-rev-${part}`, 1);
       for (const [look, rule] of Object.entries(size.split)) {
         if (!size.looks[look as WoodLook]) err(`${at} : 'split' d'un aspect '${look}' qu'il n'a pas`);
         if (!size.looks[rule.into]) err(`${at} : 'split.${look}' devient '${rule.into}', un aspect qu'il n'a pas`);

@@ -3,7 +3,7 @@
 // pour l'échelle), la chute à droite (images 2 à 4), la chute à gauche, l'arbre couché d'un seul tenant tel que le jeu le
 // pose (souche + arbre couché de `spawns`), à droite puis à gauche ; ébranché (la pièce de bois ronde de sa longueur utile,
 // posée par `at`), à droite et à gauche ; coupé à 1 m du bout scié (deux pièces, 100 cm et le reste) ; la bille de 1 m
-// est-ouest et nord-sud ; enfin le tas plein de billes, est-ouest et nord-sud (piles.json).
+// est-ouest et nord-sud ; enfin le tas plein de billes de 1 m, est-ouest et nord-sud (calculé, src/world/woodPile.ts).
 // Les places se lisent dans props.json (`harvest` de l'arbre debout : `becomes`, `at`, `fall`, `spawns` ; `harvest` de
 // l'arbre couché : `at`, `wood`) ; tant que props.json ne connaît pas encore l'arbre couché, la géométrie calculée par le
 // dessin (art/world/big-felled.ts, big-pollard.ts, normal-felled.ts) en tient lieu, et tout écart entre les deux est signalé.
@@ -14,24 +14,26 @@
 import { PNG } from 'pngjs';
 import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
-import type { PileDef, PropDef } from '../../src/content/types';
+import type { PileWood, PropDef } from '../../src/content/types';
 import { drawOrder, shapeOf } from '../../src/world/pileShape';
+import { woodPileDef } from '../../src/world/woodPile';
 import { lengthPx } from '../../src/world/woodShape';
 import { Board, grassOf } from './composite-previews';
 import { FELLED_TREE } from '../../art/world/normal-felled';
 import { BIG_FELLED, BIG_TREE_CM } from '../../art/world/big-felled';
 import { POLLARD_CM, POLLARD_FELLED } from '../../art/world/big-pollard';
 import { composeWood } from '../../art/world/wood-pieces';
+import { placeImage } from './composite-previews';
 
 type Vec = [number, number];
 /** Géométrie de l'arbre couché tirée du dessin : place de son image (droite) et place de la pièce de bois dans celle-ci. */
 interface Geometry { spawn: Vec; at: Vec; size: string; cm: number }
 
 /** Les arbres montrés, dans l'ordre : clé de l'arbre debout, de l'arbre couché, du genre de tas de ses billes, et sa géométrie dessinée. */
-export const KINDS: { tree: string; lying: string; logs: string; geometry: Geometry }[] = [
-  { tree: 'big-tree', lying: 'big-felled-tree', logs: 'big-logs', geometry: { spawn: BIG_FELLED.layout.spawn, at: BIG_FELLED.layout.at, size: 'big', cm: BIG_TREE_CM } },
-  { tree: 'big-pollard', lying: 'big-pollard-felled-tree', logs: 'big-logs', geometry: { spawn: POLLARD_FELLED.layout.spawn, at: POLLARD_FELLED.layout.at, size: 'big', cm: POLLARD_CM } },
-  { tree: 'normal-tree', lying: 'normal-felled-tree', logs: 'normal-logs', geometry: { spawn: FELLED_TREE.right.at, at: FELLED_TREE.right.log, size: 'normal', cm: 580 } },
+export const KINDS: { tree: string; lying: string; logs: PileWood; geometry: Geometry }[] = [
+  { tree: 'big-tree', lying: 'big-felled-tree', logs: { size: 'big', shape: 'round', length: 100 }, geometry: { spawn: BIG_FELLED.layout.spawn, at: BIG_FELLED.layout.at, size: 'big', cm: BIG_TREE_CM } },
+  { tree: 'big-pollard', lying: 'big-pollard-felled-tree', logs: { size: 'big', shape: 'round', length: 100 }, geometry: { spawn: POLLARD_FELLED.layout.spawn, at: POLLARD_FELLED.layout.at, size: 'big', cm: POLLARD_CM } },
+  { tree: 'normal-tree', lying: 'normal-felled-tree', logs: { size: 'normal', shape: 'round', length: 100 }, geometry: { spawn: FELLED_TREE.right.at, at: FELLED_TREE.right.log, size: 'normal', cm: 580 } },
 ];
 
 interface Placed { grid: Grid; palette: Palette; x: number; y: number }
@@ -42,7 +44,7 @@ export interface TreesResult {
   problems: string[];
 }
 
-export function treesPreview(sources: ArtSource[], props: Record<string, PropDef>, piles: Record<string, PileDef>): TreesResult {
+export function treesPreview(sources: ArtSource[], props: Record<string, PropDef>): TreesResult {
   const image = (name: string | undefined) => {
     const s = sources.find((x) => x.name === name);
     return s?.kind === 'image' ? s : undefined;
@@ -177,21 +179,20 @@ export function treesPreview(sources: ArtSource[], props: Record<string, PropDef
   }
   // 7. la bille de 1 m, est-ouest et nord-sud
   step((k) => {
-    const def = piles[k.logs];
-    const ew = def ? image(def.places[def.start]?.image) : undefined;
-    const ns = def?.turned ? image(def.turned.places[def.turned.start]?.image) : undefined;
+    const def = woodPileDef(k.logs);
+    const ew = placeImage(def.places[def.start], image);
+    const ns = def.turned ? placeImage(def.turned.places[def.turned.start], image) : undefined;
     return ew && ns ? [single(ew), single(ns)] : undefined;
   });
   // 8. le tas plein, est-ouest puis nord-sud
   step((k) => {
-    const def = piles[k.logs];
-    if (!def) return undefined;
+    const def = woodPileDef(k.logs);
     return [false, true].map((turned): Cell => {
       const shape = shapeOf(def, turned);
       const taken = Object.keys(shape.places);
       return cellOf(drawOrder(shape, taken).map((id) => {
         const q = shape.places[id];
-        const src = image(q.image)!;
+        const src = placeImage(q, image)!;
         return { grid: src.grid, palette: src.palette, x: q.x, y: q.y - src.grid.length };
       }));
     });
