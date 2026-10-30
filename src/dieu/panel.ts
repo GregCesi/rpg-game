@@ -1,7 +1,8 @@
 // Outils de test (?dieu) : un panneau HTML à côté du jeu, hors du canevas, cliquable à la souris. Il n'existe pas sans
 // ?dieu : main.ts ne charge ce fichier que dans ce cas. Il ne touche jamais à la partie lui-même : chaque bouton envoie
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
-import { items, maps, piles, plans, props, stamina, strength } from '../content';
+import { items, maps, piles, plans, props, stamina, strength, wood } from '../content';
+import type { WoodLook, WoodPiece } from '../content/types';
 import { heldMass } from '../content/mass';
 import type { DieuCommand } from '../events';
 import { game } from '../state';
@@ -75,22 +76,18 @@ function select(groups: [string, [string, string][]][]): HTMLSelectElement {
   return s;
 }
 
-/** Champ de longueur, en mètres, pour un objet qui en a une (`length` de props.json, ou celui qu'il porte, ou le bois d'œuvre). */
+/** Champ de longueur, en mètres, pour un objet qui en a une (`length` de props.json, ou celui qu'il porte). */
 function lengthInput(): { input: HTMLInputElement; label: HTMLLabelElement } {
   const input = el('input', { type: 'number', min: '0.5', step: '0.5' });
   return { input, label: el('label', {}, [input, 'm']) };
 }
 
-/** Le bois d'œuvre se pose de 30 cm (la plus courte coupe) à 7 m (un arbre normal entier), au décimètre ; 3 m d'abord. */
-const TIMBER_RANGE = { start: 300, min: 30, max: 700, step: 10 };
-
 /**
  * Les longueurs qu'on peut choisir pour un objet de props.json, en cm : celles du rouleau (ou de celui que porte le billot), de
- * 50 cm à neuf, par demi-mètre ; celles d'un rondin ou d'une poutre (`timber`) ; undefined s'il n'a pas de longueur.
+ * 50 cm à neuf, par demi-mètre ; undefined s'il n'a pas de longueur.
  */
 function lengthDef(key: string | undefined): { start: number; min: number; max: number; step: number } | undefined {
   const d = key ? props[key] : undefined;
-  if (d?.timber) return TIMBER_RANGE;
   const len = d?.length ?? (d?.bears?.prop ? props[d.bears.prop].length : undefined);
   return len && { start: len.start, min: 50, max: len.start, step: 50 };
 }
@@ -115,6 +112,13 @@ function lengthOf(f: { input: HTMLInputElement }, key: string): number | undefin
   return Math.round(cm);
 }
 
+/** Ce qu'on choisit d'une pièce de bois : son aspect donne sa forme et ses coups de doloire (une face tous les `perFace`). */
+function woodFrom(size: string, length: number, look: WoodLook, axis: 'ew' | 'ns'): WoodPiece {
+  const faces = { round: 0, half: 0, quarter: 0, f1: 1, f2: 2, f3: 3, beam: 4 }[look];
+  const shape = look === 'half' || look === 'quarter' ? look : 'round';
+  return { size, length, shape, axis, ...(faces ? { hewn: faces * wood.hew.perFace } : {}) };
+}
+
 /** Monte le panneau à côté du jeu (dans #stage) ; `send` transmet une commande à la scène du monde. */
 export function mountPanel(send: (cmd: DieuCommand) => void): void {
   document.head.append(el('style', { textContent: CSS }));
@@ -122,7 +126,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   // donner en main : les objets possédables, et les objets du monde qui se prennent (la bille)
   const give = select([
     ['Objets possédables', Object.entries(items).map(([k, d]) => [`item:${k}`, `${d.name} (${k})`])],
-    ['Objets du monde à porter', Object.entries(props).filter(([, d]) => d.take).map(([k, d]) => [`prop:${k}`, `${d.name} (${k})`])],
+    ['Objets du monde à porter', Object.entries(props).filter(([, d]) => d.take && !d.wood).map(([k, d]) => [`prop:${k}`, `${d.name} (${k})`])],
   ]);
   // la longueur d'un objet qui en a une (le rouleau de corde, en mètres), pour le donner ou le poser
   const giveLength = lengthInput();
@@ -136,12 +140,31 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   });
 
   // poser devant Xéros : tout objet du monde de props.json
-  const prop = select([['Objets du monde', Object.entries(props).map(([k, d]) => [k, `${d.name} (${k})`])]]);
+  const prop = select([['Objets du monde', Object.entries(props).filter(([, d]) => !d.wood).map(([k, d]) => [k, `${d.name} (${k})`])]]);
   const propLength = lengthInput();
   const syncProp = () => syncLength(propLength, prop.value);
   prop.addEventListener('change', syncProp);
   syncProp();
   const propButton = button('Poser', () => send({ kind: 'prop', prop: prop.value, length: lengthOf(propLength, prop.value) }));
+
+  // une pièce de bois : diamètre, longueur sur la grille (de la plus courte pièce à 7 m), aspect (forme, faces), sens
+  const woodSize = select([['Diamètre', Object.entries(wood.sizes).map(([k, d]) => [k, `${d.name}, ${d.diameter} cm (${k})`])]]);
+  const woodLength = el('input', { type: 'number', min: String(wood.min / 100), max: '7', step: String(wood.grid / 100), value: '1' });
+  const woodLook = select([['État', []]]);
+  const syncWood = () => {
+    const looks = Object.keys(wood.sizes[woodSize.value].looks) as WoodLook[];
+    woodLook.replaceChildren(...looks.map((l) => el('option', { value: l, textContent: `${wood.sizes[woodSize.value].looks[l]!.name} (${l})` })));
+  };
+  woodSize.addEventListener('change', syncWood);
+  syncWood();
+  const woodAxis = select([['Sens', [['ew', 'est-ouest'], ['ns', 'nord-sud']]]]);
+  const chosenWood = (): WoodPiece => {
+    const cm = Math.min(700, Math.max(wood.min, Math.round((Number(woodLength.value) * 100 || 100) / wood.grid) * wood.grid));
+    woodLength.value = String(cm / 100);
+    return woodFrom(woodSize.value, cm, woodLook.value as WoodLook, woodAxis.value as 'ew' | 'ns');
+  };
+  const woodPlace = button('Poser', () => send({ kind: 'wood', wood: chosenWood() }));
+  const woodGive = button('Donner', () => send({ kind: 'give', held: { prop: 'wood-piece', wood: chosenWood() } }));
 
   // un tas : genre, nombre de pièces (au plus ses places), sens nord-sud si le genre se tourne
   const pile = select([['Genres de tas', Object.entries(piles).map(([k, d]) => [k, `${d.name} (${k})`])]]);
@@ -228,6 +251,11 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('h3', { textContent: 'Poser devant Xéros' }),
     prop,
     el('div', { className: 'row' }, [propLength.label, propButton]),
+    el('h3', { textContent: 'Pièce de bois' }),
+    woodSize,
+    woodLook,
+    woodAxis,
+    el('div', { className: 'row' }, [el('label', {}, [woodLength, 'm']), woodPlace, woodGive]),
     el('h3', { textContent: 'Tas devant Xéros' }),
     pile,
     el('div', { className: 'row' }, [count, el('span', { textContent: ' pièces ' }), turnedLabel, tieLabel]),
