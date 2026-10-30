@@ -168,6 +168,8 @@
     "normal-felled-log",
     "normal-tree-stump",
     "shed-roof",
-    "big-pollard"
+    "big-pollard",
+    "big-felled-log-ns",
+    "normal-felled-log-ns"
   ]
 }

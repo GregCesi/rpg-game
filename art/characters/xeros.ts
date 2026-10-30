@@ -712,6 +712,97 @@ export const SHOULDER_POINTS: Record<'down' | 'up' | 'right', { idle: HoldPoint;
   };
 })();
 
+// ---------- Pousser (push-*) ----------
+// Xéros pousse une charge posée au sol (une bille qui roule) : mains libres, à plat contre la charge, à hauteur de
+// ventre ; buste penché vers la poussée, tête rentrée dans les épaules (un pixel plus bas que debout) ; jambes écartées,
+// le pied arrière en appui. Pas lents et lourds : la moitié de la cadence de walk-*. La charge est une image à part.
+
+export const PUSH_FRAME_RATE = 4;
+
+/** Une jambe de profil, de la hanche à la cheville, et sa botte (la pointe vers la poussée). */
+function pushLeg(c: Canvas, hip: Vec, ankle: Vec, back: boolean) {
+  const [pants, pantsShade, boot, bootLight] = back ? ['P', 'P', 'k', 'k'] : ['p', 'P', 'k', 'K'];
+  capsule(c, hip[0] + 0.5, hip[1] + 0.5, ankle[0] + 0.5, ankle[1] + 0.5, 1.05, (_t, across) => (across > 0.4 ? pantsShade : pants));
+  const [ax, ay] = ankle;
+  c.rect(ax - 1, ay + 1, 3, 2, boot).rect(ax - 1, ay + 1, 2, 1, bootLight);
+}
+
+/**
+ * Profil droit. feet : x de la cheville arrière (jambe du fond, plus sombre) et avant ; lift : la cheville qui avance
+ * se lève d'un pixel ; swap : la jambe claire (côté spectateur) est derrière.
+ */
+function pushSide(backX: number, frontX: number, lift: 'back' | 'front' | null, swap: boolean): Grid {
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = 7;
+  // buste penché : le haut du torse avance de deux pixels, la poitrine d'un, la ceinture reste sur les hanches
+  const LEAN = [2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0];
+  const leaned = bodySide.map((row, y) => '.'.repeat(LEAN[y]) + row);
+  // le bras du fond, presque caché : il passe devant la poitrine, la main un pixel plus haut (plus loin)
+  const shoulder: Vec = [SHOULDER_SIDE[0] + 2, SHOULDER_SIDE[1] + 1];
+  const legs = () => {
+    const ankleY = 43 - 1;
+    const y = (which: 'back' | 'front') => ankleY - (lift === which ? 1 : 0);
+    pushLeg(c, [12, 40], [backX, y('back')], !swap);
+    pushLeg(c, [14, 40], [frontX, y('front')], swap);
+  };
+  legs();
+  rim(c);
+  arm(c, [shoulder, [20, 34], [24, 35]], 'T', 'T');
+  c.stamp(leaned, ox, BODY_Y);
+  c.stamp(headSide, ox + 2, HEAD_Y + 1);
+  rim(c);
+  arm(c, [shoulder, [20, 35], [24, 36]], 't', 'L');
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+/**
+ * Face ou dos. legL/legR : décalage vertical de chaque jambe (négatif = levée). De face, les bras descendent de
+ * l'épaule devant le ventre, mains écartées ouvertes vers nous ; de dos, ils partent devant lui, cachés par le corps.
+ */
+function pushFrontal(facing: Facing, legL: number, legR: number): Grid {
+  const c = new Canvas(W, H);
+  shadow(c);
+  const ox = 6;
+  const legY = BODY_Y + 10;
+  // jambes écartées d'un pixel de plus qu'au repos
+  c.stamp(legLeft, ox + 4, legY + legL);
+  c.stamp(legRight, ox + 12, legY + legR);
+  // épaules plus basses : le torse descend d'un pixel sous la tête, raccourci d'une rangée de tunique (le buste
+  // penché vers nous ou loin de nous), si bien que l'ourlet reste où il est
+  const torso = facing === 'down' ? torsoFront : torsoBack;
+  const hunched = [...torso.slice(0, 7), ...torso.slice(8)];
+  const shL: Vec = [SHOULDER_L[0], SHOULDER_L[1] + 2];
+  const shR: Vec = [SHOULDER_R[0], SHOULDER_R[1] + 2];
+  const arms = () => {
+    rim(c);
+    if (facing === 'down') {
+      arm(c, [shL, [9, 36], [12, 39]], 't', 'L');
+      arm(c, [shR, [22, 36], [19, 39]], 'T', 't');
+    } else {
+      arm(c, [shL, [9, 35], [13, 34]], 't', 'L');
+      arm(c, [shR, [22, 35], [18, 34]], 'T', 't');
+    }
+  };
+  if (facing === 'up') arms();
+  c.stamp(bareTorso(hunched), ox, BODY_Y + 1);
+  c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y + 1);
+  if (facing === 'down') arms();
+  rim(c);
+  return selOut(c.toGrid(), DARK);
+}
+
+// Pas lourd : une jambe ne se lève que d'un pixel, et la tête ne rebondit pas.
+const pushWalkFrontal = (f: Facing) => [pushFrontal(f, 0, -1), pushFrontal(f, 0, 0), pushFrontal(f, -1, 0), pushFrontal(f, 0, 0)];
+// De profil : grand écart, la jambe arrière ramenée (levée) sous le corps, puis l'autre jambe devant.
+const pushWalkRight = [
+  pushSide(9, 18, null, false),
+  pushSide(13, 17, 'back', false),
+  pushSide(9, 18, null, true),
+  pushSide(13, 17, 'back', true),
+];
+
 const xeros: SpriteSheetSource = {
   kind: 'spritesheet',
   name: 'xeros',
@@ -751,6 +842,14 @@ const xeros: SpriteSheetSource = {
     'shoulder-walk-up': { frames: shoulderWalkFrontal('up'), frameRate: 8, repeat: -1 },
     'shoulder-walk-right': { frames: shoulderWalkRight, frameRate: 8, repeat: -1 },
     'shoulder-walk-left': { frames: shoulderWalkRight.map(flipX), frameRate: 8, repeat: -1 },
+    'push-idle-down': { frames: [pushFrontal('down', 0, 0)], frameRate: 1, repeat: 0 },
+    'push-idle-up': { frames: [pushFrontal('up', 0, 0)], frameRate: 1, repeat: 0 },
+    'push-idle-right': { frames: [pushSide(9, 18, null, false)], frameRate: 1, repeat: 0 },
+    'push-idle-left': { frames: [flipX(pushSide(9, 18, null, false))], frameRate: 1, repeat: 0 },
+    'push-walk-down': { frames: pushWalkFrontal('down'), frameRate: PUSH_FRAME_RATE, repeat: -1 },
+    'push-walk-up': { frames: pushWalkFrontal('up'), frameRate: PUSH_FRAME_RATE, repeat: -1 },
+    'push-walk-right': { frames: pushWalkRight, frameRate: PUSH_FRAME_RATE, repeat: -1 },
+    'push-walk-left': { frames: pushWalkRight.map(flipX), frameRate: PUSH_FRAME_RATE, repeat: -1 },
   },
 };
 
