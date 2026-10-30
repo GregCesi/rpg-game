@@ -79,12 +79,12 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "big-tree",
-          "x": 80,
-          "y": 32,
+          "type": "big-pollard",
+          "x": 330,
+          "y": 140,
           "width": 64,
-          "height": 160,
-          "gid": 1001
+          "height": 96,
+          "gid": 1072
         },
         {
           "id": 2,
@@ -92,8 +92,8 @@
           "visible": true,
           "name": "",
           "type": "normal-tree",
-          "x": 249,
-          "y": 32,
+          "x": 396,
+          "y": 230,
           "width": 48,
           "height": 168,
           "gid": 1057
@@ -104,8 +104,8 @@
           "visible": true,
           "name": "",
           "type": "bush",
-          "x": 352,
-          "y": 96,
+          "x": 250,
+          "y": 56,
           "width": 32,
           "height": 32,
           "gid": 1003
@@ -247,12 +247,12 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "big-tree",
+          "type": "big-pollard",
           "x": 112,
           "y": 448,
           "width": 64,
-          "height": 160,
-          "gid": 1001
+          "height": 96,
+          "gid": 1072
         },
         {
           "id": 15,
@@ -283,12 +283,12 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "normal-tree",
-          "x": 153,
+          "type": "big-pollard",
+          "x": 150,
           "y": 640,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
+          "width": 64,
+          "height": 96,
+          "gid": 1072
         },
         {
           "id": 18,
