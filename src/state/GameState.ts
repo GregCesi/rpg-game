@@ -3,8 +3,9 @@
 // Les cartes décrivent le monde au début de la partie ; GameState dit seulement ce qui a changé.
 
 import { z } from 'zod';
-import { stamina } from '../content';
+import { items, stamina } from '../content';
 import { CornerSchema, PileWoodSchema, WoodPieceSchema, type WoodPiece } from '../content/types';
+import { viewCount } from '../content/views';
 import { turnedWood } from '../world/woodShape';
 
 const id = z.string().min(1);
@@ -12,14 +13,17 @@ const id = z.string().min(1);
 /** Longueur restante, en centimètres, d'une quantité mesurée (le rouleau de corde, `length` de props.json). */
 const length = z.number().int().nonnegative().optional();
 
+/** La vue d'un objet couché (1 à 3 : un, deux ou trois quarts de tour depuis son image, `views` de sa symétrie ; absente, 0). */
+const view = z.number().int().min(1).max(3).optional();
+
 /**
- * Ce que tient une main : un objet possédable (`item`, clé de items.json), ou un objet du monde pris sur une carte
+ * Ce que tient une main : un objet possédable (`item`, clé de items.json ; `view` : la vue où il sera posé, que R change), ou un objet du monde pris sur une carte
  * (`prop`, clé de props.json ; `flip` : sa version couchée vers la gauche ; `turned` : tournée nord-sud, R, pour le tas qu'elle
  * commencera (le fagot) ; `length` : sa longueur restante, le rouleau de corde ; `wood` : les réglages d'une pièce de bois, dont
  * le sens où elle sera posée, que R change). Pas de besace : les mains sont tout l'inventaire.
  */
 export const HeldSchema = z.union([
-  z.strictObject({ item: id }),
+  z.strictObject({ item: id, view }),
   z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length, wood: WoodPieceSchema.optional() }),
 ]);
 
@@ -66,8 +70,8 @@ export const SpawnedSchema = z.strictObject({
   wood: WoodPieceSchema.optional(),
 });
 
-/** Un objet possédable posé au sol : (x, y) = son point au sol. */
-export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number() });
+/** Un objet possédable posé au sol : (x, y) = son point au sol ; `view` : sa vue (le sens où il est couché). */
+export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number(), view });
 
 /**
  * Un tas posé pendant la partie : un seul objet du monde, ce qu'il entrepose, son point au sol (x, y : l'origine du repère de
@@ -224,13 +228,20 @@ export function release(s: GameState): Held | undefined {
 }
 
 /**
- * Tourne l'objet du monde que tient Xéros entre est-ouest et nord-sud : la pièce de bois change de sens d'un quart de tour dans le
- * sens des aiguilles d'une montre (la face debout d'un quartier suit, `turnedWood`), le reste (le fagot)
- * est noté tourné ; sans objet du monde en main, rien.
+ * Tourne ce que tient Xéros d'un quart de tour dans le sens des aiguilles d'une montre, pour le poser : la pièce de bois change de
+ * sens (la face debout d'un quartier suit, `turnedWood`) ; un objet possédable passe à sa vue suivante (selon sa symétrie : la
+ * branche, le piquet, les outils) ; un autre objet du monde (le fagot) est noté tourné ou non.
  */
 export function turnHeld(s: GameState): void {
   const h = held(s);
-  if (!h || !('prop' in h)) return;
+  if (!h) return;
+  if ('item' in h) {
+    const next = ((h.view ?? 0) + 1) % viewCount(items[h.item].views);
+    if (next) h.view = next;
+    else delete h.view;
+    revision++;
+    return;
+  }
   if (h.wood) h.wood = turnedWood(h.wood);
   else if (h.turned) delete h.turned;
   else h.turned = true;
@@ -268,9 +279,9 @@ export function changeObject(s: GameState, mapId: string, objectId: number, chan
   revision++;
 }
 
-/** Pose un objet possédable au sol ; renvoie ce qui a été posé. */
-export function dropItem(s: GameState, mapId: string, item: string, x: number, y: number): GroundItem {
-  const g = { id: s.nextGroundId++, item, x, y };
+/** Pose un objet possédable au sol, dans sa vue `view` ; renvoie ce qui a été posé. */
+export function dropItem(s: GameState, mapId: string, item: string, x: number, y: number, view?: number): GroundItem {
+  const g = { id: s.nextGroundId++, item, x, y, ...(view ? { view } : {}) };
   mapState(s, mapId).ground.push(g);
   revision++;
   return g;

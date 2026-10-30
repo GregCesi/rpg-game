@@ -19,6 +19,7 @@
 - **1 kg** les 10 m (`"mass": 1`), au prorata de la longueur restante (4 m : 0,4 kg).
 
 ## Vues
+- Symétrie : rond (`views: "round"`, une vue) : pareil de tous côtés.
 - Au sol : `rope-coil`, 6 × 5 px, le dessus du rouleau (les tours de corde, un trou sombre au milieu) et sa tranche au sud ;
   ombre portée dessous. Pas de version `-left`.
 - En main (`held-rope-coil`, posture `hand`) : le rouleau pend au poing, le long de la jambe. De profil (`right`, et `left`

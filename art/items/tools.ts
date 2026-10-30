@@ -9,6 +9,7 @@ import type { Material, Materials } from '../lib/light';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { darkest, outline } from './lib';
+import { lyingView } from './lying';
 
 const S = 16;
 
@@ -403,8 +404,50 @@ export const axeArt = (): ToolArt => ({
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: toolPalette, grid: c.toGrid() });
 
+// ---------- La cognée au sol ----------
+// Couchée par terre (`axe-ground`, comme la hachette, art/items/hatchet.ts, et la doloire) : à l'échelle du jeu, sans le
+// fer grossi de la main : manche de 90 cm (18 px du bout au haut de l'œil, contour compris), fer de 20 cm du fil à l'œil,
+// couché à plat. On voit le manche (bout en bois de bout N, poignée patinée m, bois M), l'œil presque noir (0) au bout, et
+// le fer qui s'évase de l'œil jusqu'au fil clair (1), tourné vers le nord quand la tête est à l'est. 18 × 5 px contour
+// compris (une boîte de 90 × 20 × 6 cm : H + D/2 = 1,2 + 2 = 3,2 px, le fer à plat dessiné sur trois rangées, comme
+// celui de la doloire) ; ses vues nord-sud 5 × 18 (règle D). Quatre vues, un quart de tour de plus à chaque fois dans le
+// sens des aiguilles d'une montre : le fer suit la tête ; contour et ombre gardent la lumière en haut à gauche.
+
+/** Contour côté lumière des vues au sol : comme la hachette (le fil bordé de fer noir). */
+const groundDark = darkest({ M: 'K', m: 'K', N: 'K', K: 'K', '1': '0', '0': '0' }, 'o');
+
+const AXE_GROUND: Record<'r0' | 'r1' | 'r2' | 'r3', string[]> = {
+  // tête à l'est, le fil au nord
+  r0: [
+    '............1111',
+    '.............00.',
+    'NmmMMMMMMMMMM00.',
+  ],
+  // tête au sud, le fil à l'est
+  r1: ['N..', 'm..', 'm..', ...Array(9).fill('M..'), 'M.1', '001', '001', '..1'],
+  // tête à l'ouest, le fil au sud
+  r2: [
+    '.00MMMMMMMMMMmmN',
+    '.00.............',
+    '1111............',
+  ],
+  // tête au nord, le fil à l'ouest
+  r3: ['1..', '100', '100', '1.M', ...Array(9).fill('..M'), '..m', '..m', '..N'],
+};
+
+const axeGround = (k: 0 | 1 | 2 | 3): ImageSource => ({
+  kind: 'image',
+  name: k ? `axe-ground-r${k}` : 'axe-ground',
+  palette: toolPalette,
+  grid: lyingView(AXE_GROUND[`r${k}`], groundDark, k % 2 === 1),
+});
+
 export default [
   img('item-axe', axe()),
+  axeGround(0),
+  axeGround(1),
+  axeGround(2),
+  axeGround(3),
   img('item-pickaxe', pickaxe()),
   img('item-hoe', hoe()),
   img('item-sickle', sickle()),

@@ -42,14 +42,28 @@ export function shapeOf(def: PileShape, turned: boolean): PileShape {
 
 /**
  * Le dessin du lien d'un tas lié aux places `taken` (repère du tas, coin bas gauche) : sans pièce au sol, sa boucle seule
- * (`alone`) ; sinon ses deux bouts, `north` derrière la pièce au sol la plus au nord, `south` devant la plus au sud.
- * Vide si le genre n'a pas de lien.
+ * (`alone`) ; sinon ses deux bouts, `north` derrière la pièce au sol la plus au nord, `south` devant la plus au sud, ou, le tas
+ * tourné (`turned`, sa forme nord-sud), `west` à l'ouest de la pièce au sol la plus à l'ouest et `east` à l'est de la plus à
+ * l'est (`width` : la largeur d'une image, pour caler le bout ouest par son bord droit). Vide si le genre n'a pas de lien.
  */
-export function tieImages(def: PileShape, taken: readonly string[]): { image: string; x: number; y: number }[] {
+export function tieImages(
+  def: PileShape,
+  taken: readonly string[],
+  turned = false,
+  width: (image: string) => number = () => 0,
+): { image: string; x: number; y: number }[] {
   const tie = def.tie;
   if (!tie) return [];
   const bodies = taken.flatMap((id) => (def.places[id].body ? [def.places[id].body!] : []));
   if (!bodies.length) return [tie.alone];
+  if (turned && tie.west && tie.east) {
+    const west = Math.min(...bodies.map((b) => b.x));
+    const east = Math.max(...bodies.map((b) => b.x + b.w));
+    return [
+      { image: tie.west.image, x: west + tie.west.dx - width(tie.west.image), y: tie.west.y },
+      { image: tie.east.image, x: east + tie.east.dx, y: tie.east.y },
+    ];
+  }
   const north = Math.min(...bodies.map((b) => b.y));
   const south = Math.max(...bodies.map((b) => b.y + b.h));
   return [

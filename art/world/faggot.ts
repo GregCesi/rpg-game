@@ -2,8 +2,9 @@
 //
 // Gabarit : cylindre de 130 cm de long, Ø 50 cm, contour compris.
 // - Est-ouest (`faggot`) : 26 px de long, 11 de haut (Ø × 1,12) ; bouts en ovales de 5 × 10.
-// - Nord-sud (`faggot-ns`, tas tourné) : 10 px de large, 19 de haut : la face des bouts au sud, aplatie (10 × 6), et
-//   le dessus du faisceau qui fuit vers le nord sur 13 px (130 cm × ½).
+// - Nord-sud (`faggot-ns`, tas tourné) : règle D (docs/STYLE.md section 8), la silhouette de l'est-ouest inversée, 13 × 27
+//   (rameaux compris) : le faisceau couché du nord au sud dans toute sa longueur, la face des gros bouts en bande au sud
+//   (11 × 5, Ø × Ø/2), les pointes au nord, les rameaux qui dépassent à l'ouest, le lien en travers au milieu.
 //
 // Matière : celle de la branche (art/items/branch.ts) : bois sec M m N K, bout cassé clair (U u). Le faisceau se lit en
 // brins couchés dans le sens de la longueur : chaque rangée est une suite de branches (une fente sombre entre deux),
@@ -180,12 +181,64 @@ function trimTop(c: Canvas): Canvas {
   return Canvas.from(c.toGrid().slice(top, bottom).map((row) => row.slice(0, right)));
 }
 
-/** Le fagot nord-sud, vu par le bout : 10 × 19 px de silhouette, face des gros bouts (10 × 6) au sud. */
-export const FAGGOT_NS = { w: 12, h: 21, cx: 5, back: 3.5, front: 15.5, rx: 4, ry: 2.5, tie: 8 } as const;
+/**
+ * Le faisceau couché nord-sud, sans contour, dans `c` : intérieur de `dia` × `len` px à partir de (x0, y0), dessiné pour ce
+ * sens (le faisceau de l'est-ouest tourné d'un quart de tour, sens inverse des aiguilles d'une montre : les gros bouts, à
+ * l'ouest en est-ouest, viennent au sud, où l'on voit leur face, comme on voit le bout ouest d'une pièce est-ouest). Une
+ * colonne sur deux est une branche (bois de sa teinte, éclairé à l'ouest, dans l'ombre à l'est), l'autre l'interstice, plus
+ * sombre, par tirets. Au nord, les pointes inégales dans l'enveloppe du rond du fond, un cran plus sombres. Au sud, la face
+ * des gros bouts (`buttEnds`), un ovale de dia × dia/2. `twigs` : rangées (depuis les gros bouts, vers le nord) des rameaux
+ * qui dépassent du flanc ouest (le dessus de l'est-ouest), penchés vers les pointes. Le lien en travers au milieu, sur deux
+ * rangées, le faisceau pincé sur ses flancs.
+ */
+export function bundleNS(c: Canvas, x0: number, y0: number, len: number, dia: number, seed: number, twigs: number[] = []): Canvas {
+  const r = rng(seed);
+  const rx = dia / 2;
+  const ry = dia / 4; // le rond d'un bout, vu de dessus en raccourci
+  const inset = (i: number) => {
+    const u = (i + 0.5 - rx) / rx;
+    return Math.round(ry * (1 - Math.sqrt(Math.max(0, 1 - u * u))));
+  };
+  const bottom = y0 + len - 1;
+  for (let i = 0; i < dia; i++) {
+    const X = x0 + i;
+    const s = (i + 0.5) / dia;
+    const stick = i % 2 === 0;
+    // une branche, la plus longue, dépasse d'un pixel au nord (comme une pointe à l'est en est-ouest)
+    const from = y0 + inset(i) + Math.floor(r() * 2) - (stick && r() < 0.35 ? 1 : 0) - (i === 2 ? 1 : 0);
+    let dash = from + Math.floor(r() * 2), gap = -1;
+    for (let Y = from; Y <= bottom - inset(i); Y++) {
+      let k = tone(s);
+      if (!stick) {
+        if (Y === dash) gap = dash + 4 + Math.floor(r() * 6);
+        if (Y >= dash && Y < gap) k = DARKER[k];
+        else if (Y === gap) dash = Y + 1;
+      }
+      c.set(X, Y, k);
+    }
+    // pointe : un cran plus sombre
+    c.set(X, from, DARKER[tone(s)]);
+  }
+  // rameaux sur le flanc ouest : deux pixels qui s'écartent vers le nord-ouest
+  for (const t of twigs) c.set(x0 - 1, bottom - t, 'm').set(x0 - 2, bottom - t - 1, 'm');
+  // le lien, au milieu : deux rangées de chanvre, le faisceau pincé de chaque côté
+  const mid = y0 + Math.floor(len / 2) - 1;
+  for (const Y of [mid - 1, mid, mid + 1, mid + 2]) { c.set(x0, Y, EMPTY); c.set(x0 + dia - 1, Y, EMPTY); }
+  for (const Y of [mid, mid + 1]) for (let X = x0 + 1; X < x0 + dia - 1; X++) {
+    const s = (X - x0 + 0.5) / dia;
+    c.set(X, Y, Y === mid + 1 && s >= 0.34 ? 'C' : rope(s));
+  }
+  // face des gros bouts, au sud
+  buttEnds(c, x0 + rx, bottom + 1 - ry - 0.5, rx + 0.2, ry + 0.45);
+  return c;
+}
+
+/** Le fagot nord-sud : 13 × 27 px de silhouette (l'est-ouest inversé, règle D), ombre décalée à l'est et vers le sud. */
 function faggotNS(): Canvas {
-  const { w, h, cx, back, front, rx, ry, tie } = FAGGOT_NS;
-  const c = outlineBundle(bundleByTheEnd(new Canvas(w, h), cx, back, front, rx, ry, tie, 82));
-  dropShadow(c, 2, Math.ceil(back) + 2);
+  const c = new Canvas(16, 31);
+  // intérieur de 9 × 24, contour autour : 11 × 26 ; les rameaux dépassent de deux colonnes à l'ouest
+  outlineBundle(bundleNS(c, 3, 2, 24, 9, 82, FAGGOT_TWIGS));
+  dropShadow(c, 2, 0);
   return trimTop(c);
 }
 

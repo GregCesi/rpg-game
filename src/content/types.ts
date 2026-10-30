@@ -205,15 +205,20 @@ const WoodEwSchema = z.strictObject({
   /** Collision au sol : toute la longueur moins un pixel, `h` de profondeur, `bottom` px au-dessus du bas de l'image. */
   body: z.strictObject({ h: z.number().int().positive(), bottom: z.number().int().nonnegative() }),
 });
-/** Géométrie des parties d'un aspect, dans le sens nord-sud : voir WoodSizeSchema. */
+/**
+ * Géométrie des parties d'un aspect, dans le sens nord-sud (règle D, docs/STYLE.md section 8 : l'image est-ouest tournée d'un quart
+ * de tour, une vraie face dessinée) : `w` colonnes (la silhouette, aussi large que l'est-ouest est haute, et l'ombre), la longueur
+ * en pixels plus `extra` rangées (l'ombre au sud), le bout nord à la rangée `back` ; `start`, `end` : les rangées du bout nord et du
+ * bout sud (la bande du bout coupé et l'ombre) ; `bottom` : le bas de la collision, en px au-dessus du bas de l'image. La collision
+ * est celle de l'est-ouest, inversée (world/woodShape.ts).
+ */
 const WoodNsSchema = z.strictObject({
   w: z.number().int().positive(),
   extra: z.number().int().nonnegative(),
   back: z.number().int().nonnegative(),
   start: z.number().int().positive(),
   end: z.number().int().positive(),
-  /** Collision au sol : `w` de large, la moitié de la longueur (px) plus `extra` de haut, `bottom` px au-dessus du bas de l'image. */
-  body: z.strictObject({ w: z.number().int().positive(), extra: z.number().int().nonnegative(), bottom: z.number().int().nonnegative() }),
+  bottom: z.number().int().nonnegative(),
 });
 
 /**
@@ -249,7 +254,8 @@ export const WoodSizeSchema = z.strictObject({
   diameter: z.number().positive(),
   sheet: id,
   tile: z.number().int().positive(),
-  notch: z.strictObject({ ew: z.strictObject({ w: z.number().int().positive(), at: z.number().int().nonnegative() }), ns: z.strictObject({ h: z.number().int().positive(), at: z.number().int().nonnegative() }) }),
+  /** La bande d'encoche est-ouest (`w` colonnes, la coupe à la colonne `at` de la bande) ; nord-sud, la même en rangées (règle D). */
+  notch: z.strictObject({ ew: z.strictObject({ w: z.number().int().positive(), at: z.number().int().nonnegative() }) }),
   hew: id.optional(),
   split: z.partialRecord(z.enum(['round', 'half']), WoodSplitSchema),
   looks: z.partialRecord(WoodLookSchema, WoodLookDefSchema),
@@ -546,13 +552,19 @@ export const PileDefSchema = z.strictObject({
    * la plus au nord (`north`), du bord sud de celle de la plus au sud (`south`), si bien que les bouts suivent la taille
    * du tas. `alone` : son dessin quand le tas n'a encore aucune pièce (une boucle lâche par terre), coin bas gauche en
    * (`x`, `y`), repère du tas. `into` : l'objet de props.json que devient le tas plein et lié quand on le noue (E
-   * maintenu) : le fagot, qui se dénoue en un tas plein de ce genre avec son lien.
+   * maintenu) : le fagot, qui se dénoue en un tas plein de ce genre avec son lien. Un genre qui se tourne (`turned`) a aussi les
+   * deux bouts de son lien d'est en ouest sous le tas nord-sud : `west` dépasse à l'ouest de la pièce au sol la plus à l'ouest,
+   * `east` à l'est de la plus à l'est ; chacun a son `image`, son `y` (repère du tas) et son `dx` : le bord droit de l'image est à
+   * `dx` du bord ouest de la collision de la pièce la plus à l'ouest (`west`), le bord gauche à `dx` du bord est de la plus à l'est
+   * (`east`).
    */
   tie: z
     .strictObject({
       item: id,
       north: z.strictObject({ image: id, x: px, dy: px }),
       south: z.strictObject({ image: id, x: px, dy: px }),
+      west: z.strictObject({ image: id, y: px, dx: px }).optional(),
+      east: z.strictObject({ image: id, y: px, dx: px }).optional(),
       alone: z.strictObject({ image: id, x: px, y: px }),
       into: id,
     })

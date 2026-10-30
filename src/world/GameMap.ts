@@ -4,6 +4,7 @@ import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
 import { drawOrder, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
+import { groundImage } from '../content/views';
 import type { Chain, GroundItem, MapState, Pile, WorldChange } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
@@ -368,10 +369,13 @@ export class GameMap {
     this.props.splice(this.props.indexOf(p), 1);
   }
 
-  /** Affiche un objet possédable posé au sol : son image au sol (`ground`), sinon son icône, son point au sol en bas, au milieu. */
+  /**
+   * Affiche un objet possédable posé au sol : son image au sol (`ground`) dans sa vue, sinon son icône, son point au sol en bas,
+   * au milieu.
+   */
   placeGround(item: GroundItem): PlacedGround {
-    const def = items[item.item];
-    const image = this.scene.add.image(item.x, item.y, def.ground ?? def.icon).setOrigin(0.5, 1).setDepth(item.y);
+    const key = groundImage(items[item.item], item.view, (k) => this.scene.textures.exists(k));
+    const image = this.scene.add.image(item.x, item.y, key).setOrigin(0.5, 1).setDepth(item.y);
     const g = { item, image };
     this.ground.push(g);
     return g;
@@ -396,7 +400,7 @@ export class GameMap {
     const def = shapeOf(pileDefOf(kindOf(pile)), !!pile.turned);
     const ground = pile.places.map((id) => def.places[id]).filter((q) => q.body);
     // le lien seul par terre a son propre dessin ; sous des pièces, on n'en voit que les deux bouts
-    const ties = pile.tie ? tieImages(def, pile.places) : [];
+    const ties = pile.tie ? tieImages(def, pile.places, !!pile.turned, (k) => this.scene.textures.getFrame(k).width) : [];
     // le lien seul est à la profondeur de son propre bas
     const depth = Math.max(...pile.places.map((id) => pile.y + def.places[id].y), ...ties.map((t) => pile.y + t.y));
     const parts: Phaser.GameObjects.GameObject[] = drawOrder(def, pile.places).map((id, i) => {

@@ -12,7 +12,7 @@
   "egg": {"name": "œuf", "icon": "item-egg", "views": "round", "kind": "resource", "mass": 0.06},
   "apple": {"name": "pomme", "icon": "item-apple", "views": "round", "kind": "resource", "mass": 0.15},
   "wool": {"name": "laine", "icon": "item-wool", "views": "round", "kind": "resource", "mass": 0.5},
-  "axe": {"name": "hache", "icon": "item-axe", "views": "four", "lying": true, "kind": "tool", "hands": 2, "hold": {"stance": "shoulder", "image": "held-axe"}, "mass": 2.5},
+  "axe": {"name": "hache", "icon": "item-axe", "ground": "axe-ground", "views": "four", "lying": true, "kind": "tool", "hands": 2, "hold": {"stance": "shoulder", "image": "held-axe"}, "mass": 2.5},
   "maul": {"name": "masse de bûcheron", "icon": "item-maul", "ground": "maul-ground", "views": "four", "lying": true, "kind": "tool", "hands": 2, "hold": {"stance": "shoulder", "image": "held-maul"}, "mass": 4},
   "splitting-wedge": {"name": "coin de fendage", "icon": "item-splitting-wedge", "ground": "splitting-wedge-ground", "views": "four", "lying": true, "kind": "tool", "hold": {"stance": "hand", "image": "held-splitting-wedge"}, "mass": 2},
   "hatchet": {"name": "hachette", "icon": "item-hatchet", "ground": "hatchet-ground", "views": "four", "lying": true, "kind": "tool", "hold": {"stance": "hand", "image": "held-hatchet"}, "mass": 1},

@@ -43,19 +43,20 @@ export class KnotSystem {
     return this.untiePile(a.pile);
   }
 
-  /** Noue un tas plein et lié : il devient un tas d'une pièce de `tie.into` (un fagot seul), centré à sa place. */
+  /** Noue un tas plein et lié : il devient un tas d'une pièce de `tie.into` (un fagot seul), centré à sa place, dans son sens. */
   private tie(p: PlacedPile): string | undefined {
     const tie = p.def.tie!;
     if (!p.pile.tie) return 'Il faut un lien.';
     if (p.pile.places.length < Object.keys(p.def.places).length) return 'Pas assez de branches.';
     const genre = props[tie.into].take!.pile!;
-    const def = shapeOf(piles[genre], false);
+    const turned = !!p.pile.turned;
+    const def = shapeOf(piles[genre], turned);
     const b = def.places[def.start].body!;
     const [cx, cy] = groundCenter(p.def);
     const x = Math.round(p.pile.x + cx - (b.x + b.w / 2));
     const y = Math.round(p.pile.y + cy - (b.y + b.h / 2));
-    if (!this.hands.pileFree(genre, false, x, y, [def.start], p)) return 'Pas la place ici.';
-    this.replacePile(p, { pile: genre, x, y, places: [def.start] });
+    if (!this.hands.pileFree(genre, turned, x, y, [def.start], p)) return 'Pas la place ici.';
+    this.replacePile(p, { pile: genre, x, y, places: [def.start], ...(turned ? { turned } : {}) });
     return undefined;
   }
 
@@ -63,27 +64,27 @@ export class KnotSystem {
   private untiePile(p: PlacedPile): string | undefined {
     if (p.pile.places.length > 1) return 'Un seul fagot à la fois.';
     const b = p.def.places[p.pile.places[0]].body!;
-    return this.untie(p.pile.x + b.x + b.w / 2, p.pile.y + b.y + b.h / 2, untiesInto(p)!, p);
+    return this.untie(p.pile.x + b.x + b.w / 2, p.pile.y + b.y + b.h / 2, untiesInto(p)!, !!p.pile.turned, p);
   }
 
   /** Dénoue un fagot posé hors d'un tas (outils de test) : il quitte la carte, le tas plein de branches prend sa place. */
   private untieProp(prop: PlacedProp): string | undefined {
     const box = prop.box ?? { left: prop.baseX, right: prop.baseX, top: prop.baseY, bottom: prop.baseY };
-    return this.untie((box.left + box.right) / 2, (box.top + box.bottom) / 2, bundleOf(prop.type)!, undefined, prop);
+    return this.untie((box.left + box.right) / 2, (box.top + box.bottom) / 2, bundleOf(prop.type)!, false, undefined, prop);
   }
 
   /**
-   * Pose le tas plein et lié du genre `genre`, son emprise au sol centrée sur (cx, cy), à la place du tas `own` ou de
-   * l'objet `prop` qu'il remplace ; sans la place, rien ne change.
+   * Pose le tas plein et lié du genre `genre`, dans le sens `turned`, son emprise au sol centrée sur (cx, cy), à la place du tas
+   * `own` ou de l'objet `prop` qu'il remplace ; sans la place, rien ne change.
    */
-  private untie(cx: number, cy: number, genre: string, own?: PlacedPile, prop?: PlacedProp): string | undefined {
-    const def = piles[genre];
+  private untie(cx: number, cy: number, genre: string, turned: boolean, own?: PlacedPile, prop?: PlacedProp): string | undefined {
+    const def = shapeOf(piles[genre], turned);
     const [gx, gy] = groundCenter(def);
     const x = Math.round(cx - gx);
     const y = Math.round(cy - gy);
     const places = Object.keys(def.places);
-    if (!this.hands.pileFree(genre, false, x, y, places, own, prop)) return 'Pas la place ici.';
-    const pile = { pile: genre, x, y, places, tie: true };
+    if (!this.hands.pileFree(genre, turned, x, y, places, own, prop)) return 'Pas la place ici.';
+    const pile = { pile: genre, x, y, places, tie: true, ...(turned ? { turned } : {}) };
     if (own) return this.replacePile(own, pile);
     const p = prop!;
     if (p.spawned) changeSpawned(game, this.map.def.id, p.id, { x: p.x, y: p.y });

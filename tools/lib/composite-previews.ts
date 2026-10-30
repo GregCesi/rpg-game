@@ -225,24 +225,25 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
   const xh = body?.kind === 'spritesheet' ? body.frameH : 0;
   const pad = 8;
   const perRow = 8;
-  type Row = { def: PileShape; states: string[][]; ext: { left: number; right: number; top: number; bottom: number }; tied?: boolean };
+  type Row = { def: PileShape; turned: boolean; states: string[][]; ext: { left: number; right: number; top: number; bottom: number }; tied?: boolean };
   const rows: Row[] = [];
   // chaque genre écrit, puis chaque tas de bois calculé, chacun suivi de sa forme tournée s'il en a une (nord-sud)
   const defs: PileShape[] = [...Object.values(piles).map((d) => d as PileShape), ...PILE_WOOD.map(woodPileDef)];
-  const shapes = defs.flatMap((d) => (d.turned ? [d, shapeOf(d, true)] : [d]));
-  for (const def of shapes) {
+  const shapes = defs.flatMap((d) => (d.turned ? [{ def: d, turned: false }, { def: shapeOf(d, true), turned: true }] : [{ def: d, turned: false }]));
+  const widthOf = (k: string) => named(k)?.grid[0].length ?? 0;
+  for (const { def, turned } of shapes) {
     const places = Object.entries(def.places);
     if (places.some(([, q]) => !of(q))) return undefined;
     const image = named;
     // étendue de toutes les places autour du point du tas : la même case pour chaque état
     // le lien sous le tas (les branches), s'il est dessiné, compte dans l'étendue
-    const tie = def.tie && [def.tie.north, def.tie.south, def.tie.alone].every((t) => image(t.image)) ? def.tie : undefined;
+    const tie = def.tie && [def.tie.north, def.tie.south, def.tie.alone, ...(turned ? [def.tie.west, def.tie.east] : [])].every((t) => t && image(t.image)) ? def.tie : undefined;
     const keys0 = places.map(([id]) => id);
     // ses dessins dans chaque état de la construction type (la boucle seule, puis les bouts) : coin bas gauche et taille
     const tieBoxes = tie
       ? keys0
           .map((_, i) => keys0.slice(0, i))
-          .flatMap((taken) => tieImages(def, taken))
+          .flatMap((taken) => tieImages(def, taken, turned, widthOf))
           .map((t) => ({ x: t.x, y: t.y, w: image(t.image)!.grid[0].length, h: image(t.image)!.grid.length }))
       : [];
     const ext = {
@@ -253,14 +254,14 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
     };
     const keys = places.map(([id]) => id);
     const typical = keys.map((_, i) => keys.slice(0, i + 1));
-    for (let i = 0; i < typical.length; i += perRow) rows.push({ def, states: typical.slice(i, i + perRow), ext });
+    for (let i = 0; i < typical.length; i += perRow) rows.push({ def, turned, states: typical.slice(i, i + perRow), ext });
     // lié : le lien seul, puis la construction type sur lui
     if (tie) {
       const tied = [[], ...typical];
-      for (let i = 0; i < tied.length; i += perRow) rows.push({ def, states: tied.slice(i, i + perRow), ext, tied: true });
+      for (let i = 0; i < tied.length; i += perRow) rows.push({ def, turned, states: tied.slice(i, i + perRow), ext, tied: true });
     }
     const all = pileStates(def, ALL_STATES + 1);
-    if (all.length <= ALL_STATES) for (let i = 0; i < all.length; i += perRow) rows.push({ def, states: all.slice(i, i + perRow), ext });
+    if (all.length <= ALL_STATES) for (let i = 0; i < all.length; i += perRow) rows.push({ def, turned, states: all.slice(i, i + perRow), ext });
   }
   const cellW = Math.max(...rows.map((r) => r.ext.right - r.ext.left)) + pad;
   const rowH = rows.map((r) => Math.max(r.ext.bottom - r.ext.top, xh) + 2 * pad);
@@ -274,7 +275,7 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
       const px = pad + xw + pad + i * cellW - r.ext.left;
       // le lien passe sous toutes les pièces
       // le lien seul par terre a son propre dessin
-      for (const t of r.tied ? tieImages(r.def, taken) : []) {
+      for (const t of r.tied ? tieImages(r.def, taken, r.turned, widthOf) : []) {
         const src = named(t.image)!;
         board.blit(src.grid, src.palette, px + t.x, base + t.y - src.grid.length);
       }

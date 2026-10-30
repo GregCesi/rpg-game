@@ -33,16 +33,17 @@ du rondin et de la poutre. Le contenu est dans `src/content/wood.json` ; voir CO
 ## Dimensions (gabarit, docs/STYLE.md section 8)
 - Contour compris : longueur L ; diamètre 65 cm (gros), 40 cm (normal) ; demi : la moitié en hauteur ; poutre : 30 × 30 cm
   (20 × 20 de bois). Le quartier, un quart de rond posé sur un rayon : 27,5 × 27,5 cm de bois (le rayon de la bille), 37,5 cm contour
-  compris, soit environ 20 × 11 px à 1 m est-ouest, 8 × 18 px nord-sud, la même épaisseur dans les deux sens ; nord-sud, la part de
-  tarte au sud, bien claire, le fait lire couché. `validate.ts` vérifie la silhouette de la
+  compris, soit environ 20 × 11 px à 1 m est-ouest, 11 × 20 px nord-sud (règle D) ; nord-sud, la part de tarte au sud, bien claire, le
+  fait lire couché. `validate.ts` vérifie la silhouette de la
   demi-bille, du quartier (ses quatre positions) et de la poutre, dans les deux sens, à 60 cm, 1 m, 2 m et 3 m (`woodSilhouettes`
   du manifeste, tirées par build-art des pièces assemblées).
 - Est-ouest : L/5 px de long, plus une colonne d'ombre (21 px pour 1 m) ; hauteur de l'image selon l'aspect (`ew.h` : 16 pour
-  la bille du gros, 10 pour le rondin). Nord-sud : largeur selon l'aspect (`ns.w` : 14, 9), hauteur `extra` + L/10 px (le dessus
-  vu à ½). La bille de 1 m du gros, étalon du gabarit : 20 × 13 px de silhouette (`dims` de `wood-piece` : 100 × 65 × 65).
-- Collision : est-ouest, (L/5 − 1) px de long ; nord-sud, L/10 + `extra` px de haut (`body` de chaque aspect, wood.json).
+  la bille du gros, 10 pour le rondin). Nord-sud (règle D, rotation pure) : largeur selon l'aspect (`ns.w`), hauteur L/5 + `extra`
+  px : la silhouette est celle de l'est-ouest inversée (13 × L/5 pour la bille, 11 pour le quartier, 8 pour le normal). La bille de 1 m du gros, étalon du gabarit : 20 × 13 px de silhouette (`dims` de `wood-piece` : 100 × 65 × 65).
+- Collision : est-ouest, (L/5 − 1) px de long sur `ew.body.h` ; nord-sud, la même inversée (`ew.body.h` de large, L/5 − 1 de haut, son bas à `ns.bottom`).
 
 ## Vues
+- Symétrie : deux vues (`views: "symmetric"`, couchée) ; le quartier, quatre (sa face debout, `face`). Règle D (docs/STYLE.md section 8) : nord-sud, l'image et la collision sont celles de l'est-ouest inversées, à toute longueur (la bille de 1 m : 20 × 13 px est-ouest, 13 × 20 nord-sud) ; le bout coupé nord-sud est une bande au sud avec ses cernes. Contrôle : `npm run test:perspective`.
 - Au sol : l'image s'assemble à sa longueur en trois parties, bout, milieu répété, bout, prises dans la planche de son diamètre
   (`wood-big`, `wood-normal`, et `-ns`), par les opérations de `src/world/woodShape.ts` (`composeOps`) : le jeu à la volée
   (`src/world/woodTexture.ts`), le dessin pour les images de 1 m (`art/world/wood-pieces.ts`). Jamais retournée.

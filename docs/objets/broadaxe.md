@@ -15,6 +15,7 @@
 - En main, à l'échelle (5 cm par pixel) : manche de 12 px, du bout au haut de l'œil, déporté d'un pixel au coude, deux pixels au-dessus de la prise. Le fer est grossi de 1,6 fois pour se lire (la cognée et la hachette : du double) : de profil, 8 px de fil sur 5 de l'œil au fil ; par la tranche, une lame mince de 8 px le long du manche, l'œil en bloc de 5 px de large à son bout.
 
 ## Vues
+- Symétrie : quatre vues (`views: "four"`, couché, `lying`) : `broadaxe-ground` (la tête à l'est), `broadaxe-ground-r1` (au sud), `broadaxe-ground-r2` (à l'ouest), `broadaxe-ground-r3` (au nord), chacune dessinée, lumière en haut à gauche ; les vues nord-sud ont les dimensions de l'est-ouest inversées (règle D, docs/STYLE.md section 8). R les fait défiler à la pose.
 - Icône 16 × 16 (`item-broadaxe`) : la doloire en diagonale, comme les autres manches ; la lame large pend du haut à droite le long du manche, son fil droit et clair vers le haut à gauche.
 - Au sol (`broadaxe-ground`, 12 × 5 px, aussi l'image `ground` de l'objet possédable) : couchée, la lame à plat au nord du bout du manche, le fil clair au bord nord.
 - Portée (`held-broadaxe`, posture `shoulder`, vues `down`, `up`, `right`, la gauche est le miroir) : sur l'épaule comme la cognée et la masse, le poing près du bout du manche. De face et de dos, par la tranche (la lame mince et l'œil) ; de profil, la face de la lame, le fil vers le bas, à plat contre le dos.

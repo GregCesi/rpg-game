@@ -17,6 +17,7 @@
 - **0,2 kg** (`items.json`, saisie).
 
 ## Vues
+- Symétrie : deux vues (`views: "symmetric"`, couché) : `rope-tie-ground` est-ouest, `rope-tie-ground-ns` nord-sud, ses dimensions inversées (règle D). R le tourne à la pose.
 - Au sol : `rope-tie-ground`, l'écheveau couché, son ombre.
 - En main (`held-rope-tie`, posture `hand`) : l'écheveau plié pend du poing, environ 10 px ; de face, de dos et de profil
   (la gauche en miroir).

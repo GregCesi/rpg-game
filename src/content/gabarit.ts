@@ -10,7 +10,8 @@
 // - Ancrage : le bas de la silhouette (hors ombre portée) est le bord sud de l'objet au sol ; l'ombre `x` est en dessous.
 // - Une taille à l'écran se mesure sur la silhouette, contour compris, ombre portée et lueurs exclues ; les dimensions
 //   réelles aussi se comptent contour compris (la bille : 95 cm de long, 65 de diamètre).
-// - La face de coupe d'un cylindre couché nord-sud se dessine aplatie, pour qu'on lise l'objet couché : FACE_NS.
+// - Règle D pour tout ce qui est couché : une pièce tournée d'un quart de tour garde sa taille ; couché nord-sud, l'image est
+//   celle de l'est-ouest, dimensions inversées (le bout coupé, une bande au sud).
 // - Plancher de lisibilité : un objet de moins de LISIBLE px de large peut être agrandi jusqu'à LISIBLE px, pas au-delà
 //   (en gardant ses proportions). Les personnages font 12 px de large (60 cm, bras compris) ;
 //   leur hauteur suit le gabarit.
@@ -19,8 +20,7 @@
 //
 // Mesures des références (silhouette, contour compris) :
 // - big-felled-log (est-ouest, 95 × 65 cm) : 19 × 13 ; bouts ovales de 5 px de large pour 11 de haut (≈ 11 × ½).
-// - big-felled-log-ns (nord-sud) : 13 × 19 ; dessus d'écorce de 10 px entre les deux ronds (95 cm × ½ = 9,5) ; face de
-//   coupe en ovale de 11 × 7 (FACE_NS = 7/11).
+// - la bille de 1 m nord-sud (règle D) : 13 × 20, l'est-ouest (20 × 13) inversé ; le bout coupé, une bande de 11 × 5 au sud.
 // - Xéros et la mère : 32 px de haut (1,60 m), 12 px de large (60 cm).
 
 import type { Grid, Palette } from '../../art/lib/canvas';
@@ -30,9 +30,6 @@ export const CM_PER_PX = 5;
 
 /** Coefficient des dessus et des faces vues en raccourci (est, ouest) : la moitié de leur profondeur. */
 export const RACCOURCI = 0.5;
-
-/** Aplatissement de la face de coupe d'un cylindre couché nord-sud (celle des billes : ovale de 11 × 7 px). */
-export const FACE_NS = 7 / 11;
 
 /** Plancher de lisibilité : largeur à l'écran jusqu'à laquelle un objet plus étroit peut être agrandi, en pixels. */
 export const LISIBLE = 6;
@@ -69,8 +66,8 @@ function realSize(dims: Dims): { w: number; h: number } {
   if (dims.shape === 'flat') return { w: W, h: D };
   // couché est-ouest : le rond du bout, de diamètre H, cisaillé par le dessus raccourci : √(1 + ¼) ≈ 1,12
   if (dims.shape === 'cylinder' && dims.axis === 'ew') return { w: W, h: H * Math.hypot(1, RACCOURCI) };
-  // couché nord-sud : la face de coupe au sud, aplatie, et le dessus qui fuit vers le nord, raccourci de moitié
-  if (dims.shape === 'cylinder' && dims.axis === 'ns') return { w: W, h: H * FACE_NS + D * RACCOURCI };
+  // couché nord-sud (règle D) : le couché est-ouest tourné d'un quart de tour, dimensions inversées
+  if (dims.shape === 'cylinder' && dims.axis === 'ns') return { w: H * Math.hypot(1, RACCOURCI), h: D };
   // pièce de bâtiment qui relie des appuis posés au sol : sa profondeur à l'échelle du sol, comme les cases
   if (dims.ground) return { w: W, h: H + D };
   // boîte, cylindre debout (dessus en ovale D × D/2) : la face sud en vraie grandeur, le dessus raccourci de moitié

@@ -23,8 +23,8 @@
 import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
-import { branch, finishBranch, branchBody, BASE, type Branch } from '../items/branch';
-import { tieNorth, tieSouth } from '../items/rope';
+import { branch, finishBranch, branchBody, branchBodyNS, finishBranchNS, BASE, type Branch } from '../items/branch';
+import { tieEast, tieNorth, tieSouth, tieWest } from '../items/rope';
 
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
@@ -47,17 +47,53 @@ export const BRANCHES: Record<string, Branch & { x0: number }> = {
 
 const branches = Object.entries(BRANCHES).map(([p, b]) => img(`pile-branch-${p}`, branch(b, b.x0, p.startsWith('g'))));
 
+// ---------- Branches, tas tourné (nord-sud) ----------
+// Les mêmes branches, couchées nord-sud (règle D : chacune garde sa longueur), dessinées pour ce sens (`branchBodyNS`) :
+// images de NS_W × NS_H, la tige aux colonnes NS_C0 (dessus éclairé) et NS_C0 + 1 (flanc), la branche à partir de la rangée
+// x0 + 1 de son entrée de BRANCHES. Le côté du gros bout de l'est-ouest passe au nord (`thickLeft` : gros bout au nord), si
+// bien que le tête-bêche suit (le gros bout alterne au nord et au sud d'une place à la voisine). Les rameaux couchés partent
+// vers l'est, sous la branche voisine posée après elle ; les autres se dressent vers l'ouest. Places (piles.json, `turned`
+// de `branches`) : au sol x 0, 3, 6, 9 (3 px d'une branche à l'autre d'ouest en est, comme du nord au sud en est-ouest),
+// y 0 ; une couche monte de 3,5 px comme en est-ouest (y −4, −7, −11), au milieu de ses deux porteuses (x 2, 5, 8 ; 3, 6 ;
+// 5). Collision au sol : 3 px de large (la tige et son contour est) sur la longueur de la branche.
+export const NS_W = 13;
+export const NS_H = 32;
+export const NS_C0 = 5;
+const branchesNS = Object.entries(BRANCHES).map(([p, b]) =>
+  img(`pile-branch-${p}-ns`, finishBranchNS(branchBodyNS(b, b.x0 + 1, NS_W, NS_H, NS_C0, b.thickLeft, 1), p.startsWith('g'))),
+);
+
 // ---------- Branche au sol ----------
 // Une branche tombée d'une récolte, seule, couchée est-ouest : le jeu la pose bas milieu sur son point au sol
 // (`ground` de src/content/items.json). Pas de rameau fourchu vers le bas : il sortirait de l'image. Les rangées vides
 // du haut sont retirées ; le bas de l'image est la rangée sous l'ombre.
 const GROUND_BRANCH: Branch = { len: 25, thickLeft: true, thick: 11, seed: 51, twigs: [{ at: 0.42, up: true, len: 6, fork: true }, { at: 0.68, up: false, len: 5 }] };
 
-function groundBranch(): Canvas {
-  const c = finishBranch(branchBody(GROUND_BRANCH, 3), BASE + 1);
+function groundBranch(r2 = false): Canvas {
+  const c = finishBranch(branchBody({ ...GROUND_BRANCH, thickLeft: !r2 }, 3), BASE + 1);
   let top = 0;
   while (c.px[top].every((k) => k === EMPTY)) top++;
   return Canvas.from(c.toGrid().slice(top));
+}
+
+// Ses trois autres vues (`views: four` d'items.json), un quart de tour de plus à chaque fois dans le sens des aiguilles d'une
+// montre, chacune dessinée dans son sens, à la taille de la vue 0 (27 × 9, règle D) :
+// - r1 (9 × 27) : le gros bout au nord, les rameaux couchés (au sud en est-ouest) partent vers l'ouest ;
+// - r2 (27 × 9) : le gros bout à l'est, sa face cassée dans l'ombre (u) ;
+// - r3 (9 × 27) : le gros bout au sud, sa face cassée visible (U u), les rameaux couchés vers l'est.
+// Nord-sud, l'ombre est la silhouette décalée d'un pixel vers l'est et vers le sud ; le bas de l'image est sa dernière rangée.
+function groundBranchNS(thickTop: boolean): Canvas {
+  const c = finishBranchNS(branchBodyNS(GROUND_BRANCH, 2, 13, GROUND_BRANCH.len + 5, 5, thickTop, thickTop ? -1 : 1), true);
+  return crop(c);
+}
+
+/** Recadre sur ce qui est dessiné (ombre comprise). */
+function crop(c: Canvas): Canvas {
+  let x0 = c.w, y0 = c.h, x1 = -1, y1 = -1;
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) if (c.px[y][x] !== EMPTY) {
+    x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+  }
+  return Canvas.from(c.toGrid().slice(y0, y1 + 1).map((row) => row.slice(x0, x1 + 1)));
 }
 
 // ---------- Lien sous le tas ----------
@@ -76,4 +112,15 @@ function groundBranch(): Canvas {
 // milieu de l'emprise au sol du tas (les corps des branches du sol : colonnes 0 à 29, rangées −14 à −2), le centre de
 // la boucle vers (15, −8).
 
-export default [...branches, img('branch-ground', groundBranch()), img('pile-branch-tie-north', tieNorth()), img('pile-branch-tie-south', tieSouth())];
+export default [
+  ...branches,
+  ...branchesNS,
+  img('branch-ground', groundBranch()),
+  img('branch-ground-r1', groundBranchNS(true)),
+  img('branch-ground-r2', groundBranch(true)),
+  img('branch-ground-r3', groundBranchNS(false)),
+  img('pile-branch-tie-north', tieNorth()),
+  img('pile-branch-tie-south', tieSouth()),
+  img('pile-branch-tie-west', tieWest()),
+  img('pile-branch-tie-east', tieEast()),
+];

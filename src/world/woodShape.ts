@@ -60,24 +60,25 @@ export function lookOf(piece: Pick<WoodPiece, 'shape' | 'hewn'>): WoodLook {
 
 /**
  * Taille de l'image d'une pièce. Est-ouest : n + 1 colonnes (n la longueur en pixels ; la colonne de plus porte le bout de
- * l'ombre) sur `ew.h` rangées. Nord-sud : `ns.w` colonnes sur `ns.extra` + la moitié de n (le dessus vu à ½) rangées.
+ * l'ombre) sur `ew.h` rangées. Nord-sud (règle D, rotation pure : la pièce tournée garde sa taille) : `ns.w` colonnes sur
+ * n + `ns.extra` rangées.
  */
 export function woodSize(size: string, look: WoodLook, axis: WoodAxis, cm: number): { w: number; h: number } {
   const n = lengthPx(cm);
   const g = lookDef(size, look);
-  return axis === 'ew' ? { w: n + 1, h: g.ew.h } : { w: g.ns.w, h: g.ns.extra + Math.round(n / 2) };
+  return axis === 'ew' ? { w: n + 1, h: g.ew.h } : { w: g.ns.w, h: n + g.ns.extra };
 }
 
 /**
  * Collision au sol (format `body` de props.json : centrée en bas de l'image, `bottom` px au-dessus du bas) : est-ouest, la
- * longueur moins un pixel sur la profondeur de l'aspect ; nord-sud, la largeur de l'aspect sur la moitié de la longueur plus `extra`.
+ * longueur moins un pixel sur la profondeur de l'aspect ; nord-sud, la même inversée (règle D : l'emprise tournée).
  */
 export function woodBody(size: string, look: WoodLook, axis: WoodAxis, cm: number): { w: number; h: number; bottom: number } {
   const n = lengthPx(cm);
   const g = lookDef(size, look);
   return axis === 'ew'
     ? { w: Math.max(1, n - 1), h: g.ew.body.h, bottom: g.ew.body.bottom }
-    : { w: g.ns.body.w, h: Math.round(n / 2) + g.ns.body.extra, bottom: g.ns.body.bottom };
+    : { w: g.ew.body.h, h: Math.max(1, n - 1), bottom: g.ns.bottom };
 }
 
 /** Une partie posée dans l'image : laquelle, où (colonne est-ouest, rangée nord-sud), et combien de pixels on en garde. */
@@ -103,21 +104,21 @@ export function placements(size: string, look: WoodLook, axis: WoodAxis, cm: num
 
 /**
  * Où tombe dans l'image une coupe à `cm` centimètres du bout de départ (ouest, nord) : la colonne (est-ouest) ou la rangée
- * (nord-sud, la rangée `back` est le bout nord ; 1 px = 10 cm en raccourci) qui suit la coupe.
+ * (nord-sud, la rangée `back` est le bout nord ; 5 cm par pixel, comme l'est-ouest) qui suit la coupe.
  */
 export function cutPixel(size: string, look: WoodLook, axis: WoodAxis, cm: number): number {
-  return axis === 'ew' ? lengthPx(cm) : lookDef(size, look).ns.back + Math.round(cm / (2 * CM_PER_PX));
+  return axis === 'ew' ? lengthPx(cm) : lookDef(size, look).ns.back + lengthPx(cm);
 }
 
-/** Première colonne (est-ouest) ou rangée (nord-sud) de la bande d'encoche d'une coupe à `cm` du bout de départ. */
+/** Première colonne (est-ouest) ou rangée (nord-sud : la même bande, en rangées) de la bande d'encoche d'une coupe à `cm` du bout de départ. */
 export function notchPixel(size: string, look: WoodLook, axis: WoodAxis, cm: number): number {
   const n = sizeOf(size).notch;
-  return cutPixel(size, look, axis, cm) - (axis === 'ew' ? n.ew.at : n.ns.at);
+  return cutPixel(size, look, axis, cm) - n.ew.at;
 }
 
 /** L'inverse de `cutPixel` : la distance (cm) au bout de départ d'un point de l'image (colonne ou rangée, fractionnaire). */
 export function cmAt(size: string, look: WoodLook, axis: WoodAxis, px: number): number {
-  return axis === 'ew' ? px * CM_PER_PX : (px - lookDef(size, look).ns.back) * 2 * CM_PER_PX;
+  return axis === 'ew' ? px * CM_PER_PX : (px - lookDef(size, look).ns.back) * CM_PER_PX;
 }
 
 /** La partie de la planche (départ ou arrivée) où se trouve le bout `end` d'une pièce. */
@@ -243,7 +244,7 @@ export function composeOps(piece: WoodPiece, opts: ComposeOpts = {}): DrawOp[] {
   if (piece.notch) {
     const n = sizeOf(size).notch;
     const at = notchPixel(size, look, axis, piece.notch.at);
-    const band = axis === 'ew' ? n.ew.w : n.ns.h;
+    const band = n.ew.w;
     ops.push({ kind: 'clear', at, size: band });
     ops.push({ kind: 'part', anim: `notch${Math.min(2, piece.notch.hits)}`, frame: k, at, size: band });
   }

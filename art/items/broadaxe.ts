@@ -19,6 +19,7 @@ import { lightUp } from '../lib/light';
 import type { ArtSource, ImageSource, SpriteSheetSource } from '../lib/types';
 import { FIST, behindHead, fistGap, sheet } from './carried';
 import { darkest, outline } from './lib';
+import { lyingView } from './lying';
 import { axeArt, toolPalette } from './tools';
 
 /** Milieu de l'œil, le long du manche depuis la prise ; l'œil couvre deux rangées, le haut du fer une de plus. */
@@ -204,6 +205,21 @@ function ground(): Grid {
   return groundShadow(outline(c, dark));
 }
 
+/**
+ * Les trois autres vues au sol (règle D : `-r1`, `-r3` nord-sud, 5 × 12 px ; `-r2` est-ouest, 12 × 5, contour compris),
+ * chacune un quart de tour de plus dans le sens des aiguilles d'une montre : la lame à plat suit le fer (à l'est du manche
+ * quand la tête est au sud, au sud quand elle est à l'ouest, à l'ouest quand elle est au nord), son fil clair au bord du
+ * dehors. Contour et ombre d'une lumière en haut à gauche.
+ */
+const GROUND_VIEWS: Record<'r1' | 'r2' | 'r3', Grid> = {
+  // tête au sud : le bout du manche au nord, la lame le long du manche à l'est, l'œil au bout sud
+  r1: ['N..', 'm..', 'm..', 'M..', 'M01', 'M01', 'M01', 'M01', '001', '001'],
+  // tête à l'ouest : le manche au nord, l'œil au bout ouest, la lame au sud, son fil au bord sud
+  r2: ['00MMMMMmmN', '000000....', '111111....'],
+  // tête au nord : la lame à l'ouest du manche, son fil au bord ouest ; le bout du manche au sud
+  r3: ['100', '100', '10M', '10M', '10M', '10M', '..M', '..m', '..m', '..N'],
+};
+
 // ---------- Sur l'épaule ----------
 // Comme la cognée et la masse (held-axe, art/items/carried.ts ; held-maul) : le poing droit tient le manche près du
 // bout, devant la poitrine ; le manche passe sur l'épaule ; le fer est derrière l'épaule, au-dessus. De face et de dos,
@@ -254,6 +270,13 @@ const heldBroadaxe = (): SpriteSheetSource =>
 
 const img = (name: string, grid: Grid): ImageSource => ({ kind: 'image', name, palette: toolPalette, grid });
 
-const sources: ArtSource[] = [img('item-broadaxe', icon().toGrid()), img('broadaxe-ground', ground()), heldBroadaxe()];
+const sources: ArtSource[] = [
+  img('item-broadaxe', icon().toGrid()),
+  img('broadaxe-ground', ground()),
+  img('broadaxe-ground-r1', lyingView(GROUND_VIEWS.r1, dark, true)),
+  img('broadaxe-ground-r2', lyingView(GROUND_VIEWS.r2, dark, false)),
+  img('broadaxe-ground-r3', lyingView(GROUND_VIEWS.r3, dark, true)),
+  heldBroadaxe(),
+];
 
 export default sources;

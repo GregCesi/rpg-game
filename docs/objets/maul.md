@@ -15,6 +15,7 @@
 - En main, à l'échelle : 5 cm par pixel, le manche mesure 16 px, la tête 3 × 2 px de fer.
 
 ## Vues
+- Symétrie : quatre vues (`views: "four"`, couché, `lying`) : `maul-ground` (la tête à l'est), `maul-ground-r1` (au sud), `maul-ground-r2` (à l'ouest), `maul-ground-r3` (au nord), chacune dessinée, lumière en haut à gauche ; les vues nord-sud ont les dimensions de l'est-ouest inversées (règle D, docs/STYLE.md section 8). R les fait défiler à la pose.
 - Icône 16 × 16 (`item-maul`) : la masse en diagonale, comme l'icône de la hache, tête en haut à droite.
 - Au sol (`maul-ground`, 16 × 3 px à peu près, aussi l'image `ground` de l'objet possédable) : couchée, le manche à l'horizontale, la tête de fer à un bout.
 - Sur l'épaule (`held-maul`, posture `shoulder`, vues `down`, `up`, `right`, la gauche est le miroir) : comme la hache, qu'elle remplace.

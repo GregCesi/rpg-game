@@ -14,6 +14,7 @@
 - À l'écran : W = 6 px ; H + D/2 = 3 + 3 = **6 × 6** (le même gabarit que le dé : 6 × 6).
 
 ## Vues
+- Symétrie : ronde (`views: "round"`, une vue) : à 6 × 6 px, une pierre plate tournée ne se distingue pas ; R ne la tourne pas.
 - Au sol : `flat-stone`, 6 × 6 px, le dessus clair, la face sud plus sombre, un coin émoussé, jamais un œuf ; ombre portée dessous, à droite. C'est le dessin du dé de pierre (`footing-stone`, 7 × 7 avec son ombre) : même pierre, même lumière.
 - En main (`held-flat-stone`, posture `carry`, vues `down`, `up`, `right`) : portée à deux mains devant le ventre ; de face, la face sud ; de dos, cachée par le corps ; de profil, de côté.
 - Case d'interface : `item-flat-stone`, 16 × 16, la pierre en trois quarts.

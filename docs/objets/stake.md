@@ -17,6 +17,7 @@ Une fiche pour le piquet qu'on porte (`stake`, objet possédable) et le piquet p
 - Planté (`planted-stake`) : 75 cm hors de terre (25 cm dans le sol), boîte 5 × 5 × 75 cm : W = 1 px (agrandi au plancher : 2 px), hauteur 15 + 2,5 = **2 × 15** à 17 px. Un trait de bois clair, pointe enfoncée dans l'herbe, tête taillée plate.
 
 ## Vues
+- Symétrie : quatre vues (`views: "four"`, couché, `lying`) : `stake-ground` (la pointe à l'est), `stake-ground-r1` (au sud), `stake-ground-r2` (à l'ouest), `stake-ground-r3` (au nord), chacune dessinée, lumière en haut à gauche ; les vues nord-sud ont les dimensions de l'est-ouest inversées (règle D, docs/STYLE.md section 8). R les fait défiler à la pose.
 - Au sol (`stake-ground`) : couché, la pointe d'un côté, le bois d'une branche écorcée (matière `NORMAL_WOOD`, `art/world/wood.ts`), ombre portée dessous. Pas de version `-left`.
 - En main (`held-stake`, posture `hand`, vues `down`, `up`, `right`) : tenu au poing, la pointe en bas le long de la jambe ; de profil (`right`), toute sa longueur ; de face et de dos, un trait court.
 - Case d'interface : `item-stake`, 16 × 16, le piquet en diagonale, pointe en bas à gauche.

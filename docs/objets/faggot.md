@@ -10,14 +10,15 @@
 - Branches serrées par un lien : environ 130 cm de long, Ø 50 cm, contour compris.
 - Cylindre couché est-ouest (`ew`) ; dans un tas tourné, nord-sud (`ns`).
 - Est-ouest : L = **26 px** de long, Ø × 1,12 = **11 px** de haut, bouts en ovales de 5 × 10 (Ø/2 × Ø).
-- Nord-sud : Ø = **10 px** de large, Ø × 7/11 + L/2 = 6,4 + 13 = **19 px** de haut ; le bout est une face de branches
-  coupées aplatie, 10 × 6.
+- Nord-sud (règle D, docs/STYLE.md section 8) : l'est-ouest inversé, **13 × 27 px** ; le bout des branches coupées, une bande
+  au sud.
 
 ## Masse
 - **25,2 kg** : la somme de ses dix branches (2,5 kg chacune) et de son lien (0,2 kg) (`"mass": {"pile": "branches"}`).
   Juste au-dessus des 25 kg où Xéros marche normalement : porté, il ne court plus et ralentit à peine.
 
 ## Vues
+- Symétrie : deux vues (`views: "symmetric"`, couché) : `faggot` est-ouest, `faggot-ns` nord-sud, de la même taille inversée (règle D, docs/STYLE.md section 8 : 27 × 13 puis 13 × 27) ; son tas tourné monte de la même hauteur par couche. R le tourne.
 - Au sol : `faggot`, est-ouest : le faisceau de branches, gros bouts mêlés, quelques rameaux qui dépassent, le lien qui le
   serre au milieu ; ombre portée. Seul, il est un tas de fagots d'une pièce.
 - Tourné : `faggot-ns`, vu par le bout : les bouts des branches (ronds clairs dans l'ombre) au sud, le dessus du faisceau

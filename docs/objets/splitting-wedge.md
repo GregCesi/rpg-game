@@ -15,6 +15,7 @@
 - Planté dans le bout d'une bille : seule la tête dépasse de la face coupée (environ 7 × 4 cm) ; le reste est dans le bois.
 
 ## Vues
+- Symétrie : quatre vues (`views: "four"`, couché, `lying`) : `splitting-wedge-ground` (la tête à l'est), `splitting-wedge-ground-r1` (au sud), `splitting-wedge-ground-r2` (à l'ouest), `splitting-wedge-ground-r3` (au nord), chacune dessinée, lumière en haut à gauche ; les vues nord-sud ont les dimensions de l'est-ouest inversées (règle D, docs/STYLE.md section 8). R les fait défiler à la pose.
 - Icône 16 × 16 (`item-splitting-wedge`) : le coin vu de côté, en pointe vers le bas, tête plate en haut, fer bleuté.
 - Au sol (`splitting-wedge-ground`, 6 × 2 px, aussi l'image `ground` de l'objet possédable) : couché, la tête à un bout.
 - En main (`held-splitting-wedge`, posture `hand`, vues `down`, `up`, `right`) : un petit bloc de fer tenu à la main.

@@ -321,8 +321,20 @@ export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
 function validateGabarit(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   for (const key of Object.keys(EXCEPTIONS)) if (!c.props[key]) errors.push(`validate.ts EXCEPTIONS : '${key}' absent de props.json`);
-  // les pièces de bois assemblées : leur silhouette a la taille de leurs dimensions (woodDims), dans les deux sens, à toute longueur
+  // les pièces de bois assemblées : est-ouest, leur silhouette a la taille de leurs dimensions (woodDims), à toute longueur ;
+  // nord-sud, celle de la même pièce est-ouest, inversée, à 1 px près (règle D : une pièce tournée garde sa taille)
   for (const { piece, w, h } of cat.woodSilhouettes) {
+    if (piece.axis === 'ns') {
+      const twin = cat.woodSilhouettes.find(
+        (o) => o.piece.axis === 'ew' && o.piece.size === piece.size && o.piece.length === piece.length && lookOf(o.piece) === lookOf(piece) && o.piece.shape === piece.shape,
+      );
+      if (twin && (Math.abs(w - twin.h) > 1 || Math.abs(h - twin.w) > 1)) {
+        errors.push(`pièce de bois ${piece.size} ${lookOf(piece)}${piece.face ? ` face ${piece.face}` : ''} nord-sud de ${piece.length} cm : ${w} × ${h} px, attendu ${twin.h} × ${twin.w} (l'est-ouest inversé, règle D, à 1 px près)`);
+      }
+      continue;
+    }
+    // les faces dressées en cours (f1 à f3) sont entre le rond et la poutre : pas de forme de base, seul leur nord-sud se contrôle
+    if (['f1', 'f2', 'f3'].includes(lookOf(piece))) continue;
     const want = expectedSize(woodDims(piece));
     const ok = (n: number, lo: number, hi: number) => n >= lo - TOLERANCE && n <= hi + TOLERANCE;
     if (ok(w, want.w, want.wMax) && ok(h, want.h, want.hMax)) continue;
@@ -395,21 +407,6 @@ export const VIEWS_TODO: Record<string, string> = {
   'fishing-rod': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
   sword: "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
   'wooden-sword': "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
-  // à dessiner dans ce chantier (perspective, étape 3) : la règle D pour tout ce qui est couché
-  'wood-piece': 'couché : à redessiner en nord-sud (règle D)',
-  faggot: 'couché : à redessiner en nord-sud (règle D)',
-  'maul-ground': 'couché : ses quatre vues (règle D)',
-  'splitting-wedge-ground': 'couché : ses quatre vues (règle D)',
-  'hatchet-ground': 'couché : ses quatre vues (règle D)',
-  'broadaxe-ground': 'couché : ses quatre vues (règle D)',
-  branch: 'couché : ses quatre vues (règle D)',
-  'rope-tie': 'couché : ses deux vues (règle D)',
-  stake: 'couché : ses quatre vues (règle D)',
-  axe: 'couché : son image au sol et ses quatre vues (règle D)',
-  maul: 'couché : ses quatre vues (règle D)',
-  'splitting-wedge': 'couché : ses quatre vues (règle D)',
-  hatchet: 'couché : ses quatre vues (règle D)',
-  broadaxe: 'couché : ses quatre vues (règle D)',
 };
 
 /**
@@ -565,10 +562,11 @@ function validatePiles(c: Content, cat: Catalog): string[] {
     const it = c.items[tie.item];
     if (!it) err(`${at} : objet possédable '${tie.item}' introuvable dans items.json`);
     else if (it.hands !== 1 || it.pile) err(`${at} : '${tie.item}' doit se tenir à une main et ne pas s'entreposer (pas de 'pile')`);
-    for (const [part, t] of Object.entries({ north: tie.north, south: tie.south, alone: tie.alone })) {
-      if (!cat.textures.has(t.image)) err(`${at} ${part} : image '${t.image}' non dessinée`);
+    for (const [part, t] of Object.entries({ north: tie.north, south: tie.south, alone: tie.alone, west: tie.west, east: tie.east })) {
+      if (t && !cat.textures.has(t.image)) err(`${at} ${part} : image '${t.image}' non dessinée`);
     }
-    if (pile.turned) err(`${at} : un genre lié ne se tourne pas (le lien n'a pas de forme tournée)`);
+    if (pile.turned && !(tie.west && tie.east)) err(`${at} : un genre lié qui se tourne a les deux bouts de son lien nord-sud ('west', 'east')`);
+    if (!pile.turned && (tie.west || tie.east)) err(`${at} : 'west' et 'east' sont le lien du tas tourné, et ce genre ne se tourne pas`);
     const into = c.props[tie.into];
     if (!into) err(`${at} : objet '${tie.into}' (into) introuvable dans props.json`);
     else if (!into.take?.pile || !c.piles[into.take.pile]) err(`${at} : '${tie.into}' doit se prendre et s'entreposer dans un tas ('take' avec 'pile')`);

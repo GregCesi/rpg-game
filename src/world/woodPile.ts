@@ -8,10 +8,11 @@
 // - section plate ou carrée (la demi-bille, le quartier, la poutre) : des rangées droites, 3 de large sur 3 de haut, chaque
 //   pièce sur celle du dessous ; les quartiers tête-bêche (un sur deux la face debout de l'autre côté : sud et nord en est-ouest,
 //   est et ouest en nord-sud, `face`).
-// Au sol, les pièces sont côte à côte, à la largeur de leur collision (`woodBody`) : est-ouest, l'une derrière l'autre (plus
-// un pixel, pour que le contour du bas de celle de derrière se lise) ; nord-sud, l'une à côté de l'autre. Une couche monte de la
-// hauteur de la section rapportée à sa largeur (`woodDims`) : dans les creux, √3/2 de plus (des cercles qui se touchent) ; en
-// rangée, toute la hauteur. Nord-sud, la largeur est vue à plat et la hauteur en raccourci (½, docs/STYLE.md section 8). L'image
+// Au sol, les pièces sont côte à côte, à la largeur de leur collision (`woodBody`) plus un pixel (pour que le contour de celle de
+// derrière se lise) : est-ouest, l'une derrière l'autre ; nord-sud, l'une à côté de l'autre, au même écart (règle D, docs/STYLE.md
+// section 8 : l'emprise au sol est la vraie, tournée). Une couche monte de la hauteur de la section rapportée à sa largeur
+// (`woodDims`) : dans les creux, √3/2 de plus (des cercles qui se touchent) ; en rangée, toute la hauteur ; nord-sud, de la même
+// hauteur qu'est-ouest (une pièce tournée garde sa taille). L'image
 // de chaque place est la pièce elle-même, assemblée à sa longueur (`woodKey` ; world/woodTexture.ts en jeu, composeWood à l'aperçu).
 
 import { strength } from '../content';
@@ -56,13 +57,15 @@ function woodPlaces(w: PileWood, axis: WoodAxis): Record<string, ShapePlace> {
   const look = lookOf(piece);
   const img = woodSize(w.size, look, axis, w.length);
   const body = woodBody(w.size, look, axis, w.length);
-  const dims = woodDims(piece);
-  const ratio = dims.h / (axis === 'ew' ? dims.d : dims.w);
+  // la section vue de l'est-ouest : le nord-sud a la même (règle D)
+  const ew = woodBody(w.size, look, 'ew', w.length);
+  const dims = woodDims({ ...piece, axis: 'ew' });
+  const ratio = dims.h / dims.d;
   const rows = ROWS.has(look);
   const flip = HEAD_TO_TAIL.has(look);
-  // écart entre deux pièces voisines au sol, et montée d'une couche à l'écran
-  const step = axis === 'ew' ? body.h + 1 : body.w;
-  const lift = step * ratio * (rows ? 1 : Math.sqrt(3) / 2) * (axis === 'ew' ? 1 : 0.5);
+  // écart entre deux pièces voisines au sol, et montée d'une couche à l'écran, les mêmes dans les deux sens
+  const step = ew.h + 1;
+  const lift = step * ratio * (rows ? 1 : Math.sqrt(3) / 2);
   // une place à la position `f` en travers (0 à 2, demi-valeurs dans les creux), à la couche `layer`
   const place = (f: number, layer: number, on: string[], other = false): ShapePlace => {
     const [x, y] = axis === 'ew' ? [0, Math.round(-(WIDE - 1 - f) * step - layer * lift)] : [Math.round(f * step), Math.round(-layer * lift)];

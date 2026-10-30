@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { INTERACT, PUT_DOWN } from '../config';
 import { items, piles, props } from '../content';
+import { crosswise, groundImage, viewCount } from '../content/views';
 import type { Facing, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
 import {
@@ -131,7 +132,7 @@ export class HandsSystem {
     // une pièce reprise d'un tas nord-sud reste tournée
     const what: Held =
       'item' in piece
-        ? { ...piece }
+        ? { ...piece, ...(p.pile.turned ? { view: 1 } : {}) }
         : 'wood' in piece
           ? { prop: WOOD_PIECE, wood: structuredClone(p.def.places[place].wood) ?? { ...piece.wood, axis: p.pile.turned ? 'ns' : 'ew' } }
           : { ...piece, ...(p.pile.turned ? { turned: true } : {}) };
@@ -200,14 +201,15 @@ export class HandsSystem {
   }
 
   /**
-   * Tourne ce qu'on tient entre est-ouest et nord-sud (R) : une pièce de bois (elle sera posée dans l'autre sens, seule ou en tas),
-   * ou ce dont le genre de tas a une forme tournée (`turned` de piles.json : le fagot). Renvoie false si ce qu'on tient ne se
-   * tourne pas.
+   * Tourne ce qu'on tient d'un quart de tour (R) : une pièce de bois (elle sera posée dans l'autre sens, seule ou en tas), un objet
+   * possédable qui a plusieurs vues (`views` : la branche, le piquet, le lien, les outils), ou ce dont le genre de tas a une forme
+   * tournée (`turned` de piles.json : le fagot). Renvoie false si ce qu'on tient ne se tourne pas (un objet rond).
    */
   turn(): boolean {
     const what = held(game);
     const kind = what && pileOf(what);
-    if (!what || !('prop' in what) || !(what.wood || (kind && pileDefOf(kind).turned))) return false;
+    const turns = what && ('item' in what ? viewCount(items[what.item].views) > 1 : what.wood || (kind && pileDefOf(kind).turned));
+    if (!turns) return false;
     turnHeld(game);
     return true;
   }
@@ -368,8 +370,10 @@ export class HandsSystem {
     for (const g of this.map.ground) {
       const k = pileOf({ item: g.item.item });
       if (!k || !sameKind(k, kind) || !g.image.visible) continue;
-      // un objet au sol est posé par le milieu du bas de son image
-      out.push({ lone: { ground: g }, x: Math.round(g.item.x - g.image.width / 2), y: g.item.y, turned: false });
+      // un objet au sol est posé par le milieu du bas de son image ; couché nord-sud, il commence un tas tourné
+      const turned = crosswise(items[g.item.item].views, g.item.view ?? 0);
+      if (turned && !pileDefOf(kind).turned) continue;
+      out.push({ lone: { ground: g }, x: Math.round(g.item.x - g.image.width / 2), y: g.item.y, turned });
     }
     return out;
   }
@@ -398,7 +402,7 @@ export class HandsSystem {
     } else if (t.kind === 'tie-alone') {
       this.map.placePile(addPile(game, mapId, { pile: t.genre, x: t.x, y: t.y, places: [], tie: true }));
     } else if ('item' in what) {
-      this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y));
+      this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view));
     } else {
       const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood });
       this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood });
@@ -417,12 +421,12 @@ export class HandsSystem {
     }
     if (t.kind === 'tie' || t.kind === 'tie-alone') {
       // sous un tas, son bout de devant, là où il dépassera ; par terre, la boucle du lien seul
-      const tie = t.kind === 'tie' ? tieImages(t.pile.def, t.pile.pile.places)[1] : piles[t.genre].tie!.alone;
+      const tie = t.kind === 'tie' ? tieImages(t.pile.def, t.pile.pile.places, !!t.pile.pile.turned, (k) => this.scene.textures.getFrame(k).width)[1] : piles[t.genre].tie!.alone;
       const [x, y] = t.kind === 'tie' ? [t.pile.pile.x, t.pile.pile.y] : [t.x, t.y];
       return { key: tie.image, x: x + tie.x, y: y + tie.y, depth: t.kind === 'tie' ? t.pile.depth : y + tie.y };
     }
     if ('item' in what) {
-      const key = items[what.item].ground ?? items[what.item].icon;
+      const key = groundImage(items[what.item], what.view, (k) => this.scene.textures.exists(k));
       return { key, x: t.x - this.scene.textures.getFrame(key).width / 2, y: t.y, depth: t.y };
     }
     if (what.wood) return { key: woodTexture(this.scene, what.wood), frame: '0', x: t.x, y: t.y, depth: t.y };
@@ -503,26 +507,36 @@ export class HandsSystem {
   }
 
   /**
-   * La place de `what` posé juste devant Xéros : un objet possédable, son point au sol juste au-delà de sa collision ; un objet du
-   * monde (dans le sens où il est tenu), le coin bas gauche de son image, sa collision presque collée à celle de Xéros, du côté où
-   * il regarde, centrée sur lui.
+   * La place de `what` posé juste devant Xéros : un objet possédable, son point au sol (milieu du bas de son image, dans sa vue),
+   * son image presque collée à la collision de Xéros ; un objet du monde (dans le sens où il est tenu), le coin bas gauche de son
+   * image, sa collision presque collée à celle de Xéros ; du côté où il regarde, centré sur lui.
    */
   private layFront(player: Player, what: Held): [number, number] {
     const b = player.actor.body;
     if ('item' in what) {
-      const [sx, sy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.actor.facing];
-      return [Math.round(b.center.x + sx * (b.width / 2 + PUT_DOWN.gap + 4)), Math.round(b.center.y + sy * (b.height / 2 + PUT_DOWN.gap + 4) + 3)];
+      const { w, h } = this.itemSize(what);
+      const [l, t] = frontCorner(b, player.actor.facing, w, h);
+      return [Math.round(l + w / 2), Math.round(t + h)];
     }
     const { f, h } = this.footprint(what);
     const [l, t] = frontCorner(b, player.actor.facing, f.right - f.left, f.bottom - f.top);
     return [Math.round(l - f.left), Math.round(t - f.top + h)];
   }
 
-  /** L'emprise au sol de `what` posé seul en (x, y) : un petit carré autour du point d'un objet possédable, la collision d'un objet du monde. */
+  /** L'emprise au sol de `what` posé seul en (x, y) : l'image d'un objet possédable dans sa vue, la collision d'un objet du monde. */
   private layBox(what: Held, x: number, y: number): Box {
-    if ('item' in what) return { left: x - 4, top: y - 6, right: x + 4, bottom: y };
+    if ('item' in what) {
+      const { w, h } = this.itemSize(what);
+      return { left: x - w / 2, top: y - h, right: x + w / 2, bottom: y };
+    }
     const { f, h } = this.footprint(what);
     return { left: x + f.left, top: y - h + f.top, right: x + f.right, bottom: y - h + f.bottom };
+  }
+
+  /** La taille de l'image au sol d'un objet possédable, dans sa vue. */
+  private itemSize(what: Extract<Held, { item: string }>): { w: number; h: number } {
+    const f = this.scene.textures.getFrame(groundImage(items[what.item], what.view, (k) => this.scene.textures.exists(k)));
+    return { w: f.width, h: f.height };
   }
 
   /** La collision d'un objet du monde dans son image (la pièce de bois à la taille de ses réglages), et la hauteur de l'image. */

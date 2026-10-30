@@ -56,6 +56,56 @@ export function branchBody(b: Branch, x0: number, w = BW, h = BH, base = BASE): 
 }
 
 /**
+ * La branche sans contour, couchée nord-sud (règle D, docs/STYLE.md section 8 : la même branche qu'est-ouest, tournée d'un
+ * quart de tour, dessinée pour ce sens et non tournée en pixels). Image w × h, gros bout en haut (`thickTop`, au nord) ou
+ * en bas (au sud) à partir de la rangée `y0`. Gros bout sur deux colonnes : `c0` le dessus éclairé (M, à l'ouest, côté
+ * lumière), `c0 + 1` le flanc (m) et sa fente sombre (N) ; tige fine d'un pixel sur la colonne du flanc, la pointe qui
+ * dévie d'une colonne vers l'ouest sur ses quatre derniers. Rameaux : ceux qui sont « vers le bas » en est-ouest (couchés)
+ * partent du côté `down` (-1 ouest, 1 est), les autres de l'autre côté, de biais vers la pointe, tous depuis la tige. Bout cassé : au sud, on
+ * voit sa face (bois clair, U à l'ouest, u à l'est) ; au nord elle est tournée de l'autre côté, on ne voit que le dessus.
+ */
+export function branchBodyNS(b: Branch, y0: number, w: number, h: number, c0: number, thickTop: boolean, down: -1 | 1): Canvas {
+  const c = new Canvas(w, h);
+  const r = rng(b.seed);
+  const dir = thickTop ? 1 : -1;
+  const start = thickTop ? y0 : y0 + b.len - 1;
+  const Y = (i: number) => start + dir * i; // i : distance depuis le gros bout
+  for (const t of b.twigs) {
+    const side = t.up ? -down : down;
+    const sx = c0 + 1; // tous partent de la tige, comme en est-ouest
+    const sy = Y(Math.round(t.at * b.len));
+    const spread = t.up ? Math.min(3, Math.ceil(t.len / 2)) : Math.min(2, Math.ceil(t.len / 3));
+    const ex = sx + side * spread;
+    const ey = sy + dir * t.len;
+    c.line(sx, sy, ex, ey, 'm');
+    if (t.fork) c.line(ex, ey - dir, ex + side, ey + dir, 'm');
+  }
+  for (let i = 0; i < b.len; i++) {
+    if (i < b.thick) c.set(c0, Y(i), 'M').set(c0 + 1, Y(i), 'm');
+    else c.set(i >= b.len - 4 ? c0 : c0 + 1, Y(i), 'm');
+  }
+  for (let i = 3; i < Math.min(b.thick - 2, 3 + 3 + Math.floor(r() * 3)); i++) c.set(c0 + 1, Y(i), 'N');
+  if (!thickTop) c.set(c0, Y(0), 'U').set(c0 + 1, Y(0), 'u');
+  return c;
+}
+
+/**
+ * Contour d'une branche nord-sud, et, posée au sol (`ground`), son ombre : la silhouette décalée d'un pixel vers l'est et
+ * d'un vers le sud, sur le vide.
+ */
+export function finishBranchNS(c: Canvas, ground: boolean): Canvas {
+  outline(c, 'N');
+  if (ground) {
+    const shade: [number, number][] = [];
+    for (let y = 1; y < c.h; y++) for (let x = 1; x < c.w; x++) {
+      if (c.get(x, y) === EMPTY && c.get(x - 1, y - 1) !== EMPTY) shade.push([x, y]);
+    }
+    for (const [x, y] of shade) c.set(x, y, 'x');
+  }
+  return c;
+}
+
+/**
  * Contour, et, `shadowRow` donné, ombre au sol sur cette rangée : sous chaque pixel dessiné de la rangée du dessus,
  * décalée d'un pixel vers la droite.
  */

@@ -14,6 +14,7 @@ import { lightUp } from '../lib/light';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { BRANCH_FIST, fistGap, sheet } from './carried';
 import { darkest, outline } from './lib';
+import { lyingView } from './lying';
 import { axeArt, toolPalette } from './tools';
 
 /** Milieu de l'œil, le long du manche depuis la prise ; l'œil couvre deux rangées, le manche s'arrête à son haut. */
@@ -188,6 +189,21 @@ function ground(): Grid {
   return groundShadow(outline(c, dark));
 }
 
+/**
+ * Les trois autres vues au sol (règle D : `-r1`, `-r3` nord-sud, 4 × 8 px ; `-r2` est-ouest, 8 × 4, contour compris),
+ * chacune un quart de tour de plus dans le sens des aiguilles d'une montre : la lame à plat suit le fer (vers l'est quand
+ * la tête est au sud, vers le sud quand elle est à l'ouest, vers l'ouest quand elle est au nord). Le contour et l'ombre
+ * restent ceux d'une lumière en haut à gauche.
+ */
+const GROUND_VIEWS: Record<'r1' | 'r2' | 'r3', Grid> = {
+  // tête au sud : le manche descend, le bout (N) au nord ; l'œil sur le manche, le fil à l'est
+  r1: ['N.', 'M.', 'M.', 'M.', '01', '01'],
+  // tête à l'ouest : l'œil au bout ouest du manche, le fil au sud, sous l'œil
+  r2: ['00MMMN', '11....'],
+  // tête au nord : le fil à l'ouest de l'œil, le manche descend vers son bout au sud
+  r3: ['10', '10', '.M', '.M', '.M', '.N'],
+};
+
 // ---------- Tenue au poing ----------
 // Posture `hand` : le poing (2 × 2, BRANCH_FIST) serre le manche près du bout, qui dépasse d'un pixel au-dessus ; la
 // hachette pend le long de la jambe, le fer en bas, le tranchant vers l'avant. De face et de dos, on la voit par la
@@ -223,4 +239,11 @@ const heldHatchet = (): SpriteSheetSource =>
 
 const img = (name: string, grid: Grid): ImageSource => ({ kind: 'image', name, palette: toolPalette, grid });
 
-export default [img('item-hatchet', icon().toGrid()), img('hatchet-ground', ground()), heldHatchet()];
+export default [
+  img('item-hatchet', icon().toGrid()),
+  img('hatchet-ground', ground()),
+  img('hatchet-ground-r1', lyingView(GROUND_VIEWS.r1, dark, true)),
+  img('hatchet-ground-r2', lyingView(GROUND_VIEWS.r2, dark, false)),
+  img('hatchet-ground-r3', lyingView(GROUND_VIEWS.r3, dark, true)),
+  heldHatchet(),
+];

@@ -12,10 +12,11 @@ import { z } from 'zod';
 import { sources } from '../art/index';
 import type { Grid, Palette } from '../art/lib/canvas';
 import propsJson from '../src/content/props.json';
+import itemsJson from '../src/content/items.json';
 import pilesJson from '../src/content/piles.json';
 import plansJson from '../src/content/plans.json';
 import tilesCatalogJson from '../src/content/tiles.json';
-import { GestureSchema, PileDefSchema, PlanSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
+import { GestureSchema, ItemDefSchema, PileDefSchema, PlanSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
 import type { DecalSet } from '../src/content/types';
 import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
 import { projectFile, propsTsj, tilesetTsj } from './lib/tiled-files';
@@ -25,10 +26,12 @@ import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPre
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
 import { woodPreview } from './lib/wood-preview';
+import { lyingPreview } from './lib/lying-preview';
 import { auditPreview } from './lib/audit-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
-import type { WoodPiece } from '../src/content/types';
+import type { WoodLook, WoodPiece } from '../src/content/types';
+import { WOOD } from '../src/world/woodShape';
 import { composeWood } from '../art/world/wood-pieces';
 import { world } from '../art/palette';
 
@@ -121,20 +124,27 @@ const catalog = {
   images: [] as { key: string; width: number; height: number; silhouette: Box }[],
   woodSilhouettes: [] as { piece: WoodPiece; w: number; h: number }[],
 };
-// Le gabarit des pièces de bois assemblées (validate.ts) : la silhouette de la demi-bille, du quartier dans ses quatre positions et
-// de la poutre, dans les deux sens, à plusieurs longueurs, telles que le jeu les assemble (composeWood).
-for (const length of [60, 100, 200, 300]) {
-  const samples: WoodPiece[] = [
-    { size: 'big', shape: 'half', axis: 'ew', length },
-    { size: 'big', shape: 'half', axis: 'ns', length },
-    ...(['north', 'south'] as const).map((face): WoodPiece => ({ size: 'big', shape: 'quarter', axis: 'ew', face, length })),
-    ...(['east', 'west'] as const).map((face): WoodPiece => ({ size: 'big', shape: 'quarter', axis: 'ns', face, length })),
-    { size: 'normal', shape: 'round', hewn: 12, axis: 'ew', length },
-    { size: 'normal', shape: 'round', hewn: 12, axis: 'ns', length },
-  ];
-  for (const piece of samples) {
-    const s = silhouette(composeWood(piece).toGrid(), world);
-    catalog.woodSilhouettes.push({ piece, w: s.w, h: s.h });
+// Le gabarit des pièces de bois assemblées (validate.ts) : la silhouette de chaque aspect de chaque diamètre (le quartier dans ses
+// quatre positions), dans les deux sens, à plusieurs longueurs, telles que le jeu les assemble (composeWood) : l'est-ouest suit le
+// gabarit, le nord-sud a ses dimensions inversées (règle D).
+for (const length of [60, 100, 200, 300, 400]) {
+  for (const [size, def] of Object.entries(WOOD.sizes)) {
+    for (const look of Object.keys(def.looks) as WoodLook[]) {
+      const shape = look === 'half' || look === 'quarter' ? look : 'round';
+      const hewn = (['round', 'f1', 'f2', 'f3', 'beam'] as const).indexOf(look as 'round') * WOOD.hew.perFace;
+      const base: WoodPiece = { size, shape, axis: 'ew', length, ...(hewn > 0 ? { hewn } : {}) };
+      const samples: WoodPiece[] =
+        shape === 'quarter'
+          ? [
+              ...(['north', 'south'] as const).map((face): WoodPiece => ({ ...base, face })),
+              ...(['east', 'west'] as const).map((face): WoodPiece => ({ ...base, axis: 'ns', face })),
+            ]
+          : [base, { ...base, axis: 'ns' }];
+      for (const piece of samples) {
+        const s = silhouette(composeWood(piece).toGrid(), world);
+        catalog.woodSilhouettes.push({ piece, w: s.w, h: s.h });
+      }
+    }
   }
 }
 const spritesheets: string[] = [];
@@ -324,6 +334,10 @@ if (withPreview) {
   // le bois : chaque diamètre et chaque aspect assemblés à plusieurs longueurs, l'encoche, le coin planté et la fente, les vues portées
   const bois = woodPreview(sources);
   if (bois) writeFileSync(join(PREVIEW, 'bois.png'), PNG.sync.write(bois));
+  // tout ce qui est couché, dans toutes ses vues (règle D), et la pièce de bois dans ses deux sens avec sa collision
+  const itemDefs = parse('items.json', z.record(z.string(), ItemDefSchema), itemsJson);
+  const couches = lyingPreview(sources, propDefs, itemDefs);
+  if (couches) writeFileSync(join(PREVIEW, 'couches.png'), PNG.sync.write(couches));
   // les bâtiments qui montent, étape par étape : chaque plan de plans.json posé sur la ferme, son piquet nord-ouest en PLAN_PREVIEW
   const plans = parse('plans.json', z.record(z.string(), PlanSchema), plansJson);
   const base = previewMap(PLAN_PREVIEW.map);

@@ -1,6 +1,6 @@
 {
   "branches": {"name": "tas de branches", "piece": {"item": "branch"}, "start": "g1", "blockFrom": 3, "count": true,
-    "tie": {"item": "rope-tie", "north": {"image": "pile-branch-tie-north", "x": 11, "dy": 0}, "south": {"image": "pile-branch-tie-south", "x": 11, "dy": 7}, "alone": {"image": "pile-branch-tie-alone", "x": 7, "y": 0}, "into": "faggot"}, "places": {
+    "tie": {"item": "rope-tie", "north": {"image": "pile-branch-tie-north", "x": 11, "dy": 0}, "south": {"image": "pile-branch-tie-south", "x": 11, "dy": 7}, "west": {"image": "pile-branch-tie-west", "y": -11, "dx": 0}, "east": {"image": "pile-branch-tie-east", "y": -9, "dx": -1}, "alone": {"image": "pile-branch-tie-alone", "x": 7, "y": 0}, "into": "faggot"}, "places": {
     "g1": {"layer": 0, "image": "pile-branch-g1", "x": 0, "y": -6, "body": {"x": 5, "y": -11, "w": 24, "h": 3}},
     "g0": {"layer": 0, "image": "pile-branch-g0", "x": 0, "y": -9, "body": {"x": 2, "y": -14, "w": 26, "h": 3}},
     "g2": {"layer": 0, "image": "pile-branch-g2", "x": 0, "y": -3, "body": {"x": 0, "y": -8, "w": 28, "h": 3}},
@@ -11,7 +11,18 @@
     "l2-0": {"layer": 2, "on": ["l1-0", "l1-1"], "image": "pile-branch-l2-0", "x": 0, "y": -13},
     "l2-1": {"layer": 2, "on": ["l1-1", "l1-2"], "image": "pile-branch-l2-1", "x": 0, "y": -10},
     "l3-0": {"layer": 3, "on": ["l2-0", "l2-1"], "image": "pile-branch-l3-0", "x": 0, "y": -15}
-  }},
+  }, "turned": {"start": "g1", "places": {
+    "g1": {"layer": 0, "image": "pile-branch-g1-ns", "x": 3, "y": 0, "body": {"x": 8, "y": -26, "w": 3, "h": 24}},
+    "g0": {"layer": 0, "image": "pile-branch-g0-ns", "x": 0, "y": 0, "body": {"x": 5, "y": -29, "w": 3, "h": 26}},
+    "g2": {"layer": 0, "image": "pile-branch-g2-ns", "x": 6, "y": 0, "body": {"x": 11, "y": -31, "w": 3, "h": 28}},
+    "g3": {"layer": 0, "image": "pile-branch-g3-ns", "x": 9, "y": 0, "body": {"x": 14, "y": -27, "w": 3, "h": 25}},
+    "l1-0": {"layer": 1, "on": ["g0", "g1"], "image": "pile-branch-l1-0-ns", "x": 2, "y": -4},
+    "l1-1": {"layer": 1, "on": ["g1", "g2"], "image": "pile-branch-l1-1-ns", "x": 5, "y": -4},
+    "l1-2": {"layer": 1, "on": ["g2", "g3"], "image": "pile-branch-l1-2-ns", "x": 8, "y": -4},
+    "l2-0": {"layer": 2, "on": ["l1-0", "l1-1"], "image": "pile-branch-l2-0-ns", "x": 3, "y": -7},
+    "l2-1": {"layer": 2, "on": ["l1-1", "l1-2"], "image": "pile-branch-l2-1-ns", "x": 6, "y": -7},
+    "l3-0": {"layer": 3, "on": ["l2-0", "l2-1"], "image": "pile-branch-l3-0-ns", "x": 5, "y": -11}
+  }}},
   "faggots": {"name": "tas de fagots", "piece": {"prop": "faggot"}, "start": "g1", "blockFrom": 1, "order": "depth", "places": {
     "g1": {"layer": 0, "image": "faggot", "x": 0, "y": -9, "body": {"x": 2, "y": -19, "w": 24, "h": 8}},
     "g0": {"layer": 0, "image": "faggot", "x": 0, "y": -18, "body": {"x": 2, "y": -28, "w": 24, "h": 8}},
@@ -20,11 +31,11 @@
     "u12": {"layer": 1, "on": ["g1", "g2"], "image": "faggot", "x": 0, "y": -13},
     "top": {"layer": 2, "on": ["u01", "u12"], "image": "faggot", "x": 0, "y": -26}
   }, "turned": {"start": "g1", "order": "depth", "places": {
-    "g1": {"layer": 0, "image": "faggot-ns", "x": 9, "y": 0, "body": {"x": 10, "y": -19, "w": 9, "h": 17}},
-    "g0": {"layer": 0, "image": "faggot-ns", "x": 0, "y": 0, "body": {"x": 1, "y": -19, "w": 9, "h": 17}},
-    "g2": {"layer": 0, "image": "faggot-ns", "x": 18, "y": 0, "body": {"x": 19, "y": -19, "w": 9, "h": 17}},
-    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "faggot-ns", "x": 5, "y": -5},
-    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "faggot-ns", "x": 14, "y": -5},
-    "top": {"layer": 2, "on": ["u01", "u12"], "image": "faggot-ns", "x": 9, "y": -10}
+    "g1": {"layer": 0, "image": "faggot-ns", "x": 9, "y": 0, "body": {"x": 14, "y": -28, "w": 8, "h": 24}},
+    "g0": {"layer": 0, "image": "faggot-ns", "x": 0, "y": 0, "body": {"x": 5, "y": -28, "w": 8, "h": 24}},
+    "g2": {"layer": 0, "image": "faggot-ns", "x": 18, "y": 0, "body": {"x": 23, "y": -28, "w": 8, "h": 24}},
+    "u01": {"layer": 1, "on": ["g0", "g1"], "image": "faggot-ns", "x": 4, "y": -9},
+    "u12": {"layer": 1, "on": ["g1", "g2"], "image": "faggot-ns", "x": 14, "y": -9},
+    "top": {"layer": 2, "on": ["u01", "u12"], "image": "faggot-ns", "x": 9, "y": -17}
   }}}
 }

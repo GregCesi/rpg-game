@@ -9,6 +9,7 @@ import { lightUp, type Material, type Materials } from '../lib/light';
 import type { ArtSource, ImageSource, SpriteSheetSource } from '../lib/types';
 import { BRANCH_FIST, FIST, behindHead, fistGap, sheet } from './carried';
 import { darkest, outline } from './lib';
+import { lyingView } from './lying';
 import { toolPalette } from './tools';
 
 /**
@@ -170,6 +171,20 @@ function maulGround(): Grid {
   return groundShadow(outline(c, dark));
 }
 
+/**
+ * Les trois autres vues de la masse au sol (règle D : `-r1`, `-r3` nord-sud, 4 × 15 px ; `-r2` est-ouest, 15 × 4, contour
+ * compris), chacune un quart de tour de plus dans le sens des aiguilles d'une montre. La tête garde sa lumière : dessus
+ * clair à gauche, face sud sombre ; à l'ouest, le manche reste au pied de la tête, plus haute que lui.
+ */
+const MAUL_VIEWS: Record<'r1' | 'r2' | 'r3', Grid> = {
+  // tête au sud : le manche descend le long de la colonne ouest, la tête au bout (dessus, puis face sud)
+  r1: ['N.', ...Array(9).fill('M.'), '22', '23', '34'],
+  // tête à l'ouest : la même tête, le manche vers l'est, son bout (N) au bout est
+  r2: ['223..........', '344MMMMMMMMMN'],
+  // tête au nord : la tête en haut (dessus, face sud), le manche descend le long de la colonne est
+  r3: ['22', '23', '34', ...Array(9).fill('.M'), '.N'],
+};
+
 // ---------- Coin de fendage ----------
 // Fer, 20 × 7 × 4 cm : une tête plate et large en haut, martelée (elle s'évase d'un pixel sous les coups), le corps
 // qui s'amincit en coin vers le bas.
@@ -201,6 +216,20 @@ function wedgeGround(): Grid {
   c.stamp(['IIpp', 'Ip..'], 1, 1);
   return groundShadow(outline(c, dark));
 }
+
+/**
+ * Les trois autres vues du coin au sol (règle D : `-r1`, `-r3` nord-sud, 4 × 6 px ; `-r2` est-ouest, 6 × 4, contour
+ * compris), chacune un quart de tour de plus dans le sens des aiguilles d'une montre : la tête martelée au nord, à l'est,
+ * puis au sud. La tête : son dessus clair (I), sa face sud (p) ; le corps qui s'effile, plus étroit que la tête.
+ */
+const WEDGE_VIEWS: Record<'r1' | 'r2' | 'r3', Grid> = {
+  // tête au nord, pointe au sud
+  r1: ['II', 'Ip', '.p', '.p'],
+  // tête à l'est, pointe à l'ouest
+  r2: ['ppII', '..Ip'],
+  // tête au sud, pointe au nord
+  r3: ['I.', 'p.', 'II', 'Ip'],
+};
 
 /** Matière du coin tenu en main (fer bleuté), éclairée par lightUp. */
 const wedgeMaterials: Materials = {
@@ -294,9 +323,15 @@ const img = (name: string, grid: Grid, palette = splittingPalette): ImageSource 
 const sources: ArtSource[] = [
   img('item-maul', maulIcon().toGrid()),
   img('maul-ground', maulGround()),
+  img('maul-ground-r1', lyingView(MAUL_VIEWS.r1, dark, true)),
+  img('maul-ground-r2', lyingView(MAUL_VIEWS.r2, dark, false)),
+  img('maul-ground-r3', lyingView(MAUL_VIEWS.r3, dark, true)),
   heldMaul(),
   img('item-splitting-wedge', wedgeIcon().toGrid()),
   img('splitting-wedge-ground', wedgeGround()),
+  img('splitting-wedge-ground-r1', lyingView(WEDGE_VIEWS.r1, dark, true)),
+  img('splitting-wedge-ground-r2', lyingView(WEDGE_VIEWS.r2, dark, false)),
+  img('splitting-wedge-ground-r3', lyingView(WEDGE_VIEWS.r3, dark, true)),
   heldWedge(),
 ];
 

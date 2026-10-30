@@ -15,6 +15,7 @@ import { world } from '../palette';
 import { centerIn, diagonal, finishBranch } from './branch';
 import { BRANCH_FIST, fistGap, sheet } from './carried';
 import { outline } from './lib';
+import { lyingView } from './lying';
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
@@ -42,6 +43,23 @@ export function stakeBody(x0: number, w: number, h: number, row: number, pointLe
 
 function stakeGround(): Canvas {
   return finishBranch(stakeBody(1, LEN + 3, 4, 1), 3);
+}
+
+/**
+ * Les trois autres vues au sol (règle D : `-r1`, `-r3` nord-sud, 3 × 20 px ; `-r2` est-ouest, 20 × 3, contour compris),
+ * chacune un quart de tour de plus dans le sens des aiguilles d'une montre : la pointe au sud, à l'ouest, au nord. Une
+ * colonne (ou une rangée) de bois, la fente au tiers de la tête. Le bois mis à nu prend la lumière : les facettes de la
+ * pointe sont claires (U) sauf celle qui regarde le sud ou l'est (u) ; la tête coupée, claire au nord et à l'ouest,
+ * dans l'ombre à l'est et au sud.
+ */
+function stakeView(k: 1 | 2 | 3): Grid {
+  // le bois depuis la tête (i = 0) jusqu'à la pointe (i = LEN - 1)
+  const wood = (head: string, tip: [string, string, string]) =>
+    Array.from({ length: LEN }, (_, i) =>
+      i === 0 ? head : i >= LEN - 3 ? tip[i - (LEN - 3)] : i >= 4 && i <= 6 ? 'm' : 'M');
+  if (k === 1) return wood('U', ['U', 'U', 'u']); // tête au nord, pointe au sud
+  if (k === 2) return [wood('u', ['U', 'U', 'U']).reverse().join('')]; // pointe à l'ouest, tête à l'est
+  return wood('u', ['U', 'U', 'U']).reverse(); // pointe au nord, tête au sud
 }
 
 // ---------- Planté ----------
@@ -113,4 +131,14 @@ function heldStakeView(view: 'down' | 'up' | 'right'): Grid {
 const heldStake = (): SpriteSheetSource =>
   sheet('held-stake', HELD_SIZE, world, { down: heldStakeView('down'), up: heldStakeView('up'), right: heldStakeView('right') });
 
-export default [img('stake-ground', stakeGround()), img('planted-stake', plantedStake()), img('item-stake', itemStake()), heldStake()];
+const view = (name: string, grid: Grid): ImageSource => ({ kind: 'image', name, palette: world, grid });
+
+export default [
+  img('stake-ground', stakeGround()),
+  view('stake-ground-r1', lyingView(stakeView(1), 'N', true)),
+  view('stake-ground-r2', lyingView(stakeView(2), 'N', false)),
+  view('stake-ground-r3', lyingView(stakeView(3), 'N', true)),
+  img('planted-stake', plantedStake()),
+  img('item-stake', itemStake()),
+  heldStake(),
+];

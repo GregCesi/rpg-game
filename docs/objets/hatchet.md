@@ -15,6 +15,7 @@
 - En main pendant le geste, à l'échelle : 5 cm par pixel, le manche mesure 8 px, le fer 2 × 2 px.
 
 ## Vues
+- Symétrie : quatre vues (`views: "four"`, couché, `lying`) : `hatchet-ground` (la tête à l'est), `hatchet-ground-r1` (au sud), `hatchet-ground-r2` (à l'ouest), `hatchet-ground-r3` (au nord), chacune dessinée, lumière en haut à gauche ; les vues nord-sud ont les dimensions de l'est-ouest inversées (règle D, docs/STYLE.md section 8). R les fait défiler à la pose.
 - Icône 16 × 16 (`item-hatchet`) : la hachette en diagonale, fer en haut à droite, plus petite que l'icône de la hache.
 - Au sol (`hatchet-ground`, 8 × 3 px, aussi l'image `ground` de l'objet possédable) : couchée, le fer à un bout.
 - Tenue à la main (`held-hatchet`, posture `hand`, vues `down`, `up`, `right`, la gauche est le miroir) : au poing, le long de la jambe, le fer vers le bas.

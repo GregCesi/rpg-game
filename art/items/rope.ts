@@ -48,6 +48,34 @@ const TIE_GROUND: string[] = [
   '..xxxxxxxx.',
 ];
 
+// Nord-sud (`rope-tie-ground-ns`, `views: symmetric`, règle D : 4 × 11, la taille de l'est-ouest inversée) : le même
+// écheveau couché du nord au sud, dessiné dans ce sens. Les deux brins côte à côte, le clair (J) à l'ouest du côté de la
+// lumière, l'autre (O) à l'est, torsadés d'un cran plus sombre ; le tour serré en travers au milieu (O C) ; boucles
+// arrondies aux deux bouts. Contour X au nord et à l'ouest, OUTLINE au sud et à l'est ; ombre : la silhouette décalée d'un
+// pixel vers l'est et vers le sud.
+const TIE_GROUND_NS: string[] = [
+  '.XX.',
+  'XJOo',
+  'XJCo',
+  'XOOo',
+  'XJOo',
+  'XOCo',
+  'XJCo',
+  'XOOo',
+  'XJCo',
+  'XJOo',
+  '.oo.',
+];
+
+function tieGroundNS(): Canvas {
+  const c = new Canvas(5, TIE_GROUND_NS.length + 1);
+  c.stamp(TIE_GROUND_NS, 0, 0);
+  const shade: [number, number][] = [];
+  for (let y = 1; y < c.h; y++) for (let x = 1; x < c.w; x++) if (c.get(x, y) === EMPTY && c.get(x - 1, y - 1) !== EMPTY) shade.push([x, y]);
+  for (const [x, y] of shade) c.set(x, y, 'x');
+  return c;
+}
+
 // ---------- Icônes 16×16 ----------
 // Pas d'ombre (le jeu l'ajoute quand l'objet est posé).
 
@@ -209,4 +237,57 @@ export function tieSouth(): Canvas {
   return rows(c, 1, c.h);
 }
 
-export default [img('rope-coil', ropeCoil()), img('rope-tie-ground', Canvas.from(TIE_GROUND)), img('item-rope-coil', coilIcon()), img('item-rope-tie', tieIcon()), img('pile-branch-tie-alone', tieAlone())];
+/**
+ * Le lien sous le tas tourné (branches nord-sud) : il passe d'ouest en est sous toutes les branches, on n'en voit que les
+ * deux bouts (`tie.west`, `tie.east` de piles.json). Les mêmes brins doublés que du nord au sud, couchés d'ouest en est :
+ * brins aux rangées 1 et 4 de chaque image (la rangée 0 est le contour), le clair (J) dessus, du côté de la lumière.
+ * - Ouest (`tieWest`) : la boucle de la corde doublée ; sa dernière colonne file sous la branche la plus à l'ouest, coupée
+ *   net (pas de contour de ce côté).
+ * - Est (`tieEast`) : les brins sortent de sous la branche la plus à l'est (première colonne coupée net), se rejoignent en
+ *   un nœud lâche, puis les deux bouts s'écartent, l'un vers l'est, l'autre vers le sud-est. Ombre sous les bouts.
+ */
+const TIE_WEST_STUB = [
+  '..JJOJJOJ',
+  '.J.......',
+  '.O.......',
+  '..OCOOCOC',
+];
+const TIE_EAST_STUB = [
+  'JOJO...JO',
+  '....JOJ..',
+  '....OC...',
+  'OCOC.CO..',
+  '.......C.',
+  '........O',
+];
+
+/** Ombre au sol : sous chaque contour du bas, un pixel plus bas et à droite. */
+function groundShade(c: Canvas): Canvas {
+  const shade: [number, number][] = [];
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) if (c.get(x, y) === 'o' && c.get(x + 1, y + 1) === EMPTY && c.get(x, y + 1) === EMPTY) shade.push([x + 1, y + 1]);
+  for (const [x, y] of shade) c.set(x, y, 'x');
+  return c;
+}
+
+/** Colonnes de `c` de `from` à `to` (exclu). */
+const cols = (c: Canvas, from: number, to: number) => Canvas.from(c.toGrid().map((r) => r.slice(from, to)));
+
+/** Le bout ouest : la boucle ; sa dernière colonne file sous la branche de l'ouest. */
+export function tieWest(): Canvas {
+  const c = new Canvas(TIE_WEST_STUB[0].length + 1, TIE_WEST_STUB.length + 3);
+  c.stamp(TIE_WEST_STUB, 0, 1);
+  outline(c, 'X');
+  groundShade(c);
+  return cols(c, 0, TIE_WEST_STUB[0].length);
+}
+
+/** Le bout est : sa première colonne sort de sous la branche de l'est ; puis le nœud, les bouts, l'ombre. */
+export function tieEast(): Canvas {
+  const c = new Canvas(TIE_EAST_STUB[0].length + 3, TIE_EAST_STUB.length + 3);
+  c.stamp(TIE_EAST_STUB, 1, 1);
+  outline(c, 'X');
+  groundShade(c);
+  return cols(c, 1, c.w);
+}
+
+export default [img('rope-coil', ropeCoil()), img('rope-tie-ground', Canvas.from(TIE_GROUND)), img('rope-tie-ground-ns', tieGroundNS()), img('item-rope-coil', coilIcon()), img('item-rope-tie', tieIcon()), img('pile-branch-tie-alone', tieAlone())];

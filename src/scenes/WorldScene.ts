@@ -486,7 +486,9 @@ export class WorldScene extends Phaser.Scene {
   private pickUp(g: PlacedGround): void {
     if (!this.player.strength.canCarry(itemMass(g.item.item))) return this.notice('Trop lourd à porter.');
     if (!this.canLift(itemMass(g.item.item))) return this.effort.exhausted();
-    if (!take(game, { item: g.item.item }, items[g.item.item].hands)) return this.notice('Les mains pleines.');
+    // il garde le sens où il était couché : reposé, il le retrouve (R le tourne)
+    const what = { item: g.item.item, ...(g.item.view ? { view: g.item.view } : {}) };
+    if (!take(game, what, items[g.item.item].hands)) return this.notice('Les mains pleines.');
     removeGroundItem(game, this.map.def.id, g.item.id);
     this.map.removeGround(g);
     this.handsChanged();

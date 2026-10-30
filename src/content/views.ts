@@ -2,7 +2,7 @@
 // en a et le nom de l'image de chacune. La vue 0 est son image ; les autres, un quart de tour de plus à chaque fois, dans le sens
 // des aiguilles d'une montre (R les fait défiler à la pose).
 
-import type { Views } from './types';
+import type { ItemDef, Views } from './types';
 
 /** Nombre de vues d'une symétrie : rond 1, symétrique 2, quatre 4. */
 export function viewCount(views: Views): number {
@@ -24,6 +24,14 @@ export function viewImage(base: string, views: Views, k: number, has?: (key: str
 /** Les images de toutes les vues d'un objet, dans l'ordre (la vue 0 d'abord). */
 export function viewImages(base: string, views: Views, has?: (key: string) => boolean): string[] {
   return Array.from({ length: viewCount(views) }, (_, k) => viewImage(base, views, k, has));
+}
+
+/**
+ * L'image au sol d'un objet possédable dans sa vue `view` (0 à 3) : celle de `ground` et de sa symétrie, sinon son icône (un objet
+ * rond sans image au sol).
+ */
+export function groundImage(def: Pick<ItemDef, 'ground' | 'icon' | 'views'>, view = 0, has?: (key: string) => boolean): string {
+  return def.ground ? viewImage(def.ground, def.views, view, has) : def.icon;
 }
 
 /** Une vue est nord-sud (un quart de tour depuis l'image) : ses dimensions sont celles de l'image, inversées, pour ce qui est couché. */

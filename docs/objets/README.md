@@ -8,7 +8,7 @@ le même jour, toutes ses vues : un objet se crée vu de ses quatre côtés, sel
 La fiche décrit l'objet tel qu'il doit être ; le contenu (`src/content/`) et les dessins (`art/`) en découlent. Quand
 l'objet change, la fiche change d'abord.
 
-Fiches : le [têtard](big-pollard.md), les [gros arbres couchés](big-felled-tree.md) ; l'[arbre normal](normal-tree.md) ; la [pièce de bois](wood-piece.md) (bille, demi-bille, quartier, rondin, poutre : un seul objet, des réglages) ; l'implantation : [planchette gravée](plan-tablet.md), [piquet](stake.md), [hachette](hatchet.md), [pierre plate](flat-stone.md) ; l'équarrissage : [doloire](broadaxe.md) ; [rouleau de corde](rope-coil.md), [lien](rope-tie.md), [fagot](faggot.md) ; le fendage : [masse de bûcheron](maul.md), [coin de fendage](splitting-wedge.md) ; les pièces de l'abri à bois, dans
+Fiches : le [têtard](big-pollard.md), les [gros arbres couchés](big-felled-tree.md) ; l'[arbre normal](normal-tree.md) ; la [pièce de bois](wood-piece.md) (bille, demi-bille, quartier, rondin, poutre : un seul objet, des réglages) ; l'implantation : [planchette gravée](plan-tablet.md), [piquet](stake.md), [hachette](hatchet.md), [pierre plate](flat-stone.md) ; l'équarrissage : [doloire](broadaxe.md) ; la [cognée](axe.md) ; [rouleau de corde](rope-coil.md), [lien](rope-tie.md), [fagot](faggot.md) ; le fendage : [masse de bûcheron](maul.md), [coin de fendage](splitting-wedge.md) ; les pièces de l'abri à bois, dans
 l'ordre du chantier : [dé de pierre](footing-stone.md), [poteaux](shed-post.md), [sablières](shed-plate.md),
 [chevron](shed-rafter.md), [toit de planches](shed-roof.md). Les pièces d'un même genre (les deux poteaux, les trois
 sablières) partagent une fiche, qui nomme toutes leurs clés.
