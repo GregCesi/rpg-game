@@ -9,7 +9,7 @@ import { orientedZones } from '../lib/held';
 import { lightUp } from '../lib/light';
 import { axeArt, toolPalette } from '../items/tools';
 import { ROPE_COIL } from '../items/rope';
-import { shadedOutline } from './trees';
+import { shadedOutline } from './big-tree';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 

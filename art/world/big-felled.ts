@@ -1,22 +1,22 @@
 // Chute de l'arbre et arbre couché.
 //
-// La chute (`tree-fall`) reprend l'arbre de trees.ts dans son repère (image 64x96, pied du tronc en (33, 89)),
+// La chute (`big-tree-fall`) reprend l'arbre de trees.ts dans son repère (image 64x96, pied du tronc en (33, 89)),
 // pivoté autour de la charnière au-dessus de la souche. Sa dernière image est l'arbre couché lui-même :
-// la souche (`tree-stump`) et les quatre pièces que le jeu pose ensuite comme objets séparés, si bien que
+// la souche (`big-tree-stump`) et les quatre pièces que le jeu pose ensuite comme objets séparés, si bien que
 // le remplacement de la dernière image par les objets ne saute pas.
 //
-// Arbre couché vers la droite, du pied à la cime : `felled-section-1`, `-2`, `-3` (tronc nu, 19 px, environ 1 m),
-// puis `felled-crown` (4e bille et pointe, sous le houppier). Ébranché, `felled-crown` devient `felled-head`
+// Arbre couché vers la droite, du pied à la cime : `big-felled-section-1`, `-2`, `-3` (tronc nu, 19 px, environ 1 m),
+// puis `big-felled-crown` (4e bille et pointe, sous le houppier). Ébranché, `big-felled-crown` devient `big-felled-head`
 // (même image, même place : la 4e bille nue, puis la pointe avec ses chicots). Chaque pièce est une future bille
 // et porte une encoche à son bout droit, sur la jonction avec la suivante, qui se creuse à chaque coup (`-n1`, `-n2`)
-// puis se coupe (`-cut-right` ; la voisine passe en `-cut-left`). La bille `felled-log-k` est la pièce k coupée aux
-// deux bouts, même image, même place. La chute vers la gauche (`tree-fall-left`, pièces `-left`) a sa propre
+// puis se coupe (`-cut-right` ; la voisine passe en `-cut-left`). La bille `big-felled-log-k` est la pièce k coupée aux
+// deux bouts, même image, même place. La chute vers la gauche (`big-tree-fall-left`, pièces `-left`) a sa propre
 // section en fin de fichier : géométrie en miroir, dessin et lumière refaits.
 
 import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
-import { FOOT, type Vec, despeckle, groundShadow, shadedOutline, standingTree, stump, stumpBody, treeBody } from './trees';
+import { FOOT, type Vec, despeckle, groundShadow, shadedOutline, standingTree, stump, stumpBody, treeBody } from './big-tree';
 import { DIAMETER, bark, faceTone, logByTheEnd, logEnd } from './wood';
 
 // ---------- Chute ----------
@@ -347,7 +347,7 @@ function piece(k: number, head = false, st: State = {}): Canvas {
 }
 
 /**
- * Bille seule (`felled-log`, celle du tas et de l'atelier) : la même que les billes du tronc, 17 px de bois entre deux
+ * Bille seule (`big-felled-log`, celle du tas et de l'atelier) : la même que les billes du tronc, 17 px de bois entre deux
  * contours, 11 de diamètre. Un cylindre : l'écorce commune en travers (lumière en haut), les sillons en long, les coins
  * arrondis, la face de coupe en ovale au bout gauche, vers la lumière, et l'écorce enroulée au bout droit.
  */
@@ -367,7 +367,7 @@ function felledLog(): Canvas {
 }
 
 /**
- * La même bille couchée nord-sud (`felled-log-ns`, tas tourné de piles.json), vue par le bout : la bille est-ouest
+ * La même bille couchée nord-sud (`big-felled-log-ns`, tas tourné de piles.json), vue par le bout : la bille est-ouest
  * tournée d'un quart de tour. Elle tient dans la même boîte, transposée : 13 px de large (11 de diamètre, 55 cm, et le
  * contour) et 19 px de haut, comme la bille est-ouest et la pièce du tronc font 19 px de long (95 cm). Au sol, le jeu
  * compte la profondeur à 5 cm par pixel, comme la largeur (collisions de props.json, tas est-ouest à 11 px d'une
@@ -412,7 +412,7 @@ function cut(c: Canvas, f: Frame): Canvas {
   return out;
 }
 
-const PIECE_NAMES = ['felled-section-1', 'felled-section-2', 'felled-section-3', 'felled-crown'];
+const PIECE_NAMES = ['big-felled-section-1', 'big-felled-section-2', 'big-felled-section-3', 'big-felled-crown'];
 const PIECES = [0, 1, 2, 3].map((k) => piece(k));
 
 /**
@@ -420,7 +420,7 @@ const PIECES = [0, 1, 2, 3].map((k) => piece(k));
  * à couper (c'est le bout scié) ; le houppier ne s'entaille pas (on ébranche d'abord).
  */
 function variants(k: number, head: boolean): [string, Canvas][] {
-  const name = head ? 'felled-head' : PIECE_NAMES[k];
+  const name = head ? 'big-felled-head' : PIECE_NAMES[k];
   if (k === 3 && !head) return [[name, piece(k)], [`${name}-cut-left`, piece(k, false, { left: true })]];
   const lefts = k === 0 ? [false] : [false, true];
   return lefts.flatMap((left): [string, Canvas][] => {
@@ -447,7 +447,7 @@ const FRAMES: Frame[] = [
 ];
 
 /**
- * Données des pièces, pour props.json : repère = coin bas gauche de l'image `tree` posée sur la carte
+ * Données des pièces, pour props.json : repère = coin bas gauche de l'image `big-tree` posée sur la carte
  * (x vers la droite, y vers le bas, donc négatif au-dessus). Calculé, jamais recopié à la main.
  */
 export const FELLED_LAYOUT = (() => {
@@ -474,8 +474,8 @@ export const FELLED_LAYOUT = (() => {
   };
   return {
     pieces: [0, 1, 2].map((k) => describe(PIECE_NAMES[k], FRAMES[k], k, true)),
-    crown: describe('felled-crown', FRAMES[3], 3, false),
-    head: describe('felled-head', FRAMES[3], 3, true),
+    crown: describe('big-felled-crown', FRAMES[3], 3, false),
+    head: describe('big-felled-head', FRAMES[3], 3, true),
   };
 })();
 
@@ -498,7 +498,7 @@ const frames = [
 
 const treeFall: SpriteSheetSource = {
   kind: 'spritesheet',
-  name: 'tree-fall',
+  name: 'big-tree-fall',
   frameW: FALL_W,
   frameH: FALL_H,
   palette: world,
@@ -508,16 +508,16 @@ const treeFall: SpriteSheetSource = {
 };
 
 // ---------- Chute vers la gauche ----------
-// Pas un miroir de la chute à droite : l'arbre debout reste `tree` tel quel, il pivote vers la gauche autour du bord
-// gauche de sa coupe, et la souche reste `tree-stump`, à la même place. Seules la géométrie des pièces couchées
+// Pas un miroir de la chute à droite : l'arbre debout reste `big-tree` tel quel, il pivote vers la gauche autour du bord
+// gauche de sa coupe, et la souche reste `big-tree-stump`, à la même place. Seules la géométrie des pièces couchées
 // (silhouettes, encoches, cadres) est le miroir exact de celle de droite autour du pied de l'arbre, pour que le jeu
-// en déduise positions et collisions (x' = 66 - (x + w - 1) dans le repère de `tree`) ; le dessin est refait avec
+// en déduise positions et collisions (x' = 66 - (x + w - 1) dans le repère de `big-tree`) ; le dessin est refait avec
 // la lumière en haut à gauche : faces de coupe, entailles, houppier, contour.
 //
 // Frame de même taille que la chute à droite, miroir de la sienne : l'arbre debout y est à OFF_L, le tronc couché
 // s'étend vers la gauche. Une colonne X de la frame de droite devient la colonne mx(X) de celle de gauche.
 
-/** Décalage de l'arbre dans la frame de la chute à gauche : coin bas gauche de la frame à x = -OFF_L de celui de `tree`. */
+/** Décalage de l'arbre dans la frame de la chute à gauche : coin bas gauche de la frame à x = -OFF_L de celui de `big-tree`. */
 export const OFF_L = FALL_W - 1 - OFF - 66;
 const mx = (X: number) => FALL_W - 1 - X;
 /** Charnière de la chute à gauche : bord gauche de la coupe (le tronc va de 28 à 37 sous le houppier). */
@@ -683,7 +683,7 @@ function pieceLeft(k: number, head = false, st: State = {}): Canvas {
 
 /** Variantes d'une pièce couchée à gauche : la clé de la pièce, puis `-left`, puis le suffixe d'état. */
 function variantsLeft(k: number, head: boolean): [string, Canvas][] {
-  const base = head ? 'felled-head' : PIECE_NAMES[k];
+  const base = head ? 'big-felled-head' : PIECE_NAMES[k];
   return variants(k, head).map(([name]): [string, Canvas] => {
     const suffix = name.slice(base.length);
     const left = suffix.startsWith('-cut-left');
@@ -706,7 +706,7 @@ const FRAMES_L: Frame[] = FRAMES.map((f) => ({ ...f, x: FALL_W - f.x - f.w }));
   const pairs: [string, Canvas, Canvas, Frame, Frame][] = [
     ...SETS.flatMap((s, k) => s.map(([n, c], i): [string, Canvas, Canvas, Frame, Frame] => [n, c, SETS_L[k][i][1], FRAMES[k], FRAMES_L[k]])),
     ...[...CROWN_SET, ...HEAD_SET].map(([n, c], i): [string, Canvas, Canvas, Frame, Frame] => [n, c, [...CROWN_SET_L, ...HEAD_SET_L][i][1], FRAMES[3], FRAMES_L[3]]),
-    ...LOGS.map((c, k): [string, Canvas, Canvas, Frame, Frame] => [`felled-log-${k + 1}`, c, LOGS_L[k], FRAMES[k], FRAMES_L[k]]),
+    ...LOGS.map((c, k): [string, Canvas, Canvas, Frame, Frame] => [`big-felled-log-${k + 1}`, c, LOGS_L[k], FRAMES[k], FRAMES_L[k]]),
   ];
   for (const [name, r, l, , fl] of pairs) {
     for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
@@ -743,7 +743,7 @@ const framesLeft = [
 
 const treeFallLeft: SpriteSheetSource = {
   ...treeFall,
-  name: 'tree-fall-left',
+  name: 'big-tree-fall-left',
   animations: {
     fall: { ...treeFall.animations.fall, frames: framesLeft.map((f) => f.toGrid()) },
   },
@@ -755,13 +755,13 @@ export default [
   treeFall,
   ...SETS.flatMap((s, k) => s.map(([name, c]) => img(name, cut(c, FRAMES[k])))),
   ...[...CROWN_SET, ...HEAD_SET].map(([name, c]) => img(name, cut(c, FRAMES[3]))),
-  ...LOGS.map((c, k) => img(`felled-log-${k + 1}`, cut(c, FRAMES[k]))),
+  ...LOGS.map((c, k) => img(`big-felled-log-${k + 1}`, cut(c, FRAMES[k]))),
   // largeur gardée à LOG_LEN + 3 (20 px, dernière colonne vide depuis que l'ombre ne dépasse plus) : collision et
   // places du tas en dépendent
-  img('felled-log', ((l) => cut(l, { ...bounds([l]), w: LOG_LEN + 3 }))(felledLog())),
-  img('felled-log-ns', felledLogNS()),
+  img('big-felled-log', ((l) => cut(l, { ...bounds([l]), w: LOG_LEN + 3 }))(felledLog())),
+  img('big-felled-log-ns', felledLogNS()),
   treeFallLeft,
   ...SETS_L.flatMap((s, k) => s.map(([name, c]) => img(name, cut(c, FRAMES_L[k])))),
   ...[...CROWN_SET_L, ...HEAD_SET_L].map(([name, c]) => img(name, cut(c, FRAMES_L[3]))),
-  ...LOGS_L.map((c, k) => img(`felled-log-${k + 1}-left`, cut(c, FRAMES_L[k]))),
+  ...LOGS_L.map((c, k) => img(`big-felled-log-${k + 1}-left`, cut(c, FRAMES_L[k]))),
 ];

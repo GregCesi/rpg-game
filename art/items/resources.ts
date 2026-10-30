@@ -308,5 +308,5 @@ export default [
   img('item-egg', egg()),
   img('item-apple', apple()),
   img('item-wool', wool()),
-  img('item-felled-log', felledLog()),
+  img('item-big-felled-log', felledLog()),
 ];

@@ -10,7 +10,7 @@ import { orientedZones, gripOf } from '../lib/held';
 import { lightUp, type Materials } from '../lib/light';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
-import felled from '../world/felled';
+import felled from '../world/big-felled';
 import { logByTheEnd } from '../world/wood';
 import { darkest, outline } from './lib';
 import { branchBody, finishBranch, shearDown, transpose, type Branch } from './branch';
@@ -149,7 +149,7 @@ const heldBranch = (): SpriteSheetSource =>
   sheet('held-branch', BRANCH_SIZE, world, { down: heldBranchView('down'), up: heldBranchView('up'), right: heldBranchView('right') });
 
 // ---------- Bille portée ----------
-// La bille felled-log-1 (art/world/felled.ts) portée à deux mains devant lui. De face et de dos, en longueur : la
+// La bille big-felled-log-1 (art/world/big-felled.ts) portée à deux mains devant lui. De face et de dos, en longueur : la
 // bille couchée elle-même, sans son ombre au sol. De profil, on la voit par le bout, comme la bille nord-sud du tas :
 // la face de coupe (11 px de diamètre, 55 cm), son cerne et l'écorce autour, le dessus de l'écorce qui fuit derrière.
 
@@ -157,8 +157,8 @@ const LOG_SIZE = 25;
 const LOG_C = Math.floor(LOG_SIZE / 2);
 
 function logLengthwise(): Grid {
-  const src = (felled as (ImageSource | SpriteSheetSource)[]).find((s) => s.name === 'felled-log-1');
-  if (!src || src.kind !== 'image') throw new Error('carried : felled-log-1 introuvable');
+  const src = (felled as (ImageSource | SpriteSheetSource)[]).find((s) => s.name === 'big-felled-log-1');
+  if (!src || src.kind !== 'image') throw new Error('carried : big-felled-log-1 introuvable');
   const body = src.grid.map((r) => r.replace(/x/g, EMPTY)).filter((r) => /[^.]/.test(r));
   const c = new Canvas(LOG_SIZE, LOG_SIZE);
   // le milieu de la bille sur la prise
@@ -179,7 +179,7 @@ function logEnd(): Grid {
 
 const heldFelledLog = (): SpriteSheetSource => {
   const lengthwise = logLengthwise();
-  return sheet('held-felled-log', LOG_SIZE, world, { down: lengthwise, up: lengthwise, right: logEnd() });
+  return sheet('held-big-felled-log', LOG_SIZE, world, { down: lengthwise, up: lengthwise, right: logEnd() });
 };
 
 // ---------- Rouleau de corde ----------

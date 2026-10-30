@@ -60,7 +60,7 @@ Après `npm run art:preview`, ouvrir `.art-preview/<clé>.png` et, à côté, `.
 
 ## 8. Gabarit
 
-Règle de dimensions et de perspective, tirée des billes (`felled-log`, `felled-log-ns`), qui font référence. Un objet part de ses dimensions réelles en centimètres (`dims` dans `src/content/props.json`) ; sa taille à l'écran en découle. Code : `src/content/gabarit.ts`. Étalons : `.art-preview/gabarit.png`.
+Règle de dimensions et de perspective, tirée des billes (`big-felled-log`, `big-felled-log-ns`), qui font référence. Un objet part de ses dimensions réelles en centimètres (`dims` dans `src/content/props.json`) ; sa taille à l'écran en découle. Code : `src/content/gabarit.ts`. Étalons : `.art-preview/gabarit.png`.
 
 **La projection.**
 

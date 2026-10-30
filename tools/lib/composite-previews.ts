@@ -12,7 +12,7 @@
 //   en jeu (ROOF.alpha). <bâtiment>.png les met côte à côte. Même ordre d'affichage que GameMap : `floor` d'abord, puis
 //   le bas de chaque image (y de Tiled), à égalité dans l'ordre de la carte.
 // - gabarit.png : les étalons du gabarit (docs/STYLE.md section 8), posés sur une même ligne de sol, de gauche à droite :
-//   Xéros, un cube de 50 cm, la bille est-ouest (felled-log), la bille nord-sud (felled-log-ns), un cylindre debout de
+//   Xéros, un cube de 50 cm, la bille est-ouest (big-felled-log), la bille nord-sud (big-felled-log-ns), un cylindre debout de
 //   50 cm (Ø 50, 50 de haut). Le cube et le cylindre sont tracés d'après les formules de src/content/gabarit.ts. En
 //   dessous, les mêmes avec, en liseré jaune, la taille que donne le gabarit. Une règle à gauche : un trait tous les
 //   10 px (50 cm), un long tous les 20 px (1 m) ; le quadrillage du fond est celui des cases (32 px, 1,60 m).
@@ -308,8 +308,8 @@ export function gabaritPreview(sources: ArtSource[]): PNG | undefined {
     return s?.kind === 'image' ? s : undefined;
   };
   const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');
-  const ew = image('felled-log');
-  const ns = image('felled-log-ns');
+  const ew = image('big-felled-log');
+  const ns = image('big-felled-log-ns');
   if (body?.kind !== 'spritesheet' || !ew || !ns) return undefined;
   const cube: Dims = { w: 50, d: 50, h: 50, shape: 'box' };
   const upright: Dims = { w: 50, d: 50, h: 50, shape: 'cylinder', axis: 'up' };

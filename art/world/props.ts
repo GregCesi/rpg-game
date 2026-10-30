@@ -3,7 +3,7 @@
 import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
-import { standingTree } from './trees';
+import { standingTree } from './big-tree';
 
 /** Ombre portée : ne remplit que les pixels encore vides. */
 function groundShadow(c: Canvas, cx: number, cy: number, rx: number, ry: number) {
@@ -42,4 +42,4 @@ function bucket(): Canvas {
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
-export default [img('tree', standingTree()), img('bucket', bucket())];
+export default [img('big-tree', standingTree()), img('bucket', bucket())];

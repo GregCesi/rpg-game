@@ -99,7 +99,7 @@
     },
     {
       "id": 100,
-      "name": "tree",
+      "name": "big-tree",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -354,7 +354,7 @@
     },
     {
       "id": 120,
-      "name": "tree-stump",
+      "name": "big-tree-stump",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -609,7 +609,7 @@
     },
     {
       "id": 135,
-      "name": "felled-section-1",
+      "name": "big-felled-section-1",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -626,7 +626,7 @@
     },
     {
       "id": 136,
-      "name": "felled-section-2",
+      "name": "big-felled-section-2",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -643,7 +643,7 @@
     },
     {
       "id": 137,
-      "name": "felled-section-3",
+      "name": "big-felled-section-3",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -660,7 +660,7 @@
     },
     {
       "id": 138,
-      "name": "felled-crown",
+      "name": "big-felled-crown",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -677,7 +677,7 @@
     },
     {
       "id": 139,
-      "name": "felled-head",
+      "name": "big-felled-head",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -694,7 +694,7 @@
     },
     {
       "id": 140,
-      "name": "felled-log",
+      "name": "big-felled-log",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -711,7 +711,7 @@
     },
     {
       "id": 141,
-      "name": "felled-log-1",
+      "name": "big-felled-log-1",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -728,7 +728,7 @@
     },
     {
       "id": 142,
-      "name": "felled-log-2",
+      "name": "big-felled-log-2",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -745,7 +745,7 @@
     },
     {
       "id": 143,
-      "name": "felled-log-3",
+      "name": "big-felled-log-3",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -762,7 +762,7 @@
     },
     {
       "id": 144,
-      "name": "felled-log-4",
+      "name": "big-felled-log-4",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,

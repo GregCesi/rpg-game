@@ -1,5 +1,5 @@
 // Gabarit : la règle commune de dimensions et de perspective (docs/STYLE.md, section « Gabarit »).
-// Tirée des billes (felled-log, felled-log-ns, art/world/felled.ts), vérifiée sur Xéros, la mère et les cases du sol.
+// Tirée des billes (big-felled-log, big-felled-log-ns, art/world/big-felled.ts), vérifiée sur Xéros, la mère et les cases du sol.
 //
 // - 5 cm par pixel, sur les trois axes : largeur (est-ouest), hauteur (verticale), profondeur au sol (nord-sud).
 // - Le sol se voit à plat : une case de 32 px fait 1,60 m sur 1,60 m ; empreinte, collisions, écarts entre objets
@@ -17,8 +17,8 @@
 //   profondeur se voit à l'échelle du sol, sans raccourci, pour qu'elle rejoigne ses poteaux posés à leur place.
 //
 // Mesures des références (silhouette, contour compris) :
-// - felled-log (est-ouest, 95 × 65 cm) : 19 × 13 ; bouts ovales de 5 px de large pour 11 de haut (≈ 11 × ½).
-// - felled-log-ns (nord-sud) : 13 × 19 ; dessus d'écorce de 10 px entre les deux ronds (95 cm × ½ = 9,5) ; face de
+// - big-felled-log (est-ouest, 95 × 65 cm) : 19 × 13 ; bouts ovales de 5 px de large pour 11 de haut (≈ 11 × ½).
+// - big-felled-log-ns (nord-sud) : 13 × 19 ; dessus d'écorce de 10 px entre les deux ronds (95 cm × ½ = 9,5) ; face de
 //   coupe en ovale de 11 × 7 (FACE_NS = 7/11).
 // - Xéros : 32 px de haut (1,60 m) ; la mère : 34 px (1,70 m).
 

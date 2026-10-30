@@ -76,7 +76,7 @@ export const HarvestSchema = z.strictObject({
   /**
    * Animation de fin, jouée à la place de l'objet avant qu'il devienne `becomes`. `image`, `x`, `y` : la chute vers la droite,
    * avec le décalage du coin bas gauche d'une de ses images par rapport à celui de l'objet (le pied de l'arbre est en x = 33
-   * dans `tree`, en x = 47 dans `tree-fall` : x = -14). `left` : la chute vers la gauche, une planche à part (pas de miroir),
+   * dans `big-tree`, en x = 47 dans `big-tree-fall` : x = -14). `left` : la chute vers la gauche, une planche à part (pas de miroir),
    * avec la même animation `anim`. `foot` : colonne du pied dans l'image de l'objet ; ce qui naît vers la gauche est posé
    * en miroir de la droite autour de ce pied (x' = 2 × foot − (x + largeur − 1)), avec ses images `-left`.
    * L'objet tombe du côté opposé à celui qui frappe ; frappé d'en haut ou d'en bas, d'un côté au hasard.
@@ -115,9 +115,9 @@ export const HandsSchema = z.union([z.literal(1), z.literal(2)]);
  */
 export const TakeSchema = z.strictObject({
   hands: HandsSchema,
-  /** Icône 16×16 affichée dans les cases des mains (`item-<…>` : la même pour toutes les billes, `item-felled-log`). */
+  /** Icône 16×16 affichée dans les cases des mains (`item-<…>` : la même pour toutes les billes, `item-big-felled-log`). */
   icon: id,
-  /** Comment il se voit sur Xéros quand il le tient (la bille : `carry`, `held-felled-log`). */
+  /** Comment il se voit sur Xéros quand il le tient (la bille : `carry`, `held-big-felled-log`). */
   hold: z.lazy(() => HoldSchema),
   /** Genre de tas où il s'entrepose (clé de piles.json) : posé sur un tas du même genre, il s'y ajoute. */
   pile: id.optional(),

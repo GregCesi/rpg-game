@@ -134,7 +134,7 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "felled-log",
+          "type": "big-felled-log",
           "x": 678,
           "y": 160,
           "width": 20,

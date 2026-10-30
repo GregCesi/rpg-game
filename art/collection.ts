@@ -18,7 +18,7 @@ export const families: Family[] = [
     title: 'Ressources',
     ground: 'grass',
     keys: [],
-    icons: ['branch', 'stone', 'iron-ore', 'straw', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'felled-log'].map((n) => `item-${n}`),
+    icons: ['branch', 'stone', 'iron-ore', 'straw', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'big-felled-log'].map((n) => `item-${n}`),
   },
   {
     title: 'Outils et armes',
@@ -29,24 +29,24 @@ export const families: Family[] = [
   {
     title: 'Nature',
     ground: 'grass',
-    keys: ['tree', 'tree-stump', 'tree-fall', 'felled-section-1', 'felled-section-2', 'felled-section-3', 'felled-crown', 'felled-head', 'felled-log', 'rock', 'rock-rubble', 'bush', 'bush-berries'],
-    allFrames: ['tree-fall'],
+    keys: ['big-tree', 'big-tree-stump', 'big-tree-fall', 'big-felled-section-1', 'big-felled-section-2', 'big-felled-section-3', 'big-felled-crown', 'big-felled-head', 'big-felled-log', 'rock', 'rock-rubble', 'bush', 'bush-berries'],
+    allFrames: ['big-tree-fall'],
   },
   {
     title: 'Arbre couché : entailles et billes',
     ground: 'grass',
-    keys: ['felled-section-2', 'felled-section-2-n1', 'felled-section-2-n2', 'felled-section-2-cut-right', 'felled-section-2-cut-left', 'felled-crown-cut-left', 'felled-head-cut-left', 'felled-head-n2', 'felled-log-1', 'felled-log-2', 'felled-log-3', 'felled-log-4'],
+    keys: ['big-felled-section-2', 'big-felled-section-2-n1', 'big-felled-section-2-n2', 'big-felled-section-2-cut-right', 'big-felled-section-2-cut-left', 'big-felled-crown-cut-left', 'big-felled-head-cut-left', 'big-felled-head-n2', 'big-felled-log-1', 'big-felled-log-2', 'big-felled-log-3', 'big-felled-log-4'],
   },
   {
     title: 'Chute vers la gauche',
     ground: 'grass',
-    keys: ['tree-fall-left', 'felled-section-1-left', 'felled-section-2-left', 'felled-section-3-left', 'felled-crown-left', 'felled-head-left'],
-    allFrames: ['tree-fall-left'],
+    keys: ['big-tree-fall-left', 'big-felled-section-1-left', 'big-felled-section-2-left', 'big-felled-section-3-left', 'big-felled-crown-left', 'big-felled-head-left'],
+    allFrames: ['big-tree-fall-left'],
   },
   {
     title: 'Arbre couché à gauche : entailles et billes',
     ground: 'grass',
-    keys: ['felled-section-2-left', 'felled-section-2-left-n1', 'felled-section-2-left-n2', 'felled-section-2-left-cut-right', 'felled-section-2-left-cut-left', 'felled-section-2-left-cut-left-n2', 'felled-crown-left-cut-left', 'felled-head-left-cut-left', 'felled-head-left-n2', 'felled-head-left-cut-right', 'felled-log-1-left', 'felled-log-2-left', 'felled-log-3-left', 'felled-log-4-left'],
+    keys: ['big-felled-section-2-left', 'big-felled-section-2-left-n1', 'big-felled-section-2-left-n2', 'big-felled-section-2-left-cut-right', 'big-felled-section-2-left-cut-left', 'big-felled-section-2-left-cut-left-n2', 'big-felled-crown-left-cut-left', 'big-felled-head-left-cut-left', 'big-felled-head-left-n2', 'big-felled-head-left-cut-right', 'big-felled-log-1-left', 'big-felled-log-2-left', 'big-felled-log-3-left', 'big-felled-log-4-left'],
   },
   { title: 'Lumière', ground: 'floor', keys: ['lantern', 'wall-torch', 'candle'] },
   { title: 'Personnages', ground: 'floor', keys: ['mother', 'portrait-mother-64'] },
@@ -56,7 +56,7 @@ export const families: Family[] = [
   {
     title: 'Corde et fagot',
     ground: 'grass',
-    keys: ['rope-coil', 'rope-tie-ground', 'chopping-block', 'chopping-block-rope', 'pile-branch-tie-north', 'pile-branch-tie-south', 'pile-branch-tie-alone', 'faggot', 'faggot-ns', 'felled-log', 'felled-log-ns'],
+    keys: ['rope-coil', 'rope-tie-ground', 'chopping-block', 'chopping-block-rope', 'pile-branch-tie-north', 'pile-branch-tie-south', 'pile-branch-tie-alone', 'faggot', 'faggot-ns', 'big-felled-log', 'big-felled-log-ns'],
     icons: ['item-rope-coil', 'item-rope-tie', 'item-faggot'],
   },
   { title: 'Jauge et chiffres (herbe)', ground: 'grass', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },

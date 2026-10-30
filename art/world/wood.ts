@@ -1,5 +1,5 @@
 // Matière bois du gros arbre : une seule définition pour toute la chaîne, de l'arbre debout à la bille.
-// L'arbre (`tree`), sa souche, sa chute, les pièces du tronc couché, les billes (est-ouest et nord-sud), la bille
+// L'arbre (`big-tree`), sa souche, sa chute, les pièces du tronc couché, les billes (est-ouest et nord-sud), la bille
 // portée et son icône tirent leur apparence d'ici, pour qu'on reconnaisse partout le même bois.
 //
 // - Écorce : la rampe du bois de la palette (M m N K), posée en travers du tronc. `s` va de 0 (bord tourné vers la

@@ -320,9 +320,9 @@ function validateTrunk(c: Content, cat: Catalog): string[] {
 export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
   // taille dessinée ; en commentaire, la taille attendue (de la taille réelle au plancher de lisibilité) et l'écart
   // (dessiné − attendu, hors de cette plage, largeur × hauteur)
-  'tree': { w: 54, h: 79 }, // attendu 54 × 140 : 0 × -61 px (sa longueur couchée, 5,65 m, fait foi ; à redessiner)
-  'felled-crown': { w: 52, h: 30 }, // attendu 53 × 57 : -1 × -27 px
-  'tree-stump': { w: 26, h: 16 }, // attendu 14 × 15 : +12 × +1 px
+  'big-tree': { w: 54, h: 79 }, // attendu 54 × 140 : 0 × -61 px (sa longueur couchée, 5,65 m, fait foi ; à redessiner)
+  'big-felled-crown': { w: 52, h: 30 }, // attendu 53 × 57 : -1 × -27 px
+  'big-tree-stump': { w: 26, h: 16 }, // attendu 14 × 15 : +12 × +1 px
   'bucket': { w: 20, h: 23 }, // attendu 6 × 9 : +14 × +14 px
   'chopping-block': { w: 18, h: 15 }, // attendu 11 × 14,5 : +7 × +0,5 px
   'chopping-block-axe': { w: 23, h: 28 }, // attendu 11 × 14,5 : +12 × +13,5 px
@@ -550,7 +550,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Objets (la clé de props.json est le type d'un objet de carte)
   for (const [key, p] of Object.entries(c.props)) {
-    if (!KEBAB_CASE.test(key)) err(`props.json '${key}' : la clé doit être un identifiant anglais en kebab-case (minuscules sans accent, chiffres, tirets : 'tree', 'tall-fence')`);
+    if (!KEBAB_CASE.test(key)) err(`props.json '${key}' : la clé doit être un identifiant anglais en kebab-case (minuscules sans accent, chiffres, tirets : 'big-tree', 'tall-fence')`);
     if (!cat.textures.has(p.image)) err(`props.json '${key}' : image '${p.image}' non dessinée`);
     if (p.anim && !cat.animations.get(p.image)?.has(p.anim)) err(`props.json '${key}' : animation '${p.anim}' absente de '${p.image}'`);
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);

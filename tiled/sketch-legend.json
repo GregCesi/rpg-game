@@ -23,7 +23,7 @@
     }
   },
   "props": {
-    "T": "tree",
+    "T": "big-tree",
     "r": "rock",
     "b": "bush",
     "S": "bucket",
@@ -32,7 +32,7 @@
     "C": {"prop": "fireplace", "anchor": "left"},
     "P": {"prop": "worktable", "anchor": "left"},
     "E": {"prop": "workbench", "anchor": "left"},
-    "l": "felled-log",
+    "l": "big-felled-log",
     "O": "stove",
     "M": "bed",
     "Z": "pallet",
