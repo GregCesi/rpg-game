@@ -4,8 +4,8 @@
 // La future sauvegarde au cagibi passera par ces mêmes fonctions.
 
 import { z } from 'zod';
-import { items, maps, piles, plans, props, stamina } from '../content';
-import { FacingSchema } from '../content/types';
+import { items, maps, piles, plans, props, stamina, wood } from '../content';
+import { FacingSchema, type End, type WoodPiece } from '../content/types';
 import { GameStateSchema, type GameState, type Held } from './GameState';
 
 /** Clé de la sauvegarde dans localStorage. */
@@ -13,7 +13,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -76,6 +76,7 @@ export function readSave(): ReadResult {
  * son houppier, sa tête ébranchée et ses billes numérotées deviennent des rondins de 95 cm (`normal-felled-log`) à la même place
  * (la 5e bille, sous le houppier ou dans la tête, là où elle était dessinée ; les entailles commencées et les branches du houppier
  * sont perdues) ; une bille numérotée tenue en main devient la bille ordinaire.
+ * Version 6 -> 7 : la pièce de bois (voir `woodPiecesFromKeys`).
  */
 function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -89,6 +90,7 @@ function upgrade(data: unknown): unknown {
     d = { ...d, version: 5, state: { ...d.state, maps, knownPlans: [], nextSiteId: 0 } };
   }
   if (d?.version === 5 && d.state && typeof d.state === 'object') d = { ...d, version: 6, state: normalPiecesToLogs(d.state as V5State) };
+  if (d?.version === 6 && d.state && typeof d.state === 'object') d = { ...d, version: 7, state: woodPiecesFromKeys(d.state as V6State) };
   return d;
 }
 
@@ -129,6 +131,85 @@ function normalPiecesToLogs(state: V5State): V5State {
   return { ...state, hands: (state.hands ?? []).map((h) => held(h) ?? null), both: held(state.both) ?? null, maps };
 }
 
+/** Ce que la conversion 6 -> 7 lit d'une partie : les objets de carte changés, les objets nés, ce que tiennent les mains. */
+type V6Piece = { type?: string; x: number; y: number; flip?: boolean; chain?: unknown; hits?: number; length?: number; notch?: unknown; hewn?: number; wood?: WoodPiece };
+type V6Held = { prop?: string; item?: string; turned?: boolean; flip?: boolean; length?: number; hewn?: number; wood?: WoodPiece } | null;
+type V6State = { hands?: V6Held[]; both?: V6Held; maps?: Record<string, { changes?: Record<string, V6Piece>; spawned?: V6Piece[] }> };
+
+/** Une longueur ancienne (au décimètre, ou 95 cm) ramenée sur la grille de wood.json, jamais sous la plus courte pièce. */
+const onGrid = (cm: number) => Math.max(wood.min, Math.round(cm / wood.grid) * wood.grid);
+
+/**
+ * Les anciennes clés de bois et la pièce de bois qu'elles deviennent : diamètre, forme, sens, faces, bout du coin planté, et
+ * décalage du coin bas gauche de la pièce dans l'image d'avant (couchée vers la droite, vers la gauche) : la 4e bille du gros et
+ * sa tête ébranchée (53 × 30 px) portaient la bille à 9 px du bord gauche, 9 px au-dessus du bas.
+ */
+const OLD_WOOD: Record<string, { size: string; shape: WoodPiece['shape']; axis: WoodPiece['axis']; hewn?: number; end?: End; at?: { right: [number, number]; left: [number, number] } }> = {
+  ...Object.fromEntries(
+    ['big-felled-section-1', 'big-felled-section-2', 'big-felled-section-3', 'big-felled-log-1', 'big-felled-log-2', 'big-felled-log-3', 'big-felled-log'].map((k) => [k, { size: 'big', shape: 'round', axis: 'ew' }]),
+  ),
+  ...Object.fromEntries(['big-felled-crown', 'big-felled-head', 'big-felled-log-4'].map((k) => [k, { size: 'big', shape: 'round', axis: 'ew', at: { right: [9, -9], left: [25, -9] } }])),
+  'big-felled-log-ns': { size: 'big', shape: 'round', axis: 'ns' },
+  'big-wedged-log': { size: 'big', shape: 'round', axis: 'ew', end: 'west' },
+  'big-wedged-log-east': { size: 'big', shape: 'round', axis: 'ew', end: 'east' },
+  'big-wedged-log-ns': { size: 'big', shape: 'round', axis: 'ns', end: 'south' },
+  'big-wedged-log-ns-north': { size: 'big', shape: 'round', axis: 'ns', end: 'north' },
+  'big-half-log': { size: 'big', shape: 'half', axis: 'ew' },
+  'big-half-log-ns': { size: 'big', shape: 'half', axis: 'ns' },
+  'big-wedged-half-log': { size: 'big', shape: 'half', axis: 'ew', end: 'west' },
+  'big-wedged-half-log-east': { size: 'big', shape: 'half', axis: 'ew', end: 'east' },
+  'big-wedged-half-log-ns': { size: 'big', shape: 'half', axis: 'ns', end: 'south' },
+  'big-wedged-half-log-ns-north': { size: 'big', shape: 'half', axis: 'ns', end: 'north' },
+  'big-quarter-log': { size: 'big', shape: 'quarter', axis: 'ew' },
+  'big-quarter-log-ns': { size: 'big', shape: 'quarter', axis: 'ns' },
+  'normal-felled-log': { size: 'normal', shape: 'round', axis: 'ew' },
+  'normal-felled-log-ns': { size: 'normal', shape: 'round', axis: 'ns' },
+  'normal-beam': { size: 'normal', shape: 'round', axis: 'ew', hewn: 12 },
+  'normal-beam-ns': { size: 'normal', shape: 'round', axis: 'ns', hewn: 12 },
+};
+
+/**
+ * Version 6 -> 7 : la pièce de bois. Chaque ancienne clé de bois (sections et billes du gros, tête, houppier, bille coin planté,
+ * demi-billes, quartiers, rondins, poutres) devient une pièce de bois `wood-piece` équivalente, à la même place : 1 m pour les
+ * pièces de 95 cm, la longueur d'un rondin ramenée sur la grille de 20 cm ; les coups de doloire restent ; le coin planté reste
+ * planté avec ses coups ; une coupe commencée (encoche) est perdue, comme les branches d'un houppier pas encore ébranché. Ce que
+ * tiennent les mains suit (la bille tournée devient la pièce nord-sud). Les tas gardent leurs genres et leurs places.
+ */
+function woodPiecesFromKeys(state: V6State): V6State {
+  const piece = (o: V6Piece): V6Piece => {
+    const old = o.type ? OLD_WOOD[o.type] : undefined;
+    const { hits, notch: _n, hewn, ...rest } = o;
+    if (!old) return rest;
+    const [dx, dy] = old.at ? (o.flip ? old.at.left : old.at.right) : [0, 0];
+    const { flip: _f, chain: _c, length, ...kept } = rest;
+    const faces = old.hewn ?? hewn;
+    const w: WoodPiece = {
+      size: old.size,
+      length: onGrid(old.size === 'normal' && length !== undefined ? length : 100),
+      shape: old.shape,
+      axis: old.axis,
+      ...(faces ? { hewn: faces } : {}),
+      ...(old.end ? { wedge: { end: old.end, hits: hits ?? 0 } } : {}),
+    };
+    return { ...kept, type: 'wood-piece', x: o.x + dx, y: o.y + dy, wood: w };
+  };
+  const held = (h: V6Held | undefined): V6Held => {
+    const old = h?.prop ? OLD_WOOD[h.prop] : undefined;
+    if (!h || !old) return h ?? null;
+    const faces = old.hewn ?? h.hewn;
+    const axis = h.turned || old.axis === 'ns' ? 'ns' : 'ew';
+    const length = onGrid(old.size === 'normal' && h.length !== undefined ? h.length : 100);
+    return { prop: 'wood-piece', wood: { size: old.size, length, shape: old.shape, axis, ...(faces ? { hewn: faces } : {}) } };
+  };
+  const maps = Object.fromEntries(
+    Object.entries(state.maps ?? {}).map(([id, m]) => [
+      id,
+      { ...m, changes: Object.fromEntries(Object.entries(m.changes ?? {}).map(([k, c]) => [k, piece(c)])), spawned: (m.spawned ?? []).map(piece) },
+    ]),
+  );
+  return { ...state, hands: (state.hands ?? []).map((h) => held(h)), both: held(state.both), maps };
+}
+
 /** Écrit la partie et la position de Xéros. Un stockage plein ou bloqué ne plante pas le jeu : on le note en console. */
 export function writeSave(state: GameState, where: Where): void {
   const save: Save = { version: SAVE_VERSION, savedAt: new Date().toISOString(), where, state };
@@ -159,6 +240,13 @@ function damaged(raw: string, why: string): ReadResult {
   return { problem: `${why} : nouvelle partie.` };
 }
 
+/** Le bois que nomment les réglages d'une pièce, s'il n'existe plus (diamètre, ou aspect de ce diamètre), décrit en français. */
+function woodMissing(w: WoodPiece): string | undefined {
+  const size = wood.sizes[w.size];
+  if (!size) return `le bois « ${w.size} »`;
+  return size.looks[w.shape] ? undefined : `la forme « ${w.shape} » du bois « ${w.size} »`;
+}
+
 /**
  * Le premier contenu nommé par la sauvegarde qui n'existe plus (carte, objet, genre ou place de tas), décrit en
  * français, ou undefined. Le contenu a pu changer depuis l'écriture ; sans ce contrôle, la carte planterait au chargement.
@@ -169,6 +257,7 @@ function missingContent(save: Save): string | undefined {
   const heldMissing = (h: Held | null): string | undefined => {
     if (!h) return undefined;
     if ('item' in h) return items[h.item] ? undefined : `l'objet « ${h.item} »`;
+    if (h.wood) return woodMissing(h.wood);
     return props[h.prop]?.take ? undefined : `l'objet « ${h.prop} »`;
   };
   for (const h of [...state.hands, state.both]) {
@@ -187,6 +276,10 @@ function missingContent(save: Save): string | undefined {
     }
     for (const c of Object.values(m.changes)) if (c.type && !props[c.type]) return `l'objet « ${c.type} »`;
     for (const o of m.spawned) if (!props[o.type]) return `l'objet « ${o.type} »`;
+    for (const w of [...Object.values(m.changes), ...m.spawned].flatMap((o) => (o.wood ? [o.wood] : []))) {
+      const missing = woodMissing(w);
+      if (missing) return missing;
+    }
     for (const g of m.ground) if (!items[g.item]) return `l'objet « ${g.item} »`;
     for (const p of m.piles) {
       const def = piles[p.pile];
