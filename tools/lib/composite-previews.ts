@@ -407,6 +407,10 @@ export interface PreviewObject {
   type: string;
   x: number;
   y: number;
+  /** L'image à poser, si ce n'est pas celle de `type` (une pièce de bois dressée : son image assemblée). */
+  image?: string;
+  /** Bloque le passage (une pièce de bois dressée : `type` n'a pas de collision, ses réglages en ont une). */
+  blocks?: boolean;
 }
 
 /** Ce qu'il faut d'une carte pour l'aperçu d'un bâtiment : sa largeur en cases, ses tuiles de sol (grilles), ses objets. */
@@ -454,7 +458,7 @@ export function buildingPreview(sources: ArtSource[], building: PreviewBuilding,
   const stepOf = new Map(building.steps.flatMap((s, i) => s.pieces.map((p) => [p, i] as const)));
   const pieces = map.objects.filter((o) => stepOf.has(o.type));
   const sized = (o: PreviewObject) => {
-    const src = image(props[o.type]?.image);
+    const src = image(o.image ?? props[o.type]?.image);
     return src ? { o, src, w: src.grid[0].length, h: src.grid.length } : undefined;
   };
   const all = map.objects.map(sized).filter((s) => !!s);
@@ -467,7 +471,7 @@ export function buildingPreview(sources: ArtSource[], building: PreviewBuilding,
   const top = Math.min(...mine.map((s) => s.o.y - s.h)) - pad;
   const bottom = Math.max(...mine.map((s) => s.o.y)) + pad;
   // ce qui bloque le passage (les poteaux) : leur cadre au sol dit où est l'intérieur
-  const blocking = mine.filter((s) => props[s.o.type].body || props[s.o.type].bodies);
+  const blocking = mine.filter((s) => s.o.blocks || props[s.o.type].body || props[s.o.type].bodies);
   const inner = blocking.length ? blocking : mine;
   const inLeft = Math.min(...inner.map((s) => s.o.x));
   const inRight = Math.max(...inner.map((s) => s.o.x + s.w));

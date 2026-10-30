@@ -639,9 +639,10 @@ function validatePlans(c: Content): string[] {
           const wd = c.wood;
           if (w.section !== wd.hew.beam) errors.push(`${pw} : section de ${w.section} cm, la poutre de wood.json fait ${wd.hew.beam} cm`);
           if (w.length % wd.grid !== 0 || w.length < wd.min) errors.push(`${pw} : longueur de ${w.length} cm hors de la grille de ${wd.grid} cm (au moins ${wd.min} cm)`);
-          if (piece && (piece.dims.w !== w.section || piece.dims.d !== w.section || piece.dims.h !== w.length)) {
-            errors.push(`${pw} : la pièce '${place.piece}' fait ${piece.dims.w} × ${piece.dims.d} × ${piece.dims.h} cm, la poutre demandée ${w.section} × ${w.section} × ${w.length} cm`);
-          }
+          // ce qu'on voit est ce qu'on a posé : la pièce de bois elle-même, dressée (`upright`), pas un dessin à part
+          if (place.piece !== 'wood-piece') errors.push(`${pw} : une poutre est la pièce de bois ('wood-piece'), pas '${place.piece}'`);
+          if (place.orientation !== 'upright') errors.push(`${pw} : une poutre se dresse (orientation 'upright') ; les autres sens viendront avec leur étape`);
+          if (!Object.values(wd.sizes).some((sz) => sz.looks.beam?.up)) errors.push(`${pw} : aucun bois n'a de poutre debout ('up' de son aspect 'beam', wood.json)`);
         } else if (accepts.prop) {
           const held = c.props[accepts.prop];
           if (!held) errors.push(`${pw} : '${accepts.prop}' (accepts) absent de props.json`);
@@ -697,6 +698,16 @@ function validateWood(c: Content, cat: Catalog): string[] {
           want(`open-${look}-${part}`, 1);
         }
       }
+    }
+    // les aspects qui se dressent (poteau) : une planche `<sheet>-up`, trois parties d'une image chacun ; le pied est posé sur un dé
+    for (const [look, l] of Object.entries(size.looks)) {
+      if (!l.up) continue;
+      const anims = cat.frameCounts.get(`${size.sheet}-up`);
+      for (const part of ['start', 'mid', 'end']) {
+        const got = anims?.get(`${look}-${part}`);
+        if (got !== 1) err(`${at} : planche '${size.sheet}-up' : '${look}-${part}' ${got === undefined ? 'non dessinée' : `a ${got} images, il en faut 1`}`);
+      }
+      if (l.up.start + l.up.end > l.up.extra + W.min / 5) err(`${at} '${look}' up : la tête et le pied (${l.up.start + l.up.end} rangées) dépassent la plus courte pièce`);
     }
     for (const [look, l] of Object.entries(size.looks)) {
       if (!cat.textures.has(l.icon)) err(`${at} '${look}' : icône '${l.icon}' non dessinée`);

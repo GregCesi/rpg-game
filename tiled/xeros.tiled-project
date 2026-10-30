@@ -676,40 +676,6 @@
       ]
     },
     {
-      "id": 149,
-      "name": "shed-post-high",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
-      "id": 150,
-      "name": "shed-post-low",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
       "id": 151,
       "name": "shed-plate-north",
       "type": "class",

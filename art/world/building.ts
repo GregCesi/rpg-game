@@ -1,4 +1,6 @@
-// Pièces de bâtiment : dés, poteaux, sablières, chevrons, couvertures ; l'abri à bois d'abord.
+// Pièces de bâtiment : dés, sablières, chevrons, couvertures ; l'abri à bois d'abord. Les poteaux sont la pièce de bois dressée
+// (wood-pieces.ts) : un chantier montre les vraies pièces posées ; les sablières, chevrons et le toit, « à venir », gardent ici leurs
+// dessins (fantômes) jusqu'à leur chantier, où ils deviendront des pièces de bois (plans.json, `note`).
 //
 // L'abri à bois (fiches docs/objets/footing-stone.md, shed-*.md) : appentis à environ 20°, toit de planches. Repère
 // commun, en pixels de la carte (5 cm par pixel), projection (x, y, z) -> (x, y - z) pour poser les pièces :
@@ -40,9 +42,7 @@ export function footingStone(): Canvas {
 }
 
 // ---------- Poteaux ----------
-
-/** Rangées vides sous un poteau, dans son image : la hauteur du dé (15 cm) sur lequel il se dresse. */
-const FOOTING_ROWS = 3;
+// Les poteaux ne sont plus dessinés ici : un poteau est la pièce de bois dressée (art/world/wood-pieces.ts, `axis: 'up'`).
 
 /** Bois équarri d'un dessus, tourné vers la lumière : un cran plus clair que la face (t -> Y, T -> t), écorce gardée. */
 const LIGHTER: Record<string, string> = { t: 'Y', T: 't' };
@@ -50,25 +50,6 @@ const topTone = (along: number, wane?: 'lit' | 'shade') => {
   const k = hewnTone(along, 0, 1, wane);
   return LIGHTER[k] ?? k;
 };
-
-/**
- * Poteau équarri de 20 × 20 cm (`shed-post-high`, `shed-post-low`), boîte debout : silhouette 4 × `sil` px. Rangée 0 :
- * le contour du haut ; rangée 1 : le dessus, bois de bout éclairé (Y) ; puis la face sud, deux colonnes de bois équarri
- * (fil vertical ; la colonne de gauche, côté lumière, un cran plus claire, avec la flache par endroits ; `phase` pour que
- * deux poteaux diffèrent) entre le contour gauche N (la teinte la plus sombre du bois de coupe) et OUTLINE à droite ;
- * dernière rangée : le contour du bas, le pied, posé sur le dessus du dé. Sous lui, FOOTING_ROWS rangées vides. Pas
- * d'ombre portée : le dé la porte.
- */
-function shedPost(sil: number, phase: number): Canvas {
-  const c = new Canvas(4, sil + FOOTING_ROWS);
-  c.set(0, 0, 'N').set(1, 0, 'N').set(2, 0, 'N').set(3, 0, 'o');
-  c.set(0, 1, 'N').set(1, 1, 'Y').set(2, 1, 'Y').set(3, 1, 'o');
-  for (let y = 2; y < sil - 1; y++) {
-    c.set(0, y, 'N').set(1, y, topTone(y + phase, 'lit')).set(2, y, hewnTone(y + phase + 17, 0, 1)).set(3, y, 'o');
-  }
-  for (let x = 0; x < 4; x++) c.set(x, sil - 1, 'o');
-  return c;
-}
 
 // ---------- Sablières ----------
 
@@ -265,8 +246,6 @@ const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, pa
 
 export default [
   img('footing-stone', footingStone()),
-  img('shed-post-high', shedPost(62, 12)),
-  img('shed-post-low', shedPost(38, 30)),
   img('shed-plate-north', shedPlateEW(64, 0)),
   img('shed-plate-south', shedPlateEW(41, 23)),
   img('shed-plate-side', shedPlateSide()),

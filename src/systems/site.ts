@@ -28,7 +28,9 @@ import type { Box, GameMap, Interactable, PlacedProp } from '../world/GameMap';
 import { offerOf } from '../world/offer';
 import { beamLength, beamRefusal, refusal, type Accepts, type BeamRule } from '../world/places';
 import { acceptOf, cornerPoint, footprintBox, openSlots, placeCorner, placeGround, progress, statusLine, type PlanSlot } from '../world/sitePlan';
-import { WOOD_PIECE } from '../world/woodPiece';
+import { uprightOf, WOOD_PIECE } from '../world/woodPiece';
+import { BEAM_SIZE } from '../world/woodShape';
+import { woodTexture } from '../world/woodTexture';
 import { Ghosts } from './ghost';
 
 const CORNERS: Corner[] = ['nw', 'ne', 'se', 'sw'];
@@ -111,7 +113,7 @@ export class SiteSystem {
         }
       } else {
         for (const slot of openSlots(site, plan)) {
-          const g = placeGround(site, slot.place);
+          const g = placeGround(site, slot.place, plan.steps[slot.step]);
           // trop lourd pour Xéros : E maintenu appelle la mère, quoi qu'il tienne ; sinon la pièce se pose si on la tient
           if (this.needsHelp(plan, slot)) list.push({ x: g.x, y: g.y, top: g.y - 12, action: { kind: 'site-help', site: site.id, place: slot.id } });
           else if (holding) list.push({ x: g.x, y: g.y, top: g.y - 12, action: { kind: 'site-place', site: site.id, place: slot.id } });
@@ -134,7 +136,7 @@ export class SiteSystem {
       if (!site.born) continue;
       const plan = plans[site.plan];
       for (const slot of openSlots(site, plan)) {
-        const g = placeGround(site, slot.place);
+        const g = placeGround(site, slot.place, plan.steps[slot.step]);
         const d = Math.hypot(g.x - probe.x, g.y - probe.y);
         if (d >= bestD) continue;
         const ok = this.needsHelp(plan, slot) ? !!this.beamNear(site, plan, slot) : !!what && !this.refusalOf(plan, slot, what);
@@ -177,8 +179,11 @@ export class SiteSystem {
       for (const slot of openSlots(site, plan)) {
         const def = props[slot.place.piece];
         const c = placeCorner(site, slot.place);
-        const isAimed = aimed?.site.id === site.id && aimed.slot.id === slot.id;
-        this.ghosts.show(n++, def.image, c.x, c.y, def.layer === 'floor' ? DEPTH.floor + 0.01 : c.y, isAimed ? SITE.aimed : SITE.ghost);
+        const alpha = aimed?.site.id === site.id && aimed.slot.id === slot.id ? SITE.aimed : SITE.ghost;
+        // une place qui demande une poutre montre la pièce attendue, dessinée comme la pièce de bois dressée ; les autres, leur objet
+        const rule = this.ruleOf(plan, slot);
+        if (rule) this.ghosts.show(n++, woodTexture(this.scene, this.beamOf(rule, 'up')), c.x, c.y, c.y, alpha, '0');
+        else this.ghosts.show(n++, def.image, c.x, c.y, def.layer === 'floor' ? DEPTH.floor + 0.01 : c.y, alpha);
       }
       // la ligne d'état, sous le chantier
       const bottom = site.y + Math.max(...Object.values(plan.steps).flatMap((s) => Object.values(s.places).map((p) => p.at[1]))) / 5;
@@ -296,11 +301,14 @@ export class SiteSystem {
     };
   }
 
-  /** La pièce de la place est née sur la carte, notée dans le chantier avec la pièce de bois d'où elle vient (`from`, si c'en est une). */
+  /**
+   * La pièce de la place est née sur la carte, notée dans le chantier avec la pièce de bois d'où elle vient (`from`, si c'en est
+   * une). Une poutre est la pièce de bois elle-même, dressée : ce qu'on voit est ce qu'on a posé.
+   */
   private lay(site: Site, plan: PlanDef, slot: PlanSlot, from?: WoodPiece): void {
     const mapId = this.map.def.id;
     const c = placeCorner(site, slot.place);
-    const o = spawnObject(game, mapId, slot.place.piece, c.x, c.y);
+    const o = from ? spawnObject(game, mapId, WOOD_PIECE, c.x, c.y, { wood: uprightOf(from) }) : spawnObject(game, mapId, slot.place.piece, c.x, c.y);
     this.map.placeProp(o, { spawned: true });
     placeSitePiece(game, mapId, site.id, slot.id, o.id, from);
     const corner = slot.place.corner;
@@ -314,9 +322,9 @@ export class SiteSystem {
 
   // --- dresser avec de l'aide ---
 
-  /** La poutre qu'une place demande, en pièce de bois (diamètre et sens pour l'exemple : la masse d'une poutre ne dépend que de sa section). */
-  private beamOf(rule: BeamRule): WoodPiece {
-    return { size: Object.keys(wood.sizes)[0], length: rule.length, shape: 'round', hewn: wood.hew.faces * wood.hew.perFace, axis: 'ew' };
+  /** La poutre qu'une place demande, en pièce de bois (diamètre du normal ; couchée pour l'exemple, la masse ne dépend pas du sens ; `up` pour la montrer dressée). */
+  private beamOf(rule: BeamRule, axis: WoodPiece['axis'] = 'ew'): WoodPiece {
+    return { size: BEAM_SIZE, length: rule.length, shape: 'round', hewn: wood.hew.faces * wood.hew.perFace, axis };
   }
 
   /** La poutre demandée par une place jouable de l'étape en cours, ou undefined (une autre pièce, ou une étape « à venir »). */
@@ -343,7 +351,7 @@ export class SiteSystem {
   private beamNear(site: Site, plan: PlanDef, slot: PlanSlot): PlacedProp | undefined {
     const rule = this.ruleOf(plan, slot);
     if (!rule) return undefined;
-    const g = placeGround(site, slot.place);
+    const g = placeGround(site, slot.place, plan.steps[slot.step]);
     let best: PlacedProp | undefined;
     let bestD: number = TILE;
     for (const p of this.map.props) {

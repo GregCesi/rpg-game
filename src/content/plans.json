@@ -21,15 +21,16 @@
       {
         "name": "poteaux",
         "places": {
-          "post-nw": {"piece": "shed-post-high", "at": [-10, 5], "orientation": "upright", "on": ["footing-nw"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
-          "post-ne": {"piece": "shed-post-high", "at": [295, 5], "orientation": "upright", "on": ["footing-ne"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
-          "post-se": {"piece": "shed-post-low", "at": [295, 360], "orientation": "upright", "on": ["footing-se"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
-          "post-sw": {"piece": "shed-post-low", "at": [-10, 360], "orientation": "upright", "on": ["footing-sw"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}}
+          "post-nw": {"piece": "wood-piece", "at": [-10, 5], "orientation": "upright", "on": ["footing-nw"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
+          "post-ne": {"piece": "wood-piece", "at": [295, 5], "orientation": "upright", "on": ["footing-ne"], "accepts": {"wood": {"length": 300, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
+          "post-se": {"piece": "wood-piece", "at": [295, 360], "orientation": "upright", "on": ["footing-se"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}},
+          "post-sw": {"piece": "wood-piece", "at": [-10, 360], "orientation": "upright", "on": ["footing-sw"], "accepts": {"wood": {"length": 180, "section": 20}, "refuse": "Ce n'est pas une poutre."}}
         }
       },
       {
         "name": "sablières",
         "soon": true,
+        "note": "Pièces de bois : chaque sablière sera une poutre couchée en hauteur, posée sur la tête de deux poteaux. Dessin actuel en fantôme jusqu'à son chantier.",
         "places": {
           "plate-north": {"piece": "shed-plate-north", "at": [-10, 10], "orientation": "ew", "on": ["post-nw", "post-ne"]},
           "plate-east": {"piece": "shed-plate-side", "at": [295, 365], "orientation": "ns", "on": ["post-ne", "post-se"]},
@@ -40,6 +41,7 @@
       {
         "name": "chevrons",
         "soon": true,
+        "note": "Pièces de bois : chaque chevron sera une perche. Dessin actuel en fantôme jusqu'à son chantier.",
         "places": {
           "rafter-1": {"piece": "shed-rafter", "at": [0, 395], "orientation": "slope", "on": ["plate-north", "plate-south"]},
           "rafter-2": {"piece": "shed-rafter", "at": [75, 395], "orientation": "slope", "on": ["plate-north", "plate-south"]},
@@ -51,6 +53,7 @@
       {
         "name": "toit",
         "soon": true,
+        "note": "Le toit sera des planches ou des bardeaux. Dessin actuel en fantôme jusqu'à son chantier.",
         "places": {
           "roof": {"piece": "shed-roof", "at": [-30, 400], "orientation": "slope", "on": ["rafter-1", "rafter-2", "rafter-3", "rafter-4", "rafter-5"]}
         }

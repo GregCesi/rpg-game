@@ -25,10 +25,19 @@ export function placeCorner(site: Pick<Site, 'x' | 'y'>, place: PlanPlace): { x:
   return { x: Math.round(site.x + place.at[0] / CM_PER_PX), y: Math.round(site.y + place.at[1] / CM_PER_PX) };
 }
 
-/** Le point au sol visé pour poser une pièce : le milieu de son emprise (ses `dims`) au-dessus de son coin bas gauche. */
-export function placeGround(site: Pick<Site, 'x' | 'y'>, place: PlanPlace): { x: number; y: number } {
+/**
+ * L'emprise au sol d'une place (cm) : celle de son objet (`dims` de props.json), sauf une place qui demande une poutre
+ * (`accepts.wood`) : la pièce de bois y est dressée (`axis: 'up'`), son emprise est sa section.
+ */
+export function placeDims(place: PlanPlace, step?: PlanStep): { w: number; d: number } {
+  const beam = (place.accepts ?? step?.accepts)?.wood;
+  return beam ? { w: beam.section, d: beam.section } : props[place.piece].dims;
+}
+
+/** Le point au sol visé pour poser une pièce : le milieu de son emprise au-dessus de son coin bas gauche. */
+export function placeGround(site: Pick<Site, 'x' | 'y'>, place: PlanPlace, step?: PlanStep): { x: number; y: number } {
   const { x, y } = placeCorner(site, place);
-  const dims = props[place.piece].dims;
+  const dims = placeDims(place, step);
   return { x: x + dims.w / CM_PER_PX / 2, y: y - dims.d / CM_PER_PX / 2 };
 }
 
@@ -48,7 +57,7 @@ export function planSet(site: Pick<Site, 'x' | 'y'>, plan: PlanDef): PlaceSet {
   const places: PlaceSet['places'] = {};
   for (const { id, place, step } of planSlots(plan)) {
     const at = placeCorner(site, place);
-    const aim = placeGround(site, place);
+    const aim = placeGround(site, place, plan.steps[step]);
     places[id] = { layer: step, on: place.on, x: at.x, y: at.y, aim: [aim.x, aim.y] };
   }
   return { places };
