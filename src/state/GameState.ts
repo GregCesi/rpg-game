@@ -308,6 +308,13 @@ export function setPileTie(s: GameState, mapId: string, pileId: number, tie: boo
   revision++;
 }
 
+/** Les mains lâchent ce qu'elles tiennent (`both`, ou la main 0 ou 1) : sauvegarde d'un objet devenu trop lourd, posé au sol par la scène. */
+export function clearHeld(s: GameState, slot: 'both' | Hand): void {
+  if (slot === 'both') s.both = null;
+  else s.hands[slot] = null;
+  revision++;
+}
+
 /** Vide les deux mains : ce qu'elles tenaient disparaît (outils de test, ?dieu). */
 export function emptyHands(s: GameState): void {
   s.hands = [null, null];

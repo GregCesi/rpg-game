@@ -90,3 +90,6 @@ export function silhouette(grid: Grid, palette: Palette): { x: number; y: number
   }));
   return x1 < 0 ? { x: 0, y: 0, w: 0, h: 0 } : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 }
+
+/** Le contour d'un pixel de chaque côté, en cm : le tronc d'une bille est plus étroit que ses dimensions, contour compris (65 cm → 55 cm). */
+export const CONTOUR_CM = 2 * CM_PER_PX;

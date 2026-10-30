@@ -4,6 +4,7 @@
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
+import { propMass } from './mass';
 import type { BuildingDef, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PropDef, TilesetCatalog } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
@@ -486,6 +487,57 @@ function validateBuildings(c: Content): string[] {
   return errors;
 }
 
+/**
+ * Masses et roulement : tout objet qu'on prend, pose ou roule a une masse (items.json : un nombre ; props.json : un nombre,
+ * `"wood"` pour une pièce de bois cylindrique, ou `{ "pile": genre }`) ; ce qui roule est un cylindre couché, a sa collision,
+ * sa planche de roulement (animation `roll` de 4 images, de la taille de l'objet), et l'objet ordinaire qu'il devient (`into`).
+ */
+function validateMasses(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const err = (msg: string) => errors.push(msg);
+  for (const [key, it] of Object.entries(c.items)) if (it.mass === undefined) err(`items.json '${key}' : pas de masse ('mass', en kg) : tout objet possédable en a une`);
+  for (const [key, p] of Object.entries(c.props)) {
+    const at = `props.json '${key}'`;
+    const weighs = !!p.take || !!p.roll;
+    if (weighs && p.mass === undefined) err(`${at} : pas de masse ('mass') : tout objet qu'on prend ou qu'on roule en a une`);
+    if (p.mass === 'wood' && !(p.dims.shape === 'cylinder')) err(`${at} : 'mass: "wood"' est le calcul d'une pièce de bois cylindrique (dims.shape 'cylinder')`);
+    if (typeof p.mass === 'object' && !c.piles[p.mass.pile]) err(`${at} : masse d'un tas '${p.mass.pile}' introuvable dans piles.json`);
+    if (p.mass !== undefined && p.length && typeof p.mass !== 'number') err(`${at} : un objet à longueur mesurée a une masse saisie (celle de sa longueur neuve)`);
+    if (p.mass !== undefined) {
+      try {
+        propMass(key, undefined, c);
+      } catch (e) {
+        err(`${at} : ${(e as Error).message}`);
+      }
+    }
+    const r = p.roll;
+    if (!r) continue;
+    if (p.dims.shape !== 'cylinder' || p.dims.axis !== r.axis) err(`${at} : 'roll' d'axe '${r.axis}' demande des dims de cylindre couché '${r.axis}'`);
+    if (!p.body && !p.bodies) err(`${at} : un objet qui roule a sa collision ('body')`);
+    const frames = cat.frameCounts.get(r.sheet)?.get('roll');
+    if (frames === undefined) err(`${at} : planche de roulement '${r.sheet}' (animation 'roll') non dessinée`);
+    else if (frames !== 4) err(`${at} : planche '${r.sheet}' : 'roll' a ${frames} images, il en faut 4 (un tour)`);
+    // l'objet ordinaire (lui-même, ou celui qu'il devient) a la taille des images de la planche : rien ne saute quand il roule
+    const ordinary = r.into ? c.props[r.into] : p;
+    if (!ordinary) err(`${at} : 'into' '${r.into}' introuvable dans props.json`);
+    else {
+      if (r.into && (ordinary.roll?.into || ordinary.roll?.axis !== r.axis || ordinary.roll?.sheet !== r.sheet)) {
+        err(`${at} : 'into' '${r.into}' doit être l'objet ordinaire du même roulement (même axe et même planche, sans 'into')`);
+      }
+      const a = cat.sizes.get(r.sheet);
+      const b = cat.sizes.get(ordinary.image);
+      if (a && b && (a.w !== b.w || a.h !== b.h)) err(`${at} : planche '${r.sheet}' (${a.w} × ${a.h}) de taille différente de l'image '${ordinary.image}' (${b.w} × ${b.h})`);
+    }
+  }
+  // la pose « pousser » de Xéros : une attente et une marche, dans les 4 directions
+  for (const state of ['idle', 'walk']) {
+    for (const dir of DIRECTIONS) {
+      if (!cat.animations.get(PLAYER.skin)?.has(`push-${state}-${dir}`)) err(`Sprite '${PLAYER.skin}' : animation 'push-${state}-${dir}' manquante (pose pousser)`);
+    }
+  }
+  return errors;
+}
+
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -566,6 +618,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (!cat.textures.has(it.icon)) err(`items.json '${key}' : icône '${it.icon}' non dessinée`);
     if (it.ground && !cat.textures.has(it.ground)) err(`items.json '${key}' : image au sol '${it.ground}' non dessinée`);
   }
+
+  // Masses, roulement, pose pousser
+  addAll(validateMasses(c, cat));
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));

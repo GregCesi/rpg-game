@@ -13,6 +13,9 @@
 - Sous un tas de branches : une corde passée du nord au sud sous le milieu du tas ; on n'en voit que les deux bouts, courts,
   qui dépassent de chaque côté du tas (devant et derrière).
 
+## Masse
+- **0,2 kg** (`items.json`, saisie).
+
 ## Vues
 - Au sol : `rope-tie-ground`, l'écheveau couché, son ombre.
 - En main (`held-rope-tie`, posture `hand`) : l'écheveau plié pend du poing, environ 10 px ; de face, de dos et de profil

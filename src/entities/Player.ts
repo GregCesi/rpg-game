@@ -3,6 +3,7 @@ import { PLAYER } from '../config';
 import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
 import { Hold } from './Hold';
+import { Strength } from './Strength';
 import { ToolUse } from './ToolUse';
 
 /** Le joueur = un Actor piloté par le clavier, avec les composants du geste d'outil et de ce qu'il tient (Hold). */
@@ -11,6 +12,10 @@ export class Player {
   readonly input: PlayerInput;
   readonly tools: ToolUse;
   readonly hold: Hold;
+  /** La force : ce qu'il porte, à quelle vitesse il marche chargé, ce qu'il fait rouler. */
+  readonly strength = new Strength();
+  /** Il pousse une bille qui roule (posé par systems/roll.ts à chaque image) : posture `push`. */
+  pushing = false;
   /** Direction demandée au dernier tour (0,0 si immobile). */
   dir = new Phaser.Math.Vector2(0, 0);
 
@@ -35,9 +40,13 @@ export class Player {
     }
     const { dir, running } = this.input.read();
     this.dir = dir;
-    // chargé, il marche lentement et ne court pas (l'animation carry-walk a déjà sa cadence lente)
-    if (this.hold.loaded) this.actor.move(dir, PLAYER.carrySpeed);
-    else this.actor.move(dir, running ? PLAYER.runSpeed : PLAYER.walkSpeed, PLAYER.walkSpeed);
+    this.actor.stance = this.pushing ? 'push' : this.hold.stance;
+    // au-delà de ce qu'il porte sans peine, il ne court pas et marche de moins en moins vite (Strength) ; la marche
+    // portée garde sa cadence de dessin, accélérée ou ralentie d'autant (sans dépasser une foulée vive)
+    const factor = this.strength.walkFactor();
+    if (this.hold.loaded) this.actor.move(dir, PLAYER.walkSpeed * factor, Math.max(PLAYER.carrySpeed, (PLAYER.walkSpeed * factor) / 1.4));
+    else if (running && this.strength.canRun()) this.actor.move(dir, PLAYER.runSpeed * factor, PLAYER.walkSpeed);
+    else this.actor.move(dir, PLAYER.walkSpeed * factor, PLAYER.walkSpeed);
   }
 
   /** Point au sol juste devant Xéros, là où il "regarde". */

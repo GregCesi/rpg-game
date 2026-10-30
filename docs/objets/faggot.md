@@ -13,6 +13,10 @@
 - Nord-sud : Ø = **10 px** de large, Ø × 7/11 + L/2 = 6,4 + 13 = **19 px** de haut ; le bout est une face de branches
   coupées aplatie, 10 × 6.
 
+## Masse
+- **25,2 kg** : la somme de ses dix branches (2,5 kg chacune) et de son lien (0,2 kg) (`"mass": {"pile": "branches"}`).
+  Juste au-dessus des 25 kg où Xéros marche normalement : porté, il ne court plus et ralentit à peine.
+
 ## Vues
 - Au sol : `faggot`, est-ouest : le faisceau de branches, gros bouts mêlés, quelques rameaux qui dépassent, le lien qui le
   serre au milieu ; ombre portée. Seul, il est un tas de fagots d'une pièce.

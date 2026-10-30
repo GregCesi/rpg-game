@@ -22,6 +22,10 @@ Seuls l'arbre debout et ses deux chutes lui sont propres. Le gros grand, ses pi�
 - Couché : 2 sections de tronc, donc 2 billes de 95 × 65 cm : la section 1, puis le houppier (la 2e bille et la pointe,
   sous les feuilles).
 
+## Masse
+- L'arbre debout : pas déplaçable, pas de masse. Ses billes (`big-felled-log-*`, 95 × Ø 55 cm de bois) : **203 kg** chacune
+  (calculée, volume × 900 kg/m³), donc **trop lourdes à porter** (70 kg) : elles se roulent (300 kg), elles ne vont plus en tas.
+
 ## Vues
 - Debout : `big-pollard`, 64 × 96, pied du tronc en (33, 89) : le dessin du gros arbre debout d'avant le 30 octobre 2026
   (`treeBody` de art/world/big-tree.ts), sans retouche.

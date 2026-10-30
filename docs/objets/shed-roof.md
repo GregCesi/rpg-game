@@ -26,6 +26,10 @@
 - Dans `ferme.tmj` : coin bas gauche de l'image en (604, 147), 73 × 162. Le haut de l'image est à y = −15 : les 15
   rangées du haut du toit (le bord nord) dépassent du haut de la carte.
 
+## Masse
+- Pas encore déplaçable (le toit est posé tout construit) : pas de masse saisie. Plusieurs centaines de kilos de planches : il
+  se montera pièce par pièce quand on construira soi-même.
+
 ## Vues
 - Posé : le dessus, un pan de 73 px de planches nord-sud : joints verticaux (P), fil le long de la planche, arête gauche
   de chaque planche éclairée, quelques nœuds ; trois teintes de bois équarri (`art/world/wood.ts` : claire Y, ordinaire

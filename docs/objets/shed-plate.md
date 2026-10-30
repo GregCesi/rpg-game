@@ -28,6 +28,9 @@ Une fiche pour les quatre sablières de l'abri à bois : les poutres posées en 
 - Dans `ferme.tmj` (coin bas gauche de l'image) : haute en (608, 69), image de 65 × 69 (64 rangées vides) ; basse en
   (608, 141), 65 × 44 (39 rangées vides) ; de côté en (608, 140) et (669, 140), 4 × 142 (38 rangées vides).
 
+## Masse
+- Pas encore déplaçable : pas de masse saisie. Ordre de grandeur : sablière de 325 × 15 × 15 cm, environ 66 kg.
+
 ## Vues
 - Posée : bois équarri de la matière commune (`art/world/wood.ts`), comme les poteaux, fil dans le sens de la poutre.
   Est-ouest : le dessus clair et la face sud ; aux deux bouts, rien (ils sont sur les poteaux). Nord-sud : le dessus,

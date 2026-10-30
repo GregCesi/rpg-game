@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { START, ZOOM } from '../config';
 import { items, maps, props } from '../content';
+import { heldMass, itemMass, propMass } from '../content/mass';
 import type { Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
@@ -15,8 +16,11 @@ import { KnotSystem } from '../systems/knot';
 import { LongPress } from '../systems/longPress';
 import { PileCount } from '../systems/pileCount';
 import { Roofs } from '../systems/roofs';
+import { RollSystem } from '../systems/roll';
+import { carriedMass, heavyNotice } from '../systems/weight';
 import {
   canTake,
+  clearHeld,
   clearSave,
   emptyHands,
   game,
@@ -73,6 +77,9 @@ export class WorldScene extends Phaser.Scene {
   private press!: LongPress;
   private pileCount!: PileCount;
   private roofs!: Roofs;
+  private roll!: RollSystem;
+  /** Champ « force » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
+  private force = 1;
   private autosave!: AutoSave;
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
   private talking?: Npc;
@@ -132,6 +139,9 @@ export class WorldScene extends Phaser.Scene {
     this.press = new LongPress(this);
     this.pileCount = new PileCount(this, this.map);
     this.roofs = new Roofs(this.map);
+    this.roll = new RollSystem(this.map, npcs.map((n) => n.actor.body), (t) => this.notice(t));
+    this.player.strength.multiplier = this.force;
+    this.dropHeavy();
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
 
@@ -145,7 +155,10 @@ export class WorldScene extends Phaser.Scene {
     // la partie est écrite à l'arrivée sur la carte, puis à chaque changement, et quand la page se cache ou se ferme
     this.autosave = new AutoSave(def, this.player);
     this.autosave.update(true);
-    const saveNow = () => this.autosave.update(true);
+    const saveNow = () => {
+      this.roll.flush();
+      this.autosave.update(true);
+    };
     const saveIfHidden = () => document.visibilityState === 'hidden' && saveNow();
     window.addEventListener('pagehide', saveNow);
     document.addEventListener('visibilitychange', saveIfHidden);
@@ -164,6 +177,8 @@ export class WorldScene extends Phaser.Scene {
     // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
     this.autosave.update();
     this.player.update(this.mode === 'play');
+    // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
+    this.roll.update(this.player, delta, this.mode === 'play');
     // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes
     this.roofs.update(this.player, delta);
     if (this.mode === 'play') {
@@ -214,9 +229,14 @@ export class WorldScene extends Phaser.Scene {
       if (gives.some((d) => !canTake(game, items[d.item].hands))) return this.notice('Les mains pleines.');
       this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
     } else if (a.kind === 'take') {
+      const kg = propMass(a.prop.type, a.prop.length);
+      if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(a.prop.def, kg, this.player.strength));
       if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'pile') {
+      const piece = a.pile.def.piece;
+      const kg = 'item' in piece ? itemMass(piece.item) : propMass(piece.prop);
+      if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice('prop' in piece ? props[piece.prop] : undefined, kg, this.player.strength));
       if (!this.handsSystem.takeFromPile(a.pile, a.place)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'tie') {
@@ -245,8 +265,23 @@ export class WorldScene extends Phaser.Scene {
     if (r === 'done') this.handsChanged();
   }
 
+  /** Une sauvegarde où Xéros tient plus qu'il ne porte (d'avant les masses) : le plus lourd est posé au sol devant lui, la partie continue. */
+  private dropHeavy(): void {
+    const slots = (): { slot: 'both' | 0 | 1; held: Held }[] =>
+      [{ slot: 'both' as const, held: game.both }, { slot: 0 as const, held: game.hands[0] }, { slot: 1 as const, held: game.hands[1] }].filter(
+        (s): s is { slot: 'both' | 0 | 1; held: Held } => !!s.held,
+      );
+    while (carriedMass(game) > this.player.strength.carry + 1e-9) {
+      const heaviest = slots().sort((a, b) => heldMass(b.held) - heldMass(a.held))[0];
+      this.handsSystem.layDown(this.player, heaviest.held);
+      clearHeld(game, heaviest.slot);
+      this.notice('Trop lourd à porter : posé devant toi.');
+    }
+  }
+
   /** Les mains ont changé : le HUD se redessine, ce que tient Xéros se voit sur lui. */
   private handsChanged(): void {
+    this.player.strength.load = carriedMass(game);
     const [l, r] = game.hands;
     if (game.both) {
       const { stance, look } = holdOf(game.both);
@@ -298,6 +333,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Prend un objet au sol dans une main libre (les deux s'il le demande). */
   private pickUp(g: PlacedGround): void {
+    if (!this.player.strength.canCarry(itemMass(g.item.item))) return this.notice('Trop lourd à porter.');
     if (!take(game, { item: g.item.item }, items[g.item.item].hands)) return this.notice('Les mains pleines.');
     removeGroundItem(game, this.map.def.id, g.item.id);
     this.map.removeGround(g);
@@ -328,6 +364,7 @@ export class WorldScene extends Phaser.Scene {
     switch (cmd.kind) {
       case 'give': {
         const h = cmd.held;
+        if (heldMass(h) > this.player.strength.carry) return this.notice(heavyNotice('prop' in h ? props[h.prop] : undefined, heldMass(h), this.player.strength));
         emptyHands(game);
         take(game, h, 'item' in h ? items[h.item].hands : props[h.prop].take!.hands);
         this.handsChanged();
@@ -342,6 +379,10 @@ export class WorldScene extends Phaser.Scene {
         else if (n < cmd.count) this.notice(`Place pour ${n} seulement.`);
         break;
       }
+      case 'force':
+        this.force = cmd.multiplier;
+        this.player.strength.multiplier = cmd.multiplier;
+        break;
       case 'map':
         this.fadeTo({ mapId: cmd.map, spawn: Object.keys(maps[cmd.map].spawns)[0] });
         break;

@@ -166,13 +166,39 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - **Chantier en cours : l'abri à bois seulement**, posé tout construit dans la ferme, à côté du tas de bois, sur environ
   2 × 2 cases (3,2 m sur 3,2 m). Construire soi-même (porter les pièces, les poser dans l'ordre) n'est pas encore construit.
 
+## Poids et force (décidé le 30 octobre 2026)
+
+Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter se roule.
+
+- **Masses** (`src/content/mass.ts`). Tout objet qu'on prend, pose ou roule a une masse en kg (`validate.ts` l'exige). Saisie pour les
+  objets simples (hache 2,5 kg, branche 2,5 kg, lien 0,2 kg, rouleau de corde 1 kg les 10 m, au prorata de sa longueur). **Calculée
+  pour le bois** : volume du tronc tiré des `dims` (le diamètre est celui des dimensions moins le contour d'un pixel de chaque côté :
+  65 cm contour compris = 55 cm de bois) × une seule densité, 900 kg/m³ de bois vert. Ce qui donne **203 kg** pour une bille du gros
+  arbre (95 cm × Ø 55) et **60 kg** pour une bille de l'arbre normal (95 cm × Ø 30) ; avec des billes d'un mètre pile, on trouverait
+  214 et 64 kg : l'ordre de grandeur est le bon. Le fagot pèse la somme de ses dix branches et de son lien (25,2 kg).
+- **Force** (`src/content/strength.json`, composant `Strength` du joueur). Il **porte jusqu'à 70 kg** (les deux mains ensemble), **marche
+  normalement jusqu'à 25 kg** (au-delà : pas de course, et une marche qui ralentit progressivement jusqu'à la moitié de la vitesse
+  normale à 70 kg), **fait rouler jusqu'à 300 kg**. Plus tard la force progressera : seuls ces chiffres changeront. E court sur plus
+  de 70 kg : « Trop lourde à porter. Pousse-la pour la faire rouler. »
+- **Roulement** (`src/systems/roll.ts`, constantes `ROLL` de `config.ts`). Une bille couchée roule seulement perpendiculairement à son
+  axe (est-ouest : vers le nord ou le sud ; nord-sud : vers l'est ou l'ouest). Pousser = marcher contre elle, face à elle, les deux
+  mains libres ; après 0,3 s de poussée continue elle avance au pixel, Xéros collé à elle, et s'arrête dès qu'il s'arrête (de l'herbe :
+  pas d'élan). Vitesse : marche × (1 − masse / 300), bornée entre 0,15 et 0,6 fois la marche. Elle a son propre corps de collision et
+  bute sur tout ce qui bloque. Au-delà de 300 kg, rien ne bouge : c'est le calcul qui le décide (un tronc entier abattu dépasse le
+  seuil, c'est voulu). L'écorce tourne exactement de la distance parcourue (un tour = π × diamètre, 4 images).
+- **Pourquoi les grosses billes ne vont plus en tas** : à 203 kg elles ne se portent plus, et un tas se construit en portant. Elles se
+  roulent jusqu'à leur place ; le fendage (en quatre sur le billot, des quartiers de 50 kg qui se portent) viendra, et c'est lui qui
+  les rendra empilables. Les billes de l'arbre normal (60 kg) se portent et s'empilent comme avant. Un tas de grosses billes déjà
+  posé reste, mais on n'en reprend plus.
+- Une sauvegarde où Xéros tient plus qu'il ne porte (d'avant les masses) : l'objet est posé au sol devant lui au chargement.
+
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 
 - **La partie se sauvegarde toute seule.** `GameState` est écrit dans le navigateur à chaque changement (objet pris, posé, coupé, tas modifié, changement de carte), avec la carte et la position de Xéros. Au lancement, la partie reprend là où elle était. Pas de bouton « sauvegarder » pour l'instant.
 - **Le format porte un numéro de version et se lit par un schéma Zod.** Une sauvegarde abîmée ou d'une autre version ne plante pas le jeu : un message clair le dit, et une partie neuve commence.
 - **Une position dans une zone de sortie ne s'enregistre pas telle quelle** (précisé le 29 octobre 2026) : au rechargement, Xéros reprend au point d'arrivée de cette sortie, et ne change pas de carte tout seul.
 - **`?reset` dans l'adresse** efface la sauvegarde et repart du réveil dans le cagibi.
-- **`?dieu` dans l'adresse** ouvre des outils de test, à côté du jeu, hors du canevas : donner un objet en main, poser un objet du monde ou un tas devant Xéros, aller sur une carte, remettre une carte ou toute la partie à zéro (cette dernière à confirmer dans le panneau : « Vraiment ? », puis un second clic). « Aller sur une carte » mène à son premier point d'apparition. Sans `?dieu`, ils n'existent pas : le joueur ne les voit jamais.
+- **`?dieu` dans l'adresse** ouvre des outils de test (dont la force de Xéros, un multiplicateur de tous ses seuils, et la masse qu'il porte), à côté du jeu, hors du canevas : donner un objet en main, poser un objet du monde ou un tas devant Xéros, aller sur une carte, remettre une carte ou toute la partie à zéro (cette dernière à confirmer dans le panneau : « Vraiment ? », puis un second clic). « Aller sur une carte » mène à son premier point d'apparition. Sans `?dieu`, ils n'existent pas : le joueur ne les voit jamais.
 - **Plus tard, la sauvegarde du joueur au cagibi** (Xéros se couche, la partie est gardée) reposera sur le même mécanisme : même format, même lecture.
 
 ## Façon de travailler

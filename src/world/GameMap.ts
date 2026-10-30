@@ -6,7 +6,9 @@ import type { MapData, MapObject, PileDef, PropDef } from '../content/types';
 import { drawOrder, pileBlocks, placeAim, shapeOf, tieImages, topPieces } from './pileShape';
 import type { Chain, GroundItem, MapState, Pile } from '../state';
 import type { Npc } from '../entities/Npc';
-import { tilesets } from '../generated/assets';
+import { images, tilesets } from '../generated/assets';
+import { CM_PER_PX } from '../content/gabarit';
+import { woodShape } from '../content/mass';
 
 /** Pièce de tronc couché : elle a une encoche, ou devient une pièce qui en a une (le houppier devient la tête). */
 export function isTrunk(def: PropDef): boolean {
@@ -317,6 +319,58 @@ export class GameMap {
     return !others.some((o) => overlaps(o.left, o.top, o.right, o.bottom));
   }
 
+  /**
+   * Ce qui roule (`roll` de props.json) montre l'image de sa planche que donne sa position : un tour complet (π × diamètre
+   * du tronc, au gabarit de 5 cm par pixel) = les 4 images, dans le sens où il avance ; à l'arrêt comme en route, donc l'écorce
+   * tourne exactement du chemin parcouru. L'objet qui n'est pas encore l'ordinaire (`into`) garde son dessin.
+   */
+  rollFrame(p: PlacedProp): void {
+    const r = p.def.roll;
+    if (!r || r.into) return;
+    const turn = (Math.PI * woodShape(p.def.dims).diameter) / CM_PER_PX;
+    const at = r.axis === 'ew' ? p.y : p.x;
+    const i = Math.min(3, Math.floor((((at % turn) + turn) % turn) / (turn / 4)));
+    p.image.setTexture(r.sheet, this.scene.anims.get(`${r.sheet}-roll`).frames[i].frame.name);
+  }
+
+  /** Déplace un objet posé de (dx, dy) pixels : image, collisions et repères. L'état de la partie n'est pas touché. */
+  moveProp(p: PlacedProp, dx: number, dy: number): void {
+    p.x += dx;
+    p.y += dy;
+    p.baseX += dx;
+    p.baseY += dy;
+    p.top += dy;
+    p.aimX += dx;
+    p.aimY += dy;
+    if (p.box) {
+      p.box.left += dx;
+      p.box.right += dx;
+      p.box.top += dy;
+      p.box.bottom += dy;
+    }
+    for (const part of p.parts) {
+      const o = part as Phaser.GameObjects.GameObject & { x: number; y: number };
+      o.x += dx;
+      o.y += dy;
+      if (part instanceof Phaser.GameObjects.Zone) (part.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
+    }
+    if (p.def.layer !== 'floor') p.image.setDepth(p.y);
+    this.rollFrame(p);
+  }
+
+  /**
+   * L'objet `p` devient `type` (la pièce du tronc devient la bille ronde qui roule) en gardant sa silhouette au même endroit
+   * (coin bas gauche de la silhouette). Renvoie le nouvel objet ; l'état de la partie n'est pas touché.
+   */
+  convertProp(p: PlacedProp, type: string): PlacedProp {
+    const old = images.find((i) => i.key === (p.flip ? `${p.def.image}-left` : p.def.image))!;
+    const next = images.find((i) => i.key === propDefs[type].image)!;
+    const x = p.x + old.silhouette.x - next.silhouette.x;
+    const y = p.y - old.height + old.silhouette.y + old.silhouette.h - (next.silhouette.y + next.silhouette.h) + next.height;
+    this.removeProp(p);
+    return this.placeProp({ id: p.id, type, x, y }, { spawned: p.spawned, chain: p.chain, length: p.length });
+  }
+
   /** Retire un objet posé (image, collisions, fumées, lueurs). */
   removeProp(p: PlacedProp): void {
     this.scene.tweens.killTweensOf(p.parts);
@@ -440,6 +494,7 @@ export class GameMap {
       length: opts.length ?? startLength(p),
     };
     this.props.push(placed);
+    this.rollFrame(placed);
 
     for (const [sx, sy] of p.smoke ?? []) {
       const smoke = scene.add

@@ -15,6 +15,9 @@
   bord arrière. Billot et rouleau : `dims` 55 × 55 × 55 cm (45 + 10), cylindre debout, attendu 11 × 16,5, dessiné 11 × 16.
   Le billot est au même pixel dans ses trois images (vide, à hache, à rouleau) : rien ne bouge quand on pose le rouleau.
 
+## Masse
+- **1 kg** les 10 m (`"mass": 1`), au prorata de la longueur restante (4 m : 0,4 kg).
+
 ## Vues
 - Au sol : `rope-coil`, 6 × 5 px, le dessus du rouleau (les tours de corde, un trou sombre au milieu) et sa tranche au sud ;
   ombre portée dessous. Pas de version `-left`.

@@ -106,6 +106,21 @@ export const HarvestSchema = z.strictObject({
   spawns: z.array(z.strictObject({ type: id, x: px, y: px })).default([]),
 });
 
+/**
+ * Masse d'un objet, en kilogrammes. Un nombre : masse saisie. `"wood"` : pièce de bois cylindrique, masse calculée par ses
+ * `dims` (volume × densité du bois vert, `mass.ts`). `{ "pile": genre }` : la somme d'un tas plein de ce genre de `piles.json`
+ * plus son lien (le fagot : ses dix branches et son lien). Un objet qu'on prend, pose ou roule en a une (validate.ts).
+ */
+export const MassSchema = z.union([z.number().positive(), z.literal('wood'), z.strictObject({ pile: id })]);
+
+/**
+ * Ce qui roule quand Xéros le pousse (la bille couchée) : `axis` de la pièce couchée (est-ouest : elle roule vers le
+ * nord ou le sud ; nord-sud : vers l'est ou l'ouest) ; `sheet` : la planche animée (animation `roll`, 4 images, un tour) ;
+ * `into` : l'objet ordinaire qu'elle devient quand elle se met à rouler (la pièce du tronc, dessinée avec son bout coupé,
+ * devient la bille ronde), absent pour l'objet ordinaire lui-même. Son diamètre et sa masse viennent de `dims` (`mass.ts`).
+ */
+export const RollSchema = z.strictObject({ axis: z.enum(['ew', 'ns']), sheet: id, into: id.optional() });
+
 /** Nombre de mains que demande un objet qu'on prend : une, ou les deux (lourd ou long). */
 export const HandsSchema = z.union([z.literal(1), z.literal(2)]);
 
@@ -138,6 +153,8 @@ export const ItemDefSchema = z.strictObject({
   hold: z.lazy(() => HoldSchema).optional(),
   /** Genre de tas où il s'entrepose (clé de piles.json) : posé sur un tas du même genre, il s'y ajoute. */
   pile: id.optional(),
+  /** Masse en kg (obligatoire : validate.ts). */
+  mass: z.number().positive().optional(),
 });
 
 /**
@@ -196,6 +213,10 @@ export const PropDefSchema = z.strictObject({
   harvest: HarvestSchema.optional(),
   /** Ce qui se prend dans les mains : voir TakeSchema. */
   take: TakeSchema.optional(),
+  /** Masse (obligatoire pour ce qui se prend ou roule : validate.ts) : voir MassSchema. Celle d'une quantité mesurée (`length`) est celle de sa longueur neuve. */
+  mass: MassSchema.optional(),
+  /** Ce qui roule quand on le pousse : voir RollSchema. */
+  roll: RollSchema.optional(),
   /**
    * Quantité mesurée (le rouleau de corde) : une longueur, en centimètres, gardée par GameState (`length` de ce qu'on
    * tient, d'un objet né ou changé). `start` : la longueur d'un objet neuf (posé dans Tiled) ; `cut` : ce qu'enlève une
@@ -389,6 +410,21 @@ export const StanceSchema = z.enum(['hand', 'shoulder', 'carry']);
  */
 export const HoldSchema = z.strictObject({ stance: StanceSchema, image: id.optional() });
 
+/**
+ * La force de Xéros (strength.json), en kg : `carry` ce qu'il porte au plus (les deux mains ensemble), `walk` jusqu'où il
+ * marche normalement (au-delà : pas de course, et une marche qui ralentit), `roll` ce qu'il fait rouler au plus ;
+ * `slowest` : sa vitesse de marche, en part de la normale, quand il porte `carry`. Plus tard la force progressera :
+ * seuls ces chiffres changeront.
+ */
+export const StrengthSchema = z
+  .strictObject({
+    carry: z.number().positive(),
+    walk: z.number().positive(),
+    roll: z.number().positive(),
+    slowest: z.number().gt(0).lte(1),
+  })
+  .refine((s) => s.walk < s.carry, { message: "'walk' doit être au-dessous de 'carry'" });
+
 /** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
 export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
 
@@ -468,6 +504,9 @@ export type Harvest = z.infer<typeof HarvestSchema>;
 export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;
 export type Take = z.infer<typeof TakeSchema>;
+export type Mass = z.infer<typeof MassSchema>;
+export type Roll = z.infer<typeof RollSchema>;
+export type Strength = z.infer<typeof StrengthSchema>;
 export type PilePlace = z.infer<typeof PilePlaceSchema>;
 export type PileDef = z.infer<typeof PileDefSchema>;
 export type BuildingDef = z.infer<typeof BuildingDefSchema>;

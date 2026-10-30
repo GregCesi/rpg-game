@@ -1,6 +1,6 @@
 # Fiches d'objets
 
-Décidé le 29 octobre 2026 : **tout nouvel objet a sa fiche ici avant d'être construit.** Une fiche par objet,
+Décidé le 29 octobre 2026 (rubrique « Masse » ajoutée le 30 octobre 2026 : tout objet qu'on prend, pose ou roule a une masse) : **tout nouvel objet a sa fiche ici avant d'être construit.** Une fiche par objet,
 `docs/objets/<clé>.md`, qui remplit le modèle ci-dessous, rubrique par rubrique. Une rubrique sans objet le dit
 (« aucune », « pas encore ») plutôt que de disparaître : on voit qu'on y a pensé.
 
@@ -22,6 +22,11 @@ sablières) partagent une fiche, qui nomme toutes leurs clés.
 - Nom affiché : <nom, en français>.
 - Nature : objet possédable (`items.json`) ou objet du monde (`props.json`, avec ou sans `take`).
 - Mains : une ou deux (deux s'il est lourd ou long).
+
+## Masse
+- Masse en kg : saisie (`mass` : un nombre), calculée pour une pièce de bois (`"mass": "wood"`, volume de ses `dims` ×
+  900 kg/m³), ou somme de ses parties (fagot). Ce que cela fait à Xéros : porté (jusqu'à 70 kg), marche normale (jusqu'à
+  25 kg), roulé (jusqu'à 300 kg). Un objet pas encore déplaçable le dit.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
 - Dimensions réelles, contour compris : largeur, profondeur, hauteur (ou longueur, diamètre), en cm.

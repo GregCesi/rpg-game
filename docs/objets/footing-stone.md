@@ -16,6 +16,10 @@
   d'axe en axe (le rang sud reculé pour la pente de 20° du toit). Dans `ferme.tmj` : (607, 70), (668, 70), (607, 141),
   (668, 141), coin bas gauche de l'image de 7 × 7.
 
+## Masse
+- Pas encore déplaçable (le chantier est posé tout construit) : pas de masse saisie. Ordre de grandeur : 30 × 30 × 15 cm de pierre
+  (2 400 kg/m³), environ 32 kg ; à saisir quand on pourra le porter.
+
 ## Vues
 - Au sol : `footing-stone`, 6 × 6 px, pierre de la palette (`R r z Z`), dessus clair, face sud plus sombre, un coin
   émoussé, jamais un œuf ; ombre portée `x` dessous, à droite.

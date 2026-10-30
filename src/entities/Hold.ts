@@ -43,6 +43,11 @@ export class Hold {
     });
   }
 
+  /** Posture du corps que lui donne ce qu'il tient : `shoulder`, `carry`, ou vide (bras pendants). */
+  get stance(): string {
+    return 'both' in this.holding ? this.holding.stance : '';
+  }
+
   /** Vrai quand il porte devant lui à deux mains (la bille) : il marche lentement et n'utilise rien. */
   get loaded(): boolean {
     return 'both' in this.holding && this.holding.stance === 'carry';

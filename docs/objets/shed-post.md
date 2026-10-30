@@ -21,6 +21,10 @@ Une fiche pour les deux poteaux de l'abri à bois : la même pièce, à deux hau
 - Dans `ferme.tmj` (coin bas gauche de l'image) : hauts en (608, 68) et (669, 68), images de 4 × 65 ; bas en (608, 139)
   et (669, 139), images de 4 × 39. Chacun centré sur son dé, à un pixel du bord sud du dé.
 
+## Masse
+- Pas encore déplaçable (pièce du chantier posée tout construite) : pas de masse saisie. Ordre de grandeur, bois vert de
+  900 kg/m³ : 20 × 20 × 300 cm, environ 108 kg (côté haut) ; 20 × 20 × 170 cm, environ 61 kg (côté bas).
+
 ## Vues
 - Debout : `shed-post-high`, `shed-post-low`. Les faces équarries montrent le bois de la matière commune
   (`art/world/wood.ts`) : deux colonnes de bois clair au fil vertical, la gauche (côté lumière) un cran plus claire, avec

@@ -94,9 +94,19 @@ export const PLAYER = {
   skin: 'xeros',
   walkSpeed: 100, // px/s, environ 3 tuiles par seconde
   runSpeed: 165,
-  /** Portant à deux mains (une bille) : lent, pas de course. */
+  /**
+   * Cadence de référence de la marche portée (`carry-walk-*`, dessinée pour environ 55 px/s) : l'animation s'accélère ou
+   * ralentit avec la vitesse réelle, qui dépend de la masse portée (`entities/Strength.ts`, strength.json).
+   */
   carrySpeed: 55,
 };
+
+/**
+ * Faire rouler une bille (systems/roll.ts) : il faut pousser `startMs` ms sans lâcher avant qu'elle ne bouge ; elle avance
+ * alors à la vitesse de marche × (1 − masse / force de roulement), bornée entre `minFactor` et `maxFactor` fois la marche
+ * (la force de roulement est dans strength.json : 300 kg). Pas d'élan : elle s'arrête quand il s'arrête.
+ */
+export const ROLL = { startMs: 300, minFactor: 0.15, maxFactor: 0.6 };
 
 const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
 

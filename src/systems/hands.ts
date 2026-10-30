@@ -116,7 +116,11 @@ export class HandsSystem {
   takeProp(p: PlacedProp): boolean {
     // ce qui a une longueur (le rouleau) l'emporte avec lui
     const length = p.def.length ? { length: p.length ?? p.def.length.start } : {};
-    if (!take(game, { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length }, p.def.take!.hands)) return false;
+    // une bille posée nord-sud est, dans les mains, la bille ordinaire tournée (R)
+    const pile = p.def.roll?.axis === 'ns' ? p.def.take!.pile : undefined;
+    const piece = pile ? piles[pile].piece : undefined;
+    const what: Held = piece && 'prop' in piece ? { prop: piece.prop, turned: true } : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length };
+    if (!take(game, what, p.def.take!.hands)) return false;
     const mapId = this.map.def.id;
     if (p.spawned) changeSpawned(game, mapId, p.id, { x: p.x, y: p.y });
     else changeObject(game, mapId, p.id, { x: p.x, y: p.y });
@@ -218,6 +222,25 @@ export class HandsSystem {
     if (!what || !('prop' in what) || !genre || !piles[genre].turned) return false;
     turnHeld(game);
     return true;
+  }
+
+  /**
+   * Pose au sol devant Xéros ce qu'il tient et ne peut plus porter (une sauvegarde d'avant les masses) : devant lui s'il y a la
+   * place, sinon sur lui. Une bille tournée devient la bille nord-sud posée. Ne touche pas aux mains : l'appelant les vide.
+   */
+  layDown(player: Player, what: Held): void {
+    const mapId = this.map.def.id;
+    const feet = { x: Math.round(player.actor.x), y: Math.round(player.actor.y) };
+    if ('item' in what) {
+      const spot = this.groundSpot(player) ?? feet;
+      this.map.placeGround(dropItem(game, mapId, what.item, spot.x, spot.y));
+      return;
+    }
+    const ns = what.turned ? Object.keys(props).find((k) => props[k].roll?.axis === 'ns' && props[k].take?.pile === props[what.prop].take?.pile) : undefined;
+    const type = ns ?? what.prop;
+    const spot = this.propSpot(player, { prop: type }) ?? feet;
+    const o = spawnObject(game, mapId, type, spot.x, spot.y, false, undefined, what.length);
+    this.map.placeProp(o, { spawned: true, length: what.length });
   }
 
   /**

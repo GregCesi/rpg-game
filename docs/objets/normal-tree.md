@@ -25,6 +25,11 @@ se nomme `normal-…`. La bille et le tas ont la leur : [bille normale](normal-f
 - Longueur couchée : environ 140 px (7 m), houppier compris : 5 billes (4 sections de tronc nu, puis la 5e bille sous le
   houppier), contre 4 pour le gros.
 
+## Masse
+- L'arbre debout : pas déplaçable, pas de masse. Ses billes (`normal-felled-log-*`) : **60 kg** chacune (voir la
+  [fiche de la bille](normal-felled-log.md)) ; leur tronc entier couché dépasserait les 300 kg que Xéros fait rouler : il ne
+  bouge pas, c'est voulu (on le tronçonne d'abord).
+
 ## Vues
 - Debout : `normal-tree`, 48 × 168, pied du tronc en (24, 161) ; houppier étroit et haut (masses asymétriques), tronc nu
   droit et vertical (colonnes 21 à 26 du pied au houppier, sans courbe ni coude : l'arbre de la charpente), une branche à

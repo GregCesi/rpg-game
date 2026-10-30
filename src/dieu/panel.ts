@@ -1,8 +1,10 @@
 // Outils de test (?dieu) : un panneau HTML à côté du jeu, hors du canevas, cliquable à la souris. Il n'existe pas sans
 // ?dieu : main.ts ne charge ce fichier que dans ce cas. Il ne touche jamais à la partie lui-même : chaque bouton envoie
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
-import { items, maps, piles, props } from '../content';
+import { items, maps, piles, props, strength } from '../content';
+import { heldMass } from '../content/mass';
 import type { DieuCommand } from '../events';
+import { game } from '../state';
 
 const CSS = `
 #dieu {
@@ -159,6 +161,23 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     send({ kind: 'pile', pile: pile.value, count: n, turned: turned.checked, tie: tie.checked });
   });
 
+  // la force : un multiplicateur de tous les seuils (porter, marcher, rouler) ; la masse portée se lit à côté
+  const force = el('input', { type: 'number', min: '0.1', step: '0.5', value: '1' });
+  const forceButton = button('Appliquer', () => {
+    const m = Math.max(0.1, Number(force.value) || 1);
+    force.value = String(m);
+    send({ kind: 'force', multiplier: m });
+  });
+  const carried = el('div', { className: 'row' });
+  const showCarried = () => {
+    const [l, r] = game.hands;
+    const kg = game.both ? heldMass(game.both) : heldMass(l) + heldMass(r);
+    const limit = strength.carry * (Math.max(0.1, Number(force.value) || 1));
+    carried.textContent = `Masse portée : ${(Math.round(kg * 10) / 10).toString().replace('.', ',')} kg (jusqu'à ${Math.round(limit)} kg)`;
+  };
+  showCarried();
+  setInterval(showCarried, 200);
+
   const mapButtons = Object.entries(maps).map(([id, m]) => button(m.name, () => send({ kind: 'map', map: id })));
 
   const panel = el('aside', { id: 'dieu' }, [
@@ -173,6 +192,9 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     pile,
     el('div', { className: 'row' }, [count, el('span', { textContent: ' pièces ' }), turnedLabel, tieLabel]),
     pileButton,
+    el('h3', { textContent: 'Force de Xéros' }),
+    el('div', { className: 'row' }, [el('label', {}, ['force ×', force]), forceButton]),
+    carried,
     el('h3', { textContent: 'Aller sur une carte' }),
     el('div', { className: 'row' }, mapButtons),
     el('h3', { textContent: 'Remettre à zéro' }),

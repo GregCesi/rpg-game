@@ -18,12 +18,13 @@ export const GameEvent = {
  * Ce que demande le panneau des outils de test (src/dieu/panel.ts) : donner un objet en main (ce que tenaient les mains
  * disparaît ; un rouleau avec sa longueur, `length` de Held), poser devant Xéros un objet du monde (`length` : sa
  * longueur, s'il en a une) ou un tas (`tie` : avec son lien dessous, `count` pouvant alors être 0), aller sur une carte,
- * remettre la carte ou la partie à zéro.
+ * remettre la carte ou la partie à zéro, multiplier la force de Xéros (`force` : tester les seuils de masse).
  */
 export type DieuCommand =
   | { kind: 'give'; held: Held }
   | { kind: 'prop'; prop: string; length?: number }
   | { kind: 'pile'; pile: string; count: number; turned: boolean; tie: boolean }
+  | { kind: 'force'; multiplier: number }
   | { kind: 'map'; map: string }
   | { kind: 'reset-map' }
   | { kind: 'reset-game' };

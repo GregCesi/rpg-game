@@ -20,6 +20,9 @@
 - Dans `ferme.tmj` (coin bas gauche de l'image, 2 × 161) : x = 610, 625, 641, 656, 671 ; y = 146. Les deux de rive sont
   sur le côté droit des sablières de côté (leur contour sombre tombe sur celui de la sablière).
 
+## Masse
+- Pas encore déplaçable : pas de masse saisie. Ordre de grandeur : chevron de 10 cm d'épaisseur sur 4,45 m, de l'ordre de 40 kg.
+
 ## Vues
 - Posé : une ligne de bois de 2 px qui descend du nord au sud, matière commune (`art/world/wood.ts`), clair à gauche et
   OUTLINE à droite, et au bout sud son bois de bout (2 × 2, plus sombre que le dessus). Sous le toit fini, on n'en voit
