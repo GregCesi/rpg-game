@@ -7,7 +7,7 @@ Décidé le 29 octobre 2026 (rubrique « Masse » ajoutée le 30 octobre 2026 : 
 La fiche décrit l'objet tel qu'il doit être ; le contenu (`src/content/`) et les dessins (`art/`) en découlent. Quand
 l'objet change, la fiche change d'abord.
 
-Fiches : le [têtard](big-pollard.md) ; l'[arbre normal](normal-tree.md) et sa [bille](normal-felled-log.md) ; l'implantation : [planchette gravée](plan-tablet.md), [piquet](stake.md), [hachette](hatchet.md), [pierre plate](flat-stone.md) ; l'équarrissage : [doloire](broadaxe.md) ; [rouleau de corde](rope-coil.md), [lien](rope-tie.md), [fagot](faggot.md) ; le fendage : [masse de bûcheron](maul.md), [coin de fendage](splitting-wedge.md), [bille coin planté](big-wedged-log.md), [demi-bille](big-half-log.md), [quartier](big-quarter-log.md) ; les pièces de l'abri à bois, dans
+Fiches : le [têtard](big-pollard.md), les [gros arbres couchés](big-felled-tree.md) ; l'[arbre normal](normal-tree.md) ; la [pièce de bois](wood-piece.md) (bille, demi-bille, quartier, rondin, poutre : un seul objet, des réglages) ; l'implantation : [planchette gravée](plan-tablet.md), [piquet](stake.md), [hachette](hatchet.md), [pierre plate](flat-stone.md) ; l'équarrissage : [doloire](broadaxe.md) ; [rouleau de corde](rope-coil.md), [lien](rope-tie.md), [fagot](faggot.md) ; le fendage : [masse de bûcheron](maul.md), [coin de fendage](splitting-wedge.md) ; les pièces de l'abri à bois, dans
 l'ordre du chantier : [dé de pierre](footing-stone.md), [poteaux](shed-post.md), [sablières](shed-plate.md),
 [chevron](shed-rafter.md), [toit de planches](shed-roof.md). Les pièces d'un même genre (les deux poteaux, les trois
 sablières) partagent une fiche, qui nomme toutes leurs clés.
@@ -24,8 +24,8 @@ sablières) partagent une fiche, qui nomme toutes leurs clés.
 - Mains : une ou deux (deux s'il est lourd ou long).
 
 ## Masse
-- Masse en kg : saisie (`mass` : un nombre), calculée pour une pièce de bois (`"mass": "wood"`, volume de ses `dims` ×
-  900 kg/m³), ou somme de ses parties (fagot). Ce que cela fait à Xéros : porté (jusqu'à 70 kg), marche normale (jusqu'à
+- Masse en kg : saisie (`mass` : un nombre), calculée pour la pièce de bois (`"mass": "wood"`, d'après ses réglages :
+  section × longueur × 900 kg/m³), ou somme de ses parties (fagot). Ce que cela fait à Xéros : porté (jusqu'à 70 kg), marche normale (jusqu'à
   25 kg), roulé (jusqu'à 300 kg). Un objet pas encore déplaçable le dit.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)

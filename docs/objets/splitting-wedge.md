@@ -18,7 +18,7 @@
 - Icône 16 × 16 (`item-splitting-wedge`) : le coin vu de côté, en pointe vers le bas, tête plate en haut, fer bleuté.
 - Au sol (`splitting-wedge-ground`, 6 × 2 px, aussi l'image `ground` de l'objet possédable) : couché, la tête à un bout.
 - En main (`held-splitting-wedge`, posture `hand`, vues `down`, `up`, `right`) : un petit bloc de fer tenu à la main.
-- Planté : il apparaît dans les images de la bille (`big-wedged-log…`, `big-wedged-half-log…`), pas à part.
+- Planté : il apparaît dans l'image de la pièce de bois où il est planté (son réglage `wedge` : le bout et les coups, parties `wedge-…` des planches de bois, voir la fiche [pièce de bois](wood-piece.md)), pas à part.
 - Fantôme : aucun.
 
 ## Regroupement

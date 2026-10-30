@@ -1,17 +1,17 @@
 # Arbre normal (`normal-tree`) et son tronc couché
 
 Une fiche pour toute la série de l'arbre normal, de l'arbre debout aux pièces du tronc couché : un jeu de pièces dont chacune
-se nomme `normal-…`. Le rondin (et la bille de 95 cm, le tas) a la sienne : [rondin](normal-felled-log.md) ; la [poutre](normal-beam.md) aussi.
-Repris le 30 octobre 2026 (équarrissage) : couché, l'arbre est un seul objet ; ébranché, son tronc devient un rondin de 5 m qu'on coupe où l'on veut. Le gros arbre (`big-tree`,
+se nomme `normal-…`. Le bois qui en sort (rondin, bille de 1 m, poutre) est la [pièce de bois](wood-piece.md), du diamètre `normal`.
+Repris le 30 octobre 2026 (équarrissage, puis pièce de bois) : couché, l'arbre est un seul objet ; ébranché, son tronc devient une pièce de bois ronde de 5,8 m qu'on coupe sur la grille de 20 cm. Le gros arbre (`big-tree`,
 `big-tree-stump`, `big-felled-…`, tronc de 55 cm) est l'arbre d'avant : mêmes gestes, même chaîne de pièces, autre échelle.
 
 ## Identité
 - Clés : `normal-tree` (debout), `normal-tree-stump` (souche), `normal-tree-fall` et `normal-tree-fall-left` (planches de
   la chute), `normal-felled-tree` (l'arbre couché, tronc et houppier : un seul objet, `-left` vers la gauche),
-  `normal-felled-log` (le rondin qu'il devient, ébranché). Toutes aussi clés d'image (le rondin s'assemble à sa longueur).
+  et le rondin qu'il devient, ébranché, une pièce de bois (`wood-piece`, `normal`). Toutes aussi clés d'image (le rondin s'assemble à sa longueur).
 - Noms affichés : arbre, souche, arbre couché, rondin.
 - Nature : objets du monde (`props.json`). L'arbre et l'arbre couché ont un `harvest` ; la souche n'en a pas ; le rondin est
-  du bois d'œuvre (`timber`).
+  une pièce de bois.
 - Mains : le rondin, deux, s'il se porte (70 kg ou moins).
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
@@ -22,11 +22,11 @@ Repris le 30 octobre 2026 (équarrissage) : couché, l'arbre est un seul objet ;
   compris) : **12 × 13,5 px**, dessinée 12 × 14.
 - Arbre couché (`normal-felled-tree`) : 700 × 100 × 50 cm (boîte) : 140 × 22 px, la dernière image de la chute ; collisions du
   tronc (123 × 6 px) et du houppier (79 × 14).
-- Longueur utile du tronc : **5 m** (100 px), du bout scié jusqu'où la cime commence à s'amincir : le rondin qu'il devient.
+- Longueur utile du tronc : **5,8 m** (116 px), du bout scié jusqu'où la cime commence à s'amincir : le rondin qu'il devient.
 
 ## Masse
-- L'arbre debout et l'arbre couché : pas déplaçables, pas de masse. Le rondin de 5 m pèse **318 kg** : au-delà des 300 kg que
-  Xéros fait rouler, il ne bouge pas, c'est voulu (on le coupe d'abord ; voir la [fiche du rondin](normal-felled-log.md)).
+- L'arbre debout et l'arbre couché : pas déplaçables, pas de masse. Le rondin de 5,8 m pèse **369 kg** : au-delà des 300 kg que
+  Xéros fait rouler, il ne bouge pas, c'est voulu (on le coupe d'abord ; voir la [pièce de bois](wood-piece.md)).
 
 ## Vues
 - Debout : `normal-tree`, 48 × 168, pied du tronc en (24, 161) ; houppier étroit et haut (masses asymétriques), tronc nu
@@ -56,10 +56,10 @@ Seuls. Les billes de 95 cm qu'on coupe du rondin s'entassent en tas de leur prop
 Pousse debout dans la ferme (`ferme.tmj`, calque des arbres) ; les billes naissent de l'abattage.
 
 ## Devenir
-Souche, branches, et un rondin de 5 m : un poteau de 3 m et un de 1,70 m (30 cm de chute), ou des billes de 95 cm.
+Souche, branches, et un rondin de 5,8 m : un poteau de 3 m, un de 1,80 m et une bille de 1 m, sans chute, ou des billes de 1 m.
 
 ## Vérification
 - Aperçu : `.art-preview/collection.png`, `.art-preview/arbres.png` (les deux arbres côte à côte à chaque étape : debout,
-  chute, couché, ébranché, coupé à 3 m, tas), `.art-preview/timber.png`, `.art-preview/gabarit.png`.
+  chute, couché, ébranché, coupé à 3 m, tas), `.art-preview/bois.png`, `.art-preview/gabarit.png`.
 - Test : `npm run test:equarrissage`.
 - En jeu : voir le rapport de la branche `arbre-normal`.

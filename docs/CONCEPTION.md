@@ -102,6 +102,8 @@ Première boucle : Xéros prend la hache sur le billot, abat un arbre, ramasse l
 
 ## Abattre un arbre (décidé le 29 octobre 2026)
 
+Repris le 30 octobre 2026 par *Le bois* : les trois arbres se couchent d'un seul tenant, et le tronc ébranché devient une seule pièce de bois de sa longueur utile, qu'on coupe sur la grille de 20 cm ; plus de sections à encoches fixes ni de billes numérotées, et les billes font 1 m.
+
 Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux mains. Rien de volumineux ne se range dans l'inventaire.
 
 - **L'arbre tombe du côté opposé à Xéros**, à gauche ou à droite seulement, et laisse sa souche.
@@ -161,7 +163,7 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
   se dessine au-dessus de lui et devient en partie transparent quand il est dessous ou caché derrière. On peut entasser
   sous un abri comme ailleurs.
 - **L'abri repris** (30 octobre 2026) : toit de planches posées dans le sens de la pente, avec un avant-toit visible, appentis
-  à environ 20° (poteaux de 3 m au nord, 1,70 m au sud), poteaux de 20 × 20 cm ; l'ombre portée du toit est calculée par le
+  à environ 20° (poteaux de 3 m au nord, 1,70 m au sud, puis 1,80 m depuis *Le bois* : la grille de 20 cm, pente de 18,7°), poteaux de 20 × 20 cm ; l'ombre portée du toit est calculée par le
   jeu (sa projection au sol, décalée selon la lumière), sous les poteaux et sous Xéros, et s'efface avec le toit.
 - **Chantier en cours : l'abri à bois seulement, et seulement ses fondations** (décidé le 30 octobre 2026, « implantation »).
   L'abri n'est plus posé tout construit dans la ferme : Xéros le bâtit, comme en vrai, en commençant par apprendre le plan,
@@ -215,6 +217,8 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 
 ## Poids et force (décidé le 30 octobre 2026)
 
+Repris par *Le bois* (30 octobre 2026) : la masse se calcule d'après les réglages de la pièce de bois ; à 1 m, la bille du gros pèse 214 kg et celle du normal 63,6 kg.
+
 Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter se roule.
 
 - **Masses** (`src/content/mass.ts`). Tout objet qu'on prend, pose ou roule a une masse en kg (`validate.ts` l'exige). Saisie pour les
@@ -254,6 +258,8 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 
 ## Fendre (décidé le 30 octobre 2026)
 
+Repris par *Le bois* (30 octobre 2026) : la bille, la demi-bille et le quartier sont des formes de la pièce de bois du gros, le coin planté un de ses réglages (son bout et ses coups) ; à 1 m, 107 kg la demi-bille, 53,5 kg le quartier.
+
 Une grosse bille pèse 203 kg : on ne la soulève pas. Alors on la fend **là où elle est couchée**, comme en vrai : un coin de fer planté dans le fil, des coups de masse dessus, et le bois s'ouvre. En deux, puis chaque moitié en deux : quatre quartiers d'environ 51 kg qui, eux, se portent.
 
 - **Pourquoi sur place.** Il n'y a rien à soulever ni à rouler : la bille est trop lourde pour l'un comme pour l'autre dans l'état actuel de Xéros, et elle reste où elle est. Le geste ne demande que de la place autour (les morceaux sont plus larges que la bille couchée, voir plus bas). On ne cherche pas le billot : il servira plus tard à refendre un quartier en bûches, debout.
@@ -269,39 +275,86 @@ Une grosse bille pèse 203 kg : on ne la soulève pas. Alors on la fend **là o�
 
 ## Bois d'œuvre (décidé le 30 octobre 2026, « équarrissage »)
 
-Les poteaux de l'abri (2 de 3 m au nord, 2 de 1,70 m au sud, section de 20 × 20 cm) viennent de l'arbre normal. Au Moyen Âge, les
+Repris le 30 octobre 2026 par *Le bois* (une seule pièce de bois, la grille de 20 cm, les poteaux bas à 1,80 m) : ce qui suit
+garde la décision de l'équarrissage, les nombres à jour sont là-bas. Les poteaux de l'abri (2 de 3 m au nord, 2 de 1,80 m au sud,
+section de 20 × 20 cm) viennent de l'arbre normal. Au Moyen Âge, les
 charpentes se faisaient avec des arbres jeunes de 25 à 35 cm, équarris à la hache, pas sciés, mis en œuvre verts : c'est ce que
 fait Xéros. Le gros arbre ne change pas : il reste le bois de chauffage (billes, fendage).
 
 - **Un tronc qu'on coupe où l'on veut.** L'arbre normal couché est un seul objet, tronc et houppier (`normal-felled-tree`) ; le
-  houppier coupé (3 coups de cognée, des branches), le tronc ébranché devient **un seul rondin de 5 m** (sa longueur utile : la
-  partie du tronc qui garde ses 30 cm, avant que la cime s'amincisse), à la place exacte du tronc. Plus de sections à encoches
-  fixes. 5 m donnent un poteau de 3 m et un de 1,70 m, avec 30 cm de chute.
-- **Le rondin** (`normal-felled-log`, fiche `docs/objets/normal-felled-log.md`) a une longueur en cm, gardée par la partie. Sa masse
-  est calculée (volume × 900 kg/m³ : 63,6 kg le mètre), et donc ce qu'on en fait : porté jusqu'à 70 kg (1,10 m), roulé jusqu'à
-  300 kg (4,70 m), sinon il ne bouge pas (le tronc entier de 5 m, 318 kg). La bille de 95 cm n'est plus qu'un rondin court
-  (60 kg) : elle se porte, va en tas, roule et pivote comme avant ; seule elle va en tas.
-- **Couper à la longueur.** La cognée en main, contre le flanc du rondin, Espace : l'encoche se fait là où tombe le fer, au
-  décimètre, jamais à moins de 30 cm d'un bout ; en approchant, la coupe visée s'affiche avec les deux longueurs qu'elle donnerait
-  (« 2,9 m | 2,4 m »). Trois coups (un tiers, deux tiers, coupé), et deux rondins, chacun sa longueur. Une seule coupe à la fois ;
-  un rondin entaillé ne roule pas, ne se porte pas, ne pivote pas avant la fin de la coupe.
+  houppier coupé (3 coups de cognée, des branches), le tronc ébranché devient **une seule pièce ronde de 5,8 m** (sa longueur utile :
+  la partie du tronc qui garde ses 30 cm, avant que la cime s'amincisse), à la place exacte du tronc. 5,8 m donnent un poteau de
+  3 m, un de 1,80 m et une bille de 1 m, sans chute.
+- **Le rondin** est une pièce de bois (voir *Le bois*) : sa longueur est gardée par la partie, sa masse calculée (63,6 kg le
+  mètre) : porté jusqu'à 70 kg (1 m sur la grille), roulé jusqu'à 300 kg (4,6 m), sinon il ne bouge pas (le tronc entier, 369 kg).
+- **Couper à la longueur.** La cognée en main, contre le flanc, Espace : l'encoche se fait sur la grille de 20 cm, mesurée depuis le
+  bout le plus proche de Xéros, jamais un morceau de moins de 60 cm ; la coupe visée s'affiche avec les deux longueurs (« 3 m |
+  2,8 m »). Trois coups (un tiers, deux tiers, coupé), et deux pièces. Une seule coupe à la fois ; une pièce entaillée ne roule
+  pas, ne se porte pas, ne pivote pas avant la fin de la coupe.
 - **Rouler jusqu'au chantier.** Le rondin de 3 m (191 kg) se roule, lentement ; l'écorce tourne avec la distance, à toute longueur.
 - **Équarrir sur place, à la doloire** (`broadaxe`, hache à équarrir : lame large et plate de 25 cm, manche coudé de 60 cm, 3 kg,
   deux mains, dans la réserve de la maison ; fiche `docs/objets/broadaxe.md`). Contre le flanc d'un rondin couché, Espace : un
-  coup (le geste `chop`) ; 3 coups dressent une face, 4 faces font la poutre (`normal-beam`, fiche `docs/objets/normal-beam.md`) :
-  20 × 20 cm de bois, sa longueur, 108 kg pour 3 m, 61 kg pour 1,70 m. Le dessin change à chaque face finie : rond, une face,
+  coup (le geste `chop`) ; 3 coups dressent une face, 4 faces font la poutre (la pièce de bois équarrie, fiche
+  `docs/objets/wood-piece.md`) : 20 × 20 cm de bois, sa longueur, 108 kg pour 3 m, 64,8 kg pour 1,80 m. Le dessin change à chaque face finie : rond, une face,
   deux, trois, poutre. Une face dressée, le rondin ne roule plus ; la poutre non plus (« Elle ne roule pas : elle est carrée. »).
   On ne coupe plus un rondin entamé à la doloire : on coupe d'abord, on équarrit ensuite. Refusé sur une grosse bille (« Trop
   grosse pour une poutre. ») ou un rondin de moins de 20 cm de bois. Endurance : 0,333 point par coup et par mètre, soit
-  **12 points** pour un poteau de 3 m (12 coups), 6,8 pour 1,70 m ; la coupe : 0,8 point par coup de cognée.
+  **12 points** pour un poteau de 3 m (12 coups), 7,2 pour 1,80 m ; la coupe : 0,8 point par coup de cognée.
 - **Pourquoi au pied du chantier.** Une poutre de 3 m pèse 108 kg : elle ne se porte pas et ne roule pas. Le rondin, lui, roule :
-  on le roule jusqu'au chantier et on l'équarrit là où il servira. Celle de 1,70 m (61 kg) se porte, lentement.
+  on le roule jusqu'au chantier et on l'équarrit là où il servira. Celle de 1,80 m (65 kg) se porte, lentement.
 - **Sauvegarde** : `SAVE_VERSION` 6 ; une partie de la version 5 est convertie (les sections, le houppier, la tête et les billes
   numérotées de l'arbre normal deviennent des rondins de 95 cm à la même place).
-- **Outils de test** (`?dieu`) : poser un rondin ou une poutre de la longueur choisie (de 30 cm à 7 m, au décimètre) ; donner la
-  doloire.
+- **Outils de test** (`?dieu`) : poser une pièce de bois de réglages choisis (voir *Le bois*) ; donner la doloire.
 - **Ce qui viendra** : la pose des poteaux sur les dés, avec l'aide de la mère (une poutre de 108 kg ne se dresse pas seul) ; les
   sablières et les chevrons, tirés de la même façon ; une scie, plus tard, qui raccourcira les étapes.
+
+## Le bois (décidé le 30 octobre 2026, « pièce de bois »)
+
+La coupe libre de l'arbre normal plaisait, mais en jouant elle posait trois problèmes : des erreurs de quelques centimètres, des
+bouts inutiles de 30 cm, et des dessins et des tas pour chaque longueur. Et le bois était une collection de clés séparées (billes
+numérotées, bille coin planté depuis chaque bout, nord-sud, demi-billes, quartiers, rondins, poutres) qui aurait explosé avec des
+longueurs libres et le fendage. On garde la coupe libre et on change la façon de décrire le bois.
+
+- **Une seule pièce de bois** (`wood-piece`, fiche `docs/objets/wood-piece.md`). Elle est décrite par des réglages, pas par une clé :
+  son **diamètre** (celui de l'arbre d'origine : gros 55 cm, normal 30 cm), sa **longueur** en cm, sa **forme** (ronde, demi, quart),
+  ses **faces dressées** à la doloire (0 à 4 ; 4 : la poutre), son **sens** (est-ouest, nord-sud), et s'il y en a, son **encoche** en
+  cours (place, coups) et son **coin planté** (bout, coups). GameState garde ces réglages pour chaque pièce posée ou tenue ; Tiled
+  peut les donner en propriétés.
+- **Les règles sont du contenu** (`src/content/wood.json`) : la densité (900 kg/m³), la grille, la plus courte pièce, la coupe (la
+  cognée, 3 coups), l'équarrissage (la doloire, 3 coups par face, 4 faces, poutre de 20 cm), le fendage (le coin, la masse, 3 coups
+  par fente, une pièce de 1 m au plus par coin), et par diamètre ce qu'on a le droit de faire : **seul le gros se fend** (la bille en
+  deux demi-billes, la demi-bille en deux quartiers) ; **on n'équarrit qu'une pièce ronde**, et seulement le normal (« Trop grosse
+  pour une poutre. ») ; une demi ou un quart ne s'équarrit pas ; on coupe avant de fendre et avant d'équarrir.
+- **La masse se calcule** à partir des réglages (section × longueur × densité ; la demi, la moitié ; le quart, le quart ; une face
+  dressée retire un quart de l'écart au carré de la poutre), et en découlent porter, rouler, pivoter : bille du gros de 1 m 214 kg,
+  demi-bille 107 kg, quartier 53,5 kg, rondin de 1 m 63,6 kg, de 3 m 191 kg, poutre de 3 m 108 kg, de 1,80 m 64,8 kg.
+- **Les dessins se font une fois par diamètre et par aspect** (rond, demi, quart, une à trois faces, poutre) : bout, milieu,
+  bout, en est-ouest et nord-sud, et la longueur s'assemble ; l'encoche, le coin planté (une partie de bout pour chaque bout), la fente
+  (qui court sur les morceaux du milieu, rognée à la part fendue) et le bois ouvert du dernier coup s'assemblent de même, comme le
+  roulement (4 images) et la rotation. Portée, la pièce se tient dans le sens de la marche : de face et de dos, vue par le bout
+  (une vue qui ne dépend pas de la longueur, la plus lisible) ; de profil, assemblée à sa longueur. Contrat :
+  `src/world/woodShape.ts` ; dessins : `art/world/wood-pieces.ts`.
+- **La grille de 20 cm.** La coupe à la cognée s'aimante tous les 20 cm, mesurés depuis le bout le plus proche de Xéros : la perche
+  marquée du charpentier. **20 et pas 25** : 20 cm, c'est 4 px pile (5 cm par pixel), 8 graduations par case de 1,60 m ; 25 cm
+  tomberait entre deux pixels. La ligne au-dessus de la coupe visée donne les deux longueurs (« 3 m | 2,6 m »).
+- **Aucune pièce de moins de 60 cm.** Une coupe qui laisserait un bout plus court est refusée (« Le bout serait trop court. ») :
+  plus de bouts inutiles. Les billes de chauffage passent de 95 cm à **1 m**.
+- **Les trois arbres dans le même système.** Gros grand, têtard et normal se comportent pareil : abattu, couché d'un seul tenant,
+  puis le houppier coupé, le tronc ébranché devient une seule pièce ronde de sa **longueur utile** (le gros grand 4 m, 855 kg ; le
+  têtard 2 m, 428 kg ; le normal 5,8 m, 369 kg), qui se coupe où l'on veut sur la grille. Le têtard a le diamètre du gros : ses
+  pièces sont des pièces « gros », sans rien de particulier. Un tronc entier ne bouge pas : c'est le calcul qui le dit (le tronc du
+  gros pèse 855 kg et non 1,2 t : sa longueur utile s'arrête sous le houppier) ; il roulera plus tard, avec plus de force ou un outil.
+- **Les tas** n'acceptent pour l'instant que des pièces de 1 m (billes du gros, rondins du normal, quartiers), est-ouest ou nord-sud.
+- **L'abri suit la grille** : poteaux de 3 m au nord, **1,80 m** au sud (pente de 18,7°, 1,95 m sous la sablière basse).
+- **Sauvegarde** : `SAVE_VERSION` 7 ; une partie de la version 6 est convertie : toutes les anciennes clés de bois deviennent des
+  pièces de bois équivalentes au même endroit (95 cm deviennent 1 m, les longueurs des rondins sont ramenées sur la grille, les
+  coins plantés et leurs coups sont gardés) ; les encoches en cours sont perdues, comme les branches d'un houppier du gros pas encore
+  ébranché.
+- **Outils de test** (`?dieu`, « Pièce de bois ») : poser ou donner une pièce en choisissant le diamètre, la longueur (sur la grille,
+  de 60 cm à 7 m), l'état (rond, demi, quart, une à trois faces, poutre) et le sens.
+- **Nouveau bois = un diamètre ou un aspect dans le contenu** (wood.json, et ses dessins), **pas une nouvelle clé**.
+- **Ce qui vient** : les tas de toutes longueurs et le fendage de toute longueur (plusieurs coins) ; refendre le quartier en bûches
+  sur le billot ; rouler un tronc entier avec plus de force ou un outil ; la scie.
 
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 
