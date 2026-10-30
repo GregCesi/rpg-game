@@ -5,6 +5,7 @@ import type { Facing } from '../content/types';
 import type { Player } from '../entities/Player';
 import { changeObject, changeSpawned, game } from '../state';
 import type { GameMap, PlacedProp } from '../world/GameMap';
+import { EXHAUSTED } from './effort';
 
 /** Écart (px) sous lequel Xéros touche une bille, et recouvrement minimal (px) le long d'elle pour la pousser. */
 const TOUCH = { gap: 1.5, overlap: 2 };
@@ -39,6 +40,8 @@ export class RollSystem {
     /** Corps où une bille ne passe pas (les personnages). */
     private readonly others: Phaser.Physics.Arcade.Body[],
     private readonly notice: (text: string) => void,
+    /** Pousser a vidé la jauge : la scène fait trembler la jauge. */
+    private readonly exhausted: () => void,
   ) {}
 
   /** À appeler après `Player.update`, à chaque image. `active` = false pendant un geste, un dialogue ou un changement de carte. */
@@ -57,7 +60,7 @@ export class RollSystem {
     const roll = target.def.roll!;
     const why = this.refusal(player, target, dir);
     if (why) {
-      if (!this.told) this.notice(why);
+      if (!this.told) (why === EXHAUSTED ? this.exhausted() : this.notice(why));
       this.told = true;
       this.charge = 0;
       player.pushing = false;
@@ -71,6 +74,8 @@ export class RollSystem {
     if (this.charge < ROLL.startMs) return player.actor.move(none, 0);
     const mass = propMass(target.type, target.length);
     const speed = PLAYER.walkSpeed * player.strength.rollFactor(mass);
+    // pousser puise dans la jauge, proportionnellement à la masse (stamina.json)
+    player.stamina.drain(player.stamina.pushRate(mass), delta);
     const moved = this.advance(this.become(target, roll.into), dir, speed, delta);
     const [sx, sy] = STEP[dir];
     player.actor.move(moved ? none.set(sx, sy) : none, speed, PLAYER.walkSpeed);
@@ -87,6 +92,7 @@ export class RollSystem {
     if (!across) return 'Elle ne roule pas dans ce sens.';
     if (game.both || game.hands[0] || game.hands[1]) return "Pose d'abord ce que tu tiens.";
     if (!player.strength.canRoll(propMass(p.type, p.length))) return 'Trop lourde, elle ne bouge pas.';
+    if (player.stamina.empty) return EXHAUSTED;
     return undefined;
   }
 

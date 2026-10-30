@@ -3,6 +3,7 @@ import { PLAYER } from '../config';
 import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
 import { Hold } from './Hold';
+import { Stamina } from './Stamina';
 import { Strength } from './Strength';
 import { ToolUse } from './ToolUse';
 
@@ -14,6 +15,12 @@ export class Player {
   readonly hold: Hold;
   /** La force : ce qu'il porte, à quelle vitesse il marche chargé, ce qu'il fait rouler. */
   readonly strength = new Strength();
+  /** L'endurance : la fatigue de la journée (courir, porter, pousser et les gestes y puisent). */
+  readonly stamina = new Stamina();
+  /** Il court à cette image (lu par systems/effort.ts, qui en fait payer la course). */
+  running = false;
+  /** Maj est pressée mais l'endurance l'interdit (fatigué ou épuisé) : lu par la scène pour le dire. */
+  runRefused = false;
   /** Il pousse une bille qui roule (posé par systems/roll.ts à chaque image) : posture `push`. */
   pushing = false;
   /** Direction demandée au dernier tour (0,0 si immobile). */
@@ -28,6 +35,8 @@ export class Player {
 
   /** enabled = false pendant un dialogue : le joueur reste immobile. */
   update(enabled = true): void {
+    this.running = false;
+    this.runRefused = false;
     // pendant un geste, le corps reste sur place et garde son animation
     if (this.tools.busy) {
       this.dir.set(0, 0);
@@ -42,11 +51,17 @@ export class Player {
     this.dir = dir;
     this.actor.stance = this.pushing ? 'push' : this.hold.stance;
     // au-delà de ce qu'il porte sans peine, il ne court pas et marche de moins en moins vite (Strength) ; la marche
-    // portée garde sa cadence de dessin, accélérée ou ralentie d'autant (sans dépasser une foulée vive)
-    const factor = this.strength.walkFactor();
+    // portée garde sa cadence de dessin, accélérée ou ralentie d'autant (sans dépasser une foulée vive).
+    // Fatigué (sous le seuil de stamina.json), il marche moins vite et ne court plus.
+    const factor = this.strength.walkFactor() * this.stamina.walkFactor();
     if (this.hold.loaded) this.actor.move(dir, PLAYER.walkSpeed * factor, Math.max(PLAYER.carrySpeed, (PLAYER.walkSpeed * factor) / 1.4));
-    else if (running && this.strength.canRun()) this.actor.move(dir, PLAYER.runSpeed * factor, PLAYER.walkSpeed);
-    else this.actor.move(dir, PLAYER.walkSpeed * factor, PLAYER.walkSpeed);
+    else if (running && this.strength.canRun() && this.stamina.canRun()) {
+      this.actor.move(dir, PLAYER.runSpeed * factor, PLAYER.walkSpeed);
+      this.running = dir.lengthSq() > 0;
+    } else {
+      this.runRefused = running && this.strength.canRun() && this.stamina.empty && dir.lengthSq() > 0;
+      this.actor.move(dir, PLAYER.walkSpeed * factor, PLAYER.walkSpeed);
+    }
   }
 
   /** Point au sol juste devant Xéros, là où il "regarde". */

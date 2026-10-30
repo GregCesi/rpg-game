@@ -8,6 +8,7 @@ import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
 import { GameEvent, type DieuCommand } from '../events';
 import { AutoSave } from '../systems/autosave';
+import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
 import { HarvestSystem, type HitResult } from '../systems/harvest';
 import { HandsSystem } from '../systems/hands';
@@ -78,8 +79,11 @@ export class WorldScene extends Phaser.Scene {
   private pileCount!: PileCount;
   private roofs!: Roofs;
   private roll!: RollSystem;
+  private effort!: EffortSystem;
   /** Champ « force » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
   private force = 1;
+  /** Case « endurance infinie » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
+  private infinite = false;
   private autosave!: AutoSave;
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
   private talking?: Npc;
@@ -139,11 +143,15 @@ export class WorldScene extends Phaser.Scene {
     this.press = new LongPress(this);
     this.pileCount = new PileCount(this, this.map);
     this.roofs = new Roofs(this.map);
-    this.roll = new RollSystem(this.map, npcs.map((n) => n.actor.body), (t) => this.notice(t));
+    this.effort = new EffortSystem((t) => this.notice(t), () => this.game.events.emit(GameEvent.StaminaDenied));
+    this.roll = new RollSystem(this.map, npcs.map((n) => n.actor.body), (t) => this.notice(t), () => this.effort.exhausted());
     this.player.strength.multiplier = this.force;
+    this.player.stamina.infinite = this.infinite;
+    this.player.stamina.onChange = () => this.game.events.emit(GameEvent.Stamina, this.player.stamina.fraction);
     this.dropHeavy();
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
+    this.game.events.emit(GameEvent.Stamina, this.player.stamina.fraction);
 
     const cam = this.cameras.main;
     cam.setZoom(ZOOM);
@@ -157,6 +165,7 @@ export class WorldScene extends Phaser.Scene {
     this.autosave.update(true);
     const saveNow = () => {
       this.roll.flush();
+      this.player.stamina.flush();
       this.autosave.update(true);
     };
     const saveIfHidden = () => document.visibilityState === 'hidden' && saveNow();
@@ -177,6 +186,8 @@ export class WorldScene extends Phaser.Scene {
     // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
     this.autosave.update();
     this.player.update(this.mode === 'play');
+    // courir et porter puisent dans l'endurance
+    this.effort.update(this.player, delta, this.mode === 'play');
     // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
     this.roll.update(this.player, delta, this.mode === 'play');
     // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes
@@ -231,12 +242,14 @@ export class WorldScene extends Phaser.Scene {
     } else if (a.kind === 'take') {
       const kg = propMass(a.prop.type, a.prop.length);
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(a.prop.def, kg, this.player.strength));
+      if (!this.canLift(kg)) return this.effort.exhausted();
       if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'pile') {
       const piece = a.pile.def.piece;
       const kg = 'item' in piece ? itemMass(piece.item) : propMass(piece.prop);
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice('prop' in piece ? props[piece.prop] : undefined, kg, this.player.strength));
+      if (!this.canLift(kg)) return this.effort.exhausted();
       if (!this.handsSystem.takeFromPile(a.pile, a.place)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'tie') {
@@ -254,8 +267,10 @@ export class WorldScene extends Phaser.Scene {
 
   /** E maintenu devant un tas ou un fagot : nouer ou dénouer ; sinon, ce qui manque se dit. */
   private knot(target: Interactable): void {
+    if (this.player.stamina.empty) return this.effort.exhausted();
     const why = this.knots.act(target.action);
     if (why) this.notice(why);
+    else this.player.stamina.spend(this.player.stamina.costs.knot);
   }
 
   /** Q, ou E quand on tient à deux mains : pose devant soi ce que tient la main active (en tas s'il s'entrepose), s'il y a la place. */
@@ -306,7 +321,10 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     // le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ; dans le vide, de côté
-    const gesture = this.harvest.target(this.player)?.def.harvest?.gesture ?? 'use';
+    const target = this.harvest.target(this.player);
+    const gesture = target?.def.harvest?.gesture ?? 'use';
+    // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
+    if (target?.def.harvest?.tool === tool && !this.effort.afford(this.player, target.def.bears ? this.player.stamina.costs.cutTie : this.player.stamina.costs.chop)) return;
     // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
     this.gesture(gesture, tool, () => this.report(this.harvest.hit(this.harvest.target(this.player), tool, this.player.actor.facing)));
   }
@@ -331,9 +349,16 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** Épuisé, Xéros ne prend pas ce qui l'obligerait à porter au-delà de ce qu'il porte sans peine : porter coûte à chaque pas. */
+  private canLift(kg: number): boolean {
+    const s = this.player.strength;
+    return !this.player.stamina.empty || s.load + kg <= s.walk + 1e-9;
+  }
+
   /** Prend un objet au sol dans une main libre (les deux s'il le demande). */
   private pickUp(g: PlacedGround): void {
     if (!this.player.strength.canCarry(itemMass(g.item.item))) return this.notice('Trop lourd à porter.');
+    if (!this.canLift(itemMass(g.item.item))) return this.effort.exhausted();
     if (!take(game, { item: g.item.item }, items[g.item.item].hands)) return this.notice('Les mains pleines.');
     removeGroundItem(game, this.map.def.id, g.item.id);
     this.map.removeGround(g);
@@ -348,6 +373,7 @@ export class WorldScene extends Phaser.Scene {
   /** Fondu au noir, puis la scène redémarre sur `start`. */
   private fadeTo(start: WorldStart): void {
     this.mode = 'transition';
+    this.player.stamina.flush();
     const cam = this.cameras.main;
     cam.fadeOut(200, 20, 14, 8);
     cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart(start));
@@ -382,6 +408,13 @@ export class WorldScene extends Phaser.Scene {
       case 'force':
         this.force = cmd.multiplier;
         this.player.strength.multiplier = cmd.multiplier;
+        break;
+      case 'stamina':
+        this.player.stamina.reset(cmd.value);
+        break;
+      case 'stamina-infinite':
+        this.infinite = cmd.on;
+        this.player.stamina.infinite = cmd.on;
         break;
       case 'map':
         this.fadeTo({ mapId: cmd.map, spawn: Object.keys(maps[cmd.map].spawns)[0] });

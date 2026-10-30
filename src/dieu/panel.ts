@@ -1,7 +1,7 @@
 // Outils de test (?dieu) : un panneau HTML à côté du jeu, hors du canevas, cliquable à la souris. Il n'existe pas sans
 // ?dieu : main.ts ne charge ce fichier que dans ce cas. Il ne touche jamais à la partie lui-même : chaque bouton envoie
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
-import { items, maps, piles, props, strength } from '../content';
+import { items, maps, piles, props, stamina, strength } from '../content';
 import { heldMass } from '../content/mass';
 import type { DieuCommand } from '../events';
 import { game } from '../state';
@@ -178,6 +178,25 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   showCarried();
   setInterval(showCarried, 200);
 
+  // l'endurance : la régler (points), la rendre infinie ; la valeur lue est celle de GameState (écrite tous les points)
+  const energy = el('input', { type: 'number', min: '0', max: String(stamina.max), step: '5', value: String(stamina.max) });
+  const energyButton = button('Régler', () => {
+    const v = Math.min(stamina.max, Math.max(0, Number(energy.value) || 0));
+    energy.value = String(v);
+    send({ kind: 'stamina', value: v });
+  });
+  const infinite = el('input', { type: 'checkbox' });
+  infinite.addEventListener('change', () => {
+    send({ kind: 'stamina-infinite', on: infinite.checked });
+    infinite.blur();
+  });
+  const energyNow = el('div', { className: 'row' });
+  const showEnergy = () => {
+    energyNow.textContent = `Endurance : ${Math.round(game.stamina)} / ${stamina.max} · Jour ${game.day}`;
+  };
+  showEnergy();
+  setInterval(showEnergy, 200);
+
   const mapButtons = Object.entries(maps).map(([id, m]) => button(m.name, () => send({ kind: 'map', map: id })));
 
   const panel = el('aside', { id: 'dieu' }, [
@@ -195,6 +214,10 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('h3', { textContent: 'Force de Xéros' }),
     el('div', { className: 'row' }, [el('label', {}, ['force ×', force]), forceButton]),
     carried,
+    el('h3', { textContent: 'Endurance' }),
+    el('div', { className: 'row' }, [el('label', {}, [energy, 'points']), energyButton]),
+    el('div', { className: 'row' }, [el('label', {}, [infinite, 'endurance infinie'])]),
+    energyNow,
     el('h3', { textContent: 'Aller sur une carte' }),
     el('div', { className: 'row' }, mapButtons),
     el('h3', { textContent: 'Remettre à zéro' }),
