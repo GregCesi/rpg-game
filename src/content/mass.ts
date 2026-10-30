@@ -1,6 +1,7 @@
 // Les masses : tout objet qu'on prend, pose ou roule a une masse en kg (validate.ts l'exige). Sans Phaser.
 // - saisie (`mass` : un nombre dans items.json ou props.json) ;
 // - calculée pour le bois : volume du tronc tiré de `dims` × densité du bois vert (`"mass": "wood"`) ;
+// - une part d'un autre objet de bois (`{ "share": 0.25, "of": "big-felled-log" }` : le quartier, un quart de la bille) ;
 // - calculée pour un fagot : la somme des branches d'un tas plein de son genre plus son lien (`{ "pile": genre }`) ;
 // - au prorata de sa longueur pour une quantité mesurée (le rouleau de corde : 1 kg les 10 m).
 
@@ -65,6 +66,7 @@ export function propMass(key: string, length?: number, cat: MassCatalog = CONTEN
   let kg: number;
   if (m === 'wood') kg = woodMass(def.dims);
   else if (typeof m === 'number') kg = m;
+  else if ('share' in m) kg = m.share * propMass(m.of, undefined, cat);
   else {
     const g = cat.piles[m.pile];
     kg = capacity(g) * pieceMass(g.piece, cat) + (g.tie ? itemMass(g.tie.item, cat) : 0);

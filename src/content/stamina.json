@@ -5,6 +5,8 @@
   "costs": {
     "chop": 0.8,
     "cutTie": 0.5,
+    "plant": 1,
+    "maul": 0.8,
     "knot": 1.5,
     "turnPerKg": 0.03,
     "carryPerKgSec": 0.034,

@@ -64,7 +64,25 @@ export const HarvestSchema = z.strictObject({
    * Geste de Xéros (clé de gestures.json) : `use`, de côté, sur ce qui est debout ;
    * `chop`, de haut en bas, sur ce qui est couché ou posé.
    */
-  gesture: z.enum(['use', 'chop']).default('use'),
+  gesture: z.enum(['use', 'chop', 'maul']).default('use'),
+  /**
+   * Fendage : chaque coup change l'image de l'objet (`<image>-n1`, `-n2`... après 1, 2... coups ; la dernière, `-n<hits>`, se
+   * voit un instant avant que l'objet devienne `becomes` et `spawns`). Les coups reçus sont notés dans GameState (l'objet
+   * né ou changé garde ses `hits`) : la fente se retrouve au retour sur la carte. Sans `staged`, un coup ne change pas l'image.
+   */
+  staged: z.boolean().default(false),
+  /**
+   * On plante l'outil dans l'objet (le coin) : sans geste, d'un coup, et l'outil quitte la main ; l'objet devient `becomes`.
+   * L'outil réapparaît quand on le lâche par `drops` (le dernier coup de masse).
+   */
+  plant: z.boolean().default(false),
+  /** Prix du coup en endurance : une clé de `costs` de stamina.json. Absent : `chop` (`cutTie` pour le billot qui porte une corde). */
+  effort: z.enum(['chop', 'cutTie', 'plant', 'maul']).optional(),
+  /**
+   * Ce qu'on dit quand on frappe avec cet outil (clé de items.json) alors qu'il ne convient pas ou plus : la hache sur une grosse
+   * bille, le coin déjà planté. Le geste ne se joue pas, rien n'est dépensé.
+   */
+  refuse: z.record(id, id).default({}),
   /**
    * Pièce de tronc couché : frapper creuse l'encoche de son bout droit, à la jonction avec la pièce suivante de sa chaîne.
    * Un coup = une profondeur (image `<image>-n1`, `-n2`...), le dernier coupe (`<image>-cut-right`). Quand la pièce de gauche
@@ -109,9 +127,16 @@ export const HarvestSchema = z.strictObject({
 /**
  * Masse d'un objet, en kilogrammes. Un nombre : masse saisie. `"wood"` : pièce de bois cylindrique, masse calculée par ses
  * `dims` (volume × densité du bois vert, `mass.ts`). `{ "pile": genre }` : la somme d'un tas plein de ce genre de `piles.json`
- * plus son lien (le fagot : ses dix branches et son lien). Un objet qu'on prend, pose ou roule en a une (validate.ts).
+ * plus son lien (le fagot : ses dix branches et son lien). `{ "share": 0.25, "of": objet }` : cette part de la masse d'un autre
+ * objet de bois (le quartier : un quart de la bille). Un objet qu'on prend, pose ou roule en a une (validate.ts).
  */
-export const MassSchema = z.union([z.number().positive(), z.literal('wood'), z.strictObject({ pile: id })]);
+export const MassSchema = z.union([
+  z.number().positive(),
+  z.literal('wood'),
+  z.strictObject({ pile: id }),
+  // une part d'un autre objet de bois : la demi-bille et le quartier, `share` de la bille dont ils sont taillés
+  z.strictObject({ share: z.number().gt(0).lt(1), of: id }),
+]);
 
 /**
  * Ce qui roule quand Xéros le pousse (la bille couchée) : `axis` de la pièce couchée (est-ouest : elle roule vers le
@@ -143,6 +168,11 @@ export const TakeSchema = z.strictObject({
   hold: z.lazy(() => HoldSchema),
   /** Genre de tas où il s'entrepose (clé de piles.json) : posé sur un tas du même genre, il s'y ajoute. */
   pile: id.optional(),
+  /**
+   * C'est la forme nord-sud (tournée, R) de l'objet ordinaire de son genre de tas, sans rouler (le quartier) : pris, il
+   * devient la pièce ordinaire du genre, tournée. Pour ce qui roule, c'est l'axe `ns` de `roll` qui le dit.
+   */
+  turned: z.boolean().optional(),
 });
 
 /** Un objet possédable (dans les mains, au sol) : sa clé dans items.json est son identifiant. Une main en tient un seul. */
@@ -438,7 +468,8 @@ export const StrengthSchema = z
  * L'endurance de Xéros (stamina.json), la fatigue de la journée : `max` points ; sous la part `tired` du maximum, il ne
  * court plus et sa marche est ralentie à la part `tiredWalk` de la normale. `costs` : le prix de chaque effort, en points
  * (les « PerSec » se paient chaque seconde de l'effort, les « PerKg » sont proportionnels à la masse en kg) ; marcher ne coûte rien.
- * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `knot`
+ * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `plant` planter
+ * le coin de fendage, `maul` un coup de masse sur le coin, `knot`
  * nouer ou dénouer, `turnPerKg` pivoter une bille, `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
  * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir.
  */
@@ -449,6 +480,8 @@ export const StaminaSchema = z.strictObject({
   costs: z.strictObject({
     chop: z.number().nonnegative(),
     cutTie: z.number().nonnegative(),
+    plant: z.number().nonnegative(),
+    maul: z.number().nonnegative(),
     knot: z.number().nonnegative(),
     turnPerKg: z.number().nonnegative(),
     carryPerKgSec: z.number().nonnegative(),

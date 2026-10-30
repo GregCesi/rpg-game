@@ -218,6 +218,25 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
   for (const sp of h.spawns) {
     if (!c.props[sp.type]) err(`objet né '${sp.type}' absent de props.json`);
   }
+  for (const tool of Object.keys(h.refuse)) if (!c.items[tool]) err(`'refuse' : outil '${tool}' absent de items.json`);
+  if (h.plant) {
+    if (!h.tool) err("'plant' : il faut l'outil qu'on plante ('tool')");
+    if (h.becomes === undefined) err("'plant' : l'objet devient autre chose une fois l'outil planté ('becomes')");
+    if (h.hits !== 1) err("'plant' : un seul coup (l'outil se plante d'un coup)");
+    if (c.items[h.tool ?? '']?.hands === 2) err("'plant' : l'outil planté se tient à une main");
+  }
+  if (h.staged) {
+    if (!h.tool) err("'staged' : il faut un outil ('tool')");
+    if (h.hits < 2) err("'staged' : au moins deux coups");
+    if (h.notch) err("'staged' avec 'notch' : une seule façon de montrer les coups");
+    // une image par coup, de la taille de l'objet : rien ne saute quand la fente s'allonge
+    const base = cat.sizes.get(p.image);
+    for (let k = 1; k <= h.hits; k++) {
+      const size = cat.sizes.get(`${p.image}-n${k}`);
+      if (!size) err(`étape ${k} : image '${p.image}-n${k}' non dessinée`);
+      else if (base && (size.w !== base.w || size.h !== base.h)) err(`étape ${k} : '${p.image}-n${k}' fait ${size.w}×${size.h}, '${p.image}' ${base.w}×${base.h} (même taille attendue)`);
+    }
+  }
   h.drops.forEach((d, i) => {
     if (!c.items[d.item]) err(`objet lâché n°${i + 1} : '${d.item}' absent de items.json`);
     if (d.min > d.max) err(`objet lâché '${d.item}' : min (${d.min}) plus grand que max (${d.max})`);
@@ -493,7 +512,8 @@ function validateMasses(c: Content, cat: Catalog): string[] {
     const weighs = !!p.take || !!p.roll;
     if (weighs && p.mass === undefined) err(`${at} : pas de masse ('mass') : tout objet qu'on prend ou qu'on roule en a une`);
     if (p.mass === 'wood' && !(p.dims.shape === 'cylinder')) err(`${at} : 'mass: "wood"' est le calcul d'une pièce de bois cylindrique (dims.shape 'cylinder')`);
-    if (typeof p.mass === 'object' && !c.piles[p.mass.pile]) err(`${at} : masse d'un tas '${p.mass.pile}' introuvable dans piles.json`);
+    if (typeof p.mass === 'object' && 'pile' in p.mass && !c.piles[p.mass.pile]) err(`${at} : masse d'un tas '${p.mass.pile}' introuvable dans piles.json`);
+    if (typeof p.mass === 'object' && 'share' in p.mass && c.props[p.mass.of]?.mass !== 'wood') err(`${at} : masse en part de '${p.mass.of}', qui doit être une pièce de bois ('mass: "wood"')`);
     if (p.mass !== undefined && p.length && typeof p.mass !== 'number') err(`${at} : un objet à longueur mesurée a une masse saisie (celle de sa longueur neuve)`);
     if (p.mass !== undefined) {
       try {
@@ -598,8 +618,8 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.harvest) addAll(validateHarvest(key, p, c, cat));
     if (p.take) addAll(validateHold(`props.json '${key}' take`, p.take.hold, p.take.hands, cat));
     if (p.take && !cat.textures.has(p.take.icon)) err(`props.json '${key}' : icône '${p.take.icon}' non dessinée`);
-    // E sur l'objet : le prendre, le récolter ou ouvrir son dialogue, pas deux à la fois
-    if (p.take && (p.harvest || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
+    // E sur l'objet : le prendre, le récolter à la main ou ouvrir son dialogue, pas deux à la fois (une récolte à l'outil se fait avec Espace)
+    if (p.take && ((p.harvest && !p.harvest.tool) || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
     addAll(validateRope(key, p, c));
   }
 
