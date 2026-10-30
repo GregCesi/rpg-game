@@ -1,7 +1,10 @@
 // Chute de l'arbre et arbre couché.
 //
-// La chute (`big-tree-fall`) reprend l'arbre de trees.ts dans son repère (image 64x96, pied du tronc en (33, 89)),
-// pivoté autour de la charnière au-dessus de la souche. Sa dernière image est l'arbre couché lui-même :
+// La chute (`big-tree-fall`) reprend l'arbre debout de big-tree.ts dans son grand repère (`tallTreeBody`, image 64 x TALL_H,
+// à sa vraie hauteur), pivoté autour de la charnière au-dessus de la souche : sa première image est `big-tree` lui-même.
+// En tombant, le feuillage se raccourcit le long du tronc (de sa hauteur debout, dessus compris, à la longueur du houppier
+// couché) et s'aplatit en travers ; le tronc nu a déjà sa longueur couchée. Les images de la planche font FALL_W x FALL_HT,
+// bas aligné : les pièces couchées restent dessinées dans la frame 160x96 (FALL_H), posée au bas de la planche. Sa dernière image est l'arbre couché lui-même :
 // la souche (`big-tree-stump`) et les quatre pièces que le jeu pose ensuite comme objets séparés, si bien que
 // le remplacement de la dernière image par les objets ne saute pas.
 //
@@ -16,13 +19,17 @@
 import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
-import { FOOT, type Vec, despeckle, groundShadow, shadedOutline, standingTree, stump, stumpBody, treeBody } from './big-tree';
+import { FOOT, TALL_DY, TALL_H, type Vec, despeckle, groundShadow, shadedOutline, standingTree, stump, stumpBody, tallTreeBody, treeBody } from './big-tree';
 import { DIAMETER, bark, faceTone, logByTheEnd, logEnd } from './wood';
 
 // ---------- Chute ----------
 
 const FALL_W = 160;
 const FALL_H = 96;
+/** Hauteur des images de la planche de chute : celle de l'arbre debout ; la frame des pièces (FALL_H) en occupe le bas. */
+const FALL_HT = TALL_H;
+/** Décalage des rangées du repère 64x96 (et de la frame des pièces) dans le grand repère et dans la planche. */
+const DY = TALL_DY;
 /**
  * Décalage de l'arbre (64 de large) dans la frame : l'arbre debout est à gauche (pied en x = OFF + 33)
  * pour laisser au tronc couché, puis au houppier, la place de s'étendre vers la droite.
@@ -34,42 +41,22 @@ const STUMP_AT: Vec = [17, 62];
 const CUT_Y = 76;
 /** Charnière : bord droit de la coupe, côté où l'arbre tombe. */
 const HINGE: Vec = [38, CUT_Y];
-/** Rangée sous le houppier à partir de laquelle le tronc s'allonge quand il se couche. */
-const TRUNK_FROM = 70;
-/** Allongement du tronc couché : vu de dessus, il montre toute sa longueur (environ 34 px sous le houppier). */
-const EXT = 24;
 /** Première colonne du tronc debout sous le houppier (rangée 77 de treeBody : 11 px, de 27 à 37). */
 const PROFILE_X0 = 27;
 
-function withStump(c: Canvas, off = OFF): Canvas {
-  c.stamp(stumpBody().toGrid(), STUMP_AT[0] + off, STUMP_AT[1]);
-  return c;
-}
-
-/**
- * Le haut de l'arbre (au-dessus de la coupe), avec un tronc allongé de `ext` rangées.
- * Le tronc ajouté reprend le profil d'écorce de l'arbre (clair à gauche, sombre à droite) et quelques fentes.
- * Rend le canevas et la rangée de coupe dans ce canevas.
- */
-function fallingPart(light: Vec, ext: number): { src: Canvas; cut: number } {
-  const body = treeBody(light);
-  const cut = CUT_Y + ext;
-  const src = new Canvas(64, cut);
-  for (let y = 0; y < TRUNK_FROM; y++) for (let x = 0; x < 64; x++) src.px[y][x] = body.get(x, y);
-  // le tronc ajouté : la silhouette du tronc juste sous la coupe, l'écorce commune (art/world/wood.ts), ses sillons
-  // continuant ceux du tronc au-dessus
-  const profile = body.px[77];
-  for (let y = TRUNK_FROM; y < cut; y++) for (let x = 0; x < 64; x++) {
-    src.px[y][x] = profile[x] === EMPTY ? EMPTY : bark(y, (x - PROFILE_X0 + 0.5) / DIAMETER);
-  }
-  return { src, cut };
-}
+/** Feuillage de l'arbre debout dans le grand repère : première et dernière rangées. */
+const TALL_CROWN = (() => {
+  const body = tallTreeBody();
+  const rows = body.px.map((r, y) => (r.some((q) => 'jLlk'.includes(q)) ? y : -1)).filter((y) => y >= 0);
+  return { top: rows[0], bottom: rows[rows.length - 1] };
+})();
 
 interface Pose {
   deg: number;
   /** Position à l'écran du centre de la coupe du tronc qui tombe. */
   base: Vec;
-  ext: number;
+  /** Raccourcissement du feuillage le long du tronc (1 = aucun) : couché, il a la longueur du houppier couché. */
+  along: number;
   /** Écrasement du houppier de part et d'autre du tronc (1 = aucun) : vu de dessus, il s'aplatit au sol. */
   squash: number;
 }
@@ -83,21 +70,25 @@ function drawFalling(c: Canvas, p: Pose) {
   const cos = Math.cos(t);
   const sin = Math.sin(t);
   const S: Vec = [-Math.SQRT1_2, -Math.SQRT1_2];
-  const { src, cut } = fallingPart([S[0] * cos + S[1] * sin, -S[0] * sin + S[1] * cos], p.ext);
+  const src = tallTreeBody([S[0] * cos + S[1] * sin, -S[0] * sin + S[1] * cos]);
+  const cut = CUT_Y + DY;
+  // distance de la coupe au bas du feuillage : au-delà, le feuillage se raccourcit
+  const hc = cut - TALL_CROWN.bottom;
+  const row = (h: number) => Math.floor(cut - (h <= hc ? h : hc + (h - hc) / p.along));
   const half = 5.5; // demi-largeur du tronc, jamais écrasée
   const inv = (g: number) => (Math.abs(g) <= half ? g : Math.sign(g) * (half + (Math.abs(g) - half) / p.squash));
   // calque à part : le bout scié ne se peint que sur le tronc qui tombe, jamais sur la souche
-  const layer = new Canvas(FALL_W, FALL_H);
+  const layer = new Canvas(c.w, c.h);
   // axe du tronc (vers la cime) : (sin, -cos) ; travers (côté droit de l'arbre) : (cos, sin)
   const local = (X: number, Y: number): Vec => {
     const U = X + 0.5 - p.base[0];
     const V = Y + 0.5 - p.base[1];
     return [U * sin - V * cos, U * cos + V * sin];
   };
-  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
     const [h, g] = local(X, Y);
     if (h < 0) continue;
-    const q = src.get(Math.floor(FOOT[0] + inv(g)), Math.floor(cut - h));
+    const q = src.get(Math.floor(FOOT[0] + inv(g)), row(h));
     if (q !== EMPTY) layer.set(X, Y, q);
   }
   // bout scié : disque du tronc vu de biais, tourné vers le bas-gauche (vers la lumière) quand l'arbre tombe
@@ -107,11 +98,11 @@ function drawFalling(c: Canvas, p: Pose) {
   const rx = 5.6, ry = minor + 0.4;
   const inFace = (h: number, g: number) => h >= 1 && ((g + 0.3) / rx) ** 2 + ((h - 1) / ry) ** 2 <= 1;
   // la rangée du bas : bord d'écorce du disque, qui sépare le bout scié du dessus de la souche
-  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
     if (layer.get(X, Y) !== EMPTY && local(X, Y)[0] < 1) layer.set(X, Y, 'N');
   }
   const paint: [number, number, string][] = [];
-  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
     if (layer.get(X, Y) === EMPTY) continue;
     const [h, g] = local(X, Y);
     if (!inFace(h, g)) continue;
@@ -126,14 +117,24 @@ function drawFalling(c: Canvas, p: Pose) {
   c.stamp(layer.toGrid(), 0, 0);
 }
 
-/** Image de la chute : souche fixe, haut de l'arbre dans la pose donnée, contour, ombres. */
+/**
+ * Image de la chute (FALL_W x FALL_HT) : souche fixe, haut de l'arbre dans la pose donnée, contour, ombres.
+ * Les ombres sont données dans la frame des pièces (y de 0 à FALL_H), comme la souche.
+ */
 function fallFrame(p: Pose, shadows: [number, number, number, number][], off = OFF): Canvas {
-  const c = withStump(new Canvas(FALL_W, FALL_H), off);
+  const c = new Canvas(FALL_W, FALL_HT);
+  c.stamp(stumpBody().toGrid(), STUMP_AT[0] + off, STUMP_AT[1] + DY);
   drawFalling(c, p);
   despeckle(c, 'KY');
   shadedOutline(c);
-  for (const [x, y, rx, ry] of shadows) groundShadow(c, x, y, rx, ry);
+  for (const [x, y, rx, ry] of shadows) groundShadow(c, x, y + DY, rx, ry);
   return c;
+}
+
+/** Raccourcissement du feuillage selon le sinus de l'angle : 1 debout, longueur du houppier couché / hauteur du feuillage debout couché. */
+function alongAt(s: number): number {
+  const lying = (CROWN_END - F0) / (TALL_CROWN.bottom - TALL_CROWN.top + 1);
+  return 1 - (1 - lying) * s * s;
 }
 
 /** Pose pivotée autour de la charnière (bord droit de la coupe), qui reste sur la souche. */
@@ -144,8 +145,8 @@ function pivot(deg: number): Pose {
   const d = HINGE[0] - FOOT[0];
   return {
     deg,
-    base: [HINGE[0] + OFF - d * Math.cos(t), HINGE[1] - d * s],
-    ext: Math.round(EXT * s),
+    base: [HINGE[0] + OFF - d * Math.cos(t), HINGE[1] + DY - d * s],
+    along: alongAt(s),
     squash: 1 - 0.64 * s * s,
   };
 }
@@ -490,17 +491,17 @@ function lyingFrame(): Canvas {
 const FOOT_X = FOOT[0] + OFF;
 
 const frames = [
-  new Canvas(FALL_W, FALL_H).stamp(standingTree().toGrid(), OFF, 0),
+  new Canvas(FALL_W, FALL_HT).stamp(standingTree().toGrid(), OFF, FALL_HT - TALL_H),
   fallFrame(pivot(10), [[FOOT_X + 3, 89.5, 17, 4], [FOOT_X + 12, 90, 16, 3.5]]),
   fallFrame(pivot(45), [[FOOT_X + 3, 89.5, 14, 3.5], [FOOT_X + 46, 90.5, 26, 4]]),
-  lyingFrame(),
+  new Canvas(FALL_W, FALL_HT).stamp(lyingFrame().toGrid(), 0, DY),
 ];
 
 const treeFall: SpriteSheetSource = {
   kind: 'spritesheet',
   name: 'big-tree-fall',
   frameW: FALL_W,
-  frameH: FALL_H,
+  frameH: FALL_HT,
   palette: world,
   animations: {
     fall: { frames: frames.map((f) => f.toGrid()), frameRate: 6, repeat: 0 },
@@ -530,8 +531,8 @@ function pivotLeft(deg: number): Pose {
   const d = FOOT[0] - HINGE_L[0];
   return {
     deg: -deg,
-    base: [HINGE_L[0] + OFF_L + d * Math.cos(t), HINGE_L[1] - d * s],
-    ext: Math.round(EXT * s),
+    base: [HINGE_L[0] + OFF_L + d * Math.cos(t), HINGE_L[1] + DY - d * s],
+    along: alongAt(s),
     squash: 1 - 0.64 * s * s,
   };
 }
@@ -735,10 +736,10 @@ function lyingFrameLeft(): Canvas {
 const FOOT_XL = FOOT[0] + OFF_L;
 
 const framesLeft = [
-  new Canvas(FALL_W, FALL_H).stamp(standingTree().toGrid(), OFF_L, 0),
+  new Canvas(FALL_W, FALL_HT).stamp(standingTree().toGrid(), OFF_L, FALL_HT - TALL_H),
   fallFrame(pivotLeft(10), [[FOOT_XL + 3, 89.5, 17, 4], [FOOT_XL - 8, 90, 16, 3.5]], OFF_L),
   fallFrame(pivotLeft(45), [[FOOT_XL + 3, 89.5, 14, 3.5], [FOOT_XL - 38, 90.5, 26, 4]], OFF_L),
-  lyingFrameLeft(),
+  new Canvas(FALL_W, FALL_HT).stamp(lyingFrameLeft().toGrid(), 0, DY),
 ];
 
 const treeFallLeft: SpriteSheetSource = {

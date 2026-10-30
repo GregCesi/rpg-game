@@ -3,7 +3,7 @@
 // (images 2 à 4), la chute à gauche, l'arbre couché tel que le jeu le pose (souche + pièces de `spawns`, d'après props.json),
 // l'entaille de la section 2 (rien, 1 coup, 2 coups, coupée, et sa voisine), les billes du tronc (1 à n) et la bille
 // ordinaire est-ouest et nord-sud, enfin le tas plein de billes, est-ouest et nord-sud.
-// Vérification : la dernière image de chaque chute doit être, pixel pour pixel, l'arbre couché posé par le jeu ; les
+// Vérification : la première image de chaque chute doit être, pixel pour pixel, l'arbre debout posé, et la dernière l'arbre couché posé par le jeu ; les
 // écarts sont rendus à l'appelant (rien ne doit sauter au moment où la chute laisse la place aux objets).
 
 import { PNG } from 'pngjs';
@@ -91,6 +91,25 @@ export function treesPreview(sources: ArtSource[], props: Record<string, PropDef
       const s = sheet(`${k.prefix}-tree-fall${side}`);
       return s ? frames(s, [1, 2, 3]) : undefined;
     });
+  }
+  // vérification : la première image de chaque chute est l'arbre debout, posé à sa place (bas aligné, décalage x de la planche)
+  for (const k of KINDS) for (const left of [false, true]) {
+    const s = sheet(`${k.prefix}-tree-fall${left ? '-left' : ''}`);
+    const tree = image(`${k.prefix}-tree`);
+    const fx = props[`${k.prefix}-tree`]?.harvest?.fall;
+    if (!s || !tree || !fx) continue;
+    const first = s.animations.fall.frames[0];
+    const offX = left ? fx.left.x : fx.x;
+    const W = first[0].length;
+    const H = first.length;
+    const a = new Board(W, H, undefined);
+    const b = new Board(W, H, undefined);
+    a.blit(first, s.palette, 0, 0);
+    b.blit(tree.grid, tree.palette, -offX, H - tree.grid.length);
+    const diff = a.diff(b);
+    const where = `${k.prefix}${left ? ' à gauche' : ''}`;
+    if (tree.grid.length > H) problems.push(`${where} : l'arbre debout (${tree.grid.length} px) est plus haut que les images de la chute (${H} px)`);
+    else if (diff.length) problems.push(`${where} : ${diff.length} pixels diffèrent entre la première image de la chute et l'arbre debout posé (premier en (${diff[0][0]}, ${diff[0][1]}))`);
   }
   // 4. arbre couché posé par le jeu, à droite puis à gauche ; en même temps, vérification contre la dernière image
   for (const left of [false, true]) {

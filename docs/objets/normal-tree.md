@@ -25,10 +25,13 @@ se nomme `normal-…`. La bille et le tas ont la leur : [bille normale](normal-f
   houppier), contre 4 pour le gros.
 
 ## Vues
-- Debout : `normal-tree`, 48 × 168, pied du tronc en (24, 161) ; houppier étroit et haut, tronc nu, deux racines.
+- Debout : `normal-tree`, 48 × 168, pied du tronc en (24, 161) ; houppier étroit et haut (masses asymétriques), tronc nu
+  droit et vertical (colonnes 21 à 26 du pied au houppier, sans courbe ni coude : l'arbre de la charpente), une branche à
+  droite sous le houppier, deux racines.
 - Souche : `normal-tree-stump`, 24 × 24, pied en (12, 19) ; face de coupe sans cernes (trop étroite), rayures.
 - Chute : `normal-tree-fall` (à droite) et `normal-tree-fall-left` (à gauche, dessinée avec sa propre lumière en haut à
-  gauche, pas un miroir), 192 × 168, animation `fall` de 4 images ; la dernière est l'arbre couché lui-même.
+  gauche, pas un miroir), 192 × 168, animation `fall` de 4 images : la première est l'arbre debout, les deux suivantes
+  le même tronc droit pivoté autour du pied (10°, 45°), la dernière est l'arbre couché lui-même.
 - Couché : les 4 sections, le houppier puis la tête ; états : entailles `-n1`, `-n2`, bout coupé `-cut-right`, voisine
   `-cut-left`, et pour chaque image sa version `-left` (tronc couché à gauche).
 - Case d'interface, porté, fantôme : ceux de la bille ordinaire (voir sa fiche).

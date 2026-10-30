@@ -107,9 +107,9 @@ const MASSES: Mass[] = [
   { cx: 38, cy: 56, rx: 15, ry: 9, seed: 15, dim: 0.25 },
 ];
 
-/** Silhouette festonnée d'une masse de feuillage (dans le repère de l'arbre). */
-function massShape(m: Mass): Canvas {
-  const s = new Canvas(64, 96);
+/** Silhouette festonnée d'une masse de feuillage (dans le repère de l'arbre, de hauteur `h`). */
+function massShape(m: Mass, h = 96): Canvas {
+  const s = new Canvas(64, h);
   const r = rng(m.seed);
   s.ellipse(m.cx, m.cy, m.rx * 0.84, m.ry * 0.84, 'l');
   const n = 13;
@@ -121,28 +121,11 @@ function massShape(m: Mass): Canvas {
   return s;
 }
 
-/**
- * L'arbre dans son repère, sans contour ni ombre.
- * `light` : direction de la lumière dans ce repère (vers la source), pour garder le nord-ouest après rotation.
- */
-export function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
-  const c = new Canvas(64, 96);
+/** Feuillage : chaque masse est découpée en grappes (cellules de Voronoï), ombrées selon la lumière (vers la source). */
+function paintFoliage(c: Canvas, masses: Mass[], light: Vec) {
   const [lx, ly] = light;
-
-  // Tronc : légère courbe, évasé au pied, deux racines, une branche vers la masse de droite.
-  // La branche garde son ombrage ; le tronc et les racines prennent l'écorce commune (art/world/wood.ts) : rampe en
-  // travers de chaque rangée (lumière à gauche), sillons dans le sens du tronc.
-  c.polygon([[36, 58], [44, 50], [46, 51], [37.5, 62]], 'm');
-  c.within('m', (c) => c.polygon([[40, 52], [46, 51], [37.5, 62], [37, 58]], 'N'));
-  barkRows(c, (t) => {
-    t.polygon([[28, 54], [37, 54], [37.5, 70], [38, 80], [40.5, 85], [42, 89], [24, 89], [26, 85], [27.5, 79], [27.5, 68]], 'm');
-    t.polygon([[38, 86], [44, 87.5], [45, 89], [39, 89]], 'm'); // racine droite
-    t.polygon([[26, 86], [21, 88], [20.5, 89], [26, 89]], 'm'); // racine gauche
-  });
-
-  // Feuillage : chaque masse est découpée en grappes (cellules de Voronoï), ombrées selon la lumière.
-  for (const m of MASSES) {
-    const shape = massShape(m);
+  for (const m of masses) {
+    const shape = massShape(m, c.h);
     const r = rng(m.seed * 31);
     const sites: Vec[] = [];
     for (let gy = m.cy - m.ry - 3; gy <= m.cy + m.ry + 3; gy += 5.5) {
@@ -151,7 +134,7 @@ export function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
       }
     }
     const ramp = ['k', 'l', 'L', 'j'];
-    for (let y = 0; y < 96; y++) for (let x = 0; x < 64; x++) {
+    for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
       if (shape.get(x, y) === EMPTY) continue;
       const px = x + 0.5;
       const py = y + 0.5;
@@ -171,6 +154,28 @@ export function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
     }
   }
 
+}
+
+/**
+ * L'arbre dans son repère, sans contour ni ombre.
+ * `light` : direction de la lumière dans ce repère (vers la source), pour garder le nord-ouest après rotation.
+ */
+export function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
+  const c = new Canvas(64, 96);
+
+  // Tronc : légère courbe, évasé au pied, deux racines, une branche vers la masse de droite.
+  // La branche garde son ombrage ; le tronc et les racines prennent l'écorce commune (art/world/wood.ts) : rampe en
+  // travers de chaque rangée (lumière à gauche), sillons dans le sens du tronc.
+  c.polygon([[36, 58], [44, 50], [46, 51], [37.5, 62]], 'm');
+  c.within('m', (c) => c.polygon([[40, 52], [46, 51], [37.5, 62], [37, 58]], 'N'));
+  barkRows(c, (t) => {
+    t.polygon([[28, 54], [37, 54], [37.5, 70], [38, 80], [40.5, 85], [42, 89], [24, 89], [26, 85], [27.5, 79], [27.5, 68]], 'm');
+    t.polygon([[38, 86], [44, 87.5], [45, 89], [39, 89]], 'm'); // racine droite
+    t.polygon([[26, 86], [21, 88], [20.5, 89], [26, 89]], 'm'); // racine gauche
+  });
+
+  paintFoliage(c, MASSES, light);
+
   // Ombre du feuillage sur le haut du tronc.
   c.within('Mm', (c) => c.polygon([[26, 54], [40, 54], [40, 67], [33, 69], [26, 66]], 'N'));
   c.within('N', (c) => c.polygon([[33, 54], [40, 54], [40, 64], [33, 66]], 'K'));
@@ -178,10 +183,58 @@ export function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
   return despeckle(c, 'K');
 }
 
-/** L'arbre debout, 64x96 : image `big-tree`. */
+// ---------- Arbre debout, à sa vraie hauteur ----------
+// `treeBody` ci-dessus (64x96) reste le repère des pièces couchées (art/world/big-felled.ts : profil du tronc, houppier
+// couché), qui ne bougent pas. L'arbre debout (`big-tree`) et sa chute prennent ce grand repère : même largeur, même
+// pied (rangées décalées de TALL_DY), mais à sa vraie hauteur, 270 × 270 × 565 cm (boîte : 54 × 140 px). Sa longueur
+// couchée fait foi : du sol à la coupe, la souche (13 px) ; de la coupe au bas du feuillage, le tronc nu des sections
+// couchées jusqu'au houppier (environ 46 px) ; puis le feuillage, la longueur du houppier couché (52 px) plus son
+// dessus vu en trois quarts (D/2 = 27 px).
+
+/** Hauteur de l'image de l'arbre debout ; décalage de ses rangées par rapport au repère 64x96 (même bas d'image). */
+export const TALL_H = 160;
+export const TALL_DY = TALL_H - 96;
+
+// Une masse de fond, puis cinq masses de la plus lointaine (en haut) à la plus proche (en bas) : asymétriques, éclairées en haut à gauche.
+const TALL_MASSES: Mass[] = [
+  { cx: 31, cy: 58, rx: 17, ry: 27, seed: 20, dim: 0.3 }, // masse du fond : bouche les jours entre les autres
+  { cx: 35, cy: 28, rx: 13, ry: 13, seed: 21, dim: 0 },
+  { cx: 24, cy: 45, rx: 15, ry: 14, seed: 22, dim: 0.05 },
+  { cx: 43, cy: 54, rx: 14, ry: 13, seed: 23, dim: 0.1 },
+  { cx: 19, cy: 69, rx: 13, ry: 12, seed: 24, dim: 0.15 },
+  { cx: 38, cy: 81, rx: 16, ry: 11, seed: 25, dim: 0.25 },
+];
+
+/** L'arbre debout dans son grand repère (64 x TALL_H, pied en (33, 89 + TALL_DY)), sans contour ni ombre. */
+export function tallTreeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
+  const c = new Canvas(64, TALL_H);
+  const D = TALL_DY;
+  const P = (pts: Vec[]): Vec[] => pts.map(([x, y]) => [x, y + D]);
+  // Tronc : long fût presque droit, évasé au pied (le même pied que la souche), deux racines ; deux branches
+  // montent dans les masses de droite et de gauche.
+  c.polygon(P([[36, 26], [44, 16], [46, 17], [37.5, 30]]), 'm');
+  c.within('m', (c) => c.polygon(P([[40, 20], [46, 17], [37.5, 30], [37, 26]]), 'N'));
+  c.polygon(P([[29, 24], [22, 13], [20, 14], [28.5, 28]]), 'm');
+  c.within('m', (c) => c.polygon(P([[24, 18], [20, 14], [28.5, 28], [28.5, 25]]), 'N'));
+  barkRows(c, (t) => {
+    t.polygon(P([[28, 14], [37, 14], [37.5, 40], [37.5, 70], [38, 80], [40.5, 85], [42, 89], [24, 89], [26, 85], [27.5, 79], [27.5, 40]]), 'm');
+    t.polygon(P([[38, 86], [44, 87.5], [45, 89], [39, 89]]), 'm'); // racine droite
+    t.polygon(P([[26, 86], [21, 88], [20.5, 89], [26, 89]]), 'm'); // racine gauche
+  }, -D);
+
+  paintFoliage(c, TALL_MASSES, light);
+
+  // Ombre du feuillage sur le haut du tronc.
+  c.within('Mm', (c) => c.polygon(P([[26, 28], [40, 28], [40, 38], [33, 40], [26, 37]]), 'N'));
+  c.within('N', (c) => c.polygon(P([[33, 28], [40, 28], [40, 36], [33, 38]]), 'K'));
+
+  return despeckle(c, 'K');
+}
+
+/** L'arbre debout, 64 x TALL_H : image `big-tree`. */
 export function standingTree(): Canvas {
-  const c = shadedOutline(treeBody());
-  groundShadow(c, 36, 89.5, 17, 4);
+  const c = shadedOutline(tallTreeBody());
+  groundShadow(c, 36, 89.5 + TALL_DY, 17, 4);
   return c;
 }
 

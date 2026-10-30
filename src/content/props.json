@@ -8,7 +8,7 @@
     "harvest": {"tool": "axe", "hits": 3, "impact": "wood", "gesture": "chop", "notch": true, "becomes": "big-felled-log-2"}},
   "big-felled-section-3": {"name": "tronc couché", "image": "big-felled-section-3", "dims": {"w": 95, "d": 65, "h": 65, "shape": "cylinder", "axis": "ew"}, "body": {"w": 19, "h": 10, "bottom": 3}, "aim": [18, 2],
     "harvest": {"tool": "axe", "hits": 3, "impact": "wood", "gesture": "chop", "notch": true, "becomes": "big-felled-log-3"}},
-  "big-felled-crown": {"name": "houppier", "image": "big-felled-crown", "dims": {"w": 265, "d": 270, "h": 150, "shape": "box"}, "body": {"w": 53, "h": 16, "bottom": 7}, "aim": [27, 10],
+  "big-felled-crown": {"name": "houppier", "image": "big-felled-crown", "dims": {"w": 260, "d": 120, "h": 90, "shape": "box"}, "body": {"w": 53, "h": 16, "bottom": 7}, "aim": [27, 10],
     "harvest": {"tool": "axe", "hits": 3, "impact": "leaves", "gesture": "chop", "becomes": "big-felled-head", "drops": [{"item": "branch", "min": 2, "max": 3}]}},
   "big-felled-head": {"name": "tête de tronc ébranchée", "image": "big-felled-head", "dims": {"w": 190, "d": 60, "h": 75, "shape": "box"}, "bodies": [{"x": 9, "y": 11, "w": 39, "h": 10}], "aim": [27, 10],
     "harvest": {"tool": "axe", "hits": 3, "impact": "wood", "gesture": "chop", "notch": true, "becomes": "big-felled-log-4", "drops": [{"item": "branch", "min": 1, "max": 1}]}},

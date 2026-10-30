@@ -1,8 +1,9 @@
 // Arbre normal debout (`normal-tree`) et sa souche (`normal-tree-stump`).
 // Même méthode que le gros (art/world/big-tree.ts) : tronc en écorce commune (art/world/wood.ts, NORMAL_WOOD : 6 px,
 // deux couloirs de sillons), feuillage en masses festonnées découpées en grappes ombrées (rampe k l L j), lumière en
-// haut à gauche. Mais un autre arbre : élancé, 7 m pour 1,90 m de houppier, tronc nu sur 3 m, sept masses empilées
-// en une silhouette étroite et haute qui penche un peu à droite en montant.
+// haut à gauche. Mais un autre arbre : élancé, 7 m pour 1,90 m de houppier, tronc nu sur 3 m, droit et vertical (c'est
+// l'arbre de la charpente : aucune courbe, aucun coude), sept masses empilées en quinconce en une silhouette étroite et
+// haute, centrée sur le tronc ; une seule branche sort du flanc droit vers la masse du bas.
 // Géométrie partagée avec la chute et l'arbre couché : art/world/normal-geometry.ts (FOOT, TRUNK_X0, CROWN_*, TRUNK_ROW,
 // STUMP_*). Le pied (FOOT) est la rangée du contour sous le tronc ; l'écorce s'arrête la rangée au-dessus.
 //
@@ -21,8 +22,6 @@ const [FX, FY] = FOOT;
 const TRUNK_X1 = TRUNK_X0 + NORMAL_WOOD.diameter - 1;
 /** Le tronc monte jusque sous la dernière masse du houppier (plus haut, il percerait entre les masses en points isolés). */
 const TRUNK_TOP = 88;
-/** Au-dessus de cette rangée, le tronc se décale d'une colonne vers la droite : une légère courbe. */
-const BEND = 112;
 
 /**
  * Pied du tronc : pour les rangées du bas (0 = la dernière rangée d'écorce, au-dessus du pied), l'écart des bords
@@ -42,8 +41,7 @@ function trunkSpan(y: number): [number, number] | null {
   if (y < TRUNK_TOP || y > FY - 1) return null;
   const k = FY - 1 - y;
   const [dl, dr] = FLARE[k] ?? [0, 0];
-  const shift = y < BEND ? 1 : 0;
-  return [TRUNK_X0 + dl + shift, TRUNK_X1 + dr + shift];
+  return [TRUNK_X0 + dl, TRUNK_X1 + dr];
 }
 
 /**
@@ -60,8 +58,11 @@ function barkRows(c: Canvas, span: (y: number) => [number, number] | null, from 
   }
 }
 
-/** Bouche les trous fermés (vides qu'on n'atteint pas depuis le bord de l'image) : un creux entre deux masses. */
-function fillHoles(c: Canvas, col: string) {
+/**
+ * Bouche les trous fermés (vides qu'on n'atteint pas depuis le bord de l'image) : un creux entre deux masses.
+ * Seulement au-dessus de la rangée `below`.
+ */
+function fillHoles(c: Canvas, col: string, below = c.h) {
   const out = new Set<number>();
   const stack: Vec[] = [];
   for (let x = 0; x < c.w; x++) stack.push([x, 0], [x, c.h - 1]);
@@ -72,13 +73,14 @@ function fillHoles(c: Canvas, col: string) {
     out.add(y * c.w + x);
     stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
   }
-  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) if (c.get(x, y) === EMPTY && !out.has(y * c.w + x)) c.set(x, y, col);
+  for (let y = 0; y < below; y++) for (let x = 0; x < c.w; x++) if (c.get(x, y) === EMPTY && !out.has(y * c.w + x)) c.set(x, y, col);
 }
 
 interface Mass { cx: number; cy: number; rx: number; ry: number; seed: number; dim: number }
 
 // Sept masses, de la plus haute (la plus lointaine) à la plus basse (la plus proche), en quinconce : la silhouette
-// s'élargit un peu vers le bas, la cime penche à droite. Graines propres à l'arbre normal.
+// s'élargit un peu vers le bas, la cime est un peu à droite (le houppier reste asymétrique ; le tronc, lui, est droit).
+// Graines propres à l'arbre normal.
 const MASSES: Mass[] = [
   { cx: 27, cy: 14, rx: 8, ry: 10, seed: 41, dim: 0 },
   { cx: 21, cy: 27, rx: 10, ry: 10, seed: 42, dim: 0 },
@@ -152,10 +154,14 @@ export function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
     }
   }
 
-  fillHoles(c, 'k');
+  // Creux fermés : dans le houppier, du feuillage sombre (l'arbre couché de normal-felled.ts reprend ces rangées : ne
+  // pas les changer) ; dessous, le creux entre le tronc et la branche prend le trait du contour (le V de la fourche),
+  // pas du feuillage qui collait au tronc un coin sombre.
+  fillHoles(c, 'k', CROWN_BOTTOM + 1);
+  fillHoles(c, 'o');
 
   // Ombre du feuillage sur le haut du tronc nu.
-  c.within('Mm', (c) => c.polygon([[20, CROWN_BOTTOM - 4], [29, CROWN_BOTTOM - 4], [29, CROWN_BOTTOM + 6], [25, CROWN_BOTTOM + 5], [20, CROWN_BOTTOM + 2]], 'N'));
+  c.within('Mm', (c) => c.polygon([[20, CROWN_BOTTOM - 6], [29, CROWN_BOTTOM - 4], [29, CROWN_BOTTOM + 6], [25, CROWN_BOTTOM + 5], [20, CROWN_BOTTOM + 2]], 'N'));
   c.within('N', (c) => c.polygon([[25, CROWN_BOTTOM - 4], [29, CROWN_BOTTOM - 4], [29, CROWN_BOTTOM + 3], [25, CROWN_BOTTOM + 2]], 'K'));
 
   return despeckleEdges(despeckle(c, 'K'), 'K');
