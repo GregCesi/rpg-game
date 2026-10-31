@@ -196,6 +196,9 @@
     "normal-beam-ns",
     "wood-piece",
     "big-felled-tree",
-    "big-pollard-felled-tree"
+    "big-pollard-felled-tree",
+    "bucket-water",
+    "earth-mortar",
+    "stone-chips"
   ]
 }

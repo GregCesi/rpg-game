@@ -25,21 +25,42 @@ import { hewnTone } from './wood';
 // ---------- Dé de pierre ----------
 
 /**
- * Dé de pierre (`footing-stone`), boîte de 40 × 40 × 15 cm : silhouette 8 × 7 px (gabarit : W 8 ; H + D/2 = 3 + 4), dessus en
- * 4 rangées (contour du haut et trois rangées de pierre claire R r, où se pose le pied du poteau, 8 px, sans déborder), face
- * sud en 3 rangées (z Z, puis le contour du bas). Coin nord-est émoussé. Ombre portée sous la base, décalée à droite.
+ * Dé de pierre (`footing-stone`, `footing-stone-b`) : la pierre plate posée (art/world/implantation.ts), une dalle de berge
+ * naturelle de 40 × 40 × 15 cm, en deux formes. Silhouette 8 × 7 px (gabarit : W 8 ; H + D/2 = 3 + 4) collée en haut à gauche
+ * d'une image de 9 × 8 : dessus en 4 rangées (contour du haut et trois rangées de pierre claire R r, assez large pour le pied
+ * du poteau de 8 px), face sud en 3 rangées (z Z, puis le contour du bas). Irrégulière : coins cassés, une facette en r sur
+ * le dessus, un éclat au pied ; jamais lisse. Ombre portée calculée : la silhouette décalée d'un pixel vers le sud-est.
  */
-export function footingStone(): Canvas {
-  return Canvas.from([
-    'ZZZZZZ...',
-    'ZRRRRRro.',
-    'ZRRRRrro.',
-    'ZRRRrrro.',
-    'ZzzzzzZox',
-    'ZzzzzZZox',
-    'oooooooox',
-    '.xxxxxxxx',
-  ]);
+export function footingStone(form: 'a' | 'b' = 'a'): Canvas {
+  const shapes: Record<'a' | 'b', string[]> = {
+    // A : coin nord-est cassé en biais, une facette r au milieu du dessus, le pied ouest écorné
+    a: [
+      '.ZZZZZ..',
+      'ZRRRRRo.',
+      'ZRRrRRro',
+      'ZrRRRrro',
+      'ZzzzzzZo',
+      '.ozzZZZo',
+      '..ooooo.',
+    ],
+    // B : coin nord-ouest cassé, le dessus qui penche vers l'est (r), le pied est arrondi, un creux Z sur la face
+    b: [
+      '..ZZZZZ.',
+      '.ZRRRRRo',
+      'ZRRRRrro',
+      'ZRrrRrro',
+      'ZzzzzzZo',
+      'ZzZZzZo.',
+      'oooooo..',
+    ],
+  };
+  const g = shapes[form];
+  const c = new Canvas(9, 8);
+  c.stamp(g, 0, 0);
+  for (let y = 1; y < 8; y++) for (let x = 1; x < 9; x++) {
+    if (c.get(x, y) === '.' && (g[y - 1]?.[x - 1] ?? '.') !== '.') c.set(x, y, 'x');
+  }
+  return c;
 }
 
 // ---------- Poteaux ----------
@@ -246,7 +267,8 @@ function shedRoof(): Canvas {
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
 export default [
-  img('footing-stone', footingStone()),
+  img('footing-stone', footingStone('a')),
+  img('footing-stone-b', footingStone('b')),
   img('shed-plate-north', shedPlateEW(64, 0)),
   img('shed-plate-south', shedPlateEW(41, 23)),
   img('shed-plate-side', shedPlateSide()),

@@ -10,6 +10,7 @@ import { world } from '../palette';
 import { NORMAL_WOOD, bark, paintFace } from '../world/wood';
 import { shadedOutline } from '../world/big-tree';
 import { pie } from '../world/wood-pieces';
+import { strawIconCanvas } from './fibres';
 
 const S = 16;
 
@@ -99,23 +100,12 @@ function ironOre(): Canvas {
 
 // ---------- Paille ----------
 
-/** Poignée de paille couchée en diagonale, serrée au milieu par un lien, brins en éventail aux deux bouts. */
+/**
+ * La gerbe de paille longue (`straw`, art/items/fibres.ts) en diagonale : le pied coupé net en bas à gauche, le lien de
+ * paille tordue au milieu, les épis bruns à grains clairs en haut à droite. Le dessin est celui de fibres.ts.
+ */
 function straw(): Canvas {
-  const c = new Canvas(S, S);
-  // fuseau pincé au milieu (axe bas-gauche -> haut-droit), bouts déchiquetés
-  c.polygon([[0.6, 9.8], [5.8, 7.6], [7.6, 5.8], [9.8, 0.6], [15.4, 6.2], [10.2, 8.8], [8.8, 10.2], [6.2, 15.4]], 't');
-  // brins : traits le long de l'axe, clairs côté lumière, sombres côté ombre
-  c.within('t', (c) => {
-    c.line(1, 10, 10, 1, 'Y').line(3, 10, 6, 7, 'Y').line(10, 4, 12, 2, 'Y');
-    c.line(5, 12, 12, 5, 'T').line(4, 14, 7, 11, 'P').line(10, 9, 14, 5, 'P').line(5, 15, 15, 5, 'P');
-  });
-  // bouts en brosse : un brin sur deux s'arrête un pixel plus tôt
-  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-    if (Math.abs(x - y) >= 8 && (x + y) % 2 === 0 && Math.abs(x - y) + (x + y) % 4 >= 9) c.px[y][x] = EMPTY;
-  }
-  // lien de paille tordue
-  c.line(5, 9, 9, 5, 'n').line(6, 10, 10, 6, 'e').set(5, 8, 'u').set(6, 7, 'u').set(7, 6, 'u');
-  return outline(c, 'P');
+  return strawIconCanvas();
 }
 
 // ---------- Blé ----------

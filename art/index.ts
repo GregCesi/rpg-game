@@ -35,5 +35,10 @@ import implantation from './world/implantation';
 import hatchet from './items/hatchet';
 import broadaxe from './items/broadaxe';
 import woodPieces from './world/wood-pieces';
+import stones from './items/stones';
+import masonTools from './items/mason-tools';
+import earth from './items/earth';
+import fibres from './items/fibres';
+import woodSmall from './items/wood-small';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...stamina, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building , ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...stamina, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building , ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...fibres, ...woodSmall];
