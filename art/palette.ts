@@ -47,6 +47,15 @@ export const world = {
   R: '#b8b09f',
   z: '#787061',
   Z: '#5d564a',
+  // calcaire de la carrière (chantier « pierre », roche `limestone` de art/proposals/roches.ts) : la pierre commune du
+  // village, gris clair presque blanc, plus claire et plus chaude que la pierre grise R r z Z (qui reste celle des rochers).
+  // De la cassure fraîche à la fissure profonde : la lumière glisse vers le jaune crème, l'ombre vers le brun-violet, jamais
+  // un gris froid de béton. Signes pris hors des lettres, libres dans toutes les palettes du jeu.
+  '!': '#f3eedf', // cassure fraîche : arêtes vives, éclats de taille (presque blanc, à peine chaud)
+  '+': '#ddd3bb', // calcaire au soleil : dessus, faces tournées vers la lumière (crème)
+  '=': '#bdb29c', // calcaire patiné : face sud, la teinte de la pierre en place
+  ';': '#958a84', // calcaire à l'ombre : flanc est, dessous (glisse vers le violet)
+  '~': '#675a5a', // fissure profonde, creux, contour côté lumière (brun-violet)
   // chaume
   t: '#b8954f',
   T: '#97773c',

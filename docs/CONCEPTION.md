@@ -514,6 +514,20 @@ de la plus naturelle à la plus travaillée, chacune servant de base à la suiva
   vrais gestes (dégrossir, tailler, creuser, puiser, mêler, peigner, fendre au coutre), le taillis de noisetiers et le jeune arbre
   de taillis (la perche), la carrière et le village qui vend.
 
+### La pierre, un objet à la fois (décidé le 31 octobre 2026, chantier « pierre »)
+
+Le chantier « briques » a fait une vingtaine d'objets d'un coup, et la maquette de la maison, dessinée d'un bloc, montrait une pierre
+qui ressemblait à de la brique, sans chaîne visible d'un objet à l'autre. On recommence par la pierre, **un objet à la fois, qui
+vient visiblement du précédent, validé par Grégoire avant le suivant** : d'abord la fiche, puis des propositions de dessin
+côte à côte (`art/proposals/`, jamais chargé par le jeu ; `.art-preview/essai-pierre.png`), puis seulement l'intégration.
+
+- **La pierre commune du village est un calcaire gris clair, presque blanc**, la moins chère, tirée d'une carrière toute proche.
+  D'autres pierres, d'autres couleurs viendront plus tard.
+- **La roche est un réglage de la pierre** : nom, couleur (une rampe de 4 à 5 tons dans `art/palette.ts`), densité (calcaire :
+  2 400 kg/m³), dureté à la taille, prix relatif. Une nouvelle couleur de pierre = une nouvelle roche, pas un nouvel objet.
+- Premiers maillons : la [pierre brute de carrière](objets/rough-stone.md) (moyenne et grosse), puis le [moellon](objets/rubble-stone.md)
+  (trois longueurs, faces bosselées), avec un muret d'essai monté par calcul pour juger qu'il se lit comme un mur de moellons.
+
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 
 - **La partie se sauvegarde toute seule.** `GameState` est écrit dans le navigateur à chaque changement (objet pris, posé, coupé, tas modifié, changement de carte), avec la carte et la position de Xéros. Au lancement, la partie reprend là où elle était. Pas de bouton « sauvegarder » pour l'instant.
