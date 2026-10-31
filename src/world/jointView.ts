@@ -8,7 +8,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import { boxOf, type Box3, type BuildPiece } from './build';
 import { buildLook } from './buildView';
 import { scarfChains, woodOfPiece, type JointRef } from './joints';
-import { lookOf, upOf } from './woodShape';
+import { agedKey, lookOf, upOf } from './woodShape';
 
 /** Une pièce affichée, telle que GameMap la tient. */
 export interface ShownPiece {
@@ -102,7 +102,7 @@ export function drawJoints(scene: Phaser.Scene, shown: readonly ShownPiece[], jo
     const look = buildLook(scene, u.look);
     // les marques des entures, à chaque jonction
     for (const cut of u.cuts) {
-      const key = `joint-scarf-${wood.size}-${u.axis}`;
+      const key = agedKey(`joint-scarf-${wood.size}-${u.axis}`, wood.age);
       if (!scene.textures.exists(key)) continue;
       const m = scene.textures.getFrame(key);
       if (u.axis === 'ew') u.marks.push({ key, x: Math.round(cut / CM_PER_PX) - Math.floor(m.width / 2), y: look.h - m.height });
@@ -118,8 +118,9 @@ export function drawJoints(scene: Phaser.Scene, shown: readonly ShownPiece[], jo
       if (!lying || !post || !u.pieces.includes(lying)) continue;
       const pb = boxOf(post);
       const px = Math.round((pb.x + pb.w / 2) / CM_PER_PX) - look.x;
-      if (u.axis === 'ew') u.marks.push({ key: 'joint-peg', x: px - 1, y: Math.round(look.h * 0.6) - 1 });
-      else u.marks.push({ key: 'joint-peg', x: Math.floor(look.w / 2) - 1, y: Math.round((pb.y + pb.d / 2 - u.box.y) / CM_PER_PX) - 1 });
+      const peg = agedKey('joint-peg', wood.age);
+      if (u.axis === 'ew') u.marks.push({ key: peg, x: px - 1, y: Math.round(look.h * 0.6) - 1 });
+      else u.marks.push({ key: peg, x: Math.floor(look.w / 2) - 1, y: Math.round((pb.y + pb.d / 2 - u.box.y) / CM_PER_PX) - 1 });
     }
     const tex = marked(scene, look.key, look.frame, u.marks);
     const n = u.pieces.length;
@@ -171,7 +172,9 @@ export function halvingOverlays(scene: Phaser.Scene, shown: readonly ShownPiece[
     const mask = (N.y < E.y - over ? 1 : 0) + (E.x + E.w > N.x + N.w + over ? 2 : 0) + (N.y + N.d > E.y + E.d + over ? 4 : 0) + (E.x < N.x - over ? 8 : 0);
     const top = j.top === ns.piece.id ? 'ns' : 'ew';
     // le mi-bois : rangée 0 sur celle de l'image de l'est-ouest ; l'encoche : 4 rangées plus haut (le rondin du dessus est 20 cm plus haut)
-    const key = j.type === 'notch' ? `joint-notch-${w.size}-${top}-${mask}` : `joint-halving-${w.size}-${lookOf(w) === 'beam' ? 'beam' : 'round'}-${top}-${mask}`;
+    // le rondin écorcé a ses croisements à lui (le bois mis à nu) ; à l'âge des deux pièces
+    const notchKey = `joint-notch-${w.size}-${lookOf(w) === 'peeled' ? 'peeled-' : ''}${top}-${mask}`;
+    const key = agedKey(j.type === 'notch' ? notchKey : `joint-halving-${w.size}-${lookOf(w) === 'beam' ? 'beam' : 'round'}-${top}-${mask}`, w.age);
     if (!scene.textures.exists(key)) continue;
     const lift = j.type === 'notch' ? 4 : 0;
     out.push({ key, x: ns.image.x, y: ew.image.y - ew.image.height - lift, depth: Math.max(ew.image.depth, ns.image.depth) + 0.0005 });

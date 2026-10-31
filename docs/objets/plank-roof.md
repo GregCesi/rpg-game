@@ -13,6 +13,7 @@ en planches** (`plank-awning`, l'étal de la place) aussi, en petit.
   la pente, sur deux épaisseurs à joints croisés (la seconde couvre les joints de la première), chevillées à la faîtière et au
   rondin de rive. Pièce de toit (`roof`) : elle s'efface quand Xéros est dessous.
 - Mains : aucune (il se monte planche à planche ; ici, un seul élément).
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Par la matière : `{"matter": "wood", "fill": 0.067}` sur la boîte de ses `dims` (480 × 200 × 100 cm, 9,6 m³) : deux épaisseurs de

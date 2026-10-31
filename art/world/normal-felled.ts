@@ -161,7 +161,7 @@ function trunkShadow(trunk: Canvas): [Canvas, Canvas] {
   return [r1, r2];
 }
 
-const TRUNK = shadedOutline(despeckle(trunkBody(), 'KYTt'));
+const TRUNK = shadedOutline(despeckle(trunkBody(), 'K^%*'));
 const CROWN = shadedOutline(crownBody());
 const [BAND1, BAND2] = trunkShadow(TRUNK);
 
@@ -288,7 +288,7 @@ function crownBodyLeft(): Canvas {
   return c;
 }
 
-const TRUNK_L = shadedOutline(despeckle(trunkBodyLeft(), 'KYTt'));
+const TRUNK_L = shadedOutline(despeckle(trunkBodyLeft(), 'K^%*'));
 const CROWN_L = shadedOutline(crownBodyLeft());
 const [BAND1_L, BAND2_L] = trunkShadow(TRUNK_L);
 /** Colonne la plus à droite du houppier couché à gauche (son ombre ne déborde pas de son image). */

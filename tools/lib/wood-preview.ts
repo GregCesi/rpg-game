@@ -11,7 +11,7 @@ import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource } from '../../art/lib/types';
 import { composeWood } from '../../art/world/wood-pieces';
 import type { End, WoodLook, WoodPiece } from '../../src/content/types';
-import { shapeOfLook, splitPieces, WOOD } from '../../src/world/woodShape';
+import { splitPieces, WOOD, woodOfLook } from '../../src/world/woodShape';
 import { Board, grassOf } from './composite-previews';
 import { endView } from '../../art/world/wood-section';
 import { CM_PER_PX } from '../../src/content/gabarit';
@@ -19,8 +19,6 @@ import { CM_PER_PX } from '../../src/content/gabarit';
 interface Placed { grid: Grid; x: number; y: number }
 interface Cell { items: Placed[]; palette: Palette; w: number; h: number }
 
-/** Faces dressées de chaque aspect. */
-const FACES: Record<WoodLook, number> = { round: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 };
 
 export function woodPreview(sources: ArtSource[]): PNG | undefined {
   const find = (name: string) => sources.find((s) => s.name === name);
@@ -32,8 +30,7 @@ export function woodPreview(sources: ArtSource[]): PNG | undefined {
   const one = (grid: Grid, pal: Palette = palette): Cell => ({ items: [{ grid, x: 0, y: 0 }], palette: pal, w: grid[0].length, h: grid.length });
   const xeros = one(body.animations['idle-down'].frames[0], body.palette);
   const piece = (size: string, axis: WoodPiece['axis'], length: number, look: WoodLook = 'round', more: Partial<WoodPiece> = {}): WoodPiece => {
-    const shape = shapeOfLook(look);
-    return { size, length, shape, axis, ...(FACES[look] ? { hewn: FACES[look] * WOOD.hew.perFace } : {}), ...more };
+    return { ...woodOfLook(size, look, length, axis), ...more };
   };
   const cell = (p: WoodPiece, frame = 0, open = false) => one(composeWood(p, { frame, open }).toGrid());
   /** Des pièces posées dans un repère local (coin bas gauche de chacune), ramenées en case. */
@@ -137,7 +134,7 @@ export function sectionsPreview(sources: ArtSource[]): PNG | undefined {
     for (const look of Object.keys(def.looks) as WoodLook[]) {
       for (const point of look === 'quarter' ? [undefined, 'down' as const] : [undefined]) {
         const end = endView(size, look, 1 / CM_PER_PX, point).toGrid();
-        const p = (axis: 'ew' | 'ns'): WoodPiece => ({ size, length: 100, shape: shapeOfLook(look), axis, ...(FACES[look] ? { hewn: FACES[look] * WOOD.hew.perFace } : {}), ...(point ? { point } : {}) });
+        const p = (axis: 'ew' | 'ns'): WoodPiece => ({ ...woodOfLook(size, look, 100, axis), ...(point ? { point } : {}) });
         rows.push([xeros, one(end), one(zoom(end, 3)), one(composeWood(p('ew')).toGrid()), one(composeWood(p('ns')).toGrid())]);
       }
     }

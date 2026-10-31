@@ -5,7 +5,8 @@
 
 import { wood } from '../content';
 import { buildPlans, onBuildPlans } from '../content/buildPlans';
-import type { WoodLook } from '../content/types';
+import type { WoodAge, WoodLook } from '../content/types';
+import { agedKey } from '../world/woodShape';
 import type { BuildCommand, BuildStatus } from '../events';
 import { images, spritesheets } from '../generated/assets';
 import { canStand, catalog, FAMILIES, looksOf, woodFrom, type CatalogEntry } from './catalog';
@@ -124,7 +125,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
   });
   const wAxis = select([['ew', 'est-ouest'], ['ns', 'nord-sud'], ['up', 'debout']], () => pickWood());
   const fillLooks = () => {
-    const names: Record<WoodLook, string> = { round: 'ronde', half: 'demi', quarter: 'quartier', f1: '1 face', f2: '2 faces', f3: '3 faces', beam: 'poutre', plank: 'planche' };
+    const names: Record<WoodLook, string> = { round: 'ronde', peeled: 'écorcée', half: 'demi', quarter: 'quartier', f1: '1 face', f2: '2 faces', f3: '3 faces', beam: 'poutre', plank: 'planche' };
     wLook.replaceChildren(...looksOf(wSize.value).map((l) => el('option', { value: l, textContent: names[l] })));
     if (looksOf(wSize.value).includes('beam')) wLook.value = 'beam';
   };
@@ -163,6 +164,16 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     };
     send({ kind: 'pick', piece: e.ref, natural: nat });
   };
+
+  // l'âge du bois (neuf, patiné, vieux) : toutes les pièces de bois qu'on pose le prennent ; les vignettes des objets de bois le montrent
+  const ages = Object.entries(wood.ages) as [WoodAge, string][];
+  let age: WoodAge = 'new';
+  const wAge = select(ages, () => {
+    age = wAge.value as WoodAge;
+    send({ kind: 'age', age });
+    render();
+  });
+  const ageBox = el('div', { className: 'row' }, ['âge du bois', wAge]);
 
   const search = el('input', { type: 'search', placeholder: 'chercher…' });
   search.addEventListener('input', () => render());
@@ -217,7 +228,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
         nodes.push(el('h3', { textContent: f }));
         const grid = el('div', { className: 'grid' });
         for (const e of these) {
-          grid.append(tile(e.name, thumb(e.thumb), chosen === e.id, () => pick(e)));
+          grid.append(tile(e.name, thumb(e.aged ? agedKey(e.thumb, age) : e.thumb), chosen === e.id, () => pick(e)));
         }
         nodes.push(grid);
       }
@@ -246,6 +257,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
   planName.addEventListener('keydown', (e) => e.stopPropagation());
   const tools = el('div', {}, [
     el('h3', { textContent: 'Outils' }),
+    ageBox,
     el('div', { className: 'row' }, [
       toggle,
       button('Rien en main', () => ((chosen = undefined), send({ kind: 'none' }), render())),
@@ -271,7 +283,8 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     status: (s) => {
       toggle.textContent = s.active ? 'Sortir (B)' : 'Entrer (B)';
       const sel = s.selection ? `zone ${s.selection.w / 100} × ${s.selection.d / 100} m` : 'aucune zone';
-      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool}${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * 20} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}${s.hint ? `\n${s.hint}` : ''}`;
+      wAge.value = s.age;
+      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool} (bois ${wood.ages[s.age]})${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * 20} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}${s.hint ? `\n${s.hint}` : ''}`;
     },
   };
 }

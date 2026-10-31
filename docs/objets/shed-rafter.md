@@ -6,6 +6,7 @@
 - Nature : objet du monde (`props.json`), sans `take` : pièce de bâtiment, place de l'étape « les chevrons » du plan `woodshed` (`plans.json`, étape « à venir »),
   cinq fois. Pièce du toit (`roof`) : elle s'efface avec lui.
 - Mains : aucune pour l'instant.
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Dimensions (gabarit)
 - Bois équarri, section 10 × 10 cm, posé du nord au sud sur les deux sablières est-ouest, dans la pente (20,1°). Il

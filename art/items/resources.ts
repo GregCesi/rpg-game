@@ -9,6 +9,7 @@ import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { NORMAL_WOOD, POLE_WOOD, bark, paintFace } from '../world/wood';
 import { shadedOutline } from '../world/big-tree';
+import { SKINS } from '../world/wood-skin';
 import { strawIconCanvas } from './fibres';
 
 const S = 16;
@@ -291,20 +292,20 @@ function bigRoundIcon(): Canvas {
 /**
  * Demi-bille : la bille fendue en deux, face de fente en haut. Même biais que le rond : devant, en bas à gauche, le bout
  * en demi-lune (le cœur au milieu de son bord droit du haut, contre la fente, un cerne, l'écorce N sur l'arc) ; la face
- * de fente, la plus claire (Y, fibres t en long), fuit vers le haut à droite ; le dos d'écorce dessous, à droite, de m à
+ * de fente, la plus claire (^, fibres * en long), fuit vers le haut à droite ; le dos d'écorce dessous, à droite, de m à
  * K vers le bas.
  */
 const HALF_ICON = [
   '................',
   '................',
-  '........YYYtYYY.',
-  '.......YtYYYYtm.',
-  '......YYYtYYYmm.',
-  '....YYtYYYtYmmN.',
-  '..YYYYYtYYYmmNN.',
-  '.NtttTttNmmNNNK.',
-  '.NYtTTTtNmNNNK..',
-  '..NYtttNNNNKK...',
+  '........^^^*^^^.',
+  '.......^*^^^^*m.',
+  '......^^^*^^^mm.',
+  '....^^*^^^*^mmN.',
+  '..^^^^^*^^^mmNN.',
+  '.N***%**NmmNNNK.',
+  '.N^*%%%*NmNNNK..',
+  '..N^***NNNNKK...',
   '...NNNNNNNK.....',
   '................',
   '................',
@@ -316,10 +317,10 @@ const bigHalfIcon = (): Canvas => shadedOutline(Canvas.from(HALF_ICON));
 
 /**
  * Quartier de biais, dans sa position au sol (wood.json, `section` : l'écorce en bas, la pointe en l'air, l'angle du cœur).
- * Devant, en bas à gauche, son bout en triangle pointe en haut : le cœur (T) à la pointe, un cerne (t), le bois de bout clair,
+ * Devant, en bas à gauche, son bout en triangle pointe en haut : le cœur (%) à la pointe, un cerne (*), le bois de bout clair,
  * l'arc d'écorce (N) dessous. La pièce fuit vers le haut à droite : le triangle poussé de loin en près, dont on voit l'arête
- * (le fil du cœur, qui accroche la lumière : Y), puis la face fendue tournée vers nous, qui descend dans l'ombre (t, T, fibres
- * P, la matière des faces fendues de art/world/wood-skin.ts) jusqu'au liseré d'écorce du pied. La face nord, tournée vers la
+ * (le fil du cœur, qui accroche la lumière : ^), puis la face fendue tournée vers nous, qui descend dans l'ombre (*, %, fibres
+ * &, la matière des faces fendues de art/world/wood-skin.ts) jusqu'au liseré d'écorce du pied. La face nord, tournée vers la
  * lumière, est derrière l'arête : on ne la voit pas d'ici.
  */
 function bigQuarterIcon(): Canvas {
@@ -347,19 +348,19 @@ function bigQuarterIcon(): Canvas {
     const foot = Math.max(...ys);
     for (const Y of ys) {
       const d = Y - top;
-      let q = d === 0 ? 'Y' : d === 1 ? (dash(X, 0, 4, 2) ? 'T' : 't') : d === 2 ? (dash(X, 1, 5, 2) ? 't' : 'T') : dash(X, 3, 5, 3) ? 'P' : 'T';
+      let q = d === 0 ? '^' : d === 1 ? (dash(X, 0, 4, 2) ? '%' : '*') : d === 2 ? (dash(X, 1, 5, 2) ? '*' : '%') : dash(X, 3, 5, 3) ? '&' : '%';
       if (Y === foot && d > 1 && !tri(X, Y + 1)) q = 'N';
       // contre le bout, l'ombre de son arête
-      else if (tri(X - 1, Y) && d > 0) q = 'T';
+      else if (tri(X - 1, Y) && d > 0) q = '%';
       c.set(X, Y + DOWN, q);
     }
   }
   const END: [number, string][] = [
-    [5, '.....T'],
-    [6, '....YTt'],
-    [7, '...YtttT'],
-    [8, '..YYtYttT'],
-    [9, '.YYYYYYYtT'],
+    [5, '.....%'],
+    [6, '....^%*'],
+    [7, '...^***%'],
+    [8, '..^^*^**%'],
+    [9, '.^^^^^^^*%'],
     [10, '..NNNNNNN'],
   ];
   for (const [y, row] of END) [...row].forEach((q, x) => { if (q !== '.') c.set(x, y + DOWN, q); });
@@ -381,6 +382,25 @@ function normalRoundIcon(): Canvas {
 }
 
 /**
+ * Le rondin écorcé : le rondin de biais, même cadrage, mais mis à nu à la plane : le bois travaillé en cylindre (la matière
+ * `peeled` de art/world/wood-skin.ts : clair en haut, ombre en bas, traces de plane en long), le bout scié en bas à gauche, son
+ * bois de bout sans anneau d'écorce.
+ */
+function normalPeeledIcon(): Canvas {
+  const c = new Canvas(S, S);
+  const [x0, y0, x1, y1] = [4.4, 9.4, 11.4, 6.8];
+  const r = 2.2;
+  capsule(c, x0, y0, x1, y1, r, (t, a) => {
+    const s = Math.min(0.999, Math.max(0, (a + 1) / 2));
+    return SKINS.normal.peeled(t * 16, Math.floor(s * 6), s, 0);
+  });
+  paintFace(c, x0 - 0.6, y0 + 0.1, 1.6, 2.4, { all: true });
+  // pas d'écorce : le bord du bout (N, l'anneau d'écorce de paintFace) devient du bois de bout à l'ombre
+  for (let Y = 0; Y < S; Y++) for (let X = 0; X < S; X++) if (c.get(X, Y) === 'N') c.set(X, Y, '%');
+  return outline(c, 'K');
+}
+
+/**
  * La poutre (20 × 20 cm) en biais : la face de bout carrée en bas à gauche (bois de bout, le cœur), le dessus éclairé
  * qui monte vers la droite, le flanc dans l'ombre dessous (l'icône de art/world/timber.ts).
  */
@@ -389,34 +409,34 @@ function beamIcon(): Canvas {
   const L: [number, number] = [9, -4.5];
   const A: [number, number] = [1.5, 7.5], B: [number, number] = [5.5, 7.5], C: [number, number] = [5.5, 11.5], D: [number, number] = [1.5, 11.5];
   const add = (p: [number, number]): [number, number] => [p[0] + L[0], p[1] + L[1]];
-  c.polygon([A, add(A), add(B), B], 'Y');
-  c.polygon([B, add(B), add(C), C], 't');
-  c.polygon([A, B, C, D], 'Y');
+  c.polygon([A, add(A), add(B), B], '^');
+  c.polygon([B, add(B), add(C), C], '*');
+  c.polygon([A, B, C, D], '^');
   // flanc : le pied plus sombre
   for (let X = 0; X < S; X++) for (let Y = 0; Y < S; Y++) {
-    if (c.get(X, Y) === 't' && c.get(X, Y + 1) === EMPTY) c.set(X, Y, 'T');
+    if (c.get(X, Y) === '*' && c.get(X, Y + 1) === EMPTY) c.set(X, Y, '%');
   }
   // face de bout : le cœur et l'ombre du bas à droite
-  c.set(3, 9, 'T').set(4, 9, 'T').set(4, 10, 't').set(3, 10, 't').set(2, 10, 't').set(4, 8, 't');
+  c.set(3, 9, '%').set(4, 9, '%').set(4, 10, '*').set(3, 10, '*').set(2, 10, '*').set(4, 8, '*');
   return outline(c, 'K');
 }
 
 /**
  * La perche (12 cm, longue) : un bâton fin en travers de toute l'icône, du bas à gauche au haut à droite, écorce lisse gris-brun
- * (`POLE_WOOD` : A B Q), le bout coupé en bas à gauche (Y t), contour K.
+ * (`POLE_WOOD` : A B Q), le bout coupé en bas à gauche (^ *), contour K.
  */
 function poleIcon(): Canvas {
   const c = new Canvas(S, S);
   const [x0, y0, x1, y1] = [2.6, 13.2, 13.4, 2.8];
   capsule(c, x0, y0, x1, y1, 1.25, (t, a) => bark(t * 20, (a + 1) / 2, POLE_WOOD));
-  c.set(2, 13, 'Y').set(3, 13, 't').set(2, 12, 't');
+  c.set(2, 13, '^').set(3, 13, '*').set(2, 12, '*');
   return outline(c, 'K');
 }
 
 /**
  * La planche fendue, de biais : la planche est-ouest au sol (art/world/wood-pieces.ts) cisaillée, qui monte vers la droite d'un
- * pixel tous les deux. Chaque colonne : l'aubier (d), le dessus de bois frais (Y, ses fibres t en long), la rive d'épaisseur
- * dans l'ombre (T). Les bouts coupés droit : à gauche, vers la lumière, le bois de bout clair (Y t) ; à droite, dans l'ombre (T).
+ * pixel tous les deux. Chaque colonne : l'arête (^), le dessus de bois travaillé (^, ses fibres * en long), la rive d'épaisseur
+ * dans l'ombre (%). Les bouts coupés droit : à gauche, vers la lumière, le bois de bout clair (^ *) ; à droite, dans l'ombre (%).
  */
 function plankIcon(): Canvas {
   const c = new Canvas(S, S);
@@ -424,12 +444,12 @@ function plankIcon(): Canvas {
   const FIBRE = [3, 4, 8, 9];
   for (let X = x0; X <= x1; X++) {
     const y = 10 - Math.floor((X - x0) / 2);
-    const col = ['d', 'Y', FIBRE.includes(X) ? 't' : 'Y', 'T'];
-    if (X === x0) col.splice(0, 4, 'Y', 'Y', 't', 't');
-    if (X === x1) col.splice(0, 4, 'T', 'T', 'T', 'N');
+    const col = ['^', '^', FIBRE.includes(X) ? '*' : '^', '%'];
+    if (X === x0) col.splice(0, 4, '^', '^', '*', '*');
+    if (X === x1) col.splice(0, 4, '%', '%', '%', 'N');
     col.forEach((q, i) => c.set(X, y + i, q));
   }
-  return outline(c, 'N');
+  return outline(c, 'K');
 }
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
@@ -450,6 +470,7 @@ export default [
   img('item-wood-big-half', bigHalfIcon()),
   img('item-wood-big-quarter', bigQuarterIcon()),
   img('item-wood-normal-round', normalRoundIcon()),
+  img('item-wood-normal-peeled', normalPeeledIcon()),
   img('item-wood-normal-beam', beamIcon()),
   img('item-wood-big-plank', plankIcon()),
   img('item-wood-pole-round', poleIcon()),

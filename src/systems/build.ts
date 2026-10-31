@@ -9,11 +9,11 @@ import { BUILD, DEPTH } from '../config';
 import { items, props } from '../content';
 import { buildPlans, putBuildPlan } from '../content/buildPlans';
 import { CM_PER_PX } from '../content/gabarit';
-import type { BuildPlaced, BuildRef, JointType, Natural } from '../content/types';
+import type { BuildPlaced, BuildRef, JointType, Natural, WoodAge } from '../content/types';
 import type { BuildCommand, BuildStatus } from '../events';
 import type { Player } from '../entities/Player';
 import { addBuildPieces, addJoints, game, mapState, moveBuildPiece, removeBuildPieces, removeJoints, type BuildPiece, type Joint } from '../state';
-import { aimAt, supportAt, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, type Area, type Box3 } from '../world/build';
+import { aimAt, supportAt, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, withAge, type Area, type Box3 } from '../world/build';
 import { buildLook } from '../world/buildView';
 import { alignOnWall } from '../world/wallRuns';
 import { JOINT_NAMES, jointGroup, jointPoint, junctionAt, refusal as jointRefusal, type Junction } from '../world/joints';
@@ -75,6 +75,8 @@ export class BuildSystem {
   private aim?: { pieces: BuildPlaced[]; ok: boolean; why?: string };
   /** La jonction visée avec un assemblage en main, et pourquoi il ne va pas (rien : il va). */
   private jointAim?: { junction?: Junction; why?: string };
+  /** L'âge du bois des pièces qu'on pose (réglé au catalogue) : la pièce de bois et les objets de bois le prennent. */
+  private age: WoodAge = 'new';
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -151,6 +153,9 @@ export class BuildSystem {
       case 'none':
         this.tool = undefined;
         break;
+      case 'age':
+        this.age = cmd.age;
+        return this.status();
       case 'save-plan':
         void this.savePlan(cmd.name);
         return;
@@ -259,7 +264,7 @@ export class BuildSystem {
         const a = alignOnWall(this.pieces, b);
         if (a !== b && supportAt(this.pieces, a) === supportAt(this.pieces, b)) b = a;
       }
-      list = [{ piece: t.piece, x: b.x, y: b.y, z: b.z, view: t.view, ...(t.drawn ? { natural: t.drawn } : {}), ...(t.variant !== undefined ? { variant: t.variant } : {}) }];
+      list = [withAge({ piece: t.piece, x: b.x, y: b.y, z: b.z, view: t.view, ...(t.drawn ? { natural: t.drawn } : {}), ...(t.variant !== undefined ? { variant: t.variant } : {}) }, this.age)];
     } else {
       const plan = buildPlans[t.plan];
       if (!plan) return;
@@ -554,7 +559,7 @@ export class BuildSystem {
     const t = this.tool;
     const tool = !t ? 'rien' : t.kind === 'select' ? 'choisir une zone' : t.kind === 'joint' ? JOINT_NAMES[t.type] : t.kind === 'plan' ? `plan « ${buildPlans[t.plan]?.name ?? t.plan} »` : refName(t.piece);
     const hint = t?.kind === 'joint' ? (this.jointAim?.junction ? (this.jointAim.why ?? 'Elles vont ensemble : clic gauche.') : 'Vise une jonction.') : undefined;
-    this.emit({ active: this.active, tool, step: this.step, selection: this.selection, count: this.pieces.length, undo: this.undoStack.length, redo: this.redoStack.length, ...(hint ? { hint } : {}) });
+    this.emit({ active: this.active, tool, age: this.age, step: this.step, selection: this.selection, count: this.pieces.length, undo: this.undoStack.length, redo: this.redoStack.length, ...(hint ? { hint } : {}) });
   }
 }
 

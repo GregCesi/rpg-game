@@ -10,6 +10,7 @@ bardage. Les pièces d'un même genre partagent cette fiche.
   chevillées à la face du dehors des poteaux. Le devant bas finit en haut par une planche de rive horizontale, le rebord où le volet
   d'étal s'appuie et tourne.
 - Mains : aucune (montés sur place).
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Par la matière : `{"matter": "wood", "fill": 0.18}` (comme le pan de bardage) sur la boîte de leurs `dims` : fond 160 × 20 × 252 cm,

@@ -26,7 +26,8 @@ La référence de qualité est le portrait de Xéros (`portrait-xeros-64`) : tou
 ## 4. Couleurs
 
 - Uniquement les couleurs de `art/palette.ts`, ou d'une palette de sprite qui en dérive. Une couleur nouvelle s'ajoute à la palette avec un commentaire, jamais en dur dans un sprite.
-- Chaque matière a sa rampe de trois ou quatre teintes, de la plus claire à la plus sombre : bois `M m N K`, pierre `R r z Z`, feuillage `j L l k`, chaume `Y t T P`, torchis `d D E`. Un volume se modèle avec sa propre rampe.
+- Chaque matière a sa rampe de trois ou quatre teintes, de la plus claire à la plus sombre : écorce `M m N K`, bois travaillé `^ * % &` (ci-dessous), pierre `R r z Z`, feuillage `j L l k`, chaume `Y t T P`, torchis `d D E`. Un volume se modèle avec sa propre rampe.
+- **Le bois travaillé a une seule matière, à trois âges** (CONCEPTION, « L'âge du bois ») : toute pièce de bois mis à nu (faces dressées et fendues, bois de bout, planche, bardage, porte, volet, pignon, pan de toit, auvent, étal, bardeau, cheville) se dessine avec les signes de la rampe `woodAges` (`art/palette.ts`), jamais avec une teinte à elle : le build en tire le patiné et le vieux. Ce qui distingue deux pièces, c'est la forme et la texture (fil, joints, couvre-joints, ombres, contours), pas la couleur. L'écorce garde sa rampe `M m N K` à tout âge.
 - Les ombres glissent vers le brun-violet, les lumières vers le jaune, comme le dit la palette.
 - Pas de dégradé lisse. Le tramage sert à une texture (terre, paille), jamais à modeler un volume.
 

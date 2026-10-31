@@ -9,13 +9,11 @@ import type { ArtSource } from '../../art/lib/types';
 import { composeWood } from '../../art/world/wood-pieces';
 import { viewImages } from '../../src/content/views';
 import type { ItemDef, PropDef, WoodLook, WoodPiece } from '../../src/content/types';
-import { WOOD, woodBody, lookOf, shapeOfLook } from '../../src/world/woodShape';
+import { WOOD, woodBody, lookOf, woodOfLook } from '../../src/world/woodShape';
 import { Board, grassOf } from './composite-previews';
 
 interface Cell { grid: Grid; palette: Palette; body?: { w: number; h: number; bottom: number } }
 
-/** Faces dressées de chaque aspect. */
-const FACES: Record<WoodLook, number> = { round: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 };
 
 export function lyingPreview(sources: ArtSource[], props: Record<string, PropDef>, items: Record<string, ItemDef>): PNG | undefined {
   const find = (name: string) => sources.find((s) => s.name === name);
@@ -46,11 +44,10 @@ export function lyingPreview(sources: ArtSource[], props: Record<string, PropDef
   const palette = sheet?.kind === 'spritesheet' ? sheet.palette : xeros.palette;
   for (const [size, def] of Object.entries(WOOD.sizes)) {
     for (const look of Object.keys(def.looks) as WoodLook[]) {
-      const shape = shapeOfLook(look);
       const cells: Cell[] = [xeros];
       for (const length of [60, 100, 400]) {
         for (const axis of ['ew', 'ns'] as const) {
-          const p: WoodPiece = { size, shape, axis, length, ...(FACES[look] ? { hewn: FACES[look] * WOOD.hew.perFace } : {}) };
+          const p: WoodPiece = woodOfLook(size, look, length, axis);
           cells.push({ grid: composeWood(p).toGrid(), palette, body: woodBody(size, lookOf(p), axis, length) });
         }
       }

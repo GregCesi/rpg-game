@@ -7,7 +7,8 @@
 //    l'enture (l'about en travers du dessus, le biseau décroché d'une rangée au milieu qui descend sur la face, l'about du bas),
 //    d'un pixel du trait translucide `-` (un cran plus sombre que le bois qu'il traverse, jamais le contour K, pas de clé), et
 //    les têtes rondes des chevilles plantées par le dessus (gros : trois, normal et perche : deux) : un rond de bois de bout
-//    clair Y cerné du même trait en losange. Le trait se lit sur l'écorce M m N, le bois équarri Y t T et la perche S A B Q.
+//    clair ^ cerné du même trait en losange. Le trait se lit sur l'écorce M m N, le bois travaillé (la rampe des âges ^ * % &,
+//    art/palette.ts `woodAges` : les marques prennent l'âge des pièces au build) et la perche S A B Q.
 //    - Est-ouest (`-ew`) : hauteur = `ew.h` du diamètre (gros 16, normal 10, perche 6), largeur impaire (gros 19, normal 15,
 //      perche 9). Ancrage : colonne du milieu (⌊largeur / 2⌋) sur la colonne de la jonction, bas de l'image sur le bas de
 //      l'image de la pièce. Ne trace que dans les rangées de bois (dessus et face), jamais dans le contour ni l'ombre.
@@ -16,7 +17,7 @@
 //      rangée du milieu sur la rangée de la jonction, colonne 0 sur la colonne 0 de l'image de la pièce.
 //    - Debout (`joint-scarf-normal-up`, le poteau : seul le normal se dresse) : l'est-ouest du normal transposé, 8 × 15.
 //      Ancrage : rangée du milieu (7) sur la rangée de la jonction, colonne 0 sur la colonne 0 de l'image du poteau.
-// 2. Le tenon et mortaise (`joint-peg`, 3 × 3) : la tête ronde d'une cheville vue de face, comme celles de l'enture (Y cerné
+// 2. Le tenon et mortaise (`joint-peg`, 3 × 3) : la tête ronde d'une cheville vue de face, comme celles de l'enture (^ cerné
 //    du trait translucide en losange). Ancrage : son pixel central (1, 1) au point choisi par le moteur.
 //
 // Aperçu : `npx tsx tools/joint-marks-preview.ts` → .art-preview/joint-marks.png (et -zoom), joint-halving*.png, joint-notch.png
@@ -64,7 +65,7 @@ const markPalette = { ...world, '-': '#2b1a1060' };
  * losange autour). `flat` : la perche n'a qu'une rangée de dessus, le cerne ne se met qu'à gauche et à droite.
  */
 function peg(c: Canvas, x: number, y: number, flat = false): void {
-  c.set(x, y, 'Y').set(x - 1, y, LINE).set(x + 1, y, LINE);
+  c.set(x, y, '^').set(x - 1, y, LINE).set(x + 1, y, LINE);
   if (!flat) c.set(x, y - 1, LINE).set(x, y + 1, LINE);
 }
 
@@ -146,8 +147,8 @@ interface HalvingMat {
 
 // relevé sur les pièces de 2 m (composeWood) : la rangée courante de la nord-sud, la colonne courante de l'est-ouest
 const HALVING_MATS: Record<'beam' | 'round', HalvingMat> = {
-  round: { ns: 'KMMmmNNo', ew: 'KMMmmNNo', joint: 'N', endS: ['NTTttN', 'NttTtN'], endW: ['Yt', 'Yt', 'tT'] },
-  beam: { ns: 'NtYYYtTo', ew: 'KYYtttTo', joint: 'T', endS: ['YYYYtt', 'YttTtt'], endW: ['YY', 'Yt', 'tT'] },
+  round: { ns: 'KMMmmNNo', ew: 'KMMmmNNo', joint: 'N', endS: ['N%%**N', 'N**%*N'], endW: ['^*', '^*', '*%'] },
+  beam: { ns: 'K*^^^*%o', ew: 'K^^***%o', joint: '%', endS: ['^^^^**', '^**%**'], endW: ['^^', '^*', '*%'] },
 };
 
 export const HALVING_MASKS = Array.from({ length: 16 }, (_, i) => i);
@@ -207,10 +208,10 @@ export function halving(aspect: 'beam' | 'round', top: 'ew' | 'ns', mask: number
   if (!N && !E) clear(7, 0);
   if (!S && !W) clear(0, 7);
   if (!S && !E) clear(7, 7);
-  // 7. la cheville, plantée par le dessus ; sur la poutre, le clair Y se fond dans le dessus : cernée aussi à gauche (T)
-  // (le mi-bois garde sa cheville opaque, l'image recouvre les deux pièces : le clair cerné de K côté ombre)
-  c.set(4, 1, 'Y').set(5, 1, 'K').set(4, 2, 'K');
-  if (aspect === 'beam') c.set(3, 1, 'T');
+  // 7. la cheville, plantée par le dessus ; sur la poutre, le clair ^ se fond dans le dessus : cernée aussi à gauche (%)
+  // (le mi-bois garde sa cheville opaque, l'image recouvre les deux pièces : le clair cerné de @ côté ombre, le joint du bois)
+  c.set(4, 1, '^').set(5, 1, '@').set(4, 2, '@');
+  if (aspect === 'beam') c.set(3, 1, '%');
   return c;
 }
 
@@ -228,15 +229,16 @@ export function halving(aspect: 'beam' | 'round', top: 'ew' | 'ns', mask: number
 //    - masque : de quels côtés un rondin continue (nord 1, est 2, sud 4, ouest 8) ; un côté sans suite est un bout qui dépasse de
 //      20 cm (le bois de bout rond, dessiné par le rondin lui-même, et par l'image où il recouvre l'autre).
 //    Générée en composant les vrais rondins (composeWood) comme le jeu les pose, au caractère : le dessus gagne, son ombre `x`
-//    assombrit d'un cran ce qu'elle couvre.
+//    assombrit d'un cran ce qu'elle couvre. Le rondin écorcé a les siennes (`joint-notch-normal-peeled-<dessus>-<masque>`) : les
+//    mêmes, composées de deux rondins écorcés.
 
 export const NOTCH_W = 10;
 export const NOTCH_H = 18;
 /** Un cran plus sombre (écorce, bois de bout) : l'ombre du rondin du dessus et le creux de l'encoche. */
-const SHADE: Record<string, string> = { M: 'm', m: 'N', N: 'K', K: 'K', Y: 't', t: 'T', T: 'N', o: 'o' };
+const SHADE: Record<string, string> = { M: 'm', m: 'N', N: 'K', K: 'K', '^': '*', '*': '%', '%': '&', '&': '@', '@': '@', o: 'o' };
 
-/** Le croisement d'une encoche. */
-export function notch(top: 'ew' | 'ns', mask: number): Canvas {
+/** Le croisement d'une encoche ; `peeled` : deux rondins écorcés (la cabane, le bois mis à nu à la plane). */
+export function notch(top: 'ew' | 'ns', mask: number, peeled = false): Canvas {
   const CM = 5;
   const D = 40; // l'emprise du rondin, contour compris
   const OVER = 20; // le bout qui dépasse
@@ -254,7 +256,7 @@ export function notch(top: 'ew' | 'ns', mask: number): Canvas {
   const zN = top === 'ns' ? 20 : 0;
   // posés comme le jeu (buildLook) : centrés sur l'emprise en largeur, le bas de l'image au bord sud relevé de z
   const place = (axis: 'ew' | 'ns', bx: number, by: number, bw: number, bd: number, z: number) => {
-    const g = composeWood({ size: 'normal', shape: 'round', axis, length: axis === 'ew' ? bw : bd }).toGrid();
+    const g = composeWood({ size: 'normal', shape: 'round', axis, length: axis === 'ew' ? bw : bd, ...(peeled ? { peeled: true as const } : {}) }).toGrid();
     const x = Math.round((bx + bw / 2) / CM - g[0].length / 2);
     const y = Math.round((by + bd - z) / CM) - g.length;
     return { g, x, y };
@@ -319,6 +321,8 @@ export default [
   img('joint-scarf-normal-up', transpose(scarfEW('normal').toGrid(), 8)),
   img('joint-peg', jointPeg()),
   ...(['ew', 'ns'] as const).flatMap((top) => HALVING_MASKS.map((mask) => img(`joint-notch-normal-${top}-${mask}`, notch(top, mask)))),
+  // les mêmes, entre deux rondins écorcés
+  ...(['ew', 'ns'] as const).flatMap((top) => HALVING_MASKS.map((mask) => img(`joint-notch-normal-peeled-${top}-${mask}`, notch(top, mask, true)))),
   ...(['beam', 'round'] as const).flatMap((aspect) =>
     (['ew', 'ns'] as const).flatMap((top) => HALVING_MASKS.map((mask) => img(`joint-halving-normal-${aspect}-${top}-${mask}`, halving(aspect, top, mask)))),
   ),

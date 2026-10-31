@@ -6,9 +6,10 @@
 // r0 la face du dehors au sud, r1 la face du dehors à l'ouest (de chant), r2 la face du dedans (on la voit du dedans, depuis le
 // sud : le dessin du dehors retourné), r3 la face du dehors à l'est (de chant).
 //
-// Le bois et le dessin du bardage sont dans art/lib/board-wall.ts (communs avec l'étal). Le bois : la planche fendue, comme la porte de la cabane, mais un peu plus vieille (rampe BOARD_WOOD : M m N, joints K) que le
-// bois équarri frais des poteaux et des sablières (Y t T) : le bardage se lit comme un remplissage entre les poteaux, qui gardent
-// leur jaune de bois neuf ; le toit, plus exposé encore, est le bois grisé (S A B Q).
+// Le bois et le dessin du bardage sont dans art/lib/board-wall.ts (communs avec l'étal). Le bois : la planche fendue, dans la
+// rampe du bois travaillé (^ * % & @, art/palette.ts `woodAges`), la même que les poteaux, les sablières et le toit : un bâtiment
+// est d'un seul âge (neuf, patiné, vieux, tirés au build). Le bardage se lit comme un remplissage entre les poteaux par sa forme
+// (planches debout, couvre-joints, joints, bas mouillé), jamais par sa teinte.
 //
 // - Le pan de bardage (`board-wall`, 120 × 6 × 312 cm) : un module qui se pose côte à côte, deux par travée de 2,40 m. Quatre
 //   planches debout de 30 cm (6 px), jointives ; sur chaque joint un couvre-joint de 2 px (son bord ouest d'un trait sombre, sa

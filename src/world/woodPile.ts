@@ -23,7 +23,7 @@ import { strength } from '../content';
 import { woodMass } from '../content/mass';
 import type { PileDef, PilePlace, PileWood, WoodPiece } from '../content/types';
 import { woodDims } from './woodPiece';
-import { lookDef, lookOf, woodBody, woodKey, woodSize, type WoodAxis } from './woodShape';
+import { ageOfWood, lookDef, lookOf, woodBody, woodKey, woodSize, woodTraits, type WoodAxis } from './woodShape';
 
 /** Une place de tas telle que le jeu la lit : celle de piles.json, ou celle d'un tas de bois, dont la pièce s'assemble (`wood`). */
 export type ShapePlace = PilePlace & { wood?: WoodPiece };
@@ -48,12 +48,12 @@ const WIDE = 3;
 export function pileWoodOf(piece: WoodPiece): PileWood | undefined {
   if (piece.notch || piece.wedge) return undefined;
   if (woodMass(piece) > strength.carry + 1e-9) return undefined;
-  return { size: piece.size, shape: piece.shape, length: piece.length, ...(piece.hewn ? { hewn: piece.hewn } : {}) };
+  return { size: piece.size, shape: piece.shape, length: piece.length, ...(piece.hewn ? { hewn: piece.hewn } : {}), ...woodTraits(piece) };
 }
 
-/** Deux pièces de tas identiques. */
+/** Deux pièces de tas identiques (écorcées ou non, et du même âge). */
 export function sameWood(a: PileWood, b: PileWood): boolean {
-  return a.size === b.size && a.shape === b.shape && a.length === b.length && (a.hewn ?? 0) === (b.hewn ?? 0);
+  return a.size === b.size && a.shape === b.shape && a.length === b.length && (a.hewn ?? 0) === (b.hewn ?? 0) && lookOf(a) === lookOf(b) && ageOfWood(a) === ageOfWood(b);
 }
 
 /** Les places d'un tas de bois dans un sens. */
@@ -115,7 +115,7 @@ export function woodPileDef(w: PileWood): PileShape {
   let def = cache.get(key);
   if (!def) {
     def = {
-      name: `tas de ${lookDef(w.size, lookOf(w)).name}s`,
+      name: `tas de ${lookDef(w.size, lookOf(w)).name.split(' ').map((m) => `${m}s`).join(' ')}`,
       piece: { wood: { ...w } },
       start: 'g1',
       blockFrom: 1,

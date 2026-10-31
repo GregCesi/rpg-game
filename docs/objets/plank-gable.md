@@ -10,6 +10,7 @@ cabane, sous les deux pans de toit, et porte la faîtière.
 - Nature : des planches fendues (la planche du gros bois, `plank` de wood.json : 3 × 25 cm) posées debout, jointives, coupées en
   haut suivant les deux pentes du toit, chevillées en bas sur le dernier rondin du mur et, côté dedans, sur une traverse.
 - Mains : aucune (il se monte planche à planche ; ici, un seul élément).
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Par la matière : `{"matter": "wood", "fill": 0.25}` sur la boîte de ses `dims` (260 × 6 × 60 cm : un pentagone de planches de

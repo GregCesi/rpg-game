@@ -10,7 +10,7 @@
 import { BUILD } from '../config';
 import { items, props, wood as woodContent } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
-import type { BuildPlaced, BuildPlan, BuildRef, JointType, WoodPiece } from '../content/types';
+import type { BuildPlaced, BuildPlan, BuildRef, JointType, WoodAge, WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { woodDims } from './woodPiece';
 import { lookDef, lookOf, turnedWood } from './woodShape';
@@ -55,6 +55,29 @@ export function refName(ref: BuildRef): string {
   if ('item' in ref) return items[ref.item].name;
   const look = lookDef(ref.wood.size, lookOf(ref.wood));
   return ref.wood.axis === 'up' && look.up ? look.up.name : look.name;
+}
+
+/** La pièce prend-elle l'âge du bois : la pièce de bois, ou un objet de bois (`aged` de props.json ou items.json). */
+export function ageable(ref: BuildRef): boolean {
+  if ('wood' in ref) return true;
+  return 'prop' in ref ? !!props[ref.prop]?.aged : !!items[ref.item]?.aged;
+}
+
+/** L'âge d'une pièce posée qui le prend (la pièce de bois : `wood.age` ; un objet de bois : `age`), neuf par défaut ; rien sinon. */
+export function ageOf(p: BuildPlaced): WoodAge | undefined {
+  if (!ageable(p.piece)) return undefined;
+  return ('wood' in p.piece ? p.piece.wood.age : p.age) ?? 'new';
+}
+
+/** La pièce à cet âge, si elle le prend (neuf : le réglage est ôté) ; une pièce qui ne le prend pas ne change pas. */
+export function withAge<P extends BuildPlaced>(p: P, age: WoodAge): P {
+  if (!ageable(p.piece)) return p;
+  if ('wood' in p.piece) {
+    const { age: _a, ...wood } = p.piece.wood;
+    return { ...p, piece: { wood: age === 'new' ? wood : { ...wood, age } } };
+  }
+  const { age: _b, ...rest } = p;
+  return (age === 'new' ? rest : { ...rest, age }) as P;
 }
 
 /** Le nombre de vues (de sens) d'une pièce : celles de sa symétrie ; la pièce de bois tourne par son `axis` (une seule vue). */
@@ -322,18 +345,26 @@ export function planOf(pieces: readonly BuildPiece[], area: Area, name: string, 
   const kept = joints
     .filter((j) => rank.has(j.a) && rank.has(j.b))
     .map((j) => ({ type: j.type, a: rank.get(j.a)!, b: rank.get(j.b)!, ...(j.top !== undefined ? { top: rank.get(j.top)! } : {}) }));
+  // un seul âge pour tout son bois : le plan le fixe, ses pièces ne le répètent pas ; sinon chacune garde le sien
+  const ages = new Set(inside.map(ageOf).filter((a) => a !== undefined));
+  const one = ages.size === 1 ? [...ages][0] : undefined;
   return {
     name,
     size: { w, d },
+    ...(one ? { age: one } : {}),
     ...(kept.length ? { joints: kept } : {}),
-    pieces: order.map(({ p }) => ({
-      piece: structuredClone(p.piece),
-      x: p.x - ox,
-      y: p.y - oy,
-      z: p.z - oz,
-      view: p.view,
-      ...(p.natural ? { natural: { ...p.natural } } : {}),
-    })),
+    pieces: order.map(({ p }) => {
+      const q: BuildPlaced = {
+        piece: structuredClone(p.piece),
+        x: p.x - ox,
+        y: p.y - oy,
+        z: p.z - oz,
+        view: p.view,
+        ...(p.natural ? { natural: { ...p.natural } } : {}),
+        ...(p.age ? { age: p.age } : {}),
+      };
+      return one ? withAge(q, 'new') : q;
+    }),
   };
 }
 
@@ -344,7 +375,11 @@ export function planSize(plan: BuildPlan): Size3 {
 
 /** Les pièces d'un plan posé avec son coin nord-ouest en (x, y) et sa base à la hauteur z. */
 export function planPieces(plan: BuildPlan, at: { x: number; y: number; z: number }): BuildPlaced[] {
-  return plan.pieces.map((p) => ({ ...structuredClone(p), x: p.x + at.x, y: p.y + at.y, z: p.z + at.z }));
+  return plan.pieces.map((p) => {
+    const q = { ...structuredClone(p), x: p.x + at.x, y: p.y + at.y, z: p.z + at.z };
+    // l'âge du plan l'emporte sur celui de chaque pièce : un bâtiment d'un seul âge
+    return plan.age ? withAge(q, plan.age) : q;
+  });
 }
 
 /**
@@ -360,6 +395,8 @@ export function planProblems(plan: BuildPlan): string[] {
     if (missing) return out.push(`${at} : ${missing} n'existe pas`);
     if (p.view >= viewsOf(p.piece)) out.push(`${at} : sens ${p.view}, l'objet n'en a que ${viewsOf(p.piece)}`);
     if ('prop' in p.piece && p.variant !== undefined && p.variant >= (props[p.piece.prop].variants ?? 1)) out.push(`${at} : tirage ${p.variant} inconnu`);
+    if (p.age && !('wood' in p.piece) && !ageable(p.piece)) out.push(`${at} : un âge (${p.age}), mais ce n'est pas un objet de bois (\`aged\`)`);
+    if ('wood' in p.piece && p.age) out.push(`${at} : la pièce de bois garde son âge dans \`wood.age\`, pas dans \`age\``);
   });
   return out;
 }

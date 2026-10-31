@@ -13,8 +13,9 @@
 //   3,60 m au bord nord, 2,10 m au bord sud (chute de 30 px sur 89).
 // Chaque pièce suit le gabarit (docs/STYLE.md, section 8) ; sa silhouette est collée en haut à gauche de l'image
 // (x = 0, y = 0), l'ombre portée `x` en dessous et à droite, hors silhouette.
-// Lumière nord-ouest ; contour d'un pixel : teinte la plus sombre de la matière en haut et à gauche, OUTLINE (o) en bas
-// et à droite.
+// Lumière nord-ouest ; contour d'un pixel : K en haut et à gauche (le contour de tout le bois), OUTLINE (o) en bas et à droite.
+// Le bois : le bois travaillé de tout le jeu, la rampe des âges (^ * % & @, art/palette.ts `woodAges`), l'âge tiré au build ;
+// l'écorce de la flache garde son brun (M m N K).
 
 import { Canvas, rng } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
@@ -32,8 +33,8 @@ import { slab } from './implantation';
 // ---------- Poteaux ----------
 // Les poteaux ne sont plus dessinés ici : un poteau est la pièce de bois dressée (art/world/wood-pieces.ts, `axis: 'up'`).
 
-/** Bois équarri d'un dessus, tourné vers la lumière : un cran plus clair que la face (t -> Y, T -> t), écorce gardée. */
-const LIGHTER: Record<string, string> = { t: 'Y', T: 't' };
+/** Bois équarri d'un dessus, tourné vers la lumière : un cran plus clair que la face (* -> ^, % -> *), écorce gardée. */
+const LIGHTER: Record<string, string> = { '*': '^', '%': '*' };
 const topTone = (along: number, wane?: 'lit' | 'shade') => {
   const k = hewnTone(along, 0, 1, wane);
   return LIGHTER[k] ?? k;
@@ -44,8 +45,8 @@ const topTone = (along: number, wane?: 'lit' | 'shade') => {
 /**
  * Sablière est-ouest (`shed-plate-north`, `shed-plate-south`), boîte de 325 × 15 × 15 cm : silhouette 65 × 5 px collée
  * en haut de l'image, `below` rangées vides dessous (la hauteur qui la sépare du sol, bas de l'image au sol). Rangée 0 :
- * le contour du haut (N) ; rangée 1 : le dessus, bois clair (Y, fil en t) ; rangées 2 et 3 : la face sud (t, fil en T),
- * l'écorce de l'arête du haut par endroits ; rangée 4 : le contour du bas. Contour gauche N, droit OUTLINE ; aux bouts,
+ * le contour du haut (K) ; rangée 1 : le dessus, bois clair (^, fil en *) ; rangées 2 et 3 : la face sud (*, fil en %),
+ * l'écorce de l'arête du haut par endroits ; rangée 4 : le contour du bas. Contour gauche K, droit OUTLINE ; aux bouts,
  * rien (ils sont sur les poteaux). `phase` : une autre pièce du même bois.
  */
 function shedPlateEW(below: number, phase: number): Canvas {
@@ -53,8 +54,8 @@ function shedPlateEW(below: number, phase: number): Canvas {
   const c = new Canvas(W, 5 + below);
   for (let x = 0; x < W; x++) {
     const a = x + phase;
-    const edge = x === 0 ? 'N' : x === W - 1 ? 'o' : null;
-    c.set(x, 0, x === W - 1 ? 'o' : 'N');
+    const edge = x === 0 ? 'K' : x === W - 1 ? 'o' : null;
+    c.set(x, 0, x === W - 1 ? 'o' : 'K');
     c.set(x, 1, edge ?? topTone(a));
     c.set(x, 2, edge ?? hewnTone(a + 17, 0, 1, 'lit'));
     c.set(x, 3, edge ?? hewnTone(a + 41, 0, 1));
@@ -71,19 +72,19 @@ const SIDE_BELOW = 40;
  * Sablière de côté (`shed-plate-side`), 20 × 15 cm, nord-sud, en pente de la tête d'un poteau haut à celle d'un poteau
  * bas : pièce `ground`, silhouette 4 × SIDE_SIL px (la largeur du poteau, qu'elle couvre exactement : pas de contour
  * doublé), puis SIDE_BELOW rangées vides. Rangée 0 : le contour du haut ; puis le dessus, deux colonnes de bois
- * (la gauche un cran plus claire, flache par endroits ; fil vertical) entre le contour gauche N et OUTLINE ; l'arête
+ * (la gauche un cran plus claire, flache par endroits ; fil vertical) entre le contour gauche K et OUTLINE ; l'arête
  * du bout ; deux rangées de face de coupe au sud (bois de bout, plus sombre que le dessus) ; le contour du bas.
  */
 function shedPlateSide(): Canvas {
   const sil = SIDE_SIL;
   const c = new Canvas(4, sil + SIDE_BELOW);
-  c.set(0, 0, 'N').set(1, 0, 'N').set(2, 0, 'N').set(3, 0, 'o');
+  c.set(0, 0, 'K').set(1, 0, 'K').set(2, 0, 'K').set(3, 0, 'o');
   for (let y = 1; y < sil - 4; y++) {
-    c.set(0, y, 'N').set(1, y, topTone(y + 5, 'lit')).set(2, y, topTone(y + 29)).set(3, y, 'o');
+    c.set(0, y, 'K').set(1, y, topTone(y + 5, 'lit')).set(2, y, topTone(y + 29)).set(3, y, 'o');
   }
-  c.set(0, sil - 4, 'N').set(1, sil - 4, 'T').set(2, sil - 4, 'T').set(3, sil - 4, 'o');
-  c.set(0, sil - 3, 'N').set(1, sil - 3, 't').set(2, sil - 3, 't').set(3, sil - 3, 'o');
-  c.set(0, sil - 2, 'N').set(1, sil - 2, 't').set(2, sil - 2, 'T').set(3, sil - 2, 'o');
+  c.set(0, sil - 4, 'K').set(1, sil - 4, '%').set(2, sil - 4, '%').set(3, sil - 4, 'o');
+  c.set(0, sil - 3, 'K').set(1, sil - 3, '*').set(2, sil - 3, '*').set(3, sil - 3, 'o');
+  c.set(0, sil - 2, 'K').set(1, sil - 2, '*').set(2, sil - 2, '%').set(3, sil - 2, 'o');
   for (let x = 0; x < 4; x++) c.set(x, sil - 1, 'o');
   return c;
 }
@@ -105,11 +106,11 @@ const RAFTER_BELOW = 40;
 function shedRafter(): Canvas {
   const sil = RAFTER_SIL;
   const c = new Canvas(2, sil + RAFTER_BELOW);
-  c.set(0, 0, 'N').set(1, 0, 'o');
+  c.set(0, 0, 'K').set(1, 0, 'o');
   for (let y = 1; y < sil - 3; y++) c.set(0, y, topTone(y + 5, 'lit')).set(1, y, 'o');
-  c.set(0, sil - 3, 'T').set(1, sil - 3, 'o');
-  c.set(0, sil - 2, 't').set(1, sil - 2, 'T');
-  c.set(0, sil - 1, 'T').set(1, sil - 1, 'o');
+  c.set(0, sil - 3, '%').set(1, sil - 3, 'o');
+  c.set(0, sil - 2, '*').set(1, sil - 2, '%');
+  c.set(0, sil - 1, '%').set(1, sil - 1, 'o');
   return c;
 }
 
@@ -120,12 +121,12 @@ const ROOF_W = 73;
 const ROOF_SIL = 119;
 const ROOF_BELOW = 43;
 
-/** Bois grisé, du plus clair au plus sombre ; K (le bois le plus sombre) pour les joints, en ombre. */
-const WEATHERED = ['S', 'A', 'B', 'Q', 'K'];
+/** Bois travaillé (la rampe des âges, art/palette.ts `woodAges`), du plus clair au plus sombre ; @ pour les joints et les clous. */
+const WEATHERED = ['^', '*', '%', '&', '@'];
 /** Rangées des clous : les planches sont clouées sur quatre liteaux est-ouest, posés en travers des chevrons. */
 const NAILS = [9, 39, 69, 99];
-/** Rangées où le toit change de bande (la pente) : le haut, un cran plus clair ; le bas, vers l'avant-toit, un cran plus sombre. */
-const BANDS = [40, 94];
+/** Rangées où le toit change de bande (la pente) : seule la seconde sert, le bas vers l'avant-toit, un cran plus sombre. */
+const BANDS = [40, 104];
 /** La tranche de l'avant-toit : ses trois rangées, en bas de la silhouette. */
 const EAVE = 3;
 
@@ -133,18 +134,18 @@ const EAVE = 3;
  * Toit de planches de l'abri (`shed-roof`), appentis de 365 × 445 cm au sol, côté haut au nord : pièce `ground`,
  * silhouette ROOF_W × ROOF_SIL px collée en haut de l'image, puis ROOF_BELOW rangées vides (bas de l'image au sol, un
  * pixel au sud de l'avant-toit). Pas d'ombre peinte : le jeu calcule celle du toit.
- * - Bois brut grisé (rampe WEATHERED, dérivée du bois et de la pierre de la palette), nettement moins jaune que le
- *   chaume de la chaumière et que la charpente équarrie.
- * - Planches de 20 à 25 cm (4 ou 5 px, joint compris) dans le sens de la pente : joints verticaux en ombre (K), fil le
+ * - Le bois travaillé de tout le jeu (rampe WEATHERED : la rampe des âges, l'âge tiré au build) : le toit a l'âge de
+ *   l'abri, comme ses poteaux et ses sablières ; il s'en distingue par ses planches, ses joints, ses clous, ses rives.
+ * - Planches de 20 à 25 cm (4 ou 5 px, joint compris) dans le sens de la pente : joints verticaux en ombre (@), fil le
  *   long de la planche (tirets un cran plus sombres), quelques nœuds ; chaque planche sa teinte (claire, ordinaire),
  *   les claires plutôt à l'ouest, côté lumière ; une planche sur trois environ plus courte d'un pixel au nord ; un clou
  *   par planche sur chacun des quatre liteaux.
- * - La pente : trois bandes est-ouest (BANDS, la limite décalée d'une planche à l'autre), le haut au nord un cran plus
- *   clair, le bas vers l'avant-toit un cran plus sombre.
+ * - La pente : le bas vers l'avant-toit un cran plus sombre (BANDS[1], la limite décalée d'une planche à l'autre) ; les
+ *   rives aussi.
  * - Les rives est et ouest : une planche de rive de 2 px sur toute la longueur, sans joint, posée de chant (claire à
  *   l'ouest, côté lumière ; sombre à l'est).
- * - L'avant-toit : une tranche de EAVE rangées sur toute la largeur, droite et sombre (le bout des planches Q, joints
- *   K, puis K et le contour du bas) ; les bouts des chevrons (leurs images) dépassent juste dessous.
+ * - L'avant-toit : une tranche de EAVE rangées sur toute la largeur, droite et sombre (le bout des planches &, joints
+ *   @, puis @ et le contour du bas) ; les bouts des chevrons (leurs images) dépassent juste dessous.
  * Contour d'un pixel pris dans la silhouette : K en haut et à gauche, OUTLINE en bas et à droite.
  */
 function shedRoof(): Canvas {
@@ -167,7 +168,7 @@ function shedRoof(): Canvas {
       x0: x,
       x1: x + w - 1,
       n: r() < 0.3 ? 1 : 0,
-      base: lit ? 1 : 2,
+      base: lit ? 0 : 1,
       old: !lit && r() < 0.25,
       bands: BANDS.map((b) => b + Math.floor(r() * 7) - 3),
       grain: Array.from({ length: w }, () => [13 + Math.floor(r() * 10), 4 + Math.floor(r() * 4), Math.floor(r() * 30)]),
@@ -176,7 +177,8 @@ function shedRoof(): Canvas {
   }
   const north = (x: number) => boards.find((b) => x >= b.x0 && x <= b.x1)?.n ?? 0;
   const inside = (x: number, y: number) => x >= 0 && x < W && y >= north(x) && y < SIL;
-  const shift = (b: Board, y: number) => (y < b.bands[0] ? -1 : y < b.bands[1] ? 0 : 1);
+  // la rampe des âges a des crans plus francs que l'ancien bois grisé : le haut garde la teinte de la planche, seul le bas s'assombrit
+  const shift = (b: Board, y: number) => (y < b.bands[1] ? 0 : 1);
   const tone = (i: number) => WEATHERED[Math.max(0, Math.min(WEATHERED.length - 1, i))];
   // le dessus
   for (const b of boards) {
@@ -186,8 +188,8 @@ function shedRoof(): Canvas {
       for (let y = b.n; y < TOP; y++) {
         const base = b.base + shift(b, y);
         let k: string;
-        if (joint) k = 'K';
-        else if (NAILS.includes(y) && i === 1) k = 'K'; // un clou par planche, sur chaque liteau
+        if (joint) k = '@';
+        else if (NAILS.includes(y) && i === 1) k = '@'; // un clou par planche, sur chaque liteau
         else {
           const [p, n, ph] = b.grain[i];
           const pos = (y + ph) % p;
@@ -208,15 +210,15 @@ function shedRoof(): Canvas {
   }
   // les rives : planches de chant, sur toute la longueur ; à l'ouest, côté lumière, la claire, à l'est la sombre
   for (let y = 0; y < TOP; y++) {
-    const band = y < BANDS[0] ? -1 : y < BANDS[1] ? 0 : 1;
-    c.set(1, y, tone(1 + band)).set(2, y, tone(2 + band));
-    c.set(W - 3, y, tone(2 + band)).set(W - 2, y, tone(3 + band));
+    const band = y < BANDS[1] ? 0 : 1;
+    c.set(1, y, tone(0 + band)).set(2, y, tone(1 + band));
+    c.set(W - 3, y, tone(1 + band)).set(W - 2, y, tone(2 + band));
   }
-  // l'avant-toit : le bout des planches (Q, un joint K à chaque planche), puis K, puis le contour du bas
+  // l'avant-toit : le bout des planches (&, un joint @ à chaque planche), puis @, puis le contour du bas
   for (let x = 0; x < W; x++) {
     const joint = boards.some((b) => b.x1 === x) || x === 2 || x === W - 4;
-    c.set(x, TOP, joint ? 'K' : 'Q');
-    c.set(x, TOP + 1, 'K');
+    c.set(x, TOP, joint ? '@' : '&');
+    c.set(x, TOP + 1, '@');
     c.set(x, TOP + 2, 'o');
   }
   // contour pris dans la silhouette : K côté lumière (haut, gauche), OUTLINE côté ombre (bas, droite)

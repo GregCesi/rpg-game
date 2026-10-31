@@ -11,9 +11,9 @@
 // - coutre, 32 × 35 × 4 cm (la lame est-ouest, le manche vers le nord à son bout est) : boîte, 6,4 × (0,8 + 3,5) px :
 //   dessiné 7 × 5 (la lame et l'œil sur une rangée, le manche sur deux, le contour autour) ; nord-sud 5 × 7.
 //
-// Matières : la cheville, du bois fraîchement taillé à la hachette, à facettes (U éclairée, u à l'ombre ; la tête coupée
-// en bois de bout Y) : le bois mis à nu du piquet (art/items/stake.ts) ; le bardeau, du chêne fendu au coutre (Y t T, le
-// bois de fente, le fil en tirets) ; le coutre, le fer forgé de la hachette (toolPalette : 0 l'œil, 3 et 4 le fer, 2 le dos
+// Matières : la cheville et le bardeau sont du bois travaillé, la rampe des âges (art/palette.ts `woodAges` : leurs images au
+// sol prennent l'âge au build) : la cheville taillée à la hachette, à facettes (* éclairée, % à l'ombre ; la tête coupée en bois
+// de bout ^) ; le bardeau, du chêne fendu au coutre (^ * %, le bois de fente, le fil en tirets) ; le coutre, le fer forgé de la hachette (toolPalette : 0 l'œil, 3 et 4 le fer, 2 le dos
 // éclairé, 1 le fil), le manche en bois (M m, le bout en bois de bout N).
 // Choix (tranchés au plus réaliste, Grégoire dort) : la cheville a la tête à l'ouest et la pointe à l'est dans sa vue de
 // base, comme le piquet ; le bardeau, le gros bout à l'ouest ; le coutre, la lame est-ouest, l'œil et le manche à l'est.
@@ -32,8 +32,8 @@ const suffix = (t: Turn) => (t === 0 ? '' : `-r${t}`);
 
 const img = (name: string, grid: Grid): ImageSource => ({ kind: 'image', name, palette: toolPalette, grid });
 
-/** Contour côté lumière : la teinte la plus sombre de chaque matière (bois : N ; fer : 4, presque noir à l'œil). */
-const DARK = darkest({ Y: 'N', t: 'N', T: 'N', U: 'N', u: 'N', M: 'K', m: 'K', N: 'K', '0': '0', '1': '4', '2': '4', '3': '4', '4': '0' }, 'N');
+/** Contour côté lumière : la teinte la plus sombre de chaque matière (bois : K, le contour de tout le bois ; fer : 4, presque noir à l'œil). */
+const DARK = darkest({ '^': 'K', '*': 'K', '%': 'K', '&': 'K', M: 'K', m: 'K', N: 'K', '0': '0', '1': '4', '2': '4', '3': '4', '4': '0' }, 'K');
 
 /** Ombre portée au sol : la silhouette décalée d'un pixel vers l'est et le sud, sur le vide. */
 function dropShadow(g: Grid): Grid {
@@ -53,14 +53,14 @@ function turnCW(g: Grid): Grid {
 
 // ---------- Cheville ----------
 // Une rangée de bois et l'OUTLINE dessous (est-ouest) ou à l'est (nord-sud). Depuis la tête : le bois de bout de la tête
-// coupée (Y, ou U quand il regarde le nord ou l'est), trois facettes éclairées (U), la pointe taillée (u, puis u au bout).
+// coupée (^, ou * quand il regarde le nord ou l'est), trois facettes éclairées (*), la pointe taillée (%, puis % au bout).
 // Sous la pointe, plus d'OUTLINE : elle s'amincit.
 
-const PEG = ['Y', 'U', 'U', 'U', 'u', 'u'];
+const PEG = ['^', '*', '*', '*', '%', '%'];
 
 function pegGround(turn: Turn): Grid {
   // la tête regarde l'ouest (0) ou le sud (3) : son bois de bout se voit dans la lumière ; sinon c'est une facette
-  const wood = PEG.map((k, i) => (i === 0 && turn !== 0 && turn !== 3 ? 'U' : k));
+  const wood = PEG.map((k, i) => (i === 0 && turn !== 0 && turn !== 3 ? '*' : k));
   const n = wood.length;
   const along = (i: number) => (turn === 0 || turn === 1 ? i : n - 1 - i); // position depuis l'ouest ou le nord
   const crosswise = turn % 2 === 1;
@@ -75,11 +75,11 @@ function pegGround(turn: Turn): Grid {
 }
 
 // ---------- Bardeau ----------
-// Le dessus fendu (une rangée) : fil du chêne en tirets Y t, plus sombre (T) au bout aminci ; contour N côté lumière,
-// OUTLINE à l'ombre. Le gros bout : sa tranche de 1,5 cm (T) se voit sous le dessus, sur deux pixels, au lieu de l'OUTLINE.
+// Le dessus fendu (une rangée) : fil du chêne en tirets ^ *, plus sombre (%) au bout aminci ; contour K côté lumière,
+// OUTLINE à l'ombre. Le gros bout : sa tranche de 1,5 cm (%) se voit sous le dessus, sur deux pixels, au lieu de l'OUTLINE.
 
 /** Le dessus du bardeau depuis le gros bout (6 px entre les contours). */
-const SHINGLE_TOP = ['Y', 'Y', 't', 'Y', 't', 'T'];
+const SHINGLE_TOP = ['^', '^', '*', '^', '*', '%'];
 
 function shingleGround(turn: Turn): Grid {
   const n = SHINGLE_TOP.length;
@@ -88,13 +88,13 @@ function shingleGround(turn: Turn): Grid {
   const along = (i: number) => 1 + (turn === 0 || turn === 1 ? i : n - 1 - i);
   SHINGLE_TOP.forEach((k, i) => {
     const p = along(i);
-    const edge = i <= 1 ? 'T' : 'o'; // la tranche du gros bout, ou le contour d'ombre
-    if (crosswise) c.set(0, p, 'N').set(1, p, k).set(2, p, edge);
-    else c.set(p, 0, 'N').set(p, 1, k).set(p, 2, edge);
+    const edge = i <= 1 ? '%' : 'o'; // la tranche du gros bout, ou le contour d'ombre
+    if (crosswise) c.set(0, p, 'K').set(1, p, k).set(2, p, edge);
+    else c.set(p, 0, 'K').set(p, 1, k).set(p, 2, edge);
   });
-  // les bouts : contour N du côté de la lumière (ouest, nord), OUTLINE de l'autre
-  if (crosswise) c.set(1, 0, 'N').set(1, n + 1, 'o');
-  else c.set(0, 1, 'N').set(n + 1, 1, 'o');
+  // les bouts : contour K du côté de la lumière (ouest, nord), OUTLINE de l'autre
+  if (crosswise) c.set(1, 0, 'K').set(1, n + 1, 'o');
+  else c.set(0, 1, 'K').set(n + 1, 1, 'o');
   return dropShadow(c.toGrid());
 }
 
@@ -123,14 +123,14 @@ function froeInner(turn: Turn): Grid {
  * bois de bout clair (Y).
  */
 const PEG_ICON: Grid = [
-  '......YY',
-  '.....UUu',
-  '....UUu.',
-  '...UUu..',
-  '..UUu...',
-  '.UUu....',
-  '.Uu.....',
-  'u.......',
+  '......^^',
+  '.....**%',
+  '....**%.',
+  '...**%..',
+  '..**%...',
+  '.**%....',
+  '.*%.....',
+  '%.......',
 ];
 
 function pegIcon(): Canvas {
@@ -143,10 +143,10 @@ function pegIcon(): Canvas {
  * s'amincit et disparaît vers l'autre bout. Une planchette, pas un bâton : elle se distingue de la cheville.
  */
 const SHINGLE_ICON: Grid = [
-  'YYYtYYYYtYYYtt',
-  'tYYYtttYYYtttT',
-  'YttYYYtYYtttTT',
-  'TTTTTTTTT.....',
+  '^^^*^^^^*^^^**',
+  '*^^^***^^^***%',
+  '^**^^^*^^***%%',
+  '%%%%%%%%%.....',
 ];
 
 function shingleIcon(): Canvas {
@@ -177,7 +177,7 @@ const PC = Math.floor(PEG_HELD / 2);
  */
 function heldPegView(view: View): Grid {
   const c = new Canvas(PEG_HELD, PEG_HELD);
-  const wood = ['Y', 'U', 'U', 'U', 'u', 'u'];
+  const wood = ['^', '*', '*', '*', '%', '%'];
   wood.forEach((k, i) => {
     const y = PC - 2 + i;
     const x = view === 'right' ? PC + Math.floor(i / 2) : PC;
@@ -198,8 +198,8 @@ function heldShingleView(view: View): Grid {
   const c = new Canvas(SHINGLE_HELD, SHINGLE_HELD);
   for (let i = 0; i < 8; i++) {
     const y = BC - 1 + i;
-    if (view === 'right') c.set(BC, y, i % 4 === 2 ? 't' : 'Y').set(BC + 1, y, i >= 6 ? 'T' : i % 3 === 1 ? 'Y' : 't');
-    else c.set(BC, y, i >= 6 ? 'T' : 't');
+    if (view === 'right') c.set(BC, y, i % 4 === 2 ? '*' : '^').set(BC + 1, y, i >= 6 ? '%' : i % 3 === 1 ? '^' : '*');
+    else c.set(BC, y, i >= 6 ? '%' : '*');
   }
   outline(c, DARK);
   return view === 'up' ? c.toGrid() : fistGap(c.toGrid(), BC, BRANCH_FIST);

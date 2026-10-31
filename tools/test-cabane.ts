@@ -4,7 +4,8 @@
 // (BuildCommand), visée à la souris là où elle doit aller, posée d'un clic ; chaque assemblage posé d'un clic sur sa jonction.
 //   - quatre dalles aux angles, la première assise de rondins est-ouest posée dessus ; deux dalles en seuil, dans l'ouverture de la
 //     porte ;
-//   - cinq assises de rondins du normal (30 cm de bois, 40 cm contour compris), est-ouest puis nord-sud, croisés aux angles par une
+//   - le bois patiné (l'âge réglé au catalogue, fixé par le plan) ;
+//   - cinq assises de rondins écorcés du normal (30 cm de bois, 40 cm contour compris), est-ouest puis nord-sud, croisés aux angles par une
 //     encoche (le rondin du dessus s'enfonce de 20 cm), 20 cm de dépassement ;
 //   - la porte : au sud, les rondins des cinq premières assises recoupés de part et d'autre d'une ouverture d'un mètre ; la fenêtre : à
 //     l'est, le rondin de la troisième assise recoupé (60 cm), et son volet en planches ; une dernière assise est-ouest (le linteau de
@@ -23,8 +24,8 @@ import { playtest } from './lib/playtest';
 
 const PLAN_FILE = 'src/content/plans/cabane.json';
 
-/** Un rondin du normal, rond, de cette longueur, dans ce sens. */
-const log = (axis: 'ew' | 'ns', length: number) => ({ wood: { size: 'normal', length, shape: 'round', axis } });
+/** Un rondin écorcé du normal, de cette longueur, dans ce sens (son âge vient du catalogue). */
+const log = (axis: 'ew' | 'ns', length: number) => ({ wood: { size: 'normal', length, shape: 'round', peeled: true, axis } });
 
 await playtest('cabane', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -155,6 +156,9 @@ await playtest('cabane', async ({ page, errors, load }) => {
     await sleep(150);
   };
 
+  // l'âge du bois, réglé au catalogue : une cabane patinée (toutes ses pièces de bois le prennent)
+  await send({ kind: 'age', age: 'worn' });
+
   // 1. les dalles aux quatre angles, sous les croisements
   for (const [x, y] of [[20, 20], [320, 20], [20, 380], [320, 380]]) {
     await send({ kind: 'pick', piece: { prop: 'slab' }, natural: { form: 0, size: 100 } });
@@ -274,6 +278,11 @@ await playtest('cabane', async ({ page, errors, load }) => {
   assert.equal(plan.joints.length, (await joints()).length, 'et tous les assemblages');
   // seulement des pièces du catalogue : des rondins du normal, des dalles, la porte, les pans
   for (const p of plan.pieces) assert.ok(('wood' in p.piece && p.piece.wood.size === 'normal') || ['slab', 'plank-door', 'plank-roof', 'plank-gable', 'plank-shutter'].includes(p.piece.prop), JSON.stringify(p.piece));
+  // un seul âge, patiné, fixé par le plan ; des rondins écorcés
+  assert.equal(plan.age, 'worn', 'le plan fixe l’âge de toutes ses pièces : patiné');
+  for (const p of plan.pieces) assert.ok(!p.age && !('wood' in p.piece && p.piece.wood.age), `l'âge est celui du plan, pas de la pièce : ${JSON.stringify(p)}`);
+  for (const p of plan.pieces) if ('wood' in p.piece) assert.equal(p.piece.wood.peeled, true, `un rondin écorcé : ${JSON.stringify(p.piece)}`);
+  assert.ok(all.every((p: any) => ('wood' in p.piece ? p.piece.wood.age === 'worn' : p.piece.prop === 'slab' || p.age === 'worn')), 'toutes les pièces de bois posées sont patinées');
 
   // 6. en jeu : hors du mode construction, Xéros devant le volet, à l'est du mur, tourné vers lui ; E l'ouvre (il tourne d'un quart sur
   // son gond, au bout sud de sa face du dehors : ouvert, il sort du mur vers l'est, sa face du dehors au sud), E le referme

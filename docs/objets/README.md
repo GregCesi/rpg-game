@@ -29,6 +29,8 @@ sablières) partagent une fiche, qui nomme toutes leurs clés.
 - Nom affiché : <nom, en français>.
 - Nature : objet possédable (`items.json`) ou objet du monde (`props.json`, avec ou sans `take`).
 - Mains : une ou deux (deux s'il est lourd ou long).
+- Âge (bois travaillé seulement) : `"aged": true`, il prend l'âge du bois (neuf, patiné, vieux), dessiné avec la rampe `woodAges` ;
+  du bois brut qui ne le prend pas va dans `RAW_WOOD` (validate.ts) avec sa raison.
 
 ## Masse
 - Masse en kg : saisie (`mass` : un nombre), calculée pour la pièce de bois (`"mass": "wood"`, d'après ses réglages :

@@ -151,7 +151,7 @@ function drawFalling(c: Canvas, p: Pose) {
 function fallFrame(p: Pose, shadows: [number, number, number, number][], off: number): Canvas {
   const c = withStump(new Canvas(FALL_W, FALL_H), off);
   drawFalling(c, p);
-  despeckle(c, 'KY');
+  despeckle(c, 'K^');
   shadedOutline(c);
   for (const [x, y, rx, ry] of shadows) groundShadow(c, x, y, rx, ry);
   return c;

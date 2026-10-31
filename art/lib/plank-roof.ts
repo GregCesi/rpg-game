@@ -3,7 +3,8 @@
 // dimensions du pan en centimètres : `w` le long du faîtage, `d` la profondeur au sol de la rive basse au faîtage, `h` la montée.
 //
 // Pièce `ground` et `roof` (docs/STYLE.md, section 8) : profondeur à l'échelle du sol, projection (x, y, z) -> (x, y − z), 5 cm
-// par pixel. Bois brut grisé (rampe S A B Q, K pour les joints : un toit au soleil et à la pluie). Planches de 25 cm dans le sens
+// par pixel. Le bois travaillé de tout le jeu (rampe des âges ^ * % &, joints et chevilles @ ; art/palette.ts `woodAges`) : le pan
+// prend l'âge du bâtiment (neuf, patiné, vieux, tirés au build), il n'a plus de gris à lui. Planches de 25 cm dans le sens
 // de la pente, deux épaisseurs à joints croisés (une planche du dessus sur deux), chevilles, rive basse plus sombre, faîtage clair.
 // Pas de rangées vides sous le pan côté rive basse, pas d'ombre peinte (le jeu la calcule).
 // - r0 (rive basse au sud) : W × (H + D) px, le faîtage en haut (rangée 0), la rive basse en bas.
@@ -19,8 +20,8 @@ export interface RoofDims { w: number; d: number; h: number }
 
 const PX = 5;
 
-/** Bois grisé, du plus clair au plus sombre ; K pour les joints et les têtes de chevilles. */
-const WEATHERED = ['S', 'A', 'B', 'Q', 'K'];
+/** Bois travaillé, du plus clair au plus sombre : lumière, bois, ombre, creux ; @ pour les joints et les têtes de chevilles. */
+const WEATHERED = ['^', '*', '%', '&', '@'];
 const tone = (i: number) => WEATHERED[Math.max(0, Math.min(WEATHERED.length - 1, i))];
 
 /** Une planche de 25 cm : 5 px le long du faîtage. Deux épaisseurs à joints croisés : une planche du dessus sur deux. */
@@ -70,7 +71,7 @@ function roofTone(u: number, a: number, n: number, ref: number, pegs: number[], 
   const p = (u - 1) % BOARD;
   const b = boards[i % boards.length];
   const upper = i % 2 === 0;
-  if (pegs.includes(a) && p === 2) return 'K';
+  if (pegs.includes(a) && p === 2) return '@';
   if (a === n - 1) return p === BOARD - 1 && upper ? tone(3) : tone(lit ? 0 : 1);
   const eave = a < 2 ? 1 : 0;
   let k: number;
@@ -91,8 +92,8 @@ function roofTone(u: number, a: number, n: number, ref: number, pegs: number[], 
   return tone(k + eave);
 }
 
-/** Les joints du bout des planches (la tranche de la rive basse) : K entre deux planches. */
-const endTone = (u: number) => ((u - 1) % BOARD === BOARD - 1 ? 'K' : 'Q');
+/** Les joints du bout des planches (la tranche de la rive basse) : @ entre deux planches, le bois de bout à l'ombre (&). */
+const endTone = (u: number) => ((u - 1) % BOARD === BOARD - 1 ? '@' : '&');
 
 /** Pan de toit, rive basse au sud (r0) ou au nord (r2) : planches nord-sud, en colonnes. */
 export function roofNS(r: RoofDims, low: 'south' | 'north', seed: number): Canvas {

@@ -2,7 +2,7 @@
 // clients au sud. Les quatre poteaux et leurs sablières sont les pièces de bois du jeu (wood-pieces.ts) : rien ici. Ici, ce qui
 // les habille : le fond, les côtés, le devant bas, le volet (fermé, puis rabattu en comptoir) et l'auvent.
 //
-// Le bardage est celui de la grange (art/lib/board-wall.ts) : même bois un peu vieux (M m N, joints K), mêmes planches debout
+// Le bardage est celui de la grange (art/lib/board-wall.ts) : même bois travaillé (la rampe des âges), mêmes planches debout
 // à couvre-joints, mêmes lisses chevillées au dedans, même ombre portée, même chant. Les planches de 30 cm (6 px) ne tombent pas
 // juste sur 1,60 m (32 px) ni sur 80 cm (16 px) : quelques planches de 25 ou 35 cm. Gabarit (docs/STYLE.md, section 8),
 // 5 cm par pixel, lumière nord-ouest. Quatre vues chacun : r0 la face du dehors au sud, r1 le dehors à l'ouest (de chant),

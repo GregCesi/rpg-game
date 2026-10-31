@@ -1,17 +1,20 @@
 // La cabane de bûcheron en rondins du normal (chantier « cabane en rondins ») : la porte en planches et le pan de toit en
 // planches (fiches docs/objets/plank-door.md, plank-roof.md). Les murs sont les rondins eux-mêmes (wood-pieces.ts).
 //
-// Gabarit (docs/STYLE.md, section 8), 5 cm par pixel, lumière nord-ouest, contour d'un pixel : la teinte la plus sombre de la
-// matière en haut et à gauche, OUTLINE (o) en bas et à droite.
+// Gabarit (docs/STYLE.md, section 8), 5 cm par pixel, lumière nord-ouest, contour d'un pixel : K en haut et à gauche (le contour
+// de tout le bois), OUTLINE (o) en bas et à droite.
 //
-// - La porte (`plank-door`, 100 × 6 × 200 cm, debout, quatre vues) : neuve, de bois fendu frais, le bois de la planche fendue
-//   (wood-pieces.ts, `plankEW` : Y t T, contour N) ; joints entre planches en P, la teinte la plus sombre du bois frais (Y t T P),
-//   plus lisible que T sur t. Face : 20 × 42 px (40 de haut, le dessus de 6 cm tient dans le contour, plus les deux bouts de
-//   pivot d'un pixel), l'ombre portée en dessous. De chant : 4 × 50 px (le chant agrandi au plancher de lisibilité, 3 px, plus la
-//   traverse et l'écharpe ; le dessus de 1 m en raccourci, 10 rangées).
+// Le bois : le bois travaillé de tout le jeu, la rampe des âges (^ lumière, * bois, % ombre, & creux, @ joint ; art/palette.ts
+// `woodAges`), tirée neuve ici, patinée et vieille au build : la porte et le pan d'une cabane ont l'âge de ses rondins. Ils s'en
+// distinguent par la forme : planches, joints, traverses, écharpe, chevilles.
+//
+// - La porte (`plank-door`, 100 × 6 × 200 cm, debout, quatre vues) : cinq planches fendues debout, le bord éclairé de chaque
+//   planche en ^, le fil en tirets %, joints entre planches en @, têtes de chevilles en @. Face : 20 × 42 px (40 de haut, le
+//   dessus de 6 cm tient dans le contour, plus les deux bouts de pivot d'un pixel), l'ombre portée en dessous. De chant :
+//   4 × 50 px (le chant agrandi au plancher de lisibilité, 3 px, plus la traverse et l'écharpe ; le dessus de 1 m en raccourci,
+//   10 rangées).
 // - Le pan de toit (`plank-roof`, 480 × 200 × 100 cm, pièce `ground` et `roof`), dessiné par art/lib/plank-roof.ts (commun avec
-//   le grand pan de la grange, art/world/barn.ts) : bois brut grisé (rampe S A B Q, K pour les joints : un toit au soleil et à
-//   la pluie ; le bois frais Y t T se confondrait avec le chaume). Pas de rangées vides sous lui,
+//   le grand pan de la grange, art/world/barn.ts), dans la même rampe. Pas de rangées vides sous lui,
 //   pas d'ombre peinte (le jeu la calcule). Le bas de l'image est le bord sud de son emprise, à la hauteur de sa base (la rive
 //   basse posée sur le rondin de rive) : projection (x, y, z) -> (x, y − z), pente de 20 px (1 m) sur 40 px (2 m) au sol.
 //   - r0 (rive basse au sud) : 96 × 60, le faîtage en haut (rangée 0), la rive basse en bas.
@@ -71,54 +74,54 @@ function doorFace(inside: boolean): Canvas {
     const src = inside ? W - 1 - x : x; // la face du dedans montre les mêmes planches, retournées
     for (let y = top(x); y <= DOOR_BOTTOM; y++) {
       let k: string;
-      if (DOOR_JOINTS.includes(src)) k = 'P';
+      if (DOOR_JOINTS.includes(src)) k = '@';
       else {
         // le bord éclairé de chaque planche, à gauche à l'écran (sur la face retournée, son autre bord)
         const first = DOOR_PLANKS.some(([a, b]) => src === (inside ? b : a));
-        k = first ? 'Y' : 't';
+        k = first ? '^' : '*';
         const g = DOOR_GRAIN.find(([gx]) => gx === src);
-        if (g && !first && (y + g[3]) % g[1] < g[2]) k = 'T';
-        if (!inside && DOOR_KNOTS.some(([kx, ky]) => kx === src && (y === ky || y === ky + 1))) k = 'T';
+        if (g && !first && (y + g[3]) % g[1] < g[2]) k = '%';
+        if (!inside && DOOR_KNOTS.some(([kx, ky]) => kx === src && (y === ky || y === ky + 1))) k = '%';
       }
       c.set(x, y, k);
     }
   }
   if (!inside) {
     // les têtes de chevilles : une par planche, sur la rangée du milieu de chaque traverse
-    for (const [a, b] of DOOR_PLANKS) for (const [r0, r1] of RAILS) c.set(Math.floor((a + b) / 2), (r0 + r1) >> 1, 'N');
+    for (const [a, b] of DOOR_PLANKS) for (const [r0, r1] of RAILS) c.set(Math.floor((a + b) / 2), (r0 + r1) >> 1, '@');
   } else {
     // l'écharpe : du bas, côté pivot (droite), au haut, côté loquet (gauche), entre les traverses ; 3 px de large
     const y0 = RAILS[0][1] + 1;
     const y1 = RAILS[1][0] - 1;
     for (let y = y0; y <= y1; y++) {
       const cx = Math.round(3 + ((15 - 3) * (y - y0)) / (y1 - y0));
-      c.set(cx - 1, y, 'Y').set(cx, y, 't').set(cx + 1, y, 'T');
-      if (cx + 2 < W - 1) c.set(cx + 2, y, 'P'); // son ombre sur les planches, côté est
+      c.set(cx - 1, y, '^').set(cx, y, '*').set(cx + 1, y, '%');
+      if (cx + 2 < W - 1) c.set(cx + 2, y, '&'); // son ombre sur les planches, côté est
     }
     // les traverses, sur toute la largeur : le bord du haut au soleil, le bas à l'ombre, l'ombre portée sur les planches
     for (const [r0, r1] of RAILS) {
       for (let x = 1; x < W - 1; x++) {
-        c.set(x, r0, 'Y');
-        for (let y = r0 + 1; y < r1; y++) c.set(x, y, 't');
-        c.set(x, r1, 'T');
-        if (c.get(x, r1 + 1) !== 'P') c.set(x, r1 + 1, 'T');
+        c.set(x, r0, '^');
+        for (let y = r0 + 1; y < r1; y++) c.set(x, y, '*');
+        c.set(x, r1, '%');
+        if (c.get(x, r1 + 1) !== '@') c.set(x, r1 + 1, '&');
       }
       // les chevilles, une par planche, au milieu de la traverse
-      for (const [a, b] of DOOR_PLANKS) c.set(W - 1 - Math.floor((a + b) / 2), (r0 + r1) >> 1, 'N');
+      for (const [a, b] of DOOR_PLANKS) c.set(W - 1 - Math.floor((a + b) / 2), (r0 + r1) >> 1, '@');
     }
     // les chevilles de l'écharpe, à ses deux bouts
-    c.set(3, y0 + 1, 'N').set(15, y1 - 1, 'N');
+    c.set(3, y0 + 1, '@').set(15, y1 - 1, '@');
   }
-  // le contour : N en haut et à gauche, OUTLINE en bas et à droite
+  // le contour : K en haut et à gauche, OUTLINE en bas et à droite
   const out: [number, number, string][] = [];
   for (let y = 0; y < 43; y++) for (let x = 0; x < W; x++) {
     if (!inDoor(x, y)) continue;
     if (!inDoor(x + 1, y) || !inDoor(x, y + 1)) out.push([x, y, 'o']);
-    else if (!inDoor(x - 1, y) || !inDoor(x, y - 1)) out.push([x, y, 'N']);
+    else if (!inDoor(x - 1, y) || !inDoor(x, y - 1)) out.push([x, y, 'K']);
   }
   for (const [x, y, k] of out) c.set(x, y, k);
   // les pivots : un bout de bois rond qui dépasse en haut (dans le linteau) et en bas (dans le seuil)
-  c.set(pivot, DOOR_TOP - 1, 'N').set(pivot, DOOR_BOTTOM + 1, 'o');
+  c.set(pivot, DOOR_TOP - 1, 'K').set(pivot, DOOR_BOTTOM + 1, 'o');
   // l'ombre portée
   for (let x = 2; x <= W; x++) c.set(x, DOOR_BOTTOM + 2, 'x');
   return c;
@@ -139,9 +142,9 @@ function doorEdge(outsideWest: boolean): Canvas {
   const back = outsideWest ? 3 : 0; // la colonne de plus, côté dedans, à la hauteur de la traverse et de l'écharpe
   const braced = (y: number) => y >= BRACE[0] && y <= BRACE[1];
   for (let y = 0; y < H; y++) {
-    const wood = y < TOPS ? (y % 4 < 2 ? 'Y' : 't') : (y + 3) % 11 < 3 ? 'T' : 't';
+    const wood = y < TOPS ? (y % 4 < 2 ? '^' : '*') : (y + 3) % 11 < 3 ? '%' : '*';
     if (y === 0) {
-      for (let x = plank; x < plank + 3; x++) c.set(x, y, x === plank + 2 ? 'o' : 'N');
+      for (let x = plank; x < plank + 3; x++) c.set(x, y, x === plank + 2 ? 'o' : 'K');
       continue;
     }
     if (y === H - 1) {
@@ -150,19 +153,19 @@ function doorEdge(outsideWest: boolean): Canvas {
       continue;
     }
     if (outsideWest) {
-      c.set(0, y, 'N').set(1, y, wood);
-      if (braced(y)) c.set(2, y, y === BRACE[0] ? 't' : 'T').set(3, y, 'o');
+      c.set(0, y, 'K').set(1, y, wood);
+      if (braced(y)) c.set(2, y, y === BRACE[0] ? '*' : '%').set(3, y, 'o');
       else c.set(2, y, 'o');
       if (y === BRACE[1] + 1) c.set(2, y, 'o');
     } else {
-      if (braced(y)) c.set(0, y, 'N').set(1, y, y === BRACE[0] ? 'Y' : 't');
-      else c.set(1, y, 'N');
+      if (braced(y)) c.set(0, y, 'K').set(1, y, y === BRACE[0] ? '^' : '*');
+      else c.set(1, y, 'K');
       c.set(2, y, wood).set(3, y, 'o');
     }
   }
   // le contour du haut et du bas de la traverse, côté dedans
   if (outsideWest) { c.set(2, BRACE[0] - 1, 'o'); c.set(3, BRACE[0], 'o'); c.set(3, BRACE[1] + 1, 'o'); }
-  else { c.set(0, BRACE[0], 'N'); c.set(1, BRACE[0] - 1, 'N'); c.set(0, BRACE[1] + 1, 'o'); c.set(1, BRACE[1] + 1, 'o'); }
+  else { c.set(0, BRACE[0], 'K'); c.set(1, BRACE[0] - 1, 'K'); c.set(0, BRACE[1] + 1, 'o'); c.set(1, BRACE[1] + 1, 'o'); }
   for (let x = 1; x <= 4; x++) if (c.get(x - 1, H - 1) !== '.' || x === 4) c.set(x, H, 'x');
   return c;
 }

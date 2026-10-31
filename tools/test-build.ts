@@ -160,3 +160,34 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   assert.match(judge(A, { ...B, piece: hewn })!.why!, /même état/);
   console.log('✓ test-build : encoche (rondins croisés, enfoncés de moitié, refus)');
 }
+
+// l'âge du bois : la pièce de bois le garde dans `wood.age`, un objet de bois dans `age` ; une dalle ne le prend pas ; un plan d'un seul
+// âge le fixe (ses pièces ne le répètent pas) et l'impose à la pose ; deux pièces d'âges différents ne s'entent pas ; le rondin écorcé
+// s'encoche comme le rond
+{
+  const { judge } = await import('../src/world/joints');
+  const { ageOf, withAge } = await import('../src/world/build');
+  const beam = (x: number, age?: 'worn' | 'old'): BuildPiece => ({ id: x, piece: { wood: { size: 'normal', length: 200, shape: 'round', hewn: 12, axis: 'ew', ...(age ? { age } : {}) } }, x, y: 0, z: 0, view: 0 });
+  const door: BuildPiece = { id: 9, piece: { prop: 'plank-door' }, x: 0, y: 100, z: 0, view: 0 };
+  const stone: BuildPiece = { id: 10, piece: { prop: 'slab' }, x: 200, y: 100, z: 0, view: 0 };
+  assert.equal(ageOf(beam(0)), 'new', 'sans réglage : neuf');
+  assert.deepEqual(withAge(beam(0), 'worn').piece, beam(0, 'worn').piece, 'la pièce de bois prend l’âge dans wood.age');
+  assert.equal(withAge(door, 'old').age, 'old', 'un objet de bois le prend dans age');
+  assert.equal(withAge(withAge(door, 'old'), 'new').age, undefined, 'neuf : le réglage est ôté');
+  assert.equal(withAge(stone, 'old'), stone, 'une dalle ne le prend pas');
+  assert.equal(ageOf(stone), undefined);
+  const group: BuildPiece[] = [withAge(beam(0), 'worn'), withAge(door, 'worn'), stone];
+  const plan = planOf(group, { x: 0, y: 0, w: 400, d: 200 }, 'Âge')!;
+  assert.equal(plan.age, 'worn', 'un seul âge : le plan le fixe');
+  assert.ok(plan.pieces.every((q) => !q.age && !('wood' in q.piece && q.piece.wood.age)), 'ses pièces ne le répètent pas');
+  const again = planPieces({ ...plan, age: 'old' }, { x: 0, y: 0, z: 0 });
+  assert.ok(again.filter((q) => ageOf(q)).every((q) => ageOf(q) === 'old'), 'l’âge du plan l’emporte à la pose');
+  const mixed = planOf([withAge(beam(0), 'worn'), withAge(door, 'old')], { x: 0, y: 0, w: 400, d: 200 }, 'Mêlé')!;
+  assert.equal(mixed.age, undefined, 'deux âges : chaque pièce garde le sien');
+  assert.deepEqual(planProblems({ ...plan, pieces: [{ ...plan.pieces[0], piece: { prop: 'slab' }, age: 'old' }] }).length, 1, 'un âge sur une dalle est refusé');
+  assert.match(judge(beam(0, 'worn'), { ...beam(200), id: 1 })!.why!, /même âge/, 'deux âges ne s’entent pas');
+  assert.deepEqual(judge(beam(0, 'worn'), { ...beam(200, 'worn'), id: 1 }), { type: 'scarf' });
+  const log = (axis: 'ew' | 'ns', length: number) => ({ wood: { size: 'normal', length, shape: 'round' as const, peeled: true as const, axis } });
+  assert.deepEqual(judge({ id: 1, piece: log('ew', 380), x: 0, y: 20, z: 12, view: 0 }, { id: 2, piece: log('ns', 440), x: 20, y: 0, z: 52, view: 0 }), { type: 'notch' }, 'deux rondins écorcés : une encoche');
+  console.log('✓ test-build : âge du bois (pièce, objet, plan, enture), rondin écorcé');
+}

@@ -5,6 +5,32 @@
 // lumières vers le jaune. Contours brun chaud plutôt que noirs.
 export const OUTLINE = '#3b2b20';
 
+/**
+ * Le bois travaillé, une rampe par âge (docs/CONCEPTION.md, « L'âge du bois ») : neuf (blond chaud), patiné (brun doux), vieux
+ * (gris argenté). Toute pièce de bois travaillé (faces dressées et fendues, bois de bout, planches, bardage, portes, volets, pans de
+ * toit…) se dessine avec ces signes-là, de la lumière au joint ; la palette `world` leur donne les teintes du neuf, et le build tire
+ * le patiné et le vieux de la même grille en changeant ces teintes (art/world/wood.ts, `WOOD_AGES`). Mêmes signes pour les trois
+ * âges ; ce qui distingue les pièces entre elles, c'est la forme et la texture, jamais la teinte. Signes pris hors des lettres,
+ * libres dans toutes les palettes du jeu.
+ *
+ * Cinq teintes, de la plus claire à la plus sombre :
+ * - `^` lumière : le dessus et les arêtes au soleil, le bord éclairé d'une planche, le bois de bout côté lumière ;
+ * - `*` bois : la teinte de la pièce, sa face sud, le fond d'une planche ;
+ * - `%` ombre : le fil, la face dans l'ombre, le cerne, le cœur ;
+ * - `&` creux : le fil arraché dans l'ombre, l'ombre portée d'une traverse, le bas mouillé ;
+ * - `@` joint : la fente entre deux planches, les têtes de chevilles et de clous, la saignée ; jamais le contour (K, o).
+ * Le neuf est un blond de bois fendu du jour, moins jaune et moins saturé que le chaume (Y t T P) dont il se détache ; le patiné,
+ * le même bois après quelques saisons, brun doux, plus clair et plus gris que l'écorce (M m N K) pour ne pas s'y confondre ; le
+ * vieux, le bois lavé par vingt ans de pluie, gris argenté à peine chaud (la lumière garde un soupçon de jaune, l'ombre glisse
+ * vers le brun-violet), plus froid que le bois grisé S A B Q. D'un âge à l'autre, chaque signe garde à peu près sa valeur : le
+ * dessin se lit pareil, seule la couleur change.
+ */
+export const woodAges = {
+  new: { '^': '#d2b688', '*': '#b39469', '%': '#8d704f', '&': '#6a523f', '@': '#4b3a2f' },
+  worn: { '^': '#b49a7a', '*': '#957c62', '%': '#74604d', '&': '#56473b', '@': '#3e332c' },
+  old: { '^': '#bcb8ad', '*': '#9a968d', '%': '#79766f', '&': '#5c5856', '@': '#433f40' },
+} as const;
+
 export const world = {
   // herbe (olive, un peu sèche)
   g: '#7b8544',
@@ -75,6 +101,8 @@ export const world = {
   O: '#b99c62',
   C: '#8c7244',
   X: '#5f4a2b',
+  // bois travaillé, à l'âge neuf (woodAges : le patiné et le vieux se tirent de la même grille)
+  ...woodAges.new,
   // contour, ombre, lueur
   o: OUTLINE,
   x: '#2b1a1040',

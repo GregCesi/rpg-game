@@ -1,7 +1,8 @@
 // La cabane de bûcheron en rondins, ce qui la ferme (chantier « bâtiments ») : le pignon en planches au-dessus du dernier
 // rondin d'un mur de bout, et le volet de la fenêtre du mur est. Même bois, mêmes joints et même convention de vues que la
-// porte en planches (cabin.ts, `plank-door`) : planches fendues fraîches Y t T, joints P, têtes de chevilles N, contour N en
-// haut et à gauche, OUTLINE (o) en bas et à droite. Lumière nord-ouest.
+// porte en planches (cabin.ts, `plank-door`) : planches fendues dans la rampe du bois travaillé (^ * %, l'ombre des traverses &,
+// joints et têtes de chevilles @ ; art/palette.ts `woodAges`, l'âge tiré au build), contour K en haut et à gauche, OUTLINE (o) en
+// bas et à droite. Lumière nord-ouest.
 //
 // Gabarit (docs/STYLE.md, section 8), 5 cm par pixel, boîtes debout à quatre vues :
 // - Le pignon (`plank-gable`, 260 × 6 × 60 cm) : de face 52 × 13 px (12 de haut, le dessus de 6 cm tient dans le contour,
@@ -19,28 +20,28 @@ import { Canvas } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 
-/** Contour d'une forme : `o` si le voisin de droite ou du dessous est dehors, sinon `N` si celui de gauche ou du dessus l'est. */
+/** Contour d'une forme : `o` si le voisin de droite ou du dessous est dehors, sinon `K` si celui de gauche ou du dessus l'est. */
 function outline(c: Canvas, w: number, h: number, inside: (x: number, y: number) => boolean): void {
   const out: [number, number, string][] = [];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (!inside(x, y)) continue;
     if (!inside(x + 1, y) || !inside(x, y + 1)) out.push([x, y, 'o']);
-    else if (!inside(x - 1, y) || !inside(x, y - 1)) out.push([x, y, 'N']);
+    else if (!inside(x - 1, y) || !inside(x, y - 1)) out.push([x, y, 'K']);
   }
   for (const [x, y, k] of out) c.set(x, y, k);
 }
 
 /**
  * Teinte d'une planche debout : `src` la colonne dans le dessin du dehors (la face du dedans montre les mêmes planches,
- * retournées), le bord éclairé à gauche à l'écran, le fil en tirets T, les joints en P.
+ * retournées), le bord éclairé à gauche à l'écran, le fil en tirets %, les joints en @.
  */
 function plankTone(src: number, y: number, inside: boolean, planks: [number, number][], joints: number[], grain: [number, number, number, number][]): string {
-  if (joints.includes(src)) return 'P';
+  if (joints.includes(src)) return '@';
   const first = planks.some(([a, b]) => src === (inside ? b : a));
-  if (first) return 'Y';
+  if (first) return '^';
   const g = grain.find(([gx]) => gx === src);
-  if (g && (y + g[3]) % g[1] < g[2]) return 'T';
-  return 't';
+  if (g && (y + g[3]) % g[1] < g[2]) return '%';
+  return '*';
 }
 
 // =====================================================================================================================
@@ -71,27 +72,27 @@ function gableFace(inside: boolean): Canvas {
   }
   if (!inside) {
     // un nœud, sur la grande planche à droite du faîte
-    c.set(34, 6, 'T').set(34, 7, 'T');
+    c.set(34, 6, '%').set(34, 7, '%');
     // les têtes de chevilles le long du bas, une par planche assez haute, dans le rondin qui le porte
     for (const [a, b] of GABLE_PLANKS) {
       const m = Math.floor((a + b) / 2);
-      if (gableTop(m) <= 8) c.set(m, 10, 'N');
+      if (gableTop(m) <= 8) c.set(m, 10, '@');
     }
   } else {
     // la traverse : le bord du haut au soleil, le bas à l'ombre, son ombre portée sur les planches
     const [r0, r1] = G_RAIL;
     for (let x = G_RAIL_X[0]; x <= G_RAIL_X[1]; x++) {
-      c.set(x, r0, 'Y');
-      for (let y = r0 + 1; y < r1; y++) c.set(x, y, 't');
-      c.set(x, r1, 'T');
-      if (c.get(x, r1 + 1) !== 'P') c.set(x, r1 + 1, 'T');
+      c.set(x, r0, '^');
+      for (let y = r0 + 1; y < r1; y++) c.set(x, y, '*');
+      c.set(x, r1, '%');
+      if (c.get(x, r1 + 1) !== '@') c.set(x, r1 + 1, '&');
     }
     // ses bouts coupés : le gauche au soleil, le droit à l'ombre
-    for (let y = r0; y <= r1; y++) c.set(G_RAIL_X[1], y, 'T');
+    for (let y = r0; y <= r1; y++) c.set(G_RAIL_X[1], y, '%');
     // ses chevilles, une par planche qu'elle croise
     for (const [a, b] of GABLE_PLANKS) {
       const m = GW - 1 - Math.floor((a + b) / 2);
-      if (m > G_RAIL_X[0] && m < G_RAIL_X[1]) c.set(m, (r0 + r1) >> 1, 'N');
+      if (m > G_RAIL_X[0] && m < G_RAIL_X[1]) c.set(m, (r0 + r1) >> 1, '@');
     }
   }
   outline(c, GW, GH, inShape);
@@ -125,22 +126,22 @@ function shutterFace(inside: boolean): Canvas {
     for (let y = 1; y < SH - 1; y++) c.set(ox + x, y, plankTone(src, y, inside, SHUTTER_PLANKS, SHUTTER_JOINTS, SHUTTER_GRAIN));
   }
   if (!inside) {
-    for (const [a, b] of SHUTTER_PLANKS) for (const [, r1] of S_RAILS) c.set(ox + Math.floor((a + b) / 2), r1, 'N');
+    for (const [a, b] of SHUTTER_PLANKS) for (const [, r1] of S_RAILS) c.set(ox + Math.floor((a + b) / 2), r1, '@');
   } else {
     // les traverses : le bord du haut au soleil, son ombre portée sur les planches dessous ; les chevilles sur leur rangée du bas
     // (l'écharpe, sur les deux rangées entre elles, ne se lisait pas : un escalier de pixels)
     for (const [r0, r1] of S_RAILS) {
       for (let x = 1; x < SW - 1; x++) {
-        c.set(ox + x, r0, 'Y').set(ox + x, r1, 't');
-        if (r1 + 1 < SH - 1 && c.get(ox + x, r1 + 1) !== 'P') c.set(ox + x, r1 + 1, 'T');
+        c.set(ox + x, r0, '^').set(ox + x, r1, '*');
+        if (r1 + 1 < SH - 1 && c.get(ox + x, r1 + 1) !== '@') c.set(ox + x, r1 + 1, '&');
       }
-      for (const [a, b] of SHUTTER_PLANKS) c.set(ox + SW - 1 - Math.floor((a + b) / 2), r1, 'N');
+      for (const [a, b] of SHUTTER_PLANKS) c.set(ox + SW - 1 - Math.floor((a + b) / 2), r1, '@');
     }
   }
   outline(c, SW + 1, SH, inShape);
   // les gonds de bois : deux tourillons qui dépassent du bord, à la hauteur des traverses
   const hx = inside ? SW : 0;
-  for (const [r0] of S_RAILS) c.set(hx, r0 + 1, inside ? 'o' : 'N');
+  for (const [r0] of S_RAILS) c.set(hx, r0 + 1, inside ? 'o' : 'K');
   return c;
 }
 
@@ -152,7 +153,7 @@ function shutterFace(inside: boolean): Canvas {
  * Une planche de chant (r1 : le dehors à l'ouest ; r3 : à l'est). Rangées 0 à `tops` − 1 : le dessus, la largeur en
  * raccourci ; puis le chant sur la hauteur. La planche, agrandie à un pixel de bois entre ses contours, sur toute la hauteur ;
  * du côté du dedans, une colonne de plus sur les rangées des traverses (`rail`). `topTone` : le bois du dessus, rangée par
- * rangée ; le chant : t, le fil en tirets T. Image 4 × `h`, sans ombre portée.
+ * rangée ; le chant : *, le fil en tirets %. Image 4 × `h`, sans ombre portée.
  */
 function edge(outsideWest: boolean, h: number, tops: number, rail: [number, number], topTone: (y: number) => string): Canvas {
   const c = new Canvas(4, h);
@@ -160,26 +161,26 @@ function edge(outsideWest: boolean, h: number, tops: number, rail: [number, numb
   const pl = outsideWest ? 0 : 1; // première colonne de la planche (contour, bois, contour)
   const back = outsideWest ? 3 : 0;
   for (let y = 0; y < h; y++) {
-    const wood = y < tops ? topTone(y) : (y + 2) % 9 < 3 ? 'T' : 't';
-    if (y === 0) { c.set(pl, 0, 'N').set(pl + 1, 0, 'N').set(pl + 2, 0, 'o'); continue; }
+    const wood = y < tops ? topTone(y) : (y + 2) % 9 < 3 ? '%' : '*';
+    if (y === 0) { c.set(pl, 0, 'K').set(pl + 1, 0, 'K').set(pl + 2, 0, 'o'); continue; }
     if (y === h - 1) {
       for (let x = pl; x < pl + 3; x++) c.set(x, y, 'o');
       if (railed(y)) c.set(back, y, 'o');
       continue;
     }
     if (outsideWest) {
-      c.set(0, y, 'N').set(1, y, wood);
-      if (railed(y)) c.set(2, y, y === rail[0] ? 't' : 'T').set(3, y, 'o');
+      c.set(0, y, 'K').set(1, y, wood);
+      if (railed(y)) c.set(2, y, y === rail[0] ? '*' : '%').set(3, y, 'o');
       else c.set(2, y, 'o');
     } else {
-      if (railed(y)) c.set(0, y, 'N').set(1, y, y === rail[0] ? 'Y' : 't');
-      else c.set(1, y, 'N');
+      if (railed(y)) c.set(0, y, 'K').set(1, y, y === rail[0] ? '^' : '*');
+      else c.set(1, y, 'K');
       c.set(2, y, wood).set(3, y, 'o');
     }
   }
   // le contour du haut et du bas de la traverse
   if (outsideWest) { c.set(2, rail[0] - 1, 'o'); c.set(3, rail[0], 'o'); c.set(3, rail[1] + 1, 'o'); if (rail[1] + 1 < h - 1) c.set(2, rail[1] + 1, 'o'); }
-  else { c.set(0, rail[0], 'N'); c.set(1, rail[0] - 1, 'N'); c.set(0, rail[1] + 1, 'o'); c.set(1, rail[1] + 1, 'o'); }
+  else { c.set(0, rail[0], 'K'); c.set(1, rail[0] - 1, 'K'); c.set(0, rail[1] + 1, 'o'); c.set(1, rail[1] + 1, 'o'); }
   return c;
 }
 
@@ -189,10 +190,10 @@ function edge(outsideWest: boolean, h: number, tops: number, rail: [number, numb
  * dedans (à 20 cm du bas, de 40 à 220 cm de long) : rangées 12 à 30.
  */
 const gableEdge = (outsideWest: boolean) =>
-  edge(outsideWest, 38, 26, [12, 30], (y) => (y === 13 ? 'Y' : y < 13 ? ((y + 1) % 5 < 3 ? 'Y' : 't') : (y % 5 < 3 ? 't' : 'T')));
+  edge(outsideWest, 38, 26, [12, 30], (y) => (y === 13 ? '^' : y < 13 ? ((y + 1) % 5 < 3 ? '^' : '*') : (y % 5 < 3 ? '*' : '%')));
 
 /** Le volet de chant : 14 rangées, le dessus (60 cm) en raccourci sur 6, le chant sur 8 ; les deux traverses, rangées 2 à 12. */
-const shutterEdge = (outsideWest: boolean) => edge(outsideWest, 14, 6, [2, 12], (y) => (y % 3 === 0 ? 't' : 'Y'));
+const shutterEdge = (outsideWest: boolean) => edge(outsideWest, 14, 6, [2, 12], (y) => (y % 3 === 0 ? '*' : '^'));
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 

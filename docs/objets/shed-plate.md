@@ -9,6 +9,7 @@ Une fiche pour les quatre sablières de l'abri à bois : les poutres posées en 
 - Noms affichés : sablière haute, sablière basse, sablière de côté.
 - Nature : objets du monde (`props.json`), sans `take` : pièces de bâtiment, places de l'étape « les sablières » du plan `woodshed` (`plans.json`, étape « à venir »).
 - Mains : aucune pour l'instant (deux, plus tard : pièce longue).
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Dimensions (gabarit)
 - Bois équarri. Contour compris.

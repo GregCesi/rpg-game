@@ -3,7 +3,7 @@
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
 import { items, maps, piles, plans, props, stamina, strength, transforms, wood } from '../content';
 import type { WoodLook, WoodPiece } from '../content/types';
-import { shapeOfLook } from '../world/woodShape';
+import { woodOfLook } from '../world/woodShape';
 import { heldMass } from '../content/mass';
 import type { DieuCommand } from '../events';
 import { game } from '../state';
@@ -115,9 +115,7 @@ function lengthOf(f: { input: HTMLInputElement }, key: string): number | undefin
 
 /** Ce qu'on choisit d'une pièce de bois : son aspect donne sa forme et ses coups de doloire (une face tous les `perFace`). */
 function woodFrom(size: string, length: number, look: WoodLook, axis: 'ew' | 'ns'): WoodPiece {
-  const faces = { round: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 }[look];
-  const shape = shapeOfLook(look);
-  return { size, length, shape, axis, ...(faces ? { hewn: faces * wood.hew.perFace } : {}) };
+  return woodOfLook(size, look, length, axis);
 }
 
 /** Monte le panneau à côté du jeu (dans #stage) ; `send` transmet une commande à la scène du monde. */

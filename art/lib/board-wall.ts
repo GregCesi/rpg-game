@@ -2,7 +2,9 @@
 // (art/world/barn.ts) et les parois de l'étal (art/world/stall.ts). Un même bois et un même dessin, paramétrés par le panneau :
 // sa forme, ses lisses, la largeur de ses planches.
 //
-// Le bois : la planche fendue un peu vieille (rampe BOARD_WOOD : M m N, joints K). Vu du dehors, des planches debout de 30 cm
+// Le bois : la planche fendue, dans la rampe du bois travaillé (BOARD_WOOD : ^ * %, creux &, joints @ ; art/palette.ts
+// `woodAges`), la même que toutes les pièces de bois : son âge (neuf, patiné, vieux) se tire au build, il n'a plus de teinte à lui.
+// Ce qui le distingue des poteaux et des portes : ses couvre-joints, ses joints, son fil en long, son bas mouillé. Vu du dehors, des planches debout de 30 cm
 // (6 px) jointives ; sur chaque joint un couvre-joint de 2 px (son bord ouest d'un trait sombre, sa face claire, son flanc est
 // à l'ombre). Chaque panneau porte le couvre-joint de son bord ouest (le trait sombre de ce bord est le contour) et pas celui
 // de l'est. Vu du dedans (le dehors retourné) : les planches, leurs joints, les lisses chevillées. Contour d'un pixel : K en
@@ -10,9 +12,12 @@
 
 import { Canvas, rng } from './canvas';
 
-/** Teintes de la planche, du plus clair au plus sombre : lumière, bois, ombre, joint ; `edge` le contour côté lumière. */
-export const BOARD_WOOD = { hi: 'M', mid: 'm', lo: 'N', joint: 'K', edge: 'K' };
-const RAMP = [BOARD_WOOD.hi, BOARD_WOOD.mid, BOARD_WOOD.lo, BOARD_WOOD.joint];
+/**
+ * Teintes de la planche, du plus clair au plus sombre : lumière, bois, ombre, creux (le bas mouillé, l'ombre d'une lisse), joint ;
+ * `edge` le contour côté lumière (K, comme tout le bois).
+ */
+export const BOARD_WOOD = { hi: '^', mid: '*', lo: '%', deep: '&', joint: '@', edge: 'K' };
+const RAMP = [BOARD_WOOD.hi, BOARD_WOOD.mid, BOARD_WOOD.lo, BOARD_WOOD.deep, BOARD_WOOD.joint];
 /** Un cran plus sombre (le bas des planches mouillé). */
 export const darker = (k: string) => {
   const i = RAMP.indexOf(k);

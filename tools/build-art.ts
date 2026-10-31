@@ -27,6 +27,7 @@ import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
 import { sectionsPreview, woodPreview } from './lib/wood-preview';
 import { lyingPreview } from './lib/lying-preview';
+import { agesPreview } from './lib/ages-preview';
 import { auditPreview } from './lib/audit-preview';
 import { briquesPreview } from './lib/briques-preview';
 import { sillPreview } from './lib/sill-preview';
@@ -139,7 +140,7 @@ for (const length of [60, 100, 180, 200, 300, 400]) {
     for (const look of Object.keys(def.looks) as WoodLook[]) {
       const shape = shapeOfLook(look);
       const hewn = (['round', 'f1', 'f2', 'f3', 'beam'] as const).indexOf(look as 'round') * WOOD.hew.perFace;
-      const base: WoodPiece = { size, shape, axis: 'ew', length, ...(hewn > 0 ? { hewn } : {}) };
+      const base: WoodPiece = { size, shape, axis: 'ew', length, ...(hewn > 0 ? { hewn } : {}), ...(look === 'peeled' ? { peeled: true as const } : {}) };
       const samples: WoodPiece[] =
         shape === 'quarter'
           ? [base, { ...base, axis: 'ns' }, { ...base, point: 'down' }, { ...base, axis: 'ns', point: 'down' }]
@@ -364,6 +365,9 @@ if (withPreview) {
   const itemDefs = parse('items.json', z.record(z.string(), ItemDefSchema), itemsJson);
   const couches = lyingPreview(sources, propDefs, itemDefs);
   if (couches) writeFileSync(join(PREVIEW, 'couches.png'), PNG.sync.write(couches));
+  // l'âge du bois : chaque pièce de bois neuve, patinée, vieille, côte à côte
+  const ages = agesPreview(sources, propDefs, itemDefs);
+  if (ages) writeFileSync(join(PREVIEW, 'bois-ages.png'), PNG.sync.write(ages));
   // les bâtiments qui montent, étape par étape : chaque plan de plans.json posé sur la ferme, son piquet nord-ouest en PLAN_PREVIEW
   const plans = parse('plans.json', z.record(z.string(), PlanSchema), plansJson);
   const base = previewMap(PLAN_PREVIEW.map);

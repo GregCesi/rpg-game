@@ -8,10 +8,31 @@
 // - Sillons : l'écorce se creuse dans le sens de la longueur. Trois couloirs en travers (rangées 2, 5, 8 sur 11, assez
 //   écartés pour que deux tirets ne se touchent jamais), des tirets de 5 à 6 px qui descendent d'un pixel à
 //   mi-longueur, de périodes différentes pour ne jamais s'aligner en planches. Un sillon prend la teinte d'écorce un cran plus sombre (M -> m, m -> N, N -> K).
-// - Face de coupe : un ovale cerclé d'écorce (N), bois de bout (t) éclairé en haut à gauche (Y), un cerne (t côté
-//   lumière, T côté ombre) et le cœur (T). Les entailles montrent le même bois frais (Y t T).
+// - Face de coupe : un ovale cerclé d'écorce (N), bois de bout (*) éclairé en haut à gauche (^), un cerne (* côté
+//   lumière, % côté ombre) et le cœur (%). Les entailles montrent le même bois mis à nu. Le bois mis à nu (bois de bout,
+//   faces fendues ou dressées) est le bois travaillé, dans la rampe des âges (^ * % & @, art/palette.ts `woodAges`) ; les
+//   souches et troncs couchés des arbres le montrent neuf.
 
-import { Canvas, EMPTY } from '../lib/canvas';
+import { Canvas, EMPTY, type Palette } from '../lib/canvas';
+import { woodAges } from '../palette';
+import type { WoodAge } from '../../src/content/types';
+
+// ---------- L'âge du bois ----------
+//
+// Une seule matière bois, un réglage d'âge partagé par toutes les pièces de bois travaillé (docs/CONCEPTION.md, « L'âge du bois ») :
+// neuf, patiné, vieux. Le bois travaillé se dessine avec les signes de la rampe `woodAges` (art/palette.ts) ; une image à un autre
+// âge est la même grille, ses signes peints de la rampe de cet âge. L'écorce (M m N K) ne change pas : seul le bois mis à nu vieillit.
+
+/** Les teintes de chaque âge : les signes du bois travaillé et leur couleur (la palette `world` porte celles du neuf). */
+export const WOOD_AGES: Record<WoodAge, Record<string, string>> = woodAges;
+
+/** Les âges tirés au build d'une image neuve : `<nom>-worn`, `<nom>-old`. */
+export const LATER_AGES = ['worn', 'old'] as const satisfies readonly WoodAge[];
+
+/** La palette d'une image à l'âge `age` : la sienne, les signes du bois travaillé repeints. */
+export function agedPalette(palette: Palette, age: WoodAge): Palette {
+  return { ...palette, ...WOOD_AGES[age] };
+}
 
 /** Diamètre du tronc du gros arbre en pixels : la référence des couloirs de sillons. */
 export const DIAMETER = 11;
@@ -110,10 +131,10 @@ export function faceTone(u: number, v: number, rim: boolean, dim = false, rings 
   const lit = u + v < (rings ? 0.15 : -0.3);
   let k: string;
   // le cœur, un peu décalé vers le bas à droite : un bloc de 2 × 2 sur une grande face, 1 × 2 sur un bout étroit
-  if (Math.hypot(u - 0.09, v - 0.11) < 0.2) k = 'T';
-  else if (rings && r >= 0.5 && r < 0.66) k = lit ? 't' : 'T';
-  else k = lit ? 'Y' : 't';
-  return dim ? ({ Y: 't', t: 'T', T: 'T' } as Record<string, string>)[k] : k;
+  if (Math.hypot(u - 0.09, v - 0.11) < 0.2) k = '%';
+  else if (rings && r >= 0.5 && r < 0.66) k = lit ? '*' : '%';
+  else k = lit ? '^' : '*';
+  return dim ? ({ '^': '*', '*': '%', '%': '%' } as Record<string, string>)[k] : k;
 }
 
 /**
@@ -190,11 +211,11 @@ export function logByTheEnd(c: Canvas, cx: number, back: number, front: number, 
 // ---------- Bois équarri ----------
 //
 // Poteaux, sablières, chevrons : le même bois que l'arbre, taillé à la hache. Les faces équarries montrent le bois
-// clair des faces de coupe (Y t T, comme le bois de bout des billes), le fil dans le sens de la pièce, et par endroits
+// mis à nu des faces de coupe (^ * %, comme le bois de bout des billes), le fil dans le sens de la pièce, et par endroits
 // un reste d'écorce (la rampe M m N K) sur une arête, là où la hache n'a pas mordu (la flache).
 // - Teinte de fond d'une face (`s` de 0, bord tourné vers la lumière, à 1, bord dans l'ombre ; `width` la largeur de
-//   la face en pixels) : t ; sur une face d'au moins 3 px, Y sur le premier pixel côté lumière, T sur le dernier.
-// - Fil : des tirets d'un cran plus sombres (Y -> t, t -> T), de 3 à 4 px, le long de la pièce, de périodes
+//   la face en pixels) : * ; sur une face d'au moins 3 px, ^ sur le premier pixel côté lumière, % sur le dernier.
+// - Fil : des tirets d'un cran plus sombres (^ -> *, * -> %), de 3 à 4 px, le long de la pièce, de périodes
 //   différentes par couloir (un couloir tous les 3 px en travers) pour ne jamais s'aligner ; un pixel de bois clair
 //   les sépare toujours d'une plaque d'écorce.
 // - Flache : des plaques d'écorce de 4 à 5 px le long d'une arête (`wane` : 'lit', l'arête éclairée, en m ; 'shade',
@@ -217,8 +238,8 @@ const WANE: [number, number, number][] = [
   [53, 3, 30],
 ];
 
-/** Teinte de bois clair un cran plus sombre. */
-const HEWN_DARKER: Record<string, string> = { Y: 't', t: 'T', T: 'T' };
+/** Teinte de bois travaillé un cran plus sombre. */
+const HEWN_DARKER: Record<string, string> = { '^': '*', '*': '%', '%': '%' };
 
 /** Le pixel (`along` le long de la pièce) est-il dans une plaque d'écorce ? Rend sa place dans la plaque, ou -1. */
 function waneAt(along: number): { i: number; n: number } | null {
@@ -246,7 +267,7 @@ export function hewnTone(along: number, col: number, width: number, wane?: 'lit'
       return last ? 'K' : 'N';
     }
   }
-  let k = width >= 3 && col === 0 ? 'Y' : width >= 3 && col === width - 1 ? 'T' : 't';
+  let k = width >= 3 && col === 0 ? '^' : width >= 3 && col === width - 1 ? '%' : '*';
   // un couloir de fil tous les 3 px en travers, au milieu du couloir (ou sur toute face étroite)
   const [p, n, ph] = GRAIN[Math.floor(col / 3) % GRAIN.length];
   const pos = (((a + ph) % p) + p) % p;

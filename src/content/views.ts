@@ -41,3 +41,15 @@ export const crosswise = (views: Views, k: number) => views !== 'round' && k % 2
 export function variantImage(base: string, k: number | undefined): string {
   return k ? `${base}-s${k}` : base;
 }
+
+/**
+ * Les images d'un objet de bois (`aged` de props.json ou items.json) qui prennent l'âge du bois : toutes ses vues, de tous ses
+ * tirages (`variants`) et de ses deux formes (`natural.forms` 2) ; pour un objet possédable, ses images au sol (`ground`, sinon
+ * l'icône). Chacune a ses trois âges : `<image>`, `<image>-worn`, `<image>-old` (woodShape.ts `agedKey`).
+ */
+export function ageableImages(def: { image?: string; ground?: string; icon?: string; views: Views; variants?: number; natural?: { forms: number } }): string[] {
+  const base = def.image ?? def.ground ?? def.icon!;
+  const forms = def.natural?.forms === 2 ? [base, `${base}-b`] : [base];
+  const draws = forms.flatMap((f) => Array.from({ length: Math.max(1, def.variants ?? 1) }, (_, k) => variantImage(f, k)));
+  return draws.flatMap((d) => viewImages(d, def.views));
+}

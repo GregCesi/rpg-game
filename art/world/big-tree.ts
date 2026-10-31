@@ -13,7 +13,11 @@ export type Vec = [number, number];
 export const FOOT: Vec = [33, 89];
 
 /** Teinte la plus sombre de chaque matière : contour côté lumière (STYLE.md, section 3). */
-const DARKEST: Record<string, string> = { j: 'k', L: 'k', l: 'k', k: 'k', M: 'K', m: 'K', N: 'K', K: 'K', Y: 'N', t: 'N', T: 'N' };
+// le bois travaillé (la rampe des âges ^ * % & @) prend le contour K, comme l'écorce : K et o restent les contours de tout le bois
+const DARKEST: Record<string, string> = {
+  j: 'k', L: 'k', l: 'k', k: 'k', M: 'K', m: 'K', N: 'K', K: 'K', Y: 'N', t: 'N', T: 'N',
+  '^': 'K', '*': 'K', '%': 'K', '&': 'K', '@': 'K',
+};
 
 /**
  * Contour d'un pixel : en haut et à gauche, la teinte la plus sombre de la matière voisine ;

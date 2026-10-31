@@ -7,6 +7,7 @@
   toit ». Pièce du toit (`roof`). Il remplace la couverture de chaume (`shed-thatch`, retirée le 30 octobre 2026 ; son
   numéro de tuile reste réservé dans `art/tile-registry.json`).
 - Mains : aucune (le toit se fait planche par planche ; ici, une seule pièce).
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Dimensions (gabarit)
 - Toit à une seule pente (appentis) de 20,1°, le côté haut au nord. Planches refendues de 20 à 25 cm de large et 5 cm

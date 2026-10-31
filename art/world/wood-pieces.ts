@@ -10,11 +10,11 @@
 // découpe en parties ; un garde-fou vérifie que les deux milieux sont identiques (le milieu se répète sans couture).
 //
 // Sept planches, une par diamètre et par sens : `wood-big`, `wood-big-ns`, `wood-normal`, `wood-normal-ns`, `wood-pole`,
-// `wood-pole-ns`, et debout (le poteau, le normal seulement) `wood-normal-up` (rond, f1, f2, f3, poutre : `<aspect>-start|mid|end`,
+// `wood-pole-ns`, et debout (le poteau, le normal seulement) `wood-normal-up` (rond, rond écorcé, f1, f2, f3, poutre : `<aspect>-start|mid|end`,
 // une image chacune, `normalUpSheet`, encore dessiné à la main). Chaque partie est calée en haut à gauche d'un cadre commun.
 // Animations :
-// - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` (gros : round, half, quarter, plank ; normal : round, f1, f2, f3, beam ;
-//   perche : round) ; le rond a 4 images (le roulement, un tour : l'anneau d'écorce tourne d'un quart, la fente du bout aussi), les
+// - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` (gros : round, half, quarter, plank ; normal : round, peeled, f1, f2, f3, beam ;
+//   perche : round) ; le rond et le rond écorcé ont 4 images (le roulement, un tour : l'anneau d'écorce tourne d'un quart, la fente du bout aussi), les
 //   autres une ; le quartier a aussi `quarter-down-…`, pointe en bas (un sur deux dans une rangée de tas) ;
 // - `notch1`, `notch2` : la bande d'encoche de la coupe à la cognée (un tiers, deux tiers), 4 images comme le rond ;
 // - gros seulement, pour le rond et la demi-bille (les aspects qui se fendent) : `wedge-<aspect>-start|end` (le bout où le coin est
@@ -32,7 +32,7 @@ import { world } from '../palette';
 import { toolPalette } from '../items/tools';
 import { shadedOutline } from './big-tree';
 import { DARKER } from './wood';
-import { barkV, grain, NORMAL_RING, TILE, WOOD_DARKER } from './wood-skin';
+import { barkV, grain, NORMAL_RING, SKINS, TILE, WOOD_DARKER } from './wood-skin';
 import { lyingView, type LyingView } from './wood-section';
 import { CM_PER_PX, RACCOURCI } from '../../src/content/gabarit';
 import {
@@ -146,7 +146,7 @@ function drawCrack(c: Canvas, pts: [number, number][], skip: [number, number][] 
   for (const [X, Y] of pts) if (solid(c, X, Y) && !no.has(`${X},${Y}`)) c.set(X, Y, 'K');
 }
 
-/** Fente grande ouverte : le trait K, la lèvre de bois frais à côté (t, T au bord du corps), les entailles du contour. */
+/** Fente grande ouverte : le trait K, la lèvre de bois mis à nu à côté (*, % par endroits), les entailles du contour. */
 function drawOpen(c: Canvas, sd: SplitDraw) {
   const pts = [...sd.along, ...sd.face];
   const lips: [number, number][] = pts.map(([X, Y]) => [X + sd.lip[0], Y + sd.lip[1]]);
@@ -154,7 +154,7 @@ function drawOpen(c: Canvas, sd: SplitDraw) {
   lips.forEach(([X, Y]) => {
     if (!solid(c, X, Y) || key.has(`${X},${Y}`)) return;
     // la lèvre, un cran plus sombre par endroits (périodique : X + Y suit la pièce à un écart près)
-    c.set(X, Y, mod(X + Y, 8) === 2 ? 'T' : 't');
+    c.set(X, Y, mod(X + Y, 8) === 2 ? '%' : '*');
   });
   for (const [X, Y] of pts) if (solid(c, X, Y)) c.set(X, Y, 'K');
   for (const [X, Y] of sd.notches) c.set(X, Y, 'K');
@@ -265,7 +265,7 @@ function splitParts(look: 'round' | 'half', axis: LyingAxis, anims: Record<strin
 
 // ---------- Encoches du gros ----------
 // Est-ouest : bande de 7 colonnes (notch.ew.w), la colonne 5 (notch.ew.at) est la première à l'est de la coupe ; la
-// saignée (K) en colonne 4, le flanc ouest de l'entaille en bois frais (Y t T) qui descend vers elle. Image 0 : sur le
+// saignée (K) en colonne 4, le flanc ouest de l'entaille en bois mis à nu (^ * %, la rampe des âges) qui descend vers elle. Image 0 : sur le
 // dessus, la silhouette se creuse ; image 1 : la pièce a roulé d'un quart vers le sud, l'entaille est sur la face qu'on
 // voit ; image 2 : dessous, presque rien ; image 3 : au nord, la silhouette s'ébrèche à peine.
 const SH = ['x', 'x', 'x'];
@@ -274,14 +274,14 @@ const EW_PLAIN = ['KKKKKKK', 'MMMMMMM', 'MMMMMMM', 'MMMMMMM', 'mmmmmmm', 'mmmmmm
 const ewWith = (edits: Record<number, string>): Grid => ewBand(EW_PLAIN.map((r, i) => edits[i] ?? r));
 const BIG_EW_NOTCH: Record<1 | 2, Grid[]> = {
   1: [
-    ewWith({ 0: 'KK...KK', 1: 'MKYYtKM', 2: 'MMYtTKM', 3: 'MMMtTKM', 4: 'mmmmTKm' }),
-    ewWith({ 4: 'mmYYtKm', 5: 'mmmYtKm', 6: 'mmmtTKm', 7: 'mmmmTKm' }),
+    ewWith({ 0: 'KK...KK', 1: 'MK^^*KM', 2: 'MM^*%KM', 3: 'MMM*%KM', 4: 'mmmm%Km' }),
+    ewWith({ 4: 'mm^^*Km', 5: 'mmm^*Km', 6: 'mmm*%Km', 7: 'mmmm%Km' }),
     ewWith({ 10: 'NNNKKNN', 11: 'KKKKKKK' }),
     ewWith({ 0: 'KKK.KKK', 1: 'MMKKKMM' }),
   ],
   2: [
-    ewWith({ 0: 'K....KK', 1: 'MK...KM', 2: 'MKYYtKM', 3: 'MMYYtKM', 4: 'mmmYtKm', 5: 'mmmtTKm', 6: 'mmmmTKm', 7: 'mmmmmKm' }),
-    ewWith({ 3: 'MYYYtKM', 4: 'mmYYtKm', 5: 'mmYttKm', 6: 'mmmtTKm', 7: 'mmmtTKm', 8: 'mmmmTKm', 9: 'NNNNNKN' }),
+    ewWith({ 0: 'K....KK', 1: 'MK...KM', 2: 'MK^^*KM', 3: 'MM^^*KM', 4: 'mmm^*Km', 5: 'mmm*%Km', 6: 'mmmm%Km', 7: 'mmmmmKm' }),
+    ewWith({ 3: 'M^^^*KM', 4: 'mm^^*Km', 5: 'mm^**Km', 6: 'mmm*%Km', 7: 'mmm*%Km', 8: 'mmmm%Km', 9: 'NNNNNKN' }),
     ewWith({ 9: 'NNNNKKN', 10: 'NNKKKKN', 11: 'KK.KKKK', 12: 'oo.oooo' }),
     ewWith({ 0: 'KK..KKK', 1: 'MKK.KMM', 2: 'MMKKKMM' }),
   ],
@@ -317,8 +317,8 @@ function bigSheet(axis: LyingAxis): SheetParts {
 // Bois normal
 // =====================================================================================================================
 
-type NormalLook = 'round' | 'f1' | 'f2' | 'f3' | 'beam';
-const NORMAL_LOOKS: NormalLook[] = ['round', 'f1', 'f2', 'f3', 'beam'];
+type NormalLook = 'round' | 'peeled' | 'f1' | 'f2' | 'f3' | 'beam';
+const NORMAL_LOOKS: NormalLook[] = ['round', 'peeled', 'f1', 'f2', 'f3', 'beam'];
 const ND = 6;
 const HEWN_DARKER = WOOD_DARKER;
 const nBark = (along: number, v: number, k: number, plain = false) => barkV(NORMAL_RING, along, v, k, plain);
@@ -330,8 +330,10 @@ function nEwColumn(look: NormalLook, along: number, k: number): string[] {
   for (let v = 0; v < ND; v++) {
     const row = v + 1;
     if (look === 'round') col.push(nBark(along, v, k));
-    else if (row <= 2) col.push(look === 'f1' || look === 'f2' ? nBark(along, v, 0) : row === 2 ? grain(along, 'c', 'Y') : 'Y');
-    else col.push(row === 6 ? 'T' : row === 5 ? grain(along, 'b', 't') : 't');
+    // le rond écorcé : le bois mis à nu, la rampe du cylindre de gauche (lumière) à droite, traces de plane et nœuds en long
+    else if (look === 'peeled') col.push(SKINS.normal.peeled(along, v, (v + 0.5) / ND, k));
+    else if (row <= 2) col.push(look === 'f1' || look === 'f2' ? nBark(along, v, 0) : row === 2 ? grain(along, 'c', '^') : '^');
+    else col.push(row === 6 ? '%' : row === 5 ? grain(along, 'b', '*') : '*');
   }
   col.push('o');
   return col;
@@ -339,14 +341,14 @@ function nEwColumn(look: NormalLook, along: number, k: number): string[] {
 
 const N_EW_NOTCH: Record<1 | 2, Grid[]> = {
   1: [
-    ['K...K', 'MKNKM', 'MYtKM', 'mmTKm', 'mmmmm', 'NNNNN', 'NNNNN', 'ooooo', 'xxxxx', 'xxxxx'],
-    ['KKKKK', 'MMMMM', 'MMMMM', 'mYtKm', 'mmTKm', 'NNNKN', 'NNNNN', 'ooooo', 'xxxxx', 'xxxxx'],
+    ['K...K', 'MKNKM', 'M^*KM', 'mm%Km', 'mmmmm', 'NNNNN', 'NNNNN', 'ooooo', 'xxxxx', 'xxxxx'],
+    ['KKKKK', 'MMMMM', 'MMMMM', 'm^*Km', 'mm%Km', 'NNNKN', 'NNNNN', 'ooooo', 'xxxxx', 'xxxxx'],
     ['KKKKK', 'MMMMM', 'MMMMM', 'mmmmm', 'mmmmm', 'NNNNN', 'NNKKN', 'ooooo', 'xxxxx', 'xxxxx'],
     ['KK.KK', 'MKKKM', 'MMMMM', 'mmmmm', 'mmmmm', 'NNNNN', 'NNNNN', 'ooooo', 'xxxxx', 'xxxxx'],
   ],
   2: [
-    ['....K', 'K..KM', 'MKNKM', 'mYtKm', 'mmTKm', 'NNNKN', 'NNNNN', 'ooooo', 'xxxxx', 'xxxxx'],
-    ['KKKKK', 'MMMMM', 'MYtKM', 'mYtKm', 'mmTKm', 'NNTKN', 'NNNKN', 'ooooo', 'xxxxx', 'xxxxx'],
+    ['....K', 'K..KM', 'MKNKM', 'm^*Km', 'mm%Km', 'NNNKN', 'NNNNN', 'ooooo', 'xxxxx', 'xxxxx'],
+    ['KKKKK', 'MMMMM', 'M^*KM', 'm^*Km', 'mm%Km', 'NN%KN', 'NNNKN', 'ooooo', 'xxxxx', 'xxxxx'],
     ['KKKKK', 'MMMMM', 'MMMMM', 'mmmmm', 'mmmmm', 'NNKKN', 'NKKKN', 'oo.oo', 'xxxxx', 'xxxxx'],
     ['K..KK', 'MK.KM', 'MMKMM', 'mmmmm', 'mmmmm', 'NNNNN', 'NNNNN', 'ooooo', 'xxxxx', 'xxxxx'],
   ],
@@ -366,14 +368,15 @@ function normalSheet(axis: LyingAxis): SheetParts {
 
 // ---------- Debout (le poteau, `axis: 'up'`) ----------
 // Règle D étendue : debout, une pièce garde la largeur de l'épaisseur de la même pièce couchée est-ouest, 8 colonnes contour
-// compris pour les cinq aspects. C'est la couchée est-ouest redressée : sa colonne (contour du haut, dessus en rangées 1-2, flanc en
+// compris pour les six aspects. C'est la couchée est-ouest redressée : sa colonne (contour du haut, dessus en rangées 1-2, flanc en
 // 3-6, contour du bas : `nEwColumn`) devient la rangée du poteau, de gauche (côté lumière) à droite ; mêmes teintes, même écorce
 // (anneau `NORMAL_RING`, sillons le long de la pièce, périodiques sur 24 px), même fil (`grain`). Rond : l'écorce sur 6 colonnes
-// (M M m m N N) ; poutre et f3 : le dessus clair (Y, fil c) à gauche, le flanc (t, fil b) puis T à droite, contour N à gauche ;
-// f1, f2 : la face dressée claire à gauche (comme le flanc dressé de la couchée), l'écorce à droite, et pour f2 la seconde face dans
-// l'ombre (T) au bord droit. La tête (`start`, avec 3 rangées de corps) : le bois de bout vu de dessus, `up.extra` = 4 rangées contour
-// compris (8 × 4 : la section en raccourci), Y clair en haut à gauche, un cerne t autour du cœur T, cerclé de N sur les côtés ronds
-// (le contour du haut et de gauche, l'écorce à droite et devant) ; la rangée sous la tête un cran plus sombre (l'arête) ; coins
+// (M M m m N N) ; rond écorcé : le bois mis à nu (^ * * % % &, `peeled` de wood-skin.ts, traces de plane et nœuds) ; poutre et f3 :
+// le dessus clair (^, fil c) à gauche, le flanc (*, fil b) puis % à droite ; f1, f2 : la face dressée claire à gauche (comme le flanc
+// dressé de la couchée), l'écorce à droite, et pour f2 la seconde face dans l'ombre (%) au bord droit. Le bois mis à nu est la rampe
+// des âges (art/palette.ts `woodAges`). La tête (`start`, avec 3 rangées de corps) : le bois de bout vu de dessus, `up.extra` = 4
+// rangées contour compris (8 × 4 : la section en raccourci), ^ clair en haut à gauche, un cerne * autour du cœur %, cerclé de N sur
+// les côtés ronds (le contour du haut et de gauche, l'écorce à droite et devant ; le rond écorcé, sans écorce, y garde son bois) ; la rangée sous la tête un cran plus sombre (l'arête) ; coins
 // carrés du côté des faces dressées. Le pied (`end`) : le contour du bas, carré si la face sud est dressée (f3, poutre), arrondi
 // sinon. Pas d'ombre : le dé la porte. Les `lift` rangées sous le pied restent vides.
 
@@ -382,24 +385,27 @@ function nUpColumn(look: NormalLook, i: number, Y: number): string {
   const bark = (v: number) => nBark(Y, v, 0);
   switch (look) {
     // la face dressée claire à gauche, l'écorce à droite (ses rangées d'ombre)
-    case 'f1': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'c', 'Y') : i === 2 ? grain(Y, 'a', 't') : i === 3 ? grain(Y, 'b', 't') : bark(i);
-    case 'f2': return i === 0 ? 'Y' : i === 1 ? grain(Y, 'c', 'Y') : i === 2 ? grain(Y, 'a', 't') : i === 5 ? 'T' : bark(i);
-    // rond, f3, poutre : la colonne de la couchée est-ouest, redressée
+    case 'f1': return i === 0 ? '^' : i === 1 ? grain(Y, 'c', '^') : i === 2 ? grain(Y, 'a', '*') : i === 3 ? grain(Y, 'b', '*') : bark(i);
+    case 'f2': return i === 0 ? '^' : i === 1 ? grain(Y, 'c', '^') : i === 2 ? grain(Y, 'a', '*') : i === 5 ? '%' : bark(i);
+    // rond, rond écorcé, f3, poutre : la colonne de la couchée est-ouest, redressée
     default: return nEwColumn(look, Y, 0)[i + 1];
   }
 }
 
 /** La tête vue de dessus, rangées de bois (sous le contour du haut), colonnes de bois de gauche à droite (6 × 3). */
 const N_UP_HEAD: Record<NormalLook, Grid> = {
-  round: ['YYYYtN', 'YtTTtN', 'NtttNN'],
-  f1: ['YYYYtN', 'YtTTtN', 'YtttNN'],
-  f2: ['YYYYtt', 'YtTTtt', 'YtttNt'],
-  f3: ['YYYYtt', 'YtTTtt', 'YtttTt'],
-  beam: ['YYYYtt', 'YtTTtt', 'ttttTT'],
+  round: ['^^^^*N', '^*%%*N', 'N***NN'],
+  // le rond écorcé : le même bois de bout, sans l'anneau d'écorce ; son bord d'ombre (à droite, devant) en bois à l'ombre
+  peeled: ['^^^^**', '^*%%*%', '%***%%'],
+  f1: ['^^^^*N', '^*%%*N', '^***NN'],
+  f2: ['^^^^**', '^*%%**', '^***N*'],
+  f3: ['^^^^**', '^*%%**', '^***%*'],
+  beam: ['^^^^**', '^*%%**', '****%%'],
 };
 /** Coins carrés (faces dressées) : en haut à gauche, en haut à droite, en bas. */
 const N_UP_SQUARE: Record<NormalLook, { tl: boolean; tr: boolean; bottom: boolean }> = {
   round: { tl: false, tr: false, bottom: false },
+  peeled: { tl: false, tr: false, bottom: false },
   f1: { tl: true, tr: false, bottom: false },
   f2: { tl: true, tr: true, bottom: false },
   f3: { tl: true, tr: true, bottom: true },
@@ -448,17 +454,17 @@ function normalUpSheet(): SheetParts {
 
 
 // La coupe à la cognée : bande de 3 colonnes (notch.ew.w), la coupe à la colonne 2 (notch.ew.at), la saignée (K) en colonne 1, le
-// flanc ouest de l'entaille en bois frais (Y t). Mêmes images que le gros et le normal : dessus, face sud, dessous, nord.
+// flanc ouest de l'entaille en bois mis à nu (^ *). Mêmes images que le gros et le normal : dessus, face sud, dessous, nord.
 const POLE_EW_NOTCH: Record<1 | 2, Grid[]> = {
   1: [
-    ['K.K', 'YKS', 'AAA', 'BBB', 'ooo', 'xxx'],
-    ['KKK', 'SSS', 'YKA', 'BBB', 'ooo', 'xxx'],
+    ['K.K', '^KS', 'AAA', 'BBB', 'ooo', 'xxx'],
+    ['KKK', 'SSS', '^KA', 'BBB', 'ooo', 'xxx'],
     ['KKK', 'SSS', 'AAA', 'BKB', 'ooo', 'xxx'],
     ['K.K', 'SKS', 'AAA', 'BBB', 'ooo', 'xxx'],
   ],
   2: [
-    ['...', 'K.K', 'YKA', 'BBB', 'ooo', 'xxx'],
-    ['KKK', 'YKS', 'tKA', 'BKB', 'ooo', 'xxx'],
+    ['...', 'K.K', '^KA', 'BBB', 'ooo', 'xxx'],
+    ['KKK', '^KS', '*KA', 'BKB', 'ooo', 'xxx'],
     ['KKK', 'SSS', 'AKA', 'KKK', 'o.o', 'xxx'],
     ['K.K', 'SKS', 'AKA', 'BBB', 'ooo', 'xxx'],
   ],

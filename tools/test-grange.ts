@@ -2,6 +2,7 @@
 // dans le mode construction, par un scénario, uniquement avec les pièces du catalogue, puis à l'enregistrer comme plan). Dans le vrai
 // jeu (tools/lib/playtest.ts), à la vraie souris et au vrai clavier : chaque pièce prise au catalogue (BuildCommand), visée à la souris,
 // posée d'un clic ; chaque assemblage posé d'un clic sur sa jonction.
+//   - le bois vieux, gris (l'âge réglé au catalogue, fixé par le plan) ;
 //   - 8,80 × 6 m au sol, faîtage est-ouest ; dix dalles, dix poteaux (poutres de 3 m dressées) : quatre au nord, quatre au sud (des
 //     travées de 2,40 m entre poteaux, celle du milieu pour la porte), un au milieu de chaque mur de bout ;
 //   - les sablières (poutres couchées sur la tête des poteaux, tenon et mortaise), entées en trait de Jupiter (un arbre normal ne donne
@@ -166,6 +167,9 @@ await playtest('grange', async ({ page, errors, load }) => {
     await sleep(150);
   };
 
+  // l'âge du bois, réglé au catalogue (vieux, gris) : toutes ses pièces de bois le prennent, le plan le fixe
+  await send({ kind: 'age', age: 'old' });
+
   // 1. les dalles, puis les poteaux dessus (des poutres de 3 m dressées : 12 + 300 = 3,12 m)
   // du nord au sud : un poteau visé loin au nord d'un poteau déjà dressé serait vu sur sa tête (la visée prend le plus haut dessus)
   const POSTS: [number, number][] = [[0, 0], [280, 0], [560, 0], [840, 0], [0, 280], [840, 280], [0, 560], [280, 560], [560, 560], [840, 560]];
@@ -291,6 +295,8 @@ await playtest('grange', async ({ page, errors, load }) => {
   for (const p of plan.pieces) assert.ok(('wood' in p.piece && p.piece.wood.size === 'normal' && p.piece.wood.hewn === 12) || ['slab', 'board-wall', 'cart-door', 'board-gable', 'plank-roof-large'].includes(p.piece.prop), JSON.stringify(p.piece));
   // aucune poutre plus longue que ce que donne un arbre normal (5,80 m)
   for (const p of plan.pieces) if ('wood' in p.piece) assert.ok(p.piece.wood.length <= 580, `une poutre de ${p.piece.wood.length} cm`);
+  assert.equal(plan.age, 'old', "le plan fixe l'âge de toutes ses pièces de bois (vieux, gris)");
+  for (const p of plan.pieces) assert.ok(!p.age && !('wood' in p.piece && p.piece.wood.age), `l'âge est celui du plan, pas de la pièce : ${JSON.stringify(p)}`);
 
   const H = Math.max(...shots.map((s) => s.png.height)) + 4;
   const W = shots.reduce((s, x) => s + x.png.width + 4, 4);

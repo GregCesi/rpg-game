@@ -5,8 +5,8 @@
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
 import { itemMass, naturalFactor, propMass, type MassCatalog } from './mass';
-import { crosswise, variantImage, viewImages } from './views';
-import { lookOf, WEDGE_FRAMES } from '../world/woodShape';
+import { ageableImages, crosswise, variantImage, viewImages } from './views';
+import { agedKey, framesOf, lookOf, WEDGE_FRAMES, woodSheets } from '../world/woodShape';
 import { formImage } from '../world/natural';
 import { partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
@@ -745,7 +745,7 @@ function validateWood(c: Content, cat: Catalog): string[] {
       };
       // le quartier : pointe en l'air (sa position posé) et pointe en bas (un sur deux dans une rangée de tas)
       for (const look of Object.keys(size.looks) as WoodLook[]) {
-        for (const drawn of look === 'quarter' ? ['quarter', 'quarter-down'] : [look]) for (const part of ['start', 'mid', 'end']) want(`${drawn}-${part}`, look === 'round' ? 4 : 1);
+        for (const drawn of look === 'quarter' ? ['quarter', 'quarter-down'] : [look]) for (const part of ['start', 'mid', 'end']) want(`${drawn}-${part}`, framesOf(look));
       }
       for (const notch of ['notch1', 'notch2']) want(notch, 4);
       for (const [look, rule] of Object.entries(size.split)) {
@@ -786,6 +786,48 @@ function validateWood(c: Content, cat: Catalog): string[] {
       if (!W.sizes[h.wood.size]) errors.push(`${at} : 'harvest.wood' : diamètre '${h.wood.size}' introuvable dans wood.json`);
       if (h.wood.length % W.grid || h.wood.length < W.min) errors.push(`${at} : 'harvest.wood' : longueur ${h.wood.length} cm hors de la grille (multiple de ${W.grid}, au moins ${W.min})`);
     } else if (h?.becomes && c.props[h.becomes]?.wood) errors.push(`${at} : il devient une pièce de bois : son diamètre et sa longueur ('harvest.wood')`);
+  }
+  return errors;
+}
+
+/**
+ * Objets de bois qui ne prennent pas l'âge du bois, avec leur raison : du bois vert, brut, qu'on ne travaille pas (l'âge est celui du
+ * bois mis à nu). Un objet de bois travaillé ne s'ajoute pas ici : il est `aged`.
+ */
+export const RAW_WOOD: Record<string, string> = {
+  'wattle-rod': 'baguette de coudrier verte, avec son écorce, tressée telle quelle',
+};
+
+/**
+ * L'âge du bois (docs/CONCEPTION.md, « L'âge du bois ») : toute pièce de bois a ses trois âges. Un objet de bois (masse de matière
+ * bois, ou la pièce de bois) est `aged`, sauf le bois brut de RAW_WOOD ; chaque image d'un objet `aged` (vues, tirages, formes) a son
+ * patiné et son vieux ; chaque planche de la pièce de bois aussi.
+ */
+function validateAges(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const later = ['worn', 'old'] as const;
+  const missing = (key: string) => later.filter((a) => !cat.textures.has(agedKey(key, a))).map((a) => agedKey(key, a));
+  const isWood = (mass: unknown) => mass === 'wood' || (typeof mass === 'object' && mass !== null && 'matter' in mass && (mass as { matter: string }).matter === 'wood');
+  for (const key of Object.keys(RAW_WOOD)) if (!c.props[key] && !c.items[key]) errors.push(`validate.ts RAW_WOOD : '${key}' absent de props.json et d'items.json`);
+  const entries: [string, string, PropDef | ItemDef][] = [
+    ...Object.entries(c.props).map(([k, d]) => [`props.json '${k}'`, k, d] as [string, string, PropDef]),
+    ...Object.entries(c.items).map(([k, d]) => [`items.json '${k}'`, k, d] as [string, string, ItemDef]),
+  ];
+  for (const [at, key, d] of entries) {
+    if (isWood(d.mass) && !d.aged && !RAW_WOOD[key]) errors.push(`${at} : un objet de bois prend l'âge du bois ('"aged": true', ses images à trois âges), ou va dans RAW_WOOD avec sa raison`);
+    if (d.aged && RAW_WOOD[key]) errors.push(`${at} : 'aged' et dans RAW_WOOD : l'un ou l'autre`);
+    if (!d.aged) continue;
+    const images = ageableImages({ ...d, image: 'image' in d ? d.image : undefined, ground: 'ground' in d ? d.ground : undefined, icon: 'icon' in d ? d.icon : undefined, variants: 'variants' in d ? d.variants : undefined });
+    for (const img of images) {
+      if (!cat.textures.has(img)) continue; // l'image neuve manquante est dite par validateViews
+      const lost = missing(img);
+      if (lost.length) errors.push(`${at} : '${img}' n'a pas ses trois âges (${lost.join(', ')} non tirées : le bois travaillé de son dessin doit être dans la rampe woodAges, art/palette.ts)`);
+    }
+  }
+  for (const sheet of woodSheets()) {
+    if (!cat.textures.has(sheet)) continue;
+    const lost = missing(sheet);
+    if (lost.length) errors.push(`wood.json : planche '${sheet}' sans ses trois âges (${lost.join(', ')})`);
   }
   return errors;
 }
@@ -1018,6 +1060,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Le bois : planches de parties de chaque diamètre et aspect, icônes, vues portées, outils, grille
   addAll(validateWood(c, cat));
+  addAll(validateAges(c, cat));
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));

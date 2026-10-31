@@ -9,6 +9,7 @@ le mur sud (rondins recoupés de part et d'autre).
 - Nature : un vantail : des planches fendues jointives posées debout, tenues par deux traverses et une écharpe en diagonale (le Z),
   chevillées ; elle tourne sur deux pivots de bois pris dans le seuil et le linteau (pas de ferrure : la cabane n'a pas de forgeron).
 - Mains : deux (plus tard).
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Par la matière : `{"matter": "wood", "fill": 0.5}` sur la boîte de ses `dims` (100 × 6 × 200 cm : la moitié de la boîte est du

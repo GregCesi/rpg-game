@@ -3,6 +3,10 @@
 // le bois fendu (fil en long), le bois dressé à la doloire (fil en long), la planche, et le bois de bout (cernes, cœur), pour chaque
 // diamètre de wood.json. La forme, elle, vient de la section (wood.json, `section`).
 //
+// Le bois mis à nu (faces fendues, dressées, planche, bois de bout, rond écorcé) est le bois travaillé : la rampe des âges
+// (^ lumière, * bois, % ombre, & creux ; art/palette.ts `woodAges`), qui prend l'âge de la pièce au build. L'écorce garde sa rampe
+// (M m N K, la perche S A B Q) et ne vieillit pas.
+//
 // Lumière en haut à gauche, toujours : le calcul donne à chaque matière `light`, de -1 (dans l'ombre) à 1 (face à la lumière),
 // d'après la normale de la surface ; l'écorce prend `s` = (1 - light) / 2, de 0 (éclairée) à 1 (dans l'ombre).
 
@@ -128,20 +132,20 @@ export const SPLIT_LANES: [number, number][][] = [
 ];
 
 /**
- * Bois frais d'une face fendue tournée vers la lumière : `along` le long de la pièce, `across` en travers (0, le bord côté lumière).
- * Fond t, le bord en Y ; un couloir sur deux des fibres éclairées (Y), l'autre des fibres arrachées (T), jamais de cerne. C'est la
+ * Bois d'une face fendue tournée vers la lumière : `along` le long de la pièce, `across` en travers (0, le bord côté lumière).
+ * Fond *, le bord en ^ ; un couloir sur deux des fibres éclairées (^), l'autre des fibres arrachées (%), jamais de cerne. C'est la
  * face de la demi-bille que Grégoire aime : la rangée de demi-billes vue de face.
  */
 export function splitWood(along: number, across: number): string {
-  if (across === 0) return 'Y';
+  if (across === 0) return '^';
   const a = mod(Math.floor(along), TILE);
   const hit = SPLIT_LANES[across % SPLIT_LANES.length].some(([s, n]) => mod(a - s, TILE) < n);
-  if (!hit) return 't';
-  return across % 2 === 1 ? 'Y' : 'T';
+  if (!hit) return '*';
+  return across % 2 === 1 ? '^' : '%';
 }
 
-/** Un cran plus sombre pour le bois frais et dressé. */
-export const WOOD_DARKER: Record<string, string> = { Y: 't', t: 'T', T: 'T', d: 't' };
+/** Un cran plus sombre pour le bois travaillé (fendu, dressé, planche). */
+export const WOOD_DARKER: Record<string, string> = { '^': '*', '*': '%', '%': '&', '&': '&' };
 
 // ---------- Bois dressé à la doloire ----------
 
@@ -164,14 +168,17 @@ const PLANK_FIBRES: [number, number, number][] = [
 const PLANK_SAP: [number, number][] = [[4, 4], [16, 3]];
 const PLANK_EDGE: [number, number][] = [[2, 3], [11, 2], [19, 3]];
 
-/** Bois de la planche à `along`, `across` en travers (0 l'aubier, côté lumière ; puis le dessus ; `last` : la rive d'ombre). */
+/**
+ * Bois de la planche à `along`, `across` en travers (0 l'arête au soleil ; puis le dessus, l'aubier par endroits sur la première
+ * rangée ; `last` : la rive d'ombre, un reste d'écorce N par endroits).
+ */
 export function plankTone(along: number, across: number, last: boolean): string {
   const a = mod(Math.floor(along), TILE);
   const inDash = (st: number, n: number) => mod(a - st, TILE) < n;
-  if (across === 0) return 'd';
-  if (last) return PLANK_EDGE.some(([st, n]) => inDash(st, n)) ? 'N' : 'T';
-  if (across === 1 && PLANK_SAP.some(([st, n]) => inDash(st, n))) return 'd';
-  const base = across === 1 ? 'Y' : 't';
+  if (across === 0) return '^';
+  if (last) return PLANK_EDGE.some(([st, n]) => inDash(st, n)) ? 'N' : '%';
+  if (across === 1 && PLANK_SAP.some(([st, n]) => inDash(st, n))) return '^';
+  const base = across === 1 ? '^' : '*';
   const hit = PLANK_FIBRES.some(([lane, st, n]) => {
     if (!inDash(st, n)) return false;
     const second = mod(a - st, TILE) >= Math.ceil(n / 2);
@@ -200,6 +207,11 @@ export interface Skin {
   ringSize: number;
   /** L'écorce à la rangée d'anneau `ring`, teinte `s` (0 éclairée à 1 dans l'ombre), à l'image k du roulement. */
   bark(along: number, ring: number, s: number, k: number): string;
+  /**
+   * Le rond écorcé (le rondin de la cabane, `bark: 'none'` de sa section) à la rangée d'anneau `ring`, teinte `s` (0 éclairée à 1
+   * dans l'ombre), à l'image k du roulement : le bois mis à nu à la plane, dans la rampe du bois travaillé (il prend l'âge).
+   */
+  peeled(along: number, ring: number, s: number, k: number): string;
   /** Une face plane : fendue (`split`), dressée à la doloire (`hewn`) ou la planche (`plank`). */
   face(kind: 'split' | 'hewn' | 'plank', at: FaceAt): string;
   /** Le bois de bout en (u, v) depuis le cœur (u vers la droite, v vers le bas de l'écran, en rayons) ; `rim` : bord d'écorce. */
@@ -207,19 +219,19 @@ export interface Skin {
 }
 
 /**
- * Bois frais tourné de biais (un cran) : le fond t passe en T, les fibres éclairées Y en t, les fibres arrachées T en P (le
- * brun du chaume à l'ombre), pour que le fil se lise encore sur une face qui ne prend pas la lumière (le flanc sud du quartier).
+ * Bois tourné de biais (un cran) : le fond * passe en %, les fibres éclairées ^ en *, les fibres arrachées % en & (le creux),
+ * pour que le fil se lise encore sur une face qui ne prend pas la lumière (le flanc sud du quartier).
  */
-const FACE_SHADE: Record<string, string> = { Y: 't', t: 'T', T: 'P', d: 't' };
-/** Bois frais dans l'ombre (deux crans) : le fond en T, seules les fibres arrachées en P (la face sud d'une poutre). */
-const FACE_DEEP: Record<string, string> = { Y: 'T', t: 'T', T: 'P', d: 'T' };
+const FACE_SHADE: Record<string, string> = { '^': '*', '*': '%', '%': '&', '&': '&' };
+/** Bois dans l'ombre (deux crans) : le fond en %, seules les fibres arrachées en & (la face sud d'une poutre). */
+const FACE_DEEP: Record<string, string> = { '^': '%', '*': '%', '%': '&', '&': '&' };
 
 /** Une face plane, d'après sa lumière : le bois frais éclairé, un cran plus sombre de biais, deux dans l'ombre. */
 function planeFace(kind: 'split' | 'hewn' | 'plank', at: FaceAt): string {
   let q: string;
   if (kind === 'plank') q = plankTone(at.along, at.across, at.across === at.count - 1 && at.count > 2);
   else if (kind === 'split') q = splitWood(at.along, at.across);
-  else q = at.across === 0 ? 'Y' : grain(Math.floor(at.along), (['c', 'a', 'b'] as const)[at.across % 3], at.across % 2 ? 't' : 'Y');
+  else q = at.across === 0 ? '^' : grain(Math.floor(at.along), (['c', 'a', 'b'] as const)[at.across % 3], at.across % 2 ? '*' : '^');
   if (at.light >= 0.55) return q;
   if (at.light >= -0.1) return FACE_SHADE[q] ?? q;
   return FACE_DEEP[q] ?? q;
@@ -227,22 +239,66 @@ function planeFace(kind: 'split' | 'hewn' | 'plank', at: FaceAt): string {
 
 const endWood = (u: number, v: number, rim: boolean, rings: boolean) => faceTone(u, v, rim, false, rings);
 
+// ---------- Le rond écorcé (le rondin de la cabane) ----------
+
+/**
+ * Traces de plane sur l'anneau du rond écorcé : par rangée d'anneau (une sur trois), des tirets [début, longueur] sur 24 px, d'un
+ * cran plus sombres. La plane enlève l'écorce en longues facettes : leurs arêtes se lisent comme de longs traits en long, jamais
+ * alignés d'une rangée à l'autre.
+ */
+const PEELED_LANES: [number, number][][] = [
+  [[2, 9], [15, 5]],
+  [[9, 11]],
+  [[0, 6], [13, 8]],
+  [[18, 9]],
+];
+/** Les nœuds (le bois autour d'une branche coupée à ras) : rangée d'anneau, début et longueur sur 24 px. Deux de 2 px par tour. */
+const PEELED_KNOTS: { row: number; at: number; n: number }[] = [
+  { row: 3, at: 19, n: 2 },
+  { row: 8, at: 6, n: 2 },
+];
+
+/**
+ * Le rond écorcé : le bois mis à nu à la plane, en cylindre dans la rampe du bois travaillé (il prend l'âge). Le clair ^ prend le
+ * haut côté lumière (un peu plus large que le M de l'écorce : le bois nu est lisse et renvoie la lumière), le bois * le gros du
+ * dessus, le flanc sud en %, la dernière rangée en & ; les traces de plane un cran plus sombres, des nœuds de deux crans. Tout tourne
+ * avec l'anneau (un quart de tour par image), comme les sillons de l'écorce.
+ */
+function peeledWood(ringSize: number) {
+  return (along: number, ring: number, s: number, k: number): string => {
+    const base = s < 0.2 ? '^' : s < 0.55 ? '*' : s < 0.84 ? '%' : '&';
+    const row = mod(ring - Math.round((k * ringSize) / 4), ringSize);
+    const a = mod(Math.floor(along), TILE);
+    // les nœuds : rangées données pour l'anneau du normal (12), ramenées à celui du diamètre
+    const knot = PEELED_KNOTS.some((n) => Math.floor((n.row * ringSize) / 12) === row && mod(a - n.at, TILE) < n.n);
+    if (knot) return base === '^' ? '%' : '&';
+    if (row % 3 === 1) {
+      const lane = PEELED_LANES[Math.floor(row / 3) % PEELED_LANES.length];
+      if (lane.some(([st, n]) => mod(a - st, TILE) < n)) return WOOD_DARKER[base];
+    }
+    return base;
+  };
+}
+
 export const SKINS: Record<string, Skin> = {
   big: {
     ringSize: BIG_RING.size,
     bark: (along, ring, s, k) => lyingRingBark(BIG_RING, along, ring, s, k),
+    peeled: peeledWood(BIG_RING.size),
     face: planeFace,
     end: endWood,
   },
   normal: {
     ringSize: NORMAL_RING.size,
     bark: (along, ring, s, k) => lyingRingBark(NORMAL_RING, along, ring, s, k),
+    peeled: peeledWood(NORMAL_RING.size),
     face: planeFace,
     end: endWood,
   },
   pole: {
     ringSize: POLE_RING,
     bark: lyingPoleBark,
+    peeled: peeledWood(POLE_RING),
     face: planeFace,
     end: (u, v, rim, rings) => (rim ? 'B' : endWood(u, v, false, rings)),
   },

@@ -9,7 +9,7 @@
 import { CM_PER_PX } from '../content/gabarit';
 import type { JointType, WoodPiece } from '../content/types';
 import { boxOf, type Box3, type BuildPiece } from './build';
-import { lookOf } from './woodShape';
+import { ageOfWood, lookOf, rollsLook } from './woodShape';
 
 /** Un assemblage posé (GameState) : son type et ses deux pièces. */
 export interface JointRef {
@@ -78,7 +78,8 @@ export function judge(a: BuildPiece, b: BuildPiece): { type?: JointType; why?: s
     (up(wa) && up(wb) && c.axis === 'z' && A.x === B.x && A.y === B.y);
   if (endToEnd) {
     if (wa.size !== wb.size || wa.shape !== wb.shape) return { type: 'scarf', why: 'Les deux pièces doivent avoir la même section.' };
-    if (lookOf(wa) !== lookOf(wb)) return { type: 'scarf', why: 'Les deux pièces doivent être dans le même état (rondes, équarries…).' };
+    if (lookOf(wa) !== lookOf(wb)) return { type: 'scarf', why: 'Les deux pièces doivent être dans le même état (rondes, écorcées, équarries…).' };
+    if (ageOfWood(wa) !== ageOfWood(wb)) return { type: 'scarf', why: 'Les deux pièces doivent avoir le même âge : entées, elles ne font plus qu’une.' };
     return { type: 'scarf' };
   }
   if (up(wa) && up(wb) && c.axis === 'z') return { type: 'scarf', why: "Les deux poteaux doivent être exactement l'un sur l'autre." };
@@ -88,12 +89,12 @@ export function judge(a: BuildPiece, b: BuildPiece): { type?: JointType; why?: s
   // deux pièces couchées qui se croisent à angle droit, l'une sur l'autre ou déjà l'une dans l'autre : deux rondins ronds, une encoche
   // (celui du dessus s'enfonce de la moitié de son diamètre) ; des pièces dressées, un mi-bois (à la même hauteur)
   if ((c.axis === 'z' || c.axis === 'cross' || c.axis === 'sunk') && !up(wa) && !up(wb)) {
-    const logs = lookOf(wa) === 'round' && lookOf(wb) === 'round';
+    const logs = rollsLook(lookOf(wa)) && rollsLook(lookOf(wb));
     const type = logs ? 'notch' : 'halving';
     const name = logs ? "L'encoche" : 'Le mi-bois';
     if (wa.axis === wb.axis) return { why: `${name} croise deux pièces à angle droit.` };
     if (wa.size !== wb.size || wa.shape !== wb.shape) return { type, why: 'Les deux pièces doivent avoir la même section.' };
-    if (lookOf(wa) !== lookOf(wb)) return { type, why: 'Les deux pièces doivent être dans le même état (rondes, équarries…).' };
+    if (lookOf(wa) !== lookOf(wb)) return { type, why: 'Les deux pièces doivent être dans le même état (rondes, écorcées, équarries…).' };
     const [lo, hi] = A.z <= B.z ? [A, B] : [B, A];
     const ok = logs ? hi.z === lo.z + lo.h || hi.z === lo.z + lo.h / 2 : hi.z === lo.z + lo.h || hi.z === lo.z;
     if (!ok) return { type, why: "L'une doit reposer sur l'autre." };
@@ -174,7 +175,7 @@ export function refusal(j: Junction | undefined, type: JointType, joints: readon
       scarf: 'Une enture prolonge deux pièces de même section, bout à bout, sur le même axe.',
       mortise: 'Il faut un poteau sous une pièce couchée, ou sur une sablière basse.',
       halving: 'Le mi-bois croise deux pièces équarries de même section, à angle droit, l’une sur l’autre.',
-      notch: 'L’encoche croise deux rondins ronds de même section, à angle droit, l’un sur l’autre.',
+      notch: 'L’encoche croise deux rondins ronds (avec ou sans écorce) de même section, à angle droit, l’un sur l’autre.',
     };
     return want[type];
   }

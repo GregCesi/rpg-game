@@ -5,6 +5,7 @@
 - Nom affiché : bardeau.
 - Nature : objet possédable (`items.json`, `kind: resource`) : une planchette de chêne fendue au coutre, un bout épais, un bout aminci.
 - Mains : une.
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Calculée : 40 × 10 × 1,5 cm × 900 kg/m³ = **0,54 kg**.

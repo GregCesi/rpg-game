@@ -23,7 +23,7 @@
 
 import { CM_PER_PX } from '../content/gabarit';
 import woodJson from '../content/wood.json';
-import { WoodSchema, type End, type WoodLook, type WoodLookDef, type WoodPiece, type WoodSize } from '../content/types';
+import { WoodSchema, type End, type WoodAge, type WoodLook, type WoodLookDef, type WoodPiece, type WoodSize } from '../content/types';
 
 export type WoodAxis = 'ew' | 'ns' | 'up';
 
@@ -56,8 +56,27 @@ export function shapeOfLook(look: WoodLook): WoodPiece['shape'] {
   return look === 'half' || look === 'quarter' || look === 'plank' ? look : 'round';
 }
 
+/** Un aspect rond entier, avec ou sans son écorce (la bille, le rondin, le rondin écorcé, la perche) : il roule. */
+export const rollsLook = (look: WoodLook) => look === 'round' || look === 'peeled';
+
+/** Faces dressées à la doloire de chaque aspect. */
+export const LOOK_FACES: Record<WoodLook, number> = { round: 0, peeled: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 };
+
+/** La pièce de bois d'un aspect : sa forme, ses coups de doloire (une face tous les `perFace`), son écorce ôtée. */
+export function woodOfLook(size: string, look: WoodLook, length: number, axis: WoodAxis): WoodPiece {
+  const faces = LOOK_FACES[look];
+  return {
+    size,
+    length,
+    shape: shapeOfLook(look),
+    axis,
+    ...(faces ? { hewn: faces * WOOD.hew.perFace } : {}),
+    ...(look === 'peeled' ? { peeled: true as const } : {}),
+  };
+}
+
 /** Images d'un aspect : 4 pour le rond (il roule), 1 pour les autres. */
-export const framesOf = (look: WoodLook) => (look === 'round' ? 4 : 1);
+export const framesOf = (look: WoodLook) => (rollsLook(look) ? 4 : 1);
 
 /** Longueur en pixels (contour compris) d'une pièce de `cm` centimètres. */
 export const lengthPx = (cm: number) => Math.round(cm / CM_PER_PX);
@@ -67,10 +86,41 @@ export function facesOf(piece: Pick<WoodPiece, 'hewn'>): number {
   return Math.min(WOOD.hew.faces, Math.floor((piece.hewn ?? 0) / WOOD.hew.perFace));
 }
 
-/** L'aspect d'une pièce : demi, quart, ou, ronde, selon ses faces dressées (une tous les `perFace` coups de doloire). */
-export function lookOf(piece: Pick<WoodPiece, 'shape' | 'hewn'>): WoodLook {
+/**
+ * L'aspect d'une pièce : demi, quart, ou, ronde, selon ses faces dressées (une tous les `perFace` coups de doloire) ; ronde sans
+ * face dressée et écorcée (`peeled`) : le rondin écorcé.
+ */
+export function lookOf(piece: Pick<WoodPiece, 'shape' | 'hewn' | 'peeled'>): WoodLook {
   if (piece.shape !== 'round') return piece.shape;
-  return (['round', 'f1', 'f2', 'f3', 'beam'] as const)[facesOf(piece)];
+  const look = (['round', 'f1', 'f2', 'f3', 'beam'] as const)[facesOf(piece)];
+  return look === 'round' && piece.peeled ? 'peeled' : look;
+}
+
+/** L'âge d'une pièce de bois (absent : neuve). */
+export const ageOfWood = (piece: Pick<WoodPiece, 'age'>): WoodAge => piece.age ?? 'new';
+
+/** Ce qui suit une pièce de bois quand elle en devient une autre (dressée, portée, en tas, entée) : écorcée, son âge. */
+export function woodTraits(piece: Pick<WoodPiece, 'peeled' | 'age'>): Pick<WoodPiece, 'peeled' | 'age'> {
+  return { ...(piece.peeled ? { peeled: true as const } : {}), ...(piece.age && piece.age !== 'new' ? { age: piece.age } : {}) };
+}
+
+/**
+ * Le nom d'une image ou d'une planche à l'âge `age` : `<clé>` neuve, `<clé>-worn` patinée, `<clé>-old` vieille (les trois tirées au
+ * build de la même grille, art/world/wood.ts `WOOD_AGES`).
+ */
+export function agedKey(key: string, age: WoodAge | undefined): string {
+  return !age || age === 'new' ? key : `${key}-${age}`;
+}
+
+/** Les planches des parties de tout le bois (chaque diamètre : est-ouest, nord-sud, debout s'il se dresse), à l'âge neuf. */
+export function woodSheets(): string[] {
+  return Object.values(WOOD.sizes).flatMap((s) => [s.sheet, `${s.sheet}-ns`, ...(Object.values(s.looks).some((l) => l?.up) ? [`${s.sheet}-up`] : [])]);
+}
+
+/** La planche des parties d'une pièce, dans son sens et à son âge : `<sheet>`, `<sheet>-ns`, `<sheet>-up`, puis `-worn` ou `-old`. */
+export function sheetOf(piece: Pick<WoodPiece, 'size' | 'axis' | 'age'>): string {
+  const { sheet } = sizeOf(piece.size);
+  return agedKey(piece.axis === 'ew' ? sheet : `${sheet}-${piece.axis}`, piece.age);
 }
 
 /**
@@ -214,6 +264,7 @@ export function woodKey(piece: WoodPiece, opts: Pick<ComposeOpts, 'open'> = {}):
     wedge ? `w${wedge.end}${wedge.hits}/${splitHits(piece)}` : '',
     piece.point === 'down' ? 'down' : '',
     opts.open ? 'open' : '',
+    ageOfWood(piece),
   ].join(':');
 }
 

@@ -4,7 +4,7 @@
 
 import { items, props, wood } from '../content';
 import type { BuildRef, ItemDef, JointType, NaturalDef, PropDef, WoodLook, WoodPiece } from '../content/types';
-import { shapeOfLook } from '../world/woodShape';
+import { shapeOfLook, woodOfLook } from '../world/woodShape';
 
 /** Les familles, dans l'ordre du catalogue. */
 export const FAMILIES = ['éléments', 'assemblages', 'bois', 'pierre', 'terre', 'fibres', 'outils', 'mobilier', 'chantier', 'nature', 'divers'] as const;
@@ -22,6 +22,8 @@ export interface CatalogEntry {
   wood?: { size: string; look: WoodLook; up?: true };
   /** Un assemblage (famille « assemblages ») : il se pose sur la jonction de deux pièces, pas comme une pièce. */
   joint?: JointType;
+  /** Un objet de bois (`aged`) : sa vignette a ses trois âges. */
+  aged?: true;
 }
 
 /** La matière d'un objet, d'après sa masse (`{ matter }`, ou `"stone"`). */
@@ -80,10 +82,10 @@ export function catalog(): CatalogEntry[] {
   }
   for (const [key, d] of Object.entries(props)) {
     if (d.wood) continue;
-    out.push({ id: `prop:${key}`, name: d.name, family: propFamily(key, d), ref: { prop: key }, thumb: d.image, ...(d.natural ? { natural: d.natural } : {}) });
+    out.push({ id: `prop:${key}`, name: d.name, family: propFamily(key, d), ref: { prop: key }, thumb: d.image, ...(d.natural ? { natural: d.natural } : {}), ...(d.aged ? { aged: true as const } : {}) });
   }
   for (const [key, d] of Object.entries(items)) {
-    out.push({ id: `item:${key}`, name: d.name, family: itemFamily(key, d), ref: { item: key }, thumb: d.ground ?? d.icon, ...(d.natural ? { natural: d.natural } : {}) });
+    out.push({ id: `item:${key}`, name: d.name, family: itemFamily(key, d), ref: { item: key }, thumb: d.ground ?? d.icon, ...(d.natural ? { natural: d.natural } : {}), ...(d.aged ? { aged: true as const } : {}) });
   }
   return out;
 }
@@ -98,11 +100,10 @@ export function canStand(size: string, look: WoodLook): boolean {
   return !!wood.sizes[size]?.looks[look]?.up && shapeOfLook(look) === 'round';
 }
 
-/** La pièce de bois de ces réglages : son aspect donne sa forme et ses coups de doloire (une face tous les `perFace`). */
+/** La pièce de bois de ces réglages : son aspect donne sa forme, ses coups de doloire (une face tous les `perFace`), son écorce ôtée. */
 export function woodFrom(size: string, length: number, look: WoodLook, axis: 'ew' | 'ns' | 'up'): WoodPiece {
-  const faces = { round: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 }[look];
   const up = axis === 'up' && canStand(size, look);
-  return { size, length, shape: shapeOfLook(look), axis: up ? 'up' : axis === 'up' ? 'ew' : axis, ...(faces ? { hewn: faces * wood.hew.perFace } : {}) };
+  return woodOfLook(size, look, length, up ? 'up' : axis === 'up' ? 'ew' : axis);
 }
 
 /** La vignette d'une pièce de bois de cet aspect : son icône (wood.json). */

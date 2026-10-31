@@ -11,6 +11,7 @@ entre deux poteaux d'une ossature (deux modules par travée de 2,40 m).
   l'ossature) ; sur chaque joint, un couvre-joint (une latte étroite refendue dans une planche) qui empêche
   l'eau d'entrer. Un module se raccorde à son voisin : son bord tombe sur un joint, que le couvre-joint d'un des deux recouvre.
 - Mains : aucune (il se monte planche à planche ; ici, un module).
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Par la matière : `{"matter": "wood", "fill": 0.18}` sur la boîte de ses `dims` (120 × 20 × 312 cm : planches de 3 cm sur toute la

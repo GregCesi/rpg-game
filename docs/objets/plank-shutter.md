@@ -11,6 +11,7 @@ premier objet qui s'ouvre et se ferme.
 - Nature : trois planches fendues debout, deux traverses et une écharpe du côté du dedans, chevillées ; il tourne sur deux gonds
   de bois sur son bord gauche vu du dehors (pas de ferrure, comme la porte).
 - Mains : une (plus tard, quand il se prendra) ; aujourd'hui il se pose en mode construction.
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Par la matière : `{"matter": "wood", "fill": 0.8}` sur la boîte de ses `dims` (60 × 4 × 40 cm), bois vert 900 kg/m³ : **6,9 kg**.

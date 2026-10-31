@@ -6,7 +6,7 @@
 
 import type Phaser from 'phaser';
 import type { WoodPiece } from '../content/types';
-import { composeOps, framesOf, lookDef, lookOf, sizeOf, woodKey, woodSize, type ComposeOpts } from './woodShape';
+import { composeOps, framesOf, lookDef, lookOf, sheetOf, woodKey, woodSize, woodTraits, type ComposeOpts } from './woodShape';
 
 /** Couleur de l'ombre au sol (`x` de la palette `world`) : ôtée de la pièce portée, qui ne touche pas le sol. */
 const SHADOW_RGBA = [0x2b, 0x1a, 0x10, 0x40] as const;
@@ -14,7 +14,7 @@ const SHADOW_RGBA = [0x2b, 0x1a, 0x10, 0x40] as const;
 /** Dessine les opérations d'une pièce dans `ctx`, décalées de `ox` (l'image de roulement `frame`). */
 function paint(scene: Phaser.Scene, ctx: CanvasRenderingContext2D, piece: WoodPiece, ox: number, opts: ComposeOpts): void {
   const { axis } = piece;
-  const src = axis === 'ew' ? sizeOf(piece.size).sheet : `${sizeOf(piece.size).sheet}-${axis}`;
+  const src = sheetOf(piece);
   const { w, h } = woodSize(piece.size, lookOf(piece), axis, piece.length);
   for (const op of composeOps(piece, opts)) {
     if (op.kind === 'clear') {
@@ -58,7 +58,7 @@ export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, opts: Pick<Co
  * longueur, sans son ombre au sol, rognée à son corps (son centre est la prise).
  */
 export function heldWoodTexture(scene: Phaser.Scene, wood: WoodPiece): string {
-  const piece: WoodPiece = { size: wood.size, length: wood.length, shape: wood.shape, axis: 'ew', ...(wood.hewn ? { hewn: wood.hewn } : {}) };
+  const piece: WoodPiece = { size: wood.size, length: wood.length, shape: wood.shape, axis: 'ew', ...(wood.hewn ? { hewn: wood.hewn } : {}), ...woodTraits(wood) };
   const key = `held:${woodKey(piece)}`;
   if (scene.textures.exists(key)) return key;
   const held = lookDef(piece.size, lookOf(piece)).held;

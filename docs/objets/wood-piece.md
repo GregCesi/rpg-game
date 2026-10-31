@@ -14,12 +14,14 @@ du rondin et de la poutre. Le contenu est dans `src/content/wood.json` ; voir CO
   `hewn` (coups de doloire : une face tous les 3, la poutre à 12) ; `axis` (`ew` est-ouest, `ns` nord-sud) ; `notch` (la coupe
   commencée : `at` cm du bout ouest ou nord, `hits`) ; `wedge` (le coin planté : `end`, le bout, `hits`, les coups de masse) ;
   `point` (le quartier seulement : `down`, pointe en bas, un sur deux dans une rangée de tas ; absent, sa position posé : écorce
-  en bas, pointe en l'air). Le `face` d'avant (le côté de la face debout) a disparu le 31 octobre 2026 (sauvegarde 15).
+  en bas, pointe en l'air) ; `peeled` (le rond écorcé : l'aspect `peeled`, le rondin écorcé de la cabane) ; `age` (neuf par défaut,
+  `worn` patiné, `old` vieux : la teinte de son bois mis à nu, ses faces et son bois de bout ; l'écorce garde son brun ; CONCEPTION
+  « L'âge du bois »). Le `face` d'avant (le côté de la face debout) a disparu le 31 octobre 2026 (sauvegarde 15).
 - Section (wood.json, `section` de chaque aspect, « Les pièces fendues » de CONCEPTION) : la forme vue par le bout (rond, demi-rond,
   quart de rond, rectangle ; les faces dressées en `flats`), où est l'écorce, où est le cœur, sur quoi la pièce repose. Toutes ses
   vues couchées se calculent de là.
-- Nom affiché, selon le diamètre et l'aspect (wood.json, `looks`) : bille, demi-bille, quartier, planche (le gros) ; rondin, poutre (le
-  normal) ; perche. Genre du nom pour les messages : « elle » (bille, demi-bille, poutre), « il » (quartier, rondin).
+- Nom affiché, selon le diamètre et l'aspect (wood.json, `looks`) : bille, demi-bille, quartier, planche (le gros) ; rondin, rondin
+  écorcé, poutre (le normal) ; perche. Genre du nom pour les messages : « elle » (bille, demi-bille, poutre), « il » (quartier, rondin).
 - Nature : objet du monde (`props.json`), qui se prend quand il n'est pas trop lourd. Sa définition complète (dimensions,
   collision, prise, roulement, pivot, tas) se tire de ses réglages : `src/world/woodPiece.ts`.
 - Mains : deux (couchée ; debout, aucune : voir *Debout*).

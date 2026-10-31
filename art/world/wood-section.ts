@@ -348,7 +348,20 @@ export function lyingView(size: string, look: WoodLook, axis: 'ew' | 'ns', total
     const edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !at(X + dx, Y + dy));
     if (edge && nearestEdge(g, h.P) === -1) c.set(X, Y, endTone(g, skin, h, axis, k, rings, true));
   }
-  despeckle(c, 'KYTtNdSAB');
+  // le rond écorcé (pas d'écorce pour cercler son bout) : l'arête entre le bois de bout et le corps, un cran plus sombre, pour que le
+  // bout se détache du cylindre de même bois
+  if (!g.bark && g.round) {
+    const DARK: Record<string, string> = { '^': '%', '*': '%', '%': '&', '&': '&' };
+    const edge: [number, number][] = [];
+    for (const [key, h] of hits) {
+      if (h.role !== 'e') continue;
+      const [X, Y] = key.split(',').map(Number);
+      if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(X + dx, Y + dy)?.role === 'b')) edge.push([X, Y]);
+    }
+    for (const [X, Y] of edge) c.set(X, Y, DARK[c.get(X, Y)] ?? c.get(X, Y));
+  }
+  // le bois travaillé (^ * %), l'écorce (N, la perche S A B) et le contour gardent leurs pixels seuls ; le creux & et les sillons non
+  despeckle(c, 'K^*%NSAB');
   shadedOutline(c);
   if (axis === 'ew') {
     const S = def.ew.body.bottom;
@@ -375,7 +388,7 @@ function endTone(g: SectionGeom, skin: Skin, h: Hit, axis: 'ew' | 'ns', k: numbe
     const r = Math.hypot(u, v);
     let d = Math.atan2(v, u) - th;
     d = Math.atan2(Math.sin(d), Math.cos(d));
-    if (r >= 0.3 && r <= 0.95 && Math.abs(d) < 0.3) return 'T';
+    if (r >= 0.3 && r <= 0.95 && Math.abs(d) < 0.3) return '%';
   }
   return skin.end(u, v, false, rings);
 }
@@ -389,6 +402,8 @@ function paint(g: SectionGeom, skin: Skin, h: Hit, across: { i: number; count: n
     const phi = axis === 'ew' ? Math.atan2(N[1], -N[0]) : Math.atan2(N[1], N[0]);
     const ring = Math.floor(((((phi / (2 * Math.PI)) % 1) + 1) % 1) * skin.ringSize);
     const s = Math.min(0.999, Math.max(0, (1 - h.light) / 2));
+    // le rond écorcé (`bark: 'none'`) : le même anneau, en bois mis à nu
+    if (!g.bark) return skin.peeled(Math.floor(h.along), ring, s, k);
     return skin.bark(Math.floor(h.along), ring, s, k);
   }
   const kind = g.planes[h.out].kind;

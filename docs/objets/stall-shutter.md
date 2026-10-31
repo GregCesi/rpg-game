@@ -10,6 +10,7 @@ le haut de la face de l'étal au-dessus du devant bas ; rabattu vers la rue, il 
 - Nature : des planches fendues debout, jointives, deux traverses au dedans, chevillées ; il tourne sur deux gros gonds de bois pris
   dans le rebord du devant ; un loquet de bois le tient fermé.
 - Mains : deux (plus tard) ; il se pose en mode construction.
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Par la matière : `{"matter": "wood", "fill": 0.8}` sur 160 × 4 × 90 cm (fermé) ou 160 × 90 × 4 (rabattu, la même boîte tournée),

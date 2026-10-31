@@ -9,6 +9,7 @@ pour faire entrer une charrette.
 - Nature : deux battants de 1,20 m, chacun de planches fendues debout tenues par deux traverses et une écharpe en Z, chevillées ; ils
   tournent sur de gros pivots de bois pris dans le seuil et la sablière ; une barre de fermeture en travers, côté dedans.
 - Mains : aucune (elle se monte sur place).
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Par la matière : `{"matter": "wood", "fill": 0.165}` sur la boîte de ses `dims` (240 × 20 × 312 cm), bois vert 900 kg/m³ : **222 kg**

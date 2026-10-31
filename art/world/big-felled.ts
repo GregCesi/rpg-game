@@ -129,7 +129,7 @@ export function fallFrame(p: Pose, shadows: [number, number, number, number][], 
   const c = new Canvas(FALL_W, h);
   c.stamp(stumpBody().toGrid(), STUMP_AT[0] + off, STUMP_AT[1] + dy);
   drawFalling(c, p, f);
-  despeckle(c, 'KY');
+  despeckle(c, 'K^');
   shadedOutline(c);
   for (const [x, y, rx, ry] of shadows) groundShadow(c, x, y + dy, rx, ry);
   return c;

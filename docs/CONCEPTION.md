@@ -415,7 +415,8 @@ uniquement avec les pièces du catalogue, puis à l'enregistrer comme plan.** Un
 Grégoire.
 
 - **La cabane de bûcheron** (`npm run test:cabane`, plan `src/content/plans/cabane.json`, aperçu `.art-preview/cabane.png`) : 3,40 ×
-  4 m au sol entre les faces des murs ; quatre dalles aux angles ; cinq assises de rondins du normal (30 cm de bois), est-ouest puis
+  4 m au sol entre les faces des murs ; quatre dalles aux angles ; cinq assises de rondins du normal (30 cm de bois ; écorcés et le
+  bois patiné depuis « L'âge du bois »), est-ouest puis
   nord-sud, croisés aux angles par une **encoche** ([fiche](objets/notch-joint.md)), 20 cm de dépassement, puis une sixième
   assise est-ouest (le linteau) ; une porte d'un mètre au sud (les rondins des cinq premières assises recoupés de part et d'autre :
   des pièces de bois de 1,40 m) et la **porte en planches** ([fiche](objets/plank-door.md)) ; une fenêtre de 60 cm à l'est (le
@@ -449,7 +450,8 @@ Grégoire.
 Même règle que la cabane : chaque bâtiment est bâti par un scénario dans le mode construction, avec les seules pièces du catalogue, et
 enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche, vues, masse, origine, métier, dessin du pixel-artist).
 
-- **La grange** (`npm run test:grange`, plan `src/content/plans/grange.json`, aperçu `.art-preview/grange.png`) : 8,80 × 6 m,
+- **La grange** (`npm run test:grange`, plan `src/content/plans/grange.json`, aperçu `.art-preview/grange.png` ; le bois vieux, gris,
+  depuis « L'âge du bois ») : 8,80 × 6 m,
   faîtage est-ouest. Dix dalles, dix poteaux (poutres du normal de 3 m dressées : quatre au nord, quatre au sud, un au milieu de chaque
   mur de bout ; travées de 2,40 m, celle du milieu du mur sud pour la porte) ; les sablières des quatre murs sur la tête des poteaux
   (tenon et mortaise), **entées en trait de Jupiter** (un arbre normal ne donne que 5,80 m : 3 m + 5,80 m sur les longs murs, 3 + 3 m
@@ -463,12 +465,13 @@ enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche
   par le pixel-artist dans `art/world/barn.ts` ; le pan de toit, en grand, par les fonctions du pan de la cabane sorties dans
   `art/lib/plank-roof.ts`, la cabane inchangée au pixel près). **Ce qui existait** : les poutres (dressées, couchées), les dalles,
   l'enture, le tenon et mortaise, le mi-bois.
-- **Choix faits sans Grégoire** : le bardage en brun vieilli (en bois frais, il se confondait avec les poteaux équarris) ; les pans de
+- **Choix faits sans Grégoire** : le bardage en brun vieilli (en bois frais, il se confondait avec les poteaux équarris : **retiré** par
+  « L'âge du bois », ci-dessous, une seule teinte par âge pour toutes les pièces) ; les pans de
   bardage ont 20 cm d'épaisseur (lisses comprises), contre la face du dehors des poteaux : l'aimant des bords décalait un pan mince de
   10 cm d'un pan à l'autre ; l'entrait posé à mi-bois sur la sablière (un entrait sur la sablière haussait le pan nord, qui se pose sur
   le plus haut dessus de sa rive) ; une sablière de bout au ras du dedans des poteaux à l'est (au ras du dehors, elle s'aimantait au
   bord des dalles, qui débordent de 5 cm, et passait sous le bardage).
-- **L'étal de la place** (`npm run test:etal`, plan `src/content/plans/etal.json`, aperçu `.art-preview/etal.png`) : 2,40 × 1,60 m,
+- **L'étal de la place** (`npm run test:etal`, plan `src/content/plans/etal.json`, aperçu `.art-preview/etal.png` ; le bois patiné) : 2,40 × 1,60 m,
   la face des clients au sud ; quatre dalles, quatre poteaux (poutres de 2,40 m derrière, 1,80 m devant), une sablière sur chaque rang
   (tenon et mortaise) ; un [fond, deux côtés et un devant bas](objets/stall-panels.md) en bardage (le même que la grange, sorti dans
   `art/lib/board-wall.ts`) ; le [volet d'étal](objets/stall-shutter.md) posé fermé sur le rebord du devant (1 m), qui **se rabat en
@@ -498,6 +501,41 @@ enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche
 - **Le moteur, appris en route** : la visée prend le plus haut dessus qui se tient sous l'emprise ; viser une pièce près d'une pièce
   plus haute (un poteau au nord d'un poteau dressé, un pan sous une sablière) peut la poser dessus : le scénario pose du nord au sud,
   vise 4 cm au nord du milieu, et pose le bardage avant les poinçons et les pignons.
+
+### L'âge du bois (décidé le 31 octobre 2026, chantier « âge du bois »)
+
+Grégoire : « Pourquoi les poutres sont hyper claires mais le bois autour est beaucoup plus foncé ? » Chaque pièce avait sa teinte :
+les poutres en bois fraîchement taillé jaune clair, le bardage en « brun vieilli » pour qu'on le distingue, la porte jaune vif, les
+pans de toit gris. Un même bâtiment mélangeait du bois neuf et du bois de vingt ans.
+
+- **Une seule matière bois, un réglage d'âge** partagé par toutes les pièces de bois travaillé : **neuf** (blond chaud), **patiné**
+  (brun doux), **vieux** (gris argenté). Une rampe par âge dans la palette (`woodAges`, `art/palette.ts`), sur les mêmes signes : le
+  bois travaillé se dessine avec eux, et une image à un autre âge est **la même grille** peinte de la rampe de cet âge
+  (`art/world/wood.ts`, `WOOD_AGES` ; `art/lib/ages.ts` tire au build `<image>-worn` et `<image>-old` de chaque image neuve).
+- **Ce qui distingue les pièces entre elles, c'est la forme et la texture** (fil du bois, joints, couvre-joints, ombres, contours),
+  **jamais la teinte**. La teinte propre au bardage est retirée.
+- **Ce qui prend l'âge** : la pièce de bois (poutre, rondin, rondin écorcé, planche, poteau… : `age` de ses réglages, gardé par
+  GameState comme les autres), et les objets de bois marqués `aged` dans props.json et items.json (porte, volet, pignons, bardage,
+  pans de toit, auvent, étal, l'abri à bois, le bardeau, la cheville), et les marques d'assemblage. Seul le bois mis à nu vieillit :
+  **l'écorce** des rondins non écorcés garde son brun (M m N K), harmonisé avec les rampes. Un objet de bois qui ne prend pas l'âge
+  est du bois brut (`RAW_WOOD` de validate.ts, avec sa raison : la baguette de clayonnage verte).
+- **Le rondin écorcé** : un état du rondin (`peeled` des réglages, l'aspect `peeled` du normal dans wood.json, section sans écorce),
+  pas une nouvelle clé : rond, il roule, se dresse, s'encoche comme le rond ; ses vues se calculent de sa section. Il fait la cabane.
+- **Mode construction** : l'âge se règle dans le catalogue (« âge du bois » ; les vignettes des objets de bois le montrent) ; toute
+  pièce posée qui le prend le reçoit. **Un plan fixe l'âge de toutes ses pièces** (`age` du plan : « Enregistrer comme plan » l'écrit
+  quand tout son bois a le même âge, et ses pièces ne le répètent pas ; il l'emporte à la pose). Deux pièces d'âges différents ne
+  s'entent pas (entées, elles ne font plus qu'une).
+- **Les bâtiments** : la cabane patinée, en rondins écorcés (`plans/cabane.json`) ; la grange vieille, grise (`plans/grange.json`) ;
+  l'étal patiné (`plans/etal.json`). Aperçu : `.art-preview/bois-ages.png`, chaque pièce de bois dans les trois âges, côte à côte.
+- **Vérification** : validate.ts refuse un objet de bois (matière bois) qui n'est pas `aged` (hors RAW_WOOD), et toute image d'un
+  objet `aged`, toute planche de la pièce de bois, qui n'a pas ses trois âges.
+- **À venir : le vieillissement avec le temps**, quand l'horloge existera : une pièce posée au monde passera de neuve à patinée puis
+  à vieille (pluie et soleil), sans changer de dessin, en changeant son `age`. En attendant, le bois du jeu (abattu, coupé, fendu,
+  équarri) naît neuf, et seuls le mode construction et ses plans règlent l'âge.
+- **Choix faits sans Grégoire** (à revoir) : l'âge ne change que l'image posée, pas celle qu'on tient (les vues portées et les
+  icônes restent neuves) ; le bois des arbres (souches, troncs couchés, entailles) prend la rampe du neuf ; le meuble et l'outil (table,
+  coffre, manches) gardent leurs teintes : ils ne sont pas des pièces de bâtiment ; l'abri à bois du chantier guidé prend l'âge au
+  catalogue, mais son chantier en jeu le pose neuf ; écorcer un rondin en jeu (la plane) viendra avec son geste.
 
 ## Poids et force (décidé le 30 octobre 2026)
 

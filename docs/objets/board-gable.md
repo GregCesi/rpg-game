@@ -9,6 +9,7 @@ sous les deux pans du toit ; il porte le bout du faîtage.
 - Nature : le même bardage que les murs (`board-wall` : planches fendues debout, couvre-joints), coupé suivant les deux rampants,
   chevillé sur la sablière et sur les lisses du dedans.
 - Mains : aucune.
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Par la matière : `{"matter": "wood", "fill": 0.09}` sur la boîte de ses `dims` (520 × 20 × 220 cm : un pentagone de bardage et ses

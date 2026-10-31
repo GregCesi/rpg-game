@@ -6,6 +6,7 @@
   "hew": {"tool": "broadaxe", "perFace": 3, "faces": 4, "beam": 20},
   "split": {"wedge": "splitting-wedge", "maul": "maul", "hits": 3},
   "plank": {"thick": 3, "wide": 25},
+  "ages": {"new": "neuf", "worn": "patiné", "old": "vieux"},
   "sizes": {
     "big": {
       "name": "gros", "diameter": 55, "sheet": "wood-big", "tile": 24,
@@ -48,6 +49,9 @@
       "looks": {
         "round": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-round",
           "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "bark"},
+          "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 10, "extra": 2, "back": 0, "start": 5, "end": 8, "bottom": 2}, "up": {"name": "poteau", "w": 8, "extra": 4, "start": 7, "end": 4, "lift": 3, "body": {"w": 4, "h": 4}}},
+        "peeled": {"name": "rondin écorcé", "gender": "m", "icon": "item-wood-normal-peeled", "held": "held-wood-normal-peeled",
+          "section": {"shape": "round", "bark": "none", "heart": "center", "rests": "bark"},
           "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 10, "extra": 2, "back": 0, "start": 5, "end": 8, "bottom": 2}, "up": {"name": "poteau", "w": 8, "extra": 4, "start": 7, "end": 4, "lift": 3, "body": {"w": 4, "h": 4}}},
         "f1": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-f1",
           "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "bark", "flats": ["top"], "faces": "hewn"},

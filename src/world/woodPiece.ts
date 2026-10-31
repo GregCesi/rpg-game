@@ -5,7 +5,7 @@
 import { props as propDefs } from '../content';
 import { CM_PER_PX, CONTOUR_CM } from '../content/gabarit';
 import type { PropDef, WoodPiece } from '../content/types';
-import { facesOf, lookDef, lookOf, sizeOf, upOf, woodBody, WOOD } from './woodShape';
+import { facesOf, lookDef, lookOf, rollsLook, sizeOf, upOf, woodBody, woodTraits, WOOD } from './woodShape';
 
 /** La clé de la pièce de bois dans props.json. */
 export const WOOD_PIECE = 'wood-piece';
@@ -38,7 +38,7 @@ export function woodDims(piece: WoodPiece): PropDef['dims'] {
   const across = piece.shape === 'plank' ? WOOD.plank.wide : piece.shape === 'quarter' ? d / Math.SQRT2 : look === 'beam' ? WOOD.hew.beam : d;
   const high = piece.shape === 'plank' ? WOOD.plank.thick : piece.shape === 'round' ? (look === 'beam' ? WOOD.hew.beam : d) : d / 2;
   const [w, dd] = piece.axis === 'ew' ? [piece.length, across + CONTOUR_CM] : [across + CONTOUR_CM, piece.length];
-  if (look === 'round') return { w, d: dd, h: d + CONTOUR_CM, shape: 'cylinder', axis: piece.axis };
+  if (rollsLook(look)) return { w, d: dd, h: d + CONTOUR_CM, shape: 'cylinder', axis: piece.axis };
   return { w, d: dd, h: Math.round(high + CONTOUR_CM), shape: 'box' };
 }
 
@@ -74,7 +74,7 @@ export function woodDef(base: PropDef, piece: WoodPiece): PropDef {
     body: woodBody(piece.size, look, piece.axis, piece.length),
     bodies: undefined,
     take: { hands: 2, icon: l.icon, hold: { stance: 'carry', image: l.held } },
-    ...(look === 'round' ? { roll: { axis: piece.axis, sheet: sizeOf(piece.size).sheet } } : { roll: undefined }),
+    ...(rollsLook(look) ? { roll: { axis: piece.axis, sheet: sizeOf(piece.size).sheet } } : { roll: undefined }),
     turn: { into: WOOD_PIECE },
     wood: piece,
   };
@@ -103,5 +103,5 @@ export function capitalName(piece: WoodPiece): string {
  * ni coin, ni face de quartier. C'est ce qu'un chantier garde de la poutre posée et ce qu'il dessine.
  */
 export function uprightOf(piece: WoodPiece): WoodPiece {
-  return { size: piece.size, length: piece.length, shape: 'round', ...(piece.hewn ? { hewn: piece.hewn } : {}), axis: 'up' };
+  return { size: piece.size, length: piece.length, shape: 'round', ...(piece.hewn ? { hewn: piece.hewn } : {}), ...woodTraits(piece), axis: 'up' };
 }

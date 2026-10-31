@@ -217,10 +217,19 @@ export const TurnSchema = z.strictObject({ into: id });
 export const EndSchema = z.enum(['west', 'east', 'north', 'south']);
 
 /**
- * Aspect d'une pièce de bois, ce que montre son dessin : ronde (`round`), demi (`half`), quart (`quarter`), une à trois faces
- * dressées à la doloire (`f1`, `f2`, `f3`), équarrie (`beam`, la poutre). L'aspect se déduit des réglages (forme, coups de doloire).
+ * Aspect d'une pièce de bois, ce que montre son dessin : ronde (`round`), ronde écorcée (`peeled`, le rondin de la cabane), demi
+ * (`half`), quart (`quarter`), une à trois faces dressées à la doloire (`f1`, `f2`, `f3`), équarrie (`beam`, la poutre). L'aspect se
+ * déduit des réglages (forme, écorcée, coups de doloire).
  */
-export const WoodLookSchema = z.enum(['round', 'half', 'quarter', 'f1', 'f2', 'f3', 'beam', 'plank']);
+export const WoodLookSchema = z.enum(['round', 'peeled', 'half', 'quarter', 'f1', 'f2', 'f3', 'beam', 'plank']);
+
+/**
+ * L'âge du bois travaillé (docs/CONCEPTION.md, « L'âge du bois ») : neuf (`new`, blond chaud), patiné (`worn`, brun doux), vieux
+ * (`old`, gris argenté). Un réglage partagé par toutes les pièces de bois (la pièce de bois, `wood.age` ; un objet de bois de
+ * props.json ou items.json marqué `aged`, `age` de la pièce posée), jamais une teinte propre à une pièce : une rampe par âge dans
+ * art/palette.ts, la même pour toutes. Absent : neuf. Le vieillissement avec le temps viendra avec l'horloge.
+ */
+export const WoodAgeSchema = z.enum(['new', 'worn', 'old']);
 
 /**
  * Une pièce de bois (la seule sorte d'objet de bois du monde, `wood-piece` de props.json), décrite par ses réglages et non par
@@ -249,6 +258,10 @@ export const WoodPieceSchema = z.strictObject({
    * s'emboîtent en triangles. Absent : la position d'un quartier posé, écorce en bas, pointe (l'angle du cœur) en l'air.
    */
   point: z.literal('down').optional(),
+  /** Ronde et écorcée (le rondin de la cabane) : l'aspect `peeled` de son diamètre ; sans effet sur une pièce fendue ou dressée. */
+  peeled: z.literal(true).optional(),
+  /** Son âge (WoodAgeSchema) : la teinte de son bois travaillé (faces, bois de bout) ; l'écorce garde son brun. Absent : neuve. */
+  age: z.lazy(() => WoodAgeSchema).optional(),
 });
 
 /**
@@ -260,6 +273,8 @@ export const PileWoodSchema = z.strictObject({
   shape: z.lazy(() => WoodShapeSchema),
   length: z.number().int().positive(),
   hewn: z.number().int().positive().optional(),
+  peeled: z.literal(true).optional(),
+  age: z.lazy(() => WoodAgeSchema).optional(),
 });
 
 /** Géométrie des parties d'un aspect, dans le sens est-ouest : voir WoodSizeSchema. */
@@ -381,6 +396,8 @@ export const WoodSchema = z.strictObject({
   /** La planche fendue : son épaisseur et sa largeur de bois (cm), quel que soit le diamètre d'où elle vient. */
   plank: z.strictObject({ thick: z.number().positive(), wide: z.number().positive() }),
   split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive() }),
+  /** Les âges du bois travaillé et leur nom affiché (WoodAgeSchema : tous, dans l'ordre), pour le catalogue et les messages. */
+  ages: z.strictObject({ new: id, worn: id, old: id }),
   sizes: z.record(id, WoodSizeSchema),
 });
 
@@ -436,6 +453,8 @@ export const ItemDefSchema = z.strictObject({
   natural: z.lazy(() => NaturalDefSchema).optional(),
   /** Le métier qui le fait et le vendrait au village, voir TradeSchema. */
   trade: z.lazy(() => TradeSchema).optional(),
+  /** Bois travaillé (le bardeau, la cheville) : il prend l'âge du bois, voir `aged` de PropDefSchema (ses images au sol). */
+  aged: z.literal(true).optional(),
 });
 
 /**
@@ -518,6 +537,13 @@ export const PropDefSchema = z.strictObject({
   natural: z.lazy(() => NaturalDefSchema).optional(),
   /** Le métier qui le fait et le vendrait au village, voir TradeSchema. */
   trade: z.lazy(() => TradeSchema).optional(),
+  /**
+   * Bois travaillé (porte, volet, pignon, bardage, pan de toit, étal…) : il prend l'âge du bois (WoodAgeSchema). Chacune de ses
+   * images (vues, tirages, formes) a ses trois âges : `<image>` neuf, `<image>-worn` patiné, `<image>-old` vieux, tirées au build de
+   * la même grille par la rampe de l'âge (art/world/wood.ts, `WOOD_AGES`) ; validate.ts le vérifie, et refuse un objet de bois
+   * qui ne le serait pas.
+   */
+  aged: z.literal(true).optional(),
   /**
    * Quantité mesurée (le rouleau de corde) : une longueur, en centimètres, gardée par GameState (`length` de ce qu'on
    * tient, d'un objet né ou changé). `start` : la longueur d'un objet neuf (posé dans Tiled) ; `cut` : ce qu'enlève une
@@ -667,6 +693,8 @@ export const BuildPlacedSchema = z.strictObject({
   view: z.number().int().min(0).max(3).default(0),
   natural: z.lazy(() => NaturalSchema).optional(),
   variant: z.number().int().nonnegative().optional(),
+  /** L'âge d'un objet de bois (`aged` de props.json ou items.json) ; la pièce de bois garde le sien dans `wood.age`. Absent : neuf. */
+  age: z.lazy(() => WoodAgeSchema).optional(),
 });
 
 /**
@@ -693,6 +721,11 @@ export const BuildPlanSchema = z.strictObject({
   pieces: z.array(BuildPlacedSchema).min(1),
   /** Ses assemblages, entre ses pièces. */
   joints: z.array(PlanJointSchema).optional(),
+  /**
+   * L'âge de toutes ses pièces de bois (pièces de bois et objets `aged`), qui l'emporte sur le leur à la pose : un bâtiment d'un
+   * seul âge. Absent : chaque pièce garde le sien.
+   */
+  age: z.lazy(() => WoodAgeSchema).optional(),
 });
 
 /**
@@ -1062,6 +1095,7 @@ export type MapData = z.infer<typeof MapSchema>;
 export type End = z.infer<typeof EndSchema>;
 export type WoodLook = z.infer<typeof WoodLookSchema>;
 export type WoodPiece = z.infer<typeof WoodPieceSchema>;
+export type WoodAge = z.infer<typeof WoodAgeSchema>;
 export type PileWood = z.infer<typeof PileWoodSchema>;
 export type WoodLookDef = z.infer<typeof WoodLookDefSchema>;
 export type WoodSize = z.infer<typeof WoodSizeSchema>;

@@ -1,7 +1,7 @@
 // Événements échangés entre scènes sur le bus du jeu (this.game.events).
 // Un événement = une constante ici, jamais une chaîne tapée à la main : une faute de frappe devient une erreur de compilation.
 // À l'intérieur d'une scène, pas d'événements : la scène appelle ses systèmes directement, c'est plus facile à suivre.
-import type { BuildRef, JointType, PileWood, WoodPiece } from './content/types';
+import type { BuildRef, JointType, PileWood, WoodAge, WoodPiece } from './content/types';
 import type { Area } from './world/build';
 import type { Held } from './state';
 
@@ -28,6 +28,7 @@ export const GameEvent = {
  * Ce que demande le catalogue du mode construction (src/build/panel.ts) : entrer ou sortir (`toggle`), prendre une pièce
  * (`pick` : ce qu'elle est, son sens, et pour une matière naturelle sa forme et sa taille, au hasard si absentes), prendre un plan
  * du bac à sable (`pick-plan`), prendre un assemblage (`pick-joint` : on le pose sur la jonction de deux pièces), choisir une zone à la souris (`select`), n'avoir rien en main (`none` : le clic droit retire encore),
+ * régler l'âge du bois des pièces qu'on pose (`age` : la pièce de bois et les objets de bois `aged` le prennent ; un plan qui fixe le sien l'emporte),
  * enregistrer la zone choisie comme plan (`save-plan` : son nom affiché), annuler, refaire.
  */
 export type BuildCommand =
@@ -37,6 +38,7 @@ export type BuildCommand =
   | { kind: 'pick-joint'; joint: JointType }
   | { kind: 'select' }
   | { kind: 'none' }
+  | { kind: 'age'; age: WoodAge }
   | { kind: 'save-plan'; name: string }
   | { kind: 'undo' }
   | { kind: 'redo' };
@@ -45,6 +47,8 @@ export type BuildCommand =
 export interface BuildStatus {
   active: boolean;
   tool: string;
+  /** L'âge du bois des pièces qu'on pose. */
+  age: WoodAge;
   step: number;
   selection?: Area;
   count: number;

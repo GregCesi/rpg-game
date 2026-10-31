@@ -5,7 +5,7 @@ import type { Facing } from '../content/types';
 import type { Player } from '../entities/Player';
 import { changeObject, changeSpawned, game } from '../state';
 import { stateOf, type GameMap, type PlacedProp } from '../world/GameMap';
-import { lookOf } from '../world/woodShape';
+import { lookOf, rollsLook } from '../world/woodShape';
 import { EXHAUSTED } from './effort';
 
 /** Écart (px) sous lequel Xéros touche une bille, et recouvrement minimal (px) le long d'elle pour la pousser. */
@@ -95,8 +95,8 @@ export class RollSystem {
     const m = p.def.gender === 'm';
     const look = p.wood ? lookOf(p.wood) : 'round';
     if (look === 'beam') return 'Elle ne roule pas : elle est carrée.';
-    if (look !== 'round' && p.wood?.shape === 'round') return m ? 'Il ne roule plus : une face est dressée.' : 'Elle ne roule plus : une face est dressée.';
-    if (look !== 'round') return m ? 'Il ne roule pas : il est à plat.' : 'Elle ne roule pas : elle est à plat.';
+    if (!rollsLook(look) && p.wood?.shape === 'round') return m ? 'Il ne roule plus : une face est dressée.' : 'Elle ne roule plus : une face est dressée.';
+    if (!rollsLook(look)) return m ? 'Il ne roule pas : il est à plat.' : 'Elle ne roule pas : elle est à plat.';
     if (p.wood?.notch) return "Finis d'abord la coupe.";
     if (p.wood?.wedge) return 'Le coin est planté : finis de la fendre.';
     const across = p.def.roll!.axis === 'ew' ? dir === 'up' || dir === 'down' : dir === 'left' || dir === 'right';

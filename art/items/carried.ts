@@ -161,8 +161,9 @@ const heldBranch = (): SpriteSheetSource =>
 // - De profil (`right`), en long : la pièce couchée est-ouest, sans ombre, ici pour 1 m (20 px contour compris), le
 //   milieu sur la prise ; le jeu la remplace par la pièce assemblée à sa vraie longueur. Le bout éclairé (la face de
 //   coupe) est à gauche, contre Xéros.
-// Matière commune (art/world/wood.ts) : écorce M m N K éclairée en haut à gauche, sillons en long, bois de bout Y t T ;
-// bois de fente (demi, quart) et faces dressées en Y t T, fibres en long. Contour : K ou N côté lumière, o côté ombre.
+// Matière commune (art/world/wood.ts) : écorce M m N K éclairée en haut à gauche, sillons en long ; le bois mis à nu (bois de
+// bout, bois de fente, faces dressées, rondin écorcé) dans la rampe du bois travaillé (^ * % &, art/palette.ts `woodAges`, ici
+// neuve), fibres en long. Contour : K côté lumière, o côté ombre.
 // Ces dessins ne dépendent pas des planches au sol (art/world/wood-pieces.ts) : ils reprennent la matière de wood.ts et
 // les tracés de l'ancienne bille portée, de la demi-bille et du quartier (split.ts), du rondin et de la poutre (timber.ts).
 
@@ -192,13 +193,13 @@ function onGrip(g: Grid, gripRow = Math.floor(g.length / 2)): Grid {
  */
 function splitWood(along: number, across: number): string {
   const a = Math.floor(along);
-  if (across === 0) return 'Y';
+  if (across === 0) return '^';
   const lanes: [number, number, number][] = [[9, 5, 2], [13, 4, 8], [11, 6, 5], [12, 3, 0], [10, 5, 7]];
   const [p, n, ph] = lanes[across % lanes.length];
   const pos = mod(a + ph, p);
-  if (across % 2 === 1 && pos < n) return 'Y';
-  if (across % 2 === 0 && pos === Math.floor(p / 2)) return 'T';
-  return 't';
+  if (across % 2 === 1 && pos < n) return '^';
+  if (across % 2 === 0 && pos === Math.floor(p / 2)) return '%';
+  return '*';
 }
 
 // ----- Gros bois (55 cm) -----
@@ -206,7 +207,7 @@ function splitWood(along: number, across: number): string {
 /** Rond, par le bout : la bille nord-sud raccourcie, face de coupe de 11 × 9 sous les mains (l'ancienne vue de profil). */
 function bigRoundEnd(): Grid {
   const c = logByTheEnd(new Canvas(WOOD_SIZE, WOOD_SIZE), WC + 0.5, WC - 2.5, WC + 2.5, 5.5, 4.5);
-  return outline(c, darkest({ M: 'K', m: 'K', N: 'K', K: 'K', Y: 'N', t: 'N', T: 'N' }, 'o')).toGrid();
+  return outline(c, darkest({ M: 'K', m: 'K', N: 'K', K: 'K', '^': 'K', '*': 'K', '%': 'K' }, 'o')).toGrid();
 }
 
 /** Rond, en long : 18 px d'écorce entre deux contours, 11 de diamètre, la face de coupe à gauche, l'écorce enroulée à droite. */
@@ -216,7 +217,7 @@ function bigRoundLong(): Grid {
   for (let Y = 1; Y <= DIAMETER; Y++) for (let X = 1; X <= len; X++) c.set(X, Y, bark(X + 30, (Y - 1 + 0.5) / DIAMETER));
   logEnd(c, 1, 'left', 1 + DIAMETER / 2, true);
   logEnd(c, len + 1, 'right', 1 + DIAMETER / 2, false);
-  despeckle(c, 'KYTtN');
+  despeckle(c, 'K^%*N');
   return onGrip(trim(shadedOutline(c).toGrid()));
 }
 
@@ -253,7 +254,7 @@ function bigFlatLong(top: number, bottom: number, endA: number): Grid {
     while (X > 0 && c.get(X, Y) === EMPTY) X--;
     if (X > 0) c.set(X, Y, DARKER[c.get(X, Y)] ?? c.get(X, Y));
   }
-  despeckle(c, 'KYTtNM');
+  despeckle(c, 'K^%*NM');
   return onGrip(trim(shadedOutline(c).toGrid()));
 }
 
@@ -277,11 +278,11 @@ function bigFlatEnd(x1: number, y1: number, endH: number): Grid {
       if (!inside(X, Y)) continue;
       const rim = !inside(X, Y + 1) || !inside(X - 1, Y) || !inside(X + 1, Y);
       let k = faceTone((X + 0.5 - cx) / rx, (Y + 0.5 - cy) / ry, rim, false, true);
-      if (Y === Math.floor(cy)) k = ({ Y: 't', t: 'T' } as Record<string, string>)[k] ?? k;
+      if (Y === Math.floor(cy)) k = ({ '^': '*', '*': '%' } as Record<string, string>)[k] ?? k;
       c.set(X, Y, k);
     }
   }
-  despeckle(c, 'KYTtNM');
+  despeckle(c, 'K^%*NM');
   const g = trim(shadedOutline(c).toGrid());
   // la prise sur l'arête entre le dessus et la face (rangée y1 + 1 de la pièce, contour du haut compris)
   return onGrip(g, y1 + 1);
@@ -318,7 +319,7 @@ type NormalLook = 'round' | 'f1' | 'f2' | 'f3' | 'beam';
 const GRAIN: Record<string, [number, number][]> = { a: [[3, 4], [16, 3]], b: [[10, 4], [21, 3]], c: [[6, 3], [18, 4]] };
 function grain(along: number, lane: keyof typeof GRAIN, base: string): string {
   const a = mod(along, 24);
-  return GRAIN[lane].some(([s, n]) => mod(a - s, 24) < n) ? ({ Y: 't', t: 'T', T: 'T' } as Record<string, string>)[base] : base;
+  return GRAIN[lane].some(([s, n]) => mod(a - s, 24) < n) ? ({ '^': '*', '*': '%', '%': '%' } as Record<string, string>)[base] : base;
 }
 
 /** Écorce du rondin (6 px), `v` de 0 (côté lumière) à 5. */
@@ -327,7 +328,7 @@ const normalBark = (along: number, v: number) => bark(along, (v + 0.5) / NORMAL_
 /** Par le bout, rond : la bille nord-sud raccourcie, face de coupe de 6 × 5 sous les mains (l'ancienne vue de profil). */
 function normalRoundEnd(): Grid {
   const c = logByTheEnd(new Canvas(WOOD_SIZE, WOOD_SIZE), WC, WC - 2.5, WC + 2.5, 3, 2.5, NORMAL_WOOD);
-  return outline(c, darkest({ M: 'K', m: 'K', N: 'K', K: 'K', Y: 'N', t: 'N', T: 'N' }, 'o')).toGrid();
+  return outline(c, darkest({ M: 'K', m: 'K', N: 'K', K: 'K', '^': 'K', '*': 'K', '%': 'K' }, 'o')).toGrid();
 }
 
 /**
@@ -336,22 +337,22 @@ function normalRoundEnd(): Grid {
  * la colonne Y côté lumière ; la face est (f2 et après), la colonne T ; le dessus (f3, poutre), bois clair Y Y t.
  */
 const NORMAL_BACK: Record<Exclude<NormalLook, 'round'>, Grid> = {
-  f1: ['..KKKK..', '.KYNNNo.', '.KYNNNNo'],
-  f2: ['..KKKK..', '.KYNNTo.', '.KYNNTo.'],
-  f3: ['..KKKK..', '.KYYYto.', '.KYYYto.'],
-  beam: ['..KKKK..', '.KYYYto.', '.KYYYto.'],
+  f1: ['..KKKK..', '.K^NNNo.', '.K^NNNNo'],
+  f2: ['..KKKK..', '.K^NN%o.', '.K^NN%o.'],
+  f3: ['..KKKK..', '.K^^^*o.', '.K^^^*o.'],
+  beam: ['..KKKK..', '.K^^^*o.', '.K^^^*o.'],
 };
 const NORMAL_FRONT: Record<Exclude<NormalLook, 'round'>, Grid> = {
-  f1: ['.KYNNNNo', '.KYYttNo', '.KYtTtNo', '.otNNNo.', '..oooo..'],
-  f2: ['.KYNNTo.', '.KYYtTo.', '.KYtTTo.', '.otNNTo.', '..oooo..'],
-  f3: ['.KtttTo.', '.KYtTTo.', '.KttTTo.', '.otNNTo.', '..oooo..'],
-  beam: ['.KtttTo.', '.KYtTTo.', '.KttTTo.', '.KtTTTo.', '..oooo..'],
+  f1: ['.K^NNNNo', '.K^^**No', '.K^*%*No', '.o*NNNo.', '..oooo..'],
+  f2: ['.K^NN%o.', '.K^^*%o.', '.K^*%%o.', '.o*NN%o.', '..oooo..'],
+  f3: ['.K***%o.', '.K^*%%o.', '.K**%%o.', '.o*NN%o.', '..oooo..'],
+  beam: ['.K***%o.', '.K^*%%o.', '.K**%%o.', '.K*%%%o.', '..oooo..'],
 };
 /** Une rangée du dessus, entre le fond et la face (`along` : la rangée). */
 function normalTopRow(look: Exclude<NormalLook, 'round'>, along: number): string {
-  if (look === 'f1') return `.KY${[2, 3, 4, 5].map((v) => normalBark(along, v)).join('')}o`;
-  if (look === 'f2') return `.KY${[2, 3].map((v) => normalBark(along, v)).join('')}To.`;
-  return `.KY${grain(along, 'a', 'Y')}${grain(along, 'b', 'Y')}to.`;
+  if (look === 'f1') return `.K^${[2, 3, 4, 5].map((v) => normalBark(along, v)).join('')}o`;
+  if (look === 'f2') return `.K^${[2, 3].map((v) => normalBark(along, v)).join('')}%o.`;
+  return `.K^${grain(along, 'a', '^')}${grain(along, 'b', '^')}*o.`;
 }
 /** Rangées du dessus entre le fond et la face : la pièce s'éloigne, raccourcie comme la bille portée. */
 const NORMAL_TOP_ROWS = 3;
@@ -371,26 +372,26 @@ function normalHewnEnd(look: Exclude<NormalLook, 'round'>): Grid {
  * les faces de côté de la vue par le bout deviennent ici le dessus et la face sud, comme la pièce est-ouest au sol.
  */
 const NORMAL_EW_START: Record<NormalLook, Grid> = {
-  round: ['..KKK', '.KNNM', 'KNYtN', 'KNYtN', 'KNtTN', 'KNttN', '.oNNN', '..ooo'],
-  f1: ['..KKK', '.KNNM', 'KNYtN', 'KNYtT', 'KNtTT', 'KNttT', '.oNNT', '..ooo'],
-  f2: ['.KKKK', 'KNNNM', 'KYYtN', 'KYYtT', 'KYtTT', 'KtttT', '.oNNT', '..ooo'],
-  f3: ['.KKKK', 'KYYYt', 'KYYtt', 'KYYtT', 'KYtTT', 'KtttT', '.oNNT', '..ooo'],
-  beam: ['.KKKK', 'KYYYt', 'KYttt', 'KYtTT', 'KttTT', 'KtTTT', 'KtTTT', '.oooo'],
+  round: ['..KKK', '.KNNM', 'KN^*N', 'KN^*N', 'KN*%N', 'KN**N', '.oNNN', '..ooo'],
+  f1: ['..KKK', '.KNNM', 'KN^*N', 'KN^*%', 'KN*%%', 'KN**%', '.oNN%', '..ooo'],
+  f2: ['.KKKK', 'KNNNM', 'K^^*N', 'K^^*%', 'K^*%%', 'K***%', '.oNN%', '..ooo'],
+  f3: ['.KKKK', 'K^^^*', 'K^^**', 'K^^*%', 'K^*%%', 'K***%', '.oNN%', '..ooo'],
+  beam: ['.KKKK', 'K^^^*', 'K^***', 'K^*%%', 'K**%%', 'K*%%%', 'K*%%%', '.oooo'],
 };
 const NORMAL_EW_END: Record<NormalLook, Grid> = {
   round: ['K..', 'mo.', 'Mmo', 'mNo', 'mNo', 'NKo', 'Ko.', 'o..'],
-  f1: ['K..', 'mo.', 'Mmo', 'tTo', 'tTo', 'tTo', 'TTo', 'oo.'],
-  f2: ['KK.', 'MNo', 'MNo', 'tTo', 'tTo', 'tTo', 'TTo', 'oo.'],
-  f3: ['KK.', 'YTo', 'YTo', 'tTo', 'tTo', 'tTo', 'TTo', 'oo.'],
-  beam: ['KK.', 'YTo', 'YTo', 'tTo', 'tTo', 'tTo', 'TTo', 'oo.'],
+  f1: ['K..', 'mo.', 'Mmo', '*%o', '*%o', '*%o', '%%o', 'oo.'],
+  f2: ['KK.', 'MNo', 'MNo', '*%o', '*%o', '*%o', '%%o', 'oo.'],
+  f3: ['KK.', '^%o', '^%o', '*%o', '*%o', '*%o', '%%o', 'oo.'],
+  beam: ['KK.', '^%o', '^%o', '*%o', '*%o', '*%o', '%%o', 'oo.'],
 };
 function normalColumn(look: NormalLook, along: number): string[] {
   const col = ['K'];
   for (let v = 0; v < NORMAL_WOOD.diameter; v++) {
     const row = v + 1;
     if (look === 'round') col.push(normalBark(along, v));
-    else if (row <= 2) col.push(look === 'f1' || look === 'f2' ? normalBark(along, v) : row === 2 ? grain(along, 'c', 'Y') : 'Y');
-    else col.push(row === 6 ? 'T' : row === 5 ? grain(along, 'b', 't') : 't');
+    else if (row <= 2) col.push(look === 'f1' || look === 'f2' ? normalBark(along, v) : row === 2 ? grain(along, 'c', '^') : '^');
+    else col.push(row === 6 ? '%' : row === 5 ? grain(along, 'b', '*') : '*');
   }
   col.push('o');
   return col;
@@ -410,11 +411,27 @@ function normalLong(look: NormalLook): Grid {
 // bout, la pièce nord-sud raccourcie : l'écorce (ou le dessus de la planche) qui fuit sur deux rangées, puis le bout coupé sous
 // les mains.
 
-/** Perche par le bout : l'écorce S A B qui fuit, la face de coupe de 3 × 2 (Y t, le cœur T, cerclée de B). */
-const POLE_END: Grid = ['.KKK.', 'KSABo', 'KSABo', 'KYtBo', 'KtTBo', '.ooo.'];
+/** Perche par le bout : l'écorce S A B qui fuit, la face de coupe de 3 × 2 (^ *, le cœur %, cerclée de B). */
+const POLE_END: Grid = ['.KKK.', 'KSABo', 'KSABo', 'K^*Bo', 'K*%Bo', '.ooo.'];
 
-/** Planche par le bout : le dessus qui fuit (l'aubier d à gauche, le bois frais Y t, la rive T), le bois de bout (une rangée, ses cernes en travers). */
-const PLANK_END: Grid = ['.NNNNN.', 'NdYttTo', 'NdYttTo', 'NYtYtTo', '.ooooo.'];
+/** Planche par le bout : le dessus qui fuit (l'arête ^ à gauche, le bois *, la rive %), le bois de bout (une rangée, ses cernes en travers). */
+const PLANK_END: Grid = ['.KKKKK.', 'K^^**%o', 'K^^**%o', 'K^*^*%o', '.ooooo.'];
+
+/**
+ * Le rondin écorcé par le bout : le rondin nord-sud au sol (la vue calculée de sa section, art/world/wood-section.ts), court : le
+ * dessus de bois mis à nu qui fuit, puis sous les mains le bout coupé, le bois de bout sans anneau d'écorce. La prise sur l'arête
+ * entre le dessus et le bout, comme le quartier.
+ */
+function peeledEnd(): Grid {
+  const v = lyingView('normal', 'peeled', 'ns', 13);
+  const mid = Math.floor(v.c.w / 2) - 1;
+  const grip = v.roles.findIndex((r) => r[mid] === 'e');
+  const g = v.c.toGrid();
+  const top = g.findIndex((r) => /[^.x]/.test(r));
+  return onGrip(trim(g), Math.max(0, grip - top));
+}
+/** Le rondin écorcé en long : le rondin est-ouest calculé, sans son ombre. */
+const peeledLong = (): Grid => onGrip(trim(lyingCanvas('normal', 'peeled', 'ew', PREVIEW_LEN + 1).toGrid()));
 
 const poleLong = (): Grid => onGrip(trim(lyingCanvas('pole', 'round', 'ew', PREVIEW_LEN + 1).toGrid()));
 const plankLong = (): Grid => onGrip(trim(lyingCanvas('big', 'plank', 'ew', PREVIEW_LEN + 1).toGrid()));
@@ -431,6 +448,7 @@ const heldWood = (): SpriteSheetSource[] => [
   woodSheet('held-wood-big-plank', onGrip(PLANK_END, 3), plankLong()),
   woodSheet('held-wood-pole-round', onGrip(POLE_END, 3), poleLong()),
   woodSheet('held-wood-normal-round', normalRoundEnd(), normalLong('round')),
+  woodSheet('held-wood-normal-peeled', peeledEnd(), peeledLong()),
   ...(['f1', 'f2', 'f3'] as const).map((l) => woodSheet(`held-wood-normal-${l}`, normalHewnEnd(l), normalLong(l))),
   woodSheet('held-wood-normal-beam', normalHewnEnd('beam'), normalLong('beam')),
 ];

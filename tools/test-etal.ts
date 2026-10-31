@@ -1,6 +1,7 @@
 // L'étal de la place, en bois, bâti dans le mode construction (règle de Grégoire : un bâtiment est validé quand on réussit à le bâtir
 // dans le mode construction, par un scénario, uniquement avec les pièces du catalogue, puis à l'enregistrer comme plan). Dans le vrai
 // jeu (tools/lib/playtest.ts), à la vraie souris et au vrai clavier, comme la cabane et la grange :
+//   - le bois patiné (l'âge réglé au catalogue, fixé par le plan) ;
 //   - 2,40 × 1,60 m, la face des clients au sud ; quatre dalles, quatre poteaux (poutres du normal dressées : 2,40 m derrière, 1,80 m
 //     devant), une sablière sur chaque rang (tenon et mortaise) ;
 //   - le fond, les deux côtés et le devant bas (1 m) en bardage, contre la face du dehors des poteaux ; le volet d'étal fermé, posé
@@ -172,6 +173,9 @@ await playtest('etal', async ({ page, errors, load }) => {
     return p;
   };
 
+  // l'âge du bois, réglé au catalogue (patiné) : toutes ses pièces de bois le prennent, le plan le fixe
+  await send({ kind: 'age', age: 'worn' });
+
   // 1. les dalles, puis les poteaux (des poutres dressées) : 2,40 m derrière, 1,80 m devant (la pente de l'auvent), du nord au sud
   const POSTS: [number, number, number][] = [[0, 0, 240], [200, 0, 240], [0, 120, 180], [200, 120, 180]];
   for (const [x, y] of POSTS) {
@@ -222,6 +226,8 @@ await playtest('etal', async ({ page, errors, load }) => {
   assert.equal(plan.pieces.length, all.length, 'toutes les pièces sont dans le plan');
   assert.equal(plan.joints.length, (await joints()).length, 'et tous les assemblages');
   for (const p of plan.pieces) assert.ok(('wood' in p.piece && p.piece.wood.size === 'normal' && p.piece.wood.hewn === 12) || ['slab', 'stall-back', 'stall-side', 'stall-front', 'stall-shutter', 'plank-awning'].includes(p.piece.prop), JSON.stringify(p.piece));
+  assert.equal(plan.age, 'worn', "le plan fixe l'âge de toutes ses pièces de bois (patiné)");
+  for (const p of plan.pieces) assert.ok(!p.age && !('wood' in p.piece && p.piece.wood.age), `l'âge est celui du plan, pas de la pièce : ${JSON.stringify(p)}`);
 
   // 5. en jeu : hors du mode construction, Xéros devant l'étal, tourné vers lui ; E rabat le volet en comptoir (contre la face du
   // dehors, son dessus à 1 m), E le relève

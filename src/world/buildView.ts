@@ -9,7 +9,7 @@ import type { BuildPlaced } from '../content/types';
 import { variantImage } from '../content/views';
 import { boxOf } from './build';
 import { formView, naturalGround } from './natural';
-import { lookOf, upOf } from './woodShape';
+import { agedKey, lookOf, upOf } from './woodShape';
 import { woodTexture } from './woodTexture';
 
 /** L'image d'une pièce : sa texture (et son image dans une planche), et le coin bas gauche où la poser, en pixels du monde. */
@@ -23,8 +23,8 @@ export interface BuildLook {
 }
 
 /**
- * L'image d'une pièce posée : un objet du monde dans sa vue (sa forme naturelle, son tirage), un objet possédable par son image au
- * sol, la pièce de bois assemblée à ses réglages. Le bas de l'image est au bord sud de l'emprise relevé de sa hauteur (y − z), et
+ * L'image d'une pièce posée : un objet du monde dans sa vue (sa forme naturelle, son tirage, son âge s'il est de bois), un objet
+ * possédable par son image au sol, la pièce de bois assemblée à ses réglages (son âge compris). Le bas de l'image est au bord sud de l'emprise relevé de sa hauteur (y − z), et
  * l'image est centrée sur l'emprise en largeur ; la pièce de bois debout a sous son pied des rangées vides (le dé), qui descendent
  * d'autant.
  */
@@ -38,10 +38,13 @@ export function buildLook(scene: Phaser.Scene, p: BuildPlaced): BuildLook {
     frame = '0';
     if (p.piece.wood.axis === 'up') lift = upOf(p.piece.wood.size, lookOf(p.piece.wood)).lift;
   } else if ('item' in p.piece) {
-    key = naturalGround(items[p.piece.item], p.view, p.natural, has);
+    const def = items[p.piece.item];
+    key = naturalGround(def, p.view, p.natural, has);
+    if (def.aged) key = agedKey(key, p.age);
   } else {
     const def = props[p.piece.prop];
     key = formView(variantImage(def.image, p.variant), def.views, p.view, p.natural, has);
+    if (def.aged) key = agedKey(key, p.age);
   }
   // une planche (le feu qui brûle) : sa première image
   const t = scene.textures.get(key);

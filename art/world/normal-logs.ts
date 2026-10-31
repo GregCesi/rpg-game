@@ -34,7 +34,7 @@ export function normalFelledLog(): Canvas {
   const cy = 1 + R;
   logEnd(c, 1, 'left', cy, true, R, NORMAL_WOOD.endA);
   logEnd(c, LOG_LEN + 1, 'right', cy, false, R, NORMAL_WOOD.endA);
-  despeckle(c, 'KYTtN');
+  despeckle(c, 'K^%*N');
   shadedOutline(c);
   const bottom = DIAMETER + 1; // rangée du contour du bas
   for (let X = 2; X <= LOG_LEN + 1; X++) if (c.get(X, bottom + 1) === EMPTY) c.set(X, bottom + 1, 'x');
@@ -53,7 +53,7 @@ export const LOG_NS = { w: 9, h: 17, cx: 4, back: 3, front: 12, rx: 3, ry: 2 } a
 export function normalFelledLogNS(): Canvas {
   const { w, h, cx, back, front, rx, ry } = LOG_NS;
   const c = logByTheEnd(new Canvas(w, h), cx, back, front, rx, ry, NORMAL_WOOD);
-  despeckle(c, 'KYTtN');
+  despeckle(c, 'K^%*N');
   shadedOutline(c);
   const body = Canvas.from(c.toGrid());
   for (let Y = 0; Y < h; Y++) for (let X = 2; X < w; X++) {

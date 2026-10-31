@@ -4,6 +4,7 @@
     "w": 380,
     "d": 480
   },
+  "age": "worn",
   "joints": [
     {
       "type": "notch",
@@ -331,6 +332,7 @@
           "size": "normal",
           "length": 380,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -345,6 +347,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -359,6 +362,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -382,6 +386,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -396,6 +401,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -410,6 +416,7 @@
           "size": "normal",
           "length": 380,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -424,6 +431,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -438,6 +446,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -452,6 +461,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -466,6 +476,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -480,6 +491,7 @@
           "size": "normal",
           "length": 380,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -494,6 +506,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -508,6 +521,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -522,6 +536,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -536,6 +551,7 @@
           "size": "normal",
           "length": 180,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -559,6 +575,7 @@
           "size": "normal",
           "length": 200,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -573,6 +590,7 @@
           "size": "normal",
           "length": 380,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -587,6 +605,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -601,6 +620,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -615,6 +635,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -629,6 +650,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -643,6 +665,7 @@
           "size": "normal",
           "length": 380,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -657,6 +680,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -671,6 +695,7 @@
           "size": "normal",
           "length": 140,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -685,6 +710,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -699,6 +725,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },
@@ -713,6 +740,7 @@
           "size": "normal",
           "length": 380,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -727,6 +755,7 @@
           "size": "normal",
           "length": 380,
           "shape": "round",
+          "peeled": true,
           "axis": "ew"
         }
       },
@@ -777,6 +806,7 @@
           "size": "normal",
           "length": 440,
           "shape": "round",
+          "peeled": true,
           "axis": "ns"
         }
       },

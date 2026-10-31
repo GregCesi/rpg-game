@@ -5,6 +5,7 @@
 - Nom affiché : cheville.
 - Nature : objet possédable (`items.json`, `kind: resource`) : une cheville de charpente, un bout taillé en pointe.
 - Mains : une.
+- Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
 - Calculée : 25 cm × Ø 3 × 900 kg/m³ = **0,16 kg**.
