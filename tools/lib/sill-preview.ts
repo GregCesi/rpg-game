@@ -68,7 +68,7 @@ export function sillPreview(): PNG {
   const depth = depthsOf(pieces);
   const draws: { depth: number; draw: () => void }[] = [];
   for (const run of wallRuns(pieces)) {
-    const grid = kit.run({ kind: run.kind, axis: run.axis, pieces: run.pieces.length, start: run.start, end: run.end, seed: run.seed });
+    const grid = kit.run({ kind: run.kind, axis: run.axis, pieces: run.pieces.length, start: run.start, end: run.end, seed: run.seed, ...(run.extra ? { extra: run.extra } : {}) });
     const lay = runLayout(run, grid[0].length, grid.length);
     run.pieces.forEach((p, i) => {
       const c = lay.crops[i];

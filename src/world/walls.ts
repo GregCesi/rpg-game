@@ -16,7 +16,8 @@
 // est plus profond (le solin : 50 cm d'épaisseur, 5 rangées en raccourci), des rangs de pierres de dessus se posent derrière
 // l'assise haute, du nord au sud, chacun recouvert par le suivant : on ne voit de chacune que son dessus. `axis: 'ns'` : le mur
 // vu en long (vue nord-sud, règle D) : le dessus court sur toute la hauteur de l'image, la face est le bout du mur, au sud ;
-// le mur taillé y couche ses moellons en long, en deux files (leur vue nord-sud).
+// le mur taillé y montre le dessus de ses moellons couchés en long, en deux files de longueurs mêlées, coupées de loin en loin
+// par une boutisse qui traverse le mur.
 //
 // Le tronçon (`run`) : plusieurs morceaux de solin de 1,60 m montés d'un seul tenant (les pierres et les assises traversent les
 // jonctions), ses deux bouts dessinés selon ce qu'ils touchent : tête de mur, angle, ou contre un autre mur. Le mur est monté
@@ -50,12 +51,29 @@ export interface WallSize {
 export type WallKind = 'rough' | 'dressed';
 /**
  * Un bout de tronçon : `head` tête de mur finie ; `abut` contre le flanc d'un tronçon perpendiculaire ; `corner-<côté>` ce
- * tronçon possède le carré d'angle, un tronçon perpendiculaire en part vers ce côté (`n`, `s` sur un est-ouest ; `e`, `w` sur
- * un nord-sud).
+ * tronçon tient l'angle (il en dessine le carré), un tronçon perpendiculaire en part vers ce côté (`n`, `s` sur un est-ouest).
+ * L'angle est toujours tenu par l'est-ouest, quel que soit le morceau qui couvre le carré au sol (voir `extra` de RunSpec) ;
+ * `corner-e`, `corner-w` (un nord-sud qui tiendrait l'angle) restent dessinés mais le jeu ne s'en sert plus.
  */
 export type RunEnd = 'head' | 'abut' | 'corner-n' | 'corner-s' | 'corner-e' | 'corner-w';
 /** Un tronçon : `pieces` morceaux de 1,60 m ; `start` le bout ouest (ou nord), `end` le bout est (ou sud). */
-export interface RunSpec { kind: WallKind; axis: 'ew' | 'ns'; pieces: number; start: RunEnd; end: RunEnd; seed: number }
+export interface RunSpec {
+  kind: WallKind;
+  axis: 'ew' | 'ns';
+  pieces: number;
+  start: RunEnd;
+  end: RunEnd;
+  seed: number;
+  /** Pixels ajoutés (positifs) ou ôtés (négatifs) à chaque bout, le long du tronçon : un est-ouest qui tient un carré d'angle couvert au sol par le nord-sud reçoit + l'épaisseur (10 px) à ce bout ; ce nord-sud reçoit −10 px à ce bout. Absent : 0. */
+  extra?: { start?: number; end?: number };
+}
+
+/** Longueur dessinée d'un tronçon le long de son axe (sans la rangée ou la colonne d'ombre) : 32 × pieces + ses `extra`. */
+export function runLength(spec: RunSpec): number {
+  const L = PIECE_PX * spec.pieces + (spec.extra?.start ?? 0) + (spec.extra?.end ?? 0);
+  if (L < 4) throw new Error(`Mur : un tronçon de ${L} px de long (${spec.pieces} morceaux, extra ${JSON.stringify(spec.extra)})`);
+  return L;
+}
 
 export const MORTAR = 'n'; // mortier de terre, sur la face
 const MORTAR_TOP = 'u'; // le même au soleil, sur le dessus du mur
@@ -243,7 +261,6 @@ interface Tables {
   SMALL: Piece[];
   RUBBLE: Piece[];
   HEADER: Piece;
-  RUBBLE_NS: Grid[];
   STONE_VARIANTS: Stone[];
   BITS: Stone[];
   CAPS: (Stone & { crop: number })[];
@@ -269,8 +286,6 @@ function tables(image: (name: string) => Grid): Tables {
   ].map((p) => ({ ...p, full: bodyOf(image(p.image)) }));
   const headerFull = bodyOf(image('rubble-stone-ground-ns'));
   const HEADER: Piece = { label: 'boutisse 40', image: 'rubble-stone-ground-ns', full: headerFull, crop: headerFull.length - 4 };
-  /** Les moellons couchés en long dans un mur vu en long (leur vue nord-sud) : on n'en voit que le dessus. */
-  const RUBBLE_NS = ['short-rubble-stone-ground-ns', 'rubble-stone-ground-ns', 'long-rubble-stone-ground-ns'].map((k) => bodyOf(image(k)));
   const sizeOf = (p: Piece) => (BIG.includes(p) ? 'big' : MEDIUM.includes(p) ? 'medium' : 'small') as Stone['size'];
   /** Toutes les manières de poser chaque pierre brute (à plat, retournée, debout, de travers, en biais). */
   const STONE_VARIANTS: Stone[] = [];
@@ -305,7 +320,7 @@ function tables(image: (name: string) => Grid): Tables {
   }
   /** Les pierres entières de l'assise haute (le dessin complet : leur dessus fait le dessus du mur), retournées ou non. */
   const CAPS = ROUGH.flatMap((p) => [p, turn(p)].map((q) => ({ g: q.full, base: p, size: sizeOf(p), how: 'cap' as const, crop: q.crop })));
-  return { image, ROUGH, BIG, MEDIUM, SMALL, RUBBLE, HEADER, RUBBLE_NS, STONE_VARIANTS, BITS, CAPS, CHIPS: bodyOf(image('stone-chips')) };
+  return { image, ROUGH, BIG, MEDIUM, SMALL, RUBBLE, HEADER, STONE_VARIANTS, BITS, CAPS, CHIPS: bodyOf(image('stone-chips')) };
 }
 
 function count(t: Tables, used: Used, p: Piece): void {
@@ -747,14 +762,10 @@ function longCourse(t: Tables, W: number, r: () => number, prev: Course | undefi
   }
 }
 
-/** Le dessus d'un moellon couché (son dessin sans sa face ni son contour du bas) : ce qu'on en voit sous le rang suivant. */
-const topOf = (g: Grid, faceRows = 3) => g.slice(0, g.length - faceRows);
 
 /**
  * Le dessus profond du mur taillé, derrière l'assise haute (rangées 0 à `until` - 1). Vu de face (`ew`) : un rang de moellons
- * couchés en long (leur dessus : le contour arrière et deux rangées), joints décalés. Vu en long (`ns`) : deux files de
- * moellons couchés dans le sens du mur (leur vue nord-sud, dessus seul), un pixel de mortier entre les deux, chaque moellon
- * posé contre le précédent (contour commun ou un pixel de mortier), les joints d'une file décalés de ceux de l'autre.
+ * couchés en long (leur dessus : le contour arrière et deux rangées), joints décalés. Vu en long (`ns`) : `nsDressedTop`.
  */
 function dressedTop(t: Tables, wall: Wall, r: () => number, axis: 'ew' | 'ns', until: number, used: Used): void {
   const W = wall.W;
@@ -776,25 +787,107 @@ function dressedTop(t: Tables, wall: Wall, r: () => number, axis: 'ew' | 'ns', u
     }
     return;
   }
-  // deux files : la première contre le bord ouest, la seconde contre le bord est, un pixel de mortier entre elles
-  const colW = t.RUBBLE_NS[0][0].length;
-  const files = [0, W - colW];
-  files.forEach((x0, f) => {
-    let y = f === 0 ? 0 : -(2 + Math.floor(r() * 3));
-    while (y < until) {
-      const k = Math.floor(r() * t.RUBBLE_NS.length);
-      const full = t.RUBBLE_NS[k];
-      const p: Piece = { label: '', image: '', full, crop: 0 };
-      const g = topOf(r() < 0.4 ? turn(p).full : full);
-      stamp(g, x0, y);
-      count(t, used, t.RUBBLE[k]);
-      y += g.length - 1 + (r() < 0.25 ? 1 : 0);
+  nsDressedTop(t, wall, r, until, used);
+}
+
+/**
+ * Le dessus d'un moellon vu d'en haut, contour compris (`~` au nord et à l'ouest, OUTLINE au sud et à l'est), dans la matière
+ * des moellons du jeu : clair `+` au soleil, la colonne est ombrée `=` (le flanc qui tourne), la rangée sud à demi ombrée,
+ * l'éclat blanc `!` de temps en temps au bord ouest, et des taches `=` (une ou deux colonnes) et `;` semées dans le dessus.
+ */
+function topStone(w: number, h: number, r: () => number): Grid {
+  const g: string[][] = Array.from({ length: h }, (_, j) => Array.from({ length: w }, (_, i) =>
+    (j === h - 1 || i === w - 1 ? 'o' : j === 0 || i === 0 ? '~' : '+')));
+  g[0][w - 1] = 'o';
+  const iw = w - 2, ih = h - 2;
+  for (let j = 1; j <= ih; j++) {
+    if (iw > 2 && r() < 0.8) g[j][w - 2] = '=';
+    if (r() < 0.2) g[j][1] = '!';
+  }
+  for (let i = 2; i < w - 1; i++) if (r() < 0.45) g[h - 2][i] = '=';
+  // les taches, une pour 8 pixels de dessus à peu près
+  const n = Math.round((iw * ih) / 8);
+  for (let k = 0; k < n; k++) {
+    const i = 2 + Math.floor(r() * Math.max(1, iw - 2)), j = 1 + Math.floor(r() * ih);
+    if (i >= w - 1) continue;
+    const dark = r() < 0.2;
+    g[j][i] = dark ? ';' : '=';
+    if (!dark && i + 1 < w - 1 && r() < 0.6) g[j][i + 1] = '=';
+  }
+  return g.map((row) => row.join(''));
+}
+
+/**
+ * Le dessus du mur taillé vu en long (`ns`, 13 colonnes, rangées 0 à `until` - 1) : des moellons couchés dans le sens du mur,
+ * vus de dessus, en deux files de longueurs mêlées (30, 40, 50 cm : 7, 9, 11 rangées contour compris), joints d'une file
+ * décalés de 2 rangées au moins de ceux de l'autre ; le joint entre les deux files n'est pas droit (la pierre de la file ouest
+ * a 6, 7 ou 8 colonnes, celle de la file est passe sous elle) ; de loin en loin (tous les 1 à 1,70 m), une boutisse traverse
+ * tout le mur (13 colonnes sur 5 rangées) et coupe les deux files. Joints : le contour commun, ou les deux contours côte à
+ * côte ; le contour sombre (OUTLINE) l'emporte sur le clair.
+ */
+function nsDressedTop(t: Tables, wall: Wall, r: () => number, until: number, used: Used): void {
+  const W = wall.W;
+  const put = (g: Grid, x: number, y: number) => g.forEach((row, j) => [...row].forEach((ch, i) => {
+    const px = x + i, py = y + j;
+    if (ch === EMPTY || py < 0 || py >= until || px < 0 || px >= W) return;
+    if (ch === '~' && wall.c.get(px, py) === 'o') return;
+    wall.c.set(px, py, ch);
+    wall.owner[py][px] = 9999;
+  }));
+  const LENS = [7, 9, 11];
+  const countLen = (h: number) => count(t, used, t.RUBBLE[h <= 7 ? 0 : h <= 9 ? 1 : 2]);
+  /** Les moellons d'une file entre les rangées y0 et y1 (contours compris) : [haut, hauteur]. Leurs joints évitent `avoid`. */
+  const file = (y0: number, y1: number, avoid: number[]): [number, number][] => {
+    let best: [number, number][] = [];
+    let bestBad = Infinity;
+    for (let tries = 0; tries < 60; tries++) {
+      const out: [number, number][] = [];
+      let y = y0;
+      for (;;) {
+        const rem = y1 - y + 1;
+        if (rem <= 12) {
+          if (rem >= 5 || !out.length) out.push([y, rem]);
+          else out[out.length - 1][1] = y1 - out[out.length - 1][0] + 1; // la dernière s'allonge jusqu'au bout
+          break;
+        }
+        const h = LENS[Math.floor(r() * LENS.length)];
+        out.push([y, h]);
+        y += h - 1 + (r() < 0.3 ? 1 : 0);
+      }
+      const joints = out.slice(1).map(([a]) => a);
+      const bad = joints.filter((j) => avoid.some((b) => Math.abs(j - b) < 2)).length;
+      if (bad < bestBad) { best = out; bestBad = bad; }
+      if (!bad) break;
     }
-  });
-  // le mortier entre les deux files (au soleil), sous le contour du bout nord
-  for (let x = colW; x < W - colW; x++) for (let y = 1; y < until; y++) if (wall.c.get(x, y) === EMPTY) {
-    wall.c.set(x, y, MORTAR_TOP);
-    wall.owner[y][x] = 9999;
+    return best;
+  };
+  let y = 0;
+  let first = true;
+  while (y < until) {
+    // une boutisse tous les 20 à 34 rangées (la première, n'importe où)
+    const seg = first ? 6 + Math.floor(r() * 26) : 20 + Math.floor(r() * 15);
+    const y1 = y + seg; // rangée du haut de la boutisse (contour commun avec les pierres du dessus)
+    const east = file(y, y1, []);
+    const west = file(y, y1, east.slice(1).map(([a]) => a));
+    for (const [a, h] of east) { put(topStone(W - 5, h, r), 5, a); countLen(h); }
+    for (const [a, h] of west) {
+      const w = 6 + Math.floor(r() * 3);
+      put(topStone(w, h, r), 0, a);
+      countLen(h);
+    }
+    if (y1 >= until) break;
+    put(topStone(W, 5, r), 0, y1);
+    count(t, used, t.HEADER);
+    y = y1 + 4;
+    first = false;
+  }
+  // aux bouts des joints, sur les bords du mur, un coin abattu de temps en temps
+  for (let py = 1; py < until - 1; py++) for (const px of [0, W - 1]) {
+    const inner = px === 0 ? 1 : px - 1;
+    if (wall.c.get(inner, py) === 'o' && wall.c.get(inner, py - 1) !== 'o' && r() < 0.3) {
+      wall.c.set(px, py, EMPTY);
+      wall.owner[py][px] = -1;
+    }
   }
 }
 
@@ -935,7 +1028,7 @@ export function wallKit(image: (name: string) => Grid): WallKit {
   };
 
   /**
-   * Le tronçon est-ouest : largeur 32 × pieces + 1, hauteur 13 + 1. Monté d'un tenant ; un bout `abut` est monté 6 px plus
+   * Le tronçon est-ouest : largeur L + 1 (L = `runLength` : 32 × pieces + ses `extra`), hauteur 13 + 1. Monté d'un tenant ; un bout `abut` est monté 6 px plus
    * long puis coupé. Le carré d'angle (`corner-n`, `corner-s`) se dessine sur les 13 colonnes de son bout (la largeur du mur
    * nord-sud à l'écran, règle D) : le dessus du mur nord-sud y passe, il croise le dessus de l'est-ouest ; `corner-s`
    * (le mur nord-sud part vers le sud, sous lui à l'écran) : sur toute la hauteur de l'image, rangée d'ombre comprise (le
@@ -943,7 +1036,7 @@ export function wallKit(image: (name: string) => Grid): WallKit {
    * finie comme une tête (chaînage).
    */
   const runEW = (spec: RunSpec): Grid => {
-    const W = PIECE_PX * spec.pieces;
+    const W = runLength(spec);
     const mL = spec.start === 'abut' ? ABUT_MARGIN : 0, mR = spec.end === 'abut' ? ABUT_MARGIN : 0;
     const ends: Ends = { left: mL ? 'free' : 'head', right: mR ? 'free' : 'head' };
     const g = build(spec.kind, spec.seed, { length: W + mL + mR, face: SILL_FACE, top: SILL_TOP, axis: 'ew' }, ends);
@@ -966,14 +1059,14 @@ export function wallKit(image: (name: string) => Grid): WallKit {
   };
 
   /**
-   * Le tronçon nord-sud (règle D) : largeur 13 + 1, hauteur 32 × pieces + 1, rangée r = le sol à r px du bout nord. Le dessus
+   * Le tronçon nord-sud (règle D) : largeur 13 + 1, hauteur L + 1 (`runLength`), rangée r = le sol à r px du début de l'image. Le dessus
    * court sur toute la longueur ; la bande de bout (la face de 40 cm, 8 rangées) n'est qu'au bout sud, s'il est une tête ou un
    * angle. Un bout `abut` est monté plus long puis coupé. Un angle au bout sud (`corner-e`, `corner-w`) : la bande de bout est la
    * face du mur est-ouest qui en part (même rangées à l'écran) : son contour de ce côté s'efface, la face continue. Un angle au
    * bout nord se dessine comme une tête (le mur est-ouest qui en part dépasse de 4 rangées au nord : à éviter, voir `run`).
    */
   const runNS = (spec: RunSpec): Grid => {
-    const L = PIECE_PX * spec.pieces;
+    const L = runLength(spec);
     const mN = spec.start === 'abut' ? ABUT_MARGIN : 0;
     const band = spec.end !== 'abut';
     const top = band ? L - SILL_FACE + mN : L + mN + 12;
@@ -993,10 +1086,13 @@ export function wallKit(image: (name: string) => Grid): WallKit {
   return {
     /**
      * Le dessin d'un tronçon de `pieces` morceaux de 1,60 m, d'un seul tenant, déterministe (même graine, même dessin).
-     * Est-ouest : 32 × pieces + 1 sur 14 (colonne c = le sol à c px du bout ouest, bas de l'image au bord sud, ombre comprise).
-     * Nord-sud : 14 sur 32 × pieces + 1. Qui possède l'angle : de préférence le tronçon est-ouest (`corner-s` au nord de
-     * l'enceinte, `corner-n` au sud) ; le nord-sud qui en part est `abut` de ce côté, son image calée sur le bord extérieur du
-     * carré d'angle (ses 13 colonnes au ras du bout du mur est-ouest).
+     * Sa longueur le long de l'axe : L = 32 × pieces + extra.start + extra.end (`runLength`), plus 1 pour l'ombre.
+     * Est-ouest : L + 1 sur 14 (colonne c = le sol à c - extra.start px du premier morceau, bas de l'image au bord sud, ombre
+     * comprise). Nord-sud : 14 sur L + 1 (rangée r = le sol à r - extra.start px du premier morceau). L'angle est toujours tenu
+     * par l'est-ouest (`corner-s` au nord de l'enceinte, `corner-n` au sud), il en dessine le carré sur les 13 colonnes de ce
+     * bout ; le nord-sud qui en part est `abut` de ce côté, son image calée sur le bord extérieur du carré (ses 13 colonnes au
+     * ras du bout de l'image est-ouest). Si c'est le morceau nord-sud qui couvre le carré au sol, l'est-ouest reçoit
+     * extra + 10 (l'épaisseur) à ce bout et le nord-sud extra − 10 : le dessin est le même que dans l'autre cas.
      */
     run(spec: RunSpec): Grid {
       if (spec.pieces < 1) throw new Error(`Mur : un tronçon de ${spec.pieces} morceau`);

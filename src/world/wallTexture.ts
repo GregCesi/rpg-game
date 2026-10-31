@@ -28,7 +28,7 @@ function rgba(hex: string): [number, number, number, number] {
 export function wallTexture(scene: Phaser.Scene, run: WallRun): string {
   const key = runKey(run);
   if (scene.textures.exists(key)) return key;
-  const grid = theKit().run({ kind: run.kind, axis: run.axis, pieces: run.pieces.length, start: run.start, end: run.end, seed: run.seed });
+  const grid = theKit().run({ kind: run.kind, axis: run.axis, pieces: run.pieces.length, start: run.start, end: run.end, seed: run.seed, ...(run.extra ? { extra: run.extra } : {}) });
   const h = grid.length;
   const w = grid[0].length;
   const canvas = scene.textures.createCanvas(key, w, h)!;

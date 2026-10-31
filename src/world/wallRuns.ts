@@ -23,6 +23,12 @@ export interface WallRun {
    * bord ouest du carré, `east` : sur son bord est) pour que ses files de pierres prolongent celles du carré ; sinon centrée.
    */
   align?: 'west' | 'east';
+  /**
+   * Pixels ajoutés ou ôtés au dessin à chaque bout, le long du tronçon (`extra` de RunSpec) : l'angle est toujours tenu par le
+   * tronçon est-ouest ; quand c'est le morceau nord-sud qui couvre le carré d'angle au sol, l'est-ouest dessine ce carré (+ son
+   * épaisseur) et le nord-sud ne le dessine pas (− l'épaisseur). Le dessin d'un angle ne dépend donc pas de l'ordre de pose.
+   */
+  extra?: { start?: number; end?: number };
 }
 
 /** La manière de mur d'une pièce posée, si c'est un morceau qui se raccorde. */
@@ -47,8 +53,9 @@ function seedOf(kind: WallKind, axis: 'ew' | 'ns', b: Box3): number {
  * 1 et 3), sur la même ligne, bout à bout ; puis leurs bouts, d'après les tronçons perpendiculaires qu'ils touchent :
  * - un tronçon perpendiculaire part du carré d'angle d'un bout (sa largeur est l'épaisseur du mur, il touche le flanc nord ou sud,
  *   est ou ouest de ce carré) : ce bout possède l'angle (`corner-<côté où part l'autre>`), l'autre bout vient contre (`abut`) ;
- * - un bout vient contre le flanc d'un tronçon perpendiculaire (au bout de celui-ci : l'autre possède l'angle ; au milieu : un T) :
- *   `abut` ;
+ * - un bout d'est-ouest vient contre le flanc d'un nord-sud, au carré d'un bout de celui-ci (le nord-sud couvre le carré au sol) :
+ *   l'angle reste à l'est-ouest, qui dessine le carré en plus (`extra`), le nord-sud vient contre (`abut`, `extra` négatif) ;
+ * - un bout vient contre le flanc d'un tronçon perpendiculaire ailleurs (un T) : `abut` ;
  * - sinon, une tête de mur (`head`).
  */
 export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
@@ -103,13 +110,20 @@ export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
             n.align = e === 'start' ? 'west' : 'east';
           }
         }
-        // ce bout vient contre le flanc du tronçon nord-sud (à l'ouest du bout ouest, à l'est du bout est)
+        // ce bout vient contre le flanc du tronçon nord-sud, au carré d'un de ses bouts : le nord-sud couvre le carré au sol, mais
+        // l'angle reste à l'est-ouest (il dessine le carré en plus, le nord-sud le dessine en moins) ; ailleurs le long du flanc : un T
         const against = e === 'start' ? N.x + N.w === R.x : N.x === R.x + R.w;
         if (against && R.y >= N.y && R.y + R.d <= N.y + N.d) {
-          r[e] = 'abut';
-          const side = e === 'start' ? 'corner-e' : 'corner-w';
-          if (R.y === N.y) n.start = side;
-          else if (R.y + R.d === N.y + N.d) n.end = side;
+          const atNorth = R.y === N.y;
+          const atSouth = R.y + R.d === N.y + N.d;
+          if (atNorth || atSouth) {
+            r[e] = atNorth ? 'corner-s' : 'corner-n';
+            r.extra = { ...r.extra, [e]: Math.round(N.w / CM_PER_PX) };
+            const ne = atNorth ? 'start' : 'end';
+            n[ne] = 'abut';
+            n.extra = { ...n.extra, [ne]: -Math.round(R.d / CM_PER_PX) };
+            n.align = e === 'start' ? 'west' : 'east';
+          } else r[e] = 'abut';
         }
       }
       // un T : le tronçon nord-sud vient contre le flanc nord ou sud du tronçon est-ouest, ailleurs qu'à un carré d'angle
@@ -123,7 +137,7 @@ export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
 
 /** Le tronçon dessiné : la clé de sa texture (tout ce qui change son dessin). */
 export function runKey(r: WallRun): string {
-  return ['wall', r.kind, r.axis, r.pieces.length, r.start, r.end, r.seed].join(':');
+  return ['wall', r.kind, r.axis, r.pieces.length, r.start, r.end, r.extra?.start ?? 0, r.extra?.end ?? 0, r.seed].join(':');
 }
 
 /**
@@ -132,10 +146,13 @@ export function runKey(r: WallRun): string {
  * (colonnes) ou du nord au sud (rangées), le premier et le dernier allant jusqu'au bord de l'image.
  */
 export function runLayout(r: WallRun, w: number, h: number): { x: number; y: number; crops: { x: number; y: number; w: number; h: number }[] } {
-  const b = r.box;
+  // la boîte dessinée : celle du tronçon, allongée ou raccourcie de ses `extra` le long du tronçon
+  const es = (r.extra?.start ?? 0) * CM_PER_PX;
+  const ee = (r.extra?.end ?? 0) * CM_PER_PX;
+  const b = r.axis === 'ew' ? { ...r.box, x: r.box.x - es, w: r.box.w + es + ee } : { ...r.box, y: r.box.y - es, d: r.box.d + es + ee };
   // centrée sur l'emprise ; un nord-sud contre un angle, au ras du bord extérieur du carré (ombre comprise à l'est)
   const x =
-    r.align === 'west' ? Math.round(b.x / CM_PER_PX) : r.align === 'east' ? Math.round((b.x + b.w) / CM_PER_PX) - (w - 1) : Math.round((b.x + b.w / 2) / CM_PER_PX - w / 2);
+    r.align === 'west' ? Math.round(r.box.x / CM_PER_PX) : r.align === 'east' ? Math.round((r.box.x + r.box.w) / CM_PER_PX) - (w - 1) : Math.round((b.x + b.w / 2) / CM_PER_PX - w / 2);
   const y = Math.round((b.y + b.d - b.z) / CM_PER_PX);
   const top = y - h;
   const n = r.pieces.length;
