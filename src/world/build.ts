@@ -239,7 +239,7 @@ export interface Area {
  * grille) et la base de la plus basse ; un tirage d'élément calculé n'est pas gardé (chaque pose en tire un nouveau). Undefined
  * si la zone est vide.
  */
-export function planOf(pieces: readonly BuildPiece[], area: Area, name: string, joints: readonly { type: JointType; a: number; b: number }[] = []): BuildPlan | undefined {
+export function planOf(pieces: readonly BuildPiece[], area: Area, name: string, joints: readonly { type: JointType; a: number; b: number; top?: number }[] = []): BuildPlan | undefined {
   const inside = pieces.filter((p) => overlaps(boxOf(p), area));
   if (!inside.length) return undefined;
   const boxes = inside.map(boxOf);
@@ -252,7 +252,9 @@ export function planOf(pieces: readonly BuildPiece[], area: Area, name: string, 
   const order = inside.map((p, i) => ({ p, b: boxes[i] })).sort((a, b) => a.b.z - b.b.z || a.b.y - b.b.y || a.b.x - b.b.x);
   // les assemblages dont les deux pièces sont dans la zone, par le rang de leurs pièces dans le plan
   const rank = new Map(order.map(({ p }, i) => [p.id, i]));
-  const kept = joints.filter((j) => rank.has(j.a) && rank.has(j.b)).map((j) => ({ type: j.type, a: rank.get(j.a)!, b: rank.get(j.b)! }));
+  const kept = joints
+    .filter((j) => rank.has(j.a) && rank.has(j.b))
+    .map((j) => ({ type: j.type, a: rank.get(j.a)!, b: rank.get(j.b)!, ...(j.top !== undefined ? { top: rank.get(j.top)! } : {}) }));
   return {
     name,
     size: { w, d },

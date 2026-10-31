@@ -375,6 +375,15 @@ s'emboîter, traversées de chevilles enfoncées au maillet.
   avec la marque de l'enture (le biseau en Z, 2 ou 3 chevilles) sur la face visible.
 - **Le tenon et mortaise** ([fiche](objets/mortise-joint.md)) : un poteau debout dont la tête touche le dessous d'une pièce couchée,
   ou dont le pied repose sur une sablière basse ; la cheville se voit sur la face de la pièce couchée, au droit du poteau.
+- **Le mi-bois** ([fiche](objets/halving-joint.md), ajouté le même jour, à la demande de Grégoire, pour les angles) : deux pièces
+  couchées de même section qui se croisent à angle droit, à la même hauteur, au bout de l'une ou des deux (un angle) ou au milieu (une
+  croix), chacune entaillée de la moitié de son épaisseur. On pose la seconde sur la première, puis le mi-bois au croisement : elle
+  descend dans l'autre. Le croisement se dessine d'un seul tenant (la pièce du dessus entaillée posée dans l'autre, la cheville au
+  centre) ; le poteau d'angle se dresse au-dessus. Retirer le mi-bois fait remonter la pièce du dessus, refusé tant qu'une pièce
+  repose sur le croisement.
+- **Une pièce couchée posée sur le solin** s'accroche sur son dessus (40 cm) et **affleure sa face extérieure** : le côté opposé au
+  reste du mur (le centre des morceaux qui se touchent, de proche en proche) ; un mur seul et droit n'a pas de dehors, la pièce garde sa place
+  (`alignOnWall`, world/wallRuns.ts).
 - **Même principe que le solin continu** : chaque pièce reste une pièce (pose, retrait, collision, sauvegarde), le dessin est commun
   (`world/joints.ts` sans Phaser, `world/jointView.ts`).
 - **Retirer** une pièce assemblée est refusé (« Retire d'abord l'assemblage… ») ; un clic droit sur la jonction retire
@@ -382,8 +391,7 @@ s'emboîter, traversées de chevilles enfoncées au maillet.
   Annuler et refaire les suivent ; un plan du bac à sable garde les assemblages de sa zone.
 - **Pas de fabrication** en mode construction. En jeu, plus tard : les **chevilles** (`peg`, déjà au jeu), une **tarière** pour les
   trous, le **maillet** (`mallet`, déjà au jeu), le ciseau à bois et la scie pour tailler, et un geste par étape (fiches).
-- **À venir** : le **mi-bois** (deux pièces qui se croisent, entaillées chacune de la moitié : la sablière d'angle, la croix d'une
-  cloison), l'**embrèvement** (une pièce en diagonale, la jambe de force ou le chevron, dont le bout s'emboîte en biais dans une autre),
+- **À venir** : l'**embrèvement** (une pièce en diagonale, la jambe de force ou le chevron, dont le bout s'emboîte en biais dans une autre),
   la queue d'aronde, l'enfourchement (le chevron sur le faîtage), et le chevillage visible des pans de bois.
 - **Choix faits sans Grégoire** : les marques et les chevilles sont posées par-dessus le dessin de la pièce entière (pas un dessin
   par longueur) ; une enture ne se pose qu'entre deux pièces dont les emprises sont exactement bout à bout (l'aimant des bords y

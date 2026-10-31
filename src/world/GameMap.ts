@@ -17,7 +17,7 @@ import { blocks, boxOf, depthsOf, type BuildPiece } from './build';
 import { buildLook } from './buildView';
 import { runLayout, wallRuns } from './wallRuns';
 import { wallTexture } from './wallTexture';
-import { drawJoints } from './jointView';
+import { drawJoints, halvingOverlays } from './jointView';
 
 /**
  * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois, celle de ses réglages
@@ -231,6 +231,8 @@ export class GameMap {
   readonly piles: PlacedPile[] = [];
   /** Les pièces posées en mode construction. */
   readonly builds: PlacedBuild[] = [];
+  /** Les croisements des mi-bois, posés par-dessus leurs deux pièces (redessinés à chaque changement). */
+  private overlays: Phaser.GameObjects.Image[] = [];
   readonly width: number;
   readonly height: number;
 
@@ -613,6 +615,10 @@ export class GameMap {
       const floor = b.piece.z === 0 && 'prop' in b.piece.piece && propDefs[b.piece.piece.prop].layer === 'floor';
       b.image.setDepth(floor ? DEPTH.floor : depths.get(b.piece.id)!);
     }
+    for (const o of this.overlays) o.destroy();
+    this.overlays = halvingOverlays(this.scene, this.builds, this.changes.joints).map((o) =>
+      this.scene.add.image(o.x, o.y, o.key).setOrigin(0, 0).setDepth(o.depth).setAlpha(1),
+    );
   }
 
   /** Les tronçons de mur : chaque morceau prend l'image de son tronçon, placée pour le tronçon, rognée à sa part. */

@@ -12,9 +12,10 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildRef, JointType, Natural } from '../content/types';
 import type { BuildCommand, BuildStatus } from '../events';
 import type { Player } from '../entities/Player';
-import { addBuildPieces, addJoints, game, mapState, removeBuildPieces, removeJoints, type BuildPiece, type Joint } from '../state';
-import { aimAt, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, type Area, type Box3 } from '../world/build';
+import { addBuildPieces, addJoints, game, mapState, moveBuildPiece, removeBuildPieces, removeJoints, type BuildPiece, type Joint } from '../state';
+import { aimAt, supportAt, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, type Area, type Box3 } from '../world/build';
 import { buildLook } from '../world/buildView';
+import { alignOnWall } from '../world/wallRuns';
 import { JOINT_NAMES, jointGroup, jointPoint, junctionAt, refusal as jointRefusal, type Junction } from '../world/joints';
 import type { GameMap } from '../world/GameMap';
 import { drawNatural } from '../world/natural';
@@ -28,7 +29,10 @@ type Tool =
   | { kind: 'joint'; type: JointType };
 
 /** Un geste qu'on peut annuler : des pièces et des assemblages posés, ou retirés (ils reviennent avec leur identifiant). */
-type Op = { kind: 'add' | 'remove'; pieces: BuildPiece[]; joints: Joint[] };
+type Op = { kind: 'add' | 'remove'; pieces: BuildPiece[]; joints: Joint[]; moves?: Move[] };
+
+/** Une pièce qui change de hauteur avec un geste (le mi-bois descend la pièce du dessus au niveau de l'autre). */
+type Move = { id: number; from: number; to: number };
 
 /** Un clic de la souris, en attente de la prochaine image : le bouton, Maj, et le point visé (px du monde). */
 interface Click {
@@ -240,7 +244,12 @@ export class BuildSystem {
     const cy = py * CM_PER_PX;
     let list: BuildPlaced[];
     if (t.kind === 'piece') {
-      const b = aimAt(this.pieces, sizeOf(t.piece, t.view), cx, cy, this.step);
+      let b = aimAt(this.pieces, sizeOf(t.piece, t.view), cx, cy, this.step);
+      // sur un mur (le solin), une pièce couchée affleure sa face extérieure, et reste sur ce qui la porte
+      if (b.z > 0) {
+        const a = alignOnWall(this.pieces, b);
+        if (a !== b && supportAt(this.pieces, a) === supportAt(this.pieces, b)) b = a;
+      }
       list = [{ piece: t.piece, x: b.x, y: b.y, z: b.z, view: t.view, ...(t.drawn ? { natural: t.drawn } : {}), ...(t.variant !== undefined ? { variant: t.variant } : {}) }];
     } else {
       const plan = buildPlans[t.plan];
@@ -279,7 +288,7 @@ export class BuildSystem {
     for (const p of added) this.map.placeBuild(p);
     // un plan : ses assemblages, entre les pièces qu'on vient de poser
     const planJoints = t.kind === 'plan' ? (buildPlans[t.plan]?.joints ?? []) : [];
-    const joints = planJoints.length ? addJoints(game, this.map.def.id, planJoints.map((j) => ({ type: j.type, a: added[j.a].id, b: added[j.b].id }))) : [];
+    const joints = planJoints.length ? addJoints(game, this.map.def.id, planJoints.map((j) => ({ type: j.type, a: added[j.a].id, b: added[j.b].id, ...(j.top !== undefined ? { top: added[j.top].id } : {}) }))) : [];
     this.map.sortBuilds();
     this.push({ kind: 'add', pieces: structuredClone(added), joints: structuredClone(joints) });
     if (t.kind === 'piece') {
@@ -296,9 +305,21 @@ export class BuildSystem {
   private placeJoint(type: JointType): void {
     const a = this.jointAim;
     if (!a?.junction || a.why) return this.notice(a?.why ?? jointRefusal(undefined, type, this.joints)!);
-    const added = addJoints(game, this.map.def.id, [{ type, a: a.junction.a.id, b: a.junction.b.id }]);
+    const { a: pa, b: pb } = a.junction;
+    // le mi-bois : la pièce du dessus (la plus haute ; à hauteur égale, la nord-sud) descend dans celle du dessous, entaillées chacune
+    // de la moitié ; rien ne doit reposer sur elle
+    let moves: Move[] = [];
+    let top: number | undefined;
+    if (type === 'halving') {
+      const [upper, lower] = pa.z > pb.z || (pa.z === pb.z && 'wood' in pa.piece && pa.piece.wood.axis === 'ns') ? [pa, pb] : [pb, pa];
+      if (upper.z !== lower.z && carriedBy(this.pieces, upper.id).length) return this.notice("Retire d'abord ce qui repose sur elle.");
+      top = upper.id;
+      if (upper.z !== lower.z) moves = [{ id: upper.id, from: upper.z, to: lower.z }];
+      this.move(moves, true);
+    }
+    const added = addJoints(game, this.map.def.id, [{ type, a: pa.id, b: pb.id, ...(top !== undefined ? { top } : {}) }]);
     this.map.sortBuilds();
-    this.push({ kind: 'add', pieces: [], joints: structuredClone(added) });
+    this.push({ kind: 'add', pieces: [], joints: structuredClone(added), moves });
     this.notice(`${JOINT_NAMES[type][0].toUpperCase()}${JOINT_NAMES[type].slice(1)} posé${type === 'scarf' ? 'e' : ''}.`);
     this.status();
   }
@@ -342,8 +363,21 @@ export class BuildSystem {
   private remove(px: number, py: number, all: boolean): void {
     const joint = all ? undefined : this.jointAt(px, py);
     if (joint) {
+      // le mi-bois retiré : la pièce du dessus remonte sur l'autre, s'il ne repose rien sur le croisement
+      let moves: Move[] = [];
+      if (joint.type === 'halving' && joint.top !== undefined) {
+        const upper = this.pieces.find((q) => q.id === joint.top);
+        const lower = this.pieces.find((q) => q.id === (joint.a === joint.top ? joint.b : joint.a));
+        if (upper && lower) {
+          if (carriedBy(this.pieces, upper.id).length || carriedBy(this.pieces, lower.id).some((q) => overlaps(boxOf(q), boxOf(upper)))) {
+            return this.notice("Retire d'abord ce qui repose sur le croisement.");
+          }
+          moves = [{ id: upper.id, from: upper.z, to: lower.z + boxOf(lower).h }];
+        }
+      }
       this.drop([], [joint]);
-      this.push({ kind: 'remove', pieces: [], joints: [structuredClone(joint)] });
+      this.move(moves, true);
+      this.push({ kind: 'remove', pieces: [], joints: [structuredClone(joint)], moves });
       return this.status();
     }
     const p = this.pieceAt(px, py);
@@ -388,6 +422,13 @@ export class BuildSystem {
     this.map.sortBuilds();
   }
 
+  /** Change la hauteur des pièces d'un geste (dans son sens, ou à rebours pour annuler). */
+  private move(moves: Move[] | undefined, forward: boolean): void {
+    if (!moves?.length) return;
+    for (const m of moves) moveBuildPiece(game, this.map.def.id, m.id, forward ? m.to : m.from);
+    this.map.sortBuilds();
+  }
+
   private push(op: Op): void {
     this.undoStack.push(op);
     this.redoStack.length = 0;
@@ -397,8 +438,13 @@ export class BuildSystem {
   private undo(): void {
     const op = this.undoStack.pop();
     if (!op) return this.notice('Rien à annuler.');
-    if (op.kind === 'add') this.drop(op.pieces, op.joints);
-    else this.restore(op.pieces, op.joints);
+    if (op.kind === 'add') {
+      this.drop(op.pieces, op.joints);
+      this.move(op.moves, false);
+    } else {
+      this.move(op.moves, false);
+      this.restore(op.pieces, op.joints);
+    }
     this.redoStack.push(op);
     this.status();
   }
@@ -407,8 +453,13 @@ export class BuildSystem {
   private redo(): void {
     const op = this.redoStack.pop();
     if (!op) return this.notice('Rien à refaire.');
-    if (op.kind === 'add') this.restore(op.pieces, op.joints);
-    else this.drop(op.pieces, op.joints);
+    if (op.kind === 'add') {
+      this.move(op.moves, true);
+      this.restore(op.pieces, op.joints);
+    } else {
+      this.drop(op.pieces, op.joints);
+      this.move(op.moves, true);
+    }
     this.undoStack.push(op);
     this.status();
   }

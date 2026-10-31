@@ -138,6 +138,41 @@ export function drawJoints(scene: Phaser.Scene, shown: readonly ShownPiece[], jo
   }
 }
 
+/** Le croisement d'un mi-bois, à poser par-dessus les deux pièces : sa clé, son coin haut gauche (px du monde), sa profondeur. */
+export interface Overlay {
+  key: string;
+  x: number;
+  y: number;
+  depth: number;
+}
+
+/**
+ * Les croisements des mi-bois : une image (`joint-halving-<diamètre>-<aspect>-<dessus>-<masque>`, art/world/joints.ts) posée sur les
+ * deux pièces, sa colonne 0 sur celle de l'image de la pièce nord-sud, sa rangée 0 sur celle de l'image de l'est-ouest ; le masque dit
+ * de quels côtés une pièce continue au-delà du croisement (nord 1, est 2, sud 4, ouest 8). Juste au-dessus des deux pièces. À appeler
+ * quand les pièces sont placées et à leur profondeur.
+ */
+export function halvingOverlays(scene: Phaser.Scene, shown: readonly ShownPiece[], joints: readonly JointRef[]): Overlay[] {
+  const byId = new Map(shown.map((s) => [s.piece.id, s]));
+  const out: Overlay[] = [];
+  for (const j of joints) {
+    if (j.type !== 'halving') continue;
+    const two = [byId.get(j.a), byId.get(j.b)];
+    const ew = two.find((s) => s && woodOfPiece(s.piece)?.axis === 'ew');
+    const ns = two.find((s) => s && woodOfPiece(s.piece)?.axis === 'ns');
+    if (!ew || !ns) continue;
+    const w = woodOfPiece(ew.piece)!;
+    const E = boxOf(ew.piece);
+    const N = boxOf(ns.piece);
+    const mask = (N.y < E.y ? 1 : 0) + (E.x + E.w > N.x + N.w ? 2 : 0) + (N.y + N.d > E.y + E.d ? 4 : 0) + (E.x < N.x ? 8 : 0);
+    const top = j.top === ns.piece.id ? 'ns' : 'ew';
+    const key = `joint-halving-${w.size}-${lookOf(w) === 'beam' ? 'beam' : 'round'}-${top}-${mask}`;
+    if (!scene.textures.exists(key)) continue;
+    out.push({ key, x: ns.image.x, y: ew.image.y - ew.image.height, depth: Math.max(ew.image.depth, ns.image.depth) + 0.0005 });
+  }
+  return out;
+}
+
 /** La rangée de l'image d'une pièce debout à `cut` cm de son pied : la tête (`extra` rangées) en haut, puis le fût. */
 function upRow(wood: { size: string; length: number } & Parameters<typeof lookOf>[0], cut: number): number {
   const u = upOf(wood.size, lookOf(wood));

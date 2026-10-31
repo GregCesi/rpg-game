@@ -635,12 +635,14 @@ export const BuildPlacedSchema = z.strictObject({
 /**
  * Un assemblage de charpente posé en mode construction (docs/CONCEPTION.md, « Les assemblages ») : `scarf`, l'enture en trait de
  * Jupiter (deux pièces de bois de même section et de même état, bout à bout sur le même axe) ; `mortise`, le tenon et mortaise (un
- * poteau debout sous une pièce couchée, ou posé sur une sablière basse). Bois sur bois, chevillé.
+ * poteau debout sous une pièce couchée, ou posé sur une sablière basse) ; `halving`, le mi-bois (deux pièces couchées de même section qui
+ * se croisent à angle droit, à la même hauteur, chacune entaillée de la moitié de son épaisseur : l'angle de deux sablières basses, ou
+ * une croix). Bois sur bois, chevillé.
  */
-export const JointTypeSchema = z.enum(['scarf', 'mortise']);
+export const JointTypeSchema = z.enum(['scarf', 'mortise', 'halving']);
 
 /** Un assemblage d'un plan du bac à sable : son type et ses deux pièces, par leur rang dans `pieces` du plan. */
-export const PlanJointSchema = z.strictObject({ type: JointTypeSchema, a: z.number().int().nonnegative(), b: z.number().int().nonnegative() });
+export const PlanJointSchema = z.strictObject({ type: JointTypeSchema, a: z.number().int().nonnegative(), b: z.number().int().nonnegative(), top: z.number().int().nonnegative().optional() });
 
 /**
  * Un plan du bac à sable (`src/content/plans/<nom>.json`, écrit par « Enregistrer comme plan » du mode construction) : son nom

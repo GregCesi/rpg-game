@@ -122,6 +122,27 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   // le tenon : un poteau dont la tête touche le dessous d'une sablière
   const plateOn: BuildPiece = { id: 6, piece: { wood: { size: 'normal', length: 200, shape: 'round', hewn: 12, axis: 'ew' } }, x: -80, y: 0, z: 180, view: 0 };
   assert.deepEqual(judge(lower, plateOn), { type: 'mortise' });
-  assert.match(refusal(junctionAt([lower, plateOn], 4, 0 - 180 / 5 + 8, 20), 'scarf', [])!, /tenon et mortaise/);
+  assert.match(refusal(junctionAt([lower, plateOn], 4, 0 - 180 / 5 + 8, 20), 'scarf', [])!, /bout à bout/);
   console.log('✓ test-build : assemblages (enture debout, section et état, suite entée, tenon et mortaise)');
+}
+
+// le mi-bois : deux pièces couchées de même section qui se croisent à angle droit ; une pièce couchée sur le solin s'aligne dehors
+{
+  const { judge } = await import('../src/world/joints');
+  const { alignOnWall } = await import('../src/world/wallRuns');
+  const beamOf = (axis: 'ew' | 'ns', size = 'normal') => ({ wood: { size, length: 300, shape: 'round' as const, hewn: size === 'normal' ? 12 : undefined, axis } });
+  const E: BuildPiece = { id: 1, piece: beamOf('ew'), x: 0, y: 0, z: 40, view: 0 };
+  const N: BuildPiece = { id: 2, piece: beamOf('ns'), x: 0, y: 0, z: 70, view: 0 };
+  assert.deepEqual(judge(E, N), { type: 'halving' }, "l'une sur l'autre, à angle droit : un mi-bois");
+  assert.deepEqual(judge(E, { ...N, z: 40 }), { type: 'halving' }, "l'une dans l'autre, à la même hauteur : toujours le mi-bois");
+  assert.match(judge(E, { ...N, piece: { wood: { size: 'pole', length: 300, shape: 'round', axis: 'ns' } } })!.why!, /même section/);
+  assert.match(judge(E, { ...E, id: 3, y: 0, z: 70 })!.why!, /angle droit/);
+  // le solin : un angle (nord-sud qui part vers le sud du bout ouest) ; la sablière est-ouest affleure le nord, la nord-sud l'ouest
+  const sill = (id: number, x: number, y: number, view = 0): BuildPiece => ({ id, piece: { prop: 'rough-sill-wall' }, x, y, z: 0, view });
+  const walls = [sill(10, 0, 0), sill(11, 160, 0), sill(12, 0, 50, 1), sill(13, 0, 210, 1)];
+  const onEw = alignOnWall(walls, { x: 0, y: 10, z: 40, w: 300, d: 30, h: 30 });
+  assert.equal(onEw.y, 0, 'la sablière est-ouest affleure la face nord (dehors)');
+  const onNs = alignOnWall(walls, { x: 10, y: 60, z: 40, w: 30, d: 300, h: 30 });
+  assert.equal(onNs.x, 0, 'la sablière nord-sud affleure la face ouest (dehors)');
+  console.log('✓ test-build : mi-bois (croisement, section, sens), sablière alignée sur la face extérieure du solin');
 }

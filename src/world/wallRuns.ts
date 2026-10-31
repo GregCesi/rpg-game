@@ -169,3 +169,36 @@ export function runLayout(r: WallRun, w: number, h: number): { x: number; y: num
   });
   return { x, y, crops };
 }
+
+/**
+ * Une pièce couchée posée sur un mur (le solin) s'aligne sur sa face extérieure : la sablière basse affleure le parement du dehors.
+ * Le dehors est le côté opposé au reste du mur (le centre des morceaux qui se touchent, de proche en proche) ; un mur seul et droit n'a pas de
+ * dehors : la pièce garde sa place. Seulement une pièce parallèle au mur, plus mince que lui, posée au-dessus de son dessus.
+ */
+export function alignOnWall<B extends Box3>(pieces: readonly BuildPiece[], box: B): B {
+  const ew = box.w >= box.d;
+  const walls = pieces.filter((p) => wallOf(p));
+  const under = walls.find((p) => {
+    const b = boxOf(p);
+    const parallel = (p.view % 2 === 0) === ew;
+    const thinner = ew ? box.d < b.d : box.w < b.w;
+    return parallel && thinner && b.z + b.h <= box.z && box.x < b.x + b.w && b.x < box.x + box.w && box.y < b.y + b.d && b.y < box.y + box.d;
+  });
+  if (!under) return box;
+  const W = boxOf(under);
+  // le mur dont il fait partie : les morceaux qui se touchent (bout à bout, en angle), de proche en proche
+  const boxes = walls.map(boxOf);
+  const touch = (a: Box3, b: Box3) => a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.d && b.y <= a.y + a.d && a.z === b.z;
+  const near = [boxes[walls.indexOf(under)]];
+  for (let i = 0; i < near.length; i++) for (const b of boxes) if (!near.includes(b) && touch(near[i], b)) near.push(b);
+  const cx = near.reduce((s, b) => s + b.x + b.w / 2, 0) / near.length;
+  const cy = near.reduce((s, b) => s + b.y + b.d / 2, 0) / near.length;
+  if (ew) {
+    const mid = W.y + W.d / 2;
+    if (Math.abs(cy - mid) < W.d / 2) return box;
+    return { ...box, y: cy > mid ? W.y : W.y + W.d - box.d };
+  }
+  const mid = W.x + W.w / 2;
+  if (Math.abs(cx - mid) < W.w / 2) return box;
+  return { ...box, x: cx > mid ? W.x : W.x + W.w - box.w };
+}

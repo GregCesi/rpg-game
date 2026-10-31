@@ -17,10 +17,12 @@ export interface JointRef {
   type: JointType;
   a: number;
   b: number;
+  /** Le mi-bois : la pièce du dessus. */
+  top?: number;
 }
 
 /** Les noms des assemblages, en français. */
-export const JOINT_NAMES: Record<JointType, string> = { scarf: 'enture en trait de Jupiter', mortise: 'tenon et mortaise' };
+export const JOINT_NAMES: Record<JointType, string> = { scarf: 'enture en trait de Jupiter', mortise: 'tenon et mortaise', halving: 'mi-bois' };
 
 /** Une jonction entre deux pièces qui se touchent : ce qu'elle permet (ou pourquoi pas), et son point à l'écran (px). */
 export interface Junction {
@@ -38,7 +40,7 @@ export interface Junction {
 export const woodOfPiece = (p: BuildPiece): WoodPiece | undefined => ('wood' in p.piece ? p.piece.wood : undefined);
 
 /** Le contact de deux boîtes : l'axe où elles se touchent (`x`, `y`, `z`) et le rectangle du contact, ou rien. */
-function contact(A: Box3, B: Box3): { axis: 'x' | 'y' | 'z'; x0: number; x1: number; y0: number; y1: number; z0: number; z1: number } | undefined {
+function contact(A: Box3, B: Box3): { axis: 'x' | 'y' | 'z' | 'cross'; x0: number; x1: number; y0: number; y1: number; z0: number; z1: number } | undefined {
   const ov = (a0: number, a1: number, b0: number, b1: number) => [Math.max(a0, b0), Math.min(a1, b1)] as const;
   const [x0, x1] = ov(A.x, A.x + A.w, B.x, B.x + B.w);
   const [y0, y1] = ov(A.y, A.y + A.d, B.y, B.y + B.d);
@@ -49,6 +51,8 @@ function contact(A: Box3, B: Box3): { axis: 'x' | 'y' | 'z'; x0: number; x1: num
   if (touchX && y1 > y0 && z1 > z0) return { axis: 'x', x0, x1: x0, y0, y1, z0, z1 };
   if (touchY && x1 > x0 && z1 > z0) return { axis: 'y', x0, x1, y0, y1: y0, z0, z1 };
   if (touchZ && x1 > x0 && y1 > y0) return { axis: 'z', x0, x1, y0, y1, z0, z1: z0 };
+  // à la même hauteur, l'une dans l'autre : le croisement d'un mi-bois (vu sur son dessus)
+  if (x1 > x0 && y1 > y0 && z1 > z0 && A.z === B.z) return { axis: 'cross', x0, x1, y0, y1, z0: z1, z1 };
   return undefined;
 }
 
@@ -79,7 +83,14 @@ export function judge(a: BuildPiece, b: BuildPiece): { type?: JointType; why?: s
   if (wa.axis === wb.axis && wa.axis !== 'up' && c.axis !== 'z') return { why: 'Les deux pièces doivent se toucher par un bout, alignées sur le même axe.' };
   // un poteau sous une pièce couchée (sa tête dessous), ou sur une sablière basse (son pied dessus)
   if (c.axis === 'z' && up(wa) !== up(wb)) return { type: 'mortise' };
-  if (c.axis === 'z' && !up(wa) && !up(wb)) return { why: 'Le mi-bois, pour des pièces qui se croisent, viendra plus tard.' };
+  // deux pièces couchées qui se croisent à angle droit, l'une sur l'autre ou déjà l'une dans l'autre : un mi-bois
+  if ((c.axis === 'z' || c.axis === 'cross') && !up(wa) && !up(wb)) {
+    if (wa.axis === wb.axis) return { why: 'Le mi-bois croise deux pièces à angle droit.' };
+    if (wa.size !== wb.size || wa.shape !== wb.shape) return { type: 'halving', why: 'Les deux pièces doivent avoir la même section.' };
+    if (lookOf(wa) !== lookOf(wb)) return { type: 'halving', why: 'Les deux pièces doivent être dans le même état (rondes, équarries…).' };
+    if (c.axis === 'z' && A.z !== B.z && Math.abs(A.z - B.z) !== (A.z < B.z ? A.h : B.h)) return { type: 'halving', why: "L'une doit reposer sur l'autre." };
+    return { type: 'halving' };
+  }
   return { why: 'Il faut un poteau sous une pièce couchée, ou sur une sablière basse.' };
 }
 
@@ -131,10 +142,16 @@ export const joined = (joints: readonly JointRef[], a: number, b: number) => joi
 
 /** Pourquoi on ne pose pas un assemblage de ce type à cette jonction, ou rien si on peut. */
 export function refusal(j: Junction | undefined, type: JointType, joints: readonly JointRef[]): string | undefined {
-  if (!j) return type === 'scarf' ? 'Vise la jonction de deux pièces de bois bout à bout.' : 'Vise la jonction d’un poteau et d’une pièce couchée.';
+  const aim = { scarf: 'Vise la jonction de deux pièces de bois bout à bout.', mortise: 'Vise la jonction d’un poteau et d’une pièce couchée.', halving: 'Vise le croisement de deux pièces couchées.' };
+  if (!j) return aim[type];
   if (joined(joints, j.a.id, j.b.id)) return 'Elles sont déjà assemblées.';
-  if (j.type && j.type !== type) {
-    return type === 'scarf' ? 'Une enture prolonge deux pièces bout à bout : ici, c’est un tenon et mortaise.' : 'Il faut un poteau sous une pièce couchée, ou sur une sablière basse.';
+  if (j.type !== type) {
+    const want = {
+      scarf: 'Une enture prolonge deux pièces de même section, bout à bout, sur le même axe.',
+      mortise: 'Il faut un poteau sous une pièce couchée, ou sur une sablière basse.',
+      halving: 'Le mi-bois croise deux pièces couchées de même section, à angle droit, l’une sur l’autre.',
+    };
+    return want[type];
   }
   return j.why;
 }

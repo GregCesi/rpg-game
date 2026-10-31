@@ -120,3 +120,84 @@ for (let yy = 0; yy < big.height; yy++) for (let xx = 0; xx < big.width; xx++) {
   big.data.set(small.data.subarray(s, s + 4), (yy * big.width + xx) * 4);
 }
 writeFileSync('.art-preview/joint-marks-zoom.png', PNG.sync.write(big));
+
+// Le mi-bois (`joint-halving-normal-<aspect>-<dessus>-<masque>`) : .art-preview/joint-halving.png, x4. Par aspect et par
+// dessus, une rangée : les quatre angles d'une maison (sud-ouest 3, nord-ouest 6, nord-est 12, sud-est 9), une croix (15) et un
+// T (7), composés comme le moteur les pose (buildView : chaque pièce de 2 m centrée sur son emprise, bas de l'image au bord sud ;
+// puis le croisement, colonne 0 sur celle de la nord-sud, rangée 0 sur celle de l'est-ouest). Xéros à gauche ; en dessous,
+// les mêmes sans le croisement, pour voir ce qu'il recouvre.
+{
+  const CM = 5;
+  const HALVING_SHOWN = [3, 6, 12, 9, 15, 7];
+  type Placed = { grid: Grid; x: number; y: number; bottom: number };
+  // une pièce de bois posée comme buildView : emprise en cm (x, y, largeur, profondeur)
+  const place = (p: WoodPiece, bx: number, by: number, bw: number, bd: number): Placed => {
+    const g = composeWood(p).toGrid();
+    const x = Math.round((bx + bw / 2) / CM - g[0].length / 2);
+    const bottom = Math.round((by + bd) / CM);
+    return { grid: g, x, y: bottom - g.length, bottom };
+  };
+  const L = 200;
+  const D = 30;
+  /** Les deux pièces et le croisement d'un masque ; la nord-sud d'emprise x 0..30, l'est-ouest d'emprise y 0..30 (cm). */
+  const scene = (beam: boolean, top: 'ew' | 'ns', mask: number, overlay: boolean): Item[] => {
+    const N = mask & 1, E = mask & 2, S = mask & 4, W = mask & 8;
+    const ex = W && E ? -85 : W ? D - L : 0;
+    const ny = N && S ? -85 : N ? D - L : 0;
+    const ew = place(P('normal', 'ew', L, beam), ex, 0, L, D);
+    const ns = place(P('normal', 'ns', L, beam), 0, ny, D, L);
+    // la profondeur : la plus au sud devant (à égalité, la nord-sud)
+    const order = ew.bottom > ns.bottom ? [ns, ew] : [ew, ns];
+    const items: Item[] = order.map((q) => ({ grid: q.grid, x: q.x, y: q.y, palette: pal }));
+    if (overlay) {
+      const key = `joint-halving-normal-${beam ? 'beam' : 'round'}-${top}-${mask}`;
+      items.push({ grid: find(key), x: ns.x, y: ew.y, palette: world });
+    }
+    return items;
+  };
+  const CELL_W = 2 * L / CM + 8;
+  const CELL_H = 2 * L / CM + 8;
+  const rowsSpec: { beam: boolean; top: 'ew' | 'ns' }[] = [];
+  for (const beam of [false, true]) for (const top of ['ew', 'ns'] as const) rowsSpec.push({ beam, top });
+  const W0 = 40;
+  const BW = W0 + HALVING_SHOWN.length * CELL_W + 4;
+  const BH = rowsSpec.length * CELL_H + 8;
+  const make = (overlay: boolean) => {
+    const b = new Board(BW, BH, grassOf(sources));
+    rowsSpec.forEach((r, k) => {
+      const oy = 4 + k * CELL_H;
+      b.blit(X, xerosPal, 2, oy + 20);
+      HALVING_SHOWN.forEach((mask, i) => {
+        const items = scene(r.beam, r.top, mask, overlay);
+        const minX = Math.min(...items.map((q) => q.x));
+        const minY = Math.min(...items.map((q) => q.y));
+        for (const q of items) b.blit(q.grid, q.palette, W0 + i * CELL_W + (q.x - minX), oy + (q.y - minY));
+      });
+    });
+    return b.toPng();
+  };
+  const up = (small: PNG, k: number) => {
+    const big = new PNG({ width: small.width * k, height: small.height * k });
+    for (let yy = 0; yy < big.height; yy++) for (let xx = 0; xx < big.width; xx++) {
+      const s = (Math.floor(yy / k) * small.width + Math.floor(xx / k)) * 4;
+      big.data.set(small.data.subarray(s, s + 4), (yy * big.width + xx) * 4);
+    }
+    return big;
+  };
+  writeFileSync('.art-preview/joint-halving.png', PNG.sync.write(up(make(true), 4)));
+  // zoom, par aspect et dessus : une fenêtre de 26 × 26 px autour de chaque croisement, avec (en haut) puis sans lui, x8
+  const Z = 26;
+  for (const r of rowsSpec) {
+    const zb = new Board((Z + 2) * HALVING_SHOWN.length, (Z + 2) * 2, grassOf(sources));
+    HALVING_SHOWN.forEach((mask, i) => [true, false].forEach((ov, o) => {
+      const items = scene(r.beam, r.top, mask, ov);
+      const cell = new Board(Z, Z, grassOf(sources));
+      const ref = scene(r.beam, r.top, mask, true).at(-1)!;
+      for (const q of items) cell.blit(q.grid, q.palette, q.x - ref.x + 8, q.y - ref.y + 8);
+      zb.paste(cell, i * (Z + 2), o * (Z + 2));
+    }));
+    writeFileSync(`.art-preview/joint-halving-zoom-${r.beam ? 'beam' : 'round'}-${r.top}.png`, PNG.sync.write(up(zb.toPng(), 8)));
+  }
+  writeFileSync('.art-preview/joint-halving-under.png', PNG.sync.write(up(make(false), 4)));
+  console.log('.art-preview/joint-halving.png');
+}

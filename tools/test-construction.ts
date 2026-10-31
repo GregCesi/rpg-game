@@ -384,11 +384,69 @@ await playtest('construction', async ({ page, errors, load }) => {
     assert.ok(left.includes(beamPiece.id) && left.includes(polePiece.id), 'le reste ne bouge pas');
     assert.equal((await jointsNow()).length, 0);
 
+    // 13. l'angle d'une maison : un angle de solin brut ; une sablière est-ouest posée dessus s'accroche sur son dessus (40 cm) et
+    // affleure sa face extérieure (le nord) ; une sablière nord-sud la croise au coin (posée dessus, 70 cm) et affleure l'ouest ; le
+    // mi-bois les croise à la même hauteur (la nord-sud descend à 40 cm), un seul dessin au croisement ; le poteau d'angle au-dessus
+    const spot4 = await page.evaluate(() => {
+      const w = (window as any).game.scene.getScene('world');
+      const m = w.map;
+      const clear = (l: number, t: number, r: number, b: number) =>
+        m.areaFree({ left: l, top: t, right: r, bottom: b }) && !m.builds.some((q: any) => q.image.x < r && q.image.x + q.image.width > l && q.image.y - q.image.height < b && q.image.y > t);
+      for (let y = 140; y < m.height - 120; y += 8) for (let x = 60; x < m.width - 160; x += 8) if (clear(x - 20, y - 70, x + 120, y + 90)) {
+        w.cameras.main.centerOn(x + 30, y + 10);
+        return { x, y };
+      }
+      return undefined;
+    });
+    assert.ok(spot4, 'un quatrième coin dégagé');
+    await sleep(300);
+    center = { x: spot4!.x + 30, y: spot4!.y + 10 };
+    const n4 = (await pieces()).length;
+    await send({ kind: 'pick', piece: { prop: 'rough-sill-wall' } });
+    for (const dx of [16, 48]) await click(spot4!.x + dx, spot4!.y);
+    const [w1] = (await pieces()).slice(n4);
+    await page.keyboard.press('KeyR');
+    await sleep(100);
+    await click((w1.x + 25) / 5, (w1.y + 50 + 80) / 5);
+    const s1 = (await pieces()).at(-1);
+    assert.deepEqual([s1.view, s1.x, s1.y], [1, w1.x, w1.y + 50], 'le solin nord-sud sous le bout ouest : un angle');
+    const plateBeam = (axis: string) => ({ size: 'normal', length: 300, shape: 'round', hewn: 12, axis });
+    await send({ kind: 'pick', piece: { wood: plateBeam('ew') } });
+    await click((w1.x + 150) / 5, (w1.y + 25 - 40) / 5);
+    const pe = (await pieces()).at(-1);
+    assert.equal(pe.z, 40, 'la sablière est-ouest sur le dessus du solin (40 cm)');
+    assert.equal(pe.y, w1.y, 'elle affleure la face extérieure (le nord)');
+    assert.equal(pe.x, w1.x, 'elle part du coin');
+    await send({ kind: 'pick', piece: { wood: plateBeam('ns') } });
+    await click((s1.x + 15) / 5, (w1.y + 150 - 70) / 5);
+    const pn = (await pieces()).at(-1);
+    assert.equal(pn.z, 70, 'la sablière nord-sud posée sur la première, au coin');
+    assert.deepEqual([pn.x, pn.y], [w1.x, w1.y], 'elle affleure la face extérieure (l’ouest) et part du coin');
+    await shot('10-angle-avant');
+    await send({ kind: 'pick-joint', joint: 'halving' });
+    await click((w1.x + 15) / 5, (w1.y + 30 - 70) / 5);
+    const halving = (await jointsNow()).find((j: any) => j.type === 'halving');
+    assert.ok(halving, 'le mi-bois est posé');
+    const after = await pieces();
+    assert.equal(after.find((p: any) => p.id === pn.id).z, 40, 'les deux sablières à la même hauteur, l’une dans l’autre');
+    const overlay = await page.evaluate(() => (window as any).game.scene.getScene('world').map.overlays.map((o: any) => o.texture.key));
+    assert.ok(overlay.some((k: string) => k.startsWith('joint-halving-normal-beam-')), `un seul dessin au croisement (${overlay})`);
+    // le poteau d'angle, debout sur le croisement
+    await send({ kind: 'pick', piece: { wood: upBeam(180) } });
+    await click((w1.x + 15) / 5, (w1.y + 20 - 70) / 5);
+    const corner = (await pieces()).at(-1);
+    assert.equal(corner.z, 70, 'le poteau d’angle sur le croisement (40 + 30 cm)');
+    await shot('11-mi-bois');
+    // une enture refusée là : deux pièces croisées ; et retirer le mi-bois est refusé tant que le poteau repose sur le croisement
+    await send({ kind: 'none' });
+    await click((w1.x + 15) / 5, (w1.y + 30 - 70) / 5 + 1, 'right');
+    assert.ok((await jointsNow()).some((j: any) => j.type === 'halving'), 'le mi-bois reste sous le poteau');
+
     await page.keyboard.press('KeyB');
     await sleep(150);
     assert.equal(await mode(), 'play', 'B rend le jeu');
     assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
-    console.log('  ✓ construction : dalle, poteau à 12 cm, sablière à 192 cm, refus, annuler, refaire, plan écrit et reposé, solin, cran, rechargé ; tronçon de trois sans contour intérieur, angle, coupure ; enture des poteaux, enture refusée, tenon, rechargés, retrait refusé puis l’ensemble');
+    console.log('  ✓ construction : dalle, poteau à 12 cm, sablière à 192 cm, refus, annuler, refaire, plan écrit et reposé, solin, cran, rechargé ; tronçon de trois sans contour intérieur, angle, coupure ; enture des poteaux, enture refusée, tenon, rechargés, retrait refusé puis l’ensemble ; angle de solin, sablières alignées dehors, mi-bois, poteau d’angle');
   } finally {
     rmSync(PLAN_FILE, { force: true });
   }

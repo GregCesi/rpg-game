@@ -126,7 +126,14 @@ export const SiteSchema = z.strictObject({
 export const BuildPieceSchema = BuildPlacedSchema.extend({ id: z.number().int().nonnegative() });
 
 /** Un assemblage posé en mode construction : son identifiant propre, son type, ses deux pièces (identifiants de `builds`). */
-export const JointSchema = z.strictObject({ id: z.number().int().nonnegative(), type: JointTypeSchema, a: z.number().int().nonnegative(), b: z.number().int().nonnegative() });
+export const JointSchema = z.strictObject({
+  id: z.number().int().nonnegative(),
+  type: JointTypeSchema,
+  a: z.number().int().nonnegative(),
+  b: z.number().int().nonnegative(),
+  /** Le mi-bois : la pièce du dessus (entaillée par-dessous, descendue au niveau de l'autre ; elle remonte quand on retire l'assemblage). */
+  top: z.number().int().nonnegative().optional(),
+});
 
 /** Ce qui a changé sur une carte. */
 export const MapStateSchema = z.strictObject({
@@ -530,6 +537,13 @@ export function addJoints(s: GameState, mapId: string, joints: (Omit<Joint, 'id'
   });
   revision++;
   return out;
+}
+
+/** Une pièce posée change de hauteur (le mi-bois descend la pièce du dessus au niveau de l'autre, ou la remonte). */
+export function moveBuildPiece(s: GameState, mapId: string, id: number, z: number): void {
+  const p = mapState(s, mapId).builds.find((q) => q.id === id);
+  if (p) p.z = z;
+  revision++;
 }
 
 /** Retire des assemblages (par identifiant) ; les pièces restent. */

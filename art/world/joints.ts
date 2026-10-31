@@ -104,6 +104,101 @@ function jointPeg(): Canvas {
   return c;
 }
 
+// 3. Le mi-bois (`joint-halving-normal-<aspect>-<dessus>-<masque>`, 10 × 10) : deux pièces du normal couchées, l'une est-ouest,
+//    l'autre nord-sud, à la même hauteur, chacune entaillée sur la moitié de son épaisseur, l'une posée dans l'autre. Le jeu
+//    dessine les deux pièces entières, puis pose cette image opaque au croisement : colonne 0 sur la colonne 0 de l'image de la
+//    nord-sud, rangée 0 sur la rangée 0 de l'image de l'est-ouest. Dans l'image : la bande de l'est-ouest occupe les rangées 0 à
+//    7 (0 contour ou joint, 1-2 dessus, 3-6 face, 7 contour), la nord-sud les colonnes 0 à 7 (0 contour, 1-6 bois, 7 contour) ;
+//    les colonnes 8-9 sont l'est-ouest qui continue à l'est, les rangées 8-9 la nord-sud qui continue au sud.
+//    - aspect : `beam` (la poutre) ou `round` (le rondin, et 1 à 3 faces) ; dessus : `ew` ou `ns`, la pièce entaillée par-dessous
+//      qui traverse (son dessus passe d'un tenant, l'autre reprend de chaque côté à fleur, une ligne de joint) ;
+//    - masque : de quels côtés une pièce continue (nord 1, est 2, sud 4, ouest 8). Un côté sans suite est un bout : au sud, la
+//      face du croisement (la moitié haute à la pièce du dessus, la basse à celle du dessous : le bois de bout de la nord-sud) ;
+//      à l'ouest, le bout de l'est-ouest (sa moitié en bois de bout) ; au nord et à l'est, le contour seul (comme les pièces).
+//    - la cheville plantée par le dessus, au milieu de la nord-sud, dans la bande du dessus de l'est-ouest.
+
+interface HalvingMat {
+  /** une rangée de la nord-sud, colonnes 0 à 7 */
+  ns: string;
+  /** une colonne de l'est-ouest, rangées 0 à 7 */
+  ew: string;
+  /** la ligne de joint (à fleur) */
+  joint: string;
+  /** le bois de bout de la nord-sud vu au sud, colonnes 1 à 6, moitié haute puis moitié basse (deux rangées chacune) */
+  endS: [string, string];
+  /** le bois de bout de l'est-ouest vu à l'ouest, colonnes 1 et 2, trois rangées */
+  endW: [string, string, string];
+}
+
+// relevé sur les pièces de 2 m (composeWood) : la rangée courante de la nord-sud, la colonne courante de l'est-ouest
+const HALVING_MATS: Record<'beam' | 'round', HalvingMat> = {
+  round: { ns: 'KMMmmNNo', ew: 'KMMmmNNo', joint: 'N', endS: ['NTTttN', 'NttTtN'], endW: ['Yt', 'Yt', 'tT'] },
+  beam: { ns: 'NtYYYtTo', ew: 'KYYtttTo', joint: 'T', endS: ['YYYYtt', 'YttTtt'], endW: ['YY', 'Yt', 'tT'] },
+};
+
+export const HALVING_MASKS = Array.from({ length: 16 }, (_, i) => i);
+
+/** Le croisement d'un mi-bois. */
+export function halving(aspect: 'beam' | 'round', top: 'ew' | 'ns', mask: number): Canvas {
+  const m = HALVING_MATS[aspect];
+  const N = (mask & 1) !== 0;
+  const E = (mask & 2) !== 0;
+  const S = (mask & 4) !== 0;
+  const W = (mask & 8) !== 0;
+  const c = new Canvas(10, 10);
+  const J = m.joint;
+  // 1. l'est-ouest, comme s'il continuait : sa bande sur la nord-sud, et à l'est s'il continue
+  for (let x = 0; x < (E ? 10 : 8); x++) for (let y = 0; y < 8; y++) c.set(x, y, m.ew[y]);
+  // 2. la face sud du croisement quand la nord-sud s'arrête : moitié haute (3-4) à la pièce du dessus, basse (5-6) à l'autre ;
+  //    le bois de bout de la nord-sud, l'est-ouest y garde sa face
+  if (!S) {
+    const rows = top === 'ns' ? [3, 4] : [5, 6];
+    rows.forEach((y, k) => {
+      for (let x = 1; x <= 6; x++) c.set(x, y, m.endS[k][x - 1]);
+      c.set(0, y, W ? J : 'K');
+      c.set(7, y, E ? J : 'o');
+    });
+  }
+  // 3. le bout de l'est-ouest à l'ouest : sa moitié (haute s'il est dessus, basse sinon) en bois de bout, l'autre moitié est le
+  //    flanc éclairé de la nord-sud
+  if (!W) {
+    const endRows = top === 'ew' ? [1, 2, 3] : [4, 5, 6];
+    const flankRows = top === 'ew' ? [4, 5, 6] : [1, 2, 3];
+    endRows.forEach((y, k) => c.set(1, y, m.endW[k][0]).set(2, y, m.endW[k][1]));
+    for (const y of flankRows) c.set(1, y, m.ns[1]).set(2, y, m.ns[2]);
+  }
+  // 4. la pièce du dessus : la nord-sud passe d'un tenant (l'est-ouest reprend à fleur de part et d'autre), ou l'est-ouest passe
+  //    (la nord-sud reprend au nord et au sud)
+  if (top === 'ns') {
+    for (let y = 0; y < 3; y++) for (let x = 0; x < 8; x++) c.set(x, y, m.ns[x]);
+    for (let y = 1; y < 3; y++) c.set(0, y, W ? J : 'K').set(7, y, E ? J : 'o');
+  } else if (N) {
+    for (let x = 1; x <= 6; x++) c.set(x, 0, J);
+    c.set(0, 0, m.ns[0]).set(7, 0, 'o');
+  }
+  // 5. la nord-sud qui continue au sud passe devant la face de l'est-ouest
+  if (S) {
+    for (let y = 3; y < 10; y++) for (let x = 0; x < 8; x++) c.set(x, y, m.ns[x]);
+    if (top === 'ew') for (let x = 1; x <= 6; x++) c.set(x, 3, J);
+  }
+  // 6. les contours des côtés sans suite, coins arrondis d'un pixel
+  if (!N) for (let x = 0; x < 8; x++) c.set(x, 0, 'K');
+  // à l'ouest, le contour de l'est-ouest (K) ; où la nord-sud continue (au nord, au sud), le sien
+  if (!W) for (let y = 0; y < (S ? 10 : 8); y++) c.set(0, y, (S && y >= 3) || (N && y === 0) ? m.ns[0] : 'K');
+  if (!E) for (let y = 0; y < (S ? 10 : 8); y++) c.set(7, y, y === 0 && !N ? 'K' : 'o');
+  if (!S) for (let x = 0; x < 8; x++) c.set(x, 7, x === 0 && !W ? 'K' : 'o');
+  if (!S && E) c.set(7, 7, 'o');
+  const clear = (x: number, y: number) => c.set(x, y, '.');
+  if (!N && !W) clear(0, 0);
+  if (!N && !E) clear(7, 0);
+  if (!S && !W) clear(0, 7);
+  if (!S && !E) clear(7, 7);
+  // 7. la cheville, plantée par le dessus ; sur la poutre, le clair Y se fond dans le dessus : cernée aussi à gauche (T)
+  peg(c, 4, 1);
+  if (aspect === 'beam') c.set(3, 1, 'T');
+  return c;
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
 export const JOINT_SIZES = Object.keys(BANDS);
@@ -116,4 +211,7 @@ export default [
   // le poteau : 8 colonnes (`up.w`), les rangées de bois du normal couché tombent sur ses colonnes 1 à 6
   img('joint-scarf-normal-up', transpose(scarfEW('normal').toGrid(), 8)),
   img('joint-peg', jointPeg()),
+  ...(['beam', 'round'] as const).flatMap((aspect) =>
+    (['ew', 'ns'] as const).flatMap((top) => HALVING_MASKS.map((mask) => img(`joint-halving-normal-${aspect}-${top}-${mask}`, halving(aspect, top, mask)))),
+  ),
 ];
