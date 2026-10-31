@@ -543,6 +543,48 @@ pans de toit gris. Un même bâtiment mélangeait du bois neuf et du bois de vin
   coffre, manches) gardent leurs teintes : ils ne sont pas des pièces de bâtiment ; l'abri à bois du chantier guidé prend l'âge au
   catalogue, mais son chantier en jeu le pose neuf ; écorcer un rondin en jeu (la plane) viendra avec son geste.
 
+### Les intérieurs (décidé le 1er novembre 2026, chantier « intérieurs »)
+
+Le but, décidé par Grégoire : un joueur qui bâtit une maison comme il veut peut y entrer, et l'intérieur est cohérent avec ce qu'il a
+construit. **Pas de dessin à la main pour chaque maison : l'intérieur se calcule des pièces posées**, parce que chacune est connue.
+La chaumière (`maison.tmj`) reste telle quelle jusqu'à la nouvelle chaumière.
+
+- **Les portes s'ouvrent** (`swing` de props.json, `passage` : une porte) : la porte en planches pivote d'un quart vers le dehors sur
+  son gond, comme le volet (`plank-door`, `plank-door-open`) ; la porte charretière ouvre ses deux battants (gond `double`,
+  `cart-door-open`, dessinée par le pixel-artist à partir de la porte fermée ; ouverte, elle ne bloque pas). E devant la porte.
+- **Le bâtiment se reconnaît à sa porte** (`world/interior.ts`, sans Phaser) : tout ce qui barre le passage à hauteur d'homme est
+  projeté au sol (grille de 5 cm), avec les linteaux et chaque porte à sa place fermée ; on remplit depuis le dedans de la porte. Si
+  le remplissage reste clos, c'est une pièce : son rectangle est l'emprise **entre les faces intérieures des murs** (la cabane
+  2,60 × 3,20 m, la grange 8,80 × 6 m). Une **ouverture sans porte** est un passage d'au moins 60 cm sous un linteau (base entre
+  1,80 m et 2,40 m) ; sans linteau, la pièce n'est pas close : on n'y entre pas (un appentis ouvert reste dehors).
+- **Entrer, sortir** (`systems/interiors.ts`) : Xéros qui marche dans le passage d'une porte ouverte, tourné vers le dedans, passe à
+  la vue intérieure par le même fondu qu'une sortie de Tiled ; dedans, le même passage, tourné vers le dehors, le ramène devant la
+  porte. Porte fermée : elle barre le passage, E l'ouvre d'abord.
+- **La vue intérieure** (`world/interiorMap.ts`, `world/interiorView.ts`) est une carte calculée à l'entrée (`interieur:<carte>:<x>,<y>`,
+  le coin nord-ouest de la pièce), la même pour le même bâtiment, à la même échelle et au même zoom que dehors : le sol de terre
+  battue dans la pièce, le vide autour ; **les pièces posées du bâtiment elles-mêmes**, à leur place et à leur âge : le mur du fond
+  montre sa face du dedans (les rondins de la cabane ; le bardage vu du dedans, ses lisses et les poteaux de la grange, `-r2`), les
+  murs est et ouest se voient par leur tranche, les poteaux, cloisons, dalles, foyer posés dans l'emprise sont à leur place ; ni les
+  toits, ni ce qui passe au-dessus de la tête (faîtière, entraits, poinçons). **Le mur sud est en coupe** : le dessus tranché au ras du
+  sol, de la teinte moyenne de ses pièces (son âge suit), avec ses passages ; il barre le passage. Changer le bâtiment en mode
+  construction change son intérieur.
+- **La lumière** : la pénombre de la chaumière (0,22) quand un volet est ouvert, plus sombre (0,36) quand tous sont fermés ; une tache
+  de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **E de dedans
+  ouvre et ferme le volet** (la pièce est à la carte du dehors : GameState la change là-bas, la vue suit).
+- **Les meubles** : le mode construction marche dans la vue intérieure (pas dans les murs : « Hors de la pièce. » ; les pièces du
+  bâtiment ne s'y retirent pas). Ce qu'on y pose appartient au bâtiment : `builds` de la carte `interieur:…` dans GameState, pas au plan.
+  Remettre la carte du dehors à zéro efface aussi ses intérieurs.
+- **Vérification** : `npm run test:interieur` (la cabane, puis la grange, posées par leur plan : porte fermée on ne passe pas, E
+  l'ouvre, on entre, la pièce a la taille du plan, le volet éclaire, un tabouret posé dedans, on ressort devant la porte, on rentre,
+  le tabouret est là) ; aperçu `.art-preview/interieurs.png`, chaque bâtiment dehors puis dedans, à côté de Xéros. `tools/test-build.ts`
+  vérifie le modèle sans navigateur (porte, ouverture sous le linteau, pièce non close sans linteau).
+- **Choix faits sans Grégoire** (à revoir) : la vue garde le nord en haut (une porte sur un autre mur reste où elle est, la vue ne
+  tourne pas) ; la pièce est le rectangle de ce qui est clos (une maison en L serait vue comme son rectangle) ; les meubles sont rangés
+  sous le coin nord-ouest de la pièce : agrandir le bâtiment vers l'ouest ou le nord fait un nouvel intérieur, vide ; la coupe du mur sud
+  est calculée (une teinte, pas un dessin) ; les battants ouverts de la porte charretière ne bloquent pas ; les murs de plus de 80 cm
+  d'épaisseur ne sont pas tous montrés ; pas de fenêtre sans volet (une baie nue n'éclaire pas encore) ; la porte n'est pas fermée de
+  dedans.
+
 ## Poids et force (décidé le 30 octobre 2026)
 
 Repris par *Le bois* (30 octobre 2026) : la masse se calcule d'après les réglages de la pièce de bois ; à 1 m, la bille du gros pèse 214 kg et celle du normal 63,6 kg.
