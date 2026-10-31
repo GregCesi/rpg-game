@@ -479,6 +479,18 @@ enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche
   de découpe du boucher, des étagères pour le potier ou l'épicier) ; le **comptoir** lui-même (en pente vers les clients et lavé à
   grande eau pour le poissonnier, double pour le maraîcher) ; la **largeur** (deux travées pour un étal plus riche). Il faudra d'abord
   les marchandises (chacune un objet, sa fiche, sa chaîne) : c'est le gros du travail, l'étal est commun.
+- **La petite maison de pierre : un essai, pas encore bâtie** (`npx tsx tools/essai-maison.ts`, `.art-preview/essai-maison.png`, hors
+  jeu ; `art/proposals/walls-high.ts`, une copie de l'algorithme des murs augmentée, jamais chargée par le jeu). Le mur plein de
+  2,40 m ne peut pas suivre la règle du solin : couché (règle D), son tronçon nord-sud ferait 53 px de large. Vu d'en haut, un mur haut
+  nord-sud est une bande mince (son dessus, 10 px) et sa tête au bout. Avant d'en faire un élément du jeu, l'essai montre, en taillé
+  (moellons hourdés) et en brut : le mur plein de 3,20 m, la porte (2 m et 1,80 m) et son linteau (le rondin à deux faces de 1,40 m,
+  dessiné par le jeu), la fenêtre de 60 × 80 cm (allège, linteau d'un mètre, maçonnerie reprise au-dessus), l'angle (dessus raccourci
+  ou en vraie grandeur), la maison entière sans toit à côté de Xéros, la souche de cheminée. Proposition : le taillé ; le dessus en
+  vraie grandeur (10 rangées, la règle des pièces de bâtiment, raccord exact à l'angle) ; une dalle de couronnement sur la souche.
+  **À trancher par Grégoire** avant l'intégration (questions dans le rapport du chantier). Ce qui manque au moteur : la hauteur de face
+  et du dessus dans `RunSpec`, les têtes au mur haut, les ouvertures (et la reprise au-dessus d'un linteau), la bande nord-sud en
+  projection (x, y − z) dans `wallRuns.ts`, des longueurs de morceau plus courtes que 1,60 m pour placer les baies, et la vitesse (1 s
+  pour 3,20 m de brut, contre 30 ms pour un tronçon de solin).
 - **Le moteur, appris en route** : la visée prend le plus haut dessus qui se tient sous l'emprise ; viser une pièce près d'une pièce
   plus haute (un poteau au nord d'un poteau dressé, un pan sous une sablière) peut la poser dessus : le scénario pose du nord au sud,
   vise 4 cm au nord du milieu, et pose le bardage avant les poinçons et les pignons.
