@@ -9,8 +9,9 @@
 //   plus lisible que T sur t. Face : 20 × 42 px (40 de haut, le dessus de 6 cm tient dans le contour, plus les deux bouts de
 //   pivot d'un pixel), l'ombre portée en dessous. De chant : 4 × 50 px (le chant agrandi au plancher de lisibilité, 3 px, plus la
 //   traverse et l'écharpe ; le dessus de 1 m en raccourci, 10 rangées).
-// - Le pan de toit (`plank-roof`, 480 × 200 × 100 cm, pièce `ground` et `roof`) : bois brut grisé (rampe S A B Q, K pour les
-//   joints : un toit au soleil et à la pluie ; le bois frais Y t T se confondrait avec le chaume). Pas de rangées vides sous lui,
+// - Le pan de toit (`plank-roof`, 480 × 200 × 100 cm, pièce `ground` et `roof`), dessiné par art/lib/plank-roof.ts (commun avec
+//   le grand pan de la grange, art/world/barn.ts) : bois brut grisé (rampe S A B Q, K pour les joints : un toit au soleil et à
+//   la pluie ; le bois frais Y t T se confondrait avec le chaume). Pas de rangées vides sous lui,
 //   pas d'ombre peinte (le jeu la calcule). Le bas de l'image est le bord sud de son emprise, à la hauteur de sa base (la rive
 //   basse posée sur le rondin de rive) : projection (x, y, z) -> (x, y − z), pente de 20 px (1 m) sur 40 px (2 m) au sol.
 //   - r0 (rive basse au sud) : 96 × 60, le faîtage en haut (rangée 0), la rive basse en bas.
@@ -20,126 +21,16 @@
 //   - r1 (rive basse à l'ouest), r3 (à l'est) : 40 × 116, un parallélogramme (la rive basse rangées 20 à 115, le faîtage
 //   rangées 0 à 95) ; côte à côte, un r1 à l'ouest et un r3 à l'est font un toit à deux versants, le faîtage au milieu.
 
-import { Canvas, rng } from '../lib/canvas';
+import { Canvas } from '../lib/canvas';
+import { roofEW, roofNS, type RoofDims } from '../lib/plank-roof';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 
 // =====================================================================================================================
-// Pan de toit en planches
+// Pan de toit en planches : le dessin commun de art/lib/plank-roof.ts, aux dimensions du pan de la cabane
 // =====================================================================================================================
 
-/** Bois grisé, du plus clair au plus sombre ; K pour les joints et les têtes de chevilles. */
-const WEATHERED = ['S', 'A', 'B', 'Q', 'K'];
-const tone = (i: number) => WEATHERED[Math.max(0, Math.min(WEATHERED.length - 1, i))];
-
-/** Une planche de 25 cm : 5 px le long du faîtage. Deux épaisseurs à joints croisés : une planche du dessus sur deux. */
-const BOARD = 5;
-
-/** Une planche du pan : son fil (tirets [période, longueur, décalage] par colonne), un nœud, une teinte un peu plus vieille. */
-interface Board { grain: [number, number, number][]; knot?: number; old: boolean }
-
-function boardsOf(seed: number, count: number, slope: number): Board[] {
-  const r = rng(seed);
-  return Array.from({ length: count }, () => ({
-    grain: Array.from({ length: BOARD }, () => [9 + Math.floor(r() * 7), 3 + Math.floor(r() * 3), Math.floor(r() * 20)] as [number, number, number]),
-    knot: r() < 0.35 ? 6 + Math.floor(r() * (slope - 14)) : undefined,
-    old: r() < 0.25,
-  }));
-}
-
-/**
- * Teinte d'un point du dessus du pan : `u` le long du faîtage (1 au premier pixel dans le contour), `a` le long de la pente
- * (0 au bas, à la rive basse ; n − 1 au faîtage). `lit` : le pan tourné vers l'ouest ou le nord, un peu plus clair.
- * - Les planches du dessus (une sur deux) : leur bord côté lumière clair, leur bord côté ombre (leur épaisseur) sombre ; celles
- *   du dessous, entre elles, un cran plus sombres, et l'ombre de la planche du dessus sur leur premier pixel au pan à l'ombre.
- * - La rive basse : ses deux dernières rangées un cran plus sombres (le bout des planches mouillé) ; le faîtage : l'arête claire.
- * - Les têtes de chevilles : une par planche, près de la rive (a = 3) et près du faîtage (a = n − 4).
- */
-function roofTone(u: number, a: number, n: number, lit: boolean, boards: Board[]): string {
-  const i = Math.floor((u - 1) / BOARD);
-  const p = (u - 1) % BOARD;
-  const b = boards[i % boards.length];
-  const upper = i % 2 === 0;
-  if ((a === 3 || a === n - 4) && p === 2) return 'K';
-  if (a === n - 1) return p === BOARD - 1 && upper ? tone(3) : tone(lit ? 0 : 1);
-  const eave = a < 2 ? 1 : 0;
-  let k: number;
-  if (upper) {
-    if (p === 0) k = lit ? 0 : 1;
-    else if (p === BOARD - 1) k = lit ? 3 : 4;
-    else k = 1 + (b.old ? 1 : 0);
-  } else {
-    k = p === 0 && !lit ? 3 : 2;
-  }
-  if (p > 0 && p < BOARD - 1) {
-    // le fil : des tirets le long de la planche, plus courts sur une pente raccourcie (57 px vue de face), jamais d'un seul pixel
-    const [per, len, ph] = b.grain[p];
-    const dash = Math.max(2, Math.round((len * n) / 57));
-    if ((a + ph) % per < dash && p % 2 === (upper ? 0 : 1)) k += 1;
-    if (b.knot !== undefined && (a === b.knot || a === b.knot + 1) && (p === 1 || p === 2)) k = Math.max(k, (upper ? 2 : 3));
-  }
-  return tone(k + eave);
-}
-
-/** Les joints du bout des planches (la tranche de la rive basse) : K entre deux planches. */
-const endTone = (u: number) => ((u - 1) % BOARD === BOARD - 1 ? 'K' : 'Q');
-
-/** Pan de toit, rive basse au sud (r0) ou au nord (r2) : planches nord-sud, en colonnes. */
-function roofNS(low: 'south' | 'north'): Canvas {
-  const W = 96;
-  const lit = low === 'north';
-  const SLOPE = low === 'south' ? 57 : 19; // rangées du dessus (la pente vue de face, ou raccourcie)
-  const boards = boardsOf(low === 'south' ? 61 : 67, 20, SLOPE);
-  const c = new Canvas(W, low === 'south' ? 60 : 40);
-  if (low === 'south') {
-    // rangée 0 : le contour du faîtage ; 1 à 57 : le dessus (a = 0 en bas) ; 58 : la tranche de la rive basse ; 59 : contour
-    for (let x = 0; x < W; x++) {
-      c.set(x, 0, x === W - 1 ? 'o' : 'K');
-      for (let y = 1; y <= SLOPE; y++) c.set(x, y, x === 0 ? 'K' : x === W - 1 ? 'o' : roofTone(x, SLOPE - y, SLOPE, lit, boards));
-      c.set(x, 58, x === 0 ? 'K' : x === W - 1 ? 'o' : endTone(x));
-      c.set(x, 59, 'o');
-    }
-  } else {
-    // rangée 0 : le contour de la rive basse (au nord, loin) ; 1 à 19 : le dessus (a = 0 en haut) ; 20 : le faîtage, contour
-    for (let x = 0; x < W; x++) {
-      c.set(x, 0, x === W - 1 ? 'o' : 'K');
-      for (let y = 1; y <= SLOPE; y++) c.set(x, y, x === 0 ? 'K' : x === W - 1 ? 'o' : roofTone(x, y - 1, SLOPE, lit, boards));
-      c.set(x, 20, 'o');
-    }
-  }
-  return c;
-}
-
-/**
- * Pan de toit, rive basse à l'ouest (r1) ou à l'est (r3) : planches est-ouest, le long de la pente. Le dessus monte de 20 px
- * de la rive basse au faîtage : chaque colonne est décalée vers le haut de sa hauteur (`top`), un parallélogramme de 40 × 116.
- * Colonne de la rive basse : le contour, puis le bout des planches (en raccourci, un pixel) ; colonne du faîtage : l'arête, puis
- * le contour. En haut, le contour du bord nord (K) ; en bas, celui du bord sud (o), la tranche de la dernière planche.
- */
-function roofEW(low: 'west' | 'east'): Canvas {
-  const W = 40;
-  const D = 96;
-  const lit = low === 'west';
-  const SLOPE = 37; // colonnes du dessus, entre la colonne de contour et celle du bout des planches à la rive, et le contour au faîtage
-  const boards = boardsOf(low === 'west' ? 71 : 73, 20, SLOPE);
-  const c = new Canvas(W, D + 20);
-  for (let x = 0; x < W; x++) {
-    const fromLow = low === 'west' ? x : W - 1 - x; // 0 à la rive basse, 39 au faîtage
-    const top = 20 - Math.round((20 * fromLow) / (W - 1));
-    for (let u = 0; u < D; u++) {
-      const y = top + u;
-      let k: string;
-      if (x === 0) k = 'K';
-      else if (x === W - 1) k = 'o';
-      else if (u === 0) k = 'K';
-      else if (u === D - 1) k = 'o';
-      else if (fromLow === 1) k = endTone(u);
-      else k = roofTone(u, fromLow - 2, SLOPE, lit, boards);
-      c.set(x, y, k);
-    }
-  }
-  return c;
-}
+const ROOF: RoofDims = { w: 480, d: 200, h: 100 };
 
 // =====================================================================================================================
 // Porte en planches
@@ -283,8 +174,8 @@ export default [
   img('plank-door-r1', doorEdge(true)),
   img('plank-door-r2', doorFace(true)),
   img('plank-door-r3', doorEdge(false)),
-  img('plank-roof', roofNS('south')),
-  img('plank-roof-r1', roofEW('west')),
-  img('plank-roof-r2', roofNS('north')),
-  img('plank-roof-r3', roofEW('east')),
+  img('plank-roof', roofNS(ROOF, 'south', 61)),
+  img('plank-roof-r1', roofEW(ROOF, 'west', 71)),
+  img('plank-roof-r2', roofNS(ROOF, 'north', 67)),
+  img('plank-roof-r3', roofEW(ROOF, 'east', 73)),
 ];

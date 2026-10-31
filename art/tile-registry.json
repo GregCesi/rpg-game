@@ -206,6 +206,10 @@
     "plank-roof",
     "plank-gable",
     "plank-shutter",
-    "plank-shutter-open"
+    "plank-shutter-open",
+    "board-wall",
+    "cart-door",
+    "board-gable",
+    "plank-roof-large"
   ]
 }

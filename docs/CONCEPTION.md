@@ -440,6 +440,34 @@ Grégoire.
 - **À trancher par Grégoire** : la porte qui s'ouvre (le même `swing`, mais elle a une collision : il faudra la retirer du passage
   ouverte) ; un toit de bardeaux (le bardeau existe, mais pas de lattes pour le porter).
 
+### Les bâtiments du village (décidé le 31 octobre 2026, chantier « bâtiments »)
+
+Même règle que la cabane : chaque bâtiment est bâti par un scénario dans le mode construction, avec les seules pièces du catalogue, et
+enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche, vues, masse, origine, métier, dessin du pixel-artist).
+
+- **La grange** (`npm run test:grange`, plan `src/content/plans/grange.json`, aperçu `.art-preview/grange.png`) : 8,80 × 6 m,
+  faîtage est-ouest. Dix dalles, dix poteaux (poutres du normal de 3 m dressées : quatre au nord, quatre au sud, un au milieu de chaque
+  mur de bout ; travées de 2,40 m, celle du milieu du mur sud pour la porte) ; les sablières des quatre murs sur la tête des poteaux
+  (tenon et mortaise), **entées en trait de Jupiter** (un arbre normal ne donne que 5,80 m : 3 m + 5,80 m sur les longs murs, 3 + 3 m
+  sur les murs de bout) et croisées **à mi-bois** aux angles ; deux entraits (3 + 3 m entés) à mi-bois sur les sablières ; deux
+  poinçons (poutres de 2,20 m) sur les entraits, le faîtage (enté) sur les poinçons et les pignons. Le **bardage** : dix-huit
+  [pans de bardage](objets/board-wall.md) de 1,20 m (planches debout et couvre-joints, sur des lisses chevillées à la face du dehors
+  des poteaux), deux par travée ; la [porte charretière](objets/cart-door.md) à deux battants (2,40 m : une charrette passe) ; deux
+  [pignons en bardage](objets/board-gable.md) ; le toit, deux [grands pans de toit en planches](objets/plank-roof.md) de 9,60 × 3,40 m,
+  2,60 m de pente (37°), le faîte à 6 m pour le foin, sans étage. 59 pièces, 29 assemblages.
+- **Ce qui a manqué et a été créé** : le pan de bardage, la porte charretière, le pignon en bardage, le grand pan de toit (dessinés
+  par le pixel-artist dans `art/world/barn.ts` ; le pan de toit, en grand, par les fonctions du pan de la cabane sorties dans
+  `art/lib/plank-roof.ts`, la cabane inchangée au pixel près). **Ce qui existait** : les poutres (dressées, couchées), les dalles,
+  l'enture, le tenon et mortaise, le mi-bois.
+- **Choix faits sans Grégoire** : le bardage en brun vieilli (en bois frais, il se confondait avec les poteaux équarris) ; les pans de
+  bardage ont 20 cm d'épaisseur (lisses comprises), contre la face du dehors des poteaux : l'aimant des bords décalait un pan mince de
+  10 cm d'un pan à l'autre ; l'entrait posé à mi-bois sur la sablière (un entrait sur la sablière haussait le pan nord, qui se pose sur
+  le plus haut dessus de sa rive) ; une sablière de bout au ras du dedans des poteaux à l'est (au ras du dehors, elle s'aimantait au
+  bord des dalles, qui débordent de 5 cm, et passait sous le bardage).
+- **Le moteur, appris en route** : la visée prend le plus haut dessus qui se tient sous l'emprise ; viser une pièce près d'une pièce
+  plus haute (un poteau au nord d'un poteau dressé, un pan sous une sablière) peut la poser dessus : le scénario pose du nord au sud,
+  vise 4 cm au nord du milieu, et pose le bardage avant les poinçons et les pignons.
+
 ## Poids et force (décidé le 30 octobre 2026)
 
 Repris par *Le bois* (30 octobre 2026) : la masse se calcule d'après les réglages de la pièce de bois ; à 1 m, la bille du gros pèse 214 kg et celle du normal 63,6 kg.
