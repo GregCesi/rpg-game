@@ -19,7 +19,7 @@
   tient sur son dé.
 
 ## Masse
-- Pas déplaçable une fois posé : pas de masse. La pierre plate dont il naît pèse 62,4 kg (40 × 40 × 15 cm × 2 600 kg/m³ :
+- Pas déplaçable une fois posé : pas de masse. La pierre plate dont il naît pèse 49,9 kg à sa taille type (de 40 à 61 kg ; voir la
   [pierre plate](flat-stone.md)).
 
 ## Vues
@@ -42,6 +42,17 @@ ferme. Le piquet du coin est arraché au même moment.
 ## Devenir
 Reste sous son poteau. Ne bloque pas le passage (seul le poteau bloque) ; il est dessiné à plat sous les personnages
 (`layer: floor`), comme ce qui dépasse à peine du sol.
+
+## Variantes naturelles
+Les deux formes de la pierre plate (`footing-stone`, `footing-stone-b`, `natural` de props.json) : le dé est la pierre posée, il
+garde la forme et la taille de celle qu'on a apportée (`site.ts`, `lay`). Dessinés le 31 octobre 2026 (« briques ») en dalle
+naturelle, 8 × 7 px, la même ancre qu'avant.
+
+## Transformations
+Aucune.
+
+## Métier
+Carrier (la pierre) ; le charpentier le pose.
 
 ## Vérification
 - Aperçu : `.art-preview/footing-stone.png`, `.art-preview/woodshed-1.png` (les quatre dés en place, d'après le plan), à côté de

@@ -462,6 +462,58 @@ longueurs libres et le fendage. On garde la coupe libre et on change la façon d
 - R tourne à la pose tout ce qui a plusieurs vues (un quart de tour dans le sens des aiguilles d'une montre) : la pièce de bois, le
   fagot, la branche, le piquet, le lien, les outils.
 
+## Les matières (décidé le 31 octobre 2026, chantier « briques »)
+
+On arrête de bâtir l'abri pas à pas : la construction marche. Le but devient de **composer les maisons du village**, en commençant
+par refaire la chaumière de Xéros (longère paysanne : solin de pierre, ossature en colombages, remplissage en clayonnage et
+torchis, toit de chaume, porte et volets en planches, cheminée). Il faut d'abord les briques : les matières et les pièces de base,
+de la plus naturelle à la plus travaillée, chacune servant de base à la suivante (fiches : `docs/objets/README.md`).
+
+- **Le naturel est irrégulier, le travaillé est régulier à la mesure du travail.** Une matière naturelle (pierre brute, pierre plate,
+  motte de terre) a une ou deux formes dessinées (`<image>` et `<image>-b`) et une taille qui varie un peu autour de sa taille type
+  (± 7 %, `natural` de props.json ou items.json), tirées à l'apparition et gardées par la partie (`natural` de GameState ; un objet
+  de Tiled tire les siennes de son identifiant, toujours les mêmes). Sa masse suit le cube de sa taille ; son image ne change pas
+  (moins d'un pixel). Pas de pierre naturelle lisse. Un tas range des pièces semblables : une pierre reprise d'un tas a la forme
+  dessinée à sa place et la taille type. Ce qui est travaillé (moellon, pierre de taille, torchis, botte, baguette, bardeau,
+  cheville, planche) n'a qu'une forme et ses mesures, sur la grille de 20 cm pour les pièces taillées.
+- **Les masses viennent de la matière** (`src/content/matters.json`) : pierre 2 600, terre crue 1 800, torchis 1 750, mortier
+  1 900, paille tassée 100, bois vert 900 (le même que wood.json), eau 1 000 kg/m³. `"mass": {"matter": …, "fill": …}` : le volume
+  des `dims` × la part qu'occupe la matière (0,52 pour une pierre brute, à peu près un ellipsoïde ; 0,85 pour le moellon bosselé ;
+  1 pour ce qui est taillé ou moulé) × sa densité. La pierre plate pèse ainsi 50 kg (62 kg tant qu'elle était une boîte pleine).
+- **Tailler retire de la matière.** Chaque transformation déclare ce qui entre, ce qui sort (plus petit, plus léger : masse
+  recalculée) et le déchet. **Choix** : les éclats de pierre restent au sol (`stone-chips`, ils serviront de blocage dans le
+  solin) ; les copeaux, rameaux et chutes de bois disparaissent (ils partent au feu) ; l'eau en trop s'égoutte. `validate.ts` vérifie
+  que la sortie, à sa plus grande taille, pèse au plus l'entrée à sa plus petite.
+- **Les transformations sont des données** (`src/content/transforms.json`) : pour chacune, les entrées (un objet, une pièce de
+  bois par ses réglages, ou de la matière prise au poste : l'eau de l'étang, l'argile de la berge), les sorties, le déchet, les
+  outils, le poste (sol, billot, établi, bord de l'étang, chevalet de fendeur), le métier, et le geste : réel (fendre, équarrir,
+  tailler un piquet, tailler une cheville) ou « à venir ». `validate.ts` vérifie que tout ce qui y figure existe.
+- **La transformation « magique »** en attendant les gestes : dans `?dieu`, « Transformer » applique d'un coup une transformation à
+  ce que Xéros tient ou vise (`systems/transform.ts`) : les entrées se cherchent dans ses mains, puis au sol près de lui ; le poste
+  et les outils ne sont pas vérifiés (c'est le geste qui les demandera) ; ce qui sort va dans la main libérée s'il y tient, sinon
+  au sol à côté. Il manque une entrée : « Il manque : … », et rien ne change.
+- **Tout s'achète, mais tout peut se faire.** Chaque objet dit son métier (`trade`) et qui le vendrait au village : le carrier (pierre
+  brute, moellon, pierre plate), le maçon (pierre de taille, mortier), le terrassier (motte, torchis), le chaumier (botte de
+  chaume), le bûcheron (branche, baguette, piquet), le charpentier (poutre, cheville), le fendeur (planche, bardeau), le menuisier
+  (maillet, seau), le forgeron (les outils de fer), le paysan (la paille, puiser l'eau).
+- **Les briques, dans l'ordre** :
+  1. *La pierre* (solin, cheminée) : pierre brute petite et grosse (ramassée), moellon (la grosse dégrossie au têtu), pierre de
+     taille (le moellon dressé au ciseau et au maillet), pierre plate devenue naturelle (le plan de l'abri accepte toute pierre
+     plate ; le dé garde sa forme), éclats de taille ; outils : têtu, ciseau de tailleur, maillet.
+  2. *La terre* (solin, remplissage) : motte de terre (creusée à la bêche au bord de l'étang), mortier de terre (une gâchée au sol),
+     torchis (même unité que la terre) ; la bêche ; le seau, qui se prend et a deux états, vide et plein.
+  3. *Les fibres* (remplissage, toit) : baguette de clayonnage (parée dans une branche en attendant un taillis de noisetiers), gerbe
+     de paille longue (l'ancien objet `straw`, mis au protocole), botte de chaume (trois gerbes peignées).
+  4. *Le bois travaillé* (charpente, ouvertures) : la perche (un nouveau diamètre de la pièce de bois, 12 cm), la planche fendue (une
+     nouvelle forme de la pièce de bois, 3 × 25 cm, fendue au coutre dans un quartier ou une demi-bille), le bardeau, la cheville
+     (taillée dans un piquet sur le billot, le geste du piquet) ; le coutre.
+- **Ce qui manque pour la chaumière** (à décider avec Grégoire) : les **pans de mur** (le solin de moellons au mortier, les
+  colombages de poutres chevillées, le clayonnage de baguettes entre des palançons, le torchis), le **toit** (les chevrons de perches,
+  les lattes, le chaume en rangs), la **porte et les volets** (planches et traverses, les gonds du forgeron), la **cheminée** (pierre
+  de taille et moellons, le manteau), et le **bac à sable** où composer une maison pièce par pièce ; puis le plan de la maison, les
+  vrais gestes (dégrossir, tailler, creuser, puiser, mêler, peigner, fendre au coutre), le taillis de noisetiers et le jeune arbre
+  de taillis (la perche), la carrière et le village qui vend.
+
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 
 - **La partie se sauvegarde toute seule.** `GameState` est écrit dans le navigateur à chaque changement (objet pris, posé, coupé, tas modifié, changement de carte), avec la carte et la position de Xéros. Au lancement, la partie reprend là où elle était. Pas de bouton « sauvegarder » pour l'instant.

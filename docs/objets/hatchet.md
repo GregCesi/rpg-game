@@ -27,7 +27,7 @@ Seule. Ne s'entrepose pas.
 
 ## Gestes
 - E court : prendre (une main libre).
-- Espace, hachette dans une main, branche dans l'autre, face au billot : un coup (`chop`) taille la pointe : la branche devient un piquet (`stake`), qui reste dans la main qui tenait la branche. Coûte 0,4 point d'endurance (`whittle`, `stamina.json`), la moitié d'un coup de cognée. Si l'autre main ne tient pas de branche : « Tiens la branche debout sur le billot, de l'autre main. »
+- Espace, hachette dans une main, branche dans l'autre, face au billot : un coup (`chop`) taille la pointe : la branche devient un piquet (`stake`), qui reste dans la main qui tenait la branche. Coûte 0,4 point d'endurance (`whittle`, `stamina.json`), la moitié d'un coup de cognée. Si l'autre main ne tient pas de branche : « Tiens la branche ou le piquet debout sur le billot, de l'autre main. »
 - Q (A en AZERTY) : lâcher.
 
 ## Origine

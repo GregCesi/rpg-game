@@ -34,7 +34,7 @@ Seul. Ne s'entrepose pas ; quatre piquets tracent l'emprise d'un plan.
 - R : rien. Q : le lâche devant Xéros.
 
 ## Origine
-Taillé à la [hachette](hatchet.md) : on tient la branche debout d'une main, la pointe appuyée sur le billot (`chopping-block`), la hachette dans l'autre main, face au billot, Espace : un coup (geste `chop`), et la branche devient un piquet, qui reste dans la main qui la tenait. Coûte 0,4 point d'endurance (`whittle`), moins qu'un coup de cognée. Si l'autre main ne tient pas de branche : « Tiens la branche debout sur le billot, de l'autre main. »
+Taillé à la [hachette](hatchet.md) : on tient la branche debout d'une main, la pointe appuyée sur le billot (`chopping-block`), la hachette dans l'autre main, face au billot, Espace : un coup (geste `chop`), et la branche devient un piquet, qui reste dans la main qui la tenait. Coûte 0,4 point d'endurance (`whittle`), moins qu'un coup de cognée. Si l'autre main ne tient pas de branche : « Tiens la branche ou le piquet debout sur le billot, de l'autre main. »
 
 ## Devenir
 Planté, il trace un coin du chantier. Quand le dé de ce coin est posé, le piquet est arraché et retombe au sol à côté, réutilisable.
