@@ -385,6 +385,10 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
       else if (!!o.swing.open === !!p.swing.open) errors.push(`${at} : un seul des deux états est l'ouvert ('open')`);
       else if (o.swing.hinge !== p.swing.hinge || o.views !== p.views) errors.push(`${at} : les deux états tournent sur le même gond et ont les mêmes vues`);
       else if (p.swing.hinge === 'side' && (o.dims.w !== p.dims.w || o.dims.d !== p.dims.d || o.dims.h !== p.dims.h)) errors.push(`${at} : un battant sur le côté garde ses dimensions ouvert`);
+      else if (p.swing.hinge === 'double' && (o.dims.w !== p.dims.w || o.dims.h !== p.dims.h)) errors.push(`${at} : deux battants gardent la largeur et la hauteur ouverts`);
+      else if (!!o.swing.passage !== !!p.swing.passage) errors.push(`${at} : les deux états d'une porte sont un passage ('passage')`);
+      // ouverts, les deux battants laissent le passage libre : pas de collision
+      else if (p.swing.passage && p.swing.open && p.swing.hinge === 'double' && (p.body || p.bodies)) errors.push(`${at} : ouverts, les deux battants laissent le passage libre (pas de 'body')`);
     }
     const drawn = cat.silhouettes.get(p.image);
     if (!drawn) continue; // image non dessinée : signalé ailleurs

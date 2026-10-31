@@ -249,7 +249,7 @@ export function turned(ref: BuildRef, view: number): { ref: BuildRef; view: numb
 }
 
 /** Le côté du dehors d'une pièce dans sa vue : sud dans la vue 0, puis un quart de tour dans le sens des aiguilles d'une montre. */
-const OUTWARD: readonly [number, number][] = [
+export const OUTWARD: readonly [number, number][] = [
   [0, 1],
   [-1, 0],
   [0, -1],
@@ -303,9 +303,16 @@ export function swung(p: BuildPlaced): BuildPlaced | undefined {
     }
     return undefined;
   }
-  // `bottom` : rabattu contre la face du dehors (centré le long de la face)
   const [ox, oy] = OUTWARD[p.view % 4];
   const t = sizeOf(into, p.view);
+  // `double` : les deux battants ouverts sortent de la face du dehors ; la boîte ouverte est contre elle, de la même largeur, et le
+  // fermé revient contre le bord du dedans de l'ouvert, à la même hauteur
+  if (s.hinge === 'double') {
+    const x = ox > 0 ? (s.open ? b.x - t.w : b.x + b.w) : ox < 0 ? (s.open ? b.x + b.w : b.x - t.w) : b.x;
+    const y = oy > 0 ? (s.open ? b.y - t.d : b.y + b.d) : oy < 0 ? (s.open ? b.y + b.d : b.y - t.d) : b.y;
+    return { ...p, piece: into, x, y };
+  }
+  // `bottom` : rabattu contre la face du dehors (centré le long de la face)
   if (!s.open) {
     const x = ox > 0 ? b.x + b.w : ox < 0 ? b.x - t.w : b.x + Math.round((b.w - t.w) / 2);
     const y = oy > 0 ? b.y + b.d : oy < 0 ? b.y - t.d : b.y + Math.round((b.d - t.d) / 2);

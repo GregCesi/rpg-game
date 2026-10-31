@@ -216,6 +216,8 @@
     "stall-front",
     "stall-shutter",
     "stall-shutter-open",
-    "plank-awning"
+    "plank-awning",
+    "plank-door-open",
+    "cart-door-open"
   ]
 }

@@ -34,8 +34,13 @@ Seule.
 
 ## Gestes
 - Mode construction : clic gauche la pose au sol entre les deux poteaux de la travée du milieu, R la tourne, clic droit la retire.
-- En jeu : fermée, elle bloque le passage (`body`). L'ouvrir (chaque battant sur son pivot) viendra : elle a deux gonds, un par
-  battant, ce que le battant simple (`swing`, le volet) ne sait pas encore faire.
+- En jeu (chantier « intérieurs ») : fermée, elle bloque le passage (`body`) ; **E** devant elle l'ouvre : chaque battant tourne
+  d'un quart vers le dehors sur son gond, au bord extérieur de l'ouverture (`swing`, gond `double`) ; E encore la referme. Ouverte,
+  c'est l'objet `cart-door-open` : la boîte des deux battants (240 × 120 × 312 cm) contre la face du dehors, sans collision (le
+  passage entre les battants est libre ; choix sans Grégoire : les battants ouverts ne bloquent pas non plus). `passage` : marcher
+  dans l'ouverture fait entrer dans la grange (CONCEPTION « Les intérieurs »).
+- Vues de l'ouverte (`art/world/barn.ts`, tirées de la porte fermée) : r0, r2 les deux battants de chant aux bords ; r1, r3 de face,
+  l'un derrière l'autre (le battant de devant montre sa face du dehors, celui de derrière sa face du dedans, la barre retirée).
 
 ## Origine
 Pas encore fabriquée en jeu. Les planches de la chaîne du gros bois (`rive-plank`), les traverses et les écharpes en planches, des

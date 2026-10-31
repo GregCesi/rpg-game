@@ -4,7 +4,7 @@ Décidée le 31 octobre 2026 (chantier « cabane en rondins ») : la porte de la
 le mur sud (rondins recoupés de part et d'autre).
 
 ## Identité
-- Clé : `plank-door` (objet du monde, `props.json`), sans `take` pour l'instant (elle se pose en mode construction).
+- Clés : `plank-door` (fermée) et `plank-door-open` (ouverte) (objets du monde, `props.json`), sans `take` pour l'instant (elle se pose en mode construction).
 - Nom affiché : porte en planches (féminin).
 - Nature : un vantail : des planches fendues jointives posées debout, tenues par deux traverses et une écharpe en diagonale (le Z),
   chevillées ; elle tourne sur deux pivots de bois pris dans le seuil et le linteau (pas de ferrure : la cabane n'a pas de forgeron).
@@ -36,7 +36,10 @@ Seule.
 
 ## Gestes
 - Mode construction : clic gauche la pose (dans l'ouverture d'un mur, sur le sol ou un seuil), R la tourne, clic droit la retire.
-- En jeu : elle bloque le passage (fermée). Ouvrir et fermer : plus tard.
+- En jeu (chantier « intérieurs ») : fermée, elle bloque le passage ; **E** devant elle l'ouvre : un quart de tour vers le dehors
+  sur son pivot (le bord gauche de sa face du dehors vu du dehors), comme le volet ; E encore la referme. Deux états, deux clés :
+  `plank-door` et `plank-door-open` (`swing`, le même dessin dans la vue suivante), `passage` : ouverte, on passe, et marcher dans
+  son ouverture fait entrer dans le bâtiment (CONCEPTION « Les intérieurs »).
 
 ## Origine
 Pas encore fabriquée en jeu. Plus tard : des planches fendues au coutre dans un quartier (transforms.json), deux traverses et une

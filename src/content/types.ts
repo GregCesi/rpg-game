@@ -605,10 +605,13 @@ export const PropDefSchema = z.strictObject({
    * nomme celui-ci en retour) ; `hinge`, où il tourne : `side`, le bord gauche de sa face du dehors vu du dehors (un volet, une
    * porte : ouvert, il a tourné d'un quart vers le dehors, dans le sens des aiguilles d'une montre), `bottom`, le bas de sa face du
    * dehors (le volet d'étal, rabattu en comptoir : l'objet ouvert est contre sa face du dehors, son dessus à la hauteur de sa base) ;
-   * `open` : cet état est l'ouvert. La face du dehors est au sud dans la vue 0 (`world/build.ts`, `swung`).
+   * `double`, deux battants sur des gonds aux deux bords de l'ouverture (la porte charretière : ouverte, chaque battant a tourné d'un
+   * quart vers le dehors, l'objet ouvert est la boîte des deux battants, de la largeur du fermé, contre sa face du dehors) ;
+   * `open` : cet état est l'ouvert ; `passage` : on passe par là quand il est ouvert (une porte : chantier « intérieurs », entrer dans
+   * un bâtiment). La face du dehors est au sud dans la vue 0 (`world/build.ts`, `swung`).
    */
   swing: z
-    .strictObject({ into: z.string(), hinge: z.enum(['side', 'bottom']), open: z.literal(true).optional() })
+    .strictObject({ into: z.string(), hinge: z.enum(['side', 'bottom', 'double']), open: z.literal(true).optional(), passage: z.literal(true).optional() })
     .optional(),
 });
 

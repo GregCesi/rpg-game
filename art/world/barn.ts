@@ -25,6 +25,14 @@
 //   gonds de bois (deux pixels) qui dépassent en haut et en bas aux bords extérieurs. Face : 48 × 63 px (61 rangées de porte,
 //   les gonds dessus et dessous). Du dedans : les planches, les têtes des chevilles des traverses, la barre de fermeture en
 //   travers dans ses deux paires de crochets. De chant : 5 × 87 px (le dessus de 2,40 m, 24 rangées).
+// - La porte charretière ouverte (`cart-door-open`, 240 × 120 × 312 cm) : chaque battant a tourné d'un quart vers le dehors
+//   autour de son gond ; les deux, perpendiculaires au mur aux deux bouts de l'ouverture, sortent de 1,20 m ; le passage entre
+//   eux est vide. Les mêmes battants que la porte fermée (cartDoorFace, edgeView), sans redessin. r0 (sortis au sud) : deux
+//   chants de 5 × 74 px aux deux bords de l'image (48 px), la fente devant, le gond du haut au fond ; r2 (au nord) : de même,
+//   le chant côté gond devant, son gond du bas dessous. La face du dehors de chaque battant regarde loin du passage (traverses
+//   et écharpe de ce côté, les crochets du dedans vers le passage). r1 (sortis à l'ouest) et r3 (à l'est) : 24 × 87 px, les
+//   deux battants de face coiffés de leur dessus (2 rangées), l'un derrière l'autre, 22 rangées d'écart ; devant, la face du dehors, derrière la face du dedans
+//   (crochets, barre retirée), le gond côté mur (à l'est en r1, à l'ouest en r3).
 // - Le pignon (`board-gable`, 520 × 6 × 220 cm, posé de 40 à 560 cm le long du mur de bout) : le même bardage, coupé en
 //   pentagone (deux petits côtés verticaux de 30 cm, 6 px, aux bouts, puis les deux rampants jusqu'au sommet) ; il pose sur la
 //   sablière, sans ombre portée. Face : 104 × 45 px. Du dedans : deux lisses. De chant : 5 × 97 px (le gabarit de sa boîte,
@@ -71,7 +79,8 @@ const LEAF = 24;
 /** Joints du battant de gauche (du bord du gond, 0, à la fente, 23) : quatre planches. */
 const LEAF_JOINTS = [6, 12, 18];
 
-function cartDoorFace(inside: boolean): Canvas {
+/** `bar` : la barre de fermeture dans ses crochets (le dedans, porte fermée) ; ouverte, la barre est retirée, les crochets restent. */
+function cartDoorFace(inside: boolean, bar = true): Canvas {
   const c = new Canvas(DOOR_W, DOOR_BOTTOM + 3);
   const inDoor = (x: number, y: number) => x >= 0 && x < DOOR_W && y >= DOOR_TOP && y <= DOOR_BOTTOM;
   const planks = planksOf(inside ? 91 : 83, 8, DOOR_BOTTOM);
@@ -136,7 +145,7 @@ function cartDoorFace(inside: boolean): Canvas {
       for (let x = hx; x <= hx + 3; x++) c.set(x, BAR[1] + 4, BOARD_WOOD.joint);
     }
     // la barre, d'un bord à l'autre par-dessus la fente
-    for (let x = 1; x < DOOR_W - 1; x++) {
+    for (let x = 1; bar && x < DOOR_W - 1; x++) {
       c.set(x, BAR[0], BOARD_WOOD.hi);
       for (let y = BAR[0] + 1; y < BAR[1]; y++) c.set(x, y, (x + 3) % 11 < 3 ? BOARD_WOOD.lo : BOARD_WOOD.mid);
       c.set(x, BAR[1], BOARD_WOOD.lo);
@@ -155,10 +164,10 @@ function cartDoorFace(inside: boolean): Canvas {
   }
   for (const [x, y, k] of out) {
     // la barre passe par-dessus la fente : elle garde son bois
-    if (inside && y >= BAR[0] && y <= BAR[1] && x > 0 && x < DOOR_W - 1) continue;
+    if (inside && bar && y >= BAR[0] && y <= BAR[1] && x > 0 && x < DOOR_W - 1) continue;
     c.set(x, y, k);
   }
-  if (inside) { c.set(0, BAR[0], BOARD_WOOD.edge); c.set(DOOR_W - 1, BAR[0], 'o'); }
+  if (inside && bar) { c.set(0, BAR[0], BOARD_WOOD.edge); c.set(DOOR_W - 1, BAR[0], 'o'); }
   // les gonds : de gros pivots de bois (10 cm, 2 px) qui dépassent en haut et en bas, aux bords extérieurs
   for (const gx of [1, DOOR_W - 3]) {
     c.set(gx, DOOR_TOP - 1, BOARD_WOOD.edge).set(gx + 1, DOOR_TOP - 1, 'o');
@@ -172,6 +181,90 @@ const DOOR_EDGE: Edge = {
   rows: DOOR_BOTTOM + 2 + 24, depth: DOOR_TOP + 24, pins: true, shadow: true,
   outer: [DOOR_RAILS[0][0], DOOR_RAILS[1][1] + 24], inner: [[BAR[0] - 2, BAR[1] + 2 + 24]],
 };
+
+// =====================================================================================================================
+// Porte charretière ouverte
+// =====================================================================================================================
+
+/** Les deux battants ouverts sortent de 1,20 m vers le dehors : 12 rangées de dessus en raccourci (r0, r2), 22 rangées d'écart
+ * entre le battant de devant et celui de derrière (r1, r3 : 2,40 m moins l'épaisseur d'un battant, en raccourci). */
+const OPEN_DEPTH = 12;
+const OPEN_GAP = 22;
+/** Rangées des battants (du haut au bas), sans les gonds. */
+const LEAF_ROWS = DOOR_BOTTOM - DOOR_TOP + 1;
+
+/**
+ * Un battant ouvert vu de chant (r0, r2), perpendiculaire au mur : le dessus de 1,20 m en raccourci, puis son chant jusqu'au sol.
+ * `outsideWest` : sa face du dehors regarde l'ouest (les traverses et l'écharpe de ce côté, les crochets de l'autre).
+ * `hingeFar` : le gond au fond (r0, au nord : on voit le chant de la fente ; le gond du haut dépasse au-dessus du fond du dessus) ;
+ * sinon le gond devant (r2 : on voit le chant côté gond, son gond du bas dépasse sous lui).
+ */
+function openLeafEdge(outsideWest: boolean, hingeFar: boolean): Canvas {
+  const top = (y: number) => y - DOOR_TOP; // rangée de la face, comptée depuis le haut du battant
+  // l'écart en rangées d'une colonne du battant (0 au gond, 23 à la fente), comptée depuis le fond du dessus
+  const shift = (l: number) => (hingeFar ? l : LEAF - 1 - l) / 2;
+  // les crochets (la barre retirée) : chaque taquet, vu de chant, glisse en raccourci selon sa place sur le battant
+  const hooks = [HOOKS[0], HOOKS[1]]; // les crochets du battant de gauche, colonnes depuis le gond (ceux de droite en sont le reflet)
+  const inner: [number, number][] = [];
+  for (const hx of hooks) for (const [y0, y1] of [[BAR[0] - 3, BAR[0] - 1], [BAR[1] + 1, BAR[1] + 3]]) {
+    const s = [shift(hx), shift(hx + 2)];
+    inner.push([top(y0) + Math.floor(Math.min(...s)), top(y1) + Math.ceil(Math.max(...s))]);
+  }
+  const e: Edge = {
+    rows: LEAF_ROWS + OPEN_DEPTH, depth: OPEN_DEPTH, shadow: true, inner,
+    outer: [top(DOOR_RAILS[0][0]), top(DOOR_RAILS[1][1]) + OPEN_DEPTH],
+  };
+  const v = edgeView(e, outsideWest);
+  const c = new Canvas(v.w, v.h + 1);
+  if (hingeFar) {
+    c.stamp(v.toGrid(), 0, 1);
+    c.set(2, 0, BOARD_WOOD.edge); // le gond du haut, au fond
+  } else {
+    c.stamp(v.toGrid(), 0, 0);
+    c.set(2, v.h - 1, 'o').set(3, v.h, 'x'); // le gond du bas, devant, et son ombre
+  }
+  return c;
+}
+
+/** r0 (battants sortis au sud) et r2 (au nord) : deux battants de chant aux deux bouts de l'ouverture, le passage vide entre eux. */
+function cartDoorOpenEdges(hingeFar: boolean): Canvas {
+  const west = openLeafEdge(true, hingeFar);
+  const east = openLeafEdge(false, hingeFar);
+  return new Canvas(DOOR_W, west.h).stamp(west.toGrid(), 0, 0).stamp(east.toGrid(), DOOR_W - 5, 0);
+}
+
+/** Les colonnes [x0, x0 + w[ d'une image. */
+const crop = (c: Canvas, x0: number, w: number) => new Canvas(w, c.h).stamp(c.toGrid().map((r) => r.slice(x0, x0 + w)), 0, 0);
+
+/**
+ * r1 (battants sortis à l'ouest, le mur à l'est) et r3 (à l'est, le mur à l'ouest) : les deux battants de face, l'un derrière
+ * l'autre. Le battant de devant (au sud) montre sa face du dehors, celui de derrière sa face du dedans (crochets, barre retirée),
+ * le gond côté mur : à droite en r1, à gauche en r3. Chacun est le battant de la porte fermée tel quel (même lumière, même côté).
+ */
+function cartDoorOpenFaces(wallEast: boolean): Canvas {
+  const x0 = wallEast ? LEAF : 0;
+  const front = withTop(crop(cartDoorFace(false), x0, LEAF));
+  const back = withTop(crop(cartDoorFace(true, false), x0, LEAF));
+  return new Canvas(LEAF, front.h + OPEN_GAP).stamp(back.toGrid(), 0, 0).stamp(front.toGrid(), 0, OPEN_GAP);
+}
+
+/**
+ * Un battant vu de face, coiffé de son dessus : 20 cm d'épaisseur en raccourci, 2 rangées (le contour, puis le bout des planches
+ * au soleil) ; l'arête entre le dessus et la face, un trait d'ombre. Le gond du haut dépasse au-dessus. C'est ce dessus clair
+ * qui détache le battant de devant de celui de derrière.
+ */
+function withTop(face: Canvas): Canvas {
+  const w = face.w;
+  const c = new Canvas(w, face.h + 2).stamp(face.toGrid(), 0, 2);
+  for (let x = 0; x < w; x++) {
+    const last = x === w - 1;
+    c.set(x, 0, face.get(x, 0)); // le gond, remonté au-dessus du dessus
+    c.set(x, 1, last ? 'o' : BOARD_WOOD.edge);
+    c.set(x, 2, last ? 'o' : x === 0 ? BOARD_WOOD.edge : x % PITCH === 0 ? BOARD_WOOD.mid : BOARD_WOOD.hi);
+    if (x > 0 && !last) c.set(x, 3, BOARD_WOOD.lo);
+  }
+  return c;
+}
 
 // =====================================================================================================================
 // Pignon
@@ -211,6 +304,10 @@ export default [
   img('cart-door-r1', edgeView(DOOR_EDGE, true)),
   img('cart-door-r2', cartDoorFace(true)),
   img('cart-door-r3', edgeView(DOOR_EDGE, false)),
+  img('cart-door-open', cartDoorOpenEdges(true)),
+  img('cart-door-open-r1', cartDoorOpenFaces(true)),
+  img('cart-door-open-r2', cartDoorOpenEdges(false)),
+  img('cart-door-open-r3', cartDoorOpenFaces(false)),
   img('board-gable', boardsOutside(gablePanel(23))),
   img('board-gable-r1', edgeView(GABLE_EDGE, true)),
   img('board-gable-r2', boardsInside(gablePanel(23))),
