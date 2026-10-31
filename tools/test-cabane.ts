@@ -14,13 +14,16 @@
 //   - la porte en planches dans son ouverture, sur le seuil ; les deux pans de toit en planches ;
 //   - en jeu (hors du mode construction), E devant le volet : il s'ouvre à l'équerre du mur, puis se referme ;
 //   - la zone enregistrée comme plan : src/content/plans/cabane.json (gardé) ; .art-preview/cabane.png : la cabane finie à côté de
-//     Xéros, et les couches de montage.
+//     Xéros, et les couches de montage ;
+//   - la cabane entière neuve, patinée, vieille : .art-preview/bois-ages-court.png (l'aperçu court des âges, tools/lib/ages-preview.ts).
 // Usage : npm run test:cabane.
 
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
 import { playtest } from './lib/playtest';
+import { sources } from '../art/index';
+import { agesShortPreview, SHORT_MAX_H } from './lib/ages-preview';
 
 const PLAN_FILE = 'src/content/plans/cabane.json';
 
@@ -334,6 +337,55 @@ await playtest('cabane', async ({ page, errors, load }) => {
   await sleep(250);
   const closed = await shutterOf();
   assert.deepEqual([closed.piece.prop, closed.x, closed.y, closed.view], ['plank-shutter', before.x, before.y, 3], 'E le referme, à sa place');
+
+  // 7. la cabane entière dans les trois âges, pour .art-preview/bois-ages-court.png : toutes ses pièces de bois retintées (le même
+  // réglage que le catalogue), redessinées, capturées comme les couches
+  await page.keyboard.press('KeyB');
+  await page.waitForFunction(() => (window as any).game.scene.getScene('world').mode === 'build', null, { timeout: 5000 });
+  const cabins: PNG[] = [];
+  // tirée du canevas du jeu (pas de l'écran, que le navigateur réduit) : 3 pixels du canevas par pixel du jeu, sans la zone choisie
+  const cabinShot = async (): Promise<PNG> => {
+    await send({ kind: 'none' });
+    await page.mouse.move(5, 5);
+    const url: string = await page.evaluate(([ox, oy]) => {
+      const g = (window as any).game;
+      const w = g.scene.getScene('world');
+      w.builder.selection = undefined;
+      w.player.actor.body.reset(Math.round((ox + 470) / 5), Math.round((oy + 300) / 5));
+      w.player.actor.face('down');
+      const cam = w.cameras.main;
+      cam.setZoom(3);
+      cam.centerOn((ox + 245) / 5, (oy + 50) / 5);
+      cam.preRender();
+      const k = cam.zoom * (g.canvas.width / g.scale.width) * (g.scale.width / cam.width);
+      const x = Math.round(((ox - 30) / 5 - cam.worldView.x) * k);
+      const y = Math.round(((oy - 400) / 5 - cam.worldView.y) * k);
+      return new Promise((done) => g.renderer.snapshotArea(x, y, Math.round((550 / 5) * k), Math.round((900 / 5) * k), (img: HTMLImageElement) => done(img.src)));
+    }, [O!.x, O!.y] as const);
+    return PNG.sync.read(Buffer.from(url.split(',')[1], 'base64'));
+  };
+  for (const age of ['new', 'worn', 'old'] as const) {
+    await page.evaluate((age) => {
+      const m = (window as any).game.scene.getScene('world').map;
+      for (const b of m.changes.builds) {
+        m.removeBuild(b.id);
+        if ('wood' in b.piece) {
+          if (age === 'new') delete b.piece.wood.age;
+          else b.piece.wood.age = age;
+        } else if (b.piece.prop !== 'slab') {
+          if (age === 'new') delete b.age;
+          else b.age = age;
+        }
+        m.placeBuild(b);
+      }
+      m.sortBuilds();
+    }, age);
+    cabins.push(await cabinShot());
+  }
+  const short = agesShortPreview(sources, cabins);
+  assert.ok(short, 'l’aperçu court des âges');
+  assert.ok(short.height <= SHORT_MAX_H, `bois-ages-court.png : ${short.height} px de haut, ${SHORT_MAX_H} au plus`);
+  writeFileSync('.art-preview/bois-ages-court.png', PNG.sync.write(short));
 
   // .art-preview/cabane.png : les couches de montage côte à côte, la cabane finie (avec Xéros) en dernier
   const H = Math.max(...shots.map((s) => s.png.height)) + 4;

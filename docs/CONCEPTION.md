@@ -526,7 +526,9 @@ pans de toit gris. Un même bâtiment mélangeait du bois neuf et du bois de vin
   quand tout son bois a le même âge, et ses pièces ne le répètent pas ; il l'emporte à la pose). Deux pièces d'âges différents ne
   s'entent pas (entées, elles ne font plus qu'une).
 - **Les bâtiments** : la cabane patinée, en rondins écorcés (`plans/cabane.json`) ; la grange vieille, grise (`plans/grange.json`) ;
-  l'étal patiné (`plans/etal.json`). Aperçu : `.art-preview/bois-ages.png`, chaque pièce de bois dans les trois âges, côte à côte.
+  l'étal patiné (`plans/etal.json`). Aperçus : `.art-preview/bois-ages.png`, chaque pièce de bois dans les trois âges, côte à côte (très haute : pour chercher une pièce) ;
+  `.art-preview/bois-ages-court.png` (`npm run test:cabane`, moins de 1 500 px de haut, x6), en trois colonnes NEUF, PATINÉ, VIEUX : poutre,
+  planche, rondin écorcé et rondin avec écorce à côté de Xéros ; bardage, porte, pan de toit ; la cabane entière.
 - **Vérification** : validate.ts refuse un objet de bois (matière bois) qui n'est pas `aged` (hors RAW_WOOD), et toute image d'un
   objet `aged`, toute planche de la pièce de bois, qui n'a pas ses trois âges.
 - **À venir : le vieillissement avec le temps**, quand l'horloge existera : une pièce posée au monde passera de neuve à patinée puis
