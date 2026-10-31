@@ -1,6 +1,12 @@
 {
-  "dress-rubble": {"name": "dégrossir un moellon", "inputs": [{"item": "big-rough-stone"}], "outputs": [{"item": "rubble-stone"}],
+  "break-big-stone": {"name": "casser une grosse pierre", "inputs": [{"item": "big-rough-stone"}], "outputs": [{"item": "rough-stone", "count": 2}, {"item": "small-rough-stone"}],
     "waste": {"name": "éclats de pierre", "prop": "stone-chips"}, "tools": ["stone-hammer"], "station": "ground", "trade": "quarryman", "gesture": "soon"},
+  "break-stone": {"name": "casser une pierre", "inputs": [{"item": "rough-stone"}], "outputs": [{"item": "small-rough-stone", "count": 2}],
+    "waste": {"name": "éclats de pierre", "prop": "stone-chips"}, "tools": ["stone-hammer"], "station": "ground", "trade": "quarryman", "gesture": "soon"},
+  "dress-rubble": {"name": "dégrossir un moellon", "inputs": [{"item": "big-rough-stone"}], "outputs": [{"item": "rubble-stone"}],
+    "waste": {"name": "éclats de pierre", "prop": "stone-chips"}, "tools": ["stone-hammer"], "station": "ground", "trade": "mason", "gesture": "soon"},
+  "dress-short-rubble": {"name": "dégrossir un moellon court", "inputs": [{"item": "big-rough-stone"}], "outputs": [{"item": "short-rubble-stone"}],
+    "waste": {"name": "éclats de pierre", "prop": "stone-chips"}, "tools": ["stone-hammer"], "station": "ground", "trade": "mason", "gesture": "soon"},
   "dress-ashlar": {"name": "tailler une pierre de taille", "inputs": [{"item": "rubble-stone"}], "outputs": [{"item": "ashlar"}],
     "waste": {"name": "éclats et poussière de taille", "prop": "stone-chips"}, "tools": ["stone-chisel", "mallet"], "station": "ground", "trade": "mason", "gesture": "soon"},
   "dig-clay": {"name": "creuser une motte d'argile", "inputs": [{"raw": "earth", "kg": 18}], "outputs": [{"item": "clay-clod"}],

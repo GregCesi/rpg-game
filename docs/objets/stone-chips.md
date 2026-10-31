@@ -6,7 +6,7 @@
 - Mains : ne se prend pas (pour l'instant).
 
 ## Masse
-Pas de masse déclarée : il ne se prend pas. Ce qu'il représente se calcule (l'entrée moins la sortie de la transformation qui le laisse : environ 20 kg pour un moellon, 4 kg pour une pierre de taille).
+Pas de masse déclarée : il ne se prend pas. Ce qu'il représente se calcule (l'entrée moins la sortie de la transformation qui le laisse, au calcaire : 19,6 kg pour un moellon de 40 cm, 21,8 kg pour une grosse pierre cassée, 7,1 kg pour une pierre de taille).
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
 - 40 × 30 cm, à plat (`flat`) : **8 × 6** px.
@@ -30,7 +30,7 @@ Le déchet de la taille : chaque transformation de pierre (`dress-rubble`, `dres
 Plus tard : ramassés à la pelle pour le blocage du solin. Pour l'instant, ils restent.
 
 ## Transformations
-Déchet de `dress-rubble` et `dress-ashlar`.
+Déchet de `break-big-stone`, `break-stone`, `dress-rubble`, `dress-short-rubble` et `dress-ashlar`.
 
 ## Métier
 Celui de la taille (carrier, maçon).

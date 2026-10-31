@@ -15,6 +15,11 @@ async function main() {
   const manifest = JSON.parse(readFileSync('src/generated/manifest.json', 'utf8'));
   const cat = catalogFrom(manifest);
   const errors = validateContent(content, cat);
+  // la rampe de chaque roche (rocks.json) est faite de couleurs de la palette commune (le jeu ne lit pas art/ : on le vérifie ici)
+  const { world } = await import('../art/palette');
+  for (const [k, r] of Object.entries(content.rocks)) {
+    for (const ch of r.ramp) if (!(ch in world)) errors.push(`rocks.json '${k}' : couleur '${ch}' de sa rampe absente de la palette commune (art/palette.ts)`);
+  }
   if (errors.length) {
     console.error(`\n✗ ${errors.length} problème(s) dans le contenu :`);
     for (const e of errors) console.error(`  - ${e}`);

@@ -118,8 +118,8 @@ Vérifications : la bille est-ouest (1 m × 65 cm) mesure 20 × 13 px, ses bouts
   `dims` d'une pièce debout sont donc 40 × 40 cm (`woodDims`, l'épaisseur × 5 cm), pas sa section. `validate.ts` vérifie la
   largeur debout = l'épaisseur couchée (± 1 px) et la silhouette entière à 60 cm, 1 m, 1,80 m, 2 m, 3 m et 4 m (`woodSilhouettes`,
   axe `up`). `.art-preview/bois.png` met côte à côte la couchée est-ouest, nord-sud et debout, à la même échelle.
-  Le dé de pierre (la pierre plate posée) fait 40 × 40 × 15 cm (8 × 7 px) pour que le poteau de 8 px tienne dessus sans déborder
-  (`validate.ts` le vérifie sur le plan) ; à 45 cm, la pierre pèserait 79 kg, plus que ce que Xéros porte.
+  Le dé de pierre (la dalle posée, chantier « pierre ») fait 45 × 40 × 12 cm (9 × 6 px) : le poteau de 8 px tient dessus sans
+  déborder (`validate.ts` le vérifie sur le plan) ; la dalle de calcaire pèse 38,9 kg.
 - Les objets debout (meubles, arbres, bâtiments) gardent le gabarit de toujours : une vue dessinée par côté, chacune à la taille
   de ses dimensions vues de ce côté (largeur et profondeur échangées pour une vue de côté).
 

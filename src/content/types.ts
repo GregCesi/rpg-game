@@ -140,15 +140,41 @@ export const MassSchema = z.union([
 ]);
 
 /**
- * Masse calculée par la matière (`matters.json` : pierre 2 600, terre crue 1 800, torchis 1 750, paille tassée 100 kg/m³...) :
+ * Masse calculée par la matière (`matters.json` : pierre selon sa roche, calcaire 2 400, terre crue 1 800, torchis 1 750, paille tassée 100 kg/m³...) :
  * le volume de ses `dims` (une boîte : w × d × h ; un cylindre : π r² × sa longueur) × `fill` (la part de la boîte qu'occupe la
- * matière : 0,52 pour une pierre brute, à peu près un ellipsoïde ; 1 pour ce qui est taillé ou moulé) × la densité. Une matière
+ * matière : 0,56 pour une pierre brute de carrière, anguleuse ; 1 pour ce qui est taillé ou moulé) × la densité. Une matière
  * naturelle (`natural`) pèse ensuite au cube de sa taille tirée.
  */
-export const MatterMassSchema = z.strictObject({ matter: id, fill: z.number().positive().max(1).default(1) });
+export const MatterMassSchema = z.strictObject({
+  matter: id,
+  fill: z.number().positive().max(1).default(1),
+  /** La roche (clé de rocks.json) d'une pierre qui n'est pas de la roche commune de sa matière (`rock` de matters.json). */
+  rock: id.optional(),
+});
 
-/** Une matière (`matters.json`) : son nom en français et sa densité, en kg/m³. */
-export const MatterSchema = z.strictObject({ name: id, density: z.number().positive() });
+/**
+ * Une matière (`matters.json`) : son nom en français et sa densité, en kg/m³ ; ou, pour la pierre, sa roche commune (`rock`,
+ * clé de rocks.json), qui donne la densité : une pierre pèse selon sa roche (chantier « pierre », 31 octobre 2026).
+ */
+export const MatterSchema = z
+  .strictObject({ name: id, density: z.number().positive().optional(), rock: id.optional() })
+  .refine((m) => (m.density === undefined) !== (m.rock === undefined), { message: 'une matière a soit sa densité (`density`), soit sa roche (`rock`)' });
+
+/**
+ * Une roche (`rocks.json`, chantier « pierre ») : un réglage de la pierre, pas un objet. Une nouvelle couleur de pierre = une
+ * nouvelle roche, jamais une nouvelle clé d'objet. `name` : nom affiché ; `color` : sa couleur en mots ; `ramp` : sa rampe de
+ * couleurs, clés de la palette commune (`art/palette.ts`), de la plus claire à la plus sombre ; `density` : kg/m³ ; `hardness` :
+ * multiplie le nombre de coups d'outil pour la tailler (1 : la référence, le calcaire) ; `price` : prix relatif (1 : la référence,
+ * la moins chère).
+ */
+export const RockSchema = z.strictObject({
+  name: id,
+  color: id,
+  ramp: z.array(z.string().length(1)).min(4).max(5),
+  density: z.number().positive(),
+  hardness: z.number().positive(),
+  price: z.number().positive(),
+});
 
 /**
  * Une matière naturelle (docs/CONCEPTION.md, « Les matières ») : une pierre ramassée, une motte creusée n'ont ni deux fois la même
@@ -508,7 +534,7 @@ export const CornerSchema = z.enum(['nw', 'ne', 'se', 'sw']);
 /**
  * Ce qu'une place de chantier accepte : une pièce précise, par sa clé (`prop` : un objet du monde qu'on porte, `item` : un
  * objet possédable), ou une poutre (`wood` : une pièce de bois équarrie sur ses quatre faces, de cette `section` (côté, en cm) et
- * de cette `length` exacte). `refuse` : ce qu'on dit à qui présente autre chose (« Il faut une pierre plate. », « Ce n'est pas une
+ * de cette `length` exacte). `refuse` : ce qu'on dit à qui présente autre chose (« Il faut une dalle. », « Ce n'est pas une
  * poutre. ») ; pour une poutre, « Il faut l'équarrir d'abord. » et « Il faut une poutre de 3 m. » sont dits d'après ses réglages.
  * Les places d'un tas, elles, acceptent un genre (`genre` de piles.json).
  */
@@ -940,6 +966,7 @@ export type WoodSize = z.infer<typeof WoodSizeSchema>;
 export type WoodDef = z.infer<typeof WoodSchema>;
 export type MatterMass = z.infer<typeof MatterMassSchema>;
 export type Matter = z.infer<typeof MatterSchema>;
+export type Rock = z.infer<typeof RockSchema>;
 export type NaturalDef = z.infer<typeof NaturalDefSchema>;
 export type Natural = z.infer<typeof NaturalSchema>;
 export type Trade = z.infer<typeof TradeSchema>;

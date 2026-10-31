@@ -55,8 +55,18 @@ export const families: Family[] = [
   {
     title: 'Implantation',
     ground: 'grass',
-    keys: ['stake-ground', 'planted-stake', 'hatchet-ground', 'chopping-block', 'chopping-block-rope', 'flat-stone', 'footing-stone', 'table', 'plan-tablet'],
-    icons: ['item-stake', 'item-hatchet', 'item-flat-stone', 'item-branch'],
+    keys: ['stake-ground', 'planted-stake', 'hatchet-ground', 'chopping-block', 'chopping-block-rope', 'slab', 'slab-b', 'footing-stone', 'table', 'plan-tablet'],
+    icons: ['item-stake', 'item-hatchet', 'item-slab', 'item-branch'],
+  },
+  {
+    title: 'Pierre',
+    ground: 'grass',
+    keys: [
+      'small-rough-stone-ground', 'small-rough-stone-ground-b', 'rough-stone-ground', 'rough-stone-ground-b', 'big-rough-stone-ground', 'big-rough-stone-ground-b',
+      'short-rubble-stone-ground', 'short-rubble-stone-ground-ns', 'rubble-stone-ground', 'rubble-stone-ground-ns', 'long-rubble-stone-ground', 'long-rubble-stone-ground-ns',
+      'slab', 'slab-b', 'ashlar-ground', 'ashlar-ground-ns', 'stone-chips',
+    ],
+    icons: ['small-rough-stone', 'rough-stone', 'big-rough-stone', 'short-rubble-stone', 'rubble-stone', 'long-rubble-stone', 'slab', 'ashlar'].map((n) => `item-${n}`),
   },
   { title: 'Intérieur', ground: 'floor', keys: ['bed', 'pallet', 'sack', 'jar', 'worktable', 'workbench'] },
 ];

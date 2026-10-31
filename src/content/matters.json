@@ -1,5 +1,5 @@
 {
-  "stone": {"name": "pierre", "density": 2600},
+  "stone": {"name": "pierre", "rock": "limestone"},
   "earth": {"name": "terre crue", "density": 1800},
   "cob": {"name": "torchis", "density": 1750},
   "mortar": {"name": "mortier de terre", "density": 1900},

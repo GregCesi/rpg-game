@@ -7,7 +7,7 @@
 - Mains : deux (`carry`).
 
 ## Masse
-- Calculée : 40 × 20 × 15 cm, pleine (`fill` 1), × 2 600 kg/m³ = **31,2 kg**, moins que le moellon d'où elle sort (35,4 kg).
+- Calculée : 40 × 20 × 15 cm, pleine (`fill` 1), × 2 400 kg/m³ (le calcaire, `rocks.json`, chantier « pierre ») = **28,8 kg**, moins que le moellon de 40 cm d'où elle sort (35,9 kg à sa taille type, 30,8 kg au plus petit).
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
 - 40 × 20 × 15 cm : la longueur et la largeur sur la grille de 20 cm, l'assise de 15 cm (le moellon a perdu ses bosses et 5 cm de lit en dressant ses faces).
@@ -34,7 +34,7 @@ Taillée dans un moellon, au ciseau et au maillet. S'achète au maçon.
 Les chaînes d'angle, le jambage et le manteau de la cheminée (à venir avec le plan de la maison).
 
 ## Transformations
-- `dress-ashlar` : moellon → pierre de taille ; déchet : éclats et poussière de taille (4,2 kg), au sol ; outils : ciseau de tailleur, maillet ; poste : sol ; geste à venir.
+- `dress-ashlar` : moellon → pierre de taille ; déchet : éclats et poussière de taille (7,1 kg à la taille type du moellon), au sol ; outils : ciseau de tailleur, maillet ; poste : sol ; geste à venir.
 
 ## Métier
 Maçon (`mason`), le tailleur de pierre du village.

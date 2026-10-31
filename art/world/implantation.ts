@@ -1,80 +1,109 @@
-// L'implantation de l'abri à bois : la pierre plate qui devient un dé, la planchette où la mère a gravé le plan.
-// Fiches : docs/objets/flat-stone.md, plan-tablet.md. Le piquet : art/items/stake.ts ; la hachette qui le taille :
+// L'implantation de l'abri à bois : la dalle de calcaire qui devient un dé, la planchette où la mère a gravé le plan.
+// Fiches : docs/objets/slab.md, plan-tablet.md. Le piquet : art/items/stake.ts ; la hachette qui le taille :
 // art/items/hatchet.ts.
 //
 // Échelle du jeu (5 cm par pixel, gabarit de docs/STYLE.md section 8), lumière en haut à gauche, contour d'un pixel :
 // teinte la plus sombre de la matière en haut et à gauche, OUTLINE (o) en bas et à droite.
 
-import { Canvas, type Grid } from '../lib/canvas';
+import { Canvas, EMPTY, type Grid } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
-import { outline } from '../items/lib';
 import { sheet } from '../items/carried';
-import { footingStone } from './building';
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
-// ---------- Pierre plate ----------
-// Une dalle de berge naturelle, 40 × 40 × 15 cm (8 × 7 px), en deux formes (`flat-stone`, `flat-stone-b`) : le dessin du
-// dé de pierre (art/world/building.ts), même pierre, même lumière, ombre portée en bas à droite. Posée sur une place du
-// chantier, elle devient ce dé sans changer (forme A : `footing-stone`, forme B : `footing-stone-b`).
+// ---------- Dalle ----------
+// Le calcaire de la carrière se casse en plaques : la dalle est une forme naturelle plate de la pierre brute, 45 × 40 × 12 cm.
+// Gabarit : W 9 ; H + D/2 = 2,4 + 4 : silhouette 9 × 7 px. Même roche et même manière que la pierre brute (manière C,
+// art/items/stones.ts : rampe du calcaire `! + = ; ~`, taches de patine grise `R` et ocre `D`, blanc seulement là où la pierre
+// a sauté, fissure `~`), mais une plaque : le dessus large et plat sur cinq rangées (le contour du haut, quatre rangées de `+`),
+// le flanc est en raccourci d'un pixel (`;`), la tranche sud mince (une rangée, `=` et `;`) et cassée, puis le contour du bas.
+// Contour dessiné à la main : `~` en haut et à gauche, OUTLINE en bas et à droite ; il marche là où la plaque a cassé.
+// Deux formes (`slab`, `slab-b`). Posée sous un poteau, elle devient le dé (`footing-stone`, `footing-stone-b`,
+// art/world/building.ts) sans changer : le dessus garde au moins 8 px de large pour le pied du poteau.
 
-function flatStone(form: 'a' | 'b' = 'a'): Canvas {
-  return footingStone(form);
+const SLAB: Record<'a' | 'b', Grid> = {
+  // A : le coin nord-ouest parti en biais, le bord ouest cassé frais (blanc sur le dessus et la tranche), une fissure en biais
+  // sur le dessus, une tache de patine grise au nord-est, la tranche ébréchée au sud-est
+  a: [
+    '..~~~~~o.',
+    '.~+;+RR;o',
+    '~!++;+R;o',
+    '~!+++;+;o',
+    '~++++++;o',
+    '~!==;=;o.',
+    '.ooooooo.',
+  ],
+  // B : le coin nord-est cassé, un creux au bord nord d'où part une fissure, du lichen ocre au sud-ouest du dessus, le bout est
+  // de la tranche parti frais (blanc)
+  b: [
+    '.~~~~.~o.',
+    '~++++;+;o',
+    '~+++;++;o',
+    '~+R++++;o',
+    '~DD+++!;o',
+    '~=D=;!!o.',
+    '.ooooooo.',
+  ],
+};
+
+/** La dalle sans ombre portée (silhouette 9 × 7), forme A ou B. */
+export function slabBody(form: 'a' | 'b' = 'a'): Grid {
+  const g = SLAB[form];
+  g.forEach((r, i) => { if (r.length !== 9) throw new Error(`implantation : dalle ${form}, rangée ${i} de ${r.length} au lieu de 9`); });
+  return g;
 }
 
-/** La pierre sans son ombre portée. */
-function stoneBody(): Grid {
-  return footingStone().toGrid().map((r) => r.replace(/x/g, '.')).filter((r) => /[^.]/.test(r)).map((r) => r.slice(0, 8));
+/** La dalle posée, ombre portée comprise (la silhouette décalée d'un pixel vers le sud-est), dans une image de 10 × 8. */
+export function slab(form: 'a' | 'b' = 'a'): Canvas {
+  const g = slabBody(form);
+  const c = new Canvas(10, 8).stamp(g, 0, 0);
+  for (let y = 1; y < c.h; y++) for (let x = 1; x < c.w; x++) {
+    if (c.get(x, y) === EMPTY && (g[y - 1]?.[x - 1] ?? EMPTY) !== EMPTY) c.set(x, y, 'x');
+  }
+  return c;
 }
 
-// ---------- Icône de la pierre plate ----------
-// En trois quarts, plus grande que sur la carte pour la case : la dalle de berge de la forme A, plus large que haute,
-// le dessus clair (R, la lumière à gauche ; une facette r, r vers l'est), la face sud en z, Z vers la droite et le bas ;
-// coins cassés (nord-est en biais, pied écorné), un creux sur la face. Pas d'ombre (le jeu l'ajoute au sol).
+// ---------- Icône de la dalle ----------
+// Plus grande que sur la carte pour la case : la même plaque, plus large que haute ; le dessus clair et plat, une fissure, la
+// patine grise et le lichen ocre, le bord ouest cassé frais, la tranche mince au sud. Pas d'ombre (le jeu l'ajoute au sol).
 
-function itemFlatStone(): Canvas {
-  const c = Canvas.from([
-    '................',
-    '................',
-    '................',
-    '................',
-    '...RRRRRRRr.....',
-    '..RRRRRRRRRrr...',
-    '..RRRrrRRRRRrr..',
-    '..rRRRRRRRrrrrr.',
-    '..zzzzzzzzzzzzZ.',
-    '..zzzzZZzzzzzZZ.',
-    '...zzzzzzzzZZZ..',
-    '.....zzzzzZZ....',
-    '................',
-    '................',
-    '................',
-    '................',
-  ]);
-  return outline(c, 'Z');
+function itemSlab(): Canvas {
+  const g: Grid = [
+    '...~~~~~~~o..',
+    '.~~++++++RR;o',
+    '~!+++~+++RR;o',
+    '~!++++~+++R;o',
+    '~!+++++~+++;o',
+    '~++++++++++;o',
+    '~+DD+++++++;o',
+    '~=DD==;==;;o.',
+    '.oooooooooo..',
+  ];
+  g.forEach((r, i) => { if (r.length !== g[0].length) throw new Error(`implantation : icône de la dalle, rangée ${i}`); });
+  const c = new Canvas(16, 16);
+  c.stamp(g, Math.floor((16 - g[0].length) / 2), 16 - 3 - g.length);
+  return c;
 }
 
-// ---------- Pierre plate portée ----------
-// Portée à deux mains devant le ventre (posture `carry`, CARRY_HANDS de art/characters/xeros.ts). Une pierre carrée
-// se voit pareille de tous côtés : de face, sa face sud et son dessus ; de profil, son côté, le même dessin ; de dos,
-// le même, que le corps cache (8 px de large derrière un torse de 12). Les mains la tiennent par-dessous : la prise est
-// sur sa dernière rangée de pierre.
+// ---------- Dalle portée ----------
+// Portée à deux mains devant le ventre (posture `carry`, CARRY_HANDS de art/characters/xeros.ts). Une plaque presque carrée
+// se voit à peu près pareille de tous côtés : de face, sa tranche et son dessus ; de profil, le même dessin ; de dos, le même,
+// que le corps cache en partie. Les mains la tiennent par-dessous : la prise est sur sa dernière rangée.
 
 const STONE_SIZE = 15;
 const SC = Math.floor(STONE_SIZE / 2);
 
-function carriedStone(): Grid {
-  const body = stoneBody();
+function carriedSlab(): Grid {
+  const body = slabBody('a');
   const c = new Canvas(STONE_SIZE, STONE_SIZE);
-  // la dernière rangée de pierre (la prise) à la même place qu'avant : rangée SC + 1
-  c.stamp(body, SC - 4, SC + 2 - body.length);
+  c.stamp(body, SC - Math.floor(body[0].length / 2), SC + 2 - body.length);
   return c.toGrid();
 }
 
-const heldFlatStone = (): SpriteSheetSource => {
-  const g = carriedStone();
-  return sheet('held-flat-stone', STONE_SIZE, world, { down: g, up: g, right: g });
+const heldSlab = (): SpriteSheetSource => {
+  const g = carriedSlab();
+  return sheet('held-slab', STONE_SIZE, world, { down: g, up: g, right: g });
 };
 
 // ---------- Planchette gravée ----------
@@ -100,9 +129,9 @@ function planTablet(): Canvas {
 }
 
 export default [
-  img('flat-stone', flatStone('a')),
-  img('flat-stone-b', flatStone('b')),
-  img('item-flat-stone', itemFlatStone()),
-  heldFlatStone(),
+  img('slab', slab('a')),
+  img('slab-b', slab('b')),
+  img('item-slab', itemSlab()),
+  heldSlab(),
   img('plan-tablet', planTablet()),
 ];

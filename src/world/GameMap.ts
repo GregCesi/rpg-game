@@ -144,7 +144,7 @@ export interface PlacedProp {
   length?: number;
   /** Pièce de bois : ses réglages (diamètre, longueur, forme, faces, sens, coupe commencée, coin planté). */
   wood?: WoodPiece;
-  /** Matière naturelle (la pierre plate) : sa forme et sa taille (GameState, ou tirées de son identifiant Tiled). */
+  /** Matière naturelle (la dalle) : sa forme et sa taille (GameState, ou tirées de son identifiant Tiled). */
   natural?: Natural;
 }
 

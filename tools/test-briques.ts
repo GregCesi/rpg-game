@@ -1,6 +1,7 @@
 // Test de scénario des matières (chantier « briques »), dans le vrai jeu (voir tools/lib/playtest.ts) : une grosse pierre brute donnée
 // (sa forme et sa taille tirées), transformée en moellon par ?dieu (« Transformer » : la masse baisse, les éclats restent au sol),
-// puis deux moellons posés l'un contre l'autre : un tas naît ; de même la terre mêlée en torchis (trois mottes, une gerbe de paille
+// une autre cassée en deux moyennes et une petite, puis deux pièces identiques posées l'une contre l'autre font un tas, un par taille
+// et par longueur (moellons de 40 et 50 cm, petites et moyennes pierres) ; de même la terre mêlée en torchis (trois mottes, une gerbe de paille
 // et un seau d'eau au sol : trois mottes de torchis et le seau vide), mise en tas, la branche parée en baguette, mise en tas, un quartier fendu en cinq planches et deux perches en tas ; une
 // transformation à qui il manque une entrée ne change rien ; puis la page rechargée : tout est retrouvé, la pierre posée seule avec
 // sa forme et sa taille.
@@ -62,8 +63,8 @@ await playtest('briques', async ({ page, errors }) => {
     // deux pièces de `what` posées l'une devant l'autre (Q, lâcher : le même chemin de pose que E dans le vide ; E, une main libre,
     // reprendrait la pièce au sol) : la seconde, contre la première seule au sol, fait naître un tas
     const pileOf = async (what: unknown) => {
-      const [x, y] = find(70, 70);
-      await standAt(x + 30, y, 'down');
+      const [x, y] = find(40, 40);
+      await standAt(x + 20, y, 'down');
       await send({ kind: 'give', held: what });
       await press('KeyQ');
       await send({ kind: 'give', held: what });
@@ -101,8 +102,29 @@ await playtest('briques', async ({ page, errors }) => {
       await standAt(lx + 30, ly, 'down');
       await press('KeyE');
       out.loneGround = ms().ground.filter((q: any) => q.item === 'big-rough-stone').map((q: any) => q.natural);
+      // casser une grosse pierre : deux moyennes et une petite, les éclats au sol
+      const [bx, by] = find(48, 48);
+      await standAt(bx + 24, by + 12, 'down');
+      await send({ kind: 'give', held: { item: 'big-rough-stone' } });
+      const big = carried();
+      const ground0 = ms().ground.length;
+      const chips0 = ms().spawned.filter((o: any) => o.type === 'stone-chips').length;
+      notices.length = 0;
+      await send({ kind: 'transform', id: 'break-big-stone' });
+      const pieces = [gs.game.both, ...gs.game.hands].filter(Boolean).concat(ms().ground.slice(ground0)).map((h: any) => JSON.parse(JSON.stringify(h)));
+      out.broken = {
+        big,
+        pieces: pieces.map((h: any) => h.item).sort(),
+        kg: pieces.reduce((sum: number, h: any) => sum + mass.heldMass({ item: h.item, natural: h.natural }), 0),
+        chips: ms().spawned.filter((o: any) => o.type === 'stone-chips').length - chips0,
+        notice: notices.at(-1),
+      };
     }
+    // un tas par taille et par longueur : jamais mêlés
     out.rubblePiles = await pileOf({ item: 'rubble-stone' });
+    out.longPiles = await pileOf({ item: 'long-rubble-stone' });
+    out.smallPiles = await pileOf({ item: 'small-rough-stone' });
+    out.mediumPiles = await pileOf({ item: 'rough-stone' });
 
     // 2. la terre : trois mottes, une gerbe de paille et un seau d'eau au sol, mêlés en torchis
     {
@@ -163,15 +185,26 @@ await playtest('briques', async ({ page, errors }) => {
   assert.ok(r.stone.stone.natural && r.stone.stone.natural.size >= 93 && r.stone.stone.natural.size <= 107, `la pierre a sa forme et sa taille : ${JSON.stringify(r.stone.stone.natural)}`);
   assert.equal(r.stone.held.item, 'rubble-stone', 'le moellon est dans les mains qui tenaient la pierre');
   assert.ok(r.stone.after < r.stone.before, `le moellon pèse moins que la pierre : ${r.stone.after} < ${r.stone.before}`);
-  assert.ok(Math.abs(r.stone.after - 35.36) < 0.1, `moellon : 35,4 kg (${r.stone.after})`);
+  // moellon de 40 cm : 40 × 22 × 20 cm × 0,85 × 2 400 kg/m³ (le calcaire, rocks.json) = 35,9 kg à sa taille type, ± 5 % au cube
+  const rubbleKg = 35.904 * (r.stone.held.natural.size / 100) ** 3;
+  assert.ok(r.stone.held.natural.size >= 95 && r.stone.held.natural.size <= 105, `le moellon a sa taille tirée : ${JSON.stringify(r.stone.held.natural)}`);
+  assert.ok(Math.abs(r.stone.after - rubbleKg) < 0.1, `moellon : ${rubbleKg} kg (${r.stone.after})`);
+  assert.ok(r.stone.before >= 55.52 * 0.93 ** 3 - 0.1 && r.stone.before <= 55.52 * 1.07 ** 3 + 0.1, `grosse pierre brute : 55,5 kg ± 7 % au cube (${r.stone.before})`);
   assert.equal(r.stone.chips, 1, 'les éclats restent au sol');
-  assert.match(r.stone.notice, /^Moellon : 35 kg ; éclats de pierre : [\d,]+ kg, au sol\.$/);
+  assert.match(r.stone.notice, /^Moellon de 40 cm : \d+ kg ; éclats de pierre : [\d,]+ kg, au sol\.$/);
+  // casser une grosse pierre
+  assert.deepEqual(r.broken.pieces, ['rough-stone', 'rough-stone', 'small-rough-stone'], `une grosse pierre cassée donne deux moyennes et une petite : ${r.broken.pieces}`);
+  assert.ok(r.broken.kg < r.broken.big, `les morceaux pèsent moins que la pierre : ${r.broken.kg} < ${r.broken.big}`);
+  assert.equal(r.broken.chips, 1, 'les éclats de la casse restent au sol');
+  // un tas par taille et par longueur
+  for (const [list, genre] of [[r.rubblePiles, 'rubble-stones'], [r.longPiles, 'long-rubble-stones'], [r.smallPiles, 'small-rough-stones'], [r.mediumPiles, 'rough-stones']] as const) {
+    assert.ok(list.includes(`${genre}:2`), `deux pièces identiques font un tas '${genre}' : ${list}`);
+  }
   assert.equal(r.missing.notice, 'Il manque : grosse pierre brute.');
   assert.equal(r.missing.same, true, 'sans son entrée, rien ne change');
   assert.equal(r.ashlar.held.item, 'ashlar');
-  assert.ok(Math.abs(r.ashlar.kg - 31.2) < 0.1, `pierre de taille : 31,2 kg (${r.ashlar.kg})`);
+  assert.ok(Math.abs(r.ashlar.kg - 28.8) < 0.1, `pierre de taille : 40 × 20 × 15 cm de calcaire, 28,8 kg (${r.ashlar.kg})`);
   assert.deepEqual(r.loneGround, [r.lone.natural], 'posée seule, la pierre garde sa forme et sa taille');
-  assert.ok(r.rubblePiles.includes('rubble-stones:2'), `deux moellons font un tas : ${r.rubblePiles}`);
   // la terre
   assert.equal(r.cob.clodsAfter, r.cob.clodsBefore - 3, 'les trois mottes de terre sont mêlées');
   assert.equal(r.cob.cob, 3, 'trois mottes de torchis');
@@ -218,5 +251,5 @@ await playtest('briques', async ({ page, errors }) => {
   assert.equal(after.chips, r.chipsTotal, 'les éclats aussi');
   assert.deepEqual(after.lone, r.loneGround, 'la pierre seule, avec sa forme et sa taille');
   assert.deepEqual(after.loneImage, r.loneGround.map((n: any) => (n.form ? 'big-rough-stone-ground-b' : 'big-rough-stone-ground')), 'dessinée dans sa forme');
-  console.log('  ✓ briques : pierre brute dégrossie en moellon (éclats au sol) puis en pierre de taille, terre mêlée en torchis, branche parée en baguette, quartier fendu en planches, perches, chacun en tas, la forme et la taille d\'une pierre gardées, tout retrouvé après rechargement');
+  console.log('  ✓ briques : pierre brute dégrossie en moellon (éclats au sol) puis en pierre de taille, grosse pierre cassée, un tas par taille et par longueur, terre mêlée en torchis, branche parée en baguette, quartier fendu en planches, perches, chacun en tas, la forme et la taille d\'une pierre gardées, tout retrouvé après rechargement');
 });

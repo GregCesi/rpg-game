@@ -50,7 +50,7 @@ export type HelpResult = { ok: false; message: string } | { ok: true; kg: number
  * Les chantiers : tracer l'emprise d'un plan avec des piquets, puis y poser les pièces, étape par étape. Tout le plan est dans
  * plans.json (en cm) ; l'état est dans GameState (`sites` de la carte). Les places du plan sont celles du moteur commun
  * (world/places.ts) : l'étape en cours montre ses places en fantôme, la place visée est mise en avant quand ce qu'on tient lui
- * convient, et une pièce qui ne convient pas est refusée avec le message du plan (« Il faut une pierre plate. »).
+ * convient, et une pièce qui ne convient pas est refusée avec le message du plan (« Il faut une dalle. »).
  * Une place dont la pièce est une poutre (`accepts.wood`) vérifie les réglages de la pièce en main. Si cette poutre pèse plus que
  * Xéros ne porte, la place accepte l'aide de la mère : la poutre couchée au sol près de la place (son bout à moins d'une case)
  * est dressée sans être portée (`help`). La règle est celle du plan, pas d'une pièce : toute place trop lourde pour Xéros.
@@ -260,7 +260,7 @@ export class SiteSystem {
       }
     }
     if (this.map.ground.some((g) => g.item.x >= box.left && g.item.x <= box.right && g.item.y >= box.top && g.item.y <= box.bottom + 4)) return false;
-    // un objet sans collision, posé là (une pierre plate, une planchette) : pas à plat sur le sol, c'est un objet
+    // un objet sans collision, posé là (une dalle, une planchette) : pas à plat sur le sol, c'est un objet
     return !this.map.props.some((p) => p.def.layer !== 'floor' && !p.box && overlaps(box, { left: p.x, top: p.y - p.image.height, right: p.x + p.image.width, bottom: p.y }));
   }
 

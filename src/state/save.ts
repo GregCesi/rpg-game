@@ -15,7 +15,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -84,6 +84,8 @@ export function readSave(): ReadResult {
  * Version 9 -> 10 : un chantier montre les vraies pièces posées (voir `postsAsWood`) : les poteaux deviennent des pièces de bois dressées.
  * Version 10 -> 11 : la pièce debout a l'épaisseur de la couchée (règle D étendue) et le dé grandit (40 cm) : les pièces posées d'un
  * chantier reprennent la place que leur donne le plan (voir `replacePlaced`).
+ * Version 11 -> 12 : la pierre (chantier « pierre ») : la pierre plate devient la dalle (`flat-stone` -> `slab`, voir `slabFromFlatStone`) ;
+ * les autres pierres gardent leur clé (les masses se recalculent par la roche, rien n'est gardé).
  */
 function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -102,7 +104,18 @@ function upgrade(data: unknown): unknown {
   if (d?.version === 8 && d.state && typeof d.state === 'object') d = { ...d, version: 9, state: sitesWithPieces(d.state as V8State) };
   if (d?.version === 9 && d.state && typeof d.state === 'object') d = { ...d, version: 10, state: postsAsWood(d.state as V9State) };
   if (d?.version === 10 && d.state && typeof d.state === 'object') d = { ...d, version: 11, state: replacePlaced(d.state as V9State & V10Sites) };
+  if (d?.version === 11 && d.state && typeof d.state === 'object') d = { ...d, version: 12, state: slabFromFlatStone(d.state) };
   return d;
+}
+
+/**
+ * Version 11 -> 12 : la pierre plate devient la dalle. Sa clé n'apparaît dans une partie que comme type d'objet (tenu, né, changé,
+ * posé) : toute valeur `"flat-stone"` devient `"slab"`, où qu'elle soit.
+ */
+function slabFromFlatStone(state: object): object {
+  const swap = (v: unknown): unknown =>
+    v === 'flat-stone' ? 'slab' : Array.isArray(v) ? v.map(swap) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, swap(x)])) : v;
+  return swap(state) as object;
 }
 
 /** Ce que la conversion 10 -> 11 lit en plus : la position du chantier (son piquet nord-ouest) et les objets nés (x, y). */

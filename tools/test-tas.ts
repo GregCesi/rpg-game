@@ -2,7 +2,7 @@
 // d'une première pièce posée seule puis d'une pièce identique posée contre elle (des rondins de 80 cm en pyramide, des quartiers
 // de 1,20 m nord-sud en rangées tête-bêche, des poutres de 1,80 m en rangées) ; leur forme (nombre de pièces, pièces par couche) ;
 // le refus de mélanger (un rondin visé sur un tas de quartiers est posé seul, sans message) ; une pièce de plus de 70 kg (portée
-// avec la force doublée) qui ne fait pas de tas contre sa jumelle ; la pose d'une pierre plate et d'une hachette à la place de leur
+// avec la force doublée) qui ne fait pas de tas contre sa jumelle ; la pose d'une dalle et d'une hachette à la place de leur
 // fantôme, et de la hachette tournée par R (sa vue r1, gardée quand on la reprend) ; puis la page rechargée : tout est retrouvé.
 // Usage : npm run test:tas (lancé aussi par npm run test).
 
@@ -204,15 +204,15 @@ await playtest('tas', async ({ page, errors }) => {
       out.heavyDieu = { notice: notices.at(-1), piles: piles().filter((p: any) => p.wood?.length === 140).length };
     }
 
-    // 4. la pose avec fantôme d'une pierre plate (objet du monde) et d'une hachette (objet possédable)
+    // 4. la pose avec fantôme d'une dalle (objet du monde) et d'une hachette (objet possédable)
     {
       const [x, y] = find(60, 60);
-      await give({ prop: 'flat-stone' });
+      await give({ prop: 'slab' });
       await standAt(x + 30, y, 'down');
       await sleep(100);
       const gh = ghost();
       await press('KeyE');
-      const stone = w().map.props.find((p: any) => p.type === 'flat-stone' && p.spawned && p.x === gh.x && p.y === gh.y);
+      const stone = w().map.props.find((p: any) => p.type === 'slab' && p.spawned && p.x === gh.x && p.y === gh.y);
       out.stone = { ghost: gh.visible, key: gh.key, at: !!stone, hands: JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both) };
     }
     {
@@ -289,7 +289,7 @@ await playtest('tas', async ({ page, errors }) => {
   assert.equal(r.heavyDieu.piles, 0);
   assert.equal(r.heavyDieu.notice, 'Trop lourde pour un tas : elle se pose seule.');
   assert.equal(r.stone.ghost, true, 'la pierre a son fantôme');
-  assert.match(r.stone.key, /^flat-stone(-b)?$/, 'le fantôme de la pierre est dans sa forme');
+  assert.match(r.stone.key, /^slab(-b)?$/, 'le fantôme de la pierre est dans sa forme');
   assert.equal(r.stone.at, true, 'posée à la place de son fantôme');
   assert.equal(r.stone.hands, '[null,null]null');
   assert.equal(r.tool.ghost, true, 'la hachette a son fantôme');
@@ -317,7 +317,7 @@ await playtest('tas', async ({ page, errors }) => {
         .map((p: any) => [p.wood.shape, p.wood.length, p.wood.hewn ?? 0, !!p.turned, p.places.length].join(':'))
         .sort(),
       shown: w.map.piles.filter((p: any) => p.pile.wood).reduce((n: number, p: any) => n + p.pile.places.length, 0),
-      stone: w.map.props.some((p: any) => p.type === 'flat-stone' && p.spawned),
+      stone: w.map.props.some((p: any) => p.type === 'slab' && p.spawned),
       tool: w.map.ground.some((q: any) => q.item.item === 'hatchet'),
     };
   })) as Record<string, any>;

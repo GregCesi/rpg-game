@@ -527,6 +527,15 @@ côte à côte (`art/proposals/`, jamais chargé par le jeu ; `.art-preview/essa
   2 400 kg/m³), dureté à la taille, prix relatif. Une nouvelle couleur de pierre = une nouvelle roche, pas un nouvel objet.
 - Premiers maillons : la [pierre brute de carrière](objets/rough-stone.md) (moyenne et grosse), puis le [moellon](objets/rubble-stone.md)
   (trois longueurs, faces bosselées), avec un muret d'essai monté par calcul pour juger qu'il se lit comme un mur de moellons.
+- **Choix de Grégoire sur l'essai** (même jour) : la pierre brute prend le dessin C (« cassures et taches »), en **trois tailles**
+  (petite, ~15 cm et 4,5 kg, d'une main ; moyenne 26 × 22 × 19 ; grosse 45 × 34 × 27), deux formes par taille ; **casser** une grosse
+  pierre au têtu donne des moyennes, une petite et des éclats (geste à venir, bilan de masse juste). Le moellon prend le dessin B
+  (dégrossi, plus plat et plus calme que la pierre brute : on voit le travail du têtu), 30, 40 et 50 cm. **Un tas par taille et par
+  longueur, jamais mêlés.** **La dalle** (`slab`, ~45 × 40 × 12 cm) : le calcaire se casse en plaques ; forme naturelle plate de la
+  pierre brute, elle remplace la pierre plate et sert de dé à l'abri. **La roche entre dans le contenu** (`src/content/rocks.json`) :
+  toutes les masses de pierre se recalculent au calcaire (2 400 kg/m³ au lieu de 2 600). Intégré ; un second essai, sans intégration,
+  monte deux murs de 1,60 × 0,80 m avec ces dessins (`tools/essai-murs.ts`, `.art-preview/essai-murs.png`) : un mur brut de pierres
+  brutes posées sur leur face la plus plate, un mur taillé de moellons en assises.
 
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 

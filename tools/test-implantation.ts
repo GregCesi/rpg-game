@@ -1,7 +1,7 @@
 // Test de scénario de l'implantation, dans le vrai jeu (voir tools/lib/playtest.ts) : refus sans plan, lire la planchette chez la
 // mère, tailler un piquet à la hachette (refus sans branche dans l'autre main), poser le rouleau de corde
 // sur le billot et en couper un lien à la hachette puis à la cognée, tracer l'emprise (un piquet refusé hors des coins, un tracé gêné par un rocher), le
-// chantier qui naît, un objet refusé par une place, quatre pierres plates portées depuis la berge jusqu'aux quatre dés, le
+// chantier qui naît, un objet refusé par une place, quatre dalles portées depuis la berge jusqu'aux quatre dés, le
 // piquet arraché de chaque coin, la ligne d'état, les poteaux en fantôme, puis la page rechargée : le chantier est retrouvé.
 // Usage : npm run test:implantation (lancé aussi par npm run test).
 
@@ -98,9 +98,9 @@ await playtest('implantation', async ({ page, errors, load }) => {
         }
         return undefined;
       };
-      const berge = props(/^flat-stone$/);
+      const berge = props(/^slab$/);
       out.stonesOnMap = berge.length;
-      out.stoneMass = mass.propMass('flat-stone');
+      out.stoneMass = mass.propMass('slab');
       const block = find(32, 32)!;
       await standAt(block[0], block[1], 'down');
       emit({ kind: 'prop', prop: 'chopping-block' });
@@ -228,7 +228,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const ghostKeys = () => w().site.ghosts.images.filter((i: any) => i.visible).map((i: any) => i.texture.key).sort();
       out.ghostsDice = ghostKeys();
 
-      // 6. les dés : un objet qui n'est pas une pierre plate est refusé ; quatre pierres de la berge, portées une à une
+      // 6. les dés : un objet qui n'est pas une dalle est refusé ; quatre pierres de la berge, portées une à une
       const plan = content.plans.woodshed;
       const places = Object.entries(plan.steps[0].places) as [string, any][];
       const aimOf = (id: string) => sp.placeGround(site(), plan.steps[0].places[id]);
@@ -244,7 +244,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       emit({ kind: 'stamina', value: 100 });
       const dice: unknown[] = [];
       for (const [i, [id, place]] of places.entries()) {
-        const stone = props(/^flat-stone$/)[0];
+        const stone = props(/^slab$/)[0];
         await standAt(stone.baseX, stone.y + 4, 'up');
         await press('KeyE');
         const carried = hands();
@@ -300,8 +300,8 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.deepEqual(r.known, ['woodshed'], 'le plan est connu');
   assert.equal(r.alreadyKnown, 'Xéros connaît déjà ce plan.');
   assert.equal(r.tabletStays, 1, 'la planchette reste en place');
-  assert.ok(r.stonesOnMap >= 6, `six pierres plates sur la berge : ${r.stonesOnMap}`);
-  assert.ok(Math.abs(r.stoneMass - 49.92) < 0.2, `masse de la pierre plate à sa taille type (40 × 40 × 15 cm, 80 % de pierre) : ${r.stoneMass}`);
+  assert.ok(r.stonesOnMap >= 6, `six dalles sur la berge : ${r.stonesOnMap}`);
+  assert.ok(Math.abs(r.stoneMass - 38.88) < 0.2, `masse de la dalle à sa taille type (45 × 40 × 12 cm, 75 % de calcaire à 2 400 kg/m³) : ${r.stoneMass}`);
   assert.equal(r.noBranchNotice, "Tiens la branche ou le piquet debout sur le billot, de l'autre main.", 'sans branche dans l\'autre main : refusé');
   assert.equal(r.noBranchMode, 'play', 'refus sans geste');
   assert.equal(r.noBranchCost, 0, 'un refus ne coûte rien');
@@ -341,10 +341,10 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.equal(r.born, JSON.stringify({ stakes: 4, born: true, hands: '[null,null]null' }), 'dégagée, le chantier naît');
   assert.deepEqual(r.statusStart, ['Abri à bois : dés, 0 sur 4']);
   assert.deepEqual(r.ghostsDice, ['footing-stone', 'footing-stone', 'footing-stone', 'footing-stone'], 'les quatre dés en fantôme');
-  assert.equal(r.wrongNotice, 'Il faut une pierre plate.', 'un autre objet est refusé');
+  assert.equal(r.wrongNotice, 'Il faut une dalle.', 'un autre objet est refusé');
   assert.equal(r.wrongPlaced, 0);
   for (const [i, d] of (r.dice as any[]).entries()) {
-    assert.match(d.carried, /^\[null,null\]\{"prop":"flat-stone","natural":\{"form":[01],"size":\d+\}\}$/, `pierre ${i + 1} portée à deux mains, avec sa forme et sa taille`);
+    assert.match(d.carried, /^\[null,null\]\{"prop":"slab","natural":\{"form":[01],"size":\d+\}\}$/, `pierre ${i + 1} portée à deux mains, avec sa forme et sa taille`);
     assert.equal(d.after, '[null,null]null', `pierre ${i + 1} posée : les mains sont libres`);
     assert.equal(d.placed, i + 1);
     assert.equal(d.footings, i + 1, 'un dé de plus sur la carte');

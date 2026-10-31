@@ -140,7 +140,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       await refuse('deux-metres-haut', beam(200), 'post-nw');
       await refuse('trois-metres-bas', beam(300), 'post-sw');
       await refuse('hache', { item: 'axe' }, 'post-sw');
-      await refuse('pierre', { prop: 'flat-stone' }, 'post-nw');
+      await refuse('pierre', { prop: 'slab' }, 'post-nw');
       out.refusals = refusals;
       emit({ kind: 'force', multiplier: 1 });
       gs.emptyHands(gs.game);

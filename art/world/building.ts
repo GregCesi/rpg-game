@@ -4,7 +4,7 @@
 //
 // L'abri à bois (fiches docs/objets/footing-stone.md, shed-*.md) : appentis à environ 20°, toit de planches. Repère
 // commun, en pixels de la carte (5 cm par pixel), projection (x, y, z) -> (x, y - z) pour poser les pièces :
-// - poteaux de 20 × 20 cm, sur des dés de 15 cm ; rang nord 3 m hors dé (tête à 3,15 m, 63 px), rang sud 1,80 m (tête
+// - poteaux de 20 × 20 cm, sur des dés (la dalle posée, 12 cm d'épaisseur depuis le chantier « pierre », 15 cm avant : les hauteurs ci-dessous gardent les 15 cm, à 1 px près) ; rang nord 3 m hors dé (tête à 3,15 m, 63 px), rang sud 1,80 m (tête
 //   à 1,95 m, 39 px : le bois se coupe sur une grille de 20 cm, src/content/wood.json) ; 71 px (3,55 m) d'entraxe
 //   nord-sud : chute de 1,20 m, pente atan(24 / 71) = 18,7° ;
 // - sablières de 15 × 15 cm sur la tête des poteaux (dessus à 66 px au nord, 42 px au sud) ;
@@ -20,48 +20,14 @@ import { Canvas, rng } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { hewnTone } from './wood';
+import { slab } from './implantation';
 
 
 // ---------- Dé de pierre ----------
-
-/**
- * Dé de pierre (`footing-stone`, `footing-stone-b`) : la pierre plate posée (art/world/implantation.ts), une dalle de berge
- * naturelle de 40 × 40 × 15 cm, en deux formes. Silhouette 8 × 7 px (gabarit : W 8 ; H + D/2 = 3 + 4) collée en haut à gauche
- * d'une image de 9 × 8 : dessus en 4 rangées (contour du haut et trois rangées de pierre claire R r, assez large pour le pied
- * du poteau de 8 px), face sud en 3 rangées (z Z, puis le contour du bas). Irrégulière : coins cassés, une facette en r sur
- * le dessus, un éclat au pied ; jamais lisse. Ombre portée calculée : la silhouette décalée d'un pixel vers le sud-est.
- */
-export function footingStone(form: 'a' | 'b' = 'a'): Canvas {
-  const shapes: Record<'a' | 'b', string[]> = {
-    // A : coin nord-est cassé en biais, une facette r au milieu du dessus, le pied ouest écorné
-    a: [
-      '.ZZZZZ..',
-      'ZRRRRRo.',
-      'ZRRrRRro',
-      'ZrRRRrro',
-      'ZzzzzzZo',
-      '.ozzZZZo',
-      '..ooooo.',
-    ],
-    // B : coin nord-ouest cassé, le dessus qui penche vers l'est (r), le pied est arrondi, un creux Z sur la face
-    b: [
-      '..ZZZZZ.',
-      '.ZRRRRRo',
-      'ZRRRRrro',
-      'ZRrrRrro',
-      'ZzzzzzZo',
-      'ZzZZzZo.',
-      'oooooo..',
-    ],
-  };
-  const g = shapes[form];
-  const c = new Canvas(9, 8);
-  c.stamp(g, 0, 0);
-  for (let y = 1; y < 8; y++) for (let x = 1; x < 9; x++) {
-    if (c.get(x, y) === '.' && (g[y - 1]?.[x - 1] ?? '.') !== '.') c.set(x, y, 'x');
-  }
-  return c;
-}
+// Le dé (`footing-stone`, `footing-stone-b`) est la dalle posée sous un poteau (art/world/implantation.ts) : une plaque de
+// calcaire de 45 × 40 × 12 cm, silhouette 9 × 7 px collée en haut à gauche d'une image de 10 × 8, l'ombre portée au sud-est.
+// Même dessin, deux formes : la dalle ne change pas en devenant un dé. Son dessus (7 px de calcaire entre les contours, 9 avec
+// eux) porte le pied du poteau de 8 px.
 
 // ---------- Poteaux ----------
 // Les poteaux ne sont plus dessinés ici : un poteau est la pièce de bois dressée (art/world/wood-pieces.ts, `axis: 'up'`).
@@ -267,8 +233,8 @@ function shedRoof(): Canvas {
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
 export default [
-  img('footing-stone', footingStone('a')),
-  img('footing-stone-b', footingStone('b')),
+  img('footing-stone', slab('a')),
+  img('footing-stone-b', slab('b')),
   img('shed-plate-north', shedPlateEW(64, 0)),
   img('shed-plate-south', shedPlateEW(41, 23)),
   img('shed-plate-side', shedPlateSide()),

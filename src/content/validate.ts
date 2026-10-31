@@ -10,7 +10,7 @@ import { lookOf, WEDGE_FRAMES } from '../world/woodShape';
 import { formImage } from '../world/natural';
 import { partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
-import type { Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, TransformDef } from './types';
+import type { Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -202,6 +202,7 @@ export interface Content {
   dialogues: Record<string, DialogueDef>;
   wood: WoodDef;
   matters: Record<string, Matter>;
+  rocks: Record<string, Rock>;
   transforms: Record<string, TransformDef>;
 }
 
@@ -817,6 +818,13 @@ function validateMatters(c: Content): string[] {
   if (c.matters.wood && c.matters.wood.density !== c.wood.density) err(`matters.json 'wood' : ${c.matters.wood.density} kg/m³, wood.json ${c.wood.density} (une seule densité du bois vert)`);
   const named = [...Object.entries(c.props).map(([k, d]) => [`props.json '${k}'`, d.mass] as const), ...Object.entries(c.items).map(([k, d]) => [`items.json '${k}'`, d.mass] as const)];
   for (const [at, m] of named) if (m && typeof m === 'object' && 'matter' in m && !c.matters[m.matter]) err(`${at} : matière '${m.matter}' absente de matters.json`);
+  // les roches : une matière qui a sa roche la nomme dans rocks.json, une pierre qui dit sa roche est de la matière d'une roche
+  for (const [k, m] of Object.entries(c.matters)) if (m.rock && !c.rocks[m.rock]) err(`matters.json '${k}' : roche '${m.rock}' absente de rocks.json`);
+  for (const [at, m] of named) {
+    if (!m || typeof m !== 'object' || !('matter' in m) || !m.rock) continue;
+    if (!c.rocks[m.rock]) err(`${at} : roche '${m.rock}' absente de rocks.json`);
+    else if (!c.matters[m.matter]?.rock) err(`${at} : la matière '${m.matter}' n'est pas une pierre (pas de roche dans matters.json), elle ne prend pas de roche`);
+  }
   for (const [key, it] of Object.entries(c.items)) {
     if (it.mass && typeof it.mass === 'object' && !it.dims) err(`items.json '${key}' : une masse par la matière demande ses dimensions ('dims')`);
     if (it.natural && it.mass !== undefined && it.dims) {

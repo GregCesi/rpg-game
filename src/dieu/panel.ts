@@ -295,7 +295,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('div', { className: 'row' }, [
       button('Apprendre le plan', () => send({ kind: 'learn-plan', plan: plan.value })),
       button('4 piquets au sol', () => supply(stakeOf(), 4)()),
-      button('4 pierres plates au sol', supply('flat-stone', 4)),
+      button('4 dalles au sol', supply('slab', 4)),
     ]),
     known,
     el('div', { className: 'row' }, [button('Sauter l\'étape du chantier', () => send({ kind: 'skip-step' })), confirmButton('Effacer les chantiers', () => send({ kind: 'erase-sites' }))]),

@@ -10,7 +10,7 @@
     "steps": [
       {
         "name": "dés",
-        "accepts": {"prop": "flat-stone", "refuse": "Il faut une pierre plate."},
+        "accepts": {"prop": "slab", "refuse": "Il faut une dalle."},
         "places": {
           "footing-nw": {"piece": "footing-stone", "at": [-20, 20], "orientation": "flat", "corner": "nw"},
           "footing-ne": {"piece": "footing-stone", "at": [285, 20], "orientation": "flat", "corner": "ne"},

@@ -79,7 +79,7 @@ export function accepts(rule: Accepts, offer: Offer | undefined): boolean {
   return offer.item === rule.item;
 }
 
-/** Pourquoi la place refuse ce qu'on apporte, dit par `refuse` (« Il faut une pierre plate. »), ou undefined si elle l'accepte. */
+/** Pourquoi la place refuse ce qu'on apporte, dit par `refuse` (« Il faut une dalle. »), ou undefined si elle l'accepte. */
 export function refusal(rule: Accepts & { refuse: string }, offer: Offer | undefined): string | undefined {
   if ('wood' in rule) return beamRefusal(rule.wood, rule.refuse, offer?.wood);
   return accepts(rule, offer) ? undefined : rule.refuse;

@@ -9,7 +9,7 @@ import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource } from '../../art/lib/types';
 import { composeWood } from '../../art/world/wood-pieces';
 import { world } from '../../art/palette';
-import { items, matters, props, transforms, wood } from '../../src/content';
+import { items, matters, props, rocks, transforms, wood } from '../../src/content';
 import { silhouette } from '../../src/content/gabarit';
 import { itemMass, propMass, woodMass } from '../../src/content/mass';
 import type { TransformPart, Views, WoodPiece } from '../../src/content/types';
@@ -36,8 +36,8 @@ type Entry = { item: string } | { prop: string } | { wood: Omit<WoodPiece, 'axis
 const GROUPS: { title: string; objects: Entry[]; chains: string[] }[] = [
   {
     title: 'Groupe 1 : la pierre (solin, cheminée)',
-    objects: [{ item: 'rough-stone' }, { item: 'big-rough-stone' }, { item: 'rubble-stone' }, { item: 'ashlar' }, { prop: 'flat-stone' }, { prop: 'footing-stone' }, { prop: 'stone-chips' }, { item: 'stone-hammer' }, { item: 'stone-chisel' }, { item: 'mallet' }],
-    chains: ['dress-rubble', 'dress-ashlar'],
+    objects: [{ item: 'small-rough-stone' }, { item: 'rough-stone' }, { item: 'big-rough-stone' }, { prop: 'slab' }, { item: 'short-rubble-stone' }, { item: 'rubble-stone' }, { item: 'long-rubble-stone' }, { item: 'ashlar' }, { prop: 'footing-stone' }, { prop: 'stone-chips' }, { item: 'stone-hammer' }, { item: 'stone-chisel' }, { item: 'mallet' }],
+    chains: ['break-big-stone', 'break-stone', 'dress-rubble', 'dress-short-rubble', 'dress-ashlar'],
   },
   {
     title: 'Groupe 2 : la terre (solin, remplissage)',
@@ -155,7 +155,7 @@ export function briquesPreview(sources: ArtSource[]): PNG | undefined {
       const t = transforms[id];
       if (!t) continue;
       const parts = [...t.inputs.map((p) => partShown(sources, p)), { text: '>' }, ...t.outputs.map((p) => partShown(sources, p))];
-      const { input, output, waste } = balance(t, { props, items, piles: {}, matters });
+      const { input, output, waste } = balance(t, { props, items, piles: {}, matters, rocks });
       if (t.waste) parts.push({ text: '+' }, { ...(t.waste.prop ? { image: gridOf(sources, props[t.waste.prop].image) } : {}), text: `dechet : ${t.waste.name} ${kilos(Math.max(0, waste))}` });
       const cellsOf = parts.map<Cell>((p) => {
         const artW = p.image ? p.image.grid[0].length * K : 0;

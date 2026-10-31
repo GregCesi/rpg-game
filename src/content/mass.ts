@@ -2,18 +2,19 @@
 // - saisie (`mass` : un nombre dans items.json ou props.json) ;
 // - calculée pour la pièce de bois (`"mass": "wood"`) : la section de son bois (ronde, demi, quart, moins ce que la doloire a ôté)
 //   × sa longueur × la densité du bois vert de wood.json, d'après ses réglages ;
-// - calculée pour la pierre : volume de la boîte de `dims` × densité de la pierre (`"mass": "stone"`) ;
+// - calculée pour la pierre : volume de la boîte de `dims` × densité de la roche commune (`"mass": "stone"`, rocks.json) ;
 // - calculée par sa matière (`"mass": { "matter": …, "fill": … }`, matters.json) : le volume de ses `dims` × la part qu'occupe la
-//   matière × sa densité ; une matière naturelle (`natural`) pèse au cube de sa taille tirée (GameState) ;
+//   matière × sa densité (la pierre : celle de sa roche, rocks.json) ; une matière naturelle (`natural`) pèse au cube de sa
+//   taille tirée (GameState) ;
 // - calculée pour un fagot : la somme des branches d'un tas plein de son genre plus son lien (`{ "pile": genre }`) ;
 // - au prorata de sa longueur pour une quantité mesurée (le rouleau de corde : 1 kg les 10 m).
 
-import { items as itemDefs, matters as matterDefs, piles as pileDefs, props as propDefs, wood as woodDef } from './index';
+import { items as itemDefs, matters as matterDefs, piles as pileDefs, props as propDefs, rocks as rockDefs, wood as woodDef } from './index';
 import type { Dims } from './gabarit';
-import type { ItemDef, Matter, MatterMass, Natural, PileDef, PropDef, WoodPiece } from './types';
+import type { ItemDef, Matter, MatterMass, Natural, PileDef, PropDef, Rock, WoodPiece } from './types';
 
-/** Densité de la pierre, kg/m³ : celle de matters.json, une seule pour toutes les pierres (celle du bois est dans wood.json). */
-export const STONE_DENSITY = matterDefs.stone.density;
+/** Densité de la pierre commune, kg/m³ : celle de la roche de la pierre de matters.json (le calcaire, rocks.json). */
+export const STONE_DENSITY = rockDefs[matterDefs.stone.rock!].density;
 
 /** Ce qu'il faut du contenu pour peser : mêmes tables que `src/content/index.ts` (validate.ts passe les siennes). */
 export interface MassCatalog {
@@ -21,9 +22,10 @@ export interface MassCatalog {
   items: Record<string, ItemDef>;
   piles: Record<string, PileDef>;
   matters: Record<string, Matter>;
+  rocks: Record<string, Rock>;
 }
 
-const CONTENT: MassCatalog = { props: propDefs, items: itemDefs, piles: pileDefs, matters: matterDefs };
+const CONTENT: MassCatalog = { props: propDefs, items: itemDefs, piles: pileDefs, matters: matterDefs, rocks: rockDefs };
 
 /**
  * Ce qu'on peut tenir : un objet possédable (`item`) ou un objet du monde pris (`prop`, avec sa longueur s'il en a une, ses
@@ -41,11 +43,23 @@ export function dimsVolume(d: Dims): number {
   return w * dd * h;
 }
 
-/** Masse (kg) par la matière : le volume des `dims` × la part qu'occupe la matière × sa densité (matters.json). */
+/**
+ * Densité (kg/m³) d'une matière : la sienne (matters.json), ou, pour la pierre, celle de sa roche (rocks.json) : `rock`, la roche
+ * de cet objet, sinon la roche commune de la matière.
+ */
+export function matterDensity(key: string, rock?: string, cat: Pick<MassCatalog, 'matters' | 'rocks'> = CONTENT): number {
+  const matter = cat.matters[key];
+  if (!matter) throw new Error(`matière « ${key} » absente de matters.json`);
+  const r = rock ?? matter.rock;
+  if (r === undefined) return matter.density!;
+  const def = cat.rocks[r];
+  if (!def) throw new Error(`roche « ${r} » absente de rocks.json`);
+  return def.density;
+}
+
+/** Masse (kg) par la matière : le volume des `dims` × la part qu'occupe la matière × sa densité (matters.json, rocks.json). */
 export function matterMass(d: Dims, m: MatterMass, cat: MassCatalog = CONTENT): number {
-  const matter = cat.matters[m.matter];
-  if (!matter) throw new Error(`matière « ${m.matter} » absente de matters.json`);
-  return dimsVolume(d) * (m.fill ?? 1) * matter.density;
+  return dimsVolume(d) * (m.fill ?? 1) * matterDensity(m.matter, m.rock, cat);
 }
 
 /** Ce que pèse un exemplaire naturel par rapport à la taille type : le cube de sa taille (110 % de taille : 1,33 fois plus lourd). */
@@ -73,7 +87,7 @@ export function woodMass(piece: WoodPiece): number {
   return woodSection(piece) * (piece.length / 100) * woodDef.density;
 }
 
-/** Masse d'une pierre de ces dimensions (la boîte de ses `dims`, contour compris), en kg : 40 × 40 × 15 cm donne 62 kg. */
+/** Masse d'une pierre de ces dimensions (la boîte de ses `dims`, contour compris), en kg : 40 × 40 × 15 cm de calcaire donne 57,6 kg. */
 export function stoneMass(d: Dims): number {
   return (d.w / 100) * (d.d / 100) * (d.h / 100) * STONE_DENSITY;
 }
