@@ -538,6 +538,12 @@ export const PropDefSchema = z.strictObject({
    * (world/wallRuns.ts, world/walls.ts) ; deux tronçons à angle droit forment un angle ; un tronçon qui s'arrête montre une tête.
    */
   wall: z.enum(['rough', 'dressed']).optional(),
+  /**
+   * Pan de toit (le pan de toit en planches) : le côté de sa rive basse dans la vue 0 (`south`) ; un quart de tour de plus à chaque
+   * vue (ouest, nord, est). En mode construction, il se pose sur ce qui porte sa rive basse et ne se heurte pas à ce qui est sous sa
+   * pente.
+   */
+  pitch: z.literal('south').optional(),
 });
 
 /** Les quatre coins d'une emprise : nord-ouest, nord-est, sud-est, sud-ouest. */
@@ -637,9 +643,10 @@ export const BuildPlacedSchema = z.strictObject({
  * Jupiter (deux pièces de bois de même section et de même état, bout à bout sur le même axe) ; `mortise`, le tenon et mortaise (un
  * poteau debout sous une pièce couchée, ou posé sur une sablière basse) ; `halving`, le mi-bois (deux pièces couchées de même section qui
  * se croisent à angle droit, à la même hauteur, chacune entaillée de la moitié de son épaisseur : l'angle de deux sablières basses, ou
- * une croix). Bois sur bois, chevillé.
+ * une croix) ; `notch`, l'encoche (deux rondins ronds qui se croisent à angle droit aux angles d'une cabane : celui du dessus, entaillé
+ * en creux arrondi par-dessous, s'enfonce de la moitié de son diamètre dans celui du dessous). Bois sur bois, chevillé.
  */
-export const JointTypeSchema = z.enum(['scarf', 'mortise', 'halving']);
+export const JointTypeSchema = z.enum(['scarf', 'mortise', 'halving', 'notch']);
 
 /** Un assemblage d'un plan du bac à sable : son type et ses deux pièces, par leur rang dans `pieces` du plan. */
 export const PlanJointSchema = z.strictObject({ type: JointTypeSchema, a: z.number().int().nonnegative(), b: z.number().int().nonnegative(), top: z.number().int().nonnegative().optional() });

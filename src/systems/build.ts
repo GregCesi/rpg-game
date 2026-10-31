@@ -244,7 +244,16 @@ export class BuildSystem {
     const cy = py * CM_PER_PX;
     let list: BuildPlaced[];
     if (t.kind === 'piece') {
-      let b = aimAt(this.pieces, sizeOf(t.piece, t.view), cx, cy, this.step);
+      // un pan de toit ne porte rien : on vise sans les pièces de toit
+      const pitch = 'prop' in t.piece && props[t.piece.prop].pitch;
+      let b = aimAt(this.pieces.filter((q) => !isRoof(q)), sizeOf(t.piece, t.view), cx, cy, this.step);
+      // un pan de toit : sa base est le dessus de ce qui porte sa rive basse (une bande de 60 cm le long du côté bas)
+      if (pitch) {
+        const low = (['south', 'west', 'north', 'east'] as const)[t.view % 4];
+        const band = 60;
+        const strip = low === 'south' ? { ...b, y: b.y + b.d - band, d: band } : low === 'north' ? { ...b, d: band } : low === 'west' ? { ...b, w: band } : { ...b, x: b.x + b.w - band, w: band };
+        b = { ...b, z: Math.max(0, supportAt(this.pieces.filter((q) => !isRoof(q)), strip) + this.step * BUILD.grid) };
+      }
       // sur un mur (le solin), une pièce couchée affleure sa face extérieure, et reste sur ce qui la porte
       if (b.z > 0) {
         const a = alignOnWall(this.pieces, b);
@@ -265,13 +274,14 @@ export class BuildSystem {
   private refusal(list: BuildPlaced[]): string | undefined {
     const W = this.map.width * CM_PER_PX;
     const H = this.map.height * CM_PER_PX;
-    const others = this.pieces.map(boxOf);
+    // un pan de toit ne se heurte pas à ce qui est sous sa pente, ni rien à lui
+    const others = this.pieces.filter((q) => !isRoof(q)).map(boxOf);
     const body = this.player.actor.body as Phaser.Physics.Arcade.Body;
     const feet = { x: body.left * CM_PER_PX, y: body.top * CM_PER_PX, w: body.width * CM_PER_PX, d: body.height * CM_PER_PX };
     for (const p of list) {
       const b = boxOf(p);
       if (b.x < 0 || b.y < 0 || b.x + b.w > W || b.y + b.d > H) return 'Hors de la carte.';
-      if (others.some((o) => intersects(o, b))) return 'Une autre pièce est déjà là.';
+      if (!isRoof(p) && others.some((o) => intersects(o, b))) return 'Une autre pièce est déjà là.';
       if (b.z < BUILD.high && overlaps(b, feet)) return 'Xéros est là.';
     }
     return undefined;
@@ -310,11 +320,13 @@ export class BuildSystem {
     // de la moitié ; rien ne doit reposer sur elle
     let moves: Move[] = [];
     let top: number | undefined;
-    if (type === 'halving') {
+    // l'encoche : le rondin du dessus s'enfonce de la moitié de son diamètre (s'il ne l'est pas déjà, par une autre encoche)
+    if (type === 'halving' || type === 'notch') {
       const [upper, lower] = pa.z > pb.z || (pa.z === pb.z && 'wood' in pa.piece && pa.piece.wood.axis === 'ns') ? [pa, pb] : [pb, pa];
-      if (upper.z !== lower.z && carriedBy(this.pieces, upper.id).length) return this.notice("Retire d'abord ce qui repose sur elle.");
+      const to = type === 'halving' ? lower.z : lower.z + boxOf(lower).h / 2;
+      if (upper.z !== to && carriedBy(this.pieces, upper.id).length) return this.notice("Retire d'abord ce qui repose sur elle.");
       top = upper.id;
-      if (upper.z !== lower.z) moves = [{ id: upper.id, from: upper.z, to: lower.z }];
+      if (upper.z !== to) moves = [{ id: upper.id, from: upper.z, to }];
       this.move(moves, true);
     }
     const added = addJoints(game, this.map.def.id, [{ type, a: pa.id, b: pb.id, ...(top !== undefined ? { top } : {}) }]);
@@ -365,7 +377,9 @@ export class BuildSystem {
     if (joint) {
       // le mi-bois retiré : la pièce du dessus remonte sur l'autre, s'il ne repose rien sur le croisement
       let moves: Move[] = [];
-      if (joint.type === 'halving' && joint.top !== undefined) {
+      // (l'encoche : seulement si le rondin ne tient pas encore par une autre encoche, qui le garde enfoncé)
+      const held = joint.type === 'notch' && this.joints.some((q) => q !== joint && q.type === 'notch' && q.top === joint.top);
+      if ((joint.type === 'halving' || joint.type === 'notch') && joint.top !== undefined && !held) {
         const upper = this.pieces.find((q) => q.id === joint.top);
         const lower = this.pieces.find((q) => q.id === (joint.a === joint.top ? joint.b : joint.a));
         if (upper && lower) {
@@ -542,6 +556,11 @@ export class BuildSystem {
     const hint = t?.kind === 'joint' ? (this.jointAim?.junction ? (this.jointAim.why ?? 'Elles vont ensemble : clic gauche.') : 'Vise une jonction.') : undefined;
     this.emit({ active: this.active, tool, step: this.step, selection: this.selection, count: this.pieces.length, undo: this.undoStack.length, redo: this.redoStack.length, ...(hint ? { hint } : {}) });
   }
+}
+
+/** Une pièce de toit (le pan de toit) : elle ne se heurte à rien. */
+function isRoof(p: BuildPlaced): boolean {
+  return 'prop' in p.piece && !!props[p.piece.prop].roof;
 }
 
 /** Deux boîtes se recouvrent en volume (emprise et hauteur). */
