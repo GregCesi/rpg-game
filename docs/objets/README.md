@@ -10,7 +10,7 @@ La fiche décrit l'objet tel qu'il doit être ; le contenu (`src/content/`) et l
 l'objet change, la fiche change d'abord.
 
 Fiches : les matières (chantier « briques », CONCEPTION *Les matières*) : la pierre (chantier « pierre » : la roche, `rocks.json`), [pierres brutes](rough-stone.md) (petite, moyenne, grosse), [dalle](slab.md),
-[moellons](rubble-stone.md) (30, 40, 50 cm), [pierre de taille](ashlar.md), [éclats de taille](stone-chips.md), [têtu](stone-hammer.md),
+[moellons](rubble-stone.md) (30, 40, 50 cm), [morceaux de solin](sill-wall.md) (brut, taillé : éléments composés du mode construction), [pierre de taille](ashlar.md), [éclats de taille](stone-chips.md), [têtu](stone-hammer.md),
 [ciseau de tailleur](stone-chisel.md), [maillet](mallet.md) ; la terre, [motte de terre](clay-clod.md), [torchis](cob.md),
 [mortier de terre](earth-mortar.md), [seau](bucket.md), [bêche](spade.md) ; les fibres, [baguette de clayonnage](wattle-rod.md),
 [gerbe de paille](straw.md), [botte de chaume](thatch-bundle.md) ; le bois travaillé, la perche et la planche (des réglages de la

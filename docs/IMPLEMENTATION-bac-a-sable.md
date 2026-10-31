@@ -1,6 +1,14 @@
 # Le bac à sable : plan d'implémentation
 
 Run de nuit « maquette », 31 octobre 2026. **À relire par Grégoire avant toute ligne de code.** Ce document ne change rien au jeu.
+
+> **État (31 octobre 2026, chantier « mode construction », branche `construction`)** : fait, en mode à part (`?construire`, caméra
+> libre, souris) plutôt que dans `?dieu` : le modèle (runs 1 et 2 : `world/build.ts`, `builds` de GameState, `SAVE_VERSION` 13), la
+> pose, le rendu relevé, les collisions sous 2 m, l'effacement au-dessus de la tête (run 4, sans l'ombre portée), le plan du bac à
+> sable (run 5, dans `src/content/plans/` et non dans `plans.json`), et les deux premiers éléments composés (les morceaux de solin,
+> calculés). Les pièces gardent leurs porteurs par calcul, pas dans `on`. Reste : les autres éléments de la chaumière et le rang
+> des pièces en pente (run 3), les portes, l'ombre portée des pièces hautes, `PlanPlaceSchema` et le chantier guidé (run 6).
+> Voir CONCEPTION, *Le mode construction*.
 Il s'appuie sur la maquette de la chaumière (`docs/maison-chaumiere.md`), dont le contrat de géométrie
 (`art/proposals/chaumiere-geometry.ts`) et le compositeur (`tools/lib/maison-preview.ts`, fonction `scene`) font déjà, hors du jeu, ce
 que le bac à sable fera dedans : poser des pièces en hauteur, dans un sens, et les afficher dans le bon ordre.

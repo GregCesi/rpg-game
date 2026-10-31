@@ -294,6 +294,52 @@ précède) :
   seulement) ; un geste de Xéros pour dresser (il n'a pas d'animation propre) ; les sablières, les chevrons, le toit de planches ;
   d'autres orientations ; le pierrier, s'il n'y a pas d'étang ; tourner un plan ; défaire un chantier.
 
+### Le mode construction (décidé le 31 octobre 2026, chantier « mode construction »)
+
+Grégoire veut construire la maison et voir chaque objet en place sans passer par la fabrication. Le **mode construction** est un
+bac à sable : on prend n'importe quel objet qui existe dans un catalogue et on le pose où l'on veut, y compris en hauteur, sur
+d'autres pièces. Ni force, ni aide de la mère, ni ordre de chantier. Plan d'origine : `docs/IMPLEMENTATION-bac-a-sable.md`.
+
+- **Un mode à part**, pas le panneau `?dieu` : `?construire` dans l'adresse ouvre le catalogue (à gauche du jeu) et lance le jeu en
+  mode construction ; **B** entre et sort (même place en AZERTY et en QWERTY, libre). Sans `?construire`, le mode n'existe pas.
+- **Caméra libre** : ZQSD ou les flèches la déplacent (Maj : plus vite), zoom comme en jeu (molette, + et −). Xéros est figé.
+- **À la souris** : le fantôme suit la souris ; clic gauche pose ; clic droit retire. Le clavier règle : **R** tourne (est-ouest,
+  nord-sud, puis debout pour la pièce de bois qui se dresse ; les quatre vues d'un objet) ; **T** et **G** (ou Page haut, Page bas)
+  montent et descendent d'un cran de 20 cm ; **Ctrl+Z**, **Ctrl+Y** (ou Ctrl+Maj+Z) annulent et refont (pendant la séance).
+- **Le catalogue ne propose que ce qui existe** : chaque objet de `props.json` et `items.json`, et la pièce de bois de tous réglages
+  (diamètre, état, longueur sur la grille de 20 cm, sens), rangés par famille (éléments, bois, pierre, terre, fibres, outils,
+  mobilier, chantier, nature, divers : tirée du contenu, `src/build/catalog.ts`), avec une recherche. Une matière naturelle se
+  règle (forme, taille), au hasard par défaut.
+- **La pose libre en hauteur** (`src/world/build.ts`, sans Phaser) : l'emprise au sol sur la grille de 20 cm ; la pièce
+  **s'accroche sur le dessus de ce qu'il y a dessous** (le plus haut dessus que recoupe son emprise : une sablière sur la tête
+  d'un poteau, une pierre sur une autre) ; le point visé est vu à la hauteur où la pièce se poserait, si bien que viser la tête d'un
+  poteau pose dessus. La hauteur suit ce qui porte (une dalle de 12 cm : un poteau dessus est à 12 cm), plus les crans.
+  Une pose qui entrerait dans une autre pièce, hors de la carte ou sur Xéros est refusée (fantôme pâle, message).
+- **L'image** : bas au bord sud de l'emprise relevé de la hauteur (y écran = y sol − z), centrée sur l'emprise ; profondeur =
+  bord sud, puis hauteur, et toujours après ce qui la porte.
+- **Retirer** une pièce qui en porte d'autres est refusé (« Elle porte quelque chose ») ; **Maj + clic droit** retire la pièce et
+  tout ce qui repose dessus. Ce qu'une pièce porte se calcule de ses boîtes, rien n'est gardé à part.
+- **Le monde garde ce qu'on a posé** : `builds` de chaque carte dans GameState (objet, réglages, position, hauteur, sens, forme,
+  tirage), `SAVE_VERSION` 13 (une partie plus ancienne n'a aucune pièce posée). En jeu, une pièce qui a une collision et posée sous
+  2 m bloque Xéros (son emprise en vraie grandeur) ; au-dessus, non. Ce dont la base est au-dessus de sa tête (1,60 m) et qui le
+  couvre **s'efface** quand il passe dessous, avec ce qui repose dessus (`systems/roofs.ts` généralisé) ; pas en mode construction.
+- **Les plans du bac à sable** : « Choisir une zone » (glisser à la souris), puis « Enregistrer comme plan » avec un nom : en
+  développement, le serveur Vite écrit `src/content/plans/<nom>.json` (pièces, réglages, positions depuis le coin nord-ouest et la
+  base de la plus basse) ; le plan arrive au catalogue sans recharger (onglet « Plans ») et se pose d'un coup, accroché comme une
+  pièce. `npm run check` vérifie que tout ce qu'il nomme existe. Sans serveur (jeu construit), le plan ne vaut que pour la séance.
+  Ce ne sont pas les plans de chantier guidé de `plans.json`.
+- **Les éléments composés** : un élément calculé (`variants` de props.json) a plusieurs tirages produits par `npm run art`, et le
+  mode en tire un au hasard à chaque pose. Premiers éléments : les [morceaux de solin](objets/sill-wall.md) brut et taillé (1,60 m,
+  40 cm visibles, 50 cm d'épaisseur), montés par l'algorithme de l'essai des murs (`art/lib/walls.ts`), 8 tirages × 4 vues.
+- **Choix faits sans Grégoire** (à revoir) : la touche B ; T et G pour les crans ; Maj + clic droit pour retirer une pile ;
+  l'historique d'annulation ne survit pas au rechargement ; une pièce posée n'a pas de taille naturelle visible (sa taille ne
+  change que sa masse, comme en jeu) ; un objet possédable sans `dims` prend une boîte de 20 × 20 × 10 cm ; un plan ne garde pas le
+  tirage d'un solin ; la dalle, sans collision dans `props.json`, ne bloque pas ; 8 tirages par solin, produits au build plutôt
+  que calculés dans le navigateur (le jeu ne lit pas `art/`).
+- **Ce qui viendra** : l'angle et le bout de solin (pour une porte) ; les autres éléments composés (pans, couples, pans de toit,
+  faîtage, cheminée, cloison) et leur rang d'affichage pour ce qui est en pente ; les portes dans les collisions ; poser un plan
+  depuis Tiled ; le chantier guidé tiré d'un plan du bac à sable.
+
 ## Poids et force (décidé le 30 octobre 2026)
 
 Repris par *Le bois* (30 octobre 2026) : la masse se calcule d'après les réglages de la pièce de bois ; à 1 m, la bille du gros pèse 214 kg et celle du normal 63,6 kg.

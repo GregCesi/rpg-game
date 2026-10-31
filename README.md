@@ -8,11 +8,11 @@ Phaser 3 + TypeScript + Vite. Tuiles 32×32.
 
 ```bash
 npm install
-npm run dev            # http://localhost:5173  (?debug : collisions ; ?reset : efface la sauvegarde ; ?dieu : outils de test)
+npm run dev            # http://localhost:5173  (?debug : collisions ; ?reset : efface la sauvegarde ; ?dieu : outils de test ; ?construire : mode construction)
 npm run art            # art/ -> PNG, manifestes et tilesets Tiled (à lancer une fois avant d'ouvrir Tiled)
 npm run maps           # cartes Tiled (tiled/maps/*.tmj) -> src/generated/maps.ts
 npm run sketch -- <id> # fait naître tiled/maps/<id>.tmj depuis tiled/sketches/<id>.json (grille de lettres)
-npm run test           # tests : l'outil d'esquisse, puis sept scénarios dans le vrai jeu (Chromium sans écran : npm run test:fendage, npm run test:implantation, npm run test:equarrissage, npm run test:tas, npm run test:perspective, npm run test:poteaux, npm run test:briques)
+npm run test           # tests : l'outil d'esquisse, le modèle du mode construction (tools/test-build.ts, sans navigateur), puis huit scénarios dans le vrai jeu (Chromium sans écran : npm run test:construction, npm run test:fendage, npm run test:implantation, npm run test:equarrissage, npm run test:tas, npm run test:perspective, npm run test:poteaux, npm run test:briques)
 npm run check          # art, maps, puis vérifie tout le contenu sans lancer le jeu (formats + références croisées)
 npm run build          # check, test, puis build web dans dist/
 npm run build:single   # un seul fichier HTML autonome dans dist-single/
@@ -59,6 +59,7 @@ src/
     validate.ts      vérifications croisées (une sortie vers une carte qui existe, une image dessinée...)
     items.json       objets possédables (dans les mains, au sol)
     piles.json       genres de tas : ce qu'on y entrepose, ses places (couche, porteuses, pièce dessinée, collision)
+    plans/           plans du bac à sable (<nom>.json : pièces, réglages, positions), écrits par « Enregistrer comme plan » du mode construction ; buildPlans.ts les charge (à chaud), validate.ts les vérifie
     plans.json       plans de bâtiment : emprise, coins, piquet de tracé, étapes dans l'ordre du chantier, places de chaque pièce (en cm) ; un bâtiment = un plan
     stamina.json     l'endurance de Xéros : maximum, seuil de fatigue, prix de chaque effort (points : coup d'outil, planter le coin, coup de masse, nœud, pivot, course à 0,2 par seconde...)
     matters.json     les matières et leurs densités (pierre, terre crue, torchis, mortier, paille, bois vert, eau) : les masses calculées par la matière ; la pierre prend la densité de sa roche
@@ -70,6 +71,7 @@ src/
     hold.json        objets tenus sur Xéros : point d'accroche par posture (main, épaule, porter) à chaque image
   state/             GameState : l'état de la partie (les deux mains, changements du monde, objets au sol) ; save.ts : sa sauvegarde (localStorage, version, schéma Zod)
   world/GameMap.ts   construit une carte jouable à partir d'une MapData
+  world/build.ts     le mode construction sans Phaser : boîte de chaque pièce posée, hauteur accrochée sur ce qu'il y a dessous, porteurs, ordre d'affichage, sens, plan tiré d'une zone ; world/buildView.ts son image projetée (y − z)
   world/places.ts    le moteur de places commun aux tas et aux chantiers, sans Phaser : places ouvertes, pièces à reprendre, place visée, ordre d'affichage, ce qu'une place accepte (un genre, ou une pièce précise)
   world/pileShape.ts la forme d'un tas dans son sens, son lien (les places viennent de places.ts)
   world/sitePlan.ts  un plan posé sur la carte, sans Phaser : où tombe chaque place, laquelle est ouverte, où en est le chantier, sa ligne d'état
@@ -85,6 +87,7 @@ src/
   entities/Npc.ts    Actor + contrôleur immobile : un personnage non joueur qui se tourne vers Xéros quand il lui parle
   input/             lecture du clavier
   dieu/panel.ts      outils de test (?dieu) : panneau HTML hors du canevas, qui envoie des commandes à WorldScene
+  build/             mode construction (?construire) : le catalogue (catalog.ts, familles tirées du contenu) et son panneau HTML à gauche du jeu (panel.ts), qui envoie des BuildCommand ; la mécanique est systems/build.ts
   scenes/            Boot (chargement), World (la carte en jeu), Hud (les deux mains, messages courts), Dialogue (par-dessus le monde)
 ```
 
@@ -105,6 +108,22 @@ La partie se sauvegarde toute seule, dans le navigateur (`localStorage['xeros-pa
 ### Les outils de test (`?dieu`)
 
 `main.ts` ne charge `dieu/panel.ts` qu'avec `?dieu` et le monte à droite du canevas (`#stage` de `index.html`). Le panneau ne touche pas la partie : chaque bouton envoie une `DieuCommand` (`events.ts`) sur `GameEvent.Dieu`, que `WorldScene.dieu` exécute par les fonctions de `GameState`, donc tout est sauvegardé comme en jeu (refusé hors du mode `play`). Donner en main vide d'abord les mains (ce qu'elles tenaient disparaît) ; un objet qui a une longueur (le rouleau de corde, ou le billot qui le porte) se donne ou se pose avec la longueur choisie, en mètres ; un tas d'un genre lié (les branches) se pose « avec lien », de 0 pièce (le lien seul) au tas plein ; poser un objet du monde ou un tas (un genre écrit, ou « Poser en tas » d'une pièce de bois choisie, refusé au-dessus de 70 kg) passe par `HandsSystem.placeInFront` et `pileInFront` (même place libre que pour poser à la main ; le tas met toute son emprise au sol devant Xéros, places prises du bas vers le haut) ; aller sur une carte mène à son premier point d'apparition ; remettre la carte à zéro (`resetMap`) recharge la carte autour de Xéros ; réinitialiser la partie (« Toute la partie », à confirmer : le premier clic change le bouton en « Vraiment ? », le second agit ; sans second clic, il revient au bout de 3 s) efface la sauvegarde et repart du réveil. Les listes du panneau se lisent dans `props.json`, `items.json` et `piles.json` : le têtard (`big-pollard`), l'arbre normal (`normal-tree`), son tronc couché (sections, houppier, tête), ses billes (à porter) et son genre de tas (`normal-logs`) y sont d'office, comme ceux du gros, sans code de plus. Nouvel outil de test = une variante de `DieuCommand`, un bouton dans le panneau, un cas dans `WorldScene.dieu`. Pour l'implantation : `learn-plan` (`GameState.learnPlan`), `supply` (met `count` exemplaires d'un objet possédable ou d'un objet du monde en rangée devant Xéros : `HandsSystem.supplyAround`), `erase-sites` (`SiteSystem.erase`).
+
+### Le mode construction (`?construire`)
+
+Un bac à sable pour composer une construction avec tout ce qui existe (CONCEPTION, *Le mode construction*). `main.ts` ne charge le catalogue (`build/panel.ts`) qu'avec `?construire` ; le jeu s'ouvre alors en mode `build` de `WorldScene` (`systems/build.ts`). Touches (par leur place) :
+
+| Touche | Effet |
+| --- | --- |
+| B | entrer dans le mode, en sortir |
+| ZQSD, flèches (Maj : plus vite) | déplacer la caméra ; molette, + et − : zoom |
+| clic gauche | poser ce qu'on a en main (pièce ou plan), là où le montre le fantôme |
+| clic droit | retirer la pièce visée (refusé si elle en porte d'autres) ; Maj + clic droit : avec tout ce qui repose dessus |
+| R | tourner (est-ouest, nord-sud, debout pour la pièce de bois) |
+| T, G (Page haut, Page bas) | monter, descendre d'un cran de 20 cm |
+| Ctrl+Z, Ctrl+Y (Ctrl+Maj+Z) | annuler, refaire |
+
+Le panneau : vignettes par famille, recherche, réglages (pièce de bois : diamètre, état, longueur, sens ; matière naturelle : forme, taille), « Rien en main », « Choisir une zone » (glisser), « Enregistrer comme plan » (en développement, `vite.config.ts` écrit `src/content/plans/<nom>.json`), onglet « Plans » pour en poser un d'un coup. Les pièces posées vont dans `builds` de chaque carte (GameState) : on les retrouve en jeu.
 
 ### Les quatre règles
 
