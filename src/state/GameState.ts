@@ -568,9 +568,13 @@ export function emptyHands(s: GameState): void {
   revision++;
 }
 
-/** Remet une carte dans son état d'origine : ses changements, objets au sol, objets nés et tas sont oubliés. */
+/**
+ * Remet une carte dans son état d'origine : ses changements, objets au sol, objets nés et tas sont oubliés, et les intérieurs de ses
+ * bâtiments (`interieur:<carte>:…`, leurs meubles) avec elle.
+ */
 export function resetMap(s: GameState, mapId: string): void {
   delete s.maps[mapId];
+  for (const id of Object.keys(s.maps)) if (id.startsWith(`interieur:${mapId}:`)) delete s.maps[id];
   revision++;
 }
 

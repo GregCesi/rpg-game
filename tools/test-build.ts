@@ -191,3 +191,34 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   assert.deepEqual(judge({ id: 1, piece: log('ew', 380), x: 0, y: 20, z: 12, view: 0 }, { id: 2, piece: log('ns', 440), x: 20, y: 0, z: 52, view: 0 }), { type: 'notch' }, 'deux rondins écorcés : une encoche');
   console.log('✓ test-build : âge du bois (pièce, objet, plan, enture), rondin écorcé');
 }
+
+// Les intérieurs (chantier « intérieurs ») : la cabane et la grange de leurs plans, la pièce close derrière la porte, l'entrée, ce
+// qu'on voit dedans ; la cabane sans sa porte : une ouverture sous le linteau ; sans son linteau non plus : plus de pièce close.
+{
+  const { readFileSync } = await import('node:fs');
+  const { buildingsOf, interiorId, parseInteriorId } = await import('../src/world/interior');
+  const { swung } = await import('../src/world/build');
+  const placed = (name: string) => planPieces(JSON.parse(readFileSync(`src/content/plans/${name}.json`, 'utf8')), { x: 1000, y: 1000, z: 0 }).map((p, i) => ({ ...p, id: i }));
+  const cabin = placed('cabane');
+  const [c] = buildingsOf(cabin);
+  assert.deepEqual(c.room, { x: 1060, y: 1080, w: 260, d: 320 }, 'la cabane : 2,60 × 3,20 m entre les faces des murs');
+  assert.equal(c.entrances.length, 1);
+  assert.deepEqual([c.entrances[0].side, c.entrances[0].open, c.entrances[0].facing], ['south', false, 'up'], 'la porte au sud, fermée');
+  assert.deepEqual(c.windows.map((w) => [w.side, w.open]), [['east', false]], 'le volet de la fenêtre est');
+  assert.ok(!c.shell.some((p) => 'prop' in p.piece && /roof|door/.test(p.piece.prop)), 'ni toit ni porte dedans');
+  assert.ok(!c.shell.some((p) => 'wood' in p.piece && p.z >= 300), 'la faîtière passe au-dessus');
+  const open = cabin.map((p) => ('prop' in p.piece && p.piece.prop === 'plank-door' ? { ...swung(p)!, id: p.id } : p));
+  assert.equal(buildingsOf(open)[0].entrances[0].open, true, 'la porte ouverte : on passe');
+  const doorless = cabin.filter((p) => !('prop' in p.piece && p.piece.prop === 'plank-door'));
+  const [d] = buildingsOf(doorless);
+  assert.ok(d && d.entrances.length === 1 && d.entrances[0].open && d.entrances[0].door === undefined, 'sans porte : une ouverture sous le linteau');
+  assert.deepEqual(d.room, c.room, 'la même pièce');
+  const lintel = Math.max(...doorless.filter((p) => 'wood' in p.piece && p.y === 1400).map((p) => p.z));
+  assert.deepEqual(buildingsOf(doorless.filter((p) => !('wood' in p.piece && p.y === 1400 && p.z === lintel))), [], 'sans linteau : rien de clos');
+  const [g] = buildingsOf(placed('grange'));
+  assert.deepEqual([g.room.w, g.room.d], [880, 600], 'la grange : 8,80 × 6 m');
+  assert.ok(g.south.length >= 4, 'la coupe du mur sud, de part et d’autre de la porte charretière');
+  assert.deepEqual(parseInteriorId(interiorId('ferme', c.key)), { host: 'ferme', key: '1060,1080' });
+  assert.equal(parseInteriorId('maison'), undefined);
+  console.log('✓ test-build : intérieurs (pièce close, porte, ouverture sous le linteau, fenêtre, coupe du mur sud)');
+}

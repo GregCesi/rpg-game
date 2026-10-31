@@ -231,6 +231,14 @@ export class BuildSystem {
     return mapState(game, this.map.def.id).builds;
   }
 
+  /**
+   * Tout ce qui est posé sous les yeux : les pièces de la carte et, dans un intérieur, celles du bâtiment (fixes, à la carte du
+   * dehors) : on vise sur elles et on ne pose pas dedans.
+   */
+  private get shown(): BuildPiece[] {
+    return this.map.builds.map((b) => b.piece);
+  }
+
   /** Les assemblages posés sur la carte (GameState). */
   private get joints(): Joint[] {
     return mapState(game, this.map.def.id).joints;
@@ -256,24 +264,24 @@ export class BuildSystem {
     if (t.kind === 'piece') {
       // un pan de toit ne porte rien : on vise sans les pièces de toit
       const pitch = 'prop' in t.piece && props[t.piece.prop].pitch;
-      let b = aimAt(this.pieces.filter((q) => !isRoof(q)), sizeOf(t.piece, t.view), cx, cy, this.step);
+      let b = aimAt(this.shown.filter((q) => !isRoof(q)), sizeOf(t.piece, t.view), cx, cy, this.step);
       // un pan de toit : sa base est le dessus de ce qui porte sa rive basse (une bande de 60 cm le long du côté bas)
       if (pitch) {
         const low = (['south', 'west', 'north', 'east'] as const)[t.view % 4];
         const band = 60;
         const strip = low === 'south' ? { ...b, y: b.y + b.d - band, d: band } : low === 'north' ? { ...b, d: band } : low === 'west' ? { ...b, w: band } : { ...b, x: b.x + b.w - band, w: band };
-        b = { ...b, z: Math.max(0, supportAt(this.pieces.filter((q) => !isRoof(q)), strip) + this.step * BUILD.grid) };
+        b = { ...b, z: Math.max(0, supportAt(this.shown.filter((q) => !isRoof(q)), strip) + this.step * BUILD.grid) };
       }
       // sur un mur (le solin), une pièce couchée affleure sa face extérieure, et reste sur ce qui la porte
       if (b.z > 0) {
-        const a = alignOnWall(this.pieces, b);
-        if (a !== b && supportAt(this.pieces, a) === supportAt(this.pieces, b)) b = a;
+        const a = alignOnWall(this.shown, b);
+        if (a !== b && supportAt(this.shown, a) === supportAt(this.shown, b)) b = a;
       }
       list = [withAge({ piece: t.piece, x: b.x, y: b.y, z: b.z, view: t.view, ...(t.drawn ? { natural: t.drawn } : {}), ...(t.variant !== undefined ? { variant: t.variant } : {}) }, this.age)];
     } else {
       const plan = buildPlans[t.plan];
       if (!plan) return;
-      const b = aimAt(this.pieces, planSize(plan), cx, cy, this.step);
+      const b = aimAt(this.shown, planSize(plan), cx, cy, this.step);
       // tout le bois du plan prend l'âge choisi
       list = planPieces({ ...plan, age: this.age }, b).map((p, i) => ({ ...p, ...(t.variants[i] !== undefined ? { variant: t.variants[i] } : {}) }));
     }
@@ -286,12 +294,15 @@ export class BuildSystem {
     const W = this.map.width * CM_PER_PX;
     const H = this.map.height * CM_PER_PX;
     // un pan de toit ne se heurte pas à ce qui est sous sa pente, ni rien à lui
-    const others = this.pieces.filter((q) => !isRoof(q)).map(boxOf);
+    const others = this.shown.filter((q) => !isRoof(q)).map(boxOf);
+    // dans un intérieur : rien hors de la pièce (dans les murs, dehors)
+    const room = this.map.room;
     const body = this.player.actor.body as Phaser.Physics.Arcade.Body;
     const feet = { x: body.left * CM_PER_PX, y: body.top * CM_PER_PX, w: body.width * CM_PER_PX, d: body.height * CM_PER_PX };
     for (const p of list) {
       const b = boxOf(p);
       if (b.x < 0 || b.y < 0 || b.x + b.w > W || b.y + b.d > H) return 'Hors de la carte.';
+      if (room && (b.x < room.x || b.y < room.y || b.x + b.w > room.x + room.w || b.y + b.d > room.y + room.d)) return 'Hors de la pièce.';
       if (!isRoof(p) && others.some((o) => intersects(o, b))) return 'Une autre pièce est déjà là.';
       if (b.z < BUILD.high && overlaps(b, feet)) return 'Xéros est là.';
     }
@@ -366,6 +377,8 @@ export class BuildSystem {
   pieceAt(px: number, py: number): BuildPiece | undefined {
     const sorted = [...this.map.builds].sort((a, b) => b.image.depth - a.image.depth);
     for (const b of sorted) {
+      // une pièce du bâtiment vue de dedans ne se retire pas d'ici
+      if (b.fixed) continue;
       const img = b.image;
       const lx = Math.floor(px - img.x);
       const ly = Math.floor(py - (img.y - img.height));

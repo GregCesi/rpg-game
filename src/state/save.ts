@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { items, maps, piles, plans, props, stamina, wood } from '../content';
 import { FacingSchema, type End, type PileWood, type WoodPiece } from '../content/types';
 import { refMissing } from '../world/build';
+import { parseInteriorId } from '../world/interior';
 import { kindOf, pileDefOf } from '../world/pileShape';
 import { BEAM_SIZE, dressedLook, lookOf } from '../world/woodShape';
 import { GameStateSchema, type GameState, type Held } from './GameState';
@@ -453,9 +454,14 @@ function woodMissing(w: WoodPiece): string | undefined {
  * Le premier contenu nommé par la sauvegarde qui n'existe plus (carte, objet, genre ou place de tas), décrit en
  * français, ou undefined. Le contenu a pu changer depuis l'écriture ; sans ce contrôle, la carte planterait au chargement.
  */
+/** Une carte de Tiled, ou l'intérieur d'un bâtiment d'une carte de Tiled (`interieur:<carte>:<x>,<y>`, chantier « intérieurs »). */
+function mapKnown(id: string): boolean {
+  return !!maps[id] || !!maps[parseInteriorId(id)?.host ?? ''];
+}
+
 function missingContent(save: Save): string | undefined {
   const { state, where } = save;
-  if (!maps[where.map]) return `la carte « ${where.map} »`;
+  if (!mapKnown(where.map)) return `la carte « ${where.map} »`;
   const heldMissing = (h: Held | null): string | undefined => {
     if (!h) return undefined;
     if ('item' in h) return items[h.item] ? undefined : `l'objet « ${h.item} »`;
@@ -468,7 +474,7 @@ function missingContent(save: Save): string | undefined {
   }
   for (const plan of state.knownPlans) if (!plans[plan]) return `le plan « ${plan} »`;
   for (const [mapId, m] of Object.entries(state.maps)) {
-    if (!maps[mapId]) return `la carte « ${mapId} »`;
+    if (!mapKnown(mapId)) return `la carte « ${mapId} »`;
     for (const site of m.sites) {
       const def = plans[site.plan];
       if (!def) return `le plan « ${site.plan} »`;

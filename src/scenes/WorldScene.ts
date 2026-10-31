@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS } from '../config';
+import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW } from '../config';
 import { items, maps, props } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -11,6 +11,7 @@ import { BuildSystem } from '../systems/build';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
+import { Interiors, resolveInterior } from '../systems/interiors';
 import { HarvestSystem, effortOf, wields, type HitResult } from '../systems/harvest';
 import { HandsSystem } from '../systems/hands';
 import { InteractionSystem } from '../systems/InteractionSystem';
@@ -48,6 +49,9 @@ import {
 import { blocks, boxOf, overlaps, swung } from '../world/build';
 import { CM_PER_PX } from '../content/gabarit';
 import { GameMap } from '../world/GameMap';
+import { parseInteriorId } from '../world/interior';
+import type { InteriorMap } from '../world/interiorMap';
+import { InteriorView } from '../world/interiorView';
 import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { heldWoodTexture } from '../world/woodTexture';
 import { pileWoodOf } from '../world/woodPile';
@@ -134,6 +138,11 @@ export class WorldScene extends Phaser.Scene {
   private at?: WorldStart['at'];
   /** On arrive d'une nuit de sommeil : le jour est dit à l'écran. */
   private wake = false;
+  /** Entrer dans les bâtiments posés, en sortir (systems/interiors.ts). */
+  private interiors!: Interiors;
+  /** L'intérieur où l'on est (sa carte calculée, ce que la vue y ajoute), ou rien dehors. */
+  private interior?: InteriorMap;
+  private inside?: InteriorView;
 
   constructor() {
     super('world');
@@ -149,13 +158,25 @@ export class WorldScene extends Phaser.Scene {
   }
 
   create(): void {
-    const def = maps[this.mapId];
-    if (!def) throw new Error(`Carte inconnue : ${this.mapId}`);
+    // une carte de Tiled, ou l'intérieur d'un bâtiment posé, calculé de ses pièces ; un bâtiment qui n'est plus là ramène dehors
+    this.interior = maps[this.mapId] ? undefined : resolveInterior(this.mapId);
+    let lost = false;
+    if (!maps[this.mapId] && !this.interior) {
+      const host = parseInteriorId(this.mapId)?.host;
+      if (!host || !maps[host]) throw new Error(`Carte inconnue : ${this.mapId}`);
+      this.mapId = host;
+      this.spawn = Object.keys(maps[host].spawns)[0];
+      this.at = undefined;
+      lost = true;
+    }
+    const def = this.interior?.def ?? maps[this.mapId];
     const sp = this.at ?? def.spawns[this.spawn];
     if (!sp) throw new Error(`Carte ${def.id} : point d'apparition '${this.spawn}' inconnu`);
 
     // la carte telle que la partie l'a laissée : objets récoltés, objets au sol
-    this.map = new GameMap(this, def, mapState(game, def.id));
+    this.map = new GameMap(this, def, mapState(game, def.id), this.interior && { pieces: this.interior.shell, joints: this.interior.joints });
+    this.inside = this.interior && new InteriorView(this, this.map, this.interior);
+    this.interiors = new Interiors(this.map, this.interior);
     this.physics.world.setBounds(0, 0, this.map.width, this.map.height);
 
     this.player = new Player(this, sp.x, sp.y);
@@ -202,10 +223,14 @@ export class WorldScene extends Phaser.Scene {
     this.handsChanged();
     this.game.events.emit(GameEvent.Stamina, this.player.stamina.fraction);
     if (this.wake) this.game.events.emit(GameEvent.Notice, `Jour ${game.day}`, HUD.longNoticeMs / 2);
+    if (lost) this.notice("Le bâtiment n'est plus là.");
 
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, this.map.width, this.map.height);
-    this.zoom = new ZoomControl(cam, this.map.width, this.map.height);
+    // un intérieur plus petit que la vue : la caméra le montre au milieu du vide, au même zoom que dehors
+    const bw = this.interior ? Math.max(this.map.width, VIEW.width) : this.map.width;
+    const bh = this.interior ? Math.max(this.map.height, VIEW.height) : this.map.height;
+    cam.setBounds((this.map.width - bw) / 2, (this.map.height - bh) / 2, bw, bh);
+    this.zoom = new ZoomControl(cam, bw, bh);
     cam.startFollow(this.player.actor, true, 0.15, 0.15);
     cam.setRoundPixels(true);
     cam.fadeIn(220, 20, 14, 8);
@@ -244,10 +269,13 @@ export class WorldScene extends Phaser.Scene {
     // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
     this.roll.update(this.player, delta, this.mode === 'play');
     // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes ; en mode construction, rien ne s'efface
-    this.roofs.update(this.player, delta, this.mode !== 'build');
+    this.roofs.update(this.player, delta, this.mode !== 'build' && !this.interior);
     if (this.mode === 'play') {
       const exit = findExit(this.player, this.map.def.exits);
       if (exit) this.travel(exit);
+      // la porte ouverte d'un bâtiment posé : on entre, ou, dedans, on ressort devant elle
+      const passage = exit ? undefined : this.interiors.update(this.player);
+      if (passage) this.fadeTo(passage);
     }
     // Espace, Q, Tab et R toujours lus, comme E : sinon un appui fait pendant un dialogue ressortirait juste après
     const { input } = this.player;
@@ -373,16 +401,24 @@ export class WorldScene extends Phaser.Scene {
    * world/build.ts), GameState le note dans son autre état, et la carte le redessine. Refusé si, ouvert, il bloquerait Xéros.
    */
   private swing(id: number): void {
-    const p = mapState(game, this.map.def.id).builds.find((q) => q.id === id);
+    // dedans, une pièce du bâtiment (le volet) : elle est à la carte du dehors, vue ici décalée
+    const it = this.interior;
+    const fixed = !!it && this.map.builds.some((b) => b.piece.id === id && b.fixed);
+    const owner = fixed ? it!.host : this.map.def.id;
+    const shift = fixed ? it!.shift : { x: 0, y: 0 };
+    const p = mapState(game, owner).builds.find((q) => q.id === id);
     const next = p && swung(p);
     if (!p || !next) return;
+    const here = { ...next, x: next.x + shift.x, y: next.y + shift.y };
     const body = this.player.actor.body as Phaser.Physics.Arcade.Body;
     const feet = { x: body.left * CM_PER_PX, y: body.top * CM_PER_PX, w: body.width * CM_PER_PX, d: body.height * CM_PER_PX };
-    if (blocks(next) && overlaps(boxOf(next), feet)) return this.notice('Xéros est dans le passage.');
-    const [piece] = addBuildPieces(game, this.map.def.id, [{ ...next, id }]);
+    if (blocks(here) && overlaps(boxOf(here), feet)) return this.notice('Xéros est dans le passage.');
+    const [piece] = addBuildPieces(game, owner, [{ ...next, id }]);
     this.map.removeBuild(id);
-    this.map.placeBuild(piece);
+    this.map.placeBuild({ ...piece, x: piece.x + shift.x, y: piece.y + shift.y }, fixed);
     this.map.sortBuilds();
+    // un volet ouvert fait entrer la lumière, fermé la pénombre
+    if (fixed) this.inside?.refresh(mapState(game, owner).builds.flatMap((q) => ('prop' in q.piece ? [{ id: q.id, open: !!props[q.piece.prop].swing?.open }] : [])));
   }
 
   /** La place dont Xéros demande l'aide à sa mère (le dialogue « Appeler ta mère pour la dresser ? » est ouvert). */
@@ -624,6 +660,11 @@ export class WorldScene extends Phaser.Scene {
   /** Une sortie est prise : la carte d'arrivée, à son point d'apparition. */
   private travel(exit: Exit): void {
     this.fadeTo({ mapId: exit.to, spawn: exit.spawn });
+  }
+
+  /** Les taches de lumière de l'intérieur où l'on est (pour les tests de scénario). */
+  get interiorLights() {
+    return this.inside?.lights ?? [];
   }
 
   /** Fondu au noir, puis la scène redémarre sur `start`. */

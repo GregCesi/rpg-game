@@ -5,7 +5,7 @@ import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
 import { drawOrder, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
 import { formImage, naturalGround, stableNatural } from './natural';
-import type { Chain, GroundItem, MapState, Pile, WorldChange } from '../state';
+import type { Chain, GroundItem, Joint, MapState, Pile, WorldChange } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
 import { CM_PER_PX } from '../content/gabarit';
@@ -162,6 +162,11 @@ export interface PlacedBuild {
   zone?: Phaser.GameObjects.Zone;
   /** Un morceau de mur dans un tronçon : la part de l'image du tronçon qu'il montre (repère de l'image). */
   crop?: { x: number; y: number; w: number; h: number };
+  /**
+   * Une pièce du bâtiment vue dans son intérieur (chantier « intérieurs ») : elle appartient à la carte du dehors, on ne la retire pas
+   * d'ici (le mode construction l'ignore au clic droit).
+   */
+  fixed?: boolean;
 }
 
 /** Un objet possédable posé au sol, affiché. */
@@ -242,6 +247,14 @@ export class GameMap {
    * (`down`) ; un tronçon de mur nord-sud calé au ras d'un angle décale ce qui repose dessus d'autant (`dx`).
    */
   private readonly shown = new Map<number, { dx: number; down: number }>();
+  /** Les assemblages des pièces fixes (le bâtiment vu de son intérieur), qui appartiennent à la carte du dehors. */
+  private readonly shellJoints: Joint[] = [];
+  /** La pénombre (intérieurs), si la carte en a une. */
+  private shade?: Phaser.GameObjects.Rectangle;
+  /** Augmente à chaque pose ou retrait de pièce (`sortBuilds`) : ce qui se calcule des pièces posées sait quand recommencer. */
+  buildsVersion = 0;
+  /** L'emprise de la pièce d'un intérieur (cm) : le mode construction n'y pose rien au-dehors. */
+  room?: { x: number; y: number; w: number; d: number };
   readonly width: number;
   readonly height: number;
 
@@ -249,6 +262,8 @@ export class GameMap {
     private readonly scene: Phaser.Scene,
     readonly def: MapData,
     private readonly changes: MapState,
+    /** Les pièces d'un bâtiment vues de son intérieur, et leurs assemblages (fixes : elles sont à la carte du dehors). */
+    shell?: { pieces: readonly BuildPiece[]; joints: readonly Joint[] },
   ) {
     const tileset = tilesets.find((t) => t.key === def.tileset)!;
     this.width = def.width * TILE;
@@ -287,12 +302,14 @@ export class GameMap {
     for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, length: o.length, wood: o.wood, natural: o.natural });
     for (const g of changes.ground) this.placeGround(g);
     for (const pile of changes.piles) this.placePile(pile);
+    for (const p of shell?.pieces ?? []) this.placeBuild(p, true);
+    this.shellJoints.push(...(shell?.joints ?? []));
     for (const b of changes.builds) this.placeBuild(b);
     this.sortBuilds();
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
     if (def.ambient) {
-      scene.add.rectangle(0, 0, this.width, this.height, 0x1a0e06, def.ambient).setOrigin(0).setDepth(DEPTH.ambient);
+      this.shade = scene.add.rectangle(0, 0, this.width, this.height, 0x1a0e06, def.ambient).setOrigin(0).setDepth(DEPTH.ambient);
     }
   }
 
@@ -595,7 +612,7 @@ export class GameMap {
    * Affiche une pièce posée en mode construction : son image (relevée de sa hauteur), et sa collision, son emprise au sol en vraie
    * grandeur, si elle bloque (posée sous BUILD.high). Appeler `sortBuilds` ensuite pour l'ordre d'affichage.
    */
-  placeBuild(piece: BuildPiece): PlacedBuild {
+  placeBuild(piece: BuildPiece, fixed = false): PlacedBuild {
     const look = buildLook(this.scene, piece);
     const image = this.scene.add.image(look.x, look.y, look.key, look.frame).setOrigin(0, 1);
     let zone: Phaser.GameObjects.Zone | undefined;
@@ -603,7 +620,7 @@ export class GameMap {
       const b = boxOf(piece);
       zone = this.addObstacle((b.x + b.w / 2) / CM_PER_PX, (b.y + b.d / 2) / CM_PER_PX, b.w / CM_PER_PX, b.d / CM_PER_PX);
     }
-    const placed = { piece, image, zone };
+    const placed: PlacedBuild = { piece, image, zone, ...(fixed ? { fixed } : {}) };
     this.builds.push(placed);
     return placed;
   }
@@ -629,8 +646,10 @@ export class GameMap {
       const look = buildLook(this.scene, b.piece);
       b.image.setPosition(look.x, look.y);
     }
+    this.buildsVersion++;
+    const joints = [...this.shellJoints, ...this.changes.joints];
     this.drawWalls();
-    drawJoints(this.scene, this.builds, this.changes.joints);
+    drawJoints(this.scene, this.builds, joints);
     this.shown.clear();
     for (const b of [...this.builds].sort((a, c) => a.piece.z - c.piece.z)) {
       const o = this.offsetOf(b.piece);
@@ -643,7 +662,7 @@ export class GameMap {
       b.image.setDepth(floor ? DEPTH.floor : depths.get(b.piece.id)!);
     }
     for (const o of this.overlays) o.destroy();
-    this.overlays = halvingOverlays(this.scene, this.builds, this.changes.joints).map((o) =>
+    this.overlays = halvingOverlays(this.scene, this.builds, joints).map((o) =>
       this.scene.add.image(o.x, o.y, o.key).setOrigin(0, 0).setDepth(o.depth).setAlpha(1),
     );
   }
@@ -706,6 +725,16 @@ export class GameMap {
         b.crop = c;
       });
     }
+  }
+
+  /** Change la pénombre d'un intérieur (un volet ouvert, fermé). */
+  setAmbient(alpha: number): void {
+    this.shade?.setFillStyle(0x1a0e06, alpha);
+  }
+
+  /** Une collision de plus, un rectangle au sol en cm (la coupe du mur sud d'un intérieur). */
+  addBlock(r: { x: number; y: number; w: number; d: number }): Phaser.GameObjects.Zone {
+    return this.addObstacle((r.x + r.w / 2) / CM_PER_PX, (r.y + r.d / 2) / CM_PER_PX, r.w / CM_PER_PX, r.d / CM_PER_PX);
   }
 
   private addObstacle(x: number, y: number, w: number, h: number): Phaser.GameObjects.Zone {

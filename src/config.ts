@@ -139,6 +139,35 @@ export const HUD = { noticeMs: 1800, longNoticeMs: 7000 };
  */
 export const BUILD = { grid: 20, high: 200, head: 160, camera: 260, fast: 3, ghost: 0.6, refused: 0.25 };
 
+/**
+ * Les intérieurs (chantier « intérieurs », world/interior.ts, world/interiorMap.ts) : un bâtiment posé en mode construction se
+ * reconnaît à sa porte, la pièce est ce qui est clos autour d'elle. Hauteurs en cm : ce qui a sa base sous `headroom` barre le passage,
+ * ce qui l'a entre `headroom` et `lintel` est un linteau (l'ouverture dessous est un passage, la pièce reste close) ; ce dont le dessus
+ * est sous `floor` est au sol (dalles, seuil) ; `cell` : la grille de la recherche (cm, un pixel) ; `search` : jusqu'où l'on cherche le
+ * dedans derrière une porte ; `maxCells` : au-delà, ce n'est pas une pièce close ; `reach` : l'épaisseur des murs qu'on prend autour de
+ * la pièce ; `band` : une pièce en hauteur dans cette bande le long d'un mur est du mur (la sablière) ; `south` : ce qui touche le bord
+ * sud dans cette bande est du mur sud (montré en coupe) ; `passage` : la plus petite ouverture sans porte. La vue : `margin` (px)
+ * autour de la pièce, la pénombre (`ambient` quand un volet est ouvert, `dark` sinon, comme la chaumière), la couleur du vide, la
+ * taille des taches de lumière (`light`, × l'image `sunpatch`).
+ */
+export const INTERIOR = {
+  headroom: 180,
+  lintel: 240,
+  floor: 30,
+  cell: 5,
+  search: 300,
+  maxCells: 250000,
+  reach: 80,
+  band: 40,
+  south: 60,
+  passage: 60,
+  margin: { side: 32, top: 128, bottom: 32 },
+  ambient: 0.22,
+  dark: 0.36,
+  void: 0x1e1610,
+  light: { door: 0.75, window: 0.8, alpha: 0.9 },
+};
+
 /** Où commence la partie : Xéros se réveille dans son cagibi. */
 export const START = { map: 'maison', spawn: 'reveil' };
 

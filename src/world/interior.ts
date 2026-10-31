@@ -1,0 +1,393 @@
+// Les intérieurs (chantier « intérieurs », CONCEPTION « Les intérieurs »), sans Phaser : un bâtiment posé en mode construction se
+// reconnaît à sa porte, et son intérieur se calcule de ses pièces, parce que chacune est connue. Rien n'est dessiné à la main pour
+// une maison.
+//
+// - La pièce : ce qui est clos derrière une porte. On projette au sol (grille de INTERIOR.cell cm) tout ce qui barre le passage à
+//   hauteur d'homme (base sous INTERIOR.headroom, dessus au-dessus du sol), plus les linteaux (base sous INTERIOR.lintel), plus chaque
+//   porte à sa place fermée ; puis on remplit depuis le dedans de la porte. Si le remplissage atteint le bord de la grille, ce n'est
+//   pas une pièce close. La pièce est le rectangle de ce qui a été rempli : son emprise entre les faces intérieures des murs.
+// - Les entrées : chaque porte (`swing.passage` de props.json ; ouverte, on passe) et chaque ouverture sans porte (un passage sous un
+//   linteau, d'au moins INTERIOR.passage cm). Une zone de passage à travers l'épaisseur du mur, le sens où l'on entre, où l'on
+//   arrive dedans et dehors.
+// - Ce qu'on montre dedans (`shell`) : les murs nord, est et ouest avec tout ce qui est dans leur bande (la sablière), et ce qui est
+//   dans l'emprise sous la tête de Xéros (poteaux, cloisons, foyer, dalles) ; ni les toits, ni ce qui passe au-dessus (faîtière,
+//   entraits), ni le mur sud, montré en coupe (`south` : l'emprise de ses pièces, hors des passages).
+// - Les fenêtres : ce qui s'ouvre et n'est pas une porte (le volet) ; ouvert, il fait entrer une tache de lumière.
+
+import { INTERIOR } from '../config';
+import { props } from '../content';
+import type { Facing } from '../content/types';
+import { boxOf, OUTWARD, swung, type Box3, type BuildPiece } from './build';
+
+/** Un rectangle au sol, en cm (coin nord-ouest, largeur est-ouest, profondeur nord-sud). */
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  d: number;
+}
+
+/** Un mur de la pièce. */
+export type Side = 'north' | 'east' | 'south' | 'west';
+
+/** Une entrée d'un bâtiment : une porte (son identifiant de pièce posée) ou une ouverture sans porte. */
+export interface Entrance {
+  /** La pièce de porte, s'il y en a une. */
+  door?: number;
+  /** On passe : la porte est ouverte, ou l'ouverture n'a pas de porte. */
+  open: boolean;
+  /** Le mur où elle est. */
+  side: Side;
+  /** Son étendue le long du mur (cm, x pour un mur nord ou sud, y sinon). */
+  span: [number, number];
+  /** La zone de passage : les pieds de Xéros dedans, tourné vers `facing`, il entre (ou, dedans, tourné à l'opposé, il sort). */
+  zone: Rect;
+  /** La direction de Xéros qui entre. */
+  facing: Facing;
+  /** Où arrivent ses pieds, dehors (devant la porte) et dedans (derrière elle), en cm. */
+  outside: { x: number; y: number };
+  inside: { x: number; y: number };
+}
+
+/** Une fenêtre (un volet) : où elle est et si elle est ouverte. */
+export interface Window {
+  id: number;
+  open: boolean;
+  side: Side;
+  span: [number, number];
+}
+
+/** Un bâtiment où l'on entre : sa pièce, ses entrées, ce qu'on en voit dedans. */
+export interface Building {
+  /** Le coin nord-ouest de la pièce, « x,y » en cm : ce qui nomme l'intérieur (ses meubles y sont rangés). */
+  key: string;
+  room: Rect;
+  entrances: Entrance[];
+  /** Les pièces posées qu'on voit dedans, à leur place (repère de la carte du dehors). */
+  shell: BuildPiece[];
+  /** La coupe du mur sud : l'emprise de ses pièces, hors des passages ; et ces pièces (leur matière, leur âge). */
+  south: Rect[];
+  southPieces: BuildPiece[];
+  windows: Window[];
+}
+
+const FACING: Record<Side, Facing> = { south: 'up', north: 'down', east: 'left', west: 'right' };
+
+/** La direction opposée : celle de Xéros qui ressort. */
+export const BACK: Record<Facing, Facing> = { up: 'down', down: 'up', left: 'right', right: 'left' };
+
+/** Le mur d'un côté du dehors (vecteur de `OUTWARD`). */
+function sideOf(ox: number, oy: number): Side {
+  return oy > 0 ? 'south' : oy < 0 ? 'north' : ox > 0 ? 'east' : 'west';
+}
+
+/** Une pièce de toit : elle n'est ni un mur ni rien qu'on voit dedans. */
+function isRoof(p: BuildPiece): boolean {
+  return 'prop' in p.piece && !!props[p.piece.prop]?.roof;
+}
+
+/** Ce qui s'ouvre et se ferme, d'une pièce posée. */
+function swingOf(p: BuildPiece) {
+  return 'prop' in p.piece ? props[p.piece.prop]?.swing : undefined;
+}
+
+/** Une porte : ce qui s'ouvre et qu'on passe (`swing.passage`). */
+export function isDoor(p: BuildPiece): boolean {
+  return !!swingOf(p)?.passage;
+}
+
+/** La pièce à sa place fermée (une porte ou un volet ouvert revient dans son ouverture), sinon telle quelle. */
+function closedOf(p: BuildPiece): BuildPiece {
+  const s = swingOf(p);
+  if (!s?.open) return p;
+  const c = swung(p);
+  return c ? { ...c, id: p.id } : p;
+}
+
+/** Les emprises de deux rectangles se recouvrent. */
+function cross(a: Rect, b: Rect): boolean {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.d && b.y < a.y + a.d;
+}
+
+/** La grille au sol de la recherche : chaque case dit si elle barre le passage (1) ou porte un linteau (2). */
+class Grid {
+  readonly cells: Uint8Array;
+
+  constructor(
+    readonly x0: number,
+    readonly y0: number,
+    readonly nx: number,
+    readonly ny: number,
+  ) {
+    this.cells = new Uint8Array(nx * ny);
+  }
+
+  mark(r: Rect, bit: number): void {
+    const c = INTERIOR.cell;
+    const i0 = Math.max(0, Math.floor((r.x - this.x0) / c));
+    const j0 = Math.max(0, Math.floor((r.y - this.y0) / c));
+    const i1 = Math.min(this.nx, Math.ceil((r.x + r.w - this.x0) / c));
+    const j1 = Math.min(this.ny, Math.ceil((r.y + r.d - this.y0) / c));
+    for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) this.cells[j * this.nx + i] |= bit;
+  }
+
+  /** La case d'un point (cm), ou -1 hors de la grille. */
+  cellAt(x: number, y: number): number {
+    const i = Math.floor((x - this.x0) / INTERIOR.cell);
+    const j = Math.floor((y - this.y0) / INTERIOR.cell);
+    return i < 0 || j < 0 || i >= this.nx || j >= this.ny ? -1 : j * this.nx + i;
+  }
+
+  /** Le rectangle (cm) de cases groupées, donné par leurs indices extrêmes. */
+  rect(i0: number, j0: number, i1: number, j1: number): Rect {
+    const c = INTERIOR.cell;
+    return { x: this.x0 + i0 * c, y: this.y0 + j0 * c, w: (i1 - i0 + 1) * c, d: (j1 - j0 + 1) * c };
+  }
+
+  /**
+   * Le remplissage depuis une case libre : le rectangle (cm) de ce qui a été rempli, ou rien s'il touche le bord de la grille ou
+   * dépasse INTERIOR.maxCells (ce n'est pas clos).
+   */
+  flood(start: number): Rect | undefined {
+    if (start < 0 || this.cells[start]) return undefined;
+    const seen = new Uint8Array(this.cells.length);
+    const stack = [start];
+    seen[start] = 1;
+    let n = 0;
+    let [i0, j0, i1, j1] = [Infinity, Infinity, -Infinity, -Infinity];
+    while (stack.length) {
+      const k = stack.pop()!;
+      const i = k % this.nx;
+      const j = (k - i) / this.nx;
+      if (i === 0 || j === 0 || i === this.nx - 1 || j === this.ny - 1 || ++n > INTERIOR.maxCells) return undefined;
+      i0 = Math.min(i0, i);
+      j0 = Math.min(j0, j);
+      i1 = Math.max(i1, i);
+      j1 = Math.max(j1, j);
+      for (const q of [k - 1, k + 1, k - this.nx, k + this.nx]) {
+        if (!seen[q] && !this.cells[q]) {
+          seen[q] = 1;
+          stack.push(q);
+        }
+      }
+    }
+    return this.rect(i0, j0, i1, j1);
+  }
+}
+
+/** La boîte d'une pièce pour la recherche, si elle compte : sa place fermée pour une porte ; rien pour un toit ou ce qui est au sol. */
+function searchBox(p: BuildPiece): Box3 | undefined {
+  if (isRoof(p)) return undefined;
+  const b = boxOf(closedOf(p));
+  if (b.z >= INTERIOR.lintel || b.z + b.h <= INTERIOR.floor) return undefined;
+  return b;
+}
+
+/** La grille de toutes les pièces posées : ce qui barre le passage (1), les linteaux (2), avec deux cases de marge tout autour. */
+function gridOf(pieces: readonly BuildPiece[]): Grid | undefined {
+  const boxes = pieces.map(searchBox).filter((b): b is Box3 => !!b);
+  if (!boxes.length) return undefined;
+  const c = INTERIOR.cell;
+  const x0 = Math.floor(Math.min(...boxes.map((b) => b.x)) / c) * c - 2 * c;
+  const y0 = Math.floor(Math.min(...boxes.map((b) => b.y)) / c) * c - 2 * c;
+  const x1 = Math.ceil(Math.max(...boxes.map((b) => b.x + b.w)) / c) * c + 2 * c;
+  const y1 = Math.ceil(Math.max(...boxes.map((b) => b.y + b.d)) / c) * c + 2 * c;
+  const g = new Grid(x0, y0, (x1 - x0) / c, (y1 - y0) / c);
+  for (const b of boxes) g.mark(b, b.z < INTERIOR.headroom ? 1 : 2);
+  return g;
+}
+
+/** La pièce derrière un passage : on avance depuis `from` vers le dedans (dx, dy) jusqu'à une case libre, puis on remplit. */
+function roomBehind(g: Grid, from: { x: number; y: number }, dx: number, dy: number): Rect | undefined {
+  for (let t = 0; t <= INTERIOR.search; t += INTERIOR.cell) {
+    const k = g.cellAt(from.x + dx * t, from.y + dy * t);
+    if (k < 0) return undefined;
+    if (!g.cells[k]) return g.flood(k);
+  }
+  return undefined;
+}
+
+/** Une entrée, d'après son passage (`gap`, au sol, dans le mur), le côté du dehors (ox, oy) et la pièce. */
+function entranceOf(room: Rect, gap: Rect, ox: number, oy: number, open: boolean, door?: number): Entrance {
+  const side = sideOf(ox, oy);
+  const ns = side === 'north' || side === 'south';
+  const span: [number, number] = ns ? [gap.x, gap.x + gap.w] : [gap.y, gap.y + gap.d];
+  const mid = (span[0] + span[1]) / 2;
+  const s = ox + oy;
+  // à travers le mur : du bord de la pièce (5 cm dedans) à 10 cm au-delà de la face du dehors du passage
+  const edge = side === 'south' ? room.y + room.d : side === 'north' ? room.y : side === 'east' ? room.x + room.w : room.x;
+  const outer = side === 'south' ? gap.y + gap.d : side === 'north' ? gap.y : side === 'east' ? gap.x + gap.w : gap.x;
+  const a = Math.min(edge - s * 5, outer + s * 10);
+  const b = Math.max(edge - s * 5, outer + s * 10);
+  const zone = ns ? { x: span[0], y: a, w: span[1] - span[0], d: b - a } : { x: a, y: span[0], w: b - a, d: span[1] - span[0] };
+  const out = outer + s * 30;
+  const inn = edge - s * 30;
+  return {
+    ...(door !== undefined ? { door } : {}),
+    open,
+    side,
+    span,
+    zone,
+    facing: FACING[side],
+    outside: ns ? { x: mid, y: out } : { x: out, y: mid },
+    inside: ns ? { x: mid, y: inn } : { x: inn, y: mid },
+  };
+}
+
+/**
+ * Les ouvertures sans porte : les cases sous un linteau que rien ne barre à hauteur d'homme, groupées, d'au moins INTERIOR.passage
+ * cm le long du mur ; hors de celles qui touchent une porte (sous le linteau d'une porte, de part et d'autre du vantail).
+ */
+function doorways(g: Grid, doors: readonly Box3[]): Rect[] {
+  const c = INTERIOR.cell;
+  const seen = new Uint8Array(g.cells.length);
+  const out: Rect[] = [];
+  for (let k = 0; k < g.cells.length; k++) {
+    if (seen[k] || g.cells[k] !== 2) continue;
+    const stack = [k];
+    seen[k] = 1;
+    let [i0, j0, i1, j1] = [Infinity, Infinity, -Infinity, -Infinity];
+    while (stack.length) {
+      const q = stack.pop()!;
+      const i = q % g.nx;
+      const j = (q - i) / g.nx;
+      i0 = Math.min(i0, i);
+      j0 = Math.min(j0, j);
+      i1 = Math.max(i1, i);
+      j1 = Math.max(j1, j);
+      for (const r of [i > 0 ? q - 1 : -1, i < g.nx - 1 ? q + 1 : -1, q - g.nx, q + g.nx]) {
+        if (r >= 0 && r < g.cells.length && !seen[r] && g.cells[r] === 2) {
+          seen[r] = 1;
+          stack.push(r);
+        }
+      }
+    }
+    const r = g.rect(i0, j0, i1, j1);
+    if (Math.max(r.w, r.d) < INTERIOR.passage) continue;
+    const near = { x: r.x - c, y: r.y - c, w: r.w + 2 * c, d: r.d + 2 * c };
+    if (doors.some((b) => cross(near, b))) continue;
+    out.push(r);
+  }
+  return out;
+}
+
+/** Le mur dans la bande duquel est une pièce posée (à INTERIOR.band cm du bord de la pièce, ou au-delà), ou rien. */
+function wallSide(room: Rect, b: Rect): Side | undefined {
+  const band = INTERIOR.band;
+  if (b.y + b.d <= room.y + band) return 'north';
+  if (b.x + b.w <= room.x + band) return 'west';
+  if (b.x >= room.x + room.w - band) return 'east';
+  if (b.y >= room.y + room.d - band) return 'south';
+  return undefined;
+}
+
+/** Une pièce du mur sud : au-delà du bord sud de la pièce, ou qui le touche depuis la bande INTERIOR.south (le poteau du mur sud). */
+function onSouthWall(room: Rect, b: Rect): boolean {
+  const s = room.y + room.d;
+  return b.y >= s - 1 || (b.y + b.d >= s - INTERIOR.cell && b.y >= s - INTERIOR.south);
+}
+
+/** Ce qu'on voit dedans, la coupe du mur sud et les fenêtres d'une pièce, d'après les pièces posées autour d'elle. */
+function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly Entrance[]): Pick<Building, 'shell' | 'south' | 'southPieces' | 'windows'> {
+  const r = INTERIOR.reach;
+  const around = { x: room.x - r, y: room.y - r, w: room.w + 2 * r, d: room.d + 2 * r };
+  const shell: BuildPiece[] = [];
+  const south: Rect[] = [];
+  const southPieces: BuildPiece[] = [];
+  const windows: Window[] = [];
+  for (const p of pieces) {
+    const b = boxOf(p);
+    const closed = boxOf(closedOf(p));
+    if (isRoof(p) || !cross(around, closed)) continue;
+    const s = swingOf(p);
+    // un volet : une fenêtre, sur le mur où il est fermé
+    if (s && !s.passage) {
+      const side = wallSide(room, closed);
+      if (side) windows.push({ id: p.id, open: !!s.open, side, span: side === 'north' || side === 'south' ? [closed.x, closed.x + closed.w] : [closed.y, closed.y + closed.d] });
+    }
+    // au sol (dalles) : seulement dans la pièce
+    if (b.z + b.h <= INTERIOR.floor) {
+      if (cross(room, b) && !onSouthWall(room, b)) shell.push(p);
+      continue;
+    }
+    if (onSouthWall(room, closed)) {
+      // la coupe : ce qui barre le passage à hauteur d'homme, hors des portes (le linteau et le pignon passent au-dessus)
+      if (b.z < INTERIOR.headroom && !s?.passage) {
+        const x0 = Math.max(b.x, room.x - r);
+        const x1 = Math.min(b.x + b.w, room.x + room.w + r);
+        if (x1 > x0) {
+          south.push({ x: x0, y: b.y, w: x1 - x0, d: b.d });
+          southPieces.push(p);
+        }
+      }
+      continue;
+    }
+    // ce qui passe au-dessus de la pièce (faîtière, entraits, poinçons) : seulement ce qui est dans la bande d'un mur
+    if (cross(room, b) && b.z >= INTERIOR.headroom && !wallSide(room, b)) continue;
+    shell.push(p);
+  }
+  // la coupe s'arrête aux passages du mur sud
+  const gaps = entrances.filter((e) => e.side === 'south');
+  const cut = south.flatMap((q) => gaps.reduce<Rect[]>((list, e) => list.flatMap((s) => minus(s, e.span[0], e.span[1])), [q]));
+  return { shell, south: cut, southPieces, windows };
+}
+
+/** Un rectangle sans l'intervalle [a, b[ en x. */
+function minus(s: Rect, a: number, b: number): Rect[] {
+  if (b <= s.x || a >= s.x + s.w) return [s];
+  const out: Rect[] = [];
+  if (a > s.x) out.push({ ...s, w: a - s.x });
+  if (b < s.x + s.w) out.push({ ...s, x: b, w: s.x + s.w - b });
+  return out;
+}
+
+/** La clé d'une pièce : son coin nord-ouest. */
+const keyOf = (room: Rect) => `${room.x},${room.y}`;
+
+/**
+ * Les bâtiments où l'on entre, parmi les pièces posées d'une carte : chaque porte et chaque ouverture sans porte qui mène à une pièce
+ * close ; deux entrées de la même pièce font un seul bâtiment.
+ */
+export function buildingsOf(pieces: readonly BuildPiece[]): Building[] {
+  const g = gridOf(pieces);
+  if (!g) return [];
+  const rooms = new Map<string, { room: Rect; entrances: Entrance[] }>();
+  const add = (room: Rect, e: Entrance) => {
+    const k = keyOf(room);
+    const b = rooms.get(k) ?? { room, entrances: [] };
+    b.entrances.push(e);
+    rooms.set(k, b);
+  };
+  const doors = pieces.filter(isDoor);
+  for (const p of doors) {
+    const d = closedOf(p);
+    const b = boxOf(d);
+    const [ox, oy] = OUTWARD[d.view % 4];
+    const room = roomBehind(g, { x: b.x + b.w / 2, y: b.y + b.d / 2 }, -ox, -oy);
+    if (room) add(room, entranceOf(room, b, ox, oy, !!swingOf(p)?.open, p.id));
+  }
+  for (const w of doorways(g, doors.map((p) => boxOf(closedOf(p))))) {
+    const across: [number, number][] = w.w >= w.d ? [[0, 1], [0, -1]] : [[1, 0], [-1, 0]];
+    const mid = { x: w.x + w.w / 2, y: w.y + w.d / 2 };
+    // le dedans est d'un seul côté : de l'autre, on ressort au large
+    const inner = across.map(([ox, oy]) => ({ ox, oy, room: roomBehind(g, mid, -ox, -oy) })).filter((s) => s.room);
+    if (inner.length !== 1) continue;
+    add(inner[0].room!, entranceOf(inner[0].room!, w, inner[0].ox, inner[0].oy, true));
+  }
+  return [...rooms.values()].map(({ room, entrances }) => ({ key: keyOf(room), room, entrances, ...contents(room, pieces, entrances) }));
+}
+
+// --- L'identifiant d'un intérieur : la carte du dehors et la clé de sa pièce ---
+
+const ID = /^interieur:([^:]+):(-?\d+),(-?\d+)$/;
+
+/** L'identifiant de carte de l'intérieur d'un bâtiment : `interieur:<carte>:<x>,<y>`. Ses meubles sont rangés sous cet identifiant. */
+export function interiorId(host: string, key: string): string {
+  return `interieur:${host}:${key}`;
+}
+
+/** La carte du dehors et la clé de la pièce d'un identifiant d'intérieur, ou rien pour une carte de Tiled. */
+export function parseInteriorId(id: string): { host: string; key: string } | undefined {
+  const m = ID.exec(id);
+  return m ? { host: m[1], key: `${m[2]},${m[3]}` } : undefined;
+}
