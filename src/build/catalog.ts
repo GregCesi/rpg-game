@@ -22,7 +22,7 @@ export interface CatalogEntry {
   wood?: { size: string; look: WoodLook; up?: true };
   /** Un assemblage (famille « assemblages ») : il se pose sur la jonction de deux pièces, pas comme une pièce. */
   joint?: JointType;
-  /** Un objet de bois (`aged`) : sa vignette a ses trois âges. */
+  /** Du bois qui prend l'âge (la pièce de bois, un objet `aged`) : sa vignette a ses trois âges. */
   aged?: true;
 }
 
@@ -73,10 +73,10 @@ export function catalog(): CatalogEntry[] {
     for (const look of looksOf(size)) {
       const l = s.looks[look]!;
       const ref = { wood: woodFrom(size, 200, look, 'ew') };
-      out.push({ id: `wood:${size}:${look}`, name: `${l.name}${faces[look] ?? ''} (${s.diameter} cm)`, family: 'bois', ref, thumb: l.icon, wood: { size, look } });
+      out.push({ id: `wood:${size}:${look}`, name: `${l.name}${faces[look] ?? ''} (${s.diameter} cm)`, family: 'bois', ref, thumb: l.icon, wood: { size, look }, aged: true });
       if (canStand(size, look) && look === 'round') {
         const up = { wood: woodFrom(size, 200, look, 'up') };
-        out.push({ id: `wood:${size}:${look}:up`, name: `${l.up!.name} (${s.diameter} cm)`, family: 'bois', ref: up, thumb: l.icon, wood: { size, look, up: true } });
+        out.push({ id: `wood:${size}:${look}:up`, name: `${l.up!.name} (${s.diameter} cm)`, family: 'bois', ref: up, thumb: l.icon, wood: { size, look, up: true }, aged: true });
       }
     }
   }

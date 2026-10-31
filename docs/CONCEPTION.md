@@ -521,7 +521,8 @@ pans de toit gris. Un même bâtiment mélangeait du bois neuf et du bois de vin
   est du bois brut (`RAW_WOOD` de validate.ts, avec sa raison : la baguette de clayonnage verte).
 - **Le rondin écorcé** : un état du rondin (`peeled` des réglages, l'aspect `peeled` du normal dans wood.json, section sans écorce),
   pas une nouvelle clé : rond, il roule, se dresse, s'encoche comme le rond ; ses vues se calculent de sa section. Il fait la cabane.
-- **Mode construction** : l'âge se règle dans le catalogue (« âge du bois » ; les vignettes des objets de bois le montrent) ; toute
+- **Mode construction** : l'âge se règle en haut du catalogue (trois boutons NEUF, PATINÉ, VIEUX, chacun de la teinte de son bois ;
+  les vignettes du bois le montrent, pièce de bois comprise : ses icônes ont aussi leurs trois âges) ; toute
   pièce posée qui le prend le reçoit. **Un plan fixe l'âge de toutes ses pièces** (`age` du plan : « Enregistrer comme plan » l'écrit
   quand tout son bois a le même âge, et ses pièces ne le répètent pas ; il l'emporte à la pose). Deux pièces d'âges différents ne
   s'entent pas (entées, elles ne font plus qu'une).

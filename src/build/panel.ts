@@ -7,6 +7,9 @@ import { wood } from '../content';
 import { buildPlans, onBuildPlans } from '../content/buildPlans';
 import type { WoodAge, WoodLook } from '../content/types';
 import { agedKey } from '../world/woodShape';
+
+/** La teinte de chaque âge sur son bouton : la teinte du bois (`*`) de sa rampe, `woodAges` d'art/palette.ts. */
+const AGE_SWATCH: Record<WoodAge, string> = { new: '#b39469', worn: '#957c62', old: '#9a968d' };
 import type { BuildCommand, BuildStatus } from '../events';
 import { images, spritesheets } from '../generated/assets';
 import { canStand, catalog, FAMILIES, looksOf, woodFrom, type CatalogEntry } from './catalog';
@@ -165,15 +168,22 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     send({ kind: 'pick', piece: e.ref, natural: nat });
   };
 
-  // l'âge du bois (neuf, patiné, vieux) : toutes les pièces de bois qu'on pose le prennent ; les vignettes des objets de bois le montrent
+  // l'âge du bois (neuf, patiné, vieux) : trois boutons, chacun avec la teinte de son bois ; toutes les pièces de bois qu'on pose le
+  // prennent (la pièce de bois, les objets de bois), et leurs vignettes le montrent
   const ages = Object.entries(wood.ages) as [WoodAge, string][];
   let age: WoodAge = 'new';
-  const wAge = select(ages, () => {
-    age = wAge.value as WoodAge;
+  const ageButtons = ages.map(([a, name]) => {
+    const b = button(name, () => setAge(a));
+    b.style.cssText = `border-left: 10px solid ${AGE_SWATCH[a]}; text-transform: uppercase;`;
+    return [a, b] as const;
+  });
+  const setAge = (a: WoodAge) => {
+    age = a;
     send({ kind: 'age', age });
     render();
-  });
-  const ageBox = el('div', { className: 'row' }, ['âge du bois', wAge]);
+  };
+  const ageBox = el('div', {}, [el('h3', { textContent: 'Âge du bois' }), el('div', { className: 'row' }, ageButtons.map(([, b]) => b))]);
+  const showAge = () => ageButtons.forEach(([a, b]) => (b.className = a === age ? 'on' : ''));
 
   const search = el('input', { type: 'search', placeholder: 'chercher…' });
   search.addEventListener('input', () => render());
@@ -247,6 +257,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
       }
     }
     list.replaceChildren(...nodes);
+    showAge();
     settings.replaceChildren(...(chosen?.startsWith('wood:') ? [woodBox] : natEntry && chosen === natEntry.id ? [natBox] : []));
   };
   onBuildPlans(render);
@@ -257,7 +268,6 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
   planName.addEventListener('keydown', (e) => e.stopPropagation());
   const tools = el('div', {}, [
     el('h3', { textContent: 'Outils' }),
-    ageBox,
     el('div', { className: 'row' }, [
       toggle,
       button('Rien en main', () => ((chosen = undefined), send({ kind: 'none' }), render())),
@@ -275,7 +285,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     '<kbd>R</kbd> tourner · <kbd>T</kbd> monter d’un cran · <kbd>G</kbd> descendre (20 cm)<br>' +
     '<kbd>Ctrl</kbd>+<kbd>Z</kbd> annuler · <kbd>Ctrl</kbd>+<kbd>Y</kbd> refaire';
 
-  const panel = el('div', { id: 'construire' }, [el('h2', { textContent: 'Construire' }), tools, statusBox, settings, tabs, search, list, keys]);
+  const panel = el('div', { id: 'construire' }, [el('h2', { textContent: 'Construire' }), ageBox, tools, statusBox, settings, tabs, search, list, keys]);
   document.getElementById('stage')!.prepend(panel);
   render();
 
@@ -283,7 +293,10 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     status: (s) => {
       toggle.textContent = s.active ? 'Sortir (B)' : 'Entrer (B)';
       const sel = s.selection ? `zone ${s.selection.w / 100} × ${s.selection.d / 100} m` : 'aucune zone';
-      wAge.value = s.age;
+      if (s.age !== age) {
+        age = s.age;
+        render();
+      }
       statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool} (bois ${wood.ages[s.age]})${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * 20} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}${s.hint ? `\n${s.hint}` : ''}`;
     },
   };
