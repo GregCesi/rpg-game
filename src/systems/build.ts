@@ -75,7 +75,10 @@ export class BuildSystem {
   private aim?: { pieces: BuildPlaced[]; ok: boolean; why?: string };
   /** La jonction visée avec un assemblage en main, et pourquoi il ne va pas (rien : il va). */
   private jointAim?: { junction?: Junction; why?: string };
-  /** L'âge du bois des pièces qu'on pose (réglé au catalogue) : la pièce de bois et les objets de bois le prennent. */
+  /**
+   * L'âge du bois des pièces qu'on pose (réglé au catalogue) : la pièce de bois et les objets de bois le prennent, un plan aussi (tout
+   * son bois) ; prendre un plan règle l'âge sur le sien.
+   */
   private age: WoodAge = 'new';
 
   constructor(
@@ -142,6 +145,8 @@ export class BuildSystem {
         const plan = buildPlans[cmd.plan];
         if (!plan) return this.notice(`Plan « ${cmd.plan} » introuvable.`);
         this.tool = { kind: 'plan', plan: cmd.plan, variants: plan.pieces.map((p) => drawVariant(p.piece)) };
+        // l'âge du plan devient l'âge choisi (les boutons du catalogue le montrent) ; on peut le changer avant de poser
+        if (plan.age) this.age = plan.age;
         break;
       }
       case 'select':
@@ -269,7 +274,8 @@ export class BuildSystem {
       const plan = buildPlans[t.plan];
       if (!plan) return;
       const b = aimAt(this.pieces, planSize(plan), cx, cy, this.step);
-      list = planPieces(plan, b).map((p, i) => ({ ...p, ...(t.variants[i] !== undefined ? { variant: t.variants[i] } : {}) }));
+      // tout le bois du plan prend l'âge choisi
+      list = planPieces({ ...plan, age: this.age }, b).map((p, i) => ({ ...p, ...(t.variants[i] !== undefined ? { variant: t.variants[i] } : {}) }));
     }
     const why = this.refusal(list);
     this.aim = { pieces: list, ok: !why, why };

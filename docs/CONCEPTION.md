@@ -509,7 +509,8 @@ les poutres en bois fraîchement taillé jaune clair, le bardage en « brun viei
 pans de toit gris. Un même bâtiment mélangeait du bois neuf et du bois de vingt ans.
 
 - **Une seule matière bois, un réglage d'âge** partagé par toutes les pièces de bois travaillé : **neuf** (blond chaud), **patiné**
-  (brun doux), **vieux** (gris argenté). Une rampe par âge dans la palette (`woodAges`, `art/palette.ts`), sur les mêmes signes : le
+  (brun doux), **vieux** (gris-brun argenté : réchauffé le même jour, Grégoire trouvait le premier gris « un peu abusé », il
+  faisait pierre ou béton). Une rampe par âge dans la palette (`woodAges`, `art/palette.ts`), sur les mêmes signes : le
   bois travaillé se dessine avec eux, et une image à un autre âge est **la même grille** peinte de la rampe de cet âge
   (`art/world/wood.ts`, `WOOD_AGES` ; `art/lib/ages.ts` tire au build `<image>-worn` et `<image>-old` de chaque image neuve).
 - **Ce qui distingue les pièces entre elles, c'est la forme et la texture** (fil du bois, joints, couvre-joints, ombres, contours),
@@ -524,7 +525,9 @@ pans de toit gris. Un même bâtiment mélangeait du bois neuf et du bois de vin
 - **Mode construction** : l'âge se règle en haut du catalogue (trois boutons NEUF, PATINÉ, VIEUX, chacun de la teinte de son bois ;
   les vignettes du bois le montrent, pièce de bois comprise : ses icônes ont aussi leurs trois âges) ; toute
   pièce posée qui le prend le reçoit. **Un plan fixe l'âge de toutes ses pièces** (`age` du plan : « Enregistrer comme plan » l'écrit
-  quand tout son bois a le même âge, et ses pièces ne le répètent pas ; il l'emporte à la pose). Deux pièces d'âges différents ne
+  quand tout son bois a le même âge, et ses pièces ne le répètent pas). **On choisit l'âge d'un plan au catalogue** (retour de
+  Grégoire, même jour) : prendre un plan met les boutons sur son âge enregistré, puis l'âge choisi s'applique à tout son bois à la pose
+  (la grange se pose neuve, patinée ou vieille). Deux pièces d'âges différents ne
   s'entent pas (entées, elles ne font plus qu'une).
 - **Les bâtiments** : la cabane patinée, en rondins écorcés (`plans/cabane.json`) ; la grange vieille, grise (`plans/grange.json`) ;
   l'étal patiné (`plans/etal.json`). Aperçus : `.art-preview/bois-ages.png`, chaque pièce de bois dans les trois âges, côte à côte (très haute : pour chercher une pièce) ;

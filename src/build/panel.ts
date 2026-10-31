@@ -247,7 +247,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
       if (!names.length) nodes.push(el('p', { textContent: 'Aucun plan : choisis une zone, puis « Enregistrer comme plan ».' }));
       for (const k of names) {
         const p = buildPlans[k];
-        const b = button(`${p.name} — ${p.pieces.length} pièces, ${p.size.w / 100} × ${p.size.d / 100} m`, () => {
+        const b = button(`${p.name} — ${p.pieces.length} pièces, ${p.size.w / 100} × ${p.size.d / 100} m${p.age ? `, bois ${wood.ages[p.age]}` : ''}`, () => {
           chosen = `plan:${k}`;
           send({ kind: 'pick-plan', plan: k });
           render();

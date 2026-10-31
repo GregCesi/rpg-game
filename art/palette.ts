@@ -21,14 +21,16 @@ export const OUTLINE = '#3b2b20';
  * - `@` joint : la fente entre deux planches, les têtes de chevilles et de clous, la saignée ; jamais le contour (K, o).
  * Le neuf est un blond de bois fendu du jour, moins jaune et moins saturé que le chaume (Y t T P) dont il se détache ; le patiné,
  * le même bois après quelques saisons, brun doux, plus clair et plus gris que l'écorce (M m N K) pour ne pas s'y confondre ; le
- * vieux, le bois lavé par vingt ans de pluie, gris argenté à peine chaud (la lumière garde un soupçon de jaune, l'ombre glisse
- * vers le brun-violet), plus froid que le bois grisé S A B Q. D'un âge à l'autre, chaque signe garde à peu près sa valeur : le
- * dessin se lit pareil, seule la couleur change.
+ * vieux, le bois lavé par vingt ans de pluie, gris-brun argenté (réchauffé à la demande de Grégoire : un gris neutre faisait
+ * pierre, métal ou béton) : arêtes blanchies, un peu jaunes, corps gris-brun, creux et joints qui restent bruns, vers le
+ * brun-violet ; moins brun que le bois grisé S A B Q, distinct de la pierre grise (qui tire vers l'olive). Plus d'écart entre
+ * lumière et creux que les autres âges. D'un âge à l'autre, chaque signe garde à peu près sa valeur : le dessin se lit pareil,
+ * seule la couleur change.
  */
 export const woodAges = {
   new: { '^': '#d2b688', '*': '#b39469', '%': '#8d704f', '&': '#6a523f', '@': '#4b3a2f' },
   worn: { '^': '#b49a7a', '*': '#957c62', '%': '#74604d', '&': '#56473b', '@': '#3e332c' },
-  old: { '^': '#bcb8ad', '*': '#9a968d', '%': '#79766f', '&': '#5c5856', '@': '#433f40' },
+  old: { '^': '#c8bfaa', '*': '#9e9182', '%': '#7b6d60', '&': '#5b4b44', '@': '#3f3036' },
 } as const;
 
 export const world = {
