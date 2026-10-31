@@ -10,7 +10,7 @@
 import { BUILD } from '../config';
 import { items, props, wood as woodContent } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
-import type { BuildPlaced, BuildPlan, BuildRef, WoodPiece } from '../content/types';
+import type { BuildPlaced, BuildPlan, BuildRef, JointType, WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { woodDims } from './woodPiece';
 import { lookDef, lookOf, turnedWood } from './woodShape';
@@ -119,6 +119,11 @@ export function aimAt(pieces: readonly BuildPlaced[], size: Size3, cx: number, c
   if (!base) {
     const f = at(0);
     base = { x: f.x, y: f.y, z: supportAt(pieces, f) };
+  }
+  // posée sur une seule pièce de la même emprise (un poteau sur un poteau, une pierre sur une pierre pareille) : exactement dessus
+  if (base.z > 0) {
+    const same = pieces.map(boxOf).filter((b) => topOf(b) === base!.z && b.w === size.w && b.d === size.d && overlaps(b, { ...base!, w: size.w, d: size.d }));
+    if (same.length === 1) base = { x: same[0].x, y: same[0].y, z: base.z };
   }
   return { ...base, z: Math.max(0, base.z + step * BUILD.grid), ...size };
 }
@@ -234,7 +239,7 @@ export interface Area {
  * grille) et la base de la plus basse ; un tirage d'élément calculé n'est pas gardé (chaque pose en tire un nouveau). Undefined
  * si la zone est vide.
  */
-export function planOf(pieces: readonly BuildPiece[], area: Area, name: string): BuildPlan | undefined {
+export function planOf(pieces: readonly BuildPiece[], area: Area, name: string, joints: readonly { type: JointType; a: number; b: number }[] = []): BuildPlan | undefined {
   const inside = pieces.filter((p) => overlaps(boxOf(p), area));
   if (!inside.length) return undefined;
   const boxes = inside.map(boxOf);
@@ -245,9 +250,13 @@ export function planOf(pieces: readonly BuildPiece[], area: Area, name: string):
   const d = Math.max(...boxes.map((b) => b.y + b.d)) - oy;
   // de bas en haut, puis du nord au sud : l'ordre où on les reposera
   const order = inside.map((p, i) => ({ p, b: boxes[i] })).sort((a, b) => a.b.z - b.b.z || a.b.y - b.b.y || a.b.x - b.b.x);
+  // les assemblages dont les deux pièces sont dans la zone, par le rang de leurs pièces dans le plan
+  const rank = new Map(order.map(({ p }, i) => [p.id, i]));
+  const kept = joints.filter((j) => rank.has(j.a) && rank.has(j.b)).map((j) => ({ type: j.type, a: rank.get(j.a)!, b: rank.get(j.b)! }));
   return {
     name,
     size: { w, d },
+    ...(kept.length ? { joints: kept } : {}),
     pieces: order.map(({ p }) => ({
       piece: structuredClone(p.piece),
       x: p.x - ox,
@@ -275,6 +284,7 @@ export function planPieces(plan: BuildPlan, at: { x: number; y: number; z: numbe
  */
 export function planProblems(plan: BuildPlan): string[] {
   const out: string[] = [];
+  for (const j of plan.joints ?? []) if (!plan.pieces[j.a] || !plan.pieces[j.b] || j.a === j.b) out.push(`assemblage ${j.type} : pièces ${j.a} et ${j.b} introuvables`);
   plan.pieces.forEach((p, i) => {
     const at = `pièce ${i + 1}`;
     const missing = refMissing(p.piece);

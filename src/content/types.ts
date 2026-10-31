@@ -633,6 +633,16 @@ export const BuildPlacedSchema = z.strictObject({
 });
 
 /**
+ * Un assemblage de charpente posé en mode construction (docs/CONCEPTION.md, « Les assemblages ») : `scarf`, l'enture en trait de
+ * Jupiter (deux pièces de bois de même section et de même état, bout à bout sur le même axe) ; `mortise`, le tenon et mortaise (un
+ * poteau debout sous une pièce couchée, ou posé sur une sablière basse). Bois sur bois, chevillé.
+ */
+export const JointTypeSchema = z.enum(['scarf', 'mortise']);
+
+/** Un assemblage d'un plan du bac à sable : son type et ses deux pièces, par leur rang dans `pieces` du plan. */
+export const PlanJointSchema = z.strictObject({ type: JointTypeSchema, a: z.number().int().nonnegative(), b: z.number().int().nonnegative() });
+
+/**
  * Un plan du bac à sable (`src/content/plans/<nom>.json`, écrit par « Enregistrer comme plan » du mode construction) : son nom
  * affiché, son emprise (`size`, en cm) et ses pièces, placées depuis son coin nord-ouest. Il se pose d'un coup, comme une pièce.
  * À ne pas confondre avec les plans de chantier guidé de plans.json.
@@ -641,6 +651,8 @@ export const BuildPlanSchema = z.strictObject({
   name: id,
   size: z.strictObject({ w: z.number().positive(), d: z.number().positive() }),
   pieces: z.array(BuildPlacedSchema).min(1),
+  /** Ses assemblages, entre ses pièces. */
+  joints: z.array(PlanJointSchema).optional(),
 });
 
 /**
@@ -1026,3 +1038,4 @@ export type TransformDef = z.infer<typeof TransformSchema>;
 export type BuildRef = z.infer<typeof BuildRefSchema>;
 export type BuildPlaced = z.infer<typeof BuildPlacedSchema>;
 export type BuildPlan = z.infer<typeof BuildPlanSchema>;
+export type JointType = z.infer<typeof JointTypeSchema>;

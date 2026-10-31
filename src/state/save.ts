@@ -16,7 +16,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -107,10 +107,17 @@ function upgrade(data: unknown): unknown {
   if (d?.version === 10 && d.state && typeof d.state === 'object') d = { ...d, version: 11, state: replacePlaced(d.state as V9State & V10Sites) };
   if (d?.version === 11 && d.state && typeof d.state === 'object') d = { ...d, version: 12, state: slabFromFlatStone(d.state) };
   if (d?.version === 12 && d.state && typeof d.state === 'object') d = { ...d, version: 13, state: withBuilds(d.state as V12State) };
+  if (d?.version === 13 && d.state && typeof d.state === 'object') d = { ...d, version: 14, state: withJoints(d.state as V12State) };
   return d;
 }
 
-/** Ce que la conversion 12 -> 13 lit d'une partie : ses cartes. */
+/** Version 13 -> 14 : les assemblages du mode construction. Aucun sur aucune carte, et le compteur de leurs identifiants à zéro. */
+function withJoints(state: V12State): object {
+  const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, joints: [] }]));
+  return { ...state, maps, nextJointId: 0 };
+}
+
+/** Ce que les conversions 12 -> 13 et 13 -> 14 lisent d'une partie : ses cartes. */
 interface V12State {
   maps?: Record<string, object>;
 }
@@ -439,6 +446,7 @@ function missingContent(save: Save): string | undefined {
       const missing = refMissing(b.piece);
       if (missing) return missing;
     }
+    for (const j of m.joints) if (!m.builds.some((b) => b.id === j.a) || !m.builds.some((b) => b.id === j.b)) return `une pièce de l'assemblage ${j.id}`;
     for (const p of m.piles) {
       const missing = p.wood ? woodMissing({ ...p.wood, axis: 'ew' }) : piles[p.pile!] ? undefined : `le tas « ${p.pile} »`;
       if (missing) return missing;

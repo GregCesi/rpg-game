@@ -3,11 +3,11 @@
 // genre d'objet) ; ce qui ne se range nulle part va dans « divers ».
 
 import { items, props, wood } from '../content';
-import type { BuildRef, ItemDef, NaturalDef, PropDef, WoodLook, WoodPiece } from '../content/types';
+import type { BuildRef, ItemDef, JointType, NaturalDef, PropDef, WoodLook, WoodPiece } from '../content/types';
 import { shapeOfLook } from '../world/woodShape';
 
 /** Les familles, dans l'ordre du catalogue. */
-export const FAMILIES = ['éléments', 'bois', 'pierre', 'terre', 'fibres', 'outils', 'mobilier', 'chantier', 'nature', 'divers'] as const;
+export const FAMILIES = ['éléments', 'assemblages', 'bois', 'pierre', 'terre', 'fibres', 'outils', 'mobilier', 'chantier', 'nature', 'divers'] as const;
 export type Family = (typeof FAMILIES)[number];
 
 /** Une entrée du catalogue : son nom, sa famille, ce qu'elle pose, son image (vignette), sa matière naturelle, si c'est le bois. */
@@ -19,6 +19,8 @@ export interface CatalogEntry {
   thumb: string;
   natural?: NaturalDef;
   wood?: true;
+  /** Un assemblage (famille « assemblages ») : il se pose sur la jonction de deux pièces, pas comme une pièce. */
+  joint?: JointType;
 }
 
 /** La matière d'un objet, d'après sa masse (`{ matter }`, ou `"stone"`). */
@@ -57,6 +59,9 @@ function itemFamily(key: string, d: ItemDef): Family {
 export function catalog(): CatalogEntry[] {
   const out: CatalogEntry[] = [];
   const base = props['wood-piece'];
+  // les assemblages de charpente (CONCEPTION, « Les assemblages ») : pas des objets, des jonctions entre deux pièces de bois
+  out.push({ id: 'joint:scarf', name: 'enture en trait de Jupiter', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-scarf-normal-ew', joint: 'scarf' });
+  out.push({ id: 'joint:mortise', name: 'tenon et mortaise', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-peg', joint: 'mortise' });
   out.push({ id: 'wood', name: 'pièce de bois', family: 'bois', ref: { wood: structuredClone(base.wood!) }, thumb: 'item-wood-normal-beam', wood: true });
   for (const [key, d] of Object.entries(props)) {
     if (d.wood) continue;

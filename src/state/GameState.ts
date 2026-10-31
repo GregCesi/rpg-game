@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { items, stamina } from '../content';
-import { BuildPlacedSchema, CornerSchema, NaturalSchema, PileWoodSchema, WoodPieceSchema, type BuildPlaced, type Natural, type WoodPiece } from '../content/types';
+import { BuildPlacedSchema, JointTypeSchema, CornerSchema, NaturalSchema, PileWoodSchema, WoodPieceSchema, type BuildPlaced, type Natural, type WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { turnedWood } from '../world/woodShape';
 
@@ -125,6 +125,9 @@ export const SiteSchema = z.strictObject({
  */
 export const BuildPieceSchema = BuildPlacedSchema.extend({ id: z.number().int().nonnegative() });
 
+/** Un assemblage posé en mode construction : son identifiant propre, son type, ses deux pièces (identifiants de `builds`). */
+export const JointSchema = z.strictObject({ id: z.number().int().nonnegative(), type: JointTypeSchema, a: z.number().int().nonnegative(), b: z.number().int().nonnegative() });
+
 /** Ce qui a changé sur une carte. */
 export const MapStateSchema = z.strictObject({
   /** Par identifiant d'objet Tiled. */
@@ -138,6 +141,8 @@ export const MapStateSchema = z.strictObject({
   sites: z.array(SiteSchema),
   /** Pièces posées en mode construction sur cette carte. */
   builds: z.array(BuildPieceSchema),
+  /** Assemblages entre ces pièces (enture, tenon et mortaise). */
+  joints: z.array(JointSchema),
 });
 
 export const GameStateSchema = z.strictObject({
@@ -165,6 +170,8 @@ export const GameStateSchema = z.strictObject({
   nextSiteId: z.number().int().nonnegative(),
   /** Prochain identifiant de pièce posée en mode construction (unique dans toute la partie). */
   nextBuildId: z.number().int().nonnegative(),
+  /** Prochain identifiant d'assemblage (unique dans toute la partie). */
+  nextJointId: z.number().int().nonnegative(),
 });
 
 export type Held = z.infer<typeof HeldSchema>;
@@ -176,6 +183,7 @@ export type Chain = z.infer<typeof ChainSchema>;
 export type Pile = z.infer<typeof PileSchema>;
 export type Site = z.infer<typeof SiteSchema>;
 export type BuildPiece = z.infer<typeof BuildPieceSchema>;
+export type Joint = z.infer<typeof JointSchema>;
 export type MapState = z.infer<typeof MapStateSchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
 
@@ -192,12 +200,12 @@ export function revisionOf(): number {
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: stamina.max, day: 1, knownPlans: [], nextSiteId: 0, nextBuildId: 0 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: stamina.max, day: 1, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
 export function mapState(s: GameState, mapId: string): MapState {
-  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [] });
+  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [] });
 }
 
 /** Ce que tient la main active (ou les deux mains), ou undefined. */
@@ -502,10 +510,32 @@ export function addBuildPieces(s: GameState, mapId: string, pieces: (BuildPlaced
   return out;
 }
 
-/** Retire des pièces posées en mode construction (par identifiant). */
+/** Retire des pièces posées en mode construction (par identifiant), et les assemblages qui les nomment. */
 export function removeBuildPieces(s: GameState, mapId: string, ids: readonly number[]): void {
   const m = mapState(s, mapId);
   m.builds = m.builds.filter((q) => !ids.includes(q.id));
+  m.joints = m.joints.filter((j) => !ids.includes(j.a) && !ids.includes(j.b));
+  revision++;
+}
+
+/** Pose des assemblages entre des pièces posées ; un assemblage qui revient (annuler un retrait) garde son identifiant. */
+export function addJoints(s: GameState, mapId: string, joints: (Omit<Joint, 'id'> & { id?: number })[]): Joint[] {
+  const m = mapState(s, mapId);
+  const out = joints.map(({ id, ...rest }) => {
+    const j: Joint = { id: id ?? s.nextJointId++, ...rest };
+    if (j.id >= s.nextJointId) s.nextJointId = j.id + 1;
+    m.joints = m.joints.filter((q) => q.id !== j.id);
+    m.joints.push(j);
+    return j;
+  });
+  revision++;
+  return out;
+}
+
+/** Retire des assemblages (par identifiant) ; les pièces restent. */
+export function removeJoints(s: GameState, mapId: string, ids: readonly number[]): void {
+  const m = mapState(s, mapId);
+  m.joints = m.joints.filter((j) => !ids.includes(j.id));
   revision++;
 }
 

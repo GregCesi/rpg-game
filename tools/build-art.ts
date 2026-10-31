@@ -30,6 +30,7 @@ import { lyingPreview } from './lib/lying-preview';
 import { auditPreview } from './lib/audit-preview';
 import { briquesPreview } from './lib/briques-preview';
 import { sillPreview } from './lib/sill-preview';
+import { jointsPreview } from './lib/joints-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
 import type { WoodLook, WoodPiece } from '../src/content/types';
@@ -335,6 +336,8 @@ if (withPreview) {
   writeFileSync(join(PREVIEW, 'collection.png'), PNG.sync.write(buildCollectionBoard(sources)));
   // le solin en tronçons, par le moteur du jeu : rectangle de 4 × 3 avec une porte, tronçon de 3, morceau seul
   writeFileSync(join(PREVIEW, 'solin-rectangle.png'), PNG.sync.write(sillPreview()));
+  // les assemblages, avant et après, par les règles du moteur
+  writeFileSync(join(PREVIEW, 'assemblages.png'), PNG.sync.write(jointsPreview()));
   // aperçus composés : chaque geste avec chaque outil en main (planches tool-*), et les deux mains
   const gestures = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson);
   const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');

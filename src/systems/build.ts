@@ -9,12 +9,13 @@ import { BUILD, DEPTH } from '../config';
 import { items, props } from '../content';
 import { buildPlans, putBuildPlan } from '../content/buildPlans';
 import { CM_PER_PX } from '../content/gabarit';
-import type { BuildPlaced, BuildRef, Natural } from '../content/types';
+import type { BuildPlaced, BuildRef, JointType, Natural } from '../content/types';
 import type { BuildCommand, BuildStatus } from '../events';
 import type { Player } from '../entities/Player';
-import { addBuildPieces, game, mapState, removeBuildPieces, type BuildPiece } from '../state';
+import { addBuildPieces, addJoints, game, mapState, removeBuildPieces, removeJoints, type BuildPiece, type Joint } from '../state';
 import { aimAt, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, type Area, type Box3 } from '../world/build';
 import { buildLook } from '../world/buildView';
+import { JOINT_NAMES, jointGroup, jointPoint, junctionAt, refusal as jointRefusal, type Junction } from '../world/joints';
 import type { GameMap } from '../world/GameMap';
 import { drawNatural } from '../world/natural';
 import { Ghosts } from './ghost';
@@ -23,10 +24,11 @@ import { Ghosts } from './ghost';
 type Tool =
   | { kind: 'piece'; piece: BuildRef; view: number; natural?: { form?: 0 | 1; size?: number }; drawn?: Natural; variant?: number }
   | { kind: 'plan'; plan: string; variants: (number | undefined)[] }
-  | { kind: 'select' };
+  | { kind: 'select' }
+  | { kind: 'joint'; type: JointType };
 
-/** Un geste qu'on peut annuler : des pièces posées, ou retirées (elles reviennent avec leur identifiant). */
-type Op = { kind: 'add' | 'remove'; pieces: BuildPiece[] };
+/** Un geste qu'on peut annuler : des pièces et des assemblages posés, ou retirés (ils reviennent avec leur identifiant). */
+type Op = { kind: 'add' | 'remove'; pieces: BuildPiece[]; joints: Joint[] };
 
 /** Un clic de la souris, en attente de la prochaine image : le bouton, Maj, et le point visé (px du monde). */
 interface Click {
@@ -67,6 +69,8 @@ export class BuildSystem {
   private readonly redoStack: Op[] = [];
   /** La boîte où se poserait la pièce (ou le plan) en main, et si la pose est permise ; mis à jour à chaque image. */
   private aim?: { pieces: BuildPlaced[]; ok: boolean; why?: string };
+  /** La jonction visée avec un assemblage en main, et pourquoi il ne va pas (rien : il va). */
+  private jointAim?: { junction?: Junction; why?: string };
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -136,6 +140,9 @@ export class BuildSystem {
       }
       case 'select':
         this.tool = { kind: 'select' };
+        break;
+      case 'pick-joint':
+        this.tool = { kind: 'joint', type: cmd.joint };
         break;
       case 'none':
         this.tool = undefined;
@@ -210,10 +217,24 @@ export class BuildSystem {
     return mapState(game, this.map.def.id).builds;
   }
 
+  /** Les assemblages posés sur la carte (GameState). */
+  private get joints(): Joint[] {
+    return mapState(game, this.map.def.id).joints;
+  }
+
   /** Où irait ce qu'on a en main, visé au point (px du monde) : la pièce ou le plan entier, accroché, et si la pose est permise. */
   private updateAim(px: number, py: number): void {
     const t = this.tool;
     this.aim = undefined;
+    const sign = (j?: { junction?: Junction; why?: string }) => `${j?.junction ? 1 : 0}|${j?.why ?? ''}`;
+    const before = sign(this.jointAim);
+    this.jointAim = undefined;
+    if (t?.kind === 'joint') {
+      const junction = junctionAt(this.pieces, px, py);
+      this.jointAim = { junction, why: jointRefusal(junction, t.type, this.joints) };
+      if (sign(this.jointAim) !== before) this.status();
+      return;
+    }
     if (!t || t.kind === 'select') return;
     const cx = px * CM_PER_PX;
     const cy = py * CM_PER_PX;
@@ -251,12 +272,16 @@ export class BuildSystem {
   private place(): void {
     const a = this.aim;
     const t = this.tool;
+    if (t?.kind === 'joint') return this.placeJoint(t.type);
     if (!a || !t || t.kind === 'select') return;
     if (!a.ok) return this.notice(a.why!);
     const added = addBuildPieces(game, this.map.def.id, a.pieces);
     for (const p of added) this.map.placeBuild(p);
+    // un plan : ses assemblages, entre les pièces qu'on vient de poser
+    const planJoints = t.kind === 'plan' ? (buildPlans[t.plan]?.joints ?? []) : [];
+    const joints = planJoints.length ? addJoints(game, this.map.def.id, planJoints.map((j) => ({ type: j.type, a: added[j.a].id, b: added[j.b].id }))) : [];
     this.map.sortBuilds();
-    this.push({ kind: 'add', pieces: structuredClone(added) });
+    this.push({ kind: 'add', pieces: structuredClone(added), joints: structuredClone(joints) });
     if (t.kind === 'piece') {
       t.drawn = this.natural(t);
       t.variant = drawVariant(t.piece);
@@ -265,6 +290,32 @@ export class BuildSystem {
       if (plan) t.variants = plan.pieces.map((p) => drawVariant(p.piece));
     }
     this.status();
+  }
+
+  /** Clic gauche avec un assemblage : il se pose à la jonction visée, si les deux pièces vont ensemble ; sinon on dit pourquoi. */
+  private placeJoint(type: JointType): void {
+    const a = this.jointAim;
+    if (!a?.junction || a.why) return this.notice(a?.why ?? jointRefusal(undefined, type, this.joints)!);
+    const added = addJoints(game, this.map.def.id, [{ type, a: a.junction.a.id, b: a.junction.b.id }]);
+    this.map.sortBuilds();
+    this.push({ kind: 'add', pieces: [], joints: structuredClone(added) });
+    this.notice(`${JOINT_NAMES[type][0].toUpperCase()}${JOINT_NAMES[type].slice(1)} posé${type === 'scarf' ? 'e' : ''}.`);
+    this.status();
+  }
+
+  /** L'assemblage dont la jonction est sous le point (px du monde), à moins de 5 px. */
+  jointAt(px: number, py: number): Joint | undefined {
+    let best: Joint | undefined;
+    let d = 5;
+    for (const j of this.joints) {
+      const pt = jointPoint(this.pieces, j);
+      const dd = pt ? Math.hypot(pt.x - px, pt.y - py) : Infinity;
+      if (dd <= d) {
+        d = dd;
+        best = j;
+      }
+    }
+    return best;
   }
 
   /** La pièce visible sous le point (px du monde) : la plus en avant dont un pixel opaque est là. */
@@ -284,28 +335,56 @@ export class BuildSystem {
     return undefined;
   }
 
-  /** Clic droit : retire la pièce visée, refusé si elle en porte d'autres ; avec Maj, elle et tout ce qui repose dessus. */
+  /**
+   * Clic droit : sur la jonction d'un assemblage, il est retiré (les pièces restent) ; sur une pièce, elle est retirée, refusé si elle
+   * est assemblée ou porte quelque chose. Avec Maj : la pièce, tout ce qui lui est assemblé et tout ce qui repose dessus.
+   */
   private remove(px: number, py: number, all: boolean): void {
+    const joint = all ? undefined : this.jointAt(px, py);
+    if (joint) {
+      this.drop([], [joint]);
+      this.push({ kind: 'remove', pieces: [], joints: [structuredClone(joint)] });
+      return this.status();
+    }
     const p = this.pieceAt(px, py);
     if (!p) return;
+    if (!all && this.joints.some((j) => j.a === p.id || j.b === p.id)) return this.notice("Retire d'abord l'assemblage (clic droit sur la jonction), ou Maj + clic droit pour tout l'ensemble.");
     if (!all && carriedBy(this.pieces, p.id).length) return this.notice('Elle porte quelque chose : Maj + clic droit retire tout.');
-    const gone = structuredClone(all ? withAbove(this.pieces, p.id) : [p]);
-    this.drop(gone);
-    this.push({ kind: 'remove', pieces: gone });
+    // avec Maj : de proche en proche, ce qui est assemblé et ce qui repose dessus
+    const ids = new Set([p.id]);
+    if (all) {
+      for (let grew = true; grew; ) {
+        grew = false;
+        for (const id of [...ids]) {
+          for (const q of [...jointGroup(this.joints, id), ...withAbove(this.pieces, id).map((x) => x.id)]) {
+            if (!ids.has(q)) {
+              ids.add(q);
+              grew = true;
+            }
+          }
+        }
+      }
+    }
+    const gone = structuredClone(this.pieces.filter((q) => ids.has(q.id)));
+    const goneJoints = structuredClone(this.joints.filter((j) => ids.has(j.a) || ids.has(j.b)));
+    this.drop(gone, goneJoints);
+    this.push({ kind: 'remove', pieces: gone, joints: goneJoints });
     this.status();
   }
 
-  /** Retire ces pièces de la partie et de la carte. */
-  private drop(pieces: BuildPiece[]): void {
+  /** Retire ces assemblages et ces pièces de la partie et de la carte. */
+  private drop(pieces: BuildPiece[], joints: Joint[] = []): void {
+    if (joints.length) removeJoints(game, this.map.def.id, joints.map((j) => j.id));
     const ids = pieces.map((p) => p.id);
-    removeBuildPieces(game, this.map.def.id, ids);
+    if (ids.length) removeBuildPieces(game, this.map.def.id, ids);
     for (const id of ids) this.map.removeBuild(id);
     this.map.sortBuilds();
   }
 
-  /** Remet ces pièces (avec leur identifiant) dans la partie et sur la carte. */
-  private restore(pieces: BuildPiece[]): void {
+  /** Remet ces pièces et ces assemblages (avec leur identifiant) dans la partie et sur la carte. */
+  private restore(pieces: BuildPiece[], joints: Joint[] = []): void {
     for (const p of addBuildPieces(game, this.map.def.id, pieces)) this.map.placeBuild(p);
+    if (joints.length) addJoints(game, this.map.def.id, joints);
     this.map.sortBuilds();
   }
 
@@ -318,8 +397,8 @@ export class BuildSystem {
   private undo(): void {
     const op = this.undoStack.pop();
     if (!op) return this.notice('Rien à annuler.');
-    if (op.kind === 'add') this.drop(op.pieces);
-    else this.restore(op.pieces);
+    if (op.kind === 'add') this.drop(op.pieces, op.joints);
+    else this.restore(op.pieces, op.joints);
     this.redoStack.push(op);
     this.status();
   }
@@ -328,8 +407,8 @@ export class BuildSystem {
   private redo(): void {
     const op = this.redoStack.pop();
     if (!op) return this.notice('Rien à refaire.');
-    if (op.kind === 'add') this.restore(op.pieces);
-    else this.drop(op.pieces);
+    if (op.kind === 'add') this.restore(op.pieces, op.joints);
+    else this.drop(op.pieces, op.joints);
     this.undoStack.push(op);
     this.status();
   }
@@ -353,7 +432,7 @@ export class BuildSystem {
     const label = name.trim();
     if (!label) return this.say('Donne un nom au plan.');
     if (!this.selection) return this.say("Choisis d'abord une zone.");
-    const plan = planOf(this.pieces, this.selection, label);
+    const plan = planOf(this.pieces, this.selection, label, this.joints);
     if (!plan) return this.say('Rien dans cette zone.');
     const key = planKeyOf(label);
     if (!key) return this.say('Ce nom ne fait pas un nom de fichier.');
@@ -390,6 +469,12 @@ export class BuildSystem {
         g.strokeRect(b.x / CM_PER_PX, (b.y - b.z) / CM_PER_PX, b.w / CM_PER_PX, b.d / CM_PER_PX);
       }
     } else this.ghosts.hideFrom(0);
+    // la jonction visée avec un assemblage : un cercle clair si les pièces vont ensemble, rouge sinon
+    const ja = this.jointAim?.junction;
+    if (ja) {
+      g.lineStyle(1, this.jointAim!.why ? 0xd06040 : 0x9fe07a, 1);
+      g.strokeCircle(ja.x, ja.y, 3);
+    }
     const sel = this.dragFrom ? this.areaOf(this.dragFrom, at) : this.selection;
     if (sel) {
       g.lineStyle(1, 0x9fd0ff, 0.9);
@@ -400,8 +485,9 @@ export class BuildSystem {
   /** Ce que le catalogue affiche. */
   status(): void {
     const t = this.tool;
-    const tool = !t ? 'rien' : t.kind === 'select' ? 'choisir une zone' : t.kind === 'plan' ? `plan « ${buildPlans[t.plan]?.name ?? t.plan} »` : refName(t.piece);
-    this.emit({ active: this.active, tool, step: this.step, selection: this.selection, count: this.pieces.length, undo: this.undoStack.length, redo: this.redoStack.length });
+    const tool = !t ? 'rien' : t.kind === 'select' ? 'choisir une zone' : t.kind === 'joint' ? JOINT_NAMES[t.type] : t.kind === 'plan' ? `plan « ${buildPlans[t.plan]?.name ?? t.plan} »` : refName(t.piece);
+    const hint = t?.kind === 'joint' ? (this.jointAim?.junction ? (this.jointAim.why ?? 'Elles vont ensemble : clic gauche.') : 'Vise une jonction.') : undefined;
+    this.emit({ active: this.active, tool, step: this.step, selection: this.selection, count: this.pieces.length, undo: this.undoStack.length, redo: this.redoStack.length, ...(hint ? { hint } : {}) });
   }
 }
 

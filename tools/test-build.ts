@@ -84,6 +84,12 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   const nsRun = runs.find((r) => r.axis === 'ns')!;
   assert.equal(nsRun.pieces.length, 2);
   assert.deepEqual([ew.start, ew.end, nsRun.start, nsRun.end], ['corner-s', 'head', 'abut', 'head'], "l'angle : l'est-ouest possède le carré, le nord-sud vient contre");
+  // l'ordre de pose ne change pas l'angle : le nord-sud couvre le carré au sol (posé d'abord), l'est-ouest vient contre son flanc ;
+  // l'angle reste à l'est-ouest, qui dessine le carré en plus, le nord-sud le dessine en moins
+  runs = wallRuns([sill(20, 0, 0, 1), sill(21, 0, 160, 1), sill(22, 50, 0), sill(23, 210, 0)]);
+  const ew2 = runs.find((r) => r.axis === 'ew')!;
+  const ns2 = runs.find((r) => r.axis === 'ns')!;
+  assert.deepEqual([ew2.start, ew2.extra, ns2.start, ns2.extra, ns2.align], ['corner-s', { start: 10 }, 'abut', { start: -10 }, 'west'], "l'angle est toujours à l'est-ouest");
   // un rectangle de 4 × 3 (nord-sud de 3 entre deux est-ouest de 4) : quatre angles
   const rect: BuildPiece[] = [];
   let id = 10;
@@ -94,4 +100,28 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   for (const r of runs.filter((q) => q.axis === 'ew')) assert.ok(r.start.startsWith('corner') && r.end.startsWith('corner'), `est-ouest : ${r.start} ${r.end}`);
   for (const r of runs.filter((q) => q.axis === 'ns')) assert.deepEqual([r.start, r.end], ['abut', 'abut']);
   console.log('✓ test-build : tronçons de solin (bout à bout, aimant, angle, rectangle, coupure)');
+}
+
+// les assemblages : enture entre deux poteaux debout l'un sur l'autre, refusée entre deux sections, tenon sous une sablière
+{
+  const { judge, refusal, scarfChains, junctionAt } = await import('../src/world/joints');
+  const beamUp = (length: number) => ({ wood: { size: 'normal', length, shape: 'round' as const, hewn: 12, axis: 'up' as const } });
+  const lower: BuildPiece = { id: 1, piece: beamUp(180), x: 0, y: 0, z: 0, view: 0 };
+  const upper: BuildPiece = { id: 2, piece: beamUp(100), x: 0, y: 0, z: 180, view: 0 };
+  assert.deepEqual(judge(lower, upper), { type: 'scarf' }, 'deux poteaux debout bout à bout : une enture');
+  const round: BuildPiece = { id: 3, piece: { wood: { size: 'normal', length: 100, shape: 'round', axis: 'up' } }, x: 0, y: 0, z: 180, view: 0 };
+  assert.match(judge(lower, round)!.why!, /même état/);
+  const pole: BuildPiece = { id: 4, piece: { wood: { size: 'pole', length: 200, shape: 'round', axis: 'ew' } }, x: 200, y: 0, z: 0, view: 0 };
+  const beamEw: BuildPiece = { id: 5, piece: { wood: { size: 'normal', length: 200, shape: 'round', hewn: 12, axis: 'ew' } }, x: 0, y: 0, z: 0, view: 0 };
+  const touching = { ...pole, y: beamEw.y + (sizeOf(beamEw.piece).d - sizeOf(pole.piece).d) };
+  assert.equal(judge(beamEw, { ...touching, y: beamEw.y })?.why, 'Les deux pièces doivent avoir la même section.');
+  const chains = scarfChains([lower, upper], [{ id: 1, type: 'scarf', a: 1, b: 2 }]);
+  assert.equal(chains.length, 1);
+  assert.equal(chains[0].wood.length, 280, 'la suite entée est une pièce de 2,80 m');
+  assert.deepEqual(chains[0].cuts, [180]);
+  // le tenon : un poteau dont la tête touche le dessous d'une sablière
+  const plateOn: BuildPiece = { id: 6, piece: { wood: { size: 'normal', length: 200, shape: 'round', hewn: 12, axis: 'ew' } }, x: -80, y: 0, z: 180, view: 0 };
+  assert.deepEqual(judge(lower, plateOn), { type: 'mortise' });
+  assert.match(refusal(junctionAt([lower, plateOn], 4, 0 - 180 / 5 + 8, 20), 'scarf', [])!, /tenon et mortaise/);
+  console.log('✓ test-build : assemblages (enture debout, section et état, suite entée, tenon et mortaise)');
 }

@@ -285,11 +285,110 @@ await playtest('construction', async ({ page, errors, load }) => {
     assert.equal(runs.length, 2, 'le tronçon est coupé en deux');
     assert.deepEqual(runs.map((r: any) => r.ids.length).sort(), [1, 1]);
 
+    // 12. les assemblages : deux poteaux debout l'un sur l'autre + une enture = un seul dessin ; une enture refusée entre deux
+    // sections ; un tenon et mortaise entre le poteau et une sablière ; rechargé, tout est là ; le retrait refusé, puis Maj + clic droit
+    const spot3 = await page.evaluate(() => {
+      const w = (window as any).game.scene.getScene('world');
+      const m = w.map;
+      const clear = (l: number, t: number, r: number, b: number) =>
+        m.areaFree({ left: l, top: t, right: r, bottom: b }) && !m.builds.some((q: any) => q.image.x < r && q.image.x + q.image.width > l && q.image.y - q.image.height < b && q.image.y > t);
+      for (let y = 140; y < m.height - 60; y += 8) for (let x = 60; x < m.width - 160; x += 8) if (clear(x - 40, y - 110, x + 140, y + 30)) {
+        w.cameras.main.centerOn(x + 40, y - 40);
+        return { x, y };
+      }
+      return undefined;
+    });
+    assert.ok(spot3, 'un troisième coin dégagé');
+    await sleep(300);
+    const { x: jx, y: jy } = spot3!;
+    center = { x: jx + 40, y: jy - 40 };
+    const upBeam = (length: number) => ({ size: 'normal', length, shape: 'round', hewn: 12, axis: 'up' });
+    const n0 = (await pieces()).length;
+    await send({ kind: 'pick', piece: { wood: upBeam(180) } });
+    await click(jx, jy);
+    await send({ kind: 'pick', piece: { wood: upBeam(100) } });
+    await click(jx, jy - 180 / 5 - 2);
+    let mine = (await pieces()).slice(n0);
+    assert.deepEqual(mine.map((p: any) => p.z), [0, 180], 'le second poteau debout sur le premier');
+    const [low, high2] = mine;
+    const footY = (low.y + 40) / 5;
+    await shot('7-poteaux-avant');
+    await send({ kind: 'pick-joint', joint: 'scarf' });
+    await click((low.x + 20) / 5, footY - 180 / 5);
+    const jointsNow = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.changes.joints)));
+    let js = await jointsNow();
+    assert.equal(js.length, 1, "l'enture est posée");
+    assert.equal(js[0].type, 'scarf');
+    const shownOf = (ids: number[]) =>
+      page.evaluate((ids) => {
+        const w = (window as any).game.scene.getScene('world');
+        return ids.map((id) => {
+          const b = w.map.builds.find((q: any) => q.piece.id === id);
+          return { key: b.image.texture.key, x: b.image.x, y: b.image.y, crop: b.crop, h: b.image.height };
+        });
+      }, ids);
+    let shown = await shownOf([low.id, high2.id]);
+    assert.equal(shown[0].key, shown[1].key, 'les deux poteaux entés ne font qu’un dessin');
+    assert.ok(shown[0].key.includes(':280:') || shown[0].key.includes('280'), `une pièce de 2,80 m (${shown[0].key})`);
+    assert.equal(shown[1].crop.y, 0, 'le poteau du haut montre la tête');
+    assert.equal(shown[0].crop.y, shown[1].crop.h, 'le poteau du bas reprend où s’arrête celui du haut : pas de tête ni de trait entre eux');
+    await shot('8-enture');
+
+    // une enture refusée : une poutre et une perche bout à bout (deux sections)
+    await send({ kind: 'pick', piece: { wood: { size: 'normal', length: 200, shape: 'round', hewn: 12, axis: 'ew' } } });
+    await click(jx + 60, jy);
+    const beamPiece = (await pieces()).at(-1);
+    await send({ kind: 'pick', piece: { wood: { size: 'pole', length: 200, shape: 'round', axis: 'ew' } } });
+    await click((beamPiece.x + 200 + 100) / 5, (beamPiece.y + 20) / 5 - 2);
+    const polePiece = (await pieces()).at(-1);
+    assert.equal(polePiece.x, beamPiece.x + 200, 'la perche bout à bout de la poutre');
+    await send({ kind: 'pick-joint', joint: 'scarf' });
+    await click((beamPiece.x + 200) / 5, (beamPiece.y + 30) / 5 - 3);
+    assert.equal((await jointsNow()).length, 1, 'pas d’enture entre deux sections');
+    assert.match(String(await lastNotice()), /même section/);
+
+    // le tenon et mortaise : une sablière sur la tête du poteau du haut
+    await send({ kind: 'pick', piece: { wood: { size: 'normal', length: 200, shape: 'round', hewn: 12, axis: 'ew' } } });
+    await click(jx, jy - 280 / 5 - 2);
+    const plateTop = (await pieces()).at(-1);
+    assert.equal(plateTop.z, 280, 'la sablière sur la tête du poteau (2,80 m)');
+    await send({ kind: 'pick-joint', joint: 'mortise' });
+    await click((low.x + 20) / 5, footY - 280 / 5);
+    js = await jointsNow();
+    assert.equal(js.length, 2, 'le tenon et mortaise est posé');
+    assert.ok(js.some((j: any) => j.type === 'mortise' && [j.a, j.b].includes(plateTop.id) && [j.a, j.b].includes(high2.id)));
+    await shot('9-tenon');
+
+    // rechargé : les assemblages et leur dessin commun sont là
+    await sleep(300);
+    await load('?construire');
+    await page.waitForFunction(() => (window as any).game?.scene?.getScene('world')?.map?.def.id === 'ferme', null, { timeout: 10000 });
+    await sleep(300);
+    await listen();
+    await page.evaluate(([x, y]) => (window as any).game.scene.getScene('world').cameras.main.centerOn(x, y), [jx + 40, jy - 40] as const);
+    await sleep(200);
+    assert.equal((await jointsNow()).length, 2, 'les assemblages reviennent au rechargement');
+    shown = await shownOf([low.id, high2.id]);
+    assert.equal(shown[0].key, shown[1].key, 'et le dessin commun aussi');
+
+    // retirer le poteau du bas : refusé ; Maj + clic droit : l'ensemble (les deux poteaux et la sablière)
+    await send({ kind: 'none' });
+    await click((low.x + 20) / 5, footY - 60 / 5, 'right');
+    assert.ok((await pieces()).some((p: any) => p.id === low.id), 'le poteau assemblé reste');
+    assert.match(String(await lastNotice()), /Retire d'abord l'assemblage/);
+    await page.keyboard.down('Shift');
+    await click((low.x + 20) / 5, footY - 60 / 5, 'right');
+    await page.keyboard.up('Shift');
+    const left = (await pieces()).map((p: any) => p.id);
+    for (const id of [low.id, high2.id, plateTop.id]) assert.ok(!left.includes(id), `Maj + clic droit retire l'ensemble (${id})`);
+    assert.ok(left.includes(beamPiece.id) && left.includes(polePiece.id), 'le reste ne bouge pas');
+    assert.equal((await jointsNow()).length, 0);
+
     await page.keyboard.press('KeyB');
     await sleep(150);
     assert.equal(await mode(), 'play', 'B rend le jeu');
     assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
-    console.log('  ✓ construction : dalle, poteau à 12 cm, sablière à 192 cm, refus, annuler, refaire, plan écrit et reposé, solin, cran, rechargé ; tronçon de trois sans contour intérieur, angle, coupure');
+    console.log('  ✓ construction : dalle, poteau à 12 cm, sablière à 192 cm, refus, annuler, refaire, plan écrit et reposé, solin, cran, rechargé ; tronçon de trois sans contour intérieur, angle, coupure ; enture des poteaux, enture refusée, tenon, rechargés, retrait refusé puis l’ensemble');
   } finally {
     rmSync(PLAN_FILE, { force: true });
   }

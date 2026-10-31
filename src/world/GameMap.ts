@@ -17,6 +17,7 @@ import { blocks, boxOf, depthsOf, type BuildPiece } from './build';
 import { buildLook } from './buildView';
 import { runLayout, wallRuns } from './wallRuns';
 import { wallTexture } from './wallTexture';
+import { drawJoints } from './jointView';
 
 /**
  * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois, celle de ses réglages
@@ -236,7 +237,7 @@ export class GameMap {
   constructor(
     private readonly scene: Phaser.Scene,
     readonly def: MapData,
-    changes: MapState,
+    private readonly changes: MapState,
   ) {
     const tileset = tilesets.find((t) => t.key === def.tileset)!;
     this.width = def.width * TILE;
@@ -606,6 +607,7 @@ export class GameMap {
    */
   sortBuilds(): void {
     this.drawWalls();
+    drawJoints(this.scene, this.builds, this.changes.joints);
     const depths = depthsOf(this.builds.map((b) => b.piece));
     for (const b of this.builds) {
       const floor = b.piece.z === 0 && 'prop' in b.piece.piece && propDefs[b.piece.piece.prop].layer === 'floor';

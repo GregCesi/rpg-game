@@ -175,6 +175,10 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
 
   const pick = (e: CatalogEntry) => {
     chosen = e.id;
+    if (e.joint) {
+      send({ kind: 'pick-joint', joint: e.joint });
+      return render();
+    }
     if (e.wood) return pickWood();
     natEntry = e.natural ? e : undefined;
     if (e.natural) {
@@ -250,7 +254,8 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
   const keys = el('div', { className: 'keys' });
   keys.innerHTML =
     '<kbd>B</kbd> entrer, sortir · <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches : caméra (<kbd>Maj</kbd> plus vite) · molette : zoom<br>' +
-    'clic gauche : poser · clic droit : retirer (<kbd>Maj</kbd> : avec ce qui est dessus)<br>' +
+    'clic gauche : poser · clic droit : retirer (<kbd>Maj</kbd> : avec ce qui est dessus et assemblé)<br>' +
+    'assemblage : clic gauche sur la jonction de deux pièces ; clic droit sur la jonction le retire<br>' +
     '<kbd>R</kbd> tourner · <kbd>T</kbd> monter d’un cran · <kbd>G</kbd> descendre (20 cm)<br>' +
     '<kbd>Ctrl</kbd>+<kbd>Z</kbd> annuler · <kbd>Ctrl</kbd>+<kbd>Y</kbd> refaire';
 
@@ -262,7 +267,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     status: (s) => {
       toggle.textContent = s.active ? 'Sortir (B)' : 'Entrer (B)';
       const sel = s.selection ? `zone ${s.selection.w / 100} × ${s.selection.d / 100} m` : 'aucune zone';
-      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool}${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * 20} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}`;
+      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool}${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * 20} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}${s.hint ? `\n${s.hint}` : ''}`;
     },
   };
 }
