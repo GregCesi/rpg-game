@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { DEPTH, HARVEST, SPLIT, WOOD_AIM } from '../config';
+import { DEPTH, HARVEST, HEW_PASS, SPLIT, WOOD_AIM } from '../config';
 import { gestures, wood as W } from '../content';
 import type { End, Facing, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
@@ -9,14 +9,16 @@ import { capitalName, hewnFaces, WOOD_PIECE } from '../world/woodPiece';
 import { cmAt, cutPixel, lengthPx, lookOf, metresLabel, sizeOf, splitHits, splitPieces, woodBody, woodSize } from '../world/woodShape';
 import { woodTexture } from '../world/woodTexture';
 import type { HarvestSystem } from './harvest';
+import type { RailEnd, RailPass } from './rail';
 
 /** Ce qu'un outil fait à une pièce de bois : la couper (cognée), l'équarrir (doloire), planter le coin, frapper le coin (masse). */
 export type WoodWork = 'cut' | 'hew' | 'plant' | 'maul';
 
 /**
  * Ce que l'outil en main ferait à la pièce de bois devant Xéros : `at`, pour une coupe, sa place en cm depuis le bout de départ
- * (ouest, nord) ; `end`, pour le coin et la masse, le bout où se tient Xéros ; (x, y) : où l'invite se pose. `refusal` : pourquoi
- * ce n'est pas possible (dit sans geste ni dépense).
+ * (ouest, nord), pour une passe de doloire, l'endroit où elle commence ; `end`, pour le coin et la masse, le bout où se tient
+ * Xéros ; `from`, pour une passe, le bout d'où part la face (elle va vers l'autre) ; (x, y) : où l'invite se pose. `refusal` :
+ * pourquoi ce n'est pas possible (dit sans geste ni dépense).
  */
 export interface WoodAim {
   prop: PlacedProp;
@@ -24,6 +26,7 @@ export interface WoodAim {
   work: WoodWork;
   at: number;
   end?: End;
+  from?: 'start' | 'end';
   x: number;
   y: number;
   refusal?: string;
@@ -49,7 +52,10 @@ const END_OF_FACING: Record<Facing, End> = { right: 'west', left: 'east', down: 
  * - couper à la cognée : contre le flanc, le point où tombe le fer (`strike` du geste `chop`) dit où se fait la coupe, aimantée
  *   tous les `grid` cm depuis le bout le plus proche de Xéros ; aucun morceau de moins de `min` cm (« Le bout serait trop court. ») ;
  *   la ligne au-dessus de la coupe visée donne les deux longueurs (« 3 m | 2,6 m ») ; `cut.hits` coups, et deux pièces ;
- * - équarrir à la doloire : contre le flanc d'une pièce ronde ; une face tous les `perFace` coups, la poutre à 4 faces ;
+ * - équarrir à la doloire : une passe par face (le dessus, le sud, le nord, le dessous), sur le rail (systems/rail.ts) : Xéros
+ *   part d'un bout de la pièce, contre son flanc, et la longe tout seul en frappant en rythme ; la face se dresse derrière lui
+ *   (`dressed` : sa longueur, notée à chaque coup) ; Échap l'arrête, une nouvelle passe reprend là ; au bout, la face est finie et
+ *   la pièce retournée d'un quart de tour ; la poutre à 4 faces ;
  * - fendre : le coin se plante d'un coup, sans geste, dans le bois de bout où se tient Xéros (une pièce qui se fend : `split` de son
  *   diamètre) ; la masse frappe depuis ce même bout, `split.hits` coups par mètre commencé (la fente court sur la longueur, le coin
  *   s'enfonce), et la pièce devient deux
@@ -116,7 +122,7 @@ export class WoodSystem {
     const along = this.flank(player, p);
     if (along === undefined) return undefined;
     if (work === 'cut') return this.cutAim(p, along);
-    if (work === 'hew') return this.hewAim(p, along);
+    if (work === 'hew') return this.hewAim(player, p, along);
     const why = work === 'plant' ? 'Le coin se plante dans le bout, là où on voit les cernes.' : 'Les coups se donnent sur le bout, là où le coin est planté.';
     return { ...this.flankAim(p, along), work, refusal: why };
   }
@@ -130,9 +136,7 @@ export class WoodSystem {
     const b = actor.body;
     const box = p.box!;
     const f = actor.facing;
-    const gesture = gestures.chop;
-    const dir = f === 'left' ? 'right' : (f as 'down' | 'up' | 'right');
-    const strike = (gesture.strike?.[dir] ?? gesture.poses[dir][gesture.impact].dx) * (f === 'left' ? -1 : 1);
+    const strike = this.strikeX(player);
     const { w, h } = this.sizeOf(p);
     if (p.wood!.axis === 'ew') {
       const above = f === 'down' && Math.abs(box.top - b.bottom) <= WOOD_AIM.gap;
@@ -143,6 +147,14 @@ export class WoodSystem {
     const west = f === 'right' && Math.abs(box.left - b.right) <= WOOD_AIM.gap;
     const east = f === 'left' && Math.abs(b.left - box.right) <= WOOD_AIM.gap;
     return (west || east) && b.center.y >= box.top && b.center.y <= box.bottom ? b.center.y - (p.y - h) : undefined;
+  }
+
+  /** Où tombe le fer du geste `chop` en x, par rapport aux pieds de Xéros (`strike` de gestures.json, retourné vers la gauche). */
+  private strikeX(player: Player): number {
+    const f = player.actor.facing;
+    const gesture = gestures.chop;
+    const dir = f === 'left' ? 'right' : (f as 'down' | 'up' | 'right');
+    return (gesture.strike?.[dir] ?? gesture.poses[dir][gesture.impact].dx) * (f === 'left' ? -1 : 1);
   }
 
   /**
@@ -192,7 +204,7 @@ export class WoodSystem {
     let at = fromStart ? near : len - near;
     let refusal: string | undefined;
     if (piece.shape !== 'round') refusal = 'On coupe avant de fendre.';
-    else if (piece.hewn) refusal = "On coupe avant d'équarrir.";
+    else if (piece.hewn || piece.dressed) refusal = "On coupe avant d'équarrir.";
     else if (piece.wedge) refusal = 'Le coin est planté : finis de la fendre.';
     else if (len < 2 * W.min) refusal = 'Trop court pour être recoupé.';
     else if (piece.notch) {
@@ -206,16 +218,166 @@ export class WoodSystem {
     return { prop: p, piece, work: 'cut', at, x, y, refusal };
   }
 
-  /** Le coup de doloire visé : seulement sur une pièce ronde d'un diamètre qui fait des poutres, sans coupe en cours. */
-  private hewAim(p: PlacedProp, along: number): WoodAim {
+  /**
+   * La passe de doloire visée : sur une pièce ronde d'un diamètre qui fait des poutres, sans coupe en cours, pas encore poutre ;
+   * Xéros contre son flanc, à `HEW_PASS.reach` px au plus d'un bout (la face part de là vers l'autre) ou, si la face en cours
+   * s'est arrêtée (`dressed`), de là où elle s'est arrêtée (elle reprend là, dans le même sens) ; et la place de longer la pièce
+   * jusqu'au bout. L'invite se pose là où la passe commence.
+   */
+  private hewAim(player: Player, p: PlacedProp, along: number): WoodAim {
     const piece = p.wood!;
-    let refusal: string | undefined;
+    const flank = { ...this.flankAim(p, along), work: 'hew' as const };
     const size = sizeOf(piece.size);
-    if (size.hew) refusal = size.hew;
-    else if (piece.shape !== 'round') refusal = "On n'équarrit qu'une pièce ronde.";
-    else if (piece.notch) refusal = "Finis d'abord la coupe.";
-    else if (hewnFaces(piece).beam) refusal = 'Elle est déjà équarrie.';
-    return { ...this.flankAim(p, along), work: 'hew', refusal };
+    if (size.hew) return { ...flank, refusal: size.hew };
+    if (piece.shape !== 'round') return { ...flank, refusal: "On n'équarrit qu'une pièce ronde." };
+    if (piece.notch) return { ...flank, refusal: "Finis d'abord la coupe." };
+    if (hewnFaces(piece).beam) return { ...flank, refusal: 'Elle est déjà équarrie.' };
+    const px = (cm: number) => cutPixel(piece.size, lookOf(piece), piece.axis, cm);
+    const near = (cm: number) => Math.abs(along - px(cm)) <= HEW_PASS.reach;
+    const d = piece.dressed;
+    let start: { from: 'start' | 'end'; at: number };
+    if (d) {
+      start = { from: d.from, at: d.from === 'start' ? d.length : piece.length - d.length };
+      if (!near(start.at)) return { ...flank, refusal: "Reprends la face là où tu l'as laissée." };
+    } else if (near(0)) start = { from: 'start', at: 0 };
+    else if (near(piece.length)) start = { from: 'end', at: piece.length };
+    else return { ...flank, refusal: 'Mets-toi à un bout de la pièce pour commencer la face.' };
+    const { x, y } = this.flankAim(p, px(start.at));
+    const aim: WoodAim = { ...flank, ...start, x, y };
+    return this.railFree(player, p, aim) ? aim : { ...aim, refusal: 'Pas la place de longer la pièce.' };
+  }
+
+  /**
+   * Le rail d'une passe de doloire : les pieds de Xéros au début de la passe (le fer, `strike` du geste `chop`, sur la colonne ou la
+   * rangée de son début) et à l'autre bout ; `startPx` et `sign` : où est le fer après `done` px (`startPx + sign × done`).
+   */
+  private railOf(player: Player, p: PlacedProp, aim: WoodAim): { from: { x: number; y: number }; to: { x: number; y: number }; startPx: number; sign: 1 | -1 } {
+    const piece = p.wood!;
+    const { actor } = player;
+    const px = (cm: number) => cutPixel(piece.size, lookOf(piece), piece.axis, cm);
+    const startPx = px(aim.at);
+    const endPx = px(aim.from === 'start' ? piece.length : 0);
+    const feet = (at: number) => {
+      if (piece.axis === 'ew') return { x: p.x + at - this.strikeX(player), y: actor.y };
+      const top = p.y - this.sizeOf(p).h;
+      return { x: actor.x, y: actor.y + (top + at - actor.body.center.y) };
+    };
+    return { from: feet(startPx), to: feet(endPx), startPx, sign: endPx >= startPx ? 1 : -1 };
+  }
+
+  /** Xéros a la place de longer la pièce d'un bout de la passe à l'autre (sa collision balayée ; la pièce elle-même ne compte pas). */
+  private railFree(player: Player, p: PlacedProp, aim: WoodAim): boolean {
+    const { from, to } = this.railOf(player, p, aim);
+    const { actor } = player;
+    const b = actor.body;
+    const own = p.parts.filter((q): q is Phaser.GameObjects.Zone => q.type === 'Zone');
+    const box: Box = {
+      left: Math.min(from.x, to.x) + (b.left - actor.x),
+      right: Math.max(from.x, to.x) + (b.right - actor.x),
+      top: Math.min(from.y, to.y) + (b.top - actor.y),
+      bottom: Math.max(from.y, to.y) + (b.bottom - actor.y),
+    };
+    return this.map.areaFree(box, [], own);
+  }
+
+  /** La pièce de bois `id` de la carte (née pendant la partie ou de la carte), telle qu'elle est à l'écran maintenant. */
+  private find(id: number, spawned: boolean | undefined): PlacedProp | undefined {
+    return this.map.props.find((q) => q.id === id && !!q.spawned === !!spawned && !!q.wood);
+  }
+
+  /**
+   * La passe de doloire de `aim` (une visée `hewAim` sans refus), à lancer sur le rail : Xéros longe la pièce du début de la passe
+   * jusqu'à l'autre bout, un coup (`chop`) tous les `hew.stroke` cm. À chaque coup, `pay` reçoit le prix de ce qu'il vient de
+   * dresser (`hewPerM` par mètre ; refusé : la passe s'arrête), la face en cours s'allonge jusqu'au fer (notée dans GameState) et
+   * des copeaux tombent. Au bout, le reste est payé, la face est finie, et, si ce n'est pas la poutre, la pièce est retournée d'un
+   * quart de tour. `end` reçoit ce qu'a donné la passe (la face, la poutre, ou rien : arrêtée) et pourquoi elle s'est terminée.
+   */
+  hewPass(player: Player, aim: WoodAim, pay: (cost: number) => boolean, end: (hit: WoodHit, why: RailEnd) => void): RailPass {
+    const { id, spawned } = aim.prop;
+    const piece = aim.piece;
+    const from = aim.from!;
+    const len = piece.length;
+    const look = lookOf(piece);
+    const rail = this.railOf(player, aim.prop, aim);
+    const facing = player.actor.facing;
+    const fer = (done: number) => rail.startPx + rail.sign * done;
+    // la longueur dressée quand le fer est à `done` px du début de la passe
+    const dressedAt = (done: number) => {
+      const cm = Math.min(len, Math.max(0, cmAt(piece.size, look, piece.axis, fer(done))));
+      return Math.round(from === 'start' ? cm : len - cm);
+    };
+    const cost = (cm: number) => (player.stamina.costs.hewPerM * cm) / 100;
+    let paid = from === 'start' ? aim.at : len - aim.at;
+    return {
+      from: rail.from,
+      to: rail.to,
+      gesture: 'chop',
+      tool: W.hew.tool,
+      step: lengthPx(W.hew.stroke),
+      onStroke: (done) => {
+        const p = this.find(id, spawned);
+        if (!p) return false;
+        const cm = dressedAt(done);
+        if (cm > paid && !pay(cost(cm - paid))) return false;
+        paid = Math.max(paid, cm);
+        const top = p.y - this.sizeOf(p).h;
+        const [x, y] = piece.axis === 'ew' ? [p.x + Math.round(fer(done)), top + 1] : [p.x + 4, top + Math.round(fer(done))];
+        this.harvest.chipsAt(x, y + 3, p.y + 1, 'wood', facing);
+        if (cm > 0 && cm < len && cm > (p.wood!.dressed?.length ?? 0)) this.update(p, { ...p.wood!, dressed: { from, length: cm } });
+        return true;
+      },
+      onEnd: (why) => {
+        const p = this.find(id, spawned);
+        if (!p || why !== 'end') return end({}, why);
+        // le dernier bout dressé se paie aussi ; la face est finie même si la jauge tombe à zéro sur ce bout
+        if (len > paid) pay(cost(len - paid));
+        if (hewnFaces(p.wood!).faces + 1 >= W.hew.faces) return end(this.finishFace(p), why);
+        this.turnOver(p, (q) => end(this.finishFace(q), why));
+      },
+    };
+  }
+
+  /** La face en cours est finie : elle passe dans `hewn` (une face de plus, `perFace` au compte) ; la poutre à la quatrième. */
+  private finishFace(p: PlacedProp): WoodHit {
+    const { dressed: _d, ...rest } = p.wood!;
+    const faces = hewnFaces(p.wood!).faces + 1;
+    const piece: WoodPiece = { ...rest, hewn: faces * W.hew.perFace };
+    this.update(p, piece);
+    return faces >= W.hew.faces ? { beam: { length: piece.length } } : { face: faces };
+  }
+
+  /**
+   * Le quart de tour entre deux faces : la pièce se soulève de `HEW_PASS.hop` px, et, en haut, `turn` la change (sa face suivante
+   * tournée vers le haut : la pièce redessinée) ; elle retombe en s'écrasant un peu.
+   */
+  private turnOver(p: PlacedProp, turn: (p: PlacedProp) => void): void {
+    const { id, spawned } = p;
+    const ms = HEW_PASS.turnMs;
+    this.scene.tweens.add({
+      targets: p.image,
+      y: p.y - HEW_PASS.hop,
+      duration: ms * 0.4,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        const q = this.find(id, spawned);
+        if (!q) return;
+        turn(q);
+        const next = this.find(id, spawned);
+        if (!next) return;
+        const img = next.image;
+        img.y = next.y - HEW_PASS.hop;
+        this.scene.tweens.add({
+          targets: img,
+          y: next.y,
+          duration: ms * 0.35,
+          ease: 'Quad.easeIn',
+          onComplete: () => {
+            img.setScale(1, 0.85);
+            this.scene.tweens.add({ targets: img, scaleY: 1, duration: ms * 0.25, ease: 'Back.easeOut' });
+          },
+        });
+      },
+    });
   }
 
   /** L'invite au bout `end` de la pièce : sur le haut du bout. */
@@ -234,7 +396,7 @@ export class WoodSystem {
     const size = sizeOf(piece.size);
     let refusal: string | undefined;
     if (!Object.keys(size.split).length) refusal = "Ce bois ne se fend pas : il se coupe et s'équarrit.";
-    else if (!size.split[piece.shape as 'round' | 'half'] || piece.hewn) refusal = 'Trop mince pour le coin.';
+    else if (!size.split[piece.shape as 'round' | 'half'] || piece.hewn || piece.dressed) refusal = 'Trop mince pour le coin.';
     else if (piece.notch) refusal = "Finis d'abord la coupe.";
     else if (piece.wedge) refusal = 'Le coin est déjà planté.';
     return { prop: p, piece, work: 'plant', at: 0, end, ...this.endAim(p, end), refusal };
@@ -250,11 +412,14 @@ export class WoodSystem {
     return { prop: p, piece, work: 'maul', at: 0, end, ...this.endAim(p, end), refusal };
   }
 
-  /** Prix du coup en endurance : la cognée, la doloire selon la longueur de la pièce, planter le coin, le coup de masse. */
+  /**
+   * Prix du coup en endurance : la cognée, planter le coin, le coup de masse ; pour la doloire, celui d'un coup de sa passe (la passe
+   * se paie coup par coup, au fil de ce qu'elle dresse : `hewPass`).
+   */
   cost(player: Player, aim: WoodAim): number {
     const c = player.stamina.costs;
     if (aim.work === 'cut') return c.chop;
-    if (aim.work === 'hew') return (c.hewPerM * aim.piece.length) / 100;
+    if (aim.work === 'hew') return (c.hewPerM * W.hew.stroke) / 100;
     return aim.work === 'plant' ? c.plant : c.maul;
   }
 
@@ -312,15 +477,14 @@ export class WoodSystem {
   }
 
   /**
-   * Un coup porté avec `tool` (la cible est cherchée à nouveau : celle qui est devant Xéros à cet instant). Undefined : rien à
-   * frapper (on a bougé, la pièce a disparu, ce n'est plus possible).
+   * Un coup porté avec `tool` (la cible est cherchée à nouveau : celle qui est devant Xéros à cet instant) : la cognée, le coin, la
+   * masse (la doloire passe par `hewPass`). Undefined : rien à frapper (on a bougé, la pièce a disparu, ce n'est plus possible).
    */
   hit(player: Player, tool: string, facing: Facing): WoodHit | undefined {
     const aim = this.target(player, tool);
-    if (!aim || aim.refusal) return undefined;
+    if (!aim || aim.refusal || aim.work === 'hew') return undefined;
     if (aim.work !== 'plant') this.harvest.chipsAt(aim.x, aim.y + 3, aim.prop.y + 1, 'wood', facing);
     if (aim.work === 'cut') return this.cutHit(aim.prop, aim.at);
-    if (aim.work === 'hew') return this.hewHit(aim.prop);
     if (aim.work === 'plant') return this.plant(aim.prop, aim.end!);
     return this.maulHit(aim.prop);
   }
@@ -375,15 +539,6 @@ export class WoodSystem {
   private born(piece: WoodPiece, at: { x: number; y: number }): PlacedProp {
     const o = spawnObject(game, this.map.def.id, WOOD_PIECE, at.x, at.y, { wood: piece });
     return this.map.placeProp(o, { spawned: true, wood: piece });
-  }
-
-  private hewHit(p: PlacedProp): WoodHit {
-    const piece = { ...p.wood!, hewn: (p.wood!.hewn ?? 0) + 1 };
-    const before = hewnFaces(p.wood!).faces;
-    const { faces, beam } = hewnFaces(piece);
-    this.update(p, piece);
-    if (beam) return { beam: { length: piece.length } };
-    return faces > before ? { face: faces } : {};
   }
 
   /** Le coin se plante dans le bout `end` : il y reste, la main qui le tenait est libre. */

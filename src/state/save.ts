@@ -8,7 +8,7 @@ import { items, maps, piles, plans, props, stamina, wood } from '../content';
 import { FacingSchema, type End, type PileWood, type WoodPiece } from '../content/types';
 import { refMissing } from '../world/build';
 import { kindOf, pileDefOf } from '../world/pileShape';
-import { BEAM_SIZE, lookOf } from '../world/woodShape';
+import { BEAM_SIZE, dressedLook, lookOf } from '../world/woodShape';
 import { GameStateSchema, type GameState, type Held } from './GameState';
 
 /** Clé de la sauvegarde dans localStorage. */
@@ -16,7 +16,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -109,7 +109,33 @@ function upgrade(data: unknown): unknown {
   if (d?.version === 12 && d.state && typeof d.state === 'object') d = { ...d, version: 13, state: withBuilds(d.state as V12State) };
   if (d?.version === 13 && d.state && typeof d.state === 'object') d = { ...d, version: 14, state: withJoints(d.state as V12State) };
   if (d?.version === 14 && d.state && typeof d.state === 'object') d = { ...d, version: 15, state: quartersWithoutFace(d.state) };
+  if (d?.version === 15 && d.state && typeof d.state === 'object') d = { ...d, version: 16, state: hewingInPasses(d.state) };
   return d;
+}
+
+/**
+ * Version 15 -> 16 : l'équarrissage par passes (docs/CONCEPTION.md, « Bois d'œuvre ») : la doloire dresse une face d'une passe le
+ * long de la pièce, et la pièce garde la longueur dressée de sa face en cours (`dressed`). `hewn` compte toujours les faces finies,
+ * `perFace` (3) par face ; les coups d'une face commencée à l'ancienne (le reste de `hewn`) deviennent cette part de la longueur,
+ * dressée depuis le bout ouest ou nord (sauf dans un tas, qui ne garde que les faces finies). Toute pièce de bois de la partie
+ * (posée, tenue, en tas, d'un chantier, du mode construction).
+ */
+function hewingInPasses(state: object): object {
+  const per = 3;
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(walk);
+    if (!v || typeof v !== 'object') return v;
+    const o = Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([k, x]) => [k, walk(x)]));
+    const wood = typeof o.size === 'string' && typeof o.shape === 'string' && typeof o.length === 'number';
+    const hewn = typeof o.hewn === 'number' ? o.hewn : 0;
+    if (!wood || hewn % per === 0 || hewn >= 4 * per) return o;
+    const { hewn: _h, ...rest } = o;
+    const faces = Math.floor(hewn / per);
+    // la pièce d'un tas (sans sens) n'a pas de face entamée : ses coups en reste sont perdus
+    const length = typeof o.axis === 'string' ? Math.round(((o.length as number) * (hewn % per)) / per) : 0;
+    return { ...rest, ...(faces ? { hewn: faces * per } : {}), ...(length > 0 ? { dressed: { from: 'start', length } } : {}) };
+  };
+  return walk(state) as object;
 }
 
 /**
@@ -418,6 +444,8 @@ function woodMissing(w: WoodPiece): string | undefined {
   if (!size) return `le bois « ${w.size} »`;
   const look = size.looks[lookOf(w)];
   if (!look) return `la forme « ${lookOf(w)} » du bois « ${w.size} »`;
+  const next = dressedLook(w);
+  if (next && !size.looks[next]) return `la forme « ${next} » du bois « ${w.size} » (la face entamée)`;
   return w.axis === 'up' && !look.up ? `la forme « ${lookOf(w)} » du bois « ${w.size} » debout` : undefined;
 }
 

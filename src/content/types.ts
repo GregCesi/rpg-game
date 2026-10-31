@@ -234,8 +234,8 @@ export const WoodAgeSchema = z.enum(['new', 'worn', 'old']);
 /**
  * Une pièce de bois (la seule sorte d'objet de bois du monde, `wood-piece` de props.json), décrite par ses réglages et non par
  * une clé : `size`, son diamètre (clé de `sizes` de wood.json : celui de l'arbre d'où elle vient, `big` 55 cm, `normal` 30 cm) ;
- * `length` en cm ; `shape` : ronde, demi ou quart (le fendage) ; `hewn` : coups de doloire reçus (une face tous les `perFace`
- * coups, la poutre à 4 faces) ; `axis` : couchée est-ouest ou nord-sud, ou debout (`up` : un poteau, sur son dé) ; `notch` : la coupe commencée (`at` cm du bout ouest ou
+ * `length` en cm ; `shape` : ronde, demi ou quart (le fendage) ; `hewn` : faces finies à la doloire, comptées `perFace` par face
+ * (la poutre à 4 faces) ; `dressed` : la face suivante, dressée sur une partie de la longueur seulement (une passe arrêtée) ; `axis` : couchée est-ouest ou nord-sud, ou debout (`up` : un poteau, sur son dé) ; `notch` : la coupe commencée (`at` cm du bout ouest ou
  * nord, `hits` coups) ; `face` : le côté de la face debout d'un quartier ; `wedge` : le coin planté (`end`, le bout d'où il est planté et d'où se donnent les coups, `hits` coups de
  * masse reçus). GameState garde ces réglages pour chaque pièce posée ou tenue ; Tiled peut les donner en propriétés.
  */
@@ -250,6 +250,13 @@ export const WoodPieceSchema = z.strictObject({
   length: z.number().int().positive(),
   shape: WoodShapeSchema,
   hewn: z.number().int().positive().optional(),
+  /**
+   * La face en cours (la suivante après les `hewn` finies), dressée depuis le bout `from` (`start` : ouest ou nord, `end` : est ou
+   * sud, la partie de la planche, si bien que la pièce tournée la garde) sur `length` cm : une passe de doloire arrêtée par Échap,
+   * qu'une nouvelle passe reprend là (docs/CONCEPTION.md, « Bois d'œuvre »). Toujours plus courte que la pièce : finie, la face
+   * passe dans `hewn`.
+   */
+  dressed: z.strictObject({ from: z.enum(['start', 'end']), length: z.number().int().positive() }).optional(),
   axis: z.enum(['ew', 'ns', 'up']),
   notch: z.strictObject({ at: z.number().int().positive(), hits: z.number().int().positive() }).optional(),
   wedge: z.strictObject({ end: EndSchema, hits: z.number().int().nonnegative() }).optional(),
@@ -384,7 +391,9 @@ export const WoodSizeSchema = z.strictObject({
 /**
  * Le bois (wood.json) : `density` du bois vert (kg/m³) ; `grid` (cm) : la coupe s'aimante tous les `grid` cm depuis le bout le plus
  * proche de Xéros ; `min` (cm) : aucune pièce plus courte ; `cut` : l'outil qui coupe et ses coups ; `hew` : l'outil qui équarrit,
- * `perFace` coups par face, `faces` faces, `beam` le côté de la poutre (cm de bois) ; `split` : le coin, la masse, les coups de masse
+ * `perFace` le compte de `hewn` par face finie (3 : l'unité des anciens coups de doloire, que gardent les plans et les parties),
+ * `faces` faces, `beam` le côté de la poutre (cm de bois), `stroke` les centimètres dont Xéros avance à chaque coup de sa passe le
+ * long de la pièce (la durée d'une passe est proportionnelle à la longueur : un coup, le geste `chop`, tous les `stroke` cm) ; `split` : le coin, la masse, les coups de masse
  * par mètre commencé (`hits` : 3 pour 1 m, 6 pour 2 m ; un seul coin, planté dans le bout, quelle que soit la longueur) ; `sizes` : les diamètres.
  */
 export const WoodSchema = z.strictObject({
@@ -392,7 +401,7 @@ export const WoodSchema = z.strictObject({
   grid: z.number().int().positive(),
   min: z.number().int().positive(),
   cut: z.strictObject({ tool: id, hits: z.number().int().positive() }),
-  hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive() }),
+  hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive(), stroke: z.number().int().positive() }),
   /** La planche fendue : son épaisseur et sa largeur de bois (cm), quel que soit le diamètre d'où elle vient. */
   plank: z.strictObject({ thick: z.number().positive(), wide: z.number().positive() }),
   split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive() }),
@@ -902,7 +911,7 @@ export const StrengthSchema = z
  * (les « PerSec » se paient chaque seconde de l'effort, les « PerKg » sont proportionnels à la masse en kg) ; marcher ne coûte rien.
  * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `plant` planter
  * le coin de fendage, `whittle` tailler un piquet à la hachette, `stake` planter un piquet de tracé, `maul` un coup de masse sur le coin, `knot`
- * nouer ou dénouer, `hewPerM` un coup de doloire, par mètre de la pièce qu'on équarrit, `turnPerKg` pivoter une bille, `raisePerKg` dresser une poutre sur son appui (par kg ; avec l'aide de la mère, la moitié), `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
+ * nouer ou dénouer, `hewPerM` un mètre de face dressé à la doloire (payé coup par coup au fil de la passe : équarrir une poutre de 3 m, 4 faces, coûte 12 × `hewPerM`), `turnPerKg` pivoter une bille, `raisePerKg` dresser une poutre sur son appui (par kg ; avec l'aide de la mère, la moitié), `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
  * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir.
  */
 export const StaminaSchema = z.strictObject({

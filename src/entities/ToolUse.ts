@@ -18,6 +18,8 @@ export class ToolUse {
   /** Geste en cours et animation de l'outil (sans la direction), ex. 'chop' et 'tool-axe-chop'. */
   private gesture = 'use';
   private toolAnim?: string;
+  /** Arrête le geste en cours sans son `onDone` (une passe sur un rail interrompue par Échap) ; absent hors d'un geste. */
+  private stop?: () => void;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -48,16 +50,28 @@ export class ToolUse {
     const onFrame = (_a: Phaser.Animations.Animation, frame: Phaser.Animations.AnimationFrame) => {
       if (frame.index - 1 === g.impact) onImpact();
     };
-    this.actor.on(Phaser.Animations.Events.ANIMATION_UPDATE, onFrame);
-    this.actor.once(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + key, () => {
+    const end = () => {
       this.actor.off(Phaser.Animations.Events.ANIMATION_UPDATE, onFrame);
+      this.actor.off(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + key, complete);
+      this.stop = undefined;
       this.tool.setVisible(false);
       this.busy = false;
       this.actor.face(this.actor.facing);
+    };
+    const complete = () => {
+      end();
       onDone();
-    });
+    };
+    this.stop = end;
+    this.actor.on(Phaser.Animations.Events.ANIMATION_UPDATE, onFrame);
+    this.actor.once(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + key, complete);
     this.actor.play(key);
     this.place();
+  }
+
+  /** Interrompt le geste en cours, là où il en est : ni impact ni `onDone` ; le corps reprend sa pose. Sans geste, rien. */
+  cancel(): void {
+    this.stop?.();
   }
 
   /** Pose l'outil sur la main, pour l'image en cours du geste. */

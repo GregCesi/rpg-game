@@ -26,6 +26,7 @@ import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPre
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
 import { sectionsPreview, woodPreview } from './lib/wood-preview';
+import { hewPreview } from './lib/hew-preview';
 import { lyingPreview } from './lib/lying-preview';
 import { agesPreview } from './lib/ages-preview';
 import { auditPreview } from './lib/audit-preview';
@@ -361,6 +362,9 @@ if (withPreview) {
   if (bois) writeFileSync(join(PREVIEW, 'bois.png'), PNG.sync.write(bois));
   const sections = sectionsPreview(sources);
   if (sections) writeFileSync(join(PREVIEW, 'bois-sections.png'), PNG.sync.write(sections));
+  // la passe de doloire : Xéros à trois moments de la passe, la face dressée derrière lui
+  const hew = hewPreview(sources);
+  if (hew) writeFileSync(join(PREVIEW, 'equarrissage.png'), PNG.sync.write(hew));
   // tout ce qui est couché, dans toutes ses vues (règle D), et la pièce de bois dans ses deux sens avec sa collision
   const itemDefs = parse('items.json', z.record(z.string(), ItemDefSchema), itemsJson);
   const couches = lyingPreview(sources, propDefs, itemDefs);

@@ -734,8 +734,16 @@ function validateWood(c: Content, cat: Catalog): string[] {
   if (W.cut.hits !== 3) err(`'cut.hits' : 3 coups (un tiers, deux tiers, coupé : les bandes notch1 et notch2)`);
   for (const tool of [W.cut.tool, W.hew.tool, W.split.wedge, W.split.maul]) if (c.items[tool]?.kind !== 'tool') err(`'${tool}' n'est pas un outil de items.json`);
   if (c.items[W.split.wedge]?.hands === 2) err(`le coin '${W.split.wedge}' se tient à une main (il se plante et quitte la main)`);
+  if (W.hew.stroke % CM_PER_PX) err(`'hew.stroke' : un nombre entier de pixels (${CM_PER_PX} cm le pixel), pour que la passe avance d'un pas régulier`);
   for (const [key, size] of Object.entries(W.sizes)) {
     const at = `diamètre '${key}'`;
+    // la face entamée (`dressed`) pose les parties de l'aspect suivant par-dessus celles de l'aspect en cours : même géométrie
+    const hewing = (['round', 'f1', 'f2', 'f3', 'beam'] as const).filter((l) => size.looks[l]);
+    for (const l of hewing.slice(1)) {
+      const a = size.looks[hewing[0]]!;
+      const b = size.looks[l]!;
+      if (JSON.stringify([a.ew, a.ns]) !== JSON.stringify([b.ew, b.ns])) err(`${at} : l'aspect '${l}' n'a pas la géométrie (ew, ns) de '${hewing[0]}' : une face entamée ne s'y poserait pas`);
+    }
     for (const sheet of [size.sheet, `${size.sheet}-ns`]) {
       const anims = cat.frameCounts.get(sheet);
       const want = (anim: string, n: number) => {

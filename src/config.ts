@@ -103,6 +103,13 @@ export const PUT_DOWN = { gap: 2, step: 2, reach: 24 };
 export const WOOD_AIM = { gap: 3, end: 6 };
 
 /**
+ * La passe de doloire (systems/wood.ts, sur le rail de systems/rail.ts) : elle commence à au plus `reach` px d'un bout de la pièce,
+ * ou de là où la face en cours s'est arrêtée ; entre deux faces, la pièce est retournée d'un quart de tour sur son axe : elle se
+ * soulève de `hop` px, s'écrase un peu en retombant, en `turnMs` ms.
+ */
+export const HEW_PASS = { reach: 8, hop: 3, turnMs: 420 };
+
+/**
  * Fendre : les deux morceaux naissent à leur place (`split` de wood.json) ; si elle est prise, ils s'écartent ensemble, en travers
  * de la pièce, d'un pixel de plus à chaque essai, de part et d'autre, jusqu'à `slide` px (deux quartiers écorce en bas, pointe en
  * l'air, sont plus larges que leur demi-bille : celle d'à côté ne doit pas l'empêcher de se fendre).

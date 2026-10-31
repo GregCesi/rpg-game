@@ -631,13 +631,14 @@ fait Xéros. Le gros arbre ne change pas : il reste le bois de chauffage (billes
   pas, ne se porte pas, ne pivote pas avant la fin de la coupe.
 - **Rouler jusqu'au chantier.** Le rondin de 3 m (191 kg) se roule, lentement ; l'écorce tourne avec la distance, à toute longueur.
 - **Équarrir sur place, à la doloire** (`broadaxe`, hache à équarrir : lame large et plate de 25 cm, manche coudé de 60 cm, 3 kg,
-  deux mains, dans la réserve de la maison ; fiche `docs/objets/broadaxe.md`). Contre le flanc d'un rondin couché, Espace : un
-  coup (le geste `chop`) ; 3 coups dressent une face, 4 faces font la poutre (la pièce de bois équarrie, fiche
+  deux mains, dans la réserve de la maison ; fiche `docs/objets/broadaxe.md`). Repris le 1er novembre 2026 par *L'équarrissage par
+  passes* (une passe le long du rondin par face, au lieu de coups sur place) ; à l'origine : contre le flanc d'un rondin couché,
+  Espace : un coup (le geste `chop`) ; 3 coups dressent une face, 4 faces font la poutre (la pièce de bois équarrie, fiche
   `docs/objets/wood-piece.md`) : 20 × 20 cm de bois, sa longueur, 108 kg pour 3 m, 64,8 kg pour 1,80 m. Le dessin change à chaque face finie : rond, une face,
   deux, trois, poutre. Une face dressée, le rondin ne roule plus ; la poutre non plus (« Elle ne roule pas : elle est carrée. »).
   On ne coupe plus un rondin entamé à la doloire : on coupe d'abord, on équarrit ensuite. Refusé sur une grosse bille (« Trop
-  grosse pour une poutre. ») ou un rondin de moins de 20 cm de bois. Endurance : 0,333 point par coup et par mètre, soit
-  **12 points** pour un poteau de 3 m (12 coups), 7,2 pour 1,80 m ; la coupe : 0,8 point par coup de cognée.
+  grosse pour une poutre. ») ou un rondin de moins de 20 cm de bois. Endurance : **12 points** pour un poteau de 3 m, 7,2 pour
+  1,80 m (gardé par les passes : 1 point par mètre de face) ; la coupe : 0,8 point par coup de cognée.
 - **Pourquoi au pied du chantier.** Une poutre de 3 m pèse 108 kg : elle ne se porte pas et ne roule pas. Le rondin, lui, roule :
   on le roule jusqu'au chantier et on l'équarrit là où il servira. Celle de 1,80 m (65 kg) se porte, lentement.
 - **Sauvegarde** : `SAVE_VERSION` 6 ; une partie de la version 5 est convertie (les sections, le houppier, la tête et les billes
@@ -645,6 +646,45 @@ fait Xéros. Le gros arbre ne change pas : il reste le bois de chauffage (billes
 - **Outils de test** (`?dieu`) : poser une pièce de bois de réglages choisis (voir *Le bois*) ; donner la doloire.
 - **Ce qui viendra** : la pose des poteaux sur les dés, avec l'aide de la mère (une poutre de 108 kg ne se dresse pas seul) ; les
   sablières et les chevrons, tirés de la même façon ; une scie, plus tard, qui raccourcira les étapes.
+
+## L'équarrissage par passes (décidé le 1er novembre 2026, « doloire en passe »)
+
+Équarrir par douze coups sur place ne ressemblait pas au métier. En vrai, le charpentier avance le long du rondin en donnant des
+coups courts vers le bas, sur le flanc, et la face se dresse derrière lui à mesure qu'il avance. Xéros fait de même.
+
+- **Une passe par face.** La doloire en main, Xéros se met contre le flanc du rondin couché, à un bout (au plus 40 cm du bout,
+  `HEW_PASS.reach` de config.ts) ; ailleurs : « Mets-toi à un bout de la pièce pour commencer la face. ». Espace lance la passe :
+  il longe le rondin tout seul, sur un rail, au pas, en frappant en rythme (le geste `chop` de la doloire), des copeaux tombent à
+  chaque coup, et la face devient claire et plate derrière lui, au fil de sa position (dressée jusqu'au fer, ronde au-delà).
+- **Échap, seule commande pendant la passe.** Elle l'arrête là où il est (« Arrêté : la face reprendra là. ») : la partie déjà
+  dressée le reste, la pièce garde la longueur dressée de sa face en cours (`dressed` de la pièce de bois : le bout d'où elle part,
+  sa longueur en cm), et une nouvelle passe reprend là, dans le même sens (ailleurs : « Reprends la face là où tu l'as laissée. »).
+  Une face entamée, le rondin ne roule plus (« Il ne roule plus : une face est entamée. »), ne va pas en tas, ne se coupe ni ne se
+  fend ; il se porte, s'il n'est pas trop lourd, et garde sa face entamée.
+- **Quatre passes**, une par face, dans l'ordre déjà choisi : le dessus, puis le sud, le nord et le dessous. Au bout d'une passe, la
+  face est finie (« Une face dressée (1 sur 4). »), et le rondin est retourné d'un quart de tour sur son axe, par une courte
+  animation automatique (il se soulève, la face suivante vient en haut, il retombe en s'écrasant un peu : `HEW_PASS.hop`,
+  `turnMs`). Xéros est alors à l'autre bout : la passe suivante part de là, au retour. La quatrième donne la poutre (« Poutre
+  équarrie : 3 m. »).
+- **Durée et endurance proportionnelles à la longueur**, règles du contenu : Xéros avance de `hew.stroke` cm (15) à chaque coup
+  (wood.json ; un coup dure le geste `chop`, 0,44 s : une face de 3 m prend 9 s environ) ; chaque coup paie ce qu'il vient de
+  dresser, `hewPerM` (stamina.json) par mètre de face : 1 point, soit toujours **12 points** pour un poteau de 3 m (12 % de la
+  jauge), 7,2 pour 1,80 m. À zéro, la passe s'arrête après le coup refusé (« Xéros est épuisé. Il faut dormir. »), la face entamée
+  gardée.
+- **Le rail** (`src/systems/rail.ts`) est un mécanisme général : une ligne droite pour les pieds de Xéros, un geste répété avec un
+  outil, un pas par geste, ce que fait chaque coup, la fin (au bout, Échap, coup refusé). Le travail lui est donné par celui qui le
+  lance (ici la doloire, `hewPass` de `systems/wood.ts`, qui juge aussi qu'il y a la place de longer la pièce : « Pas la place de
+  longer la pièce. ») ; le rabot et la scie de long s'en serviront.
+- **La face entamée se calcule** comme le reste (*Les pièces fendues*) : la pièce s'assemble avec les parties de son aspect, puis,
+  sur la bande déjà dressée (du bout `from` jusqu'à `length` cm de lui), on l'efface et on pose les parties de l'aspect suivant
+  (rond -> une face -> deux -> trois -> poutre), elles aussi calculées depuis leur section (`dressedBand`, `composeOps` de
+  `woodShape.ts`). Les aspects ronds et dressés d'un diamètre ont donc la même géométrie à l'écran (validate.ts le vérifie).
+- **Dans GameState**, `hewn` compte toujours les faces finies par trois (`perFace`, l'unité des anciens coups, que gardent les plans
+  et les parties) ; `dressed` est la face en cours. Sauvegarde 16 : les coups d'une face commencée à l'ancienne deviennent cette part
+  de la longueur, dressée depuis le bout ouest ou nord.
+- **Vérification** : `npm run test:equarrissage` (refus au milieu, passe lancée au bout, sourde aux autres touches, arrêtée par
+  Échap à la position du fer, reprise, quatre passes, 12 points pour 3 m) ; aperçu `.art-preview/equarrissage.png` (Xéros à trois
+  moments de la passe, la première face depuis l'ouest et la deuxième au retour depuis l'est).
 
 ## Le bois (décidé le 30 octobre 2026, « pièce de bois »)
 
@@ -659,7 +699,7 @@ longueurs libres et le fendage. On garde la coupe libre et on change la façon d
   cours (place, coups) et son **coin planté** (bout, coups). GameState garde ces réglages pour chaque pièce posée ou tenue ; Tiled
   peut les donner en propriétés.
 - **Les règles sont du contenu** (`src/content/wood.json`) : la densité (900 kg/m³), la grille, la plus courte pièce, la coupe (la
-  cognée, 3 coups), l'équarrissage (la doloire, 3 coups par face, 4 faces, poutre de 20 cm), le fendage (le coin, la masse, 3 coups
+  cognée, 3 coups), l'équarrissage (la doloire, une passe par face, un coup tous les 15 cm, 4 faces, poutre de 20 cm), le fendage (le coin, la masse, 3 coups
   par mètre commencé, un seul coin dans le bout, à toute longueur), et par diamètre ce qu'on a le droit de faire : **seul le gros se fend** (la bille en
   deux demi-billes, la demi-bille en deux quartiers) ; **on n'équarrit qu'une pièce ronde**, et seulement le normal (« Trop grosse
   pour une poutre. ») ; une demi ou un quart ne s'équarrit pas ; on coupe avant de fendre et avant d'équarrir.

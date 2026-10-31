@@ -1,8 +1,11 @@
 // Test de scénario de l'équarrissage, dans le vrai jeu (voir tools/lib/playtest.ts) : abattre un arbre normal à la cognée,
 // couper son houppier (le tronc ébranché devient une seule pièce de bois ronde de 5,8 m), refuser une coupe qui laisserait un
 // bout de moins de 60 cm, couper à 3 m sur la grille de 20 cm (la ligne « 3 m | 2,8 m » au-dessus de la coupe, l'encoche gardée
-// dans GameState, deux pièces), recouper la pièce de 2,8 m en 1,8 m et 1 m, rouler la pièce de 3 m, l'équarrir à la doloire (une
-// face tous les trois coups, la poutre au douzième : sa masse, son prix d'endurance, elle ne roule plus et ne se porte pas), la
+// dans GameState, deux pièces), recouper la pièce de 2,8 m en 1,8 m et 1 m, rouler la pièce de 3 m, l'équarrir à la doloire par
+// passes sur le rail (refusée au milieu ; à un bout, Espace lance la passe : Xéros longe la pièce tout seul, sourd aux autres
+// touches ; Échap l'arrête, la longueur dressée est gardée dans GameState à la position du fer, la pièce entamée ne roule plus ;
+// reprise ailleurs refusée, reprise là où elle s'est arrêtée ; puis une passe par face, aller et retour, la poutre à la quatrième :
+// sa masse, son prix d'endurance proportionnel à la longueur, elle ne roule plus et ne se porte pas), la
 // pièce de 1 m qui se porte et va en tas ; le gros arbre et le têtard abattus, ébranchés (une pièce ronde de 4 m, de 2 m) et coupés
 // à 1 m ; puis la page rechargée : tout est retrouvé.
 // Usage : npm run test:equarrissage (lancé aussi par npm run test).
@@ -32,6 +35,11 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       };
       const settled = async () => {
         for (let i = 0; i < 100 && w().mode !== 'play'; i++) await sleep(50);
+        await sleep(300);
+      };
+      // une passe de doloire entière : Xéros longe la pièce (près de 9 s pour 3 m), puis le quart de tour
+      const passed = async () => {
+        for (let i = 0; i < 1000 && w().mode !== 'play'; i++) await sleep(50);
         await sleep(300);
       };
       const give = async (item: string) => {
@@ -151,18 +159,69 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.rolled = three().y - y0;
       out.rolledSaved = spawned().find((q: any) => q.id === three().id)?.y === three().y;
 
-      // 5. l'équarrir à la doloire : douze coups, une face tous les trois, la poutre ; son prix d'endurance
+      // 5. l'équarrir à la doloire, par passes sur le rail
       emit({ kind: 'stamina', value: 100 });
       await give('broadaxe');
       const faces: (string | undefined)[] = [];
       const hewnId = three().id;
       const hewing = () => w().map.props.find((p: any) => p.id === hewnId && p.spawned);
-      for (let i = 1; i <= 12; i++) {
-        await aboveAt(hewing(), 30);
+      // au milieu de la pièce : refusé, sans geste ni dépense
+      await aboveAt(hewing(), 30);
+      await press('Space');
+      await sleep(200);
+      out.middleNotice = notices.at(-1);
+      out.middleMode = w().mode;
+      out.middleCost = 100 - w().player.stamina.value;
+      // au bout ouest : Espace lance la passe, Xéros avance tout seul vers l'est en frappant
+      await aboveAt(hewing(), 2);
+      const [hx0, hy0] = [a().x, a().y];
+      await press('Space');
+      out.passMode = w().mode;
+      await sleep(1500);
+      // les autres touches ne font rien pendant la passe
+      await press('KeyS', 300);
+      await press('KeyE');
+      out.passY = a().y - hy0;
+      await sleep(1500);
+      out.walked = a().x - hx0;
+      out.passAnim = a().anims.currentAnim?.key;
+      // Échap : arrêtée là où il est ; la face entamée est gardée dans GameState, jusqu'au fer
+      await press('Escape');
+      await sleep(150);
+      out.stopMode = w().mode;
+      out.stopNotice = notices.at(-1);
+      const stopX = a().x;
+      await sleep(600);
+      out.stopStill = a().x === stopX;
+      const dressed = spawned().find((q: any) => q.id === hewnId)?.wood.dressed;
+      out.dressed = dressed;
+      // le fer (strike.down de chop : -1) est sur la colonne x + strike de l'image ; 5 cm par pixel
+      out.dressedVsFer = dressed && dressed.length - (stopX - 1 - hewing().x) * 5;
+      out.dressedTexture = hewing().image.texture.key;
+      // la pièce entamée ne roule plus
+      gs.emptyHands(gs.game);
+      w().handsChanged();
+      await standAt(stopX, hy0, "down");
+      await press('KeyS', 900);
+      out.dressedRoll = notices.at(-1);
+      await give('broadaxe');
+      // reprendre ailleurs : refusé ; reprendre là où elle s'est arrêtée : la passe va jusqu'au bout est
+      await aboveAt(hewing(), 50);
+      await press('Space');
+      await sleep(200);
+      out.resumeElsewhere = notices.at(-1);
+      await standAt(stopX, hy0, "down");
+      await press('Space');
+      out.resumeMode = w().mode;
+      await passed();
+      faces.push(notices.at(-1));
+      out.endX = a().x - hx0;
+      out.afterFace = spawned().find((q: any) => q.id === hewnId)?.wood;
+      // les trois autres faces : depuis le bout où il est, aller et retour
+      for (let i = 2; i <= 4; i++) {
         await press('Space');
-        await settled();
-        if (i % 3 === 0) faces.push(notices.at(-1));
-        if (i === 4) out.hewnKept = spawned().find((q: any) => q.id === hewnId)?.wood.hewn;
+        await passed();
+        faces.push(notices.at(-1));
       }
       out.faces = faces;
       out.hewCost = Math.round((100 - w().player.stamina.value) * 10) / 10;
@@ -275,9 +334,27 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.deepEqual(r.pieces2, [100, 180, 300], 'le tronc donne 3 m, 1,8 m et 1 m, sans chute');
   assert.ok(r.rolled >= 3, `le rondin de 3 m roule vers le sud : ${r.rolled} px`);
   assert.equal(r.rolledSaved, true, 'sa position est notée');
-  assert.equal(r.hewnKept, 4, 'les coups de doloire sont notés');
+  assert.equal(r.middleNotice, 'Mets-toi à un bout de la pièce pour commencer la face.', 'la passe commence à un bout');
+  assert.equal(r.middleMode, 'play', 'refus sans geste');
+  assert.equal(r.middleCost, 0, 'un refus ne coûte rien');
+  assert.equal(r.passMode, 'rail', 'Espace au bout lance la passe');
+  assert.equal(r.passY, 0, 'pendant la passe, les touches de marche ne font rien');
+  assert.ok(r.walked > 10, `Xéros longe la pièce tout seul : ${r.walked} px`);
+  assert.match(r.passAnim ?? '', /chop-down/, 'en frappant (le geste chop)');
+  assert.equal(r.stopMode, 'play', 'Échap arrête la passe');
+  assert.equal(r.stopNotice, 'Arrêté : la face reprendra là.');
+  assert.equal(r.stopStill, true, 'arrêté, il ne bouge plus');
+  assert.equal(r.dressed?.from, 'start', 'la face part du bout ouest');
+  assert.ok(r.dressed?.length > 0 && r.dressed.length < 300, `la longueur dressée est gardée : ${JSON.stringify(r.dressed)}`);
+  assert.ok(Math.abs(r.dressedVsFer) <= 20, `dressée jusqu'à la position du fer, à un coup près : ${r.dressedVsFer} cm`);
+  assert.match(r.dressedTexture, /:dstart\d+:/, 'son image montre la face entamée');
+  assert.equal(r.dressedRoll, 'Il ne roule plus : une face est entamée.');
+  assert.equal(r.resumeElsewhere, "Reprends la face là où tu l'as laissée.");
+  assert.equal(r.resumeMode, 'rail', 'la passe reprend là où elle s’était arrêtée');
+  assert.ok(r.endX > 55, `elle va jusqu'au bout est : ${r.endX} px`);
+  assert.ok(r.afterFace?.hewn === 3 && !r.afterFace.dressed, `la face finie passe dans hewn, sans face entamée : ${JSON.stringify(r.afterFace)}`);
   assert.deepEqual(r.faces, ['Une face dressée (1 sur 4).', 'Une face dressée (2 sur 4).', 'Une face dressée (3 sur 4).', 'Poutre équarrie : 3 m.']);
-  assert.ok(Math.abs(r.hewCost - 12) < 0.1, `équarrir un poteau de 3 m coûte environ 12 points : ${r.hewCost}`);
+  assert.ok(Math.abs(r.hewCost - 12) < 0.1, `équarrir un poteau de 3 m coûte environ 12 points, proportionnel à sa longueur : ${r.hewCost}`);
   assert.deepEqual(r.beam, { length: 300, kg: 108 }, 'la poutre de 3 m pèse 108 kg');
   assert.equal(r.shortBeamKg, 64.8, 'celle de 1,80 m, 65 kg (elle se porte)');
   assert.equal(r.beamRollNotice, 'Elle ne roule pas : elle est carrée.');

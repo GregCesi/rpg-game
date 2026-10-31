@@ -18,6 +18,8 @@ const CODES = {
   drop: ['KeyQ'],
   swap: ['Tab'],
   turn: ['KeyR'],
+  // arrêter une passe sur un rail (la doloire le long d'une pièce)
+  stop: ['Escape'],
   // mode construction (?construire) : B entre et sort ; T et G (ou Page haut, Page bas) montent et descendent d'un cran. Ces trois
   // lettres sont à la même place en AZERTY et en QWERTY, et ne servent à rien d'autre.
   build: ['KeyB'],
@@ -35,7 +37,7 @@ const ZOOM_OUT = ['NumpadSubtract'];
  * Traduit le clavier en intention : direction, course, et les gestes des mains.
  * E (ou Entrée) : prendre dans une main libre, parler, cueillir, ou reposer ce qu'on tient à deux mains.
  * Espace : utiliser ce qu'on tient. Q (A en AZERTY) : lâcher ce que tient la main active. Tab : changer de main active.
- * R : tourner la bille portée (est-ouest, nord-sud). Molette, + et − : le zoom.
+ * R : tourner la bille portée (est-ouest, nord-sud). Échap : arrêter une passe sur un rail. Molette, + et − : le zoom.
  */
 export class PlayerInput {
   /** Touches enfoncées (codes). */
@@ -115,6 +117,11 @@ export class PlayerInput {
   /** Tourner la bille portée (R) : vrai une seule fois par appui. */
   turnPressed(): boolean {
     return this.take('turn');
+  }
+
+  /** Échap : arrêter la passe en cours ; vrai une seule fois par appui. */
+  stopPressed(): boolean {
+    return this.take('stop');
   }
 
   /** La touche R est enfoncée en ce moment : R maintenu (pivoter une bille couchée). */

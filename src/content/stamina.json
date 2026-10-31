@@ -10,7 +10,7 @@
     "whittle": 0.4,
     "maul": 0.8,
     "knot": 1.5,
-    "hewPerM": 0.333,
+    "hewPerM": 1,
     "turnPerKg": 0.03,
     "raisePerKg": 0.06,
     "carryPerKgSec": 0.034,

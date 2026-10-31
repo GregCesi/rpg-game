@@ -263,16 +263,46 @@ export function woodKey(piece: WoodPiece, opts: Pick<ComposeOpts, 'open'> = {}):
     notch ? `n${notch.hits}@${notch.at}` : '',
     wedge ? `w${wedge.end}${wedge.hits}/${splitHits(piece)}` : '',
     piece.point === 'down' ? 'down' : '',
+    piece.dressed ? `d${piece.dressed.from}${piece.dressed.length}` : '',
     opts.open ? 'open' : '',
     ageOfWood(piece),
   ].join(':');
 }
 
+/** Les aspects d'une pièce ronde selon ses faces finies, de 0 à 4. */
+const HEWN_LOOKS = ['round', 'f1', 'f2', 'f3', 'beam'] as const;
+
+/** L'aspect qu'aura une pièce ronde quand sa face en cours (`dressed`) sera finie ; rien sans face en cours. */
+export function dressedLook(piece: Pick<WoodPiece, 'shape' | 'hewn' | 'dressed'>): WoodLook | undefined {
+  if (!piece.dressed || piece.shape !== 'round') return undefined;
+  const faces = facesOf(piece);
+  return faces < WOOD.hew.faces ? HEWN_LOOKS[faces + 1] : undefined;
+}
+
+/**
+ * La face en cours d'une pièce ronde (`dressed`, une passe de doloire arrêtée) : l'aspect qu'aura la pièce quand elle sera finie,
+ * et la bande de l'image déjà dressée, [de, à[ le long de la pièce (colonnes est-ouest, rangées nord-sud), depuis son bout `from`
+ * jusqu'à `length` cm de lui (la place de la coupe qui tomberait là, `cutPixel`). Rien sur une pièce sans face en cours.
+ */
+export function dressedBand(piece: WoodPiece): { look: WoodLook; clip: [number, number] } | undefined {
+  const d = piece.dressed;
+  const look = dressedLook(piece);
+  if (!d || !look || piece.axis === 'up') return undefined;
+  const { size, axis, length } = piece;
+  const { w, h } = woodSize(size, look, axis, length);
+  const total = axis === 'ew' ? w : h;
+  const cm = Math.min(length, d.length);
+  if (d.from === 'start') return { look, clip: [0, cutPixel(size, look, axis, cm)] };
+  return { look, clip: [cutPixel(size, look, axis, length - cm), total] };
+}
+
 /**
  * Les opérations qui dessinent une pièce, dans l'ordre (le jeu et le dessin les suivent à l'identique) : les parties de son aspect
  * (`open-…` au dernier coup de masse ; la partie du bout du coin remplacée par `wedge-…`), puis la fente qui court depuis ce bout
- * sur la part de la longueur déjà fendue (`crack-…`, rognée par `clip`), puis l'encoche de la coupe (on efface sa bande, on la
- * peint). Une pièce coin planté ne roule pas : elle montre l'image 0.
+ * sur la part de la longueur déjà fendue (`crack-…`, rognée par `clip`), puis la face en cours (`dressed` : sur la bande déjà
+ * dressée, on efface la pièce et on pose les parties de l'aspect suivant, calculées comme les autres depuis leur section, rognées à
+ * la bande : dressée jusqu'où Xéros est arrivé, ronde au-delà), puis l'encoche de la coupe (on efface sa bande, on la peint). Une
+ * pièce coin planté ne roule pas : elle montre l'image 0.
  */
 export function composeOps(piece: WoodPiece, opts: ComposeOpts = {}): DrawOp[] {
   const look = lookOf(piece);
@@ -298,6 +328,14 @@ export function composeOps(piece: WoodPiece, opts: ComposeOpts = {}): DrawOp[] {
     const run = Math.round((total * piece.wedge.hits) / hits);
     const clip: [number, number] = wedgePart === 'start' ? [0, run] : [total - run, total];
     for (const p of places) ops.push({ kind: 'part', anim: `crack-${look}-${p.part}`, frame: 0, at: p.at, size: p.size, clip });
+  }
+  const band = dressedBand(piece);
+  if (band && band.clip[1] > band.clip[0]) {
+    const [from, to] = band.clip;
+    ops.push({ kind: 'clear', at: from, size: to - from });
+    for (const p of placements(size, band.look, axis, length)) {
+      ops.push({ kind: 'part', anim: `${band.look}-${p.part}`, frame: 0, at: p.at, size: p.size, clip: band.clip });
+    }
   }
   if (piece.notch) {
     const n = sizeOf(size).notch;

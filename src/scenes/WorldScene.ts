@@ -19,8 +19,9 @@ import { LongPress } from '../systems/longPress';
 import { PileCount } from '../systems/pileCount';
 import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
+import { Rail } from '../systems/rail';
 import { SiteSystem } from '../systems/site';
-import { WoodSystem } from '../systems/wood';
+import { WoodSystem, type WoodAim } from '../systems/wood';
 import { TransformSystem } from '../systems/transform';
 import { ZoomControl } from '../systems/zoom';
 import { TurnSystem } from '../systems/turnLog';
@@ -58,8 +59,10 @@ import type { Interactable, PlacedGround } from '../world/GameMap';
  * marcher pendant un dialogue, ni ouvrir un dialogue pendant qu'il change de carte.
  * `use` : Xéros fait un geste (outil ou mains), il ne marche pas et ne prend pas de sortie.
  * `build` : le mode construction (?construire, systems/build.ts) : Xéros attend, la caméra est libre, la souris pose et retire.
+ * `rail` : une passe sur un rail (systems/rail.ts, la doloire le long d'une pièce) : Xéros avance tout seul en frappant ; seule
+ * Échap compte, elle l'arrête là où il est.
  */
-type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build';
+type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail';
 
 /** Ce que reçoit la scène à son lancement : la carte, et le point d'apparition ou la position exacte (`at`, sauvegarde). */
 export type WorldStart = { mapId: string; spawn?: string; at?: { x: number; y: number; facing: Facing }; wake?: boolean };
@@ -103,6 +106,8 @@ export class WorldScene extends Phaser.Scene {
   private turns!: TurnSystem;
   private site!: SiteSystem;
   private wood!: WoodSystem;
+  /** Les passes de Xéros le long d'une pièce (la doloire). */
+  private rail!: Rail;
   /** La transformation « magique » des outils de test (?dieu). */
   private transformer!: TransformSystem;
   /** R maintenu : pivoter une bille couchée. */
@@ -176,6 +181,7 @@ export class WorldScene extends Phaser.Scene {
     });
     this.harvest = new HarvestSystem(this, this.map);
     this.wood = new WoodSystem(this, this.map, this.harvest);
+    this.rail = new Rail(this.player);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
     this.transformer = new TransformSystem(this.map, this.handsSystem);
     this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body), this.player.strength);
@@ -249,6 +255,9 @@ export class WorldScene extends Phaser.Scene {
     const drop = input.dropPressed();
     const swap = input.swapPressed();
     const turn = input.turnPressed();
+    // Échap : la seule commande d'une passe sur un rail
+    const stop = input.stopPressed();
+    if (this.mode === 'rail') this.rail.update(delta, stop);
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
@@ -507,11 +516,12 @@ export class WorldScene extends Phaser.Scene {
       if (t) this.report({ kind: 'missing', tool: t });
       return;
     }
-    // une pièce de bois : la cognée la coupe où l'on vise, la doloire en dresse une face (de haut en bas, contre le flanc) ; le
+    // une pièce de bois : la cognée la coupe où l'on vise, la doloire en dresse une face d'une passe le long de la pièce ; le
     // coin se plante dans le bout, d'un coup, sans geste ; la masse frappe le coin depuis ce bout
     const aim = this.wood.target(this.player, tool);
     if (aim) {
       if (aim.refusal) return this.notice(aim.refusal);
+      if (aim.work === 'hew') return this.hewPass(aim);
       if (!this.effort.afford(this.player, this.wood.cost(this.player, aim))) return;
       const gesture = WoodSystem.gestureOf(aim);
       return gesture ? this.gesture(gesture, tool, () => this.woodHit(tool)) : this.woodHit(tool);
@@ -533,14 +543,34 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
+   * Une passe de doloire (Espace contre le flanc, à un bout de la pièce ou là où la face s'est arrêtée) : Xéros longe la pièce sur
+   * le rail, chaque coup payé au fil de ce qu'il dresse ; à la fin, la face finie (et le quart de tour), la poutre, ou, arrêtée
+   * par Échap ou par la fatigue, la face entamée qui attend la passe suivante.
+   */
+  private hewPass(aim: WoodAim): void {
+    if (this.player.stamina.empty) return this.effort.exhausted();
+    this.mode = 'rail';
+    const pay = (cost: number) => this.effort.afford(this.player, cost);
+    this.rail.start(
+      this.wood.hewPass(this.player, aim, pay, (r, why) => {
+        if (r.face) this.notice(`Une face dressée (${r.face} sur 4).`);
+        if (r.beam) this.notice(`Poutre équarrie : ${metres(r.beam.length)}.`);
+        if (why === 'stopped') this.notice('Arrêté : la face reprendra là.');
+        this.player.stamina.flush();
+        if (this.mode === 'rail') this.mode = 'play';
+        // l'appui sur Échap ou l'Espace d'avant ne relance rien
+        this.useLockedUntil = this.time.now + 150;
+      }),
+    );
+  }
+
+  /**
    * L'impact d'un coup sur une pièce de bois : la coupe se creuse ou s'achève, une face se dresse, la poutre est finie, le coin est
    * planté (la main qui le tenait est libre), la fente s'allonge ou la pièce s'ouvre en deux.
    */
   private woodHit(tool: string): void {
     const r = this.wood.hit(this.player, tool, this.player.actor.facing);
     if (r?.split) this.notice(`Coupé : ${metres(r.split[0])} et ${metres(r.split[1])}.`);
-    if (r?.face) this.notice(`Une face dressée (${r.face} sur 4).`);
-    if (r?.beam) this.notice(`Poutre équarrie : ${metres(r.beam.length)}.`);
     if (r?.planted) {
       // le coin est resté dans le bois : la main qui le tenait (l'active, ou l'autre) est libre
       const slot = game.both && 'item' in game.both && game.both.item === tool ? 'both' : ([0, 1] as const).find((i) => { const x = game.hands[i]; return !!x && 'item' in x && x.item === tool; });

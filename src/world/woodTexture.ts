@@ -55,10 +55,10 @@ export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, opts: Pick<Co
 /**
  * Clé de la texture d'une pièce portée devant Xéros, dans le sens de la marche : `down` et `up`, par le bout (les vues de la
  * planche `held` de son aspect, qui ne dépendent pas de la longueur) ; `right`, en long, la pièce est-ouest assemblée à sa
- * longueur, sans son ombre au sol, rognée à son corps (son centre est la prise).
+ * longueur (sa face entamée comprise), sans son ombre au sol, rognée à son corps (son centre est la prise).
  */
 export function heldWoodTexture(scene: Phaser.Scene, wood: WoodPiece): string {
-  const piece: WoodPiece = { size: wood.size, length: wood.length, shape: wood.shape, axis: 'ew', ...(wood.hewn ? { hewn: wood.hewn } : {}), ...woodTraits(wood) };
+  const piece: WoodPiece = { size: wood.size, length: wood.length, shape: wood.shape, axis: 'ew', ...(wood.hewn ? { hewn: wood.hewn } : {}), ...(wood.dressed ? { dressed: wood.dressed } : {}), ...woodTraits(wood) };
   const key = `held:${woodKey(piece)}`;
   if (scene.textures.exists(key)) return key;
   const held = lookDef(piece.size, lookOf(piece)).held;

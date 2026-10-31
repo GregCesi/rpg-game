@@ -11,7 +11,9 @@ du rondin et de la poutre. Le contenu est dans `src/content/wood.json` ; voir CO
 - Réglages (GameState, `WoodPieceSchema` de `src/content/types.ts`) : `size`, le diamètre (`big` : 55 cm de bois, le gros arbre et
   le têtard ; `normal` : 30 cm ; `pole` : 12 cm, la perche, depuis le 31 octobre 2026) ; `length` en cm (sur la grille de 20 cm,
   60 cm au moins) ; `shape` (`round`, `half`, `quarter`, `plank` : la planche fendue, même date) ;
-  `hewn` (coups de doloire : une face tous les 3, la poutre à 12) ; `axis` (`ew` est-ouest, `ns` nord-sud) ; `notch` (la coupe
+  `hewn` (faces finies à la doloire, comptées 3 par face : la poutre à 12) ; `dressed` (la face en cours, dressée sur une partie de
+  la longueur : `from`, le bout d'où elle part, `start` ouest ou nord, `end` est ou sud ; `length` en cm ; une passe arrêtée par
+  Échap, depuis le 1er novembre 2026) ; `axis` (`ew` est-ouest, `ns` nord-sud) ; `notch` (la coupe
   commencée : `at` cm du bout ouest ou nord, `hits`) ; `wedge` (le coin planté : `end`, le bout, `hits`, les coups de masse) ;
   `point` (le quartier seulement : `down`, pointe en bas, un sur deux dans une rangée de tas ; absent, sa position posé : écorce
   en bas, pointe en l'air) ; `peeled` (le rond écorcé : l'aspect `peeled`, le rondin écorcé de la cabane) ; `age` (neuf par défaut,
@@ -115,8 +117,11 @@ bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1
   morceau ferait moins de 60 cm (« Le bout serait trop court. »), sur une pièce de moins de 1,20 m (« Trop court pour être
   recoupé. »), sur une demi ou un quart (« On coupe avant de fendre. »), sur une pièce dressée (« On coupe avant d'équarrir. ») ;
   trois coups, deux pièces. 0,8 point le coup.
-- Espace, la doloire, contre le flanc d'une pièce ronde du normal : une face tous les 3 coups, la poutre à 12 ; le gros : « Trop
-  grosse pour une poutre. » ; 0,333 point par coup et par mètre.
+- Espace, la doloire, contre le flanc d'une pièce ronde du normal, à un bout : une passe le long de la pièce, sur le rail, la face
+  dressée derrière Xéros (docs/CONCEPTION.md, « L'équarrissage par passes », fiche `broadaxe.md`) ; Échap l'arrête, la face entamée
+  est gardée et reprise là ; une passe par face, un quart de tour entre deux, la poutre à la quatrième ; le gros : « Trop grosse
+  pour une poutre. » ; 1 point par mètre de face. Une face entamée : elle ne roule plus (« Il ne roule plus : une face est
+  entamée. »), ne va pas en tas, ne se coupe ni ne se fend.
 - Espace, le coin, à un bout d'une bille ou d'une demi-bille du gros, de toute longueur : il se plante d'un coup, sans geste ; depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. » ; le quartier :
   « Trop mince pour le coin. » ; le normal : « Ce bois ne se fend pas : il se coupe et s'équarrit. ». 1 point.
 - Espace, la masse, depuis le bout du coin : 3 coups par mètre commencé (6 pour 2 m ; la fente court, le coin s'enfonce), et deux

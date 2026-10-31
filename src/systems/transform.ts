@@ -28,9 +28,9 @@ function heldOf(s: Source): Held {
   return { prop: p.type, ...(p.wood ? { wood: p.wood } : {}), ...(p.natural ? { natural: p.natural } : {}), ...(p.length !== undefined ? { length: p.length } : {}) };
 }
 
-/** La pièce de bois d'une entrée convient : même diamètre, même forme, mêmes coups de doloire ; ni coupe en cours, ni coin, ni debout. */
+/** La pièce de bois d'une entrée convient : même diamètre, même forme, mêmes faces dressées ; ni coupe en cours, ni coin, ni face entamée, ni debout. */
 function woodFits(part: NonNullable<TransformPart['wood']>, w: WoodPiece): boolean {
-  if (w.notch || w.wedge || w.axis === 'up') return false;
+  if (w.notch || w.wedge || w.dressed || w.axis === 'up') return false;
   if (part.length !== undefined && part.length !== w.length) return false;
   return w.size === part.size && w.shape === part.shape && (w.hewn ?? 0) === (part.hewn ?? 0);
 }

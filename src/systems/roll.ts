@@ -87,7 +87,7 @@ export class RollSystem {
   }
 
   /**
-   * Pourquoi la pièce ne roule pas, ou undefined : la poutre (carrée), la pièce dont une face est dressée, la demi-bille et le
+   * Pourquoi la pièce ne roule pas, ou undefined : la poutre (carrée), la pièce dont une face est dressée ou entamée, la demi-bille et le
    * quartier (à plat), celle qu'on est en train de couper ou de fendre, le sens de l'axe, les mains prises, trop lourde. Les
    * messages s'accordent au nom (`gender` : le rondin, la bille).
    */
@@ -97,6 +97,7 @@ export class RollSystem {
     if (look === 'beam') return 'Elle ne roule pas : elle est carrée.';
     if (!rollsLook(look) && p.wood?.shape === 'round') return m ? 'Il ne roule plus : une face est dressée.' : 'Elle ne roule plus : une face est dressée.';
     if (!rollsLook(look)) return m ? 'Il ne roule pas : il est à plat.' : 'Elle ne roule pas : elle est à plat.';
+    if (p.wood?.dressed) return m ? 'Il ne roule plus : une face est entamée.' : 'Elle ne roule plus : une face est entamée.';
     if (p.wood?.notch) return "Finis d'abord la coupe.";
     if (p.wood?.wedge) return 'Le coin est planté : finis de la fendre.';
     const across = p.def.roll!.axis === 'ew' ? dir === 'up' || dir === 'down' : dir === 'left' || dir === 'right';

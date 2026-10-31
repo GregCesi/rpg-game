@@ -19,7 +19,7 @@
 - Icône 16 × 16 (`item-broadaxe`) : la doloire en diagonale, comme les autres manches ; la lame large pend du haut à droite le long du manche, son fil droit et clair vers le haut à gauche.
 - Au sol (`broadaxe-ground`, 12 × 5 px, aussi l'image `ground` de l'objet possédable) : couchée, la lame à plat au nord du bout du manche, le fil clair au bord nord.
 - Portée (`held-broadaxe`, posture `shoulder`, vues `down`, `up`, `right`, la gauche est le miroir) : sur l'épaule comme la cognée et la masse, le poing près du bout du manche. De face et de dos, par la tranche (la lame mince et l'œil) ; de profil, la face de la lame, le fil vers le bas, à plat contre le dos.
-- En main pendant le geste (`tool-broadaxe`, planche tirée de `heldToolSheet` : cinq dessins de base `diag`, `upright`, `flat`, `flatDiag`, `flatEnd`, prise au centre de 48 px, convention dans l'en-tête de `art/lib/held.ts`). Gestes `use`, `chop`, `maul` comme la hachette ; elle sert au `chop`, de haut en bas : on la voit alors par la tranche.
+- En main pendant le geste (`tool-broadaxe`, planche tirée de `heldToolSheet` : cinq dessins de base `diag`, `upright`, `flat`, `flatDiag`, `flatEnd`, prise au centre de 48 px, convention dans l'en-tête de `art/lib/held.ts`). Gestes `use`, `chop`, `maul` comme la hachette ; elle sert au `chop`, de haut en bas : on la voit alors par la tranche. Pendant une passe, le `chop` se répète en rythme pendant que Xéros avance le long du rondin.
 - Fantôme : aucun (elle ne s'entrepose pas).
 
 ## Regroupement
@@ -27,7 +27,10 @@ Seule. Ne s'entrepose pas.
 
 ## Gestes
 - E court : la prendre, sur l'épaule, à deux mains.
-- Espace, face au flanc d'un rondin couché : un coup (`chop`) ; trois coups dressent une face, quatre faces font la poutre. Sur une bille du gros arbre : « Trop grosse pour une poutre. »
+- Espace, contre le flanc d'un rondin couché, à un bout (au plus 40 cm du bout) : une passe (docs/CONCEPTION.md, « L'équarrissage par passes »). Xéros longe le rondin tout seul, sur un rail (`src/systems/rail.ts`), au pas, un coup (`chop`) tous les 15 cm (`hew.stroke` de wood.json), des copeaux à chaque coup ; la face se dresse derrière lui, jusqu'au fer. Ailleurs qu'à un bout : « Mets-toi à un bout de la pièce pour commencer la face. » ; pas la place de longer le rondin : « Pas la place de longer la pièce. ».
+- Échap pendant la passe (seule commande) : l'arrête là où il est ; la face entamée est gardée (`dressed` de la pièce de bois) et une nouvelle passe reprend là, dans le même sens (« Reprends la face là où tu l'as laissée. » ailleurs).
+- Quatre passes, une par face (le dessus, le sud, le nord, le dessous) ; entre deux faces, le rondin est retourné d'un quart de tour (courte animation automatique), et la passe suivante repart du bout où Xéros est arrivé. La quatrième fait la poutre. Sur une bille du gros arbre : « Trop grosse pour une poutre. »
+- Endurance : 1 point par mètre de face (`hewPerM` de stamina.json), payé coup par coup : 12 points pour une poutre de 3 m.
 - Q (A en AZERTY) : lâcher.
 
 ## Origine
@@ -37,5 +40,6 @@ Posée dans la réserve de la maison, à côté de la hachette.
 Outil : reste dans les mains, se lâche comme un outil ; ne s'use pas.
 
 ## Vérification
-- Aperçu : `.art-preview/xeros-chop-broadaxe.png` (et `xeros-use-broadaxe.png`), `tool-broadaxe.png`, `held-broadaxe.png`, `item-broadaxe.png`, `broadaxe-ground.png`, `collection.png`, à côté de la cognée et de la hachette, et des étalons (`gabarit.png`).
-- En jeu : la prendre dans la réserve (ou la donner par `?dieu`) ; elle se porte sur l'épaule ; Espace face au flanc d'un rondin couché : trois coups par face, quatre faces ; face à une bille du gros arbre, le refus.
+- Aperçu : `.art-preview/equarrissage.png` (Xéros à trois moments de la passe, la face dressée derrière lui), `.art-preview/xeros-chop-broadaxe.png` (et `xeros-use-broadaxe.png`), `tool-broadaxe.png`, `held-broadaxe.png`, `item-broadaxe.png`, `broadaxe-ground.png`, `collection.png`, à côté de la cognée et de la hachette, et des étalons (`gabarit.png`).
+- En jeu : la prendre dans la réserve (ou la donner par `?dieu`) ; elle se porte sur l'épaule ; Espace à un bout d'un rondin couché, contre son flanc : la passe, Échap l'arrête, Espace la reprend là ; quatre passes ; face à une bille du gros arbre, le refus.
+- Test : `npm run test:equarrissage`.

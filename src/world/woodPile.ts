@@ -44,9 +44,9 @@ const TRIANGLES = new Set(['quarter']);
 /** Largeur d'un tas (pièces au sol), et hauteur des rangées. */
 const WIDE = 3;
 
-/** La pièce de tas d'une pièce de bois, si elle va en tas : sans coupe ni coin, et pas plus lourde que ce que porte Xéros. */
+/** La pièce de tas d'une pièce de bois, si elle va en tas : sans coupe, ni coin, ni face entamée, et pas plus lourde que ce que porte Xéros. */
 export function pileWoodOf(piece: WoodPiece): PileWood | undefined {
-  if (piece.notch || piece.wedge) return undefined;
+  if (piece.notch || piece.wedge || piece.dressed) return undefined;
   if (woodMass(piece) > strength.carry + 1e-9) return undefined;
   return { size: piece.size, shape: piece.shape, length: piece.length, ...(piece.hewn ? { hewn: piece.hewn } : {}), ...woodTraits(piece) };
 }
