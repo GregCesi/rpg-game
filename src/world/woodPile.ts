@@ -11,8 +11,9 @@
 // Au sol, les pièces sont côte à côte, à la largeur de leur collision (`woodBody`) plus un pixel (pour que le contour de celle de
 // derrière se lise) : est-ouest, l'une derrière l'autre ; nord-sud, l'une à côté de l'autre, au même écart (règle D, docs/STYLE.md
 // section 8 : l'emprise au sol est la vraie, tournée). Une couche monte de la hauteur de la section rapportée à sa largeur
-// (`woodDims`) : dans les creux, √3/2 de plus (des cercles qui se touchent) ; en rangée, toute la hauteur ; nord-sud, de la même
-// hauteur qu'est-ouest (une pièce tournée garde sa taille). L'image
+// (`woodDims`) : dans les creux, √3/2 de plus (des cercles qui se touchent) ; en rangée, toute la hauteur ; comptée depuis la
+// pièce porteuse de devant, si bien que toutes les pièces s'emboîtent avec le même pas, dans les deux sens (est-ouest, le demi-pas
+// en arrière d'un creux fait partie de la montée : la 4e bille couvre le quart haut de celle du centre). L'image
 // de chaque place est la pièce elle-même, assemblée à sa longueur (`woodKey` ; world/woodTexture.ts en jeu, composeWood à l'aperçu).
 
 import { strength } from '../content';
@@ -63,12 +64,19 @@ function woodPlaces(w: PileWood, axis: Exclude<WoodAxis, 'up'>): Record<string, 
   const ratio = dims.h / dims.d;
   const rows = ROWS.has(look);
   const flip = HEAD_TO_TAIL.has(look);
-  // écart entre deux pièces voisines au sol, et montée d'une couche à l'écran, les mêmes dans les deux sens
+  // écart entre deux pièces voisines au sol (le pas), et montée d'une couche à l'écran : une pièce est à un pas de sa porteuse de
+  // devant (× √3/2 dans un creux, × la hauteur de la section rapportée à sa largeur), dans les deux sens, ronde ou non
   const step = ew.h + 1;
   const lift = step * ratio * (rows ? 1 : Math.sqrt(3) / 2);
+  // est-ouest, la place d'un creux est déjà un demi-pas en arrière, donc plus haut à l'écran : ce demi-pas fait partie de la montée
+  // (le compter en plus faisait flotter la pièce du creux au-dessus de celle de devant)
+  const back = rows ? 0 : step / 2;
   // une place à la position `f` en travers (0 à 2, demi-valeurs dans les creux), à la couche `layer`
   const place = (f: number, layer: number, on: string[], other = false): ShapePlace => {
-    const [x, y] = axis === 'ew' ? [0, Math.round(-(WIDE - 1 - f) * step - layer * lift)] : [Math.round(f * step), Math.round(-layer * lift)];
+    const [x, y] =
+      axis === 'ew'
+        ? [0, Math.round(-(WIDE - 1 - f) * step - layer * (lift - back))]
+        : [Math.round(f * step), Math.round(-layer * lift)];
     const wood: WoodPiece = flip ? { ...piece, face: FACES[axis][other ? 1 : 0] } : piece;
     const q: ShapePlace = { layer, on, image: woodKey(wood), x, y, wood };
     if (layer === 0) q.body = { x: x + Math.floor((img.w - body.w) / 2), y: y - body.bottom - body.h, w: body.w, h: body.h };

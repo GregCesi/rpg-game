@@ -2,7 +2,8 @@
 // le vrai jeu (voir tools/lib/playtest.ts) : pour chaque pièce de bois de test (60 cm, 1 m, 4 m), de chaque diamètre et de chaque
 // aspect (le quartier dans ses quatre positions), l'image que le jeu assemble (world/woodTexture.ts, ombre exclue) et la collision
 // de sa définition (world/woodPiece.ts) sont, en nord-sud, celles de l'est-ouest inversées, à 1 px près pour l'image, exactement
-// pour la collision ; un tas nord-sud monte de la même hauteur par couche qu'est-ouest, ses pièces au même écart.
+// pour la collision ; un tas nord-sud monte de la même hauteur par couche qu'est-ouest, ses pièces au même écart, chacune au même
+// pas au-dessus de sa porteuse de devant (la 4e bille d'un tas de 3 couvre le quart haut de celle du centre).
 // Usage : npm run test:perspective (lancé aussi par npm run test).
 
 import assert from 'node:assert/strict';
@@ -57,20 +58,35 @@ await playtest('perspective', async ({ page, errors }) => {
         }
       }
     }
-    // les tas : même écart au sol, même montée par couche dans les deux sens
+    // les tas : même écart au sol, et toutes les pièces s'emboîtent avec le même pas dans les deux sens : chaque pièce d'une couche
+    // monte de la même hauteur au-dessus de sa porteuse de devant (est-ouest, la plus au sud ; le demi-pas en arrière d'un creux
+    // fait partie de la montée)
     const piles: { what: string; ok: boolean; detail: string }[] = [];
     for (const w of [
       { size: 'big', shape: 'round', length: 60 },
+      { size: 'normal', shape: 'round', length: 100 },
       { size: 'big', shape: 'quarter', length: 100 },
+      { size: 'big', shape: 'half', length: 60 },
       { size: 'normal', shape: 'round', length: 100, hewn: 12 },
     ]) {
       const d = woodPileDef(w);
       const [e, n] = [d.places, d.turned.places];
-      const up = Object.keys(e).find((k) => e[k].layer === 1)!;
       const gap = (p: any) => Math.abs((p.g1.x - p.g0.x) || (p.g1.y - p.g0.y));
-      const rise = (p: any, k: string, ew: boolean) => (ew ? -(p[k].y - (p[p[k].on[0]].y + p[p[k].on[p[k].on.length - 1]].y) / 2) : -p[k].y);
-      const ok = gap(e) === gap(n) && Math.abs(rise(e, up, true) - rise(n, up, false)) <= 1;
-      piles.push({ what: `tas de ${w.size} ${w.shape} ${w.length} cm`, ok, detail: `écart ${gap(e)}/${gap(n)}, montée ${rise(e, up, true)}/${rise(n, up, false)}` });
+      const rise = (p: any, k: string) => -(p[k].y - Math.max(...p[k].on.map((o: string) => p[o].y)));
+      const upper = Object.keys(e).filter((k) => e[k].layer > 0);
+      const rises = upper.map((k) => [rise(e, k), rise(n, k)]);
+      const all = rises.flat();
+      const ok = gap(e) === gap(n) && Math.max(...all) - Math.min(...all) <= 1;
+      piles.push({ what: `tas de ${w.size} ${w.shape} ${w.length} cm`, ok, detail: `écart ${gap(e)}/${gap(n)}, montées ${upper.map((k, i) => `${k} ${rises[i].join('/')}`).join(', ')}` });
+    }
+    // le cas de Grégoire : sur un tas de 3 rondins de 1 m de l'arbre normal, est-ouest, le bas de la 4e pièce (dans le creux de
+    // derrière) arrive au quart de celle du centre : elle en couvre le quart haut
+    {
+      const w = { size: 'normal', shape: 'round', length: 100 };
+      const e = woodPileDef(w).places;
+      const band = box(woodTexture(scene, { ...w, axis: 'ew' })).h;
+      const covered = e.u01.y - e.g1.y + band;
+      piles.push({ what: '4e rondin de 1 m sur un tas de 3', ok: covered === Math.round(band / 4), detail: `couvre ${covered} px de la pièce du centre (${band} px de haut ; attendu le quart)` });
     }
     return { out, piles };
   })) as { out: { what: string; ew: unknown; ns: unknown; ok: boolean }[]; piles: { what: string; ok: boolean; detail: string }[] };

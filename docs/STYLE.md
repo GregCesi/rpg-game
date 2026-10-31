@@ -101,7 +101,8 @@ Vérifications : la bille est-ouest (1 m × 65 cm) mesure 20 × 13 px, ses bouts
 - Ce n'est pas une rotation de pixels : la vue nord-sud est **dessinée**, une vraie face, avec la lumière en haut à gauche (le
   contour clair au nord et à l'ouest, sombre au sud et à l'est ; le bout coupé nord-sud est une bande au sud, avec ses cernes,
   comme le bout ouest d'une pièce est-ouest).
-- Un tas nord-sud : une couche monte de la même hauteur qu'en est-ouest ; l'emprise au sol est la vraie (pièces côte à côte à
+- Un tas nord-sud : une couche monte de la même hauteur qu'en est-ouest, comptée depuis la pièce porteuse de devant (en est-ouest,
+  le demi-pas en arrière d'un creux fait partie de la montée : la 4e bille d'un tas de 3 couvre le quart haut de celle du centre) ; l'emprise au sol est la vraie (pièces côte à côte à
   l'écart de l'est-ouest).
 - **Pourquoi** : c'est une triche assumée, préférée à l'œil par Grégoire. La règle stricte (dessus en raccourci à ½, face de
   coupe aplatie) faisait d'une pièce tournée une autre pièce : plus courte (la bille de 4 m tombait à 13 × 49 px) ou plus fine.

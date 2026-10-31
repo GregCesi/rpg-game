@@ -142,7 +142,11 @@ base : ranger ce qu'on vient de faire.
   dans les creux, 1 au sommet) ; les sections plates ou carrées (demi-bille, quartier, poutre) font des rangées droites de 3 de large
   sur 3 de haut, les quartiers tête-bêche (la face fendue debout d'un côté, puis de l'autre, comme un vrai tas de bois fendu). Au
   sol, les pièces sont côte à côte à la largeur de leur collision ; une couche monte de la hauteur de la section (√3/2 dans les creux
-  d'une pyramide). Le dessin du tas s'assemble pour toute longueur, comme les pièces.
+  d'une pyramide), **comptée depuis la pièce porteuse de devant** : toutes les pièces s'emboîtent avec le même pas, rondes ou non,
+  dans les deux sens. En est-ouest, le demi-pas en arrière d'un creux fait déjà monter la pièce à l'écran : il fait partie de la
+  montée. (Corrigé le 31 octobre 2026 en jouant : il était compté en plus, et la 4e bille d'un tas de 3 rondins flottait au-dessus
+  de celle du centre ; Grégoire : « Le bas de la quatrième bûche doit arriver au quart de la bûche du centre du tas de 3. » C'est
+  ce que donne le pas commun, et `npm run test:perspective` le vérifie.) Le dessin du tas s'assemble pour toute longueur, comme les pièces.
 - **Ce qui va en tas : ce qui se porte.** Seule une pièce de 70 kg ou moins (ce que porte Xéros, `carry` de strength.json, sans le
   multiplicateur de ?dieu) va en tas ; une pièce plus lourde se pose seule, ou se roule. **Pourquoi** : un tas se construit en
   portant ses pièces une à une, et on le défait de même ; une pièce que Xéros ne soulève pas ne monte pas sur un tas, et ne s'en
