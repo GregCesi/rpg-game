@@ -3,8 +3,9 @@
 // Deux murs de 1,60 m de long sur 80 cm de haut (32 × 16 px de face, plus le dessus en trois quarts), montés par calcul à
 // graine fixe avec les dessins mêmes des pierres du jeu (art/items/stones.ts, images au sol, ombre retirée), pour que
 // Grégoire juge avant toute intégration. Rien ici n'entre dans le jeu.
-//   1. le mur brut : les pierres brutes (manière C), grosses en bas, moyennes dans les vides, petites calées dans les joints,
-//      posées sur leur lit (le dessous plat de chaque dessin), joints de mortier de terre larges et irréguliers ;
+//   1. le mur brut : les pierres brutes (manière C) serrées, la pierre couvre l'essentiel de la face : grosses au pied (à plat
+//      sur leur lit ou dressées sur deux hauteurs), moyennes à plat, de travers ou en biais, petites entières ou rognées et
+//      éclats dans les vides ; joints de 1 à 2 px contours compris, la terre seulement dans les joints ;
 //   2. le mur taillé : les moellons (manière B) des trois longueurs mêlées, quelques boutisses (le bout du moellon, sa vue
 //      nord-sud), assises à peu près régulières, joints décalés, joints fins (le contour seul, ou un pixel de mortier).
 // Une pierre dans le mur montre sa face sud : le dessin du jeu sans les rangées de son dessus (sauf la dernière, l'arête
@@ -195,113 +196,268 @@ const xsFor = (w: number) => Array.from({ length: W - w + 1 }, (_, x) => x).filt
 
 // ---------- le mur brut ----------
 
-/**
- * Le mur brut, à graine fixe. Pas d'assise réglée : le pied et le dessus sont deux rangées de pierres de tailles mêlées, le
- * milieu se comble pierre à pierre, chacune là où elle est le plus serrée, à 1 pixel de mortier de ses voisines (2 ou 3 entre
- * deux pierres d'une rangée), joints de lit au contact.
- *   1. le pied : surtout des grosses, posées sur le sol par leur lit (le dessous plat de chaque dessin du jeu) ;
- *   2. l'assise haute : des pierres entières (dessin complet, leur dessus fait le dessus du mur), la face au ras de la face du
- *      mur, ou un pixel plus bas ;
- *   3. le milieu : une grosse si elle tient, puis les moyennes, puis les petites, de préférence à cheval sur deux pierres ;
- *   4. deux petites calées au contact dans ce qui reste de vide.
- * Une pierre sur trois environ est retournée bout pour bout (rééclairée) ; deux mêmes dessins ne se suivent pas dans une rangée.
- */
-function roughWall(seed: number): { grid: Grid; used: Used } {
-  const r = rng(Math.imul(seed, 0x9e3779b1) ^ 0x5bd1e995);
-  const wall = new Wall(3);
-  const used: Used = new Map();
-  const pick = <T>(a: T[]) => a[Math.floor(r() * a.length)];
-  const vary = (p: Piece) => (r() < 0.35 ? turn(p) : p);
+const N4: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const cell = (g: Grid, x: number, y: number) => g[y]?.[x] ?? EMPTY;
 
-  /** Ce qui entoure la pierre posée en (x, y) à `d` pixels près : pierres, sol, bouts du mur. Plus c'est serré, mieux c'est. */
-  const contact = (g: Grid, x: number, y: number, d: number) => {
-    let n = 0;
+/** Pixel de contour d'un dessin : `o` ou `~` qui touche le vide (une fissure `~` à l'intérieur n'en est pas un). */
+const isEdge = (g: Grid, x: number, y: number) =>
+  (g[y][x] === 'o' || g[y][x] === '~') && N4.some(([dx, dy]) => cell(g, x + dx, y + dy) === EMPTY);
+
+/** La matière d'une pierre sans son contour (taches, cassures, fissures intérieures gardées). */
+function inner(g: Grid): Grid {
+  const out = g.map((row, y) => [...row].map((ch, x) => (ch !== EMPTY && isEdge(g, x, y) ? EMPTY : ch)).join(''));
+  return bodyOf(out.map((r) => r.replace(/x/g, EMPTY)));
+}
+
+/** Une matière reçoit un contour d'un pixel (coins arrondis) : `~` en haut et à gauche, OUTLINE en bas et à droite. */
+function reoutline(m: Grid): Grid {
+  const c = new Canvas(m[0].length + 2, m.length + 2).stamp(m, 1, 1);
+  const add: [number, number, string][] = [];
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    if (c.get(x, y) !== EMPTY) continue;
+    if (c.get(x - 1, y) !== EMPTY || c.get(x, y - 1) !== EMPTY) add.push([x, y, 'o']);
+    else if (c.get(x + 1, y) !== EMPTY || c.get(x, y + 1) !== EMPTY) add.push([x, y, '~']);
+  }
+  for (const [x, y, k] of add) c.set(x, y, k);
+  return c.toGrid();
+}
+
+/**
+ * Pierre dressée ou couchée de travers : sa face transposée (lignes et colonnes échangées). La transposition garde la lumière
+ * en haut à gauche (l'arête éclairée du haut passe à gauche, le flanc est à l'ombre passe en bas) : un quart de tour de la
+ * pierre, vu du même côté.
+ */
+const transpose = (m: Grid): Grid => Array.from({ length: m[0].length }, (_, x) => m.map((r) => r[x]).join(''));
+
+/** Pierre posée en biais d'un pixel : la moitié haute de sa face décalée d'un pixel (vers l'est si `east`). */
+function skew(m: Grid, east: boolean): Grid {
+  const h = m.length;
+  return m.map((r, j) => ((j < h / 2) === east ? EMPTY + r : r + EMPTY));
+}
+
+/** Ce qui se pose dans le mur brut : un dessin, sa pierre d'origine, sa sorte. */
+interface Stone {
+  g: Grid;
+  base: Piece;
+  size: 'big' | 'medium' | 'small' | 'bit';
+  how: 'flat' | 'upright' | 'across' | 'tilted' | 'cap' | 'trimmed';
+}
+
+/** Toutes les manières de poser chaque pierre brute (à plat, retournée, debout, de travers, en biais). */
+function stoneVariants(): Stone[] {
+  const out: Stone[] = [];
+  const sizeOf = (p: Piece) => (BIG.includes(p) ? 'big' : MEDIUM.includes(p) ? 'medium' : 'small') as Stone['size'];
+  for (const p of ROUGH) {
+    const size = sizeOf(p);
+    for (const q of [p, turn(p)]) {
+      out.push({ g: face(q), base: p, size, how: 'flat' });
+      const m = inner(face(q));
+      if (size === 'big') out.push({ g: reoutline(transpose(m)), base: p, size, how: 'upright' });
+      if (size === 'medium') {
+        out.push({ g: reoutline(transpose(m)), base: p, size, how: 'across' });
+        out.push({ g: reoutline(skew(m, q === p)), base: p, size, how: 'tilted' });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Les pierres de calage : des morceaux rognés des petites et des moyennes (un rectangle de leur matière, 1 à 3 pixels de
+ * large sur 1 à 2 de haut, avec un contour neuf) : leurs taches et cassures, en plus petit. Les plus grands d'abord.
+ */
+function bits(): Stone[] {
+  const seen = new Set<string>();
+  const out: Stone[] = [];
+  for (const p of [...SMALL, ...MEDIUM]) {
+    const m = inner(face(p));
+    for (let h = 2; h >= 1; h--) for (let w = 3; w >= 1; w--) for (let y = 0; y + h <= m.length; y++) for (let x = 0; x + w <= m[0].length; x++) {
+      const sub = m.slice(y, y + h).map((r) => r.slice(x, x + w));
+      if (sub.some((r) => r.includes(EMPTY))) continue;
+      const key = sub.join('/');
+      if (seen.has(key) || new Set(sub.join('')).size < 2 && w * h > 1) continue;
+      seen.add(key);
+      out.push({ g: reoutline(sub), base: SMALL.includes(p) ? p : SMALL[MEDIUM.indexOf(p)], size: 'bit', how: 'trimmed' });
+    }
+  }
+  return out;
+}
+
+/** Éclats de taille calés dans un joint, pris au dessin des éclats du jeu (sans contour : ils sont noyés dans la terre). */
+const CHIP_BITS: Grid[] = [['!;'], ['+;'], ['=;'], ['.!', '!;'], ['!'], ['+']];
+
+/**
+ * Le mur brut en chantier : en plus du mur, pour chaque pixel, ce qui l'occupe (0 rien, 1 contour d'une pierre, 2 sa
+ * matière). Deux pierres voisines peuvent mettre leur contour l'une sur l'autre (joint d'un pixel) ou côte à côte (deux
+ * pixels), jamais leur matière.
+ */
+class RoughWall extends Wall {
+  readonly kind: number[][];
+  constructor(topRows: number) {
+    super(topRows);
+    this.kind = Array.from({ length: this.c.h }, () => Array(W).fill(0));
+  }
+  fitsStone(g: Grid, x: number, y: number, minY = this.top): boolean {
     for (let j = 0; j < g.length; j++) for (let i = 0; i < g[0].length; i++) {
       if (g[j][i] === EMPTY) continue;
-      for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
+      const px = x + i, py = y + j;
+      if (px < 0 || px >= W || py < minY || py > this.ground) return false;
+      const k = this.kind[py][px];
+      if (k === 2 || (k === 1 && !isEdge(g, i, j))) return false;
+    }
+    return true;
+  }
+  /** Part du pourtour de la pierre qui touche déjà quelque chose (pierre, sol, bout du mur) : plus c'est serré, mieux c'est. */
+  snug(g: Grid, x: number, y: number): number {
+    let n = 0, all = 0;
+    for (let j = 0; j < g.length; j++) for (let i = 0; i < g[0].length; i++) {
+      if (g[j][i] === EMPTY) continue;
+      for (const [dx, dy] of N4) {
+        if (cell(g, i + dx, j + dy) !== EMPTY) continue;
+        all++;
         const px = x + i + dx, py = y + j + dy;
-        if (py > wall.ground || px < 0 || px >= W) n++;
-        else if ((wall.owner[py]?.[px] ?? -1) >= 0) n++;
+        if (py > this.ground || px < 0 || px >= W || (this.kind[py]?.[px] ?? 0) > 0 || this.kind[y + j][x + i] > 0) n++;
       }
     }
-    return n;
-  };
-  const put = (p: Piece, g: Grid, x: number, y: number) => { wall.put(g, x, y); count(used, p); };
+    return all ? n / all : 0;
+  }
+  putStone(g: Grid, x: number, y: number): void {
+    const id = this.owner.flat().reduce((a, b) => Math.max(a, b), -1) + 1;
+    g.forEach((row, j) => [...row].forEach((ch, i) => {
+      if (ch === EMPTY) return;
+      const px = x + i, py = y + j, edge = isEdge(g, i, j);
+      // deux contours l'un sur l'autre : le plus sombre (l'ombre) l'emporte
+      if (!(edge && this.kind[py][px] === 1 && this.c.get(px, py) === 'o')) this.c.set(px, py, ch);
+      this.kind[py][px] = Math.max(this.kind[py][px], edge ? 1 : 2);
+      this.owner[py][px] = id;
+    }));
+  }
+}
 
-  /**
-   * Une rangée de pierres d'un bout à l'autre du mur : tirées (grosses ou moyennes selon `bigShare`), retournées ou non,
-   * avec 1 à 3 pixels de mortier entre elles, jusqu'à tomber juste sur la longueur du mur. `at(p, g)` donne la rangée du haut.
-   */
-  const joints: number[] = [];
-  const row = (bigShare: number, grid: (p: Piece) => Grid, at: (p: Piece, g: Grid) => number) => {
-    for (let tries = 0; tries < 2000; tries++) {
-      const out: { p: Piece; g: Grid; x: number }[] = [];
-      let x = 0;
-      while (x < W) {
-        // une petite de temps en temps, calée entre deux plus grosses
-        const p = vary(pick(r() < 0.12 ? SMALL : r() < bigShare ? BIG : MEDIUM));
-        const g = grid(p);
-        if (x + g[0].length > W) break;
-        out.push({ p, g, x });
-        x += g[0].length + (r() < 0.75 ? 1 : 2);
-      }
-      const last = out.at(-1);
-      // la dernière ferme le mur ; deux mêmes dessins ne se suivent pas
-      if (!last || last.x + last.g[0].length !== W) continue;
-      if (out.some((o, i) => i > 0 && o.p.image === out[i - 1].p.image && o.p.turned === out[i - 1].p.turned)) continue;
-      // les joints de cette rangée tombent à 3 px au moins de ceux de l'autre rangée (le pied et le dessus ne s'alignent pas)
-      const js = out.slice(1).map((o) => o.x);
-      if (tries < 1500 && joints.length && !js.every((j) => joints.every((k) => Math.abs(j - k) >= 4))) continue;
-      joints.push(...js);
-      for (const o of out) put(o.p, o.g, o.x, at(o.p, o.g));
-      return;
-    }
+/** Ce qui a été posé dans le mur brut. */
+interface RoughStats { big: number; medium: number; small: number; trimmed: number; chips: number; upright: number; across: number; tilted: number; cover: number }
+
+/**
+ * Le mur brut, à graine fixe. Les pierres se serrent : deux voisines mettent leur contour l'une sur l'autre (joint d'un
+ * pixel) ou côte à côte (deux pixels), la terre ne reste que dans ce qu'aucune pierre ne comble. Pas de rangée :
+ *   1. les grosses, au pied et jusqu'à mi-hauteur : à plat sur leur lit, retournées, ou dressées (debout, sur deux hauteurs
+ *      de pierre) ; chacune là où elle repose le plus serrée, les plus basses d'abord ;
+ *   2. l'assise haute : des pierres entières (le dessin complet, leur dessus fait le dessus du mur), serrées de gauche à droite ;
+ *   3. le milieu : moyennes à plat, de travers (un quart de tour) ou en biais d'un pixel, chacune là où elle touche le plus ;
+ *   4. les petites entières, puis les petites rognées (morceaux de leurs dessins) dans tous les vides où elles tiennent ;
+ *   5. des éclats dans les derniers trous de terre.
+ */
+function roughWall(seed: number): { grid: Grid; used: Used; stats: RoughStats } {
+  const r = rng(Math.imul(seed, 0x9e3779b1) ^ 0x5bd1e995);
+  const wall = new RoughWall(3);
+  const used: Used = new Map();
+  const stats: RoughStats = { big: 0, medium: 0, small: 0, trimmed: 0, chips: 0, upright: 0, across: 0, tilted: 0, cover: 0 };
+  const all = stoneVariants();
+  const placed: { s: Stone; x: number; y: number }[] = [];
+  /** Deux fois le même dessin, posé de la même façon, à moins de 14 px : on le verrait. Deux pierres dressées côte à côte non plus. */
+  const twin = (s: Stone, x: number) => placed.some((p) =>
+    Math.abs(p.x - x) < 14 && ((p.s.base === s.base && p.s.how === s.how && s.how !== 'trimmed') || (s.how === 'upright' && p.s.how === 'upright')));
+  const put = (s: Stone, x: number, y: number) => {
+    placed.push({ s, x, y });
+    wall.putStone(s.g, x, y);
+    count(used, s.base);
+    if (s.how === 'trimmed') stats.trimmed++;
+    else stats[s.size as 'big' | 'medium' | 'small']++;
+    if (s.how === 'upright') stats.upright++;
+    if (s.how === 'across') stats.across++;
+    if (s.how === 'tilted') stats.tilted++;
   };
-  // 1. le pied : surtout des grosses, posées sur le sol par leur lit
-  row(0.75, face, (_, g) => wall.ground - g.length + 1);
-  // 2. l'assise haute : dessin entier (le dessus de la pierre fait le dessus du mur), la face au ras de celle du mur ou un pixel
-  // plus bas
-  row(0.4, (p) => p.full, (p) => wall.faceTop - p.crop + (r() < 0.4 ? 1 : 0));
-  // 3. les vides du milieu : moyennes (une grosse si elle tient), puis petites, chacune là où elle est le plus serrée, et de
-  // préférence à cheval sur un joint du dessous (une pierre couvre le joint de deux autres)
-  const straddle = (g: Grid, x: number, y: number) => {
-    const below = new Set<number>(), above = new Set<number>();
-    for (let i = 0; i < g[0].length; i++) {
-      for (let dy = 1; dy <= 3; dy++) {
-        const o = wall.owner[y + g.length - 1 + dy]?.[x + i] ?? -1;
-        if (o >= 0) { below.add(o); break; }
-      }
-      for (let dy = 1; dy <= 3; dy++) {
-        const o = wall.owner[y - dy]?.[x + i] ?? -1;
-        if (o >= 0) { above.add(o); break; }
+  /** Pose la meilleure des pierres `from` (la plus serrée, plus `bias`), si l'une tient ; dit si elle a posé. */
+  const best = (from: Stone[], ok: (s: Stone, x: number, y: number) => boolean, bias: (s: Stone, x: number, y: number) => number) => {
+    let out: { s: Stone; x: number; y: number; v: number } | undefined;
+    for (const s of from) {
+      const w = s.g[0].length;
+      for (const x of xsFor(w)) for (let y = wall.faceTop; y + s.g.length - 1 <= wall.ground; y++) {
+        if (!ok(s, x, y) || !wall.fitsStone(s.g, x, y)) continue;
+        const v = wall.snug(s.g, x, y) + bias(s, x, y) + r() * 0.15 - (twin(s, x) ? 0.6 : 0);
+        if (!out || v > out.v) out = { s, x, y, v };
       }
     }
-    return (below.size >= 2 ? 1 : 0) + (above.size >= 2 ? 1 : 0);
+    if (out) put(out.s, out.x, out.y);
+    return !!out;
   };
-  const fill = (from: Piece[], gx: number, gy: number, max: number) => {
-    for (let k = 0; k < max; k++) {
-      let out: { p: Piece; g: Grid; x: number; y: number; s: number } | undefined;
-      for (const base of from) for (const p of [base, turn(base)]) {
-        const g = face(p);
-        for (const x of xsFor(g[0].length)) for (let y = wall.faceTop; y + g.length - 1 <= wall.ground; y++) {
-          if (!wall.fits(g, x, y, gx, gy)) continue;
-          const s = contact(g, x, y, gx + 1) / (g.length * g[0].length) + 0.8 * straddle(g, x, y) + r() * 0.4;
-          if (!out || s > out.s) out = { p, g, x, y, s };
-        }
+  const bottomOf = (s: Stone, y: number) => y + s.g.length - 1;
+
+  // 1. les grosses : 4 ou 5, dont une ou deux dressées, posées sur ce qui est dessous
+  const bigs = all.filter((s) => s.size === 'big');
+  const nBig = 3 + (r() < 0.5 ? 1 : 0);
+  for (let k = 0; k < nBig; k++) {
+    const pool = bigs.filter((s) => (s.how === 'upright' ? stats.upright < 2 : true));
+    // une pierre sur trois tirée parmi les dressées, pour qu'il y en ait toujours
+    const from = k === 1 || (k === 3 && r() < 0.5) ? pool.filter((s) => s.how === 'upright') : pool;
+    best(from, (s, _x, y) => bottomOf(s, y) >= wall.ground - 6 && wall.snug(s.g, _x, y) > 0.2,
+      (s, _x, y) => 0.12 * (bottomOf(s, y) - wall.ground));
+  }
+  // 2. l'assise haute, serrée de gauche à droite : dessin entier, la face au ras de celle du mur ou un pixel plus bas
+  const caps: Stone[] = ROUGH.flatMap((p) => [p, turn(p)].map((q) => ({ g: q.full, base: p, size: (BIG.includes(p) ? 'big' : MEDIUM.includes(p) ? 'medium' : 'small') as Stone['size'], how: 'cap' as const, crop: q.crop })));
+  for (let x = 0; x < W - 3;) {
+    let done = false;
+    // surtout des moyennes et des petites en haut (les grosses sont au pied), une grosse de temps en temps
+    const w = { medium: 0, small: 0.45, big: 0.7, bit: 1 };
+    const order = caps.map((c) => ({ c, k: w[c.size] + r() })).sort((a, b) => a.k - b.k).map((o) => o.c);
+    for (const c of order) {
+      const crop = ROUGH.find((p) => p === c.base)!.crop;
+      for (const dx of [0, -1, 1]) {
+        const px = x + dx, y = wall.faceTop - crop + (r() < 0.35 ? 1 : 0);
+        if (!xsFor(c.g[0].length).includes(px) || !wall.fitsStone(c.g, px, y) || twin(c, px)) continue;
+        put(c, px, y);
+        x = px + c.g[0].length - (r() < 0.6 ? 1 : 0);
+        done = true;
+        break;
       }
-      if (!out) return;
-      put(out.p, out.g, out.x, out.y);
+      if (done) break;
     }
-  };
-  fill(BIG, 1, 0, 1);
-  fill(MEDIUM, 1, 0, 3);
-  fill(SMALL, 1, 0, 2);
-  fill(MEDIUM, 1, 0, 12);
-  fill(MEDIUM, 0, 0, 2);
-  fill(SMALL, 1, 0, 12);
-  // 4. les petites calées au contact, dans ce qui reste de vide
-  fill(SMALL, 0, 0, 4);
-  return { grid: wall.finish(), used };
+    if (!done) x++;
+  }
+  // 3. le milieu : moyennes (et une grosse si elle tient), à plat, de travers, en biais
+  const mids = all.filter((s) => s.size === 'medium' || s.size === 'big');
+  for (let k = 0; k < 6; k++) if (!best(mids, (s, x, y) => wall.snug(s.g, x, y) > 0.35, (s) => (s.size === 'big' ? 0.1 : 0) + (s.how !== 'flat' ? 0.15 : 0))) break;
+  // 4. les petites entières, puis rognées, partout où elles tiennent bien calées
+  const smalls = all.filter((s) => s.size === 'small');
+  for (let k = 0; k < 20; k++) if (!best(smalls, (s, x, y) => wall.snug(s.g, x, y) > 0.4, () => 0)) break;
+  const trimmed = bits();
+  for (let k = 0; k < 60; k++) if (!best(trimmed, (s, x, y) => wall.snug(s.g, x, y) > 0.45, (s) => 0.02 * s.g.length * s.g[0].length)) break;
+  // 5. les éclats, dans les trous de terre qui restent (là où ils ne couvrent que du vide, sous le dessus du mur)
+  for (let k = 0; k < 40; k++) {
+    let done = false;
+    for (const g of CHIP_BITS) {
+      for (let y = wall.faceTop + 1; y + g.length <= wall.ground && !done; y++) for (let x = 1; x + g[0].length < W - 1 && !done; x++) {
+        let ok = true;
+        for (let j = 0; j < g.length; j++) for (let i = 0; i < g[0].length; i++) if (g[j][i] !== EMPTY && wall.kind[y + j][x + i] !== 0) ok = false;
+        // un éclat seulement dans un trou de 2 pixels au moins de large ou de haut, pas sur la ligne d'un joint
+        const room = [[-1, 0], [g[0].length, 0]].filter(([dx]) => wall.kind[y][x + dx] === 0).length + (wall.kind[y - 1]?.[x] === 0 ? 1 : 0) + (wall.kind[y + g.length]?.[x] === 0 ? 1 : 0);
+        if (!ok || room < 1 || r() < 0.5) continue;
+        wall.c.stamp(g, x, y);
+        g.forEach((row, j) => [...row].forEach((ch, i) => { if (ch !== EMPTY) wall.kind[y + j][x + i] = 2; }));
+        stats.chips++;
+        done = true;
+      }
+      if (done) break;
+    }
+    if (!done) break;
+  }
+  // la terre dans les joints : là où deux contours sont côte à côte (l'ombre d'une pierre, puis le contour clair de la
+  // voisine), le contour clair devient souvent de la terre : un joint de deux pixels, contour et terre
+  const earthy: [number, number][] = [];
+  for (let y = wall.faceTop; y < wall.ground; y++) for (let x = 1; x < W - 1; x++) {
+    if (wall.c.get(x, y) !== '~' || wall.kind[y][x] !== 1) continue;
+    const o = wall.owner[y][x];
+    const shadowed = ([[-1, 0], [0, -1]] as const).some(([dx, dy]) => wall.c.get(x + dx, y + dy) === 'o' && wall.owner[y + dy][x + dx] !== o);
+    if (shadowed && r() < 0.7) earthy.push([x, y]);
+  }
+  for (const [x, y] of earthy) { wall.c.set(x, y, MORTAR); wall.kind[y][x] = 0; }
+  if (stats.chips) used.set('stone-chips', { piece: { label: 'eclats', image: 'stone-chips', full: bodyOf(gameImage('stone-chips')), crop: 0 }, n: stats.chips });
+  const grid = wall.finish();
+  // part de la surface du mur couverte par la pierre (contours compris), le reste est la terre des joints
+  let stone = 0, earth = 0;
+  wall.c.px.forEach((row, y) => row.forEach((ch, x) => { if (ch === MORTAR || ch === MORTAR_TOP) earth++; else if (wall.kind[y][x] > 0) stone++; }));
+  stats.cover = stone / (stone + earth);
+  return { grid, used, stats };
 }
 
 // ---------- le mur taillé ----------
@@ -523,14 +679,20 @@ function main() {
   const SEEDS = [1, 2];
   const rows = SEEDS.map((seed) => {
     const rough = roughWall(seed);
+    const rs = rough.stats;
     const dressed = dressedWall(seed);
     return [
-      block([`MUR BRUT, GRAINE ${seed}`, `${total(rough.used)} PIERRES BRUTES`], rough.grid, rough.used, [
+      block([`MUR BRUT, GRAINE ${seed}`,
+        `${rs.big} GROSSES, ${rs.medium} MOYENNES`,
+        `${rs.small + rs.trimmed} PETITES (${rs.trimmed} ROGNEES)`,
+        `${rs.chips} ECLATS`], rough.grid, rough.used, [
         `1,60 X 0,80 M - ${size(rough.grid)}`,
-        'GROSSES AU PIED, SUR LEUR LIT,',
-        'MOYENNES DANS LES VIDES, PETITES',
-        'CALEES - PAS D ASSISES - JOINTS',
-        'DE TERRE LARGES ET IRREGULIERS',
+        `PIERRE ${Math.round(rs.cover * 100)} %, TERRE ${100 - Math.round(rs.cover * 100)} %`,
+        `GROSSES AU PIED, ${rs.upright} DEBOUT,`,
+        `MOYENNES A PLAT, ${rs.across} DE TRAVERS,`,
+        `${rs.tilted} EN BIAIS - PETITES ET ECLATS`,
+        'CALES DANS LES VIDES - JOINTS DE',
+        '1 A 2 PX, CONTOURS COMPRIS',
       ], true),
       block([`MUR TAILLE, GRAINE ${seed}`, `${total(dressed.used)} MOELLONS`], dressed.grid, dressed.used, [
         `1,60 X 0,80 M - ${size(dressed.grid)}`,
