@@ -429,6 +429,17 @@ await playtest('construction', async ({ page, errors, load }) => {
     assert.ok(halving, 'le mi-bois est posé');
     const after = await pieces();
     assert.equal(after.find((p: any) => p.id === pn.id).z, 40, 'les deux sablières à la même hauteur, l’une dans l’autre');
+    // ce que l'œil voit : la sablière nord-sud sur le solin nord-sud ne déborde pas de son image et n'est pas décalée vers le nord
+    const seenOn = await page.evaluate(([pid, sid]) => {
+      const m = (window as any).game.scene.getScene('world').map;
+      const im = (id: number) => { const b = m.builds.find((q: any) => q.piece.id === id); return { x: b.image.x, y: b.image.y, w: b.image.width, cx: b.crop?.x ?? 0, cw: b.crop?.w ?? b.image.width }; };
+      return { beam: im(pid), wall: im(sid) };
+    }, [pn.id, s1.id] as const);
+    const wallL = seenOn.wall.x;
+    const wallR = seenOn.wall.x + seenOn.wall.w - 1;
+    assert.ok(seenOn.beam.x >= wallL && seenOn.beam.x + seenOn.beam.w - 1 <= wallR, `la sablière ne déborde pas du solin (${JSON.stringify(seenOn)})`);
+    const southPx = (pn.y + 300) / 5;
+    assert.ok(seenOn.beam.y >= southPx - 2, `la sablière n'est pas décalée vers le nord (bas ${seenOn.beam.y}, bord sud ${southPx})`);
     const overlay = await page.evaluate(() => (window as any).game.scene.getScene('world').map.overlays.map((o: any) => o.texture.key));
     assert.ok(overlay.some((k: string) => k.startsWith('joint-halving-normal-beam-')), `un seul dessin au croisement (${overlay})`);
     // le poteau d'angle, debout sur le croisement

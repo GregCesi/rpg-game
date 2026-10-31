@@ -13,9 +13,11 @@ import type { Natural, WoodPiece } from '../content/types';
 import { woodDef, woodOf } from './woodPiece';
 import { lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
-import { blocks, boxOf, depthsOf, type BuildPiece } from './build';
+import { blocks, boxOf, depthsOf, overlaps, supportsOf, type BuildPiece } from './build';
+import type { BuildPlaced } from '../content/types';
+import { lookDef, lookOf as woodLookOf } from './woodShape';
 import { buildLook } from './buildView';
-import { runLayout, wallRuns } from './wallRuns';
+import { runLayout, wallOf, wallRuns } from './wallRuns';
 import { wallTexture } from './wallTexture';
 import { drawJoints, halvingOverlays } from './jointView';
 
@@ -233,6 +235,12 @@ export class GameMap {
   readonly builds: PlacedBuild[] = [];
   /** Les croisements des mi-bois, posés par-dessus leurs deux pièces (redessinés à chaque changement). */
   private overlays: Phaser.GameObjects.Image[] = [];
+  /**
+   * Le décalage d'affichage de chaque pièce posée (px) : une pièce se cale sur le dessus *dessiné* de ce qui la porte. En règle D, une
+   * pièce couchée nord-sud (le solin, la poutre) n'est pas relevée de sa hauteur à l'écran : ce qui repose dessus descend d'autant
+   * (`down`) ; un tronçon de mur nord-sud calé au ras d'un angle décale ce qui repose dessus d'autant (`dx`).
+   */
+  private readonly shown = new Map<number, { dx: number; down: number }>();
   readonly width: number;
   readonly height: number;
 
@@ -608,8 +616,20 @@ export class GameMap {
    * porte : world/build.ts).
    */
   sortBuilds(): void {
+    // chaque pièce reprend sa place calculée (les murs et le bois sont replacés par leur dessin commun), puis son calage
+    for (const b of this.builds) {
+      if ('wood' in b.piece.piece || wallOf(b.piece)) continue;
+      const look = buildLook(this.scene, b.piece);
+      b.image.setPosition(look.x, look.y);
+    }
     this.drawWalls();
     drawJoints(this.scene, this.builds, this.changes.joints);
+    this.shown.clear();
+    for (const b of [...this.builds].sort((a, c) => a.piece.z - c.piece.z)) {
+      const o = this.offsetOf(b.piece);
+      this.shown.set(b.piece.id, o);
+      if (o.dx || o.down) b.image.setPosition(b.image.x + o.dx, b.image.y + o.down);
+    }
     const depths = depthsOf(this.builds.map((b) => b.piece));
     for (const b of this.builds) {
       const floor = b.piece.z === 0 && 'prop' in b.piece.piece && propDefs[b.piece.piece.prop].layer === 'floor';
@@ -619,6 +639,50 @@ export class GameMap {
     this.overlays = halvingOverlays(this.scene, this.builds, this.changes.joints).map((o) =>
       this.scene.add.image(o.x, o.y, o.key).setOrigin(0, 0).setDepth(o.depth).setAlpha(1),
     );
+  }
+
+  /**
+   * Le décalage d'affichage d'une pièce (posée, ou en fantôme) : celui de la pièce qui la porte (celle dont l'emprise recoupe le plus
+   * la sienne), plus ce que son dessin corrige : un dessus nord-sud en règle D dessiné plus bas que sa hauteur, un mur nord-sud calé
+   * au ras d'un angle.
+   */
+  offsetOf(p: BuildPlaced): { dx: number; down: number } {
+    const pieces = this.builds.map((b) => b.piece);
+    const supports = supportsOf(pieces, p);
+    if (!supports.length) return { dx: 0, down: 0 };
+    const pb = boxOf(p);
+    const area = (q: BuildPiece) => {
+      const b = boxOf(q);
+      return Math.max(0, Math.min(b.x + b.w, pb.x + pb.w) - Math.max(b.x, pb.x)) * Math.max(0, Math.min(b.y + b.d, pb.y + pb.d) - Math.max(b.y, pb.y));
+    };
+    // à recouvrement égal (le poteau d'angle sur un croisement), celle qui est dessinée à sa hauteur (pas en règle D)
+    const s = supports.filter((q) => overlaps(boxOf(q), pb)).sort((a, b) => area(b) - area(a) || Number(this.reglD(a)) - Number(this.reglD(b)))[0] ?? supports[0];
+    const placed = this.builds.find((b) => b.piece.id === s.id);
+    const base = this.shown.get(s.id) ?? { dx: 0, down: 0 };
+    if (!placed) return base;
+    const sb = boxOf(s);
+    let dx = base.dx;
+    let down = base.down;
+    if (this.reglD(s)) {
+      // le dessus dessiné d'une pièce nord-sud : quelques rangées au-dessus de son emprise, au lieu de sa hauteur
+      const drawn = 'wood' in s.piece ? lookDef(s.piece.wood.size, woodLookOf(s.piece.wood)).ns.extra : wallOf(s) ? 1 : Math.max(0, placed.image.height - Math.round(sb.d / CM_PER_PX));
+      down += Math.round(sb.h / CM_PER_PX) - drawn;
+    }
+    // un mur nord-sud dont l'image n'est pas centrée sur son emprise (calée au ras d'un angle)
+    if (wallOf(s) && s.view % 2) dx += placed.image.x - Math.round((sb.x + sb.w / 2) / CM_PER_PX - placed.image.width / 2);
+    return { dx, down };
+  }
+
+  /** Le décalage d'affichage d'une pièce posée (calculé au dernier `sortBuilds`). */
+  shownOffset(p: BuildPiece): { dx: number; down: number } {
+    return this.shown.get(p.id) ?? { dx: 0, down: 0 };
+  }
+
+  /** Une pièce couchée nord-sud dessinée en règle D (pas relevée de sa hauteur) : le bois nord-sud, un objet couché tourné d'un quart. */
+  private reglD(p: BuildPiece): boolean {
+    if ('wood' in p.piece) return p.piece.wood.axis === 'ns';
+    const def = 'prop' in p.piece ? propDefs[p.piece.prop] : items[p.piece.item];
+    return !!def.lying && p.view % 2 === 1;
   }
 
   /** Les tronçons de mur : chaque morceau prend l'image de son tronçon, placée pour le tronçon, rognée à sa part. */

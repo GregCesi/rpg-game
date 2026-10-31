@@ -234,7 +234,7 @@ export class BuildSystem {
     const before = sign(this.jointAim);
     this.jointAim = undefined;
     if (t?.kind === 'joint') {
-      const junction = junctionAt(this.pieces, px, py);
+      const junction = junctionAt(this.pieces, px, py, 8, (q) => this.map.shownOffset(q));
       this.jointAim = { junction, why: jointRefusal(junction, t.type, this.joints) };
       if (sign(this.jointAim) !== before) this.status();
       return;
@@ -329,7 +329,7 @@ export class BuildSystem {
     let best: Joint | undefined;
     let d = 5;
     for (const j of this.joints) {
-      const pt = jointPoint(this.pieces, j);
+      const pt = jointPoint(this.pieces, j, (q) => this.map.shownOffset(q));
       const dd = pt ? Math.hypot(pt.x - px, pt.y - py) : Infinity;
       if (dd <= d) {
         d = dd;
@@ -510,7 +510,9 @@ export class BuildSystem {
     if (a) {
       a.pieces.forEach((p, i) => {
         const look = buildLook(this.scene, p);
-        this.ghosts.show(i, look.key, look.x, look.y, DEPTH.prompt - 3, a.ok ? BUILD.ghost : BUILD.refused, look.frame);
+        // calé comme il le sera, sur le dessus dessiné de ce qui le porte
+        const o = this.map.offsetOf(p);
+        this.ghosts.show(i, look.key, look.x + o.dx, look.y + o.down, DEPTH.prompt - 3, a.ok ? BUILD.ghost : BUILD.refused, look.frame);
       });
       this.ghosts.hideFrom(a.pieces.length);
       // l'emprise de la base, à sa hauteur : où la pièce touche ce qui la porte

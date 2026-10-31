@@ -101,8 +101,18 @@ function junctionPoint(A: Box3, B: Box3): { x: number; y: number } | undefined {
   return { x: (c.x0 + c.x1) / 2 / CM_PER_PX, y: (c.y1 - (c.z0 + c.z1) / 2) / CM_PER_PX };
 }
 
+/** Le décalage d'affichage d'une pièce (px : `dx`, `down`), pour viser une jonction là où on la voit (GameMap.offsetOf). */
+export type Shift = (p: BuildPiece) => { dx: number; down: number };
+
+/** Le point d'une jonction tel qu'on le voit : celui du calcul, décalé comme la plus haute des deux pièces. */
+function seen(a: BuildPiece, b: BuildPiece, pt: { x: number; y: number }, shift?: Shift): { x: number; y: number } {
+  if (!shift) return pt;
+  const o = shift(b.z > a.z ? b : a);
+  return { x: pt.x + o.dx, y: pt.y + o.down };
+}
+
 /** Toutes les jonctions entre une pièce de bois et une pièce qui la touche. */
-export function junctions(pieces: readonly BuildPiece[]): Junction[] {
+export function junctions(pieces: readonly BuildPiece[], shift?: Shift): Junction[] {
   const out: Junction[] = [];
   for (const a of pieces) {
     if (!('wood' in a.piece)) continue;
@@ -110,17 +120,17 @@ export function junctions(pieces: readonly BuildPiece[]): Junction[] {
       if (a === b || ('wood' in b.piece && b.id < a.id)) continue;
       const j = judge(a, b);
       const pt = j && junctionPoint(boxOf(a), boxOf(b));
-      if (j && pt) out.push({ a, b, ...j, ...pt });
+      if (j && pt) out.push({ a, b, ...j, ...seen(a, b, pt, shift) });
     }
   }
   return out;
 }
 
 /** La jonction la plus proche du point (px du monde), à moins de `reach` px. */
-export function junctionAt(pieces: readonly BuildPiece[], px: number, py: number, reach = 8): Junction | undefined {
+export function junctionAt(pieces: readonly BuildPiece[], px: number, py: number, reach = 8, shift?: Shift): Junction | undefined {
   let best: Junction | undefined;
   let d = reach;
-  for (const j of junctions(pieces)) {
+  for (const j of junctions(pieces, shift)) {
     const dd = Math.hypot(j.x - px, j.y - py);
     if (dd <= d) {
       d = dd;
@@ -131,10 +141,11 @@ export function junctionAt(pieces: readonly BuildPiece[], px: number, py: number
 }
 
 /** Le point à l'écran d'un assemblage posé (px), ou rien si ses pièces ne se touchent plus. */
-export function jointPoint(pieces: readonly BuildPiece[], j: JointRef): { x: number; y: number } | undefined {
+export function jointPoint(pieces: readonly BuildPiece[], j: JointRef, shift?: Shift): { x: number; y: number } | undefined {
   const a = pieces.find((p) => p.id === j.a);
   const b = pieces.find((p) => p.id === j.b);
-  return a && b ? junctionPoint(boxOf(a), boxOf(b)) : undefined;
+  const pt = a && b ? junctionPoint(boxOf(a), boxOf(b)) : undefined;
+  return a && b && pt ? seen(a, b, pt, shift) : undefined;
 }
 
 /** Les deux pièces sont-elles déjà assemblées ? */
