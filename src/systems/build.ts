@@ -275,6 +275,9 @@ export class BuildSystem {
       const lx = Math.floor(px - img.x);
       const ly = Math.floor(py - (img.y - img.height));
       if (lx < 0 || ly < 0 || lx >= img.width || ly >= img.height) continue;
+      // un morceau de mur ne montre que sa part du tronçon
+      const c = b.crop;
+      if (c && (lx < c.x || ly < c.y || lx >= c.x + c.w || ly >= c.y + c.h)) continue;
       const alpha = this.scene.textures.getPixelAlpha(lx, ly, img.texture.key, img.frame.name);
       if (alpha && alpha > 0) return b.piece;
     }

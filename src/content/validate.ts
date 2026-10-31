@@ -981,6 +981,8 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     // E sur l'objet : le prendre, le récolter à la main ou ouvrir son dialogue, pas deux à la fois (une récolte à l'outil se fait avec Espace)
     if (p.take && ((p.harvest && !p.harvest.tool) || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
     addAll(validateRope(key, p, c));
+    // un morceau de mur qui se raccorde (le solin) : couché à quatre vues (est-ouest, nord-sud), plus long qu'épais
+    if (p.wall && (p.views !== 'four' || !p.lying || p.dims.shape !== 'box' || p.dims.w <= p.dims.d)) err(`props.json '${key}' : 'wall' demande un morceau couché à quatre vues ('four', 'lying'), une boîte plus longue qu'épaisse`);
   }
 
   // Gabarit : taille de chaque objet d'après ses dimensions réelles

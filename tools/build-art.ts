@@ -29,6 +29,7 @@ import { woodPreview } from './lib/wood-preview';
 import { lyingPreview } from './lib/lying-preview';
 import { auditPreview } from './lib/audit-preview';
 import { briquesPreview } from './lib/briques-preview';
+import { sillPreview } from './lib/sill-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
 import type { WoodLook, WoodPiece } from '../src/content/types';
@@ -36,6 +37,8 @@ import { shapeOfLook, WOOD } from '../src/world/woodShape';
 import { composeWood } from '../art/world/wood-pieces';
 import { world } from '../art/palette';
 import type { ArtSource } from '../art/lib/types';
+import { WALL_STONES } from '../src/world/walls';
+import { stonePalette } from '../art/items/stones';
 
 /** Où l'aperçu pose un plan : la carte, et le point au sol de son piquet nord-ouest (px). */
 const PLAN_PREVIEW = { map: 'ferme', corner: [568, 99] };
@@ -310,10 +313,28 @@ ${images.join('\n')}
 export const woodSilhouettes: { piece: WoodPiece; w: number; h: number }[] = ${JSON.stringify(catalog.woodSilhouettes)};
 `;
 writeFileSync(join(OUT, 'assets.ts'), manifest);
+// les dessins des pierres dont le jeu monte ses murs (le tronçon de solin, src/world/walls.ts) : des grilles, et leur palette ; le
+// jeu ne lit pas art/, il lit ceci
+const wallStones = Object.fromEntries(
+  WALL_STONES.map((name) => {
+    const src = sources.find((x) => x.kind === 'image' && x.name === name);
+    if (src?.kind !== 'image') throw new Error(`art : la pierre '${name}' (WALL_STONES, src/world/walls.ts) n'est pas une image de art/`);
+    return [name, src.grid];
+  }),
+);
+writeFileSync(
+  join(OUT, 'wallStones.ts'),
+  `// GÉNÉRÉ par tools/build-art.ts à partir de art/items/stones.ts. Ne pas modifier à la main.\n` +
+    `// Les dessins des pierres (grilles de caractères) et leur palette, pour monter les murs dans le jeu (src/world/walls.ts).\n` +
+    `export const wallStones: Record<string, string[]> = ${JSON.stringify(wallStones)};\n` +
+    `export const wallPalette: Record<string, string> = ${JSON.stringify(stonePalette)};\n`,
+);
 // Même catalogue sans les images, lisible par Node (npm run check)
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(catalog, null, 2));
 if (withPreview) {
   writeFileSync(join(PREVIEW, 'collection.png'), PNG.sync.write(buildCollectionBoard(sources)));
+  // le solin en tronçons, par le moteur du jeu : rectangle de 4 × 3 avec une porte, tronçon de 3, morceau seul
+  writeFileSync(join(PREVIEW, 'solin-rectangle.png'), PNG.sync.write(sillPreview()));
   // aperçus composés : chaque geste avec chaque outil en main (planches tool-*), et les deux mains
   const gestures = parse('gestures.json', z.record(z.string(), GestureSchema), gesturesJson);
   const body = sources.find((s) => s.kind === 'spritesheet' && s.name === 'xeros');

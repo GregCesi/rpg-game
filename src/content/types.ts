@@ -532,6 +532,12 @@ export const PropDefSchema = z.strictObject({
    * chaque pose (`variant` d'une pièce posée en mode construction, GameState).
    */
   variants: z.number().int().min(2).max(32).optional(),
+  /**
+   * Morceau de mur qui se raccorde (le morceau de solin) : sa manière (`rough` brut, `dressed` taillé). Posés en mode construction,
+   * des morceaux de même manière, à la même hauteur, alignés et jointifs, forment un tronçon dessiné d'un seul tenant
+   * (world/wallRuns.ts, world/walls.ts) ; deux tronçons à angle droit forment un angle ; un tronçon qui s'arrête montre une tête.
+   */
+  wall: z.enum(['rough', 'dressed']).optional(),
 });
 
 /** Les quatre coins d'une emprise : nord-ouest, nord-est, sud-est, sud-ouest. */

@@ -15,6 +15,8 @@ import { lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
 import { blocks, boxOf, depthsOf, type BuildPiece } from './build';
 import { buildLook } from './buildView';
+import { runLayout, wallRuns } from './wallRuns';
+import { wallTexture } from './wallTexture';
 
 /**
  * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois, celle de ses réglages
@@ -155,6 +157,8 @@ export interface PlacedBuild {
   piece: BuildPiece;
   image: Phaser.GameObjects.Image;
   zone?: Phaser.GameObjects.Zone;
+  /** Un morceau de mur dans un tronçon : la part de l'image du tronçon qu'il montre (repère de l'image). */
+  crop?: { x: number; y: number; w: number; h: number };
 }
 
 /** Un objet possédable posé au sol, affiché. */
@@ -595,12 +599,33 @@ export class GameMap {
     this.builds.splice(i, 1);
   }
 
-  /** Remet chaque pièce posée à sa profondeur (bord sud, puis hauteur, et toujours après ce qui la porte : world/build.ts). */
+  /**
+   * Après une pose ou un retrait : les tronçons de mur sont recalculés (chaque morceau montre sa part du dessin de son tronçon :
+   * world/wallRuns.ts), puis chaque pièce posée est remise à sa profondeur (bord sud, puis hauteur, et toujours après ce qui la
+   * porte : world/build.ts).
+   */
   sortBuilds(): void {
+    this.drawWalls();
     const depths = depthsOf(this.builds.map((b) => b.piece));
     for (const b of this.builds) {
       const floor = b.piece.z === 0 && 'prop' in b.piece.piece && propDefs[b.piece.piece.prop].layer === 'floor';
       b.image.setDepth(floor ? DEPTH.floor : depths.get(b.piece.id)!);
+    }
+  }
+
+  /** Les tronçons de mur : chaque morceau prend l'image de son tronçon, placée pour le tronçon, rognée à sa part. */
+  private drawWalls(): void {
+    const byId = new Map(this.builds.map((b) => [b.piece.id, b]));
+    for (const run of wallRuns(this.builds.map((b) => b.piece))) {
+      const key = wallTexture(this.scene, run);
+      const f = this.scene.textures.getFrame(key);
+      const lay = runLayout(run, f.width, f.height);
+      run.pieces.forEach((p, i) => {
+        const b = byId.get(p.id)!;
+        const c = lay.crops[i];
+        b.image.setTexture(key).setPosition(lay.x, lay.y).setCrop(c.x, c.y, c.w, c.h);
+        b.crop = c;
+      });
     }
   }
 

@@ -3,7 +3,9 @@
 // dalle, 12 cm), une sablière sur la tête du poteau (12 + 180 = 192 cm) ; retirer le poteau est refusé (il porte la sablière) ;
 // Ctrl+Z ôte la sablière, Ctrl+Y la remet ; la zone choisie à la souris s'enregistre comme plan (écrit par le serveur Vite dans
 // src/content/plans/, effacé à la fin) ; le plan se repose ailleurs d'un coup, aux mêmes hauteurs ; la page rechargée retrouve
-// les six pièces ; ce qui est posé sous 2 m bloque ; un cran (T) monte de 20 cm ; un morceau de solin se pose.
+// les pièces ; ce qui est posé sous 2 m bloque ; un cran (T) monte de 20 cm ; un morceau de solin se pose. Puis le solin en tronçons :
+// trois morceaux taillés bout à bout ne font qu'un dessin, sans contour aux jonctions ; un morceau nord-sud aimanté sous le bout
+// ouest forme un angle ; retirer le morceau du milieu coupe le tronçon en deux.
 // Usage : npm run test:construction (lancé aussi par npm run test). CONSTRUCTION_SHOTS=1 : captures dans .art-preview/.
 
 import assert from 'node:assert/strict';
@@ -208,11 +210,86 @@ await playtest('construction', async ({ page, errors, load }) => {
     // dalle, sans collision dans props.json, se marche comme en jeu
     const blocking = await page.evaluate(() => (window as any).game.scene.getScene('world').map.builds.filter((b: any) => b.zone).map((b: any) => b.piece.id));
     assert.equal(blocking.length, 6);
+    // 11. le solin en tronçons : trois morceaux taillés bout à bout = un tronçon, un seul dessin, sans contour aux jonctions ; un
+    // morceau nord-sud sous le bout ouest = un angle ; le morceau du milieu retiré coupe le tronçon en deux
+    await listen();
+    const spot2 = await page.evaluate(() => {
+      const w = (window as any).game.scene.getScene('world');
+      const m = w.map;
+      const clear = (l: number, t: number, r: number, b: number) =>
+        m.areaFree({ left: l, top: t, right: r, bottom: b }) && !m.builds.some((q: any) => q.image.x < r && q.image.x + q.image.width > l && q.image.y - q.image.height < b && q.image.y > t);
+      for (let y = 100; y < m.height - 120; y += 8) for (let x = 60; x < m.width - 160; x += 8) if (clear(x - 20, y - 40, x + 120, y + 80)) {
+        w.cameras.main.centerOn(x + 48, y + 20);
+        return { x, y };
+      }
+      return undefined;
+    });
+    assert.ok(spot2, 'un second coin dégagé');
+    await sleep(300);
+    center = { x: spot2!.x + 48, y: spot2!.y + 20 };
+    const before = (await pieces()).length;
+    await send({ kind: 'pick', piece: { prop: 'dressed-sill-wall' } });
+    for (const dx of [16, 48, 80]) await click(spot2!.x + dx, spot2!.y);
+    const sills = (await pieces()).slice(before);
+    assert.equal(sills.length, 3, 'trois morceaux posés');
+    assert.deepEqual(sills.map((p: any) => p.x - sills[0].x), [0, 160, 320], 'bout à bout');
+    assert.ok(sills.every((p: any) => p.y === sills[0].y), 'alignés');
+    const runsOf = () =>
+      page.evaluate(async () => {
+        const url = '/src/world/wallRuns.ts';
+        const mod = await import(url);
+        const w = (window as any).game.scene.getScene('world');
+        return mod.wallRuns(w.map.builds.map((b: any) => b.piece)).filter((r: any) => r.kind === 'dressed').map((r: any) => ({ axis: r.axis, ids: r.pieces.map((p: any) => p.id), start: r.start, end: r.end }));
+      });
+    let runs = await runsOf();
+    assert.equal(runs.length, 1, 'un tronçon');
+    assert.deepEqual([runs[0].ids.length, runs[0].start, runs[0].end], [3, 'head', 'head']);
+    // un seul dessin : les trois morceaux montrent la même texture, chacun sa part ; aux jonctions, pas de colonne de contour
+    const look = await page.evaluate(async (ids) => {
+      const url = '/src/generated/wallStones.ts';
+      const { wallPalette } = await import(url);
+      const w = (window as any).game.scene.getScene('world');
+      const bs = ids.map((id: number) => w.map.builds.find((b: any) => b.piece.id === id));
+      const key = bs[0].image.texture.key;
+      const src = w.textures.get(key).getSourceImage();
+      const ctx = src.getContext('2d');
+      const hex = (x: number, y: number) => { const d = ctx.getImageData(x, y, 1, 1).data; return d[3] ? '#' + [d[0], d[1], d[2]].map((v: number) => v.toString(16).padStart(2, '0')).join('') : ''; };
+      const outline = String(wallPalette.o ?? '').slice(0, 7);
+      // la colonne de chaque jonction, sur la face (les 8 rangées au-dessus de l'ombre) : combien de pixels du contour sombre
+      const faceRows = Array.from({ length: 8 }, (_, i) => src.height - 2 - i);
+      const joints = [32, 64].map((x) => faceRows.filter((y) => hex(x, y) === outline).length);
+      const ends = [0, src.width - 2].map((x) => faceRows.filter((y) => hex(x, y) === outline).length);
+      return { keys: bs.map((b: any) => b.image.texture.key), crops: bs.map((b: any) => b.crop), joints, ends, outline };
+    }, runs[0].ids);
+    assert.equal(new Set(look.keys).size, 1, 'un seul dessin pour le tronçon');
+    assert.deepEqual(look.crops.map((c: any) => c.x), [0, 32, 64], 'chaque morceau montre sa part');
+    for (const j of look.joints) assert.ok(j < 6, `pas de trait de contour à la jonction (${look.joints})`);
+    await shot('5-troncon');
+    // l'angle : un morceau tourné nord-sud (R), visé sous le carré ouest, s'aimante contre le tronçon
+    await page.keyboard.press('KeyR');
+    await sleep(100);
+    const west = sills[0];
+    await click((west.x + 25) / 5, (west.y + 50 + 80) / 5);
+    const ns = (await pieces()).at(-1);
+    assert.equal(ns.view, 1, 'tourné nord-sud');
+    assert.deepEqual([ns.x, ns.y], [west.x, west.y + 50], "aimanté sous le carré d'angle");
+    runs = await runsOf();
+    const ewRun = runs.find((r: any) => r.axis === 'ew');
+    const nsRun = runs.find((r: any) => r.axis === 'ns');
+    assert.deepEqual([ewRun?.start, nsRun?.start], ['corner-s', 'abut'], "un angle se forme");
+    await shot('6-angle');
+    // le morceau du milieu retiré (clic droit sur sa face) : deux tronçons
+    await send({ kind: 'none' });
+    await click((sills[1].x + 80) / 5, (sills[1].y + 50) / 5 - 3, 'right');
+    runs = (await runsOf()).filter((r: any) => r.axis === 'ew');
+    assert.equal(runs.length, 2, 'le tronçon est coupé en deux');
+    assert.deepEqual(runs.map((r: any) => r.ids.length).sort(), [1, 1]);
+
     await page.keyboard.press('KeyB');
     await sleep(150);
     assert.equal(await mode(), 'play', 'B rend le jeu');
     assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
-    console.log('  ✓ construction : dalle, poteau à 12 cm, sablière à 192 cm, refus, annuler, refaire, plan écrit et reposé, solin, cran, rechargé');
+    console.log('  ✓ construction : dalle, poteau à 12 cm, sablière à 192 cm, refus, annuler, refaire, plan écrit et reposé, solin, cran, rechargé ; tronçon de trois sans contour intérieur, angle, coupure');
   } finally {
     rmSync(PLAN_FILE, { force: true });
   }

@@ -73,5 +73,8 @@ Le maçon (`trade: "mason"`).
 - `npm run check` : chaque vue de chaque tirage à la règle D.
 - En jeu (`?construire`) : famille « éléments », le poser, le tourner, poser une poutre dessus (elle prend 40 cm), le retirer ;
   `npm run test:construction` en pose un et vérifie qu'il garde son tirage au rechargement.
-- Reste à faire : un **angle** (une pièce en L avec une pierre d'angle qui coiffe les deux bras, quatre dessins, `bodies` à deux
-  rectangles) et un **bout** (le côté d'une porte : pierres plus droites en chaîne, `end` dans `WallSize` de `art/lib/walls.ts`).
+- Raccord : `wall` (`rough`, `dressed`) dans props.json ; posés bout à bout, en angle, ou arrêtés à une porte, les morceaux forment
+  des tronçons dessinés d'un seul tenant (CONCEPTION, *Le mode construction* ; `world/wallRuns.ts`, `world/walls.ts` `run`).
+  Aperçus : `.art-preview/solin-rectangle.png` (par le moteur du jeu : rectangle de 4 × 3 avec une porte, tronçon de 3, morceau
+  seul, dans les deux manières, Xéros devant la porte) et `.art-preview/solin-enceinte.png` (`tools/essai-murs.ts`).
+- Reste à faire : la harpe sur le dessus des angles taillés, une grosse pierre d'angle franche pour le brut.

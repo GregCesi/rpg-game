@@ -107,7 +107,7 @@ export function supportAt(pieces: readonly BuildPlaced[], foot: { x: number; y: 
  */
 export function aimAt(pieces: readonly BuildPlaced[], size: Size3, cx: number, cy: number, step = 0): Box3 {
   const tops = [...new Set(pieces.map((p) => topOf(boxOf(p))))].sort((a, b) => b - a);
-  const at = (t: number) => ({ x: onGrid(cx - size.w / 2), y: onGrid(cy + t - size.d / 2), w: size.w, d: size.d });
+  const at = (t: number) => magnet(pieces, { x: onGrid(cx - size.w / 2), y: onGrid(cy + t - size.d / 2), w: size.w, d: size.d });
   let base: { x: number; y: number; z: number } | undefined;
   for (const t of tops) {
     const f = at(t);
@@ -121,6 +121,24 @@ export function aimAt(pieces: readonly BuildPlaced[], size: Size3, cx: number, c
     base = { x: f.x, y: f.y, z: supportAt(pieces, f) };
   }
   return { ...base, z: Math.max(0, base.z + step * BUILD.grid), ...size };
+}
+
+/**
+ * L'emprise aimantée aux bords de ses voisines : un bord à moins d'une demi-grille (10 cm) d'un bord d'une pièce proche (bout à bout,
+ * ou alignés) s'y colle, en x puis en y. Ce qui n'est pas sur la grille (le morceau de solin, 50 cm d'épaisseur) se joint ainsi
+ * exactement, en angle comme en long.
+ */
+export function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F): F {
+  const reach = BUILD.grid / 2;
+  const boxes = pieces.map(boxOf);
+  const best = (deltas: number[]) => deltas.filter((d) => Math.abs(d) <= reach).sort((a, b) => Math.abs(a) - Math.abs(b))[0] ?? 0;
+  // en x : les pièces à moins d'une grille en y
+  const nearY = boxes.filter((o) => o.y < f.y + f.d + BUILD.grid && f.y < o.y + o.d + BUILD.grid);
+  const dx = best(nearY.flatMap((o) => [o.x + o.w - f.x, o.x - (f.x + f.w), o.x - f.x, o.x + o.w - (f.x + f.w)]));
+  const g = { ...f, x: f.x + dx };
+  const nearX = boxes.filter((o) => o.x < g.x + g.w + BUILD.grid && g.x < o.x + o.w + BUILD.grid);
+  const dy = best(nearX.flatMap((o) => [o.y + o.d - g.y, o.y - (g.y + g.d), o.y - g.y, o.y + o.d - (g.y + g.d)]));
+  return { ...g, y: g.y + dy };
 }
 
 /** Les pièces sur lesquelles repose celle-ci : leur dessus est à sa base et leurs emprises se recouvrent. */
@@ -251,7 +269,10 @@ export function planPieces(plan: BuildPlan, at: { x: number; y: number; z: numbe
   return plan.pieces.map((p) => ({ ...structuredClone(p), x: p.x + at.x, y: p.y + at.y, z: p.z + at.z }));
 }
 
-/** Ce qui ne va pas dans un plan du bac à sable (pièces disparues du contenu, sens impossibles, hors grille), décrit en français. */
+/**
+ * Ce qui ne va pas dans un plan du bac à sable (pièces disparues du contenu, sens impossibles), décrit en français. Les positions ne
+ * sont pas forcément sur la grille : une pièce aimantée au bord d'une voisine (le solin de 50 cm d'épaisseur) en sort.
+ */
 export function planProblems(plan: BuildPlan): string[] {
   const out: string[] = [];
   plan.pieces.forEach((p, i) => {
@@ -259,8 +280,6 @@ export function planProblems(plan: BuildPlan): string[] {
     const missing = refMissing(p.piece);
     if (missing) return out.push(`${at} : ${missing} n'existe pas`);
     if (p.view >= viewsOf(p.piece)) out.push(`${at} : sens ${p.view}, l'objet n'en a que ${viewsOf(p.piece)}`);
-    // x et y sur la grille ; la hauteur suit ce qui porte la pièce (une dalle de 12 cm), elle n'y est pas forcément
-    for (const k of ['x', 'y'] as const) if (p[k] % BUILD.grid) out.push(`${at} : ${k} = ${p[k]} cm, hors de la grille de ${BUILD.grid} cm`);
     if ('prop' in p.piece && p.variant !== undefined && p.variant >= (props[p.piece.prop].variants ?? 1)) out.push(`${at} : tirage ${p.variant} inconnu`);
   });
   return out;

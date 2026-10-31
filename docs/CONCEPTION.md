@@ -331,12 +331,27 @@ d'autres pièces. Ni force, ni aide de la mère, ni ordre de chantier. Plan d'or
 - **Les éléments composés** : un élément calculé (`variants` de props.json) a plusieurs tirages produits par `npm run art`, et le
   mode en tire un au hasard à chaque pose. Premiers éléments : les [morceaux de solin](objets/sill-wall.md) brut et taillé (1,60 m,
   40 cm visibles, 50 cm d'épaisseur), montés par l'algorithme de l'essai des murs (`art/lib/walls.ts`), 8 tirages × 4 vues.
+- **Le solin se raccorde** (retour de Grégoire, même jour : posés côte à côte, les morceaux restaient séparés) : des morceaux de
+  même manière (`wall` de props.json), à la même hauteur, alignés et jointifs, forment un **tronçon** dessiné d'un seul tenant par
+  l'algorithme des murs : pierres et assises traversent les jonctions, contour aux deux vrais bouts seulement. Le tirage d'un
+  tronçon se tire de sa position (le même mur à chaque chargement). Deux tronçons à angle droit forment un **angle** (le tronçon
+  est-ouest possède le carré d'angle ; le nord-sud vient contre lui, son image calée au ras du bord extérieur) ; un tronçon qui
+  s'arrête (à une porte) montre une **tête** finie (pierres d'about, chaînage du taillé). Poser ou retirer un morceau recalcule les
+  tronçons. Chaque morceau reste une pièce à part (poser, retirer, collision, sauvegarde) et montre sa part du dessin du tronçon.
+  Les bords d'une pièce s'**aimantent** à ceux de ses voisines à moins de 10 cm (le solin, 50 cm d'épaisseur, sort de la grille de
+  20 : il se joint ainsi exactement en angle). Détection : `world/wallRuns.ts` ; dessin : `world/walls.ts`.
+- **Choix : le dessin d'un tronçon se calcule dans le jeu, à la pose**, et non d'avance par longueur et par forme (trop de
+  combinaisons : longueurs, bouts, angles, graines). L'algorithme des murs est devenu du code pur de `src/` (`src/world/walls.ts`,
+  outils de grille `src/world/gridCanvas.ts`, que `art/` ré-exporte) ; les dessins des pierres lui arrivent en données, écrites par
+  `npm run art` (`src/generated/wallStones.ts`) : le jeu ne lit toujours pas `art/`. Un tronçon de 8 morceaux se calcule en
+  moins de 30 ms. Les morceaux seuls de props.json (8 tirages × 4 vues) restent pour le catalogue et le fantôme.
 - **Choix faits sans Grégoire** (à revoir) : la touche B ; T et G pour les crans ; Maj + clic droit pour retirer une pile ;
   l'historique d'annulation ne survit pas au rechargement ; une pièce posée n'a pas de taille naturelle visible (sa taille ne
   change que sa masse, comme en jeu) ; un objet possédable sans `dims` prend une boîte de 20 × 20 × 10 cm ; un plan ne garde pas le
   tirage d'un solin ; la dalle, sans collision dans `props.json`, ne bloque pas ; 8 tirages par solin, produits au build plutôt
   que calculés dans le navigateur (le jeu ne lit pas `art/`).
-- **Ce qui viendra** : l'angle et le bout de solin (pour une porte) ; les autres éléments composés (pans, couples, pans de toit,
+- **Ce qui viendra** : la harpe visible sur le dessus des angles taillés et une grosse pierre d'angle franche pour le brut (le
+  dessus du carré est aujourd'hui celui du mur nord-sud) ; un angle tenu au nord par un tronçon nord-sud (à éviter : laid) ; les autres éléments composés (pans, couples, pans de toit,
   faîtage, cheminée, cloison) et leur rang d'affichage pour ce qui est en pente ; les portes dans les collisions ; poser un plan
   depuis Tiled ; le chantier guidé tiré d'un plan du bac à sable.
 

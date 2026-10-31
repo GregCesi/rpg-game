@@ -71,6 +71,7 @@ src/
     hold.json        objets tenus sur Xéros : point d'accroche par posture (main, épaule, porter) à chaque image
   state/             GameState : l'état de la partie (les deux mains, changements du monde, objets au sol) ; save.ts : sa sauvegarde (localStorage, version, schéma Zod)
   world/GameMap.ts   construit une carte jouable à partir d'une MapData
+  world/walls.ts     les murs de pierre montés par calcul (le solin), pur : l'algorithme de l'essai des murs, un tronçon de toute longueur avec ses têtes et ses angles (`run`), nourri des pierres de src/generated/wallStones.ts (écrit par build-art) ; world/wallRuns.ts trouve les tronçons parmi les pièces posées, world/wallTexture.ts les peint ; world/gridCanvas.ts, les grilles de caractères (art/lib/canvas.ts le ré-exporte)
   world/build.ts     le mode construction sans Phaser : boîte de chaque pièce posée, hauteur accrochée sur ce qu'il y a dessous, porteurs, ordre d'affichage, sens, plan tiré d'une zone ; world/buildView.ts son image projetée (y − z)
   world/places.ts    le moteur de places commun aux tas et aux chantiers, sans Phaser : places ouvertes, pièces à reprendre, place visée, ordre d'affichage, ce qu'une place accepte (un genre, ou une pièce précise)
   world/pileShape.ts la forme d'un tas dans son sens, son lien (les places viennent de places.ts)
