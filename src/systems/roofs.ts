@@ -1,5 +1,7 @@
 import { ROOF } from '../config';
 import type { Player } from '../entities/Player';
+import { CM_PER_PX } from '../content/gabarit';
+import { overHead, withAbove } from '../world/build';
 import type { GameMap, PlacedProp } from '../world/GameMap';
 
 /** Hauteur de Xéros à l'écran au-dessus de ses pieds (px, 1,60 m et le haut du bol de cheveux) : sa tête. */
@@ -15,7 +17,8 @@ export class Roofs {
   constructor(private readonly map: GameMap) {}
 
   /** À appeler à chaque image, dans tous les modes (le toit suit Xéros même pendant un geste ou un dialogue). */
-  update(player: Player, delta: number): void {
+  update(player: Player, delta: number, builds = true): void {
+    this.builds(player, delta, builds);
     const roofs = this.map.props.filter((p) => p.def.roof);
     if (!roofs.length) return;
     const { x, y } = player.actor;
@@ -32,6 +35,26 @@ export class Roofs {
       p.image.setAlpha(a < target ? Math.min(target, a + step) : Math.max(target, a - step));
       // son ombre portée s'efface avec lui
       p.shadow?.setAlpha(p.image.alpha);
+    }
+  }
+
+  /**
+   * Les pièces posées en mode construction : celles dont la base est au-dessus de la tête de Xéros (BUILD.head) et dont l'emprise au
+   * sol couvre ses pieds (à une demi-case près : il est caché un peu avant d'être dessous) s'effacent, avec tout ce qui repose dessus ;
+   * les autres redeviennent opaques. Même fondu que les toits. `on` faux (le mode construction) : rien ne s'efface.
+   */
+  private builds(player: Player, delta: number, on: boolean): void {
+    if (!this.map.builds.length) return;
+    const pieces = this.map.builds.map((b) => b.piece);
+    const fx = player.actor.x * CM_PER_PX;
+    const fy = player.actor.y * CM_PER_PX;
+    const faded = new Set<number>();
+    if (on) for (const p of pieces) if (overHead(p, fx, fy, 80)) for (const q of withAbove(pieces, p.id)) faded.add(q.id);
+    const step = ((1 - ROOF.alpha) * delta) / ROOF.fadeMs;
+    for (const b of this.map.builds) {
+      const target = faded.has(b.piece.id) ? ROOF.alpha : 1;
+      const a = b.image.alpha;
+      if (a !== target) b.image.setAlpha(a < target ? Math.min(target, a + step) : Math.max(target, a - step));
     }
   }
 }

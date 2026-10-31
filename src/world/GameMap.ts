@@ -13,6 +13,8 @@ import type { Natural, WoodPiece } from '../content/types';
 import { woodDef, woodOf } from './woodPiece';
 import { lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
+import { blocks, boxOf, depthsOf, type BuildPiece } from './build';
+import { buildLook } from './buildView';
 
 /**
  * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois, celle de ses réglages
@@ -148,6 +150,13 @@ export interface PlacedProp {
   natural?: Natural;
 }
 
+/** Une pièce posée en mode construction, affichée : son état (GameState), son image, sa collision si elle bloque. */
+export interface PlacedBuild {
+  piece: BuildPiece;
+  image: Phaser.GameObjects.Image;
+  zone?: Phaser.GameObjects.Zone;
+}
+
 /** Un objet possédable posé au sol, affiché. */
 export interface PlacedGround {
   item: GroundItem;
@@ -215,6 +224,8 @@ export class GameMap {
   readonly props: PlacedProp[] = [];
   readonly ground: PlacedGround[] = [];
   readonly piles: PlacedPile[] = [];
+  /** Les pièces posées en mode construction. */
+  readonly builds: PlacedBuild[] = [];
   readonly width: number;
   readonly height: number;
 
@@ -260,6 +271,8 @@ export class GameMap {
     for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, length: o.length, wood: o.wood, natural: o.natural });
     for (const g of changes.ground) this.placeGround(g);
     for (const pile of changes.piles) this.placePile(pile);
+    for (const b of changes.builds) this.placeBuild(b);
+    this.sortBuilds();
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
     if (def.ambient) {
@@ -554,6 +567,41 @@ export class GameMap {
       parts.push(glow);
     }
     return placed;
+  }
+
+  /**
+   * Affiche une pièce posée en mode construction : son image (relevée de sa hauteur), et sa collision, son emprise au sol en vraie
+   * grandeur, si elle bloque (posée sous BUILD.high). Appeler `sortBuilds` ensuite pour l'ordre d'affichage.
+   */
+  placeBuild(piece: BuildPiece): PlacedBuild {
+    const look = buildLook(this.scene, piece);
+    const image = this.scene.add.image(look.x, look.y, look.key, look.frame).setOrigin(0, 1);
+    let zone: Phaser.GameObjects.Zone | undefined;
+    if (blocks(piece)) {
+      const b = boxOf(piece);
+      zone = this.addObstacle((b.x + b.w / 2) / CM_PER_PX, (b.y + b.d / 2) / CM_PER_PX, b.w / CM_PER_PX, b.d / CM_PER_PX);
+    }
+    const placed = { piece, image, zone };
+    this.builds.push(placed);
+    return placed;
+  }
+
+  /** Retire une pièce posée en mode construction (image et collision). */
+  removeBuild(id: number): void {
+    const i = this.builds.findIndex((b) => b.piece.id === id);
+    if (i < 0) return;
+    this.builds[i].image.destroy();
+    this.builds[i].zone?.destroy();
+    this.builds.splice(i, 1);
+  }
+
+  /** Remet chaque pièce posée à sa profondeur (bord sud, puis hauteur, et toujours après ce qui la porte : world/build.ts). */
+  sortBuilds(): void {
+    const depths = depthsOf(this.builds.map((b) => b.piece));
+    for (const b of this.builds) {
+      const floor = b.piece.z === 0 && 'prop' in b.piece.piece && propDefs[b.piece.piece.prop].layer === 'floor';
+      b.image.setDepth(floor ? DEPTH.floor : depths.get(b.piece.id)!);
+    }
   }
 
   private addObstacle(x: number, y: number, w: number, h: number): Phaser.GameObjects.Zone {

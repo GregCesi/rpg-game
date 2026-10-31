@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
-import { HELP, HUD, START, TURN_PRESS } from '../config';
+import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS } from '../config';
 import { items, maps, props } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
-import { GameEvent, type DieuCommand } from '../events';
+import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand } from '../events';
+import { BuildSystem } from '../systems/build';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
@@ -53,8 +54,9 @@ import type { Interactable, PlacedGround } from '../world/GameMap';
  * Ce que fait le monde en ce moment. Une seule valeur à la fois : le joueur ne peut pas
  * marcher pendant un dialogue, ni ouvrir un dialogue pendant qu'il change de carte.
  * `use` : Xéros fait un geste (outil ou mains), il ne marche pas et ne prend pas de sortie.
+ * `build` : le mode construction (?construire, systems/build.ts) : Xéros attend, la caméra est libre, la souris pose et retire.
  */
-type Mode = 'play' | 'use' | 'dialogue' | 'transition';
+type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build';
 
 /** Ce que reçoit la scène à son lancement : la carte, et le point d'apparition ou la position exacte (`at`, sauvegarde). */
 export type WorldStart = { mapId: string; spawn?: string; at?: { x: number; y: number; facing: Facing }; wake?: boolean };
@@ -102,6 +104,10 @@ export class WorldScene extends Phaser.Scene {
   private transformer!: TransformSystem;
   /** R maintenu : pivoter une bille couchée. */
   private turnPress!: LongPress;
+  /** Le mode construction (?construire). */
+  private builder!: BuildSystem;
+  /** Le mode construction était ouvert : il le reste d'une carte à l'autre (et ?construire l'ouvre au lancement). */
+  private building = CONSTRUIRE;
   /** Champ « force » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
   private force = 1;
   /** Case « endurance infinie » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
@@ -178,6 +184,7 @@ export class WorldScene extends Phaser.Scene {
     this.roll = new RollSystem(this.map, npcs.map((n) => n.actor.body), (t) => this.notice(t), () => this.effort.exhausted());
     this.turns = new TurnSystem(this.map, this.roll, npcs.map((n) => n.actor.body), this);
     this.turnPress = new LongPress(this, TURN_PRESS.ms);
+    this.builder = new BuildSystem(this, this.map, this.player, (t) => this.notice(t), (st: BuildStatus) => this.game.events.emit(GameEvent.BuildStatus, st));
     this.player.strength.multiplier = this.force;
     this.player.stamina.infinite = this.infinite;
     this.player.stamina.onChange = () => this.game.events.emit(GameEvent.Stamina, this.player.stamina.fraction);
@@ -193,6 +200,7 @@ export class WorldScene extends Phaser.Scene {
     cam.startFollow(this.player.actor, true, 0.15, 0.15);
     cam.setRoundPixels(true);
     cam.fadeIn(220, 20, 14, 8);
+    if (CONSTRUIRE && this.building) this.enterBuild();
 
     // la partie est écrite à l'arrivée sur la carte, puis à chaque changement, et quand la page se cache ou se ferme
     this.autosave = new AutoSave(def, this.player);
@@ -208,9 +216,11 @@ export class WorldScene extends Phaser.Scene {
 
     this.game.events.on(GameEvent.DialogueEnd, this.onDialogueEnd, this);
     this.game.events.on(GameEvent.Dieu, this.dieu, this);
+    this.game.events.on(GameEvent.Build, this.buildCommand, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(GameEvent.DialogueEnd, this.onDialogueEnd, this);
       this.game.events.off(GameEvent.Dieu, this.dieu, this);
+      this.game.events.off(GameEvent.Build, this.buildCommand, this);
       window.removeEventListener('pagehide', saveNow);
       document.removeEventListener('visibilitychange', saveIfHidden);
     });
@@ -224,8 +234,8 @@ export class WorldScene extends Phaser.Scene {
     this.effort.update(this.player, delta, this.mode === 'play');
     // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
     this.roll.update(this.player, delta, this.mode === 'play');
-    // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes
-    this.roofs.update(this.player, delta);
+    // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes ; en mode construction, rien ne s'efface
+    this.roofs.update(this.player, delta, this.mode !== 'build');
     if (this.mode === 'play') {
       const exit = findExit(this.player, this.map.def.exits);
       if (exit) this.travel(exit);
@@ -239,6 +249,11 @@ export class WorldScene extends Phaser.Scene {
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
+    // B (?construire) : entrer dans le mode construction, ou en sortir
+    if (input.buildPressed() && CONSTRUIRE && (this.mode === 'play' || this.mode === 'build')) {
+      if (this.mode === 'build') this.exitBuild();
+      else this.enterBuild();
+    }
     const e = this.interaction.update(time, this.mode === 'play');
     this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
     // la coupe visée sur une pièce de bois et ses deux longueurs, la face qu'on dresse, le bout où planter ou frapper le coin
@@ -248,6 +263,7 @@ export class WorldScene extends Phaser.Scene {
     // les chantiers : piquets, places à remplir en fantôme, ligne d'état
     this.site.update(this.player, this.mode === 'play');
     this.pileCount.update(this.player, this.mode === 'play');
+    if (this.mode === 'build') this.builder.update(delta, turn);
     if (this.mode !== 'play') {
       this.turnPress.cancel();
       return this.press.cancel();
@@ -646,6 +662,33 @@ export class WorldScene extends Phaser.Scene {
         this.fadeTo({ mapId: START.map, spawn: START.spawn });
         break;
     }
+  }
+
+  /** Ouvre le mode construction : Xéros attend, la caméra est libre (systems/build.ts). */
+  private enterBuild(): void {
+    this.mode = 'build';
+    this.building = true;
+    this.builder.enter();
+  }
+
+  /** Ferme le mode construction : on rejoue, la caméra reprend Xéros. */
+  private exitBuild(): void {
+    this.mode = 'play';
+    this.building = false;
+    this.builder.exit();
+    this.interaction.lock(200);
+  }
+
+  /**
+   * Une commande du catalogue du mode construction (GameEvent.Build) : `toggle` entre ou sort ; une autre ouvre le mode s'il ne
+   * l'est pas (on choisit une pièce, on la pose), sauf pendant un geste, un dialogue ou un changement de carte.
+   */
+  private buildCommand(cmd: BuildCommand): void {
+    if (!CONSTRUIRE) return;
+    if (this.mode !== 'play' && this.mode !== 'build') return this.notice('Pas pendant un geste ou un dialogue.');
+    if (cmd.kind === 'toggle') return this.mode === 'build' ? this.exitBuild() : this.enterBuild();
+    if (this.mode !== 'build') this.enterBuild();
+    this.builder.command(cmd);
   }
 
   private openDialogue(id: string): void {

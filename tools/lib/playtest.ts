@@ -56,7 +56,7 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     await page.addInitScript('window.__name = (f) => f;');
     const load = async (query = '?dieu&reset') => {
       await page.goto(`${url}${query}`);
-      await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
+      await page.waitForFunction(() => !!(window as any).game?.scene?.getScene?.('world')?.player, null, { timeout: 30000 });
     };
     await load();
     await body({ page, url, errors, load });

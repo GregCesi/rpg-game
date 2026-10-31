@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import '@fontsource/pixelify-sans/latin-400.css';
-import { DEBUG, DIEU, UI, VIEW, ZOOM } from './config';
+import { CONSTRUIRE, DEBUG, DIEU, UI, VIEW, ZOOM } from './config';
 import * as content from './content';
 import { buildPlans } from './content/buildPlans';
 import { catalogFrom, validateBuildPlans, validateContent } from './content/validate';
@@ -32,6 +32,8 @@ async function start() {
   // ?dieu : le panneau des outils de test, monté avant le jeu pour que le canevas prenne la place qui reste
   let game: Phaser.Game | undefined;
   if (DIEU) (await import('./dieu/panel')).mountPanel((cmd) => game?.events.emit(GameEvent.Dieu, cmd));
+  // ?construire : le catalogue du mode construction, à gauche du jeu
+  const build = CONSTRUIRE ? (await import('./build/panel')).mountBuildPanel((cmd) => game?.events.emit(GameEvent.Build, cmd)) : undefined;
 
   game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -46,6 +48,8 @@ async function start() {
     // ordre d'affichage : le monde, la barre d'objets par-dessus, puis le dialogue
     scene: [BootScene, WorldScene, HudScene, DialogueScene],
   });
+
+  if (build) game.events.on(GameEvent.BuildStatus, build.status);
 
   // Accès depuis la console du navigateur pour déboguer.
   (window as unknown as { game: Phaser.Game }).game = game;
