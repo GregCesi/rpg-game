@@ -544,6 +544,16 @@ export const PropDefSchema = z.strictObject({
    * pente.
    */
   pitch: z.literal('south').optional(),
+  /**
+   * Ce qui s'ouvre et se ferme en jeu (E, une pièce posée en mode construction) : `into`, l'objet qu'il devient (son autre état, qui
+   * nomme celui-ci en retour) ; `hinge`, où il tourne : `side`, le bord gauche de sa face du dehors vu du dehors (un volet, une
+   * porte : ouvert, il a tourné d'un quart vers le dehors, dans le sens des aiguilles d'une montre), `bottom`, le bas de sa face du
+   * dehors (le volet d'étal, rabattu en comptoir : l'objet ouvert est contre sa face du dehors, son dessus à la hauteur de sa base) ;
+   * `open` : cet état est l'ouvert. La face du dehors est au sud dans la vue 0 (`world/build.ts`, `swung`).
+   */
+  swing: z
+    .strictObject({ into: z.string(), hinge: z.enum(['side', 'bottom']), open: z.literal(true).optional() })
+    .optional(),
 });
 
 /** Les quatre coins d'une emprise : nord-ouest, nord-est, sud-est, sud-ouest. */

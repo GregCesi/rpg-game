@@ -203,6 +203,9 @@
     "rough-sill-wall",
     "dressed-sill-wall",
     "plank-door",
-    "plank-roof"
+    "plank-roof",
+    "plank-gable",
+    "plank-shutter",
+    "plank-shutter-open"
   ]
 }

@@ -7,39 +7,21 @@
   "joints": [
     {
       "type": "notch",
-      "a": 5,
-      "b": 8,
-      "top": 8
-    },
-    {
-      "type": "notch",
       "a": 6,
-      "b": 8,
-      "top": 8
-    },
-    {
-      "type": "notch",
-      "a": 5,
-      "b": 9,
-      "top": 9
+      "b": 10,
+      "top": 10
     },
     {
       "type": "notch",
       "a": 7,
-      "b": 9,
-      "top": 9
-    },
-    {
-      "type": "notch",
-      "a": 8,
       "b": 10,
       "top": 10
     },
     {
       "type": "notch",
-      "a": 9,
-      "b": 10,
-      "top": 10
+      "a": 6,
+      "b": 11,
+      "top": 11
     },
     {
       "type": "notch",
@@ -49,7 +31,13 @@
     },
     {
       "type": "notch",
-      "a": 9,
+      "a": 10,
+      "b": 12,
+      "top": 12
+    },
+    {
+      "type": "notch",
+      "a": 11,
       "b": 12,
       "top": 12
     },
@@ -62,20 +50,14 @@
     {
       "type": "notch",
       "a": 11,
-      "b": 13,
-      "top": 13
-    },
-    {
-      "type": "notch",
-      "a": 10,
       "b": 14,
       "top": 14
     },
     {
       "type": "notch",
       "a": 12,
-      "b": 14,
-      "top": 14
+      "b": 15,
+      "top": 15
     },
     {
       "type": "notch",
@@ -85,19 +67,25 @@
     },
     {
       "type": "notch",
-      "a": 14,
-      "b": 15,
-      "top": 15
-    },
-    {
-      "type": "notch",
-      "a": 13,
+      "a": 12,
       "b": 16,
       "top": 16
     },
     {
       "type": "notch",
       "a": 14,
+      "b": 16,
+      "top": 16
+    },
+    {
+      "type": "notch",
+      "a": 15,
+      "b": 17,
+      "top": 17
+    },
+    {
+      "type": "notch",
+      "a": 16,
       "b": 17,
       "top": 17
     },
@@ -110,12 +98,6 @@
     {
       "type": "notch",
       "a": 16,
-      "b": 18,
-      "top": 18
-    },
-    {
-      "type": "notch",
-      "a": 15,
       "b": 19,
       "top": 19
     },
@@ -128,60 +110,42 @@
     {
       "type": "notch",
       "a": 18,
+      "b": 20,
+      "top": 20
+    },
+    {
+      "type": "notch",
+      "a": 17,
       "b": 21,
       "top": 21
     },
     {
       "type": "notch",
       "a": 19,
-      "b": 21,
-      "top": 21
-    },
-    {
-      "type": "notch",
-      "a": 18,
-      "b": 22,
-      "top": 22
-    },
-    {
-      "type": "notch",
-      "a": 20,
       "b": 23,
       "top": 23
     },
     {
       "type": "notch",
-      "a": 21,
-      "b": 24,
-      "top": 24
-    },
-    {
-      "type": "notch",
-      "a": 22,
+      "a": 20,
       "b": 24,
       "top": 24
     },
     {
       "type": "notch",
       "a": 21,
+      "b": 24,
+      "top": 24
+    },
+    {
+      "type": "notch",
+      "a": 20,
       "b": 25,
       "top": 25
     },
     {
       "type": "notch",
       "a": 23,
-      "b": 25,
-      "top": 25
-    },
-    {
-      "type": "notch",
-      "a": 24,
-      "b": 26,
-      "top": 26
-    },
-    {
-      "type": "notch",
-      "a": 25,
       "b": 26,
       "top": 26
     },
@@ -194,14 +158,20 @@
     {
       "type": "notch",
       "a": 25,
+      "b": 27,
+      "top": 27
+    },
+    {
+      "type": "notch",
+      "a": 24,
       "b": 28,
       "top": 28
     },
     {
       "type": "notch",
       "a": 26,
-      "b": 29,
-      "top": 29
+      "b": 28,
+      "top": 28
     },
     {
       "type": "notch",
@@ -211,25 +181,19 @@
     },
     {
       "type": "notch",
-      "a": 26,
+      "a": 28,
+      "b": 29,
+      "top": 29
+    },
+    {
+      "type": "notch",
+      "a": 27,
       "b": 30,
       "top": 30
     },
     {
       "type": "notch",
       "a": 28,
-      "b": 30,
-      "top": 30
-    },
-    {
-      "type": "notch",
-      "a": 29,
-      "b": 31,
-      "top": 31
-    },
-    {
-      "type": "notch",
-      "a": 30,
       "b": 31,
       "top": 31
     },
@@ -247,15 +211,39 @@
     },
     {
       "type": "notch",
-      "a": 35,
-      "b": 37,
-      "top": 37
+      "a": 29,
+      "b": 33,
+      "top": 33
     },
     {
       "type": "notch",
-      "a": 36,
-      "b": 37,
-      "top": 37
+      "a": 31,
+      "b": 33,
+      "top": 33
+    },
+    {
+      "type": "notch",
+      "a": 32,
+      "b": 34,
+      "top": 34
+    },
+    {
+      "type": "notch",
+      "a": 33,
+      "b": 34,
+      "top": 34
+    },
+    {
+      "type": "notch",
+      "a": 32,
+      "b": 35,
+      "top": 35
+    },
+    {
+      "type": "notch",
+      "a": 33,
+      "b": 35,
+      "top": 35
     }
   ],
   "pieces": [
@@ -302,7 +290,7 @@
       "piece": {
         "prop": "slab"
       },
-      "x": 320,
+      "x": 140,
       "y": 400,
       "z": 0,
       "view": 0,
@@ -313,12 +301,29 @@
     },
     {
       "piece": {
-        "prop": "plank-door"
+        "prop": "slab"
       },
-      "x": 140,
-      "y": 420,
+      "x": 195,
+      "y": 400,
       "z": 0,
-      "view": 0
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 320,
+      "y": 400,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
     },
     {
       "piece": {
@@ -359,6 +364,15 @@
       },
       "x": 240,
       "y": 400,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "plank-door"
+      },
+      "x": 140,
+      "y": 420,
       "z": 12,
       "view": 0
     },
@@ -529,6 +543,15 @@
       "y": 20,
       "z": 112,
       "view": 0
+    },
+    {
+      "piece": {
+        "prop": "plank-shutter"
+      },
+      "x": 340,
+      "y": 200,
+      "z": 112,
+      "view": 3
     },
     {
       "piece": {
@@ -732,29 +755,19 @@
     },
     {
       "piece": {
-        "wood": {
-          "size": "normal",
-          "length": 180,
-          "shape": "round",
-          "axis": "ew"
-        }
+        "prop": "plank-gable"
       },
-      "x": 100,
-      "y": 40,
+      "x": 60,
+      "y": 60,
       "z": 252,
-      "view": 0
+      "view": 2
     },
     {
       "piece": {
-        "wood": {
-          "size": "normal",
-          "length": 180,
-          "shape": "round",
-          "axis": "ew"
-        }
+        "prop": "plank-gable"
       },
-      "x": 100,
-      "y": 400,
+      "x": 60,
+      "y": 420,
       "z": 252,
       "view": 0
     },
@@ -767,9 +780,9 @@
           "axis": "ns"
         }
       },
-      "x": 180,
+      "x": 185,
       "y": 20,
-      "z": 272,
+      "z": 312,
       "view": 0
     }
   ]

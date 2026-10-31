@@ -226,6 +226,74 @@ export function turned(ref: BuildRef, view: number): { ref: BuildRef; view: numb
   return { ref: { wood: { ...w, axis: 'ew' } as WoodPiece }, view: 0 };
 }
 
+/** Le côté du dehors d'une pièce dans sa vue : sud dans la vue 0, puis un quart de tour dans le sens des aiguilles d'une montre. */
+const OUTWARD: readonly [number, number][] = [
+  [0, 1],
+  [-1, 0],
+  [0, -1],
+  [1, 0],
+];
+
+/** Un point tourné d'un quart autour de (cx, cy), dans le sens des aiguilles d'une montre à l'écran (`cw`) ou dans l'autre. */
+function quarter(x: number, y: number, cx: number, cy: number, cw: boolean): [number, number] {
+  const dx = x - cx;
+  const dy = y - cy;
+  return cw ? [cx - dy, cy + dx] : [cx + dy, cy - dx];
+}
+
+/** Le coin nord-ouest d'un rectangle au sol tourné d'un quart autour d'un point. */
+function quarterBox(b: { x: number; y: number; w: number; d: number }, cx: number, cy: number, cw: boolean): { x: number; y: number } {
+  const a = quarter(b.x, b.y, cx, cy, cw);
+  const c = quarter(b.x + b.w, b.y + b.d, cx, cy, cw);
+  return { x: Math.min(a[0], c[0]), y: Math.min(a[1], c[1]) };
+}
+
+/**
+ * Ce qui s'ouvre et se ferme (`swing` de props.json : le volet, le volet d'étal) : sa place dans son autre état, ou rien si la pièce
+ * ne bat pas. `side` : le bord gauche de sa face du dehors, vu du dehors, est le gond ; ouvrir, c'est tourner d'un quart vers le
+ * dehors autour de lui (la vue suivante), fermer le tour inverse (le gond est le coin de la boîte ouverte qui, refermé puis rouvert,
+ * la redonne). `bottom` : le bas de sa face du dehors est le gond ; ouvert, l'objet est contre sa face du dehors, centré, son dessus à
+ * la hauteur de la base du fermé ; fermé, le fermé est contre le bord du dedans de l'ouvert, sa base sur le dessus de l'ouvert.
+ */
+export function swung(p: BuildPlaced): BuildPlaced | undefined {
+  if (!('prop' in p.piece)) return undefined;
+  const s = props[p.piece.prop].swing;
+  if (!s || !props[s.into]) return undefined;
+  const into = { prop: s.into };
+  const n = viewsOf(p.piece);
+  const b = boxOf(p);
+  if (s.hinge === 'side') {
+    const open = (q: BuildPlaced): BuildPlaced => {
+      const qb = boxOf(q);
+      const [qx, qy] = OUTWARD[q.view % 4];
+      // le gond : au bout gauche de la face du dehors (vu du dehors, la gauche est (−qy, qx))
+      const fx = qb.x + qb.w / 2 + (qx * qb.w) / 2;
+      const fy = qb.y + qb.d / 2 + (qy * qb.d) / 2;
+      const half = qx ? qb.d / 2 : qb.w / 2;
+      return { ...q, ...quarterBox(qb, fx - qy * half, fy + qx * half, true), view: (q.view + 1) % n };
+    };
+    if (!s.open) return { ...open(p), piece: into };
+    // fermer : le coin de la boîte ouverte autour duquel elle se referme
+    for (const [cx, cy] of [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.d], [b.x + b.w, b.y + b.d]]) {
+      const closed: BuildPlaced = { ...p, piece: into, ...quarterBox(b, cx, cy, false), view: (p.view + n - 1) % n };
+      const again = open({ ...closed, piece: p.piece });
+      if (again.x === p.x && again.y === p.y) return closed;
+    }
+    return undefined;
+  }
+  // `bottom` : rabattu contre la face du dehors (centré le long de la face)
+  const [ox, oy] = OUTWARD[p.view % 4];
+  const t = sizeOf(into, p.view);
+  if (!s.open) {
+    const x = ox > 0 ? b.x + b.w : ox < 0 ? b.x - t.w : b.x + Math.round((b.w - t.w) / 2);
+    const y = oy > 0 ? b.y + b.d : oy < 0 ? b.y - t.d : b.y + Math.round((b.d - t.d) / 2);
+    return { ...p, piece: into, x, y, z: Math.max(0, b.z - t.h) };
+  }
+  const x = ox > 0 ? b.x - t.w : ox < 0 ? b.x + b.w : b.x + Math.round((b.w - t.w) / 2);
+  const y = oy > 0 ? b.y - t.d : oy < 0 ? b.y + b.d : b.y + Math.round((b.d - t.d) / 2);
+  return { ...p, piece: into, x, y, z: b.z + b.h };
+}
+
 /** Une zone choisie au sol, en cm : coin nord-ouest et dimensions. */
 export interface Area {
   x: number;

@@ -417,16 +417,28 @@ Grégoire.
   des pièces de bois de 1,40 m) et la **porte en planches** ([fiche](objets/plank-door.md)) ; une fenêtre de 60 cm à l'est (le
   rondin de la troisième assise recoupé) ; les pignons en rondins (un rondin de 1,80 m sur chaque mur de bout) ; la faîtière (un
   rondin nord-sud encoché dans les pignons, à 1,80 m du bord ouest : le milieu exact, 1,70 m, n'est pas sur la grille) ; les deux
-  **pans de toit en planches** ([fiche](objets/plank-roof.md)) posés sur le rondin de rive. 38 pièces, 42 assemblages.
+  **pans de toit en planches** ([fiche](objets/plank-roof.md)) posés sur le rondin de rive. 38 pièces, 42 assemblages (avant la
+  finition ci-dessous).
 - **Ce qui a manqué et a été créé** : l'encoche (assemblage, règle, dessin du croisement) ; la porte en planches et le pan de toit en
   planches (objets, fiches, dessins). **Ce qui existait** : le rondin recoupé (une pièce de bois de toute longueur sur la grille),
   les rondins de pignon et la faîtière (des rondins).
 - **Le moteur, pour la cabane** : un pan de toit (`pitch` de props.json, le côté de sa rive basse) se pose sur ce qui porte sa rive
   basse et ne se heurte pas à ce qui est sous sa pente ; une pièce de toit ne porte rien (la visée l'ignore). La visée prend le
   plus haut dessus sous l'emprise : la porte se pose donc avant le linteau qui passe au-dessus d'elle (l'ordre réel du montage).
-- **À trancher par Grégoire** : des pignons taillés en biais (un rondin coupé à la pente, nouvel aspect de la pièce de bois) plutôt
-  qu'un rondin court ; un volet ou un châssis pour la fenêtre (aujourd'hui une simple ouverture) ; un seuil sous la porte ; un toit
-  de bardeaux (le bardeau existe, mais pas de lattes pour le porter).
+- **Finition, avec les réponses de Grégoire** (même jour, chantier « bâtiments ») : les **pignons fermés en planches fendues**
+  ([fiche](objets/plank-gable.md) ; pas de rondins en biais pour l'instant) : un pentagone de planches debout de 2,60 × 0,60 m sur le
+  dernier rondin de chaque mur de bout, entre les murs nord-sud (hors des bandes de rive des pans) ; la faîtière posée sur leurs
+  sommets, son dessus au faîte des pans ; un **volet en planches** à la fenêtre ([fiche](objets/plank-shutter.md)), qui **s'ouvre et
+  se ferme en jeu avec E** ; un **seuil en dalles** sous la porte (deux dalles, la porte posée dessus : son haut touche le linteau) ;
+  le toit reste en planches, les bardeaux attendront la latte. 41 pièces, 40 assemblages.
+- **Ce qui s'ouvre et se ferme** (`swing` de props.json) : un objet a deux états, deux clés qui se nomment (`into`), dont une est
+  l'ouverte (`open`) ; `hinge` dit où il tourne : `side`, le bord gauche de sa face du dehors vu du dehors (ouvert, un quart de tour vers
+  le dehors : la vue suivante), `bottom`, le bas de sa face du dehors (rabattu : le volet d'étal). En jeu, E sur une pièce posée en mode
+  construction qui bat (`GameMap.interactables`, action `swing`) : `swung` (world/build.ts) calcule son autre état, GameState le note
+  dans `builds` (même identifiant), la carte la redessine ; refusé si, ouvert, il bloquerait Xéros. `validate.ts` vérifie les deux
+  états (l'un nomme l'autre, un seul ouvert, même gond et mêmes vues ; un battant de côté garde ses dimensions).
+- **À trancher par Grégoire** : la porte qui s'ouvre (le même `swing`, mais elle a une collision : il faudra la retirer du passage
+  ouverte) ; un toit de bardeaux (le bardeau existe, mais pas de lattes pour le porter).
 
 ## Poids et force (décidé le 30 octobre 2026)
 

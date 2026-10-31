@@ -202,7 +202,8 @@ export type Action =
   | { kind: 'learn'; prop: PlacedProp; plan: string }
   | { kind: 'stake'; site: number; corner: Corner }
   | { kind: 'site-place'; site: number; place: string }
-  | { kind: 'site-help'; site: number; place: string };
+  | { kind: 'site-help'; site: number; place: string }
+  | { kind: 'swing'; id: number };
 
 /** Longueur d'un objet neuf (posé dans Tiled) : celle de son `length`, ou de l'objet qu'il porte (`bears`). */
 function startLength(def: PropDef): number | undefined {
@@ -331,6 +332,12 @@ export class GameMap {
         const top = p.pile.y + q.y - this.textureSize(q.image).h;
         list.push({ x: p.pile.x + ax, y: p.pile.y + ay, top, action: { kind: 'pile', pile: p, place } });
       }
+    }
+    // ce qui s'ouvre et se ferme parmi les pièces posées en mode construction (le volet) : visé au milieu de son emprise au sol
+    for (const b of this.builds) {
+      if (!('prop' in b.piece.piece) || !propDefs[b.piece.piece.prop].swing) continue;
+      const box = boxOf(b.piece);
+      list.push({ x: (box.x + box.w / 2) / CM_PER_PX, y: (box.y + box.d / 2) / CM_PER_PX, top: b.image.y - b.image.displayHeight, action: { kind: 'swing', id: b.piece.id } });
     }
     // un objet encore caché (il attend la fin d'une chute) ne se ramasse pas
     for (const g of this.ground) if (g.image.visible) list.push({ x: g.item.x, y: g.item.y - 4, top: g.image.y - g.image.height, action: { kind: 'pickup', ground: g } });

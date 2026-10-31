@@ -21,6 +21,8 @@ function subject(a: Action): unknown {
     case 'site-place':
     case 'site-help':
       return `${a.site}:${a.place}`;
+    case 'swing':
+      return `build:${a.id}`;
     default:
       return a.prop;
   }

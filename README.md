@@ -125,7 +125,7 @@ Un bac à sable pour composer une construction avec tout ce qui existe (CONCEPTI
 | T, G (Page haut, Page bas) | monter, descendre d'un cran de 20 cm |
 | Ctrl+Z, Ctrl+Y (Ctrl+Maj+Z) | annuler, refaire |
 
-Les assemblages (famille « assemblages » : enture en trait de Jupiter, tenon et mortaise) se posent d'un clic gauche sur la jonction de deux pièces de bois ; un cercle clair ou rouge marque la jonction visée, et la raison d'un refus s'écrit dans le panneau. Aperçu : `.art-preview/assemblages.png`.
+Ce qui s'ouvre et se ferme (`swing` de props.json : le volet en planches, bientôt le volet d'étal) : en jeu, hors du mode, E devant la pièce posée la fait battre sur son gond (`swung`, `world/build.ts` ; deux clés, ses deux états). Les assemblages (famille « assemblages » : enture en trait de Jupiter, tenon et mortaise) se posent d'un clic gauche sur la jonction de deux pièces de bois ; un cercle clair ou rouge marque la jonction visée, et la raison d'un refus s'écrit dans le panneau. Aperçu : `.art-preview/assemblages.png`.
 
 Le panneau : vignettes par famille, recherche, réglages (pièce de bois : une vignette par diamètre et par état, puis longueur et sens ; matière naturelle : forme, taille), « Rien en main », « Choisir une zone » (glisser), « Enregistrer comme plan » (en développement, `vite.config.ts` écrit `src/content/plans/<nom>.json`), onglet « Plans » pour en poser un d'un coup. Les pièces posées vont dans `builds` de chaque carte (GameState) : on les retrouve en jeu.
 

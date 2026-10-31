@@ -26,6 +26,7 @@ import { ZoomControl } from '../systems/zoom';
 import { TurnSystem } from '../systems/turnLog';
 import { carriedMass, heavyNotice } from '../systems/weight';
 import {
+  addBuildPieces,
   canTake,
   clearHeld,
   clearSave,
@@ -43,6 +44,8 @@ import {
   take,
   type Held,
 } from '../state';
+import { blocks, boxOf, overlaps, swung } from '../world/build';
+import { CM_PER_PX } from '../content/gabarit';
 import { GameMap } from '../world/GameMap';
 import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { heldWoodTexture } from '../world/woodTexture';
@@ -347,11 +350,30 @@ export class WorldScene extends Phaser.Scene {
       if (r.kg > 0 && !this.effort.afford(this.player, this.player.stamina.raiseCost(r.kg))) return;
       r.commit();
       this.handsChanged();
+    } else if (a.kind === 'swing') {
+      this.swing(a.id);
     } else if (a.kind === 'site-help') {
       // E court : dire ce qui manque, ou comment appeler la mère
       const r = this.site.help(a.site, a.place);
       if (r) this.notice(r.ok ? 'Maintiens E pour appeler ta mère.' : r.message);
     }
+  }
+
+  /**
+   * E sur ce qui s'ouvre et se ferme parmi les pièces posées en mode construction (le volet) : il bat sur son gond (`swung`,
+   * world/build.ts), GameState le note dans son autre état, et la carte le redessine. Refusé si, ouvert, il bloquerait Xéros.
+   */
+  private swing(id: number): void {
+    const p = mapState(game, this.map.def.id).builds.find((q) => q.id === id);
+    const next = p && swung(p);
+    if (!p || !next) return;
+    const body = this.player.actor.body as Phaser.Physics.Arcade.Body;
+    const feet = { x: body.left * CM_PER_PX, y: body.top * CM_PER_PX, w: body.width * CM_PER_PX, d: body.height * CM_PER_PX };
+    if (blocks(next) && overlaps(boxOf(next), feet)) return this.notice('Xéros est dans le passage.');
+    const [piece] = addBuildPieces(game, this.map.def.id, [{ ...next, id }]);
+    this.map.removeBuild(id);
+    this.map.placeBuild(piece);
+    this.map.sortBuilds();
   }
 
   /** La place dont Xéros demande l'aide à sa mère (le dialogue « Appeler ta mère pour la dresser ? » est ouvert). */

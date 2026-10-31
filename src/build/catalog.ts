@@ -33,7 +33,7 @@ function matterOf(mass: PropDef['mass'] | ItemDef['mass']): string | undefined {
 /** La famille d'un objet du monde. */
 function propFamily(key: string, d: PropDef): Family {
   const matter = matterOf(d.mass);
-  if (d.variants || d.pitch || /door/.test(key)) return 'éléments';
+  if (d.variants || d.pitch || d.swing || /door|gable|board-wall/.test(key)) return 'éléments';
   if (d.wood) return 'bois';
   if (/tree|pollard|bush|stump/.test(key)) return 'nature';
   if (matter === 'stone' || /rock|stone-chips/.test(key)) return 'pierre';

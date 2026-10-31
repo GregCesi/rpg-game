@@ -376,6 +376,16 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
   for (const [key, p] of Object.entries(c.props)) {
     // l'ombre portée se calcule sur l'emprise au sol d'une couverture : une pièce de toit vue à l'échelle du sol
     if (p.shadow && !(p.roof && p.dims.ground)) errors.push(`props.json '${key}' : 'shadow' est l'ombre d'une couverture, pièce 'roof' avec 'dims.ground'`);
+    // ce qui s'ouvre et se ferme : son autre état existe, le nomme en retour, un seul des deux est l'ouvert, mêmes vues
+    if (p.swing) {
+      const o = c.props[p.swing.into];
+      const at = `props.json '${key}' : 'swing'`;
+      if (!o) errors.push(`${at} : l'objet '${p.swing.into}' n'existe pas`);
+      else if (o.swing?.into !== key) errors.push(`${at} : '${p.swing.into}' doit le nommer en retour ('swing.into' : '${key}')`);
+      else if (!!o.swing.open === !!p.swing.open) errors.push(`${at} : un seul des deux états est l'ouvert ('open')`);
+      else if (o.swing.hinge !== p.swing.hinge || o.views !== p.views) errors.push(`${at} : les deux états tournent sur le même gond et ont les mêmes vues`);
+      else if (p.swing.hinge === 'side' && (o.dims.w !== p.dims.w || o.dims.d !== p.dims.d || o.dims.h !== p.dims.h)) errors.push(`${at} : un battant sur le côté garde ses dimensions ouvert`);
+    }
     const drawn = cat.silhouettes.get(p.image);
     if (!drawn) continue; // image non dessinée : signalé ailleurs
     const want = expectedSize(p.dims);
