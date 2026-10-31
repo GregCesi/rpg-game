@@ -36,3 +36,8 @@ export function groundImage(def: Pick<ItemDef, 'ground' | 'icon' | 'views'>, vie
 
 /** Une vue est nord-sud (un quart de tour depuis l'image) : ses dimensions sont celles de l'image, inversées, pour ce qui est couché. */
 export const crosswise = (views: Views, k: number) => views !== 'round' && k % 2 === 1;
+
+/** L'image de base du tirage `k` d'un élément calculé (`variants` de props.json) : `<image>` pour le premier, `<image>-s<k>` ensuite. */
+export function variantImage(base: string, k: number | undefined): string {
+  return k ? `${base}-s${k}` : base;
+}

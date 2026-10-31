@@ -526,6 +526,12 @@ export const PropDefSchema = z.strictObject({
    * la lumière (`SHADOW` de config.ts). `south`, `north` : hauteur du dessus du toit à son bord sud et à son bord nord, en cm.
    */
   shadow: z.strictObject({ south: z.number().positive(), north: z.number().positive() }).optional(),
+  /**
+   * Élément calculé (le morceau de solin) : nombre de tirages produits par build-art, chacun avec toutes ses vues. Le tirage 0 est
+   * `<image>` (et ses vues), le tirage k ≥ 1 est `<image>-s<k>` (et ses vues : `<image>-s<k>-r1`…). Le jeu en tire un au hasard à
+   * chaque pose (`variant` d'une pièce posée en mode construction, GameState).
+   */
+  variants: z.number().int().min(2).max(32).optional(),
 });
 
 /** Les quatre coins d'une emprise : nord-ouest, nord-est, sud-est, sud-ouest. */
@@ -591,6 +597,44 @@ export const PlanSchema = z.strictObject({
   footprint: z.strictObject({ w: z.number().positive(), d: z.number().positive() }),
   corners: z.strictObject({ nw: z.tuple([px, px]), ne: z.tuple([px, px]), se: z.tuple([px, px]), sw: z.tuple([px, px]) }),
   steps: z.array(PlanStepSchema).min(1),
+});
+
+/**
+ * Ce qu'est une pièce posée en mode construction (le bac à sable) : un objet du monde (`prop`, clé de props.json), un objet
+ * possédable (`item`, clé de items.json) ou une pièce de bois (`wood`, ses réglages ; son sens est son `axis`).
+ */
+export const BuildRefSchema = z.union([
+  z.strictObject({ prop: id }),
+  z.strictObject({ item: id }),
+  z.strictObject({ wood: z.lazy(() => WoodPieceSchema) }),
+]);
+
+/**
+ * Une pièce posée en mode construction, comme l'écrivent GameState et les plans du bac à sable : ce qu'elle est (`piece`), le coin
+ * nord-ouest de son emprise au sol (`x`, `y`, en cm) et la hauteur de sa base (`z`, en cm, 0 = au sol), tous sur la grille de
+ * 20 cm (un plan : relatifs à son coin nord-ouest) ; `view` : son sens, un quart de tour de plus à chaque cran (0 à 3, selon la
+ * symétrie de l'objet ; la pièce de bois garde son sens dans `axis`) ; `natural` : la forme et la taille d'une matière naturelle ;
+ * `variant` : le tirage d'un élément calculé (`variants` de props.json).
+ */
+export const BuildPlacedSchema = z.strictObject({
+  piece: BuildRefSchema,
+  x: z.number().int(),
+  y: z.number().int(),
+  z: z.number().int().nonnegative(),
+  view: z.number().int().min(0).max(3).default(0),
+  natural: z.lazy(() => NaturalSchema).optional(),
+  variant: z.number().int().nonnegative().optional(),
+});
+
+/**
+ * Un plan du bac à sable (`src/content/plans/<nom>.json`, écrit par « Enregistrer comme plan » du mode construction) : son nom
+ * affiché, son emprise (`size`, en cm) et ses pièces, placées depuis son coin nord-ouest. Il se pose d'un coup, comme une pièce.
+ * À ne pas confondre avec les plans de chantier guidé de plans.json.
+ */
+export const BuildPlanSchema = z.strictObject({
+  name: id,
+  size: z.strictObject({ w: z.number().positive(), d: z.number().positive() }),
+  pieces: z.array(BuildPlacedSchema).min(1),
 });
 
 /**
@@ -973,3 +1017,6 @@ export type Trade = z.infer<typeof TradeSchema>;
 export type TransformPart = z.infer<typeof TransformPartSchema>;
 export type Station = z.infer<typeof StationSchema>;
 export type TransformDef = z.infer<typeof TransformSchema>;
+export type BuildRef = z.infer<typeof BuildRefSchema>;
+export type BuildPlaced = z.infer<typeof BuildPlacedSchema>;
+export type BuildPlan = z.infer<typeof BuildPlanSchema>;

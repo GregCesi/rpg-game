@@ -5,12 +5,13 @@
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
 import { itemMass, naturalFactor, propMass, type MassCatalog } from './mass';
-import { crosswise, viewImages } from './views';
+import { crosswise, variantImage, viewImages } from './views';
 import { lookOf, WEDGE_FRAMES } from '../world/woodShape';
 import { formImage } from '../world/natural';
 import { partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
-import type { Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
+import { planProblems } from '../world/build';
+import type { BuildPlan, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -471,6 +472,12 @@ function objectViews(c: Content, cat: Catalog): ObjectViews[] {
     const at = `${'image' in d ? 'props' : 'items'}.json '${key}' seconde forme`;
     entries.push({ at, key: `${key}#b`, views: d.views, lying: !!d.lying, base: formImage(base, { form: 1, size: 100 }), dims: d.dims });
   }
+  // chaque tirage d'un élément calculé (`variants`, le morceau de solin) a toutes ses vues aussi, à la même règle que le premier
+  for (const [key, p] of Object.entries(c.props)) {
+    for (let k = 1; k < (p.variants ?? 0); k++) {
+      entries.push({ at: `props.json '${key}' tirage ${k}`, key: `${key}#s${k}`, views: p.views, lying: !!p.lying, base: variantImage(p.image, k), dims: p.dims });
+    }
+  }
   return entries.map((e) => {
     const images = viewImages(e.base, e.views, has);
     const wrong: ObjectViews['wrong'] = [];
@@ -892,6 +899,19 @@ function validateTransforms(c: Content): string[] {
     } catch (e) {
       err((e as Error).message);
     }
+  }
+  return errors;
+}
+
+/**
+ * Les plans du bac à sable (src/content/plans/<nom>.json) : un nom de fichier en kebab-case, et chaque pièce existe dans le contenu,
+ * dans un sens qu'elle a, sur la grille (`planProblems`, world/build.ts).
+ */
+export function validateBuildPlans(plans: Record<string, BuildPlan>): string[] {
+  const errors: string[] = [];
+  for (const [key, plan] of Object.entries(plans)) {
+    if (!KEBAB_CASE.test(key)) errors.push(`plans/${key}.json : le nom doit être en kebab-case (minuscules sans accent, chiffres, tirets)`);
+    for (const p of planProblems(plan)) errors.push(`plans/${key}.json : ${p}`);
   }
   return errors;
 }

@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import '@fontsource/pixelify-sans/latin-400.css';
 import { DEBUG, DIEU, UI, VIEW, ZOOM } from './config';
 import * as content from './content';
-import { catalogFrom, validateContent } from './content/validate';
+import { buildPlans } from './content/buildPlans';
+import { catalogFrom, validateBuildPlans, validateContent } from './content/validate';
 import { GameEvent } from './events';
 import * as assets from './generated/assets';
 import { BootScene } from './scenes/BootScene';
@@ -12,7 +13,7 @@ import { WorldScene } from './scenes/WorldScene';
 
 async function start() {
   // Même vérification que `npm run check` : en dev, une erreur de contenu s'affiche à l'écran au lieu d'un plantage obscur.
-  const problems = validateContent(content, catalogFrom(assets));
+  const problems = [...validateContent(content, catalogFrom(assets)), ...validateBuildPlans(buildPlans)];
   if (problems.length) {
     const pre = document.createElement('pre');
     pre.style.cssText = 'color:#f3d9b0;background:#14110d;padding:16px;white-space:pre-wrap;font:13px monospace';

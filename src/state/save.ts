@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { items, maps, piles, plans, props, stamina, wood } from '../content';
 import { FacingSchema, type End, type PileWood, type WoodPiece } from '../content/types';
+import { refMissing } from '../world/build';
 import { kindOf, pileDefOf } from '../world/pileShape';
 import { BEAM_SIZE, lookOf } from '../world/woodShape';
 import { GameStateSchema, type GameState, type Held } from './GameState';
@@ -15,7 +16,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -105,7 +106,19 @@ function upgrade(data: unknown): unknown {
   if (d?.version === 9 && d.state && typeof d.state === 'object') d = { ...d, version: 10, state: postsAsWood(d.state as V9State) };
   if (d?.version === 10 && d.state && typeof d.state === 'object') d = { ...d, version: 11, state: replacePlaced(d.state as V9State & V10Sites) };
   if (d?.version === 11 && d.state && typeof d.state === 'object') d = { ...d, version: 12, state: slabFromFlatStone(d.state) };
+  if (d?.version === 12 && d.state && typeof d.state === 'object') d = { ...d, version: 13, state: withBuilds(d.state as V12State) };
   return d;
+}
+
+/** Ce que la conversion 12 -> 13 lit d'une partie : ses cartes. */
+interface V12State {
+  maps?: Record<string, object>;
+}
+
+/** Version 12 -> 13 : le mode construction. Aucune pièce posée sur aucune carte, et le compteur de ses identifiants à zéro. */
+function withBuilds(state: V12State): object {
+  const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, builds: [] }]));
+  return { ...state, maps, nextBuildId: 0 };
 }
 
 /**
@@ -422,6 +435,10 @@ function missingContent(save: Save): string | undefined {
       if (missing) return missing;
     }
     for (const g of m.ground) if (!items[g.item]) return `l'objet « ${g.item} »`;
+    for (const b of m.builds) {
+      const missing = refMissing(b.piece);
+      if (missing) return missing;
+    }
     for (const p of m.piles) {
       const missing = p.wood ? woodMissing({ ...p.wood, axis: 'ew' }) : piles[p.pile!] ? undefined : `le tas « ${p.pile} »`;
       if (missing) return missing;

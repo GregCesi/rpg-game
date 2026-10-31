@@ -117,6 +117,14 @@ export const HARVEST = {
 /** Les mains à l'écran : durée d'un message court (ms), et d'un message important (sauvegarde refusée). */
 export const HUD = { noticeMs: 1800, longNoticeMs: 7000 };
 
+/**
+ * Le mode construction (le bac à sable, systems/build.ts, world/build.ts) : la grille (cm) de l'emprise et des crans de hauteur ;
+ * `high` : une pièce posée à cette hauteur ou plus haut ne bloque plus le passage ; `head` : une pièce dont la base est à cette
+ * hauteur ou plus haut s'efface quand Xéros passe dessous (sa tête, 1,60 m) ; `camera` : vitesse de la caméra libre (px/s, Maj :
+ * `fast` fois plus) ; `ghost` : opacité du fantôme (`refused` : quand la pose est refusée).
+ */
+export const BUILD = { grid: 20, high: 200, head: 160, camera: 260, fast: 3, ghost: 0.6, refused: 0.25 };
+
 /** Où commence la partie : Xéros se réveille dans son cagibi. */
 export const START = { map: 'maison', spawn: 'reveil' };
 
@@ -145,6 +153,9 @@ export const DEBUG = params.has('debug');
 
 /** ?reset efface la sauvegarde et repart du réveil (le mot est ensuite retiré de l'adresse, voir resumeGame). */
 export const RESET = params.has('reset');
+
+/** ?construire ouvre le mode construction (le bac à sable) : son catalogue à gauche du jeu, la touche B pour entrer et sortir. */
+export const CONSTRUIRE = params.has('construire');
 
 /** ?dieu ouvre les outils de test, à côté du jeu (src/dieu/). Sans lui, ils n'existent pas. */
 export const DIEU = params.has('dieu');

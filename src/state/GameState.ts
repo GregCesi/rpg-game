@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { items, stamina } from '../content';
-import { CornerSchema, NaturalSchema, PileWoodSchema, WoodPieceSchema, type Natural, type WoodPiece } from '../content/types';
+import { BuildPlacedSchema, CornerSchema, NaturalSchema, PileWoodSchema, WoodPieceSchema, type BuildPlaced, type Natural, type WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { turnedWood } from '../world/woodShape';
 
@@ -118,6 +118,13 @@ export const SiteSchema = z.strictObject({
   pieces: z.record(id, WoodPieceSchema),
 });
 
+/**
+ * Une pièce posée en mode construction (le bac à sable) : son identifiant propre (unique dans la partie), ce qu'elle est, sa place
+ * en cm (coin nord-ouest de son emprise, hauteur de sa base), son sens, sa forme naturelle, son tirage (voir BuildPlacedSchema).
+ * Ce qu'elle porte et sur quoi elle repose se calculent de ces boîtes (world/build.ts).
+ */
+export const BuildPieceSchema = BuildPlacedSchema.extend({ id: z.number().int().nonnegative() });
+
 /** Ce qui a changé sur une carte. */
 export const MapStateSchema = z.strictObject({
   /** Par identifiant d'objet Tiled. */
@@ -129,6 +136,8 @@ export const MapStateSchema = z.strictObject({
   piles: z.array(PileSchema),
   /** Chantiers posés sur cette carte (un tracé de piquets, ou un chantier né). */
   sites: z.array(SiteSchema),
+  /** Pièces posées en mode construction sur cette carte. */
+  builds: z.array(BuildPieceSchema),
 });
 
 export const GameStateSchema = z.strictObject({
@@ -154,6 +163,8 @@ export const GameStateSchema = z.strictObject({
   knownPlans: z.array(id),
   /** Prochain identifiant de chantier (unique dans toute la partie). */
   nextSiteId: z.number().int().nonnegative(),
+  /** Prochain identifiant de pièce posée en mode construction (unique dans toute la partie). */
+  nextBuildId: z.number().int().nonnegative(),
 });
 
 export type Held = z.infer<typeof HeldSchema>;
@@ -164,6 +175,7 @@ export type Spawned = z.infer<typeof SpawnedSchema>;
 export type Chain = z.infer<typeof ChainSchema>;
 export type Pile = z.infer<typeof PileSchema>;
 export type Site = z.infer<typeof SiteSchema>;
+export type BuildPiece = z.infer<typeof BuildPieceSchema>;
 export type MapState = z.infer<typeof MapStateSchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
 
@@ -180,12 +192,12 @@ export function revisionOf(): number {
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: stamina.max, day: 1, knownPlans: [], nextSiteId: 0 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: stamina.max, day: 1, knownPlans: [], nextSiteId: 0, nextBuildId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
 export function mapState(s: GameState, mapId: string): MapState {
-  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [] });
+  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [] });
 }
 
 /** Ce que tient la main active (ou les deux mains), ou undefined. */
@@ -469,6 +481,31 @@ export function placeSitePiece(s: GameState, mapId: string, siteId: number, plac
 export function removeSite(s: GameState, mapId: string, siteId: number): void {
   const m = mapState(s, mapId);
   m.sites = m.sites.filter((q) => q.id !== siteId);
+  revision++;
+}
+
+/**
+ * Pose des pièces en mode construction ; renvoie ce qui a été noté. Une pièce qui revient (annuler un retrait) garde son
+ * identifiant (`id`) ; une nouvelle en reçoit un.
+ */
+export function addBuildPieces(s: GameState, mapId: string, pieces: (BuildPlaced & { id?: number })[]): BuildPiece[] {
+  const m = mapState(s, mapId);
+  const out = pieces.map((p) => {
+    const { id, ...rest } = structuredClone(p);
+    const piece: BuildPiece = { id: id ?? s.nextBuildId++, ...rest };
+    if (piece.id >= s.nextBuildId) s.nextBuildId = piece.id + 1;
+    m.builds = m.builds.filter((q) => q.id !== piece.id);
+    m.builds.push(piece);
+    return piece;
+  });
+  revision++;
+  return out;
+}
+
+/** Retire des pièces posées en mode construction (par identifiant). */
+export function removeBuildPieces(s: GameState, mapId: string, ids: readonly number[]): void {
+  const m = mapState(s, mapId);
+  m.builds = m.builds.filter((q) => !ids.includes(q.id));
   revision++;
 }
 
