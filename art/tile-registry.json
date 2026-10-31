@@ -210,6 +210,12 @@
     "board-wall",
     "cart-door",
     "board-gable",
-    "plank-roof-large"
+    "plank-roof-large",
+    "stall-back",
+    "stall-side",
+    "stall-front",
+    "stall-shutter",
+    "stall-shutter-open",
+    "plank-awning"
   ]
 }

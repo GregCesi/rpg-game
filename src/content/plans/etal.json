@@ -1,0 +1,227 @@
+{
+  "name": "Etal",
+  "size": {
+    "w": 280,
+    "d": 220
+  },
+  "joints": [
+    {
+      "type": "mortise",
+      "a": 8,
+      "b": 15
+    },
+    {
+      "type": "mortise",
+      "a": 9,
+      "b": 15
+    },
+    {
+      "type": "mortise",
+      "a": 10,
+      "b": 13
+    },
+    {
+      "type": "mortise",
+      "a": 11,
+      "b": 13
+    }
+  ],
+  "pieces": [
+    {
+      "piece": {
+        "prop": "stall-back"
+      },
+      "x": 60,
+      "y": 0,
+      "z": 0,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 20,
+      "y": 20,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 220,
+      "y": 20,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "stall-side"
+      },
+      "x": 0,
+      "y": 60,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "stall-side"
+      },
+      "x": 260,
+      "y": 60,
+      "z": 0,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 20,
+      "y": 140,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 220,
+      "y": 140,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "stall-front"
+      },
+      "x": 60,
+      "y": 180,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 20,
+      "y": 20,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 220,
+      "y": 20,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 20,
+      "y": 140,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 220,
+      "y": 140,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stall-shutter"
+      },
+      "x": 60,
+      "y": 180,
+      "z": 100,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 20,
+      "y": 140,
+      "z": 192,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "plank-awning"
+      },
+      "x": 0,
+      "y": 0,
+      "z": 222,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 20,
+      "y": 20,
+      "z": 252,
+      "view": 0
+    }
+  ]
+}

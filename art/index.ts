@@ -45,5 +45,6 @@ import joints from './world/joints';
 import cabin from './world/cabin';
 import cabinClosing from './world/cabin-closing';
 import barn from './world/barn';
+import stall from './world/stall';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...stamina, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building , ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...stamina, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building , ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall];

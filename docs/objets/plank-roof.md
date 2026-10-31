@@ -1,12 +1,14 @@
-# Pan de toit en planches (`plank-roof`, `plank-roof-large`)
+# Pan de toit en planches (`plank-roof`, `plank-roof-large`, `plank-awning`)
 
 Décidé le 31 octobre 2026 (chantier « cabane en rondins ») : un des deux pans du toit de la cabane de bûcheron, posé de la rive
 basse (l'avant-toit, sur le dernier rondin du mur) à la faîtière. Le **grand pan** (`plank-roof-large`, chantier « bâtiments », la
-grange) est le même pan à une autre taille : mêmes planches, même dessin, tiré des mêmes fonctions (`art/lib/plank-roof.ts`).
+grange) est le même pan à une autre taille : mêmes planches, même dessin, tiré des mêmes fonctions (`art/lib/plank-roof.ts`). L'**auvent
+en planches** (`plank-awning`, l'étal de la place) aussi, en petit.
 
 ## Identité
-- Clés : `plank-roof` (objet du monde, `props.json`), sans `take` ; `plank-roof-large` (le grand pan de la grange).
-- Nom affiché : pan de toit en planches (masculin) ; grand pan de toit en planches.
+- Clés : `plank-roof` (objet du monde, `props.json`), sans `take` ; `plank-roof-large` (le grand pan de la grange) ; `plank-awning`
+  (l'auvent de l'étal).
+- Nom affiché : pan de toit en planches (masculin) ; grand pan de toit en planches ; auvent en planches.
 - Nature : un élément composé de planches fendues (la planche du gros bois, `plank` de wood.json : 3 × 25 cm) posées dans le sens de
   la pente, sur deux épaisseurs à joints croisés (la seconde couvre les joints de la première), chevillées à la faîtière et au
   rondin de rive. Pièce de toit (`roof`) : elle s'efface quand Xéros est dessous.
@@ -18,6 +20,8 @@ grange) est le même pan à une autre taille : mêmes planches, même dessin, ti
   31 octobre 2026 : la fiche disait 0,062 m³ et 60 kg, une erreur d'un facteur dix.)
 - Le grand pan : `{"matter": "wood", "fill": 0.029}` sur 960 × 340 × 260 cm (84,9 m³) : deux épaisseurs de 3 cm sur une pente de
   4,28 m et 9,6 m de long, 2,47 m³, **2,2 t**.
+- L'auvent : `{"matter": "wood", "fill": 0.08}` sur 280 × 220 × 80 cm (4,9 m³) : deux épaisseurs de 3 cm sur 2,8 × 2,34 m, 0,39 m³,
+  **355 kg**.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
 - Dans sa vue 0 : 4,80 m le long du faîtage (est-ouest), 2 m de la rive basse au faîtage (nord-sud), 1 m de pente (100 cm de haut,
@@ -27,6 +31,8 @@ grange) est le même pan à une autre taille : mêmes planches, même dessin, ti
   W = 96 ; H + D = 20 + 40 = **96 × 60 px** ; r1 et r3 : **40 × 116 px**.
 - Le grand pan : 9,60 m le long du faîtage, 3,40 m de la rive basse au faîtage, 2,60 m de pente (37°, un toit à foin) ; r0 et r2
   192 × 120 px, r1 et r3 68 × 244 px.
+- L'auvent : 2,80 m de large (20 cm de débord de chaque côté de l'étal), 2,20 m de la rive basse (40 cm devant les poteaux, au-dessus
+  du comptoir) au haut (sur la sablière de derrière), 80 cm de pente ; r0 56 × 60 px, r1 et r3 44 × 72 px.
 - **Sans rangées vides sous lui** : en mode construction, sa hauteur (`z`) le relève ; sa base est le dessus de ce qui porte sa rive
   basse (le rondin de rive).
 
@@ -62,4 +68,5 @@ Le charpentier (`carpenter`).
 
 ## Vérification
 - `.art-preview/plank-roof*.png` ; la cabane : `.art-preview/cabane.png`.
-- `npm run test:cabane` pose les deux pans ; `npm run test:grange` les deux grands pans (`.art-preview/grange.png`).
+- `npm run test:cabane` pose les deux pans ; `npm run test:grange` les deux grands pans (`.art-preview/grange.png`) ;
+  `npm run test:etal` l'auvent (`.art-preview/etal.png`).

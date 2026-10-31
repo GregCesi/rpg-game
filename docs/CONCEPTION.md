@@ -455,7 +455,7 @@ enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche
   des poteaux), deux par travée ; la [porte charretière](objets/cart-door.md) à deux battants (2,40 m : une charrette passe) ; deux
   [pignons en bardage](objets/board-gable.md) ; le toit, deux [grands pans de toit en planches](objets/plank-roof.md) de 9,60 × 3,40 m,
   2,60 m de pente (37°), le faîte à 6 m pour le foin, sans étage. 59 pièces, 29 assemblages.
-- **Ce qui a manqué et a été créé** : le pan de bardage, la porte charretière, le pignon en bardage, le grand pan de toit (dessinés
+- **Ce qui a manqué et a été créé pour la grange** : le pan de bardage, la porte charretière, le pignon en bardage, le grand pan de toit (dessinés
   par le pixel-artist dans `art/world/barn.ts` ; le pan de toit, en grand, par les fonctions du pan de la cabane sorties dans
   `art/lib/plank-roof.ts`, la cabane inchangée au pixel près). **Ce qui existait** : les poutres (dressées, couchées), les dalles,
   l'enture, le tenon et mortaise, le mi-bois.
@@ -464,6 +464,21 @@ enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche
   10 cm d'un pan à l'autre ; l'entrait posé à mi-bois sur la sablière (un entrait sur la sablière haussait le pan nord, qui se pose sur
   le plus haut dessus de sa rive) ; une sablière de bout au ras du dedans des poteaux à l'est (au ras du dehors, elle s'aimantait au
   bord des dalles, qui débordent de 5 cm, et passait sous le bardage).
+- **L'étal de la place** (`npm run test:etal`, plan `src/content/plans/etal.json`, aperçu `.art-preview/etal.png`) : 2,40 × 1,60 m,
+  la face des clients au sud ; quatre dalles, quatre poteaux (poutres de 2,40 m derrière, 1,80 m devant), une sablière sur chaque rang
+  (tenon et mortaise) ; un [fond, deux côtés et un devant bas](objets/stall-panels.md) en bardage (le même que la grange, sorti dans
+  `art/lib/board-wall.ts`) ; le [volet d'étal](objets/stall-shutter.md) posé fermé sur le rebord du devant (1 m), qui **se rabat en
+  comptoir avec E** en jeu (`swing`, gond `bottom`) ; un [auvent en planches](objets/plank-roof.md) de 2,80 × 2,20 m en pente vers les
+  clients, sur la sablière de devant, 40 cm au-delà des poteaux. 16 pièces, 4 assemblages. Le comptoir en planches de la demande est
+  le volet rabattu : le même objet, ouvert le jour, fermé la nuit.
+- **Les huit boutiques** : un étal par métier, le même plan, ce qui change de l'un à l'autre (à décider avec Grégoire, rien n'est
+  fait) : l'**enseigne** (une planchette peinte pendue à la sablière de devant : le pain, le couteau, le poisson…) ; ce qui est **sur
+  le comptoir** (des objets du jeu, posés : miches et paniers pour le boulanger ; poissons sur un lit de paille, un seau d'eau pour le
+  poissonnier ; légumes en paniers et en cagettes, à terre devant aussi, pour le maraîcher) ; ce qui est **sous l'auvent** (une barre
+  à crochets pour le boucher, ses pièces de viande pendues ; une perche pour les étoffes du drapier) ; ce qui est **dedans** (le billot
+  de découpe du boucher, des étagères pour le potier ou l'épicier) ; le **comptoir** lui-même (en pente vers les clients et lavé à
+  grande eau pour le poissonnier, double pour le maraîcher) ; la **largeur** (deux travées pour un étal plus riche). Il faudra d'abord
+  les marchandises (chacune un objet, sa fiche, sa chaîne) : c'est le gros du travail, l'étal est commun.
 - **Le moteur, appris en route** : la visée prend le plus haut dessus qui se tient sous l'emprise ; viser une pièce près d'une pièce
   plus haute (un poteau au nord d'un poteau dressé, un pan sous une sablière) peut la poser dessus : le scénario pose du nord au sud,
   vise 4 cm au nord du milieu, et pose le bardage avant les poinçons et les pignons.
