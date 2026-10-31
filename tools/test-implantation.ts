@@ -301,8 +301,8 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.equal(r.alreadyKnown, 'Xéros connaît déjà ce plan.');
   assert.equal(r.tabletStays, 1, 'la planchette reste en place');
   assert.ok(r.stonesOnMap >= 6, `six pierres plates sur la berge : ${r.stonesOnMap}`);
-  assert.ok(Math.abs(r.stoneMass - 62.4) < 0.2, `masse de la pierre plate : ${r.stoneMass}`);
-  assert.equal(r.noBranchNotice, "Tiens la branche debout sur le billot, de l'autre main.", 'sans branche dans l\'autre main : refusé');
+  assert.ok(Math.abs(r.stoneMass - 49.92) < 0.2, `masse de la pierre plate à sa taille type (40 × 40 × 15 cm, 80 % de pierre) : ${r.stoneMass}`);
+  assert.equal(r.noBranchNotice, "Tiens la branche ou le piquet debout sur le billot, de l'autre main.", 'sans branche dans l\'autre main : refusé');
   assert.equal(r.noBranchMode, 'play', 'refus sans geste');
   assert.equal(r.noBranchCost, 0, 'un refus ne coûte rien');
   assert.equal(r.beforeCut, '[{"item":"branch"},{"item":"hatchet"}]null');
@@ -344,7 +344,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.equal(r.wrongNotice, 'Il faut une pierre plate.', 'un autre objet est refusé');
   assert.equal(r.wrongPlaced, 0);
   for (const [i, d] of (r.dice as any[]).entries()) {
-    assert.equal(d.carried, '[null,null]{"prop":"flat-stone"}', `pierre ${i + 1} portée à deux mains`);
+    assert.match(d.carried, /^\[null,null\]\{"prop":"flat-stone","natural":\{"form":[01],"size":\d+\}\}$/, `pierre ${i + 1} portée à deux mains, avec sa forme et sa taille`);
     assert.equal(d.after, '[null,null]null', `pierre ${i + 1} posée : les mains sont libres`);
     assert.equal(d.placed, i + 1);
     assert.equal(d.footings, i + 1, 'un dé de plus sur la carte');

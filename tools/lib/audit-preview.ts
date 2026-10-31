@@ -42,11 +42,12 @@ const GLYPHS: Record<string, string> = {
   '5': '111100110001110', '6': '011100111101111', '7': '111001010010010', '8': '111101111101111', '9': '111101111001110',
   '-': '000000111000000', '/': '001001010100100', ',': '000000000010100', '.': '000000000000010', ':': '000010000010000',
   '(': '001010010010001', ')': '100010010010100', '+': '000010111010000', ' ': '000000000000000',
+  '>': '100010001010100', '=': '000111000111000', '%': '101001010100101', "'": '010010000000000',
 };
 
-type Rgb = [number, number, number];
+export type Rgb = [number, number, number];
 
-class Sheet {
+export class Sheet {
   readonly png: PNG;
   constructor(readonly w: number, readonly h: number, bg: Rgb) {
     this.png = new PNG({ width: w, height: h });
@@ -79,14 +80,15 @@ class Sheet {
     });
   }
   text(s: string, x: number, y: number, c: Rgb, k = 2): void {
-    [...s.toUpperCase()].forEach((ch, n) => {
+    // la police n'a que les majuscules sans accent : « Pierre de taille, 31,2 kg » s'écrit PIERRE DE TAILLE, 31,2 KG
+    [...s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/×/g, 'X').toUpperCase()].forEach((ch, n) => {
       const g = GLYPHS[ch] ?? GLYPHS[' '];
       for (let j = 0; j < 5; j++) for (let i = 0; i < 3; i++) if (g[j * 3 + i] === '1') this.rect(x + (n * 4 + i) * k, y + j * k, k, k, c);
     });
   }
 }
 
-const textWidth = (s: string, k = 2) => s.length * 4 * k;
+export const textWidth = (s: string, k = 2) => s.length * 4 * k;
 const fmt = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
 const range = (lo: number, hi: number) => (hi - lo > 0.05 ? `${fmt(lo)}-${fmt(hi)}` : fmt(lo));
 

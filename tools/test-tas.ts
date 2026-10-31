@@ -289,7 +289,7 @@ await playtest('tas', async ({ page, errors }) => {
   assert.equal(r.heavyDieu.piles, 0);
   assert.equal(r.heavyDieu.notice, 'Trop lourde pour un tas : elle se pose seule.');
   assert.equal(r.stone.ghost, true, 'la pierre a son fantôme');
-  assert.equal(r.stone.key, 'flat-stone');
+  assert.match(r.stone.key, /^flat-stone(-b)?$/, 'le fantôme de la pierre est dans sa forme');
   assert.equal(r.stone.at, true, 'posée à la place de son fantôme');
   assert.equal(r.stone.hands, '[null,null]null');
   assert.equal(r.tool.ghost, true, 'la hachette a son fantôme');

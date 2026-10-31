@@ -28,10 +28,11 @@ import { treesPreview } from './lib/trees-preview';
 import { woodPreview } from './lib/wood-preview';
 import { lyingPreview } from './lib/lying-preview';
 import { auditPreview } from './lib/audit-preview';
+import { briquesPreview } from './lib/briques-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
 import type { WoodLook, WoodPiece } from '../src/content/types';
-import { WOOD } from '../src/world/woodShape';
+import { shapeOfLook, WOOD } from '../src/world/woodShape';
 import { composeWood } from '../art/world/wood-pieces';
 import { world } from '../art/palette';
 import type { ArtSource } from '../art/lib/types';
@@ -132,7 +133,7 @@ const catalog = {
 for (const length of [60, 100, 180, 200, 300, 400]) {
   for (const [size, def] of Object.entries(WOOD.sizes)) {
     for (const look of Object.keys(def.looks) as WoodLook[]) {
-      const shape = look === 'half' || look === 'quarter' ? look : 'round';
+      const shape = shapeOfLook(look);
       const hewn = (['round', 'f1', 'f2', 'f3', 'beam'] as const).indexOf(look as 'round') * WOOD.hew.perFace;
       const base: WoodPiece = { size, shape, axis: 'ew', length, ...(hewn > 0 ? { hewn } : {}) };
       const samples: WoodPiece[] =
@@ -367,6 +368,9 @@ if (withPreview) {
   // l'audit des tailles : les objets hors gabarit à côté de Xéros (docs/audit-tailles.md)
   const audit = auditPreview(sources, propDefs);
   if (audit) writeFileSync(join(PREVIEW, 'audit-tailles.png'), PNG.sync.write(audit));
+  // les matières : chaque objet du chantier « briques » dans toutes ses vues, puis chaque chaîne de transformation, avec le déchet
+  const briques = briquesPreview(sources);
+  if (briques) writeFileSync(join(PREVIEW, 'briques.png'), PNG.sync.write(briques));
 }
 /**
  * Une carte Tiled lue pour l'aperçu d'un bâtiment : le sol (numéros du registre -> grilles du jeu de tuiles de la carte)
