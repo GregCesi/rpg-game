@@ -104,6 +104,12 @@ Vérifications : la bille est-ouest (1 m × 65 cm) mesure 20 × 13 px, ses bouts
 - Un tas nord-sud : une couche monte de la même hauteur qu'en est-ouest, comptée depuis la pièce porteuse de devant (en est-ouest,
   le demi-pas en arrière d'un creux fait partie de la montée : la 4e bille d'un tas de 3 couvre le quart haut de celle du centre) ; l'emprise au sol est la vraie (pièces côte à côte à
   l'écart de l'est-ouest).
+- **La pièce de bois n'est plus dessinée, elle se calcule** (décidé le 31 octobre 2026, CONCEPTION « Les pièces fendues ») : sa
+  section par le bout (wood.json) étirée sur sa longueur, un rayon par pixel (`art/world/wood-section.ts`), dans ces mêmes
+  dimensions. Le travers d'une pièce couchée remplit sa collision (la profondeur à l'échelle du sol, celle du pas d'un tas) et sa
+  hauteur le reste de l'image : la pièce de devant cache exactement le flanc de celle de derrière. **Recouvrement** : ce qui est
+  devant (plus au sud) ou plus haut cache ce qui est derrière, au pixel près. Le dessinateur ne règle que les matières
+  (`art/world/wood-skin.ts`) : rampes, sillons, fil, cernes.
 - **Pourquoi** : c'est une triche assumée, préférée à l'œil par Grégoire. La règle stricte (dessus en raccourci à ½, face de
   coupe aplatie) faisait d'une pièce tournée une autre pièce : plus courte (la bille de 4 m tombait à 13 × 49 px) ou plus fine.
   Une pièce qu'on tourne doit rester la même pièce. Trois essais l'ont tranché (outils `tools/essai-perspective*.ts`, supprimés

@@ -1,75 +1,46 @@
 // La pièce de bois : un seul objet du monde (`wood-piece`), décrit par ses réglages (diamètre, longueur, forme, faces
-// dressées, sens, encoche, coin planté), dont l'image s'assemble à sa longueur à partir de parties dessinées une fois par
-// diamètre et par aspect. Contrat : src/world/woodShape.ts (tailles, placements, `composeOps`) et la géométrie de
+// dressées, sens, encoche, coin planté, pointe du quartier), dont l'image s'assemble à sa longueur à partir de parties tirées une
+// fois par diamètre et par aspect. Contrat : src/world/woodShape.ts (tailles, placements, `composeOps`) et la géométrie de
 // src/content/wood.json. Le jeu assemble à la volée avec les mêmes opérations que `composeWood` ci-dessous.
 //
+// Les vues couchées ne sont plus dessinées à la main : chaque aspect a sa section dans wood.json (`section` : forme, écorce, cœur,
+// face sur laquelle il repose, faces dressées), et art/world/wood-section.ts en calcule chaque vue, est-ouest et nord-sud, à la
+// taille de la règle D, avec les matières de art/world/wood-skin.ts (le pixel-artist règle couleurs et textures, pas les formes).
+// Ici, on tire de ces vues calculées une pièce de référence par aspect (bout de départ, deux milieux, bout d'arrivée), et on la
+// découpe en parties ; un garde-fou vérifie que les deux milieux sont identiques (le milieu se répète sans couture).
+//
 // Sept planches, une par diamètre et par sens : `wood-big`, `wood-big-ns`, `wood-normal`, `wood-normal-ns`, `wood-pole`,
-// `wood-pole-ns` (la perche : le rond seul, `poleSheet`), et debout (le poteau, le normal seulement) `wood-normal-up` (rond, f1, f2, f3, poutre : `<aspect>-start|mid|end`, une image chacune, `normalUpSheet`).
-// Chaque partie est calée en haut à gauche d'un cadre commun. Animations :
-// - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` (gros : round, half ; normal : round, f1, f2, f3, beam) ; le rond a
-//   4 images (le roulement, un tour), les autres une ;
-// - gros seulement, la planche fendue (`plank-start|mid|end`, une image : `plankEW`, `plankNS`) ;
-// - gros seulement, le quartier : une partie par côté de sa face fendue debout (une image chacune), `quarter-north|south-
-//   start|mid|end` dans la planche est-ouest, `quarter-east|west-start|mid|end` dans la planche nord-sud ;
+// `wood-pole-ns`, et debout (le poteau, le normal seulement) `wood-normal-up` (rond, f1, f2, f3, poutre : `<aspect>-start|mid|end`,
+// une image chacune, `normalUpSheet`, encore dessiné à la main). Chaque partie est calée en haut à gauche d'un cadre commun.
+// Animations :
+// - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` (gros : round, half, quarter, plank ; normal : round, f1, f2, f3, beam ;
+//   perche : round) ; le rond a 4 images (le roulement, un tour : l'anneau d'écorce tourne d'un quart, la fente du bout aussi), les
+//   autres une ; le quartier a aussi `quarter-down-…`, pointe en bas (un sur deux dans une rangée de tas) ;
 // - `notch1`, `notch2` : la bande d'encoche de la coupe à la cognée (un tiers, deux tiers), 4 images comme le rond ;
-// - gros seulement, pour le rond et la demi-bille (les aspects qui se fendent) : `wedge-<aspect>-start|end` (le bout où
-//   le coin est planté, 3 images : le coin sort de 3, 2 puis 1 px, il s'enfonce à chaque coup ; le jeu prend l'image
-//   min(2, ⌊3 × coups / coups totaux⌋)), `crack-<aspect>-start|mid|end` (la fente seule, transparente ailleurs),
-//   `open-<aspect>-start|mid|end` (le bois grand ouvert du dernier coup de masse) ;
+// - gros seulement, pour le rond et la demi-bille (les aspects qui se fendent) : `wedge-<aspect>-start|end` (le bout où le coin est
+//   planté, 3 images : le coin sort de 3, 2 puis 1 px), `crack-<aspect>-start|mid|end` (la fente seule, transparente ailleurs),
+//   `open-<aspect>-start|mid|end` (le bois grand ouvert du dernier coup de masse). La fente suit le plan de fente de la section :
+//   vertical, par le cœur (le travers a = 0), sur le dessus et sur la face de coupe ; le coin est planté sur ce plan.
 //
-// Méthode : chaque aspect se dessine d'un tenant sur une pièce de référence (bout de départ, deux milieux, bout d'arrivée),
-// avec une écorce et des fibres périodiques sur `tile` (24 px) le long de la pièce ; les parties en sont découpées. Un
-// garde-fou vérifie que les deux milieux de la référence sont identiques : le milieu se répète sans couture.
-//
-// Matières : art/world/wood.ts (écorce M m N K en travers, lumière en haut à gauche, face de coupe Y t T cerclée de N).
-// - Gros (`BIG_WOOD`, 11 px d'écorce, 55 cm) : comme les anciennes billes (big-felled.ts, roll.ts) : est-ouest 16 rangées
-//   (contour, 11 d'écorce, contour, 3 d'ombre), bouts en ovale de 5 × 11 (face de coupe à l'ouest, écorce enroulée à
-//   l'est) ; nord-sud (règle D, docs/STYLE.md section 8 : l'est-ouest tourné, 13 × n px) 14 colonnes, l'écorce de 11
-//   colonnes éclairée à l'ouest, le bout lointain au nord (ovale de 11 × 5, l'écorce qui s'enroule), la face de coupe au
-//   sud (bande de 11 × 5), l'ombre au sud et à l'est. L'anneau
-//   d'écorce fait 22 rangées (deux fois la face visible), six couloirs de sillons de 4 à 6 px, périodiques sur 24 px ;
-//   4 images = un tour, l'anneau tourne d'un quart par image (vers le bas en est-ouest, vers la droite en nord-sud), la
-//   lumière reste en place ; la fente de la face de coupe nord-sud tourne d'un quart de tour par image.
-// - Demi-bille : posée face plate en haut (bois frais de la fente, fibres en long, pas de cerne), un liseré d'écorce au
-//   bord nord, le dos d'écorce dessous ; à l'ouest, le bout en demi-lune de bois de bout ; nord-sud (13 × n), le liseré
-//   éclairé à l'ouest, un liseré d'écorce dans l'ombre à l'est, la demi-lune de 11 × 5 au sud.
-// - Quartier : un quart de rond couché sur un rayon (section de 37,5 × 37,5 cm contour compris, 6 px de bois dans les deux
-//   sens), une face fendue au sol, l'autre debout du côté `face`, l'écorce qui descend en arrondi de l'autre. Est-ouest
-//   (20 × 11 px à 1 m) : face au sud, trois rangées d'écorce dessus et la face fendue claire sur 6 rangées (cernes en long,
-//   cœur au sol) ; face au nord, l'arête en haut et tout le dos d'écorce ; à l'ouest, la part de tarte du bout. Nord-sud
-//   (11 × 20 px à 1 m, règle D) : le dessus d'écorce en long sur six colonnes, la face debout du côté dit sur trois (claire
-//   à l'ouest, dans l'ombre à l'est), au sud la part de tarte claire de 9 × 4, le cœur en bas du côté de la face, le bout
-//   nord arrondi du côté de l'écorce (`quarterGroundNS`). Deux quartiers faces debout l'une contre l'autre (split.half de
-//   wood.json) reforment la demi-bille.
-// - Normal (`NORMAL_WOOD`, 6 px d'écorce) : est-ouest, les dessins du rondin et de la poutre de l'ancien
-//   art/world/timber.ts, repris tels quels (bouts au pixel, faces dressées f1 à f3, poutre) ; nord-sud (8 × n, règle D),
-//   dessinés en vue de dessus (`nNsFull`), les faces dressées tournées avec la pièce, bouts en ovale de 6 × 4.
-// - Encoches nord-sud : la bande est-ouest transposée (`nsNotch`), en rangées.
-// - Coin de fendage : la tête de fer (2 px de large, la rampe 2 3 0 de tools.ts) qui sort de 3, 2 ou 1 px du bout (le
-//   pixel d'entrée fixe ; là où le fer s'est retiré, les images 1 et 2 portent la fente elle-même) ; fente : un
-//   trait K qui court sur le dessus (rond : la rangée éclairée ; demi : le milieu de la face plate ; nord-sud : la crête)
-//   et descend la face de coupe du bout du coin ; grand ouvert : la fente bâille sur toute la longueur, la lèvre en bois
-//   frais, et traverse les deux bouts.
-//
-// Images tirées d'ici par `composeWood` : les pièces de 1 m des tas (`wood-big-round-100`, `-ns`, `wood-normal-round-100`,
-// `-ns`), l'image de l'objet dans Tiled (`wood-piece`, la bille du gros, 1 m, est-ouest ; `wood-piece-ns`, la même nord-sud) et quatre images de contrôle du
-// quartier de 1 m, une par côté de sa face debout (`wood-big-quarter-north-100`, `-south-100`, `-east-100-ns`, `-west-100-ns`).
-// `quarterEW`, `quarterNS` et `pie` servent aussi à la vue portée et à l'icône du quartier (items/carried.ts, resources.ts) :
-// `quarterNS` est l'ancien quartier nord-sud (9 colonnes), gardé pour la vue portée ; au sol, c'est `quarterGroundNS`.
+// Images tirées d'ici par `composeWood` : les pièces de 1 m des tas (`wood-big-round-100`, `-ns`, `wood-normal-round-100`, `-ns`),
+// l'image de l'objet dans Tiled (`wood-piece`, la bille du gros, 1 m, est-ouest ; `wood-piece-ns`) et le quartier de 1 m pointe en
+// l'air et pointe en bas (`wood-big-quarter-100`, `-down-100`, et leurs `-ns`).
 
 import { Canvas, EMPTY, type Grid } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { toolPalette } from '../items/tools';
-import { despeckle, shadedOutline } from './big-tree';
-import { barkTone, DARKER, faceTone, logEnd, POLE_DARKER } from './wood';
+import { shadedOutline } from './big-tree';
+import { DARKER } from './wood';
+import { barkV, grain, NORMAL_RING, TILE, WOOD_DARKER } from './wood-skin';
+import { lyingView, type LyingView } from './wood-section';
+import { CM_PER_PX, RACCOURCI } from '../../src/content/gabarit';
 import {
   WOOD, composeOps, framesOf, lookDef, lookOf, sizeOf, woodSize, type ComposeOpts, type WoodAxis,
 } from '../../src/world/woodShape';
-import type { WoodPiece } from '../../src/content/types';
+import type { WoodLook, WoodPiece } from '../../src/content/types';
 
 const mod = (a: number, n: number) => ((a % n) + n) % n;
-const TILE = 24;
 for (const s of Object.values(WOOD.sizes)) if (s.tile !== TILE) throw new Error('wood-pieces : écorce et fibres périodiques sur 24 px (tile)');
 
 type Part = 'start' | 'mid' | 'end';
@@ -77,522 +48,13 @@ type Part = 'start' | 'mid' | 'end';
 type LyingAxis = Exclude<WoodAxis, 'up'>;
 const PARTS: Part[] = ['start', 'mid', 'end'];
 
-// ---------- Écorce qui roule ----------
+/** La vue calculée d'un aspect, sur une pièce de `total` px le long de l'axe (est-ouest : n + 1 colonnes ; nord-sud : n + 2 rangées). */
+const lying = (size: string, look: WoodLook, axis: LyingAxis, total: number, k = 0, point?: WoodPiece['point']): LyingView =>
+  lyingView(size, look, axis, total, k, point);
 
-/** Anneau d'écorce : rangées de texture sur tout le tour ; couloirs de sillons (rangée, tirets [début, longueur] sur 24 px). */
-interface Ring { size: number; diameter: number; furrows: [number, [number, number][]][] }
-
-/**
- * Gros : 22 rangées (deux fois les 11 visibles). Couloirs 2, 5, 8 visibles à l'image 0 (ceux de BIG_WOOD), 12, 15, 18 sur
- * la face cachée ; deux tirets de 4 à 6 px par période, placés pour ne jamais s'aligner d'un couloir à l'autre.
- */
-const BIG_RING: Ring = {
-  size: 22,
-  diameter: 11,
-  furrows: [
-    [2, [[1, 5], [13, 6]]],
-    [5, [[7, 6], [19, 4]]],
-    [8, [[3, 5], [15, 5]]],
-    [12, [[10, 6], [21, 5]]],
-    [15, [[4, 4], [16, 6]]],
-    [18, [[9, 5], [20, 4]]],
-  ],
-};
-
-/** Normal : l'anneau de 12 rangées de l'ancien timber.ts (couloirs 1, 4, 7, 10). */
-const NORMAL_RING: Ring = {
-  size: 12,
-  diameter: 6,
-  furrows: [
-    [1, [[0, 4], [13, 5]]],
-    [4, [[6, 5], [18, 4]]],
-    [7, [[3, 4], [15, 5]]],
-    [10, [[9, 5], [21, 4]]],
-  ],
-};
-
-/** Décalage de l'anneau à l'image k : un quart de tour par image. */
-const shiftAt = (ring: Ring, k: number) => Math.round((k * ring.size) / 4);
-
-/** Le pixel (`along` le long de la pièce, rangée visible `v` en travers, 0 côté lumière) est-il dans un sillon à l'image k ? */
-function furrow(ring: Ring, along: number, v: number, k: number): boolean {
-  const row = mod(v - shiftAt(ring, k), ring.size);
-  const a = mod(Math.floor(along), TILE);
-  return ring.furrows.some(([r, dashes]) => dashes.some(([s, n]) => {
-    const pos = mod(a - s, TILE);
-    if (pos >= n) return false;
-    return row === mod(r + (pos >= Math.ceil(n / 2) ? 1 : 0), ring.size);
-  }));
-}
-
-/** Écorce : la rampe en travers (`s` de 0, côté lumière, à 1), creusée d'un cran par les sillons. */
-function barkS(ring: Ring, along: number, s: number, k: number): string {
-  const b = barkTone(s);
-  return furrow(ring, along, Math.floor(s * ring.diameter), k) ? DARKER[b] : b;
-}
-
-/** Écorce sur la rangée visible `v` (0 à diamètre − 1). */
-const barkV = (ring: Ring, along: number, v: number, k: number, plain = false): string =>
-  plain ? barkTone((v + 0.5) / ring.diameter) : barkS(ring, along, (v + 0.5) / ring.diameter, k);
-
-// ---------- Bois frais de la fente (face plate) ----------
-
-/** Couloirs de fibres de la face plate, en travers : tirets [début, longueur] sur 24 px. */
-const SPLIT_LANES: [number, number][][] = [
-  [[2, 5], [14, 4]],
-  [[8, 2], [19, 2]],
-  [[5, 6], [17, 3]],
-  [[0, 2], [11, 2]],
-  [[9, 5], [21, 3]],
-];
-
-/**
- * Bois frais d'une face plate vue de dessus : `along` le long de la pièce, `across` en travers (0 côté lumière). Fond t,
- * le bord côté lumière en Y ; un couloir sur deux des fibres éclairées (Y), l'autre des fibres arrachées (T), jamais de cerne.
- */
-function splitWood(along: number, across: number): string {
-  if (across === 0) return 'Y';
-  const a = mod(Math.floor(along), TILE);
-  const hit = SPLIT_LANES[across % SPLIT_LANES.length].some(([s, n]) => mod(a - s, TILE) < n);
-  if (!hit) return 't';
-  return across % 2 === 1 ? 'Y' : 'T';
-}
-
-// ---------- Ombres ----------
-
-/** Ombre au sol est-ouest : deux rangées pleines sous le corps (colonnes 2 à x1), la dernière plus courte (4 à x1 − 1). */
-function ewShadowRows(c: Canvas, y: number, rows: number, x1: number) {
-  for (let r = 0; r < rows - 1; r++) for (let X = 2; X <= x1; X++) if (c.get(X, y + r) === EMPTY) c.set(X, y + r, 'x');
-  for (let X = 4; X <= x1 - 1; X++) if (c.get(X, y + rows - 1) === EMPTY) c.set(X, y + rows - 1, 'x');
-}
-
-/** Ombre nord-sud (ancienne vue portée du quartier) : le corps décalé d'un pixel à droite et de deux vers le bas, à partir de la rangée `from`. */
-function nsShadow(c: Canvas, from: number) {
-  const body = Canvas.from(c.toGrid());
-  for (let Y = from; Y < c.h; Y++) for (let X = 2; X < c.w; X++) {
-    if (c.get(X, Y) !== EMPTY) continue;
-    const q = body.get(X - 1, Y - 2);
-    if (q !== EMPTY && q !== 'x') c.set(X, Y, 'x');
-  }
-}
-
-/**
- * Ombre au sol d'une pièce nord-sud (règle D) : sous son bout sud et le long de son flanc est, le corps décalé d'un pixel à
- * droite et de deux vers le bas ; `wide` 2 : une seconde colonne, plus courte (décalée de deux à droite, trois vers le bas),
- * comme la dernière rangée, plus courte, de l'ombre est-ouest.
- */
-function nsGroundShadow(c: Canvas, wide: 1 | 2) {
-  const body = Canvas.from(c.toGrid());
-  const shifts: [number, number][] = wide === 1 ? [[1, 2]] : [[1, 2], [2, 3]];
-  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
-    if (c.get(X, Y) !== EMPTY) continue;
-    if (shifts.some(([dx, dy]) => { const q = body.get(X - dx, Y - dy); return q !== EMPTY && q !== 'x'; })) c.set(X, Y, 'x');
-  }
-}
-
-/** Côtés dressés (plats) de la section d'une pièce : ouest, est, dessus, dessous. */
-interface Section { w: boolean; e: boolean; top: boolean; bottom: boolean }
-const ROUND_SECTION: Section = { w: false, e: false, top: false, bottom: false };
-
-/**
- * Le pixel (X, Y) est-il dans le bout de section `sec` centré en (cx, cy), demi-axes rx (en travers) et ry (le long de la
- * pièce, la moitié du diamètre : le bout en raccourci) ? Ovale là où deux côtés ronds se rencontrent, coin carré ailleurs.
- */
-function inSection(sec: Section, cx: number, cy: number, rx: number, ry: number, X: number, Y: number): boolean {
-  const u = (X + 0.5 - cx) / rx, v = (Y + 0.5 - cy) / ry;
-  if (Math.abs(u) > 1 || Math.abs(v) > 1) return false;
-  const side = u < 0 ? sec.w : sec.e;
-  const end = v < 0 ? sec.top : sec.bottom;
-  return side || end ? true : u * u + v * v <= 1;
-}
-
-/**
- * Face de coupe d'un bout sud (la bande au sud d'une pièce nord-sud, la section en raccourci) : bois de bout éclairé en haut à
- * gauche, cerclé d'écorce (N) sur ses côtés ronds, le bois dressé (t) sur ses côtés plats, le cœur.
- */
-function southFace(c: Canvas, sec: Section, cx: number, cy: number, rx: number, ry: number, rings: boolean) {
-  const inside = (X: number, Y: number) => inSection(sec, cx, cy, rx, ry, X, Y);
-  const out: [number, number, string][] = [];
-  for (let Y = Math.floor(cy - ry); Y <= Math.ceil(cy + ry); Y++) for (let X = Math.floor(cx - rx); X <= Math.ceil(cx + rx); X++) {
-    if (!inside(X, Y)) continue;
-    const u = (X + 0.5 - cx) / rx, v = (Y + 0.5 - cy) / ry;
-    // le bord : un voisin hors de la section ; côté rond, l'écorce ; côté plat, le bois dressé
-    const roundRim = (!inside(X - 1, Y) && !sec.w) || (!inside(X + 1, Y) && !sec.e) || (!inside(X, Y - 1) && !sec.top) || (!inside(X, Y + 1) && !sec.bottom);
-    const flatRim = !roundRim && [[-1, 0], [1, 0], [0, -1], [0, 1]].some(([dx, dy]) => !inside(X + dx, Y + dy));
-    out.push([X, Y, roundRim ? 'N' : flatRim ? (u + v < 0 ? 'Y' : 't') : faceTone(u, v, false, false, rings)]);
-  }
-  for (const [X, Y, q] of out) c.set(X, Y, q);
-}
-
-/**
- * Pièce ronde ou dressée couchée nord-sud (règle D), sans contour ni ombre : silhouette de `W` colonnes sur h − 2 rangées
- * (contour compris), le dessus `top(X, Y)` (colonnes 1 à W − 2) entre ses deux bouts, des ovales de `ry` rangées (la section en
- * raccourci, comme les bouts de l'est-ouest) : au nord, le bout lointain, l'écorce qui s'enroule (un cran plus sombre sur son
- * bord) ; au sud, la face de coupe. Rend aussi le centre de la face sud.
- */
-function nsLog(W: number, h: number, ry: number, sec: Section, top: (X: number, Y: number) => string, rings: boolean): { c: Canvas; front: number } {
-  const n = h - 2;
-  const c = new Canvas(W + 1, h);
-  const cx = W / 2, rx = (W - 2) / 2;
-  const back = 1 + ry, front = n - 1 - ry;
-  for (let Y = 1; Y <= n - 2; Y++) for (let X = 1; X <= W - 2; X++) {
-    if (Y + 0.5 < back && !inSection(sec, cx, back, rx, ry, X, Y)) continue;
-    if (Y + 0.5 > front && !inSection(sec, cx, front, rx, ry, X, Y)) continue;
-    c.set(X, Y, top(X, Y));
-  }
-  // bout nord : l'écorce qui s'enroule, plus sombre sur le pourtour
-  const edge: [number, number][] = [];
-  for (let Y = 1; Y + 0.5 < back; Y++) for (let X = 1; X <= W - 2; X++) {
-    if (c.get(X, Y) !== EMPTY && c.get(X, Y - 1) === EMPTY) edge.push([X, Y]);
-  }
-  for (const [X, Y] of edge) c.px[Y][X] = DARKER[c.px[Y][X]] ?? c.px[Y][X];
-  southFace(c, sec, cx, front, rx, ry, rings);
-  return { c, front };
-}
-
-// =====================================================================================================================
-// Gros bois
-// =====================================================================================================================
-
-/**
- * Bille est-ouest de n px (image n + 1 × 16), à l'image k : écorce de 11 rangées (1 à 11), bouts en ovale (5 × 11 : face
- * de coupe à l'ouest, vers la lumière ; écorce enroulée à l'est), contour (0 et 12), ombre (13, 14 pleines jusqu'au contour
- * droit, 15 plus courte).
- */
-function bigRoundEW(n: number, k: number): Canvas {
-  const D = 11;
-  const len = n - 2;
-  const c = new Canvas(n + 1, 16);
-  for (let Y = 1; Y <= D; Y++) for (let X = 1; X <= len; X++) c.set(X, Y, barkV(BIG_RING, X, Y - 1, k));
-  logEnd(c, 1, 'left', 1 + D / 2, true, D / 2, 2.5);
-  logEnd(c, len + 1, 'right', 1 + D / 2, false, D / 2, 2.5);
-  despeckle(c, 'KYTtN');
-  shadedOutline(c);
-  ewShadowRows(c, 13, 3, n - 1);
-  return c;
-}
-
-/** Fente de la face de coupe nord-sud : angle à l'image 0 (vers le haut à gauche), un quart de tour par image. */
-const CRACK0 = (-3 * Math.PI) / 4;
-
-/**
- * Bille nord-sud (règle D : la bille est-ouest tournée, 13 × n px) de h = n + 2 rangées (14 colonnes), à l'image k : l'écorce
- * de 11 colonnes, éclairée à l'ouest, les sillons le long de la pièce (ils défilent vers l'est quand elle roule) ; au nord, le
- * bout lointain en ovale de 11 × 5, l'écorce qui s'enroule ; au sud, la face de coupe, une bande de 11 × 5 (centre rangée
- * n − 3,5), et sa fente qui tourne d'un quart de tour par image ; contour, ombre au sud et à l'est.
- */
-function bigRoundNS(h: number, k: number): Canvas {
-  const rx = 5.5, ry = 2.5, cx = 6.5;
-  const { c, front } = nsLog(13, h, ry, ROUND_SECTION, (X, Y) => barkS(BIG_RING, Y, (X - 0.5) / 11, k), true);
-  const th = CRACK0 + (k * Math.PI) / 2;
-  for (let t = 0.3; t <= 0.95; t += 0.05) {
-    const X = Math.floor(cx + t * rx * Math.cos(th));
-    const Y = Math.floor(front + t * ry * Math.sin(th));
-    if (((X + 0.5 - cx) / rx) ** 2 + ((Y + 0.5 - front) / ry) ** 2 <= 0.8) c.set(X, Y, 'T');
-  }
-  despeckle(c, 'KYTtN');
-  shadedOutline(c);
-  nsGroundShadow(c, 1);
-  return c;
-}
-
-/**
- * Pièce est-ouest face plate en haut (demi-bille, quartier), image `w` × `h` : bois de X = 1 à w − 3. Rangée 1 : le liseré
- * d'écorce du bord nord ; 2 à `top` : la face plate (bois frais) ; `top` + 1 à `bottom` : le dos d'écorce (la moitié ombrée
- * de la bille), dont les bouts s'arrondissent ; à l'ouest, le bout en demi-lune de bois de bout, éclairé.
- */
-function flatEW(w: number, h: number, top: number, bottom: number, endA: number): Canvas {
-  const c = new Canvas(w, h);
-  const x1 = w - 3;
-  const back = bottom - top;
-  for (let X = 1; X <= x1; X++) for (let Y = 1; Y <= bottom; Y++) {
-    if (Y === 1) c.set(X, Y, 'M');
-    else if (Y <= top) c.set(X, Y, splitWood(X, Y - 2));
-    else c.set(X, Y, barkS(BIG_RING, X, 0.42 + (0.58 * (Y - top - 0.5)) / back, 0));
-  }
-  const ry = back + 0.5;
-  const cy = top + 0.5;
-  const inside = (X: number, Y: number, ox: number) => ((X + 0.5 - ox) / endA) ** 2 + ((Y + 0.5 - cy) / ry) ** 2 <= 1;
-  for (let Y = top + 1; Y <= bottom; Y++) for (let X = 1; X <= x1; X++) {
-    const left = X + 0.5 - 1 < endA, right = x1 + 1 - (X + 0.5) < endA;
-    if (left && !inside(X, Y, 1 + endA)) c.px[Y][X] = EMPTY;
-    else if (right && !inside(X, Y, x1 + 1 - endA)) c.px[Y][X] = EMPTY;
-  }
-  // bout ouest : la demi-lune de bois de bout sous la face plate, cerclée d'écorce
-  const ox = 1 + endA;
-  for (let Y = top + 1; Y <= bottom; Y++) for (let X = 1; X < 1 + 2 * endA; X++) {
-    if (!inside(X, Y, ox) || c.get(X, Y) === EMPTY) continue;
-    const rim = !inside(X - 1, Y, ox) || !inside(X, Y + 1, ox);
-    let q = faceTone((X + 0.5 - ox) / endA, (Y + 0.5 - cy) / ry, rim, false, false);
-    // l'arête avec la face plate, au-dessus : un cran plus sombre, pour que le bout se lise sous le dessus clair
-    if (Y === top + 1 && !rim) q = ({ Y: 't', t: 'T' } as Record<string, string>)[q] ?? q;
-    c.set(X, Y, q);
-  }
-  // bout est : l'écorce qui s'enroule, un cran plus sombre sur son bord
-  for (let Y = top + 1; Y <= bottom; Y++) {
-    let X = x1;
-    while (X > 0 && c.get(X, Y) === EMPTY) X--;
-    if (X > 0) c.set(X, Y, DARKER[c.get(X, Y)] ?? c.get(X, Y));
-  }
-  despeckle(c, 'KYTtNM');
-  shadedOutline(c);
-  ewShadowRows(c, bottom + 2, h - bottom - 2, x1 + 1);
-  return c;
-}
-
-/** Bout coupé tourné vers le sud d'une demi-bille nord-sud : la demi-lune de bois de bout, son arête un cran plus sombre. */
-function southEnd(c: Canvas, cx: number, cy: number, rx: number, ry: number) {
-  const inside = (X: number, Y: number) => ((X + 0.5 - cx) / rx) ** 2 + ((Y + 0.5 - cy) / ry) ** 2 <= 1;
-  for (let Y = Math.floor(cy); Y <= Math.ceil(cy + ry); Y++) for (let X = Math.floor(cx - rx); X <= Math.ceil(cx + rx); X++) {
-    if (!inside(X, Y)) continue;
-    const rim = !inside(X, Y + 1) || !inside(X - 1, Y) || !inside(X + 1, Y);
-    let k = faceTone((X + 0.5 - cx) / rx, (Y + 0.5 - cy) / ry, rim, false, true);
-    if (Y === Math.floor(cy)) k = ({ Y: 't', t: 'T' } as Record<string, string>)[k] ?? k;
-    c.set(X, Y, k);
-  }
-}
-
-/** Première rangée de la demi-lune d'une demi-bille nord-sud de h rangées : la bande du bout sud fait 5 rangées. */
-const halfMoonNS = (h: number) => h - 8;
-
-/**
- * Demi-bille nord-sud (règle D : 13 × n px, comme l'est-ouest tournée), image 14 × h (h = n + 2) : posée face plate en haut, la
- * face plate de bois frais (fibres en long) de la colonne 2 à 10, le liseré d'écorce à l'ouest, du côté de la lumière (comme
- * celui du nord en est-ouest) ; au nord, le bout lointain droit (le dos d'écorce est dessous) ; au sud, la demi-lune de bois de
- * bout, 11 × 5, son arête sombre sous la face plate, cerclée d'écorce ; à l'est, un liseré d'écorce dans l'ombre (le dos qui
- * descend). Contour, ombre au sud et à l'est.
- */
-function halfNS(h: number): Canvas {
-  const c = new Canvas(14, h);
-  const y1 = halfMoonNS(h);
-  for (let Y = 1; Y < y1; Y++) for (let X = 1; X <= 11; X++) c.set(X, Y, X === 1 ? 'M' : X === 11 ? 'N' : splitWood(Y, X - 2));
-  // le bout nord : le bord de la face plate, un cran plus sombre (la fibre tranchée)
-  for (let X = 2; X <= 10; X++) c.set(X, 1, ({ Y: 't', t: 'T' } as Record<string, string>)[c.get(X, 1)] ?? c.get(X, 1));
-  c.set(1, 1, 'm');
-  c.set(11, 1, 'K');
-  southEnd(c, 6.5, y1, 5.5, 5);
-  // l'arête entre la face plate et la demi-lune : le bois de bout s'y lit sous le dessus clair
-  for (let X = 2; X <= 10; X++) if (c.get(X, y1) !== 'N') c.set(X, y1, 'T');
-  despeckle(c, 'KYTtNM');
-  shadedOutline(c);
-  nsGroundShadow(c, 1);
-  return c;
-}
-
-// ---------- Le quartier ----------
-// Un quart de rond couché sur un de ses rayons : une face fendue au sol, l'autre debout d'un côté (`face`), l'écorce qui
-// descend en arrondi de l'autre. Au gabarit contour compris, comme les autres pièces : section de 37,5 × 37,5 cm (le rayon
-// de la bille, 27,5 cm, et le contour), 6 px de bois dans les deux sens : la face debout fait 6 rangées en est-ouest (face
-// sud) comme la part de tarte du bout sud en nord-sud. 1 m : 20 × 11 px est-ouest, 8 × 18 px nord-sud.
-
-type QuarterFace = 'north' | 'south' | 'east' | 'west';
-
-/**
- * La part de tarte au pixel, par taille de boîte (`<w>x<h>`) et par coin du cœur (`br` en bas à droite, `bl` en bas à
- * gauche) : l'arc d'écorce (N) en face du cœur, le bois de bout clair (Y), un cerne (t), le cœur (T) dans l'angle droit
- * entre la face debout et la face au sol. « . » : hors de la part.
- */
-const PIES: Record<string, Record<'bl' | 'br', string[]>> = {
-  // le bout sud d'un quartier nord-sud (et la vue portée par le bout) : la face qui fait lire la pièce couchée, claire
-  '6x6': {
-    br: ['...NNN', '..NYYY', '.NYYtt', 'NYYtYY', 'NYtYYT', 'NYtYTT'],
-    bl: ['NNN...', 'YYYN..', 'ttYYN.', 'YYtYYN', 'TYYtYN', 'TTYtYN'],
-  },
-  // le bout ouest d'un quartier est-ouest, sur toute sa hauteur (dessus et face)
-  '4x9': {
-    br: ['..NN', '..NY', '.NYY', '.NYt', 'NYYt', 'NYtY', 'NYtY', 'NtYT', 'NtTT'],
-    bl: ['NN..', 'YN..', 'YYN.', 'tYN.', 'tYYN', 'YtYN', 'YtYN', 'TYtN', 'TTtN'],
-  },
-  // l'icône
-  '5x5': {
-    br: ['...NN', '.NNYY', 'NYYYt', 'NYYtT', 'NYtTT'],
-    bl: ['NN...', 'YYNN.', 'tYYYN', 'TtYYN', 'TTtYN'],
-  },
-};
-
-/**
- * Bois de bout en part de tarte dans la boîte (x0, y0, w, h), le cœur dans le coin `corner` (`PIES`). Chaque pixel de la
- * boîte hors de la part est passé à `outside` (effacé : la silhouette s'arrondit), sinon laissé tel quel.
- */
-export function pie(c: Canvas, x0: number, y0: number, w: number, h: number, corner: 'bl' | 'br', outside?: (X: number, Y: number) => void) {
-  const rows = PIES[`${w}x${h}`]?.[corner];
-  if (!rows) throw new Error(`wood-pieces : pas de part de tarte de ${w} × ${h}`);
-  rows.forEach((row, i) => [...row].forEach((q, j) => {
-    if (q === '.') outside?.(x0 + j, y0 + i);
-    else c.set(x0 + j, y0 + i, q);
-  }));
-}
-
-/**
- * Face fendue debout tournée vers le sud (quartier est-ouest, `quarter-south`), rangée `row` de 0 (sous l'écorce) à 5 (le
- * cœur, au sol) : bois frais clair (Y), deux cernes en long (t, des tirets T sur le second), le cœur en T.
- */
-function standingFace(along: number, row: number): string {
-  const a = mod(Math.floor(along), TILE);
-  const lane = (i: number) => SPLIT_LANES[i].some(([s, n]) => mod(a - s, TILE) < n);
-  switch (row) {
-    case 0: return lane(1) ? 't' : 'Y';
-    case 1: return lane(0) ? 'Y' : 't';
-    case 2: return lane(3) ? 't' : 'Y';
-    case 3: return lane(2) ? 't' : 'Y';
-    case 4: return lane(4) ? 'T' : 't';
-    default: return lane(2) ? 't' : 'T';
-  }
-}
-
-/** Écorce du dessus d'un quartier est-ouest face au sud, rangées 1 à 3 : l'arrondi qui fuit vers le nord, éclairé à l'arête. */
-const SOUTH_TOP = [0, 0.4, 0.2, 0.08];
-/** Écorce du quartier est-ouest face debout au nord (le dos tourné vers nous), rangées 1 à 9 : l'arête éclairée en haut. */
-const NORTH_BARK = [0, 0.03, 0.12, 0.22, 0.33, 0.44, 0.55, 0.66, 0.78, 0.9];
-
-/**
- * Quartier est-ouest, image `w` × 13 : bois de X = 1 à w − 3, rangées 1 à 9 (contour 0 et 10, ombre 11 et 12).
- * - `south` : la face debout au sud, vers nous : trois rangées d'écorce dessus (l'arrondi qui descend vers le nord, vu
- *   par son haut), puis la face fendue claire sur 6 rangées (cernes en long, le cœur au sol). À l'ouest, le bout : la
- *   part de tarte, le cœur en bas à droite contre la face, l'arc en haut à gauche (la silhouette s'y arrondit) ; à
- *   l'est, l'arrondi d'écorce répond, un cran plus sombre.
- * - `north` : la face debout au nord, cachée : on voit l'arête en haut et tout le dos d'écorce qui descend vers nous
- *   (éclairé en haut, dans l'ombre au pied). À l'ouest, la part de tarte, le cœur en bas à gauche, l'arc en haut à droite
- *   contre l'écorce ; à l'est, l'écorce qui s'enroule, un cran plus sombre, l'arrondi au pied.
- */
-export function quarterEW(w: number, face: 'north' | 'south'): Canvas {
-  const c = new Canvas(w, 13);
-  const x1 = w - 3;
-  for (let X = 1; X <= x1; X++) for (let Y = 1; Y <= 9; Y++) {
-    if (face === 'south') c.set(X, Y, Y <= 3 ? barkS(BIG_RING, X, SOUTH_TOP[Y], 0) : standingFace(X, Y - 4));
-    else c.set(X, Y, barkS(BIG_RING, X, NORTH_BARK[Y], 0));
-  }
-  const DARK: Record<string, string> = { ...DARKER, Y: 't', t: 'T' };
-  if (face === 'south') {
-    pie(c, 1, 1, 4, 9, 'br', (X, Y) => { c.px[Y][X] = EMPTY; });
-    // est : l'arrondi du haut
-    for (const Y of [1, 2, 3]) c.px[Y][x1] = EMPTY;
-  } else {
-    pie(c, 1, 1, 4, 9, 'bl');
-    // est : l'écorce s'enroule au pied
-    for (const Y of [8, 9]) c.px[Y][x1] = EMPTY;
-  }
-  // bout est : le dernier pixel de chaque rangée un cran plus sombre
-  for (let Y = 1; Y <= 9; Y++) {
-    let X = x1;
-    while (X > 0 && c.get(X, Y) === EMPTY) X--;
-    if (X > 4) c.set(X, Y, DARK[c.get(X, Y)] ?? c.get(X, Y));
-  }
-  shadedOutline(c);
-  ewShadowRows(c, 11, 2, x1 + 1);
-  return c;
-}
-
-/** Écorce du dessus d'un quartier nord-sud, colonnes 1 à 6 (`null` : le liseré de la face debout). */
-const NS_TOP: Record<'east' | 'west', (number | null)[]> = {
-  // face à l'est : l'écorce monte de l'ouest (éclairée) vers l'arête, à l'est le liseré de la face, dans l'ombre
-  east: [0, 0.05, 0.12, 0.22, 0.35, 0.5, null],
-  // face à l'ouest : le liseré de la face, éclairé, à l'arête ; l'écorce descend vers l'est, dans l'ombre
-  west: [0, null, 0.2, 0.4, 0.6, 0.76, 0.9],
-};
-
-/**
- * Quartier nord-sud, image 9 × `h` : bois de X = 1 à 6, le dessus vu de dessus (l'écorce en long, le liseré de la face
- * debout du côté dit, la fibre en long), puis le bout sud : la part de tarte de 6 × 6, claire, le cœur en bas du côté de
- * la face debout, l'arc d'écorce de l'autre côté. Le bout nord, plus haut d'une demi-longueur, s'arrondit du côté de
- * l'écorce.
- */
-export function quarterNS(h: number, face: 'east' | 'west'): Canvas {
-  const c = new Canvas(9, h);
-  const yN = h - 9;
-  const corner = face === 'east' ? 'br' : 'bl';
-  // la part de tarte, pour savoir où l'arc coupe chaque colonne
-  const probe = new Canvas(9, 6);
-  for (let Y = 0; Y < 6; Y++) for (let X = 1; X <= 6; X++) probe.set(X, Y, 'Y');
-  pie(probe, 1, 0, 6, 6, corner, (X, Y) => { probe.px[Y][X] = EMPTY; });
-  // le bout nord, plus haut d'une demi-longueur : l'arc un peu moins marqué, sans pointe d'arête
-  const top = (X: number) => { let r = 0; while (r < 6 && probe.get(X, r) === EMPTY) r++; return 1 + Math.max(0, r - 1); };
-  for (let X = 1; X <= 6; X++) for (let Y = top(X); Y < yN + 6; Y++) {
-    const s = NS_TOP[face][X];
-    if (s === null) {
-      const fiber = SPLIT_LANES[1].some(([a, n]) => mod(Y - a, TILE) < n);
-      c.set(X, Y, face === 'east' ? (fiber ? 't' : 'T') : (fiber ? 't' : 'Y'));
-    } else c.set(X, Y, barkS(BIG_RING, Y, s, 0));
-  }
-  pie(c, 1, yN, 6, 6, corner);
-  shadedOutline(c);
-  nsShadow(c, 3);
-  return c;
-}
-
-/**
- * La part de tarte d'un quartier nord-sud au sol, en raccourci (la section vue par son bout, 9 × 4 : le bout de 4 × 9 de
- * l'est-ouest tourné) : le cœur dans le coin bas `corner` (contre la face debout et le sol), l'arc d'écorce en face. Rend le
- * masque de la part, dans la boîte (0 à w − 1, 0 à h − 1).
- */
-function pieMask(w: number, h: number, corner: 'bl' | 'br') {
-  return (i: number, j: number) => {
-    if (i < 0 || i >= w || j < 0 || j >= h) return false;
-    const u = corner === 'br' ? (w - (i + 0.5)) / w : (i + 0.5) / w;
-    const v = (h - (j + 0.5)) / h;
-    return u * u + v * v <= 1;
-  };
-}
-
-/** Peint la part de tarte (`pieMask`) en (x0, y0) : l'arc en N, le bois de bout clair (Y), un cerne (t), le cœur (T). */
-function pieBand(c: Canvas, x0: number, y0: number, w: number, h: number, corner: 'bl' | 'br') {
-  const inside = pieMask(w, h, corner);
-  const back = corner === 'br' ? -1 : 1;
-  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-    if (!inside(i, j)) continue;
-    const u = corner === 'br' ? (w - (i + 0.5)) / w : (i + 0.5) / w;
-    const v = (h - (j + 0.5)) / h;
-    const r = Math.hypot(u, v);
-    const rim = !inside(i + back, j) || !inside(i, j - 1);
-    c.set(x0 + i, y0 + j, rim ? 'N' : r < 0.3 ? 'T' : r >= 0.55 && r < 0.75 ? 't' : 'Y');
-  }
-}
-
-/** Écorce du dessus d'un quartier nord-sud au sol, colonnes 1 à 9 (`null` : la face fendue debout, vue en raccourci). */
-const NS_GROUND_TOP: Record<'east' | 'west', (number | null)[]> = {
-  // face à l'est : l'écorce monte du sol, à l'ouest (éclairée), vers l'arête ; à l'est, la face debout, dans l'ombre
-  east: [0, 0.03, 0.1, 0.18, 0.3, 0.42, 0.55, null, null, null],
-  // face à l'ouest : la face debout, éclairée ; de l'arête, l'écorce descend vers l'est, dans l'ombre
-  west: [0, null, null, null, 0.35, 0.5, 0.62, 0.74, 0.86, 0.96],
-};
-
-/**
- * Quartier nord-sud au sol (règle D : 11 × n px, le quartier est-ouest tourné), image 13 × h (h = n + 2) : bois de X = 1 à 9.
- * Le dessus vu de dessus : l'écorce en long (six colonnes, de l'arête au sol) et la face fendue debout du côté dit (trois
- * colonnes : sa hauteur en raccourci, fibres en long ; claire à l'ouest, dans l'ombre à l'est). Au sud, la part de tarte claire
- * (9 × 4), le cœur en bas du côté de la face debout, l'arc d'écorce de l'autre ; au nord, le bout lointain prend l'arc de la
- * même section (la silhouette s'y arrondit du côté de l'écorce). Contour, ombre au sud et à l'est.
- */
-function quarterGroundNS(h: number, face: 'east' | 'west'): Canvas {
-  const n = h - 2;
-  const c = new Canvas(13, h);
-  const corner = face === 'east' ? 'br' : 'bl';
-  const PH = 4;
-  const yS = n - 1 - PH;
-  const inPie = pieMask(9, PH, corner);
-  for (let X = 1; X <= 9; X++) for (let Y = 1; Y <= n - 2; Y++) {
-    if (Y <= PH && !inPie(X - 1, Y - 1)) continue;
-    const s = NS_GROUND_TOP[face][X];
-    if (s !== null) { c.set(X, Y, barkS(BIG_RING, Y, s, 0)); continue; }
-    // la face debout : trois colonnes, la plus proche de l'arête d'abord
-    const i = face === 'east' ? X - 7 : 3 - X;
-    const lane = (k: number) => SPLIT_LANES[k].some(([a, m]) => mod(Y - a, TILE) < m);
-    const q = face === 'east'
-      ? (i === 0 ? (lane(1) ? 'T' : 't') : i === 1 ? (lane(2) ? 'T' : 't') : 'T')
-      : (i === 0 ? 'Y' : i === 1 ? (lane(1) ? 't' : 'Y') : (lane(3) ? 'T' : 't'));
-    c.set(X, Y, q);
-  }
-  // bout nord : l'écorce qui s'enroule, un cran plus sombre sur son bord
-  const edge: [number, number][] = [];
-  for (let Y = 1; Y <= PH; Y++) for (let X = 1; X <= 9; X++) {
-    if (c.get(X, Y) !== EMPTY && c.get(X, Y - 1) === EMPTY && NS_GROUND_TOP[face][X] !== null) edge.push([X, Y]);
-  }
-  for (const [X, Y] of edge) c.px[Y][X] = DARKER[c.px[Y][X]] ?? c.px[Y][X];
-  pieBand(c, 1, yS, 9, PH, corner);
-  shadedOutline(c);
-  nsGroundShadow(c, 2);
-  return c;
-}
+/** La pièce couchée, calculée (vue portée en long, aperçus). `total` : n + 1 colonnes est-ouest, n + 2 rangées nord-sud. */
+export const lyingCanvas = (size: string, look: WoodLook, axis: LyingAxis, total: number, k = 0, point?: WoodPiece['point']): Canvas =>
+  lying(size, look, axis, total, k, point).c;
 
 // ---------- Le coin et la fente ----------
 
@@ -699,65 +161,67 @@ function drawOpen(c: Canvas, sd: SplitDraw) {
 }
 
 /**
- * Tracés du fendage du gros bois, sur une pièce de référence de longueur `total` (px le long de la pièce), pour le rond
- * et la demi-bille, est-ouest et nord-sud.
+ * Tracés du fendage du gros bois, sur une pièce de référence de longueur `total`, pour le rond et la demi-bille, est-ouest et
+ * nord-sud. Tout se tire de la section : la fente suit le plan de fente (vertical, par le cœur : a = 0), sur le dessus de la pièce
+ * puis sur sa face de coupe ; le coin est planté sur ce plan, au bout de départ (ouest, nord) ou d'arrivée (est, sud).
  */
 function bigSplitDraw(look: 'round' | 'half', axis: LyingAxis, total: number): SplitDraw {
+  const v = lying('big', look, axis, total);
+  const base = v.c;
+  const g = v.geom;
+  const ztop = g.zmax;
+  const pix = (a: number, z: number, along: number): [number, number] => {
+    const [x, y] = v.project(a, z, along);
+    return [Math.floor(x), Math.floor(y)];
+  };
+  // la face de coupe : le plan de fente, du dessus au sol, au bout `along`
+  const facePts = (along: number): [number, number][] => {
+    const out: [number, number][] = [];
+    for (let z = ztop; z >= 0; z -= 0.5) {
+      const [X, Y] = pix(0, z, along);
+      if (v.roles[Y]?.[X] === 'e' && !out.some(([x, y]) => x === X && y === Y)) out.push([X, Y]);
+    }
+    return out;
+  };
   if (axis === 'ew') {
     const n = total - 1;
-    if (look === 'round') {
-      const base = bigRoundEW(n, 0);
-      // la fente : sur le dessus éclairé (rangée 3), du bout ouest au bout est ; sur la face de coupe ouest, la colonne 3
-      const along: [number, number][] = [];
-      for (let X = 4; X <= n - 3; X++) along.push([X, 3 + jog(X)]);
-      const face: [number, number][] = [];
-      for (let Y = 1; Y <= 11; Y++) face.push([Y >= 10 ? 2 : 3, Y]);
-      return {
-        base, along, face, lip: [0, -1],
-        wedge: { start: { at: [3, 6], dir: [-1, 0] }, end: { at: [n - 3, 6], dir: [1, 0] } },
-        notches: [[n - 2, 3 + jog(n - 2)], [n - 1, 3 + jog(n - 2)]],
-      };
-    }
-    const base = flatEW(n + 1, 16, 5, 11, 2.5);
-    // la fente : au milieu de la face plate (rangée 3), puis elle descend la demi-lune du bout ouest
+    const Yc = pix(0, ztop, 0)[1];
     const along: [number, number][] = [];
-    for (let X = 2; X <= n - 2; X++) along.push([X, 3 + jog(X)]);
-    const face: [number, number][] = [];
-    for (let Y = 6; Y <= 11; Y++) face.push([Y >= 9 ? 3 : 2, Y]);
+    for (let X = 0; X <= n; X++) {
+      const Y = Yc + jog(X);
+      if (v.roles[Y]?.[X] && v.roles[Y][X] !== EMPTY && v.roles[Y][X] !== 'e') along.push([X, Y]);
+    }
+    const face = facePts(0);
+    // le coin : sur le plan de fente, assez loin du bord pour que sa tête tienne dans l'image (3 px)
+    const zw = Math.min(ztop, Math.max(ztop / 2, (2 * CM_PER_PX) / RACCOURCI));
+    const [sx, sy] = pix(0, zw, 0);
+    const [ex, ey] = pix(0, zw, v.lin);
+    const xs = along.map(([X]) => X);
     return {
-      base, along, face, lip: [0, 1],
-      wedge: { start: { at: [3, 3], dir: [-1, 0] }, end: { at: [n - 3, 3], dir: [1, 0] } },
-      notches: [[0, 3], [n - 1, 3 + jog(n - 1)]],
+      base, along, face, lip: look === 'round' ? [0, -1] : [0, 1],
+      wedge: { start: { at: [Math.max(3, sx), sy], dir: [-1, 0] }, end: { at: [Math.min(n - 3, ex), ey], dir: [1, 0] } },
+      notches: [[Math.min(...xs) - 1, Yc + jog(Math.min(...xs))], [Math.max(...xs) + 1, Yc + jog(Math.max(...xs))]],
     };
   }
-  // nord-sud (h = n + 2 rangées) : la fente court sur la crête (colonne 6), du bout nord à la face de coupe, puis descend la
-  // bande du bout sud ; le coin est planté au milieu du bout, il sort vers le nord ou vers le sud
+  // nord-sud : la fente court sur la crête, du bout nord à la face de coupe sud, puis descend la face
   const h = total;
   const n = h - 2;
-  if (look === 'round') {
-    const base = bigRoundNS(h, 0);
-    const along: [number, number][] = [];
-    for (let Y = 2; Y <= n - 7; Y++) along.push([6 + jog(Y), Y]);
-    const face: [number, number][] = [];
-    for (let Y = n - 6; Y <= n - 2; Y++) face.push([Y === n - 4 ? 7 : 6, Y]);
-    return {
-      base, along, face, lip: [1, 0],
-      wedge: { start: { at: [6, 3], dir: [0, -1] }, end: { at: [6, n - 4], dir: [0, 1] } },
-      notches: [[6 + jog(0), 0], [6 + jog(1), 1]],
-    };
-  }
-  const base = halfNS(h);
-  const y1 = halfMoonNS(h);
+  const Xc = pix(0, ztop, 0)[0];
   const along: [number, number][] = [];
-  for (let Y = 1; Y < y1; Y++) along.push([6 + jog(Y), Y]);
-  const face: [number, number][] = [];
-  for (let Y = y1; Y <= n - 2; Y++) face.push([Y === y1 + 2 ? 7 : 6, Y]);
+  for (let Y = 0; Y < h; Y++) {
+    const X = Xc + jog(Y);
+    if (v.roles[Y]?.[X] && v.roles[Y][X] !== EMPTY && v.roles[Y][X] !== 'e') along.push([X, Y]);
+  }
+  const face = facePts(v.lin);
+  const [, ey] = pix(0, ztop / 2, v.lin);
+  const ys = along.map(([, Y]) => Y);
   return {
     base, along, face, lip: [1, 0],
-    wedge: { start: { at: [6, 3], dir: [0, -1] }, end: { at: [6, y1 - 1], dir: [0, 1] } },
-    notches: [[6 + jog(0), 0], [6, n - 1]],
+    wedge: { start: { at: [Xc, Math.max(3, Math.min(...ys) + 2)], dir: [0, -1] }, end: { at: [Xc, Math.min(n - 2, ey)], dir: [0, 1] } },
+    notches: [[Xc + jog(0), Math.min(...ys) - 1], [Xc + jog(1), Math.min(...ys)]],
   };
 }
+
 
 /** Ce qui dépasse du coin de fendage, image par image (le jeu prend l'image min(2, ⌊3 × coups / coups totaux⌋)). */
 const WEDGE_OUT = [3, 2, 1];
@@ -832,81 +296,34 @@ const transposeBand = (g: Grid, w: number): Grid =>
 const nsNotch = (ew: Record<1 | 2, Grid[]>, w: number): Record<1 | 2, Grid[]> =>
   ({ 1: ew[1].map((g) => transposeBand(g, w)), 2: ew[2].map((g) => transposeBand(g, w)) });
 
-/** Les planches du gros bois. */
+/** Les planches du gros bois : chaque aspect calculé depuis sa section ; le quartier pointe en l'air et pointe en bas. */
 function bigSheet(axis: LyingAxis): SheetParts {
   const anims: Record<string, Grid[]> = {};
-  for (const look of ['round', 'half'] as const) {
+  for (const look of ['round', 'half', 'quarter', 'plank'] as const) {
     const g = lookDef('big', look)[axis];
     const total = refTotal(g.start, g.end);
-    const frames = [...Array(framesOf(look)).keys()].map((k) => {
-      let c: Canvas;
-      if (axis === 'ew') c = look === 'round' ? bigRoundEW(total - 1, k) : flatEW(total, 16, 5, 11, 2.5);
-      else c = look === 'round' ? bigRoundNS(total, k) : halfNS(total);
-      return cut3(c, axis, g.start, g.end, `${look}-${axis}-${k}`);
-    });
-    for (const part of PARTS) anims[`${look}-${part}`] = frames.map((p) => p[part]);
+    for (const point of look === 'quarter' ? [undefined, 'down' as const] : [undefined]) {
+      const frames = [...Array(framesOf(look)).keys()].map((k) => cut3(lying('big', look, axis, total, k, point).c, axis, g.start, g.end, `${look}-${axis}-${k}`));
+      for (const part of PARTS) anims[`${look}${point ? `-${point}` : ''}-${part}`] = frames.map((p) => p[part]);
+    }
   }
-  // le quartier : une partie par côté de sa face debout (nord et sud en est-ouest, est et ouest en nord-sud), mêmes cotes
-  const q = lookDef('big', 'quarter')[axis];
-  const qTotal = refTotal(q.start, q.end);
-  for (const face of (axis === 'ew' ? ['north', 'south'] : ['east', 'west']) as QuarterFace[]) {
-    const c = axis === 'ew' ? quarterEW(qTotal, face as 'north' | 'south') : quarterGroundNS(qTotal, face as 'east' | 'west');
-    const parts = cut3(c, axis, q.start, q.end, `quarter-${face}-${axis}`);
-    for (const part of PARTS) anims[`quarter-${face}-${part}`] = [parts[part]];
-  }
-  // la planche fendue, couchée à plat
-  const pl = lookDef('big', 'plank')[axis];
-  const plTotal = refTotal(pl.start, pl.end);
-  const plParts = cut3(axis === 'ew' ? plankEW(plTotal - 1) : plankNS(plTotal), axis, pl.start, pl.end, `plank-${axis}`);
-  for (const part of PARTS) anims[`plank-${part}`] = [plParts[part]];
   for (const d of [1, 2] as const) anims[`notch${d}`] = (axis === 'ew' ? BIG_EW_NOTCH : nsNotch(BIG_EW_NOTCH, lookDef('big', 'round').ns.w))[d];
   for (const look of ['round', 'half'] as const) splitParts(look, axis, anims);
   return { axis, frame: frameOf('big', axis), anims };
 }
 
+
 // =====================================================================================================================
-// Bois normal (les dessins de l'ancien timber.ts)
+// Bois normal
 // =====================================================================================================================
 
 type NormalLook = 'round' | 'f1' | 'f2' | 'f3' | 'beam';
 const NORMAL_LOOKS: NormalLook[] = ['round', 'f1', 'f2', 'f3', 'beam'];
-const NEW = lookDef('normal', 'round').ew;
-for (const l of NORMAL_LOOKS) {
-  const g = lookDef('normal', l);
-  if (JSON.stringify([g.ew.h, g.ew.start, g.ew.end])
-    !== JSON.stringify([10, 5, 4])) throw new Error(`wood-pieces : géométrie du normal « ${l} » hors des dessins`);
-}
 const ND = 6;
-
-/** Fil du bois dressé : tirets [début, longueur] d'un cran plus sombres, sur 24 px, par couloir. */
-const GRAIN: Record<string, [number, number][]> = {
-  a: [[3, 4], [16, 3]],
-  b: [[10, 4], [21, 3]],
-  c: [[6, 3], [18, 4]],
-};
-const HEWN_DARKER: Record<string, string> = { Y: 't', t: 'T', T: 'T' };
-function grain(along: number, lane: keyof typeof GRAIN, base: string): string {
-  const a = mod(along, TILE);
-  return GRAIN[lane].some(([s, n]) => mod(a - s, TILE) < n) ? HEWN_DARKER[base] : base;
-}
-
+const HEWN_DARKER = WOOD_DARKER;
 const nBark = (along: number, v: number, k: number, plain = false) => barkV(NORMAL_RING, along, v, k, plain);
 
-// Est-ouest : rangées 0 contour du haut, 1-6 corps, 7 contour du bas (au sol), 8-9 ombre ; bouts au pixel.
-const N_EW_START: Record<NormalLook, Grid> = {
-  round: ['..KKK', '.KNNM', 'KNYtN', 'KNYtN', 'KNtTN', 'KNttN', '.oNNN', '..ooo'],
-  f1: ['..KKK', '.KNNM', 'KNYtN', 'KNYtT', 'KNtTT', 'KNttT', '.oNNT', '..ooo'],
-  f2: ['.KKKK', 'KNNNM', 'KYYtN', 'KYYtT', 'KYtTT', 'KtttT', '.oNNT', '..ooo'],
-  f3: ['.KKKK', 'KYYYt', 'KYYtt', 'KYYtT', 'KYtTT', 'KtttT', '.oNNT', '..ooo'],
-  beam: ['.KKKK', 'KYYYt', 'KYttt', 'KYtTT', 'KttTT', 'KtTTT', 'KtTTT', '.oooo'],
-};
-const N_EW_END: Record<NormalLook, Grid> = {
-  round: ['K...', 'mo..', 'Mmo.', 'mNo.', 'mNo.', 'NKo.', 'Ko..', 'o...'],
-  f1: ['K...', 'mo..', 'Mmo.', 'tTo.', 'tTo.', 'tTo.', 'TTo.', 'oo..'],
-  f2: ['KK..', 'MNo.', 'MNo.', 'tTo.', 'tTo.', 'tTo.', 'TTo.', 'oo..'],
-  f3: ['KK..', 'YTo.', 'YTo.', 'tTo.', 'tTo.', 'tTo.', 'TTo.', 'oo..'],
-  beam: ['KK..', 'YTo.', 'YTo.', 'tTo.', 'tTo.', 'tTo.', 'TTo.', 'oo..'],
-};
+/** La colonne d'une pièce normale est-ouest d'avant le calcul (contour, dessus, flanc, contour) : sert encore au poteau debout. */
 
 function nEwColumn(look: NormalLook, along: number, k: number): string[] {
   const col = ['K'];
@@ -918,58 +335,6 @@ function nEwColumn(look: NormalLook, along: number, k: number): string[] {
   }
   col.push('o');
   return col;
-}
-
-function nEwFull(look: NormalLook, n: number, k: number): Canvas {
-  const c = new Canvas(n + 1, NEW.h);
-  for (let X = 0; X < n; X++) nEwColumn(look, X, k).forEach((q, Y) => c.set(X, Y, q));
-  const put = (g: Grid, x0: number) => g.forEach((row, Y) => [...row].forEach((q, i) => { c.px[Y][x0 + i] = q; }));
-  put(N_EW_START[look], 0);
-  put(N_EW_END[look], n + 1 - NEW.end);
-  for (let X = 2; X <= n; X++) if (c.get(X, 8) === EMPTY) c.set(X, 8, 'x');
-  for (let X = 4; X <= n - 1; X++) if (c.get(X, 9) === EMPTY) c.set(X, 9, 'x');
-  return c;
-}
-
-// Nord-sud (règle D : 8 × n px, l'est-ouest tourné), image 10 × (n + 2) : corps de 6 colonnes (1 à 6), bouts en ovale de
-// 6 × 4 (la section en raccourci, comme les bouts de 4 × 6 de l'est-ouest) : au nord le bout lointain, au sud la face de coupe.
-// Une pièce tournée d'un quart de tour garde ses faces dressées : celle du sud en est-ouest (f1) est à l'ouest en nord-sud, la
-// seconde (f2) à l'est, la troisième (f3) dessus, la poutre a aussi le dessous dressé. Faces dressées : bois clair à l'ouest
-// (Y, fil t, trois colonnes : la face qui fait lire la pièce, comme celle du sud en est-ouest), dans l'ombre à l'est (T), le
-// dessus clair au fil en long ; un côté dressé a son coin de section carré.
-const N_SECTIONS: Record<NormalLook, Section> = {
-  round: ROUND_SECTION,
-  f1: { w: true, e: false, top: false, bottom: false },
-  f2: { w: true, e: true, top: false, bottom: false },
-  f3: { w: true, e: true, top: true, bottom: false },
-  beam: { w: true, e: true, top: true, bottom: true },
-};
-
-/** Le dessus d'une pièce normale nord-sud, colonne X (1 à 6), rangée Y (le long de la pièce). */
-function nNsTop(look: NormalLook, X: number, Y: number, k: number): string {
-  const bark = (s: number) => barkS(NORMAL_RING, Y, s, 0);
-  switch (look) {
-    case 'round': return nBark(Y, X - 1, k);
-    case 'f1': return X === 1 ? 'Y' : X === 2 ? grain(Y, 'c', 'Y') : X === 3 ? grain(Y, 'a', 't') : bark([0.5, 0.75, 0.95][X - 4]);
-    case 'f2': return X === 1 ? 'Y' : X === 2 ? grain(Y, 'c', 'Y') : X === 3 ? grain(Y, 'a', 't') : X === 6 ? 'T' : bark([0.5, 0.8][X - 4]);
-    default: return X === 1 ? 't' : X === 6 ? 'T' : X === 5 ? grain(Y, 'b', 't') : grain(Y, X === 3 ? 'c' : 'a', 'Y');
-  }
-}
-
-function nNsFull(look: NormalLook, h: number, k: number): Canvas {
-  const { c, front } = nsLog(8, h, 2, N_SECTIONS[look], (X, Y) => nNsTop(look, X, Y, k), false);
-  if (look === 'round') {
-    const cx = 4, rx = 3, ry = 2;
-    const th = CRACK0 + (k * Math.PI) / 2;
-    for (let t = 0.3; t <= 0.95; t += 0.05) {
-      const X = Math.floor(cx + t * rx * Math.cos(th));
-      const Y = Math.floor(front + t * ry * Math.sin(th));
-      if (((X + 0.5 - cx) / rx) ** 2 + ((Y + 0.5 - front) / ry) ** 2 <= 0.7) c.set(X, Y, 'T');
-    }
-  }
-  shadedOutline(c);
-  nsGroundShadow(c, 2);
-  return c;
 }
 
 const N_EW_NOTCH: Record<1 | 2, Grid[]> = {
@@ -991,15 +356,13 @@ function normalSheet(axis: LyingAxis): SheetParts {
   for (const look of NORMAL_LOOKS) {
     const g = lookDef('normal', look)[axis];
     const total = refTotal(g.start, g.end);
-    const frames = [...Array(framesOf(look)).keys()].map((k) => {
-      const c = axis === 'ew' ? nEwFull(look, total - 1, k) : nNsFull(look, total, k);
-      return cut3(c, axis, g.start, g.end, `normal-${look}-${axis}-${k}`);
-    });
+    const frames = [...Array(framesOf(look)).keys()].map((k) => cut3(lying('normal', look, axis, total, k).c, axis, g.start, g.end, `normal-${look}-${axis}-${k}`));
     for (const part of PARTS) anims[`${look}-${part}`] = frames.map((p) => p[part]);
   }
   for (const d of [1, 2] as const) anims[`notch${d}`] = (axis === 'ew' ? N_EW_NOTCH : nsNotch(N_EW_NOTCH, lookDef('normal', 'round').ns.w))[d];
   return { axis, frame: frameOf('normal', axis), anims };
 }
+
 
 // ---------- Debout (le poteau, `axis: 'up'`) ----------
 // Règle D étendue : debout, une pièce garde la largeur de l'épaisseur de la même pièce couchée est-ouest, 8 colonnes contour
@@ -1080,150 +443,9 @@ function normalUpSheet(): SheetParts {
 }
 
 // =====================================================================================================================
-// La planche fendue (gros bois, `plank`)
+// La perche (`pole`) : la vue se calcule comme les autres ; restent ses encoches
 // =====================================================================================================================
-// Une planche de chêne fendue au coutre dans un quartier ou une demi-bille : 3 cm sur 25 de bois (`plank` de wood.json), couchée
-// à plat. Est-ouest (20 × 6 px à 1 m : le dessus en raccourci, 35 cm ÷ 10 = 3,5, et la rive sud, 13 cm ÷ 5 = 2,6), image
-// (n + 1) × 7 : rangée 0 le contour du haut (N, la teinte la plus sombre du bois frais), 1 la rive d'aubier au nord (d, plus
-// clair que le cœur ; elle déborde par endroits sur la rangée 2 : le fil n'est pas droit, la planche est fendue, pas sciée),
-// 2 et 3 le dessus de bois frais (Y puis t), ses fibres en tirets d'un cran plus sombres qui ondulent d'une rangée à l'autre,
-// 4 la rive sud, l'épaisseur, dans l'ombre (T, fil N), 5 le contour du bas (o), 6 l'ombre. Les bouts sont coupés droit : à
-// l'ouest, le bois de bout éclairé (une colonne Y t, la face en raccourci) ; à l'est, dans l'ombre (T). Nord-sud (règle D :
-// 6 × 20 px à 1 m), image 7 × (n + 2) : la même tournée, l'aubier à l'ouest (côté lumière), le dessus en colonnes, la rive
-// d'ombre à l'est ; au sud, le bout coupé (une rangée de bois de bout, t, ses cernes en T), contour, ombre au sud et à l'est.
 
-/** Fibres du dessus : couloir (0 la rangée claire, 1 la rangée sombre), tirets [début, longueur] sur 24 px ; un tiret passe d'un couloir à l'autre à mi-longueur (le fil ondule). */
-const PLANK_FIBRES: [number, number, number][] = [
-  [0, 1, 5], [0, 13, 4], [1, 7, 4], [1, 18, 5], [0, 21, 3],
-];
-/** Là où l'aubier déborde sur la rangée claire du dessus (colonnes sur 24 px). */
-const PLANK_SAP: [number, number][] = [[4, 4], [16, 3]];
-/** Fil de la rive d'ombre (l'épaisseur) : tirets N sur 24 px. */
-const PLANK_EDGE: [number, number][] = [[2, 3], [11, 2], [19, 3]];
-
-/** Bois de la planche à `along` (le long de la pièce), `across` en travers (0 l'aubier, côté lumière ; 1, 2 le dessus ; 3 la rive d'ombre). */
-function plankTone(along: number, across: number): string {
-  const a = mod(Math.floor(along), TILE);
-  const inDash = (st: number, n: number) => mod(a - st, TILE) < n;
-  if (across === 0) return 'd';
-  if (across === 3) return PLANK_EDGE.some(([st, n]) => inDash(st, n)) ? 'N' : 'T';
-  if (across === 1 && PLANK_SAP.some(([st, n]) => inDash(st, n))) return 'd';
-  const base = across === 1 ? 'Y' : 't';
-  const hit = PLANK_FIBRES.some(([lane, st, n]) => {
-    if (!inDash(st, n)) return false;
-    const second = mod(a - st, TILE) >= Math.ceil(n / 2);
-    return across - 1 === (second ? 1 - lane : lane);
-  });
-  return hit ? HEWN_DARKER[base] : base;
-}
-
-/** Planche est-ouest de n px (image n + 1 × 7). */
-export function plankEW(n: number): Canvas {
-  const c = new Canvas(n + 1, 7);
-  for (let X = 0; X < n; X++) {
-    c.set(X, 0, 'N');
-    for (let r = 0; r < 4; r++) c.set(X, r + 1, plankTone(X, r));
-    c.set(X, 5, 'o');
-  }
-  // bout ouest, coupé droit, vers la lumière : le contour, le bois de bout clair
-  for (let Y = 1; Y <= 4; Y++) c.set(0, Y, 'N');
-  c.set(0, 0, EMPTY).set(0, 5, EMPTY);
-  c.set(1, 1, 'Y').set(1, 2, 'Y').set(1, 3, 't').set(1, 4, 't');
-  // bout est, dans l'ombre : le bois de bout sombre, le contour
-  for (let Y = 1; Y <= 4; Y++) { c.set(n - 2, Y, Y === 4 ? 'N' : 'T'); c.set(n - 1, Y, 'o'); }
-  c.set(n - 1, 0, EMPTY).set(n - 1, 5, EMPTY).set(n - 2, 5, 'o');
-  for (let X = 2; X <= n; X++) c.set(X, 6, 'x');
-  return c;
-}
-
-/** Planche nord-sud de h = n + 2 rangées (image 7 × h). */
-export function plankNS(h: number): Canvas {
-  const n = h - 2;
-  const c = new Canvas(7, h);
-  for (let Y = 1; Y <= n - 3; Y++) {
-    c.set(0, Y, 'N');
-    for (let r = 0; r < 4; r++) c.set(r + 1, Y, plankTone(Y, r));
-    c.set(5, Y, 'o');
-  }
-  // bout nord, lointain : le contour, la fibre tranchée un cran plus sombre
-  for (let X = 1; X <= 4; X++) c.set(X, 0, 'N');
-  c.set(1, 1, 'Y').set(2, 1, 't').set(3, 1, 'T').set(4, 1, 'T');
-  // bout sud, coupé droit, tourné vers nous : une rangée de bois de bout (t, cernes T), le contour
-  c.set(0, n - 2, 'N');
-  ['Y', 't', 'T', 't'].forEach((q, i) => c.set(i + 1, n - 2, q));
-  c.set(5, n - 2, 'o');
-  for (let X = 1; X <= 4; X++) c.set(X, n - 1, 'o');
-  nsGroundShadow(c, 1);
-  return c;
-}
-
-// =====================================================================================================================
-// La perche (`pole`)
-// =====================================================================================================================
-// Un jeune arbre de taillis, 12 cm de bois, 22 cm contour compris (`POLE_WOOD` de wood.ts) : écorce lisse et fine, gris-brun (la
-// rampe S A B du bois grisé, plus claire et plus froide que l'écorce M m N du normal ; K pour le contour). Est-ouest (20 × 5 px à
-// 1 m : Ø × 1,12 = 4,9), image (n + 1) × 6 : rangée 0 le contour du haut (K), 1 à 3 l'écorce (S éclairée, A, B dans l'ombre), 4
-// le contour du bas (o), 5 l'ombre. À l'ouest, la face de coupe, un ovale de 2 × 3 px (Y t, le cœur T) cerclé d'écorce (B) ; à l'est, l'écorce qui s'enroule, un cran plus sombre.
-// Nord-sud (règle D : 5 × 20 px), image 6 × (n + 2) : l'écorce sur 3 colonnes, éclairée à l'ouest ; au nord, le bout lointain
-// arrondi, un cran plus sombre ; au sud, la face de coupe de 3 × 2 ; ombre au sud et à l'est. Roule : 4 images, l'anneau
-// d'écorce de 8 rangées (un peu moins de trois fois les 3 visibles : le tour d'une perche de 3 px) tourne de 2 rangées par image ;
-// ses gerçures sont de courts tirets droits (2 ou 3 px), rares : l'écorce lisse.
-
-/** Anneau d'écorce de la perche : 8 rangées ; gerçures (rangée de l'anneau, tirets [début, longueur] sur 24 px). */
-const POLE_RING = 8;
-const POLE_MARKS: [number, [number, number][]][] = [
-  [1, [[3, 2], [15, 3]]],
-  [3, [[9, 3], [21, 2]]],
-  [5, [[0, 2], [12, 2]]],
-  [7, [[6, 2], [18, 3]]],
-];
-const POLE_TONES = ['S', 'A', 'B'];
-
-/** Écorce de la perche à `along`, rangée visible `v` (0 côté lumière à 2), à l'image k du roulement. */
-function poleBark(along: number, v: number, k: number): string {
-  const row = mod(v - 2 * k, POLE_RING);
-  const a = mod(Math.floor(along), TILE);
-  const base = POLE_TONES[v];
-  const hit = POLE_MARKS.some(([r, dashes]) => r === row && dashes.some(([st, n]) => mod(a - st, TILE) < n));
-  return hit ? POLE_DARKER[base] : base;
-}
-
-/** Perche est-ouest de n px (image n + 1 × 6), à l'image k. */
-export function poleEW(n: number, k: number): Canvas {
-  const c = new Canvas(n + 1, 6);
-  for (let X = 0; X < n; X++) {
-    c.set(X, 0, 'K');
-    for (let v = 0; v < 3; v++) c.set(X, v + 1, poleBark(X, v, k));
-    c.set(X, 4, 'o');
-  }
-  // bout ouest : la face de coupe, cerclée d'écorce, coins arrondis
-  const start = ['.KKK', 'KYtB', 'KtTB', 'KttB', '.ooo'];
-  start.forEach((row, Y) => [...row].forEach((q, X) => c.set(X, Y, q)));
-  // bout est : l'écorce qui s'enroule, un cran plus sombre, coins arrondis
-  for (let Y = 1; Y <= 3; Y++) { c.set(n - 2, Y, POLE_DARKER[c.get(n - 2, Y)] ?? c.get(n - 2, Y)); c.set(n - 1, Y, 'o'); }
-  c.set(n - 1, 0, EMPTY).set(n - 1, 4, EMPTY);
-  for (let X = 2; X <= n; X++) c.set(X, 5, 'x');
-  return c;
-}
-
-/** Perche nord-sud de h = n + 2 rangées (image 6 × h), à l'image k. */
-export function poleNS(h: number, k: number): Canvas {
-  const n = h - 2;
-  const c = new Canvas(6, h);
-  for (let Y = 1; Y <= n - 2; Y++) {
-    c.set(0, Y, 'K');
-    for (let v = 0; v < 3; v++) c.set(v + 1, Y, poleBark(Y, v, k));
-    c.set(4, Y, 'o');
-  }
-  // bout nord, lointain : le contour arrondi, l'écorce un cran plus sombre
-  for (let X = 1; X <= 3; X++) { c.set(X, 0, 'K'); c.set(X, 1, POLE_DARKER[c.get(X, 1)]); }
-  // bout sud : la face de coupe (3 × 2), le contour arrondi
-  ['Y', 't', 'B'].forEach((q, i) => c.set(i + 1, n - 3, q));
-  ['t', 'T', 'B'].forEach((q, i) => c.set(i + 1, n - 2, q));
-  for (let X = 1; X <= 3; X++) c.set(X, n - 1, 'o');
-  nsGroundShadow(c, 1);
-  return c;
-}
 
 // La coupe à la cognée : bande de 3 colonnes (notch.ew.w), la coupe à la colonne 2 (notch.ew.at), la saignée (K) en colonne 1, le
 // flanc ouest de l'entaille en bois frais (Y t). Mêmes images que le gros et le normal : dessus, face sud, dessous, nord.
@@ -1246,12 +468,12 @@ function poleSheet(axis: LyingAxis): SheetParts {
   const anims: Record<string, Grid[]> = {};
   const g = lookDef('pole', 'round')[axis];
   const total = refTotal(g.start, g.end);
-  const frames = [...Array(framesOf('round')).keys()].map((k) =>
-    cut3(axis === 'ew' ? poleEW(total - 1, k) : poleNS(total, k), axis, g.start, g.end, `pole-round-${axis}-${k}`));
+  const frames = [...Array(framesOf('round')).keys()].map((k) => cut3(lying('pole', 'round', axis, total, k).c, axis, g.start, g.end, `pole-round-${axis}-${k}`));
   for (const part of PARTS) anims[`round-${part}`] = frames.map((p) => p[part]);
   for (const d of [1, 2] as const) anims[`notch${d}`] = (axis === 'ew' ? POLE_EW_NOTCH : nsNotch(POLE_EW_NOTCH, lookDef('pole', 'round').ns.w))[d];
   return { axis, frame: frameOf('pole', axis), anims };
 }
+
 
 // =====================================================================================================================
 // Planches et assemblage
@@ -1281,7 +503,7 @@ const SHEETS: Record<string, Partial<Record<WoodAxis, SheetParts>>> = {
 /**
  * L'image d'une pièce, exactement comme le jeu l'assemble (`composeOps`) : une partie pose les pixels [0, size[ de son
  * image le long de la pièce à `at` (seulement ceux qui tombent dans `clip` s'il est donné), le travers entier ; `clear`
- * efface la bande. Le quartier prend les parties du côté de sa face debout (`face`, sinon sud en est-ouest, est en nord-sud).
+ * efface la bande. Le quartier prend les parties de sa pointe (`quarter-…`, ou `quarter-down-…` pointe en bas).
  */
 export function composeWood(piece: WoodPiece, opts: ComposeOpts = {}): Canvas {
   const { w, h } = woodSize(piece.size, lookOf(piece), piece.axis, piece.length);
@@ -1328,8 +550,8 @@ function sheetSource(size: string, sp: SheetParts): SpriteSheetSource {
 }
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
-const piece = (size: string, shape: WoodPiece['shape'], axis: WoodAxis, length = 100, face?: WoodPiece['face']): WoodPiece =>
-  ({ size, shape, axis, length, ...(face ? { face } : {}) });
+const piece = (size: string, shape: WoodPiece['shape'], axis: WoodAxis, length = 100, point?: WoodPiece['point']): WoodPiece =>
+  ({ size, shape, axis, length, ...(point ? { point } : {}) });
 
 export default [
   sheetSource('big', SHEETS.big.ew!),
@@ -1348,11 +570,10 @@ export default [
   img('wood-pole-round-100-ns', composeWood(piece('pole', 'round', 'ns'))),
   img('wood-big-plank-100', composeWood(piece('big', 'plank', 'ew'))),
   img('wood-big-plank-100-ns', composeWood(piece('big', 'plank', 'ns'))),
-  img('wood-big-quarter-north-100', composeWood(piece('big', 'quarter', 'ew', 100, 'north'))),
-  img('wood-big-quarter-south-100', composeWood(piece('big', 'quarter', 'ew', 100, 'south'))),
-  img('wood-big-quarter-east-100-ns', composeWood(piece('big', 'quarter', 'ns', 100, 'east'))),
-  img('wood-big-quarter-west-100-ns', composeWood(piece('big', 'quarter', 'ns', 100, 'west'))),
+  img('wood-big-quarter-100', composeWood(piece('big', 'quarter', 'ew'))),
+  img('wood-big-quarter-down-100', composeWood(piece('big', 'quarter', 'ew', 100, 'down'))),
+  img('wood-big-quarter-100-ns', composeWood(piece('big', 'quarter', 'ns'))),
+  img('wood-big-quarter-down-100-ns', composeWood(piece('big', 'quarter', 'ns', 100, 'down'))),
   img('wood-piece', composeWood(piece('big', 'round', 'ew'))),
   img('wood-piece-ns', composeWood(piece('big', 'round', 'ns'))),
 ];
-

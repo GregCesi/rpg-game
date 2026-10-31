@@ -218,8 +218,7 @@ export function turned(ref: BuildRef, view: number): { ref: BuildRef; view: numb
   if (w.axis === 'ns') {
     const look = lookDef(w.size, lookOf(w));
     if (look.up && w.shape === 'round') {
-      const { face: _f, ...rest } = w;
-      return { ref: { wood: { ...rest, axis: 'up' } }, view: 0 };
+      return { ref: { wood: { ...w, axis: 'up' } }, view: 0 };
     }
     return { ref: { wood: turnedWood(w) }, view: 0 };
   }

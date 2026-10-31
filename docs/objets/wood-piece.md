@@ -13,8 +13,11 @@ du rondin et de la poutre. Le contenu est dans `src/content/wood.json` ; voir CO
   60 cm au moins) ; `shape` (`round`, `half`, `quarter`, `plank` : la planche fendue, même date) ;
   `hewn` (coups de doloire : une face tous les 3, la poutre à 12) ; `axis` (`ew` est-ouest, `ns` nord-sud) ; `notch` (la coupe
   commencée : `at` cm du bout ouest ou nord, `hits`) ; `wedge` (le coin planté : `end`, le bout, `hits`, les coups de masse) ;
-  `face` (le quartier seulement : le côté de sa face fendue debout, `north` ou `south` est-ouest, `east` ou `west` nord-sud ;
-  absent, sud ou est).
+  `point` (le quartier seulement : `down`, pointe en bas, un sur deux dans une rangée de tas ; absent, sa position posé : écorce
+  en bas, pointe en l'air). Le `face` d'avant (le côté de la face debout) a disparu le 31 octobre 2026 (sauvegarde 15).
+- Section (wood.json, `section` de chaque aspect, « Les pièces fendues » de CONCEPTION) : la forme vue par le bout (rond, demi-rond,
+  quart de rond, rectangle ; les faces dressées en `flats`), où est l'écorce, où est le cœur, sur quoi la pièce repose. Toutes ses
+  vues couchées se calculent de là.
 - Nom affiché, selon le diamètre et l'aspect (wood.json, `looks`) : bille, demi-bille, quartier, planche (le gros) ; rondin, poutre (le
   normal) ; perche. Genre du nom pour les messages : « elle » (bille, demi-bille, poutre), « il » (quartier, rondin).
 - Nature : objet du monde (`props.json`), qui se prend quand il n'est pas trop lourd. Sa définition complète (dimensions,
@@ -49,10 +52,10 @@ dresse. Elle ne vient que des places d'un plan (`accepts.wood`) : `lay` de `syst
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
 - Contour compris : longueur L ; diamètre 65 cm (gros), 40 cm (normal) ; demi : la moitié en hauteur ; poutre : 30 × 30 cm
-  (20 × 20 de bois). Le quartier, un quart de rond posé sur un rayon : 27,5 × 27,5 cm de bois (le rayon de la bille), 37,5 cm contour
-  compris, soit environ 20 × 11 px à 1 m est-ouest, 11 × 20 px nord-sud (règle D) ; nord-sud, la part de tarte au sud, bien claire, le
-  fait lire couché. `validate.ts` vérifie la silhouette de la
-  demi-bille, du quartier (ses quatre positions) et de la poutre, dans les deux sens, à 60 cm, 1 m, 2 m et 3 m (`woodSilhouettes`
+  (20 × 20 de bois). Le quartier, un quart de rond écorce en bas, pointe en l'air, ses deux faces fendues à 45° : 39 cm de large
+  (le rayon × √2) sur 27,5 de haut de bois, 49 × 37,5 cm contour compris, soit 20 × 11 px à 1 m est-ouest, 11 × 20 px nord-sud
+  (règle D) ; nord-sud, le bout sud montre le triangle de la section, pointe en haut. `validate.ts` vérifie la silhouette de la
+  demi-bille, du quartier (pointe en l'air et pointe en bas) et de la poutre, dans les deux sens, à 60 cm, 1 m, 2 m et 3 m (`woodSilhouettes`
   du manifeste, tirées par build-art des pièces assemblées).
 - Est-ouest : L/5 px de long, plus une colonne d'ombre (21 px pour 1 m) ; hauteur de l'image selon l'aspect (`ew.h` : 16 pour
   la bille du gros, 10 pour le rondin). Nord-sud (règle D, rotation pure) : largeur selon l'aspect (`ns.w`), hauteur L/5 + `extra`
@@ -60,14 +63,22 @@ dresse. Elle ne vient que des places d'un plan (`accepts.wood`) : `lay` de `syst
 - Collision : est-ouest, (L/5 − 1) px de long sur `ew.body.h` ; nord-sud, la même inversée (`ew.body.h` de large, L/5 − 1 de haut, son bas à `ns.bottom`).
 
 ## Vues
-- Symétrie : deux vues (`views: "symmetric"`, couchée) ; le quartier, quatre (sa face debout, `face`). Règle D (docs/STYLE.md section 8) : nord-sud, l'image et la collision sont celles de l'est-ouest inversées, à toute longueur (la bille de 1 m : 20 × 13 px est-ouest, 13 × 20 nord-sud) ; le bout coupé nord-sud est une bande au sud avec ses cernes. Contrôle : `npm run test:perspective`.
+- Symétrie : deux vues (`views: "symmetric"`, couchée), le quartier aussi (sa section est symétrique : pointe en l'air dans les deux
+  sens ; pointe en bas seulement en tas). Règle D (docs/STYLE.md section 8) : nord-sud, l'image et la collision sont celles de l'est-ouest inversées, à toute longueur (la bille de 1 m : 20 × 13 px est-ouest, 13 × 20 nord-sud) ; le bout coupé nord-sud est une bande au sud avec ses cernes. Contrôle : `npm run test:perspective`.
 - Au sol : l'image s'assemble à sa longueur en trois parties, bout, milieu répété, bout, prises dans la planche de son diamètre
   (`wood-big`, `wood-normal`, et `-ns`), par les opérations de `src/world/woodShape.ts` (`composeOps`) : le jeu à la volée
   (`src/world/woodTexture.ts`), le dessin pour les images de 1 m (`art/world/wood-pieces.ts`). Jamais retournée.
-- Aspects : rond (4 images de roulement), demi, quart (le gros) ; une, deux, trois faces dressées, poutre (le normal).
-- Le quartier dans ses quatre positions, lumière toujours en haut à gauche, sans miroir (`quarter-<face>-…`) : est-ouest face debout
-  au sud, la face fendue claire et ses cernes en face sud, l'écorce qui descend vers le nord ; est-ouest face debout au nord, le
-  dessus de l'arête et l'écorce en face sud ; nord-sud, le bout sud montre la part de tarte, la face debout à l'est ou à l'ouest.
+- Les parties ne sont plus dessinées à la main (31 octobre 2026) : `art/world/wood-section.ts` les calcule de la section, étirée sur
+  la longueur. Est-ouest, le travers remplit la collision (`ew.body.h` rangées : la profondeur à l'échelle du pas d'un tas), la
+  hauteur ce qui reste de l'image (le flanc tourné vers nous) ; le bout ouest montre la face de coupe, la section écrasée en
+  raccourci ; nord-sud, le dessus vu d'en haut et la face de coupe au sud, en raccourci. Lumière en haut à gauche. Les couleurs et
+  les textures (écorce et ses sillons, fil des faces fendues et dressées, cernes et cœur des bouts) sont dans
+  `art/world/wood-skin.ts`, réglées par le pixel-artist.
+- Aspects : rond (4 images de roulement), demi (écorce en bas, face plate claire en l'air), quart (écorce en bas, pointe en l'air ;
+  et pointe en bas, `quarter-down-…`), planche (le gros) ; une, deux, trois faces dressées, poutre (le normal : la doloire dresse
+  le dessus, puis le sud, le nord, le dessous).
+- Recouvrement : la pièce de devant (plus au sud) ou de dessus cache celle de derrière ou de dessous au pixel près ; des
+  demi-billes côte à côte montrent leurs faces claires presque continues, l'écorce seulement sur la dernière, devant.
 - Encoche : une bande à sa place (un tiers, deux tiers).
 - Coin planté : la partie du bout où il est planté est remplacée (coin dans la face de coupe vue, tête qui dépasse au bout caché) ;
   il s'enfonce à chaque coup (3 images : il sort de 3, 2, 1 px) ; la fente court depuis ce bout sur la part de la longueur déjà
@@ -83,7 +94,9 @@ dresse. Elle ne vient que des places d'un plan (`accepts.wood`) : `lay` de `syst
 Seule, ou en tas si elle se porte (70 kg ou moins), de toute longueur et de tout état. Un tas naît quand on la pose contre une pièce
 identique seule au sol, et prend tout d'elle (diamètre, état, longueur, sens) ; il n'accepte que des pièces identiques. Sa forme se
 calcule d'après la section (`src/world/woodPile.ts`) : pyramide de 6 pour le rond (même entamé à la doloire), rangées de 3 × 3 pour
-la demi-bille, le quartier (tête-bêche : la face debout d'un côté puis de l'autre) et la poutre ; est-ouest ou nord-sud. Exemples :
+la demi-bille et la poutre ; le quartier en triangles : dans chaque rangée, pointe en l'air, pointe en bas, pointe en l'air, à un
+demi-pas (proposition à faire juger par Grégoire) ; est-ouest ou nord-sud. L'affichage va couche par couche, de l'arrière vers
+l'avant. Exemples :
 bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1,20 m (64 kg), demi-bille de 60 cm, poutre jusqu'à
 1,80 m.
 
@@ -92,8 +105,8 @@ bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1
   faire rouler. ») ; pas pendant une coupe ni avec un coin planté.
 - Pousser (mains libres, contre elle) : la pièce ronde roule perpendiculairement à son axe jusqu'à 300 kg ; la poutre (« Elle ne
   roule pas : elle est carrée. »), une pièce à une face dressée, la demi-bille et le quartier (à plat) ne roulent pas.
-- R maintenu au contact, mains libres : un quart de tour dans le sens des aiguilles d'une montre (est-ouest <-> nord-sud ; la face
-  debout d'un quartier suit : nord, est, sud, ouest), à toute longueur, s'il y a la place. R en main : de même, elle sera posée
+- R maintenu au contact, mains libres : un quart de tour dans le sens des aiguilles d'une montre (est-ouest <-> nord-sud ; le
+  quartier reste écorce en bas, pointe en l'air), à toute longueur, s'il y a la place. R en main : de même, elle sera posée
   dans ce sens.
 - E dans le vide (ou Q) : la poser là où le montre son fantôme (seule, contre une pièce identique, ou sur son tas).
 - Espace, la cognée, contre son flanc : la coupe s'aimante tous les 20 cm depuis le bout le plus proche de Xéros ; refusée si un
@@ -105,8 +118,10 @@ bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1
 - Espace, le coin, à un bout d'une bille ou d'une demi-bille du gros, de toute longueur : il se plante d'un coup, sans geste ; depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. » ; le quartier :
   « Trop mince pour le coin. » ; le normal : « Ce bois ne se fend pas : il se coupe et s'équarrit. ». 1 point.
 - Espace, la masse, depuis le bout du coin : 3 coups par mètre commencé (6 pour 2 m ; la fente court, le coin s'enfonce), et deux
-  morceaux identiques, dans le même sens (demi-billes, puis quartiers, tous nés avec la face debout de départ de leur sens : au sud
-  est-ouest, à l'est nord-sud ; aucun retourné, R les tourne ensuite ; décidé le 31 octobre 2026), le coin au sol ; sans coin : « Il faut d'abord un coin. » ; depuis l'autre bout : « Les coups se donnent sur le bout, là où le coin est
+  morceaux identiques, dans le même sens, côte à côte, dans la position de leur section : deux demi-billes écorce en bas, face en
+  l'air ; deux quartiers écorce en bas, pointe en l'air (31 octobre 2026). Deux quartiers sont plus larges que leur demi-bille : si
+  leur place est prise (la demi-bille voisine), ils s'écartent ensemble en travers, de part et d'autre, jusqu'à 12 px (`SPLIT` de
+  config.ts) ; le coin au sol ; sans coin : « Il faut d'abord un coin. » ; depuis l'autre bout : « Les coups se donnent sur le bout, là où le coin est
   planté. » ; sans place : « Pas la place pour la fendre. ». 0,8 point le coup.
 
 ## La perche et la planche (chantier « briques », 31 octobre 2026)
@@ -134,9 +149,11 @@ Les billes, quartiers et rondins qui se portent vont en tas pour le chauffage, o
 (3 m et 1,80 m), équarris au pied du chantier.
 
 ## Vérification
-- Aperçu : `.art-preview/bois.png` (chaque diamètre et aspect, plusieurs longueurs, roulement, encoche, coin et fente, vues
+- Aperçu : `.art-preview/bois-sections.png` (chaque état : sa section par le bout, puis la pièce est-ouest et nord-sud à côté de
+  Xéros), `.art-preview/bois.png` (chaque diamètre et aspect, plusieurs longueurs, roulement, encoche, coin et fente, vues
   portées, icônes, et chaque aspect du normal couché à côté de la même pièce debout), `.art-preview/arbres.png`, `.art-preview/piles.png`, `.art-preview/gabarit.png`.
-- Tests : `npm run test:fendage` (dont une bille de 2 m, et un tour complet du quartier avec R), `npm run test:equarrissage`,
-  `npm run test:tas`.
+- Tests : `npm run test:sections` (le recouvrement des tas et des rangées : aucun flanc caché visible ; les positions après la
+  coupe ; la règle D), `npm run test:fendage` (dont une bille de 2 m, chaque demi-bille fendue en deux quartiers depuis chaque
+  bout, et un tour complet du quartier avec R), `npm run test:equarrissage`, `npm run test:tas`.
 - En jeu (`?dieu`, « Pièce de bois ») : poser des pièces de chaque diamètre, longueur, état et sens ; les couper, les rouler, les
   pivoter, les porter, les fendre, les équarrir.

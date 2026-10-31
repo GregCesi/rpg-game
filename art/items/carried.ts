@@ -17,7 +17,8 @@ import { branchBody, finishBranch, shearDown, transpose, type Branch } from './b
 import { axeArt, toolPalette } from './tools';
 import xeros, { SHOULDER_POINTS } from '../characters/xeros';
 import { bundleByTheEnd, faggotBody, outlineBundle } from '../world/faggot';
-import { plankEW, poleEW, quarterEW, quarterNS } from '../world/wood-pieces';
+import { lyingCanvas } from '../world/wood-pieces';
+import { lyingView } from '../world/wood-section';
 
 type View = 'down' | 'up' | 'right';
 
@@ -287,18 +288,23 @@ function bigFlatEnd(x1: number, y1: number, endH: number): Grid {
 }
 
 /**
- * Quartier par le bout (le quartier nord-sud de wood-pieces.ts, raccourci, face debout à l'est) : l'écorce du dessus qui
- * fuit derrière, puis la part de tarte sous les mains, posée sur un rayon, le cœur en bas à droite contre la face debout,
- * l'arc d'écorce en haut à gauche. La prise sur l'arête entre le dessus et la part.
+ * Quartier par le bout : le quartier nord-sud au sol (la vue calculée de sa section, art/world/wood-section.ts), court : le dessus,
+ * ses deux faces fendues en toit (l'ouest éclairée, l'est dans l'ombre), puis sous les mains le bout coupé, la section elle-même,
+ * écorce en bas, pointe (l'angle du cœur) en l'air. La prise sur l'arête entre le dessus et le bout.
  */
 function quarterEnd(): Grid {
   const h = 14;
-  return onGrip(trim(quarterNS(h, 'east').toGrid()), h - 9);
+  const v = lyingView('big', 'quarter', 'ns', h);
+  const mid = Math.floor(v.c.w / 2) - 1;
+  const grip = v.roles.findIndex((r) => r[mid] === 'e');
+  const g = v.c.toGrid();
+  const top = g.findIndex((r) => /[^.x]/.test(r));
+  return onGrip(trim(g), Math.max(0, grip - top));
 }
 
-/** Quartier en long : le quartier est-ouest de wood-pieces.ts, face debout au sud (une rangée d'écorce, la face fendue). */
+/** Quartier en long : le quartier est-ouest calculé, écorce en bas, pointe en l'air (la face nord éclairée, la sud dans l'ombre). */
 function quarterLong(): Grid {
-  return onGrip(trim(quarterEW(PREVIEW_LEN + 1, 'south').toGrid()));
+  return onGrip(trim(lyingCanvas('big', 'quarter', 'ew', PREVIEW_LEN + 1).toGrid()));
 }
 
 // ----- Bois normal (30 cm) -----
@@ -410,8 +416,8 @@ const POLE_END: Grid = ['.KKK.', 'KSABo', 'KSABo', 'KYtBo', 'KtTBo', '.ooo.'];
 /** Planche par le bout : le dessus qui fuit (l'aubier d à gauche, le bois frais Y t, la rive T), le bois de bout (une rangée, ses cernes en travers). */
 const PLANK_END: Grid = ['.NNNNN.', 'NdYttTo', 'NdYttTo', 'NYtYtTo', '.ooooo.'];
 
-const poleLong = (): Grid => onGrip(trim(poleEW(PREVIEW_LEN, 0).toGrid()));
-const plankLong = (): Grid => onGrip(trim(plankEW(PREVIEW_LEN).toGrid()));
+const poleLong = (): Grid => onGrip(trim(lyingCanvas('pole', 'round', 'ew', PREVIEW_LEN + 1).toGrid()));
+const plankLong = (): Grid => onGrip(trim(lyingCanvas('big', 'plank', 'ew', PREVIEW_LEN + 1).toGrid()));
 
 // ----- Les planches -----
 

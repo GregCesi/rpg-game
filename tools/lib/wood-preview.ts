@@ -3,8 +3,8 @@
 // puis nord-sud : les pièces rondes de 60 cm, 1 m, 2 m et 4 m ; les 4 images du roulement d'une pièce de 1 m et l'encoche d'une coupe
 // (un tiers, deux tiers) à 1 m du bout d'une pièce de 2 m ; chaque aspect à 1 m puis à 3 m ; pour ce qui se fend, depuis chaque bout,
 // le coin planté, la fente après un et deux coups, le bois ouvert du dernier, et les deux morceaux posés comme le jeu les pose
-// (`split` de wood.json, `splitPieces` : les quartiers identiques, même face debout) ; le quartier dans ses quatre positions (face debout au
-// nord, à l'est, au sud, à l'ouest : un tour de R), à 1 m et 2 m ; debout (le poteau), chaque aspect qui se dresse couché est-ouest et nord-sud à 1 m puis debout à 1 m, 1,80 m et 3 m. Enfin les vues portées (de face, de dos, de profil à 1 m) et l'icône de chaque aspect.
+// (`split` de wood.json, `splitPieces` : deux morceaux identiques, écorce en bas) ; le quartier pointe en l'air et pointe en bas,
+// est-ouest et nord-sud, à 1 m et 2 m ; debout (le poteau), chaque aspect qui se dresse couché est-ouest et nord-sud à 1 m puis debout à 1 m, 1,80 m et 3 m. Enfin les vues portées (de face, de dos, de profil à 1 m) et l'icône de chaque aspect.
 
 import type { PNG } from 'pngjs';
 import type { Grid, Palette } from '../../art/lib/canvas';
@@ -13,6 +13,8 @@ import { composeWood } from '../../art/world/wood-pieces';
 import type { End, WoodLook, WoodPiece } from '../../src/content/types';
 import { shapeOfLook, splitPieces, WOOD } from '../../src/world/woodShape';
 import { Board, grassOf } from './composite-previews';
+import { endView } from '../../art/world/wood-section';
+import { CM_PER_PX } from '../../src/content/gabarit';
 
 interface Placed { grid: Grid; x: number; y: number }
 interface Cell { items: Placed[]; palette: Palette; w: number; h: number }
@@ -67,10 +69,10 @@ export function woodPreview(sources: ArtSource[]): PNG | undefined {
         }
       }
     }
-    // le quartier dans ses quatre positions, un quart de tour à chaque fois (R) : face debout au nord, à l'est, au sud, à l'ouest
+    // le quartier pointe en l'air (posé) et pointe en bas (un sur deux dans une rangée de tas), est-ouest et nord-sud, à 1 m et 2 m
     if (def.looks.quarter) {
       for (const cm of [100, 200]) {
-        rows.push([xeros, ...(['north', 'east', 'south', 'west'] as const).map((face) => cell(piece(size, face === 'north' || face === 'south' ? 'ew' : 'ns', cm, 'quarter', { face })))]);
+        rows.push([xeros, ...(['ew', 'ns'] as const).flatMap((ax) => [undefined, 'down' as const].map((point) => cell(piece(size, ax, cm, 'quarter', point ? { point } : {}))))]);
       }
     }
     // debout (le poteau) : chaque aspect qui se dresse, couché est-ouest et nord-sud (1 m) à côté du même debout (1 m, 1,80 m, 3 m)
@@ -105,6 +107,52 @@ export function woodPreview(sources: ArtSource[]): PNG | undefined {
     let x = pad;
     for (const c of cells) {
       // bas des cases aligné sur le sol de la rangée
+      for (const i of c.items) board.blit(i.grid, c.palette, x + i.x, y + h - pad - c.h + i.y);
+      x += c.w + pad;
+    }
+    y += h;
+    for (let X = 0; X < width; X++) board.dot(X, y + 1, [60, 70, 30]);
+    y += 4;
+  }
+  return board.toPng();
+}
+
+/**
+ * bois-sections.png de npm run art:preview : pour chaque état de la pièce de bois (chaque aspect de chaque diamètre de wood.json,
+ * le quartier pointe en l'air puis pointe en bas), sa section vue par le bout (art/world/wood-section.ts, `endView` : à l'échelle
+ * du jeu, puis agrandie ×3 pour qu'on y lise l'écorce, le cœur et la face d'appui), puis la pièce de 1 m au sol, est-ouest et
+ * nord-sud (la vue calculée, telle que le jeu l'assemble), à côté de Xéros.
+ */
+export function sectionsPreview(sources: ArtSource[]): PNG | undefined {
+  const find = (name: string) => sources.find((s) => s.name === name);
+  const body = find('xeros');
+  const sheet = find(Object.values(WOOD.sizes)[0].sheet);
+  if (body?.kind !== 'spritesheet' || sheet?.kind !== 'spritesheet') return undefined;
+  const palette = sheet.palette;
+  const one = (grid: Grid, pal: Palette = palette): Cell => ({ items: [{ grid, x: 0, y: 0 }], palette: pal, w: grid[0].length, h: grid.length });
+  const xeros = one(body.animations['idle-down'].frames[0], body.palette);
+  const zoom = (g: Grid, k: number): Grid => g.flatMap((r) => Array(k).fill([...r].map((q) => q.repeat(k)).join('')));
+  const rows: Cell[][] = [];
+  for (const [size, def] of Object.entries(WOOD.sizes)) {
+    for (const look of Object.keys(def.looks) as WoodLook[]) {
+      for (const point of look === 'quarter' ? [undefined, 'down' as const] : [undefined]) {
+        const end = endView(size, look, 1 / CM_PER_PX, point).toGrid();
+        const p = (axis: 'ew' | 'ns'): WoodPiece => ({ size, length: 100, shape: shapeOfLook(look), axis, ...(FACES[look] ? { hewn: FACES[look] * WOOD.hew.perFace } : {}), ...(point ? { point } : {}) });
+        rows.push([xeros, one(end), one(zoom(end, 3)), one(composeWood(p('ew')).toGrid()), one(composeWood(p('ns')).toGrid())]);
+      }
+    }
+  }
+  const pad = 6;
+  const rowW = (cells: Cell[]) => cells.reduce((a, c) => a + c.w + pad, pad);
+  const rowH = (cells: Cell[]) => Math.max(...cells.map((c) => c.h)) + 2 * pad;
+  const width = Math.max(...rows.map(rowW));
+  const total = rows.reduce((a, r) => a + rowH(r) + 4, 0);
+  const board = new Board(width, total, grassOf(sources));
+  let y = 0;
+  for (const cells of rows) {
+    const h = rowH(cells);
+    let x = pad;
+    for (const c of cells) {
       for (const i of c.items) board.blit(i.grid, c.palette, x + i.x, y + h - pad - c.h + i.y);
       x += c.w + pad;
     }

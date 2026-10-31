@@ -5,9 +5,12 @@
 //
 // La forme vient de la section de la pièce :
 // - section ronde (la bille, le rondin, même entamé à la doloire) : une pyramide, 3 au sol, 2 dans les creux, 1 au sommet ;
-// - section plate ou carrée (la demi-bille, le quartier, la poutre) : des rangées droites, 3 de large sur 3 de haut, chaque
-//   pièce sur celle du dessous ; les quartiers tête-bêche (un sur deux la face debout de l'autre côté : sud et nord en est-ouest,
-//   est et ouest en nord-sud, `face`).
+// - section plate ou carrée (la demi-bille, la poutre) : des rangées droites, 3 de large sur 3 de haut, chaque pièce sur celle du
+//   dessous ; le quartier, en triangles : dans une rangée, pointe en l'air, pointe en bas (`point`), pointe en l'air, à un
+//   demi-pas, le quartier pointe en bas emboîté entre ses deux voisins (proposition à faire juger par Grégoire).
+// L'affichage va couche par couche, et dans une couche de l'arrière vers l'avant (de l'ouest vers l'est en nord-sud) : ce qui est
+// plus haut cache ce qui est dessous, ce qui est devant ce qui est derrière. Les vues calculées des pièces (art/world/wood-section.ts)
+// ont le travers à l'échelle du pas : la pièce de devant cache exactement le flanc de celle de derrière.
 // Au sol, les pièces sont côte à côte, à la largeur de leur collision (`woodBody`) plus un pixel (pour que le contour de celle de
 // derrière se lise) : est-ouest, l'une derrière l'autre ; nord-sud, l'une à côté de l'autre, au même écart (règle D, docs/STYLE.md
 // section 8 : l'emprise au sol est la vraie, tournée). Une couche monte de la hauteur de la section rapportée à sa largeur
@@ -33,10 +36,11 @@ export type PileShape = Omit<PileDef, 'places' | 'turned'> & {
 
 /** Les aspects qui se rangent en rangées droites (section plate ou carrée) ; les autres font une pyramide. */
 const ROWS = new Set(['half', 'quarter', 'beam', 'plank']);
-/** Les aspects rangés tête-bêche : un sur deux la face debout de l'autre côté. */
-const HEAD_TO_TAIL = new Set(['quarter']);
-/** Les deux côtés de la face debout d'un quartier tête-bêche, par sens : le premier, puis l'autre. */
-const FACES = { ew: ['south', 'north'], ns: ['east', 'west'] } as const;
+/**
+ * Les aspects rangés en triangles : dans une rangée, un sur deux pointe en bas (`point`), emboîté entre ses deux voisins pointe en
+ * l'air, à un demi-pas (le quartier : ses deux faces fendues à 45° s'appuient sur celles de ses voisins).
+ */
+const TRIANGLES = new Set(['quarter']);
 /** Largeur d'un tas (pièces au sol), et hauteur des rangées. */
 const WIDE = 3;
 
@@ -63,7 +67,7 @@ function woodPlaces(w: PileWood, axis: Exclude<WoodAxis, 'up'>): Record<string, 
   const dims = woodDims({ ...piece, axis: 'ew' });
   const ratio = dims.h / dims.d;
   const rows = ROWS.has(look);
-  const flip = HEAD_TO_TAIL.has(look);
+  const tri = TRIANGLES.has(look);
   // écart entre deux pièces voisines au sol (le pas), et montée d'une couche à l'écran : une pièce est à un pas de sa porteuse de
   // devant (× √3/2 dans un creux, × la hauteur de la section rapportée à sa largeur), dans les deux sens, ronde ou non
   const step = ew.h + 1;
@@ -71,23 +75,25 @@ function woodPlaces(w: PileWood, axis: Exclude<WoodAxis, 'up'>): Record<string, 
   // est-ouest, la place d'un creux est déjà un demi-pas en arrière, donc plus haut à l'écran : ce demi-pas fait partie de la montée
   // (le compter en plus faisait flotter la pièce du creux au-dessus de celle de devant)
   const back = rows ? 0 : step / 2;
+  // en triangles, les pièces d'une rangée sont à un demi-pas : pointe en l'air, pointe en bas, pointe en l'air
+  const pitch = tri ? step / 2 : step;
   // une place à la position `f` en travers (0 à 2, demi-valeurs dans les creux), à la couche `layer`
-  const place = (f: number, layer: number, on: string[], other = false): ShapePlace => {
+  const place = (f: number, layer: number, on: string[], down = false): ShapePlace => {
     const [x, y] =
       axis === 'ew'
-        ? [0, Math.round(-(WIDE - 1 - f) * step - layer * (lift - back))]
-        : [Math.round(f * step), Math.round(-layer * lift)];
-    const wood: WoodPiece = flip ? { ...piece, face: FACES[axis][other ? 1 : 0] } : piece;
+        ? [0, Math.round(-(WIDE - 1 - f) * pitch - layer * (lift - back))]
+        : [Math.round(f * pitch), Math.round(-layer * lift)];
+    const wood: WoodPiece = down ? { ...piece, point: 'down' } : piece;
     const q: ShapePlace = { layer, on, image: woodKey(wood), x, y, wood };
     if (layer === 0) q.body = { x: x + Math.floor((img.w - body.w) / 2), y: y - body.bottom - body.h, w: body.w, h: body.h };
     return q;
   };
   const out: Record<string, ShapePlace> = {};
-  // la place du milieu d'abord : l'ordre d'une construction type (aperçu)
-  for (const i of [1, 0, 2]) out[`g${i}`] = place(i, 0, [], flip && i % 2 === 1);
+  // de l'arrière (ou de l'ouest) vers l'avant : à hauteur égale, l'ordre d'affichage suit celui des places
+  for (const i of [0, 1, 2]) out[`g${i}`] = place(i, 0, [], tri && i % 2 === 1);
   if (rows) {
     for (let layer = 1; layer < WIDE; layer++) {
-      for (let i = 0; i < WIDE; i++) out[`l${layer}-${i}`] = place(i, layer, [layer === 1 ? `g${i}` : `l${layer - 1}-${i}`], flip && (i + layer) % 2 === 1);
+      for (let i = 0; i < WIDE; i++) out[`l${layer}-${i}`] = place(i, layer, [layer === 1 ? `g${i}` : `l${layer - 1}-${i}`], tri && i % 2 === 1);
     }
   } else {
     out.u01 = place(0.5, 1, ['g0', 'g1']);
@@ -100,8 +106,9 @@ function woodPlaces(w: PileWood, axis: Exclude<WoodAxis, 'up'>): Record<string, 
 const cache = new Map<string, PileShape>();
 
 /**
- * Le genre de tas d'une pièce de bois, calculé : la pièce reprise (`piece.wood`), le départ au milieu, l'ordre de l'arrière vers
- * l'avant, la forme est-ouest et la forme nord-sud (`turned`). Toujours le même objet pour la même pièce.
+ * Le genre de tas d'une pièce de bois, calculé : la pièce reprise (`piece.wood`), le départ au milieu, l'ordre d'affichage couche
+ * par couche (ce qui est plus haut cache ce qui est dessous, ce qui est devant ce qui est derrière), la forme est-ouest et la forme
+ * nord-sud (`turned`). Toujours le même objet pour la même pièce.
  */
 export function woodPileDef(w: PileWood): PileShape {
   const key = woodKey({ ...w, axis: 'ew' });
@@ -113,9 +120,9 @@ export function woodPileDef(w: PileWood): PileShape {
       start: 'g1',
       blockFrom: 1,
       count: false,
-      order: 'depth',
+      order: 'layers',
       places: woodPlaces(w, 'ew'),
-      turned: { start: 'g1', order: 'depth', places: woodPlaces(w, 'ns') },
+      turned: { start: 'g1', order: 'layers', places: woodPlaces(w, 'ns') },
     };
     cache.set(key, def);
   }

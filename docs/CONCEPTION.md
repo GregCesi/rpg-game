@@ -139,8 +139,8 @@ base : ranger ce qu'on vient de faire.
   message d'erreur. Une pièce posée seule reste une pièce (elle se coupe, se fend, roule, pivote) : seule la deuxième fait le tas.
 - **Des formes calculées, pas écrites.** La forme d'un tas de bois se calcule à partir de la section de sa pièce, pour toute
   longueur (`src/world/woodPile.ts`) : une section ronde (bille, rondin, même entamé à la doloire) fait une pyramide (3 au sol, 2
-  dans les creux, 1 au sommet) ; les sections plates ou carrées (demi-bille, quartier, poutre) font des rangées droites de 3 de large
-  sur 3 de haut, les quartiers tête-bêche (la face fendue debout d'un côté, puis de l'autre, comme un vrai tas de bois fendu). Au
+  dans les creux, 1 au sommet) ; les sections plates ou carrées (demi-bille, poutre) font des rangées droites de 3 de large sur 3 de
+  haut ; les quartiers des rangées de triangles (voir *Les pièces fendues*, 31 octobre 2026 : avant, tête-bêche). Au
   sol, les pièces sont côte à côte à la largeur de leur collision ; une couche monte de la hauteur de la section (√3/2 dans les creux
   d'une pyramide), **comptée depuis la pièce porteuse de devant** : toutes les pièces s'emboîtent avec le même pas, rondes ou non,
   dans les deux sens. En est-ouest, le demi-pas en arrière d'un creux fait déjà monter la pièce à l'écran : il fait partie de la
@@ -547,16 +547,10 @@ masse par mètre**, arrondis au mètre au-dessus (3 pour 1 m, 6 pour 2 m, 9 pour
 disparaît. À chaque coup, la fente s'allonge sur les morceaux du milieu, du bout du coin jusqu'à l'autre bout, et **le coin
 s'enfonce** un peu (trois profondeurs dessinées : il sort de 3, 2, puis 1 px du bout) ; au dernier coup, le bois s'ouvre. Pourquoi un
 seul coin : c'est le bois de bout qui s'ouvre le long des fibres, et la fente court d'elle-même sur la longueur à force de coups ; il
-faut seulement plus de coups pour une pièce plus longue. **Le quartier** est un quart de rond couché sur une de ses faces fendues,
-l'autre face debout d'un côté, l'écorce qui descend en arrondi de l'autre : la pièce garde le côté de sa face debout (`face` : nord ou
-sud est-ouest, est ou ouest nord-sud) ; R (ou le pivot au sol) le tourne d'un quart de tour dans le sens des aiguilles d'une montre,
-la face suit (nord, est, sud, ouest). Les quartiers d'une demi-bille naissent côte à côte **identiques, dans le même sens**, aucun
-retourné : ils gardent la face debout de départ de leur sens (au sud est-ouest, à l'est nord-sud), que la demi-bille soit est-ouest ou
-nord-sud, qu'elle vienne d'une bille ou non ; R les tourne ensuite. (Corrigé le 31 octobre 2026 en jouant : les deux quartiers
-naissaient faces opposées, tournés l'un vers l'autre pour reformer la demi-bille ; décision annulée, deux pièces identiques se lisent
-mieux et s'empilent sans être retournées.) Section : 27,5 × 27,5 cm (le rayon de la bille), 37,5 cm contour compris comme toutes les
-pièces (gabarit), soit environ 20 × 11 px à 1 m est-ouest et 8 × 18 px nord-sud ; la même épaisseur dans les deux sens. Nord-sud, la
-face coupée au sud (la part de tarte, claire, ses cernes, le cœur du côté de la face debout) fait lire la pièce couchée et non debout.
+faut seulement plus de coups pour une pièce plus longue. **Le quartier** : repris par *Les pièces fendues* (31 octobre 2026) : il
+repose écorce en bas, pointe (l'angle du cœur) en l'air, et sort du fendage ainsi, les deux d'une demi-bille identiques, côte à côte ;
+R le tourne d'est-ouest en nord-sud sans rien changer d'autre. (Le même jour, plus tôt : les deux quartiers naissaient faces debout
+opposées, puis identiques, couchés sur une face fendue, l'autre debout d'un côté, `face` ; cette position est abandonnée.)
 
 Repris par *Le bois* (30 octobre 2026) : la bille, la demi-bille et le quartier sont des formes de la pièce de bois du gros, le coin planté un de ses réglages (son bout et ses coups) ; à 1 m, 107 kg la demi-bille, 53,5 kg le quartier.
 
@@ -570,7 +564,7 @@ Une grosse bille pèse 203 kg : on ne la soulève pas. Alors on la fend **là o�
 - **Les messages.** Masse sans coin : « Il faut d'abord un coin. » Hache sur une grosse bille, une demi-bille ou un coin planté : « Trop grosse pour la hache. Il faut le coin et la masse. » Sans la place d'ouvrir le bois au dernier coup : « Pas la place pour la fendre. » (rien n'est joué, rien n'est payé). Les billes de l'arbre normal ne se fendent pas : ce sont des rondins de la grosseur d'un bras, la hache les tronçonne déjà.
 - **Endurance.** Planter le coin coûte 1 point, un coup de masse 0,8 point. Une grosse bille fendue en quatre (un coin planté sur la bille, deux sur les moitiés, soit trois fois, et neuf coups de masse) coûte 10,2 points, un dixième de la jauge du jour (`stamina.json`).
 - **Les morceaux débordent de la bille** : deux demi-billes à plat sont plus larges qu'une bille couchée. Si Xéros se tient là, les demi-billes le repoussent ; si un obstacle gêne leur place, la fente ne s'ouvre pas.
-- **Les tas de quartiers.** Un quartier s'empile avec le système des tas : genre `big-quarters`, six places (trois au sol côte à côte, deux dans les creux, une au sommet), en est-ouest ou nord-sud, R tournant le quartier en main comme une bille. Le genre ne se mélange pas avec les billes. Les demi-billes ne s'empilent pas.
+- **Les tas de quartiers.** Un quartier s'empile avec le système des tas, en est-ouest ou nord-sud, R tournant le quartier en main comme une bille ; le genre ne se mélange pas avec les billes. Repris par *Les tas* (30 octobre 2026 : tas calculés) et *Les pièces fendues* (31 octobre 2026 : rangées de triangles).
 - **Ce qui viendra** : fendre debout, sur le billot, ce qui se dresse : d'abord le quartier (refendu en bûches) ; la grosse bille elle-même ne se fendra debout que lorsque Xéros sera assez fort pour la redresser (203 kg aujourd'hui) ; refendre un quartier en bûches sur le billot, debout (la hache, ou le coin et la masse) ; les bardeaux du toit des bâtiments, qui se fendent dans une bille de chêne comme ici (même `harvest`, autres `becomes`) ; retirer un coin planté sans frapper ; un deuxième coin, ou un coin qu'on forge.
 
 ## Bois d'œuvre (décidé le 30 octobre 2026, « équarrissage »)
@@ -655,6 +649,49 @@ longueurs libres et le fendage. On garde la coupe libre et on change la façon d
 - **Nouveau bois = un diamètre ou un aspect dans le contenu** (wood.json, et ses dessins), **pas une nouvelle clé**.
 - **Ce qui vient** : refendre le quartier en bûches
   sur le billot ; rouler un tronc entier avec plus de force ou un outil ; la scie.
+
+## Les pièces fendues (décidé le 31 octobre 2026, « avant l'âge du bois »)
+
+Grégoire a regardé les tas en jeu et dans piles.png : « Les tas de quarts sont catastrophiques, ça n'a aucun sens. » Deux causes. Le
+**recouvrement** : quand des pièces se touchent dans la profondeur, celle de devant doit cacher le flanc de celle de derrière ; or
+chaque pièce était dessinée entière, si bien qu'on voyait le flanc foncé (l'écorce) de chacune, une alternance de bandes claires et
+foncées. La **forme** : chaque vue de chaque pièce avait été dessinée à la main, à part, sans forme commune ; personne ne savait plus
+quel côté était en bas, surtout pour le quartier.
+
+- **Les positions** (Grégoire). La demi-bille repose écorce en bas, face plate claire en l'air, au sol comme en tas. Le quartier
+  repose écorce en bas, pointe (l'angle du cœur) en l'air, juste après la coupe et posé seul. En tas, les quartiers alternent pointe
+  en haut et pointe en bas et s'emboîtent comme des triangles dans une rangée, à un demi-pas (proposition à faire juger par Grégoire
+  sur piles.png). Le quartier n'a plus de côté de face debout (`face` disparaît, sauvegarde 15) ; `point: 'down'` ne sert qu'en tas.
+- **La section, dans le contenu.** Chaque état de la pièce de bois est décrit par sa section, vue par le bout (wood.json, `section`
+  de chaque aspect) : rond (bille, rondin, perche), demi-rond (demi-bille), quart de rond (quartier), rectangle (planche), et le rond
+  aux faces dressées jusqu'au carré (rondin à 1, 2, 3 faces, poutre : la doloire dresse le dessus, le sud, le nord, puis le
+  dessous) ; où est l'écorce, où est le cœur, sur quelle face la pièce repose.
+- **Les vues se calculent** (`art/world/wood-section.ts`) : la section étirée sur la longueur, un rayon par pixel. La vue par le
+  bout montre la section elle-même (cernes, cœur, écorce), la vue de côté le dessus et le flanc ; lumière en haut à gauche. Les
+  dimensions à l'écran restent celles de la règle D : le calcul les remplit, il ne les change pas. **Le travers remplit la
+  collision** : la profondeur d'une pièce à l'écran est celle du pas d'un tas (la collision et un pixel), si bien que la pièce de
+  devant cache exactement le flanc de celle de derrière ; la hauteur occupe le reste de l'image. Le bout ouest (est-ouest) et le
+  bout sud (nord-sud) montrent la face de coupe, la section écrasée en raccourci ; les deux bouts sont symétriques.
+- **Le pixel-artist ne dessine plus les formes** : il règle une fois les couleurs et les textures (`art/world/wood-skin.ts` :
+  écorce et ses sillons, fil du bois des faces fendues et dressées, planche, cernes et cœur des bouts). La face fendue de la
+  demi-bille garde le rendu que Grégoire aime.
+- **Recouvrement partout** : dans un tas et pour des pièces posées côte à côte, ce qui est devant (plus au sud) ou plus haut cache
+  ce qui est derrière, au pixel près. Un tas de bois s'affiche couche par couche, de l'arrière vers l'avant (de l'ouest vers l'est
+  en nord-sud). Le pas d'un tas reste celui corrigé le même jour (la 4e bille d'un tas de 3 couvre le quart haut de celle du centre).
+- **Le fendage suit** : une bille couchée donne deux demi-billes écorce en bas, face en l'air, côte à côte ; une demi-bille deux
+  quartiers écorce en bas, pointe en l'air, côte à côte. Deux quartiers sont plus larges que leur demi-bille (78 cm pour 55) : si la
+  demi-bille voisine occupe leur place, ils s'écartent ensemble en travers, de part et d'autre, jusqu'à 12 px (`SPLIT` de
+  config.ts), sinon « Pas la place pour la fendre. ». Sans cela, deux demi-billes nées côte à côte (107 kg, ni portées ni
+  roulées) ne se fendraient jamais.
+- **Le quartier** : section de 39 × 27,5 cm de bois (49 × 37,5 contour compris), 20 × 11 px à 1 m est-ouest, 11 × 20 nord-sud ; sa
+  collision a 9 px de profondeur (un peu plus que ses 39 cm, pour que la vue reste de dessus et montre ses deux faces fendues : la
+  face nord éclairée, la sud dans l'ombre).
+- **Contrôle** : `.art-preview/bois-sections.png` (chaque état : sa section par le bout, puis la pièce est-ouest et nord-sud à côté de
+  Xéros) ; `.art-preview/piles.png` (pour la bille, la demi-bille, le quartier, la poutre : un tas qui grandit pièce par pièce,
+  est-ouest puis nord-sud, et trois pièces posées côte à côte dans la profondeur) ; `npm run test:sections` (le recouvrement, les
+  positions après la coupe, la règle D).
+- **Encore à la main** : la pièce debout (le poteau, `wood-normal-up`), les encoches de la cognée (bandes dessinées), les vues
+  portées par le bout autres que le quartier, et les icônes.
 
 ## La perspective (décidé le 30 octobre 2026, « perspective »)
 

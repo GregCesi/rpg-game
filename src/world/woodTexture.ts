@@ -58,7 +58,7 @@ export function woodTexture(scene: Phaser.Scene, piece: WoodPiece, opts: Pick<Co
  * longueur, sans son ombre au sol, rognée à son corps (son centre est la prise).
  */
 export function heldWoodTexture(scene: Phaser.Scene, wood: WoodPiece): string {
-  const piece: WoodPiece = { size: wood.size, length: wood.length, shape: wood.shape, axis: 'ew', ...(wood.hewn ? { hewn: wood.hewn } : {}), ...(wood.shape === 'quarter' ? { face: 'south' as const } : {}) };
+  const piece: WoodPiece = { size: wood.size, length: wood.length, shape: wood.shape, axis: 'ew', ...(wood.hewn ? { hewn: wood.hewn } : {}) };
   const key = `held:${woodKey(piece)}`;
   if (scene.textures.exists(key)) return key;
   const held = lookDef(piece.size, lookOf(piece)).held;

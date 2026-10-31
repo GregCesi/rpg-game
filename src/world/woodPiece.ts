@@ -22,8 +22,8 @@ export function woodOf(base: PropDef, wood?: WoodPiece): WoodPiece {
 
 /**
  * Dimensions réelles d'une pièce (cm, contour compris : le tronc de 55 cm fait 65 cm), comme `dims` de props.json : un cylindre
- * couché pour la pièce ronde, une boîte couchée pour la demi (face plate en haut), le quart (27,5 × 27,5 cm de bois, 37,5 cm contour
- * compris : environ 20 × 11 px à 1 m est-ouest, 8 × 17 px nord-sud) et la pièce équarrie.
+ * couché pour la pièce ronde, une boîte couchée pour la demi (écorce en bas, face plate en l'air), le quart (écorce en bas, pointe
+ * en l'air : 39 × 27,5 cm de bois, 49 × 37,5 cm contour compris ; 20 × 11 px à 1 m est-ouest, 11 × 20 nord-sud) et la pièce équarrie.
  */
 export function woodDims(piece: WoodPiece): PropDef['dims'] {
   const d = sizeOf(piece.size).diameter;
@@ -34,8 +34,8 @@ export function woodDims(piece: WoodPiece): PropDef['dims'] {
     const s = upOf(piece.size, look).w * CM_PER_PX;
     return { w: s, d: s, h: piece.length, shape: look === 'beam' ? 'box' : 'cylinder', ...(look === 'beam' ? {} : { axis: 'up' as const }) };
   }
-  // la planche : sa largeur couchée à plat, son épaisseur en hauteur (plank de wood.json)
-  const across = piece.shape === 'plank' ? WOOD.plank.wide : piece.shape === 'quarter' ? d / 2 : look === 'beam' ? WOOD.hew.beam : d;
+  // la planche : sa largeur couchée à plat, son épaisseur en hauteur (plank de wood.json) ; le quartier repose écorce en bas, pointe en l'air : ses deux faces fendues à 45°, d/√2 de large, d/2 de haut
+  const across = piece.shape === 'plank' ? WOOD.plank.wide : piece.shape === 'quarter' ? d / Math.SQRT2 : look === 'beam' ? WOOD.hew.beam : d;
   const high = piece.shape === 'plank' ? WOOD.plank.thick : piece.shape === 'round' ? (look === 'beam' ? WOOD.hew.beam : d) : d / 2;
   const [w, dd] = piece.axis === 'ew' ? [piece.length, across + CONTOUR_CM] : [across + CONTOUR_CM, piece.length];
   if (look === 'round') return { w, d: dd, h: d + CONTOUR_CM, shape: 'cylinder', axis: piece.axis };

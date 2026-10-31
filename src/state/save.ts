@@ -16,7 +16,7 @@ export const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -108,7 +108,24 @@ function upgrade(data: unknown): unknown {
   if (d?.version === 11 && d.state && typeof d.state === 'object') d = { ...d, version: 12, state: slabFromFlatStone(d.state) };
   if (d?.version === 12 && d.state && typeof d.state === 'object') d = { ...d, version: 13, state: withBuilds(d.state as V12State) };
   if (d?.version === 13 && d.state && typeof d.state === 'object') d = { ...d, version: 14, state: withJoints(d.state as V12State) };
+  if (d?.version === 14 && d.state && typeof d.state === 'object') d = { ...d, version: 15, state: quartersWithoutFace(d.state) };
   return d;
+}
+
+/**
+ * Version 14 -> 15 : les pièces fendues (docs/CONCEPTION.md, « Les pièces fendues ») : le quartier repose écorce en bas, pointe en
+ * l'air, et n'a plus de côté de face debout. On retire `face` de toute pièce de bois de la partie (posée, tenue, en tas, d'un
+ * chantier ou du mode construction) ; un tas de quartiers garde ses places (mêmes noms), rangées en triangles.
+ */
+function quartersWithoutFace(state: object): object {
+  const strip = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(strip);
+    if (!v || typeof v !== 'object') return v;
+    const o = v as Record<string, unknown>;
+    const wood = typeof o.size === 'string' && typeof o.shape === 'string' && typeof o.length === 'number';
+    return Object.fromEntries(Object.entries(o).filter(([k]) => !(wood && k === 'face')).map(([k, x]) => [k, strip(x)]));
+  };
+  return strip(state) as object;
 }
 
 /** Version 13 -> 14 : les assemblages du mode construction. Aucun sur aucune carte, et le compteur de leurs identifiants à zéro. */

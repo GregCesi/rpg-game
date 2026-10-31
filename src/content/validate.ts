@@ -334,10 +334,10 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
   for (const { piece, w, h } of cat.woodSilhouettes) {
     if (piece.axis === 'ns') {
       const twin = cat.woodSilhouettes.find(
-        (o) => o.piece.axis === 'ew' && o.piece.size === piece.size && o.piece.length === piece.length && lookOf(o.piece) === lookOf(piece) && o.piece.shape === piece.shape,
+        (o) => o.piece.axis === 'ew' && o.piece.size === piece.size && o.piece.length === piece.length && lookOf(o.piece) === lookOf(piece) && o.piece.shape === piece.shape && o.piece.point === piece.point,
       );
       if (twin && (Math.abs(w - twin.h) > 1 || Math.abs(h - twin.w) > 1)) {
-        errors.push(`pièce de bois ${piece.size} ${lookOf(piece)}${piece.face ? ` face ${piece.face}` : ''} nord-sud de ${piece.length} cm : ${w} × ${h} px, attendu ${twin.h} × ${twin.w} (l'est-ouest inversé, règle D, à 1 px près)`);
+        errors.push(`pièce de bois ${piece.size} ${lookOf(piece)}${piece.point ? ` pointe en bas` : ''} nord-sud de ${piece.length} cm : ${w} × ${h} px, attendu ${twin.h} × ${twin.w} (l'est-ouest inversé, règle D, à 1 px près)`);
       }
       continue;
     }
@@ -357,7 +357,7 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
     if (ok(w, want.w, want.wMax) && ok(h, want.h, want.hMax)) continue;
     const f = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
     errors.push(
-      `pièce de bois ${piece.size} ${lookOf(piece)}${piece.face ? ` face ${piece.face}` : ''} ${piece.axis} de ${piece.length} cm hors gabarit : attendu ${f(want.w)} × ${f(want.h)} px, dessiné ${w} × ${h} px (tolérance ${TOLERANCE} px)`,
+      `pièce de bois ${piece.size} ${lookOf(piece)}${piece.point ? ` pointe en bas` : ''} ${piece.axis} de ${piece.length} cm hors gabarit : attendu ${f(want.w)} × ${f(want.h)} px, dessiné ${w} × ${h} px (tolérance ${TOLERANCE} px)`,
     );
   }
   // un objet possédable qui a ses dimensions : son image au sol (vue 0) les suit, comme un objet du monde ; ses vues nord-sud et son
@@ -743,10 +743,9 @@ function validateWood(c: Content, cat: Catalog): string[] {
         if (got === undefined) err(`${at} : planche '${sheet}' : animation '${anim}' non dessinée`);
         else if (got !== n) err(`${at} : planche '${sheet}' : '${anim}' a ${got} images, il en faut ${n}`);
       };
-      // le quartier : une partie par côté de sa face debout (nord et sud en est-ouest, est et ouest en nord-sud)
-      const faces = sheet === size.sheet ? ['north', 'south'] : ['east', 'west'];
+      // le quartier : pointe en l'air (sa position posé) et pointe en bas (un sur deux dans une rangée de tas)
       for (const look of Object.keys(size.looks) as WoodLook[]) {
-        for (const drawn of look === 'quarter' ? faces.map((f) => `quarter-${f}`) : [look]) for (const part of ['start', 'mid', 'end']) want(`${drawn}-${part}`, look === 'round' ? 4 : 1);
+        for (const drawn of look === 'quarter' ? ['quarter', 'quarter-down'] : [look]) for (const part of ['start', 'mid', 'end']) want(`${drawn}-${part}`, look === 'round' ? 4 : 1);
       }
       for (const notch of ['notch1', 'notch2']) want(notch, 4);
       for (const [look, rule] of Object.entries(size.split)) {

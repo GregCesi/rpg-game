@@ -25,7 +25,7 @@ import { buildCollectionBoard } from './lib/collection-board';
 import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
-import { woodPreview } from './lib/wood-preview';
+import { sectionsPreview, woodPreview } from './lib/wood-preview';
 import { lyingPreview } from './lib/lying-preview';
 import { auditPreview } from './lib/audit-preview';
 import { briquesPreview } from './lib/briques-preview';
@@ -130,8 +130,8 @@ const catalog = {
   images: [] as { key: string; width: number; height: number; silhouette: Box }[],
   woodSilhouettes: [] as { piece: WoodPiece; w: number; h: number }[],
 };
-// Le gabarit des pièces de bois assemblées (validate.ts) : la silhouette de chaque aspect de chaque diamètre (le quartier dans ses
-// quatre positions), dans les deux sens, à plusieurs longueurs, telles que le jeu les assemble (composeWood) : l'est-ouest suit le
+// Le gabarit des pièces de bois assemblées (validate.ts) : la silhouette de chaque aspect de chaque diamètre (le quartier pointe en
+// l'air et pointe en bas), dans les deux sens, à plusieurs longueurs, telles que le jeu les assemble (composeWood) : l'est-ouest suit le
 // gabarit, le nord-sud a ses dimensions inversées (règle D), et debout (les aspects qui se dressent) : sa section en largeur, sa
 // longueur plus la moitié de sa profondeur en hauteur.
 for (const length of [60, 100, 180, 200, 300, 400]) {
@@ -142,10 +142,7 @@ for (const length of [60, 100, 180, 200, 300, 400]) {
       const base: WoodPiece = { size, shape, axis: 'ew', length, ...(hewn > 0 ? { hewn } : {}) };
       const samples: WoodPiece[] =
         shape === 'quarter'
-          ? [
-              ...(['north', 'south'] as const).map((face): WoodPiece => ({ ...base, face })),
-              ...(['east', 'west'] as const).map((face): WoodPiece => ({ ...base, axis: 'ns', face })),
-            ]
+          ? [base, { ...base, axis: 'ns' }, { ...base, point: 'down' }, { ...base, axis: 'ns', point: 'down' }]
           : [base, { ...base, axis: 'ns' }, ...(def.looks[look]!.up ? [{ ...base, axis: 'up' as const }] : [])];
       for (const piece of samples) {
         const s = silhouette(composeWood(piece).toGrid(), world);
@@ -361,6 +358,8 @@ if (withPreview) {
   // le bois : chaque diamètre et chaque aspect assemblés à plusieurs longueurs, l'encoche, le coin planté et la fente, les vues portées
   const bois = woodPreview(sources);
   if (bois) writeFileSync(join(PREVIEW, 'bois.png'), PNG.sync.write(bois));
+  const sections = sectionsPreview(sources);
+  if (sections) writeFileSync(join(PREVIEW, 'bois-sections.png'), PNG.sync.write(sections));
   // tout ce qui est couché, dans toutes ses vues (règle D), et la pièce de bois dans ses deux sens avec sa collision
   const itemDefs = parse('items.json', z.record(z.string(), ItemDefSchema), itemsJson);
   const couches = lyingPreview(sources, propDefs, itemDefs);

@@ -4,7 +4,7 @@
 //   comme dans le jeu (entities/ToolUse.ts) : l'aperçu montre exactement ce que l'on verra.
 // - hands.png : les deux mains comme dans le HUD.
 // - piles.png : chaque genre de tas écrit (src/content/piles.json), puis des tas de bois calculés de plusieurs longueurs et états
-//   (`PILE_WOOD` : billes, rondins, quartiers tête-bêche, demi-billes, poutres ; world/woodPile.ts), étape par étape (construction
+//   (`PILE_WOOD` : rondins, demi-billes, quartiers en triangles, poutres, billes ; world/woodPile.ts), étape par étape (construction
 //   type, puis tous les états possibles s'ils sont peu nombreux), chacun suivi de sa forme tournée (`turned`, nord-sud), Xéros à
 //   l'échelle en tête de rangée, collisions des pièces au sol en liseré : même calcul que GameMap.placePile (pièce = coin bas
 //   gauche au point du tas + (x, y), dans l'ordre de drawOrder ; une pièce de bois assemblée à sa longueur par composeWood).
@@ -25,7 +25,8 @@ import { Canvas, EMPTY } from '../../art/lib/canvas';
 import { flipX } from '../../art/lib/canvas';
 import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../../art/lib/types';
-import type { Gesture, PileDef, PileWood, PropDef } from '../../src/content/types';
+import type { Gesture, PileDef, PileWood, PropDef, WoodPiece } from '../../src/content/types';
+import { lookDef, lookOf, woodBody, woodKey } from '../../src/world/woodShape';
 import { ROOF } from '../../src/config';
 import { roofShadow } from '../../src/world/roofShadow';
 import { CM_PER_PX, RACCOURCI, expectedSize, silhouette } from '../../src/content/gabarit';
@@ -193,18 +194,37 @@ export function handsPreview(sources: ArtSource[]): PNG | undefined {
  */
 const ALL_STATES = 60;
 
-/** Les tas de bois montés dans piles.png : plusieurs diamètres, longueurs et états (ceux du test de npm run test:tas compris). */
+/**
+ * Les tas de bois montés dans piles.png : d'abord les quatre états que Grégoire juge (le rondin, la demi-bille, le quartier, la
+ * poutre : un tas qui grandit pièce par pièce, est-ouest puis nord-sud), puis d'autres diamètres, longueurs et états (ceux du test
+ * de npm run test:tas compris).
+ */
 const PILE_WOOD: PileWood[] = [
+  { size: 'normal', shape: 'round', length: 100 },
+  { size: 'big', shape: 'half', length: 60 },
+  { size: 'big', shape: 'quarter', length: 100 },
+  { size: 'normal', shape: 'round', length: 180, hewn: 12 },
   { size: 'big', shape: 'round', length: 100 },
   { size: 'normal', shape: 'round', length: 80 },
-  { size: 'normal', shape: 'round', length: 100 },
   { size: 'big', shape: 'quarter', length: 120 },
-  { size: 'big', shape: 'half', length: 60 },
-  { size: 'normal', shape: 'round', length: 180, hewn: 12 },
   { size: 'normal', shape: 'round', length: 100, hewn: 6 },
   { size: 'pole', shape: 'round', length: 200 },
   { size: 'big', shape: 'plank', length: 200 },
 ];
+
+/** Trois pièces posées seules, côte à côte dans la profondeur, au pas d'un tas (`body.h` + 1), comme un « tas » pour l'aperçu. */
+function looseRow(w: PileWood, axis: 'ew' | 'ns'): PileShape {
+  const piece: WoodPiece = { ...w, axis };
+  const look = lookOf(piece);
+  const body = woodBody(w.size, look, 'ew', w.length);
+  const step = body.h + 1;
+  const places: Record<string, ShapePlace> = {};
+  for (const i of [0, 1, 2]) {
+    const [x, y] = axis === 'ew' ? [0, -(2 - i) * step] : [i * step, 0];
+    places[`g${i}`] = { layer: 0, on: [], image: woodKey(piece), x, y, wood: piece };
+  }
+  return { name: `${lookDef(w.size, look).name}s posés côte à côte`, piece: { wood: { ...w } }, start: 'g0', blockFrom: 1, count: false, order: 'layers', places };
+}
 
 /** L'image d'une place de tas : celle des sources (piles.json), ou la pièce de bois assemblée à sa longueur (comme GameMap.placeImage). */
 export function placeImage(q: ShapePlace, image: (name: string) => { grid: Grid; palette: Palette } | undefined): { grid: Grid; palette: Palette } | undefined {
@@ -226,12 +246,15 @@ export function pilesPreview(sources: ArtSource[], piles: Record<string, PileDef
   const xw = body?.kind === 'spritesheet' ? body.frameW : 0;
   const xh = body?.kind === 'spritesheet' ? body.frameH : 0;
   const pad = 8;
-  const perRow = 8;
+  const perRow = 9;
   type Row = { def: PileShape; turned: boolean; states: string[][]; ext: { left: number; right: number; top: number; bottom: number }; tied?: boolean };
   const rows: Row[] = [];
   // chaque genre écrit, puis chaque tas de bois calculé, chacun suivi de sa forme tournée s'il en a une (nord-sud)
   const defs: PileShape[] = [...Object.values(piles).map((d) => d as PileShape), ...PILE_WOOD.map(woodPileDef)];
   const shapes = defs.flatMap((d) => (d.turned ? [{ def: d, turned: false }, { def: shapeOf(d, true), turned: true }] : [{ def: d, turned: false }]));
+  // puis, pour les quatre états, trois pièces posées seules côte à côte dans la profondeur (est-ouest : l'une derrière l'autre ;
+  // nord-sud : l'une à côté de l'autre), au pas d'un tas, telles que le jeu les affiche (de l'arrière vers l'avant)
+  shapes.push(...PILE_WOOD.slice(0, 4).flatMap((w) => (['ew', 'ns'] as const).map((axis) => ({ def: looseRow(w, axis), turned: axis === 'ns' }))));
   const widthOf = (k: string) => named(k)?.grid[0].length ?? 0;
   for (const { def, turned } of shapes) {
     const places = Object.entries(def.places);

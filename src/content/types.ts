@@ -245,11 +245,10 @@ export const WoodPieceSchema = z.strictObject({
   notch: z.strictObject({ at: z.number().int().positive(), hits: z.number().int().positive() }).optional(),
   wedge: z.strictObject({ end: EndSchema, hits: z.number().int().nonnegative() }).optional(),
   /**
-   * Le quartier seulement : le côté de sa face fendue debout (il repose sur l'autre, l'écorce descend en arrondi du côté opposé) ;
-   * `north` ou `south` couché est-ouest, `east` ou `west` nord-sud. R le tourne d'un quart de tour dans le sens des aiguilles d'une
-   * montre (nord, est, sud, ouest). Absent : `south` est-ouest, `east` nord-sud (`faceOf`, world/woodShape.ts).
+   * Le quartier seulement : `down`, pointe en bas (l'écorce en l'air), comme un sur deux dans une rangée de tas, où les quartiers
+   * s'emboîtent en triangles. Absent : la position d'un quartier posé, écorce en bas, pointe (l'angle du cœur) en l'air.
    */
-  face: EndSchema.optional(),
+  point: z.literal('down').optional(),
 });
 
 /**
@@ -304,6 +303,26 @@ const WoodUpSchema = z.strictObject({
 });
 
 /**
+ * La section d'un aspect, vue par le bout (docs/CONCEPTION.md, « Les pièces fendues ») : toutes ses vues couchées se calculent
+ * d'elle (art/world/wood-section.ts), étirée sur la longueur. `shape` : le rond (bille, rondin, perche ; avec `flats`, les faces
+ * dressées à la doloire, jusqu'à la poutre), le demi-rond (demi-bille), le quart de rond (quartier), le rectangle (planche). `bark` :
+ * où est l'écorce (`arc` : sur l'arc du rond qui reste ; `none`). `heart` : où est le cœur, centre des cernes du bout (`center` du
+ * rond, au milieu de la `face` plate de la demi-bille, à la pointe, `apex`, du quartier ; `none`). `rests` : sur quoi la pièce
+ * repose (`bark` : écorce en bas, la demi-bille face plate en l'air, le quartier pointe en l'air ; `face` : sur une face plane).
+ * `flats` : les faces dressées, dans l'ordre de la doloire, nommées en est-ouest (le dessus, le sud, le nord, le dessous ; tournée
+ * nord-sud, le sud passe à l'ouest). `faces` : la matière des faces planes (`split` fendue, `hewn` dressée).
+ */
+export const WoodSectionSchema = z.strictObject({
+  shape: z.enum(['round', 'half', 'quarter', 'rect']),
+  bark: z.enum(['arc', 'none']),
+  heart: z.enum(['center', 'face', 'apex', 'none']),
+  rests: z.enum(['bark', 'face']),
+  flats: z.array(z.enum(['top', 'south', 'north', 'bottom'])).optional(),
+  faces: z.enum(['split', 'hewn']).optional(),
+});
+export type WoodSection = z.infer<typeof WoodSectionSchema>;
+
+/**
  * Un aspect d'un diamètre : son nom et son genre (les messages), son icône 16×16 (`item-…`), sa planche portée (`held-…` :
  * vues `down` et `up` par le bout, ne dépendant pas de la longueur ; `right`, la pièce de 1 m de profil, que le jeu remplace par la
  * pièce assemblée à sa longueur), et la géométrie de ses parties (contrat entre le dessin et le jeu, `world/woodShape.ts`).
@@ -313,6 +332,8 @@ export const WoodLookDefSchema = z.strictObject({
   gender: z.enum(['m', 'f']),
   icon: id,
   held: id,
+  /** Sa section, vue par le bout : toutes ses vues couchées en sont tirées. */
+  section: WoodSectionSchema,
   ew: WoodEwSchema,
   ns: WoodNsSchema,
   /** Debout (poteau) : absent, cet aspect ne se dresse pas. */

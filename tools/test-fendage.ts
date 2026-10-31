@@ -138,7 +138,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     }
     out.quarters = pieces('quarter').length;
     out.splitNotices = notices.slice(before4);
-    out.quarterFaces = pieces('quarter').map((p: any) => p.wood.face).sort();
+    out.quarterPoints = pieces('quarter').map((p: any) => p.wood.point ?? 'up');
     out.quarterMass = mass.woodMass(wood('quarter'));
     // le quartier ne se refend pas ici
     await give('splitting-wedge');
@@ -182,9 +182,9 @@ await playtest('fendage', async ({ page, errors, load }) => {
         await press('Space');
         await settled();
       }
-      // la demi-bille de ce bout, fendue à son tour depuis le même bout : deux quartiers identiques, face debout de départ du sens
+      // la demi-bille de ce bout, fendue à son tour depuis le même bout : deux quartiers identiques, écorce en bas, pointe en l'air
       const halves = pieces('half').length;
-      const halfFaces = pieces('half').map((p: any) => p.wood.face ?? null);
+      const halfFaces = pieces('half').map((p: any) => p.wood.point ?? null);
       emit({ kind: 'stamina', value: 100 });
       await give('splitting-wedge');
       await standAt(pieces('half')[0], end);
@@ -256,17 +256,17 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await press('KeyR');
     await sleep(150);
     out.turned = JSON.stringify(gs.game.both);
-    // un tour complet : face debout au nord, puis R quatre fois (est, sud, ouest, nord), un quart de tour dans le sens des aiguilles
+    // un tour complet : R quatre fois, un quart de tour dans le sens des aiguilles d'une montre à chaque fois : seul le sens change
     // d'une montre à chaque fois, et le quartier revient comme au départ
     {
-      const start = { ...wood('quarter'), face: 'north' };
+      const start = { ...wood('quarter') };
       emit({ kind: 'give', held: { prop: 'wood-piece', wood: start } });
       await sleep(150);
       const tour: string[] = [];
       for (let i = 0; i < 4; i++) {
         await press('KeyR');
         await sleep(150);
-        tour.push(`${gs.game.both.wood.axis}:${gs.game.both.wood.face}`);
+        tour.push(`${gs.game.both.wood.axis}:${gs.game.both.wood.point ?? 'up'}`);
       }
       out.tour = { tour, back: JSON.stringify(gs.game.both.wood) === JSON.stringify(start) };
     }
@@ -311,15 +311,14 @@ await playtest('fendage', async ({ page, errors, load }) => {
     assert.equal(e.wrongNotice, 'Les coups se donnent sur le bout, là où le coin est planté.', `coups depuis l'autre bout de ${e.end} : refusés`);
     assert.equal(e.hitsWrong, 0, 'aucun coup noté depuis l\'autre bout');
     assert.equal(e.halves, 2, `trois coups depuis ${e.end} : deux demi-billes`);
-    assert.deepEqual(e.halfFaces, [null, null], `les demi-billes depuis ${e.end} n'ont pas de face`);
-    const face = e.axis === 'ew' ? 'south' : 'east';
-    const quarter = { size: 'big', length: 100, axis: e.axis, shape: 'quarter', face };
-    assert.deepEqual(e.quarters, [quarter, quarter], `la demi-bille ${e.axis} fendue depuis ${e.end} : deux quartiers identiques, face debout au ${face}`);
+    assert.deepEqual(e.halfFaces, [null, null], `les demi-billes depuis ${e.end} : écorce en bas, face en l'air`);
+    const quarter = { size: 'big', length: 100, axis: e.axis, shape: 'quarter' };
+    assert.deepEqual(e.quarters, [quarter, quarter], `la demi-bille ${e.axis} fendue depuis ${e.end} : deux quartiers identiques, écorce en bas, pointe en l'air`);
   }
-  assert.equal(r.turned, '{"prop":"wood-piece","wood":{"size":"big","length":100,"shape":"quarter","axis":"ns","face":"west"}}', 'R tourne le quartier tenu (face au sud par défaut, puis à l\'ouest)');
-  assert.deepEqual(r.tour.tour, ['ns:east', 'ew:south', 'ns:west', 'ew:north'], 'R : la face debout suit, nord -> est -> sud -> ouest -> nord');
+  assert.equal(r.turned, '{"prop":"wood-piece","wood":{"size":"big","length":100,"shape":"quarter","axis":"ns"}}', 'R tourne le quartier tenu : seul son sens change');
+  assert.deepEqual(r.tour.tour, ['ns:up', 'ew:up', 'ns:up', 'ew:up'], 'R : le sens change, le quartier reste pointe en l\'air');
   assert.equal(r.tour.back, true, 'un tour complet revient au départ');
-  assert.deepEqual(r.quarterFaces, ['south', 'south', 'south', 'south'], 'les quatre quartiers d\'une bille naissent identiques, aucun retourné');
+  assert.deepEqual(r.quarterPoints, ['up', 'up', 'up', 'up'], 'les quatre quartiers d\'une bille naissent identiques, écorce en bas, pointe en l\'air');
   assert.ok(r.pile.includes('quarter-100:6'), `tas de quartiers : ${r.pile}`);
   assert.equal(r.long.planted, 1, 'le coin se plante dans une bille de 2 m');
   assert.deepEqual(r.long.hits, [1, 2, 3, 4, 5, -1], '6 coups de masse pour 2 m : la fente court à chaque coup, le 6e la fend');

@@ -102,6 +102,13 @@ export const PUT_DOWN = { gap: 2, step: 2, reach: 24 };
  */
 export const WOOD_AIM = { gap: 3, end: 6 };
 
+/**
+ * Fendre : les deux morceaux naissent à leur place (`split` de wood.json) ; si elle est prise, ils s'écartent ensemble, en travers
+ * de la pièce, d'un pixel de plus à chaque essai, de part et d'autre, jusqu'à `slide` px (deux quartiers écorce en bas, pointe en
+ * l'air, sont plus larges que leur demi-bille : celle d'à côté ne doit pas l'empêcher de se fendre).
+ */
+export const SPLIT = { slide: 12 };
+
 /** Récolte : tremblement d'un objet frappé, saut des objets lâchés, où ils retombent (px, autour de la base). */
 export const HARVEST = {
   shakeMs: 160,

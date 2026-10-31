@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { DEPTH, HARVEST, WOOD_AIM } from '../config';
+import { DEPTH, HARVEST, SPLIT, WOOD_AIM } from '../config';
 import { gestures, wood as W } from '../content';
 import type { End, Facing, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
@@ -392,21 +392,38 @@ export class WoodSystem {
     return { planted: true };
   }
 
-  /** Où naissent les deux morceaux d'une pièce qui se fend (coin bas gauche de chacun) et ce qu'ils sont (`splitPieces`). */
-  private halves(p: PlacedProp): { piece: WoodPiece; x: number; y: number }[] {
-    return splitPieces(p.wood!).map(({ piece, dx, dy }) => ({ piece, x: p.x + dx, y: p.y + dy }));
+  /** Où naîtraient les deux morceaux d'une pièce qui se fend, décalés ensemble de `slide` px en travers (`splitPieces`). */
+  private placed(p: PlacedProp, slide: number): { piece: WoodPiece; x: number; y: number }[] {
+    const [sx, sy] = p.wood!.axis === 'ns' ? [slide, 0] : [0, slide];
+    return splitPieces(p.wood!).map(({ piece, dx, dy }) => ({ piece, x: p.x + dx + sx, y: p.y + dy + sy }));
   }
 
-  /** Les deux morceaux tiendraient à leur place (carte, cases bloquantes, objets) : la collision de la pièce fendue ne compte pas. */
-  private splitFree(p: PlacedProp): boolean {
+  /**
+   * Où naissent les deux morceaux : à leur place, sinon écartés ensemble en travers, de plus en plus loin, de part et d'autre
+   * (`SPLIT.slide`), là où ils tiennent (carte, cases bloquantes, objets ; la collision de la pièce fendue ne compte pas). Rien :
+   * pas la place.
+   */
+  private halves(p: PlacedProp): { piece: WoodPiece; x: number; y: number }[] | undefined {
     const own = p.parts.filter((q): q is Phaser.GameObjects.Zone => q.type === 'Zone');
-    return this.halves(p).every(({ piece, x, y }) => {
+    const fits = (parts: { piece: WoodPiece; x: number; y: number }[]) => parts.every(({ piece, x, y }) => {
       const look = lookOf(piece);
       const { w, h } = woodSize(piece.size, look, piece.axis, piece.length);
       const f = footprint({ ...p.def, body: woodBody(piece.size, look, piece.axis, piece.length), bodies: undefined }, w, h, false)!;
       const box: Box = { left: x + f.left, right: x + f.right, top: y - h + f.top, bottom: y - h + f.bottom };
       return this.map.areaFree(box, [], own);
     });
+    for (let d = 0; d <= SPLIT.slide; d++) {
+      for (const s of d === 0 ? [0] : [-d, d]) {
+        const parts = this.placed(p, s);
+        if (fits(parts)) return parts;
+      }
+    }
+    return undefined;
+  }
+
+  /** Les deux morceaux tiendraient quelque part (`halves`). */
+  private splitFree(p: PlacedProp): boolean {
+    return this.halves(p) !== undefined;
   }
 
   /**
@@ -420,7 +437,7 @@ export class WoodSystem {
       this.update(p, { ...piece, wedge: { ...piece.wedge!, hits } });
       return {};
     }
-    const [first, second] = this.halves(p);
+    const [first, second] = this.halves(p) ?? this.placed(p, 0);
     const open = this.scene.add.image(p.x, p.y, woodTexture(this.scene, piece, { open: true }), '0').setOrigin(0, 1).setDepth(p.y);
     const [cx, cy] = [p.x + Math.floor(open.width / 2), p.y - 4];
     const a = this.replace(p, first.piece, first);

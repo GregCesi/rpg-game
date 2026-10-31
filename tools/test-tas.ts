@@ -1,6 +1,6 @@
 // Test de scénario des tas, dans le vrai jeu (voir tools/lib/playtest.ts) : trois tas montés pièce par pièce avec E, chacun né
 // d'une première pièce posée seule puis d'une pièce identique posée contre elle (des rondins de 80 cm en pyramide, des quartiers
-// de 1,20 m nord-sud en rangées tête-bêche, des poutres de 1,80 m en rangées) ; leur forme (nombre de pièces, pièces par couche) ;
+// de 1,20 m nord-sud en rangées de triangles, des poutres de 1,80 m en rangées) ; leur forme (nombre de pièces, pièces par couche) ;
 // le refus de mélanger (un rondin visé sur un tas de quartiers est posé seul, sans message) ; une pièce de plus de 70 kg (portée
 // avec la force doublée) qui ne fait pas de tas contre sa jumelle ; la pose d'une dalle et d'une hachette à la place de leur
 // fantôme, et de la hachette tournée par R (sa vue r1, gardée quand on la reprend) ; puis la page rechargée : tout est retrouvé.
@@ -123,7 +123,7 @@ await playtest('tas', async ({ page, errors }) => {
       return steps;
     };
 
-    // 1. trois tas : rondins de 80 cm (pyramide), quartiers de 1,20 m nord-sud (rangées tête-bêche), poutres de 1,80 m (rangées)
+    // 1. trois tas : rondins de 80 cm (pyramide), quartiers de 1,20 m nord-sud (rangées de triangles), poutres de 1,80 m (rangées)
     const rondin = { size: 'normal', shape: 'round', length: 80 };
     const quartier = { size: 'big', shape: 'quarter', length: 120 };
     const poutre = { size: 'normal', shape: 'round', length: 180, hewn: 12 };
@@ -133,7 +133,7 @@ await playtest('tas', async ({ page, errors }) => {
     out.poutres = await build(poutre, 'ew', 9);
     {
       const def = shape(piles().find((q: any) => q.wood?.shape === 'quarter'));
-      out.headToTail = ['g0', 'g1', 'g2', 'l1-0', 'l1-1'].map((id) => def.places[id].wood.face);
+      out.headToTail = ['g0', 'g1', 'g2', 'l1-0', 'l1-1'].map((id) => def.places[id].wood.point ?? 'up');
     }
 
     // 2. ne pas mélanger : un rondin de 80 cm visé sur la place ouverte d'un tas de quartiers commencé est posé seul, sans message
@@ -163,7 +163,7 @@ await playtest('tas', async ({ page, errors }) => {
       const ew = gs.addPile(gs.game, mapId(), { wood: quartier, x: x + 10, y: y + 50, places: ['g1', 'g0', 'g2'] });
       w().map.placePile(ew);
       const def = shape(ew);
-      await give({ prop: 'wood-piece', wood: { ...quartier, axis: 'ns', face: 'east' } });
+      await give({ prop: 'wood-piece', wood: { ...quartier, axis: 'ns' } });
       const [ax, ay] = ps.placeAim(def, 'l1-1');
       await lookAt(ew.x + ax, ew.y + ay);
       await sleep(100);
@@ -272,7 +272,7 @@ await playtest('tas', async ({ page, errors }) => {
     assert.equal(s.handsEnd, null);
   }
   assert.equal(r.quartiers.born.turned, true, 'le tas de quartiers prend le sens de sa première pièce (nord-sud)');
-  assert.deepEqual(r.headToTail, ['east', 'west', 'east', 'west', 'east'], 'les quartiers tête-bêche (nord-sud) : la face debout à l\'est, puis à l\'ouest');
+  assert.deepEqual(r.headToTail, ['up', 'down', 'up', 'up', 'down'], 'les quartiers en triangles (nord-sud) : pointe en l\'air, pointe en bas, pointe en l\'air, dans chaque rangée');
   assert.equal(r.mixed.started, '["g1"]', 'le rondin ne va pas sur le tas de quartiers');
   assert.equal(r.mixed.rondinAlone, 1, 'il est posé seul à côté');
   assert.deepEqual(r.mixed.notices, [], 'sans message');
@@ -328,5 +328,5 @@ await playtest('tas', async ({ page, errors }) => {
   assert.equal(after.shown, r.piles.reduce((n: number, p: string) => n + Number(p.split(':').at(-1)), 0), 'chaque pièce est affichée');
   assert.equal(after.stone, true, 'la pierre aussi');
   assert.equal(after.tool, true, 'et la hachette');
-  console.log('  ✓ tas : rondins, quartiers tête-bêche et poutres en tas, refus de mélanger et du trop lourd, pierre et hachette posées à leur fantôme, tout retrouvé après rechargement');
+  console.log('  ✓ tas : rondins, quartiers en triangles et poutres en tas, refus de mélanger et du trop lourd, pierre et hachette posées à leur fantôme, tout retrouvé après rechargement');
 });

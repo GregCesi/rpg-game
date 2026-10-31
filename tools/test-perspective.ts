@@ -1,6 +1,6 @@
 // Contrôle de la règle D (docs/STYLE.md section 8 : une pièce couchée tournée d'un quart de tour garde exactement sa taille), dans
 // le vrai jeu (voir tools/lib/playtest.ts) : pour chaque pièce de bois de test (60 cm, 1 m, 4 m), de chaque diamètre et de chaque
-// aspect (le quartier dans ses quatre positions), l'image que le jeu assemble (world/woodTexture.ts, ombre exclue) et la collision
+// aspect (le quartier pointe en l'air et pointe en bas), l'image que le jeu assemble (world/woodTexture.ts, ombre exclue) et la collision
 // de sa définition (world/woodPiece.ts) sont, en nord-sud, celles de l'est-ouest inversées, à 1 px près pour l'image, exactement
 // pour la collision ; un tas nord-sud monte de la même hauteur par couche qu'est-ouest, ses pièces au même écart, chacune au même
 // pas au-dessus de sa porteuse de devant (la 4e bille d'un tas de 3 couvre le quart haut de celle du centre).
@@ -42,14 +42,14 @@ await playtest('perspective', async ({ page, errors }) => {
       for (const look of Object.keys(def.looks)) {
         const shape = look === 'half' || look === 'quarter' ? look : 'round';
         const hewn = ['round', 'f1', 'f2', 'f3', 'beam'].indexOf(look) * WOOD.hew.perFace;
-        const faces = shape === 'quarter' ? ['north', 'south'] : [undefined];
-        for (const face of faces) {
+        const points = shape === 'quarter' ? [undefined, 'down'] : [undefined];
+        for (const point of points) {
           for (const length of [60, 100, 400]) {
-            const ew = { size, shape, axis: 'ew', length, ...(hewn > 0 ? { hewn } : {}), ...(face ? { face } : {}) };
+            const ew = { size, shape, axis: 'ew', length, ...(hewn > 0 ? { hewn } : {}), ...(point ? { point } : {}) };
             const ns = turnedWood(ew);
             const [ie, inn] = [box(woodTexture(scene, ew)), box(woodTexture(scene, ns))];
             const [be, bn] = [defOf('wood-piece', ew).body, defOf('wood-piece', ns).body];
-            const what = `${size} ${look}${face ? ` ${face}/${ns.face}` : ''} ${length} cm`;
+            const what = `${size} ${look}${point ? ' pointe en bas' : ''} ${length} cm`;
             const imageOk = Math.abs(inn.w - ie.h) <= 1 && Math.abs(inn.h - ie.w) <= 1;
             const bodyOk = bn.w === be.h && bn.h === be.w;
             out.push({ what: `${what} image`, ew: ie, ns: inn, ok: imageOk });

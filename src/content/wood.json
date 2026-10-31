@@ -13,16 +13,20 @@
       "hew": "Trop grosse pour une poutre.",
       "split": {
         "round": {"into": "half", "ew": [[0, -5], [0, 5]], "ns": [[-5, 0], [5, 0]]},
-        "half": {"into": "quarter", "ew": [[0, -6], [0, -1]], "ns": [[-2, 0], [3, 0]]}
+        "half": {"into": "quarter", "ew": [[0, -7], [0, 3]], "ns": [[-4, 0], [6, 0]]}
       },
       "looks": {
         "round": {"name": "bille", "gender": "f", "icon": "item-wood-big-round", "held": "held-wood-big-round",
-          "ew": {"h": 16, "start": 6, "end": 5, "body": {"h": 10, "bottom": 3}}, "ns": {"w": 14, "extra": 2, "back": 0, "start": 5, "end": 9, "bottom": 2}},
+          "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "bark"},
+          "ew": {"h": 16, "start": 7, "end": 5, "body": {"h": 10, "bottom": 3}}, "ns": {"w": 14, "extra": 2, "back": 0, "start": 5, "end": 9, "bottom": 2}},
         "half": {"name": "demi-bille", "gender": "f", "icon": "item-wood-big-half", "held": "held-wood-big-half",
+          "section": {"shape": "half", "bark": "arc", "heart": "face", "rests": "bark", "faces": "split"},
           "ew": {"h": 16, "start": 6, "end": 5, "body": {"h": 10, "bottom": 3}}, "ns": {"w": 14, "extra": 2, "back": 0, "start": 5, "end": 9, "bottom": 2}},
         "quarter": {"name": "quartier", "gender": "m", "icon": "item-wood-big-quarter", "held": "held-wood-big-quarter",
-          "ew": {"h": 13, "start": 5, "end": 4, "body": {"h": 5, "bottom": 2}}, "ns": {"w": 13, "extra": 2, "back": 0, "start": 8, "end": 8, "bottom": 2}},
+          "section": {"shape": "quarter", "bark": "arc", "heart": "apex", "rests": "bark", "faces": "split"},
+          "ew": {"h": 13, "start": 5, "end": 5, "body": {"h": 9, "bottom": 2}}, "ns": {"w": 12, "extra": 2, "back": 0, "start": 5, "end": 8, "bottom": 2}},
         "plank": {"name": "planche", "gender": "f", "icon": "item-wood-big-plank", "held": "held-wood-big-plank",
+          "section": {"shape": "rect", "bark": "none", "heart": "none", "rests": "face", "faces": "split"},
           "ew": {"h": 7, "start": 2, "end": 3, "body": {"h": 5, "bottom": 1}}, "ns": {"w": 7, "extra": 2, "back": 0, "start": 3, "end": 4, "bottom": 2}}
       }
     },
@@ -33,6 +37,7 @@
       "split": {},
       "looks": {
         "round": {"name": "perche", "gender": "f", "icon": "item-wood-pole-round", "held": "held-wood-pole-round",
+          "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "bark"},
           "ew": {"h": 6, "start": 4, "end": 3, "body": {"h": 3, "bottom": 1}}, "ns": {"w": 6, "extra": 2, "back": 0, "start": 4, "end": 5, "bottom": 2}}
       }
     },
@@ -42,14 +47,19 @@
       "split": {},
       "looks": {
         "round": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-round",
+          "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "bark"},
           "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 10, "extra": 2, "back": 0, "start": 5, "end": 8, "bottom": 2}, "up": {"name": "poteau", "w": 8, "extra": 4, "start": 7, "end": 4, "lift": 3, "body": {"w": 4, "h": 4}}},
         "f1": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-f1",
+          "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "bark", "flats": ["top"], "faces": "hewn"},
           "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 10, "extra": 2, "back": 0, "start": 5, "end": 8, "bottom": 2}, "up": {"name": "poteau", "w": 8, "extra": 4, "start": 7, "end": 4, "lift": 3, "body": {"w": 4, "h": 4}}},
         "f2": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-f2",
+          "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "bark", "flats": ["top", "south"], "faces": "hewn"},
           "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 10, "extra": 2, "back": 0, "start": 5, "end": 8, "bottom": 2}, "up": {"name": "poteau", "w": 8, "extra": 4, "start": 7, "end": 4, "lift": 3, "body": {"w": 4, "h": 4}}},
         "f3": {"name": "rondin", "gender": "m", "icon": "item-wood-normal-round", "held": "held-wood-normal-f3",
+          "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "bark", "flats": ["top", "south", "north"], "faces": "hewn"},
           "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 10, "extra": 2, "back": 0, "start": 5, "end": 8, "bottom": 2}, "up": {"name": "poteau", "w": 8, "extra": 4, "start": 7, "end": 4, "lift": 3, "body": {"w": 4, "h": 4}}},
         "beam": {"name": "poutre", "gender": "f", "icon": "item-wood-normal-beam", "held": "held-wood-normal-beam",
+          "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "face", "flats": ["top", "south", "north", "bottom"], "faces": "hewn"},
           "ew": {"h": 10, "start": 5, "end": 4, "body": {"h": 6, "bottom": 2}}, "ns": {"w": 10, "extra": 2, "back": 0, "start": 5, "end": 8, "bottom": 2}, "up": {"name": "poteau", "w": 8, "extra": 4, "start": 7, "end": 4, "lift": 3, "body": {"w": 4, "h": 4}}}
       }
     }

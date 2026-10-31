@@ -9,7 +9,6 @@ import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { NORMAL_WOOD, POLE_WOOD, bark, paintFace } from '../world/wood';
 import { shadedOutline } from '../world/big-tree';
-import { pie } from '../world/wood-pieces';
 import { strawIconCanvas } from './fibres';
 
 const S = 16;
@@ -316,29 +315,54 @@ const HALF_ICON = [
 const bigHalfIcon = (): Canvas => shadedOutline(Canvas.from(HALF_ICON));
 
 /**
- * Quartier de biais (le quart de la bille, art/world/wood-pieces.ts), posé sur un rayon : devant, en bas à gauche, son
- * bout, la part de tarte (le cœur en bas à droite, l'arc d'écorce en haut à gauche) ; la pièce fuit vers le haut à
- * droite : le dos d'écorce dessus (éclairé en haut), la face fendue debout à droite (bois frais, fibres en long).
+ * Quartier de biais, dans sa position au sol (wood.json, `section` : l'écorce en bas, la pointe en l'air, l'angle du cœur).
+ * Devant, en bas à gauche, son bout en triangle pointe en haut : le cœur (T) à la pointe, un cerne (t), le bois de bout clair,
+ * l'arc d'écorce (N) dessous. La pièce fuit vers le haut à droite : le triangle poussé de loin en près, dont on voit l'arête
+ * (le fil du cœur, qui accroche la lumière : Y), puis la face fendue tournée vers nous, qui descend dans l'ombre (t, T, fibres
+ * P, la matière des faces fendues de art/world/wood-skin.ts) jusqu'au liseré d'écorce du pied. La face nord, tournée vers la
+ * lumière, est derrière l'arête : on ne la voit pas d'ici.
  */
 function bigQuarterIcon(): Canvas {
   const c = new Canvas(S, S);
-  const [x0, y0, w, h] = [2, 8, 5, 5];
-  const mask = new Canvas(S, S);
-  for (let Y = y0; Y < y0 + h; Y++) for (let X = x0; X < x0 + w; X++) mask.set(X, Y, 'Y');
-  pie(mask, x0, y0, w, h, 'br', (X, Y) => { mask.px[Y][X] = EMPTY; });
-  // la pièce qui fuit : la part posée de loin en près, son bord droit en bois frais, le reste en écorce
-  const steps = 7;
-  for (let k = steps; k >= 1; k--) {
-    const dx = k, dy = -Math.round((k * 5) / 7);
-    for (let Y = y0; Y < y0 + h; Y++) for (let X = x0; X < x0 + w; X++) {
-      if (mask.get(X, Y) === EMPTY) continue;
-      const right = X === x0 + w - 1;
-      const top = Y - y0;
-      const q = right ? ((X + Y + k) % 4 === 0 ? 'Y' : 't') : bark(k * 2 + Y, Math.min(0.95, 0.05 + (top + (X - x0)) / 9));
-      c.set(X + dx, Y + dy, q);
+  /** Tout descend de 2 rangées : l'icône centrée dans la case. */
+  const DOWN = 2;
+  // le triangle du bout : la pointe en (5, 5), une colonne de plus de chaque côté par rangée, l'arc d'écorce en rangée 10
+  const tri = (X: number, Y: number) => (Y >= 5 && Y <= 9 && Math.abs(X - 5) <= Y - 5) || (Y === 10 && X >= 2 && X <= 8);
+  const dash = (x: number, phase: number, every: number, len: number) => (x + phase) % every < len;
+  // la pièce qui fuit : le triangle poussé de 5 px vers la droite et de 3 vers le haut, de loin en près
+  const body = new Canvas(S, S);
+  for (let k = 5; k >= 1; k--) {
+    const dx = k, dy = -Math.round(k * 0.6);
+    for (let Y = 0; Y < S; Y++) for (let X = 0; X < S; X++) if (tri(X, Y)) body.set(X + dx, Y + dy, 'x');
+  }
+  // la pointe du bout lointain : un pixel seul au-dessus de l'arête, retiré (la silhouette reste droite)
+  for (let X = 1; X < S - 1; X++) {
+    const top = [...Array(S).keys()].find((Y) => body.get(X, Y) !== EMPTY);
+    if (top !== undefined && body.get(X - 1, top) === EMPTY && body.get(X + 1, top) === EMPTY) body.set(X, top, EMPTY);
+  }
+  for (let X = 0; X < S; X++) {
+    const ys = [...Array(S).keys()].filter((Y) => body.get(X, Y) !== EMPTY && !tri(X, Y));
+    if (!ys.length) continue;
+    const top = Math.min(...ys);
+    const foot = Math.max(...ys);
+    for (const Y of ys) {
+      const d = Y - top;
+      let q = d === 0 ? 'Y' : d === 1 ? (dash(X, 0, 4, 2) ? 'T' : 't') : d === 2 ? (dash(X, 1, 5, 2) ? 't' : 'T') : dash(X, 3, 5, 3) ? 'P' : 'T';
+      if (Y === foot && d > 1 && !tri(X, Y + 1)) q = 'N';
+      // contre le bout, l'ombre de son arête
+      else if (tri(X - 1, Y) && d > 0) q = 'T';
+      c.set(X, Y + DOWN, q);
     }
   }
-  pie(c, x0, y0, w, h, 'br');
+  const END: [number, string][] = [
+    [5, '.....T'],
+    [6, '....YTt'],
+    [7, '...YtttT'],
+    [8, '..YYtYttT'],
+    [9, '.YYYYYYYtT'],
+    [10, '..NNNNNNN'],
+  ];
+  for (const [y, row] of END) [...row].forEach((q, x) => { if (q !== '.') c.set(x, y + DOWN, q); });
   return shadedOutline(c);
 }
 

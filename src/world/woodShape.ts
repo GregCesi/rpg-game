@@ -17,8 +17,8 @@
 //   planté (il remplace la partie de ce bout) ; `crack-<aspect>-start|mid|end`, la fente (transparente ailleurs, posée par-dessus,
 //   sur la partie de la longueur déjà fendue depuis le bout du coin) ; `open-<aspect>-start|mid|end`, le bois grand ouvert du
 //   dernier coup (il remplace les parties de l'aspect). Le coin a `WEDGE_FRAMES` images : il s'enfonce au fil des coups ;
-// - le quartier n'a pas de parties `quarter-…` : une par côté de sa face fendue debout, `quarter-north|south-start|mid|end` dans
-//   la planche est-ouest, `quarter-east|west-…` dans la planche nord-sud (`drawnLook`, `faceOf`).
+// - le quartier a deux jeux de parties : `quarter-…` (écorce en bas, pointe en l'air, sa position posé) et `quarter-down-…` (pointe
+//   en bas, un sur deux dans une rangée de tas, où ils s'emboîtent en triangles) (`drawnLook`).
 // Dans la planche, chaque partie est calée en haut à gauche de son image (cadre commun, assez grand pour la plus grande).
 
 import { CM_PER_PX } from '../content/gabarit';
@@ -159,43 +159,33 @@ export interface ComposeOpts {
   open?: boolean;
 }
 
-/** Les quatre côtés, dans le sens des aiguilles d'une montre : R fait passer de l'un au suivant. */
-export const CLOCKWISE: readonly End[] = ['north', 'east', 'south', 'west'];
-
-/** Le côté de la face debout d'un quartier (`face`), sinon celui par défaut de son sens : sud est-ouest, est nord-sud. */
-export function faceOf(piece: Pick<WoodPiece, 'axis' | 'face'>): End {
-  return piece.face ?? (piece.axis === 'ew' ? 'south' : 'east');
-}
-
 /**
- * La pièce tournée d'un quart de tour dans le sens des aiguilles d'une montre : son sens change (est-ouest <-> nord-sud) ; un
- * quartier garde sa face debout du côté qui suit (nord -> est -> sud -> ouest -> nord).
+ * La pièce tournée d'un quart de tour dans le sens des aiguilles d'une montre : son sens change (est-ouest <-> nord-sud), rien
+ * d'autre (le quartier reste écorce en bas, pointe en l'air : sa section est la même dans les deux sens).
  */
 export function turnedWood(piece: WoodPiece): WoodPiece {
   if (piece.axis === 'up') return piece;
-  const axis = piece.axis === 'ew' ? 'ns' : 'ew';
-  if (piece.shape !== 'quarter') return { ...piece, axis };
-  return { ...piece, axis, face: CLOCKWISE[(CLOCKWISE.indexOf(faceOf(piece)) + 1) % 4] };
+  return { ...piece, axis: piece.axis === 'ew' ? 'ns' : 'ew' };
 }
 
 /**
  * Les deux morceaux d'une pièce qui se fend (`split` de son diamètre) : leurs réglages et le coin bas gauche de chacun par rapport à
- * la pièce. Les morceaux sortent identiques, dans le même sens, aucun retourné : deux quartiers naissent avec la face debout de
- * départ de leur sens (sud est-ouest, est nord-sud, `faceOf`) ; R les tourne ensuite.
+ * la pièce. Les morceaux sortent identiques, dans le même sens, côte à côte, dans la position de leur section (wood.json) : deux
+ * demi-billes écorce en bas, face plate en l'air ; deux quartiers écorce en bas, pointe en l'air (sans `point`).
  */
 export function splitPieces(piece: WoodPiece): { piece: WoodPiece; dx: number; dy: number }[] {
-  const { wedge: _w, face: _f, ...rest } = piece;
+  const { wedge: _w, point: _p, ...rest } = piece;
   const rule = sizeOf(piece.size).split[piece.shape as 'round' | 'half']!;
   // une pièce dressée ne se fend pas : seules les couchées
   const axis = piece.axis as Exclude<WoodAxis, 'up'>;
-  const into: WoodPiece = { ...rest, shape: rule.into, ...(rule.into === 'quarter' ? { face: faceOf({ axis }) } : {}) };
+  const into: WoodPiece = { ...rest, shape: rule.into };
   return rule[axis].map(([dx, dy]) => ({ piece: { ...into }, dx, dy }));
 }
 
-/** L'aspect tel qu'il est dessiné dans la planche : le quartier a une partie par côté de sa face debout (`quarter-south`). */
+/** L'aspect tel qu'il est dessiné dans la planche : le quartier pointe en bas a ses parties à lui (`quarter-down`). */
 export function drawnLook(piece: WoodPiece): string {
   const look = lookOf(piece);
-  return look === 'quarter' ? `quarter-${faceOf(piece)}` : look;
+  return look === 'quarter' && piece.point === 'down' ? 'quarter-down' : look;
 }
 
 /** Images du coin planté (`wedge-…`) : il sort de moins en moins du bout à chaque coup de masse. */
@@ -222,7 +212,7 @@ export function woodKey(piece: WoodPiece, opts: Pick<ComposeOpts, 'open'> = {}):
     length,
     notch ? `n${notch.hits}@${notch.at}` : '',
     wedge ? `w${wedge.end}${wedge.hits}/${splitHits(piece)}` : '',
-    piece.shape === 'quarter' ? faceOf(piece) : '',
+    piece.point === 'down' ? 'down' : '',
     opts.open ? 'open' : '',
   ].join(':');
 }
