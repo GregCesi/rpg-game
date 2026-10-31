@@ -1,0 +1,776 @@
+{
+  "name": "Cabane",
+  "size": {
+    "w": 380,
+    "d": 480
+  },
+  "joints": [
+    {
+      "type": "notch",
+      "a": 5,
+      "b": 8,
+      "top": 8
+    },
+    {
+      "type": "notch",
+      "a": 6,
+      "b": 8,
+      "top": 8
+    },
+    {
+      "type": "notch",
+      "a": 5,
+      "b": 9,
+      "top": 9
+    },
+    {
+      "type": "notch",
+      "a": 7,
+      "b": 9,
+      "top": 9
+    },
+    {
+      "type": "notch",
+      "a": 8,
+      "b": 10,
+      "top": 10
+    },
+    {
+      "type": "notch",
+      "a": 9,
+      "b": 10,
+      "top": 10
+    },
+    {
+      "type": "notch",
+      "a": 8,
+      "b": 11,
+      "top": 11
+    },
+    {
+      "type": "notch",
+      "a": 9,
+      "b": 12,
+      "top": 12
+    },
+    {
+      "type": "notch",
+      "a": 10,
+      "b": 13,
+      "top": 13
+    },
+    {
+      "type": "notch",
+      "a": 11,
+      "b": 13,
+      "top": 13
+    },
+    {
+      "type": "notch",
+      "a": 10,
+      "b": 14,
+      "top": 14
+    },
+    {
+      "type": "notch",
+      "a": 12,
+      "b": 14,
+      "top": 14
+    },
+    {
+      "type": "notch",
+      "a": 13,
+      "b": 15,
+      "top": 15
+    },
+    {
+      "type": "notch",
+      "a": 14,
+      "b": 15,
+      "top": 15
+    },
+    {
+      "type": "notch",
+      "a": 13,
+      "b": 16,
+      "top": 16
+    },
+    {
+      "type": "notch",
+      "a": 14,
+      "b": 17,
+      "top": 17
+    },
+    {
+      "type": "notch",
+      "a": 15,
+      "b": 18,
+      "top": 18
+    },
+    {
+      "type": "notch",
+      "a": 16,
+      "b": 18,
+      "top": 18
+    },
+    {
+      "type": "notch",
+      "a": 15,
+      "b": 19,
+      "top": 19
+    },
+    {
+      "type": "notch",
+      "a": 17,
+      "b": 20,
+      "top": 20
+    },
+    {
+      "type": "notch",
+      "a": 18,
+      "b": 21,
+      "top": 21
+    },
+    {
+      "type": "notch",
+      "a": 19,
+      "b": 21,
+      "top": 21
+    },
+    {
+      "type": "notch",
+      "a": 18,
+      "b": 22,
+      "top": 22
+    },
+    {
+      "type": "notch",
+      "a": 20,
+      "b": 23,
+      "top": 23
+    },
+    {
+      "type": "notch",
+      "a": 21,
+      "b": 24,
+      "top": 24
+    },
+    {
+      "type": "notch",
+      "a": 22,
+      "b": 24,
+      "top": 24
+    },
+    {
+      "type": "notch",
+      "a": 21,
+      "b": 25,
+      "top": 25
+    },
+    {
+      "type": "notch",
+      "a": 23,
+      "b": 25,
+      "top": 25
+    },
+    {
+      "type": "notch",
+      "a": 24,
+      "b": 26,
+      "top": 26
+    },
+    {
+      "type": "notch",
+      "a": 25,
+      "b": 26,
+      "top": 26
+    },
+    {
+      "type": "notch",
+      "a": 24,
+      "b": 27,
+      "top": 27
+    },
+    {
+      "type": "notch",
+      "a": 25,
+      "b": 28,
+      "top": 28
+    },
+    {
+      "type": "notch",
+      "a": 26,
+      "b": 29,
+      "top": 29
+    },
+    {
+      "type": "notch",
+      "a": 27,
+      "b": 29,
+      "top": 29
+    },
+    {
+      "type": "notch",
+      "a": 26,
+      "b": 30,
+      "top": 30
+    },
+    {
+      "type": "notch",
+      "a": 28,
+      "b": 30,
+      "top": 30
+    },
+    {
+      "type": "notch",
+      "a": 29,
+      "b": 31,
+      "top": 31
+    },
+    {
+      "type": "notch",
+      "a": 30,
+      "b": 31,
+      "top": 31
+    },
+    {
+      "type": "notch",
+      "a": 29,
+      "b": 32,
+      "top": 32
+    },
+    {
+      "type": "notch",
+      "a": 30,
+      "b": 32,
+      "top": 32
+    },
+    {
+      "type": "notch",
+      "a": 35,
+      "b": 37,
+      "top": 37
+    },
+    {
+      "type": "notch",
+      "a": 36,
+      "b": 37,
+      "top": 37
+    }
+  ],
+  "pieces": [
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 20,
+      "y": 40,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 320,
+      "y": 40,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 20,
+      "y": 400,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 320,
+      "y": 400,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "plank-door"
+      },
+      "x": 140,
+      "y": 420,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 40,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 400,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 240,
+      "y": 400,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 20,
+      "y": 20,
+      "z": 32,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 320,
+      "y": 20,
+      "z": 32,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 40,
+      "z": 52,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 400,
+      "z": 52,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 240,
+      "y": 400,
+      "z": 52,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 20,
+      "y": 20,
+      "z": 72,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 320,
+      "y": 20,
+      "z": 72,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 40,
+      "z": 92,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 400,
+      "z": 92,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 240,
+      "y": 400,
+      "z": 92,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 20,
+      "y": 20,
+      "z": 112,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 320,
+      "y": 20,
+      "z": 112,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 200,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 320,
+      "y": 260,
+      "z": 112,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 40,
+      "z": 132,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 400,
+      "z": 132,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 240,
+      "y": 400,
+      "z": 132,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 20,
+      "y": 20,
+      "z": 152,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 320,
+      "y": 20,
+      "z": 152,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 40,
+      "z": 172,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 400,
+      "z": 172,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 140,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 240,
+      "y": 400,
+      "z": 172,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 20,
+      "y": 20,
+      "z": 192,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 320,
+      "y": 20,
+      "z": 192,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 40,
+      "z": 212,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 400,
+      "z": 212,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "plank-roof"
+      },
+      "x": 0,
+      "y": 0,
+      "z": 252,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "plank-roof"
+      },
+      "x": 180,
+      "y": 0,
+      "z": 252,
+      "view": 3
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 100,
+      "y": 40,
+      "z": 252,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "axis": "ew"
+        }
+      },
+      "x": 100,
+      "y": 400,
+      "z": 252,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 440,
+          "shape": "round",
+          "axis": "ns"
+        }
+      },
+      "x": 180,
+      "y": 20,
+      "z": 272,
+      "view": 0
+    }
+  ]
+}

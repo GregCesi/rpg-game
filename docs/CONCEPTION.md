@@ -391,12 +391,41 @@ s'emboîter, traversées de chevilles enfoncées au maillet.
   Annuler et refaire les suivent ; un plan du bac à sable garde les assemblages de sa zone.
 - **Pas de fabrication** en mode construction. En jeu, plus tard : les **chevilles** (`peg`, déjà au jeu), une **tarière** pour les
   trous, le **maillet** (`mallet`, déjà au jeu), le ciseau à bois et la scie pour tailler, et un geste par étape (fiches).
+- **L'encoche** ([fiche](objets/notch-joint.md), chantier « cabane ») : deux rondins ronds croisés à angle droit, le second posé sur le
+  premier ; il s'enfonce de la moitié de son diamètre. Comme le mi-bois, une image du croisement par-dessus les deux rondins.
+- **L'enture retouchée** (même jour) : la pièce entière d'un seul tenant, seulement un trait fin et discret (un cran plus sombre que le
+  bois) et les têtes rondes des chevilles.
 - **À venir** : l'**embrèvement** (une pièce en diagonale, la jambe de force ou le chevron, dont le bout s'emboîte en biais dans une autre),
   la queue d'aronde, l'enfourchement (le chevron sur le faîtage), et le chevillage visible des pans de bois.
 - **Choix faits sans Grégoire** : les marques et les chevilles sont posées par-dessus le dessin de la pièce entière (pas un dessin
   par longueur) ; une enture ne se pose qu'entre deux pièces dont les emprises sont exactement bout à bout (l'aimant des bords y
   aide) ; deux pièces de même section mais d'états différents (une ronde, une poutre) ne s'entent pas ; la marque debout n'existe
   que pour le normal (seul il se dresse).
+
+### La cabane en rondins (décidé le 31 octobre 2026, chantier « cabane »)
+
+**Règle de vérification de Grégoire : un bâtiment est validé quand on réussit à le bâtir dans le mode construction, par un scénario,
+uniquement avec les pièces du catalogue, puis à l'enregistrer comme plan.** Une pièce qui manque se crée en respectant sa chaîne
+(d'où elle vient, de quoi elle est faite, sa fiche, le pixel-artist pour le dessin) ; une pièce trop particulière se demande à
+Grégoire.
+
+- **La cabane de bûcheron** (`npm run test:cabane`, plan `src/content/plans/cabane.json`, aperçu `.art-preview/cabane.png`) : 3,40 ×
+  4 m au sol entre les faces des murs ; quatre dalles aux angles ; cinq assises de rondins du normal (30 cm de bois), est-ouest puis
+  nord-sud, croisés aux angles par une **encoche** ([fiche](objets/notch-joint.md)), 20 cm de dépassement, puis une sixième
+  assise est-ouest (le linteau) ; une porte d'un mètre au sud (les rondins des cinq premières assises recoupés de part et d'autre :
+  des pièces de bois de 1,40 m) et la **porte en planches** ([fiche](objets/plank-door.md)) ; une fenêtre de 60 cm à l'est (le
+  rondin de la troisième assise recoupé) ; les pignons en rondins (un rondin de 1,80 m sur chaque mur de bout) ; la faîtière (un
+  rondin nord-sud encoché dans les pignons, à 1,80 m du bord ouest : le milieu exact, 1,70 m, n'est pas sur la grille) ; les deux
+  **pans de toit en planches** ([fiche](objets/plank-roof.md)) posés sur le rondin de rive. 38 pièces, 42 assemblages.
+- **Ce qui a manqué et a été créé** : l'encoche (assemblage, règle, dessin du croisement) ; la porte en planches et le pan de toit en
+  planches (objets, fiches, dessins). **Ce qui existait** : le rondin recoupé (une pièce de bois de toute longueur sur la grille),
+  les rondins de pignon et la faîtière (des rondins).
+- **Le moteur, pour la cabane** : un pan de toit (`pitch` de props.json, le côté de sa rive basse) se pose sur ce qui porte sa rive
+  basse et ne se heurte pas à ce qui est sous sa pente ; une pièce de toit ne porte rien (la visée l'ignore). La visée prend le
+  plus haut dessus sous l'emprise : la porte se pose donc avant le linteau qui passe au-dessus d'elle (l'ordre réel du montage).
+- **À trancher par Grégoire** : des pignons taillés en biais (un rondin coupé à la pente, nouvel aspect de la pièce de bois) plutôt
+  qu'un rondin court ; un volet ou un châssis pour la fenêtre (aujourd'hui une simple ouverture) ; un seuil sous la porte ; un toit
+  de bardeaux (le bardeau existe, mais pas de lattes pour le porter).
 
 ## Poids et force (décidé le 30 octobre 2026)
 
