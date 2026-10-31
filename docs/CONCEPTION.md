@@ -334,12 +334,16 @@ d'autres pièces. Ni force, ni aide de la mère, ni ordre de chantier. Plan d'or
 - **Le solin se raccorde** (retour de Grégoire, même jour : posés côte à côte, les morceaux restaient séparés) : des morceaux de
   même manière (`wall` de props.json), à la même hauteur, alignés et jointifs, forment un **tronçon** dessiné d'un seul tenant par
   l'algorithme des murs : pierres et assises traversent les jonctions, contour aux deux vrais bouts seulement. Le tirage d'un
-  tronçon se tire de sa position (le même mur à chaque chargement). Deux tronçons à angle droit forment un **angle** (le tronçon
-  est-ouest possède le carré d'angle ; le nord-sud vient contre lui, son image calée au ras du bord extérieur) ; un tronçon qui
+  tronçon se tire de sa position (le même mur à chaque chargement). Deux tronçons à angle droit forment un **angle**, toujours tenu
+  par le tronçon est-ouest **quel que soit l'ordre de pose** (repris le même jour, chantier « assemblages ») : si c'est le morceau
+  nord-sud qui couvre le carré d'angle au sol, l'est-ouest dessine quand même le carré (`extra` de `run`) et le nord-sud s'arrête
+  contre lui ; le nord-sud a son image calée au ras du bord extérieur ; un tronçon qui
   s'arrête (à une porte) montre une **tête** finie (pierres d'about, chaînage du taillé). Poser ou retirer un morceau recalcule les
   tronçons. Chaque morceau reste une pièce à part (poser, retirer, collision, sauvegarde) et montre sa part du dessin du tronçon.
   Les bords d'une pièce s'**aimantent** à ceux de ses voisines à moins de 10 cm (le solin, 50 cm d'épaisseur, sort de la grille de
   20 : il se joint ainsi exactement en angle). Détection : `world/wallRuns.ts` ; dessin : `world/walls.ts`.
+- **Le dessus du taillé vu en long** (nord-sud, même reprise) montre des moellons de longueurs mêlées en deux files, joints décalés,
+  boutisses qui traversent le mur, et non plus deux longs traits parallèles.
 - **Choix : le dessin d'un tronçon se calcule dans le jeu, à la pose**, et non d'avance par longueur et par forme (trop de
   combinaisons : longueurs, bouts, angles, graines). L'algorithme des murs est devenu du code pur de `src/` (`src/world/walls.ts`,
   outils de grille `src/world/gridCanvas.ts`, que `art/` ré-exporte) ; les dessins des pierres lui arrivent en données, écrites par
@@ -351,9 +355,40 @@ d'autres pièces. Ni force, ni aide de la mère, ni ordre de chantier. Plan d'or
   tirage d'un solin ; la dalle, sans collision dans `props.json`, ne bloque pas ; 8 tirages par solin, produits au build plutôt
   que calculés dans le navigateur (le jeu ne lit pas `art/`).
 - **Ce qui viendra** : la harpe visible sur le dessus des angles taillés et une grosse pierre d'angle franche pour le brut (le
-  dessus du carré est aujourd'hui celui du mur nord-sud) ; un angle tenu au nord par un tronçon nord-sud (à éviter : laid) ; les autres éléments composés (pans, couples, pans de toit,
+  dessus du carré est aujourd'hui celui du mur nord-sud) ; les autres éléments composés (pans, couples, pans de toit,
   faîtage, cheminée, cloison) et leur rang d'affichage pour ce qui est en pente ; les portes dans les collisions ; poser un plan
   depuis Tiled ; le chantier guidé tiré d'un plan du bac à sable.
+
+### Les assemblages (décidé le 31 octobre 2026, chantier « assemblages »)
+
+En mode construction, deux poteaux posés bout à bout restaient deux pièces séparées, avec un trait à la jonction, et rien ne disait
+comment elles tenaient. Au Moyen Âge, le charpentier assemble **le bois avec du bois**, sans vis : des pièces taillées pour
+s'emboîter, traversées de chevilles enfoncées au maillet.
+
+- **Un assemblage est une jonction**, pas un objet : son type et ses deux pièces, gardés par GameState (`joints` de chaque carte,
+  `SAVE_VERSION` 14 : une partie plus ancienne n'en a aucun). Famille « assemblages » du catalogue : on le prend, puis on clique sur
+  la **jonction** de deux pièces ; un cercle clair (elles vont ensemble) ou rouge à la jonction visée, et la raison écrite dans le
+  catalogue ; au clic refusé, le message dit pourquoi.
+- **L'enture en trait de Jupiter** ([fiche](objets/scarf-joint.md)) : prolonge une pièce par une autre, bout à bout ; deux pièces
+  de bois de même section et de même état, alignées sur le même axe (est-ouest, nord-sud, ou debout l'une sur l'autre), qui se
+  touchent par un bout. Les pièces entées se dessinent comme **une seule pièce de leur longueur totale**, sans contour à la jonction,
+  avec la marque de l'enture (le biseau en Z, 2 ou 3 chevilles) sur la face visible.
+- **Le tenon et mortaise** ([fiche](objets/mortise-joint.md)) : un poteau debout dont la tête touche le dessous d'une pièce couchée,
+  ou dont le pied repose sur une sablière basse ; la cheville se voit sur la face de la pièce couchée, au droit du poteau.
+- **Même principe que le solin continu** : chaque pièce reste une pièce (pose, retrait, collision, sauvegarde), le dessin est commun
+  (`world/joints.ts` sans Phaser, `world/jointView.ts`).
+- **Retirer** une pièce assemblée est refusé (« Retire d'abord l'assemblage… ») ; un clic droit sur la jonction retire
+  l'assemblage seul ; **Maj + clic droit** retire la pièce, tout ce qui lui est assemblé (de proche en proche) et ce qui repose dessus.
+  Annuler et refaire les suivent ; un plan du bac à sable garde les assemblages de sa zone.
+- **Pas de fabrication** en mode construction. En jeu, plus tard : les **chevilles** (`peg`, déjà au jeu), une **tarière** pour les
+  trous, le **maillet** (`mallet`, déjà au jeu), le ciseau à bois et la scie pour tailler, et un geste par étape (fiches).
+- **À venir** : le **mi-bois** (deux pièces qui se croisent, entaillées chacune de la moitié : la sablière d'angle, la croix d'une
+  cloison), l'**embrèvement** (une pièce en diagonale, la jambe de force ou le chevron, dont le bout s'emboîte en biais dans une autre),
+  la queue d'aronde, l'enfourchement (le chevron sur le faîtage), et le chevillage visible des pans de bois.
+- **Choix faits sans Grégoire** : les marques et les chevilles sont posées par-dessus le dessin de la pièce entière (pas un dessin
+  par longueur) ; une enture ne se pose qu'entre deux pièces dont les emprises sont exactement bout à bout (l'aimant des bords y
+  aide) ; deux pièces de même section mais d'états différents (une ronde, une poutre) ne s'entent pas ; la marque debout n'existe
+  que pour le normal (seul il se dresse).
 
 ## Poids et force (décidé le 30 octobre 2026)
 

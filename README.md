@@ -72,6 +72,7 @@ src/
   state/             GameState : l'état de la partie (les deux mains, changements du monde, objets au sol) ; save.ts : sa sauvegarde (localStorage, version, schéma Zod)
   world/GameMap.ts   construit une carte jouable à partir d'une MapData
   world/walls.ts     les murs de pierre montés par calcul (le solin), pur : l'algorithme de l'essai des murs, un tronçon de toute longueur avec ses têtes et ses angles (`run`), nourri des pierres de src/generated/wallStones.ts (écrit par build-art) ; world/wallRuns.ts trouve les tronçons parmi les pièces posées, world/wallTexture.ts les peint ; world/gridCanvas.ts, les grilles de caractères (art/lib/canvas.ts le ré-exporte)
+  world/joints.ts    les assemblages de charpente du mode construction, sans Phaser (enture en trait de Jupiter, tenon et mortaise : jonctions, ce qui va ensemble et pourquoi pas, suites entées) ; world/jointView.ts leur dessin commun (la pièce entière, la marque de l'enture, la cheville)
   world/build.ts     le mode construction sans Phaser : boîte de chaque pièce posée, hauteur accrochée sur ce qu'il y a dessous, porteurs, ordre d'affichage, sens, plan tiré d'une zone ; world/buildView.ts son image projetée (y − z)
   world/places.ts    le moteur de places commun aux tas et aux chantiers, sans Phaser : places ouvertes, pièces à reprendre, place visée, ordre d'affichage, ce qu'une place accepte (un genre, ou une pièce précise)
   world/pileShape.ts la forme d'un tas dans son sens, son lien (les places viennent de places.ts)
@@ -119,10 +120,12 @@ Un bac à sable pour composer une construction avec tout ce qui existe (CONCEPTI
 | B | entrer dans le mode, en sortir |
 | ZQSD, flèches (Maj : plus vite) | déplacer la caméra ; molette, + et − : zoom |
 | clic gauche | poser ce qu'on a en main (pièce ou plan), là où le montre le fantôme |
-| clic droit | retirer la pièce visée (refusé si elle en porte d'autres) ; Maj + clic droit : avec tout ce qui repose dessus |
+| clic droit | retirer la pièce visée (refusé si elle en porte d'autres ou est assemblée) ; sur la jonction d'un assemblage : l'assemblage seul ; Maj + clic droit : avec tout ce qui repose dessus et tout ce qui lui est assemblé |
 | R | tourner (est-ouest, nord-sud, debout pour la pièce de bois) |
 | T, G (Page haut, Page bas) | monter, descendre d'un cran de 20 cm |
 | Ctrl+Z, Ctrl+Y (Ctrl+Maj+Z) | annuler, refaire |
+
+Les assemblages (famille « assemblages » : enture en trait de Jupiter, tenon et mortaise) se posent d'un clic gauche sur la jonction de deux pièces de bois ; un cercle clair ou rouge marque la jonction visée, et la raison d'un refus s'écrit dans le panneau. Aperçu : `.art-preview/assemblages.png`.
 
 Le panneau : vignettes par famille, recherche, réglages (pièce de bois : diamètre, état, longueur, sens ; matière naturelle : forme, taille), « Rien en main », « Choisir une zone » (glisser), « Enregistrer comme plan » (en développement, `vite.config.ts` écrit `src/content/plans/<nom>.json`), onglet « Plans » pour en poser un d'un coup. Les pièces posées vont dans `builds` de chaque carte (GameState) : on les retrouve en jeu.
 
