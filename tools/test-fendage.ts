@@ -150,7 +150,8 @@ await playtest('fendage', async ({ page, errors, load }) => {
     out.noRoom = notices.filter((n) => /Pas la place/.test(n));
 
     // 4 bis. le coin se plante depuis chacun des quatre bouts : la pièce garde ce bout, les coups ne se donnent que depuis lui
-    // (depuis l'autre bout : le message), et trois coups fendent en deux demi-billes
+    // (depuis l'autre bout : le message), et trois coups fendent en deux demi-billes ; une demi-bille, fendue depuis le même bout,
+    // donne deux quartiers identiques, la face debout de départ de son sens (aucun retourné)
     const ENDS = [
       ['ew', 'west', 'east'],
       ['ew', 'east', 'west'],
@@ -181,7 +182,22 @@ await playtest('fendage', async ({ page, errors, load }) => {
         await press('Space');
         await settled();
       }
-      ends.push({ end, planted, wrongNotice, hitsWrong, halves: pieces('half').length });
+      // la demi-bille de ce bout, fendue à son tour depuis le même bout : deux quartiers identiques, face debout de départ du sens
+      const halves = pieces('half').length;
+      const halfFaces = pieces('half').map((p: any) => p.wood.face ?? null);
+      emit({ kind: 'stamina', value: 100 });
+      await give('splitting-wedge');
+      await standAt(pieces('half')[0], end);
+      await press('Space');
+      await sleep(300);
+      await give('maul');
+      for (let i = 0; i < 3; i++) {
+        await standAt(wedged()[0], end);
+        await press('Space');
+        await settled();
+      }
+      const quarters = pieces('quarter').map((p: any) => ({ ...p.wood }));
+      ends.push({ axis, end, planted, wrongNotice, hitsWrong, halves, halfFaces, quarters });
     }
     out.ends = ends;
 
@@ -295,11 +311,15 @@ await playtest('fendage', async ({ page, errors, load }) => {
     assert.equal(e.wrongNotice, 'Les coups se donnent sur le bout, là où le coin est planté.', `coups depuis l'autre bout de ${e.end} : refusés`);
     assert.equal(e.hitsWrong, 0, 'aucun coup noté depuis l\'autre bout');
     assert.equal(e.halves, 2, `trois coups depuis ${e.end} : deux demi-billes`);
+    assert.deepEqual(e.halfFaces, [null, null], `les demi-billes depuis ${e.end} n'ont pas de face`);
+    const face = e.axis === 'ew' ? 'south' : 'east';
+    const quarter = { size: 'big', length: 100, axis: e.axis, shape: 'quarter', face };
+    assert.deepEqual(e.quarters, [quarter, quarter], `la demi-bille ${e.axis} fendue depuis ${e.end} : deux quartiers identiques, face debout au ${face}`);
   }
   assert.equal(r.turned, '{"prop":"wood-piece","wood":{"size":"big","length":100,"shape":"quarter","axis":"ns","face":"west"}}', 'R tourne le quartier tenu (face au sud par défaut, puis à l\'ouest)');
   assert.deepEqual(r.tour.tour, ['ns:east', 'ew:south', 'ns:west', 'ew:north'], 'R : la face debout suit, nord -> est -> sud -> ouest -> nord');
   assert.equal(r.tour.back, true, 'un tour complet revient au départ');
-  assert.deepEqual(r.quarterFaces, ['north', 'north', 'south', 'south'], 'les deux quartiers d\'une demi-bille naissent faces debout opposées');
+  assert.deepEqual(r.quarterFaces, ['south', 'south', 'south', 'south'], 'les quatre quartiers d\'une bille naissent identiques, aucun retourné');
   assert.ok(r.pile.includes('quarter-100:6'), `tas de quartiers : ${r.pile}`);
   assert.equal(r.long.planted, 1, 'le coin se plante dans une bille de 2 m');
   assert.deepEqual(r.long.hits, [1, 2, 3, 4, 5, -1], '6 coups de masse pour 2 m : la fente court à chaque coup, le 6e la fend');

@@ -180,23 +180,16 @@ export function turnedWood(piece: WoodPiece): WoodPiece {
 
 /**
  * Les deux morceaux d'une pièce qui se fend (`split` de son diamètre) : leurs réglages et le coin bas gauche de chacun par rapport à
- * la pièce. Deux quartiers naissent faces debout opposées, tournées l'une vers l'autre, pour reformer la demi-bille : celui du nord
- * (de l'ouest) a sa face au sud (à l'est), l'autre au nord (à l'ouest).
+ * la pièce. Les morceaux sortent identiques, dans le même sens, aucun retourné : deux quartiers naissent avec la face debout de
+ * départ de leur sens (sud est-ouest, est nord-sud, `faceOf`) ; R les tourne ensuite.
  */
 export function splitPieces(piece: WoodPiece): { piece: WoodPiece; dx: number; dy: number }[] {
-  const { wedge: _w, ...rest } = piece;
+  const { wedge: _w, face: _f, ...rest } = piece;
   const rule = sizeOf(piece.size).split[piece.shape as 'round' | 'half']!;
   // une pièce dressée ne se fend pas : seules les couchées
   const axis = piece.axis as Exclude<WoodAxis, 'up'>;
-  const at = rule[axis];
-  const along = axis === 'ew' ? 1 : 0;
-  const first = at[0][along] <= at[1][along] ? 0 : 1;
-  const faces: End[] = axis === 'ew' ? ['south', 'north'] : ['east', 'west'];
-  return at.map(([dx, dy], i) => ({
-    piece: { ...rest, shape: rule.into, ...(rule.into === 'quarter' ? { face: faces[i === first ? 0 : 1] } : {}) },
-    dx,
-    dy,
-  }));
+  const into: WoodPiece = { ...rest, shape: rule.into, ...(rule.into === 'quarter' ? { face: faceOf({ axis }) } : {}) };
+  return rule[axis].map(([dx, dy]) => ({ piece: { ...into }, dx, dy }));
 }
 
 /** L'aspect tel qu'il est dessiné dans la planche : le quartier a une partie par côté de sa face debout (`quarter-south`). */

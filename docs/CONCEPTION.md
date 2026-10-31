@@ -546,8 +546,11 @@ seul coin : c'est le bois de bout qui s'ouvre le long des fibres, et la fente co
 faut seulement plus de coups pour une pièce plus longue. **Le quartier** est un quart de rond couché sur une de ses faces fendues,
 l'autre face debout d'un côté, l'écorce qui descend en arrondi de l'autre : la pièce garde le côté de sa face debout (`face` : nord ou
 sud est-ouest, est ou ouest nord-sud) ; R (ou le pivot au sol) le tourne d'un quart de tour dans le sens des aiguilles d'une montre,
-la face suit (nord, est, sud, ouest). Les deux quartiers d'une demi-bille naissent côte à côte faces debout opposées, tournées l'une
-vers l'autre : ils reforment la demi-bille. Section : 27,5 × 27,5 cm (le rayon de la bille), 37,5 cm contour compris comme toutes les
+la face suit (nord, est, sud, ouest). Les quartiers d'une demi-bille naissent côte à côte **identiques, dans le même sens**, aucun
+retourné : ils gardent la face debout de départ de leur sens (au sud est-ouest, à l'est nord-sud), que la demi-bille soit est-ouest ou
+nord-sud, qu'elle vienne d'une bille ou non ; R les tourne ensuite. (Corrigé le 31 octobre 2026 en jouant : les deux quartiers
+naissaient faces opposées, tournés l'un vers l'autre pour reformer la demi-bille ; décision annulée, deux pièces identiques se lisent
+mieux et s'empilent sans être retournées.) Section : 27,5 × 27,5 cm (le rayon de la bille), 37,5 cm contour compris comme toutes les
 pièces (gabarit), soit environ 20 × 11 px à 1 m est-ouest et 8 × 18 px nord-sud ; la même épaisseur dans les deux sens. Nord-sud, la
 face coupée au sud (la part de tarte, claire, ses cernes, le cœur du côté de la face debout) fait lire la pièce couchée et non debout.
 

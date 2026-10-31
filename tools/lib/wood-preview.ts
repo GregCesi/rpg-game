@@ -3,7 +3,7 @@
 // puis nord-sud : les pièces rondes de 60 cm, 1 m, 2 m et 4 m ; les 4 images du roulement d'une pièce de 1 m et l'encoche d'une coupe
 // (un tiers, deux tiers) à 1 m du bout d'une pièce de 2 m ; chaque aspect à 1 m puis à 3 m ; pour ce qui se fend, depuis chaque bout,
 // le coin planté, la fente après un et deux coups, le bois ouvert du dernier, et les deux morceaux posés comme le jeu les pose
-// (`split` de wood.json, `splitPieces` : les quartiers faces debout opposées) ; le quartier dans ses quatre positions (face debout au
+// (`split` de wood.json, `splitPieces` : les quartiers identiques, même face debout) ; le quartier dans ses quatre positions (face debout au
 // nord, à l'est, au sud, à l'ouest : un tour de R), à 1 m et 2 m ; debout (le poteau), chaque aspect qui se dresse couché est-ouest et nord-sud à 1 m puis debout à 1 m, 1,80 m et 3 m. Enfin les vues portées (de face, de dos, de profil à 1 m) et l'icône de chaque aspect.
 
 import type { PNG } from 'pngjs';

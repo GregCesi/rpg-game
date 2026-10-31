@@ -105,7 +105,8 @@ bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1
 - Espace, le coin, à un bout d'une bille ou d'une demi-bille du gros, de toute longueur : il se plante d'un coup, sans geste ; depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. » ; le quartier :
   « Trop mince pour le coin. » ; le normal : « Ce bois ne se fend pas : il se coupe et s'équarrit. ». 1 point.
 - Espace, la masse, depuis le bout du coin : 3 coups par mètre commencé (6 pour 2 m ; la fente court, le coin s'enfonce), et deux
-  morceaux (demi-billes, puis quartiers, nés faces debout opposées), le coin au sol ; sans coin : « Il faut d'abord un coin. » ; depuis l'autre bout : « Les coups se donnent sur le bout, là où le coin est
+  morceaux identiques, dans le même sens (demi-billes, puis quartiers, tous nés avec la face debout de départ de leur sens : au sud
+  est-ouest, à l'est nord-sud ; aucun retourné, R les tourne ensuite ; décidé le 31 octobre 2026), le coin au sol ; sans coin : « Il faut d'abord un coin. » ; depuis l'autre bout : « Les coups se donnent sur le bout, là où le coin est
   planté. » ; sans place : « Pas la place pour la fendre. ». 0,8 point le coup.
 
 ## La perche et la planche (chantier « briques », 31 octobre 2026)
