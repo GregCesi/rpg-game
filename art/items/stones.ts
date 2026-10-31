@@ -20,7 +20,7 @@
 // Échelle du jeu (5 cm par pixel, gabarit de docs/STYLE.md section 8 : boîte W × (H + D/2), contour compris, ombre
 // exclue), lumière en haut à gauche, ombre portée `x` décalée d'un pixel vers le sud-est, hors silhouette.
 
-import { Canvas, EMPTY, type Grid } from '../lib/canvas';
+import { Canvas, EMPTY, castShadow, type Grid } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { BRANCH_FIST, fistGap, sheet } from './carried';
@@ -45,15 +45,8 @@ function rect(name: string, g: Grid): Grid {
   return g;
 }
 
-/** Ombre portée : la silhouette décalée d'un pixel vers le sud-est, là où le sol est libre. Ajoute une colonne et une rangée. */
-export function castShadow(g: Grid): Grid {
-  const c = new Canvas(g[0].length + 1, g.length + 1).stamp(g, 0, 0);
-  for (let y = 1; y < c.h; y++) for (let x = 1; x < c.w; x++) {
-    const src = g[y - 1]?.[x - 1] ?? EMPTY;
-    if (c.get(x, y) === EMPTY && src !== EMPTY && src !== 'x') c.set(x, y, 'x');
-  }
-  return c.toGrid();
-}
+/** Ombre portée (src/world/gridCanvas.ts, partagée avec les murs du jeu) : la silhouette décalée d'un pixel vers le sud-est. */
+export { castShadow };
 
 /**
  * Le contour du moellon (manière B) : une matière sans contour (rangées de même largeur) reçoit son contour d'un pixel, à

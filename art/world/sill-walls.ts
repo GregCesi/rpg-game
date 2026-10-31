@@ -1,5 +1,5 @@
 // Le morceau de solin (chantier « mode construction ») : le mur bas de pierre qui porte une sablière, en deux manières, montées
-// par calcul (art/lib/walls.ts, le calcul de l'essai des murs validé par Grégoire : tools/essai-murs.ts) avec les dessins
+// par calcul (src/world/walls.ts, `run` : le tronçon d'un morceau, deux têtes ; le calcul de l'essai des murs validé par Grégoire : tools/essai-murs.ts) avec les dessins
 // mêmes des pierres du jeu :
 //   - le morceau de solin brut (`rough-sill-wall`) : pierres brutes serrées, joints de terre d'1 à 2 px, petites et éclats
 //     de calage ; sur 40 cm de face, une grosse au plus (rognée par l'assise haute), surtout des moyennes et des petites ;
@@ -18,25 +18,16 @@
 
 import type { Grid } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
-import { dressedWall, roughWall, type WallSize } from '../lib/walls';
+import { walls } from '../lib/walls';
+import type { WallKind } from '../../src/world/walls';
 import { stonePalette } from '../items/stones';
 
 /** Nombre de tirages de chaque vue (variants de props.json). */
 export const VARIANTS = 8;
 
-const LENGTH = 32; // 1,60 m
-const FACE = 8; // 40 cm hors du sol
-const TOP = 5; // 50 cm d'épaisseur, en raccourci à ½
-
-/** Le mur est-ouest (r0, r2) et le mur nord-sud (r1, r3 : règle D, dimensions inversées). */
-const EW: WallSize = { length: LENGTH, face: FACE, top: TOP, axis: 'ew' };
-const NS: WallSize = { length: TOP + FACE, face: FACE, top: LENGTH - FACE, axis: 'ns' };
-
-type Build = (seed: number, size: WallSize) => { grid: Grid };
-
-const KINDS: { key: string; build: Build; salt: number }[] = [
-  { key: 'rough-sill-wall', build: roughWall, salt: 101 },
-  { key: 'dressed-sill-wall', build: dressedWall, salt: 211 },
+const KINDS: { key: string; kind: WallKind; salt: number }[] = [
+  { key: 'rough-sill-wall', kind: 'rough', salt: 101 },
+  { key: 'dressed-sill-wall', kind: 'dressed', salt: 211 },
 ];
 
 /** Graine de la vue `view` du tirage `k` : toutes différentes (le demi-tour est un autre tirage). */
@@ -51,7 +42,8 @@ export function sillImage(key: string, k: number, view: number): string {
 export function sillGrid(key: string, k: number, view: number): Grid {
   const kind = KINDS.find((x) => x.key === key);
   if (!kind) throw new Error(`sill-walls : solin ${key} inconnu`);
-  return kind.build(seedOf(kind.salt, k, view), view % 2 ? NS : EW).grid;
+  // le morceau seul est un tronçon d'un morceau, deux têtes (src/world/walls.ts, `run`)
+  return walls.run({ kind: kind.kind, axis: view % 2 ? 'ns' : 'ew', pieces: 1, start: 'head', end: 'head', seed: seedOf(kind.salt, k, view) });
 }
 
 export const SILL_KEYS = KINDS.map((k) => k.key);

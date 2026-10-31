@@ -22,7 +22,7 @@ import { PNG } from 'pngjs';
 import type { Grid } from '../art/lib/canvas';
 import xeros from '../art/characters/xeros';
 import { stonePalette } from '../art/items/stones';
-import { HEADER, ROUGH, RUBBLE, dressedWall, gameImage, roughWall, type Used } from '../art/lib/walls';
+import { HEADER, ROUGH, RUBBLE, dressedWall, gameImage, roughWall, walls, type RunSpec, type Used } from '../art/lib/walls';
 import { SILL_KEYS, VARIANTS, sillGrid, sillImage } from '../art/world/sill-walls';
 import { silhouette } from '../src/content/gabarit';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
@@ -153,6 +153,7 @@ function main() {
   }
   console.log(`essai-murs -> ${out}`);
   sills();
+  enclosure();
 }
 
 /**
@@ -189,6 +190,58 @@ function sills() {
   const out = join(ROOT, '.art-preview', 'solins.png');
   writeFileSync(out, PNG.sync.write(sheet.png));
   console.log(`solins -> ${out}`);
+}
+
+/**
+ * L'enceinte de solin (.art-preview/solin-enceinte.png) : les tronçons montés d'un seul tenant (src/world/walls.ts, `run`), posés
+ * comme le jeu les pose (5 cm par pixel au sol ; un est-ouest a le bas de son image, ombre comprise, à son bord sud ; un
+ * nord-sud a le haut de son image à son bout nord, règle D). Pour chaque manière : un rectangle de 4 × 3 morceaux (est-ouest
+ * de 4 au nord et au sud, qui possèdent les quatre angles ; nord-sud de 3 entre eux, `abut` aux deux bouts, calés au ras du bord
+ * extérieur), une porte au sud (un morceau absent : deux têtes) ; un angle tenu par le nord-sud (son bout sud) ; un tronçon
+ * droit de 3 morceaux ; un morceau seul ; Xéros à côté. Agrandi x4.
+ */
+function enclosure() {
+  type Place = { spec: Omit<RunSpec, 'kind' | 'seed'>; x: number; y: number }; // x, y : coin haut gauche de l'image, en px du jeu
+  const ew = (pieces: number, start: RunSpec['start'], end: RunSpec['end'], x: number, south: number): Place =>
+    ({ spec: { axis: 'ew', pieces, start, end }, x, y: south - 14 });
+  const ns = (pieces: number, start: RunSpec['start'], end: RunSpec['end'], x: number, north: number): Place =>
+    ({ spec: { axis: 'ns', pieces, start, end }, x, y: north });
+  // l'enceinte : 6,40 × 5,80 m, coin nord-ouest en (0, 0) ; puis l'angle tenu par le nord-sud, le droit, le seul
+  const scene: Place[] = [
+    ew(4, 'corner-s', 'corner-s', 0, 10),
+    ns(3, 'abut', 'abut', 0, 10),
+    ns(3, 'abut', 'abut', 128 - 13, 10),
+    ew(2, 'corner-n', 'head', 0, 116),
+    ew(1, 'head', 'corner-n', 96, 116),
+    ns(2, 'head', 'corner-e', 150, 0),
+    ew(2, 'abut', 'head', 160, 64),
+    ew(3, 'head', 'head', 150, 100),
+    ew(1, 'head', 'head', 150, 140),
+  ];
+  const groundW = 260, groundH = 150;
+  const ox = 8, oy = 10; // marge en px du jeu
+  const kinds: RunSpec['kind'][] = ['rough', 'dressed'];
+  const blockH = (groundH + oy + 12) * K;
+  const sheet = new Sheet((groundW + ox * 2) * K + 40, 40 + kinds.length * blockH, GRASS);
+  for (let x = 0; x < sheet.w; x += 32 * K) sheet.rect(x, 0, 1, sheet.h, GRID);
+  for (let y = 0; y < sheet.h; y += 32 * K) sheet.rect(0, y, sheet.w, 1, GRID);
+  sheet.text('ENCEINTE DE SOLIN : TRONCONS D UN SEUL TENANT - BRUT (HAUT), TAILLE (BAS) (X4)', PAD, 12, GOLD, T);
+  kinds.forEach((kind, ki) => {
+    const top = 40 + ki * blockH;
+    const at = (x: number, y: number): [number, number] => [(ox + x) * K, top + (oy + y) * K];
+    // de la plus au nord à la plus au sud (le bas de l'image), comme le jeu les trie
+    const placed = scene.map((p, i) => ({ ...p, grid: walls.run({ ...p.spec, kind, seed: 1000 * (ki + 1) + i * 17 }) }));
+    placed.sort((a, b) => a.y + a.grid.length - (b.y + b.grid.length));
+    for (const p of placed) { const [x, y] = at(p.x, p.y); sheet.blit(p.grid, pal, x, y, K); }
+    // Xéros dans l'enceinte, et à côté du morceau seul
+    for (const [gx, gy] of [[40, 70], [190, 152]] as const) {
+      const [x, y] = at(gx, gy);
+      sheet.blit(xg, xeros.palette, x - xs.x * K, y - (xs.y + xs.h) * K, K);
+    }
+  });
+  const out = join(ROOT, '.art-preview', 'solin-enceinte.png');
+  writeFileSync(out, PNG.sync.write(sheet.png));
+  console.log(`solin-enceinte -> ${out}`);
 }
 
 main();
