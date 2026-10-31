@@ -17,7 +17,7 @@ import { branchBody, finishBranch, shearDown, transpose, type Branch } from './b
 import { axeArt, toolPalette } from './tools';
 import xeros, { SHOULDER_POINTS } from '../characters/xeros';
 import { bundleByTheEnd, faggotBody, outlineBundle } from '../world/faggot';
-import { quarterEW, quarterNS } from '../world/wood-pieces';
+import { plankEW, poleEW, quarterEW, quarterNS } from '../world/wood-pieces';
 
 type View = 'down' | 'up' | 'right';
 
@@ -399,6 +399,20 @@ function normalLong(look: NormalLook): Grid {
   return onGrip(trim(rows));
 }
 
+// ----- La perche (12 cm) et la planche fendue -----
+// Mêmes dessins que la pièce au sol (art/world/wood-pieces.ts) : de profil, la pièce est-ouest de 1 m sans son ombre ; par le
+// bout, la pièce nord-sud raccourcie : l'écorce (ou le dessus de la planche) qui fuit sur deux rangées, puis le bout coupé sous
+// les mains.
+
+/** Perche par le bout : l'écorce S A B qui fuit, la face de coupe de 3 × 2 (Y t, le cœur T, cerclée de B). */
+const POLE_END: Grid = ['.KKK.', 'KSABo', 'KSABo', 'KYtBo', 'KtTBo', '.ooo.'];
+
+/** Planche par le bout : le dessus qui fuit (l'aubier d à gauche, le bois frais Y t, la rive T), le bois de bout (une rangée, ses cernes en travers). */
+const PLANK_END: Grid = ['.NNNNN.', 'NdYttTo', 'NdYttTo', 'NYtYtTo', '.ooooo.'];
+
+const poleLong = (): Grid => onGrip(trim(poleEW(PREVIEW_LEN, 0).toGrid()));
+const plankLong = (): Grid => onGrip(trim(plankEW(PREVIEW_LEN).toGrid()));
+
 // ----- Les planches -----
 
 const woodSheet = (name: string, end: Grid, long: Grid): SpriteSheetSource =>
@@ -408,6 +422,8 @@ const heldWood = (): SpriteSheetSource[] => [
   woodSheet('held-wood-big-round', bigRoundEnd(), bigRoundLong()),
   woodSheet('held-wood-big-half', bigFlatEnd(11, 4, 6), bigFlatLong(5, 11, 2.5)),
   woodSheet('held-wood-big-quarter', quarterEnd(), quarterLong()),
+  woodSheet('held-wood-big-plank', onGrip(PLANK_END, 3), plankLong()),
+  woodSheet('held-wood-pole-round', onGrip(POLE_END, 3), poleLong()),
   woodSheet('held-wood-normal-round', normalRoundEnd(), normalLong('round')),
   ...(['f1', 'f2', 'f3'] as const).map((l) => woodSheet(`held-wood-normal-${l}`, normalHewnEnd(l), normalLong(l))),
   woodSheet('held-wood-normal-beam', normalHewnEnd('beam'), normalLong('beam')),

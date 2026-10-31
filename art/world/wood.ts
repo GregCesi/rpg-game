@@ -25,6 +25,8 @@ export interface Wood {
   diameter: number;
   furrows: [number, number, number, number][];
   endA: number;
+  /** Teintes de l'écorce, si ce n'est pas la rampe du bois (M m N K) : chaque teinte de la rampe -> la sienne. */
+  ramp?: Record<string, string>;
 }
 
 /** Le gros arbre : tronc de 55 cm, 11 px d'écorce. */
@@ -52,6 +54,22 @@ export const NORMAL_WOOD: Wood = {
   endA: 2,
 };
 
+/**
+ * La perche (`pole` de wood.json) : un jeune arbre de taillis, 12 cm de bois, 3 px d'écorce (22 cm contour compris). Écorce
+ * lisse et fine, gris-brun : la rampe du bois grisé de la palette (S A B, plus claire et plus froide que M m N ; Q pour les
+ * gerçures), K pour le contour. Un seul couloir de gerçures, courtes et rares (l'écorce lisse). Bouts ovales de 2 px de large
+ * (Ø 22 cm ÷ 2).
+ */
+export const POLE_WOOD: Wood = {
+  diameter: 3,
+  furrows: [[1, 17, 2, 3]],
+  endA: 1,
+  ramp: { M: 'S', m: 'A', N: 'B', K: 'Q' },
+};
+
+/** Teinte d'écorce de la perche un cran plus sombre (sa rampe S A B, puis Q et K). */
+export const POLE_DARKER: Record<string, string> = { S: 'A', A: 'B', B: 'Q', Q: 'K', K: 'K' };
+
 /** Écorce, de la lumière à l'ombre (palette `world`). */
 export const BARK = ['M', 'm', 'N', 'K'] as const;
 
@@ -77,7 +95,8 @@ export function furrowAt(along: number, s: number, wood: Wood = BIG_WOOD): boole
 /** Écorce en un point du tronc : la rampe, creusée par les sillons. */
 export function bark(along: number, s: number, wood: Wood = BIG_WOOD): string {
   const b = barkTone(s);
-  return furrowAt(along, s, wood) ? DARKER[b] : b;
+  const k = furrowAt(along, s, wood) ? DARKER[b] : b;
+  return wood.ramp?.[k] ?? k;
 }
 
 /**

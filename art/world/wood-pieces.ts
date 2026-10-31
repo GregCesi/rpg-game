@@ -3,11 +3,12 @@
 // diamètre et par aspect. Contrat : src/world/woodShape.ts (tailles, placements, `composeOps`) et la géométrie de
 // src/content/wood.json. Le jeu assemble à la volée avec les mêmes opérations que `composeWood` ci-dessous.
 //
-// Cinq planches, une par diamètre et par sens : `wood-big`, `wood-big-ns`, `wood-normal`, `wood-normal-ns`, et debout (le poteau,
-// le normal seulement) `wood-normal-up` (rond, f1, f2, f3, poutre : `<aspect>-start|mid|end`, une image chacune, `normalUpSheet`).
+// Sept planches, une par diamètre et par sens : `wood-big`, `wood-big-ns`, `wood-normal`, `wood-normal-ns`, `wood-pole`,
+// `wood-pole-ns` (la perche : le rond seul, `poleSheet`), et debout (le poteau, le normal seulement) `wood-normal-up` (rond, f1, f2, f3, poutre : `<aspect>-start|mid|end`, une image chacune, `normalUpSheet`).
 // Chaque partie est calée en haut à gauche d'un cadre commun. Animations :
 // - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` (gros : round, half ; normal : round, f1, f2, f3, beam) ; le rond a
 //   4 images (le roulement, un tour), les autres une ;
+// - gros seulement, la planche fendue (`plank-start|mid|end`, une image : `plankEW`, `plankNS`) ;
 // - gros seulement, le quartier : une partie par côté de sa face fendue debout (une image chacune), `quarter-north|south-
 //   start|mid|end` dans la planche est-ouest, `quarter-east|west-start|mid|end` dans la planche nord-sud ;
 // - `notch1`, `notch2` : la bande d'encoche de la coupe à la cognée (un tiers, deux tiers), 4 images comme le rond ;
@@ -61,7 +62,7 @@ import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { toolPalette } from '../items/tools';
 import { despeckle, shadedOutline } from './big-tree';
-import { barkTone, DARKER, faceTone, logEnd } from './wood';
+import { barkTone, DARKER, faceTone, logEnd, POLE_DARKER } from './wood';
 import {
   WOOD, composeOps, framesOf, lookDef, lookOf, sizeOf, woodSize, type ComposeOpts, type WoodAxis,
 } from '../../src/world/woodShape';
@@ -853,6 +854,11 @@ function bigSheet(axis: LyingAxis): SheetParts {
     const parts = cut3(c, axis, q.start, q.end, `quarter-${face}-${axis}`);
     for (const part of PARTS) anims[`quarter-${face}-${part}`] = [parts[part]];
   }
+  // la planche fendue, couchée à plat
+  const pl = lookDef('big', 'plank')[axis];
+  const plTotal = refTotal(pl.start, pl.end);
+  const plParts = cut3(axis === 'ew' ? plankEW(plTotal - 1) : plankNS(plTotal), axis, pl.start, pl.end, `plank-${axis}`);
+  for (const part of PARTS) anims[`plank-${part}`] = [plParts[part]];
   for (const d of [1, 2] as const) anims[`notch${d}`] = (axis === 'ew' ? BIG_EW_NOTCH : nsNotch(BIG_EW_NOTCH, lookDef('big', 'round').ns.w))[d];
   for (const look of ['round', 'half'] as const) splitParts(look, axis, anims);
   return { axis, frame: frameOf('big', axis), anims };
@@ -1074,6 +1080,180 @@ function normalUpSheet(): SheetParts {
 }
 
 // =====================================================================================================================
+// La planche fendue (gros bois, `plank`)
+// =====================================================================================================================
+// Une planche de chêne fendue au coutre dans un quartier ou une demi-bille : 3 cm sur 25 de bois (`plank` de wood.json), couchée
+// à plat. Est-ouest (20 × 6 px à 1 m : le dessus en raccourci, 35 cm ÷ 10 = 3,5, et la rive sud, 13 cm ÷ 5 = 2,6), image
+// (n + 1) × 7 : rangée 0 le contour du haut (N, la teinte la plus sombre du bois frais), 1 la rive d'aubier au nord (d, plus
+// clair que le cœur ; elle déborde par endroits sur la rangée 2 : le fil n'est pas droit, la planche est fendue, pas sciée),
+// 2 et 3 le dessus de bois frais (Y puis t), ses fibres en tirets d'un cran plus sombres qui ondulent d'une rangée à l'autre,
+// 4 la rive sud, l'épaisseur, dans l'ombre (T, fil N), 5 le contour du bas (o), 6 l'ombre. Les bouts sont coupés droit : à
+// l'ouest, le bois de bout éclairé (une colonne Y t, la face en raccourci) ; à l'est, dans l'ombre (T). Nord-sud (règle D :
+// 6 × 20 px à 1 m), image 7 × (n + 2) : la même tournée, l'aubier à l'ouest (côté lumière), le dessus en colonnes, la rive
+// d'ombre à l'est ; au sud, le bout coupé (une rangée de bois de bout, t, ses cernes en T), contour, ombre au sud et à l'est.
+
+/** Fibres du dessus : couloir (0 la rangée claire, 1 la rangée sombre), tirets [début, longueur] sur 24 px ; un tiret passe d'un couloir à l'autre à mi-longueur (le fil ondule). */
+const PLANK_FIBRES: [number, number, number][] = [
+  [0, 1, 5], [0, 13, 4], [1, 7, 4], [1, 18, 5], [0, 21, 3],
+];
+/** Là où l'aubier déborde sur la rangée claire du dessus (colonnes sur 24 px). */
+const PLANK_SAP: [number, number][] = [[4, 4], [16, 3]];
+/** Fil de la rive d'ombre (l'épaisseur) : tirets N sur 24 px. */
+const PLANK_EDGE: [number, number][] = [[2, 3], [11, 2], [19, 3]];
+
+/** Bois de la planche à `along` (le long de la pièce), `across` en travers (0 l'aubier, côté lumière ; 1, 2 le dessus ; 3 la rive d'ombre). */
+function plankTone(along: number, across: number): string {
+  const a = mod(Math.floor(along), TILE);
+  const inDash = (st: number, n: number) => mod(a - st, TILE) < n;
+  if (across === 0) return 'd';
+  if (across === 3) return PLANK_EDGE.some(([st, n]) => inDash(st, n)) ? 'N' : 'T';
+  if (across === 1 && PLANK_SAP.some(([st, n]) => inDash(st, n))) return 'd';
+  const base = across === 1 ? 'Y' : 't';
+  const hit = PLANK_FIBRES.some(([lane, st, n]) => {
+    if (!inDash(st, n)) return false;
+    const second = mod(a - st, TILE) >= Math.ceil(n / 2);
+    return across - 1 === (second ? 1 - lane : lane);
+  });
+  return hit ? HEWN_DARKER[base] : base;
+}
+
+/** Planche est-ouest de n px (image n + 1 × 7). */
+export function plankEW(n: number): Canvas {
+  const c = new Canvas(n + 1, 7);
+  for (let X = 0; X < n; X++) {
+    c.set(X, 0, 'N');
+    for (let r = 0; r < 4; r++) c.set(X, r + 1, plankTone(X, r));
+    c.set(X, 5, 'o');
+  }
+  // bout ouest, coupé droit, vers la lumière : le contour, le bois de bout clair
+  for (let Y = 1; Y <= 4; Y++) c.set(0, Y, 'N');
+  c.set(0, 0, EMPTY).set(0, 5, EMPTY);
+  c.set(1, 1, 'Y').set(1, 2, 'Y').set(1, 3, 't').set(1, 4, 't');
+  // bout est, dans l'ombre : le bois de bout sombre, le contour
+  for (let Y = 1; Y <= 4; Y++) { c.set(n - 2, Y, Y === 4 ? 'N' : 'T'); c.set(n - 1, Y, 'o'); }
+  c.set(n - 1, 0, EMPTY).set(n - 1, 5, EMPTY).set(n - 2, 5, 'o');
+  for (let X = 2; X <= n; X++) c.set(X, 6, 'x');
+  return c;
+}
+
+/** Planche nord-sud de h = n + 2 rangées (image 7 × h). */
+export function plankNS(h: number): Canvas {
+  const n = h - 2;
+  const c = new Canvas(7, h);
+  for (let Y = 1; Y <= n - 3; Y++) {
+    c.set(0, Y, 'N');
+    for (let r = 0; r < 4; r++) c.set(r + 1, Y, plankTone(Y, r));
+    c.set(5, Y, 'o');
+  }
+  // bout nord, lointain : le contour, la fibre tranchée un cran plus sombre
+  for (let X = 1; X <= 4; X++) c.set(X, 0, 'N');
+  c.set(1, 1, 'Y').set(2, 1, 't').set(3, 1, 'T').set(4, 1, 'T');
+  // bout sud, coupé droit, tourné vers nous : une rangée de bois de bout (t, cernes T), le contour
+  c.set(0, n - 2, 'N');
+  ['Y', 't', 'T', 't'].forEach((q, i) => c.set(i + 1, n - 2, q));
+  c.set(5, n - 2, 'o');
+  for (let X = 1; X <= 4; X++) c.set(X, n - 1, 'o');
+  nsGroundShadow(c, 1);
+  return c;
+}
+
+// =====================================================================================================================
+// La perche (`pole`)
+// =====================================================================================================================
+// Un jeune arbre de taillis, 12 cm de bois, 22 cm contour compris (`POLE_WOOD` de wood.ts) : écorce lisse et fine, gris-brun (la
+// rampe S A B du bois grisé, plus claire et plus froide que l'écorce M m N du normal ; K pour le contour). Est-ouest (20 × 5 px à
+// 1 m : Ø × 1,12 = 4,9), image (n + 1) × 6 : rangée 0 le contour du haut (K), 1 à 3 l'écorce (S éclairée, A, B dans l'ombre), 4
+// le contour du bas (o), 5 l'ombre. À l'ouest, la face de coupe, un ovale de 2 × 3 px (Y t, le cœur T) cerclé d'écorce (B) ; à l'est, l'écorce qui s'enroule, un cran plus sombre.
+// Nord-sud (règle D : 5 × 20 px), image 6 × (n + 2) : l'écorce sur 3 colonnes, éclairée à l'ouest ; au nord, le bout lointain
+// arrondi, un cran plus sombre ; au sud, la face de coupe de 3 × 2 ; ombre au sud et à l'est. Roule : 4 images, l'anneau
+// d'écorce de 8 rangées (un peu moins de trois fois les 3 visibles : le tour d'une perche de 3 px) tourne de 2 rangées par image ;
+// ses gerçures sont de courts tirets droits (2 ou 3 px), rares : l'écorce lisse.
+
+/** Anneau d'écorce de la perche : 8 rangées ; gerçures (rangée de l'anneau, tirets [début, longueur] sur 24 px). */
+const POLE_RING = 8;
+const POLE_MARKS: [number, [number, number][]][] = [
+  [1, [[3, 2], [15, 3]]],
+  [3, [[9, 3], [21, 2]]],
+  [5, [[0, 2], [12, 2]]],
+  [7, [[6, 2], [18, 3]]],
+];
+const POLE_TONES = ['S', 'A', 'B'];
+
+/** Écorce de la perche à `along`, rangée visible `v` (0 côté lumière à 2), à l'image k du roulement. */
+function poleBark(along: number, v: number, k: number): string {
+  const row = mod(v - 2 * k, POLE_RING);
+  const a = mod(Math.floor(along), TILE);
+  const base = POLE_TONES[v];
+  const hit = POLE_MARKS.some(([r, dashes]) => r === row && dashes.some(([st, n]) => mod(a - st, TILE) < n));
+  return hit ? POLE_DARKER[base] : base;
+}
+
+/** Perche est-ouest de n px (image n + 1 × 6), à l'image k. */
+export function poleEW(n: number, k: number): Canvas {
+  const c = new Canvas(n + 1, 6);
+  for (let X = 0; X < n; X++) {
+    c.set(X, 0, 'K');
+    for (let v = 0; v < 3; v++) c.set(X, v + 1, poleBark(X, v, k));
+    c.set(X, 4, 'o');
+  }
+  // bout ouest : la face de coupe, cerclée d'écorce, coins arrondis
+  const start = ['.KKK', 'KYtB', 'KtTB', 'KttB', '.ooo'];
+  start.forEach((row, Y) => [...row].forEach((q, X) => c.set(X, Y, q)));
+  // bout est : l'écorce qui s'enroule, un cran plus sombre, coins arrondis
+  for (let Y = 1; Y <= 3; Y++) { c.set(n - 2, Y, POLE_DARKER[c.get(n - 2, Y)] ?? c.get(n - 2, Y)); c.set(n - 1, Y, 'o'); }
+  c.set(n - 1, 0, EMPTY).set(n - 1, 4, EMPTY);
+  for (let X = 2; X <= n; X++) c.set(X, 5, 'x');
+  return c;
+}
+
+/** Perche nord-sud de h = n + 2 rangées (image 6 × h), à l'image k. */
+export function poleNS(h: number, k: number): Canvas {
+  const n = h - 2;
+  const c = new Canvas(6, h);
+  for (let Y = 1; Y <= n - 2; Y++) {
+    c.set(0, Y, 'K');
+    for (let v = 0; v < 3; v++) c.set(v + 1, Y, poleBark(Y, v, k));
+    c.set(4, Y, 'o');
+  }
+  // bout nord, lointain : le contour arrondi, l'écorce un cran plus sombre
+  for (let X = 1; X <= 3; X++) { c.set(X, 0, 'K'); c.set(X, 1, POLE_DARKER[c.get(X, 1)]); }
+  // bout sud : la face de coupe (3 × 2), le contour arrondi
+  ['Y', 't', 'B'].forEach((q, i) => c.set(i + 1, n - 3, q));
+  ['t', 'T', 'B'].forEach((q, i) => c.set(i + 1, n - 2, q));
+  for (let X = 1; X <= 3; X++) c.set(X, n - 1, 'o');
+  nsGroundShadow(c, 1);
+  return c;
+}
+
+// La coupe à la cognée : bande de 3 colonnes (notch.ew.w), la coupe à la colonne 2 (notch.ew.at), la saignée (K) en colonne 1, le
+// flanc ouest de l'entaille en bois frais (Y t). Mêmes images que le gros et le normal : dessus, face sud, dessous, nord.
+const POLE_EW_NOTCH: Record<1 | 2, Grid[]> = {
+  1: [
+    ['K.K', 'YKS', 'AAA', 'BBB', 'ooo', 'xxx'],
+    ['KKK', 'SSS', 'YKA', 'BBB', 'ooo', 'xxx'],
+    ['KKK', 'SSS', 'AAA', 'BKB', 'ooo', 'xxx'],
+    ['K.K', 'SKS', 'AAA', 'BBB', 'ooo', 'xxx'],
+  ],
+  2: [
+    ['...', 'K.K', 'YKA', 'BBB', 'ooo', 'xxx'],
+    ['KKK', 'YKS', 'tKA', 'BKB', 'ooo', 'xxx'],
+    ['KKK', 'SSS', 'AKA', 'KKK', 'o.o', 'xxx'],
+    ['K.K', 'SKS', 'AKA', 'BBB', 'ooo', 'xxx'],
+  ],
+};
+
+function poleSheet(axis: LyingAxis): SheetParts {
+  const anims: Record<string, Grid[]> = {};
+  const g = lookDef('pole', 'round')[axis];
+  const total = refTotal(g.start, g.end);
+  const frames = [...Array(framesOf('round')).keys()].map((k) =>
+    cut3(axis === 'ew' ? poleEW(total - 1, k) : poleNS(total, k), axis, g.start, g.end, `pole-round-${axis}-${k}`));
+  for (const part of PARTS) anims[`round-${part}`] = frames.map((p) => p[part]);
+  for (const d of [1, 2] as const) anims[`notch${d}`] = (axis === 'ew' ? POLE_EW_NOTCH : nsNotch(POLE_EW_NOTCH, lookDef('pole', 'round').ns.w))[d];
+  return { axis, frame: frameOf('pole', axis), anims };
+}
+
+// =====================================================================================================================
 // Planches et assemblage
 // =====================================================================================================================
 
@@ -1095,6 +1275,7 @@ function frameOf(size: string, axis: WoodAxis): { w: number; h: number } {
 const SHEETS: Record<string, Partial<Record<WoodAxis, SheetParts>>> = {
   big: { ew: bigSheet('ew'), ns: bigSheet('ns') },
   normal: { ew: normalSheet('ew'), ns: normalSheet('ns'), up: normalUpSheet() },
+  pole: { ew: poleSheet('ew'), ns: poleSheet('ns') },
 };
 
 /**
@@ -1156,11 +1337,17 @@ export default [
   sheetSource('normal', SHEETS.normal.ew!),
   sheetSource('normal', SHEETS.normal.ns!),
   sheetSource('normal', SHEETS.normal.up!),
+  sheetSource('pole', SHEETS.pole.ew!),
+  sheetSource('pole', SHEETS.pole.ns!),
   img('wood-normal-beam-300-up', composeWood({ size: 'normal', shape: 'round', axis: 'up', length: 300, hewn: WOOD.hew.faces * WOOD.hew.perFace })),
   img('wood-big-round-100', composeWood(piece('big', 'round', 'ew'))),
   img('wood-big-round-100-ns', composeWood(piece('big', 'round', 'ns'))),
   img('wood-normal-round-100', composeWood(piece('normal', 'round', 'ew'))),
   img('wood-normal-round-100-ns', composeWood(piece('normal', 'round', 'ns'))),
+  img('wood-pole-round-100', composeWood(piece('pole', 'round', 'ew'))),
+  img('wood-pole-round-100-ns', composeWood(piece('pole', 'round', 'ns'))),
+  img('wood-big-plank-100', composeWood(piece('big', 'plank', 'ew'))),
+  img('wood-big-plank-100-ns', composeWood(piece('big', 'plank', 'ns'))),
   img('wood-big-quarter-north-100', composeWood(piece('big', 'quarter', 'ew', 100, 'north'))),
   img('wood-big-quarter-south-100', composeWood(piece('big', 'quarter', 'ew', 100, 'south'))),
   img('wood-big-quarter-east-100-ns', composeWood(piece('big', 'quarter', 'ns', 100, 'east'))),

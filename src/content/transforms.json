@@ -29,5 +29,13 @@
     "gesture": {"system": "systems/wood.ts", "keys": "le coin planté dans le bout (Espace), puis la masse depuis ce bout (Espace, 3 coups par mètre)"}},
   "hew-beam": {"name": "équarrir une poutre", "inputs": [{"wood": {"size": "normal", "shape": "round"}}], "outputs": [{"wood": {"size": "normal", "shape": "round", "hewn": 12}}],
     "waste": {"name": "copeaux de doloire", "fate": "ils partent au feu"}, "tools": ["broadaxe"], "station": "ground", "trade": "carpenter",
-    "gesture": {"system": "systems/wood.ts", "keys": "la doloire contre le flanc, Espace : 3 coups par face, 4 faces"}}
+    "gesture": {"system": "systems/wood.ts", "keys": "la doloire contre le flanc, Espace : 3 coups par face, 4 faces"}},
+  "pole-from-top": {"name": "tirer une perche de la flèche", "inputs": [{"prop": "normal-felled-tree"}], "outputs": [{"wood": {"size": "normal", "shape": "round", "length": 340}}, {"wood": {"size": "pole", "shape": "round", "length": 360}}],
+    "waste": {"name": "houppier et rameaux", "fate": "ils partent au feu"}, "tools": ["axe"], "station": "ground", "trade": "woodcutter", "gesture": "soon"},
+  "rive-plank": {"name": "fendre des planches dans un quartier", "inputs": [{"wood": {"size": "big", "shape": "quarter"}}], "outputs": [{"wood": {"size": "big", "shape": "plank"}, "count": 5}],
+    "waste": {"name": "le cœur, l'aubier et les éclats", "fate": "ils partent au feu"}, "tools": ["froe", "mallet"], "station": "brake", "trade": "splitter", "gesture": "soon"},
+  "rive-plank-half": {"name": "fendre des planches dans une demi-bille", "inputs": [{"wood": {"size": "big", "shape": "half"}}], "outputs": [{"wood": {"size": "big", "shape": "plank"}, "count": 8}],
+    "waste": {"name": "le cœur, l'aubier et les éclats", "fate": "ils partent au feu"}, "tools": ["froe", "mallet"], "station": "brake", "trade": "splitter", "gesture": "soon"},
+  "rive-shingle": {"name": "fendre des bardeaux", "inputs": [{"wood": {"size": "big", "shape": "quarter", "length": 60}}], "outputs": [{"item": "shingle", "count": 16}],
+    "waste": {"name": "le bout recoupé, le cœur et l'aubier", "fate": "ils partent au feu"}, "tools": ["froe", "mallet"], "station": "brake", "trade": "splitter", "gesture": "soon"}
 }

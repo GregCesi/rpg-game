@@ -202,6 +202,8 @@ const PILE_WOOD: PileWood[] = [
   { size: 'big', shape: 'half', length: 60 },
   { size: 'normal', shape: 'round', length: 180, hewn: 12 },
   { size: 'normal', shape: 'round', length: 100, hewn: 6 },
+  { size: 'pole', shape: 'round', length: 200 },
+  { size: 'big', shape: 'plank', length: 200 },
 ];
 
 /** L'image d'une place de tas : celle des sources (piles.json), ou la pièce de bois assemblée à sa longueur (comme GameMap.placeImage). */

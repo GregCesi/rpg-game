@@ -81,7 +81,7 @@ export class Sheet {
   }
   text(s: string, x: number, y: number, c: Rgb, k = 2): void {
     // la police n'a que les majuscules sans accent : « Pierre de taille, 31,2 kg » s'écrit PIERRE DE TAILLE, 31,2 KG
-    [...s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/×/g, 'X').toUpperCase()].forEach((ch, n) => {
+    [...s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/×/g, 'X').replace(/œ/g, 'oe').toUpperCase()].forEach((ch, n) => {
       const g = GLYPHS[ch] ?? GLYPHS[' '];
       for (let j = 0; j < 5; j++) for (let i = 0; i < 3; i++) if (g[j * 3 + i] === '1') this.rect(x + (n * 4 + i) * k, y + j * k, k, k, c);
     });

@@ -1,7 +1,7 @@
 // Test de scénario des matières (chantier « briques »), dans le vrai jeu (voir tools/lib/playtest.ts) : une grosse pierre brute donnée
 // (sa forme et sa taille tirées), transformée en moellon par ?dieu (« Transformer » : la masse baisse, les éclats restent au sol),
 // puis deux moellons posés l'un contre l'autre : un tas naît ; de même la terre mêlée en torchis (trois mottes, une gerbe de paille
-// et un seau d'eau au sol : trois mottes de torchis et le seau vide), mise en tas, et la branche parée en baguette, mise en tas ; une
+// et un seau d'eau au sol : trois mottes de torchis et le seau vide), mise en tas, la branche parée en baguette, mise en tas, un quartier fendu en cinq planches et deux perches en tas ; une
 // transformation à qui il manque une entrée ne change rien ; puis la page rechargée : tout est retrouvé, la pierre posée seule avec
 // sa forme et sa taille.
 // Usage : npm run test:briques (lancé aussi par npm run test).
@@ -68,7 +68,7 @@ await playtest('briques', async ({ page, errors }) => {
       await press('KeyQ');
       await send({ kind: 'give', held: what });
       await press('KeyQ');
-      return ms().piles.map((p: any) => `${p.pile}:${p.places.length}`);
+      return ms().piles.map((p: any) => `${p.pile ?? `${p.wood.size}-${p.wood.shape}-${p.wood.length}`}:${p.places.length}`);
     };
 
     await send({ kind: 'stamina-infinite', on: true });
@@ -136,7 +136,21 @@ await playtest('briques', async ({ page, errors }) => {
       out.rod = { before, after: carried(), held: held() };
     }
     out.rodPiles = await pileOf({ item: 'wattle-rod' });
-    out.piles = ms().piles.map((p: any) => `${p.pile}:${p.places.length}`).sort();
+
+    // 4. le bois travaillé : un quartier de 1 m fendu au coutre en cinq planches (au sol, à côté), une perche de 2 m mise en tas
+    {
+      const [x, y] = find(110, 90);
+      await standAt(x + 55, y + 10, 'down');
+      await send({ kind: 'give', held: { prop: 'wood-piece', wood: { size: 'big', shape: 'quarter', length: 100, axis: 'ew' } } });
+      const before = carried();
+      const planks = () => ms().spawned.filter((o: any) => o.type === 'wood-piece' && o.wood?.shape === 'plank');
+      const n = planks().length;
+      await send({ kind: 'transform', id: 'rive-plank' }, 300);
+      const kinds = planks().slice(n).map((o: any) => `${o.wood.size}:${o.wood.length}`);
+      out.planks = { before, kinds, inHand: held()?.wood?.shape ?? null };
+    }
+    out.polePiles = await pileOf({ prop: 'wood-piece', wood: { size: 'pole', shape: 'round', length: 200, axis: 'ew' } });
+    out.piles = ms().piles.map((p: any) => `${p.pile ?? `${p.wood.size}-${p.wood.shape}-${p.wood.length}`}:${p.places.length}`).sort();
     out.chipsTotal = ms().spawned.filter((o: any) => o.type === 'stone-chips').length;
     out.notices = notices;
     return out;
@@ -171,6 +185,13 @@ await playtest('briques', async ({ page, errors }) => {
   assert.ok(r.rod.after < r.rod.before, `la baguette pèse moins que la branche : ${r.rod.after} < ${r.rod.before}`);
   assert.ok(r.rodPiles.includes('wattle-rods:2'), `deux baguettes font un tas : ${r.rodPiles}`);
 
+  // le bois travaillé
+  assert.ok(Math.abs(r.planks.before - 53.46) < 0.1, `le quartier de 1 m pèse 53,5 kg (${r.planks.before})`);
+  const handPlank = r.planks.inHand === 'plank' ? 1 : 0;
+  assert.equal(r.planks.kinds.length + handPlank, 5, `cinq planches : ${r.planks.kinds}`);
+  assert.ok(r.planks.kinds.every((k: string) => k === 'big:100'), 'de la longueur du quartier');
+  assert.ok(r.polePiles.includes('pole-round-200:2'), `deux perches font un tas : ${r.polePiles}`);
+
   // la page rechargée : les tas, les éclats et la pierre posée seule sont retrouvés
   await page.reload();
   await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
@@ -182,7 +203,7 @@ await playtest('briques', async ({ page, errors }) => {
     const ms = gs.mapState(gs.game, w.map.def.id);
     return {
       map: w.map.def.id,
-      piles: ms.piles.map((p: any) => `${p.pile}:${p.places.length}`).sort(),
+      piles: ms.piles.map((p: any) => `${p.pile ?? `${p.wood.size}-${p.wood.shape}-${p.wood.length}`}:${p.places.length}`).sort(),
       shown: w.map.piles.reduce((n: number, p: any) => n + p.pile.places.length, 0),
       chips: w.map.props.filter((p: any) => p.type === 'stone-chips').length,
       lone: w.map.ground.filter((q: any) => q.item.item === 'big-rough-stone').map((q: any) => q.item.natural),
@@ -197,5 +218,5 @@ await playtest('briques', async ({ page, errors }) => {
   assert.equal(after.chips, r.chipsTotal, 'les éclats aussi');
   assert.deepEqual(after.lone, r.loneGround, 'la pierre seule, avec sa forme et sa taille');
   assert.deepEqual(after.loneImage, r.loneGround.map((n: any) => (n.form ? 'big-rough-stone-ground-b' : 'big-rough-stone-ground')), 'dessinée dans sa forme');
-  console.log('  ✓ briques : pierre brute dégrossie en moellon (éclats au sol) puis en pierre de taille, terre mêlée en torchis, branche parée en baguette, chacun en tas, la forme et la taille d\'une pierre gardées, tout retrouvé après rechargement');
+  console.log('  ✓ briques : pierre brute dégrossie en moellon (éclats au sol) puis en pierre de taille, terre mêlée en torchis, branche parée en baguette, quartier fendu en planches, perches, chacun en tas, la forme et la taille d\'une pierre gardées, tout retrouvé après rechargement');
 });

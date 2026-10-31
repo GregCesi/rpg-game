@@ -7,7 +7,7 @@ import { ball, capsule, darkest, outline } from './lib';
 import { branchBody, centerIn, diagonal, finishBranch, type Branch } from './branch';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
-import { NORMAL_WOOD, bark, paintFace } from '../world/wood';
+import { NORMAL_WOOD, POLE_WOOD, bark, paintFace } from '../world/wood';
 import { shadedOutline } from '../world/big-tree';
 import { pie } from '../world/wood-pieces';
 import { strawIconCanvas } from './fibres';
@@ -377,6 +377,37 @@ function beamIcon(): Canvas {
   return outline(c, 'K');
 }
 
+/**
+ * La perche (12 cm, longue) : un bâton fin en travers de toute l'icône, du bas à gauche au haut à droite, écorce lisse gris-brun
+ * (`POLE_WOOD` : A B Q), le bout coupé en bas à gauche (Y t), contour K.
+ */
+function poleIcon(): Canvas {
+  const c = new Canvas(S, S);
+  const [x0, y0, x1, y1] = [2.6, 13.2, 13.4, 2.8];
+  capsule(c, x0, y0, x1, y1, 1.25, (t, a) => bark(t * 20, (a + 1) / 2, POLE_WOOD));
+  c.set(2, 13, 'Y').set(3, 13, 't').set(2, 12, 't');
+  return outline(c, 'K');
+}
+
+/**
+ * La planche fendue, de biais : la planche est-ouest au sol (art/world/wood-pieces.ts) cisaillée, qui monte vers la droite d'un
+ * pixel tous les deux. Chaque colonne : l'aubier (d), le dessus de bois frais (Y, ses fibres t en long), la rive d'épaisseur
+ * dans l'ombre (T). Les bouts coupés droit : à gauche, vers la lumière, le bois de bout clair (Y t) ; à droite, dans l'ombre (T).
+ */
+function plankIcon(): Canvas {
+  const c = new Canvas(S, S);
+  const x0 = 2, x1 = 13;
+  const FIBRE = [3, 4, 8, 9];
+  for (let X = x0; X <= x1; X++) {
+    const y = 10 - Math.floor((X - x0) / 2);
+    const col = ['d', 'Y', FIBRE.includes(X) ? 't' : 'Y', 'T'];
+    if (X === x0) col.splice(0, 4, 'Y', 'Y', 't', 't');
+    if (X === x1) col.splice(0, 4, 'T', 'T', 'T', 'N');
+    col.forEach((q, i) => c.set(X, y + i, q));
+  }
+  return outline(c, 'N');
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
 export default [
@@ -396,4 +427,6 @@ export default [
   img('item-wood-big-quarter', bigQuarterIcon()),
   img('item-wood-normal-round', normalRoundIcon()),
   img('item-wood-normal-beam', beamIcon()),
+  img('item-wood-big-plank', plankIcon()),
+  img('item-wood-pole-round', poleIcon()),
 ];

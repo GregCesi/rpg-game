@@ -9,13 +9,14 @@ du rondin et de la poutre. Le contenu est dans `src/content/wood.json` ; voir CO
 - Clé : `wood-piece` (props.json), la seule clé de bois. Image dans Tiled : `wood-piece` (la bille du gros, ronde, 1 m,
   est-ouest) ; en jeu, l'image s'assemble d'après les réglages.
 - Réglages (GameState, `WoodPieceSchema` de `src/content/types.ts`) : `size`, le diamètre (`big` : 55 cm de bois, le gros arbre et
-  le têtard ; `normal` : 30 cm) ; `length` en cm (sur la grille de 20 cm, 60 cm au moins) ; `shape` (`round`, `half`, `quarter`) ;
+  le têtard ; `normal` : 30 cm ; `pole` : 12 cm, la perche, depuis le 31 octobre 2026) ; `length` en cm (sur la grille de 20 cm,
+  60 cm au moins) ; `shape` (`round`, `half`, `quarter`, `plank` : la planche fendue, même date) ;
   `hewn` (coups de doloire : une face tous les 3, la poutre à 12) ; `axis` (`ew` est-ouest, `ns` nord-sud) ; `notch` (la coupe
   commencée : `at` cm du bout ouest ou nord, `hits`) ; `wedge` (le coin planté : `end`, le bout, `hits`, les coups de masse) ;
   `face` (le quartier seulement : le côté de sa face fendue debout, `north` ou `south` est-ouest, `east` ou `west` nord-sud ;
   absent, sud ou est).
-- Nom affiché, selon le diamètre et l'aspect (wood.json, `looks`) : bille, demi-bille, quartier (le gros) ; rondin, poutre (le
-  normal). Genre du nom pour les messages : « elle » (bille, demi-bille, poutre), « il » (quartier, rondin).
+- Nom affiché, selon le diamètre et l'aspect (wood.json, `looks`) : bille, demi-bille, quartier, planche (le gros) ; rondin, poutre (le
+  normal) ; perche. Genre du nom pour les messages : « elle » (bille, demi-bille, poutre), « il » (quartier, rondin).
 - Nature : objet du monde (`props.json`), qui se prend quand il n'est pas trop lourd. Sa définition complète (dimensions,
   collision, prise, roulement, pivot, tas) se tire de ses réglages : `src/world/woodPiece.ts`.
 - Mains : deux (couchée ; debout, aucune : voir *Debout*).
@@ -42,6 +43,8 @@ dresse. Elle ne vient que des places d'un plan (`accepts.wood`) : `lay` de `syst
   quartier **53,5 kg** (porté, lentement) ; rondin du normal de 1 m **63,6 kg** (porté, va en tas) ; rondin de 3 m **191 kg**
   (roulé) ; poutre de 3 m **108 kg**, de 1,80 m **64,8 kg** (portée) ; tronc du gros (4 m) **855 kg**, du têtard (2 m) **428 kg**,
   du normal (5,8 m) **369 kg** : ils ne bougent pas, c'est le calcul qui le dit.
+- Perche (`pole`, 12 cm) : **10,2 kg** le mètre ; 4 m, 40,7 kg (portée, lentement) ; 6 m, 61 kg. Planche (`plank` : 3 × 25 cm de
+  bois, `plank` de wood.json) : **6,75 kg** le mètre ; 2 m, 13,5 kg.
 - Seuils de Xéros (`strength.json`) : porté jusqu'à 70 kg, marche normale jusqu'à 25 kg, roulé jusqu'à 300 kg.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
@@ -104,6 +107,21 @@ bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1
 - Espace, la masse, depuis le bout du coin : 3 coups par mètre commencé (6 pour 2 m ; la fente court, le coin s'enfonce), et deux
   morceaux (demi-billes, puis quartiers, nés faces debout opposées), le coin au sol ; sans coin : « Il faut d'abord un coin. » ; depuis l'autre bout : « Les coups se donnent sur le bout, là où le coin est
   planté. » ; sans place : « Pas la place pour la fendre. ». 0,8 point le coup.
+
+## La perche et la planche (chantier « briques », 31 octobre 2026)
+- **La perche** (`size: "pole"`, 12 cm de bois, 22 cm contour compris) : un jeune arbre de taillis, écorce lisse et fine ; ronde,
+  elle roule, se coupe sur la grille, va en tas (pyramide) ; ne s'équarrit pas (« Trop fine pour une poutre. ») et ne se fend pas ;
+  ne se dresse pas. Elle fera les chevrons du toit de chaume. Son taillis viendra plus tard ; en attendant, ?dieu (« Pièce de bois »,
+  diamètre perche) et la transformation « magique » `pole-from-top` (la flèche d'un arbre normal couché : un tronc de 3,4 m et une
+  perche de 3,6 m ; triche notée, le vrai tronc normal garde 30 cm sur 5,8 m).
+- **La planche fendue** (`shape: "plank"`, du gros bois) : 3 cm d'épaisseur sur 25 de large (le rayon de la bille, fendu sur le
+  fil), longueurs de la grille ; couchée à plat, elle ne roule pas ; ses tas sont en rangées. Fendue au coutre et au maillet dans un
+  quartier (`rive-plank` : 5 planches de sa longueur, le cœur et l'aubier en déchet) ou une demi-bille (`rive-plank-half` : 8
+  planches) ; geste à venir. Elle fera la porte et les volets.
+- **Le bardeau** n'est pas une pièce de bois : 40 cm, moins que la plus courte pièce (60 cm), c'est un objet possédable (`shingle`,
+  fiche à part), fendu dans un quartier de 60 cm (`rive-shingle`).
+- **Variantes naturelles** : aucune ; le bois a déjà ses réglages (diamètre, longueur, état) ; un arbre donne toujours son diamètre.
+- **Métier** : bûcheron (le bois rond), fendeur (demi-bille, quartier, planche), charpentier (la poutre).
 
 ## Origine
 Un arbre abattu puis ébranché : son tronc devient une seule pièce ronde de sa longueur utile, posée sur le tronc (le gros grand

@@ -21,7 +21,19 @@
         "half": {"name": "demi-bille", "gender": "f", "icon": "item-wood-big-half", "held": "held-wood-big-half",
           "ew": {"h": 16, "start": 6, "end": 5, "body": {"h": 10, "bottom": 3}}, "ns": {"w": 14, "extra": 2, "back": 0, "start": 5, "end": 9, "bottom": 2}},
         "quarter": {"name": "quartier", "gender": "m", "icon": "item-wood-big-quarter", "held": "held-wood-big-quarter",
-          "ew": {"h": 13, "start": 5, "end": 4, "body": {"h": 5, "bottom": 2}}, "ns": {"w": 13, "extra": 2, "back": 0, "start": 8, "end": 8, "bottom": 2}}
+          "ew": {"h": 13, "start": 5, "end": 4, "body": {"h": 5, "bottom": 2}}, "ns": {"w": 13, "extra": 2, "back": 0, "start": 8, "end": 8, "bottom": 2}},
+        "plank": {"name": "planche", "gender": "f", "icon": "item-wood-big-plank", "held": "held-wood-big-plank",
+          "ew": {"h": 7, "start": 2, "end": 3, "body": {"h": 5, "bottom": 1}}, "ns": {"w": 7, "extra": 2, "back": 0, "start": 3, "end": 4, "bottom": 2}}
+      }
+    },
+    "pole": {
+      "name": "perche", "diameter": 12, "sheet": "wood-pole", "tile": 24,
+      "notch": {"ew": {"w": 3, "at": 2}},
+      "hew": "Trop fine pour une poutre.",
+      "split": {},
+      "looks": {
+        "round": {"name": "perche", "gender": "f", "icon": "item-wood-pole-round", "held": "held-wood-pole-round",
+          "ew": {"h": 6, "start": 4, "end": 3, "body": {"h": 3, "bottom": 1}}, "ns": {"w": 6, "extra": 2, "back": 0, "start": 4, "end": 5, "bottom": 2}}
       }
     },
     "normal": {
