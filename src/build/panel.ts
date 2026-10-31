@@ -8,7 +8,7 @@ import { buildPlans, onBuildPlans } from '../content/buildPlans';
 import type { WoodLook } from '../content/types';
 import type { BuildCommand, BuildStatus } from '../events';
 import { images, spritesheets } from '../generated/assets';
-import { canStand, catalog, FAMILIES, looksOf, woodFrom, woodThumb, type CatalogEntry } from './catalog';
+import { canStand, catalog, FAMILIES, looksOf, woodFrom, type CatalogEntry } from './catalog';
 
 const CSS = `
 #construire {
@@ -108,7 +108,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
   let tab: 'objects' | 'plans' = 'objects';
   let chosen: string | undefined;
 
-  // les réglages de la pièce de bois : diamètre, aspect, longueur (grille de wood.json), sens
+  // les réglages de la pièce de bois : diamètre et aspect (tirés de la vignette), longueur (grille de wood.json), sens
   const sizes = Object.keys(wood.sizes);
   const wSize = select(sizes.map((k) => [k, `${k} (${wood.sizes[k].diameter} cm)`]), () => {
     fillLooks();
@@ -129,17 +129,15 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     if (looksOf(wSize.value).includes('beam')) wLook.value = 'beam';
   };
   fillLooks();
+  // le diamètre et l'aspect viennent de la vignette choisie ; restent la longueur et le sens
   const woodBox = el('div', {}, [
     el('h3', { textContent: 'Pièce de bois' }),
-    el('div', { className: 'row' }, ['diamètre', wSize]),
-    el('div', { className: 'row' }, ['état', wLook, 'sens', wAxis]),
-    el('div', { className: 'row' }, ['longueur', wLen, 'cm']),
+    el('div', { className: 'row' }, ['longueur', wLen, 'cm', 'sens', wAxis]),
   ]);
   const pickWood = () => {
     const look = wLook.value as WoodLook;
     const axis = wAxis.value as 'ew' | 'ns' | 'up';
     if (axis === 'up' && !canStand(wSize.value, look)) wAxis.value = 'ew';
-    chosen = 'wood';
     send({ kind: 'pick', piece: { wood: woodFrom(wSize.value, Number(wLen.value), look, wAxis.value as 'ew' | 'ns' | 'up') } });
     render();
   };
@@ -179,7 +177,14 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
       send({ kind: 'pick-joint', joint: e.joint });
       return render();
     }
-    if (e.wood) return pickWood();
+    if (e.wood) {
+      wSize.value = e.wood.size;
+      fillLooks();
+      wLook.value = e.wood.look;
+      if (e.wood.up) wAxis.value = 'up';
+      else if (wAxis.value === 'up') wAxis.value = 'ew';
+      return pickWood();
+    }
     natEntry = e.natural ? e : undefined;
     if (e.natural) {
       nForm.value = '';
@@ -212,8 +217,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
         nodes.push(el('h3', { textContent: f }));
         const grid = el('div', { className: 'grid' });
         for (const e of these) {
-          const img = e.wood ? thumb(woodThumb(wSize.value, (wLook.value || 'round') as WoodLook)) : thumb(e.thumb);
-          grid.append(tile(e.name, img, chosen === e.id, () => pick(e)));
+          grid.append(tile(e.name, thumb(e.thumb), chosen === e.id, () => pick(e)));
         }
         nodes.push(grid);
       }
@@ -232,7 +236,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
       }
     }
     list.replaceChildren(...nodes);
-    settings.replaceChildren(...(chosen === 'wood' ? [woodBox] : natEntry && chosen === natEntry.id ? [natBox] : []));
+    settings.replaceChildren(...(chosen?.startsWith('wood:') ? [woodBox] : natEntry && chosen === natEntry.id ? [natBox] : []));
   };
   onBuildPlans(render);
 

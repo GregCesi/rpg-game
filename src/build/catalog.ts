@@ -18,7 +18,8 @@ export interface CatalogEntry {
   ref: BuildRef;
   thumb: string;
   natural?: NaturalDef;
-  wood?: true;
+  /** Une pièce de bois : son diamètre et son aspect (wood.json), dressée pour un poteau ; la longueur et le sens se règlent à part. */
+  wood?: { size: string; look: WoodLook; up?: true };
   /** Un assemblage (famille « assemblages ») : il se pose sur la jonction de deux pièces, pas comme une pièce. */
   joint?: JointType;
 }
@@ -55,7 +56,7 @@ function itemFamily(key: string, d: ItemDef): Family {
   return 'divers';
 }
 
-/** Tout le catalogue : la pièce de bois d'abord (ses réglages se font à part), puis chaque objet du monde et chaque objet possédable. */
+/** Tout le catalogue : la pièce de bois d'abord (une vignette par diamètre et par aspect ; longueur et sens se règlent à part), puis chaque objet du monde et chaque objet possédable. */
 export function catalog(): CatalogEntry[] {
   const out: CatalogEntry[] = [];
   const base = props['wood-piece'];
@@ -64,7 +65,19 @@ export function catalog(): CatalogEntry[] {
   out.push({ id: 'joint:mortise', name: 'tenon et mortaise', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-peg', joint: 'mortise' });
   out.push({ id: 'joint:notch', name: 'encoche', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-notch-normal-ew-3', joint: 'notch' });
   out.push({ id: 'joint:halving', name: 'mi-bois', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-halving-normal-beam-ew-3', joint: 'halving' });
-  out.push({ id: 'wood', name: 'pièce de bois', family: 'bois', ref: { wood: structuredClone(base.wood!) }, thumb: 'item-wood-normal-beam', wood: true });
+  // la pièce de bois, une vignette par diamètre et par aspect de wood.json (et le poteau, l'aspect qui se dresse)
+  const faces: Partial<Record<WoodLook, string>> = { f1: ' 1 face', f2: ' 2 faces', f3: ' 3 faces' };
+  for (const [size, s] of Object.entries(wood.sizes)) {
+    for (const look of looksOf(size)) {
+      const l = s.looks[look]!;
+      const ref = { wood: woodFrom(size, 200, look, 'ew') };
+      out.push({ id: `wood:${size}:${look}`, name: `${l.name}${faces[look] ?? ''} (${s.diameter} cm)`, family: 'bois', ref, thumb: l.icon, wood: { size, look } });
+      if (canStand(size, look) && look === 'round') {
+        const up = { wood: woodFrom(size, 200, look, 'up') };
+        out.push({ id: `wood:${size}:${look}:up`, name: `${l.up!.name} (${s.diameter} cm)`, family: 'bois', ref: up, thumb: l.icon, wood: { size, look, up: true } });
+      }
+    }
+  }
   for (const [key, d] of Object.entries(props)) {
     if (d.wood) continue;
     out.push({ id: `prop:${key}`, name: d.name, family: propFamily(key, d), ref: { prop: key }, thumb: d.image, ...(d.natural ? { natural: d.natural } : {}) });

@@ -306,8 +306,9 @@ d'autres pièces. Ni force, ni aide de la mère, ni ordre de chantier. Plan d'or
 - **À la souris** : le fantôme suit la souris ; clic gauche pose ; clic droit retire. Le clavier règle : **R** tourne (est-ouest,
   nord-sud, puis debout pour la pièce de bois qui se dresse ; les quatre vues d'un objet) ; **T** et **G** (ou Page haut, Page bas)
   montent et descendent d'un cran de 20 cm ; **Ctrl+Z**, **Ctrl+Y** (ou Ctrl+Maj+Z) annulent et refont (pendant la séance).
-- **Le catalogue ne propose que ce qui existe** : chaque objet de `props.json` et `items.json`, et la pièce de bois de tous réglages
-  (diamètre, état, longueur sur la grille de 20 cm, sens), rangés par famille (éléments, bois, pierre, terre, fibres, outils,
+- **Le catalogue ne propose que ce qui existe** : chaque objet de `props.json` et `items.json`, et la pièce de bois en une vignette
+  par diamètre et par état de `wood.json` (bille, demi-bille, quartier, planche, perche, rondin, rondin à 1, 2, 3 faces, poutre,
+  poteau ; la longueur sur la grille de 20 cm et le sens se règlent à part), rangés par famille (éléments, bois, pierre, terre, fibres, outils,
   mobilier, chantier, nature, divers : tirée du contenu, `src/build/catalog.ts`), avec une recherche. Une matière naturelle se
   règle (forme, taille), au hasard par défaut.
 - **La pose libre en hauteur** (`src/world/build.ts`, sans Phaser) : l'emprise au sol sur la grille de 20 cm ; la pièce
