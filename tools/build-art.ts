@@ -29,6 +29,7 @@ import { woodPreview } from './lib/wood-preview';
 import { lyingPreview } from './lib/lying-preview';
 import { auditPreview } from './lib/audit-preview';
 import { briquesPreview } from './lib/briques-preview';
+import { writeMaquettePreviews } from './lib/maison-preview';
 import gesturesJson from '../src/content/gestures.json';
 import { silhouette } from '../src/content/gabarit';
 import type { WoodLook, WoodPiece } from '../src/content/types';
@@ -371,6 +372,8 @@ if (withPreview) {
   // les matières : chaque objet du chantier « briques » dans toutes ses vues, puis chaque chaîne de transformation, avec le déchet
   const briques = briquesPreview(sources);
   if (briques) writeFileSync(join(PREVIEW, 'briques.png'), PNG.sync.write(briques));
+  // la maquette de la chaumière (docs/maison-chaumiere.md) : les couches, les deux plans, les éléments composés proposés
+  await writeMaquettePreviews(PREVIEW);
 }
 /**
  * Une carte Tiled lue pour l'aperçu d'un bâtiment : le sol (numéros du registre -> grilles du jeu de tuiles de la carte)

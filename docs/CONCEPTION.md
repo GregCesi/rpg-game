@@ -513,6 +513,10 @@ de la plus naturelle à la plus travaillée, chacune servant de base à la suiva
   de taille et moellons, le manteau), et le **bac à sable** où composer une maison pièce par pièce ; puis le plan de la maison, les
   vrais gestes (dégrossir, tailler, creuser, puiser, mêler, peigner, fendre au coutre), le taillis de noisetiers et le jeune arbre
   de taillis (la perche), la carrière et le village qui vend.
+- **La maquette de la chaumière** (run de nuit du 31 octobre 2026, à relire) : `docs/maison-chaumiere.md` (la maison couche par
+  couche sur la grille, ses éléments composés et leurs recettes, sa nomenclature, les briques qui manquent, deux plans intérieurs,
+  les choix à faire) et `docs/IMPLEMENTATION-bac-a-sable.md` (le plan du bac à sable, avant tout code) ; images
+  `.art-preview/maison-couches.png`, `maison-plans.png`, `maison-elements.png` ; chiffres : `npm run maquette`. Rien n'y change le jeu.
 
 ## Sauvegarde et outils de test (décidé le 29 octobre 2026)
 
