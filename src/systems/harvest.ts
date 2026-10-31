@@ -103,15 +103,18 @@ export class HarvestSystem {
     return undefined;
   }
 
-  /** La main qui tient l'objet taillé : l'autre que celle de l'outil `tool`, si elle tient ce que son `convert` attend (la branche), sinon undefined. */
+  /**
+   * La main qui tient l'objet taillé : l'autre que celle de l'outil `tool`, si elle tient ce que son `convert` sait tailler (la
+   * branche, le piquet), sinon undefined.
+   */
   private partner(tool: string): Hand | undefined {
     const target = this.map.props.find((p) => p.def.harvest?.convert && p.def.harvest.tool === tool);
-    const from = target?.def.harvest?.convert?.from;
+    const from = target?.def.harvest?.convert?.from ?? {};
     const mine = ([0, 1] as const).find((i) => { const x = game.hands[i]; return !!x && 'item' in x && x.item === tool; });
     if (mine === undefined) return undefined;
     const other = (1 - mine) as Hand;
     const x = game.hands[other];
-    return x && 'item' in x && x.item === from ? other : undefined;
+    return x && 'item' in x && from[x.item] ? other : undefined;
   }
 
   /**
@@ -163,7 +166,7 @@ export class HarvestSystem {
   }
 
   /**
-   * Un coup de hachette sur le billot : l'objet tenu dans l'autre main (la branche) devient `convert.into` (le piquet), dans la même
+   * Un coup de hachette sur le billot : l'objet tenu dans l'autre main (la branche, le piquet) devient ce que dit `convert.from` (le piquet, la cheville), dans la même
    * main ; sans lui, rien ne se passe (la scène a déjà refusé avec le message de `convert.refuse`).
    */
   private whittleHit(prop: PlacedProp, tool: string, facing: Facing): HitResult {
@@ -171,7 +174,8 @@ export class HarvestSystem {
     const slot = this.partner(tool);
     if (slot === undefined) return { kind: 'refused', message: h.convert!.refuse };
     if (h.impact) this.chips(prop, h.impact, facing);
-    replaceHeld(game, slot, { item: h.convert!.into });
+    const was = game.hands[slot] as { item: string };
+    replaceHeld(game, slot, { item: h.convert!.from[was.item] });
     return { kind: 'hit', done: true, given: 1, overflow: false };
   }
 

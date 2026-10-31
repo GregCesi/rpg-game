@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { INTERACT, PUT_DOWN } from '../config';
 import { items, piles, props } from '../content';
-import { crosswise, groundImage, viewCount } from '../content/views';
+import { crosswise, viewCount } from '../content/views';
 import type { Facing, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
 import {
@@ -27,6 +27,7 @@ import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { nearestOpenPlace, openPlaces, placeAim } from '../world/places';
 import { kindOf, pileDefOf, sameKind, shapeOf, tieImages, type PileKind, type PileShape } from '../world/pileShape';
 import { woodTexture } from '../world/woodTexture';
+import { formImage, naturalFor, naturalGround } from '../world/natural';
 import { Ghosts } from './ghost';
 
 /** Ce qu'a donné « poser devant soi » : rien en main, pas de place libre devant, ou posé. */
@@ -114,7 +115,9 @@ export class HandsSystem {
   takeProp(p: PlacedProp): boolean {
     // ce qui a une longueur (le rouleau) l'emporte avec lui ; la pièce de bois, tous ses réglages, son sens compris
     const length = p.def.length ? { length: p.length ?? p.def.length.start } : {};
-    const what: Held = p.wood ? { prop: p.type, wood: structuredClone(p.wood) } : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length };
+    const what: Held = p.wood
+      ? { prop: p.type, wood: structuredClone(p.wood) }
+      : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length, ...(p.natural ? { natural: { ...p.natural } } : {}) };
     if (!take(game, what, p.def.take!.hands)) return false;
     const mapId = this.map.def.id;
     if (p.spawned) changeSpawned(game, mapId, p.id, { x: p.x, y: p.y });
@@ -129,13 +132,17 @@ export class HandsSystem {
    */
   takeFromPile(p: PlacedPile, place: string): boolean {
     const piece = p.def.piece;
+    // une matière naturelle reprise d'un tas a la forme dessinée à sa place (`-b` : la seconde) et la taille type : le tas range des
+    // pièces semblables, il ne garde pas la taille de chacune
+    const image = p.def.places[place].image ?? '';
+    const form = { natural: { form: (/-b(-|$)/.test(image) ? 1 : 0) as 0 | 1, size: 100 } };
     // une pièce reprise d'un tas nord-sud reste tournée
     const what: Held =
       'item' in piece
-        ? { ...piece, ...(p.pile.turned ? { view: 1 } : {}) }
+        ? { ...piece, ...(p.pile.turned ? { view: 1 } : {}), ...(items[piece.item].natural ? form : {}) }
         : 'wood' in piece
           ? { prop: WOOD_PIECE, wood: structuredClone(p.def.places[place].wood) ?? { ...piece.wood, axis: p.pile.turned ? 'ns' : 'ew' } }
-          : { ...piece, ...(p.pile.turned ? { turned: true } : {}) };
+          : { ...piece, ...(p.pile.turned ? { turned: true } : {}), ...(props[piece.prop].natural ? form : {}) };
     const hands = 'item' in piece ? items[piece.item].hands : 'wood' in piece ? 2 : props[piece.prop].take!.hands;
     if (!take(game, what, hands)) return false;
     emptyPlace(game, this.map.def.id, p.pile.id, place);
@@ -228,7 +235,15 @@ export class HandsSystem {
    * GameState), avec sa longueur (le rouleau) ou ses réglages (la pièce de bois). Renvoie false s'il n'y a pas la place.
    */
   placeInFront(player: Player, type: string, length?: number, wood?: WoodPiece): boolean {
-    const what: Held = { prop: type, ...(length !== undefined ? { length } : {}), ...(wood ? { wood } : {}) };
+    const natural = naturalFor(props[type]);
+    return this.layHeld(player, { prop: type, ...(length !== undefined ? { length } : {}), ...(wood ? { wood } : {}), ...(natural ? { natural } : {}) });
+  }
+
+  /**
+   * Pose seul devant Xéros (ou à la place libre la plus proche à côté) ce qui n'est dans aucune main : ce que sort une transformation
+   * (systems/transform.ts), un objet des outils de test. Renvoie false s'il n'y a pas la place.
+   */
+  layHeld(player: Player, what: Held): boolean {
     const spot = this.laySpot(player, what);
     if (!spot) return false;
     this.put(what, { kind: 'lay', ...spot });
@@ -247,7 +262,8 @@ export class HandsSystem {
       const row = Math.floor(i / 6);
       const x = Math.round(b.center.x + ((i % 6) - 2.5) * 10);
       const y = Math.round(b.bottom + 12 + row * 14);
-      const held: Held = what in items ? { item: what } : { prop: what };
+      const natural = naturalFor(what in items ? items[what] : props[what]);
+      const held: Held = what in items ? { item: what, ...(natural ? { natural } : {}) } : { prop: what, ...(natural ? { natural } : {}) };
       if (!this.map.areaFree(this.layBox(held, x, y), what in items ? this.others : [...this.others, b])) continue;
       this.put(held, { kind: 'lay', x, y });
       placed++;
@@ -402,10 +418,10 @@ export class HandsSystem {
     } else if (t.kind === 'tie-alone') {
       this.map.placePile(addPile(game, mapId, { pile: t.genre, x: t.x, y: t.y, places: [], tie: true }));
     } else if ('item' in what) {
-      this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view));
+      this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view, what.natural));
     } else {
-      const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood });
-      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood });
+      const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood, natural: what.natural });
+      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural });
     }
   }
 
@@ -426,11 +442,11 @@ export class HandsSystem {
       return { key: tie.image, x: x + tie.x, y: y + tie.y, depth: t.kind === 'tie' ? t.pile.depth : y + tie.y };
     }
     if ('item' in what) {
-      const key = groundImage(items[what.item], what.view, (k) => this.scene.textures.exists(k));
+      const key = naturalGround(items[what.item], what.view, what.natural, (k) => this.scene.textures.exists(k));
       return { key, x: t.x - this.scene.textures.getFrame(key).width / 2, y: t.y, depth: t.y };
     }
     if (what.wood) return { key: woodTexture(this.scene, what.wood), frame: '0', x: t.x, y: t.y, depth: t.y };
-    const image = props[what.prop].image;
+    const image = formImage(props[what.prop].image, what.natural);
     return { key: what.flip ? `${image}-left` : image, x: t.x, y: t.y, depth: t.y };
   }
 
@@ -535,7 +551,7 @@ export class HandsSystem {
 
   /** La taille de l'image au sol d'un objet possédable, dans sa vue. */
   private itemSize(what: Extract<Held, { item: string }>): { w: number; h: number } {
-    const f = this.scene.textures.getFrame(groundImage(items[what.item], what.view, (k) => this.scene.textures.exists(k)));
+    const f = this.scene.textures.getFrame(naturalGround(items[what.item], what.view, what.natural, (k) => this.scene.textures.exists(k)));
     return { w: f.width, h: f.height };
   }
 

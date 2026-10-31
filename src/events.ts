@@ -41,6 +41,7 @@ export type DieuCommand =
   | { kind: 'supply'; what: string; count: number }
   | { kind: 'erase-sites' }
   | { kind: 'skip-step' }
+  | { kind: 'transform'; id: string }
   | { kind: 'map'; map: string }
   | { kind: 'reset-map' }
   | { kind: 'reset-game' };

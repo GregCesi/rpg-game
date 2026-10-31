@@ -69,11 +69,11 @@ export const HarvestSchema = z.strictObject({
    */
   gesture: z.enum(['use', 'chop']).default('use'),
   /**
-   * Tailler : le coup change l'objet possédable tenu dans l'AUTRE main (`from`) en un autre (`into`) : la branche tenue debout sur le
-   * billot devient un piquet, dans la même main. `refuse` : ce qu'on dit si l'autre main ne tient pas `from`. Un seul coup, avec
+   * Tailler : le coup change l'objet possédable tenu dans l'AUTRE main en un autre (`from` : ce qu'on taille -> ce qu'il devient) :
+   * la branche tenue debout sur le billot devient un piquet, le piquet une cheville, dans la même main. `refuse` : ce qu'on dit si l'autre main ne tient rien de `from`. Un seul coup, avec
    * l'outil `tool` dans la première main ; ni `becomes` ni `drops` n'y servent.
    */
-  convert: z.strictObject({ from: id, into: id, refuse: id }).optional(),
+  convert: z.strictObject({ from: z.record(id, id), refuse: id }).optional(),
   /** Prix du coup en endurance : une clé de `costs` de stamina.json. Absent : `chop` (`cutTie` pour le billot qui porte une corde). */
   effort: EffortSchema.optional(),
   /**
@@ -136,7 +136,41 @@ export const MassSchema = z.union([
   // une pierre : le volume de sa boîte (`dims`) × la densité de la pierre (mass.ts)
   z.literal('stone'),
   z.strictObject({ pile: id }),
+  z.lazy(() => MatterMassSchema),
 ]);
+
+/**
+ * Masse calculée par la matière (`matters.json` : pierre 2 600, terre crue 1 800, torchis 1 750, paille tassée 100 kg/m³...) :
+ * le volume de ses `dims` (une boîte : w × d × h ; un cylindre : π r² × sa longueur) × `fill` (la part de la boîte qu'occupe la
+ * matière : 0,52 pour une pierre brute, à peu près un ellipsoïde ; 1 pour ce qui est taillé ou moulé) × la densité. Une matière
+ * naturelle (`natural`) pèse ensuite au cube de sa taille tirée.
+ */
+export const MatterMassSchema = z.strictObject({ matter: id, fill: z.number().positive().max(1).default(1) });
+
+/** Une matière (`matters.json`) : son nom en français et sa densité, en kg/m³. */
+export const MatterSchema = z.strictObject({ name: id, density: z.number().positive() });
+
+/**
+ * Une matière naturelle (docs/CONCEPTION.md, « Les matières ») : une pierre ramassée, une motte creusée n'ont ni deux fois la même
+ * forme ni la même taille. `forms` : 1 ou 2 formes dessinées (la seconde est l'image `<image>-b`, et de même pour ses vues) ;
+ * `vary` : la taille varie de ± `vary` % autour de la taille type de ses `dims` (tirée à l'apparition, gardée par GameState :
+ * `natural` de ce qu'on tient, d'un objet né, changé ou posé au sol). Sa masse suit le cube de sa taille ; son image ne change pas
+ * (± 7 % de 45 cm, c'est moins d'un pixel : dans la tolérance du gabarit).
+ */
+export const NaturalDefSchema = z.strictObject({ forms: z.union([z.literal(1), z.literal(2)]), vary: z.number().int().min(1).max(15) });
+
+/** Ce que GameState garde d'un exemplaire naturel : sa forme (0 : `<image>`, 1 : `<image>-b`) et sa taille, en % de la taille type. */
+export const NaturalSchema = z.strictObject({ form: z.union([z.literal(0), z.literal(1)]), size: z.number().int().min(85).max(115) });
+
+/**
+ * Les métiers (docs/CONCEPTION.md, « Les matières ») : tout s'achète au village, mais tout peut se faire. Chaque objet dit qui le
+ * fait et le vendrait (`trade` de props.json, items.json, et des transformations de transforms.json) : le carrier (la pierre
+ * tirée, le moellon), le maçon (la pierre de taille, le mortier), le terrassier (la terre, le torchis), le chaumier (la paille, le
+ * chaume), le bûcheron (le bois abattu, les baguettes), le charpentier (la poutre, la cheville), le fendeur (le bois fendu, la
+ * planche, le bardeau), le menuisier (le bois travaillé fin, le maillet), le forgeron (les outils de fer), le paysan (ce que tout
+ * le monde fait : puiser, ramasser).
+ */
+export const TradeSchema = z.enum(['quarryman', 'mason', 'digger', 'thatcher', 'woodcutter', 'carpenter', 'splitter', 'joiner', 'smith', 'peasant']);
 
 /**
  * Ce qui roule quand Xéros le pousse (la pièce de bois ronde : `roll` de sa définition tirée de ses réglages, world/woodPiece.ts) :
@@ -160,7 +194,7 @@ export const EndSchema = z.enum(['west', 'east', 'north', 'south']);
  * Aspect d'une pièce de bois, ce que montre son dessin : ronde (`round`), demi (`half`), quart (`quarter`), une à trois faces
  * dressées à la doloire (`f1`, `f2`, `f3`), équarrie (`beam`, la poutre). L'aspect se déduit des réglages (forme, coups de doloire).
  */
-export const WoodLookSchema = z.enum(['round', 'half', 'quarter', 'f1', 'f2', 'f3', 'beam']);
+export const WoodLookSchema = z.enum(['round', 'half', 'quarter', 'f1', 'f2', 'f3', 'beam', 'plank']);
 
 /**
  * Une pièce de bois (la seule sorte d'objet de bois du monde, `wood-piece` de props.json), décrite par ses réglages et non par
@@ -170,10 +204,16 @@ export const WoodLookSchema = z.enum(['round', 'half', 'quarter', 'f1', 'f2', 'f
  * nord, `hits` coups) ; `face` : le côté de la face debout d'un quartier ; `wedge` : le coin planté (`end`, le bout d'où il est planté et d'où se donnent les coups, `hits` coups de
  * masse reçus). GameState garde ces réglages pour chaque pièce posée ou tenue ; Tiled peut les donner en propriétés.
  */
+/**
+ * Forme d'une pièce de bois : ronde, demi (fendue en deux), quart (le quartier), planche (fendue au coutre dans un quartier ou une
+ * demi-bille : `plank` de wood.json, son épaisseur et sa largeur).
+ */
+export const WoodShapeSchema = z.enum(['round', 'half', 'quarter', 'plank']);
+
 export const WoodPieceSchema = z.strictObject({
   size: id,
   length: z.number().int().positive(),
-  shape: z.enum(['round', 'half', 'quarter']),
+  shape: WoodShapeSchema,
   hewn: z.number().int().positive().optional(),
   axis: z.enum(['ew', 'ns', 'up']),
   notch: z.strictObject({ at: z.number().int().positive(), hits: z.number().int().positive() }).optional(),
@@ -192,7 +232,7 @@ export const WoodPieceSchema = z.strictObject({
  */
 export const PileWoodSchema = z.strictObject({
   size: id,
-  shape: z.enum(['round', 'half', 'quarter']),
+  shape: z.lazy(() => WoodShapeSchema),
   length: z.number().int().positive(),
   hewn: z.number().int().positive().optional(),
 });
@@ -291,6 +331,8 @@ export const WoodSchema = z.strictObject({
   min: z.number().int().positive(),
   cut: z.strictObject({ tool: id, hits: z.number().int().positive() }),
   hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive() }),
+  /** La planche fendue : son épaisseur et sa largeur de bois (cm), quel que soit le diamètre d'où elle vient. */
+  plank: z.strictObject({ thick: z.number().positive(), wide: z.number().positive() }),
   split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive() }),
   sizes: z.record(id, WoodSizeSchema),
 });
@@ -339,8 +381,14 @@ export const ItemDefSchema = z.strictObject({
   hold: z.lazy(() => HoldSchema).optional(),
   /** Genre de tas où il s'entrepose (clé de piles.json) : posé sur un tas du même genre, il s'y ajoute. */
   pile: id.optional(),
-  /** Masse en kg (obligatoire : validate.ts). */
-  mass: z.number().positive().optional(),
+  /** Masse en kg (obligatoire : validate.ts) : saisie, ou calculée par sa matière (`MatterMassSchema`, il lui faut ses `dims`). */
+  mass: z.union([z.number().positive(), z.lazy(() => MatterMassSchema)]).optional(),
+  /** Dimensions réelles, en centimètres (voir DimsSchema) : son image au sol (`ground`, vue 0) en suit le gabarit (validate.ts). */
+  dims: z.lazy(() => DimsSchema).optional(),
+  /** Matière naturelle : ses formes dessinées et sa taille qui varie, voir NaturalDefSchema. */
+  natural: z.lazy(() => NaturalDefSchema).optional(),
+  /** Le métier qui le fait et le vendrait au village, voir TradeSchema. */
+  trade: z.lazy(() => TradeSchema).optional(),
 });
 
 /**
@@ -419,6 +467,10 @@ export const PropDefSchema = z.strictObject({
   wood: z.lazy(() => WoodPieceSchema).optional(),
   /** Genre du nom (`name`), pour les messages : `f` (« la pierre », par défaut) ou `m`. */
   gender: z.enum(['m', 'f']).default('f'),
+  /** Matière naturelle : ses formes dessinées et sa taille qui varie, voir NaturalDefSchema (un objet de Tiled tire les siennes de son identifiant). */
+  natural: z.lazy(() => NaturalDefSchema).optional(),
+  /** Le métier qui le fait et le vendrait au village, voir TradeSchema. */
+  trade: z.lazy(() => TradeSchema).optional(),
   /**
    * Quantité mesurée (le rouleau de corde) : une longueur, en centimètres, gardée par GameState (`length` de ce qu'on
    * tient, d'un objet né ou changé). `start` : la longueur d'un objet neuf (posé dans Tiled) ; `cut` : ce qu'enlève une
@@ -713,6 +765,55 @@ export const StaminaSchema = z.strictObject({
   }),
 });
 
+/**
+ * Ce qui entre dans une transformation ou en sort (transforms.json) : un objet possédable (`item`), un objet du monde (`prop`), une
+ * pièce de bois (`wood` : les réglages qui la distinguent, `size`, `shape`, `hewn`, et sa `length` en cm, ou absente : la longueur
+ * de la pièce d'entrée), ou, en entrée seulement, de la matière prise au poste (`raw` : une matière de matters.json, `kg` : l'eau
+ * de l'étang, la terre de la berge). `count` : combien.
+ */
+export const TransformPartSchema = z
+  .strictObject({
+    item: id.optional(),
+    prop: id.optional(),
+    wood: z
+      .strictObject({ size: id, shape: z.lazy(() => WoodShapeSchema), hewn: z.number().int().positive().optional(), length: z.number().int().positive().optional() })
+      .optional(),
+    raw: id.optional(),
+    kg: z.number().positive().optional(),
+    count: z.number().int().positive().default(1),
+  })
+  .refine((p) => [p.item, p.prop, p.wood, p.raw].filter((q) => q !== undefined).length === 1, { message: "une entrée ou une sortie nomme une chose : 'item', 'prop', 'wood' ou 'raw'" })
+  .refine((p) => (p.raw === undefined) === (p.kg === undefined), { message: "'kg' pour une matière prise au poste ('raw'), et pour elle seule" });
+
+/**
+ * Le poste d'une transformation : au sol (`ground`), sur le billot (`block`), à l'établi (`bench`), au bord de l'étang (`pond`, où
+ * l'on puise l'eau et creuse l'argile), sur un chevalet de fendeur (`brake`).
+ */
+export const StationSchema = z.enum(['ground', 'block', 'bench', 'pond', 'brake']);
+
+/**
+ * Le geste d'une transformation : `soon`, à venir (en attendant, ?dieu l'applique d'un coup : « Transformer ») ; ou le geste réel,
+ * déjà jouable : `system`, le fichier qui le joue, et `keys`, ce que fait le joueur.
+ */
+export const TransformGestureSchema = z.union([z.literal('soon'), z.strictObject({ system: id, keys: id })]);
+
+/**
+ * Une transformation (transforms.json, docs/CONCEPTION.md « Les matières ») : tailler retire de la matière. `name` : ce qu'on fait
+ * (« dégrossir un moellon ») ; `inputs` et `outputs` (la sortie pèse moins que l'entrée : validate.ts) ; `waste` : ce qu'on retire
+ * (`name`, et `prop` : l'objet du monde qui en reste au sol, les éclats de pierre ; absent : il disparaît, avec `fate` qui dit où il
+ * va) ; `tools` : les outils (clés de items.json) ; `station` : le poste ; `trade` : le métier ; `gesture` : le geste.
+ */
+export const TransformSchema = z.strictObject({
+  name: id,
+  inputs: z.array(TransformPartSchema),
+  outputs: z.array(TransformPartSchema).min(1),
+  waste: z.strictObject({ name: id, prop: id.optional(), fate: id.optional() }).refine((w) => !w.prop !== !w.fate, { message: "le déchet reste au sol ('prop') ou dit où il va ('fate'), l'un ou l'autre" }).optional(),
+  tools: z.array(id).default([]),
+  station: StationSchema,
+  trade: TradeSchema,
+  gesture: TransformGestureSchema,
+});
+
 /** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
 export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
 
@@ -837,3 +938,11 @@ export type PileWood = z.infer<typeof PileWoodSchema>;
 export type WoodLookDef = z.infer<typeof WoodLookDefSchema>;
 export type WoodSize = z.infer<typeof WoodSizeSchema>;
 export type WoodDef = z.infer<typeof WoodSchema>;
+export type MatterMass = z.infer<typeof MatterMassSchema>;
+export type Matter = z.infer<typeof MatterSchema>;
+export type NaturalDef = z.infer<typeof NaturalDefSchema>;
+export type Natural = z.infer<typeof NaturalSchema>;
+export type Trade = z.infer<typeof TradeSchema>;
+export type TransformPart = z.infer<typeof TransformPartSchema>;
+export type Station = z.infer<typeof StationSchema>;
+export type TransformDef = z.infer<typeof TransformSchema>;

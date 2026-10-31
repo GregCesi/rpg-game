@@ -1,8 +1,9 @@
 // Outils de test (?dieu) : un panneau HTML à côté du jeu, hors du canevas, cliquable à la souris. Il n'existe pas sans
 // ?dieu : main.ts ne charge ce fichier que dans ce cas. Il ne touche jamais à la partie lui-même : chaque bouton envoie
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
-import { items, maps, piles, plans, props, stamina, strength, wood } from '../content';
+import { items, maps, piles, plans, props, stamina, strength, transforms, wood } from '../content';
 import type { WoodLook, WoodPiece } from '../content/types';
+import { shapeOfLook } from '../world/woodShape';
 import { heldMass } from '../content/mass';
 import type { DieuCommand } from '../events';
 import { game } from '../state';
@@ -114,8 +115,8 @@ function lengthOf(f: { input: HTMLInputElement }, key: string): number | undefin
 
 /** Ce qu'on choisit d'une pièce de bois : son aspect donne sa forme et ses coups de doloire (une face tous les `perFace`). */
 function woodFrom(size: string, length: number, look: WoodLook, axis: 'ew' | 'ns'): WoodPiece {
-  const faces = { round: 0, half: 0, quarter: 0, f1: 1, f2: 2, f3: 3, beam: 4 }[look];
-  const shape = look === 'half' || look === 'quarter' ? look : 'round';
+  const faces = { round: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 }[look];
+  const shape = shapeOfLook(look);
   return { size, length, shape, axis, ...(faces ? { hewn: faces * wood.hew.perFace } : {}) };
 }
 
@@ -138,6 +139,17 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     const length = lengthOf(giveLength, key);
     send({ kind: 'give', held: kind === 'item' ? { item: key } : { prop: key, ...(length !== undefined ? { length } : {}) } });
   });
+
+  // mettre au sol devant Xéros l'objet choisi (un objet possédable au sol, un objet du monde posé), comme `supply`
+  const giveGround = button('Au sol', () => send({ kind: 'supply', what: give.value.split(/:(.*)/)[1], count: 1 }));
+
+  // les transformations de transforms.json : « Transformer » applique d'un coup celle qu'on choisit à ce que Xéros tient ou vise
+  // (la transformation « magique » en attendant le geste ; celles qui ont déjà leur geste s'y essaient aussi)
+  const transform = select([
+    ['Geste à venir', Object.entries(transforms).filter(([, t]) => t.gesture === 'soon').map(([k, t]) => [k, `${t.name} (${k})`])],
+    ['Geste réel', Object.entries(transforms).filter(([, t]) => t.gesture !== 'soon').map(([k, t]) => [k, `${t.name} (${k})`])],
+  ]);
+  const transformButton = button('Transformer', () => send({ kind: 'transform', id: transform.value }));
 
   // poser devant Xéros : tout objet du monde de props.json
   const prop = select([['Objets du monde', Object.entries(props).filter(([, d]) => !d.wood).map(([k, d]) => [k, `${d.name} (${k})`])]]);
@@ -254,7 +266,10 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('h2', { textContent: 'Outils de test' }),
     el('h3', { textContent: 'Donner en main' }),
     give,
-    el('div', { className: 'row' }, [giveLength.label, giveButton]),
+    el('div', { className: 'row' }, [giveLength.label, giveButton, giveGround]),
+    el('h3', { textContent: 'Matières : transformer' }),
+    transform,
+    transformButton,
     el('h3', { textContent: 'Poser devant Xéros' }),
     prop,
     el('div', { className: 'row' }, [propLength.label, propButton]),

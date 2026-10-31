@@ -50,6 +50,12 @@ export const DEPTH = {
 export const INTERACT = { reach: 16, radius: 20 };
 
 /**
+ * La transformation « magique » des outils de test (?dieu, systems/transform.ts) : ce qui entre se cherche dans les mains, puis au
+ * sol à moins de `near` px des pieds de Xéros (le plus près du point qu'il regarde d'abord).
+ */
+export const TRANSFORM = { near: 40 };
+
+/**
  * E maintenu (nouer, dénouer) : durée de l'appui (ms) ; avant, relâcher E fait le geste court (reprendre une pièce).
  * La jauge (`ui-gauge`) se remplit au-dessus de la tête de Xéros, `above` px au-dessus de ses pieds (bas de la jauge).
  */

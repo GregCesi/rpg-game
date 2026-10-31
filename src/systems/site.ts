@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { DEPTH, INTERACT, SITE, TILE, UI, ZOOM_STEPS } from '../config';
 import { items, plans, props, wood } from '../content';
 import { heldMass, woodMass } from '../content/mass';
-import type { Corner, PlanDef, WoodPiece } from '../content/types';
+import type { Corner, Natural, PlanDef, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
 import type { Strength } from '../entities/Strength';
 import {
@@ -296,7 +296,7 @@ export class SiteSystem {
       kg: beam ? heldMass(what) : 0,
       commit: () => {
         release(game);
-        this.lay(site, plan, slot, beam && 'wood' in what ? what.wood : undefined);
+        this.lay(site, plan, slot, beam && 'wood' in what ? what.wood : undefined, what.natural);
       },
     };
   }
@@ -305,11 +305,13 @@ export class SiteSystem {
    * La pièce de la place est née sur la carte, notée dans le chantier avec la pièce de bois d'où elle vient (`from`, si c'en est
    * une). Une poutre est la pièce de bois elle-même, dressée : ce qu'on voit est ce qu'on a posé.
    */
-  private lay(site: Site, plan: PlanDef, slot: PlanSlot, from?: WoodPiece): void {
+  private lay(site: Site, plan: PlanDef, slot: PlanSlot, from?: WoodPiece, stone?: Natural): void {
     const mapId = this.map.def.id;
     const c = placeCorner(site, slot.place);
-    const o = from ? spawnObject(game, mapId, WOOD_PIECE, c.x, c.y, { wood: uprightOf(from) }) : spawnObject(game, mapId, slot.place.piece, c.x, c.y);
-    this.map.placeProp(o, { spawned: true });
+    // une pierre naturelle posée garde sa forme et sa taille : le dé est la même pierre
+    const natural = props[slot.place.piece]?.natural ? (stone ?? { form: 0, size: 100 }) : undefined;
+    const o = from ? spawnObject(game, mapId, WOOD_PIECE, c.x, c.y, { wood: uprightOf(from) }) : spawnObject(game, mapId, slot.place.piece, c.x, c.y, { natural });
+    this.map.placeProp(o, { spawned: true, natural: o.natural });
     placeSitePiece(game, mapId, site.id, slot.id, o.id, from);
     const corner = slot.place.corner;
     if (corner && site.stakes.includes(corner)) {

@@ -4,12 +4,12 @@ import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
 import { drawOrder, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
-import { groundImage } from '../content/views';
+import { formImage, naturalGround, stableNatural } from './natural';
 import type { Chain, GroundItem, MapState, Pile, WorldChange } from '../state';
 import type { Npc } from '../entities/Npc';
 import { tilesets } from '../generated/assets';
 import { CM_PER_PX } from '../content/gabarit';
-import type { WoodPiece } from '../content/types';
+import type { Natural, WoodPiece } from '../content/types';
 import { woodDef, woodOf } from './woodPiece';
 import { lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
@@ -44,6 +44,7 @@ export function stateOf(p: PlacedProp): WorldChange {
     ...(p.flip ? { flip: true } : {}),
     ...(p.length !== undefined ? { length: p.length } : {}),
     ...(p.wood ? { wood: structuredClone(p.wood) } : {}),
+    ...(p.natural ? { natural: { ...p.natural } } : {}),
   };
 }
 
@@ -143,6 +144,8 @@ export interface PlacedProp {
   length?: number;
   /** Pièce de bois : ses réglages (diamètre, longueur, forme, faces, sens, coupe commencée, coin planté). */
   wood?: WoodPiece;
+  /** Matière naturelle (la pierre plate) : sa forme et sa taille (GameState, ou tirées de son identifiant Tiled). */
+  natural?: Natural;
 }
 
 /** Un objet possédable posé au sol, affiché. */
@@ -252,9 +255,9 @@ export class GameMap {
     for (const o of def.objects) {
       const c = changes.changes[o.id];
       if (!c) this.placeProp(o);
-      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length, wood: c.wood });
+      else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length, wood: c.wood, natural: c.natural });
     }
-    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, length: o.length, wood: o.wood });
+    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, length: o.length, wood: o.wood, natural: o.natural });
     for (const g of changes.ground) this.placeGround(g);
     for (const pile of changes.piles) this.placePile(pile);
 
@@ -375,7 +378,7 @@ export class GameMap {
    * au milieu.
    */
   placeGround(item: GroundItem): PlacedGround {
-    const key = groundImage(items[item.item], item.view, (k) => this.scene.textures.exists(k));
+    const key = naturalGround(items[item.item], item.view, item.natural, (k) => this.scene.textures.exists(k));
     const image = this.scene.add.image(item.x, item.y, key).setOrigin(0.5, 1).setDepth(item.y);
     const g = { item, image };
     this.ground.push(g);
@@ -438,7 +441,7 @@ export class GameMap {
    * (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds).
    * `flip` : version couchée vers la gauche (image `-left`) ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
    */
-  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain; length?: number; wood?: WoodPiece; open?: boolean } = {}): PlacedProp {
+  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain; length?: number; wood?: WoodPiece; open?: boolean; natural?: Natural } = {}): PlacedProp {
     const scene = this.scene;
     const base = propDefs[o.type];
     // la pièce de bois : sa définition et son image assemblée tirées de ses réglages (GameState, Tiled, sinon props.json) ; jamais retournée
@@ -446,7 +449,9 @@ export class GameMap {
     const p: PropDef = wood ? woodDef(base, wood) : base;
     const flip = !!opts.flip && !wood;
     const ay = o.y;
-    const image = flip ? `${p.image}-left` : p.image;
+    // une matière naturelle : sa forme et sa taille, ou, posée dans Tiled et jamais bougée, celles que donne son identifiant
+    const natural = p.natural ? (opts.natural ?? (opts.spawned ? undefined : stableNatural(p.natural, o.id))) : undefined;
+    const image = flip ? `${p.image}-left` : formImage(p.image, natural);
     const obj = wood
       ? scene.add.image(o.x, ay, woodTexture(scene, wood, { open: opts.open }), '0')
       : p.anim
@@ -500,6 +505,7 @@ export class GameMap {
       interact: o.interact,
       length: opts.length ?? startLength(p),
       wood,
+      ...(natural ? { natural } : {}),
     };
     this.props.push(placed);
     this.rollFrame(placed);

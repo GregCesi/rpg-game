@@ -51,6 +51,11 @@ export function upOf(size: string, look: WoodLook): NonNullable<WoodLookDef['up'
   return u;
 }
 
+/** La forme d'une pièce d'un aspect : la demi, le quart et la planche sont des formes ; le reste (rond, faces, poutre) est rond. */
+export function shapeOfLook(look: WoodLook): WoodPiece['shape'] {
+  return look === 'half' || look === 'quarter' || look === 'plank' ? look : 'round';
+}
+
 /** Images d'un aspect : 4 pour le rond (il roule), 1 pour les autres. */
 export const framesOf = (look: WoodLook) => (look === 'round' ? 4 : 1);
 

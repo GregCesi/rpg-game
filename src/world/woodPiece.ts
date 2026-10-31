@@ -34,8 +34,9 @@ export function woodDims(piece: WoodPiece): PropDef['dims'] {
     const s = upOf(piece.size, look).w * CM_PER_PX;
     return { w: s, d: s, h: piece.length, shape: look === 'beam' ? 'box' : 'cylinder', ...(look === 'beam' ? {} : { axis: 'up' as const }) };
   }
-  const across = piece.shape === 'quarter' ? d / 2 : look === 'beam' ? WOOD.hew.beam : d;
-  const high = piece.shape === 'round' ? (look === 'beam' ? WOOD.hew.beam : d) : d / 2;
+  // la planche : sa largeur couchée à plat, son épaisseur en hauteur (plank de wood.json)
+  const across = piece.shape === 'plank' ? WOOD.plank.wide : piece.shape === 'quarter' ? d / 2 : look === 'beam' ? WOOD.hew.beam : d;
+  const high = piece.shape === 'plank' ? WOOD.plank.thick : piece.shape === 'round' ? (look === 'beam' ? WOOD.hew.beam : d) : d / 2;
   const [w, dd] = piece.axis === 'ew' ? [piece.length, across + CONTOUR_CM] : [across + CONTOUR_CM, piece.length];
   if (look === 'round') return { w, d: dd, h: d + CONTOUR_CM, shape: 'cylinder', axis: piece.axis };
   return { w, d: dd, h: Math.round(high + CONTOUR_CM), shape: 'box' };

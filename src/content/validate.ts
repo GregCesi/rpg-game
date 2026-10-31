@@ -4,11 +4,13 @@
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
-import { propMass } from './mass';
+import { itemMass, naturalFactor, propMass, type MassCatalog } from './mass';
 import { crosswise, viewImages } from './views';
 import { lookOf, WEDGE_FRAMES } from '../world/woodShape';
+import { formImage } from '../world/natural';
+import { partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
-import type { Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece } from './types';
+import type { Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, TransformDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -199,6 +201,8 @@ export interface Content {
   characters: Record<string, CharacterDef>;
   dialogues: Record<string, DialogueDef>;
   wood: WoodDef;
+  matters: Record<string, Matter>;
+  transforms: Record<string, TransformDef>;
 }
 
 /** Clés de props.json : minuscules ASCII, chiffres, tirets. Les majuscules sont réservées aux types de Tiled (Spawn, Exit, Facing). */
@@ -236,8 +240,10 @@ function validateHarvest(key: string, p: PropDef, c: Content, cat: Catalog): str
   if (h.convert) {
     const k = h.convert;
     if (!h.tool) err("'convert' : il faut l'outil qui taille ('tool')");
-    if (!c.items[k.from]) err(`'convert' : '${k.from}' (from) absent de items.json`);
-    if (!c.items[k.into]) err(`'convert' : '${k.into}' (into) absent de items.json`);
+    for (const [from, into] of Object.entries(k.from)) {
+      if (!c.items[from]) err(`'convert' : '${from}' (ce qu'on taille) absent de items.json`);
+      if (!c.items[into]) err(`'convert' : '${into}' (ce qu'il devient) absent de items.json`);
+    }
     if (c.items[h.tool ?? '']?.hands === 2) err("'convert' : l'outil se tient à une main (l'autre tient ce qu'on taille)");
     if (h.hits !== 1) err("'convert' : un seul coup");
     if (h.becomes !== undefined || h.drops.length || h.spawns.length || h.fall) err("'convert' : sans 'becomes', 'drops', 'spawns' ni 'fall'");
@@ -352,6 +358,19 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
       `pièce de bois ${piece.size} ${lookOf(piece)}${piece.face ? ` face ${piece.face}` : ''} ${piece.axis} de ${piece.length} cm hors gabarit : attendu ${f(want.w)} × ${f(want.h)} px, dessiné ${w} × ${h} px (tolérance ${TOLERANCE} px)`,
     );
   }
+  // un objet possédable qui a ses dimensions : son image au sol (vue 0) les suit, comme un objet du monde ; ses vues nord-sud et son
+  // demi-tour se vérifient avec toutes ses vues (règle D)
+  for (const [key, it] of Object.entries(c.items)) {
+    if (!it.dims) continue;
+    const image = it.ground ?? it.icon;
+    const drawn = cat.silhouettes.get(image);
+    if (!drawn) continue;
+    const want = expectedSize(it.dims);
+    const within = (n: number, lo: number, hi: number) => n >= lo - TOLERANCE && n <= hi + TOLERANCE;
+    if (within(drawn.w, want.w, want.wMax) && within(drawn.h, want.h, want.hMax)) continue;
+    const f = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
+    errors.push(`items.json '${key}' (image '${image}') hors gabarit : attendu ${f(want.w)} × ${f(want.h)} px (${it.dims.w} × ${it.dims.d} × ${it.dims.h} cm, ${it.dims.shape}), dessiné ${drawn.w} × ${drawn.h} px (tolérance ${TOLERANCE} px)`);
+  }
   for (const [key, p] of Object.entries(c.props)) {
     // l'ombre portée se calcule sur l'emprise au sol d'une couverture : une pièce de toit vue à l'échelle du sol
     if (p.shadow && !(p.roof && p.dims.ground)) errors.push(`props.json '${key}' : 'shadow' est l'ombre d'une couverture, pièce 'roof' avec 'dims.ground'`);
@@ -442,8 +461,15 @@ function objectViews(c: Content, cat: Catalog): ObjectViews[] {
   const entries: { at: string; key: string; views: Views; lying: boolean; base: string; dims?: PropDef['dims'] }[] = [
     ...Object.entries(c.props).map(([key, p]) => ({ at: `props.json '${key}'`, key, views: p.views, lying: !!p.lying, base: p.image, dims: p.dims })),
     // sans image au sol, un objet rond se montre par son icône ; un autre n'a encore aucune de ses vues au sol
-    ...Object.entries(c.items).map(([key, it]) => ({ at: `items.json '${key}'`, key, views: it.views, lying: !!it.lying, base: it.ground ?? (it.views === 'round' ? it.icon : `${key}-ground`) })),
+    ...Object.entries(c.items).map(([key, it]) => ({ at: `items.json '${key}'`, key, views: it.views, lying: !!it.lying, base: it.ground ?? (it.views === 'round' ? it.icon : `${key}-ground`), dims: it.dims })),
   ];
+  // la seconde forme d'une matière naturelle (`natural.forms` 2) a toutes ses vues aussi, à la même règle que la première
+  for (const [key, d] of [...Object.entries(c.props), ...Object.entries(c.items)] as [string, PropDef | ItemDef][]) {
+    if (d.natural?.forms !== 2) continue;
+    const base = 'image' in d ? d.image : (d.ground ?? d.icon);
+    const at = `${'image' in d ? 'props' : 'items'}.json '${key}' seconde forme`;
+    entries.push({ at, key: `${key}#b`, views: d.views, lying: !!d.lying, base: formImage(base, { form: 1, size: 100 }), dims: d.dims });
+  }
   return entries.map((e) => {
     const images = viewImages(e.base, e.views, has);
     const wrong: ObjectViews['wrong'] = [];
@@ -780,6 +806,88 @@ function validateMasses(c: Content, cat: Catalog): string[] {
   return errors;
 }
 
+/**
+ * Les matières : chaque masse par la matière en nomme une de matters.json, et un objet possédable pesé ainsi a ses dimensions ;
+ * le bois vert de matters.json est celui de wood.json (une seule densité du bois). Une matière naturelle a la taille de la
+ * seconde forme dessinée (validateViews) et ne pèse jamais plus que ce qu'on porte à sa plus grande taille, si elle se prend.
+ */
+function validateMatters(c: Content): string[] {
+  const errors: string[] = [];
+  const err = (msg: string) => errors.push(msg);
+  if (c.matters.wood && c.matters.wood.density !== c.wood.density) err(`matters.json 'wood' : ${c.matters.wood.density} kg/m³, wood.json ${c.wood.density} (une seule densité du bois vert)`);
+  const named = [...Object.entries(c.props).map(([k, d]) => [`props.json '${k}'`, d.mass] as const), ...Object.entries(c.items).map(([k, d]) => [`items.json '${k}'`, d.mass] as const)];
+  for (const [at, m] of named) if (m && typeof m === 'object' && 'matter' in m && !c.matters[m.matter]) err(`${at} : matière '${m.matter}' absente de matters.json`);
+  for (const [key, it] of Object.entries(c.items)) {
+    if (it.mass && typeof it.mass === 'object' && !it.dims) err(`items.json '${key}' : une masse par la matière demande ses dimensions ('dims')`);
+    if (it.natural && it.mass !== undefined && it.dims) {
+      try {
+        const big = itemMass(key, c, { form: 0, size: 100 + it.natural.vary });
+        if (big > c.strength.carry) err(`items.json '${key}' : à sa plus grande taille (+${it.natural.vary} %), ${Math.round(big)} kg, plus que Xéros ne porte (${c.strength.carry} kg)`);
+      } catch (e) {
+        err(`items.json '${key}' : ${(e as Error).message}`);
+      }
+    }
+  }
+  for (const [key, p] of Object.entries(c.props)) {
+    if (!p.natural || !p.take) continue;
+    const big = propMass(key, undefined, c, undefined, { form: 0, size: 100 + p.natural.vary });
+    if (big > c.strength.carry) err(`props.json '${key}' : à sa plus grande taille (+${p.natural.vary} %), ${Math.round(big)} kg, plus que Xéros ne porte (${c.strength.carry} kg)`);
+  }
+  return errors;
+}
+
+/**
+ * Les transformations (transforms.json) : ce qui entre et ce qui sort existe (objet possédable, objet du monde, diamètre et aspect
+ * de bois, matière), les outils sont des outils, le déchet laissé au sol est un objet du monde, chaque objet nommé dit son métier,
+ * et tailler retire de la matière : la sortie à sa plus grande taille pèse au plus l'entrée à sa plus petite (une matière naturelle
+ * varie de ± `vary` %).
+ */
+function validateTransforms(c: Content): string[] {
+  const errors: string[] = [];
+  const cat: MassCatalog = c;
+  for (const [id, t] of Object.entries(c.transforms)) {
+    const at = `transforms.json '${id}'`;
+    const err = (msg: string) => errors.push(`${at} : ${msg}`);
+    const known = (part: (typeof t.inputs)[number], side: string): boolean => {
+      if (part.item && !c.items[part.item]) return err(`${side} '${part.item}' absente d'items.json`), false;
+      if (part.prop && !c.props[part.prop]) return err(`${side} '${part.prop}' absente de props.json`), false;
+      if (part.raw && !c.matters[part.raw]) return err(`${side} : matière '${part.raw}' absente de matters.json`), false;
+      if (part.raw && side === 'sortie') return err("une matière prise au poste ('raw') n'est qu'une entrée"), false;
+      if (part.wood) {
+        const size = c.wood.sizes[part.wood.size];
+        if (!size) return err(`${side} : diamètre de bois '${part.wood.size}' absent de wood.json`), false;
+        const look = lookOf({ shape: part.wood.shape, hewn: part.wood.hewn });
+        if (!size.looks[look]) return err(`${side} : le diamètre '${part.wood.size}' n'a pas d'aspect '${look}' (wood.json)`), false;
+      }
+      const def = part.item ? c.items[part.item] : part.prop ? c.props[part.prop] : undefined;
+      if (def && !def.trade) err(`${side} '${part.item ?? part.prop}' : son métier n'est pas dit ('trade')`);
+      return true;
+    };
+    const okIn = t.inputs.map((p) => known(p, 'entrée')).every(Boolean);
+    const okOut = t.outputs.map((p) => known(p, 'sortie')).every(Boolean);
+    if (!t.inputs.some((p) => !p.raw) && !t.inputs.some((p) => p.raw)) err('aucune entrée');
+    for (const tool of t.tools) if (c.items[tool]?.kind !== 'tool') err(`outil '${tool}' absent d'items.json ou qui n'est pas un outil`);
+    if (t.waste?.prop && !c.props[t.waste.prop]) err(`déchet '${t.waste.prop}' absent de props.json`);
+    if (!okIn || !okOut) continue;
+    // la plus petite entrée, la plus grande sortie
+    const vary = (p: (typeof t.inputs)[number], sign: 1 | -1) => {
+      const d = p.item ? c.items[p.item] : p.prop ? c.props[p.prop] : undefined;
+      return d?.natural ? naturalFactor({ form: 0, size: 100 + sign * d.natural.vary }) : 1;
+    };
+    try {
+      const input = t.inputs.reduce((sum, p) => sum + partMass(p, cat) * p.count * vary(p, -1), 0);
+      const output = t.outputs.reduce((sum, p) => sum + partMass(p, cat) * p.count * vary(p, 1), 0);
+      if (output > input + 1e-6) {
+        const names = (parts: typeof t.inputs) => parts.map((p) => partName(p, c)).join(' + ');
+        err(`la sortie (${names(t.outputs)}, jusqu'à ${Math.round(output * 10) / 10} kg) pèse plus que l'entrée (${names(t.inputs)}, dès ${Math.round(input * 10) / 10} kg) : tailler retire de la matière`);
+      }
+    } catch (e) {
+      err((e as Error).message);
+    }
+  }
+  return errors;
+}
+
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
@@ -864,6 +972,10 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Masses, roulement, pose pousser
   addAll(validateMasses(c, cat));
+
+  // Les matières (densités, matière naturelle) et les transformations (entrées, sorties, outils, déchet, métier, masses)
+  addAll(validateMatters(c));
+  addAll(validateTransforms(c));
 
   // Le bois : planches de parties de chaque diamètre et aspect, icônes, vues portées, outils, grille
   addAll(validateWood(c, cat));

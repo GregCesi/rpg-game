@@ -20,6 +20,7 @@ import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
 import { SiteSystem } from '../systems/site';
 import { WoodSystem } from '../systems/wood';
+import { TransformSystem } from '../systems/transform';
 import { ZoomControl } from '../systems/zoom';
 import { TurnSystem } from '../systems/turnLog';
 import { carriedMass, heavyNotice } from '../systems/weight';
@@ -45,6 +46,7 @@ import { GameMap } from '../world/GameMap';
 import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { heldWoodTexture } from '../world/woodTexture';
 import { pileWoodOf } from '../world/woodPile';
+import { naturalFor } from '../world/natural';
 import type { Interactable, PlacedGround } from '../world/GameMap';
 
 /**
@@ -96,6 +98,8 @@ export class WorldScene extends Phaser.Scene {
   private turns!: TurnSystem;
   private site!: SiteSystem;
   private wood!: WoodSystem;
+  /** La transformation « magique » des outils de test (?dieu). */
+  private transformer!: TransformSystem;
   /** R maintenu : pivoter une bille couchée. */
   private turnPress!: LongPress;
   /** Champ « force » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
@@ -164,6 +168,7 @@ export class WorldScene extends Phaser.Scene {
     this.harvest = new HarvestSystem(this, this.map);
     this.wood = new WoodSystem(this, this.map, this.harvest);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
+    this.transformer = new TransformSystem(this.map, this.handsSystem);
     this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body), this.player.strength);
     this.knots = new KnotSystem(this.map, this.handsSystem);
     this.press = new LongPress(this);
@@ -290,7 +295,7 @@ export class WorldScene extends Phaser.Scene {
     } else if (a.kind === 'take') {
       if (a.prop.wood?.notch) return this.notice("Finis d'abord la coupe.");
       if (a.prop.wood?.wedge) return this.notice('Le coin est planté : finis de la fendre.');
-      const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.wood);
+      const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.wood, a.prop.natural);
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(a.prop.def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();
       if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
@@ -537,10 +542,11 @@ export class WorldScene extends Phaser.Scene {
 
   /** Prend un objet au sol dans une main libre (les deux s'il le demande). */
   private pickUp(g: PlacedGround): void {
-    if (!this.player.strength.canCarry(itemMass(g.item.item))) return this.notice('Trop lourd à porter.');
-    if (!this.canLift(itemMass(g.item.item))) return this.effort.exhausted();
-    // il garde le sens où il était couché : reposé, il le retrouve (R le tourne)
-    const what = { item: g.item.item, ...(g.item.view ? { view: g.item.view } : {}) };
+    const kg = itemMass(g.item.item, undefined, g.item.natural);
+    if (!this.player.strength.canCarry(kg)) return this.notice('Trop lourd à porter.');
+    if (!this.canLift(kg)) return this.effort.exhausted();
+    // il garde le sens où il était couché : reposé, il le retrouve (R le tourne) ; et, naturel, sa forme et sa taille
+    const what = { item: g.item.item, ...(g.item.view ? { view: g.item.view } : {}), ...(g.item.natural ? { natural: g.item.natural } : {}) };
     if (!take(game, what, items[g.item.item].hands)) return this.notice('Les mains pleines.');
     removeGroundItem(game, this.map.def.id, g.item.id);
     this.map.removeGround(g);
@@ -571,7 +577,9 @@ export class WorldScene extends Phaser.Scene {
     const { x, y, facing } = this.player.actor;
     switch (cmd.kind) {
       case 'give': {
-        const h = cmd.held;
+        // une matière naturelle donnée a sa forme et sa taille, tirées comme à l'apparition
+        const natural = naturalFor('item' in cmd.held ? items[cmd.held.item] : props[cmd.held.prop], cmd.held.natural);
+        const h: Held = { ...cmd.held, ...(natural ? { natural } : {}) };
         const def = 'prop' in h ? defOf(h.prop, h.wood) : undefined;
         if (heldMass(h) > this.player.strength.carry) return this.notice(heavyNotice(def, heldMass(h), this.player.strength));
         emptyHands(game);
@@ -604,6 +612,10 @@ export class WorldScene extends Phaser.Scene {
         break;
       case 'erase-sites':
         this.site.erase();
+        break;
+      case 'transform':
+        this.notice(this.transformer.apply(this.player, cmd.id));
+        this.handsChanged();
         break;
       case 'skip-step': {
         const why = this.site.skipStep();

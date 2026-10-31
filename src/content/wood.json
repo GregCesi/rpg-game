@@ -5,6 +5,7 @@
   "cut": {"tool": "axe", "hits": 3},
   "hew": {"tool": "broadaxe", "perFace": 3, "faces": 4, "beam": 20},
   "split": {"wedge": "splitting-wedge", "maul": "maul", "hits": 3},
+  "plank": {"thick": 3, "wide": 25},
   "sizes": {
     "big": {
       "name": "gros", "diameter": 55, "sheet": "wood-big", "tile": 24,

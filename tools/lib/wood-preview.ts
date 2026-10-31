@@ -11,14 +11,14 @@ import type { Grid, Palette } from '../../art/lib/canvas';
 import type { ArtSource } from '../../art/lib/types';
 import { composeWood } from '../../art/world/wood-pieces';
 import type { End, WoodLook, WoodPiece } from '../../src/content/types';
-import { splitPieces, WOOD } from '../../src/world/woodShape';
+import { shapeOfLook, splitPieces, WOOD } from '../../src/world/woodShape';
 import { Board, grassOf } from './composite-previews';
 
 interface Placed { grid: Grid; x: number; y: number }
 interface Cell { items: Placed[]; palette: Palette; w: number; h: number }
 
 /** Faces dressées de chaque aspect. */
-const FACES: Record<WoodLook, number> = { round: 0, half: 0, quarter: 0, f1: 1, f2: 2, f3: 3, beam: 4 };
+const FACES: Record<WoodLook, number> = { round: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 };
 
 export function woodPreview(sources: ArtSource[]): PNG | undefined {
   const find = (name: string) => sources.find((s) => s.name === name);
@@ -30,7 +30,7 @@ export function woodPreview(sources: ArtSource[]): PNG | undefined {
   const one = (grid: Grid, pal: Palette = palette): Cell => ({ items: [{ grid, x: 0, y: 0 }], palette: pal, w: grid[0].length, h: grid.length });
   const xeros = one(body.animations['idle-down'].frames[0], body.palette);
   const piece = (size: string, axis: WoodPiece['axis'], length: number, look: WoodLook = 'round', more: Partial<WoodPiece> = {}): WoodPiece => {
-    const shape = look === 'half' || look === 'quarter' ? look : 'round';
+    const shape = shapeOfLook(look);
     return { size, length, shape, axis, ...(FACES[look] ? { hewn: FACES[look] * WOOD.hew.perFace } : {}), ...more };
   };
   const cell = (p: WoodPiece, frame = 0, open = false) => one(composeWood(p, { frame, open }).toGrid());

@@ -2,7 +2,7 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { CharacterDefSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, PileDefSchema, PlanSchema, PropDefSchema, StaminaSchema, StrengthSchema, TilesetCatalogSchema, WoodSchema } from './types';
+import { CharacterDefSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, MatterSchema, PileDefSchema, PlanSchema, PropDefSchema, StaminaSchema, StrengthSchema, TilesetCatalogSchema, TransformSchema, WoodSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import itemsJson from './items.json';
@@ -15,6 +15,8 @@ import staminaJson from './stamina.json';
 import charactersJson from './characters.json';
 import dialoguesJson from './dialogues.json';
 import woodJson from './wood.json';
+import mattersJson from './matters.json';
+import transformsJson from './transforms.json';
 export { maps } from '../generated/maps';
 
 function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.infer<T> {
@@ -45,3 +47,7 @@ export const strength = parse('strength.json', StrengthSchema, strengthJson);
 export const stamina = parse('stamina.json', StaminaSchema, staminaJson);
 /** Le bois : diamètres, géométrie de leurs dessins, règles (grille de coupe, longueur minimale, équarrir, fendre). */
 export const wood = parse('wood.json', WoodSchema, woodJson);
+/** Les matières : nom et densité (pierre, terre crue, torchis, mortier, paille, bois vert, eau), d'où se calculent les masses. */
+export const matters = parse('matters.json', z.record(z.string(), MatterSchema), mattersJson);
+/** Les transformations : ce qui entre, ce qui sort, le déchet, l'outil, le poste, le métier, le geste (docs/CONCEPTION.md, « Les matières »). */
+export const transforms = parse('transforms.json', z.record(z.string(), TransformSchema), transformsJson);

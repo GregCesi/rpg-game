@@ -1,0 +1,9 @@
+{
+  "stone": {"name": "pierre", "density": 2600},
+  "earth": {"name": "terre crue", "density": 1800},
+  "cob": {"name": "torchis", "density": 1750},
+  "mortar": {"name": "mortier de terre", "density": 1900},
+  "straw": {"name": "paille tassée", "density": 100},
+  "wood": {"name": "bois vert", "density": 900},
+  "water": {"name": "eau", "density": 1000}
+}

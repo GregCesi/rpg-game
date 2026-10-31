@@ -31,7 +31,7 @@ export type PileShape = Omit<PileDef, 'places' | 'turned'> & {
 };
 
 /** Les aspects qui se rangent en rangées droites (section plate ou carrée) ; les autres font une pyramide. */
-const ROWS = new Set(['half', 'quarter', 'beam']);
+const ROWS = new Set(['half', 'quarter', 'beam', 'plank']);
 /** Les aspects rangés tête-bêche : un sur deux la face debout de l'autre côté. */
 const HEAD_TO_TAIL = new Set(['quarter']);
 /** Les deux côtés de la face debout d'un quartier tête-bêche, par sens : le premier, puis l'autre. */

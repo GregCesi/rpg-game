@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { items, stamina } from '../content';
-import { CornerSchema, PileWoodSchema, WoodPieceSchema, type WoodPiece } from '../content/types';
+import { CornerSchema, NaturalSchema, PileWoodSchema, WoodPieceSchema, type Natural, type WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { turnedWood } from '../world/woodShape';
 
@@ -12,6 +12,9 @@ const id = z.string().min(1);
 
 /** Longueur restante, en centimètres, d'une quantité mesurée (le rouleau de corde, `length` de props.json). */
 const length = z.number().int().nonnegative().optional();
+
+/** Une matière naturelle (la pierre ramassée, la motte) : sa forme et sa taille tirées à l'apparition (world/natural.ts). */
+const natural = NaturalSchema.optional();
 
 /** La vue d'un objet couché (1 à 3 : un, deux ou trois quarts de tour depuis son image, `views` de sa symétrie ; absente, 0). */
 const view = z.number().int().min(1).max(3).optional();
@@ -23,8 +26,8 @@ const view = z.number().int().min(1).max(3).optional();
  * le sens où elle sera posée, que R change). Pas de besace : les mains sont tout l'inventaire.
  */
 export const HeldSchema = z.union([
-  z.strictObject({ item: id, view }),
-  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length, wood: WoodPieceSchema.optional() }),
+  z.strictObject({ item: id, view, natural }),
+  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length, wood: WoodPieceSchema.optional(), natural }),
 ]);
 
 /** Une main : 0 = la gauche, 1 = la droite. */
@@ -43,6 +46,8 @@ export const WorldChangeSchema = z.strictObject({
   length,
   /** Les réglages de la pièce de bois qu'il est (diamètre, longueur, forme, faces, sens, coupe commencée, coin planté). */
   wood: WoodPieceSchema.optional(),
+  /** Sa forme et sa taille, s'il est d'une matière naturelle. */
+  natural,
 });
 
 /** Place d'un objet né dans la chaîne de ce qui est né avec lui (les pièces de l'arbre couché, bout à bout). */
@@ -68,10 +73,12 @@ export const SpawnedSchema = z.strictObject({
   length,
   /** Les réglages de la pièce de bois qu'il est. */
   wood: WoodPieceSchema.optional(),
+  /** Sa forme et sa taille, s'il est d'une matière naturelle. */
+  natural,
 });
 
 /** Un objet possédable posé au sol : (x, y) = son point au sol ; `view` : sa vue (le sens où il est couché). */
-export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number(), view });
+export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number(), view, natural });
 
 /**
  * Un tas posé pendant la partie : un seul objet du monde, ce qu'il entrepose, son point au sol (x, y : l'origine du repère de
@@ -281,9 +288,9 @@ export function changeObject(s: GameState, mapId: string, objectId: number, chan
   revision++;
 }
 
-/** Pose un objet possédable au sol, dans sa vue `view` ; renvoie ce qui a été posé. */
-export function dropItem(s: GameState, mapId: string, item: string, x: number, y: number, view?: number): GroundItem {
-  const g = { id: s.nextGroundId++, item, x, y, ...(view ? { view } : {}) };
+/** Pose un objet possédable au sol, dans sa vue `view`, avec sa forme et sa taille s'il est naturel ; renvoie ce qui a été posé. */
+export function dropItem(s: GameState, mapId: string, item: string, x: number, y: number, view?: number, nat?: Natural): GroundItem {
+  const g = { id: s.nextGroundId++, item, x, y, ...(view ? { view } : {}), ...(nat ? { natural: { ...nat } } : {}) };
   mapState(s, mapId).ground.push(g);
   revision++;
   return g;
@@ -302,11 +309,12 @@ export interface SpawnOpts {
   chain?: Chain;
   length?: number;
   wood?: WoodPiece;
+  natural?: Natural;
 }
 
 /** Fait naître un objet sur une carte ; renvoie ce qui a été noté. */
 export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, opts: SpawnOpts = {}): Spawned {
-  const { flip, chain, length, wood } = opts;
+  const { flip, chain, length, wood, natural: nat } = opts;
   const o = {
     id: s.nextSpawnId++,
     type,
@@ -316,6 +324,7 @@ export function spawnObject(s: GameState, mapId: string, type: string, x: number
     ...(chain ? { chain } : {}),
     ...(length !== undefined ? { length } : {}),
     ...(wood ? { wood: structuredClone(wood) } : {}),
+    ...(nat ? { natural: { ...nat } } : {}),
   };
   mapState(s, mapId).spawned.push(o);
   revision++;
@@ -340,6 +349,7 @@ export function changeSpawned(s: GameState, mapId: string, spawnId: number, chan
       ...(chain ? { chain } : {}),
       ...(change.length !== undefined ? { length: change.length } : {}),
       ...(change.wood ? { wood: structuredClone(change.wood) } : {}),
+      ...(change.natural ? { natural: { ...change.natural } } : {}),
     };
   }
   revision++;
