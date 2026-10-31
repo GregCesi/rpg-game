@@ -32,7 +32,7 @@ function matterOf(mass: PropDef['mass'] | ItemDef['mass']): string | undefined {
 /** La famille d'un objet du monde. */
 function propFamily(key: string, d: PropDef): Family {
   const matter = matterOf(d.mass);
-  if (d.variants) return 'éléments';
+  if (d.variants || d.pitch || /door/.test(key)) return 'éléments';
   if (d.wood) return 'bois';
   if (/tree|pollard|bush|stump/.test(key)) return 'nature';
   if (matter === 'stone' || /rock|stone-chips/.test(key)) return 'pierre';
@@ -62,6 +62,7 @@ export function catalog(): CatalogEntry[] {
   // les assemblages de charpente (CONCEPTION, « Les assemblages ») : pas des objets, des jonctions entre deux pièces de bois
   out.push({ id: 'joint:scarf', name: 'enture en trait de Jupiter', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-scarf-normal-ew', joint: 'scarf' });
   out.push({ id: 'joint:mortise', name: 'tenon et mortaise', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-peg', joint: 'mortise' });
+  out.push({ id: 'joint:notch', name: 'encoche', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-notch-normal-ew-3', joint: 'notch' });
   out.push({ id: 'joint:halving', name: 'mi-bois', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-halving-normal-beam-ew-3', joint: 'halving' });
   out.push({ id: 'wood', name: 'pièce de bois', family: 'bois', ref: { wood: structuredClone(base.wood!) }, thumb: 'item-wood-normal-beam', wood: true });
   for (const [key, d] of Object.entries(props)) {

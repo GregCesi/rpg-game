@@ -147,7 +147,8 @@ export interface Overlay {
 }
 
 /**
- * Les croisements des mi-bois : une image (`joint-halving-<diamètre>-<aspect>-<dessus>-<masque>`, art/world/joints.ts) posée sur les
+ * Les croisements des mi-bois et des encoches : une image (`joint-notch-<diamètre>-<dessus>-<masque>` pour l'encoche, rangée 0 quatre
+ * rangées au-dessus de l'image de l'est-ouest) ; pour le mi-bois, une image (`joint-halving-<diamètre>-<aspect>-<dessus>-<masque>`, art/world/joints.ts) posée sur les
  * deux pièces, sa colonne 0 sur celle de l'image de la pièce nord-sud, sa rangée 0 sur celle de l'image de l'est-ouest ; le masque dit
  * de quels côtés une pièce continue au-delà du croisement (nord 1, est 2, sud 4, ouest 8). Juste au-dessus des deux pièces. À appeler
  * quand les pièces sont placées et à leur profondeur.
@@ -156,7 +157,7 @@ export function halvingOverlays(scene: Phaser.Scene, shown: readonly ShownPiece[
   const byId = new Map(shown.map((s) => [s.piece.id, s]));
   const out: Overlay[] = [];
   for (const j of joints) {
-    if (j.type !== 'halving') continue;
+    if (j.type !== 'halving' && j.type !== 'notch') continue;
     const two = [byId.get(j.a), byId.get(j.b)];
     const ew = two.find((s) => s && woodOfPiece(s.piece)?.axis === 'ew');
     const ns = two.find((s) => s && woodOfPiece(s.piece)?.axis === 'ns');
@@ -164,11 +165,16 @@ export function halvingOverlays(scene: Phaser.Scene, shown: readonly ShownPiece[
     const w = woodOfPiece(ew.piece)!;
     const E = boxOf(ew.piece);
     const N = boxOf(ns.piece);
-    const mask = (N.y < E.y ? 1 : 0) + (E.x + E.w > N.x + N.w ? 2 : 0) + (N.y + N.d > E.y + E.d ? 4 : 0) + (E.x < N.x ? 8 : 0);
+    // une pièce continue au-delà du croisement ; pour l'encoche, un dépassement de 20 cm au plus est un bout (le rondin qui dépasse
+    // à l'angle d'une cabane), pas une suite
+    const over = j.type === 'notch' ? 20 : 0;
+    const mask = (N.y < E.y - over ? 1 : 0) + (E.x + E.w > N.x + N.w + over ? 2 : 0) + (N.y + N.d > E.y + E.d + over ? 4 : 0) + (E.x < N.x - over ? 8 : 0);
     const top = j.top === ns.piece.id ? 'ns' : 'ew';
-    const key = `joint-halving-${w.size}-${lookOf(w) === 'beam' ? 'beam' : 'round'}-${top}-${mask}`;
+    // le mi-bois : rangée 0 sur celle de l'image de l'est-ouest ; l'encoche : 4 rangées plus haut (le rondin du dessus est 20 cm plus haut)
+    const key = j.type === 'notch' ? `joint-notch-${w.size}-${top}-${mask}` : `joint-halving-${w.size}-${lookOf(w) === 'beam' ? 'beam' : 'round'}-${top}-${mask}`;
     if (!scene.textures.exists(key)) continue;
-    out.push({ key, x: ns.image.x, y: ew.image.y - ew.image.height, depth: Math.max(ew.image.depth, ns.image.depth) + 0.0005 });
+    const lift = j.type === 'notch' ? 4 : 0;
+    out.push({ key, x: ns.image.x, y: ew.image.y - ew.image.height - lift, depth: Math.max(ew.image.depth, ns.image.depth) + 0.0005 });
   }
   return out;
 }

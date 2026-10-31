@@ -146,3 +146,17 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   assert.equal(onNs.x, 0, 'la sablière nord-sud affleure la face ouest (dehors)');
   console.log('✓ test-build : mi-bois (croisement, section, sens), sablière alignée sur la face extérieure du solin');
 }
+
+// l'encoche : deux rondins ronds croisés à angle droit, celui du dessus enfoncé de la moitié de son diamètre ; pas entre deux poutres
+{
+  const { judge } = await import('../src/world/joints');
+  const log = (axis: 'ew' | 'ns', length = 380) => ({ wood: { size: 'normal', length, shape: 'round' as const, axis } });
+  const A: BuildPiece = { id: 1, piece: log('ew'), x: 0, y: 20, z: 12, view: 0 };
+  const B: BuildPiece = { id: 2, piece: log('ns', 440), x: 20, y: 0, z: 52, view: 0 };
+  assert.deepEqual(judge(A, B), { type: 'notch' }, 'deux rondins croisés, l’un sur l’autre : une encoche');
+  assert.deepEqual(judge(A, { ...B, z: 32 }), { type: 'notch' }, 'enfoncé de la moitié : toujours l’encoche');
+  assert.match(judge(A, { ...B, z: 42 })!.why!, /reposer/);
+  const hewn = { wood: { size: 'normal', length: 440, shape: 'round' as const, hewn: 12, axis: 'ns' as const } };
+  assert.match(judge(A, { ...B, piece: hewn })!.why!, /même état/);
+  console.log('✓ test-build : encoche (rondins croisés, enfoncés de moitié, refus)');
+}

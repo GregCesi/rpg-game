@@ -31,6 +31,8 @@ const grid = (name: string): Grid => {
   if (s?.kind === 'spritesheet') return s.animations['idle-down'].frames[0];
   throw new Error(`assemblages : image ${name} absente`);
 };
+/** La palette d'une image d'art (les marques d'assemblage ont la leur). */
+const palOf = (name: string): Record<string, string> => (sources.find((q) => q.name === name) as { palette: Record<string, string> }).palette;
 const woodPal = (sources.find((s) => s.name === 'wood-big') as { palette: Record<string, string> }).palette;
 const xeros = sources.find((s) => s.name === 'xeros')!;
 const xerosPal = xeros.kind === 'spritesheet' ? xeros.palette : world;
@@ -58,7 +60,7 @@ function draw(board: Board, p: BuildPiece, ox: number, oy: number, marks: { key:
   const x = Math.round((b.x + b.w / 2) / CM_PER_PX - g[0].length / 2) + ox;
   const y = Math.round((b.y + b.d - b.z) / CM_PER_PX) + lift - g.length + oy;
   board.blit(g, woodPal, x, y);
-  for (const m of marks) board.blit(grid(m.key), world, x + m.x, y + m.y);
+  for (const m of marks) board.blit(grid(m.key), palOf(m.key), x + m.x, y + m.y);
 }
 
 /** Les pièces d'une scène, avant (chacune seule) ou après (les suites entées d'un tenant, marquées ; la cheville du tenon). */
@@ -124,7 +126,7 @@ function scene(board: Board, all: BuildPiece[], joints: JointRef[], ox: number, 
     const ge = composeWood((ew.piece as { wood: WoodPiece }).wood).toGrid();
     const x = Math.round((N.x + N.w / 2) / CM_PER_PX - gn[0].length / 2) + ox;
     const y = Math.round((E.y + E.d - E.z) / CM_PER_PX) - ge.length + oy;
-    board.blit(grid(key), woodPal, x, y);
+    board.blit(grid(key), palOf(key), x, y);
   }
 }
 
