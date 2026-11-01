@@ -31,6 +31,7 @@
     "test:monde": "npm run art && npm run maps && tsx tools/test-monde.ts && tsx tools/test-combat.ts",
     "art:monde": "npm run art && npm run maps && tsx tools/world-preview.ts",
     "test:combat": "npm run art && npm run maps && tsx tools/test-combat.ts",
+    "test:temps": "npm run art && npm run maps && tsx tools/test-temps.ts",
     "build": "npm run check && npm run test:fast && tsc --noEmit && vite build",
     "build:single": "npm run check && npm run test:fast && tsc --noEmit && vite build --mode single",
     "artifact": "npm run build:single && tsx tools/make-artifact.ts"

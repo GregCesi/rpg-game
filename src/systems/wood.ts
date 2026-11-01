@@ -15,6 +15,17 @@ import type { RailEnd, RailPass } from './rail';
 export type WoodWork = 'cut' | 'hew' | 'plant' | 'maul';
 
 /**
+ * La durée réaliste d'un coup de ce travail, en minutes de jeu (wood.json ; docs/CONCEPTION.md, « Le temps ») : une part de la coupe
+ * (selon le diamètre), planter le coin, un coup de masse, un coup de doloire (sa part d'un mètre de face).
+ */
+export function workMinutes(work: WoodWork, piece: WoodPiece): number {
+  if (work === 'cut') return (W.cut.minutesPer10cm * (W.sizes[piece.size]?.diameter ?? 30)) / 10 / W.cut.hits;
+  if (work === 'plant') return W.split.plantMinutes;
+  if (work === 'maul') return W.split.minutesPerHit;
+  return (W.hew.minutesPerM * W.hew.stroke) / 100;
+}
+
+/**
  * Ce que l'outil en main ferait à la pièce de bois devant Xéros : `at`, pour une coupe, sa place en cm depuis le bout de départ
  * (ouest, nord), pour une passe de doloire, l'endroit où elle commence ; `end`, pour le coin et la masse, le bout où se tient
  * Xéros ; `from`, pour une passe, le bout d'où part la face (elle va vers l'autre) ; (x, y) : où l'invite se pose. `refusal` :

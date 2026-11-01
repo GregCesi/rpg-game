@@ -1,6 +1,19 @@
 {
-  "speeds": [1, 6, 24, 60, 360],
+  "speeds": [
+    1,
+    6,
+    24,
+    60,
+    360
+  ],
   "default": 24,
   "wakeHour": 6,
-  "saveEveryMinutes": 15
+  "saveEveryMinutes": 15,
+  "work": {
+    "knot": 3,
+    "stake": 2,
+    "turn": 2,
+    "place": 5,
+    "raise": 15
+  }
 }

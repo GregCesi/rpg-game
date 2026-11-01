@@ -57,6 +57,11 @@ const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
  * Avec `tool`, on frappe avec Espace, l'outil en main ; sans, on récolte à la main avec E.
  */
 export const HarvestSchema = z.strictObject({
+  /**
+   * Durée réaliste de la récolte entière, en minutes de jeu (docs/CONCEPTION.md, « Le temps ») : l'horloge en avance d'une part à
+   * chaque coup (`minutes` / `hits`) ; le geste, lui, garde sa durée. 0 : rien ne passe (prendre un outil posé).
+   */
+  minutes: z.number().nonnegative(),
   /** Objet possédable nécessaire (clé de items.json, de type 'tool') ; absent = à la main. */
   tool: id.optional(),
   /** Nombre de coups. L'objet tremble à chaque coup. */
@@ -400,11 +405,14 @@ export const WoodSchema = z.strictObject({
   density: z.number().positive(),
   grid: z.number().int().positive(),
   min: z.number().int().positive(),
-  cut: z.strictObject({ tool: id, hits: z.number().int().positive() }),
-  hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive(), stroke: z.number().int().positive() }),
+  /** `minutesPer10cm` : la durée d'une coupe entière, en minutes de jeu, par 10 cm de diamètre (une part à chaque coup). */
+  cut: z.strictObject({ tool: id, hits: z.number().int().positive(), minutesPer10cm: z.number().nonnegative() }),
+  /** `minutesPerM` : minutes de jeu par mètre de face dressé (une part à chaque coup de la passe). */
+  hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive(), stroke: z.number().int().positive(), minutesPerM: z.number().nonnegative() }),
   /** La planche fendue : son épaisseur et sa largeur de bois (cm), quel que soit le diamètre d'où elle vient. */
   plank: z.strictObject({ thick: z.number().positive(), wide: z.number().positive() }),
-  split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive() }),
+  /** `minutesPerHit` : minutes de jeu par coup de masse ; `plantMinutes` : planter le coin. */
+  split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive(), minutesPerHit: z.number().nonnegative(), plantMinutes: z.number().nonnegative() }),
   /** Les âges du bois travaillé et leur nom affiché (WoodAgeSchema : tous, dans l'ordre), pour le catalogue et les messages. */
   ages: z.strictObject({ new: id, worn: id, old: id }),
   sizes: z.record(id, WoodSizeSchema),
@@ -934,6 +942,12 @@ export const TimeSchema = z
     default: z.number().positive(),
     wakeHour: z.number().min(0).max(23),
     saveEveryMinutes: z.number().positive(),
+    /**
+     * Durée réaliste des petits travaux, en minutes de jeu : nouer ou dénouer un fagot (`knot`), planter un piquet de tracé (`stake`),
+     * pivoter une bille (`turn`), poser une pièce à sa place d'un chantier (`place`), y dresser une poutre (`raise`). Les récoltes, le
+     * bois et les transformations ont la leur dans leurs données.
+     */
+    work: z.strictObject({ knot: z.number().nonnegative(), stake: z.number().nonnegative(), turn: z.number().nonnegative(), place: z.number().nonnegative(), raise: z.number().nonnegative() }),
   })
   .refine((t) => t.speeds.includes(t.default), { message: "'default' doit être l'un des paliers de 'speeds'" });
 
@@ -1134,6 +1148,8 @@ export const TransformGestureSchema = z.union([z.literal('soon'), z.strictObject
  */
 export const TransformSchema = z.strictObject({
   name: id,
+  /** Durée réaliste de la transformation, en minutes de jeu (docs/CONCEPTION.md, « Le temps ») : « Transformer » (?dieu) avance l'horloge d'autant. */
+  minutes: z.number().nonnegative(),
   inputs: z.array(TransformPartSchema),
   outputs: z.array(TransformPartSchema).min(1),
   waste: z.strictObject({ name: id, prop: id.optional(), fate: id.optional() }).refine((w) => !w.prop !== !w.fate, { message: "le déchet reste au sol ('prop') ou dit où il va ('fate'), l'un ou l'autre" }).optional(),

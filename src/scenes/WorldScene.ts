@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { clockLabel } from '../world/clock';
 import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
-import { items, maps, props } from '../content';
+import { items, maps, props, time, transforms } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
@@ -28,7 +28,7 @@ import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
 import { Rail } from '../systems/rail';
 import { SiteSystem } from '../systems/site';
-import { WoodSystem, type WoodAim } from '../systems/wood';
+import { WoodSystem, workMinutes, type WoodAim } from '../systems/wood';
 import { TransformSystem } from '../systems/transform';
 import { ZoomControl } from '../systems/zoom';
 import { TurnSystem } from '../systems/turnLog';
@@ -45,6 +45,7 @@ import {
   mapState,
   newGame,
   removeGroundItem,
+  revisionOf,
   replaceState,
   resetMap,
   sleep,
@@ -404,7 +405,7 @@ export class WorldScene extends Phaser.Scene {
       // ce qui va directement dans les mains (la hache du billot) : il faut les mains libres avant le geste
       const gives = a.prop.def.harvest!.drops.filter((d) => d.give);
       if (gives.some((d) => !canTake(game, items[d.item].hands))) return this.notice('Les mains pleines.');
-      this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
+      this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.reportWork(a.prop, this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
     } else if (a.kind === 'take') {
       if (a.prop.wood?.notch) return this.notice("Finis d'abord la coupe.");
       if (a.prop.wood?.wedge) return this.notice('Le coin est planté : finis de la fendre.');
@@ -443,6 +444,8 @@ export class WorldScene extends Phaser.Scene {
       // dresser une poutre se paie selon sa masse ; une pierre qu'on pose, rien
       if (r.kg > 0 && !this.effort.afford(this.player, this.player.stamina.raiseCost(r.kg))) return;
       r.commit();
+      // poser une pièce, ou dresser une poutre : le temps qu'il faut (time.json)
+      this.clock.work(r.kg > 0 ? time.work.raise : time.work.place);
       this.handsChanged();
     } else if (a.kind === 'swing') {
       this.swing(a.id);
@@ -510,6 +513,7 @@ export class WorldScene extends Phaser.Scene {
       this.notice("Ta mère vient t'aider.");
       this.time.delayedCall(HELP.hold, () => {
         r.commit();
+        this.clock.work(time.work.raise);
         cam.fadeIn(HELP.fade, 20, 14, 8);
         cam.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
           this.mode = 'play';
@@ -526,6 +530,7 @@ export class WorldScene extends Phaser.Scene {
     if (!r.ok) return this.notice(r.message);
     if (!this.effort.afford(this.player, this.player.stamina.costs.stake)) return;
     r.commit();
+    this.clock.work(time.work.stake);
     this.handsChanged();
   }
 
@@ -538,6 +543,7 @@ export class WorldScene extends Phaser.Scene {
     const why = this.turns.act(this.player, a.prop);
     if (why) return this.notice(why);
     this.player.stamina.spend(this.player.stamina.turnCost(kg));
+    this.clock.work(time.work.turn);
   }
 
   /** E maintenu devant un tas ou un fagot : nouer ou dénouer ; sinon, ce qui manque se dit. */
@@ -545,7 +551,10 @@ export class WorldScene extends Phaser.Scene {
     if (this.player.stamina.empty) return this.effort.exhausted();
     const why = this.knots.act(target.action);
     if (why) this.notice(why);
-    else this.player.stamina.spend(this.player.stamina.costs.knot);
+    else {
+      this.player.stamina.spend(this.player.stamina.costs.knot);
+      this.clock.work(time.work.knot);
+    }
   }
 
   /** Q, ou E dans le vide : pose devant soi ce que tient la main active, là où le montre le fantôme (HandsSystem.putDown), s'il y a la place. */
@@ -624,7 +633,12 @@ export class WorldScene extends Phaser.Scene {
       if (aim.work === 'hew') return this.hewPass(aim);
       if (!this.effort.afford(this.player, this.wood.cost(this.player, aim))) return;
       const gesture = WoodSystem.gestureOf(aim);
-      return gesture ? this.gesture(gesture, tool, () => this.woodHit(tool)) : this.woodHit(tool);
+      const minutes = workMinutes(aim.work, aim.piece);
+      const hit = () => {
+        this.woodHit(tool);
+        this.clock.work(minutes);
+      };
+      return gesture ? this.gesture(gesture, tool, hit) : hit();
     }
     // un outil du bois sans pièce à portée : le coin ne se joue pas dans le vide
     if (WoodSystem.workOf(tool) === 'plant') return this.notice('Rien où le planter : colle-toi au bout d’une grosse bille couchée.');
@@ -639,7 +653,10 @@ export class WorldScene extends Phaser.Scene {
     const costs = this.player.stamina.costs;
     if (h && wields(h, tool) && !this.effort.afford(this.player, costs[effortOf(h, tool, !!target!.def.bears?.prop)])) return;
     // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
-    this.gesture(gesture, tool, () => this.report(this.harvest.hit(this.harvest.target(this.player, tool), tool, this.player.actor.facing)));
+    this.gesture(gesture, tool, () => {
+      const t = this.harvest.target(this.player, tool);
+      this.reportWork(t, this.harvest.hit(t, tool, this.player.actor.facing));
+    });
   }
 
   /**
@@ -678,7 +695,12 @@ export class WorldScene extends Phaser.Scene {
   private hewPass(aim: WoodAim): void {
     if (this.player.stamina.empty) return this.effort.exhausted();
     this.mode = 'rail';
-    const pay = (cost: number) => this.effort.afford(this.player, cost);
+    // chaque coup de la passe se paie, et prend sa part du temps d'un mètre de face (wood.json)
+    const pay = (cost: number) => {
+      const ok = this.effort.afford(this.player, cost);
+      if (ok) this.clock.work(workMinutes('hew', aim.piece));
+      return ok;
+    };
     this.rail.start(
       this.wood.hewPass(this.player, aim, pay, (r, why) => {
         if (r.face) this.notice(`Une face dressée (${r.face} sur 4).`);
@@ -714,6 +736,13 @@ export class WorldScene extends Phaser.Scene {
     this.player.tools.swing(gesture, item, onImpact, () => {
       if (this.mode === 'use') this.mode = 'play';
     });
+  }
+
+  /** Un coup de récolte rendu (voir `report`), et, s'il a porté, sa part de la durée de la récolte (`minutes` / `hits`, props.json). */
+  private reportWork(target: { def: { harvest?: { minutes: number; hits: number } } } | undefined, r: HitResult): void {
+    const h = target?.def.harvest;
+    if (r.kind === 'hit' && h) this.clock.work(h.minutes / h.hits);
+    this.report(r);
   }
 
   private report(r: HitResult): void {
@@ -858,10 +887,14 @@ export class WorldScene extends Phaser.Scene {
       case 'erase-sites':
         this.site.erase();
         break;
-      case 'transform':
+      case 'transform': {
+        const before = revisionOf();
         this.notice(this.transformer.apply(this.player, cmd.id));
+        // une transformation faite (la partie a changé) prend sa durée réaliste (transforms.json)
+        if (revisionOf() !== before) this.clock.work(transforms[cmd.id].minutes);
         this.handsChanged();
         break;
+      }
       case 'skip-step': {
         const why = this.site.skipStep();
         if (why) this.notice(why);
