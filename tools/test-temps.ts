@@ -106,9 +106,28 @@ await playtest('temps', async ({ page, errors, load }) => {
     a.face('right');
     await sleep(200);
     await send({ kind: 'sim-speed', factor: 5 }, 0);
+    // le temps du jeu (celui de la scène) et le nombre de pas de jeu par image du navigateur : ce que fait la vitesse de simulation,
+    // quelle que soit la charge de la machine
+    let steps = 0;
+    let gameMs = 0;
+    const count = (_time: number, delta: number) => {
+      steps++;
+      gameMs += delta;
+    };
+    g.events.on('prestep', count);
     const fast: { t: number; done: number }[] = [];
     await press('Space');
-    await watch(4000, fast);
+    const f0 = steps;
+    let frames = 0;
+    const tf = performance.now();
+    while (performance.now() - tf < 4000) {
+      const d = w().works.active ? w().works.done : -1;
+      if (d >= 0 && d !== fast.at(-1)?.done) fast.push({ t: gameMs, done: d });
+      frames++;
+      await frame();
+    }
+    out.stepsPerFrame = (steps - f0) / frames;
+    g.events.off('prestep', count);
     await send({ kind: 'sim-speed', factor: 1 }, 0);
     await press('Escape');
     while (w().mode !== 'play') await frame();
@@ -146,8 +165,10 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.ok(first.strong.per > 2 * m.per, `avec la force du bûcheron fort, plus de deux fois moins de coups (${(first.strong.per / m.per).toFixed(2)} fois la part)`);
   // la vitesse de simulation x5
   const fastSteps = intervals(first.fast);
-  assert.ok(fastSteps.length >= 3, `à x5, des coups serrés (${fastSteps.length + 1} en 4 s)`);
-  for (const st of fastSteps) assert.ok(Math.abs(st.dt / 1000 - m.cycle / 5) < 0.3 * (m.cycle / 5), `à x5 : ${(st.dt / 1000).toFixed(2)} s pour ${(m.cycle / 5).toFixed(2)} s`);
+  assert.ok(fastSteps.length >= 3, `à x5, des coups serrés (${fastSteps.length + 1} en 4 s réelles)`);
+  // cinq pas de jeu par image, chacun de taille normale : en temps de jeu, un coup garde sa durée
+  assert.ok(Math.abs(first.stepsPerFrame - 5) < 0.2, `à x5, cinq pas de jeu par image (${first.stepsPerFrame.toFixed(2)})`);
+  for (const st of fastSteps) assert.ok(Math.abs(st.dt / 1000 - m.cycle) < 0.25 * m.cycle, `à x5, un coup dure en temps de jeu ce qu'il dure à x1 : ${(st.dt / 1000).toFixed(2)} s pour ${m.cycle.toFixed(2)} s`);
   assert.equal(first.stopped.mode, 'play', 'un pas : le travail s’arrête');
   assert.equal(first.stopped.bar, false, 'la jauge disparaît');
   assert.ok(first.stopped.standing, 'l’arbre entamé reste debout');
