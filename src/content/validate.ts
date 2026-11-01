@@ -1130,7 +1130,7 @@ export function workDurations(): { name: string; strokes: number; pauses: number
 }
 
 /** Les points de calage du travail (work.json, `calibration`) : chacun doit tenir sa durée, à `tolerance` près. */
-export function validateWork(c: Pick<Content, 'work' | 'items' | 'props'>): string[] {
+export function validateWork(c: Pick<Content, 'work' | 'items' | 'props'>, cat: Catalog): string[] {
   const errors: string[] = [];
   for (const k of ['axe', 'hatchet', 'maul', 'broadaxe']) if (!c.items[k]?.work) errors.push(`items.json '${k}' : un outil au travail sans 'work'`);
   for (const [k, p] of Object.entries(c.props)) {
@@ -1139,6 +1139,17 @@ export function validateWork(c: Pick<Content, 'work' | 'items' | 'props'>): stri
     for (const t of h?.work ? [h.tool, ...Object.keys(h.also)] : []) if (t && !c.items[t]?.work) errors.push(`props.json '${k}' : l'outil '${t}' n'a pas de 'work' (items.json)`);
   }
   if (errors.length) return errors;
+  // les étapes visibles : croissantes, et dessinées pour chaque vue de l'objet (son image et sa vue `-left`, s'il en a une)
+  for (const [k, p] of Object.entries(c.props)) {
+    const st = p.harvest?.stages;
+    if (!st) continue;
+    if (!p.harvest!.work) errors.push(`props.json '${k}' : des étapes ('stages') sans matière ('work')`);
+    if (st.some((t, i) => i > 0 && t <= st[i - 1])) errors.push(`props.json '${k}' : les étapes ('stages') doivent croître`);
+    for (const base of [p.image, ...(cat.textures.has(`${p.image}-left`) ? [`${p.image}-left`] : [])])
+      st.forEach((_, i) => {
+        if (!cat.textures.has(`${base}-stage-${i + 1}`)) errors.push(`props.json '${k}' : image d'étape '${base}-stage-${i + 1}' introuvable (pixel-artist)`);
+      });
+  }
   for (const cal of c.work.calibration) {
     if (cal.who !== 'xeros' && !c.work.references[cal.who]) {
       errors.push(`work.json, calage « ${cal.name} » : '${cal.who}' n'est ni xeros ni une référence`);
@@ -1158,7 +1169,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   const addAll = (msgs: string[]) => errors.push(...msgs);
 
   // le travail : les outils, les récoltes au coup, les points de calage
-  addAll(validateWork(c));
+  addAll(validateWork(c, cat));
 
   // Joueur
   for (const state of ['idle', 'walk']) {

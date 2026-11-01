@@ -70,6 +70,13 @@ export const HarvestWorkSchema = z.union([
 export const HarvestSchema = z.strictObject({
   /** La matière, si la récolte se travaille au coup (voir HarvestWorkSchema). */
   work: HarvestWorkSchema.optional(),
+  /**
+   * Les étapes visibles du travail (docs/CONCEPTION.md, « Le travail », § 6) : la part de la matière enlevée (de 0 à 1, croissante) à
+   * laquelle l'objet prend l'image `<son image>-stage-<n>` (n à partir de 1 ; pour chaque vue qu'il a : `<image de la vue>-stage-<n>`),
+   * dessinée par le pixel-artist (art/world/work-stages.ts). L'arbre debout : l'entaille, le trait d'abattage, le craquement, il penche ;
+   * l'arbre couché : le houppier qui s'allège.
+   */
+  stages: z.array(z.number().gt(0).lt(1)).optional(),
   /** Objet possédable nécessaire (clé de items.json, de type 'tool') ; absent = à la main. */
   tool: id.optional(),
   /** Nombre de coups. L'objet tremble à chaque coup. */

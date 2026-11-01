@@ -53,8 +53,9 @@ import cabinClosing from './world/cabin-closing';
 import barn from './world/barn';
 import stall from './world/stall';
 import signpost from './world/signpost';
+import workStages from './world/work-stages';
 import { agedSources } from './lib/ages';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...stamina, ...staminaBar, ...workBar, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building , ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...normalLogs, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...stamina, ...staminaBar, ...workBar, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building , ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...workStages];
 // le bois travaillé à ses autres âges (patiné, vieux), tiré des images neuves
 sources.push(...agedSources(sources));

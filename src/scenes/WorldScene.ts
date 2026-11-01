@@ -278,6 +278,11 @@ export class WorldScene extends Phaser.Scene {
     this.clock.onAdvance = (from, minutes) =>
       this.player.stamina.wear((nightMinutes(from, minutes, night.nightFrom, time.wakeHour) / 60) * night.nightAwakePerHour);
     this.player.stamina.onChange = () => this.game.events.emit(GameEvent.Stamina, this.player.stamina.levels());
+    // les travaux commencés : l'étape visible de ce qui est entamé (l'arbre à moitié entaillé, retrouvé tel quel)
+    for (const [key, w] of Object.entries(mapState(game, this.map.def.id).work)) {
+      const p = w.work === 'harvest' ? this.map.props.find((q) => workKey(q.id, q.spawned) === key) : undefined;
+      if (p) this.harvest.showStage(p, w.done);
+    }
     this.dropHeavy();
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
@@ -791,6 +796,7 @@ export class WorldScene extends Phaser.Scene {
       steps,
       step: () => this.report(this.harvest.hit(prop, tool, facing)),
       strike: () => this.harvest.strike(prop, facing),
+      progress: (d) => this.harvest.showStage(prop, d),
       save: (d) => setWork(game, mapId, key, d === undefined ? undefined : { work: kind, done: d }),
       valid: () => this.map.props.includes(prop),
     });

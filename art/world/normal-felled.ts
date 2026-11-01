@@ -189,24 +189,24 @@ const TRUNK_X = BUTT_X - 1;
  * au-delà de la frontière festonnée (à partir de CROWN_OVER_X), ailleurs sur le vide ; l'ombre du tronc (deux rangées
  * décalées vers la droite) puis celle du houppier.
  */
-function lyingTree(): Canvas {
+function lyingTree(crown = CROWN, shade?: Set<number>): Canvas {
   const c = new Canvas(FALL_W, FALL_H);
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     const t = TRUNK.get(X, Y);
     if (X >= TRUNK_X) c.set(X, Y, t);
-    const f = CROWN.get(X, Y);
+    const f = crown.get(X, Y);
     if (f !== EMPTY && (t === EMPTY || (X >= CROWN_OVER_X && X >= overAt(Y)))) c.set(X, Y, f);
   }
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     if (c.get(X, Y) !== EMPTY) continue;
     const band = BAND1.get(X, Y) !== EMPTY || BAND2.get(X, Y) !== EMPTY;
     if (band && X >= TRUNK_X) c.set(X, Y, 'x');
-    else if (!band && CROWN_SHADOW.get(X, Y) !== EMPTY && TRUNK.get(X, Y) === EMPTY) c.set(X, Y, 'x');
+    else if (!band && CROWN_SHADOW.get(X, Y) !== EMPTY && TRUNK.get(X, Y) === EMPTY && (!shade || shade.has(X))) c.set(X, Y, 'x');
   }
   return c;
 }
 
-interface Frame { x: number; y: number; w: number; h: number }
+export interface Frame { x: number; y: number; w: number; h: number }
 
 /** Cadre des pixels peints. */
 function bounds(c: Canvas): Frame {
@@ -302,19 +302,19 @@ const CROWN_SHADOW_L = crownShadow(mx((CROWN_EXT.x0 + CROWN_EXT.x1) / 2) + 4);
 const STUMP_L = new Canvas(FALL_W, FALL_H).stamp(stump().toGrid(), STUMP_AT[0] + OFF_L, STUMP_AT[1]);
 
 /** L'arbre couché vers la gauche, sans la souche : le miroir de `lyingTree` en géométrie, éclairé pour ce sens. */
-function lyingTreeLeft(): Canvas {
+function lyingTreeLeft(crown = CROWN_L, shade?: Set<number>): Canvas {
   const c = new Canvas(FALL_W, FALL_H);
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     const t = TRUNK_L.get(X, Y);
     if (mx(X) >= TRUNK_X) c.set(X, Y, t);
-    const f = CROWN_L.get(X, Y);
+    const f = crown.get(X, Y);
     if (f !== EMPTY && (t === EMPTY || (mx(X) >= CROWN_OVER_X && mx(X) >= overAt(Y)))) c.set(X, Y, f);
   }
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     if (c.get(X, Y) !== EMPTY || STUMP_L.get(X, Y) !== EMPTY) continue;
     const band = BAND1_L.get(X, Y) !== EMPTY || BAND2_L.get(X, Y) !== EMPTY;
     if (band && mx(X) >= TRUNK_X) c.set(X, Y, 'x');
-    else if (!band && X <= CROWN_L_RIGHT && CROWN_SHADOW_L.get(X, Y) !== EMPTY && TRUNK_L.get(X, Y) === EMPTY) c.set(X, Y, 'x');
+    else if (!band && X <= CROWN_L_RIGHT && CROWN_SHADOW_L.get(X, Y) !== EMPTY && TRUNK_L.get(X, Y) === EMPTY && (!shade || shade.has(X))) c.set(X, Y, 'x');
   }
   return c;
 }
@@ -390,6 +390,50 @@ export const FELLED_TREE = (() => {
   };
   return { right: describe(false), left: describe(true) };
 })();
+
+// ---------- Arbre couché, houppier allégé (l'ébranchage) ----------
+// Les étapes de l'ébranchage (art/world/work-stages.ts) : le même arbre couché, composé de la même façon, mais son houppier
+// perd des pixels (`keep`, en distance au pied h et au travers de l'axe g, dans le sens de droite) ; son ombre ne reste que
+// sous les colonnes où il en reste. Le cadre reste celui de l'arbre entier.
+
+/** Colonnes où une image a des pixels peints. */
+const columns = (c: Canvas): Set<number> => new Set([...Array(c.w).keys()].filter((X) => c.px.some((r) => r[X] !== EMPTY)));
+
+/** L'arbre couché (sans la souche, dans la frame), son houppier réduit aux pixels que `keep` garde. */
+export function lightenedTree(left: boolean, keep: (h: number, g: number) => boolean): Canvas {
+  const body = left ? crownBodyLeft() : crownBody();
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    if (body.get(X, Y) === EMPTY) continue;
+    const [h, g] = lying(left ? mx(X) : X, Y);
+    if (!keep(h, g)) body.px[Y][X] = EMPTY;
+  }
+  const crown = shadedOutline(despeckleEdgesOf(despeckle(body)));
+  return left ? lyingTreeLeft(crown, columns(crown)) : lyingTree(crown, columns(crown));
+}
+
+/** Un pixel de feuillage seul au bord (que `despeckle` laisse) disparaît : sans voisin peint, il ne serait qu'un point. */
+function despeckleEdgesOf(c: Canvas): Canvas {
+  const out: [number, number][] = [];
+  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
+    if (c.get(X, Y) === EMPTY) continue;
+    const ns = [c.get(X + 1, Y), c.get(X - 1, Y), c.get(X, Y + 1), c.get(X, Y - 1)].filter((n) => n !== EMPTY);
+    if (ns.length <= 1) out.push([X, Y]);
+  }
+  for (const [X, Y] of out) c.px[Y][X] = EMPTY;
+  return c;
+}
+
+/** Ce que l'ébranchage doit savoir de l'arbre couché normal (repère : la frame de la chute). */
+export const NORMAL_LYING = {
+  w: FALL_W,
+  buttX: BUTT_X,
+  axisY: AXIS_Y,
+  barkTop: TRUNK_TOP,
+  barkBottom: TRUNK_BOTTOM - 1,
+  trunkLen: TRUNK_LEN,
+  frame: (left: boolean): Frame => wholeTree(left).f,
+  compose: lightenedTree,
+};
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 

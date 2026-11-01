@@ -25,6 +25,8 @@ export interface WorkJob {
   step(k: number): void;
   /** Chaque coup qui porte : éclats, l'objet qui tremble. */
   strike(): void;
+  /** La part enlevée a changé (au départ, à chaque coup, avant le résultat) : l'étape visible. */
+  progress?(done: number): void;
   /** La part enlevée (0 à 1), à écrire dans GameState ; `undefined` : le travail est fini, plus rien à garder. */
   save(done: number | undefined): void;
   /** La cible est-elle toujours là ? */
@@ -93,6 +95,7 @@ export class WorkSystem {
     this.reached = this.stepsAt(job.done);
     this.stopping = this.pausing = this.idle = false;
     this.bar.show(this.player.actor, job.done);
+    job.progress?.(job.done);
     this.swing();
     return true;
   }
@@ -129,6 +132,7 @@ export class WorkSystem {
     this.jump(plan.seconds / 60);
     this.player.stamina.force(plan.ceiling);
     job.done = 1;
+    job.progress?.(1);
     this.reach(job.steps);
     this.close('done');
     return true;
@@ -175,6 +179,7 @@ export class WorkSystem {
         }
         job.strike();
         job.done = Math.min(1, job.done + this.per);
+        job.progress?.(job.done);
         const k = this.stepsAt(job.done);
         if (k > this.reached) {
           this.reach(k);

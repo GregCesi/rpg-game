@@ -272,6 +272,19 @@ export class HarvestSystem {
     this.scene.time.delayedCall(c.lifespan + 50, () => emitter.destroy());
   }
 
+  /**
+   * L'étape visible d'un travail (docs/CONCEPTION.md, « Le travail », § 6) : à la part `done` de la matière enlevée, l'objet prend
+   * l'image de la dernière étape passée (`stages` de son harvest : `<son image>-stage-<n>`, dans sa vue), ou la sienne avant la première.
+   */
+  showStage(prop: PlacedProp, done: number): void {
+    const stages = prop.def.harvest?.stages;
+    if (!stages || !this.map.props.includes(prop)) return;
+    const base = prop.flip && this.scene.textures.exists(`${prop.def.image}-left`) ? `${prop.def.image}-left` : prop.def.image;
+    const n = stages.filter((t) => done + 1e-9 >= t).length;
+    const key = n > 0 ? `${base}-stage-${n}` : base;
+    if (this.scene.textures.exists(key) && prop.image.texture.key !== key) prop.image.setTexture(key);
+  }
+
   /** Un coup qui porte, entre deux étapes d'un travail : les éclats, l'objet qui tremble. */
   strike(prop: PlacedProp, facing: Facing): void {
     const h = prop.def.harvest;
