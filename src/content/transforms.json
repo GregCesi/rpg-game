@@ -45,5 +45,7 @@
   "rive-shingle": {"name": "fendre des bardeaux", "inputs": [{"wood": {"size": "big", "shape": "quarter", "length": 60}}], "outputs": [{"item": "shingle", "count": 16}],
     "waste": {"name": "le bout recoupé, le cœur et l'aubier", "fate": "ils partent au feu"}, "tools": ["froe", "mallet"], "station": "brake", "trade": "splitter", "gesture": "soon"},
   "carve-wooden-sword": {"name": "tailler une épée de bois", "inputs": [{"wood": {"size": "big", "shape": "plank", "length": 100}}], "outputs": [{"item": "wooden-sword"}],
-    "waste": {"name": "copeaux et chutes", "fate": "ils partent au feu"}, "tools": ["hatchet"], "station": "bench", "trade": "joiner", "gesture": "soon"}
+    "waste": {"name": "copeaux et chutes", "fate": "ils partent au feu"}, "tools": ["hatchet"], "station": "bench", "trade": "joiner", "gesture": "soon"},
+  "raise-training-dummy": {"name": "dresser un mannequin d'entraînement", "inputs": [{"wood": {"size": "pole", "shape": "round", "length": 200}}, {"item": "thatch-bundle"}, {"item": "rope-tie"}], "outputs": [{"prop": "training-dummy"}],
+    "tools": ["spade"], "station": "ground", "trade": "peasant", "gesture": "soon"}
 }

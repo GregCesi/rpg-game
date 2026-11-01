@@ -1,4 +1,4 @@
-// Éclats d'impact : une planche fx-<matière> par matière frappée (bois, pierre, feuillage).
+// Éclats d'impact : une planche fx-<matière> par matière frappée (bois, pierre, feuillage, paille).
 // Chaque planche tient 4 images de 8×8 : quatre variantes d'un petit éclat de 2 à 5 px, pas une animation.
 // Le jeu en fait des particules qui jaillissent du point d'impact et retombent, une variante au hasard chacune.
 // L'animation `chips` ne sert qu'à déclarer les images.
@@ -21,10 +21,12 @@ const materials: Materials = {
   s: { light: 'R', base: 'r', shade: 'z', dark: 'Z' },
   // feuille : le vert le plus clair en lumière, pour ne pas se fondre dans l'herbe
   l: { light: 'j', base: 'L', shade: 'l', dark: 'k' },
+  // brin de paille : le chaume doré de la botte (Y t T, P pour le contour), le jour sur sa longueur
+  p: { light: 'Y', base: 'Y', shade: 't', dark: 'P' },
 };
 
 /** Variantes en zones, centrées sur le pixel (4, 4) à peu près ; un pixel de marge pour le contour. */
-const VARIANTS: Record<'wood' | 'stone' | 'leaves', Grid[]> = {
+const VARIANTS: Record<'wood' | 'stone' | 'leaves' | 'straw', Grid[]> = {
   // copeaux : lamelles fines, en biais, l'une encore bordée d'écorce
   wood: [
     ['........', '........', '........', '....ww..', '...ww...', '........', '........', '........'],
@@ -46,6 +48,13 @@ const VARIANTS: Record<'wood' | 'stone' | 'leaves', Grid[]> = {
     ['........', '........', '........', '...ll...', '....l...', '........', '........', '........'],
     ['........', '........', '........', '...ll...', '........', '........', '........', '........'],
   ],
+  // brins de paille : des tiges fines et longues, droites ou pliées, qui tournent en volant
+  straw: [
+    ['........', '........', '.....p..', '....p...', '...p....', '..p.....', '........', '........'],
+    ['........', '........', '........', '..ppp...', '.....pp.', '........', '........', '........'],
+    ['........', '........', '...p....', '...p....', '....p...', '....p...', '........', '........'],
+    ['........', '........', '........', '.pp.....', '...pp...', '.....p..', '........', '........'],
+  ],
 };
 
 const sheet = (kind: keyof typeof VARIANTS): SpriteSheetSource => ({
@@ -57,4 +66,4 @@ const sheet = (kind: keyof typeof VARIANTS): SpriteSheetSource => ({
   animations: { chips: { frames: VARIANTS[kind].map((g) => lightUp(g, materials)), frameRate: 1, repeat: 0 } },
 });
 
-export default [sheet('wood'), sheet('stone'), sheet('leaves')];
+export default [sheet('wood'), sheet('stone'), sheet('leaves'), sheet('straw')];
