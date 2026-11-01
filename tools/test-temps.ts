@@ -1,11 +1,12 @@
 // Test de scénario du temps (docs/CONCEPTION.md, « Le temps »), dans le vrai jeu (voir tools/lib/playtest.ts) :
 // - l'horloge à x1 : l'accélération du temps est en pause (time.json, `accelerate`) ; V ne fait rien, l'heure s'affiche sans vitesse ;
-// - le travail au coup (docs/CONCEPTION.md, « Le travail ») : devant un arbre normal, un appui sur Espace donne un coup, qui enlève sa
-//   part de la matière (world/workPlan.ts) ; Espace maintenu enchaîne les coups au rythme du modèle (la durée d'un coup, world/swing.ts),
-//   chaque coup payé au plafond ; une jauge au-dessus de Xéros ; relâcher arrête, la part enlevée est gardée (sauvegarde comprise :
-//   retrouvée après rechargement) et le travail repris continue de là ; ?dieu « Finir le travail » fait les coups qui restent d'un coup
-//   (l'horloge avance de leur durée, pauses comprises, le plafond en paie le prix) ; à bout de souffle, Xéros s'arrête et souffle sans
-//   message d'épuisement (la bouffée, la barre qui clignote), puis reprend tout seul si Espace est tenu ;
+// - le travail au coup (docs/CONCEPTION.md, « Le travail ») : devant un arbre normal, un seul appui sur Espace lance tout le travail,
+//   Xéros frappe seul au rythme du modèle (world/swing.ts), chaque coup enlève sa part (world/workPlan.ts) et se paie au plafond ; la
+//   force réglée dans ?dieu en plein travail agit au coup suivant (le bûcheron fort enlève plus de deux fois plus par coup) ; un pas
+//   l'arrête, la part enlevée est gardée (sauvegarde comprise : retrouvée après rechargement) et le travail repris continue de là ; la
+//   vitesse de simulation x5 serre les coups cinq fois ; ?debug montre la force, l'énergie et la part par coup ; ?dieu « Finir le
+//   travail » fait les coups qui restent d'un coup (horloge et plafond de leur plan) ; à bout de souffle, Xéros s'arrête et souffle sans
+//   message d'épuisement (la bouffée, la barre qui clignote), puis reprend tout seul ;
 // - le sommeil et la veille : éveillé la nuit (22 h), le plafond s'use de 0,5 par heure de jeu ; dormir mène au lever (6 h le
 //   lendemain), avec le plafond et le maximum que donne la nuit (world/sleep.ts), et le dit.
 // Usage : npm run test:temps (lancé aussi par npm run test:scenarios).
@@ -31,7 +32,7 @@ await playtest('temps', async ({ page, errors, load }) => {
       await sleep(ms);
     };
     // de vrais keyCode : Phaser tient pour doublon deux appuis de même keyCode au même instant
-    const KEY_CODES: Record<string, number> = { KeyV: 86, Space: 32, KeyD: 68 };
+    const KEY_CODES: Record<string, number> = { KeyV: 86, Space: 32, KeyD: 68, Escape: 27 };
     const press = async (code: string) => {
       const keyCode = KEY_CODES[code] ?? 0;
       window.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode } as KeyboardEventInit));
@@ -69,32 +70,51 @@ await playtest('temps', async ({ page, errors, load }) => {
     const job = plan.harvestJob(content.props['normal-tree'].harvest.work, 'axe');
     const stroke = plan.jobStroke(job, content.strength.swing);
     out.model = { per: plan.perStroke(job, stroke) / job.amount, cycle: stroke.cycle, ceiling: plan.strokeCost(stroke).ceiling };
-    // un appui : un coup
+    // un seul appui : le travail est lancé, Xéros frappe seul ; on relève la part enlevée à chaque coup
     const c0 = w().player.stamina.ceiling;
-    await press('Space');
-    while (w().mode !== 'play') await frame();
-    await sleep(300);
-    out.one = { done: gs.mapState(gs.game, 'ferme').work[`o${tree.id}`]?.done ?? 0, kept: gs.mapState(gs.game, 'ferme').work[`o${tree.id}`], paid: c0 - w().player.stamina.ceiling };
-    // Espace maintenu : les coups s'enchaînent ; on relève la part enlevée à chaque coup
     const marks: { t: number; done: number }[] = [];
-    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
-    const t1 = performance.now();
-    let seenWork = false;
-    while (performance.now() - t1 < 7000) {
-      if (w().mode === 'work') seenWork = true;
-      const d = w().works.active ? w().works.done : -1;
-      if (d >= 0 && d !== marks.at(-1)?.done) marks.push({ t: performance.now(), done: d });
-      await frame();
-    }
-    out.held = { seenWork, bar: w().works.bar.frame.visible, mode: w().mode };
-    // relâché : le coup en cours s'achève, puis le travail s'arrête
-    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+    const watch = async (ms: number, into: { t: number; done: number }[]) => {
+      const t = performance.now();
+      while (performance.now() - t < ms) {
+        const d = w().works.active ? w().works.done : -1;
+        if (d >= 0 && d !== into.at(-1)?.done) into.push({ t: performance.now(), done: d });
+        await frame();
+      }
+    };
+    await press('Space');
+    await watch(7000, marks);
+    out.launched = { mode: w().mode, bar: w().works.bar.frame.visible };
+    // la force du bûcheron fort, réglée en plein travail : elle agit dès le coup suivant
+    const strongMul = content.work.references.strong.torque / content.strength.swing.torque;
+    await send({ kind: 'force', multiplier: strongMul }, 0);
+    const strongMarks: { t: number; done: number }[] = [];
+    await watch(6000, strongMarks);
+    const strongStroke = plan.jobStroke(job, { ...content.strength.swing, torque: content.strength.swing.torque * strongMul });
+    out.strong = { per: plan.perStroke(job, strongStroke) / job.amount, mode: w().mode };
+    await send({ kind: 'force', multiplier: 1 }, 0);
+    // un pas : le coup en cours s'achève, puis le travail s'arrête
+    await press('KeyD');
     const t2 = performance.now();
-    while (w().mode !== 'play' && performance.now() - t2 < 4000) await frame();
+    while (w().mode !== 'play' && performance.now() - t2 < 5000) await frame();
     await sleep(200);
     const kept = gs.mapState(gs.game, 'ferme').work[`o${tree.id}`];
     out.marks = marks.map((m) => ({ t: Math.round(m.t), done: m.done }));
+    out.strongMarks = strongMarks.map((m) => ({ t: Math.round(m.t), done: m.done }));
     out.stopped = { mode: w().mode, bar: w().works.bar.frame.visible, kept, standing: w().map.props.includes(tree), paid: c0 - w().player.stamina.ceiling };
+    // la vitesse de simulation à x5 : les coups cinq fois plus serrés (tout le jeu va plus vite, par pas de taille normale)
+    a.body.reset(Math.round(tree.aimX - 14), Math.round(tree.aimY));
+    a.face('right');
+    await sleep(200);
+    await send({ kind: 'sim-speed', factor: 5 }, 0);
+    const fast: { t: number; done: number }[] = [];
+    await press('Space');
+    await watch(4000, fast);
+    await send({ kind: 'sim-speed', factor: 1 }, 0);
+    await press('Escape');
+    while (w().mode !== 'play') await frame();
+    await sleep(300);
+    out.fast = fast.map((m) => ({ t: Math.round(m.t), done: m.done }));
+    out.kept2 = gs.mapState(gs.game, 'ferme').work[`o${tree.id}`];
     out.tree = { id: tree.id, x: Math.round(tree.aimX - 14), y: Math.round(tree.aimY) };
     return out;
   })) as Record<string, any>;
@@ -107,25 +127,35 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.deepEqual(first.v.notices, [], 'V ne dit rien');
   assert.ok(first.hud && !/x\d/.test(first.hud), `l’heure s’affiche, sans vitesse (${first.hud})`);
   const m = first.model;
-  assert.ok(Math.abs(first.one.done - m.per) < 1e-6, `un appui, un coup : ${first.one.done} de la matière enlevée (${m.per} par coup)`);
-  assert.ok(Math.abs(first.one.paid - m.ceiling) < 1e-6, `un coup se paie au plafond (${first.one.paid})`);
-  assert.equal(first.one.kept?.work, 'harvest', 'la part enlevée est gardée dans GameState');
-  assert.ok(first.held.seenWork && first.held.bar, 'Espace maintenu : le travail, et sa jauge');
-  // le premier relevé est le départ (le premier impact vient après armer, le temps en haut et abattre) : d'un impact au suivant
-  const hits = first.marks.slice(1);
-  const steps = hits.slice(1).map((x: any, i: number) => ({ dt: x.t - hits[i].t, dd: x.done - hits[i].done }));
+  assert.equal(first.launched.mode, 'work', 'un seul appui : le travail continue seul');
+  assert.ok(first.launched.bar, 'sa jauge au-dessus de Xéros');
+  const intervals = (marks: any[]) => {
+    // le premier relevé est le départ (le premier impact vient après armer, le temps en haut et abattre) : d'un impact au suivant
+    const hits = marks.slice(1);
+    return hits.slice(1).map((x: any, i: number) => ({ dt: x.t - hits[i].t, dd: x.done - hits[i].done }));
+  };
+  const steps = intervals(first.marks);
   assert.ok(steps.length >= 2, `plusieurs coups enchaînés (${steps.length + 1})`);
   for (const st of steps) {
     assert.ok(Math.abs(st.dd - m.per) < 1e-6, `chaque coup enlève sa part (${st.dd})`);
     assert.ok(Math.abs(st.dt / 1000 - m.cycle) < 0.25 * m.cycle, `au rythme du modèle : ${(st.dt / 1000).toFixed(2)} s pour ${m.cycle.toFixed(2)} s`);
   }
-  assert.equal(first.stopped.mode, 'play', 'Espace relâché : le travail s’arrête');
+  // la force réglée en plein travail : après le coup en cours, chaque coup enlève la part du bûcheron fort
+  const strongSteps = first.strongMarks.slice(1).map((x: any, i: number) => x.done - first.strongMarks[i].done).slice(1);
+  assert.ok(strongSteps.length >= 2 && strongSteps.every((d: number) => Math.abs(d - first.strong.per) < 1e-6), `la force agit au coup suivant (${strongSteps.map((d: number) => d.toFixed(5)).join(', ')} pour ${first.strong.per.toFixed(5)})`);
+  assert.ok(first.strong.per > 2 * m.per, `avec la force du bûcheron fort, plus de deux fois moins de coups (${(first.strong.per / m.per).toFixed(2)} fois la part)`);
+  // la vitesse de simulation x5
+  const fastSteps = intervals(first.fast);
+  assert.ok(fastSteps.length >= 3, `à x5, des coups serrés (${fastSteps.length + 1} en 4 s)`);
+  for (const st of fastSteps) assert.ok(Math.abs(st.dt / 1000 - m.cycle / 5) < 0.3 * (m.cycle / 5), `à x5 : ${(st.dt / 1000).toFixed(2)} s pour ${(m.cycle / 5).toFixed(2)} s`);
+  assert.equal(first.stopped.mode, 'play', 'un pas : le travail s’arrête');
   assert.equal(first.stopped.bar, false, 'la jauge disparaît');
   assert.ok(first.stopped.standing, 'l’arbre entamé reste debout');
   assert.ok(first.stopped.kept?.work === 'harvest' && first.stopped.kept.done > m.per * 2, `la part faite est gardée (${JSON.stringify(first.stopped.kept)})`);
 
   // 3. la page rechargée (sans effacer la sauvegarde) : la part faite est retrouvée, le travail repris continue de là, puis « Finir »
-  await load('?dieu');
+  // ?debug : au-dessus de Xéros pendant un travail, la force lue, l'énergie du coup et la part enlevée par coup
+  await load('?dieu&debug');
   const second = (await page.evaluate(async (t: any) => {
     const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
     const frame = () => new Promise((res) => requestAnimationFrame(res));
@@ -159,7 +189,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     await sleep(200);
     await press('Space');
     await sleep(300);
-    out.resumed = { mode: w().mode, done: w().works.done };
+    out.resumed = { mode: w().mode, done: w().works.done, debug: w().works.bar.infoText };
     const c1 = w().player.stamina.ceiling;
     const m1 = minutes();
     const left = plan.planOf(job, content.strength.swing, w().player.stamina.max, w().works.done);
@@ -212,9 +242,10 @@ await playtest('temps', async ({ page, errors, load }) => {
   }, first.tree)) as Record<string, any>;
   console.log(JSON.stringify(second));
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
-  assert.deepEqual(second.reloaded.kept, first.stopped.kept, 'la part faite est retrouvée après rechargement');
+  assert.deepEqual(second.reloaded.kept, first.kept2, 'la part faite est retrouvée après rechargement');
+  assert.match(second.resumed.debug, /force 50 N·m · 90 J · [0-9.]+ % par coup/, `?debug : la force, l'énergie, la part par coup (${second.resumed.debug})`);
   assert.equal(second.resumed.mode, 'work', 'Espace reprend le travail');
-  assert.ok(second.resumed.done >= first.stopped.kept.done, `il reprend là où il s’était arrêté (${second.resumed.done} ≥ ${first.stopped.kept.done})`);
+  assert.ok(second.resumed.done >= first.kept2.done, `il reprend là où il s’était arrêté (${second.resumed.done} ≥ ${first.kept2.done})`);
   assert.ok(second.finished.gone && second.finished.felled, '« Finir le travail » : l’arbre est abattu');
   assert.equal(second.finished.mode, 'play', 'le travail fini rend la main');
   assert.ok(Math.abs(second.finished.jump - second.finished.expectJump) < 0.2, `l’horloge avance de ce qui manquait (${second.finished.jump.toFixed(2)} min)`);
@@ -282,6 +313,6 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.ok(Math.abs(third.slept.live - third.slept.expect.ceiling) < 1e-6, 'Xéros se lève avec ce plafond');
   assert.ok(third.slept.notices.includes(`Jour ${third.slept.clock.day} · 06:00`), `le réveil se dit (${third.slept.notices.join(' | ')})`);
   console.log(
-    "  ✓ temps : l'horloge à x1, V sans effet ; le travail au coup (un appui un coup, maintenu au rythme du modèle, relâché il s'arrête), repris après rechargement, fini d'un coup ; à bout de souffle il souffle puis reprend ; la veille de nuit, dormir",
+    "  ✓ temps : l'horloge à x1, V sans effet ; le travail lancé d'un appui (au rythme du modèle, la force réglée en plein travail agit au coup suivant, un pas l'arrête, x5 serre les coups, ?debug), repris après rechargement, fini d'un coup ; à bout de souffle il souffle puis reprend ; la veille de nuit, dormir",
   );
 });

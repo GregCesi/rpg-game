@@ -1,5 +1,5 @@
 // Test de scénario des étapes visibles d'un travail (docs/CONCEPTION.md, « Le travail », § 6), dans le vrai jeu : l'arbre normal
-// abattu au coup passe par ses images d'étape dans l'ordre (l'entaille en trois temps, le trait d'abattage, le craquement, il penche),
+// abattu au coup (lancé d'un appui sur Espace) passe par ses images d'étape dans l'ordre (l'entaille en trois temps, le trait d'abattage, le craquement, il penche),
 // puis tombe ; arrêté à une étape, il la garde après rechargement ; l'arbre couché s'allège à l'ébranchage. Xéros est rendu trente
 // fois plus fort (?dieu « force ») et l'endurance infinie, pour que l'essai reste court.
 // Usage : npm run test:etapes (lancé aussi par npm run test:scenarios).
@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';
 
 await playtest('etapes', async ({ page, errors, load }) => {
-  // Espace maintenu devant la cible ; relève l'image de l'objet à chaque changement ; s'arrête (Espace relâché) à l'image `until`
+  // Espace devant la cible (le travail va seul) ; relève l'image de l'objet à chaque changement ; s'arrête (Échap) à l'image `until`
   const run = (args: { type: string; until?: string }) =>
     page.evaluate(async ({ type, until }) => {
       const sleep = (t: number) => new Promise((r) => setTimeout(r, t));
@@ -46,13 +46,22 @@ await playtest('etapes', async ({ page, errors, load }) => {
         await sleep(20);
       }
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+      // Échap : arrêté après le coup en cours (sinon, le travail lancé va seul jusqu'au bout)
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
+      await sleep(60);
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
       for (let i = 0; i < 200 && w().mode !== 'play'; i++) await sleep(20);
       await sleep(300);
       return { keys, id: p.id, spawned: !!p.spawned, gone: !w().map.props.includes(p), now: w().map.props.includes(p) ? p.image.texture.key : null };
     }, args);
 
-  // l'arbre normal, arrêté à l'entaille finie, retrouvé ainsi après rechargement
-  const part = await run({ type: 'normal-tree', until: 'normal-tree-stage-3' });
+  // l'arbre normal, arrêté à l'entaille finie, retrouvé ainsi après rechargement ; Vite recharge parfois la page au premier lancement
+  // (dépendances optimisées) : la première étape est alors rejouée une fois, sur une partie neuve
+  const part = await run({ type: 'normal-tree', until: 'normal-tree-stage-3' }).catch(async (e: Error) => {
+    if (!/context was destroyed|navigation/.test(e.message)) throw e;
+    await load();
+    return run({ type: 'normal-tree', until: 'normal-tree-stage-3' });
+  });
   await load('?dieu');
   const after = await page.evaluate((id: number) => {
     const p = (window as any).game.scene.getScene('world').map.props.find((q: any) => q.id === id && !q.spawned);

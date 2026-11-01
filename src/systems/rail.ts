@@ -1,7 +1,7 @@
 // Une passe sur un rail : Xéros longe une pièce, en ligne droite, en répétant un geste d'outil (la doloire qui dresse une face, plus
 // tard le rabot et la scie de long). Un travail au coup (docs/CONCEPTION.md, « Le travail ») : chaque coup avance la face de ce qu'il
-// a levé (`advance`), Xéros glisse jusque-là pendant le coup suivant ; Espace maintenu enchaîne les coups, relâché, un pas ou Échap
-// arrête après le coup en cours, là où il est ; à bout de souffle, il souffle sur place et reprend. Le rail ne sait rien du travail :
+// a levé (`advance`), Xéros glisse jusque-là pendant le coup suivant ; lancée d'un appui sur Espace, la passe va seule jusqu'au bout ;
+// un pas ou Échap l'arrête après le coup en cours, là où il est ; à bout de souffle, il souffle sur place et reprend. Le rail ne sait rien du travail :
 // celui qui le lance dit, à chaque coup, ce que le coup fait (et s'il peut se faire), et ce qu'on fait de la passe finie ou arrêtée.
 import type { Player } from '../entities/Player';
 import type { WorkBar } from '../entities/WorkBar';
@@ -31,9 +31,8 @@ export interface RailPass {
   onEnd(why: RailEnd, done: number): void;
 }
 
-/** Ce que la scène dit à chaque image : Espace tenu, un arrêt demandé (un pas, Échap). */
+/** Ce que la scène dit à chaque image : un arrêt demandé (un pas, Échap). */
 export interface RailInput {
-  held: boolean;
   stop: boolean;
 }
 
@@ -73,11 +72,11 @@ export class Rail {
     this.swing();
   }
 
-  /** À chaque image : les pieds glissent vers le fer ; Espace relâché, un pas ou Échap arrête après le coup en cours. */
+  /** À chaque image : les pieds glissent vers le fer ; un pas ou Échap arrête après le coup en cours. */
   update(delta: number, input: RailInput): void {
     const pass = this.pass;
     if (!pass) return;
-    if (input.stop || !input.held) this.stopping = true;
+    if (input.stop) this.stopping = true;
     if (this.waiting) {
       if (this.stopping) return this.finish('stopped');
       // il reprend son souffle sur place, puis le coup suivant

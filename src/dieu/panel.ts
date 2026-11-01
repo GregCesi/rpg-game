@@ -2,13 +2,14 @@
 // ?dieu : main.ts ne charge ce fichier que dans ce cas. Il ne touche jamais à la partie lui-même : chaque bouton envoie
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
 import { clockLabel } from '../world/clock';
-import { items, maps, piles, plans, props, stamina, strength, transforms, wood } from '../content';
+import { items, maps, piles, plans, props, stamina, strength, transforms, wood, work } from '../content';
 import type { WoodLook, WoodPiece } from '../content/types';
 import { woodOfLook } from '../world/woodShape';
 import { heldMass } from '../content/mass';
 import type { DieuCommand } from '../events';
 import { game } from '../state';
 import { SPEEDS, metresPerSec } from '../systems/speeds';
+import { SIM_SPEEDS, simSpeed } from '../systems/simSpeed';
 
 const CSS = `
 #dieu {
@@ -230,7 +231,19 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     }, 50);
   });
 
-  // la force : un multiplicateur de tous les seuils (porter, marcher, rouler) ; la masse portée se lit à côté
+  // la vitesse de simulation : tout à l'écran plus vite (coups, pauses, marche), par pas de taille normale ; le palier en cours marqué
+  const simLabel = el('span', { textContent: '' });
+  const showSim = () => (simLabel.textContent = ` en ce moment : x${simSpeed()}`);
+  const simButtons = SIM_SPEEDS.map((n) =>
+    button(`x${n}`, () => {
+      send({ kind: 'sim-speed', factor: n });
+      setTimeout(showSim, 50);
+    }),
+  );
+  showSim();
+
+  // la force : un multiplicateur de tous les seuils (porter, marcher, rouler) et de la force des coups de travail (le couple de
+  // strength.json `swing`) ; réglée pendant un travail, elle agit au coup suivant ; la masse portée se lit à côté
   const force = el('input', { type: 'number', min: '0.1', step: '0.5', value: '1' });
   const forceButton = button('Appliquer', () => {
     const m = Math.max(0.1, Number(force.value) || 1);
@@ -311,11 +324,25 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     pile,
     el('div', { className: 'row' }, [count, el('span', { textContent: ' pièces ' }), turnedLabel, tieLabel]),
     pileButton,
+    el('h3', { textContent: 'Vitesse de simulation' }),
+    el('div', { className: 'row' }, [...simButtons, simLabel]),
     el('h3', { textContent: 'Vitesses (m/s)' }),
     el('div', { className: 'row' }, [el('label', {}, ['marche', walkSpeed]), el('label', {}, ['course', runSpeed])]),
     el('div', { className: 'row' }, [el('label', {}, ['chargé', carrySpeed]), speedsButton, speedsDefault]),
     el('h3', { textContent: 'Force de Xéros' }),
     el('div', { className: 'row' }, [el('label', {}, ['force ×', force]), forceButton]),
+    el('div', { className: 'row' }, [
+      // la force du bûcheron fort (work.json, `references.strong`) rapportée à celle de Xéros (strength.json, `swing`)
+      button(`bûcheron fort (×${(work.references.strong.torque / strength.swing.torque).toFixed(1).replace('.', ',')})`, () => {
+        const m = work.references.strong.torque / strength.swing.torque;
+        force.value = String(Math.round(m * 100) / 100);
+        send({ kind: 'force', multiplier: m });
+      }),
+      button('Xéros (×1)', () => {
+        force.value = '1';
+        send({ kind: 'force', multiplier: 1 });
+      }),
+    ]),
     carried,
     el('h3', { textContent: 'Endurance' }),
     el('div', { className: 'row' }, [el('label', {}, ['souffle', energyBreath]), el('label', {}, ['plafond', energyCeiling])]),

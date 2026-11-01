@@ -1108,8 +1108,9 @@ Les étapes se déclenchent à une part de la matière enlevée, en données (`s
 
 ### 7. Les commandes
 
-Un appui sur Espace : un coup. Espace maintenu : les coups s'enchaînent, avec les pauses de souffle, jusqu'au résultat. Relâcher Espace
-ou bouger arrête (le coup en cours s'achève) ; ce qui est fait reste fait (la matière enlevée, gardée par objet dans GameState). La
+**Corrigé par Grégoire après l'essai** : un seul appui sur Espace lance tout le travail, comme la doloire : Xéros se place, choisit son
+côté, un appui, puis il travaille seul jusqu'au résultat, avec ses pauses de souffle. Bouger ou Échap arrête (le coup en cours
+s'achève) ; ce qui est fait reste fait (la matière enlevée, gardée par objet dans GameState). La
 jauge au-dessus de Xéros montre la part enlevée. ?dieu « Finir le travail » reste : il fait tous les coups d'un coup (horloge,
 endurance, pauses comprises).
 

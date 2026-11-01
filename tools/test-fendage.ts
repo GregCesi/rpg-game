@@ -115,7 +115,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     out.plantCost = 100 - w().player.stamina.ceiling;
 
     // 3. fendre : un travail au coup (docs/CONCEPTION.md, « Le travail ») ; Espace maintenu enchaîne les coups de masse, la fente
-    // s'allonge à chaque étape (trois pour 1 m). Pour l'essai, Xéros dix fois plus fort (?dieu « force ») : le coup frappe plus fort et
+    // s'allonge à chaque étape (trois pour 1 m) ; un appui sur Espace lance tout le travail. Pour l'essai, Xéros dix fois plus fort (?dieu « force ») : le coup frappe plus fort et
     // plus vite. Arrêté (Espace relâché) après la première étape : elle est notée dans la pièce, la part enlevée dans GameState ; repris,
     // il continue de là, puis il est fini d'un coup (?dieu)
     emit({ kind: 'force', multiplier: 10 });
@@ -128,6 +128,10 @@ await playtest('fendage', async ({ page, errors, load }) => {
     out.workMode = w().mode;
     out.workBar = w().works.bar.frame.visible;
     window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+    // Échap : le coup en cours s'achève, puis le travail s'arrête
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
+    await sleep(60);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
     await settled();
     out.hitsKept = spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits;
     out.workKept = Object.values(gs.mapState(gs.game, w().map.def.id).work).map((x: any) => x.work);
@@ -323,7 +327,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
   assert.ok(Math.abs(r.plantCost - 1) < 1e-6, `coût du plantage : ${r.plantCost}`);
   assert.equal(r.workMode, 'work', 'Espace lance le travail : Xéros fend tant qu\'il n\'a pas fini');
   assert.ok(r.workBar, 'la jauge du travail se voit au-dessus de Xéros');
-  assert.equal(r.stoppedMode, 'play', 'Espace relâché, le travail s’arrête');
+  assert.equal(r.stoppedMode, 'play', 'Échap arrête le travail');
   assert.ok(r.hitsKept >= 1 && r.hitsKept < 3, `arrêté après la première étape (le coup en cours s'achève) : notée dans la pièce (${r.hitsKept})`);
   assert.deepEqual(r.workKept, ['maul'], 'la part faite du travail est gardée dans GameState');
   assert.ok(r.hitCosts[0] > 0 && r.hitCosts[0] < 2, `fendre se paie au plafond, coup par coup : ${r.hitCosts}`);

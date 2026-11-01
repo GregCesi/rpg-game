@@ -34,6 +34,7 @@ import { WorkSystem, type WorkJob } from '../systems/work';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
 import { pxPerSec, setSpeeds } from '../systems/speeds';
+import { setSimSpeed } from '../systems/simSpeed';
 import { WorkBar } from '../entities/WorkBar';
 import { splitHits } from '../world/woodShape';
 import { wood as W } from '../content';
@@ -363,9 +364,9 @@ export class WorldScene extends Phaser.Scene {
     // Échap, ou un pas (une flèche, ZQSD) : arrête un travail ou une passe sur un rail, ce qui est fait reste fait
     const stop = input.stopPressed();
     const moved = input.movePressed();
-    if (this.mode === 'rail') this.rail.update(delta, { held: input.useDown(), stop: stop || moved });
-    // un travail au coup : Espace maintenu enchaîne les coups ; relâché, un pas ou Échap l'arrête après le coup en cours
-    if (this.mode === 'work') this.works.update({ held: input.useDown(), stop: stop || moved });
+    if (this.mode === 'rail') this.rail.update(delta, { stop: stop || moved });
+    // un travail au coup : lancé d'un appui, Xéros frappe seul jusqu'au résultat ; un pas ou Échap l'arrête après le coup en cours
+    if (this.mode === 'work') this.works.update({ stop: stop || moved });
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
@@ -953,6 +954,13 @@ export class WorldScene extends Phaser.Scene {
       else this.rail.finishNow();
       return;
     }
+    // la force et la vitesse de simulation se règlent à tout moment : pendant un travail, elles agissent au coup suivant
+    if (cmd.kind === 'force') {
+      this.force = cmd.multiplier;
+      this.player.strength.multiplier = cmd.multiplier;
+      return;
+    }
+    if (cmd.kind === 'sim-speed') return setSimSpeed(this.game, cmd.factor);
     if (this.mode !== 'play') return this.notice('Pas pendant un geste ou un dialogue.');
     const mapId = this.map.def.id;
     const { x, y, facing } = this.player.actor;
@@ -1007,10 +1015,6 @@ export class WorldScene extends Phaser.Scene {
         if (why) this.notice(why);
         break;
       }
-      case 'force':
-        this.force = cmd.multiplier;
-        this.player.strength.multiplier = cmd.multiplier;
-        break;
       case 'stamina':
         this.player.stamina.reset(cmd);
         break;

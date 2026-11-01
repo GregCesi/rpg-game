@@ -1,9 +1,8 @@
 // Un travail au coup (docs/CONCEPTION.md, « Le travail ») : abattre, ébrancher, couper, fendre, tailler. Un travail est une quantité de
 // matière (world/workPlan.ts) ; chaque coup en enlève une part, selon son énergie (world/swing.ts : la force de Xéros, la masse et la
-// longueur de l'outil), le tranchant, la résistance et la précision. Un appui sur Espace : un coup ; Espace maintenu : les coups
-// s'enchaînent jusqu'au résultat. Chaque coup coûte du plafond et du souffle ; pendant le travail le souffle ne revient pas ; vide,
-// Xéros s'arrête et souffle, puis reprend tout seul si Espace est toujours tenu. Relâcher Espace, bouger ou Échap arrête après le coup en
-// cours ; ce qui est fait reste fait (la part enlevée, dans GameState : `work` de la carte). Les étapes du travail (l'arbre qui
+// longueur de l'outil), le tranchant, la résistance et la précision. Un appui sur Espace lance tout le travail : Xéros frappe seul
+// jusqu'au résultat. Chaque coup coûte du plafond et du souffle ; pendant le travail le souffle ne revient pas ; vide, Xéros s'arrête et
+// souffle, puis reprend tout seul. Bouger ou Échap arrête après le coup en cours ; ce qui est fait reste fait (la part enlevée, dans GameState : `work` de la carte). Les étapes du travail (l'arbre qui
 // tremble, la coupe qui se creuse, la fente qui s'allonge) tombent quand la part enlevée passe leurs seuils ; le résultat, au bout. La
 // durée n'est imposée nulle part : elle découle des coups et des pauses. Une jauge au-dessus de Xéros montre la part enlevée.
 import { gestures, work } from '../content';
@@ -38,9 +37,8 @@ export interface WorkJob {
 /** Pourquoi un travail se termine : fini, arrêté (relâcher Espace, bouger, Échap), épuisé, la cible partie. */
 export type WorkEnd = 'done' | 'stopped' | 'spent' | 'gone';
 
-/** Ce que la scène dit à chaque image : Espace tenu, un arrêt demandé (un pas, Échap). */
+/** Ce que la scène dit à chaque image : un arrêt demandé (un pas, Échap). */
 export interface WorkInput {
-  held: boolean;
   stop: boolean;
 }
 
@@ -90,8 +88,6 @@ export class WorkSystem {
     }
     this.job = job;
     job.done = Math.min(1, Math.max(0, job.done));
-    this.stroke = jobStroke(job.def, this.swinger);
-    this.per = perStroke(job.def, this.stroke) / job.def.amount;
     this.reached = this.stepsAt(job.done);
     this.stopping = this.pausing = this.idle = false;
     this.bar.show(this.player.actor, job.done);
@@ -100,14 +96,14 @@ export class WorkSystem {
     return true;
   }
 
-  /** À chaque image : un arrêt demandé, ou Espace relâché, arrête après le coup en cours ; à bout de souffle, il souffle puis reprend. */
+  /** À chaque image : un arrêt demandé (un pas, Échap) arrête après le coup en cours ; à bout de souffle, il souffle puis reprend. */
   update(input: WorkInput): void {
     const job = this.job;
     if (!job) return;
     if (!job.valid() && this.reached < job.steps) return this.close('gone');
-    if (input.stop || !input.held) this.stopping = true;
+    if (input.stop) this.stopping = true;
     if (this.pausing) {
-      // la pause : le souffle revient ; repris s'il est revenu et qu'Espace est toujours tenu, sinon arrêté
+      // la pause : le souffle revient, puis il reprend tout seul ; un arrêt demandé l'arrête là
       if (this.stopping) return this.close('stopped');
       if (this.idle && !this.player.stamina.winded) {
         this.pausing = this.idle = false;
@@ -138,6 +134,12 @@ export class WorkSystem {
     return true;
   }
 
+  /** ?debug : la force lue, l'énergie du coup, la part enlevée par coup. */
+  private debugText(): string {
+    const s = this.stroke!;
+    return `force ${this.swinger.torque.toFixed(0)} N·m · ${s.joules.toFixed(0)} J · ${(this.per * 100).toFixed(3)} % par coup`;
+  }
+
   /** Nombre d'étapes atteintes à la part `done` : une tous les 1 / steps, la dernière au bout. */
   private stepsAt(done: number): number {
     const job = this.job!;
@@ -156,7 +158,11 @@ export class WorkSystem {
   /** Un coup : il se paie à l'impact (sinon il souffle, ou s'arrête épuisé), enlève sa part, fait tomber les étapes passées ; puis le suivant. */
   private swing(): void {
     const job = this.job!;
-    const s = this.stroke!;
+    // le coup de la force d'aujourd'hui : une force réglée (?dieu) agit dès le coup suivant
+    const s = jobStroke(job.def, this.swinger);
+    this.stroke = s;
+    this.per = perStroke(job.def, s) / job.def.amount;
+    this.bar.info(this.debugText());
     const phases = gestures[jobGesture(job)]?.phases as Phase[] | undefined;
     const durations = phases ? frameMs(s, phases) : undefined;
     let ended = false;

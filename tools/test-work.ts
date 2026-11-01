@@ -30,6 +30,10 @@ assert.ok(minutes(fell, strong) < minutes(fell, adult) && minutes(fell, adult) <
 assert.ok(Math.abs(fellVolume(55) / fellVolume(30) - (55 / 30) ** 3) < 1e-9, 'le volume suit le cube du diamètre');
 const big = harvestJob(props['big-tree'].harvest!.work!, 'axe');
 assert.ok(minutes(big) > 4 * minutes(fell), `le gros arbre est long à la cognée (${minutes(big).toFixed(0)} min)`);
+// la force du bûcheron fort (le couple de strength.json multiplié, comme ?dieu « force ») : nettement moins de coups
+const mul = work.references.strong.torque / xeros.swinger.torque;
+const strongForce = planOf(fell, { ...xeros.swinger, torque: xeros.swinger.torque * mul }, xeros.max);
+assert.ok(strongForce.strokes < p.strokes / 2, `la force du bûcheron fort : ${strongForce.strokes} coups au lieu de ${p.strokes}`);
 // une part déjà faite
 const half = planOf(fell, xeros.swinger, xeros.max, 0.5);
 assert.ok(Math.abs(half.strokes - p.strokes / 2) <= 1, 'à moitié fait, la moitié des coups');

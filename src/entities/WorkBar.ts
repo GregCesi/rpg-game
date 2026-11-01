@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { WORK_BAR } from '../config';
+import { DEBUG, UI, WORK_BAR, ZOOM } from '../config';
 import type { Actor } from './Actor';
 
 /**
@@ -9,10 +9,29 @@ import type { Actor } from './Actor';
 export class WorkBar {
   private readonly frame: Phaser.GameObjects.Image;
   private readonly fill: Phaser.GameObjects.Image;
+  /** ?debug : la force lue, l'énergie du coup, la part enlevée par coup, au-dessus de la jauge. */
+  private readonly debug?: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene) {
     this.frame = scene.add.image(0, 0, 'ui-work-frame').setOrigin(0).setVisible(false);
     this.fill = scene.add.image(0, 0, 'ui-work-fill').setOrigin(0).setVisible(false);
+    if (DEBUG) {
+      this.debug = scene.add
+        .text(0, 0, '', { fontFamily: UI.font, fontSize: '6px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 2 })
+        .setOrigin(0.5, 1)
+        .setResolution(ZOOM)
+        .setVisible(false);
+    }
+  }
+
+  /** ?debug : le texte au-dessus de la jauge (rien sans ?debug). */
+  info(text: string): void {
+    this.debug?.setText(text);
+  }
+
+  /** Le texte de ?debug affiché (vide sans ?debug) : lu par les tests. */
+  get infoText(): string {
+    return this.debug?.text ?? '';
   }
 
   /** Montre la jauge au-dessus de `actor`, remplie de `fraction` (0 à 1). */
@@ -27,10 +46,12 @@ export class WorkBar {
       .setDepth(depth + 0.001)
       .setCrop(0, 0, w, WORK_BAR.inner.h)
       .setVisible(w > 0);
+    this.debug?.setPosition(Math.round(actor.x), y - 1).setDepth(depth + 0.002).setVisible(true);
   }
 
   hide(): void {
     this.frame.setVisible(false);
     this.fill.setVisible(false);
+    this.debug?.setVisible(false);
   }
 }
