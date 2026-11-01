@@ -13,6 +13,8 @@ import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
 import { openSides } from '../world/zones';
 import { WEAPON_ANGLES } from '../world/strike';
+import { catalog, looksOf } from '../build/catalog';
+import { JointTypeSchema } from './types';
 import type { BuildPlan, CombatDef, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
@@ -864,6 +866,39 @@ function validateCombat(c: Content, cat: Catalog): string[] {
 }
 
 /**
+ * Ce qui n'a pas à être au catalogue du mode construction, avec sa raison (effets, interface). Aujourd'hui rien : tout objet de
+ * props.json et d'items.json y est ; ce qui ne se pose pas (un effet, une image d'interface) n'est de toute façon pas un objet.
+ */
+export const CATALOG_EXCLUDED: Record<string, string> = {};
+
+/**
+ * Le catalogue du mode construction (src/build/catalog.ts) a tout : chaque objet de props.json (sauf la pièce de bois, présente par
+ * ses réglages) et d'items.json, chaque diamètre et aspect de la pièce de bois, chaque assemblage ; chaque entrée a un nom (la
+ * recherche se fait sur le nom et la clé), une famille et une vignette dessinée. Un oubli est une erreur, sauf dans CATALOG_EXCLUDED.
+ */
+function validateCatalog(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const entries = catalog();
+  const ids = new Set(entries.map((e) => e.id));
+  const want: [string, string][] = [
+    ...Object.entries(c.props).filter(([, d]) => !d.wood).map(([k]) => [`prop:${k}`, `props.json '${k}'`] as [string, string]),
+    ...Object.keys(c.items).map((k) => [`item:${k}`, `items.json '${k}'`] as [string, string]),
+    ...Object.keys(c.wood.sizes).flatMap((size) => looksOf(size).map((look) => [`wood:${size}:${look}`, `wood.json '${size}' '${look}'`] as [string, string])),
+    ...JointTypeSchema.options.map((j) => [`joint:${j}`, `assemblage '${j}'`] as [string, string]),
+  ];
+  for (const key of Object.keys(CATALOG_EXCLUDED)) if (!want.some(([id]) => id.endsWith(`:${key}`))) errors.push(`validate.ts CATALOG_EXCLUDED : '${key}' n'est pas un objet du contenu`);
+  for (const [id, at] of want) {
+    const key = id.slice(id.indexOf(':') + 1);
+    if (!ids.has(id) && !CATALOG_EXCLUDED[key]) errors.push(`${at} : absent du catalogue du mode construction (src/build/catalog.ts), ou dans CATALOG_EXCLUDED avec sa raison`);
+  }
+  for (const e of entries) {
+    if (!e.name.trim()) errors.push(`catalogue '${e.id}' : sans nom, introuvable par la recherche`);
+    if (!cat.textures.has(e.thumb)) errors.push(`catalogue '${e.id}' : vignette '${e.thumb}' non dessinée`);
+  }
+  return errors;
+}
+
+/**
  * L'âge du bois (docs/CONCEPTION.md, « L'âge du bois ») : toute pièce de bois a ses trois âges. Un objet de bois (masse de matière
  * bois, ou la pièce de bois) est `aged`, sauf le bois brut de RAW_WOOD ; chaque image d'un objet `aged` (vues, tirages, formes) a son
  * patiné et son vieux ; chaque planche de la pièce de bois aussi.
@@ -1129,6 +1164,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Le combat : attaques, familles et postures, armes, cibles
   addAll(validateCombat(c, cat));
+
+  // Le catalogue du mode construction : tout y est, avec un nom et une vignette
+  addAll(validateCatalog(c, cat));
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));
