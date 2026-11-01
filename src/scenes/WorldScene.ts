@@ -9,6 +9,7 @@ import { Player } from '../entities/Player';
 import { forgetHeldKeys } from '../input/PlayerInput';
 import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand } from '../events';
 import { BuildSystem } from '../systems/build';
+import { CombatSystem, type AttackPlan } from '../systems/combat';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
@@ -116,6 +117,7 @@ export class WorldScene extends Phaser.Scene {
   private map!: GameMap;
   private interaction!: InteractionSystem;
   private harvest!: HarvestSystem;
+  private combat!: CombatSystem;
   private handsSystem!: HandsSystem;
   private knots!: KnotSystem;
   private press!: LongPress;
@@ -234,6 +236,7 @@ export class WorldScene extends Phaser.Scene {
       return [...this.map.interactables(h && 'prop' in h ? h.prop : undefined), ...this.site.interactables(), ...talkable];
     });
     this.harvest = new HarvestSystem(this, this.map);
+    this.combat = new CombatSystem(this, this.map, this.harvest);
     this.wood = new WoodSystem(this, this.map, this.harvest);
     this.rail = new Rail(this.player);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
@@ -348,6 +351,8 @@ export class WorldScene extends Phaser.Scene {
     this.site.update(this.player, this.mode === 'play');
     this.pileCount.update(this.player, this.mode === 'play');
     if (this.mode === 'build') this.builder.update(delta, turn);
+    // Espace pendant une attaque : la suivante de l'enchaînement partira à sa fin
+    if (use && this.mode === 'use') this.combat.queue();
     if (this.mode !== 'play') {
       this.turnPress.cancel();
       return this.press.cancel();
@@ -589,6 +594,9 @@ export class WorldScene extends Phaser.Scene {
   private useHeld(): void {
     if (this.player.hold.loaded) return;
     const tool = this.usable();
+    // une arme dans la main active : Espace attaque (la branche active et la hachette dans l'autre main : c'est la hachette qui sert)
+    const weapon = CombatSystem.wielded();
+    if (weapon && tool === weapon) return this.attack(this.combat.plan(weapon, this.time.now));
     if (tool && SiteSystem.traces(tool)) return this.plantStake(tool);
     if (!tool || items[tool].kind === 'resource') {
       // mains vides devant ce qui demande un outil : on le dit
@@ -620,6 +628,27 @@ export class WorldScene extends Phaser.Scene {
     if (h && wields(h, tool) && !this.effort.afford(this.player, costs[effortOf(h, tool, !!target!.def.bears?.prop)])) return;
     // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
     this.gesture(gesture, tool, () => this.report(this.harvest.hit(this.harvest.target(this.player, tool), tool, this.player.actor.facing)));
+  }
+
+  /**
+   * Une attaque (systems/combat.ts) : elle se paie au départ, même dans le vide (c'est le geste qui fatigue) ; le geste du corps
+   * avec l'arme dans la main, à l'impact la zone de coup et ce qu'elle touche ; Espace pendant le geste enchaîne la suivante.
+   */
+  private attack(p: AttackPlan): void {
+    if (!this.effort.afford(this.player, p.cost)) return;
+    this.combat.begin(p);
+    this.mode = 'use';
+    this.player.tools.swing(
+      p.attack.gesture,
+      p.item,
+      () => this.combat.impact(this.player, p),
+      () => {
+        const chain = this.combat.end(p, this.time.now);
+        if (this.mode === 'use') this.mode = 'play';
+        if (chain && this.mode === 'play' && CombatSystem.wielded() === p.item) this.attack(this.combat.plan(p.item, this.time.now));
+      },
+      p.swing,
+    );
   }
 
   /**

@@ -376,19 +376,27 @@ function sword(): Canvas {
 
 // ---------- Épée de bois ----------
 
-/** Épée d'entraînement : lame de bois épaisse au bout arrondi, garde clouée, poignée entourée de ficelle. */
+/**
+ * Épée d'entraînement (docs/objets/wooden-sword.md) : lame de bois plate au bout arrondi, garde et poignée taillées dans la
+ * même planche. Bois travaillé, dans la rampe des âges (`woodAges`, art/palette.ts) comme sa vue au sol : la lame claire
+ * (^ au jour, * le fil, % le flanc à l'ombre), la garde et la poignée plus sombres (% &), le pommeau (&).
+ */
 function woodenSword(): Canvas {
   const c = new Canvas(S, S);
-  for (let y = 3; y <= 9; y++) c.set(15 - y - 1, y, 'U').set(15 - y, y, 'u').set(15 - y + 1, y, 'n');
-  c.set(11, 3, '.').set(13, 2, 'u').set(12, 2, 'U'); // bout arrondi
-  // poignée entourée de ficelle : tours clairs et sombres
-  shaft(c, 15, 13, 10, 'd', 'D');
-  c.set(4, 11, 'E').set(5, 11, 'E').set(2, 13, 'E').set(3, 13, 'E');
-  // garde : traverse clouée
-  crossbar(c, 3, 7, 5, 'u', 'n', 'e');
-  c.set(6, 9, 'e'); // clou
-  return outline(c, dark);
+  for (let y = 3; y <= 9; y++) c.set(15 - y - 1, y, '^').set(15 - y, y, '*').set(15 - y + 1, y, '%');
+  c.set(11, 3, '.').set(13, 2, '*').set(12, 2, '^'); // bout arrondi
+  c.set(10, 5, '^').set(8, 7, '*'); // le fil de la lame, en tirets
+  // poignée taillée : le flanc au jour, l'ombre
+  shaft(c, 15, 13, 10, '%', '&');
+  // garde : la traverse, du même bois
+  crossbar(c, 3, 7, 5, '*', '%', '&');
+  // pommeau
+  c.set(2, 13, '&').set(3, 14, '&');
+  return outline(c, woodDark);
 }
+
+/** Contour côté lumière du bois travaillé : le creux (&), jamais le joint (@). */
+const woodDark = darkest({ '^': '&', '*': '&', '%': '&', '&': '&' }, 'o');
 
 /** Hache tenue en main : les cinq dessins du geste en zones, et leurs matières (art/lib/held.ts). */
 export const axeArt = (): ToolArt => ({

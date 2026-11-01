@@ -12,7 +12,8 @@ import { partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
 import { openSides } from '../world/zones';
-import type { BuildPlan, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
+import { WEAPON_ANGLES } from '../world/strike';
+import type { BuildPlan, CombatDef, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -216,6 +217,7 @@ export interface Content {
   matters: Record<string, Matter>;
   rocks: Record<string, Rock>;
   transforms: Record<string, TransformDef>;
+  combat: CombatDef;
 }
 
 /** Clés de props.json : minuscules ASCII, chiffres, tirets. Les majuscules sont réservées aux types de Tiled (Spawn, Exit, Facing). */
@@ -461,7 +463,6 @@ export const VIEWS_TODO: Record<string, string> = {
   'watering-can': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
   'fishing-rod': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
   sword: "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
-  'wooden-sword': "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
 };
 
 /**
@@ -822,6 +823,47 @@ export const RAW_WOOD: Record<string, string> = {
 };
 
 /**
+ * Le combat (combat.json, docs/CONCEPTION.md « Le combat ») : chaque attaque joue un geste qui existe ; chaque famille a des postures
+ * dont les suites nomment des attaques, et sa dernière posture convient à tout (Espace a toujours une attaque) ; chaque arme
+ * (`weapon` de items.json) nomme une famille, a sa planche `weapon-<…>` en huit angles et une masse ; chaque cible (`target` de
+ * props.json) a les éclats de sa matière (`fx-<matter>`), et des points de vie infinis tant que rien ne garde les blessures.
+ */
+function validateCombat(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const err = (msg: string) => errors.push(msg);
+  for (const [key, a] of Object.entries(c.combat.attacks)) {
+    if (!c.gestures[a.gesture]) err(`combat.json attaque '${key}' : geste '${a.gesture}' absent de gestures.json`);
+  }
+  for (const [key, f] of Object.entries(c.combat.families)) {
+    f.stances.forEach((s, i) => {
+      for (const a of s.chain) if (!c.combat.attacks[a]) err(`combat.json famille '${key}' posture '${s.name}' : attaque '${a}' inconnue`);
+      const last = i === f.stances.length - 1;
+      if (last && (s.when.other !== undefined && s.when.other !== 'any' || s.when.both !== undefined)) {
+        err(`combat.json famille '${key}' : la dernière posture ('${s.name}') doit convenir à tout ('when' vide), pour qu'Espace ait toujours une attaque`);
+      }
+    });
+  }
+  for (const [key, it] of Object.entries(c.items)) {
+    const w = it.weapon;
+    if (!w) continue;
+    const at = `items.json '${key}' arme`;
+    if (!c.combat.families[w.family]) err(`${at} : famille '${w.family}' absente de combat.json`);
+    if (!w.image.startsWith('weapon-')) err(`${at} : sa planche doit s'appeler 'weapon-<…>' (art/lib/weapon.ts), pas '${w.image}'`);
+    const n = cat.frameCounts.get(w.image)?.get('angles');
+    if (n === undefined) err(`${at} : planche '${w.image}' et son animation 'angles' non dessinées (art/items/weapons.ts)`);
+    else if (n !== WEAPON_ANGLES) err(`${at} : '${w.image}' a ${n} angles pour ${WEAPON_ANGLES}`);
+    if (it.mass === undefined) err(`${at} : pas de masse (les dégâts et le prix d'un coup s'en calculent)`);
+  }
+  for (const [key, p] of Object.entries(c.props)) {
+    const t = p.target;
+    if (!t) continue;
+    if (t.hp !== 'infinite') err(`props.json '${key}' cible : des points de vie finis (${t.hp}) ne sont pas encore gardés par la partie ; 'infinite' en attendant (CONCEPTION, « Le combat »)`);
+    if (!cat.textures.has(`fx-${t.matter}`)) err(`props.json '${key}' cible : éclats 'fx-${t.matter}' non dessinés (art/world/fx.ts)`);
+  }
+  return errors;
+}
+
+/**
  * L'âge du bois (docs/CONCEPTION.md, « L'âge du bois ») : toute pièce de bois a ses trois âges. Un objet de bois (masse de matière
  * bois, ou la pièce de bois) est `aged`, sauf le bois brut de RAW_WOOD ; chaque image d'un objet `aged` (vues, tirages, formes) a son
  * patiné et son vieux ; chaque planche de la pièce de bois aussi.
@@ -1084,6 +1126,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   // Le bois : planches de parties de chaque diamètre et aspect, icônes, vues portées, outils, grille
   addAll(validateWood(c, cat));
   addAll(validateAges(c, cat));
+
+  // Le combat : attaques, familles et postures, armes, cibles
+  addAll(validateCombat(c, cat));
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));

@@ -1,0 +1,13 @@
+{
+  "rules": {"armCm": 50, "inertiaRef": 0.2, "inertiaSlow": 0.4, "damagePerJoule": 0.05},
+  "attacks": {
+    "slash": {"name": "taille", "gesture": "use", "windup": 180, "strike": 70, "recover": 200, "combo": 280, "sweep": 120, "power": 1, "cost": 1, "zone": {"arc": 120}},
+    "overhead": {"name": "coup d'en haut", "gesture": "chop", "windup": 240, "strike": 80, "recover": 240, "combo": 280, "sweep": 150, "power": 1.2, "cost": 1.25, "zone": {"line": 30}}
+  },
+  "families": {
+    "swing": {
+      "name": "ce qu'on balance (bâton, épée)",
+      "stances": [{"name": "une arme en main", "when": {}, "chain": ["slash", "overhead"]}]
+    }
+  }
+}
