@@ -68,7 +68,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const plan = content.plans.woodshed;
       const hands = () => JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both);
       const statusText = () => w().site.texts.map((t: any) => t.text.text)[0];
-      const stamina = () => w().player.stamina.value;
+      const stamina = () => w().player.stamina.ceiling;
       const shot = (name: string) => (window as any).shot(name);
       const beam = (length: number, hewn = 12) => ({ prop: 'wood-piece', wood: { size: 'normal', length, shape: 'round', ...(hewn ? { hewn } : {}), axis: 'ew' } });
       const aim = (id: string) => sp.placeGround(site(), plan.steps[1].places[id], plan.steps[1]);
@@ -113,7 +113,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const [ox, oy] = find()!;
       const created = gs.startSite(gs.game, mapId(), 'woodshed', ox, oy);
       for (const c of ['ne', 'se', 'sw']) gs.plantSiteStake(gs.game, mapId(), created.id, c);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'skip-step' });
       await sleep(300);
       out.start = JSON.stringify({ placed: Object.keys(site().placed).length, status: statusText() });
@@ -149,7 +149,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       // 2. les poteaux bas, portés : une poutre de 1,80 m (65 kg), dressée sur son dé
       const low: any[] = [];
       for (const place of ['post-sw', 'post-se']) {
-        emit({ kind: 'stamina', value: 100 });
+        emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
         await give(beam(180));
         out.carried = hands();
         const a = aim(place);
@@ -177,7 +177,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       };
       // 3a. rien au pied du dé : « Il faut d'abord une poutre de 3 m au pied du dé. »
       await lookAt(nw.x, nw.y);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await press('KeyE');
       out.shortNone = notices.at(-1);
       await press('KeyE', 700);
@@ -201,7 +201,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       // 3d. la bonne, couchée à l'ouest du dé, son bout est-ouest à moins d'une case : E court dit comment faire, E maintenu appelle
       beamAt(nw.x - 56, nw.y + 8);
       await lookAt(nw.x, nw.y);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await press('KeyE');
       out.shortGood = notices.at(-1);
       out.shortMode = w().mode;
@@ -225,7 +225,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const ne = aim('post-ne');
       beamAt(ne.x + 8, ne.y + 50, { wood: { size: 'normal', length: 300, shape: 'round', hewn: 12, axis: 'ns' } });
       await lookAt(ne.x, ne.y);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await press('KeyE', 700);
       await sleep(400);
       await press('KeyE');

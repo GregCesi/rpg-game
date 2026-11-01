@@ -70,7 +70,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     };
     const out: Record<string, unknown> = {};
 
-    emit({ kind: 'stamina', value: 100 });
+    emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
     // une grosse bille posée devant Xéros, comme avec ?dieu
     emit({ kind: 'wood', wood: wood('round') });
     await sleep(200);
@@ -89,7 +89,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await press('Space');
     await sleep(300);
     out.maulNotice = notices.at(-1);
-    out.refusedCost = 100 - w().player.stamina.value;
+    out.refusedCost = 100 - w().player.stamina.ceiling;
 
     // 2. depuis le flanc, le coin ne se plante pas (la bille reste) ; depuis le bout, face à la coupe, si
     await give('splitting-wedge');
@@ -104,17 +104,17 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await sleep(300);
     out.planted = wedged().map((p: any) => p.wood.wedge.end);
     out.handsAfterPlant = JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both);
-    out.plantCost = 100 - w().player.stamina.value;
+    out.plantCost = 100 - w().player.stamina.ceiling;
 
     // 3. trois coups de masse ; le premier est noté dans GameState
     await give('maul');
     const hitCosts: number[] = [];
     for (let i = 1; i <= 3; i++) {
       await stand(wedged()[0]);
-      const s = w().player.stamina.value;
+      const s = w().player.stamina.ceiling;
       await press('Space');
       await settled();
-      hitCosts.push(s - w().player.stamina.value);
+      hitCosts.push(s - w().player.stamina.ceiling);
       if (i === 1) out.hitsKept = spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits;
     }
     out.hitCosts = hitCosts;
@@ -146,7 +146,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await press('Space');
     await sleep(300);
     out.quarterWedge = notices.at(-1);
-    out.stamina = w().player.stamina.value;
+    out.stamina = w().player.stamina.ceiling;
     out.noRoom = notices.filter((n) => /Pas la place/.test(n));
 
     // 4 bis. le coin se plante depuis chacun des quatre bouts : la pièce garde ce bout, les coups ne se donnent que depuis lui
@@ -162,7 +162,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     for (const [axis, end, other] of ENDS) {
       emit({ kind: 'reset-map' });
       await sleep(1700);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'wood', wood: wood('round', axis) });
       await sleep(200);
       await give('splitting-wedge');
@@ -185,7 +185,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
       // la demi-bille de ce bout, fendue à son tour depuis le même bout : deux quartiers identiques, écorce en bas, pointe en l'air
       const halves = pieces('half').length;
       const halfFaces = pieces('half').map((p: any) => p.wood.point ?? null);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give('splitting-wedge');
       await standAt(pieces('half')[0], end);
       await press('Space');
@@ -205,7 +205,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     {
       emit({ kind: 'reset-map' });
       await sleep(1700);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'wood', wood: { ...wood('round'), length: 200 } });
       await sleep(200);
       await give('splitting-wedge');
@@ -233,7 +233,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
         halves: halves.length,
         lengths: halves.map((p: any) => p.wood.length),
         notices: [...notices],
-        cost: Math.round((100 - w().player.stamina.value) * 10) / 10,
+        cost: Math.round((100 - w().player.stamina.ceiling) * 10) / 10,
       };
     }
 

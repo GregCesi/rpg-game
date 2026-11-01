@@ -101,7 +101,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
 
       // 3. une coupe à 40 cm du bout scié : refusée (un bout de moins de 60 cm), sans geste ni dépense, et sans ligne
       emit({ kind: 'stamina-infinite', on: false });
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give('axe');
       await aboveAt(trunk, 8);
       await sleep(100);
@@ -110,7 +110,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await sleep(300);
       out.shortNotice = notices.at(-1);
       out.shortMode = w().mode;
-      out.shortCost = 100 - w().player.stamina.value;
+      out.shortCost = 100 - w().player.stamina.ceiling;
 
       // la coupe à 3 m du bout scié, aimantée à la grille : la ligne des deux longueurs, l'encoche notée, trois coups, deux pièces
       await aboveAt(trunk, 59);
@@ -124,7 +124,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         await press('Space');
         await settled();
       }
-      out.cutCost = Math.round((100 - w().player.stamina.value) * 100) / 100;
+      out.cutCost = Math.round((100 - w().player.stamina.ceiling) * 100) / 100;
       out.pieces = lengths('normal');
       out.cutNotice = notices.at(-1);
       const three = () => logs().find((p: any) => p.wood.length === 300);
@@ -160,7 +160,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.rolledSaved = spawned().find((q: any) => q.id === three().id)?.y === three().y;
 
       // 5. l'équarrir à la doloire, par passes sur le rail
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give('broadaxe');
       const faces: (string | undefined)[] = [];
       const hewnId = three().id;
@@ -171,7 +171,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await sleep(200);
       out.middleNotice = notices.at(-1);
       out.middleMode = w().mode;
-      out.middleCost = 100 - w().player.stamina.value;
+      out.middleCost = 100 - w().player.stamina.ceiling;
       // au bout ouest : Espace lance la passe, Xéros avance tout seul vers l'est en frappant
       await aboveAt(hewing(), 2);
       const [hx0, hy0] = [a().x, a().y];
@@ -224,7 +224,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         faces.push(notices.at(-1));
       }
       out.faces = faces;
-      out.hewCost = Math.round((100 - w().player.stamina.value) * 10) / 10;
+      out.hewCost = Math.round((100 - w().player.stamina.ceiling) * 10) / 10;
       const beam = beams()[0];
       out.beam = beam && { length: beam.wood.length, kg: kg(beam.wood) };
       out.shortBeamKg = kg({ size: 'normal', length: 180, shape: 'round', axis: 'ew', hewn: 12 });
