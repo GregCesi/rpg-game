@@ -54,6 +54,7 @@ import {
   replaceState,
   resetMap,
   setClock,
+  resetStamina,
   setWork,
   workKey,
   sleep,
@@ -1025,7 +1026,15 @@ export class WorldScene extends Phaser.Scene {
         resetMap(game, mapId);
         this.fadeTo({ mapId, at: { x, y, facing } });
         break;
+      case 'stamina-start':
+        resetStamina(game);
+        this.player.stamina.reset(game.stamina);
+        break;
       case 'reset-game':
+        // ce que la scène garde encore (l'endurance d'une course, la bille poussée) s'écrit dans l'ancienne partie, pas dans la neuve :
+        // le fondu ne le réécrira pas par-dessus
+        this.player.stamina.flush();
+        this.roll.flush();
         clearSave();
         replaceState(game, newGame());
         this.fadeTo({ mapId: START.map, spawn: START.spawn });

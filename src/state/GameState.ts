@@ -225,8 +225,20 @@ export function revisionOf(): number {
 }
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
+/** L'endurance de départ (stamina.json) : souffle, plafond et maximum pleins à `max.start`. */
+export function startStamina(): GameState['stamina'] {
+  const v = stamina.max.start;
+  return { breath: v, ceiling: v, max: v, woke: v };
+}
+
+/** L'endurance revient à ses valeurs de départ (?dieu « Endurance de départ »). */
+export function resetStamina(s: GameState): void {
+  s.stamina = startStamina();
+  revision++;
+}
+
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: { breath: stamina.max.start, ceiling: stamina.max.start, max: stamina.max.start, woke: stamina.max.start }, clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: startStamina(), clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */

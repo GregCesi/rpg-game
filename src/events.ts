@@ -65,7 +65,7 @@ export interface BuildStatus {
  * remettre la carte ou la partie à zéro, apprendre un plan (`learn-plan`), mettre au sol autour de Xéros des piquets ou des pierres
  * plates (`supply` : `what` est la clé d'un objet possédable ou d'un objet du monde), effacer les chantiers de la carte
  * (`erase-sites`), remplir d'un coup l'étape en cours du chantier (`skip-step`), multiplier la force de Xéros (`force` : tester les seuils de masse), régler son endurance (`stamina` : souffle, plafond du jour, maximum, en points) ou la
- * rendre infinie (`stamina-infinite`), avancer l'horloge jusqu'à une heure (`clock` : la prochaine fois qu'elle sonne), finir d'un coup le travail en cours (`finish-work` : horloge, endurance et résultat compris), poser devant Xéros une pièce de bois de réglages choisis (`wood` : diamètre, longueur sur la
+ * rendre infinie (`stamina-infinite`), avancer l'horloge jusqu'à une heure (`clock` : la prochaine fois qu'elle sonne), finir d'un coup le travail en cours (`finish-work` : horloge, endurance et résultat compris), remettre l'endurance de départ (`stamina-start`), poser devant Xéros une pièce de bois de réglages choisis (`wood` : diamètre, longueur sur la
  * grille, forme, faces, sens).
  */
 export type DieuCommand =
@@ -78,6 +78,7 @@ export type DieuCommand =
   | { kind: 'stamina-infinite'; on: boolean }
   | { kind: 'clock'; hour: number }
   | { kind: 'finish-work' }
+  | { kind: 'stamina-start' }
   | { kind: 'learn-plan'; plan: string }
   | { kind: 'supply'; what: string; count: number }
   | { kind: 'erase-sites' }

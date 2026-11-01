@@ -299,6 +299,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('h3', { textContent: 'Endurance' }),
     el('div', { className: 'row' }, [el('label', {}, ['souffle', energyBreath]), el('label', {}, ['plafond', energyCeiling])]),
     el('div', { className: 'row' }, [el('label', {}, ['maximum', energyMax]), energyButton]),
+    el('div', { className: 'row' }, [button('Endurance de départ', () => send({ kind: 'stamina-start' }))]),
     el('div', { className: 'row' }, [el('label', {}, [infinite, 'endurance infinie'])]),
     el('div', { className: 'row' }, [el('label', {}, ['heure', clockHour]), clockButton]),
     el('div', { className: 'row' }, [button('Finir le travail', () => send({ kind: 'finish-work' }))]),
