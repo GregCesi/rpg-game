@@ -77,8 +77,17 @@ await playtest('grange', async ({ page, errors, load }) => {
     await sleep(110);
   };
   const send = (cmd: object) => page.evaluate((c) => (window as any).game.events.emit('build', c), cmd);
-  const pieces = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.builds.map((b: any) => b.piece))));
-  const joints = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.changes.joints)));
+  // les pièces déjà posées sur la ferme à l'arrivée (la cabane du chasseur, posée depuis son plan : chantier « monde ») ne comptent pas
+    let existing: Set<number> | undefined;
+    const pieces = async () => {
+      const all = await page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.builds.map((b: any) => b.piece))));
+      existing ??= new Set(all.map((p: any) => p.id));
+      return all.filter((p: any) => !existing!.has(p.id));
+    };
+    await pieces();
+  // les assemblages des pièces déjà là (la cabane du chasseur) ne comptent pas non plus
+  const joints = async () =>
+    (await page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.changes.joints)))).filter((j: any) => !existing?.has(j.a));
   const keys = async (code: string, n: number) => {
     for (let i = 0; i < n; i++) {
       await page.keyboard.press(code);

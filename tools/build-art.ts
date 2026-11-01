@@ -45,7 +45,7 @@ import { WALL_STONES } from '../src/world/walls';
 import { stonePalette } from '../art/items/stones';
 
 /** Où l'aperçu pose un plan : la carte, et le point au sol de son piquet nord-ouest (px). */
-const PLAN_PREVIEW = { map: 'ferme', corner: [568, 99] };
+const PLAN_PREVIEW = { map: 'ferme', corner: [568 + 78 * 32, 99 + 43 * 32] };
 
 const OUT = 'src/generated';
 const PREVIEW = '.art-preview';

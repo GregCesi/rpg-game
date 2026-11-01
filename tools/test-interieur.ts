@@ -156,7 +156,10 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     await until((w) => w.mode === 'play');
 
     // 2. le bâtiment : une entrée, fermée ; devant la porte, on ne passe pas ; E l'ouvre
-    const building = await page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').interiors.buildings())));
+    // celui qu'on vient de poser (la ferme a déjà la cabane du chasseur, posée depuis son plan : chantier « monde »)
+    const area: { x0: number; x1: number; y0: number; y1: number } = { x0: (free!.x - 20) * 5, x1: (free!.x + 230) * 5, y0: (free!.y - 20) * 5, y1: (free!.y + 210) * 5 };
+    const mine = (x: number, y: number): boolean => x >= area.x0 && x <= area.x1 && y >= area.y0 && y <= area.y1;
+    const building: any[] = ((await page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').interiors.buildings())))) as any[]).filter((q) => mine(q.room.x, q.room.y));
     assert.equal(building.length, 1, `${b.plan} : un bâtiment où l'on entre`);
     const entrance = building[0].entrances[0];
     assert.equal(entrance.open, false, `${b.plan} : la porte est fermée`);
@@ -167,7 +170,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     await stand(outside.x, outside.y, 'up');
     await page.keyboard.press('KeyE');
     await sleep(300);
-    const door = await page.evaluate((k) => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.builds.map((q: any) => q.piece).find((q: any) => 'prop' in q.piece && q.piece.prop.startsWith(k)))), b.door);
+    const door = ((await page.evaluate((k) => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.builds.map((q: any) => q.piece).filter((q: any) => 'prop' in q.piece && q.piece.prop.startsWith(k)))), b.door)) as any[]).find((q) => mine(q.x, q.y));
     assert.equal(door.piece.prop, `${b.door}-open`, `${b.plan} : E ouvre la porte (${notices.at(-1) ?? ''})`);
     // dehors : le bâtiment, la porte ouverte, Xéros à côté
     const room = building[0].room;

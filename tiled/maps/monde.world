@@ -1,0 +1,146 @@
+{
+  "type": "world",
+  "onlyShowAdjacentMaps": false,
+  "maps": [
+    {
+      "fileName": "foret-profonde-nord.tmj",
+      "x": 0,
+      "y": 0,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "bois-du-nord.tmj",
+      "x": 4000,
+      "y": 0,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "pres-du-nord.tmj",
+      "x": 8000,
+      "y": 0,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "ferme-du-riche.tmj",
+      "x": 12000,
+      "y": 0,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "champs-du-riche.tmj",
+      "x": 16000,
+      "y": 0,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "foret-profonde.tmj",
+      "x": 0,
+      "y": 4000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "ferme.tmj",
+      "x": 4000,
+      "y": 4000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "chemin.tmj",
+      "x": 8000,
+      "y": 4000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "village.tmj",
+      "x": 12000,
+      "y": 4000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "route-de-la-ville.tmj",
+      "x": 16000,
+      "y": 4000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "foret-profonde-sud.tmj",
+      "x": 0,
+      "y": 8000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "bois-du-sud.tmj",
+      "x": 4000,
+      "y": 8000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "pres-du-sud.tmj",
+      "x": 8000,
+      "y": 8000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "quartier-sud.tmj",
+      "x": 12000,
+      "y": 8000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "pres-de-l-est.tmj",
+      "x": 16000,
+      "y": 8000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "foret-des-ronces.tmj",
+      "x": 0,
+      "y": 12000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "bois-de-la-riviere.tmj",
+      "x": 4000,
+      "y": 12000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "friches.tmj",
+      "x": 8000,
+      "y": 12000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "ferme-rivale.tmj",
+      "x": 12000,
+      "y": 12000,
+      "width": 4000,
+      "height": 4000
+    },
+    {
+      "fileName": "champs-rivaux.tmj",
+      "x": 16000,
+      "y": 12000,
+      "width": 4000,
+      "height": 4000
+    }
+  ]
+}

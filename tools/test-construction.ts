@@ -91,7 +91,14 @@ await playtest('construction', async ({ page, errors, load }) => {
       await sleep(150);
     };
     const send = (cmd: object) => page.evaluate((c) => (window as any).game.events.emit('build', c), cmd);
-    const pieces = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.builds.map((b: any) => b.piece))));
+    // les pièces déjà posées sur la ferme à l'arrivée (la cabane du chasseur, posée depuis son plan : chantier « monde ») ne comptent pas
+    let existing: Set<number> | undefined;
+    const pieces = async () => {
+      const all = await page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.builds.map((b: any) => b.piece))));
+      existing ??= new Set(all.map((p: any) => p.id));
+      return all.filter((p: any) => !existing!.has(p.id));
+    };
+    await pieces();
     const listen = () =>
       page.evaluate(() => {
         const list: string[] = [];
@@ -208,7 +215,7 @@ await playtest('construction', async ({ page, errors, load }) => {
 
     // 10. en jeu : ce qui a une collision et est posé sous 2 m bloque (poteaux, sablières à 192 cm, solin, poutre à 20 cm) ; la
     // dalle, sans collision dans props.json, se marche comme en jeu
-    const blocking = await page.evaluate(() => (window as any).game.scene.getScene('world').map.builds.filter((b: any) => b.zone).map((b: any) => b.piece.id));
+    const blocking = ((await page.evaluate(() => (window as any).game.scene.getScene('world').map.builds.filter((b: any) => b.zone).map((b: any) => b.piece.id))) as number[]).filter((id) => !existing!.has(id));
     assert.equal(blocking.length, 6);
     // 11. le solin en tronçons : trois morceaux taillés bout à bout = un tronçon, un seul dessin, sans contour aux jonctions ; un
     // morceau nord-sud sous le bout ouest = un angle ; le morceau du milieu retiré coupe le tronçon en deux
@@ -315,7 +322,9 @@ await playtest('construction', async ({ page, errors, load }) => {
     await shot('7-poteaux-avant');
     await send({ kind: 'pick-joint', joint: 'scarf' });
     await click((low.x + 20) / 5, footY - 180 / 5);
-    const jointsNow = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.changes.joints)));
+    // sans les assemblages des pièces déjà là (la cabane du chasseur)
+    const jointsNow = async () =>
+      (await page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.changes.joints)))).filter((j: any) => !existing!.has(j.a));
     let js = await jointsNow();
     assert.equal(js.length, 1, "l'enture est posée");
     assert.equal(js[0].type, 'scarf');
