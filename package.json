@@ -12,7 +12,7 @@
     "typecheck": "npm run art && npm run maps && tsc --noEmit",
     "sketch": "npm run art && tsx tools/sketch.ts",
     "test": "npm run art && npm run test:fast",
-    "test:fast": "tsx tools/test-sketch.ts && tsx tools/test-build.ts && tsx tools/test-sections.ts && tsx tools/test-crossing.ts && tsx tools/test-clock.ts && tsx tools/test-stamina.ts",
+    "test:fast": "tsx tools/test-sketch.ts && tsx tools/test-build.ts && tsx tools/test-sections.ts && tsx tools/test-crossing.ts && tsx tools/test-clock.ts && tsx tools/test-stamina.ts && tsx tools/test-sleep.ts",
     "test:scenarios": "npm run art && npm run maps && tsx tools/run-scenarios.ts",
     "test:scenarios:bg": "tsx tools/scenarios-bg.ts",
     "test:sections": "npm run art && tsx tools/test-sections.ts",

@@ -1,6 +1,6 @@
 import { time } from '../content';
 import { advanceClock, game } from '../state';
-import { gameMinutes, nextSpeed } from '../world/clock';
+import { gameMinutes, nextSpeed, type Clock } from '../world/clock';
 
 /** Où le palier choisi est retenu d'une session à l'autre, hors de la sauvegarde de partie (comme le zoom). */
 const KEY = 'xeros-temps';
@@ -24,10 +24,12 @@ function stored(): number {
 export class ClockSystem {
   /** Le palier en ce moment (lu aussi par le HUD). */
   static speed = stored();
+  /** Appelé chaque fois que l'horloge avance en jeu, depuis `from`, de `minutes` (la veille de nuit use l'endurance). */
+  onAdvance?: (from: Clock, minutes: number) => void;
 
   /** À chaque image : `delta` ms jouées ; `running` : faux pendant un dialogue, un fondu, le mode construction. */
   update(delta: number, running: boolean): void {
-    if (running) advanceClock(game, gameMinutes(delta, ClockSystem.speed));
+    if (running) this.advance(gameMinutes(delta, ClockSystem.speed));
   }
 
   /** V (`dir` +1) ou Maj + V (−1) : le palier voisin ; rend le nouveau palier, retenu dans le navigateur. */
@@ -43,6 +45,12 @@ export class ClockSystem {
 
   /** Un travail : l'horloge avance de sa durée réaliste (minutes de jeu), quelle que soit la vitesse du temps. */
   work(minutes: number): void {
+    this.advance(minutes);
+  }
+
+  private advance(minutes: number): void {
+    const from = game.clock;
     advanceClock(game, minutes);
+    this.onAdvance?.(from, minutes);
   }
 }

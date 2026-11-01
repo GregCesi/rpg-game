@@ -972,6 +972,18 @@ export const StaminaSchema = z.strictObject({
   }),
   tired: z.number().gt(0).lt(1),
   tiredWalk: z.number().gt(0).lte(1),
+  /**
+   * Le sommeil (world/sleep.ts) : `hours` de sommeil pour une nuit pleine (le lever à `wakeHour` de time.json, ou au bout de ces heures) ;
+   * au réveil, le plafond perd `exhaustedPenalty` × ce qui manquait sous le seuil `tired` au coucher, et `missingHourPenalty` par heure
+   * de sommeil manquante ; éveillé la nuit (de `nightFrom` h au lever), il perd `nightAwakePerHour` par heure de jeu.
+   */
+  sleep: z.strictObject({
+    hours: z.number().positive(),
+    exhaustedPenalty: z.number().nonnegative(),
+    missingHourPenalty: z.number().nonnegative(),
+    nightFrom: z.number().min(0).lt(24),
+    nightAwakePerHour: z.number().nonnegative(),
+  }),
   costs: z.strictObject({
     chop: z.number().nonnegative(),
     cutTie: z.number().nonnegative(),

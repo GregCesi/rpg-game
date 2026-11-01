@@ -18,6 +18,13 @@
   },
   "tired": 0.15,
   "tiredWalk": 0.85,
+  "sleep": {
+    "hours": 8,
+    "exhaustedPenalty": 0.4,
+    "missingHourPenalty": 5,
+    "nightFrom": 22,
+    "nightAwakePerHour": 0.5
+  },
   "costs": {
     "chop": 0.8,
     "cutTie": 0.5,

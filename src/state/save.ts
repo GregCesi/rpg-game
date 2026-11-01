@@ -18,7 +18,7 @@ export const SAVE_KEY = 'xeros-partie';
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
-export const SAVE_VERSION = 19;
+export const SAVE_VERSION = 20;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -114,6 +114,7 @@ export function upgrade(data: unknown): unknown {
   if (d?.version === 15 && d.state && typeof d.state === 'object') d = { ...d, version: 16, state: hewingInPasses(d.state) };
   if (d?.version === 17 && d.state && typeof d.state === 'object') d = { ...d, version: 18, state: withClock(d.state as { day?: number }) };
   if (d?.version === 18 && d.state && typeof d.state === 'object') d = { ...d, version: 19, state: threeLevels(d.state as { stamina?: number }) };
+  if (d?.version === 19 && d.state && typeof d.state === 'object') d = { ...d, version: 20, state: withWoke(d.state as { stamina?: { ceiling?: number } }) };
   return d;
 }
 
@@ -532,4 +533,13 @@ function threeLevels(state: { stamina?: number }): unknown {
   const max = stamina.max.start;
   const v = typeof state.stamina === 'number' ? Math.min(max, Math.max(0, state.stamina)) : max;
   return { ...state, stamina: { breath: v, ceiling: v, max } };
+}
+
+/**
+ * Version 19 -> 20 : le plafond au réveil (`woke`), qui dit la nuit venue si la journée a entraîné Xéros ; une partie d'avant le prend
+ * égal au plafond d'aujourd'hui (la journée commence là).
+ */
+function withWoke(state: { stamina?: { ceiling?: number } }): unknown {
+  const st = state.stamina;
+  return st && typeof st === 'object' ? { ...state, stamina: { ...st, woke: typeof st.ceiling === 'number' ? st.ceiling : stamina.max.start } } : state;
 }

@@ -783,7 +783,7 @@ Le modèle proposé (à mettre dans stamina.json, à la place de `max`, `tired`,
   "max": {"start": 100, "cap": 200, "gain": 2, "trainFrom": 0.4},
   "breath": {"regenPerSec": 12, "regenDelayMs": 800, "perCost": 3, "perSec": {"run": 5, "carryPerKg": 0.1, "pushPerKg": 0.05}},
   "tired": 0.15, "tiredWalk": 0.85,
-  "sleep": {"wakeHour": 6, "sleepHours": 8, "exhaustedBelow": 0.15, "exhaustedPenalty": 0.4, "missingHourPenalty": 5, "nightAwakePerHour": 0.5},
+  "sleep": {"hours": 8, "exhaustedPenalty": 0.4, "missingHourPenalty": 5, "nightFrom": 22, "nightAwakePerHour": 0.5},
   "costs": {"…": "les prix d'aujourd'hui, en points du plafond"}
 }
 ```
@@ -826,7 +826,8 @@ coucher épuisé (plafond à 0) coûte 6 points le lendemain.
 
 **Coucher à l'aube** : couché à 6 h au lieu de 22 h, le plafond de 15 descend à 11 en veillant (0,5 par heure de veille de nuit) ;
 levé à 14 h (8 h de sommeil), plafond 98,4 au lieu de 100, et la demi-journée est perdue. **Nuit courte** (coucher 2 h, lever 6 h :
-4 h de sommeil) : plafond 80 au réveil. **La vraie nuit blanche** (aucun sommeil, Xéros continue le lendemain) : à 6 h, le plafond est
+4 h de sommeil) : plafond 80 au réveil (81 si la journée a entraîné : le maximum est monté de 1 ; de même, 99,4 pour le coucher à
+l'aube). **La vraie nuit blanche** (aucun sommeil, Xéros continue le lendemain) : à 6 h, le plafond est
 à 11 (15 usé par 8 h de veille) et le souffle ne dépasse jamais ce plafond ; il est fatigué (sous 15 % du maximum) : pas de course, la
 marche à 85 % ; il lui reste 11 points de travail avant l'épuisement (à peu près une heure d'abattage), puis plus rien de ce qui coûte
 jusqu'au sommeil ; il marche, parle, prend ce qui est léger ; le maximum ne monte pas (il faut une nuit). La nuit suivante, le malus de

@@ -66,7 +66,7 @@ assert.equal(tired.spend(def.costs.chop), 'exhausted', 'plafond vide : épuisé'
 const v19 = upgrade({ version: 18, savedAt: '', where: {}, state: { stamina: 62, clock: { day: 2, minute: 400 }, hands: [null, null] } }) as {
   state: { stamina: unknown };
 };
-assert.deepEqual(v19.state.stamina, { breath: 62, ceiling: 62, max: def.max.start }, 'la jauge devient souffle et plafond, le maximum de départ');
+assert.deepEqual(v19.state.stamina, { breath: 62, ceiling: 62, max: def.max.start, woke: 62 }, 'la jauge devient souffle et plafond, le maximum de départ');
 
 console.log(
   `✓ endurance : la course dure ${seconds.toFixed(1)} s (${Math.round(metres)} m), l'effort attend son souffle, épuisé, fatigué, la sauvegarde de la version 18`,

@@ -243,6 +243,9 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     [energyMax.value, energyCeiling.value, energyBreath.value] = [max, ceiling, breath].map(String);
     send({ kind: 'stamina', breath, ceiling, max });
   });
+  // l'horloge : aller à une heure (la prochaine fois qu'elle sonne), pour essayer la nuit et le lever
+  const clockHour = el('input', { type: 'number', min: '0', max: '23.75', step: '0.5', value: '22' });
+  const clockButton = button("Aller à l'heure", () => send({ kind: 'clock', hour: Math.min(23.75, Math.max(0, Number(clockHour.value) || 0)) }));
   const infinite = el('input', { type: 'checkbox' });
   infinite.addEventListener('change', () => {
     send({ kind: 'stamina-infinite', on: infinite.checked });
@@ -297,6 +300,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('div', { className: 'row' }, [el('label', {}, ['souffle', energyBreath]), el('label', {}, ['plafond', energyCeiling])]),
     el('div', { className: 'row' }, [el('label', {}, ['maximum', energyMax]), energyButton]),
     el('div', { className: 'row' }, [el('label', {}, [infinite, 'endurance infinie'])]),
+    el('div', { className: 'row' }, [el('label', {}, ['heure', clockHour]), clockButton]),
     energyNow,
     el('h3', { textContent: 'Implantation' }),
     plan,

@@ -146,6 +146,12 @@ export class Stamina {
     this.set(breath, this.ceiling - perSec * s, false);
   }
 
+  /** La veille de nuit use le plafond de `points` (world/sleep.ts), sans toucher au repos du souffle. */
+  wear(points: number): void {
+    if (this.infinite || points <= 0) return;
+    this.set(this.breath, this.ceiling - points, false);
+  }
+
   /** À chaque image : le souffle revient vers le plafond au repos ; essoufflé, Xéros le reste jusqu'à `recovered` du plafond. */
   recover(delta: number): void {
     this.rest += delta;

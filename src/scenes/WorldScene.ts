@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { clockLabel } from '../world/clock';
+import { nightMinutes } from '../world/sleep';
 import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
-import { items, maps, props, time, transforms } from '../content';
+import { items, maps, props, stamina, time, transforms } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
@@ -48,6 +49,7 @@ import {
   revisionOf,
   replaceState,
   resetMap,
+  setClock,
   sleep,
   switchHand,
   take,
@@ -258,6 +260,10 @@ export class WorldScene extends Phaser.Scene {
     this.builder = new BuildSystem(this, this.map, this.player, (t) => this.notice(t), (st: BuildStatus) => this.game.events.emit(GameEvent.BuildStatus, st));
     this.player.strength.multiplier = this.force;
     this.player.stamina.infinite = this.infinite;
+    // éveillé la nuit, Xéros s'use : la veille se paie (stamina.json, `sleep`)
+    const night = stamina.sleep;
+    this.clock.onAdvance = (from, minutes) =>
+      this.player.stamina.wear((nightMinutes(from, minutes, night.nightFrom, time.wakeHour) / 60) * night.nightAwakePerHour);
     this.player.stamina.onChange = () => this.game.events.emit(GameEvent.Stamina, this.player.stamina.levels());
     this.dropHeavy();
     // ce qu'il portait sur la carte d'avant
@@ -909,6 +915,13 @@ export class WorldScene extends Phaser.Scene {
       case 'stamina':
         this.player.stamina.reset(cmd);
         break;
+      case 'clock': {
+        // la prochaine fois que l'horloge sonne cette heure (le jour même, ou le lendemain si elle est passée)
+        const at = Math.max(0, Math.min(24, cmd.hour)) * 60;
+        const c = game.clock;
+        setClock(game, { day: c.day + (at <= c.minute ? 1 : 0), minute: at % 1440 });
+        break;
+      }
       case 'stamina-infinite':
         this.infinite = cmd.on;
         this.player.stamina.infinite = cmd.on;
@@ -962,7 +975,7 @@ export class WorldScene extends Phaser.Scene {
     this.scene.launch('dialogue', { id });
   }
 
-  /** « Dormir ? » -> Oui : fondu au noir, jauge pleine, un jour de plus, réveil dans le cagibi (la partie s'écrit à l'arrivée). */
+  /** « Dormir ? » -> Oui : fondu au noir, l'horloge au lever, ce que rend la nuit (`sleep` de GameState), réveil dans le cagibi (la partie s'écrit à l'arrivée). */
   private sleepNow(): void {
     this.talking = undefined;
     this.player.stamina.flush();

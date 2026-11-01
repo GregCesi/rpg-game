@@ -4,7 +4,9 @@
 // - étape 2, la durée des travaux : abattre un arbre normal (4 coups de cognée) avance l'horloge de ses 25 minutes de jeu (props.json),
 //   le geste gardant sa durée ;
 // - étape 3, l'endurance en trois niveaux : à bout de souffle, un coup de cognée attend sans message d'épuisement, avec un signe
-//   visible (Xéros souffle, la part « revient » de la barre clignote), puis se fait quand le souffle est revenu.
+//   visible (Xéros souffle, la part « revient » de la barre clignote), puis se fait quand le souffle est revenu ;
+// - étape 4, le sommeil et la veille : éveillé la nuit (22 h), le plafond s'use de 0,5 par heure de jeu ; dormir mène au lever (6 h
+//   le lendemain), avec le plafond et le maximum que donne la nuit (world/sleep.ts), et le dit.
 // Usage : npm run test:temps (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
@@ -16,7 +18,7 @@ await playtest('temps', async ({ page, errors }) => {
     const frame = () => new Promise((res) => requestAnimationFrame(res));
     const g = (window as any).game;
     const w = () => g.scene.getScene('world');
-    const urls = { state: '/src/state/index.ts', clock: '/src/systems/clock.ts', content: '/src/content/index.ts' };
+    const urls = { state: '/src/state/index.ts', clock: '/src/systems/clock.ts', content: '/src/content/index.ts', sleep: '/src/world/sleep.ts', time: '/src/world/clock.ts' };
     const gs = await import(urls.state);
     const { ClockSystem } = await import(urls.clock);
     const content = await import(urls.content);
@@ -27,11 +29,12 @@ await playtest('temps', async ({ page, errors }) => {
       await sleep(ms);
     };
     const press = async (code: string, shift = false) => {
-      if (shift) window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft' }));
-      window.dispatchEvent(new KeyboardEvent('keydown', { code }));
+      if (shift) window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', shiftKey: true }));
+      // comme un vrai clavier : la touche pressée avec Maj porte `shiftKey`
+      window.dispatchEvent(new KeyboardEvent('keydown', { code, shiftKey: shift }));
       // un appui d'au moins une image (Phaser lit les touches à chaque image ; un appui synthétique plus bref se perd avec Maj)
       await sleep(60);
-      window.dispatchEvent(new KeyboardEvent('keyup', { code }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code, shiftKey: shift }));
       if (shift) window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft' }));
       await frame();
     };
@@ -105,6 +108,28 @@ await playtest('temps', async ({ page, errors }) => {
     await press('Space');
     while (w().mode !== 'play') await frame();
     out.after = { ceiling: gs.game.stamina.ceiling - ceiling0, cost: content.stamina.costs.chop };
+
+    // 4. la veille de nuit, puis dormir
+    await send({ kind: 'clock', hour: 22 });
+    await send({ kind: 'stamina', breath: 40, ceiling: 40, max: 100 });
+    ClockSystem.speed = 360;
+    const c0 = w().player.stamina.ceiling;
+    const n0 = minutes();
+    await sleep(2500);
+    ClockSystem.speed = content.time.default;
+    out.night = { minutes: minutes() - n0, worn: c0 - w().player.stamina.ceiling, perHour: content.stamina.sleep.nightAwakePerHour };
+    w().player.stamina.flush();
+    const sleepMod = await import(urls.sleep);
+    const { between } = await import(urls.time);
+    const bed = { ...gs.game.clock };
+    const wakeAt = sleepMod.wakeTime(bed, content.time.wakeHour, content.stamina.sleep.hours);
+    const expect = sleepMod.morning(content.stamina, gs.game.stamina, between(bed, wakeAt));
+    const told2 = notices.length;
+    w().onDialogueEnd('sleep');
+    const t2 = performance.now();
+    while ((gs.game.clock.day === bed.day + 0 || w().mode !== 'play') && performance.now() - t2 < 8000) await frame();
+    await sleep(300);
+    out.slept = { bed, clock: { ...gs.game.clock }, wakeAt, stamina: { ...gs.game.stamina }, expect, live: w().player.stamina.ceiling, notices: notices.slice(told2) };
     await send({ kind: 'stamina-infinite', on: true });
     return out;
   })) as Record<string, any>;
@@ -126,5 +151,13 @@ await playtest('temps', async ({ page, errors }) => {
   assert.equal(r.winded.ceiling, 0, 'le coup qui attend ne coûte rien');
   assert.ok(r.recovered.ms < 6000 && !r.recovered.puff && !r.recovered.blink, `le souffle revient en ${(r.recovered.ms / 1000).toFixed(1)} s, les signes s'éteignent`);
   assert.ok(Math.abs(r.after.ceiling + r.after.cost) < 0.01, `le coup se fait ensuite et coûte son prix (${r.after.ceiling.toFixed(2)})`);
-  console.log(`  ✓ temps : l'horloge à x24, V et Maj + V, l'heure à l'écran ; un arbre normal abattu en ${(r.felled.real / 1000).toFixed(1)} s de gestes avance l'horloge de ${r.felled.expect} min ; à bout de souffle, le coup attend (Xéros souffle, la barre clignote), puis se fait`);
+  const nightExpected = (r.night.minutes / 60) * r.night.perHour;
+  assert.ok(r.night.minutes > 5 && Math.abs(r.night.worn - nightExpected) < 0.02, `la nuit, ${r.night.minutes.toFixed(0)} min de veille usent ${nightExpected.toFixed(2)} (${r.night.worn.toFixed(3)})`);
+  // à la minute près : l'horloge a repris depuis le lever
+  assert.ok(r.slept.clock.day === r.slept.wakeAt.day && Math.floor(r.slept.clock.minute) === r.slept.wakeAt.minute, 'dormir mène au lever');
+  assert.equal(r.slept.wakeAt.minute, 6 * 60, 'couché vers 22 h, levé à 6 h');
+  assert.ok(Math.abs(r.slept.stamina.ceiling - r.slept.expect.ceiling) < 1e-6 && Math.abs(r.slept.stamina.max - r.slept.expect.max) < 1e-6, 'le plafond et le maximum que donne la nuit');
+  assert.ok(Math.abs(r.slept.live - r.slept.expect.ceiling) < 1e-6, 'Xéros se lève avec ce plafond');
+  assert.ok(r.slept.notices.includes(`Jour ${r.slept.clock.day} · 06:00`), `le réveil se dit (${r.slept.notices.join(' | ')})`);
+  console.log(`  ✓ temps : l'horloge à x24, V et Maj + V, l'heure à l'écran ; un arbre normal abattu en ${(r.felled.real / 1000).toFixed(1)} s de gestes avance l'horloge de ${r.felled.expect} min ; à bout de souffle, le coup attend (Xéros souffle, la barre clignote), puis se fait ; la veille de nuit use le plafond, dormir mène au lever avec ce que rend la nuit`);
 });

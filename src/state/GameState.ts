@@ -4,7 +4,8 @@
 
 import { z } from 'zod';
 import { items, stamina, time } from '../content';
-import { later } from '../world/clock';
+import { between, later } from '../world/clock';
+import { morning, wakeTime } from '../world/sleep';
 import { BuildPlacedSchema, JointTypeSchema, CornerSchema, NaturalSchema, PileWoodSchema, WoodPieceSchema, type BuildPlaced, type Natural, type WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { turnedWood } from '../world/woodShape';
@@ -178,7 +179,7 @@ export const GameStateSchema = z.strictObject({
    * en quelques secondes), le plafond du jour (`ceiling`, descend avec les efforts, ne revient qu'en dormant), le maximum (`max`, monte
    * avec l'entraînement). breath ≤ ceiling ≤ max.
    */
-  stamina: z.strictObject({ breath: z.number().nonnegative(), ceiling: z.number().nonnegative(), max: z.number().positive() }),
+  stamina: z.strictObject({ breath: z.number().nonnegative(), ceiling: z.number().nonnegative(), max: z.number().positive(), woke: z.number().nonnegative() }),
   /**
    * L'horloge (docs/CONCEPTION.md, « Le temps ») : le jour (1 au départ) et la minute du jour (0 à 1 440, avec des fractions). Elle
    * avance à la vitesse du temps (systems/clock.ts) et des minutes d'un travail ; le sommeil la mène au lever.
@@ -220,7 +221,7 @@ export function revisionOf(): number {
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: { breath: stamina.max.start, ceiling: stamina.max.start, max: stamina.max.start }, clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: { breath: stamina.max.start, ceiling: stamina.max.start, max: stamina.max.start, woke: stamina.max.start }, clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
@@ -302,14 +303,26 @@ export function setStamina(s: GameState, value: { breath?: number; ceiling?: num
   const max = Math.max(1, value.max ?? s.stamina.max);
   const ceiling = Math.min(max, Math.max(0, value.ceiling ?? s.stamina.ceiling));
   const breath = Math.min(ceiling, Math.max(0, value.breath ?? s.stamina.breath));
-  s.stamina = { breath, ceiling, max };
+  s.stamina = { breath, ceiling, max, woke: s.stamina.woke };
   revision++;
 }
 
-/** Une nuit de sommeil : l'endurance est pleine, le jour suivant commence. */
+/**
+ * Xéros dort (docs/CONCEPTION.md, « Le temps » ; world/sleep.ts) : l'horloge va au lever (`wakeHour`, ou au bout d'une nuit pleine) ;
+ * la nuit rend le plafond selon l'épuisement du coucher et le sommeil pris, et fait monter le maximum si la journée l'a entraîné.
+ */
 export function sleep(s: GameState): void {
-  s.stamina = { breath: s.stamina.max, ceiling: s.stamina.max, max: s.stamina.max };
-  s.clock = { day: s.clock.day + 1, minute: time.wakeHour * 60 };
+  const bed = s.clock;
+  const wake = wakeTime(bed, time.wakeHour, stamina.sleep.hours);
+  const { max, ceiling } = morning(stamina, s.stamina, between(bed, wake));
+  s.stamina = { breath: ceiling, ceiling, max, woke: ceiling };
+  s.clock = wake;
+  revision++;
+}
+
+/** L'horloge va droit à `clock` (outils de test : essayer la nuit, le lever), sans user l'endurance. */
+export function setClock(s: GameState, clock: { day: number; minute: number }): void {
+  s.clock = { ...clock };
   revision++;
 }
 
