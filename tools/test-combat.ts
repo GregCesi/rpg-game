@@ -1,14 +1,15 @@
 // Test de scénario du combat (docs/CONCEPTION.md, « Le combat »), dans le vrai jeu (voir tools/lib/playtest.ts), avec ?debug : le
-// mannequin posé sur la ferme.
-// - La zone de coup est fidèle à ce qui est dessiné : pour chaque arme et chaque direction, la plus grande distance où la lame dessinée
-//   (sans écart de précision) recoupe la silhouette du mannequin est calculée par world/strike.ts ; en jeu, à cette distance le coup
-//   porte, et 2 px plus loin (une cible juste hors de portée) il ne porte pas.
-// - Une cible traversée par l'arc (la taille a deux images de frappe) n'est touchée qu'une fois ; elle penche, ne casse pas.
+// mannequin posé sur la ferme. La zone de coup est calculée au sol, dans le monde (world/strike.ts, `sweeps` de combat.json).
+// - Au bord de la portée, droit devant, le coup porte ; 2 px plus loin, il ne porte pas (pour chaque arme, dans les quatre directions).
+// - Une cible derrière Xéros, ou au-dessus de lui à l'écran sans être devant lui dans le monde, n'est jamais touchée.
+// - Une cible que seul le début de la suite atteint (la taille : la dernière image active) est touchée, à cette image-là.
+// - Une cible traversée par l'arc n'est touchée qu'une fois ; elle penche, ne casse pas ; ses dégâts s'envolent au-dessus d'elle.
 // - Les dégâts et le prix d'endurance sont ceux du calcul ; l'épée fait environ 1,5 fois les dégâts par seconde de la branche.
 // - La précision : sur un grand nombre de coups simulés au bord de sa portée (écart tiré à chaque coup), la branche touche nettement
-//   moins souvent que l'épée au bord de la sienne.
-// - Un coup dans le vide joue tout le geste et coûte ; le poing nu contre un arbre ne lui fait rien ; épuisé, rien ne part ; les poings enchaînent le droit puis le gauche ; une
-//   pierre dans une main, le poing de l'autre ; une ou deux branches ne changent rien ; branche et hachette taillent toujours.
+//   moins souvent que l'épée au bord de la sienne ; un coup que l'écart fait manquer affiche « raté ».
+// - Un coup dans le vide joue tout le geste et coûte ; le poing nu contre un arbre ne lui fait rien ; épuisé, rien ne part ; les poings
+//   enchaînent le droit puis le gauche ; une pierre dans une main, le poing de l'autre ; une ou deux branches ne changent rien ; branche
+//   et hachette taillent toujours.
 // Usage : npm run test:combat (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
@@ -51,6 +52,8 @@ await playtest('combat', async ({ page, errors, load }) => {
     const stamina = () => w().player.stamina.value;
     const log = () => w().combat.log;
     const give = (item: string) => send({ kind: 'give', held: { item } });
+    // les textes qui s'envolent au-dessus des cibles (dégâts, « raté »)
+    const floats = () => w().children.list.filter((o: any) => o.type === 'Text').map((o: any) => o.text);
 
     await send({ kind: 'map', map: 'ferme' }, 1500);
     const m = w().map;
@@ -64,28 +67,23 @@ await playtest('combat', async ({ page, errors, load }) => {
     const dummy = w().map.props.find((p: any) => p.type === 'training-dummy');
     if (!dummy) throw new Error('le mannequin ne s’est pas posé');
     const foot = strike.footprint(dummy.def.dims, dummy.baseX, dummy.baseY);
-    const sil = w().combat.silhouette(dummy);
-    // les pieds de Xéros à `gap` px du bord de l'emprise du mannequin, tourné vers lui
+    const mid = { x: (foot.left + foot.right) / 2, y: (foot.top + foot.bottom) / 2 };
+    // les pieds de Xéros à `gap` px du bord de l'emprise du mannequin, droit devant lui, tourné vers lui
     const feetAt = (dir: string, gap: number): [number, number] =>
       ({
-        right: [foot.left - gap, Math.round((foot.top + foot.bottom) / 2)],
-        left: [foot.right + gap, Math.round((foot.top + foot.bottom) / 2)],
-        down: [Math.round(dummy.baseX), foot.top - gap],
-        up: [Math.round(dummy.baseX), foot.bottom + gap],
+        right: [foot.left - gap, Math.round(mid.y)],
+        left: [foot.right + gap, Math.round(mid.y)],
+        down: [Math.round(mid.x), foot.top - gap],
+        up: [Math.round(mid.x), foot.bottom + gap],
       })[dir] as [number, number];
     const facingDummy = (dir: string, gap: number) => standAt(...feetAt(dir, gap), dir);
-    // ce que prévoit le calcul : la lame dessinée d'une image de frappe recoupe-t-elle la silhouette ?
     const weaponOf = (item: string) => (item === 'fist' ? content.combat.unarmed : content.items[item].weapon);
-    const predicts = (item: string, gesture: string, hand: string, dir: string, gap: number, shift = { x: 0, y: 0 }) => {
-      const [x, y] = feetAt(dir, gap);
-      const feet = { x: Math.round(x), y: Math.round(y) };
-      const wpn = weaponOf(item);
-      if (!strike.inFront(feet, dir, foot, strike.reachCm(content.combat.rules, wpn) + 30)) return false;
-      return strike.strikePath(combatPoses[gesture][dir], dir, feet, wpn, hand, shift).some((s: any) => s.blades.some((b: any) => strike.bladeHits(b, sil)));
-    };
-    const edgeOf = (item: string, gesture: string, hand: string, dir: string) => {
+    // ce que prévoit le calcul, au sol : la première image active qui touche le mannequin depuis ces pieds, ou −1
+    const predicts = (item: string, gesture: string, dir: string, feet: [number, number], shift = strike.NO_SHIFT) =>
+      strike.firstHit(content.combat.sweeps[gesture], weaponOf(item), dir, { x: Math.round(feet[0]), y: Math.round(feet[1]) }, foot, shift);
+    const edgeOf = (item: string, gesture: string, dir: string) => {
       let best = -1;
-      for (let gap = 0; gap <= 60; gap++) if (predicts(item, gesture, hand, dir, gap)) best = gap;
+      for (let gap = 0; gap <= 60; gap++) if (predicts(item, gesture, dir, feetAt(dir, gap)) >= 0) best = gap;
       return best;
     };
     // un coup (Espace), seul : on laisse passer l'enchaînement d'avant
@@ -95,56 +93,100 @@ await playtest('combat', async ({ page, errors, load }) => {
       const before = stamina();
       const t0 = performance.now();
       await press('Space');
-      let tilt = 0;
       let played = false;
+      const texts = new Set<string>();
       for (let i = 0; i < 120 && (w().mode !== 'play' || w().combat.busy); i++) {
         played ||= w().mode === 'use' && w().player.tools.busy;
-        tilt = Math.max(tilt, Math.abs(dummy.image.angle));
+        for (const t of floats()) texts.add(t);
         await sleep(15);
       }
       const ms = performance.now() - t0;
       await settle();
+      for (const t of floats()) texts.add(t);
       const entry = log().length > n ? log()[log().length - 1] : undefined;
-      return { entry, spent: Math.round((before - stamina()) * 1000) / 1000, tilt, played, ms, hits: entry ? entry.hits.filter((h: any) => h.type === 'training-dummy').length : 0 };
+      const hits = entry ? entry.hits.filter((h: any) => h.type === 'training-dummy') : [];
+      return { entry, spent: Math.round((before - stamina()) * 1000) / 1000, played, ms, hits: hits.length, steps: hits.map((h: any) => h.step), texts: [...texts] };
     };
 
     await send({ kind: 'stamina-infinite', on: false });
     await send({ kind: 'stamina', value: 100 });
     const out: Record<string, any> = { weapons: {} };
-    // pas d'écart pendant les mesures de fidélité : la lame passe là où elle est dessinée
+    // pas d'écart pendant les mesures de portée : le coup va où le geste le dit
     w().combat.rand = () => 0;
     for (const item of ['branch', 'wooden-sword']) {
       await give(item);
       const res: Record<string, any> = { dirs: {} };
       for (const dir of ['down', 'up', 'right', 'left']) {
-        const edge = edgeOf(item, 'cut', 'right', dir);
+        const edge = edgeOf(item, 'cut', dir);
         await facingDummy(dir, edge);
         const at = await strikeOnce();
         await send({ kind: 'stamina', value: 100 });
         await facingDummy(dir, edge + 2);
         const past = await strikeOnce();
         await send({ kind: 'stamina', value: 100 });
-        res.dirs[dir] = { edge, atHits: at.hits, pastHits: past.hits, attack: at.entry?.attack, damage: at.entry?.damage, spent: at.spent, tilt: at.tilt };
+        res.dirs[dir] = { edge, atHits: at.hits, pastHits: past.hits, attack: at.entry?.attack, damage: at.entry?.damage, spent: at.spent, texts: at.texts };
       }
       const wpn = weaponOf(item);
       const kg = mass.itemMass(item);
       const cut = content.combat.attacks.cut;
+      const sweep = content.combat.sweeps.cut;
       res.expect = {
-        damage: strike.damage(content.combat.rules, cut, combatPoses.cut.down, wpn, kg),
+        damage: strike.damage(content.combat.rules, cut, sweep, combatPoses.cut.down, wpn, kg),
         cost: Math.round(strike.attackCost(content.stamina.costs, cut, kg) * 1000) / 1000,
         cycle: strike.cycle(content.combat.rules, combatPoses.cut.down, wpn, kg),
-        precision: strike.precision(content.combat.rules, wpn, kg),
+        reach: strike.reachCm(sweep, wpn),
       };
       // la précision : des coups simulés au bord de la portée (1 px en deçà), l'écart tiré à chaque coup
       let hits = 0;
       let tries = 0;
       for (const dir of ['down', 'up', 'right', 'left']) {
-        const edge = res.dirs[dir].edge - 1;
-        for (let k = 0; k < 250; k++, tries++) if (predicts(item, 'cut', 'right', dir, edge, strike.aimShift(content.combat.rules, wpn, kg))) hits++;
+        const feet = feetAt(dir, res.dirs[dir].edge - 1);
+        for (let k = 0; k < 250; k++, tries++) if (predicts(item, 'cut', dir, feet, strike.aimShift(content.combat.rules, wpn, kg)) >= 0) hits++;
       }
       res.rate = hits / tries;
       out.weapons[item] = res;
     }
+
+    // derrière Xéros, et au-dessus de lui à l'écran sans être devant lui dans le monde : jamais touché (l'épée, la taille et le coup
+    // vertical ; le mannequin juste au nord de ses pieds)
+    await give('wooden-sword');
+    const north: [number, number] = [Math.round(mid.x), foot.bottom + 4];
+    out.never = [];
+    for (const [dir, gesture] of [['down', 'cut'], ['down', 'overhead'], ['right', 'cut'], ['left', 'cut'], ['right', 'overhead']]) {
+      out.never.push({ dir, gesture, predicted: predicts('wooden-sword', gesture, dir, north) });
+    }
+    for (const dir of ['down', 'right', 'left']) {
+      await standAt(...north, dir);
+      const s0 = await strikeOnce();
+      out.never.push({ dir, gesture: 'cut', game: s0.hits });
+    }
+    // une cible que seul le début de la suite atteint : la dernière image active de la taille
+    const sweep = content.combat.sweeps.cut;
+    const last = sweep.active[sweep.active.length - 1];
+    let suite: [number, number] | undefined;
+    for (let dy = -40; dy <= 40 && !suite; dy++) {
+      for (let dx = -40; dx <= 40 && !suite; dx++) {
+        const feet: [number, number] = [Math.round(mid.x + dx), Math.round(mid.y + dy)];
+        if (predicts('wooden-sword', 'cut', 'down', feet) === last) suite = feet;
+      }
+    }
+    out.suite = { found: !!suite };
+    if (suite) {
+      await standAt(...suite, 'down');
+      const s1 = await strikeOnce();
+      out.suite = { found: true, steps: s1.steps, last };
+    }
+
+    // « raté » : au bord de la portée de la branche, un écart tiré qui fait manquer (en long, vers Xéros)
+    await give('branch');
+    await facingDummy('down', out.weapons.branch.dirs.down.edge);
+    w().combat.rand = (() => {
+      const seq = [1, 0.75];
+      let i = 0;
+      return () => seq[i++ % seq.length];
+    })();
+    const miss = await strikeOnce();
+    out.miss = { hits: miss.hits, misses: miss.entry?.misses.length, texts: miss.texts };
     w().combat.rand = Math.random;
 
     // un coup dans le vide : tout le geste, et son prix
@@ -197,11 +239,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     await standAt(tree.aimX, tree.aimY + 12, 'up');
     const punch = await strikeOnce();
     await sleep(300);
-    out.tree = {
-      attack: punch.entry?.attack,
-      hits: punch.entry?.hits.length,
-      same: w().map.props.includes(tree) && tree.type === treeType && tree.hits === treeHits,
-    };
+    out.tree = { attack: punch.entry?.attack, hits: punch.entry?.hits.length, same: w().map.props.includes(tree) && tree.type === treeType && tree.hits === treeHits };
 
     // épuisé : rien ne part
     await give('wooden-sword');
@@ -242,22 +280,32 @@ await playtest('combat', async ({ page, errors, load }) => {
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   for (const [item, res] of Object.entries(r.weapons) as [string, any][]) {
     for (const [dir, d] of Object.entries(res.dirs) as [string, any][]) {
-      assert.ok(d.edge >= 0, `${item} ${dir} : le calcul trouve une distance où la lame touche`);
-      assert.equal(d.atHits, 1, `${item} ${dir} : au bord de sa portée (${d.edge} px), le mannequin est touché, une seule fois par coup`);
+      assert.ok(d.edge >= 0, `${item} ${dir} : le calcul trouve une distance où le coup porte`);
+      assert.equal(d.atHits, 1, `${item} ${dir} : au bord de sa portée (${d.edge} px devant), le mannequin est touché, une seule fois par coup`);
       assert.equal(d.pastHits, 0, `${item} ${dir} : 2 px plus loin, il ne l'est pas`);
       assert.equal(d.attack, 'cut', `${item} ${dir} : le premier coup est la taille`);
       assert.equal(d.damage, res.expect.damage, `${item} ${dir} : les dégâts sont ceux du calcul`);
       assert.ok(Math.abs(d.spent - res.expect.cost) < 1e-3, `${item} ${dir} : l'endurance dépensée (${d.spent}) est le prix calculé (${res.expect.cost})`);
-      assert.ok(d.tilt > 0, `${item} ${dir} : le mannequin penche sous le coup`);
+      assert.ok(d.texts.includes(String(d.damage).replace('.', ',')), `${item} ${dir} : le chiffre des dégâts s'envole au-dessus du mannequin (${d.texts})`);
     }
   }
   const b = r.weapons.branch;
   const s = r.weapons['wooden-sword'];
+  assert.ok(b.dirs.down.edge > s.dirs.down.edge, `la branche porte plus loin que l'épée (${b.dirs.down.edge} contre ${s.dirs.down.edge} px)`);
   const dps = (x: any) => x.expect.damage / x.expect.cycle;
   assert.ok(dps(s) / dps(b) > 1.3 && dps(s) / dps(b) < 1.7, `l'épée fait environ 1,5 fois les dégâts par seconde de la branche (${(dps(s) / dps(b)).toFixed(2)})`);
   assert.ok(s.expect.cost < b.expect.cost, 'l’épée coûte moins d’endurance');
   assert.ok(s.rate >= 0.85, `l'épée touche presque toujours au bord de sa portée (${(s.rate * 100).toFixed(0)} %)`);
   assert.ok(b.rate <= s.rate - 0.25, `la branche, imprécise, touche nettement moins souvent au bord de la sienne (${(b.rate * 100).toFixed(0)} % contre ${(s.rate * 100).toFixed(0)} %)`);
+  for (const n of r.never) {
+    if ('predicted' in n) assert.equal(n.predicted, -1, `${n.gesture} vers ${n.dir} : le mannequin au nord de ses pieds n'est jamais touché (calcul)`);
+    else assert.equal(n.game, 0, `${n.gesture} vers ${n.dir} : le mannequin au nord de ses pieds n'est jamais touché (en jeu)`);
+  }
+  assert.ok(r.suite.found, 'il existe une place que seul le début de la suite atteint');
+  assert.deepEqual(r.suite.steps, [r.suite.last], 'une cible atteinte seulement au début de la suite est touchée, à cette image');
+  assert.equal(r.miss.hits, 0, 'l’écart fait manquer la cible au bord');
+  assert.equal(r.miss.misses, 1, 'le coup manqué est noté');
+  assert.ok(r.miss.texts.includes('raté'), `« raté » s'affiche au-dessus du mannequin (${r.miss.texts})`);
   assert.equal(r.air.hits, 0, 'dans le vide, rien n’est touché');
   assert.ok(r.air.played && r.air.spent > 0, 'dans le vide, le geste se joue et coûte');
   assert.ok(r.air.ms >= r.air.expected - 60, `dans le vide, tout le geste se joue (${r.air.ms} ms pour ${r.air.expected})`);
@@ -274,5 +322,5 @@ await playtest('combat', async ({ page, errors, load }) => {
   assert.equal(r.whittle, 0, 'branche et hachette : Espace n’attaque pas');
   assert.equal(r.dummyLeft, 1, 'le mannequin ne casse pas');
   assert.equal(r.dummyAngle, 0, 'il revient droit');
-  console.log(`  ✓ combat : zone de coup fidèle au dessin (touché au bord, manqué 2 px plus loin, une fois par coup) à la branche et à l’épée dans les quatre directions ; précision au bord : branche ${(b.rate * 100).toFixed(0)} %, épée ${(s.rate * 100).toFixed(0)} % ; vide, enchaînements, poings, épuisé`);
+  console.log(`  ✓ combat : zone au sol (touché au bord, manqué 2 px plus loin, jamais derrière ni au-dessus à l'écran, la suite compte) à la branche et à l’épée dans les quatre directions ; précision au bord : branche ${(b.rate * 100).toFixed(0)} %, épée ${(s.rate * 100).toFixed(0)} %, « raté » ; vide, enchaînements, poings, arbre, épuisé`);
 });

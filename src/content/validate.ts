@@ -849,7 +849,6 @@ function validateCombat(c: Content, cat: Catalog): string[] {
       const frames = poses[dir as Facing] ?? [];
       const n = cat.frameCounts.get(PLAYER.skin)?.get(`${g}-${dir}`);
       if (n !== undefined && n !== frames.length) err(`combat.json geste '${g}' ${dir} : ${frames.length} poses pour ${n} images dans '${PLAYER.skin}-${g}-${dir}'`);
-      if (!frames.some((f) => f.strike)) err(`combat.json geste '${g}' ${dir} : aucune image de frappe ('strike')`);
       for (const f of frames) {
         for (const img of [f.spark?.image, f.grip?.image]) if (img && !cat.textures.has(img)) err(`combat.json geste '${g}' ${dir} : image '${img}' non dessinée`);
         // la traînée, tirée pour chaque arme qui joue ce geste, à sa longueur
@@ -863,6 +862,15 @@ function validateCombat(c: Content, cat: Catalog): string[] {
       }
     }
   }
+  // où frappe chaque geste, au sol (`sweeps`) : un par geste d'attaque, autant d'images que ses poses, des images actives qui existent
+  for (const g of new Set(Object.values(c.combat.attacks).map((a) => a.gesture))) {
+    const sw = c.combat.sweeps[g];
+    if (!sw) { err(`combat.json geste '${g}' : pas de zone de coup ('sweeps')`); continue; }
+    const n = combatPoses[g]?.down.length;
+    if (n !== undefined && sw.frames.length !== n) err(`combat.json sweeps '${g}' : ${sw.frames.length} images pour ${n} poses`);
+    for (const k of sw.active) if (k >= sw.frames.length) err(`combat.json sweeps '${g}' : image active ${k} au-delà des ${sw.frames.length} images`);
+  }
+  for (const g of Object.keys(c.combat.sweeps)) if (!Object.values(c.combat.attacks).some((a) => a.gesture === g)) err(`combat.json sweeps '${g}' : aucune attaque ne joue ce geste`);
   if (!c.combat.families[c.combat.unarmed.family]) err(`combat.json main nue : famille '${c.combat.unarmed.family}' inconnue`);
   if (!c.combat.unarmed.fist) err("combat.json main nue : 'fist: true' (sa lame est le bras)");
   for (const [key, f] of Object.entries(c.combat.families)) {

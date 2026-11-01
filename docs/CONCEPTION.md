@@ -798,6 +798,30 @@ des attaques est remplacé par ceci.
 - **Avec `?debug`** : à chaque image de frappe, la lame (blanche), le balayage depuis l'image d'avant (pâle), la silhouette touchée
   (cadre rouge) et le chiffre des dégâts.
 
+### Troisième passe : la zone de coup au sol (1er novembre 2026)
+
+Grégoire, en jeu, avec ?debug : les coups touchaient surtout autour de la tête, pas devant Xéros, et la fin du mouvement ne comptait
+pas. La cause : la zone suivait la lame dessinée, et l'écran mêle profondeur et hauteur (y − z, règle D) ; une lame levée au-dessus de
+la tête est dessinée là où serait ce qui est devant Xéros vers le nord. Diagnostic par une **carte de touche** (`npm run art:touche`,
+`.art-preview/carte-touche.png` : vue du dessus, Xéros au centre, cases de 10 cm sur ± 2 m, une couleur par image active ; la carte
+d'avant la correction est gardée dans `carte-touche-avant.png`). Ce qui précède sur la lame dessinée et la silhouette est remplacé par
+ceci.
+
+- **La zone de coup se calcule dans le monde, au sol** (`sweeps` de combat.json, `world/strike.ts`) ; la lame dessinée ne sert plus
+  qu'à l'image. Pour chaque geste : `hand`, la main tendue (la portée = `hand` + l'arme devant la main) ; `width`, la largeur de ce qui
+  frappe ; par image, l'angle de l'arme par rapport au regard de Xéros (+ sa droite, − sa gauche), la part de la portée atteinte et la
+  hauteur de la pointe ; `active`, les images où l'arme a de l'élan : la frappe et le début de la suite (jamais la garde, l'armer, le
+  retour). La taille balaie un arc devant lui, de sa droite (75°) à sa gauche (−70°) ; le coup vertical, une bande de 30 cm droit
+  devant ; le direct, un court trait à la longueur du bras. La zone d'une image active est ce que balaie l'arme depuis l'image d'avant ;
+  une cible y est touchée si son emprise au sol y entre, quelle que soit sa hauteur, et jamais derrière Xéros ni à côté de lui (à plus
+  de 80° de son regard) : au-dessus de lui à l'écran n'est pas devant lui dans le monde.
+- **La précision** tire à chaque coup un écart (même formule), en travers (il tourne la zone) et en long (il allonge ou raccourcit la
+  portée) ; l'arme dessinée en est décalée d'autant. Au bord de leur portée : branche 58 %, épée 100 %.
+- **La vitesse** est celle de la pointe dans l'espace (au sol et en hauteur : un coup d'en haut tombe), à l'image active la plus
+  rapide ; les dégâts en suivent (le coup d'en haut, plus lent, a une puissance de 1,7).
+- **Le mannequin annonce ses dégâts** : à chaque coup reçu, le chiffre s'envole au-dessus de lui et s'efface, sans ?debug ; un coup
+  que l'écart seul a fait manquer affiche « raté ». Avec ?debug, la zone de chaque image active est dessinée au sol, en rouge.
+
 **Ce qui vient ensuite** (rien de fait) :
 - **Les postures** : deux mains (une arme longue, plus lente et plus forte), le **bouclier** dans l'autre main (parer, une posture
   `when.other: shield` et une matière de plus), **deux armes** (une attaque de chaque main) : de nouvelles entrées de `stances`, sans

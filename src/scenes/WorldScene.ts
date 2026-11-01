@@ -648,7 +648,8 @@ export class WorldScene extends Phaser.Scene {
       frames: p.frames,
       durations: p.durations,
       weapon: p.weapon.image,
-      shift: p.shift,
+      shift: p.drawShift,
+      active: p.sweep.active,
       onStrike: (step) => this.combat.strike(this.player, p, step),
       onDone: () => {
         const chain = this.combat.end(p, this.time.now);

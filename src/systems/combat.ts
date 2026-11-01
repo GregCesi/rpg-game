@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { DEBUG, DEPTH, UI, ZOOM_STEPS } from '../config';
 import { combat, items, stamina } from '../content';
 import { itemMass } from '../content/mass';
-import type { Attack, Facing, Weapon } from '../content/types';
+import type { Attack, Facing, SweepDef, Weapon } from '../content/types';
 import type { Player } from '../entities/Player';
 import { combatPoses } from '../generated/combatPoses';
 import { game } from '../state';
@@ -10,20 +10,21 @@ import type { GameMap, PlacedProp } from '../world/GameMap';
 import {
   aimShift,
   attackCost,
-  bladeHits,
   damage,
+  directionOf,
   footprint,
   frameDurations,
-  inFront,
+  NO_SHIFT,
   precision,
   reachCm,
   stanceFor,
-  strikePath,
+  sweepAt,
+  zoneHits,
   type CombatFrame,
   type Grip,
   type Point,
   type Segment,
-  type Silhouette,
+  type Shift,
 } from '../world/strike';
 import type { HarvestSystem } from './harvest';
 
@@ -31,8 +32,8 @@ import type { HarvestSystem } from './harvest';
 export type Striker = { item: string } | { fist: true };
 
 /**
- * Une attaque prête à jouer : laquelle, avec quoi, ses images dans la direction de Xéros et leurs durées, son prix, ses dégâts, sa
- * précision et l'écart tiré pour ce coup.
+ * Une attaque prête à jouer : laquelle, avec quoi, ses images dans la direction de Xéros et leurs durées, où elle frappe au sol
+ * (`sweep`), son prix, ses dégâts, sa précision et l'écart tiré pour ce coup (au sol, et à l'écran pour l'arme dessinée).
  */
 export interface AttackPlan {
   key: string;
@@ -43,15 +44,19 @@ export interface AttackPlan {
   facing: Facing;
   frames: CombatFrame[];
   durations: number[];
+  sweep: SweepDef;
   cost: number;
   damage: number;
   precision: number;
-  shift: Point;
+  shift: Shift;
+  drawShift: Point;
   /** Les cibles déjà touchées par ce coup : une cible ne prend qu'un coup par frappe. */
   touched: Set<number>;
+  /** Les cibles que la zone aurait touchées sans l'écart, et que l'écart a fait manquer : « raté » à la fin du coup. */
+  missed: Map<number, PlacedProp>;
 }
 
-/** Ce qu'a fait un coup (les tests le lisent, ?debug le montre). */
+/** Ce qu'a fait un coup (les tests le lisent). */
 export interface StrikeLog {
   attack: string;
   /** L'arme (clé d'items.json), ou `fist`. */
@@ -61,26 +66,30 @@ export interface StrikeLog {
   cost: number;
   damage: number;
   precision: number;
-  shift: Point;
+  shift: Shift;
   hits: { id: number; type: string; damage: number; step: number }[];
+  misses: number[];
 }
 
 /**
  * Le combat (docs/CONCEPTION.md, « Le combat ») : Espace avec une arme en main (la main active, ou l'autre si l'active est vide), ou,
  * la main active vide et l'autre sans arme ni outil, la main nue : le geste complet se joue toujours et se paie, dans le vide comme sur
- * une cible. L'arme est des données (`weapon` d'items.json ; la main nue, `unarmed` de combat.json), l'attaque aussi (combat.json) ;
- * le corps joue le geste de combat de l'attaque (COMBAT_POSES, src/generated/combatPoses.ts) avec l'arme dans la main droite, dans
- * l'angle de chaque image (entities/ToolUse.ts). À chaque image de frappe, la lame dessinée (de la main à la pointe ; le poing : de
- * l'épaule au poing), décalée de l'écart que laisse la précision, balaie depuis l'image d'avant ; une cible (`target` de props.json)
- * devant Xéros dont la silhouette dessinée est recoupée est touchée, une seule fois par coup : arrêt sur image, elle penche et recule,
- * sa matière vole, l'écran tremble sur un gros coup ; avec ?debug, la lame, le balayage, la silhouette touchée et les dégâts. Un
- * deuxième Espace pendant le geste, ou peu après (`combo`), enchaîne l'attaque suivante de la posture. Ne lit pas le clavier.
+ * une cible. L'arme est des données (`weapon` d'items.json ; la main nue, `unarmed` de combat.json), l'attaque et son geste aussi
+ * (combat.json : `attacks`, `sweeps`) ; le corps joue le geste (COMBAT_POSES) avec l'arme dessinée dans la main droite
+ * (entities/ToolUse.ts). La zone de coup est calculée au sol, dans le monde (world/strike.ts) : à chaque image active, ce que l'arme
+ * balaie devant Xéros depuis l'image d'avant, décalé de l'écart que laisse la précision ; une cible (`target` de props.json) dont
+ * l'emprise au sol y entre est touchée, une seule fois par coup : arrêt sur image, elle penche et recule, sa matière vole, l'écran
+ * tremble sur un gros coup, et le chiffre des dégâts s'envole au-dessus d'elle ; une cible que l'écart a fait manquer affiche
+ * « raté ». Avec ?debug, la zone de chaque image active, au sol, en rouge. Un deuxième Espace pendant le geste, ou peu après
+ * (`combo`), enchaîne l'attaque suivante de la posture. Ne lit pas le clavier.
  */
 export class CombatSystem {
-  /** Chaque coup porté, dans l'ordre (les tests, ?debug). */
+  /** Chaque coup porté, dans l'ordre (les tests). */
   readonly log: StrikeLog[] = [];
   /** Une attaque est en cours (de la garde à la fin du retour). */
   busy = false;
+  /** Le tirage de l'écart de chaque coup (la précision) : Math.random en jeu ; un test peut le fixer. */
+  rand: () => number = Math.random;
   /** Où en est l'enchaînement : la place de la dernière attaque dans la suite de sa posture, avec quoi, jusqu'à quand il tient. */
   private chainAt = -1;
   private chainWith?: string;
@@ -89,10 +98,6 @@ export class CombatSystem {
   private queued = false;
   /** La réaction en cours de chaque cible touchée. */
   private readonly reacting = new Map<PlacedProp, Phaser.Tweens.Tween>();
-  /** Le tirage de l'écart de chaque coup (la précision) : Math.random en jeu ; un test peut le fixer. */
-  rand: () => number = Math.random;
-  /** Silhouettes des images des cibles (pixels opaques), par clé d'image. */
-  private readonly masks = new Map<string, { w: number; h: number; opaque: Uint8Array }>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -126,7 +131,13 @@ export class CombatSystem {
     const key = chain[at];
     const attack = combat.attacks[key];
     const frames = combatPoses[attack.gesture][facing];
+    const sweep = combat.sweeps[attack.gesture];
     const rules = combat.rules;
+    const shift = aimShift(rules, weapon, kg, this.rand);
+    // l'écart se voit : l'arme dessinée est décalée d'autant pendant les images actives (en travers vers sa droite, en long devant)
+    const ahead = directionOf(facing, 0);
+    const right = directionOf(facing, 90);
+    const drawShift = { x: Math.round(right.x * shift.side + ahead.x * shift.far), y: Math.round(right.y * shift.side + ahead.y * shift.far) };
     return {
       key,
       attack,
@@ -136,11 +147,14 @@ export class CombatSystem {
       facing,
       frames,
       durations: frameDurations(rules, frames, weapon, kg),
+      sweep,
       cost: attackCost(stamina.costs, attack, kg),
-      damage: damage(rules, attack, combatPoses[attack.gesture].down, weapon, kg),
+      damage: damage(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
       precision: precision(rules, weapon, kg),
-      shift: aimShift(rules, weapon, kg, this.rand),
+      shift,
+      drawShift,
       touched: new Set(),
+      missed: new Map(),
     };
   }
 
@@ -155,12 +169,13 @@ export class CombatSystem {
       attack: p.key,
       item: CombatSystem.keyOf(p.striker),
       facing: p.facing,
-      reach: reachCm(combat.rules, p.weapon),
+      reach: reachCm(p.sweep, p.weapon),
       cost: p.cost,
       damage: p.damage,
       precision: p.precision,
       shift: p.shift,
       hits: [],
+      misses: [],
     });
   }
 
@@ -169,8 +184,16 @@ export class CombatSystem {
     if (this.busy) this.queued = true;
   }
 
-  /** La fin du geste, à `time` : l'enchaînement tient `combo` ms. Rend vrai si Espace a été appuyé pendant le geste (enchaîner tout de suite). */
+  /**
+   * La fin du geste, à `time` : les cibles que l'écart a fait manquer affichent « raté » ; l'enchaînement tient `combo` ms. Rend vrai si
+   * Espace a été appuyé pendant le geste (enchaîner tout de suite).
+   */
   end(p: AttackPlan, time: number): boolean {
+    for (const [id, q] of p.missed) {
+      if (p.touched.has(id)) continue;
+      this.log[this.log.length - 1]?.misses.push(id);
+      this.float(q, 'raté');
+    }
     this.busy = false;
     this.comboUntil = time + p.attack.combo;
     const q = this.queued;
@@ -179,61 +202,24 @@ export class CombatSystem {
   }
 
   /**
-   * La silhouette dessinée d'une cible : sa boîte dans le monde et ses pixels opaques (l'image posée par son coin bas gauche, comme
-   * GameMap ; l'ombre, translucide, n'en fait pas partie).
-   */
-  silhouette(q: PlacedProp): Silhouette {
-    const frame = q.image.frame;
-    const key = `${frame.texture.key}#${frame.name}`;
-    let m = this.masks.get(key);
-    if (!m) {
-      const w = frame.cutWidth;
-      const h = frame.cutHeight;
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(frame.source.image as CanvasImageSource, frame.cutX, frame.cutY, w, h, 0, 0, w, h);
-      const data = ctx.getImageData(0, 0, w, h).data;
-      const opaque = new Uint8Array(w * h);
-      for (let i = 0; i < w * h; i++) opaque[i] = data[i * 4 + 3] >= 250 ? 1 : 0;
-      m = { w, h, opaque };
-      this.masks.set(key, m);
-    }
-    const { w, h, opaque } = m;
-    const left = q.x;
-    const top = q.y - h;
-    return {
-      box: { left, top, right: left + w, bottom: q.y },
-      covers: (x, y) => {
-        const u = x - left;
-        const v = y - top;
-        return u >= 0 && v >= 0 && u < w && v < h && opaque[v * w + u] === 1;
-      },
-    };
-  }
-
-  /**
-   * Une image de frappe du coup `p` (son indice `step`) : la lame balaie depuis l'image d'avant ; chaque cible devant Xéros dont la
-   * silhouette est recoupée, pas encore touchée par ce coup, l'est : le ressenti, le journal, ?debug.
+   * Une image du coup `p` (son indice `step`) : si elle est active, la zone qu'elle balaie au sol ; chaque cible dont l'emprise y
+   * entre, pas encore touchée par ce coup, l'est : le ressenti, le chiffre des dégâts, le journal ; une cible que l'écart seul fait
+   * manquer est notée pour « raté ».
    */
   strike(player: Player, p: AttackPlan, step: number): void {
+    if (!p.sweep.active.includes(step)) return;
     const feet = { x: player.actor.x, y: player.actor.y };
-    const path = strikePath(p.frames, p.facing, feet, p.weapon, p.attack.hand, p.shift).find((s) => s.step === step);
-    if (!path) return;
-    const reach = reachCm(combat.rules, p.weapon);
     const hit: PlacedProp[] = [];
-    const shown: Silhouette[] = [];
     for (const q of this.map.props) {
       if (!q.def.target || !q.image.visible || p.touched.has(q.id)) continue;
-      if (!inFront(feet, p.facing, footprint(q.def.dims, q.baseX, q.baseY), reach + 30)) continue;
-      const sil = this.silhouette(q);
-      if (!path.blades.some((b) => bladeHits(b, sil))) continue;
-      p.touched.add(q.id);
-      hit.push(q);
-      shown.push(sil);
+      const box = footprint(q.def.dims, q.baseX, q.baseY);
+      if (zoneHits(p.sweep, p.weapon, p.facing, feet, step, box, p.shift)) {
+        p.touched.add(q.id);
+        p.missed.delete(q.id);
+        hit.push(q);
+      } else if (zoneHits(p.sweep, p.weapon, p.facing, feet, step, box, NO_SHIFT)) p.missed.set(q.id, q);
     }
-    if (DEBUG) this.showStrike(path.blades, shown);
+    if (DEBUG) this.showZone(sweepAt(p.sweep, p.weapon, p.facing, feet, step, p.shift), p.sweep.width);
     if (!hit.length) return;
     const entry = this.log[this.log.length - 1];
     const feel = combat.feel;
@@ -243,7 +229,7 @@ export class CombatSystem {
     for (const q of hit) {
       entry?.hits.push({ id: q.id, type: q.type, damage: p.damage, step });
       this.scene.time.delayedCall(feel.hitStopMs, () => this.react(q, p.facing));
-      if (DEBUG) this.showDamage(q, p.damage);
+      this.float(q, String(p.damage).replace('.', ','));
     }
   }
 
@@ -287,25 +273,23 @@ export class CombatSystem {
     this.harvest.chipsAt(q.x + img.width / 2, q.y - img.height * 0.55, q.y + 1, t.matter, facing);
   }
 
-  /** ?debug : le balayage depuis l'image d'avant (pâle), la lame de cette image de frappe (blanche), la silhouette touchée (rouge). */
-  private showStrike(blades: Segment[], touched: Silhouette[]): void {
-    const g = this.scene.add.graphics().setDepth(DEPTH.prompt - 2);
-    g.lineStyle(1, 0xf3e6c8, 0.35);
+  /** ?debug : la zone de coup d'une image active, au sol : ce que balaie l'arme (ses lames, de la largeur de ce qui frappe), en rouge. */
+  private showZone(blades: Segment[], width: number): void {
+    const g = this.scene.add.graphics().setDepth(DEPTH.shadow + 0.01);
+    g.lineStyle(Math.max(1, width / 5), 0xd0402a, 0.35);
     for (const b of blades) g.lineBetween(b.a.x, b.a.y, b.b.x, b.b.y);
-    const last = blades[blades.length - 1];
-    g.lineStyle(1, 0xffffff, 1).lineBetween(last.a.x, last.a.y, last.b.x, last.b.y);
-    g.lineStyle(1, 0xd0402a, 1);
-    for (const s of touched) g.strokeRect(s.box.left, s.box.top, s.box.right - s.box.left, s.box.bottom - s.box.top);
+    const tips = blades.map((b) => b.b);
+    g.lineStyle(1, 0xd0402a, 1).strokePoints([blades[0].a, ...tips, blades[0].a], true);
     this.scene.tweens.add({ targets: g, alpha: 0, duration: combat.feel.debugMs, onComplete: () => g.destroy() });
   }
 
-  /** ?debug : les dégâts au-dessus de la cible, qui montent et s'effacent. */
-  private showDamage(q: PlacedProp, dmg: number): void {
+  /** Le chiffre des dégâts (ou « raté ») s'envole au-dessus de la cible et s'efface. */
+  private float(q: PlacedProp, label: string): void {
     const text = this.scene.add
-      .text(q.x + q.image.width / 2, q.top - 2, String(dmg).replace('.', ','), { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
+      .text(q.x + q.image.width / 2, q.top - 2, label, { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setResolution(ZOOM_STEPS.max)
       .setDepth(DEPTH.prompt - 1);
-    this.scene.tweens.add({ targets: text, y: text.y - 8, alpha: 0, duration: combat.feel.debugMs, ease: 'Quad.easeIn', onComplete: () => text.destroy() });
+    this.scene.tweens.add({ targets: text, y: text.y - 10, alpha: 0, duration: combat.feel.floatMs, ease: 'Quad.easeIn', onComplete: () => text.destroy() });
   }
 }

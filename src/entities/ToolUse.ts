@@ -16,6 +16,8 @@ export interface FightOptions {
   durations: number[];
   weapon?: string;
   shift: Point;
+  /** Les images où le coup compte (`active` du geste, combat.json `sweeps`) : `onStrike` y est appelé, et l'arme y est décalée. */
+  active: number[];
   onStrike: (step: number) => void;
   onDone: () => void;
 }
@@ -82,7 +84,7 @@ export class ToolUse {
     this.toolAnim = undefined;
     this.tool.setVisible(!!o.weapon && this.scene.textures.exists(o.weapon));
     if (this.tool.visible) this.tool.setTexture(o.weapon!);
-    this.run(this.timed(`${this.actor.skin}-${gesture}-${this.actor.facing}`, o.durations), (step) => o.frames[step]?.strike && o.onStrike(step), o.onDone);
+    this.run(this.timed(`${this.actor.skin}-${gesture}-${this.actor.facing}`, o.durations), (step) => o.active.includes(step) && o.onStrike(step), o.onDone);
     this.placeFight();
   }
 
@@ -186,7 +188,7 @@ export class ToolUse {
     if (!f) return;
     const left = this.actor.facing === 'left';
     const sx = left ? -1 : 1;
-    const shift = f.strike ? o.shift : { x: 0, y: 0 };
+    const shift = o.active.includes(step) ? o.shift : { x: 0, y: 0 };
     const centre = (img: Phaser.GameObjects.Image) => img.setOrigin(Math.floor(img.width / 2) / img.width, Math.floor(img.height / 2) / img.height);
     const y0 = this.actor.y;
     if (o.weapon && this.tool.texture.key === o.weapon && f.weapon) {

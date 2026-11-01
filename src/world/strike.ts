@@ -1,18 +1,20 @@
 // Le coup d'une arme, sans Phaser (docs/CONCEPTION.md, « Le combat ») : tout se calcule de l'arme (longueur, prise, équilibre,
-// efficacité, masse), de l'attaque (combat.json) et des poses du geste (art/characters/xeros-combat.ts, `COMBAT_POSES`, tirées par
-// build-art dans src/generated/combatPoses.ts) : la posture qui sert, la durée de chaque image, la vitesse de ce qui frappe, les
-// dégâts, la précision et l'écart qu'elle laisse, le prix en endurance, et la zone de coup : la lame dessinée (de la main à la pointe ;
-// pour le poing, de l'épaule au poing) à chaque image de frappe, et la surface qu'elle balaie depuis l'image d'avant. Une cible est
-// touchée si ce balayage recoupe sa silhouette dessinée. systems/combat.ts le joue ; tools/test-combat.ts le vérifie.
+// efficacité, masse), de l'attaque et de son geste (combat.json : `attacks`, `sweeps`) et des poses dessinées (COMBAT_POSES,
+// src/generated/combatPoses.ts : les durées des images, l'image seulement). La zone de coup se calcule DANS LE MONDE, AU SOL : à
+// chaque image active du geste, l'arme balaie, depuis l'image d'avant, un secteur devant Xéros (l'angle de chaque image par rapport à
+// où il regarde, la part de la portée atteinte), de la largeur de ce qui frappe ; une cible est touchée si son emprise au sol y entre.
+// La lame dessinée ne sert qu'à l'image : à l'écran, la hauteur se mêle à la profondeur (y − z), et une lame levée au-dessus de la tête
+// y est dessinée là où serait ce qui est devant Xéros vers le nord. systems/combat.ts le joue ; tools/test-combat.ts et
+// tools/carte-touche.ts le vérifient.
 
 import { CM_PER_PX, type Dims } from '../content/gabarit';
-import type { Attack, CombatDef, Facing, StaminaDef, StanceDef, Weapon } from '../content/types';
+import type { Attack, CombatDef, Facing, StaminaDef, StanceDef, SweepDef, Weapon } from '../content/types';
 
 type Rules = CombatDef['rules'];
 export type Point = { x: number; y: number };
 /** Une boîte, en px : gauche, haut (nord), droite, bas (sud). */
 export type Box = { left: number; top: number; right: number; bottom: number };
-/** Un segment : de la main (ou de l'épaule) à la pointe (ou au poing). */
+/** Un segment, en px du monde au sol : des pieds de Xéros à la pointe de ce qui frappe. */
 export type Segment = { a: Point; b: Point };
 
 /** Un point du corps depuis les pieds, à une image d'un geste (vers la gauche : dans le repère retourné, le jeu oppose dx). */
@@ -22,7 +24,7 @@ export interface PosePoint {
   behind?: boolean;
 }
 
-/** Une image d'un geste de combat (COMBAT_POSES) : sa durée, les mains et les épaules, l'arme, la traînée, l'éclat, la frappe. */
+/** Une image d'un geste de combat (COMBAT_POSES) : sa durée et ce qui se dessine (mains, épaules, arme, traînée, main par-dessus, éclat). */
 export interface CombatFrame {
   /** Nom du temps (garde, armer, frappe…), pour les aperçus. */
   name?: string;
@@ -38,7 +40,7 @@ export interface CombatFrame {
   /** L'arme est derrière le corps et la main qui la tient serait cachée : l'image de la main, posée par-dessus le corps. */
   grip?: { image: string; dx: number; dy: number };
   spark?: { image: string; dx: number; dy: number };
-  /** L'arme ou le poing frappe à cette image : la lame y compte, et le balayage depuis l'image d'avant. */
+  /** Image de frappe du dessin (la traînée, l'éclat) ; les images où le coup compte sont `active` de `sweeps` (combat.json). */
   strike?: boolean;
 }
 
@@ -65,8 +67,8 @@ export function stanceFor(def: CombatDef, family: string, grip: Grip): StanceDef
 /** Longueur de l'arme devant la main, en cm (le poing : le bras, de l'épaule au poing). */
 export const ahead = (w: Weapon): number => w.length - w.grip;
 
-/** Portée nominale d'une attaque avec cette arme, en cm, depuis les pieds : le bras, puis l'arme devant la main (le poing : le bras seul). */
-export const reachCm = (rules: Rules, w: Weapon): number => (w.fist ? w.length : rules.armCm + ahead(w));
+/** Portée d'un geste avec cette arme, en cm, depuis les pieds : la main tendue (`hand` du geste), puis l'arme devant la main. */
+export const reachCm = (s: SweepDef, w: Weapon): number => s.hand + ahead(w);
 
 /**
  * Masse qui frappe, en kg : m × 2/3 × `balance` (une tige uniforme, `balance` 0,5, frappe de son tiers ; un gourdin lourd du bout,
@@ -98,154 +100,145 @@ export const cycle = (rules: Rules, frames: CombatFrame[], w: Weapon, kg: number
 /** Prix d'une attaque en endurance : `attackBase` + `attackPerKg` × la masse de l'arme, × `cost` de l'attaque (stamina.json). */
 export const attackCost = (costs: StaminaDef['costs'], a: Attack, kg: number): number => (costs.attackBase + costs.attackPerKg * kg) * a.cost;
 
-/** Un point de pose dans le monde : les pieds + (dx, dy), dx opposé vers la gauche (le jeu retourne l'image). */
-const at = (feet: Point, p: PosePoint, left: boolean): Point => ({ x: feet.x + (left ? -p.dx : p.dx), y: feet.y + p.dy });
+const FACE: Record<Facing, Point> = { right: { x: 1, y: 0 }, left: { x: -1, y: 0 }, up: { x: 0, y: -1 }, down: { x: 0, y: 1 } };
 
 /**
- * La lame d'une image, dans le monde : pour une arme, de la main droite à la pointe, dans l'angle de son dessin, de sa longueur devant
- * la main (vers la gauche, l'angle est retourné : 180° − a) ; pour le poing (`hand`), de l'épaule au poing. `shift` : l'écart de la
- * précision, ajouté à toute la lame.
+ * La direction au sol d'un angle du geste (degrés : 0 droit devant, + vers la droite de Xéros, − vers sa gauche). Sa droite est la
+ * direction où il regarde tournée d'un quart dans le sens des aiguilles d'une montre, vue du dessus (y vers le bas) : tourné vers le
+ * sud, sa droite est l'ouest ; vers l'est, le sud.
  */
-export function bladeAt(f: CombatFrame, facing: Facing, feet: Point, w: Weapon, hand: 'right' | 'left', shift: Point = { x: 0, y: 0 }): Segment | undefined {
-  const left = facing === 'left';
-  const move = (p: Point) => ({ x: p.x + shift.x, y: p.y + shift.y });
-  if (w.fist) {
-    const fist = at(feet, hand === 'right' ? f.right : f.left, left);
-    const shoulder = at(feet, hand === 'right' ? f.shoulderRight : f.shoulderLeft, left);
-    return { a: move(shoulder), b: move(fist) };
-  }
-  if (!f.weapon) return undefined;
-  const h = at(feet, f.right, left);
-  const deg = left ? 180 - f.weapon.angle : f.weapon.angle;
-  const r = ahead(w) / CM_PER_PX;
+export function directionOf(facing: Facing, deg: number): Point {
+  const f = FACE[facing];
+  const r = { x: -f.y, y: f.x };
   const t = (deg * Math.PI) / 180;
-  return { a: move(h), b: move({ x: h.x + Math.cos(t) * r, y: h.y - Math.sin(t) * r }) };
+  return { x: f.x * Math.cos(t) + r.x * Math.sin(t), y: f.y * Math.cos(t) + r.y * Math.sin(t) };
 }
 
-/** Angle d'un segment (rad, à l'écran : y vers le bas). */
-const angleOf = (s: Segment) => Math.atan2(s.b.y - s.a.y, s.b.x - s.a.x);
+/** L'écart d'un coup, au sol : vers la droite de Xéros (`side`, px) et en portée (`far`, px ; + plus loin). */
+export type Shift = { side: number; far: number };
+export const NO_SHIFT: Shift = { side: 0, far: 0 };
 
 /**
- * La surface balayée par la lame de `from` à `to` : des lames intermédiaires, la base glissant en ligne droite et l'angle tournant
- * par le plus court (une image de frappe ne tourne jamais de plus d'un demi-tour), une tous les `step` px parcourus par la pointe.
+ * L'écart d'un coup, tiré à chaque fois : un point au hasard dans un disque de `missPx` × (1 − précision)² px (`rand` : un tirage
+ * entre 0 et 1, Math.random en jeu, un tirage fixé dans les tests), en travers (il tourne la zone d'autant d'angle, vu à la portée) et
+ * en long (il allonge ou raccourcit la portée). Au carré, pour qu'une arme précise reste sûre (l'épée, 0,76 : moins de 2 px) et qu'une
+ * arme maladroite se voie (la branche, 0,18 : jusqu'à 13 px).
  */
-export function sweep(from: Segment, to: Segment, step = 1): Segment[] {
-  const a0 = angleOf(from);
-  let da = angleOf(to) - a0;
-  while (da > Math.PI) da -= 2 * Math.PI;
-  while (da < -Math.PI) da += 2 * Math.PI;
-  const l0 = Math.hypot(from.b.x - from.a.x, from.b.y - from.a.y);
-  const l1 = Math.hypot(to.b.x - to.a.x, to.b.y - to.a.y);
-  const travel = Math.hypot(to.b.x - from.b.x, to.b.y - from.b.y) + Math.abs(da) * Math.max(l0, l1);
-  const n = Math.max(1, Math.ceil(travel / step));
+export function aimShift(rules: Rules, w: Weapon, kg: number, rand: () => number = Math.random): Shift {
+  const r = rules.missPx * (1 - precision(rules, w, kg)) ** 2 * Math.sqrt(rand());
+  const t = rand() * 2 * Math.PI;
+  return { side: Math.cos(t) * r, far: Math.sin(t) * r };
+}
+
+/** La pointe de ce qui frappe à une image du geste, au sol, depuis les pieds (px), avec l'écart du coup. */
+function tipAt(s: SweepDef, w: Weapon, facing: Facing, feet: Point, f: { a: number; r: number }, shift: Shift): Point {
+  const reach = (reachCm(s, w) / CM_PER_PX) * f.r + shift.far;
+  // l'écart en travers tourne l'arme d'autant, vu à la pleine portée
+  const deg = f.a + (Math.atan2(shift.side, Math.max(1, reachCm(s, w) / CM_PER_PX)) * 180) / Math.PI;
+  const d = directionOf(facing, deg);
+  return { x: feet.x + d.x * Math.max(0, reach), y: feet.y + d.y * Math.max(0, reach) };
+}
+
+/**
+ * Ce que balaie l'arme à l'image active `step` (depuis l'image d'avant), au sol : des lames des pieds à la pointe, l'angle et la portée
+ * glissant d'une image à l'autre, une tous les 2° et tous les 2 px.
+ */
+export function sweepAt(s: SweepDef, w: Weapon, facing: Facing, feet: Point, step: number, shift: Shift = NO_SHIFT): Segment[] {
+  const f0 = s.frames[step - 1];
+  const f1 = s.frames[step];
+  const reach = reachCm(s, w) / CM_PER_PX;
+  const n = Math.max(1, Math.ceil(Math.max(Math.abs(f1.a - f0.a) / 2, (Math.abs(f1.r - f0.r) * reach) / 2)));
   return Array.from({ length: n + 1 }, (_, i) => {
     const t = i / n;
-    const base = { x: from.a.x + (to.a.x - from.a.x) * t, y: from.a.y + (to.a.y - from.a.y) * t };
-    const ang = a0 + da * t;
-    const len = l0 + (l1 - l0) * t;
-    return { a: base, b: { x: base.x + Math.cos(ang) * len, y: base.y + Math.sin(ang) * len } };
+    return { a: feet, b: tipAt(s, w, facing, feet, { a: f0.a + (f1.a - f0.a) * t, r: f0.r + (f1.r - f0.r) * t }, shift) };
   });
 }
 
+/** Une lame de largeur `width` (cm) touche-t-elle la boîte ? Le long du segment, tous les demi-pixels, à une demi-largeur près. */
+export function bladeHits(b: Segment, width: number, box: Box): boolean {
+  const h = width / CM_PER_PX / 2;
+  const n = Math.max(1, Math.ceil(Math.hypot(b.b.x - b.a.x, b.b.y - b.a.y) * 2));
+  for (let i = 0; i <= n; i++) {
+    const x = b.a.x + ((b.b.x - b.a.x) * i) / n;
+    const y = b.a.y + ((b.b.y - b.a.y) * i) / n;
+    if (x >= box.left - h && x <= box.right + h && y >= box.top - h && y <= box.bottom + h) return true;
+  }
+  return false;
+}
+
+/** Le plus grand angle, depuis la direction où regarde Xéros, auquel une cible peut être touchée : au-delà, elle est à côté de lui. */
+export const FRONT_DEG = 80;
+
 /**
- * Tout ce que balaie la lame pendant un geste, image de frappe par image de frappe : pour chaque image `strike`, la lame de l'image
- * d'avant jusqu'à la sienne. Rend, par image de frappe (son indice), ses lames.
+ * La cible est-elle hors de devant Xéros ? Le centre de son emprise est derrière ses pieds, ou à côté de lui (à plus de FRONT_DEG de
+ * son regard) : au-dessus de lui à l'écran n'est pas devant lui dans le monde.
  */
-export function strikePath(frames: CombatFrame[], facing: Facing, feet: Point, w: Weapon, hand: 'right' | 'left', shift?: Point): { step: number; blades: Segment[] }[] {
-  const out: { step: number; blades: Segment[] }[] = [];
-  frames.forEach((f, i) => {
-    if (!f.strike) return;
-    const now = bladeAt(f, facing, feet, w, hand, shift);
-    if (!now) return;
-    const before = i > 0 ? bladeAt(frames[i - 1], facing, feet, w, hand, shift) : undefined;
-    out.push({ step: i, blades: before ? sweep(before, now) : [now] });
-  });
-  return out;
+export function outside(facing: Facing, feet: Point, box: Box): boolean {
+  const f = FACE[facing];
+  const cx = (box.left + box.right) / 2 - feet.x;
+  const cy = (box.top + box.bottom) / 2 - feet.y;
+  const fwd = cx * f.x + cy * f.y;
+  const side = Math.abs(cx * -f.y + cy * f.x);
+  return fwd <= 0 || (Math.atan2(side, fwd) * 180) / Math.PI > FRONT_DEG;
 }
 
 /**
- * Vitesse de ce qui frappe (m/s) : le chemin de la pointe (du poing) de l'image d'avant la première frappe jusqu'à la dernière image de
- * frappe, sur la durée des images de frappe avec cette arme. Le geste le dit, pas un nombre recopié.
+ * La zone de l'image active `step` touche-t-elle la boîte (l'emprise au sol d'une cible) ? Jamais une cible derrière Xéros ni à côté
+ * de lui (la lame part de ses pieds et a une largeur : sans cela, une cible collée dans son dos ou à son flanc serait effleurée).
  */
-export function tipSpeed(rules: Rules, frames: CombatFrame[], facing: Facing, w: Weapon, kg: number, hand: 'right' | 'left'): number {
+export const zoneHits = (s: SweepDef, w: Weapon, facing: Facing, feet: Point, step: number, box: Box, shift: Shift = NO_SHIFT): boolean =>
+  !outside(facing, feet, box) && sweepAt(s, w, facing, feet, step, shift).some((b) => bladeHits(b, s.width, box));
+
+/** La première image active qui touche la boîte, ou −1 (le coup entier, sans écart sauf `shift`). */
+export const firstHit = (s: SweepDef, w: Weapon, facing: Facing, feet: Point, box: Box, shift: Shift = NO_SHIFT): number =>
+  s.active.find((step) => zoneHits(s, w, facing, feet, step, box, shift)) ?? -1;
+
+/**
+ * Vitesse de ce qui frappe (m/s) : celle de l'image active la plus rapide, le chemin de la pointe dans l'espace (au sol, et en
+ * hauteur : `z`) depuis l'image d'avant, sur sa durée avec cette arme (celle des poses, allongée par l'inertie).
+ */
+export function tipSpeed(rules: Rules, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
   const ms = frameDurations(rules, frames, w, kg);
   const feet = { x: 0, y: 0 };
   let px = 0;
   let t = 0;
-  frames.forEach((f, i) => {
-    if (!f.strike || i === 0) return;
-    const a = bladeAt(frames[i - 1], facing, feet, w, hand);
-    const b = bladeAt(f, facing, feet, w, hand);
-    if (!a || !b) return;
-    // l'arc parcouru par la pointe, mesuré sur le balayage (une corde par lame intermédiaire)
-    const path = sweep(a, b, 0.5);
-    for (let k = 1; k < path.length; k++) px += Math.hypot(path[k].b.x - path[k - 1].b.x, path[k].b.y - path[k - 1].b.y);
-    t += ms[i];
-  });
-  return t > 0 ? (px * CM_PER_PX) / 100 / (t / 1000) : 0;
+  const reach = reachCm(s, w) / CM_PER_PX;
+  let best = 0;
+  for (const step of s.active) {
+    px = 0;
+    // la pointe dans l'espace : au sol (l'angle, la part de la portée), et en hauteur (`z`) : un coup d'en haut tombe
+    const f0 = s.frames[step - 1];
+    const f1 = s.frames[step];
+    const n = 24;
+    let prev: [number, number, number] | undefined;
+    for (let i = 0; i <= n; i++) {
+      const t0 = i / n;
+      const f = { a: f0.a + (f1.a - f0.a) * t0, r: f0.r + (f1.r - f0.r) * t0 };
+      const tip = tipAt(s, w, 'down', feet, f, NO_SHIFT);
+      const p: [number, number, number] = [tip.x, tip.y, (f0.z + (f1.z - f0.z) * t0) * reach];
+      if (prev) px += Math.hypot(p[0] - prev[0], p[1] - prev[1], p[2] - prev[2]);
+      prev = p;
+    }
+    t = ms[step] ?? 0;
+    if (t > 0) best = Math.max(best, (px * CM_PER_PX) / 100 / (t / 1000));
+  }
+  return best;
 }
 
 /**
  * Dégâts d'un coup : l'énergie de ce qui frappe (½ × masse qui frappe × v², en joules) × `damagePerJoule` × `efficiency` de l'arme ×
- * `power` de l'attaque, au dixième. La vitesse vient des poses (de face, la direction de référence).
+ * `power` de l'attaque, au dixième.
  */
-export function damage(rules: Rules, a: Attack, frames: CombatFrame[], w: Weapon, kg: number): number {
-  const v = tipSpeed(rules, frames, 'down', w, kg, a.hand);
+export function damage(rules: Rules, a: Attack, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
+  const v = tipSpeed(rules, s, frames, w, kg);
   const joules = 0.5 * strikingMass(w, kg) * v * v;
   return Math.round(joules * rules.damagePerJoule * w.efficiency * a.power * 10) / 10;
-}
-
-/**
- * L'écart d'un coup, tiré à chaque fois : un point au hasard dans un disque de `missPx` × (1 − précision)² px (`rand` : un tirage
- * entre 0 et 1, Math.random en jeu, un tirage fixé dans les tests). Toute la lame passe à côté d'autant : l'arme se voit décalée.
- * Au carré, pour qu'une arme précise reste sûre (l'épée, 0,76 : moins de 2 px) et qu'une arme maladroite se voie (la branche, 0,18 :
- * jusqu'à 13 px).
- */
-export function aimShift(rules: Rules, w: Weapon, kg: number, rand: () => number = Math.random): Point {
-  const r = rules.missPx * (1 - precision(rules, w, kg)) ** 2 * Math.sqrt(rand());
-  const t = rand() * 2 * Math.PI;
-  return { x: Math.round(Math.cos(t) * r), y: Math.round(Math.sin(t) * r) };
-}
-
-/** Une silhouette dessinée : sa boîte dans le monde et ses pixels opaques (vrai si le pixel (x, y) du monde en fait partie). */
-export interface Silhouette {
-  box: Box;
-  covers: (x: number, y: number) => boolean;
-}
-
-/** Une lame recoupe-t-elle la silhouette ? Le long du segment, tous les demi-pixels. */
-export function bladeHits(s: Segment, sil: Silhouette): boolean {
-  const { box } = sil;
-  if (Math.max(s.a.x, s.b.x) < box.left || Math.min(s.a.x, s.b.x) > box.right || Math.max(s.a.y, s.b.y) < box.top || Math.min(s.a.y, s.b.y) > box.bottom) return false;
-  const n = Math.max(1, Math.ceil(Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y) * 2));
-  for (let i = 0; i <= n; i++) {
-    const x = s.a.x + ((s.b.x - s.a.x) * i) / n;
-    const y = s.a.y + ((s.b.y - s.a.y) * i) / n;
-    if (sil.covers(Math.floor(x), Math.floor(y))) return true;
-  }
-  return false;
 }
 
 /** L'emprise au sol d'une cible debout, en px : ses `dims` (largeur, profondeur), centrée sur sa base, son bord sud à la base. */
 export function footprint(dims: Dims, baseX: number, baseY: number): Box {
   const w = dims.w / CM_PER_PX;
   return { left: baseX - w / 2, right: baseX + w / 2, top: baseY - dims.d / CM_PER_PX, bottom: baseY };
-}
-
-const DIR: Record<Facing, Point> = { right: { x: 1, y: 0 }, left: { x: -1, y: 0 }, up: { x: 0, y: -1 }, down: { x: 0, y: 1 } };
-
-/**
- * La cible est-elle devant Xéros, au sol, à portée ? Son emprise est du côté où il regarde (pas derrière lui, même si son image passe
- * derrière la lame à l'écran) et à moins de `reach` cm de ses pieds. Seule une cible devant lui peut être touchée par ce qu'il voit
- * passer sur elle.
- */
-export function inFront(feet: Point, facing: Facing, foot: Box, reach: number): boolean {
-  const d = DIR[facing];
-  const cx = Math.max(foot.left, Math.min(feet.x, foot.right));
-  const cy = Math.max(foot.top, Math.min(feet.y, foot.bottom));
-  const ahead = (cx - feet.x) * d.x + (cy - feet.y) * d.y;
-  const far = d.x !== 0 ? (d.x > 0 ? foot.right - feet.x : feet.x - foot.left) : d.y > 0 ? foot.bottom - feet.y : feet.y - foot.top;
-  return far > 0 && ahead >= -1 && Math.hypot(cx - feet.x, cy - feet.y) <= reach / CM_PER_PX;
 }
 
 /** Nombre d'images d'une planche d'arme (`weapon-<…>`, animation `angles`) : un angle tous les 45°. */
