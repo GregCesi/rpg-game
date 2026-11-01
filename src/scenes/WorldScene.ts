@@ -721,8 +721,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.player.stamina.empty) return this.effort.exhausted();
     this.mode = 'rail';
     // un coup de doloire (world/swing.ts, la force de Xéros) : ce qu'il lève, rapporté à la section d'une face, et ses temps
-    const s = this.player.strength;
-    const who = { ...s.swing, torque: s.swing.torque * s.multiplier };
+    const who = this.player.strength.swinger;
     const unit = woodJob('hew', aim.piece, 1);
     const stroke = jobStroke(unit, who);
     const cost = strokeCost(stroke);

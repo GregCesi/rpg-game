@@ -1130,8 +1130,10 @@ export function workDurations(): { name: string; strokes: number; pauses: number
 }
 
 /** Les points de calage du travail (work.json, `calibration`) : chacun doit tenir sa durée, à `tolerance` près. */
-export function validateWork(c: Pick<Content, 'work' | 'items' | 'props'>, cat: Catalog): string[] {
+export function validateWork(c: Pick<Content, 'work' | 'items' | 'props' | 'strength'>, cat: Catalog): string[] {
   const errors: string[] = [];
+  if (c.strength.swing.humanMax < c.strength.swing.torque) errors.push("strength.json swing : 'humanMax' sous le couple de Xéros");
+  for (const r of Object.values(c.work.references)) if (r.torque > c.strength.swing.humanMax) errors.push(`work.json references : un couple (${r.torque}) au-delà du plafond humain`);
   for (const k of ['axe', 'hatchet', 'maul', 'broadaxe']) if (!c.items[k]?.work) errors.push(`items.json '${k}' : un outil au travail sans 'work'`);
   for (const [k, p] of Object.entries(c.props)) {
     const h = p.harvest;

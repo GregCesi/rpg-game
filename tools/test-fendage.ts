@@ -115,10 +115,11 @@ await playtest('fendage', async ({ page, errors, load }) => {
     out.plantCost = 100 - w().player.stamina.ceiling;
 
     // 3. fendre : un travail au coup (docs/CONCEPTION.md, « Le travail ») ; Espace maintenu enchaîne les coups de masse, la fente
-    // s'allonge à chaque étape (trois pour 1 m) ; un appui sur Espace lance tout le travail. Pour l'essai, Xéros dix fois plus fort (?dieu « force ») : le coup frappe plus fort et
+    // s'allonge à chaque étape (trois pour 1 m) ; un appui sur Espace lance tout le travail. Pour l'essai, Xéros à la force humaine la plus grande (?dieu « force », plafonnée) et la simulation à x10 : le coup frappe plus fort et
     // plus vite. Arrêté (Espace relâché) après la première étape : elle est notée dans la pièce, la part enlevée dans GameState ; repris,
     // il continue de là, puis il est fini d'un coup (?dieu)
     emit({ kind: 'force', multiplier: 10 });
+    emit({ kind: 'sim-speed', factor: 10 });
     await give('maul');
     await stand(wedged()[0]);
     const s0 = w().player.stamina.ceiling;
@@ -233,14 +234,14 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await sleep(300);
       const planted = wedged().length;
       await give('maul');
-      // les six étapes du travail, Espace maintenu (Xéros dix fois plus fort pour l'essai) : la fente court, le coin s'enfonce
+      // les six étapes du travail, lancées d'un appui (force humaine la plus grande, simulation x10) : la fente court, le coin s'enfonce
       const hits: number[] = [];
       const images: string[] = [];
       await standAt(wedged()[0], 'west');
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
       for (let i = 0; i < 100 && w().mode !== 'work'; i++) await sleep(20);
       const t1 = performance.now();
-      // les pauses de souffle comprises (Xéros dix fois plus fort frappe fort : chaque coup lui coûte beaucoup de souffle)
+      // les pauses de souffle comprises (frapper fort coûte beaucoup de souffle)
       while (w().mode === 'work' && performance.now() - t1 < 90000) {
         const p = wedged()[0];
         const h = p ? p.wood.wedge.hits : -1;
@@ -252,6 +253,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
       }
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
       await settled();
+      emit({ kind: 'sim-speed', factor: 1 });
       if (hits.at(-1) !== -1) hits.push(wedged()[0] ? wedged()[0].wood.wedge.hits : -1);
       const halves = pieces('half');
       out.long = {

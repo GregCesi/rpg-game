@@ -7,9 +7,11 @@
 import assert from 'node:assert/strict';
 import { combat, items, strength, work } from '../src/content';
 import { frameMs, strokeOf, type Phase } from '../src/world/swing';
+import type { Swinger } from '../src/content/types';
+import { Strength } from '../src/entities/Strength';
 
 const tool = (k: string) => ({ def: items[k].work!, kg: items[k].mass as number });
-const hit = (who: typeof strength.swing, k: string, stroke: string) => strokeOf(who, tool(k).def, tool(k).kg, work.strokes[stroke], combat.rules);
+const hit = (who: Swinger, k: string, stroke: string) => strokeOf(who, tool(k).def, tool(k).kg, work.strokes[stroke], combat.rules);
 const xeros = strength.swing;
 const strong = work.references.strong;
 
@@ -34,6 +36,15 @@ assert.ok(1 - axe.quality < 1 - hew.quality, 'une imprécision coûte plus à la
 const phases: Phase[] = ['arm', 'arm', 'hold', 'down', 'down', 'impact', 'free', 'free'];
 const ms = frameMs(axe, phases);
 assert.ok(Math.abs(ms.reduce((s, v) => s + v, 0) - axe.cycle * 1000) <= phases.length, `les images font le coup (${ms.join(' · ')} ms)`);
+
+// la force reste humaine : ?dieu « force » ×10 ne dépasse pas le plafond humain (strength.json, swing.humanMax)
+const s10 = new Strength();
+s10.multiplier = 10;
+assert.equal(s10.swinger.torque, strength.swing.humanMax, 'force ×10 : le couple plafonne à celui d’un humain');
+const capped = hit(s10.swinger, 'axe', 'use');
+const s100 = new Strength();
+s100.multiplier = 100;
+assert.deepEqual(hit(s100.swinger, 'axe', 'use'), capped, 'au-delà du plafond, plus rien ne change');
 
 console.log(
   `✓ coup de travail : cognée ${axe.joules.toFixed(0)} J en ${axe.cycle.toFixed(2)} s, hachette ${hatchet.joules.toFixed(0)} J en ${hatchet.cycle.toFixed(2)} s, masse ${maul.joules.toFixed(0)} J en ${maul.cycle.toFixed(2)} s ; le bûcheron fort ${axeStrong.joules.toFixed(0)} J en ${axeStrong.cycle.toFixed(2)} s`,

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 
 /** Les vitesses de simulation proposées dans ?dieu. */
-export const SIM_SPEEDS = [1, 2, 5, 10] as const;
+export const SIM_SPEEDS = [1, 2, 5, 10, 20, 50] as const;
 
 /** Le facteur en ce moment (1 : le jeu normal). */
 let factor = 1;

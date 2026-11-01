@@ -1,7 +1,7 @@
 // Test de scénario des étapes visibles d'un travail (docs/CONCEPTION.md, « Le travail », § 6), dans le vrai jeu : l'arbre normal
 // abattu au coup (lancé d'un appui sur Espace) passe par ses images d'étape dans l'ordre (l'entaille en trois temps, le trait d'abattage, le craquement, il penche),
-// puis tombe ; arrêté à une étape, il la garde après rechargement ; l'arbre couché s'allège à l'ébranchage. Xéros est rendu trente
-// fois plus fort (?dieu « force ») et l'endurance infinie, pour que l'essai reste court.
+// puis tombe ; arrêté à une étape, il la garde après rechargement ; l'arbre couché s'allège à l'ébranchage. Xéros est rendu aussi
+// fort que le permet un humain un humain (?dieu « force », plafonnée), l'endurance infinie et la simulation à x20, pour que l'essai reste court.
 // Usage : npm run test:etapes (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
@@ -23,7 +23,9 @@ await playtest('etapes', async ({ page, errors, load }) => {
         await sleep(2000);
       }
       await send({ kind: 'stamina-infinite', on: true });
-      await send({ kind: 'force', multiplier: 30 });
+      // la force au plafond humain (×2,6) et la simulation à x20 : l'essai reste court, sans rien sauter
+      await send({ kind: 'force', multiplier: 10 });
+      await send({ kind: 'sim-speed', factor: 20 });
       await send({ kind: 'give', held: { item: 'axe' } });
       const p = w().map.props.find((q: any) => q.type === type && q.image.visible);
       if (!p) throw new Error(`pas de ${type} sur la ferme`);
@@ -51,6 +53,7 @@ await playtest('etapes', async ({ page, errors, load }) => {
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
       for (let i = 0; i < 200 && w().mode !== 'play'; i++) await sleep(20);
+      await send({ kind: 'sim-speed', factor: 1 });
       await sleep(300);
       return { keys, id: p.id, spawned: !!p.spawned, gone: !w().map.props.includes(p), now: w().map.props.includes(p) ? p.image.texture.key : null };
     }, args);

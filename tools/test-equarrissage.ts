@@ -179,7 +179,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.middleMode = w().mode;
       out.middleCost = 100 - w().player.stamina.ceiling;
       // au bout ouest : Espace maintenu, la passe au coup (chaque coup lève sa part de la face, Xéros glisse avec le fer) ; pour l'essai,
-      // Xéros dix fois plus fort (?dieu « force ») : la face avance d'environ un demi-centimètre par coup
+      // Xéros à la force humaine la plus grande (?dieu « force » ×10, plafonnée à ×2,6)
       emit({ kind: 'force', multiplier: 10 });
       await aboveAt(hewing(), 2);
       const [hx0, hy0] = [a().x, a().y];
@@ -243,13 +243,16 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       }
       out.faces = faces;
       out.hewCost = Math.round((100 - w().player.stamina.ceiling) * 10) / 10;
-      // ce que coûtent les coups des quatre faces, pour Xéros dix fois plus fort (world/workPlan.ts)
+      // ce que coûtent les coups des quatre faces, pour Xéros à la force humaine la plus grande (world/workPlan.ts)
       {
         const face = plan.woodJob('hew', { size: 'normal', length: 300 });
-        const strong = { ...content.strength.swing, torque: content.strength.swing.torque * 10 };
+        const sw = content.strength.swing;
+        const strong = { torque: Math.min(sw.torque * 10, sw.humanMax), omegaMax: sw.omegaMax, skill: sw.skill };
         out.hewExpect = Math.round(plan.planOf({ ...face, amount: face.amount * 4 }, strong, 100).ceiling * 10) / 10;
       }
       emit({ kind: 'force', multiplier: 1 });
+      // la poutre a vidé le plafond de Xéros (quatre faces à la doloire) : la suite repart reposée
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       const beam = beams()[0];
       out.beam = beam && { length: beam.wood.length, kg: kg(beam.wood) };
       out.shortBeamKg = kg({ size: 'normal', length: 180, shape: 'round', axis: 'ew', hewn: 12 });

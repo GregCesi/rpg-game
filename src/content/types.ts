@@ -1005,8 +1005,11 @@ export const WorkSchema = z.strictObject({
 
 export const StrengthSchema = z
   .strictObject({
-    /** La force d'un coup de travail (docs/CONCEPTION.md, « Le travail ») ; ?dieu « force » multiplie le couple. */
-    swing: SwingerSchema,
+    /**
+     * La force d'un coup de travail (docs/CONCEPTION.md, « Le travail ») ; ?dieu « force » multiplie le couple, jusqu'au plafond d'un
+     * humain (`humanMax`, N·m : un homme très fort ; la force surhumaine viendra avec les superpouvoirs).
+     */
+    swing: SwingerSchema.extend({ humanMax: z.number().positive() }),
     carry: z.number().positive(),
     walk: z.number().positive(),
     roll: z.number().positive(),

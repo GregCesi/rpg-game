@@ -76,8 +76,7 @@ export class WorkSystem {
 
   /** La force d'un coup de Xéros : strength.json, le couple multiplié par sa force (?dieu « force »). */
   private get swinger() {
-    const s = this.player.strength;
-    return { ...s.swing, torque: s.swing.torque * s.multiplier };
+    return this.player.strength.swinger;
   }
 
   /** Lance un travail : le premier coup part ; plafond vide, refusé (« épuisé »). */

@@ -1022,6 +1022,26 @@ comptait 15).
 - **validate.ts** calcule, pour Xéros d'aujourd'hui, la durée de chaque travail et l'affiche à côté de sa cible (`npm run check`), sans
   refuser : c'est un tableau de bord du calibrage.
 
+### 4 bis. La force reste humaine (décidé par Grégoire après l'essai)
+
+La force réglée dans ?dieu (« force ») multiplie le couple de Xéros, **jusqu'au plafond d'un humain** : `humanMax` de strength.json
+(130 N·m, un homme très fort, ×2,6 la force de Xéros). Au-delà, plus rien ne change. **La force surhumaine qui lève ce plafond viendra
+plus tard, avec les superpouvoirs.** Les chiffres, pour l'arbre normal à la cognée (le couple multiplié, sans le plafond, pour garder la
+mesure ; le maximum d'endurance pris à 100 pour tous) :
+
+| Force | Couple (N·m) | Énergie du coup (J) | Vitesse angulaire (rad/s) | Durée d'un coup (s) | Coups | Pauses | Durée totale |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ×1 (Xéros) | 50 | 90 | 14,6 | 1,64 | 784 | 25 | 24 min 54 |
+| ×1,5 (l'adulte) | 75 | 135 | 17,9 | 1,40 | 509 | 25 | 15 min 18 |
+| ×2,2 (le bûcheron fort) | 110 | 198 | 21,7 | 1,23 | 338 | 24 | 10 min 18 |
+| **×2,6 (le plafond humain)** | **130** | **234** | **23,6** | **1,18** | **283** | **23** | **8 min 42** |
+| ×3 (au-delà : refusé) | 150 | 264 | 25,0 (le bras) | 1,14 | 248 | 24 | 8 min 00 |
+| ×5 (refusé) | 250 | 264 | 25,0 | 1,06 | 240 | 23 | 7 min 24 |
+| ×10 (refusé) | 500 | 264 | 25,0 | 0,99 | 230 | 22 | 6 min 54 |
+
+Dès ×2,9, la vitesse du bras plafonne l'énergie (264 J) : seule la levée de l'outil raccourcit encore. Le plafond humain s'arrête un peu
+avant.
+
 ### 5. Le tableau
 
 Pour trois forces : Xéros aujourd'hui (couple 50 N·m, adresse 0,8, maximum 100), un adulte (75, 0,9, 140), un bûcheron fort (110,
