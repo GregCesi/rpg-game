@@ -92,8 +92,9 @@ Un refus (mauvais outil, pas la place, épuisé) se dit sans geste ni dépense.
 - Sur un rail ou pendant un travail : l'arrêter après le coup en cours (ce qui est fait reste fait ; un pas fait de même). Ailleurs : rien.
 
 ### V (la vitesse du temps)
-- V : le palier suivant de la vitesse du temps (x1, x2, x5, x10, x20 ; x1 au départ) ; Maj + V : le précédent ; un message dit le
-  palier (« Le temps : x5 ») et le cadran l'affiche. C'est la vitesse de simulation : elle accélère tout le jeu (la marche, les coups,
+- V : le palier suivant de la vitesse du temps (x1, x2, x5, x10, x20, puis de nouveau x1 : en boucle ; x1 au départ) ; Maj + V : le
+  précédent, en boucle aussi (avant x1, x20) ; un message dit le palier (« Le temps : x5 ») et l'indicateur à côté du cadran le
+  montre toujours, x1 compris. C'est la vitesse de simulation : elle accélère tout le jeu (la marche, les coups,
   les pauses, l'horloge), par pas de taille normale. Une attaque ramène à x1. x50 est réservé à ?dieu (les tests). Pas gardée d'une
   session à l'autre (docs/CONCEPTION.md, « Le temps »).
 

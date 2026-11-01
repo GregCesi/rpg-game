@@ -33,8 +33,9 @@ export function hhmm(c: Clock): string {
 /** Ce qu'affiche l'écran : « Jour 3 · 14:05 ». */
 export const clockLabel = (c: Clock): string => `Jour ${c.day} · ${hhmm(c)}`;
 
-/** Le palier voisin dans la liste (`dir` +1 : plus vite, −1 : moins vite), sans sortir des bouts. */
+/** Le palier voisin dans la liste (`dir` +1 : plus vite, −1 : moins vite), en boucle (V après x20 : x1 ; Maj + V après x1 : x20). */
 export function nextSpeed(speeds: readonly number[], current: number, dir: 1 | -1): number {
   const i = Math.max(0, speeds.indexOf(current));
-  return speeds[Math.min(speeds.length - 1, Math.max(0, i + dir))];
+  // en boucle : après le dernier, le premier ; avant le premier, le dernier
+  return speeds[(i + dir + speeds.length) % speeds.length];
 }

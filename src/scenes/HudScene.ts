@@ -63,7 +63,7 @@ export class HudScene extends Phaser.Scene {
   /** Le cadran du temps, en haut à droite (world/clockFace.ts) : ses images, redessinées quand l'heure ou la vitesse change. */
   private face!: Phaser.GameObjects.Container;
   private faceKey = '';
-  /** Ce que dit le cadran (« Jour 3 · 14:20 », et la vitesse si elle n'est pas x1) : lu par les tests de scénario. */
+  /** Ce que dit le cadran (« Jour 3 · 14:20  x1 » : l'heure et la vitesse, toujours) : lu par les tests de scénario. */
   clockText = '';
 
   create(data: { notice?: string } = {}): void {
@@ -224,7 +224,7 @@ export class HudScene extends Phaser.Scene {
     const key = `${c.day}:${Math.floor(c.minute)}:${speed}`;
     if (key === this.faceKey) return;
     this.faceKey = key;
-    this.clockText = `${clockLabel(c)}${speed !== 1 ? `  x${speed}` : ''}`;
+    this.clockText = `${clockLabel(c)}  x${speed}`;
     this.face.removeAll(true);
     const width = (k: string) => this.textures.get(k).getSourceImage().width;
     for (const p of clockFace(c, speed, VIEW.width, width)) {

@@ -704,7 +704,8 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 
 **La clôture du chantier** (décidé par Grégoire après l'essai du travail au coup, même jour) :
 - **La vitesse du temps du joueur est réactivée, et c'est la vitesse de simulation** : V passe au palier suivant (x1, x2, x5, x10, x20 ;
-  `speeds` de time.json, x1 au départ), Maj + V au précédent ; elle accélère tout le jeu, marche comprise, par pas de jeu de taille
+  `speeds` de time.json, x1 au départ ; en boucle : après x20, x1), Maj + V au précédent (en boucle aussi) ; un indicateur à côté du
+  cadran la montre toujours, x1 compris (des crans et le chiffre) ; elle accélère tout le jeu, marche comprise, par pas de jeu de taille
   normale (systems/simSpeed.ts), et plus seulement l'horloge ; le cadran l'affiche ; une attaque ramène à x1 ; x50 reste réservé à
   ?dieu pour les tests. La distinction d'avant (vitesse du temps / vitesse de simulation) tombe : il n'y a plus qu'une vitesse.
 - **L'interface du temps** : le cadran rond en haut à droite (l'essai, piste A) : « Jour 3 / 14:20 » et un médaillon où le soleil puis

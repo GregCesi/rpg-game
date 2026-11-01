@@ -17,8 +17,8 @@ assert.deepEqual(later({ day: 3, minute: 600 }, 3 * 1440), { day: 6, minute: 600
 assert.equal(clockLabel({ day: 3, minute: 14 * 60 + 5.7 }), 'Jour 3 · 14:05', 'l’heure s’écrit à la minute');
 assert.equal(nextSpeed(time.speeds, 5, 1), 10, 'V : le palier suivant');
 assert.equal(nextSpeed(time.speeds, 5, -1), 2, 'Maj + V : le palier précédent');
-assert.equal(nextSpeed(time.speeds, time.speeds[time.speeds.length - 1], 1), time.speeds[time.speeds.length - 1], 'le dernier palier reste le dernier');
-assert.equal(nextSpeed(time.speeds, time.speeds[0], -1), time.speeds[0], 'le premier reste le premier');
+assert.equal(nextSpeed(time.speeds, time.speeds[time.speeds.length - 1], 1), time.speeds[0], 'V tourne en boucle : après x20, x1');
+assert.equal(nextSpeed(time.speeds, time.speeds[0], -1), time.speeds[time.speeds.length - 1], 'Maj + V tourne en boucle : avant x1, x20');
 const v17 = { version: 17, savedAt: '', where: {}, state: { stamina: 80, day: 4, hands: [null, null] } };
 const v18 = upgrade(v17) as { version: number; state: Record<string, unknown> };
 assert.ok(v18.version >= 18, 'une sauvegarde de la version 17 passe aux suivantes');

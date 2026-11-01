@@ -1,9 +1,9 @@
 // Planche de contrôle du cadran (hors jeu, non déclarée dans art/index.ts).
 // Usage : npx tsx tools/preview-module.ts art/ui/clock-preview.ts .art-preview  → .art-preview/cadran.png
 // Le cadran y est recomposé à partir des seules pièces de clock.ts et de leur contrat (`clockLayout`), à 6 h, 7 h, 13 h,
-// 19 h 30, 21 h, 23 h et 3 h (une rangée par heure) ; en colonnes : sans vitesse (Jour 3), avec la vitesse x5, avec x20 au
-// jour 12, sans vitesse au jour 123, et à droite le dessin de l'essai validé (art/proposals/horloge-temps.ts, piste A).
-// Sans vitesse, au jour 3, la recomposition est comparée pixel pour pixel à l'essai : une différence arrête le script.
+// 19 h 30, 21 h, 23 h et 3 h (une rangée par heure) ; en colonnes, les cinq paliers de vitesse : x1 et x2 et x5 au jour 3,
+// x10 au jour 12, x20 au jour 123, et à droite le dessin de l'essai validé (art/proposals/horloge-temps.ts, piste A).
+// Sans l'indicateur de vitesse, au jour 3, la recomposition est comparée pixel pour pixel à l'essai : une différence arrête le script.
 
 import { Canvas, type Grid, type Palette } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
@@ -23,7 +23,7 @@ const width = (key: string) => piece(key).grid[0].length;
 const HUD_A = '¤';
 
 /** Le cadran monté comme le fera le HUD. `mark` : le parchemin des signes reçoit HUD_A (sinon `a`, pour comparer à l'essai). */
-function assemble(day: number, min: number, speed: number, mark: boolean): Canvas {
+function assemble(day: number, min: number, speed: number | null, mark: boolean): Canvas {
   const { parts, w, h } = clockLayout(day, min, speed, width);
   const c = new Canvas(w, h);
   for (const p of parts) {
@@ -38,13 +38,14 @@ function assemble(day: number, min: number, speed: number, mark: boolean): Canva
 const TIMES = [6 * 60, 7 * 60, 13 * 60, 19 * 60 + 30, 21 * 60, 23 * 60, 3 * 60];
 const COLS: { day: number; speed: number }[] = [
   { day: 3, speed: 1 },
+  { day: 3, speed: 2 },
   { day: 3, speed: 5 },
-  { day: 12, speed: 20 },
-  { day: 123, speed: 1 },
+  { day: 12, speed: 10 },
+  { day: 123, speed: 20 },
 ];
 
 for (const min of TIMES) {
-  const got = assemble(3, min, 1, false).toGrid();
+  const got = assemble(3, min, null, false).toGrid();
   const want = clockA(3, min).toGrid();
   if (got.join('\n') !== want.join('\n')) {
     throw new Error(`cadran : la recomposition diffère de l'essai à ${min} min\n${got.join('\n')}\n---\n${want.join('\n')}`);
@@ -52,7 +53,7 @@ for (const min of TIMES) {
 }
 
 const CW = 66;
-const RH = 34;
+const RH = 38;
 const sheet = new Canvas((COLS.length + 1) * CW, TIMES.length * RH);
 TIMES.forEach((min, r) => {
   COLS.forEach(({ day, speed }, k) => sheet.stamp(assemble(day, min, speed, true).toGrid(), k * CW, r * RH));

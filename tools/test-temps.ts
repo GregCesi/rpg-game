@@ -67,6 +67,14 @@ await playtest('temps', async ({ page, errors, load }) => {
     await press('KeyV', true);
     await sleep(300);
     out.back = { speed: sim.simSpeed(), hud: hudClock() };
+    // en boucle : Maj + V depuis x1 va à x20 ; V depuis x20 revient à x1 ; les crans pleins suivent le rang du palier
+    await press('KeyV', true);
+    await sleep(300);
+    const face = await import('/src/world/clockFace.ts' as string);
+    out.loopDown = { speed: sim.simSpeed(), rank: face.speedRank(sim.simSpeed()) };
+    await press('KeyV');
+    await sleep(300);
+    out.loopUp = { speed: sim.simSpeed(), rank: face.speedRank(sim.simSpeed()), hud: hudClock() };
     out.hud = hudClock();
 
     // 2. le travail au coup, devant un arbre normal
@@ -157,7 +165,11 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.deepEqual(first.v.notices, ['Le temps : x2'], 'V le dit');
   assert.ok(/x2$/.test(first.v.hud ?? ''), `la vitesse s'affiche avec l'heure (${first.v.hud})`);
   assert.equal(first.back.speed, 1, 'Maj + V : de nouveau x1');
-  assert.ok(first.hud && !/x\d/.test(first.hud), `à x1, l’heure s’affiche sans vitesse (${first.hud})`);
+  assert.deepEqual(first.loopDown, { speed: 20, rank: 5 }, 'Maj + V depuis x1 : x20, cinq crans pleins (en boucle)');
+  assert.equal(first.loopUp.speed, 1, 'V depuis x20 : de nouveau x1 (en boucle)');
+  assert.equal(first.loopUp.rank, 1, 'à x1, un cran plein');
+  assert.ok(/x1$/.test(first.hud ?? ''), `à x1, la vitesse se voit aussi (${first.hud})`);
+  assert.ok(/x1$/.test(first.back.hud ?? ''), `Maj + V : x1 affiché (${first.back.hud})`);
   const m = first.model;
   assert.equal(first.launched.mode, 'work', 'un seul appui : le travail continue seul');
   assert.ok(first.launched.bar, 'sa jauge au-dessus de Xéros');

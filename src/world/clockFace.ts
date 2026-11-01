@@ -1,7 +1,9 @@
 // Le cadran du temps, sans Phaser (docs/CONCEPTION.md, « Le temps » ; le contrat de pose de art/ui/clock.ts, dessiné par le
 // pixel-artist) : en haut à droite, une plaquette de bois « Jour 3 » sur « 14:20 », et un médaillon rond où le soleil puis la lune passent
-// sur un arc au-dessus d'une colline, au ciel du moment ; la vitesse du temps suspendue sous le médaillon quand elle n'est pas x1.
+// sur un arc au-dessus d'une colline, au ciel du moment ; dessous, toujours (x1 compris), la vitesse du temps : cinq crans, autant de
+// pleins que le rang du palier, et le chiffre.
 // Rend la liste des images à poser, dans l'ordre de dessin, en px de l'écran du HUD (avant le zoom) ; HudScene les pose.
+import { time } from '../content';
 import { hhmm, type Clock } from './clock';
 import { momentAt, type Moment } from './daylight';
 
@@ -18,7 +20,7 @@ const FACE = {
   plate: { end: 3, y: 2, line1: 5, line2: 11, extra: 15 },
   dial: { size: 23, overlap: 11 },
   arc: { cx: 11, cy: 14, rx: 5, ry: 6, half: 2 },
-  speedY: 22,
+  speed: { plate: 29, y: 20, notch: { x: 4, step: 4, y: 24 }, digit: { x: 24, box: 13, y: 23 } },
   sun: { rise: 6 * 60, set: 20 * 60 },
   margin: 4,
   space: 2,
@@ -45,6 +47,14 @@ function textPieces(glyphs: string[], x: number, y: number, width: (key: string)
     cx += width(`ui-digit-${g}`) - 1;
   }
   return out;
+}
+
+/**
+ * Le nombre de crans pleins d'une vitesse : son rang parmi les paliers du joueur (time.json : x1 → 1, x20 → 5) ; hors des paliers (x50
+ * de ?dieu), celui du palier juste au-dessous.
+ */
+export function speedRank(speed: number, speeds: readonly number[] = time.speeds): number {
+  return Math.max(1, speeds.filter((s) => s <= speed).length);
 }
 
 /** L'astre du moment et son coin haut gauche dans le médaillon : le soleil de 6 h à 20 h, la lune sinon. */
@@ -87,10 +97,18 @@ export function clockFace(clock: Clock, speed: number, viewWidth: number, width:
     { key: moment === 'night' ? 'ui-clock-hill-night' : 'ui-clock-hill', x: dialX, y: oy },
     { key: 'ui-clock-ring', x: dialX, y: oy },
   ];
-  if (speed !== 1) {
-    const sp = glyphsOf(`x${speed}`);
-    const w = textWidth(sp, width);
-    pieces.push(...textPieces(sp, ox + pw - (w - 1) / 2, oy + FACE.speedY, width));
-  }
+  // la vitesse du temps, toujours : la plaquette sous le médaillon (avant l'anneau, qui mord sur son haut), les crans, le chiffre
+  const sp = FACE.speed;
+  const sx = ox + pw - sp.plate;
+  const rank = speedRank(speed);
+  const label = glyphsOf(`x${speed}`);
+  const lw = textWidth(label, width);
+  const ring = pieces.pop()!;
+  pieces.push(
+    { key: 'ui-clock-speed-plate', x: sx, y: oy + sp.y },
+    ...Array.from({ length: 5 }, (_, k) => ({ key: k < rank ? 'ui-clock-speed-on' : 'ui-clock-speed-off', x: sx + sp.notch.x + sp.notch.step * k, y: oy + sp.notch.y })),
+    ...textPieces(label, sx + sp.digit.x + Math.round((sp.digit.box - lw) / 2), oy + sp.digit.y, width),
+    ring,
+  );
   return pieces;
 }

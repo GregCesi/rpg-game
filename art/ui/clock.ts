@@ -14,6 +14,9 @@
 //      `ui-clock-sky-dawn`, `-day`, `-dusk`, `-night` (le ciel du moment dans la fenêtre ronde ; les étoiles sont dans la nuit),
 //      `ui-clock-sun` (jour), `ui-clock-sun-low` (rougi : aube et crépuscule), `ui-clock-moon` (le croissant),
 //      `ui-clock-hill` (aube, jour, crépuscule), `ui-clock-hill-night`, puis `ui-clock-ring` (l'anneau de bois, fenêtre vide).
+//    Vitesse : `ui-clock-speed-plate` 41 × 13 (une seule image, largeur fixe ; même facture que la plaquette, creux K de
+//      x 3 à 37, y 3 à 9), `ui-clock-speed-on` et `ui-clock-speed-off` 3 × 5 (un cran : triangle ▶ de soleil, plein ; ou
+//      entaille de bois, vide).
 //
 // 2. Un texte en signes : chaque image de signe se pose 1 px avant la fin de la précédente (contours confondus : avance = sa
 //    largeur − 1) ; une espace ajoute 2 px à l'avance. Largeur d'un texte = 1 + Σ (largeur du signe − 1) + 2 × espaces.
@@ -23,14 +26,22 @@
 //    iw = max(largeur « Jour n », largeur « hh:mm ») + 1 ; pw = iw + 15 (largeur de la plaquette).
 //    Plaquette en (0, 2) : left en x 0, mid de x 3 à pw − 4 (pw − 6 colonnes), right en x pw − 3 (cachée sous le médaillon).
 //    « Jour n » en (3 + round((iw − w1) / 2), 5) ; « hh:mm » en (3 + round((iw − w2) / 2), 11) ; round = Math.round.
-//    Médaillon en (pw − 11, 0). Boîte : (pw + 12) × 23, sans la vitesse.
-//    Vitesse (seulement si elle n'est pas x1) : « x5 » centré sous le médaillon, en (pw − (w − 1) / 2, 22) : sa rangée de
-//    contour du haut se confond avec le bas de l'anneau ; la boîte descend alors à 29 px.
-//    Ordre de dessin : plaquette, textes, ciel, astre, colline, anneau, vitesse.
+//    Médaillon en (pw − 11, 0). Boîte : (pw + 12) × 33 (23 sans l'indicateur de vitesse, qui est toujours là en jeu).
+//    Indicateur de vitesse, toujours montré, x1 compris : paliers x1, x2, x5, x10, x20, de rang r = 1 à 5 (r crans pleins).
+//      Sa plaquette en (sx, 20), sx = pw + 12 − 41 = pw − 29 : alignée à droite sur le médaillon, sa rangée de contour du
+//      haut confondue avec celle du bas de la plaquette du jour (y 20) ; l'anneau, posé après, mord sur ses 3 rangées du haut.
+//      Cran k (k = 0 à 4) en (sx + 4 + 4k, 24) : `ui-clock-speed-on` si k < r, sinon `ui-clock-speed-off` (x 4, 8, 12, 16, 20
+//      dans la plaquette ; le dernier finit en x 22).
+//      Chiffre « xN » (texte en signes, règle 2) centré dans une zone de 13 px qui commence en x 24 de la plaquette :
+//      en (sx + 24 + round((13 − w) / 2), 23). x1, x2, x5 (w = 9) : x 26 à 34 de la plaquette ; x10, x20 (w = 13) : x 24 à 36.
+//    Ordre de dessin : plaquette du jour, plaquette de vitesse, crans, chiffre de vitesse, textes, ciel, astre, colline, anneau.
+//    (La plaquette de vitesse doit passer avant l'anneau ; avant ou après la plaquette du jour, le résultat est le même.)
 //
 // 4. À l'écran (la vue fait VIEW = 640 × 360) : marge de 4 px en haut et à droite. Le médaillon est fixe, en
 //    (640 − 4 − 23, 4) = (613, 4) ; la plaquette grandit vers la gauche avec le nombre de chiffres du jour : boîte en
 //    x = 613 − (pw − 11), y = 4. Jour 1 à 9 : pw = 39 ; 10 à 99 : 43 ; 100 à 999 : 47.
+//    L'indicateur de vitesse est fixe lui aussi : plaquette en (595, 24), de x 595 à 635 et de y 24 à 36 ; crans en
+//    (599 + 4k, 28) ; chiffre en (621, 27) pour x1, x2, x5 et en (619, 27) pour x10, x20.
 //
 // 5. Les moments (minutes depuis minuit, m = min mod 1440) : aube 5 h ≤ m < 8 h ; jour 8 h ≤ m < 18 h 30 ; crépuscule
 //    18 h 30 ≤ m < 21 h 30 ; nuit sinon. Ils choisissent le ciel, la colline (nuit ou non) et le soleil (bas hors du jour).
@@ -60,7 +71,12 @@ export const CLOCK = {
   dial: { size: 23, overlap: 11, center: 11 },
   arc: { cx: 11, cy: 14, rx: 5, ry: 6, half: 2 },
   hill: { ridge: 14, step: 14 },
-  speed: { y: 22 },
+  speed: {
+    steps: [1, 2, 5, 10, 20],
+    plate: { w: 41, h: 13, y: 20 },
+    notch: { x: 4, y: 4, step: 4, w: 3, h: 5 },
+    digit: { x: 24, y: 3, zone: 13 },
+  },
   sun: { rise: 6 * 60, set: 20 * 60 },
   moments: { dawn: 5 * 60, day: 8 * 60, dusk: 18 * 60 + 30, night: 21 * 60 + 30 },
   margin: 4,
@@ -222,8 +238,14 @@ export const hhmm = (min: number): string => {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
 
-/** Toutes les pièces du cadran pour le jour `day`, l'heure `min` et la vitesse `speed`, dans la boîte du cadran. */
-export function clockLayout(day: number, min: number, speed: number, width: (key: string) => number): { parts: Placed[]; w: number; h: number } {
+/** Le rang du palier de vitesse (1 à 5) : le nombre de crans pleins ; une vitesse hors des paliers prend celui juste au-dessous. */
+export const speedRank = (speed: number): number => Math.max(1, CLOCK.speed.steps.filter((s) => s <= speed).length);
+
+/**
+ * Toutes les pièces du cadran pour le jour `day`, l'heure `min` et la vitesse `speed`, dans la boîte du cadran ; `speed` null :
+ * le cadran seul, sans l'indicateur de vitesse (pour le comparer à l'essai).
+ */
+export function clockLayout(day: number, min: number, speed: number | null, width: (key: string) => number): { parts: Placed[]; w: number; h: number } {
   const { plate, dial } = CLOCK;
   const w1 = layText(`Jour ${day}`, 0, 0, width).w;
   const w2 = layText(hhmm(min), 0, 0, width).w;
@@ -243,14 +265,24 @@ export function clockLayout(day: number, min: number, speed: number, width: (key
     { key: moment === 'night' ? 'ui-clock-hill-night' : 'ui-clock-hill', x: dx, y: 0 },
     { key: 'ui-clock-ring', x: dx, y: 0 },
   ];
+  const w = pw + dial.size - dial.overlap;
   let h = dial.size;
-  if (speed !== 1) {
+  if (speed !== null) {
+    const { plate: sp, notch, digit } = CLOCK.speed;
+    const sx = w - sp.w;
+    const rank = speedRank(speed);
     const s = `x${speed}`;
     const ws = layText(s, 0, 0, width).w;
-    parts.push(...layText(s, dx + C - (ws - 1) / 2, CLOCK.speed.y, width).parts);
-    h = CLOCK.speed.y + 7;
+    const tab: Placed[] = [
+      { key: 'ui-clock-speed-plate', x: sx, y: sp.y },
+      ...CLOCK.speed.steps.map((_, k) => ({ key: k < rank ? 'ui-clock-speed-on' : 'ui-clock-speed-off', x: sx + notch.x + k * notch.step, y: sp.y + notch.y })),
+      ...layText(s, sx + digit.x + Math.round((digit.zone - ws) / 2), sp.y + digit.y, width).parts,
+    ];
+    // la plaquette de vitesse passe sous le cadran : juste après la plaquette du jour (ses trois pièces), avant les textes
+    parts.splice(3, 0, ...tab);
+    h = sp.y + sp.h;
   }
-  return { parts, w: pw + dial.size - dial.overlap, h };
+  return { parts, w, h };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -260,7 +292,19 @@ export function clockLayout(day: number, min: number, speed: number, width: (key
 const img = (name: string, grid: Grid, pal: Palette = palette): ImageSource => ({ kind: 'image', name, palette: pal, grid });
 const p7 = plaque(7, CLOCK.plate.h);
 
+/**
+ * Un cran de vitesse, 3 × 5, un triangle pointé vers l'est (▶, le temps qui file) ; plein, de soleil
+ * (H éclairé en haut à gauche, h dessous et à droite) ; vide, une entaille de bois N dans le creux K.
+ */
+function notch(on: boolean): Grid {
+  const [l, b] = on ? ['H', 'h'] : ['N', 'N'];
+  return ['L..', 'LL.', 'LLB', 'LB.', 'B..'].map((r) => r.replace(/L/g, l).replace(/B/g, b));
+}
+
 const sources: ImageSource[] = [
+  img('ui-clock-speed-plate', plaque(CLOCK.speed.plate.w, CLOCK.speed.plate.h).toGrid()),
+  img('ui-clock-speed-on', notch(true)),
+  img('ui-clock-speed-off', notch(false)),
   img('ui-clock-plate-left', cut(p7, 0, 3)),
   img('ui-clock-plate-mid', cut(p7, 3, 1)),
   img('ui-clock-plate-right', cut(p7, 4, 3)),
