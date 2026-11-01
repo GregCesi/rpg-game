@@ -7,6 +7,7 @@
     "art:preview": "tsx tools/build-art.ts --preview",
     "art:touche": "npm run art && tsx tools/carte-touche.ts",
     "maps": "tsx tools/build-maps.ts",
+    "audit": "knip --no-exit-code; depcruise src art tools vite.config.ts --config .dependency-cruiser.cjs --output-type err-long",
     "check": "npm run art && npm run maps && tsx tools/check.ts",
     "dev": "npm run art && npm run maps && vite",
     "typecheck": "npm run art && npm run maps && tsc --noEmit",
@@ -48,8 +49,11 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@swc/core": "^1.16.21",
     "@types/node": "^26.6.5",
     "@types/pngjs": "^6.0.5",
+    "dependency-cruiser": "^18.7.0",
+    "knip": "^6.44.1",
     "playwright-core": "^1.64.1",
     "pngjs": "^7.0.0",
     "tsx": "^4.23.15",
