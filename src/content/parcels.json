@@ -1,0 +1,9 @@
+{
+  "cottage": {"name": "maison des abords", "color": "#c9a05a"},
+  "house": {"name": "maison du quartier", "color": "#d9b77a"},
+  "rich-house": {"name": "maison de riche", "color": "#b07ad9"},
+  "town-hall": {"name": "mairie", "color": "#5a8fd9"},
+  "tavern": {"name": "taverne", "color": "#d95a5a"},
+  "reserve": {"name": "parcelle réservée", "color": "#9a9a9a"},
+  "farmhouse": {"name": "logis de ferme", "color": "#7ad97a"}
+}

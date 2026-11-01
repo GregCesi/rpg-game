@@ -34,14 +34,30 @@ const ZOOM_IN = ['NumpadAdd'];
 const ZOOM_OUT = ['NumpadSubtract'];
 
 /**
+ * Touches enfoncées (codes), gardées d'une scène à l'autre : Xéros qui passe le bord d'une zone (la scène redémarre sur la voisine,
+ * systems/zones.ts) continue de marcher tant que la touche reste enfoncée. Un relâchement est écouté sur la fenêtre même, toujours, pour
+ * qu'aucun ne se perde pendant le redémarrage ; la fenêtre quittée les oublie toutes.
+ */
+const HELD = new Set<string>();
+if (typeof window !== 'undefined') {
+  window.addEventListener('keyup', (e) => HELD.delete(e.code));
+  window.addEventListener('blur', () => HELD.clear());
+}
+
+/**
  * Traduit le clavier en intention : direction, course, et les gestes des mains.
  * E (ou Entrée) : prendre dans une main libre, parler, cueillir, ou reposer ce qu'on tient à deux mains.
  * Espace : utiliser ce qu'on tient. Q (A en AZERTY) : lâcher ce que tient la main active. Tab : changer de main active.
  * R : tourner la bille portée (est-ouest, nord-sud). Échap : arrêter une passe sur un rail. Molette, + et − : le zoom.
  */
+/** Oublie les touches enfoncées : un passage avec fondu (une porte, une sortie) repart à l'arrêt, comme avant les zones. */
+export function forgetHeldKeys(): void {
+  HELD.clear();
+}
+
 export class PlayerInput {
-  /** Touches enfoncées (codes). */
-  private readonly held = new Set<string>();
+  /** Touches enfoncées (codes), communes à toutes les scènes (HELD). */
+  private readonly held = HELD;
   /** Actions dont la touche vient d'être pressée, pas encore lues. */
   private readonly pressed = new Set<Action>();
   /** Crans de zoom demandés (molette, + et −), pas encore lus : positif pour s'approcher. */

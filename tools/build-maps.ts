@@ -2,17 +2,21 @@
 // Le jeu ne lit jamais Tiled : tout ce qui est faux dans un .tmj est signalé ici, avec la carte, l'objet et sa position.
 // Usage : npm run maps   (lancé par npm run check ; suppose que npm run art a généré tiled/tilesets/)
 
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { TILE } from '../src/config';
 import { MapSchema, WoodPieceSchema } from '../src/content/types';
 import propsJson from '../src/content/props.json';
-import type { Exit, MapData, MapObject, Npc, Spawn } from '../src/content/types';
+import type { Exit, MapData, MapObject, MapPlan, Npc, Parcel, Spawn } from '../src/content/types';
+import { WoodAgeSchema } from '../src/content/types';
+import parcelsJson from '../src/content/parcels.json';
 import { TmjSchema, TsjSchema } from './lib/tiled-schema';
 import type { Tmj, TmjObject, Tsj } from './lib/tiled-schema';
 
 const MAPS_DIR = 'tiled/maps';
+/** Le monde : les zones assemblées côte à côte (fichier « world » de Tiled, ouvert par Monde > Charger un monde). */
+const WORLD_FILE = 'tiled/maps/monde.world';
 const OUT = 'src/generated/maps.ts';
 const FACINGS = ['down', 'up', 'left', 'right'];
 /** Bits de retournement / rotation que Tiled range dans les bits de poids fort d'un gid. */
@@ -143,6 +147,8 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   const spawns: Record<string, Spawn> = {};
   const exits: Exit[] = [];
   const npcs: Npc[] = [];
+  const parcels: Parcel[] = [];
+  const plans: MapPlan[] = [];
 
   // deux tilesets dont les numéros se chevauchent : l'un a grossi depuis la dernière sauvegarde de la carte dans Tiled
   const sorted = [...uses].sort((a, b) => a.firstgid - b.firstgid);
@@ -250,8 +256,24 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (!character) oerr("champ 'character' (clé de characters.json) manquant");
       if (!dialogue) oerr("champ 'dialogue' (clé de dialogues.json) manquant");
       if (character && dialogue) npcs.push({ x: o.x, y: o.y, character, dialogue, ...(facing() ? { facing: facing() } : {}) });
+    } else if (cls === 'Parcel') {
+      only(['use']);
+      if (o.point || o.gid !== undefined || o.width <= 0 || o.height <= 0) return oerr('une parcelle est un rectangle (outil « Insérer un rectangle »)');
+      const use = text('use');
+      if (!use) return oerr("champ 'use' (destination, clé de src/content/parcels.json) manquant");
+      if (!(parcelsJson as Record<string, unknown>)[use]) return oerr(`destination '${use}' inconnue (attendues : ${Object.keys(parcelsJson).join(', ')})`);
+      parcels.push({ x: o.x, y: o.y, w: o.width, h: o.height, use, ...(o.name ? { name: o.name } : {}) });
+    } else if (cls === 'Plan') {
+      only(['plan', 'age']);
+      if (o.gid !== undefined) return oerr('un plan posé est un rectangle ou un point (son coin nord-ouest)');
+      const plan = text('plan');
+      const age = text('age');
+      if (!plan) return oerr("champ 'plan' (un plan de src/content/plans/, sans .json) manquant");
+      if (!existsSync(`src/content/plans/${plan}.json`)) return oerr(`plan '${plan}' introuvable (src/content/plans/${plan}.json)`);
+      if (age !== undefined && !WoodAgeSchema.safeParse(age).success) return oerr(`âge '${age}' inconnu (attendus : ${WoodAgeSchema.options.join(', ')})`);
+      plans.push({ id: o.id, x: o.x, y: o.y, plan, ...(age ? { age: age as MapPlan['age'] } : {}) });
     } else {
-      only(['interact', ...WOOD_FIELDS]);
+      only(['interact', 'age', ...WOOD_FIELDS]);
       if (o.gid === undefined) return oerr("objet sans image : type inconnu (attendus : Spawn, Exit, Npc, ou un objet posé depuis le tileset 'props')");
       if (o.gid > 0x0fffffff || (o.gid & FLIP_BITS) !== 0) return oerr('image retournée ou pivotée, non gérée');
       const u = owner(o.gid);
@@ -265,7 +287,10 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       }
       const interact = text('interact');
       const wood = readWood(key, props, oerr);
-      objects.push({ id: o.id, type: key, x: o.x, y: o.y, ...(interact ? { interact } : {}), ...(wood ? { wood } : {}) });
+      const age = text('age');
+      if (age !== undefined && !WoodAgeSchema.safeParse(age).success) return oerr(`âge '${age}' inconnu (attendus : ${WoodAgeSchema.options.join(', ')})`);
+      if (age && !(propsJson as Record<string, { aged?: boolean }>)[key]?.aged) return oerr(`propriété 'age' : seul un objet de bois travaillé (\`aged\` de props.json) en a`);
+      objects.push({ id: o.id, type: key, x: o.x, y: o.y, ...(interact ? { interact } : {}), ...(wood ? { wood } : {}), ...(age ? { age: age as MapObject['age'] } : {}) });
     }
   }
 
@@ -282,12 +307,62 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
     spawns,
     exits,
     npcs,
+    parcels,
+    plans,
   });
   if (!map.success) {
     err(`format interne invalide :\n${indent(z.prettifyError(map.error))}`);
     return undefined;
   }
   return map.data;
+}
+
+/** Le fichier « world » de Tiled : une carte par zone, sa place en pixels. */
+const WorldFileSchema = z.object({
+  type: z.literal('world'),
+  maps: z.array(z.object({ fileName: z.string(), x: z.number(), y: z.number(), width: z.number(), height: z.number() })),
+});
+
+/**
+ * Lit le monde (WORLD_FILE) : chaque zone qu'il nomme reçoit sa place (`world` de la carte). Refusé avec un message : une carte
+ * inconnue, une place hors de la grille des tuiles, une taille qui n'est pas celle du .tmj, deux zones qui se recouvrent. Sans fichier,
+ * aucune carte n'est une zone.
+ */
+function readWorld(maps: Record<string, MapData>, errors: string[]): void {
+  if (!existsSync(WORLD_FILE)) return;
+  const err = (m: string): void => {
+    errors.push(`Monde (${WORLD_FILE}) : ${m}`);
+  };
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(WORLD_FILE, 'utf8'));
+  } catch (e) {
+    return err(`JSON illisible (${(e as Error).message})`);
+  }
+  const r = WorldFileSchema.safeParse(raw);
+  if (!r.success) return err(`format inattendu :\n${indent(z.prettifyError(r.error))}`);
+  const placed: { id: string; x: number; y: number; w: number; h: number }[] = [];
+  for (const z0 of r.data.maps) {
+    const id = basename(z0.fileName, '.tmj');
+    const m = maps[id];
+    if (!m) {
+      err(`zone '${z0.fileName}' : aucune carte ${MAPS_DIR}/${id}.tmj`);
+      continue;
+    }
+    if (m.world) {
+      err(`zone '${id}' nommée deux fois`);
+      continue;
+    }
+    if (z0.x % TILE || z0.y % TILE) err(`zone '${id}' en (${z0.x}, ${z0.y}) : hors de la grille des tuiles (${TILE} px)`);
+    if (z0.width !== m.width * TILE || z0.height !== m.height * TILE) {
+      err(`zone '${id}' : ${z0.width}x${z0.height} px dans le monde, la carte fait ${m.width * TILE}x${m.height * TILE} px (rouvrir le monde dans Tiled)`);
+    }
+    const box = { id, x: z0.x, y: z0.y, w: m.width * TILE, h: m.height * TILE };
+    const over = placed.find((b) => b.x < box.x + box.w && box.x < b.x + b.w && b.y < box.y + box.h && box.y < b.y + b.h);
+    if (over) err(`zones '${over.id}' et '${id}' se recouvrent`);
+    placed.push(box);
+    m.world = { x: z0.x, y: z0.y };
+  }
 }
 
 function main() {
@@ -303,6 +378,7 @@ function main() {
     const m = convert(id, join(MAPS_DIR, f), errors);
     if (m) maps[id] = m;
   }
+  readWorld(maps, errors);
   if (errors.length) {
     console.error(`\n✗ ${errors.length} problème(s) dans les cartes Tiled :`);
     for (const e of errors) console.error(`  - ${e}`);

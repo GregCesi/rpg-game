@@ -122,10 +122,12 @@ function objectClass(id: number, name: string, color: string, members: Member[])
  *   - une classe par objet de props.json (son nom = la clé du catalogue), avec les champs surchargeables ;
  *   - `Spawn` : point d'apparition, son nom est son identifiant ;
  *   - `Exit` : rectangle qui mène vers une autre carte ;
- *   - `Npc` : point où se tient un personnage non joueur (ses pieds).
+ *   - `Npc` : point où se tient un personnage non joueur (ses pieds) ;
+ *   - `Parcel` : rectangle d'une parcelle réservée du village, sa destination (`use`, liste de src/content/parcels.json) ;
+ *   - `Plan` : un plan du bac à sable posé là (`plan`, liste de src/content/plans/ ; `age` facultatif), coin nord-ouest du rectangle.
  * Un champ laissé vide n'est pas surchargé (le jeu prend la valeur de props.json, ou rien).
  */
-export function projectFile(propKeys: { id: number; key: string; wood?: boolean }[]) {
+export function projectFile(propKeys: { id: number; key: string; wood?: boolean }[], parcelUses: string[] = [], planNames: string[] = []) {
   const facing = { id: 1, name: 'Facing', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...DIRECTIONS] };
   const text = (name: string): Member => ({ name, type: 'string', value: '' });
   const direction: Member = { name: 'facing', type: 'string', propertyType: 'Facing', value: '' };
@@ -141,6 +143,14 @@ export function projectFile(propKeys: { id: number; key: string; wood?: boolean 
       objectClass(2, 'Spawn', '#3fa34d', [direction]),
       objectClass(3, 'Exit', '#d9534f', [text('to'), text('spawn'), direction]),
       objectClass(4, 'Npc', '#4a78c2', [text('character'), direction, text('dialogue')]),
+      { id: 5, name: 'ParcelUse', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...parcelUses] },
+      { id: 6, name: 'PlanName', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...planNames] },
+      { id: 7, name: 'WoodAge', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', 'new', 'worn', 'old'] },
+      objectClass(8, 'Parcel', '#c9a05a', [{ name: 'use', type: 'string', propertyType: 'ParcelUse', value: '' }]),
+      objectClass(9, 'Plan', '#8a6a3a', [
+        { name: 'plan', type: 'string', propertyType: 'PlanName', value: '' },
+        { name: 'age', type: 'string', propertyType: 'WoodAge', value: '' },
+      ]),
       // numéros à partir de 100 : ceux du registre des objets, donc stables
       // la pièce de bois : ses réglages (wood.json : diamètre `big`/`normal`, longueur en cm, forme `round`/`half`/`quarter`,
       // sens `ew`/`ns`, coups de doloire), vides : ceux de props.json

@@ -16,6 +16,7 @@ import itemsJson from '../src/content/items.json';
 import pilesJson from '../src/content/piles.json';
 import plansJson from '../src/content/plans.json';
 import tilesCatalogJson from '../src/content/tiles.json';
+import parcelsJson from '../src/content/parcels.json';
 import { GestureSchema, ItemDefSchema, PileDefSchema, PlanSchema, PropDefSchema, TilesetCatalogSchema } from '../src/content/types';
 import type { DecalSet } from '../src/content/types';
 import { loadRegistry, reconcile, saveRegistry } from './lib/registry';
@@ -266,7 +267,9 @@ propSlots.slots.forEach((name, id) => {
 });
 writeFileSync(join(TILED, 'props.tsj'), JSON.stringify(propsTsj(propTiles), null, 2) + '\n');
 // Fichier projet committé : il liste les types d'objets (objets de props.json, Spawn, Exit) que Tiled propose.
-writeFileSync(PROJECT, JSON.stringify(projectFile(propTiles), null, 2) + '\n');
+// les destinations des parcelles et les plans du bac à sable, proposés en listes dans Tiled (objets Parcel et Plan)
+const planNames = readdirSync('src/content/plans').filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')).sort();
+writeFileSync(PROJECT, JSON.stringify(projectFile(propTiles, Object.keys(parcelsJson), planNames), null, 2) + '\n');
 
 if (saveRegistry(registry)) notes.push('art/tile-registry.json modifié : à committer');
 for (const n of notes) console.log(`art : ${n}`);

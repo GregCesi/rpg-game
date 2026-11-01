@@ -1,16 +1,19 @@
 import Phaser from 'phaser';
-import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW } from '../config';
+import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
 import { items, maps, props } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
+import { forgetHeldKeys } from '../input/PlayerInput';
 import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand } from '../events';
 import { BuildSystem } from '../systems/build';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
+import { ZoneCrossing } from '../systems/zones';
+import { Parcels } from '../systems/parcels';
 import { Interiors, resolveInterior } from '../systems/interiors';
 import { HarvestSystem, effortOf, wields, type HitResult } from '../systems/harvest';
 import { HandsSystem } from '../systems/hands';
@@ -52,6 +55,9 @@ import { GameMap } from '../world/GameMap';
 import { parseInteriorId } from '../world/interior';
 import type { InteriorMap } from '../world/interiorMap';
 import { InteriorView } from '../world/interiorView';
+import { ZoneBand } from '../world/zoneBand';
+import { drawGloom } from '../world/gloom';
+import { seedMap } from '../world/mapPlans';
 import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { heldWoodTexture } from '../world/woodTexture';
 import { pileWoodOf } from '../world/woodPile';
@@ -69,7 +75,17 @@ import type { Interactable, PlacedGround } from '../world/GameMap';
 type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail';
 
 /** Ce que reçoit la scène à son lancement : la carte, et le point d'apparition ou la position exacte (`at`, sauvegarde). */
-export type WorldStart = { mapId: string; spawn?: string; at?: { x: number; y: number; facing: Facing }; wake?: boolean };
+export type WorldStart = {
+  mapId: string;
+  spawn?: string;
+  at?: { x: number; y: number; facing: Facing };
+  wake?: boolean;
+  /**
+   * On arrive en passant le bord d'une zone (systems/zones.ts) : pas de fondu (la voisine était déjà à l'écran, world/zoneBand.ts), et
+   * la caméra reprend où elle était par rapport à Xéros (`view` : le milieu de la vue moins ses pieds).
+   */
+  edge?: { view: { dx: number; dy: number } };
+};
 
 /**
  * Comment un objet tenu se voit sur Xéros : son `hold` (items.json, ou `take` de props.json ; la pièce de bois, sa vue portée
@@ -143,6 +159,12 @@ export class WorldScene extends Phaser.Scene {
   /** L'intérieur où l'on est (sa carte calculée, ce que la vue y ajoute), ou rien dehors. */
   private interior?: InteriorMap;
   private inside?: InteriorView;
+  /** Le passage d'une zone du monde à sa voisine (systems/zones.ts). */
+  private zones!: ZoneCrossing;
+  /** Arrivée par le bord d'une zone : pas de fondu, la caméra reprend sa place. */
+  private edge?: WorldStart['edge'];
+  /** Les parcelles réservées, montrées en mode construction et avec ?debug. */
+  private parcels!: Parcels;
 
   constructor() {
     super('world');
@@ -153,6 +175,7 @@ export class WorldScene extends Phaser.Scene {
     if (data.spawn) this.spawn = data.spawn;
     this.at = data.at;
     this.wake = !!data.wake;
+    this.edge = data.edge;
     this.mode = 'play';
     this.talking = undefined;
   }
@@ -173,13 +196,23 @@ export class WorldScene extends Phaser.Scene {
     const sp = this.at ?? def.spawns[this.spawn];
     if (!sp) throw new Error(`Carte ${def.id} : point d'apparition '${this.spawn}' inconnu`);
 
+    // les plans posés depuis Tiled (la cabane, les étals, les granges) entrent dans la partie à la première visite
+    if (!this.interior) seedMap(def);
     // la carte telle que la partie l'a laissée : objets récoltés, objets au sol
     this.map = new GameMap(this, def, mapState(game, def.id), this.interior && { pieces: this.interior.shell, joints: this.interior.joints });
     this.inside = this.interior && new InteriorView(this, this.map, this.interior);
     this.interiors = new Interiors(this.map, this.interior);
-    this.physics.world.setBounds(0, 0, this.map.width, this.map.height);
+    // une zone du monde : ses voisines se voient par-delà le bord, et les pieds de Xéros passent un bord ouvert
+    this.zones = new ZoneCrossing(def);
+    if (this.zones.isZone) new ZoneBand(this, def);
+    const walk = this.zones.walkBounds;
+    this.physics.world.setBounds(walk.x, walk.y, walk.w, walk.h);
+    const view = this.zones.cameraBounds;
+    if (def.world) drawGloom(this, def.world.x, { x0: view.x, y0: view.y, x1: view.x + view.w, y1: view.y + view.h });
+    this.parcels = new Parcels(this, def);
 
-    this.player = new Player(this, sp.x, sp.y);
+    const arrival = this.edge ? this.freeArrival(sp.x, sp.y) : sp;
+    this.player = new Player(this, arrival.x, arrival.y);
     if (sp.facing) this.player.actor.face(sp.facing);
     this.physics.add.collider(this.player.actor, this.map.floor);
     this.physics.add.collider(this.player.actor, this.map.obstacles);
@@ -226,14 +259,22 @@ export class WorldScene extends Phaser.Scene {
     if (lost) this.notice("Le bâtiment n'est plus là.");
 
     const cam = this.cameras.main;
-    // un intérieur plus petit que la vue : la caméra le montre au milieu du vide, au même zoom que dehors
-    const bw = this.interior ? Math.max(this.map.width, VIEW.width) : this.map.width;
-    const bh = this.interior ? Math.max(this.map.height, VIEW.height) : this.map.height;
-    cam.setBounds((this.map.width - bw) / 2, (this.map.height - bh) / 2, bw, bh);
-    this.zoom = new ZoomControl(cam, bw, bh);
+    // un intérieur plus petit que la vue : la caméra le montre au milieu du vide, au même zoom que dehors ; une zone du monde : la carte
+    // et la bande de ses voisines
+    if (this.interior) {
+      const bw = Math.max(this.map.width, VIEW.width);
+      const bh = Math.max(this.map.height, VIEW.height);
+      cam.setBounds((this.map.width - bw) / 2, (this.map.height - bh) / 2, bw, bh);
+      this.zoom = new ZoomControl(cam, bw, bh);
+    } else {
+      cam.setBounds(view.x, view.y, view.w, view.h);
+      this.zoom = new ZoomControl(cam, view.w, view.h);
+    }
     cam.startFollow(this.player.actor, true, 0.15, 0.15);
     cam.setRoundPixels(true);
-    cam.fadeIn(220, 20, 14, 8);
+    // passé le bord d'une zone : la vue reprend où elle était, sans fondu (la voisine était déjà là)
+    if (this.edge) cam.centerOn(this.player.actor.x + this.edge.view.dx, this.player.actor.y + this.edge.view.dy);
+    else cam.fadeIn(220, 20, 14, 8);
     if (CONSTRUIRE && this.building) this.enterBuild();
 
     // la partie est écrite à l'arrivée sur la carte, puis à chaque changement, et quand la page se cache ou se ferme
@@ -271,6 +312,9 @@ export class WorldScene extends Phaser.Scene {
     // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes ; en mode construction, rien ne s'efface
     this.roofs.update(this.player, delta, this.mode !== 'build' && !this.interior);
     if (this.mode === 'play') {
+      // le bord d'une zone du monde : la voisine prend le relais, au même point du monde
+      const cross = this.interior ? undefined : this.zones.update(this.player);
+      if (cross) return this.crossTo(cross);
       const exit = findExit(this.player, this.map.def.exits);
       if (exit) this.travel(exit);
       // la porte ouverte d'un bâtiment posé : on entre, ou, dedans, on ressort devant elle
@@ -657,6 +701,46 @@ export class WorldScene extends Phaser.Scene {
     this.handsChanged();
   }
 
+  /**
+   * Xéros passe le bord de la zone : la scène redémarre sur la voisine, ses pieds au même point du monde, sans fondu ; la vue garde son
+   * décalage par rapport à lui (la caméra le suit avec un peu de retard). La partie s'écrit à l'arrivée, comme pour une sortie.
+   */
+  private crossTo(c: { map: { id: string }; x: number; y: number }): void {
+    this.mode = 'transition';
+    this.roll.flush();
+    this.player.stamina.flush();
+    const cam = this.cameras.main;
+    const { x, y, facing } = this.player.actor;
+    this.scene.restart({ mapId: c.map.id, at: { x: c.x, y: c.y, facing }, edge: { view: { dx: cam.midPoint.x - x, dy: cam.midPoint.y - y } } } satisfies WorldStart);
+  }
+
+  /**
+   * Où poser Xéros qui arrive par le bord : ses pieds là où ils étaient dans le monde, ou, si un objet de la voisine les y recouvre (un
+   * arbre au ras du bord), au plus près le long du bord, là où ils sont libres.
+   */
+  private freeArrival(x: number, y: number): { x: number; y: number } {
+    const W = this.map.width;
+    const H = this.map.height;
+    const box = (px: number, py: number) => ({
+      left: Math.max(0, px - 5),
+      right: Math.min(W, px + 5),
+      top: Math.max(0, py - 8),
+      bottom: Math.min(H, py),
+    });
+    // arrivé par le bord ouest ou est, on glisse du nord au sud ; par le nord ou le sud, d'ouest en est
+    const near = ZONES.edge + 2;
+    const along = x < near || x > W - near ? 'y' : 'x';
+    for (let d = 0; d <= 96; d += 2) {
+      for (const s of d ? [d, -d] : [0]) {
+        const px = along === 'x' ? x + s : x;
+        const py = along === 'y' ? y + s : y;
+        if (px < 0 || px > W || py < 0 || py > H) continue;
+        if (this.map.areaFree(box(px, py))) return { x: px, y: py };
+      }
+    }
+    return { x, y };
+  }
+
   /** Une sortie est prise : la carte d'arrivée, à son point d'apparition. */
   private travel(exit: Exit): void {
     this.fadeTo({ mapId: exit.to, spawn: exit.spawn });
@@ -673,7 +757,11 @@ export class WorldScene extends Phaser.Scene {
     this.player.stamina.flush();
     const cam = this.cameras.main;
     cam.fadeOut(ms, 20, 14, 8);
-    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart(start));
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      // seul le bord d'une zone garde la marche en cours (crossTo) ; après un fondu, Xéros repart à l'arrêt
+      forgetHeldKeys();
+      this.scene.restart(start);
+    });
   }
 
   /**
@@ -762,6 +850,7 @@ export class WorldScene extends Phaser.Scene {
     this.mode = 'build';
     this.building = true;
     this.builder.enter();
+    this.parcels.show(true);
   }
 
   /** Ferme le mode construction : on rejoue, la caméra reprend Xéros. */
@@ -769,6 +858,7 @@ export class WorldScene extends Phaser.Scene {
     this.mode = 'play';
     this.building = false;
     this.builder.exit();
+    this.parcels.show(false);
     this.interaction.lock(200);
   }
 

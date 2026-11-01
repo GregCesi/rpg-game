@@ -50,6 +50,15 @@ export const SketchSchema = z.strictObject({
   props: z.array(z.string()),
   spawns: z.record(id, z.strictObject({ x: tile, y: tile, facing: FacingSchema.optional() })),
   exits: z.array(z.strictObject({ x: tile, y: tile, facing: FacingSchema, to: id, spawn: id })).optional(),
+  /**
+   * Objets posés au pixel, hors de la grille des lettres (une forêt dont les arbres ne sont pas alignés sur les cases) : (x, y) = le
+   * milieu du bas de l'image (ses pieds), en px ; `age` pour un objet de bois (chantier « monde »).
+   */
+  objects: z.array(z.strictObject({ type: id, x: z.number(), y: z.number(), age: z.enum(['new', 'worn', 'old']).optional() })).optional(),
+  /** Parcelles réservées (rectangles `Parcel`), en px : coin haut gauche, taille, destination (parcels.json), nom facultatif. */
+  parcels: z.array(z.strictObject({ x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive(), use: id, name: id.optional() })).optional(),
+  /** Plans du bac à sable posés (rectangles `Plan`), en px : coin nord-ouest, et sa taille pour qu'on le voie dans Tiled. */
+  plans: z.array(z.strictObject({ x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive(), plan: id, age: z.enum(['new', 'worn', 'old']).optional() })).optional(),
 });
 
 export type SketchLegend = z.infer<typeof SketchLegendSchema>;
@@ -196,6 +205,26 @@ export function sketchToTmj(mapId: string, sketch: Sketch, legend: SketchLegend,
     }),
   );
 
+  // Objets posés au pixel : le milieu du bas de leur image en (x, y)
+  for (const o of sketch.objects ?? []) {
+    const info = ctx.propTiles[o.type];
+    if (!info) {
+      errCell('objets posés', `objet '${o.type}' en (${o.x}, ${o.y}) : absent de props.json (ou image non dessinée)`);
+      continue;
+    }
+    objects.push({
+      ...base(),
+      name: '',
+      type: o.type,
+      x: Math.round(o.x - info.width / 2),
+      y: Math.round(o.y),
+      width: info.width,
+      height: info.height,
+      gid: PROPS_FIRSTGID + info.id,
+      ...(o.age ? { properties: [prop('age', o.age, 'WoodAge')] } : {}),
+    });
+  }
+
   // Zones : points d'apparition (pieds en bas de la case) et sorties (une case)
   const zones: object[] = [];
   for (const [name, s] of Object.entries(sketch.spawns)) {
@@ -226,6 +255,23 @@ export function sketchToTmj(mapId: string, sketch: Sketch, legend: SketchLegend,
       properties: [prop('to', e.to), prop('spawn', e.spawn), prop('facing', e.facing, 'Facing')],
     });
   }
+  // Le village : parcelles réservées et plans posés, sur leur propre calque
+  const places: object[] = [];
+  for (const p of sketch.parcels ?? []) {
+    places.push({ ...base(), name: p.name ?? '', type: 'Parcel', x: p.x, y: p.y, width: p.w, height: p.h, properties: [prop('use', p.use, 'ParcelUse')] });
+  }
+  for (const p of sketch.plans ?? []) {
+    places.push({
+      ...base(),
+      name: p.plan,
+      type: 'Plan',
+      x: p.x,
+      y: p.y,
+      width: p.w,
+      height: p.h,
+      properties: [prop('plan', p.plan, 'PlanName'), ...(p.age ? [prop('age', p.age, 'WoodAge')] : [])],
+    });
+  }
   if (errors.length) return { errors };
 
   const layer = { opacity: 1, visible: true, x: 0, y: 0 };
@@ -242,7 +288,7 @@ export function sketchToTmj(mapId: string, sketch: Sketch, legend: SketchLegend,
       height: rows,
       tilewidth: TILE,
       tileheight: TILE,
-      nextlayerid: 4,
+      nextlayerid: places.length ? 5 : 4,
       nextobjectid: nextId,
       properties: [prop('name', sketch.name), ...(sketch.ambient ? [prop('ambient', sketch.ambient)] : [])],
       tilesets: [
@@ -253,6 +299,7 @@ export function sketchToTmj(mapId: string, sketch: Sketch, legend: SketchLegend,
         { id: 1, name: 'ground', type: 'tilelayer', width: cols, height: rows, ...layer, data: ground.flat() },
         { id: 2, name: 'objects', type: 'objectgroup', draworder: 'topdown', ...layer, objects },
         { id: 3, name: 'zones', type: 'objectgroup', draworder: 'topdown', ...layer, objects: zones },
+        ...(places.length ? [{ id: 4, name: 'parcelles', type: 'objectgroup', draworder: 'topdown', ...layer, objects: places }] : []),
       ],
     },
   };

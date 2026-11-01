@@ -134,6 +134,8 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
     spawns: Object.fromEntries(arrivals.map((a, i) => [`entree-${i}`, a])),
     exits: [],
     npcs: [],
+    parcels: [],
+    plans: [],
   };
   return {
     def,

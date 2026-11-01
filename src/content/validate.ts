@@ -11,6 +11,7 @@ import { formImage } from '../world/natural';
 import { partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
+import { openSides } from '../world/zones';
 import type { BuildPlan, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
@@ -130,6 +131,8 @@ export function validateMaps(
       else if (!numbers.has(n)) err(`${where} : tuile n°${n} en ${at} absente du jeu de tuiles '${m.tileset}' (retirée de art/ ?)`);
     });
     const solidAt = (px: number, py: number) => solid.has(ground[Math.floor(py / TILE) * m.width + Math.floor(px / TILE)]);
+    // une zone du monde : là où le monde continue, un arbre peut tomber par-dessus le bord (chantier « monde »)
+    const open = openSides(maps, m);
 
     for (const o of m.objects) {
       const at = `${where} : objet « ${o.type} » n°${o.id} en (${o.x}, ${o.y})`;
@@ -138,10 +141,18 @@ export function validateMaps(
         const box = fallExtent(propsByType, o.type, side === 'gauche', cat);
         if (!box) continue;
         const [x0, x1] = [o.x + box[0], o.x + box[1]];
-        if (x0 < 0 || x1 > W) err(`${at} : pas la place de tomber à ${side} dans la carte (la chute et l'arbre couché vont de x = ${x0} à ${x1}, la carte fait ${W} px de large)`);
+        if ((x0 < 0 && !open.west) || (x1 > W && !open.east)) err(`${at} : pas la place de tomber à ${side} dans la carte (la chute et l'arbre couché vont de x = ${x0} à ${x1}, la carte fait ${W} px de large)`);
       }
       if (o.x < 0 || o.y < 0 || o.x > W || o.y > H) err(`${at} : hors de la carte`);
       if (o.interact && !dialogues[o.interact]) err(`${at} : dialogue '${o.interact}' introuvable`);
+    }
+    for (const p of m.parcels) {
+      const at = `${where} : parcelle « ${p.name ?? p.use} » en (${p.x}, ${p.y})`;
+      if (p.x < 0 || p.y < 0 || p.x + p.w > W || p.y + p.h > H) err(`${at} : sort de la carte`);
+    }
+    for (const p of m.plans) {
+      const at = `${where} : plan « ${p.plan} » (objet n°${p.id}) en (${p.x}, ${p.y})`;
+      if (p.x < 0 || p.y < 0 || p.x > W || p.y > H) err(`${at} : hors de la carte`);
     }
     for (const [name, s] of Object.entries(m.spawns)) {
       const at = `${where} : point '${name}' en (${s.x}, ${s.y})`;

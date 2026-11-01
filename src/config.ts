@@ -171,6 +171,17 @@ export const INTERIOR = {
 /** Où commence la partie : Xéros se réveille dans son cagibi. */
 export const START = { map: 'maison', spawn: 'reveil' };
 
+/**
+ * Les zones du monde (chantier « monde », systems/zones.ts) : `band`, ce qu'on voit des voisines par-delà le bord, en cases (assez pour
+ * la moitié de la vue au palier de zoom le plus bas : la caméra ne montre jamais le vide près d'un bord ouvert) ; `reach`, en cases, ce
+ * qu'on prend d'objets au-delà de la bande (un arbre planté plus bas qui dépasse vers le haut) ; `edge`, en px, ce dont les pieds de
+ * Xéros passent le bord avant que la voisine prenne le relais (le milieu de ses pieds).
+ */
+export const ZONES = { band: { x: 21, y: 12 }, reach: 8, edge: 8 };
+
+/** La pénombre du sous-bois (`gloom` de world.json) : sa couleur, et la largeur des bandes où elle varie (px). */
+export const GLOOM = { color: 0x0b1611, strip: 64 };
+
 export const PLAYER = {
   skin: 'xeros',
   walkSpeed: 100, // px/s, environ 3 tuiles par seconde

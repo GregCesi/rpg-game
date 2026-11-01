@@ -11,7 +11,7 @@ import { tilesets } from '../generated/assets';
 import { CM_PER_PX } from '../content/gabarit';
 import type { Natural, WoodPiece } from '../content/types';
 import { woodDef, woodOf } from './woodPiece';
-import { lookOf, sizeOf, woodBody, woodSize } from './woodShape';
+import { agedKey, lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
 import { blocks, boxOf, depthsOf, overlaps, supportsOf, type BuildPiece } from './build';
 import type { BuildPlaced } from '../content/types';
@@ -106,6 +106,29 @@ function hash(x: number, y: number): number {
   let h = (x * 374761393 + y * 668265263) >>> 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
   return (h ^ (h >>> 16)) >>> 0;
+}
+
+/**
+ * Les détails au hasard du sol d'une carte, posés de façon stable (même case = mêmes détails), pour les cases [x0, x1[ × [y0, y1[ ;
+ * (ox, oy) : où tombe le coin haut gauche de la carte (la zone voisine vue par-delà le bord, world/zoneBand.ts).
+ */
+export function drawDecals(scene: Phaser.Scene, def: MapData, ox: number, oy: number, r: { x0: number; y0: number; x1: number; y1: number }): Phaser.GameObjects.Image[] {
+  const tileset = tilesets.find((t) => t.key === def.tileset)!;
+  const cells = def.layers.ground;
+  const out: Phaser.GameObjects.Image[] = [];
+  for (let y = r.y0; y < r.y1; y++) {
+    for (let x = r.x0; x < r.x1; x++) {
+      const d = tileset.decals[cells[y * def.width + x]];
+      if (!d) continue;
+      const h = hash(x * 3 + 7, y * 5 + 11);
+      if ((h % 1000) / 1000 >= d.chance) continue;
+      const img = d.images[(h >>> 10) % d.images.length];
+      const dx = ((h >>> 4) % 17) - 8;
+      const dy = ((h >>> 8) % 13) - 6;
+      out.push(scene.add.image(ox + x * TILE + TILE / 2 + dx, oy + y * TILE + TILE / 2 + dy, img).setDepth(DEPTH.decal).setFlipX(((h >>> 14) & 1) === 1));
+    }
+  }
+  return out;
 }
 
 /** Un objet de props.json posé sur la carte, tel qu'il est maintenant (après les changements de GameState). */
@@ -279,18 +302,7 @@ export class GameMap {
     this.floor.setCollision(tileset.solid);
 
     // Détails au sol, posés de façon stable (même carte = mêmes détails)
-    cells.forEach((tile, i) => {
-      const d = tileset.decals[tile];
-      if (!d) return;
-      const x = i % def.width;
-      const y = Math.floor(i / def.width);
-      const h = hash(x * 3 + 7, y * 5 + 11);
-      if ((h % 1000) / 1000 >= d.chance) return;
-      const img = d.images[(h >>> 10) % d.images.length];
-      const ox = ((h >>> 4) % 17) - 8;
-      const oy = ((h >>> 8) % 13) - 6;
-      scene.add.image(x * TILE + TILE / 2 + ox, y * TILE + TILE / 2 + oy, img).setDepth(DEPTH.decal).setFlipX(((h >>> 14) & 1) === 1);
-    });
+    drawDecals(scene, def, 0, 0, { x0: 0, y0: 0, x1: def.width, y1: def.height });
 
     // Objets posés
     this.obstacles = scene.physics.add.staticGroup();
@@ -374,7 +386,11 @@ export class GameMap {
       }
     }
     const overlaps = (l: number, t: number, r: number, bo: number) => b.left < r && b.right > l && b.top < bo && b.bottom > t;
-    const zones = (this.obstacles.getChildren() as Phaser.GameObjects.Zone[]).filter((z) => !ignore.includes(z));
+    // les obstacles proches seulement, par l'arbre des collisions fixes (une forêt en a des milliers), puis le contrôle exact
+    const near = this.scene.physics.overlapRect(b.left - 1, b.top - 1, b.right - b.left + 2, b.bottom - b.top + 2, false, true) as Phaser.Physics.Arcade.StaticBody[];
+    const zones = near
+      .map((body) => body.gameObject as Phaser.GameObjects.Zone)
+      .filter((z) => z && this.obstacles.contains(z) && !ignore.includes(z));
     if (zones.some((z) => overlaps(z.x - z.width / 2, z.y - z.height / 2, z.x + z.width / 2, z.y + z.height / 2))) return false;
     return !others.some((o) => overlaps(o.left, o.top, o.right, o.bottom));
   }
@@ -503,7 +519,8 @@ export class GameMap {
     const ay = o.y;
     // une matière naturelle : sa forme et sa taille, ou, posée dans Tiled et jamais bougée, celles que donne son identifiant
     const natural = p.natural ? (opts.natural ?? (opts.spawned ? undefined : stableNatural(p.natural, o.id))) : undefined;
-    const image = flip ? `${p.image}-left` : formImage(p.image, natural);
+    // un objet de bois travaillé posé dans Tiled à son âge (le panneau, vieux)
+    const image = flip ? `${p.image}-left` : agedKey(formImage(p.image, natural), p.aged ? o.age : undefined);
     const obj = wood
       ? scene.add.image(o.x, ay, woodTexture(scene, wood, { open: opts.open }), '0')
       : p.anim

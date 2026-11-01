@@ -3,10 +3,24 @@
     "world": {
       ".": {"tiles": ["grass", "grass2", "grass3", "grass4", "grass5", "grass6"]},
       ",": {"tiles": ["flowers", "flowers2"]},
-      "=": {"terrain": "path"},
+      "=": {"terrain": "path", "connects": "ywxez"},
       "#": {"tiles": ["field"]},
-      "~": {"terrain": "water"},
-      "F": {"terrain": "fence"}
+      "%": {"tiles": ["field", "field2", "field3"]},
+      "~": {"terrain": "water", "connects": "bd"},
+      "F": {"terrain": "fence"},
+      "|": {"tiles": ["field-ns", "field-ns2"]},
+      ";": {"tiles": ["forest", "forest2", "forest3", "forest4"]},
+      ":": {"tiles": ["woods", "woods2", "woods3", "woods4"]},
+      "!": {"tiles": ["deepwoods", "deepwoods2", "deepwoods3", "deepwoods4"]},
+      "\"": {"tiles": ["meadow", "meadow2", "meadow3"]},
+      "y": {"terrain": "yard", "connects": "=R"},
+      "R": {"terrain": "road", "connects": "y"},
+      "b": {"tiles": ["bridge-n"]},
+      "d": {"tiles": ["bridge-s"]},
+      "w": {"tiles": ["bridge-w-n"]},
+      "x": {"tiles": ["bridge-w-s"]},
+      "e": {"tiles": ["bridge-e-n"]},
+      "z": {"tiles": ["bridge-e-s"]}
     },
     "interior": {
       ".": {"tiles": ["floor", "floor2", "floor3", "floor4"]},

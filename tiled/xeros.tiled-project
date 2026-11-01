@@ -98,6 +98,91 @@
       ]
     },
     {
+      "id": 5,
+      "name": "ParcelUse",
+      "type": "enum",
+      "storageType": "string",
+      "valuesAsFlags": false,
+      "values": [
+        "",
+        "cottage",
+        "house",
+        "rich-house",
+        "town-hall",
+        "tavern",
+        "reserve",
+        "farmhouse"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "PlanName",
+      "type": "enum",
+      "storageType": "string",
+      "valuesAsFlags": false,
+      "values": [
+        "",
+        "cabane",
+        "etal",
+        "grange"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "WoodAge",
+      "type": "enum",
+      "storageType": "string",
+      "valuesAsFlags": false,
+      "values": [
+        "",
+        "new",
+        "worn",
+        "old"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Parcel",
+      "type": "class",
+      "color": "#c9a05a",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "use",
+          "type": "string",
+          "propertyType": "ParcelUse",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Plan",
+      "type": "class",
+      "color": "#8a6a3a",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "plan",
+          "type": "string",
+          "propertyType": "PlanName",
+          "value": ""
+        },
+        {
+          "name": "age",
+          "type": "string",
+          "propertyType": "WoodAge",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
       "id": 100,
       "name": "big-tree",
       "type": "class",
@@ -1383,6 +1468,23 @@
     {
       "id": 221,
       "name": "cart-door-open",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 222,
+      "name": "signpost",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,

@@ -1022,6 +1022,8 @@ export const MapObjectSchema = z.strictObject({
   interact: id.optional(),
   /** Réglages d'une pièce de bois (`wood-piece`), tirés de ses propriétés Tiled ; absents : ceux de props.json. */
   wood: z.lazy(() => WoodPieceSchema).optional(),
+  /** L'âge d'un objet de bois travaillé (`aged` de props.json : le panneau, vieux au bord de la route), propriété `age` dans Tiled. */
+  age: z.lazy(() => WoodAgeSchema).optional(),
 });
 
 /** Point d'apparition : (x, y) = position des pieds du joueur. */
@@ -1048,12 +1050,31 @@ export const NpcSchema = z.strictObject({
   dialogue: id,
 });
 
+/**
+ * Une parcelle réservée du village (chantier « monde ») : un rectangle de type `Parcel` dans Tiled, sa destination (`use`, clé de
+ * parcels.json) et son nom facultatif (le nom de l'objet dans Tiled : « Mairie »). Invisible en jeu ; montrée en mode construction et
+ * avec ?debug. Les bâtiments s'y poseront quand leurs pièces existeront.
+ */
+export const ParcelSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive(), use: id, name: id.optional() });
+
+/**
+ * Un plan du bac à sable posé depuis Tiled (un rectangle de type `Plan`, propriété `plan` : un fichier de src/content/plans/, `age`
+ * facultatif) : (x, y) = son coin nord-ouest au sol. À la première visite de la carte, ses pièces entrent dans `builds` de GameState
+ * (`seedPlans`), comme si on l'avait posé en mode construction ; `id` est l'identifiant de l'objet dans Tiled.
+ */
+export const MapPlanSchema = z.strictObject({ id: z.number().int().nonnegative(), x: px, y: px, plan: id, age: z.lazy(() => WoodAgeSchema).optional() });
+
 export const MapSchema = z.strictObject({
   /** Nom du fichier .tmj. */
   id,
   name: id,
   /** Jeu de tuiles du sol : déduit du .tsj que la carte référence. */
   tileset: id,
+  /**
+   * Place de la carte dans le monde (px, coin haut gauche), quand elle est une zone du monde (`tiled/maps/monde.world`) : on passe à la
+   * zone voisine en marchant hors du bord (systems/zones.ts). Sans : une carte à part (la chaumière), où l'on n'entre que par une sortie.
+   */
+  world: z.strictObject({ x: px, y: px }).optional(),
   /** Pénombre posée sur toute la carte (0 = aucune, 1 = noir). Les feux restent lumineux. */
   ambient: z.number().min(0).max(1).optional(),
   /** Taille en tuiles. */
@@ -1065,6 +1086,22 @@ export const MapSchema = z.strictObject({
   spawns: z.record(id, SpawnSchema),
   exits: z.array(ExitSchema),
   npcs: z.array(NpcSchema),
+  /** Parcelles réservées (le village). */
+  parcels: z.array(ParcelSchema),
+  /** Plans du bac à sable posés depuis Tiled (la cabane, les étals, les granges). */
+  plans: z.array(MapPlanSchema),
+});
+
+/** Une destination de parcelle (parcels.json) : le nom dit, et une couleur pour la montrer (mode construction, ?debug). */
+export const ParcelUseSchema = z.strictObject({ name: id, color: z.string().regex(/^#[0-9a-f]{6}$/) });
+
+/**
+ * Le monde entier (world.json, chantier « monde »), ce qui ne dépend d'aucune zone : `gloom`, la pénombre du sous-bois, de l'ouest vers
+ * l'est, par paliers (`x` en mètres depuis le bord ouest du monde, `alpha` de 0 à 1, interpolé entre deux paliers ; au-delà du dernier,
+ * rien).
+ */
+export const WorldSchema = z.strictObject({
+  gloom: z.array(z.strictObject({ x: z.number().nonnegative(), alpha: z.number().min(0).max(1) })).min(2),
 });
 
 export type Facing = z.infer<typeof FacingSchema>;
@@ -1104,6 +1141,10 @@ export type Spawn = z.infer<typeof SpawnSchema>;
 export type Exit = z.infer<typeof ExitSchema>;
 export type Npc = z.infer<typeof NpcSchema>;
 export type MapData = z.infer<typeof MapSchema>;
+export type Parcel = z.infer<typeof ParcelSchema>;
+export type MapPlan = z.infer<typeof MapPlanSchema>;
+export type ParcelUse = z.infer<typeof ParcelUseSchema>;
+export type WorldDef = z.infer<typeof WorldSchema>;
 export type End = z.infer<typeof EndSchema>;
 export type WoodLook = z.infer<typeof WoodLookSchema>;
 export type WoodPiece = z.infer<typeof WoodPieceSchema>;

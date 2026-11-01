@@ -150,6 +150,11 @@ export const MapStateSchema = z.strictObject({
   builds: z.array(BuildPieceSchema),
   /** Assemblages entre ces pièces (enture, tenon et mortaise). */
   joints: z.array(JointSchema),
+  /**
+   * Les plans posés depuis Tiled (`plans` de la carte, par identifiant d'objet Tiled) dont les pièces sont déjà entrées dans `builds`
+   * (chantier « monde ») : on ne les repose pas, même si le joueur en a retiré des pièces en mode construction.
+   */
+  seeded: z.array(z.number().int().nonnegative()).default([]),
 });
 
 export const GameStateSchema = z.strictObject({
@@ -212,7 +217,7 @@ export function newGame(): GameState {
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
 export function mapState(s: GameState, mapId: string): MapState {
-  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [] });
+  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [], seeded: [] });
 }
 
 /** Ce que tient la main active (ou les deux mains), ou undefined. */
@@ -572,6 +577,33 @@ export function emptyHands(s: GameState): void {
  * Remet une carte dans son état d'origine : ses changements, objets au sol, objets nés et tas sont oubliés, et les intérieurs de ses
  * bâtiments (`interieur:<carte>:…`, leurs meubles) avec elle.
  */
+/**
+ * Les plans de Tiled d'une carte (`plans` de MapData : la cabane, les étals, les granges) qui n'y sont pas encore entrent dans ses
+ * `builds`, avec leurs assemblages, comme posés en mode construction (chantier « monde »). Appelée à l'arrivée sur la carte ; une
+ * carte remise à zéro les reçoit à nouveau. `pieces` donne, pour un plan, ses pièces posées (coin nord-ouest en cm) et ses assemblages
+ * (rangs dans la liste des pièces). Renvoie le nombre de plans posés.
+ */
+export function seedPlans(
+  s: GameState,
+  mapId: string,
+  list: readonly { id: number }[],
+  pieces: (p: { id: number }) => { pieces: BuildPlaced[]; joints: { type: Joint['type']; a: number; b: number; top?: number }[] } | undefined,
+): number {
+  const m = mapState(s, mapId);
+  let n = 0;
+  for (const p of list) {
+    if (m.seeded.includes(p.id)) continue;
+    const plan = pieces(p);
+    m.seeded.push(p.id);
+    if (!plan) continue;
+    const added = addBuildPieces(s, mapId, plan.pieces);
+    addJoints(s, mapId, plan.joints.map((j) => ({ type: j.type, a: added[j.a].id, b: added[j.b].id, ...(j.top !== undefined ? { top: added[j.top].id } : {}) })));
+    n++;
+  }
+  if (n) revision++;
+  return n;
+}
+
 export function resetMap(s: GameState, mapId: string): void {
   delete s.maps[mapId];
   for (const id of Object.keys(s.maps)) if (id.startsWith(`interieur:${mapId}:`)) delete s.maps[id];
