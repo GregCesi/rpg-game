@@ -15,8 +15,9 @@ import { openSides } from '../world/zones';
 import { WEAPON_ANGLES } from '../world/strike';
 import type { CombatPoses } from '../world/strike';
 import { catalog, looksOf } from '../build/catalog';
+import { calibrationJob, gameJobs, planOf, swingerOf } from '../world/workPlan';
 import { JointTypeSchema } from './types';
-import type { BuildPlan, CombatDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
+import type { BuildPlan, CombatDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -221,6 +222,8 @@ export interface Content {
   rocks: Record<string, Rock>;
   transforms: Record<string, TransformDef>;
   combat: CombatDef;
+  /** Le travail (work.json) : les coups, la matière, les points de calage. */
+  work: WorkDef;
   /**
    * Les poses des gestes de combat (src/generated/combatPoses.ts), passées par qui les a (npm run check, le jeu) : validate.ts ne les
    * importe pas, car build-art, qui les écrit, l'utilise avant de les avoir écrites (sur un dossier neuf, elles n'existent pas encore).
@@ -1114,10 +1117,48 @@ export function validateBuildPlans(plans: Record<string, BuildPlan>): string[] {
 }
 
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
+/**
+ * Le tableau de bord du travail (docs/CONCEPTION.md, « Le travail ») : la durée de chaque travail du jeu pour Xéros d'aujourd'hui,
+ * calculée de ses coups (world/workPlan.ts), affichée par `npm run check` sans être imposée.
+ */
+export function workDurations(): { name: string; strokes: number; pauses: number; minutes: number; ceiling: number }[] {
+  const { swinger, max } = swingerOf('xeros');
+  return gameJobs().map(({ name, job }) => {
+    const p = planOf(job, swinger, max);
+    return { name, strokes: p.strokes, pauses: p.pauses, minutes: p.seconds / 60, ceiling: p.ceiling };
+  });
+}
+
+/** Les points de calage du travail (work.json, `calibration`) : chacun doit tenir sa durée, à `tolerance` près. */
+export function validateWork(c: Pick<Content, 'work' | 'items' | 'props'>): string[] {
+  const errors: string[] = [];
+  for (const k of ['axe', 'hatchet', 'maul', 'broadaxe']) if (!c.items[k]?.work) errors.push(`items.json '${k}' : un outil au travail sans 'work'`);
+  for (const [k, p] of Object.entries(c.props)) {
+    const h = p.harvest;
+    if (h?.work && !h.tool) errors.push(`props.json '${k}' : une récolte travaillée au coup ('work') demande un outil`);
+    for (const t of h?.work ? [h.tool, ...Object.keys(h.also)] : []) if (t && !c.items[t]?.work) errors.push(`props.json '${k}' : l'outil '${t}' n'a pas de 'work' (items.json)`);
+  }
+  if (errors.length) return errors;
+  for (const cal of c.work.calibration) {
+    if (cal.who !== 'xeros' && !c.work.references[cal.who]) {
+      errors.push(`work.json, calage « ${cal.name} » : '${cal.who}' n'est ni xeros ni une référence`);
+      continue;
+    }
+    const { swinger, max } = swingerOf(cal.who);
+    const minutes = planOf(calibrationJob(cal), swinger, max).seconds / 60;
+    if (Math.abs(minutes - cal.minutes) > cal.minutes * c.work.tolerance)
+      errors.push(`work.json, calage « ${cal.name} » : ${minutes.toFixed(1)} min calculées pour ${cal.minutes} min (à ${Math.round(c.work.tolerance * 100)} % près)`);
+  }
+  return errors;
+}
+
 export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   const err = (msg: string) => errors.push(msg);
   const addAll = (msgs: string[]) => errors.push(...msgs);
+
+  // le travail : les outils, les récoltes au coup, les points de calage
+  addAll(validateWork(c));
 
   // Joueur
   for (const state of ['idle', 'walk']) {

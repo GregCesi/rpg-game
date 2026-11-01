@@ -18,6 +18,11 @@
   },
   "tired": 0.15,
   "tiredWalk": 0.85,
+  "work": {
+    "ceilingPerJ": 0.00014,
+    "breathPerJ": 0.032,
+    "resume": 0.9
+  },
   "sleep": {
     "hours": 8,
     "exhaustedPenalty": 0.4,

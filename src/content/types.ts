@@ -56,7 +56,20 @@ const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
  * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.
  * Avec `tool`, on frappe avec Espace, l'outil en main ; sans, on récolte à la main avec E.
  */
+/**
+ * La matière d'une récolte qui se travaille au coup (docs/CONCEPTION.md, « Le travail » ; world/workPlan.ts) : abattre un arbre
+ * (`fell` : le diamètre du tronc, cm), ébrancher (`limbs` : le nombre de branches et leur diamètre, cm), tailler une pointe sur le
+ * billot (`whittle` : le diamètre de la branche et la longueur de la pointe, cm). Absent : une récolte de `hits` coups simples.
+ */
+export const HarvestWorkSchema = z.union([
+  z.strictObject({ fell: z.strictObject({ diameter: z.number().positive() }) }),
+  z.strictObject({ limbs: z.strictObject({ count: z.number().int().positive(), diameter: z.number().positive() }) }),
+  z.strictObject({ whittle: z.strictObject({ diameter: z.number().positive(), length: z.number().positive() }) }),
+]);
+
 export const HarvestSchema = z.strictObject({
+  /** La matière, si la récolte se travaille au coup (voir HarvestWorkSchema). */
+  work: HarvestWorkSchema.optional(),
   /**
    * Durée réaliste de la récolte entière, en minutes de jeu (docs/CONCEPTION.md, « Le temps ») : l'horloge en avance d'une part à
    * chaque coup (`minutes` / `hits`) ; le geste, lui, garde sa durée. 0 : rien ne passe (prendre un outil posé).
@@ -1060,6 +1073,11 @@ export const StaminaSchema = z.strictObject({
   tired: z.number().gt(0).lt(1),
   tiredWalk: z.number().gt(0).lte(1),
   /**
+   * Le travail au coup (docs/CONCEPTION.md, « Le travail ») : chaque coup coûte au plafond `ceilingPerJ` et au souffle `breathPerJ` par
+   * joule frappé ; pendant un travail le souffle ne revient pas ; vide, Xéros s'arrête et souffle jusqu'à `resume` de son plafond.
+   */
+  work: z.strictObject({ ceilingPerJ: z.number().nonnegative(), breathPerJ: z.number().nonnegative(), resume: z.number().gt(0).lte(1) }),
+  /**
    * Le sommeil (world/sleep.ts) : `hours` de sommeil pour une nuit pleine (le lever à `wakeHour` de time.json, ou au bout de ces heures) ;
    * au réveil, le plafond perd `exhaustedPenalty` × ce qui manquait sous le seuil `tired` au coucher, et `missingHourPenalty` par heure
    * de sommeil manquante ; éveillé la nuit (de `nightFrom` h au lever), il perd `nightAwakePerHour` par heure de jeu.
@@ -1410,6 +1428,7 @@ export type Swinger = z.infer<typeof SwingerSchema>;
 export type ToolWork = z.infer<typeof ToolWorkSchema>;
 export type WorkStroke = z.infer<typeof WorkStrokeSchema>;
 export type WorkDef = z.infer<typeof WorkSchema>;
+export type HarvestWork = z.infer<typeof HarvestWorkSchema>;
 export type DialogueAction = z.infer<typeof DialogueActionSchema>;
 export type StaminaDef = z.infer<typeof StaminaSchema>;
 export type PilePlace = z.infer<typeof PilePlaceSchema>;

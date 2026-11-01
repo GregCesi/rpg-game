@@ -910,7 +910,7 @@ l'épuisement s'ajoute à celui des heures manquantes.
      qui régénère ; test : la suite plus courte, un scénario à x1.
   6. *La lumière qui suit l'heure* (si Grégoire la veut tout de suite).
 
-## Le travail (proposé le 1er novembre 2026, chantier « temps » ; à valider par Grégoire, sans code)
+## Le travail (décidé le 1er novembre 2026, chantier « temps » ; validé par Grégoire avec trois réponses : la loi du volume, deux points de calage, la cognée à 1,8 kg)
 
 **Pourquoi.** Joué à x1, un travail de durée fixe ne va pas : Xéros tape une fois par seconde et rien ne change jusqu'au résultat,
 « on dirait que c'est statistique » (Grégoire). **La durée doit découler des coups, pas l'inverse.** Un travail est une quantité de
@@ -940,8 +940,8 @@ et `.art-preview/essai-abattage.html` (le geste à vitesse réelle).
   coups, une à deux minutes**.
 - **Masse des outils** : la hache d'abattage américaine de Gränsfors Bruk, tête de 1,4 kg (3 lb), manche de 79 cm, 1,6 kg en tout ; sa
   grande hache à fendre, 2,4 kg, 70 cm ; la hache de forêt scandinave, tête de 0,9 kg, 65 cm. La masse de bûcheron courante pèse 3 à
-  5 kg ; la doloire, 2 à 3,5 kg (modèles courants, pas de source unique trouvée). **Nos outils** : cognée 2,5 kg (lourde pour un
-  adolescent, voir les questions), hachette 1 kg, masse 4 kg, doloire 3 kg (items.json).
+  5 kg ; la doloire, 2 à 3,5 kg (modèles courants, pas de source unique trouvée). **Nos outils** : cognée 1,8 kg (une hache de ferme ;
+  décidé : le geste lourd vient de l'animation, pas d'une masse fausse), hachette 1 kg, masse 4 kg, doloire 3 kg (items.json).
 - **Marche et course** : la marche d'un adulte est d'environ 1,3 à 1,4 m/s (méta-analyse de Bohannon et Andrews, 2011) ; on passe à la
   course vers 2 m/s ; un petit trot (jogging) va de 2,5 à 3,1 m/s ; en portant, la vitesse la plus économe reste vers 1,3 m/s jusqu'au
   quart du poids du corps (Bastien et coll., 2005), plus lente au-delà (1 à 1,1 m/s).
@@ -973,9 +973,9 @@ Ces chiffres sont des ordres de grandeur : la plupart viennent de praticiens, pa
 - **Sa précision** p : celle de l'arme (`precision` : 1 / (1 + I / contrôle)), le contrôle grandissant avec la force, × l'**adresse**.
 
 **Ce qu'enlève un coup** : E × qualité × tranchant / (résistance de la matière × dureté du bois), où qualité = 1 − `aim` × (1 − p) :
-`aim` dit combien la précision compte pour cet outil. La résistance : l'énergie pour enlever 1 cm³ en travers du fil (`cut`, 9 J/cm³,
-calé pour que Xéros abatte l'arbre normal en 25 min), 1 cm³ le long d'une face marquée (`hew`, 1,6 J/cm³ : le bois se lève par
-éclats), 1 m² de fente au coin (`split`, 2 200 J/m², frottement du coin compris).
+`aim` dit combien la précision compte pour cet outil. La résistance : l'énergie pour enlever 1 cm³ en travers du fil (`cut`, 10,8 J/cm³,
+calé pour que Xéros abatte l'arbre normal en 25 min), 1 cm³ le long d'une face marquée (`hew`, 4,3 J/cm³ : le bois se lève par
+éclats ; calé sur l'équarrisseur professionnel), 1 m² de fente au coin (`split`, 2 200 J/m², frottement du coin compris).
 
 **La matière de chaque travail** (calculée de ses dimensions, en données) :
 - abattre : deux encoches en V (l'entaille de direction, 0,4 D de profondeur ; le trait d'abattage, 0,5 D), ≈ 0,18 D³ (30 cm :
@@ -989,7 +989,7 @@ calé pour que Xéros abatte l'arbre normal en 25 min), 1 cm³ le long d'une fac
 **L'endurance d'un coup** : le plafond perd E × `ceilingPerJ`, le souffle E × `breathPerJ` (un coup de cognée de Xéros : 0,013 point
 du plafond, 2,9 de souffle). Pendant un travail le souffle ne revient pas (chaque coup est un effort) ; vide, Xéros s'arrête et souffle
 (l'animation existe) jusqu'à `resume` (90 %) de son plafond, puis reprend tout seul : une pause d'environ 8 s toutes les 30 coups pour
-Xéros. Le prix de la journée type reste le même ordre (abattre et ébrancher l'arbre normal : 12,6 points ; la conception du temps en
+Xéros. Le prix de la journée type reste le même ordre (abattre et ébrancher l'arbre normal : 14,8 points ; la conception du temps en
 comptait 15).
 
 ### 3. Chaque outil, ce qui compte
@@ -1004,15 +1004,20 @@ comptait 15).
 ### 4. Les paramètres, en données
 
 - **strength.json**, `swing` : la force de Xéros pour un geste, `torque` (N·m, 50 aujourd'hui), `omegaMax` (rad/s, 25), `skill` (0,8).
-  Un Xéros plus fort = un `torque` plus grand ; rien d'autre ne change.
+  Un Xéros plus fort = un `torque` plus grand ; rien d'autre ne change (?dieu « force » multiplie le couple).
 - **items.json**, `work` de chaque outil (comme `weapon`) : `length`, `grip`, `balance` (l'inertie, comme une arme), `edge`, `aim` ; la
   masse est déjà `mass`.
-- **gestures.json**, `swing` de chaque geste : `angle` (rad), et les temps hors frappe (`arm`, `armK`, `hold`, `holdK`, `impact`,
-  `free`, `freeK`) ; les durées des images du geste en découlent (une seule source, comme les gestes de combat).
-- **wood.json**, `work` : `cut`, `hew`, `split` (la résistance) ; la dureté plus tard par essence (une seule essence aujourd'hui, 1).
-- **props.json**, `harvest` : la matière du travail (`fell` : le diamètre ; `limbs` : le nombre et le diamètre des branches ;
-  `whittle` : la pointe), ses étapes visibles, et `minutes` devient `target` (la cible de calibrage) ; `wood.json`, `cut.minutesPer10cm`,
-  `hew.minutesPerM`, `split.minutesPerHit` deviennent des cibles aussi.
+- **work.json** (fait ainsi à l'implémentation, plutôt que dans gestures.json et wood.json) : `strokes`, chaque coup (`use`, `chop`,
+  `maul`, `hew`, `whittle`) avec le geste du corps qui le joue, son `angle` (rad) et ses temps hors frappe (`arm`, `armK`, `hold`,
+  `holdK`, `impact`, `free`, `freeK`) ; `matter`, la résistance (`cut` 10,8 J/cm³, `hew` 4,3 J/cm³, `split` 2 200 J/m²) ; `references`,
+  l'adulte et le bûcheron fort ; `calibration`, les deux points de calage, tenus à 10 % près (validate.ts). La dureté viendra par
+  essence (une seule aujourd'hui).
+- **gestures.json**, `phases` : le temps de chaque image d'un geste de travail (armer, en haut, abattre, impact, dégager) ; les durées
+  des images en découlent (`frameMs` de world/swing.ts).
+- **props.json**, `harvest.work` : la matière du travail (`fell` : le diamètre ; `limbs` : le nombre et le diamètre des branches ;
+  `whittle` : la pointe), et ses étapes visibles. Les `minutes` des récoltes et du bois disparaissent : **deux points de calage
+  seulement** (décidé par Grégoire), l'arbre normal à la cognée en 25 min pour Xéros et la poutre de 3 m en 2 h pour le bûcheron fort
+  (work.json, `calibration`) ; toutes les autres durées sont calculées, affichées par `npm run check`, jamais imposées.
 - **stamina.json**, `work` : `ceilingPerJ`, `breathPerJ`, `resume`.
 - **validate.ts** calcule, pour Xéros d'aujourd'hui, la durée de chaque travail et l'affiche à côté de sa cible (`npm run check`), sans
   refuser : c'est un tableau de bord du calibrage.
@@ -1024,17 +1029,17 @@ Pour trois forces : Xéros aujourd'hui (couple 50 N·m, adresse 0,8, maximum 100
 
 #### Un coup, par outil et par force
 
-| Outil (geste) | Force | Inertie (kg·m²) | Vitesse du tranchant (m/s) | Énergie (J) | Précision | Armer · haut · abattre · impact · dégager (ms) | Durée du coup (s) |
+| Outil (coup) | Force | Inertie (kg·m²) | Vitesse du tranchant (m/s) | Énergie (J) | Précision | Armer · haut · abattre · impact · dégager (ms) | Durée du coup (s) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cognée (use) | Xéros (aujourd’hui) | 1,17 | 9,3 | 90 | 0,16 | 652 · 261 · 290 · 120 · 602 | 1,92 |
-| cognée (use) | un adulte | 1,17 | 11,4 | 135 | 0,25 | 534 · 214 · 237 · 120 · 484 | 1,59 |
-| cognée (use) | un bûcheron fort | 1,17 | 13,8 | 198 | 0,36 | 460 · 184 · 196 · 120 · 410 | 1,37 |
+| hache (use) | Xéros (aujourd’hui) | 0,84 | 11,0 | 90 | 0,21 | 553 · 221 · 246 · 120 · 503 | 1,64 |
+| hache (use) | un adulte | 0,84 | 13,4 | 135 | 0,31 | 469 · 188 · 201 · 120 · 419 | 1,40 |
+| hache (use) | un bûcheron fort | 0,84 | 16,2 | 198 | 0,44 | 415 · 166 · 166 · 120 · 365 | 1,23 |
 | hachette (use) | Xéros (aujourd’hui) | 0,12 | 9,5 | 38 | 0,57 | 336 · 134 · 144 · 120 · 286 | 1,02 |
 | hachette (use) | un adulte | 0,12 | 10,3 | 44 | 0,71 | 324 · 130 · 133 · 120 · 274 | 0,98 |
 | hachette (use) | un bûcheron fort | 0,12 | 11,4 | 54 | 0,85 | 316 · 127 · 120 · 120 · 266 | 0,95 |
-| masse (maul) | Xéros (aujourd’hui) | 2,30 | 7,5 | 100 | 0,09 | 1041 · 426 · 429 · 150 · 991 | 3,04 |
-| masse (maul) | un adulte | 2,30 | 9,1 | 150 | 0,15 | 811 · 334 · 351 · 150 · 761 | 2,41 |
-| masse (maul) | un bûcheron fort | 2,30 | 11,1 | 220 | 0,22 | 664 · 276 · 289 · 150 · 614 | 1,99 |
+| masse de bûcheron (maul) | Xéros (aujourd’hui) | 2,30 | 7,5 | 100 | 0,09 | 1041 · 426 · 429 · 150 · 991 | 3,04 |
+| masse de bûcheron (maul) | un adulte | 2,30 | 9,1 | 150 | 0,15 | 811 · 334 · 351 · 150 · 761 | 2,41 |
+| masse de bûcheron (maul) | un bûcheron fort | 2,30 | 11,1 | 220 | 0,22 | 664 · 276 · 289 · 150 · 614 | 1,99 |
 | doloire (hew) | Xéros (aujourd’hui) | 0,65 | 5,9 | 45 | 0,25 | 395 · 115 · 153 · 100 · 345 | 1,11 |
 | doloire (hew) | un adulte | 0,65 | 7,2 | 67 | 0,37 | 330 · 93 · 125 · 100 · 280 | 0,93 |
 | doloire (hew) | un bûcheron fort | 0,65 | 8,7 | 99 | 0,50 | 289 · 80 · 103 · 100 · 239 | 0,81 |
@@ -1043,51 +1048,51 @@ Pour trois forces : Xéros aujourd'hui (couple 50 N·m, adresse 0,8, maximum 100
 
 | Travail | Outil | Force | Coups | Durée d’un coup (s) | Pauses (durée) | Durée totale | Plafond dépensé | Cible (min) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| abattre un arbre normal (30 cm) | cognée | Xéros (aujourd’hui) | 666 | 1,92 | 21 (8 s) | 24 min 16 | 8,4 | 25 |
-| abattre un arbre normal (30 cm) | cognée | un adulte | 429 | 1,59 | 14 (11 s) | 14 min 00 | 8,1 | 25 |
-| abattre un arbre normal (30 cm) | cognée | un bûcheron fort | 281 | 1,37 | 11 (14 s) | 9 min 02 | 7,8 | 25 |
-| abattre un arbre normal (30 cm) | hachette | Xéros (aujourd’hui) | 1518 | 1,02 | 20 (8 s) | 28 min 35 | 8,0 | 25 |
-| abattre un arbre normal (30 cm) | hachette | un adulte | 1196 | 0,98 | 13 (11 s) | 22 min 00 | 7,3 | 25 |
-| abattre un arbre normal (30 cm) | hachette | un bûcheron fort | 898 | 0,95 | 9 (14 s) | 16 min 21 | 6,8 | 25 |
-| abattre le gros arbre (55 cm) | cognée | Xéros (aujourd’hui) | 4099 | 1,92 | 132 (8 s) | 2 h 30 | 51,6 | 60 |
-| abattre le gros arbre (55 cm) | cognée | un adulte | 2641 | 1,59 | 90 (11 s) | 1 h 27 | 49,9 | 60 |
-| abattre le gros arbre (55 cm) | cognée | un bûcheron fort | 1727 | 1,37 | 68 (14 s) | 55 min 37 | 47,9 | 60 |
-| ébrancher l’arbre normal (12 branches de 7 cm) | cognée | Xéros (aujourd’hui) | 313 | 1,96 | 10 (8 s) | 11 min 37 | 4,2 | 20 |
-| ébrancher l’arbre normal (12 branches de 7 cm) | cognée | un adulte | 202 | 1,63 | 7 (11 s) | 6 min 48 | 4,0 | 20 |
-| ébrancher l’arbre normal (12 branches de 7 cm) | cognée | un bûcheron fort | 132 | 1,40 | 5 (14 s) | 4 min 17 | 3,9 | 20 |
-| ébrancher l’arbre normal (12 branches de 7 cm) | hachette | Xéros (aujourd’hui) | 753 | 1,06 | 10 (8 s) | 14 min 40 | 4,0 | 20 |
-| ébrancher l’arbre normal (12 branches de 7 cm) | hachette | un adulte | 593 | 1,02 | 6 (11 s) | 11 min 12 | 3,6 | 20 |
-| ébrancher l’arbre normal (12 branches de 7 cm) | hachette | un bûcheron fort | 445 | 0,99 | 4 (14 s) | 8 min 16 | 3,4 | 20 |
-| ébrancher le gros arbre (16 branches de 10 cm) | cognée | Xéros (aujourd’hui) | 1215 | 1,96 | 41 (8 s) | 45 min 24 | 16,2 | 40 |
-| ébrancher le gros arbre (16 branches de 10 cm) | cognée | un adulte | 783 | 1,63 | 28 (11 s) | 26 min 30 | 15,6 | 40 |
-| ébrancher le gros arbre (16 branches de 10 cm) | cognée | un bûcheron fort | 512 | 1,40 | 21 (14 s) | 17 min 00 | 15,0 | 40 |
-| couper un rondin de 30 cm | cognée | Xéros (aujourd’hui) | 726 | 1,96 | 24 (8 s) | 27 min 04 | 9,7 | 12 |
-| couper un rondin de 30 cm | cognée | un adulte | 468 | 1,63 | 17 (11 s) | 15 min 53 | 9,3 | 12 |
-| couper un rondin de 30 cm | cognée | un bûcheron fort | 306 | 1,40 | 12 (14 s) | 10 min 01 | 9,0 | 12 |
-| couper une bille de 55 cm | cognée | Xéros (aujourd’hui) | 4473 | 1,96 | 154 (8 s) | 2 h 48 | 59,5 | 22 |
-| couper une bille de 55 cm | cognée | un adulte | 2882 | 1,63 | 106 (11 s) | 1 h 38 | 57,5 | 22 |
-| couper une bille de 55 cm | cognée | un bûcheron fort | 1885 | 1,40 | 78 (14 s) | 1 h 03 | 55,2 | 22 |
-| fendre une bille de 55 cm × 1 m | masse | Xéros (aujourd’hui) | 30 | 3,04 | 0 (8 s) | 1 min 31 | 0,4 | 6 |
-| fendre une bille de 55 cm × 1 m | masse | un adulte | 20 | 2,41 | 0 (11 s) | 48 s | 0,4 | 6 |
-| fendre une bille de 55 cm × 1 m | masse | un bûcheron fort | 14 | 1,99 | 0 (14 s) | 28 s | 0,4 | 6 |
-| fendre une demi-bille de 55 cm × 1 m | masse | Xéros (aujourd’hui) | 21 | 3,04 | 0 (8 s) | 1 min 04 | 0,3 | 6 |
-| fendre une demi-bille de 55 cm × 1 m | masse | un adulte | 14 | 2,41 | 0 (11 s) | 34 s | 0,3 | 6 |
-| fendre une demi-bille de 55 cm × 1 m | masse | un bûcheron fort | 10 | 1,99 | 0 (14 s) | 20 s | 0,3 | 6 |
-| équarrir une poutre de 3 m (rondin de 30 cm → 20 × 20) | doloire | Xéros (aujourd’hui) | 8141 | 1,11 | 131 (8 s) | 2 h 48 | 51,3 | 96 |
-| équarrir une poutre de 3 m (rondin de 30 cm → 20 × 20) | doloire | un adulte | 4413 | 0,93 | 75 (11 s) | 1 h 22 | 41,7 | 96 |
-| équarrir une poutre de 3 m (rondin de 30 cm → 20 × 20) | doloire | un bûcheron fort | 2468 | 0,81 | 48 (14 s) | 44 min 45 | 34,2 | 96 |
-| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hachette | Xéros (aujourd’hui) | 48 | 0,59 | 0 (8 s) | 29 s | 0,3 | 10 |
-| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hachette | un adulte | 38 | 0,56 | 0 (11 s) | 21 s | 0,2 | 10 |
-| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hachette | un bûcheron fort | 29 | 0,53 | 0 (14 s) | 16 s | 0,2 | 10 |
-| tailler un piquet (branche de 5 cm, pointe de 12 cm) | cognée | Xéros (aujourd’hui) | 20 | 1,96 | 0 (8 s) | 39 s | 0,3 | 10 |
-| tailler un piquet (branche de 5 cm, pointe de 12 cm) | cognée | un adulte | 13 | 1,63 | 0 (11 s) | 21 s | 0,3 | 10 |
-| tailler un piquet (branche de 5 cm, pointe de 12 cm) | cognée | un bûcheron fort | 9 | 1,40 | 0 (14 s) | 13 s | 0,3 | 10 |
+| abattre un arbre normal (30 cm) | hache | Xéros (aujourd’hui) | 784 | 1,64 | 25 (8 s) | 24 min 56 | 9,9 | 25 pour Xéros (calage) |
+| abattre un arbre normal (30 cm) | hache | un adulte | 502 | 1,40 | 17 (11 s) | 14 min 53 | 9,5 | 25 pour Xéros (calage) |
+| abattre un arbre normal (30 cm) | hache | un bûcheron fort | 327 | 1,23 | 12 (14 s) | 9 min 35 | 9,1 | 25 pour Xéros (calage) |
+| abattre un arbre normal (30 cm) | hachette | Xéros (aujourd’hui) | 1822 | 1,02 | 24 (8 s) | 34 min 19 | 9,6 | — |
+| abattre un arbre normal (30 cm) | hachette | un adulte | 1435 | 0,98 | 16 (11 s) | 26 min 29 | 8,8 | — |
+| abattre un arbre normal (30 cm) | hachette | un bûcheron fort | 1077 | 0,95 | 11 (14 s) | 19 min 40 | 8,2 | — |
+| abattre le gros arbre (55 cm) | hache | Xéros (aujourd’hui) | 4829 | 1,64 | 155 (8 s) | 2 h 34 | 60,8 | — |
+| abattre le gros arbre (55 cm) | hache | un adulte | 3094 | 1,40 | 106 (11 s) | 1 h 32 | 58,5 | — |
+| abattre le gros arbre (55 cm) | hache | un bûcheron fort | 2014 | 1,23 | 80 (14 s) | 1 h 00 | 55,8 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hache | Xéros (aujourd’hui) | 368 | 1,68 | 12 (8 s) | 11 min 58 | 4,9 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hache | un adulte | 236 | 1,43 | 8 (11 s) | 7 min 08 | 4,7 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hache | un bûcheron fort | 154 | 1,27 | 6 (14 s) | 4 min 41 | 4,5 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hachette | Xéros (aujourd’hui) | 903 | 1,06 | 12 (8 s) | 17 min 36 | 4,8 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hachette | un adulte | 712 | 1,02 | 7 (11 s) | 13 min 24 | 4,4 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hachette | un bûcheron fort | 534 | 0,99 | 5 (14 s) | 9 min 58 | 4,0 | — |
+| ébrancher le gros arbre (16 branches de 10 cm) | hache | Xéros (aujourd’hui) | 1431 | 1,68 | 49 (8 s) | 46 min 52 | 19,0 | — |
+| ébrancher le gros arbre (16 branches de 10 cm) | hache | un adulte | 917 | 1,43 | 33 (11 s) | 28 min 06 | 18,3 | — |
+| ébrancher le gros arbre (16 branches de 10 cm) | hache | un bûcheron fort | 597 | 1,27 | 24 (14 s) | 18 min 20 | 17,5 | — |
+| couper un rondin de 30 cm | hache | Xéros (aujourd’hui) | 855 | 1,68 | 29 (8 s) | 27 min 58 | 11,4 | — |
+| couper un rondin de 30 cm | hache | un adulte | 548 | 1,43 | 20 (11 s) | 16 min 51 | 10,9 | — |
+| couper un rondin de 30 cm | hache | un bûcheron fort | 357 | 1,27 | 14 (14 s) | 10 min 52 | 10,4 | — |
+| couper une bille de 55 cm | hache | Xéros (aujourd’hui) | 5269 | 1,68 | 181 (8 s) | 2 h 53 | 70,1 | — |
+| couper une bille de 55 cm | hache | un adulte | 3376 | 1,43 | 124 (11 s) | 1 h 44 | 67,4 | — |
+| couper une bille de 55 cm | hache | un bûcheron fort | 2197 | 1,27 | 91 (14 s) | 1 h 08 | 64,3 | — |
+| fendre une bille de 55 cm × 1 m | masse de bûcheron | Xéros (aujourd’hui) | 30 | 3,04 | 0 (8 s) | 1 min 31 | 0,4 | — |
+| fendre une bille de 55 cm × 1 m | masse de bûcheron | un adulte | 20 | 2,41 | 0 (11 s) | 48 s | 0,4 | — |
+| fendre une bille de 55 cm × 1 m | masse de bûcheron | un bûcheron fort | 14 | 1,99 | 0 (14 s) | 28 s | 0,4 | — |
+| équarrir une poutre de 3 m (rondin de 30 cm → 20 × 20) | doloire | Xéros (aujourd’hui) | 21877 | 1,11 | 352 (8 s) | 7 h 33 | 137,8 | 120 pour le bûcheron fort (calage) |
+| équarrir une poutre de 3 m (rondin de 30 cm → 20 × 20) | doloire | un adulte | 11859 | 0,93 | 204 (11 s) | 3 h 42 | 112,1 | 120 pour le bûcheron fort (calage) |
+| équarrir une poutre de 3 m (rondin de 30 cm → 20 × 20) | doloire | un bûcheron fort | 6631 | 0,81 | 129 (14 s) | 2 h 00 | 91,9 | 120 pour le bûcheron fort (calage) |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hachette | Xéros (aujourd’hui) | 58 | 0,59 | 0 (8 s) | 34 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hachette | un adulte | 46 | 0,56 | 0 (11 s) | 26 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hachette | un bûcheron fort | 34 | 0,53 | 0 (14 s) | 18 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hache | Xéros (aujourd’hui) | 24 | 1,68 | 0 (8 s) | 40 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hache | un adulte | 15 | 1,43 | 0 (11 s) | 21 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hache | un bûcheron fort | 10 | 1,27 | 0 (14 s) | 13 s | 0,3 | — |
 
-Ce qu'on lit : l'arbre normal tombe en 24 min pour Xéros (cible 25), 14 pour un adulte, 9 pour un bûcheron fort ; à la hachette, il
-faut deux fois plus de coups, plus rapides : presque aussi long. Le gros arbre, 2 h 30 pour Xéros (cible 60 min) : le volume croît
-comme le cube du diamètre. Couper une bille de 55 cm à la cognée prend près de 3 h : c'est un travail de scie. Fendre est rapide
-(1 min 30, cible 6) ; tailler un piquet, une demi-minute (cible 10). L'équarrissage d'une poutre de 3 m, 2 h 50 pour Xéros, 1 h 20 pour
-un adulte (le réel, à rythme posé : environ 2 h).
+Points de calage (work.json) : abattre l'arbre normal à la cognée, Xéros, 25 min ; équarrir une poutre de 3 m, le bûcheron fort (1,19 m² de face par heure), 120 min.
+
+Ce qu'on lit : l'arbre normal tombe en 25 min pour Xéros (le calage), 15 pour un adulte, 10 pour un bûcheron fort ; à la hachette, deux
+fois plus de coups, plus rapides : un peu plus long. Le gros arbre, 2 h 30 pour Xéros : le volume croît comme le cube du diamètre
+(décidé : on garde la loi du volume ; **la scie passe-partout viendra plus tard, l'outil des gros bois**). Couper une bille de 55 cm à la
+cognée, près de 3 h. Fendre est rapide (1 min 30) ; tailler un piquet, une demi-minute. L'équarrissage, calé sur le professionnel
+mesuré (1,19 m² de face par heure : 2 h pour le bûcheron fort), demande 3 h 40 à un adulte et 7 h 30 à Xéros, plus que son plafond
+d'une journée (138 points) : une poutre de 3 m lui prend deux jours.
 
 ### 6. Ce qu'on voit avancer
 
