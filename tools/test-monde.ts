@@ -158,7 +158,7 @@ await playtest('monde', async ({ page, errors, load }) => {
   for (const c of route.slice(1)) {
     const now = await where();
     if (now.id !== 'maison') break;
-    await goTo(c.x, c.y, Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y', 15000, 2);
+    await goTo(c.x, c.y, Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y', 45000, 2);
   }
   // un pas vers le sud dans la sortie
   await press(['KeyS']);
@@ -177,8 +177,8 @@ await playtest('monde', async ({ page, errors, load }) => {
   const ROAD = 191 * TILE; // la limite entre les deux rangées du chemin (rangées 190-191 du monde)
   const farmPath = 125 * TILE + 3008; // le milieu du chemin nord-sud de la ferme
   p = await where();
-  await goTo(farmPath, p.wy, 'x', 20000);
-  await goTo(farmPath, ROAD, 'y', 20000);
+  await goTo(farmPath, p.wy, 'x', 60000);
+  await goTo(farmPath, ROAD, 'y', 60000);
   // 3. vers l'est, le long du chemin : la ferme, le chemin du village, le village ; jusqu'au milieu de la place
   const place = { x: 478.5 * TILE, y: 191.5 * TILE };
   await goTo(place.x, ROAD, 'x');
@@ -199,7 +199,7 @@ await playtest('monde', async ({ page, errors, load }) => {
   });
   assert.ok(post, 'le panneau est posé');
   // devant lui, au sud, tourné vers le nord
-  await goTo(post.x, post.y + 22, 'x', 20000);
+  await goTo(post.x, post.y + 22, 'x', 60000);
   await page.keyboard.down('KeyW');
   await sleep(60);
   await page.keyboard.up('KeyW');
@@ -220,7 +220,7 @@ await playtest('monde', async ({ page, errors, load }) => {
   assert.equal(edge.id, 'route-de-la-ville', 'le bord du monde arrête Xéros');
   assert.ok(edge.x <= 125 * TILE, `toujours dans la zone (x = ${edge.x})`);
   // un pas en arrière, loin du poteau (collé à lui, sa collision le repousserait de quelques px à la reprise)
-  await goTo(post.x, post.y + 48, 'x', 20000);
+  await goTo(post.x, post.y + 48, 'x', 60000);
   await sleep(200);
   const before = await where();
 

@@ -17,16 +17,18 @@
 // Usage : npm run test:grange.
 
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
 import { playtest } from './lib/playtest';
 
 const PLAN_FILE = 'src/content/plans/grange.json';
+/** Date du plan au départ (0 s'il n'existe pas) : le test attend qu'il soit réécrit. */
+const mtimeOf = (f: string) => (existsSync(f) ? statSync(f).mtimeMs : 0);
+const PLAN_BEFORE = mtimeOf(PLAN_FILE);
 
 /** Une poutre du normal (20 × 20 cm équarrie : quatre faces), de cette longueur, dans ce sens (`up` : dressée, un poteau). */
 const beam = (axis: 'ew' | 'ns' | 'up', length: number) => ({ wood: { size: 'normal', length, shape: 'round', hewn: 12, axis } });
 
-if (existsSync(PLAN_FILE)) rmSync(PLAN_FILE);
 
 await playtest('grange', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -294,8 +296,9 @@ await playtest('grange', async ({ page, errors, load }) => {
   await page.mouse.up();
   await sleep(150);
   await send({ kind: 'save-plan', name: 'Grange' });
-  for (let i = 0; i < 50 && !existsSync(PLAN_FILE); i++) await sleep(100);
-  assert.ok(existsSync(PLAN_FILE), 'la grange est enregistrée dans src/content/plans/grange.json');
+  // le plan est réécrit (plus récent qu'au départ) : on ne l'efface pas avant, car les scénarios qui tournent en même temps le lisent
+  for (let i = 0; i < 50 && mtimeOf(PLAN_FILE) <= PLAN_BEFORE; i++) await sleep(100);
+  assert.ok(mtimeOf(PLAN_FILE) > PLAN_BEFORE, 'la grange est enregistrée dans src/content/plans/grange.json');
   const plan = JSON.parse(readFileSync(PLAN_FILE, 'utf8'));
   const all = await pieces();
   assert.equal(plan.pieces.length, all.length, 'toutes les pièces sont dans le plan');

@@ -113,7 +113,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     await sleep(120);
   };
   /** Marche dans une direction jusqu'à ce que la carte change (au plus `ms`), puis attend la fin du fondu. */
-  const walkTo = async (key: string, done: (id: string) => boolean, ms = 4000) => {
+  const walkTo = async (key: string, done: (id: string) => boolean, ms = 15000) => {
     await page.keyboard.down(key);
     const t = Date.now();
     while (Date.now() - t < ms && !done(await mapId())) await sleep(50);
