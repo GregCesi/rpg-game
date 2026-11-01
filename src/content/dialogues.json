@@ -43,5 +43,14 @@
         ]
       }
     ]
+  },
+  "signpost-town": {
+    "lines": [
+      {
+        "speaker": "xeros",
+        "expression": "neutral",
+        "text": "Vers la ville. La route n'est pas encore pour moi."
+      }
+    ]
   }
 }

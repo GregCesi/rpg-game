@@ -105,6 +105,34 @@ export const world = {
   X: '#5f4a2b',
   // bois travaillé, à l'âge neuf (woodAges : le patiné et le vieux se tirent de la même grille)
   ...woodAges.new,
+  // bois travaillé vieux, posé dans une tuile (le pont de bois, art/world/tiles.ts) : un jeu de tuiles n'a qu'une palette, et le
+  // build ne vieillit pas les tuiles ; ces signes reprennent tels quels la rampe `woodAges.old`, dans le même ordre (^ * % & @).
+  '{': woodAges.old['^'],
+  '}': woodAges.old['*'],
+  '[': woodAges.old['%'],
+  ']': woodAges.old['&'],
+  '|': woodAges.old['@'],
+  // sols de la forêt, de la lisière à la forêt profonde (art/world/tiles.ts) : même grain que l'herbe, les tons glissent de
+  // l'olive vers le brun de la litière, puis vers un vert-bleu froid et un humus noir qui tire au brun-violet.
+  '0': '#757b41', // sol de lisière : herbe rare mêlée de feuilles (un cran sous l'herbe g)
+  '2': '#665c3c', // litière du sous-bois : feuilles brunes tassées
+  '3': '#43372a', // terre sombre du sous-bois, creux de la litière
+  '4': '#485045', // sol de la forêt profonde, froid
+  '5': '#2c292d', // humus noir (brun-violet)
+  '6': '#4d6756', // mousse vert-bleu de la forêt profonde
+  '7': '#5f7d68', // mousse au jour (forêt profonde)
+  '8': '#35483f', // mousse à l'ombre (forêt profonde)
+  '9': '#54473b', // feuille pourrie, éteinte (forêt profonde)
+  // prairie de fauche : herbe haute, plus blonde que l'herbe rase g
+  s: '#878a4a', // fond de la prairie
+  p: '#c3b571', // épis blonds, au soleil
+  // terre battue (place du village, cours de ferme) : plus claire et plus tassée que le chemin u U n e
+  I: '#b9a178', // terre battue
+  '#': '#cbb68d', // terre battue lissée, au soleil
+  $: '#9b8461', // terre battue, creux et traces
+  // route empierrée : la terre qui lie les pierres (les pierres : calcaire + = ;, pierre grise R r z, ocre U u)
+  ':': '#7c6b54', // joint de terre entre les pierres
+  ',': '#5b4d3d', // joint profond, ombre au pied d'une pierre de bordure
   // contour, ombre, lueur
   o: OUTLINE,
   x: '#2b1a1040',

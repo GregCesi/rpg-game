@@ -1,7 +1,8 @@
 {
   "world": {
     "decals": {
-      "grass": {"images": ["decal-tufts", "decal-tufts2", "decal-pebbles", "decal-clover", "decal-patch-dark", "decal-patch-light", "decal-patch-dark", "decal-dirt"], "chance": 0.22}
+      "grass": {"images": ["decal-tufts", "decal-tufts2", "decal-pebbles", "decal-clover", "decal-patch-dark", "decal-patch-light", "decal-patch-dark", "decal-dirt"], "chance": 0.22},
+      "forest": {"images": ["decal-fern", "decal-twigs", "decal-leaves", "decal-mushrooms", "decal-moss", "decal-fern", "decal-leaves", "decal-twigs"], "chance": 0.25}
     },
     "tiles": {
       "grass": {"decals": "grass"},
@@ -9,10 +10,27 @@
       "grass3": {"decals": "grass"},
       "grass4": {"decals": "grass"},
       "grass5": {"decals": "grass"},
-      "grass6": {"decals": "grass"}
+      "grass6": {"decals": "grass"},
+      "forest": {"decals": "forest"},
+      "forest2": {"decals": "forest"},
+      "forest3": {"decals": "forest"},
+      "forest4": {"decals": "forest"},
+      "woods": {"decals": "forest"},
+      "woods2": {"decals": "forest"},
+      "woods3": {"decals": "forest"},
+      "woods4": {"decals": "forest"},
+      "deepwoods": {"decals": "forest"},
+      "deepwoods2": {"decals": "forest"},
+      "deepwoods3": {"decals": "forest"},
+      "deepwoods4": {"decals": "forest"},
+      "meadow": {"decals": "grass"},
+      "meadow2": {"decals": "grass"},
+      "meadow3": {"decals": "grass"}
     },
     "terrains": {
       "path": {"color": "#b8956a"},
+      "yard": {"color": "#b9a178"},
+      "road": {"color": "#a89c84"},
       "water": {"color": "#4a7fa8", "solid": true},
       "fence": {"color": "#7a5a3e", "solid": true}
     }
