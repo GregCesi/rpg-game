@@ -46,10 +46,12 @@ export function combatPreview(sources: ArtSource[], body: SpriteSheetSource, wea
           board.blit(grid, pal, Math.round(bx + hx - (Math.floor(w / 2) - (left ? 1 : 0))), Math.round(by + fh + dy - Math.floor(h / 2)));
         };
         const sword = weapon && f.weapon ? weapon.animations.angles.frames[weaponFrame(f.weapon.angle)] : undefined;
-        const smear = f.smear ? image(f.smear.image) : undefined;
+        const smear = f.smear && weapon ? image(`fx-smear-${weapon.name.replace(/^weapon-/, '')}-${f.smear.image}`) : undefined;
+        const grip = f.grip && weapon ? image(f.grip.image) : undefined;
         if (smear && f.smear!.behind) put(smear.grid, smear.palette, f.smear!.dx, f.smear!.dy);
         if (sword && f.weapon!.behind) put(sword, weapon!.palette, f.right.dx, f.right.dy);
         board.blit(bodyFrames[step], body.palette, bx, by);
+        if (grip) put(grip.grid, grip.palette, f.grip!.dx, f.grip!.dy);
         if (sword && !f.weapon!.behind) put(sword, weapon!.palette, f.right.dx, f.right.dy);
         if (smear && !f.smear!.behind) put(smear.grid, smear.palette, f.smear!.dx, f.smear!.dy);
         const spark = f.spark ? image(f.spark.image) : undefined;

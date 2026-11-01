@@ -33,7 +33,10 @@ export interface CombatFrame {
   shoulderLeft: PosePoint;
   /** L'arme dans la main droite : l'angle de son dessin (0 = est, 90 = nord), derrière le corps ou non. */
   weapon?: { angle: number; behind: boolean };
+  /** La traînée : le suffixe de son image (`<geste>-<direction>-<n>`), tirée pour chaque arme à sa longueur : `fx-smear-<arme>-<suffixe>`. */
   smear?: { image: string; dx: number; dy: number; behind: boolean };
+  /** L'arme est derrière le corps et la main qui la tient serait cachée : l'image de la main, posée par-dessus le corps. */
+  grip?: { image: string; dx: number; dy: number };
   spark?: { image: string; dx: number; dy: number };
   /** L'arme ou le poing frappe à cette image : la lame y compte, et le balayage depuis l'image d'avant. */
   strike?: boolean;

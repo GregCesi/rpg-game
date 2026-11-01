@@ -3,7 +3,8 @@
 // Pose les gestes de art/characters/xeros-combat.ts, agrandis x6 : une bande par geste (la taille, le coup vertical, le direct
 // du droit, le direct du gauche), une rangée par direction (bas, haut, droite, gauche), les images dans l'ordre, chacune sur
 // l'herbe ; sous chaque image, son nom et sa durée en ms (chiffres `ui-digit-<n>` de l'interface). Même calcul que le jeu :
-// l'image d'angle de `weapon-wooden-sword` posée par son centre sur la main droite, pieds + (dx, dy) ; vers la gauche, l'arme,
+// l'image d'angle de `weapon-wooden-sword` (ou de l'arme donnée en argument) posée par son centre sur la main droite, pieds +
+// (dx, dy), sa traînée `fx-smear-<arme>-<suffixe>`, et la main `grip` par-dessus le corps quand l'arme est derrière ; vers la gauche, l'arme,
 // la traînée et l'éclat sont retournés et dx est opposé (les poses `left` sont écrites dans le repère retourné ; le corps de
 // l'animation `<geste>-left` est déjà retourné).
 // Lit les sources d'art directement (pas src/generated/). Écrit aussi chaque bande à part dans .art-preview/essai-gestes-<n>.png,
@@ -22,18 +23,18 @@ import type { SpriteSheetSource } from '../art/lib/types';
 import { weaponFrame } from '../src/world/strike';
 import xeros from '../art/characters/xeros';
 import {
-  COMBAT_DIRS as DIRS, COMBAT_POSES, COMBAT_TITLES, combatDuration, combatEffects, effectPalette, type CombatDir as Dir,
+  COMBAT_DIRS as DIRS, COMBAT_POSES, COMBAT_TITLES, combatDuration, combatEffects, effectPalette, smearImage, type CombatDir as Dir,
   type CombatFrame, type CombatGesture,
 } from '../art/characters/xeros-combat';
 import { Sheet, type Rgb } from './lib/audit-preview';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const K = 6;
-/** Une case, en pixels du jeu : la frame de 32 × 48 posée en (OX, OY), de l'air autour pour la lame (16 px de la main). */
-const CW = 60;
-const CH = 74;
-const OX = 14;
-const OY = 20;
+/** Une case, en pixels du jeu : la frame de 32 × 48 posée en (OX, OY), de l'air autour pour la lame (jusqu'à 22 px de la main). */
+const CW = 76;
+const CH = 84;
+const OX = 22;
+const OY = 28;
 const LABEL_W = 260;
 const BELOW = 64;
 const TITLE = 70;
@@ -42,7 +43,10 @@ const WHITE: Rgb = [255, 255, 255];
 const GOLD: Rgb = [245, 215, 120];
 const GREY: Rgb = [220, 220, 205];
 
-const sword = weapons.find((s) => s.name === 'weapon-wooden-sword') as SpriteSheetSource;
+/** L'arme posée : l'épée de bois, ou celle donnée en argument (npx tsx tools/essai-gestes.ts branch : fichiers `essai-gestes-branch…`). */
+const WEAPON = process.argv[2] ?? 'wooden-sword';
+const SUFFIX = process.argv[2] ? `-${WEAPON}` : '';
+const sword = weapons.find((s) => s.name === `weapon-${WEAPON}`) as SpriteSheetSource;
 const angles = sword.animations.angles.frames;
 const grass = { grid: tiles.tiles.grass, palette: tiles.palette };
 const digit = (n: number) => ui.find((s) => s.name === `ui-digit-${n}`) as { grid: Grid; palette: Palette };
@@ -84,12 +88,13 @@ function cell(s: Sheet, x: number, y: number, body: Grid, f: CombatFrame, left: 
   const by = y + OY * K;
   const put = (grid: Grid, pal: Palette, dx: number, dy: number) => place(s, grid, pal, bx, by, dx, dy, left, K);
   const weapon = f.weapon ? angles[weaponFrame(f.weapon.angle)] : undefined;
-  const smear = f.smear ? effect(f.smear.image) : undefined;
+  const smear = f.smear ? effect(smearImage(WEAPON, f.smear.image)) : undefined;
   if (smear && f.smear!.behind) put(smear, effectPalette, f.smear!.dx, f.smear!.dy);
   if (weapon && f.weapon!.behind) put(weapon, sword.palette, f.right.dx, f.right.dy);
   s.blit(body, xeros.palette, bx, by, K);
   if (smear && !f.smear!.behind) put(smear, effectPalette, f.smear!.dx, f.smear!.dy);
   if (weapon && !f.weapon!.behind) put(weapon, sword.palette, f.right.dx, f.right.dy);
+  if (f.grip) put(effect(f.grip.image), xeros.palette, f.grip.dx, f.grip.dy);
   if (f.spark) put(effect(f.spark.image), effectPalette, f.spark.dx, f.spark.dy);
 }
 
@@ -188,7 +193,7 @@ document.querySelectorAll('img[data-a]').forEach((img) => {
 const sheets = GESTURES.map(band);
 const dir = join(ROOT, '.art-preview');
 mkdirSync(dir, { recursive: true });
-sheets.forEach((s, i) => writeFileSync(join(dir, `essai-gestes-${i + 1}.png`), PNG.sync.write(s.png)));
-writeFileSync(join(dir, 'essai-gestes.png'), PNG.sync.write(stack(sheets)));
-writeFileSync(join(dir, 'essai-gestes.html'), page());
-console.log(`essai-gestes : ${GESTURES.join(', ')} -> ${join(dir, 'essai-gestes.png')}, essai-gestes.html`);
+sheets.forEach((s, i) => writeFileSync(join(dir, `essai-gestes${SUFFIX}-${i + 1}.png`), PNG.sync.write(s.png)));
+writeFileSync(join(dir, `essai-gestes${SUFFIX}.png`), PNG.sync.write(stack(sheets)));
+writeFileSync(join(dir, `essai-gestes${SUFFIX}.html`), page());
+console.log(`essai-gestes (${WEAPON}) : ${GESTURES.join(', ')} -> ${join(dir, `essai-gestes${SUFFIX}.png`)}, essai-gestes${SUFFIX}.html`);

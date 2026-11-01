@@ -851,7 +851,15 @@ function validateCombat(c: Content, cat: Catalog): string[] {
       if (n !== undefined && n !== frames.length) err(`combat.json geste '${g}' ${dir} : ${frames.length} poses pour ${n} images dans '${PLAYER.skin}-${g}-${dir}'`);
       if (!frames.some((f) => f.strike)) err(`combat.json geste '${g}' ${dir} : aucune image de frappe ('strike')`);
       for (const f of frames) {
-        for (const img of [f.smear?.image, f.spark?.image]) if (img && !cat.textures.has(img)) err(`combat.json geste '${g}' ${dir} : image '${img}' non dessinée`);
+        for (const img of [f.spark?.image, f.grip?.image]) if (img && !cat.textures.has(img)) err(`combat.json geste '${g}' ${dir} : image '${img}' non dessinée`);
+        // la traînée, tirée pour chaque arme qui joue ce geste, à sa longueur
+        if (!f.smear) continue;
+        for (const [key, it] of Object.entries(c.items)) {
+          const fam = it.weapon && c.combat.families[it.weapon.family];
+          const plays = fam && fam.stances.some((st) => st.chain.some((a) => c.combat.attacks[a]?.gesture === g));
+          const img = `fx-smear-${key}-${f.smear.image}`;
+          if (plays && !cat.textures.has(img)) err(`combat.json geste '${g}' ${dir} : traînée '${img}' non dessinée (l'arme '${key}' à sa longueur)`);
+        }
       }
     }
   }

@@ -772,7 +772,8 @@ des attaques est remplacé par ceci.
   (vers la gauche, l'épée reste dans la main droite, au fond : pas un miroir). Les poses sont des données (`COMBAT_POSES` : par image,
   sa durée, les mains, les épaules, l'angle de l'arme, la traînée, l'éclat, les images de frappe), que `build-art` écrit dans
   `src/generated/combatPoses.ts` : **la seule source** des durées (la taille dure 530 ms garde comprise à l'épée) et de la place de
-  ce qui frappe. Une arme lourde les allonge (son inertie) : la branche met 1,2 s.
+  ce qui frappe. Une arme lourde les allonge (son inertie, au-delà de `inertiaRef`) : la branche met 1,2 s ; l'épée et le poing
+  gardent la durée de leurs poses.
 - **La main nue est une arme en données** (`unarmed` de combat.json : le bras de 60 cm, 2 kg qui frappent, famille `fists`). Espace,
   la main active vide et l'autre sans arme ni outil (rien, une pierre…), frappe du poing de la main libre ; un deuxième Espace enchaîne
   le direct de l'autre poing (gauche-droite) si les deux mains sont libres. Postures de la famille `fists` : selon les mains libres
@@ -790,7 +791,8 @@ des attaques est remplacé par ceci.
   leur durée ; les dégâts, l'énergie de la masse qui frappe (½ m v², m = 2/3 × équilibre × masse) × `damagePerJoule` × l'efficacité de
   l'arme × la puissance de l'attaque. Le tableau des armes est dans leurs fiches ([branche](objets/branch.md),
   [épée de bois](objets/wooden-sword.md)) : la branche 8,5 par coup en 1,2 s, l'épée 6 en 0,53 s (1,6 fois les dégâts par seconde, pour
-  moins d'endurance), le poing 1,2 en 0,4 s.
+  moins d'endurance), le poing 1,6 en 0,34 s (la durée de ses poses : seul ce qui dépasse 0,4 kg·m² d'inertie ralentit,
+  la branche).
 - **Le ressenti** (`feel` de combat.json, tout réglable) : un arrêt sur image de 50 ms à l'impact (le geste se fige), puis la cible
   recule et penche, sa matière vole ; l'écran tremble à partir de 8 de dégâts.
 - **Avec `?debug`** : à chaque image de frappe, la lame (blanche), le balayage depuis l'image d'avant (pâle), la silhouette touchée

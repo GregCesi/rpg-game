@@ -38,12 +38,13 @@ calcule (world/strike.ts), à côté de l'épée de bois :
 | Le mannequin touché jusqu'à (lame dessinée, taille) | 29 à 39 px des pieds selon la direction | 23 à 33 px | — |
 | Précision (calculée) ; écart d'un coup | 0,18, faible ; jusqu'à 13 px | 0,76, bonne ; moins de 2 px | 0,45 ; jusqu'à 6 px |
 | Coups au but au bord de sa portée (1 000 coups simulés) | 70 % | 100 % | — |
-| Taille (direct) : dégâts, durée du coup | 8,5 en 1,20 s | 6,0 en 0,53 s | 1,2 en 0,40 s |
-| Dégâts par seconde | 7,1 | 11,3 (× 1,59) | 3,0 |
+| Taille (direct) : dégâts, durée du coup | 8,5 en 1,20 s | 6,0 en 0,53 s | 1,6 en 0,34 s |
+| Dégâts par seconde | 7,1 | 11,3 (× 1,59) | 4,7 |
 | Coup d'en haut : dégâts, durée | 11,6 en 1,36 s | 8,5 en 0,60 s | — |
 | Endurance par coup (taille ; en haut) | 1,30 ; 1,63 | 0,62 ; 0,77 | 0,33 |
 
-Les durées sont la somme des images du geste (garde comprise), allongée par l'inertie de l'arme ; la vitesse du coup vient du chemin
+Les durées sont la somme des images du geste (garde comprise), allongée par l'inertie d'une arme lourde (au-delà de 0,4 kg·m² :
+la branche ; ni l'épée ni le poing ne ralentissent) ; la vitesse du coup vient du chemin
 de la pointe dans les poses ; tout se recalcule (world/strike.ts) quand une pose ou un réglage change.
 
 ## Variantes naturelles

@@ -7,7 +7,7 @@
 // - Les dégâts et le prix d'endurance sont ceux du calcul ; l'épée fait environ 1,5 fois les dégâts par seconde de la branche.
 // - La précision : sur un grand nombre de coups simulés au bord de sa portée (écart tiré à chaque coup), la branche touche nettement
 //   moins souvent que l'épée au bord de la sienne.
-// - Un coup dans le vide joue tout le geste et coûte ; épuisé, rien ne part ; les poings enchaînent le droit puis le gauche ; une
+// - Un coup dans le vide joue tout le geste et coûte ; le poing nu contre un arbre ne lui fait rien ; épuisé, rien ne part ; les poings enchaînent le droit puis le gauche ; une
 //   pierre dans une main, le poing de l'autre ; une ou deux branches ne changent rien ; branche et hachette taillent toujours.
 // Usage : npm run test:combat (lancé aussi par npm run test:scenarios).
 
@@ -187,6 +187,22 @@ await playtest('combat', async ({ page, errors, load }) => {
     await settle();
     out.oneFist = log().slice(n).map((e: any) => e.attack);
 
+    // le poing nu contre un arbre debout : rien (pas de dégâts, pas un coup de récolte, pas d'abattage)
+    gs.emptyHands(gs.game);
+    w().handsChanged();
+    const tree = w().map.props.find((p: any) => p.def.harvest?.fall && p.image.visible);
+    if (!tree) throw new Error('pas d’arbre debout sur la ferme');
+    const treeType = tree.type;
+    const treeHits = tree.hits;
+    await standAt(tree.aimX, tree.aimY + 12, 'up');
+    const punch = await strikeOnce();
+    await sleep(300);
+    out.tree = {
+      attack: punch.entry?.attack,
+      hits: punch.entry?.hits.length,
+      same: w().map.props.includes(tree) && tree.type === treeType && tree.hits === treeHits,
+    };
+
     // épuisé : rien ne part
     await give('wooden-sword');
     await send({ kind: 'stamina', value: 0 });
@@ -248,6 +264,9 @@ await playtest('combat', async ({ page, errors, load }) => {
   assert.deepEqual(r.chain, ['cut', 'overhead'], 'un deuxième Espace pendant le geste enchaîne le coup d’en haut');
   assert.deepEqual(r.fists, ['jab-right:1', 'jab-left:1'], 'mains vides : le direct du droit, puis du gauche, chacun touche');
   assert.deepEqual(r.oneFist, ['jab-right', 'jab-right'], 'une pierre dans la main gauche : le poing droit seul');
+  assert.equal(r.tree.attack, 'jab-right', 'mains vides devant un arbre : un coup de poing');
+  assert.equal(r.tree.hits, 0, 'le poing ne touche pas l’arbre comme une cible');
+  assert.ok(r.tree.same, 'l’arbre est intact : ni coup de récolte, ni abattage');
   assert.equal(r.exhausted.attacks, 0, 'épuisé, aucune attaque ne part');
   assert.match(r.exhausted.notice, /épuisé/, 'épuisé, on le dit');
   assert.deepEqual(r.twoBranches.both, ['branch', 'branch'], 'deux branches en main');

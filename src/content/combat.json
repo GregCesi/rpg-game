@@ -1,5 +1,5 @@
 {
-  "rules": {"armCm": 50, "inertiaRef": 0.2, "inertiaSlow": 1.12, "damagePerJoule": 0.081, "controlRef": 0.3, "missPx": 20},
+  "rules": {"armCm": 50, "inertiaRef": 0.4, "inertiaSlow": 1.37, "damagePerJoule": 0.081, "controlRef": 0.3, "missPx": 20},
   "feel": {"hitStopMs": 50, "recoilPx": 1, "reactMs": 260, "shakeFrom": 8, "shakeMs": 120, "shakeIntensity": 0.004, "debugMs": 1200},
   "unarmed": {"name": "poing", "length": 60, "grip": 0, "balance": 0.75, "efficiency": 1, "mass": 2, "family": "fists", "fist": true},
   "attacks": {

@@ -37,6 +37,8 @@ export class ToolUse {
   /** La traînée et l'éclat d'un geste de combat. */
   private readonly smear: Phaser.GameObjects.Image;
   private readonly spark: Phaser.GameObjects.Image;
+  /** La main qui tient l'arme, par-dessus le corps, quand l'arme passe derrière lui. */
+  private readonly grip: Phaser.GameObjects.Image;
   /** Geste en cours et animation de l'outil (sans la direction), ex. 'chop' et 'tool-axe-chop'. */
   private gesture = 'use';
   private toolAnim?: string;
@@ -52,8 +54,9 @@ export class ToolUse {
     this.tool = scene.add.image(0, 0, '__DEFAULT').setVisible(false);
     this.smear = scene.add.image(0, 0, '__DEFAULT').setVisible(false);
     this.spark = scene.add.image(0, 0, '__DEFAULT').setVisible(false);
+    this.grip = scene.add.image(0, 0, '__DEFAULT').setVisible(false);
     actor.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => (this.fightOpts ? this.placeFight() : this.place()));
-    actor.once(Phaser.GameObjects.Events.DESTROY, () => [this.tool, this.smear, this.spark].forEach((o) => o.destroy()));
+    actor.once(Phaser.GameObjects.Events.DESTROY, () => [this.tool, this.smear, this.spark, this.grip].forEach((o) => o.destroy()));
   }
 
   /**
@@ -103,6 +106,7 @@ export class ToolUse {
       this.tool.setVisible(false);
       this.smear.setVisible(false);
       this.spark.setVisible(false);
+      this.grip.setVisible(false);
       this.fightOpts = undefined;
       this.busy = false;
       this.actor.face(this.actor.facing);
@@ -159,8 +163,9 @@ export class ToolUse {
   }
 
   /**
-   * Pose l'arme, la traînée et l'éclat d'un geste de combat pour l'image en cours : l'arme dans l'angle de la pose, sur la main droite
-   * (décalée de l'écart du coup pendant la frappe) ; vers la gauche, les images sont retournées et dx opposé (les poses de la gauche
+   * Pose l'arme, la traînée, l'éclat et la main par-dessus d'un geste de combat pour l'image en cours : l'arme dans l'angle de la
+   * pose, sur la main droite (décalée de l'écart du coup pendant la frappe), devant ou derrière le corps (`weapon.behind`) ; derrière,
+   * l'ordre est l'arme et sa traînée, le corps, puis la main (`grip`) ; vers la gauche, les images sont retournées et dx opposé (les poses de la gauche
    * sont dessinées dans ce repère).
    */
   private placeFight(): void {
@@ -180,8 +185,10 @@ export class ToolUse {
         .setPosition(this.actor.x + sx * f.right.dx + shift.x, y0 + f.right.dy + shift.y)
         .setDepth(y0 + (f.weapon.behind ? -0.01 : 0.01));
     } else this.tool.setVisible(false);
-    if (f.smear && this.scene.textures.exists(f.smear.image)) {
-      centre(this.smear.setTexture(f.smear.image).setVisible(true).setFlipX(left))
+    // la traînée de cette arme, à sa longueur (`fx-smear-<arme>-<suffixe>`)
+    const smearKey = f.smear && o.weapon ? `fx-smear-${o.weapon.replace(/^weapon-/, '')}-${f.smear.image}` : undefined;
+    if (f.smear && smearKey && this.scene.textures.exists(smearKey)) {
+      centre(this.smear.setTexture(smearKey).setVisible(true).setFlipX(left))
         .setPosition(this.actor.x + sx * f.smear.dx + shift.x, y0 + f.smear.dy + shift.y)
         .setDepth(y0 + (f.smear.behind ? -0.02 : 0.02));
     } else this.smear.setVisible(false);
@@ -190,5 +197,11 @@ export class ToolUse {
         .setPosition(this.actor.x + sx * f.spark.dx + shift.x, y0 + f.spark.dy + shift.y)
         .setDepth(y0 + 0.03);
     } else this.spark.setVisible(false);
+    // l'arme derrière le corps : la main qui la tient, par-dessus le corps (la poignée reste dans la main)
+    if (o.weapon && f.grip && this.scene.textures.exists(f.grip.image)) {
+      centre(this.grip.setTexture(f.grip.image).setVisible(true).setFlipX(left))
+        .setPosition(this.actor.x + sx * f.grip.dx + shift.x, y0 + f.grip.dy + shift.y)
+        .setDepth(y0 + 0.02);
+    } else this.grip.setVisible(false);
   }
 }
