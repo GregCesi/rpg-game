@@ -5,7 +5,7 @@
 // par seconde de la branche (le rééquilibrage) ; un deuxième Espace enchaîne le coup
 // d'en haut ; un coup dans le vide coûte aussi ; épuisé, rien ne part ; une ou deux branches en main ne changent rien ; la branche
 // active et la hachette dans l'autre main taillent toujours (Espace n'attaque pas).
-// Usage : npm run test:combat (lancé aussi par npm run test).
+// Usage : npm run test:combat (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';

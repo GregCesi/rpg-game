@@ -3,7 +3,7 @@
 // jusqu'aux quatre quartiers : refus (cognée sur une pièce trop courte pour être recoupée, masse sans coin), planter le coin,
 // trois coups de masse, demi-billes, coin lâché, quartiers, masses, endurance, coups gardés dans GameState (les réglages de la
 // pièce), une bille de 2 m (un seul coin, 6 coups), quartier tourné et tas de quartiers.
-// Usage : npm run test:fendage (lancé aussi par npm run test). Le Chromium et le serveur : tools/lib/playtest.ts.
+// Usage : npm run test:fendage (lancé aussi par npm run test:scenarios). Le Chromium et le serveur : tools/lib/playtest.ts.
 
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';

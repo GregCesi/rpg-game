@@ -5,7 +5,7 @@
 // et un seau d'eau au sol : trois mottes de torchis et le seau vide), mise en tas, la branche parée en baguette, mise en tas, un quartier fendu en cinq planches et deux perches en tas ; une
 // transformation à qui il manque une entrée ne change rien ; puis la page rechargée : tout est retrouvé, la pierre posée seule avec
 // sa forme et sa taille.
-// Usage : npm run test:briques (lancé aussi par npm run test).
+// Usage : npm run test:briques (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';
