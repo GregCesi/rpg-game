@@ -1,0 +1,6 @@
+{
+  "speeds": [1, 6, 24, 60, 360],
+  "default": 24,
+  "wakeHour": 6,
+  "saveEveryMinutes": 15
+}

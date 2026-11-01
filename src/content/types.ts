@@ -922,6 +922,21 @@ export const StrengthSchema = z
  * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir, `attackBase` et `attackPerKg` une attaque (le prix de base, plus
  * tant par kg de l'arme, × `cost` de l'attaque ; même dans le vide : c'est le geste qui fatigue).
  */
+/**
+ * Le temps (time.json, docs/CONCEPTION.md « Le temps ») : `speeds`, les paliers de la vitesse du temps que choisit le joueur (à x1,
+ * une journée dure 24 h réelles ; une minute réelle fait `speed` minutes de jeu) ; `default`, le palier de départ (x24 : une journée
+ * en une heure) ; `wakeHour`, l'heure du lever ; `saveEveryMinutes`, tous les combien de minutes de jeu l'horloge seule fait écrire la
+ * sauvegarde (elle avance à chaque image : sans ce pas, la partie s'écrirait sans cesse).
+ */
+export const TimeSchema = z
+  .strictObject({
+    speeds: z.array(z.number().positive()).min(1),
+    default: z.number().positive(),
+    wakeHour: z.number().min(0).max(23),
+    saveEveryMinutes: z.number().positive(),
+  })
+  .refine((t) => t.speeds.includes(t.default), { message: "'default' doit être l'un des paliers de 'speeds'" });
+
 export const StaminaSchema = z.strictObject({
   max: z.number().positive(),
   tired: z.number().gt(0).lt(1),

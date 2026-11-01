@@ -90,6 +90,11 @@ Un refus (mauvais outil, pas la place, épuisé) se dit sans geste ni dépense.
 ### Échap
 - Sur un rail : arrêter la passe (la face entamée reprendra là). Ailleurs : rien.
 
+### V (la vitesse du temps)
+- V : le palier suivant de la vitesse du temps (x1, x6, x24, x60, x360 ; x24 par défaut) ; Maj + V : le précédent ; un message dit
+  le palier (« Le temps : x60 »). Elle ne fait avancer que l'horloge (l'heure en haut à droite), jamais la marche ni les gestes.
+  Retenue d'une session à l'autre (docs/CONCEPTION.md, « Le temps »).
+
 ### Le zoom (dans tous les modes)
 - Molette (vers l'avant : plus près), **+** et **−** (lus par leur signe, où qu'ils soient), ou + et − du pavé numérique.
 

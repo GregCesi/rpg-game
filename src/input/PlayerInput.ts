@@ -23,6 +23,8 @@ const CODES = {
   // mode construction (?construire) : B entre et sort ; T et G (ou Page haut, Page bas) montent et descendent d'un cran. Ces trois
   // lettres sont à la même place en AZERTY et en QWERTY, et ne servent à rien d'autre.
   build: ['KeyB'],
+  // la vitesse du temps (docs/CONCEPTION.md, « Le temps ») : V, à la même place en AZERTY et en QWERTY ; Maj + V pour ralentir
+  speed: ['KeyV'],
   raise: ['KeyT', 'PageUp'],
   lower: ['KeyG', 'PageDown'],
 } as const;
@@ -143,6 +145,12 @@ export class PlayerInput {
   /** La touche R est enfoncée en ce moment : R maintenu (pivoter une bille couchée). */
   turnDown(): boolean {
     return CODES.turn.some((c) => this.held.has(c));
+  }
+
+  /** V : la vitesse du temps, +1 (V) ou −1 (Maj + V), ou 0 ; une fois par appui. */
+  speedPressed(): 1 | -1 | 0 {
+    if (!this.take('speed')) return 0;
+    return this.shiftDown() ? -1 : 1;
   }
 
   /** B : entrer dans le mode construction ou en sortir (?construire) ; vrai une seule fois par appui. */

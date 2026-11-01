@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { clockLabel } from '../world/clock';
 import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
 import { items, maps, props } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
@@ -9,6 +10,7 @@ import { Player } from '../entities/Player';
 import { forgetHeldKeys } from '../input/PlayerInput';
 import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand } from '../events';
 import { BuildSystem } from '../systems/build';
+import { ClockSystem } from '../systems/clock';
 import { CombatSystem, type AttackPlan } from '../systems/combat';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
@@ -118,6 +120,8 @@ export class WorldScene extends Phaser.Scene {
   private interaction!: InteractionSystem;
   private harvest!: HarvestSystem;
   private combat!: CombatSystem;
+  /** L'horloge (docs/CONCEPTION.md, « Le temps ») : une pour toutes les cartes, le palier est partagé (ClockSystem.speed). */
+  private readonly clock = new ClockSystem();
   private handsSystem!: HandsSystem;
   private knots!: KnotSystem;
   private press!: LongPress;
@@ -258,7 +262,7 @@ export class WorldScene extends Phaser.Scene {
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
     this.game.events.emit(GameEvent.Stamina, this.player.stamina.fraction);
-    if (this.wake) this.game.events.emit(GameEvent.Notice, `Jour ${game.day}`, HUD.longNoticeMs / 2);
+    if (this.wake) this.game.events.emit(GameEvent.Notice, clockLabel(game.clock), HUD.longNoticeMs / 2);
     if (lost) this.notice("Le bâtiment n'est plus là.");
 
     const cam = this.cameras.main;
@@ -336,6 +340,10 @@ export class WorldScene extends Phaser.Scene {
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
+    // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V et Maj + V changent la vitesse du temps
+    this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail');
+    const speed = input.speedPressed();
+    if (speed && this.mode === 'play') this.notice(`Le temps : x${this.clock.step(speed)}`);
     // B (?construire) : entrer dans le mode construction, ou en sortir
     if (input.buildPressed() && CONSTRUIRE && (this.mode === 'play' || this.mode === 'build')) {
       if (this.mode === 'build') this.exitBuild();

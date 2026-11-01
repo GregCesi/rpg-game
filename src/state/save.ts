@@ -4,7 +4,7 @@
 // La future sauvegarde au cagibi passera par ces mêmes fonctions.
 
 import { z } from 'zod';
-import { items, maps, piles, plans, props, stamina, wood } from '../content';
+import { items, maps, piles, plans, props, stamina, time, wood } from '../content';
 import { FacingSchema, type End, type PileWood, type WoodPiece } from '../content/types';
 import { refMissing } from '../world/build';
 import { parseInteriorId } from '../world/interior';
@@ -18,7 +18,7 @@ export const SAVE_KEY = 'xeros-partie';
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
-export const SAVE_VERSION = 17;
+export const SAVE_VERSION = 18;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -90,7 +90,7 @@ export function readSave(): ReadResult {
  * Version 11 -> 12 : la pierre (chantier « pierre ») : la pierre plate devient la dalle (`flat-stone` -> `slab`, voir `slabFromFlatStone`) ;
  * les autres pierres gardent leur clé (les masses se recalculent par la roche, rien n'est gardé).
  */
-function upgrade(data: unknown): unknown {
+export function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
   if (d?.version === 2 && d.state && typeof d.state === 'object') {
     d = { ...d, version: 3, state: { ...d.state, stamina: stamina.max, day: 1 } };
@@ -112,6 +112,7 @@ function upgrade(data: unknown): unknown {
   if (d?.version === 13 && d.state && typeof d.state === 'object') d = { ...d, version: 14, state: withJoints(d.state as V12State) };
   if (d?.version === 14 && d.state && typeof d.state === 'object') d = { ...d, version: 15, state: quartersWithoutFace(d.state) };
   if (d?.version === 15 && d.state && typeof d.state === 'object') d = { ...d, version: 16, state: hewingInPasses(d.state) };
+  if (d?.version === 17 && d.state && typeof d.state === 'object') d = { ...d, version: 18, state: withClock(d.state as { day?: number }) };
   return d;
 }
 
@@ -511,4 +512,13 @@ function missingContent(save: Save): string | undefined {
     }
   }
   return undefined;
+}
+
+/**
+ * Version 17 -> 18 : l'horloge (docs/CONCEPTION.md, « Le temps ») : le compteur de jours `day` devient `clock`, le même jour, à l'heure
+ * du lever (time.json).
+ */
+function withClock(state: { day?: number }): unknown {
+  const { day, ...rest } = state;
+  return { ...rest, clock: { day: typeof day === 'number' && day >= 1 ? day : 1, minute: time.wakeHour * 60 } };
 }

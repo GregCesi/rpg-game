@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import { HUD, UI, VIEW, ZOOM } from '../config';
-import { items, props, stamina } from '../content';
+import { items, props, stamina, time } from '../content';
 import { GameEvent } from '../events';
 import { game, type Held } from '../state';
 import { defOf } from '../world/woodPiece';
+import { clockLabel } from '../world/clock';
+import { ClockSystem } from '../systems/clock';
 
 /** Écart entre les deux cases (px) et marge sous les cases. */
 const GAP = 4;
@@ -52,6 +54,9 @@ export class HudScene extends Phaser.Scene {
   }
 
   /** `notice` : message à afficher dès le lancement, plus longtemps qu'un message court (sauvegarde refusée). */
+  /** L'heure et la vitesse du temps, en haut à droite. */
+  private clock!: Phaser.GameObjects.Text;
+
   create(data: { notice?: string } = {}): void {
     this.cameras.main.setZoom(ZOOM).centerOn(VIEW.width / 2, VIEW.height / 2);
     const size = this.textures.get('ui-slot').getSourceImage().width;
@@ -70,6 +75,12 @@ export class HudScene extends Phaser.Scene {
       this.bar.add([slot, icon, text]);
     });
     this.makeEnergy(x0 + 2 * size + GAP, y0 + size);
+    // l'heure, en haut à droite, et la vitesse du temps quand elle n'est pas celle par défaut (docs/CONCEPTION.md, « Le temps »)
+    this.clock = this.add
+      .text(VIEW.width - 4, 3, '', { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
+      .setOrigin(1, 0)
+      .setResolution(ZOOM);
+    this.bar.add(this.clock);
     this.notice = this.add
       .text(VIEW.width / 2, y0 - 6, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
@@ -91,6 +102,8 @@ export class HudScene extends Phaser.Scene {
   }
 
   update(): void {
+    const speed = ClockSystem.speed;
+    this.clock.setText(`${clockLabel(game.clock)}${speed !== time.default ? `  x${speed}` : ''}`);
     const talking = this.scene.isActive('dialogue');
     this.bar.setVisible(!talking);
     if (talking) this.notice.setAlpha(0);

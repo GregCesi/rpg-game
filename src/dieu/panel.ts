@@ -1,6 +1,7 @@
 // Outils de test (?dieu) : un panneau HTML à côté du jeu, hors du canevas, cliquable à la souris. Il n'existe pas sans
 // ?dieu : main.ts ne charge ce fichier que dans ce cas. Il ne touche jamais à la partie lui-même : chaque bouton envoie
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
+import { clockLabel } from '../world/clock';
 import { items, maps, piles, plans, props, stamina, strength, transforms, wood } from '../content';
 import type { WoodLook, WoodPiece } from '../content/types';
 import { woodOfLook } from '../world/woodShape';
@@ -242,7 +243,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   });
   const energyNow = el('div', { className: 'row' });
   const showEnergy = () => {
-    energyNow.textContent = `Endurance : ${Math.round(game.stamina)} / ${stamina.max} · Jour ${game.day}`;
+    energyNow.textContent = `Endurance : ${Math.round(game.stamina)} / ${stamina.max} · ${clockLabel(game.clock)}`;
   };
   showEnergy();
   setInterval(showEnergy, 200);
