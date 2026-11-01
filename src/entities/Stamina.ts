@@ -164,8 +164,9 @@ export class Stamina {
     }
   }
 
-  /** Remet les niveaux (outils de test, sommeil), écrits tout de suite. */
+  /** Remet les niveaux (outils de test, sommeil), écrits tout de suite ; le souffle réglé tient le délai de repos avant de revenir. */
   reset(value: { breath?: number; ceiling?: number; max?: number }): void {
+    this.rest = 0;
     if (value.max !== undefined) this.max = value.max;
     const ceiling = value.ceiling ?? this.ceiling;
     this.set(value.breath ?? Math.min(this.breath, ceiling), ceiling, true);

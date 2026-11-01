@@ -28,14 +28,21 @@ await playtest('temps', async ({ page, errors }) => {
       g.events.emit('dieu', c);
       await sleep(ms);
     };
+    const KEY_CODES: Record<string, number> = { KeyV: 86, Space: 32 };
     const press = async (code: string, shift = false) => {
-      if (shift) window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', shiftKey: true }));
-      // comme un vrai clavier : la touche pressée avec Maj porte `shiftKey`
-      window.dispatchEvent(new KeyboardEvent('keydown', { code, shiftKey: shift }));
+      // comme un vrai clavier : chaque touche a son keyCode (Phaser tient pour doublon deux appuis de même keyCode au même instant,
+      // et un appui synthétique sans keyCode vaut 0 : Maj puis V, coup sur coup, perdaient V), Maj enfoncée une image avant V, et la
+      // touche pressée avec Maj porte `shiftKey`
+      const keyCode = KEY_CODES[code] ?? 0;
+      if (shift) {
+        window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', keyCode: 16, shiftKey: true } as KeyboardEventInit));
+        await frame();
+      }
+      window.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode, shiftKey: shift } as KeyboardEventInit));
       // un appui d'au moins une image (Phaser lit les touches à chaque image ; un appui synthétique plus bref se perd avec Maj)
       await sleep(60);
-      window.dispatchEvent(new KeyboardEvent('keyup', { code, shiftKey: shift }));
-      if (shift) window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code, keyCode, shiftKey: shift } as KeyboardEventInit));
+      if (shift) window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft', keyCode: 16 } as KeyboardEventInit));
       await frame();
     };
     const minutes = () => gs.game.clock.day * 1440 + gs.game.clock.minute;
@@ -94,6 +101,10 @@ await playtest('temps', async ({ page, errors }) => {
     const told = notices.length;
     const ceiling0 = gs.game.stamina.ceiling;
     await press('Space');
+    // le jeu lit l'appui à son image suivante (une machine chargée en saute), au plus 2 s
+    const t3 = performance.now();
+    while (!w().player.stamina.winded && performance.now() - t3 < 2000) await frame();
+    await frame();
     await frame();
     const hud = g.scene.getScene('hud');
     const puff = w().player.breath.puff;
