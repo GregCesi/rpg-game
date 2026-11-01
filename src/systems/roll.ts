@@ -1,3 +1,4 @@
+import { SPEEDS } from './speeds';
 import type Phaser from 'phaser';
 import { PLAYER, ROLL } from '../config';
 import { propMass } from '../content/mass';
@@ -73,7 +74,7 @@ export class RollSystem {
     const none = player.dir.clone().set(0, 0);
     if (this.charge < ROLL.startMs) return player.actor.move(none, 0);
     const mass = propMass(target.type, target.length, undefined, target.wood);
-    const speed = PLAYER.walkSpeed * player.strength.rollFactor(mass);
+    const speed = SPEEDS.walk * player.strength.rollFactor(mass);
     // pousser puise dans le plafond et le souffle, proportionnellement à la masse (stamina.json)
     player.stamina.drain(player.stamina.pushRate(mass), delta, player.stamina.pushBreath(mass));
     const moved = this.advance(target, dir, speed, delta);

@@ -13,7 +13,7 @@ import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 
 /** Les scénarios, les plus longs d'abord (pour finir plus tôt quand ils tournent à plusieurs). */
-export const SCENARIOS = ['monde', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'temps', 'reset', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective'];
+export const SCENARIOS = ['monde', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective'];
 
 /**
  * Ceux qui tournent seuls, après les autres : ils effacent un fichier que tous lisent au démarrage (construction écrit puis efface

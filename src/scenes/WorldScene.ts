@@ -33,6 +33,7 @@ import { WoodSystem, type WoodAim } from '../systems/wood';
 import { WorkSystem, type WorkJob } from '../systems/work';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
+import { pxPerSec, setSpeeds } from '../systems/speeds';
 import { WorkBar } from '../entities/WorkBar';
 import { splitHits } from '../world/woodShape';
 import { wood as W } from '../content';
@@ -1033,6 +1034,15 @@ export class WorldScene extends Phaser.Scene {
       case 'reset-map':
         resetMap(game, mapId);
         this.fadeTo({ mapId, at: { x, y, facing } });
+        break;
+      case 'speeds':
+        // les vitesses à calibrer en jouant (systems/speeds.ts), retenues dans le navigateur
+        setSpeeds({ walk: pxPerSec(cmd.walk), run: pxPerSec(cmd.run), carry: pxPerSec(cmd.carry) });
+        this.notice(`Vitesses : marche ${cmd.walk} m/s, course ${cmd.run} m/s, chargé ${cmd.carry} m/s.`);
+        break;
+      case 'speeds-default':
+        setSpeeds(undefined);
+        this.notice('Vitesses par défaut.');
         break;
       case 'stamina-start':
         resetStamina(game);
