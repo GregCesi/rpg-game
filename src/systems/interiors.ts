@@ -19,11 +19,25 @@ export interface Passage {
   at: { x: number; y: number; facing: Facing };
 }
 
-/** Les pieds (le point de collision, 3 px au-dessus, comme les sorties de Tiled) dans un rectangle en cm. */
-function feetIn(player: Player, r: Rect): boolean {
-  const x = player.actor.x * CM_PER_PX;
-  const y = (player.actor.y - 3) * CM_PER_PX;
+/** Un point des pieds (px ; le point de collision, 3 px au-dessus, comme les sorties de Tiled) dans un rectangle en cm. */
+function pointIn(px: number, py: number, r: Rect): boolean {
+  const x = px * CM_PER_PX;
+  const y = (py - 3) * CM_PER_PX;
   return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.d;
+}
+
+/**
+ * Les pieds sont-ils passés dans le rectangle depuis l'image d'avant (`from`) ? Le chemin parcouru est suivi pixel par pixel : un jeu
+ * qui rame fait plusieurs pas de physique par image, et le passage étroit d'une porte serait sinon franchi sans être vu.
+ */
+function feetCrossed(player: Player, from: { x: number; y: number } | undefined, r: Rect): boolean {
+  const to = { x: player.actor.x, y: player.actor.y };
+  const a = from ?? to;
+  const n = Math.max(1, Math.ceil(Math.hypot(to.x - a.x, to.y - a.y)));
+  // un saut de plus de 32 px (Xéros reposé ailleurs, un changement de carte) n'est pas un chemin parcouru
+  if (n > 32) return pointIn(to.x, to.y, r);
+  for (let i = 0; i <= n; i++) if (pointIn(a.x + ((to.x - a.x) * i) / n, a.y + ((to.y - a.y) * i) / n, r)) return true;
+  return false;
 }
 
 /** Les numéros de tuile de l'intérieur : la terre battue (ses quatre variantes) et le vide. */
@@ -46,6 +60,8 @@ export function resolveInterior(id: string): InteriorMap | undefined {
 
 export class Interiors {
   private cache?: { version: number; buildings: Building[] };
+  /** Les pieds à l'image d'avant : le chemin parcouru depuis compte, pas seulement la position. */
+  private last?: { x: number; y: number };
 
   constructor(
     private readonly map: GameMap,
@@ -62,16 +78,21 @@ export class Interiors {
     return this.cache.buildings;
   }
 
-  /** Une entrée ou une sortie prise à cette image (Xéros avance, ses pieds dans le passage, tourné vers où il va), sinon rien. */
+  /**
+   * Une entrée ou une sortie prise à cette image (Xéros avance, ses pieds passés dans le passage depuis l'image d'avant, tourné vers où
+   * il va), sinon rien. À appeler à chaque image où Xéros peut passer.
+   */
   update(player: Player): Passage | undefined {
+    const from = this.last;
+    this.last = { x: player.actor.x, y: player.actor.y };
     if (player.dir.lengthSq() === 0) return undefined;
     const facing = player.actor.facing;
     if (this.interior) {
-      const e = this.interior.exits.find((x) => x.facing === facing && feetIn(player, x.zone));
+      const e = this.interior.exits.find((x) => x.facing === facing && feetCrossed(player, from, x.zone));
       return e && { mapId: this.interior.host, at: e.to };
     }
     for (const b of this.buildings()) {
-      const i = b.entrances.findIndex((e) => e.open && e.facing === facing && feetIn(player, e.zone));
+      const i = b.entrances.findIndex((e) => e.open && e.facing === facing && feetCrossed(player, from, e.zone));
       if (i < 0) continue;
       const it = resolveInterior(interiorId(this.map.def.id, b.key));
       if (it) return { mapId: it.def.id, at: it.arrivals[i] };
