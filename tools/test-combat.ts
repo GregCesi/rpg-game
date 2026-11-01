@@ -46,9 +46,15 @@ await playtest('combat', async ({ page, errors, load }) => {
       a.face(face);
       await sleep(100);
     };
+    // les attentes suivent l'état du jeu (le geste fini, l'enchaînement retombé), pas une durée : un jeu ralenti y arrive plus tard
+    const frame = () => new Promise((res) => requestAnimationFrame(res));
     const settle = async () => {
-      for (let i = 0; i < 200 && (w().mode !== 'play' || w().combat.busy); i++) await sleep(20);
-      await sleep(60);
+      while (w().mode !== 'play' || w().combat.busy) await frame();
+      await frame();
+    };
+    /** Attend que l'enchaînement retombe : le coup suivant sera le premier de la suite. */
+    const unchained = async () => {
+      while (w().time.now <= (w().combat as any).comboUntil) await frame();
     };
     const stamina = () => w().player.stamina.value;
     const log = () => w().combat.log;
@@ -89,17 +95,19 @@ await playtest('combat', async ({ page, errors, load }) => {
     };
     // un coup (Espace), seul : on laisse passer l'enchaînement d'avant
     const strikeOnce = async () => {
-      await sleep(400);
+      await unchained();
       const n = log().length;
       const before = stamina();
       const t0 = performance.now();
       await press('Space');
       let played = false;
       const texts = new Set<string>();
-      for (let i = 0; i < 120 && (w().mode !== 'play' || w().combat.busy); i++) {
+      // le premier pas du geste, puis jusqu'à sa fin
+      while (log().length === n && w().mode === 'play' && stamina() > 0 && performance.now() - t0 < 2000) await frame();
+      while (w().mode !== 'play' || w().combat.busy) {
         played ||= w().mode === 'use' && w().player.tools.busy;
         for (const t of floats()) texts.add(t);
-        await sleep(15);
+        await frame();
       }
       const ms = performance.now() - t0;
       await settle();
@@ -199,7 +207,7 @@ await playtest('combat', async ({ page, errors, load }) => {
 
     // l'enchaînement à l'épée : la taille puis le coup d'en haut
     await facingDummy('right', 6);
-    await sleep(400);
+    await unchained();
     let n = log().length;
     await press('Space');
     await sleep(150);
@@ -211,7 +219,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     gs.emptyHands(gs.game);
     w().handsChanged();
     await facingDummy('down', 2);
-    await sleep(400);
+    await unchained();
     n = log().length;
     await press('Space');
     await sleep(120);
@@ -222,7 +230,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     gs.game.hands[0] = { item: 'small-rough-stone', natural: { form: 0, size: 100 } };
     gs.game.active = 1;
     w().handsChanged();
-    await sleep(400);
+    await unchained();
     n = log().length;
     await press('Space');
     await sleep(120);

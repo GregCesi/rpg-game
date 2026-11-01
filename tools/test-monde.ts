@@ -79,86 +79,131 @@ await playtest('monde', async ({ page, errors, load }) => {
    * Marche (en courant) jusqu'au point du monde (wx, wy) : d'abord le long d'un axe puis de l'autre (`first`), à 6 px près ; les
    * changements de zone se font en route. Renvoie quand il y est.
    */
-  const goTo = async (wx: number, wy: number, first: 'x' | 'y', ms = 120000, tol = 6) => {
-    const t = Date.now();
-    let axis = first;
-    let last = { wx: 0, wy: 0, at: Date.now() };
-    const start = await where();
-    while (Date.now() - t < ms) {
-      const p = await where();
-      // une sortie prise en route (la porte de la maison) : on est arrivé ailleurs
-      if (!start.zone && p.id !== start.id) return press([]);
-      if (p.mode !== 'play') {
-        await sleep(20);
-        continue;
-      }
-      const dx = wx - p.wx;
-      const dy = wy - p.wy;
-      if (Math.abs(dx) <= tol && Math.abs(dy) <= tol) return press([]);
-      if (axis === 'x' && Math.abs(dx) <= tol) axis = 'y';
-      if (axis === 'y' && Math.abs(dy) <= tol) axis = 'x';
-      // de près, sans courir : il s'arrête plus juste
-      const keys = tol < 6 ? [] : ['ShiftLeft'];
-      if (axis === 'x') keys.push(dx > 0 ? 'KeyD' : 'KeyA');
-      else keys.push(dy > 0 ? 'KeyS' : 'KeyW');
-      const d = axis === 'x' ? Math.abs(dx) : Math.abs(dy);
-      if (tol < 6 && d < 12) {
-        // de très près : un appui bref (un ou deux pixels)
-        await press([]);
-        await page.keyboard.down(keys[0]);
-        await sleep(16);
-        await page.keyboard.up(keys[0]);
-        await sleep(40);
-      } else await press(keys);
-      // bloqué : on le dit
-      if (Math.hypot(p.wx - last.wx, p.wy - last.wy) > 2) last = { wx: p.wx, wy: p.wy, at: Date.now() };
-      else if (Date.now() - last.at > 3000) throw new Error(`Xéros est bloqué en route vers (${wx}, ${wy}) : ${JSON.stringify(p)}`);
-      await sleep(30);
-    }
-    throw new Error(`trop long pour aller en (${wx}, ${wy})`);
+  const goTo = async (wx: number, wy: number, first: 'x' | 'y', tol = 6) => {
+    await press([]);
+    // la marche se conduit dans la page, au rythme du jeu : chaque décision suit l'état du jeu à l'image même (ses pieds, son mode),
+    // si bien qu'un jeu ralenti (les scénarios tournent à plusieurs) ne fait ni dépasser le but ni échouer sur une durée ; de très
+    // près, un appui ne dure qu'un pas de la physique (un ou deux pixels)
+    const r = await page.evaluate(
+      async ({ wx, wy, first, tol }) => {
+        const g = (window as any).game;
+        const world = () => g.scene.getScene('world');
+        const key = (type: 'keydown' | 'keyup', code: string) => window.dispatchEvent(new KeyboardEvent(type, { code }));
+        const held = new Set<string>();
+        const hold = (keys: string[]) => {
+          for (const k of [...held]) if (!keys.includes(k)) (key('keyup', k), held.delete(k));
+          for (const k of keys) if (!held.has(k)) (key('keydown', k), held.add(k));
+        };
+        const frame = () => new Promise((res) => requestAnimationFrame(res));
+        /** Attend `n` pas de la physique du monde (une image peut en contenir plusieurs). */
+        const steps = (n: number) =>
+          new Promise<void>((res) => {
+            let k = 0;
+            const tick = () => (++k >= n ? (world().physics.world.off('worldstep', tick), res()) : undefined);
+            world().physics.world.on('worldstep', tick);
+          });
+        const at = () => {
+          const w = world();
+          const a = w?.player?.actor;
+          if (!a || !w.map) return undefined;
+          const o = w.map.def.world ?? { x: 0, y: 0 };
+          return { id: w.map.def.id as string, wx: o.x + a.x, wy: o.y + a.y, mode: w.mode as string, zone: !!w.map.def.world };
+        };
+        let start = at();
+        while (!start) (await frame(), (start = at()));
+        let axis = first;
+        let last = { wx: start.wx, wy: start.wy };
+        let still = 0;
+        for (;;) {
+          await frame();
+          const p = at();
+          if (!p) continue;
+          // une sortie prise en route (la porte de la maison) : on est arrivé ailleurs
+          if (!start.zone && p.id !== start.id) return (hold([]), { ok: true, p });
+          if (p.mode !== 'play') continue;
+          const dx = wx - p.wx;
+          const dy = wy - p.wy;
+          if (Math.abs(dx) <= tol && Math.abs(dy) <= tol) return (hold([]), { ok: true, p });
+          if (axis === 'x' && Math.abs(dx) <= tol) axis = 'y';
+          if (axis === 'y' && Math.abs(dy) <= tol) axis = 'x';
+          const dir = axis === 'x' ? (dx > 0 ? 'KeyD' : 'KeyA') : dy > 0 ? 'KeyS' : 'KeyW';
+          const d = axis === 'x' ? Math.abs(dx) : Math.abs(dy);
+          if (d < 12) {
+            // de très près, au pas de la physique : appuyer le temps d'un pas, relâcher, laisser s'arrêter
+            hold([]);
+            hold([dir]);
+            await steps(2);
+            hold([]);
+            await steps(3);
+          } else hold(tol < 6 || d < 24 ? [dir] : ['ShiftLeft', dir]);
+          // buté sur un coin (un piquet de clôture, l'angle d'un mur) : un petit pas de côté, d'un côté puis de l'autre, et on reprend ;
+          // bloqué pour de bon : des centaines d'images sans bouger (et non une durée)
+          if (Math.hypot(p.wx - last.wx, p.wy - last.wy) > 2) (last = { wx: p.wx, wy: p.wy }, (still = 0));
+          else if (++still > 600) return (hold([]), { ok: false, p });
+          else if (still % 60 === 0 && d >= 12) {
+            const side = (still / 60) % 2 === 1 ? 1 : -1;
+            const across = axis === 'x' ? (side > 0 ? 'KeyS' : 'KeyW') : side > 0 ? 'KeyD' : 'KeyA';
+            hold([across]);
+            await steps(6 * Math.ceil(still / 120));
+            hold([]);
+          }
+        }
+      },
+      { wx, wy, first, tol },
+    );
+    if (!r.ok) throw new Error(`Xéros est bloqué en route vers (${wx}, ${wy}) : ${JSON.stringify(r.p)}`);
   };
 
   // 1. le réveil dans le cagibi, puis la sortie de la chaumière : un chemin calculé dans la maison (pas de 4 px, cases libres)
   let p = await where();
   assert.equal(p.id, 'maison', 'réveil dans la chaumière');
-  const route: { x: number; y: number }[] = await page.evaluate(() => {
-    const w = (window as any).game.scene.getScene('world');
-    const m = w.map;
-    const exit = m.def.exits.find((e: any) => e.to === 'ferme' && e.spawn === 'porte');
-    const S = 4;
-    const free = (x: number, y: number) => m.areaFree({ left: x - 5, top: y - 8, right: x + 5, bottom: y }, []);
-    const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
-    const goal = (x: number, y: number) => x * S >= exit.x + 8 && x * S < exit.x + exit.w - 8 && y * S - 3 >= exit.y + 4 && y * S - 3 < exit.y + exit.h;
-    const prev = new Map<string, string>();
-    const q = [start];
-    prev.set(start.join(), '');
-    let end: number[] | undefined;
-    while (q.length) {
-      const [x, y] = q.shift()!;
-      if (goal(x, y)) {
-        end = [x, y];
-        break;
+  /**
+   * Un chemin sans obstacle sur la carte en cours, de Xéros jusqu'au but (une recherche en largeur sur une grille de 4 px, la place de
+   * ses pieds libre à chaque pas) : la sortie de la chaumière vers la ferme, ou un point de la carte (`to`, en px de la carte). Rend
+   * ses coins, en px de la carte.
+   */
+  const routeTo = (to?: { x: number; y: number }): Promise<{ x: number; y: number }[]> =>
+    page.evaluate((to) => {
+      const w = (window as any).game.scene.getScene('world');
+      const m = w.map;
+      const exit = m.def.exits.find((e: any) => e.to === 'ferme' && e.spawn === 'porte');
+      const S = 4;
+      const free = (x: number, y: number) => m.areaFree({ left: x - 5, top: y - 8, right: x + 5, bottom: y }, []);
+      const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
+      const goal = to
+        ? (x: number, y: number) => Math.abs(x * S - to.x) <= S / 2 && Math.abs(y * S - to.y) <= S / 2
+        : (x: number, y: number) => x * S >= exit.x + 8 && x * S < exit.x + exit.w - 8 && y * S - 3 >= exit.y + 4 && y * S - 3 < exit.y + exit.h;
+      const prev = new Map<string, string>();
+      const q = [start];
+      prev.set(start.join(), '');
+      let end: number[] | undefined;
+      while (q.length) {
+        const [x, y] = q.shift()!;
+        if (goal(x, y)) {
+          end = [x, y];
+          break;
+        }
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const n = [x + dx, y + dy];
+          if (prev.has(n.join()) || !free(n[0] * S, n[1] * S)) continue;
+          prev.set(n.join(), `${x},${y}`);
+          q.push(n);
+        }
       }
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const n = [x + dx, y + dy];
-        if (prev.has(n.join()) || !free(n[0] * S, n[1] * S)) continue;
-        prev.set(n.join(), `${x},${y}`);
-        q.push(n);
+      const out: { x: number; y: number }[] = [];
+      for (let k = end?.join(); k; k = prev.get(k)) {
+        const [x, y] = k.split(',').map(Number);
+        out.unshift({ x: x * S, y: y * S });
       }
-    }
-    const out: { x: number; y: number }[] = [];
-    for (let k = end?.join(); k; k = prev.get(k)) {
-      const [x, y] = k.split(',').map(Number);
-      out.unshift({ x: x * S, y: y * S });
-    }
-    // seulement les coins
-    return out.filter((_q, i) => i === 0 || i === out.length - 1 || (out[i - 1].x !== out[i + 1].x && out[i - 1].y !== out[i + 1].y));
-  });
+      // seulement les coins
+      return out.filter((_q, i) => i === 0 || i === out.length - 1 || (out[i - 1].x !== out[i + 1].x && out[i - 1].y !== out[i + 1].y));
+    }, to);
+  const route = await routeTo();
   assert.ok(route.length > 1, 'un chemin du cagibi à la porte');
   for (const c of route.slice(1)) {
     const now = await where();
     if (now.id !== 'maison') break;
-    await goTo(c.x, c.y, Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y', 45000, 2);
+    await goTo(c.x, c.y, Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y', 2);
   }
   // un pas vers le sud dans la sortie
   await press(['KeyS']);
@@ -176,9 +221,18 @@ await playtest('monde', async ({ page, errors, load }) => {
   const TILE = 32;
   const ROAD = 191 * TILE; // la limite entre les deux rangées du chemin (rangées 190-191 du monde)
   const farmPath = 125 * TILE + 3008; // le milieu du chemin nord-sud de la ferme
+  // jusqu'au chemin nord-sud par un chemin libre (la sortie de la chaumière ne pose pas Xéros toujours au même pixel, et la cour a
+  // ses obstacles), puis droit au sud, sur l'axe du chemin
   p = await where();
-  await goTo(farmPath, p.wy, 'x', 60000);
-  await goTo(farmPath, ROAD, 'y', 60000);
+  const o = ferme!.world!;
+  const onPath = { x: farmPath - o.x, y: p.y + 64 };
+  const farmRoute = await routeTo(onPath);
+  assert.ok(farmRoute.length > 1, 'un chemin libre de la porte au chemin nord-sud');
+  for (const c of farmRoute.slice(1)) {
+    const now = await where();
+    await goTo(o.x + c.x, o.y + c.y, Math.abs(o.x + c.x - now.wx) > Math.abs(o.y + c.y - now.wy) ? 'x' : 'y', 2);
+  }
+  await goTo(farmPath, ROAD, 'y', 2);
   // 3. vers l'est, le long du chemin : la ferme, le chemin du village, le village ; jusqu'au milieu de la place
   const place = { x: 478.5 * TILE, y: 191.5 * TILE };
   await goTo(place.x, ROAD, 'x');
@@ -199,7 +253,7 @@ await playtest('monde', async ({ page, errors, load }) => {
   });
   assert.ok(post, 'le panneau est posé');
   // devant lui, au sud, tourné vers le nord
-  await goTo(post.x, post.y + 22, 'x', 60000);
+  await goTo(post.x, post.y + 22, 'x');
   await page.keyboard.down('KeyW');
   await sleep(60);
   await page.keyboard.up('KeyW');
@@ -220,7 +274,7 @@ await playtest('monde', async ({ page, errors, load }) => {
   assert.equal(edge.id, 'route-de-la-ville', 'le bord du monde arrête Xéros');
   assert.ok(edge.x <= 125 * TILE, `toujours dans la zone (x = ${edge.x})`);
   // un pas en arrière, loin du poteau (collé à lui, sa collision le repousserait de quelques px à la reprise)
-  await goTo(post.x, post.y + 48, 'x', 60000);
+  await goTo(post.x, post.y + 48, 'x');
   await sleep(200);
   const before = await where();
 

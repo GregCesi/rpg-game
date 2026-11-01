@@ -112,11 +112,29 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     }, [x, y, facing] as const);
     await sleep(120);
   };
-  /** Marche dans une direction jusqu'à ce que la carte change (au plus `ms`), puis attend la fin du fondu. */
-  const walkTo = async (key: string, done: (id: string) => boolean, ms = 15000) => {
+  /**
+   * Marche dans une direction jusqu'à ce que la carte soit `to` (son nom, ou le début de son nom avec `*` : `interieur:*`), puis
+   * attend la fin du fondu. L'attente suit l'état du jeu (`waitForFunction` sur la carte), pas une durée : un jeu ralenti par d'autres
+   * scénarios y arrive simplement plus tard.
+   */
+  const walkTo = async (key: string, to: string) => {
     await page.keyboard.down(key);
-    const t = Date.now();
-    while (Date.now() - t < ms && !done(await mapId())) await sleep(50);
+    await page.waitForFunction(
+      (want) => {
+        const id = (window as any).game.scene.getScene('world')?.map?.def?.id ?? '';
+        return want.endsWith('*') ? id.startsWith(want.slice(0, -1)) : id === want;
+      },
+      to,
+      { timeout: 0, polling: 'raf' },
+    );
+    await page.keyboard.up(key);
+    await page.waitForFunction(() => (window as any).game.scene.getScene('world')?.mode === 'play', null, { timeout: 0, polling: 'raf' });
+    await sleep(300);
+  };
+  /** Marche `ms` millisecondes dans une direction (la porte fermée : on vérifie ensuite qu'on n'est pas entré), puis s'arrête. */
+  const walkFor = async (key: string, ms: number) => {
+    await page.keyboard.down(key);
+    await sleep(ms);
     await page.keyboard.up(key);
     await until((w) => w.mode === 'play');
     await sleep(300);
@@ -165,7 +183,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     assert.equal(entrance.open, false, `${b.plan} : la porte est fermée`);
     const outside = { x: Math.round(entrance.outside.x / 5), y: Math.round(entrance.outside.y / 5) };
     await stand(outside.x, outside.y, 'up');
-    await walkTo('KeyW', (id) => id !== 'ferme', 900);
+    await walkFor('KeyW', 900);
     assert.equal(await mapId(), 'ferme', `${b.plan} : porte fermée, on n'entre pas`);
     await stand(outside.x, outside.y, 'up');
     await page.keyboard.press('KeyE');
@@ -180,7 +198,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
 
     // 3. on entre : la carte de l'intérieur, la pièce du plan
     await stand(outside.x, outside.y, 'up');
-    await walkTo('KeyW', (id) => id.startsWith('interieur:'));
+    await walkTo('KeyW', 'interieur:*');
     const inside = await mapId();
     assert.match(inside, /^interieur:ferme:/, `${b.plan} : on entre`);
     const interior = await page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').interior)));
@@ -231,7 +249,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     const exit = interior.exits[0];
     const out = async () => {
       await stand(Math.round((exit.zone.x + exit.zone.w / 2) / 5), Math.round((exit.zone.y - 30) / 5), 'down');
-      await walkTo('KeyS', (id) => id === 'ferme');
+      await walkTo('KeyS', 'ferme');
     };
     await out();
     assert.equal(await mapId(), 'ferme', `${b.plan} : on ressort`);
@@ -241,7 +259,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     });
     assert.ok(Math.abs(back.x - outside.x) <= 3 && Math.abs(back.y - outside.y) <= 3, `${b.plan} : dehors, devant la porte (${back.x}, ${back.y} ; attendu ${outside.x}, ${outside.y})`);
     await stand(outside.x, outside.y, 'up');
-    await walkTo('KeyW', (id) => id.startsWith('interieur:'));
+    await walkTo('KeyW', 'interieur:*');
     assert.equal(await mapId(), inside, `${b.plan} : on rentre dans le même intérieur`);
     assert.deepEqual(await furniture(), put, `${b.plan} : le tabouret est retrouvé`);
     await out();
