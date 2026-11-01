@@ -93,12 +93,21 @@ export class ToolUse {
     this.scene.time.delayedCall(ms, () => this.busy && this.actor.anims.resume());
   }
 
-  /** Lance l'animation `key` du corps : `onStep` à chaque nouvelle image (son indice), `onDone` à la fin ; le personnage ne marche pas. */
+  /**
+   * Lance l'animation `key` du corps : `onStep` à chaque nouvelle image (son indice), y compris celles qu'un ralentissement a fait
+   * sauter, `onDone` à la fin ; le personnage ne marche pas.
+   */
   private run(key: string, onStep: (step: number) => void, onDone: () => void): void {
     this.busy = true;
     this.actor.body.setVelocity(0, 0);
     this.actor.anims.timeScale = 1;
-    const onFrame = (_a: Phaser.Animations.Animation, frame: Phaser.Animations.AnimationFrame) => onStep(frame.index - 1);
+    // chaque image franchie compte, même si un ralentissement en fait sauter (une image de frappe ne se perd jamais)
+    let last = 0;
+    const reach = (step: number) => {
+      for (let k = last + 1; k <= step; k++) onStep(k);
+      last = Math.max(last, step);
+    };
+    const onFrame = (_a: Phaser.Animations.Animation, frame: Phaser.Animations.AnimationFrame) => reach(frame.index - 1);
     const end = () => {
       this.actor.off(Phaser.Animations.Events.ANIMATION_UPDATE, onFrame);
       this.actor.off(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + key, complete);
@@ -112,6 +121,7 @@ export class ToolUse {
       this.actor.face(this.actor.facing);
     };
     const complete = () => {
+      reach(this.scene.anims.get(key).frames.length - 1);
       end();
       onDone();
     };
