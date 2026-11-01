@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { DEPTH, HARVEST, HEW_PASS, SPLIT, WOOD_AIM } from '../config';
-import { gestures, wood as W } from '../content';
+import { gestures, wood as W, work } from '../content';
+import { CM_PER_PX } from '../content/gabarit';
 import type { End, Facing, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
 import { changeObject, changeSpawned, game, setWood, spawnObject } from '../state';
@@ -14,16 +15,6 @@ import type { RailEnd, RailPass } from './rail';
 /** Ce qu'un outil fait à une pièce de bois : la couper (cognée), l'équarrir (doloire), planter le coin, frapper le coin (masse). */
 export type WoodWork = 'cut' | 'hew' | 'plant' | 'maul';
 
-/**
- * La durée réaliste d'un coup de ce travail, en minutes de jeu (wood.json ; docs/CONCEPTION.md, « Le temps ») : une part de la coupe
- * (selon le diamètre), planter le coin, un coup de masse, un coup de doloire (sa part d'un mètre de face).
- */
-export function workMinutes(work: WoodWork, piece: WoodPiece): number {
-  if (work === 'cut') return (W.cut.minutesPer10cm * (W.sizes[piece.size]?.diameter ?? 30)) / 10 / W.cut.hits;
-  if (work === 'plant') return W.split.plantMinutes;
-  if (work === 'maul') return W.split.minutesPerHit;
-  return (W.hew.minutesPerM * W.hew.stroke) / 100;
-}
 
 /**
  * Ce que l'outil en main ferait à la pièce de bois devant Xéros : `at`, pour une coupe, sa place en cm depuis le bout de départ
@@ -297,13 +288,21 @@ export class WoodSystem {
   }
 
   /**
-   * La passe de doloire de `aim` (une visée `hewAim` sans refus), à lancer sur le rail : Xéros longe la pièce du début de la passe
-   * jusqu'à l'autre bout en `minutesPerM` par mètre de face à dresser, répétant son coup (`chop`). À chaque coup, `pay` reçoit le prix de ce qu'il vient de
-   * dresser (`hewPerM` par mètre ; refusé : la passe s'arrête), la face en cours s'allonge jusqu'au fer (notée dans GameState) et
-   * des copeaux tombent. Au bout, le reste est payé, la face est finie, et, si ce n'est pas la poutre, la pièce est retournée d'un
-   * quart de tour. `end` reçoit ce qu'a donné la passe (la face, la poutre, ou rien : arrêtée) et pourquoi elle s'est terminée.
+   * La passe de doloire de `aim` (une visée `hewAim` sans refus), à lancer sur le rail : Xéros longe la pièce du début de la passe vers
+   * l'autre bout, au coup (docs/CONCEPTION.md, « Le travail ») : chaque coup avance la face de `stroke.cm` (ce qu'il lève, rapporté à la
+   * section de la face), se paie par `pay` (refusé : la passe s'arrête ; `wait` : Xéros souffle), et la face en cours s'allonge jusqu'au
+   * fer (notée dans GameState), des copeaux tombent. Au bout, la face est finie, et, si ce n'est pas la poutre, la pièce est retournée
+   * d'un quart de tour. `settle` (?dieu) reçoit ce qui reste à dresser (cm) quand la passe est finie d'un coup ; `end` reçoit ce qu'a
+   * donné la passe (la face, la poutre, ou rien : arrêtée) et pourquoi elle s'est terminée.
    */
-  hewPass(player: Player, aim: WoodAim, pay: (cost: number) => boolean | 'wait', end: (hit: WoodHit, why: RailEnd) => void): RailPass {
+  hewPass(
+    player: Player,
+    aim: WoodAim,
+    stroke: { cm: number; durations?: number[] },
+    pay: () => boolean | 'wait',
+    settle: (cm: number) => void,
+    end: (hit: WoodHit, why: RailEnd) => void,
+  ): RailPass {
     const { id, spawned } = aim.prop;
     const piece = aim.piece;
     const from = aim.from!;
@@ -317,35 +316,31 @@ export class WoodSystem {
       const cm = Math.min(len, Math.max(0, cmAt(piece.size, look, piece.axis, fer(done))));
       return Math.round(from === 'start' ? cm : len - cm);
     };
-    const cost = (cm: number) => (player.stamina.costs.hewPerM * cm) / 100;
-    let paid = from === 'start' ? aim.at : len - aim.at;
+    const start = from === 'start' ? aim.at : len - aim.at;
     return {
       from: rail.from,
       to: rail.to,
-      gesture: 'chop',
+      gesture: work.strokes.hew.gesture,
       tool: W.hew.tool,
-      // la passe dure le temps réaliste de ce qui reste à dresser (`minutesPerM`, wood.json)
-      minutes: (W.hew.minutesPerM * Math.max(0, len - paid)) / 100,
+      durations: stroke.durations,
+      // le fer avance de ce que lève un coup (une fraction de pixel : la face monte lentement, comme en vrai)
+      advance: stroke.cm / CM_PER_PX,
       onStroke: (done) => {
         const p = this.find(id, spawned);
         if (!p) return false;
+        const r = pay();
+        if (r !== true) return r;
         const cm = dressedAt(done);
-        if (cm > paid) {
-          const r = pay(cost(cm - paid));
-          if (r !== true) return r;
-        }
-        paid = Math.max(paid, cm);
         const top = p.y - this.sizeOf(p).h;
         const [x, y] = piece.axis === 'ew' ? [p.x + Math.round(fer(done)), top + 1] : [p.x + 4, top + Math.round(fer(done))];
         this.harvest.chipsAt(x, y + 3, p.y + 1, 'wood', facing);
         if (cm > 0 && cm < len && cm > (p.wood!.dressed?.length ?? 0)) this.update(p, { ...p.wood!, dressed: { from, length: cm } });
         return true;
       },
+      settle: (left) => settle((len - start) * (rail.from === rail.to ? 1 : left / Math.max(1e-6, Math.hypot(rail.to.x - rail.from.x, rail.to.y - rail.from.y)))),
       onEnd: (why) => {
         const p = this.find(id, spawned);
         if (!p || why !== 'end') return end({}, why);
-        // le dernier bout dressé se paie aussi ; la face est finie même si la jauge tombe à zéro sur ce bout
-        if (len > paid) pay(cost(len - paid));
         if (hewnFaces(p.wood!).faces + 1 >= W.hew.faces) return end(this.finishFace(p), why);
         this.turnOver(p, (q) => end(this.finishFace(q), why));
       },

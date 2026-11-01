@@ -1,65 +1,61 @@
-// Un travail en temps réel (docs/CONCEPTION.md, « Le temps ») : abattre, ébrancher, récolter, couper, fendre, tailler. Il se lance
-// d'un appui ; Xéros répète son geste pendant toute la durée réaliste du travail (les `minutes` des données), au rythme du geste :
-// le nombre de coups en découle. Les étapes du travail (les `hits` des données : l'arbre qui tremble, la coupe qui se creuse, la fente
-// qui s'allonge) tombent à intervalles égaux, chacune sur un coup ; le résultat arrive au dernier. L'endurance se paie au fil du travail,
-// coup par coup ; à bout de souffle, Xéros s'arrête et souffle, puis reprend ; plafond vide, le travail s'arrête. Bouger ou Échap
-// l'interrompt : ce qui est fait reste fait (la part faite est écrite dans GameState, `work` de la carte). Une jauge au-dessus de Xéros
-// montre où il en est. Ne lit pas le clavier : la scène dit quand s'arrêter.
+// Un travail au coup (docs/CONCEPTION.md, « Le travail ») : abattre, ébrancher, couper, fendre, tailler. Un travail est une quantité de
+// matière (world/workPlan.ts) ; chaque coup en enlève une part, selon son énergie (world/swing.ts : la force de Xéros, la masse et la
+// longueur de l'outil), le tranchant, la résistance et la précision. Un appui sur Espace : un coup ; Espace maintenu : les coups
+// s'enchaînent jusqu'au résultat. Chaque coup coûte du plafond et du souffle ; pendant le travail le souffle ne revient pas ; vide,
+// Xéros s'arrête et souffle, puis reprend tout seul si Espace est toujours tenu. Relâcher Espace, bouger ou Échap arrête après le coup en
+// cours ; ce qui est fait reste fait (la part enlevée, dans GameState : `work` de la carte). Les étapes du travail (l'arbre qui
+// tremble, la coupe qui se creuse, la fente qui s'allonge) tombent quand la part enlevée passe leurs seuils ; le résultat, au bout. La
+// durée n'est imposée nulle part : elle découle des coups et des pauses. Une jauge au-dessus de Xéros montre la part enlevée.
+import { gestures, work } from '../content';
 import type { Player } from '../entities/Player';
 import type { WorkBar } from '../entities/WorkBar';
-import { gameMinutes } from '../world/clock';
-import { ClockSystem } from './clock';
+import { frameMs, type Phase, type Stroke } from '../world/swing';
+import { jobStroke, perStroke, planOf, strokeCost, type WorkJobDef } from '../world/workPlan';
 import type { EffortSystem } from './effort';
 
 /** Un travail : ce que la scène sait de lui au départ. */
 export interface WorkJob {
-  /** Le geste répété (clé de gestures.json) et l'outil en main (absent : à mains nues). */
-  gesture: string;
-  tool?: string;
-  /** Durée réaliste du travail entier, en minutes de jeu. */
-  minutes: number;
-  /** Nombre d'étapes (au moins 1) ; la dernière donne le résultat. */
-  steps: number;
-  /** Minutes déjà faites (un travail repris là où il s'était arrêté). */
+  /** La matière, l'outil et le coup (world/workPlan.ts). */
+  def: WorkJobDef;
+  /** La part déjà enlevée, de 0 à 1 (un travail repris). */
   done: number;
-  /** Prix du travail entier en endurance (points du plafond), payé au fil des coups. */
-  cost: number;
+  /** Nombre d'étapes (au moins 1) ; la dernière donne le résultat. L'étape k tombe quand la part enlevée passe k / steps. */
+  steps: number;
   /** L'étape `k` (de 1 à `steps`) est atteinte : son effet (la dernière, le résultat). */
   step(k: number): void;
   /** Chaque coup qui porte : éclats, l'objet qui tremble. */
   strike(): void;
-  /** La part faite (minutes), à écrire dans GameState ; `undefined` : le travail est fini, plus rien à garder. */
-  save(minutes: number | undefined): void;
+  /** La part enlevée (0 à 1), à écrire dans GameState ; `undefined` : le travail est fini, plus rien à garder. */
+  save(done: number | undefined): void;
   /** La cible est-elle toujours là ? */
   valid(): boolean;
   /** Le travail est fini ou arrêté (`why`). */
   end(why: WorkEnd): void;
 }
 
-/** Pourquoi un travail se termine : fini, arrêté (bouger, Échap), épuisé, la cible partie. */
+/** Pourquoi un travail se termine : fini, arrêté (relâcher Espace, bouger, Échap), épuisé, la cible partie. */
 export type WorkEnd = 'done' | 'stopped' | 'spent' | 'gone';
 
-/** Tous les combien de ms jouées la part faite s'écrit, en plus des étapes et de l'arrêt (une page fermée en plein travail). */
-const SAVE_EVERY_MS = 10000;
+/** Ce que la scène dit à chaque image : Espace tenu, un arrêt demandé (un pas, Échap). */
+export interface WorkInput {
+  held: boolean;
+  stop: boolean;
+}
 
 /**
- * Le travail en cours : `start` le lance, `update` à chaque image le fait avancer et l'arrête sur demande, `finish` (?dieu) le termine
- * d'un coup, comme s'il avait duré son temps (horloge, endurance et résultat compris).
+ * Le travail en cours : `start` le lance (le premier coup part), `update` à chaque image enchaîne ou arrête, `finish` (?dieu) le
+ * termine d'un coup, comme s'il avait duré son temps (horloge, endurance et résultat compris).
  */
 export class WorkSystem {
   private job?: WorkJob;
-  /** Minutes faites depuis le début du travail (reprise comprise). */
-  private done = 0;
-  /** Minutes déjà payées en endurance. */
-  private paid = 0;
-  /** Étapes déjà atteintes. */
+  private stroke?: Stroke;
+  private per = 0;
   private reached = 0;
-  /** À bout de souffle : il attend sans avancer ; `idle` : le geste en cours est fini, le suivant attend. */
-  private waiting = false;
+  /** Un arrêt est demandé : le coup en cours s'achève, puis le travail s'arrête. */
+  private stopping = false;
+  /** À bout de souffle : il souffle sur place ; `idle` : entre deux coups. */
+  private pausing = false;
   private idle = false;
-  /** Le dernier coup est donné : le travail finit avec ce geste. */
-  private last = false;
-  private sinceSave = 0;
 
   constructor(
     private readonly player: Player,
@@ -73,82 +69,76 @@ export class WorkSystem {
     return !!this.job;
   }
 
-  /** Lance un travail : rien n'est payé avant le premier coup ; plafond vide, refusé (« épuisé »). */
+  /** La part enlevée du travail en cours (0 à 1). */
+  get done(): number {
+    return this.job?.done ?? 0;
+  }
+
+  /** La force d'un coup de Xéros : strength.json, le couple multiplié par sa force (?dieu « force »). */
+  private get swinger() {
+    const s = this.player.strength;
+    return { ...s.swing, torque: s.swing.torque * s.multiplier };
+  }
+
+  /** Lance un travail : le premier coup part ; plafond vide, refusé (« épuisé »). */
   start(job: WorkJob): boolean {
     if (this.player.stamina.empty) {
       this.effort.exhausted();
       return false;
     }
     this.job = job;
-    this.done = Math.min(job.minutes, Math.max(0, job.done));
-    this.paid = this.done;
-    this.reached = this.stepsAt(this.done);
-    this.waiting = this.idle = this.last = false;
-    this.sinceSave = 0;
-    this.bar.show(this.player.actor, this.fraction);
+    job.done = Math.min(1, Math.max(0, job.done));
+    this.stroke = jobStroke(job.def, this.swinger);
+    this.per = perStroke(job.def, this.stroke) / job.def.amount;
+    this.reached = this.stepsAt(job.done);
+    this.stopping = this.pausing = this.idle = false;
+    this.bar.show(this.player.actor, job.done);
     this.swing();
     return true;
   }
 
-  /** À chaque image : le temps du travail avance (à la vitesse du temps) ; `stop` (bouger, Échap) l'interrompt, ce qui est fait reste. */
-  update(delta: number, stop: boolean): void {
+  /** À chaque image : un arrêt demandé, ou Espace relâché, arrête après le coup en cours ; à bout de souffle, il souffle puis reprend. */
+  update(input: WorkInput): void {
     const job = this.job;
     if (!job) return;
-    // le dernier coup a pu changer la cible (l'arbre devenu souche) : le geste s'achève
-    if (!this.last && !job.valid()) return this.close('gone');
-    if (stop) {
-      this.player.tools.cancel();
-      return this.close('stopped');
-    }
-    if (this.waiting) {
-      // il reprend son souffle sur place, puis le geste suivant
+    if (!job.valid() && this.reached < job.steps) return this.close('gone');
+    if (input.stop || !input.held) this.stopping = true;
+    if (this.pausing) {
+      // la pause : le souffle revient ; repris s'il est revenu et qu'Espace est toujours tenu, sinon arrêté
+      if (this.stopping) return this.close('stopped');
       if (this.idle && !this.player.stamina.winded) {
-        this.waiting = this.idle = false;
+        this.pausing = this.idle = false;
         this.swing();
       }
       return;
     }
-    if (this.last) return;
-    this.done = Math.min(job.minutes, this.done + gameMinutes(delta, ClockSystem.speed));
-    this.sinceSave += delta;
-    if (this.sinceSave >= SAVE_EVERY_MS) {
-      this.sinceSave = 0;
-      job.save(this.paid);
-    }
-    this.bar.show(this.player.actor, this.fraction);
+    // pendant le travail, le souffle ne revient pas
+    this.player.stamina.busy();
+    this.bar.show(this.player.actor, job.done);
   }
 
   /**
-   * ?dieu « Finir le travail » : ce qui reste se fait d'un coup ; l'horloge avance de ce qui manquait, l'endurance en paie le prix (sans
-   * attendre son souffle), les étapes restantes et le résultat tombent.
+   * ?dieu « Finir le travail » : tous les coups qui restent d'un coup ; l'horloge avance de leur durée (pauses comprises), le plafond en
+   * paie le prix, les étapes restantes et le résultat tombent.
    */
   finish(): boolean {
     const job = this.job;
     if (!job) return false;
     this.player.tools.cancel();
-    this.jump(job.minutes - this.done);
-    this.player.stamina.force(this.costOf(job.minutes - this.paid));
-    this.done = this.paid = job.minutes;
+    const plan = planOf(job.def, this.swinger, this.player.stamina.max, job.done);
+    this.jump(plan.seconds / 60);
+    this.player.stamina.force(plan.ceiling);
+    job.done = 1;
     this.reach(job.steps);
     this.close('done');
     return true;
   }
 
-  private get fraction(): number {
-    return this.job && this.job.minutes > 0 ? this.done / this.job.minutes : 1;
-  }
-
-  /** Prix en endurance de `minutes` de ce travail. */
-  private costOf(minutes: number): number {
+  /** Nombre d'étapes atteintes à la part `done` : une tous les 1 / steps, la dernière au bout. */
+  private stepsAt(done: number): number {
     const job = this.job!;
-    return job.minutes > 0 ? (job.cost * Math.max(0, minutes)) / job.minutes : 0;
-  }
-
-  /** Nombre d'étapes atteintes après `minutes` faites : une tous les `minutes / steps`, la dernière au bout. */
-  private stepsAt(minutes: number): number {
-    const job = this.job!;
-    if (minutes >= job.minutes - 1e-9) return job.steps;
-    return Math.min(job.steps - 1, Math.floor((minutes / job.minutes) * job.steps + 1e-9));
+    if (done >= 1 - 1e-9) return job.steps;
+    return Math.min(job.steps - 1, Math.floor(done * job.steps + 1e-9));
   }
 
   /** Les étapes jusqu'à `k` tombent, dans l'ordre. */
@@ -159,40 +149,51 @@ export class WorkSystem {
     }
   }
 
-  /** Un geste : à l'impact, le coup se paie et porte, les étapes passées tombent ; puis le suivant, sauf au bout. */
+  /** Un coup : il se paie à l'impact (sinon il souffle, ou s'arrête épuisé), enlève sa part, fait tomber les étapes passées ; puis le suivant. */
   private swing(): void {
     const job = this.job!;
+    const s = this.stroke!;
+    const phases = gestures[jobGesture(job)]?.phases as Phase[] | undefined;
+    const durations = phases ? frameMs(s, phases) : undefined;
+    let ended = false;
     this.player.tools.swing(
-      job.gesture,
-      job.tool,
+      jobGesture(job),
+      job.def.tool,
       () => {
         if (this.job !== job) return;
-        const r = this.effort.attempt(this.player, this.costOf(this.done - this.paid));
+        const cost = strokeCost(s);
+        const r = this.player.stamina.spendStroke(cost.ceiling, cost.breath);
         if (r === 'winded') {
-          // le temps de ce geste ne compte pas : il le refera, son souffle revenu
-          this.done = this.paid;
-          this.waiting = true;
+          // il s'arrête et souffle ; ce coup ne compte pas
+          this.pausing = true;
           return;
         }
         if (r === 'exhausted') {
-          this.last = true;
+          this.effort.exhausted();
+          ended = true;
           return;
         }
-        this.paid = this.done;
         job.strike();
-        const k = this.stepsAt(this.done);
+        job.done = Math.min(1, job.done + this.per);
+        const k = this.stepsAt(job.done);
         if (k > this.reached) {
           this.reach(k);
-          if (this.job === job) job.save(k >= job.steps ? undefined : this.done);
+          if (this.job === job && k < job.steps) job.save(job.done);
         }
-        if (k >= job.steps) this.last = true;
+        if (k >= job.steps) ended = true;
+        this.bar.show(this.player.actor, job.done);
       },
       () => {
         if (this.job !== job) return;
-        if (this.last) return this.close(this.reached >= job.steps ? 'done' : 'spent');
-        if (this.waiting) this.idle = true;
-        else this.swing();
+        if (ended) return this.close(this.reached >= job.steps ? 'done' : 'spent');
+        if (this.pausing) {
+          this.idle = true;
+          return;
+        }
+        if (this.stopping) return this.close('stopped');
+        this.swing();
       },
+      durations,
     );
   }
 
@@ -201,8 +202,11 @@ export class WorkSystem {
     this.job = undefined;
     this.bar.hide();
     if (why === 'done') job.save(undefined);
-    else if (why !== 'gone') job.save(this.paid);
+    else if (why !== 'gone') job.save(job.done);
     this.player.stamina.flush();
     job.end(why);
   }
 }
+
+/** Le geste du corps d'un travail : celui de son coup (work.json, `strokes`). */
+const jobGesture = (job: WorkJob): string => work.strokes[job.def.stroke].gesture;

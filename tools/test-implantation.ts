@@ -315,7 +315,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.equal(r.noBranchCost, 0, 'un refus ne coûte rien');
   assert.equal(r.beforeCut, '[{"item":"branch"},{"item":"hatchet"}]null');
   assert.equal(r.afterCut, '[{"item":"stake"},{"item":"hatchet"}]null', 'la branche devient un piquet, dans la même main');
-  assert.ok(Math.abs(r.cutCost - 0.4) < 1e-6, `tailler coûte 0,4, moins qu'un coup de cognée : ${r.cutCost}`);
+  assert.ok(r.cutCost > 0.1 && r.cutCost < 0.6, `tailler se paie coup par coup, une fraction de point : ${r.cutCost}`);
   assert.equal(r.blockBare, 1, 'le billot ne change pas');
   assert.equal(r.afterCut2, '[{"item":"hatchet"},{"item":"stake"}]null', 'dans l\'autre ordre aussi : le piquet reste dans la main de la branche');
   {

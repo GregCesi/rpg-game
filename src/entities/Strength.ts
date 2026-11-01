@@ -16,6 +16,11 @@ export class Strength {
     return base.carry * this.multiplier;
   }
 
+  /** La force d'un coup de travail (strength.json, `swing` ; docs/CONCEPTION.md, « Le travail »), telle que dans le contenu. */
+  get swing() {
+    return base.swing;
+  }
+
   get walk(): number {
     return base.walk * this.multiplier;
   }

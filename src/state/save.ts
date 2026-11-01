@@ -18,7 +18,7 @@ export const SAVE_KEY = 'xeros-partie';
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
-export const SAVE_VERSION = 21;
+export const SAVE_VERSION = 22;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -117,6 +117,7 @@ export function upgrade(data: unknown): unknown {
   if (d?.version === 19 && d.state && typeof d.state === 'object') d = { ...d, version: 20, state: withWoke(d.state as { stamina?: { ceiling?: number } }) };
   // 20 -> 21 : les travaux interrompus (`work` de chaque carte), vides au départ (le schéma les donne vides)
   if (d?.version === 20 && d.state && typeof d.state === 'object') d = { ...d, version: 21 };
+  if (d?.version === 21 && d.state && typeof d.state === 'object') d = { ...d, version: 22, state: workByMatter(d.state as { maps?: Record<string, { work?: unknown }> }) };
   return d;
 }
 
@@ -544,4 +545,14 @@ function threeLevels(state: { stamina?: number }): unknown {
 function withWoke(state: { stamina?: { ceiling?: number } }): unknown {
   const st = state.stamina;
   return st && typeof st === 'object' ? { ...state, stamina: { ...st, woke: typeof st.ceiling === 'number' ? st.ceiling : stamina.max.start } } : state;
+}
+
+/**
+ * Version 21 -> 22 : un travail interrompu garde la part de sa matière enlevée (`done`, docs/CONCEPTION.md, « Le travail ») et plus ses
+ * minutes faites : la durée découle maintenant des coups, les minutes d'avant ne disent plus où l'on en est. Les travaux commencés
+ * repartent de zéro (les encoches et les coins plantés, dans les réglages des pièces, restent).
+ */
+function workByMatter(state: { maps?: Record<string, { work?: unknown }> }): unknown {
+  const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, work: {} }]));
+  return { ...state, maps };
 }

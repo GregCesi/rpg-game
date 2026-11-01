@@ -19,10 +19,8 @@ await playtest('fendage', async ({ page, errors, load }) => {
     // chemins dans une variable : ce sont des modules de la page (servis par Vite), pas du test
     const stateUrl = '/src/state/index.ts';
     const massUrl = '/src/content/mass.ts';
-    const clockUrl = '/src/systems/clock.ts';
     const gs = await import(stateUrl);
     const mass = await import(massUrl);
-    const { ClockSystem } = await import(clockUrl);
     const emit = (c: unknown) => g.events.emit('dieu', c);
     const notices: string[] = [];
     g.events.on('notice', (t: string) => notices.push(t));
@@ -116,24 +114,24 @@ await playtest('fendage', async ({ page, errors, load }) => {
     out.handsAfterPlant = JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both);
     out.plantCost = 100 - w().player.stamina.ceiling;
 
-    // 3. fendre : un travail de 3 coups de masse (2 min chacun, wood.json), mené en temps réel ; pour l'essai, le temps va 60 fois plus
-    // vite (2 s par étape). Arrêté (Échap) après la première étape : elle est notée dans la pièce, la part faite dans GameState ;
-    // repris, il continue de là, puis il est fini d'un coup (?dieu)
+    // 3. fendre : un travail au coup (docs/CONCEPTION.md, « Le travail ») ; Espace maintenu enchaîne les coups de masse, la fente
+    // s'allonge à chaque étape (trois pour 1 m). Pour l'essai, Xéros dix fois plus fort (?dieu « force ») : le coup frappe plus fort et
+    // plus vite. Arrêté (Espace relâché) après la première étape : elle est notée dans la pièce, la part enlevée dans GameState ; repris,
+    // il continue de là, puis il est fini d'un coup (?dieu)
+    emit({ kind: 'force', multiplier: 10 });
     await give('maul');
     await stand(wedged()[0]);
     const s0 = w().player.stamina.ceiling;
-    ClockSystem.speed = 60;
-    await press('Space', false);
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
     const t0 = performance.now();
-    while (!(spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits >= 1) && performance.now() - t0 < 8000) await sleep(50);
+    while (!(spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits >= 1) && performance.now() - t0 < 20000) await sleep(30);
     out.workMode = w().mode;
     out.workBar = w().works.bar.frame.visible;
-    await sleep(400);
-    await press('Escape', false);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
     await settled();
-    ClockSystem.speed = 1;
     out.hitsKept = spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits;
     out.workKept = Object.values(gs.mapState(gs.game, w().map.def.id).work).map((x: any) => x.work);
+    out.splitSteps = spawned().find((q: any) => q.wood?.wedge) ? 3 : 0;
     out.stoppedMode = w().mode;
     await stand(wedged()[0]);
     await press('Space');
@@ -231,14 +229,15 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await sleep(300);
       const planted = wedged().length;
       await give('maul');
-      // les six étapes du travail (12 min), le temps 120 fois plus vite pour l'essai (1 s par étape) : la fente court, le coin s'enfonce
+      // les six étapes du travail, Espace maintenu (Xéros dix fois plus fort pour l'essai) : la fente court, le coin s'enfonce
       const hits: number[] = [];
       const images: string[] = [];
       await standAt(wedged()[0], 'west');
-      ClockSystem.speed = 120;
-      await press('Space', false);
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+      for (let i = 0; i < 100 && w().mode !== 'work'; i++) await sleep(20);
       const t1 = performance.now();
-      while (w().mode === 'work' && performance.now() - t1 < 20000) {
+      // les pauses de souffle comprises (Xéros dix fois plus fort frappe fort : chaque coup lui coûte beaucoup de souffle)
+      while (w().mode === 'work' && performance.now() - t1 < 90000) {
         const p = wedged()[0];
         const h = p ? p.wood.wedge.hits : -1;
         if (h !== 0 && h !== hits.at(-1)) {
@@ -247,7 +246,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
         }
         await sleep(30);
       }
-      ClockSystem.speed = 1;
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
       await settled();
       if (hits.at(-1) !== -1) hits.push(wedged()[0] ? wedged()[0].wood.wedge.hits : -1);
       const halves = pieces('half');
@@ -324,10 +323,10 @@ await playtest('fendage', async ({ page, errors, load }) => {
   assert.ok(Math.abs(r.plantCost - 1) < 1e-6, `coût du plantage : ${r.plantCost}`);
   assert.equal(r.workMode, 'work', 'Espace lance le travail : Xéros fend tant qu\'il n\'a pas fini');
   assert.ok(r.workBar, 'la jauge du travail se voit au-dessus de Xéros');
-  assert.equal(r.stoppedMode, 'play', 'Échap arrête le travail');
-  assert.equal(r.hitsKept, 1, 'arrêté après la première étape : elle est notée dans la pièce (GameState)');
+  assert.equal(r.stoppedMode, 'play', 'Espace relâché, le travail s’arrête');
+  assert.ok(r.hitsKept >= 1 && r.hitsKept < 3, `arrêté après la première étape (le coup en cours s'achève) : notée dans la pièce (${r.hitsKept})`);
   assert.deepEqual(r.workKept, ['maul'], 'la part faite du travail est gardée dans GameState');
-  assert.ok(Math.abs(r.hitCosts[0] - 2.4) < 1e-6, `fendre coûte ses trois coups de masse (3 × 0,8), payés au fil du travail : ${r.hitCosts}`);
+  assert.ok(r.hitCosts[0] > 0 && r.hitCosts[0] < 2, `fendre se paie au plafond, coup par coup : ${r.hitCosts}`);
   assert.equal(r.workLeft, 0, 'le travail fini ne laisse rien dans GameState');
   assert.equal(r.halves, 2, 'deux demi-billes');
   assert.ok(r.wedgeOnGround >= 1, 'le coin tombe au sol');
@@ -356,6 +355,6 @@ await playtest('fendage', async ({ page, errors, load }) => {
   assert.equal(r.long.halves, 2, 'deux demi-billes');
   assert.deepEqual(r.long.lengths, [200, 200], 'de 2 m');
   assert.ok(!r.long.notices.some((n: string) => /Trop longue/.test(n)), `plus de « Trop longue pour un seul coin. » : ${r.long.notices}`);
-  assert.equal(r.long.cost, 5.8, `planter (1) et 6 coups (0,8) : ${r.long.cost}`);
+  assert.ok(r.long.cost > 1 && r.long.cost < 3, `planter (1) et les coups de masse : ${r.long.cost}`);
   console.log('  ✓ fendage : de la grosse bille aux quatre quartiers');
 });

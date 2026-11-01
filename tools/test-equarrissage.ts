@@ -23,8 +23,10 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       const stateUrl = '/src/state/index.ts';
       const massUrl = '/src/content/mass.ts';
       const gs = await import(stateUrl);
-      const clockUrl = '/src/systems/clock.ts';
-      const { ClockSystem } = await import(clockUrl);
+      const planUrl = '/src/world/workPlan.ts';
+      const plan = await import(planUrl);
+      const contentUrl = '/src/content/index.ts';
+      const content = await import(contentUrl);
       const mass = await import(massUrl);
       const emit = (c: unknown) => g.events.emit('dieu', c);
       const notices: string[] = [];
@@ -129,6 +131,8 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.notch = JSON.stringify(spawned().find((q: any) => q.id === trunk.id)?.wood.notch ?? null);
       out.workLeft = Object.keys(gs.mapState(gs.game, w().map.def.id).work).length;
       out.cutCost = Math.round((100 - w().player.stamina.ceiling) * 100) / 100;
+      // ce que coûtent les coups de la coupe d'une pièce de 30 cm, pour Xéros (world/workPlan.ts)
+      out.cutExpect = Math.round(plan.planOf(plan.woodJob('cut', { size: 'normal', length: 580 }), content.strength.swing, 100).ceiling * 100) / 100;
       out.pieces = lengths('normal');
       out.cutNotice = notices.at(-1);
       const three = () => logs().find((p: any) => p.wood.length === 300);
@@ -174,27 +178,32 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.middleNotice = notices.at(-1);
       out.middleMode = w().mode;
       out.middleCost = 100 - w().player.stamina.ceiling;
-      // au bout ouest : Espace lance la passe, Xéros avance tout seul vers l'est en frappant
+      // au bout ouest : Espace maintenu, la passe au coup (chaque coup lève sa part de la face, Xéros glisse avec le fer) ; pour l'essai,
+      // Xéros dix fois plus fort (?dieu « force ») : la face avance d'environ un demi-centimètre par coup
+      emit({ kind: 'force', multiplier: 10 });
       await aboveAt(hewing(), 2);
       const [hx0, hy0] = [a().x, a().y];
-      // une face de 3 m dure 24 min (8 min par mètre, wood.json) : pour l'essai, le temps va 120 fois plus vite (12 s)
-      ClockSystem.speed = 120;
-      await press('Space', 60, false);
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+      for (let i = 0; i < 100 && w().mode !== 'rail'; i++) await sleep(20);
+      // le rail pose Xéros au départ de la passe : la marche se mesure de là
+      const railX = a().x;
       out.passMode = w().mode;
       out.passBar = w().rail.bar.frame.visible;
-      await sleep(1500);
+      await sleep(3000);
       // E ne fait rien pendant la passe
       await press('KeyE');
-      await sleep(1500);
-      out.walked = a().x - hx0;
+      await sleep(5000);
+      out.walked = a().x - railX;
       out.passAnim = a().anims.currentAnim?.key;
       // un pas (S) : arrêtée là où il est ; la face entamée est gardée dans GameState, jusqu'au fer
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyS' }));
       await new Promise((res) => requestAnimationFrame(res));
       await new Promise((res) => requestAnimationFrame(res));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+      // le coup en cours s'achève, puis la passe s'arrête
+      for (let i = 0; i < 100 && w().mode === 'rail'; i++) await sleep(20);
       out.stopMode = w().mode;
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyS' }));
-      ClockSystem.speed = 1;
       await sleep(150);
       // le pas qui l'arrête pousse ensuite contre la pièce (qui ne roule plus) : le message d'arrêt est parmi les derniers
       out.stopNotice = notices.slice(-3).find((n: string) => n.startsWith('Arrêté')) ?? notices.at(-1);
@@ -234,6 +243,13 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       }
       out.faces = faces;
       out.hewCost = Math.round((100 - w().player.stamina.ceiling) * 10) / 10;
+      // ce que coûtent les coups des quatre faces, pour Xéros dix fois plus fort (world/workPlan.ts)
+      {
+        const face = plan.woodJob('hew', { size: 'normal', length: 300 });
+        const strong = { ...content.strength.swing, torque: content.strength.swing.torque * 10 };
+        out.hewExpect = Math.round(plan.planOf({ ...face, amount: face.amount * 4 }, strong, 100).ceiling * 10) / 10;
+      }
+      emit({ kind: 'force', multiplier: 1 });
       const beam = beams()[0];
       out.beam = beam && { length: beam.wood.length, kg: kg(beam.wood) };
       out.shortBeamKg = kg({ size: 'normal', length: 180, shape: 'round', axis: 'ew', hewn: 12 });
@@ -332,7 +348,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.workLeft, 0, 'le travail fini ne laisse rien dans GameState');
   assert.deepEqual(r.pieces, [280, 300], 'deux pièces, de 2,8 m et 3 m');
   assert.equal(r.cutNotice, 'Coupé : 3 m et 2,8 m.');
-  assert.ok(Math.abs(r.cutCost - 2.4) < 0.01, `la coupe coûte ses trois étapes de cognée : 2,4 points (${r.cutCost})`);
+  assert.ok(Math.abs(r.cutCost - r.cutExpect) < 0.05, `la coupe coûte ses coups de cognée : ${r.cutExpect} points (${r.cutCost})`);
   assert.equal(r.threeMass, 191, 'le rondin de 3 m pèse 191 kg');
   assert.equal(r.restNotice, 'Trop lourd à porter. Pousse-le pour le faire rouler.', 'le rondin de 2,8 m (178 kg) se roule');
   assert.equal(r.restLabel, '1,8 m | 1 m', 'la coupe du poteau bas : 1,8 m et une bille de 1 m');
@@ -344,7 +360,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.middleCost, 0, 'un refus ne coûte rien');
   assert.equal(r.passMode, 'rail', 'Espace au bout lance la passe');
   assert.equal(r.passBar, true, 'la jauge du travail se voit pendant la passe');
-  assert.ok(r.walked > 10, `Xéros longe la pièce tout seul : ${r.walked} px`);
+  assert.ok(r.walked > 0, `Xéros longe la pièce avec le fer : ${r.walked} px`);
   assert.match(r.passAnim ?? '', /chop-down/, 'en frappant (le geste chop)');
   assert.equal(r.stopMode, 'play', 'un pas arrête la passe');
   assert.equal(r.stopNotice, 'Arrêté : la face reprendra là.');
@@ -359,7 +375,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.ok(r.endX > 55, `elle va jusqu'au bout est : ${r.endX} px`);
   assert.ok(r.afterFace?.hewn === 3 && !r.afterFace.dressed, `la face finie passe dans hewn, sans face entamée : ${JSON.stringify(r.afterFace)}`);
   assert.deepEqual(r.faces, ['Une face dressée (1 sur 4).', 'Une face dressée (2 sur 4).', 'Une face dressée (3 sur 4).', 'Poutre équarrie : 3 m.']);
-  assert.ok(Math.abs(r.hewCost - 12) < 0.1, `équarrir un poteau de 3 m coûte environ 12 points, proportionnel à sa longueur : ${r.hewCost}`);
+  assert.ok(Math.abs(r.hewCost - r.hewExpect) < 0.1 * r.hewExpect, `équarrir un poteau de 3 m coûte ses coups de doloire : ${r.hewExpect} points (${r.hewCost})`);
   assert.deepEqual(r.beam, { length: 300, kg: 108 }, 'la poutre de 3 m pèse 108 kg');
   assert.equal(r.shortBeamKg, 64.8, 'celle de 1,80 m, 65 kg (elle se porte)');
   assert.equal(r.beamRollNotice, 'Elle ne roule pas : elle est carrée.');

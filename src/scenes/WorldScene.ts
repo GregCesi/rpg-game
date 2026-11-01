@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { clockLabel } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
-import { items, maps, props, stamina, time, time as timeDef, transforms } from '../content';
+import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
@@ -29,8 +29,10 @@ import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
 import { Rail } from '../systems/rail';
 import { SiteSystem } from '../systems/site';
-import { WoodSystem, workMinutes, type WoodAim } from '../systems/wood';
+import { WoodSystem, type WoodAim } from '../systems/wood';
 import { WorkSystem, type WorkJob } from '../systems/work';
+import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
+import { frameMs, type Phase } from '../world/swing';
 import { WorkBar } from '../entities/WorkBar';
 import { splitHits } from '../world/woodShape';
 import { wood as W } from '../content';
@@ -255,7 +257,7 @@ export class WorldScene extends Phaser.Scene {
     this.combat = new CombatSystem(this, this.map, this.harvest);
     this.wood = new WoodSystem(this, this.map, this.harvest);
     const bar = new WorkBar(this);
-    this.rail = new Rail(this.player, bar, (m) => this.clock.work(m));
+    this.rail = new Rail(this.player, bar);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
     this.transformer = new TransformSystem(this.map, this.handsSystem);
     this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body), this.player.strength);
@@ -355,8 +357,9 @@ export class WorldScene extends Phaser.Scene {
     // Échap, ou un pas (une flèche, ZQSD) : arrête un travail ou une passe sur un rail, ce qui est fait reste fait
     const stop = input.stopPressed();
     const moved = input.movePressed();
-    if (this.mode === 'rail') this.rail.update(delta, stop || moved);
-    if (this.mode === 'work') this.works.update(delta, stop || moved);
+    if (this.mode === 'rail') this.rail.update(delta, { held: input.useDown(), stop: stop || moved });
+    // un travail au coup : Espace maintenu enchaîne les coups ; relâché, un pas ou Échap l'arrête après le coup en cours
+    if (this.mode === 'work') this.works.update({ held: input.useDown(), stop: stop || moved });
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
@@ -425,7 +428,6 @@ export class WorldScene extends Phaser.Scene {
       // ce qui va directement dans les mains (la hache du billot) : il faut les mains libres avant le geste
       const gives = a.prop.def.harvest!.drops.filter((d) => d.give);
       if (gives.some((d) => !canTake(game, items[d.item].hands))) return this.notice('Les mains pleines.');
-      if (a.prop.def.harvest!.minutes > 0) return this.harvestWork(a.prop, undefined);
       this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
     } else if (a.kind === 'take') {
       if (a.prop.wood?.notch) return this.notice("Finis d'abord la coupe.");
@@ -663,8 +665,8 @@ export class WorldScene extends Phaser.Scene {
     // un outil que la cible écarte (la hache sur une grosse bille) ou une fente sans la place de s'ouvrir : on le dit, sans geste ni dépense
     const why = target && this.harvest.refusal(target, tool);
     if (why) return this.notice(why);
-    // une récolte qui dure : Xéros la mène jusqu'au bout (ou jusqu'à ce qu'on l'arrête), coup après coup
-    if (target && h && wields(h, tool) && h.minutes > 0) return this.harvestWork(target, tool);
+    // une récolte au coup (sa matière, `work`) : un coup par appui, Espace maintenu enchaîne jusqu'au résultat
+    if (target && h?.work && wields(h, tool)) return this.harvestWork(target, tool);
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
     const costs = this.player.stamina.costs;
     if (h && wields(h, tool) && !this.effort.afford(this.player, costs[effortOf(h, tool, !!target!.def.bears?.prop)])) return;
@@ -711,18 +713,27 @@ export class WorldScene extends Phaser.Scene {
   private hewPass(aim: WoodAim): void {
     if (this.player.stamina.empty) return this.effort.exhausted();
     this.mode = 'rail';
-    // chaque coup de la passe se paie ; à bout de souffle, la passe attend sur place (Xéros souffle) puis reprend ; plafond vide, elle
-    // s'arrête ; finie d'un coup (?dieu), ce qui reste se paie sans attendre son souffle
-    const pay = (cost: number): boolean | 'wait' => {
-      if (this.rail.forced) {
-        this.player.stamina.force(cost);
-        return true;
-      }
-      const r = this.effort.attempt(this.player, cost);
+    // un coup de doloire (world/swing.ts, la force de Xéros) : ce qu'il lève, rapporté à la section d'une face, et ses temps
+    const s = this.player.strength;
+    const who = { ...s.swing, torque: s.swing.torque * s.multiplier };
+    const unit = woodJob('hew', aim.piece, 1);
+    const stroke = jobStroke(unit, who);
+    const cost = strokeCost(stroke);
+    const phases = gestures[work.strokes.hew.gesture]?.phases as Phase[] | undefined;
+    // chaque coup se paie ; à bout de souffle, Xéros souffle sur place puis reprend ; plafond vide, la passe s'arrête
+    const pay = (): boolean | 'wait' => {
+      const r = this.player.stamina.spendStroke(cost.ceiling, cost.breath);
+      if (r === 'exhausted') this.effort.exhausted();
       return r === 'done' ? true : r === 'winded' ? 'wait' : false;
     };
+    // ?dieu « Finir le travail » : ce qui reste à dresser, d'un coup (l'horloge et le plafond de ses coups)
+    const settle = (cm: number) => {
+      const plan = planOf(woodJob('hew', aim.piece, cm), who, this.player.stamina.max);
+      this.clock.work(plan.seconds / 60);
+      this.player.stamina.force(plan.ceiling);
+    };
     this.rail.start(
-      this.wood.hewPass(this.player, aim, pay, (r, why) => {
+      this.wood.hewPass(this.player, aim, { cm: perStroke(unit, stroke) / unit.amount, durations: phases ? frameMs(stroke, phases) : undefined }, pay, settle, (r, why) => {
         if (r.face) this.notice(`Une face dressée (${r.face} sur 4).`);
         if (r.beam) this.notice(`Poutre équarrie : ${metres(r.beam.length)}.`);
         if (why === 'stopped') this.notice('Arrêté : la face reprendra là.');
@@ -759,40 +770,36 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * Une récolte qui dure (props.json : `minutes`, `hits`) : Xéros répète son geste le temps réaliste de la récolte, les `hits` étapes
-   * tombent en chemin (l'arbre tremble), le résultat au bout ; tailler sur le billot et couper le lien du rouleau sont une seule étape.
-   * Repris là où il s'était arrêté (`work` de la carte, GameState).
+   * Une récolte au coup (props.json : `harvest.work`, la matière ; docs/CONCEPTION.md, « Le travail ») : chaque coup en enlève une part,
+   * les `hits` étapes tombent en chemin (l'arbre tremble), le résultat au bout ; tailler sur le billot est une seule étape. Reprise là où
+   * elle s'était arrêtée (`work` de la carte, GameState).
    */
-  private harvestWork(prop: PlacedProp, tool: string | undefined): void {
+  private harvestWork(prop: PlacedProp, tool: string): void {
     const h = prop.def.harvest!;
     const mapId = this.map.def.id;
     const key = workKey(prop.id, prop.spawned);
     const kind = h.convert ? 'whittle' : 'harvest';
     const saved = mapState(game, mapId).work[key];
-    const done = saved?.work === kind ? saved.minutes : 0;
-    const steps = h.convert || prop.def.bears?.prop ? 1 : h.hits;
+    const done = saved?.work === kind ? saved.done : 0;
+    const steps = h.convert ? 1 : h.hits;
     // les étapes déjà faites (l'arbre entamé, repris après un rechargement)
-    if (steps > 1) prop.hits = Math.min(steps - 1, Math.floor((done / h.minutes) * steps + 1e-9));
-    const per = tool ? this.player.stamina.costs[effortOf(h, tool, !!prop.def.bears?.prop)] : 0;
+    if (steps > 1) prop.hits = Math.min(steps - 1, Math.floor(done * steps + 1e-9));
     const facing = this.player.actor.facing;
     this.startWork({
-      gesture: h.gesture ?? 'use',
-      tool,
-      minutes: h.minutes,
-      steps,
+      def: harvestJob(h.work!, tool),
       done,
-      cost: per * steps,
+      steps,
       step: () => this.report(this.harvest.hit(prop, tool, facing)),
       strike: () => this.harvest.strike(prop, facing),
-      save: (m) => setWork(game, mapId, key, m === undefined ? undefined : { work: kind, minutes: m }),
+      save: (d) => setWork(game, mapId, key, d === undefined ? undefined : { work: kind, done: d }),
       valid: () => this.map.props.includes(prop),
     });
   }
 
   /**
-   * Couper une pièce de bois à la cognée, ou la fendre à la masse (wood.json) : un travail du temps réaliste de la coupe entière (selon
-   * le diamètre) ou de tous les coups de masse ; la coupe se creuse, la fente s'allonge à chaque étape (notées dans les réglages de la
-   * pièce), la pièce s'ouvre au bout.
+   * Couper une pièce de bois à la cognée, ou la fendre à la masse (wood.json ; docs/CONCEPTION.md, « Le travail ») : un travail au coup
+   * dont la matière vient du diamètre (et de la longueur, pour fendre) ; la coupe se creuse, la fente s'allonge à chaque étape (notées
+   * dans les réglages de la pièce), la pièce s'ouvre au bout.
    */
   private woodWork(aim: WoodAim, tool: string): void {
     const work = aim.work as 'cut' | 'maul';
@@ -801,22 +808,17 @@ export class WorldScene extends Phaser.Scene {
     const mapId = this.map.def.id;
     const key = workKey(id, spawned);
     const steps = work === 'cut' ? W.cut.hits : splitHits(piece);
-    const per = workMinutes(work, piece);
     const before = work === 'cut' ? (piece.notch?.hits ?? 0) : (piece.wedge?.hits ?? 0);
     // les étapes faites sont dans la pièce ; la part de l'étape en cours, dans GameState
     const saved = mapState(game, mapId).work[key];
-    const inStep = saved?.work === work ? saved.minutes - before * per : 0;
-    const done = before * per + Math.min(per * 0.999, Math.max(0, inStep));
+    const done = Math.max(before / steps, saved?.work === work ? Math.min(saved.done, (before + 0.999) / steps) : 0);
     this.startWork({
-      gesture: WoodSystem.gestureOf(aim)!,
-      tool,
-      minutes: per * steps,
-      steps,
+      def: woodJob(work, piece),
       done,
-      cost: this.wood.cost(this.player, aim) * steps,
+      steps,
       step: () => this.woodHit(tool),
       strike: () => this.harvest.chipsAt(aim.x, aim.y + 3, aim.prop.y + 1, 'wood', this.player.actor.facing),
-      save: (m) => setWork(game, mapId, key, m === undefined ? undefined : { work, minutes: m }),
+      save: (d) => setWork(game, mapId, key, d === undefined ? undefined : { work, done: d }),
       valid: () => this.map.props.some((q) => q.id === id && !!q.spawned === !!spawned && !!q.wood),
     });
   }

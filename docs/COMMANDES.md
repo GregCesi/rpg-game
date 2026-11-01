@@ -16,8 +16,8 @@ Le monde a un mode à la fois (`WorldScene`) :
 | --- | --- | --- |
 | **jeu** (`play`) | Xéros marche | tout ce qui suit |
 | **geste** (`use`) | un coup d'outil ou une attaque se joue | le zoom ; Espace (gardé : enchaîner l'attaque suivante) ; le reste est lu et jeté |
-| **rail** (`rail`) | une passe de doloire le long d'une pièce | Échap ou un pas (arrêter) et le zoom, rien d'autre |
-| **travail** (`work`) | un travail qui dure (abattre, récolter, couper, fendre, tailler) : Xéros répète son geste, une jauge au-dessus de lui | Échap ou un pas (arrêter : ce qui est fait reste fait) et le zoom, rien d'autre |
+| **rail** (`rail`) | une passe de doloire le long d'une pièce, au coup | Espace maintenu (les coups s'enchaînent) ; relâché, un pas ou Échap : arrêter après le coup en cours ; le zoom |
+| **travail** (`work`) | un travail au coup (abattre, ébrancher, couper, fendre, tailler) : une jauge au-dessus de Xéros | Espace maintenu (les coups s'enchaînent, avec les pauses de souffle) ; relâché, un pas ou Échap : arrêter après le coup en cours (ce qui est fait reste fait) ; le zoom |
 | **dialogue** (`dialogue`) | une ligne de dialogue est ouverte (DialogueScene) | E, Espace, Entrée, clic : la suite ; Z/S (W/S) ou flèches : choisir ; le zoom |
 | **passage** (`transition`) | fondu d'une carte à l'autre, aide de la mère | le zoom |
 | **construction** (`build`, `?construire`) | le bac à sable | voir plus bas |
@@ -66,12 +66,12 @@ Selon ce que tient Xéros (« ce qui sert » : la main active, sinon l'autre mai
 | **la main active vide**, l'autre vide ou tenant ce qui n'est ni une arme ni un outil (une pierre…) | **un direct du poing** de la main libre ; Espace de nouveau : l'autre poing (gauche-droite) si les deux sont libres |
 | la branche (ou le piquet) dans la main active et la hachette dans l'autre, face au billot | tailler : la branche devient un piquet, le piquet une cheville (c'est la hachette qui sert) |
 | un piquet, un plan connu | le planter au tracé (le premier fixe le coin nord-ouest) |
-| la cognée, devant un arbre debout | abattre (`use`) : un travail en temps réel (25 min pour un arbre normal, 1 h pour le gros), Xéros frappe jusqu'au bout ; un pas ou Échap l'arrête, repris là où il en était |
-| la cognée, sur un arbre couché, un houppier, une pièce de bois | de haut en bas (`chop`), un travail en temps réel : ébrancher, couper sur la grille |
+| la cognée, devant un arbre debout | abattre (`use`), au coup : un appui, un coup ; Espace maintenu, les coups s'enchaînent jusqu'à la chute (25 min environ pour l'arbre normal, 2 h 30 pour le gros, à la force de Xéros) ; relâcher, un pas ou Échap arrête, repris là où il en était |
+| la cognée, sur un arbre couché, un houppier, une pièce de bois | de haut en bas (`chop`), au coup (maintenu : enchaîné) : ébrancher, couper sur la grille |
 | la hachette ou la cognée, sur le rouleau posé sur le billot | couper un lien de 2 m |
-| la doloire, contre le flanc d'une pièce de bois | une passe sur le rail (Xéros longe la pièce tout seul, 8 min par mètre ; Échap ou un pas l'arrête) |
+| la doloire, contre le flanc d'une pièce de bois | une passe sur le rail, au coup : Espace maintenu, chaque coup lève sa part de la face et Xéros glisse avec le fer ; relâcher, un pas ou Échap l'arrête |
 | le coin, contre le bout d'une grosse bille | le planter (sans geste) |
-| la masse, sur un coin planté | fendre (`maul`), un travail en temps réel (2 min par étape, trois étapes par mètre commencé), la bille s'ouvre au bout |
+| la masse, sur un coin planté | fendre (`maul`), au coup (maintenu : enchaîné) ; la fente s'allonge (trois étapes par mètre commencé), la bille s'ouvre au bout |
 | une ressource seule dans la main active (pas une arme), devant ce qui demande un outil | « Sans hache, rien à faire. » (mains vides : le poing, voir plus haut) |
 | un outil dans le vide | le geste dans le vide, sans dépense |
 | ce qu'on porte à deux mains (`carry`) | rien |
@@ -89,7 +89,7 @@ Un refus (mauvais outil, pas la place, épuisé) se dit sans geste ni dépense.
 - Maintenu une seconde, mains vides, au contact d'une bille couchée : la faire pivoter d'un quart de tour (jauge).
 
 ### Échap
-- Sur un rail ou pendant un travail : l'arrêter (ce qui est fait reste fait ; un pas fait de même). Ailleurs : rien.
+- Sur un rail ou pendant un travail : l'arrêter après le coup en cours (ce qui est fait reste fait ; relâcher Espace ou un pas font de même). Ailleurs : rien.
 
 ### V (la vitesse du temps) — en pause
 - L'accélération du temps est en pause : tout se joue à x1, V ne fait rien (`accelerate` de time.json). Quand elle reviendra : V, le palier suivant de la vitesse du temps (x1, x6, x24, x60, x360 ; x24 par défaut) ; Maj + V : le précédent ; un message dit

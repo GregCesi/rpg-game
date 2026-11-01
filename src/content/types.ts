@@ -70,11 +70,6 @@ export const HarvestWorkSchema = z.union([
 export const HarvestSchema = z.strictObject({
   /** La matière, si la récolte se travaille au coup (voir HarvestWorkSchema). */
   work: HarvestWorkSchema.optional(),
-  /**
-   * Durée réaliste de la récolte entière, en minutes de jeu (docs/CONCEPTION.md, « Le temps ») : l'horloge en avance d'une part à
-   * chaque coup (`minutes` / `hits`) ; le geste, lui, garde sa durée. 0 : rien ne passe (prendre un outil posé).
-   */
-  minutes: z.number().nonnegative(),
   /** Objet possédable nécessaire (clé de items.json, de type 'tool') ; absent = à la main. */
   tool: id.optional(),
   /** Nombre de coups. L'objet tremble à chaque coup. */
@@ -418,14 +413,12 @@ export const WoodSchema = z.strictObject({
   density: z.number().positive(),
   grid: z.number().int().positive(),
   min: z.number().int().positive(),
-  /** `minutesPer10cm` : la durée d'une coupe entière, en minutes de jeu, par 10 cm de diamètre (une part à chaque coup). */
-  cut: z.strictObject({ tool: id, hits: z.number().int().positive(), minutesPer10cm: z.number().nonnegative() }),
-  /** `minutesPerM` : minutes de jeu par mètre de face dressé (une part à chaque coup de la passe). */
-  hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive(), stroke: z.number().int().positive(), minutesPerM: z.number().nonnegative() }),
+  /** La durée d'une coupe découle de ses coups (docs/CONCEPTION.md, « Le travail ») ; `hits` : ses étapes (l'encoche qui se creuse). */
+  cut: z.strictObject({ tool: id, hits: z.number().int().positive() }),
+  hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive(), stroke: z.number().int().positive() }),
   /** La planche fendue : son épaisseur et sa largeur de bois (cm), quel que soit le diamètre d'où elle vient. */
   plank: z.strictObject({ thick: z.number().positive(), wide: z.number().positive() }),
-  /** `minutesPerHit` : minutes de jeu par coup de masse ; `plantMinutes` : planter le coin. */
-  split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive(), minutesPerHit: z.number().nonnegative(), plantMinutes: z.number().nonnegative() }),
+  split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive() }),
   /** Les âges du bois travaillé et leur nom affiché (WoodAgeSchema : tous, dans l'ordre), pour le catalogue et les messages. */
   ages: z.strictObject({ new: id, worn: id, old: id }),
   sizes: z.record(id, WoodSizeSchema),

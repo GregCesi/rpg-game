@@ -36,6 +36,11 @@ export class Stamina {
   infinite = false;
   /** Essoufflé : un effort a attendu faute de souffle, ou la course s'est arrêtée ; jusqu'à ce que le souffle revienne. */
   winded = false;
+  /**
+   * La part du plafond où l'essoufflement cesse : `breath.recovered` d'ordinaire ; un travail au coup la monte à sa reprise
+   * (stamina.json `work.resume`) : Xéros souffle jusqu'à ce qu'il reprenne.
+   */
+  windedUntil = def.breath.recovered;
   /** Temps (ms jouées) depuis le dernier effort : le souffle ne revient qu'après `regenDelayMs`. */
   private rest = 0;
   private unsaved = 0;
@@ -153,6 +158,33 @@ export class Stamina {
     this.set(this.breath - cost * def.breath.perCost, this.ceiling - cost, true);
   }
 
+  /**
+   * Un coup de travail (docs/CONCEPTION.md, « Le travail ») : le plafond perd `ceiling`, le souffle `breath` (ses joules × stamina.json
+   * `work`). Refusé à plafond vide (épuisé) ou si le souffle ne suffit pas (il s'arrête et souffle : `winded`).
+   */
+  spendStroke(ceiling: number, breath: number): Effort {
+    if (this.infinite) return 'done';
+    if (this.empty) return 'exhausted';
+    if (this.breath + 1e-9 < Math.min(this.ceiling, breath)) {
+      // il souffle jusqu'à la reprise du travail
+      this.windedUntil = def.work.resume;
+      if (!this.winded) {
+        this.winded = true;
+        this.onChange?.();
+      }
+      return 'winded';
+    }
+    this.rest = 0;
+    this.set(this.breath - breath, this.ceiling - ceiling, false);
+    return 'done';
+  }
+
+  /** Pendant un travail, le souffle ne revient pas : chaque image de travail compte comme un effort. */
+  busy(): void {
+    this.rest = 0;
+  }
+
+
   /** La veille de nuit use le plafond de `points` (world/sleep.ts), sans toucher au repos du souffle. */
   wear(points: number): void {
     if (this.infinite || points <= 0) return;
@@ -165,8 +197,9 @@ export class Stamina {
     if (this.rest >= def.breath.regenDelayMs && this.breath < this.ceiling) {
       this.set(this.breath + (def.breath.regenPerSec * delta) / 1000, this.ceiling, false);
     }
-    if (this.winded && this.breath >= def.breath.recovered * this.ceiling) {
+    if (this.winded && (this.infinite || this.breath + 1e-9 >= this.windedUntil * this.ceiling)) {
       this.winded = false;
+      this.windedUntil = def.breath.recovered;
       this.onChange?.();
     }
   }
