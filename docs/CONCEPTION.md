@@ -700,9 +700,15 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 - **Sauvegarde** : `SAVE_VERSION` 5 ; une partie de la version 2 est convertie à la lecture (jauge pleine, jour 1), une partie de la version 3 aussi (le fendage ne fait qu'ajouter des champs facultatifs), une partie de la version 4 aussi (les chantiers : aucun plan connu, aucun chantier), sans repartir à neuf.
 - **Outils de test** (`?dieu`) : un champ pour régler l'endurance, une case « endurance infinie » ; pour l'implantation : apprendre un plan, mettre quatre piquets ou quatre pierres plates au sol devant Xéros, effacer les chantiers de la carte.
 
-## Le temps (proposé le 1er novembre 2026, chantier « temps » : conception, en attente de l'accord de Grégoire)
+## Le temps (décidé le 1er novembre 2026, chantier « temps »)
 
-Rien n'est codé : cette section est l'étape 1 du chantier. Les chiffres viennent de `tools/essai-temps.ts` (un modèle en petit, le
+**Validé par Grégoire** (même jour), avec ces réponses : la lumière qui suit l'heure en deuxième temps (étape 6) ; essoufflé, l'effort
+attend sans message d'épuisement, mais la barre clignote et Xéros souffle (une petite animation) ; x24 par défaut, x6 en repli ; la barre
+horizontale qui s'allonge avec le maximum, la teinte « revient » en torchis ; une durée réaliste fixe par travail, en minutes de jeu,
+dans les données. Et deux corrections : le malus du réveil commence au seuil « fatigué » (15 % du maximum) — la journée type, qui finit
+à 15, ne coûte rien le lendemain : seul le vrai épuisement se paie ; la vraie nuit blanche (aucun sommeil) est décrite plus bas. La
+course (5 de souffle par seconde, sans retour pendant l'effort : environ 20 s, 165 m) est gardée pour l'essai, en données, jugée en jeu.
+Cette section a d'abord été l'étape 1 du chantier (la conception, sans code). Les chiffres viennent de `tools/essai-temps.ts` (un modèle en petit, le
 même qu'on mettra dans stamina.json), l'aperçu est `.art-preview/temps-endurance.png` (la courbe de la journée type ; dessous, la barre
 à trois teintes à 6 h, 7 h 30, 16 h 30, 22 h et au réveil du 3e jour).
 
@@ -777,7 +783,7 @@ Le modèle proposé (à mettre dans stamina.json, à la place de `max`, `tired`,
   "max": {"start": 100, "cap": 200, "gain": 2, "trainFrom": 0.4},
   "breath": {"regenPerSec": 12, "regenDelayMs": 800, "perCost": 3, "perSec": {"run": 5, "carryPerKg": 0.1, "pushPerKg": 0.05}},
   "tired": 0.15, "tiredWalk": 0.85,
-  "sleep": {"wakeHour": 6, "sleepHours": 8, "exhaustedBelow": 0.25, "exhaustedPenalty": 0.4, "missingHourPenalty": 5, "nightAwakePerHour": 0.5},
+  "sleep": {"wakeHour": 6, "sleepHours": 8, "exhaustedBelow": 0.15, "exhaustedPenalty": 0.4, "missingHourPenalty": 5, "nightAwakePerHour": 0.5},
   "costs": {"…": "les prix d'aujourd'hui, en points du plafond"}
 }
 ```
@@ -785,7 +791,8 @@ Le modèle proposé (à mettre dans stamina.json, à la place de `max`, `tired`,
 - Un effort coûte son prix au plafond (comme aujourd'hui) et 3 fois son prix au souffle ; le souffle ne dépasse jamais le plafond.
 - Épuisé (plafond à 0) : comme aujourd'hui, les efforts sont refusés. Essoufflé (souffle à 0) : l'effort attend que le souffle revienne
   (quelques secondes), sans message d'épuisement.
-- Au réveil : plafond = maximum − 0,4 × (ce qui manquait sous 25 % du maximum au coucher) − 5 par heure de sommeil manquante sous 8 h.
+- Au réveil : plafond = maximum − 0,4 × (ce qui manquait sous 15 % du maximum au coucher, le seuil « fatigué ») − 5 par heure de
+  sommeil manquante sous 8 h. Se coucher fatigué ne coûte rien ; seul le vrai épuisement se paie.
 - Le maximum monte la nuit de 2 × (1 − maximum / 200) si la journée a entamé le plafond d'au moins 40 % du maximum.
 
 Journée type (maximum 100) :
@@ -811,14 +818,19 @@ Trois jours d'entraînement (la même journée, coucher 22 h, lever 6 h) :
 | Jour | Maximum au réveil | Plafond au réveil | Plafond au coucher | Maximum le lendemain |
 | --- | --- | --- | --- | --- |
 | 1 | 100 | 100 | 15 | 101 |
-| 2 | 101 | 96,9 | 11,9 | 102 |
-| 3 | 102 | 96,6 | 11,6 | 103 |
+| 2 | 101 | 101 | 16 | 102 |
+| 3 | 102 | 102 | 17 | 103 |
 
-Une semaine pareille mène vers 107, un mois vers 130 (le gain diminue en approchant de 200). Se coucher épuisé coûte 3 à 4 points le
-lendemain : il vaut mieux s'arrêter avant.
+Une semaine pareille mène vers 107, un mois vers 130 (le gain diminue en approchant de 200). Se coucher fatigué ne coûte rien ; se
+coucher épuisé (plafond à 0) coûte 6 points le lendemain.
 
-**Nuit blanche** : couché à 6 h au lieu de 22 h, le plafond de 15 descend à 11 en veillant ; levé à 14 h (8 h de sommeil), plafond 94,4
-au lieu de 96, et la demi-journée est perdue. **Nuit courte** (coucher 2 h, lever 6 h : 4 h de sommeil) : plafond 76 au réveil.
+**Coucher à l'aube** : couché à 6 h au lieu de 22 h, le plafond de 15 descend à 11 en veillant (0,5 par heure de veille de nuit) ;
+levé à 14 h (8 h de sommeil), plafond 98,4 au lieu de 100, et la demi-journée est perdue. **Nuit courte** (coucher 2 h, lever 6 h :
+4 h de sommeil) : plafond 80 au réveil. **La vraie nuit blanche** (aucun sommeil, Xéros continue le lendemain) : à 6 h, le plafond est
+à 11 (15 usé par 8 h de veille) et le souffle ne dépasse jamais ce plafond ; il est fatigué (sous 15 % du maximum) : pas de course, la
+marche à 85 % ; il lui reste 11 points de travail avant l'épuisement (à peu près une heure d'abattage), puis plus rien de ce qui coûte
+jusqu'au sommeil ; il marche, parle, prend ce qui est léger ; le maximum ne monte pas (il faut une nuit). La nuit suivante, le malus de
+l'épuisement s'ajoute à celui des heures manquantes.
 
 ### 4. Le jour et la nuit (à trancher)
 

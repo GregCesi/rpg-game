@@ -25,9 +25,9 @@ export const PROPOSE = {
   tired: 0.15,
   tiredWalk: 0.85,
   // la nuit : lever à `wakeHour` après `sleepHours` de sommeil ; un coucher tardif fait se lever plus tard (au plus tôt coucher +
-  // sleepHours) ; au réveil, plafond = maximum − `exhaustedPenalty` × ce qui manquait sous `exhaustedBelow` du maximum la veille −
+  // sleepHours) ; au réveil, plafond = maximum − `exhaustedPenalty` × ce qui manquait sous `exhaustedBelow` (le seuil « fatigué ») du maximum la veille −
   // `missingHourPenalty` par heure de sommeil manquante ; veiller la nuit (22 h – 6 h) use le plafond de `nightAwakePerHour`
-  sleep: { wakeHour: 6, sleepHours: 8, exhaustedBelow: 0.25, exhaustedPenalty: 0.4, missingHourPenalty: 5, nightAwakePerHour: 0.5 },
+  sleep: { wakeHour: 6, sleepHours: 8, exhaustedBelow: 0.15, exhaustedPenalty: 0.4, missingHourPenalty: 5, nightAwakePerHour: 0.5 },
 };
 
 /** La journée type : ce que fait Xéros, ce que coûtent ces heures au plafond (les prix d'aujourd'hui), son souffle au plus bas (part du plafond). */
@@ -92,10 +92,13 @@ for (let d = 1; d <= 3; d++) {
 const awake = bed1 - P.sleep.nightAwakePerHour * 8;
 const afterWhite = morning(P.max.start, awake, P.sleep.sleepHours);
 const shortNight = morning(P.max.start, bed1, 4);
+// la vraie nuit blanche : aucun sommeil ; Xéros continue le lendemain avec le plafond de la veille, usé par la veillée
+const noSleep = bed1 - P.sleep.nightAwakePerHour * 8;
 lines.push(
   '',
   `Nuit blanche : couché à 6 h au lieu de 22 h, le plafond de ${r1(bed1)} descend à ${r1(awake)} en veillant ; levé à 14 h (8 h de sommeil), plafond ${r1(afterWhite)} au lieu de ${r1(morning(P.max.start, bed1, 8))} ; la demi-journée est perdue.`,
   `Nuit courte (coucher 2 h, lever 6 h : 4 h de sommeil) : plafond ${r1(shortNight)} au réveil.`,
+  `Vraie nuit blanche (aucun sommeil) : à 6 h, plafond ${r1(noSleep)} (et le souffle au plus ce plafond) ; fatigué (sous ${r1(P.tired * 100)}) : pas de course, marche à ${P.tiredWalk * 100} % ; ${r1(noSleep)} points de travail avant l'épuisement (à peu près une heure d'abattage) ; le maximum ne monte pas (pas de nuit).`,
 );
 console.log(lines.join('\n'));
 
