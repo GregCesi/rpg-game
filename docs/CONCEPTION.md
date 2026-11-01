@@ -700,6 +700,180 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 - **Sauvegarde** : `SAVE_VERSION` 5 ; une partie de la version 2 est convertie à la lecture (jauge pleine, jour 1), une partie de la version 3 aussi (le fendage ne fait qu'ajouter des champs facultatifs), une partie de la version 4 aussi (les chantiers : aucun plan connu, aucun chantier), sans repartir à neuf.
 - **Outils de test** (`?dieu`) : un champ pour régler l'endurance, une case « endurance infinie » ; pour l'implantation : apprendre un plan, mettre quatre piquets ou quatre pierres plates au sol devant Xéros, effacer les chantiers de la carte.
 
+## Le temps (proposé le 1er novembre 2026, chantier « temps » : conception, en attente de l'accord de Grégoire)
+
+Rien n'est codé : cette section est l'étape 1 du chantier. Les chiffres viennent de `tools/essai-temps.ts` (un modèle en petit, le
+même qu'on mettra dans stamina.json), l'aperçu est `.art-preview/temps-endurance.png` (la courbe de la journée type ; dessous, la barre
+à trois teintes à 6 h, 7 h 30, 16 h 30, 22 h et au réveil du 3e jour).
+
+**Décidé par Grégoire** : une horloge unique de 24 h ; à x1, une journée dure 24 h réelles ; une vitesse du temps par paliers, réglée
+par le joueur (à essayer : x1, x6, **x24 par défaut** — une journée en une heure —, x60, x360 pour attendre et dormir) ; une échelle de
+temps propre à chaque être (un facteur, 1 par défaut, inutilisé pour l'instant : plus tard, ralentir la perception sera un pouvoir) ;
+l'endurance en trois niveaux (souffle, plafond du jour, maximum), une barre à trois teintes ; pas d'effondrement forcé la nuit : la
+veille se paie au réveil. **Choisi par défaut** (Grégoire peut le contredire) : un travail garde la durée de son geste en jeu, et
+l'horloge avance pendant ce geste de la durée réaliste du travail (abattre un chêne ≈ 1 h de jeu, fendre une bille quelques minutes),
+en données pour chaque action et chaque transformation ; la vitesse revient d'elle-même à x1 quand un combat commence (coup donné ou
+reçu) ou qu'une créature hostile remarque Xéros (aucune n'existe encore ; le lapin à venir fuit).
+
+**Deux vitesses à ne jamais confondre.** La **vitesse du temps** (celle du joueur) ne fait avancer que l'horloge : Xéros marche
+toujours à 5 m/s (100 px/s), les gestes gardent leur durée. La **vitesse de simulation** accélère tout (gestes, marche, animaux) et est
+réservée aux tests et au débogage (`?debug`) : elle fait plusieurs pas de simulation de taille normale par image, comme la physique de
+Phaser quand le jeu rame (pas fixe de 1/60 s, plusieurs par image), et n'agrandit jamais les pas. L'inventaire des franchissements est
+fait (commit « Franchissement », `world/crossing.ts`) ; ce qui n'est pas dans la physique doit suivre cette vitesse sans sauter
+d'étape : vérifié ci-dessous, système par système.
+
+### 1. Ce qui dépend du temps aujourd'hui
+
+| Système | Fichier | Ce qui dépend du temps |
+| --- | --- | --- |
+| Endurance | `entities/Stamina.ts`, `systems/effort.ts`, `content/stamina.json` | une jauge de 100 ; prix ponctuels (coups, nœuds, pivot, dresser) ; prix par seconde jouée : courir 0,2/s, porter au-delà de 25 kg 0,034/kg/s, pousser une bille 0,014/kg/s (`drain(perSec, delta)`) |
+| Sommeil, jours | `state/GameState.ts` (`sleep` : jauge pleine, `day` + 1), dialogue `pallet-sleep`, `WorldScene` (fondu, « Jour n ») | un compteur de jours, sans heure ; dormir ne prend pas de temps |
+| Course | `entities/Player.ts`, `effort.ts` | vitesses en px/s (marche 100, course 165, porter 55) ; la course se paie par seconde |
+| Physique | Phaser Arcade (`main.ts`) | pas fixe de 1/60 s, plusieurs par image quand le jeu rame |
+| Gestes | `entities/ToolUse.ts`, `gestures.json`, `COMBAT_POSES` | cadence des animations (images/s) ou durées par image (combat) ; une image sautée est quand même jouée (ToolUse) |
+| Combat | `systems/combat.ts`, `combat.json` | durées des poses × inertie, fenêtre d'enchaînement (`combo`, ms), arrêt sur image, réactions |
+| Rail de la doloire | `systems/rail.ts` | avance de `speed × delta` (px/ms) ; un coup par geste, au rythme du geste |
+| Bille qui roule | `systems/roll.ts`, `ROLL` | 300 ms de poussée avant de rouler ; vitesse en px/s, avance pixel par pixel |
+| Appuis longs | `systems/longPress.ts`, `turnLog.ts` | E maintenu 500 ms, R maintenu 1 000 ms |
+| Effets | `harvest.ts` (tremblement, chute, éclats), `roofs.ts` (fondu 250 ms), lueurs et fumées (`GameMap`), HUD (messages 1,8 s / 7 s) | durées d'affichage |
+| Transformations | `transforms.json`, `systems/transform.ts` | aucune durée (« Transformer » est instantané ; les gestes réels ont la durée de leurs coups) |
+| Âge du bois | `art/palette.ts` `woodAges`, `world/build.ts` | un réglage (neuf, patiné, vieux), pas une horloge |
+| Animaux | — | aucun |
+| Sauvegarde | `state/save.ts` (`SAVE_VERSION` 17), `systems/autosave.ts` | `savedAt` (date réelle) ; écrite à chaque changement |
+| Tests | `tools/lib/playtest.ts`, `tools/test-*.ts`, `tools/run-scenarios.ts` | 222 pauses fixes (`sleep`, `waitForTimeout`) dans les scénarios ; un garde-fou de 15 min par scénario |
+
+### 2. Horloge ou simulation, système par système
+
+L'**horloge** compte les heures de jeu (elle avance à la vitesse du temps, et du temps de travail pendant un geste) ; la
+**simulation** compte les secondes jouées (elle avance à la vitesse de simulation, x1 en jeu).
+
+| Système | Vit sur | Ce qui change | Ce que voit le joueur |
+| --- | --- | --- | --- |
+| Souffle | simulation | nouveau : il se vide à chaque effort (3 × son prix ; courir 5/s) et revient de 12 points/s, 0,8 s après le dernier effort | la teinte vive de la barre qui baisse et remonte en quelques secondes ; essoufflé, l'effort attend |
+| Plafond du jour | horloge (par les efforts) | c'est la jauge d'aujourd'hui : chaque effort la baisse de son prix d'aujourd'hui (le budget d'une journée ne change pas) | la teinte du milieu qui descend au fil de la journée |
+| Maximum | horloge (la nuit) | nouveau : monte la nuit si la journée a entamé le plafond d'au moins 40 % | la barre qui s'allonge, jour après jour |
+| Sommeil | horloge | dormir avance l'horloge jusqu'au lever (6 h, ou coucher + 8 h) ; le plafond revient selon la fatigue de la veille et le sommeil pris | « Jour n, 6 h » au réveil ; un coucher tardif fait se lever tard |
+| Jour | horloge | `day` devient l'horloge (jour et minute) | l'heure à l'écran |
+| Travaux (récolte, coupe, fendage, équarrissage, tailler, transformer) | les deux | le geste garde sa durée (simulation) ; l'horloge avance de la durée réaliste du travail, en données (`minutes` de chaque récolte, coupe, transformation) | abattre un chêne : quelques secondes de gestes, une heure passe |
+| Marche, course, porter | simulation | rien | rien |
+| Gestes, combat, rail, bille, appuis longs, effets | simulation | ils suivent la vitesse de simulation par pas fixes (voir plus bas) | rien à x1 |
+| Âge du bois | — (plus tard : horloge, en années) | rien pour l'instant | rien |
+| Animaux (le lapin) | simulation pour bouger ; horloge pour leurs heures (sortir à l'aube) | à leur création | — |
+| PNJ (la mère) | horloge, plus tard | routines remises à plus tard | — |
+
+**La simulation suit sans sauter d'étape** : la physique (marche, collisions) fait déjà des pas fixes ; les **gestes** jouent chaque
+image franchie (ToolUse, corrigé au combat) ; le **rail de la doloire** avance de `speed × delta` mais ne déclenche ses coups qu'au rythme
+du geste (aucune étape sautée ; à vitesse de simulation, il faudra le passer en pas fixes pour que Xéros ne dépasse pas la fin de la
+passe d'un coup) ; la **bille qui roule** avance pixel par pixel en vérifiant chaque pixel (déjà sûr) ; les **animaux** se déplaceront
+par la physique (pas fixes) et décideront par pas fixes, jamais par `delta` agrandi. Règle à écrire dans CLAUDE.md : tout ce qui avance
+hors de la physique avance par pas fixes de la simulation (une boucle `while (acc >= step)`), jamais d'un `delta` multiplié.
+
+### 3. L'endurance chiffrée
+
+Le modèle proposé (à mettre dans stamina.json, à la place de `max`, `tired`, `tiredWalk`) :
+
+```json
+{
+  "max": {"start": 100, "cap": 200, "gain": 2, "trainFrom": 0.4},
+  "breath": {"regenPerSec": 12, "regenDelayMs": 800, "perCost": 3, "perSec": {"run": 5, "carryPerKg": 0.1, "pushPerKg": 0.05}},
+  "tired": 0.15, "tiredWalk": 0.85,
+  "sleep": {"wakeHour": 6, "sleepHours": 8, "exhaustedBelow": 0.25, "exhaustedPenalty": 0.4, "missingHourPenalty": 5, "nightAwakePerHour": 0.5},
+  "costs": {"…": "les prix d'aujourd'hui, en points du plafond"}
+}
+```
+
+- Un effort coûte son prix au plafond (comme aujourd'hui) et 3 fois son prix au souffle ; le souffle ne dépasse jamais le plafond.
+- Épuisé (plafond à 0) : comme aujourd'hui, les efforts sont refusés. Essoufflé (souffle à 0) : l'effort attend que le souffle revienne
+  (quelques secondes), sans message d'épuisement.
+- Au réveil : plafond = maximum − 0,4 × (ce qui manquait sous 25 % du maximum au coucher) − 5 par heure de sommeil manquante sous 8 h.
+- Le maximum monte la nuit de 2 × (1 − maximum / 200) si la journée a entamé le plafond d'au moins 40 % du maximum.
+
+Journée type (maximum 100) :
+
+| Heure | Ce que fait Xéros | Plafond | Souffle au plus bas |
+| --- | --- | --- | --- |
+| 6 h | réveil | 100 | 100 |
+| 7 h | puiser l'eau, bois du feu | 97 | 82,5 |
+| 8 h | abattre un arbre normal, l'ébrancher | 82 | 20,5 |
+| 10 h | couper en billes, porter | 72 | 39,6 |
+| 12 h | équarrir une poutre de 3 m | 60 | 24 |
+| 13 h | repas | 60 | 60 |
+| 15 h | fendre deux billes | 52 | 18,2 |
+| 16 h | mettre en tas | 46 | 27,6 |
+| 17 h | course (20 min), mannequin (30 coups d'épée) | 17 | 1,7 |
+| 21 h | soirée, petits travaux | 15 | 13,5 |
+| 22 h | coucher | 15 | 15 |
+
+Fatigué vers 21 h (sous 15) : la course s'arrête, la marche ralentit — la journée invite à se coucher.
+
+Trois jours d'entraînement (la même journée, coucher 22 h, lever 6 h) :
+
+| Jour | Maximum au réveil | Plafond au réveil | Plafond au coucher | Maximum le lendemain |
+| --- | --- | --- | --- | --- |
+| 1 | 100 | 100 | 15 | 101 |
+| 2 | 101 | 96,9 | 11,9 | 102 |
+| 3 | 102 | 96,6 | 11,6 | 103 |
+
+Une semaine pareille mène vers 107, un mois vers 130 (le gain diminue en approchant de 200). Se coucher épuisé coûte 3 à 4 points le
+lendemain : il vaut mieux s'arrêter avant.
+
+**Nuit blanche** : couché à 6 h au lieu de 22 h, le plafond de 15 descend à 11 en veillant ; levé à 14 h (8 h de sommeil), plafond 94,4
+au lieu de 96, et la demi-journée est perdue. **Nuit courte** (coucher 2 h, lever 6 h : 4 h de sommeil) : plafond 76 au réveil.
+
+### 4. Le jour et la nuit (à trancher)
+
+- **Tout de suite, proposé** : l'horloge et son affichage ; le sommeil qui avance l'horloge ; le lever et le malus de veille ; la vitesse
+  du temps par paliers. **La lumière qui suit l'heure** (une teinte du monde par heure : aube, jour, crépuscule, nuit, les feux et les
+  lanternes qui comptent la nuit) : proposée en deuxième temps, une fois l'horloge jouée, parce qu'elle touche tout l'affichage (la
+  pénombre des intérieurs et du sous-bois, `gloom`, les lueurs).
+- **Plus tard** : les routines des PNJ (la mère à l'atelier le matin, à la ferme du riche l'après-midi), les heures des animaux, les
+  boutiques du village et leurs horaires, la météo, les saisons (le compteur de jours y mène).
+
+### 5. Les tests
+
+- **Vitesse de simulation dans `tools/lib/playtest.ts`** : x10 par défaut (`?simu=10`, lu par `main.ts` seulement avec `?debug` ou
+  en test) ; une fonction `capture()` la remet à x1 (ou met la simulation en pause) le temps d'une capture d'écran, pour que l'image soit
+  celle du jeu.
+- **Un scénario à x1 avant chaque fusion** (`SCENARIOS_X1`, par défaut `monde` : le plus long en marche réelle et le plus sensible aux
+  défauts de vitesse réelle), dans `test:scenarios:bg`.
+- **Les pauses fixes à remplacer par des attentes d'état** : 222 dans les scénarios (fendage 28, construction 25, équarrissage 23,
+  cabane 20, intérieurs 19, combat 19, tas 18, étal 15, poteaux 14, implantation 14, grange 12, monde 9, briques 5). Les remplacer par
+  des attentes sur l'état du jeu (le mode, le geste fini, la carte, un objet né), comme pour monde, intérieurs et combat : elles
+  suivent la simulation accélérée ; une pause fixe, elle, dure toujours autant et annule le gain.
+- **La copie figée régénère ses fichiers** (`tools/scenarios-bg.ts`) : aujourd'hui elle recopie `src/generated/` du dossier de travail
+  s'il manque, ce qui a caché à la fusion du combat qu'un dossier neuf ne savait plus produire ses fichiers. Proposé : effacer
+  `src/generated/` de la copie et le régénérer (`npm run maps`, `npm run art`, l'ordre dont un dossier neuf a besoin), si bien que la
+  suite vérifie aussi qu'un dossier neuf se construit.
+- **Le gain estimé** : la suite fait 350 s (4 à la fois) ; la marche et les gestes représentent à peu près les deux tiers du temps de
+  chaque scénario, le reste est le démarrage et les pauses. À x10, avec les pauses remplacées : **environ 2 min** (le démarrage des
+  navigateurs et des serveurs reste) ; sans remplacer les pauses, à peine 30 % de gain.
+
+### 6. L'heure, la vitesse, la touche
+
+- **L'heure** s'affiche en haut à droite de l'écran, petite, dans le style des chiffres du HUD (`ui-digit-*`) : « Jour 3 · 14:20 », et
+  la vitesse à côté quand elle n'est pas celle par défaut (« x60 »). Le HUD des mains et la barre d'endurance restent en bas.
+- **La touche** : **V** (« vitesse »), à la même place en AZERTY et en QWERTY, libre aujourd'hui (docs/COMMANDES.md : ni le jeu ni la
+  construction ne l'utilisent), lue par sa place : V passe au palier suivant, Maj + V au précédent ; un message court dit le palier
+  (« Le temps : x60 »). Refusée pendant un combat ou si une créature hostile le voit (la vitesse revient à x1).
+- **Dormir** passe par la paillasse (« Dormir ? ») : le sommeil se joue à x360 (quelques secondes de fondu), comme aujourd'hui.
+
+### 7. La sauvegarde et le découpage
+
+- **Sauvegarde** : `SAVE_VERSION` 18 ; `day` devient `clock` (`{ day, minute }`), `stamina` devient `{ breath, ceiling, max }` ;
+  `timeSpeed` (le palier) est gardé hors de la partie (`localStorage`, comme le zoom). Une partie de la version 17 est convertie à la
+  lecture : `clock = { day, minute: 6 × 60 }`, `ceiling = stamina`, `breath = stamina`, `max = 100`.
+- **Le découpage**, chaque étape testable et commitée seule :
+  1. *L'horloge* : `clock` dans GameState, `systems/clock.ts` (avance à la vitesse du temps), l'affichage de l'heure, la touche V et les
+     paliers, la conversion de sauvegarde ; test : l'heure avance au bon rythme à chaque palier.
+  2. *La durée des travaux* : `minutes` dans les récoltes, coupes, fendages, transformations ; l'horloge avance pendant le geste ;
+     test : abattre un arbre normal avance l'horloge de sa durée.
+  3. *L'endurance en trois niveaux* : souffle, plafond, maximum ; la barre à trois teintes (le pixel-artist) ; test : la journée type
+     simulée (`essai-temps.ts`) donne les mêmes chiffres en jeu.
+  4. *Le sommeil et la veille* : le lever, le malus, le maximum qui monte ; test : nuit blanche, nuit courte, trois jours d'entraînement.
+  5. *La vitesse de simulation* (`?debug`, playtest x10) et le remplacement des pauses fixes, scénario par scénario ; la copie figée
+     qui régénère ; test : la suite plus courte, un scénario à x1.
+  6. *La lumière qui suit l'heure* (si Grégoire la veut tout de suite).
+
 ## Le combat (décidé le 1er novembre 2026, chantier « combat de base »)
 
 Une base juste, pas complète : deux armes (la branche, l'[épée de bois](objets/wooden-sword.md)), une cible qui encaisse (le
