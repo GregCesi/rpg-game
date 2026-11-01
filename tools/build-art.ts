@@ -26,6 +26,8 @@ import { buildCollectionBoard } from './lib/collection-board';
 import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
+import { combatPreview } from './lib/combat-preview';
+import combatJson from '../src/content/combat.json';
 import { sectionsPreview, woodPreview } from './lib/wood-preview';
 import { hewPreview } from './lib/hew-preview';
 import { lyingPreview } from './lib/lying-preview';
@@ -40,7 +42,7 @@ import type { WoodLook, WoodPiece } from '../src/content/types';
 import { shapeOfLook, WOOD } from '../src/world/woodShape';
 import { composeWood } from '../art/world/wood-pieces';
 import { world } from '../art/palette';
-import type { ArtSource } from '../art/lib/types';
+import type { ArtSource, SpriteSheetSource } from '../art/lib/types';
 import { WALL_STONES } from '../src/world/walls';
 import { stonePalette } from '../art/items/stones';
 
@@ -350,6 +352,10 @@ if (withPreview) {
       writeFileSync(join(PREVIEW, `xeros-${name}-${tool.name.slice('tool-'.length)}.png`), PNG.sync.write(png));
     }
   }
+  // le combat : Xéros à trois moments de chaque geste d'attaque avec chaque arme, et chaque arme dans ses huit angles
+  const weapons = sources.filter((s): s is SpriteSheetSource => s.kind === 'spritesheet' && s.name.startsWith('weapon-'));
+  const used = [...new Set(Object.values(combatJson.attacks).map((a) => a.gesture))];
+  if (body?.kind === 'spritesheet' && weapons.length) writeFileSync(join(PREVIEW, 'combat.png'), PNG.sync.write(combatPreview(sources, body, weapons, gestures, used)));
   const hands = handsPreview(sources);
   if (hands) writeFileSync(join(PREVIEW, 'hands.png'), PNG.sync.write(hands));
   // les tas, étape par étape, pour chaque genre
