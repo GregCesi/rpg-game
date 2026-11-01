@@ -100,8 +100,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const out: Record<string, any> = {};
 
       // 0. de quoi partir : un chantier né sur un coin dégagé de la ferme, ses quatre dés posés
-      emit({ kind: 'map', map: 'ferme' });
-      await sleep(2200);
+      await (window as any).__restart({ kind: 'map', map: 'ferme' });
       const free = (l: number, t: number, r: number, b: number) => w().map.areaFree({ left: l, top: t, right: r, bottom: b });
       const find = () => {
         const m = w().map;
@@ -349,9 +348,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
   assert.equal(r.plateNotice, 'Cette étape viendra plus tard.', 'les sablières ne se posent pas encore');
 
   // 5. la page rechargée : les quatre poteaux et la ligne « sablières » sont retrouvés
-  await page.reload();
-  await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
-  await page.waitForTimeout(500);
+  await load('?dieu');
   const after = await page.evaluate(async () => {
     const stateUrl = '/src/state/index.ts';
     const gs = await import(stateUrl);

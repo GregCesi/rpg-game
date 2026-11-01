@@ -47,9 +47,7 @@ await playtest('construction', async ({ page, errors, load }) => {
     await page.keyboard.press('KeyB');
     await sleep(150);
     assert.equal(await mode(), 'play', 'B sort du mode');
-    await page.evaluate(() => (window as any).game.events.emit('dieu', { kind: 'map', map: 'ferme' }));
-    await page.waitForFunction(() => (window as any).game?.scene?.getScene('world')?.map?.def.id === 'ferme' && (window as any).game.scene.getScene('world').mode === 'play', null, { timeout: 10000 });
-    await sleep(400);
+    await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
     await page.keyboard.press('KeyB');
     await sleep(150);
     assert.equal(await mode(), 'build', 'B rentre dans le mode');

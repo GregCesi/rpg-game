@@ -5,7 +5,7 @@
 // Usage : npm run test   (suppose npm run art : manifeste et tileset des objets)
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { existingMapError, loadContext, SketchLegendSchema, SketchSchema, sketchToTmj } from './lib/sketch';
@@ -72,6 +72,7 @@ test('refuse si le .tmj existe déjà', () => {
   assert.equal(existingMapError('nouvelle', dir), undefined);
   writeFileSync(join(dir, 'nouvelle.tmj'), '{}');
   assert.match(existingMapError('nouvelle', dir) ?? '', /existe déjà/);
+  rmSync(dir, { recursive: true, force: true });
 });
 
 if (failed) {

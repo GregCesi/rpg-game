@@ -10,7 +10,8 @@
 // celui qui efface un plan (construction) tourne seul, après les autres (ALONE).
 
 import { spawn } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /** Les scénarios, les plus longs d'abord (pour finir plus tôt quand ils tournent à plusieurs). */
 export const SCENARIOS = ['monde', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective'];
@@ -76,6 +77,8 @@ await Promise.all(
   }),
 );
 for (const name of ALONE) done(await run(name));
+// un plan d'essai qu'un scénario arrêté de force (SIGKILL : son \`finally\` ne passe pas) aurait laissé dans le contenu
+for (const f of readdirSync('src/content/plans')) if (f.startsWith('essai-')) rmSync(join('src/content/plans', f), { force: true });
 const total = (Date.now() - t0) / 1000;
 const order = (r: Result) => SCENARIOS.indexOf(r.name);
 const width = Math.max(...SCENARIOS.map((n) => n.length));

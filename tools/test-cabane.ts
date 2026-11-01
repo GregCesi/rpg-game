@@ -19,13 +19,20 @@
 // Usage : npm run test:cabane.
 
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { playtest } from './lib/playtest';
 import { sources } from '../art/index';
 import { agesShortPreview, SHORT_MAX_H } from './lib/ages-preview';
 
-const PLAN_FILE = 'src/content/plans/cabane.json';
+/** Le plan commité (le contenu du jeu) ; le scénario écrit le sien dans un dossier temporaire et le compare, sauf avec PLANS_WRITE=1
+ * (pour mettre à jour le plan commité quand le bâtiment change exprès). */
+const COMMITTED = 'src/content/plans/cabane.json';
+const OUT_DIR = process.env.PLANS_WRITE ? 'src/content/plans' : mkdtempSync(join(tmpdir(), 'xeros-plans-'));
+process.env.XEROS_PLANS_OUT = OUT_DIR;
+const PLAN_FILE = `${OUT_DIR}/cabane.json`;
 /** Date du plan au départ (0 s'il n'existe pas) : le test attend qu'il soit réécrit. */
 const mtimeOf = (f: string) => (existsSync(f) ? statSync(f).mtimeMs : 0);
 const PLAN_BEFORE = mtimeOf(PLAN_FILE);
@@ -39,9 +46,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
   // sur la ferme, en mode construction
   await page.keyboard.press('KeyB');
   await sleep(150);
-  await page.evaluate(() => (window as any).game.events.emit('dieu', { kind: 'map', map: 'ferme' }));
-  await page.waitForFunction(() => (window as any).game?.scene?.getScene('world')?.map?.def.id === 'ferme' && (window as any).game.scene.getScene('world').mode === 'play', null, { timeout: 10000 });
-  await sleep(400);
+  await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
   await page.keyboard.press('KeyB');
   await sleep(150);
   const notices: string[] = [];
@@ -289,6 +294,8 @@ await playtest('cabane', async ({ page, errors, load }) => {
   for (let i = 0; i < 50 && mtimeOf(PLAN_FILE) <= PLAN_BEFORE; i++) await sleep(100);
   assert.ok(mtimeOf(PLAN_FILE) > PLAN_BEFORE, 'la cabane est enregistrée dans src/content/plans/cabane.json');
   const plan = JSON.parse(readFileSync(PLAN_FILE, 'utf8'));
+  // le plan bâti par le scénario est celui du contenu (sinon : le bâtiment a changé ; PLANS_WRITE=1 pour le mettre à jour exprès)
+  if (!process.env.PLANS_WRITE) assert.deepEqual(plan, JSON.parse(readFileSync(COMMITTED, 'utf8')), `le plan bâti est celui de ${COMMITTED} (PLANS_WRITE=1 pour le mettre à jour)`);
   const all = await pieces();
   assert.equal(plan.pieces.length, all.length, 'toutes les pièces sont dans le plan');
   assert.equal(plan.joints.length, (await joints()).length, 'et tous les assemblages');

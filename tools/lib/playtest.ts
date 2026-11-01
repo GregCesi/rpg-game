@@ -59,7 +59,7 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     await page.addInitScript('window.__name = (f) => f;');
     // attendre un état, jamais un délai (CLAUDE.md) : `__until(cond, label)` attend que `cond()` soit vrai, image après image, et lève une
     // erreur nommée au bout d'une minute ; `__restart(command)` envoie une commande ?dieu qui redémarre la scène (`map`, `reset-map`) et
-    // attend la nouvelle carte, prête (le joueur posé, le mode jeu)
+    // attend la nouvelle carte, prête (le joueur posé, le mode jeu, ou construction sous ?construire)
     await page.addInitScript(`
       window.__until = async (cond, label, ms = 60000) => {
         const t = performance.now();
@@ -74,18 +74,20 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
         g.events.emit('dieu', command);
         await window.__until(() => {
           const w = g.scene.getScene('world');
-          return !!w && w.map && w.map !== old && w.mode === 'play' && !!w.player;
+          return !!w && w.map && w.map !== old && (w.mode === 'play' || w.mode === 'build') && !!w.player;
         }, 'la carte ' + (command.map || command.kind));
       };
     `);
     const load = async (query = '?dieu&reset') => {
       await page.goto(`${url}${query}`);
-      // jusqu'à ce que le monde tourne, sans durée : un jeu qui démarre lentement (d'autres scénarios tournent en même temps) démarre
-      // plus tard ; mais une erreur de la page pendant le démarrage arrête tout de suite (le jeu ne démarrera plus) ; le lanceur des
-      // scénarios (tools/run-scenarios.ts) arrête celui qui ne finirait jamais
+      // jusqu'à ce que le monde tourne : un jeu qui démarre lentement (d'autres scénarios tournent en même temps) démarre plus tard,
+      // dans une borne de deux minutes (un scénario lancé seul ne reste pas suspendu) ; une erreur de la page pendant le démarrage
+      // arrête tout de suite (le jeu ne démarrera plus)
       const before = errors.length;
+      const t0 = Date.now();
       for (;;) {
         if (errors.length > before) throw new Error(`le jeu ne démarre pas : ${errors.slice(before).join(' | ')}`);
+        if (Date.now() - t0 > 120000) throw new Error(`le jeu ne démarre pas en deux minutes (${query})`);
         if (await page.evaluate(() => !!(window as any).game?.scene?.getScene?.('world')?.player).catch(() => false)) break;
         await new Promise((r) => setTimeout(r, 200));
       }

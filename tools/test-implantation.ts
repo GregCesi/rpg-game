@@ -70,8 +70,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const hands = () => JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both);
       const statusText = () => w().site.texts.map((t: any) => t.text.text);
       const wait = async (map: string) => {
-        emit({ kind: 'map', map });
-        await sleep(2200);
+        await (window as any).__restart({ kind: 'map', map });
       };
       const shot = (name: string) => (window as any).shot(name);
       const out: Record<string, unknown> = {};
@@ -366,9 +365,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.equal(r.postPlaced, 4);
 
   // 7. la page rechargée : le chantier est retrouvé (plan, pièces posées, ligne d'état)
-  await page.reload();
-  await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
-  await page.waitForTimeout(500);
+  await load('?dieu');
   const after = await page.evaluate(async () => {
     const stateUrl = '/src/state/index.ts';
     const gs = await import(stateUrl);

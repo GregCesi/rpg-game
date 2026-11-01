@@ -20,8 +20,7 @@ await playtest('vitesses', async ({ page, errors, load }) => {
         await sleep(150);
       };
       if (w().map.def.id !== 'ferme') {
-        await send({ kind: 'map', map: 'ferme' });
-        await sleep(2000);
+        await (window as any).__restart({ kind: 'map', map: 'ferme' });
       }
       await send({ kind: 'stamina-infinite', on: !o.tired });
       await send({ kind: 'stamina', breath: o.tired ? 10 : 100, ceiling: o.tired ? 10 : 100, max: 100 });

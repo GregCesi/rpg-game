@@ -81,8 +81,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       const out: Record<string, unknown> = {};
 
       // 1. à la ferme, un arbre normal : quatre coups de cognée depuis l'ouest, il tombe vers l'est
-      emit({ kind: 'map', map: 'ferme' });
-      await sleep(2200);
+      await (window as any).__restart({ kind: 'map', map: 'ferme' });
       emit({ kind: 'stamina-infinite', on: true });
       const tree = props(/^normal-tree$/)[0];
       await give('axe');
@@ -393,9 +392,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.deepEqual(r.big['big-pollard'], { trunk: { length: 200, kg: 428 }, label: '1 m | 1 m', cut: [100, 100] }, 'le têtard : 2 m, coupé à 1 m');
 
   // 7. la page rechargée : la poutre, les rondins et le tas sont retrouvés
-  await page.reload();
-  await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
-  await page.waitForTimeout(500);
+  await load('?dieu');
   const after = await page.evaluate(async () => {
     const stateUrl = '/src/state/index.ts';
     const gs = await import(stateUrl);

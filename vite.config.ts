@@ -23,7 +23,8 @@ function buildPlanWriter(): Plugin {
             const { key, plan } = JSON.parse(body) as { key: string; plan: { name: string; pieces: unknown[] } };
             if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(key) || !plan?.name || !Array.isArray(plan.pieces)) throw new Error('plan ou nom invalide');
             // écrit à côté puis renommé : un autre serveur (les scénarios tournent en parallèle) ne lit jamais un plan à moitié écrit
-            const file = `src/content/plans/${key}.json`;
+            // les scénarios écrivent leurs plans dans un dossier temporaire (XEROS_PLANS_OUT), jamais par-dessus le contenu commité
+            const file = `${process.env.XEROS_PLANS_OUT ?? 'src/content/plans'}/${key}.json`;
             writeFileSync(`${file}.tmp`, `${JSON.stringify(plan, null, 2)}\n`);
             renameSync(`${file}.tmp`, file);
             res.statusCode = 200;

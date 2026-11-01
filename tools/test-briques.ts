@@ -10,7 +10,7 @@
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';
 
-await playtest('briques', async ({ page, errors }) => {
+await playtest('briques', async ({ page, errors, load }) => {
   const r = (await page.evaluate(async () => {
     const sleep = (t: number) => new Promise((res) => setTimeout(res, t));
     const g = (window as any).game;
@@ -73,7 +73,7 @@ await playtest('briques', async ({ page, errors }) => {
     };
 
     await send({ kind: 'stamina-infinite', on: true });
-    await send({ kind: 'map', map: 'ferme' }, 1500);
+    await (window as any).__restart({ kind: 'map', map: 'ferme' });
     const out: Record<string, unknown> = { map: mapId() };
 
     // 1. la pierre : une grosse pierre brute donnée, dégrossie en moellon ; les éclats restent au sol
@@ -226,9 +226,7 @@ await playtest('briques', async ({ page, errors }) => {
   assert.ok(r.polePiles.includes('pole-round-200:2'), `deux perches font un tas : ${r.polePiles}`);
 
   // la page rechargée : les tas, les éclats et la pierre posée seule sont retrouvés
-  await page.reload();
-  await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
-  await page.waitForTimeout(500);
+  await load('?dieu');
   const after = (await page.evaluate(async () => {
     const stateUrl = '/src/state/index.ts';
     const gs = await import(stateUrl);
