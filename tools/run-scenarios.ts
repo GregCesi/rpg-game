@@ -6,13 +6,20 @@
 // Ce qui pourrait se gêner quand ils tournent ensemble, et pourquoi ça ne se gêne pas : chaque scénario a son navigateur (sa
 // sauvegarde, localStorage, est à lui) et son serveur sur un port libre (tools/lib/playtest.ts) ; chacun écrit ses propres aperçus
 // (.art-preview/<son nom>.png) ; les plans réécrits par la cabane, la grange et l'étal (src/content/plans/) ne sont jamais effacés,
-// et le serveur les écrit d'un coup (renommage : vite.config.ts), si bien qu'un autre scénario qui démarre les lit toujours entiers.
+// et le serveur les écrit d'un coup (renommage : vite.config.ts), si bien qu'un autre scénario qui démarre les lit toujours entiers ;
+// celui qui efface un plan (construction) tourne seul, après les autres (ALONE).
 
 import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 
 /** Les scénarios, les plus longs d'abord (pour finir plus tôt quand ils tournent à plusieurs). */
 export const SCENARIOS = ['monde', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective'];
+
+/**
+ * Ceux qui tournent seuls, après les autres : ils effacent un fichier que tous lisent au démarrage (construction écrit puis efface
+ * src/content/plans/essai-de-construction.json ; un autre jeu qui démarre à ce moment ne trouverait plus le plan qu'il importe).
+ */
+export const ALONE = ['construction'];
 
 const jobs = Math.max(1, Number(process.env.SCENARIOS_JOBS) || 4);
 /** Au-delà, un scénario est arrêté (SCENARIOS_LIMIT, en secondes ; 15 min par défaut). */
@@ -58,16 +65,17 @@ function run(name: string): Promise<Result> {
 
 const t0 = Date.now();
 const results: Result[] = [];
-const queue = [...SCENARIOS];
+const queue = SCENARIOS.filter((n) => !ALONE.includes(n));
+const done = (r: Result) => {
+  console.log(`${r.ok ? '✓' : '✗'} ${r.name} (${(r.ms / 1000).toFixed(0)} s)`);
+  results.push(r);
+};
 await Promise.all(
   Array.from({ length: Math.min(jobs, queue.length) }, async () => {
-    for (let name = queue.shift(); name; name = queue.shift()) {
-      const r = await run(name);
-      console.log(`${r.ok ? '✓' : '✗'} ${name} (${(r.ms / 1000).toFixed(0)} s)`);
-      results.push(r);
-    }
+    for (let name = queue.shift(); name; name = queue.shift()) done(await run(name));
   }),
 );
+for (const name of ALONE) done(await run(name));
 const total = (Date.now() - t0) / 1000;
 const order = (r: Result) => SCENARIOS.indexOf(r.name);
 const width = Math.max(...SCENARIOS.map((n) => n.length));

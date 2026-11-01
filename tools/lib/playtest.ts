@@ -57,8 +57,14 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     const load = async (query = '?dieu&reset') => {
       await page.goto(`${url}${query}`);
       // jusqu'à ce que le monde tourne, sans durée : un jeu qui démarre lentement (d'autres scénarios tournent en même temps) démarre
-      // plus tard ; le lanceur des scénarios (tools/run-scenarios.ts) arrête celui qui ne finirait jamais
-      await page.waitForFunction(() => !!(window as any).game?.scene?.getScene?.('world')?.player, null, { timeout: 0, polling: 200 });
+      // plus tard ; mais une erreur de la page pendant le démarrage arrête tout de suite (le jeu ne démarrera plus) ; le lanceur des
+      // scénarios (tools/run-scenarios.ts) arrête celui qui ne finirait jamais
+      const before = errors.length;
+      for (;;) {
+        if (errors.length > before) throw new Error(`le jeu ne démarre pas : ${errors.slice(before).join(' | ')}`);
+        if (await page.evaluate(() => !!(window as any).game?.scene?.getScene?.('world')?.player).catch(() => false)) break;
+        await new Promise((r) => setTimeout(r, 200));
+      }
     };
     await load();
     await body({ page, url, errors, load });
