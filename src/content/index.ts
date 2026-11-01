@@ -2,7 +2,7 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { CharacterDefSchema, CombatSchema, TimeSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, MatterSchema, PileDefSchema, RockSchema, PlanSchema, ParcelUseSchema, PropDefSchema, StaminaSchema, StrengthSchema, TilesetCatalogSchema, TransformSchema, WoodSchema, WorldSchema } from './types';
+import { CharacterDefSchema, CombatSchema, TimeSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, MatterSchema, PileDefSchema, RockSchema, PlanSchema, ParcelUseSchema, PropDefSchema, StaminaSchema, StrengthSchema, WorkSchema, TilesetCatalogSchema, TransformSchema, WoodSchema, WorldSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import itemsJson from './items.json';
@@ -22,6 +22,7 @@ import parcelsJson from './parcels.json';
 import worldJson from './world.json';
 import combatJson from './combat.json';
 import timeJson from './time.json';
+import workJson from './work.json';
 export { maps } from '../generated/maps';
 
 function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.infer<T> {
@@ -66,3 +67,5 @@ export const world = parse('world.json', WorldSchema, worldJson);
 export const combat = parse('combat.json', CombatSchema, combatJson);
 /** Le temps : les paliers de la vitesse du temps, le palier par défaut, l'heure du lever (CONCEPTION, « Le temps »). */
 export const time = parse('time.json', TimeSchema, timeJson);
+/** Le travail (docs/CONCEPTION.md, « Le travail ») : les coups, la résistance de la matière, les êtres de référence, les points de calage. */
+export const work = parse('work.json', WorkSchema, workJson);

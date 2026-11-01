@@ -474,6 +474,8 @@ export const ItemDefSchema = z.strictObject({
   aged: z.literal(true).optional(),
   /** C'est une arme (la branche, l'épée de bois) : Espace, dans la main active, attaque. Voir WeaponSchema. */
   weapon: z.lazy(() => WeaponSchema).optional(),
+  /** Un outil au travail (docs/CONCEPTION.md, « Le travail ») : son inertie, son tranchant, ce que la précision y pèse. */
+  work: z.lazy(() => ToolWorkSchema).optional(),
 });
 
 /**
@@ -871,6 +873,12 @@ export const GestureSchema = z.strictObject({
    */
   strike: z.strictObject({ down: px, up: px, right: px }).optional(),
   poses: z.strictObject({ down: z.array(PoseSchema), up: z.array(PoseSchema), right: z.array(PoseSchema) }),
+  /**
+   * Le temps de chaque image d'un geste de travail (docs/CONCEPTION.md, « Le travail ») : `arm` (armer), `hold` (le temps en haut),
+   * `down` (abattre), `impact`, `free` (dégager) ; les durées des images en découlent (world/swing.ts : la durée de chaque temps,
+   * partagée entre ses images). Absent : les durées de l'animation dessinée.
+   */
+  phases: z.array(z.enum(['arm', 'hold', 'down', 'impact', 'free'])).optional(),
 });
 
 /** Point d'accroche d'un objet tenu, pour une image : (dx, dy) depuis les pieds. `behind` : derrière le corps à cette image. */
@@ -911,8 +919,81 @@ export const HoldSchema = z.strictObject({ stance: StanceSchema, image: id.optio
  * `slowest` : sa vitesse de marche, en part de la normale, quand il porte `carry`. Plus tard la force progressera :
  * seuls ces chiffres changeront.
  */
+/**
+ * La force d'un coup (docs/CONCEPTION.md, « Le travail ») : le couple du corps sur le manche (`torque`, N·m), la vitesse angulaire au
+ * plus du bras (`omegaMax`, rad/s : un outil léger ne prend pas plus d'énergie que ce que le bras lui donne), l'adresse (`skill`, de 0
+ * à 1, multiplie la précision de l'outil). `max` : l'endurance d'un être de référence (work.json, `references`).
+ */
+export const SwingerSchema = z.strictObject({
+  torque: z.number().positive(),
+  omegaMax: z.number().positive(),
+  skill: z.number().gt(0).lte(1),
+  max: z.number().positive().optional(),
+});
+
+/**
+ * Un outil au travail (items.json, `work`), comme une arme pour l'inertie (world/strike.ts) : `length` cm du bout du manche au tranchant,
+ * `grip` cm de la main au bout, `balance` (l'équilibre : la masse qui frappe = ⅔ × balance × masse) ; `edge`, le tranchant (1 : une lame
+ * affûtée ; la masse qui enfonce un coin, moins) ; `aim`, ce que la précision pèse dans ce qu'enlève un coup (0 : la force seule ; 1 :
+ * la précision seule).
+ */
+export const ToolWorkSchema = z
+  .strictObject({
+    length: z.number().positive(),
+    grip: z.number().nonnegative(),
+    balance: z.number().positive(),
+    edge: z.number().gt(0).lte(1),
+    aim: z.number().min(0).max(1),
+  })
+  .refine((t) => t.grip < t.length, { message: "'grip' doit être en deçà de 'length' : la main tient l'outil" });
+
+/**
+ * Un coup de travail (work.json, `strokes`) : le geste du corps qui le joue (`gesture`, clé de gestures.json), l'angle de la frappe sur
+ * lequel le couple travaille (`angle`, rad), et ses temps hors frappe en secondes (`arm` armer, `hold` le temps en haut, `impact`,
+ * `free` dégager) : `arm`, `hold`, `free` s'allongent de `armK`, `holdK`, `freeK` × 0,1 s par kg·m² d'inertie, à 50 N·m (une cognée se
+ * lève lourdement ; un homme fort la lève plus vite).
+ */
+export const WorkStrokeSchema = z.strictObject({
+  gesture: id,
+  angle: z.number().positive(),
+  arm: z.number().nonnegative(),
+  armK: z.number().nonnegative(),
+  hold: z.number().nonnegative(),
+  holdK: z.number().nonnegative(),
+  impact: z.number().nonnegative(),
+  free: z.number().nonnegative(),
+  freeK: z.number().nonnegative(),
+});
+
+/**
+ * Le travail (work.json ; docs/CONCEPTION.md, « Le travail ») : les coups (`strokes` : `use` de côté, `chop` de haut en bas, `maul` la
+ * masse, `hew` le coup court de la doloire, `whittle` la hachette sur le billot) ; la résistance de la matière (`matter` : J pour enlever
+ * 1 cm³ en travers du fil, `cut`, ou le long d'une face marquée, `hew` ; J pour ouvrir 1 m² de fente au coin, `split`) ; des êtres de
+ * référence (`references` : l'adulte, le bûcheron fort) ; les points de calage (`calibration` : une durée qu'un travail doit tenir pour
+ * un être donné, vérifiée par validate.ts à `tolerance` près).
+ */
+export const WorkSchema = z.strictObject({
+  strokes: z.record(id, WorkStrokeSchema),
+  matter: z.strictObject({ cut: z.number().positive(), hew: z.number().positive(), split: z.number().positive() }),
+  references: z.record(id, SwingerSchema.required({ max: true })),
+  calibration: z.array(
+    z.strictObject({
+      name: z.string().min(1),
+      /** `xeros` : la force de strength.json ; sinon une clé de `references`. */
+      who: id,
+      tool: id,
+      /** La matière : abattre un arbre (`fell` : la clé de props.json), ou équarrir une poutre (`hew` : diamètre, longueur en cm). */
+      job: z.union([z.strictObject({ fell: id }), z.strictObject({ hew: z.strictObject({ size: id, length: z.number().positive() }) })]),
+      minutes: z.number().positive(),
+    }),
+  ),
+  tolerance: z.number().gt(0).lt(1),
+});
+
 export const StrengthSchema = z
   .strictObject({
+    /** La force d'un coup de travail (docs/CONCEPTION.md, « Le travail ») ; ?dieu « force » multiplie le couple. */
+    swing: SwingerSchema,
     carry: z.number().positive(),
     walk: z.number().positive(),
     roll: z.number().positive(),
@@ -1325,6 +1406,10 @@ export type Mass = z.infer<typeof MassSchema>;
 export type Turn = z.infer<typeof TurnSchema>;
 export type Roll = z.infer<typeof RollSchema>;
 export type Strength = z.infer<typeof StrengthSchema>;
+export type Swinger = z.infer<typeof SwingerSchema>;
+export type ToolWork = z.infer<typeof ToolWorkSchema>;
+export type WorkStroke = z.infer<typeof WorkStrokeSchema>;
+export type WorkDef = z.infer<typeof WorkSchema>;
 export type DialogueAction = z.infer<typeof DialogueActionSchema>;
 export type StaminaDef = z.infer<typeof StaminaSchema>;
 export type PilePlace = z.infer<typeof PilePlaceSchema>;

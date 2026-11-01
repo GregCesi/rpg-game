@@ -1136,6 +1136,8 @@ export function validateContent(c: Content, cat: Catalog): string[] {
       if (frames === undefined) err(`gestures.json '${name}' : animation '${anim}' manquante dans le sprite '${PLAYER.skin}'`);
       else if (frames !== poses.length) err(`gestures.json '${name}' ${dir} : ${poses.length} poses d'outil pour ${frames} images dans '${PLAYER.skin}-${anim}'`);
       if (g.impact >= poses.length) err(`gestures.json '${name}' ${dir} : image d'impact ${g.impact} au-delà des ${poses.length} poses`);
+      if (g.phases && g.phases.length !== poses.length) err(`gestures.json '${name}' ${dir} : ${g.phases.length} temps (phases) pour ${poses.length} poses`);
+      if (g.phases && g.phases[g.impact] !== 'impact') err(`gestures.json '${name}' : l'image d'impact ${g.impact} n'est pas le temps 'impact' de phases`);
     }
   }
 
