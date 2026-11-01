@@ -82,6 +82,80 @@ Ordre validé pour rendre le projet tenable dans la durée :
 - **Une nouvelle carte naît d'une esquisse** (grille de lettres, `npm run sketch -- <id>`) puis vit en `.tmj` : l'outil refuse d'écrire sur une carte existante, le `.tmj` fait foi (ajouté le 28 octobre 2026).
 - **Les tilesets sont générés par `build-art`** et jamais modifiés dans Tiled. Les collisions restent dans `props.json`, et `tiles.json` devient un catalogue de propriétés par tuile et par terrain.
 
+## Le monde (décidé le 1er novembre 2026, chantier « monde »)
+
+Le but, décidé par Grégoire : **une grande carte à l'échelle vraie** (1 case = 1,60 m), où l'on marche pour de vrai, avec un village
+petit et dense. **On bâtit le monde avant ses bâtiments** : le terrain, les chemins, la rivière, la forêt, les champs et les parcelles
+d'abord ; les bâtiments se posent quand leurs pièces existent.
+
+- **Le macro** : à l'ouest, la forêt, de plus en plus dense et sombre en s'enfonçant : c'est par là que le monde devient magique, vers le
+  druide (le passage sera raconté plus tard par Grégoire). À l'est, le sérieux : la route officielle, empierrée, vers la ville et le
+  château. Entre les deux, la ferme de Xéros, le chemin de terre, le village.
+- **Le plan** (1 000 × 800 m, d'ouest en est ; aperçu `.art-preview/monde.png`) :
+  - la **forêt**, de 0 à 300 m : la forêt profonde (`deepwoods`) à l'ouest, le sous-bois (`woods`), puis la lisière (`forest`), avec des
+    clairières ; gros arbres et arbres normaux, tous abattables comme à la ferme ; la pénombre monte vers l'ouest (`gloom` de
+    `src/content/world.json`, calculée au mètre du monde : elle ne change pas d'un coup au bord d'une zone) ;
+  - la **rivière**, nord-sud, 8 m (5 cases), à 270 m, dans la forêt : la lisière est sur sa rive est ; le **pont de bois** la franchit
+    sur le chemin, qui continue à l'ouest en sentier dans la forêt ;
+  - la **ferme de Xéros**, 100 × 80 m, de 300 à 400 m : la chaumière, le tas de bois, l'étang, le potager clos, le champ clos (l'ancienne
+    ferme, gardée telle quelle), un petit champ de plus à l'est ; le **cabanon du chasseur** (la cabane en rondins) à la lisière, juste
+    au sud ;
+  - le **chemin de terre**, 250 m, de la ferme au village, entre les prés ;
+  - le **village en croix latine** autour de la **place ronde** (30 m, terre battue `yard`) et de ses **huit étals** : à l'ouest les abords
+    (100 m, 3 parcelles de maison de chaque côté de la rue), au nord le quartier riche (100 m, 4 grandes parcelles), au sud le quartier
+    résidentiel (180 m, une vingtaine de petites parcelles serrées, semblables), à l'est les parcelles officielles (80 m : la mairie, la taverne, deux
+    réservées) ; les rues sont de terre battue, 3 cases (4,80 m) ;
+  - la **route de la ville**, à l'est : 6,40 m, empierrée et bordée (`road`), jusqu'au bord du monde ; un **panneau** « vers la ville » ;
+    on ne la franchit pas encore (le bord du monde arrête Xéros) ;
+  - au-delà du quartier riche, au nord, **la ferme du riche** : sa cour au bout de la rue du nord, sa grange, son logis (une parcelle),
+    ses champs labourés entre des haies de têtards et de buissons (320 × 190 m) ; au-delà du quartier résidentiel, au sud, **la ferme
+    rivale**, faite de même ;
+  - ailleurs, des prés (herbe et prairie de fauche), des bosquets, des friches.
+- **Vingt zones de 200 × 200 m** (125 × 125 cases), chacune une carte Tiled (`tiled/maps/<zone>.tmj`) au nom qui dit ce qu'elle est,
+  assemblées dans un monde Tiled, **`tiled/maps/monde.world`** (dans Tiled : Monde > Charger un monde ; on les voit alors côte à côte).
+  Du nord au sud, d'ouest en est :
+
+  | | 0-200 m | 200-400 m | 400-600 m | 600-800 m | 800-1 000 m |
+  | --- | --- | --- | --- | --- | --- |
+  | 0-200 m | `foret-profonde-nord` | `bois-du-nord` | `pres-du-nord` | `ferme-du-riche` | `champs-du-riche` |
+  | 200-400 m | `foret-profonde` | `ferme` | `chemin` | `village` | `route-de-la-ville` |
+  | 400-600 m | `foret-profonde-sud` | `bois-du-sud` | `pres-du-sud` | `quartier-sud` | `pres-de-l-est` |
+  | 600-800 m | `foret-des-ronces` | `bois-de-la-riviere` | `friches` | `ferme-rivale` | `champs-rivaux` |
+
+- **Passer d'une zone à l'autre** : Xéros qui marche hors du bord arrive dans la voisine, ses pieds au même point du monde, **sans
+  fondu** : la scène redémarre sur la voisine (15 à 25 ms mesurés), la vue reprend sa place, la marche continue (les touches tenues sont
+  gardées). Pour que cela ne se voie pas, **la bande des voisines** est dessinée par-delà chaque bord ouvert (21 cases à l'est et à
+  l'ouest, 12 au nord et au sud : la moitié de la vue au zoom le plus éloigné) : leur sol, leurs détails, leurs objets tels que la partie
+  les a laissés, leurs pièces posées ; rien n'y bloque ni ne s'y prend. La caméra ne montre donc jamais le vide près d'un bord ouvert. Au
+  bord du monde (rien de l'autre côté), Xéros s'arrête. La sauvegarde, déjà rangée par carte, suit : la position est notée dans la zone
+  où il est. Ce qui ne passe pas un bord : une bille qu'on roule, un tas, une pièce posée en mode construction (chacun reste dans sa zone).
+- **La ferme** (`ferme.tmj`) est devenue la zone de la ferme : l'ancienne carte (32 × 22 cases) y est posée telle quelle, objets et
+  identifiants compris (les sorties vers la chaumière, les dalles de l'étang), décalée de 78 × 43 cases. Xéros se réveille toujours dans
+  son cagibi. Une partie d'avant le monde est refusée proprement (`SAVE_VERSION` 17).
+- **Les parcelles** : un rectangle de type `Parcel` dans Tiled, sa destination (`use`, `src/content/parcels.json` : maison des abords,
+  maison du quartier, maison de riche, mairie, taverne, réservée, logis de ferme) et son nom ; invisible en jeu, montrée en mode
+  construction et avec `?debug` (sa couleur, son nom, sa taille en mètres). Les maisons s'y bâtiront quand leurs pièces existeront.
+- **Les bâtiments posés depuis leurs plans** : un rectangle de type `Plan` dans Tiled (`plan` : un plan de `src/content/plans/`, `age`
+  facultatif) ; à la première visite de la zone (ou dès qu'on la voit d'une voisine), ses pièces entrent dans la partie comme si on
+  l'avait posé en mode construction : on entre dans la cabane, on ouvre les volets d'étal, le mode construction les retire. Posés : la
+  cabane (le chasseur), les huit étals de la place, une grange dans chacune des deux grandes fermes.
+- **La naissance** : `tools/monde-esquisses.ts` dessine tout le monde en un seul plan (lettres et objets placés au pixel : arbres par
+  tirage de Poisson, plus serrés vers l'ouest, haies le long des champs), le découpe en une esquisse par zone, et agrandit la ferme ;
+  chaque zone est née par `npm run sketch`. Depuis, **les .tmj font foi** : on retouche dans Tiled.
+- **Vérification** : `npm run test:monde` (du cagibi à la place, puis au panneau, à travers les zones ; le bord du monde ; la page
+  rechargée ; la mesure des passages et d'une image dans la forêt profonde) ; aperçu `.art-preview/monde.png` (`npm run art:monde`).
+  Mesuré le 1er novembre 2026, dans la forêt profonde (la zone la plus chargée : 1 790 objets, 9 739 affichés avec la bande des
+  voisines) : la logique du jeu prend 0,13 ms par image ; l'image entière 21 ms en moyenne (pire 25 ms) dans Chromium sans écran, dont
+  le rendu est logiciel (pas de carte graphique) : sur un vrai navigateur, ce chiffre est un plafond, pas une mesure.
+- **Choix faits sans Grégoire** (à revoir) : la rivière coule dans la forêt (la lisière sur sa rive est), si bien que le pont est sur
+  le chemin qui part de la ferme vers l'ouest, en sentier dans la forêt ; les huit étals regardent tous le sud (un plan ne tourne pas
+  encore) ; la place et les cours en terre battue ; 4 rangées de zones (800 m au lieu de 710 : des prés et des friches en plus au sud) ;
+  le panneau posé vieux, avec une pierre de calage au pied (le gabarit de ses vues de côté) ; la pénombre du sous-bois est une couleur
+  posée sur tout (Xéros compris), comme celle des intérieurs ; le pont en tuiles, pas en objet.
+- **À trancher par Grégoire** : la vitesse de marche. Xéros marche à 100 px/s, soit 5 m/s : un kilomètre en 3 min 20 s (2 min en
+  courant). « Un kilomètre en 13 minutes », la marche d'un homme (1,3 m/s), voudrait 26 px/s (`PLAYER.walkSpeed`, config.ts) : un seul
+  réglage, mais il change tout le jeu ; il n'est pas changé.
+
 ## Boucle de jeu : récolte et inventaire (décidé le 29 octobre 2026)
 
 Première boucle : Xéros prend la hache sur le billot, abat un arbre, ramasse les bûches.
