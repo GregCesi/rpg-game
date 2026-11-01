@@ -23,15 +23,25 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       const stateUrl = '/src/state/index.ts';
       const massUrl = '/src/content/mass.ts';
       const gs = await import(stateUrl);
+      const clockUrl = '/src/systems/clock.ts';
+      const { ClockSystem } = await import(clockUrl);
       const mass = await import(massUrl);
       const emit = (c: unknown) => g.events.emit('dieu', c);
       const notices: string[] = [];
       g.events.on('notice', (t: string) => notices.push(t));
-      const press = async (code: string, ms = 60) => {
+      const finishWork = async () => {
+        const world = () => (window as any).game.scene.getScene('world');
+        for (let i = 0; i < 20 && world().mode !== 'work' && world().mode !== 'rail'; i++) await new Promise((res) => requestAnimationFrame(res));
+        if (world().mode === 'work' || world().mode === 'rail') (window as any).game.events.emit('dieu', { kind: 'finish-work' });
+      };
+      const press = async (code: string, ms = 60, finish = true) => {
         window.dispatchEvent(new KeyboardEvent('keydown', { code }));
         await sleep(ms);
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
         await sleep(120);
+        // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
+        // travail »), horloge, endurance et résultat compris
+        if (code === 'Space' && finish) await finishWork();
       };
       const settled = async () => {
         for (let i = 0; i < 100 && w().mode !== 'play'; i++) await sleep(50);
@@ -75,20 +85,17 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       const tree = props(/^normal-tree$/)[0];
       await give('axe');
       await standAt(tree.box.left - 6, tree.box.bottom - 1, 'right');
-      for (let i = 0; i < 4; i++) {
-        await press('Space');
-        await settled();
-      }
+      // abattre : un travail (25 min), fini d'un coup
+      await press('Space');
+      await settled();
       await sleep(2500);
       const felled = props(/^normal-felled-tree$/)[0];
       out.felled = !!felled;
 
       // 2. le houppier : trois coups, des branches, et le tronc ébranché devient une seule pièce ronde de 5,8 m
       await standAt(felled.aimX, felled.aimY + 14, 'up');
-      for (let i = 0; i < 3; i++) {
-        await press('Space');
-        await settled();
-      }
+      await press('Space');
+      await settled();
       out.trunk = lengths('normal');
       out.branches = gs.mapState(gs.game, w().map.def.id).ground.filter((q: any) => q.item === 'branch').length;
       const trunk = logs()[0];
@@ -116,14 +123,11 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await aboveAt(trunk, 59);
       await sleep(100);
       out.label = w().wood.labelText;
+      // couper : un travail (le temps des trois étapes de la coupe), fini d'un coup ; l'encoche n'existe plus, la part faite non plus
       await press('Space');
       await settled();
-      out.notch = JSON.stringify(spawned().find((q: any) => q.id === trunk.id)?.wood.notch);
-      for (let i = 0; i < 2; i++) {
-        await aboveAt(logs().find((p: any) => p.id === trunk.id), 60);
-        await press('Space');
-        await settled();
-      }
+      out.notch = JSON.stringify(spawned().find((q: any) => q.id === trunk.id)?.wood.notch ?? null);
+      out.workLeft = Object.keys(gs.mapState(gs.game, w().map.def.id).work).length;
       out.cutCost = Math.round((100 - w().player.stamina.ceiling) * 100) / 100;
       out.pieces = lengths('normal');
       out.cutNotice = notices.at(-1);
@@ -139,12 +143,10 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.restNotice = notices.at(-1);
       emit({ kind: 'stamina-infinite', on: true });
       await give('axe');
-      for (let i = 0; i < 3; i++) {
-        await aboveAt(logs().find((p: any) => p.id === rest.id) ?? rest, 36);
-        if (i === 0) out.restLabel = w().wood.labelText;
-        await press('Space');
-        await settled();
-      }
+      await aboveAt(logs().find((p: any) => p.id === rest.id) ?? rest, 36);
+      out.restLabel = w().wood.labelText;
+      await press('Space');
+      await settled();
       emit({ kind: 'stamina-infinite', on: false });
       out.pieces2 = lengths('normal');
 
@@ -175,24 +177,30 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       // au bout ouest : Espace lance la passe, Xéros avance tout seul vers l'est en frappant
       await aboveAt(hewing(), 2);
       const [hx0, hy0] = [a().x, a().y];
-      await press('Space');
+      // une face de 3 m dure 24 min (8 min par mètre, wood.json) : pour l'essai, le temps va 120 fois plus vite (12 s)
+      ClockSystem.speed = 120;
+      await press('Space', 60, false);
       out.passMode = w().mode;
+      out.passBar = w().rail.bar.frame.visible;
       await sleep(1500);
-      // les autres touches ne font rien pendant la passe
-      await press('KeyS', 300);
+      // E ne fait rien pendant la passe
       await press('KeyE');
-      out.passY = a().y - hy0;
       await sleep(1500);
       out.walked = a().x - hx0;
       out.passAnim = a().anims.currentAnim?.key;
-      // Échap : arrêtée là où il est ; la face entamée est gardée dans GameState, jusqu'au fer
-      await press('Escape');
-      await sleep(150);
+      // un pas (S) : arrêtée là où il est ; la face entamée est gardée dans GameState, jusqu'au fer
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyS' }));
+      await new Promise((res) => requestAnimationFrame(res));
+      await new Promise((res) => requestAnimationFrame(res));
       out.stopMode = w().mode;
-      out.stopNotice = notices.at(-1);
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyS' }));
+      ClockSystem.speed = 1;
+      await sleep(150);
+      // le pas qui l'arrête pousse ensuite contre la pièce (qui ne roule plus) : le message d'arrêt est parmi les derniers
+      out.stopNotice = notices.slice(-3).find((n: string) => n.startsWith('Arrêté')) ?? notices.at(-1);
       const stopX = a().x;
       await sleep(600);
-      out.stopStill = a().x === stopX;
+      out.stopStill = Math.abs(a().x - stopX) < 1;
       const dressed = spawned().find((q: any) => q.id === hewnId)?.wood.dressed;
       out.dressed = dressed;
       // le fer (strike.down de chop : -1) est sur la colonne x + strike de l'image ; 5 cm par pixel
@@ -211,8 +219,9 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await sleep(200);
       out.resumeElsewhere = notices.at(-1);
       await standAt(stopX, hy0, "down");
-      await press('Space');
+      await press('Space', 60, false);
       out.resumeMode = w().mode;
+      await finishWork();
       await passed();
       faces.push(notices.at(-1));
       out.endX = a().x - hx0;
@@ -269,10 +278,8 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         await sleep(2500);
         const f = props(new RegExp(`^${lying}$`)).at(-1);
         await standAt(f.aimX, f.aimY + 14, 'up');
-        for (let i = 0; i < 3; i++) {
-          await press('Space');
-          await settled();
-        }
+        await press('Space');
+        await settled();
         const piece = logs('big').find((p: any) => !before.has(p.id));
         const trunk = { length: piece?.wood.length, kg: piece && Math.round(mass.woodMass(piece.wood)) };
         for (const gr of [...w().map.ground]) {
@@ -280,13 +287,10 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
           w().map.removeGround(gr);
         }
         // la coupe à 1 m du bout scié (ouest : l'arbre est tombé vers l'est)
-        let label: string | undefined;
-        for (let i = 0; i < 3; i++) {
-          await aboveAt(w().map.props.find((p: any) => p.id === piece.id && p.spawned), 20);
-          if (i === 0) label = w().wood.labelText;
-          await press('Space');
-          await settled();
-        }
+        await aboveAt(w().map.props.find((p: any) => p.id === piece.id && p.spawned), 20);
+        const label: string | undefined = w().wood.labelText;
+        await press('Space');
+        await settled();
         const cut = logs('big')
           .filter((p: any) => !before.has(p.id))
           .map((p: any) => p.wood.length)
@@ -324,10 +328,11 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.shortMode, 'play', 'refus sans geste');
   assert.equal(r.shortCost, 0, 'un refus ne coûte rien');
   assert.equal(r.label, '3 m | 2,8 m', 'la coupe visée, aimantée à 3 m, et les deux longueurs');
-  assert.equal(r.notch, JSON.stringify({ at: 300, hits: 1 }), "l'encoche est notée dans GameState");
+  assert.equal(r.notch, 'null', 'la coupe finie ne laisse pas d’encoche');
+  assert.equal(r.workLeft, 0, 'le travail fini ne laisse rien dans GameState');
   assert.deepEqual(r.pieces, [280, 300], 'deux pièces, de 2,8 m et 3 m');
   assert.equal(r.cutNotice, 'Coupé : 3 m et 2,8 m.');
-  assert.ok(Math.abs(r.cutCost - 2.4) < 0.01, `trois coups de cognée : 2,4 points (${r.cutCost})`);
+  assert.ok(Math.abs(r.cutCost - 2.4) < 0.01, `la coupe coûte ses trois étapes de cognée : 2,4 points (${r.cutCost})`);
   assert.equal(r.threeMass, 191, 'le rondin de 3 m pèse 191 kg');
   assert.equal(r.restNotice, 'Trop lourd à porter. Pousse-le pour le faire rouler.', 'le rondin de 2,8 m (178 kg) se roule');
   assert.equal(r.restLabel, '1,8 m | 1 m', 'la coupe du poteau bas : 1,8 m et une bille de 1 m');
@@ -338,10 +343,10 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.middleMode, 'play', 'refus sans geste');
   assert.equal(r.middleCost, 0, 'un refus ne coûte rien');
   assert.equal(r.passMode, 'rail', 'Espace au bout lance la passe');
-  assert.equal(r.passY, 0, 'pendant la passe, les touches de marche ne font rien');
+  assert.equal(r.passBar, true, 'la jauge du travail se voit pendant la passe');
   assert.ok(r.walked > 10, `Xéros longe la pièce tout seul : ${r.walked} px`);
   assert.match(r.passAnim ?? '', /chop-down/, 'en frappant (le geste chop)');
-  assert.equal(r.stopMode, 'play', 'Échap arrête la passe');
+  assert.equal(r.stopMode, 'play', 'un pas arrête la passe');
   assert.equal(r.stopNotice, 'Arrêté : la face reprendra là.');
   assert.equal(r.stopStill, true, 'arrêté, il ne bouge plus');
   assert.equal(r.dressed?.from, 'start', 'la face part du bout ouest');

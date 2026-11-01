@@ -139,6 +139,12 @@ export const HUD = { noticeMs: 1800, longNoticeMs: 7000 };
 export const STAMINA_BAR = { pxPerPoint: 0.5, inner: 3, end: 3, height: 10, gap: 4, blinkMs: 260, blinkAlpha: 0.25 };
 
 /**
+ * La jauge d'un travail (entities/WorkBar.ts, art/ui/work-bar.ts, contrat de pose) : coin haut-gauche de l'image depuis les pieds de
+ * Xéros (`dx`, `dy` : au-dessus de l'outil levé du coup de masse), et le creux où se pose le remplissage (`inner`, depuis le coin du cadre).
+ */
+export const WORK_BAR = { dx: -10, dy: -68, inner: { x: 2, y: 2, w: 16, h: 2 } };
+
+/**
  * La bouffée de Xéros essoufflé (planche `fx-breath`, art/characters/breath.ts) : coin haut-gauche de l'image depuis ses pieds, et
  * miroir, par direction (les accroches données par le dessin).
  */

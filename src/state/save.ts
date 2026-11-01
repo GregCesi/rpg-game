@@ -18,7 +18,7 @@ export const SAVE_KEY = 'xeros-partie';
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
-export const SAVE_VERSION = 20;
+export const SAVE_VERSION = 21;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -115,6 +115,8 @@ export function upgrade(data: unknown): unknown {
   if (d?.version === 17 && d.state && typeof d.state === 'object') d = { ...d, version: 18, state: withClock(d.state as { day?: number }) };
   if (d?.version === 18 && d.state && typeof d.state === 'object') d = { ...d, version: 19, state: threeLevels(d.state as { stamina?: number }) };
   if (d?.version === 19 && d.state && typeof d.state === 'object') d = { ...d, version: 20, state: withWoke(d.state as { stamina?: { ceiling?: number } }) };
+  // 20 -> 21 : les travaux interrompus (`work` de chaque carte), vides au départ (le schéma les donne vides)
+  if (d?.version === 20 && d.state && typeof d.state === 'object') d = { ...d, version: 21 };
   return d;
 }
 

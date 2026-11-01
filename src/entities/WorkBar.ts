@@ -1,0 +1,36 @@
+import Phaser from 'phaser';
+import { WORK_BAR } from '../config';
+import type { Actor } from './Actor';
+
+/**
+ * La jauge d'un travail en cours (systems/work.ts, la passe sur un rail) : au-dessus de la tête de Xéros, dans le monde, elle se remplit
+ * de 0 à 100 % (pièces de art/ui/work-bar.ts, posées selon son contrat : WORK_BAR de config.ts).
+ */
+export class WorkBar {
+  private readonly frame: Phaser.GameObjects.Image;
+  private readonly fill: Phaser.GameObjects.Image;
+
+  constructor(scene: Phaser.Scene) {
+    this.frame = scene.add.image(0, 0, 'ui-work-frame').setOrigin(0).setVisible(false);
+    this.fill = scene.add.image(0, 0, 'ui-work-fill').setOrigin(0).setVisible(false);
+  }
+
+  /** Montre la jauge au-dessus de `actor`, remplie de `fraction` (0 à 1). */
+  show(actor: Actor, fraction: number): void {
+    const x = Math.round(actor.x + WORK_BAR.dx);
+    const y = Math.round(actor.y + WORK_BAR.dy);
+    const depth = actor.depth + 0.06;
+    this.frame.setPosition(x, y).setDepth(depth).setVisible(true);
+    const w = Math.round(WORK_BAR.inner.w * Math.min(1, Math.max(0, fraction)));
+    this.fill
+      .setPosition(x + WORK_BAR.inner.x, y + WORK_BAR.inner.y)
+      .setDepth(depth + 0.001)
+      .setCrop(0, 0, w, WORK_BAR.inner.h)
+      .setVisible(w > 0);
+  }
+
+  hide(): void {
+    this.frame.setVisible(false);
+    this.fill.setVisible(false);
+  }
+}

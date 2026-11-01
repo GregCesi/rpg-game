@@ -938,14 +938,20 @@ export const StrengthSchema = z
  */
 export const TimeSchema = z
   .strictObject({
+    /**
+     * L'accélération du temps (V, Maj + V, les paliers de `speeds`) : en pause (`false`), tout se joue à x1, une minute réelle pour une
+     * minute de jeu, le temps de calibrer le jeu (docs/CONCEPTION.md, « Le temps ») ; le code reste, éteint.
+     */
+    accelerate: z.boolean(),
     speeds: z.array(z.number().positive()).min(1),
     default: z.number().positive(),
     wakeHour: z.number().min(0).max(23),
     saveEveryMinutes: z.number().positive(),
     /**
      * Durée réaliste des petits travaux, en minutes de jeu : nouer ou dénouer un fagot (`knot`), planter un piquet de tracé (`stake`),
-     * pivoter une bille (`turn`), poser une pièce à sa place d'un chantier (`place`), y dresser une poutre (`raise`). Les récoltes, le
-     * bois et les transformations ont la leur dans leurs données.
+     * pivoter une bille (`turn`), poser une pièce à sa place d'un chantier (`place`), y dresser une poutre (`raise`). En attente : depuis
+     * que tout se joue en temps réel, ces petits gestes ne durent que leur geste, l'horloge ne saute plus. Les récoltes, le bois et les
+     * transformations ont la leur dans leurs données (un travail en temps réel, systems/work.ts).
      */
     work: z.strictObject({ knot: z.number().nonnegative(), stake: z.number().nonnegative(), turn: z.number().nonnegative(), place: z.number().nonnegative(), raise: z.number().nonnegative() }),
   })

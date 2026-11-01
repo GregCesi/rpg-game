@@ -146,6 +146,13 @@ export class Stamina {
     this.set(breath, this.ceiling - perSec * s, false);
   }
 
+  /** Un effort payé sans attendre son souffle (?dieu « Finir le travail ») : le plafond perd `cost`, le souffle `perCost` fois. */
+  force(cost: number): void {
+    if (this.infinite || cost <= 0) return;
+    this.rest = 0;
+    this.set(this.breath - cost * def.breath.perCost, this.ceiling - cost, true);
+  }
+
   /** La veille de nuit use le plafond de `points` (world/sleep.ts), sans toucher au repos du souffle. */
   wear(points: number): void {
     if (this.infinite || points <= 0) return;

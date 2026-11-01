@@ -298,7 +298,7 @@ export class WoodSystem {
 
   /**
    * La passe de doloire de `aim` (une visée `hewAim` sans refus), à lancer sur le rail : Xéros longe la pièce du début de la passe
-   * jusqu'à l'autre bout, un coup (`chop`) tous les `hew.stroke` cm. À chaque coup, `pay` reçoit le prix de ce qu'il vient de
+   * jusqu'à l'autre bout en `minutesPerM` par mètre de face à dresser, répétant son coup (`chop`). À chaque coup, `pay` reçoit le prix de ce qu'il vient de
    * dresser (`hewPerM` par mètre ; refusé : la passe s'arrête), la face en cours s'allonge jusqu'au fer (notée dans GameState) et
    * des copeaux tombent. Au bout, le reste est payé, la face est finie, et, si ce n'est pas la poutre, la pièce est retournée d'un
    * quart de tour. `end` reçoit ce qu'a donné la passe (la face, la poutre, ou rien : arrêtée) et pourquoi elle s'est terminée.
@@ -324,7 +324,8 @@ export class WoodSystem {
       to: rail.to,
       gesture: 'chop',
       tool: W.hew.tool,
-      step: lengthPx(W.hew.stroke),
+      // la passe dure le temps réaliste de ce qui reste à dresser (`minutesPerM`, wood.json)
+      minutes: (W.hew.minutesPerM * Math.max(0, len - paid)) / 100,
       onStroke: (done) => {
         const p = this.find(id, spawned);
         if (!p) return false;

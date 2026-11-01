@@ -33,11 +33,19 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const emit = (c: unknown) => g.events.emit('dieu', c);
       const notices: string[] = [];
       g.events.on('notice', (t: string) => notices.push(t));
+      const finishWork = async () => {
+        const world = () => (window as any).game.scene.getScene('world');
+        for (let i = 0; i < 20 && world().mode !== 'work' && world().mode !== 'rail'; i++) await new Promise((res) => requestAnimationFrame(res));
+        if (world().mode === 'work' || world().mode === 'rail') (window as any).game.events.emit('dieu', { kind: 'finish-work' });
+      };
       const press = async (code: string) => {
         window.dispatchEvent(new KeyboardEvent('keydown', { code }));
         await sleep(60);
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
         await sleep(120);
+        // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
+        // travail »), horloge, endurance et résultat compris
+        if (code === 'Space') await finishWork();
       };
       const give = async (what: { item: string } | { prop: string }) => {
         emit({ kind: 'give', held: what });

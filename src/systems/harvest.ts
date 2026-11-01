@@ -272,6 +272,14 @@ export class HarvestSystem {
     this.scene.time.delayedCall(c.lifespan + 50, () => emitter.destroy());
   }
 
+  /** Un coup qui porte, entre deux étapes d'un travail : les éclats, l'objet qui tremble. */
+  strike(prop: PlacedProp, facing: Facing): void {
+    const h = prop.def.harvest;
+    if (!h || !this.map.props.includes(prop)) return;
+    if (h.impact) this.chips(prop, h.impact, facing);
+    this.shake(prop);
+  }
+
   private shake(prop: PlacedProp): void {
     const img = prop.image;
     this.scene.tweens.killTweensOf(img);

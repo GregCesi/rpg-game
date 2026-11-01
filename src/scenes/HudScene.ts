@@ -108,7 +108,7 @@ export class HudScene extends Phaser.Scene {
 
   update(): void {
     const speed = ClockSystem.speed;
-    this.clock.setText(`${clockLabel(game.clock)}${speed !== time.default ? `  x${speed}` : ''}`);
+    this.clock.setText(`${clockLabel(game.clock)}${time.accelerate && speed !== time.default ? `  x${speed}` : ''}`);
     const talking = this.scene.isActive('dialogue');
     this.bar.setVisible(!talking);
     if (talking) this.notice.setAlpha(0);

@@ -157,6 +157,11 @@ export const MapStateSchema = z.strictObject({
    * (chantier « monde ») : on ne les repose pas, même si le joueur en a retiré des pièces en mode construction.
    */
   seeded: z.array(z.number().int().nonnegative()).default([]),
+  /**
+   * Les travaux commencés et interrompus (docs/CONCEPTION.md, « Le temps » ; systems/work.ts), par objet (`o<id>` : objet Tiled,
+   * `s<id>` : objet né) : le travail (`work` : `harvest`, `cut`, `maul`, `whittle`) et ses minutes faites. Un travail fini s'efface.
+   */
+  work: z.record(z.string(), z.strictObject({ work: z.string(), minutes: z.number().nonnegative() })).default({}),
 });
 
 export const GameStateSchema = z.strictObject({
@@ -226,7 +231,7 @@ export function newGame(): GameState {
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
 export function mapState(s: GameState, mapId: string): MapState {
-  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [], seeded: [] });
+  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [], seeded: [], work: {} });
 }
 
 /** Ce que tient la main active (ou les deux mains), ou undefined. */
@@ -317,6 +322,17 @@ export function sleep(s: GameState): void {
   const { max, ceiling } = morning(stamina, s.stamina, between(bed, wake));
   s.stamina = { breath: ceiling, ceiling, max, woke: ceiling };
   s.clock = wake;
+  revision++;
+}
+
+/** Clé d'un objet dans `work` de sa carte : `o<id>` (objet Tiled) ou `s<id>` (objet né). */
+export const workKey = (id: number, spawned: boolean | undefined): string => `${spawned ? 's' : 'o'}${id}`;
+
+/** La part faite d'un travail sur un objet (`undefined` : fini, ou rien de commencé : l'entrée s'efface). */
+export function setWork(s: GameState, mapId: string, key: string, entry: { work: string; minutes: number } | undefined): void {
+  const m = mapState(s, mapId);
+  if (entry) m.work[key] = { ...entry };
+  else delete m.work[key];
   revision++;
 }
 

@@ -5,8 +5,9 @@ import { gameMinutes, nextSpeed, type Clock } from '../world/clock';
 /** Où le palier choisi est retenu d'une session à l'autre, hors de la sauvegarde de partie (comme le zoom). */
 const KEY = 'xeros-temps';
 
-/** Le palier de la vitesse du temps en ce moment : celui retenu dans le navigateur, sinon celui de time.json. */
+/** Le palier de la vitesse du temps en ce moment : celui retenu dans le navigateur, sinon celui de time.json ; x1 si l'accélération est en pause. */
 function stored(): number {
+  if (!time.accelerate) return 1;
   try {
     const v = Number(localStorage.getItem(KEY));
     return time.speeds.includes(v) ? v : time.default;
@@ -32,8 +33,9 @@ export class ClockSystem {
     if (running) this.advance(gameMinutes(delta, ClockSystem.speed));
   }
 
-  /** V (`dir` +1) ou Maj + V (−1) : le palier voisin ; rend le nouveau palier, retenu dans le navigateur. */
+  /** V (`dir` +1) ou Maj + V (−1) : le palier voisin ; rend le nouveau palier, retenu dans le navigateur. Rien si l'accélération est en pause. */
   step(dir: 1 | -1): number {
+    if (!time.accelerate) return ClockSystem.speed;
     ClockSystem.speed = nextSpeed(time.speeds, ClockSystem.speed, dir);
     try {
       localStorage.setItem(KEY, String(ClockSystem.speed));

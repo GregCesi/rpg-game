@@ -146,6 +146,11 @@ export class PlayerInput {
     return this.take('stop');
   }
 
+  /** Une flèche ou ZQSD vient d'être pressée (pas maintenue) : interrompt un travail. Lit les quatre, une fois par appui. */
+  movePressed(): boolean {
+    return [this.take('up'), this.take('down'), this.take('left'), this.take('right')].some(Boolean);
+  }
+
   /** La touche R est enfoncée en ce moment : R maintenu (pivoter une bille couchée). */
   turnDown(): boolean {
     return CODES.turn.some((c) => this.held.has(c));

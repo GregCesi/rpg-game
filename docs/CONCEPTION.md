@@ -702,6 +702,29 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 
 ## Le temps (décidé le 1er novembre 2026, chantier « temps »)
 
+**L'accélération en pause, les travaux en temps réel** (décidé par Grégoire après l'essai des étapes 1 à 4, même jour). On met
+l'accélération du temps en pause et on joue tout à **x1**, pour calibrer le jeu petit à petit avant de décider comment la vitesse doit
+marcher :
+- **La vitesse du temps est verrouillée à x1** : V et les paliers sont éteints (`accelerate: false` dans `time.json` ; le code reste) ;
+  l'heure s'affiche, sans indicateur de vitesse. La vitesse de simulation des tests ne change pas (un test peut encore faire aller le
+  temps plus vite, `ClockSystem.speed`, pour voir un long travail avancer).
+- **Plus de saut de l'horloge.** Un travail (abattre, ébrancher, récolter, couper, fendre, équarrir, tailler) se lance d'un appui, puis
+  Xéros répète son geste pendant toute sa durée réaliste (les `minutes` des données), en temps réel : abattre un arbre normal prend
+  25 minutes réelles. Le nombre de coups découle de la durée et du rythme du geste ; les étapes des données (`hits` : l'arbre qui
+  tremble, la coupe qui se creuse, la fente qui s'allonge) tombent à intervalles égaux, chacune sur un coup ; le résultat arrive à la
+  fin (`systems/work.ts` ; la passe de doloire, sur son rail, dure `minutesPerM` par mètre de face). Une jauge au-dessus de Xéros montre
+  où il en est. **Bouger ou Échap interrompt**, et ce qui est fait reste fait : la part faite d'un travail est gardée dans GameState
+  (`work` de la carte, par objet ; la face entamée, `dressed`), sauvegarde comprise, et le travail repris continue de là. L'endurance se
+  paie au fil du travail, coup par coup (le prix du travail entier est celui de ses étapes d'avant : 4 × 0,8 pour un arbre normal) ; à
+  bout de souffle, le travail attend que Xéros reprenne son souffle puis continue.
+- Les petits gestes (nouer, planter un piquet, pivoter une bille, poser une pièce, dresser une poutre) ne durent que leur geste : leurs
+  minutes (`work` de time.json) attendent. Le coin se plante toujours d'un coup. Les transformations n'ont pas encore de geste : ?dieu
+  « Transformer » les applique, et avance l'horloge de leur durée, comme « Finir le travail ».
+- **?dieu « Finir le travail »** termine d'un coup le travail en cours (ou la passe de doloire), comme s'il avait duré son temps :
+  l'horloge avance de ce qui manquait, l'endurance en paie le reste (sans attendre son souffle), le résultat tombe.
+- Rien d'autre : pas de nouveau modèle d'endurance pour l'instant. Ce qui suit (la conception d'avant, la vitesse par paliers) reste la
+  référence pour le jour où l'accélération reviendra.
+
 **Validé par Grégoire** (même jour), avec ces réponses : la lumière qui suit l'heure en deuxième temps (étape 6) ; essoufflé, l'effort
 attend sans message d'épuisement, mais la barre clignote et Xéros souffle (une petite animation) ; x24 par défaut, x6 en repli ; la barre
 horizontale qui s'allonge avec le maximum, la teinte « revient » en torchis ; une durée réaliste fixe par travail, en minutes de jeu,
