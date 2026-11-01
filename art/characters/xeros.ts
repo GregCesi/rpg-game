@@ -97,19 +97,29 @@ function side(spread: number, arm: number, bob: number, swapLegs = false): Grid 
 }
 
 
-// ---------- Geste d'outil (hache, pioche, houe...) ----------
-// Le corps seul : l'outil est une image à part (planche tool-<objet>, art/lib/held.ts) que le jeu pose
-// sur les mains, devant ou derrière le corps. Quatre temps : lever, armer, frapper (impact), retour.
-// La tête ne bouge pas ; les jambes restent plantées.
+// ---------- Gestes de travail (use-*, chop-*, maul-*) ----------
+// Le corps seul : l'outil est une image à part (planche tool-<objet>, art/lib/held.ts) que le jeu pose sur les mains, devant ou
+// derrière le corps. Le coup lourd (docs/CONCEPTION.md, « Le travail ») : huit images en cinq temps, les mêmes pour les trois gestes
+// (WORK_PHASES, `phases` de gestures.json) : armer (2), le temps en haut (1), abattre (2 : l'outil part du sommet puis arrive, avec
+// sa traînée, dessinée dans la planche de l'outil), impact (1), dégager (2 : on retire le fer, on revient en garde). La dernière
+// image, la garde, est celle d'où part le coup suivant. On arme plus haut et plus loin, le corps cambré (`lean` −1 : buste et tête
+// remontent d'un pixel, de profil ils reculent) ; à l'impact le corps se tasse (1 : buste raccourci d'une rangée, tête baissée, de
+// profil le haut du corps avance ; 2 pour la masse : deux rangées). Pieds écartés d'un pixel, plantés. La tête garde sa hauteur
+// hors du cambré et du tassé. Le jeu impose la durée de chaque image (world/swing.ts) ; FRAME_RATE ne sert qu'aux aperçus.
 
-/** Image de l'impact dans les animations use-* (0 à 3). */
-export const USE_IMPACT = 2;
-export const USE_FRAME_RATE = 10;
+/** Les cinq temps de chaque image d'un geste de travail (gestures.json, `phases`). */
+export const WORK_PHASES = ['arm', 'arm', 'hold', 'down', 'down', 'impact', 'free', 'free'] as const;
+/** Image de l'impact dans les gestes de travail (0 à 7). */
+export const WORK_IMPACT = 5;
+/** Cadences des aperçus (le coup de Xéros d'aujourd'hui : environ 1,9 s à la cognée, 3 s à la masse). */
+export const USE_FRAME_RATE = 4;
+export const CHOP_FRAME_RATE = 4;
+export const MAUL_FRAME_RATE = 3;
 
 /** Où passent les bras : devant tout, sous la tête seulement (bras levés), ou sous le corps (vue de dos). */
 type ArmLayer = 'front' | 'head' | 'body';
 
-interface UseBody {
+interface WorkBody {
   /** Mains jointes, dans la frame : là où finissent les bras. */
   hands: Vec;
   /**
@@ -120,55 +130,76 @@ interface UseBody {
   /** Coudes (face et dos : gauche puis droit ; profil : le bras côté spectateur). */
   elbows: Vec[];
   arms: ArmLayer;
+  /** −1 : cambré ; 0 : droit ; 1, 2 : tassé vers le coup. */
+  lean: number;
 }
 
+interface WorkOpts { arms?: ArmLayer; grip?: Vec; trail?: boolean }
+
 const pose = (
-  hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer, view: View, grip: Vec,
-): UseBody => ({ hands: hand, tool: { hand: grip, head, edge, behind, ...(view === 'edge' ? { view } : {}) }, elbows, arms });
+  view: View, hands: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], lean: number, o: WorkOpts = {},
+): WorkBody => ({
+  hands,
+  tool: { hand: o.grip ?? hands, head, edge, behind, ...(view === 'edge' ? { view } : {}), ...(o.trail ? { trail: true } : {}) },
+  elbows,
+  arms: o.arms ?? 'front',
+  lean,
+});
 
 /** Pose d'un coup horizontal : on voit la face de l'outil, de profil (art/lib/held.ts, dessins `diag` et `upright`). */
 const face = (
-  hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front', grip: Vec = hand,
-) => pose(hand, head, edge, behind, elbows, arms, 'face', grip);
-
+  hands: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], lean: number, o?: WorkOpts,
+) => pose('face', hands, head, edge, behind, elbows, lean, o);
 /** Pose d'un coup vertical : on voit l'outil par la tranche (art/lib/held.ts, dessins `flat*`). */
 const edgeOn = (
-  hand: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], arms: ArmLayer = 'front', grip: Vec = hand,
-) => pose(hand, head, edge, behind, elbows, arms, 'edge', grip);
+  hands: Vec, head: ToolPose['head'], edge: ToolPose['edge'], behind: boolean, elbows: Vec[], lean: number, o?: WorkOpts,
+) => pose('edge', hands, head, edge, behind, elbows, lean, o);
 
 // Épaules, dans la frame : face/dos à gauche et à droite du torse (sur la manche), profil au milieu du dos.
 const SHOULDER_L: Vec = [12, BODY_Y + 2];
 const SHOULDER_R: Vec = [19, BODY_Y + 2];
 const SHOULDER_SIDE: Vec = [15, BODY_Y + 2];
 
-// Coup horizontal (use-*), sur ce qui est debout : la hache tourne à plat autour de Xéros, à hauteur de tronc
-// (mains à hauteur de ceinture). On voit la face du fer, de profil : le tranchant en éventail mène le coup (côté 'ccw' :
-// la hache tourne dans le sens inverse des aiguilles d'une montre, vue d'en haut). Armée sur le côté, elle passe devant
-// lui puis mord le tronc.
-const USE_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
-  // de face (l'arbre au sud) : armée à sa droite (à gauche de l'image), le fer tourne vers nous et mord le tronc
-  // devant lui ; puis on le dégage
+// Coup horizontal (use-*), sur ce qui est debout (abattre l'arbre) : la cognée tourne à plat autour de Xéros (tranchant 'ccw' :
+// elle tourne dans le sens inverse des aiguilles d'une montre, vue d'en haut). On voit la face du fer, de profil. En garde, le fer
+// bas devant lui ; il l'arme sur le côté puis derrière l'épaule, à hauteur de tête, le corps cambré ; elle part, passe du côté du
+// spectateur, et mord le tronc à hauteur de taille, le corps tassé ; on la retire et on revient en garde.
+const USE_BODY: Record<'down' | 'up' | 'right', WorkBody[]> = {
+  // de face (l'arbre au sud) : armée à sa droite (à gauche de l'image), derrière l'épaule ; le fer revient vers nous et mord le
+  // tronc devant lui, en bas à gauche
   down: [
-    face([10, 34], 'nw', 'ccw', true, [[10, 36], [16, 37]]),
-    face([12, 37], 'w', 'ccw', false, [[11, 37], [18, 38]]),
-    face([16, 38], 'sw', 'ccw', false, [[12, 38], [19, 38]], 'front', [18, 37]),
-    face([14, 37], 'sw', 'ccw', false, [[12, 38], [18, 38]], 'front', [16, 36]),
+    face([11, 34], 'w', 'ccw', false, [[10, 36], [16, 37]], 0),
+    face([9, 30], 'nw', 'ccw', true, [[9, 33], [14, 34]], -1),
+    face([9, 28], 'n', 'ccw', true, [[9, 32], [14, 33]], -1),
+    face([9, 33], 'w', 'ccw', false, [[9, 35], [15, 36]], 0, { trail: true }),
+    face([12, 37], 'sw', 'ccw', false, [[11, 37], [17, 38]], 0, { trail: true }),
+    face([15, 38], 'sw', 'ccw', false, [[12, 38], [19, 38]], 1, { grip: [17, 37] }),
+    face([14, 37], 'sw', 'ccw', false, [[12, 37], [18, 37]], 0, { grip: [15, 36] }),
+    face([13, 38], 's', 'ccw', false, [[12, 37], [18, 38]], 0),
   ],
-  // de dos (l'arbre au nord) : armée en arrière à sa droite, le fer vers nous ; il tourne par la droite et mord
-  // le tronc devant lui, à droite de la tête, puis revient
+  // de dos (l'arbre au nord) : armée à sa droite (à droite de l'image), puis rejetée en arrière, vers nous, à hauteur d'épaule ;
+  // elle tourne par la droite et mord le tronc devant lui, à droite de la tête
   up: [
-    face([22, 37], 'se', 'ccw', false, [[13, 37], [21, 35]], 'body'),
-    face([24, 34], 'e', 'ccw', false, [[13, 36], [22, 32]], 'body'),
-    face([21, 31], 'ne', 'ccw', true, [[13, 35], [21, 33]], 'body'),
-    face([23, 33], 'ne', 'ccw', true, [[13, 36], [22, 34]], 'body'),
+    face([23, 34], 'e', 'ccw', false, [[13, 37], [22, 34]], 0, { arms: 'body' }),
+    face([23, 30], 'ne', 'ccw', true, [[13, 35], [22, 33]], -1, { arms: 'body' }),
+    face([22, 27], 'n', 'ccw', true, [[13, 33], [23, 31]], -1, { arms: 'body' }),
+    face([24, 31], 'e', 'ccw', false, [[13, 35], [23, 33]], 0, { arms: 'body', trail: true }),
+    face([23, 35], 'se', 'ccw', false, [[13, 36], [21, 33]], 0, { arms: 'body', trail: true }),
+    face([21, 33], 'ne', 'ccw', true, [[13, 36], [21, 35]], 1, { arms: 'body' }),
+    face([22, 34], 'ne', 'ccw', true, [[13, 36], [22, 35]], 0, { arms: 'body' }),
+    face([22, 37], 'ne', 'ccw', true, [[13, 37], [21, 36]], 0, { arms: 'body' }),
   ],
-  // de profil : armée derrière son dos, elle tourne par le côté proche de nous (fer vers le spectateur),
-  // mord le tronc devant lui, puis on la dégage d'un pixel
+  // de profil (l'arbre à l'est) : levée devant lui, puis rejetée derrière la tête ; elle tourne par le côté proche de nous (fer
+  // vers le spectateur) et mord le tronc devant lui
   right: [
-    face([11, 35], 'w', 'ccw', false, [[15, 36]]),
-    face([18, 37], 'se', 'ccw', false, [[17, 36]]),
-    face([22, 34], 'ne', 'ccw', false, [[19, 35]]),
-    face([20, 35], 'ne', 'ccw', false, [[18, 35]]),
+    face([15, 32], 'n', 'ccw', false, [[17, 35]], 0),
+    face([12, 28], 'nw', 'ccw', true, [[16, 31]], -1, { arms: 'head' }),
+    face([11, 27], 'w', 'ccw', true, [[15, 30]], -1, { arms: 'head' }),
+    face([14, 33], 'sw', 'ccw', false, [[15, 35]], 0, { trail: true }),
+    face([18, 36], 'se', 'ccw', false, [[17, 36]], 0, { trail: true }),
+    face([21, 35], 'e', 'ccw', false, [[19, 35]], 1),
+    face([19, 34], 'e', 'ccw', false, [[18, 34]], 0),
+    face([16, 37], 'se', 'ccw', false, [[16, 36]], 0),
   ],
 };
 
@@ -179,39 +210,42 @@ export const USE_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
   right: USE_BODY.right.map((b) => b.tool),
 };
 
-// Coup vertical (chop-*), de haut en bas sur ce qui est couché ou posé au sol : on voit la hache par la tranche,
-// un bloc de fer étroit et sombre au bout du manche. Armée au-dessus de la tête, elle s'abat ; à l'impact le manche est
-// vertical et le bloc est dans l'encoche, au sol devant Xéros ; puis on le dégage.
-
-/** Image de l'impact dans les animations chop-* (0 à 3). */
-export const CHOP_IMPACT = 2;
-export const CHOP_FRAME_RATE = 9;
-
-const CHOP_BODY: Record<'down' | 'up' | 'right', UseBody[]> = {
-  // de face (le tronc au sud) : armée haut derrière la tête, elle revient devant le front, puis le fer frappe
-  // le dessus du tronc quelques pixels sous les pieds, manche vertical, et on le dégage
+// Coup vertical (chop-*), de haut en bas sur ce qui est couché ou posé au sol (ébrancher, couper, la doloire, la hachette sur le
+// billot) : on voit l'outil par la tranche, un bloc de fer étroit et sombre au bout du manche. Armé au-dessus de la tête, le corps
+// cambré ; il s'abat, frappe devant les pieds (à l'impact le manche est vertical et le bloc dans l'encoche), le corps tassé ; on le
+// dégage et on revient en garde, le fer posé près de la cible.
+const CHOP_BODY: Record<'down' | 'up' | 'right', WorkBody[]> = {
   down: [
-    edgeOn([16, 11], 'n', 'cw', true, [[9, 21], [22, 21]], 'head'),
-    edgeOn([16, 18], 'n', 'cw', false, [[10, 26], [21, 26]]),
-    edgeOn([16, 42], 's', 'ccw', false, [[13, 38], [19, 38]], 'front', [16, 35]),
-    edgeOn([16, 39], 's', 'ccw', false, [[12, 37], [19, 37]], 'front', [16, 33]),
+    edgeOn([16, 24], 'n', 'cw', false, [[10, 28], [21, 28]], 0),
+    edgeOn([16, 13], 'n', 'cw', true, [[9, 22], [22, 22]], -1, { arms: 'head' }),
+    edgeOn([16, 10], 'n', 'cw', true, [[9, 20], [22, 20]], -1, { arms: 'head' }),
+    edgeOn([16, 17], 'n', 'cw', false, [[10, 25], [21, 25]], 0, { trail: true }),
+    edgeOn([16, 32], 's', 'ccw', false, [[12, 33], [20, 33]], 0, { trail: true }),
+    edgeOn([16, 41], 's', 'ccw', false, [[12, 37], [20, 37]], 1, { grip: [16, 36] }),
+    edgeOn([16, 39], 's', 'ccw', false, [[12, 36], [20, 36]], 0, { grip: [16, 34] }),
+    edgeOn([16, 37], 's', 'ccw', false, [[12, 36], [20, 36]], 0, { grip: [16, 32] }),
   ],
-  // de dos (le tronc au nord, son dessus 18 à 22 px au-dessus des pieds, derrière la taille et le dos) : le fer est
-  // armé derrière la tête, pendu vers nous ; il passe au-dessus de la tête, puis frappe l'encoche derrière le corps.
-  // Les mains sont décalées à droite : le manche vertical et le fer dépassent du flanc droit
+  // de dos (la cible au nord, derrière la taille et le dos) : le fer armé derrière la tête, pendu vers nous ; il passe au-dessus
+  // de la tête, puis frappe derrière le corps ; les mains décalées à droite, le manche et le fer dépassent du flanc droit
   up: [
-    edgeOn([18, 12], 's', 'ccw', false, [[9, 21], [22, 21]], 'head'),
-    edgeOn([21, 10], 'n', 'cw', true, [[9, 21], [23, 20]], 'head'),
-    edgeOn([24, 37], 'n', 'cw', true, [[14, 39], [19, 39]], 'body', [24, 39]),
-    edgeOn([24, 35], 'n', 'cw', true, [[14, 38], [19, 38]], 'body', [24, 37]),
+    edgeOn([21, 24], 'n', 'cw', true, [[11, 28], [22, 27]], 0, { arms: 'body' }),
+    edgeOn([18, 12], 's', 'ccw', false, [[9, 21], [22, 21]], -1, { arms: 'head' }),
+    edgeOn([18, 9], 's', 'ccw', false, [[9, 19], [22, 19]], -1, { arms: 'head' }),
+    edgeOn([21, 10], 'n', 'cw', true, [[9, 20], [23, 19]], 0, { arms: 'head', trail: true }),
+    edgeOn([23, 26], 'n', 'cw', true, [[12, 30], [22, 29]], 0, { arms: 'body', trail: true }),
+    edgeOn([24, 38], 'n', 'cw', true, [[14, 39], [20, 39]], 1, { arms: 'body', grip: [24, 40] }),
+    edgeOn([24, 36], 'n', 'cw', true, [[14, 38], [20, 38]], 0, { arms: 'body', grip: [24, 38] }),
+    edgeOn([23, 35], 'n', 'cw', true, [[14, 37], [20, 37]], 0, { arms: 'body', grip: [23, 36] }),
   ],
-  // de profil : armée derrière la tête, elle repart en avant au-dessus de lui, puis le fer frappe le dessus de la
-  // bille posée devant lui, manche vertical, et on le dégage
   right: [
-    edgeOn([12, 12], 'nw', 'cw', true, [[9, 23]], 'head'),
-    edgeOn([22, 21], 'ne', 'ccw', false, [[20, 28]]),
-    edgeOn([24, 29], 'se', 'cw', false, [[20, 32]], 'front', [23, 26]),
-    edgeOn([23, 27], 'se', 'cw', false, [[20, 31]], 'front', [22, 25]),
+    edgeOn([18, 24], 'n', 'cw', false, [[19, 29]], 0),
+    edgeOn([13, 13], 'nw', 'cw', true, [[10, 22]], -1, { arms: 'head' }),
+    edgeOn([12, 11], 'w', 'ccw', true, [[9, 21]], -1, { arms: 'head' }),
+    edgeOn([19, 15], 'ne', 'ccw', false, [[19, 23]], 0, { trail: true }),
+    edgeOn([23, 24], 'e', 'ccw', false, [[21, 29]], 0, { trail: true }),
+    edgeOn([24, 30], 'se', 'cw', false, [[21, 32]], 1, { grip: [23, 27] }),
+    edgeOn([23, 28], 'se', 'cw', false, [[20, 31]], 0, { grip: [22, 26] }),
+    edgeOn([21, 33], 'se', 'cw', false, [[19, 34]], 0, { grip: [20, 31] }),
   ],
 };
 
@@ -222,49 +256,45 @@ export const CHOP_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
   right: CHOP_BODY.right.map((b) => b.tool),
 };
 
-// Frapper à la masse (maul-*), de haut en bas sur le coin planté dans une bille couchée devant lui : un coup vertical à
-// deux mains comme chop, mais plus lourd. La masse se lève plus haut que la hache, le corps se cambre (buste et tête
-// remontent d'un pixel, de profil ils reculent) ; elle s'abat par-dessus la tête ; à l'impact le corps se penche (buste
-// tassé de deux pixels, tête baissée, de profil le haut du corps avance), les bras tendus, la tête de la masse sur le
-// milieu du dessus de la bille ; puis elle rebondit d'un ou deux pixels. Pieds écartés, plantés. Plus lent que chop.
-// On voit la masse par la tranche (le bloc carré de sa tête), comme la hache dans chop.
-
-/** Image de l'impact dans les animations maul-* (0 à 3). */
-export const MAUL_IMPACT = 2;
-export const MAUL_FRAME_RATE = 8;
-
-interface MaulBody extends UseBody {
-  /** −1 : cambré (buste et tête remontent, de profil ils reculent) ; 0 : droit ; 1, 2 : penché vers le coup. */
-  lean: number;
-}
-
-const maul = (b: UseBody, lean: number): MaulBody => ({ ...b, lean });
-
-const MAUL_BODY: Record<'down' | 'up' | 'right', MaulBody[]> = {
-  // de face (la bille au sud) : levée tout en haut, derrière la tête, le corps cambré ; elle repasse devant le front ;
-  // puis la tête frappe le coin au milieu de la bille, sous ses pieds, bras tendus et buste penché ; elle rebondit
+// Frapper à la masse (maul-*), de haut en bas sur le coin planté dans une bille couchée devant lui : le modèle de chop, plus haut
+// et plus lourd. La masse monte plus haut que la cognée (les mains au-dessus du sommet du crâne), pend derrière la tête au temps en
+// haut ; elle s'abat par-dessus la tête ; à l'impact la tête de la masse est sur le coin, bras tendus, le buste tassé de deux
+// rangées ; elle rebondit d'un ou deux pixels, puis la garde : la masse posée devant lui. On la voit par la tranche (le bloc carré
+// de sa tête), comme la cognée dans chop.
+const MAUL_BODY: Record<'down' | 'up' | 'right', WorkBody[]> = {
   down: [
-    maul(edgeOn([16, 8], 'n', 'cw', true, [[9, 19], [22, 19]], 'head'), -1),
-    maul(edgeOn([16, 15], 'n', 'cw', false, [[10, 24], [21, 24]]), 0),
-    maul(edgeOn([16, 40], 's', 'ccw', false, [[12, 37], [20, 37]]), 2),
-    maul(edgeOn([16, 38], 's', 'ccw', false, [[12, 36], [20, 36]]), 1),
+    edgeOn([16, 23], 'n', 'cw', false, [[10, 27], [21, 27]], 0),
+    edgeOn([16, 11], 'n', 'cw', true, [[9, 20], [22, 20]], -1, { arms: 'head' }),
+    edgeOn([16, 8], 'n', 'cw', true, [[9, 19], [22, 19]], -1, { arms: 'head' }),
+    edgeOn([16, 14], 'n', 'cw', false, [[10, 23], [21, 23]], 0, { trail: true }),
+    edgeOn([16, 31], 's', 'ccw', false, [[12, 33], [20, 33]], 0, { trail: true }),
+    edgeOn([16, 40], 's', 'ccw', false, [[12, 37], [20, 37]], 2),
+    edgeOn([16, 38], 's', 'ccw', false, [[12, 36], [20, 36]], 1),
+    edgeOn([16, 37], 's', 'ccw', false, [[12, 36], [20, 36]], 0),
   ],
-  // de dos (la bille au nord, son dessus derrière les épaules) : armée tout en haut, la tête pendue derrière lui (vers
-  // nous) au-dessus de sa tête ; elle repasse au-dessus de la tête ; puis frappe la bille devant lui, cachée par le corps :
-  // les mains sont décalées à droite, la masse dépasse du flanc droit, comme la hache
+  // de dos (la bille au nord, son dessus derrière les épaules) : la masse frappe devant lui, cachée par le corps ; les mains
+  // décalées à droite, elle dépasse du flanc droit, comme la cognée
   up: [
-    maul(edgeOn([17, 8], 's', 'ccw', false, [[9, 19], [22, 19]], 'head'), -1),
-    maul(edgeOn([20, 9], 'n', 'cw', true, [[9, 20], [23, 18]], 'head'), 0),
-    maul(edgeOn([23, 38], 'n', 'cw', true, [[14, 39], [20, 39]], 'body'), 2),
-    maul(edgeOn([23, 36], 'n', 'cw', true, [[14, 38], [20, 38]], 'body'), 1),
+    edgeOn([21, 24], 'n', 'cw', true, [[11, 28], [22, 27]], 0, { arms: 'body' }),
+    edgeOn([18, 11], 's', 'ccw', false, [[9, 20], [22, 20]], -1, { arms: 'head' }),
+    edgeOn([17, 7], 's', 'ccw', false, [[9, 18], [22, 18]], -1, { arms: 'head' }),
+    edgeOn([20, 9], 'n', 'cw', true, [[9, 19], [23, 18]], 0, { arms: 'head', trail: true }),
+    edgeOn([22, 25], 'n', 'cw', true, [[12, 30], [22, 29]], 0, { arms: 'body', trail: true }),
+    edgeOn([23, 38], 'n', 'cw', true, [[14, 39], [20, 39]], 2, { arms: 'body' }),
+    edgeOn([23, 36], 'n', 'cw', true, [[14, 38], [20, 38]], 1, { arms: 'body' }),
+    edgeOn([23, 35], 'n', 'cw', true, [[14, 37], [20, 37]], 0, { arms: 'body' }),
   ],
-  // de profil : levée derrière la tête, la masse pend dans le dos, le corps cambré ; elle repart par-dessus lui ; puis
-  // la tête frappe le dessus de la bille devant lui, bras tendus, buste penché ; elle rebondit
+  // de profil : levée devant lui, puis derrière la tête, la masse pendue dans le dos ; elle repart par-dessus lui et frappe le
+  // dessus de la bille devant lui, bras tendus, buste penché
   right: [
-    maul(edgeOn([12, 9], 'sw', 'ccw', true, [[10, 20]], 'head'), -1),
-    maul(edgeOn([20, 13], 'ne', 'ccw', false, [[20, 22]]), 0),
-    maul(edgeOn([24, 35], 'se', 'cw', false, [[21, 33]]), 2),
-    maul(edgeOn([23, 33], 'se', 'cw', false, [[20, 32]]), 1),
+    edgeOn([18, 23], 'n', 'cw', false, [[19, 28]], 0),
+    edgeOn([13, 11], 'nw', 'cw', true, [[10, 20]], -1, { arms: 'head' }),
+    edgeOn([12, 9], 'w', 'ccw', true, [[9, 20]], -1, { arms: 'head' }),
+    edgeOn([19, 12], 'ne', 'ccw', false, [[19, 21]], 0, { trail: true }),
+    edgeOn([23, 23], 'e', 'ccw', false, [[21, 28]], 0, { trail: true }),
+    edgeOn([24, 35], 'se', 'cw', false, [[21, 33]], 2),
+    edgeOn([23, 33], 'se', 'cw', false, [[20, 32]], 1),
+    edgeOn([21, 34], 'se', 'cw', false, [[19, 34]], 0),
   ],
 };
 
@@ -275,62 +305,18 @@ export const MAUL_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
   right: MAUL_BODY.right.map((b) => b.tool),
 };
 
-
-function useFrontal(facing: Facing, b: UseBody): Grid {
-  const c = new Canvas(W, H);
-  shadow(c);
-  const ox = FRONT_X;
-  const legY = BODY_Y + 11;
-  c.stamp(legLeft, ox + LEG_L, legY);
-  c.stamp(legRight, ox + LEG_R, legY);
-  const torso = () => c.stamp(bareTorso(facing === 'down' ? torsoFront : torsoBack), ox, BODY_Y);
-  const head = () => c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y);
-  const arms = () => {
-    rim(c);
-    const [el, er] = b.elbows;
-    arm(c, [SHOULDER_L, el, b.hands], 't', 'L');
-    arm(c, [SHOULDER_R, er, b.hands], 'T', 't');
-  };
-  if (b.arms === 'body') arms();
-  torso();
-  if (b.arms === 'head') arms();
-  head();
-  if (b.arms === 'front') arms();
-  rim(c);
-  return selOut(c.toGrid(), DARK);
-}
-
-function useSide(b: UseBody): Grid {
-  const c = new Canvas(W, H);
-  shadow(c);
-  const ox = SIDE_X;
-  const legY = BODY_Y + 11;
-  c.stamp(backLeg(legSide), ox + LEG_SIDE[0] - 1, legY);
-  c.stamp(legSide, ox + LEG_SIDE[1] + 1, legY);
-  c.stamp(bodySide, ox, BODY_Y);
-  const arms = () => {
-    rim(c);
-    arm(c, [SHOULDER_SIDE, b.elbows[0], b.hands], 't', 'L');
-  };
-  if (b.arms !== 'front') arms();
-  c.stamp(headSide, ox, HEAD_Y);
-  if (b.arms === 'front') arms();
-  rim(c);
-  return selOut(c.toGrid(), DARK);
-}
-
 /**
- * Torse de face ou de dos pour maul-* : cambré (lean −1), une rangée de tunique de plus (le buste s'étire) ; penché
- * (lean 1 ou 2), une ou deux rangées de moins (le buste se tasse), si bien que l'ourlet reste en place.
+ * Torse de face ou de dos : cambré (lean −1), une rangée de tunique de plus (le buste s'étire) ; tassé (lean 1 ou 2), une ou deux
+ * rangées de moins, si bien que l'ourlet reste en place.
  */
-function maulTorso(torso: Grid, lean: number): Grid {
+function workTorso(torso: Grid, lean: number): Grid {
   if (lean < 0) return [...torso.slice(0, 5), torso[4], ...torso.slice(5)];
   if (lean === 0) return torso;
   const drop = lean >= 2 ? [4, 8] : [8];
   return torso.filter((_, i) => !drop.includes(i));
 }
 
-function maulFrontal(facing: Facing, b: MaulBody): Grid {
+function workFrontal(facing: Facing, b: WorkBody): Grid {
   const c = new Canvas(W, H);
   shadow(c);
   const ox = FRONT_X;
@@ -339,7 +325,7 @@ function maulFrontal(facing: Facing, b: MaulBody): Grid {
   c.stamp(legLeft, ox + LEG_L - 1, legY);
   c.stamp(legRight, ox + LEG_R + 1, legY);
   const dy = b.lean < 0 ? -1 : b.lean; // haut du torse et tête
-  const torso = () => c.stamp(bareTorso(maulTorso(facing === 'down' ? torsoFront : torsoBack, b.lean)), ox, BODY_Y + dy);
+  const torso = () => c.stamp(bareTorso(workTorso(facing === 'down' ? torsoFront : torsoBack, b.lean)), ox, BODY_Y + dy);
   const head = () => c.stamp(facing === 'down' ? headFront : headBack, ox, HEAD_Y + dy);
   const arms = () => {
     rim(c);
@@ -356,14 +342,14 @@ function maulFrontal(facing: Facing, b: MaulBody): Grid {
   return selOut(c.toGrid(), DARK);
 }
 
-function maulSide(b: MaulBody): Grid {
+function workSide(b: WorkBody): Grid {
   const c = new Canvas(W, H);
   shadow(c);
   const ox = SIDE_X;
   const legY = BODY_Y + 11;
   c.stamp(backLeg(legSide), ox + LEG_SIDE[0] - 1, legY);
   c.stamp(legSide, ox + LEG_SIDE[1] + 1, legY);
-  // le haut du torse recule (cambré) ou avance (penché), la ceinture reste sur les hanches
+  // le haut du torse recule (cambré) ou avance (tassé), la ceinture reste sur les hanches
   const shift = b.lean < 0 ? [-1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0]
     : b.lean >= 2 ? [2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
       : b.lean === 1 ? [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0] : Array(12).fill(0);
@@ -383,12 +369,6 @@ function maulSide(b: MaulBody): Grid {
   return selOut(c.toGrid(), DARK);
 }
 
-const useDown = USE_BODY.down.map((b) => useFrontal('down', b));
-const useUp = USE_BODY.up.map((b) => useFrontal('up', b));
-const useRight = USE_BODY.right.map(useSide);
-const chopDown = CHOP_BODY.down.map((b) => useFrontal('down', b));
-const chopUp = CHOP_BODY.up.map((b) => useFrontal('up', b));
-const chopRight = CHOP_BODY.right.map(useSide);
 
 /** Images de walk-down et walk-up : [legL, legR, bob] de frontal. */
 const WALK_FRONTAL: [number, number, number][] = [[0, -2, 0], [0, 0, -1], [-2, 0, 0], [0, 0, -1]];
@@ -712,9 +692,13 @@ const pushWalkRight = [
   pushSide(14, 18, 'back', true),
 ];
 
-const maulDown = MAUL_BODY.down.map((b) => maulFrontal('down', b));
-const maulUp = MAUL_BODY.up.map((b) => maulFrontal('up', b));
-const maulRight = MAUL_BODY.right.map(maulSide);
+const workAnims = (bodies: Record<'down' | 'up' | 'right', WorkBody[]>) => {
+  const right = bodies.right.map(workSide);
+  return { down: bodies.down.map((b) => workFrontal('down', b)), up: bodies.up.map((b) => workFrontal('up', b)), right, left: right.map(flipX) };
+};
+const useAnim = workAnims(USE_BODY);
+const chopAnim = workAnims(CHOP_BODY);
+const maulAnim = workAnims(MAUL_BODY);
 
 const xeros: SpriteSheetSource = {
   kind: 'spritesheet',
@@ -731,18 +715,18 @@ const xeros: SpriteSheetSource = {
     'walk-up': { frames: walkFrontal('up'), frameRate: 8, repeat: -1 },
     'walk-right': { frames: walkRight, frameRate: 8, repeat: -1 },
     'walk-left': { frames: walkRight.map(flipX), frameRate: 8, repeat: -1 },
-    'use-down': { frames: useDown, frameRate: USE_FRAME_RATE, repeat: 0 },
-    'use-up': { frames: useUp, frameRate: USE_FRAME_RATE, repeat: 0 },
-    'use-right': { frames: useRight, frameRate: USE_FRAME_RATE, repeat: 0 },
-    'use-left': { frames: useRight.map(flipX), frameRate: USE_FRAME_RATE, repeat: 0 },
-    'chop-down': { frames: chopDown, frameRate: CHOP_FRAME_RATE, repeat: 0 },
-    'chop-up': { frames: chopUp, frameRate: CHOP_FRAME_RATE, repeat: 0 },
-    'chop-right': { frames: chopRight, frameRate: CHOP_FRAME_RATE, repeat: 0 },
-    'chop-left': { frames: chopRight.map(flipX), frameRate: CHOP_FRAME_RATE, repeat: 0 },
-    'maul-down': { frames: maulDown, frameRate: MAUL_FRAME_RATE, repeat: 0 },
-    'maul-up': { frames: maulUp, frameRate: MAUL_FRAME_RATE, repeat: 0 },
-    'maul-right': { frames: maulRight, frameRate: MAUL_FRAME_RATE, repeat: 0 },
-    'maul-left': { frames: maulRight.map(flipX), frameRate: MAUL_FRAME_RATE, repeat: 0 },
+    'use-down': { frames: useAnim.down, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'use-up': { frames: useAnim.up, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'use-right': { frames: useAnim.right, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'use-left': { frames: useAnim.left, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'chop-down': { frames: chopAnim.down, frameRate: CHOP_FRAME_RATE, repeat: 0 },
+    'chop-up': { frames: chopAnim.up, frameRate: CHOP_FRAME_RATE, repeat: 0 },
+    'chop-right': { frames: chopAnim.right, frameRate: CHOP_FRAME_RATE, repeat: 0 },
+    'chop-left': { frames: chopAnim.left, frameRate: CHOP_FRAME_RATE, repeat: 0 },
+    'maul-down': { frames: maulAnim.down, frameRate: MAUL_FRAME_RATE, repeat: 0 },
+    'maul-up': { frames: maulAnim.up, frameRate: MAUL_FRAME_RATE, repeat: 0 },
+    'maul-right': { frames: maulAnim.right, frameRate: MAUL_FRAME_RATE, repeat: 0 },
+    'maul-left': { frames: maulAnim.left, frameRate: MAUL_FRAME_RATE, repeat: 0 },
     'carry-idle-down': { frames: [carryFrontal('down', 0, 0, 0)], frameRate: 1, repeat: 0 },
     'carry-idle-up': { frames: [carryFrontal('up', 0, 0, 0)], frameRate: 1, repeat: 0 },
     'carry-idle-right': { frames: [carrySide(0, 0)], frameRate: 1, repeat: 0 },

@@ -112,7 +112,7 @@ function drawGesture(b: Buf, key: GestureKey, dir: Dir4, i: number, ox: number, 
   const mx = (x: number, w: number) => (left ? ox + 31 - (x - ox) - (w - 1) : x); // miroir autour de la frame
   const put = (g: Grid, pal: Palette, x: number, y: number) => b.blit(g, pal, mx(x, g[0].length), y, left);
   const tool = toolFrame(f);
-  const toolAt = (): [number, number] => [ox + f.grip[0] - 24, oy + f.grip[1] - 24];
+  const toolAt = (): [number, number] => [ox + f.grip[0] - tool[0].length / 2, oy + f.grip[1] - tool.length / 2];
   const trail = f.trail ? trailFrame(prev, f) : undefined;
   const d = srcDir(dir);
   const drawTarget = () => {

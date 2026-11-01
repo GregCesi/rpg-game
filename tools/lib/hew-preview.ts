@@ -17,9 +17,9 @@ import { Board, grassOf } from './composite-previews';
 const LENGTH = 300;
 /** Où en est la passe à chaque moment (part de la longueur dressée), et l'image du geste `chop` montrée. */
 const MOMENTS = [
-  { part: 0.2, frame: 2 },
-  { part: 0.55, frame: 0 },
-  { part: 0.9, frame: 2 },
+  { part: 0.2, frame: gesturesJson.chop.impact },
+  { part: 0.55, frame: 2 },
+  { part: 0.9, frame: gesturesJson.chop.impact },
 ];
 
 export function hewPreview(sources: ArtSource[]): PNG | undefined {
