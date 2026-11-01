@@ -50,10 +50,18 @@ await playtest('temps', async ({ page, errors }) => {
     await sleep(2000);
     out.x24 = { game: minutes() - m0, real: performance.now() - t0 };
     // V : le palier suivant, Maj + V : le précédent ; le HUD écrit l'heure
+    // on attend que le jeu ait lu l'appui (une machine chargée peut sauter des images), au plus 2 s
+    const changed = async (from: number) => {
+      const t = performance.now();
+      while (ClockSystem.speed === from && performance.now() - t < 2000) await frame();
+    };
     await press('KeyV');
+    await changed(content.time.default);
     out.up = { speed: ClockSystem.speed, notice: notices.at(-1) };
     await sleep(300);
+    const up = ClockSystem.speed;
     await press('KeyV', true);
+    await changed(up);
     out.down = { speed: ClockSystem.speed };
     // les textes du HUD, dans ses groupes compris
     const texts = (list: any[]): string[] => list.flatMap((o: any) => (o.type === 'Text' ? [o.text] : o.list ? texts(o.list) : []));
