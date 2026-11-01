@@ -12,7 +12,11 @@ import { partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
 import { openSides } from '../world/zones';
-import type { BuildPlan, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
+import { WEAPON_ANGLES } from '../world/strike';
+import { combatPoses } from '../generated/combatPoses';
+import { catalog, looksOf } from '../build/catalog';
+import { JointTypeSchema } from './types';
+import type { BuildPlan, CombatDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -216,6 +220,7 @@ export interface Content {
   matters: Record<string, Matter>;
   rocks: Record<string, Rock>;
   transforms: Record<string, TransformDef>;
+  combat: CombatDef;
 }
 
 /** Clés de props.json : minuscules ASCII, chiffres, tirets. Les majuscules sont réservées aux types de Tiled (Spawn, Exit, Facing). */
@@ -461,7 +466,6 @@ export const VIEWS_TODO: Record<string, string> = {
   'watering-can': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
   'fishing-rod': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
   sword: "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
-  'wooden-sword': "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
 };
 
 /**
@@ -822,6 +826,118 @@ export const RAW_WOOD: Record<string, string> = {
 };
 
 /**
+ * Le combat (combat.json, docs/CONCEPTION.md « Le combat ») : chaque attaque joue un geste qui existe ; chaque famille a des postures
+ * dont les suites nomment des attaques, et sa dernière posture convient à tout (Espace a toujours une attaque) ; chaque arme
+ * (`weapon` de items.json) nomme une famille, a sa planche `weapon-<…>` en huit angles et une masse ; chaque cible (`target` de
+ * props.json) a les éclats de sa matière (`fx-<matter>`), et des points de vie infinis tant que rien ne garde les blessures.
+ */
+function validateCombat(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const err = (msg: string) => errors.push(msg);
+  for (const [key, a] of Object.entries(c.combat.attacks)) {
+    // un geste de combat : ses images dans la planche du corps, dans les quatre directions (art/characters/xeros-combat.ts)
+    for (const dir of DIRECTIONS) {
+      if (!cat.animations.get(PLAYER.skin)?.has(`${a.gesture}-${dir}`)) err(`combat.json attaque '${key}' : animation '${a.gesture}-${dir}' absente de la planche '${PLAYER.skin}'`);
+    }
+  }
+  // les poses de chaque geste de combat (art/characters/xeros-combat.ts, tirées par build-art) : autant d'images que l'animation du
+  // corps dans chaque direction, au moins une image de frappe, la traînée et l'éclat dessinés
+  for (const g of new Set(Object.values(c.combat.attacks).map((a) => a.gesture))) {
+    const poses = combatPoses[g];
+    if (!poses) { err(`combat.json geste '${g}' : pas de poses (COMBAT_POSES, art/characters/xeros-combat.ts)`); continue; }
+    for (const dir of DIRECTIONS) {
+      const frames = poses[dir as Facing] ?? [];
+      const n = cat.frameCounts.get(PLAYER.skin)?.get(`${g}-${dir}`);
+      if (n !== undefined && n !== frames.length) err(`combat.json geste '${g}' ${dir} : ${frames.length} poses pour ${n} images dans '${PLAYER.skin}-${g}-${dir}'`);
+      for (const f of frames) {
+        for (const img of [f.spark?.image, f.grip?.image]) if (img && !cat.textures.has(img)) err(`combat.json geste '${g}' ${dir} : image '${img}' non dessinée`);
+        // la traînée, tirée pour chaque arme qui joue ce geste, à sa longueur
+        if (!f.smear) continue;
+        for (const [key, it] of Object.entries(c.items)) {
+          const fam = it.weapon && c.combat.families[it.weapon.family];
+          const plays = fam && fam.stances.some((st) => st.chain.some((a) => c.combat.attacks[a]?.gesture === g));
+          const img = `fx-smear-${key}-${f.smear.image}`;
+          if (plays && !cat.textures.has(img)) err(`combat.json geste '${g}' ${dir} : traînée '${img}' non dessinée (l'arme '${key}' à sa longueur)`);
+        }
+      }
+    }
+  }
+  // où frappe chaque geste, au sol (`sweeps`) : un par geste d'attaque, autant d'images que ses poses, des images actives qui existent
+  for (const g of new Set(Object.values(c.combat.attacks).map((a) => a.gesture))) {
+    const sw = c.combat.sweeps[g];
+    if (!sw) { err(`combat.json geste '${g}' : pas de zone de coup ('sweeps')`); continue; }
+    const n = combatPoses[g]?.down.length;
+    if (n !== undefined && sw.frames.length !== n) err(`combat.json sweeps '${g}' : ${sw.frames.length} images pour ${n} poses`);
+    for (const k of sw.active) if (k >= sw.frames.length) err(`combat.json sweeps '${g}' : image active ${k} au-delà des ${sw.frames.length} images`);
+  }
+  for (const g of Object.keys(c.combat.sweeps)) if (!Object.values(c.combat.attacks).some((a) => a.gesture === g)) err(`combat.json sweeps '${g}' : aucune attaque ne joue ce geste`);
+  if (!c.combat.families[c.combat.unarmed.family]) err(`combat.json main nue : famille '${c.combat.unarmed.family}' inconnue`);
+  if (!c.combat.unarmed.fist) err("combat.json main nue : 'fist: true' (sa lame est le bras)");
+  for (const [key, f] of Object.entries(c.combat.families)) {
+    f.stances.forEach((s, i) => {
+      for (const a of s.chain) if (!c.combat.attacks[a]) err(`combat.json famille '${key}' posture '${s.name}' : attaque '${a}' inconnue`);
+      const last = i === f.stances.length - 1;
+      if (last && (s.when.other !== undefined && s.when.other !== 'any' || s.when.both !== undefined)) {
+        err(`combat.json famille '${key}' : la dernière posture ('${s.name}') doit convenir à tout ('when' vide), pour qu'Espace ait toujours une attaque`);
+      }
+    });
+  }
+  for (const [key, it] of Object.entries(c.items)) {
+    const w = it.weapon;
+    if (!w) continue;
+    const at = `items.json '${key}' arme`;
+    if (!c.combat.families[w.family]) err(`${at} : famille '${w.family}' absente de combat.json`);
+    if (w.fist) err(`${at} : 'fist' est réservé à la main nue (combat.json, 'unarmed')`);
+    if (!w.image) { err(`${at} : sa planche 'weapon-<…>' manque ('image')`); continue; }
+    if (!w.image.startsWith('weapon-')) err(`${at} : sa planche doit s'appeler 'weapon-<…>' (art/lib/weapon.ts), pas '${w.image}'`);
+    const n = cat.frameCounts.get(w.image)?.get('angles');
+    if (n === undefined) err(`${at} : planche '${w.image}' et son animation 'angles' non dessinées (art/items/weapons.ts)`);
+    else if (n !== WEAPON_ANGLES) err(`${at} : '${w.image}' a ${n} angles pour ${WEAPON_ANGLES}`);
+    if (it.mass === undefined) err(`${at} : pas de masse (les dégâts et le prix d'un coup s'en calculent)`);
+  }
+  for (const [key, p] of Object.entries(c.props)) {
+    const t = p.target;
+    if (!t) continue;
+    if (t.hp !== 'infinite') err(`props.json '${key}' cible : des points de vie finis (${t.hp}) ne sont pas encore gardés par la partie ; 'infinite' en attendant (CONCEPTION, « Le combat »)`);
+    if (!cat.textures.has(`fx-${t.matter}`)) err(`props.json '${key}' cible : éclats 'fx-${t.matter}' non dessinés (art/world/fx.ts)`);
+  }
+  return errors;
+}
+
+/**
+ * Ce qui n'a pas à être au catalogue du mode construction, avec sa raison (effets, interface). Aujourd'hui rien : tout objet de
+ * props.json et d'items.json y est ; ce qui ne se pose pas (un effet, une image d'interface) n'est de toute façon pas un objet.
+ */
+export const CATALOG_EXCLUDED: Record<string, string> = {};
+
+/**
+ * Le catalogue du mode construction (src/build/catalog.ts) a tout : chaque objet de props.json (sauf la pièce de bois, présente par
+ * ses réglages) et d'items.json, chaque diamètre et aspect de la pièce de bois, chaque assemblage ; chaque entrée a un nom (la
+ * recherche se fait sur le nom et la clé), une famille et une vignette dessinée. Un oubli est une erreur, sauf dans CATALOG_EXCLUDED.
+ */
+function validateCatalog(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const entries = catalog();
+  const ids = new Set(entries.map((e) => e.id));
+  const want: [string, string][] = [
+    ...Object.entries(c.props).filter(([, d]) => !d.wood).map(([k]) => [`prop:${k}`, `props.json '${k}'`] as [string, string]),
+    ...Object.keys(c.items).map((k) => [`item:${k}`, `items.json '${k}'`] as [string, string]),
+    ...Object.keys(c.wood.sizes).flatMap((size) => looksOf(size).map((look) => [`wood:${size}:${look}`, `wood.json '${size}' '${look}'`] as [string, string])),
+    ...JointTypeSchema.options.map((j) => [`joint:${j}`, `assemblage '${j}'`] as [string, string]),
+  ];
+  for (const key of Object.keys(CATALOG_EXCLUDED)) if (!want.some(([id]) => id.endsWith(`:${key}`))) errors.push(`validate.ts CATALOG_EXCLUDED : '${key}' n'est pas un objet du contenu`);
+  for (const [id, at] of want) {
+    const key = id.slice(id.indexOf(':') + 1);
+    if (!ids.has(id) && !CATALOG_EXCLUDED[key]) errors.push(`${at} : absent du catalogue du mode construction (src/build/catalog.ts), ou dans CATALOG_EXCLUDED avec sa raison`);
+  }
+  for (const e of entries) {
+    if (!e.name.trim()) errors.push(`catalogue '${e.id}' : sans nom, introuvable par la recherche`);
+    if (!cat.textures.has(e.thumb)) errors.push(`catalogue '${e.id}' : vignette '${e.thumb}' non dessinée`);
+  }
+  return errors;
+}
+
+/**
  * L'âge du bois (docs/CONCEPTION.md, « L'âge du bois ») : toute pièce de bois a ses trois âges. Un objet de bois (masse de matière
  * bois, ou la pièce de bois) est `aged`, sauf le bois brut de RAW_WOOD ; chaque image d'un objet `aged` (vues, tirages, formes) a son
  * patiné et son vieux ; chaque planche de la pièce de bois aussi.
@@ -1084,6 +1200,12 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   // Le bois : planches de parties de chaque diamètre et aspect, icônes, vues portées, outils, grille
   addAll(validateWood(c, cat));
   addAll(validateAges(c, cat));
+
+  // Le combat : attaques, familles et postures, armes, cibles
+  addAll(validateCombat(c, cat));
+
+  // Le catalogue du mode construction : tout y est, avec un nom et une vignette
+  addAll(validateCatalog(c, cat));
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));

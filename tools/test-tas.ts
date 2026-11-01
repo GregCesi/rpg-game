@@ -4,7 +4,7 @@
 // le refus de mélanger (un rondin visé sur un tas de quartiers est posé seul, sans message) ; une pièce de plus de 70 kg (portée
 // avec la force doublée) qui ne fait pas de tas contre sa jumelle ; la pose d'une dalle et d'une hachette à la place de leur
 // fantôme, et de la hachette tournée par R (sa vue r1, gardée quand on la reprend) ; puis la page rechargée : tout est retrouvé.
-// Usage : npm run test:tas (lancé aussi par npm run test).
+// Usage : npm run test:tas (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';

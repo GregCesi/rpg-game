@@ -8,7 +8,7 @@ La technique (architecture, conventions) est dans `README.md` et `CLAUDE.md`.
 - Jeu d'aventure très long, médiéval fantastique, ton terre à terre.
 - On commence adolescent dans une petite ferme isolée près d'un village. Les premières tâches sont la vie quotidienne du garçon à la ferme, puis il découvre le monde petit à petit.
 - Vue de dessus façon Stardew Valley, tuiles 32×32, Phaser dans le navigateur.
-- Viendront plus tard : artisanat, combat, inventaire, quêtes.
+- Viendront plus tard : artisanat, combat (commencé : voir *Le combat*), inventaire, quêtes.
 - Projet perso, pour le plaisir.
 
 ## Xéros
@@ -699,6 +699,138 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 - **Compteur de jours** : `day` de GameState (jour 1 au départ, +1 à chaque nuit). Pas encore d'horloge ; il servira au temps et aux saisons.
 - **Sauvegarde** : `SAVE_VERSION` 5 ; une partie de la version 2 est convertie à la lecture (jauge pleine, jour 1), une partie de la version 3 aussi (le fendage ne fait qu'ajouter des champs facultatifs), une partie de la version 4 aussi (les chantiers : aucun plan connu, aucun chantier), sans repartir à neuf.
 - **Outils de test** (`?dieu`) : un champ pour régler l'endurance, une case « endurance infinie » ; pour l'implantation : apprendre un plan, mettre quatre piquets ou quatre pierres plates au sol devant Xéros, effacer les chantiers de la carte.
+
+## Le combat (décidé le 1er novembre 2026, chantier « combat de base »)
+
+Une base juste, pas complète : deux armes (la branche, l'[épée de bois](objets/wooden-sword.md)), une cible qui encaisse (le
+[mannequin d'entraînement](objets/training-dummy.md)), et une architecture où ajouter une arme donne ses animations tout de suite.
+Les touches : [docs/COMMANDES.md](COMMANDES.md).
+
+- **Le corps et l'arme sont séparés** (décidé avec Grégoire). Le corps a un répertoire de gestes, dans les quatre directions, qui ne
+  savent pas ce que Xéros tient : pour ce chantier, la **taille** (coup de côté) et le **coup d'en haut** (vertical). Ce sont les
+  gestes `use` et `chop` des outils (gestures.json), qui disent à chaque image où est la main et dans quel angle part ce qu'elle tient :
+  aucun corps n'a été redessiné. Plus tard, des gestes propres au combat (à une main, d'estoc) s'ajouteront au même répertoire.
+- **Une arme est des données et un dessin.** `weapon` d'un objet de items.json : sa longueur, sa prise (où la main la tient), sa
+  famille de gestes, sa planche ; sa masse et ses mains sont celles de l'objet. Le dessin est **un seul**, couché vers l'est, tiré en
+  huit angles par `art/lib/weapon.ts` (rotation, puis éclairage en haut à gauche ; le pixel-artist reprend les diagonales s'il le
+  faut) ; à chaque image du geste, le jeu pose sur la main l'angle de la pose (`weaponFrame`, entities/ToolUse.ts). La branche :
+  125 cm, tenue à 10 cm du gros bout, 2,5 kg ; l'épée de bois : 90 cm, tenue à 6 cm du pommeau, 0,8 kg. **Rééquilibrées** (même
+  jour, après le premier essai de Grégoire : la branche frappait six fois plus fort que l'épée et portait plus loin, personne ne
+  l'aurait prise) : chaque arme a aussi un **équilibre** (`balance`, où est son centre de masse devant la main : la branche, un
+  gourdin lourd du bout, 0,6 ; l'épée, près de la garde, 0,25) et une **efficacité** (`efficiency`, la part de l'énergie qui fait
+  des dégâts : les rameaux de la branche amortissent, 0,4 ; le fil de l'épée concentre le coup, 1). Le tableau des deux armes est
+  dans leurs fiches ([branche](objets/branch.md), [épée de bois](objets/wooden-sword.md)) : l'épée fait environ 1,5 fois les dégâts
+  par seconde de la branche, pour moins d'endurance.
+- **Tout se calcule** (`src/world/strike.ts`, sans Phaser ; les règles dans `src/content/combat.json`) :
+  - la **portée** : le bras (50 cm) plus l'arme devant la main : 165 cm pour la branche, 134 cm pour l'épée ;
+  - la **zone de coup**, au sol, depuis les pieds vers où regarde Xéros, de la longueur de la portée : un secteur de 120° pour la
+    taille, une bande de 30 cm pour le coup d'en haut ; une cible est touchée si son emprise au sol (`dims`) y entre ;
+  - le **temps** : chaque attaque dit combien durent l'armé, le coup et la récupération ; une arme lourde et longue (son moment
+    d'inertie autour de la main, m L² × 2/3 × l'équilibre) les allonge : un coup de branche dure 1,2 s, un coup d'épée 0,6 s ;
+  - la **précision** : 1 / (1 + I / `controlRef`) : 0,18 pour la branche, 0,76 pour l'épée (calculée, montrée, pas encore jouée :
+    elle servira aux coups visés et à la parade) ;
+  - les **dégâts** : l'énergie de l'arme au coup (½ I ω², la vitesse venant de l'angle que parcourt la pointe pendant le coup) ×
+    un facteur × l'efficacité de l'arme : 8,2 à la taille avec la branche, 5,9 avec l'épée ; le coup d'en haut frappe plus fort et
+    coûte plus ;
+  - le **prix en endurance** : `attackBase` + `attackPerKg` × la masse de l'arme (stamina.json), × le prix de l'attaque : 1,3 point
+    pour la branche, 0,6 pour l'épée. **Un coup dans le vide coûte aussi** (choix de Grégoire : c'est le geste qui fatigue) ; épuisé,
+    rien ne part.
+- **Une attaque est des données** (combat.json, `attacks`) : son geste, ses trois temps, la fenêtre d'enchaînement, l'angle que
+  parcourt la pointe, sa puissance, son prix, sa zone. **Une famille** (`families`, la seule aujourd'hui : `swing`, ce qu'on balance)
+  a des **postures**, chacune avec ce que tiennent les mains (`when` : l'autre main vide, une arme, n'importe quoi ; l'arme à deux
+  mains) et sa suite d'attaques ; la première posture qui convient sert. Aujourd'hui une seule posture, qui convient à tout : **tenir
+  une ou deux branches ne change rien**.
+- **Espace avec une arme en main attaque, toujours** : la main active, ou l'autre si l'active est vide (comme un outil) ; le geste
+  complet (armer, frapper, revenir) se joue et se paie dans le vide comme sur une cible : on s'entraîne dans le vide, le mannequin
+  sert à voir les dégâts et les réactions. Un deuxième Espace pendant le geste, ou juste après, **enchaîne** l'attaque
+  suivante de la posture (la taille, puis le coup d'en haut, puis de nouveau la taille). C'est la seule commande changée ; la branche
+  active et la hachette dans l'autre main taillent toujours, comme avant.
+- **Une cible** : `target` d'un objet de props.json : ses points de vie (le mannequin : infinis), sa matière (ce qui vole : `fx-straw`,
+  des brins de paille), de combien elle penche. Touchée, elle tremble, recule d'un pixel et penche autour de son pied du côté opposé
+  à Xéros, puis revient ; sa matière vole. Des points de vie finis attendent que la partie garde les blessures (validate.ts les
+  refuse en attendant).
+- **Avec `?debug`** : les dégâts chiffrés au-dessus de la cible et la zone de coup dessinée au sol, un instant.
+- **Le mannequin** : un poteau planté (une perche de 2 m), une botte de chaume liée dessus avec un lien ; la transformation
+  `raise-training-dummy` (à venir), et il se pose en mode construction. L'épée de bois : taillée dans une planche fendue par le
+  menuisier, `carve-wooden-sword` (à venir).
+- **Vérifier** : `npm run test:combat` (le mannequin frappé à la branche puis à l'épée dans les quatre directions ; à 28 px la branche
+  touche et l'épée manque ; dégâts et prix du calcul ; l'enchaînement ; le coup dans le vide ; épuisé ; une ou deux branches ; la
+  hachette qui taille) ; `.art-preview/combat.png` (Xéros armé, au coup et au retour de chaque geste avec chaque arme, dans les quatre
+  directions, puis chaque arme dans ses huit angles).
+
+### Deuxième passe : les gestes de combat et la zone de coup (1er novembre 2026)
+
+Grégoire : « On n'a pas l'impression qu'il manie l'épée. » Les gestes des outils (la cognée à deux mains jointes) sont remplacés, pour
+le combat, par de vrais gestes d'une main, essayés d'abord hors du jeu (`tools/essai-gestes.ts`, `.art-preview/essai-gestes.png` et
+`essai-gestes.html`, l'aperçu animé à vitesse réelle), corrigés, puis intégrés. Ce qui précède sur la zone au sol et les trois temps
+des attaques est remplacé par ceci.
+
+- **Les gestes de combat** (`art/characters/xeros-combat.ts`, animations de la planche `xeros`) : la **taille** (garde, armer, deux
+  images de frappe avec une traînée claire en arc, suite, retour : l'épée passe au-dessus de la tête et s'abat devant), le **coup
+  vertical** (au-dessus de la tête, abattu devant, traînée droite, tenue pointe basse, retour), les **directs** du poing droit et du
+  gauche (garde poings levés, armer court, le bras tendu et un petit éclat, retour). Les quatre directions ont chacune leurs poses
+  (vers la gauche, l'épée reste dans la main droite, au fond : pas un miroir). Les poses sont des données (`COMBAT_POSES` : par image,
+  sa durée, les mains, les épaules, l'angle de l'arme, la traînée, l'éclat, les images de frappe), que `build-art` écrit dans
+  `src/generated/combatPoses.ts` : **la seule source** des durées (la taille dure 530 ms garde comprise à l'épée) et de la place de
+  ce qui frappe. Une arme lourde les allonge (son inertie, au-delà de `inertiaRef`) : la branche met 1,2 s ; l'épée et le poing
+  gardent la durée de leurs poses.
+- **La main nue est une arme en données** (`unarmed` de combat.json : le bras de 60 cm, 2 kg qui frappent, famille `fists`). Espace,
+  la main active vide et l'autre sans arme ni outil (rien, une pierre…), frappe du poing de la main libre ; un deuxième Espace enchaîne
+  le direct de l'autre poing (gauche-droite) si les deux mains sont libres. Postures de la famille `fists` : selon les mains libres
+  (`when.free`).
+- **La zone de coup suit ce qui frappe** (`world/strike.ts`) : à chaque image de frappe, la lame est le segment dessiné, de la main à
+  la pointe (le poing : de l'épaule au poing), à l'endroit exact où l'arme est dessinée ; entre l'image d'avant et celle-ci, la surface
+  balayée compte (des lames intermédiaires, tous les pixels). Une cible est touchée si ce balayage recoupe **sa silhouette dessinée**
+  (les pixels opaques de son image, le corps entier) et qu'elle est devant Xéros, à portée ; **une seule fois par coup**, même si les
+  deux images de frappe la traversent. On ne touche jamais sans toucher : `test:combat` vérifie qu'au bord calculé le coup porte et que
+  2 px plus loin il ne porte pas, dans les quatre directions.
+- **La précision joue** : à chaque coup, un écart tiré au hasard dans un disque de `missPx` × (1 − précision)² déplace toute la lame
+  (et l'arme dessinée pendant la frappe, pour qu'on le voie) : moins de 2 px pour l'épée, jusqu'à 13 px pour la branche. Au bord de sa
+  portée, la branche touche le mannequin 70 % du temps, l'épée 100 % (1 000 coups simulés).
+- **La vitesse et les dégâts viennent des poses** : la vitesse est le chemin de la pointe (du poing) pendant les images de frappe, sur
+  leur durée ; les dégâts, l'énergie de la masse qui frappe (½ m v², m = 2/3 × équilibre × masse) × `damagePerJoule` × l'efficacité de
+  l'arme × la puissance de l'attaque. Le tableau des armes est dans leurs fiches ([branche](objets/branch.md),
+  [épée de bois](objets/wooden-sword.md)) : la branche 8,5 par coup en 1,2 s, l'épée 6 en 0,53 s (1,6 fois les dégâts par seconde, pour
+  moins d'endurance), le poing 1,6 en 0,34 s (la durée de ses poses : seul ce qui dépasse 0,4 kg·m² d'inertie ralentit,
+  la branche).
+- **Le ressenti** (`feel` de combat.json, tout réglable) : un arrêt sur image de 50 ms à l'impact (le geste se fige), puis la cible
+  recule et penche, sa matière vole ; l'écran tremble à partir de 8 de dégâts.
+- **Avec `?debug`** : à chaque image de frappe, la lame (blanche), le balayage depuis l'image d'avant (pâle), la silhouette touchée
+  (cadre rouge) et le chiffre des dégâts.
+
+### Troisième passe : la zone de coup au sol (1er novembre 2026)
+
+Grégoire, en jeu, avec ?debug : les coups touchaient surtout autour de la tête, pas devant Xéros, et la fin du mouvement ne comptait
+pas. La cause : la zone suivait la lame dessinée, et l'écran mêle profondeur et hauteur (y − z, règle D) ; une lame levée au-dessus de
+la tête est dessinée là où serait ce qui est devant Xéros vers le nord. Diagnostic par une **carte de touche** (`npm run art:touche`,
+`.art-preview/carte-touche.png` : vue du dessus, Xéros au centre, cases de 10 cm sur ± 2 m, une couleur par image active ; la carte
+d'avant la correction est gardée dans `carte-touche-avant.png`). Ce qui précède sur la lame dessinée et la silhouette est remplacé par
+ceci.
+
+- **La zone de coup se calcule dans le monde, au sol** (`sweeps` de combat.json, `world/strike.ts`) ; la lame dessinée ne sert plus
+  qu'à l'image. Pour chaque geste : `hand`, la main tendue (la portée = `hand` + l'arme devant la main) ; `width`, la largeur de ce qui
+  frappe ; par image, l'angle de l'arme par rapport au regard de Xéros (+ sa droite, − sa gauche), la part de la portée atteinte et la
+  hauteur de la pointe ; `active`, les images où l'arme a de l'élan : la frappe et le début de la suite (jamais la garde, l'armer, le
+  retour). La taille balaie un arc devant lui, de sa droite (75°) à sa gauche (−70°) ; le coup vertical, une bande de 30 cm droit
+  devant ; le direct, un court trait à la longueur du bras. La zone d'une image active est ce que balaie l'arme depuis l'image d'avant ;
+  une cible y est touchée si son emprise au sol y entre, quelle que soit sa hauteur, et jamais derrière Xéros ni à côté de lui (à plus
+  de 80° de son regard) : au-dessus de lui à l'écran n'est pas devant lui dans le monde.
+- **La précision** tire à chaque coup un écart (même formule), en travers (il tourne la zone) et en long (il allonge ou raccourcit la
+  portée) ; l'arme dessinée en est décalée d'autant. Au bord de leur portée : branche 58 %, épée 100 %.
+- **La vitesse** est celle de la pointe dans l'espace (au sol et en hauteur : un coup d'en haut tombe), à l'image active la plus
+  rapide ; les dégâts en suivent (le coup d'en haut, plus lent, a une puissance de 1,7).
+- **Le mannequin annonce ses dégâts** : à chaque coup reçu, le chiffre s'envole au-dessus de lui et s'efface, sans ?debug ; un coup
+  que l'écart seul a fait manquer affiche « raté ». Avec ?debug, la zone de chaque image active est dessinée au sol, en rouge.
+
+**Ce qui vient ensuite** (rien de fait) :
+- **Les postures** : deux mains (une arme longue, plus lente et plus forte), le **bouclier** dans l'autre main (parer, une posture
+  `when.other: shield` et une matière de plus), **deux armes** (une attaque de chaque main) : de nouvelles entrées de `stances`, sans
+  toucher au moteur ; le corps aura ses gestes à une main.
+- **Les attaques spéciales**, débloquées par **les idées de la nuit** (Xéros qui rêve d'un coup et le sait au réveil) : un champ de
+  l'attaque qui la tient fermée tant que l'idée n'est pas venue.
+- **Les lapins** : les premières cibles qui bougent et meurent ; leurs points de vie finis, gardés par la partie (GameState).
+- **La vie de Xéros** : une jauge à côté de l'endurance, ce qui le blesse, se soigner, dormir.
+- Les commandes à trancher : voir [docs/COMMANDES.md](COMMANDES.md), « À trancher ».
 
 ## Fendre (décidé le 30 octobre 2026)
 

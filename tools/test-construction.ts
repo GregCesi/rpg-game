@@ -6,7 +6,7 @@
 // les pièces ; ce qui est posé sous 2 m bloque ; un cran (T) monte de 20 cm ; un morceau de solin se pose. Puis le solin en tronçons :
 // trois morceaux taillés bout à bout ne font qu'un dessin, sans contour aux jonctions ; un morceau nord-sud aimanté sous le bout
 // ouest forme un angle ; retirer le morceau du milieu coupe le tronçon en deux.
-// Usage : npm run test:construction (lancé aussi par npm run test). CONSTRUCTION_SHOTS=1 : captures dans .art-preview/.
+// Usage : npm run test:construction (lancé aussi par npm run test:scenarios). CONSTRUCTION_SHOTS=1 : captures dans .art-preview/.
 
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, rmSync } from 'node:fs';

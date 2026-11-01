@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { renameSync, writeFileSync } from 'node:fs';
 import { defineConfig, type Plugin } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
@@ -22,7 +22,10 @@ function buildPlanWriter(): Plugin {
           try {
             const { key, plan } = JSON.parse(body) as { key: string; plan: { name: string; pieces: unknown[] } };
             if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(key) || !plan?.name || !Array.isArray(plan.pieces)) throw new Error('plan ou nom invalide');
-            writeFileSync(`src/content/plans/${key}.json`, `${JSON.stringify(plan, null, 2)}\n`);
+            // écrit à côté puis renommé : un autre serveur (les scénarios tournent en parallèle) ne lit jamais un plan à moitié écrit
+            const file = `src/content/plans/${key}.json`;
+            writeFileSync(`${file}.tmp`, `${JSON.stringify(plan, null, 2)}\n`);
+            renameSync(`${file}.tmp`, file);
             res.statusCode = 200;
             res.end('ok');
           } catch (e) {

@@ -8,7 +8,7 @@
 // sa masse, son prix d'endurance proportionnel à la longueur, elle ne roule plus et ne se porte pas), la
 // pièce de 1 m qui se porte et va en tas ; le gros arbre et le têtard abattus, ébranchés (une pièce ronde de 4 m, de 2 m) et coupés
 // à 1 m ; puis la page rechargée : tout est retrouvé.
-// Usage : npm run test:equarrissage (lancé aussi par npm run test).
+// Usage : npm run test:equarrissage (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';

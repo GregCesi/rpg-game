@@ -78,3 +78,7 @@ Sous un tas de branches plein (10 branches), E maintenu une demi-seconde noue la
       fantôme suit). Q : posé ; d'autres fagots portés se posent en tas (3, 2, 1), en est-ouest ou nord-sud.
   11. Fagot posé seul, mains libres, E maintenu : il se dénoue, tas de 10 branches avec son lien, compteur à 10.
   12. Recharger la page à chaque étape : tout est là (rouleau et sa longueur, lien, tas lié, fagots).
+
+## Métier
+Le paysan (`peasant`) : il coupe ses liens au rouleau de corde (ajouté le 1er novembre 2026, chantier « combat » : le lien entre dans
+la transformation du mannequin d'entraînement, et tout ce qui y figure dit son métier).

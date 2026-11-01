@@ -26,6 +26,9 @@ import { buildCollectionBoard } from './lib/collection-board';
 import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
+import { combatPreview } from './lib/combat-preview';
+import { COMBAT_POSES } from '../art/characters/xeros-combat';
+import combatJson from '../src/content/combat.json';
 import { sectionsPreview, woodPreview } from './lib/wood-preview';
 import { hewPreview } from './lib/hew-preview';
 import { lyingPreview } from './lib/lying-preview';
@@ -40,7 +43,7 @@ import type { WoodLook, WoodPiece } from '../src/content/types';
 import { shapeOfLook, WOOD } from '../src/world/woodShape';
 import { composeWood } from '../art/world/wood-pieces';
 import { world } from '../art/palette';
-import type { ArtSource } from '../art/lib/types';
+import type { ArtSource, SpriteSheetSource } from '../art/lib/types';
 import { WALL_STONES } from '../src/world/walls';
 import { stonePalette } from '../art/items/stones';
 
@@ -332,6 +335,15 @@ writeFileSync(
     `export const wallStones: Record<string, string[]> = ${JSON.stringify(wallStones)};\n` +
     `export const wallPalette: Record<string, string> = ${JSON.stringify(stonePalette)};\n`,
 );
+// les gestes de combat (art/characters/xeros-combat.ts) : par geste, par direction, chaque image (durée, mains, épaules, arme,
+// traînée, éclat, frappe) ; le jeu ne lit pas art/, il lit ceci (systems/combat.ts, world/strike.ts)
+writeFileSync(
+  join(OUT, 'combatPoses.ts'),
+  `// GÉNÉRÉ par tools/build-art.ts à partir de art/characters/xeros-combat.ts (COMBAT_POSES). Ne pas modifier à la main.\n` +
+    `// Les gestes de combat du corps, image par image : la seule source de leurs durées et de la place de ce qui frappe.\n` +
+    `import type { CombatPoses } from '../world/strike';\n` +
+    `export const combatPoses: Record<string, CombatPoses> = ${JSON.stringify(COMBAT_POSES)};\n`,
+);
 // Même catalogue sans les images, lisible par Node (npm run check)
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(catalog, null, 2));
 if (withPreview) {
@@ -349,6 +361,13 @@ if (withPreview) {
       const png = gesturePreview(sources, body, tool, name, gesture);
       writeFileSync(join(PREVIEW, `xeros-${name}-${tool.name.slice('tool-'.length)}.png`), PNG.sync.write(png));
     }
+  }
+  // le combat : Xéros à trois moments de chaque geste d'attaque avec chaque arme, et chaque arme dans ses huit angles
+  const weapons = sources.filter((s): s is SpriteSheetSource => s.kind === 'spritesheet' && s.name.startsWith('weapon-'));
+  // les gestes des armes (la famille `swing`) et ceux de la main nue (la famille de `unarmed`), d'après les postures de combat.json
+  const chainOf = (family: string) => [...new Set(combatJson.families[family as keyof typeof combatJson.families].stances.flatMap((st) => st.chain).map((k) => combatJson.attacks[k as keyof typeof combatJson.attacks].gesture))];
+  if (body?.kind === 'spritesheet' && weapons.length) {
+    writeFileSync(join(PREVIEW, 'combat.png'), PNG.sync.write(combatPreview(sources, body, weapons, COMBAT_POSES, chainOf('swing'), chainOf(combatJson.unarmed.family))));
   }
   const hands = handsPreview(sources);
   if (hands) writeFileSync(join(PREVIEW, 'hands.png'), PNG.sync.write(hands));

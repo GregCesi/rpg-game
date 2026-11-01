@@ -2,7 +2,7 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { CharacterDefSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, MatterSchema, PileDefSchema, RockSchema, PlanSchema, ParcelUseSchema, PropDefSchema, StaminaSchema, StrengthSchema, TilesetCatalogSchema, TransformSchema, WoodSchema, WorldSchema } from './types';
+import { CharacterDefSchema, CombatSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, MatterSchema, PileDefSchema, RockSchema, PlanSchema, ParcelUseSchema, PropDefSchema, StaminaSchema, StrengthSchema, TilesetCatalogSchema, TransformSchema, WoodSchema, WorldSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import itemsJson from './items.json';
@@ -20,6 +20,7 @@ import rocksJson from './rocks.json';
 import transformsJson from './transforms.json';
 import parcelsJson from './parcels.json';
 import worldJson from './world.json';
+import combatJson from './combat.json';
 export { maps } from '../generated/maps';
 
 function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.infer<T> {
@@ -60,3 +61,5 @@ export const transforms = parse('transforms.json', z.record(z.string(), Transfor
 export const parcelUses = parse('parcels.json', z.record(z.string(), ParcelUseSchema), parcelsJson);
 /** Le monde entier : ce qui ne dépend d'aucune zone (la pénombre du sous-bois, de l'ouest vers l'est). */
 export const world = parse('world.json', WorldSchema, worldJson);
+/** Le combat : les règles du calcul (portée, vitesse, dégâts), les attaques, les familles d'armes et leurs postures (CONCEPTION, « Le combat »). */
+export const combat = parse('combat.json', CombatSchema, combatJson);

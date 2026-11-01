@@ -9,6 +9,7 @@ import { Player } from '../entities/Player';
 import { forgetHeldKeys } from '../input/PlayerInput';
 import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand } from '../events';
 import { BuildSystem } from '../systems/build';
+import { CombatSystem, type AttackPlan } from '../systems/combat';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
@@ -116,6 +117,7 @@ export class WorldScene extends Phaser.Scene {
   private map!: GameMap;
   private interaction!: InteractionSystem;
   private harvest!: HarvestSystem;
+  private combat!: CombatSystem;
   private handsSystem!: HandsSystem;
   private knots!: KnotSystem;
   private press!: LongPress;
@@ -234,6 +236,7 @@ export class WorldScene extends Phaser.Scene {
       return [...this.map.interactables(h && 'prop' in h ? h.prop : undefined), ...this.site.interactables(), ...talkable];
     });
     this.harvest = new HarvestSystem(this, this.map);
+    this.combat = new CombatSystem(this, this.map, this.harvest);
     this.wood = new WoodSystem(this, this.map, this.harvest);
     this.rail = new Rail(this.player);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
@@ -348,6 +351,8 @@ export class WorldScene extends Phaser.Scene {
     this.site.update(this.player, this.mode === 'play');
     this.pileCount.update(this.player, this.mode === 'play');
     if (this.mode === 'build') this.builder.update(delta, turn);
+    // Espace pendant une attaque : la suivante de l'enchaînement partira à sa fin
+    if (use && this.mode === 'use') this.combat.queue();
     if (this.mode !== 'play') {
       this.turnPress.cancel();
       return this.press.cancel();
@@ -589,7 +594,14 @@ export class WorldScene extends Phaser.Scene {
   private useHeld(): void {
     if (this.player.hold.loaded) return;
     const tool = this.usable();
+    // une arme qui sert (la main active, ou l'autre si l'active est vide) : Espace attaque, toujours, dans le vide comme sur une cible
+    // (la branche active et la hachette dans l'autre main : c'est la hachette qui sert, elle taille)
+    if (tool && items[tool].weapon) return this.attack(this.combat.plan({ item: tool }, this.player.actor.facing, this.time.now));
     if (tool && SiteSystem.traces(tool)) return this.plantStake(tool);
+    // la main active vide, l'autre sans arme ni outil (rien, ou une ressource qui ne se plante pas) : le poing de la main libre
+    if (!game.both && !game.hands[game.active] && (!tool || items[tool].kind === 'resource')) {
+      return this.attack(this.combat.plan({ fist: true }, this.player.actor.facing, this.time.now));
+    }
     if (!tool || items[tool].kind === 'resource') {
       // mains vides devant ce qui demande un outil : on le dit
       const t = this.harvest.target(this.player)?.def.harvest?.tool;
@@ -621,6 +633,34 @@ export class WorldScene extends Phaser.Scene {
     // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
     this.gesture(gesture, tool, () => this.report(this.harvest.hit(this.harvest.target(this.player, tool), tool, this.player.actor.facing)));
   }
+
+  /**
+   * Une attaque (systems/combat.ts) : elle se paie au départ, même dans le vide (c'est le geste qui fatigue) ; le geste de combat du
+   * corps avec l'arme dans la main droite (ou le poing), à chaque image de frappe la lame et ce qu'elle balaie ; Espace pendant le
+   * geste enchaîne la suivante.
+   */
+  private attack(p: AttackPlan): void {
+    if (!this.effort.afford(this.player, p.cost)) return;
+    this.combat.begin(p);
+    this.mode = 'use';
+    const striker = p.striker;
+    this.player.tools.fight(p.attack.gesture, {
+      frames: p.frames,
+      durations: p.durations,
+      weapon: p.weapon.image,
+      shift: p.drawShift,
+      active: p.sweep.active,
+      onStrike: (step) => this.combat.strike(this.player, p, step),
+      onDone: () => {
+        const chain = this.combat.end(p, this.time.now);
+        if (this.mode === 'use') this.mode = 'play';
+        // Espace pendant le geste : la suivante, avec la même arme (ou le même poing) si elle sert toujours
+        const same = 'item' in striker ? this.usable() === striker.item : !game.both && !game.hands[game.active];
+        if (chain && this.mode === 'play' && same) this.attack(this.combat.plan(striker, this.player.actor.facing, this.time.now));
+      },
+    });
+  }
+
 
   /**
    * Une passe de doloire (Espace contre le flanc, à un bout de la pièce ou là où la face s'est arrêtée) : Xéros longe la pièce sur

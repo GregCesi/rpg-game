@@ -4,7 +4,7 @@
 // de sa définition (world/woodPiece.ts) sont, en nord-sud, celles de l'est-ouest inversées, à 1 px près pour l'image, exactement
 // pour la collision ; un tas nord-sud monte de la même hauteur par couche qu'est-ouest, ses pièces au même écart, chacune au même
 // pas au-dessus de sa porteuse de devant (la 4e bille d'un tas de 3 couvre le quart haut de celle du centre).
-// Usage : npm run test:perspective (lancé aussi par npm run test).
+// Usage : npm run test:perspective (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';

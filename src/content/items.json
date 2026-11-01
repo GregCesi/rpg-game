@@ -1,6 +1,6 @@
 {
-  "branch": {"name": "branche", "icon": "item-branch", "views": "four", "lying": true, "kind": "resource", "hold": {"stance": "hand", "image": "held-branch"}, "ground": "branch-ground", "pile": "branches", "mass": 2.5, "trade": "woodcutter"},
-  "rope-tie": {"name": "lien", "icon": "item-rope-tie", "views": "symmetric", "lying": true, "kind": "resource", "hold": {"stance": "hand", "image": "held-rope-tie"}, "ground": "rope-tie-ground", "mass": 0.2},
+  "branch": {"name": "branche", "icon": "item-branch", "views": "four", "lying": true, "kind": "resource", "hold": {"stance": "hand", "image": "held-branch"}, "ground": "branch-ground", "pile": "branches", "mass": 2.5, "trade": "woodcutter", "weapon": {"length": 125, "grip": 10, "balance": 0.6, "efficiency": 0.63, "family": "swing", "image": "weapon-branch"}},
+  "rope-tie": {"name": "lien", "icon": "item-rope-tie", "views": "symmetric", "lying": true, "kind": "resource", "hold": {"stance": "hand", "image": "held-rope-tie"}, "ground": "rope-tie-ground", "mass": 0.2, "trade": "peasant"},
   "stake": {"name": "piquet", "icon": "item-stake", "views": "four", "lying": true, "kind": "resource", "hold": {"stance": "hand", "image": "held-stake"}, "ground": "stake-ground", "mass": 1, "trade": "woodcutter"},
   "small-rough-stone": {"name": "petite pierre brute", "icon": "item-small-rough-stone", "ground": "small-rough-stone-ground", "views": "round", "kind": "resource", "hands": 1, "hold": {"stance": "hand", "image": "held-small-rough-stone"}, "pile": "small-rough-stones", "dims": {"w": 17, "d": 15, "h": 13, "shape": "box"}, "mass": {"matter": "stone", "fill": 0.56}, "natural": {"forms": 2, "vary": 7}, "trade": "quarryman"},
   "rough-stone": {"name": "pierre brute", "icon": "item-rough-stone", "ground": "rough-stone-ground", "views": "round", "kind": "resource", "hands": 2, "hold": {"stance": "carry", "image": "held-rough-stone"}, "pile": "rough-stones", "dims": {"w": 26, "d": 22, "h": 19, "shape": "box"}, "mass": {"matter": "stone", "fill": 0.56}, "natural": {"forms": 2, "vary": 7}, "trade": "quarryman"},
@@ -41,5 +41,5 @@
   "watering-can": {"name": "arrosoir", "icon": "item-watering-can", "views": "four", "kind": "tool", "mass": 2},
   "fishing-rod": {"name": "canne à pêche", "icon": "item-fishing-rod", "views": "four", "lying": true, "kind": "tool", "mass": 0.5},
   "sword": {"name": "épée", "icon": "item-sword", "views": "four", "lying": true, "kind": "weapon", "mass": 1.2},
-  "wooden-sword": {"name": "épée de bois", "icon": "item-wooden-sword", "views": "four", "lying": true, "kind": "weapon", "mass": 0.6}
+  "wooden-sword": {"name": "épée de bois", "aged": true, "icon": "item-wooden-sword", "ground": "wooden-sword-ground", "views": "four", "lying": true, "kind": "weapon", "hold": {"stance": "hand", "image": "held-wooden-sword"}, "dims": {"w": 90, "d": 5, "h": 2.5, "shape": "box"}, "mass": {"matter": "wood", "fill": 0.79}, "trade": "joiner", "weapon": {"length": 90, "grip": 6, "balance": 0.25, "efficiency": 1, "family": "swing", "image": "weapon-wooden-sword"}}
 }

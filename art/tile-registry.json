@@ -276,6 +276,7 @@
     "plank-awning",
     "plank-door-open",
     "cart-door-open",
-    "signpost"
+    "signpost",
+    "training-dummy"
   ]
 }

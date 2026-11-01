@@ -5,7 +5,7 @@
 // l'effort) ; les quatre poteaux posés, la ligne passe aux sablières ; la page rechargée les retrouve avec leur pièce d'origine.
 // Un chantier montre les vraies pièces posées : un poteau dressé est la pièce de bois debout (même état, même longueur, même clé
 // d'image que son fantôme), et sa silhouette a la taille au gabarit (une poutre de 1,80 m : 8 × 40 px ; de 3 m : 8 × 64), et sa largeur est l'épaisseur de la même poutre couchée (règle D étendue).
-// Usage : npm run test:poteaux (lancé aussi par npm run test).
+// Usage : npm run test:poteaux (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';

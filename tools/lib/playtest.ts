@@ -56,7 +56,9 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     await page.addInitScript('window.__name = (f) => f;');
     const load = async (query = '?dieu&reset') => {
       await page.goto(`${url}${query}`);
-      await page.waitForFunction(() => !!(window as any).game?.scene?.getScene?.('world')?.player, null, { timeout: 30000 });
+      // jusqu'à ce que le monde tourne, sans durée : un jeu qui démarre lentement (d'autres scénarios tournent en même temps) démarre
+      // plus tard ; le lanceur des scénarios (tools/run-scenarios.ts) arrête celui qui ne finirait jamais
+      await page.waitForFunction(() => !!(window as any).game?.scene?.getScene?.('world')?.player, null, { timeout: 0, polling: 200 });
     };
     await load();
     await body({ page, url, errors, load });

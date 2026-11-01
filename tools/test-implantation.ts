@@ -3,7 +3,7 @@
 // sur le billot et en couper un lien à la hachette puis à la cognée, tracer l'emprise (un piquet refusé hors des coins, un tracé gêné par un rocher), le
 // chantier qui naît, un objet refusé par une place, quatre dalles portées depuis la berge jusqu'aux quatre dés, le
 // piquet arraché de chaque coin, la ligne d'état, les poteaux en fantôme, puis la page rechargée : le chantier est retrouvé.
-// Usage : npm run test:implantation (lancé aussi par npm run test).
+// Usage : npm run test:implantation (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';
