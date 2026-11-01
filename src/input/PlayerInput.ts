@@ -23,6 +23,8 @@ const CODES = {
   // mode construction (?construire) : B entre et sort ; T et G (ou Page haut, Page bas) montent et descendent d'un cran. Ces trois
   // lettres sont à la même place en AZERTY et en QWERTY, et ne servent à rien d'autre.
   build: ['KeyB'],
+  // la vitesse du temps (docs/CONCEPTION.md, « Le temps ») : V, à la même place en AZERTY et en QWERTY ; Maj + V pour ralentir
+  speed: ['KeyV'],
   raise: ['KeyT', 'PageUp'],
   lower: ['KeyG', 'PageDown'],
 } as const;
@@ -60,6 +62,8 @@ export class PlayerInput {
   private readonly held = HELD;
   /** Actions dont la touche vient d'être pressée, pas encore lues. */
   private readonly pressed = new Set<Action>();
+  /** Le sens du dernier appui sur V (+1 ; Maj + V : −1), lu au moment de l'appui. */
+  private speedDir: 1 | -1 = 1;
   /** Crans de zoom demandés (molette, + et −), pas encore lus : positif pour s'approcher. */
   private zoom = 0;
   /** Ctrl+Z (annuler) et Ctrl+Y ou Ctrl+Maj+Z (refaire) du mode construction, pas encore lus. */
@@ -84,6 +88,8 @@ export class PlayerInput {
         return;
       }
       if (e.repeat) return;
+      // Maj + V : le sens se lit au moment de l'appui (un appui bref relâcherait Maj avant l'image suivante)
+      if (CODES.speed.includes(e.code as 'KeyV')) this.speedDir = e.shiftKey || CODES.run.some((c) => this.held.has(c)) ? -1 : 1;
       for (const [action, codes] of Object.entries(CODES)) if ((codes as readonly string[]).includes(e.code)) this.pressed.add(action as Action);
     };
     const onUp = (e: KeyboardEvent) => this.held.delete(e.code);
@@ -140,9 +146,24 @@ export class PlayerInput {
     return this.take('stop');
   }
 
+  /** Une flèche ou ZQSD vient d'être pressée (pas maintenue) : interrompt un travail. Lit les quatre, une fois par appui. */
+  movePressed(): boolean {
+    return [this.take('up'), this.take('down'), this.take('left'), this.take('right')].some(Boolean);
+  }
+
   /** La touche R est enfoncée en ce moment : R maintenu (pivoter une bille couchée). */
+  /** Espace est enfoncé en ce moment : maintenu, les coups d'un travail s'enchaînent (docs/CONCEPTION.md, « Le travail »). */
+  useDown(): boolean {
+    return CODES.use.some((c) => this.held.has(c));
+  }
+
   turnDown(): boolean {
     return CODES.turn.some((c) => this.held.has(c));
+  }
+
+  /** V : la vitesse du temps, +1 (V) ou −1 (Maj + V), ou 0 ; une fois par appui. */
+  speedPressed(): 1 | -1 | 0 {
+    return this.take('speed') ? this.speedDir : 0;
   }
 
   /** B : entrer dans le mode construction ou en sortir (?construire) ; vrai une seule fois par appui. */

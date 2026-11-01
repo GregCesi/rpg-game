@@ -32,8 +32,9 @@
 // Un nouvel outil = ces cinq dessins, puis `heldToolSheet` : aucune animation du corps à refaire.
 // Le jeu pose le centre de chaque image de la planche (la prise du manche) sur la main du geste.
 
-import { Canvas, type Grid, type Palette } from './canvas';
+import { Canvas, EMPTY, type Grid, type Palette } from './canvas';
 import { lightUp, type Materials } from './light';
+import { woodAges, world } from '../palette';
 import type { SpriteSheetSource } from './types';
 
 /** Côté d'un dessin de base d'outil en main. */
@@ -167,6 +168,8 @@ export interface ToolPose {
   behind: boolean;
   /** Vue de l'outil (`face` si absent) : de profil pour un coup horizontal, par la tranche pour un coup vertical. */
   view?: View;
+  /** Traînée du fer depuis la pose de l'image précédente (le temps « abattre » des gestes de travail), dessinée sous l'outil. */
+  trail?: boolean;
 }
 
 /** Dessin de base employé pour une pose (pour l'aide de gestures.json). */
@@ -174,9 +177,10 @@ export const baseOf = (p: ToolPose): Base => transformFor(p.head, p.edge, p.view
 
 /**
  * Côté d'une image de la planche `tool-<objet>` (carré pair). La prise du manche y est toujours au pixel HELD_GRIP ;
- * l'outil s'étend jusqu'à 22 px autour (fer et contour compris).
+ * l'outil s'étend jusqu'à 22 px autour (fer et contour compris), sa traînée jusqu'à 40 (elle part de la pose précédente :
+ * le fer tombé de la tête aux pieds en une image).
  */
-export const HELD_SIZE = 48;
+export const HELD_SIZE = 80;
 /** Centre de l'image, arrondi vers le bas : le jeu pose ce pixel sur la main. */
 export const HELD_GRIP: Vec = [HELD_SIZE / 2, HELD_SIZE / 2];
 
@@ -187,7 +191,79 @@ export function heldImage(art: ToolArt, head: Dir8, edge: Edge, view: View = 'fa
   return lightUp(zones.toGrid(), art.materials);
 }
 
-/** Un geste du corps : les poses de l'outil par direction (4 temps chacune) et sa cadence. */
+/**
+ * Signes de la traînée dans la planche (ceux de la traînée des gestes de combat, effectPalette de xeros-combat.ts) : `(` presque
+ * plein (parchemin), `)` à moitié, `<` la queue (lumière du bois neuf, transparente). Des signes que la palette des outils
+ * n'emploie pas.
+ */
+export const TRAIL_PALETTE: Palette = {
+  '(': `${world.a}e0`,
+  ')': `${world.a}99`,
+  '<': `${woodAges.new['^']}60`,
+};
+
+/** Le bout du fer d'une image d'outil (prise en HELD_GRIP) : sa distance à la prise, le long de la direction de la tête. */
+function reachOf(img: Grid, head: Dir8): number {
+  const a = (angleOf(head) * Math.PI) / 180;
+  let best = 0;
+  img.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (ch === EMPTY) return;
+    best = Math.max(best, (x - HELD_GRIP[0]) * Math.cos(a) - (y - HELD_GRIP[1]) * Math.sin(a));
+  }));
+  return best;
+}
+
+/**
+ * Traînée du fer de la pose `a` (image `ia`) à la pose `b` (image `ib`), dans le repère d'une image de la planche (la prise de `b`
+ * en HELD_GRIP) : un arc balayé par le fer (de profil, l'outil tourne à plat), ou une ligne du fer de départ au fer d'arrivée
+ * (par la tranche, un demi-tour par-dessus la tête vu de face ou de dos). Plus pleine près de l'arrivée.
+ */
+function trailOf(a: ToolPose, ia: Grid, b: ToolPose, ib: Grid): Canvas {
+  const c = new Canvas(HELD_SIZE, HELD_SIZE);
+  const ra = reachOf(ia, a.head);
+  const rb = reachOf(ib, b.head);
+  const a0 = angleOf(a.head);
+  let delta = ((angleOf(b.head) - a0) % 360 + 360) % 360;
+  if (delta > 180) delta -= 360;
+  // la prise de `a` dans le repère de `b`
+  const ga: Vec = [HELD_GRIP[0] + a.hand[0] - b.hand[0], HELD_GRIP[1] + a.hand[1] - b.hand[1]];
+  const gb: Vec = HELD_GRIP;
+  const put = (x: number, y: number, k: string) => {
+    const X = Math.round(x);
+    const Y = Math.round(y);
+    if (X < 0 || Y < 0 || X >= HELD_SIZE || Y >= HELD_SIZE) return;
+    const old = c.get(X, Y);
+    const rank = (s: string) => '()<'.indexOf(s);
+    if (old === EMPTY || rank(old) > rank(k)) c.set(X, Y, k);
+  };
+  const tip = (g: Vec, ang: number, r: number): Vec => [g[0] + Math.cos((ang * Math.PI) / 180) * r, g[1] - Math.sin((ang * Math.PI) / 180) * r];
+  if (b.view === 'edge' && (Math.abs(delta) >= 179 || delta === 0)) {
+    const p0 = tip(ga, a0, ra * 0.85);
+    const p1 = tip(gb, angleOf(b.head), rb * 0.85);
+    for (let i = 0; i <= 60; i++) {
+      const t = i / 60;
+      for (const dx of [-1, 0, 1]) {
+        const k = dx !== 0 ? (t > 0.5 ? ')' : '<') : t > 0.6 ? '(' : t > 0.3 ? ')' : '<';
+        put(p0[0] + (p1[0] - p0[0]) * t + dx, p0[1] + (p1[1] - p0[1]) * t, k);
+      }
+    }
+    return c;
+  }
+  const N = 120;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const g: Vec = [ga[0] + (gb[0] - ga[0]) * t, ga[1] + (gb[1] - ga[1]) * t];
+    const ang = a0 + delta * t;
+    const reach = ra + (rb - ra) * t;
+    for (let r = 0.72 - 0.2 * t; r <= 1.0001; r += 0.04) {
+      const [x, y] = tip(g, ang, reach * r);
+      put(x, y, t > 0.66 ? '(' : t > 0.33 ? ')' : '<');
+    }
+  }
+  return c;
+}
+
+/** Un geste du corps : les poses de l'outil par direction (8 images chacune pour les gestes de travail) et sa cadence. */
 export interface HeldGesture {
   poses: Record<'down' | 'up' | 'right', ToolPose[]>;
   frameRate: number;
@@ -207,8 +283,18 @@ export function heldToolSheet(
   const animations: SpriteSheetSource['animations'] = {};
   for (const [gesture, { poses, frameRate }] of Object.entries(gestures)) {
     for (const dir of ['down', 'up', 'right'] as const) {
-      animations[`${gesture}-${dir}`] = { frames: poses[dir].map((p) => heldImage(art, p.head, p.edge, p.view)), frameRate, repeat: 0 };
+      const list = poses[dir];
+      const images = list.map((p) => heldImage(art, p.head, p.edge, p.view));
+      const frames = images.map((img, i) => {
+        const p = list[i];
+        if (!p.trail || i === 0) return img;
+        // la traînée sous l'outil
+        const c = trailOf(list[i - 1], images[i - 1], p, img);
+        img.forEach((row, y) => [...row].forEach((ch, x) => ch !== EMPTY && c.set(x, y, ch)));
+        return c.toGrid();
+      });
+      animations[`${gesture}-${dir}`] = { frames, frameRate, repeat: 0 };
     }
   }
-  return { kind: 'spritesheet', name: `tool-${name}`, frameW: HELD_SIZE, frameH: HELD_SIZE, palette, animations };
+  return { kind: 'spritesheet', name: `tool-${name}`, frameW: HELD_SIZE, frameH: HELD_SIZE, palette: { ...palette, ...TRAIL_PALETTE }, animations };
 }

@@ -700,6 +700,481 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 - **Sauvegarde** : `SAVE_VERSION` 5 ; une partie de la version 2 est convertie à la lecture (jauge pleine, jour 1), une partie de la version 3 aussi (le fendage ne fait qu'ajouter des champs facultatifs), une partie de la version 4 aussi (les chantiers : aucun plan connu, aucun chantier), sans repartir à neuf.
 - **Outils de test** (`?dieu`) : un champ pour régler l'endurance, une case « endurance infinie » ; pour l'implantation : apprendre un plan, mettre quatre piquets ou quatre pierres plates au sol devant Xéros, effacer les chantiers de la carte.
 
+## Le temps (décidé le 1er novembre 2026, chantier « temps »)
+
+**La clôture du chantier** (décidé par Grégoire après l'essai du travail au coup, même jour) :
+- **La vitesse du temps du joueur est réactivée, et c'est la vitesse de simulation** : V passe au palier suivant (x1, x2, x5, x10, x20 ;
+  `speeds` de time.json, x1 au départ), Maj + V au précédent ; elle accélère tout le jeu, marche comprise, par pas de jeu de taille
+  normale (systems/simSpeed.ts), et plus seulement l'horloge ; le cadran l'affiche ; une attaque ramène à x1 ; x50 reste réservé à
+  ?dieu pour les tests. La distinction d'avant (vitesse du temps / vitesse de simulation) tombe : il n'y a plus qu'une vitesse.
+- **L'interface du temps** : le cadran rond en haut à droite (l'essai, piste A) : « Jour 3 / 14:20 » et un médaillon où le soleil puis
+  la lune passent sur une colline, au ciel du moment (aube, jour, crépuscule, nuit) ; les mains et la barre d'endurance passent en bas à
+  droite.
+- **La lumière suit l'heure** (l'étape 6) : un voile teinté posé sur le monde (`daylight` de world.json : des repères dans la journée,
+  interpolés), à la profondeur des pénombres du sous-bois et des intérieurs, qui s'y ajoutent ; les lueurs des feux restent
+  par-dessus ; les rais de soleil des fenêtres et des portes suivent la force du soleil (éteints la nuit).
+- **Les vitesses de Xéros** : marche 2 m/s, course 2,5 m/s (9 km/h), fatigué 1 m/s (`tiredWalk` 0,5) ; une seule source
+  (`PLAYER.walk`, `PLAYER.run`), dont dérivent la marche chargée, la marche fatiguée et la bille poussée.
+
+**L'accélération en pause, les travaux en temps réel** (décidé par Grégoire après l'essai des étapes 1 à 4, même jour ; remplacé
+depuis par la clôture ci-dessus pour la vitesse du temps). On met
+l'accélération du temps en pause et on joue tout à **x1**, pour calibrer le jeu petit à petit avant de décider comment la vitesse doit
+marcher :
+- **La vitesse du temps est verrouillée à x1** : V et les paliers sont éteints (`accelerate: false` dans `time.json` ; le code reste) ;
+  l'heure s'affiche, sans indicateur de vitesse. La vitesse de simulation des tests ne change pas (un test peut encore faire aller le
+  temps plus vite, `ClockSystem.speed`, pour voir un long travail avancer).
+- **Plus de saut de l'horloge.** Un travail (abattre, ébrancher, récolter, couper, fendre, équarrir, tailler) se lance d'un appui, puis
+  Xéros répète son geste pendant toute sa durée réaliste (les `minutes` des données), en temps réel : abattre un arbre normal prend
+  25 minutes réelles. Le nombre de coups découle de la durée et du rythme du geste ; les étapes des données (`hits` : l'arbre qui
+  tremble, la coupe qui se creuse, la fente qui s'allonge) tombent à intervalles égaux, chacune sur un coup ; le résultat arrive à la
+  fin (`systems/work.ts` ; la passe de doloire, sur son rail, dure `minutesPerM` par mètre de face). Une jauge au-dessus de Xéros montre
+  où il en est. **Bouger ou Échap interrompt**, et ce qui est fait reste fait : la part faite d'un travail est gardée dans GameState
+  (`work` de la carte, par objet ; la face entamée, `dressed`), sauvegarde comprise, et le travail repris continue de là. L'endurance se
+  paie au fil du travail, coup par coup (le prix du travail entier est celui de ses étapes d'avant : 4 × 0,8 pour un arbre normal) ; à
+  bout de souffle, le travail attend que Xéros reprenne son souffle puis continue.
+- Les petits gestes (nouer, planter un piquet, pivoter une bille, poser une pièce, dresser une poutre) ne durent que leur geste : leurs
+  minutes (`work` de time.json) attendent. Le coin se plante toujours d'un coup. Les transformations n'ont pas encore de geste : ?dieu
+  « Transformer » les applique, et avance l'horloge de leur durée, comme « Finir le travail ».
+- **?dieu « Finir le travail »** termine d'un coup le travail en cours (ou la passe de doloire), comme s'il avait duré son temps :
+  l'horloge avance de ce qui manquait, l'endurance en paie le reste (sans attendre son souffle), le résultat tombe.
+- Rien d'autre : pas de nouveau modèle d'endurance pour l'instant. Ce qui suit (la conception d'avant, la vitesse par paliers) reste la
+  référence pour le jour où l'accélération reviendra.
+
+**Validé par Grégoire** (même jour), avec ces réponses : la lumière qui suit l'heure en deuxième temps (étape 6) ; essoufflé, l'effort
+attend sans message d'épuisement, mais la barre clignote et Xéros souffle (une petite animation) ; x24 par défaut, x6 en repli ; la barre
+horizontale qui s'allonge avec le maximum, la teinte « revient » en torchis ; une durée réaliste fixe par travail, en minutes de jeu,
+dans les données. Et deux corrections : le malus du réveil commence au seuil « fatigué » (15 % du maximum) — la journée type, qui finit
+à 15, ne coûte rien le lendemain : seul le vrai épuisement se paie ; la vraie nuit blanche (aucun sommeil) est décrite plus bas. La
+course (5 de souffle par seconde, sans retour pendant l'effort : environ 20 s, 165 m) est gardée pour l'essai, en données, jugée en jeu.
+Cette section a d'abord été l'étape 1 du chantier (la conception, sans code). Les chiffres viennent de `tools/essai-temps.ts` (un modèle en petit, le
+même qu'on mettra dans stamina.json), l'aperçu est `.art-preview/temps-endurance.png` (la courbe de la journée type ; dessous, la barre
+à trois teintes à 6 h, 7 h 30, 16 h 30, 22 h et au réveil du 3e jour).
+
+**Décidé par Grégoire** : une horloge unique de 24 h ; à x1, une journée dure 24 h réelles ; une vitesse du temps par paliers, réglée
+par le joueur (à essayer : x1, x6, **x24 par défaut** — une journée en une heure —, x60, x360 pour attendre et dormir) ; une échelle de
+temps propre à chaque être (un facteur, 1 par défaut, inutilisé pour l'instant : plus tard, ralentir la perception sera un pouvoir) ;
+l'endurance en trois niveaux (souffle, plafond du jour, maximum), une barre à trois teintes ; pas d'effondrement forcé la nuit : la
+veille se paie au réveil. **Choisi par défaut** (Grégoire peut le contredire) : un travail garde la durée de son geste en jeu, et
+l'horloge avance pendant ce geste de la durée réaliste du travail (abattre un chêne ≈ 1 h de jeu, fendre une bille quelques minutes),
+en données pour chaque action et chaque transformation ; la vitesse revient d'elle-même à x1 quand un combat commence (coup donné ou
+reçu) ou qu'une créature hostile remarque Xéros (aucune n'existe encore ; le lapin à venir fuit).
+
+**Deux vitesses à ne jamais confondre.** La **vitesse du temps** (celle du joueur) ne fait avancer que l'horloge : Xéros marche
+toujours à 5 m/s (100 px/s), les gestes gardent leur durée. La **vitesse de simulation** accélère tout (gestes, marche, animaux) et est
+réservée aux tests et au débogage (`?debug`) : elle fait plusieurs pas de simulation de taille normale par image, comme la physique de
+Phaser quand le jeu rame (pas fixe de 1/60 s, plusieurs par image), et n'agrandit jamais les pas. L'inventaire des franchissements est
+fait (commit « Franchissement », `world/crossing.ts`) ; ce qui n'est pas dans la physique doit suivre cette vitesse sans sauter
+d'étape : vérifié ci-dessous, système par système.
+
+### 1. Ce qui dépend du temps aujourd'hui
+
+| Système | Fichier | Ce qui dépend du temps |
+| --- | --- | --- |
+| Endurance | `entities/Stamina.ts`, `systems/effort.ts`, `content/stamina.json` | une jauge de 100 ; prix ponctuels (coups, nœuds, pivot, dresser) ; prix par seconde jouée : courir 0,2/s, porter au-delà de 25 kg 0,034/kg/s, pousser une bille 0,014/kg/s (`drain(perSec, delta)`) |
+| Sommeil, jours | `state/GameState.ts` (`sleep` : jauge pleine, `day` + 1), dialogue `pallet-sleep`, `WorldScene` (fondu, « Jour n ») | un compteur de jours, sans heure ; dormir ne prend pas de temps |
+| Course | `entities/Player.ts`, `effort.ts` | vitesses en px/s (marche 100, course 165, porter 55) ; la course se paie par seconde |
+| Physique | Phaser Arcade (`main.ts`) | pas fixe de 1/60 s, plusieurs par image quand le jeu rame |
+| Gestes | `entities/ToolUse.ts`, `gestures.json`, `COMBAT_POSES` | cadence des animations (images/s) ou durées par image (combat) ; une image sautée est quand même jouée (ToolUse) |
+| Combat | `systems/combat.ts`, `combat.json` | durées des poses × inertie, fenêtre d'enchaînement (`combo`, ms), arrêt sur image, réactions |
+| Rail de la doloire | `systems/rail.ts` | avance de `speed × delta` (px/ms) ; un coup par geste, au rythme du geste |
+| Bille qui roule | `systems/roll.ts`, `ROLL` | 300 ms de poussée avant de rouler ; vitesse en px/s, avance pixel par pixel |
+| Appuis longs | `systems/longPress.ts`, `turnLog.ts` | E maintenu 500 ms, R maintenu 1 000 ms |
+| Effets | `harvest.ts` (tremblement, chute, éclats), `roofs.ts` (fondu 250 ms), lueurs et fumées (`GameMap`), HUD (messages 1,8 s / 7 s) | durées d'affichage |
+| Transformations | `transforms.json`, `systems/transform.ts` | aucune durée (« Transformer » est instantané ; les gestes réels ont la durée de leurs coups) |
+| Âge du bois | `art/palette.ts` `woodAges`, `world/build.ts` | un réglage (neuf, patiné, vieux), pas une horloge |
+| Animaux | — | aucun |
+| Sauvegarde | `state/save.ts` (`SAVE_VERSION` 17), `systems/autosave.ts` | `savedAt` (date réelle) ; écrite à chaque changement |
+| Tests | `tools/lib/playtest.ts`, `tools/test-*.ts`, `tools/run-scenarios.ts` | 222 pauses fixes (`sleep`, `waitForTimeout`) dans les scénarios ; un garde-fou de 15 min par scénario |
+
+### 2. Horloge ou simulation, système par système
+
+L'**horloge** compte les heures de jeu (elle avance à la vitesse du temps, et du temps de travail pendant un geste) ; la
+**simulation** compte les secondes jouées (elle avance à la vitesse de simulation, x1 en jeu).
+
+| Système | Vit sur | Ce qui change | Ce que voit le joueur |
+| --- | --- | --- | --- |
+| Souffle | simulation | nouveau : il se vide à chaque effort (3 × son prix ; courir 5/s) et revient de 12 points/s, 0,8 s après le dernier effort | la teinte vive de la barre qui baisse et remonte en quelques secondes ; essoufflé, l'effort attend |
+| Plafond du jour | horloge (par les efforts) | c'est la jauge d'aujourd'hui : chaque effort la baisse de son prix d'aujourd'hui (le budget d'une journée ne change pas) | la teinte du milieu qui descend au fil de la journée |
+| Maximum | horloge (la nuit) | nouveau : monte la nuit si la journée a entamé le plafond d'au moins 40 % | la barre qui s'allonge, jour après jour |
+| Sommeil | horloge | dormir avance l'horloge jusqu'au lever (6 h, ou coucher + 8 h) ; le plafond revient selon la fatigue de la veille et le sommeil pris | « Jour n, 6 h » au réveil ; un coucher tardif fait se lever tard |
+| Jour | horloge | `day` devient l'horloge (jour et minute) | l'heure à l'écran |
+| Travaux (récolte, coupe, fendage, équarrissage, tailler, transformer) | les deux | le geste garde sa durée (simulation) ; l'horloge avance de la durée réaliste du travail, en données (`minutes` de chaque récolte, coupe, transformation) | abattre un chêne : quelques secondes de gestes, une heure passe |
+| Marche, course, porter | simulation | rien | rien |
+| Gestes, combat, rail, bille, appuis longs, effets | simulation | ils suivent la vitesse de simulation par pas fixes (voir plus bas) | rien à x1 |
+| Âge du bois | — (plus tard : horloge, en années) | rien pour l'instant | rien |
+| Animaux (le lapin) | simulation pour bouger ; horloge pour leurs heures (sortir à l'aube) | à leur création | — |
+| PNJ (la mère) | horloge, plus tard | routines remises à plus tard | — |
+
+**La simulation suit sans sauter d'étape** : la physique (marche, collisions) fait déjà des pas fixes ; les **gestes** jouent chaque
+image franchie (ToolUse, corrigé au combat) ; le **rail de la doloire** avance de `speed × delta` mais ne déclenche ses coups qu'au rythme
+du geste (aucune étape sautée ; à vitesse de simulation, il faudra le passer en pas fixes pour que Xéros ne dépasse pas la fin de la
+passe d'un coup) ; la **bille qui roule** avance pixel par pixel en vérifiant chaque pixel (déjà sûr) ; les **animaux** se déplaceront
+par la physique (pas fixes) et décideront par pas fixes, jamais par `delta` agrandi. Règle à écrire dans CLAUDE.md : tout ce qui avance
+hors de la physique avance par pas fixes de la simulation (une boucle `while (acc >= step)`), jamais d'un `delta` multiplié.
+
+### 3. L'endurance chiffrée
+
+Le modèle proposé (à mettre dans stamina.json, à la place de `max`, `tired`, `tiredWalk`) :
+
+```json
+{
+  "max": {"start": 100, "cap": 200, "gain": 2, "trainFrom": 0.4},
+  "breath": {"regenPerSec": 12, "regenDelayMs": 800, "perCost": 3, "perSec": {"run": 5, "carryPerKg": 0.1, "pushPerKg": 0.05}},
+  "tired": 0.15, "tiredWalk": 0.85,
+  "sleep": {"hours": 8, "exhaustedPenalty": 0.4, "missingHourPenalty": 5, "nightFrom": 22, "nightAwakePerHour": 0.5},
+  "costs": {"…": "les prix d'aujourd'hui, en points du plafond"}
+}
+```
+
+- Un effort coûte son prix au plafond (comme aujourd'hui) et 3 fois son prix au souffle ; le souffle ne dépasse jamais le plafond.
+- Épuisé (plafond à 0) : comme aujourd'hui, les efforts sont refusés. Essoufflé (souffle à 0) : l'effort attend que le souffle revienne
+  (quelques secondes), sans message d'épuisement.
+- Au réveil : plafond = maximum − 0,4 × (ce qui manquait sous 15 % du maximum au coucher, le seuil « fatigué ») − 5 par heure de
+  sommeil manquante sous 8 h. Se coucher fatigué ne coûte rien ; seul le vrai épuisement se paie.
+- Le maximum monte la nuit de 2 × (1 − maximum / 200) si la journée a entamé le plafond d'au moins 40 % du maximum.
+
+Journée type (maximum 100) :
+
+| Heure | Ce que fait Xéros | Plafond | Souffle au plus bas |
+| --- | --- | --- | --- |
+| 6 h | réveil | 100 | 100 |
+| 7 h | puiser l'eau, bois du feu | 97 | 82,5 |
+| 8 h | abattre un arbre normal, l'ébrancher | 82 | 20,5 |
+| 10 h | couper en billes, porter | 72 | 39,6 |
+| 12 h | équarrir une poutre de 3 m | 60 | 24 |
+| 13 h | repas | 60 | 60 |
+| 15 h | fendre deux billes | 52 | 18,2 |
+| 16 h | mettre en tas | 46 | 27,6 |
+| 17 h | course (20 min), mannequin (30 coups d'épée) | 17 | 1,7 |
+| 21 h | soirée, petits travaux | 15 | 13,5 |
+| 22 h | coucher | 15 | 15 |
+
+Fatigué vers 21 h (sous 15) : la course s'arrête, la marche ralentit — la journée invite à se coucher.
+
+Trois jours d'entraînement (la même journée, coucher 22 h, lever 6 h) :
+
+| Jour | Maximum au réveil | Plafond au réveil | Plafond au coucher | Maximum le lendemain |
+| --- | --- | --- | --- | --- |
+| 1 | 100 | 100 | 15 | 101 |
+| 2 | 101 | 101 | 16 | 102 |
+| 3 | 102 | 102 | 17 | 103 |
+
+Une semaine pareille mène vers 107, un mois vers 130 (le gain diminue en approchant de 200). Se coucher fatigué ne coûte rien ; se
+coucher épuisé (plafond à 0) coûte 6 points le lendemain.
+
+**Coucher à l'aube** : couché à 6 h au lieu de 22 h, le plafond de 15 descend à 11 en veillant (0,5 par heure de veille de nuit) ;
+levé à 14 h (8 h de sommeil), plafond 98,4 au lieu de 100, et la demi-journée est perdue. **Nuit courte** (coucher 2 h, lever 6 h :
+4 h de sommeil) : plafond 80 au réveil (81 si la journée a entraîné : le maximum est monté de 1 ; de même, 99,4 pour le coucher à
+l'aube). **La vraie nuit blanche** (aucun sommeil, Xéros continue le lendemain) : à 6 h, le plafond est
+à 11 (15 usé par 8 h de veille) et le souffle ne dépasse jamais ce plafond ; il est fatigué (sous 15 % du maximum) : pas de course, la
+marche à 85 % ; il lui reste 11 points de travail avant l'épuisement (à peu près une heure d'abattage), puis plus rien de ce qui coûte
+jusqu'au sommeil ; il marche, parle, prend ce qui est léger ; le maximum ne monte pas (il faut une nuit). La nuit suivante, le malus de
+l'épuisement s'ajoute à celui des heures manquantes.
+
+### 4. Le jour et la nuit (à trancher)
+
+- **Tout de suite, proposé** : l'horloge et son affichage ; le sommeil qui avance l'horloge ; le lever et le malus de veille ; la vitesse
+  du temps par paliers. **La lumière qui suit l'heure** (une teinte du monde par heure : aube, jour, crépuscule, nuit, les feux et les
+  lanternes qui comptent la nuit) : proposée en deuxième temps, une fois l'horloge jouée, parce qu'elle touche tout l'affichage (la
+  pénombre des intérieurs et du sous-bois, `gloom`, les lueurs).
+- **Plus tard** : les routines des PNJ (la mère à l'atelier le matin, à la ferme du riche l'après-midi), les heures des animaux, les
+  boutiques du village et leurs horaires, la météo, les saisons (le compteur de jours y mène).
+
+### 5. Les tests
+
+- **Vitesse de simulation dans `tools/lib/playtest.ts`** : x10 par défaut (`?simu=10`, lu par `main.ts` seulement avec `?debug` ou
+  en test) ; une fonction `capture()` la remet à x1 (ou met la simulation en pause) le temps d'une capture d'écran, pour que l'image soit
+  celle du jeu.
+- **Un scénario à x1 avant chaque fusion** (`SCENARIOS_X1`, par défaut `monde` : le plus long en marche réelle et le plus sensible aux
+  défauts de vitesse réelle), dans `test:scenarios:bg`.
+- **Les pauses fixes à remplacer par des attentes d'état** : 222 dans les scénarios (fendage 28, construction 25, équarrissage 23,
+  cabane 20, intérieurs 19, combat 19, tas 18, étal 15, poteaux 14, implantation 14, grange 12, monde 9, briques 5). Les remplacer par
+  des attentes sur l'état du jeu (le mode, le geste fini, la carte, un objet né), comme pour monde, intérieurs et combat : elles
+  suivent la simulation accélérée ; une pause fixe, elle, dure toujours autant et annule le gain.
+- **La copie figée régénère ses fichiers** (`tools/scenarios-bg.ts`) : aujourd'hui elle recopie `src/generated/` du dossier de travail
+  s'il manque, ce qui a caché à la fusion du combat qu'un dossier neuf ne savait plus produire ses fichiers. Proposé : effacer
+  `src/generated/` de la copie et le régénérer (`npm run maps`, `npm run art`, l'ordre dont un dossier neuf a besoin), si bien que la
+  suite vérifie aussi qu'un dossier neuf se construit.
+- **Le gain estimé** : la suite fait 350 s (4 à la fois) ; la marche et les gestes représentent à peu près les deux tiers du temps de
+  chaque scénario, le reste est le démarrage et les pauses. À x10, avec les pauses remplacées : **environ 2 min** (le démarrage des
+  navigateurs et des serveurs reste) ; sans remplacer les pauses, à peine 30 % de gain.
+
+### 6. L'heure, la vitesse, la touche
+
+- **L'heure** s'affiche en haut à droite de l'écran, petite, dans le style des chiffres du HUD (`ui-digit-*`) : « Jour 3 · 14:20 », et
+  la vitesse à côté quand elle n'est pas celle par défaut (« x60 »). Le HUD des mains et la barre d'endurance restent en bas.
+- **La touche** : **V** (« vitesse »), à la même place en AZERTY et en QWERTY, libre aujourd'hui (docs/COMMANDES.md : ni le jeu ni la
+  construction ne l'utilisent), lue par sa place : V passe au palier suivant, Maj + V au précédent ; un message court dit le palier
+  (« Le temps : x60 »). Refusée pendant un combat ou si une créature hostile le voit (la vitesse revient à x1).
+- **Dormir** passe par la paillasse (« Dormir ? ») : le sommeil se joue à x360 (quelques secondes de fondu), comme aujourd'hui.
+
+### 7. La sauvegarde et le découpage
+
+- **Sauvegarde** : `SAVE_VERSION` 18 ; `day` devient `clock` (`{ day, minute }`), `stamina` devient `{ breath, ceiling, max }` ;
+  `timeSpeed` (le palier) est gardé hors de la partie (`localStorage`, comme le zoom). Une partie de la version 17 est convertie à la
+  lecture : `clock = { day, minute: 6 × 60 }`, `ceiling = stamina`, `breath = stamina`, `max = 100`.
+- **Le découpage**, chaque étape testable et commitée seule :
+  1. *L'horloge* : `clock` dans GameState, `systems/clock.ts` (avance à la vitesse du temps), l'affichage de l'heure, la touche V et les
+     paliers, la conversion de sauvegarde ; test : l'heure avance au bon rythme à chaque palier.
+  2. *La durée des travaux* : `minutes` dans les récoltes, coupes, fendages, transformations ; l'horloge avance pendant le geste ;
+     test : abattre un arbre normal avance l'horloge de sa durée.
+  3. *L'endurance en trois niveaux* : souffle, plafond, maximum ; la barre à trois teintes (le pixel-artist) ; test : la journée type
+     simulée (`essai-temps.ts`) donne les mêmes chiffres en jeu.
+  4. *Le sommeil et la veille* : le lever, le malus, le maximum qui monte ; test : nuit blanche, nuit courte, trois jours d'entraînement.
+  5. *La vitesse de simulation* (`?debug`, playtest x10) et le remplacement des pauses fixes, scénario par scénario ; la copie figée
+     qui régénère ; test : la suite plus courte, un scénario à x1.
+  6. *La lumière qui suit l'heure* (si Grégoire la veut tout de suite).
+
+## Le travail (décidé le 1er novembre 2026, chantier « temps » ; validé par Grégoire avec trois réponses : la loi du volume, deux points de calage, la cognée à 1,8 kg)
+
+**Pourquoi.** Joué à x1, un travail de durée fixe ne va pas : Xéros tape une fois par seconde et rien ne change jusqu'au résultat,
+« on dirait que c'est statistique » (Grégoire). **La durée doit découler des coups, pas l'inverse.** Un travail est une quantité de
+matière à enlever ou à vaincre ; chaque coup en enlève une part, selon l'énergie du coup, le tranchant, la dureté du bois et la
+précision ; chaque coup coûte du souffle et du plafond ; à bout de souffle, Xéros s'arrête et souffle, puis reprend. La durée totale,
+ce sont les coups et les pauses, elle se calcule toute seule : quand Xéros deviendra plus fort, il abattra plus vite sans qu'on touche
+aux données. Les `minutes` actuelles deviennent une **cible de calibrage**, plus une durée imposée. Les chiffres ci-dessous viennent de
+`tools/essai-travail.ts` (le modèle en petit, qui importe la physique du combat) ; l'essai visuel est `.art-preview/essai-abattage.png`
+et `.art-preview/essai-abattage.html` (le geste à vitesse réelle).
+
+### 1. Ce que dit le réel
+
+- **Rythme de frappe soutenable** : le Compendium of Physical Activities (code « chopping wood », hache de 1,25 kg) donne 19 coups par
+  minute à effort modéré (5 MET), 35 à effort vigoureux (8 MET), 51 à effort extrême (17,5 MET). Un rythme tenu longtemps est donc
+  entre 20 et 35 coups par minute, 1,7 à 3 s par coup, déplacements compris.
+- **Abattre à la hache** : le guide de la hache du Service des forêts américain (USDA, *An Ax to Grind*) place l'entaille de direction
+  entre le tiers et la moitié du diamètre. Aucune mesure sérieuse du nombre de coups pour un arbre donné n'a été trouvée ; les
+  repères : en compétition, un bloc debout de 25 cm d'un bois tendre tombe en 26 s (record féminin Stihl Timbersports) et un bloc de
+  pin blanc de 35,5 cm en 22 s (Guinness), avec des haches de course affûtées comme des rasoirs ; un débutant parle d'« une bonne
+  heure » pour un arbre moyen. Estimation retenue, en volume de bois (qui croît comme le cube du diamètre) : **30 cm, environ 10 min
+  pour un bûcheron entraîné, 15 pour un adulte, 25 pour un adolescent ; 55 cm, cinq à six fois plus** (1 à 2 h 30).
+- **Équarrir** : *Mortise & Tenon Magazine* mesure 1,19 m² de face équarrie par personne et par heure, à un rythme posé (un poteau
+  de 8 × 8 pouces sur 12 pieds en 3 h) ; des praticiens disent 15 à 30 min par pied de poutre (20 à 30 min en moyenne). Notre poutre
+  de 3 m, 20 × 20 (2,4 m² de faces) : **environ 2 h pour un adulte posé**.
+- **Fendre** : rien de mesuré ; des forums parlent d'une bille de chêne de 1 m de diamètre réduite en bûches en un quart d'heure, et
+  d'une grosse bille ouverte en quelques coups de masse lourde. Estimation : **une bille de 55 cm sur 1 m ouverte en deux en 15 à 40
+  coups, une à deux minutes**.
+- **Masse des outils** : la hache d'abattage américaine de Gränsfors Bruk, tête de 1,4 kg (3 lb), manche de 79 cm, 1,6 kg en tout ; sa
+  grande hache à fendre, 2,4 kg, 70 cm ; la hache de forêt scandinave, tête de 0,9 kg, 65 cm. La masse de bûcheron courante pèse 3 à
+  5 kg ; la doloire, 2 à 3,5 kg (modèles courants, pas de source unique trouvée). **Nos outils** : cognée 1,8 kg (une hache de ferme ;
+  décidé : le geste lourd vient de l'animation, pas d'une masse fausse), hachette 1 kg, masse 4 kg, doloire 3 kg (items.json).
+- **Marche et course** : la marche d'un adulte est d'environ 1,3 à 1,4 m/s (méta-analyse de Bohannon et Andrews, 2011) ; on passe à la
+  course vers 2 m/s ; un petit trot (jogging) va de 2,5 à 3,1 m/s ; en portant, la vitesse la plus économe reste vers 1,3 m/s jusqu'au
+  quart du poids du corps (Bastien et coll., 2005), plus lente au-delà (1 à 1,1 m/s).
+
+Sources : [Compendium of Physical Activities](https://pacompendium.com/occupation/) ;
+[USDA, An Ax to Grind](https://www.fs.usda.gov/t-d/pubs/htmlpubs/htm99232823/page04.htm) ;
+[Guinness, standing block chop](https://www.guinnessworldrecords.com/world-records/67841-fastest-wood-cutting-standing-block-chop) ;
+[Stihl Timbersports, record féminin](https://930kmpt.com/ixp/990/p/lauren-the-lumberjill-champ/) ;
+[Mortise & Tenon, The Efficiency of Hewing](https://mortiseandtenonmag.com/blogs/blog/the-efficiency-of-hewing) ;
+[Permies, Hand hewing beams](https://permies.com/t/58723/Hand-hewing-beams) ;
+[Press Herald, un équarrisseur professionnel](https://www.pressherald.com/?p=7385688) ;
+[Gränsfors Bruk, American Felling Axe](https://www.oldausable.com/american-felling-axe) ;
+[Gränsfors Bruk, Large Splitting Axe](https://www.knivesandtools.com/en/pt/-gransfors-bruk-large-splitting-axe-442-XX-51350.htm) ;
+[Bohannon et Andrews, Normal walking speed](https://pubmed.ncbi.nlm.nih.gov/21820535/) ;
+[Bastien et coll., marche chargée](https://springerlink.bibliotecabuap.elogim.com/content/pdf/10.1007/s00421-004-1286-z.pdf) ;
+[Hearth.com, fendre de gros chênes](https://hearth.com/talk/threads/help-with-splitting-big-oak-logs.33104).
+Ces chiffres sont des ordres de grandeur : la plupart viennent de praticiens, pas de mesures ; le jeu se calibre ensuite à l'œil.
+
+### 2. Le modèle
+
+**Un coup** (la même physique que le combat, `world/strike.ts`) :
+- L'outil a une **inertie** autour des mains, I = masse qui frappe × L² (`inertia` : la masse × ⅔ × l'équilibre, L la longueur devant
+  les mains).
+- Le corps applique un **couple** τ (la force de Xéros) sur l'**angle de frappe** θ du geste : l'outil arrive à la vitesse angulaire
+  ω = min(√(2 τ θ / I), ω_max), où ω_max est la vitesse du bras ; **son énergie** E = ½ I ω². Un outil lourd prend toute la force (E =
+  τ θ) mais part lentement ; un outil léger plafonne à la vitesse du bras (la hachette ne frappe jamais fort).
+- **Sa durée** : cinq temps. *Armer*, *temps en haut* et *dégager* s'allongent avec I / τ (une cognée se lève lourdement, un homme fort
+  la lève plus vite) ; *abattre* = 2 θ / ω (l'outil accélère) ; *impact*, fixe.
+- **Sa précision** p : celle de l'arme (`precision` : 1 / (1 + I / contrôle)), le contrôle grandissant avec la force, × l'**adresse**.
+
+**Ce qu'enlève un coup** : E × qualité × tranchant / (résistance de la matière × dureté du bois), où qualité = 1 − `aim` × (1 − p) :
+`aim` dit combien la précision compte pour cet outil. La résistance : l'énergie pour enlever 1 cm³ en travers du fil (`cut`, 10,8 J/cm³,
+calé pour que Xéros abatte l'arbre normal en 25 min), 1 cm³ le long d'une face marquée (`hew`, 4,3 J/cm³ : le bois se lève par
+éclats ; calé sur l'équarrisseur professionnel), 1 m² de fente au coin (`split`, 2 200 J/m², frottement du coin compris).
+
+**La matière de chaque travail** (calculée de ses dimensions, en données) :
+- abattre : deux encoches en V (l'entaille de direction, 0,4 D de profondeur ; le trait d'abattage, 0,5 D), ≈ 0,18 D³ (30 cm :
+  5 000 cm³ ; 55 cm : 30 700 cm³) ;
+- ébrancher : chaque branche tranchée en V, ≈ 0,6 d³ par branche (nombre et diamètre des branches dans props.json) ;
+- couper une pièce couchée : deux V d'une demi-épaisseur, un de chaque côté, ≈ 0,21 D³ ;
+- fendre : la surface de la fente (diamètre × longueur) ;
+- équarrir : le cercle moins le carré de la poutre, sur la longueur (passe par passe : chaque face, un quart) ;
+- tailler un piquet : le cylindre moins le cône de la pointe.
+
+**L'endurance d'un coup** : le plafond perd E × `ceilingPerJ`, le souffle E × `breathPerJ` (un coup de cognée de Xéros : 0,013 point
+du plafond, 2,9 de souffle). Pendant un travail le souffle ne revient pas (chaque coup est un effort) ; vide, Xéros s'arrête et souffle
+(l'animation existe) jusqu'à `resume` (90 %) de son plafond, puis reprend tout seul : une pause d'environ 8 s toutes les 30 coups pour
+Xéros. Le prix de la journée type reste le même ordre (abattre et ébrancher l'arbre normal : 14,8 points ; la conception du temps en
+comptait 15).
+
+### 3. Chaque outil, ce qui compte
+
+| Outil | Ce qui compte | Pourquoi | `aim` |
+| --- | --- | --- | --- |
+| **cognée** (abattre, ébrancher, couper) | la force | lourde du bout : toute l'énergie du corps ; un coup un peu à côté de l'entaille enlève encore beaucoup | 0,3 |
+| **masse** (sur le coin) | la force | elle ne coupe pas : elle enfonce le coin (tranchant 0,5) ; le coin est là, viser compte peu | 0,2 |
+| **hachette** (tailler, ébrancher les petites branches) | entre les deux | légère : la vitesse du bras la limite, la force compte peu ; elle se place bien | 0,5 |
+| **doloire** (équarrir) | la précision | un coup court, peu de force ; un coup imprécis enlève peu, et plus tard laissera une face moins nette | 0,8 |
+
+### 4. Les paramètres, en données
+
+- **strength.json**, `swing` : la force de Xéros pour un geste, `torque` (N·m, 50 aujourd'hui), `omegaMax` (rad/s, 25), `skill` (0,8).
+  Un Xéros plus fort = un `torque` plus grand ; rien d'autre ne change (?dieu « force » multiplie le couple).
+- **items.json**, `work` de chaque outil (comme `weapon`) : `length`, `grip`, `balance` (l'inertie, comme une arme), `edge`, `aim` ; la
+  masse est déjà `mass`.
+- **work.json** (fait ainsi à l'implémentation, plutôt que dans gestures.json et wood.json) : `strokes`, chaque coup (`use`, `chop`,
+  `maul`, `hew`, `whittle`) avec le geste du corps qui le joue, son `angle` (rad) et ses temps hors frappe (`arm`, `armK`, `hold`,
+  `holdK`, `impact`, `free`, `freeK`) ; `matter`, la résistance (`cut` 10,8 J/cm³, `hew` 4,3 J/cm³, `split` 2 200 J/m²) ; `references`,
+  l'adulte et le bûcheron fort ; `calibration`, les deux points de calage, tenus à 10 % près (validate.ts). La dureté viendra par
+  essence (une seule aujourd'hui).
+- **gestures.json**, `phases` : le temps de chaque image d'un geste de travail (armer, en haut, abattre, impact, dégager) ; les durées
+  des images en découlent (`frameMs` de world/swing.ts).
+- **props.json**, `harvest.work` : la matière du travail (`fell` : le diamètre ; `limbs` : le nombre et le diamètre des branches ;
+  `whittle` : la pointe), et ses étapes visibles. Les `minutes` des récoltes et du bois disparaissent : **deux points de calage
+  seulement** (décidé par Grégoire), l'arbre normal à la cognée en 25 min pour Xéros et la poutre de 3 m en 2 h pour le bûcheron fort
+  (work.json, `calibration`) ; toutes les autres durées sont calculées, affichées par `npm run check`, jamais imposées.
+- **stamina.json**, `work` : `ceilingPerJ`, `breathPerJ`, `resume`.
+- **validate.ts** calcule, pour Xéros d'aujourd'hui, la durée de chaque travail et l'affiche à côté de sa cible (`npm run check`), sans
+  refuser : c'est un tableau de bord du calibrage.
+
+### 4 bis. La force reste humaine (décidé par Grégoire après l'essai)
+
+La force réglée dans ?dieu (« force ») multiplie le couple de Xéros, **jusqu'au plafond d'un humain** : `humanMax` de strength.json
+(130 N·m, un homme très fort, ×2,6 la force de Xéros). Au-delà, plus rien ne change. **La force surhumaine qui lève ce plafond viendra
+plus tard, avec les superpouvoirs.** Les chiffres, pour l'arbre normal à la cognée (le couple multiplié, sans le plafond, pour garder la
+mesure ; le maximum d'endurance pris à 100 pour tous) :
+
+| Force | Couple (N·m) | Énergie du coup (J) | Vitesse angulaire (rad/s) | Durée d'un coup (s) | Coups | Pauses | Durée totale |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ×1 (Xéros) | 50 | 90 | 14,6 | 1,64 | 784 | 25 | 24 min 54 |
+| ×1,5 (l'adulte) | 75 | 135 | 17,9 | 1,40 | 509 | 25 | 15 min 18 |
+| ×2,2 (le bûcheron fort) | 110 | 198 | 21,7 | 1,23 | 338 | 24 | 10 min 18 |
+| **×2,6 (le plafond humain)** | **130** | **234** | **23,6** | **1,18** | **283** | **23** | **8 min 42** |
+| ×3 (au-delà : refusé) | 150 | 264 | 25,0 (le bras) | 1,14 | 248 | 24 | 8 min 00 |
+| ×5 (refusé) | 250 | 264 | 25,0 | 1,06 | 240 | 23 | 7 min 24 |
+| ×10 (refusé) | 500 | 264 | 25,0 | 0,99 | 230 | 22 | 6 min 54 |
+
+Dès ×2,9, la vitesse du bras plafonne l'énergie (264 J) : seule la levée de l'outil raccourcit encore. Le plafond humain s'arrête un peu
+avant.
+
+### 5. Le tableau
+
+Pour trois forces : Xéros aujourd'hui (couple 50 N·m, adresse 0,8, maximum 100), un adulte (75, 0,9, 140), un bûcheron fort (110,
+1, 180). « Pauses » : les arrêts pour souffler, et la durée d'un arrêt. La cible : les `minutes` d'aujourd'hui.
+
+#### Un coup, par outil et par force
+
+| Outil (coup) | Force | Inertie (kg·m²) | Vitesse du tranchant (m/s) | Énergie (J) | Précision | Armer · haut · abattre · impact · dégager (ms) | Durée du coup (s) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| hache (use) | Xéros (aujourd’hui) | 0,84 | 11,0 | 90 | 0,21 | 553 · 221 · 246 · 120 · 503 | 1,64 |
+| hache (use) | un adulte | 0,84 | 13,4 | 135 | 0,31 | 469 · 188 · 201 · 120 · 419 | 1,40 |
+| hache (use) | un bûcheron fort | 0,84 | 16,2 | 198 | 0,44 | 415 · 166 · 166 · 120 · 365 | 1,23 |
+| hachette (use) | Xéros (aujourd’hui) | 0,12 | 9,5 | 38 | 0,57 | 336 · 134 · 144 · 120 · 286 | 1,02 |
+| hachette (use) | un adulte | 0,12 | 10,3 | 44 | 0,71 | 324 · 130 · 133 · 120 · 274 | 0,98 |
+| hachette (use) | un bûcheron fort | 0,12 | 11,4 | 54 | 0,85 | 316 · 127 · 120 · 120 · 266 | 0,95 |
+| masse de bûcheron (maul) | Xéros (aujourd’hui) | 2,30 | 7,5 | 100 | 0,09 | 1041 · 426 · 429 · 150 · 991 | 3,04 |
+| masse de bûcheron (maul) | un adulte | 2,30 | 9,1 | 150 | 0,15 | 811 · 334 · 351 · 150 · 761 | 2,41 |
+| masse de bûcheron (maul) | un bûcheron fort | 2,30 | 11,1 | 220 | 0,22 | 664 · 276 · 289 · 150 · 614 | 1,99 |
+| doloire (hew) | Xéros (aujourd’hui) | 0,65 | 5,9 | 45 | 0,25 | 395 · 115 · 153 · 100 · 345 | 1,11 |
+| doloire (hew) | un adulte | 0,65 | 7,2 | 67 | 0,37 | 330 · 93 · 125 · 100 · 280 | 0,93 |
+| doloire (hew) | un bûcheron fort | 0,65 | 8,7 | 99 | 0,50 | 289 · 80 · 103 · 100 · 239 | 0,81 |
+
+#### Chaque travail, pour trois forces
+
+| Travail | Outil | Force | Coups | Durée d’un coup (s) | Pauses (durée) | Durée totale | Plafond dépensé | Cible (min) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| abattre un arbre normal (30 cm) | hache | Xéros (aujourd’hui) | 784 | 1,64 | 25 (8 s) | 24 min 56 | 9,9 | 25 pour Xéros (calage) |
+| abattre un arbre normal (30 cm) | hache | un adulte | 502 | 1,40 | 17 (11 s) | 14 min 53 | 9,5 | 25 pour Xéros (calage) |
+| abattre un arbre normal (30 cm) | hache | un bûcheron fort | 327 | 1,23 | 12 (14 s) | 9 min 35 | 9,1 | 25 pour Xéros (calage) |
+| abattre un arbre normal (30 cm) | hachette | Xéros (aujourd’hui) | 1822 | 1,02 | 24 (8 s) | 34 min 19 | 9,6 | — |
+| abattre un arbre normal (30 cm) | hachette | un adulte | 1435 | 0,98 | 16 (11 s) | 26 min 29 | 8,8 | — |
+| abattre un arbre normal (30 cm) | hachette | un bûcheron fort | 1077 | 0,95 | 11 (14 s) | 19 min 40 | 8,2 | — |
+| abattre le gros arbre (55 cm) | hache | Xéros (aujourd’hui) | 4829 | 1,64 | 155 (8 s) | 2 h 34 | 60,8 | — |
+| abattre le gros arbre (55 cm) | hache | un adulte | 3094 | 1,40 | 106 (11 s) | 1 h 32 | 58,5 | — |
+| abattre le gros arbre (55 cm) | hache | un bûcheron fort | 2014 | 1,23 | 80 (14 s) | 1 h 00 | 55,8 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hache | Xéros (aujourd’hui) | 368 | 1,68 | 12 (8 s) | 11 min 58 | 4,9 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hache | un adulte | 236 | 1,43 | 8 (11 s) | 7 min 08 | 4,7 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hache | un bûcheron fort | 154 | 1,27 | 6 (14 s) | 4 min 41 | 4,5 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hachette | Xéros (aujourd’hui) | 903 | 1,06 | 12 (8 s) | 17 min 36 | 4,8 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hachette | un adulte | 712 | 1,02 | 7 (11 s) | 13 min 24 | 4,4 | — |
+| ébrancher l’arbre normal (12 branches de 7 cm) | hachette | un bûcheron fort | 534 | 0,99 | 5 (14 s) | 9 min 58 | 4,0 | — |
+| ébrancher le gros arbre (16 branches de 10 cm) | hache | Xéros (aujourd’hui) | 1431 | 1,68 | 49 (8 s) | 46 min 52 | 19,0 | — |
+| ébrancher le gros arbre (16 branches de 10 cm) | hache | un adulte | 917 | 1,43 | 33 (11 s) | 28 min 06 | 18,3 | — |
+| ébrancher le gros arbre (16 branches de 10 cm) | hache | un bûcheron fort | 597 | 1,27 | 24 (14 s) | 18 min 20 | 17,5 | — |
+| couper un rondin de 30 cm | hache | Xéros (aujourd’hui) | 855 | 1,68 | 29 (8 s) | 27 min 58 | 11,4 | — |
+| couper un rondin de 30 cm | hache | un adulte | 548 | 1,43 | 20 (11 s) | 16 min 51 | 10,9 | — |
+| couper un rondin de 30 cm | hache | un bûcheron fort | 357 | 1,27 | 14 (14 s) | 10 min 52 | 10,4 | — |
+| couper une bille de 55 cm | hache | Xéros (aujourd’hui) | 5269 | 1,68 | 181 (8 s) | 2 h 53 | 70,1 | — |
+| couper une bille de 55 cm | hache | un adulte | 3376 | 1,43 | 124 (11 s) | 1 h 44 | 67,4 | — |
+| couper une bille de 55 cm | hache | un bûcheron fort | 2197 | 1,27 | 91 (14 s) | 1 h 08 | 64,3 | — |
+| fendre une bille de 55 cm × 1 m | masse de bûcheron | Xéros (aujourd’hui) | 30 | 3,04 | 0 (8 s) | 1 min 31 | 0,4 | — |
+| fendre une bille de 55 cm × 1 m | masse de bûcheron | un adulte | 20 | 2,41 | 0 (11 s) | 48 s | 0,4 | — |
+| fendre une bille de 55 cm × 1 m | masse de bûcheron | un bûcheron fort | 14 | 1,99 | 0 (14 s) | 28 s | 0,4 | — |
+| équarrir une poutre de 3 m (rondin de 30 cm → 20 × 20) | doloire | Xéros (aujourd’hui) | 21877 | 1,11 | 352 (8 s) | 7 h 33 | 137,8 | 120 pour le bûcheron fort (calage) |
+| équarrir une poutre de 3 m (rondin de 30 cm → 20 × 20) | doloire | un adulte | 11859 | 0,93 | 204 (11 s) | 3 h 42 | 112,1 | 120 pour le bûcheron fort (calage) |
+| équarrir une poutre de 3 m (rondin de 30 cm → 20 × 20) | doloire | un bûcheron fort | 6631 | 0,81 | 129 (14 s) | 2 h 00 | 91,9 | 120 pour le bûcheron fort (calage) |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hachette | Xéros (aujourd’hui) | 58 | 0,59 | 0 (8 s) | 34 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hachette | un adulte | 46 | 0,56 | 0 (11 s) | 26 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hachette | un bûcheron fort | 34 | 0,53 | 0 (14 s) | 18 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hache | Xéros (aujourd’hui) | 24 | 1,68 | 0 (8 s) | 40 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hache | un adulte | 15 | 1,43 | 0 (11 s) | 21 s | 0,3 | — |
+| tailler un piquet (branche de 5 cm, pointe de 12 cm) | hache | un bûcheron fort | 10 | 1,27 | 0 (14 s) | 13 s | 0,3 | — |
+
+Points de calage (work.json) : abattre l'arbre normal à la cognée, Xéros, 25 min ; équarrir une poutre de 3 m, le bûcheron fort (1,19 m² de face par heure), 120 min.
+
+Ce qu'on lit : l'arbre normal tombe en 25 min pour Xéros (le calage), 15 pour un adulte, 10 pour un bûcheron fort ; à la hachette, deux
+fois plus de coups, plus rapides : un peu plus long. Le gros arbre, 2 h 30 pour Xéros : le volume croît comme le cube du diamètre
+(décidé : on garde la loi du volume ; **la scie passe-partout viendra plus tard, l'outil des gros bois**). Couper une bille de 55 cm à la
+cognée, près de 3 h. Fendre est rapide (1 min 30) ; tailler un piquet, une demi-minute. L'équarrissage, calé sur le professionnel
+mesuré (1,19 m² de face par heure : 2 h pour le bûcheron fort), demande 3 h 40 à un adulte et 7 h 30 à Xéros, plus que son plafond
+d'une journée (138 points) : une poutre de 3 m lui prend deux jours.
+
+### 6. Ce qu'on voit avancer
+
+Les étapes se déclenchent à une part de la matière enlevée, en données (`stages` de `harvest`), chacune un dessin (pixel-artist) :
+- **abattre** : l'entaille de direction en trois étapes (un tiers, deux tiers, finie : 0 à 45 % de la matière), le trait d'abattage
+  d'en face (45 à 90 %), le **craquement** (90 % : la charnière, des éclats, un bruit), l'arbre qui **penche** (95 % : deux images, de
+  plus en plus), puis la chute (100 %). Les copeaux s'accumulent au pied d'étape en étape.
+- **ébrancher** : les branches tombent une à une (une par part de la matière, le houppier s'allège à chaque branche).
+- **couper une pièce couchée** : l'encoche se creuse en trois étapes (l'encoche d'aujourd'hui), la pièce s'ouvre au bout.
+- **fendre** : le coin s'enfonce, la fente court en trois étapes par mètre (ce qu'on voit aujourd'hui), puis la pièce s'ouvre.
+- **équarrir** : la face qui avance sous le fer (aujourd'hui) ; plus tard, sa netteté selon la précision des coups.
+- **tailler** : la pointe qui s'affine (deux étapes).
+
+### 7. Les commandes
+
+**Corrigé par Grégoire après l'essai** : un seul appui sur Espace lance tout le travail, comme la doloire : Xéros se place, choisit son
+côté, un appui, puis il travaille seul jusqu'au résultat, avec ses pauses de souffle. Bouger ou Échap arrête (le coup en cours
+s'achève) ; ce qui est fait reste fait (la matière enlevée, gardée par objet dans GameState). La
+jauge au-dessus de Xéros montre la part enlevée. ?dieu « Finir le travail » reste : il fait tous les coups d'un coup (horloge,
+endurance, pauses comprises).
+
+### 8. La marche et la course
+
+Aujourd'hui Xéros marche à 5 m/s (100 px/s à 5 cm par pixel) et court à 8,25 m/s (165 px/s) : trois à quatre fois le réel (marche
+1,3 à 1,4 m/s, petit trot 2,5 à 3,1, en portant lourd 1 à 1,1). Proposé : un réglage dans le panneau ?dieu, « Vitesses » : marche,
+course, marche chargée (en m/s, converties en px/s), appliquées tout de suite et gardées dans le navigateur (comme le zoom), sans
+toucher aux valeurs par défaut ; Grégoire calibre en jeu, puis on écrit ses valeurs dans config.ts (`PLAYER`).
+
+### 9. Le découpage
+
+1. **La physique du coup** : `world/swing.ts` (sans Phaser), qui reprend `inertia` et `precision` de `world/strike.ts` ; les champs de
+   strength.json, items.json, gestures.json ; test rapide : le tableau « Un coup » ci-dessus, retrouvé.
+2. **La matière** : les champs de wood.json, props.json, stamina.json ; `minutes` devient `target` ; validate.ts affiche la durée
+   calculée contre la cible ; test rapide : le tableau « Chaque travail », retrouvé.
+3. **Le geste lourd** : les cinq temps du coup de cognée (`use`, `chop`) et de la masse (`maul`), dessinés par le pixel-artist d'après
+   l'essai validé, leurs durées tirées de `swing` ; test : la durée d'un coup en jeu égale celle du modèle.
+4. **Les commandes et le travail par coups** : `systems/work.ts` refait (Espace un coup, maintenu enchaîne, relâcher ou bouger arrête,
+   pauses de souffle automatiques), la part enlevée gardée ; scénario : un arbre abattu coup par coup, interrompu, repris après
+   rechargement.
+5. **Les étapes visibles** : l'entaille, le craquement, l'arbre qui penche, les branches qui tombent, la pointe ; dessins par le
+   pixel-artist ; aperçu et scénario.
+6. **Les vitesses dans ?dieu** : le réglage, gardé dans le navigateur ; test.
+
+**La sauvegarde** : `work` de chaque carte garde aujourd'hui des minutes faites ; il gardera la **part de matière enlevée** (de 0 à 1,
+`{ work, done }`) : SAVE_VERSION 22, et une partie d'avant convertit ses minutes en part (minutes / la cible). Les étapes se déduisent
+de la part (rien d'autre à garder) ; les encoches et les coins plantés restent dans les réglages de la pièce de bois.
+
 ## Le combat (décidé le 1er novembre 2026, chantier « combat de base »)
 
 Une base juste, pas complète : deux armes (la branche, l'[épée de bois](objets/wooden-sword.md)), une cible qui encaisse (le

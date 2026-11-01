@@ -335,29 +335,25 @@ export interface FelledLayout {
   at: Vec;
 }
 
+/** La pièce de bois du tronc d'un gros arbre couché de `cm` centimètres. */
+const woodOf = (cm: number) => composeWood({ size: 'big', shape: 'round', axis: 'ew', length: cm });
+
 /**
- * Compose l'arbre couché d'un tronc de `cm` centimètres, le houppier décalé de `shift` colonnes par rapport à celui du gros
- * grand (le têtard : plus court de 2 m, −40).
+ * Compose un gros arbre couché (sans la souche) dans la frame : la pièce de bois du tronc, le houppier `crown` (déjà décalé
+ * de `shift`, avec son contour) par-dessus au-delà de la frontière festonnée, puis son ombre ; `shade` : si donné, l'ombre du
+ * houppier ne se pose que sous ces colonnes (le houppier allégé de l'ébranchage).
  */
-export function felledTree(cm: number, shift: number, what: string): Felled {
-  const wood = composeWood({ size: 'big', shape: 'round', axis: 'ew', length: cm });
+function composeLying(cm: number, shift: number, left: boolean, crown: Canvas, shade?: Set<number>): Canvas {
+  const wood = woodOf(cm);
   const n = wood.w - 1;
-  const crownR = shifted(CROWN, shift);
-  const crownL = shifted(CROWN_L, -shift);
   const shadow = (cx: number) => new Canvas(FALL_W, FALL_H).ellipse(cx, 90.5, 21, 3.5, 'x');
-  const shadowR = shadow(BUTT_X + 81 + shift);
-  const shadowL = shadow(mx(BUTT_X + 81) + 13 - shift);
   const crownRight = CROWN_X1 + shift;
   const crownLeftEdge = mx(CROWN_X0 + shift);
-  const stumpL = stumpIn(OFF_L);
-  const stumpR = stumpIn(OFF);
-
-  const compose = (left: boolean): Canvas => {
+  {
     const c = new Canvas(FALL_W, FALL_H);
     const wx = left ? FALL_W - WOOD_X - n : WOOD_X;
     const base = new Canvas(FALL_W, FALL_H).stamp(wood.toGrid(), wx, WOOD_Y);
-    const crown = left ? crownL : crownR;
-    const stp = left ? stumpL : stumpR;
+    const stp = stumpIn(left ? OFF_L : OFF);
     for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
       const t = base.get(X, Y);
       // l'ombre de la pièce ne se pose jamais sur la souche : dans la frame, elle remplacerait le pixel au lieu de s'y fondre
@@ -368,16 +364,26 @@ export function felledTree(cm: number, shift: number, what: string): Felled {
       if (t === EMPTY || t === 'x' || col >= overAt(Y) + shift) c.set(X, Y, f);
     }
     // ombre du houppier, décalée vers la droite, sur le vide seulement, sans dépasser le houppier à droite
-    const sh = left ? shadowL : shadowR;
+    const sh = left ? shadow(mx(BUTT_X + 81) + 13 - shift) : shadow(BUTT_X + 81 + shift);
     const edge = left ? crownLeftEdge : crownRight;
     for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
       if (c.get(X, Y) !== EMPTY || sh.get(X, Y) === EMPTY || X > edge || stp.get(X, Y) !== EMPTY) continue;
+      if (shade && !shade.has(X)) continue;
       c.set(X, Y, 'x');
     }
     return c;
-  };
-  const right = compose(false);
-  const left = compose(true);
+  }
+}
+
+/**
+ * Compose l'arbre couché d'un tronc de `cm` centimètres, le houppier décalé de `shift` colonnes par rapport à celui du gros
+ * grand (le têtard : plus court de 2 m, −40).
+ */
+export function felledTree(cm: number, shift: number, what: string): Felled {
+  const wood = woodOf(cm);
+  const n = wood.w - 1;
+  const right = composeLying(cm, shift, false, shifted(CROWN, shift));
+  const left = composeLying(cm, shift, true, shifted(CROWN_L, -shift));
 
   // garde-fous : rien ne déborde de la frame ; la silhouette de gauche est le miroir de celle de droite (ombre mise à part)
   const solid = (c: Canvas, X: number, Y: number) => c.get(X, Y) !== EMPTY && c.get(X, Y) !== 'x';
@@ -421,6 +427,51 @@ export function felledTree(cm: number, shift: number, what: string): Felled {
     at: [WOOD_X - frame.x, WOOD_Y + wood.h - bottom],
   };
   return { right, left, frame, frameLeft, wood, n, layout };
+}
+
+// ---------- Arbre couché, houppier allégé (l'ébranchage) ----------
+// Les étapes de l'ébranchage (art/world/work-stages.ts) : le même arbre couché, composé de la même façon, mais son houppier
+// perd des pixels (`keep`, en distance au pied h et au travers de l'axe g, là où il est posé, dans le sens de droite) ; son
+// ombre ne reste que sous les colonnes où il en reste. Le cadre reste celui de l'arbre entier.
+
+/** L'arbre couché d'un tronc de `cm` cm (sans la souche, dans la frame), son houppier réduit aux pixels que `keep` garde. */
+export function lightenedFelled(cm: number, shift: number, left: boolean, keep: (h: number, g: number) => boolean): Canvas {
+  const body = left ? crownBodyLeft() : crownBody();
+  // le houppier est décalé de `shift` (à droite) ou de −shift (à gauche) : on le juge là où il sera posé
+  const crown = new Canvas(FALL_W, FALL_H);
+  const dx = left ? -shift : shift;
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    const q = body.get(X, Y);
+    if (q === EMPTY) continue;
+    const at = X + dx;
+    const [h, g] = lying(left ? mx(at) : at, Y);
+    if (keep(h, g)) crown.set(at, Y, q);
+  }
+  const lone: [number, number][] = [];
+  despeckle(crown);
+  for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
+    if (crown.get(X, Y) === EMPTY) continue;
+    const ns = [crown.get(X + 1, Y), crown.get(X - 1, Y), crown.get(X, Y + 1), crown.get(X, Y - 1)].filter((q) => q !== EMPTY);
+    if (ns.length <= 1) lone.push([X, Y]);
+  }
+  for (const [X, Y] of lone) crown.px[Y][X] = EMPTY;
+  shadedOutline(crown);
+  const cols = new Set([...Array(FALL_W).keys()].filter((X) => crown.px.some((r) => r[X] !== EMPTY)));
+  return composeLying(cm, shift, left, crown, cols);
+}
+
+/** Ce que l'ébranchage doit savoir d'un gros arbre couché (repère : la frame des pièces, FALL_W × FALL_H). */
+export function bigLying(f: Felled, cm: number, shift: number) {
+  return {
+    w: FALL_W,
+    buttX: BUTT_X,
+    axisY: AXIS_Y,
+    barkTop: TRUNK_TOP,
+    barkBottom: TRUNK_TOP + 10,
+    trunkLen: f.n - 1,
+    frame: (left: boolean): Frame => (left ? f.frameLeft : f.frame),
+    compose: (left: boolean, keep: (h: number, g: number) => boolean) => lightenedFelled(cm, shift, left, keep),
+  };
 }
 
 /** Le gros grand couché : tronc de 4 m. */

@@ -6,7 +6,7 @@ import { world } from '../palette';
 import { palette as portrait } from '../portraits/xeros';
 import { outline } from '../items/lib';
 
-const palette = {
+export const palette = {
   ...world,
   a: '#ecdfbd', // parchemin
   A: '#d8c79d',

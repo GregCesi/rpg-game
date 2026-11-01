@@ -33,11 +33,19 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const emit = (c: unknown) => g.events.emit('dieu', c);
       const notices: string[] = [];
       g.events.on('notice', (t: string) => notices.push(t));
+      const finishWork = async () => {
+        const world = () => (window as any).game.scene.getScene('world');
+        for (let i = 0; i < 20 && world().mode !== 'work' && world().mode !== 'rail'; i++) await new Promise((res) => requestAnimationFrame(res));
+        if (world().mode === 'work' || world().mode === 'rail') (window as any).game.events.emit('dieu', { kind: 'finish-work' });
+      };
       const press = async (code: string) => {
         window.dispatchEvent(new KeyboardEvent('keydown', { code }));
         await sleep(60);
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
         await sleep(120);
+        // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
+        // travail »), horloge, endurance et résultat compris
+        if (code === 'Space') await finishWork();
       };
       const give = async (what: { item: string } | { prop: string }) => {
         emit({ kind: 'give', held: what });
@@ -69,7 +77,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const out: Record<string, unknown> = {};
 
       // 1. sans plan connu, un piquet ne se plante pas
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'stake' });
       await press('Space');
       out.noPlanNotice = notices.at(-1);
@@ -106,13 +114,13 @@ await playtest('implantation', async ({ page, errors, load }) => {
       emit({ kind: 'prop', prop: 'chopping-block' });
       await sleep(250);
       // la hachette seule, face au billot : refusé, sans geste ni dépense
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'hatchet' });
       await press('Space');
       await sleep(300);
       out.noBranchNotice = notices.at(-1);
       out.noBranchMode = w().mode;
-      out.noBranchCost = 100 - w().player.stamina.value;
+      out.noBranchCost = 100 - w().player.stamina.ceiling;
       // la branche dans une main, la hachette dans l'autre : un coup, la branche devient un piquet dans la même main
       const twoHands = async (first: string, second: string) => {
         gs.emptyHands(gs.game);
@@ -126,7 +134,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       await press('Space');
       await settled();
       out.afterCut = hands();
-      out.cutCost = 100 - w().player.stamina.value;
+      out.cutCost = 100 - w().player.stamina.ceiling;
       out.blockBare = props(/^chopping-block$/).length;
       // et dans l'autre ordre : la branche dans la main active, la hachette dans l'autre
       await twoHands('branch', 'hatchet');
@@ -157,25 +165,25 @@ await playtest('implantation', async ({ page, errors, load }) => {
       out.ropeRested = JSON.stringify({ hands: hands(), block: props(/^chopping-block-rope$/).length });
       const ropeLength = () => props(/^chopping-block-rope$/)[0]?.length;
       const ties = () => ground('rope-tie');
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'hatchet' });
       await press('Space');
       await settled();
       out.ropeHatchet = JSON.stringify({ length: ropeLength(), ties: ties(), notice: notices.at(-1) });
-      out.ropeHatchetCost = 100 - w().player.stamina.value;
-      emit({ kind: 'stamina', value: 100 });
+      out.ropeHatchetCost = 100 - w().player.stamina.ceiling;
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'axe' });
       await press('Space');
       await settled();
       out.ropeAxe = JSON.stringify({ length: ropeLength(), ties: ties(), notice: notices.at(-1) });
-      out.ropeAxeCost = 100 - w().player.stamina.value;
+      out.ropeAxeCost = 100 - w().player.stamina.ceiling;
 
       // 4. tracer : le coin nord-ouest, un piquet refusé hors des coins, le nord-est (aimanté, repris, replanté), le sud-est
       const origin = find(61, 71, 90)!;
       const [ox, oy] = origin;
       const corner = { nw: [ox, oy], ne: [ox + 61, oy], se: [ox + 61, oy + 71], sw: [ox, oy + 71] };
-      const stamina = () => w().player.stamina.value;
-      emit({ kind: 'stamina', value: 100 });
+      const stamina = () => w().player.stamina.ceiling;
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'stake' });
       await lookAt(corner.nw[0], corner.nw[1]);
       await press('Space');
@@ -241,7 +249,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       // la hache lâchée (sinon E la reposerait au lieu de prendre une pierre), puis quatre pierres de la berge
       gs.emptyHands(gs.game);
       w().handsChanged();
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       const dice: unknown[] = [];
       for (const [i, [id, place]] of places.entries()) {
         const stone = props(/^slab$/)[0];
@@ -307,7 +315,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.equal(r.noBranchCost, 0, 'un refus ne coûte rien');
   assert.equal(r.beforeCut, '[{"item":"branch"},{"item":"hatchet"}]null');
   assert.equal(r.afterCut, '[{"item":"stake"},{"item":"hatchet"}]null', 'la branche devient un piquet, dans la même main');
-  assert.ok(Math.abs(r.cutCost - 0.4) < 1e-6, `tailler coûte 0,4, moins qu'un coup de cognée : ${r.cutCost}`);
+  assert.ok(r.cutCost > 0.1 && r.cutCost < 0.6, `tailler se paie coup par coup, une fraction de point : ${r.cutCost}`);
   assert.equal(r.blockBare, 1, 'le billot ne change pas');
   assert.equal(r.afterCut2, '[{"item":"hatchet"},{"item":"stake"}]null', 'dans l\'autre ordre aussi : le piquet reste dans la main de la branche');
   {

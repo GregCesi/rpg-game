@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { PLAYER } from '../config';
+import { SPEEDS } from '../systems/speeds';
 import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
+import { Breath } from './Breath';
 import { Hold } from './Hold';
 import { Stamina } from './Stamina';
 import { Strength } from './Strength';
@@ -17,9 +19,11 @@ export class Player {
   readonly strength = new Strength();
   /** L'endurance : la fatigue de la journée (courir, porter, pousser et les gestes y puisent). */
   readonly stamina = new Stamina();
+  /** Essoufflé, il souffle : la bouffée près de sa bouche. */
+  readonly breath: Breath;
   /** Il court à cette image (lu par systems/effort.ts, qui en fait payer la course). */
   running = false;
-  /** Maj est pressée mais l'endurance l'interdit (fatigué ou épuisé) : lu par la scène pour le dire. */
+  /** Maj est pressée mais Xéros est épuisé (plafond vide) : lu par la scène pour le dire. Fatigué ou à bout de souffle, il marche sans message. */
   runRefused = false;
   /** Il pousse une bille qui roule (posé par systems/roll.ts à chaque image) : posture `push`. */
   pushing = false;
@@ -37,6 +41,7 @@ export class Player {
     this.input = new PlayerInput(scene);
     this.tools = new ToolUse(scene, this.actor);
     this.hold = new Hold(scene, this.actor, () => this.tools.busy);
+    this.breath = new Breath(scene, this.actor);
   }
 
   /** enabled = false pendant un dialogue : le joueur reste immobile. */
@@ -45,6 +50,7 @@ export class Player {
     this.feet = { x: this.actor.x, y: this.actor.y };
     this.running = false;
     this.runRefused = false;
+    this.breath.update(this.stamina.winded && !this.stamina.infinite);
     // pendant un geste, le corps reste sur place et garde son animation
     if (this.tools.busy) {
       this.dir.set(0, 0);
@@ -52,7 +58,7 @@ export class Player {
     }
     if (!enabled) {
       this.dir.set(0, 0);
-      this.actor.move(this.dir, PLAYER.walkSpeed);
+      this.actor.move(this.dir, SPEEDS.walk, PLAYER.walkCadence);
       return;
     }
     const { dir, running } = this.input.read();
@@ -62,13 +68,13 @@ export class Player {
     // portée garde sa cadence de dessin, accélérée ou ralentie d'autant (sans dépasser une foulée vive).
     // Fatigué (sous le seuil de stamina.json), il marche moins vite et ne court plus.
     const factor = this.strength.walkFactor() * this.stamina.walkFactor();
-    if (this.hold.loaded) this.actor.move(dir, PLAYER.walkSpeed * factor, Math.max(PLAYER.carrySpeed, (PLAYER.walkSpeed * factor) / 1.4));
+    if (this.hold.loaded) this.actor.move(dir, SPEEDS.walk * factor, Math.max(PLAYER.carryCadence, (SPEEDS.walk * factor) / 1.4));
     else if (running && this.strength.canRun() && this.stamina.canRun()) {
-      this.actor.move(dir, PLAYER.runSpeed * factor, PLAYER.walkSpeed);
+      this.actor.move(dir, SPEEDS.run * factor, PLAYER.walkCadence);
       this.running = dir.lengthSq() > 0;
     } else {
       this.runRefused = running && this.strength.canRun() && this.stamina.empty && dir.lengthSq() > 0;
-      this.actor.move(dir, PLAYER.walkSpeed * factor, PLAYER.walkSpeed);
+      this.actor.move(dir, SPEEDS.walk * factor, PLAYER.walkCadence);
     }
   }
 

@@ -16,6 +16,20 @@ export class Strength {
     return base.carry * this.multiplier;
   }
 
+  /** La force d'un coup de travail (strength.json, `swing` ; docs/CONCEPTION.md, « Le travail »), telle que dans le contenu. */
+  get swing() {
+    return base.swing;
+  }
+
+  /**
+   * La force d'un coup de Xéros en ce moment : le couple de strength.json multiplié (?dieu « force »), plafonné à celui d'un humain
+   * (`humanMax`) : la force reste réaliste.
+   */
+  get swinger() {
+    const s = base.swing;
+    return { torque: Math.min(s.torque * this.multiplier, s.humanMax), omegaMax: s.omegaMax, skill: s.skill };
+  }
+
   get walk(): number {
     return base.walk * this.multiplier;
   }

@@ -11,7 +11,7 @@ async function main() {
     console.error(`\n✗ ${(e as Error).message}\n`);
     process.exit(1);
   }
-  const { catalogFrom, validateBuildPlans, validateContent, viewsTodo } = await import('../src/content/validate');
+  const { catalogFrom, validateBuildPlans, validateContent, viewsTodo, workDurations } = await import('../src/content/validate');
   const manifest = JSON.parse(readFileSync('src/generated/manifest.json', 'utf8'));
   const cat = catalogFrom(manifest);
   // les poses des gestes de combat, écrites par npm run art juste avant (validate.ts ne les importe pas lui-même)
@@ -43,6 +43,10 @@ async function main() {
   console.log(
     `✓ contenu valide : ${n(content.maps)} cartes, ${n(content.props)} objets, ${n(content.items)} objets possédables, ${n(content.dialogues)} dialogues, ${n(content.characters)} personnages, ${n(buildPlans)} plans du bac à sable`,
   );
+  // le travail : la durée de chaque travail pour Xéros d'aujourd'hui, calculée de ses coups (docs/CONCEPTION.md, « Le travail »)
+  const mm = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, '0')}` : m >= 1 ? `${Math.round(m)} min` : `${Math.round(m * 60)} s`);
+  console.log('… le travail, pour Xéros d’aujourd’hui (calculé, pas imposé) :');
+  for (const w of workDurations()) console.log(`    ${w.name} : ${w.strokes} coups, ${w.pauses} pauses, ${mm(w.minutes)}, ${w.ceiling.toFixed(1)} points`);
   // toutes les faces : ce qui reste à dessiner (VIEWS_TODO, validate.ts), redit à chaque vérification
   const todo = viewsTodo(content, cat);
   if (todo.objects.length) {

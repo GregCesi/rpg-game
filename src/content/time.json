@@ -1,0 +1,20 @@
+{
+  "accelerate": true,
+  "speeds": [
+    1,
+    2,
+    5,
+    10,
+    20
+  ],
+  "default": 1,
+  "wakeHour": 6,
+  "saveEveryMinutes": 15,
+  "work": {
+    "knot": 3,
+    "stake": 2,
+    "turn": 2,
+    "place": 5,
+    "raise": 15
+  }
+}

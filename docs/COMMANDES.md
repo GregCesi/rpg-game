@@ -16,7 +16,8 @@ Le monde a un mode à la fois (`WorldScene`) :
 | --- | --- | --- |
 | **jeu** (`play`) | Xéros marche | tout ce qui suit |
 | **geste** (`use`) | un coup d'outil ou une attaque se joue | le zoom ; Espace (gardé : enchaîner l'attaque suivante) ; le reste est lu et jeté |
-| **rail** (`rail`) | une passe de doloire le long d'une pièce | Échap (arrêter) et le zoom, rien d'autre |
+| **rail** (`rail`) | une passe de doloire le long d'une pièce, au coup, lancée d'un appui | un pas ou Échap : arrêter après le coup en cours ; le zoom |
+| **travail** (`work`) | un travail au coup (abattre, ébrancher, couper, fendre, tailler), lancé d'un appui : Xéros frappe seul jusqu'au résultat, avec ses pauses de souffle ; une jauge au-dessus de lui | un pas ou Échap : arrêter après le coup en cours (ce qui est fait reste fait) ; le zoom |
 | **dialogue** (`dialogue`) | une ligne de dialogue est ouverte (DialogueScene) | E, Espace, Entrée, clic : la suite ; Z/S (W/S) ou flèches : choisir ; le zoom |
 | **passage** (`transition`) | fondu d'une carte à l'autre, aide de la mère | le zoom |
 | **construction** (`build`, `?construire`) | le bac à sable | voir plus bas |
@@ -27,7 +28,7 @@ Dedans (un intérieur calculé) : les mêmes touches que dehors.
 
 ### Se déplacer
 - **Z Q S D (W A S D)** ou **flèches** : marcher. Chargé au-delà de 25 kg, il marche plus lentement ; à deux mains (`carry`), lentement.
-- **Maj** (maintenu) : courir (0,2 point par seconde) ; refusé chargé au-delà de 25 kg, à deux mains, fatigué ou épuisé.
+- **Maj** (maintenu) : courir (0,2 point du plafond et 5 de souffle par seconde : environ 20 s à plein souffle) ; refusé chargé au-delà de 25 kg, à deux mains, fatigué ou épuisé ; à bout de souffle, Xéros repasse au pas et souffle, la barre clignote, sans message.
 - **Pousser** (pas de touche) : marcher contre une bille ronde couchée, les mains libres, 0,3 s : elle roule.
 - Marcher dans une sortie, hors du bord d'une zone, par une porte ouverte : changer de carte.
 
@@ -65,12 +66,12 @@ Selon ce que tient Xéros (« ce qui sert » : la main active, sinon l'autre mai
 | **la main active vide**, l'autre vide ou tenant ce qui n'est ni une arme ni un outil (une pierre…) | **un direct du poing** de la main libre ; Espace de nouveau : l'autre poing (gauche-droite) si les deux sont libres |
 | la branche (ou le piquet) dans la main active et la hachette dans l'autre, face au billot | tailler : la branche devient un piquet, le piquet une cheville (c'est la hachette qui sert) |
 | un piquet, un plan connu | le planter au tracé (le premier fixe le coin nord-ouest) |
-| la cognée, devant un arbre debout | un coup de côté (`use`) |
-| la cognée, sur un arbre couché, un houppier, une pièce de bois | un coup de haut en bas (`chop`) : ébrancher, couper sur la grille |
+| la cognée, devant un arbre debout | abattre (`use`) : un appui lance tout le travail, Xéros frappe seul jusqu'à la chute (25 min environ pour l'arbre normal, 2 h 30 pour le gros, à la force de Xéros), avec ses pauses de souffle ; un pas ou Échap l'arrête, repris là où il en était |
+| la cognée, sur un arbre couché, un houppier, une pièce de bois | de haut en bas (`chop`), lancé d'un appui : ébrancher, couper sur la grille |
 | la hachette ou la cognée, sur le rouleau posé sur le billot | couper un lien de 2 m |
-| la doloire, contre le flanc d'une pièce de bois | une passe sur le rail (Xéros longe la pièce tout seul ; Échap l'arrête) |
+| la doloire, contre le flanc d'une pièce de bois | une passe sur le rail, lancée d'un appui : chaque coup lève sa part de la face et Xéros glisse avec le fer ; un pas ou Échap l'arrête |
 | le coin, contre le bout d'une grosse bille | le planter (sans geste) |
-| la masse, sur un coin planté | un coup (`maul`) ; trois par mètre commencé, la bille s'ouvre |
+| la masse, sur un coin planté | fendre (`maul`), lancé d'un appui ; la fente s'allonge (trois étapes par mètre commencé), la bille s'ouvre au bout |
 | une ressource seule dans la main active (pas une arme), devant ce qui demande un outil | « Sans hache, rien à faire. » (mains vides : le poing, voir plus haut) |
 | un outil dans le vide | le geste dans le vide, sans dépense |
 | ce qu'on porte à deux mains (`carry`) | rien |
@@ -88,7 +89,13 @@ Un refus (mauvais outil, pas la place, épuisé) se dit sans geste ni dépense.
 - Maintenu une seconde, mains vides, au contact d'une bille couchée : la faire pivoter d'un quart de tour (jauge).
 
 ### Échap
-- Sur un rail : arrêter la passe (la face entamée reprendra là). Ailleurs : rien.
+- Sur un rail ou pendant un travail : l'arrêter après le coup en cours (ce qui est fait reste fait ; un pas fait de même). Ailleurs : rien.
+
+### V (la vitesse du temps)
+- V : le palier suivant de la vitesse du temps (x1, x2, x5, x10, x20 ; x1 au départ) ; Maj + V : le précédent ; un message dit le
+  palier (« Le temps : x5 ») et le cadran l'affiche. C'est la vitesse de simulation : elle accélère tout le jeu (la marche, les coups,
+  les pauses, l'horloge), par pas de taille normale. Une attaque ramène à x1. x50 est réservé à ?dieu (les tests). Pas gardée d'une
+  session à l'autre (docs/CONCEPTION.md, « Le temps »).
 
 ### Le zoom (dans tous les modes)
 - Molette (vers l'avant : plus près), **+** et **−** (lus par leur signe, où qu'ils soient), ou + et − du pavé numérique.
@@ -129,7 +136,7 @@ Le panneau du catalogue et `?dieu` se manient à la souris.
 7. **Les dialogues ne lisent pas les touches comme le reste.** `DialogueScene` écoute E, Espace et Entrée par leur code de touche
    (la lettre E), pas par leur place via `PlayerInput` ; le choix se fait par Z/S (W/S) et les flèches. Un clic fait aussi
    défiler. Sans conséquence aujourd'hui (E est à la même place partout), mais c'est une deuxième lecture du clavier.
-8. **Échap ne sert qu'au rail.** Pas de menu, pas de pause, pas d'annulation d'une attaque ou d'un geste : un coup parti va au bout.
+8. **Échap ne sert qu'à arrêter un travail ou une passe.** Pas de menu, pas de pause, pas d'annulation d'une attaque ou d'un geste : un coup parti va au bout.
 9. **Maj** : courir en jeu, accélérer la caméra et étendre le clic droit en construction. Cohérent, mais à garder en tête.
 10. **Deux armes en main** : Espace attaque avec celle de la main active, Tab change d'arme. Rien ne dit à l'écran qu'on est « en
     garde » ; tenir une ou deux branches ne change rien (voulu pour ce chantier).

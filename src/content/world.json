@@ -1,9 +1,68 @@
 {
   "gloom": [
-    {"x": 0, "alpha": 0.34},
-    {"x": 100, "alpha": 0.27},
-    {"x": 200, "alpha": 0.15},
-    {"x": 280, "alpha": 0.05},
-    {"x": 300, "alpha": 0}
+    {
+      "x": 0,
+      "alpha": 0.34
+    },
+    {
+      "x": 100,
+      "alpha": 0.27
+    },
+    {
+      "x": 200,
+      "alpha": 0.15
+    },
+    {
+      "x": 280,
+      "alpha": 0.05
+    },
+    {
+      "x": 300,
+      "alpha": 0
+    }
+  ],
+  "daylight": [
+    {
+      "hour": 0,
+      "color": "#0b1430",
+      "alpha": 0.55,
+      "sun": 0
+    },
+    {
+      "hour": 5,
+      "color": "#0b1430",
+      "alpha": 0.55,
+      "sun": 0
+    },
+    {
+      "hour": 6.5,
+      "color": "#6a3f5c",
+      "alpha": 0.28,
+      "sun": 0.4
+    },
+    {
+      "hour": 8,
+      "color": "#ffffff",
+      "alpha": 0,
+      "sun": 1
+    },
+    {
+      "hour": 18.5,
+      "color": "#ffffff",
+      "alpha": 0,
+      "sun": 1
+    },
+    {
+      "hour": 20,
+      "color": "#8a3f12",
+      "alpha": 0.32,
+      "sun": 0.4
+    },
+    {
+      "hour": 21.5,
+      "color": "#0b1430",
+      "alpha": 0.55,
+      "sun": 0
+    }
   ]
 }

@@ -3,7 +3,9 @@
 // Les cartes décrivent le monde au début de la partie ; GameState dit seulement ce qui a changé.
 
 import { z } from 'zod';
-import { items, stamina } from '../content';
+import { items, stamina, time } from '../content';
+import { between, later } from '../world/clock';
+import { morning, wakeTime } from '../world/sleep';
 import { BuildPlacedSchema, JointTypeSchema, CornerSchema, NaturalSchema, PileWoodSchema, WoodPieceSchema, type BuildPlaced, type Natural, type WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { turnedWood } from '../world/woodShape';
@@ -155,6 +157,12 @@ export const MapStateSchema = z.strictObject({
    * (chantier « monde ») : on ne les repose pas, même si le joueur en a retiré des pièces en mode construction.
    */
   seeded: z.array(z.number().int().nonnegative()).default([]),
+  /**
+   * Les travaux commencés et interrompus (docs/CONCEPTION.md, « Le travail » ; systems/work.ts), par objet (`o<id>` : objet Tiled,
+   * `s<id>` : objet né) : le travail (`work` : `harvest`, `cut`, `maul`, `whittle`) et la part de sa matière déjà enlevée (`done`, de 0
+   * à 1). Un travail fini s'efface.
+   */
+  work: z.record(z.string(), z.strictObject({ work: z.string(), done: z.number().min(0).max(1) })).default({}),
 });
 
 export const GameStateSchema = z.strictObject({
@@ -172,10 +180,17 @@ export const GameStateSchema = z.strictObject({
   nextSpawnId: z.number().int().nonnegative(),
   /** Prochain identifiant de tas (unique dans toute la partie). */
   nextPileId: z.number().int().nonnegative(),
-  /** Endurance de Xéros : la fatigue de la journée, de 0 (épuisé) au maximum de stamina.json (le sommeil la remplit). */
-  stamina: z.number().nonnegative(),
-  /** Numéro du jour : 1 au départ, +1 à chaque nuit (il servira au temps et aux saisons). */
-  day: z.number().int().positive(),
+  /**
+   * L'endurance de Xéros en trois niveaux (docs/CONCEPTION.md, « Le temps ») : le souffle (`breath`, se vide pendant l'effort, revient
+   * en quelques secondes), le plafond du jour (`ceiling`, descend avec les efforts, ne revient qu'en dormant), le maximum (`max`, monte
+   * avec l'entraînement). breath ≤ ceiling ≤ max.
+   */
+  stamina: z.strictObject({ breath: z.number().nonnegative(), ceiling: z.number().nonnegative(), max: z.number().positive(), woke: z.number().nonnegative() }),
+  /**
+   * L'horloge (docs/CONCEPTION.md, « Le temps ») : le jour (1 au départ) et la minute du jour (0 à 1 440, avec des fractions). Elle
+   * avance à la vitesse du temps (systems/clock.ts) et des minutes d'un travail ; le sommeil la mène au lever.
+   */
+  clock: z.strictObject({ day: z.number().int().positive(), minute: z.number().min(0).lt(1440) }),
   /** Les plans que Xéros connaît (clés de plans.json) : appris sur la planchette de la mère. */
   knownPlans: z.array(id),
   /** Prochain identifiant de chantier (unique dans toute la partie). */
@@ -211,13 +226,25 @@ export function revisionOf(): number {
 }
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
+/** L'endurance de départ (stamina.json) : souffle, plafond et maximum pleins à `max.start`. */
+export function startStamina(): GameState['stamina'] {
+  const v = stamina.max.start;
+  return { breath: v, ceiling: v, max: v, woke: v };
+}
+
+/** L'endurance revient à ses valeurs de départ (?dieu « Endurance de départ »). */
+export function resetStamina(s: GameState): void {
+  s.stamina = startStamina();
+  revision++;
+}
+
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: stamina.max, day: 1, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: startStamina(), clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
 export function mapState(s: GameState, mapId: string): MapState {
-  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [], seeded: [] });
+  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [], seeded: [], work: {} });
 }
 
 /** Ce que tient la main active (ou les deux mains), ou undefined. */
@@ -290,16 +317,53 @@ export function turnHeld(s: GameState): void {
 }
 
 /** L'endurance de Xéros vaut `value` (bornée de 0 au maximum). */
-export function setStamina(s: GameState, value: number): void {
-  s.stamina = Math.min(stamina.max, Math.max(0, value));
+export function setStamina(s: GameState, value: { breath?: number; ceiling?: number; max?: number }): void {
+  const max = Math.max(1, value.max ?? s.stamina.max);
+  const ceiling = Math.min(max, Math.max(0, value.ceiling ?? s.stamina.ceiling));
+  const breath = Math.min(ceiling, Math.max(0, value.breath ?? s.stamina.breath));
+  s.stamina = { breath, ceiling, max, woke: s.stamina.woke };
   revision++;
 }
 
-/** Une nuit de sommeil : l'endurance est pleine, le jour suivant commence. */
+/**
+ * Xéros dort (docs/CONCEPTION.md, « Le temps » ; world/sleep.ts) : l'horloge va au lever (`wakeHour`, ou au bout d'une nuit pleine) ;
+ * la nuit rend le plafond selon l'épuisement du coucher et le sommeil pris, et fait monter le maximum si la journée l'a entraîné.
+ */
 export function sleep(s: GameState): void {
-  s.stamina = stamina.max;
-  s.day++;
+  const bed = s.clock;
+  const wake = wakeTime(bed, time.wakeHour, stamina.sleep.hours);
+  const { max, ceiling } = morning(stamina, s.stamina, between(bed, wake));
+  s.stamina = { breath: ceiling, ceiling, max, woke: ceiling };
+  s.clock = wake;
   revision++;
+}
+
+/** Clé d'un objet dans `work` de sa carte : `o<id>` (objet Tiled) ou `s<id>` (objet né). */
+export const workKey = (id: number, spawned: boolean | undefined): string => `${spawned ? 's' : 'o'}${id}`;
+
+/** La part faite d'un travail sur un objet (`undefined` : fini, ou rien de commencé : l'entrée s'efface). */
+export function setWork(s: GameState, mapId: string, key: string, entry: { work: string; done: number } | undefined): void {
+  const m = mapState(s, mapId);
+  if (entry) m.work[key] = { ...entry };
+  else delete m.work[key];
+  revision++;
+}
+
+/** L'horloge va droit à `clock` (outils de test : essayer la nuit, le lever), sans user l'endurance. */
+export function setClock(s: GameState, clock: { day: number; minute: number }): void {
+  s.clock = { ...clock };
+  revision++;
+}
+
+/**
+ * L'horloge avance de `minutes` minutes de jeu (la vitesse du temps à chaque image, ou la durée d'un travail). Elle avance à chaque
+ * image : la sauvegarde n'est écrite (`revision`) que lorsqu'elle passe un pas de `saveEveryMinutes` (time.json) ou change de jour.
+ */
+export function advanceClock(s: GameState, minutes: number): void {
+  if (minutes <= 0) return;
+  const before = Math.floor((s.clock.day * 1440 + s.clock.minute) / time.saveEveryMinutes);
+  s.clock = later(s.clock, minutes);
+  if (Math.floor((s.clock.day * 1440 + s.clock.minute) / time.saveEveryMinutes) !== before) revision++;
 }
 
 /** Ce que tient la main `slot` devient `what` (la branche taillée devient un piquet, dans la même main). */

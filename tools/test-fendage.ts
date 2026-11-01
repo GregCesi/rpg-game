@@ -24,10 +24,18 @@ await playtest('fendage', async ({ page, errors, load }) => {
     const emit = (c: unknown) => g.events.emit('dieu', c);
     const notices: string[] = [];
     g.events.on('notice', (t: string) => notices.push(t));
-    const press = async (code: string) => {
+    const finishWork = async () => {
+      const world = () => (window as any).game.scene.getScene('world');
+      for (let i = 0; i < 20 && world().mode !== 'work' && world().mode !== 'rail'; i++) await new Promise((res) => requestAnimationFrame(res));
+      if (world().mode === 'work' || world().mode === 'rail') (window as any).game.events.emit('dieu', { kind: 'finish-work' });
+    };
+    // un appui ; `finish` : un travail lancé (fendre) dure son temps réel, il se finit d'un coup (?dieu « Finir le travail »),
+    // horloge, endurance et résultat compris
+    const press = async (code: string, finish = true) => {
       window.dispatchEvent(new KeyboardEvent('keydown', { code }));
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code }));
+      if (code === 'Space' && finish) await finishWork();
     };
     // le geste fini, et la fente ouverte un instant avant que les morceaux paraissent
     const settled = async () => {
@@ -70,7 +78,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     };
     const out: Record<string, unknown> = {};
 
-    emit({ kind: 'stamina', value: 100 });
+    emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
     // une grosse bille posée devant Xéros, comme avec ?dieu
     emit({ kind: 'wood', wood: wood('round') });
     await sleep(200);
@@ -89,7 +97,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await press('Space');
     await sleep(300);
     out.maulNotice = notices.at(-1);
-    out.refusedCost = 100 - w().player.stamina.value;
+    out.refusedCost = 100 - w().player.stamina.ceiling;
 
     // 2. depuis le flanc, le coin ne se plante pas (la bille reste) ; depuis le bout, face à la coupe, si
     await give('splitting-wedge');
@@ -104,20 +112,37 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await sleep(300);
     out.planted = wedged().map((p: any) => p.wood.wedge.end);
     out.handsAfterPlant = JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both);
-    out.plantCost = 100 - w().player.stamina.value;
+    out.plantCost = 100 - w().player.stamina.ceiling;
 
-    // 3. trois coups de masse ; le premier est noté dans GameState
+    // 3. fendre : un travail au coup (docs/CONCEPTION.md, « Le travail ») ; Espace maintenu enchaîne les coups de masse, la fente
+    // s'allonge à chaque étape (trois pour 1 m) ; un appui sur Espace lance tout le travail. Pour l'essai, Xéros à la force humaine la plus grande (?dieu « force », plafonnée) et la simulation à x10 : le coup frappe plus fort et
+    // plus vite. Arrêté (Espace relâché) après la première étape : elle est notée dans la pièce, la part enlevée dans GameState ; repris,
+    // il continue de là, puis il est fini d'un coup (?dieu)
+    emit({ kind: 'force', multiplier: 10 });
+    emit({ kind: 'sim-speed', factor: 10 });
     await give('maul');
-    const hitCosts: number[] = [];
-    for (let i = 1; i <= 3; i++) {
-      await stand(wedged()[0]);
-      const s = w().player.stamina.value;
-      await press('Space');
-      await settled();
-      hitCosts.push(s - w().player.stamina.value);
-      if (i === 1) out.hitsKept = spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits;
-    }
-    out.hitCosts = hitCosts;
+    await stand(wedged()[0]);
+    const s0 = w().player.stamina.ceiling;
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+    const t0 = performance.now();
+    while (!(spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits >= 1) && performance.now() - t0 < 20000) await sleep(30);
+    out.workMode = w().mode;
+    out.workBar = w().works.bar.frame.visible;
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+    // Échap : le coup en cours s'achève, puis le travail s'arrête
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
+    await sleep(60);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
+    await settled();
+    out.hitsKept = spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits;
+    out.workKept = Object.values(gs.mapState(gs.game, w().map.def.id).work).map((x: any) => x.work);
+    out.splitSteps = spawned().find((q: any) => q.wood?.wedge) ? 3 : 0;
+    out.stoppedMode = w().mode;
+    await stand(wedged()[0]);
+    await press('Space');
+    await settled();
+    out.hitCosts = [s0 - w().player.stamina.ceiling];
+    out.workLeft = Object.keys(gs.mapState(gs.game, w().map.def.id).work).length;
     out.halves = pieces('half').length;
     out.wedgeOnGround = gs.mapState(gs.game, w().map.def.id).ground.filter((q: any) => q.item === 'splitting-wedge').length;
     out.halfMass = mass.woodMass(wood('half'));
@@ -130,11 +155,9 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await press('Space');
       await sleep(300);
       await give('maul');
-      for (let i = 0; i < 3; i++) {
-        await stand(wedged()[0]);
-        await press('Space');
-        await settled();
-      }
+      await stand(wedged()[0]);
+      await press('Space');
+      await settled();
     }
     out.quarters = pieces('quarter').length;
     out.splitNotices = notices.slice(before4);
@@ -146,7 +169,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await press('Space');
     await sleep(300);
     out.quarterWedge = notices.at(-1);
-    out.stamina = w().player.stamina.value;
+    out.stamina = w().player.stamina.ceiling;
     out.noRoom = notices.filter((n) => /Pas la place/.test(n));
 
     // 4 bis. le coin se plante depuis chacun des quatre bouts : la pièce garde ce bout, les coups ne se donnent que depuis lui
@@ -162,7 +185,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     for (const [axis, end, other] of ENDS) {
       emit({ kind: 'reset-map' });
       await sleep(1700);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'wood', wood: wood('round', axis) });
       await sleep(200);
       await give('splitting-wedge');
@@ -177,25 +200,21 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await sleep(300);
       const wrongNotice = notices.at(-1);
       const hitsWrong = spawned().find((o: any) => o.wood?.wedge)?.wood.wedge.hits;
-      for (let i = 0; i < 3; i++) {
-        await standAt(wedged()[0], end);
-        await press('Space');
-        await settled();
-      }
+      await standAt(wedged()[0], end);
+      await press('Space');
+      await settled();
       // la demi-bille de ce bout, fendue à son tour depuis le même bout : deux quartiers identiques, écorce en bas, pointe en l'air
       const halves = pieces('half').length;
       const halfFaces = pieces('half').map((p: any) => p.wood.point ?? null);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give('splitting-wedge');
       await standAt(pieces('half')[0], end);
       await press('Space');
       await sleep(300);
       await give('maul');
-      for (let i = 0; i < 3; i++) {
-        await standAt(wedged()[0], end);
-        await press('Space');
-        await settled();
-      }
+      await standAt(wedged()[0], end);
+      await press('Space');
+      await settled();
       const quarters = pieces('quarter').map((p: any) => ({ ...p.wood }));
       ends.push({ axis, end, planted, wrongNotice, hitsWrong, halves, halfFaces, quarters });
     }
@@ -205,7 +224,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     {
       emit({ kind: 'reset-map' });
       await sleep(1700);
-      emit({ kind: 'stamina', value: 100 });
+      emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'wood', wood: { ...wood('round'), length: 200 } });
       await sleep(200);
       await give('splitting-wedge');
@@ -215,16 +234,27 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await sleep(300);
       const planted = wedged().length;
       await give('maul');
+      // les six étapes du travail, lancées d'un appui (force humaine la plus grande, simulation x10) : la fente court, le coin s'enfonce
       const hits: number[] = [];
       const images: string[] = [];
-      for (let i = 0; i < 6; i++) {
-        await standAt(wedged()[0], 'west');
-        await press('Space');
-        await settled();
+      await standAt(wedged()[0], 'west');
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+      for (let i = 0; i < 100 && w().mode !== 'work'; i++) await sleep(20);
+      const t1 = performance.now();
+      // les pauses de souffle comprises (frapper fort coûte beaucoup de souffle)
+      while (w().mode === 'work' && performance.now() - t1 < 90000) {
         const p = wedged()[0];
-        hits.push(p ? p.wood.wedge.hits : -1);
-        if (p) images.push(p.image.texture.key);
+        const h = p ? p.wood.wedge.hits : -1;
+        if (h !== 0 && h !== hits.at(-1)) {
+          hits.push(h);
+          if (p) images.push(p.image.texture.key);
+        }
+        await sleep(30);
       }
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+      await settled();
+      emit({ kind: 'sim-speed', factor: 1 });
+      if (hits.at(-1) !== -1) hits.push(wedged()[0] ? wedged()[0].wood.wedge.hits : -1);
       const halves = pieces('half');
       out.long = {
         planted,
@@ -233,7 +263,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
         halves: halves.length,
         lengths: halves.map((p: any) => p.wood.length),
         notices: [...notices],
-        cost: Math.round((100 - w().player.stamina.value) * 10) / 10,
+        cost: Math.round((100 - w().player.stamina.ceiling) * 10) / 10,
       };
     }
 
@@ -297,8 +327,13 @@ await playtest('fendage', async ({ page, errors, load }) => {
   assert.deepEqual(r.planted, ['west'], 'Espace plante le coin depuis le bout');
   assert.equal(r.handsAfterPlant, '[null,null]null', 'la main est libérée');
   assert.ok(Math.abs(r.plantCost - 1) < 1e-6, `coût du plantage : ${r.plantCost}`);
-  assert.equal(r.hitsKept, 1, 'le premier coup est noté dans GameState');
-  assert.ok(r.hitCosts.every((c: number) => Math.abs(c - 0.8) < 1e-6), `coût des coups : ${r.hitCosts}`);
+  assert.equal(r.workMode, 'work', 'Espace lance le travail : Xéros fend tant qu\'il n\'a pas fini');
+  assert.ok(r.workBar, 'la jauge du travail se voit au-dessus de Xéros');
+  assert.equal(r.stoppedMode, 'play', 'Échap arrête le travail');
+  assert.ok(r.hitsKept >= 1 && r.hitsKept < 3, `arrêté après la première étape (le coup en cours s'achève) : notée dans la pièce (${r.hitsKept})`);
+  assert.deepEqual(r.workKept, ['maul'], 'la part faite du travail est gardée dans GameState');
+  assert.ok(r.hitCosts[0] > 0 && r.hitCosts[0] < 2, `fendre se paie au plafond, coup par coup : ${r.hitCosts}`);
+  assert.equal(r.workLeft, 0, 'le travail fini ne laisse rien dans GameState');
   assert.equal(r.halves, 2, 'deux demi-billes');
   assert.ok(r.wedgeOnGround >= 1, 'le coin tombe au sol');
   assert.ok(Math.abs(r.halfMass - 106.9) < 0.1, `masse d'une demi-bille de 1 m : ${r.halfMass}`);
@@ -326,6 +361,6 @@ await playtest('fendage', async ({ page, errors, load }) => {
   assert.equal(r.long.halves, 2, 'deux demi-billes');
   assert.deepEqual(r.long.lengths, [200, 200], 'de 2 m');
   assert.ok(!r.long.notices.some((n: string) => /Trop longue/.test(n)), `plus de « Trop longue pour un seul coin. » : ${r.long.notices}`);
-  assert.equal(r.long.cost, 5.8, `planter (1) et 6 coups (0,8) : ${r.long.cost}`);
+  assert.ok(r.long.cost > 1 && r.long.cost < 3, `planter (1) et les coups de masse : ${r.long.cost}`);
   console.log('  ✓ fendage : de la grosse bille aux quatre quartiers');
 });

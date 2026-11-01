@@ -1,0 +1,102 @@
+{
+  "strokes": {
+    "use": {
+      "gesture": "use",
+      "angle": 1.8,
+      "arm": 0.3,
+      "armK": 3,
+      "hold": 0.12,
+      "holdK": 1.2,
+      "impact": 0.12,
+      "free": 0.25,
+      "freeK": 3
+    },
+    "chop": {
+      "gesture": "chop",
+      "angle": 1.9,
+      "arm": 0.3,
+      "armK": 3,
+      "hold": 0.15,
+      "holdK": 1.2,
+      "impact": 0.12,
+      "free": 0.25,
+      "freeK": 3
+    },
+    "maul": {
+      "gesture": "maul",
+      "angle": 2.0,
+      "arm": 0.35,
+      "armK": 3,
+      "hold": 0.15,
+      "holdK": 1.2,
+      "impact": 0.15,
+      "free": 0.3,
+      "freeK": 3
+    },
+    "hew": {
+      "gesture": "chop",
+      "angle": 0.9,
+      "arm": 0.2,
+      "armK": 3,
+      "hold": 0.05,
+      "holdK": 1,
+      "impact": 0.1,
+      "free": 0.15,
+      "freeK": 3
+    },
+    "whittle": {
+      "gesture": "chop",
+      "angle": 1.0,
+      "arm": 0.15,
+      "armK": 3,
+      "hold": 0.05,
+      "holdK": 1,
+      "impact": 0.08,
+      "free": 0.15,
+      "freeK": 3
+    }
+  },
+  "matter": {
+    "cut": 10.8,
+    "hew": 4.3,
+    "split": 2200
+  },
+  "references": {
+    "adult": {
+      "torque": 75,
+      "omegaMax": 27,
+      "skill": 0.9,
+      "max": 140
+    },
+    "strong": {
+      "torque": 110,
+      "omegaMax": 30,
+      "skill": 1,
+      "max": 180
+    }
+  },
+  "calibration": [
+    {
+      "name": "abattre l'arbre normal à la cognée, Xéros",
+      "who": "xeros",
+      "tool": "axe",
+      "job": {
+        "fell": "normal-tree"
+      },
+      "minutes": 25
+    },
+    {
+      "name": "équarrir une poutre de 3 m, le bûcheron fort (1,19 m² de face par heure)",
+      "who": "strong",
+      "tool": "broadaxe",
+      "job": {
+        "hew": {
+          "size": "normal",
+          "length": 300
+        }
+      },
+      "minutes": 120
+    }
+  ],
+  "tolerance": 0.1
+}

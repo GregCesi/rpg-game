@@ -1,7 +1,35 @@
 {
-  "max": 100,
+  "max": {
+    "start": 100,
+    "cap": 200,
+    "gain": 2,
+    "trainFrom": 0.4
+  },
+  "breath": {
+    "regenPerSec": 12,
+    "regenDelayMs": 800,
+    "perCost": 3,
+    "perSec": {
+      "run": 5,
+      "carryPerKg": 0.1,
+      "pushPerKg": 0.05
+    },
+    "recovered": 0.3
+  },
   "tired": 0.15,
-  "tiredWalk": 0.85,
+  "tiredWalk": 0.5,
+  "work": {
+    "ceilingPerJ": 0.00014,
+    "breathPerJ": 0.032,
+    "resume": 0.9
+  },
+  "sleep": {
+    "hours": 8,
+    "exhaustedPenalty": 0.4,
+    "missingHourPenalty": 5,
+    "nightFrom": 22,
+    "nightAwakePerHour": 0.5
+  },
   "costs": {
     "chop": 0.8,
     "cutTie": 0.5,

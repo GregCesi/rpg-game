@@ -132,6 +132,30 @@ export const HARVEST = {
 export const HUD = { noticeMs: 1800, longNoticeMs: 7000 };
 
 /**
+ * La barre d'endurance du HUD (art/ui/stamina-bar.ts, contrat de pose) : `pxPerPoint` px de creux par point (le maximum de 100 fait
+ * 50 px), le creux en (`inner`, `inner`) du cadre, `gap` px au-dessus des cases des mains ; essoufflé, la part « revient » clignote
+ * (`blinkMs` par demi-période, jusqu'à `blinkAlpha`).
+ */
+export const STAMINA_BAR = { pxPerPoint: 0.5, inner: 3, end: 3, height: 10, gap: 4, blinkMs: 260, blinkAlpha: 0.25 };
+
+/**
+ * La jauge d'un travail (entities/WorkBar.ts, art/ui/work-bar.ts, contrat de pose) : coin haut-gauche de l'image depuis les pieds de
+ * Xéros (`dx`, `dy` : au-dessus de l'outil levé du coup de masse), et le creux où se pose le remplissage (`inner`, depuis le coin du cadre).
+ */
+export const WORK_BAR = { dx: -10, dy: -68, inner: { x: 2, y: 2, w: 16, h: 2 } };
+
+/**
+ * La bouffée de Xéros essoufflé (planche `fx-breath`, art/characters/breath.ts) : coin haut-gauche de l'image depuis ses pieds, et
+ * miroir, par direction (les accroches données par le dessin).
+ */
+export const BREATH = {
+  down: { dx: 4, dy: -26, flipX: false },
+  up: { dx: 4, dy: -26, flipX: false },
+  right: { dx: 5, dy: -26, flipX: false },
+  left: { dx: -15, dy: -26, flipX: true },
+} as const;
+
+/**
  * Le mode construction (le bac à sable, systems/build.ts, world/build.ts) : la grille (cm) de l'emprise et des crans de hauteur ;
  * `high` : une pièce posée à cette hauteur ou plus haut ne bloque plus le passage ; `head` : une pièce dont la base est à cette
  * hauteur ou plus haut s'efface quand Xéros passe dessous (sa tête, 1,60 m) ; `camera` : vitesse de la caméra libre (px/s, Maj :
@@ -184,13 +208,19 @@ export const GLOOM = { color: 0x0b1611, strip: 64 };
 
 export const PLAYER = {
   skin: 'xeros',
-  walkSpeed: 100, // px/s, environ 3 tuiles par seconde
-  runSpeed: 165,
   /**
-   * Cadence de référence de la marche portée (`carry-walk-*`, dessinée pour environ 55 px/s) : l'animation s'accélère ou
-   * ralentit avec la vitesse réelle, qui dépend de la masse portée (`entities/Strength.ts`, strength.json).
+   * Les vitesses de Xéros, en m/s (décidé par Grégoire : une marche de 2 m/s, une course de 2,5 m/s, 9 km/h) : la seule source des
+   * déplacements (systems/speeds.ts, réglables dans ?dieu). Chargé, il marche à la marche × ce que permet sa force (Strength) ; fatigué,
+   * à la marche × `tiredWalk` de stamina.json (1 m/s).
    */
-  carrySpeed: 55,
+  walk: 2,
+  run: 2.5,
+  /**
+   * Cadences des dessins (px/s) : la vitesse pour laquelle la marche (`walk-*`, 100 px/s) et la marche portée (`carry-walk-*`, 55 px/s)
+   * ont été dessinées ; l'animation s'accélère ou ralentit avec la vitesse réelle. Pas des vitesses de déplacement.
+   */
+  walkCadence: 100,
+  carryCadence: 55,
 };
 
 /**

@@ -56,7 +56,27 @@ const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
  * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.
  * Avec `tool`, on frappe avec Espace, l'outil en main ; sans, on récolte à la main avec E.
  */
+/**
+ * La matière d'une récolte qui se travaille au coup (docs/CONCEPTION.md, « Le travail » ; world/workPlan.ts) : abattre un arbre
+ * (`fell` : le diamètre du tronc, cm), ébrancher (`limbs` : le nombre de branches et leur diamètre, cm), tailler une pointe sur le
+ * billot (`whittle` : le diamètre de la branche et la longueur de la pointe, cm). Absent : une récolte de `hits` coups simples.
+ */
+export const HarvestWorkSchema = z.union([
+  z.strictObject({ fell: z.strictObject({ diameter: z.number().positive() }) }),
+  z.strictObject({ limbs: z.strictObject({ count: z.number().int().positive(), diameter: z.number().positive() }) }),
+  z.strictObject({ whittle: z.strictObject({ diameter: z.number().positive(), length: z.number().positive() }) }),
+]);
+
 export const HarvestSchema = z.strictObject({
+  /** La matière, si la récolte se travaille au coup (voir HarvestWorkSchema). */
+  work: HarvestWorkSchema.optional(),
+  /**
+   * Les étapes visibles du travail (docs/CONCEPTION.md, « Le travail », § 6) : la part de la matière enlevée (de 0 à 1, croissante) à
+   * laquelle l'objet prend l'image `<son image>-stage-<n>` (n à partir de 1 ; pour chaque vue qu'il a : `<image de la vue>-stage-<n>`),
+   * dessinée par le pixel-artist (art/world/work-stages.ts). L'arbre debout : l'entaille, le trait d'abattage, le craquement, il penche ;
+   * l'arbre couché : le houppier qui s'allège.
+   */
+  stages: z.array(z.number().gt(0).lt(1)).optional(),
   /** Objet possédable nécessaire (clé de items.json, de type 'tool') ; absent = à la main. */
   tool: id.optional(),
   /** Nombre de coups. L'objet tremble à chaque coup. */
@@ -400,6 +420,7 @@ export const WoodSchema = z.strictObject({
   density: z.number().positive(),
   grid: z.number().int().positive(),
   min: z.number().int().positive(),
+  /** La durée d'une coupe découle de ses coups (docs/CONCEPTION.md, « Le travail ») ; `hits` : ses étapes (l'encoche qui se creuse). */
   cut: z.strictObject({ tool: id, hits: z.number().int().positive() }),
   hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive(), stroke: z.number().int().positive() }),
   /** La planche fendue : son épaisseur et sa largeur de bois (cm), quel que soit le diamètre d'où elle vient. */
@@ -466,6 +487,8 @@ export const ItemDefSchema = z.strictObject({
   aged: z.literal(true).optional(),
   /** C'est une arme (la branche, l'épée de bois) : Espace, dans la main active, attaque. Voir WeaponSchema. */
   weapon: z.lazy(() => WeaponSchema).optional(),
+  /** Un outil au travail (docs/CONCEPTION.md, « Le travail ») : son inertie, son tranchant, ce que la précision y pèse. */
+  work: z.lazy(() => ToolWorkSchema).optional(),
 });
 
 /**
@@ -863,6 +886,12 @@ export const GestureSchema = z.strictObject({
    */
   strike: z.strictObject({ down: px, up: px, right: px }).optional(),
   poses: z.strictObject({ down: z.array(PoseSchema), up: z.array(PoseSchema), right: z.array(PoseSchema) }),
+  /**
+   * Le temps de chaque image d'un geste de travail (docs/CONCEPTION.md, « Le travail ») : `arm` (armer), `hold` (le temps en haut),
+   * `down` (abattre), `impact`, `free` (dégager) ; les durées des images en découlent (world/swing.ts : la durée de chaque temps,
+   * partagée entre ses images). Absent : les durées de l'animation dessinée.
+   */
+  phases: z.array(z.enum(['arm', 'hold', 'down', 'impact', 'free'])).optional(),
 });
 
 /** Point d'accroche d'un objet tenu, pour une image : (dx, dy) depuis les pieds. `behind` : derrière le corps à cette image. */
@@ -903,8 +932,84 @@ export const HoldSchema = z.strictObject({ stance: StanceSchema, image: id.optio
  * `slowest` : sa vitesse de marche, en part de la normale, quand il porte `carry`. Plus tard la force progressera :
  * seuls ces chiffres changeront.
  */
+/**
+ * La force d'un coup (docs/CONCEPTION.md, « Le travail ») : le couple du corps sur le manche (`torque`, N·m), la vitesse angulaire au
+ * plus du bras (`omegaMax`, rad/s : un outil léger ne prend pas plus d'énergie que ce que le bras lui donne), l'adresse (`skill`, de 0
+ * à 1, multiplie la précision de l'outil). `max` : l'endurance d'un être de référence (work.json, `references`).
+ */
+export const SwingerSchema = z.strictObject({
+  torque: z.number().positive(),
+  omegaMax: z.number().positive(),
+  skill: z.number().gt(0).lte(1),
+  max: z.number().positive().optional(),
+});
+
+/**
+ * Un outil au travail (items.json, `work`), comme une arme pour l'inertie (world/strike.ts) : `length` cm du bout du manche au tranchant,
+ * `grip` cm de la main au bout, `balance` (l'équilibre : la masse qui frappe = ⅔ × balance × masse) ; `edge`, le tranchant (1 : une lame
+ * affûtée ; la masse qui enfonce un coin, moins) ; `aim`, ce que la précision pèse dans ce qu'enlève un coup (0 : la force seule ; 1 :
+ * la précision seule).
+ */
+export const ToolWorkSchema = z
+  .strictObject({
+    length: z.number().positive(),
+    grip: z.number().nonnegative(),
+    balance: z.number().positive(),
+    edge: z.number().gt(0).lte(1),
+    aim: z.number().min(0).max(1),
+  })
+  .refine((t) => t.grip < t.length, { message: "'grip' doit être en deçà de 'length' : la main tient l'outil" });
+
+/**
+ * Un coup de travail (work.json, `strokes`) : le geste du corps qui le joue (`gesture`, clé de gestures.json), l'angle de la frappe sur
+ * lequel le couple travaille (`angle`, rad), et ses temps hors frappe en secondes (`arm` armer, `hold` le temps en haut, `impact`,
+ * `free` dégager) : `arm`, `hold`, `free` s'allongent de `armK`, `holdK`, `freeK` × 0,1 s par kg·m² d'inertie, à 50 N·m (une cognée se
+ * lève lourdement ; un homme fort la lève plus vite).
+ */
+export const WorkStrokeSchema = z.strictObject({
+  gesture: id,
+  angle: z.number().positive(),
+  arm: z.number().nonnegative(),
+  armK: z.number().nonnegative(),
+  hold: z.number().nonnegative(),
+  holdK: z.number().nonnegative(),
+  impact: z.number().nonnegative(),
+  free: z.number().nonnegative(),
+  freeK: z.number().nonnegative(),
+});
+
+/**
+ * Le travail (work.json ; docs/CONCEPTION.md, « Le travail ») : les coups (`strokes` : `use` de côté, `chop` de haut en bas, `maul` la
+ * masse, `hew` le coup court de la doloire, `whittle` la hachette sur le billot) ; la résistance de la matière (`matter` : J pour enlever
+ * 1 cm³ en travers du fil, `cut`, ou le long d'une face marquée, `hew` ; J pour ouvrir 1 m² de fente au coin, `split`) ; des êtres de
+ * référence (`references` : l'adulte, le bûcheron fort) ; les points de calage (`calibration` : une durée qu'un travail doit tenir pour
+ * un être donné, vérifiée par validate.ts à `tolerance` près).
+ */
+export const WorkSchema = z.strictObject({
+  strokes: z.record(id, WorkStrokeSchema),
+  matter: z.strictObject({ cut: z.number().positive(), hew: z.number().positive(), split: z.number().positive() }),
+  references: z.record(id, SwingerSchema.required({ max: true })),
+  calibration: z.array(
+    z.strictObject({
+      name: z.string().min(1),
+      /** `xeros` : la force de strength.json ; sinon une clé de `references`. */
+      who: id,
+      tool: id,
+      /** La matière : abattre un arbre (`fell` : la clé de props.json), ou équarrir une poutre (`hew` : diamètre, longueur en cm). */
+      job: z.union([z.strictObject({ fell: id }), z.strictObject({ hew: z.strictObject({ size: id, length: z.number().positive() }) })]),
+      minutes: z.number().positive(),
+    }),
+  ),
+  tolerance: z.number().gt(0).lt(1),
+});
+
 export const StrengthSchema = z
   .strictObject({
+    /**
+     * La force d'un coup de travail (docs/CONCEPTION.md, « Le travail ») ; ?dieu « force » multiplie le couple, jusqu'au plafond d'un
+     * humain (`humanMax`, N·m : un homme très fort ; la force surhumaine viendra avec les superpouvoirs).
+     */
+    swing: SwingerSchema.extend({ humanMax: z.number().positive() }),
     carry: z.number().positive(),
     walk: z.number().positive(),
     roll: z.number().positive(),
@@ -922,10 +1027,72 @@ export const StrengthSchema = z
  * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir, `attackBase` et `attackPerKg` une attaque (le prix de base, plus
  * tant par kg de l'arme, × `cost` de l'attaque ; même dans le vide : c'est le geste qui fatigue).
  */
+/**
+ * Le temps (time.json, docs/CONCEPTION.md « Le temps ») : `speeds`, les paliers de la vitesse du temps que choisit le joueur (à x1,
+ * une journée dure 24 h réelles ; une minute réelle fait `speed` minutes de jeu) ; `default`, le palier de départ (x24 : une journée
+ * en une heure) ; `wakeHour`, l'heure du lever ; `saveEveryMinutes`, tous les combien de minutes de jeu l'horloge seule fait écrire la
+ * sauvegarde (elle avance à chaque image : sans ce pas, la partie s'écrirait sans cesse).
+ */
+export const TimeSchema = z
+  .strictObject({
+    /**
+     * La vitesse du temps du joueur (V, Maj + V, les paliers de `speeds`, depuis `default`) : c'est la vitesse de simulation, elle
+     * accélère tout le jeu, marche comprise (docs/CONCEPTION.md, « Le temps ») ; `false` : V ne fait rien. Le combat ramène à x1 ; x50
+     * reste réservé à ?dieu.
+     */
+    accelerate: z.boolean(),
+    speeds: z.array(z.number().positive()).min(1),
+    default: z.number().positive(),
+    wakeHour: z.number().min(0).max(23),
+    saveEveryMinutes: z.number().positive(),
+    /**
+     * Durée réaliste des petits travaux, en minutes de jeu : nouer ou dénouer un fagot (`knot`), planter un piquet de tracé (`stake`),
+     * pivoter une bille (`turn`), poser une pièce à sa place d'un chantier (`place`), y dresser une poutre (`raise`). En attente : depuis
+     * que tout se joue en temps réel, ces petits gestes ne durent que leur geste, l'horloge ne saute plus. Les récoltes, le bois et les
+     * transformations ont la leur dans leurs données (un travail en temps réel, systems/work.ts).
+     */
+    work: z.strictObject({ knot: z.number().nonnegative(), stake: z.number().nonnegative(), turn: z.number().nonnegative(), place: z.number().nonnegative(), raise: z.number().nonnegative() }),
+  })
+  .refine((t) => t.speeds.includes(t.default), { message: "'default' doit être l'un des paliers de 'speeds'" });
+
 export const StaminaSchema = z.strictObject({
-  max: z.number().positive(),
+  /**
+   * Le maximum (docs/CONCEPTION.md, « Le temps ») : `start` au départ, au plus `cap` ; chaque nuit, si la journée a entamé le plafond
+   * d'au moins `trainFrom` du maximum, il monte de `gain` × (1 − maximum / cap).
+   */
+  max: z.strictObject({ start: z.number().positive(), cap: z.number().positive(), gain: z.number().nonnegative(), trainFrom: z.number().gt(0).lte(1) }),
+  /**
+   * Le souffle : chaque effort lui coûte `perCost` fois son prix (le plafond, son prix) ; les efforts continus, `perSec` par seconde
+   * jouée (`run` courir, `carryPerKg` porter au-delà de la marche normale, `pushPerKg` pousser une bille) ; il revient vers le plafond de
+   * `regenPerSec` par seconde, `regenDelayMs` après le dernier effort ; essoufflé (un effort qui attend), Xéros souffle jusqu'à ce qu'il
+   * soit revenu à `recovered` du plafond.
+   */
+  breath: z.strictObject({
+    regenPerSec: z.number().positive(),
+    regenDelayMs: z.number().nonnegative(),
+    perCost: z.number().nonnegative(),
+    perSec: z.strictObject({ run: z.number().nonnegative(), carryPerKg: z.number().nonnegative(), pushPerKg: z.number().nonnegative() }),
+    recovered: z.number().gt(0).lte(1),
+  }),
   tired: z.number().gt(0).lt(1),
   tiredWalk: z.number().gt(0).lte(1),
+  /**
+   * Le travail au coup (docs/CONCEPTION.md, « Le travail ») : chaque coup coûte au plafond `ceilingPerJ` et au souffle `breathPerJ` par
+   * joule frappé ; pendant un travail le souffle ne revient pas ; vide, Xéros s'arrête et souffle jusqu'à `resume` de son plafond.
+   */
+  work: z.strictObject({ ceilingPerJ: z.number().nonnegative(), breathPerJ: z.number().nonnegative(), resume: z.number().gt(0).lte(1) }),
+  /**
+   * Le sommeil (world/sleep.ts) : `hours` de sommeil pour une nuit pleine (le lever à `wakeHour` de time.json, ou au bout de ces heures) ;
+   * au réveil, le plafond perd `exhaustedPenalty` × ce qui manquait sous le seuil `tired` au coucher, et `missingHourPenalty` par heure
+   * de sommeil manquante ; éveillé la nuit (de `nightFrom` h au lever), il perd `nightAwakePerHour` par heure de jeu.
+   */
+  sleep: z.strictObject({
+    hours: z.number().positive(),
+    exhaustedPenalty: z.number().nonnegative(),
+    missingHourPenalty: z.number().nonnegative(),
+    nightFrom: z.number().min(0).lt(24),
+    nightAwakePerHour: z.number().nonnegative(),
+  }),
   costs: z.strictObject({
     chop: z.number().nonnegative(),
     cutTie: z.number().nonnegative(),
@@ -1119,6 +1286,8 @@ export const TransformGestureSchema = z.union([z.literal('soon'), z.strictObject
  */
 export const TransformSchema = z.strictObject({
   name: id,
+  /** Durée réaliste de la transformation, en minutes de jeu (docs/CONCEPTION.md, « Le temps ») : « Transformer » (?dieu) avance l'horloge d'autant. */
+  minutes: z.number().nonnegative(),
   inputs: z.array(TransformPartSchema),
   outputs: z.array(TransformPartSchema).min(1),
   waste: z.strictObject({ name: id, prop: id.optional(), fate: id.optional() }).refine((w) => !w.prop !== !w.fate, { message: "le déchet reste au sol ('prop') ou dit où il va ('fate'), l'un ou l'autre" }).optional(),
@@ -1243,6 +1412,15 @@ export const ParcelUseSchema = z.strictObject({ name: id, color: z.string().rege
  */
 export const WorldSchema = z.strictObject({
   gloom: z.array(z.strictObject({ x: z.number().nonnegative(), alpha: z.number().min(0).max(1) })).min(2),
+  /**
+   * La lumière qui suit l'heure (docs/CONCEPTION.md, « Le temps ») : des repères dans la journée (`hour`, de 0 à 24, croissants), chacun
+   * la teinte du voile posé sur le monde (`color`), son opacité (`alpha` : 0 en plein jour) et la force du soleil (`sun`, de 0 à 1 : les
+   * rais de soleil des fenêtres et des portes) ; entre deux repères, tout s'interpole, et la journée boucle de minuit à minuit.
+   */
+  daylight: z
+    .array(z.strictObject({ hour: z.number().min(0).max(24), color: z.string().regex(/^#[0-9a-f]{6}$/i), alpha: z.number().min(0).max(1), sun: z.number().min(0).max(1) }))
+    .min(2)
+    .refine((d) => d.every((p, i) => i === 0 || p.hour > d[i - 1].hour), { message: "les heures de 'daylight' doivent croître" }),
 });
 
 export type Facing = z.infer<typeof FacingSchema>;
@@ -1259,6 +1437,11 @@ export type Mass = z.infer<typeof MassSchema>;
 export type Turn = z.infer<typeof TurnSchema>;
 export type Roll = z.infer<typeof RollSchema>;
 export type Strength = z.infer<typeof StrengthSchema>;
+export type Swinger = z.infer<typeof SwingerSchema>;
+export type ToolWork = z.infer<typeof ToolWorkSchema>;
+export type WorkStroke = z.infer<typeof WorkStrokeSchema>;
+export type WorkDef = z.infer<typeof WorkSchema>;
+export type HarvestWork = z.infer<typeof HarvestWorkSchema>;
 export type DialogueAction = z.infer<typeof DialogueActionSchema>;
 export type StaminaDef = z.infer<typeof StaminaSchema>;
 export type PilePlace = z.infer<typeof PilePlaceSchema>;

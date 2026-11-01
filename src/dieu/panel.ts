@@ -1,12 +1,15 @@
 // Outils de test (?dieu) : un panneau HTML à côté du jeu, hors du canevas, cliquable à la souris. Il n'existe pas sans
 // ?dieu : main.ts ne charge ce fichier que dans ce cas. Il ne touche jamais à la partie lui-même : chaque bouton envoie
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
-import { items, maps, piles, plans, props, stamina, strength, transforms, wood } from '../content';
+import { clockLabel } from '../world/clock';
+import { items, maps, piles, plans, props, stamina, strength, transforms, wood, work } from '../content';
 import type { WoodLook, WoodPiece } from '../content/types';
 import { woodOfLook } from '../world/woodShape';
 import { heldMass } from '../content/mass';
 import type { DieuCommand } from '../events';
 import { game } from '../state';
+import { SPEEDS, metresPerSec } from '../systems/speeds';
+import { SIM_SPEEDS, simSpeed } from '../systems/simSpeed';
 
 const CSS = `
 #dieu {
@@ -211,7 +214,35 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     send({ kind: 'pile', pile: pile.value, count: n, turned: turned.checked, tie: tie.checked });
   });
 
-  // la force : un multiplicateur de tous les seuils (porter, marcher, rouler) ; la masse portée se lit à côté
+  // les vitesses de Xéros, en m/s, à calibrer en jouant (docs/CONCEPTION.md, « Le travail », § 8) : la marche et la course (chargé ou
+  // fatigué, il marche à une part de la marche) ; retenues dans le navigateur ; « Par défaut » revient à celles de config.ts
+  const speedInput = (px: number) => el('input', { type: 'number', min: '0.2', max: '20', step: '0.1', value: (Math.round(metresPerSec(px) * 100) / 100).toString() });
+  const walkSpeed = speedInput(SPEEDS.walk);
+  const runSpeed = speedInput(SPEEDS.run);
+  const metres = (i: HTMLInputElement) => Math.min(20, Math.max(0.2, Number(i.value) || 1));
+  const speedsButton = button('Appliquer', () => send({ kind: 'speeds', walk: metres(walkSpeed), run: metres(runSpeed) }));
+  const speedsDefault = button('Par défaut', () => {
+    send({ kind: 'speeds-default' });
+    setTimeout(() => {
+      walkSpeed.value = String(Math.round(metresPerSec(SPEEDS.walk) * 100) / 100);
+      runSpeed.value = String(Math.round(metresPerSec(SPEEDS.run) * 100) / 100);
+    }, 50);
+  });
+
+  // la vitesse de simulation : tout à l'écran plus vite (coups, pauses, marche), par pas de taille normale ; le palier en cours marqué
+  const simLabel = el('span', { textContent: '' });
+  const showSim = () => (simLabel.textContent = ` en ce moment : x${simSpeed()}`);
+  const simButtons = SIM_SPEEDS.map((n) =>
+    button(`x${n}`, () => {
+      send({ kind: 'sim-speed', factor: n });
+      setTimeout(showSim, 50);
+    }),
+  );
+  showSim();
+  setInterval(showSim, 300);
+
+  // la force : un multiplicateur de tous les seuils (porter, marcher, rouler) et de la force des coups de travail (le couple de
+  // strength.json `swing`) ; réglée pendant un travail, elle agit au coup suivant ; la masse portée se lit à côté
   const force = el('input', { type: 'number', min: '0.1', step: '0.5', value: '1' });
   const forceButton = button('Appliquer', () => {
     const m = Math.max(0.1, Number(force.value) || 1);
@@ -229,12 +260,22 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   setInterval(showCarried, 200);
 
   // l'endurance : la régler (points), la rendre infinie ; la valeur lue est celle de GameState (écrite tous les points)
-  const energy = el('input', { type: 'number', min: '0', max: String(stamina.max), step: '5', value: String(stamina.max) });
+  // l'endurance en trois niveaux (souffle, plafond du jour, maximum) : les régler (points), la rendre infinie ; les valeurs lues sont
+  // celles de GameState (écrites tous les quelques points)
+  const level = (value: number) => el('input', { type: 'number', min: '0', max: String(stamina.max.cap), step: '5', value: String(value) });
+  const energyBreath = level(stamina.max.start);
+  const energyCeiling = level(stamina.max.start);
+  const energyMax = level(stamina.max.start);
   const energyButton = button('Régler', () => {
-    const v = Math.min(stamina.max, Math.max(0, Number(energy.value) || 0));
-    energy.value = String(v);
-    send({ kind: 'stamina', value: v });
+    const max = Math.min(stamina.max.cap, Math.max(1, Number(energyMax.value) || 1));
+    const ceiling = Math.min(max, Math.max(0, Number(energyCeiling.value) || 0));
+    const breath = Math.min(ceiling, Math.max(0, Number(energyBreath.value) || 0));
+    [energyMax.value, energyCeiling.value, energyBreath.value] = [max, ceiling, breath].map(String);
+    send({ kind: 'stamina', breath, ceiling, max });
   });
+  // l'horloge : aller à une heure (la prochaine fois qu'elle sonne), pour essayer la nuit et le lever
+  const clockHour = el('input', { type: 'number', min: '0', max: '23.75', step: '0.5', value: '22' });
+  const clockButton = button("Aller à l'heure", () => send({ kind: 'clock', hour: Math.min(23.75, Math.max(0, Number(clockHour.value) || 0)) }));
   const infinite = el('input', { type: 'checkbox' });
   infinite.addEventListener('change', () => {
     send({ kind: 'stamina-infinite', on: infinite.checked });
@@ -242,7 +283,8 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   });
   const energyNow = el('div', { className: 'row' });
   const showEnergy = () => {
-    energyNow.textContent = `Endurance : ${Math.round(game.stamina)} / ${stamina.max} · Jour ${game.day}`;
+    const e = game.stamina;
+    energyNow.textContent = `Souffle ${Math.round(e.breath)} · plafond ${Math.round(e.ceiling)} · maximum ${Math.round(e.max)} · ${clockLabel(game.clock)}`;
   };
   showEnergy();
   setInterval(showEnergy, 200);
@@ -281,12 +323,33 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     pile,
     el('div', { className: 'row' }, [count, el('span', { textContent: ' pièces ' }), turnedLabel, tieLabel]),
     pileButton,
+    el('h3', { textContent: 'Vitesse de simulation' }),
+    el('div', { className: 'row' }, [...simButtons, simLabel]),
+    el('h3', { textContent: 'Vitesses (m/s)' }),
+    el('div', { className: 'row' }, [el('label', {}, ['marche', walkSpeed]), el('label', {}, ['course', runSpeed])]),
+    el('div', { className: 'row' }, [speedsButton, speedsDefault]),
     el('h3', { textContent: 'Force de Xéros' }),
     el('div', { className: 'row' }, [el('label', {}, ['force ×', force]), forceButton]),
+    el('div', { className: 'row' }, [
+      // la force du bûcheron fort (work.json, `references.strong`) rapportée à celle de Xéros (strength.json, `swing`)
+      button(`bûcheron fort (×${(work.references.strong.torque / strength.swing.torque).toFixed(1).replace('.', ',')})`, () => {
+        const m = work.references.strong.torque / strength.swing.torque;
+        force.value = String(Math.round(m * 100) / 100);
+        send({ kind: 'force', multiplier: m });
+      }),
+      button('Xéros (×1)', () => {
+        force.value = '1';
+        send({ kind: 'force', multiplier: 1 });
+      }),
+    ]),
     carried,
     el('h3', { textContent: 'Endurance' }),
-    el('div', { className: 'row' }, [el('label', {}, [energy, 'points']), energyButton]),
+    el('div', { className: 'row' }, [el('label', {}, ['souffle', energyBreath]), el('label', {}, ['plafond', energyCeiling])]),
+    el('div', { className: 'row' }, [el('label', {}, ['maximum', energyMax]), energyButton]),
+    el('div', { className: 'row' }, [button('Endurance de départ', () => send({ kind: 'stamina-start' }))]),
     el('div', { className: 'row' }, [el('label', {}, [infinite, 'endurance infinie'])]),
+    el('div', { className: 'row' }, [el('label', {}, ['heure', clockHour]), clockButton]),
+    el('div', { className: 'row' }, [button('Finir le travail', () => send({ kind: 'finish-work' }))]),
     energyNow,
     el('h3', { textContent: 'Implantation' }),
     plan,

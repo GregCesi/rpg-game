@@ -63,9 +63,10 @@ export class ToolUse {
 
   /**
    * Joue le geste `gesture` (clé de gestures.json) avec l'objet `item` en main (undefined = mains nues).
-   * `onImpact` est appelé à l'image où le coup porte, `onDone` à la fin du geste.
+   * `onImpact` est appelé à l'image où le coup porte, `onDone` à la fin du geste ; `durations` : la durée de chaque image (ms), un coup
+   * de travail (docs/CONCEPTION.md, « Le travail »).
    */
-  swing(gesture: string, item: string | undefined, onImpact: () => void, onDone: () => void): void {
+  swing(gesture: string, item: string | undefined, onImpact: () => void, onDone: () => void, durations?: number[]): void {
     const g = gestures[gesture];
     const dir = this.actor.facing === 'left' ? 'right' : this.actor.facing;
     const anim = `tool-${item}-${gesture}`;
@@ -74,7 +75,10 @@ export class ToolUse {
     this.toolAnim = item && this.scene.anims.exists(`${anim}-${dir}`) ? anim : undefined;
     this.tool.setVisible(!!this.toolAnim);
     if (this.toolAnim) this.tool.setTexture(`tool-${item}`);
-    this.run(`${this.actor.skin}-${gesture}-${this.actor.facing}`, (step) => step === g.impact && onImpact(), onDone);
+    // un coup de travail : ses images aux durées de ses cinq temps (world/swing.ts) ; sinon celles du dessin
+    const key = `${this.actor.skin}-${gesture}-${this.actor.facing}`;
+    const frames = this.scene.anims.get(key)?.frames.length ?? 0;
+    this.run(durations && durations.length === frames ? this.timed(key, durations) : key, (step) => step === g.impact && onImpact(), onDone);
     this.place();
   }
 
