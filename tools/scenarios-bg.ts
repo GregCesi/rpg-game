@@ -6,7 +6,7 @@
 // À lancer en arrière-plan ; code de sortie : celui de la suite.
 
 import { execFileSync, spawn } from 'node:child_process';
-import { cpSync, createWriteStream, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, createWriteStream, existsSync, lstatSync, mkdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const work = process.cwd();
@@ -27,7 +27,14 @@ if (!known) {
   execFileSync('git', ['checkout', '--detach', '--force', sha], { cwd: dir, stdio: 'ignore' });
   execFileSync('git', ['clean', '-fdq', '-e', 'node_modules'], { cwd: dir, stdio: 'ignore' });
 }
-if (!existsSync(join(dir, 'node_modules'))) symlinkSync(join(work, 'node_modules'), join(dir, 'node_modules'), 'dir');
+// node_modules : toujours relié à celui du dossier d'où l'on lance (un lien vers un dossier de travail supprimé serait cassé)
+const link = join(dir, 'node_modules');
+try {
+  if (lstatSync(link).isSymbolicLink()) unlinkSync(link);
+} catch {
+  // pas encore de lien
+}
+if (!existsSync(link)) symlinkSync(join(work, 'node_modules'), link, 'dir');
 // les fichiers générés amorcent la chaîne (le contenu lit les cartes générées) : copiés une fois, puis refaits par art et maps
 if (!existsSync(join(dir, 'src/generated'))) cpSync(join(work, 'src/generated'), join(dir, 'src/generated'), { recursive: true });
 mkdirSync(join(dir, '.art-preview'), { recursive: true });
