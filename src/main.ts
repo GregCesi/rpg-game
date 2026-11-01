@@ -6,6 +6,7 @@ import { buildPlans } from './content/buildPlans';
 import { catalogFrom, validateBuildPlans, validateContent } from './content/validate';
 import { GameEvent } from './events';
 import * as assets from './generated/assets';
+import { combatPoses } from './generated/combatPoses';
 import { BootScene } from './scenes/BootScene';
 import { DialogueScene } from './scenes/DialogueScene';
 import { HudScene } from './scenes/HudScene';
@@ -13,7 +14,7 @@ import { WorldScene } from './scenes/WorldScene';
 
 async function start() {
   // Même vérification que `npm run check` : en dev, une erreur de contenu s'affiche à l'écran au lieu d'un plantage obscur.
-  const problems = [...validateContent(content, catalogFrom(assets)), ...validateBuildPlans(buildPlans)];
+  const problems = [...validateContent({ ...content, combatPoses }, catalogFrom(assets)), ...validateBuildPlans(buildPlans)];
   if (problems.length) {
     const pre = document.createElement('pre');
     pre.style.cssText = 'color:#f3d9b0;background:#14110d;padding:16px;white-space:pre-wrap;font:13px monospace';

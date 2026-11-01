@@ -14,7 +14,9 @@ async function main() {
   const { catalogFrom, validateBuildPlans, validateContent, viewsTodo } = await import('../src/content/validate');
   const manifest = JSON.parse(readFileSync('src/generated/manifest.json', 'utf8'));
   const cat = catalogFrom(manifest);
-  const errors = validateContent(content, cat);
+  // les poses des gestes de combat, écrites par npm run art juste avant (validate.ts ne les importe pas lui-même)
+  const { combatPoses } = await import('../src/generated/combatPoses');
+  const errors = validateContent({ ...content, combatPoses }, cat);
   // les plans du bac à sable (src/content/plans/*.json) : le jeu les charge par Vite, ici on les lit sur le disque
   const { parseBuildPlans } = await import('../src/content/buildPlanFiles');
   const dir = 'src/content/plans';

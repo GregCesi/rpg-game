@@ -13,7 +13,7 @@ import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
 import { openSides } from '../world/zones';
 import { WEAPON_ANGLES } from '../world/strike';
-import { combatPoses } from '../generated/combatPoses';
+import type { CombatPoses } from '../world/strike';
 import { catalog, looksOf } from '../build/catalog';
 import { JointTypeSchema } from './types';
 import type { BuildPlan, CombatDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
@@ -221,6 +221,12 @@ export interface Content {
   rocks: Record<string, Rock>;
   transforms: Record<string, TransformDef>;
   combat: CombatDef;
+  /**
+   * Les poses des gestes de combat (src/generated/combatPoses.ts), passées par qui les a (npm run check, le jeu) : validate.ts ne les
+   * importe pas, car build-art, qui les écrit, l'utilise avant de les avoir écrites (sur un dossier neuf, elles n'existent pas encore).
+   * Absentes : leur vérification est sautée.
+   */
+  combatPoses?: Record<string, CombatPoses>;
 }
 
 /** Clés de props.json : minuscules ASCII, chiffres, tirets. Les majuscules sont réservées aux types de Tiled (Spawn, Exit, Facing). */
@@ -842,7 +848,8 @@ function validateCombat(c: Content, cat: Catalog): string[] {
   }
   // les poses de chaque geste de combat (art/characters/xeros-combat.ts, tirées par build-art) : autant d'images que l'animation du
   // corps dans chaque direction, au moins une image de frappe, la traînée et l'éclat dessinés
-  for (const g of new Set(Object.values(c.combat.attacks).map((a) => a.gesture))) {
+  const combatPoses = c.combatPoses ?? {};
+  for (const g of c.combatPoses ? new Set(Object.values(c.combat.attacks).map((a) => a.gesture)) : []) {
     const poses = combatPoses[g];
     if (!poses) { err(`combat.json geste '${g}' : pas de poses (COMBAT_POSES, art/characters/xeros-combat.ts)`); continue; }
     for (const dir of DIRECTIONS) {
