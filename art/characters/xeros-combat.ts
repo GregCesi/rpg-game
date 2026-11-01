@@ -1,201 +1,41 @@
-// ESSAI (chantier « combat ») : de vrais gestes de combat, d'une main, pour Xéros. Rien de ce fichier n'est chargé par le jeu ni
-// déclaré dans art/index.ts ; tools/essai-gestes.ts le pose sur .art-preview/essai-gestes.png pour que Grégoire choisisse.
+// Les gestes de combat de Xéros, d'une main (docs/CONCEPTION.md, « Le combat » : le corps a ses gestes, qui ne savent pas ce
+// qu'il tient ; l'arme garde son dessin unique en huit angles, planche `weapon-wooden-sword`, posée sur la main image par image).
 //
-// Quatre gestes, dans les quatre directions (docs/CONCEPTION.md, « Le combat » : le corps a ses gestes, qui ne savent pas ce
-// qu'il tient ; l'arme garde son dessin unique en huit angles, planche `weapon-wooden-sword`, posée sur la main image par image) :
 //   - `cut`       la taille, à l'épée de bois : garde, armer, frappe en deux images très rapides (avec la traînée), suite, retour ;
-//   - `overhead`  le coup vertical : l'épée au-dessus de la tête, abattue devant, la pointe près du sol, retour ;
+//   - `overhead`  le coup vertical : l'épée au-dessus de la tête, abattue devant, la pointe près du sol, tenue, retour ;
 //   - `jab-right` le direct du poing droit (main vide), avec un éclat au bout du poing à l'impact ;
 //   - `jab-left`  le direct du poing gauche, le deuxième appui de l'enchaînement gauche-droite.
 //
-// Les DONNÉES (`COMBAT_GESTURES`) servent telles quelles à l'intégration : à chaque image, sa durée, le point des deux mains
-// (dx, dy depuis les pieds, comme gestures.json), l'angle de l'épée (multiple de 45 : 0 = est, 90 = nord) et si elle passe
-// derrière le corps, la traînée (son image et son point) et l'éclat.
+// Ce module donne trois choses :
+//   - les corps, animations `<geste>-<direction>` de la planche `xeros` (`combatAnimations`, ajoutées par xeros.ts) ;
+//   - les images d'effet : chaque traînée `fx-smear-<geste>-<direction>-<n>` (64 × 64, son centre sur la main droite de l'image n)
+//     et l'éclat `fx-spark` (7 × 7), palette `effectPalette` (`combatEffects`, déclarées dans art/index.ts) ;
+//   - les données de chaque image (`COMBAT_POSES`), que le jeu suit telles quelles : durée, mains, épaules, arme, traînée, éclat,
+//     images où le coup porte. La durée d'un coup est la somme des `ms` de ses images, garde comprise (`combatDuration`) : il n'y
+//     a pas d'autre source.
 //
-// La gauche : l'épée reste dans la main DROITE. Vers la gauche, la main droite est du côté du fond (au nord) : la vue gauche
-// n'est donc PAS le miroir de la droite. Elle est dessinée comme un profil droit dont le bras du fond tient l'épée, puis
-// retournée : ses données (`poses.left`) sont écrites comme celles de la droite, dans le repère retourné (le jeu les retourne
-// comme il le fait aujourd'hui : dx opposé, image de l'arme retournée). À l'intégration, `poses.left` remplace le miroir de
-// `poses.right` quand il existe.
+// Repère : (dx, dy) depuis les pieds, comme gestures.json (le pixel (16, 48) de la frame de 32 × 48). L'angle de l'arme est un
+// multiple de 45 (0 = est, 90 = nord) : l'image `angle / 45` de `weapon-wooden-sword`, posée par son centre sur la main droite.
 //
-// Le corps reprend les pièces de art/characters/xeros.ts (tête, torse, jambes, bras par le coude, couches, contour) : elles y
-// sont privées, elles sont recopiées ici pour l'essai ; l'intégration les exportera de xeros.ts au lieu de les recopier.
+// LA GAUCHE : l'épée reste dans la main DROITE. Vers la gauche, la main droite est du côté du fond : la vue gauche n'est donc
+// PAS le miroir de la droite, elle a ses propres poses. Elle est dessinée comme un profil droit dont le bras du fond tient
+// l'épée, puis retournée. L'animation `<geste>-left` de la planche est déjà retournée (prête à jouer telle quelle). Ses DONNÉES
+// (`COMBAT_POSES[geste].left`) et ses images de traînée sont, elles, écrites dans le repère d'avant le retournement : le jeu
+// retourne l'image de l'arme, de la traînée et de l'éclat, et oppose dx (mains, épaules, arme, traînée, éclat), comme il le
+// fait pour les autres vues gauches.
 
 import { Canvas, EMPTY, flipX, selOut, type Grid, type Palette } from '../lib/canvas';
-import { capsule } from '../items/lib';
-import xeros from '../characters/xeros';
+import type { ImageSource } from '../lib/types';
+import { world } from '../palette';
+import {
+  W, H, HEAD_Y, BODY_Y, FRONT_X, SIDE_X, DARK, headFront, headBack, torsoFront, torsoBack, legLeft, legRight, LEG_L, LEG_R,
+  headSide, bodySide, legSide, LEG_SIDE, backLeg, shadow, rim, arm, bareTorso,
+} from './xeros-body';
 
 type Vec = [number, number];
-export type Dir = 'down' | 'up' | 'right' | 'left';
-export const DIRS: Dir[] = ['down', 'up', 'right', 'left'];
-
-const W = 32;
-const H = 48;
-const HEAD_Y = 14;
-const BODY_Y = HEAD_Y + 15;
-const FRONT_X = 10;
-const SIDE_X = 10;
-
-/** La palette du corps : celle de Xéros. */
-export const bodyPalette: Palette = xeros.palette;
-
-const DARK: Record<string, string> = {
-  h: 'd', H: 'd', d: 'd',
-  s: 'D', S: 'D', D: 'D',
-  L: 'Y', t: 'Y', T: 'Y', Y: 'Y',
-  b: 'b',
-  p: 'P', P: 'P',
-  k: 'k', K: 'k',
-};
-
-// ---------- Pièces du corps (recopiées de art/characters/xeros.ts) ----------
-
-const headFront: Grid = [
-  '...oooooo...',
-  '..ohHHhhho..',
-  '.ohHHHhhhdo.',
-  '.ohHHhhhhdo.',
-  '.ohHhhhhhdo.',
-  '.ohhhhhhhdo.',
-  '.ohhhdhhhdo.',
-  '.osddddddSo.',
-  '.osssddssSo.',
-  'oSssossosSSo',
-  'oSssossosSSo',
-  '.osssssssSo.',
-  '..ossssSSo..',
-  '...osssSo...',
-  '....oooo....',
-];
-
-const headBack: Grid = [
-  '...oooooo...',
-  '..ohHHhhho..',
-  '.ohHHHhhhdo.',
-  '.ohHHhhhhdo.',
-  '.ohHhhhhhdo.',
-  '.ohhhhhhhdo.',
-  '.ohhhhhhhdo.',
-  '.ohhhhhhhdo.',
-  '.ohhhhhhhdo.',
-  'oSdhhhhhhdSo',
-  'oSsddddddsSo',
-  '.ossssssSSo.',
-  '..osSSSSSo..',
-  '...oSSSSo...',
-  '....oooo....',
-];
-
-const torsoFront: Grid = [
-  '.osSo.',
-  'oosSoo',
-  'LtTTtt',
-  'Lttttt',
-  'YLttTY',
-  'YLttTY',
-  'YLttTY',
-  'YbbbbY',
-  'YLttTY',
-  'LttTTT',
-  'LtTTTT',
-  'oooooo',
-];
-
-const torsoBack: Grid = [
-  '.osSo.',
-  'oottoo',
-  'LttTtT',
-  'LttTtt',
-  'YLtTtY',
-  'YLttTY',
-  'YLttTY',
-  'YbbbbY',
-  'YLtTtY',
-  'LttTTT',
-  'LtTTTT',
-  'oooooo',
-];
-
-const legLeft: Grid = ['opPo', 'opPo', 'opPo', 'oKko', 'oKko', 'oooo'];
-const legRight: Grid = ['opPo', 'opPo', 'oPPo', 'oKko', 'okko', 'oooo'];
-const LEG_L = 2;
-const LEG_R = 6;
-
-const headSide: Grid = [
-  '...ooooo....',
-  '.oohHHhhoo..',
-  '.ohHHHhhhho.',
-  'ohHHhhhhhho.',
-  'ohHhhhhhhho.',
-  'ohhhhhhhhho.',
-  'ohhhhhhdhdo.',
-  'ohhhddddddo.',
-  'ohhdsssssso.',
-  'ohdSsssosso.',
-  'ohsSDssossso',
-  '.osSsssssSo.',
-  '..ossssssSo.',
-  '...ossDDSo..',
-  '....osDooo..',
-];
-
-const bodySide: Grid = [
-  '...oLtTo....',
-  '..oLLtttTo..',
-  '..oLttttTTo.',
-  '..oLttttTTo.',
-  '...oLtttTo..',
-  '...oLtttTo..',
-  '...oLtttTo..',
-  '...obbbbbo..',
-  '...oLttttTo.',
-  '..oLtttttTo.',
-  '..oLttttttTo',
-  '..oooooooooo',
-];
-
-const legSide: Grid = ['opPo.', 'opPo.', 'opPo.', 'oKkko', 'okkko', 'ooooo'];
-const LEG_SIDE: [number, number] = [3, 5];
-const backLeg = (g: Grid) => Canvas.from(g).recolor({ p: 'P', K: 'k' }).toGrid();
-
-const isMatter = (ch: string) => ch !== EMPTY && ch !== 'x' && ch !== 'o';
-
-function shadow(c: Canvas) {
-  c.ellipse(16.5, 45.5, 5.5, 2, 'x');
-}
-
-function rim(c: Canvas) {
-  const add: Vec[] = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const ch = c.get(x, y);
-    if (ch !== EMPTY && ch !== 'x') continue;
-    if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isMatter(c.get(x + dx, y + dy)))) add.push([x, y]);
-  }
-  for (const [x, y] of add) c.set(x, y, 'o');
-}
-
-/** Bras de l'épaule à la main par le coude, la main (ou le poing) de 3 × 3 au bout (xeros.ts, `arm`). */
-function arm(c: Canvas, pts: Vec[], sleeve: string, sleeveLight: string) {
-  const a = new Canvas(W, H);
-  for (let i = 0; i + 1 < pts.length; i++) {
-    const [x0, y0] = pts[i];
-    const [x1, y1] = pts[i + 1];
-    capsule(a, x0 + 0.5, y0 + 0.5, x1 + 0.5, y1 + 0.5, 1.05, (_t, across) => (across < -0.2 ? sleeveLight : sleeve));
-  }
-  const [hx, hy] = pts[pts.length - 1];
-  a.rect(hx - 1, hy - 1, 3, 3, 's').rect(hx + 1, hy - 1, 1, 3, 'S').set(hx - 1, hy + 1, 'S').set(hx, hy + 1, 'S');
-  const border: [number, number, string][] = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (a.get(x, y) !== EMPTY) continue;
-    if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => a.get(x + dx, y + dy) !== EMPTY)) continue;
-    const under = c.get(x, y);
-    border.push([x, y, isMatter(under) ? DARK[under] ?? 'o' : 'o']);
-  }
-  c.stamp(a.toGrid(), 0, 0);
-  for (const [x, y, k] of border) c.set(x, y, k);
-}
-
-const bareTorso = (torso: Grid): Grid => torso.map((row) => '...' + row + '...');
+export type CombatDir = 'down' | 'up' | 'right' | 'left';
+export const COMBAT_DIRS: CombatDir[] = ['down', 'up', 'right', 'left'];
+export type CombatGesture = 'cut' | 'overhead' | 'jab-right' | 'jab-left';
 
 // ---------- Le modèle d'une image ----------
 
@@ -210,7 +50,7 @@ interface Arm {
 }
 
 interface Frame {
-  /** Nom du temps (garde, armer…), pour la planche. */
+  /** Nom du temps (garde, armer…), pour l'aperçu. */
   name: string;
   ms: number;
   /** Main droite de Xéros (l'épée, le poing droit), main gauche. En profil gauche : repère retourné (voir l'en-tête). */
@@ -225,11 +65,33 @@ interface Frame {
   /** Face/dos : décalage du torse et de la tête (le corps tourne). Profil : le buste penche (−1 en arrière, +1 en avant). */
   torso?: number;
   head?: number;
+  /** Face/dos : le haut du corps (tête, torse, épaules) descend (+1, il avance vers nous) ou monte (−1, il penche au loin). */
+  rise?: number;
   /** Face/dos : [dx, dy] de la jambe gauche de l'image, puis de la droite. Profil : [recul du pied arrière, avance du pied avant]. */
   legs?: [number, number, number, number] | [number, number];
 }
 
 // ---------- Les corps ----------
+
+/** Épaules de face et de dos : celle de gauche de l'image, celle de droite. */
+function frontalShoulders(f: Frame): [Vec, Vec] {
+  const tdx = f.torso ?? 0;
+  const y = BODY_Y + 2 + (f.rise ?? 0);
+  return [[12 + tdx, y], [19 + tdx, y]];
+}
+
+/** Rangées du torse de profil décalées par la penche du buste. */
+function sideShift(f: Frame): number[] {
+  const lean = f.torso ?? 0;
+  return lean < 0 ? [-1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0]
+    : lean > 0 ? [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0] : Array(12).fill(0);
+}
+
+/** Épaules de profil : le bras côté spectateur, celui du fond. */
+function sideShoulders(f: Frame): [Vec, Vec] {
+  const s = sideShift(f)[2];
+  return [[15 + s, BODY_Y + 2], [16 + s, BODY_Y + 2]];
+}
 
 /** Face (`down`) ou dos (`up`). De face, la main droite de Xéros est le bras gauche de l'image ; de dos, le droit. */
 function frontalBody(facing: 'down' | 'up', f: Frame): Grid {
@@ -241,18 +103,18 @@ function frontalBody(facing: 'down' | 'up', f: Frame): Grid {
   c.stamp(legLeft, ox + LEG_L + lx, legY + ly);
   c.stamp(legRight, ox + LEG_R + rx, legY + ry);
   const tdx = f.torso ?? 0;
+  const rise = f.rise ?? 0;
   const imgL = facing === 'down' ? f.right : f.left;
   const imgR = facing === 'down' ? f.left : f.right;
-  const shL: Vec = [12 + tdx, BODY_Y + 2];
-  const shR: Vec = [19 + tdx, BODY_Y + 2];
+  const [shL, shR] = frontalShoulders(f);
   const draw = (layer: Layer) => {
     if (imgL.layer === layer) { rim(c); arm(c, [shL, imgL.elbow, imgL.hand], 't', 'L'); }
     if (imgR.layer === layer) { rim(c); arm(c, [shR, imgR.elbow, imgR.hand], 'T', 't'); }
   };
   draw('body');
-  c.stamp(bareTorso(facing === 'down' ? torsoFront : torsoBack), ox + tdx, BODY_Y);
+  c.stamp(bareTorso(facing === 'down' ? torsoFront : torsoBack), ox + tdx, BODY_Y + rise);
   draw('head');
-  c.stamp(facing === 'down' ? headFront : headBack, ox + (f.head ?? 0), HEAD_Y);
+  c.stamp(facing === 'down' ? headFront : headBack, ox + (f.head ?? 0), HEAD_Y + rise);
   draw('front');
   rim(c);
   return selOut(c.toGrid(), DARK);
@@ -270,12 +132,9 @@ function sideBody(f: Frame, near: Arm, far: Arm): Grid {
   const [back, front] = (f.legs as [number, number] | undefined) ?? [0, 0];
   c.stamp(backLeg(legSide), ox + LEG_SIDE[0] - back, legY);
   c.stamp(legSide, ox + LEG_SIDE[1] + front, legY);
-  const lean = f.torso ?? 0;
-  const shift = lean < 0 ? [-1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0]
-    : lean > 0 ? [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0] : Array(12).fill(0);
+  const shift = sideShift(f);
   const body = bodySide.map((row, y) => (shift[y] >= 0 ? '.'.repeat(shift[y]) + row : row.slice(-shift[y]) + '.'.repeat(-shift[y])));
-  const nearSh: Vec = [15 + shift[2], BODY_Y + 2];
-  const farSh: Vec = [16 + shift[2], BODY_Y + 2];
+  const [nearSh, farSh] = sideShoulders(f);
   const draw = (layer: Layer) => {
     if (far.layer === layer) { rim(c); arm(c, [farSh, far.elbow, far.hand], 'T', 'T'); }
     if (near.layer === layer) { rim(c); arm(c, [nearSh, near.elbow, near.hand], 't', 'L'); }
@@ -283,16 +142,24 @@ function sideBody(f: Frame, near: Arm, far: Arm): Grid {
   draw('body');
   c.stamp(body, ox, BODY_Y);
   draw('head');
-  c.stamp(headSide, ox + (f.head ?? lean), HEAD_Y);
+  c.stamp(headSide, ox + (f.head ?? f.torso ?? 0), HEAD_Y);
   draw('front');
   rim(c);
   return selOut(c.toGrid(), DARK);
 }
 
-function bodyOf(dir: Dir, f: Frame): Grid {
+/** Le corps d'une image ; vers la gauche, retourné (prêt à jouer). */
+function bodyOf(dir: CombatDir, f: Frame): Grid {
   if (dir === 'down' || dir === 'up') return frontalBody(dir, f);
-  // vers la droite, la main droite est devant ; vers la gauche, au fond (repère retourné)
   return dir === 'right' ? sideBody(f, f.right, f.left) : flipX(sideBody(f, f.left, f.right));
+}
+
+/** Les épaules de Xéros (sa droite, sa gauche), dans la frame ; vers la gauche, dans le repère retourné. */
+function shouldersOf(dir: CombatDir, f: Frame): { right: Vec; left: Vec } {
+  if (dir === 'down') { const [l, r] = frontalShoulders(f); return { right: l, left: r }; }
+  if (dir === 'up') { const [l, r] = frontalShoulders(f); return { right: r, left: l }; }
+  const [near, far] = sideShoulders(f);
+  return dir === 'right' ? { right: near, left: far } : { right: far, left: near };
 }
 
 // ---------- Raccourcis d'écriture ----------
@@ -303,13 +170,11 @@ const S = (angle: number, behind = false) => ({ angle, behind });
 // =====================================================================================================================
 // 1. La taille, à l'épée de bois
 // =====================================================================================================================
-// Coup droit de la main droite : armée derrière l'épaule droite, l'épée balaie devant lui de sa droite vers sa gauche, à
-// hauteur de taille, et finit basse de l'autre côté. Vue d'en haut, la pointe tourne dans le sens inverse des aiguilles d'une
-// montre de face (sa droite est à gauche de l'image) et de profil droit ; dans le sens trigonométrique à l'écran.
-// Durées : garde 80, armer 150, frappe 50 + 50, suite 100, retour 100 (450 ms de l'armé au retour, le coup d'épée du jeu
-// dure 0,6 s avec la garde).
+// Coup droit de la main droite : l'épée armée à l'épaule droite passe au-dessus de la tête et s'abat devant le corps, de sa
+// droite vers sa gauche, puis finit basse. Chaque direction a ses poses (la droite n'est pas le miroir de la gauche). Durées :
+// garde 80, armer 150, frappe 50 + 50, suite 100, retour 100 : 530 ms.
 
-const CUT: Record<Dir, Frame[]> = {
+const CUT: Record<CombatDir, Frame[]> = {
   // de face : sa main droite est à gauche de l'image
   down: [
     { name: 'garde', ms: 80, right: A([13, 36], [11, 34]), left: A([20, 35], [21, 33]), sword: S(315), legs: [0, 0, 0, 1] },
@@ -319,28 +184,28 @@ const CUT: Record<Dir, Frame[]> = {
     { name: 'suite', ms: 100, right: A([22, 37], [16, 37]), left: A([21, 32], [22, 31], 'body'), sword: S(0), torso: 1, head: 1, legs: [-1, 0, 1, 1] },
     { name: 'retour', ms: 100, right: A([16, 37], [12, 35]), left: A([20, 35], [21, 33]), sword: S(315), legs: [0, 0, 0, 1] },
   ],
-  // de dos : sa main droite est à droite de l'image ; armée derrière l'épaule, l'épée vers nous, puis elle passe devant
-  // lui (derrière la tête pour nous) et finit basse à sa gauche, revenue de notre côté
+  // de dos : sa main droite est à droite de l'image ; l'épée levée à l'épaule droite, la pointe en l'air, passe par-dessus
+  // la tête (derrière elle pour nous, devant lui), puis descend à sa gauche, basse
   up: [
     { name: 'garde', ms: 80, right: A([22, 35], [22, 33], 'body'), left: A([10, 35], [9, 33], 'body'), sword: S(90, true), legs: [0, -1, 0, 0] },
-    { name: 'armer', ms: 150, right: A([23, 30], [23, 33]), left: A([11, 35], [9, 33], 'body'), sword: S(315), torso: 1, head: 1, legs: [0, -1, 1, 0] },
-    { name: 'frappe 1', ms: 50, right: A([24, 33], [23, 33]), left: A([10, 34], [9, 33], 'body'), sword: S(45, true), smear: { mode: 'ccw', behind: false }, torso: 1, legs: [-1, -1, 1, 0] },
-    { name: 'frappe 2', ms: 50, right: A([16, 29], [21, 32], 'body'), left: A([10, 34], [9, 33], 'body'), sword: S(135, true), smear: { mode: 'ccw', behind: true }, torso: -1, legs: [-1, -1, 1, 0] },
+    { name: 'armer', ms: 150, right: A([23, 29], [24, 32]), left: A([11, 35], [9, 33], 'body'), sword: S(45), torso: 1, head: 1, legs: [0, -1, 1, 0] },
+    { name: 'frappe 1', ms: 50, right: A([21, 24], [24, 28]), left: A([10, 34], [9, 33], 'body'), sword: S(135), smear: { mode: 'ccw', behind: true }, legs: [-1, -1, 1, 0] },
+    { name: 'frappe 2', ms: 50, right: A([11, 33], [15, 32], 'body'), left: A([10, 34], [9, 33], 'body'), sword: S(225, true), smear: { mode: 'ccw', behind: true }, torso: -1, rise: -1, legs: [-1, -1, 1, 0] },
     { name: 'suite', ms: 100, right: A([9, 37], [12, 34], 'body'), left: A([9, 32], [8, 34], 'body'), sword: S(225), torso: -1, head: -1, legs: [-1, -1, 1, 0] },
     { name: 'retour', ms: 100, right: A([21, 35], [22, 33], 'body'), left: A([10, 35], [9, 33], 'body'), sword: S(45, true), legs: [0, -1, 0, 0] },
   ],
-  // de profil droit : la main droite est devant ; armée par-dessus l'épaule, la pointe passe derrière lui, à son côté (vers
-  // nous, en bas de l'image), devant lui, et finit de l'autre côté, au fond, derrière le corps
+  // de profil droit : la main droite est devant ; armée par-dessus l'épaule, la pointe en arrière, l'épée passe dressée
+  // au-dessus de la tête et s'abat devant lui, puis finit basse devant le corps (le trajet de la gauche)
   right: [
     { name: 'garde', ms: 80, right: A([19, 36], [16, 36]), left: A([18, 34], [17, 35], 'body'), sword: S(0), legs: [1, 1] },
-    { name: 'armer', ms: 150, right: A([12, 30], [12, 34]), left: A([18, 34], [17, 35], 'body'), sword: S(135), torso: -1, legs: [2, 1] },
-    { name: 'frappe 1', ms: 50, right: A([16, 37], [14, 35]), left: A([19, 33], [18, 35], 'body'), sword: S(225), smear: { mode: 'ccw', behind: false }, legs: [1, 2] },
-    { name: 'frappe 2', ms: 50, right: A([24, 34], [20, 34]), left: A([18, 33], [17, 35], 'body'), sword: S(0), smear: { mode: 'ccw', behind: false }, torso: 1, legs: [1, 3] },
-    { name: 'suite', ms: 100, right: A([20, 34], [18, 36]), left: A([16, 35], [15, 36], 'body'), sword: S(45, true), torso: 1, legs: [1, 3] },
+    { name: 'armer', ms: 150, right: A([13, 29], [12, 33]), left: A([18, 34], [17, 35], 'body'), sword: S(135), torso: -1, legs: [2, 1] },
+    { name: 'frappe 1', ms: 50, right: A([23, 30], [19, 32]), left: A([18, 34], [17, 35], 'body'), sword: S(90), smear: { mode: 'cw', behind: false }, legs: [1, 2] },
+    { name: 'frappe 2', ms: 50, right: A([24, 34], [20, 34]), left: A([17, 35], [16, 36], 'body'), sword: S(0), smear: { mode: 'cw', behind: false }, torso: 1, legs: [1, 3] },
+    { name: 'suite', ms: 100, right: A([21, 38], [18, 36]), left: A([16, 35], [15, 36], 'body'), sword: S(315), torso: 1, legs: [1, 3] },
     { name: 'retour', ms: 100, right: A([19, 36], [16, 36]), left: A([18, 34], [17, 35], 'body'), sword: S(0), legs: [1, 2] },
   ],
   // vers la gauche (dessiné en profil droit, retourné) : la main droite est au fond ; armée derrière la tête, la pointe passe
-  // au fond (son côté droit), devant lui, puis revient devant le corps, basse, de notre côté
+  // au-dessus de la tête, s'abat devant lui, puis revient devant le corps, basse, de notre côté
   left: [
     { name: 'garde', ms: 80, right: A([21, 36], [18, 36], 'body'), left: A([19, 34], [16, 35]), sword: S(0, true), legs: [1, 1] },
     { name: 'armer', ms: 150, right: A([13, 29], [13, 33], 'body'), left: A([20, 35], [17, 35]), sword: S(135, true), torso: -1, legs: [2, 1] },
@@ -355,10 +220,11 @@ const CUT: Record<Dir, Frame[]> = {
 // 2. Le coup vertical, à l'épée de bois
 // =====================================================================================================================
 // L'épée levée au-dessus de la tête (le bras droit tendu en l'air), abattue devant lui, la pointe près du sol, puis retour.
-// De face, la lame descend le long du côté droit de la tête (pas devant le visage) : une traînée droite, verticale. Durées :
-// garde 80, armer 180, frappe 50 + 50, tenue 120 (la pointe au sol), retour 120.
+// De face, la lame descend le long du côté droit de la tête (pas devant le visage) : une traînée droite, verticale. De dos, à
+// la tenue, le buste penché au loin, la lame dépasse au-dessus de l'épaule, pointée devant lui. Durées : garde 80, armer 180,
+// frappe 50 + 50, tenue 120 (la pointe au sol), retour 120 : 600 ms.
 
-const OVERHEAD: Record<Dir, Frame[]> = {
+const OVERHEAD: Record<CombatDir, Frame[]> = {
   down: [
     { name: 'garde', ms: 80, right: A([13, 36], [11, 34]), left: A([20, 35], [21, 33]), sword: S(315), legs: [0, 0, 0, 1] },
     { name: 'armer', ms: 180, right: A([10, 12], [8, 21], 'head'), left: A([20, 34], [21, 32]), sword: S(90, true), legs: [0, 0, 0, 1] },
@@ -371,8 +237,8 @@ const OVERHEAD: Record<Dir, Frame[]> = {
     { name: 'garde', ms: 80, right: A([22, 35], [22, 33], 'body'), left: A([10, 35], [9, 33], 'body'), sword: S(90, true), legs: [0, -1, 0, 0] },
     { name: 'armer', ms: 180, right: A([21, 12], [23, 21], 'head'), left: A([10, 34], [9, 32], 'body'), sword: S(90), legs: [0, -1, 0, 0] },
     { name: 'frappe 1', ms: 50, right: A([22, 22], [24, 26], 'body'), left: A([10, 35], [9, 33], 'body'), sword: S(90, true), smear: { mode: 'line', behind: true }, legs: [0, -1, 0, 0] },
-    { name: 'frappe 2', ms: 50, right: A([23, 37], [23, 32], 'body'), left: A([10, 35], [9, 33], 'body'), sword: S(90, true), smear: { mode: 'line', behind: true }, legs: [0, -2, 0, 0] },
-    { name: 'tenue', ms: 120, right: A([23, 38], [23, 33], 'body'), left: A([10, 35], [9, 33], 'body'), sword: S(90, true), legs: [0, -2, 0, 0] },
+    { name: 'frappe 2', ms: 50, right: A([24, 35], [24, 32], 'body'), left: A([11, 35], [10, 33], 'body'), sword: S(90, true), smear: { mode: 'line', behind: true }, rise: -1, legs: [0, -2, 0, 0] },
+    { name: 'tenue', ms: 120, right: A([24, 36], [24, 33], 'body'), left: A([11, 35], [10, 33], 'body'), sword: S(90, true), rise: -1, legs: [0, -2, 0, 0] },
     { name: 'retour', ms: 120, right: A([22, 35], [22, 33], 'body'), left: A([10, 35], [9, 33], 'body'), sword: S(90, true), legs: [0, -1, 0, 0] },
   ],
   right: [
@@ -397,29 +263,31 @@ const OVERHEAD: Record<Dir, Frame[]> = {
 // 3. Les coups de poing (main vide)
 // =====================================================================================================================
 // Garde poings levés devant le menton, le poing gauche (le poing avant) un peu plus loin. Armer très court : l'épaule recule.
-// Le bras se tend, petit pas du pied avant, un éclat au bout du poing ; retour en garde. Durées : garde 80, armer 60, frappe
-// 80, retour 120. Le direct du gauche est le deuxième appui de l'enchaînement gauche-droite : même construction, l'autre bras.
+// Le bras se tend, petit pas du pied avant, un éclat au bout du poing ; retour en garde. De face, le haut du corps avance d'un
+// pixel, l'épaule du bras qui frappe tourne vers nous et le poing sort sous le torse : le coup se lit sans l'éclat. De dos,
+// le buste penche au loin, le poing part à côté de la tête, à hauteur d'épaule. Durées : garde 80, armer 60, frappe 80,
+// retour 120 : 340 ms. Le direct du gauche est le deuxième appui de l'enchaînement gauche-droite : même construction, l'autre bras.
 
-const GUARD: Record<Dir, Pick<Frame, 'right' | 'left' | 'legs'>> = {
+const GUARD: Record<CombatDir, Pick<Frame, 'right' | 'left' | 'legs'>> = {
   down: { right: A([13, 31], [11, 35]), left: A([18, 32], [20, 35]), legs: [0, 0, 0, 1] },
   up: { right: A([20, 31], [21, 35], 'body'), left: A([12, 32], [10, 35], 'body'), legs: [0, -1, 0, 0] },
   right: { right: A([19, 31], [16, 35]), left: A([21, 30], [18, 34], 'body'), legs: [1, 1] },
   left: { right: A([20, 31], [17, 34], 'body'), left: A([21, 30], [17, 34]), legs: [1, 1] },
 };
 
-const g = (d: Dir, name: string, ms: number, over: Partial<Frame> = {}): Frame => ({ name, ms, ...GUARD[d], ...over });
+const g = (d: CombatDir, name: string, ms: number, over: Partial<Frame> = {}): Frame => ({ name, ms, ...GUARD[d], ...over });
 
-const JAB_RIGHT: Record<Dir, Frame[]> = {
+const JAB_RIGHT: Record<CombatDir, Frame[]> = {
   down: [
     g('down', 'garde', 80),
-    g('down', 'armer', 60, { right: A([12, 31], [10, 34]), torso: -1, head: 0 }),
-    g('down', 'frappe', 80, { right: A([15, 35], [13, 33]), spark: { hand: 'right', at: [0, 4] }, legs: [0, 0, 0, 2] }),
+    g('down', 'armer', 60, { right: A([12, 31], [10, 34]), torso: -1 }),
+    g('down', 'frappe', 80, { right: A([16, 39], [14, 35]), spark: { hand: 'right', at: [0, 5] }, torso: 1, rise: 1, legs: [0, 0, 0, 2] }),
     g('down', 'retour', 120, { right: A([13, 33], [11, 35]) }),
   ],
   up: [
     g('up', 'garde', 80),
     g('up', 'armer', 60, { right: A([21, 32], [22, 35], 'body'), torso: 1 }),
-    g('up', 'frappe', 80, { right: A([22, 24], [21, 28], 'body'), spark: { hand: 'right', at: [0, -4] }, legs: [0, -2, 0, 0] }),
+    g('up', 'frappe', 80, { right: A([22, 28], [23, 31], 'body'), spark: { hand: 'right', at: [0, -4] }, rise: -1, legs: [0, -2, 0, 0] }),
     g('up', 'retour', 120, { right: A([21, 30], [22, 34], 'body') }),
   ],
   right: [
@@ -437,17 +305,17 @@ const JAB_RIGHT: Record<Dir, Frame[]> = {
   ],
 };
 
-const JAB_LEFT: Record<Dir, Frame[]> = {
+const JAB_LEFT: Record<CombatDir, Frame[]> = {
   down: [
     g('down', 'garde', 80),
     g('down', 'armer', 60, { left: A([19, 31], [21, 34]), torso: 1 }),
-    g('down', 'frappe', 80, { left: A([17, 35], [19, 33]), spark: { hand: 'left', at: [0, 4] }, legs: [0, 0, 0, 2] }),
+    g('down', 'frappe', 80, { left: A([15, 39], [17, 35]), spark: { hand: 'left', at: [0, 5] }, torso: -1, rise: 1, legs: [0, 0, 0, 2] }),
     g('down', 'retour', 120, { left: A([18, 33], [20, 35]) }),
   ],
   up: [
     g('up', 'garde', 80),
     g('up', 'armer', 60, { left: A([11, 32], [9, 35], 'body'), torso: -1 }),
-    g('up', 'frappe', 80, { left: A([9, 24], [10, 28], 'body'), spark: { hand: 'left', at: [0, -4] }, legs: [0, -2, 0, 0] }),
+    g('up', 'frappe', 80, { left: A([9, 28], [8, 31], 'body'), spark: { hand: 'left', at: [0, -4] }, rise: -1, legs: [0, -2, 0, 0] }),
     g('up', 'retour', 120, { left: A([11, 30], [10, 34], 'body') }),
   ],
   // vers la droite, le poing gauche est au fond
@@ -481,14 +349,15 @@ const SMEAR_C = SMEAR_SIZE / 2;
 /** Longueur de la lame de la main à la pointe (art/items/weapons.ts : la garde à +2, 14 px de lame). */
 const REACH = 16;
 
+/** Palette des effets de combat : traînée en trois transparences, éclat plein. */
 export const effectPalette: Palette = {
-  // traînée : `a` (parchemin, world.a) presque plein, puis `^` (lumière du bois, woodAges.new) de plus en plus transparent
-  '1': '#efe6cce0',
-  '2': '#efe6cc99',
-  '3': '#d2b68860',
+  // traînée : `a` (parchemin) presque plein, puis de plus en plus transparent ; la queue dans `^` (lumière du bois neuf)
+  '1': `${world.a}e0`,
+  '2': `${world.a}99`,
+  '3': '#d2b68860', // woodAges.new '^', transparent
   // éclat : parchemin plein, cœur jaune clair de la lueur (world.H)
-  a: '#efe6cc',
-  H: '#f6d36b',
+  a: world.a,
+  H: world.H,
 };
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
@@ -540,7 +409,7 @@ function smearGrid(prev: Frame, cur: Frame, mode: 'ccw' | 'cw' | 'line'): Grid {
 }
 
 /** L'éclat de l'impact, 7 × 7 : un cœur clair et quatre rayons, deux éclats en biais. Ses pixels seuls sont voulus. */
-export const SPARK: Grid = [
+const SPARK: Grid = [
   '...a...',
   '.H.a...',
   '...H...',
@@ -549,77 +418,107 @@ export const SPARK: Grid = [
   '...a.H.',
   '...a...',
 ];
+export const SPARK_IMAGE = 'fx-spark';
 
 // =====================================================================================================================
-// Les données, pour l'intégration
+// Les données, pour le jeu
 // =====================================================================================================================
 
-export interface HandData { dx: number; dy: number; behind: boolean }
-export interface CombatFrameData {
+export interface CombatPoint { dx: number; dy: number }
+export interface CombatHand extends CombatPoint { behind: boolean }
+export interface CombatFrame {
+  /** Nom du temps (garde, armer, frappe…). */
   name: string;
   /** Durée de l'image, en millisecondes. */
   ms: number;
   /** Les deux mains de Xéros (sa droite, sa gauche), depuis les pieds ; `behind` : le bras passe sous le corps. */
-  right: HandData;
-  left: HandData;
+  right: CombatHand;
+  left: CombatHand;
+  /** Les deux épaules (sa droite, sa gauche), depuis les pieds : la zone de coup d'un poing va de l'épaule au poing. */
+  shoulderRight: CombatPoint;
+  shoulderLeft: CombatPoint;
   /** L'épée dans la main droite : l'image `angle / 45` de `weapon-wooden-sword`, posée par son centre sur la main droite. */
   weapon?: { angle: number; behind: boolean };
   /** La traînée : son image (64 × 64), posée par son centre sur (dx, dy) depuis les pieds. */
   smear?: { image: string; dx: number; dy: number; behind: boolean };
   /** L'éclat de l'impact (7 × 7), son centre sur (dx, dy) depuis les pieds. */
   spark?: { image: string; dx: number; dy: number };
-}
-export interface CombatGesture {
-  title: string;
-  /** L'image où le coup porte (la deuxième image de frappe, ou celle du poing tendu). */
-  impact: number;
-  poses: Record<Dir, CombatFrameData[]>;
+  /** L'arme ou le poing frappe sur cette image. */
+  strike?: true;
 }
 
-const GESTURES: Record<string, { title: string; frames: Record<Dir, Frame[]> }> = {
-  cut: { title: 'la taille, a l epee de bois', frames: CUT },
-  overhead: { title: 'le coup vertical, a l epee de bois', frames: OVERHEAD },
-  'jab-right': { title: 'direct du poing droit', frames: JAB_RIGHT },
-  'jab-left': { title: 'direct du poing gauche (2e appui du gauche-droite)', frames: JAB_LEFT },
+const FRAMES: Record<CombatGesture, Record<CombatDir, Frame[]>> = {
+  cut: CUT,
+  overhead: OVERHEAD,
+  'jab-right': JAB_RIGHT,
+  'jab-left': JAB_LEFT,
 };
 
-const at = ([x, y]: Vec) => ({ dx: x - 16, dy: y - 48 });
+/** Titre de chaque geste, pour les aperçus. */
+export const COMBAT_TITLES: Record<CombatGesture, string> = {
+  cut: 'la taille, a l epee de bois',
+  overhead: 'le coup vertical, a l epee de bois',
+  'jab-right': 'direct du poing droit',
+  'jab-left': 'direct du poing gauche (2e appui du gauche-droite)',
+};
 
-/** Les images dessinées : le corps de chaque image, les traînées, l'éclat. */
-export const bodyFrames: Record<string, Record<Dir, Grid[]>> = {};
-export const smearImages: Record<string, Grid> = { };
-export const sparkImage = { name: 'fx-spark', grid: SPARK };
+const at = ([x, y]: Vec): CombatPoint => ({ dx: x - 16, dy: y - 48 });
 
-export const COMBAT_GESTURES: Record<string, CombatGesture> = Object.fromEntries(
-  Object.entries(GESTURES).map(([key, { title, frames }]) => {
-    bodyFrames[key] = {} as Record<Dir, Grid[]>;
-    const poses = {} as Record<Dir, CombatFrameData[]>;
-    for (const dir of DIRS) {
-      const list = frames[dir];
-      bodyFrames[key][dir] = list.map((f) => bodyOf(dir, f));
-      poses[dir] = list.map((f, i) => {
-        const d: CombatFrameData = {
+const smearGrids: Record<string, Grid> = {};
+
+/** Par geste, par direction, les images dans l'ordre. Vers la gauche : repère retourné (voir l'en-tête). */
+export const COMBAT_POSES: Record<CombatGesture, Record<CombatDir, CombatFrame[]>> = Object.fromEntries(
+  (Object.keys(FRAMES) as CombatGesture[]).map((key) => {
+    const byDir = Object.fromEntries(COMBAT_DIRS.map((dir) => {
+      const list = FRAMES[key][dir];
+      return [dir, list.map((f, i): CombatFrame => {
+        const sh = shouldersOf(dir, f);
+        const d: CombatFrame = {
           name: f.name,
           ms: f.ms,
           right: { ...at(f.right.hand), behind: f.right.layer === 'body' },
           left: { ...at(f.left.hand), behind: f.left.layer === 'body' },
+          shoulderRight: at(sh.right),
+          shoulderLeft: at(sh.left),
         };
         if (f.sword) d.weapon = { angle: f.sword.angle, behind: f.sword.behind };
         if (f.smear && f.sword && i > 0) {
           const image = `fx-smear-${key}-${dir}-${i}`;
-          smearImages[image] = smearGrid(list[i - 1], f, f.smear.mode);
+          smearGrids[image] = smearGrid(list[i - 1], f, f.smear.mode);
           d.smear = { image, ...at(f.right.hand), behind: f.smear.behind };
         }
         if (f.spark) {
           const h = f[f.spark.hand].hand;
-          d.spark = { image: sparkImage.name, ...at([h[0] + f.spark.at[0], h[1] + f.spark.at[1]]) };
+          d.spark = { image: SPARK_IMAGE, ...at([h[0] + f.spark.at[0], h[1] + f.spark.at[1]]) };
         }
+        // l'épée frappe sur ses deux images de traînée, le poing sur l'image de l'éclat
+        if (f.smear || f.spark) d.strike = true;
         return d;
-      });
-    }
-    const impact = Math.max(0, frames.down.findIndex((f) => f.spark) >= 0
-      ? frames.down.findIndex((f) => f.spark)
-      : frames.down.map((f) => !!f.smear).lastIndexOf(true));
-    return [key, { title, impact, poses }];
+      })];
+    })) as Record<CombatDir, CombatFrame[]>;
+    return [key, byDir];
   }),
-);
+) as Record<CombatGesture, Record<CombatDir, CombatFrame[]>>;
+
+/** Durée d'un coup, garde comprise : la somme des `ms` de ses images. */
+export function combatDuration(gesture: CombatGesture, dir: CombatDir = 'down'): number {
+  return COMBAT_POSES[gesture][dir].reduce((a, f) => a + f.ms, 0);
+}
+
+/** Les corps des gestes : animations `<geste>-<direction>` de la planche `xeros` (la gauche déjà retournée). */
+export function combatAnimations(): Record<string, { frames: Grid[]; frameRate: number; repeat: number }> {
+  const out: Record<string, { frames: Grid[]; frameRate: number; repeat: number }> = {};
+  for (const key of Object.keys(FRAMES) as CombatGesture[]) {
+    for (const dir of COMBAT_DIRS) {
+      // frameRate sans effet : le jeu impose la durée de chaque image (COMBAT_POSES)
+      out[`${key}-${dir}`] = { frames: FRAMES[key][dir].map((f) => bodyOf(dir, f)), frameRate: 10, repeat: 0 };
+    }
+  }
+  return out;
+}
+
+/** Les images d'effet : chaque traînée, l'éclat. Vers la gauche, les traînées sont dans le repère retourné. */
+export const combatEffects: ImageSource[] = [
+  ...Object.entries(smearGrids).map(([name, grid]): ImageSource => ({ kind: 'image', name, palette: effectPalette, grid })),
+  { kind: 'image', name: SPARK_IMAGE, palette: effectPalette, grid: SPARK },
+];

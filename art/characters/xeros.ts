@@ -11,133 +11,15 @@
 // en x=11-12 et 19-20, torse en x=13 à 18, jambes en x=12-15 et 16-19. De profil : nez en x=21 (y=24), œil en x=17,
 // oreille en x=13-14, bras côté spectateur en x=14 à 17.
 
-import { Canvas, EMPTY, flipX, selOut, type Grid } from '../lib/canvas';
+import { Canvas, flipX, selOut, type Grid } from '../lib/canvas';
 import type { ToolPose, Vec, View } from '../lib/held';
 import { capsule } from '../items/lib';
 import type { SpriteSheetSource } from '../lib/types';
-import { OUTLINE } from '../palette';
-import { palette as portrait } from '../portraits/xeros';
+import {
+  W, H, HEAD_Y, BODY_Y, FRONT_X, SIDE_X, palette, DARK, headFront, headBack, torsoFront, torsoBack, legLeft, legRight, LEG_L, LEG_R, headSide, bodySide, legSide, LEG_SIDE, backLeg, shadow, rim, arm, bareTorso,
+} from './xeros-body';
+import { combatAnimations } from './xeros-combat';
 
-const W = 32;
-const H = 48;
-const HEAD_Y = 14;
-const BODY_Y = HEAD_Y + 15;
-/** Colonne gauche de la silhouette de face et de dos (12 px de large, centrée sur la frame). */
-const FRONT_X = 10;
-/** Colonne gauche de la grille de profil (tête de 12 px, nez compris). */
-const SIDE_X = 10;
-
-const palette = {
-  o: OUTLINE,
-  // cheveux (portrait : h H j)
-  h: portrait.h,
-  H: portrait.H,
-  d: portrait.j,
-  // peau (portrait : s S D) ; D sert au contour côté lumière et au dessous de la mâchoire
-  s: portrait.s,
-  S: portrait.S,
-  D: portrait.D,
-  // tunique de lin (portrait : L t T Y)
-  L: portrait.L,
-  t: portrait.t,
-  T: portrait.T,
-  Y: portrait.Y,
-  b: '#5a3a22', // ceinture de cuir
-  p: '#6f5640', // pantalon
-  P: '#57422f',
-  k: '#3d2a1f', // bottes
-  K: '#5c4130',
-  x: '#00000038', // ombre au sol
-};
-
-// Contour côté lumière : teinte la plus sombre de chaque matière.
-const DARK: Record<string, string> = {
-  h: 'd', H: 'd', d: 'd',
-  s: 'D', S: 'D', D: 'D',
-  L: 'Y', t: 'Y', T: 'Y', Y: 'Y',
-  b: 'b',
-  p: 'P', P: 'P',
-  k: 'k', K: 'k',
-};
-
-// ---------- Tête ----------
-// Crâne de 10 px contour compris, oreilles d'un pixel de chaque côté : 12 px.
-
-// Face : le bord du bol s'arrête au-dessus des oreilles et la frange au-dessus des yeux, avec une mèche plus longue
-// au milieu du front. Tempes rasées en peau, oreilles qui dépassent, un pixel d'œil de chaque côté (deux rangées),
-// deux pixels de joue de part et d'autre, deux entre les yeux.
-const headFront: Grid = [
-  '...oooooo...',
-  '..ohHHhhho..',
-  '.ohHHHhhhdo.',
-  '.ohHHhhhhdo.',
-  '.ohHhhhhhdo.',
-  '.ohhhhhhhdo.',
-  '.ohhhdhhhdo.', // mèches de la frange
-  '.osddddddSo.', // bord du bol, tempes rasées
-  '.osssddssSo.', // mèche plus longue au milieu du front
-  'oSssossosSSo', // yeux, oreilles
-  'oSssossosSSo',
-  '.osssssssSo.',
-  '..ossssSSo..',
-  '...osssSo...',
-  '....oooo....',
-];
-
-// Dos : le bol vu de derrière descend jusqu'aux oreilles ; dessous, l'arrière du crâne rasé garde la silhouette de la
-// mâchoire vue de face, une seule rangée claire, le reste dans l'ombre de la tête.
-const headBack: Grid = [
-  '...oooooo...',
-  '..ohHHhhho..',
-  '.ohHHHhhhdo.',
-  '.ohHHhhhhdo.',
-  '.ohHhhhhhdo.',
-  '.ohhhhhhhdo.',
-  '.ohhhhhhhdo.',
-  '.ohhhhhhhdo.',
-  '.ohhhhhhhdo.',
-  'oSdhhhhhhdSo',
-  'oSsddddddsSo',
-  '.ossssssSSo.',
-  '..osSSSSSo..',
-  '...oSSSSo...',
-  '....oooo....',
-];
-
-// ---------- Corps, face et dos ----------
-// Torse de 6 px (x=13 à 18) entre deux bras de 2 px (manche claire, ombre) ; une colonne d'ombre du lin sépare le bras
-// du torse, sans contour intérieur. Sous les mains, l'ourlet.
-
-const torsoFront: Grid = [
-  '.osSo.', // cou
-  'oosSoo', // épaules, encolure
-  'LtTTtt', // fente de l'encolure
-  'Lttttt',
-  'YLttTY',
-  'YLttTY',
-  'YLttTY',
-  'YbbbbY', // ceinture
-  'YLttTY',
-  'LttTTT', // l'ourlet, sous les mains
-  'LtTTTT',
-  'oooooo',
-];
-
-// Dos : pas d'encolure, un pli qui descend de l'omoplate droite et reprend sous la ceinture.
-const torsoBack: Grid = [
-  '.osSo.',
-  'oottoo',
-  'LttTtT',
-  'LttTtt',
-  'YLtTtY',
-  'YLttTY',
-  'YLttTY',
-  'YbbbbY',
-  'YLtTtY',
-  'LttTTT',
-  'LtTTTT',
-  'oooooo',
-];
 
 // Bras pendants (3 colonnes : contour et manche de 2 px). `raised` : la main remonte d'un pixel (bras qui part vers
 // l'avant pendant la marche).
@@ -161,52 +43,6 @@ function bodyFrontal(torso: Grid, leftRaised: boolean, rightRaised: boolean): Gr
   return torso.map((row, y) => l[y] + row + r[y]);
 }
 
-// Jambes fines, jointes (le contour de chacune les sépare) ; bottes de cuir.
-const legLeft: Grid = ['opPo', 'opPo', 'opPo', 'oKko', 'oKko', 'oooo'];
-const legRight: Grid = ['opPo', 'opPo', 'oPPo', 'oKko', 'okko', 'oooo'];
-/** Colonnes des jambes de face, depuis FRONT_X. */
-const LEG_L = 2;
-const LEG_R = 6;
-
-// ---------- Vue de profil (droite) ----------
-
-// Le bol couvre le crâne et s'arrête au-dessus du front (une rangée de front dégagée devant) ; derrière, il descend
-// plus bas, jusqu'à l'oreille, puis une petite bande rasée à la nuque. Oreille en C (S clair, creux D), œil, nez qui
-// dépasse, mâchoire ombrée, cou court qui disparaît dans le col.
-const headSide: Grid = [
-  '...ooooo....',
-  '.oohHHhhoo..',
-  '.ohHHHhhhho.',
-  'ohHHhhhhhho.',
-  'ohHhhhhhhho.',
-  'ohhhhhhhhho.',
-  'ohhhhhhdhdo.', // mèches de la frange
-  'ohhhddddddo.', // bord du bol
-  'ohhdsssssso.', // front dégagé ; derrière, le bol descend
-  'ohdSsssosso.', // oreille, œil
-  'ohsSDssossso', // le nez dépasse
-  '.osSsssssSo.',
-  '..ossssssSo.',
-  '...ossDDSo..', // dessous de la mâchoire
-  '....osDooo..', // cou
-];
-
-// Torse de profil : col montant autour du cou, poitrine en avant, ourlet qui s'évase sous la ceinture. Dos éclairé à
-// gauche.
-const bodySide: Grid = [
-  '...oLtTo....',
-  '..oLLtttTo..',
-  '..oLttttTTo.',
-  '..oLttttTTo.',
-  '...oLtttTo..',
-  '...oLtttTo..',
-  '...oLtttTo..',
-  '...obbbbbo..',
-  '...oLttttTo.',
-  '..oLtttttTo.',
-  '..oLttttttTo',
-  '..oooooooooo',
-];
 /** Colonne du bras de profil, depuis SIDE_X. */
 const ARM_SIDE_X = 4;
 
@@ -224,26 +60,6 @@ const armSide: Grid = [
   'DSSD',
   '.DD.',
 ];
-
-const legSide: Grid = [
-  'opPo.',
-  'opPo.',
-  'opPo.',
-  'oKkko',
-  'okkko',
-  'ooooo',
-];
-/** Colonnes des jambes de profil (fond, devant), depuis SIDE_X, jambes jointes. */
-const LEG_SIDE: [number, number] = [3, 5];
-
-// La jambe du fond est plus sombre pour qu'on lise la profondeur.
-const backLeg = (g: Grid) => Canvas.from(g).recolor({ p: 'P', K: 'k' }).toGrid();
-
-// ---------- Composition ----------
-
-function shadow(c: Canvas) {
-  c.ellipse(16.5, 45.5, 5.5, 2, 'x');
-}
 
 type Facing = 'down' | 'up';
 
@@ -459,47 +275,6 @@ export const MAUL_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
   right: MAUL_BODY.right.map((b) => b.tool),
 };
 
-/** Tout ce qui n'est ni vide, ni ombre au sol, ni contour. */
-const isMatter = (ch: string) => ch !== EMPTY && ch !== 'x' && ch !== 'o';
-
-/** Contour d'un pixel autour de la matière (sur le vide et l'ombre au sol). */
-function rim(c: Canvas) {
-  const add: Vec[] = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const ch = c.get(x, y);
-    if (ch !== EMPTY && ch !== 'x') continue;
-    if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isMatter(c.get(x + dx, y + dy)))) add.push([x, y]);
-  }
-  for (const [x, y] of add) c.set(x, y, 'o');
-}
-
-/**
- * Bras de l'épaule à la main, par le coude : manche de lin, mains de peau jointes sur le manche.
- * Bordé de contour sur le vide, et de la teinte la plus sombre de ce qu'il recouvre ailleurs
- * (pas de contour intérieur).
- */
-function arm(c: Canvas, pts: Vec[], sleeve: string, sleeveLight: string) {
-  const a = new Canvas(W, H);
-  for (let i = 0; i + 1 < pts.length; i++) {
-    const [x0, y0] = pts[i];
-    const [x1, y1] = pts[i + 1];
-    capsule(a, x0 + 0.5, y0 + 0.5, x1 + 0.5, y1 + 0.5, 1.05, (_t, across) => (across < -0.2 ? sleeveLight : sleeve));
-  }
-  const [hx, hy] = pts[pts.length - 1];
-  a.rect(hx - 1, hy - 1, 3, 3, 's').rect(hx + 1, hy - 1, 1, 3, 'S').set(hx - 1, hy + 1, 'S').set(hx, hy + 1, 'S');
-  const border: [number, number, string][] = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (a.get(x, y) !== EMPTY) continue;
-    if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => a.get(x + dx, y + dy) !== EMPTY)) continue;
-    const under = c.get(x, y);
-    border.push([x, y, isMatter(under) ? DARK[under] ?? 'o' : 'o']);
-  }
-  c.stamp(a.toGrid(), 0, 0);
-  for (const [x, y, k] of border) c.set(x, y, k);
-}
-
-/** Torse sans bras pendants : seul le bord de l'épaule reste. */
-const bareTorso = (torso: Grid): Grid => torso.map((row) => '...' + row + '...');
 
 function useFrontal(facing: Facing, b: UseBody): Grid {
   const c = new Canvas(W, H);
@@ -992,6 +767,8 @@ const xeros: SpriteSheetSource = {
     'push-walk-up': { frames: pushWalkFrontal('up'), frameRate: PUSH_FRAME_RATE, repeat: -1 },
     'push-walk-right': { frames: pushWalkRight, frameRate: PUSH_FRAME_RATE, repeat: -1 },
     'push-walk-left': { frames: pushWalkRight.map(flipX), frameRate: PUSH_FRAME_RATE, repeat: -1 },
+    // les gestes de combat (taille, coup vertical, directs), la gauche dessinée à part : art/characters/xeros-combat.ts
+    ...combatAnimations(),
   },
 };
 

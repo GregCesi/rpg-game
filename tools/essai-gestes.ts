@@ -1,12 +1,14 @@
-// Essai des gestes de combat (chantier « combat ») : npx tsx tools/essai-gestes.ts écrit .art-preview/essai-gestes.png.
+// Aperçu des gestes de combat : npx tsx tools/essai-gestes.ts écrit .art-preview/essai-gestes.png et essai-gestes.html.
 //
-// Pose les gestes de art/proposals/gestes-combat.ts (jamais chargé par le jeu), agrandis x6, pour que Grégoire choisisse avant
-// toute intégration : une bande par geste (la taille, le coup vertical, le direct du droit, le direct du gauche), une rangée
-// par direction (bas, haut, droite, gauche), les images dans l'ordre, chacune sur l'herbe ; sous chaque image, son nom et sa
-// durée en ms (chiffres `ui-digit-<n>` de l'interface). Même calcul que le jeu (entities/ToolUse.ts, tools/lib/combat-preview.ts) :
+// Pose les gestes de art/characters/xeros-combat.ts, agrandis x6 : une bande par geste (la taille, le coup vertical, le direct
+// du droit, le direct du gauche), une rangée par direction (bas, haut, droite, gauche), les images dans l'ordre, chacune sur
+// l'herbe ; sous chaque image, son nom et sa durée en ms (chiffres `ui-digit-<n>` de l'interface). Même calcul que le jeu :
 // l'image d'angle de `weapon-wooden-sword` posée par son centre sur la main droite, pieds + (dx, dy) ; vers la gauche, l'arme,
-// la traînée et l'éclat sont retournés et dx est opposé (les poses `left` sont écrites dans le repère retourné).
-// Lit les sources d'art directement (pas src/generated/). Écrit aussi chaque bande à part dans .art-preview/essai-gestes-<n>.png.
+// la traînée et l'éclat sont retournés et dx est opposé (les poses `left` sont écrites dans le repère retourné ; le corps de
+// l'animation `<geste>-left` est déjà retourné).
+// Lit les sources d'art directement (pas src/generated/). Écrit aussi chaque bande à part dans .art-preview/essai-gestes-<n>.png,
+// et .art-preview/essai-gestes.html : chaque geste joué en boucle à vitesse réelle (durée `ms` de chaque image), une ligne par
+// direction, une colonne par geste, pour juger la largeur des traînées en mouvement.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -18,9 +20,11 @@ import tiles from '../art/world/tiles';
 import ui from '../art/ui/dialog';
 import type { SpriteSheetSource } from '../art/lib/types';
 import { weaponFrame } from '../src/world/strike';
+import xeros from '../art/characters/xeros';
 import {
-  bodyFrames, bodyPalette, COMBAT_GESTURES, DIRS, effectPalette, smearImages, sparkImage, type CombatFrameData, type Dir,
-} from '../art/proposals/gestes-combat';
+  COMBAT_DIRS as DIRS, COMBAT_POSES, COMBAT_TITLES, combatDuration, combatEffects, effectPalette, type CombatDir as Dir,
+  type CombatFrame, type CombatGesture,
+} from '../art/characters/xeros-combat';
 import { Sheet, type Rgb } from './lib/audit-preview';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -47,14 +51,20 @@ const DIR_LABEL: Record<Dir, string[]> = {
   down: ['bas'],
   up: ['haut'],
   right: ['droite'],
-  left: ['gauche', 'epee toujours', 'main droite', '(au fond)'],
+  left: ['gauche'],
 };
+/** Sous « gauche », pour les gestes à l'épée seulement. */
+const SWORD_LEFT = ['epee toujours', 'main droite', '(au fond)'];
+
+const GESTURES = Object.keys(COMBAT_POSES) as CombatGesture[];
+const effect = (name: string) => (combatEffects.find((e) => e.name === name) as { grid: Grid }).grid;
+const body = (key: CombatGesture, dir: Dir, i: number) => xeros.animations[`${key}-${dir}`].frames[i];
 
 /**
  * Pose une image par son centre sur le point (dx, dy) des pieds ; vers la gauche, retournée et dx opposé. (sx, sy) : le coin
  * de la frame du corps sur la planche, en pixels de la planche.
  */
-function place(s: Sheet, grid: Grid, pal: Palette, sx: number, sy: number, dx: number, dy: number, left: boolean) {
+function place(s: Sheet, grid: Grid, pal: Palette, sx: number, sy: number, dx: number, dy: number, left: boolean, K: number) {
   const w = grid[0].length;
   const h = grid.length;
   const g = left ? flipX(grid) : grid;
@@ -64,7 +74,7 @@ function place(s: Sheet, grid: Grid, pal: Palette, sx: number, sy: number, dx: n
   s.blit(g, pal, sx + (hx - gx) * K, sy + (48 + dy - gy) * K, K);
 }
 
-function cell(s: Sheet, x: number, y: number, body: Grid, f: CombatFrameData, left: boolean) {
+function cell(s: Sheet, x: number, y: number, body: Grid, f: CombatFrame, left: boolean, K: number) {
   // l'herbe de la case
   for (let ty = 0; ty < CH; ty += 32) for (let tx = 0; tx < CW; tx += 32) {
     const sub = grass.grid.slice(0, Math.min(32, CH - ty)).map((r) => r.slice(0, Math.min(32, CW - tx)));
@@ -72,15 +82,15 @@ function cell(s: Sheet, x: number, y: number, body: Grid, f: CombatFrameData, le
   }
   const bx = x + OX * K;
   const by = y + OY * K;
-  const put = (grid: Grid, pal: Palette, dx: number, dy: number) => place(s, grid, pal, bx, by, dx, dy, left);
+  const put = (grid: Grid, pal: Palette, dx: number, dy: number) => place(s, grid, pal, bx, by, dx, dy, left, K);
   const weapon = f.weapon ? angles[weaponFrame(f.weapon.angle)] : undefined;
-  const smear = f.smear ? smearImages[f.smear.image] : undefined;
+  const smear = f.smear ? effect(f.smear.image) : undefined;
   if (smear && f.smear!.behind) put(smear, effectPalette, f.smear!.dx, f.smear!.dy);
   if (weapon && f.weapon!.behind) put(weapon, sword.palette, f.right.dx, f.right.dy);
-  s.blit(body, bodyPalette, bx, by, K);
+  s.blit(body, xeros.palette, bx, by, K);
   if (smear && !f.smear!.behind) put(smear, effectPalette, f.smear!.dx, f.smear!.dy);
   if (weapon && !f.weapon!.behind) put(weapon, sword.palette, f.right.dx, f.right.dy);
-  if (f.spark) put(sparkImage.grid, effectPalette, f.spark.dx, f.spark.dy);
+  if (f.spark) put(effect(f.spark.image), effectPalette, f.spark.dx, f.spark.dy);
 }
 
 function durationAt(s: Sheet, ms: number, x: number, y: number) {
@@ -93,23 +103,23 @@ function durationAt(s: Sheet, ms: number, x: number, y: number) {
   s.text('ms', cx + 6, y + 6, GREY, 2);
 }
 
-function band(key: string): Sheet {
-  const gst = COMBAT_GESTURES[key];
-  const cols = Math.max(...DIRS.map((d) => gst.poses[d].length));
+function band(key: CombatGesture): Sheet {
+  const poses = COMBAT_POSES[key];
+  const cols = Math.max(...DIRS.map((d) => poses[d].length));
   const rowH = CH * K + BELOW;
   const width = LABEL_W + cols * (CW * K + 12);
   const height = TITLE + DIRS.length * rowH + 10;
   const s = new Sheet(width, height, BG);
-  const total = gst.poses.down.slice(1).reduce((a, f) => a + f.ms, 0);
-  s.text(`${gst.title}  -  ${total} ms de l armer au retour`, 16, 20, GOLD, 5);
+  s.text(`${COMBAT_TITLES[key]}  -  ${combatDuration(key)} ms garde comprise`, 16, 20, GOLD, 5);
   DIRS.forEach((dir, r) => {
     const y = TITLE + r * rowH;
-    DIR_LABEL[dir].forEach((l, i) => s.text(l, 16, y + 20 + i * 26, i === 0 ? WHITE : GREY, i === 0 ? 4 : 3));
-    gst.poses[dir].forEach((f, i) => {
+    const label = dir === 'left' && poses.left.some((f) => f.weapon) ? [...DIR_LABEL[dir], ...SWORD_LEFT] : DIR_LABEL[dir];
+    label.forEach((l, i) => s.text(l, 16, y + 20 + i * 26, i === 0 ? WHITE : GREY, i === 0 ? 4 : 3));
+    poses[dir].forEach((f, i) => {
       const x = LABEL_W + i * (CW * K + 12);
-      cell(s, x, y, bodyFrames[key][dir][i], f, dir === 'left');
-      const tag = f.name + (i === gst.impact ? ' *' : '');
-      s.text(tag, x + 4, y + CH * K + 8, i === gst.impact ? GOLD : WHITE, 3);
+      cell(s, x, y, body(key, dir, i), f, dir === 'left', K);
+      const tag = f.name + (f.strike ? ' *' : '');
+      s.text(tag, x + 4, y + CH * K + 8, f.strike ? GOLD : WHITE, 3);
       durationAt(s, f.ms, x + 4, y + CH * K + 30);
     });
   });
@@ -128,9 +138,57 @@ function stack(sheets: Sheet[]): PNG {
   return out.png;
 }
 
-const sheets = Object.keys(COMBAT_GESTURES).map(band);
+/** Une image du geste, seule, à l'échelle 1, en data URI PNG (la page l'agrandit). */
+function frameUri(key: CombatGesture, dir: Dir, i: number): string {
+  const s = new Sheet(CW, CH, BG);
+  cell(s, 0, 0, body(key, dir, i), COMBAT_POSES[key][dir][i], dir === 'left', 1);
+  return `data:image/png;base64,${PNG.sync.write(s.png).toString('base64')}`;
+}
+
+/** La page animée : chaque geste en boucle à vitesse réelle, un court temps de garde entre deux boucles. */
+function page(): string {
+  const PAUSE = 400;
+  const anims = GESTURES.map((key) => DIRS.map((dir) => ({
+    key, dir, frames: COMBAT_POSES[key][dir].map((f, i) => ({ src: frameUri(key, dir, i), ms: f.ms })),
+  })));
+  const head = GESTURES.map((k) => `<th>${k}<br><small>${combatDuration(k)} ms</small></th>`).join('');
+  const rows = DIRS.map((dir, r) => `<tr><th>${dir}</th>${GESTURES.map((_, c) => `<td><img data-a="${c},${r}" width="${CW * K}" height="${CH * K}"></td>`).join('')}</tr>`).join('\n');
+  return `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Gestes de combat</title>
+<style>
+body { background: #282c1a; color: #f5d778; font: 14px monospace; margin: 16px; }
+table { border-collapse: separate; border-spacing: 8px; }
+th { color: #fff; font-weight: normal; padding: 4px; }
+img { image-rendering: pixelated; display: block; }
+</style></head><body>
+<p>Gestes de combat de Xéros, x${K}, à vitesse réelle (durée de chaque image), ${PAUSE} ms en garde entre deux boucles.</p>
+<table><tr><th></th>${head}</tr>
+${rows}
+</table>
+<script>
+const ANIMS = ${JSON.stringify(anims.map((col) => col.map((a) => a.frames)))};
+const PAUSE = ${PAUSE};
+document.querySelectorAll('img[data-a]').forEach((img) => {
+  const [c, r] = img.dataset.a.split(',').map(Number);
+  const frames = ANIMS[c][r];
+  let i = 0;
+  const step = () => {
+    img.src = frames[i].src;
+    // la garde (image 0) dure en plus le temps de pause, au début de chaque boucle
+    const ms = frames[i].ms + (i === 0 ? PAUSE : 0);
+    i = (i + 1) % frames.length;
+    setTimeout(step, ms);
+  };
+  step();
+});
+</script></body></html>
+`;
+}
+
+const sheets = GESTURES.map(band);
 const dir = join(ROOT, '.art-preview');
 mkdirSync(dir, { recursive: true });
 sheets.forEach((s, i) => writeFileSync(join(dir, `essai-gestes-${i + 1}.png`), PNG.sync.write(s.png)));
 writeFileSync(join(dir, 'essai-gestes.png'), PNG.sync.write(stack(sheets)));
-console.log(`essai-gestes : ${Object.keys(COMBAT_GESTURES).join(', ')} -> ${join(dir, 'essai-gestes.png')}`);
+writeFileSync(join(dir, 'essai-gestes.html'), page());
+console.log(`essai-gestes : ${GESTURES.join(', ')} -> ${join(dir, 'essai-gestes.png')}, essai-gestes.html`);
