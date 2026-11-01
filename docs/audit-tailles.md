@@ -1,5 +1,9 @@
 # Audit des tailles
 
+> **Archive, fichiers cités disparus** (bandeau du 2 novembre 2026, chantier 2 de l'audit, docs/AUDIT.md) : rapport daté du
+> 30 octobre 2026, plus tenu à jour ; des objets, des images et des chiffres qu'il cite ont changé ou disparu depuis. Ce qui fait foi :
+> docs/STYLE.md section 8 (le gabarit), `EXCEPTIONS` de validate.ts et `npm run check`.
+
 > **Mise à jour (chantier « largeur », 30 octobre 2026)** : corrigés, marqués **✔ corrigé** plus bas : Xéros et la mère amincis à 12 px (60 cm), la mère à 32 px (160 cm), collision de Xéros 10 × 8 px ; tonneau, caisse, coffre, tabouret, botte de foin, bougie, lanterne redessinés à leur vraie taille ; puits déclaré à 215 cm. Tous sortis d'`EXCEPTIONS` (seul reste `big-pollard`). Non touchés, pour le chantier « maison » : cheminée, tables, murs, portes, `maison.tmj`. Les mesures et verdicts ci-dessous sont ceux de l'audit d'origine.
 
 Rapport de lecture : aucun dessin, aucune dimension de `props.json`, aucune `EXCEPTIONS` n'a été changé. Mesures prises le 30 octobre 2026 sur la branche `realisme` (`npm run art`, `src/generated/manifest.json`, `expectedSize` de `src/content/gabarit.ts`). Image : `.art-preview/audit-tailles.png` (`npm run art:preview`, outil `tools/lib/audit-preview.ts`) : chaque objet hors gabarit à côté de Xéros, à la même échelle, avec en jaune la taille attendue d'après les dimensions déclarées et en cyan celle d'après les dimensions proposées ici.

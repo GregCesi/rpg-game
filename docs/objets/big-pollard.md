@@ -40,10 +40,11 @@ Seul. Les deux pièces couchées forment une chaîne (ordre de `spawns`) ; leurs
 (`big-logs`).
 
 ## Gestes
-- Espace avec la hache, debout, de côté (`use`) : 4 coups, il tombe du côté opposé à Xéros, laisse sa souche et fait naître
+- Espace avec la hache, debout, de côté (`use`) : un travail au coup (docs/CONCEPTION.md, « Le travail ») (`work.fell`, 55 cm : environ 2 h 30 pour Xéros) ; il
+  tombe du côté où Xéros frappe (Xéros s'y place au lancement, l'entaille s'y dessine), laisse sa souche et fait naître
   ses deux pièces : souche `at` [17, -2], section 1 en (45, -6), houppier en (55, 0) ; `fall` : x -14, `foot` 33, à
   gauche x -45.
-- Puis comme le gros grand : ébrancher le houppier (branches), couper l'encoche (3 coups), prendre, tourner, poser les billes.
+- Puis comme le gros grand : ébrancher le houppier (branches), couper la pièce de bois (un travail au coup, trois étapes), prendre, tourner, poser les billes.
 
 ## Origine
 Pousse dans la ferme (`ferme.tmj`), parmi les deux autres arbres.

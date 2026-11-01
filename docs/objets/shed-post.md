@@ -38,7 +38,7 @@ Seul ; quatre par abri, aux quatre coins : nord-ouest, nord-est, sud-ouest, sud-
 - E court, E maintenu, Espace, R, Q : rien.
 
 ## Origine
-Places du plan `woodshed`. Une poutre équarrie à la doloire (arbre normal abattu, ébranché, coupé à 1,80 m ou 3 m, 12 coups) :
+Places du plan `woodshed`. Une poutre équarrie à la doloire (arbre normal abattu, ébranché, coupé à 1,80 m ou 3 m, quatre passes de doloire, un travail au coup) :
 le poteau bas est porté et dressé avec E sur son dé ; le poteau haut est équarri au pied de son dé, puis dressé avec l'aide de la
 mère (E maintenu, fondu). Le chantier garde la pièce de bois d'origine (`pieces`).
 

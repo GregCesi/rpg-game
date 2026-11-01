@@ -28,11 +28,13 @@ Pas déplaçables, pas de masse. Ébranchés, leur tronc est une pièce de bois 
 Seul.
 
 ## Gestes
-- Espace, la cognée, de haut en bas sur le houppier (3 coups) : des branches tombent, et le tronc ébranché devient une seule pièce
+- Espace, la cognée, de haut en bas sur le houppier : un appui lance le travail au coup (docs/CONCEPTION.md, « Le travail ») (`work.limbs` : 16 branches de
+  10 cm, en trois étapes, `stages`) : des branches tombent, et le tronc ébranché devient une seule pièce
   de bois ronde de sa longueur utile, à la place exacte du tronc (`harvest` : `becomes: "wood-piece"`, `wood`, `at`).
 
 ## Origine
-L'arbre debout abattu (4 coups de cognée), qui tombe du côté opposé à Xéros.
+L'arbre debout abattu (un travail au coup, `work.fell`), qui tombe du côté où Xéros frappe (repris le 2 novembre 2026 ; avant : du
+côté opposé).
 
 ## Devenir
 Ébranché : la [pièce de bois](wood-piece.md) qu'on coupe sur la grille de 20 cm (des billes de 1 m), qu'on fend.

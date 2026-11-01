@@ -1,8 +1,9 @@
 # Les commandes
 
-L'inventaire de toutes les touches du jeu au 1er novembre 2026 (chantier « combat de base ») : ce qu'elles font selon ce que Xéros
-tient et où il est, puis les conflits et incohérences relevés, avec ce qu'il faudra trancher. Rien n'a été refondu : la seule
-commande ajoutée par ce chantier est « Espace avec une arme en main attaque ».
+L'inventaire de toutes les touches du jeu au 2 novembre 2026 (après le chantier 1 de l'audit, docs/AUDIT.md) : ce qu'elles font
+selon ce que Xéros tient et où il est, puis les conflits et incohérences relevés, avec ce qu'il faudra trancher. Depuis le premier
+inventaire (1er novembre, chantier « combat de base », qui ajoutait « Espace avec une arme en main attaque ») : le travail au coup
+lancé d'un appui (modes `work` et `rail`, arrêtés par un pas ou Échap) et la vitesse du temps (V seul, en boucle).
 
 Les touches sont lues **par leur place** sur le clavier (`KeyboardEvent.code`, `src/input/PlayerInput.ts`) : la même place sert en
 AZERTY et en QWERTY. Dans ce document, une touche est nommée par sa lettre en AZERTY, la lettre QWERTY entre parenthèses quand elle
@@ -14,10 +15,10 @@ Le monde a un mode à la fois (`WorldScene`) :
 
 | Mode | Quand | Ce qui est lu |
 | --- | --- | --- |
-| **jeu** (`play`) | Xéros marche | tout ce qui suit |
+| **jeu** (`play`) | Xéros marche | tout ce qui suit, dont V (la vitesse du temps) |
 | **geste** (`use`) | un coup d'outil ou une attaque se joue | le zoom ; Espace (gardé : enchaîner l'attaque suivante) ; le reste est lu et jeté |
-| **rail** (`rail`) | une passe de doloire le long d'une pièce, au coup, lancée d'un appui | un pas ou Échap : arrêter après le coup en cours ; le zoom |
-| **travail** (`work`) | un travail au coup (abattre, ébrancher, couper, fendre, tailler), lancé d'un appui : Xéros frappe seul jusqu'au résultat, avec ses pauses de souffle ; une jauge au-dessus de lui | un pas ou Échap : arrêter après le coup en cours (ce qui est fait reste fait) ; le zoom |
+| **rail** (`rail`) | une passe de doloire le long d'une pièce, au coup, lancée d'un appui | un pas ou Échap : arrêter après le coup en cours ; V (la vitesse du temps) ; le zoom |
+| **travail** (`work`) | un travail au coup (abattre, ébrancher, couper, fendre, tailler), lancé d'un appui : Xéros frappe seul jusqu'au résultat, avec ses pauses de souffle ; une jauge au-dessus de lui | un pas ou Échap : arrêter après le coup en cours (ce qui est fait reste fait) ; V (la vitesse du temps) ; le zoom |
 | **dialogue** (`dialogue`) | une ligne de dialogue est ouverte (DialogueScene) | E, Espace, Entrée, clic : la suite ; Z/S (W/S) ou flèches : choisir ; le zoom |
 | **passage** (`transition`) | fondu d'une carte à l'autre, aide de la mère | le zoom |
 | **construction** (`build`, `?construire`) | le bac à sable | voir plus bas |
@@ -93,7 +94,9 @@ Un refus (mauvais outil, pas la place, épuisé) se dit sans geste ni dépense.
 
 ### V (la vitesse du temps)
 - V : le palier suivant de la vitesse du temps (x1, x2, x5, x10, x20, puis de nouveau x1 : en boucle ; x1 au départ), Maj tenue ou
-  non (pendant une course, V accélère aussi) ; Maj + V n'existe plus. Un message dit le palier (« Le temps : x5 ») et l'indicateur sous
+  non (pendant une course, V accélère aussi) ; aucune touche ne revient au palier d'avant (la combinaison avec Maj est retirée depuis
+  le chantier 1 de l'audit). Lue en jeu, pendant un travail et sur un rail ; pas pendant un geste, un dialogue, un passage, la
+  construction. Un message dit le palier (« Le temps : x5 ») et l'indicateur sous
   le cadran le montre toujours, x1 compris. C'est la vitesse de simulation : elle accélère tout le jeu (la marche, les coups, les pauses,
   l'horloge), par pas de taille normale. Une attaque ramène à x1. x50 est réservé à ?dieu (les tests). Pas gardée d'une session à
   l'autre (docs/CONCEPTION.md, « Le temps »).

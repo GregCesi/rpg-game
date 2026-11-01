@@ -27,7 +27,8 @@
   sans son ombre) ; de profil (`right`, `left` en miroir), par le bout, comme la bille portée.
 - Case d'interface : `item-faggot`, 16×16, le fagot de trois quarts et son lien.
 - Fantôme : `faggot` ou `faggot-ns` en transparence, à la place exacte où il ira (tas visé ou nouveau tas).
-- Porté : `carry`, à deux mains, marche lente (`PLAYER.carrySpeed`), pas de course, rien d'autre.
+- Porté : `carry`, à deux mains, au pas (la marche, ralentie au-delà des 25 kg de `walk` : le fagot en pèse 25,2, `walkFactor` de
+  `entities/Strength.ts` ; une seule source des vitesses, `systems/speeds.ts`), pas de course, rien d'autre.
 
 ## Regroupement
 En tas (`piles.json`, `faggots`), même forme que les billes : 3 au sol côte à côte, 2 dans les creux, 1 au sommet, 6 au plus ;
