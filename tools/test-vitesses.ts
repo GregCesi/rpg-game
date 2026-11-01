@@ -29,10 +29,9 @@ await playtest('vitesses', async ({ page, errors, load }) => {
       if (run) window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', keyCode: 16 } as KeyboardEventInit));
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyD', keyCode: 68 } as KeyboardEventInit));
       await sleep(300);
-      const x0 = a.x;
-      const t0 = performance.now();
-      await sleep(1000);
-      const v = (a.x - x0) / ((performance.now() - t0) / 1000);
+      // la vitesse du corps (px/s) : celle que le jeu donne à Xéros, quelle que soit la charge de la machine (un jeu qui rame fait
+      // moins de pas de physique par seconde réelle : la distance chronométrée mentirait)
+      const v = Math.hypot(a.body.velocity.x, a.body.velocity.y);
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyD', keyCode: 68 } as KeyboardEventInit));
       if (run) window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft', keyCode: 16 } as KeyboardEventInit));
       await sleep(200);
@@ -49,8 +48,6 @@ await playtest('vitesses', async ({ page, errors, load }) => {
   const walk = await measure(false);
   const run = await measure(true);
   await load('?dieu');
-  // le jeu qui vient de démarrer rame un instant : la mesure attend qu'il tourne à son rythme
-  await page.waitForTimeout(1500);
   const kept = await measure(false);
   await send({ kind: 'speeds-default' });
   const back = await measure(false);
