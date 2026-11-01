@@ -10,6 +10,7 @@
 // - Un coup dans le vide joue tout le geste et coûte ; le poing nu contre un arbre ne lui fait rien ; épuisé, rien ne part ; les poings
 //   enchaînent le droit puis le gauche ; une pierre dans une main, le poing de l'autre ; une ou deux branches ne changent rien ; branche
 //   et hachette taillent toujours.
+// - Le mannequin posé par le catalogue du mode construction est une cible, et encore après rechargement.
 // Usage : npm run test:combat (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
@@ -277,6 +278,77 @@ await playtest('combat', async ({ page, errors, load }) => {
     return out;
   })) as Record<string, any>;
   console.log(JSON.stringify(r));
+
+  // le mannequin posé par le catalogue du mode construction (une pièce de `builds`, pas un objet de la carte) : il est une cible ;
+  // et encore après rechargement (la sauvegarde)
+  await load('?construire&dieu&reset');
+  const sleep = (t: number) => new Promise((res) => setTimeout(res, t));
+  await page.evaluate(() => (window as any).game.events.emit('dieu', { kind: 'map', map: 'ferme' }));
+  await sleep(1500);
+  const spot = await page.evaluate(() => {
+    const w = (window as any).game.scene.getScene('world');
+    const m = w.map;
+    for (let y = 120; y < m.height - 120; y += 8) {
+      for (let x = 80; x < m.width - 200; x += 8) {
+        if (m.areaFree({ left: x - 60, top: y - 80, right: x + 60, bottom: y + 60 })) {
+          w.cameras.main.centerOn(x, y);
+          return { x, y };
+        }
+      }
+    }
+    return undefined;
+  });
+  assert.ok(spot, 'un coin dégagé sur la ferme');
+  await sleep(300);
+  const screen = (x: number, y: number) =>
+    page.evaluate(([x, y]) => {
+      const g = (window as any).game;
+      const cam = g.scene.getScene('world').cameras.main;
+      const rect = g.canvas.getBoundingClientRect();
+      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
+    }, [x, y] as const);
+  await page.evaluate(() => (window as any).game.events.emit('build', { kind: 'pick', piece: { prop: 'training-dummy' } }));
+  const at = await screen(spot!.x, spot!.y);
+  await page.mouse.move(at.x, at.y);
+  await sleep(100);
+  await page.mouse.click(at.x, at.y);
+  await sleep(200);
+  await page.keyboard.press('KeyB');
+  await sleep(300);
+  // frapper le mannequin posé : l'épée en main, droit devant lui, au sud ; rend les coups qui l'ont touché
+  const hitBuilt = () =>
+    page.evaluate(async () => {
+      const sleep = (t: number) => new Promise((res) => setTimeout(res, t));
+      const g = (window as any).game;
+      const w = g.scene.getScene('world');
+      const built = w.map.builds.find((b: any) => 'prop' in b.piece.piece && b.piece.piece.prop === 'training-dummy');
+      if (!built) return { built: false };
+      g.events.emit('dieu', { kind: 'give', held: { item: 'wooden-sword' } });
+      g.events.emit('dieu', { kind: 'stamina', value: 100 });
+      await sleep(200);
+      const t = w.combat.targets().find((q: any) => q.type === 'training-dummy');
+      const a = w.player.actor;
+      a.body.reset(Math.round((t.box.left + t.box.right) / 2), Math.round(t.box.bottom + 8));
+      a.face('up');
+      await sleep(500);
+      const n = w.combat.log.length;
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
+      await sleep(40);
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space' }));
+      for (let i = 0; i < 150 && (w.mode !== 'play' || w.combat.busy); i++) await sleep(20);
+      await sleep(100);
+      const e = w.combat.log[n];
+      return { built: true, mode: w.mode, attack: e?.attack, hits: e ? e.hits.filter((h: any) => h.type === 'training-dummy').map((h: any) => h.key.split(':')[0]) : [] };
+    });
+  const built = await hitBuilt();
+  await sleep(300);
+  await load('?dieu');
+  await sleep(500);
+  const reloaded = await hitBuilt();
+  console.log(JSON.stringify({ built, reloaded }));
+  assert.ok(built.built, 'le mannequin est posé par le catalogue du mode construction');
+  assert.deepEqual(built.hits, ['build'], 'le mannequin posé par le catalogue est une cible : il est touché');
+  assert.deepEqual(reloaded.hits, ['build'], 'et encore après rechargement (la sauvegarde)');
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   for (const [item, res] of Object.entries(r.weapons) as [string, any][]) {
     for (const [dir, d] of Object.entries(res.dirs) as [string, any][]) {

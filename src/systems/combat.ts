@@ -1,12 +1,15 @@
 import Phaser from 'phaser';
 import { DEBUG, DEPTH, UI, ZOOM_STEPS } from '../config';
-import { combat, items, stamina } from '../content';
+import { combat, items, props, stamina } from '../content';
 import { itemMass } from '../content/mass';
 import type { Attack, Facing, SweepDef, Weapon } from '../content/types';
 import type { Player } from '../entities/Player';
 import { combatPoses } from '../generated/combatPoses';
 import { game } from '../state';
-import type { GameMap, PlacedProp } from '../world/GameMap';
+import type { GameMap } from '../world/GameMap';
+import { boxOf } from '../world/build';
+import { CM_PER_PX } from '../content/gabarit';
+import type { Target as TargetDef } from '../content/types';
 import {
   aimShift,
   attackCost,
@@ -22,11 +25,27 @@ import {
   zoneHits,
   type CombatFrame,
   type Grip,
+  type Box,
   type Point,
   type Segment,
   type Shift,
 } from '../world/strike';
 import type { HarvestSystem } from './harvest';
+
+/**
+ * Une cible sur la carte, quelle que soit la façon dont elle a été posée : un objet de la carte (Tiled, ?dieu, né pendant la partie :
+ * `map.props`) ou une pièce posée en mode construction (le catalogue, un plan, la sauvegarde : `map.builds`). `key` : unique sur la
+ * carte ; `box` : son emprise au sol (px) ; `image` : ce qui réagit ; `x`, `y` : le coin bas gauche de son image au repos.
+ */
+interface Target {
+  key: string;
+  type: string;
+  def: TargetDef;
+  box: Box;
+  image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
+  x: number;
+  y: number;
+}
 
 /** Ce qui frappe : une arme possédable (`item`), ou la main nue (`fist`, combat.json `unarmed`). */
 export type Striker = { item: string } | { fist: true };
@@ -51,9 +70,9 @@ export interface AttackPlan {
   shift: Shift;
   drawShift: Point;
   /** Les cibles déjà touchées par ce coup : une cible ne prend qu'un coup par frappe. */
-  touched: Set<number>;
+  touched: Set<string>;
   /** Les cibles que la zone aurait touchées sans l'écart, et que l'écart a fait manquer : « raté » à la fin du coup. */
-  missed: Map<number, PlacedProp>;
+  missed: Map<string, Target>;
 }
 
 /** Ce qu'a fait un coup (les tests le lisent). */
@@ -67,8 +86,8 @@ export interface StrikeLog {
   damage: number;
   precision: number;
   shift: Shift;
-  hits: { id: number; type: string; damage: number; step: number }[];
-  misses: number[];
+  hits: { key: string; type: string; damage: number; step: number }[];
+  misses: string[];
 }
 
 /**
@@ -97,7 +116,9 @@ export class CombatSystem {
   /** Espace a été appuyé pendant l'attaque en cours : la suivante partira à sa fin. */
   private queued = false;
   /** La réaction en cours de chaque cible touchée. */
-  private readonly reacting = new Map<PlacedProp, Phaser.Tweens.Tween>();
+  private readonly reacting = new Map<string, Phaser.Tweens.Tween>();
+  /** Où est l'image de chaque cible au repos (avant sa réaction en cours) : elle y revient. */
+  private readonly rest = new Map<string, { x: number; y: number }>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -189,9 +210,9 @@ export class CombatSystem {
    * Espace a été appuyé pendant le geste (enchaîner tout de suite).
    */
   end(p: AttackPlan, time: number): boolean {
-    for (const [id, q] of p.missed) {
-      if (p.touched.has(id)) continue;
-      this.log[this.log.length - 1]?.misses.push(id);
+    for (const [key, q] of p.missed) {
+      if (p.touched.has(key)) continue;
+      this.log[this.log.length - 1]?.misses.push(key);
       this.float(q, 'raté');
     }
     this.busy = false;
@@ -202,6 +223,28 @@ export class CombatSystem {
   }
 
   /**
+   * Les cibles de la carte : les objets de la carte et les pièces posées en mode construction qui portent un `target` (props.json),
+   * visibles. Une cible posée par le catalogue, un plan ou la sauvegarde compte comme une posée dans Tiled ou par ?dieu.
+   */
+  targets(): Target[] {
+    const out: Target[] = [];
+    for (const q of this.map.props) {
+      if (!q.def.target || !q.image.visible) continue;
+      out.push({ key: `prop:${q.id}`, type: q.type, def: q.def.target, box: footprint(q.def.dims, q.baseX, q.baseY), image: q.image, x: q.x, y: q.y });
+    }
+    for (const b of this.map.builds) {
+      const ref = b.piece.piece;
+      if (!('prop' in ref) || !b.image.visible) continue;
+      const def = props[ref.prop];
+      if (!def?.target) continue;
+      const c = boxOf(b.piece);
+      const box = { left: c.x / CM_PER_PX, top: c.y / CM_PER_PX, right: (c.x + c.w) / CM_PER_PX, bottom: (c.y + c.d) / CM_PER_PX };
+      out.push({ key: `build:${b.piece.id}`, type: ref.prop, def: def.target, box, image: b.image, x: b.image.x, y: b.image.y });
+    }
+    return out;
+  }
+
+  /**
    * Une image du coup `p` (son indice `step`) : si elle est active, la zone qu'elle balaie au sol ; chaque cible dont l'emprise y
    * entre, pas encore touchée par ce coup, l'est : le ressenti, le chiffre des dégâts, le journal ; une cible que l'écart seul fait
    * manquer est notée pour « raté ».
@@ -209,15 +252,14 @@ export class CombatSystem {
   strike(player: Player, p: AttackPlan, step: number): void {
     if (!p.sweep.active.includes(step)) return;
     const feet = { x: player.actor.x, y: player.actor.y };
-    const hit: PlacedProp[] = [];
-    for (const q of this.map.props) {
-      if (!q.def.target || !q.image.visible || p.touched.has(q.id)) continue;
-      const box = footprint(q.def.dims, q.baseX, q.baseY);
-      if (zoneHits(p.sweep, p.weapon, p.facing, feet, step, box, p.shift)) {
-        p.touched.add(q.id);
-        p.missed.delete(q.id);
+    const hit: Target[] = [];
+    for (const q of this.targets()) {
+      if (p.touched.has(q.key)) continue;
+      if (zoneHits(p.sweep, p.weapon, p.facing, feet, step, q.box, p.shift)) {
+        p.touched.add(q.key);
+        p.missed.delete(q.key);
         hit.push(q);
-      } else if (zoneHits(p.sweep, p.weapon, p.facing, feet, step, box, NO_SHIFT)) p.missed.set(q.id, q);
+      } else if (zoneHits(p.sweep, p.weapon, p.facing, feet, step, q.box, NO_SHIFT)) p.missed.set(q.key, q);
     }
     if (DEBUG) this.showZone(sweepAt(p.sweep, p.weapon, p.facing, feet, step, p.shift), p.sweep.width);
     if (!hit.length) return;
@@ -227,7 +269,7 @@ export class CombatSystem {
     player.tools.hold(feel.hitStopMs);
     if (p.damage >= feel.shakeFrom) this.scene.cameras.main.shake(feel.shakeMs, feel.shakeIntensity);
     for (const q of hit) {
-      entry?.hits.push({ id: q.id, type: q.type, damage: p.damage, step });
+      entry?.hits.push({ key: q.key, type: q.type, damage: p.damage, step });
       this.scene.time.delayedCall(feel.hitStopMs, () => this.react(q, p.facing));
       this.float(q, String(p.damage).replace('.', ','));
     }
@@ -237,21 +279,24 @@ export class CombatSystem {
    * La cible touchée : elle recule un peu et penche autour de son pied, du côté opposé à Xéros (de face ou de dos : elle recule vers
    * le nord ou le sud et penche un peu d'un côté au hasard), en tremblant, puis revient ; sa matière vole (`fx-<matter>`).
    */
-  private react(q: PlacedProp, facing: Facing): void {
-    const t = q.def.target!;
+  private react(q: Target, facing: Facing): void {
+    const t = q.def;
     const img = q.image;
     const feel = combat.feel;
     // un coup pendant la réaction d'avant : elle revient d'abord à sa place
-    this.reacting.get(q)?.stop();
-    img.setOrigin(0.5, 1).setPosition(q.x + img.width / 2, q.y).setAngle(0);
+    this.reacting.get(q.key)?.stop();
+    const home = this.rest.get(q.key) ?? { x: q.x, y: q.y };
+    this.rest.set(q.key, home);
+    img.setOrigin(0.5, 1).setPosition(home.x + img.width / 2, home.y).setAngle(0);
     const side = facing === 'right' ? 1 : facing === 'left' ? -1 : 0;
     const lean = side !== 0 ? side * t.tilt : (Math.random() < 0.5 ? -1 : 1) * t.tilt * 0.5;
     const dx = side * feel.recoilPx;
     const dy = facing === 'down' ? feel.recoilPx : facing === 'up' ? -feel.recoilPx : 0;
     const cx = img.x;
     const restore = () => {
-      img.setOrigin(0, 1).setPosition(q.x, q.y).setAngle(0);
-      this.reacting.delete(q);
+      img.setOrigin(0, 1).setPosition(home.x, home.y).setAngle(0);
+      this.reacting.delete(q.key);
+      this.rest.delete(q.key);
     };
     // v monte de 0 à 1 puis redescend : la cible penche et recule, et tremble d'un pixel tant qu'elle n'est pas revenue
     let n = 0;
@@ -264,13 +309,13 @@ export class CombatSystem {
       onUpdate: (tw) => {
         const v = tw.getValue() ?? 0;
         const jitter = v > 0.15 ? (n++ % 4 < 2 ? 1 : -1) : 0;
-        img.setAngle(lean * v).setPosition(cx + dx * v + jitter, q.y + dy * v);
+        img.setAngle(lean * v).setPosition(cx + dx * v + jitter, home.y + dy * v);
       },
       onComplete: restore,
       onStop: restore,
     });
-    this.reacting.set(q, tween);
-    this.harvest.chipsAt(q.x + img.width / 2, q.y - img.height * 0.55, q.y + 1, t.matter, facing);
+    this.reacting.set(q.key, tween);
+    this.harvest.chipsAt(home.x + img.width / 2, home.y - img.height * 0.55, home.y + 1, t.matter, facing);
   }
 
   /** ?debug : la zone de coup d'une image active, au sol : ce que balaie l'arme (ses lames, de la largeur de ce qui frappe), en rouge. */
@@ -284,9 +329,10 @@ export class CombatSystem {
   }
 
   /** Le chiffre des dégâts (ou « raté ») s'envole au-dessus de la cible et s'efface. */
-  private float(q: PlacedProp, label: string): void {
+  private float(q: Target, label: string): void {
+    const home = this.rest.get(q.key) ?? { x: q.x, y: q.y };
     const text = this.scene.add
-      .text(q.x + q.image.width / 2, q.top - 2, label, { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
+      .text(home.x + q.image.width / 2, home.y - q.image.height - 2, label, { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setResolution(ZOOM_STEPS.max)
       .setDepth(DEPTH.prompt - 1);
