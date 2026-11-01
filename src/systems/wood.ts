@@ -303,7 +303,7 @@ export class WoodSystem {
    * des copeaux tombent. Au bout, le reste est payé, la face est finie, et, si ce n'est pas la poutre, la pièce est retournée d'un
    * quart de tour. `end` reçoit ce qu'a donné la passe (la face, la poutre, ou rien : arrêtée) et pourquoi elle s'est terminée.
    */
-  hewPass(player: Player, aim: WoodAim, pay: (cost: number) => boolean, end: (hit: WoodHit, why: RailEnd) => void): RailPass {
+  hewPass(player: Player, aim: WoodAim, pay: (cost: number) => boolean | 'wait', end: (hit: WoodHit, why: RailEnd) => void): RailPass {
     const { id, spawned } = aim.prop;
     const piece = aim.piece;
     const from = aim.from!;
@@ -329,7 +329,10 @@ export class WoodSystem {
         const p = this.find(id, spawned);
         if (!p) return false;
         const cm = dressedAt(done);
-        if (cm > paid && !pay(cost(cm - paid))) return false;
+        if (cm > paid) {
+          const r = pay(cost(cm - paid));
+          if (r !== true) return r;
+        }
         paid = Math.max(paid, cm);
         const top = p.y - this.sizeOf(p).h;
         const [x, y] = piece.axis === 'ew' ? [p.x + Math.round(fer(done)), top + 1] : [p.x + 4, top + Math.round(fer(done))];

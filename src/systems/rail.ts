@@ -1,6 +1,6 @@
 // Une passe sur un rail : Xéros longe une pièce tout seul, en ligne droite, au pas, en répétant un geste d'outil en rythme (la
 // doloire qui dresse une face, plus tard le rabot et la scie de long). Le joueur ne le dirige pas : seule Échap arrête la passe, là
-// où il est. Le rail ne sait rien du travail : celui qui le lance dit, à chaque coup, ce que le coup fait (et s'il peut se faire),
+// où il est ; à bout de souffle, il attend sur place et reprend. Le rail ne sait rien du travail : celui qui le lance dit, à chaque coup, ce que le coup fait (et s'il peut se faire),
 // et ce qu'on fait de la passe finie ou arrêtée.
 import type { Player } from '../entities/Player';
 
@@ -17,8 +17,11 @@ export interface RailPass {
   tool: string;
   /** Pixels faits pendant un geste : la vitesse en découle (un pas par geste, d'un mouvement continu). */
   step: number;
-  /** À l'image d'impact de chaque geste, `done` px faits depuis le départ. Faux : le coup ne se fait pas, la passe s'arrête après lui. */
-  onStroke(done: number): boolean;
+  /**
+   * À l'image d'impact de chaque geste, `done` px faits depuis le départ. Faux : le coup ne se fait pas, la passe s'arrête après lui ;
+   * `wait` : le coup ne se fait pas faute de souffle, Xéros attend sur place, puis la passe reprend quand il n'est plus essoufflé.
+   */
+  onStroke(done: number): boolean | 'wait';
   /** La passe est finie ou arrêtée, après `done` px. */
   onEnd(why: RailEnd, done: number): void;
 }
@@ -36,6 +39,10 @@ export class Rail {
   private speed = 0;
   /** Un coup a été refusé : la passe s'arrête à la fin de ce geste. */
   private spent = false;
+  /** Un coup a attendu son souffle : Xéros reste sur place jusqu'à ce qu'il ne soit plus essoufflé. */
+  private waiting = false;
+  /** Le geste est fini et la passe attend son souffle pour le suivant. */
+  private idle = false;
 
   constructor(private readonly player: Player) {}
 
@@ -50,6 +57,8 @@ export class Rail {
     this.pass = pass;
     this.done = 0;
     this.spent = false;
+    this.waiting = false;
+    this.idle = false;
     const anim = actor.scene.anims.get(`${actor.skin}-${pass.gesture}-${actor.facing}`);
     this.speed = pass.step / Math.max(1, anim?.duration ?? 400);
     this.place();
@@ -62,6 +71,14 @@ export class Rail {
     if (stop) {
       this.player.tools.cancel();
       return this.finish('stopped');
+    }
+    if (this.waiting) {
+      // il reprend son souffle sur place, puis le geste suivant
+      if (this.idle && !this.player.stamina.winded) {
+        this.waiting = this.idle = false;
+        this.swing();
+      }
+      return;
     }
     this.done = Math.min(this.length, this.done + this.speed * delta);
     this.place();
@@ -87,12 +104,16 @@ export class Rail {
       pass.gesture,
       pass.tool,
       () => {
-        if (this.pass === pass && !pass.onStroke(this.done)) this.spent = true;
+        if (this.pass !== pass) return;
+        const r = pass.onStroke(this.done);
+        if (r === 'wait') this.waiting = true;
+        else if (!r) this.spent = true;
       },
       () => {
         if (this.pass !== pass) return;
         if (this.done >= this.length - 1e-6) this.finish('end');
         else if (this.spent) this.finish('spent');
+        else if (this.waiting) this.idle = true;
         else this.swing();
       },
     );

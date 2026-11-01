@@ -258,11 +258,11 @@ export class WorldScene extends Phaser.Scene {
     this.builder = new BuildSystem(this, this.map, this.player, (t) => this.notice(t), (st: BuildStatus) => this.game.events.emit(GameEvent.BuildStatus, st));
     this.player.strength.multiplier = this.force;
     this.player.stamina.infinite = this.infinite;
-    this.player.stamina.onChange = () => this.game.events.emit(GameEvent.Stamina, this.player.stamina.fraction);
+    this.player.stamina.onChange = () => this.game.events.emit(GameEvent.Stamina, this.player.stamina.levels());
     this.dropHeavy();
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
-    this.game.events.emit(GameEvent.Stamina, this.player.stamina.fraction);
+    this.game.events.emit(GameEvent.Stamina, this.player.stamina.levels());
     if (this.wake) this.game.events.emit(GameEvent.Notice, clockLabel(game.clock), HUD.longNoticeMs / 2);
     if (lost) this.notice("Le bâtiment n'est plus là.");
 
@@ -538,17 +538,18 @@ export class WorldScene extends Phaser.Scene {
   private turnLog(target: Interactable): void {
     const a = target.action;
     if (a.kind !== 'turn') return;
-    if (this.player.stamina.empty) return this.effort.exhausted();
     const kg = this.turns.mass(a.prop);
+    const cost = this.player.stamina.turnCost(kg);
+    if (!this.effort.allows(this.player, cost)) return;
     const why = this.turns.act(this.player, a.prop);
     if (why) return this.notice(why);
-    this.player.stamina.spend(this.player.stamina.turnCost(kg));
+    this.player.stamina.spend(cost);
     this.clock.work(time.work.turn);
   }
 
   /** E maintenu devant un tas ou un fagot : nouer ou dénouer ; sinon, ce qui manque se dit. */
   private knot(target: Interactable): void {
-    if (this.player.stamina.empty) return this.effort.exhausted();
+    if (!this.effort.allows(this.player, this.player.stamina.costs.knot)) return;
     const why = this.knots.act(target.action);
     if (why) this.notice(why);
     else {
@@ -696,10 +697,11 @@ export class WorldScene extends Phaser.Scene {
     if (this.player.stamina.empty) return this.effort.exhausted();
     this.mode = 'rail';
     // chaque coup de la passe se paie, et prend sa part du temps d'un mètre de face (wood.json)
-    const pay = (cost: number) => {
-      const ok = this.effort.afford(this.player, cost);
-      if (ok) this.clock.work(workMinutes('hew', aim.piece));
-      return ok;
+    // à bout de souffle, la passe attend sur place (Xéros souffle) puis reprend ; plafond vide, elle s'arrête
+    const pay = (cost: number): boolean | 'wait' => {
+      const r = this.effort.attempt(this.player, cost);
+      if (r === 'done') this.clock.work(workMinutes('hew', aim.piece));
+      return r === 'done' ? true : r === 'winded' ? 'wait' : false;
     };
     this.rail.start(
       this.wood.hewPass(this.player, aim, pay, (r, why) => {
@@ -905,7 +907,7 @@ export class WorldScene extends Phaser.Scene {
         this.player.strength.multiplier = cmd.multiplier;
         break;
       case 'stamina':
-        this.player.stamina.reset(cmd.value);
+        this.player.stamina.reset(cmd);
         break;
       case 'stamina-infinite':
         this.infinite = cmd.on;

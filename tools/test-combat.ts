@@ -56,7 +56,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     const unchained = async () => {
       while (w().time.now <= (w().combat as any).comboUntil) await frame();
     };
-    const stamina = () => w().player.stamina.value;
+    const stamina = () => w().player.stamina.ceiling;
     const log = () => w().combat.log;
     const give = (item: string) => send({ kind: 'give', held: { item } });
     // les textes qui s'envolent au-dessus des cibles (dégâts, « raté »)
@@ -118,7 +118,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     };
 
     await send({ kind: 'stamina-infinite', on: false });
-    await send({ kind: 'stamina', value: 100 });
+    await send({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
     const out: Record<string, any> = { weapons: {} };
     // pas d'écart pendant les mesures de portée : le coup va où le geste le dit
     w().combat.rand = () => 0;
@@ -129,10 +129,10 @@ await playtest('combat', async ({ page, errors, load }) => {
         const edge = edgeOf(item, 'cut', dir);
         await facingDummy(dir, edge);
         const at = await strikeOnce();
-        await send({ kind: 'stamina', value: 100 });
+        await send({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
         await facingDummy(dir, edge + 2);
         const past = await strikeOnce();
-        await send({ kind: 'stamina', value: 100 });
+        await send({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
         res.dirs[dir] = { edge, atHits: at.hits, pastHits: past.hits, attack: at.entry?.attack, damage: at.entry?.damage, spent: at.spent, texts: at.texts };
       }
       const wpn = weaponOf(item);
@@ -252,13 +252,13 @@ await playtest('combat', async ({ page, errors, load }) => {
 
     // épuisé : rien ne part
     await give('wooden-sword');
-    await send({ kind: 'stamina', value: 0 });
+    await send({ kind: 'stamina', breath: 0, ceiling: 0 });
     n = log().length;
     notices.length = 0;
     await press('Space');
     await settle();
     out.exhausted = { attacks: log().length - n, notice: notices.join(' | ') };
-    await send({ kind: 'stamina', value: 100 });
+    await send({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
 
     // une ou deux branches : le même coup
     await give('branch');
@@ -332,7 +332,7 @@ await playtest('combat', async ({ page, errors, load }) => {
       const built = w.map.builds.find((b: any) => 'prop' in b.piece.piece && b.piece.piece.prop === 'training-dummy');
       if (!built) return { built: false };
       g.events.emit('dieu', { kind: 'give', held: { item: 'wooden-sword' } });
-      g.events.emit('dieu', { kind: 'stamina', value: 100 });
+      g.events.emit('dieu', { kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await sleep(200);
       const t = w.combat.targets().find((q: any) => q.type === 'training-dummy');
       const a = w.player.actor;

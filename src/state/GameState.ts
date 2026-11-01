@@ -173,8 +173,12 @@ export const GameStateSchema = z.strictObject({
   nextSpawnId: z.number().int().nonnegative(),
   /** Prochain identifiant de tas (unique dans toute la partie). */
   nextPileId: z.number().int().nonnegative(),
-  /** Endurance de Xéros : la fatigue de la journée, de 0 (épuisé) au maximum de stamina.json (le sommeil la remplit). */
-  stamina: z.number().nonnegative(),
+  /**
+   * L'endurance de Xéros en trois niveaux (docs/CONCEPTION.md, « Le temps ») : le souffle (`breath`, se vide pendant l'effort, revient
+   * en quelques secondes), le plafond du jour (`ceiling`, descend avec les efforts, ne revient qu'en dormant), le maximum (`max`, monte
+   * avec l'entraînement). breath ≤ ceiling ≤ max.
+   */
+  stamina: z.strictObject({ breath: z.number().nonnegative(), ceiling: z.number().nonnegative(), max: z.number().positive() }),
   /**
    * L'horloge (docs/CONCEPTION.md, « Le temps ») : le jour (1 au départ) et la minute du jour (0 à 1 440, avec des fractions). Elle
    * avance à la vitesse du temps (systems/clock.ts) et des minutes d'un travail ; le sommeil la mène au lever.
@@ -216,7 +220,7 @@ export function revisionOf(): number {
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: stamina.max, clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
+  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: { breath: stamina.max.start, ceiling: stamina.max.start, max: stamina.max.start }, clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
@@ -294,14 +298,17 @@ export function turnHeld(s: GameState): void {
 }
 
 /** L'endurance de Xéros vaut `value` (bornée de 0 au maximum). */
-export function setStamina(s: GameState, value: number): void {
-  s.stamina = Math.min(stamina.max, Math.max(0, value));
+export function setStamina(s: GameState, value: { breath?: number; ceiling?: number; max?: number }): void {
+  const max = Math.max(1, value.max ?? s.stamina.max);
+  const ceiling = Math.min(max, Math.max(0, value.ceiling ?? s.stamina.ceiling));
+  const breath = Math.min(ceiling, Math.max(0, value.breath ?? s.stamina.breath));
+  s.stamina = { breath, ceiling, max };
   revision++;
 }
 
 /** Une nuit de sommeil : l'endurance est pleine, le jour suivant commence. */
 export function sleep(s: GameState): void {
-  s.stamina = stamina.max;
+  s.stamina = { breath: s.stamina.max, ceiling: s.stamina.max, max: s.stamina.max };
   s.clock = { day: s.clock.day + 1, minute: time.wakeHour * 60 };
   revision++;
 }

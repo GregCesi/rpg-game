@@ -2,7 +2,9 @@
 // - étape 1, l'horloge : elle avance à la vitesse du temps (x24 par défaut), V passe au palier suivant et le dit, Maj + V revient ;
 //   l'heure s'affiche en haut à droite ;
 // - étape 2, la durée des travaux : abattre un arbre normal (4 coups de cognée) avance l'horloge de ses 25 minutes de jeu (props.json),
-//   le geste gardant sa durée.
+//   le geste gardant sa durée ;
+// - étape 3, l'endurance en trois niveaux : à bout de souffle, un coup de cognée attend sans message d'épuisement, avec un signe
+//   visible (Xéros souffle, la part « revient » de la barre clignote), puis se fait quand le souffle est revenu.
 // Usage : npm run test:temps (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
@@ -70,6 +72,40 @@ await playtest('temps', async ({ page, errors }) => {
       while (w().mode !== 'play') await frame();
     }
     out.felled = { gone: !w().map.props.includes(tree), game: minutes() - before, real: performance.now() - tReal, expect: content.props['normal-tree'].harvest.minutes };
+
+    // 3. à bout de souffle : le coup attend, sans message, Xéros souffle et la barre clignote ; puis il se fait
+    const other = w().map.props.find((p: any) => p.type === 'normal-tree' && p.image.visible && p !== tree);
+    if (!other) throw new Error('pas de second arbre normal debout sur la ferme');
+    a.body.reset(Math.round(other.aimX - 14), Math.round(other.aimY));
+    a.face('right');
+    await send({ kind: 'stamina-infinite', on: false });
+    await send({ kind: 'stamina', breath: 0, ceiling: 80, max: 100 }, 50);
+    const told = notices.length;
+    const ceiling0 = gs.game.stamina.ceiling;
+    await press('Space');
+    await frame();
+    const hud = g.scene.getScene('hud');
+    const puff = w().player.breath.puff;
+    out.winded = {
+      winded: w().player.stamina.winded,
+      puff: puff.visible && puff.anims.isPlaying,
+      blink: hud.blink?.isPlaying() ?? false,
+      notices: notices.slice(told),
+      ceiling: gs.game.stamina.ceiling - ceiling0,
+      mode: w().mode,
+    };
+    // le souffle revient (délai, puis 30 % du plafond à 12 par seconde : un peu moins de 3 s)
+    const t1 = performance.now();
+    while (w().player.stamina.winded && performance.now() - t1 < 8000) await frame();
+    const ms = performance.now() - t1;
+    // la bouffée se cache à l'image suivante (Player.update)
+    await frame();
+    await frame();
+    out.recovered = { ms, puff: puff.visible, blink: !!hud.blink };
+    await press('Space');
+    while (w().mode !== 'play') await frame();
+    out.after = { ceiling: gs.game.stamina.ceiling - ceiling0, cost: content.stamina.costs.chop };
+    await send({ kind: 'stamina-infinite', on: true });
     return out;
   })) as Record<string, any>;
   console.log(JSON.stringify(r));
@@ -83,5 +119,12 @@ await playtest('temps', async ({ page, errors }) => {
   assert.ok(r.felled.gone, 'l’arbre est abattu');
   const played = r.felled.real / 60000;
   assert.ok(Math.abs(r.felled.game - (r.felled.expect + played)) < 0.5, `abattre un arbre normal avance l'horloge de ${r.felled.expect} min (${r.felled.game.toFixed(2)})`);
-  console.log(`  ✓ temps : l'horloge à x24, V et Maj + V, l'heure à l'écran ; un arbre normal abattu en ${(r.felled.real / 1000).toFixed(1)} s de gestes avance l'horloge de ${r.felled.expect} min`);
+  assert.ok(r.winded.winded, 'à bout de souffle, Xéros est essoufflé');
+  assert.ok(r.winded.puff, 'il souffle : la bouffée se voit');
+  assert.ok(r.winded.blink, 'la part « revient » de la barre clignote');
+  assert.deepEqual(r.winded.notices, [], 'aucun message (ni « épuisé »)');
+  assert.equal(r.winded.ceiling, 0, 'le coup qui attend ne coûte rien');
+  assert.ok(r.recovered.ms < 6000 && !r.recovered.puff && !r.recovered.blink, `le souffle revient en ${(r.recovered.ms / 1000).toFixed(1)} s, les signes s'éteignent`);
+  assert.ok(Math.abs(r.after.ceiling + r.after.cost) < 0.01, `le coup se fait ensuite et coûte son prix (${r.after.ceiling.toFixed(2)})`);
+  console.log(`  ✓ temps : l'horloge à x24, V et Maj + V, l'heure à l'écran ; un arbre normal abattu en ${(r.felled.real / 1000).toFixed(1)} s de gestes avance l'horloge de ${r.felled.expect} min ; à bout de souffle, le coup attend (Xéros souffle, la barre clignote), puis se fait`);
 });

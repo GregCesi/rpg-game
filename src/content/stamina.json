@@ -1,5 +1,21 @@
 {
-  "max": 100,
+  "max": {
+    "start": 100,
+    "cap": 200,
+    "gain": 2,
+    "trainFrom": 0.4
+  },
+  "breath": {
+    "regenPerSec": 12,
+    "regenDelayMs": 800,
+    "perCost": 3,
+    "perSec": {
+      "run": 5,
+      "carryPerKg": 0.1,
+      "pushPerKg": 0.05
+    },
+    "recovered": 0.3
+  },
   "tired": 0.15,
   "tiredWalk": 0.85,
   "costs": {

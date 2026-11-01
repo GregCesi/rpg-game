@@ -230,11 +230,18 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   setInterval(showCarried, 200);
 
   // l'endurance : la régler (points), la rendre infinie ; la valeur lue est celle de GameState (écrite tous les points)
-  const energy = el('input', { type: 'number', min: '0', max: String(stamina.max), step: '5', value: String(stamina.max) });
+  // l'endurance en trois niveaux (souffle, plafond du jour, maximum) : les régler (points), la rendre infinie ; les valeurs lues sont
+  // celles de GameState (écrites tous les quelques points)
+  const level = (value: number) => el('input', { type: 'number', min: '0', max: String(stamina.max.cap), step: '5', value: String(value) });
+  const energyBreath = level(stamina.max.start);
+  const energyCeiling = level(stamina.max.start);
+  const energyMax = level(stamina.max.start);
   const energyButton = button('Régler', () => {
-    const v = Math.min(stamina.max, Math.max(0, Number(energy.value) || 0));
-    energy.value = String(v);
-    send({ kind: 'stamina', value: v });
+    const max = Math.min(stamina.max.cap, Math.max(1, Number(energyMax.value) || 1));
+    const ceiling = Math.min(max, Math.max(0, Number(energyCeiling.value) || 0));
+    const breath = Math.min(ceiling, Math.max(0, Number(energyBreath.value) || 0));
+    [energyMax.value, energyCeiling.value, energyBreath.value] = [max, ceiling, breath].map(String);
+    send({ kind: 'stamina', breath, ceiling, max });
   });
   const infinite = el('input', { type: 'checkbox' });
   infinite.addEventListener('change', () => {
@@ -243,7 +250,8 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   });
   const energyNow = el('div', { className: 'row' });
   const showEnergy = () => {
-    energyNow.textContent = `Endurance : ${Math.round(game.stamina)} / ${stamina.max} · ${clockLabel(game.clock)}`;
+    const e = game.stamina;
+    energyNow.textContent = `Souffle ${Math.round(e.breath)} · plafond ${Math.round(e.ceiling)} · maximum ${Math.round(e.max)} · ${clockLabel(game.clock)}`;
   };
   showEnergy();
   setInterval(showEnergy, 200);
@@ -286,7 +294,8 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('div', { className: 'row' }, [el('label', {}, ['force ×', force]), forceButton]),
     carried,
     el('h3', { textContent: 'Endurance' }),
-    el('div', { className: 'row' }, [el('label', {}, [energy, 'points']), energyButton]),
+    el('div', { className: 'row' }, [el('label', {}, ['souffle', energyBreath]), el('label', {}, ['plafond', energyCeiling])]),
+    el('div', { className: 'row' }, [el('label', {}, ['maximum', energyMax]), energyButton]),
     el('div', { className: 'row' }, [el('label', {}, [infinite, 'endurance infinie'])]),
     energyNow,
     el('h3', { textContent: 'Implantation' }),

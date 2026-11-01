@@ -64,7 +64,7 @@ export interface BuildStatus {
  * longueur, s'il en a une) ou un tas (un genre écrit `pile`, ou une pièce de bois `wood` ; `tie` : avec son lien dessous, `count` pouvant alors être 0), aller sur une carte,
  * remettre la carte ou la partie à zéro, apprendre un plan (`learn-plan`), mettre au sol autour de Xéros des piquets ou des pierres
  * plates (`supply` : `what` est la clé d'un objet possédable ou d'un objet du monde), effacer les chantiers de la carte
- * (`erase-sites`), remplir d'un coup l'étape en cours du chantier (`skip-step`), multiplier la force de Xéros (`force` : tester les seuils de masse), régler son endurance (`stamina`, en points) ou la
+ * (`erase-sites`), remplir d'un coup l'étape en cours du chantier (`skip-step`), multiplier la force de Xéros (`force` : tester les seuils de masse), régler son endurance (`stamina` : souffle, plafond du jour, maximum, en points) ou la
  * rendre infinie (`stamina-infinite`), poser devant Xéros une pièce de bois de réglages choisis (`wood` : diamètre, longueur sur la
  * grille, forme, faces, sens).
  */
@@ -74,7 +74,7 @@ export type DieuCommand =
   | { kind: 'wood'; wood: WoodPiece }
   | { kind: 'pile'; pile?: string; wood?: PileWood; count: number; turned: boolean; tie: boolean }
   | { kind: 'force'; multiplier: number }
-  | { kind: 'stamina'; value: number }
+  | { kind: 'stamina'; breath?: number; ceiling?: number; max?: number }
   | { kind: 'stamina-infinite'; on: boolean }
   | { kind: 'learn-plan'; plan: string }
   | { kind: 'supply'; what: string; count: number }

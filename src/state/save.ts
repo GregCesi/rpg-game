@@ -18,7 +18,7 @@ export const SAVE_KEY = 'xeros-partie';
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
-export const SAVE_VERSION = 18;
+export const SAVE_VERSION = 19;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -93,7 +93,7 @@ export function readSave(): ReadResult {
 export function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
   if (d?.version === 2 && d.state && typeof d.state === 'object') {
-    d = { ...d, version: 3, state: { ...d.state, stamina: stamina.max, day: 1 } };
+    d = { ...d, version: 3, state: { ...d.state, stamina: stamina.max.start, day: 1 } };
   }
   if (d?.version === 3) d = { ...d, version: 4 };
   if (d?.version === 4 && d.state && typeof d.state === 'object') {
@@ -113,6 +113,7 @@ export function upgrade(data: unknown): unknown {
   if (d?.version === 14 && d.state && typeof d.state === 'object') d = { ...d, version: 15, state: quartersWithoutFace(d.state) };
   if (d?.version === 15 && d.state && typeof d.state === 'object') d = { ...d, version: 16, state: hewingInPasses(d.state) };
   if (d?.version === 17 && d.state && typeof d.state === 'object') d = { ...d, version: 18, state: withClock(d.state as { day?: number }) };
+  if (d?.version === 18 && d.state && typeof d.state === 'object') d = { ...d, version: 19, state: threeLevels(d.state as { stamina?: number }) };
   return d;
 }
 
@@ -521,4 +522,14 @@ function missingContent(save: Save): string | undefined {
 function withClock(state: { day?: number }): unknown {
   const { day, ...rest } = state;
   return { ...rest, clock: { day: typeof day === 'number' && day >= 1 ? day : 1, minute: time.wakeHour * 60 } };
+}
+
+/**
+ * Version 18 -> 19 : l'endurance en trois niveaux (docs/CONCEPTION.md, « Le temps ») : la jauge d'avant devient le plafond du jour et
+ * le souffle ; le maximum est celui du départ.
+ */
+function threeLevels(state: { stamina?: number }): unknown {
+  const max = stamina.max.start;
+  const v = typeof state.stamina === 'number' ? Math.min(max, Math.max(0, state.stamina)) : max;
+  return { ...state, stamina: { breath: v, ceiling: v, max } };
 }

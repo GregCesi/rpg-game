@@ -27,7 +27,7 @@ Dedans (un intérieur calculé) : les mêmes touches que dehors.
 
 ### Se déplacer
 - **Z Q S D (W A S D)** ou **flèches** : marcher. Chargé au-delà de 25 kg, il marche plus lentement ; à deux mains (`carry`), lentement.
-- **Maj** (maintenu) : courir (0,2 point par seconde) ; refusé chargé au-delà de 25 kg, à deux mains, fatigué ou épuisé.
+- **Maj** (maintenu) : courir (0,2 point du plafond et 5 de souffle par seconde : environ 20 s à plein souffle) ; refusé chargé au-delà de 25 kg, à deux mains, fatigué ou épuisé ; à bout de souffle, Xéros repasse au pas et souffle, la barre clignote, sans message.
 - **Pousser** (pas de touche) : marcher contre une bille ronde couchée, les mains libres, 0,3 s : elle roule.
 - Marcher dans une sortie, hors du bord d'une zone, par une porte ouverte : changer de carte.
 

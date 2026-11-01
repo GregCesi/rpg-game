@@ -42,7 +42,7 @@ export const families: Family[] = [
   { title: 'Personnages', ground: 'floor', keys: ['mother', 'portrait-mother-64'] },
   { title: 'Outil en main', ground: 'grass', keys: ['tool-axe', 'tool-hatchet'], allFrames: ['tool-axe', 'tool-hatchet'] },
   { title: "Éclats d'impact", ground: 'grass', keys: ['fx-wood', 'fx-stone', 'fx-leaves'], allFrames: ['fx-wood', 'fx-stone', 'fx-leaves'] },
-  { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-stamina-frame', 'ui-stamina-back', 'ui-stamina-fill', 'ui-stamina-fill-low', 'ui-box', 'ui-key-e', 'ui-key-space'], icons: ['ui-hand-left', 'ui-hand-right', 'ui-hands-both'] },
+  { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-stamina-frame', 'ui-stamina-back', 'ui-stamina-fill', 'ui-stamina-fill-low', 'ui-bar-left', 'ui-bar-mid', 'ui-bar-right', 'ui-bar-lost', 'ui-bar-back-edge', 'ui-bar-back', 'ui-bar-breath-edge', 'ui-bar-breath', 'ui-bar-breath-low-edge', 'ui-bar-breath-low', 'fx-breath', 'ui-box', 'ui-key-e', 'ui-key-space'], icons: ['ui-hand-left', 'ui-hand-right', 'ui-hands-both'], allFrames: ['fx-breath'] },
   {
     title: 'Corde et fagot',
     ground: 'grass',

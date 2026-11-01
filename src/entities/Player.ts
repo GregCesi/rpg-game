@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { PLAYER } from '../config';
 import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
+import { Breath } from './Breath';
 import { Hold } from './Hold';
 import { Stamina } from './Stamina';
 import { Strength } from './Strength';
@@ -17,9 +18,11 @@ export class Player {
   readonly strength = new Strength();
   /** L'endurance : la fatigue de la journée (courir, porter, pousser et les gestes y puisent). */
   readonly stamina = new Stamina();
+  /** Essoufflé, il souffle : la bouffée près de sa bouche. */
+  readonly breath: Breath;
   /** Il court à cette image (lu par systems/effort.ts, qui en fait payer la course). */
   running = false;
-  /** Maj est pressée mais l'endurance l'interdit (fatigué ou épuisé) : lu par la scène pour le dire. */
+  /** Maj est pressée mais Xéros est épuisé (plafond vide) : lu par la scène pour le dire. Fatigué ou à bout de souffle, il marche sans message. */
   runRefused = false;
   /** Il pousse une bille qui roule (posé par systems/roll.ts à chaque image) : posture `push`. */
   pushing = false;
@@ -37,6 +40,7 @@ export class Player {
     this.input = new PlayerInput(scene);
     this.tools = new ToolUse(scene, this.actor);
     this.hold = new Hold(scene, this.actor, () => this.tools.busy);
+    this.breath = new Breath(scene, this.actor);
   }
 
   /** enabled = false pendant un dialogue : le joueur reste immobile. */
@@ -45,6 +49,7 @@ export class Player {
     this.feet = { x: this.actor.x, y: this.actor.y };
     this.running = false;
     this.runRefused = false;
+    this.breath.update(this.stamina.winded && !this.stamina.infinite);
     // pendant un geste, le corps reste sur place et garde son animation
     if (this.tools.busy) {
       this.dir.set(0, 0);

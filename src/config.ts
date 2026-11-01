@@ -132,6 +132,24 @@ export const HARVEST = {
 export const HUD = { noticeMs: 1800, longNoticeMs: 7000 };
 
 /**
+ * La barre d'endurance du HUD (art/ui/stamina-bar.ts, contrat de pose) : `pxPerPoint` px de creux par point (le maximum de 100 fait
+ * 50 px), le creux en (`inner`, `inner`) du cadre, `gap` px au-dessus des cases des mains ; essoufflé, la part « revient » clignote
+ * (`blinkMs` par demi-période, jusqu'à `blinkAlpha`).
+ */
+export const STAMINA_BAR = { pxPerPoint: 0.5, inner: 3, end: 3, height: 10, gap: 4, blinkMs: 260, blinkAlpha: 0.25 };
+
+/**
+ * La bouffée de Xéros essoufflé (planche `fx-breath`, art/characters/breath.ts) : coin haut-gauche de l'image depuis ses pieds, et
+ * miroir, par direction (les accroches données par le dessin).
+ */
+export const BREATH = {
+  down: { dx: 4, dy: -26, flipX: false },
+  up: { dx: 4, dy: -26, flipX: false },
+  right: { dx: 5, dy: -26, flipX: false },
+  left: { dx: -15, dy: -26, flipX: true },
+} as const;
+
+/**
  * Le mode construction (le bac à sable, systems/build.ts, world/build.ts) : la grille (cm) de l'emprise et des crans de hauteur ;
  * `high` : une pièce posée à cette hauteur ou plus haut ne bloque plus le passage ; `head` : une pièce dont la base est à cette
  * hauteur ou plus haut s'efface quand Xéros passe dessous (sa tête, 1,60 m) ; `camera` : vitesse de la caméra libre (px/s, Maj :

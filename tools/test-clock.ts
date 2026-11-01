@@ -20,7 +20,7 @@ assert.equal(nextSpeed(time.speeds, time.speeds[time.speeds.length - 1], 1), tim
 assert.equal(nextSpeed(time.speeds, time.speeds[0], -1), time.speeds[0], 'le premier reste le premier');
 const v17 = { version: 17, savedAt: '', where: {}, state: { stamina: 80, day: 4, hands: [null, null] } };
 const v18 = upgrade(v17) as { version: number; state: Record<string, unknown> };
-assert.equal(v18.version, 18, 'une sauvegarde de la version 17 passe à la 18');
+assert.ok(v18.version >= 18, 'une sauvegarde de la version 17 passe aux suivantes');
 assert.deepEqual(v18.state.clock, { day: 4, minute: time.wakeHour * 60 }, 'le compteur de jours devient l’horloge, au lever du même jour');
 assert.equal('day' in v18.state, false, 'le compteur de jours disparaît');
 console.log('✓ horloge : les paliers, minuit, l’écriture de l’heure, V et Maj + V, la sauvegarde de la version 17');

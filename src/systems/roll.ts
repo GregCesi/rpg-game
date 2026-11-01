@@ -74,8 +74,8 @@ export class RollSystem {
     if (this.charge < ROLL.startMs) return player.actor.move(none, 0);
     const mass = propMass(target.type, target.length, undefined, target.wood);
     const speed = PLAYER.walkSpeed * player.strength.rollFactor(mass);
-    // pousser puise dans la jauge, proportionnellement à la masse (stamina.json)
-    player.stamina.drain(player.stamina.pushRate(mass), delta);
+    // pousser puise dans le plafond et le souffle, proportionnellement à la masse (stamina.json)
+    player.stamina.drain(player.stamina.pushRate(mass), delta, player.stamina.pushBreath(mass));
     const moved = this.advance(target, dir, speed, delta);
     const [sx, sy] = STEP[dir];
     player.actor.move(moved ? none.set(sx, sy) : none, speed, PLAYER.walkSpeed);
