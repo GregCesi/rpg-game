@@ -2,7 +2,7 @@
 
 L'inventaire de toutes les touches du jeu au 1er novembre 2026 (chantier « combat de base ») : ce qu'elles font selon ce que Xéros
 tient et où il est, puis les conflits et incohérences relevés, avec ce qu'il faudra trancher. Rien n'a été refondu : la seule
-commande ajoutée par ce chantier est « Espace avec une arme dans la main active attaque ».
+commande ajoutée par ce chantier est « Espace avec une arme en main attaque ».
 
 Les touches sont lues **par leur place** sur le clavier (`KeyboardEvent.code`, `src/input/PlayerInput.ts`) : la même place sert en
 AZERTY et en QWERTY. Dans ce document, une touche est nommée par sa lettre en AZERTY, la lettre QWERTY entre parenthèses quand elle
@@ -61,7 +61,7 @@ Selon ce que tient Xéros (« ce qui sert » : la main active, sinon l'autre mai
 
 | Ce qu'il tient | Ce que fait Espace |
 | --- | --- |
-| **une arme dans la main active** (la branche, l'épée de bois) | **attaquer** (la taille ; Espace de nouveau pendant le geste ou juste après : le coup d'en haut, puis de nouveau la taille) ; coûte même dans le vide |
+| **une arme qui sert** (la branche, l'épée de bois : dans la main active, ou dans l'autre si l'active est vide) | **attaquer** (la taille ; Espace de nouveau pendant le geste ou juste après : le coup d'en haut, puis de nouveau la taille) ; coûte même dans le vide |
 | la branche (ou le piquet) dans la main active et la hachette dans l'autre, face au billot | tailler : la branche devient un piquet, le piquet une cheville (c'est la hachette qui sert) |
 | un piquet, un plan connu | le planter au tracé (le premier fixe le coin nord-ouest) |
 | la cognée, devant un arbre debout | un coup de côté (`use`) |
@@ -114,9 +114,9 @@ Le panneau du catalogue et `?dieu` se manient à la souris.
    à la fois une ressource qu'on taille et une arme : branche active seule, Espace attaque ; branche active et hachette dans l'autre
    main, Espace taille. **Avant ce chantier, la branche en main devant un arbre disait « Sans hache, rien à faire. » ; maintenant
    elle frappe.**
-2. **L'arme ne sert que de la main active, les outils de n'importe laquelle.** Une épée dans la main non active ne fait rien avec
-   Espace, alors qu'une hachette dans la main non active sert. C'est la consigne de ce chantier (« avec une arme en main active »),
-   mais c'est le contraire de la règle des outils.
+2. ~~L'arme ne sert que de la main active, les outils de n'importe laquelle.~~ Réglé après le premier essai de Grégoire : une arme
+   sert comme un outil (la main active, sinon l'autre si l'active est vide), toujours, dans le vide comme sur une cible. Une épée
+   dans la main non active, l'active vide, ne faisait rien de visible : c'est ce qui cachait l'attaque.
 3. **E et Q posent tous les deux.** E dans le vide pose ce que tient la main active, exactement comme Q ; mais E près d'une cible
    (un tas, un personnage, un objet à prendre) fait autre chose, si bien qu'on ne sait pas toujours d'avance si E va poser ou prendre.
 4. **E maintenu réunit trois gestes sans rapport** : nouer, dénouer, appeler la mère. Le même appui court, devant la même cible,

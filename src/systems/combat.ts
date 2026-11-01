@@ -5,7 +5,7 @@ import { itemMass } from '../content/mass';
 import type { Attack, Facing, Weapon } from '../content/types';
 import type { Player } from '../entities/Player';
 import type { SwingOptions } from '../entities/ToolUse';
-import { game, heldItem } from '../state';
+import { game } from '../state';
 import type { GameMap, PlacedProp } from '../world/GameMap';
 import { attackCost, damage, footprint, frameDurations, hitsBox, reachCm, stanceFor, timing, zonePolygon, type Grip } from '../world/strike';
 import type { HarvestSystem } from './harvest';
@@ -33,7 +33,8 @@ export interface StrikeLog {
 }
 
 /**
- * Le combat (docs/CONCEPTION.md, « Le combat ») : Espace avec une arme dans la main active. L'arme est des données (`weapon` de
+ * Le combat (docs/CONCEPTION.md, « Le combat ») : Espace avec une arme en main (la main active, ou l'autre si l'active est vide), dans
+ * le vide comme sur une cible : le geste complet se joue toujours et se paie. L'arme est des données (`weapon` de
  * items.json), l'attaque aussi (combat.json) ; le corps joue le geste de l'attaque (gestures.json, qui ne sait pas ce que tient
  * Xéros) avec l'arme posée sur la main dans l'angle de chaque image (entities/ToolUse.ts). Tout se calcule dans world/strike.ts :
  * la posture qui sert, les durées, la portée, les dégâts, le prix, la zone. À l'impact, ce qui porte un `target` (props.json) et
@@ -61,16 +62,12 @@ export class CombatSystem {
     private readonly harvest: HarvestSystem,
   ) {}
 
-  /** L'arme de la main active (Espace attaque avec elle), sinon undefined. */
-  static wielded(): string | undefined {
-    const it = heldItem(game);
-    return it && items[it].weapon ? it : undefined;
-  }
-
-  /** Ce que tiennent les mains, pour la posture : l'arme à deux mains, ou ce que tient l'autre main. */
-  private grip(): Grip {
+  /** Ce que tiennent les mains, pour la posture : l'arme `item` à deux mains, ou ce que tient la main qui ne la tient pas. */
+  private grip(item: string): Grip {
     if (game.both) return { other: 'empty', both: true };
-    const other = game.hands[1 - game.active];
+    const own = game.hands[game.active];
+    const mine = own && 'item' in own && own.item === item ? game.active : 1 - game.active;
+    const other = game.hands[1 - mine];
     if (!other) return { other: 'empty', both: false };
     return { other: 'item' in other && items[other.item].weapon ? 'weapon' : 'other', both: false };
   }
@@ -78,7 +75,7 @@ export class CombatSystem {
   /** L'attaque que jouerait Espace à `time` avec l'arme `item` : la suivante de l'enchaînement s'il tient, sinon la première. */
   plan(item: string, time: number): AttackPlan {
     const weapon = items[item].weapon!;
-    const chain = stanceFor(combat, weapon.family, this.grip()).chain;
+    const chain = stanceFor(combat, weapon.family, this.grip(item)).chain;
     const at = this.chainItem === item && this.chainAt >= 0 && time <= this.comboUntil ? (this.chainAt + 1) % chain.length : 0;
     const key = chain[at];
     const attack = combat.attacks[key];
@@ -97,7 +94,7 @@ export class CombatSystem {
 
   /** L'attaque part : elle prend sa place dans l'enchaînement. */
   begin(p: AttackPlan): void {
-    const chain = stanceFor(combat, p.weapon.family, this.grip()).chain;
+    const chain = stanceFor(combat, p.weapon.family, this.grip(p.item)).chain;
     this.chainAt = chain.indexOf(p.key);
     this.chainItem = p.item;
     this.busy = true;

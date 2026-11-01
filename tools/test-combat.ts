@@ -84,13 +84,15 @@ await playtest('combat', async ({ page, errors, load }) => {
       await press('Space');
       let tilt = 0;
       let texts = 0;
+      let played = false;
       for (let i = 0; i < 60 && (w().mode !== 'play' || w().combat.busy); i++) {
+        played ||= w().mode === 'use' && w().player.tools.busy;
         tilt = Math.max(tilt, Math.abs(dummy.image.angle));
         texts = Math.max(texts, damageTexts());
         await sleep(15);
       }
       await settle();
-      return { entry: log().length > n ? log()[log().length - 1] : undefined, spent: before - stamina(), tilt, texts };
+      return { entry: log().length > n ? log()[log().length - 1] : undefined, spent: before - stamina(), tilt, texts, played };
     };
     const hit = (e: any) => !!e?.hits.some((h: any) => h.type === 'training-dummy');
     const give = async (item: string) => {
@@ -136,7 +138,14 @@ await playtest('combat', async ({ page, errors, load }) => {
     // un coup dans le vide coûte aussi
     await facingDummy('left', 80);
     const air = await strikeOnce();
-    out.air = { hits: air.entry?.hits.length, spent: Math.round(air.spent * 1000) / 1000 };
+    out.air = { hits: air.entry?.hits.length, spent: Math.round(air.spent * 1000) / 1000, played: air.played };
+
+    // l'arme dans la main qui n'est pas active, l'active vide : elle sert quand même, dans le vide
+    await give('branch');
+    gs.switchHand(gs.game);
+    w().handsChanged();
+    const other = await strikeOnce();
+    out.otherHand = { active: gs.game.hands[gs.game.active]?.item ?? null, attack: other.entry?.attack, played: other.played, spent: Math.round(other.spent * 1000) / 1000 };
 
     // épuisé : rien ne part
     await send({ kind: 'stamina', value: 0 });
@@ -199,6 +208,10 @@ await playtest('combat', async ({ page, errors, load }) => {
   assert.deepEqual(r.chain, ['slash', 'overhead'], 'un deuxième Espace pendant le geste enchaîne le coup d’en haut');
   assert.equal(r.air.hits, 0, 'dans le vide, rien n’est touché');
   assert.ok(r.air.spent > 0, 'un coup dans le vide coûte de l’endurance');
+  assert.ok(r.air.played, 'dans le vide, le geste complet se joue');
+  assert.equal(r.otherHand.active, null, 'la main active est vide, l’arme est dans l’autre');
+  assert.equal(r.otherHand.attack, 'slash', 'l’arme de l’autre main attaque quand l’active est vide');
+  assert.ok(r.otherHand.played && r.otherHand.spent > 0, 'avec son geste et son prix');
   assert.equal(r.exhausted.attacks, 0, 'épuisé, aucune attaque ne part');
   assert.match(r.exhausted.notice, /épuisé/, 'épuisé, on le dit');
   assert.deepEqual(r.twoBranches.both, ['branch', 'branch'], 'deux branches en main');

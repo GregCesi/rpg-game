@@ -731,7 +731,9 @@ Les touches : [docs/COMMANDES.md](COMMANDES.md).
   a des **postures**, chacune avec ce que tiennent les mains (`when` : l'autre main vide, une arme, n'importe quoi ; l'arme à deux
   mains) et sa suite d'attaques ; la première posture qui convient sert. Aujourd'hui une seule posture, qui convient à tout : **tenir
   une ou deux branches ne change rien**.
-- **Espace avec une arme dans la main active attaque** ; un deuxième Espace pendant le geste, ou juste après, **enchaîne** l'attaque
+- **Espace avec une arme en main attaque, toujours** : la main active, ou l'autre si l'active est vide (comme un outil) ; le geste
+  complet (armer, frapper, revenir) se joue et se paie dans le vide comme sur une cible : on s'entraîne dans le vide, le mannequin
+  sert à voir les dégâts et les réactions. Un deuxième Espace pendant le geste, ou juste après, **enchaîne** l'attaque
   suivante de la posture (la taille, puis le coup d'en haut, puis de nouveau la taille). C'est la seule commande changée ; la branche
   active et la hachette dans l'autre main taillent toujours, comme avant.
 - **Une cible** : `target` d'un objet de props.json : ses points de vie (le mannequin : infinis), sa matière (ce qui vole : `fx-straw`,

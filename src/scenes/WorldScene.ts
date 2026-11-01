@@ -594,9 +594,9 @@ export class WorldScene extends Phaser.Scene {
   private useHeld(): void {
     if (this.player.hold.loaded) return;
     const tool = this.usable();
-    // une arme dans la main active : Espace attaque (la branche active et la hachette dans l'autre main : c'est la hachette qui sert)
-    const weapon = CombatSystem.wielded();
-    if (weapon && tool === weapon) return this.attack(this.combat.plan(weapon, this.time.now));
+    // une arme qui sert (la main active, ou l'autre si l'active est vide) : Espace attaque, toujours, dans le vide comme sur une cible
+    // (la branche active et la hachette dans l'autre main : c'est la hachette qui sert, elle taille)
+    if (tool && items[tool].weapon) return this.attack(this.combat.plan(tool, this.time.now));
     if (tool && SiteSystem.traces(tool)) return this.plantStake(tool);
     if (!tool || items[tool].kind === 'resource') {
       // mains vides devant ce qui demande un outil : on le dit
@@ -645,7 +645,7 @@ export class WorldScene extends Phaser.Scene {
       () => {
         const chain = this.combat.end(p, this.time.now);
         if (this.mode === 'use') this.mode = 'play';
-        if (chain && this.mode === 'play' && CombatSystem.wielded() === p.item) this.attack(this.combat.plan(p.item, this.time.now));
+        if (chain && this.mode === 'play' && this.usable() === p.item) this.attack(this.combat.plan(p.item, this.time.now));
       },
       p.swing,
     );

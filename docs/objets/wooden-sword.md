@@ -40,7 +40,7 @@ Seule. Ne s'entrepose pas.
 ## Gestes
 - E court : la prendre (au sol).
 - E maintenu : rien.
-- Espace, dans la main active : attaquer (CONCEPTION, « Le combat ») ; un deuxième Espace pendant la récupération enchaîne le coup
+- Espace (dans la main active, ou dans l'autre si l'active est vide) : attaquer, dans le vide comme sur une cible (CONCEPTION, « Le combat ») ; un deuxième Espace pendant la récupération enchaîne le coup
   suivant (la taille, puis le coup d'en haut). Coûte de l'endurance selon sa masse, même dans le vide.
 - R : la tourne à la pose. Q : la lâche devant Xéros.
 
