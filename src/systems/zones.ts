@@ -38,7 +38,12 @@ export class ZoneCrossing {
     return { x: -l, y: -t, w: w + l + (this.open.east ? ex : 0), h: h + t + (this.open.south ? ey : 0) };
   }
 
-  /** Où marchent les pieds : la carte, et un peu au-delà d'un bord ouvert, le temps que le milieu des pieds le passe. */
+  /**
+   * Où marchent les pieds : la carte, et un peu au-delà d'un bord ouvert, le temps que le milieu des pieds le passe. Ces bornes font
+   * que le passage d'un bord ne se perd jamais, même quand le jeu rame : au-delà du bord, Xéros y reste retenu, et `update` le voit à
+   * l'image suivante (la condition reste vraie). Les resserrer sous le bord ferait de ce passage un franchissement à tester sur le
+   * chemin parcouru (world/crossing.ts), comme une sortie.
+   */
   get walkBounds(): Rect {
     return this.grown(ZONES.edge, ZONES.edge);
   }

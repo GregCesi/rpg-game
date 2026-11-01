@@ -3,6 +3,7 @@
 // ouverture sans porte), tourné vers le dedans, entre : la scène passe à la carte de l'intérieur (world/interiorMap.ts), par le même
 // fondu qu'une sortie de Tiled. Dedans : le même passage, tourné vers le dehors, le ramène devant la porte.
 
+import { crossed } from '../world/crossing';
 import { maps } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import type { Facing } from '../content/types';
@@ -26,18 +27,9 @@ function pointIn(px: number, py: number, r: Rect): boolean {
   return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.d;
 }
 
-/**
- * Les pieds sont-ils passés dans le rectangle depuis l'image d'avant (`from`) ? Le chemin parcouru est suivi pixel par pixel : un jeu
- * qui rame fait plusieurs pas de physique par image, et le passage étroit d'une porte serait sinon franchi sans être vu.
- */
-function feetCrossed(player: Player, from: { x: number; y: number } | undefined, r: Rect): boolean {
-  const to = { x: player.actor.x, y: player.actor.y };
-  const a = from ?? to;
-  const n = Math.max(1, Math.ceil(Math.hypot(to.x - a.x, to.y - a.y)));
-  // un saut de plus de 32 px (Xéros reposé ailleurs, un changement de carte) n'est pas un chemin parcouru
-  if (n > 32) return pointIn(to.x, to.y, r);
-  for (let i = 0; i <= n; i++) if (pointIn(a.x + ((to.x - a.x) * i) / n, a.y + ((to.y - a.y) * i) / n, r)) return true;
-  return false;
+/** Les pieds sont-ils passés dans le rectangle depuis l'image d'avant (world/crossing.ts : le chemin, pas la position de l'instant) ? */
+function feetCrossed(player: Player, r: Rect): boolean {
+  return crossed(player.from, { x: player.actor.x, y: player.actor.y }, (x, y) => pointIn(x, y, r));
 }
 
 /** Les numéros de tuile de l'intérieur : la terre battue (ses quatre variantes) et le vide. */
@@ -60,8 +52,6 @@ export function resolveInterior(id: string): InteriorMap | undefined {
 
 export class Interiors {
   private cache?: { version: number; buildings: Building[] };
-  /** Les pieds à l'image d'avant : le chemin parcouru depuis compte, pas seulement la position. */
-  private last?: { x: number; y: number };
 
   constructor(
     private readonly map: GameMap,
@@ -83,16 +73,14 @@ export class Interiors {
    * il va), sinon rien. À appeler à chaque image où Xéros peut passer.
    */
   update(player: Player): Passage | undefined {
-    const from = this.last;
-    this.last = { x: player.actor.x, y: player.actor.y };
     if (player.dir.lengthSq() === 0) return undefined;
     const facing = player.actor.facing;
     if (this.interior) {
-      const e = this.interior.exits.find((x) => x.facing === facing && feetCrossed(player, from, x.zone));
+      const e = this.interior.exits.find((x) => x.facing === facing && feetCrossed(player, x.zone));
       return e && { mapId: this.interior.host, at: e.to };
     }
     for (const b of this.buildings()) {
-      const i = b.entrances.findIndex((e) => e.open && e.facing === facing && feetCrossed(player, from, e.zone));
+      const i = b.entrances.findIndex((e) => e.open && e.facing === facing && feetCrossed(player, e.zone));
       if (i < 0) continue;
       const it = resolveInterior(interiorId(this.map.def.id, b.key));
       if (it) return { mapId: it.def.id, at: it.arrivals[i] };

@@ -25,6 +25,12 @@ export class Player {
   pushing = false;
   /** Direction demandée au dernier tour (0,0 si immobile). */
   dir = new Phaser.Math.Vector2(0, 0);
+  /**
+   * Les pieds à l'image d'avant (relevés au début de `update`, après la physique) : ce qui se déclenche en passant se teste sur le
+   * chemin depuis là (world/crossing.ts), pas à la position de l'instant.
+   */
+  from?: { x: number; y: number };
+  private feet?: { x: number; y: number };
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.actor = new Actor(scene, x, y, PLAYER.skin);
@@ -35,6 +41,8 @@ export class Player {
 
   /** enabled = false pendant un dialogue : le joueur reste immobile. */
   update(enabled = true): void {
+    this.from = this.feet;
+    this.feet = { x: this.actor.x, y: this.actor.y };
     this.running = false;
     this.runRefused = false;
     // pendant un geste, le corps reste sur place et garde son animation
