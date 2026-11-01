@@ -1,13 +1,13 @@
 {
-  "accelerate": false,
+  "accelerate": true,
   "speeds": [
     1,
-    6,
-    24,
-    60,
-    360
+    2,
+    5,
+    10,
+    20
   ],
-  "default": 24,
+  "default": 1,
   "wakeHour": 6,
   "saveEveryMinutes": 15,
   "work": {

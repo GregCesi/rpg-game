@@ -1036,8 +1036,9 @@ export const StrengthSchema = z
 export const TimeSchema = z
   .strictObject({
     /**
-     * L'accélération du temps (V, Maj + V, les paliers de `speeds`) : en pause (`false`), tout se joue à x1, une minute réelle pour une
-     * minute de jeu, le temps de calibrer le jeu (docs/CONCEPTION.md, « Le temps ») ; le code reste, éteint.
+     * La vitesse du temps du joueur (V, Maj + V, les paliers de `speeds`, depuis `default`) : c'est la vitesse de simulation, elle
+     * accélère tout le jeu, marche comprise (docs/CONCEPTION.md, « Le temps ») ; `false` : V ne fait rien. Le combat ramène à x1 ; x50
+     * reste réservé à ?dieu.
      */
     accelerate: z.boolean(),
     speeds: z.array(z.number().positive()).min(1),
@@ -1411,6 +1412,15 @@ export const ParcelUseSchema = z.strictObject({ name: id, color: z.string().rege
  */
 export const WorldSchema = z.strictObject({
   gloom: z.array(z.strictObject({ x: z.number().nonnegative(), alpha: z.number().min(0).max(1) })).min(2),
+  /**
+   * La lumière qui suit l'heure (docs/CONCEPTION.md, « Le temps ») : des repères dans la journée (`hour`, de 0 à 24, croissants), chacun
+   * la teinte du voile posé sur le monde (`color`), son opacité (`alpha` : 0 en plein jour) et la force du soleil (`sun`, de 0 à 1 : les
+   * rais de soleil des fenêtres et des portes) ; entre deux repères, tout s'interpole, et la journée boucle de minuit à minuit.
+   */
+  daylight: z
+    .array(z.strictObject({ hour: z.number().min(0).max(24), color: z.string().regex(/^#[0-9a-f]{6}$/i), alpha: z.number().min(0).max(1), sun: z.number().min(0).max(1) }))
+    .min(2)
+    .refine((d) => d.every((p, i) => i === 0 || p.hour > d[i - 1].hour), { message: "les heures de 'daylight' doivent croître" }),
 });
 
 export type Facing = z.infer<typeof FacingSchema>;

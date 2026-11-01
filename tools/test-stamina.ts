@@ -1,6 +1,6 @@
 // L'endurance en trois niveaux (docs/CONCEPTION.md, « Le temps » ; src/entities/Stamina.ts), sans navigateur :
-// - la course : partie à plein souffle, elle dure `max.start / breath.perSec.run` secondes (100 / 5 = 20 s, 165 m à 165 px/s et 5 cm par
-//   px), puis Xéros est essoufflé ; le plafond n'a baissé que du prix de la course ;
+// - la course : partie à plein souffle, elle dure `max.start / breath.perSec.run` secondes (100 / 5 = 20 s, 50 m à 2,5 m/s), puis
+//   Xéros est essoufflé ; le plafond n'a baissé que du prix de la course ;
 // - un effort qui manque de souffle attend : refusé sans toucher au plafond, Xéros essoufflé jusqu'à ce que le souffle revienne à
 //   `recovered` du plafond, `regenDelayMs` après le dernier effort ;
 // - plafond vide : épuisé ; sous `tired` du maximum : fatigué, plus de course ;
@@ -29,7 +29,7 @@ while (run.canRun() && ms < 120000) {
   ms += FRAME;
 }
 const seconds = ms / 1000;
-const metres = (PLAYER.runSpeed * seconds * 5) / 100;
+const metres = PLAYER.run * seconds;
 const expected = def.max.start / def.breath.perSec.run;
 assert.ok(Math.abs(seconds - expected) < 0.2, `la course dure ${expected} s (${seconds.toFixed(2)} s)`);
 assert.ok(run.winded, 'à bout de souffle, Xéros est essoufflé');

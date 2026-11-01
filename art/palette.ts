@@ -150,3 +150,19 @@ export const woad = {
   shade: '#56637a',
   deep: '#443f55',
 };
+
+/**
+ * Les ciels du cadran du temps (art/ui/clock.ts, chantier « le temps ») : deux aplats par moment de la journée, le haut et
+ * l'horizon, sans dégradé. Ils restent terreux comme le reste : la lumière glisse vers le jaune, l'ombre vers le brun-violet.
+ * Signes pris hors des lettres, libres dans la palette du monde.
+ */
+export const sky = {
+  '(': '#a8838e', // aube, haut : mauve rosé
+  ')': '#ddb08a', // aube, horizon : pêche
+  '<': '#9fb6b6', // jour, haut : bleu pâle grisé (l'eau W, éclaircie)
+  '>': '#c6cfbb', // jour, horizon : presque crème
+  '?': '#8e5560', // crépuscule, haut : lie-de-vin
+  '/': '#cf7f4c', // crépuscule, horizon : orange brique
+  '-': '#2c3049', // nuit, haut : indigo sombre
+  '_': '#434b68', // nuit, horizon : indigo
+};

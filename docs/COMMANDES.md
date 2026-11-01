@@ -91,10 +91,11 @@ Un refus (mauvais outil, pas la place, épuisé) se dit sans geste ni dépense.
 ### Échap
 - Sur un rail ou pendant un travail : l'arrêter après le coup en cours (ce qui est fait reste fait ; un pas fait de même). Ailleurs : rien.
 
-### V (la vitesse du temps) — en pause
-- L'accélération du temps est en pause : tout se joue à x1, V ne fait rien (`accelerate` de time.json). Quand elle reviendra : V, le palier suivant de la vitesse du temps (x1, x6, x24, x60, x360 ; x24 par défaut) ; Maj + V : le précédent ; un message dit
-  le palier (« Le temps : x60 »). Elle ne fait avancer que l'horloge (l'heure en haut à droite), jamais la marche ni les gestes.
-  Retenue d'une session à l'autre (docs/CONCEPTION.md, « Le temps »).
+### V (la vitesse du temps)
+- V : le palier suivant de la vitesse du temps (x1, x2, x5, x10, x20 ; x1 au départ) ; Maj + V : le précédent ; un message dit le
+  palier (« Le temps : x5 ») et le cadran l'affiche. C'est la vitesse de simulation : elle accélère tout le jeu (la marche, les coups,
+  les pauses, l'horloge), par pas de taille normale. Une attaque ramène à x1. x50 est réservé à ?dieu (les tests). Pas gardée d'une
+  session à l'autre (docs/CONCEPTION.md, « Le temps »).
 
 ### Le zoom (dans tous les modes)
 - Molette (vers l'avant : plus près), **+** et **−** (lus par leur signe, où qu'ils soient), ou + et − du pavé numérique.

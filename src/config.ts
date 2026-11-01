@@ -208,13 +208,19 @@ export const GLOOM = { color: 0x0b1611, strip: 64 };
 
 export const PLAYER = {
   skin: 'xeros',
-  walkSpeed: 100, // px/s, environ 3 tuiles par seconde
-  runSpeed: 165,
   /**
-   * Cadence de référence de la marche portée (`carry-walk-*`, dessinée pour environ 55 px/s) : l'animation s'accélère ou
-   * ralentit avec la vitesse réelle, qui dépend de la masse portée (`entities/Strength.ts`, strength.json).
+   * Les vitesses de Xéros, en m/s (décidé par Grégoire : une marche de 2 m/s, une course de 2,5 m/s, 9 km/h) : la seule source des
+   * déplacements (systems/speeds.ts, réglables dans ?dieu). Chargé, il marche à la marche × ce que permet sa force (Strength) ; fatigué,
+   * à la marche × `tiredWalk` de stamina.json (1 m/s).
    */
-  carrySpeed: 55,
+  walk: 2,
+  run: 2.5,
+  /**
+   * Cadences des dessins (px/s) : la vitesse pour laquelle la marche (`walk-*`, 100 px/s) et la marche portée (`carry-walk-*`, 55 px/s)
+   * ont été dessinées ; l'animation s'accélère ou ralentit avec la vitesse réelle. Pas des vitesses de déplacement.
+   */
+  walkCadence: 100,
+  carryCadence: 55,
 };
 
 /**

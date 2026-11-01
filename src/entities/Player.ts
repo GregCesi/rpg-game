@@ -58,7 +58,7 @@ export class Player {
     }
     if (!enabled) {
       this.dir.set(0, 0);
-      this.actor.move(this.dir, SPEEDS.walk);
+      this.actor.move(this.dir, SPEEDS.walk, PLAYER.walkCadence);
       return;
     }
     const { dir, running } = this.input.read();
@@ -68,13 +68,13 @@ export class Player {
     // portée garde sa cadence de dessin, accélérée ou ralentie d'autant (sans dépasser une foulée vive).
     // Fatigué (sous le seuil de stamina.json), il marche moins vite et ne court plus.
     const factor = this.strength.walkFactor() * this.stamina.walkFactor();
-    if (this.hold.loaded) this.actor.move(dir, SPEEDS.carry * factor, Math.max(PLAYER.carrySpeed, (SPEEDS.carry * factor) / 1.4));
+    if (this.hold.loaded) this.actor.move(dir, SPEEDS.walk * factor, Math.max(PLAYER.carryCadence, (SPEEDS.walk * factor) / 1.4));
     else if (running && this.strength.canRun() && this.stamina.canRun()) {
-      this.actor.move(dir, SPEEDS.run * factor, PLAYER.walkSpeed);
+      this.actor.move(dir, SPEEDS.run * factor, PLAYER.walkCadence);
       this.running = dir.lengthSq() > 0;
     } else {
       this.runRefused = running && this.strength.canRun() && this.stamina.empty && dir.lengthSq() > 0;
-      this.actor.move(dir, SPEEDS.walk * factor, PLAYER.walkSpeed);
+      this.actor.move(dir, SPEEDS.walk * factor, PLAYER.walkCadence);
     }
   }
 

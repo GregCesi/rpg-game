@@ -17,7 +17,7 @@
     "recovered": 0.3
   },
   "tired": 0.15,
-  "tiredWalk": 0.85,
+  "tiredWalk": 0.5,
   "work": {
     "ceilingPerJ": 0.00014,
     "breathPerJ": 0.032,

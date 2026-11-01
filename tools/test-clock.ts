@@ -9,13 +9,14 @@ import { upgrade } from '../src/state/save';
 import { clockLabel, gameMinutes, later, nextSpeed } from '../src/world/clock';
 
 for (const speed of time.speeds) assert.equal(gameMinutes(60000, speed), speed, `x${speed} : une minute réelle fait ${speed} minutes de jeu`);
-assert.equal(gameMinutes(60 * 60000, 24), 24 * 60, 'x24 : une heure réelle fait une journée');
-assert.equal(time.default, 24, 'x24 par défaut');
+
+assert.deepEqual(time.speeds, [1, 2, 5, 10, 20], 'les paliers de la vitesse du temps : x1 à x20 (x50 réservé à ?dieu)');
+assert.equal(time.default, 1, 'x1 par défaut');
 assert.deepEqual(later({ day: 1, minute: 23 * 60 + 30 }, 45), { day: 2, minute: 15 }, 'le jour change à minuit');
 assert.deepEqual(later({ day: 3, minute: 600 }, 3 * 1440), { day: 6, minute: 600 }, 'trois jours plus tard, la même heure');
 assert.equal(clockLabel({ day: 3, minute: 14 * 60 + 5.7 }), 'Jour 3 · 14:05', 'l’heure s’écrit à la minute');
-assert.equal(nextSpeed(time.speeds, 24, 1), 60, 'V : le palier suivant');
-assert.equal(nextSpeed(time.speeds, 24, -1), 6, 'Maj + V : le palier précédent');
+assert.equal(nextSpeed(time.speeds, 5, 1), 10, 'V : le palier suivant');
+assert.equal(nextSpeed(time.speeds, 5, -1), 2, 'Maj + V : le palier précédent');
 assert.equal(nextSpeed(time.speeds, time.speeds[time.speeds.length - 1], 1), time.speeds[time.speeds.length - 1], 'le dernier palier reste le dernier');
 assert.equal(nextSpeed(time.speeds, time.speeds[0], -1), time.speeds[0], 'le premier reste le premier');
 const v17 = { version: 17, savedAt: '', where: {}, state: { stamina: 80, day: 4, hands: [null, null] } };

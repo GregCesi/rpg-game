@@ -1,5 +1,6 @@
 // Test de scénario du temps (docs/CONCEPTION.md, « Le temps »), dans le vrai jeu (voir tools/lib/playtest.ts) :
-// - l'horloge à x1 : l'accélération du temps est en pause (time.json, `accelerate`) ; V ne fait rien, l'heure s'affiche sans vitesse ;
+// - l'horloge à x1 par défaut ; V passe la vitesse du temps du joueur au palier suivant (x2 : la vitesse de simulation, tout le jeu plus
+//   vite), le dit et l'affiche avec l'heure ; Maj + V revient à x1 ;
 // - le travail au coup (docs/CONCEPTION.md, « Le travail ») : devant un arbre normal, un seul appui sur Espace lance tout le travail,
 //   Xéros frappe seul au rythme du modèle (world/swing.ts), chaque coup enlève sa part (world/workPlan.ts) et se paie au plafond ; la
 //   force réglée dans ?dieu en plein travail agit au coup suivant (le bûcheron fort enlève plus de deux fois plus par coup) ; un pas
@@ -33,11 +34,17 @@ await playtest('temps', async ({ page, errors, load }) => {
     };
     // de vrais keyCode : Phaser tient pour doublon deux appuis de même keyCode au même instant
     const KEY_CODES: Record<string, number> = { KeyV: 86, Space: 32, KeyD: 68, Escape: 27 };
-    const press = async (code: string) => {
+    // Maj enfoncée une image avant la touche, qui porte `shiftKey` (comme un vrai clavier)
+    const press = async (code: string, shift = false) => {
       const keyCode = KEY_CODES[code] ?? 0;
-      window.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode } as KeyboardEventInit));
+      if (shift) {
+        window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', keyCode: 16, shiftKey: true } as KeyboardEventInit));
+        await frame();
+      }
+      window.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode, shiftKey: shift } as KeyboardEventInit));
       await sleep(60);
-      window.dispatchEvent(new KeyboardEvent('keyup', { code, keyCode } as KeyboardEventInit));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code, keyCode, shiftKey: shift } as KeyboardEventInit));
+      if (shift) window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft', keyCode: 16 } as KeyboardEventInit));
       await frame();
     };
     const minutes = () => gs.game.clock.day * 1440 + gs.game.clock.minute;
@@ -45,18 +52,22 @@ await playtest('temps', async ({ page, errors, load }) => {
     await send({ kind: 'map', map: 'ferme' }, 1500);
     await send({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
 
-    // 1. l'horloge à x1 : 2 s jouées font 2 s de jeu ; V ne change rien ; l'heure sans vitesse
+    // 1. l'horloge à x1 : 2 s jouées font 2 s de jeu ; V : x2, Maj + V : x1
     out.accelerate = content.time.accelerate;
     const m0 = minutes();
     const t0 = performance.now();
     await sleep(2000);
     out.x1 = { game: minutes() - m0, real: performance.now() - t0, speed: ClockSystem.speed };
     const told = notices.length;
+    const hudClock = () => g.scene.getScene('hud').clockText as string;
+    const sim = await import('/src/systems/simSpeed.ts' as string);
     await press('KeyV');
     await sleep(300);
-    out.v = { speed: ClockSystem.speed, notices: notices.slice(told) };
-    const texts = (list: any[]): string[] => list.flatMap((o: any) => (o.type === 'Text' ? [o.text] : o.list ? texts(o.list) : []));
-    out.hud = texts(g.scene.getScene('hud').children.list).find((t: string) => /^Jour \d+ · \d\d:\d\d/.test(t));
+    out.v = { speed: sim.simSpeed(), notices: notices.slice(told), hud: hudClock() };
+    await press('KeyV', true);
+    await sleep(300);
+    out.back = { speed: sim.simSpeed(), hud: hudClock() };
+    out.hud = hudClock();
 
     // 2. le travail au coup, devant un arbre normal
     const tree = w().map.props.find((p: any) => p.type === 'normal-tree' && p.image.visible);
@@ -139,12 +150,14 @@ await playtest('temps', async ({ page, errors, load }) => {
   })) as Record<string, any>;
   console.log(JSON.stringify(first));
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
-  assert.equal(first.accelerate, false, 'l’accélération du temps est en pause (time.json)');
+  assert.equal(first.accelerate, true, 'la vitesse du temps du joueur est active (time.json)');
   assert.equal(first.x1.speed, 1, 'le temps va à x1');
   assert.ok(Math.abs(first.x1.game - first.x1.real / 60000) < 0.01, `à x1, ${(first.x1.real / 1000).toFixed(1)} s jouées font autant de jeu (${(first.x1.game * 60).toFixed(1)} s)`);
-  assert.equal(first.v.speed, 1, 'V ne change pas la vitesse');
-  assert.deepEqual(first.v.notices, [], 'V ne dit rien');
-  assert.ok(first.hud && !/x\d/.test(first.hud), `l’heure s’affiche, sans vitesse (${first.hud})`);
+  assert.equal(first.v.speed, 2, 'V : x2, la vitesse de simulation');
+  assert.deepEqual(first.v.notices, ['Le temps : x2'], 'V le dit');
+  assert.ok(/x2$/.test(first.v.hud ?? ''), `la vitesse s'affiche avec l'heure (${first.v.hud})`);
+  assert.equal(first.back.speed, 1, 'Maj + V : de nouveau x1');
+  assert.ok(first.hud && !/x\d/.test(first.hud), `à x1, l’heure s’affiche sans vitesse (${first.hud})`);
   const m = first.model;
   assert.equal(first.launched.mode, 'work', 'un seul appui : le travail continue seul');
   assert.ok(first.launched.bar, 'sa jauge au-dessus de Xéros');
@@ -302,7 +315,22 @@ await playtest('temps', async ({ page, errors, load }) => {
     };
     const minutes = () => gs.game.clock.day * 1440 + gs.game.clock.minute;
     const out: Record<string, any> = {};
+    // la lumière suit l'heure : à 13 h, aucun voile ; à 22 h, le voile de la nuit
+    await send({ kind: 'clock', hour: 13 });
+    await frame();
+    out.noon = { alpha: w().daylight.veil.fillAlpha, visible: w().daylight.veil.visible };
+    // une attaque ramène la vitesse du temps à x1
+    const sim = await import('/src/systems/simSpeed.ts' as string);
+    await send({ kind: 'sim-speed', factor: 5 });
+    await send({ kind: 'give', held: { item: 'wooden-sword' } });
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+    await sleep(80);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+    for (let i = 0; i < 100 && w().mode !== 'play'; i++) await sleep(20);
+    out.combat = { speed: sim.simSpeed() };
     await send({ kind: 'clock', hour: 22 });
+    await frame();
+    out.night22 = { alpha: w().daylight.veil.fillAlpha, visible: w().daylight.veil.visible };
     await send({ kind: 'stamina', breath: 40, ceiling: 40, max: 100 });
     // pour l'essai, le temps va plus vite (l'accélération est en pause pour le joueur, pas pour le test)
     ClockSystem.speed = 360;
@@ -327,6 +355,9 @@ await playtest('temps', async ({ page, errors, load }) => {
   })) as Record<string, any>;
   console.log(JSON.stringify(third));
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
+  assert.ok(!third.noon.visible || third.noon.alpha < 0.01, 'à 13 h, la lumière du jour : aucun voile');
+  assert.ok(third.night22.visible && third.night22.alpha > 0.4, `à 22 h, le voile de la nuit (${third.night22.alpha.toFixed(2)})`);
+  assert.equal(third.combat.speed, 1, 'une attaque ramène le temps à x1');
   const nightExpected = (third.night.minutes / 60) * third.night.perHour;
   assert.ok(third.night.minutes > 5 && Math.abs(third.night.worn - nightExpected) < 0.02, `la nuit, ${third.night.minutes.toFixed(0)} min de veille usent ${nightExpected.toFixed(2)} (${third.night.worn.toFixed(3)})`);
   // à la minute près : l'horloge a repris depuis le lever
@@ -336,6 +367,6 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.ok(Math.abs(third.slept.live - third.slept.expect.ceiling) < 1e-6, 'Xéros se lève avec ce plafond');
   assert.ok(third.slept.notices.includes(`Jour ${third.slept.clock.day} · 06:00`), `le réveil se dit (${third.slept.notices.join(' | ')})`);
   console.log(
-    "  ✓ temps : l'horloge à x1, V sans effet ; le travail lancé d'un appui (au rythme du modèle, la force réglée en plein travail agit au coup suivant, un pas l'arrête, x5 serre les coups, ?debug), repris après rechargement, fini d'un coup ; à bout de souffle il souffle puis reprend ; la veille de nuit, dormir",
+    "  ✓ temps : l'horloge à x1, V et Maj + V (la vitesse de simulation, affichée au cadran), une attaque ramène à x1, la lumière du jour et de la nuit ; le travail lancé d'un appui (au rythme du modèle, la force réglée en plein travail agit au coup suivant, un pas l'arrête, x5 serre les coups, ?debug), repris après rechargement, fini d'un coup ; à bout de souffle il souffle puis reprend ; la veille de nuit, dormir",
   );
 });

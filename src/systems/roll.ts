@@ -79,7 +79,7 @@ export class RollSystem {
     player.stamina.drain(player.stamina.pushRate(mass), delta, player.stamina.pushBreath(mass));
     const moved = this.advance(target, dir, speed, delta);
     const [sx, sy] = STEP[dir];
-    player.actor.move(moved ? none.set(sx, sy) : none, speed, PLAYER.walkSpeed);
+    player.actor.move(moved ? none.set(sx, sy) : none, speed, PLAYER.walkCadence);
   }
 
   /** Écrit la position de la bille en cours dans GameState (à l'arrêt, à la fermeture de la page). */

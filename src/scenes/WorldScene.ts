@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { clockLabel } from '../world/clock';
+import { clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
 import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work } from '../content';
@@ -34,7 +34,8 @@ import { WorkSystem, type WorkJob } from '../systems/work';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
 import { pxPerSec, setSpeeds } from '../systems/speeds';
-import { setSimSpeed } from '../systems/simSpeed';
+import { setSimSpeed, simSpeed } from '../systems/simSpeed';
+import { Daylight } from '../systems/daylight';
 import { WorkBar } from '../entities/WorkBar';
 import { splitHits } from '../world/woodShape';
 import { wood as W } from '../content';
@@ -145,6 +146,8 @@ export class WorldScene extends Phaser.Scene {
   private effort!: EffortSystem;
   /** Le travail en cours (abattre, couper, fendre, tailler) : il dure son temps réel (systems/work.ts). */
   private works!: WorkSystem;
+  /** La lumière qui suit l'heure (systems/daylight.ts). */
+  private daylight!: Daylight;
   private turns!: TurnSystem;
   private site!: SiteSystem;
   private wood!: WoodSystem;
@@ -231,6 +234,8 @@ export class WorldScene extends Phaser.Scene {
     this.physics.world.setBounds(walk.x, walk.y, walk.w, walk.h);
     const view = this.zones.cameraBounds;
     if (def.world) drawGloom(this, def.world.x, { x0: view.x, y0: view.y, x1: view.x + view.w, y1: view.y + view.h });
+    // la lumière qui suit l'heure : un voile sur tout ce qu'on voit (dedans comme dehors), les rais de soleil selon le soleil
+    this.daylight = new Daylight(this, { x: view.x - VIEW.width, y: view.y - VIEW.height, w: view.w + 2 * VIEW.width, h: view.h + 2 * VIEW.height });
     this.parcels = new Parcels(this, def);
 
     const arrival = this.edge ? this.freeArrival(sp.x, sp.y) : sp;
@@ -372,9 +377,14 @@ export class WorldScene extends Phaser.Scene {
     if (zoom) this.zoom.step(zoom);
     // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V et Maj + V changent la vitesse du temps
     this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work');
+    this.daylight.update();
+    // V et Maj + V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite) ; pas pendant un combat
     const speed = input.speedPressed();
-    // l'accélération du temps en pause (time.json) : V ne fait rien
-    if (speed && this.mode === 'play' && timeDef.accelerate) this.notice(`Le temps : x${this.clock.step(speed)}`);
+    if (speed && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
+      const n = nextSpeed(timeDef.speeds, timeDef.speeds.includes(simSpeed()) ? simSpeed() : timeDef.default, speed);
+      setSimSpeed(this.game, n);
+      this.notice(`Le temps : x${n}`);
+    }
     // B (?construire) : entrer dans le mode construction, ou en sortir
     if (input.buildPressed() && CONSTRUIRE && (this.mode === 'play' || this.mode === 'build')) {
       if (this.mode === 'build') this.exitBuild();
@@ -690,6 +700,11 @@ export class WorldScene extends Phaser.Scene {
    * geste enchaîne la suivante.
    */
   private attack(p: AttackPlan): void {
+    // le combat ramène le temps à x1
+    if (simSpeed() > 1) {
+      setSimSpeed(this.game, 1);
+      this.notice('Le temps : x1');
+    }
     if (!this.effort.afford(this.player, p.cost)) return;
     this.combat.begin(p);
     this.mode = 'use';
@@ -1040,8 +1055,8 @@ export class WorldScene extends Phaser.Scene {
         break;
       case 'speeds':
         // les vitesses à calibrer en jouant (systems/speeds.ts), retenues dans le navigateur
-        setSpeeds({ walk: pxPerSec(cmd.walk), run: pxPerSec(cmd.run), carry: pxPerSec(cmd.carry) });
-        this.notice(`Vitesses : marche ${cmd.walk} m/s, course ${cmd.run} m/s, chargé ${cmd.carry} m/s.`);
+        setSpeeds({ walk: pxPerSec(cmd.walk), run: pxPerSec(cmd.run) });
+        this.notice(`Vitesses : marche ${cmd.walk} m/s, course ${cmd.run} m/s.`);
         break;
       case 'speeds-default':
         setSpeeds(undefined);

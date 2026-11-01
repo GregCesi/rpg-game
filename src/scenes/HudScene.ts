@@ -1,16 +1,18 @@
 import Phaser from 'phaser';
 import { HUD, STAMINA_BAR, UI, VIEW, ZOOM } from '../config';
-import { items, props, stamina, time } from '../content';
+import { items, props, stamina } from '../content';
 import type { StaminaLevels } from '../entities/Stamina';
 import { GameEvent } from '../events';
 import { game, type Held } from '../state';
 import { defOf } from '../world/woodPiece';
 import { clockLabel } from '../world/clock';
-import { ClockSystem } from '../systems/clock';
+import { clockFace } from '../world/clockFace';
+import { simSpeed } from '../systems/simSpeed';
 
-/** Écart entre les deux cases (px) et marge sous les cases. */
+/** Écart entre les deux cases (px), marge sous les cases, et au bord droit de l'écran. */
 const GAP = 4;
 const BOTTOM = 10;
+const MARGIN = 4;
 
 /**
  * Signes (images `ui-digit-<signe>`) de la longueur restante d'un objet tenu, en mètres : « 8 m » donne 8 puis m,
@@ -48,8 +50,8 @@ export class HudScene extends Phaser.Scene {
   /** Barre d'endurance, au-dessus des deux cases : le cadre, puis dans le creux le perdu, le « revient » et le souffle. */
   private energy!: Phaser.GameObjects.Container;
   private energyParts!: Record<'mid' | 'right' | 'lost' | 'backEdge' | 'back' | 'breathEdge' | 'breath', Phaser.GameObjects.TileSprite>;
-  /** Milieu de la barre (elle s'allonge des deux côtés avec le maximum). */
-  private energyCenter = 0;
+  /** Bord droit de la barre (elle s'allonge vers la gauche avec le maximum, au-dessus des mains). */
+  private energyRight = 0;
   private energyX = 0;
   /** Le clignotement de la part « revient », pendant que Xéros est essoufflé. */
   private blink?: Phaser.Tweens.Tween;
@@ -58,14 +60,17 @@ export class HudScene extends Phaser.Scene {
     super('hud');
   }
 
-  /** `notice` : message à afficher dès le lancement, plus longtemps qu'un message court (sauvegarde refusée). */
-  /** L'heure et la vitesse du temps, en haut à droite. */
-  private clock!: Phaser.GameObjects.Text;
+  /** Le cadran du temps, en haut à droite (world/clockFace.ts) : ses images, redessinées quand l'heure ou la vitesse change. */
+  private face!: Phaser.GameObjects.Container;
+  private faceKey = '';
+  /** Ce que dit le cadran (« Jour 3 · 14:20 », et la vitesse si elle n'est pas x1) : lu par les tests de scénario. */
+  clockText = '';
 
   create(data: { notice?: string } = {}): void {
     this.cameras.main.setZoom(ZOOM).centerOn(VIEW.width / 2, VIEW.height / 2);
     const size = this.textures.get('ui-slot').getSourceImage().width;
-    const x0 = Math.round((VIEW.width - (2 * size + GAP)) / 2);
+    // les deux mains et la barre d'endurance en bas à droite ; la journée se surveille en haut à droite (le cadran)
+    const x0 = VIEW.width - MARGIN - (2 * size + GAP);
     const y0 = VIEW.height - BOTTOM - size;
     this.bar = this.add.container(0, 0);
     const label = { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 };
@@ -79,13 +84,10 @@ export class HudScene extends Phaser.Scene {
       this.corners.push([x + size - 1, y0 + size - 1]);
       this.bar.add([slot, icon, text]);
     });
-    this.makeEnergy(VIEW.width / 2, y0 - STAMINA_BAR.gap);
-    // l'heure, en haut à droite, et la vitesse du temps quand elle n'est pas celle par défaut (docs/CONCEPTION.md, « Le temps »)
-    this.clock = this.add
-      .text(VIEW.width - 4, 3, '', { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
-      .setOrigin(1, 0)
-      .setResolution(ZOOM);
-    this.bar.add(this.clock);
+    this.makeEnergy(VIEW.width - MARGIN, y0 - STAMINA_BAR.gap);
+    // le cadran du temps, en haut à droite (docs/CONCEPTION.md, « Le temps »)
+    this.face = this.add.container(0, 0);
+    this.bar.add(this.face);
     this.notice = this.add
       .text(VIEW.width / 2, y0 - STAMINA_BAR.gap - STAMINA_BAR.height - 4, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
@@ -107,18 +109,17 @@ export class HudScene extends Phaser.Scene {
   }
 
   update(): void {
-    const speed = ClockSystem.speed;
-    this.clock.setText(`${clockLabel(game.clock)}${time.accelerate && speed !== time.default ? `  x${speed}` : ''}`);
+    this.drawFace();
     const talking = this.scene.isActive('dialogue');
     this.bar.setVisible(!talking);
     if (talking) this.notice.setAlpha(0);
   }
 
   /**
-   * La barre d'endurance (docs/CONCEPTION.md, « Le temps »), centrée en `cx`, son bas en `bottom` : pièces de art/ui/stamina-bar.ts,
+   * La barre d'endurance (docs/CONCEPTION.md, « Le temps »), son bord droit en `right`, son bas en `bottom` : pièces de art/ui/stamina-bar.ts,
    * posées selon son contrat (le creux en (3, 3), 1 px pour 2 points ; elle s'allonge avec le maximum).
    */
-  private makeEnergy(cx: number, bottom: number): void {
+  private makeEnergy(right: number, bottom: number): void {
     const { inner, end, height } = STAMINA_BAR;
     const tile = (x: number, y: number, h: number, key: string) => this.add.tileSprite(x, y, 1, h, key).setOrigin(0);
     const left = this.add.image(0, 0, 'ui-bar-left').setOrigin(0);
@@ -134,7 +135,7 @@ export class HudScene extends Phaser.Scene {
     this.energyParts.right.setSize(end, height);
     const p = this.energyParts;
     this.energy = this.add.container(0, bottom - height, [left, p.mid, p.right, p.lost, p.backEdge, p.back, p.breathEdge, p.breath]);
-    this.energyCenter = cx;
+    this.energyRight = right;
     this.bar.add(this.energy);
     this.showEnergy({ ...game.stamina, winded: false });
   }
@@ -163,7 +164,7 @@ export class HudScene extends Phaser.Scene {
     p.breathEdge.setTexture(low ? 'ui-bar-breath-low-edge' : 'ui-bar-breath-edge');
     p.breath.setTexture(low ? 'ui-bar-breath-low' : 'ui-bar-breath');
     part(p.breathEdge, p.breath, 0, pb);
-    this.energyX = Math.round(this.energyCenter - (iw + 2 * end) / 2);
+    this.energyX = Math.round(this.energyRight - (iw + 2 * end));
     if (!this.tweens.isTweening(this.energy)) this.energy.x = this.energyX;
     // essoufflé : ce qui revient clignote (il attend son souffle) ; sinon la barre est franche
     if (e.winded && !this.blink) {
@@ -213,6 +214,22 @@ export class HudScene extends Phaser.Scene {
       g.setPosition(x, bottom);
       this.lengths[i].push(g);
       this.bar.add(g);
+    }
+  }
+
+  /** Le cadran : redessiné seulement quand ce qu'il montre change (la minute, le jour, la vitesse). */
+  private drawFace(): void {
+    const c = game.clock;
+    const speed = simSpeed();
+    const key = `${c.day}:${Math.floor(c.minute)}:${speed}`;
+    if (key === this.faceKey) return;
+    this.faceKey = key;
+    this.clockText = `${clockLabel(c)}${speed !== 1 ? `  x${speed}` : ''}`;
+    this.face.removeAll(true);
+    const width = (k: string) => this.textures.get(k).getSourceImage().width;
+    for (const p of clockFace(c, speed, VIEW.width, width)) {
+      const img = p.repeat ? this.add.tileSprite(p.x, p.y, p.repeat, this.textures.get(p.key).getSourceImage().height, p.key) : this.add.image(p.x, p.y, p.key);
+      this.face.add(img.setOrigin(0));
     }
   }
 

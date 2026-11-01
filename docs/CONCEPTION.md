@@ -702,7 +702,22 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 
 ## Le temps (décidé le 1er novembre 2026, chantier « temps »)
 
-**L'accélération en pause, les travaux en temps réel** (décidé par Grégoire après l'essai des étapes 1 à 4, même jour). On met
+**La clôture du chantier** (décidé par Grégoire après l'essai du travail au coup, même jour) :
+- **La vitesse du temps du joueur est réactivée, et c'est la vitesse de simulation** : V passe au palier suivant (x1, x2, x5, x10, x20 ;
+  `speeds` de time.json, x1 au départ), Maj + V au précédent ; elle accélère tout le jeu, marche comprise, par pas de jeu de taille
+  normale (systems/simSpeed.ts), et plus seulement l'horloge ; le cadran l'affiche ; une attaque ramène à x1 ; x50 reste réservé à
+  ?dieu pour les tests. La distinction d'avant (vitesse du temps / vitesse de simulation) tombe : il n'y a plus qu'une vitesse.
+- **L'interface du temps** : le cadran rond en haut à droite (l'essai, piste A) : « Jour 3 / 14:20 » et un médaillon où le soleil puis
+  la lune passent sur une colline, au ciel du moment (aube, jour, crépuscule, nuit) ; les mains et la barre d'endurance passent en bas à
+  droite.
+- **La lumière suit l'heure** (l'étape 6) : un voile teinté posé sur le monde (`daylight` de world.json : des repères dans la journée,
+  interpolés), à la profondeur des pénombres du sous-bois et des intérieurs, qui s'y ajoutent ; les lueurs des feux restent
+  par-dessus ; les rais de soleil des fenêtres et des portes suivent la force du soleil (éteints la nuit).
+- **Les vitesses de Xéros** : marche 2 m/s, course 2,5 m/s (9 km/h), fatigué 1 m/s (`tiredWalk` 0,5) ; une seule source
+  (`PLAYER.walk`, `PLAYER.run`), dont dérivent la marche chargée, la marche fatiguée et la bille poussée.
+
+**L'accélération en pause, les travaux en temps réel** (décidé par Grégoire après l'essai des étapes 1 à 4, même jour ; remplacé
+depuis par la clôture ci-dessus pour la vitesse du temps). On met
 l'accélération du temps en pause et on joue tout à **x1**, pour calibrer le jeu petit à petit avant de décider comment la vitesse doit
 marcher :
 - **La vitesse du temps est verrouillée à x1** : V et les paliers sont éteints (`accelerate: false` dans `time.json` ; le code reste) ;

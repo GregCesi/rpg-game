@@ -214,20 +214,18 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     send({ kind: 'pile', pile: pile.value, count: n, turned: turned.checked, tie: tie.checked });
   });
 
-  // les vitesses de Xéros, en m/s, à calibrer en jouant (docs/CONCEPTION.md, « Le travail », § 8) : la marche, la course, la marche
-  // chargée (à deux mains) ; retenues dans le navigateur ; « Par défaut » revient à celles de config.ts
+  // les vitesses de Xéros, en m/s, à calibrer en jouant (docs/CONCEPTION.md, « Le travail », § 8) : la marche et la course (chargé ou
+  // fatigué, il marche à une part de la marche) ; retenues dans le navigateur ; « Par défaut » revient à celles de config.ts
   const speedInput = (px: number) => el('input', { type: 'number', min: '0.2', max: '20', step: '0.1', value: (Math.round(metresPerSec(px) * 100) / 100).toString() });
   const walkSpeed = speedInput(SPEEDS.walk);
   const runSpeed = speedInput(SPEEDS.run);
-  const carrySpeed = speedInput(SPEEDS.carry);
   const metres = (i: HTMLInputElement) => Math.min(20, Math.max(0.2, Number(i.value) || 1));
-  const speedsButton = button('Appliquer', () => send({ kind: 'speeds', walk: metres(walkSpeed), run: metres(runSpeed), carry: metres(carrySpeed) }));
+  const speedsButton = button('Appliquer', () => send({ kind: 'speeds', walk: metres(walkSpeed), run: metres(runSpeed) }));
   const speedsDefault = button('Par défaut', () => {
     send({ kind: 'speeds-default' });
     setTimeout(() => {
       walkSpeed.value = String(Math.round(metresPerSec(SPEEDS.walk) * 100) / 100);
       runSpeed.value = String(Math.round(metresPerSec(SPEEDS.run) * 100) / 100);
-      carrySpeed.value = String(Math.round(metresPerSec(SPEEDS.carry) * 100) / 100);
     }, 50);
   });
 
@@ -241,6 +239,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     }),
   );
   showSim();
+  setInterval(showSim, 300);
 
   // la force : un multiplicateur de tous les seuils (porter, marcher, rouler) et de la force des coups de travail (le couple de
   // strength.json `swing`) ; réglée pendant un travail, elle agit au coup suivant ; la masse portée se lit à côté
@@ -328,7 +327,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('div', { className: 'row' }, [...simButtons, simLabel]),
     el('h3', { textContent: 'Vitesses (m/s)' }),
     el('div', { className: 'row' }, [el('label', {}, ['marche', walkSpeed]), el('label', {}, ['course', runSpeed])]),
-    el('div', { className: 'row' }, [el('label', {}, ['chargé', carrySpeed]), speedsButton, speedsDefault]),
+    el('div', { className: 'row' }, [speedsButton, speedsDefault]),
     el('h3', { textContent: 'Force de Xéros' }),
     el('div', { className: 'row' }, [el('label', {}, ['force ×', force]), forceButton]),
     el('div', { className: 'row' }, [
