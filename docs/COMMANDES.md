@@ -62,6 +62,7 @@ Selon ce que tient Xéros (« ce qui sert » : la main active, sinon l'autre mai
 | Ce qu'il tient | Ce que fait Espace |
 | --- | --- |
 | **une arme qui sert** (la branche, l'épée de bois : dans la main active, ou dans l'autre si l'active est vide) | **attaquer** (la taille ; Espace de nouveau pendant le geste ou juste après : le coup d'en haut, puis de nouveau la taille) ; coûte même dans le vide |
+| **la main active vide**, l'autre vide ou tenant ce qui n'est ni une arme ni un outil (une pierre…) | **un direct du poing** de la main libre ; Espace de nouveau : l'autre poing (gauche-droite) si les deux sont libres |
 | la branche (ou le piquet) dans la main active et la hachette dans l'autre, face au billot | tailler : la branche devient un piquet, le piquet une cheville (c'est la hachette qui sert) |
 | un piquet, un plan connu | le planter au tracé (le premier fixe le coin nord-ouest) |
 | la cognée, devant un arbre debout | un coup de côté (`use`) |
@@ -70,7 +71,7 @@ Selon ce que tient Xéros (« ce qui sert » : la main active, sinon l'autre mai
 | la doloire, contre le flanc d'une pièce de bois | une passe sur le rail (Xéros longe la pièce tout seul ; Échap l'arrête) |
 | le coin, contre le bout d'une grosse bille | le planter (sans geste) |
 | la masse, sur un coin planté | un coup (`maul`) ; trois par mètre commencé, la bille s'ouvre |
-| une ressource seule (pas une arme), devant ce qui demande un outil | « Sans hache, rien à faire. » |
+| une ressource seule dans la main active (pas une arme), devant ce qui demande un outil | « Sans hache, rien à faire. » (mains vides : le poing, voir plus haut) |
 | un outil dans le vide | le geste dans le vide, sans dépense |
 | ce qu'on porte à deux mains (`carry`) | rien |
 
@@ -134,6 +135,8 @@ Le panneau du catalogue et `?dieu` se manient à la souris.
     garde » ; tenir une ou deux branches ne change rien (voulu pour ce chantier).
 11. **Un coup dans le vide** : gratuit avec un outil, payé avec une arme (choix de Grégoire, 1er novembre 2026 : c'est le geste qui
     fatigue).
+12. **Le poing remplace le message des mains vides** : mains vides devant un arbre, Espace donnait « Sans hache, rien à faire. » ; il
+    donne maintenant un coup de poing (deuxième passe du combat, 1er novembre 2026). Un piquet dans l'autre main se plante toujours.
 
 ## À trancher
 

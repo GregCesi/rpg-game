@@ -596,8 +596,12 @@ export class WorldScene extends Phaser.Scene {
     const tool = this.usable();
     // une arme qui sert (la main active, ou l'autre si l'active est vide) : Espace attaque, toujours, dans le vide comme sur une cible
     // (la branche active et la hachette dans l'autre main : c'est la hachette qui sert, elle taille)
-    if (tool && items[tool].weapon) return this.attack(this.combat.plan(tool, this.time.now));
+    if (tool && items[tool].weapon) return this.attack(this.combat.plan({ item: tool }, this.player.actor.facing, this.time.now));
     if (tool && SiteSystem.traces(tool)) return this.plantStake(tool);
+    // la main active vide, l'autre sans arme ni outil (rien, ou une ressource qui ne se plante pas) : le poing de la main libre
+    if (!game.both && !game.hands[game.active] && (!tool || items[tool].kind === 'resource')) {
+      return this.attack(this.combat.plan({ fist: true }, this.player.actor.facing, this.time.now));
+    }
     if (!tool || items[tool].kind === 'resource') {
       // mains vides devant ce qui demande un outil : on le dit
       const t = this.harvest.target(this.player)?.def.harvest?.tool;
@@ -631,25 +635,31 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * Une attaque (systems/combat.ts) : elle se paie au départ, même dans le vide (c'est le geste qui fatigue) ; le geste du corps
-   * avec l'arme dans la main, à l'impact la zone de coup et ce qu'elle touche ; Espace pendant le geste enchaîne la suivante.
+   * Une attaque (systems/combat.ts) : elle se paie au départ, même dans le vide (c'est le geste qui fatigue) ; le geste de combat du
+   * corps avec l'arme dans la main droite (ou le poing), à chaque image de frappe la lame et ce qu'elle balaie ; Espace pendant le
+   * geste enchaîne la suivante.
    */
   private attack(p: AttackPlan): void {
     if (!this.effort.afford(this.player, p.cost)) return;
     this.combat.begin(p);
     this.mode = 'use';
-    this.player.tools.swing(
-      p.attack.gesture,
-      p.item,
-      () => this.combat.impact(this.player, p),
-      () => {
+    const striker = p.striker;
+    this.player.tools.fight(p.attack.gesture, {
+      frames: p.frames,
+      durations: p.durations,
+      weapon: p.weapon.image,
+      shift: p.shift,
+      onStrike: (step) => this.combat.strike(this.player, p, step),
+      onDone: () => {
         const chain = this.combat.end(p, this.time.now);
         if (this.mode === 'use') this.mode = 'play';
-        if (chain && this.mode === 'play' && this.usable() === p.item) this.attack(this.combat.plan(p.item, this.time.now));
+        // Espace pendant le geste : la suivante, avec la même arme (ou le même poing) si elle sert toujours
+        const same = 'item' in striker ? this.usable() === striker.item : !game.both && !game.hands[game.active];
+        if (chain && this.mode === 'play' && same) this.attack(this.combat.plan(striker, this.player.actor.facing, this.time.now));
       },
-      p.swing,
-    );
+    });
   }
+
 
   /**
    * Une passe de doloire (Espace contre le flanc, à un bout de la pièce ou là où la face s'est arrêtée) : Xéros longe la pièce sur

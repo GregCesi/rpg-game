@@ -758,6 +758,44 @@ Les touches : [docs/COMMANDES.md](COMMANDES.md).
   hachette qui taille) ; `.art-preview/combat.png` (Xéros armé, au coup et au retour de chaque geste avec chaque arme, dans les quatre
   directions, puis chaque arme dans ses huit angles).
 
+### Deuxième passe : les gestes de combat et la zone de coup (1er novembre 2026)
+
+Grégoire : « On n'a pas l'impression qu'il manie l'épée. » Les gestes des outils (la cognée à deux mains jointes) sont remplacés, pour
+le combat, par de vrais gestes d'une main, essayés d'abord hors du jeu (`tools/essai-gestes.ts`, `.art-preview/essai-gestes.png` et
+`essai-gestes.html`, l'aperçu animé à vitesse réelle), corrigés, puis intégrés. Ce qui précède sur la zone au sol et les trois temps
+des attaques est remplacé par ceci.
+
+- **Les gestes de combat** (`art/characters/xeros-combat.ts`, animations de la planche `xeros`) : la **taille** (garde, armer, deux
+  images de frappe avec une traînée claire en arc, suite, retour : l'épée passe au-dessus de la tête et s'abat devant), le **coup
+  vertical** (au-dessus de la tête, abattu devant, traînée droite, tenue pointe basse, retour), les **directs** du poing droit et du
+  gauche (garde poings levés, armer court, le bras tendu et un petit éclat, retour). Les quatre directions ont chacune leurs poses
+  (vers la gauche, l'épée reste dans la main droite, au fond : pas un miroir). Les poses sont des données (`COMBAT_POSES` : par image,
+  sa durée, les mains, les épaules, l'angle de l'arme, la traînée, l'éclat, les images de frappe), que `build-art` écrit dans
+  `src/generated/combatPoses.ts` : **la seule source** des durées (la taille dure 530 ms garde comprise à l'épée) et de la place de
+  ce qui frappe. Une arme lourde les allonge (son inertie) : la branche met 1,2 s.
+- **La main nue est une arme en données** (`unarmed` de combat.json : le bras de 60 cm, 2 kg qui frappent, famille `fists`). Espace,
+  la main active vide et l'autre sans arme ni outil (rien, une pierre…), frappe du poing de la main libre ; un deuxième Espace enchaîne
+  le direct de l'autre poing (gauche-droite) si les deux mains sont libres. Postures de la famille `fists` : selon les mains libres
+  (`when.free`).
+- **La zone de coup suit ce qui frappe** (`world/strike.ts`) : à chaque image de frappe, la lame est le segment dessiné, de la main à
+  la pointe (le poing : de l'épaule au poing), à l'endroit exact où l'arme est dessinée ; entre l'image d'avant et celle-ci, la surface
+  balayée compte (des lames intermédiaires, tous les pixels). Une cible est touchée si ce balayage recoupe **sa silhouette dessinée**
+  (les pixels opaques de son image, le corps entier) et qu'elle est devant Xéros, à portée ; **une seule fois par coup**, même si les
+  deux images de frappe la traversent. On ne touche jamais sans toucher : `test:combat` vérifie qu'au bord calculé le coup porte et que
+  2 px plus loin il ne porte pas, dans les quatre directions.
+- **La précision joue** : à chaque coup, un écart tiré au hasard dans un disque de `missPx` × (1 − précision)² déplace toute la lame
+  (et l'arme dessinée pendant la frappe, pour qu'on le voie) : moins de 2 px pour l'épée, jusqu'à 13 px pour la branche. Au bord de sa
+  portée, la branche touche le mannequin 70 % du temps, l'épée 100 % (1 000 coups simulés).
+- **La vitesse et les dégâts viennent des poses** : la vitesse est le chemin de la pointe (du poing) pendant les images de frappe, sur
+  leur durée ; les dégâts, l'énergie de la masse qui frappe (½ m v², m = 2/3 × équilibre × masse) × `damagePerJoule` × l'efficacité de
+  l'arme × la puissance de l'attaque. Le tableau des armes est dans leurs fiches ([branche](objets/branch.md),
+  [épée de bois](objets/wooden-sword.md)) : la branche 8,5 par coup en 1,2 s, l'épée 6 en 0,53 s (1,6 fois les dégâts par seconde, pour
+  moins d'endurance), le poing 1,2 en 0,4 s.
+- **Le ressenti** (`feel` de combat.json, tout réglable) : un arrêt sur image de 50 ms à l'impact (le geste se fige), puis la cible
+  recule et penche, sa matière vole ; l'écran tremble à partir de 8 de dégâts.
+- **Avec `?debug`** : à chaque image de frappe, la lame (blanche), le balayage depuis l'image d'avant (pâle), la silhouette touchée
+  (cadre rouge) et le chiffre des dégâts.
+
 **Ce qui vient ensuite** (rien de fait) :
 - **Les postures** : deux mains (une arme longue, plus lente et plus forte), le **bouclier** dans l'autre main (parer, une posture
   `when.other: shield` et une matière de plus), **deux armes** (une attaque de chaque main) : de nouvelles entrées de `stances`, sans

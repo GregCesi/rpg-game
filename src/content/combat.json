@@ -1,13 +1,25 @@
 {
-  "rules": {"armCm": 50, "inertiaRef": 0.2, "inertiaSlow": 0.9, "damagePerJoule": 0.23, "controlRef": 0.3},
+  "rules": {"armCm": 50, "inertiaRef": 0.2, "inertiaSlow": 1.12, "damagePerJoule": 0.081, "controlRef": 0.3, "missPx": 20},
+  "feel": {"hitStopMs": 50, "recoilPx": 1, "reactMs": 260, "shakeFrom": 8, "shakeMs": 120, "shakeIntensity": 0.004, "debugMs": 1200},
+  "unarmed": {"name": "poing", "length": 60, "grip": 0, "balance": 0.75, "efficiency": 1, "mass": 2, "family": "fists", "fist": true},
   "attacks": {
-    "slash": {"name": "taille", "gesture": "use", "windup": 220, "strike": 90, "recover": 290, "combo": 280, "sweep": 120, "power": 1, "cost": 1, "zone": {"arc": 120}},
-    "overhead": {"name": "coup d'en haut", "gesture": "chop", "windup": 280, "strike": 100, "recover": 340, "combo": 280, "sweep": 150, "power": 1.2, "cost": 1.25, "zone": {"line": 30}}
+    "cut": {"name": "taille", "gesture": "cut", "combo": 280, "power": 1, "cost": 1},
+    "overhead": {"name": "coup d'en haut", "gesture": "overhead", "combo": 280, "power": 1.2, "cost": 1.25},
+    "jab-right": {"name": "direct du droit", "gesture": "jab-right", "hand": "right", "combo": 280, "power": 1, "cost": 0.3},
+    "jab-left": {"name": "direct du gauche", "gesture": "jab-left", "hand": "left", "combo": 280, "power": 1, "cost": 0.3}
   },
   "families": {
     "swing": {
       "name": "ce qu'on balance (bâton, épée)",
-      "stances": [{"name": "une arme en main", "when": {}, "chain": ["slash", "overhead"]}]
+      "stances": [{"name": "une arme en main", "when": {}, "chain": ["cut", "overhead"]}]
+    },
+    "fists": {
+      "name": "les poings",
+      "stances": [
+        {"name": "les deux mains libres", "when": {"free": "both"}, "chain": ["jab-right", "jab-left"]},
+        {"name": "la main droite libre", "when": {"free": "right"}, "chain": ["jab-right"]},
+        {"name": "la main gauche libre", "when": {}, "chain": ["jab-left"]}
+      ]
     }
   }
 }

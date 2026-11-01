@@ -26,20 +26,25 @@ Fiche écrite le 1er novembre 2026 (chantier « combat »), après coup : la bra
 
 ## Au combat
 Arme de la famille `swing` (combat.json). Ses réglages (`weapon` d'items.json) : longueur 125 cm, prise à 10 cm du gros bout,
-équilibre 0,6 (un gourdin : le poids part vers le bout), efficacité 0,4 (les rameaux et le bois sec amortissent le coup). Ce qui s'en
+équilibre 0,6 (un gourdin : le poids part vers le bout), efficacité 0,58 (les rameaux et le bois sec amortissent le coup). Ce qui s'en
 calcule (world/strike.ts), à côté de l'épée de bois :
 
-| | Branche | Épée de bois |
-| --- | --- | --- |
-| Longueur, prise | 125 cm, à 10 cm du gros bout | 90 cm, à 6 cm du pommeau |
-| Masse | 2,5 kg | 0,8 kg |
-| Équilibre ; efficacité (données) | 0,6 (poids au bout) ; 0,4 (rameaux qui amortissent) | 0,25 (près de la garde) ; 1 (le fil) |
-| Portée | 165 cm | 134 cm |
-| Précision (calculée) | 0,18, faible | 0,76, bonne |
-| Taille : dégâts, durée du coup | 8,2 en 1,21 s | 5,9 en 0,60 s |
-| Dégâts par seconde (taille) | 6,8 | 9,8 (× 1,44) |
-| Coup d'en haut : dégâts, durée | 12,4 en 1,45 s | 8,9 en 0,72 s |
-| Endurance par coup (taille ; en haut) | 1,30 ; 1,63 | 0,62 ; 0,77 |
+| | Branche | Épée de bois | Poing (main nue) |
+| --- | --- | --- | --- |
+| Longueur, prise | 125 cm, à 10 cm du gros bout | 90 cm, à 6 cm du pommeau | le bras, 60 cm |
+| Masse | 2,5 kg | 0,8 kg | 2 kg (poing et avant-bras lancés) |
+| Équilibre ; efficacité (données) | 0,6 (poids au bout) ; 0,58 (rameaux qui amortissent) | 0,25 (près de la garde) ; 1 (le fil) | 0,75 ; 1 |
+| Portée nominale (bras + arme) | 165 cm | 134 cm | 60 cm |
+| Le mannequin touché jusqu'à (lame dessinée, taille) | 29 à 39 px des pieds selon la direction | 23 à 33 px | — |
+| Précision (calculée) ; écart d'un coup | 0,18, faible ; jusqu'à 13 px | 0,76, bonne ; moins de 2 px | 0,45 ; jusqu'à 6 px |
+| Coups au but au bord de sa portée (1 000 coups simulés) | 70 % | 100 % | — |
+| Taille (direct) : dégâts, durée du coup | 8,5 en 1,20 s | 6,0 en 0,53 s | 1,2 en 0,40 s |
+| Dégâts par seconde | 7,1 | 11,3 (× 1,59) | 3,0 |
+| Coup d'en haut : dégâts, durée | 11,6 en 1,36 s | 8,5 en 0,60 s | — |
+| Endurance par coup (taille ; en haut) | 1,30 ; 1,63 | 0,62 ; 0,77 | 0,33 |
+
+Les durées sont la somme des images du geste (garde comprise), allongée par l'inertie de l'arme ; la vitesse du coup vient du chemin
+de la pointe dans les poses ; tout se recalcule (world/strike.ts) quand une pose ou un réglage change.
 
 ## Variantes naturelles
 Aucune pour l'instant : une seule forme dessinée, une seule taille.

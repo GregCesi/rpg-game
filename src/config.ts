@@ -117,13 +117,6 @@ export const HEW_PASS = { reach: 8, hop: 3, turnMs: 420 };
 export const SPLIT = { slide: 12 };
 
 /** Récolte : tremblement d'un objet frappé, saut des objets lâchés, où ils retombent (px, autour de la base). */
-/**
- * Le combat (systems/combat.ts) : la réaction d'une cible touchée (elle tremble de `shakePx`, recule de `recoilPx` et penche de son
- * `tilt` (props.json) du côté opposé à Xéros, puis revient en `reactMs`), et, avec ?debug, combien de temps restent la zone de coup
- * dessinée et le chiffre des dégâts (`debugMs`). Les règles du coup (portée, vitesse, dégâts) sont dans le contenu : combat.json.
- */
-export const COMBAT = { shakePx: 1, recoilPx: 1, reactMs: 260, debugMs: 900 };
-
 export const HARVEST = {
   shakeMs: 160,
   dropMs: 320,

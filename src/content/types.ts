@@ -956,16 +956,18 @@ export const StaminaSchema = z.strictObject({
  * ses mains sont celles de l'objet. La portée, la durée, la précision, les dégâts et le prix d'un coup s'en calculent
  * (world/strike.ts).
  */
-export const WeaponSchema = z
-  .strictObject({
-    length: z.number().positive(),
-    grip: z.number().nonnegative(),
-    balance: z.number().gt(0).lte(1),
-    efficiency: z.number().gt(0).lte(1),
-    family: id,
-    image: id,
-  })
-  .refine((w) => w.grip < w.length, { message: "'grip' doit être en deçà de 'length' : la main tient l'arme" });
+const weaponFields = {
+  length: z.number().positive(),
+  grip: z.number().nonnegative(),
+  balance: z.number().gt(0).lte(1),
+  efficiency: z.number().gt(0).lte(1),
+  family: id,
+  image: id.optional(),
+  /** La main nue : sa « lame » est le bras, de l'épaule au poing (`length` : sa longueur), et rien ne se dessine dans la main. */
+  fist: z.literal(true).optional(),
+};
+const gripInside = { message: "'grip' doit être en deçà de 'length' : la main tient l'arme" };
+export const WeaponSchema = z.strictObject(weaponFields).refine((w) => w.grip < w.length, gripInside);
 
 /**
  * Ce qu'on frappe (`target` d'un objet de props.json) : `hp`, ses points de vie (`infinite` : il encaisse sans jamais casser, le
@@ -979,44 +981,57 @@ export const TargetSchema = z.strictObject({
 });
 
 /**
- * La zone d'une attaque, au sol, depuis les pieds de Xéros vers où il regarde, de la longueur de sa portée (bras + arme) : un
- * secteur de `arc` degrés, 180 au plus (la taille balaie de côté), ou une bande de `line` cm de large (le coup d'en haut tombe droit devant).
- */
-export const AttackZoneSchema = z.union([
-  z.strictObject({ arc: z.number().positive().max(180) }),
-  z.strictObject({ line: z.number().positive() }),
-]);
-
-/**
- * Une attaque (combat.json, `attacks`) : des données. `gesture` : le geste du corps (clé de gestures.json), qui ne sait pas ce que
- * Xéros tient ; ses images avant l'impact se partagent `windup` (armer, ms), l'image d'impact dure `strike` (le coup touche à son
- * début), les suivantes se partagent `recover` (récupération) ; toutes ces durées s'allongent avec le moment d'inertie de l'arme
- * (`rules`). `combo` : après la fin du geste, combien de ms un Espace enchaîne l'attaque suivante de la posture (pendant le geste,
- * l'appui est gardé). `sweep` : l'angle que parcourt la pointe pendant `strike` (degrés) : la vitesse du coup ; `power` multiplie
- * les dégâts, `cost` le prix en endurance ; `zone` : voir AttackZoneSchema.
+ * Une attaque (combat.json, `attacks`) : des données. `gesture` : le geste de combat du corps (COMBAT_POSES de
+ * art/characters/xeros-combat.ts, tirées par build-art dans src/generated/combatPoses.ts : ses images, leur durée, la main, l'arme,
+ * la traînée, l'éclat, les images de frappe), qui ne sait pas ce que Xéros tient ; la durée du coup et la vitesse de ce qui frappe se
+ * tirent de ses poses (une seule source), allongées par l'inertie de l'arme. `hand` : la main qui frappe (le poing : `right` ou
+ * `left` ; une arme : `right`, la main de l'épée dans les dessins). `combo` : après la fin du geste, combien de ms un Espace enchaîne
+ * l'attaque suivante de la posture (pendant le geste, l'appui est gardé). `power` multiplie les dégâts, `cost` le prix en endurance.
  */
 export const AttackSchema = z.strictObject({
   name: id,
   gesture: id,
-  windup: z.number().positive(),
-  strike: z.number().positive(),
-  recover: z.number().positive(),
+  hand: z.enum(['right', 'left']).default('right'),
   combo: z.number().nonnegative(),
-  sweep: z.number().positive(),
   power: z.number().positive(),
   cost: z.number().positive(),
-  zone: AttackZoneSchema,
+});
+
+/**
+ * La main nue (combat.json, `unarmed`) : une arme en données comme les autres (WeaponSchema, `fist: true`, sans planche), avec son nom
+ * et sa masse (celle qui frappe : le poing et l'avant-bras lancés) ; sa portée est la longueur du bras.
+ */
+export const UnarmedSchema = z.strictObject({ ...weaponFields, name: id, mass: z.number().positive() }).refine((w) => w.grip < w.length, gripInside);
+
+/**
+ * Le ressenti d'un coup qui porte (combat.json, `feel`) : `hitStopMs`, l'arrêt sur image à l'impact (le geste et la cible figés) ;
+ * `recoilPx`, le recul de la cible ; `reactMs`, la durée de sa réaction (elle penche de son `tilt` et revient) ; `shakeFrom`, à partir
+ * de combien de dégâts l'écran tremble, `shakeMs` et `shakeIntensity` (part de l'écran) ; `debugMs`, combien de temps ?debug garde la
+ * lame, le balayage, la silhouette touchée et le chiffre des dégâts.
+ */
+export const FeelSchema = z.strictObject({
+  hitStopMs: z.number().nonnegative(),
+  recoilPx: z.number().nonnegative(),
+  reactMs: z.number().positive(),
+  shakeFrom: z.number().nonnegative(),
+  shakeMs: z.number().nonnegative(),
+  shakeIntensity: z.number().nonnegative(),
+  debugMs: z.number().positive(),
 });
 
 /**
  * Une posture d'une famille d'armes : ce que tiennent les mains (`when`) et la suite des attaques qu'enchaîne Espace (`chain`).
  * `when.other` : ce que tient l'autre main (`empty` rien, `weapon` une arme, `any` n'importe quoi) ; `when.both` : l'arme est tenue
- * à deux mains. Absents : tout convient. La première posture qui convient sert. Plus tard : deux mains, bouclier, deux armes
+ * à deux mains ; `when.free` : les mains libres (le poing : `both`, les deux ; `right`, `left` : celle-là seule). Absents : tout convient. La première posture qui convient sert. Plus tard : deux mains, bouclier, deux armes
  * (CONCEPTION, « Le combat ») ; aujourd'hui, une seule posture, qui convient à tout.
  */
 export const StanceDefSchema = z.strictObject({
   name: id,
-  when: z.strictObject({ other: z.enum(['empty', 'weapon', 'any']).optional(), both: z.boolean().optional() }),
+  when: z.strictObject({
+    other: z.enum(['empty', 'weapon', 'any']).optional(),
+    both: z.boolean().optional(),
+    free: z.enum(['both', 'right', 'left']).optional(),
+  }),
   chain: z.array(id).min(1),
 });
 
@@ -1026,7 +1041,9 @@ export const StanceDefSchema = z.strictObject({
  * `rules.inertiaRef` (kg·m²) et `rules.inertiaSlow` : au-delà de `inertiaRef`, chaque kg·m² de moment d'inertie (autour de la main)
  * allonge le geste de `inertiaSlow` ; `rules.damagePerJoule` : les dégâts d'un coup = l'énergie de l'arme au coup (½ I ω²) × ce
  * facteur × `efficiency` de l'arme × `power` de l'attaque ; `rules.controlRef` (kg·m²) : la précision d'une arme, 1 / (1 + I /
- * `controlRef`), de 0 (on ne la tient pas) à 1 (elle va où l'on veut).
+ * `controlRef`), de 0 (on ne la tient pas) à 1 (elle va où l'on veut) ; `rules.missPx` : l'écart le plus grand d'un coup, en px, à
+ * précision nulle (tiré à chaque coup dans un disque de `missPx` × (1 − précision)² : toute la lame passe à côté d'autant).
+ * `feel` : le ressenti (FeelSchema) ; `unarmed` : la main nue, une arme comme les autres (UnarmedSchema).
  */
 export const CombatSchema = z.strictObject({
   rules: z.strictObject({
@@ -1035,7 +1052,10 @@ export const CombatSchema = z.strictObject({
     inertiaSlow: z.number().nonnegative(),
     damagePerJoule: z.number().positive(),
     controlRef: z.number().positive(),
+    missPx: z.number().nonnegative(),
   }),
+  feel: FeelSchema,
+  unarmed: UnarmedSchema,
   attacks: z.record(id, AttackSchema),
   families: z.record(id, z.strictObject({ name: id, stances: z.array(StanceDefSchema).min(1) })),
 });
@@ -1270,7 +1290,7 @@ export type BuildPlan = z.infer<typeof BuildPlanSchema>;
 export type JointType = z.infer<typeof JointTypeSchema>;
 export type Weapon = z.infer<typeof WeaponSchema>;
 export type Target = z.infer<typeof TargetSchema>;
-export type AttackZone = z.infer<typeof AttackZoneSchema>;
+export type Feel = z.infer<typeof FeelSchema>;
 export type Attack = z.infer<typeof AttackSchema>;
 export type StanceDef = z.infer<typeof StanceDefSchema>;
 export type CombatDef = z.infer<typeof CombatSchema>;

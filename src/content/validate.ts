@@ -13,9 +13,10 @@ import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
 import { openSides } from '../world/zones';
 import { WEAPON_ANGLES } from '../world/strike';
+import { combatPoses } from '../generated/combatPoses';
 import { catalog, looksOf } from '../build/catalog';
 import { JointTypeSchema } from './types';
-import type { BuildPlan, CombatDef, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
+import type { BuildPlan, CombatDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -834,8 +835,28 @@ function validateCombat(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   const err = (msg: string) => errors.push(msg);
   for (const [key, a] of Object.entries(c.combat.attacks)) {
-    if (!c.gestures[a.gesture]) err(`combat.json attaque '${key}' : geste '${a.gesture}' absent de gestures.json`);
+    // un geste de combat : ses images dans la planche du corps, dans les quatre directions (art/characters/xeros-combat.ts)
+    for (const dir of DIRECTIONS) {
+      if (!cat.animations.get(PLAYER.skin)?.has(`${a.gesture}-${dir}`)) err(`combat.json attaque '${key}' : animation '${a.gesture}-${dir}' absente de la planche '${PLAYER.skin}'`);
+    }
   }
+  // les poses de chaque geste de combat (art/characters/xeros-combat.ts, tirées par build-art) : autant d'images que l'animation du
+  // corps dans chaque direction, au moins une image de frappe, la traînée et l'éclat dessinés
+  for (const g of new Set(Object.values(c.combat.attacks).map((a) => a.gesture))) {
+    const poses = combatPoses[g];
+    if (!poses) { err(`combat.json geste '${g}' : pas de poses (COMBAT_POSES, art/characters/xeros-combat.ts)`); continue; }
+    for (const dir of DIRECTIONS) {
+      const frames = poses[dir as Facing] ?? [];
+      const n = cat.frameCounts.get(PLAYER.skin)?.get(`${g}-${dir}`);
+      if (n !== undefined && n !== frames.length) err(`combat.json geste '${g}' ${dir} : ${frames.length} poses pour ${n} images dans '${PLAYER.skin}-${g}-${dir}'`);
+      if (!frames.some((f) => f.strike)) err(`combat.json geste '${g}' ${dir} : aucune image de frappe ('strike')`);
+      for (const f of frames) {
+        for (const img of [f.smear?.image, f.spark?.image]) if (img && !cat.textures.has(img)) err(`combat.json geste '${g}' ${dir} : image '${img}' non dessinée`);
+      }
+    }
+  }
+  if (!c.combat.families[c.combat.unarmed.family]) err(`combat.json main nue : famille '${c.combat.unarmed.family}' inconnue`);
+  if (!c.combat.unarmed.fist) err("combat.json main nue : 'fist: true' (sa lame est le bras)");
   for (const [key, f] of Object.entries(c.combat.families)) {
     f.stances.forEach((s, i) => {
       for (const a of s.chain) if (!c.combat.attacks[a]) err(`combat.json famille '${key}' posture '${s.name}' : attaque '${a}' inconnue`);
@@ -850,6 +871,8 @@ function validateCombat(c: Content, cat: Catalog): string[] {
     if (!w) continue;
     const at = `items.json '${key}' arme`;
     if (!c.combat.families[w.family]) err(`${at} : famille '${w.family}' absente de combat.json`);
+    if (w.fist) err(`${at} : 'fist' est réservé à la main nue (combat.json, 'unarmed')`);
+    if (!w.image) { err(`${at} : sa planche 'weapon-<…>' manque ('image')`); continue; }
     if (!w.image.startsWith('weapon-')) err(`${at} : sa planche doit s'appeler 'weapon-<…>' (art/lib/weapon.ts), pas '${w.image}'`);
     const n = cat.frameCounts.get(w.image)?.get('angles');
     if (n === undefined) err(`${at} : planche '${w.image}' et son animation 'angles' non dessinées (art/items/weapons.ts)`);
