@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
-import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
+import { CONSTRUIRE, FELL, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
 import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -288,7 +288,7 @@ export class WorldScene extends Phaser.Scene {
     // les travaux commencés : l'étape visible de ce qui est entamé (l'arbre à moitié entaillé, retrouvé tel quel)
     for (const [key, w] of Object.entries(mapState(game, this.map.def.id).work)) {
       const p = w.work === 'harvest' ? this.map.props.find((q) => workKey(q.id, q.spawned) === key) : undefined;
-      if (p) this.harvest.showStage(p, w.done);
+      if (p) this.harvest.showStage(p, w.done, w.side);
     }
     this.dropHeavy();
     // ce qu'il portait sur la carte d'avant
@@ -378,10 +378,9 @@ export class WorldScene extends Phaser.Scene {
     // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V et Maj + V changent la vitesse du temps
     this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work');
     this.daylight.update();
-    // V et Maj + V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite) ; pas pendant un combat
-    const speed = input.speedPressed();
-    if (speed && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
-      const n = nextSpeed(timeDef.speeds, timeDef.speeds.includes(simSpeed()) ? simSpeed() : timeDef.default, speed);
+    // V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite), au palier suivant, en boucle
+    if (input.speedPressed() && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
+      const n = nextSpeed(timeDef.speeds, timeDef.speeds.includes(simSpeed()) ? simSpeed() : timeDef.default);
       setSimSpeed(this.game, n);
       this.notice(`Le temps : x${n}`);
     }
@@ -805,6 +804,10 @@ export class WorldScene extends Phaser.Scene {
     const steps = h.convert ? 1 : h.hits;
     // les étapes déjà faites (l'arbre entamé, repris après un rechargement)
     if (steps > 1) prop.hits = Math.min(steps - 1, Math.floor(done * steps + 1e-9));
+    // un arbre debout (une chute) : le côté de l'entaille, celui où Xéros frappe (gardé avec le travail commencé) ; Xéros se met lui-même
+    // en place de ce côté, le fer sur l'entaille : la hache frappe toujours au même endroit, et l'arbre tombera de ce côté
+    const side = h.fall ? (saved?.side ?? (this.player.actor.x < prop.baseX ? 'left' : 'right')) : undefined;
+    if (side) this.standToFell(prop, side);
     const facing = this.player.actor.facing;
     this.startWork({
       def: harvestJob(h.work!, tool),
@@ -812,10 +815,25 @@ export class WorldScene extends Phaser.Scene {
       steps,
       step: () => this.report(this.harvest.hit(prop, tool, facing)),
       strike: () => this.harvest.strike(prop, facing),
-      progress: (d) => this.harvest.showStage(prop, d),
-      save: (d) => setWork(game, mapId, key, d === undefined ? undefined : { work: kind, done: d }),
+      progress: (d) => this.harvest.showStage(prop, d, side),
+      save: (d) => setWork(game, mapId, key, d === undefined ? undefined : { work: kind, done: d, ...(side ? { side } : {}) }),
       valid: () => this.map.props.includes(prop),
     });
+  }
+
+  /**
+   * Xéros se met en place pour abattre (docs/CONCEPTION.md, « Le travail ») : du côté `side` de l'arbre, tourné vers lui, ses pieds à
+   * `FELL.reach` px du point visé, à sa hauteur ; si la place est prise, il frappe d'où il est, tourné vers l'arbre.
+   */
+  private standToFell(prop: PlacedProp, side: 'left' | 'right'): void {
+    const a = this.player.actor;
+    const x = Math.round(prop.aimX + (side === 'left' ? -FELL.reach : FELL.reach));
+    const y = Math.round(prop.aimY);
+    const b = a.body;
+    const dx = x - a.x;
+    const dy = y - a.y;
+    if (this.map.areaFree({ left: b.left + dx, right: b.right + dx, top: b.top + dy, bottom: b.bottom + dy })) b.reset(x, y);
+    a.face(side === 'left' ? 'right' : 'left');
   }
 
   /**

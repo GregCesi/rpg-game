@@ -1,14 +1,15 @@
 // arbres.png de npm run art:preview : les trois arbres de KINDS à chaque étape, l'un sous l'autre dans cet ordre (le gros
 // grand, le têtard, le normal), au même pas (même échelle, même sol). De haut en bas : debout (avec sa souche, et Xéros
-// pour l'échelle), la chute à droite (images 2 à 4), la chute à gauche, l'arbre couché d'un seul tenant tel que le jeu le
+// pour l'échelle), la chute à droite (10°, 45°, couché : les images 2 à 4, après les deux du raccord), la chute à gauche, l'arbre couché d'un seul tenant tel que le jeu le
 // pose (souche + arbre couché de `spawns`), à droite puis à gauche ; ébranché (la pièce de bois ronde de sa longueur utile,
 // posée par `at`), à droite et à gauche ; coupé à 1 m du bout scié (deux pièces, 100 cm et le reste) ; la bille de 1 m
 // est-ouest et nord-sud ; enfin le tas plein de billes de 1 m, est-ouest et nord-sud (calculé, src/world/woodPile.ts).
 // Les places se lisent dans props.json (`harvest` de l'arbre debout : `becomes`, `at`, `fall`, `spawns` ; `harvest` de
 // l'arbre couché : `at`, `wood`) ; tant que props.json ne connaît pas encore l'arbre couché, la géométrie calculée par le
 // dessin (art/world/big-felled.ts, big-pollard.ts, normal-felled.ts) en tient lieu, et tout écart entre les deux est signalé.
-// Vérification : la première image de chaque chute doit être, pixel pour pixel, l'arbre debout posé, et la dernière l'arbre
-// couché posé par le jeu ; les écarts sont rendus à l'appelant (rien ne doit sauter au moment où la chute laisse la place
+// Vérification : sous la coupe, la première image de chaque chute (le raccord, art/world/felling.ts) doit être, pixel pour
+// pixel, la dernière étape de l'abattage posée (`<arbre>-stage-7`, `<arbre>-left-stage-7` vers la gauche), et la dernière
+// image l'arbre couché posé par le jeu ; les écarts sont rendus à l'appelant (rien ne doit sauter au moment où la chute laisse la place
 // aux objets).
 
 import { PNG } from 'pngjs';
@@ -24,6 +25,10 @@ import { BIG_FELLED, BIG_TREE_CM } from '../../art/world/big-felled';
 import { POLLARD_CM, POLLARD_FELLED } from '../../art/world/big-pollard';
 import { composeWood } from '../../art/world/wood-pieces';
 import { placeImage } from './composite-previews';
+import { BIG, NORMAL, POLLARD } from '../../art/world/felling';
+
+/** Les arbres debout et leur abattage (plancher de l'entaille) : pour comparer la première image de chaque chute à la dernière étape. */
+const STANDING = [BIG, POLLARD, NORMAL];
 
 type Vec = [number, number];
 /** Géométrie de l'arbre couché tirée du dessin : place de son image (droite) et place de la pièce de bois dans celle-ci. */
@@ -142,10 +147,11 @@ export function treesPreview(sources: ArtSource[], props: Record<string, PropDef
   for (const left of [false, true]) {
     step((k) => {
       const s = fallSheet(k.tree, left);
-      return s ? frames(s, [1, 2, 3]) : undefined;
+      return s ? frames(s, [2, 3, 4]) : undefined;
     });
   }
-  // vérification : première image = arbre debout posé ; dernière = souche et arbre couché posés par le jeu
+  // vérification : première image = dernière étape de l'abattage posée (sous la coupe : le haut a déjà commencé à basculer) ;
+  // dernière = souche et arbre couché posés par le jeu
   for (const k of KINDS) for (const left of [false, true]) {
     const s = fallSheet(k.tree, left);
     const tree = image(props[k.tree]?.image);
@@ -165,7 +171,25 @@ export function treesPreview(sources: ArtSource[], props: Record<string, PropDef
       if (diff.length) problems.push(`${where} : ${diff.length} pixels diffèrent entre ${what} (premier en (${diff[0][0]}, ${diff[0][1]}))`);
     };
     if (tree.grid.length > H) problems.push(`${where} : l'arbre debout (${tree.grid.length} px) est plus haut que les images de la chute (${H} px)`);
-    else compare(fs[0], [{ grid: tree.grid, palette: tree.palette, x: 0, y: 0 }], "la première image de la chute et l'arbre debout posé");
+    else {
+      const last = image(`${k.tree}${left ? '-left' : ''}-stage-7`);
+      const t = STANDING.find((x) => x.key === k.tree);
+      if (!last || !t) problems.push(`${where} : dernière étape de l'abattage introuvable`);
+      else {
+        // sous la coupe (la rangée au-dessus du plancher de l'entaille et dessous), les pixels pleins doivent être les mêmes ;
+        // l'ombre du haut, qui suit la penche, n'est pas comparée
+        const dy = H - last.grid.length;
+        const solid = (q: string | undefined) => q !== undefined && q !== '.' && q !== 'x';
+        let n = 0;
+        let first: Vec | undefined;
+        for (let y = t.floor - 1; y < last.grid.length; y++) for (let x = 0; x < last.grid[0].length; x++) {
+          const p = last.grid[y][x];
+          const q = fs[0][y + dy]?.[x - offX];
+          if ((solid(p) || solid(q)) && p !== q) { n++; first ??= [x - offX, y + dy]; }
+        }
+        if (n) problems.push(`${where} : ${n} pixels diffèrent sous la coupe entre la première image de la chute et la dernière étape posée (premier en (${first![0]}, ${first![1]}))`);
+      }
+    }
     const placed = lyingScene(k, left, 'whole');
     if (!placed) problems.push(`${where} : arbre couché introuvable (${k.lying}${left ? '-left' : ''})`);
     else compare(fs[fs.length - 1], placed, "la dernière image de la chute et l'arbre couché posé");

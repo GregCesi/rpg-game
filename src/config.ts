@@ -206,6 +206,12 @@ export const ZONES = { band: { x: 21, y: 12 }, reach: 8, edge: 8 };
 /** La pénombre du sous-bois (`gloom` de world.json) : sa couleur, et la largeur des bandes où elle varie (px). */
 export const GLOOM = { color: 0x0b1611, strip: 64 };
 
+/**
+ * Abattre (docs/CONCEPTION.md, « Le travail ») : au lancement du travail, Xéros se met en place à `reach` px du point visé de l'arbre,
+ * du côté où il frappe (le fer sur l'entaille).
+ */
+export const FELL = { reach: 14 };
+
 export const PLAYER = {
   skin: 'xeros',
   /**

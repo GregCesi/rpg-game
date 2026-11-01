@@ -276,12 +276,15 @@ export class HarvestSystem {
    * L'étape visible d'un travail (docs/CONCEPTION.md, « Le travail », § 6) : à la part `done` de la matière enlevée, l'objet prend
    * l'image de la dernière étape passée (`stages` de son harvest : `<son image>-stage-<n>`, dans sa vue), ou la sienne avant la première.
    */
-  showStage(prop: PlacedProp, done: number): void {
+  showStage(prop: PlacedProp, done: number, side?: 'left' | 'right'): void {
     const stages = prop.def.harvest?.stages;
     if (!stages || !this.map.props.includes(prop)) return;
-    const base = prop.flip && this.scene.textures.exists(`${prop.def.image}-left`) ? `${prop.def.image}-left` : prop.def.image;
+    // l'arbre debout frappé depuis la gauche : ses étapes dessinées pour la gauche (l'entaille à gauche, `<image>-left-stage-<n>`) ;
+    // l'arbre couché vers la gauche : sa vue -left et ses étapes
+    const left = prop.flip || (!!prop.def.harvest!.fall && side === 'left');
+    const base = left && this.scene.textures.exists(`${prop.def.image}-left`) ? `${prop.def.image}-left` : prop.def.image;
     const n = stages.filter((t) => done + 1e-9 >= t).length;
-    const key = n > 0 ? `${base}-stage-${n}` : base;
+    const key = n > 0 ? `${left ? `${prop.def.image}-left` : prop.def.image}-stage-${n}` : base;
     if (this.scene.textures.exists(key) && prop.image.texture.key !== key) prop.image.setTexture(key);
   }
 
@@ -315,8 +318,9 @@ export class HarvestSystem {
     const mapId = this.map.def.id;
     // un objet qui n'a pas de version dessinée vers la gauche (la bille coin planté) ne se retourne pas
     const hasLeft = (type: string) => this.scene.textures.exists(`${props[type].image}-left`);
-    // Xéros à gauche (tourné vers la droite) : chute à droite ; à droite : à gauche ; d'en haut ou d'en bas : au hasard
-    const fallLeft = !!h.fall && (facing === 'left' || (facing !== 'right' && Math.random() < 0.5));
+    // l'arbre tombe du côté de l'entaille, celui où Xéros frappe : Xéros à gauche (tourné vers la droite), chute à gauche ; à droite,
+    // à droite ; d'en haut ou d'en bas (ce qui ne s'abat pas debout) : au hasard
+    const fallLeft = !!h.fall && (facing === 'right' || (facing !== 'left' && Math.random() < 0.5));
     // ce qui naît vers la gauche (l'arbre couché) prend ses images `-left` ; le remplaçant (la souche) ne dépend pas du côté
     const flip = prop.flip !== fallLeft;
     // abscisse (dans le repère de l'objet) d'une image de largeur w décalée de `off`, côté gauche :

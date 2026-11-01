@@ -3,8 +3,8 @@
 // (~/Library/Caches/ms-playwright, `npx playwright-core install chromium`), ou FENDAGE_CHROME=<exécutable>.
 // Sans Chromium le test dit qu'il est ignoré (FENDAGE_REQUIRED=1 le rend obligatoire).
 
-import { existsSync, readdirSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, type Page } from 'playwright-core';
 import { createServer } from 'vite';
@@ -43,7 +43,10 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     console.log(`${name} : test ignoré (aucun Chromium trouvé ; FENDAGE_CHROME=<exécutable>).`);
     process.exit(process.env.FENDAGE_REQUIRED ? 1 : 0);
   }
-  const server = await createServer({ logLevel: 'error', server: { port: 0 } });
+  // son propre cache des dépendances : les serveurs des scénarios parallèles (et le npm run dev de Grégoire) ne se rechargent pas les
+  // uns les autres en réoptimisant un cache commun
+  const cacheDir = mkdtempSync(join(tmpdir(), 'xeros-vite-'));
+  const server = await createServer({ logLevel: 'error', server: { port: 0 }, cacheDir });
   await server.listen();
   const url = server.resolvedUrls!.local[0];
   const browser = await chromium.launch({ executablePath: chrome, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
@@ -54,6 +57,27 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     page.on('pageerror', (e) => errors.push(e.message));
     // tsx ajoute des appels à __name aux fonctions : la page doit le connaître pour exécuter le scénario
     await page.addInitScript('window.__name = (f) => f;');
+    // attendre un état, jamais un délai (CLAUDE.md) : `__until(cond, label)` attend que `cond()` soit vrai, image après image, et lève une
+    // erreur nommée au bout d'une minute ; `__restart(command)` envoie une commande ?dieu qui redémarre la scène (`map`, `reset-map`) et
+    // attend la nouvelle carte, prête (le joueur posé, le mode jeu)
+    await page.addInitScript(`
+      window.__until = async (cond, label, ms = 60000) => {
+        const t = performance.now();
+        while (!cond()) {
+          if (performance.now() - t > ms) throw new Error('attente trop longue : ' + label);
+          await new Promise((r) => requestAnimationFrame(r));
+        }
+      };
+      window.__restart = async (command) => {
+        const g = window.game;
+        const old = g.scene.getScene('world').map;
+        g.events.emit('dieu', command);
+        await window.__until(() => {
+          const w = g.scene.getScene('world');
+          return !!w && w.map && w.map !== old && w.mode === 'play' && !!w.player;
+        }, 'la carte ' + (command.map || command.kind));
+      };
+    `);
     const load = async (query = '?dieu&reset') => {
       await page.goto(`${url}${query}`);
       // jusqu'à ce que le monde tourne, sans durée : un jeu qui démarre lentement (d'autres scénarios tournent en même temps) démarre
@@ -74,6 +98,7 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
   } finally {
     await browser.close();
     await server.close();
+    rmSync(cacheDir, { recursive: true, force: true });
   }
   process.exit(failed ? 1 : 0);
 }

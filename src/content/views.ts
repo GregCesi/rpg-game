@@ -16,14 +16,30 @@ export function viewCount(views: Views): number {
 export function viewImage(base: string, views: Views, k: number, has?: (key: string) => boolean): string {
   const v = ((k % viewCount(views)) + viewCount(views)) % viewCount(views);
   if (v === 0) return base;
-  if (views === 'symmetric') return `${base}-ns`;
-  if (v === 2 && has && !has(`${base}-r2`) && has(`${base}-left`)) return `${base}-left`;
-  return `${base}-r${v}`;
+  const key = views === 'symmetric' ? `${base}-ns` : `${base}-r${v}`;
+  if (!has || has(key)) return key;
+  // la vue n'est pas encore dessinée (VIEWS_TODO) : la vue -left pour le demi-tour, sinon l'image de départ, jamais une image manquante
+  if (v === 2 && has(`${base}-left`)) return `${base}-left`;
+  return base;
+}
+
+/** La vue `k` est-elle dessinée (la vue de départ l'est toujours ; le demi-tour peut être la vue `-left`) ? */
+export function viewDrawn(base: string, views: Views, k: number, has: (key: string) => boolean): boolean {
+  const v = ((k % viewCount(views)) + viewCount(views)) % viewCount(views);
+  if (v === 0) return true;
+  const key = views === 'symmetric' ? `${base}-ns` : `${base}-r${v}`;
+  return has(key) || (v === 2 && has(`${base}-left`));
 }
 
 /** Les images de toutes les vues d'un objet, dans l'ordre (la vue 0 d'abord). */
 export function viewImages(base: string, views: Views, has?: (key: string) => boolean): string[] {
-  return Array.from({ length: viewCount(views) }, (_, k) => viewImage(base, views, k, has));
+  // les noms attendus, sans repli sur l'image de départ : c'est ce que validate.ts compte (une vue manquante doit s'y voir)
+  return Array.from({ length: viewCount(views) }, (_, k) => {
+    if (k === 0) return base;
+    if (views === 'symmetric') return `${base}-ns`;
+    if (k === 2 && has && !has(`${base}-r2`) && has(`${base}-left`)) return `${base}-left`;
+    return `${base}-r${k}`;
+  });
 }
 
 /**

@@ -62,8 +62,6 @@ export class PlayerInput {
   private readonly held = HELD;
   /** Actions dont la touche vient d'être pressée, pas encore lues. */
   private readonly pressed = new Set<Action>();
-  /** Le sens du dernier appui sur V (+1 ; Maj + V : −1), lu au moment de l'appui. */
-  private speedDir: 1 | -1 = 1;
   /** Crans de zoom demandés (molette, + et −), pas encore lus : positif pour s'approcher. */
   private zoom = 0;
   /** Ctrl+Z (annuler) et Ctrl+Y ou Ctrl+Maj+Z (refaire) du mode construction, pas encore lus. */
@@ -88,8 +86,6 @@ export class PlayerInput {
         return;
       }
       if (e.repeat) return;
-      // Maj + V : le sens se lit au moment de l'appui (un appui bref relâcherait Maj avant l'image suivante)
-      if (CODES.speed.includes(e.code as 'KeyV')) this.speedDir = e.shiftKey || CODES.run.some((c) => this.held.has(c)) ? -1 : 1;
       for (const [action, codes] of Object.entries(CODES)) if ((codes as readonly string[]).includes(e.code)) this.pressed.add(action as Action);
     };
     const onUp = (e: KeyboardEvent) => this.held.delete(e.code);
@@ -161,9 +157,9 @@ export class PlayerInput {
     return CODES.turn.some((c) => this.held.has(c));
   }
 
-  /** V : la vitesse du temps, +1 (V) ou −1 (Maj + V), ou 0 ; une fois par appui. */
-  speedPressed(): 1 | -1 | 0 {
-    return this.take('speed') ? this.speedDir : 0;
+  /** V : la vitesse du temps, au palier suivant (en boucle) ; vrai une fois par appui, Maj tenue ou non (pendant une course). */
+  speedPressed(): boolean {
+    return this.take('speed');
   }
 
   /** B : entrer dans le mode construction ou en sortir (?construire) ; vrai une seule fois par appui. */

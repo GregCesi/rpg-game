@@ -1,6 +1,6 @@
 // Test de scénario du temps (docs/CONCEPTION.md, « Le temps »), dans le vrai jeu (voir tools/lib/playtest.ts) :
 // - l'horloge à x1 par défaut ; V passe la vitesse du temps du joueur au palier suivant (x2 : la vitesse de simulation, tout le jeu plus
-//   vite), le dit et l'affiche avec l'heure ; Maj + V revient à x1 ;
+//   vite), le dit et l'affiche ; en boucle jusqu'à x20 puis x1, Maj tenue (une course) ou non : Maj + V n'existe plus ;
 // - le travail au coup (docs/CONCEPTION.md, « Le travail ») : devant un arbre normal, un seul appui sur Espace lance tout le travail,
 //   Xéros frappe seul au rythme du modèle (world/swing.ts), chaque coup enlève sa part (world/workPlan.ts) et se paie au plafond ; la
 //   force réglée dans ?dieu en plein travail agit au coup suivant (le bûcheron fort enlève plus de deux fois plus par coup) ; un pas
@@ -49,7 +49,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     };
     const minutes = () => gs.game.clock.day * 1440 + gs.game.clock.minute;
     const out: Record<string, any> = {};
-    await send({ kind: 'map', map: 'ferme' }, 1500);
+    await (window as any).__restart({ kind: 'map', map: 'ferme' });
     await send({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
 
     // 1. l'horloge à x1 : 2 s jouées font 2 s de jeu ; V : x2, Maj + V : x1
@@ -64,14 +64,14 @@ await playtest('temps', async ({ page, errors, load }) => {
     await press('KeyV');
     await sleep(300);
     out.v = { speed: sim.simSpeed(), notices: notices.slice(told), hud: hudClock() };
-    await press('KeyV', true);
-    await sleep(300);
-    out.back = { speed: sim.simSpeed(), hud: hudClock() };
-    // en boucle : Maj + V depuis x1 va à x20 ; V depuis x20 revient à x1 ; les crans pleins suivent le rang du palier
-    await press('KeyV', true);
-    await sleep(300);
+    // en boucle : V, V, V mènent à x20 (Maj tenue comme pendant une course : V avance quand même, Maj + V n'existe plus) ;
+    // V de nouveau : x1 ; les crans pleins suivent le rang du palier
+    for (const shift of [false, true, false]) {
+      await press('KeyV', shift);
+      await sleep(250);
+    }
     const face = await import('/src/world/clockFace.ts' as string);
-    out.loopDown = { speed: sim.simSpeed(), rank: face.speedRank(sim.simSpeed()) };
+    out.top = { speed: sim.simSpeed(), rank: face.speedRank(sim.simSpeed()) };
     await press('KeyV');
     await sleep(300);
     out.loopUp = { speed: sim.simSpeed(), rank: face.speedRank(sim.simSpeed()), hud: hudClock() };
@@ -164,12 +164,11 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.equal(first.v.speed, 2, 'V : x2, la vitesse de simulation');
   assert.deepEqual(first.v.notices, ['Le temps : x2'], 'V le dit');
   assert.ok(/x2$/.test(first.v.hud ?? ''), `la vitesse s'affiche avec l'heure (${first.v.hud})`);
-  assert.equal(first.back.speed, 1, 'Maj + V : de nouveau x1');
-  assert.deepEqual(first.loopDown, { speed: 20, rank: 5 }, 'Maj + V depuis x1 : x20, cinq crans pleins (en boucle)');
+  assert.deepEqual(first.top, { speed: 20, rank: 5 }, 'V, V, V (l\'un Maj tenue, comme en courant) : x20, cinq crans pleins');
   assert.equal(first.loopUp.speed, 1, 'V depuis x20 : de nouveau x1 (en boucle)');
   assert.equal(first.loopUp.rank, 1, 'à x1, un cran plein');
   assert.ok(/x1$/.test(first.hud ?? ''), `à x1, la vitesse se voit aussi (${first.hud})`);
-  assert.ok(/x1$/.test(first.back.hud ?? ''), `Maj + V : x1 affiché (${first.back.hud})`);
+  assert.ok(/x1$/.test(first.loopUp.hud ?? ''), `de nouveau x1, affiché (${first.loopUp.hud})`);
   const m = first.model;
   assert.equal(first.launched.mode, 'work', 'un seul appui : le travail continue seul');
   assert.ok(first.launched.bar, 'sa jauge au-dessus de Xéros');
@@ -379,6 +378,6 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.ok(Math.abs(third.slept.live - third.slept.expect.ceiling) < 1e-6, 'Xéros se lève avec ce plafond');
   assert.ok(third.slept.notices.includes(`Jour ${third.slept.clock.day} · 06:00`), `le réveil se dit (${third.slept.notices.join(' | ')})`);
   console.log(
-    "  ✓ temps : l'horloge à x1, V et Maj + V (la vitesse de simulation, affichée au cadran), une attaque ramène à x1, la lumière du jour et de la nuit ; le travail lancé d'un appui (au rythme du modèle, la force réglée en plein travail agit au coup suivant, un pas l'arrête, x5 serre les coups, ?debug), repris après rechargement, fini d'un coup ; à bout de souffle il souffle puis reprend ; la veille de nuit, dormir",
+    "  ✓ temps : l'horloge à x1, V en boucle (la vitesse de simulation, affichée au cadran, Maj tenue ou non), une attaque ramène à x1, la lumière du jour et de la nuit ; le travail lancé d'un appui (au rythme du modèle, la force réglée en plein travail agit au coup suivant, un pas l'arrête, x5 serre les coups, ?debug), repris après rechargement, fini d'un coup ; à bout de souffle il souffle puis reprend ; la veille de nuit, dormir",
   );
 });

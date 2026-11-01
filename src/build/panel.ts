@@ -8,10 +8,11 @@ import { buildPlans, onBuildPlans } from '../content/buildPlans';
 import type { WoodAge, WoodLook } from '../content/types';
 import { agedKey } from '../world/woodShape';
 
-/** La teinte de chaque âge sur son bouton : la teinte du bois (`*`) de sa rampe, `woodAges` d'art/palette.ts. */
-const AGE_SWATCH: Record<WoodAge, string> = { new: '#b39469', worn: '#957c62', old: '#9a968d' };
+/** La teinte de chaque âge sur son bouton : la teinte du bois (`*`) de sa rampe, tirée de la palette par npm run art. */
+const AGE_SWATCH: Record<WoodAge, string> = WOOD_AGE_SWATCH;
 import type { BuildCommand, BuildStatus } from '../events';
 import { images, spritesheets } from '../generated/assets';
+import { WOOD_AGE_SWATCH } from '../generated/woodAgeSwatch';
 import { canStand, catalog, FAMILIES, looksOf, woodFrom, type CatalogEntry } from './catalog';
 
 const CSS = `

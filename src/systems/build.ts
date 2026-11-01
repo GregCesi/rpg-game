@@ -15,6 +15,7 @@ import type { Player } from '../entities/Player';
 import { addBuildPieces, addJoints, game, mapState, moveBuildPiece, removeBuildPieces, removeJoints, type BuildPiece, type Joint } from '../state';
 import { aimAt, supportAt, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, withAge, type Area, type Box3 } from '../world/build';
 import { buildLook } from '../world/buildView';
+import { viewDrawn } from '../content/views';
 import { alignOnWall } from '../world/wallRuns';
 import { JOINT_NAMES, jointGroup, jointPoint, junctionAt, refusal as jointRefusal, type Junction } from '../world/joints';
 import type { GameMap } from '../world/GameMap';
@@ -212,10 +213,23 @@ export class BuildSystem {
   private turn(): void {
     const t = this.tool;
     if (t?.kind !== 'piece') return;
-    const next = turned(t.piece, t.view);
+    // un quart de tour, en sautant les vues pas encore dessinées (VIEWS_TODO) : l'image et l'emprise restent d'accord
+    let next = turned(t.piece, t.view);
+    for (let i = 0; i < 4 && !this.drawn(next.ref, next.view); i++) next = turned(next.ref, next.view);
     t.piece = next.ref;
     t.view = next.view;
     this.status();
+  }
+
+  /** La vue `view` de cette pièce est-elle dessinée ? (la pièce de bois se calcule : toujours) */
+  private drawn(ref: BuildRef, view: number): boolean {
+    const has = (k: string) => this.scene.textures.exists(k);
+    if ('prop' in ref) return viewDrawn(props[ref.prop].image, props[ref.prop].views, view, has);
+    if ('item' in ref) {
+      const def = items[ref.item];
+      return !def.ground || viewDrawn(def.ground, def.views, view, has);
+    }
+    return true;
   }
 
   /** La forme et la taille naturelles de la prochaine pose : celles choisies au catalogue, sinon au hasard. */

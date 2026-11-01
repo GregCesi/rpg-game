@@ -160,9 +160,9 @@ export const MapStateSchema = z.strictObject({
   /**
    * Les travaux commencés et interrompus (docs/CONCEPTION.md, « Le travail » ; systems/work.ts), par objet (`o<id>` : objet Tiled,
    * `s<id>` : objet né) : le travail (`work` : `harvest`, `cut`, `maul`, `whittle`) et la part de sa matière déjà enlevée (`done`, de 0
-   * à 1). Un travail fini s'efface.
+   * à 1) ; `side`, pour un arbre debout, le côté de l'entaille, celui où Xéros frappe et où l'arbre tombera. Un travail fini s'efface.
    */
-  work: z.record(z.string(), z.strictObject({ work: z.string(), done: z.number().min(0).max(1) })).default({}),
+  work: z.record(z.string(), z.strictObject({ work: z.string(), done: z.number().min(0).max(1), side: z.enum(['left', 'right']).optional() })).default({}),
 });
 
 export const GameStateSchema = z.strictObject({
@@ -342,7 +342,7 @@ export function sleep(s: GameState): void {
 export const workKey = (id: number, spawned: boolean | undefined): string => `${spawned ? 's' : 'o'}${id}`;
 
 /** La part faite d'un travail sur un objet (`undefined` : fini, ou rien de commencé : l'entrée s'efface). */
-export function setWork(s: GameState, mapId: string, key: string, entry: { work: string; done: number } | undefined): void {
+export function setWork(s: GameState, mapId: string, key: string, entry: { work: string; done: number; side?: 'left' | 'right' } | undefined): void {
   const m = mapState(s, mapId);
   if (entry) m.work[key] = { ...entry };
   else delete m.work[key];

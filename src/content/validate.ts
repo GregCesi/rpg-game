@@ -1147,7 +1147,8 @@ export function validateWork(c: Pick<Content, 'work' | 'items' | 'props' | 'stre
     if (!st) continue;
     if (!p.harvest!.work) errors.push(`props.json '${k}' : des étapes ('stages') sans matière ('work')`);
     if (st.some((t, i) => i > 0 && t <= st[i - 1])) errors.push(`props.json '${k}' : les étapes ('stages') doivent croître`);
-    for (const base of [p.image, ...(cat.textures.has(`${p.image}-left`) ? [`${p.image}-left`] : [])])
+    // l'arbre debout se frappe des deux côtés : ses étapes pour la gauche aussi (`<image>-left-stage-<n>`)
+    for (const base of [p.image, ...(cat.textures.has(`${p.image}-left`) || p.harvest!.fall ? [`${p.image}-left`] : [])])
       st.forEach((_, i) => {
         if (!cat.textures.has(`${base}-stage-${i + 1}`)) errors.push(`props.json '${k}' : image d'étape '${base}-stage-${i + 1}' introuvable (pixel-artist)`);
       });
