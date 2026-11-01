@@ -949,11 +949,22 @@ export const StaminaSchema = z.strictObject({
  * Une arme (`weapon` d'un objet de items.json ; docs/CONCEPTION.md, « Le combat ») : des données et un dessin. `length` : sa longueur
  * en cm, du bout tenu à la pointe ; `grip` : où la main la tient, en cm depuis le bout tenu (la main est au centre de chaque image de
  * sa planche) ; `family` : sa famille de gestes (clé de `families` de combat.json) ; `image` : sa planche `weapon-<…>`, un seul dessin
- * en huit angles (animation `angles`, art/lib/weapon.ts). Sa masse et ses mains sont celles de l'objet. La portée, les dégâts et le
- * prix d'un coup s'en calculent (world/strike.ts).
+ * en huit angles (animation `angles`, art/lib/weapon.ts) ; `balance` : où est son centre de masse, en part de sa longueur devant la
+ * main (0 : dans la main, 0,5 : au milieu comme un bâton uniforme, 1 : à la pointe) : plus il est loin, plus l'arme est lente et
+ * maladroite (la branche, un gourdin : 0,6) ; près de la garde, elle se contrôle (l'épée : 0,25) ; `efficiency` : la part de
+ * l'énergie du coup qui fait des dégâts (1 : un fil qui la concentre ; la branche, ses rameaux qui amortissent : 0,4). Sa masse et
+ * ses mains sont celles de l'objet. La portée, la durée, la précision, les dégâts et le prix d'un coup s'en calculent
+ * (world/strike.ts).
  */
 export const WeaponSchema = z
-  .strictObject({ length: z.number().positive(), grip: z.number().nonnegative(), family: id, image: id })
+  .strictObject({
+    length: z.number().positive(),
+    grip: z.number().nonnegative(),
+    balance: z.number().gt(0).lte(1),
+    efficiency: z.number().gt(0).lte(1),
+    family: id,
+    image: id,
+  })
   .refine((w) => w.grip < w.length, { message: "'grip' doit être en deçà de 'length' : la main tient l'arme" });
 
 /**
@@ -1013,8 +1024,9 @@ export const StanceDefSchema = z.strictObject({
  * Le combat (combat.json) : les règles du calcul (`rules`), les attaques, les familles d'armes et leurs postures.
  * `rules.armCm` : la portée du bras, des pieds à la main (la portée d'une attaque = bras + longueur de l'arme devant la main) ;
  * `rules.inertiaRef` (kg·m²) et `rules.inertiaSlow` : au-delà de `inertiaRef`, chaque kg·m² de moment d'inertie (autour de la main)
- * allonge le geste de `inertiaSlow` ; `rules.damagePerJoule` : les dégâts d'un coup = l'énergie de la pointe (½ I ω²) × ce facteur ×
- * `power` de l'attaque.
+ * allonge le geste de `inertiaSlow` ; `rules.damagePerJoule` : les dégâts d'un coup = l'énergie de l'arme au coup (½ I ω²) × ce
+ * facteur × `efficiency` de l'arme × `power` de l'attaque ; `rules.controlRef` (kg·m²) : la précision d'une arme, 1 / (1 + I /
+ * `controlRef`), de 0 (on ne la tient pas) à 1 (elle va où l'on veut).
  */
 export const CombatSchema = z.strictObject({
   rules: z.strictObject({
@@ -1022,6 +1034,7 @@ export const CombatSchema = z.strictObject({
     inertiaRef: z.number().nonnegative(),
     inertiaSlow: z.number().nonnegative(),
     damagePerJoule: z.number().positive(),
+    controlRef: z.number().positive(),
   }),
   attacks: z.record(id, AttackSchema),
   families: z.record(id, z.strictObject({ name: id, stances: z.array(StanceDefSchema).min(1) })),

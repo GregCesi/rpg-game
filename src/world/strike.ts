@@ -32,13 +32,17 @@ export const ahead = (w: Weapon): number => w.length - w.grip;
 export const reachCm = (rules: Rules, w: Weapon): number => rules.armCm + ahead(w);
 
 /**
- * Moment d'inertie de l'arme autour de la main (kg·m²), comme une tige de sa masse et de sa longueur devant la main : m L² / 3.
- * C'est lui qui fait qu'un long bâton lourd se balance plus lentement qu'une épée courte.
+ * Moment d'inertie de l'arme autour de la main (kg·m²) : m L² × 2/3 × `balance` (L, sa longueur devant la main) ; un bâton uniforme
+ * (`balance` 0,5) donne m L² / 3. C'est lui qui fait qu'un long gourdin lourd du bout se balance plus lentement, et se tient moins
+ * bien, qu'une épée équilibrée près de la garde.
  */
 export function inertia(w: Weapon, kg: number): number {
   const l = ahead(w) / 100;
-  return (kg * l * l) / 3;
+  return (2 / 3) * w.balance * kg * l * l;
 }
+
+/** Précision de l'arme, de 0 à 1 : 1 / (1 + I / `controlRef`) ; elle se contrôle d'autant mieux que son inertie est faible. */
+export const precision = (rules: Rules, w: Weapon, kg: number): number => 1 / (1 + inertia(w, kg) / rules.controlRef);
 
 /** Facteur d'allongement du geste : 1 jusqu'à `inertiaRef`, puis `inertiaSlow` de plus par kg·m². */
 export const slowness = (rules: Rules, w: Weapon, kg: number): number => 1 + rules.inertiaSlow * Math.max(0, inertia(w, kg) - rules.inertiaRef);
@@ -67,11 +71,23 @@ export const angularSpeed = (rules: Rules, a: Attack, w: Weapon, kg: number): nu
 /** Vitesse de la pointe pendant le coup (m/s). */
 export const tipSpeed = (rules: Rules, a: Attack, w: Weapon, kg: number): number => (angularSpeed(rules, a, w, kg) * ahead(w)) / 100;
 
-/** Dégâts d'un coup : l'énergie de l'arme au coup (½ I ω², en joules) × `damagePerJoule` × `power` de l'attaque, au dixième. */
-export function damage(rules: Rules, a: Attack, w: Weapon, kg: number): number {
+/** Énergie de l'arme au coup, en joules : ½ I ω². */
+export function energy(rules: Rules, a: Attack, w: Weapon, kg: number): number {
   const omega = angularSpeed(rules, a, w, kg);
-  const joules = 0.5 * inertia(w, kg) * omega * omega;
-  return Math.round(joules * rules.damagePerJoule * a.power * 10) / 10;
+  return 0.5 * inertia(w, kg) * omega * omega;
+}
+
+/**
+ * Dégâts d'un coup : l'énergie de l'arme au coup × `damagePerJoule` × `efficiency` de l'arme (la part qui fait des dégâts : le fil
+ * la concentre, les rameaux l'amortissent) × `power` de l'attaque, au dixième.
+ */
+export const damage = (rules: Rules, a: Attack, w: Weapon, kg: number): number =>
+  Math.round(energy(rules, a, w, kg) * rules.damagePerJoule * w.efficiency * a.power * 10) / 10;
+
+/** Durée d'un coup entier (armer, frapper, revenir), en ms. */
+export function cycle(rules: Rules, a: Attack, w: Weapon, kg: number): number {
+  const t = timing(rules, a, w, kg);
+  return t.windup + t.strike + t.recover;
 }
 
 /** Prix d'une attaque en endurance : `attackBase` + `attackPerKg` × la masse de l'arme, × `cost` de l'attaque (stamina.json). */

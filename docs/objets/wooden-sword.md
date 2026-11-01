@@ -11,15 +11,16 @@ branche (CONCEPTION, « Le combat »).
 - Âge : bois travaillé, `"aged": true` : ses images au sol ont leurs trois âges (neuf, patiné, vieux), dessinées dans la rampe `woodAges`.
 
 ## Masse
-- Calculée par sa matière : `{"matter": "wood", "fill": 0.65}` sur sa boîte de 80 × 5 × 2,5 cm (la lame s'amincit vers la pointe et
-  les bords, la poignée est ronde), soit **0,6 kg**. Sans effet sur la marche.
+- Calculée par sa matière : `{"matter": "wood", "fill": 0.79}` sur sa boîte de 90 × 5 × 2,5 cm (la lame s'amincit vers la pointe et
+  les bords, la poignée est ronde ; un bois dense), soit **0,8 kg**. Sans effet sur la marche.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
-- 80 cm de long, contour compris : poignée et pommeau 15 cm, garde 3 cm (10 cm de large), lame 62 cm, 5 cm de large, 2,5 cm d'épaisseur.
-- Couchée (`wooden-sword-ground`) : boîte 80 × 5 × 2,5 cm, à plat. À l'écran : **16 × 1 px**, au plancher de lisibilité (2 à 3 px
+- 90 cm de long, contour compris (repris le 1er novembre 2026 au rééquilibrage, 80 cm avant) : poignée et pommeau 15 cm, garde 3 cm
+  (10 à 15 cm de large), lame 72 cm, 5 cm de large, 2,5 cm d'épaisseur.
+- Couchée (`wooden-sword-ground`) : boîte 90 × 5 × 2,5 cm, à plat. À l'écran : **18 × 1 px**, au plancher de lisibilité (2 à 3 px
   de haut, la garde un peu plus large).
-- En arme (planche `weapon-wooden-sword`) : 80 cm = 16 px du pommeau à la pointe, la main à 12 cm du pommeau (2 px derrière la
-  main, 14 px devant).
+- En arme (planche `weapon-wooden-sword`) : 90 cm = 18 px du pommeau à la pointe, la main à 6 cm du pommeau (1 px derrière la
+  main, 17 px devant).
 
 ## Vues
 - Symétrie : quatre vues (`views: "four"`, `lying`) : `wooden-sword-ground` (la pointe à l'est), `-r1` (au sud), `-r2` (à l'ouest),
@@ -30,6 +31,23 @@ branche (CONCEPTION, « Le combat »).
   reprises à la main ; le geste choisit l'angle à chaque image.
 - Case d'interface : `item-wooden-sword` (16 × 16, déjà dessinée).
 - Fantôme : son image au sol en transparence, là où E ou Q la poserait.
+
+## Au combat
+Arme de la famille `swing` (combat.json). Ses réglages (`weapon` d'items.json) : longueur 90 cm, prise à 6 cm, équilibre 0,25 (le
+centre de masse près de la garde : elle se contrôle), efficacité 1 (le coup porte sur le fil). Ce qui s'en calcule
+(world/strike.ts), à côté de la branche :
+
+| | Branche | Épée de bois |
+| --- | --- | --- |
+| Longueur, prise | 125 cm, à 10 cm du gros bout | 90 cm, à 6 cm du pommeau |
+| Masse | 2,5 kg | 0,8 kg |
+| Équilibre ; efficacité (données) | 0,6 (poids au bout) ; 0,4 (rameaux qui amortissent) | 0,25 (près de la garde) ; 1 (le fil) |
+| Portée | 165 cm | 134 cm |
+| Précision (calculée) | 0,18, faible | 0,76, bonne |
+| Taille : dégâts, durée du coup | 8,2 en 1,21 s | 5,9 en 0,60 s |
+| Dégâts par seconde (taille) | 6,8 | 9,8 (× 1,44) |
+| Coup d'en haut : dégâts, durée | 12,4 en 1,45 s | 8,9 en 0,72 s |
+| Endurance par coup (taille ; en haut) | 1,30 ; 1,63 | 0,62 ; 0,77 |
 
 ## Variantes naturelles
 Aucune : taillée, régulière.

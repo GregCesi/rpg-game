@@ -714,17 +714,26 @@ Les touches : [docs/COMMANDES.md](COMMANDES.md).
   famille de gestes, sa planche ; sa masse et ses mains sont celles de l'objet. Le dessin est **un seul**, couché vers l'est, tiré en
   huit angles par `art/lib/weapon.ts` (rotation, puis éclairage en haut à gauche ; le pixel-artist reprend les diagonales s'il le
   faut) ; à chaque image du geste, le jeu pose sur la main l'angle de la pose (`weaponFrame`, entities/ToolUse.ts). La branche :
-  125 cm, tenue à 10 cm du gros bout, 2,5 kg ; l'épée de bois : 80 cm, tenue à 12 cm du pommeau, 0,6 kg.
+  125 cm, tenue à 10 cm du gros bout, 2,5 kg ; l'épée de bois : 90 cm, tenue à 6 cm du pommeau, 0,8 kg. **Rééquilibrées** (même
+  jour, après le premier essai de Grégoire : la branche frappait six fois plus fort que l'épée et portait plus loin, personne ne
+  l'aurait prise) : chaque arme a aussi un **équilibre** (`balance`, où est son centre de masse devant la main : la branche, un
+  gourdin lourd du bout, 0,6 ; l'épée, près de la garde, 0,25) et une **efficacité** (`efficiency`, la part de l'énergie qui fait
+  des dégâts : les rameaux de la branche amortissent, 0,4 ; le fil de l'épée concentre le coup, 1). Le tableau des deux armes est
+  dans leurs fiches ([branche](objets/branch.md), [épée de bois](objets/wooden-sword.md)) : l'épée fait environ 1,5 fois les dégâts
+  par seconde de la branche, pour moins d'endurance.
 - **Tout se calcule** (`src/world/strike.ts`, sans Phaser ; les règles dans `src/content/combat.json`) :
-  - la **portée** : le bras (50 cm) plus l'arme devant la main : 165 cm pour la branche, 118 cm pour l'épée ;
+  - la **portée** : le bras (50 cm) plus l'arme devant la main : 165 cm pour la branche, 134 cm pour l'épée ;
   - la **zone de coup**, au sol, depuis les pieds vers où regarde Xéros, de la longueur de la portée : un secteur de 120° pour la
     taille, une bande de 30 cm pour le coup d'en haut ; une cible est touchée si son emprise au sol (`dims`) y entre ;
   - le **temps** : chaque attaque dit combien durent l'armé, le coup et la récupération ; une arme lourde et longue (son moment
-    d'inertie autour de la main) les allonge : la branche se balance un tiers plus lentement que l'épée ;
+    d'inertie autour de la main, m L² × 2/3 × l'équilibre) les allonge : un coup de branche dure 1,2 s, un coup d'épée 0,6 s ;
+  - la **précision** : 1 / (1 + I / `controlRef`) : 0,18 pour la branche, 0,76 pour l'épée (calculée, montrée, pas encore jouée :
+    elle servira aux coups visés et à la parade) ;
   - les **dégâts** : l'énergie de l'arme au coup (½ I ω², la vitesse venant de l'angle que parcourt la pointe pendant le coup) ×
-    un facteur : 13,3 à la taille avec la branche, 2 avec l'épée ; le coup d'en haut frappe plus fort et coûte plus ;
+    un facteur × l'efficacité de l'arme : 8,2 à la taille avec la branche, 5,9 avec l'épée ; le coup d'en haut frappe plus fort et
+    coûte plus ;
   - le **prix en endurance** : `attackBase` + `attackPerKg` × la masse de l'arme (stamina.json), × le prix de l'attaque : 1,3 point
-    pour la branche, 0,5 pour l'épée. **Un coup dans le vide coûte aussi** (choix de Grégoire : c'est le geste qui fatigue) ; épuisé,
+    pour la branche, 0,6 pour l'épée. **Un coup dans le vide coûte aussi** (choix de Grégoire : c'est le geste qui fatigue) ; épuisé,
     rien ne part.
 - **Une attaque est des données** (combat.json, `attacks`) : son geste, ses trois temps, la fenêtre d'enchaînement, l'angle que
   parcourt la pointe, sa puissance, son prix, sa zone. **Une famille** (`families`, la seule aujourd'hui : `swing`, ce qu'on balance)

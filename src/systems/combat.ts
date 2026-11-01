@@ -7,7 +7,7 @@ import type { Player } from '../entities/Player';
 import type { SwingOptions } from '../entities/ToolUse';
 import { game } from '../state';
 import type { GameMap, PlacedProp } from '../world/GameMap';
-import { attackCost, damage, footprint, frameDurations, hitsBox, reachCm, stanceFor, timing, zonePolygon, type Grip } from '../world/strike';
+import { attackCost, damage, precision, footprint, frameDurations, hitsBox, reachCm, stanceFor, timing, zonePolygon, type Grip } from '../world/strike';
 import type { HarvestSystem } from './harvest';
 
 /** Une attaque prête à jouer : laquelle, avec quelle arme, son prix, et ce que reçoit le geste (planche de l'arme, durées). */
@@ -29,6 +29,8 @@ export interface StrikeLog {
   reach: number;
   cost: number;
   damage: number;
+  /** Précision de l'arme (0 à 1) : calculée, montrée, pas encore jouée. */
+  precision: number;
   hits: { id: number; type: string; damage: number }[];
 }
 
@@ -134,7 +136,7 @@ export class CombatSystem {
       if (DEBUG) this.showDamage(q, dmg);
     }
     if (DEBUG) this.showZone(zone);
-    const entry: StrikeLog = { attack: p.key, item: p.item, facing, reach, cost: p.cost, damage: dmg, hits: hits.map((q) => ({ id: q.id, type: q.type, damage: dmg })) };
+    const entry: StrikeLog = { attack: p.key, item: p.item, facing, reach, cost: p.cost, damage: dmg, precision: precision(combat.rules, p.weapon, p.kg), hits: hits.map((q) => ({ id: q.id, type: q.type, damage: dmg })) };
     this.log.push(entry);
     return entry;
   }

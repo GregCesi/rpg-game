@@ -1,7 +1,8 @@
 // Test de scénario du combat de base (docs/CONCEPTION.md, « Le combat »), dans le vrai jeu (voir tools/lib/playtest.ts), avec
 // ?debug : le mannequin posé sur la ferme, frappé à la branche puis à l'épée de bois dans les quatre directions (il penche, ne casse
 // pas, les dégâts s'écrivent au-dessus) ; la portée suit la longueur (à une distance où la branche touche, l'épée manque), les
-// dégâts et le prix en endurance suivent la masse et sont ceux du calcul (world/strike.ts) ; un deuxième Espace enchaîne le coup
+// dégâts et le prix en endurance suivent la masse et sont ceux du calcul (world/strike.ts), l'épée fait environ 1,5 fois les dégâts
+// par seconde de la branche (le rééquilibrage) ; un deuxième Espace enchaîne le coup
 // d'en haut ; un coup dans le vide coûte aussi ; épuisé, rien ne part ; une ou deux branches en main ne changent rien ; la branche
 // active et la hachette dans l'autre main taillent toujours (Espace n'attaque pas).
 // Usage : npm run test:combat (lancé aussi par npm run test).
@@ -119,6 +120,8 @@ await playtest('combat', async ({ page, errors, load }) => {
         reach: strike.reachCm(content.combat.rules, weapon),
         damage: strike.damage(content.combat.rules, slash, weapon, kg),
         cost: Math.round(strike.attackCost(content.stamina.costs, slash, kg) * 1000) / 1000,
+        cycle: strike.cycle(content.combat.rules, slash, weapon, kg),
+        precision: strike.precision(content.combat.rules, weapon, kg),
       };
       res.reach = log()[log().length - 1].reach;
       out.weapons[item] = res;
@@ -205,6 +208,10 @@ await playtest('combat', async ({ page, errors, load }) => {
   assert.ok(b.reach > s.reach, 'la branche, plus longue, porte plus loin');
   assert.ok(b.expect.damage > s.expect.damage, 'la branche, plus lourde, frappe plus fort');
   assert.ok(b.expect.cost > s.expect.cost, 'la branche, plus lourde, coûte plus');
+  // le rééquilibrage : l'épée, plus rapide et précise, fait environ 1,5 fois les dégâts par seconde de la branche
+  const dps = (x: any) => x.expect.damage / x.expect.cycle;
+  assert.ok(dps(s) / dps(b) > 1.3 && dps(s) / dps(b) < 1.7, `l'épée fait environ 1,5 fois les dégâts par seconde de la branche (${(dps(s) / dps(b)).toFixed(2)})`);
+  assert.ok(s.expect.precision > 0.6 && b.expect.precision < 0.3, 'l’épée se contrôle, la branche est maladroite');
   assert.deepEqual(r.chain, ['slash', 'overhead'], 'un deuxième Espace pendant le geste enchaîne le coup d’en haut');
   assert.equal(r.air.hits, 0, 'dans le vide, rien n’est touché');
   assert.ok(r.air.spent > 0, 'un coup dans le vide coûte de l’endurance');

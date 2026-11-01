@@ -10,16 +10,17 @@
 // - La branche : 125 cm = 25 px ; la main à 10 cm du gros bout (2 px derrière la main, 23 devant) ; le gros bout de 2 px,
 //   son bout cassé en bois clair (U u), puis la tige d'un pixel, deux rameaux courts. Matières de la branche du tas
 //   (art/items/branch.ts) : l'écorce M m N, contour N côté lumière.
-// - L'épée : 80 cm = 16 px du pommeau à la pointe (fiche) : pommeau et poignée sur 3 px (x 30 à 32, la main sur le dernier),
-//   la garde d'un pixel (x 33) qui déborde d'un pixel de part et d'autre de la lame (15 cm au lieu de 10, pour qu'elle se lise
-//   une fois tournée), la lame plate d'un pixel, 12 px (60 cm), qui s'arrondit au bout (le contour n'y met pas de coin).
+// - L'épée : 90 cm = 18 px du pommeau à la pointe (fiche) : pommeau et poignée sur 3 px (x 31 à 33, la main sur le
+//   deuxième : 1 px derrière elle, 17 devant), la garde d'un pixel (x 34) qui déborde d'un pixel de part et d'autre de la
+//   lame (15 cm au lieu de 10, pour qu'elle se lise une fois tournée), la lame plate d'un pixel, 14 px (70 cm), qui
+//   s'arrondit au bout (le contour n'y met pas de coin).
 //   Bois travaillé : la rampe des âges (`woodAges`, art/palette.ts) ; la lame claire (^), la garde et la poignée plus
 //   sombres (% &). Contour côté lumière : & (le creux, la teinte la plus sombre du bois après le joint, qui n'est jamais un
 //   contour).
 //
-// Au sol, l'épée (boîte 80 × 5 × 2,5 cm, gabarit 16 × 1 px) est dessinée 16 × 3 au plancher de lisibilité, comme la
+// Au sol, l'épée (boîte 90 × 5 × 2,5 cm, gabarit 18 × 1 px) est dessinée 18 × 3 au plancher de lisibilité, comme la
 // cheville (art/items/wood-small.ts) : une rangée de bois et l'OUTLINE au sud (moins d'un pixel d'épaisseur : pas de contour
-// au nord) ; la garde déborde d'un pixel au nord et au sud. Nord-sud : 3 × 16 (une colonne de bois, l'OUTLINE à l'est).
+// au nord) ; la garde déborde d'un pixel au nord et au sud. Nord-sud : 3 × 18 (une colonne de bois, l'OUTLINE à l'est).
 // L'image au sol prend l'âge au build (`aged` de items.json) : elle n'a que les signes de la rampe et l'OUTLINE.
 
 import { Canvas, EMPTY, type Grid } from '../lib/canvas';
@@ -78,14 +79,14 @@ const hilt = { light: '*', base: '%', shade: '&', dark: '&' };
 
 const swordMaterials: Materials = { l: blade, h: hilt };
 
-/** Longueur de la lame (60 cm) et position de la garde, le long de l'arme depuis la main. */
-const BLADE = 12;
-const GUARD = 1;
+/** Longueur de la lame (70 cm) et position de la garde, le long de l'arme depuis la main. */
+const BLADE = 14;
+const GUARD = 2;
 
-/** L'épée couchée vers l'est, en zones : pommeau et poignée (h) de GX − 2 à GX, la garde en travers, la lame (l). */
+/** L'épée couchée vers l'est, en zones : pommeau et poignée (h) de GX − 1 à GX + 1, la garde en travers, la lame (l). */
 function swordBase(): Grid {
   const c = new Canvas(WEAPON_SIZE, WEAPON_SIZE);
-  for (let x = GX - 2; x <= GX; x++) c.set(x, GY, 'h');
+  for (let x = GX - 1; x < GX + GUARD; x++) c.set(x, GY, 'h');
   for (let y = GY - 1; y <= GY + 1; y++) c.set(GX + GUARD, y, 'h');
   for (let i = 1; i <= BLADE; i++) c.set(GX + GUARD + i, GY, 'l');
   return c.toGrid();
@@ -98,13 +99,13 @@ function swordBase(): Grid {
  */
 function swordDiag(dx: number, dy: number): Grid {
   const c = new Canvas(WEAPON_SIZE, WEAPON_SIZE);
-  // le long de la diagonale, un pas vaut 1,41 px : 16 px de long font 11 pas
+  // le long de la diagonale, un pas vaut 1,41 px : 18 px de long font 13 pas (le pommeau, la main, la garde, 10 de lame)
   const along = (n: number) => [GX + dx * n, GY + dy * n] as const;
   for (let n = -1; n <= 0; n++) c.set(...along(n), 'h'); // pommeau et poignée
   const [hx, hy] = along(1); // la garde
   c.set(hx, hy, 'h');
   c.set(hx - dy, hy + dx, 'h').set(hx + dy, hy - dx, 'h');
-  for (let n = 2; n <= 9; n++) c.set(...along(n), 'l');
+  for (let n = 2; n <= 11; n++) c.set(...along(n), 'l');
   return c.toGrid();
 }
 
@@ -126,10 +127,10 @@ const TURNS: Turn[] = [0, 1, 2, 3];
 const suffix = (t: Turn) => (t === 0 ? '' : `-r${t}`);
 
 /**
- * Le bois de l'épée depuis le pommeau (16 px) : le pommeau (&), la poignée (%), la garde (*, le dessus de la traverse), la
+ * Le bois de l'épée depuis le pommeau (18 px) : le pommeau (&), la poignée (%), la garde (*, le dessus de la traverse), la
  * lame au jour (^) et son fil en tirets (*), la pointe arrondie un cran plus sombre (*).
  */
-const SWORD = ['&', '%', '%', '*', '^', '^', '*', '^', '^', '^', '*', '^', '^', '*', '^', '*'];
+const SWORD = ['&', '%', '%', '*', '^', '^', '*', '^', '^', '^', '*', '^', '^', '^', '*', '^', '^', '*'];
 const GUARD_AT = 3;
 
 /** Ombre portée au sol : la silhouette décalée d'un pixel vers l'est et le sud, sur le vide. */
