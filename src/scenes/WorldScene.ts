@@ -426,14 +426,14 @@ export class WorldScene extends Phaser.Scene {
     }
     // R maintenu, mains vides, au contact d'une bille couchée : elle pivote d'un quart de tour (jauge comme pour nouer)
     const turnTarget = this.turns.target(this.player);
-    const turned = this.turnPress.update(time, input.turnDown(), turnTarget, this.player);
+    const turned = this.turnPress.update(time, input.turnDown(), turnTarget, this.player, input.turnLasted());
     if (turned?.kind === 'long') this.turnLog(turned.target);
     if (this.turnPress.pending) return;
     if (turn && turnTarget) return this.turnPress.begin(turnTarget, time);
     // R : la bille portée tourne ; le fantôme suit à l'image suivante
     if (turn) this.handsSystem.turn();
     // E devant ce qui se noue ou se dénoue : l'appui attend, court (reprendre) ou maintenu (nouer, dénouer)
-    const press = this.press.update(time, input.handsDown(), e.target, this.player);
+    const press = this.press.update(time, input.handsDown(), e.target, this.player, input.handsLasted());
     if (press?.kind === 'short') this.hands(press.target);
     else if (press?.kind === 'long') {
       if (press.target.action.kind === 'site-help') this.callMother(press.target.action);

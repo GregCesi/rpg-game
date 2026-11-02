@@ -2,7 +2,8 @@
 // branches noué donnait un fagot de 10, et le dénouer rendait 10 branches). Pour chaque nombre de 2 au tas plein : un tas lié de n branches
 // devant Xéros (?dieu), E maintenu le noue (un tas d'un fagot de n branches) ; E le prend (le fagot tenu compte n) ; Q le pose seul
 // (un objet né qui compte n, dessiné à son nombre) ; E maintenu le dénoue : le tas lié a exactement n branches. Puis un fagot de 3
-// posé seul, la page rechargée : il compte toujours 3, et dénoué rend 3 branches. Jusqu'au tas de branches plein (ses places dans
+// posé seul, la page rechargée : il compte toujours 3, et dénoué rend 3 branches. Pour un nombre sur deux, E court pour prendre le
+// fagot se fait sur une machine lente (une image de 700 ms juste après l'appui) : il reste un appui court. Jusqu'au tas de branches plein (ses places dans
 // piles.json). Usage : npm run test:noeud.
 
 import assert from 'node:assert/strict';
@@ -36,17 +37,25 @@ await playtest('noeud', async ({ page, errors, load }) => {
           key('keyup', code);
         };
         // un appui court (E court : prendre ; Q : poser), relâché à l'image suivante, puis l'état attendu
-        // un appui que le jeu, s'il rame, n'aurait pas vu (relâché avant son image) se refait : jusqu'à cinq appuis, chacun attendu
-        // 60 images ; l'état attendu décide, jamais un délai
-        const press = async (code: string, done: () => boolean, label: string) => {
-          for (let i = 0; i < 5 && !done(); i++) {
+        // un appui court (E court : prendre ; Q : poser), relâché à l'image suivante, puis l'état attendu (le jeu garde l'appui jusqu'à
+        // le lire, src/input/keyLatch.ts : un seul appui suffit, même quand il rame)
+        // `slow` : la machine lente (Grégoire : un appui court n'y est jamais perdu ni changé en appui long) ; le jeu voit l'appui
+        // commencer, puis la touche est relâchée pendant une image de 700 ms (la page bloquée), plus longue qu'un appui maintenu (500 ms)
+        const press = async (code: string, done: () => boolean, label: string, slow = false) => {
+          await frames();
+          key('keydown', code);
+          if (slow) {
             await frames();
-            key('keydown', code);
-            await frames();
+            const t = performance.now();
             key('keyup', code);
-            for (let k = 0; k < 60 && !done(); k++) await new Promise((r) => requestAnimationFrame(r));
+            while (performance.now() - t < 700);
+          } else {
+            await new Promise((r) => requestAnimationFrame(r));
+            key('keyup', code);
           }
-          if (!done()) throw new Error(`${label} : rien après cinq appuis (messages : ${notices.join(' / ')} ; mode ${w().mode} ; mains ${JSON.stringify([gs.game.hands, gs.game.both])} ; tas ${JSON.stringify(ms().piles)})`);
+          await until(done, label).catch((e: Error) => {
+            throw new Error(`${e.message} (messages : ${notices.join(' / ')} ; mode ${w().mode} ; mains ${JSON.stringify([gs.game.hands, gs.game.both])} ; tas ${JSON.stringify(ms().piles)})`);
+          });
         };
         const out: Record<string, unknown> = { n };
         const notices: string[] = ((window as any).notices ??= []);
@@ -82,7 +91,7 @@ await playtest('noeud', async ({ page, errors, load }) => {
         out.tiedBundle = tied.bundle ?? null;
         // E : pris dans les mains
         await until(() => w().mode === 'play', 'le jeu');
-        await press('KeyE', () => !!gs.game.both || !!gs.game.hands[0] || !!gs.game.hands[1], 'le fagot pris');
+        await press('KeyE', () => !!gs.game.both || !!gs.game.hands[0] || !!gs.game.hands[1], 'le fagot pris', n % 2 === 1);
         const held = gs.game.both ?? gs.game.hands[0] ?? gs.game.hands[1];
         out.held = held.prop;
         out.heldBundle = held.bundle ?? null;
