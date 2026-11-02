@@ -43,6 +43,10 @@ function buildPlanWriter(): Plugin {
 export default defineConfig(({ mode }) => ({
   base: './',
   plugins: mode === 'single' ? [viteSingleFile()] : [buildPlanWriter()],
+  // les worktrees des agents (.claude/worktrees, dans le dépôt) et les aperçus ne sont pas le jeu : les surveiller rechargerait les
+  // pages (le npm run dev de Grégoire, les scénarios) à chaque fichier qu'ils écrivent
+  server: { watch: { ignored: ['**/.claude/**', '**/.art-preview/**', '**/dist/**', '**/dist-single/**'] } },
+  optimizeDeps: { entries: ['index.html'] },
   build: {
     outDir: mode === 'single' ? 'dist-single' : 'dist',
     assetsInlineLimit: mode === 'single' ? Number.MAX_SAFE_INTEGER : 4096,
