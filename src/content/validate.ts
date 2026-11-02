@@ -476,6 +476,11 @@ export const VIEWS_TODO: Record<string, string> = {
   'shed-roof': "abri construit : pour un plan orienté autrement",
   // la pioche : ses données de coup existent (le rocher), pas encore ses dessins
   pickaxe: "outil au travail (le rocher), pas encore dessiné au sol ni en main : son image au sol, ses vues et sa planche tool-pickaxe (pixel-artist)",
+  hoe: "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
+  sickle: "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
+  'watering-can': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
+  'fishing-rod': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
+  sword: "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
 };
 
 /**

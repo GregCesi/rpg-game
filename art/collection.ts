@@ -18,18 +18,18 @@ export const families: Family[] = [
     title: 'Ressources',
     ground: 'grass',
     keys: [],
-    icons: ['branch', 'stone', 'iron-ore', 'straw', 'wood-big-round', 'wood-big-quarter'].map((n) => `item-${n}`),
+    icons: ['branch', 'stone', 'iron-ore', 'straw', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'wood-big-round', 'wood-big-quarter'].map((n) => `item-${n}`),
   },
   {
     title: 'Outils et armes',
     ground: 'grass',
     keys: [],
-    icons: ['axe', 'pickaxe', 'wooden-sword'].map((n) => `item-${n}`),
+    icons: ['axe', 'pickaxe', 'hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword', 'wooden-sword'].map((n) => `item-${n}`),
   },
   {
     title: 'Nature',
     ground: 'grass',
-    keys: ['big-tree', 'big-tree-stump', 'big-tree-fall', 'big-pollard', 'big-pollard-fall', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-big-round-100', 'rock', 'rock-rubble', 'bush'],
+    keys: ['big-tree', 'big-tree-stump', 'big-tree-fall', 'big-pollard', 'big-pollard-fall', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-big-round-100', 'rock', 'rock-rubble', 'bush', 'bush-berries'],
     allFrames: ['big-tree-fall', 'big-pollard-fall'],
   },
   {
@@ -51,7 +51,7 @@ export const families: Family[] = [
   },
   { title: 'Jauge et chiffres (herbe)', ground: 'grass', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },
   { title: 'Jauge et chiffres (plancher)', ground: 'floor', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },
-  { title: 'Mobilier et ferme', ground: 'grass', keys: ['crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'woodpile', 'chopping-block', 'chopping-block-axe'] },
+  { title: 'Mobilier et ferme', ground: 'grass', keys: ['barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'woodpile', 'chopping-block', 'chopping-block-axe'] },
   {
     title: 'Implantation',
     ground: 'grass',

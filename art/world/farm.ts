@@ -66,6 +66,37 @@ function furnitureShadow(c: Canvas, fw: number): Canvas {
 
 // ---------- Tonneau ----------
 
+/**
+ * Tonneau cerclé de fer, debout (Ø 60 cm, 90 cm de haut, cylindre debout). Gabarit : 12 × (18 + 6) = 12 × 24 px.
+ * Fond supérieur vu de dessus (jable clair, fond en retrait, bonde), quatre douelles et leurs joints, ventre plus
+ * large que les bouts, deux cercles de fer qui plongent au milieu (la courbure vue de trois quarts). Image 16 × 26.
+ */
+function barrel(): Canvas {
+  return furniture([
+    '..MYYYMm..',
+    '.MNNNNNNm.',
+    '.MmmmmKmm.',
+    '.MMMMmmmN.',
+    '.MmMmNmNK.',
+    'RRmMmNmNZZ',
+    'zzRrrrzzZZ',
+    'MMzzzzZZKK',
+    'MMmMmNmNKK',
+    'MYmMmNmNKK',
+    'MYmMmNmNKK',
+    'MYmMmNmNKK',
+    'MMmMmNmNKK',
+    'MMmMmNmNKK',
+    'MMmMmNmNKK',
+    'MMmMmNmNKK',
+    'RRmMmNmNZZ',
+    'zzRrrrzzZZ',
+    'MMzzzzZZKK',
+    '.MmMmNmNK.',
+    '.MmMmNmNK.',
+    '..mMmNmN..',
+  ]);
+}
 
 // ---------- Caisse ----------
 
@@ -328,6 +359,7 @@ const WOOD_DARKEST = { ...DARKEST, Y: 'K' };
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
 export default [
+  img('barrel', barrel()),
   img('crate', crate()),
   img('hay-bale', hayBale()),
   img('chest', chest()),
