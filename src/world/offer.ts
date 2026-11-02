@@ -17,7 +17,7 @@ export function pileOf(what: Held): PileKind | undefined {
     return wood && { wood };
   }
   const pile = props[what.prop].take?.pile;
-  return pile ? { pile } : undefined;
+  return pile ? { pile, ...(what.bundle ? { bundle: what.bundle } : {}) } : undefined;
 }
 
 /** Ce que présente ce qu'on tient : sa clé (objet possédable ou objet du monde), ce qu'entreposerait son tas (`kindKey`) et, pour une pièce de bois, ses réglages. */

@@ -900,7 +900,9 @@ jamais « impossible ».
     n'est dessinée que sur le rond ;
   - **une pièce de moins de 60 cm** (`min` de wood.json) : une pièce debout se dessine avec une tête et un pied de 55 cm ; une pièce
     courte demande son dessin debout (le billot, les bûches).
-- **À décider** : le fagot ne se noue qu'avec toutes ses branches (« Pas assez de branches. ») : un fagot plus petit est-il un fagot ?
+- **Décidé par Grégoire, fait** : un fagot se noue à partir de 2 branches ; sa taille, sa masse et son dessin suivent son nombre de
+  branches (`bundle` du tas de fagots et du fagot tenu ; images `faggot-n<n>`, de 2 à 12 ; dénoué, il rend autant de branches) ; la
+  quête en demandera 10, ce n'est pas une règle du fagot. Des fagots de nombres différents ne s'empilent pas ensemble.
 
 ## Poids et force (décidé le 30 octobre 2026)
 

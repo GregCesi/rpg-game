@@ -29,7 +29,7 @@ const view = z.number().int().min(1).max(3).optional();
  */
 const HeldSchema = z.union([
   z.strictObject({ item: id, view, natural }),
-  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length, wood: WoodPieceSchema.optional(), natural }),
+  z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length, wood: WoodPieceSchema.optional(), natural, bundle: z.number().int().min(1).optional() }),
 ]);
 
 /** Une main : 0 = la gauche, 1 = la droite. */
@@ -90,6 +90,8 @@ const PileSchema = z
     places: z.array(id),
     turned: z.boolean().optional(),
     tie: z.boolean().optional(),
+    /** Un tas de fagots : le nombre de branches de chacun (ils sont tous pareils ; absent : un fagot plein, toutes ses branches). */
+    bundle: z.number().int().min(1).optional(),
   })
   .refine((p) => p.places.length > 0 || p.tie, { message: 'un tas sans pièce ni lien' })
   .refine((p) => !p.pile !== !p.wood, { message: "un tas entrepose un genre ('pile') ou une pièce de bois ('wood'), l'un ou l'autre" });

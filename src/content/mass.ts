@@ -31,7 +31,7 @@ const CONTENT: MassCatalog = { props: propDefs, items: itemDefs, piles: pileDefs
  * Ce qu'on peut tenir : un objet possédable (`item`) ou un objet du monde pris (`prop`, avec sa longueur s'il en a une, ses
  * réglages de pièce de bois) ; l'un ou l'autre, avec sa taille s'il est naturel (`natural`).
  */
-export type Weighed = { item: string; natural?: Natural } | { prop: string; length?: number; wood?: WoodPiece; natural?: Natural };
+export type Weighed = { item: string; natural?: Natural } | { prop: string; length?: number; wood?: WoodPiece; natural?: Natural; bundle?: number };
 
 /** Volume (m³) de dimensions réelles : une boîte, w × d × h ; un cylindre, π r² × sa longueur (son diamètre est sa hauteur) ; à plat, sans volume. */
 function dimsVolume(d: Dims): number {
@@ -126,7 +126,7 @@ export function itemMass(key: string, cat: MassCatalog = CONTENT, natural?: Natu
  * longueur neuve, au prorata) ; `wood` : les réglages d'une pièce de bois (absents : ceux de props.json). Plante, avec un message,
  * si l'objet n'a pas de masse ou si elle ne se calcule pas.
  */
-export function propMass(key: string, length?: number, cat: MassCatalog = CONTENT, wood?: WoodPiece, natural?: Natural): number {
+export function propMass(key: string, length?: number, cat: MassCatalog = CONTENT, wood?: WoodPiece, natural?: Natural, bundle?: number): number {
   const def = cat.props[key];
   const m = def?.mass;
   if (m === undefined) throw new Error(`props.json '${key}' : pas de masse`);
@@ -141,7 +141,8 @@ export function propMass(key: string, length?: number, cat: MassCatalog = CONTEN
   else if ('matter' in m) kg = matterMass(def.dims, m, cat) * naturalFactor(natural);
   else {
     const g = cat.piles[m.pile];
-    kg = capacity(g) * pieceMass(g.piece, cat) + (g.tie ? itemMass(g.tie.item, cat) : 0);
+    // un fagot : ses branches (son nombre `bundle`, sinon le tas plein) et son lien
+    kg = (bundle ?? capacity(g)) * pieceMass(g.piece, cat) + (g.tie ? itemMass(g.tie.item, cat) : 0);
   }
   return def.length && length !== undefined ? (kg * length) / def.length.start : kg;
 }
@@ -149,5 +150,5 @@ export function propMass(key: string, length?: number, cat: MassCatalog = CONTEN
 /** Masse de ce que tient une main (ou les deux mains), en kg. */
 export function heldMass(h: Weighed | null | undefined, cat: MassCatalog = CONTENT): number {
   if (!h) return 0;
-  return 'item' in h ? itemMass(h.item, cat, h.natural) : propMass(h.prop, h.length, cat, h.wood, h.natural);
+  return 'item' in h ? itemMass(h.item, cat, h.natural) : propMass(h.prop, h.length, cat, h.wood, h.natural, h.bundle);
 }

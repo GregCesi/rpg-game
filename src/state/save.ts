@@ -18,7 +18,7 @@ const SAVE_KEY = 'xeros-partie';
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
-export const SAVE_VERSION = 24;
+export const SAVE_VERSION = 25;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -77,7 +77,8 @@ export function readSave(): ReadResult {
  * d'avant ont été refusées une fois pour toutes, leurs conversions retirées à l'audit du 2 novembre 2026).
  * 17 -> 18 : l'horloge (`withClock`) ; 18 -> 19 : l'endurance en trois niveaux (`threeLevels`) ; 19 -> 20 : le plafond au réveil
  * (`withWoke`) ; 20 -> 21 : les travaux interrompus, vides ; 21 -> 22 : le travail par la matière (`workByMatter`) ; 22 -> 23 : le côté
- * de l'entaille (`side`), facultatif ; 23 -> 24 : la place d'un objet né dans sa « chaîne » (`chain`), jamais lue, n'existe plus.
+ * de l'entaille (`side`), facultatif ; 23 -> 24 : la place d'un objet né dans sa « chaîne » (`chain`), jamais lue, n'existe plus ;
+ * 24 -> 25 : le nombre de branches d'un fagot (`bundle`), facultatif.
  */
 export function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -88,6 +89,8 @@ export function upgrade(data: unknown): unknown {
   if (d?.version === 21 && d.state && typeof d.state === 'object') d = { ...d, version: 22, state: workByMatter(d.state as { maps?: Record<string, { work?: unknown }> }) };
   if (d?.version === 22 && d.state && typeof d.state === 'object') d = { ...d, version: 23 };
   if (d?.version === 23 && d.state && typeof d.state === 'object') d = { ...d, version: 24, state: withoutChain(d.state as { maps?: Record<string, { spawned?: object[] }> }) };
+  // 24 -> 25 : le nombre de branches d'un fagot (`bundle` d'un tas de fagots, d'un fagot tenu), facultatif : un fagot plein
+  if (d?.version === 24 && d.state && typeof d.state === 'object') d = { ...d, version: 25 };
   return d;
 }
 
