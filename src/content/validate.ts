@@ -1123,19 +1123,15 @@ function validateMatters(c: Content): string[] {
   }
   for (const [key, it] of Object.entries(c.items)) {
     if (it.mass && typeof it.mass === 'object' && !it.dims) err(`items.json '${key}' : une masse par la matière demande ses dimensions ('dims')`);
+    // la masse de sa plus grande taille se calcule (le monde ne limite pas : une pierre plus lourde que Xéros ne la porte demande plus
+    // de force, elle n'est pas interdite)
     if (it.natural && it.mass !== undefined && it.dims) {
       try {
-        const big = itemMass(key, c, { form: 0, size: 100 + it.natural.vary });
-        if (big > c.strength.carry) err(`items.json '${key}' : à sa plus grande taille (+${it.natural.vary} %), ${Math.round(big)} kg, plus que Xéros ne porte (${c.strength.carry} kg)`);
+        itemMass(key, c, { form: 0, size: 100 + it.natural.vary });
       } catch (e) {
         err(`items.json '${key}' : ${(e as Error).message}`);
       }
     }
-  }
-  for (const [key, p] of Object.entries(c.props)) {
-    if (!p.natural || !p.take) continue;
-    const big = propMass(key, undefined, c, undefined, { form: 0, size: 100 + p.natural.vary });
-    if (big > c.strength.carry) err(`props.json '${key}' : à sa plus grande taille (+${p.natural.vary} %), ${Math.round(big)} kg, plus que Xéros ne porte (${c.strength.carry} kg)`);
   }
   return errors;
 }

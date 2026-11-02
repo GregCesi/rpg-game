@@ -187,7 +187,6 @@ for (const k of furnitures) check(`meuble ${k}`, (m) => furniture(k, m));
 void transforms;
 void stamina;
 void strength;
-void propMass;
 
 // ---------- les membres d'essai : rien que des données ----------
 
@@ -243,6 +242,63 @@ const errs = validateContent({ ...content, combatPoses: poses, buildCatalog: { e
   (e) => /essai-/.test(e) && !/traînée 'fx-smear-essai-/.test(e),
 );
 check('essai : validate.ts', (miss) => errs.forEach((e) => miss(e)));
+
+// ---------- le monde ne limite pas, seul Xéros limite (Grégoire) ----------
+// À la force maximale (?dieu « force », plafonnée au plus fort des humains), toute pièce de bois (chaque diamètre, chaque aspect,
+// chaque longueur de la grille) et tout objet qu'il soulève se prend, et ce qui s'empile forme un tas qui compte au moins 2 ; à la force
+// de Xéros, ce qui dépasse sa force est refusé par un message qui dit que c'est trop lourd pour lui, jamais que c'est impossible.
+{
+  const { Strength } = await import('../src/entities/Strength');
+  const { heavyNotice } = await import('../src/systems/weight');
+  const { pileOf } = await import('../src/world/offer');
+  const { pileDefOf } = await import('../src/world/pileShape');
+  const strong = new Strength();
+  strong.multiplier = 10;
+  const base = new Strength();
+  const refusalOk = (msg: string) => /Trop lourde? pour lui/.test(msg) && !/impossible|ne peut pas|jamais/i.test(msg);
+  check('limites : la pièce de bois', (miss) => {
+    for (const size of Object.keys(wood.sizes))
+      for (const look of looksOf(size)) {
+        const shape = ({ half: 'half', quarter: 'quarter', rect: 'plank' } as Record<string, WoodPiece['shape']>)[lookDef(size, look).section.shape] ?? 'round';
+        for (let length = wood.min; length <= wood.max; length += wood.grid) {
+          const piece = { size, length, shape, axis: 'ew', ...(look === 'beam' ? { hewn: wood.hew.faces * wood.hew.perFace } : {}) } as WoodPiece;
+          const kg = woodMass(piece);
+          const at = `${size} ${look} ${length} cm (${Math.round(kg)} kg)`;
+          if (kg <= strong.carry + 1e-9) {
+            if (!strong.canCarry(kg)) miss(`${at} : se prend à la force maximale`);
+            const kind = pileOf({ prop: WOOD_PIECE, wood: piece });
+            if (!kind) miss(`${at} : va en tas`);
+            else {
+              const def = pileDefOf(kind);
+              if (!def.count || Object.keys(def.places).length < 2) miss(`${at} : un tas qui compte 2`);
+            }
+          }
+          if (kg > base.carry + 1e-9) {
+            if (base.canCarry(kg)) miss(`${at} : à la force de Xéros, refusé`);
+            const msg = heavyNotice(defOf(WOOD_PIECE, piece), kg, base);
+            if (!refusalOk(msg)) miss(`${at} : « ${msg} » doit dire trop lourd pour lui`);
+          }
+        }
+      }
+  });
+  check('limites : les objets portables', (miss) => {
+    for (const [k, it] of Object.entries(items)) {
+      const kg = itemMass(k);
+      if (kg <= strong.carry + 1e-9) {
+        if (!strong.canCarry(kg)) miss(`${k} : se prend à la force maximale`);
+        const kind = pileOf({ item: k });
+        if (it.pile && (!kind || !pileDefOf(kind).count || Object.keys(pileDefOf(kind).places).length < 2)) miss(`${k} : un tas qui compte 2`);
+      }
+      if (kg > base.carry + 1e-9 && !refusalOk(heavyNotice(undefined, kg, base))) miss(`${k} : trop lourd pour lui`);
+    }
+    for (const [k, p] of Object.entries(props)) {
+      if (!p.take || k === WOOD_PIECE) continue;
+      const kg = propMass(k);
+      if (kg <= strong.carry + 1e-9 && !strong.canCarry(kg)) miss(`${k} : se prend à la force maximale`);
+      if (kg > base.carry + 1e-9 && !refusalOk(heavyNotice(p, kg, base))) miss(`${k} : trop lourd pour lui`);
+    }
+  });
+}
 
 // ---------- l'arbre : les trois arbres, puis un arbre d'essai ----------
 

@@ -663,6 +663,36 @@ La chaumière (`maison.tmj`) reste telle quelle jusqu'à la nouvelle chaumière.
   d'épaisseur ne sont pas tous montrés ; pas de fenêtre sans volet (une baie nue n'éclaire pas encore) ; la porte n'est pas fermée de
   dedans.
 
+## Le monde ne limite pas, seul le personnage limite (règle de base, Grégoire, 2 novembre 2026)
+
+Une action est toujours possible en soi ; ce qui l'empêche, ce sont les caractéristiques de Xéros (sa force, son endurance, ses
+compétences), jamais une règle écrite pour un objet, une taille, une longueur ou une masse. **S'il peut soulever, il peut empiler ;
+s'il a la force, il peut tout faire.** Un refus dit ce qui lui manque, à lui : « Trop lourde pour lui (107 kg, il en porte 70). »,
+jamais « impossible ».
+
+- **Corrigé le 2 novembre** (branche `limites`) :
+  - un tas refusait une pièce plus lourde que la force de base de Xéros (70 kg, écrite dans le calcul du tas) : avec la force au
+    maximum (×2,6, 182 kg), un quartier de 2 m (107 kg) se prenait mais ne s'empilait pas ; le tas prend maintenant tout ce que Xéros
+    tient, et c'est sa force du moment qui décide de ce qu'il tient ;
+  - ?dieu refusait de poser un tas d'une pièce lourde ; il n'en refuse plus que la pièce entamée (une coupe, un coin, une face) ;
+  - validate.ts refusait une matière naturelle (une pierre) plus lourde, à sa plus grande taille, que la force de base : elle peut
+    l'être, il faut de la force pour la porter ;
+  - les refus disent « trop lourd pour lui », avec la masse et ce qu'il porte (ou roule) ; ?dieu affiche ce qu'il porte avec le
+    plafond humain.
+- **Gardé, voulu** : le chantier guidé de l'abri n'accepte pas une pièce que Xéros de base ne porterait pas (validate.ts) : c'est la
+  garantie qu'il se bâtit sans force ajoutée, pas un interdit du monde ; une bille ne roule qu'en travers de son axe, une poutre
+  carrée ne roule pas (la forme, pas une règle) ; un tas ne prend que des pièces identiques.
+- **Des limites qui ne viennent que d'un dessin manquant** (à lever avec le pixel-artist) :
+  - **fendre** l'arbre normal et la perche : seul le gros diamètre a ses aspects fendus (demi-bille, quartier, planche) ; il faut
+    ceux du normal et de la perche (leurs icônes et leurs postures portées ; les vues couchées se calculent) — c'est aussi le
+    palançon et la latte de la maison ;
+  - **refendre un quartier** : pas d'aspect plus fin dessiné ;
+  - **couper une pièce fendue ou équarrie** (« On coupe avant de fendre », « On coupe avant d'équarrir ») : l'entaille de la coupe
+    n'est dessinée que sur le rond ;
+  - **une pièce de moins de 60 cm** (`min` de wood.json) : une pièce debout se dessine avec une tête et un pied de 55 cm ; une pièce
+    courte demande son dessin debout (le billot, les bûches).
+- **À décider** : le fagot ne se noue qu'avec toutes ses branches (« Pas assez de branches. ») : un fagot plus petit est-il un fagot ?
+
 ## Poids et force (décidé le 30 octobre 2026)
 
 Repris par *Le bois* (30 octobre 2026) : la masse se calcule d'après les réglages de la pièce de bois ; à 1 m, la bille du gros pèse 214 kg et celle du normal 63,6 kg.
