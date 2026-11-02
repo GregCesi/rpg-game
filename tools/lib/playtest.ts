@@ -46,7 +46,9 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
   // son propre cache des dépendances : les serveurs des scénarios parallèles (et le npm run dev de Grégoire) ne se rechargent pas les
   // uns les autres en réoptimisant un cache commun
   const cacheDir = mkdtempSync(join(tmpdir(), 'xeros-vite-'));
-  const server = await createServer({ logLevel: 'error', server: { port: 0 }, cacheDir });
+  // les dépendances du jeu pré-assemblées au démarrage, sans découverte ensuite : sinon Vite, découvrant une dépendance en cours de
+  // route sur un cache neuf, recharge la page en plein scénario (« Execution context was destroyed »)
+  const server = await createServer({ logLevel: 'error', server: { port: 0 }, cacheDir, optimizeDeps: { include: ['phaser', 'zod'], noDiscovery: true } });
   await server.listen();
   const url = server.resolvedUrls!.local[0];
   const browser = await chromium.launch({ executablePath: chrome, args: [

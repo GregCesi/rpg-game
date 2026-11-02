@@ -172,3 +172,161 @@ Dans l'ordre où je les ferais ; chacun sur sa branche, commité, `npm run build
 À trancher avec Grégoire : le rocher (travail au coup, ou « à venir ») ; le contenu mort (garder avec une fiche, ou retirer) ; la
 branche `maquette` (archive ou suppression) ; le prix d'une attaque (au joule comme le travail, ou à part, voulu) ; la force qui
 multiplie aussi porter et rouler sans plafond.
+
+## Normalisation (complément du 2 novembre 2026, sur papier)
+
+La question de Grégoire : chaque objet sait-il faire ce que ses données disent, et le comportement vient-il de ses données, jamais
+de son nom ? Le tableau se tire des données : `npm run capacites` (tools/capacites.ts) écrit `docs/CAPACITES.md`. Ses colonnes :
+portable (mains), tas (et compteur), outil (pour quel travail), arme, cible, travail (sa matière, ses étapes), bois (se coupe, se fend,
+s'équarrit), transformé, vues, fiche, masse, dimensions, âge du bois, métier.
+
+**108 objets** (75 du monde, 31 possédables, 2 diamètres de la pièce de bois ; après le ménage du chantier 5), **99 cases suspectes** :
+métier 49, fiche 33, dimensions 8, vues 3, âge 3, outil 2, travail 1.
+
+### Les cases vides suspectes, avec leur correction
+
+| Trou | Objets | Correction proposée |
+| --- | --- | --- |
+| **Sans fiche** (33) | les arbres et souches (`big-tree`, `big-tree-stump`, `normal-felled-tree`), le rocher et ses éclats, le buisson, le billot (et avec le rouleau), le tas de bois, la chaumière, les meubles (âtre, établis, poêle, lit, paillasse, sac, jarre, caisse, botte de foin, coffre, table, tabouret), les lumières (lanterne, torche, bougie, `sunpatch`), le puits, la sablière de côté, la porte charretière ouverte, la pioche, la pierre, le minerai | des fiches de groupe (meubles, lumières, végétation) qui nomment leurs clés ; `big-tree.md`, `chopping-block.md`, `rock.md`, `pickaxe.md` à part |
+| **Sans métier** (49) | tout ce qui n'a pas de `trade` : les arbres, le rocher, les meubles, les lumières, la pierre, le minerai, la pioche, les `-ground` des outils | `trade` pour tout objet fabriqué (CONCEPTION « Les matières ») ; pour le naturel, un `trade` « nature » ou l'absence permise par une règle écrite (le naturel n'a pas de métier) |
+| **Image au sol sans dimensions** (8) | branche, lien, piquet, cognée, masse, coin, hachette, doloire | reporter les `dims` des fiches dans items.json (le gabarit les contrôle alors à 2 px près) |
+| **Pas d'image au sol** (3) | pierre, minerai de fer, pioche | leur image au sol et leurs vues (pixel-artist), ou un refus de la pose au sol |
+| **Bois sans âge** (3) | seau, seau d'eau, maillet (métier menuisier, masse saisie : la règle de l'âge ne voit que la masse) | une matière déclarée pour tout objet de bois (`mass: {matter: "wood"}` ou un champ `matter`), et la règle de l'âge sur la matière |
+| **Outil invisible** (1) | la pioche : ses données de coup existent (le rocher au coup), pas sa planche en main `tool-pickaxe` | ses cinq dessins en main (pixel-artist, art/items/held.ts) |
+| **Outil sans données de coup** (1) | le coin : il « travaille » au fendage, mais on ne frappe pas avec | rien à changer : la règle doit savoir qu'un outil peut servir sans frapper (`work` exigé seulement pour ce qui frappe) |
+| **Récolte à l'outil à prix fixe** (1) | le billot qui porte le rouleau (couper un lien, `cutTie`) | le lien coupé au coup, avec une matière (une corde de 2 cm) ; ou l'écrire comme geste sans matière voulu |
+
+### Les comportements codés pour un nom d'objet
+
+| Où | Ce qui est codé | Correction proposée |
+| --- | --- | --- |
+| `src/build/catalog.ts:38-56` | la famille du catalogue tirée de la clé par des expressions (`/door\|gable\|board-wall/`, `/tree\|pollard\|bush\|stump/`, `/rock\|stone-chips/`, `/rope\|faggot\|hay\|thatch\|straw/`, `key === 'cottage'`) | une `family` dans props.json et items.json ; validate.ts vérifie qu'elle est une famille du catalogue |
+| `src/world/walls.ts:36,618,981` | les éclats des murs sont l'image `stone-chips`, nommée | `wall.chips` de props.json (le bouche-trou de chaque mur) |
+| `src/world/interiorView.ts:96`, `src/systems/daylight.ts:27` | la tache de soleil est la texture `sunpatch`, reconnue par son nom | un objet de lumière déclaré (`light.sun` dans props.json), ou une constante de config.ts ; et l'exclure du catalogue (`CATALOG_EXCLUDED`) |
+| `src/content/types.ts:87` | les éclats d'impact : trois matières en dur (`wood`, `stone`, `leaves`) | l'impact tiré de matters.json (une matière a sa planche `fx-<matière>`) ; une nouvelle matière ne touche pas au schéma |
+| `src/scenes/WorldScene.ts:639-656` | « mains vides » décidé par `kind === 'resource'` | la capacité : ce qui a `work` ou `weapon` frappe, le reste non |
+| `art/world/felling.ts:218-260`, `art/world/work-stages.ts:222`, `tools/lib/trees-preview.ts:38` | les trois arbres décrits en code (`NORMAL`, `BIG`, `POLLARD` : leur corps, leur pied, la rangée de coupe ; la liste des arbres à dessiner ; `KINDS`) | voir « Un nouvel arbre » ci-dessous |
+| `src/dieu/panel.ts:359` | « 4 dalles » : un outil de test nommé | acceptable (?dieu) ; ou une liste de fournitures dans les données de ?dieu |
+
+Propre (vérifié) : le moteur ne nomme aucun arbre, aucun outil ni aucune arme ; la pièce de bois est une seule clé (`WOOD_PIECE`),
+voulue ; la main nue est `fist`, réservée par validate.ts.
+
+### Le principe proposé
+
+**Les capacités sont déclarées dans les données ; le comportement vient de la capacité, jamais du nom de l'objet.** Une capacité est
+un champ de props.json ou d'items.json (`take`, `pile`, `work`, `weapon`, `target`, `harvest`, `swing`, `wall`, `light`, `family`,
+`trade`, la matière). Le code lit le champ ; il ne teste jamais une clé ni une partie de clé. validate.ts vérifie la cohérence :
+
+- un objet qui a des données d'arme se manie (une planche `weapon-<clé>`, une famille de combat.json), et une arme a sa fiche avec son tableau ;
+- un objet qui a des données de coup (`work`) a sa planche en main `tool-<clé>` et sert à un travail (une récolte, le bois, une transformation) ;
+- tout objet qui s'empile a son genre de tas (piles.json, ou le tas calculé du bois) et son compteur (`count`), et l'objet nomme ce genre (`pile`) ;
+- tout objet qui se prend a une masse, et tout objet posé au sol a son image au sol et ses `dims` ;
+- tout objet de bois (par sa matière, pas par sa masse) a ses trois âges, sauf le bois brut de RAW_WOOD ;
+- tout objet fabriqué a son métier ; tout objet a une famille du catalogue et une fiche (la sienne, ou une fiche de groupe qui le nomme) ;
+- aucune clé de contenu écrite en dur dans `src/` hors des listes de validate.ts (un test qui cherche les chaînes de clés dans le code).
+
+### Les recettes, une par sorte d'objet
+
+**Un nouvel outil (une nouvelle hache).**
+1. Données : items.json, l'entrée de l'outil.
+   - `name`, `icon` `item-<clé>`, `ground` `<clé>-ground`, `views: "four"`, `lying` ;
+   - `kind: "tool"`, `hands`, `hold` (`stance`, `image` `held-<clé>`) ;
+   - `mass`, `trade`, `dims` ;
+   - `work` : `length`, `grip`, `balance`, `edge`, `aim`, et `strokes` s'il a un coup propre.
+2. Données : où il travaille.
+   - `harvest.tool` ou `harvest.also` d'une récolte (props.json), ou un outil de wood.json ;
+   - un objet `<clé>-ground` dans props.json pour le poser dans Tiled.
+3. Dessins (pixel-artist) :
+   - l'icône, l'image au sol et ses vues `-r1` à `-r3` ;
+   - la planche portée `held-<clé>` (vues `down`, `up`, `right`) et ses points dans hold.json ;
+   - les cinq dessins en main en zones de matière (art/items/held.ts, `heldToolSheet`), déclarés dans art/index.ts.
+4. Fiche : docs/objets/<clé>.md, avec sa rubrique « Travail ».
+5. Tests et contrôles :
+   - `npm run check` (durées de chaque travail) ;
+   - un point de calage dans work.json s'il le faut ;
+   - `npm run art:preview` (`.art-preview/arbres.png` pour le geste).
+
+**Une nouvelle arme (une nouvelle épée).**
+1. Données : items.json, l'entrée de l'arme.
+   - `weapon` : `length`, `grip`, `balance`, `efficiency`, `family`, `image` `weapon-<clé>` ;
+   - `mass`, `hands`, `hold`, l'icône, l'image au sol ;
+   - une famille nouvelle ou une posture nouvelle : une entrée de combat.json (`families`, `stances`, `attacks`, `sweeps`), pas de code.
+2. Dessins (pixel-artist) :
+   - **un seul dessin** couché vers l'est (art/items/weapons.ts), tiré en huit angles par art/lib/weapon.ts ;
+   - les traînées `fx-smear-<clé>-…` se tirent seules à sa longueur ;
+   - l'icône, l'image au sol et ses vues, la planche portée.
+3. Fiche : avec son tableau (portée, durée, dégâts, précision, prix au joule).
+4. Tests :
+   - l'ajouter à la liste des armes de tools/test-combat.ts (aujourd'hui `['branch', 'wooden-sword']` en dur : à tirer des données) ;
+   - les aperçus `npm run art:touche` (`.art-preview/carte-touche.png`) et `.art-preview/combat.png`.
+
+**Un nouvel arbre (demain).**
+
+*Ce qu'il faut aujourd'hui.* Pour une variante d'une sorte existante (comme le têtard des gros) :
+1. Dessins (pixel-artist) :
+   - l'arbre debout et sa souche ;
+   - ses étapes d'abattage, à droite et à gauche (`<image>-stage-1..7`, `<image>-left-stage-1..7`) ;
+   - ses deux planches de chute (droite, gauche : deux images de raccord, 10°, 45°, couché) ;
+   - l'arbre couché d'un seul tenant et ses étapes d'ébranchage ;
+   - les fichiers `art/world/<sorte>-*.ts`, déclarés dans art/index.ts et art/collection.ts.
+2. Du **code de dessin** :
+   - une description `Standing` dans art/world/felling.ts (son corps, son pied, la rangée de coupe) ;
+   - sa place dans la liste des arbres de art/world/work-stages.ts ;
+   - sa chute (la chute commune des gros, `Faller` de big-felled.ts, ou une chute à part comme normal-fall.ts) ;
+   - une ligne de `KINDS` (tools/lib/trees-preview.ts).
+3. Données :
+   - props.json, l'arbre debout : `harvest` avec `work.fell.diameter`, `stages`, `tool`, `fall` (image, `x`, `foot`, `left.x`), `becomes`, `at`, `spawns` ;
+   - props.json, la souche ;
+   - props.json, l'arbre couché : `harvest` avec `work.limbs`, `stages`, `becomes: "wood-piece"`, `wood` (diamètre et longueur sur la grille), `at` ;
+   - le diamètre dans wood.json s'il est nouveau ;
+   - sa fiche.
+4. Contrôles :
+   - `npm run check` (la durée de l'abattage) ;
+   - `npm run art:preview`, `.art-preview/arbres.png` : chaque étape, la chute sans saut, l'arbre couché posé ;
+   - une nouvelle sorte (un nouveau tronc) demande en plus son contrat de géométrie `<sorte>-geometry.ts` et une matière dans wood.ts.
+
+*Ce qui manque pour qu'un nouvel arbre ne soit plus que des données et des dessins :*
+1. Une **géométrie de l'arbre en données** : un fichier `trees.json`, ou un champ `tree` de l'arbre debout dans props.json. Il porte la hauteur, le diamètre du tronc, la colonne du pied, la rangée de coupe, le plancher de l'entaille et la hauteur du houppier. `Standing`, `KINDS` et la liste de work-stages.ts se tireraient alors de ces données, au lieu de trois descriptions écrites en code.
+2. **Les décalages de props.json calculés par le build**, pas recopiés à la main : `fall.x`, `foot`, `left.x`, `spawns`, `at`. Ils découlent de la géométrie et des dessins ; aujourd'hui, trees-preview.ts les recalcule seulement pour signaler un écart.
+3. **Une chute commune à toutes les sortes**, tirée de la géométrie (le raccord, 10°, 45°, couché), comme le `Faller` des gros. Le normal a aujourd'hui sa chute propre (normal-fall.ts).
+4. **Les étapes d'ébranchage et l'arbre couché tirés du dessin debout**, comme les étapes de l'entaille le sont déjà (`fellingStage`). Il ne resterait au pixel-artist que les dessins de base : l'arbre debout, sa souche, son houppier couché, et sa matière dans wood.ts.
+5. Un test qui passe sur **tous** les arbres de props.json (ceux qui ont `harvest.fall`) : les étapes, la chute sans saut, le côté de chute. Aujourd'hui test-etapes ne teste que le normal.
+
+**Une nouvelle matière.**
+- Données :
+  - matters.json (densité) ;
+  - pour une pierre, une roche de rocks.json (nom, couleur, rampe, densité, dureté, prix), et non une nouvelle clé ;
+  - la résistance au coup dans work.json `matter`, si elle se travaille ;
+  - ses transformations dans transforms.json (entrées, sorties, déchet, outils, poste, métier, geste) ;
+  - les objets qui en sont faits : `mass: {matter, fill}`.
+- Dessins (pixel-artist) :
+  - sa rampe dans art/palette.ts ;
+  - ses éclats `fx-<matière>` si elle est frappée.
+- Ce qui manque : l'enum `impact` de types.ts (voir plus haut).
+- Tests : `npm run check` (la sortie pèse moins que l'entrée), `npm run test:briques` pour les transformations.
+
+**Un nouveau meuble.**
+- Données : props.json.
+  - `name`, `gender`, `image`, `views: "four"` ;
+  - `dims` (réelles), `body`, `mass` (ou sa matière), `trade` ;
+  - `aged` s'il est de bois ;
+  - `swing` s'il s'ouvre, `layer` s'il est au sol.
+- Dessins (pixel-artist) :
+  - l'image et ses vues `-r1` à `-r3` dès sa création (les âges se tirent seuls) ;
+  - la face du dedans, s'il en a une (`-r2`, CONCEPTION « Les intérieurs »).
+- Fiche : la sienne, ou la fiche de groupe des meubles.
+- Ce qui manque : sa famille du catalogue se devine à sa clé (voir plus haut) ; il faut une `family`.
+- Tests : `npm run check` (gabarit, vues, âges, catalogue), `npm run test:interieur` s'il se pose dedans.
+
+**Un nouveau bâtiment.**
+- Ses pièces :
+  - celles du catalogue ; une pièce qui manque se crée selon sa chaîne (d'où elle vient, de quoi elle est faite), avec sa fiche et ses `dims` ;
+  - une poutre est la pièce de bois (`accepts.wood`), jamais un dessin propre.
+- Son plan :
+  - un plan du bac à sable, src/content/plans/<nom>.json, enregistré par le mode construction ;
+  - pour un chantier à monter pas à pas, un plan de plans.json (emprise, coins, `stake`, étapes, places).
+- Sa validation : un scénario `tools/test-<nom>.ts` qui le bâtit avec les seules pièces du catalogue et l'enregistre.
+  - le plan est écrit dans un dossier temporaire et comparé au plan commité (`PLANS_WRITE=1` le réécrit) ;
+  - son script `test:<nom>` dans package.json et son nom dans `SCENARIOS` (check.ts vérifie l'accord des deux).
+- Sur une carte : un rectangle `Plan` dans Tiled, jamais un bâtiment dessiné.
+- Doc : sa section dans CONCEPTION.
