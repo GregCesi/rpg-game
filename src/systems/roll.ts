@@ -105,7 +105,10 @@ export class RollSystem {
     const across = p.def.roll!.axis === 'ew' ? dir === 'up' || dir === 'down' : dir === 'left' || dir === 'right';
     if (!across) return m ? 'Il ne roule pas dans ce sens.' : 'Elle ne roule pas dans ce sens.';
     if (game.both || game.hands[0] || game.hands[1]) return "Pose d'abord ce que tu tiens.";
-    if (!player.strength.canRoll(propMass(p.type, p.length, undefined, p.wood))) return m ? 'Trop lourd, il ne bouge pas.' : 'Trop lourde, elle ne bouge pas.';
+    if (!player.strength.canRoll(propMass(p.type, p.length, undefined, p.wood))) {
+      const kg = Math.round(propMass(p.type, p.length, undefined, p.wood));
+      return `${m ? 'Trop lourd' : 'Trop lourde'} pour lui : ${m ? 'il' : 'elle'} ne bouge pas (${kg} kg, il en roule ${Math.round(player.strength.roll)}).`;
+    }
     if (player.stamina.empty) return EXHAUSTED;
     return undefined;
   }

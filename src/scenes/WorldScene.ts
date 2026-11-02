@@ -608,7 +608,7 @@ export class WorldScene extends Phaser.Scene {
       const heaviest = slots().sort((a, b) => heldMass(b.held) - heldMass(a.held))[0];
       this.handsSystem.layDown(this.player, heaviest.held);
       clearHeld(game, heaviest.slot);
-      this.notice('Trop lourd à porter : posé devant toi.');
+      this.notice('Trop lourd pour lui maintenant : posé devant toi.');
     }
   }
 
@@ -915,7 +915,7 @@ export class WorldScene extends Phaser.Scene {
   /** Prend un objet au sol dans une main libre (les deux s'il le demande). */
   private pickUp(g: PlacedGround): void {
     const kg = itemMass(g.item.item, undefined, g.item.natural);
-    if (!this.player.strength.canCarry(kg)) return this.notice('Trop lourd à porter.');
+    if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(undefined, kg, this.player.strength));
     if (!this.canLift(kg)) return this.effort.exhausted();
     // il garde le sens où il était couché : reposé, il le retrouve (R le tourne) ; et, naturel, sa forme et sa taille
     const what = { item: g.item.item, ...(g.item.view ? { view: g.item.view } : {}), ...(g.item.natural ? { natural: g.item.natural } : {}) };
@@ -1028,9 +1028,9 @@ export class WorldScene extends Phaser.Scene {
         if (!this.handsSystem.placeInFront(this.player, WOOD_PIECE, undefined, cmd.wood)) this.notice('Pas la place ici.');
         break;
       case 'pile': {
-        // un tas de bois : seulement d'une pièce qui va en tas (ni coupe, ni coin, pas plus de ce que porte Xéros)
+        // un tas de bois : seulement d'une pièce qui va en tas (ni coupe, ni coin, ni face entamée) ; sa masse ne compte pas
         if (cmd.wood && !pileWoodOf({ ...cmd.wood, axis: 'ew' })) {
-          this.notice('Trop lourde pour un tas : elle se pose seule.');
+          this.notice('Une pièce entamée ne va pas en tas : elle se pose seule.');
           break;
         }
         const n = this.handsSystem.pileInFront(this.player, cmd.wood ? { wood: cmd.wood } : { pile: cmd.pile! }, cmd.count, cmd.turned, cmd.tie);

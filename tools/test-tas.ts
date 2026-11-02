@@ -179,28 +179,44 @@ await playtest('tas', async ({ page, errors, load }) => {
       };
     }
 
-    // 3. plus de 70 kg : un rondin de 1,40 m (89 kg), porté avec la force doublée, posé contre son jumeau, reste seul
-    {
-      const lourd = { size: 'normal', shape: 'round', length: 140 };
-      out.heavyMass = Math.round(mass.woodMass({ ...lourd, axis: 'ew' }) * 10) / 10;
+    // 3. le monde ne limite pas, seul Xéros limite (Grégoire) : ce qu'il soulève, il l'empile. Un rondin de 1,40 m (89 kg), porté avec
+    // la force doublée, posé contre son jumeau : un tas de 2 ; un quartier de 2 m (107 kg), à la force maximale (×2,6, 182 kg) : un tas
+    // de 2 ; et à la force de Xéros (70 kg), le quartier ne se prend pas : « trop lourd pour lui », jamais « impossible »
+    for (const [name, lourd, force] of [
+      ['rondin', { size: 'normal', shape: 'round', length: 140 }, 2],
+      ['quartier', { size: 'big', shape: 'quarter', length: 200 }, 10],
+    ] as const) {
+      const hm = (out.heavyMass ??= {}) as Record<string, number>;
+      hm[name] = Math.round(mass.woodMass({ ...lourd, axis: 'ew' }) * 10) / 10;
       const [x, y] = find(60, 60);
       await standAt(x + 30, y, 'down');
       emit({ kind: 'wood', wood: { ...lourd, axis: 'ew' } });
       await sleep(200);
-      emit({ kind: 'force', multiplier: 2 });
+      emit({ kind: 'force', multiplier: force });
       await sleep(100);
       await give({ prop: 'wood-piece', wood: { ...lourd, axis: 'ew' } });
-      const b = woodProps(lourd)[0].box;
+      const b = woodProps(lourd).at(-1).box;
       await lookAt((b.left + b.right) / 2, b.bottom + (b.bottom - b.top) / 2 + 1);
       const n0 = notices.length;
       await press('KeyE');
-      out.heavy = { lone: woodProps(lourd).length, piles: piles().filter((p: any) => p.wood?.length === 140).length, notices: notices.slice(n0), both: gs.game.both };
+      const pile = piles().find((p: any) => p.wood?.length === lourd.length && p.wood?.shape === lourd.shape);
+      const hv = (out.heavy ??= {}) as Record<string, unknown>;
+      hv[name] = { pile: pile?.places.length ?? 0, counts: !!w().map.piles.find((p: any) => p.pile === pile)?.def.count, notices: notices.slice(n0), both: gs.game.both };
       emit({ kind: 'force', multiplier: 1 });
       await sleep(100);
-      // et ?dieu ne pose pas de tas d'une pièce trop lourde
-      emit({ kind: 'pile', wood: lourd, count: 3, turned: false, tie: false });
-      await sleep(150);
-      out.heavyDieu = { notice: notices.at(-1), piles: piles().filter((p: any) => p.wood?.length === 140).length };
+    }
+    // à la force de Xéros, le quartier de 2 m posé au sol ne se prend pas : trop lourd pour lui
+    {
+      const quart2 = { size: 'big', shape: 'quarter', length: 200 };
+      const [x, y] = find(60, 60);
+      await standAt(x + 30, y, 'down');
+      emit({ kind: 'wood', wood: { ...quart2, axis: 'ew' } });
+      await sleep(200);
+      const b = woodProps(quart2).at(-1).box;
+      await lookAt((b.left + b.right) / 2, b.bottom + (b.bottom - b.top) / 2 + 1);
+      const n0 = notices.length;
+      await press('KeyE');
+      out.tooHeavy = { notices: notices.slice(n0), both: gs.game.both };
     }
 
     // 4. la pose avec fantôme d'une dalle (objet du monde) et d'une hachette (objet possédable)
@@ -281,12 +297,15 @@ await playtest('tas', async ({ page, errors, load }) => {
   assert.equal(r.senses.turned, false);
   assert.deepEqual([...new Set(r.senses.images)], ['ew'], 'aucune pièce nord-sud dans un tas est-ouest');
   assert.equal(r.senses.both, null);
-  assert.ok(r.heavyMass > 70, `le rondin de 1,40 m pèse plus de 70 kg : ${r.heavyMass}`);
-  assert.equal(r.heavy.piles, 0, 'plus de 70 kg : pas de tas');
-  assert.equal(r.heavy.lone, 2, 'posé seul à côté de son jumeau');
-  assert.deepEqual(r.heavy.notices, []);
-  assert.equal(r.heavyDieu.piles, 0);
-  assert.equal(r.heavyDieu.notice, 'Trop lourde pour un tas : elle se pose seule.');
+  for (const name of ['rondin', 'quartier']) {
+    assert.ok(r.heavyMass[name] > 70, `le ${name} pèse plus de 70 kg : ${r.heavyMass[name]}`);
+    assert.equal(r.heavy[name].pile, 2, `${name} : avec la force, posé contre son jumeau, un tas de 2 (le monde ne limite pas)`);
+    assert.ok(r.heavy[name].counts, `${name} : le tas compte ses pièces`);
+    assert.deepEqual(r.heavy[name].notices, []);
+    assert.equal(r.heavy[name].both, null);
+  }
+  assert.match(r.tooHeavy.notices.join(' '), /Trop lourde? pour lui \(\d+ kg, il en porte 70\)/, `à la force de Xéros, trop lourd pour lui (${r.tooHeavy.notices})`);
+  assert.equal(r.tooHeavy.both, null, 'il ne le prend pas');
   assert.equal(r.stone.ghost, true, 'la pierre a son fantôme');
   assert.match(r.stone.key, /^slab(-b)?$/, 'le fantôme de la pierre est dans sa forme');
   assert.equal(r.stone.at, true, 'posée à la place de son fantôme');
@@ -325,5 +344,5 @@ await playtest('tas', async ({ page, errors, load }) => {
   assert.equal(after.shown, r.piles.reduce((n: number, p: string) => n + Number(p.split(':').at(-1)), 0), 'chaque pièce est affichée');
   assert.equal(after.stone, true, 'la pierre aussi');
   assert.equal(after.tool, true, 'et la hachette');
-  console.log('  ✓ tas : rondins, quartiers en triangles et poutres en tas, refus de mélanger et du trop lourd, pierre et hachette posées à leur fantôme, tout retrouvé après rechargement');
+  console.log('  ✓ tas : rondins, quartiers en triangles et poutres en tas, refus de mélanger, le lourd empilé avec la force (trop lourd pour lui sans), pierre et hachette posées à leur fantôme, tout retrouvé après rechargement');
 });

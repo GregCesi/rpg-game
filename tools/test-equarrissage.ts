@@ -352,7 +352,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.cutNotice, 'Coupé : 3 m et 2,8 m.');
   assert.ok(Math.abs(r.cutCost - r.cutExpect) < 0.05, `la coupe coûte ses coups de cognée : ${r.cutExpect} points (${r.cutCost})`);
   assert.equal(r.threeMass, 191, 'le rondin de 3 m pèse 191 kg');
-  assert.equal(r.restNotice, 'Trop lourd à porter. Pousse-le pour le faire rouler.', 'le rondin de 2,8 m (178 kg) se roule');
+  assert.match(r.restNotice, /^Trop lourd pour lui \(\d+ kg, il en porte 70\)\. Pousse-le pour le faire rouler\.$/, `le rondin de 2,8 m se roule : trop lourd pour lui (${r.restNotice})`);
   assert.equal(r.restLabel, '1,8 m | 1 m', 'la coupe du poteau bas : 1,8 m et une bille de 1 m');
   assert.deepEqual(r.pieces2, [100, 180, 300], 'le tronc donne 3 m, 1,8 m et 1 m, sans chute');
   assert.ok(r.rolled >= 3, `le rondin de 3 m roule vers le sud : ${r.rolled} px`);
@@ -382,7 +382,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.shortBeamKg, 64.8, 'celle de 1,80 m, 65 kg (elle se porte)');
   assert.equal(r.beamRollNotice, 'Elle ne roule pas : elle est carrée.');
   assert.equal(r.beamMoved, 0, 'la poutre ne bouge pas');
-  assert.equal(r.beamTakeNotice, 'Trop lourde à porter.', 'la poutre de 3 m ne se porte pas');
+  assert.match(r.beamTakeNotice, /^Trop lourde pour lui \(\d+ kg, il en porte 70\)\.$/, `la poutre de 3 m : trop lourde pour lui (${r.beamTakeNotice})`);
   assert.equal(r.billeMass, 63.6, 'la bille de 1 m pèse 64 kg');
   assert.match(r.billeHeld, /"prop":"wood-piece","wood":\{"size":"normal","length":100/, 'la bille se porte');
   assert.equal(r.billePile, 0, 'posée seule : pas de tas sans une pièce identique à côté');
