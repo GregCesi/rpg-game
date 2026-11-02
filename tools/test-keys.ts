@@ -11,6 +11,7 @@ import { items, piles, props } from '../src/content';
 
 /** Les mots qui sont une clé de contenu et le nom d'autre chose, avec ce qu'ils nomment dans le code. */
 const ALLOWED: Record<string, string> = {
+  bench: 'le poste « établi » des transformations (StationSchema de types.ts), pas l’objet banc de la maison',
   maul: 'le genre de travail « fendre à la masse » (WoodWork, woodJob) et son coup de work.json, pas l’objet masse',
   stake: 'l’action « reprendre un piquet » (Action de GameMap), pas l’objet piquet',
   stone: 'la matière pierre (masse calculée, matière de work.json), pas l’objet pierre',

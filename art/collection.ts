@@ -69,4 +69,14 @@ export const families: Family[] = [
     icons: ['small-rough-stone', 'rough-stone', 'big-rough-stone', 'short-rubble-stone', 'rubble-stone', 'long-rubble-stone', 'slab', 'ashlar'].map((n) => `item-${n}`),
   },
   { title: 'Intérieur', ground: 'floor', keys: ['bed', 'pallet', 'sack', 'jar', 'worktable', 'workbench'] },
+  {
+    title: 'Maison de Xéros : murs et portes',
+    ground: 'grass',
+    keys: [
+      ...['staves', 'wattle', 'daub', 'lime'].flatMap((s) => [`${s}-panel`, `${s}-window-panel`, `${s}-jamb`, `${s}-inner-jamb`]),
+      'cottage-door', 'inner-door', 'narrow-sill-wall', 'threshold-stone',
+    ],
+  },
+  { title: 'Maison de Xéros : pignons et toit', ground: 'grass', keys: ['lime-gable', 'lime-gable-smoke', 'thatch-roof-frame', 'thatch-roof-half', 'thatch-roof', 'earth-ridge'] },
+  { title: 'Maison de Xéros : le dedans', ground: 'floor', keys: ['hearth', 'bench', 'bench-ns'], allFrames: ['hearth'] },
 ];
