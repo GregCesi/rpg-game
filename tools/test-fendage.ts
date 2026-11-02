@@ -12,6 +12,8 @@ await playtest('fendage', async ({ page, errors, load }) => {
   // Tout ce qui suit s'exécute dans la page : les touches sont de vrais KeyboardEvent sur window, lus par leur place.
   // Vite recharge parfois la page au premier lancement (dépendances optimisées) : le scénario est alors rejoué une fois
   const scenario = async () => {
+    // la partie commence dans la maison (START) : le fendage se fait dehors, sur la ferme, où la bille trouve sa place
+    await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
     return page.evaluate(async () => {
     const sleep = (t: number) => new Promise((r) => setTimeout(r, t));
     const g = (window as any).game;
