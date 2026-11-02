@@ -162,7 +162,7 @@ for (const [k, it] of Object.entries(items)) {
   if (it.kind === 'tool' && !it.work && !jobs) flag(row, k, 'outil', 'un outil qui ne travaille nulle part', 'son travail (une récolte, une transformation), ou le retirer');
   else if (jobs && !it.work && jobs.some((j) => !j.includes('à venir'))) flag(row, k, 'outil', 'travaille sans données de coup', '`work` dans items.json (le travail au coup)');
   if (it.work && !has(`tool-${k}`)) flag(row, k, 'outil', `données de coup, mais pas de planche en main \`tool-${k}\` : invisible pendant le geste`, 'ses cinq dessins en main (pixel-artist, art/items/held.ts)');
-  if (it.weapon && !has(it.weapon.image)) flag(row, k, 'arme', `arme sans sa planche \`${it.weapon.image}\``, 'son dessin couché vers l’est (pixel-artist)');
+  if (it.weapon && !has(it.weapon.image ?? `weapon-${k}`)) flag(row, k, 'arme', `arme sans sa planche \`${it.weapon.image}\``, 'son dessin couché vers l’est (pixel-artist)');
   if (it.pile && !pileOf.has(k)) flag(row, k, 'tas', `\`pile\` nomme '${it.pile}', qui ne prend pas cet objet`, 'le genre dans piles.json, ou retirer `pile`');
   if (pileOf.has(k) && !it.pile) flag(row, k, 'tas', 'un genre de tas le prend, mais l’objet ne le nomme pas (`pile`)', '`pile` dans items.json');
   if (row.fiche === '—') flag(row, k, 'fiche', 'pas de fiche', `docs/objets/${k}.md, ou une fiche de groupe`);
