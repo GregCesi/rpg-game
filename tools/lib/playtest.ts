@@ -92,13 +92,17 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
   const T0 = performance.now();
   const times: Record<string, number> = {};
   const lap = (k: string, since: number) => (times[k] = Math.round(performance.now() - since));
-  // les pauses fixes du scénario côté Node (setTimeout de plus de 30 ms), en somme
+  // les pauses fixes du scénario côté Node : les setTimeout de plus de 30 ms posés par le code du scénario (tools/test-…), comptés quand
+  // ils s'écoulent (ceux de Playwright, posés puis annulés, ne comptent pas)
   let nodeSleeps = 0;
   const realSetTimeout = globalThis.setTimeout;
   if (process.env.PLAYTEST_TIMES) {
     globalThis.setTimeout = ((fn: (...a: unknown[]) => void, ms?: number, ...rest: unknown[]) => {
-      if ((ms ?? 0) > 30) nodeSleeps += ms!;
-      return realSetTimeout(fn, ms, ...rest);
+      const mine = (ms ?? 0) > 30 && /tools\/test-/.test(new Error().stack ?? '');
+      return realSetTimeout((...a: unknown[]) => {
+        if (mine) nodeSleeps += ms!;
+        fn(...a);
+      }, ms, ...rest);
     }) as typeof setTimeout;
   }
   const chrome = findChrome();
@@ -128,7 +132,10 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     await page.addInitScript(`
       window.__sleeps = 0;
       const real = window.setTimeout;
-      window.setTimeout = (fn, ms, ...rest) => { if (ms > 30 && !fn.__until) window.__sleeps += ms; return real(fn, ms, ...rest); };
+      window.setTimeout = (fn, ms, ...rest) => {
+        if (!(ms > 30) || fn.__until || typeof fn !== 'function') return real(fn, ms, ...rest);
+        return real((...a) => { window.__sleeps += ms; fn(...a); }, ms, ...rest);
+      };
     `);
     // attendre un état, jamais un délai (CLAUDE.md) : `__until(cond, label)` attend que `cond()` soit vrai, image après image, et lève une
     // erreur nommée au bout d'une minute ; `__restart(command)` envoie une commande ?dieu qui redémarre la scène (`map`, `reset-map`) et
@@ -184,18 +191,38 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
         if (await page.evaluate(() => !!(window as any).game?.scene?.getScene?.('world')?.player).catch(() => false)) break;
         await new Promise((r) => realSetTimeout(r, 200));
       }
+      // le temps de jeu simulé : la somme des pas (les images, et les pas de plus de la vitesse de simulation), gardée d'un
+      // chargement à l'autre de la page par le test (PLAYTEST_TIMES)
+      if (process.env.PLAYTEST_TIMES) {
+        await page.evaluate(() => {
+          const g = (window as any).game;
+          (window as any).__sim ??= 0;
+          const loop = g.loop;
+          const cb = loop.callback;
+          loop.callback = (t: number, d: number) => ((window as any).__sim += d, cb(t, d));
+          const hs = g.headlessStep.bind(g);
+          g.headlessStep = (t: number, d: number) => ((window as any).__sim += d, hs(t, d));
+        });
+      }
       if (speed > 1) await setSpeed(speed);
     };
     t = performance.now();
     await load();
     lap('load', t);
     t = performance.now();
-    const game0 = await page.evaluate(() => (window as any).game?.scene?.getScene('world')?.time.now ?? 0).catch(() => 0);
+    // le temps de jeu d'avant le scénario, et celui des pages rechargées en route (le compteur de la page repart à zéro)
+    let sim = -(await page.evaluate(() => (window as any).__sim ?? 0).catch(() => 0));
+    page.on('framenavigated', async (f) => {
+      if (f === page.mainFrame()) sim += lastSim;
+    });
+    let lastSim = 0;
+    const poll = setInterval(async () => (lastSim = await page.evaluate(() => (window as any).__sim ?? 0).catch(() => lastSim)), 500);
     await body({ page, url, errors, load });
+    clearInterval(poll);
     lap('body', t);
     if (process.env.PLAYTEST_TIMES) {
-      const game1 = await page.evaluate(() => (window as any).game?.scene?.getScene('world')?.time.now ?? 0).catch(() => 0);
-      times.game = Math.round(Math.max(0, game1 - game0));
+      sim += await page.evaluate(() => (window as any).__sim ?? 0).catch(() => 0);
+      times.game = Math.round(Math.max(0, sim));
       times.pageSleeps = Math.round(await page.evaluate(() => (window as any).__sleeps ?? 0).catch(() => 0));
     }
   } catch (e) {
