@@ -163,14 +163,16 @@ await playtest('monde', async ({ page, errors, load }) => {
    * ses pieds libre à chaque pas) : devant la porte d'entrée de la maison (la sortie de l'intérieur, en cm), ou un point de la carte
    * (`to`, en px de la carte). Rend ses coins, en px de la carte.
    */
-  const routeTo = (to?: { x: number; y: number }): Promise<{ x: number; y: number }[]> =>
+  const routeTo = (to?: { x: number; y: number }): Promise<{ x: number; y: number; open?: string }[]> =>
     page.evaluate((to) => {
       const w = (window as any).game.scene.getScene('world');
       const m = w.map;
       const zone = w.interior?.exits[0]?.zone;
       const door = zone && { x: Math.round((zone.x + zone.w / 2) / 5), y: Math.round(zone.y / 5) - 6 };
       const S = 4;
-      const free = (x: number, y: number) => m.areaFree({ left: x - 5, top: y - 8, right: x + 5, bottom: y }, []);
+      // les portes fermées de la maison (les portes intérieures) ne barrent pas le chemin : Xéros les ouvre en route (E)
+      const doors = m.builds.filter((b: any) => b.zone && /door$/.test(b.piece.piece.prop ?? '')).map((b: any) => b.zone);
+      const free = (x: number, y: number) => m.areaFree({ left: x - 5, top: y - 8, right: x + 5, bottom: y }, [], doors);
       const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
       const goal = to
         ? (x: number, y: number) => Math.abs(x * S - to.x) <= S / 2 && Math.abs(y * S - to.y) <= S / 2
@@ -197,14 +199,34 @@ await playtest('monde', async ({ page, errors, load }) => {
         const [x, y] = k.split(',').map(Number);
         out.unshift({ x: x * S, y: y * S });
       }
-      // seulement les coins
-      return out.filter((_q, i) => i === 0 || i === out.length - 1 || (out[i - 1].x !== out[i + 1].x && out[i - 1].y !== out[i + 1].y));
-    }, to);
+      // seulement les coins, et, devant chaque porte fermée que le chemin traverse, un arrêt pour l'ouvrir (`open` : tourné vers elle)
+      const crosses = (q: { x: number; y: number }, z: any) => q.x + 5 > z.x - z.width / 2 && q.x - 5 < z.x + z.width / 2 && q.y > z.y - z.height / 2 && q.y - 8 < z.y + z.height / 2;
+      const stops = new Map<number, string>();
+      for (const z of doors) {
+        const i = out.findIndex((q) => crosses(q, z));
+        if (i < 1) continue;
+        const j = Math.max(0, i - 3);
+        const d = { x: out[i].x - out[i - 1].x, y: out[i].y - out[i - 1].y };
+        stops.set(j, d.x > 0 ? 'right' : d.x < 0 ? 'left' : d.y > 0 ? 'down' : 'up');
+      }
+      return out
+        .map((q, i) => ({ ...q, ...(stops.has(i) ? { open: stops.get(i) } : {}) }))
+        .filter((_q, i) => i === 0 || i === out.length - 1 || stops.has(i) || (out[i - 1].x !== out[i + 1].x && out[i - 1].y !== out[i + 1].y));
+    }, to) as Promise<{ x: number; y: number; open?: string }[]>;
   const route = await routeTo();
   assert.ok(route.length > 1, 'un chemin de son coin à la porte');
   for (const c of route.slice(1)) {
     const now = await where();
-    await goTo(c.x, c.y, Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y', 2);
+    const axis = Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y';
+    await goTo(c.x, c.y, axis, 2);
+    if (!c.open) continue;
+    // devant une porte intérieure fermée : tourné vers elle, il l'ouvre (E) ; elle ne barre plus le passage
+    // (une porte qui s'ouvre change de pièce : `swing`, ses deux états)
+    const doorsNow = () => page.evaluate(() => (window as any).game.scene.getScene('world').map.builds.map((b: any) => b.piece.piece.prop).filter((p: string) => /door/.test(p ?? '')).sort().join());
+    const before = await doorsNow();
+    await page.evaluate((f) => (window as any).game.scene.getScene('world').player.actor.face(f), c.open);
+    await page.keyboard.press('KeyE');
+    await until(async () => (await doorsNow()) !== before, 5000, `ouvrir la porte (${c.open})`);
   }
   // tourné vers la porte, il l'ouvre (E), puis passe vers le sud
   await page.evaluate(() => (window as any).game.scene.getScene('world').player.actor.face('down'));

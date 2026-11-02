@@ -884,6 +884,12 @@ vues ; le foyer est un meuble.
    - la mère garde sa place (le tabouret près du foyer) ;
    - le réveil de Xéros se fait sur sa paillasse ;
    - les sauvegardes qui nomment l'ancienne carte sont refusées proprement (`SAVE_VERSION`, `missingContent`).
+   **Fait** (2 novembre) : la ferme pose le plan `maison-xeros` (rectangle `Plan`) là où était la chaumière ; `maison.tmj` est retirée
+   (une sauvegarde qui la nomme est refusée par `missingContent`, sans changer `SAVE_VERSION` : le format de GameState n'a pas bougé).
+   Ce qui est dedans est un objet de la ferme marqué `inside` : le réveil et la paillasse au coin de Xéros, la mère assise sur le banc
+   (`pose: sit`, face au foyer), la planchette sur la table, la place `fagot` à l'ouest du foyer (`Place`, `accepts: faggot` ; la
+   quête du fagot s'en servira), le cagibi (billot et cognée, bûches, masse, coin, hachette, doloire, corde). `START` : `ferme`,
+   `reveil` ; la partie commence dans l'intérieur calculé. Les portes intérieures sont fermées au réveil : Xéros les ouvre (E).
 6. **Les tests** : `test:contrats` (les pièces nouvelles), `test:maison` (la maison bâtie, enregistrée), `test:interieur` (on y
    entre, la mère y est, la place du fagot accepte un fagot), `test:monde` (la ferme et la maison posée), la suite complète.
 ## Le monde ne limite pas, seul le personnage limite (règle de base, Grégoire, 2 novembre 2026)
