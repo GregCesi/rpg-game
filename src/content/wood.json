@@ -38,7 +38,7 @@
       "hew": "Trop fine pour une poutre.",
       "split": {
         "round": {"into": "half", "ew": [[0, -2], [0, 2]], "ns": [[-2, 0], [2, 0]]},
-        "half": {"into": "lath", "ew": [[0, -2], [0, 1]], "ns": [[-1, 0], [2, 0]]}
+        "half": {"into": "lath", "ew": [[0, -2], [0, 1]], "ns": [[-1, 0], [2, 0]], "waste": {"name": "le cœur et l'écorce, en éclats", "fate": "ils partent au feu"}}
       },
       "looks": {
         "round": {"name": "perche", "gender": "f", "icon": "item-wood-pole-round", "held": "held-wood-pole-round",

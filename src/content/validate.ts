@@ -4,11 +4,11 @@
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
-import { itemMass, naturalFactor, propMass, type MassCatalog } from './mass';
+import { itemMass, naturalFactor, propMass, woodMass, type MassCatalog } from './mass';
 import { ageableImages, crosswise, variantImage, viewImages } from './views';
 import { agedKey, framesOf, lookOf, WEDGE_FRAMES, woodSheets } from '../world/woodShape';
 import { formImage } from '../world/natural';
-import { partMass, partName } from '../world/transform';
+import { balance, partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
 import { openSides } from '../world/zones';
@@ -793,6 +793,13 @@ function validateWood(c: Content, cat: Catalog): string[] {
       for (const [look, rule] of Object.entries(size.split)) {
         if (!size.looks[look as WoodLook]) err(`${at} : 'split' d'un aspect '${look}' qu'il n'a pas`);
         if (!size.looks[rule.into]) err(`${at} : 'split.${look}' devient '${rule.into}', un aspect qu'il n'a pas`);
+        // la matière se conserve : deux morceaux qui pèsent moins que la pièce disent ce que la fente retire (`waste`)
+        else {
+          const piece = { size: key, shape: look as 'round' | 'half', length: 100, axis: 'ew' as const };
+          const lost = woodMass(piece) - 2 * woodMass({ ...piece, shape: rule.into });
+          if (lost > 1e-6 && !rule.waste) err(`${at} : fendre '${look}' en deux '${rule.into}' perd ${lost.toFixed(2)} kg par mètre sans le nommer ('waste') : la matière se conserve`);
+          if (lost < -1e-6) err(`${at} : fendre '${look}' en deux '${rule.into}' crée ${(-lost).toFixed(2)} kg par mètre`);
+        }
         for (const part of ['start', 'end']) want(`wedge-${look}-${part}`, WEDGE_FRAMES);
         for (const part of ['start', 'mid', 'end']) {
           want(`crack-${look}-${part}`, 1);
@@ -1193,6 +1200,9 @@ function validateTransforms(c: Content): string[] {
         const names = (parts: typeof t.inputs) => parts.map((p) => partName(p, c)).join(' + ');
         err(`la sortie (${names(t.outputs)}, jusqu'à ${Math.round(output * 10) / 10} kg) pèse plus que l'entrée (${names(t.inputs)}, dès ${Math.round(input * 10) / 10} kg) : tailler retire de la matière`);
       }
+      // la matière se conserve (CONCEPTION « Le monde ne limite pas ») : ce qui se perd est un déchet nommé, sinon rien ne se perd
+      const { waste } = balance(t, cat);
+      if (!t.waste && Math.abs(waste) > 1e-6) err(`la sortie pèse ${Math.round(waste * 1000) / 1000} kg de moins que l'entrée, sans déchet ('waste') : la matière se conserve, nommer ce qui part`);
     } catch (e) {
       err((e as Error).message);
     }

@@ -68,6 +68,8 @@ const SpawnedSchema = z.strictObject({
   wood: WoodPieceSchema.optional(),
   /** Sa forme et sa taille, s'il est d'une matière naturelle. */
   natural,
+  /** Un fagot posé seul : son nombre de branches (absent : le fagot plein), que le dénouer rend exactement. */
+  bundle: z.number().int().min(1).optional(),
 });
 
 /** Un objet possédable posé au sol : (x, y) = son point au sol ; `view` : sa vue (le sens où il est couché). */
@@ -397,11 +399,12 @@ export interface SpawnOpts {
   length?: number;
   wood?: WoodPiece;
   natural?: Natural;
+  bundle?: number;
 }
 
 /** Fait naître un objet sur une carte ; renvoie ce qui a été noté. */
 export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, opts: SpawnOpts = {}): Spawned {
-  const { flip, length, wood, natural: nat } = opts;
+  const { flip, length, wood, natural: nat, bundle } = opts;
   const o = {
     id: s.nextSpawnId++,
     type,
@@ -411,6 +414,7 @@ export function spawnObject(s: GameState, mapId: string, type: string, x: number
     ...(length !== undefined ? { length } : {}),
     ...(wood ? { wood: structuredClone(wood) } : {}),
     ...(nat ? { natural: { ...nat } } : {}),
+    ...(bundle ? { bundle } : {}),
   };
   mapState(s, mapId).spawned.push(o);
   revision++;
@@ -475,6 +479,8 @@ export function addPile(s: GameState, mapId: string, pile: Omit<Pile, 'id'>): Pi
     id: s.nextPileId++,
     ...(pile.pile ? { pile: pile.pile } : {}),
     ...(pile.wood ? { wood: { ...pile.wood } } : {}),
+    // un tas de fagots : le nombre de branches de ses fagots (la matière se conserve : le dénouer les rend toutes)
+    ...(pile.bundle ? { bundle: pile.bundle } : {}),
     x: pile.x,
     y: pile.y,
     places: [...pile.places],

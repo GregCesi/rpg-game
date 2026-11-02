@@ -917,6 +917,15 @@ jamais « impossible ».
 - **Décidé par Grégoire, fait** : un fagot se noue à partir de 2 branches ; sa taille, sa masse et son dessin suivent son nombre de
   branches (`bundle` du tas de fagots et du fagot tenu ; images `faggot-n<n>`, de 2 à 12 ; dénoué, il rend autant de branches) ; la
   quête en demandera 10, ce n'est pas une règle du fagot. Des fagots de nombres différents ne s'empilent pas ensemble.
+- **La matière se conserve** (règle de Grégoire, 2 novembre 2026, après un bug : un tas de 2 branches noué donnait un fagot de 10, qui
+  rendait 10 branches) : nouer, dénouer, empiler, reprendre d'un tas, fendre, couper, transformer ne créent jamais de matière ; la masse
+  totale (et le nombre de pièces quand il a un sens) est la même avant et après, sauf ce qu'un travail retire et nomme : le déchet
+  (`waste`) d'une transformation (transforms.json) ou d'une fente (`split` de wood.json : les lattes tirées de la demi-perche laissent
+  le cœur et l'écorce). Le fagot garde son nombre partout : en tas (`bundle` du tas), tenu, posé seul (`bundle` d'un objet né),
+  sauvegardé (`SAVE_VERSION` 26). `validate.ts` refuse une transformation ou une fente qui perd de la matière sans la nommer ;
+  `tools/test-matiere.ts` (dans `npm run test:fast`) vérifie chaque transformation, chaque genre de tas, chaque fente, chaque coupe de
+  la grille et le fagot de 2 à 12 branches ; `npm run test:noeud` noue, prend, pose seul, dénoue en jeu chaque fagot jusqu'au tas plein,
+  et relit un fagot posé seul après rechargement.
 
 ## Poids et force (décidé le 30 octobre 2026)
 

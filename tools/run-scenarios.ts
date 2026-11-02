@@ -14,7 +14,7 @@ import { readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** Les scénarios, les plus longs d'abord (pour finir plus tôt quand ils tournent à plusieurs). */
-export const SCENARIOS = ['maison', 'monde', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective'];
+export const SCENARIOS = ['maison', 'monde', 'noeud', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective'];
 
 /**
  * Ceux qui tournent seuls, après les autres : ils effacent un fichier que tous lisent au démarrage (construction écrit puis efface

@@ -402,11 +402,16 @@ const WoodLookDefSchema = z.strictObject({
   up: WoodUpSchema.optional(),
 });
 
-/** Fendre un aspect : ce qu'il devient (`into`, deux pièces), et le coin bas gauche de chacune par rapport à la pièce fendue, par sens. */
+/**
+ * Fendre un aspect : ce qu'il devient (`into`, deux pièces), et le coin bas gauche de chacune par rapport à la pièce fendue, par sens ;
+ * `waste` : ce que le travail retire, si les deux pièces pèsent moins que la pièce (la matière se conserve : ce qui part est nommé,
+ * comme le déchet d'une transformation ; validate.ts le vérifie).
+ */
 const WoodSplitSchema = z.strictObject({
   into: z.enum(['half', 'quarter', 'lath']),
   ew: z.tuple([z.tuple([px, px]), z.tuple([px, px])]),
   ns: z.tuple([z.tuple([px, px]), z.tuple([px, px])]),
+  waste: z.strictObject({ name: id, fate: id }).optional(),
 });
 
 /**

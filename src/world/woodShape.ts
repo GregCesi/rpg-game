@@ -241,6 +241,15 @@ export function splitPieces(piece: WoodPiece): { piece: WoodPiece; dx: number; d
   return rule[axis].map(([dx, dy]) => ({ piece: { ...into }, dx, dy }));
 }
 
+/**
+ * Les deux morceaux d'une pièce coupée à `at` cm de son début : mêmes réglages, l'encoche en moins ; leurs longueurs font la longueur
+ * de la pièce (la scie ne prend pas de matière à cette échelle : la matière se conserve).
+ */
+export function cutWood(piece: WoodPiece, at: number): [WoodPiece, WoodPiece] {
+  const { notch: _n, ...rest } = piece;
+  return [{ ...rest, length: at }, { ...rest, length: rest.length - at }];
+}
+
 /** L'aspect tel qu'il est dessiné dans la planche : le quartier pointe en bas a ses parties à lui (`quarter-down`). */
 function drawnLook(piece: WoodPiece): string {
   const look = lookOf(piece);

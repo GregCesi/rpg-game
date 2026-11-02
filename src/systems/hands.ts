@@ -117,7 +117,7 @@ export class HandsSystem {
     const length = p.def.length ? { length: p.length ?? p.def.length.start } : {};
     const what: Held = p.wood
       ? { prop: p.type, wood: structuredClone(p.wood) }
-      : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length, ...(p.natural ? { natural: { ...p.natural } } : {}) };
+      : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length, ...(p.natural ? { natural: { ...p.natural } } : {}), ...(p.bundle ? { bundle: p.bundle } : {}) };
     if (!take(game, what, p.def.take!.hands)) return false;
     const mapId = this.map.def.id;
     if (p.spawned) changeSpawned(game, mapId, p.id, { x: p.x, y: p.y });
@@ -380,7 +380,7 @@ export class HandsSystem {
     const out: { lone: Lone; x: number; y: number; turned: boolean }[] = [];
     for (const p of this.map.props) {
       if (!p.def.take || !p.image.visible) continue;
-      const k = pileOf(p.wood ? { prop: p.type, wood: p.wood } : { prop: p.type });
+      const k = pileOf(p.wood ? { prop: p.type, wood: p.wood } : { prop: p.type, ...(p.bundle ? { bundle: p.bundle } : {}) });
       if (k && sameKind(k, kind)) out.push({ lone: { prop: p }, x: p.x, y: p.y, turned: p.wood?.axis === 'ns' });
     }
     for (const g of this.map.ground) {
@@ -420,8 +420,8 @@ export class HandsSystem {
     } else if ('item' in what) {
       this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view, what.natural));
     } else {
-      const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood, natural: what.natural });
-      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural });
+      const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle });
+      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle });
     }
   }
 

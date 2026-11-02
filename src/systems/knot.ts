@@ -74,7 +74,7 @@ export class KnotSystem {
   /** Dénoue un fagot posé hors d'un tas (outils de test) : il quitte la carte, le tas plein de branches prend sa place. */
   private untieProp(prop: PlacedProp): string | undefined {
     const box = prop.box ?? { left: prop.baseX, right: prop.baseX, top: prop.baseY, bottom: prop.baseY };
-    return this.untie((box.left + box.right) / 2, (box.top + box.bottom) / 2, bundleOf(prop.type)!, false, undefined, prop);
+    return this.untie((box.left + box.right) / 2, (box.top + box.bottom) / 2, bundleOf(prop.type)!, false, undefined, prop, prop.bundle);
   }
 
   /**

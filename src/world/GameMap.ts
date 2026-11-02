@@ -3,7 +3,7 @@ import { DEPTH, GLOW, SHADOW, TILE } from '../config';
 import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
-import { drawOrder, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
+import { bundleImage, bundleOfKind, drawOrder, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
 import { formImage, naturalGround, stableNatural } from './natural';
 import type { GroundItem, Joint, MapState, Pile, WorldChange } from '../state';
 import { tilesets } from '../generated/assets';
@@ -173,6 +173,8 @@ export interface PlacedProp {
   wood?: WoodPiece;
   /** Matière naturelle (la dalle) : sa forme et sa taille (GameState, ou tirées de son identifiant Tiled). */
   natural?: Natural;
+  /** Un fagot posé seul : son nombre de branches (absent : le fagot plein). */
+  bundle?: number;
 }
 
 /** Une pièce posée en mode construction, affichée : son état (GameState), son image, sa collision si elle bloque. */
@@ -316,7 +318,7 @@ export class GameMap {
       if (!c) this.placeProp(o);
       else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length, wood: c.wood, natural: c.natural });
     }
-    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, length: o.length, wood: o.wood, natural: o.natural });
+    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, length: o.length, wood: o.wood, natural: o.natural, bundle: o.bundle });
     for (const g of changes.ground) this.placeGround(g);
     for (const pile of changes.piles) this.placePile(pile);
     for (const p of shell?.pieces ?? []) this.placeBuild(p, true);
@@ -514,7 +516,7 @@ export class GameMap {
    * (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds).
    * `flip` : version couchée vers la gauche (image `-left`) ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
    */
-  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; length?: number; wood?: WoodPiece; open?: boolean; natural?: Natural } = {}): PlacedProp {
+  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; length?: number; wood?: WoodPiece; open?: boolean; natural?: Natural; bundle?: number } = {}): PlacedProp {
     const scene = this.scene;
     const base = propDefs[o.type];
     // la pièce de bois : sa définition et son image assemblée tirées de ses réglages (GameState, Tiled, sinon props.json) ; jamais retournée
@@ -525,7 +527,10 @@ export class GameMap {
     // une matière naturelle : sa forme et sa taille, ou, posée dans Tiled et jamais bougée, celles que donne son identifiant
     const natural = p.natural ? (opts.natural ?? (opts.spawned ? undefined : stableNatural(p.natural, o.id))) : undefined;
     // un objet de bois travaillé posé dans Tiled à son âge (le panneau, vieux)
-    const image = flip ? `${p.image}-left` : agedKey(formImage(p.image, natural), p.aged ? o.age : undefined);
+    // un fagot posé seul : le dessin de son nombre de branches (`<image>-n<n>`)
+    const bundle = opts.bundle && opts.bundle !== bundleOfKind({ pile: p.take?.pile ?? '' }) ? opts.bundle : undefined;
+    const drawn = bundle ? bundleImage(p.image, bundle) : p.image;
+    const image = flip ? `${drawn}-left` : agedKey(formImage(drawn, natural), p.aged ? o.age : undefined);
     const obj = wood
       ? scene.add.image(o.x, ay, woodTexture(scene, wood, { open: opts.open }), '0')
       : p.anim
@@ -579,6 +584,7 @@ export class GameMap {
       length: opts.length ?? startLength(p),
       wood,
       ...(natural ? { natural } : {}),
+      ...(bundle ? { bundle } : {}),
     };
     this.props.push(placed);
     this.rollFrame(placed);

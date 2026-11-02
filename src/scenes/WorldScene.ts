@@ -460,14 +460,15 @@ export class WorldScene extends Phaser.Scene {
     } else if (a.kind === 'take') {
       if (a.prop.wood?.notch) return this.notice("Finis d'abord la coupe.");
       if (a.prop.wood?.wedge) return this.notice('Le coin est planté : finis de la fendre.');
-      const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.wood, a.prop.natural);
+      const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.wood, a.prop.natural, a.prop.bundle);
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(a.prop.def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();
       if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'pile') {
       const piece = a.pile.def.piece;
-      const kg = pieceMass(piece);
+      // un fagot du tas : la masse de son nombre de branches
+      const kg = 'prop' in piece && a.pile.pile.bundle ? propMass(piece.prop, undefined, undefined, undefined, undefined, a.pile.pile.bundle) : pieceMass(piece);
       const def = 'wood' in piece ? defOf(WOOD_PIECE, { ...piece.wood, axis: 'ew' }) : 'prop' in piece ? props[piece.prop] : undefined;
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();
