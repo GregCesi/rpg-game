@@ -455,7 +455,6 @@ export const VIEWS_TODO: Record<string, string> = {
   chest: 'meuble : au chantier de la maison',
   table: 'meuble : au chantier de la maison',
   crate: 'meuble : au chantier de la maison',
-  workbench: 'meuble : au chantier de la maison',
   worktable: 'meuble : au chantier de la maison',
   'hay-bale': 'meuble : au chantier de la maison',
   stove: 'meuble : au chantier de la maison',

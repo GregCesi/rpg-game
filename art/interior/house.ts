@@ -322,34 +322,85 @@ function worktable(): Canvas {
 }
 
 /**
- * Établi de la mère : grosse planche sur quatre pieds, gouge, maillet, une figurine commencée, copeaux
- * (320 × 70 × 85 cm). Gabarit : 64 × (17 + 7) = 64 × 24 px. Dessus de 7 rangées (70 cm × ½), chant de la planche,
- * pieds de 15 cm et traverse ; au sol, sous la planche, son ombre et des copeaux. Image 66 × 26.
+ * Établi de la mère, sculptrice : grosse planche de deux madriers sur quatre pieds, gouge, maillet, une figurine commencée,
+ * copeaux (320 × 70 × 85 cm). Quatre vues (`views: "four"`), un quart de tour de plus dans le sens des aiguilles d'une montre
+ * à chaque fois : 0, le côté où elle travaille au sud ; 1, ce côté à l'ouest (l'établi nord-sud, posé contre un mur est) ;
+ * 2, de dos ; 3, ce côté à l'est. Un seul modèle : ce qui est posé sur le dessus a sa place sur la planche (`u` le long, de
+ * l'ouest à l'est de la vue 0 ; `s` en travers, du dos au côté de travail), projetée dans chaque vue ; le bois travaillé dans
+ * la rampe `woodAges` (le build tire le patiné et le vieux), contour K et o.
+ *
+ * Gabarit. Long (vues 0 et 2) : 64 × (17 + 7) = 64 × 24 px, image 66 × 26 ; dessus de 7 rangées (70 cm × ½), chant de la
+ * planche (10 cm), pieds de 15 cm sur 70 cm, traverse. Bout (vues 1 et 3) : 14 × (17 + 32) = 14 × 49 px, image 16 × 51 ;
+ * dessus de 32 rangées (320 cm × ½), le bois de bout des deux madriers, les deux pieds du bout et leur entretoise. Sous la
+ * planche, le sol dans son ombre et des copeaux tombés ; l'ombre portée dessous.
  */
-function workbench(): Canvas {
-  const c = new Canvas(66, 26);
-  // pieds (avant ; ceux de l'arrière sont cachés derrière) et traverse
-  c.rect(2, 9, 3, 14, 'm').rect(2, 9, 1, 14, 'M').rect(4, 9, 1, 14, 'N');
-  c.rect(59, 9, 3, 14, 'm').rect(59, 9, 1, 14, 'M').rect(61, 9, 1, 14, 'N');
-  c.rect(5, 16, 54, 2, 'm').rect(5, 17, 54, 1, 'N');
-  // dessus de la planche : bois clair, un joint, éclairé au nord
-  c.rect(1, 1, 62, 6, 'M').rect(1, 1, 62, 1, 'Y').rect(1, 4, 62, 1, 'm');
-  // chant de la planche, face sud
-  c.rect(1, 7, 62, 1, 'm').rect(1, 8, 62, 1, 'N');
-  // gouge : fer et manche
-  c.rect(7, 3, 4, 1, 'R').rect(11, 2, 5, 2, 'N').rect(11, 2, 5, 1, 'm');
-  // maillet couché : tête et manche
-  c.rect(21, 2, 3, 3, 'm').rect(21, 2, 3, 1, 'M').rect(23, 3, 1, 2, 'N').rect(24, 3, 5, 1, 'N');
-  // copeaux sur la planche
-  c.rect(36, 2, 3, 1, 'Y').rect(37, 3, 3, 1, 't').rect(41, 5, 3, 1, 'Y');
-  // figurine commencée, debout (20 cm) : tête, corps, ombre à droite
-  c.rect(49, 1, 2, 2, 'Y').rect(48, 3, 3, 3, 'Y').rect(50, 3, 1, 3, 't').rect(51, 4, 1, 2, 'P');
+function workbench(view: number): Canvas {
+  const long = view % 2 === 0;
+  // intérieur du dessus (hors contour) et hauteurs : la planche, son chant, les pieds jusqu'à la rangée du contour au sol
+  const W = long ? 64 : 14;
+  const top = long ? 7 : 32; // rangées du dessus, contour du haut compris
+  const H = top + 2 + 15; // + chant (10 cm) + pieds (75 cm, contour du bas compris)
+  const c = new Canvas(W + 2, H + 2);
+  /** Un point du dessus (u le long, s en travers, de 0 à 1) dans la vue. */
+  const at = (u: number, s: number): [number, number] => {
+    const [x, y] =
+      view === 0 ? [1 + u * (W - 3), 1 + s * (top - 2)]
+      : view === 2 ? [W - 2 - u * (W - 3), top - 1 - s * (top - 2)]
+      : view === 1 ? [1 + (1 - s) * (W - 3), 1 + u * (top - 2)]
+      : [W - 2 - (1 - s) * (W - 3), top - 1 - u * (top - 2)];
+    return [Math.round(x), Math.round(y)];
+  };
+  /** Une pièce couchée le long de l'établi, de u0 à u1 : `thick` pixels d'épaisseur, le premier rang (ou la première colonne) éclairé. */
+  const rod = (u0: number, u1: number, s: number, thick: number, light: string, body: string) => {
+    const [ax, ay] = at(u0, s);
+    const [bx, by] = at(u1, s);
+    if (long) c.rect(Math.min(ax, bx), ay - thick + 1, Math.abs(bx - ax) + 1, thick, body).rect(Math.min(ax, bx), ay - thick + 1, Math.abs(bx - ax) + 1, 1, light);
+    else c.rect(ax, Math.min(ay, by), thick, Math.abs(by - ay) + 1, body).rect(ax, Math.min(ay, by), 1, Math.abs(by - ay) + 1, light);
+  };
+  const legTop = top + 2;
+  const legRows = H - 1 - legTop; // jusqu'au-dessus du contour du bas
+  // pieds du devant de la vue (ceux de derrière sont cachés derrière eux), 15 cm, éclairés à gauche
+  const legs = long ? [2, W - 5] : [1, W - 4];
+  for (const x of legs) c.rect(x, legTop, 3, legRows, '*').rect(x, legTop, 1, legRows, '^').rect(x + 2, legTop, 1, legRows, '%');
+  // traverse (vue de long) ou entretoise du bout (vue de bout), à 30 cm du sol
+  const rail = H - 8;
+  c.rect(legs[0] + 3, rail, legs[1] - legs[0] - 3, 2, '*').rect(legs[0] + 3, rail + 1, legs[1] - legs[0] - 3, 1, '&');
+  // dessus : bois clair au soleil, le fil en tirets, le joint des deux madriers
+  c.rect(1, 1, W - 2, top - 1, '^');
+  const grain: [number, number, number][] = [[0.04, 0.16, 0.15], [0.3, 0.46, 0.9], [0.52, 0.7, 0.2], [0.8, 0.95, 0.75], [0.6, 0.74, 0.95], [0.08, 0.2, 0.7]];
+  for (const [u0, u1, s] of grain) rod(u0, u1, s, 1, '*', '*');
+  rod(0, 1, 0.5, 1, '%', '%');
+  // chant de la planche (vue de long), ou bois de bout des deux madriers (vue de bout), face sud
+  c.rect(1, top, W - 2, 1, '*').rect(1, top + 1, W - 2, 1, '%');
+  if (!long) {
+    const [jx] = at(0, 0.5);
+    c.rect(jx, top, 1, 2, '@').set(3, top, '%').set(W - 4, top, '%');
+  }
+  // gouge : le fer vers le bout ouest de la vue 0, le manche
+  rod(0.1, 0.15, 0.4, 1, 'R', 'R');
+  rod(0.16, 0.24, 0.4, 2, '%', '&');
+  // maillet couché : le manche, puis la tête (un rondin de 15 cm), plus sombres que la planche
+  rod(0.37, 0.46, 0.4, 1, '&', '&');
+  const [mx, my] = at(0.34, 0.5);
+  c.rect(mx - 1, my - 2, 3, 3, '%').rect(mx - 1, my - 2, 2, 1, '*').rect(mx + 1, my - 2, 1, 3, '&').rect(mx - 1, my, 3, 1, '&');
+  // copeaux sur la planche, dans le sens du fil
+  for (const [u, s] of [[0.57, 0.3], [0.62, 0.5], [0.67, 0.85]] as const) {
+    rod(u, u + 0.04, s, 1, 'Y', 'Y');
+    rod(u + 0.02, u + 0.04, s, 1, 't', 't');
+  }
+  // figurine commencée, debout (15 cm) : tête, corps, ombre à droite
+  const [fx, fy] = at(0.78, 0.55);
+  c.rect(fx - 1, fy - 1, 3, 2, 'Y').rect(fx + 1, fy - 1, 1, 2, 't').rect(fx - 1, fy - 2, 2, 1, 'Y').set(fx + 2, fy, 'P');
   litOutline(c, 'K');
   // copeaux tombés au sol, sous la planche
-  for (const [x, y] of [[10, 21], [27, 22], [43, 20], [52, 22]]) c.set(x, y, 'Y').set(x + 1, y, 't').set(x + 2, y, 'Y');
-  // ombre de la planche au sol (sous elle, jusqu'à son bord sud) et ombre portée
-  c.within('.', (k) => k.rect(5, 15, 54, 8, 'x'));
-  groundShadow(c, 3, 24, 63, 1);
+  const floor = long ? [[10, H - 3], [27, H - 2], [43, H - 4], [52, H - 2]] : [[5, H - 3], [7, H - 6]];
+  for (const [x, y] of floor) {
+    if (long) c.set(x, y, 'Y').set(x + 1, y, 't').set(x + 2, y, 'Y');
+    else c.set(x, y, 'Y').set(x, y + 1, 't');
+  }
+  // le sol sous la planche, dans son ombre, et l'ombre portée
+  c.within('.', (k) => k.rect(legs[0] + 3, legTop + (long ? 6 : 0), legs[1] - legs[0] - 3, legRows - (long ? 6 : 0), 'x'));
+  groundShadow(c, 3, H, W - 1, 1);
   return c;
 }
 
@@ -550,7 +601,7 @@ export const furniture = [
   anim('fireplace', 64, 96, fireplace),
   anim('stove', 18, 49, stove),
   img('worktable', worktable()),
-  img('workbench', workbench()),
+  ...[0, 1, 2, 3].map((v) => img(v ? `workbench-r${v}` : 'workbench', workbench(v))),
   img('bed', bed()),
   img('pallet', pallet()),
   img('sack', sack()),
