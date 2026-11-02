@@ -70,7 +70,7 @@ import {
 import { blocks, boxOf, overlaps, swung } from '../world/build';
 import { CM_PER_PX } from '../content/gabarit';
 import { GameMap } from '../world/GameMap';
-import { parseInteriorId } from '../world/interior';
+import { buildingsOf, interiorId, parseInteriorId } from '../world/interior';
 import type { InteriorMap } from '../world/interiorMap';
 import { InteriorView } from '../world/interiorView';
 import { ZoneBand } from '../world/zoneBand';
@@ -206,6 +206,17 @@ export class WorldScene extends Phaser.Scene {
   }
 
   create(): void {
+    // un point d'apparition « dedans » (le réveil de Xéros chez lui) : dans l'intérieur du bâtiment posé où il est
+    const hostSpawn = !this.at && maps[this.mapId]?.spawns[this.spawn];
+    if (hostSpawn && hostSpawn.inside) {
+      seedMap(maps[this.mapId]);
+      const b = buildingsOf(mapState(game, this.mapId).builds).find((q) => {
+        const x = hostSpawn.x * CM_PER_PX;
+        const y = hostSpawn.y * CM_PER_PX;
+        return x >= q.room.x && x < q.room.x + q.room.w && y >= q.room.y && y < q.room.y + q.room.d;
+      });
+      if (b) this.mapId = interiorId(this.mapId, b.key);
+    }
     // une carte de Tiled, ou l'intérieur d'un bâtiment posé, calculé de ses pièces ; un bâtiment qui n'est plus là ramène dehors
     this.interior = maps[this.mapId] ? undefined : resolveInterior(this.mapId);
     let lost = false;
@@ -244,7 +255,8 @@ export class WorldScene extends Phaser.Scene {
     this.physics.add.collider(this.player.actor, this.map.floor);
     this.physics.add.collider(this.player.actor, this.map.obstacles);
 
-    const npcs = def.npcs.map((n) => new Npc(this, n));
+    // dehors, ceux qui sont dans un bâtiment (`inside`) n'y sont pas : ils sont dans son intérieur calculé
+    const npcs = def.npcs.filter((n) => !n.inside).map((n) => new Npc(this, n));
     for (const n of npcs) this.physics.add.collider(this.player.actor, n.actor);
     const talkable: Interactable[] = npcs.map((n) => ({
       x: n.actor.x,

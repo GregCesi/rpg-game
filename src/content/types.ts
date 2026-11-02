@@ -1459,7 +1459,8 @@ const MapObjectSchema = z.strictObject({
 });
 
 /** Point d'apparition : (x, y) = position des pieds du joueur. */
-const SpawnSchema = z.strictObject({ x: px, y: px, facing: FacingSchema.optional() });
+/** `inside` : le point est dans un bâtiment posé (un Plan) ; il vaut dans son intérieur calculé (le réveil de Xéros dans la maison). */
+const SpawnSchema = z.strictObject({ x: px, y: px, facing: FacingSchema.optional(), inside: z.literal(true).optional() });
 
 /** Zone qui mène vers une autre carte : on la prend quand les pieds sont dedans (et, si `facing` est donné, en avançant dans cette direction). */
 const ExitSchema = z.strictObject({
@@ -1480,7 +1481,17 @@ const NpcSchema = z.strictObject({
   facing: FacingSchema.optional(),
   /** Dialogue lancé quand Xéros lui parle. */
   dialogue: id,
+  /** Dans un bâtiment posé (un Plan) : il n'est que dans son intérieur calculé (la mère, chez elle), à sa place. */
+  inside: z.literal(true).optional(),
+  /** Sa pose : `sit`, assis (l'animation `sit-<direction>` de son sprite). */
+  pose: z.enum(['sit']).optional(),
 });
+
+/**
+ * Une place nommée d'une carte (un rectangle de type `Place` dans Tiled), que lira une quête : `name`, son nom ; `accepts`, ce qu'on y
+ * pose (une clé de props.json ou d'items.json : le fagot) ; `inside` : dans un bâtiment posé, elle vaut dans son intérieur.
+ */
+const PlaceSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive(), name: id, accepts: id, inside: z.literal(true).optional() });
 
 /**
  * Une parcelle réservée du village (chantier « monde ») : un rectangle de type `Parcel` dans Tiled, sa destination (`use`, clé de
@@ -1522,6 +1533,8 @@ export const MapSchema = z.strictObject({
   parcels: z.array(ParcelSchema),
   /** Plans du bac à sable posés depuis Tiled (la cabane, les étals, les granges). */
   plans: z.array(MapPlanSchema),
+  /** Places nommées (la place du fagot près du foyer). */
+  places: z.array(PlaceSchema).default([]),
 });
 
 /** Une destination de parcelle (parcels.json) : le nom dit, et une couleur pour la montrer (mode construction, ?debug). */

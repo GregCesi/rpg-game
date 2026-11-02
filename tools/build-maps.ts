@@ -148,6 +148,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   const exits: Exit[] = [];
   const npcs: Npc[] = [];
   const parcels: Parcel[] = [];
+  const places: { x: number; y: number; w: number; h: number; name: string; accepts: string; inside?: true }[] = [];
   const plans: MapPlan[] = [];
 
   // deux tilesets dont les numéros se chevauchent : l'un a grossi depuis la dernière sauvegarde de la carte dans Tiled
@@ -225,6 +226,12 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (typeof v !== 'string') oerr(`propriété '${key}' : du texte est attendu`);
       return typeof v === 'string' ? v : undefined;
     };
+    /** Une propriété booléenne (Tiled : bool ; « true » en texte accepté) : vraie seulement si elle l'est. */
+    const bool = (key: string) => {
+      const v = props.get(key);
+      if (v !== undefined && typeof v !== 'boolean' && v !== 'true' && v !== 'false') oerr(`propriété '${key}' : vrai ou faux est attendu`);
+      return v === true || v === 'true';
+    };
     const only = (allowed: string[]) => {
       for (const k of props.keys()) if (!allowed.includes(k)) oerr(`propriété inconnue '${k}' (attendues : ${allowed.join(', ')})`);
     };
@@ -235,11 +242,11 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
     };
 
     if (cls === 'Spawn') {
-      only(['facing']);
+      only(['facing', 'inside']);
       if (!o.point) return oerr('un point d\'apparition est un point (outil « Insérer un point »)');
       if (!o.name) return oerr("un point d'apparition doit avoir un nom : c'est son identifiant");
       if (spawns[o.name]) return oerr('nom déjà pris par un autre point de la carte');
-      spawns[o.name] = { x: o.x, y: o.y, ...(facing() ? { facing: facing() } : {}) };
+      spawns[o.name] = { x: o.x, y: o.y, ...(facing() ? { facing: facing() } : {}), ...(bool('inside') ? { inside: true as const } : {}) };
     } else if (cls === 'Exit') {
       only(['to', 'spawn', 'facing']);
       if (o.point || o.gid !== undefined || o.width <= 0 || o.height <= 0) return oerr('une sortie est un rectangle (outil « Insérer un rectangle »)');
@@ -249,13 +256,22 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (!spawn) oerr("champ 'spawn' (point d'arrivée) manquant");
       if (to && spawn) exits.push({ x: o.x, y: o.y, w: o.width, h: o.height, to, spawn, ...(facing() ? { facing: facing() } : {}) });
     } else if (cls === 'Npc') {
-      only(['character', 'facing', 'dialogue']);
+      only(['character', 'facing', 'dialogue', 'inside', 'pose']);
       if (!o.point) return oerr('un personnage est un point (outil « Insérer un point ») : ses pieds');
       const character = text('character');
       const dialogue = text('dialogue');
       if (!character) oerr("champ 'character' (clé de characters.json) manquant");
       if (!dialogue) oerr("champ 'dialogue' (clé de dialogues.json) manquant");
-      if (character && dialogue) npcs.push({ x: o.x, y: o.y, character, dialogue, ...(facing() ? { facing: facing() } : {}) });
+      const pose = text('pose');
+      if (pose !== undefined && pose !== 'sit') oerr(`pose '${pose}' inconnue (attendue : sit)`);
+      if (character && dialogue) npcs.push({ x: o.x, y: o.y, character, dialogue, ...(facing() ? { facing: facing() } : {}), ...(bool('inside') ? { inside: true as const } : {}), ...(pose === 'sit' ? { pose: 'sit' as const } : {}) });
+    } else if (cls === 'Place') {
+      only(['accepts', 'inside']);
+      if (o.point || o.gid !== undefined || o.width <= 0 || o.height <= 0) return oerr('une place est un rectangle (outil « Insérer un rectangle »)');
+      const accepts = text('accepts');
+      if (!o.name) return oerr("une place doit avoir un nom (la quête la nomme)");
+      if (!accepts) return oerr("champ 'accepts' (ce qu'on y pose : une clé de props.json ou d'items.json) manquant");
+      places.push({ x: o.x, y: o.y, w: o.width, h: o.height, name: o.name, accepts, ...(bool('inside') ? { inside: true as const } : {}) });
     } else if (cls === 'Parcel') {
       only(['use']);
       if (o.point || o.gid !== undefined || o.width <= 0 || o.height <= 0) return oerr('une parcelle est un rectangle (outil « Insérer un rectangle »)');
@@ -309,6 +325,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
     npcs,
     parcels,
     plans,
+    places,
   });
   if (!map.success) {
     err(`format interne invalide :\n${indent(z.prettifyError(map.error))}`);

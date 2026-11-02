@@ -111,7 +111,7 @@ export function tilesetTsj(t: TilesetExport) {
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
-type Member = { name: string; type: string; propertyType?: string; value: string };
+type Member = { name: string; type: string; propertyType?: string; value: string | boolean };
 
 function objectClass(id: number, name: string, color: string, members: Member[]) {
   return { id, name, type: 'class', color, drawFill: true, members, useAs: ['object'] };
@@ -124,6 +124,8 @@ function objectClass(id: number, name: string, color: string, members: Member[])
  *   - `Exit` : rectangle qui mène vers une autre carte ;
  *   - `Npc` : point où se tient un personnage non joueur (ses pieds) ;
  *   - `Parcel` : rectangle d'une parcelle réservée du village, sa destination (`use`, liste de src/content/parcels.json) ;
+ *   - `Place` : rectangle d'une place nommée (`accepts` : ce qu'on y pose ; `inside` : dans un bâtiment posé) ;
+ *   - `inside` d'un `Spawn` ou d'un `Npc` : il est dans un bâtiment posé, il ne vaut que dans son intérieur calculé ;
  *   - `Plan` : un plan du bac à sable posé là (`plan`, liste de src/content/plans/ ; `age` facultatif), coin nord-ouest du rectangle.
  * Un champ laissé vide n'est pas surchargé (le jeu prend la valeur de props.json, ou rien).
  */
@@ -131,6 +133,7 @@ export function projectFile(propKeys: { id: number; key: string; wood?: boolean 
   const facing = { id: 1, name: 'Facing', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...DIRECTIONS] };
   const text = (name: string): Member => ({ name, type: 'string', value: '' });
   const direction: Member = { name: 'facing', type: 'string', propertyType: 'Facing', value: '' };
+  const inside: Member = { name: 'inside', type: 'bool', value: false };
   return {
     _generated: GENERATED_NOTE,
     automappingRulesFile: '',
@@ -140,13 +143,14 @@ export function projectFile(propKeys: { id: number; key: string; wood?: boolean 
     objectTypesFile: '',
     propertyTypes: [
       facing,
-      objectClass(2, 'Spawn', '#3fa34d', [direction]),
+      objectClass(2, 'Spawn', '#3fa34d', [direction, inside]),
       objectClass(3, 'Exit', '#d9534f', [text('to'), text('spawn'), direction]),
-      objectClass(4, 'Npc', '#4a78c2', [text('character'), direction, text('dialogue')]),
+      objectClass(4, 'Npc', '#4a78c2', [text('character'), direction, text('dialogue'), inside, text('pose')]),
       { id: 5, name: 'ParcelUse', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...parcelUses] },
       { id: 6, name: 'PlanName', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...planNames] },
       { id: 7, name: 'WoodAge', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', 'new', 'worn', 'old'] },
       objectClass(8, 'Parcel', '#c9a05a', [{ name: 'use', type: 'string', propertyType: 'ParcelUse', value: '' }]),
+      objectClass(10, 'Place', '#b07fd0', [text('accepts'), inside]),
       objectClass(9, 'Plan', '#8a6a3a', [
         { name: 'plan', type: 'string', propertyType: 'PlanName', value: '' },
         { name: 'age', type: 'string', propertyType: 'WoodAge', value: '' },
