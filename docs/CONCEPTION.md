@@ -747,9 +747,10 @@ par groupe. Les dimensions sont celles de la pièce posée (cm, `dims` de props.
   la précédente en mode construction, elle la remplace), sur la grille de 1,60 m : 140 cm de large entre deux poteaux, 180 de haut
   entre la traverse basse et la sablière, 15 d'épais ; vues `four` (le mur nord-sud est sa vue `-r1`) :
   - plein : `staves-panel` (palançons), `wattle-panel` (clayonnage), `daub-panel` (torchis), `lime-panel` (chaulé) ;
-  - avec la porte d'entrée (baie de 90 × 180, huisseries de 15 cm) : `staves-door-panel`, `wattle-door-panel`, `daub-door-panel`,
-    `lime-door-panel` ;
-  - avec une porte intérieure (baie de 80 × 180) : `staves-inner-panel`, `wattle-inner-panel`, `daub-inner-panel`, `lime-inner-panel` ;
+  - de chaque côté d'une porte, un jambage (la porte est sa propre pièce, comme à la grange : un remplissage d'une seule pièce boucherait
+    la baie, et le calcul de l'intérieur ne trouverait plus la pièce derrière) : pour la porte d'entrée de 0,90 m, `staves-jamb`,
+    `wattle-jamb`, `daub-jamb`, `lime-jamb` (25 cm de large, l'huisserie du côté de la baie) ; pour une porte intérieure de 0,80 m,
+    `staves-inner-jamb`, `wattle-inner-jamb`, `daub-inner-jamb`, `lime-inner-jamb` (30 cm) ;
   - avec une fenêtre (baie de 60 × 40, appui à 80 cm, le volet `plank-shutter` s'y pose) : `staves-window-panel`, `wattle-window-panel`,
     `daub-window-panel`, `lime-window-panel` ;
   - les cloisons sont ces mêmes remplissages, posés dedans (chaulés des deux côtés).

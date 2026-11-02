@@ -62,6 +62,8 @@ export interface Building {
   /** Le coin nord-ouest de la pièce, « x,y » en cm : ce qui nomme l'intérieur (ses meubles y sont rangés). */
   key: string;
   room: Rect;
+  /** Ses pièces, une par espace clos (une seule pour une cabane ; la salle, le cagibi, le coin, l'atelier pour la maison de Xéros). */
+  rooms: Rect[];
   entrances: Entrance[];
   /** Les pièces posées qu'on voit dedans, à leur place (repère de la carte du dehors). */
   shell: BuildPiece[];
@@ -288,7 +290,7 @@ function onSouthWall(room: Rect, b: Rect): boolean {
 }
 
 /** Ce qu'on voit dedans, la coupe du mur sud et les fenêtres d'une pièce, d'après les pièces posées autour d'elle. */
-function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly Entrance[]): Pick<Building, 'shell' | 'south' | 'southPieces' | 'windows'> {
+function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly Entrance[], rooms: readonly Rect[] = [room]): Pick<Building, 'shell' | 'south' | 'southPieces' | 'windows'> {
   const r = INTERIOR.reach;
   const around = { x: room.x - r, y: room.y - r, w: room.w + 2 * r, d: room.d + 2 * r };
   const shell: BuildPiece[] = [];
@@ -324,6 +326,13 @@ function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly
     }
     // ce qui passe au-dessus de la pièce (faîtière, entraits, poinçons) : seulement ce qui est dans la bande d'un mur
     if (cross(room, b) && b.z >= INTERIOR.headroom && !wallSide(room, b)) continue;
+    // une cloison est-ouest entre deux pièces (elle barre le passage, hors de la bande des murs) : en coupe, comme le mur sud, sinon
+    // elle cacherait la pièce au nord ; une cloison nord-sud reste entière, comme les murs de côté
+    if (rooms.length > 1 && b.w > b.d && b.z < INTERIOR.headroom && !s?.passage && cross(room, b) && !wallSide(room, b) && !rooms.some((r) => cross(r, b))) {
+      south.push({ x: b.x, y: b.y, w: b.w, d: b.d });
+      southPieces.push(p);
+      continue;
+    }
     shell.push(p);
   }
   // la coupe s'arrête aux passages du mur sud
@@ -351,30 +360,57 @@ const keyOf = (room: Rect) => `${room.x},${room.y}`;
 export function buildingsOf(pieces: readonly BuildPiece[]): Building[] {
   const g = gridOf(pieces);
   if (!g) return [];
-  const rooms = new Map<string, { room: Rect; entrances: Entrance[] }>();
-  const add = (room: Rect, e: Entrance) => {
+  // les pièces closes, reliées par les portes intérieures (une porte, ou une ouverture, qui a une pièce close de chaque côté) : une
+  // maison à plusieurs pièces est un seul bâtiment, son intérieur est le rectangle qui les englobe (CONCEPTION « La maison de Xéros »)
+  const rooms = new Map<string, { room: Rect; entrances: { gap: Rect; ox: number; oy: number; open: boolean; door?: number }[] }>();
+  const parent = new Map<string, string>();
+  const find = (k: string): string => (parent.get(k) === k || !parent.has(k) ? k : find(parent.get(k)!));
+  const roomOf = (room: Rect) => {
     const k = keyOf(room);
-    const b = rooms.get(k) ?? { room, entrances: [] };
-    b.entrances.push(e);
-    rooms.set(k, b);
+    if (!rooms.has(k)) {
+      rooms.set(k, { room, entrances: [] });
+      parent.set(k, k);
+    }
+    return rooms.get(k)!;
+  };
+  const link = (a: Rect, b: Rect) => parent.set(find(keyOf(roomOf(a).room)), find(keyOf(roomOf(b).room)));
+  const passage = (gap: Rect, ox: number, oy: number, open: boolean, door?: number) => {
+    const mid = { x: gap.x + gap.w / 2, y: gap.y + gap.d / 2 };
+    const inside = roomBehind(g, mid, -ox, -oy);
+    const beyond = roomBehind(g, mid, ox, oy);
+    if (inside && beyond) link(inside, beyond);
+    else if (inside) roomOf(inside).entrances.push({ gap, ox, oy, open, door });
+    else if (beyond) roomOf(beyond).entrances.push({ gap, ox: -ox, oy: -oy, open, door });
   };
   const doors = pieces.filter(isDoor);
   for (const p of doors) {
     const d = closedOf(p);
-    const b = boxOf(d);
     const [ox, oy] = OUTWARD[d.view % 4];
-    const room = roomBehind(g, { x: b.x + b.w / 2, y: b.y + b.d / 2 }, -ox, -oy);
-    if (room) add(room, entranceOf(room, b, ox, oy, !!swingOf(p)?.open, p.id));
+    passage(boxOf(d), ox, oy, !!swingOf(p)?.open, p.id);
   }
   for (const w of doorways(g, doors.map((p) => boxOf(closedOf(p))))) {
-    const across: [number, number][] = w.w >= w.d ? [[0, 1], [0, -1]] : [[1, 0], [-1, 0]];
-    const mid = { x: w.x + w.w / 2, y: w.y + w.d / 2 };
-    // le dedans est d'un seul côté : de l'autre, on ressort au large
-    const inner = across.map(([ox, oy]) => ({ ox, oy, room: roomBehind(g, mid, -ox, -oy) })).filter((s) => s.room);
-    if (inner.length !== 1) continue;
-    add(inner[0].room!, entranceOf(inner[0].room!, w, inner[0].ox, inner[0].oy, true));
+    const [ox, oy] = w.w >= w.d ? [0, 1] : [1, 0];
+    passage(w, ox, oy, true);
   }
-  return [...rooms.values()].map(({ room, entrances }) => ({ key: keyOf(room), room, entrances, ...contents(room, pieces, entrances) }));
+  // un bâtiment par groupe de pièces reliées, s'il a une entrée
+  const groups = new Map<string, { rooms: Rect[]; entrances: (typeof rooms extends Map<string, infer V> ? V : never)['entrances'] }>();
+  for (const [k, r] of rooms) {
+    const root = find(k);
+    const gr = groups.get(root) ?? { rooms: [], entrances: [] };
+    gr.rooms.push(r.room);
+    gr.entrances.push(...r.entrances);
+    groups.set(root, gr);
+  }
+  const out: Building[] = [];
+  for (const gr of groups.values()) {
+    if (!gr.entrances.length) continue;
+    const x0 = Math.min(...gr.rooms.map((r) => r.x));
+    const y0 = Math.min(...gr.rooms.map((r) => r.y));
+    const room = { x: x0, y: y0, w: Math.max(...gr.rooms.map((r) => r.x + r.w)) - x0, d: Math.max(...gr.rooms.map((r) => r.y + r.d)) - y0 };
+    const entrances = gr.entrances.map((e) => entranceOf(room, e.gap, e.ox, e.oy, e.open, e.door));
+    out.push({ key: keyOf(room), room, entrances, rooms: gr.rooms, ...contents(room, pieces, entrances, gr.rooms) });
+  }
+  return out;
 }
 
 // --- L'identifiant d'un intérieur : la carte du dehors et la clé de sa pièce ---
