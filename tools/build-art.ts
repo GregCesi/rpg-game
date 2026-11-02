@@ -26,6 +26,8 @@ import { buildCollectionBoard } from './lib/collection-board';
 import { buildingPreview, gabaritPreview, gesturePreview, handsPreview, pilesPreview } from './lib/composite-previews';
 import type { PreviewMap } from './lib/composite-previews';
 import { treesPreview } from './lib/trees-preview';
+import { treeLayouts } from '../art/world/trees';
+import { withTreeLayout } from '../src/content/treeLayout';
 import { combatPreview } from './lib/combat-preview';
 import { COMBAT_POSES } from '../art/characters/xeros-combat';
 import combatJson from '../src/content/combat.json';
@@ -115,16 +117,19 @@ function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.i
   return r.data;
 }
 
-// src/generated/maps.ts est produit par build-maps (npm run maps) : on le garde, seul le reste est régénéré ici.
+// src/generated/maps.ts est produit par build-maps (npm run maps), trees.json (les décalages des arbres, lus par src/content/index.ts)
+// par tools/build-trees.ts, lancé juste avant : on les garde, seul le reste est régénéré ici.
 mkdirSync(OUT, { recursive: true });
-for (const f of readdirSync(OUT)) if (f !== 'maps.ts') rmSync(join(OUT, f), { recursive: true, force: true });
+for (const f of readdirSync(OUT)) if (f !== 'maps.ts' && f !== 'trees.json') rmSync(join(OUT, f), { recursive: true, force: true });
+const layouts = treeLayouts();
 rmSync(TILED, { recursive: true, force: true });
 mkdirSync(join(TILED, 'images'), { recursive: true });
 if (withPreview) mkdirSync(PREVIEW, { recursive: true });
 
 const registry = loadRegistry();
 const catalogs = parse('tiles.json', z.record(z.string(), TilesetCatalogSchema), tilesCatalogJson);
-const propDefs = parse('props.json', z.record(z.string(), PropDefSchema), propsJson);
+// props.json complété des décalages de ses arbres, calculés d'après leurs dessins (src/content/treeLayout.ts)
+const propDefs = parse('props.json', z.record(z.string(), PropDefSchema), withTreeLayout(propsJson, layouts));
 
 /** Silhouette d'une image (gabarit) : pixels opaques, contour compris, ombre et lueurs exclues. */
 type Box = { x: number; y: number; w: number; h: number };
@@ -382,7 +387,7 @@ if (withPreview) {
   const pileDefs = parse('piles.json', z.record(z.string(), PileDefSchema), pilesJson);
   const pilesPng = pilesPreview(sources, pileDefs);
   if (pilesPng) writeFileSync(join(PREVIEW, 'piles.png'), PNG.sync.write(pilesPng));
-  // les arbres (KINDS de trees-preview.ts), étape par étape ; et la vérification de la première et de la dernière image de chaque chute
+  // les arbres de props.json (TREES de art/world/trees.ts), étape par étape ; et la vérification de la première et de la dernière image de chaque chute
   const trees = treesPreview(sources, propDefs);
   if (trees.png) writeFileSync(join(PREVIEW, 'arbres.png'), PNG.sync.write(trees.png));
   for (const p of trees.problems) console.warn(`art : ATTENTION arbres : ${p}`);

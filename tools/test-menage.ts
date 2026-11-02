@@ -14,11 +14,10 @@ assert.ok(!('work' in time), 'time.json : plus de minutes des petits gestes');
 assert.ok(!('stroke' in wood.hew), 'wood.json hew : plus de pas de passe en cm');
 for (const [k, p] of Object.entries(props)) assert.ok(!(p.harvest && 'effort' in p.harvest), `props.json '${k}' : plus de 'effort'`);
 
-// le contenu mort retiré ; celui qui a une chaîne prévue, gardé
-for (const k of ['wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword']) assert.ok(!items[k], `items.json : '${k}' retiré`);
-for (const k of ['barrel', 'bush-berries']) assert.ok(!props[k], `props.json : '${k}' retiré`);
-for (const k of ['iron-ore', 'stone', 'pickaxe', 'wooden-sword']) assert.ok(items[k], `items.json : '${k}' gardé`);
-for (const k of ['well', 'lantern', 'candle', 'rock-rubble', 'woodpile']) assert.ok(props[k], `props.json : '${k}' gardé`);
+// le ménage retire le code mort et les dessins inutilisés, jamais un objet (décidé par Grégoire le 2 novembre 2026) : les objets
+// sans chaîne prévue sont restés, avec leurs dessins
+for (const k of ['wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword', 'iron-ore', 'stone', 'pickaxe', 'wooden-sword']) assert.ok(items[k], `items.json : '${k}' gardé`);
+for (const k of ['barrel', 'bush-berries', 'well', 'lantern', 'candle', 'rock-rubble', 'woodpile']) assert.ok(props[k], `props.json : '${k}' gardé`);
 
 // la sauvegarde : relue depuis la version 17 ; la « chaîne » des objets nés disparaît ; une partie plus ancienne reste refusée
 assert.equal(SAVE_VERSION, 24);
@@ -40,4 +39,4 @@ s.force(1, 30);
 const after = s.levels();
 assert.ok(Math.abs(before.ceiling - after.ceiling - 1) < 1e-9 && Math.abs(before.breath - after.breath - 30) < 1e-9, `« Finir le travail » : le plafond et le souffle de ses coups (${JSON.stringify({ before, after })})`);
 
-console.log('✓ ménage : les prix et champs morts retirés, le contenu mort retiré (le reste gardé), la sauvegarde relue depuis 17 sans chaîne, « Finir le travail » au joule');
+console.log('✓ ménage : les prix et champs morts retirés, tous les objets gardés, la sauvegarde relue depuis 17 sans chaîne, « Finir le travail » au joule');

@@ -3,11 +3,9 @@ import { DEPTH, HARVEST, INTERACT, TILE } from '../config';
 import type { Player } from '../entities/Player';
 import { items, props } from '../content';
 import type { Drop, Facing, Harvest } from '../content/types';
+import { wields } from '../world/tools';
 
-/** L'outil `tool` fait ce travail : c'est l'outil de la récolte, ou l'un de ses `also` (la hachette sur le rouleau posé). */
-export function wields(h: Harvest, tool: string | undefined): boolean {
-  return !!tool && (tool === h.tool || tool in h.also);
-}
+export { wields } from '../world/tools';
 
 /** Prix d'un coup simple de `tool` (une récolte sans matière ; clé de `costs`) : celui de son `also`, sinon `cutTie` sur ce qui porte une corde, `chop`. */
 export function effortOf(h: Harvest, tool: string, bears: boolean): Harvest['also'][string] {

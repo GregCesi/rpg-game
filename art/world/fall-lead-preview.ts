@@ -7,7 +7,7 @@
 // Usage : npx tsx art/world/fall-lead-preview.ts  (écrit .art-preview/raccord-chute.png) ; ONLY=big-tree SIDE=left OUT=x.png :
 // une seule ligne, pour regarder de près
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
@@ -15,15 +15,11 @@ import { Canvas, EMPTY, type Grid } from '../lib/canvas';
 import type { ArtSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { Sheet, type Rgb } from '../../tools/lib/audit-preview';
-import stages from './work-stages';
-import big from './big-felled';
-import pollard from './big-pollard';
-import normalFall from './normal-fall';
-import { BIG, NORMAL, POLLARD, type Standing } from './felling';
+import fellable, { TREES } from './trees';
+import { props } from '../../src/content';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const props = JSON.parse(readFileSync(join(ROOT, 'src/content/props.json'), 'utf8'));
-const sources = [...stages, ...big, ...pollard, ...normalFall] as ArtSource[];
+const sources = fellable as ArtSource[];
 const imageOf = (name: string): Grid => {
   const s = sources.find((x) => x.name === name);
   if (!s || s.kind !== 'image') throw new Error(`raccord : image ${name} absente`);
@@ -47,12 +43,12 @@ const GAP = 10;
 interface Row { title: string; cells: { label: string; grid: Grid }[]; foot: [number, number]; win: [number, number]; notes: string[] }
 
 const rows: Row[] = [];
-for (const t of [NORMAL, BIG, POLLARD] as Standing[]) {
+for (const t of TREES.map((x) => x.standing)) {
   if (process.env.ONLY && process.env.ONLY !== t.key) continue;
   for (const left of [false, true]) {
     if (process.env.SIDE && (process.env.SIDE === 'left') !== left) continue;
     const h = props[t.key].harvest;
-    const f = left ? h.fall.left : h.fall;
+    const f = left ? h!.fall!.left : h!.fall!;
     const sheet = sheetOf(f.image);
     const frames = sheet.animations.fall.frames;
     const W = sheet.frameW;

@@ -4,7 +4,13 @@
     "inertiaSlow": 1.37,
     "damagePerJoule": 0.103,
     "controlRef": 0.3,
-    "missPx": 20
+    "missPx": 20,
+    "improvised": {
+      "grip": 0.1,
+      "balance": 0.5,
+      "efficiency": 0.5,
+      "family": "swing"
+    }
   },
   "feel": {
     "hitStopMs": 50,

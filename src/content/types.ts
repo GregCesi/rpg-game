@@ -83,8 +83,11 @@ const HarvestSchema = z.strictObject({
   tool: id.optional(),
   /** Une récolte sans matière (`work` absent) : son nombre de coups simples ; l'objet tremble à chaque coup. Avec `work`, inutilisé (la matière fait les coups). */
   hits: z.number().int().positive(),
-  /** Matière frappée : à chaque coup, des éclats de la planche `fx-<matière>` jaillissent du point d'impact. */
-  impact: z.enum(['wood', 'stone', 'leaves']).optional(),
+  /**
+   * Matière frappée : à chaque coup, des éclats de la planche `fx-<matière>` jaillissent du point d'impact. Toute matière qui a sa planche
+   * (validate.ts) ; une nouvelle matière ne touche pas au schéma.
+   */
+  impact: id.optional(),
   /**
    * Geste de Xéros (clé de gestures.json) : `use`, de côté, sur ce qui est debout ;
    * `chop`, de haut en bas, sur ce qui est couché ou posé.
@@ -113,6 +116,9 @@ const HarvestSchema = z.strictObject({
    * avec la même animation `anim`. `foot` : colonne du pied dans l'image de l'objet ; ce qui naît vers la gauche est posé
    * en miroir de la droite autour de ce pied (x' = 2 × foot − (x + largeur − 1)), avec ses images `-left`.
    * L'objet tombe du côté où Xéros frappe (l'entaille, `side` du travail en cours) ; frappé d'en haut ou d'en bas, d'un côté au hasard.
+   * Un arbre (un objet qui a `tree`) n'écrit dans props.json que `image`, `anim` et `left.image` : `x`, `foot` et `left.x`, comme
+   * son `at` et la place de ce qui naît (`spawns`), sont calculés par `npm run art` d'après sa géométrie et ses dessins
+   * (src/generated/trees.json, `withTreeLayout` de src/content/treeLayout.ts).
    */
   fall: z
     .strictObject({
@@ -216,6 +222,13 @@ export const NaturalSchema = z.strictObject({ form: z.union([z.literal(0), z.lit
  * planche, le bardeau), le menuisier (le bois travaillé fin, le maillet), le forgeron (les outils de fer), le paysan (ce que tout
  * le monde fait : puiser, ramasser).
  */
+/**
+ * La famille d'un objet au catalogue du mode construction (src/build/catalog.ts), dans l'ordre du catalogue : déclarée par chaque
+ * objet (`family` de props.json et d'items.json), jamais devinée à sa clé.
+ */
+export const FAMILIES = ['éléments', 'assemblages', 'bois', 'pierre', 'terre', 'fibres', 'outils', 'mobilier', 'chantier', 'nature', 'divers'] as const;
+const FamilySchema = z.enum(FAMILIES);
+
 const TradeSchema = z.enum(['quarryman', 'mason', 'digger', 'thatcher', 'woodcutter', 'carpenter', 'splitter', 'joiner', 'smith', 'peasant']);
 
 /**
@@ -483,6 +496,8 @@ export const ItemDefSchema = z.strictObject({
   dims: z.lazy(() => DimsSchema).optional(),
   /** Matière naturelle : ses formes dessinées et sa taille qui varie, voir NaturalDefSchema. */
   natural: z.lazy(() => NaturalDefSchema).optional(),
+  /** Sa famille au catalogue du mode construction (FAMILIES). */
+  family: FamilySchema,
   /** Le métier qui le fait et le vendrait au village, voir TradeSchema. */
   trade: z.lazy(() => TradeSchema).optional(),
   /** Bois travaillé (le bardeau, la cheville) : il prend l'âge du bois, voir `aged` de PropDefSchema (ses images au sol). */
@@ -491,6 +506,13 @@ export const ItemDefSchema = z.strictObject({
   weapon: z.lazy(() => WeaponSchema).optional(),
   /** Un outil au travail (docs/CONCEPTION.md, « Le travail ») : son inertie, son tranchant, ce que la précision y pèse. */
   work: z.lazy(() => ToolWorkSchema).optional(),
+  /**
+   * Les genres de travail que fait cet outil (sa capacité : une cible accepte tout outil qui fait son genre de travail, sans le nommer) :
+   * les récoltes au coup (`fell` abattre, `limbs` ébrancher, `whittle` tailler sur le billot, `break` casser la pierre) et le bois
+   * (`cut` couper, `hew` équarrir, `plant` planter le coin, `maul` frapper le coin). Une nouvelle hache qui fait `fell`, `limbs`,
+   * `cut` abat tous les arbres et coupe tout le bois.
+   */
+  does: z.array(z.enum(['fell', 'limbs', 'whittle', 'break', 'cut', 'hew', 'plant', 'maul'])).optional(),
 });
 
 /**
@@ -513,6 +535,80 @@ const DimsSchema = z
     ground: z.literal(true).optional(),
   })
   .refine((d) => (d.shape === 'cylinder') === (d.axis !== undefined), { message: "'axis' pour un cylindre, et pour lui seul" });
+
+/** Une ombre portée au sol : [cx, cy, rx, ry] (px). */
+const ShadeSchema = z.tuple([px, px, px.positive(), px.positive()]);
+/** Une entaille : profondeur (colonnes depuis le bord de l'écorce) et ouverture (rangées au-dessus du plancher). */
+const NotchSchema = z.strictObject({ depth: px.positive(), open: px.positive() });
+
+/**
+ * La géométrie d'un arbre debout qui s'abat (docs/CONCEPTION.md, « Abattre un arbre ») : tout ce que ses dessins ne disent pas.
+ * Son dessin (l'arbre debout, sa souche, son arbre couché tiré de son houppier couché) est enregistré par sa clé d'image
+ * (`registerTree`, art/world/tree-registry.ts) ; ses étapes d'abattage, ses deux chutes, son arbre couché et ses étapes
+ * d'ébranchage en sont tirés par art/world/trees.ts, et les décalages de son `harvest` (`fall.x`, `fall.foot`, `fall.left.x`,
+ * `at`, la place de ce qui naît, `at` de l'arbre couché) sont calculés par `npm run art` (src/generated/trees.json).
+ * Repère : l'image de l'arbre debout, en pixels, x vers la droite, y vers le bas.
+ */
+export const TreeSchema = z.strictObject({
+  /**
+   * L'image d'un arbre dessiné dont celui-ci reprend le dessin (enregistré par `registerTree`) : une variante qui ne change que ses
+   * données, l'arbre d'essai des contrats. Absent : son image. Ses dessins tirés (étapes, chutes, arbre couché, ébranchage, son image
+   * debout) portent sa propre clé d'image.
+   */
+  art: z.string().min(1).optional(),
+  /** Pied du tronc (centre du bas). */
+  foot: z.tuple([px, px]),
+  /** Ombre portée de l'arbre debout (celle de son image). */
+  shadow: ShadeSchema,
+  /** Rangée de la coupe de la chute : tout ce qui est au-dessus tombe. */
+  cut: px,
+  /** Rangée du plancher de l'entaille, juste sous la coupe ; la charnière de la chute y est. */
+  floor: px,
+  /** L'entaille à 1/3, 2/3, 3/3 : profondeur (colonnes depuis le bord de l'écorce) et ouverture (rangées au-dessus du plancher). */
+  notch: z.tuple([NotchSchema, NotchSchema, NotchSchema]),
+  /** Longueur de la saignée du trait d'abattage, puis au craquement. */
+  back: z.tuple([px.positive(), px.positive()]),
+  /** Fente du craquement : [dx depuis le bord du trait, dy depuis le plancher]. */
+  crack: z.array(z.tuple([px, px])),
+  /** Angles de la penche aux étapes 6 et 7 (degrés). */
+  lean: z.tuple([z.number().positive(), z.number().positive()]),
+  /** Ombre du haut qui penche : [dx depuis le pied, rx]. */
+  leanShadow: z.tuple([px, px.positive()]),
+  /** Copeaux : écart au pied du premier, nombre côté entaille puis côté trait à chaque étape (0 à 7). */
+  chips: z.strictObject({ gap: px, right: z.array(z.number().int().nonnegative()).length(8), left: z.array(z.number().int().nonnegative()).length(8) }),
+  /** Éclats du craquement : [dx depuis le bord du trait, dy depuis le plancher, couleur de la palette]. */
+  splinters: z.array(z.tuple([px, px, z.string().length(1)])),
+  /**
+   * La chute (art/world/tree-fall.ts), commune à toutes les sortes : le haut de l'arbre pivote autour de la charnière, de 10° puis
+   * 45°, et passe de la vue de face (debout) à la vue de dessus (couché) : le houppier se raccourcit le long du tronc, de ses
+   * rangées debout (`crownRows`, sinon celles de son dessin) à sa longueur couchée (`crown`, px), et s'aplatit en travers
+   * jusqu'à `squash` ; le tronc garde sa demi-largeur `half`.
+   */
+  fall: z.strictObject({
+    /**
+     * Ce qui tombe : `body`, le dessin debout tel quel ; `bark`, le houppier rééchantillonné et le tronc nu redessiné dans son
+     * écorce (`bareTrunk` de son dessin), allongé de `ext` px couché.
+     */
+    source: z.enum(['body', 'bark']),
+    ext: px.nonnegative().default(0),
+    crown: px.positive(),
+    crownRows: px.positive().optional(),
+    squash: z.number().gt(0).lte(1),
+    half: z.number().positive(),
+    /** Le bout scié du tronc qui tombe : décalage en travers (px), ouverture selon l'angle, cernes. */
+    face: z.strictObject({ dx: z.number(), slant: z.number().positive(), rings: z.boolean() }),
+    /**
+     * Ombres portées à 10° et 45°, de chaque côté : [dx, dy depuis le pied, rx, ry] ; la première sous la souche, la seconde sous le
+     * haut de l'arbre (à 10°, le raccord depuis la dernière étape y mène).
+     */
+    shadows: z.strictObject({
+      right: z.strictObject({ '10': z.array(ShadeSchema).min(2), '45': z.array(ShadeSchema).min(2) }),
+      left: z.strictObject({ '10': z.array(ShadeSchema).min(2), '45': z.array(ShadeSchema).min(2) }),
+    }),
+    /** Largeur des images de la chute, si elles sont recadrées dans le cadre de l'arbre couché (le têtard, court). */
+    crop: px.positive().optional(),
+  }),
+});
 
 /**
  * Un objet du catalogue (arbre, rocher, maison, meuble...). Sa clé dans props.json est son identifiant :
@@ -540,6 +636,11 @@ export const PropDefSchema = z.strictObject({
   layer: z.literal('floor').optional(),
   /** 'add' : l'image éclaire ce qu'elle recouvre (lumière), posée au-dessus de la pénombre. */
   blend: z.literal('add').optional(),
+  /**
+   * Un rai de soleil (la tache de lumière d'une fenêtre ou d'une porte) : son éclat suit la force du soleil de l'heure (world.json
+   * `daylight`, systems/daylight.ts) ; les intérieurs en posent un à chaque ouverture (world/interiorView.ts).
+   */
+  sun: z.literal(true).optional(),
   /** Lueur chaude qui vacille (feu), dans le repère de l'image. */
   light: z.strictObject({ x: px, y: px, radius: px.positive() }).optional(),
   /** Identifiant du dialogue lancé quand le joueur interagit avec l'objet. */
@@ -551,6 +652,8 @@ export const PropDefSchema = z.strictObject({
   aim: z.tuple([px, px]).optional(),
   /** Ce qui se récolte : voir HarvestSchema. */
   harvest: HarvestSchema.optional(),
+  /** Un arbre debout qui s'abat (il a `harvest.fall`) : sa géométrie, voir TreeSchema. */
+  tree: z.lazy(() => TreeSchema).optional(),
   /** Ce qui se prend dans les mains : voir TakeSchema. */
   take: TakeSchema.optional(),
   /** Masse (obligatoire pour ce qui se prend ou roule : validate.ts) : voir MassSchema. Celle d'une quantité mesurée (`length`) est celle de sa longueur neuve. */
@@ -571,6 +674,8 @@ export const PropDefSchema = z.strictObject({
   gender: z.enum(['m', 'f']).default('f'),
   /** Matière naturelle : ses formes dessinées et sa taille qui varie, voir NaturalDefSchema (un objet de Tiled tire les siennes de son identifiant). */
   natural: z.lazy(() => NaturalDefSchema).optional(),
+  /** Sa famille au catalogue du mode construction (FAMILIES). */
+  family: FamilySchema,
   /** Le métier qui le fait et le vendrait au village, voir TradeSchema. */
   trade: z.lazy(() => TradeSchema).optional(),
   /**
@@ -959,6 +1064,8 @@ const ToolWorkSchema = z
     balance: z.number().positive(),
     edge: z.number().gt(0).lte(1),
     aim: z.number().min(0).max(1),
+    /** Sa planche en main (le geste du travail), tirée par art/items/held.ts ; absente : `tool-<clé>`. Un outil peut reprendre celle d'un autre. */
+    image: id.optional(),
     /** Le coup de cet outil pour un genre de travail (clé de `jobs` de work.json → clé de `strokes`), à la place du coup commun : la hachette taille au coup court. */
     strokes: z.record(id, id).optional(),
   })
@@ -1240,6 +1347,12 @@ export const CombatSchema = z.strictObject({
     damagePerJoule: z.number().positive(),
     controlRef: z.number().positive(),
     missPx: z.number().nonnegative(),
+    /**
+     * L'arme improvisée (world/heft.ts) : tout objet tenu sans `weapon` frappe comme une arme de sa plus grande dimension, tenue à
+     * `grip` de sa longueur depuis le bout, d'équilibre `balance` (0,5 : une tige uniforme), d'efficacité `efficiency`, dans la famille
+     * de gestes `family`.
+     */
+    improvised: z.strictObject({ grip: z.number().min(0).lt(1), balance: z.number().gt(0).lte(1), efficiency: z.number().gt(0).lte(1), family: id }),
   }),
   feel: FeelSchema,
   sweeps: z.record(id, SweepSchema),
@@ -1441,6 +1554,7 @@ export type DecalSet = z.infer<typeof DecalSetSchema>;
 export type TerrainDef = z.infer<typeof TerrainDefSchema>;
 export type TilesetCatalog = z.infer<typeof TilesetCatalogSchema>;
 export type PropDef = z.infer<typeof PropDefSchema>;
+export type TreeDef = z.infer<typeof TreeSchema>;
 export type Views = z.infer<typeof ViewsSchema>;
 export type Harvest = z.infer<typeof HarvestSchema>;
 export type Drop = z.infer<typeof DropSchema>;

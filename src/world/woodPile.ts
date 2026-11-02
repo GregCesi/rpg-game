@@ -119,7 +119,8 @@ export function woodPileDef(w: PileWood): PileShape {
       piece: { wood: { ...w } },
       start: 'g1',
       blockFrom: 1,
-      count: false,
+      // tout tas compte ses pièces (le contrat d'un tas, docs/objets/README.md) : le nombre s'affiche quand Xéros est tout près
+      count: true,
       order: 'layers',
       places: woodPlaces(w, 'ew'),
       turned: { start: 'g1', order: 'layers', places: woodPlaces(w, 'ns') },

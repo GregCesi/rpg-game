@@ -2,7 +2,9 @@
 // (art/proposals/essai-abattage.ts, .art-preview/essai-abattage-3.png). Des variantes d'image d'objets existants, pas de
 // nouveaux objets : chaque étape a la taille et l'origine de l'image qu'elle remplace (le jeu change l'image à la volée).
 //
-// 1. L'ABATTAGE (`<arbre>-stage-1` à `-7`, arbres debout `normal-tree`, `big-tree`, `big-pollard`, vue unique : `round`) :
+// Les arbres sont ceux de props.json qui tombent (`harvest.fall`) : art/world/trees.ts les tire de là et appelle ces deux moteurs.
+//
+// 1. L'ABATTAGE (`<arbre>-stage-1` à `-7`, arbres debout, vue unique : `round`) :
 //    entaille 1/3, 2/3, 3/3, trait d'abattage, craquement, penche 1, penche 2. Dessinées pour un arbre qui tombe vers la
 //    droite (l'entaille à droite) ; quand Xéros frappe depuis la droite, l'arbre tombe à gauche et le jeu montre
 //    `<arbre>-left-stage-1` à `-7`, dessinées (pas retournées) : l'entaille à gauche, l'arbre éclairé comme toujours.
@@ -12,7 +14,7 @@
 //    - Le trait d'abattage, côté gauche, une rangée au-dessus du plancher : une morsure et la saignée `@`.
 //    - Le craquement : la saignée rejoint presque l'entaille (la charnière), une fente monte dans le tronc, des éclats sautent.
 //    - La penche : le haut pivote autour de la charnière ; le trait d'abattage s'ouvre à gauche. L'angle est borné par la
-//      largeur de l'image (le houppier ne doit pas en sortir) : voir `lean` de chaque arbre.
+//      largeur de l'image (le houppier ne doit pas en sortir) : voir `tree.lean` de chaque arbre (props.json).
 //    - Les copeaux (bois neuf `^ * %`, éclats de 1 à 2 px) s'accumulent au pied : côté entaille d'abord, puis côté trait.
 //    Mêmes règles pour les gros (tronc de 55 cm, 11 px) à leur échelle : entaille plus profonde, plus de copeaux.
 //
@@ -28,41 +30,26 @@ import { Canvas, EMPTY, rng } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { despeckle, shadedOutline, type Vec } from './big-tree';
-import { NORMAL_LYING } from './normal-felled';
-import { BIG_FELLED, BIG_TREE_CM, bigLying } from './big-felled';
-import { CROWN_SHIFT, POLLARD_CM, POLLARD_FELLED } from './big-pollard';
 // 1. L'abattage : le dessin des étapes est dans art/world/felling.ts (les chutes en partent aussi, pour le raccord)
-import { BIG, NORMAL, POLLARD, fellingStage } from './felling';
+import { fellingStage, type Standing } from './felling';
+import type { Lying } from './tree-registry';
 
 // =====================================================================================================================
 // 2. L'ébranchage
 // =====================================================================================================================
 
-interface Frame { x: number; y: number; w: number; h: number }
-
-/** Un arbre couché à ébrancher (repère : la frame de sa chute). */
-interface Lying {
-  w: number;
-  buttX: number;
-  axisY: number;
-  /** Première et dernière rangées d'écorce du tronc. */
-  barkTop: number;
-  barkBottom: number;
-  /** Longueur du tronc depuis le bout scié (px). */
-  trunkLen: number;
-  frame: (left: boolean) => Frame;
-  compose: (left: boolean, keep: (h: number, g: number) => boolean) => Canvas;
-}
-
-interface Felled {
+/** Un arbre couché à ébrancher (repère : le cadre de sa chute, `Lying` de art/world/tree-registry.ts). */
+export interface Felled {
   key: string;
   lying: Lying;
   /** Nombre de branches (`limbs.count` de props.json). */
   limbs: number;
+  /** Part des branches tombées à chaque étape (`stages` de son harvest dans props.json : 0,3, 0,6, 0,85). */
+  shares: number[];
 }
 
-/** Part des branches tombées à chaque étape. */
-const LIMBED = [0.3, 0.6, 0.85];
+/** La part de la dernière étape : il reste ensuite la touffe de la cime. */
+const lastShare = (f: Felled) => f.shares[f.shares.length - 1];
 
 /** Une branche coupée : sa place (h le long du tronc, g en travers : son côté). */
 interface Limb { h: number; g: number }
@@ -89,8 +76,8 @@ function crownExtent(f: Felled): { h0: number; h1: number; gMax: number } {
 function frontsOf(f: Felled) {
   const { h0, h1, gMax } = crownExtent(f);
   // la touffe qui reste touche encore le bout du tronc : sans cela elle flotterait au-delà, comme un buisson à part
-  const last = Math.min(h0 + LIMBED[2] * (h1 - h0), f.lying.trunkLen - 3);
-  const fronts = LIMBED.map((p) => h0 + (p / LIMBED[2]) * (last - h0));
+  const last = Math.min(h0 + lastShare(f) * (h1 - h0), f.lying.trunkLen - 3);
+  const fronts = f.shares.map((p) => h0 + (p / lastShare(f)) * (last - h0));
   const r = rng(f.limbs * 7 + 1);
   const ph = [r() * 6, r() * 6];
   const wave = (g: number) => 2.2 * Math.sin(g * 0.8 + ph[0]) + 1.4 * Math.sin(g * 1.9 + ph[1]) + 0.12 * Math.abs(g) * 2;
@@ -108,7 +95,7 @@ function limbsAt(f: Felled, h0: number, last: number, gMax: number, share: numbe
   for (let i = 0; i < f.limbs; i++) {
     const t = (i + 0.3 + r() * 0.4) / f.limbs;
     // place fixe d'une étape à l'autre : la branche i tombe à la même place, quelle que soit l'étape
-    const h = h0 - 4 + (t / LIMBED[2]) * (last - h0 + 4);
+    const h = h0 - 4 + (t / lastShare(f)) * (last - h0 + 4);
     const side = (i + (r() < 0.25 ? 1 : 0)) % 2 === 0 ? -1 : 1;
     const g = side * gMax * (0.35 + r() * 0.25);
     if (i < n) out.push({ h: Math.min(h, last - 2), g });
@@ -154,12 +141,12 @@ function fallenBranch(c: Canvas, x: number, y: number, dir: number, side: number
   }
 }
 
-/** Une étape de l'ébranchage (1 à 3) de l'arbre couché, dans sa vue (`left` : la vue `-left`), recadrée sur son cadre. */
+/** Une étape de l'ébranchage (1 à `shares.length`) de l'arbre couché, dans sa vue (`left` : la vue `-left`), recadrée sur son cadre. */
 function limbingStage(f: Felled, stage: number, left: boolean): Canvas {
   const L = f.lying;
   const { h0, gMax, fronts, keep } = frontsOf(f);
   const front = fronts[stage - 1];
-  const limbs = limbsAt(f, h0, fronts[2], gMax, LIMBED[stage - 1]);
+  const limbs = limbsAt(f, h0, fronts[fronts.length - 1], gMax, f.shares[stage - 1]);
   const c = L.compose(left, keep(front));
   const X = (h: number) => Math.round(left ? L.w - 1 - (L.buttX + h) : L.buttX + h);
   const frame = L.frame(left);
@@ -205,33 +192,27 @@ function limbingStage(f: Felled, stage: number, left: boolean): Canvas {
   return out;
 }
 
-const FELLED: Felled[] = [
-  { key: 'normal-felled-tree', lying: NORMAL_LYING, limbs: 12 },
-  { key: 'big-felled-tree', lying: bigLying(BIG_FELLED, BIG_TREE_CM, 0), limbs: 16 },
-  { key: 'big-pollard-felled-tree', lying: bigLying(POLLARD_FELLED, POLLARD_CM, CROWN_SHIFT), limbs: 10 },
-];
-
 // =====================================================================================================================
 // Les images
 // =====================================================================================================================
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
-/** Les étapes, par objet et par vue, dans l'ordre : pour la planche de contrôle (art/world/work-stages-preview.ts). */
-export const STAGE_GROUPS: { base: string; stages: ImageSource[] }[] = [
-  ...[NORMAL, BIG, POLLARD].map((t) => ({
-    base: t.key,
-    stages: [1, 2, 3, 4, 5, 6, 7].map((s) => img(`${t.key}-stage-${s}`, fellingStage(t, s))),
-  })),
-  // vers la gauche (Xéros frappe depuis la droite) : dessinées, pas retournées (art/world/felling.ts)
-  ...[NORMAL, BIG, POLLARD].map((t) => ({
-    base: t.key,
-    stages: [1, 2, 3, 4, 5, 6, 7].map((s) => img(`${t.key}-left-stage-${s}`, fellingStage(t, s, undefined, true))),
-  })),
-  ...FELLED.flatMap((f) => [false, true].map((left) => {
-    const base = left ? `${f.key}-left` : f.key;
-    return { base, stages: [1, 2, 3].map((s) => img(`${base}-stage-${s}`, limbingStage(f, s, left))) };
-  })),
-];
+/** Les étapes de l'abattage d'un arbre debout : `<clé>-stage-<n>` (chute à droite), puis `<clé>-left-stage-<n>` (à gauche). */
+export function fellingGroups(t: Standing, count: number): { base: string; stages: ImageSource[] }[] {
+  const n = [...Array(count).keys()].map((i) => i + 1);
+  return [
+    { base: t.key, stages: n.map((s) => img(`${t.key}-stage-${s}`, fellingStage(t, s))) },
+    // vers la gauche (Xéros frappe depuis la droite) : dessinées, pas retournées (art/world/felling.ts)
+    { base: t.key, stages: n.map((s) => img(`${t.key}-left-stage-${s}`, fellingStage(t, s, undefined, true))) },
+  ];
+}
 
-export default STAGE_GROUPS.flatMap((g) => g.stages);
+/** Les étapes de l'ébranchage d'un arbre couché, dans ses deux vues (`<clé>`, `<clé>-left`). */
+export function limbingGroups(f: Felled): { base: string; stages: ImageSource[] }[] {
+  const n = f.shares.map((_, i) => i + 1);
+  return [false, true].map((left) => {
+    const base = left ? `${f.key}-left` : f.key;
+    return { base, stages: n.map((s) => img(`${base}-stage-${s}`, limbingStage(f, s, left))) };
+  });
+}

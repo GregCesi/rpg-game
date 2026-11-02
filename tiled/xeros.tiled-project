@@ -455,6 +455,23 @@
       ]
     },
     {
+      "id": 121,
+      "name": "bush-berries",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
       "id": 122,
       "name": "rock-rubble",
       "type": "class",
@@ -508,6 +525,23 @@
     {
       "id": 125,
       "name": "candle",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 126,
+      "name": "barrel",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,

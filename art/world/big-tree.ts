@@ -1,6 +1,6 @@
 // Arbre : dessin commun à l'arbre debout (`big-tree`, déclaré dans props.ts), à sa souche et à sa chute.
 // L'arbre est décrit dans son repère propre (image 64x96, pied du tronc en (33, 89)) ; la chute
-// (art/world/big-felled.ts) le ré-échantillonne au plus proche voisin, en recalculant la lumière pour qu'elle vienne toujours du nord-ouest.
+// (art/world/tree-fall.ts) le ré-échantillonne au plus proche voisin, en recalculant la lumière pour qu'elle vienne toujours du nord-ouest.
 
 import { Canvas, rng, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
@@ -184,8 +184,8 @@ export function treeBody(light: Vec = [-Math.SQRT1_2, -Math.SQRT1_2]): Canvas {
 // dessus vu en trois quarts (D/2 = 27 px).
 
 /** Hauteur de l'image de l'arbre debout ; décalage de ses rangées par rapport au repère 64x96 (même bas d'image). */
-export const TALL_H = 160;
-export const TALL_DY = TALL_H - 96;
+const TALL_H = 160;
+const TALL_DY = TALL_H - 96;
 
 // Une masse de fond, puis cinq masses de la plus lointaine (en haut) à la plus proche (en bas) : asymétriques, éclairées en haut à gauche.
 const TALL_MASSES: Mass[] = [

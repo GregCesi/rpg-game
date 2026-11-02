@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { DEPTH, HARVEST, HEW_PASS, SPLIT, WOOD_AIM } from '../config';
 import { gestures, wood as W, work } from '../content';
+import { woodWorkOf } from '../world/tools';
 import { CM_PER_PX } from '../content/gabarit';
 import type { End, Facing, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
@@ -82,11 +83,8 @@ export class WoodSystem {
 
   /** Ce que fait cet outil à une pièce de bois, s'il y fait quelque chose. */
   static workOf(tool: string | undefined): WoodWork | undefined {
-    if (tool === W.cut.tool) return 'cut';
-    if (tool === W.hew.tool) return 'hew';
-    if (tool === W.split.wedge) return 'plant';
-    if (tool === W.split.maul) return 'maul';
-    return undefined;
+    // ce que l'outil déclare faire au bois (`does` d'items.json), jamais son nom
+    return woodWorkOf(tool);
   }
 
   /** Le geste d'un travail : de haut en bas pour la cognée et la doloire, le coup de masse ; le coin se plante sans geste. */
@@ -298,7 +296,7 @@ export class WoodSystem {
   hewPass(
     player: Player,
     aim: WoodAim,
-    stroke: { cm: number; durations?: number[] },
+    stroke: { cm: number; durations?: number[]; tool?: string },
     pay: () => boolean | 'wait',
     settle: (cm: number) => void,
     end: (hit: WoodHit, why: RailEnd) => void,
@@ -321,7 +319,7 @@ export class WoodSystem {
       from: rail.from,
       to: rail.to,
       gesture: work.strokes.hew.gesture,
-      tool: W.hew.tool,
+      tool: stroke.tool ?? W.hew.tool,
       durations: stroke.durations,
       // le fer avance de ce que lève un coup (une fraction de pixel : la face monte lentement, comme en vrai)
       advance: stroke.cm / CM_PER_PX,

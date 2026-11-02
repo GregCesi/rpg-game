@@ -1,13 +1,16 @@
 // Le catalogue du mode construction, sans Phaser : tout ce qui existe dans le contenu (props.json, items.json, la pièce de bois de
-// tous réglages), rangé par famille, jamais d'objet inventé. La famille se tire du contenu (élément calculé, bois, matière, métier,
-// genre d'objet) ; ce qui ne se range nulle part va dans « divers ».
+// tous réglages), rangé par famille, jamais d'objet inventé. La famille est celle que déclare l'objet (`family` de props.json et
+// d'items.json), jamais devinée à sa clé.
 
 import { items, props, wood } from '../content';
-import type { BuildRef, ItemDef, JointType, NaturalDef, PropDef, WoodLook, WoodPiece } from '../content/types';
+import type { BuildRef, JointType, NaturalDef, WoodLook, WoodPiece } from '../content/types';
+import { WOOD_PIECE } from '../world/woodPiece';
 import { shapeOfLook, woodOfLook } from '../world/woodShape';
 
-/** Les familles, dans l'ordre du catalogue. */
-export const FAMILIES = ['éléments', 'assemblages', 'bois', 'pierre', 'terre', 'fibres', 'outils', 'mobilier', 'chantier', 'nature', 'divers'] as const;
+import { FAMILIES } from '../content/types';
+
+/** Les familles, dans l'ordre du catalogue (déclarées avec le contenu : types.ts). */
+export { FAMILIES };
 export type Family = (typeof FAMILIES)[number];
 
 /** Une entrée du catalogue : son nom, sa famille, ce qu'elle pose, son image (vignette), sa matière naturelle, si c'est le bois. */
@@ -26,42 +29,10 @@ export interface CatalogEntry {
   aged?: true;
 }
 
-/** La matière d'un objet, d'après sa masse (`{ matter }`, ou `"stone"`). */
-function matterOf(mass: PropDef['mass'] | ItemDef['mass']): string | undefined {
-  if (mass === 'stone') return 'stone';
-  return mass && typeof mass === 'object' && 'matter' in mass ? mass.matter : undefined;
-}
-
-/** La famille d'un objet du monde. */
-function propFamily(key: string, d: PropDef): Family {
-  const matter = matterOf(d.mass);
-  if (d.variants || d.pitch || d.swing || /door|gable|board-wall/.test(key)) return 'éléments';
-  if (d.wood) return 'bois';
-  if (/tree|pollard|bush|stump/.test(key)) return 'nature';
-  if (matter === 'stone' || /rock|stone-chips/.test(key)) return 'pierre';
-  if (matter === 'earth' || matter === 'cob' || matter === 'mortar' || d.trade === 'digger') return 'terre';
-  if (matter === 'straw' || /rope|faggot|hay|thatch|straw/.test(key)) return 'fibres';
-  if (/-ground$/.test(key)) return 'outils';
-  if (/^shed-|stake|plan-tablet|woodpile|footing/.test(key)) return 'chantier';
-  if (key === 'cottage' || d.blend) return 'divers';
-  return 'mobilier';
-}
-
-/** La famille d'un objet possédable. */
-function itemFamily(key: string, d: ItemDef): Family {
-  const matter = matterOf(d.mass);
-  if (d.kind !== 'resource') return 'outils';
-  if (matter === 'stone' || d.trade === 'quarryman' || d.trade === 'mason') return 'pierre';
-  if (matter === 'earth' || matter === 'cob' || d.trade === 'digger') return 'terre';
-  if (matter === 'straw' || /rope|straw|thatch/.test(key)) return 'fibres';
-  if (matter === 'wood' || ['woodcutter', 'carpenter', 'splitter', 'joiner'].includes(d.trade ?? '')) return 'bois';
-  return 'divers';
-}
-
 /** Tout le catalogue : la pièce de bois d'abord (une vignette par diamètre et par aspect ; longueur et sens se règlent à part), puis chaque objet du monde et chaque objet possédable. */
 export function catalog(): CatalogEntry[] {
   const out: CatalogEntry[] = [];
-  const base = props['wood-piece'];
+  const base = props[WOOD_PIECE];
   // les assemblages de charpente (CONCEPTION, « Les assemblages ») : pas des objets, des jonctions entre deux pièces de bois
   out.push({ id: 'joint:scarf', name: 'enture en trait de Jupiter', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-scarf-normal-ew', joint: 'scarf' });
   out.push({ id: 'joint:mortise', name: 'tenon et mortaise', family: 'assemblages', ref: { wood: structuredClone(base.wood!) }, thumb: 'joint-peg', joint: 'mortise' });
@@ -82,10 +53,10 @@ export function catalog(): CatalogEntry[] {
   }
   for (const [key, d] of Object.entries(props)) {
     if (d.wood) continue;
-    out.push({ id: `prop:${key}`, name: d.name, family: propFamily(key, d), ref: { prop: key }, thumb: d.image, ...(d.natural ? { natural: d.natural } : {}), ...(d.aged ? { aged: true as const } : {}) });
+    out.push({ id: `prop:${key}`, name: d.name, family: d.family, ref: { prop: key }, thumb: d.image, ...(d.natural ? { natural: d.natural } : {}), ...(d.aged ? { aged: true as const } : {}) });
   }
   for (const [key, d] of Object.entries(items)) {
-    out.push({ id: `item:${key}`, name: d.name, family: itemFamily(key, d), ref: { item: key }, thumb: d.ground ?? d.icon, ...(d.natural ? { natural: d.natural } : {}), ...(d.aged ? { aged: true as const } : {}) });
+    out.push({ id: `item:${key}`, name: d.name, family: d.family, ref: { item: key }, thumb: d.ground ?? d.icon, ...(d.natural ? { natural: d.natural } : {}), ...(d.aged ? { aged: true as const } : {}) });
   }
   return out;
 }

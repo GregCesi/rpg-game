@@ -24,6 +24,8 @@ import combatJson from './combat.json';
 import timeJson from './time.json';
 import workJson from './work.json';
 export { maps } from '../generated/maps';
+import treesJson from '../generated/trees.json';
+import { withTreeLayout, type TreeLayouts } from './treeLayout';
 
 function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.infer<T> {
   const r = schema.safeParse(data);
@@ -34,7 +36,8 @@ function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.i
 /** Propriétés par tuile et par terrain, par jeu de tuiles (lues par build-art, vérifiées ici). */
 export const tiles = parse('tiles.json', z.record(z.string(), TilesetCatalogSchema), tilesJson);
 /** Catalogue des objets : la clé est le type d'un objet de carte dans Tiled. */
-export const props = parse('props.json', z.record(z.string().min(1), PropDefSchema), propsJson);
+// complété des décalages de ses arbres, calculés par npm run art (src/generated/trees.json, src/content/treeLayout.ts)
+export const props = parse('props.json', z.record(z.string().min(1), PropDefSchema), withTreeLayout(propsJson, treesJson as unknown as TreeLayouts));
 /** Objets possédables (dans les mains, au sol) : la clé est l'identifiant de l'objet. */
 export const items = parse('items.json', z.record(z.string().min(1), ItemDefSchema), itemsJson);
 /** Genres de tas : ce qu'on y entrepose et leur forme pour chaque nombre de pièces. */
@@ -69,3 +72,23 @@ export const combat = parse('combat.json', CombatSchema, combatJson);
 export const time = parse('time.json', TimeSchema, timeJson);
 /** Le travail (docs/CONCEPTION.md, « Le travail ») : les coups, la résistance de la matière, les êtres de référence, les points de calage. */
 export const work = parse('work.json', WorkSchema, workJson);
+
+/**
+ * L'objet sert-il à un travail (Espace l'y emploie ; tout le reste de ce qu'on tient frappe, world/heft.ts) ? Ce qu'il déclare faire
+ * (`does`), ou ce qui le demande : une récolte, une transformation, le tracé d'un chantier. Tiré des données, jamais d'une liste de noms ;
+ * calculé à chaque appel (un objet ajouté au contenu, l'outil d'essai des contrats, compte aussitôt).
+ */
+export function worksWith(item: string): boolean {
+  if (items[item]?.does?.length) return true;
+  return (
+    Object.values(props).some((p) => p.harvest && (p.harvest.tool === item || item in p.harvest.also)) ||
+    Object.values(transforms).some((t) => t.tools.includes(item)) ||
+    Object.values(plans).some((p) => p.stake === item)
+  );
+}
+
+/** La planche en main d'un outil (`work.image`, sinon `tool-<clé>`) : son geste de travail. */
+export const toolSheet = (item: string): string => items[item]?.work?.image ?? `tool-${item}`;
+
+/** Les images des rais de soleil (`sun` de props.json) : celle que posent les intérieurs est la première (validate.ts : il y en a une). */
+export const sunImages: readonly string[] = Object.values(props).filter((p) => p.sun).map((p) => p.image);

@@ -117,3 +117,78 @@ vendrait au village. Tout s'achète, mais tout peut se faire.
 - Outils de test (`?dieu`) : le donner, le poser, le mettre au sol, le transformer.
 - En jeu : la liste des gestes à faire et de ce qu'on doit voir.
 ```
+
+# Les contrats, par sorte d'objet
+
+Un membre d'une sorte fait **tout ce que font les autres**, sans que personne ait à y penser : chaque capacité vient d'un champ des
+données (docs/AUDIT.md, « Normalisation »), jamais de son nom ; chaque dessin de la liste existe. `npm run test:contrats`
+(tools/test-contrats.ts) vérifie chaque contrat sur **tous** les membres de la sorte, puis sur des membres d'essai créés seulement
+par des données dans le test (une hache, une épée, un arbre) : s'il fallait du code pour qu'un membre d'essai passe, c'est un trou.
+Ce qui manque encore (des dessins, des fiches, des métiers à faire avec le pixel-artist ou Grégoire) est dans `DRAWINGS_TODO`,
+`VIEWS_TODO`, `TRADE_TODO` (validate.ts) et `FICHE_TODO` (tools/check.ts), chacun avec sa raison.
+
+**La recette, pour toute sorte** : déclarer les données ; demander au pixel-artist les dessins de la liste du contrat ; lancer
+`npm run test:contrats`.
+
+## Objet portable (items.json ; un objet du monde qui a `take`)
+- Il **se prend** (ses mains : `hands`, ou `take.hands`), a une **masse** (`mass`, saisie ou par sa matière), ses **dimensions**
+  (`dims`), sa **famille** au catalogue (`family`) et son **métier** (`trade`).
+- Il **frappe** : son `weapon`, sinon l'arme improvisée de ses dimensions et de sa masse (src/world/heft.ts : portée, lenteur,
+  énergie au joule).
+- S'il **s'empile** : son genre de tas (`pile`, piles.json), qui le prend et **compte** ses pièces (`count`).
+- Dessins : son icône (`icon`, 16 px) ; son **image au sol** (`ground`) et **toutes ses vues** selon sa symétrie (`views`) ; sa
+  **posture tenue** (`hold.image`, planche `held-…` : vues `down`, `up`, `right`) ; s'il est de bois (sa masse de bois, ou le
+  menuisier, le charpentier), ses trois âges (`aged`, tirés par le build).
+
+## Outil (un objet portable qui a `does`)
+- Tout le contrat d'un objet portable.
+- Il déclare **les genres de travail qu'il fait** (`does` : `fell`, `limbs`, `whittle`, `break` pour les récoltes ; `cut`, `hew`,
+  `plant`, `maul` pour le bois). **Toute cible de ce genre l'accepte**, sans le nommer (src/world/tools.ts) : une nouvelle hache qui
+  fait `fell`, `limbs`, `cut` abat tous les arbres, les ébranche et coupe tout le bois.
+- Il frappe pour faire (tout sauf planter le coin) : ses **données de coup** (`work` : `length`, `grip`, `balance`, `edge`, `aim`,
+  ses `strokes` propres) ; chacun de ses travaux se calcule (un nombre de coups, une durée : `npm run check` les affiche).
+- Dessins : en plus, sa **planche en main** (`work.image`, sinon `tool-<clé>` : art/items/held.ts, cinq dessins en zones de matière),
+  avec le geste de chacun de ses travaux dans les trois directions.
+
+## Arme (un objet portable qui a `weapon`)
+- Tout le contrat d'un objet portable.
+- Ses réglages (`weapon` : `length`, `grip`, `balance`, `efficiency`, `family`, `image`) ; sa **famille** de gestes (combat.json) et
+  ses attaques : pour chacune, des dégâts, une durée, une portée (world/strike.ts) ; son prix au joule.
+- Dessins : **un seul dessin** couché vers l'est (`weapon.image`, tiré en huit angles, animation `angles`) ; ses **traînées**
+  `fx-smear-<clé>-…` se tirent seules au build, à sa longueur ; le reste comme un objet portable.
+
+## Pièce de bois (un diamètre de wood.json ; tout le bois du monde est `wood-piece`)
+- Un diamètre (`sizes`) et ses aspects (`looks` : rond, écorcé, faces dressées, poutre, demi-bille, quartier…).
+- Chaque aspect : ses **dimensions** et sa **masse** calculées ; il **se prend** à deux mains s'il ne dépasse pas ce que porte Xéros,
+  sinon il **roule** (s'il est rond) ; il **pivote avec R** (`turn`) ; il **frappe** (l'arme improvisée de sa longueur) ; il **va en
+  tas** (le tas se calcule : pyramide, rangées, triangles) **qui compte ses pièces**, s'il se porte.
+- Le diamètre **se coupe** sur la grille (`grid`, `min`) ; **se fend** s'il a ses aspects fendus (`split`) ; **s'équarrit** s'il a
+  l'aspect poutre (`beam`).
+- Dessins : ses planches est-ouest et nord-sud (et debout s'il se dresse), **à trois âges** (tirées par le build) ; l'icône et la
+  posture portée de chaque aspect ; les vues couchées se **calculent** de la section (art/world/wood-section.ts), seules les matières
+  se dessinent (art/world/wood-skin.ts).
+
+## Arbre (un objet du monde qui a `harvest.fall`)
+Voir aussi CLAUDE.md, « Trois arbres, deux sortes ».
+- Debout : il **s'abat au coup** (`harvest.work.fell` : son diamètre ; `stages` : ses étapes) avec tout outil qui fait `fell`,
+  **des deux côtés** (Xéros se place du côté où il frappe, l'entaille se dessine de ce côté, l'arbre y tombe) ; il devient sa
+  **souche** (`becomes`) et fait naître son **arbre couché** (`spawns`).
+- Couché : il **s'ébranche au coup** (`harvest.work.limbs`, ses étapes), puis devient **une pièce de bois de sa longueur utile**
+  (`becomes: "wood-piece"`, `wood` : diamètre et longueur sur la grille), qui a tout le contrat d'une pièce de bois (se coupe en
+  billes, va en tas compté, pivote, s'équarrit…).
+- Dessins : l'arbre debout, sa souche, ses étapes d'abattage à droite et à gauche, sa chute à droite et à gauche (deux images de
+  raccord, sans saut), son arbre couché (et `-left`), ses étapes d'ébranchage ; sa matière dans art/world/wood.ts. Ce qui se calcule
+  et ce qui se dessine : voir CLAUDE.md et docs/AUDIT.md, « Un nouvel arbre ».
+
+## Matière (matters.json ; une roche de rocks.json pour la pierre)
+- Sa **densité** (la sienne, ou celle de sa roche) : la masse des objets qui en sont faits (`mass: {matter, fill}`) ; des objets qui
+  en sont faits ; ses transformations (transforms.json : la sortie pèse moins que l'entrée) ; sa résistance au coup (`matter` de
+  work.json) si elle se travaille.
+- Dessins : pour une roche, sa **rampe** dans art/palette.ts ; ses **éclats** `fx-<matière>` si elle est frappée (`impact`, `target`).
+
+## Meuble (un objet du monde de famille `mobilier`)
+- Ses **dimensions** réelles, son **corps** (`body`, sauf ce qui est au sol ou trop petit pour barrer le passage), sa **masse** (par sa
+  matière de préférence), son **métier**, sa **place au catalogue** ; s'il est de bois, ses **trois âges** (`aged`) ; s'il s'ouvre,
+  son autre état (`swing.into`).
+- Dessins : son image et **toutes ses vues** selon sa symétrie (`-r1` à `-r3` pour `four`), dès sa création ; la face du dedans s'il
+  en a une (`-r2`, CONCEPTION « Les intérieurs »).

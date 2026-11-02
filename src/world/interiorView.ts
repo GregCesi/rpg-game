@@ -5,6 +5,7 @@
 
 import Phaser from 'phaser';
 import { DEPTH, INTERIOR } from '../config';
+import { sunImages } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import { buildLook } from './buildView';
 import type { GameMap } from './GameMap';
@@ -93,7 +94,7 @@ export class InteriorView {
     this.glows = this.lights.map((l) => {
       const k = INTERIOR.light[l.kind] * Math.sqrt(l.span / 100);
       return this.scene.add
-        .image(l.x, l.y, 'sunpatch')
+        .image(l.x, l.y, sunImages[0])
         .setOrigin(0.5, 1)
         .setAngle(ANGLE[l.side])
         .setScale(k)

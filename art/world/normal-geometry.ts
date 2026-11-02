@@ -8,10 +8,11 @@
 // Fichiers et ce qu'ils s'échangent :
 // - normal-tree.ts   : arbre debout (`normal-tree`) et souche (`normal-tree-stump`) ; exporte `treeBody(light)`,
 //                      `standingTree()`, `stumpBody()`, `stump()`.
-// - normal-felled.ts : l'arbre couché d'un seul tenant (`normal-felled-tree`, `-left`), sans sections ni entailles ;
-//                      exporte `lyingFrame()` et `lyingFrameLeft()` (dernière image de chaque chute) et `FELLED_TREE`
-//                      (sa place, ses collisions, la place de la pièce de bois de 580 cm qu'il devient une fois ébranché).
-// - normal-fall.ts   : planches `normal-tree-fall` et `normal-tree-fall-left` ; importe les deux `lyingFrame*`.
+// - normal-felled.ts : l'arbre couché d'un seul tenant (`normal-felled-tree`, `-left`), sans sections ni entailles ; enregistre
+//                      le dessin de l'arbre normal (`registerTree`) : sa souche, son tronc nu, son arbre couché (la pièce de bois
+//                      de sa longueur utile qu'il devient une fois ébranché) ; `felledLayout(cm)` : ses collisions.
+// - ses étapes, ses chutes (`normal-tree-fall`, `-left`, la chute commune art/world/tree-fall.ts) et son ébranchage se tirent de
+//   ces dessins et de sa géométrie (`tree` de props.json) : art/world/trees.ts.
 // - timber.ts        : le rondin (30 cm à 5 m) et la poutre qu'on en tire, dont la bille de 95 cm `normal-felled-log`
 //                      et `normal-felled-log-ns` ; normal-logs.ts garde la construction d'origine de la bille, dont
 //                      partent encore la bille portée et l'icône (carried.ts, resources.ts).

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { DEPTH } from '../config';
+import { sunImages } from '../content';
 import { game } from '../state';
 import { lightAt } from '../world/daylight';
 
@@ -24,7 +25,7 @@ export class Daylight {
     const l = lightAt(game.clock.minute);
     this.veil.setFillStyle(l.color, l.alpha).setVisible(l.alpha > 0.001);
     for (const o of this.scene.children.list) {
-      if (!(o instanceof Phaser.GameObjects.Image) || o.texture.key !== 'sunpatch') continue;
+      if (!(o instanceof Phaser.GameObjects.Image) || !sunImages.includes(o.texture.key)) continue;
       // l'intensité dessinée du rai, retenue la première fois
       const base = (o.getData('sunAlpha') as number | undefined) ?? (o.setData('sunAlpha', o.alpha), o.alpha);
       o.setAlpha(base * l.sun);

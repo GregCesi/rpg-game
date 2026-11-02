@@ -24,17 +24,20 @@
 // sur toute sa longueur, fenêtre de 32 px après fenêtre (le calcul reste linéaire) ; un bout qui vient contre un autre mur est
 // monté plus long puis coupé : ses pierres vont jusqu'au bord, sans contour.
 
+import wallsJson from '../content/walls.json';
 import { Canvas, EMPTY, castShadow, flipX, rng, type Grid } from './gridCanvas';
 
+/** Les pierres des murs, en données (src/content/walls.json) : les pierres brutes et leur taille, les moellons, la boutisse, les éclats. */
+const WALLS = wallsJson as {
+  rough: { label: string; image: string; crop: number; size: 'big' | 'medium' | 'small' }[];
+  rubble: { label: string; image: string; crop: number }[];
+  ns: string[];
+  header: { label: string; image: string };
+  chips: { label: string; image: string };
+};
+
 /** Les images des pierres dont l'algorithme se sert (images au sol du jeu, ombre comprise, palette `stonePalette`). */
-export const WALL_STONES: readonly string[] = [
-  'big-rough-stone-ground', 'big-rough-stone-ground-b',
-  'rough-stone-ground', 'rough-stone-ground-b',
-  'small-rough-stone-ground', 'small-rough-stone-ground-b',
-  'short-rubble-stone-ground', 'rubble-stone-ground', 'long-rubble-stone-ground',
-  'short-rubble-stone-ground-ns', 'rubble-stone-ground-ns', 'long-rubble-stone-ground-ns',
-  'stone-chips',
-];
+export const WALL_STONES: readonly string[] = [...WALLS.rough.map((p) => p.image), ...WALLS.rubble.map((p) => p.image), ...WALLS.ns, WALLS.chips.image];
 
 /** Taille d'un mur, en pixels du jeu. */
 export interface WallSize {
@@ -269,23 +272,13 @@ interface Tables {
 
 function tables(image: (name: string) => Grid): Tables {
   // Les pierres brutes : la face commence sous le dessus, à la dernière rangée claire (l'arête qui prend le jour).
-  const ROUGH: Piece[] = [
-    { label: 'grosse a', image: 'big-rough-stone-ground', crop: 3 },
-    { label: 'grosse b', image: 'big-rough-stone-ground-b', crop: 3 },
-    { label: 'moyenne a', image: 'rough-stone-ground', crop: 2 },
-    { label: 'moyenne b', image: 'rough-stone-ground-b', crop: 2 },
-    { label: 'petite a', image: 'small-rough-stone-ground', crop: 1 },
-    { label: 'petite b', image: 'small-rough-stone-ground-b', crop: 1 },
-  ].map((p) => ({ ...p, full: bodyOf(image(p.image)) }));
-  const BIG = ROUGH.slice(0, 2), MEDIUM = ROUGH.slice(2, 4), SMALL = ROUGH.slice(4, 6);
+  const ROUGH: Piece[] = WALLS.rough.map(({ label, image: im, crop }) => ({ label, image: im, crop, full: bodyOf(image(im)) }));
+  const bySize = (s: string) => ROUGH.filter((_, i) => WALLS.rough[i].size === s);
+  const BIG = bySize('big'), MEDIUM = bySize('medium'), SMALL = bySize('small');
   // Les moellons : couchés en long (panneresses : l'image est-ouest), ou en boutisse (le bout, l'image nord-sud du 40 cm).
-  const RUBBLE: Piece[] = [
-    { label: 'moellon 30', image: 'short-rubble-stone-ground', crop: 2 },
-    { label: 'moellon 40', image: 'rubble-stone-ground', crop: 2 },
-    { label: 'moellon 50', image: 'long-rubble-stone-ground', crop: 2 },
-  ].map((p) => ({ ...p, full: bodyOf(image(p.image)) }));
-  const headerFull = bodyOf(image('rubble-stone-ground-ns'));
-  const HEADER: Piece = { label: 'boutisse 40', image: 'rubble-stone-ground-ns', full: headerFull, crop: headerFull.length - 4 };
+  const RUBBLE: Piece[] = WALLS.rubble.map(({ label, image: im, crop }) => ({ label, image: im, crop, full: bodyOf(image(im)) }));
+  const headerFull = bodyOf(image(WALLS.header.image));
+  const HEADER: Piece = { label: WALLS.header.label, image: WALLS.header.image, full: headerFull, crop: headerFull.length - 4 };
   const sizeOf = (p: Piece) => (BIG.includes(p) ? 'big' : MEDIUM.includes(p) ? 'medium' : 'small') as Stone['size'];
   /** Toutes les manières de poser chaque pierre brute (à plat, retournée, debout, de travers, en biais). */
   const STONE_VARIANTS: Stone[] = [];
@@ -320,7 +313,7 @@ function tables(image: (name: string) => Grid): Tables {
   }
   /** Les pierres entières de l'assise haute (le dessin complet : leur dessus fait le dessus du mur), retournées ou non. */
   const CAPS = ROUGH.flatMap((p) => [p, turn(p)].map((q) => ({ g: q.full, base: p, size: sizeOf(p), how: 'cap' as const, crop: q.crop })));
-  return { image, ROUGH, BIG, MEDIUM, SMALL, RUBBLE, HEADER, STONE_VARIANTS, BITS, CAPS, CHIPS: bodyOf(image('stone-chips')) };
+  return { image, ROUGH, BIG, MEDIUM, SMALL, RUBBLE, HEADER, STONE_VARIANTS, BITS, CAPS, CHIPS: bodyOf(image(WALLS.chips.image)) };
 }
 
 function count(t: Tables, used: Used, p: Piece): void {
@@ -615,7 +608,7 @@ function roughWall(t: Tables, seed: number, size: WallSize, ends?: Ends): { grid
     if (shadowed && r() < 0.7) earthy.push([x, y]);
   }
   for (const [x, y] of earthy) { wall.c.set(x, y, MORTAR); wall.kind[y][x] = 0; }
-  if (stats.chips) used.set('stone-chips', { piece: { label: 'eclats', image: 'stone-chips', full: t.CHIPS, crop: 0 }, n: stats.chips });
+  if (stats.chips) used.set(WALLS.chips.image, { piece: { label: WALLS.chips.label, image: WALLS.chips.image, full: t.CHIPS, crop: 0 }, n: stats.chips });
   const grid = wall.finish();
   // part de la surface du mur couverte par la pierre (contours compris), le reste est la terre des joints
   let stone = 0, earth = 0;
@@ -978,7 +971,7 @@ function dressedWall(t: Tables, seed: number, size: WallSize, ends?: Ends): { gr
     wall.c.stamp(g, x, y);
     placed.push([x, y]);
   }
-  if (placed.length) used.set('stone-chips', { piece: { label: 'eclats', image: 'stone-chips', full: t.CHIPS, crop: 0 }, n: placed.length });
+  if (placed.length) used.set(WALLS.chips.image, { piece: { label: WALLS.chips.label, image: WALLS.chips.image, full: t.CHIPS, crop: 0 }, n: placed.length });
   return { grid: wall.finish(), used };
 }
 

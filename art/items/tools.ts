@@ -273,18 +273,106 @@ function pickaxe(): Canvas {
 
 // ---------- Houe ----------
 
+/** Houe : lame plate qui pend à angle aigu au bout du manche, plus large au tranchant. */
+function hoe(): Canvas {
+  const c = new Canvas(S, S);
+  shaft(c, 15, 14, 3, 'M', 'm');
+  c.within('M', (c) => c.set(2, 13, 'm').set(3, 12, 'm'));
+  // douille de fer qui coiffe le bout du manche
+  c.set(13, 2, '3').set(14, 2, '4').set(13, 3, '4').set(14, 3, '4');
+  // lame : trapèze vu de face, sous la douille
+  c.stamp([
+    '.23.',
+    '.234',
+    '.234',
+    '2334',
+    '1111',
+  ], 11, 4);
+  c.set(13, 5, '5').set(13, 6, '6').set(14, 6, '6'); // rouille
+  return outline(c, dark);
+}
 
 // ---------- Faucille ----------
 
+/** Faucille : court manche de bois, lame en croissant qui monte puis retombe vers la droite. */
+function sickle(): Canvas {
+  const c = new Canvas(S, S);
+  // lame : croissant entre deux cercles
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const px = x + 0.5, py = y + 0.5;
+    const outer = Math.hypot(px - 8.6, py - 8.2);
+    const inner = Math.hypot(px - 9.8, py - 9.6);
+    if (outer > 6.2 || inner < 4.9) continue;
+    if (py > 9.6 && px < 9) continue; // le croissant s'ouvre en bas à gauche, vers le manche
+    if (py > 12.5) continue;
+    c.set(x, y, inner < 6.0 ? '1' : outer > 5.2 ? '3' : '2');
+  }
+  c.set(6, 7, '.');
+  shaft(c, 15, 14, 9, 'M', 'm');
+  c.set(5, 9, '4').set(6, 9, '4').set(6, 8, '4'); // virole
+  return outline(c, dark);
+}
 
 // ---------- Arrosoir ----------
 
+/** Arrosoir de fer cabossé : panse ronde à gauche, bec en diagonale vers le haut à droite, anse au-dessus. */
+function wateringCan(): Canvas {
+  const c = new Canvas(S, S);
+  // bec : du bas de la panse vers le haut à droite, pomme au bout
+  shaft(c, 19, 11, 7, '2', '3');
+  c.stamp(['.12', '123', '.34'], 12, 3);
+  // panse : dessus en ellipse (ouverture sombre), face avant claire à gauche, sombre à droite
+  c.stamp([
+    '.122223.',
+    '22244233',
+    '23333344',
+    '21333344',
+    '21333344',
+    '21444344',
+    '21322344',
+    '21333344',
+    '.665554.',
+  ], 1, 6);
+  const out = outline(c, dark);
+  // anse en arc, tirée après le contour pour garder le jour dessous
+  out.line(2, 4, 2, 4, '4').line(3, 3, 6, 3, '4').set(7, 4, '4');
+  out.set(3, 2, '3').set(4, 2, '3').set(5, 2, '3').set(6, 2, '3').set(2, 3, '3').set(7, 3, '4').set(8, 4, 'o');
+  return out;
+}
 
 // ---------- Canne à pêche ----------
 
+/** Canne à pêche : perche de bois effilée, poignée entourée de ficelle, fil qui pend du bout avec son bouchon. */
+function fishingRod(): Canvas {
+  const c = new Canvas(S, S);
+  shaft(c, 15, 14, 9, 'M', 'm');
+  c.line(7, 7, 13, 1, 'm');
+  c.within('Mm', (c) => c.set(2, 13, 'n').set(3, 12, 'n').set(3, 13, 'e').set(4, 12, 'e'));
+  // bouchon
+  c.rect(13, 8, 2, 2, 'c').set(14, 9, '9').set(13, 8, 'a');
+  const out = outline(c, dark);
+  // fil : sans contour, tiré après
+  out.line(14, 1, 14, 7, 'd');
+  return out;
+}
 
 // ---------- Épée ----------
 
+/** Épée courte : lame de fer simple à arête claire, garde droite, poignée de cuir, pommeau rond. */
+function sword(): Canvas {
+  const c = new Canvas(S, S);
+  // lame, pointe en haut à droite
+  shaft(c, 15, 8, 2, '2', '3');
+  for (let y = 3; y <= 8; y++) c.set(15 - y, y, '1');
+  c.set(14, 1, '2');
+  // poignée de cuir
+  shaft(c, 15, 12, 9, '7', '8');
+  // garde droite, en travers de la diagonale
+  crossbar(c, 4, 6, 5, '2', '3', '4');
+  // pommeau
+  c.rect(2, 13, 2, 2, '3').set(2, 13, '2').set(3, 14, '4');
+  return outline(c, dark);
+}
 
 // ---------- Épée de bois ----------
 
@@ -369,5 +457,10 @@ export default [
   axeGround(2),
   axeGround(3),
   img('item-pickaxe', pickaxe()),
+  img('item-hoe', hoe()),
+  img('item-sickle', sickle()),
+  img('item-watering-can', wateringCan()),
+  img('item-fishing-rod', fishingRod()),
+  img('item-sword', sword()),
   img('item-wooden-sword', woodenSword()),
 ];

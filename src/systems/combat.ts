@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { DEBUG, DEPTH, UI, ZOOM_STEPS } from '../config';
-import { combat, items, props, stamina } from '../content';
-import { itemMass } from '../content/mass';
-import type { Attack, Facing, SweepDef, Weapon } from '../content/types';
+import { combat, items, props, stamina, strength } from '../content';
+import type { Attack, Facing, SweepDef, Swinger, Weapon } from '../content/types';
 import type { Player } from '../entities/Player';
 import { combatPoses } from '../generated/combatPoses';
-import { game } from '../state';
+import { game, type Held } from '../state';
+import { heftOf, improvisedStroke } from '../world/heft';
 import type { GameMap } from '../world/GameMap';
 import { boxOf } from '../world/build';
 import { CM_PER_PX } from '../content/gabarit';
@@ -48,8 +48,14 @@ interface Target {
   y: number;
 }
 
-/** Ce qui frappe : une arme possédable (`item`), ou la main nue (`fist`, combat.json `unarmed`). */
-export type Striker = { item: string } | { fist: true };
+/**
+ * Ce qui frappe : ce qu'on tient (`held` : un objet possédable, un objet du monde porté, une pièce de bois ; son arme déclarée, sinon
+ * l'arme improvisée de ses dimensions, world/heft.ts), ou la main nue (`fist`, combat.json `unarmed`).
+ */
+export type Striker = { held: Held } | { fist: true };
+
+/** La clé de ce qu'on tient : l'objet possédable, ou l'objet du monde (la pièce de bois avec son diamètre et sa longueur). */
+export const heldKey = (h: Held): string => ('item' in h ? h.item : h.wood ? `${h.prop}:${h.wood.size}:${h.wood.length}` : h.prop);
 
 /**
  * Une attaque prête à jouer : laquelle, avec quoi, ses images dans la direction de Xéros et leurs durées, où elle frappe au sol
@@ -65,6 +71,8 @@ export interface AttackPlan {
   frames: CombatFrame[];
   durations: number[];
   sweep: SweepDef;
+  /** L'arme est improvisée (tirée des dimensions de ce qu'on tient, world/heft.ts) : elle se dessine par l'image de l'objet. */
+  improvised: boolean;
   /** Son énergie, en joules (strike.ts `strikeEnergy`). */
   joules: number;
   /** Son prix au plafond et au souffle (au joule, comme le travail). */
@@ -135,7 +143,7 @@ export class CombatSystem {
 
   /** La clé de ce qui frappe, pour l'enchaînement et le journal. */
   private static keyOf(s: Striker): string {
-    return 'item' in s ? s.item : 'fist';
+    return 'held' in s ? heldKey(s.held) : 'fist';
   }
 
   /** Ce que tiennent les mains, pour la posture : l'arme à deux mains, ce que tient l'autre main, les mains libres. */
@@ -144,15 +152,16 @@ export class CombatSystem {
     const free: Grip['free'] = game.both ? 'none' : !l && !r ? 'both' : !r ? 'right' : !l ? 'left' : 'none';
     if (game.both) return { other: 'empty', both: true, free };
     const own = game.hands[game.active];
-    const mine = 'item' in s && own && 'item' in own && own.item === s.item ? game.active : 1 - game.active;
+    const mine = 'held' in s && own === s.held ? game.active : 1 - game.active;
     const other = game.hands[1 - mine];
     return { other: !other ? 'empty' : 'item' in other && items[other.item].weapon ? 'weapon' : 'other', both: false, free };
   }
 
   /** L'attaque que jouerait Espace à `time` avec `s`, vers `facing` : la suivante de l'enchaînement s'il tient, sinon la première. */
-  plan(s: Striker, facing: Facing, time: number): AttackPlan {
-    const weapon: Weapon = 'item' in s ? items[s.item].weapon! : combat.unarmed;
-    const kg = 'item' in s ? itemMass(s.item) : combat.unarmed.mass;
+  plan(s: Striker, facing: Facing, time: number, who: Swinger = strength.swing): AttackPlan {
+    const heft = 'held' in s ? heftOf(s.held) : undefined;
+    const weapon: Weapon = heft?.weapon ?? combat.unarmed;
+    const kg = heft?.kg ?? combat.unarmed.mass;
     const chain = stanceFor(combat, weapon.family, this.grip(s)).chain;
     const key0 = CombatSystem.keyOf(s);
     const at = this.chainWith === key0 && this.chainAt >= 0 && time <= this.comboUntil ? (this.chainAt + 1) % chain.length : 0;
@@ -166,19 +175,24 @@ export class CombatSystem {
     const ahead = directionOf(facing, 0);
     const right = directionOf(facing, 90);
     const drawShift = { x: Math.round(right.x * shift.side + ahead.x * shift.far), y: Math.round(right.y * shift.side + ahead.y * shift.far) };
+    // une arme déclarée : sa vitesse vient de ses poses, allongées par son inertie (world/strike.ts) ; une arme improvisée, de la
+    // physique des outils au travail (le couple du bras, world/heft.ts `improvisedStroke`)
+    const imp = heft?.improvised ? improvisedStroke(heft, who) : undefined;
+    const joules = imp ? imp.joules * attack.power : strikeEnergy(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg);
     return {
       key,
       attack,
       striker: s,
       weapon,
+      improvised: !!heft?.improvised,
       kg,
       facing,
       frames,
-      durations: frameDurations(rules, frames, weapon, kg),
+      durations: imp ? frames.map((f) => Math.round(f.ms * Math.max(1, imp.slow))) : frameDurations(rules, frames, weapon, kg),
       sweep,
-      joules: strikeEnergy(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
-      cost: attackCost(stamina.work, strikeEnergy(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg)),
-      damage: damage(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
+      joules,
+      cost: attackCost(stamina.work, joules),
+      damage: imp ? Math.round(joules * rules.damagePerJoule * weapon.efficiency * 10) / 10 : damage(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
       precision: precision(rules, weapon, kg),
       shift,
       drawShift,
