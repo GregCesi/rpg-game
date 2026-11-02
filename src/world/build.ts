@@ -13,7 +13,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildPlan, BuildRef, JointType, WoodAge, WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { woodDims } from './woodPiece';
-import { lookDef, lookOf, turnedWood } from './woodShape';
+import { lookDef, lookOf, turnedWood, upOf } from './woodShape';
 
 /** Une pièce posée en mode construction, telle que GameState la garde : son identifiant propre, et ce que dit `BuildPlaced`. */
 export type BuildPiece = BuildPlaced & { id: number };
@@ -103,6 +103,29 @@ export function boxOf(p: BuildPlaced): Box3 {
   return { x: p.x, y: p.y, z: p.z, ...sizeOf(p.piece, p.view) };
 }
 
+/**
+ * Ce qu'une pièce posée occupe vraiment, pour porter, se heurter et s'aimanter : sa boîte, sauf la pièce de bois debout, dessinée plus
+ * large que sa section (règle D étendue, STYLE.md section 8 : le poteau de la poutre du normal, 20 cm, dessiné sur 40) : sa section
+ * réelle (le `body` de son aspect debout, wood.json), au milieu de son emprise. Le remplissage de 1,40 m de la maison de Xéros se pose
+ * ainsi entre deux poteaux de la travée de 1,60 m, contre leurs faces (CONCEPTION « La maison de Xéros »).
+ */
+export function solidOf(p: BuildPlaced): Box3 {
+  const b = boxOf(p);
+  if (!('wood' in p.piece) || p.piece.wood.axis !== 'up') return b;
+  const body = upOf(p.piece.wood.size, lookOf(p.piece.wood)).body;
+  const w = Math.min(b.w, body.w * CM_PER_PX);
+  const d = Math.min(b.d, body.h * CM_PER_PX);
+  return { ...b, x: b.x + (b.w - w) / 2, y: b.y + (b.d - d) / 2, w, d };
+}
+
+/**
+ * Une pièce qui se vise sur la grille, sans l'aimant des bords : le poteau (la pièce de bois debout), qui fait la travée ; le bout
+ * d'une traverse sous lui, à 10 cm de son bord, le tirerait hors de sa place.
+ */
+export function aimOnGrid(ref: BuildRef): boolean {
+  return 'wood' in ref && ref.wood.axis === 'up';
+}
+
 /** Les emprises au sol de deux boîtes se recouvrent (le simple contact d'un bord ne compte pas). */
 export function overlaps(a: { x: number; y: number; w: number; d: number }, b: { x: number; y: number; w: number; d: number }): boolean {
   return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.d && b.y < a.y + a.d;
@@ -111,11 +134,11 @@ export function overlaps(a: { x: number; y: number; w: number; d: number }, b: {
 /** Le dessus d'une boîte (cm). */
 const topOf = (b: Box3) => b.z + b.h;
 
-/** La plus grande hauteur de dessus des pièces que recoupe l'emprise (0 : le sol). */
+/** La plus grande hauteur de dessus des pièces que recoupe l'emprise (0 : le sol) ; un poteau, par sa section réelle (`solidOf`). */
 export function supportAt(pieces: readonly BuildPlaced[], foot: { x: number; y: number; w: number; d: number }): number {
   let top = 0;
   for (const p of pieces) {
-    const b = boxOf(p);
+    const b = solidOf(p);
     if (overlaps(b, foot)) top = Math.max(top, topOf(b));
   }
   return top;
@@ -126,19 +149,36 @@ export function supportAt(pieces: readonly BuildPlaced[], foot: { x: number; y: 
  * le point, sur la grille, et sa base sur le dessus de ce qu'il y a dessous. Le point visé est vu à la hauteur où la pièce se
  * poserait (y écran = y sol − z) : on essaie chaque hauteur de dessus, de la plus haute à la plus basse, et l'on garde la première
  * qui se tient (la pièce visée à cette hauteur tomberait bien sur un dessus à cette hauteur) ; à défaut, le sol. `step` : les crans
- * ajoutés (monter, descendre), d'une grille chacun, jamais sous le sol.
+ * ajoutés (monter, descendre), d'une grille chacun, jamais sous le sol. `grid` : la pièce reste sur la grille, sans aimant (le poteau,
+ * `aimOnGrid`).
  */
-export function aimAt(pieces: readonly BuildPlaced[], size: Size3, cx: number, cy: number, step = 0): Box3 {
+export function aimAt(pieces: readonly BuildPlaced[], size: Size3, cx: number, cy: number, step = 0, grid = false): Box3 {
   const tops = [...new Set(pieces.map((p) => topOf(boxOf(p))))].sort((a, b) => b - a);
-  const at = (t: number) => magnet(pieces, { x: onGrid(cx - size.w / 2), y: onGrid(cy + t - size.d / 2), w: size.w, d: size.d });
+  const at = (t: number) => {
+    const f = { x: onGrid(cx - size.w / 2), y: onGrid(cy + t - size.d / 2), w: size.w, d: size.d };
+    return grid ? f : magnet(pieces, f, t, size.h);
+  };
+  // le point visé, vu à la hauteur t, est-il sur un dessus à cette hauteur (on le voit sur ce dessus) ?
+  const seenOn = (t: number) => pieces.some((p) => {
+    const b = solidOf(p);
+    return topOf(b) === t && cx >= b.x && cx < b.x + b.w && cy + t >= b.y && cy + t < b.y + b.d;
+  });
   let base: { x: number; y: number; z: number } | undefined;
+  let first: { x: number; y: number; z: number } | undefined;
   for (const t of tops) {
     const f = at(t);
     if (supportAt(pieces, f) === t) {
-      base = { x: f.x, y: f.y, z: t };
-      break;
+      first ??= { x: f.x, y: f.y, z: t };
+      // de plusieurs hauteurs qui se tiennent, celle dont le dessus est sous le point visé : le remplissage visé sur la traverse, entre
+      // deux poteaux, ne monte pas sur la tête du poteau suivant (à sa hauteur, l'emprise glisse jusqu'à lui) ; sinon la plus haute (la
+      // sablière visée entre deux poteaux)
+      if (seenOn(t)) {
+        base = { x: f.x, y: f.y, z: t };
+        break;
+      }
     }
   }
+  base ??= first;
   if (!base) {
     const f = at(0);
     base = { x: f.x, y: f.y, z: supportAt(pieces, f) };
@@ -154,19 +194,60 @@ export function aimAt(pieces: readonly BuildPlaced[], size: Size3, cx: number, c
 /**
  * L'emprise aimantée aux bords de ses voisines : un bord à moins d'une demi-grille (10 cm) d'un bord d'une pièce proche (bout à bout,
  * ou alignés) s'y colle, en x puis en y. Ce qui n'est pas sur la grille (le morceau de solin, 50 cm d'épaisseur) se joint ainsi
- * exactement, en angle comme en long.
+ * exactement, en angle comme en long. Un poteau aimante par sa boîte et par sa section réelle (`solidOf`) : le remplissage vient
+ * contre sa face.
+ * L'aimant ne colle pas la pièce (posée à `z`, haute de `h`) là où elle heurterait une autre pièce : il prend
+ * le bord le plus proche où elle tient (le jambage d'une porte contre son poteau, pas sur lui), en x puis en y ; à défaut, comme sans
+ * heurt.
  */
-function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F): F {
+function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F, z = 0, h = 0): F {
   const reach = BUILD.grid / 2;
-  const boxes = pieces.map(boxOf);
-  const best = (deltas: number[]) => deltas.filter((d) => Math.abs(d) <= reach).sort((a, b) => Math.abs(a) - Math.abs(b))[0] ?? 0;
-  // en x : les pièces à moins d'une grille en y
-  const nearY = boxes.filter((o) => o.y < f.y + f.d + BUILD.grid && f.y < o.y + o.d + BUILD.grid);
-  const dx = best(nearY.flatMap((o) => [o.x + o.w - f.x, o.x - (f.x + f.w), o.x - f.x, o.x + o.w - (f.x + f.w)]));
-  const g = { ...f, x: f.x + dx };
-  const nearX = boxes.filter((o) => o.x < g.x + g.w + BUILD.grid && g.x < o.x + o.w + BUILD.grid);
-  const dy = best(nearX.flatMap((o) => [o.y + o.d - g.y, o.y - (g.y + g.d), o.y - g.y, o.y + o.d - (g.y + g.d)]));
-  return { ...g, y: g.y + dy };
+  // ce qui heurte : la section réelle ; les bords qui aimantent : la boîte et, pour un poteau, sa section aussi
+  const boxes = pieces.map(solidOf);
+  const edges = pieces.flatMap((p) => {
+    const [b, s] = [boxOf(p), solidOf(p)];
+    return s.w === b.w && s.d === b.d ? [b] : [b, s];
+  });
+  const hits = (b: { x: number; y: number; w: number; d: number }) => h > 0 && boxes.some((o) => overlaps(o, b) && o.z < z + h && z < o.z + o.h);
+  // les décalages possibles, du plus petit au plus grand ; sans bord à portée, aucun
+  const nearest = (deltas: number[]) => {
+    const near = deltas.filter((d) => Math.abs(d) <= reach).sort((a, b) => Math.abs(a) - Math.abs(b));
+    return near.length ? near : [0];
+  };
+  // en x : les pièces à moins d'une grille en y ; puis en y : à moins d'une grille en x, une fois décalée en x
+  const xs = nearest(
+    edges.filter((o) => o.y < f.y + f.d + BUILD.grid && f.y < o.y + o.d + BUILD.grid).flatMap((o) => [o.x + o.w - f.x, o.x - (f.x + f.w), o.x - f.x, o.x + o.w - (f.x + f.w)]),
+  );
+  const ys = (g: F) =>
+    nearest(edges.filter((o) => o.x < g.x + g.w + BUILD.grid && g.x < o.x + o.w + BUILD.grid).flatMap((o) => [o.y + o.d - g.y, o.y - (g.y + g.d), o.y - g.y, o.y + o.d - (g.y + g.d)]));
+  const at = (dx: number, dy: number) => ({ ...f, x: f.x + dx, y: f.y + dy });
+  const ysAt = (dx: number) => ys({ ...f, x: f.x + dx });
+  const first = at(xs[0], ysAt(xs[0])[0]);
+  if (!hits(first)) return first;
+  // la place la plus proche qui tient : d'abord en glissant le long de la pièce (un remplissage nord-sud entre ses poteaux, en y),
+  // puis par tous les couples de bords
+  if (f.d > f.w) {
+    for (const dy of [...ysAt(xs[0]), 0]) if (!hits(at(xs[0], dy))) return at(xs[0], dy);
+  } else {
+    for (const dx of [...xs, 0]) if (!hits(at(dx, ysAt(dx)[0]))) return at(dx, ysAt(dx)[0]);
+  }
+  for (const dx of [...xs, 0]) for (const dy of [...ysAt(dx), 0]) if (!hits(at(dx, dy))) return at(dx, dy);
+  return first;
+}
+
+/**
+ * Une pièce mince posée contre la face d'une pièce plus large (même hauteur) se centre sur elle, le long de cette face : le volet
+ * contre le remplissage à fenêtre, dont la baie est au milieu de la travée (hors de la grille de 20 cm). Sinon telle quelle.
+ */
+export function centerOnFace<B extends Box3>(pieces: readonly BuildPlaced[], b: B): B {
+  const ew = b.w >= b.d;
+  for (const p of pieces) {
+    const o = solidOf(p);
+    if (!(o.z < b.z + b.h && b.z < o.z + o.h)) continue;
+    if (ew && (o.y === b.y + b.d || o.y + o.d === b.y) && o.w > b.w && b.x < o.x + o.w && o.x < b.x + b.w) return { ...b, x: Math.round(o.x + (o.w - b.w) / 2) };
+    if (!ew && (o.x === b.x + b.w || o.x + o.w === b.x) && o.d > b.d && b.y < o.y + o.d && o.y < b.y + b.d) return { ...b, y: Math.round(o.y + (o.d - b.d) / 2) };
+  }
+  return b;
 }
 
 /** Les pièces sur lesquelles repose celle-ci : leur dessus est à sa base et leurs emprises se recouvrent. */

@@ -858,6 +858,20 @@ vues ; le foyer est un meuble.
    grange et l'étal : le solin, la traverse basse, les poteaux, les sablières, chaque pan de mur couche par couche, la charpente, les
    lattes, le chaume, le faîtage, les pignons, la porte, les volets, le foyer, les meubles ; enregistrée comme plan
    (`src/content/plans/maison-xeros.json`) ; aperçu `.art-preview/maison-xeros.png` (la maison montée étape par étape).
+   **Fait** (2 novembre) : 156 pièces, 68 assemblages, le bois patiné ; la liste de montage dans `tools/lib/maison-xeros.ts` (données,
+   sans navigateur) ; le scénario vérifie chaque remplacement de couche, puis l'intérieur (quatre pièces, une entrée, les portes
+   intérieures franchies avec E sans changer de carte, la cloison est-ouest en coupe). La paillasse, les outils, la corde, le tas de
+   bois, le seau et la planchette ne sont pas au plan : objets de la carte (Tiled), pour qu'on s'en serve. **Le moteur, appris en
+   route** : un poteau heurte, porte et aimante par sa section réelle (`solidOf` : le remplissage de 1,40 m entre deux poteaux dessinés
+   sur 40 cm) et se vise sur la grille sans aimant ; l'aimant ne colle pas une pièce là où elle heurterait (le jambage contre son
+   poteau) ; de deux dessus possibles, la visée prend celui qui est sous la souris (le remplissage sur la traverse, pas sur la tête du
+   poteau suivant) ; une couche se pose en visant la pièce qu'elle recouvre ; le volet se centre sur son remplissage ; le faîtage se
+   pose sur les pans. **Ce qui reste imparfait** : le solin en morceaux de 1,60 m laisse des trous (30 cm au nord comblé par la
+   cloison, un joint de 10 cm, 40 cm de part et d'autre du seuil, un mètre à l'ouest et à l'est, sous les cloisons aux portes) que la
+   traverse enjambe ; il faudrait des morceaux plus courts. Les cloisons sont à 5 cm de leur axe ; les pans de toit débordent de 70 cm
+   au sud et 60 au nord, de 40 à l'ouest et 60 à l'est (la grille de 20 cm) ; le foyer est en (650, 330), pas (640, 320). Une pièce
+   visée au sol juste au nord d'une pièce plus haute se pose dessus : le scénario monte du nord au sud et se sert de cales (bancs,
+   coffre) qu'il retire.
 4. **L'intérieur calculé** (`world/interior.ts`) : la pièce close par les pans de mur, les fenêtres lues dans les pans à fenêtre, le
    foyer, la lumière ; `npm run test:interieur` y entre.
 4 bis. **Les intérieurs à plusieurs pièces** : aujourd'hui `world/interior.ts` trouve une pièce, le rectangle clos. Avec des cloisons
