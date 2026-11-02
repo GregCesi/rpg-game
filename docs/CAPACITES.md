@@ -18,29 +18,29 @@
 | stone-chips | monde | — | — | — | — | — | — | — | — | round | stone-chips.md | — | 40×30×0 | — | quarryman |
 | cottage | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | — | 1660×780×610 | — | ? |
 | woodpile | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | ? | — | 195×60×90 | — | ? |
-| chopping-block | monde | — | — | — | — | — | whittle (hatchet) | — | — | round | ? | — | 55×55×45 | — | ? |
+| chopping-block | monde | — | — | — | — | — | whittle (hatchet) | — | — | round | ? | wood (matière) | 55×55×45 | trois âges | ? |
 | chopping-block-rope | monde | — | — | — | — | — | ? | — | — | round | ? | — | 55×55×55 | — | ? |
 | rope-coil | monde | 1 main | — | — | — | — | — | — | — | round | rope-coil.md | 1 kg | 30×30×10 | — | ? |
 | faggot | monde | 2 mains | faggots (compté) | — | — | — | — | — | — | symmetric | faggot.md | [object Object] | 130×50×50 | — | ? |
-| chopping-block-axe | monde | — | — | — | — | — | 1 coup (à la main) | — | — | four (3 à dessiner, VIEWS_TODO) | axe.md | — | 100×55×125 | — | ? |
-| fireplace | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | — | 320×130×415 | — | ? |
-| worktable | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | — | 310×60×85 | — | ? |
-| workbench | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | — | 320×70×85 | — | ? |
-| stove | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | — | 80×70×200 | — | ? |
-| bed | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | — | 150×200×80 | — | ? |
-| pallet | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | ? | — | 200×90×20 | — | ? |
-| sack | monde | — | — | — | — | — | — | — | — | round | ? | — | 50×40×70 | — | ? |
-| jar | monde | — | — | — | — | — | — | — | — | round | ? | — | 45×45×60 | — | ? |
+| chopping-block-axe | monde | — | — | — | — | — | 1 coup (à la main) | — | — | four (3 à dessiner, VIEWS_TODO) | axe.md | wood (matière) | 100×55×125 | trois âges | ? |
+| fireplace | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | stone (matière) | 320×130×415 | — | ? |
+| worktable | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | wood (matière) | 310×60×85 | trois âges | ? |
+| workbench | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | wood (matière) | 320×70×85 | trois âges | ? |
+| stove | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | earth (matière) | 80×70×200 | — | ? |
+| bed | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | wood (matière) | 150×200×80 | trois âges | ? |
+| pallet | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | ? | straw (matière) | 200×90×20 | — | ? |
+| sack | monde | — | — | — | — | — | — | — | — | round | ? | 30 kg | 50×40×70 | — | ? |
+| jar | monde | — | — | — | — | — | — | — | — | round | ? | earth (matière) | 45×45×60 | — | ? |
 | sunpatch | monde | — | — | — | — | — | — | — | — | round | ? | — | 180×150×0 | — | ? |
-| lantern | monde | — | — | — | — | — | — | — | — | round | ? | — | 15×15×30 | — | ? |
-| wall-torch | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | — | 15×15×70 | — | ? |
-| candle | monde | — | — | — | — | — | — | — | — | round | ? | — | 8×8×20 | — | ? |
-| barrel | monde | — | — | — | — | — | — | — | — | round | ? | — | 60×60×90 | — | ? |
-| crate | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | ? | — | 60×50×50 | — | ? |
+| lantern | monde | — | — | — | — | — | — | — | — | round | ? | 1 kg | 15×15×30 | — | ? |
+| wall-torch | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | 1 kg | 15×15×70 | — | ? |
+| candle | monde | — | — | — | — | — | — | — | — | round | ? | 0.1 kg | 8×8×20 | — | ? |
+| barrel | monde | — | — | — | — | — | — | — | — | round | ? | wood (matière) | 60×60×90 | trois âges | ? |
+| crate | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | ? | wood (matière) | 60×50×50 | trois âges | ? |
 | hay-bale | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | ? | — | 90×45×35 | — | ? |
-| chest | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | — | 90×50×55 | — | ? |
-| table | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | ? | — | 210×90×78 | — | ? |
-| stool | monde | — | — | — | — | — | — | — | — | round | ? | — | 32×32×45 | — | ? |
+| chest | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | wood (matière) | 90×50×55 | trois âges | ? |
+| table | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | ? | wood (matière) | 210×90×78 | trois âges | ? |
+| stool | monde | — | — | — | — | — | — | — | — | round | ? | wood (matière) | 32×32×45 | trois âges | ? |
 | footing-stone | monde | — | — | — | — | — | — | — | — | round | footing-stone.md | — | 45×40×12 | — | quarryman |
 | shed-plate-north | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | shed-plate.md | — | 325×15×15 | trois âges | ? |
 | shed-plate-south | monde | — | — | — | — | — | — | — | — | symmetric (1 à dessiner, VIEWS_TODO) | shed-plate.md | — | 325×15×15 | trois âges | ? |
@@ -49,7 +49,7 @@
 | shed-roof | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | shed-roof.md | — | 365×445×155 | trois âges | ? |
 | maul-ground | monde | — | — | — | — | — | 1 coup (à la main) | — | — | four | maul.md | — | 80×15×8 | — | ? |
 | splitting-wedge-ground | monde | — | — | — | — | — | 1 coup (à la main) | — | — | four | splitting-wedge.md | — | 20×7×4 | — | ? |
-| well | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | — | 235×160×215 | — | ? |
+| well | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | ? | stone (matière) | 235×160×215 | — | ? |
 | planted-stake | monde | — | — | — | — | — | — | — | — | round | stake.md | — | 5×5×75 | — | ? |
 | slab | monde | 2 mains | — | — | — | — | — | — | — | round | slab.md | stone (matière) | 45×40×12 | — | quarryman |
 | plan-tablet | monde | — | — | — | — | — | — | — | — | four (3 à dessiner, VIEWS_TODO) | plan-tablet.md | — | 30×20×2 | — | ? |
@@ -74,7 +74,7 @@
 | stall-shutter | monde | — | — | — | — | — | — | — | — | four | stall-shutter.md | wood (matière) | 160×4×90 | trois âges | joiner |
 | stall-shutter-open | monde | — | — | — | — | — | — | — | — | four | stall-shutter.md | wood (matière) | 160×90×4 | trois âges | joiner |
 | plank-awning | monde | — | — | — | — | — | — | — | — | four | plank-roof.md | wood (matière) | 280×220×80 | trois âges | carpenter |
-| signpost | monde | — | — | — | — | — | — | — | — | four | signpost.md | — | 85×12×190 | trois âges | carpenter |
+| signpost | monde | — | — | — | — | — | — | — | — | four | signpost.md | wood (matière) | 85×12×190 | trois âges | carpenter |
 | training-dummy | monde | — | — | — | — | straw | — | — | — | round | training-dummy.md | 29 kg | 30×30×170 | — | peasant |
 | branch | possédable (resource) | 1 main | branches (compté) | — | swing | — | — | — | trim-rod, whittle-stake | four | branch.md | 2.5 kg | 125×60×10 | — | woodcutter |
 | rope-tie | possédable (resource) | 1 main | — | — | — | — | — | — | raise-training-dummy | symmetric | rope-tie.md | 0.2 kg | 50×15×3 | — | peasant |
@@ -97,33 +97,33 @@
 | peg | possédable (resource) | 1 main | — | — | — | — | — | — | — | four | peg.md | wood (matière) | 25×3×3 | trois âges | carpenter |
 | shingle | possédable (resource) | 1 main | shingles (compté) | — | — | — | — | — | — | four | shingle.md | wood (matière) | 40×10×1.5 | trois âges | splitter |
 | froe | possédable (tool) | 1 main | — | rive-plank (à venir) ; rive-plank-half (à venir) ; rive-shingle (à venir) (sans données de coup) | — | — | — | — | — | four | froe.md | 1.5 kg | 32×35×4 | — | smith |
-| stone | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 1.5 kg | — | — | ? |
-| iron-ore | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 2 kg | — | — | ? |
+| stone | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 1.5 kg | 25×20×15 | — | ? |
+| iron-ore | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 2 kg | 15×12×10 | — | ? |
 | straw | possédable (resource) | 1 main | straw-sheaves (compté) | — | — | — | — | — | mix-cob, comb-thatch | four | straw.md | straw (matière) | 120×20×20 | — | peasant |
-| wheat | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.5 kg | — | — | ? |
-| seeds | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.05 kg | — | — | ? |
-| berries | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.2 kg | — | — | ? |
-| mushroom | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.1 kg | — | — | ? |
-| egg | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.06 kg | — | — | ? |
-| apple | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.15 kg | — | — | ? |
-| wool | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.5 kg | — | — | ? |
-| axe | possédable (tool) | 2 mains | — | fell big-tree ; fell big-pollard ; fell normal-tree ; limbs big-felled-tree ; limbs big-pollard-felled-tree ; limbs normal-felled-tree ; 1 coup chopping-block-rope ; couper le bois ; pole-from-top (à venir) | — | — | — | — | — | four | axe.md | 1.8 kg | 90×20×6 | — | smith |
-| maul | possédable (tool) | 2 mains | — | fendre (masse) ; split-log ; split-half | — | — | — | — | — | four | maul.md | 4 kg | 80×15×8 | — | smith |
-| splitting-wedge | possédable (tool) | 1 main | — | ? | — | — | — | — | — | four | splitting-wedge.md | 2 kg | 20×7×4 | — | smith |
-| hatchet | possédable (tool) | 1 main | — | whittle chopping-block ; whittle chopping-block-rope ; trim-rod (à venir) ; whittle-stake ; whittle-peg ; carve-wooden-sword (à venir) | — | — | — | — | — | four | hatchet.md | 1 kg | 40×12×5 | — | smith |
-| broadaxe | possédable (tool) | 2 mains | — | équarrir ; hew-beam | — | — | — | — | — | four | broadaxe.md | 3 kg | 60×25×6 | — | smith |
-| pickaxe | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 3 kg | — | — | ? |
-| hoe | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 1.5 kg | — | — | ? |
-| sickle | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 0.4 kg | — | — | ? |
-| watering-can | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 2 kg | — | — | ? |
-| fishing-rod | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 0.5 kg | — | — | ? |
-| sword | possédable (weapon) | 1 main | — | — | — | — | — | — | — | ? | ? | 1.2 kg | — | — | ? |
+| wheat | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.5 kg | 100×25×25 | — | ? |
+| seeds | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.05 kg | 25×20×30 | — | ? |
+| berries | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.2 kg | 12×12×6 | — | ? |
+| mushroom | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.1 kg | 10×10×10 | — | ? |
+| egg | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.06 kg | 6×4×4 | — | ? |
+| apple | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.15 kg | 8×8×8 | — | ? |
+| wool | possédable (resource) | 1 main | — | — | — | — | — | — | — | ? | ? | 0.5 kg | 40×30×15 | — | ? |
+| axe | possédable (tool) | 2 mains | — | fell big-tree ; fell big-pollard ; fell normal-tree ; limbs big-felled-tree ; limbs big-pollard-felled-tree ; limbs normal-felled-tree ; 1 coup chopping-block-rope ; fait fell ; fait limbs ; fait cut ; couper le bois ; pole-from-top (à venir) | — | — | — | — | — | four | axe.md | 1.8 kg | 90×20×6 | — | smith |
+| maul | possédable (tool) | 2 mains | — | fait maul ; fendre (masse) ; split-log ; split-half | — | — | — | — | — | four | maul.md | 4 kg | 80×15×8 | — | smith |
+| splitting-wedge | possédable (tool) | 1 main | — | fait plant ; fendre (coin) ; split-log ; split-half (sans données de coup) | — | — | — | — | — | four | splitting-wedge.md | 2 kg | 20×7×4 | — | smith |
+| hatchet | possédable (tool) | 1 main | — | whittle chopping-block ; whittle chopping-block-rope ; fait whittle ; trim-rod (à venir) ; whittle-stake ; whittle-peg ; carve-wooden-sword (à venir) | — | — | — | — | — | four | hatchet.md | 1 kg | 40×12×5 | — | smith |
+| broadaxe | possédable (tool) | 2 mains | — | fait hew ; équarrir ; hew-beam | — | — | — | — | — | four | broadaxe.md | 3 kg | 60×25×6 | — | smith |
+| pickaxe | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 3 kg | 90×50×5 | — | ? |
+| hoe | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 1.5 kg | 130×20×5 | — | ? |
+| sickle | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 0.4 kg | 50×30×3 | — | ? |
+| watering-can | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 2 kg | 45×20×30 | — | ? |
+| fishing-rod | possédable (tool) | 1 main | — | ? | — | — | — | — | — | ? | ? | 0.5 kg | 250×5×5 | — | ? |
+| sword | possédable (weapon) | 1 main | — | — | — | — | — | — | — | ? | ? | 1.2 kg | 95×20×4 | — | ? |
 | wooden-sword | possédable (weapon) | 1 main | — | — | swing | — | — | — | — | four | wooden-sword.md | wood (matière) | 90×5×2.5 | trois âges | joiner |
 | wood-piece big | pièce de bois (Ø 55 cm) | selon sa masse (`carry`), sinon roulée | calculé (woodPile.ts) | — | — | — | — | se coupe (axe), se fend (round, half) | — | calculées (round, half, quarter, plank) | wood-piece.md | bois (calculée) | Ø 55, longueur sur la grille | trois âges | le bois (woodcutter, splitter, carpenter) |
 | wood-piece pole | pièce de bois (Ø 12 cm) | selon sa masse (`carry`), sinon roulée | calculé (woodPile.ts) | — | — | — | — | se coupe (axe) | — | calculées (round) | wood-piece.md | bois (calculée) | Ø 12, longueur sur la grille | trois âges | le bois (woodcutter, splitter, carpenter) |
 | wood-piece normal | pièce de bois (Ø 30 cm) | selon sa masse (`carry`), sinon roulée | calculé (woodPile.ts) | — | — | — | — | se coupe (axe), s'équarrit (broadaxe) | — | calculées (round, peeled, f1, f2, f3, beam) | wood-piece.md | bois (calculée) | Ø 30, longueur sur la grille | trois âges | le bois (woodcutter, splitter, carpenter) |
 
-122 objets ; 132 cases suspectes (métier 63, fiche 47, travail 1, vues 15, outil 6) :
+122 objets ; 131 cases suspectes (métier 63, fiche 47, travail 1, vues 15, outil 5) :
 
 - `big-tree` (métier) : sans métier (`trade`) : sa chaîne n’est pas dite → son `trade` (CONCEPTION « Les matières »), ou le noter naturel
 - `big-tree` (fiche) : pas de fiche → docs/objets/big-tree.md, ou une fiche de groupe qui nomme sa clé
@@ -233,7 +233,6 @@
 - `wool` (métier) : sans métier (`trade`) : sa chaîne n’est pas dite → son `trade` (CONCEPTION « Les matières »), ou le noter naturel
 - `wool` (vues) : pas d’image au sol : posé, il s’affiche par son icône de 16 px (80 cm) → son image au sol et ses vues (pixel-artist), ou ne pas le proposer au sol
 - `wool` (fiche) : pas de fiche → docs/objets/wool.md, ou une fiche de groupe
-- `splitting-wedge` (outil) : travaille sans données de coup → `work` dans items.json (le travail au coup)
 - `pickaxe` (métier) : sans métier (`trade`) : sa chaîne n’est pas dite → son `trade` (CONCEPTION « Les matières »), ou le noter naturel
 - `pickaxe` (vues) : pas d’image au sol : posé, il s’affiche par son icône de 16 px (80 cm) → son image au sol et ses vues (pixel-artist), ou ne pas le proposer au sol
 - `pickaxe` (outil) : données de coup, mais pas de planche en main `tool-pickaxe` : invisible pendant le geste → ses cinq dessins en main (pixel-artist, art/items/held.ts)

@@ -43,6 +43,7 @@ for (const [k, p] of Object.entries(props)) {
   if (h.tool) addJob(h.tool, `${kind} ${k}`);
   for (const t of Object.keys(h.also)) addJob(t, `${h.also[t]} ${k}`);
 }
+for (const [k, it] of Object.entries(items)) for (const d of it.does ?? []) addJob(k, `fait ${d}`);
 addJob(wood.cut.tool, 'couper le bois');
 addJob(wood.split.maul, 'fendre (masse)');
 addJob(wood.split.wedge, 'fendre (coin)');
@@ -160,8 +161,8 @@ for (const [k, it] of Object.entries(items)) {
   if (it.ground && !it.dims) flag(row, k, 'dims', 'une image au sol sans dimensions : le gabarit ne la contrôle pas', 'reporter les `dims` de sa fiche dans items.json');
   if (!it.ground) flag(row, k, 'vues', 'pas d’image au sol : posé, il s’affiche par son icône de 16 px (80 cm)', 'son image au sol et ses vues (pixel-artist), ou ne pas le proposer au sol');
   if (it.kind === 'tool' && !it.work && !jobs) flag(row, k, 'outil', 'un outil qui ne travaille nulle part', 'son travail (une récolte, une transformation), ou le retirer');
-  else if (jobs && !it.work && jobs.some((j) => !j.includes('à venir'))) flag(row, k, 'outil', 'travaille sans données de coup', '`work` dans items.json (le travail au coup)');
-  if (it.work && !has(`tool-${k}`)) flag(row, k, 'outil', `données de coup, mais pas de planche en main \`tool-${k}\` : invisible pendant le geste`, 'ses cinq dessins en main (pixel-artist, art/items/held.ts)');
+  else if (jobs && !it.work && (it.does ?? []).some((d) => d !== 'plant')) flag(row, k, 'outil', 'travaille sans données de coup', '`work` dans items.json (le travail au coup)');
+  if (it.work && !has(it.work.image ?? `tool-${k}`)) flag(row, k, 'outil', `données de coup, mais pas de planche en main \`${it.work.image ?? `tool-${k}`}\` : invisible pendant le geste`, 'ses cinq dessins en main (pixel-artist, art/items/held.ts)');
   if (it.weapon && !has(it.weapon.image ?? `weapon-${k}`)) flag(row, k, 'arme', `arme sans sa planche \`${it.weapon.image}\``, 'son dessin couché vers l’est (pixel-artist)');
   if (it.pile && !pileOf.has(k)) flag(row, k, 'tas', `\`pile\` nomme '${it.pile}', qui ne prend pas cet objet`, 'le genre dans piles.json, ou retirer `pile`');
   if (pileOf.has(k) && !it.pile) flag(row, k, 'tas', 'un genre de tas le prend, mais l’objet ne le nomme pas (`pile`)', '`pile` dans items.json');
