@@ -5,6 +5,7 @@ import type { StaminaLevels } from '../entities/Stamina';
 import { GameEvent } from '../events';
 import { game, type Held } from '../state';
 import { defOf } from '../world/woodPiece';
+import { stateImage } from '../world/pileShape';
 import { clockLabel } from '../world/clock';
 import { clockFace } from '../world/clockFace';
 import { simSpeed } from '../systems/simSpeed';
@@ -35,7 +36,9 @@ const EMPTY = ['ui-hand-left', 'ui-hand-right'];
  */
 /** Icône d'un objet possédable, ou celle d'un objet du monde porté (`icon` de son `take`). */
 function icon(h: Held): string {
-  return 'item' in h ? items[h.item].icon : defOf(h.prop, h.wood).take!.icon;
+  if ('item' in h) return items[h.item].icon;
+  // un objet à plusieurs états (le fagot et son nombre de branches) : son icône suit l'état
+  return stateImage(defOf(h.prop, h.wood).take!.icon, h.prop, h.bundle);
 }
 
 export class HudScene extends Phaser.Scene {

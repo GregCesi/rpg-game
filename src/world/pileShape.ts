@@ -2,7 +2,7 @@
 // calcule, world/woodPile.ts), sa forme dans son sens, son lien, ce qui le fait bloquer. Les places elles-mêmes (ouvertes,
 // reprises, visées, ordre d'affichage) sont le moteur commun aux tas et aux chantiers : world/places.ts, repris ici sous les noms
 // d'avant. Utilisé par le jeu (GameMap, systems/hands.ts) et par l'aperçu (npm run art:preview).
-import { piles } from '../content';
+import { piles, props } from '../content';
 import type { PileWood } from '../content/types';
 import { sameWood, woodPileDef, type PileShape } from './woodPile';
 import { woodKey } from './woodShape';
@@ -39,6 +39,25 @@ export function bundleOfKind(k: PileKind): number | undefined {
 }
 
 /** L'image d'un fagot de `n` branches : `<image>-n<n>` (et `-ns` reste au bout : `faggot-n7-ns`). */
+/**
+ * Le nombre de branches d'un objet du monde qui en a un (le fagot, posé seul ou tenu : son `bundle`, sinon le fagot plein), rien pour
+ * les autres. Toutes ses vues suivent ce nombre : au sol, en tas, porté, dans la case de main (`bundleImage`).
+ */
+export function bundleOfProp(prop: string, bundle?: number): number | undefined {
+  const genre = props[prop]?.take?.pile;
+  return genre ? bundleOfKind({ pile: genre, ...(bundle ? { bundle } : {}) }) : undefined;
+}
+
+/**
+ * L'image `key` (au sol, portée, icône) d'un objet du monde dans son état : pour le fagot, celle de son nombre de branches ; sinon
+ * `key` telle quelle. Le seul choix d'image selon l'état, pour le sol (GameMap), le fantôme (hands.ts), la main (WorldScene) et la
+ * case de main (HudScene).
+ */
+export function stateImage(key: string, prop: string, bundle?: number): string {
+  const n = bundleOfProp(prop, bundle);
+  return n ? bundleImage(key, n) : key;
+}
+
 export const bundleImage = (image: string, n: number) => (image.endsWith('-ns') ? `${image.slice(0, -3)}-n${n}-ns` : `${image}-n${n}`);
 
 /** Une clé qui nomme ce qu'entrepose un tas (le genre, ou la pièce de bois) : ce qu'on offre à une place qui accepte un genre. */
@@ -52,12 +71,14 @@ const bundled = new Map<string, PileShape>();
 export function pileDefOf(k: PileKind): PileShape {
   if (k.wood) return woodPileDef(k.wood);
   const def = piles[k.pile!] as PileShape;
-  // un tas de fagots d'un autre nombre de branches que le tas plein : chaque place montre le fagot de ce nombre
-  if (!k.bundle || k.bundle === bundleOfKind({ pile: k.pile! })) return def;
-  const key = `${k.pile}:${k.bundle}`;
+  // un tas de fagots : chaque place montre le fagot de son nombre de branches (le plein compris : le dessin de base `faggot` n'est
+  // que celui du catalogue, il ne suit pas le nombre du tas plein)
+  const n = bundleOfKind(k);
+  if (!n) return def;
+  const key = `${k.pile}:${n}`;
   let d = bundled.get(key);
   if (!d) {
-    const swap = (places: PileShape['places']) => Object.fromEntries(Object.entries(places).map(([id, p]) => [id, { ...p, image: bundleImage(p.image, k.bundle!) }]));
+    const swap = (places: PileShape['places']) => Object.fromEntries(Object.entries(places).map(([id, p]) => [id, { ...p, image: bundleImage(p.image, n) }]));
     d = { ...def, places: swap(def.places), ...(def.turned ? { turned: { ...def.turned, places: swap(def.turned.places) } } : {}) } as PileShape;
     bundled.set(key, d);
   }

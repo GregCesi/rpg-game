@@ -11,6 +11,7 @@ import { formImage } from '../world/natural';
 import { balance, partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
+import { bundleImage } from '../world/pileShape';
 import { openSides } from '../world/zones';
 import { WEAPON_ANGLES } from '../world/strike';
 import type { CombatPoses } from '../world/strike';
@@ -569,6 +570,33 @@ export function viewsTodo(c: Content, cat: Catalog): { objects: { key: string; m
     .filter((o) => VIEWS_TODO[o.key] && (o.missing.length || o.wrong.length))
     .map((o) => ({ key: o.key, missing: [...o.missing, ...o.wrong.map((w) => w.image)], reason: VIEWS_TODO[o.key] }));
   return { objects, drawings: new Set(objects.flatMap((o) => o.missing)).size };
+}
+
+/**
+ * Un objet à plusieurs états suit son état dans toutes ses vues, au sol comme en main (règle du contrat de l'objet portable,
+ * Grégoire) : le fagot et son nombre de branches (`bundle`), de 2 au tas de branches plein (le genre dont le lien le noue). Pour
+ * chaque nombre : sa vue de chaque place de son tas de fagots (au sol, seul ou en tas, et tourné), sa planche portée (`down`, `up`,
+ * `right`) et son icône de case de main. (L'âge d'un objet de bois : ses trois âges, vérifiés par `aged` ; la taille d'une matière
+ * naturelle : `natural`.)
+ */
+function validateStates(key: string, p: PropDef, c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const genre = p.take?.pile;
+  const tied = Object.values(c.piles).find((g) => g.tie?.into === key);
+  if (!genre || !tied) return errors;
+  const full = Object.keys(tied.places).length;
+  const fagots = c.piles[genre];
+  const ground = [...Object.values(fagots.places), ...Object.values(fagots.turned?.places ?? {})].map((q) => q.image);
+  for (let n = 2; n <= full; n++) {
+    const at = `props.json '${key}', ${n} branches`;
+    for (const image of new Set([p.image, ...ground])) if (!cat.textures.has(bundleImage(image, n))) errors.push(`${at} : vue au sol '${bundleImage(image, n)}' non dessinée`);
+    if (p.take!.hold.image) {
+      const sheet = bundleImage(p.take!.hold.image, n);
+      for (const dir of ['down', 'up', 'right']) if (!cat.animations.get(sheet)?.has(dir)) errors.push(`${at} : vue portée '${sheet}' (${dir}) non dessinée`);
+    }
+    if (!cat.textures.has(bundleImage(p.take!.icon, n))) errors.push(`${at} : icône '${bundleImage(p.take!.icon, n)}' non dessinée`);
+  }
+  return errors;
 }
 
 /** Un objet tenu : sa posture va avec ses mains (une main : `hand` ; deux : `shoulder` ou `carry`), sa planche a ses trois vues. */
@@ -1348,6 +1376,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);
     if (p.harvest) addAll(validateHarvest(key, p, c, cat));
     if (p.take) addAll(validateHold(`props.json '${key}' take`, p.take.hold, p.take.hands, cat));
+    if (p.take) addAll(validateStates(key, p, c, cat));
     if (p.take && !cat.textures.has(p.take.icon)) err(`props.json '${key}' : icône '${p.take.icon}' non dessinée`);
     // E sur l'objet : le prendre, le récolter à la main ou ouvrir son dialogue, pas deux à la fois (une récolte à l'outil se fait avec Espace)
     if (p.take && ((p.harvest && !p.harvest.tool) || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
