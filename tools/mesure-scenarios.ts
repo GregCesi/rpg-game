@@ -4,7 +4,7 @@
 //   npm run test:mesure [-- noms…]        (tous par défaut ; PLAYTEST_SPEED=<n> pour la vitesse de simulation)
 // Écrit le tableau à l'écran et dans MESURE_OUT (par défaut .art-preview/mesure-scenarios.txt).
 
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -43,7 +43,15 @@ const rows: Row[] = [];
 for (const name of names) {
   const t0 = Date.now();
   const shared = rig && name !== 'construction' ? { PLAYTEST_URL: rig.url, PLAYTEST_WS: rig.ws, XEROS_PLANS_OUT: plansOut } : { XEROS_PLANS_OUT: undefined };
-  const r = spawnSync('npx', ['tsx', `tools/test-${name}.ts`], { env: { ...process.env, ...shared, PLAYTEST_TIMES: file, FENDAGE_REQUIRED: '1' }, encoding: 'utf8' });
+  // lancé sans bloquer : le serveur et le navigateur partagés vivent dans ce processus, et doivent répondre pendant le scénario
+  const r = await new Promise<{ status: number | null; stdout: string; stderr: string }>((done) => {
+    const child = spawn('npx', ['tsx', `tools/test-${name}.ts`], { env: { ...process.env, ...shared, PLAYTEST_TIMES: file, FENDAGE_REQUIRED: '1' } });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => (stdout += d));
+    child.stderr.on('data', (d) => (stderr += d));
+    child.on('close', (status) => done({ status, stdout, stderr }));
+  });
   const wall = Date.now() - t0;
   const lines = existsSync(file) ? readFileSync(file, 'utf8').trim().split('\n').filter(Boolean) : [];
   const last = lines.map((l) => JSON.parse(l) as Row).at(-1);
