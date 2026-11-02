@@ -268,10 +268,16 @@ function faggotNS(n = FAGGOT_BRANCHES): Canvas {
   return trimTop(c);
 }
 
-/** Icône 16×16 : le fagot est-ouest réduit (14 px), son lien et ses gros bouts ; pas d'ombre. */
-function faggotIcon(): Canvas {
+/**
+ * Icône 16×16 du fagot de `n` branches : le fagot est-ouest réduit (14 px, 10 cm par pixel), son lien et ses gros bouts ; pas
+ * d'ombre. Le faisceau suit sa grosseur au sol (`faggotDims`) : 7 rangées de bois pour dix branches, à la même proportion pour
+ * les autres, centré sur la même rangée.
+ */
+function faggotIcon(n = FAGGOT_BRANCHES): Canvas {
+  const { rows } = faggotDims(n);
+  const dia = Math.max(2, Math.round((rows * 7) / 9));
   const c = new Canvas(16, 16);
-  bundleEW(c, 1, 5, 13, 7, 83, [3, 9]);
+  bundleEW(c, 1, 5 + Math.floor((7 - dia) / 2), 13, dia, 83, n >= 6 ? [3, 9] : [5]);
   return outlineBundle(c);
 }
 
@@ -283,4 +289,6 @@ export default [
   img('item-faggot', faggotIcon()),
   // le fagot selon son nombre de branches, de 2 à 12, dans ses deux vues
   ...FAGGOT_COUNTS.flatMap((n) => [img(`faggot-n${n}`, faggot(n)), img(`faggot-n${n}-ns`, faggotNS(n))]),
+  // son icône de case de main, à sa grosseur (`item-faggot` reste celle du fagot de dix, pour le catalogue)
+  ...FAGGOT_COUNTS.map((n) => img(`item-faggot-n${n}`, faggotIcon(n))),
 ];

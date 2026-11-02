@@ -16,7 +16,7 @@ import { darkest, outline } from './lib';
 import { branchBody, finishBranch, shearDown, transpose, type Branch } from './branch';
 import { axeArt, toolPalette } from './tools';
 import xeros, { SHOULDER_POINTS } from '../characters/xeros';
-import { bundleByTheEnd, faggotBody, outlineBundle } from '../world/faggot';
+import { FAGGOT_BRANCHES, FAGGOT_COUNTS, bundleByTheEnd, faggotBody, faggotDims, outlineBundle } from '../world/faggot';
 import { lyingCanvas } from '../world/wood-pieces';
 import { lyingView } from '../world/wood-section';
 
@@ -549,29 +549,36 @@ const heldRopeTie = (): SpriteSheetSource =>
 
 // ---------- Fagot porté ----------
 // Le fagot (art/world/faggot.ts) porté à deux mains devant lui, comme la bille. De face et de dos, en longueur : le
-// fagot est-ouest sans son ombre. De profil, par le bout : la face des gros bouts (10 × 9 px, moins aplatie qu'au sol,
-// il est à hauteur de poitrine), le dessus du faisceau qui fuit derrière, le lien en travers.
+// fagot est-ouest sans son ombre. De profil, par le bout : la face des gros bouts (10 × 9 px pour dix branches, moins
+// aplatie qu'au sol, il est à hauteur de poitrine), le dessus du faisceau qui fuit derrière, le lien en travers.
+// Une planche par nombre de branches (`held-faggot-n<n>`, de 2 à 12, `FAGGOT_COUNTS`), tirée du fagot au sol du même
+// nombre : en longueur `faggotBody(n)`, par le bout la face à la grosseur du faisceau (`faggotDims(n)` : Ø contour compris
+// = Ø/5 px, la hauteur aux 7/8 de la largeur). `held-faggot` est le fagot de dix (le catalogue). Le fagot de douze tient
+// dans la même planche de 29 px.
 
 const FAGGOT_SIZE = 29;
 const FAGGOT_C = Math.floor(FAGGOT_SIZE / 2);
 
-function faggotLengthwise(): Grid {
-  const body = faggotBody().toGrid().filter((r) => /[^.]/.test(r));
+function faggotLengthwise(n: number): Grid {
+  const body = faggotBody(n).toGrid().filter((r) => /[^.]/.test(r));
   const c = new Canvas(FAGGOT_SIZE, FAGGOT_SIZE);
   // le milieu du faisceau (sans ses rameaux, deux rangées au-dessus) sur la prise
   c.stamp(body, FAGGOT_C - Math.floor(body[0].length / 2), FAGGOT_C - 1 - Math.floor((body.length - 2) / 2));
   return c.toGrid();
 }
 
-function faggotEnd(): Grid {
+function faggotEnd(n: number): Grid {
   const C = FAGGOT_C;
-  const c = bundleByTheEnd(new Canvas(FAGGOT_SIZE, FAGGOT_SIZE), C + 1, C - 3, C + 2, 4, 3.5, C - 4, 84);
+  // demi-largeur du faisceau sans le contour : Ø/5 px contour compris (4 pour dix branches, Ø 50 cm)
+  const rx = faggotDims(n).d / 10 - 1;
+  const c = bundleByTheEnd(new Canvas(FAGGOT_SIZE, FAGGOT_SIZE), C + 1, C - 3, C + 2, rx, (rx * 7) / 8, C - 4, 84);
   return outlineBundle(c).toGrid();
 }
 
-const heldFaggot = (): SpriteSheetSource => {
-  const lengthwise = faggotLengthwise();
-  return sheet('held-faggot', FAGGOT_SIZE, world, { down: lengthwise, up: lengthwise, right: faggotEnd() });
+const heldFaggot = (name: string, n: number): SpriteSheetSource => {
+  const lengthwise = faggotLengthwise(n);
+  return sheet(name, FAGGOT_SIZE, world, { down: lengthwise, up: lengthwise, right: faggotEnd(n) });
 };
 
-export default [heldAxe(), heldBranch(), ...heldWood(), heldRopeCoil(), heldRopeTie(), heldFaggot()];
+export default [heldAxe(), heldBranch(), ...heldWood(), heldRopeCoil(), heldRopeTie(), heldFaggot('held-faggot', FAGGOT_BRANCHES),
+  ...FAGGOT_COUNTS.map((n) => heldFaggot(`held-faggot-n${n}`, n))];
