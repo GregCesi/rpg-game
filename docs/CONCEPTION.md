@@ -663,6 +663,154 @@ La chaumière (`maison.tmj`) reste telle quelle jusqu'à la nouvelle chaumière.
   d'épaisseur ne sont pas tous montrés ; pas de fenêtre sans volet (une baie nue n'éclaire pas encore) ; la porte n'est pas fermée de
   dedans.
 
+### La maison de Xéros (conception, 2 novembre 2026, branche `maison`, étape 1 : pas encore dans le jeu)
+
+Décidé par Grégoire : la maison de Xéros et de sa mère, refaite **à la vraie taille**, est une **chaumière bâtie comme la grange**
+dans le mode construction, avec les seules pièces du catalogue : le solin, une ossature en pan de bois (traverses basses, poteaux,
+sablières), les murs entre les poteaux, la charpente, le toit. Pas de longère : la longère (l'étable sous le même toit, une
+cheminée) sera la maison de voisins plus aisés, plus tard. « Il faut que ce soit bien fait et beau. » L'essai visuel, hors du jeu :
+`npx tsx tools/essai-maison-xeros.ts`, `.art-preview/essai-maison-xeros.png` (dessins dans `art/proposals/maison-xeros.ts`).
+
+#### Le plan (en cm, nord en haut, faîtage est-ouest)
+
+Une seule pièce, la salle commune d'une mère et de son fils, paysans modestes : environ 28 m² au dedans, la taille d'une chaumière
+de journaliers. Toutes les mesures tombent sur la grille de 1,60 m du solin (un morceau de solin, une travée).
+
+```
+            x : 0      160      320      480      640     (axes des poteaux ; solin de 50 cm d'épais dessous)
+     y = 0    P--------P---[F]--P--------P--------P        N
+              | paillasse          coffre | lit    |        ↑
+              | (Xéros)                   | (mère) |
+     y = 160  P                                    P
+              |   fagot  ( foyer )        tabouret |
+              |   [==]   ( Ø 1 m )   mère  table   |
+     y = 320  P                           tabouret P
+              | jarre                              |
+              | sac       seau                     |
+     y = 480  P--------P--[porte]--P--------P--[F]--P
+                        160      320      480      640
+     P : poteau (20 × 20) ; F : fenêtre à volet (50 × 40, appui à 1 m) ; porte : 90 × 180, seuil de pierre
+```
+
+- **Emprise** : axes des poteaux 6,40 × 4,80 m ; le solin (50 cm) déborde de 25 cm : environ 6,90 × 5,30 m au sol. Au dedans, entre
+  les poteaux : 6,20 × 4,60 m.
+- **Hauteurs** :
+  - le solin, 0 à 40 cm ;
+  - la traverse basse, 40 à 60 ;
+  - les poteaux, 60 à 240 (1,80 m de bois) ;
+  - la sablière haute, 240 à 260 ;
+  - la pente, **50°** : le faîte de la charpente à environ **5,45 m** (2,40 m de demi-portée × tan 50°, depuis la sablière), celui
+    du chaume (40 cm) à **6,30 m** ;
+  - les chevrons dépassent de 50 cm hors des murs, l'égout est à environ 2,20 m : on passe dessous en se baissant à peine ;
+  - la porte : 1,80 m (Xéros, 1,70 m, passe ; INTERIOR.headroom est de 1,80 m).
+- **Les poteaux** : 14, tous les 1,60 m (5 au sud, 5 au nord, 2 de plus à l'est et à l'ouest, les angles partagés).
+- **Les travées** : 14. Au sud, la 2e (x 160–320) est **la porte** et la 4e (x 480–640) a **une fenêtre** (la salle est éclairée au
+  sud-est, sur la table). Au nord, la 2e a **une fenêtre** (au-dessus de la paillasse). Les murs est et ouest sont pleins ; les
+  pignons sont au-dessus.
+- **Le dedans du solin** : le solin (50 cm) déborde de 15 cm sous le mur (20 cm) ; le sol libre fait **5,90 × 4,30 m**.
+- **Dedans** :
+  - **le foyer** au centre, en (320, 240), Ø 1 m (des pierres en cercle) ;
+  - **le lit de la mère** (150 × 200) dans l'angle nord-est, **le coffre** (90 × 50) à côté, à l'ouest du lit (à son pied, avec la
+    table, le mur est faisait 4,60 m pour 4,30 de place : vu sur l'essai) ;
+  - **la paillasse de Xéros** (200 × 90, nord-sud) contre le mur ouest, au nord ;
+  - **la table** (210 × 90, nord-sud) et **deux tabourets** contre le mur est, au sud ;
+  - la jarre et le sac contre le mur ouest, au sud ; le seau près de la porte ;
+  - **la place du fagot** (1,30 × 0,50 m) juste à l'ouest du foyer, entre le feu et la paillasse : on y pose le fagot de la
+    première quête ;
+  - **la place de la mère** : assise sur le tabouret, à l'est du foyer, tournée vers lui.
+  - Le passage de la porte au foyer reste libre (1 m au moins), comme celui du foyer à la paillasse et au lit.
+
+#### Ce qui existe déjà et ce qui manque, pièce par pièce, en suivant la chaîne de chaque matière
+
+| Pièce | Chaîne | Existe | Manque | Sorte (contrat) |
+| --- | --- | --- | --- | --- |
+| Solin | pierres brutes ramassées, montées à la terre | le morceau de solin brut (`rough-sill-wall`, 1,60 m), les pierres brutes, le mortier de terre, les tronçons qui se raccordent | le **seuil de pierre** sous la porte (une dalle, `slab` ?) : le solin s'interrompt | élément (`wall`) |
+| Traverse basse, poteaux, sablières | l'arbre normal abattu, ébranché, équarri | la poutre (`wood-piece` équarrie, debout et couchée), le tenon et mortaise, le mi-bois, l'enture | rien ; à 1,60 m de travée, chaque traverse est une poutre de 1,60 m ou entée | pièce de bois |
+| **Palançon** | une perche du taillis (aujourd'hui : la perche tirée du tronc normal), fendue en deux | la perche (`pole`), la fente | **l'aspect « demi-perche »** de la perche (wood.json : un aspect fendu, sa section) ; **l'encoche** de la traverse et de la sablière qui le reçoit (le cran de la cabane existe pour les rondins) | pièce de bois (un aspect, pas une clé) |
+| **Clayonnage** | baguettes de coudrier vertes | la baguette de clayonnage (`wattle-rod`, bois brut) | **le pan de clayonnage** : les baguettes tressées entre les palançons d'une travée | élément d'un pan de mur |
+| **Torchis** | terre (argile) + paille + eau, gâchés | la motte de terre, la paille, le seau d'eau, la motte de torchis (`cob`), la transformation « gâcher le torchis » | **le torchis plaqué** des deux côtés du clayonnage | élément d'un pan de mur |
+| **Chaux** | le calcaire (la pierre commune) cuit au four à chaux (vers 900 °C), puis éteint à l'eau ; dilué, le lait de chaux | le calcaire (la roche, les pierres brutes), l'eau | **la chaux vive** et **la chaux éteinte** (deux objets, leur masse par leur matière, une matière `lime` dans matters.json) ; la transformation **« cuire la chaux »** (`soon` : le four à chaux viendra, poste à part) ; **« éteindre la chaux »** (avec le seau d'eau) ; le **badigeon** posé au pinceau (un geste, « à venir » au début) | matière, objet portable |
+| **Pan de mur** | les quatre couches ci-dessus, dans une travée | les pièces qui se posent par étapes dans un chantier (`plans.json`), les places qui acceptent une pièce | **le pan de mur en quatre étapes** (plein, avec porte, avec fenêtre) : un élément qui garde ses couches de dessous dans ses données (`layers` : palançons, clayonnage, torchis, chaux) et se dessine par sa couche du dessus ; l'étape d'avant montre les couches qu'elle a | élément (nouveau) |
+| Porte | planches | la porte en planches (`plank-door`, 1 × 2 m, qui s'ouvre avec E, `swing.passage`) | une **porte de 0,90 × 1,80 m** (la même, plus petite : `variants` ou une seconde clé) et son **cadre** dans le pan de mur | élément |
+| Fenêtres | planches | le volet en planches (`plank-shutter`, 60 × 40, qui s'ouvre) | le **pan de mur avec fenêtre** (allège, linteau, l'ouverture qu'un volet ferme), lu par les intérieurs comme une fenêtre | élément |
+| **Chevrons** | perches | la perche (`pole` ronde), le chevron de l'abri (`shed-rafter`, en planches) | rien pour la pièce (une perche de 4,50 m) ; **la pose en pente** des perches sur les sablières, que le mode construction sait déjà pour les pans de toit (`pitch`), pas encore pour une pièce de bois | pièce de bois |
+| **Lattes** | perche ou chêne fendu en lattes | la fente | **la latte** : un aspect de la perche fendue en quatre, de 3 × 4 cm (wood.json), posée en travers des chevrons tous les 30 cm | pièce de bois (un aspect) |
+| **Chaume** | paille de seigle, peignée en bottes | la gerbe de paille, la botte de chaume (`thatch-bundle`), la transformation « peigner le chaume » | **le pan de toit en chaume**, en couches de bas en haut (au moins : lattes nues, première couche, plein), 40 cm d'épais ; son ombre portée calculée (`shadow`) ; il s'efface quand Xéros est dessous (`roof`) | élément |
+| **Faîtage** | terre (argile) gâchée, où l'herbe reprend | la motte de terre, la terre gâchée de mortier | **le faîtage de terre** : un bourrelet sur le faîte, d'un seul tenant sur la longueur du toit | élément |
+| **Pignons** | comme les murs | le pignon en planches (`plank-gable`), le pignon en bardage | **le pignon en torchis chaulé** sur clayonnage (triangle, en étapes comme le pan de mur), avec le **trou de fumée** sous le faîte du pignon ouest | élément |
+| **Foyer** | pierres brutes en cercle, posées au sol | les petites pierres brutes ; la lueur (`light`), la fumée (`smoke`), l'animation du feu (le feu de l'âtre `fireplace`, celui de la longère) | **le foyer** : un objet du monde, Ø 1 m, posé au sol (`layer: floor`), son feu animé, sa lueur et sa fumée qui sort par le trou de fumée ; on y pose le bois (la quête) | meuble (au sol) |
+| Sol | terre battue | le sol des intérieurs calculés | **la terre battue** comme sol de cet intérieur (un réglage du plan, ou du dedans : `floor` du bâtiment) | — |
+| Meubles | — | le lit, la paillasse (qui fait dormir), la table, les tabourets, le coffre, la jarre, le sac, le seau, le fagot | rien | meuble |
+| **Place du fagot** | — | les places d'un chantier qui acceptent une pièce précise (`world/places.ts`) | **une place nommée dans un plan du bac à sable** (`places` : où, ce qu'elle accepte, son nom), que lira la quête ; la place de la mère de même (`npcs` du plan) | — |
+
+Chaque pièce nouvelle entre dans le contrat de sa sorte (docs/objets/README.md, « Les contrats »), vérifié par
+`npm run test:contrats` : un aspect de la perche est une pièce de bois (se coupe, va en tas compté, pivote, frappe) ; la chaux est
+une matière et des objets portables ; le pan de mur, le pan de toit, le faîtage, le pignon sont des éléments, avec toutes leurs
+vues ; le foyer est un meuble.
+
+#### Ce que l'essai a montré (pixel-artist, `.art-preview/essai-maison-xeros.png`, ×3)
+
+- **La planche** : une travée de 1,60 m dans ses quatre étapes (palançons tous les 30 cm dans leurs encoches ; clayonnage de
+  noisetier tressé devant et derrière ; torchis en mottes avec ses brins de paille ; chaux, la terre rejaillie au pied) ; le toit en
+  cinq étapes (chevrons croisés au faîte sur la faîtière, lattes, une couche de chaume, chaume plein, faîtage de terre où l'herbe
+  prend) ; la maison finie au sud (porte, fenêtre au volet ouvert, seuil de calcaire, fumée), au sud toit effacé (comme le jeu quand
+  Xéros est dessous), au nord, à l'ouest (le pignon et son trou de fumée) ; l'intérieur sans toit, le mur sud coupé à 70 cm, le foyer
+  et son feu, les meubles du jeu, la mère et Xéros.
+- **Une maison faite d'un modèle en volumes** (boîtes, prismes, faces) dont chaque face a sa matière dessinée au pixel, rendu dans la
+  projection du jeu (x, y − z), contours et ombres de STYLE.md, ombre du toit par la règle `SHADOW` : une vue ou une étape de plus ne
+  coûte qu'un paramètre. Toutes les couleurs viennent de la palette : bois patiné (`woodAges.worn`), chevrons en perches avec leur
+  écorce, torchis de la terre du chemin, chaux de la rampe du calcaire (elle en vient), chaume doré, faîtage de terre et d'herbe.
+- **L'avant-toit cache le haut des murs** : à 50°, vue de trois quarts, l'égout (vers 2 m) cache le mur sud au-dessus de 1,40 m ;
+  le haut de la porte est sous le chaume, la fenêtre touche l'égout. C'est la projection (la grange fait de même) ; le toit effacé
+  quand Xéros est dessous montre tout.
+- **La porte de 0,90 × 1,80 m** est dessinée dans l'essai, à la manière de `plank-door` (100 × 200, trop grande pour la baie), avec
+  ses huisseries de 15 cm et son linteau ; la traverse basse est coupée au seuil comme le solin.
+- **Les pignons** : une rive de 20 cm (à 40, elle cachait le trou de fumée vu de l'ouest) ; un **entrait retroussé** à 1,40 m
+  au-dessus de la sablière et pas de poinçon (il traversait le trou de fumée) ; la faîtière dans la fourche des chevrons ; le trou de
+  fumée de 50 × 40 cm sous le faîte, une traverse dessous.
+- **Les vues nord-sud de la paillasse et de la table**, qui manquaient au jeu (`VIEWS_TODO`, « au chantier de la maison »), sont
+  proposées dans l'essai (`PALLET_NS`, `TABLE_NS`), au gabarit.
+
+#### Choix proposés (à valider par Grégoire)
+
+- **Les pignons en torchis chaulé sur clayonnage**, comme les murs (la même chaîne, une maison d'une seule matière ; les planches
+  restent pour la grange). Le triangle se monte en étapes comme un pan de mur.
+- **La fumée** par un **petit trou de fumée triangulaire sous le faîte du pignon ouest**, et un peu par le chaume (la fumée qui
+  filtre noircit le dessous du chaume) : en jeu, on voit d'où elle sort.
+- **Le bois patiné** pour l'ossature (une maison habitée depuis des années), la chaux blanc cassé, le chaume doré (à griser un peu
+  s'il paraît trop neuf).
+- **L'appui des fenêtres à 80 cm** au lieu d'1 m, pour que la fenêtre se lise sous l'égout ; le toit effacé fait le reste.
+- **Une porte de 0,90 × 1,80 m**, nouvel objet (le `plank-door` de 1 × 2 m reste celui de la cabane et de la grange).
+
+#### Le découpage de l'étape 2
+
+1. **Les pièces et leurs dessins**, une à la fois selon le process d'un objet (fiche, dessins du pixel-artist, contrat) :
+   - les aspects de la perche : demi-perche (palançon), latte ;
+   - la chaux vive, la chaux éteinte, la matière `lime`, les transformations « cuire » (`soon`) et « éteindre » ;
+   - le pan de mur en quatre couches (plein, porte, fenêtre), la porte de 1,80 m, le pignon en torchis et son trou de fumée ;
+   - le pan de toit en chaume en couches, le faîtage de terre ;
+   - le foyer, le seuil de pierre.
+2. **Le moteur** :
+   - un élément à couches (`layers` : ce qu'il contient, sa couche visible, l'étape d'avant qui montre les couches de dessous) ;
+   - la perche posée en pente (chevron) ;
+   - le sol de terre battue d'un intérieur ;
+   - les places nommées et les PNJ d'un plan (la place du fagot, la mère) ;
+   - le départ du jeu dans un intérieur calculé (aujourd'hui `START` vise la carte Tiled `maison`).
+3. **La maison bâtie par un scénario** (`tools/test-maison.ts`, `npm run test:maison`, son nom dans `SCENARIOS`), comme la cabane, la
+   grange et l'étal : le solin, la traverse basse, les poteaux, les sablières, chaque pan de mur couche par couche, la charpente, les
+   lattes, le chaume, le faîtage, les pignons, la porte, les volets, le foyer, les meubles ; enregistrée comme plan
+   (`src/content/plans/maison-xeros.json`) ; aperçu `.art-preview/maison-xeros.png` (la maison montée étape par étape).
+4. **L'intérieur calculé** (`world/interior.ts`) : la pièce close par les pans de mur, les fenêtres lues dans les pans à fenêtre, le
+   foyer, la lumière ; `npm run test:interieur` y entre.
+5. **Le remplacement** :
+   - sur la carte de la ferme, l'ancienne chaumière (`cottage`) cède la place à un rectangle `Plan` (la maison posée) ;
+   - l'ancien intérieur (la carte Tiled `maison`) est remplacé par l'intérieur calculé ;
+   - la mère garde sa place (le tabouret près du foyer) ;
+   - le réveil de Xéros se fait sur sa paillasse ;
+   - les sauvegardes qui nomment l'ancienne carte sont refusées proprement (`SAVE_VERSION`, `missingContent`).
+6. **Les tests** : `test:contrats` (les pièces nouvelles), `test:maison` (la maison bâtie, enregistrée), `test:interieur` (on y
+   entre, la mère y est, la place du fagot accepte un fagot), `test:monde` (la ferme et la maison posée), la suite complète.
+
 ## Poids et force (décidé le 30 octobre 2026)
 
 Repris par *Le bois* (30 octobre 2026) : la masse se calcule d'après les réglages de la pièce de bois ; à 1 m, la bille du gros pèse 214 kg et celle du normal 63,6 kg.
