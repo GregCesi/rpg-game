@@ -254,7 +254,8 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   const showCarried = () => {
     const [l, r] = game.hands;
     const kg = game.both ? heldMass(game.both) : heldMass(l) + heldMass(r);
-    const limit = strength.carry * (Math.max(0.1, Number(force.value) || 1));
+    // la force multipliée, plafonnée au plus fort des humains, comme Strength.human (le jeu porte ce que permet ce plafond)
+    const limit = strength.carry * Math.min(Math.max(0.1, Number(force.value) || 1), strength.swing.humanMax / strength.swing.torque);
     carried.textContent = `Masse portée : ${(Math.round(kg * 10) / 10).toString().replace('.', ',')} kg (jusqu'à ${Math.round(limit)} kg)`;
   };
   showCarried();

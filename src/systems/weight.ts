@@ -14,8 +14,11 @@ export function carriedMass(s: GameState): number {
  * lourde pour rouler le dit ; tout autre objet est seulement trop lourd.
  */
 export function heavyNotice(def: PropDef | undefined, kg: number, strength: Strength): string {
+  // c'est sa force qui manque, jamais une règle du monde : on dit ce qu'il porte (le monde ne limite pas, seul le personnage limite)
   const m = def?.gender !== 'f';
-  if (!def?.roll) return m ? 'Trop lourd à porter.' : 'Trop lourde à porter.';
-  if (m) return strength.canRoll(kg) ? 'Trop lourd à porter. Pousse-le pour le faire rouler.' : 'Trop lourd à porter, et trop lourd pour rouler.';
-  return strength.canRoll(kg) ? 'Trop lourde à porter. Pousse-la pour la faire rouler.' : 'Trop lourde à porter, et trop lourde pour rouler.';
+  const lourd = m ? 'Trop lourd' : 'Trop lourde';
+  const what = `${Math.round(kg)} kg, il en porte ${Math.round(strength.carry)}`;
+  if (!def?.roll) return `${lourd} pour lui (${what}).`;
+  if (strength.canRoll(kg)) return `${lourd} pour lui (${what}). ${m ? 'Pousse-le pour le faire rouler.' : 'Pousse-la pour la faire rouler.'}`;
+  return `${lourd} pour lui, à porter comme à rouler (${what}, il en roule ${Math.round(strength.roll)}).`;
 }

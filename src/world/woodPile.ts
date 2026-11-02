@@ -19,8 +19,6 @@
 // en arrière d'un creux fait partie de la montée : la 4e bille couvre le quart haut de celle du centre). L'image
 // de chaque place est la pièce elle-même, assemblée à sa longueur (`woodKey` ; world/woodTexture.ts en jeu, composeWood à l'aperçu).
 
-import { strength } from '../content';
-import { woodMass } from '../content/mass';
 import type { PileDef, PilePlace, PileWood, WoodPiece } from '../content/types';
 import { woodDims } from './woodPiece';
 import { ageOfWood, lookDef, lookOf, woodBody, woodKey, woodSize, woodTraits, type WoodAxis } from './woodShape';
@@ -44,10 +42,13 @@ const TRIANGLES = new Set(['quarter']);
 /** Largeur d'un tas (pièces au sol), et hauteur des rangées. */
 const WIDE = 3;
 
-/** La pièce de tas d'une pièce de bois, si elle va en tas : sans coupe, ni coin, ni face entamée, et pas plus lourde que ce que porte Xéros. */
+/**
+ * La pièce de tas d'une pièce de bois : sans coupe, ni coin, ni face entamée (une pièce entamée n'est pas une pièce de tas). Le monde ne
+ * limite pas ce qui va en tas : ce que Xéros soulève, il l'empile ; sa force décide de ce qu'il soulève (Strength.canCarry), jamais
+ * une masse écrite ici.
+ */
 export function pileWoodOf(piece: WoodPiece): PileWood | undefined {
   if (piece.notch || piece.wedge || piece.dressed) return undefined;
-  if (woodMass(piece) > strength.carry + 1e-9) return undefined;
   return { size: piece.size, shape: piece.shape, length: piece.length, ...(piece.hewn ? { hewn: piece.hewn } : {}), ...woodTraits(piece) };
 }
 
