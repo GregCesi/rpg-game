@@ -637,6 +637,13 @@ export const PropDefSchema = z.strictObject({
   /** 'add' : l'image éclaire ce qu'elle recouvre (lumière), posée au-dessus de la pénombre. */
   blend: z.literal('add').optional(),
   /**
+   * Un élément à couches (le remplissage d'une travée, le pan de chaume ; CONCEPTION « La maison de Xéros ») : `layers`, ses couches de
+   * dessous jusqu'à lui (les palançons, le clayonnage, le torchis, la chaux : elles sont dans les données, la dernière se voit) ;
+   * `over`, la pièce qu'il recouvre : posé sur elle en mode construction, à la même place et dans le même sens, il la remplace.
+   */
+  layers: z.array(id).min(1).optional(),
+  over: id.optional(),
+  /**
    * Un rai de soleil (la tache de lumière d'une fenêtre ou d'une porte) : son éclat suit la force du soleil de l'heure (world.json
    * `daylight`, systems/daylight.ts) ; les intérieurs en posent un à chaque ouverture (world/interiorView.ts).
    */
