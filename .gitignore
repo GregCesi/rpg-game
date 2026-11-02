@@ -7,3 +7,6 @@ src/generated/
 tiled/tilesets/
 *.tiled-session
 tiled/sketches/
+
+# la poubelle : ce qu’un agent retire sans l’effacer (CLAUDE.md) ; Grégoire la vide
+.poubelle/

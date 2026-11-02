@@ -4,13 +4,14 @@
 
 import { PLAYER, PORTRAIT_SIZE, START, TILE } from '../config';
 import { CM_PER_PX, TOLERANCE, expectedSize } from './gabarit';
-import { itemMass, naturalFactor, propMass, type MassCatalog } from './mass';
+import { itemMass, naturalFactor, propMass, woodMass, type MassCatalog } from './mass';
 import { ageableImages, crosswise, variantImage, viewImages } from './views';
 import { agedKey, framesOf, lookOf, WEDGE_FRAMES, woodSheets } from '../world/woodShape';
 import { formImage } from '../world/natural';
-import { partMass, partName } from '../world/transform';
+import { balance, partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
+import { bundleImage } from '../world/pileShape';
 import { openSides } from '../world/zones';
 import { WEAPON_ANGLES } from '../world/strike';
 import type { CombatPoses } from '../world/strike';
@@ -455,7 +456,6 @@ export const VIEWS_TODO: Record<string, string> = {
   chest: 'meuble : au chantier de la maison',
   table: 'meuble : au chantier de la maison',
   crate: 'meuble : au chantier de la maison',
-  workbench: 'meuble : au chantier de la maison',
   worktable: 'meuble : au chantier de la maison',
   'hay-bale': 'meuble : au chantier de la maison',
   stove: 'meuble : au chantier de la maison',
@@ -570,6 +570,33 @@ export function viewsTodo(c: Content, cat: Catalog): { objects: { key: string; m
     .filter((o) => VIEWS_TODO[o.key] && (o.missing.length || o.wrong.length))
     .map((o) => ({ key: o.key, missing: [...o.missing, ...o.wrong.map((w) => w.image)], reason: VIEWS_TODO[o.key] }));
   return { objects, drawings: new Set(objects.flatMap((o) => o.missing)).size };
+}
+
+/**
+ * Un objet à plusieurs états suit son état dans toutes ses vues, au sol comme en main (règle du contrat de l'objet portable,
+ * Grégoire) : le fagot et son nombre de branches (`bundle`), de 2 au tas de branches plein (le genre dont le lien le noue). Pour
+ * chaque nombre : sa vue de chaque place de son tas de fagots (au sol, seul ou en tas, et tourné), sa planche portée (`down`, `up`,
+ * `right`) et son icône de case de main. (L'âge d'un objet de bois : ses trois âges, vérifiés par `aged` ; la taille d'une matière
+ * naturelle : `natural`.)
+ */
+function validateStates(key: string, p: PropDef, c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const genre = p.take?.pile;
+  const tied = Object.values(c.piles).find((g) => g.tie?.into === key);
+  if (!genre || !tied) return errors;
+  const full = Object.keys(tied.places).length;
+  const fagots = c.piles[genre];
+  const ground = [...Object.values(fagots.places), ...Object.values(fagots.turned?.places ?? {})].map((q) => q.image);
+  for (let n = 2; n <= full; n++) {
+    const at = `props.json '${key}', ${n} branches`;
+    for (const image of new Set([p.image, ...ground])) if (!cat.textures.has(bundleImage(image, n))) errors.push(`${at} : vue au sol '${bundleImage(image, n)}' non dessinée`);
+    if (p.take!.hold.image) {
+      const sheet = bundleImage(p.take!.hold.image, n);
+      for (const dir of ['down', 'up', 'right']) if (!cat.animations.get(sheet)?.has(dir)) errors.push(`${at} : vue portée '${sheet}' (${dir}) non dessinée`);
+    }
+    if (!cat.textures.has(bundleImage(p.take!.icon, n))) errors.push(`${at} : icône '${bundleImage(p.take!.icon, n)}' non dessinée`);
+  }
+  return errors;
 }
 
 /** Un objet tenu : sa posture va avec ses mains (une main : `hand` ; deux : `shoulder` ou `carry`), sa planche a ses trois vues. */
@@ -793,6 +820,13 @@ function validateWood(c: Content, cat: Catalog): string[] {
       for (const [look, rule] of Object.entries(size.split)) {
         if (!size.looks[look as WoodLook]) err(`${at} : 'split' d'un aspect '${look}' qu'il n'a pas`);
         if (!size.looks[rule.into]) err(`${at} : 'split.${look}' devient '${rule.into}', un aspect qu'il n'a pas`);
+        // la matière se conserve : deux morceaux qui pèsent moins que la pièce disent ce que la fente retire (`waste`)
+        else {
+          const piece = { size: key, shape: look as 'round' | 'half', length: 100, axis: 'ew' as const };
+          const lost = woodMass(piece) - 2 * woodMass({ ...piece, shape: rule.into });
+          if (lost > 1e-6 && !rule.waste) err(`${at} : fendre '${look}' en deux '${rule.into}' perd ${lost.toFixed(2)} kg par mètre sans le nommer ('waste') : la matière se conserve`);
+          if (lost < -1e-6) err(`${at} : fendre '${look}' en deux '${rule.into}' crée ${(-lost).toFixed(2)} kg par mètre`);
+        }
         for (const part of ['start', 'end']) want(`wedge-${look}-${part}`, WEDGE_FRAMES);
         for (const part of ['start', 'mid', 'end']) {
           want(`crack-${look}-${part}`, 1);
@@ -999,6 +1033,18 @@ function validateCapabilities(c: Content, cat: Catalog): string[] {
     if (!it.dims) err(`${at} : un objet portable a ses dimensions ('dims') : le gabarit de son image au sol et sa physique de coup en découlent (world/heft.ts)`);
     if (it.work && todo.tool && cat.textures.has(it.work.image ?? `tool-${k}`)) err(`validate.ts DRAWINGS_TODO : '${k}' a sa planche en main, à retirer de la liste`);
   }
+  // un élément à couches : il recouvre une pièce qui existe, de la même emprise, et ajoute une couche aux siennes
+  for (const [k, p] of Object.entries(c.props)) {
+    if (!p.over) continue;
+    const u = c.props[p.over];
+    if (!u) {
+      err(`props.json '${k}' : 'over' nomme '${p.over}', absent de props.json`);
+      continue;
+    }
+    // la même longueur et les mêmes vues ; la profondeur peut changer d'une couche à l'autre (le chaume plein dépasse moins que ses chevrons)
+    if (u.dims.w !== p.dims.w || u.views !== p.views) err(`props.json '${k}' : il recouvre '${p.over}' : même longueur et mêmes vues`);
+    if (p.layers && u.layers && (p.layers.length !== u.layers.length + 1 || u.layers.some((l, i) => p.layers![i] !== l))) err(`props.json '${k}' : ses couches ('layers') sont celles de '${p.over}' et une de plus`);
+  }
   for (const [k, d] of [...Object.entries(c.items), ...Object.entries(c.props)]) {
     if (!d.trade && !TRADE_TODO.has(k)) err(`'${k}' : son métier ('trade', CONCEPTION « Les matières »), ou TRADE_TODO`);
     if (d.trade && TRADE_TODO.has(k)) err(`validate.ts TRADE_TODO : '${k}' a son métier, à retirer de la liste`);
@@ -1181,6 +1227,9 @@ function validateTransforms(c: Content): string[] {
         const names = (parts: typeof t.inputs) => parts.map((p) => partName(p, c)).join(' + ');
         err(`la sortie (${names(t.outputs)}, jusqu'à ${Math.round(output * 10) / 10} kg) pèse plus que l'entrée (${names(t.inputs)}, dès ${Math.round(input * 10) / 10} kg) : tailler retire de la matière`);
       }
+      // la matière se conserve (CONCEPTION « Le monde ne limite pas ») : ce qui se perd est un déchet nommé, sinon rien ne se perd
+      const { waste } = balance(t, cat);
+      if (!t.waste && Math.abs(waste) > 1e-6) err(`la sortie pèse ${Math.round(waste * 1000) / 1000} kg de moins que l'entrée, sans déchet ('waste') : la matière se conserve, nommer ce qui part`);
     } catch (e) {
       err((e as Error).message);
     }
@@ -1327,6 +1376,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.interact && !c.dialogues[p.interact]) err(`props.json '${key}' : dialogue '${p.interact}' introuvable`);
     if (p.harvest) addAll(validateHarvest(key, p, c, cat));
     if (p.take) addAll(validateHold(`props.json '${key}' take`, p.take.hold, p.take.hands, cat));
+    if (p.take) addAll(validateStates(key, p, c, cat));
     if (p.take && !cat.textures.has(p.take.icon)) err(`props.json '${key}' : icône '${p.take.icon}' non dessinée`);
     // E sur l'objet : le prendre, le récolter à la main ou ouvrir son dialogue, pas deux à la fois (une récolte à l'outil se fait avec Espace)
     if (p.take && ((p.harvest && !p.harvest.tool) || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);

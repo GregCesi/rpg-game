@@ -8,7 +8,7 @@ import type { Player } from '../entities/Player';
 import { changeObject, changeSpawned, game, setWood, spawnObject } from '../state';
 import { footprint, stateOf, type Box, type GameMap, type PlacedProp } from '../world/GameMap';
 import { capitalName, hewnFaces, WOOD_PIECE } from '../world/woodPiece';
-import { cmAt, cutPixel, lengthPx, lookOf, metresLabel, sizeOf, splitHits, splitPieces, woodBody, woodSize } from '../world/woodShape';
+import { cmAt, cutPixel, cutWood, lengthPx, lookOf, metresLabel, sizeOf, splitHits, splitPieces, woodBody, woodSize } from '../world/woodShape';
 import { woodTexture } from '../world/woodTexture';
 import type { HarvestSystem } from './harvest';
 import type { RailEnd, RailPass } from './rail';
@@ -511,9 +511,8 @@ export class WoodSystem {
    * nord de sa collision. Renvoie les deux longueurs.
    */
   private cutApart(p: PlacedProp, at: number): [number, number] {
-    const { notch: _n, ...rest } = p.wood!;
-    const first: WoodPiece = { ...rest, length: at };
-    const second: WoodPiece = { ...rest, length: rest.length - at };
+    const [first, second] = cutWood(p.wood!, at);
+    const rest = first;
     const { x, y } = p;
     const [a, b] =
       rest.axis === 'ew'

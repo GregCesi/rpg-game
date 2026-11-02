@@ -13,6 +13,8 @@ import { boxOf, type Box3, type BuildPiece } from './build';
 export interface WallRun {
   kind: WallKind;
   axis: 'ew' | 'ns';
+  /** L'épaisseur du mur (cm) : 50 pour le solin, 30 pour celui des cloisons ; elle fait les rangées de son dessus. */
+  thick: number;
   pieces: BuildPiece[];
   box: Box3;
   start: RunEnd;
@@ -67,11 +69,12 @@ export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
     const b = boxOf(p);
     const axis = p.view % 2 ? 'ns' : 'ew';
     const line = axis === 'ew' ? b.y : b.x;
-    const k = `${kind}|${axis}|${b.z}|${line}`;
+    // un tronçon ne mêle pas deux épaisseurs (le solin des murs, celui des cloisons)
+    const k = `${kind}|${axis}|${b.z}|${line}|${axis === 'ew' ? b.d : b.w}`;
     (groups.get(k) ?? groups.set(k, []).get(k)!).push({ p, b });
   }
   for (const [k, list] of groups) {
-    const [kind, axis] = k.split('|') as [WallKind, 'ew' | 'ns'];
+    const [kind, axis, , , thick] = k.split('|') as [WallKind, 'ew' | 'ns', string, string, string];
     const along = (b: Box3) => (axis === 'ew' ? b.x : b.y);
     const size = (b: Box3) => (axis === 'ew' ? b.w : b.d);
     list.sort((a, b) => along(a.b) - along(b.b));
@@ -81,7 +84,7 @@ export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
       const first = cur[0].b;
       const last = cur[cur.length - 1].b;
       const box = axis === 'ew' ? { ...first, w: last.x + last.w - first.x } : { ...first, d: last.y + last.d - first.y };
-      runs.push({ kind, axis, pieces: cur.map((c) => c.p), box, start: 'head', end: 'head', seed: seedOf(kind, axis, box) });
+      runs.push({ kind, axis, thick: Number(thick), pieces: cur.map((c) => c.p), box, start: 'head', end: 'head', seed: seedOf(kind, axis, box) });
       cur = [];
     };
     for (const c of list) {
@@ -137,7 +140,7 @@ export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
 
 /** Le tronçon dessiné : la clé de sa texture (tout ce qui change son dessin). */
 export function runKey(r: WallRun): string {
-  return ['wall', r.kind, r.axis, r.pieces.length, r.start, r.end, r.extra?.start ?? 0, r.extra?.end ?? 0, r.seed].join(':');
+  return ['wall', r.kind, r.axis, r.thick, r.pieces.length, r.start, r.end, r.extra?.start ?? 0, r.extra?.end ?? 0, r.seed].join(':');
 }
 
 /**

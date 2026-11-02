@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { KeyLatch } from './keyLatch';
 
 const K = Phaser.Input.Keyboard.KeyCodes;
 
@@ -36,14 +37,17 @@ const ZOOM_IN = ['NumpadAdd'];
 const ZOOM_OUT = ['NumpadSubtract'];
 
 /**
- * Touches enfoncées (codes), gardées d'une scène à l'autre : Xéros qui passe le bord d'une zone (la scène redémarre sur la voisine,
- * systems/zones.ts) continue de marcher tant que la touche reste enfoncée. Un relâchement est écouté sur la fenêtre même, toujours, pour
- * qu'aucun ne se perde pendant le redémarrage ; la fenêtre quittée les oublie toutes.
+ * Le clavier (src/input/keyLatch.ts), gardé d'une scène à l'autre : Xéros qui passe le bord d'une zone (la scène redémarre sur la
+ * voisine, systems/zones.ts) continue de marcher tant que la touche reste enfoncée. Appuis et relâchements sont écoutés sur la fenêtre
+ * même, à l'instant de l'événement : aucun ne se perd, ni pendant un redémarrage, ni entre deux images, ni pendant une image longue ;
+ * chaque appui est gardé jusqu'à ce que le jeu le lise. La fenêtre quittée les oublie toutes.
  */
-const HELD = new Set<string>();
+const LATCH = new KeyLatch();
 if (typeof window !== 'undefined') {
-  window.addEventListener('keyup', (e) => HELD.delete(e.code));
-  window.addEventListener('blur', () => HELD.clear());
+  // Ctrl+Z, Ctrl+Y (annuler, refaire : lus par leur lettre, plus bas) ne sont pas des appuis de leur touche (Z est KeyW en AZERTY)
+  window.addEventListener('keydown', (e) => LATCH.down(e.code, e.timeStamp, e.repeat || e.ctrlKey || e.metaKey));
+  window.addEventListener('keyup', (e) => LATCH.up(e.code, e.timeStamp));
+  window.addEventListener('blur', () => LATCH.clear());
 }
 
 /**
@@ -54,14 +58,12 @@ if (typeof window !== 'undefined') {
  */
 /** Oublie les touches enfoncées : un passage avec fondu (une porte, une sortie) repart à l'arrêt, comme avant les zones. */
 export function forgetHeldKeys(): void {
-  HELD.clear();
+  LATCH.clear();
 }
 
 export class PlayerInput {
-  /** Touches enfoncées (codes), communes à toutes les scènes (HELD). */
-  private readonly held = HELD;
-  /** Actions dont la touche vient d'être pressée, pas encore lues. */
-  private readonly pressed = new Set<Action>();
+  /** Le clavier, commun à toutes les scènes (LATCH). */
+  private readonly keys = LATCH;
   /** Crans de zoom demandés (molette, + et −), pas encore lus : positif pour s'approcher. */
   private zoom = 0;
   /** Ctrl+Z (annuler) et Ctrl+Y ou Ctrl+Maj+Z (refaire) du mode construction, pas encore lus. */
@@ -71,8 +73,9 @@ export class PlayerInput {
     const kb = scene.input.keyboard!;
     // Tab et Espace ne doivent pas faire défiler la page ni changer le focus
     kb.addCapture([K.TAB, K.SPACE, K.UP, K.DOWN, K.LEFT, K.RIGHT, K.PAGE_UP, K.PAGE_DOWN]);
+    // les appuis d'avant cette scène (lus par la précédente, ou pendant un fondu) ne la concernent pas
+    for (const codes of Object.values(CODES)) this.keys.take(codes);
     const onDown = (e: KeyboardEvent) => {
-      this.held.add(e.code);
       // + et − : lus par leur signe (ils ne sont pas à la même place en AZERTY et en QWERTY), ou sur le pavé numérique ; maintenus, ils répètent
       if (ZOOM_IN.includes(e.code) || e.key === '+' || e.key === '=') this.zoom++;
       if (ZOOM_OUT.includes(e.code) || e.key === '-') this.zoom--;
@@ -85,23 +88,18 @@ export class PlayerInput {
         }
         return;
       }
-      if (e.repeat) return;
-      for (const [action, codes] of Object.entries(CODES)) if ((codes as readonly string[]).includes(e.code)) this.pressed.add(action as Action);
     };
-    const onUp = (e: KeyboardEvent) => this.held.delete(e.code);
     // fenêtre quittée : les touches relâchées ailleurs ne reviendront pas
-    const onBlur = () => this.held.clear();
+    const onBlur = () => this.keys.clear();
     // la molette : vers l'avant, on s'approche
     const onWheel = (_p: unknown, _o: unknown, _dx: number, dy: number) => {
       if (dy) this.zoom += dy < 0 ? 1 : -1;
     };
     kb.on('keydown', onDown);
-    kb.on('keyup', onUp);
     scene.input.on('wheel', onWheel);
     scene.game.events.on(Phaser.Core.Events.BLUR, onBlur);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       kb.off('keydown', onDown);
-      kb.off('keyup', onUp);
       scene.input.off('wheel', onWheel);
       scene.game.events.off(Phaser.Core.Events.BLUR, onBlur);
     });
@@ -114,7 +112,12 @@ export class PlayerInput {
 
   /** La touche des mains (E ou Entrée) est enfoncée en ce moment : E maintenu (nouer, dénouer). */
   handsDown(): boolean {
-    return CODES.hands.some((c) => this.held.has(c));
+    return this.keys.isDown(CODES.hands);
+  }
+
+  /** La durée (ms) du dernier appui d'E fini : la vraie, pas le temps que le jeu a mis à le lire (systems/longPress.ts). */
+  handsLasted(): number | undefined {
+    return this.keys.lastedFor(CODES.hands);
   }
 
   /** Utiliser ce qu'on tient (Espace) : vrai une seule fois par appui. */
@@ -149,7 +152,12 @@ export class PlayerInput {
 
   /** La touche R est enfoncée en ce moment : R maintenu (pivoter une bille couchée). */
   turnDown(): boolean {
-    return CODES.turn.some((c) => this.held.has(c));
+    return this.keys.isDown(CODES.turn);
+  }
+
+  /** La durée (ms) du dernier appui de R fini. */
+  turnLasted(): number | undefined {
+    return this.keys.lastedFor(CODES.turn);
   }
 
   /** V : la vitesse du temps, au palier suivant (en boucle) ; vrai une fois par appui, Maj tenue ou non (pendant une course). */
@@ -178,13 +186,19 @@ export class PlayerInput {
 
   /** Maj est enfoncée (courir ; en mode construction, la caméra va plus vite et le clic droit retire aussi ce qui repose dessus). */
   shiftDown(): boolean {
-    return CODES.run.some((c) => this.held.has(c));
+    return this.keys.isDown(CODES.run);
   }
 
+  /**
+   * La direction et la course de cette image : les touches enfoncées, et celles pressées puis relâchées depuis l'image d'avant (la
+   * plus brève des pressions déplace d'une image).
+   */
   read(): { dir: Phaser.Math.Vector2; running: boolean } {
-    const down = (a: Action) => (CODES[a].some((c) => this.held.has(c)) ? 1 : 0);
+    const down = (a: Action) => (this.keys.downOrTapped(CODES[a]) ? 1 : 0);
     const dir = new Phaser.Math.Vector2(down('right') - down('left'), down('down') - down('up'));
-    return { dir, running: down('run') === 1 };
+    const running = down('run') === 1;
+    this.keys.forgetTaps();
+    return { dir, running };
   }
 
   /** Le zoom demandé depuis la dernière lecture : +1 (s'approcher), -1 (s'éloigner) ou 0. */
@@ -195,8 +209,6 @@ export class PlayerInput {
   }
 
   private take(a: Action): boolean {
-    const p = this.pressed.has(a);
-    this.pressed.delete(a);
-    return p;
+    return this.keys.take(CODES[a]);
   }
 }

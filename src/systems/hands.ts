@@ -25,7 +25,7 @@ import { groundBox, propFootprint, propSize, type Box, type GameMap, type Placed
 import { pileOf } from '../world/offer';
 import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { nearestOpenPlace, openPlaces, placeAim } from '../world/places';
-import { kindOf, pileDefOf, sameKind, shapeOf, tieImages, type PileKind, type PileShape } from '../world/pileShape';
+import { kindOf, stateImage, pileDefOf, sameKind, shapeOf, tieImages, type PileKind, type PileShape } from '../world/pileShape';
 import { woodTexture } from '../world/woodTexture';
 import { formImage, naturalFor, naturalGround } from '../world/natural';
 import { Ghosts } from './ghost';
@@ -117,7 +117,7 @@ export class HandsSystem {
     const length = p.def.length ? { length: p.length ?? p.def.length.start } : {};
     const what: Held = p.wood
       ? { prop: p.type, wood: structuredClone(p.wood) }
-      : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length, ...(p.natural ? { natural: { ...p.natural } } : {}) };
+      : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length, ...(p.natural ? { natural: { ...p.natural } } : {}), ...(p.bundle ? { bundle: p.bundle } : {}) };
     if (!take(game, what, p.def.take!.hands)) return false;
     const mapId = this.map.def.id;
     if (p.spawned) changeSpawned(game, mapId, p.id, { x: p.x, y: p.y });
@@ -142,7 +142,7 @@ export class HandsSystem {
         ? { ...piece, ...(p.pile.turned ? { view: 1 } : {}), ...(items[piece.item].natural ? form : {}) }
         : 'wood' in piece
           ? { prop: WOOD_PIECE, wood: structuredClone(p.def.places[place].wood) ?? { ...piece.wood, axis: p.pile.turned ? 'ns' : 'ew' } }
-          : { ...piece, ...(p.pile.turned ? { turned: true } : {}), ...(props[piece.prop].natural ? form : {}) };
+          : { ...piece, ...(p.pile.turned ? { turned: true } : {}), ...(props[piece.prop].natural ? form : {}), ...(p.pile.bundle ? { bundle: p.pile.bundle } : {}) };
     const hands = 'item' in piece ? items[piece.item].hands : 'wood' in piece ? defOf(WOOD_PIECE, { ...piece.wood, axis: 'ew' }).take!.hands : props[piece.prop].take!.hands;
     if (!take(game, what, hands)) return false;
     emptyPlace(game, this.map.def.id, p.pile.id, place);
@@ -380,7 +380,7 @@ export class HandsSystem {
     const out: { lone: Lone; x: number; y: number; turned: boolean }[] = [];
     for (const p of this.map.props) {
       if (!p.def.take || !p.image.visible) continue;
-      const k = pileOf(p.wood ? { prop: p.type, wood: p.wood } : { prop: p.type });
+      const k = pileOf(p.wood ? { prop: p.type, wood: p.wood } : { prop: p.type, ...(p.bundle ? { bundle: p.bundle } : {}) });
       if (k && sameKind(k, kind)) out.push({ lone: { prop: p }, x: p.x, y: p.y, turned: p.wood?.axis === 'ns' });
     }
     for (const g of this.map.ground) {
@@ -420,8 +420,8 @@ export class HandsSystem {
     } else if ('item' in what) {
       this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view, what.natural));
     } else {
-      const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood, natural: what.natural });
-      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural });
+      const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle });
+      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle });
     }
   }
 
@@ -446,7 +446,8 @@ export class HandsSystem {
       return { key, x: t.x - this.scene.textures.getFrame(key).width / 2, y: t.y, depth: t.y };
     }
     if (what.wood) return { key: woodTexture(this.scene, what.wood), frame: '0', x: t.x, y: t.y, depth: t.y };
-    const image = formImage(props[what.prop].image, what.natural);
+    // le fagot posé seul : le dessin de son nombre de branches, comme il sera au sol
+    const image = formImage(stateImage(props[what.prop].image, what.prop, what.bundle), what.natural);
     return { key: what.flip ? `${image}-left` : image, x: t.x, y: t.y, depth: t.y };
   }
 

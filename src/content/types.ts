@@ -251,10 +251,10 @@ const EndSchema = z.enum(['west', 'east', 'north', 'south']);
 
 /**
  * Aspect d'une pièce de bois, ce que montre son dessin : ronde (`round`), ronde écorcée (`peeled`, le rondin de la cabane), demi
- * (`half`), quart (`quarter`), une à trois faces dressées à la doloire (`f1`, `f2`, `f3`), équarrie (`beam`, la poutre). L'aspect se
- * déduit des réglages (forme, écorcée, coups de doloire).
+ * (`half`), quart (`quarter`), une à trois faces dressées à la doloire (`f1`, `f2`, `f3`), équarrie (`beam`, la poutre), planche
+ * (`plank`), latte (`lath`, la demi-perche refendue). L'aspect se déduit des réglages (forme, écorcée, coups de doloire).
  */
-const WoodLookSchema = z.enum(['round', 'peeled', 'half', 'quarter', 'f1', 'f2', 'f3', 'beam', 'plank']);
+const WoodLookSchema = z.enum(['round', 'peeled', 'half', 'quarter', 'f1', 'f2', 'f3', 'beam', 'plank', 'lath']);
 
 /**
  * L'âge du bois travaillé (docs/CONCEPTION.md, « L'âge du bois ») : neuf (`new`, blond chaud), patiné (`worn`, brun doux), vieux
@@ -274,9 +274,10 @@ export const WoodAgeSchema = z.enum(['new', 'worn', 'old']);
  */
 /**
  * Forme d'une pièce de bois : ronde, demi (fendue en deux), quart (le quartier), planche (fendue au coutre dans un quartier ou une
- * demi-bille : `plank` de wood.json, son épaisseur et sa largeur).
+ * demi-bille : `plank` de wood.json, son épaisseur et sa largeur), latte (la demi-perche refendue au coin : sa section dans wood.json,
+ * `wide` × `thick`).
  */
-const WoodShapeSchema = z.enum(['round', 'half', 'quarter', 'plank']);
+const WoodShapeSchema = z.enum(['round', 'half', 'quarter', 'plank', 'lath']);
 
 export const WoodPieceSchema = z.strictObject({
   size: id,
@@ -365,16 +366,22 @@ const WoodUpSchema = z.strictObject({
  * rond, au milieu de la `face` plate de la demi-bille, à la pointe, `apex`, du quartier ; `none`). `rests` : sur quoi la pièce
  * repose (`bark` : écorce en bas, la demi-bille face plate en l'air, le quartier pointe en l'air ; `face` : sur une face plane).
  * `flats` : les faces dressées, dans l'ordre de la doloire, nommées en est-ouest (le dessus, le sud, le nord, le dessous ; tournée
- * nord-sud, le sud passe à l'ouest). `faces` : la matière des faces planes (`split` fendue, `hewn` dressée).
+ * nord-sud, le sud passe à l'ouest). `faces` : la matière des faces planes (`split` fendue, `hewn` dressée). `wide`, `thick` : la
+ * largeur et l'épaisseur de bois d'un rectangle (cm ; absentes : la planche, `plank` de wood.json).
  */
-const WoodSectionSchema = z.strictObject({
-  shape: z.enum(['round', 'half', 'quarter', 'rect']),
-  bark: z.enum(['arc', 'none']),
-  heart: z.enum(['center', 'face', 'apex', 'none']),
-  rests: z.enum(['bark', 'face']),
-  flats: z.array(z.enum(['top', 'south', 'north', 'bottom'])).optional(),
-  faces: z.enum(['split', 'hewn']).optional(),
-});
+const WoodSectionSchema = z
+  .strictObject({
+    shape: z.enum(['round', 'half', 'quarter', 'rect']),
+    bark: z.enum(['arc', 'none']),
+    heart: z.enum(['center', 'face', 'apex', 'none']),
+    rests: z.enum(['bark', 'face']),
+    flats: z.array(z.enum(['top', 'south', 'north', 'bottom'])).optional(),
+    faces: z.enum(['split', 'hewn']).optional(),
+    wide: z.number().positive().optional(),
+    thick: z.number().positive().optional(),
+  })
+  .refine((s) => s.shape === 'rect' || (s.wide === undefined && s.thick === undefined), { message: "'wide' et 'thick' pour un rectangle seulement" })
+  .refine((s) => (s.wide === undefined) === (s.thick === undefined), { message: "'wide' et 'thick' ensemble" });
 export type WoodSection = z.infer<typeof WoodSectionSchema>;
 
 /**
@@ -395,11 +402,16 @@ const WoodLookDefSchema = z.strictObject({
   up: WoodUpSchema.optional(),
 });
 
-/** Fendre un aspect : ce qu'il devient (`into`, deux pièces), et le coin bas gauche de chacune par rapport à la pièce fendue, par sens. */
+/**
+ * Fendre un aspect : ce qu'il devient (`into`, deux pièces), et le coin bas gauche de chacune par rapport à la pièce fendue, par sens ;
+ * `waste` : ce que le travail retire, si les deux pièces pèsent moins que la pièce (la matière se conserve : ce qui part est nommé,
+ * comme le déchet d'une transformation ; validate.ts le vérifie).
+ */
 const WoodSplitSchema = z.strictObject({
-  into: z.enum(['half', 'quarter']),
+  into: z.enum(['half', 'quarter', 'lath']),
   ew: z.tuple([z.tuple([px, px]), z.tuple([px, px])]),
   ns: z.tuple([z.tuple([px, px]), z.tuple([px, px])]),
+  waste: z.strictObject({ name: id, fate: id }).optional(),
 });
 
 /**
@@ -636,6 +648,13 @@ export const PropDefSchema = z.strictObject({
   layer: z.literal('floor').optional(),
   /** 'add' : l'image éclaire ce qu'elle recouvre (lumière), posée au-dessus de la pénombre. */
   blend: z.literal('add').optional(),
+  /**
+   * Un élément à couches (le remplissage d'une travée, le pan de chaume ; CONCEPTION « La maison de Xéros ») : `layers`, ses couches de
+   * dessous jusqu'à lui (les palançons, le clayonnage, le torchis, la chaux : elles sont dans les données, la dernière se voit) ;
+   * `over`, la pièce qu'il recouvre : posé sur elle en mode construction, à la même place et dans le même sens, il la remplace.
+   */
+  layers: z.array(id).min(1).optional(),
+  over: id.optional(),
   /**
    * Un rai de soleil (la tache de lumière d'une fenêtre ou d'une porte) : son éclat suit la force du soleil de l'heure (world.json
    * `daylight`, systems/daylight.ts) ; les intérieurs en posent un à chaque ouverture (world/interiorView.ts).
@@ -1383,9 +1402,10 @@ const TransformPartSchema = z
 
 /**
  * Le poste d'une transformation : au sol (`ground`), sur le billot (`block`), à l'établi (`bench`), au bord de l'étang (`pond`, où
- * l'on puise l'eau et creuse l'argile), sur un chevalet de fendeur (`brake`).
+ * l'on puise l'eau et creuse l'argile), sur un chevalet de fendeur (`brake`), au four à chaux (`kiln`, à venir : on y cuit le
+ * calcaire).
  */
-const StationSchema = z.enum(['ground', 'block', 'bench', 'pond', 'brake']);
+const StationSchema = z.enum(['ground', 'block', 'bench', 'pond', 'brake', 'kiln']);
 
 /**
  * Le geste d'une transformation : `soon`, à venir (en attendant, ?dieu l'applique d'un coup : « Transformer ») ; ou le geste réel,
@@ -1449,10 +1469,16 @@ const MapObjectSchema = z.strictObject({
   wood: z.lazy(() => WoodPieceSchema).optional(),
   /** L'âge d'un objet de bois travaillé (`aged` de props.json : le panneau, vieux au bord de la route), propriété `age` dans Tiled. */
   age: z.lazy(() => WoodAgeSchema).optional(),
+  /**
+   * Dans un bâtiment posé (un Plan) : il n'est que dans son intérieur calculé, où l'on s'en sert comme de tout objet de la carte
+   * (la paillasse où l'on dort, la planchette qui enseigne, les outils du cagibi) ; ce qu'on en fait se garde sous l'intérieur.
+   */
+  inside: z.literal(true).optional(),
 });
 
 /** Point d'apparition : (x, y) = position des pieds du joueur. */
-const SpawnSchema = z.strictObject({ x: px, y: px, facing: FacingSchema.optional() });
+/** `inside` : le point est dans un bâtiment posé (un Plan) ; il vaut dans son intérieur calculé (le réveil de Xéros dans la maison). */
+const SpawnSchema = z.strictObject({ x: px, y: px, facing: FacingSchema.optional(), inside: z.literal(true).optional() });
 
 /** Zone qui mène vers une autre carte : on la prend quand les pieds sont dedans (et, si `facing` est donné, en avançant dans cette direction). */
 const ExitSchema = z.strictObject({
@@ -1473,7 +1499,17 @@ const NpcSchema = z.strictObject({
   facing: FacingSchema.optional(),
   /** Dialogue lancé quand Xéros lui parle. */
   dialogue: id,
+  /** Dans un bâtiment posé (un Plan) : il n'est que dans son intérieur calculé (la mère, chez elle), à sa place. */
+  inside: z.literal(true).optional(),
+  /** Sa pose : `sit`, assis (l'animation `sit-<direction>` de son sprite). */
+  pose: z.enum(['sit']).optional(),
 });
+
+/**
+ * Une place nommée d'une carte (un rectangle de type `Place` dans Tiled), que lira une quête : `name`, son nom ; `accepts`, ce qu'on y
+ * pose (une clé de props.json ou d'items.json : le fagot) ; `inside` : dans un bâtiment posé, elle vaut dans son intérieur.
+ */
+const PlaceSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive(), name: id, accepts: id, inside: z.literal(true).optional() });
 
 /**
  * Une parcelle réservée du village (chantier « monde ») : un rectangle de type `Parcel` dans Tiled, sa destination (`use`, clé de
@@ -1515,6 +1551,8 @@ export const MapSchema = z.strictObject({
   parcels: z.array(ParcelSchema),
   /** Plans du bac à sable posés depuis Tiled (la cabane, les étals, les granges). */
   plans: z.array(MapPlanSchema),
+  /** Places nommées (la place du fagot près du foyer). */
+  places: z.array(PlaceSchema).default([]),
 });
 
 /** Une destination de parcelle (parcels.json) : le nom dit, et une couleur pour la montrer (mode construction, ?debug). */

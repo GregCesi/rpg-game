@@ -51,16 +51,25 @@ export function upOf(size: string, look: WoodLook): NonNullable<WoodLookDef['up'
   return u;
 }
 
-/** La forme d'une pièce d'un aspect : la demi, le quart et la planche sont des formes ; le reste (rond, faces, poutre) est rond. */
+/** La forme d'une pièce d'un aspect : la demi, le quart, la planche et la latte sont des formes ; le reste (rond, faces, poutre) est rond. */
 export function shapeOfLook(look: WoodLook): WoodPiece['shape'] {
-  return look === 'half' || look === 'quarter' || look === 'plank' ? look : 'round';
+  return look === 'half' || look === 'quarter' || look === 'plank' || look === 'lath' ? look : 'round';
+}
+
+/**
+ * La section rectangulaire d'un aspect (planche, latte), en cm de bois : sa largeur couchée à plat et son épaisseur ; celle de
+ * sa section dans wood.json (`wide`, `thick`), sinon la planche commune (`plank` de wood.json).
+ */
+export function rectOf(size: string, look: WoodLook): { wide: number; thick: number } {
+  const sec = lookDef(size, look).section;
+  return sec.wide !== undefined && sec.thick !== undefined ? { wide: sec.wide, thick: sec.thick } : WOOD.plank;
 }
 
 /** Un aspect rond entier, avec ou sans son écorce (la bille, le rondin, le rondin écorcé, la perche) : il roule. */
 export const rollsLook = (look: WoodLook) => look === 'round' || look === 'peeled';
 
 /** Faces dressées à la doloire de chaque aspect. */
-const LOOK_FACES: Record<WoodLook, number> = { round: 0, peeled: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 };
+const LOOK_FACES: Record<WoodLook, number> = { round: 0, peeled: 0, half: 0, quarter: 0, plank: 0, lath: 0, f1: 1, f2: 2, f3: 3, beam: 4 };
 
 /** La pièce de bois d'un aspect : sa forme, ses coups de doloire (une face tous les `perFace`), son écorce ôtée. */
 export function woodOfLook(size: string, look: WoodLook, length: number, axis: WoodAxis): WoodPiece {
@@ -230,6 +239,15 @@ export function splitPieces(piece: WoodPiece): { piece: WoodPiece; dx: number; d
   const axis = piece.axis as Exclude<WoodAxis, 'up'>;
   const into: WoodPiece = { ...rest, shape: rule.into };
   return rule[axis].map(([dx, dy]) => ({ piece: { ...into }, dx, dy }));
+}
+
+/**
+ * Les deux morceaux d'une pièce coupée à `at` cm de son début : mêmes réglages, l'encoche en moins ; leurs longueurs font la longueur
+ * de la pièce (la scie ne prend pas de matière à cette échelle : la matière se conserve).
+ */
+export function cutWood(piece: WoodPiece, at: number): [WoodPiece, WoodPiece] {
+  const { notch: _n, ...rest } = piece;
+  return [{ ...rest, length: at }, { ...rest, length: rest.length - at }];
 }
 
 /** L'aspect tel qu'il est dessiné dans la planche : le quartier pointe en bas a ses parties à lui (`quarter-down`). */

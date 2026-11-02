@@ -6,6 +6,7 @@
 
 import { BUILD, INTERIOR, TILE } from '../config';
 import type { Facing, MapData } from '../content/types';
+import { maps } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPiece, Joint } from '../state';
 import { BACK, interiorId, type Building, type Rect, type Side, type Window } from './interior';
@@ -121,6 +122,18 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
     ...b.entrances.filter((e) => e.open).map((e) => ({ kind: 'door' as const, id: e.door, side: e.side, span: e.span.map((v) => v + (e.side === 'north' || e.side === 'south' ? shift.x : shift.y)) as [number, number] })),
     ...windows.filter((w) => w.open).map((w) => ({ kind: 'window' as const, id: w.id, side: w.side, span: w.span })),
   ];
+  // ce que la carte du dehors pose dedans (`inside` : la mère, le réveil de Xéros, la place du fagot), à sa place dans l'intérieur
+  const hostDef = maps[host];
+  const inRoom = (x: number, y: number) => x * CM_PER_PX >= b.room.x && x * CM_PER_PX < b.room.x + b.room.w && y * CM_PER_PX >= b.room.y && y * CM_PER_PX < b.room.y + b.room.d;
+  const dx = shift.x / CM_PER_PX;
+  const dy = shift.y / CM_PER_PX;
+  const npcs = (hostDef?.npcs ?? []).filter((n) => n.inside && inRoom(n.x, n.y)).map(({ inside: _, ...n }) => ({ ...n, x: n.x + dx, y: n.y + dy }));
+  const insideSpawns = Object.entries(hostDef?.spawns ?? {})
+    .filter(([, s]) => s.inside && inRoom(s.x, s.y))
+    .map(([k, { inside: _, ...s }]) => [k, { ...s, x: s.x + dx, y: s.y + dy }] as const);
+  const places = (hostDef?.places ?? []).filter((q) => q.inside && inRoom(q.x, q.y)).map(({ inside: _, ...q }) => ({ ...q, x: q.x + dx, y: q.y + dy }));
+  // les objets de la carte posés dedans (la paillasse, la planchette, les outils du cagibi) : à leur place, utilisables
+  const objects = (hostDef?.objects ?? []).filter((o) => o.inside && inRoom(o.x, o.y)).map(({ inside: _, ...o }) => ({ ...o, x: o.x + dx, y: o.y + dy }));
   const id = interiorId(host, b.key);
   const def: MapData = {
     id,
@@ -130,12 +143,13 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
     width,
     height,
     layers: { ground },
-    objects: [],
-    spawns: Object.fromEntries(arrivals.map((a, i) => [`entree-${i}`, a])),
+    objects,
+    spawns: { ...Object.fromEntries(arrivals.map((a, i) => [`entree-${i}`, a])), ...Object.fromEntries(insideSpawns) },
     exits: [],
-    npcs: [],
+    npcs,
     parcels: [],
     plans: [],
+    places,
   };
   return {
     def,

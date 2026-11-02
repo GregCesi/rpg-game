@@ -18,7 +18,7 @@ const SAVE_KEY = 'xeros-partie';
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
-export const SAVE_VERSION = 24;
+export const SAVE_VERSION = 27;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -77,7 +77,10 @@ export function readSave(): ReadResult {
  * d'avant ont été refusées une fois pour toutes, leurs conversions retirées à l'audit du 2 novembre 2026).
  * 17 -> 18 : l'horloge (`withClock`) ; 18 -> 19 : l'endurance en trois niveaux (`threeLevels`) ; 19 -> 20 : le plafond au réveil
  * (`withWoke`) ; 20 -> 21 : les travaux interrompus, vides ; 21 -> 22 : le travail par la matière (`workByMatter`) ; 22 -> 23 : le côté
- * de l'entaille (`side`), facultatif ; 23 -> 24 : la place d'un objet né dans sa « chaîne » (`chain`), jamais lue, n'existe plus.
+ * de l'entaille (`side`), facultatif ; 23 -> 24 : la place d'un objet né dans sa « chaîne » (`chain`), jamais lue, n'existe plus ;
+ * 24 -> 25 : le nombre de branches d'un fagot (`bundle`), facultatif ; 25 -> 26 : celui d'un fagot posé seul (`bundle` d'un objet né),
+ * facultatif ; 26 -> 27 : le tas de branches plein passe de 10 à 12, un fagot sans nombre (le plein d'alors) reçoit `bundle: 10`
+ * (`withOldFullBundle`).
  */
 export function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -88,7 +91,38 @@ export function upgrade(data: unknown): unknown {
   if (d?.version === 21 && d.state && typeof d.state === 'object') d = { ...d, version: 22, state: workByMatter(d.state as { maps?: Record<string, { work?: unknown }> }) };
   if (d?.version === 22 && d.state && typeof d.state === 'object') d = { ...d, version: 23 };
   if (d?.version === 23 && d.state && typeof d.state === 'object') d = { ...d, version: 24, state: withoutChain(d.state as { maps?: Record<string, { spawned?: object[] }> }) };
+  // 24 -> 25 : le nombre de branches d'un fagot (`bundle` d'un tas de fagots, d'un fagot tenu), facultatif : un fagot plein
+  if (d?.version === 24 && d.state && typeof d.state === 'object') d = { ...d, version: 25 };
+  // 25 -> 26 : le nombre de branches d'un fagot posé seul (`bundle` d'un objet né), facultatif : sans lui, le fagot plein
+  if (d?.version === 25 && d.state && typeof d.state === 'object') d = { ...d, version: 26 };
+  // 26 -> 27 : le tas de branches plein passe de 10 à 12 branches ; un fagot sans nombre était plein, il en avait 10
+  if (d?.version === 26 && d.state && typeof d.state === 'object') d = { ...d, version: 27, state: withOldFullBundle(d.state as OldBundles) };
   return d;
+}
+
+type OldBundles = { hands?: unknown[]; both?: unknown; maps?: Record<string, { piles?: { pile?: string; bundle?: number }[]; spawned?: { type?: string; bundle?: number }[] }> };
+
+/**
+ * 26 -> 27 : un fagot sans nombre de branches était le fagot plein du tas de branches d'alors (10 places ; 12 depuis) : il reçoit
+ * `bundle: 10`, partout où il est (tas de fagots, objet né, mains), pour garder ses branches (la matière se conserve).
+ */
+function withOldFullBundle(state: OldBundles): object {
+  const OLD_FULL = 10;
+  const fagot = Object.values(piles).find((g) => g.tie?.into)?.tie?.into;
+  const genre = fagot ? props[fagot]?.take?.pile : undefined;
+  if (!fagot || !genre) return state;
+  const held = (h: unknown) => (h && typeof h === 'object' && (h as { prop?: string }).prop === fagot && !(h as { bundle?: number }).bundle ? { ...h, bundle: OLD_FULL } : h);
+  const maps = Object.fromEntries(
+    Object.entries(state.maps ?? {}).map(([id, m]) => [
+      id,
+      {
+        ...m,
+        ...(m.piles ? { piles: m.piles.map((p) => (p.pile === genre && !p.bundle ? { ...p, bundle: OLD_FULL } : p)) } : {}),
+        ...(m.spawned ? { spawned: m.spawned.map((o) => (o.type === fagot && !o.bundle ? { ...o, bundle: OLD_FULL } : o)) } : {}),
+      },
+    ]),
+  );
+  return { ...state, maps, ...(state.hands ? { hands: state.hands.map(held) } : {}), ...(state.both !== undefined ? { both: held(state.both) } : {}) };
 }
 
 /** 23 -> 24 : `chain` retiré des objets nés de chaque carte. */

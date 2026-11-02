@@ -67,6 +67,8 @@ export interface RunSpec {
   start: RunEnd;
   end: RunEnd;
   seed: number;
+  /** Rangées du dessus (l'épaisseur du mur en raccourci : 5 pour le solin de 50 cm, 3 pour celui des cloisons, 30 cm). Absent : 5. */
+  top?: number;
   /** Pixels ajoutés (positifs) ou ôtés (négatifs) à chaque bout, le long du tronçon : un est-ouest qui tient un carré d'angle couvert au sol par le nord-sud reçoit + l'épaisseur (10 px) à ce bout ; ce nord-sud reçoit −10 px à ce bout. Absent : 0. */
   extra?: { start?: number; end?: number };
 }
@@ -1014,10 +1016,10 @@ export function wallKit(image: (name: string) => Grid): WallKit {
    * Le dessus du mur nord-sud, `rows` rangées, pris au milieu d'un mur nord-sud monté pour l'occasion (sans contour au nord
    * ni au sud) ou à son bout nord (`north` : le contour arrière en rangée 0). 13 colonnes, plus celle de l'ombre.
    */
-  const nsTop = (kind: WallKind, seed: number, rows: number, north: boolean): Grid => {
+  const nsTop = (kind: WallKind, seed: number, rows: number, north: boolean, width = NS_WIDTH): Grid => {
     const skip = north ? 0 : 6;
-    const g = build(kind, seed, { length: NS_WIDTH, face: SILL_FACE, top: rows + skip + 12, axis: 'ns' });
-    return crop(g, 0, NS_WIDTH + 1, skip, skip + rows);
+    const g = build(kind, seed, { length: width, face: SILL_FACE, top: rows + skip + 12, axis: 'ns' });
+    return crop(g, 0, width + 1, skip, skip + rows);
   };
 
   /**
@@ -1032,20 +1034,23 @@ export function wallKit(image: (name: string) => Grid): WallKit {
     const W = runLength(spec);
     const mL = spec.start === 'abut' ? ABUT_MARGIN : 0, mR = spec.end === 'abut' ? ABUT_MARGIN : 0;
     const ends: Ends = { left: mL ? 'free' : 'head', right: mR ? 'free' : 'head' };
-    const g = build(spec.kind, spec.seed, { length: W + mL + mR, face: SILL_FACE, top: SILL_TOP, axis: 'ew' }, ends);
+    // l'épaisseur du mur : ses rangées de dessus, et la largeur du mur nord-sud à l'écran (règle D)
+    const T = spec.top ?? SILL_TOP;
+    const NSW = T + SILL_FACE;
+    const g = build(spec.kind, spec.seed, { length: W + mL + mR, face: SILL_FACE, top: T, axis: 'ew' }, ends);
     const out = crop(g, mL, mL + W + 1, 0, g.length).map((r) => [...r]);
     const H = out.length; // 14
     ([['start', 0], ['end', 1]] as const).forEach(([which, k]) => {
       const e = spec[which];
       if (e !== 'corner-n' && e !== 'corner-s') return;
-      const x = k === 0 ? 0 : W - NS_WIDTH;
+      const x = k === 0 ? 0 : W - NSW;
       const sub = spec.seed * 7 + 13 + k;
       if (e === 'corner-s') {
         // le dessus nord-sud depuis le bord nord du mur, jusqu'à la dernière rangée de l'image ; au bout est, son ombre aussi
-        const top = nsTop(spec.kind, sub, H, true);
-        paste(out, k === 0 ? crop(top, 0, NS_WIDTH, 0, H) : top, x, 0);
+        const top = nsTop(spec.kind, sub, H, true, NSW);
+        paste(out, k === 0 ? crop(top, 0, NSW, 0, H) : top, x, 0);
       } else {
-        paste(out, crop(nsTop(spec.kind, sub, SILL_TOP, false), 0, NS_WIDTH, 0, SILL_TOP), x, 0);
+        paste(out, crop(nsTop(spec.kind, sub, T, false, NSW), 0, NSW, 0, T), x, 0);
       }
     });
     return out.map((r) => r.join(''));
@@ -1063,14 +1068,15 @@ export function wallKit(image: (name: string) => Grid): WallKit {
     const mN = spec.start === 'abut' ? ABUT_MARGIN : 0;
     const band = spec.end !== 'abut';
     const top = band ? L - SILL_FACE + mN : L + mN + 12;
-    const g = build(spec.kind, spec.seed, { length: NS_WIDTH, face: SILL_FACE, top, axis: 'ns' });
-    const out = crop(g, 0, NS_WIDTH + 1, mN, mN + L + 1).map((r) => [...r]);
+    const NSW = (spec.top ?? SILL_TOP) + SILL_FACE;
+    const g = build(spec.kind, spec.seed, { length: NSW, face: SILL_FACE, top, axis: 'ns' });
+    const out = crop(g, 0, NSW + 1, mN, mN + L + 1).map((r) => [...r]);
     if (spec.end === 'corner-e' || spec.end === 'corner-w') {
       const east = spec.end === 'corner-e';
-      const edge = east ? NS_WIDTH - 1 : 0, inside = east ? NS_WIDTH - 2 : 1;
+      const edge = east ? NSW - 1 : 0, inside = east ? NSW - 2 : 1;
       for (let y = L - SILL_FACE; y < L; y++) {
         if (isOutline(out[y][edge])) out[y][edge] = isOutline(out[y][inside]) ? MORTAR : out[y][inside];
-        if (east && out[y][NS_WIDTH] === 'x') out[y][NS_WIDTH] = out[y][edge];
+        if (east && out[y][NSW] === 'x') out[y][NSW] = out[y][edge];
       }
     }
     return out.map((r) => r.join(''));

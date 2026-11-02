@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
+import { stateImage } from '../world/pileShape';
 import { CONSTRUIRE, FEET, FELL, HELP, LOCKS, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
 import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
@@ -70,7 +71,7 @@ import {
 import { blocks, boxOf, overlaps, swung } from '../world/build';
 import { CM_PER_PX } from '../content/gabarit';
 import { GameMap } from '../world/GameMap';
-import { parseInteriorId } from '../world/interior';
+import { buildingsOf, interiorId, parseInteriorId } from '../world/interior';
 import type { InteriorMap } from '../world/interiorMap';
 import { InteriorView } from '../world/interiorView';
 import { ZoneBand } from '../world/zoneBand';
@@ -113,7 +114,9 @@ function holdOf(scene: Phaser.Scene, h: Held): { stance: Stance; look: Look } {
   if ('prop' in h) {
     const t = defOf(h.prop, h.wood).take!;
     const texture = h.wood ? heldWoodTexture(scene, h.wood) : undefined;
-    return { stance: t.hold.stance, look: { image: t.hold.image, icon: t.icon, ...(texture ? { texture } : {}) } };
+    // un objet à plusieurs états (le fagot et son nombre de branches) : ses vues portées et son icône suivent l'état
+    const image = t.hold.image && stateImage(t.hold.image, h.prop, h.bundle);
+    return { stance: t.hold.stance, look: { image, icon: stateImage(t.icon, h.prop, h.bundle), ...(texture ? { texture } : {}) } };
   }
   const it = items[h.item];
   const stance = it.hold?.stance ?? (it.hands === 2 ? 'carry' : 'hand');
@@ -206,6 +209,17 @@ export class WorldScene extends Phaser.Scene {
   }
 
   create(): void {
+    // un point d'apparition « dedans » (le réveil de Xéros chez lui) : dans l'intérieur du bâtiment posé où il est
+    const hostSpawn = !this.at && maps[this.mapId]?.spawns[this.spawn];
+    if (hostSpawn && hostSpawn.inside) {
+      seedMap(maps[this.mapId]);
+      const b = buildingsOf(mapState(game, this.mapId).builds).find((q) => {
+        const x = hostSpawn.x * CM_PER_PX;
+        const y = hostSpawn.y * CM_PER_PX;
+        return x >= q.room.x && x < q.room.x + q.room.w && y >= q.room.y && y < q.room.y + q.room.d;
+      });
+      if (b) this.mapId = interiorId(this.mapId, b.key);
+    }
     // une carte de Tiled, ou l'intérieur d'un bâtiment posé, calculé de ses pièces ; un bâtiment qui n'est plus là ramène dehors
     this.interior = maps[this.mapId] ? undefined : resolveInterior(this.mapId);
     let lost = false;
@@ -244,7 +258,8 @@ export class WorldScene extends Phaser.Scene {
     this.physics.add.collider(this.player.actor, this.map.floor);
     this.physics.add.collider(this.player.actor, this.map.obstacles);
 
-    const npcs = def.npcs.map((n) => new Npc(this, n));
+    // dehors, ceux qui sont dans un bâtiment (`inside`) n'y sont pas : ils sont dans son intérieur calculé
+    const npcs = def.npcs.filter((n) => !n.inside).map((n) => new Npc(this, n));
     for (const n of npcs) this.physics.add.collider(this.player.actor, n.actor);
     const talkable: Interactable[] = npcs.map((n) => ({
       x: n.actor.x,
@@ -411,14 +426,14 @@ export class WorldScene extends Phaser.Scene {
     }
     // R maintenu, mains vides, au contact d'une bille couchée : elle pivote d'un quart de tour (jauge comme pour nouer)
     const turnTarget = this.turns.target(this.player);
-    const turned = this.turnPress.update(time, input.turnDown(), turnTarget, this.player);
+    const turned = this.turnPress.update(time, input.turnDown(), turnTarget, this.player, input.turnLasted());
     if (turned?.kind === 'long') this.turnLog(turned.target);
     if (this.turnPress.pending) return;
     if (turn && turnTarget) return this.turnPress.begin(turnTarget, time);
     // R : la bille portée tourne ; le fantôme suit à l'image suivante
     if (turn) this.handsSystem.turn();
     // E devant ce qui se noue ou se dénoue : l'appui attend, court (reprendre) ou maintenu (nouer, dénouer)
-    const press = this.press.update(time, input.handsDown(), e.target, this.player);
+    const press = this.press.update(time, input.handsDown(), e.target, this.player, input.handsLasted());
     if (press?.kind === 'short') this.hands(press.target);
     else if (press?.kind === 'long') {
       if (press.target.action.kind === 'site-help') this.callMother(press.target.action);
@@ -448,14 +463,15 @@ export class WorldScene extends Phaser.Scene {
     } else if (a.kind === 'take') {
       if (a.prop.wood?.notch) return this.notice("Finis d'abord la coupe.");
       if (a.prop.wood?.wedge) return this.notice('Le coin est planté : finis de la fendre.');
-      const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.wood, a.prop.natural);
+      const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.wood, a.prop.natural, a.prop.bundle);
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(a.prop.def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();
       if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'pile') {
       const piece = a.pile.def.piece;
-      const kg = pieceMass(piece);
+      // un fagot du tas : la masse de son nombre de branches
+      const kg = 'prop' in piece && a.pile.pile.bundle ? propMass(piece.prop, undefined, undefined, undefined, undefined, a.pile.pile.bundle) : pieceMass(piece);
       const def = 'wood' in piece ? defOf(WOOD_PIECE, { ...piece.wood, axis: 'ew' }) : 'prop' in piece ? props[piece.prop] : undefined;
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();

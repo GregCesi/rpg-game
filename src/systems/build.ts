@@ -13,7 +13,7 @@ import type { BuildPlaced, BuildRef, JointType, Natural, WoodAge } from '../cont
 import type { BuildCommand, BuildStatus } from '../events';
 import type { Player } from '../entities/Player';
 import { addBuildPieces, addJoints, game, mapState, moveBuildPiece, removeBuildPieces, removeJoints, type BuildPiece, type Joint } from '../state';
-import { aimAt, supportAt, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, withAge, type Area, type Box3 } from '../world/build';
+import { aimAt, aimOnGrid, centerOnFace, supportAt, solidOf, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, withAge, type Area, type Box3 } from '../world/build';
 import { buildLook } from '../world/buildView';
 import { viewDrawn } from '../content/views';
 import { alignOnWall } from '../world/wallRuns';
@@ -30,7 +30,7 @@ type Tool =
   | { kind: 'joint'; type: JointType };
 
 /** Un geste qu'on peut annuler : des pièces et des assemblages posés, ou retirés (ils reviennent avec leur identifiant). */
-type Op = { kind: 'add' | 'remove'; pieces: BuildPiece[]; joints: Joint[]; moves?: Move[] };
+type Op = { kind: 'add' | 'remove'; pieces: BuildPiece[]; joints: Joint[]; moves?: Move[]; replaced?: BuildPiece[] };
 
 /** Une pièce qui change de hauteur avec un geste (le mi-bois descend la pièce du dessus au niveau de l'autre). */
 type Move = { id: number; from: number; to: number };
@@ -73,7 +73,7 @@ export class BuildSystem {
   private readonly undoStack: Op[] = [];
   private readonly redoStack: Op[] = [];
   /** La boîte où se poserait la pièce (ou le plan) en main, et si la pose est permise ; mis à jour à chaque image. */
-  private aim?: { pieces: BuildPlaced[]; ok: boolean; why?: string };
+  private aim?: { pieces: BuildPlaced[]; ok: boolean; why?: string; replaces?: BuildPiece };
   /** La jonction visée avec un assemblage en main, et pourquoi il ne va pas (rien : il va). */
   private jointAim?: { junction?: Junction; why?: string };
   /**
@@ -276,9 +276,11 @@ export class BuildSystem {
     const cy = py * CM_PER_PX;
     let list: BuildPlaced[];
     if (t.kind === 'piece') {
-      // un pan de toit ne porte rien : on vise sans les pièces de toit
+      // un pan de toit ne porte rien : on vise sans les pièces de toit ; sauf pour le faîtage (une pièce de toit sans pente), qui se
+      // pose sur le faîte des pans (et se dessine après eux)
       const pitch = 'prop' in t.piece && props[t.piece.prop].pitch;
-      let b = aimAt(this.shown.filter((q) => !isRoof(q)), sizeOf(t.piece, t.view), cx, cy, this.step);
+      const ridge = 'prop' in t.piece && !!props[t.piece.prop].roof && !pitch;
+      let b = aimAt(this.shown.filter((q) => ridge || !isRoof(q)), sizeOf(t.piece, t.view), cx, cy, this.step, aimOnGrid(t.piece));
       // un pan de toit : sa base est le dessus de ce qui porte sa rive basse (une bande de 60 cm le long du côté bas)
       if (pitch) {
         const low = (['south', 'west', 'north', 'east'] as const)[t.view % 4];
@@ -291,7 +293,19 @@ export class BuildSystem {
         const a = alignOnWall(this.shown, b);
         if (a !== b && supportAt(this.shown, a) === supportAt(this.shown, b)) b = a;
       }
+      // un volet contre la face d'un remplissage se centre sur lui (la baie est au milieu de la travée)
+      const swing = 'prop' in t.piece ? props[t.piece.prop].swing : undefined;
+      if (swing && !swing.passage) b = centerOnFace(this.shown.filter((q) => !isRoof(q)), b);
+      // un élément à couches (`over` de props.json : le clayonnage sur les palançons) posé sur la pièce qu'il recouvre : à sa place, il
+      // la remplace
+      const under = this.underAt(t.piece, t.view, cx, cy) ?? this.underOf(t.piece, t.view, b);
+      if (under) b = { ...b, x: under.x, y: under.y, z: under.z };
       list = [withAge({ piece: t.piece, x: b.x, y: b.y, z: b.z, view: t.view, ...(t.drawn ? { natural: t.drawn } : {}), ...(t.variant !== undefined ? { variant: t.variant } : {}) }, this.age)];
+      if (under) {
+        const why = this.refusal(list, under.id);
+        this.aim = { pieces: list, ok: !why, why, replaces: under };
+        return;
+      }
     } else {
       const plan = buildPlans[t.plan];
       if (!plan) return;
@@ -303,12 +317,41 @@ export class BuildSystem {
     this.aim = { pieces: list, ok: !why, why };
   }
 
-  /** Pourquoi on ne peut pas poser ces pièces : hors de la carte, dans une autre pièce, sur Xéros ; sinon rien. */
-  private refusal(list: BuildPlaced[]): string | undefined {
+  /**
+   * La pièce qu'un élément à couches recouvre à l'emprise visée `b` : celle dont la clé est son `over`, dans le même sens, dont l'emprise
+   * touche la visée (la plus proche).
+   */
+  /**
+   * La pièce qu'un élément à couches recouvre, sous la souris (cm, au point de l'écran (cx, cy)) : celle dont la clé est son `over`,
+   * dans le même sens, dont on voit la boîte là (de son dessus au bas de sa face, `y − z − h` à `y + d − z`), la plus en avant. Le
+   * clayonnage se pose en visant les palançons qu'il recouvre, même là où la visée d'une pièce neuve prendrait un autre dessus.
+   */
+  private underAt(piece: BuildPlaced['piece'], view: number, cx: number, cy: number): BuildPiece | undefined {
+    const over = 'prop' in piece ? props[piece.prop].over : undefined;
+    if (!over) return undefined;
+    const cands = this.shown.filter((q): q is BuildPiece => {
+      if (!('id' in q) || !('prop' in q.piece) || q.piece.prop !== over || (q.view ?? 0) !== view) return false;
+      const b = boxOf(q);
+      return cx >= b.x && cx < b.x + b.w && cy >= b.y - b.z - b.h && cy < b.y + b.d - b.z;
+    });
+    return cands.sort((p, q) => boxOf(q).y + boxOf(q).d - (boxOf(p).y + boxOf(p).d))[0];
+  }
+
+  private underOf(piece: BuildPlaced['piece'], view: number, b: { x: number; y: number; w: number; d: number }): BuildPiece | undefined {
+    const over = 'prop' in piece ? props[piece.prop].over : undefined;
+    if (!over) return undefined;
+    const cands = this.shown.filter((q): q is BuildPiece => 'id' in q && 'prop' in q.piece && q.piece.prop === over && (q.view ?? 0) === view && overlaps(boxOf(q), b));
+    const d = (q: BuildPiece) => Math.hypot(q.x - b.x, q.y - b.y);
+    return cands.sort((p, q) => d(p) - d(q))[0];
+  }
+
+  /** Pourquoi on ne peut pas poser ces pièces : hors de la carte, dans une autre pièce, sur Xéros ; sinon rien. `replacing` : la pièce que la pose remplace (elle ne gêne pas). */
+  private refusal(list: BuildPlaced[], replacing?: number): string | undefined {
     const W = this.map.width * CM_PER_PX;
     const H = this.map.height * CM_PER_PX;
     // un pan de toit ne se heurte pas à ce qui est sous sa pente, ni rien à lui
-    const others = this.shown.filter((q) => !isRoof(q)).map(boxOf);
+    // (un poteau, par sa section réelle : le remplissage vient contre lui)
+    const others = this.shown.filter((q) => !isRoof(q) && !('id' in q && q.id === replacing)).map(solidOf);
     // dans un intérieur : rien hors de la pièce (dans les murs, dehors)
     const room = this.map.room;
     const body = this.player.actor.body as Phaser.Physics.Arcade.Body;
@@ -317,7 +360,7 @@ export class BuildSystem {
       const b = boxOf(p);
       if (b.x < 0 || b.y < 0 || b.x + b.w > W || b.y + b.d > H) return 'Hors de la carte.';
       if (room && (b.x < room.x || b.y < room.y || b.x + b.w > room.x + room.w || b.y + b.d > room.y + room.d)) return 'Hors de la pièce.';
-      if (!isRoof(p) && others.some((o) => intersects(o, b))) return 'Une autre pièce est déjà là.';
+      if (!isRoof(p) && others.some((o) => intersects(o, solidOf(p)))) return 'Une autre pièce est déjà là.';
       if (b.z < BUILD.high && overlaps(b, feet)) return 'Xéros est là.';
     }
     return undefined;
@@ -330,13 +373,16 @@ export class BuildSystem {
     if (t?.kind === 'joint') return this.placeJoint(t.type);
     if (!a || !t || t.kind === 'select') return;
     if (!a.ok) return this.notice(a.why!);
+    // un élément à couches remplace la pièce qu'il recouvre (elle revient si l'on défait)
+    const replaced = a.replaces ? [structuredClone(a.replaces)] : [];
+    if (replaced.length) this.drop(replaced, []);
     const added = addBuildPieces(game, this.map.def.id, a.pieces);
     for (const p of added) this.map.placeBuild(p);
     // un plan : ses assemblages, entre les pièces qu'on vient de poser
     const planJoints = t.kind === 'plan' ? (buildPlans[t.plan]?.joints ?? []) : [];
     const joints = planJoints.length ? addJoints(game, this.map.def.id, planJoints.map((j) => ({ type: j.type, a: added[j.a].id, b: added[j.b].id, ...(j.top !== undefined ? { top: added[j.top].id } : {}) }))) : [];
     this.map.sortBuilds();
-    this.push({ kind: 'add', pieces: structuredClone(added), joints: structuredClone(joints) });
+    this.push({ kind: 'add', pieces: structuredClone(added), joints: structuredClone(joints), ...(replaced.length ? { replaced } : {}) });
     if (t.kind === 'piece') {
       t.drawn = this.natural(t);
       t.variant = drawVariant(t.piece);
@@ -493,6 +539,7 @@ export class BuildSystem {
     if (op.kind === 'add') {
       this.drop(op.pieces, op.joints);
       this.move(op.moves, false);
+      if (op.replaced) this.restore(op.replaced, []);
     } else {
       this.move(op.moves, false);
       this.restore(op.pieces, op.joints);
@@ -506,6 +553,7 @@ export class BuildSystem {
     const op = this.redoStack.pop();
     if (!op) return this.notice('Rien à refaire.');
     if (op.kind === 'add') {
+      if (op.replaced) this.drop(op.replaced, []);
       this.move(op.moves, true);
       this.restore(op.pieces, op.joints);
     } else {

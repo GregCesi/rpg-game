@@ -130,7 +130,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
   });
   const wAxis = select([['ew', 'est-ouest'], ['ns', 'nord-sud'], ['up', 'debout']], () => pickWood());
   const fillLooks = () => {
-    const names: Record<WoodLook, string> = { round: 'ronde', peeled: 'écorcée', half: 'demi', quarter: 'quartier', f1: '1 face', f2: '2 faces', f3: '3 faces', beam: 'poutre', plank: 'planche' };
+    const names: Record<WoodLook, string> = { round: 'ronde', peeled: 'écorcée', half: 'demi', quarter: 'quartier', f1: '1 face', f2: '2 faces', f3: '3 faces', beam: 'poutre', plank: 'planche', lath: 'latte' };
     wLook.replaceChildren(...looksOf(wSize.value).map((l) => el('option', { value: l, textContent: names[l] })));
     if (looksOf(wSize.value).includes('beam')) wLook.value = 'beam';
   };

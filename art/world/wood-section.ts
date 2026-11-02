@@ -26,7 +26,7 @@ import { despeckle, shadedOutline } from './big-tree';
 import { SKINS, type Skin } from './wood-skin';
 import { CM_PER_PX, RACCOURCI } from '../../src/content/gabarit';
 import type { WoodLook, WoodPiece, WoodSection } from '../../src/content/types';
-import { WOOD, lookDef, sizeOf } from '../../src/world/woodShape';
+import { WOOD, lookDef, rectOf, sizeOf } from '../../src/world/woodShape';
 
 /** Un point de la section : (a en travers, z en hauteur), en cm. */
 type V = [number, number];
@@ -90,8 +90,10 @@ export function sectionGeom(size: string, look: WoodLook, point?: WoodPiece['poi
       planes = [{ n: [S2, S2], d: R * S2, kind: faces }, { n: [-S2, S2], d: R * S2, kind: faces }];
     }
   } else {
-    const w = WOOD.plank.wide / 2;
-    const t = WOOD.plank.thick;
+    // la planche, la latte : leur section rectangulaire (rectOf : `wide` × `thick` de la section, sinon la planche commune)
+    const rect = rectOf(size, look);
+    const w = rect.wide / 2;
+    const t = rect.thick;
     planes = [
       { n: [0, 1], d: t, kind: 'plank' },
       { n: [1, 0], d: w, kind: 'plank' },

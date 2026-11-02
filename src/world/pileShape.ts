@@ -2,7 +2,7 @@
 // calcule, world/woodPile.ts), sa forme dans son sens, son lien, ce qui le fait bloquer. Les places elles-mêmes (ouvertes,
 // reprises, visées, ordre d'affichage) sont le moteur commun aux tas et aux chantiers : world/places.ts, repris ici sous les noms
 // d'avant. Utilisé par le jeu (GameMap, systems/hands.ts) et par l'aperçu (npm run art:preview).
-import { piles } from '../content';
+import { piles, props } from '../content';
 import type { PileWood } from '../content/types';
 import { sameWood, woodPileDef, type PileShape } from './woodPile';
 import { woodKey } from './woodShape';
@@ -12,27 +12,77 @@ export { placeStates as pileStates } from './places';
 export type { PileShape, ShapePlace } from './woodPile';
 
 /** Ce qu'entrepose un tas : un genre écrit (`pile`, clé de piles.json) ou une pièce de bois (`wood`). Les mêmes champs que dans GameState. */
-export type PileKind = { pile: string; wood?: undefined } | { wood: PileWood; pile?: undefined };
+/** Ce qu'entrepose un tas : un genre écrit (et, pour un fagot, son nombre de branches `bundle`), ou une pièce de bois. */
+export type PileKind = { pile: string; bundle?: number; wood?: undefined } | { wood: PileWood; pile?: undefined; bundle?: undefined };
 
 /** Ce qu'entrepose un tas de GameState (ses champs `pile` ou `wood`). */
-export function kindOf(p: { pile?: string; wood?: PileWood }): PileKind {
-  return p.wood ? { wood: p.wood } : { pile: p.pile! };
+export function kindOf(p: { pile?: string; wood?: PileWood; bundle?: number }): PileKind {
+  return p.wood ? { wood: p.wood } : { pile: p.pile!, ...(p.bundle ? { bundle: p.bundle } : {}) };
 }
 
 /** Deux tas entreposent la même chose : le même genre, ou des pièces de bois identiques. */
 export function sameKind(a: PileKind, b: PileKind): boolean {
   if (a.wood || b.wood) return !!a.wood && !!b.wood && sameWood(a.wood, b.wood);
-  return a.pile === b.pile;
+  return a.pile === b.pile && bundleOfKind(a) === bundleOfKind(b);
 }
+
+/**
+ * Le nombre de branches d'un fagot du tas (le monde ne limite pas : un fagot se noue à partir de 2 branches) : `bundle`, sinon le
+ * tas plein du genre qu'il lie (le genre dont `tie.into` est sa pièce) ; rien pour ce qui n'est pas un fagot.
+ */
+export function bundleOfKind(k: PileKind): number | undefined {
+  if (k.wood) return undefined;
+  if (k.bundle) return k.bundle;
+  const piece = piles[k.pile!]?.piece;
+  const tied = piece && 'prop' in piece ? Object.values(piles).find((g) => g.tie?.into === piece.prop) : undefined;
+  return tied ? Object.keys(tied.places).length : undefined;
+}
+
+/** L'image d'un fagot de `n` branches : `<image>-n<n>` (et `-ns` reste au bout : `faggot-n7-ns`). */
+/**
+ * Le nombre de branches d'un objet du monde qui en a un (le fagot, posé seul ou tenu : son `bundle`, sinon le fagot plein), rien pour
+ * les autres. Toutes ses vues suivent ce nombre : au sol, en tas, porté, dans la case de main (`bundleImage`).
+ */
+export function bundleOfProp(prop: string, bundle?: number): number | undefined {
+  const genre = props[prop]?.take?.pile;
+  return genre ? bundleOfKind({ pile: genre, ...(bundle ? { bundle } : {}) }) : undefined;
+}
+
+/**
+ * L'image `key` (au sol, portée, icône) d'un objet du monde dans son état : pour le fagot, celle de son nombre de branches ; sinon
+ * `key` telle quelle. Le seul choix d'image selon l'état, pour le sol (GameMap), le fantôme (hands.ts), la main (WorldScene) et la
+ * case de main (HudScene).
+ */
+export function stateImage(key: string, prop: string, bundle?: number): string {
+  const n = bundleOfProp(prop, bundle);
+  return n ? bundleImage(key, n) : key;
+}
+
+export const bundleImage = (image: string, n: number) => (image.endsWith('-ns') ? `${image.slice(0, -3)}-n${n}-ns` : `${image}-n${n}`);
 
 /** Une clé qui nomme ce qu'entrepose un tas (le genre, ou la pièce de bois) : ce qu'on offre à une place qui accepte un genre. */
 export function kindKey(k: PileKind): string {
   return k.wood ? woodKey({ ...k.wood, axis: 'ew' }) : k.pile!;
 }
 
-/** Le genre de tas de ce qu'il entrepose : celui de piles.json, ou celui calculé pour la pièce de bois. */
+const bundled = new Map<string, PileShape>();
+
+/** Le genre de tas de ce qu'il entrepose : celui de piles.json (ses images au nombre de branches d'un fagot), ou celui calculé pour la pièce de bois. */
 export function pileDefOf(k: PileKind): PileShape {
-  return k.wood ? woodPileDef(k.wood) : (piles[k.pile!] as PileShape);
+  if (k.wood) return woodPileDef(k.wood);
+  const def = piles[k.pile!] as PileShape;
+  // un tas de fagots : chaque place montre le fagot de son nombre de branches (le plein compris : le dessin de base `faggot` n'est
+  // que celui du catalogue, il ne suit pas le nombre du tas plein)
+  const n = bundleOfKind(k);
+  if (!n) return def;
+  const key = `${k.pile}:${n}`;
+  let d = bundled.get(key);
+  if (!d) {
+    const swap = (places: PileShape['places']) => Object.fromEntries(Object.entries(places).map(([id, p]) => [id, { ...p, image: bundleImage(p.image, n) }]));
+    d = { ...def, places: swap(def.places), ...(def.turned ? { turned: { ...def.turned, places: swap(def.turned.places) } } : {}) } as PileShape;
+    bundled.set(key, d);
+  }
+  return d;
 }
 
 /** La forme du tas dans son sens : celle du genre, ou, tourné, celle de `turned` (ses places, son départ, son ordre). */

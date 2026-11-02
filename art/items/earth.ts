@@ -32,7 +32,7 @@ const dark = darkest({
  * Ombre portée d'un objet posé : sa silhouette décalée d'un pixel vers le sud et l'est, sur les deux dernières rangées
  * seulement (l'ombre reste au sol, elle ne monte pas le long du flanc est). Ajoute une colonne et une rangée.
  */
-function castShadow(c: Canvas): Grid {
+export function castShadow(c: Canvas): Grid {
   const out = new Canvas(c.w + 1, c.h + 1).stamp(c.toGrid(), 0, 0);
   for (let y = c.h - 1; y < out.h; y++) for (let x = 1; x < out.w; x++) {
     if (out.get(x, y) === EMPTY && c.get(x - 1, y - 1) !== EMPTY) out.set(x, y, 'x');
@@ -136,11 +136,16 @@ const ICON_COB: Grid = [
   '................',
 ];
 
-/** Le seau en icône, 12 px de large : vide (le dedans sombre) ou plein (l'eau et son reflet). */
-function iconBucket(full: boolean): Grid {
-  const inside = full
-    ? ['WWWwwwwwwq', 'wwwwwwwwqq']
-    : ['NNmmmmmmmN', 'KKKKKNNNmm'];
+/**
+ * Le seau en icône, 12 px de large : vide (le dedans sombre) ou plein (l'eau et son reflet), ou les deux rangées du dedans qu'on
+ * donne (10 px chacune : la chaux éteinte, art/items/lime.ts).
+ */
+export function iconBucket(full: boolean | [string, string]): Grid {
+  const inside = Array.isArray(full)
+    ? full
+    : full
+      ? ['WWWwwwwwwq', 'wwwwwwwwqq']
+      : ['NNmmmmmmmN', 'KKKKKNNNmm'];
   const g: Grid = [
     '................',
     '................',
@@ -219,13 +224,13 @@ function onPoint(g: Grid, size: number, gx: number, gy: number): Canvas {
 }
 
 /** Retire l'ombre portée (rangées et colonnes de `x`) d'une image au sol. */
-const noShadow = (g: Grid): Grid => g.map((r) => r.replace(/x/g, '.'));
+export const noShadow = (g: Grid): Grid => g.map((r) => r.replace(/x/g, '.'));
 
 // Portées à deux mains devant le ventre (posture `carry`, comme la pierre plate) : la motte entière entre les mains, son
 // milieu sur la prise ; de dos, elle passe sous le corps. Ronde, elle se voit pareille des trois côtés.
 const CARRY_SIZE = 15;
 
-function carriedClod(g: Grid): SpriteSheetSource['animations'][string]['frames'][number] {
+export function carriedClod(g: Grid): SpriteSheetSource['animations'][string]['frames'][number] {
   const body = noShadow(g).filter((r) => /[^.]/.test(r)).map((r) => r.slice(0, -1));
   return onPoint(body, CARRY_SIZE, Math.floor(body[0].length / 2), Math.floor(body.length / 2)).toGrid();
 }
@@ -240,9 +245,10 @@ const heldClod = (name: string, g: Grid): SpriteSheetSource => {
 // oreilles devant et derrière) ; de face et de dos, elle est vue par la tranche : un fil droit du poing au bord.
 const HAND_SIZE = 17;
 
-function heldBucketView(view: 'down' | 'up' | 'right', full: boolean): Grid {
+function heldBucketView(view: 'down' | 'up' | 'right', full: boolean | string): Grid {
   const C = Math.floor(HAND_SIZE / 2);
-  const body = BUCKET.map((r, i) => (i === 3 && full ? BUCKET_WATER : r));
+  const inside = typeof full === 'string' ? full : full ? BUCKET_WATER : undefined;
+  const body = BUCKET.map((r, i) => (i === 3 && inside ? inside : r));
   const c = new Canvas(HAND_SIZE, HAND_SIZE);
   if (view === 'right') {
     // l'arceau dans le poing (rangées C − 1 et C), le bord juste dessous : la main est à 40 cm du sol, le seau pend
@@ -256,7 +262,8 @@ function heldBucketView(view: 'down' | 'up' | 'right', full: boolean): Grid {
   return view === 'up' ? c.toGrid() : fistGap(c.toGrid(), C, BRANCH_FIST);
 }
 
-const heldBucket = (name: string, full: boolean): SpriteSheetSource =>
+/** Le seau au poing, vide, plein d'eau, ou avec la rangée du dedans qu'on donne (la chaux éteinte, art/items/lime.ts). */
+export const heldBucket = (name: string, full: boolean | string): SpriteSheetSource =>
   sheet(name, HAND_SIZE, world, {
     down: heldBucketView('down', full),
     up: heldBucketView('up', full),

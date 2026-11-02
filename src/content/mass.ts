@@ -31,7 +31,7 @@ const CONTENT: MassCatalog = { props: propDefs, items: itemDefs, piles: pileDefs
  * Ce qu'on peut tenir : un objet possédable (`item`) ou un objet du monde pris (`prop`, avec sa longueur s'il en a une, ses
  * réglages de pièce de bois) ; l'un ou l'autre, avec sa taille s'il est naturel (`natural`).
  */
-export type Weighed = { item: string; natural?: Natural } | { prop: string; length?: number; wood?: WoodPiece; natural?: Natural };
+export type Weighed = { item: string; natural?: Natural } | { prop: string; length?: number; wood?: WoodPiece; natural?: Natural; bundle?: number };
 
 /** Volume (m³) de dimensions réelles : une boîte, w × d × h ; un cylindre, π r² × sa longueur (son diamètre est sa hauteur) ; à plat, sans volume. */
 function dimsVolume(d: Dims): number {
@@ -67,7 +67,7 @@ export const naturalFactor = (n: Natural | undefined) => (n ? (n.size / 100) ** 
 
 /**
  * Section du bois d'une pièce (m²) : le rond de son diamètre, la moitié pour une demi, le quart pour un quart, l'épaisseur × la
- * largeur pour une planche (`plank` de wood.json) ; la pièce qu'on
+ * largeur pour une planche (`plank` de wood.json) ou une latte (sa section) ; la pièce qu'on
  * équarrit perd à chaque face finie un quart de ce qui sépare son rond du carré de la poutre (`hew.beam` de côté), et la face en cours
  * (`dressed`) la part de ce quart qu'elle a dressée de la longueur (section moyenne).
  */
@@ -77,7 +77,13 @@ function woodSection(piece: WoodPiece): number {
   const round = Math.PI * (size.diameter / 200) ** 2;
   if (piece.shape === 'half') return round / 2;
   if (piece.shape === 'quarter') return round / 4;
-  if (piece.shape === 'plank') return (woodDef.plank.thick / 100) * (woodDef.plank.wide / 100);
+  // la planche et la latte : leur section rectangulaire (`wide` × `thick` de leur section, sinon `plank` de wood.json)
+  if (piece.shape === 'plank' || piece.shape === 'lath') {
+    const sec = size.looks[piece.shape]?.section;
+    const wide = sec?.wide ?? woodDef.plank.wide;
+    const thick = sec?.thick ?? woodDef.plank.thick;
+    return (thick / 100) * (wide / 100);
+  }
   const hew = woodDef.hew;
   const done = Math.min(hew.faces, Math.floor((piece.hewn ?? 0) / hew.perFace));
   // la face en cours ôte son bois sur la part dressée de la longueur : en moyenne, cette part d'une face
@@ -120,7 +126,7 @@ export function itemMass(key: string, cat: MassCatalog = CONTENT, natural?: Natu
  * longueur neuve, au prorata) ; `wood` : les réglages d'une pièce de bois (absents : ceux de props.json). Plante, avec un message,
  * si l'objet n'a pas de masse ou si elle ne se calcule pas.
  */
-export function propMass(key: string, length?: number, cat: MassCatalog = CONTENT, wood?: WoodPiece, natural?: Natural): number {
+export function propMass(key: string, length?: number, cat: MassCatalog = CONTENT, wood?: WoodPiece, natural?: Natural, bundle?: number): number {
   const def = cat.props[key];
   const m = def?.mass;
   if (m === undefined) throw new Error(`props.json '${key}' : pas de masse`);
@@ -135,7 +141,8 @@ export function propMass(key: string, length?: number, cat: MassCatalog = CONTEN
   else if ('matter' in m) kg = matterMass(def.dims, m, cat) * naturalFactor(natural);
   else {
     const g = cat.piles[m.pile];
-    kg = capacity(g) * pieceMass(g.piece, cat) + (g.tie ? itemMass(g.tie.item, cat) : 0);
+    // un fagot : ses branches (son nombre `bundle`, sinon le tas plein) et son lien
+    kg = (bundle ?? capacity(g)) * pieceMass(g.piece, cat) + (g.tie ? itemMass(g.tie.item, cat) : 0);
   }
   return def.length && length !== undefined ? (kg * length) / def.length.start : kg;
 }
@@ -143,5 +150,5 @@ export function propMass(key: string, length?: number, cat: MassCatalog = CONTEN
 /** Masse de ce que tient une main (ou les deux mains), en kg. */
 export function heldMass(h: Weighed | null | undefined, cat: MassCatalog = CONTENT): number {
   if (!h) return 0;
-  return 'item' in h ? itemMass(h.item, cat, h.natural) : propMass(h.prop, h.length, cat, h.wood, h.natural);
+  return 'item' in h ? itemMass(h.item, cat, h.natural) : propMass(h.prop, h.length, cat, h.wood, h.natural, h.bundle);
 }

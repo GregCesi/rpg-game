@@ -31,7 +31,7 @@ Seule. Ne s'entrepose pas.
 - Q (A en AZERTY) : lâcher.
 
 ## Origine
-Trouvée dans la réserve de la maison (`maison.tmj`, `hatchet-ground`, à côté de la masse et du coin). E la prend dans une main.
+Trouvée dans le cagibi de la maison (`tiled/maps/ferme.tmj`, objet « dedans » `hatchet-ground`, à côté de la masse et du coin). E la prend dans une main.
 
 ## Devenir
 Reste dans la main ; se lâche comme un outil. Plus tard : tailler d'autres pièces (chevilles, manches).

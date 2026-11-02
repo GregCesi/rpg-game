@@ -136,8 +136,15 @@ bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1
 
 ## La perche et la planche (chantier « briques », 31 octobre 2026)
 - **La perche** (`size: "pole"`, 12 cm de bois, 22 cm contour compris) : un jeune arbre de taillis, écorce lisse et fine ; ronde,
-  elle roule, se coupe sur la grille, va en tas (pyramide) ; ne s'équarrit pas (« Trop fine pour une poutre. ») et ne se fend pas ;
-  ne se dresse pas. Elle fera les chevrons du toit de chaume. Son taillis viendra plus tard ; en attendant, ?dieu (« Pièce de bois »,
+  elle roule, se coupe sur la grille, va en tas (pyramide) ; ne s'équarrit pas (« Trop fine pour une poutre. ») ; ne se dresse pas.
+  Depuis le 2 novembre 2026 (maison, étape 2), elle **se fend** comme le gros (le coin, la masse, `split` de wood.json) :
+  - **le palançon** (`shape: "half"`, aspect `half`) : la perche fendue en deux, écorce en bas, face fendue en l'air (section
+    demi-ronde, 12 × 6 cm de bois) ; 5,1 kg le mètre ; à 1 m, 20 × 5 px est-ouest, comme la perche ; il garnit les travées de la
+    maison (`staves-panel`) ; icône `item-wood-pole-half`, porté `held-wood-pole-half` ;
+  - **la latte** (`shape: "lath"`, aspect `lath`) : le palançon refendu en planchette de 6 × 3 cm (sa section dans wood.json,
+    `wide`, `thick`) ; 1,6 kg le mètre ; à 1 m, 20 × 4 px ; elle se cloue en travers des chevrons ; ne se fend plus (« Trop mince
+    pour le coin. ») ; icône `item-wood-pole-lath`, portée `held-wood-pole-lath`.
+  Leurs vues couchées, leur coin et leur fente se calculent de leur section ; leurs tas sont en rangées de 3 × 3. Elle fera les chevrons du toit de chaume. Son taillis viendra plus tard ; en attendant, ?dieu (« Pièce de bois »,
   diamètre perche) et la transformation « magique » `pole-from-top` (la flèche d'un arbre normal couché : un tronc de 3,4 m et une
   perche de 3,6 m ; triche notée, le vrai tronc normal garde 30 cm sur 5,8 m).
 - **La planche fendue** (`shape: "plank"`, du gros bois) : 3 cm d'épaisseur sur 25 de large (le rayon de la bille, fendu sur le
@@ -147,7 +154,7 @@ bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1
 - **Le bardeau** n'est pas une pièce de bois : 40 cm, moins que la plus courte pièce (60 cm), c'est un objet possédable (`shingle`,
   fiche à part), fendu dans un quartier de 60 cm (`rive-shingle`).
 - **Variantes naturelles** : aucune ; le bois a déjà ses réglages (diamètre, longueur, état) ; un arbre donne toujours son diamètre.
-- **Métier** : bûcheron (le bois rond), fendeur (demi-bille, quartier, planche), charpentier (la poutre).
+- **Métier** : bûcheron (le bois rond), fendeur (demi-bille, quartier, planche, palançon, latte), charpentier (la poutre).
 
 ## Origine
 Un arbre abattu puis ébranché : son tronc devient une seule pièce ronde de sa longueur utile, posée sur le tronc (le gros grand

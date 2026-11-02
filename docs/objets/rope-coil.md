@@ -45,7 +45,7 @@ né ou changé, ou sur le billot qui le porte). 10 m au départ (`length.start` 
 - Q : le pose devant Xéros (objet né, sa longueur notée).
 
 ## Origine
-Trouvé : un rouleau posé dans la réserve de la maison (`maison.tmj`). Plus tard il s'achètera ou se fabriquera : pas
+Trouvé : un rouleau posé dans le cagibi de la maison (objet « dedans » de `tiled/maps/ferme.tmj`). Plus tard il s'achètera ou se fabriquera : pas
 encore construit.
 
 ## Devenir

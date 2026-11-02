@@ -38,10 +38,13 @@ export const BUCKET = [
 /** La rangée du dedans quand le seau est plein : l'eau sous le bord, le reflet à gauche. */
 export const BUCKET_WATER = 'KWWwqo';
 
-/** Le seau sur la carte, vide ou plein (`full`). */
-export function bucket(full = false): Canvas {
+/**
+ * Le seau sur la carte, vide ou plein (`full` : d'eau, ou la rangée du dedans qu'on donne : la chaux éteinte, art/items/lime.ts).
+ */
+export function bucket(full: boolean | string = false): Canvas {
   const c = new Canvas(32, 32);
-  c.stamp(full ? BUCKET.map((r, i) => (i === 3 ? BUCKET_WATER : r)) : BUCKET, 13, 18);
+  const inside = typeof full === 'string' ? full : full ? BUCKET_WATER : undefined;
+  c.stamp(inside ? BUCKET.map((r, i) => (i === 3 ? inside : r)) : BUCKET, 13, 18);
   groundShadow(c, 17, 29, 4, 1.2);
   return c;
 }

@@ -10,13 +10,17 @@
   "dress-ashlar": {"name": "tailler une pierre de taille", "minutes": 90, "inputs": [{"item": "rubble-stone"}], "outputs": [{"item": "ashlar"}],
     "waste": {"name": "éclats et poussière de taille", "prop": "stone-chips"}, "tools": ["stone-chisel", "mallet"], "station": "ground", "trade": "mason", "gesture": "soon"},
   "dig-clay": {"name": "creuser une motte d'argile", "minutes": 10, "inputs": [{"raw": "earth", "kg": 18}], "outputs": [{"item": "clay-clod"}],
-    "tools": ["spade"], "station": "pond", "trade": "digger", "gesture": "soon"},
+    "waste": {"name": "les cailloux et les racines triés", "fate": "ils restent au bord du trou"}, "tools": ["spade"], "station": "pond", "trade": "digger", "gesture": "soon"},
   "fill-bucket": {"name": "puiser de l'eau", "minutes": 2, "inputs": [{"prop": "bucket"}, {"raw": "water", "kg": 10}], "outputs": [{"prop": "bucket-water"}],
     "station": "pond", "trade": "peasant", "gesture": "soon"},
   "mix-mortar": {"name": "gâcher du mortier de terre", "minutes": 20, "inputs": [{"item": "clay-clod", "count": 2}, {"prop": "bucket-water"}], "outputs": [{"prop": "earth-mortar"}, {"prop": "bucket"}],
     "waste": {"name": "eau en trop et terre restée au seau", "fate": "elle s'égoutte dans le sol"}, "tools": ["spade"], "station": "ground", "trade": "mason", "gesture": "soon"},
   "mix-cob": {"name": "mêler du torchis", "minutes": 30, "inputs": [{"item": "clay-clod", "count": 3}, {"item": "straw"}, {"prop": "bucket-water"}], "outputs": [{"item": "cob", "count": 3}, {"prop": "bucket"}],
     "waste": {"name": "eau et paille en trop", "fate": "elles restent dans la fosse à torchis, pour la gâchée suivante"}, "station": "ground", "trade": "digger", "gesture": "soon"},
+  "burn-lime": {"name": "cuire la chaux", "minutes": 1440, "inputs": [{"item": "big-rough-stone"}], "outputs": [{"item": "quicklime", "count": 2}],
+    "waste": {"name": "le gaz du calcaire et les cendres", "fate": "il part en fumée par la gueule du four"}, "station": "kiln", "trade": "mason", "gesture": "soon"},
+  "slake-lime": {"name": "éteindre la chaux", "minutes": 30, "inputs": [{"item": "quicklime"}, {"prop": "bucket-water"}], "outputs": [{"item": "slaked-lime"}],
+    "waste": {"name": "l'eau en trop", "fate": "elle part en vapeur : la chaux bout en s'éteignant"}, "station": "ground", "trade": "mason", "gesture": "soon"},
   "comb-thatch": {"name": "peigner une botte de chaume", "minutes": 20, "inputs": [{"item": "straw", "count": 3}], "outputs": [{"item": "thatch-bundle"}],
     "waste": {"name": "paille courte et épis peignés", "fate": "elle servira au torchis et à la litière"}, "station": "ground", "trade": "thatcher", "gesture": "soon"},
   "trim-rod": {"name": "parer une baguette", "minutes": 5, "inputs": [{"item": "branch"}], "outputs": [{"item": "wattle-rod"}],
@@ -47,5 +51,5 @@
   "carve-wooden-sword": {"name": "tailler une épée de bois", "minutes": 120, "inputs": [{"wood": {"size": "big", "shape": "plank", "length": 100}}], "outputs": [{"item": "wooden-sword"}],
     "waste": {"name": "copeaux et chutes", "fate": "ils partent au feu"}, "tools": ["hatchet"], "station": "bench", "trade": "joiner", "gesture": "soon"},
   "raise-training-dummy": {"name": "dresser un mannequin d'entraînement", "minutes": 45, "inputs": [{"wood": {"size": "pole", "shape": "round", "length": 200}}, {"item": "thatch-bundle"}, {"item": "rope-tie"}], "outputs": [{"prop": "training-dummy"}],
-    "tools": ["spade"], "station": "ground", "trade": "peasant", "gesture": "soon"}
+    "waste": {"name": "les bouts de corde et de paille recoupés", "fate": "ils partent au feu"}, "tools": ["spade"], "station": "ground", "trade": "peasant", "gesture": "soon"}
 }

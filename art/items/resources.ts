@@ -452,6 +452,44 @@ function plankIcon(): Canvas {
   return outline(c, 'K');
 }
 
+/**
+ * Le palançon (la perche fendue en deux, 12 × 6 cm de bois) : le bâton de la perche en travers de l'icône, du bas à gauche au haut
+ * à droite, mais fendu : la face de fente tournée vers le haut à gauche, vers la lumière (bois frais ^, ses fibres * en long), le
+ * dos d'écorce de la perche (A B Q) sous elle, du côté de l'ombre ; au bout bas gauche, le bout coupé en demi-lune (^ *, le cœur %
+ * contre la face). Un peu plus large que la perche ronde, pour que la face se lise.
+ */
+function poleHalfIcon(): Canvas {
+  const c = new Canvas(S, S);
+  const [x0, y0, x1, y1] = [2.6, 13.2, 13.4, 2.8];
+  const FIBRE = [0.2, 0.45, 0.7];
+  capsule(c, x0, y0, x1, y1, 1.45, (t, a) => {
+    if (a < 0.05) return a < -0.55 || !FIBRE.some((f) => Math.abs(t - f) < 0.05) ? '^' : '*';
+    return bark(t * 20, 0.45 + a * 0.55, POLE_WOOD);
+  });
+  // le bout coupé, en bas à gauche : bois de bout clair, le cœur contre la face
+  c.set(2, 13, '^').set(3, 13, '*').set(2, 12, '*').set(3, 12, '%');
+  return outline(c, 'K');
+}
+
+/**
+ * La latte (le palançon refendu en planchette de 6 × 3 cm) : une baguette plate et droite, de biais comme la planche (un pixel de
+ * montée tous les deux), bien plus étroite qu'elle (6 cm contre 25) : le dessus de bois fendu (^, ses fibres * en long), la rive
+ * d'épaisseur dans l'ombre (%). Bouts coupés droit : à gauche, le bois de bout (* %) ; à droite, dans l'ombre (%).
+ */
+function lathIcon(): Canvas {
+  const c = new Canvas(S, S);
+  const x0 = 1, x1 = 14;
+  const FIBRE = [4, 5, 10];
+  for (let X = x0; X <= x1; X++) {
+    const y = 11 - Math.floor((X - x0) / 2);
+    const col = [FIBRE.includes(X) ? '*' : '^', '%'];
+    if (X === x0) col.splice(0, 2, '*', '%');
+    if (X === x1) col.splice(0, 2, '%', '%');
+    col.forEach((q, i) => c.set(X, y + i, q));
+  }
+  return outline(c, 'K');
+}
+
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
 export default [
@@ -474,4 +512,6 @@ export default [
   img('item-wood-normal-beam', beamIcon()),
   img('item-wood-big-plank', plankIcon()),
   img('item-wood-pole-round', poleIcon()),
+  img('item-wood-pole-half', poleHalfIcon()),
+  img('item-wood-pole-lath', lathIcon()),
 ];

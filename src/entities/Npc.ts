@@ -12,13 +12,17 @@ export class Npc {
   /** Dialogue lancé quand Xéros lui parle. */
   readonly dialogue: string;
   private readonly home: Facing;
+  /** Sa pose (`sit` : assis), si son sprite a l'animation `sit-<direction>`. */
+  private readonly pose?: 'sit';
 
   constructor(scene: Phaser.Scene, def: NpcDef) {
     // la clé du personnage est aussi celle de son sprite
     this.actor = new Actor(scene, def.x, def.y, def.character);
     this.home = def.facing ?? 'down';
     this.dialogue = def.dialogue;
+    this.pose = def.pose;
     this.actor.face(this.home);
+    this.sit();
     // Xéros le contourne : il ne le pousse pas.
     this.actor.body.setImmovable(true);
   }
@@ -28,10 +32,18 @@ export class Npc {
     const dx = x - this.actor.x;
     const dy = y - this.actor.y;
     this.actor.face(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down');
+    this.sit();
   }
 
   /** Reprend la direction de départ (fin du dialogue). */
   resume(): void {
     this.actor.face(this.home);
+    this.sit();
+  }
+
+  /** Assis : l'animation `sit-<direction>` de son sprite, s'il l'a (la mère sur le banc). */
+  private sit(): void {
+    const key = `${this.actor.skin}-${this.pose}-${this.actor.facing}`;
+    if (this.pose && this.actor.scene.anims.exists(key)) this.actor.play(key);
   }
 }

@@ -5,7 +5,7 @@
 import { props as propDefs } from '../content';
 import { CM_PER_PX, CONTOUR_CM } from '../content/gabarit';
 import type { PropDef, WoodPiece } from '../content/types';
-import { facesOf, lookDef, lookOf, rollsLook, sizeOf, upOf, woodBody, woodTraits, WOOD } from './woodShape';
+import { facesOf, lookDef, lookOf, rectOf, rollsLook, sizeOf, upOf, woodBody, woodTraits, WOOD } from './woodShape';
 
 /** La clé de la pièce de bois dans props.json. */
 export const WOOD_PIECE = 'wood-piece';
@@ -30,9 +30,11 @@ export function woodDims(piece: WoodPiece): PropDef['dims'] {
     const s = upOf(piece.size, look).w * CM_PER_PX;
     return { w: s, d: s, h: piece.length, shape: look === 'beam' ? 'box' : 'cylinder', ...(look === 'beam' ? {} : { axis: 'up' as const }) };
   }
-  // la planche : sa largeur couchée à plat, son épaisseur en hauteur (plank de wood.json) ; le quartier repose écorce en bas, pointe en l'air : ses deux faces fendues à 45°, d/√2 de large, d/2 de haut
-  const across = piece.shape === 'plank' ? WOOD.plank.wide : piece.shape === 'quarter' ? d / Math.SQRT2 : look === 'beam' ? WOOD.hew.beam : d;
-  const high = piece.shape === 'plank' ? WOOD.plank.thick : piece.shape === 'round' ? (look === 'beam' ? WOOD.hew.beam : d) : d / 2;
+  // la planche, la latte : leur largeur couchée à plat, leur épaisseur en hauteur (leur section rectangulaire, rectOf) ; le quartier
+  // repose écorce en bas, pointe en l'air : ses deux faces fendues à 45°, d/√2 de large, d/2 de haut
+  const rect = lookDef(piece.size, look).section.shape === 'rect' ? rectOf(piece.size, look) : undefined;
+  const across = rect ? rect.wide : piece.shape === 'quarter' ? d / Math.SQRT2 : look === 'beam' ? WOOD.hew.beam : d;
+  const high = rect ? rect.thick : piece.shape === 'round' ? (look === 'beam' ? WOOD.hew.beam : d) : d / 2;
   const [w, dd] = piece.axis === 'ew' ? [piece.length, across + CONTOUR_CM] : [across + CONTOUR_CM, piece.length];
   if (rollsLook(look)) return { w, d: dd, h: d + CONTOUR_CM, shape: 'cylinder', axis: piece.axis };
   return { w, d: dd, h: Math.round(high + CONTOUR_CM), shape: 'box' };

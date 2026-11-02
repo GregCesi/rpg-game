@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { pressEnd } from '../input/keyLatch';
 import { DEPTH, LONG_PRESS } from '../config';
 import type { Player } from '../entities/Player';
 import type { Action, Interactable } from '../world/GameMap';
@@ -68,10 +69,11 @@ export class LongPress {
   }
 
   /**
-   * À appeler à chaque image : `down`, E est encore enfoncé ; `current`, ce que Xéros vise maintenant. Renvoie le geste
-   * à faire quand l'appui se termine, sinon undefined.
+   * À appeler à chaque image : `down`, E est encore enfoncé ; `current`, ce que Xéros vise maintenant ; `lasted`, la durée vraie du
+   * dernier appui fini (src/input/keyLatch.ts : une image longue ne fait pas d'un appui court un appui long). Renvoie le geste à faire
+   * quand l'appui se termine, sinon undefined.
    */
-  update(time: number, down: boolean, current: Interactable | undefined, player: Player): PressResult | undefined {
+  update(time: number, down: boolean, current: Interactable | undefined, player: Player, lasted?: number): PressResult | undefined {
     const target = this.target;
     if (!target) return undefined;
     if (!current || subject(current.action) !== subject(target.action)) {
@@ -79,9 +81,10 @@ export class LongPress {
       return undefined;
     }
     const t = (time - this.start) / this.ms;
-    if (!down || t >= 1) {
+    const end = pressEnd(down, time - this.start, this.ms, lasted);
+    if (end) {
       this.cancel();
-      return { kind: t >= 1 ? 'long' : 'short', target };
+      return { kind: end, target };
     }
     const frame = this.frames[Math.min(this.frames.length - 1, Math.floor(t * this.frames.length))];
     this.gauge

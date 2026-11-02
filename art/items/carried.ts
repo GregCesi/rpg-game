@@ -16,7 +16,7 @@ import { darkest, outline } from './lib';
 import { branchBody, finishBranch, shearDown, transpose, type Branch } from './branch';
 import { axeArt, toolPalette } from './tools';
 import xeros, { SHOULDER_POINTS } from '../characters/xeros';
-import { bundleByTheEnd, faggotBody, outlineBundle } from '../world/faggot';
+import { FAGGOT_BRANCHES, FAGGOT_COUNTS, bundleByTheEnd, faggotBody, faggotDims, outlineBundle } from '../world/faggot';
 import { lyingCanvas } from '../world/wood-pieces';
 import { lyingView } from '../world/wood-section';
 
@@ -406,13 +406,22 @@ function normalLong(look: NormalLook): Grid {
   return onGrip(trim(rows));
 }
 
-// ----- La perche (12 cm) et la planche fendue -----
+// ----- La perche (12 cm), le palançon, la latte et la planche fendue -----
 // Mêmes dessins que la pièce au sol (art/world/wood-pieces.ts) : de profil, la pièce est-ouest de 1 m sans son ombre ; par le
 // bout, la pièce nord-sud raccourcie : l'écorce (ou le dessus de la planche) qui fuit sur deux rangées, puis le bout coupé sous
 // les mains.
 
 /** Perche par le bout : l'écorce S A B qui fuit, la face de coupe de 3 × 2 (^ *, le cœur %, cerclée de B). */
 const POLE_END: Grid = ['.KKK.', 'KSABo', 'KSABo', 'K^*Bo', 'K*%Bo', '.ooo.'];
+
+/**
+ * Palançon (la perche fendue en deux) par le bout : la face de fente qui fuit sur deux rangées (^ côté lumière, le bois * dans
+ * l'ombre), puis sous les mains le bout coupé en demi-lune, son cœur (%) au bord de la face, l'arc d'écorce de la perche (B) dessous.
+ */
+const POLE_HALF_END: Grid = ['.KKK.', 'K^^*o', 'K^**o', 'K*%*o', 'KBBBo', '.ooo.'];
+
+/** Latte (6 × 3 cm) par le bout : le dessus étroit qui fuit (^ *), puis le bois de bout, une rangée (* %). */
+const LATH_END: Grid = ['.KK.', 'K^*o', 'K^*o', 'K*%o', '.oo.'];
 
 /** Planche par le bout : le dessus qui fuit (l'arête ^ à gauche, le bois *, la rive %), le bois de bout (une rangée, ses cernes en travers). */
 const PLANK_END: Grid = ['.KKKKK.', 'K^^**%o', 'K^^**%o', 'K^*^*%o', '.ooooo.'];
@@ -435,6 +444,8 @@ const peeledLong = (): Grid => onGrip(trim(lyingCanvas('normal', 'peeled', 'ew',
 
 const poleLong = (): Grid => onGrip(trim(lyingCanvas('pole', 'round', 'ew', PREVIEW_LEN + 1).toGrid()));
 const plankLong = (): Grid => onGrip(trim(lyingCanvas('big', 'plank', 'ew', PREVIEW_LEN + 1).toGrid()));
+const poleHalfLong = (): Grid => onGrip(trim(lyingCanvas('pole', 'half', 'ew', PREVIEW_LEN + 1).toGrid()));
+const lathLong = (): Grid => onGrip(trim(lyingCanvas('pole', 'lath', 'ew', PREVIEW_LEN + 1).toGrid()));
 
 // ----- Les planches -----
 
@@ -447,6 +458,8 @@ const heldWood = (): SpriteSheetSource[] => [
   woodSheet('held-wood-big-quarter', quarterEnd(), quarterLong()),
   woodSheet('held-wood-big-plank', onGrip(PLANK_END, 3), plankLong()),
   woodSheet('held-wood-pole-round', onGrip(POLE_END, 3), poleLong()),
+  woodSheet('held-wood-pole-half', onGrip(POLE_HALF_END, 3), poleHalfLong()),
+  woodSheet('held-wood-pole-lath', onGrip(LATH_END, 3), lathLong()),
   woodSheet('held-wood-normal-round', normalRoundEnd(), normalLong('round')),
   woodSheet('held-wood-normal-peeled', peeledEnd(), peeledLong()),
   ...(['f1', 'f2', 'f3'] as const).map((l) => woodSheet(`held-wood-normal-${l}`, normalHewnEnd(l), normalLong(l))),
@@ -536,29 +549,36 @@ const heldRopeTie = (): SpriteSheetSource =>
 
 // ---------- Fagot porté ----------
 // Le fagot (art/world/faggot.ts) porté à deux mains devant lui, comme la bille. De face et de dos, en longueur : le
-// fagot est-ouest sans son ombre. De profil, par le bout : la face des gros bouts (10 × 9 px, moins aplatie qu'au sol,
-// il est à hauteur de poitrine), le dessus du faisceau qui fuit derrière, le lien en travers.
+// fagot est-ouest sans son ombre. De profil, par le bout : la face des gros bouts (10 × 9 px pour dix branches, moins
+// aplatie qu'au sol, il est à hauteur de poitrine), le dessus du faisceau qui fuit derrière, le lien en travers.
+// Une planche par nombre de branches (`held-faggot-n<n>`, de 2 à 12, `FAGGOT_COUNTS`), tirée du fagot au sol du même
+// nombre : en longueur `faggotBody(n)`, par le bout la face à la grosseur du faisceau (`faggotDims(n)` : Ø contour compris
+// = Ø/5 px, la hauteur aux 7/8 de la largeur). `held-faggot` est le fagot de dix (le catalogue). Le fagot de douze tient
+// dans la même planche de 29 px.
 
 const FAGGOT_SIZE = 29;
 const FAGGOT_C = Math.floor(FAGGOT_SIZE / 2);
 
-function faggotLengthwise(): Grid {
-  const body = faggotBody().toGrid().filter((r) => /[^.]/.test(r));
+function faggotLengthwise(n: number): Grid {
+  const body = faggotBody(n).toGrid().filter((r) => /[^.]/.test(r));
   const c = new Canvas(FAGGOT_SIZE, FAGGOT_SIZE);
   // le milieu du faisceau (sans ses rameaux, deux rangées au-dessus) sur la prise
   c.stamp(body, FAGGOT_C - Math.floor(body[0].length / 2), FAGGOT_C - 1 - Math.floor((body.length - 2) / 2));
   return c.toGrid();
 }
 
-function faggotEnd(): Grid {
+function faggotEnd(n: number): Grid {
   const C = FAGGOT_C;
-  const c = bundleByTheEnd(new Canvas(FAGGOT_SIZE, FAGGOT_SIZE), C + 1, C - 3, C + 2, 4, 3.5, C - 4, 84);
+  // demi-largeur du faisceau sans le contour : Ø/5 px contour compris (4 pour dix branches, Ø 50 cm)
+  const rx = faggotDims(n).d / 10 - 1;
+  const c = bundleByTheEnd(new Canvas(FAGGOT_SIZE, FAGGOT_SIZE), C + 1, C - 3, C + 2, rx, (rx * 7) / 8, C - 4, 84);
   return outlineBundle(c).toGrid();
 }
 
-const heldFaggot = (): SpriteSheetSource => {
-  const lengthwise = faggotLengthwise();
-  return sheet('held-faggot', FAGGOT_SIZE, world, { down: lengthwise, up: lengthwise, right: faggotEnd() });
+const heldFaggot = (name: string, n: number): SpriteSheetSource => {
+  const lengthwise = faggotLengthwise(n);
+  return sheet(name, FAGGOT_SIZE, world, { down: lengthwise, up: lengthwise, right: faggotEnd(n) });
 };
 
-export default [heldAxe(), heldBranch(), ...heldWood(), heldRopeCoil(), heldRopeTie(), heldFaggot()];
+export default [heldAxe(), heldBranch(), ...heldWood(), heldRopeCoil(), heldRopeTie(), heldFaggot('held-faggot', FAGGOT_BRANCHES),
+  ...FAGGOT_COUNTS.map((n) => heldFaggot(`held-faggot-n${n}`, n))];

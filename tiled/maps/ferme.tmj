@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 504,
+  "nextobjectid": 515,
   "properties": [
     {
       "name": "name",
@@ -219,11 +219,18 @@
           "visible": true,
           "name": "",
           "type": "woodpile",
-          "x": 3224,
-          "y": 1504,
+          "x": 3096,
+          "y": 1591,
           "width": 48,
           "height": 32,
-          "gid": 1006
+          "gid": 1006,
+          "properties": [
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            }
+          ]
         },
         {
           "id": 25,
@@ -231,11 +238,18 @@
           "visible": true,
           "name": "",
           "type": "chopping-block-axe",
-          "x": 3232,
-          "y": 1456,
+          "x": 3136,
+          "y": 1562,
           "width": 32,
           "height": 32,
-          "gid": 1035
+          "gid": 1035,
+          "properties": [
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            }
+          ]
         },
         {
           "id": 5,
@@ -296,18 +310,6 @@
           "width": 32,
           "height": 32,
           "gid": 1004
-        },
-        {
-          "id": 10,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "cottage",
-          "x": 3072,
-          "y": 1696,
-          "width": 332,
-          "height": 204,
-          "gid": 1005
         },
         {
           "id": 11,
@@ -5924,6 +5926,139 @@
           "width": 48,
           "height": 168,
           "gid": 1057
+        },
+        {
+          "id": 504,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "maul-ground",
+          "gid": 1083,
+          "x": 3098,
+          "y": 1560,
+          "width": 16,
+          "height": 5,
+          "properties": [
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": 505,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "splitting-wedge-ground",
+          "gid": 1084,
+          "x": 3118,
+          "y": 1559,
+          "width": 6,
+          "height": 5,
+          "properties": [
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": 506,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "hatchet-ground",
+          "gid": 1093,
+          "x": 3098,
+          "y": 1570,
+          "width": 8,
+          "height": 5,
+          "properties": [
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": 507,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "broadaxe-ground",
+          "gid": 1094,
+          "x": 3114,
+          "y": 1571,
+          "width": 12,
+          "height": 6,
+          "properties": [
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": 508,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "rope-coil",
+          "gid": 1047,
+          "x": 3128,
+          "y": 1570,
+          "width": 7,
+          "height": 6,
+          "properties": [
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": 509,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "pallet",
+          "gid": 1013,
+          "x": 3094,
+          "y": 1652,
+          "width": 42,
+          "height": 15,
+          "properties": [
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": 510,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "plan-tablet",
+          "gid": 1092,
+          "x": 3228,
+          "y": 1557,
+          "width": 7,
+          "height": 20,
+          "properties": [
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            }
+          ]
         }
       ]
     },
@@ -5956,8 +6091,8 @@
           "name": "porte",
           "type": "Spawn",
           "point": true,
-          "x": 3088,
-          "y": 1724,
+          "x": 3200,
+          "y": 1674,
           "width": 0,
           "height": 0,
           "properties": [
@@ -5990,60 +6125,90 @@
           ]
         },
         {
-          "id": 23,
+          "id": 511,
           "rotation": 0,
           "visible": true,
-          "name": "vers maison",
-          "type": "Exit",
-          "x": 3072,
-          "y": 1664,
-          "width": 32,
-          "height": 32,
+          "name": "reveil",
+          "type": "Spawn",
+          "point": true,
+          "x": 3140,
+          "y": 1642,
+          "width": 0,
+          "height": 0,
           "properties": [
-            {
-              "name": "to",
-              "type": "string",
-              "value": "maison"
-            },
-            {
-              "name": "spawn",
-              "type": "string",
-              "value": "entree"
-            },
             {
               "name": "facing",
               "type": "string",
               "propertytype": "Facing",
-              "value": "up"
+              "value": "left"
+            },
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
             }
           ]
         },
         {
-          "id": 24,
+          "id": 512,
           "rotation": 0,
           "visible": true,
-          "name": "vers maison",
-          "type": "Exit",
-          "x": 3200,
-          "y": 1504,
-          "width": 32,
-          "height": 32,
+          "name": "",
+          "type": "Npc",
+          "point": true,
+          "x": 3216,
+          "y": 1560,
+          "width": 0,
+          "height": 0,
           "properties": [
             {
-              "name": "to",
+              "name": "character",
               "type": "string",
-              "value": "maison"
-            },
-            {
-              "name": "spawn",
-              "type": "string",
-              "value": "porte-derriere"
+              "value": "mother"
             },
             {
               "name": "facing",
               "type": "string",
               "propertytype": "Facing",
               "value": "down"
+            },
+            {
+              "name": "dialogue",
+              "type": "string",
+              "value": "mother-morning"
+            },
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "pose",
+              "type": "string",
+              "value": "sit"
+            }
+          ]
+        },
+        {
+          "id": 513,
+          "rotation": 0,
+          "visible": true,
+          "name": "fagot",
+          "type": "Place",
+          "x": 3184,
+          "y": 1588,
+          "width": 22,
+          "height": 20,
+          "properties": [
+            {
+              "name": "accepts",
+              "type": "string",
+              "value": "faggot"
+            },
+            {
+              "name": "inside",
+              "type": "bool",
+              "value": true
             }
           ]
         }
@@ -6075,6 +6240,25 @@
               "type": "string",
               "propertytype": "PlanName",
               "value": "cabane"
+            }
+          ]
+        },
+        {
+          "id": 514,
+          "rotation": 0,
+          "visible": true,
+          "name": "maison-xeros",
+          "type": "Plan",
+          "x": 3080,
+          "y": 1520,
+          "width": 277,
+          "height": 150,
+          "properties": [
+            {
+              "name": "plan",
+              "type": "string",
+              "propertytype": "PlanName",
+              "value": "maison-xeros"
             }
           ]
         }

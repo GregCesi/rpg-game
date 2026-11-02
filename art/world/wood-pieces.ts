@@ -161,12 +161,13 @@ function drawOpen(c: Canvas, sd: SplitDraw) {
 }
 
 /**
- * Tracés du fendage du gros bois, sur une pièce de référence de longueur `total`, pour le rond et la demi-bille, est-ouest et
- * nord-sud. Tout se tire de la section : la fente suit le plan de fente (vertical, par le cœur : a = 0), sur le dessus de la pièce
- * puis sur sa face de coupe ; le coin est planté sur ce plan, au bout de départ (ouest, nord) ou d'arrivée (est, sud).
+ * Tracés du fendage d'un diamètre (le gros bois, la perche), sur une pièce de référence de longueur `total`, pour chaque aspect qui
+ * se fend (`split` du diamètre : le rond et la demi), est-ouest et nord-sud. Tout se tire de la section : la fente suit le plan de
+ * fente (vertical, par le cœur : a = 0), sur le dessus de la pièce puis sur sa face de coupe ; le coin est planté sur ce plan, au
+ * bout de départ (ouest, nord) ou d'arrivée (est, sud).
  */
-function bigSplitDraw(look: 'round' | 'half', axis: LyingAxis, total: number): SplitDraw {
-  const v = lying('big', look, axis, total);
+function splitDraw(size: string, look: 'round' | 'half', axis: LyingAxis, total: number): SplitDraw {
+  const v = lying(size, look, axis, total);
   const base = v.c;
   const g = v.geom;
   const ztop = g.zmax;
@@ -227,10 +228,10 @@ function bigSplitDraw(look: 'round' | 'half', axis: LyingAxis, total: number): S
 const WEDGE_OUT = [3, 2, 1];
 
 /** Les parties d'un aspect qui se fend : `wedge-…-start|end`, `crack-…-start|mid|end`, `open-…-start|mid|end`. */
-function splitParts(look: 'round' | 'half', axis: LyingAxis, anims: Record<string, Grid[]>) {
-  const g = lookDef('big', look)[axis];
+function splitParts(size: string, look: 'round' | 'half', axis: LyingAxis, anims: Record<string, Grid[]>) {
+  const g = lookDef(size, look)[axis];
   const total = refTotal(g.start, g.end);
-  const sd = bigSplitDraw(look, axis, total);
+  const sd = splitDraw(size, look, axis, total);
   // le coin, à chaque bout, à trois profondeurs : il sort de 3, 2, puis 1 px (images 0, 1, 2). Les images 1 et 2 ne
   // viennent qu'après un coup, la fente déjà ouverte depuis ce bout : là où le fer de l'image 0 s'est retiré, elles
   // portent elles-mêmes la fente (la couche `crack-…` épargne tout le fer de l'image 0)
@@ -308,7 +309,7 @@ function bigSheet(axis: LyingAxis): SheetParts {
     }
   }
   for (const d of [1, 2] as const) anims[`notch${d}`] = (axis === 'ew' ? BIG_EW_NOTCH : nsNotch(BIG_EW_NOTCH, lookDef('big', 'round').ns.w))[d];
-  for (const look of ['round', 'half'] as const) splitParts(look, axis, anims);
+  for (const look of ['round', 'half'] as const) splitParts('big', look, axis, anims);
   return { axis, frame: frameOf('big', axis), anims };
 }
 
@@ -470,13 +471,21 @@ const POLE_EW_NOTCH: Record<1 | 2, Grid[]> = {
   ],
 };
 
+/**
+ * Les planches de la perche : chaque aspect calculé depuis sa section (la perche ronde, le palançon : la perche fendue en deux,
+ * écorce en bas, face fendue en l'air ; la latte : le palançon refendu, une planchette de `wide` × `thick` cm), et la fente des
+ * aspects qui se fendent (le rond en palançons, le palançon en lattes), tirée de la section comme celle du gros.
+ */
 function poleSheet(axis: LyingAxis): SheetParts {
   const anims: Record<string, Grid[]> = {};
-  const g = lookDef('pole', 'round')[axis];
-  const total = refTotal(g.start, g.end);
-  const frames = [...Array(framesOf('round')).keys()].map((k) => cut3(lying('pole', 'round', axis, total, k).c, axis, g.start, g.end, `pole-round-${axis}-${k}`));
-  for (const part of PARTS) anims[`round-${part}`] = frames.map((p) => p[part]);
+  for (const look of Object.keys(sizeOf('pole').looks) as WoodLook[]) {
+    const g = lookDef('pole', look)[axis];
+    const total = refTotal(g.start, g.end);
+    const frames = [...Array(framesOf(look)).keys()].map((k) => cut3(lying('pole', look, axis, total, k).c, axis, g.start, g.end, `pole-${look}-${axis}-${k}`));
+    for (const part of PARTS) anims[`${look}-${part}`] = frames.map((p) => p[part]);
+  }
   for (const d of [1, 2] as const) anims[`notch${d}`] = (axis === 'ew' ? POLE_EW_NOTCH : nsNotch(POLE_EW_NOTCH, lookDef('pole', 'round').ns.w))[d];
+  for (const look of Object.keys(sizeOf('pole').split) as ('round' | 'half')[]) splitParts('pole', look, axis, anims);
   return { axis, frame: frameOf('pole', axis), anims };
 }
 
@@ -550,7 +559,7 @@ function sheetSource(size: string, sp: SheetParts): SpriteSheetSource {
     frameW: sp.frame.w,
     frameH: sp.frame.h,
     // le fer du coin de fendage (2 3 0) vient de la palette des outils, qui reprend toute la palette `world`
-    palette: size === 'big' ? toolPalette : world,
+    palette: Object.keys(sizeOf(size).split).length ? toolPalette : world,
     animations,
   };
 }
@@ -574,6 +583,10 @@ export default [
   img('wood-normal-round-100-ns', composeWood(piece('normal', 'round', 'ns'))),
   img('wood-pole-round-100', composeWood(piece('pole', 'round', 'ew'))),
   img('wood-pole-round-100-ns', composeWood(piece('pole', 'round', 'ns'))),
+  img('wood-pole-half-100', composeWood(piece('pole', 'half', 'ew'))),
+  img('wood-pole-half-100-ns', composeWood(piece('pole', 'half', 'ns'))),
+  img('wood-pole-lath-100', composeWood(piece('pole', 'lath', 'ew'))),
+  img('wood-pole-lath-100-ns', composeWood(piece('pole', 'lath', 'ns'))),
   img('wood-big-plank-100', composeWood(piece('big', 'plank', 'ew'))),
   img('wood-big-plank-100-ns', composeWood(piece('big', 'plank', 'ns'))),
   img('wood-big-quarter-100', composeWood(piece('big', 'quarter', 'ew'))),

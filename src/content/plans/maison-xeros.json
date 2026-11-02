@@ -1,0 +1,2153 @@
+{
+  "name": "Maison Xéros",
+  "size": {
+    "w": 1385,
+    "d": 750
+  },
+  "age": "worn",
+  "joints": [
+    {
+      "type": "scarf",
+      "a": 40,
+      "b": 41
+    },
+    {
+      "type": "scarf",
+      "a": 41,
+      "b": 42
+    },
+    {
+      "type": "mortise",
+      "a": 45,
+      "b": 79
+    },
+    {
+      "type": "mortise",
+      "a": 45,
+      "b": 91
+    },
+    {
+      "type": "scarf",
+      "a": 43,
+      "b": 47
+    },
+    {
+      "type": "scarf",
+      "a": 46,
+      "b": 48
+    },
+    {
+      "type": "halving",
+      "a": 50,
+      "b": 49,
+      "top": 49
+    },
+    {
+      "type": "scarf",
+      "a": 54,
+      "b": 55
+    },
+    {
+      "type": "mortise",
+      "a": 40,
+      "b": 56
+    },
+    {
+      "type": "mortise",
+      "a": 40,
+      "b": 58
+    },
+    {
+      "type": "mortise",
+      "a": 40,
+      "b": 60
+    },
+    {
+      "type": "mortise",
+      "a": 40,
+      "b": 62
+    },
+    {
+      "type": "mortise",
+      "a": 41,
+      "b": 64
+    },
+    {
+      "type": "mortise",
+      "a": 41,
+      "b": 66
+    },
+    {
+      "type": "mortise",
+      "a": 41,
+      "b": 68
+    },
+    {
+      "type": "mortise",
+      "a": 41,
+      "b": 70
+    },
+    {
+      "type": "mortise",
+      "a": 42,
+      "b": 72
+    },
+    {
+      "type": "mortise",
+      "a": 43,
+      "b": 77
+    },
+    {
+      "type": "mortise",
+      "a": 44,
+      "b": 78
+    },
+    {
+      "type": "mortise",
+      "a": 46,
+      "b": 80
+    },
+    {
+      "type": "mortise",
+      "a": 47,
+      "b": 86
+    },
+    {
+      "type": "mortise",
+      "a": 50,
+      "b": 88
+    },
+    {
+      "type": "mortise",
+      "a": 49,
+      "b": 90
+    },
+    {
+      "type": "mortise",
+      "a": 48,
+      "b": 92
+    },
+    {
+      "type": "mortise",
+      "a": 47,
+      "b": 99
+    },
+    {
+      "type": "mortise",
+      "a": 51,
+      "b": 100
+    },
+    {
+      "type": "mortise",
+      "a": 52,
+      "b": 101
+    },
+    {
+      "type": "mortise",
+      "a": 48,
+      "b": 102
+    },
+    {
+      "type": "mortise",
+      "a": 53,
+      "b": 107
+    },
+    {
+      "type": "mortise",
+      "a": 53,
+      "b": 108
+    },
+    {
+      "type": "mortise",
+      "a": 53,
+      "b": 109
+    },
+    {
+      "type": "mortise",
+      "a": 53,
+      "b": 110
+    },
+    {
+      "type": "mortise",
+      "a": 54,
+      "b": 111
+    },
+    {
+      "type": "mortise",
+      "a": 54,
+      "b": 112
+    },
+    {
+      "type": "mortise",
+      "a": 54,
+      "b": 113
+    },
+    {
+      "type": "mortise",
+      "a": 55,
+      "b": 114
+    },
+    {
+      "type": "mortise",
+      "a": 55,
+      "b": 115
+    },
+    {
+      "type": "scarf",
+      "a": 132,
+      "b": 133
+    },
+    {
+      "type": "scarf",
+      "a": 133,
+      "b": 134
+    },
+    {
+      "type": "scarf",
+      "a": 135,
+      "b": 139
+    },
+    {
+      "type": "scarf",
+      "a": 138,
+      "b": 142
+    },
+    {
+      "type": "scarf",
+      "a": 136,
+      "b": 140
+    },
+    {
+      "type": "scarf",
+      "a": 137,
+      "b": 141
+    },
+    {
+      "type": "scarf",
+      "a": 144,
+      "b": 145
+    },
+    {
+      "type": "scarf",
+      "a": 145,
+      "b": 146
+    },
+    {
+      "type": "mortise",
+      "a": 56,
+      "b": 132
+    },
+    {
+      "type": "mortise",
+      "a": 60,
+      "b": 132
+    },
+    {
+      "type": "mortise",
+      "a": 68,
+      "b": 133
+    },
+    {
+      "type": "mortise",
+      "a": 72,
+      "b": 134
+    },
+    {
+      "type": "mortise",
+      "a": 107,
+      "b": 144
+    },
+    {
+      "type": "mortise",
+      "a": 109,
+      "b": 144
+    },
+    {
+      "type": "mortise",
+      "a": 113,
+      "b": 145
+    },
+    {
+      "type": "mortise",
+      "a": 115,
+      "b": 146
+    },
+    {
+      "type": "mortise",
+      "a": 77,
+      "b": 135
+    },
+    {
+      "type": "mortise",
+      "a": 80,
+      "b": 138
+    },
+    {
+      "type": "mortise",
+      "a": 78,
+      "b": 136
+    },
+    {
+      "type": "mortise",
+      "a": 79,
+      "b": 137
+    },
+    {
+      "type": "mortise",
+      "a": 86,
+      "b": 139
+    },
+    {
+      "type": "mortise",
+      "a": 92,
+      "b": 142
+    },
+    {
+      "type": "mortise",
+      "a": 90,
+      "b": 140
+    },
+    {
+      "type": "mortise",
+      "a": 91,
+      "b": 141
+    },
+    {
+      "type": "mortise",
+      "a": 99,
+      "b": 139
+    },
+    {
+      "type": "mortise",
+      "a": 102,
+      "b": 142
+    },
+    {
+      "type": "mortise",
+      "a": 100,
+      "b": 140
+    },
+    {
+      "type": "mortise",
+      "a": 101,
+      "b": 141
+    },
+    {
+      "type": "mortise",
+      "a": 88,
+      "b": 143
+    },
+    {
+      "type": "scarf",
+      "a": 150,
+      "b": 152
+    },
+    {
+      "type": "scarf",
+      "a": 151,
+      "b": 153
+    }
+  ],
+  "pieces": [
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 20,
+      "y": 40,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 180,
+      "y": 40,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "narrow-sill-wall"
+      },
+      "x": 340,
+      "y": 40,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 370,
+      "y": 40,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 540,
+      "y": 40,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 700,
+      "y": 40,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 860,
+      "y": 40,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 1020,
+      "y": 40,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 1180,
+      "y": 40,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 20,
+      "y": 90,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "sack"
+      },
+      "x": 70,
+      "y": 90,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "sack"
+      },
+      "x": 120,
+      "y": 90,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "table"
+      },
+      "x": 580,
+      "y": 90,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "jar"
+      },
+      "x": 920,
+      "y": 90,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "narrow-sill-wall"
+      },
+      "x": 990,
+      "y": 90,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "bed"
+      },
+      "x": 1020,
+      "y": 90,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chest"
+      },
+      "x": 1200,
+      "y": 90,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 1290,
+      "y": 90,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "bench"
+      },
+      "x": 580,
+      "y": 180,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 20,
+      "y": 250,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 1290,
+      "y": 250,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "inner-door"
+      },
+      "x": 360,
+      "y": 260,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "workbench"
+      },
+      "x": 1220,
+      "y": 300,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "hearth"
+      },
+      "x": 640,
+      "y": 340,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "narrow-sill-wall"
+      },
+      "x": 200,
+      "y": 360,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "inner-door"
+      },
+      "x": 360,
+      "y": 420,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "inner-door"
+      },
+      "x": 1000,
+      "y": 420,
+      "z": 0,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 20,
+      "y": 510,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "narrow-sill-wall"
+      },
+      "x": 340,
+      "y": 510,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "narrow-sill-wall"
+      },
+      "x": 990,
+      "y": 510,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 1290,
+      "y": 510,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 20,
+      "y": 670,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 180,
+      "y": 670,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 340,
+      "y": 670,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "threshold-stone"
+      },
+      "x": 540,
+      "y": 670,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 700,
+      "y": 670,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 860,
+      "y": 670,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 1020,
+      "y": 670,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "rough-sill-wall"
+      },
+      "x": 1180,
+      "y": 670,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "cottage-door"
+      },
+      "x": 555,
+      "y": 700,
+      "z": 20,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 20,
+      "y": 40,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 600,
+      "y": 40,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 160,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 40,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 20,
+      "y": 70,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 340,
+      "y": 70,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 340,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 990,
+      "y": 70,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1310,
+      "y": 70,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 20,
+      "y": 310,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1310,
+      "y": 310,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 80,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 340,
+      "y": 340,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 320,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 50,
+      "y": 360,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 340,
+      "y": 510,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 990,
+      "y": 510,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 520,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 20,
+      "y": 690,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 660,
+      "y": 690,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1040,
+      "y": 690,
+      "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 20,
+      "y": 40,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 50,
+      "y": 40,
+      "z": 70,
+      "view": 2
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 180,
+      "y": 40,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-window-panel"
+      },
+      "x": 210,
+      "y": 40,
+      "z": 70,
+      "view": 2
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 340,
+      "y": 40,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 370,
+      "y": 40,
+      "z": 70,
+      "view": 2
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 500,
+      "y": 40,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-window-panel"
+      },
+      "x": 530,
+      "y": 40,
+      "z": 70,
+      "view": 2
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 660,
+      "y": 40,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 690,
+      "y": 40,
+      "z": 70,
+      "view": 2
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 820,
+      "y": 40,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 850,
+      "y": 40,
+      "z": 70,
+      "view": 2
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 980,
+      "y": 40,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-window-panel"
+      },
+      "x": 1010,
+      "y": 40,
+      "z": 70,
+      "view": 2
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1140,
+      "y": 40,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 1170,
+      "y": 40,
+      "z": 70,
+      "view": 2
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1300,
+      "y": 40,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 20,
+      "y": 70,
+      "z": 70,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 355,
+      "y": 70,
+      "z": 70,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 990,
+      "y": 70,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 1325,
+      "y": 70,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 20,
+      "y": 200,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 340,
+      "y": 200,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 980,
+      "y": 200,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1300,
+      "y": 200,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 20,
+      "y": 230,
+      "z": 70,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-inner-jamb"
+      },
+      "x": 360,
+      "y": 230,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 990,
+      "y": 230,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "lime-window-panel"
+      },
+      "x": 1325,
+      "y": 230,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "lime-inner-jamb"
+      },
+      "x": 360,
+      "y": 340,
+      "z": 70,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 20,
+      "y": 360,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 50,
+      "y": 360,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 180,
+      "y": 360,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 210,
+      "y": 360,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 340,
+      "y": 360,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 980,
+      "y": 360,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1300,
+      "y": 360,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 20,
+      "y": 390,
+      "z": 70,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-inner-jamb"
+      },
+      "x": 360,
+      "y": 390,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "lime-inner-jamb"
+      },
+      "x": 1000,
+      "y": 390,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 1325,
+      "y": 390,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "lime-inner-jamb"
+      },
+      "x": 355,
+      "y": 500,
+      "z": 70,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-inner-jamb"
+      },
+      "x": 990,
+      "y": 500,
+      "z": 70,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 20,
+      "y": 520,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 340,
+      "y": 520,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 980,
+      "y": 520,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1300,
+      "y": 520,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 20,
+      "y": 550,
+      "z": 70,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 355,
+      "y": 550,
+      "z": 70,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 990,
+      "y": 550,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 1325,
+      "y": 550,
+      "z": 70,
+      "view": 3
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 20,
+      "y": 680,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 180,
+      "y": 680,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 340,
+      "y": 680,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 500,
+      "y": 680,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 660,
+      "y": 680,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 820,
+      "y": 680,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 980,
+      "y": 680,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1140,
+      "y": 680,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1300,
+      "y": 680,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-jamb"
+      },
+      "x": 645,
+      "y": 700,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-window-panel"
+      },
+      "x": 50,
+      "y": 705,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 210,
+      "y": 705,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-window-panel"
+      },
+      "x": 370,
+      "y": 705,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-jamb"
+      },
+      "x": 530,
+      "y": 705,
+      "z": 70,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 690,
+      "y": 705,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-window-panel"
+      },
+      "x": 850,
+      "y": 705,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 1010,
+      "y": 705,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 1170,
+      "y": 705,
+      "z": 70,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "plank-shutter"
+      },
+      "x": 250,
+      "y": 55,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "plank-shutter"
+      },
+      "x": 570,
+      "y": 55,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "plank-shutter"
+      },
+      "x": 1050,
+      "y": 55,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "plank-shutter"
+      },
+      "x": 1321,
+      "y": 270,
+      "z": 90,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "plank-shutter"
+      },
+      "x": 90,
+      "y": 701,
+      "z": 90,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "plank-shutter"
+      },
+      "x": 410,
+      "y": 701,
+      "z": 90,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "plank-shutter"
+      },
+      "x": 890,
+      "y": 701,
+      "z": 90,
+      "view": 2
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 20,
+      "y": 40,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 600,
+      "y": 40,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 160,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 40,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 20,
+      "y": 70,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 340,
+      "y": 70,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 980,
+      "y": 70,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1310,
+      "y": 70,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 20,
+      "y": 310,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 340,
+      "y": 310,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 980,
+      "y": 310,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1310,
+      "y": 310,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 280,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 50,
+      "y": 360,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 20,
+      "y": 690,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 600,
+      "y": 690,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 160,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 690,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "thatch-roof"
+      },
+      "x": 0,
+      "y": 0,
+      "z": 280,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "lime-gable-smoke"
+      },
+      "x": 20,
+      "y": 55,
+      "z": 280,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-gable"
+      },
+      "x": 1325,
+      "y": 55,
+      "z": 280,
+      "view": 3
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 340,
+      "y": 70,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 980,
+      "y": 70,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 340,
+      "y": 310,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 980,
+      "y": 310,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "thatch-roof"
+      },
+      "x": 0,
+      "y": 360,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "earth-ridge"
+      },
+      "x": 0,
+      "y": 360,
+      "z": 725,
+      "view": 0
+    }
+  ]
+}

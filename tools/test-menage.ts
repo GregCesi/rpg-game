@@ -20,10 +20,10 @@ for (const k of ['wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool'
 for (const k of ['barrel', 'bush-berries', 'well', 'lantern', 'candle', 'rock-rubble', 'woodpile']) assert.ok(props[k], `props.json : '${k}' gardé`);
 
 // la sauvegarde : relue depuis la version 17 ; la « chaîne » des objets nés disparaît ; une partie plus ancienne reste refusée
-assert.equal(SAVE_VERSION, 24);
+assert.ok(SAVE_VERSION >= 24, 'la sauvegarde relue depuis 17');
 const v23 = { version: 23, savedAt: '', where: {}, state: { maps: { ferme: { spawned: [{ id: 1, type: 'normal-felled-tree', x: 3, y: 4, chain: { group: 1, index: 0, size: 1 } }] } } } };
 const v24 = upgrade(v23) as { version: number; state: { maps: Record<string, { spawned: object[] }> } };
-assert.equal(v24.version, 24, '23 -> 24');
+assert.equal(v24.version, SAVE_VERSION, '23 -> 24, puis jusqu’à la version d’aujourd’hui');
 assert.deepEqual(v24.state.maps.ferme.spawned[0], { id: 1, type: 'normal-felled-tree', x: 3, y: 4 }, 'la chaîne retirée, le reste intact');
 assert.equal((upgrade({ version: 16, state: {} }) as { version: number }).version, 16, 'une partie de la version 16 n’est plus convertie (refusée, partie neuve)');
 

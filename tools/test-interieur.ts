@@ -1,4 +1,6 @@
-// Les intérieurs (chantier « intérieurs », CONCEPTION « Les intérieurs »), dans le vrai jeu (tools/lib/playtest.ts) : pour la cabane,
+// Les intérieurs (chantier « intérieurs », CONCEPTION « Les intérieurs »), dans le vrai jeu (tools/lib/playtest.ts) : d'abord le
+// départ de la partie, dans la maison de Xéros (son intérieur calculé, ce que la ferme y pose : la mère assise, la place du fagot, la
+// paillasse, les outils du cagibi ; ses quatre pièces : npm run test:maison) ; puis, pour la cabane,
 // puis pour la grange, posées d'un clic par leur plan du mode construction sur la ferme :
 //   - hors du mode, Xéros devant la porte fermée : on ne passe pas ; E l'ouvre (elle pivote hors du passage) ;
 //   - il marche dans l'ouverture : la scène passe à l'intérieur (carte `interieur:ferme:<x>,<y>`), et la pièce a la taille que donne le
@@ -20,9 +22,6 @@ const MAX_H = 1500;
 await playtest('intérieurs', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   await load('?construire&dieu&reset');
-  await page.keyboard.press('KeyB');
-  await sleep(150);
-  await page.evaluate(() => (window as any).game.events.emit('dieu', { kind: 'map', map: 'ferme' }));
   const world = () => page.evaluate(() => {
     const w = (window as any).game?.scene?.getScene('world');
     return { id: w?.map?.def.id as string, mode: w?.mode as string };
@@ -35,6 +34,40 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     }
     throw new Error(`attente trop longue (${JSON.stringify(await world())})`);
   };
+
+  // 0. la partie neuve commence dans la maison de Xéros, bâtie sur la ferme par son plan : son intérieur calculé, à quatre pièces ;
+  // dedans, ce que la ferme y pose (`inside`) : Xéros à son réveil, la mère assise, la place du fagot, la paillasse, les outils
+  await until((w) => !!w.id?.startsWith('interieur:ferme:'));
+  const home = await page.evaluate(() => {
+    const w = (window as any).game.scene.getScene('world');
+    const it = w.interior;
+    const r = it.room;
+    const inRoom = (x: number, y: number) => x * 5 >= r.x && x * 5 < r.x + r.w && y * 5 >= r.y && y * 5 < r.y + r.d;
+    const a = w.player.actor;
+    const types = w.map.def.objects.map((o: any) => o.type);
+    return {
+      exits: it.exits.length as number,
+      player: inRoom(a.x, a.y),
+      reveil: w.map.def.spawns.reveil && inRoom(w.map.def.spawns.reveil.x, w.map.def.spawns.reveil.y),
+      npcs: w.map.def.npcs.map((n: any) => ({ character: n.character, pose: n.pose, inRoom: inRoom(n.x, n.y) })),
+      places: w.map.def.places.map((p: any) => ({ name: p.name, accepts: p.accepts, inRoom: inRoom(p.x + p.w / 2, p.y + p.h / 2) })),
+      types,
+      outside: w.map.def.objects.filter((o: any) => !inRoom(o.x + 2, o.y - 1)).map((o: any) => `${o.type} (${o.x}, ${o.y})`),
+    };
+  });
+  assert.equal(home.exits, 1, `la maison : une entrée (${home.exits})`);
+  assert.ok(home.player && home.reveil, 'Xéros se réveille dans la maison');
+  assert.deepEqual(home.npcs, [{ character: 'mother', pose: 'sit', inRoom: true }], `la mère, assise, dans la maison : ${JSON.stringify(home.npcs)}`);
+  assert.deepEqual(home.places, [{ name: 'fagot', accepts: 'faggot', inRoom: true }], `la place du fagot : ${JSON.stringify(home.places)}`);
+  for (const t of ['pallet', 'plan-tablet', 'chopping-block-axe', 'woodpile', 'maul-ground', 'splitting-wedge-ground', 'hatchet-ground', 'broadaxe-ground', 'rope-coil']) {
+    assert.ok(home.types.includes(t), `dans la maison : ${t}`);
+  }
+  assert.deepEqual(home.outside, [], 'chaque objet posé dedans est dans la maison');
+  console.log(`  ✓ départ : dans la maison (une entrée), la mère assise, la place du fagot, ${home.types.length} objets posés dedans`);
+
+  await page.keyboard.press('KeyB');
+  await sleep(150);
+  await page.evaluate(() => (window as any).game.events.emit('dieu', { kind: 'map', map: 'ferme' }));
   await until((w) => w.id === 'ferme' && w.mode === 'play');
   await sleep(400);
   const notices: string[] = [];
