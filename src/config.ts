@@ -202,8 +202,8 @@ export const INTERIOR = {
   light: { door: 0.75, window: 0.8, alpha: 0.9 },
 };
 
-/** Où commence la partie : Xéros se réveille dans son cagibi. */
-export const START = { map: 'maison', spawn: 'reveil' };
+/** Où commence la partie : Xéros se réveille dans son coin de la maison (le réveil est « dedans », sur la ferme). */
+export const START = { map: 'ferme', spawn: 'reveil' };
 
 /**
  * Les zones du monde (chantier « monde », systems/zones.ts) : `band`, ce qu'on voit des voisines par-delà le bord, en cases (assez pour

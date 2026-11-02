@@ -12,7 +12,7 @@
 ## Dimensions (gabarit, docs/STYLE.md section 8)
 - Planchette de bois de 30 × 20 cm, 2 cm d'épaisseur, contour compris, où la mère, qui sculpte, a gravé au couteau le plan de l'abri : les quatre dés, les quatre poteaux, le toit en pente. Boîte (`box`), à plat.
 - À l'écran : W = 6 px ; H + D/2 = 0,4 + 2 = 2,4 : **6 × 3**.
-- Elle est posée sur une table de ferme (`table`, 210 × 90 × 78 cm) dans la chambre de la mère (`maison.tmj`). Le bas de son image est au sol, au bord sud de la table (c'est sa profondeur d'affichage), et elle garde sous elle, dans son image, des rangées vides : la hauteur de la table (78 cm = **16 rangées**), pour qu'elle se voie posée sur le plateau.
+- Elle est posée sur la table de ferme (`table`, 210 × 90 × 78 cm) de la grande pièce de la maison (objet « dedans » de `tiled/maps/ferme.tmj`). Le bas de son image est au sol, au bord sud de la table (c'est sa profondeur d'affichage), et elle garde sous elle, dans son image, des rangées vides : la hauteur de la table (78 cm = **16 rangées**), pour qu'elle se voie posée sur le plateau.
 
 ## Vues
 - Posée : `plan-tablet`, 6 × (3 + 16 rangées vides) px : un petit rectangle de bois clair (matière de la palette), le dessus gravé de quelques traits sombres (deux carrés dessinés, des lignes), la tranche au sud ; contour comme les petits objets. Pas de version `-left`.

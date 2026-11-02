@@ -32,7 +32,7 @@ Seule. Ne s'entrepose pas.
 - Q (A en AZERTY) : lâcher.
 
 ## Origine
-Trouvée dans la réserve de la maison (`maison.tmj`, `maul-ground`, à côté du rouleau de corde). E la prend directement dans les deux mains.
+Trouvée dans le cagibi de la maison (`tiled/maps/ferme.tmj`, objet « dedans » `maul-ground`, à côté du rouleau de corde). E la prend directement dans les deux mains.
 
 ## Devenir
 Reste dans les mains ; se lâche comme un outil. Plus tard : forgée, achetée.

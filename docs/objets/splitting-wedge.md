@@ -31,7 +31,7 @@ Seul. Ne s'entrepose pas.
 - Q (A en AZERTY) : lâcher.
 
 ## Origine
-Trouvé dans la réserve de la maison (`maison.tmj`), à côté de la masse. E le prend directement dans la main.
+Trouvé dans le cagibi de la maison (objet « dedans » de `tiled/maps/ferme.tmj`), à côté de la masse. E le prend directement dans la main.
 
 ## Devenir
 Planté, il reste dans la bille jusqu'à ce qu'elle s'ouvre (la dernière étape du fendage, `splitHits`) : il tombe alors au sol à côté des morceaux, à ramasser. Rien ne le fait disparaître.

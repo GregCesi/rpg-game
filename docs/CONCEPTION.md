@@ -285,8 +285,8 @@ précède) :
   L'abri n'est plus posé tout construit dans la ferme : Xéros le bâtit, comme en vrai, en commençant par apprendre le plan,
   tracer l'emprise au sol avec des piquets, puis poser les dés de pierre. Les poteaux, sablières, chevrons et toit
   viendront dans d'autres chantiers ; celui-ci prépare le moteur qui les portera.
-- **Le plan.** Une planchette de bois où la mère, qui sculpte, a gravé le plan de l'abri (`plan-tablet`), posée sur une table
-  de sa chambre (`maison.tmj`). E dessus : « Xéros connaît maintenant le plan de l'abri à bois. » ; la planchette reste en place.
+- **Le plan.** Une planchette de bois où la mère, qui sculpte, a gravé le plan de l'abri (`plan-tablet`), posée sur la table
+  de la grande pièce de la maison (objet « dedans » de `tiled/maps/ferme.tmj`). E dessus : « Xéros connaît maintenant le plan de l'abri à bois. » ; la planchette reste en place.
   Les plans connus sont dans GameState (`knownPlans`). Un plan est un fichier de contenu (`src/content/plans.json`), en
   centimètres : son emprise (305 × 355 cm entre les axes des coins), ses quatre coins, le piquet qui le trace, puis ses étapes
   dans l'ordre réel (dés, poteaux, sablières, chevrons, toit). Chaque étape a ses places ; chaque place dit sa pièce, sa
@@ -625,7 +625,7 @@ pans de toit gris. Un même bâtiment mélangeait du bois neuf et du bois de vin
 
 Le but, décidé par Grégoire : un joueur qui bâtit une maison comme il veut peut y entrer, et l'intérieur est cohérent avec ce qu'il a
 construit. **Pas de dessin à la main pour chaque maison : l'intérieur se calcule des pièces posées**, parce que chacune est connue.
-La chaumière (`maison.tmj`) reste telle quelle jusqu'à la nouvelle chaumière.
+L'ancienne chaumière (`maison.tmj`, dessinée à la main) a été remplacée par la maison de Xéros, bâtie et calculée comme les autres (« La maison de Xéros »).
 
 - **Les portes s'ouvrent** (`swing` de props.json, `passage` : une porte) : la porte en planches pivote d'un quart vers le dehors sur
   son gond, comme le volet (`plank-door`, `plank-door-open`) ; la porte charretière ouvre ses deux battants (gond `double`,

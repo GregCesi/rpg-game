@@ -154,25 +154,27 @@ await playtest('monde', async ({ page, errors, load }) => {
     if (!r.ok) throw new Error(`Xéros est bloqué en route vers (${wx}, ${wy}) : ${JSON.stringify(r.p)}`);
   };
 
-  // 1. le réveil dans le cagibi, puis la sortie de la chaumière : un chemin calculé dans la maison (pas de 4 px, cases libres)
+  // 1. le réveil dans son coin de la maison (l'intérieur calculé de la maison bâtie sur la ferme), puis la sortie : un chemin calculé
+  // dans la maison (pas de 4 px, cases libres) jusque devant la porte d'entrée, qu'il ouvre (E)
   let p = await where();
-  assert.equal(p.id, 'maison', 'réveil dans la chaumière');
+  assert.ok(p.id.startsWith('interieur:ferme:'), `réveil dans la maison (${p.id})`);
   /**
    * Un chemin sans obstacle sur la carte en cours, de Xéros jusqu'au but (une recherche en largeur sur une grille de 4 px, la place de
-   * ses pieds libre à chaque pas) : la sortie de la chaumière vers la ferme, ou un point de la carte (`to`, en px de la carte). Rend
-   * ses coins, en px de la carte.
+   * ses pieds libre à chaque pas) : devant la porte d'entrée de la maison (la sortie de l'intérieur, en cm), ou un point de la carte
+   * (`to`, en px de la carte). Rend ses coins, en px de la carte.
    */
   const routeTo = (to?: { x: number; y: number }): Promise<{ x: number; y: number }[]> =>
     page.evaluate((to) => {
       const w = (window as any).game.scene.getScene('world');
       const m = w.map;
-      const exit = m.def.exits.find((e: any) => e.to === 'ferme' && e.spawn === 'porte');
+      const zone = w.interior?.exits[0]?.zone;
+      const door = zone && { x: Math.round((zone.x + zone.w / 2) / 5), y: Math.round(zone.y / 5) - 6 };
       const S = 4;
       const free = (x: number, y: number) => m.areaFree({ left: x - 5, top: y - 8, right: x + 5, bottom: y }, []);
       const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
       const goal = to
         ? (x: number, y: number) => Math.abs(x * S - to.x) <= S / 2 && Math.abs(y * S - to.y) <= S / 2
-        : (x: number, y: number) => x * S >= exit.x + 8 && x * S < exit.x + exit.w - 8 && y * S - 3 >= exit.y + 4 && y * S - 3 < exit.y + exit.h;
+        : (x: number, y: number) => Math.abs(x * S - door.x) <= S && Math.abs(y * S - door.y) <= S;
       const prev = new Map<string, string>();
       const q = [start];
       prev.set(start.join(), '');
@@ -199,13 +201,14 @@ await playtest('monde', async ({ page, errors, load }) => {
       return out.filter((_q, i) => i === 0 || i === out.length - 1 || (out[i - 1].x !== out[i + 1].x && out[i - 1].y !== out[i + 1].y));
     }, to);
   const route = await routeTo();
-  assert.ok(route.length > 1, 'un chemin du cagibi à la porte');
+  assert.ok(route.length > 1, 'un chemin de son coin à la porte');
   for (const c of route.slice(1)) {
     const now = await where();
-    if (now.id !== 'maison') break;
     await goTo(c.x, c.y, Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y', 2);
   }
-  // un pas vers le sud dans la sortie
+  // tourné vers la porte, il l'ouvre (E), puis passe vers le sud
+  await page.evaluate(() => (window as any).game.scene.getScene('world').player.actor.face('down'));
+  await page.keyboard.press('KeyE');
   await press(['KeyS']);
   await until(async () => (await where()).id === 'ferme', 5000, 'sortir sur la ferme');
   await press([]);
