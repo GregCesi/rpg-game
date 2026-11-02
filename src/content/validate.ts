@@ -999,6 +999,17 @@ function validateCapabilities(c: Content, cat: Catalog): string[] {
     if (!it.dims) err(`${at} : un objet portable a ses dimensions ('dims') : le gabarit de son image au sol et sa physique de coup en découlent (world/heft.ts)`);
     if (it.work && todo.tool && cat.textures.has(it.work.image ?? `tool-${k}`)) err(`validate.ts DRAWINGS_TODO : '${k}' a sa planche en main, à retirer de la liste`);
   }
+  // un élément à couches : il recouvre une pièce qui existe, de la même emprise, et ajoute une couche aux siennes
+  for (const [k, p] of Object.entries(c.props)) {
+    if (!p.over) continue;
+    const u = c.props[p.over];
+    if (!u) {
+      err(`props.json '${k}' : 'over' nomme '${p.over}', absent de props.json`);
+      continue;
+    }
+    if (u.dims.w !== p.dims.w || u.dims.d !== p.dims.d || u.views !== p.views) err(`props.json '${k}' : il recouvre '${p.over}' : même emprise et mêmes vues`);
+    if (p.layers && u.layers && (p.layers.length !== u.layers.length + 1 || u.layers.some((l, i) => p.layers![i] !== l))) err(`props.json '${k}' : ses couches ('layers') sont celles de '${p.over}' et une de plus`);
+  }
   for (const [k, d] of [...Object.entries(c.items), ...Object.entries(c.props)]) {
     if (!d.trade && !TRADE_TODO.has(k)) err(`'${k}' : son métier ('trade', CONCEPTION « Les matières »), ou TRADE_TODO`);
     if (d.trade && TRADE_TODO.has(k)) err(`validate.ts TRADE_TODO : '${k}' a son métier, à retirer de la liste`);
