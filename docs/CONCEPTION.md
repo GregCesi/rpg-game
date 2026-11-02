@@ -671,54 +671,66 @@ sablières), les murs entre les poteaux, la charpente, le toit. Pas de longère 
 cheminée) sera la maison de voisins plus aisés, plus tard. « Il faut que ce soit bien fait et beau. » L'essai visuel, hors du jeu :
 `npx tsx tools/essai-maison-xeros.ts`, `.art-preview/essai-maison-xeros.png` (dessins dans `art/proposals/maison-xeros.ts`).
 
-#### Le plan (en cm, nord en haut, faîtage est-ouest)
+#### Le plan (en cm, nord en haut, faîtage est-ouest ; agrandi le 2 novembre, voulu par Grégoire)
 
-Une seule pièce, la salle commune d'une mère et de son fils, paysans modestes : environ 28 m² au dedans, la taille d'une chaumière
-de journaliers. Toutes les mesures tombent sur la grille de 1,60 m du solin (un morceau de solin, une travée).
+Le joueur va beaucoup y vivre : la maison a environ **2,5 fois la surface** du premier plan. L'histoire le justifie : une
+génération plus aisée l'a bâtie, loin du centre du village, là où la terre coûtait moins cher. Plusieurs pièces, séparées par des
+**cloisons faites comme les murs** (palançons, clayonnage, torchis, chaux, entre traverse basse et sablière, sur la même grille).
 
 ```
-            x : 0      160      320      480      640     (axes des poteaux ; solin de 50 cm d'épais dessous)
-     y = 0    P--------P---[F]--P--------P--------P        N
-              | paillasse          coffre | lit    |        ↑
-              | (Xéros)                   | (mère) |
-     y = 160  P                                    P
-              |   fagot  ( foyer )        tabouret |
-              |   [==]   ( Ø 1 m )   mère  table   |
-     y = 320  P                           tabouret P
-              | jarre                              |
-              | sac       seau                     |
-     y = 480  P--------P--[porte]--P--------P--[F]--P
-                        160      320      480      640
-     P : poteau (20 × 20) ; F : fenêtre à volet (50 × 40, appui à 1 m) ; porte : 90 × 180, seuil de pierre
+    x : 0       160      320      480      640      800      960      1120     1280   (axes des poteaux, tous les 1,60 m)
+ y=0  P--------P---[F]--P--------P---[F]--P--------P--------P--------P--------P       N
+      |  CHAMBRE DE    |                                    |      RÉSERVE       |       ↑
+      |  LA MÈRE  lit  |        table (est-ouest)           |  outils, corde,    |
+      |      coffre    |        ============  banc          |  coins, masse,     [F]
+ y=160P                P   ---                              P  billot et cognée  P
+      |                [p]                                  |  bûches, sacs      |
+      |                |   fagot  ( foyer Ø 1 m )   mère    |  jarre, seau       |
+ y=320P-------P--------P                                    [p]                  P
+      |  COIN DE       [p]           SALLE COMMUNE          |                    |
+      |  XÉROS         |                                    |                    |
+ y=480P  paillasse     P                                    P                    P
+      |                |                                    |                    |
+ y=640P---[F]--P-------P---[F]--P--[porte]-P--------P--[F]--P--------P--------P--------P
+      P : poteau (20 × 20) ; [F] : fenêtre à volet (50 × 40, appui à 80 cm) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
+      [p] : porte intérieure 0,80 × 1,80 m ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
 ```
 
-- **Emprise** : axes des poteaux 6,40 × 4,80 m ; le solin (50 cm) déborde de 25 cm : environ 6,90 × 5,30 m au sol. Au dedans, entre
-  les poteaux : 6,20 × 4,60 m.
-- **Hauteurs** :
-  - le solin, 0 à 40 cm ;
-  - la traverse basse, 40 à 60 ;
-  - les poteaux, 60 à 240 (1,80 m de bois) ;
-  - la sablière haute, 240 à 260 ;
-  - la pente, **50°** : le faîte de la charpente à environ **5,45 m** (2,40 m de demi-portée × tan 50°, depuis la sablière), celui
-    du chaume (40 cm) à **6,30 m** ;
-  - les chevrons dépassent de 50 cm hors des murs, l'égout est à environ 2,20 m : on passe dessous en se baissant à peine ;
-  - la porte : 1,80 m (Xéros, 1,70 m, passe ; INTERIOR.headroom est de 1,80 m).
-- **Les poteaux** : 14, tous les 1,60 m (5 au sud, 5 au nord, 2 de plus à l'est et à l'ouest, les angles partagés).
-- **Les travées** : 14. Au sud, la 2e (x 160–320) est **la porte** et la 4e (x 480–640) a **une fenêtre** (la salle est éclairée au
-  sud-est, sur la table). Au nord, la 2e a **une fenêtre** (au-dessus de la paillasse). Les murs est et ouest sont pleins ; les
-  pignons sont au-dessus.
-- **Le dedans du solin** : le solin (50 cm) déborde de 15 cm sous le mur (20 cm) ; le sol libre fait **5,90 × 4,30 m**.
-- **Dedans** :
-  - **le foyer** au centre, en (320, 240), Ø 1 m (des pierres en cercle) ;
-  - **le lit de la mère** (150 × 200) dans l'angle nord-est, **le coffre** (90 × 50) à côté, à l'ouest du lit (à son pied, avec la
-    table, le mur est faisait 4,60 m pour 4,30 de place : vu sur l'essai) ;
-  - **la paillasse de Xéros** (200 × 90, nord-sud) contre le mur ouest, au nord ;
-  - **la table** (210 × 90, nord-sud) et **deux tabourets** contre le mur est, au sud ;
-  - la jarre et le sac contre le mur ouest, au sud ; le seau près de la porte ;
-  - **la place du fagot** (1,30 × 0,50 m) juste à l'ouest du foyer, entre le feu et la paillasse : on y pose le fagot de la
-    première quête ;
-  - **la place de la mère** : assise sur le tabouret, à l'est du foyer, tournée vers lui.
-  - Le passage de la porte au foyer reste libre (1 m au moins), comme celui du foyer à la paillasse et au lit.
+- **Emprise** : axes des poteaux **12,80 × 6,40 m** (8 travées de 1,60 m sur 4) ; avec le solin, environ **13,30 × 6,90 m** au sol ;
+  environ 80 m² au dedans.
+- **Hauteurs** : comme le premier plan (solin 0–40, traverse basse 40–60, poteaux 60–240, sablière 240–260). **La pente passe à
+  45°** sur cette portée de 6,40 m : à 50°, le faîte du chaume monterait vers 7,2 m et le toit écraserait la maison ; à 45°, le faîte
+  de la charpente est vers 5,80 m, celui du chaume vers 6,40 m (Grégoire avait dit 45 à 55°).
+- **Poteaux** : au sud et au nord, x = 0 à 1280 tous les 1,60 m ; à l'est et à l'ouest, y = 0 à 640 ; et ceux des cloisons. Les deux
+  cloisons pleines (x = 320 et x = 960) portent chacune une ferme (l'entrait, les arbalétriers) : le toit de 12,80 m a ses appuis.
+- **Les pièces** :
+  - **la salle commune** (x 320–960, 6,40 × 6,40 m, 41 m²) : **le foyer au centre** (640, 320), Ø 1 m ; **la table** (210 × 90,
+    est-ouest) près du mur nord et **un banc** au sud de la table ; **la place du fagot** à l'ouest du foyer ; **la place de la mère**,
+    assise sur le banc, tournée vers le feu ; **la porte d'entrée au sud** (travée x 480–640) ; deux fenêtres au sud, une au nord ;
+  - **la chambre de la mère** (nord-ouest, 3,20 × 3,20 m) : son lit, son coffre ; sa porte vers la salle ; une fenêtre au nord ;
+  - **le coin de Xéros** (sud-ouest, 3,20 × 3,20 m) : sa paillasse le long du mur ouest, de la place autour ; sa porte vers la salle ;
+    une fenêtre au sud ;
+  - **la réserve** (est, 3,20 × 6,40 m, 20 m²) : les outils (la cognée plantée dans le billot, la hachette, la masse, le coin, la
+    doloire), le rouleau de corde, un tas de bûches ou de branches, des sacs, la jarre, le seau ; de la place libre pour poser ; sa
+    porte vers la salle ; une fenêtre à l'est.
+- **La place pour vivre** : les passages font au moins 1 m ; la salle garde un grand espace libre autour du foyer, la réserve de quoi
+  poser des tas.
+- **Ajusté sur l'essai du plan** (pixel-artist, `.art-preview/essai-maison-xeros.png`, rangées 3 à 6) :
+  - les cloisons reposent sur un solin comme les murs (50 cm, pierres brutes), coupé aux portes intérieures (la terre battue passe
+    dessous) : les surfaces libres sont de **2,70 × 2,70 m** (chambre, coin de Xéros), **5,90 × 5,90 m** (salle), **2,70 × 5,90 m**
+    (réserve) ;
+  - la table est contre le solin nord (y 30–120), le banc juste dessous (y 125–155) : 1,15 m de passage jusqu'au foyer ;
+  - dans la chambre, le coffre est contre le mur nord, à côté du lit ;
+  - la réserve : le billot et la cognée plantée (`chopping-block-axe`), les petits outils au sol le long du mur nord, les deux sacs
+    et la jarre contre le mur est, le seau près de la porte, le tas de bûches le long du mur sud, le milieu libre ;
+  - les portes s'ouvrent vers le dedans, chaque porte intérieure vers la pièce qu'elle ferme ;
+  - **à 45°, le faîte du chaume est à 6,58 m** (7,19 m à 50°) ; avec l'appui à 80 cm, les trois fenêtres du sud et la porte se lisent
+    sous l'égout ; vue de l'ouest, le pignon entier et son trou de fumée sous la rive ; les entraits retroussés sur les deux fermes
+    des cloisons ;
+  - l'intérieur se voit sans toit, le mur sud et la cloison est-ouest coupés à 70 cm (sinon la cloison cache la chambre).
+
+**Validé par Grégoire (2 novembre)** : les murs et le toit de l'essai (« parfaits, j'adore ») ; les pignons en torchis chaulé, le trou
+de fumée à l'ouest ; l'appui des fenêtres à 80 cm, le toit effacé quand Xéros est dessous ; la nouvelle porte de 0,90 × 1,80 m.
 
 #### Ce qui existe déjà et ce qui manque, pièce par pièce, en suivant la chaîne de chaque matière
 
@@ -732,6 +744,8 @@ de journaliers. Toutes les mesures tombent sur la grille de 1,60 m du solin (un 
 | **Chaux** | le calcaire (la pierre commune) cuit au four à chaux (vers 900 °C), puis éteint à l'eau ; dilué, le lait de chaux | le calcaire (la roche, les pierres brutes), l'eau | **la chaux vive** et **la chaux éteinte** (deux objets, leur masse par leur matière, une matière `lime` dans matters.json) ; la transformation **« cuire la chaux »** (`soon` : le four à chaux viendra, poste à part) ; **« éteindre la chaux »** (avec le seau d'eau) ; le **badigeon** posé au pinceau (un geste, « à venir » au début) | matière, objet portable |
 | **Pan de mur** | les quatre couches ci-dessus, dans une travée | les pièces qui se posent par étapes dans un chantier (`plans.json`), les places qui acceptent une pièce | **le pan de mur en quatre étapes** (plein, avec porte, avec fenêtre) : un élément qui garde ses couches de dessous dans ses données (`layers` : palançons, clayonnage, torchis, chaux) et se dessine par sa couche du dessus ; l'étape d'avant montre les couches qu'elle a | élément (nouveau) |
 | Porte | planches | la porte en planches (`plank-door`, 1 × 2 m, qui s'ouvre avec E, `swing.passage`) | une **porte de 0,90 × 1,80 m** (la même, plus petite : `variants` ou une seconde clé) et son **cadre** dans le pan de mur | élément |
+| **Cloison** | comme le pan de mur | le pan de mur ci-dessus | rien de plus que le pan de mur : une cloison est un pan de mur posé dedans (chaulé des deux côtés), et une **porte intérieure de 0,80 × 1,80 m** | élément |
+| **Banc** | planches | la table, les tabourets | **le banc** (2 m, en planches, dessiné dans l'essai en bois des meubles comme la table) : un meuble, ses vues (`symmetric`), sa masse, son métier | meuble |
 | Fenêtres | planches | le volet en planches (`plank-shutter`, 60 × 40, qui s'ouvre) | le **pan de mur avec fenêtre** (allège, linteau, l'ouverture qu'un volet ferme), lu par les intérieurs comme une fenêtre | élément |
 | **Chevrons** | perches | la perche (`pole` ronde), le chevron de l'abri (`shed-rafter`, en planches) | rien pour la pièce (une perche de 4,50 m) ; **la pose en pente** des perches sur les sablières, que le mode construction sait déjà pour les pans de toit (`pitch`), pas encore pour une pièce de bois | pièce de bois |
 | **Lattes** | perche ou chêne fendu en lattes | la fente | **la latte** : un aspect de la perche fendue en quatre, de 3 × 4 cm (wood.json), posée en travers des chevrons tous les 30 cm | pièce de bois (un aspect) |
@@ -771,7 +785,7 @@ vues ; le foyer est un meuble.
 - **Les vues nord-sud de la paillasse et de la table**, qui manquaient au jeu (`VIEWS_TODO`, « au chantier de la maison »), sont
   proposées dans l'essai (`PALLET_NS`, `TABLE_NS`), au gabarit.
 
-#### Choix proposés (à valider par Grégoire)
+#### Choix (validés par Grégoire le 2 novembre, sauf la pente de 45°, proposée avec l'agrandissement)
 
 - **Les pignons en torchis chaulé sur clayonnage**, comme les murs (la même chaîne, une maison d'une seule matière ; les planches
   restent pour la grange). Le triangle se monte en étapes comme un pan de mur.
@@ -802,6 +816,10 @@ vues ; le foyer est un meuble.
    (`src/content/plans/maison-xeros.json`) ; aperçu `.art-preview/maison-xeros.png` (la maison montée étape par étape).
 4. **L'intérieur calculé** (`world/interior.ts`) : la pièce close par les pans de mur, les fenêtres lues dans les pans à fenêtre, le
    foyer, la lumière ; `npm run test:interieur` y entre.
+4 bis. **Les intérieurs à plusieurs pièces** : aujourd'hui `world/interior.ts` trouve une pièce, le rectangle clos. Avec des cloisons
+   il faut une vue de toute la maison où les cloisons sont coupées comme les murs (proposé : comme l'essai), le passage d'une pièce à
+   l'autre par les portes intérieures sans fondu, et la lumière de chaque fenêtre dans sa pièce ; les fermes posées sur les cloisons
+   (l'entrait retroussé, une place du plan) ; la fumée d'un foyer sur 13 m (un second trou au pignon est, si le premier ne suffit pas).
 5. **Le remplacement** :
    - sur la carte de la ferme, l'ancienne chaumière (`cottage`) cède la place à un rectangle `Plan` (la maison posée) ;
    - l'ancien intérieur (la carte Tiled `maison`) est remplacé par l'intérieur calculé ;

@@ -124,22 +124,22 @@ export function polyPrism(x0: number, x1: number, sec: [number, number][], p: Pa
   return out;
 }
 
-/** Centre de la maison (axe des poteaux), autour duquel on tourne la vue. */
+/** Centre de la première maison (axe des poteaux), autour duquel on tourne la vue ; un plan tourne autour de son milieu. */
 export const CENTER: [number, number] = [64, 48];
 /** Une vue : 0 du sud (le jeu), 1 de l'ouest, 2 du nord, 3 de l'est (le côté vu passe au sud de la vue). */
 export type Rot = 0 | 1 | 2 | 3;
-export function rotP(p: V3, r: Rot): V3 {
-  const [cx, cy] = CENTER, [x, y, z] = p;
+export function rotP(p: V3, r: Rot, c: [number, number] = CENTER): V3 {
+  const [cx, cy] = c, [x, y, z] = p;
   if (r === 1) return [cx + (y - cy), cy - (x - cx), z];
   if (r === 2) return [2 * cx - x, 2 * cy - y, z];
   if (r === 3) return [cx - (y - cy), cy + (x - cx), z];
   return p;
 }
 const rotV = (v: V3, r: Rot): V3 => (r === 1 ? [v[1], -v[0], v[2]] : r === 2 ? [-v[0], -v[1], v[2]] : r === 3 ? [-v[1], v[0], v[2]] : v);
-export const rotQuads = (qs: Quad[], r: Rot): Quad[] => qs.map((q) => ({ ...q, o: rotP(q.o, r), u: rotV(q.u, r), v: rotV(q.v, r), n: rotV(q.n, r) }));
+export const rotQuads = (qs: Quad[], r: Rot, c: [number, number] = CENTER): Quad[] => qs.map((q) => ({ ...q, o: rotP(q.o, r, c), u: rotV(q.u, r), v: rotV(q.v, r), n: rotV(q.n, r) }));
 /** Un rectangle au sol, tourné : [x0, x1, y0, y1]. */
-export function rotRect(r4: [number, number, number, number], r: Rot): [number, number, number, number] {
-  const a = rotP([r4[0], r4[2], 0], r), b = rotP([r4[1], r4[3], 0], r);
+export function rotRect(r4: [number, number, number, number], r: Rot, c: [number, number] = CENTER): [number, number, number, number] {
+  const a = rotP([r4[0], r4[2], 0], r, c), b = rotP([r4[1], r4[3], 0], r, c);
   return [Math.min(a[0], b[0]), Math.max(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[1], b[1])];
 }
 
@@ -440,17 +440,17 @@ export function wattle(seed: number, w: number): Tex {
 export const voidTex: Tex = (_s, t, c) => (t > c.h - 2 ? '@' : 'o');
 
 /** La porte en planches (90 × 180 cm) : quatre planches debout, joints, chevilles des traverses du dos, bas mouillé, le loquet. */
-export function doorTex(seed: number): Tex {
-  const joints = [4, 8, 13];
+export function doorTex(seed: number, w = 18): Tex {
+  const joints = w === 18 ? [4, 8, 13] : [4, 8, 12], pegs = w === 18 ? [2, 6, 11, 15] : [2, 6, 10, 14], lx = w - 4;
   return (s, t, c) => {
     const i = Math.floor(s), j = Math.floor(t), h = Math.floor(c.h);
     if (c.face === 'top') return '^';
     if (joints.includes(i)) return '@';
     let k = joints.includes(i - 1) || i === 0 ? '^' : '*';
     if (k === '*' && dash(seed, i, j, 0.6)) k = '%';
-    if ((j === 7 || j === h - 8) && [2, 6, 11, 15].includes(i)) k = '@';
-    if (i >= 14 && i <= 15 && j === 17) k = '&';
-    if (i === 15 && j === 16) k = '@';
+    if ((j === 7 || j === h - 8) && pegs.includes(i)) k = '@';
+    if (i >= lx && i <= lx + 1 && j === 17) k = '&';
+    if (i === lx + 1 && j === 16) k = '@';
     return j < 2 ? darker(k) : k;
   };
 }
@@ -531,32 +531,80 @@ export function gableTex(inner: Tex, apex: (s: number) => number, hole?: (s: num
 export type WallStage = 0 | 1 | 2 | 3 | 4;
 /** Étape du toit : 0 aucun, 1 chevrons (et faîtière), 2 lattes, 3 une couche de chaume, 4 chaume plein, 5 faîtage de terre. */
 export type RoofStage = 0 | 1 | 2 | 3 | 4 | 5;
-export interface HouseOpts { rot: Rot; wall: WallStage; roof: RoofStage; cut?: boolean }
+export interface HouseOpts { rot: Rot; wall: WallStage; roof: RoofStage; cut?: boolean; plan?: Plan; pitch?: number }
 
-type Side = 'S' | 'N' | 'E' | 'W';
-type Bay = 'plain' | 'door' | 'window';
-const SIDES: Record<Side, { c: number; posts: number[]; ew: boolean; out: 1 | -1; bays: Bay[] }> = {
-  S: { c: 96, posts: [0, 32, 64, 96, 128], ew: true, out: 1, bays: ['plain', 'door', 'plain', 'window'] },
-  N: { c: 0, posts: [0, 32, 64, 96, 128], ew: true, out: -1, bays: ['plain', 'window', 'plain', 'plain'] },
-  W: { c: 0, posts: [0, 32, 64, 96], ew: false, out: -1, bays: ['plain', 'plain', 'plain'] },
-  E: { c: 128, posts: [0, 32, 64, 96], ew: false, out: 1, bays: ['plain', 'plain', 'plain'] },
+export type Side = 'S' | 'N' | 'E' | 'W';
+export type Bay = 'plain' | 'door' | 'window' | 'inner-door';
+/**
+ * Un pan de mur (un mur du tour ou une cloison) : est-ouest ou nord-sud (`ew`), sur l'axe `c`, ses poteaux le long de lui (`posts`,
+ * le premier et le dernier aux bouts), ses travées dans l'ordre (`bays`), le côté du dehors (`out`, +1 vers le sud ou l'est).
+ * `side` : un mur du tour (S, N, W, E) ; absent : une cloison. `ends` : ses poteaux de bout sont déjà ceux d'un autre mur.
+ */
+export interface WallLine { side?: Side; ew: boolean; c: number; posts: number[]; bays: Bay[]; out: 1 | -1; ends?: [boolean, boolean]; inner?: number[] }
+/**
+ * Un plan (px du jeu, 5 cm) : les axes des poteaux font L × D ; les murs du tour et les cloisons ; la pente du toit ; le bas des
+ * baies des fenêtres (`sill`, en px depuis le sol) ; la largeur de la porte d'entrée et des portes intérieures.
+ */
+export interface Plan { L: number; D: number; pitch: number; sill: number; walls: WallLine[]; doorW: number; innerDoorW: number; trusses?: number[] }
+
+const posts = (n: number) => Array.from({ length: n + 1 }, (_, k) => k * 32);
+/** La première maison de l'essai (rangées 1 et 2 de la planche, validées par Grégoire) : 6,40 × 4,80 m, 50°, appui à 1 m. */
+export const PLAN_SMALL: Plan = {
+  L: 128, D: 96, pitch: 50, sill: 20, doorW: 18, innerDoorW: 16,
+  walls: [
+    { side: 'S', ew: true, c: 96, posts: posts(4), out: 1, bays: ['plain', 'door', 'plain', 'window'] },
+    { side: 'N', ew: true, c: 0, posts: posts(4), out: -1, bays: ['plain', 'window', 'plain', 'plain'] },
+    { side: 'W', ew: false, c: 0, posts: posts(3), out: -1, bays: ['plain', 'plain', 'plain'], ends: [true, true] },
+    { side: 'E', ew: false, c: 128, posts: posts(3), out: 1, bays: ['plain', 'plain', 'plain'], ends: [true, true] },
+  ],
+};
+/**
+ * La maison agrandie (demande de Grégoire, 2 novembre) : 12,80 × 6,40 m entre les axes, 8 travées sur 4, appui des fenêtres à
+ * 80 cm, pente proposée 45°. Cloisons : x = 320 et x = 960 sur toute la profondeur (elles portent les deux fermes), y = 320 de
+ * x = 0 à 320. Pièces : la chambre de la mère (nord-ouest), le coin de Xéros (sud-ouest), la salle commune (milieu), la réserve (est).
+ */
+export const PLAN_LONG: Plan = {
+  L: 256, D: 128, pitch: 45, sill: 16, doorW: 18, innerDoorW: 16, trusses: [64, 192],
+  walls: [
+    { side: 'S', ew: true, c: 128, posts: posts(8), out: 1, bays: ['window', 'plain', 'window', 'door', 'plain', 'window', 'plain', 'plain'] },
+    { side: 'N', ew: true, c: 0, posts: posts(8), out: -1, bays: ['plain', 'window', 'plain', 'window', 'plain', 'plain', 'plain', 'plain'] },
+    { side: 'W', ew: false, c: 0, posts: posts(4), out: -1, bays: ['plain', 'plain', 'plain', 'plain'], ends: [true, true] },
+    { side: 'E', ew: false, c: 256, posts: posts(4), out: 1, bays: ['plain', 'window', 'plain', 'plain'], ends: [true, true] },
+    // cloison de la chambre et du coin de Xéros (x = 320) : la porte de la chambre (y 160-320), celle du coin (y 320-480)
+    { ew: false, c: 64, posts: posts(4), out: 1, bays: ['plain', 'inner-door', 'inner-door', 'plain'], ends: [true, true] },
+    // cloison de la réserve (x = 960) : sa porte (y 320-480)
+    { ew: false, c: 192, posts: posts(4), out: 1, bays: ['plain', 'plain', 'inner-door', 'plain'], ends: [true, true] },
+    // entre la chambre et le coin de Xéros (y = 320, x 0-320)
+    { ew: true, c: 64, posts: posts(2), out: 1, bays: ['plain', 'plain'], ends: [true, true] },
+  ],
 };
 
-const RAD = (50 * Math.PI) / 180;
-const TAN = Math.tan(RAD), SIN = Math.sin(RAD), COS = Math.cos(RAD);
-/** Dessous des chevrons, à la distance d de l'axe du faîtage (y = 48) : z = 52 sur l'axe des murs (d = 48). */
-const zU = (d: number) => 52 + (48 - d) * TAN;
-/** Un point d'un versant (sud : +1, nord : −1) : sur le dessous des chevrons à la distance d du faîtage, plus k le long de la normale. */
-const slopePt = (side: 1 | -1, x: number, d: number, k: number): V3 => [x, 48 + side * (d + k * SIN), zU(d) + k * COS];
-/** Le chaume : dessous des chevrons + 3 (chevron et latte) à + 11 (40 cm de paille). Égout coupé d'aplomb à 62 px du faîtage (y = 110). */
-const TH_LO = 3, TH_HI = 11, EAVE = 62;
-const dAt = (y: number, k: number) => y - k * SIN; // la distance d du point de l'égout (d + k sin = y)
-/** Le toit dépasse les pignons de 20 cm (la rive : au-delà, elle cacherait le trou de fumée vu de l'ouest). */
-const RX0 = -6, RX1 = 134;
-/** Le trou de fumée du pignon ouest : un triangle, pointe en haut, de 50 cm de base (z = 96) et 40 cm de haut, sous le faîte. */
-const HOLE_Z = 96, HOLE_H = 8, HOLE_W = 5;
-/** Sur la face du pignon ouest (s : y + 2, t : z − 52). */
-const inHole = (s: number, t: number) => t >= HOLE_Z - 52 && Math.abs(s - 50) < (HOLE_Z - 52 + HOLE_H - t) * (HOLE_W / HOLE_H);
+/** Les portes d'un plan : sur quel mur, de quelle à quelle position le long de lui (jambages compris), si c'est l'entrée. */
+export function doorsOf(plan: Plan): { w: WallLine; m: number; half: number; entry: boolean }[] {
+  const out: { w: WallLine; m: number; half: number; entry: boolean }[] = [];
+  for (const w of plan.walls) w.bays.forEach((b, k) => {
+    if (b !== 'door' && b !== 'inner-door') return;
+    const entry = b === 'door', dw = entry ? plan.doorW : plan.innerDoorW;
+    out.push({ w, m: (w.posts[k] + w.posts[k + 1]) / 2, half: dw / 2 + 3, entry });
+  });
+  return out;
+}
+
+/** La géométrie du toit d'un plan à sa pente. */
+function roofGeom(plan: Plan, pitch: number) {
+  const RAD = (pitch * Math.PI) / 180, TAN = Math.tan(RAD), SIN = Math.sin(RAD), COS = Math.cos(RAD), H2 = plan.D / 2;
+  /** Dessous des chevrons, à la distance d de l'axe du faîtage : z = 52 sur l'axe des murs (d = H2). */
+  const zU = (d: number) => 52 + (H2 - d) * TAN;
+  /** Un point d'un versant (sud : +1, nord : −1) : sur le dessous des chevrons à la distance d du faîtage, plus k le long de la normale. */
+  const slopePt = (side: 1 | -1, x: number, d: number, k: number): V3 => [x, H2 + side * (d + k * SIN), zU(d) + k * COS];
+  /** Le trou de fumée : 13 px sous le dessous du faîte. */
+  const holeZ = Math.round(zU(0) - 13.2);
+  return { TAN, SIN, COS, H2, zU, slopePt, holeZ };
+}
+/** Le chaume : dessous des chevrons + 3 (chevron et latte) à + 11 (40 cm de paille). Égout coupé d'aplomb 14 px au-delà de l'axe du mur. */
+const TH_LO = 3, TH_HI = 11;
+/** Le trou de fumée du pignon ouest : un triangle, pointe en haut, de 50 cm de base et 40 cm de haut, sous le faîte. */
+const HOLE_H = 8, HOLE_W = 5;
 
 /** Le remplissage d'un pan à son étape. */
 function infillTex(stage: WallStage, seed: number, w: number): Tex {
@@ -565,97 +613,113 @@ function infillTex(stage: WallStage, seed: number, w: number): Tex {
 
 /** Les pièces de la maison, dans le monde (puis tournées dans la vue). */
 function houseQuads(o: HouseOpts): Quad[] {
+  const plan = o.plan ?? PLAN_SMALL, L = plan.L, D = plan.D, sill = plan.sill;
   const Q: Quad[] = [];
   const cutZ = o.cut ? 14 : Infinity;
   const timberP = (name: string, prio: number) => part(name, prio, 'K', 'full', { eave: true });
-  /** Une boîte sur un côté : a le long du mur, k en travers (positif vers le dehors), z en hauteur ; le mur sud coupé en mode coupe. */
-  const wb = (side: Side, a0: number, a1: number, k0: number, k1: number, z0: number, z1: number, p: Part, tex: Tex | { top: Tex; side: Tex }) => {
-    if (side === 'S' && z0 >= cutZ) return;
-    if (side === 'S') z1 = Math.min(z1, cutZ);
-    const S = SIDES[side], b0 = S.c + S.out * k0, b1 = S.c + S.out * k1;
+  /** Une boîte sur un mur : a le long du mur, k en travers (positif vers le dehors), z en hauteur ; le mur sud coupé en mode coupe. */
+  /** Coupés en mode coupe : le mur sud et les cloisons est-ouest (elles cacheraient la pièce au nord d'elles). */
+  const cutW = (W: WallLine) => W.side === 'S' || (!W.side && W.ew);
+  const wb = (W: WallLine, a0: number, a1: number, k0: number, k1: number, z0: number, z1: number, p: Part, tex: Tex | { top: Tex; side: Tex }) => {
+    if (cutW(W) && z0 >= cutZ) return;
+    if (cutW(W)) z1 = Math.min(z1, cutZ);
+    const b0 = W.c + W.out * k0, b1 = W.c + W.out * k1;
     const [c0, c1] = [Math.min(b0, b1), Math.max(b0, b1)];
-    Q.push(...(S.ew ? box(a0, a1, c0, c1, z0, z1, p, tex) : box(c0, c1, a0, a1, z0, z1, p, tex)));
+    Q.push(...(W.ew ? box(a0, a1, c0, c1, z0, z1, p, tex) : box(c0, c1, a0, a1, z0, z1, p, tex)));
   };
   let seed = 100;
-  const fill = (side: Side, a0: number, a1: number, z0: number, z1: number) => {
+  const fill = (W: WallLine, a0: number, a1: number, z0: number, z1: number) => {
     if (a1 - a0 < 1 || z1 - z0 < 1) return;
     const sd = seed++;
     if (o.wall === 1) {
-      for (const x of stickPositions(a1 - a0)) wb(side, a0 + x, a0 + x + 2, -1, 1, z0, z1, part('palançon', 2, 'K', 'thin', { eave: true }), stick(sd + x));
+      for (const x of stickPositions(a1 - a0)) wb(W, a0 + x, a0 + x + 2, -1, 1, z0, z1, part('palançon', 2, 'K', 'thin', { eave: true }), stick(sd + x));
     } else if (o.wall >= 2) {
       const k = o.wall === 2 ? 1.5 : 2;
       const p = part(o.wall === 2 ? 'clayonnage' : 'torchis', 1, ';', 'none', { eave: true });
-      wb(side, a0, a1, -k, k, z0, z1, p, infillTex(o.wall, sd, a1 - a0));
+      wb(W, a0, a1, -k, k, z0, z1, p, infillTex(o.wall, sd, a1 - a0));
     }
   };
+  const doors = doorsOf(plan);
 
-  for (const side of ['S', 'N', 'W', 'E'] as Side[]) {
-    const S = SIDES[side], ew = S.ew;
-    const end = ew ? 130 : 94, start = ew ? -2 : 2;
-    // traverse basse, sablière
+  for (const W of plan.walls) {
+    const outer = !!W.side, last = W.posts[W.posts.length - 1];
+    // les bouts : un mur du tour est-ouest va de face à face des poteaux d'angle ; les autres s'arrêtent contre eux
+    const start = W.ends ? W.posts[0] + 2 : W.posts[0] - 2, end = W.ends ? last - 2 : last + 2;
+    const k0 = W.c;
+    // traverse basse, coupée aux portes
     const sole = timberP('traverse basse', 4);
-    if (side === 'S') { wb(side, start, 36, -2, 2, 8, 12, sole, timber(11)); wb(side, 60, end, -2, 2, 8, 12, sole, timber(12)); }
-    else wb(side, start, end, -2, 2, 8, 12, sole, timber(13 + S.c));
-    if (!o.cut || side !== 'S') {
-      const pegs: [number, number][] = S.posts.map((p) => [p - start, 1] as [number, number]);
-      wb(side, start, end, -2, 2, 48, 52, timberP('sablière', 7), timber(21 + S.c, pegs));
+    const cuts = doors.filter((d) => d.w === W).map((d) => [d.m - d.half, d.m + d.half]);
+    if (cuts.length) {
+      let a = start, n = 0;
+      for (const [g0, g1] of cuts) { wb(W, a, g0, -2, 2, 8, 12, sole, timber(11 + n++)); a = g1; }
+      wb(W, a, end, -2, 2, 8, 12, sole, timber(11 + n));
+    } else wb(W, start, end, -2, 2, 8, 12, sole, timber(13 + k0 + (outer ? 0 : 500)));
+    if (!o.cut || !cutW(W)) {
+      const pegs: [number, number][] = W.posts.map((p) => [p - start, 1] as [number, number]);
+      wb(W, start, end, -2, 2, 48, 52, timberP('sablière', 7), timber(21 + k0 + (outer ? 0 : 500), pegs));
     }
-    // poteaux (les angles, une fois : sur les murs sud et nord)
-    for (const p of S.posts) {
-      if (!ew && (p === 0 || p === 96)) continue;
-      wb(side, p - 2, p + 2, -2, 2, 12, 48, timberP('poteau', 5), timber(31 + p, [[2, 33], [1, 2]]));
-    }
+    // poteaux (les angles et les croisements, une fois)
+    W.posts.forEach((p, i) => {
+      if (W.ends && (i === 0 || i === W.posts.length - 1)) return;
+      wb(W, p - 2, p + 2, -2, 2, 12, 48, timberP('poteau', 5), timber(31 + p + (outer ? 0 : 7 * k0), [[2, 33], [1, 2]]));
+    });
     // travées
-    S.bays.forEach((bay, b) => {
-      const a0 = S.posts[b] + 2, a1 = S.posts[b + 1] - 2, m = (S.posts[b] + S.posts[b + 1]) / 2;
-      if (bay === 'plain') fill(side, a0, a1, 12, 48);
-      else if (bay === 'door') {
-        for (const [j0, j1] of [[36, 39], [57, 60]]) wb(side, j0, j1, -2, 2, 4, 48, timberP('huisserie', 6), timber(41 + j0, [[1, 40], [1, 3]]));
-        fill(side, a0, 36, 12, 48); fill(side, 60, a1, 12, 48);
-        if (!o.cut) {
-          wb(side, 39, 57, -2, 2, 40, 43, timberP('linteau', 6), timber(45));
-          fill(side, 39, 57, 43, 48);
-          wb(side, 39, 57, -1, 0, 4, 40, part('porte', 3, 'K', 'full', { eave: true }), doorTex(7));
+    W.bays.forEach((bay, b) => {
+      const a0 = W.posts[b] + 2, a1 = W.posts[b + 1] - 2, m = (W.posts[b] + W.posts[b + 1]) / 2;
+      if (bay === 'plain') fill(W, a0, a1, 12, 48);
+      else if (bay === 'door' || bay === 'inner-door') {
+        const entry = bay === 'door', h = (entry ? plan.doorW : plan.innerDoorW) / 2, zb = entry ? 4 : 0;
+        const d0 = m - h, d1 = m + h;
+        for (const [j0, j1] of [[d0 - 3, d0], [d1, d1 + 3]]) wb(W, j0, j1, -2, 2, zb, 48, timberP('huisserie', 6), timber(41 + j0, [[1, 40], [1, 3]]));
+        fill(W, a0, d0 - 3, 12, 48); fill(W, d1 + 3, a1, 12, 48);
+        if (!o.cut || !cutW(W)) {
+          wb(W, d0, d1, -2, 2, zb + 36, zb + 39, timberP('linteau', 6), timber(45 + m - 48));
+          fill(W, d0, d1, zb + 39, 48);
+          wb(W, d0, d1, -1, 0, zb, zb + 36, part('porte', 3, 'K', 'full', { eave: true }), doorTex(7 + m - 48, d1 - d0));
         }
+        // le seuil de l'entrée : une dalle de calcaire à la place du solin
+        if (entry && W.side === 'S') Q.push(...box(d0 - 3, d1 + 3, D - 5, D + 5, 0, 4, part('seuil', 3, '~', 'full'), slabTex(3)));
       } else {
         const T = timberP('fenêtre', 6);
-        wb(side, a0, a1, -2, 2, 18, 20, T, timber(51 + m));
-        wb(side, a0, a1, -2, 2, 28, 30, T, timber(52 + m));
-        wb(side, m - 7, m - 5, -2, 2, 20, 28, part('montant', 6, 'K', 'thin', { eave: true }), timber(53 + m));
-        wb(side, m + 5, m + 7, -2, 2, 20, 28, part('montant', 6, 'K', 'thin', { eave: true }), timber(54 + m));
-        fill(side, a0, a1, 12, 18); fill(side, a0, a1, 30, 48); fill(side, a0, m - 7, 20, 28); fill(side, m + 7, a1, 20, 28);
-        if (!o.cut) wb(side, m - 5, m + 5, -2.4, -2, 20, 28, part('baie', 0, 'o', 'none'), voidTex);
+        wb(W, a0, a1, -2, 2, sill - 2, sill, T, timber(51 + m));
+        wb(W, a0, a1, -2, 2, sill + 8, sill + 10, T, timber(52 + m));
+        wb(W, m - 7, m - 5, -2, 2, sill, sill + 8, part('montant', 6, 'K', 'thin', { eave: true }), timber(53 + m));
+        wb(W, m + 5, m + 7, -2, 2, sill, sill + 8, part('montant', 6, 'K', 'thin', { eave: true }), timber(54 + m));
+        fill(W, a0, a1, 12, sill - 2); fill(W, a0, a1, sill + 10, 48); fill(W, a0, m - 7, sill, sill + 8); fill(W, m + 7, a1, sill, sill + 8);
+        if (!o.cut) wb(W, m - 5, m + 5, -2.4, -2, sill, sill + 8, part('baie', 0, 'o', 'none'), voidTex);
       }
     });
   }
-  // le seuil : une dalle de calcaire à la place du solin, sous la porte
-  Q.push(...box(36, 60, 91, 101, 0, 4, part('seuil', 3, '~', 'full'), slabTex(3)));
 
   if (o.cut || o.roof === 0) return Q;
 
   // ---------- le toit ----------
+  const { TAN, SIN, COS, H2, zU, slopePt, holeZ } = roofGeom(plan, o.pitch ?? plan.pitch);
+  const RX0 = -6, RX1 = L + 6; // le toit dépasse les pignons de 20 cm
+  const TIP = H2 + 12, EAVE = H2 + 14; // le bout des chevrons, l'égout
+  const dAt = (y: number, k: number) => y - k * SIN;
   const roofP = (name: string, prio: number, dark: string, outline: Outline = 'full') => part(name, prio, dark, outline, { roof: true });
   const X: V3 = [1, 0, 0];
   for (const side of [1, -1] as const) {
     const nrm: V3 = [0, side * SIN, COS];
     // chevrons : des perches de 10 cm tous les 40 cm, croisées au faîte, 50 cm au-delà du mur
-    for (let x = 0; x <= 128; x += 8) {
-      const a = slopePt(side, x, 60, 1), b = slopePt(side, x, -3, 1);
+    for (let x = 0; x <= L; x += 8) {
+      const a = slopePt(side, x, TIP, 1), b = slopePt(side, x, -3, 1);
       Q.push(...prism(a, b, X, nrm, 2, 2, roofP('chevron', 8, 'K', 'thin'), pole(x * 3 + side)));
     }
     // lattes : tous les 30 cm le long de la pente, sur les chevrons
     if (o.roof >= 2) {
-      for (let q = 2; q < 60 / COS - 2; q += 6) {
-        const d = 60 - q * COS;
+      for (let q = 2; q < TIP / COS - 2; q += 6) {
+        const d = TIP - q * COS;
         const a = slopePt(side, RX0, d, 2.5), b = slopePt(side, RX1, d, 2.5);
         Q.push(...prism(a, b, unit([0, -side * COS, SIN]), nrm, 1.3, 1, roofP('latte', 9, '%', 'thin'), lath(Math.round(q) + side * 50)));
       }
     }
     // le chaume : une couche (le bas du pan), puis plein
     if (o.roof >= 3) {
-      const y = 48 + side * EAVE;
+      const y = H2 + side * EAVE;
       const dHi = dAt(EAVE, TH_HI), dLo = dAt(EAVE, TH_LO);
-      const dTop = o.roof === 3 ? 34 : -TH_HI * SIN;
+      const dTop = o.roof === 3 ? (H2 * 34) / 48 : -TH_HI * SIN;
       const thatch = roofP('chaume', 10, 'P');
       const A = slopePt(side, RX0, dHi, TH_HI), B = slopePt(side, RX0, dTop, TH_HI);
       Q.push({ o: A, u: [RX1 - RX0, 0, 0], v: sub(B, A), n: nrm, part: thatch, tex: thatchSlope(side > 0 ? 5 : 6), face: 'slope' });
@@ -674,29 +738,32 @@ function houseQuads(o: HouseOpts): Quad[] {
   }
   // la faîtière : une perche dans la fourche des chevrons
   const ridgeZ = zU(0) + 2.2;
-  Q.push(...prism([RX0 + 4, 48, ridgeZ], [RX1 - 4, 48, ridgeZ], [0, 1, 0], [0, 0, 1], 2.4, 2.4, roofP('faîtière', 8, 'K', 'thin'), pole(77)));
+  Q.push(...prism([RX0 + 4, H2, ridgeZ], [RX1 - 4, H2, ridgeZ], [0, 1, 0], [0, 0, 1], 2.4, 2.4, roofP('faîtière', 8, 'K', 'thin'), pole(77)));
   // le faîtage de terre, un bourrelet sur le faîte, ses pieds dans le chaume
   if (o.roof >= 5) {
     const top = zU(-TH_HI * SIN) + TH_HI * COS;
     const prof: [number, number][] = [[6, -6 * TAN + 0.4], [5, -3.6], [3.8, -1.2], [2.4, 0.7], [0.8, 1.7], [-0.8, 1.7], [-2.4, 0.7], [-3.8, -1.2], [-5, -3.6], [-6, -6 * TAN + 0.4]];
-    Q.push(...polyPrism(RX0 - 0.5, RX1 + 0.5, prof.map(([dy, dz]) => [48 + dy, top + dz]), roofP('faîtage', 11, 'e'), earthRidge(31)));
+    Q.push(...polyPrism(RX0 - 0.5, RX1 + 0.5, prof.map(([dy, dz]) => [H2 + dy, top + dz]), roofP('faîtage', 11, 'e'), earthRidge(31)));
   }
   // les pignons, en torchis sur clayonnage chaulé (au stade des murs), le trou de fumée sous le faîte à l'ouest
-  for (const [x, nx] of [[-2, -1], [130, 1]] as const) {
-    const apex = (s: number) => zU(Math.abs(s - 2 - 48)) - 52;
-    const inner = infillTex(o.wall === 0 ? 4 : o.wall, 90 + x, 100);
+  const inHole = (s: number, t: number) => t >= holeZ - 52 && Math.abs(s - (H2 + 2)) < (holeZ - 52 + HOLE_H - t) * (HOLE_W / HOLE_H);
+  const gh = Math.round(H2 * TAN) + 5;
+  for (const [x, nx] of [[-2, -1], [L + 2, 1]] as const) {
+    const apex = (s: number) => zU(Math.abs(s - 2 - H2)) - 52;
+    const inner = infillTex(o.wall === 0 ? 4 : o.wall, 90 + x, D + 4);
     const p = part('pignon', 1, ';', 'none');
     const tex = gableTex(inner, apex, nx < 0 ? inHole : undefined);
-    if (nx < 0) Q.push({ o: [x, -2, 52], u: [0, 100, 0], v: [0, 0, 62], n: [-1, 0, 0], part: p, tex, face: 'W' });
-    else Q.push({ o: [x, 98, 52], u: [0, -100, 0], v: [0, 0, 62], n: [1, 0, 0], part: p, tex: gableTex(inner, (s) => apex(100 - s)), face: 'E' });
-    // l'entrait retroussé, à 1,40 m au-dessus de la sablière
-    const d = 48 - (81 - 52) / TAN;
-    const T = part('entrait', 6, 'K', 'full');
-    Q.push(...box(x - 0 + (nx < 0 ? 0 : -4), x + (nx < 0 ? 4 : 0), 48 - d + 1, 48 + d - 1, 78, 81, T, timber(61 + x)));
+    if (nx < 0) Q.push({ o: [x, -2, 52], u: [0, D + 4, 0], v: [0, 0, gh], n: [-1, 0, 0], part: p, tex, face: 'W' });
+    else Q.push({ o: [x, D + 2, 52], u: [0, -(D + 4), 0], v: [0, 0, gh], n: [1, 0, 0], part: p, tex: gableTex(inner, (s) => apex(D + 4 - s)), face: 'E' });
+  }
+  // les entraits retroussés, à 1,40 m au-dessus de la sablière : aux pignons, et aux fermes que portent les cloisons
+  const dC = H2 - (81 - 52) / TAN;
+  for (const [x0, x1, sd] of [[-2, 2, 59], [L - 2, L + 2, 61 + L + 2], ...(plan.trusses ?? []).map((x) => [x - 2, x + 2, 300 + x])]) {
+    Q.push(...box(x0, x1, H2 - dC + 1, H2 + dC - 1, 78, 81, part('entrait', 6, 'K', 'full'), timber(sd)));
   }
   // le trou de fumée : une traverse sous lui, le noir du comble derrière
-  Q.push(...box(-2, 2, 48 - HOLE_W - 2, 48 + HOLE_W + 2, HOLE_Z - 2, HOLE_Z, part('chevêtre', 6, 'K', 'full'), timber(71)));
-  Q.push({ o: [3, 36, HOLE_Z - 2], u: [0, 24, 0], v: [0, 0, 14], n: [-1, 0, 0], part: part('comble', 0, 'o', 'none'), tex: voidTex, face: 'W' });
+  Q.push(...box(-2, 2, H2 - HOLE_W - 2, H2 + HOLE_W + 2, holeZ - 2, holeZ, part('chevêtre', 6, 'K', 'full'), timber(71)));
+  Q.push({ o: [3, H2 - 12, holeZ - 2], u: [0, 24, 0], v: [0, 0, 14], n: [-1, 0, 0], part: part('comble', 0, 'o', 'none'), tex: voidTex, face: 'W' });
   return Q;
 }
 
@@ -705,26 +772,67 @@ function houseQuads(o: HouseOpts): Quad[] {
 const kit = wallKit(gameImage);
 const SOLIN = part('solin', 2, 'o', 'none');
 
-/** Les images du solin dans la vue : les deux murs « est-ouest de la vue » pleine longueur, les bandes de côté entre eux ; le seuil coupe celui où il est. */
-function solinBoards(r: Rot, seed: number): Board[] {
-  const R = rotRect([-5, 133, -5, 101], r), G = rotRect([36, 60, 91, 101], r);
-  const [X0, X1, Y0, Y1] = R, out: Board[] = [];
+/**
+ * Les images du solin dans la vue : les deux murs « est-ouest de la vue » pleine longueur, les bandes de côté entre eux ; sous les
+ * cloisons, le même solin ; les portes le coupent (le seuil de l'entrée, le sol de terre battue aux portes intérieures). Un bout de
+ * bande qui s'arrête à une porte montre sa tête (sa face au sud).
+ */
+function solinBoards(plan: Plan, r: Rot, seed: number): Board[] {
+  const L = plan.L, D = plan.D, c: [number, number] = [L / 2, D / 2];
+  const out: Board[] = [];
   const run = (x0: number, x1: number, y0: number, sd: number) => {
     if (x1 - x0 < 4) return;
     const g = kit.highWall('rough', sd, { length: x1 - x0, face: 8, top: 10 }, { left: 'head', right: 'head' });
     out.push({ grid: g, pal: PAL, x: x0, y: y0 - 8, depth: (row) => (row < 10 ? y0 + row + 0.5 : y0 + 10), part: SOLIN });
   };
-  const band = (x0: number, y0: number, y1: number, sd: number) => {
+  const band = (x0: number, y0: number, y1: number, sd: number, head = false) => {
     if (y1 - y0 < 2) return;
-    const g = kit.highWall('rough', sd, { length: 10, face: 4, top: y1 - y0 + 4, axis: 'ns' }, { left: 'head', right: 'head' }).slice(0, y1 - y0);
-    out.push({ grid: g, pal: PAL, x: x0, y: y0 - 8, depth: (row) => y0 + row + 0.5, part: SOLIN });
+    const rows = y1 - y0;
+    const g = head
+      ? kit.highWall('rough', sd, { length: 10, face: 8, top: rows - 8 + 0, axis: 'ns' }, { left: 'head', right: 'head' })
+      : kit.highWall('rough', sd, { length: 10, face: 4, top: rows + 4, axis: 'ns' }, { left: 'head', right: 'head' }).slice(0, rows);
+    // une bande à tête : son dessus jusqu'à y1 − 8 (la face au bout couvre les 8 dernières rangées à l'écran, comme un est-ouest)
+    const top = head ? rows - 8 : rows;
+    out.push({ grid: g, pal: PAL, x: x0, y: y0 - 8, depth: (row) => (row < top ? y0 + row + 0.5 : y1), part: SOLIN });
   };
-  for (const [y0, sd] of [[Y1 - 10, seed], [Y0, seed + 1]] as const) {
-    if (G[2] >= y0 - 0.5 && G[3] <= y0 + 10.5) { run(X0, G[0], y0, sd); run(G[1], X1, y0, sd + 7); } else run(X0, X1, y0, sd);
+  /** Un solin du monde (rectangle et ses portes), dans la vue. */
+  const piece = (rect: [number, number, number, number], gaps: [number, number, number, number][], sd: number, alongView: 'x' | 'y' | 'auto') => {
+    const R = rotRect(rect, r, c), G = gaps.map((g) => rotRect(g, r, c));
+    const ewView = alongView === 'auto' ? R[1] - R[0] > R[3] - R[2] : alongView === 'x';
+    if (ewView) {
+      let a = R[0], k = 0;
+      for (const g of [...G].sort((p, q) => p[0] - q[0])) { run(a, g[0], R[2], sd + 7 * k++); a = g[1]; }
+      run(a, R[1], R[2], sd + 7 * k);
+    } else {
+      let a = R[2], k = 0;
+      for (const g of [...G].sort((p, q) => p[2] - q[2])) { band(R[0], a, g[2], sd + 7 * k++, true); a = g[3]; }
+      band(R[0], a, R[3], sd + 7 * k);
+    }
+  };
+  // le tour : dans la vue, les deux longs de la vue pleine longueur, les côtés entre eux
+  const ring = rotRect([-5, L + 5, -5, D + 5], r, c);
+  const [X0, X1, Y0, Y1] = ring;
+  const doors = doorsOf(plan);
+  const gapWorld = (d: (typeof doors)[number]): [number, number, number, number] =>
+    d.w.ew ? [d.m - d.half, d.m + d.half, d.w.c - 5, d.w.c + 5] : [d.w.c - 5, d.w.c + 5, d.m - d.half, d.m + d.half];
+  const gaps = doors.map(gapWorld).map((g) => rotRect(g, r, c));
+  const inRect = (g: number[], x0: number, x1: number, y0: number, y1: number) => g[0] >= x0 - 0.5 && g[1] <= x1 + 0.5 && g[2] >= y0 - 0.5 && g[3] <= y1 + 0.5;
+  const unrot = (v: [number, number, number, number]): [number, number, number, number] => rotRect(v, ((4 - r) % 4) as Rot, c);
+  const ringPieces: [[number, number, number, number], 'x' | 'y', number][] = [
+    [[X0, X1, Y1 - 10, Y1], 'x', seed], [[X0, X1, Y0, Y0 + 10], 'x', seed + 1],
+    [[X0, X0 + 10, Y0 + 10, Y1 - 10], 'y', seed + 2], [[X1 - 10, X1, Y0 + 10, Y1 - 10], 'y', seed + 3],
+  ];
+  for (const [v, along, sd] of ringPieces) {
+    const gs = gaps.filter((g) => inRect(g, v[0], v[1], v[2], v[3]));
+    // dans la vue directement (les rectangles sont déjà tournés)
+    piece(unrot(v), gs.map(unrot), sd, along);
   }
-  for (const [x0, sd] of [[X0, seed + 2], [X1 - 10, seed + 3]] as const) {
-    if (G[0] >= x0 - 0.5 && G[1] <= x0 + 10.5) { band(x0, Y0 + 10, G[2], sd); band(x0, G[3], Y1 - 10, sd + 7); } else band(x0, Y0 + 10, Y1 - 10, sd);
-  }
+  // sous les cloisons, entre les faces du dedans du tour
+  plan.walls.filter((w) => !w.side).forEach((w, i) => {
+    const p0 = w.posts[0] + 5, p1 = w.posts[w.posts.length - 1] - 5;
+    const rect: [number, number, number, number] = w.ew ? [p0, p1, w.c - 5, w.c + 5] : [w.c - 5, w.c + 5, p0, p1];
+    piece(rect, doors.filter((d) => d.w === w).map(gapWorld), seed + 20 + 9 * i, 'auto');
+  });
   return out;
 }
 
@@ -735,15 +843,20 @@ export function placed(grid: Grid, pal: Palette, x: number, y: number, z = 0, de
 
 /** La maison dans une vue : ses pièces tournées, le solin, les volets du côté vu. `img(nom)` : une image du jeu. */
 export function houseScene(o: HouseOpts, img: (name: string) => { grid: Grid; pal: Palette }): Scene {
-  const quads = rotQuads(houseQuads(o), o.rot);
-  const boards = solinBoards(o.rot, 41);
+  const plan = o.plan ?? PLAN_SMALL, c: [number, number] = [plan.L / 2, plan.D / 2];
+  const quads = rotQuads(houseQuads(o), o.rot, c);
+  const boards = solinBoards(plan, o.rot, 41);
   if (!o.cut && o.wall >= 3) {
-    // fenêtre sud : volet ouvert, de chant (la vue suivante du volet, r1), contre le montant ouest
-    if (o.rot === 0) { const s = img('plank-shutter-r1-worn'); boards.push(placed(s.grid, s.pal, 104, 111, 20, 110)); }
-    // fenêtre nord : volet fermé, vu du nord
-    if (o.rot === 2) { const s = img('plank-shutter-worn'); boards.push(placed(s.grid, s.pal, 128 - 54, 99.5, 20, 99.5)); }
+    for (const w of plan.walls) w.bays.forEach((b, k) => {
+      if (b !== 'window') return;
+      const m = (w.posts[k] + w.posts[k + 1]) / 2;
+      // fenêtre sud : volet ouvert, de chant (la vue suivante du volet, r1), contre le montant ouest
+      if (w.side === 'S' && o.rot === 0) { const s = img('plank-shutter-r1-worn'); boards.push(placed(s.grid, s.pal, m - 8, plan.D + 15, plan.sill, plan.D + 14)); }
+      // fenêtre nord : volet fermé, vu du nord
+      if (w.side === 'N' && o.rot === 2) { const s = img('plank-shutter-worn'); boards.push(placed(s.grid, s.pal, plan.L - (m + 6), plan.D + 3.5, plan.sill, plan.D + 3.5)); }
+    });
   }
-  const fl = rotRect([5, 123, 5, 91], o.rot);
+  const fl = rotRect([5, plan.L - 5, 5, plan.D - 5], o.rot, c);
   return { quads, boards, floor: fl };
 }
 
@@ -853,3 +966,68 @@ export const TABLE_NS: Grid = (() => {
   rows.push('.ooooxxxxxxxxooooxx'.slice(0, 18));
   return rows;
 })();
+
+/**
+ * Le banc (nouveau, demande de Grégoire) : 200 × 30 × 45 cm, en planches, est-ouest : boîte de 40 × (9 + 3) px. Un siège d'une
+ * planche épaisse (le dessus éclairé, son chant), deux pieds pleins en planche, une entretoise sous le siège. Bois des meubles
+ * (M m N K, avec Y pour la lumière), comme la table.
+ */
+export const BENCH: Grid = (() => {
+  const W = 40, rows: string[] = [];
+  rows.push('.' + 'K'.repeat(W - 2) + '.');
+  rows.push('K' + 'Y'.repeat(W - 2) + 'o');
+  rows.push('K' + Array.from({ length: W - 2 }, (_, i) => (i === 13 || i === 27 || hash(21, i) < 0.06 ? 'm' : 'M')).join('') + 'o');
+  rows.push('K' + 'N'.repeat(W - 2) + 'o');
+  rows.push('.o' + 'K'.repeat(W - 4) + 'o.');
+  const leg = (j: number) => {
+    let r = '';
+    for (let i = 0; i < W; i++) {
+      if (i === 3 || i === 32) r += 'K';
+      else if (i === 4 || i === 33) r += 'M';
+      else if (i === 5 || i === 34) r += 'm';
+      else if (i === 6 || i === 35) r += 'N';
+      else if (i === 7 || i === 36) r += 'o';
+      else if (j === 1 && i > 7 && i < 32) r += 'm'; // l'entretoise, sous le siège
+      else if (j === 2 && i > 7 && i < 32) r += 'o';
+      else r += '.';
+    }
+    return r;
+  };
+  for (let j = 0; j < 6; j++) rows.push(leg(j));
+  rows.push('...oooo' + '.'.repeat(25) + 'oooo...x'.slice(0, 8));
+  rows.push('....xxxx' + 'x'.repeat(25) + 'xxx....'.slice(0, 7));
+  return rows.map((r) => r.padEnd(W, '.').slice(0, W));
+})();
+
+/** Un meuble ou un objet du dedans : son nom sur le plan, son image (ou une grille de l'essai), son emprise au sol en px (x0, y0, x1, y1). */
+export interface Furnish { label: string; image: string; at: [number, number, number, number]; plan?: boolean }
+
+/**
+ * Le dedans de la maison agrandie (PLAN_LONG), en px (cm / 5). Faces du dedans du solin : x 5-59 et 69-187 et 197-251, y 5-59
+ * et 69-123 (les cloisons sont sur le même solin de 50 cm que les murs).
+ */
+export const LONG_FURNISH: Furnish[] = [
+  // la chambre de la mère : le lit au nord-ouest, le coffre contre le mur nord
+  { label: 'LIT', image: 'bed', at: [6, 6, 36, 46] },
+  { label: 'COFFRE', image: 'chest', at: [39, 6, 57, 16] },
+  // le coin de Xéros : la paillasse le long du mur ouest
+  { label: 'PAILLASSE', image: 'PALLET_NS', at: [6, 74, 24, 114] },
+  // la salle commune : la table contre le mur nord, le banc au sud, le fagot à l'ouest du foyer
+  { label: 'TABLE', image: 'table', at: [140, 6, 182, 24] },
+  { label: 'BANC', image: 'BENCH', at: [141, 25, 181, 31] },
+  { label: 'FAGOT', image: 'faggot', at: [90, 59, 116, 69] },
+  // la réserve : le billot et la cognée, les outils au sol, la corde, le tas de bûches, les sacs, la jarre, le seau
+  { label: 'BILLOT', image: 'chopping-block-axe', at: [200, 8, 220, 19] },
+  { label: 'HACHETTE', image: 'hatchet-ground', at: [225, 10, 233, 14], plan: false },
+  { label: 'MASSE', image: 'maul-ground', at: [234, 9, 250, 13], plan: false },
+  { label: 'DOLOIRE', image: 'broadaxe-ground', at: [224, 17, 236, 22], plan: false },
+  { label: 'COIN', image: 'splitting-wedge-ground', at: [240, 17, 246, 21], plan: false },
+  { label: 'CORDE', image: 'rope-coil', at: [243, 25, 249, 31], plan: false },
+  { label: 'BUCHES', image: 'woodpile', at: [205, 111, 244, 123] },
+  { label: 'SAC', image: 'sack', at: [228, 64, 238, 72] },
+  { label: 'SAC', image: 'sack', at: [240, 64, 250, 72] },
+  { label: 'JARRE', image: 'jar', at: [241, 84, 250, 93] },
+  { label: 'SEAU', image: 'bucket', at: [200, 96, 206, 102] },
+];
+/** Le foyer de la salle : au centre (640, 320 cm), Ø 1 m. */
+export const LONG_HEARTH: [number, number, number] = [128, 64, 10];
