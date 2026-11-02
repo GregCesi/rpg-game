@@ -132,6 +132,8 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
     .filter(([, s]) => s.inside && inRoom(s.x, s.y))
     .map(([k, { inside: _, ...s }]) => [k, { ...s, x: s.x + dx, y: s.y + dy }] as const);
   const places = (hostDef?.places ?? []).filter((q) => q.inside && inRoom(q.x, q.y)).map(({ inside: _, ...q }) => ({ ...q, x: q.x + dx, y: q.y + dy }));
+  // les objets de la carte posés dedans (la paillasse, la planchette, les outils du cagibi) : à leur place, utilisables
+  const objects = (hostDef?.objects ?? []).filter((o) => o.inside && inRoom(o.x, o.y)).map(({ inside: _, ...o }) => ({ ...o, x: o.x + dx, y: o.y + dy }));
   const id = interiorId(host, b.key);
   const def: MapData = {
     id,
@@ -141,7 +143,7 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
     width,
     height,
     layers: { ground },
-    objects: [],
+    objects,
     spawns: { ...Object.fromEntries(arrivals.map((a, i) => [`entree-${i}`, a])), ...Object.fromEntries(insideSpawns) },
     exits: [],
     npcs,

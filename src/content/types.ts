@@ -1464,6 +1464,11 @@ const MapObjectSchema = z.strictObject({
   wood: z.lazy(() => WoodPieceSchema).optional(),
   /** L'âge d'un objet de bois travaillé (`aged` de props.json : le panneau, vieux au bord de la route), propriété `age` dans Tiled. */
   age: z.lazy(() => WoodAgeSchema).optional(),
+  /**
+   * Dans un bâtiment posé (un Plan) : il n'est que dans son intérieur calculé, où l'on s'en sert comme de tout objet de la carte
+   * (la paillasse où l'on dort, la planchette qui enseigne, les outils du cagibi) ; ce qu'on en fait se garde sous l'intérieur.
+   */
+  inside: z.literal(true).optional(),
 });
 
 /** Point d'apparition : (x, y) = position des pieds du joueur. */

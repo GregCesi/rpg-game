@@ -310,6 +310,8 @@ export class GameMap {
     // Objets posés
     this.obstacles = scene.physics.add.staticGroup();
     for (const o of def.objects) {
+      // dans un bâtiment posé (`inside`) : seulement dans son intérieur calculé
+      if (o.inside) continue;
       const c = changes.changes[o.id];
       if (!c) this.placeProp(o);
       else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length, wood: c.wood, natural: c.natural });

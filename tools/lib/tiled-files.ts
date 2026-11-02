@@ -125,7 +125,7 @@ function objectClass(id: number, name: string, color: string, members: Member[])
  *   - `Npc` : point où se tient un personnage non joueur (ses pieds) ;
  *   - `Parcel` : rectangle d'une parcelle réservée du village, sa destination (`use`, liste de src/content/parcels.json) ;
  *   - `Place` : rectangle d'une place nommée (`accepts` : ce qu'on y pose ; `inside` : dans un bâtiment posé) ;
- *   - `inside` d'un `Spawn` ou d'un `Npc` : il est dans un bâtiment posé, il ne vaut que dans son intérieur calculé ;
+ *   - `inside` d'un `Spawn`, d'un `Npc` ou d'un objet : il est dans un bâtiment posé, il ne vaut que dans son intérieur calculé ;
  *   - `Plan` : un plan du bac à sable posé là (`plan`, liste de src/content/plans/ ; `age` facultatif), coin nord-ouest du rectangle.
  * Un champ laissé vide n'est pas surchargé (le jeu prend la valeur de props.json, ou rien).
  */
@@ -159,7 +159,7 @@ export function projectFile(propKeys: { id: number; key: string; wood?: boolean 
       // la pièce de bois : ses réglages (wood.json : diamètre `big`/`normal`, longueur en cm, forme `round`/`half`/`quarter`,
       // sens `ew`/`ns`, coups de doloire), vides : ceux de props.json
       ...propKeys.map((p) =>
-        objectClass(100 + p.id, p.key, '#a08060', [text('interact'), ...(p.wood ? ['size', 'length', 'shape', 'axis', 'hewn'].map(text) : [])]),
+        objectClass(100 + p.id, p.key, '#a08060', [text('interact'), inside, ...(p.wood ? ['size', 'length', 'shape', 'axis', 'hewn'].map(text) : [])]),
       ),
     ],
   };
