@@ -99,6 +99,8 @@ await playtest('combat', async ({ page, errors, load }) => {
       const n = log().length;
       const before = stamina();
       const t0 = performance.now();
+      // la durée du geste se mesure sur l'horloge du jeu : sous la charge, le temps réel d'une image ne suit pas celui du jeu
+      const g0 = w().time.now;
       await press('Space');
       let played = false;
       const texts = new Set<string>();
@@ -109,7 +111,7 @@ await playtest('combat', async ({ page, errors, load }) => {
         for (const t of floats()) texts.add(t);
         await frame();
       }
-      const ms = performance.now() - t0;
+      const ms = w().time.now - g0;
       await settle();
       for (const t of floats()) texts.add(t);
       const entry = log().length > n ? log()[log().length - 1] : undefined;
