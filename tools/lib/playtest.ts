@@ -49,7 +49,15 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
   const server = await createServer({ logLevel: 'error', server: { port: 0 }, cacheDir });
   await server.listen();
   const url = server.resolvedUrls!.local[0];
-  const browser = await chromium.launch({ executablePath: chrome, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+  const browser = await chromium.launch({ executablePath: chrome, args: [
+      '--use-gl=swiftshader',
+      '--enable-unsafe-swiftshader',
+      // plusieurs scénarios à la fois chargent la machine : Chromium ne doit jamais mettre une page en veille (plus d'images, plus de
+      // minuteries), sinon le jeu s'arrête et le scénario attend sans fin
+      '--disable-renderer-backgrounding',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+    ] });
   let failed = false;
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -65,7 +73,8 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
         const t = performance.now();
         while (!cond()) {
           if (performance.now() - t > ms) throw new Error('attente trop longue : ' + label);
-          await new Promise((r) => requestAnimationFrame(r));
+          // une image, ou 50 ms si la page ne dessine plus (le délai compte toujours)
+          await new Promise((r) => { requestAnimationFrame(r); setTimeout(r, 50); });
         }
       };
       window.__restart = async (command) => {
