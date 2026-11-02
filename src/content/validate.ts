@@ -1007,7 +1007,8 @@ function validateCapabilities(c: Content, cat: Catalog): string[] {
       err(`props.json '${k}' : 'over' nomme '${p.over}', absent de props.json`);
       continue;
     }
-    if (u.dims.w !== p.dims.w || u.dims.d !== p.dims.d || u.views !== p.views) err(`props.json '${k}' : il recouvre '${p.over}' : même emprise et mêmes vues`);
+    // la même longueur et les mêmes vues ; la profondeur peut changer d'une couche à l'autre (le chaume plein dépasse moins que ses chevrons)
+    if (u.dims.w !== p.dims.w || u.views !== p.views) err(`props.json '${k}' : il recouvre '${p.over}' : même longueur et mêmes vues`);
     if (p.layers && u.layers && (p.layers.length !== u.layers.length + 1 || u.layers.some((l, i) => p.layers![i] !== l))) err(`props.json '${k}' : ses couches ('layers') sont celles de '${p.over}' et une de plus`);
   }
   for (const [k, d] of [...Object.entries(c.items), ...Object.entries(c.props)]) {
