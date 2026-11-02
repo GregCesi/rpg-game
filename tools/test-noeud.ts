@@ -36,13 +36,17 @@ await playtest('noeud', async ({ page, errors, load }) => {
           key('keyup', code);
         };
         // un appui court (E court : prendre ; Q : poser), relâché à l'image suivante, puis l'état attendu
+        // un appui que le jeu, s'il rame, n'aurait pas vu (relâché avant son image) se refait : jusqu'à cinq appuis, chacun attendu
+        // 60 images ; l'état attendu décide, jamais un délai
         const press = async (code: string, done: () => boolean, label: string) => {
-          await frames();
-          key('keydown', code);
-          await new Promise((r) => requestAnimationFrame(r));
-          await new Promise((r) => requestAnimationFrame(r));
-          key('keyup', code);
-          await until(done, label);
+          for (let i = 0; i < 5 && !done(); i++) {
+            await frames();
+            key('keydown', code);
+            await frames();
+            key('keyup', code);
+            for (let k = 0; k < 60 && !done(); k++) await new Promise((r) => requestAnimationFrame(r));
+          }
+          if (!done()) throw new Error(`${label} : rien après cinq appuis (messages : ${notices.join(' / ')} ; mode ${w().mode} ; mains ${JSON.stringify([gs.game.hands, gs.game.both])} ; tas ${JSON.stringify(ms().piles)})`);
         };
         const out: Record<string, unknown> = { n };
         const notices: string[] = ((window as any).notices ??= []);

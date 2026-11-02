@@ -25,7 +25,7 @@ import { groundBox, propFootprint, propSize, type Box, type GameMap, type Placed
 import { pileOf } from '../world/offer';
 import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { nearestOpenPlace, openPlaces, placeAim } from '../world/places';
-import { kindOf, pileDefOf, sameKind, shapeOf, tieImages, type PileKind, type PileShape } from '../world/pileShape';
+import { kindOf, stateImage, pileDefOf, sameKind, shapeOf, tieImages, type PileKind, type PileShape } from '../world/pileShape';
 import { woodTexture } from '../world/woodTexture';
 import { formImage, naturalFor, naturalGround } from '../world/natural';
 import { Ghosts } from './ghost';
@@ -446,7 +446,8 @@ export class HandsSystem {
       return { key, x: t.x - this.scene.textures.getFrame(key).width / 2, y: t.y, depth: t.y };
     }
     if (what.wood) return { key: woodTexture(this.scene, what.wood), frame: '0', x: t.x, y: t.y, depth: t.y };
-    const image = formImage(props[what.prop].image, what.natural);
+    // le fagot posé seul : le dessin de son nombre de branches, comme il sera au sol
+    const image = formImage(stateImage(props[what.prop].image, what.prop, what.bundle), what.natural);
     return { key: what.flip ? `${image}-left` : image, x: t.x, y: t.y, depth: t.y };
   }
 

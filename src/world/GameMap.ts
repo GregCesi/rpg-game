@@ -3,7 +3,7 @@ import { DEPTH, GLOW, SHADOW, TILE } from '../config';
 import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
-import { bundleImage, bundleOfKind, drawOrder, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
+import { drawOrder, stateImage, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
 import { formImage, naturalGround, stableNatural } from './natural';
 import type { GroundItem, Joint, MapState, Pile, WorldChange } from '../state';
 import { tilesets } from '../generated/assets';
@@ -528,8 +528,8 @@ export class GameMap {
     const natural = p.natural ? (opts.natural ?? (opts.spawned ? undefined : stableNatural(p.natural, o.id))) : undefined;
     // un objet de bois travaillé posé dans Tiled à son âge (le panneau, vieux)
     // un fagot posé seul : le dessin de son nombre de branches (`<image>-n<n>`)
-    const bundle = opts.bundle && opts.bundle !== bundleOfKind({ pile: p.take?.pile ?? '' }) ? opts.bundle : undefined;
-    const drawn = bundle ? bundleImage(p.image, bundle) : p.image;
+    const bundle = opts.bundle;
+    const drawn = stateImage(p.image, o.type, bundle);
     const image = flip ? `${drawn}-left` : agedKey(formImage(drawn, natural), p.aged ? o.age : undefined);
     const obj = wood
       ? scene.add.image(o.x, ay, woodTexture(scene, wood, { open: opts.open }), '0')

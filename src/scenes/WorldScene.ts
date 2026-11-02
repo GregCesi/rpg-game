@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
+import { stateImage } from '../world/pileShape';
 import { CONSTRUIRE, FEET, FELL, HELP, LOCKS, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
 import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
@@ -113,7 +114,9 @@ function holdOf(scene: Phaser.Scene, h: Held): { stance: Stance; look: Look } {
   if ('prop' in h) {
     const t = defOf(h.prop, h.wood).take!;
     const texture = h.wood ? heldWoodTexture(scene, h.wood) : undefined;
-    return { stance: t.hold.stance, look: { image: t.hold.image, icon: t.icon, ...(texture ? { texture } : {}) } };
+    // un objet à plusieurs états (le fagot et son nombre de branches) : ses vues portées et son icône suivent l'état
+    const image = t.hold.image && stateImage(t.hold.image, h.prop, h.bundle);
+    return { stance: t.hold.stance, look: { image, icon: stateImage(t.icon, h.prop, h.bundle), ...(texture ? { texture } : {}) } };
   }
   const it = items[h.item];
   const stance = it.hold?.stance ?? (it.hands === 2 ? 'carry' : 'hand');
