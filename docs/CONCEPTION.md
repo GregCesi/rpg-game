@@ -679,20 +679,20 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
 
 ```
     x : 0       160      320      480      640      800      960      1120     1280   (axes des poteaux, tous les 1,60 m)
- y=0  P--------P---[F]--P--------P---[F]--P--------P--------P--------P--------P       N
-      |  CHAMBRE DE    |                                    |      RÉSERVE       |       ↑
-      |  LA MÈRE  lit  |        table (est-ouest)           |  outils, corde,    |
-      |      coffre    |        ============  banc          |  coins, masse,     [F]
- y=160P                P   ---                              P  billot et cognée  P
-      |                [p]                                  |  bûches, sacs      |
-      |                |   fagot  ( foyer Ø 1 m )   mère    |  jarre, seau       |
- y=320P-------P--------P                                    [p]                  P
+ y=0  P--------P---[F]--P--------P---[F]--P--------P--------P---[F]--P--------P       N
+      |  CAGIBI,       |                                    | ATELIER ET CHAMBRE |       ↑
+      |  RÉSERVE       |        table (est-ouest)           | DE LA MÈRE         |
+      |  billot, outils|        ============  banc          |  lit       coffre  [F]
+ y=160P  corde, sacs   P                                    P                    P
+      |  bûches        [p]                                  |                    |
+      |                |   fagot  ( foyer Ø 1 m )   mère    |  établi de         |
+ y=320P-------P--------P                                    [p] sculptrice       P
       |  COIN DE       [p]           SALLE COMMUNE          |                    |
       |  XÉROS         |                                    |                    |
  y=480P  paillasse     P                                    P                    P
       |                |                                    |                    |
  y=640P---[F]--P-------P---[F]--P--[porte]-P--------P--[F]--P--------P--------P--------P
-      P : poteau (20 × 20) ; [F] : fenêtre à volet (50 × 40, appui à 80 cm) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
+      P : poteau (20 × 20) ; [F] : fenêtre à volet (60 × 40, appui à 80 cm) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
       [p] : porte intérieure 0,80 × 1,80 m ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
 ```
 
@@ -707,30 +707,73 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
   - **la salle commune** (x 320–960, 6,40 × 6,40 m, 41 m²) : **le foyer au centre** (640, 320), Ø 1 m ; **la table** (210 × 90,
     est-ouest) près du mur nord et **un banc** au sud de la table ; **la place du fagot** à l'ouest du foyer ; **la place de la mère**,
     assise sur le banc, tournée vers le feu ; **la porte d'entrée au sud** (travée x 480–640) ; deux fenêtres au sud, une au nord ;
-  - **la chambre de la mère** (nord-ouest, 3,20 × 3,20 m) : son lit, son coffre ; sa porte vers la salle ; une fenêtre au nord ;
+  - **le cagibi, la réserve** (nord-ouest, 3,20 × 3,20 m ; placement de Grégoire) : les outils (le billot et la cognée plantée, la
+    hachette, la masse, les coins, la doloire), la corde, les sacs, les bûches ; sa porte vers la salle ; une fenêtre au nord ;
   - **le coin de Xéros** (sud-ouest, 3,20 × 3,20 m) : sa paillasse le long du mur ouest, de la place autour ; sa porte vers la salle ;
     une fenêtre au sud ;
-  - **la réserve** (est, 3,20 × 6,40 m, 20 m²) : les outils (la cognée plantée dans le billot, la hachette, la masse, le coin, la
-    doloire), le rouleau de corde, un tas de bûches ou de branches, des sacs, la jarre, le seau ; de la place libre pour poser ; sa
-    porte vers la salle ; une fenêtre à l'est.
+  - **l'atelier et la chambre de la mère** (est, 3,20 × 6,40 m, 20 m² ; placement de Grégoire) : son lit et son coffre au nord, son
+    **établi de sculptrice** au sud (la mère sculpte) ; sa porte vers la salle ; une fenêtre à l'est et une au nord, pour la lumière
+    de l'établi.
 - **La place pour vivre** : les passages font au moins 1 m ; la salle garde un grand espace libre autour du foyer, la réserve de quoi
   poser des tas.
 - **Ajusté sur l'essai du plan** (pixel-artist, `.art-preview/essai-maison-xeros.png`, rangées 3 à 6) :
-  - les cloisons reposent sur un solin comme les murs (50 cm, pierres brutes), coupé aux portes intérieures (la terre battue passe
-    dessous) : les surfaces libres sont de **2,70 × 2,70 m** (chambre, coin de Xéros), **5,90 × 5,90 m** (salle), **2,70 × 5,90 m**
-    (réserve) ;
+  - les cloisons reposent sur un solin **de 30 cm** (Grégoire), coupé aux portes intérieures (la terre battue passe dessous) : les
+    surfaces libres sont d'environ 2,90 × 2,90 m (cagibi, coin de Xéros), 6,05 × 5,90 m (salle), 2,90 × 5,90 m (atelier) ;
   - la table est contre le solin nord (y 30–120), le banc juste dessous (y 125–155) : 1,15 m de passage jusqu'au foyer ;
-  - dans la chambre, le coffre est contre le mur nord, à côté du lit ;
-  - la réserve : le billot et la cognée plantée (`chopping-block-axe`), les petits outils au sol le long du mur nord, les deux sacs
-    et la jarre contre le mur est, le seau près de la porte, le tas de bûches le long du mur sud, le milieu libre ;
+  - (essai d'avant le placement de Grégoire : la chambre au nord-ouest, la réserve à l'est ; l'étape 2 suit le placement ci-dessus) ;
   - les portes s'ouvrent vers le dedans, chaque porte intérieure vers la pièce qu'elle ferme ;
   - **à 45°, le faîte du chaume est à 6,58 m** (7,19 m à 50°) ; avec l'appui à 80 cm, les trois fenêtres du sud et la porte se lisent
     sous l'égout ; vue de l'ouest, le pignon entier et son trou de fumée sous la rive ; les entraits retroussés sur les deux fermes
     des cloisons ;
   - l'intérieur se voit sans toit, le mur sud et la cloison est-ouest coupés à 70 cm (sinon la cloison cache la chambre).
 
+**Validé par Grégoire (2 novembre, accord de l'étape 2)** : la maison agrandie ; les cloisons sur un solin de 30 cm ; une seule
+vue de toute la maison, cloisons coupées à mi-hauteur, on passe d'une pièce à l'autre par les portes sans fondu ; la mère dessinée
+assise ; le placement des pièces ci-dessus ; la vue de l'ouest en clocher attend le chantier des plans qui tournent.
 **Validé par Grégoire (2 novembre)** : les murs et le toit de l'essai (« parfaits, j'adore ») ; les pignons en torchis chaulé, le trou
 de fumée à l'ouest ; l'appui des fenêtres à 80 cm, le toit effacé quand Xéros est dessous ; la nouvelle porte de 0,90 × 1,80 m.
+
+#### Les pièces de l'étape 2 (clés, dimensions, vues : la liste du pixel-artist)
+
+Toutes à la vraie échelle (5 cm par pixel), chacune dans le contrat de sa sorte (`npm run test:contrats`), une fiche par pièce ou
+par groupe. Les dimensions sont celles de la pièce posée (cm, `dims` de props.json : `w` est-ouest, `d` nord-sud, `h` hauteur).
+
+- **Le bois** (des aspects de la perche fendue, wood.json, pas de nouvelle clé : la pièce de bois `wood-piece`) :
+  - `pole` `half`, **le palançon** : la perche (Ø 12 cm) fendue en deux ; ses vues couchées se calculent de sa section ; à dessiner :
+    son icône et sa posture portée ;
+  - `pole` `lath`, **la latte** : la demi-perche refendue en planchette (section rectangulaire 6 × 3 cm) ; à dessiner : son icône et
+    sa posture portée.
+- **Le remplissage d'une travée**, en quatre étapes (chacune un objet de props.json, `layers` : ses couches de dessous ; posée sur
+  la précédente en mode construction, elle la remplace), sur la grille de 1,60 m : 140 cm de large entre deux poteaux, 180 de haut
+  entre la traverse basse et la sablière, 15 d'épais ; vues `four` (le mur nord-sud est sa vue `-r1`) :
+  - plein : `staves-panel` (palançons), `wattle-panel` (clayonnage), `daub-panel` (torchis), `lime-panel` (chaulé) ;
+  - avec la porte d'entrée (baie de 90 × 180, huisseries de 15 cm) : `staves-door-panel`, `wattle-door-panel`, `daub-door-panel`,
+    `lime-door-panel` ;
+  - avec une porte intérieure (baie de 80 × 180) : `staves-inner-panel`, `wattle-inner-panel`, `daub-inner-panel`, `lime-inner-panel` ;
+  - avec une fenêtre (baie de 60 × 40, appui à 80 cm, le volet `plank-shutter` s'y pose) : `staves-window-panel`, `wattle-window-panel`,
+    `daub-window-panel`, `lime-window-panel` ;
+  - les cloisons sont ces mêmes remplissages, posés dedans (chaulés des deux côtés).
+- **Les portes** : `cottage-door` (0,90 × 1,80 m, en planches, `swing` vers `cottage-door-open`, `passage`) ; `inner-door`
+  (0,80 × 1,80 m, vers `inner-door-open`). Bois : `aged`.
+- **Le solin des cloisons** : `narrow-sill-wall` (morceau de solin brut de 1,60 m, 30 cm d'épais, 40 de haut), qui se raccorde comme
+  le solin des murs (`wall`).
+- **Les pignons** : `lime-gable` (torchis chaulé sur clayonnage, sous la rive ; le triangle d'une demi-portée de 3,20 m à 45° : 640 de
+  large, 320 de haut au-dessus de la sablière, l'entrait retroussé) et `lime-gable-smoke` (le même, avec le trou de fumée de 50 × 40 cm
+  sous le faîte) ; vues `four`.
+- **Le toit** (un pan par versant, comme le grand pan de la grange ; vues `four` : le pan sud, le pan nord en `-r2`), sur 13,80 m
+  (12,80 + 2 × 50 cm de débord) et 4,50 m de pente (45°) :
+  - `thatch-roof-frame` (les chevrons en perches, les lattes) ; `thatch-roof-half` (une couche de chaume, le bas du pan) ;
+    `thatch-roof` (plein, 40 cm, `roof: true`, son ombre `shadow` calculée) ; chacun remplace le précédent, comme le remplissage ;
+  - `earth-ridge` : le faîtage de terre, d'un seul tenant sur le faîte, où l'herbe prend.
+- **Le foyer** : `hearth`, Ø 100, au sol (`layer: floor`), les pierres brutes en cercle, son feu animé, sa lueur (`light`), sa fumée.
+- **Le seuil** : `threshold-stone`, 120 × 50 × 20, calcaire.
+- **Le banc** : `bench`, 200 × 30 × 45, vues `symmetric`, en planches (le bois des meubles, comme la table).
+- **La chaux** : `quicklime` (chaux vive, en mottes) et `slaked-lime` (chaux éteinte, en pâte dans un seau), objets portables,
+  leur matière `lime` (matters.json) ; transformations « cuire la chaux » (calcaire → chaux vive, `soon` : le four à chaux viendra)
+  et « éteindre la chaux » (chaux vive + seau d'eau → chaux éteinte).
+- **La mère assise** : son image assise (vues `down`, `up`, `right`), sur le banc.
+- **Le fagot** (règle de Grégoire : le monde ne limite pas) : il se noue à partir de 2 branches ; sa taille, sa masse et son dessin
+  suivent le nombre de branches (un dessin par nombre, de 2 à 12 ; la quête en demandera 10, ce n'est pas une règle du fagot).
 
 #### Ce qui existe déjà et ce qui manque, pièce par pièce, en suivant la chaîne de chaque matière
 
