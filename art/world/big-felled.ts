@@ -1,200 +1,27 @@
-// Chutes des gros arbres et gros arbre couché.
-//
-// La chute (`big-tree-fall`) reprend l'arbre debout de big-tree.ts dans son grand repère (`tallTreeBody`, image 64 x TALL_H,
-// à sa vraie hauteur), pivoté autour de la charnière au-dessus de la souche (celle des étapes de l'abattage). Ses deux
-// premières images sont le raccord (`leadIn`, art/world/felling.ts) : l'arbre de la dernière étape (`big-tree-stage-7`,
-// entaillé, qui penche), dont le haut continue de basculer jusqu'aux 10° de la troisième image.
-// En tombant, le feuillage se raccourcit le long du tronc (de sa hauteur debout à la longueur du houppier couché) et
-// s'aplatit en travers. Les images de la planche font FALL_W x FALL_HT, bas aligné : l'arbre couché est composé dans la
-// frame 160x96 (FALL_H), posée au bas de la planche. La dernière image est la souche (`big-tree-stump`) et l'arbre couché
-// (`big-felled-tree`) exactement comme le jeu les pose : le remplacement de la chute par les objets ne saute pas.
-// La chute vers la gauche (`big-tree-fall-left`) est dessinée, pas retournée. Le moteur (`Faller`, `fallFrame`, `pivot`,
-// `pivotLeft`, `felledTree`, `lyingFrame`) sert aussi au têtard (art/world/big-pollard.ts).
-//
-// L'arbre couché est d'un seul tenant (`big-felled-tree`, `-left`) : son tronc est, au pixel près, la pièce de bois `big`
-// ronde de 400 cm (`composeWood`, art/world/wood-pieces.ts) que le jeu pose à sa place quand on a coupé le houppier.
+// Le gros arbre couché (la sorte `big` : tronc de 55 cm), commun au gros grand (`big-felled-tree`) et au têtard
+// (`big-pollard-felled-tree`, art/world/big-pollard.ts) : d'un seul tenant, son tronc est, au pixel près, la pièce de bois `big`
+// ronde de sa longueur utile (`composeWood`, art/world/wood-pieces.ts) que le jeu pose à sa place quand on a coupé le houppier ;
+// son houppier couché est tiré du dessin du têtard debout (`treeBody`), raccourci le long du tronc et aplati en travers.
+// Composé dans le cadre de la chute (FALL_W × FALL_H, l'arbre debout posé en OFF), puis recadré. La chute elle-même, commune à
+// toutes les sortes, est dans art/world/tree-fall.ts ; ce fichier enregistre le dessin du gros grand (`registerTree`).
 
 import { Canvas, EMPTY } from '../lib/canvas';
-import type { ImageSource, SpriteSheetSource } from '../lib/types';
-import { world } from '../palette';
-import { FOOT, STUMP_AT, TALL_DY, TALL_H, type Vec, despeckle, groundShadow, shadedOutline, stump, stumpBody, tallTreeBody, treeBody } from './big-tree';
-import { faceTone } from './wood';
+import { FOOT, STUMP_AT, type Vec, despeckle, shadedOutline, stump, stumpBody, tallTreeBody, treeBody } from './big-tree';
 import { composeWood } from './wood-pieces';
-import { BIG, POLLARD, hingeOf, leadIn, withChips, type LeadSide, type Standing } from './felling';
+import { registerTree, type LyingArt } from './tree-registry';
 
-// ---------- Chute ----------
+// ---------- Cadre ----------
 
-export const FALL_W = 160;
-export const FALL_H = 96;
-/** Hauteur des images de la planche de chute : celle de l'arbre debout ; la frame des pièces (FALL_H) en occupe le bas. */
-const FALL_HT = TALL_H;
-/** Décalage des rangées du repère 64x96 (et de la frame des pièces) dans le grand repère et dans la planche. */
-const DY = TALL_DY;
+/** Le cadre où l'arbre couché est composé (et celui des images de la chute, art/world/tree-fall.ts). */
+const FALL_W = 160;
+const FALL_H = 96;
 /**
- * Décalage de l'arbre (64 de large) dans la frame : l'arbre debout est à gauche (pied en x = OFF + 33)
- * pour laisser au tronc couché, puis au houppier, la place de s'étendre vers la droite.
+ * Place de l'arbre debout (64 de large) dans le cadre : à gauche (pied en x = OFF + 33) pour laisser au tronc couché, puis au
+ * houppier, la place de s'étendre vers la droite.
  */
-export const OFF = 14;
-/** Hauteur de la coupe dans le repère de l'arbre : tout ce qui est au-dessus tombe. */
-const CUT_Y = 76;
-/**
- * Charnière (repère 64x96) : celle des étapes de l'abattage (art/world/felling.ts), le bord droit de l'écorce au plancher de
- * l'entaille, deux rangées sous la coupe : l'arbre qui penche à la dernière étape continue de pivoter autour d'elle, sans
- * que le pied saute.
- */
-const HINGE: Vec = hingeOf(POLLARD);
-{
-  const [hx, hy] = hingeOf(BIG);
-  if (hx !== HINGE[0] || hy - TALL_DY !== HINGE[1]) throw new Error(`big-felled : le gros grand et le têtard n'ont pas la même charnière`);
-}
-
-/**
- * Centre de la coupe du tronc qui tombe, pivoté de `deg` degrés (vers la droite si positif) autour de la charnière `h` :
- * le centre de la coupe est en (FOOT[0], CUT_Y) quand l'arbre est debout.
- */
-export function cutCentre(deg: number, h: Vec, dy: number, off: number): Vec {
-  const t = (deg * Math.PI) / 180;
-  const [u, v] = [FOOT[0] - h[0], CUT_Y - h[1]];
-  return [h[0] + off + u * Math.cos(t) - v * Math.sin(t), h[1] + dy + u * Math.sin(t) + v * Math.cos(t)];
-}
-
-/**
- * Ce qui tombe : le corps d'un arbre debout dans son repère (64 de large, pied en FOOT[0]), la rangée de la coupe
- * dans ce repère, et les rangées extrêmes de son feuillage. Le gros arbre (`big-tree`) tombe depuis `tallTreeBody`,
- * le têtard (`big-pollard`, art/world/big-pollard.ts) depuis `treeBody`.
- */
-export interface Faller { body: (light: Vec) => Canvas; cut: number; crown: { top: number; bottom: number } }
-
-/** Feuillage d'un arbre debout : première et dernière rangées. */
-export function crownRows(body: Canvas): { top: number; bottom: number } {
-  const rows = body.px.map((r, y) => (r.some((q) => 'jLlk'.includes(q)) ? y : -1)).filter((y) => y >= 0);
-  return { top: rows[0], bottom: rows[rows.length - 1] };
-}
-
-/** Le gros arbre, dans son grand repère. */
-const TALL: Faller = { body: tallTreeBody, cut: CUT_Y + DY, crown: crownRows(tallTreeBody()) };
-
-export interface Pose {
-  deg: number;
-  /** Position à l'écran du centre de la coupe du tronc qui tombe. */
-  base: Vec;
-  /** Raccourcissement du feuillage le long du tronc (1 = aucun) : couché, il a la longueur du houppier couché. */
-  along: number;
-  /** Écrasement du houppier de part et d'autre du tronc (1 = aucun) : vu de dessus, il s'aplatit au sol. */
-  squash: number;
-}
-
-/**
- * Dessine le haut de l'arbre selon `pose` (tourné de `deg` degrés vers la droite, vers la gauche si `deg` < 0), avec la lumière
- * nord-ouest de l'écran ramenée dans le repère de l'arbre, puis le bout scié au pied du tronc.
- */
-function drawFalling(c: Canvas, p: Pose, f: Faller) {
-  const t = (p.deg * Math.PI) / 180;
-  const cos = Math.cos(t);
-  const sin = Math.sin(t);
-  const S: Vec = [-Math.SQRT1_2, -Math.SQRT1_2];
-  const src = f.body([S[0] * cos + S[1] * sin, -S[0] * sin + S[1] * cos]);
-  const cut = f.cut;
-  // distance de la coupe au bas du feuillage : au-delà, le feuillage se raccourcit
-  const hc = cut - f.crown.bottom;
-  const row = (h: number) => Math.floor(cut - (h <= hc ? h : hc + (h - hc) / p.along));
-  const half = 5.5; // demi-largeur du tronc, jamais écrasée
-  const inv = (g: number) => (Math.abs(g) <= half ? g : Math.sign(g) * (half + (Math.abs(g) - half) / p.squash));
-  // calque à part : le bout scié ne se peint que sur le tronc qui tombe, jamais sur la souche
-  const layer = new Canvas(c.w, c.h);
-  // axe du tronc (vers la cime) : (sin, -cos) ; travers (côté droit de l'arbre) : (cos, sin)
-  const local = (X: number, Y: number): Vec => {
-    const U = X + 0.5 - p.base[0];
-    const V = Y + 0.5 - p.base[1];
-    return [U * sin - V * cos, U * cos + V * sin];
-  };
-  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
-    const [h, g] = local(X, Y);
-    if (h < 0) continue;
-    const q = src.get(Math.floor(FOOT[0] + inv(g)), row(h));
-    if (q !== EMPTY) layer.set(X, Y, q);
-  }
-  // bout scié : disque du tronc vu de biais, tourné vers le bas-gauche (vers la lumière) quand l'arbre tombe
-  // à droite, vers le bas-droite (dans l'ombre) quand il tombe à gauche
-  // face commune (art/world/wood.ts), dans l'ombre quand l'arbre tombe à gauche
-  const minor = 0.9 + 1.1 * Math.abs(sin);
-  const rx = 5.6, ry = minor + 0.4;
-  const inFace = (h: number, g: number) => h >= 1 && ((g + 0.3) / rx) ** 2 + ((h - 1) / ry) ** 2 <= 1;
-  // la rangée du bas : bord d'écorce du disque, qui sépare le bout scié du dessus de la souche
-  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
-    if (layer.get(X, Y) !== EMPTY && local(X, Y)[0] < 1) layer.set(X, Y, 'N');
-  }
-  const paint: [number, number, string][] = [];
-  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
-    if (layer.get(X, Y) === EMPTY) continue;
-    const [h, g] = local(X, Y);
-    if (!inFace(h, g)) continue;
-    const rim = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => {
-      const [h2, g2] = local(X + dx, Y + dy);
-      return layer.get(X + dx, Y + dy) === EMPTY || (!inFace(h2, g2) && h2 >= 1);
-    });
-    // u en travers du tronc, v le long (vers la cime) : la face regarde le bas de l'écran
-    paint.push([X, Y, faceTone((g + 0.3) / rx, -(h - 1) / ry, rim, p.deg < 0)]);
-  }
-  for (const [X, Y, k] of paint) layer.set(X, Y, k);
-  c.stamp(layer.toGrid(), 0, 0);
-}
-
-/**
- * Image de la chute (FALL_W x `h`, FALL_HT par défaut) : souche fixe, haut de l'arbre `f` dans la pose donnée, contour,
- * ombres. Les ombres sont données dans la frame des pièces (y de 0 à FALL_H), comme la souche ; la frame des pièces
- * occupe le bas de l'image.
- */
-export function fallFrame(p: Pose, shadows: [number, number, number, number][], off = OFF, f: Faller = TALL, h = FALL_HT): Canvas {
-  const dy = h - FALL_H;
-  const c = new Canvas(FALL_W, h);
-  c.stamp(stumpBody().toGrid(), STUMP_AT[0] + off, STUMP_AT[1] + dy);
-  drawFalling(c, p, f);
-  despeckle(c, 'K^');
-  shadedOutline(c);
-  for (const [x, y, rx, ry] of shadows) groundShadow(c, x, y + dy, rx, ry);
-  return c;
-}
-
-/** Raccourcissement du feuillage selon le sinus de l'angle : 1 debout, longueur du houppier couché / hauteur du feuillage debout couché. */
-function alongAt(s: number, f: Faller): number {
-  const lying = (CROWN_END - F0) / (f.crown.bottom - f.crown.top + 1);
-  return 1 - (1 - lying) * s * s;
-}
-
-/**
- * Pose pivotée autour de la charnière (bord droit de la coupe), qui reste sur la souche. `dy` : décalage des rangées
- * du repère 64x96 dans l'image de la chute (celle du gros arbre par défaut).
- */
-export function pivot(deg: number, f: Faller = TALL, dy = DY): Pose {
-  const s = Math.sin((deg * Math.PI) / 180);
-  return {
-    deg,
-    base: cutCentre(deg, HINGE, dy, OFF),
-    along: alongAt(s, f),
-    squash: 1 - 0.64 * s * s,
-  };
-}
-
-// ---------- Chute vers la gauche ----------
-// Pas un miroir de la chute à droite : l'arbre debout reste tel quel, il pivote vers la gauche autour du bord gauche de sa
-// coupe, et la souche reste à la même place. Frame de même taille, miroir de celle de droite autour du pied.
-
-/** Décalage de l'arbre dans la frame de la chute à gauche : coin bas gauche de la frame à x = -OFF_L de celui de l'arbre debout. */
-export const OFF_L = FALL_W - 1 - OFF - 66;
-/** Charnière de la chute à gauche : celle des étapes vers la gauche (`-left-stage-<n>`), le bord gauche de l'écorce au plancher. */
-const HINGE_L: Vec = hingeOf(POLLARD, true);
-
-/** Pose pivotée vers la gauche autour du bord gauche de la coupe. */
-export function pivotLeft(deg: number, f: Faller = TALL, dy = DY): Pose {
-  const s = Math.abs(Math.sin((deg * Math.PI) / 180));
-  return {
-    deg: -deg,
-    base: cutCentre(-deg, HINGE_L, dy, OFF_L),
-    along: alongAt(s, f),
-    squash: 1 - 0.64 * s * s,
-  };
-}
+const OFF = 14;
+/** Place de l'arbre debout dans le cadre de la chute à gauche : le miroir de OFF autour du pied. */
+const OFF_L = FALL_W - 1 - OFF - 66;
 
 // ---------- Arbre couché ----------
 // D'un seul tenant : le tronc est la pièce de bois `big` ronde, est-ouest, de la longueur utile de l'arbre, telle que
@@ -226,8 +53,6 @@ const SQUASH = 0.4;
 /** Frontière où le houppier passe par-dessus le tronc (festonnée), une valeur par rangée, du contour du haut à celui du bas. */
 const OVER = [130, 131, 130, 129, 130, 132, 131, 130, 129, 130, 131, 130, 131];
 const overAt = (y: number) => OVER[y - WOOD_Y] ?? 0;
-/** Longueur utile du gros arbre (cm) : ses anciennes quatre billes, la dernière sous le houppier. */
-export const BIG_TREE_CM = 400;
 
 /** Distance au pied (h) et au travers de l'axe (g) d'un pixel de la frame. */
 const lying = (X: number, Y: number): Vec => [X + 0.5 - BUTT_X, Y + 0.5 - AXIS_Y];
@@ -395,7 +220,7 @@ function composeLying(cm: number, shift: number, left: boolean, crown: Canvas, s
  * Compose l'arbre couché d'un tronc de `cm` centimètres, le houppier décalé de `shift` colonnes par rapport à celui du gros
  * grand (le têtard : plus court de 2 m, −40).
  */
-export function felledTree(cm: number, shift: number, what: string): Felled {
+function felledTree(cm: number, shift: number, what: string): Felled {
   const wood = woodOf(cm);
   const n = wood.w - 1;
   const right = composeLying(cm, shift, false, shifted(CROWN, shift));
@@ -477,7 +302,7 @@ function lightenedFelled(cm: number, shift: number, left: boolean, keep: (h: num
 }
 
 /** Ce que l'ébranchage doit savoir d'un gros arbre couché (repère : la frame des pièces, FALL_W × FALL_H). */
-export function bigLying(f: Felled, cm: number, shift: number) {
+function bigLying(f: Felled, cm: number, shift: number) {
   return {
     w: FALL_W,
     buttX: BUTT_X,
@@ -490,11 +315,8 @@ export function bigLying(f: Felled, cm: number, shift: number) {
   };
 }
 
-/** Le gros grand couché : tronc de 4 m. */
-export const BIG_FELLED = felledTree(BIG_TREE_CM, 0, 'big-felled-tree');
-
 /** Dernière image d'une chute : la souche, puis l'arbre couché, exactement comme le jeu les pose. */
-export function lyingFrame(f: Felled, left: boolean): Canvas {
+function lyingFrame(f: Felled, left: boolean): Canvas {
   const c = stumpIn(left ? OFF_L : OFF);
   const t = left ? f.left : f.right;
   // garde-fou : une ombre translucide posée sur un pixel déjà peint donnerait en jeu un mélange que `stamp` ne rend pas
@@ -504,63 +326,28 @@ export function lyingFrame(f: Felled, left: boolean): Canvas {
   return c.stamp(t.toGrid(), 0, 0);
 }
 
-/** Les images de l'arbre couché : `<clé>` (droite) et `<clé>-left`, recadrées sur leur cadre commun. */
-export function felledImages(key: string, f: Felled): ImageSource[] {
-  return [img(key, cut(f.right, f.frame)), img(`${key}-left`, cut(f.left, f.frameLeft))];
+/** Le dessin d'un gros arbre couché de `cm` cm, son houppier décalé de `shift` colonnes, pour la chute et le jeu. */
+export function bigLyingArt(cm: number, shift: number, what: string): LyingArt {
+  const f = felledTree(cm, shift, what);
+  return {
+    w: FALL_W,
+    h: FALL_H,
+    off: OFF,
+    offLeft: OFF_L,
+    scene: (left) => lyingFrame(f, left),
+    right: cut(f.right, f.frame),
+    left: cut(f.left, f.frameLeft),
+    box: f.frame,
+    woodAt: f.layout.at,
+    limbing: bigLying(f, cm, shift),
+  };
 }
 
-const FOOT_X = FOOT[0] + OFF;
-const FOOT_XL = FOOT[0] + OFF_L;
-
-/**
- * Une chute complète : le raccord depuis la dernière étape de l'abattage (art/world/felling.ts), 10°, 45° (les copeaux de
- * l'abattage encore au pied), puis l'arbre couché. Les ombres de 10° et 45°, dans la frame des pièces ; `dy` : décalage de
- * la frame des pièces dans l'image.
- */
-export function fallFrames(
-  t: Standing,
-  side: LeadSide,
-  at10: Canvas,
-  at45: Canvas,
-  lying: Canvas,
-): Canvas[] {
-  return [...leadIn(t, side), withChips(at10, t, side), withChips(at45, t, side), lying];
-}
-
-const SHADE_10: [number, number, number, number] = [FOOT_X + 12, 90 + DY, 16, 3.5];
-const SHADE_10_L: [number, number, number, number] = [FOOT_XL - 8, 90 + DY, 16, 3.5];
-
-const frames = fallFrames(
-  BIG,
-  { w: FALL_W, off: OFF, shade10: SHADE_10, left: false },
-  fallFrame(pivot(10), [[FOOT_X + 3, 89.5, 17, 4], [SHADE_10[0], 90, 16, 3.5]]),
-  fallFrame(pivot(45), [[FOOT_X + 3, 89.5, 14, 3.5], [FOOT_X + 46, 90.5, 26, 4]]),
-  new Canvas(FALL_W, FALL_HT).stamp(lyingFrame(BIG_FELLED, false).toGrid(), 0, DY),
-);
-
-const framesLeft = fallFrames(
-  BIG,
-  { w: FALL_W, off: OFF_L, shade10: SHADE_10_L, left: true },
-  fallFrame(pivotLeft(10), [[FOOT_XL + 3, 89.5, 17, 4], [SHADE_10_L[0], 90, 16, 3.5]], OFF_L),
-  fallFrame(pivotLeft(45), [[FOOT_XL + 3, 89.5, 14, 3.5], [FOOT_XL - 38, 90.5, 26, 4]], OFF_L),
-  new Canvas(FALL_W, FALL_HT).stamp(lyingFrame(BIG_FELLED, true).toGrid(), 0, DY),
-);
-
-const sheet = (name: string, fs: Canvas[]): SpriteSheetSource => ({
-  kind: 'spritesheet',
-  name,
-  frameW: FALL_W,
-  frameH: FALL_HT,
-  palette: world,
-  animations: { fall: { frames: fs.map((f) => f.toGrid()), frameRate: 6, repeat: 0 } },
+// Le gros grand : debout dans son grand repère (`tallTreeBody`), il tombe en entier ; couché, le houppier du gros.
+registerTree('big-tree', {
+  body: tallTreeBody,
+  stumpBody,
+  stump,
+  stumpFoot: [FOOT[0] - STUMP_AT[0], FOOT[1] - STUMP_AT[1]],
+  lying: (cm, key) => bigLyingArt(cm, 0, key),
 });
-
-function img(name: string, c: Canvas): ImageSource {
-  return { kind: 'image', name, palette: world, grid: c.toGrid() };
-}
-
-export default [
-  sheet('big-tree-fall', frames),
-  sheet('big-tree-fall-left', framesLeft),
-  ...felledImages('big-felled-tree', BIG_FELLED),
-];

@@ -205,7 +205,7 @@ métier 49, fiche 33, dimensions 8, vues 3, âge 3, outil 2, travail 1.
 | `src/world/interiorView.ts:96`, `src/systems/daylight.ts:27` | la tache de soleil est la texture `sunpatch`, reconnue par son nom | un objet de lumière déclaré (`light.sun` dans props.json), ou une constante de config.ts ; et l'exclure du catalogue (`CATALOG_EXCLUDED`) |
 | `src/content/types.ts:87` | les éclats d'impact : trois matières en dur (`wood`, `stone`, `leaves`) | l'impact tiré de matters.json (une matière a sa planche `fx-<matière>`) ; une nouvelle matière ne touche pas au schéma |
 | `src/scenes/WorldScene.ts:639-656` | « mains vides » décidé par `kind === 'resource'` | la capacité : ce qui a `work` ou `weapon` frappe, le reste non |
-| `art/world/felling.ts:218-260`, `art/world/work-stages.ts:222`, `tools/lib/trees-preview.ts:38` | les trois arbres décrits en code (`NORMAL`, `BIG`, `POLLARD` : leur corps, leur pied, la rangée de coupe ; la liste des arbres à dessiner ; `KINDS`) | voir « Un nouvel arbre » ci-dessous |
+| ~~`art/world/felling.ts`, `art/world/work-stages.ts`, `tools/lib/trees-preview.ts`~~ | ~~les trois arbres décrits en code~~ | fait (contrats, étape c) : leur géométrie est `tree` de props.json, leurs listes se tirent de props.json ; voir « Un nouvel arbre » ci-dessous |
 | `src/dieu/panel.ts:359` | « 4 dalles » : un outil de test nommé | acceptable (?dieu) ; ou une liste de fournitures dans les données de ?dieu |
 
 Propre (vérifié) : le moteur ne nomme aucun arbre, aucun outil ni aucune arme ; la pièce de bois est une seule clé (`WOOD_PIECE`),
@@ -260,37 +260,40 @@ un champ de props.json ou d'items.json (`take`, `pile`, `work`, `weapon`, `targe
    - l'ajouter à la liste des armes de tools/test-combat.ts (aujourd'hui `['branch', 'wooden-sword']` en dur : à tirer des données) ;
    - les aperçus `npm run art:touche` (`.art-preview/carte-touche.png`) et `.art-preview/combat.png`.
 
-**Un nouvel arbre (demain).**
+**Un nouvel arbre.** (Fait : contrats, étape c.) Un nouvel arbre ne demande que des données et des dessins. Il fait alors tout ce
+que font ceux de sa sorte : abattage en étapes des deux côtés, chute sans saut du côté frappé, arbre couché, ébranchage en étapes,
+pièce de bois de sa longueur utile, tas avec compteur.
+1. Données, props.json :
+   - l'arbre debout : `harvest` avec `work.fell.diameter`, `stages`, `tool`, `fall` (seulement `image`, `anim`, `left.image`),
+     `becomes` (sa souche), `spawns` (son arbre couché, par son seul `type`) ;
+   - sa géométrie `tree` (`TreeSchema` de types.ts) : `foot`, `shadow`, `cut`, `floor`, `notch`, `back`, `crack`, `lean`,
+     `leanShadow`, `chips`, `splinters`, et `fall` : `source` (`body` : le dessin debout tombe tel quel ; `bark` : houppier
+     rééchantillonné et tronc nu redessiné, allongé de `ext`), `crown` (longueur du houppier couché), `crownRows` s'il le faut,
+     `squash`, `half`, `face`, les ombres `shadows` à 10° et 45° de chaque côté, `crop` si la chute se recadre ;
+   - sa souche ; son arbre couché : `harvest` avec `work.limbs`, `stages`, `becomes: "wood-piece"`, `wood` (diamètre et longueur,
+     sur la grille), `bodies`, `aim` ;
+   - le diamètre dans wood.json s'il est nouveau ; sa fiche.
+   - Jamais : `fall.x`, `fall.foot`, `fall.left.x`, `at`, la place des `spawns`, `at` de l'arbre couché. `npm run art` les calcule
+     (tools/build-trees.ts, src/generated/trees.json, `withTreeLayout` de src/content/treeLayout.ts, qui refuse qu'on les écrive).
+2. Dessins (pixel-artist), enregistrés par sa clé d'image (`registerTree`, art/world/tree-registry.ts) :
+   - l'arbre debout, sans contour (`body`, sous une lumière donnée), et son image `<clé>` ;
+   - sa souche (`stumpBody`, `stump`, `stumpFoot`) ;
+   - son arbre couché d'un seul tenant (`lying`, un `LyingArt`) : son tronc (la pièce de bois, ou son écorce) et son houppier
+     couché, tiré du dessin debout, dans un cadre où l'arbre debout est posé (`off`, `offLeft`) ;
+   - pour une chute `bark`, son tronc nu (`bareTrunk`) ; sa matière dans wood.ts.
+   - Tout le reste se tire de là (art/world/trees.ts) : les étapes d'abattage des deux côtés (felling.ts), les deux chutes (la chute
+     commune à toutes les sortes, tree-fall.ts), les images de l'arbre couché et les étapes d'ébranchage (work-stages.ts).
+3. Contrôles :
+   - `npm run test:fast` : tools/test-arbres.ts passe sur tous les arbres de props.json (ceux qui ont `harvest.fall`), chaque côté ;
+   - `npm run check` (la durée de l'abattage) ; `npm run art:preview`, `.art-preview/arbres.png`.
 
-*Ce qu'il faut aujourd'hui.* Pour une variante d'une sorte existante (comme le têtard des gros) :
-1. Dessins (pixel-artist) :
-   - l'arbre debout et sa souche ;
-   - ses étapes d'abattage, à droite et à gauche (`<image>-stage-1..7`, `<image>-left-stage-1..7`) ;
-   - ses deux planches de chute (droite, gauche : deux images de raccord, 10°, 45°, couché) ;
-   - l'arbre couché d'un seul tenant et ses étapes d'ébranchage ;
-   - les fichiers `art/world/<sorte>-*.ts`, déclarés dans art/index.ts et art/collection.ts.
-2. Du **code de dessin** :
-   - une description `Standing` dans art/world/felling.ts (son corps, son pied, la rangée de coupe) ;
-   - sa place dans la liste des arbres de art/world/work-stages.ts ;
-   - sa chute (la chute commune des gros, `Faller` de big-felled.ts, ou une chute à part comme normal-fall.ts) ;
-   - une ligne de `KINDS` (tools/lib/trees-preview.ts).
-3. Données :
-   - props.json, l'arbre debout : `harvest` avec `work.fell.diameter`, `stages`, `tool`, `fall` (image, `x`, `foot`, `left.x`), `becomes`, `at`, `spawns` ;
-   - props.json, la souche ;
-   - props.json, l'arbre couché : `harvest` avec `work.limbs`, `stages`, `becomes: "wood-piece"`, `wood` (diamètre et longueur sur la grille), `at` ;
-   - le diamètre dans wood.json s'il est nouveau ;
-   - sa fiche.
-4. Contrôles :
-   - `npm run check` (la durée de l'abattage) ;
-   - `npm run art:preview`, `.art-preview/arbres.png` : chaque étape, la chute sans saut, l'arbre couché posé ;
-   - une nouvelle sorte (un nouveau tronc) demande en plus son contrat de géométrie `<sorte>-geometry.ts` et une matière dans wood.ts.
-
-*Ce qui manque pour qu'un nouvel arbre ne soit plus que des données et des dessins :*
-1. Une **géométrie de l'arbre en données** : un fichier `trees.json`, ou un champ `tree` de l'arbre debout dans props.json. Il porte la hauteur, le diamètre du tronc, la colonne du pied, la rangée de coupe, le plancher de l'entaille et la hauteur du houppier. `Standing`, `KINDS` et la liste de work-stages.ts se tireraient alors de ces données, au lieu de trois descriptions écrites en code.
-2. **Les décalages de props.json calculés par le build**, pas recopiés à la main : `fall.x`, `foot`, `left.x`, `spawns`, `at`. Ils découlent de la géométrie et des dessins ; aujourd'hui, trees-preview.ts les recalcule seulement pour signaler un écart.
-3. **Une chute commune à toutes les sortes**, tirée de la géométrie (le raccord, 10°, 45°, couché), comme le `Faller` des gros. Le normal a aujourd'hui sa chute propre (normal-fall.ts).
-4. **Les étapes d'ébranchage et l'arbre couché tirés du dessin debout**, comme les étapes de l'entaille le sont déjà (`fellingStage`). Il ne resterait au pixel-artist que les dessins de base : l'arbre debout, sa souche, son houppier couché, et sa matière dans wood.ts.
-5. Un test qui passe sur **tous** les arbres de props.json (ceux qui ont `harvest.fall`) : les étapes, la chute sans saut, le côté de chute. Aujourd'hui test-etapes ne teste que le normal.
+*Ce qui reste du code, et pourquoi.*
+- Le dessin d'un arbre est du code (art/ dessine en TypeScript) : un nouveau fichier de dessin s'importe en tête de
+  art/world/trees.ts (une ligne), comme tout dessin se déclare dans art/index.ts. Une variante d'une sorte existante réutilise le
+  dessin couché de sa sorte (`bigLyingArt`, avec le décalage de son houppier) ; une nouvelle sorte écrit le sien.
+- La chute a deux manières de tirer ce qui tombe (`fall.source` : `body`, `bark`), choisies par les données : celles des gros et du
+  normal d'aujourd'hui, gardées toutes deux pour que leurs images ne changent pas d'un pixel. Une nouvelle sorte en choisit une.
+- La planche de contrôle art/collection.ts nomme encore les images des gros (planche hors jeu, à compléter à la main).
 
 **Une nouvelle matière.**
 - Données :

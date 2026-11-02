@@ -4,23 +4,20 @@
 // (33, 89)), tronc de 55 cm (le même que le gros arbre, donc la même souche), tête touffue juste au-dessus de la coupe.
 // Il ne se retouche pas.
 //
-// Couché, il est d'un seul tenant (`big-pollard-felled-tree`, `-left`), comme le gros grand (`felledTree` de
-// art/world/big-felled.ts) : un tronc de 2 m (sa longueur utile, une ancienne bille et la tête), au pixel près la pièce de
-// bois `big` ronde de 200 cm que le jeu pose quand on a coupé le houppier, et le houppier du gros grand par-dessus, rapproché
-// du pied de 2 m (CROWN_SHIFT).
+// Couché, il est d'un seul tenant (`big-pollard-felled-tree`, `-left`), comme le gros grand (`bigLyingArt` de
+// art/world/big-felled.ts) : un tronc de sa longueur utile (`wood.length` de props.json, 2 m : une ancienne bille et la tête),
+// au pixel près la pièce de bois `big` ronde que le jeu pose quand on a coupé le houppier, et le houppier du gros grand
+// par-dessus, rapproché du pied de 2 m (CROWN_SHIFT).
 //
-// Chutes (`big-pollard-fall`, `big-pollard-fall-left`) : même mécanique que celles du gros arbre (pivot autour de la
-// charnière sur la souche, lumière ramenée au nord-ouest), mais tirées de `treeBody`. Deux premières images : le raccord
-// depuis `big-pollard-stage-7` (art/world/felling.ts) ; dernière : la souche et l'arbre couché, exactement comme le jeu les pose. Les images sont composées dans la
-// frame 160x96, puis recadrées à POLLARD_W colonnes : côté gauche de la frame pour la chute à droite, côté droit pour la
-// chute à gauche.
+// Ses étapes, ses chutes (recadrées à `tree.fall.crop` colonnes) et son ébranchage se tirent de ce dessin et de sa géométrie
+// (`tree` de props.json) : art/world/trees.ts.
 
-import { Canvas, EMPTY } from '../lib/canvas';
-import type { ImageSource, SpriteSheetSource } from '../lib/types';
+import { Canvas } from '../lib/canvas';
+import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
-import { FOOT, groundShadow, shadedOutline, treeBody } from './big-tree';
-import { FALL_H, FALL_W, OFF, OFF_L, type Faller, crownRows, fallFrame, fallFrames, felledImages, felledTree, lyingFrame, pivot, pivotLeft } from './big-felled';
-import { POLLARD as POLLARD_STANDING } from './felling';
+import { FOOT, STUMP_AT, groundShadow, shadedOutline, stump, stumpBody, treeBody } from './big-tree';
+import { bigLyingArt } from './big-felled';
+import { registerTree } from './tree-registry';
 
 /** Le têtard debout, 64x96 : image `big-pollard` (le dessin d'origine du gros arbre). */
 function standingPollard(): Canvas {
@@ -29,71 +26,17 @@ function standingPollard(): Canvas {
   return c;
 }
 
-/** Ce qui tombe : le haut de `treeBody`, coupé à la rangée 76 (comme le gros arbre, rangées du repère 64x96). */
-const POLLARD: Faller = { body: treeBody, cut: 76, crown: crownRows(treeBody()) };
-
-/** Longueur utile du têtard (cm). */
-export const POLLARD_CM = 200;
 /** Décalage du houppier couché du têtard par rapport à celui du gros arbre : 2 m de tronc de moins (40 px). */
-export const CROWN_SHIFT = -40;
-/** Le têtard couché. */
-export const POLLARD_FELLED = felledTree(POLLARD_CM, CROWN_SHIFT, 'big-pollard-felled-tree');
+const CROWN_SHIFT = -40;
 
-/** Largeur des images des chutes du têtard (recadrées dans la frame de 160) : tout l'arbre couché et son ombre. */
-const POLLARD_W = 126;
-/** Première colonne de la frame de 160 gardée par la chute à gauche. */
-const LEFT_FROM = FALL_W - POLLARD_W;
-
-/** Recadre une image de la frame (160 de large) aux colonnes [from, from + POLLARD_W), en vérifiant que rien n'est coupé. */
-function crop(c: Canvas, from: number, what: string): Canvas {
-  const out = new Canvas(POLLARD_W, c.h);
-  for (let Y = 0; Y < c.h; Y++) for (let X = 0; X < c.w; X++) {
-    const p = c.get(X, Y);
-    if (p === EMPTY) continue;
-    if (X < from || X >= from + POLLARD_W) throw new Error(`big-pollard : ${what} déborde du cadre de ${POLLARD_W} px en (${X}, ${Y})`);
-    out.px[Y][X - from] = p;
-  }
-  return out;
-}
-
-const lying = (left: boolean) => lyingFrame(POLLARD_FELLED, left);
-
-const FOOT_X = FOOT[0] + OFF;
-const FOOT_XL = FOOT[0] + OFF_L;
-const DY = 0; // les images de la chute ont la hauteur de l'arbre debout : la frame des pièces, sans décalage
-
-// le raccord depuis la dernière étape (`big-pollard-stage-7`), puis 10°, 45° et l'arbre couché (fallFrames de big-felled.ts)
-const right = fallFrames(
-  POLLARD_STANDING,
-  { w: FALL_W, off: OFF, shade10: [FOOT_X + 9, 90, 16, 3.5], left: false },
-  fallFrame(pivot(10, POLLARD, DY), [[FOOT_X + 3, 89.5, 17, 4], [FOOT_X + 9, 90, 16, 3.5]], OFF, POLLARD, FALL_H),
-  fallFrame(pivot(45, POLLARD, DY), [[FOOT_X + 3, 89.5, 14, 3.5], [FOOT_X + 30, 90.5, 21, 4]], OFF, POLLARD, FALL_H),
-  lying(false),
-).map((c, i) => crop(c, 0, `image ${i + 1} de la chute à droite`));
-
-const left = fallFrames(
-  POLLARD_STANDING,
-  { w: FALL_W, off: OFF_L, shade10: [FOOT_XL - 5, 90, 16, 3.5], left: true },
-  fallFrame(pivotLeft(10, POLLARD, DY), [[FOOT_XL + 3, 89.5, 17, 4], [FOOT_XL - 5, 90, 16, 3.5]], OFF_L, POLLARD, FALL_H),
-  fallFrame(pivotLeft(45, POLLARD, DY), [[FOOT_XL + 3, 89.5, 14, 3.5], [FOOT_XL - 24, 90.5, 21, 4]], OFF_L, POLLARD, FALL_H),
-  lying(true),
-).map((c, i) => crop(c, LEFT_FROM, `image ${i + 1} de la chute à gauche`));
-
-
-const sheet = (name: string, frames: Canvas[]): SpriteSheetSource => ({
-  kind: 'spritesheet',
-  name,
-  frameW: POLLARD_W,
-  frameH: FALL_H,
-  palette: world,
-  animations: { fall: { frames: frames.map((f) => f.toGrid()), frameRate: 6, repeat: 0 } },
+registerTree('big-pollard', {
+  body: treeBody,
+  stumpBody,
+  stump,
+  stumpFoot: [FOOT[0] - STUMP_AT[0], FOOT[1] - STUMP_AT[1]],
+  lying: (cm, key) => bigLyingArt(cm, CROWN_SHIFT, key),
 });
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
-export default [
-  img('big-pollard', standingPollard()),
-  sheet('big-pollard-fall', right),
-  sheet('big-pollard-fall-left', left),
-  ...felledImages('big-pollard-felled-tree', POLLARD_FELLED),
-];
+export default [img('big-pollard', standingPollard())];

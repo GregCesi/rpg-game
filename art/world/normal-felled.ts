@@ -1,7 +1,7 @@
 // Arbre normal couché : `normal-felled-tree` (vers la droite) et `normal-felled-tree-left` (vers la gauche), d'un seul
 // tenant, tronc et houppier.
 //
-// Même logique que l'arbre couché du gros (art/world/big-felled.ts, section « Arbre couché » et « Chute vers la gauche »),
+// Même logique que l'arbre couché du gros (art/world/big-felled.ts, section « Arbre couché »),
 // à l'échelle du normal (contrat : art/world/normal-geometry.ts) : tronc de 30 cm (6 rangées d'écorce, 8 px contour
 // compris), environ 7 m couché (TREE_LEN = 140 px, houppier compris), matière `NORMAL_WOOD` de wood.ts.
 //
@@ -9,19 +9,19 @@
 // art/world/wood-pieces.ts, contrat src/world/woodShape.ts) posée sur son tronc, qu'on coupe ensuite où l'on veut. Il ne porte donc aucune entaille.
 // Vers la gauche : géométrie en miroir exact autour du pied, dessin et lumière refaits en haut à gauche.
 //
-// Exports : pour la chute (normal-fall.ts), `lyingFrame()` et `lyingFrameLeft()` (la souche et l'arbre couché, dernière
-// image de chaque chute) ; pour props.json et le jeu, `FELLED_TREE` (taille, place, collisions, place du rondin).
+// Ce fichier enregistre le dessin de l'arbre normal (`registerTree`) : debout et souche (normal-tree.ts), tronc nu (pour sa
+// chute `bark`, art/world/tree-fall.ts) et arbre couché (`normalLyingArt` : la souche et l'arbre couché, dernière image de chaque
+// chute ; ses images ; la place de la pièce de bois ; ce que l'ébranchage doit savoir). `felledLayout(cm)` : ses collisions.
 
 import { Canvas, EMPTY } from '../lib/canvas';
-import type { ImageSource } from '../lib/types';
-import { world } from '../palette';
 import { type Vec, despeckle, shadedOutline } from './big-tree';
 import { NORMAL_WOOD, bark, logEnd } from './wood';
 import {
-  BUTT_X, CROWN_BOTTOM, CROWN_OVER_X, CROWN_TOP, DIAMETER, FALL_H, FALL_W, FOOT, OFF, OFF_L, STUMP_AT, TREE_LEN,
+  BUTT_X, CROWN_BOTTOM, CROWN_OVER_X, CROWN_TOP, DIAMETER, FALL_H, FALL_W, FOOT, OFF, OFF_L, STUMP_AT, STUMP_FOOT, TREE_LEN,
   TRUNK_BOTTOM, TRUNK_ROW, TRUNK_TOP, TRUNK_X0,
 } from './normal-geometry';
-import { stump, treeBody } from './normal-tree';
+import { stump, stumpBody, treeBody } from './normal-tree';
+import { registerTree, type LyingArt } from './tree-registry';
 
 // ---------- Arbre couché vers la droite ----------
 // Dessiné en entier dans le repère de la chute (FALL_W × FALL_H). Le tronc et le houppier ont chacun leur contour.
@@ -228,7 +228,7 @@ function cut(c: Canvas, f: Frame): Canvas {
 const LYING = lyingTree();
 
 /** Dernière image de la chute à droite : la souche et l'arbre couché, exactement comme le jeu les posera. */
-export function lyingFrame(): Canvas {
+function lyingFrame(): Canvas {
   const c = new Canvas(FALL_W, FALL_H);
   c.stamp(stump().toGrid(), STUMP_AT[0] + OFF, STUMP_AT[1]);
   c.stamp(LYING.toGrid(), 0, 0);
@@ -331,7 +331,7 @@ const LYING_L = lyingTreeLeft();
 }
 
 /** Dernière image de la chute à gauche : la souche et l'arbre couché à gauche, posés comme par le jeu. */
-export function lyingFrameLeft(): Canvas {
+function lyingFrameLeft(): Canvas {
   const c = new Canvas(FALL_W, FALL_H);
   c.stamp(stump().toGrid(), STUMP_AT[0] + OFF_L, STUMP_AT[1]);
   c.stamp(LYING_L.toGrid(), 0, 0);
@@ -351,9 +351,6 @@ function wholeTree(left: boolean): { c: Canvas; f: Frame } {
   return { c, f: bounds(c) };
 }
 
-/** Longueur du rondin né de l'arbre ébranché (cm) et sa longueur en pixels, contour compris. */
-const TIMBER_CM = 580;
-const TIMBER_N = TIMBER_CM / 5;
 
 /**
  * Géométrie de l'arbre couché entier, pour props.json et le jeu. Repère de `at` : coin bas gauche de l'image
@@ -363,7 +360,9 @@ const TIMBER_N = TIMBER_CM / 5;
  * houppier ; `log`, décalage [dx, dy] du coin bas gauche du rondin est-ouest de 580 cm (image 117 × 10, rangées 0 à 7 le
  * corps) par rapport au coin bas gauche de l'image, pour qu'il recouvre le tronc.
  */
-export const FELLED_TREE = (() => {
+function felledLayout(cm: number) {
+  /** Longueur du rondin né de l'arbre ébranché, en pixels, contour compris. */
+  const TIMBER_N = cm / 5;
   const describe = (left: boolean) => {
     const { f } = wholeTree(left);
     const X = (x: number) => (left ? mx(x) : x);
@@ -389,7 +388,7 @@ export const FELLED_TREE = (() => {
     };
   };
   return { right: describe(false), left: describe(true) };
-})();
+}
 
 // ---------- Arbre couché, houppier allégé (l'ébranchage) ----------
 // Les étapes de l'ébranchage (art/world/work-stages.ts) : le même arbre couché, composé de la même façon, mais son houppier
@@ -424,7 +423,7 @@ function despeckleEdgesOf(c: Canvas): Canvas {
 }
 
 /** Ce que l'ébranchage doit savoir de l'arbre couché normal (repère : la frame de la chute). */
-export const NORMAL_LYING = {
+const NORMAL_LYING = {
   w: FALL_W,
   buttX: BUTT_X,
   axisY: AXIS_Y,
@@ -435,11 +434,30 @@ export const NORMAL_LYING = {
   compose: lightenedTree,
 };
 
-const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
+/** Le dessin de l'arbre normal couché, son tronc ébranché donnant une pièce de `cm` cm. */
+function normalLyingArt(cm: number): LyingArt {
+  const right = wholeTree(false);
+  const left = wholeTree(true);
+  return {
+    w: FALL_W,
+    h: FALL_H,
+    off: OFF,
+    offLeft: OFF_L,
+    scene: (l) => (l ? lyingFrameLeft() : lyingFrame()),
+    right: cut(right.c, right.f),
+    left: cut(left.c, left.f),
+    box: right.f,
+    woodAt: felledLayout(cm).right.log,
+    limbing: NORMAL_LYING,
+  };
+}
 
-export default [
-  ...[false, true].map((left) => {
-    const { c, f } = wholeTree(left);
-    return img(left ? 'normal-felled-tree-left' : 'normal-felled-tree', cut(c, f));
-  }),
-];
+// L'arbre normal : debout et souche (normal-tree.ts) ; il tombe en `bark` (son tronc nu redessiné, allongé couché).
+registerTree('normal-tree', {
+  body: treeBody,
+  stumpBody,
+  stump,
+  stumpFoot: STUMP_FOOT,
+  bareTrunk: { row: TRUNK_ROW, x0: TRUNK_X0, crownBottom: CROWN_BOTTOM, wood: NORMAL_WOOD },
+  lying: (cm) => normalLyingArt(cm),
+});

@@ -31,8 +31,8 @@ Seuls l'arbre debout, ses deux chutes et son arbre couché lui sont propres (fic
 - Chute : `big-pollard-fall` (à droite) et `big-pollard-fall-left` (à gauche, lumière refaite en haut à gauche, pas un miroir),
   126 × 96, animation `fall` de 4 images : l'arbre debout, 10°, 45° (tirées du même `treeBody` pivoté autour de la
   charnière), l'arbre couché lui-même (souche et arbre couché d'un seul tenant, tels que le jeu les pose : pixel pour pixel, vérifié par
-  `arbres.png`). Code : art/world/big-pollard.ts (`POLLARD_FALL`), qui partage le
-  pivot de la chute du gros grand (art/world/big-felled.ts, `Faller`).
+  `arbres.png`, et par `tools/test-arbres.ts`). Son dessin : art/world/big-pollard.ts (`registerTree`) ; sa géométrie : `tree` de
+  props.json (dont `fall.crop` : 126) ; sa chute est la chute commune de tous les arbres (art/world/tree-fall.ts).
 - Couché, entaillé, billes, porté, fantôme : ceux des pièces du gros grand.
 
 ## Regroupement

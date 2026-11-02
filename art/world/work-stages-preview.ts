@@ -11,11 +11,9 @@ import type { ImageSource } from '../lib/types';
 import { world } from '../palette';
 import { Sheet, type Rgb } from '../../tools/lib/audit-preview';
 import normalTree from './normal-tree';
-import normalFelled from './normal-felled';
 import props from './props';
 import pollard from './big-pollard';
-import felled from './big-felled';
-import { STAGE_GROUPS } from './work-stages';
+import fellable, { STAGE_GROUPS } from './trees';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 // K, ONLY (début des clés à montrer) et OUT (nom du fichier) : pour regarder de près une partie de la planche
@@ -26,7 +24,7 @@ const FRAME: Rgb = [170, 178, 110];
 const GOLD: Rgb = [233, 200, 120];
 const WHITE: Rgb = [235, 230, 210];
 
-const bases = [...normalTree, ...normalFelled, ...props, ...pollard, ...felled].filter((s): s is ImageSource => s.kind === 'image');
+const bases = [...normalTree, ...props, ...pollard, ...fellable].filter((s): s is ImageSource => s.kind === 'image');
 const baseOf = (key: string) => {
   const s = bases.find((b) => b.name === key);
   if (!s) throw new Error(`planche : image de départ « ${key} » absente`);

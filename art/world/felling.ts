@@ -1,8 +1,8 @@
 // L'abattage d'un arbre debout : ses étapes (`<arbre>-stage-1` à `-7`, art/world/work-stages.ts) et le raccord de la
 // dernière étape à la chute (les premières images des planches `<arbre>-fall` et `-fall-left`).
 //
-// Sorti de work-stages.ts pour que les chutes (art/world/normal-fall.ts, big-felled.ts, big-pollard.ts) partent du même
-// dessin que les étapes, sans import circulaire (work-stages.ts importe les arbres couchés de big-felled.ts).
+// La géométrie de chaque arbre vient de props.json (`tree`, `standingOf`), son dessin du registre (art/world/tree-registry.ts) ;
+// la chute commune (art/world/tree-fall.ts) part du même dessin que les étapes.
 //
 // Deux jeux d'étapes : `<image>-stage-<n>` pour un arbre qui tombe vers la droite (l'entaille à droite), et
 // `<image>-left-stage-<n>` pour la gauche (Xéros frappe depuis la droite) : dessinées, pas retournées. L'arbre reste le même,
@@ -14,9 +14,8 @@
 // la première image dessinée de la chute. La chute pivote autour de cette même charnière (`HINGE`) : rien ne saute au pied.
 
 import { Canvas, EMPTY, rng } from '../lib/canvas';
-import { despeckle, groundShadow, shadedOutline, standingTree as bigStanding, tallTreeBody, treeBody as bigBody, TALL_DY, type Vec } from './big-tree';
-import { treeBody as normalBody } from './normal-tree';
-import { FOOT as NORMAL_FOOT, TREE_H, TREE_W } from './normal-geometry';
+import type { TreeDef } from '../../src/content/types';
+import { despeckle, groundShadow, shadedOutline, type Vec } from './big-tree';
 
 /** Une entaille : profondeur (colonnes depuis le bord droit de l'écorce) et ouverture (rangées au-dessus du plancher). */
 interface Notch { depth: number; open: number }
@@ -206,67 +205,28 @@ export function fellingStage(t: Standing, stage: number, lean?: Lean, toLeft = f
   return c;
 }
 
-// Les gros (tronc de 55 cm, 10 à 11 colonnes d'écorce) : l'entaille va jusqu'à 5 px (0,45 D), la saignée jusqu'à la
-// charnière, la fente monte plus haut, davantage de copeaux, plus loin (au-delà des racines, ± 12 px).
-const BIG_NOTCH: [Notch, Notch, Notch] = [{ depth: 3, open: 4 }, { depth: 4, open: 6 }, { depth: 5, open: 8 }];
-const BIG_CRACK: Vec[] = [[5, -2], [5, -3], [4, -4], [4, -5], [4, -6], [3, -7], [3, -8]];
-const BIG_CHIPS = { gap: 13, right: [0, 6, 11, 16, 18, 18, 18, 18], left: [0, 0, 0, 0, 5, 8, 8, 8] };
-const BIG_SPLINTERS: [number, number, string][] = [
-  [-3, -3, '^'], [-4, -3, '*'], [-6, -6, '^'], [-3, -9, '^'], [-2, -9, '*'], [-8, -4, '^'], [-5, -11, '^'],
-];
-
-export const NORMAL: Standing = {
-  key: 'normal-tree',
-  body: () => normalBody(),
-  w: TREE_W,
-  h: TREE_H,
-  foot: NORMAL_FOOT,
-  shadow: [NORMAL_FOOT[0] + 2, NORMAL_FOOT[1] + 0.5, 9, 2.4],
-  // la coupe de la chute est à la rangée 148 (normal-fall.ts) ; le plancher juste dessous
-  floor: 149,
-  notch: [{ depth: 2, open: 3 }, { depth: 3, open: 4 }, { depth: 3, open: 6 }],
-  back: [3, 4],
-  crack: [[3, -2], [3, -3], [2, -4], [2, -5], [2, -6]],
-  lean: [1.5, 2.5],
-  leanShadow: [8, 11],
-  chips: { gap: 4, right: [0, 4, 8, 12, 13, 13, 13, 13], left: [0, 0, 0, 0, 4, 6, 6, 6] },
-  splinters: [[-3, -3, '^'], [-4, -3, '*'], [-6, -6, '^'], [-3, -8, '^'], [-2, -8, '*']],
-};
-
-export const BIG: Standing = {
-  key: 'big-tree',
-  body: () => tallTreeBody(),
-  w: 64,
-  h: 160,
-  foot: [33, 89 + TALL_DY],
-  shadow: [36, 89.5 + TALL_DY, 17, 4],
-  // la coupe de la chute est à la rangée 76 du repère 64 × 96 (big-felled.ts) ; le plancher deux rangées dessous
-  floor: 78 + TALL_DY,
-  notch: BIG_NOTCH,
-  back: [4, 6],
-  crack: BIG_CRACK,
-  lean: [1.5, 3],
-  leanShadow: [8, 18],
-  chips: BIG_CHIPS,
-  splinters: BIG_SPLINTERS,
-};
-
-export const POLLARD: Standing = {
-  ...BIG,
-  key: 'big-pollard',
-  body: () => bigBody(),
-  h: 96,
-  foot: [33, 89],
-  shadow: [36, 89.5, 17, 4],
-  floor: 78,
-  lean: [2, 5],
-};
-
-// garde-fou : l'étape 0 (rien de fait) est, au pixel près, l'image de l'arbre debout
-{
-  const ga = fellingStage(BIG, 0).toGrid();
-  const gb = bigStanding().toGrid();
-  if (ga.join('\n') !== gb.join('\n')) throw new Error(`étapes : big-tree, l'étape 0 diffère de l'arbre debout`);
+/**
+ * L'arbre debout `key` à abattre : sa géométrie (`tree` de props.json) et son dessin (`body`, enregistré par sa clé d'image,
+ * art/world/tree-registry.ts). Sa taille est celle de son dessin.
+ */
+export function standingOf(key: string, tree: TreeDef, body: () => Canvas): Standing {
+  const b = body();
+  return {
+    key,
+    body,
+    w: b.w,
+    h: b.h,
+    foot: tree.foot,
+    shadow: tree.shadow,
+    floor: tree.floor,
+    notch: tree.notch,
+    back: tree.back,
+    crack: tree.crack,
+    lean: tree.lean,
+    leanShadow: tree.leanShadow,
+    chips: tree.chips,
+    splinters: tree.splinters,
+  };
 }
 
 // =====================================================================================================================

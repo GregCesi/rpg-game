@@ -9,10 +9,10 @@ import worldTiles, { worldDecals } from './world/tiles';
 import props from './world/props';
 import trees from './world/big-tree';
 import pollard from './world/big-pollard';
-import felled from './world/big-felled';
 import normalTree from './world/normal-tree';
-import normalFelled from './world/normal-felled';
-import normalFall from './world/normal-fall';
+// les arbres qui s'abattent (ceux de props.json qui ont harvest.fall) : leurs étapes, leurs chutes, leurs arbres couchés et leur
+// ébranchage, tirés de leurs données et de leurs dessins (art/world/trees.ts)
+import fellable from './world/trees';
 import rocksBushes from './world/rocks-bushes';
 import ui from './ui/dialog';
 import staminaBar from './ui/stamina-bar';
@@ -52,9 +52,8 @@ import cabinClosing from './world/cabin-closing';
 import barn from './world/barn';
 import stall from './world/stall';
 import signpost from './world/signpost';
-import workStages from './world/work-stages';
 import { agedSources } from './lib/ages';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...felled, ...pollard, ...normalTree, ...normalFelled, ...normalFall, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building , ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...workStages];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait,worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building , ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects];
 // le bois travaillé à ses autres âges (patiné, vieux), tiré des images neuves
 sources.push(...agedSources(sources));

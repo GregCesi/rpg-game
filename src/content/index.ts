@@ -24,6 +24,8 @@ import combatJson from './combat.json';
 import timeJson from './time.json';
 import workJson from './work.json';
 export { maps } from '../generated/maps';
+import treesJson from '../generated/trees.json';
+import { withTreeLayout, type TreeLayouts } from './treeLayout';
 
 function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.infer<T> {
   const r = schema.safeParse(data);
@@ -34,7 +36,8 @@ function parse<T extends z.ZodType>(file: string, schema: T, data: unknown): z.i
 /** Propriétés par tuile et par terrain, par jeu de tuiles (lues par build-art, vérifiées ici). */
 export const tiles = parse('tiles.json', z.record(z.string(), TilesetCatalogSchema), tilesJson);
 /** Catalogue des objets : la clé est le type d'un objet de carte dans Tiled. */
-export const props = parse('props.json', z.record(z.string().min(1), PropDefSchema), propsJson);
+// complété des décalages de ses arbres, calculés par npm run art (src/generated/trees.json, src/content/treeLayout.ts)
+export const props = parse('props.json', z.record(z.string().min(1), PropDefSchema), withTreeLayout(propsJson, treesJson as unknown as TreeLayouts));
 /** Objets possédables (dans les mains, au sol) : la clé est l'identifiant de l'objet. */
 export const items = parse('items.json', z.record(z.string().min(1), ItemDefSchema), itemsJson);
 /** Genres de tas : ce qu'on y entrepose et leur forme pour chaque nombre de pièces. */

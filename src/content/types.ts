@@ -116,6 +116,9 @@ const HarvestSchema = z.strictObject({
    * avec la même animation `anim`. `foot` : colonne du pied dans l'image de l'objet ; ce qui naît vers la gauche est posé
    * en miroir de la droite autour de ce pied (x' = 2 × foot − (x + largeur − 1)), avec ses images `-left`.
    * L'objet tombe du côté où Xéros frappe (l'entaille, `side` du travail en cours) ; frappé d'en haut ou d'en bas, d'un côté au hasard.
+   * Un arbre (un objet qui a `tree`) n'écrit dans props.json que `image`, `anim` et `left.image` : `x`, `foot` et `left.x`, comme
+   * son `at` et la place de ce qui naît (`spawns`), sont calculés par `npm run art` d'après sa géométrie et ses dessins
+   * (src/generated/trees.json, `withTreeLayout` de src/content/treeLayout.ts).
    */
   fall: z
     .strictObject({
@@ -526,6 +529,74 @@ const DimsSchema = z
   })
   .refine((d) => (d.shape === 'cylinder') === (d.axis !== undefined), { message: "'axis' pour un cylindre, et pour lui seul" });
 
+/** Une ombre portée au sol : [cx, cy, rx, ry] (px). */
+const ShadeSchema = z.tuple([px, px, px.positive(), px.positive()]);
+/** Une entaille : profondeur (colonnes depuis le bord de l'écorce) et ouverture (rangées au-dessus du plancher). */
+const NotchSchema = z.strictObject({ depth: px.positive(), open: px.positive() });
+
+/**
+ * La géométrie d'un arbre debout qui s'abat (docs/CONCEPTION.md, « Abattre un arbre ») : tout ce que ses dessins ne disent pas.
+ * Son dessin (l'arbre debout, sa souche, son arbre couché tiré de son houppier couché) est enregistré par sa clé d'image
+ * (`registerTree`, art/world/tree-registry.ts) ; ses étapes d'abattage, ses deux chutes, son arbre couché et ses étapes
+ * d'ébranchage en sont tirés par art/world/trees.ts, et les décalages de son `harvest` (`fall.x`, `fall.foot`, `fall.left.x`,
+ * `at`, la place de ce qui naît, `at` de l'arbre couché) sont calculés par `npm run art` (src/generated/trees.json).
+ * Repère : l'image de l'arbre debout, en pixels, x vers la droite, y vers le bas.
+ */
+export const TreeSchema = z.strictObject({
+  /** Pied du tronc (centre du bas). */
+  foot: z.tuple([px, px]),
+  /** Ombre portée de l'arbre debout (celle de son image). */
+  shadow: ShadeSchema,
+  /** Rangée de la coupe de la chute : tout ce qui est au-dessus tombe. */
+  cut: px,
+  /** Rangée du plancher de l'entaille, juste sous la coupe ; la charnière de la chute y est. */
+  floor: px,
+  /** L'entaille à 1/3, 2/3, 3/3 : profondeur (colonnes depuis le bord de l'écorce) et ouverture (rangées au-dessus du plancher). */
+  notch: z.tuple([NotchSchema, NotchSchema, NotchSchema]),
+  /** Longueur de la saignée du trait d'abattage, puis au craquement. */
+  back: z.tuple([px.positive(), px.positive()]),
+  /** Fente du craquement : [dx depuis le bord du trait, dy depuis le plancher]. */
+  crack: z.array(z.tuple([px, px])),
+  /** Angles de la penche aux étapes 6 et 7 (degrés). */
+  lean: z.tuple([z.number().positive(), z.number().positive()]),
+  /** Ombre du haut qui penche : [dx depuis le pied, rx]. */
+  leanShadow: z.tuple([px, px.positive()]),
+  /** Copeaux : écart au pied du premier, nombre côté entaille puis côté trait à chaque étape (0 à 7). */
+  chips: z.strictObject({ gap: px, right: z.array(z.number().int().nonnegative()).length(8), left: z.array(z.number().int().nonnegative()).length(8) }),
+  /** Éclats du craquement : [dx depuis le bord du trait, dy depuis le plancher, couleur de la palette]. */
+  splinters: z.array(z.tuple([px, px, z.string().length(1)])),
+  /**
+   * La chute (art/world/tree-fall.ts), commune à toutes les sortes : le haut de l'arbre pivote autour de la charnière, de 10° puis
+   * 45°, et passe de la vue de face (debout) à la vue de dessus (couché) : le houppier se raccourcit le long du tronc, de ses
+   * rangées debout (`crownRows`, sinon celles de son dessin) à sa longueur couchée (`crown`, px), et s'aplatit en travers
+   * jusqu'à `squash` ; le tronc garde sa demi-largeur `half`.
+   */
+  fall: z.strictObject({
+    /**
+     * Ce qui tombe : `body`, le dessin debout tel quel ; `bark`, le houppier rééchantillonné et le tronc nu redessiné dans son
+     * écorce (`bareTrunk` de son dessin), allongé de `ext` px couché.
+     */
+    source: z.enum(['body', 'bark']),
+    ext: px.nonnegative().default(0),
+    crown: px.positive(),
+    crownRows: px.positive().optional(),
+    squash: z.number().gt(0).lte(1),
+    half: z.number().positive(),
+    /** Le bout scié du tronc qui tombe : décalage en travers (px), ouverture selon l'angle, cernes. */
+    face: z.strictObject({ dx: z.number(), slant: z.number().positive(), rings: z.boolean() }),
+    /**
+     * Ombres portées à 10° et 45°, de chaque côté : [dx, dy depuis le pied, rx, ry] ; la première sous la souche, la seconde sous le
+     * haut de l'arbre (à 10°, le raccord depuis la dernière étape y mène).
+     */
+    shadows: z.strictObject({
+      right: z.strictObject({ '10': z.array(ShadeSchema).min(2), '45': z.array(ShadeSchema).min(2) }),
+      left: z.strictObject({ '10': z.array(ShadeSchema).min(2), '45': z.array(ShadeSchema).min(2) }),
+    }),
+    /** Largeur des images de la chute, si elles sont recadrées dans le cadre de l'arbre couché (le têtard, court). */
+    crop: px.positive().optional(),
+  }),
+});
+
 /**
  * Un objet du catalogue (arbre, rocher, maison, meuble...). Sa clé dans props.json est son identifiant :
  * en anglais, en kebab-case (vérifié par validate.ts) ; c'est aussi le type d'un objet de carte dans Tiled.
@@ -568,6 +639,8 @@ export const PropDefSchema = z.strictObject({
   aim: z.tuple([px, px]).optional(),
   /** Ce qui se récolte : voir HarvestSchema. */
   harvest: HarvestSchema.optional(),
+  /** Un arbre debout qui s'abat (il a `harvest.fall`) : sa géométrie, voir TreeSchema. */
+  tree: z.lazy(() => TreeSchema).optional(),
   /** Ce qui se prend dans les mains : voir TakeSchema. */
   take: TakeSchema.optional(),
   /** Masse (obligatoire pour ce qui se prend ou roule : validate.ts) : voir MassSchema. Celle d'une quantité mesurée (`length`) est celle de sa longueur neuve. */
@@ -1466,6 +1539,7 @@ export type DecalSet = z.infer<typeof DecalSetSchema>;
 export type TerrainDef = z.infer<typeof TerrainDefSchema>;
 export type TilesetCatalog = z.infer<typeof TilesetCatalogSchema>;
 export type PropDef = z.infer<typeof PropDefSchema>;
+export type TreeDef = z.infer<typeof TreeSchema>;
 export type Views = z.infer<typeof ViewsSchema>;
 export type Harvest = z.infer<typeof HarvestSchema>;
 export type Drop = z.infer<typeof DropSchema>;

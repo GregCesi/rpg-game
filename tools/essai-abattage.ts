@@ -15,7 +15,7 @@ import { PNG } from 'pngjs';
 import type { Grid, Palette } from '../art/lib/canvas';
 import type { SpriteSheetSource } from '../art/lib/types';
 import tiles from '../art/world/tiles';
-import normalFall from '../art/world/normal-fall';
+import { FALLS } from '../art/world/trees';
 import breath, { BREATH_ANCHORS, palette as breathPalette } from '../art/characters/breath';
 import { normalFelledLog } from '../art/world/normal-logs';
 import {
@@ -182,7 +182,7 @@ function gestureBand(key: GestureKey): Sheet {
 /** Colonne de l'arbre recadrée dans l'image de 192 de large : 12 px à gauche du tronc, 52 à droite (la penche). */
 const SX0 = OFF + 6;
 const SW = 60;
-const fallSheet = normalFall[0] as SpriteSheetSource;
+const fallSheet = FALLS.find((s) => s.name === 'normal-tree-fall') as SpriteSheetSource;
 const fallFrames = fallSheet.animations.fall.frames;
 
 function stagesBand(): Sheet {
