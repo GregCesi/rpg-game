@@ -57,11 +57,12 @@ function diameterOf(p: Pick<WoodPiece, 'size'>): number {
  * La matière d'un travail sur une pièce de bois : la couper à la cognée, la fendre à la masse, ou dresser une face à la doloire sur
  * `length` cm (une passe).
  */
-export function woodJob(kind: 'cut' | 'maul' | 'hew', piece: Pick<WoodPiece, 'size' | 'length'>, length = piece.length): WorkJobDef {
+export function woodJob(kind: 'cut' | 'maul' | 'hew', piece: Pick<WoodPiece, 'size' | 'length'>, length = piece.length, tool?: string): WorkJobDef {
   const d = diameterOf(piece);
-  if (kind === 'cut') return { stroke: 'chop', tool: W.cut.tool, matter: 'cut', amount: buckVolume(d) };
-  if (kind === 'maul') return { stroke: 'maul', tool: W.split.maul, matter: 'split', amount: splitArea(d, piece.length) };
-  return { stroke: 'hew', tool: W.hew.tool, matter: 'hew', amount: faceVolume(d, W.hew.beam, length) };
+  // l'outil tenu (sa masse, son équilibre font le coup) ; sans lui, l'outil de référence de wood.json
+  if (kind === 'cut') return { stroke: 'chop', tool: tool ?? W.cut.tool, matter: 'cut', amount: buckVolume(d) };
+  if (kind === 'maul') return { stroke: 'maul', tool: tool ?? W.split.maul, matter: 'split', amount: splitArea(d, piece.length) };
+  return { stroke: 'hew', tool: tool ?? W.hew.tool, matter: 'hew', amount: faceVolume(d, W.hew.beam, length) };
 }
 
 /** Un coup de ce travail donné par `who`. */

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { gestures, items, props } from '../content';
+import { gestures, items, props, toolSheet } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import type { Held } from '../state';
 import { woodTexture } from '../world/woodTexture';
@@ -78,13 +78,14 @@ export class ToolUse {
   swing(gesture: string, item: string | undefined, onImpact: () => void, onDone: () => void, durations?: number[]): void {
     const g = gestures[gesture];
     const dir = this.actor.facing === 'left' ? 'right' : this.actor.facing;
-    const anim = `tool-${item}-${gesture}`;
+    const sheet = item ? toolSheet(item) : '';
+    const anim = `${sheet}-${gesture}`;
     this.gesture = gesture;
     this.fightOpts = undefined;
     this.tool.setAngle(0);
     this.toolAnim = item && this.scene.anims.exists(`${anim}-${dir}`) ? anim : undefined;
     this.tool.setVisible(!!this.toolAnim);
-    if (this.toolAnim) this.tool.setTexture(`tool-${item}`);
+    if (this.toolAnim) this.tool.setTexture(sheet);
     // un coup de travail : ses images aux durées de ses cinq temps (world/swing.ts) ; sinon celles du dessin
     const key = `${this.actor.skin}-${gesture}-${this.actor.facing}`;
     const frames = this.scene.anims.get(key)?.frames.length ?? 0;

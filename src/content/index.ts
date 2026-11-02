@@ -74,18 +74,21 @@ export const time = parse('time.json', TimeSchema, timeJson);
 export const work = parse('work.json', WorkSchema, workJson);
 
 /**
- * Les outils qui servent à un travail (une récolte, le bois, une transformation, le tracé d'un chantier) : Espace les y emploie ;
- * tout le reste de ce qu'on tient frappe (world/heft.ts). Tiré des données, jamais d'une liste de noms.
+ * L'objet sert-il à un travail (Espace l'y emploie ; tout le reste de ce qu'on tient frappe, world/heft.ts) ? Ce qu'il déclare faire
+ * (`does`), ou ce qui le demande : une récolte, une transformation, le tracé d'un chantier. Tiré des données, jamais d'une liste de noms ;
+ * calculé à chaque appel (un objet ajouté au contenu, l'outil d'essai des contrats, compte aussitôt).
  */
-export const workTools: ReadonlySet<string> = new Set([
-  wood.cut.tool,
-  wood.split.maul,
-  wood.split.wedge,
-  wood.hew.tool,
-  ...Object.values(props).flatMap((p) => (p.harvest ? [p.harvest.tool, ...Object.keys(p.harvest.also)].filter((t): t is string => !!t) : [])),
-  ...Object.values(transforms).flatMap((t) => t.tools),
-  ...Object.values(plans).map((p) => p.stake),
-]);
+export function worksWith(item: string): boolean {
+  if (items[item]?.does?.length) return true;
+  return (
+    Object.values(props).some((p) => p.harvest && (p.harvest.tool === item || item in p.harvest.also)) ||
+    Object.values(transforms).some((t) => t.tools.includes(item)) ||
+    Object.values(plans).some((p) => p.stake === item)
+  );
+}
+
+/** La planche en main d'un outil (`work.image`, sinon `tool-<clé>`) : son geste de travail. */
+export const toolSheet = (item: string): string => items[item]?.work?.image ?? `tool-${item}`;
 
 /** Les images des rais de soleil (`sun` de props.json) : celle que posent les intérieurs est la première (validate.ts : il y en a une). */
 export const sunImages: readonly string[] = Object.values(props).filter((p) => p.sun).map((p) => p.image);

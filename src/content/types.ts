@@ -506,6 +506,13 @@ export const ItemDefSchema = z.strictObject({
   weapon: z.lazy(() => WeaponSchema).optional(),
   /** Un outil au travail (docs/CONCEPTION.md, « Le travail ») : son inertie, son tranchant, ce que la précision y pèse. */
   work: z.lazy(() => ToolWorkSchema).optional(),
+  /**
+   * Les genres de travail que fait cet outil (sa capacité : une cible accepte tout outil qui fait son genre de travail, sans le nommer) :
+   * les récoltes au coup (`fell` abattre, `limbs` ébrancher, `whittle` tailler sur le billot, `break` casser la pierre) et le bois
+   * (`cut` couper, `hew` équarrir, `plant` planter le coin, `maul` frapper le coin). Une nouvelle hache qui fait `fell`, `limbs`,
+   * `cut` abat tous les arbres et coupe tout le bois.
+   */
+  does: z.array(z.enum(['fell', 'limbs', 'whittle', 'break', 'cut', 'hew', 'plant', 'maul'])).optional(),
 });
 
 /**
@@ -543,6 +550,12 @@ const NotchSchema = z.strictObject({ depth: px.positive(), open: px.positive() }
  * Repère : l'image de l'arbre debout, en pixels, x vers la droite, y vers le bas.
  */
 export const TreeSchema = z.strictObject({
+  /**
+   * L'image d'un arbre dessiné dont celui-ci reprend le dessin (enregistré par `registerTree`) : une variante qui ne change que ses
+   * données, l'arbre d'essai des contrats. Absent : son image. Ses dessins tirés (étapes, chutes, arbre couché, ébranchage, son image
+   * debout) portent sa propre clé d'image.
+   */
+  art: z.string().min(1).optional(),
   /** Pied du tronc (centre du bas). */
   foot: z.tuple([px, px]),
   /** Ombre portée de l'arbre debout (celle de son image). */
@@ -1051,6 +1064,8 @@ const ToolWorkSchema = z
     balance: z.number().positive(),
     edge: z.number().gt(0).lte(1),
     aim: z.number().min(0).max(1),
+    /** Sa planche en main (le geste du travail), tirée par art/items/held.ts ; absente : `tool-<clé>`. Un outil peut reprendre celle d'un autre. */
+    image: id.optional(),
     /** Le coup de cet outil pour un genre de travail (clé de `jobs` de work.json → clé de `strokes`), à la place du coup commun : la hachette taille au coup court. */
     strokes: z.record(id, id).optional(),
   })

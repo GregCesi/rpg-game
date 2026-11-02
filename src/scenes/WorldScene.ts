@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { CONSTRUIRE, FEET, FELL, HELP, LOCKS, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
-import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, workTools } from '../content';
+import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
@@ -641,7 +641,7 @@ export class WorldScene extends Phaser.Scene {
     const own = heldItem(game);
     // la branche dans la main active, la hachette dans l'autre : c'est l'outil qui sert
     const other = game.hands[1 - game.active];
-    if (own && !workTools.has(own) && other && 'item' in other && workTools.has(other.item)) return other.item;
+    if (own && !worksWith(own) && other && 'item' in other && worksWith(other.item)) return other.item;
     if (own || game.both || game.hands[game.active]) return own;
     return other && 'item' in other ? other.item : undefined;
   }
@@ -659,11 +659,11 @@ export class WorldScene extends Phaser.Scene {
     if (tool && items[tool].weapon) return strike(this.heldOf(tool)!);
     if (tool && SiteSystem.traces(tool)) return this.plantStake(tool);
     // la main active vide, l'autre sans outil qui travaille : le poing de la main libre
-    if (!game.both && !game.hands[game.active] && (!tool || !workTools.has(tool))) {
+    if (!game.both && !game.hands[game.active] && (!tool || !worksWith(tool))) {
       return this.attack(this.combat.plan({ fist: true }, this.player.actor.facing, this.time.now, this.player.strength.swinger));
     }
     // ce qu'on tient ne travaille pas (une pierre, un seau, la pièce de bois portée) : il frappe
-    if (!tool || !workTools.has(tool)) {
+    if (!tool || !worksWith(tool)) {
       const held = game.both ?? game.hands[game.active];
       return held ? strike(held) : undefined;
     }
@@ -748,7 +748,8 @@ export class WorldScene extends Phaser.Scene {
     this.mode = 'rail';
     // un coup de doloire (world/swing.ts, la force de Xéros) : ce qu'il lève, rapporté à la section d'une face, et ses temps
     const who = this.player.strength.swinger;
-    const unit = woodJob('hew', aim.piece, 1);
+    const tool = this.usable();
+    const unit = woodJob('hew', aim.piece, 1, tool);
     const stroke = jobStroke(unit, who);
     const cost = strokeCost(stroke);
     const phases = gestures[work.strokes.hew.gesture]?.phases as Phase[] | undefined;
@@ -760,12 +761,12 @@ export class WorldScene extends Phaser.Scene {
     };
     // ?dieu « Finir le travail » : ce qui reste à dresser, d'un coup (l'horloge et le plafond de ses coups)
     const settle = (cm: number) => {
-      const plan = planOf(woodJob('hew', aim.piece, cm), who, this.player.stamina.max);
+      const plan = planOf(woodJob('hew', aim.piece, cm, tool), who, this.player.stamina.max);
       this.clock.work(plan.seconds / 60);
       this.player.stamina.force(plan.ceiling, plan.breath);
     };
     this.rail.start(
-      this.wood.hewPass(this.player, aim, { cm: perStroke(unit, stroke) / unit.amount, durations: phases ? frameMs(stroke, phases) : undefined }, pay, settle, (r, why) => {
+      this.wood.hewPass(this.player, aim, { cm: perStroke(unit, stroke) / unit.amount, durations: phases ? frameMs(stroke, phases) : undefined, tool }, pay, settle, (r, why) => {
         if (r.face) this.notice(`Une face dressée (${r.face} sur 4).`);
         if (r.beam) this.notice(`Poutre équarrie : ${metres(r.beam.length)}.`);
         if (why === 'stopped') this.notice('Arrêté : la face reprendra là.');
@@ -865,7 +866,7 @@ export class WorldScene extends Phaser.Scene {
     const saved = mapState(game, mapId).work[key];
     const done = Math.max(before / steps, saved?.work === work ? Math.min(saved.done, (before + 0.999) / steps) : 0);
     this.startWork({
-      def: woodJob(work, piece),
+      def: woodJob(work, piece, piece.length, tool),
       done,
       steps,
       step: () => this.woodHit(tool),

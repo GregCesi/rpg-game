@@ -930,7 +930,7 @@ const CATALOG_EXCLUDED: Record<string, string> = {};
  * Les dessins qui manquent encore à un objet qui a la capacité (à faire avec le pixel-artist, docs/AUDIT.md « Normalisation ») :
  * `ground` l'image au sol, `tool` la planche en main d'un outil qui frappe. Chacun avec sa raison ; un objet dessiné en sort.
  */
-const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> = {
+export const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> = {
   pickaxe: { ground: 'pas encore dessinée au sol', tool: 'ses cinq dessins en main (le rocher se travaille déjà au coup)' },
   stone: { ground: 'pierre ancienne, à redessiner au sol (ou remplacée par les pierres brutes)' },
   'iron-ore': { ground: 'pas encore dessiné au sol (la chaîne du fer est à venir)' },
@@ -967,6 +967,15 @@ function validateCapabilities(c: Content, cat: Catalog): string[] {
   for (const p of Object.values(c.props)) if (p.harvest) for (const t of [p.harvest.tool, ...Object.keys(p.harvest.also)]) if (t) jobs.add(t);
   for (const t of Object.values(c.transforms)) for (const tool of t.tools) jobs.add(tool);
   for (const p of Object.values(c.plans)) jobs.add(p.stake);
+  for (const [k, it] of Object.entries(c.items)) if (it.does?.length) jobs.add(k);
+  // les genres de travail : chacun a un outil qui le fait ; un outil qui frappe pour faire (tout sauf planter le coin) a ses données de coup
+  const kinds = new Set(Object.values(c.items).flatMap((it) => it.does ?? []));
+  for (const [k, p] of Object.entries(c.props)) {
+    const kind = p.harvest?.work && Object.keys(p.harvest.work)[0];
+    if (kind && !kinds.has(kind as never)) err(`props.json '${k}' : aucun outil ne fait '${kind}' ('does' d'items.json)`);
+  }
+  for (const w of ['cut', 'hew', 'plant', 'maul'] as const) if (!kinds.has(w)) err(`items.json : aucun outil ne fait '${w}' au bois ('does')`);
+  for (const [k, it] of Object.entries(c.items)) if (it.does?.some((d) => d !== 'plant') && !it.work) err(`items.json '${k}' : il fait ${it.does!.join(', ')} en frappant : ses données de coup ('work')`);
   // ce que prend chaque genre de tas
   const genreOf = new Map<string, string>();
   for (const [g, d] of Object.entries(c.piles)) {
@@ -980,7 +989,7 @@ function validateCapabilities(c: Content, cat: Catalog): string[] {
     const todo = DRAWINGS_TODO[k] ?? {};
     if (it.weapon && !cat.textures.has(it.weapon.image ?? `weapon-${k}`)) err(`${at} : une arme a sa planche '${it.weapon.image ?? `weapon-${k}`}' (pixel-artist)`);
     if (it.weapon && !c.combat.families[it.weapon.family]) err(`${at} : famille d'arme '${it.weapon.family}' absente de combat.json`);
-    if (it.work && !todo.tool && !cat.textures.has(`tool-${k}`)) err(`${at} : un outil qui frappe ('work') a sa planche en main 'tool-${k}' (art/items/held.ts, pixel-artist), ou DRAWINGS_TODO`);
+    if (it.work && !todo.tool && !cat.textures.has(it.work.image ?? `tool-${k}`)) err(`${at} : un outil qui frappe ('work') a sa planche en main '${it.work.image ?? `tool-${k}`}' (art/items/held.ts, pixel-artist), ou DRAWINGS_TODO`);
     if (it.work && !jobs.has(k)) err(`${at} : un outil qui frappe ('work') sert à un travail (une récolte, le bois, une transformation)`);
     if (it.kind === 'tool' && !jobs.has(k) && !todo.ground) err(`${at} : un outil qui ne sert à aucun travail`);
     if (it.pile && genreOf.get(k) !== it.pile) err(`${at} : 'pile' nomme '${it.pile}', dont la pièce n'est pas cet objet (piles.json)`);
@@ -988,7 +997,7 @@ function validateCapabilities(c: Content, cat: Catalog): string[] {
     if (!it.ground && !todo.ground) err(`${at} : un objet qu'on pose a son image au sol ('ground', pixel-artist), ou DRAWINGS_TODO`);
     if (it.ground && todo.ground) err(`validate.ts DRAWINGS_TODO : '${k}' a son image au sol, à retirer de la liste`);
     if (!it.dims) err(`${at} : un objet portable a ses dimensions ('dims') : le gabarit de son image au sol et sa physique de coup en découlent (world/heft.ts)`);
-    if (it.work && todo.tool && cat.textures.has(`tool-${k}`)) err(`validate.ts DRAWINGS_TODO : '${k}' a sa planche en main, à retirer de la liste`);
+    if (it.work && todo.tool && cat.textures.has(it.work.image ?? `tool-${k}`)) err(`validate.ts DRAWINGS_TODO : '${k}' a sa planche en main, à retirer de la liste`);
   }
   for (const [k, d] of [...Object.entries(c.items), ...Object.entries(c.props)]) {
     if (!d.trade && !TRADE_TODO.has(k)) err(`'${k}' : son métier ('trade', CONCEPTION « Les matières »), ou TRADE_TODO`);

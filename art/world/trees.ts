@@ -13,7 +13,7 @@ import type { StandingLayout, TreeLayouts } from '../../src/content/treeLayout';
 import type { ArtSource, ImageSource, SpriteSheetSource } from '../lib/types';
 import type { Canvas } from '../lib/canvas';
 import { world } from '../palette';
-import { standingOf, type Standing } from './felling';
+import { fellingStage, standingOf, type Standing } from './felling';
 import { fallLayout, fallSheets } from './tree-fall';
 import { fellingGroups, limbingGroups, type Felled } from './work-stages';
 import { treeArt, type LyingArt, type TreeArt } from './tree-registry';
@@ -68,7 +68,7 @@ function treesOf(): Tree[] {
     const f = props[fk];
     const fh = f?.harvest;
     if (!f || !fh?.work?.limbs || !fh.stages || !fh.wood) throw new Error(`${where} : son arbre couché '${fk}' doit s'ébrancher (work.limbs, stages) en une pièce de bois (wood)`);
-    const art = treeArt(p.image);
+    const art = treeArt(def.art ?? p.image);
     const standing = standingOf(key, def, art.body);
     out.push({
       key,
@@ -124,5 +124,8 @@ export function treeLayouts(): TreeLayouts {
   return { standing, felled };
 }
 
-const sources: ArtSource[] = [...STAGE_GROUPS.flatMap((g) => g.stages), ...FALLS, ...LYING];
+/** L'image debout d'un arbre qui reprend le dessin d'un autre (`tree.art`) : l'étape 0 de son abattage, sous sa clé. */
+const BORROWED: ImageSource[] = TREES.filter((t) => t.def.art && t.def.art !== t.image).map((t) => img(t.image, fellingStage(t.standing, 0)));
+
+const sources: ArtSource[] = [...STAGE_GROUPS.flatMap((g) => g.stages), ...FALLS, ...LYING, ...BORROWED];
 export default sources;
