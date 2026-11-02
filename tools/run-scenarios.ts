@@ -24,6 +24,16 @@ export const SCENARIOS = ['maison', 'monde', 'noeud', 'grange', 'equarrissage', 
  */
 export const ALONE = ['construction'];
 
+/**
+ * Les scénarios lourds : ceux qui bâtissent dans le mode construction (les bâtiments du catalogue, le mode lui-même). Ils ne tournent
+ * qu'avant une fusion qui touche la construction (src/build/, src/world/build.ts, src/systems/build.ts, les plans, les pièces du
+ * catalogue) : `npm run test:scenarios:all` (ou SCENARIOS_ALL=1, `--all`) les lance avec les autres ; sans, ils sont sautés et le
+ * tableau le dit.
+ */
+export const HEAVY = ['maison', 'cabane', 'grange', 'etal', 'construction'];
+const ALL = process.argv.includes('--all') || !!process.env.SCENARIOS_ALL;
+const RUN = SCENARIOS.filter((n) => ALL || !HEAVY.includes(n));
+
 const jobs = Math.max(1, Number(process.env.SCENARIOS_JOBS) || 4);
 /**
  * Les scénarios qui tournent à x1 (SCENARIOS_X1, noms séparés par des virgules ; monde par défaut) : les autres tournent à x10 (la
@@ -94,7 +104,7 @@ function envOf(name: string): NodeJS.ProcessEnv {
 
 const t0 = Date.now();
 const results: Result[] = [];
-const queue = SCENARIOS.filter((n) => !ALONE.includes(n));
+const queue = RUN.filter((n) => !ALONE.includes(n));
 const done = (r: Result) => {
   console.log(`${r.ok ? '✓' : '✗'} ${r.name} (${(r.ms / 1000).toFixed(0)} s)`);
   results.push(r);
@@ -106,14 +116,14 @@ await Promise.all(
 );
 await rig?.close();
 if (plansOut) rmSync(plansOut, { recursive: true, force: true });
-for (const name of ALONE) done(await run(name));
+for (const name of ALONE.filter((n) => RUN.includes(n))) done(await run(name));
 // un plan d'essai qu'un scénario arrêté de force (SIGKILL : son \`finally\` ne passe pas) aurait laissé dans le contenu
 for (const f of readdirSync('src/content/plans')) if (f.startsWith('essai-')) rmSync(join('src/content/plans', f), { force: true });
 const total = (Date.now() - t0) / 1000;
 const order = (r: Result) => SCENARIOS.indexOf(r.name);
 const width = Math.max(...SCENARIOS.map((n) => n.length));
 const table = [
-  `Scénarios : ${results.filter((r) => r.ok).length} sur ${results.length} passent, en ${total.toFixed(0)} s (${jobs} à la fois)`,
+  `Scénarios : ${results.filter((r) => r.ok).length} sur ${results.length} passent, en ${total.toFixed(0)} s (${jobs} à la fois${ALL ? ', lourds compris' : `, sans les lourds : ${HEAVY.join(', ')}`})`,
   ...results.sort((a, b) => order(a) - order(b)).map((r) => `${r.ok ? '✓' : '✗'} ${r.name.padEnd(width)} ${String(Math.round(r.ms / 1000)).padStart(4)} s${r.error ? `  ${r.error}` : ''}`),
 ].join('\n');
 console.log(`\n${table}`);

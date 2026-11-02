@@ -18,6 +18,8 @@
     "test:contrats": "npm run art && tsx tools/test-contrats.ts && tsx tools/test-fagot.ts && tsx tools/test-matiere.ts",
     "test:scenarios": "npm run art && npm run maps && tsx tools/run-scenarios.ts",
     "test:scenarios:bg": "tsx tools/scenarios-bg.ts",
+    "test:scenarios:all": "npm run art && npm run maps && tsx tools/run-scenarios.ts --all",
+    "test:scenarios:bg:all": "tsx tools/scenarios-bg.ts --all",
     "test:sections": "npm run art && tsx tools/test-sections.ts",
     "test:fendage": "npm run art && npm run maps && tsx tools/test-fendage.ts",
     "test:implantation": "npm run art && npm run maps && tsx tools/test-implantation.ts",
