@@ -51,6 +51,19 @@ async function main() {
       errors.push(`test:fast nomme ${m[1]}, absent`);
     }
   }
+  // chaque objet a sa fiche (docs/objets/<clé>.md, ou une fiche de groupe qui nomme sa clé sur sa ligne « Clé ») ; celles qui restent à
+  // écrire (FICHE_TODO, docs/AUDIT.md « Normalisation » : des fiches de groupe pour les meubles, les lumières, la végétation)
+  const FICHE_TODO = new Set(
+    'big-tree big-tree-stump normal-felled-tree rock bush bush-berries rock-rubble cottage woodpile chopping-block chopping-block-rope fireplace worktable workbench stove bed pallet sack jar sunpatch lantern wall-torch candle barrel crate hay-bale chest table stool shed-plate-side well cart-door-open stone iron-ore wheat seeds berries mushroom egg apple wool pickaxe hoe sickle watering-can fishing-rod sword'.split(' '),
+  );
+  const ficheFiles = readdirSync('docs/objets').filter((f) => f.endsWith('.md') && f !== 'README.md');
+  const named = new Set<string>(ficheFiles.map((f) => f.slice(0, -3)));
+  for (const f of ficheFiles)
+    for (const line of readFileSync(`docs/objets/${f}`, 'utf8').split('\n').filter((l) => /^- Cl[ée]s?\s*:/.test(l))) for (const m of line.matchAll(/`([a-z0-9-]+)`/g)) named.add(m[1]);
+  for (const k of [...Object.keys(content.props), ...Object.keys(content.items)]) {
+    if (!named.has(k) && !FICHE_TODO.has(k)) errors.push(`'${k}' : sa fiche (docs/objets/${k}.md, ou une fiche de groupe qui le nomme), ou FICHE_TODO de tools/check.ts`);
+    if (named.has(k) && FICHE_TODO.has(k)) errors.push(`tools/check.ts FICHE_TODO : '${k}' a sa fiche, à retirer de la liste`);
+  }
   if (errors.length) {
     console.error(`\n✗ ${errors.length} problème(s) dans le contenu :`);
     for (const e of errors) console.error(`  - ${e}`);

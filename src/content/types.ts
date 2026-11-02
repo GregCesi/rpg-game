@@ -83,8 +83,11 @@ const HarvestSchema = z.strictObject({
   tool: id.optional(),
   /** Une récolte sans matière (`work` absent) : son nombre de coups simples ; l'objet tremble à chaque coup. Avec `work`, inutilisé (la matière fait les coups). */
   hits: z.number().int().positive(),
-  /** Matière frappée : à chaque coup, des éclats de la planche `fx-<matière>` jaillissent du point d'impact. */
-  impact: z.enum(['wood', 'stone', 'leaves']).optional(),
+  /**
+   * Matière frappée : à chaque coup, des éclats de la planche `fx-<matière>` jaillissent du point d'impact. Toute matière qui a sa planche
+   * (validate.ts) ; une nouvelle matière ne touche pas au schéma.
+   */
+  impact: id.optional(),
   /**
    * Geste de Xéros (clé de gestures.json) : `use`, de côté, sur ce qui est debout ;
    * `chop`, de haut en bas, sur ce qui est couché ou posé.
@@ -216,6 +219,13 @@ export const NaturalSchema = z.strictObject({ form: z.union([z.literal(0), z.lit
  * planche, le bardeau), le menuisier (le bois travaillé fin, le maillet), le forgeron (les outils de fer), le paysan (ce que tout
  * le monde fait : puiser, ramasser).
  */
+/**
+ * La famille d'un objet au catalogue du mode construction (src/build/catalog.ts), dans l'ordre du catalogue : déclarée par chaque
+ * objet (`family` de props.json et d'items.json), jamais devinée à sa clé.
+ */
+export const FAMILIES = ['éléments', 'assemblages', 'bois', 'pierre', 'terre', 'fibres', 'outils', 'mobilier', 'chantier', 'nature', 'divers'] as const;
+const FamilySchema = z.enum(FAMILIES);
+
 const TradeSchema = z.enum(['quarryman', 'mason', 'digger', 'thatcher', 'woodcutter', 'carpenter', 'splitter', 'joiner', 'smith', 'peasant']);
 
 /**
@@ -483,6 +493,8 @@ export const ItemDefSchema = z.strictObject({
   dims: z.lazy(() => DimsSchema).optional(),
   /** Matière naturelle : ses formes dessinées et sa taille qui varie, voir NaturalDefSchema. */
   natural: z.lazy(() => NaturalDefSchema).optional(),
+  /** Sa famille au catalogue du mode construction (FAMILIES). */
+  family: FamilySchema,
   /** Le métier qui le fait et le vendrait au village, voir TradeSchema. */
   trade: z.lazy(() => TradeSchema).optional(),
   /** Bois travaillé (le bardeau, la cheville) : il prend l'âge du bois, voir `aged` de PropDefSchema (ses images au sol). */
@@ -540,6 +552,11 @@ export const PropDefSchema = z.strictObject({
   layer: z.literal('floor').optional(),
   /** 'add' : l'image éclaire ce qu'elle recouvre (lumière), posée au-dessus de la pénombre. */
   blend: z.literal('add').optional(),
+  /**
+   * Un rai de soleil (la tache de lumière d'une fenêtre ou d'une porte) : son éclat suit la force du soleil de l'heure (world.json
+   * `daylight`, systems/daylight.ts) ; les intérieurs en posent un à chaque ouverture (world/interiorView.ts).
+   */
+  sun: z.literal(true).optional(),
   /** Lueur chaude qui vacille (feu), dans le repère de l'image. */
   light: z.strictObject({ x: px, y: px, radius: px.positive() }).optional(),
   /** Identifiant du dialogue lancé quand le joueur interagit avec l'objet. */
@@ -571,6 +588,8 @@ export const PropDefSchema = z.strictObject({
   gender: z.enum(['m', 'f']).default('f'),
   /** Matière naturelle : ses formes dessinées et sa taille qui varie, voir NaturalDefSchema (un objet de Tiled tire les siennes de son identifiant). */
   natural: z.lazy(() => NaturalDefSchema).optional(),
+  /** Sa famille au catalogue du mode construction (FAMILIES). */
+  family: FamilySchema,
   /** Le métier qui le fait et le vendrait au village, voir TradeSchema. */
   trade: z.lazy(() => TradeSchema).optional(),
   /**

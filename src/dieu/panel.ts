@@ -4,6 +4,7 @@
 import { clockLabel } from '../world/clock';
 import { items, maps, piles, plans, props, stamina, strength, transforms, wood, work } from '../content';
 import type { WoodLook, WoodPiece } from '../content/types';
+import { WOOD_PIECE } from '../world/woodPiece';
 import { woodOfLook } from '../world/woodShape';
 import { heldMass } from '../content/mass';
 import type { DieuCommand } from '../events';
@@ -177,7 +178,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     return woodFrom(woodSize.value, cm, woodLook.value as WoodLook, woodAxis.value as 'ew' | 'ns');
   };
   const woodPlace = button('Poser', () => send({ kind: 'wood', wood: chosenWood() }));
-  const woodGive = button('Donner', () => send({ kind: 'give', held: { prop: 'wood-piece', wood: chosenWood() } }));
+  const woodGive = button('Donner', () => send({ kind: 'give', held: { prop: WOOD_PIECE, wood: chosenWood() } }));
   // un tas de cette pièce (sa forme se calcule), de `woodCount` pièces, dans son sens ; refusé si elle ne va pas en tas (plus de 70 kg)
   const woodCount = el('input', { type: 'number', min: '1', max: '9', value: '6' });
   const woodPile = button('Poser en tas', () => {
@@ -299,6 +300,8 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   setInterval(showKnown, 300);
   const supply = (what: string, count: number) => () => send({ kind: 'supply', what, count });
   const stakeOf = () => plans[plan.value].stake;
+  /** La pièce de la première étape du plan choisi (les dés de l'abri) : tirée du plan, jamais nommée ici. */
+  const firstPieceOf = () => Object.values(Object.values(plans[plan.value].steps)[0].places)[0].piece;
 
   const mapButtons = Object.entries(maps).map(([id, m]) => button(m.name, () => send({ kind: 'map', map: id })));
 
@@ -356,7 +359,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('div', { className: 'row' }, [
       button('Apprendre le plan', () => send({ kind: 'learn-plan', plan: plan.value })),
       button('4 piquets au sol', () => supply(stakeOf(), 4)()),
-      button('4 dalles au sol', supply('slab', 4)),
+      button('4 pièces de la 1re étape au sol', () => supply(firstPieceOf(), 4)()),
     ]),
     known,
     el('div', { className: 'row' }, [button('Sauter l\'étape du chantier', () => send({ kind: 'skip-step' })), confirmButton('Effacer les chantiers', () => send({ kind: 'erase-sites' }))]),

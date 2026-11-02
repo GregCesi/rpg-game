@@ -66,6 +66,6 @@ Carrier (`quarryman`) ; tout paysan en ramasse.
 ## Vérification
 - Aperçu : `.art-preview/briques.png` (groupe 1), `collection.png`, `hands.png` (`held-slab`), `woodshed-1.png` (les dés sous les
   poteaux), `gabarit.png`.
-- `?dieu` : « 4 dalles au sol », « Donner » une dalle.
+- `?dieu` : « 4 pièces de la 1re étape au sol » (le plan de l’abri), « Donner » une dalle.
 - En jeu : voir la liste de [l'implantation](plan-tablet.md#vérification) ; `npm run test:implantation`, `npm run test:poteaux`,
   `npm run test:tas`.

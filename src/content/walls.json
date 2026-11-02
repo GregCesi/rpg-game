@@ -1,0 +1,18 @@
+{
+  "rough": [
+    {"label": "grosse a", "image": "big-rough-stone-ground", "crop": 3, "size": "big"},
+    {"label": "grosse b", "image": "big-rough-stone-ground-b", "crop": 3, "size": "big"},
+    {"label": "moyenne a", "image": "rough-stone-ground", "crop": 2, "size": "medium"},
+    {"label": "moyenne b", "image": "rough-stone-ground-b", "crop": 2, "size": "medium"},
+    {"label": "petite a", "image": "small-rough-stone-ground", "crop": 1, "size": "small"},
+    {"label": "petite b", "image": "small-rough-stone-ground-b", "crop": 1, "size": "small"}
+  ],
+  "rubble": [
+    {"label": "moellon 30", "image": "short-rubble-stone-ground", "crop": 2},
+    {"label": "moellon 40", "image": "rubble-stone-ground", "crop": 2},
+    {"label": "moellon 50", "image": "long-rubble-stone-ground", "crop": 2}
+  ],
+  "ns": ["short-rubble-stone-ground-ns", "rubble-stone-ground-ns", "long-rubble-stone-ground-ns"],
+  "header": {"label": "boutisse 40", "image": "rubble-stone-ground-ns"},
+  "chips": {"label": "eclats", "image": "stone-chips"}
+}

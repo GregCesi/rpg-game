@@ -37,6 +37,8 @@ export const tiles = parse('tiles.json', z.record(z.string(), TilesetCatalogSche
 export const props = parse('props.json', z.record(z.string().min(1), PropDefSchema), propsJson);
 /** Objets possédables (dans les mains, au sol) : la clé est l'identifiant de l'objet. */
 export const items = parse('items.json', z.record(z.string().min(1), ItemDefSchema), itemsJson);
+/** Les images des rais de soleil (`sun` de props.json) : celle que posent les intérieurs est la première (validate.ts : il y en a une). */
+export const sunImages: readonly string[] = Object.values(props).filter((p) => p.sun).map((p) => p.image);
 /** Genres de tas : ce qu'on y entrepose et leur forme pour chaque nombre de pièces. */
 export const piles = parse('piles.json', z.record(z.string().min(1), PileDefSchema), pilesJson);
 /** Plans de bâtiment : emprise, coins, étapes dans l'ordre du chantier, places de chaque pièce (en cm). Un bâtiment = un plan. */

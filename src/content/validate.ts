@@ -926,6 +926,77 @@ function validateCombat(c: Content, cat: Catalog): string[] {
 const CATALOG_EXCLUDED: Record<string, string> = {};
 
 /**
+ * Les dessins qui manquent encore à un objet qui a la capacité (à faire avec le pixel-artist, docs/AUDIT.md « Normalisation ») :
+ * `ground` l'image au sol, `tool` la planche en main d'un outil qui frappe. Chacun avec sa raison ; un objet dessiné en sort.
+ */
+const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> = {
+  pickaxe: { ground: 'pas encore dessinée au sol', tool: 'ses cinq dessins en main (le rocher se travaille déjà au coup)' },
+  stone: { ground: 'pierre ancienne, à redessiner au sol (ou remplacée par les pierres brutes)' },
+  'iron-ore': { ground: 'pas encore dessiné au sol (la chaîne du fer est à venir)' },
+  ...Object.fromEntries(['wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool'].map((k) => [k, { ground: 'objet ancien, à redessiner un objet à la fois' }])),
+  ...Object.fromEntries(['hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword'].map((k) => [k, { ground: 'pas encore en jeu : son image au sol avec son chantier' }])),
+};
+
+/**
+ * Les métiers qui restent à dire (CONCEPTION « Les matières » : chaque objet dit qui le fait) ; à décider avec Grégoire. Le naturel
+ * (arbre, rocher, buisson) aura le sien (la nature, ou le cueilleur) ; les meubles et les lumières, celui qui les fabrique.
+ */
+const TRADE_TODO = new Set([
+  'big-tree', 'big-pollard', 'big-tree-stump', 'normal-tree', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-piece', 'normal-tree-stump',
+  'rock', 'bush', 'bush-berries', 'rock-rubble', 'cottage', 'woodpile', 'chopping-block', 'chopping-block-rope', 'rope-coil', 'faggot',
+  'chopping-block-axe', 'fireplace', 'worktable', 'workbench', 'stove', 'bed', 'pallet', 'sack', 'jar', 'sunpatch', 'lantern', 'wall-torch',
+  'candle', 'barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'shed-plate-north', 'shed-plate-south', 'shed-plate-side', 'shed-rafter',
+  'shed-roof', 'maul-ground', 'splitting-wedge-ground', 'well', 'planted-stake', 'plan-tablet', 'hatchet-ground', 'broadaxe-ground',
+  'stone', 'iron-ore', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'pickaxe', 'hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword',
+]);
+
+/**
+ * Les capacités (docs/AUDIT.md, « Normalisation ») : une capacité est un champ des données, et l'objet qui l'a a tout ce qu'elle
+ * demande. Une arme a sa planche et sa famille ; un outil qui frappe (`work`) a sa planche en main et sert à un travail ; ce qui
+ * s'empile a son genre de tas, qui le prend et le compte, et le nomme (`pile`) ; un objet posé au sol a son image au sol et ses `dims` ;
+ * tout objet a son métier (TRADE_TODO : ceux qui restent à dire). Les dessins qui manquent encore : DRAWINGS_TODO, avec leur raison.
+ */
+function validateCapabilities(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  const err = (msg: string) => errors.push(msg);
+  for (const k of Object.keys(DRAWINGS_TODO)) if (!c.items[k]) err(`validate.ts DRAWINGS_TODO : '${k}' absent d'items.json`);
+  for (const k of TRADE_TODO) if (!c.items[k] && !c.props[k]) err(`validate.ts TRADE_TODO : '${k}' n'est pas un objet du contenu`);
+  // où sert chaque outil : une récolte, le bois, une transformation, le tracé d'un chantier
+  const jobs = new Set<string>([c.wood.cut.tool, c.wood.split.maul, c.wood.split.wedge, c.wood.hew.tool]);
+  for (const p of Object.values(c.props)) if (p.harvest) for (const t of [p.harvest.tool, ...Object.keys(p.harvest.also)]) if (t) jobs.add(t);
+  for (const t of Object.values(c.transforms)) for (const tool of t.tools) jobs.add(tool);
+  for (const p of Object.values(c.plans)) jobs.add(p.stake);
+  // ce que prend chaque genre de tas
+  const genreOf = new Map<string, string>();
+  for (const [g, d] of Object.entries(c.piles)) {
+    const key = 'item' in d.piece ? d.piece.item : 'prop' in d.piece ? d.piece.prop : undefined;
+    if (key) genreOf.set(key, g);
+    if (!d.count) err(`piles.json '${g}' : un tas compte ses pièces ('count': true)`);
+    if ('prop' in d.piece && !c.props[d.piece.prop]?.take) err(`piles.json '${g}' : sa pièce '${d.piece.prop}' ne se prend pas ('take')`);
+  }
+  for (const [k, it] of Object.entries(c.items)) {
+    const at = `items.json '${k}'`;
+    const todo = DRAWINGS_TODO[k] ?? {};
+    if (it.weapon && !cat.textures.has(it.weapon.image ?? `weapon-${k}`)) err(`${at} : une arme a sa planche '${it.weapon.image ?? `weapon-${k}`}' (pixel-artist)`);
+    if (it.weapon && !c.combat.families[it.weapon.family]) err(`${at} : famille d'arme '${it.weapon.family}' absente de combat.json`);
+    if (it.work && !todo.tool && !cat.textures.has(`tool-${k}`)) err(`${at} : un outil qui frappe ('work') a sa planche en main 'tool-${k}' (art/items/held.ts, pixel-artist), ou DRAWINGS_TODO`);
+    if (it.work && !jobs.has(k)) err(`${at} : un outil qui frappe ('work') sert à un travail (une récolte, le bois, une transformation)`);
+    if (it.kind === 'tool' && !jobs.has(k) && !todo.ground) err(`${at} : un outil qui ne sert à aucun travail`);
+    if (it.pile && genreOf.get(k) !== it.pile) err(`${at} : 'pile' nomme '${it.pile}', dont la pièce n'est pas cet objet (piles.json)`);
+    if (genreOf.has(k) && it.pile !== genreOf.get(k)) err(`${at} : le genre de tas '${genreOf.get(k)}' le prend ; il le nomme ('pile')`);
+    if (!it.ground && !todo.ground) err(`${at} : un objet qu'on pose a son image au sol ('ground', pixel-artist), ou DRAWINGS_TODO`);
+    if (it.ground && todo.ground) err(`validate.ts DRAWINGS_TODO : '${k}' a son image au sol, à retirer de la liste`);
+    if (it.ground && !it.dims) err(`${at} : une image au sol a ses dimensions ('dims') : le gabarit la contrôle`);
+    if (it.work && todo.tool && cat.textures.has(`tool-${k}`)) err(`validate.ts DRAWINGS_TODO : '${k}' a sa planche en main, à retirer de la liste`);
+  }
+  for (const [k, d] of [...Object.entries(c.items), ...Object.entries(c.props)]) {
+    if (!d.trade && !TRADE_TODO.has(k)) err(`'${k}' : son métier ('trade', CONCEPTION « Les matières »), ou TRADE_TODO`);
+    if (d.trade && TRADE_TODO.has(k)) err(`validate.ts TRADE_TODO : '${k}' a son métier, à retirer de la liste`);
+  }
+  return errors;
+}
+
+/**
  * Le catalogue du mode construction (src/build/catalog.ts) a tout : chaque objet de props.json (sauf la pièce de bois, présente par
  * ses réglages) et d'items.json, chaque diamètre et aspect de la pièce de bois, chaque assemblage ; chaque entrée a un nom (la
  * recherche se fait sur le nom et la clé), une famille et une vignette dessinée. Un oubli est une erreur, sauf dans CATALOG_EXCLUDED.
@@ -968,8 +1039,10 @@ function validateAges(c: Content, cat: Catalog): string[] {
     ...Object.entries(c.props).map(([k, d]) => [`props.json '${k}'`, k, d] as [string, string, PropDef]),
     ...Object.entries(c.items).map(([k, d]) => [`items.json '${k}'`, k, d] as [string, string, ItemDef]),
   ];
+  // le bois se reconnaît à sa matière (la masse de bois) ou à son métier (le menuisier, le charpentier ne font que du bois), jamais à sa clé
+  const woodTrades = ['joiner', 'carpenter'];
   for (const [at, key, d] of entries) {
-    if (isWood(d.mass) && !d.aged && !RAW_WOOD[key]) errors.push(`${at} : un objet de bois prend l'âge du bois ('"aged": true', ses images à trois âges), ou va dans RAW_WOOD avec sa raison`);
+    if ((isWood(d.mass) || woodTrades.includes(d.trade ?? '')) && !d.aged && !RAW_WOOD[key]) errors.push(`${at} : un objet de bois prend l'âge du bois ('"aged": true', ses images à trois âges), ou va dans RAW_WOOD avec sa raison`);
     if (d.aged && RAW_WOOD[key]) errors.push(`${at} : 'aged' et dans RAW_WOOD : l'un ou l'autre`);
     if (!d.aged) continue;
     const images = ageableImages({ ...d, image: 'image' in d ? d.image : undefined, ground: 'ground' in d ? d.ground : undefined, icon: 'icon' in d ? d.icon : undefined, variants: 'variants' in d ? d.variants : undefined });
@@ -1287,6 +1360,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Le catalogue du mode construction : tout y est, avec un nom et une vignette
   addAll(validateCatalog(c, cat));
+
+  // Les capacités : chacune a tout ce qu'elle demande
+  addAll(validateCapabilities(c, cat));
 
   // Tas : genres, pièces, formes
   addAll(validatePiles(c, cat));
