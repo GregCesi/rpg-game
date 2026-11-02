@@ -24,7 +24,6 @@ await playtest('temps', async ({ page, errors, load }) => {
     const w = () => g.scene.getScene('world');
     const urls = { state: '/src/state/index.ts', clock: '/src/systems/clock.ts', content: '/src/content/index.ts', plan: '/src/world/workPlan.ts' };
     const gs = await import(urls.state);
-    const { ClockSystem } = await import(urls.clock);
     const content = await import(urls.content);
     const notices: string[] = [];
     g.events.on('notice', (t: string) => notices.push(t));
@@ -57,7 +56,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     const m0 = minutes();
     const t0 = performance.now();
     await sleep(2000);
-    out.x1 = { game: minutes() - m0, real: performance.now() - t0, speed: ClockSystem.speed };
+    out.x1 = { game: minutes() - m0, real: performance.now() - t0, speed: (await import('/src/systems/simSpeed.ts' as string)).simSpeed() };
     const told = notices.length;
     const hudClock = () => g.scene.getScene('hud').clockText as string;
     const sim = await import('/src/systems/simSpeed.ts' as string);

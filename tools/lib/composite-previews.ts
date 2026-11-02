@@ -428,7 +428,7 @@ export function gabaritPreview(sources: ArtSource[]): PNG | undefined {
 }
 
 /** Un objet d'une carte Tiled tel que l'aperçu le pose : son type (clé de props.json), coin bas gauche de son image. */
-export interface PreviewObject {
+interface PreviewObject {
   type: string;
   x: number;
   y: number;

@@ -63,7 +63,7 @@ export class TurnSystem {
     const push = this.pushAway(player, box);
     if (push === null) return nope;
 
-    const spawned = { spawned: p.spawned, chain: p.chain, length: p.length, wood };
+    const spawned = { spawned: p.spawned, length: p.length, wood };
     this.map.removeProp(p);
     const placed = this.map.placeProp({ id: p.id, type: into, x, y: top + img.h }, spawned);
     const change = stateOf(placed);

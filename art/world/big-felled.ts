@@ -342,7 +342,7 @@ export interface Felled {
  * puis le houppier ; `aim` : point visé du houppier ; `at` : décalage du coin bas gauche de la pièce de bois par rapport à
  * celui de l'image couchée.
  */
-export interface FelledLayout {
+interface FelledLayout {
   w: number;
   h: number;
   spawn: Vec;
@@ -451,7 +451,7 @@ export function felledTree(cm: number, shift: number, what: string): Felled {
 // ombre ne reste que sous les colonnes où il en reste. Le cadre reste celui de l'arbre entier.
 
 /** L'arbre couché d'un tronc de `cm` cm (sans la souche, dans la frame), son houppier réduit aux pixels que `keep` garde. */
-export function lightenedFelled(cm: number, shift: number, left: boolean, keep: (h: number, g: number) => boolean): Canvas {
+function lightenedFelled(cm: number, shift: number, left: boolean, keep: (h: number, g: number) => boolean): Canvas {
   const body = left ? crownBodyLeft() : crownBody();
   // le houppier est décalé de `shift` (à droite) ou de −shift (à gauche) : on le juge là où il sera posé
   const crown = new Canvas(FALL_W, FALL_H);

@@ -11,7 +11,7 @@ import type { BuildPiece, Joint } from '../state';
 import { BACK, interiorId, type Building, type Rect, type Side, type Window } from './interior';
 
 /** Une sortie de l'intérieur : la zone de passage (repère de l'intérieur), la direction de Xéros qui sort, où il arrive dehors. */
-export interface InteriorExit {
+interface InteriorExit {
   zone: Rect;
   facing: Facing;
   to: { x: number; y: number; facing: Facing };

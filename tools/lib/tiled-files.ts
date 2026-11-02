@@ -3,7 +3,7 @@
 
 import type { TerrainDef } from '../../src/content/types';
 
-export const GENERATED_NOTE =
+const GENERATED_NOTE =
   "GÉNÉRÉ par tools/build-art.ts à partir de art/ et de src/content/. Ne pas éditer, ni à la main ni dans Tiled : npm run art le réécrit.";
 
 /**
@@ -11,7 +11,7 @@ export const GENERATED_NOTE =
  * au-dessus (PROPS_FIRSTGID), donc un jeu de tuiles qui grossit ne peut pas le recouvrir. Ensuite c'est le
  * `firstgid` écrit dans chaque .tmj qui fait foi (build-maps détecte les chevauchements).
  */
-export const TILESET_MAX = 1000;
+const TILESET_MAX = 1000;
 export const PROPS_FIRSTGID = TILESET_MAX + 1;
 
 const TILED_VERSION = { version: '1.10', tiledversion: '1.11.0' };
@@ -25,7 +25,7 @@ const EDGE_INDEX = [0, 2, 4, 6];
  * bas, bas-gauche, gauche, haut-gauche. Les coins valent 0 (jeu d'arêtes) ; chaque arête vaut 1 (le terrain)
  * si le voisin est du même terrain, 2 (« autre ») sinon : jamais 0, qui veut dire « indifférent » pour Tiled.
  */
-export function wangId(mask: number): number[] {
+function wangId(mask: number): number[] {
   const id = [0, 0, 0, 0, 0, 0, 0, 0];
   EDGE_INDEX.forEach((at, bit) => {
     id[at] = mask & (1 << bit) ? 1 : 2;

@@ -14,7 +14,7 @@ import type { Dims } from './gabarit';
 import type { ItemDef, Matter, MatterMass, Natural, PileDef, PropDef, Rock, WoodPiece } from './types';
 
 /** Densité de la pierre commune, kg/m³ : celle de la roche de la pierre de matters.json (le calcaire, rocks.json). */
-export const STONE_DENSITY = rockDefs[matterDefs.stone.rock!].density;
+const STONE_DENSITY = rockDefs[matterDefs.stone.rock!].density;
 
 /** Ce qu'il faut du contenu pour peser : mêmes tables que `src/content/index.ts` (validate.ts passe les siennes). */
 export interface MassCatalog {
@@ -34,7 +34,7 @@ const CONTENT: MassCatalog = { props: propDefs, items: itemDefs, piles: pileDefs
 export type Weighed = { item: string; natural?: Natural } | { prop: string; length?: number; wood?: WoodPiece; natural?: Natural };
 
 /** Volume (m³) de dimensions réelles : une boîte, w × d × h ; un cylindre, π r² × sa longueur (son diamètre est sa hauteur) ; à plat, sans volume. */
-export function dimsVolume(d: Dims): number {
+function dimsVolume(d: Dims): number {
   const [w, dd, h] = [d.w / 100, d.d / 100, d.h / 100];
   if (d.shape === 'cylinder') {
     const [len, dia] = d.axis === 'ew' ? [w, h] : d.axis === 'ns' ? [dd, h] : [h, w];
@@ -47,7 +47,7 @@ export function dimsVolume(d: Dims): number {
  * Densité (kg/m³) d'une matière : la sienne (matters.json), ou, pour la pierre, celle de sa roche (rocks.json) : `rock`, la roche
  * de cet objet, sinon la roche commune de la matière.
  */
-export function matterDensity(key: string, rock?: string, cat: Pick<MassCatalog, 'matters' | 'rocks'> = CONTENT): number {
+function matterDensity(key: string, rock?: string, cat: Pick<MassCatalog, 'matters' | 'rocks'> = CONTENT): number {
   const matter = cat.matters[key];
   if (!matter) throw new Error(`matière « ${key} » absente de matters.json`);
   const r = rock ?? matter.rock;
@@ -58,7 +58,7 @@ export function matterDensity(key: string, rock?: string, cat: Pick<MassCatalog,
 }
 
 /** Masse (kg) par la matière : le volume des `dims` × la part qu'occupe la matière × sa densité (matters.json, rocks.json). */
-export function matterMass(d: Dims, m: MatterMass, cat: MassCatalog = CONTENT): number {
+function matterMass(d: Dims, m: MatterMass, cat: MassCatalog = CONTENT): number {
   return dimsVolume(d) * (m.fill ?? 1) * matterDensity(m.matter, m.rock, cat);
 }
 
@@ -71,7 +71,7 @@ export const naturalFactor = (n: Natural | undefined) => (n ? (n.size / 100) ** 
  * équarrit perd à chaque face finie un quart de ce qui sépare son rond du carré de la poutre (`hew.beam` de côté), et la face en cours
  * (`dressed`) la part de ce quart qu'elle a dressée de la longueur (section moyenne).
  */
-export function woodSection(piece: WoodPiece): number {
+function woodSection(piece: WoodPiece): number {
   const size = woodDef.sizes[piece.size];
   if (!size) throw new Error(`wood.json : diamètre « ${piece.size} » inconnu`);
   const round = Math.PI * (size.diameter / 200) ** 2;

@@ -107,10 +107,6 @@ function side(spread: number, arm: number, bob: number, swapLegs = false): Grid 
 // profil le haut du corps avance ; 2 pour la masse : deux rangées). Pieds écartés d'un pixel, plantés. La tête garde sa hauteur
 // hors du cambré et du tassé. Le jeu impose la durée de chaque image (world/swing.ts) ; FRAME_RATE ne sert qu'aux aperçus.
 
-/** Les cinq temps de chaque image d'un geste de travail (gestures.json, `phases`). */
-export const WORK_PHASES = ['arm', 'arm', 'hold', 'down', 'down', 'impact', 'free', 'free'] as const;
-/** Image de l'impact dans les gestes de travail (0 à 7). */
-export const WORK_IMPACT = 5;
 /** Cadences des aperçus (le coup de Xéros d'aujourd'hui : environ 1,9 s à la cognée, 3 s à la masse). */
 export const USE_FRAME_RATE = 4;
 export const CHOP_FRAME_RATE = 4;
@@ -385,7 +381,7 @@ const walkRight = WALK_SIDE.map(([spread, arm, bob, swap]) => side(spread, arm, 
 // bras tendus vers l'avant, mains jointes à hauteur de ventre ; le pas de la marche, plus court, un peu plus lent ;
 // de profil, la tête recule d'un pixel (dos cambré pour équilibrer la charge).
 
-export const CARRY_FRAME_RATE = 6;
+const CARRY_FRAME_RATE = 6;
 
 interface CarryBody {
   /** Mains jointes, dans la frame, avant le rebond de la marche. */
@@ -478,7 +474,7 @@ export const CARRY_HANDS: Record<'down' | 'up' | 'right', { idle: { dx: number; 
 /** Point d'accroche depuis les pieds (dx = x − 16, dy = y − 48 dans la frame) ; `behind` : l'objet passe sous le corps. */
 export interface HoldPoint { dx: number; dy: number; behind: boolean }
 /** Les deux mains de Xéros (sa gauche et sa droite, pas celles de l'image). */
-export interface HandPair { left: HoldPoint; right: HoldPoint }
+interface HandPair { left: HoldPoint; right: HoldPoint }
 
 const holdAt = ([x, y]: Vec, behind: boolean): HoldPoint => ({ dx: x - 16, dy: y - 48, behind });
 
@@ -606,7 +602,7 @@ export const SHOULDER_POINTS: Record<'down' | 'up' | 'right', { idle: HoldPoint;
 // ventre ; buste penché vers la poussée, tête rentrée dans les épaules (un pixel plus bas que debout) ; jambes écartées,
 // le pied arrière en appui. Pas lents et lourds : la moitié de la cadence de walk-*. La charge est une image à part.
 
-export const PUSH_FRAME_RATE = 4;
+const PUSH_FRAME_RATE = 4;
 
 /** Une jambe de profil, de la hanche à la cheville, et sa botte (la pointe vers la poussée). */
 function pushLeg(c: Canvas, hip: Vec, ankle: Vec, back: boolean) {

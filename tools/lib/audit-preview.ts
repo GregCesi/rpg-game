@@ -19,7 +19,7 @@ import { EXCEPTIONS } from '../../src/content/validate';
  * Dimensions réelles proposées par l'audit pour les objets dont les dimensions déclarées ne sont pas plausibles
  * (objets paysans médiévaux, en centimètres). Elles ne remplacent rien : props.json fait foi.
  */
-export const PROPOSED: Record<string, Dims> = {
+const PROPOSED: Record<string, Dims> = {
   // âtre de ferme : 2 m de large, manteau et hotte jusqu'à 2,5 m (déclaré : 3,20 m de large, 4,15 m de haut)
   fireplace: { w: 200, d: 90, h: 250, shape: 'box' },
   // table de travail et établi : environ 2 m (déclaré : 3,10 m et 3,20 m)

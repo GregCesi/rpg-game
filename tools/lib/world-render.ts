@@ -15,7 +15,7 @@ export interface Img {
   data: Uint8Array;
 }
 
-export function readPng(path: string): Img {
+function readPng(path: string): Img {
   const p = PNG.sync.read(readFileSync(path));
   return { w: p.width, h: p.height, data: p.data };
 }
@@ -46,7 +46,7 @@ export function rect(img: Img, x: number, y: number, w: number, h: number, c: RG
 }
 
 /** Une image réduite d'un facteur entier : chaque pixel est la moyenne de son bloc (les pixels transparents ne comptent pas). */
-export function shrinkImg(src: Img, f: number, sx = 0, sy = 0, sw = src.w, sh = src.h): Img {
+function shrinkImg(src: Img, f: number, sx = 0, sy = 0, sw = src.w, sh = src.h): Img {
   const w = Math.max(1, Math.round(sw / f));
   const h = Math.max(1, Math.round(sh / f));
   const out = blank(w, h, [0, 0, 0, 0]);

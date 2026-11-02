@@ -55,7 +55,7 @@ function buttEnds(c: Canvas, cx: number, cy: number, rx: number, ry: number) {
  * longueur : les bouts sont inégaux, dans l'enveloppe d'un ovale (5 px de large avec le contour).
  * `twigs` : colonnes (depuis x0) des rameaux qui dépassent du dessus, penchés vers les pointes (à droite).
  */
-export function bundleEW(c: Canvas, x0: number, y0: number, len: number, dia: number, seed: number, twigs: number[] = []): Canvas {
+function bundleEW(c: Canvas, x0: number, y0: number, len: number, dia: number, seed: number, twigs: number[] = []): Canvas {
   const r = rng(seed);
   const a = 2; // demi-largeur de l'ovale d'un bout, sans le contour
   const ry = dia / 2;
@@ -152,7 +152,7 @@ function dropShadow(c: Canvas, down: number, fromY = 0) {
 }
 
 /** Le fagot est-ouest, sans ombre : 26 × 11 px de silhouette (et ses rameaux), dans une image de 27 × 14. */
-export const FAGGOT_TWIGS = [6, 16];
+const FAGGOT_TWIGS = [6, 16];
 export function faggotBody(): Canvas {
   const c = new Canvas(27, 14);
   // intérieur de 24 × 9, contour autour : 26 × 11 ; les rameaux montent de deux rangées au-dessus
@@ -191,7 +191,7 @@ function trimTop(c: Canvas): Canvas {
  * qui dépassent du flanc ouest (le dessus de l'est-ouest), penchés vers les pointes. Le lien en travers au milieu, sur deux
  * rangées, le faisceau pincé sur ses flancs.
  */
-export function bundleNS(c: Canvas, x0: number, y0: number, len: number, dia: number, seed: number, twigs: number[] = []): Canvas {
+function bundleNS(c: Canvas, x0: number, y0: number, len: number, dia: number, seed: number, twigs: number[] = []): Canvas {
   const r = rng(seed);
   const rx = dia / 2;
   const ry = dia / 4; // le rond d'un bout, vu de dessus en raccourci

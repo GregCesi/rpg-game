@@ -10,10 +10,10 @@ const id = z.string().min(1);
 export const FacingSchema = z.enum(['down', 'up', 'left', 'right']);
 
 /** Détails posés au hasard sur un sol (touffes, paille...) : ils cassent la répétition des tuiles. */
-export const DecalSetSchema = z.strictObject({ images: z.array(id).min(1), chance: z.number().min(0).max(1) });
+const DecalSetSchema = z.strictObject({ images: z.array(id).min(1), chance: z.number().min(0).max(1) });
 
 /** Propriétés d'une tuile du tileset (celles qui ne sont pas dans un terrain). */
-export const TileInfoSchema = z.strictObject({
+const TileInfoSchema = z.strictObject({
   /** Bloque le passage. */
   solid: z.boolean().optional(),
   /** Nom d'un ensemble de `decals` du même jeu de tuiles. */
@@ -24,7 +24,7 @@ export const TileInfoSchema = z.strictObject({
  * Famille de 16 tuiles `<terrain>-<masque>` (masque N=1 E=2 S=4 O=8 : un bit à 1 = le voisin est du même terrain).
  * Devient un ensemble de terrains Wang dans le tileset de Tiled.
  */
-export const TerrainDefSchema = z.strictObject({
+const TerrainDefSchema = z.strictObject({
   /** Couleur du terrain dans Tiled (#rrggbb). */
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   solid: z.boolean().optional(),
@@ -38,10 +38,10 @@ export const TilesetCatalogSchema = z.strictObject({
 });
 
 /** Rectangle en pixels, dans le repère de l'image (0,0 = coin haut gauche). */
-export const RectSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive() });
+const RectSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive() });
 
 /** Ce qui tombe d'un objet récolté : `min` à `max` exemplaires de l'objet possédable `item` (clé de items.json). */
-export const DropSchema = z.strictObject({
+const DropSchema = z.strictObject({
   item: id,
   min: z.number().int().min(0),
   max: z.number().int().min(1),
@@ -62,14 +62,14 @@ const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
  * billot (`whittle` : le diamètre de la branche et la longueur de la pointe, cm), casser un rocher (`break` : le volume de pierre à
  * abattre, cm³). Absent : une récolte de `hits` coups simples.
  */
-export const HarvestWorkSchema = z.union([
+const HarvestWorkSchema = z.union([
   z.strictObject({ fell: z.strictObject({ diameter: z.number().positive() }) }),
   z.strictObject({ limbs: z.strictObject({ count: z.number().int().positive(), diameter: z.number().positive() }) }),
   z.strictObject({ whittle: z.strictObject({ diameter: z.number().positive(), length: z.number().positive() }) }),
   z.strictObject({ break: z.strictObject({ volume: z.number().positive() }) }),
 ]);
 
-export const HarvestSchema = z.strictObject({
+const HarvestSchema = z.strictObject({
   /** La matière, si la récolte se travaille au coup (voir HarvestWorkSchema). */
   work: HarvestWorkSchema.optional(),
   /**
@@ -81,7 +81,7 @@ export const HarvestSchema = z.strictObject({
   stages: z.array(z.number().gt(0).lt(1)).optional(),
   /** Objet possédable nécessaire (clé de items.json, de type 'tool') ; absent = à la main. */
   tool: id.optional(),
-  /** Nombre de coups. L'objet tremble à chaque coup. */
+  /** Une récolte sans matière (`work` absent) : son nombre de coups simples ; l'objet tremble à chaque coup. Avec `work`, inutilisé (la matière fait les coups). */
   hits: z.number().int().positive(),
   /** Matière frappée : à chaque coup, des éclats de la planche `fx-<matière>` jaillissent du point d'impact. */
   impact: z.enum(['wood', 'stone', 'leaves']).optional(),
@@ -96,8 +96,6 @@ export const HarvestSchema = z.strictObject({
    * l'outil `tool` dans la première main ; ni `becomes` ni `drops` n'y servent.
    */
   convert: z.strictObject({ from: z.record(id, id), refuse: id }).optional(),
-  /** Prix du coup en endurance : une clé de `costs` de stamina.json. Absent : `chop` (`cutTie` pour le billot qui porte une corde). */
-  effort: EffortSchema.optional(),
   /**
    * D'autres outils (clés de items.json) qui font le même travail que `tool`, chacun avec le prix de son coup : la hachette coupe un
    * lien du rouleau posé sur le billot comme la cognée, pour moins cher (`whittle`).
@@ -114,7 +112,7 @@ export const HarvestSchema = z.strictObject({
    * dans `big-tree`, en x = 47 dans `big-tree-fall` : x = -14). `left` : la chute vers la gauche, une planche à part (pas de miroir),
    * avec la même animation `anim`. `foot` : colonne du pied dans l'image de l'objet ; ce qui naît vers la gauche est posé
    * en miroir de la droite autour de ce pied (x' = 2 × foot − (x + largeur − 1)), avec ses images `-left`.
-   * L'objet tombe du côté opposé à celui qui frappe ; frappé d'en haut ou d'en bas, d'un côté au hasard.
+   * L'objet tombe du côté où Xéros frappe (l'entaille, `side` du travail en cours) ; frappé d'en haut ou d'en bas, d'un côté au hasard.
    */
   fall: z
     .strictObject({
@@ -152,7 +150,7 @@ export const HarvestSchema = z.strictObject({
  * `{ "pile": genre }` : la somme d'un tas plein de ce genre de `piles.json` plus son lien (le fagot : ses dix branches et son lien).
  * Un objet qu'on prend, pose ou roule en a une (validate.ts).
  */
-export const MassSchema = z.union([
+const MassSchema = z.union([
   z.number().positive(),
   z.literal('wood'),
   // une pierre : le volume de sa boîte (`dims`) × la densité de la pierre (mass.ts)
@@ -167,7 +165,7 @@ export const MassSchema = z.union([
  * matière : 0,56 pour une pierre brute de carrière, anguleuse ; 1 pour ce qui est taillé ou moulé) × la densité. Une matière
  * naturelle (`natural`) pèse ensuite au cube de sa taille tirée.
  */
-export const MatterMassSchema = z.strictObject({
+const MatterMassSchema = z.strictObject({
   matter: id,
   fill: z.number().positive().max(1).default(1),
   /** La roche (clé de rocks.json) d'une pierre qui n'est pas de la roche commune de sa matière (`rock` de matters.json). */
@@ -205,7 +203,7 @@ export const RockSchema = z.strictObject({
  * `natural` de ce qu'on tient, d'un objet né, changé ou posé au sol). Sa masse suit le cube de sa taille ; son image ne change pas
  * (± 7 % de 45 cm, c'est moins d'un pixel : dans la tolérance du gabarit).
  */
-export const NaturalDefSchema = z.strictObject({ forms: z.union([z.literal(1), z.literal(2)]), vary: z.number().int().min(1).max(15) });
+const NaturalDefSchema = z.strictObject({ forms: z.union([z.literal(1), z.literal(2)]), vary: z.number().int().min(1).max(15) });
 
 /** Ce que GameState garde d'un exemplaire naturel : sa forme (0 : `<image>`, 1 : `<image>-b`) et sa taille, en % de la taille type. */
 export const NaturalSchema = z.strictObject({ form: z.union([z.literal(0), z.literal(1)]), size: z.number().int().min(85).max(115) });
@@ -218,14 +216,14 @@ export const NaturalSchema = z.strictObject({ form: z.union([z.literal(0), z.lit
  * planche, le bardeau), le menuisier (le bois travaillé fin, le maillet), le forgeron (les outils de fer), le paysan (ce que tout
  * le monde fait : puiser, ramasser).
  */
-export const TradeSchema = z.enum(['quarryman', 'mason', 'digger', 'thatcher', 'woodcutter', 'carpenter', 'splitter', 'joiner', 'smith', 'peasant']);
+const TradeSchema = z.enum(['quarryman', 'mason', 'digger', 'thatcher', 'woodcutter', 'carpenter', 'splitter', 'joiner', 'smith', 'peasant']);
 
 /**
  * Ce qui roule quand Xéros le pousse (la pièce de bois ronde : `roll` de sa définition tirée de ses réglages, world/woodPiece.ts) :
  * `axis` de la pièce couchée (est-ouest : elle roule vers le nord ou le sud ; nord-sud : vers l'est ou l'ouest) ; `sheet` : la planche
  * de ses parties (son image s'assemble à sa longueur, 4 images = un tour). Son diamètre et sa masse viennent de ses réglages.
  */
-export const RollSchema = z.strictObject({ axis: z.enum(['ew', 'ns']), sheet: id });
+const RollSchema = z.strictObject({ axis: z.enum(['ew', 'ns']), sheet: id });
 
 /**
  * Ce qui pivote d'un quart de tour quand Xéros, mains vides, maintient R à son contact (la pièce de bois couchée) : `into`, l'objet
@@ -233,17 +231,17 @@ export const RollSchema = z.strictObject({ axis: z.enum(['ew', 'ns']), sheet: id
  * bois : seul son sens change). Le coût en endurance est
  * proportionnel à sa masse (`turnPerKg` de stamina.json).
  */
-export const TurnSchema = z.strictObject({ into: id });
+const TurnSchema = z.strictObject({ into: id });
 
 /** Un bout d'une pièce couchée : l'ouest, l'est (est-ouest), le nord, le sud (nord-sud). */
-export const EndSchema = z.enum(['west', 'east', 'north', 'south']);
+const EndSchema = z.enum(['west', 'east', 'north', 'south']);
 
 /**
  * Aspect d'une pièce de bois, ce que montre son dessin : ronde (`round`), ronde écorcée (`peeled`, le rondin de la cabane), demi
  * (`half`), quart (`quarter`), une à trois faces dressées à la doloire (`f1`, `f2`, `f3`), équarrie (`beam`, la poutre). L'aspect se
  * déduit des réglages (forme, écorcée, coups de doloire).
  */
-export const WoodLookSchema = z.enum(['round', 'peeled', 'half', 'quarter', 'f1', 'f2', 'f3', 'beam', 'plank']);
+const WoodLookSchema = z.enum(['round', 'peeled', 'half', 'quarter', 'f1', 'f2', 'f3', 'beam', 'plank']);
 
 /**
  * L'âge du bois travaillé (docs/CONCEPTION.md, « L'âge du bois ») : neuf (`new`, blond chaud), patiné (`worn`, brun doux), vieux
@@ -265,7 +263,7 @@ export const WoodAgeSchema = z.enum(['new', 'worn', 'old']);
  * Forme d'une pièce de bois : ronde, demi (fendue en deux), quart (le quartier), planche (fendue au coutre dans un quartier ou une
  * demi-bille : `plank` de wood.json, son épaisseur et sa largeur).
  */
-export const WoodShapeSchema = z.enum(['round', 'half', 'quarter', 'plank']);
+const WoodShapeSchema = z.enum(['round', 'half', 'quarter', 'plank']);
 
 export const WoodPieceSchema = z.strictObject({
   size: id,
@@ -356,7 +354,7 @@ const WoodUpSchema = z.strictObject({
  * `flats` : les faces dressées, dans l'ordre de la doloire, nommées en est-ouest (le dessus, le sud, le nord, le dessous ; tournée
  * nord-sud, le sud passe à l'ouest). `faces` : la matière des faces planes (`split` fendue, `hewn` dressée).
  */
-export const WoodSectionSchema = z.strictObject({
+const WoodSectionSchema = z.strictObject({
   shape: z.enum(['round', 'half', 'quarter', 'rect']),
   bark: z.enum(['arc', 'none']),
   heart: z.enum(['center', 'face', 'apex', 'none']),
@@ -371,7 +369,7 @@ export type WoodSection = z.infer<typeof WoodSectionSchema>;
  * vues `down` et `up` par le bout, ne dépendant pas de la longueur ; `right`, la pièce de 1 m de profil, que le jeu remplace par la
  * pièce assemblée à sa longueur), et la géométrie de ses parties (contrat entre le dessin et le jeu, `world/woodShape.ts`).
  */
-export const WoodLookDefSchema = z.strictObject({
+const WoodLookDefSchema = z.strictObject({
   name: id,
   gender: z.enum(['m', 'f']),
   icon: id,
@@ -398,7 +396,7 @@ const WoodSplitSchema = z.strictObject({
  * qu'ils deviennent (vide : ce diamètre ne se fend pas) ; `looks` : ses aspects dessinés. Un nouveau bois = un diamètre ou un aspect
  * ici, avec ses dessins, pas une nouvelle clé d'objet.
  */
-export const WoodSizeSchema = z.strictObject({
+const WoodSizeSchema = z.strictObject({
   name: id,
   diameter: z.number().positive(),
   sheet: id,
@@ -426,7 +424,7 @@ export const WoodSchema = z.strictObject({
   max: z.number().int().positive(),
   /** La durée d'une coupe découle de ses coups (docs/CONCEPTION.md, « Le travail ») ; `hits` : ses étapes (l'encoche qui se creuse). */
   cut: z.strictObject({ tool: id, hits: z.number().int().positive() }),
-  hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive(), stroke: z.number().int().positive() }),
+  hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive() }),
   /** La planche fendue : son épaisseur et sa largeur de bois (cm), quel que soit le diamètre d'où elle vient. */
   plank: z.strictObject({ thick: z.number().positive(), wide: z.number().positive() }),
   split: z.strictObject({ wedge: id, maul: id, hits: z.number().int().positive() }),
@@ -436,13 +434,13 @@ export const WoodSchema = z.strictObject({
 });
 
 /** Nombre de mains que demande un objet qu'on prend : une, ou les deux (lourd ou long). */
-export const HandsSchema = z.union([z.literal(1), z.literal(2)]);
+const HandsSchema = z.union([z.literal(1), z.literal(2)]);
 
 /**
  * Objet du monde qu'on prend dans les mains avec E (la bille) : il quitte la carte, et Xéros le porte devant lui
  * (voir `hold`). Reposé, il retrouve la carte à sa nouvelle place.
  */
-export const TakeSchema = z.strictObject({
+const TakeSchema = z.strictObject({
   hands: HandsSchema,
   /** Icône 16×16 affichée dans les cases des mains (`item-<…>`). */
   icon: id,
@@ -458,7 +456,7 @@ export const TakeSchema = z.strictObject({
  * caisse, fagot) ; `four` quatre (`<image>`, puis `<image>-r1`, `-r2`, `-r3`, un quart de tour de plus dans le sens des
  * aiguilles d'une montre à chaque fois : coffre, lit, outil, branche ; ce qui tombe a son demi-tour en `<image>-left`).
  */
-export const ViewsSchema = z.enum(['round', 'symmetric', 'four']);
+const ViewsSchema = z.enum(['round', 'symmetric', 'four']);
 
 /** Un objet possédable (dans les mains, au sol) : sa clé dans items.json est son identifiant. Une main en tient un seul. */
 export const ItemDefSchema = z.strictObject({
@@ -500,7 +498,7 @@ export const ItemDefSchema = z.strictObject({
  * profondeur (nord-sud), `h` hauteur ; `shape` : `box`, `cylinder` (avec `axis` : `ew` couché est-ouest, `ns` couché
  * nord-sud, `up` debout) ou `flat` (à plat sur le sol). validate.ts en tire la taille attendue de l'image.
  */
-export const DimsSchema = z
+const DimsSchema = z
   .strictObject({
     w: z.number().positive(),
     d: z.number().positive(),
@@ -656,7 +654,7 @@ export const CornerSchema = z.enum(['nw', 'ne', 'se', 'sw']);
  * poutre. ») ; pour une poutre, « Il faut l'équarrir d'abord. » et « Il faut une poutre de 3 m. » sont dits d'après ses réglages.
  * Les places d'un tas, elles, acceptent un genre (`genre` de piles.json).
  */
-export const AcceptSchema = z
+const AcceptSchema = z
   .strictObject({
     prop: id.optional(),
     item: id.optional(),
@@ -671,7 +669,7 @@ export const AcceptSchema = z
  * (`orientation`), sur quelles places elle repose (`on`, des places du plan : elle n'existe que quand elles sont posées) ;
  * `corner` : le piquet de ce coin est arraché quand elle est posée ; `accepts` : la pièce qu'on y apporte (sinon celle de l'étape).
  */
-export const PlanPlaceSchema = z.strictObject({
+const PlanPlaceSchema = z.strictObject({
   piece: id,
   at: z.tuple([px, px]),
   orientation: z.enum(['flat', 'upright', 'ew', 'ns', 'slope']),
@@ -681,7 +679,7 @@ export const PlanPlaceSchema = z.strictObject({
 });
 
 /** Une étape d'un plan : son nom (« les dés »), ses places, et `soon` : déclarée mais pas encore jouable (« à venir »). */
-export const PlanStepSchema = z.strictObject({
+const PlanStepSchema = z.strictObject({
   name: id,
   soon: z.literal(true).optional(),
   /** Ce que seront les pièces de cette étape quand elle s'ouvrira (une étape `soon` garde ses dessins actuels en fantôme jusqu'alors). */
@@ -715,7 +713,7 @@ export const PlanSchema = z.strictObject({
  * Ce qu'est une pièce posée en mode construction (le bac à sable) : un objet du monde (`prop`, clé de props.json), un objet
  * possédable (`item`, clé de items.json) ou une pièce de bois (`wood`, ses réglages ; son sens est son `axis`).
  */
-export const BuildRefSchema = z.union([
+const BuildRefSchema = z.union([
   z.strictObject({ prop: id }),
   z.strictObject({ item: id }),
   z.strictObject({ wood: z.lazy(() => WoodPieceSchema) }),
@@ -751,7 +749,7 @@ export const BuildPlacedSchema = z.strictObject({
 export const JointTypeSchema = z.enum(['scarf', 'mortise', 'halving', 'notch']);
 
 /** Un assemblage d'un plan du bac à sable : son type et ses deux pièces, par leur rang dans `pieces` du plan. */
-export const PlanJointSchema = z.strictObject({ type: JointTypeSchema, a: z.number().int().nonnegative(), b: z.number().int().nonnegative(), top: z.number().int().nonnegative().optional() });
+const PlanJointSchema = z.strictObject({ type: JointTypeSchema, a: z.number().int().nonnegative(), b: z.number().int().nonnegative(), top: z.number().int().nonnegative().optional() });
 
 /**
  * Un plan du bac à sable (`src/content/plans/<nom>.json`, écrit par « Enregistrer comme plan » du mode construction) : son nom
@@ -775,7 +773,7 @@ export const BuildPlanSchema = z.strictObject({
  * Une place d'un tas (piles.json) : la pièce qui s'y pose est dessinée pour elle (`image`). Coordonnées dans le repère
  * du tas, dont le point (0, 0) est au sol.
  */
-export const PilePlaceSchema = z.strictObject({
+const PilePlaceSchema = z.strictObject({
   /** Couche : 0 au sol, 1 posée sur des pièces de la couche 0, etc. */
   layer: z.number().int().nonnegative(),
   /** Places qui la portent : elle n'existe que quand elles sont toutes prises (vide au sol). */
@@ -857,7 +855,7 @@ export const PileDefSchema = z.strictObject({
 });
 
 /** Où est la main pendant une image d'un geste. (dx, dy) : par rapport aux pieds du personnage (milieu bas de son image). */
-export const PoseSchema = z.strictObject({
+const PoseSchema = z.strictObject({
   dx: px,
   dy: px,
   /**
@@ -899,7 +897,7 @@ export const GestureSchema = z.strictObject({
 });
 
 /** Point d'accroche d'un objet tenu, pour une image : (dx, dy) depuis les pieds. `behind` : derrière le corps à cette image. */
-export const HoldPointSchema = z.strictObject({ dx: px, dy: px, behind: z.boolean().default(false) });
+const HoldPointSchema = z.strictObject({ dx: px, dy: px, behind: z.boolean().default(false) });
 
 /** Par direction (la gauche en miroir de la droite), un point par image ; pour l'attente (`idle`) et la marche (`walk`). */
 const holdMotions = <T extends z.ZodType>(point: T) => {
@@ -921,14 +919,14 @@ export const HoldPosesSchema = z.strictObject({
   carry: holdMotions(HoldPointSchema),
 });
 
-export const StanceSchema = z.enum(['hand', 'shoulder', 'carry']);
+const StanceSchema = z.enum(['hand', 'shoulder', 'carry']);
 
 /**
  * Comment un objet tenu se voit sur Xéros : sa posture (voir HoldPosesSchema) et sa planche `held-<…>` (animations `down`,
  * `up`, `right` d'une image, le point d'accroche au centre ; la gauche = la droite retournée). Sans planche : son icône,
  * à la main. Absent d'un objet possédable : `hand` avec son icône (à deux mains : `carry`).
  */
-export const HoldSchema = z.strictObject({ stance: StanceSchema, image: id.optional() });
+const HoldSchema = z.strictObject({ stance: StanceSchema, image: id.optional() });
 
 /**
  * La force de Xéros (strength.json), en kg : `carry` ce qu'il porte au plus (les deux mains ensemble), `walk` jusqu'où il
@@ -941,7 +939,7 @@ export const HoldSchema = z.strictObject({ stance: StanceSchema, image: id.optio
  * plus du bras (`omegaMax`, rad/s : un outil léger ne prend pas plus d'énergie que ce que le bras lui donne), l'adresse (`skill`, de 0
  * à 1, multiplie la précision de l'outil). `max` : l'endurance d'un être de référence (work.json, `references`).
  */
-export const SwingerSchema = z.strictObject({
+const SwingerSchema = z.strictObject({
   torque: z.number().positive(),
   omegaMax: z.number().positive(),
   skill: z.number().gt(0).lte(1),
@@ -954,7 +952,7 @@ export const SwingerSchema = z.strictObject({
  * affûtée ; la masse qui enfonce un coin, moins) ; `aim`, ce que la précision pèse dans ce qu'enlève un coup (0 : la force seule ; 1 :
  * la précision seule) ; `strokes`, son coup propre pour un genre de travail.
  */
-export const ToolWorkSchema = z
+const ToolWorkSchema = z
   .strictObject({
     length: z.number().positive(),
     grip: z.number().nonnegative(),
@@ -972,7 +970,7 @@ export const ToolWorkSchema = z
  * `free` dégager) : `arm`, `hold`, `free` s'allongent de `armK`, `holdK`, `freeK` × 0,1 s par kg·m² d'inertie, à 50 N·m (une cognée se
  * lève lourdement ; un homme fort la lève plus vite).
  */
-export const WorkStrokeSchema = z.strictObject({
+const WorkStrokeSchema = z.strictObject({
   gesture: id,
   angle: z.number().positive(),
   arm: z.number().nonnegative(),
@@ -1027,16 +1025,6 @@ export const StrengthSchema = z
   .refine((s) => s.walk < s.carry, { message: "'walk' doit être au-dessous de 'carry'" });
 
 /**
- * L'endurance de Xéros (stamina.json), la fatigue de la journée : `max` points ; sous la part `tired` du maximum, il ne
- * court plus et sa marche est ralentie à la part `tiredWalk` de la normale. `costs` : le prix de chaque effort, en points
- * (les « PerSec » se paient chaque seconde de l'effort, les « PerKg » sont proportionnels à la masse en kg) ; marcher ne coûte rien.
- * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `plant` planter
- * le coin de fendage, `whittle` tailler un piquet à la hachette, `stake` planter un piquet de tracé, `maul` un coup de masse sur le coin, `knot`
- * nouer ou dénouer, `hewPerM` un mètre de face dressé à la doloire (payé coup par coup au fil de la passe : équarrir une poutre de 3 m, 4 faces, coûte 12 × `hewPerM`), `turnPerKg` pivoter une bille, `raisePerKg` dresser une poutre sur son appui (par kg ; avec l'aide de la mère, la part `raiseHelped`), `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
- * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir. Une attaque, comme un coup de travail, se paie au joule
- * (`work` ci-dessous, world/strike.ts `attackCost`).
- */
-/**
  * Le temps (time.json, docs/CONCEPTION.md « Le temps ») : `speeds`, les paliers de la vitesse du temps que choisit le joueur (à x1,
  * une journée dure 24 h réelles ; une minute réelle fait `speed` minutes de jeu) ; `default`, le palier de départ, celui où ramène une
  * attaque ; `dieuSpeed`, le palier de plus que propose ?dieu (x50) ; `wakeHour`, l'heure du lever ; `saveEveryMinutes`, tous les combien de minutes de jeu l'horloge seule fait écrire la
@@ -1056,16 +1044,14 @@ export const TimeSchema = z
     dieuSpeed: z.number().positive(),
     wakeHour: z.number().min(0).max(23),
     saveEveryMinutes: z.number().positive(),
-    /**
-     * Durée réaliste des petits travaux, en minutes de jeu : nouer ou dénouer un fagot (`knot`), planter un piquet de tracé (`stake`),
-     * pivoter une bille (`turn`), poser une pièce à sa place d'un chantier (`place`), y dresser une poutre (`raise`). En attente : depuis
-     * que tout se joue en temps réel, ces petits gestes ne durent que leur geste, l'horloge ne saute plus. Les récoltes, le bois et les
-     * transformations ont la leur dans leurs données (un travail en temps réel, systems/work.ts).
-     */
-    work: z.strictObject({ knot: z.number().nonnegative(), stake: z.number().nonnegative(), turn: z.number().nonnegative(), place: z.number().nonnegative(), raise: z.number().nonnegative() }),
   })
   .refine((t) => t.speeds.includes(t.default), { message: "'default' doit être l'un des paliers de 'speeds'" });
 
+/**
+ * L'endurance de Xéros (stamina.json ; docs/CONCEPTION.md, « Le temps ») : le maximum (`max`), le souffle (`breath`), la fatigue (sous
+ * la part `tired` du maximum, il ne court plus et marche à la part `tiredWalk`), le travail au joule (`work`), le sommeil (`sleep`) et le
+ * prix des gestes sans matière (`costs`).
+ */
 export const StaminaSchema = z.strictObject({
   /**
    * Le maximum (docs/CONCEPTION.md, « Le temps ») : `start` au départ, au plus `cap` ; chaque nuit, si la journée a entamé le plafond
@@ -1104,15 +1090,22 @@ export const StaminaSchema = z.strictObject({
     nightFrom: z.number().min(0).lt(24),
     nightAwakePerHour: z.number().nonnegative(),
   }),
+  /**
+   * Le prix des gestes sans matière, en points (les « PerSec » chaque seconde de l'effort, les « PerKg » par kg ; marcher ne coûte
+   * rien) : tout ce qui se travaille au coup se paie au joule (`work` ci-dessus : abattre, couper, fendre, équarrir, tailler, casser la
+   * pierre, une attaque). `chop` un coup simple d'outil sur une récolte sans matière (`hits`), `cutTie` un coup sur le lien du billot,
+   * `whittle` le même à la hachette (`also` du rouleau), `plant` planter le coin de fendage, `stake` planter un piquet de tracé, `knot`
+   * nouer ou dénouer, `turnPerKg` pivoter une bille, `raisePerKg` dresser une poutre sur son appui (avec l'aide de la mère, la part
+   * `raiseHelped`), `carryPerKgSec` marcher en portant (au-delà de `walk` de strength.json), `pushPerKgSec` pousser une bille,
+   * `runPerSec` courir.
+   */
   costs: z.strictObject({
     chop: z.number().nonnegative(),
     cutTie: z.number().nonnegative(),
     plant: z.number().nonnegative(),
     stake: z.number().nonnegative(),
     whittle: z.number().nonnegative(),
-    maul: z.number().nonnegative(),
     knot: z.number().nonnegative(),
-    hewPerM: z.number().nonnegative(),
     turnPerKg: z.number().nonnegative(),
     raisePerKg: z.number().nonnegative(),
     raiseHelped: z.number().min(0).max(1),
@@ -1144,14 +1137,14 @@ const weaponFields = {
   fist: z.literal(true).optional(),
 };
 const gripInside = { message: "'grip' doit être en deçà de 'length' : la main tient l'arme" };
-export const WeaponSchema = z.strictObject(weaponFields).refine((w) => w.grip < w.length, gripInside);
+const WeaponSchema = z.strictObject(weaponFields).refine((w) => w.grip < w.length, gripInside);
 
 /**
  * Ce qu'on frappe (`target` d'un objet de props.json) : `hp`, ses points de vie (`infinite` : il encaisse sans jamais casser, le
  * mannequin ; un nombre viendra avec les premières cibles qui meurent, validate.ts le refuse en attendant) ; `matter`, ce qui vole
  * sous le coup (planche `fx-<matter>`) ; `tilt`, de combien de degrés il penche sous un coup (0 : il ne penche pas).
  */
-export const TargetSchema = z.strictObject({
+const TargetSchema = z.strictObject({
   hp: z.union([z.literal('infinite'), z.number().positive()]),
   matter: id,
   tilt: z.number().min(0).max(30).default(0),
@@ -1165,7 +1158,7 @@ export const TargetSchema = z.strictObject({
  * `left` ; une arme : `right`, la main de l'épée dans les dessins). `combo` : après la fin du geste, combien de ms un Espace enchaîne
  * l'attaque suivante de la posture (pendant le geste, l'appui est gardé). `power` : la part du corps qui s'y met, elle multiplie l'énergie du coup (ses dégâts et son prix au joule, world/strike.ts).
  */
-export const AttackSchema = z.strictObject({
+const AttackSchema = z.strictObject({
   name: id,
   gesture: id,
   hand: z.enum(['right', 'left']).default('right'),
@@ -1184,7 +1177,7 @@ export const AttackSchema = z.strictObject({
  * début de la suite ; jamais la garde, l'armer ni le retour). La zone d'une image active est ce que balaie l'arme, au sol, depuis
  * l'image d'avant. Les angles suivent les poses dessinées : à l'image où la lame est à droite de Xéros, la zone est à sa droite.
  */
-export const SweepSchema = z.strictObject({
+const SweepSchema = z.strictObject({
   hand: z.number().nonnegative(),
   width: z.number().positive(),
   frames: z.array(z.strictObject({ a: z.number().min(-180).max(180), r: z.number().min(0).max(1), z: z.number().min(0).max(1).default(0) })).min(2),
@@ -1195,7 +1188,7 @@ export const SweepSchema = z.strictObject({
  * La main nue (combat.json, `unarmed`) : une arme en données comme les autres (WeaponSchema, `fist: true`, sans planche), avec son nom
  * et sa masse (celle qui frappe : le poing et l'avant-bras lancés) ; sa portée est la longueur du bras.
  */
-export const UnarmedSchema = z.strictObject({ ...weaponFields, name: id, mass: z.number().positive() }).refine((w) => w.grip < w.length, gripInside);
+const UnarmedSchema = z.strictObject({ ...weaponFields, name: id, mass: z.number().positive() }).refine((w) => w.grip < w.length, gripInside);
 
 /**
  * Le ressenti d'un coup qui porte (combat.json, `feel`) : `hitStopMs`, l'arrêt sur image à l'impact (le geste et la cible figés) ;
@@ -1203,7 +1196,7 @@ export const UnarmedSchema = z.strictObject({ ...weaponFields, name: id, mass: z
  * de combien de dégâts l'écran tremble, `shakeMs` et `shakeIntensity` (part de l'écran) ; `floatMs`, combien de temps le chiffre
  * des dégâts (ou « raté ») s'envole au-dessus de la cible ; `debugMs`, combien de temps ?debug garde la zone de coup dessinée au sol.
  */
-export const FeelSchema = z.strictObject({
+const FeelSchema = z.strictObject({
   hitStopMs: z.number().nonnegative(),
   recoilPx: z.number().nonnegative(),
   reactMs: z.number().positive(),
@@ -1220,7 +1213,7 @@ export const FeelSchema = z.strictObject({
  * à deux mains ; `when.free` : les mains libres (le poing : `both`, les deux ; `right`, `left` : celle-là seule). Absents : tout convient. La première posture qui convient sert. Plus tard : deux mains, bouclier, deux armes
  * (CONCEPTION, « Le combat ») ; aujourd'hui, une seule posture, qui convient à tout.
  */
-export const StanceDefSchema = z.strictObject({
+const StanceDefSchema = z.strictObject({
   name: id,
   when: z.strictObject({
     other: z.enum(['empty', 'weapon', 'any']).optional(),
@@ -1261,7 +1254,7 @@ export const CombatSchema = z.strictObject({
  * de la pièce d'entrée), ou, en entrée seulement, de la matière prise au poste (`raw` : une matière de matters.json, `kg` : l'eau
  * de l'étang, la terre de la berge). `count` : combien.
  */
-export const TransformPartSchema = z
+const TransformPartSchema = z
   .strictObject({
     item: id.optional(),
     prop: id.optional(),
@@ -1279,13 +1272,13 @@ export const TransformPartSchema = z
  * Le poste d'une transformation : au sol (`ground`), sur le billot (`block`), à l'établi (`bench`), au bord de l'étang (`pond`, où
  * l'on puise l'eau et creuse l'argile), sur un chevalet de fendeur (`brake`).
  */
-export const StationSchema = z.enum(['ground', 'block', 'bench', 'pond', 'brake']);
+const StationSchema = z.enum(['ground', 'block', 'bench', 'pond', 'brake']);
 
 /**
  * Le geste d'une transformation : `soon`, à venir (en attendant, ?dieu l'applique d'un coup : « Transformer ») ; ou le geste réel,
  * déjà jouable : `system`, le fichier qui le joue, et `keys`, ce que fait le joueur.
  */
-export const TransformGestureSchema = z.union([z.literal('soon'), z.strictObject({ system: id, keys: id })]);
+const TransformGestureSchema = z.union([z.literal('soon'), z.strictObject({ system: id, keys: id })]);
 
 /**
  * Une transformation (transforms.json, docs/CONCEPTION.md « Les matières ») : tailler retire de la matière. `name` : ce qu'on fait
@@ -1310,12 +1303,12 @@ export const TransformSchema = z.strictObject({
 export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
 
 /** Ce qu'un choix de dialogue peut déclencher quand le dialogue se ferme : `sleep`, passer la nuit, `help`, dresser avec l'aide de la mère la poutre d'un chantier (WorldScene). */
-export const DialogueActionSchema = z.enum(['sleep', 'help']);
+const DialogueActionSchema = z.enum(['sleep', 'help']);
 
 /** Un choix offert à la fin d'une ligne (« Oui », « Non ») ; sans `action`, il ferme simplement le dialogue. */
-export const DialogueChoiceSchema = z.strictObject({ text: id, action: DialogueActionSchema.optional() });
+const DialogueChoiceSchema = z.strictObject({ text: id, action: DialogueActionSchema.optional() });
 
-export const DialogueLineSchema = z.strictObject({
+const DialogueLineSchema = z.strictObject({
   /** Clé dans characters.json. */
   speaker: id,
   /** Nom de l'expression du portrait, ex. 'neutral'. */
@@ -1331,7 +1324,7 @@ export const DialogueDefSchema = z.strictObject({ lines: z.array(DialogueLineSch
 // Le jeu ne lit jamais Tiled. Positions et tailles en pixels, repère de la carte (0,0 = coin haut gauche).
 
 /** Objet posé : `type` est une clé de props.json ; (x, y) = coin bas gauche de l'image. */
-export const MapObjectSchema = z.strictObject({
+const MapObjectSchema = z.strictObject({
   /** Identifiant de l'objet dans Tiled (unique dans la carte) : GameState y range les changements du monde. */
   id: z.number().int().nonnegative(),
   type: id,
@@ -1346,10 +1339,10 @@ export const MapObjectSchema = z.strictObject({
 });
 
 /** Point d'apparition : (x, y) = position des pieds du joueur. */
-export const SpawnSchema = z.strictObject({ x: px, y: px, facing: FacingSchema.optional() });
+const SpawnSchema = z.strictObject({ x: px, y: px, facing: FacingSchema.optional() });
 
 /** Zone qui mène vers une autre carte : on la prend quand les pieds sont dedans (et, si `facing` est donné, en avançant dans cette direction). */
-export const ExitSchema = z.strictObject({
+const ExitSchema = z.strictObject({
   x: px,
   y: px,
   w: px.positive(),
@@ -1360,7 +1353,7 @@ export const ExitSchema = z.strictObject({
 });
 
 /** Personnage non joueur : (x, y) = position de ses pieds. `character` = clé de characters.json, qui est aussi la clé de son sprite. */
-export const NpcSchema = z.strictObject({
+const NpcSchema = z.strictObject({
   x: px,
   y: px,
   character: id,
@@ -1374,14 +1367,14 @@ export const NpcSchema = z.strictObject({
  * parcels.json) et son nom facultatif (le nom de l'objet dans Tiled : « Mairie »). Invisible en jeu ; montrée en mode construction et
  * avec ?debug. Les bâtiments s'y poseront quand leurs pièces existeront.
  */
-export const ParcelSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive(), use: id, name: id.optional() });
+const ParcelSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.positive(), use: id, name: id.optional() });
 
 /**
  * Un plan du bac à sable posé depuis Tiled (un rectangle de type `Plan`, propriété `plan` : un fichier de src/content/plans/, `age`
  * facultatif) : (x, y) = son coin nord-ouest au sol. À la première visite de la carte, ses pièces entrent dans `builds` de GameState
  * (`seedPlans`), comme si on l'avait posé en mode construction ; `id` est l'identifiant de l'objet dans Tiled.
  */
-export const MapPlanSchema = z.strictObject({ id: z.number().int().nonnegative(), x: px, y: px, plan: id, age: z.lazy(() => WoodAgeSchema).optional() });
+const MapPlanSchema = z.strictObject({ id: z.number().int().nonnegative(), x: px, y: px, plan: id, age: z.lazy(() => WoodAgeSchema).optional() });
 
 export const MapSchema = z.strictObject({
   /** Nom du fichier .tmj. */
@@ -1452,10 +1445,8 @@ export type Views = z.infer<typeof ViewsSchema>;
 export type Harvest = z.infer<typeof HarvestSchema>;
 export type Drop = z.infer<typeof DropSchema>;
 export type ItemDef = z.infer<typeof ItemDefSchema>;
-export type Take = z.infer<typeof TakeSchema>;
 export type Mass = z.infer<typeof MassSchema>;
 export type Turn = z.infer<typeof TurnSchema>;
-export type Roll = z.infer<typeof RollSchema>;
 export type Strength = z.infer<typeof StrengthSchema>;
 export type Swinger = z.infer<typeof SwingerSchema>;
 export type ToolWork = z.infer<typeof ToolWorkSchema>;
@@ -1488,7 +1479,6 @@ export type MapData = z.infer<typeof MapSchema>;
 export type Parcel = z.infer<typeof ParcelSchema>;
 export type MapPlan = z.infer<typeof MapPlanSchema>;
 export type ParcelUse = z.infer<typeof ParcelUseSchema>;
-export type WorldDef = z.infer<typeof WorldSchema>;
 export type End = z.infer<typeof EndSchema>;
 export type WoodLook = z.infer<typeof WoodLookSchema>;
 export type WoodPiece = z.infer<typeof WoodPieceSchema>;
@@ -1502,9 +1492,7 @@ export type Matter = z.infer<typeof MatterSchema>;
 export type Rock = z.infer<typeof RockSchema>;
 export type NaturalDef = z.infer<typeof NaturalDefSchema>;
 export type Natural = z.infer<typeof NaturalSchema>;
-export type Trade = z.infer<typeof TradeSchema>;
 export type TransformPart = z.infer<typeof TransformPartSchema>;
-export type Station = z.infer<typeof StationSchema>;
 export type TransformDef = z.infer<typeof TransformSchema>;
 export type BuildRef = z.infer<typeof BuildRefSchema>;
 export type BuildPlaced = z.infer<typeof BuildPlacedSchema>;
@@ -1512,7 +1500,6 @@ export type BuildPlan = z.infer<typeof BuildPlanSchema>;
 export type JointType = z.infer<typeof JointTypeSchema>;
 export type Weapon = z.infer<typeof WeaponSchema>;
 export type Target = z.infer<typeof TargetSchema>;
-export type Feel = z.infer<typeof FeelSchema>;
 export type Attack = z.infer<typeof AttackSchema>;
 export type StanceDef = z.infer<typeof StanceDefSchema>;
 export type CombatDef = z.infer<typeof CombatSchema>;

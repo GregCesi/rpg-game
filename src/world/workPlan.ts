@@ -25,15 +25,15 @@ export const fellVolume = (d: number): number => {
   return v(0.4 * d) + v(0.5 * d);
 };
 /** Couper une pièce couchée : deux V d'une demi-épaisseur, un de chaque côté ; ≈ 0,21 D³. */
-export const buckVolume = (d: number): number => 2 * 0.5 * (0.5 * d) ** 2 * 0.85 * d;
+const buckVolume = (d: number): number => 2 * 0.5 * (0.5 * d) ** 2 * 0.85 * d;
 /** Ébrancher : chaque branche tranchée en V, ≈ 0,6 d³. */
-export const limbVolume = (count: number, d: number): number => count * 0.6 * d ** 3;
+const limbVolume = (count: number, d: number): number => count * 0.6 * d ** 3;
 /** Tailler une pointe : le cylindre moins le cône, sur sa longueur. */
 export const pointVolume = (d: number, length: number): number => Math.PI * (d / 2) ** 2 * length * (2 / 3);
 /** Équarrir une face sur `length` cm : un quart de ce qui sépare le rond de la poutre (le cercle moins le carré de côté `side`). */
-export const faceVolume = (d: number, side: number, length: number): number => ((Math.PI * (d / 2) ** 2 - side * side) / 4) * length;
+const faceVolume = (d: number, side: number, length: number): number => ((Math.PI * (d / 2) ** 2 - side * side) / 4) * length;
 /** Fendre : la surface de la fente, diamètre × longueur (m²). */
-export const splitArea = (d: number, length: number): number => (d / 100) * (length / 100);
+const splitArea = (d: number, length: number): number => (d / 100) * (length / 100);
 
 /** Le coup d'un genre de travail avec `tool` : celui de l'outil (`work.strokes` d'items.json), sinon le coup commun (`jobs` de work.json). */
 const strokeFor = (kind: keyof typeof work.jobs, tool: string): string => items[tool]?.work?.strokes?.[kind] ?? work.jobs[kind];
@@ -91,6 +91,8 @@ export interface WorkPlan {
   pause: number;
   seconds: number;
   ceiling: number;
+  /** Le souffle de tous ses coups (au joule ; ?dieu « Finir le travail » le paie d'un coup). */
+  breath: number;
 }
 
 /** Le travail `job` mené jusqu'au bout par `who`, de maximum `max` (le souffle part plein ; pendant le travail il ne revient pas). */
@@ -104,7 +106,7 @@ export function planOf(job: WorkJobDef, who: Swinger, max: number, done = 0): Wo
   const first = Math.max(1, Math.floor(max / breath));
   const pauses = strokes <= first ? 0 : Math.ceil((strokes - first) / bout);
   const pause = staminaDef.breath.regenDelayMs / 1000 + (resume * max) / staminaDef.breath.regenPerSec;
-  return { stroke: s, per, strokes, bout, pauses, pause, seconds: strokes * s.cycle + pauses * pause, ceiling: strokes * ceiling };
+  return { stroke: s, per, strokes, bout, pauses, pause, seconds: strokes * s.cycle + pauses * pause, ceiling: strokes * ceiling, breath: strokes * breath };
 }
 
 /** Qui travaille : `xeros` (strength.json) ou un être de référence (work.json, `references`), avec son maximum. */

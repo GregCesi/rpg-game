@@ -5,25 +5,25 @@
 
 import { z } from 'zod';
 import { items, maps, piles, plans, props, stamina, time, wood } from '../content';
-import { FacingSchema, type End, type PileWood, type WoodPiece } from '../content/types';
+import { FacingSchema, type WoodPiece } from '../content/types';
 import { refMissing } from '../world/build';
 import { parseInteriorId } from '../world/interior';
 import { kindOf, pileDefOf } from '../world/pileShape';
-import { BEAM_SIZE, dressedLook, lookOf } from '../world/woodShape';
+import { dressedLook, lookOf } from '../world/woodShape';
 import { GameStateSchema, type GameState, type Held } from './GameState';
 
 /** Clé de la sauvegarde dans localStorage. */
-export const SAVE_KEY = 'xeros-partie';
+const SAVE_KEY = 'xeros-partie';
 /** Une sauvegarde illisible est mise de côté ici avant d'être remplacée, pour pouvoir l'examiner. */
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
-export const SAVE_VERSION = 23;
+export const SAVE_VERSION = 24;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
-export const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
+const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
 
-export const SaveSchema = z.strictObject({
+const SaveSchema = z.strictObject({
   version: z.literal(SAVE_VERSION),
   /** Date de l'écriture (ISO), pour s'y retrouver en examinant une sauvegarde. */
   savedAt: z.string(),
@@ -32,7 +32,7 @@ export const SaveSchema = z.strictObject({
 });
 
 export type Where = z.infer<typeof WhereSchema>;
-export type Save = z.infer<typeof SaveSchema>;
+type Save = z.infer<typeof SaveSchema>;
 
 /** Ce qu'a donné la lecture : une sauvegarde, rien (première partie), ou un problème à dire au joueur. */
 export type ReadResult = { save: Save } | { none: true } | { problem: string };
@@ -72,350 +72,31 @@ export function readSave(): ReadResult {
 }
 
 /**
- * Met une sauvegarde d'un format plus ancien au format actuel, si on sait le faire (sinon elle est rendue telle quelle et
- * refusée plus loin). Version 2 -> 3 : l'endurance et le jour apparaissent, jauge pleine et jour 1. Version 3 -> 4 : le
- * fendage (coups reçus par un objet de carte changé, bille coin planté, demi-billes, quartiers, tas de quartiers) n'ajoute que
- * des champs facultatifs et des clés de contenu : une partie de la version 3 se relit telle quelle, seul le numéro change.
- * Version 4 -> 5 : les chantiers (`sites` de chaque carte, `knownPlans`, `nextSiteId`) apparaissent : aucun plan connu, aucun chantier.
- * Version 5 -> 6 : le bois d'œuvre (équarrissage). L'arbre normal ne se couche plus en sections à encoches fixes : ses sections,
- * son houppier, sa tête ébranchée et ses billes numérotées deviennent des rondins de 95 cm (`normal-felled-log`) à la même place
- * (la 5e bille, sous le houppier ou dans la tête, là où elle était dessinée ; les entailles commencées et les branches du houppier
- * sont perdues) ; une bille numérotée tenue en main devient la bille ordinaire.
- * Version 6 -> 7 : la pièce de bois (voir `woodPiecesFromKeys`).
- * Version 7 -> 8 : les tas de bois se calculent d'après leur pièce (voir `woodPilesFromGenres`).
- * Version 8 -> 9 : un chantier garde la pièce de bois d'où vient chacune de ses pièces posées (`pieces`) : les chantiers anciens n'en ont aucune.
- * Version 9 -> 10 : un chantier montre les vraies pièces posées (voir `postsAsWood`) : les poteaux deviennent des pièces de bois dressées.
- * Version 10 -> 11 : la pièce debout a l'épaisseur de la couchée (règle D étendue) et le dé grandit (40 cm) : les pièces posées d'un
- * chantier reprennent la place que leur donne le plan (voir `replacePlaced`).
- * Version 11 -> 12 : la pierre (chantier « pierre ») : la pierre plate devient la dalle (`flat-stone` -> `slab`, voir `slabFromFlatStone`) ;
- * les autres pierres gardent leur clé (les masses se recalculent par la roche, rien n'est gardé).
+ * Met une sauvegarde d'un format plus ancien au format actuel, si on sait le faire (sinon elle est rendue telle quelle et refusée
+ * plus loin, avec un message et une partie neuve). On ne sait relire que depuis la version 17 (le chantier « monde » : les parties
+ * d'avant ont été refusées une fois pour toutes, leurs conversions retirées à l'audit du 2 novembre 2026).
+ * 17 -> 18 : l'horloge (`withClock`) ; 18 -> 19 : l'endurance en trois niveaux (`threeLevels`) ; 19 -> 20 : le plafond au réveil
+ * (`withWoke`) ; 20 -> 21 : les travaux interrompus, vides ; 21 -> 22 : le travail par la matière (`workByMatter`) ; 22 -> 23 : le côté
+ * de l'entaille (`side`), facultatif ; 23 -> 24 : la place d'un objet né dans sa « chaîne » (`chain`), jamais lue, n'existe plus.
  */
 export function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
-  if (d?.version === 2 && d.state && typeof d.state === 'object') {
-    d = { ...d, version: 3, state: { ...d.state, stamina: stamina.max.start, day: 1 } };
-  }
-  if (d?.version === 3) d = { ...d, version: 4 };
-  if (d?.version === 4 && d.state && typeof d.state === 'object') {
-    const state = d.state as { maps?: Record<string, object> };
-    const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, sites: [] }]));
-    d = { ...d, version: 5, state: { ...d.state, maps, knownPlans: [], nextSiteId: 0 } };
-  }
-  if (d?.version === 5 && d.state && typeof d.state === 'object') d = { ...d, version: 6, state: normalPiecesToLogs(d.state as V5State) };
-  if (d?.version === 6 && d.state && typeof d.state === 'object') d = { ...d, version: 7, state: woodPiecesFromKeys(d.state as V6State) };
-  if (d?.version === 7 && d.state && typeof d.state === 'object') d = { ...d, version: 8, state: woodPilesFromGenres(d.state as V7State) };
-  if (d?.version === 8 && d.state && typeof d.state === 'object') d = { ...d, version: 9, state: sitesWithPieces(d.state as V8State) };
-  if (d?.version === 9 && d.state && typeof d.state === 'object') d = { ...d, version: 10, state: postsAsWood(d.state as V9State) };
-  if (d?.version === 10 && d.state && typeof d.state === 'object') d = { ...d, version: 11, state: replacePlaced(d.state as V9State & V10Sites) };
-  if (d?.version === 11 && d.state && typeof d.state === 'object') d = { ...d, version: 12, state: slabFromFlatStone(d.state) };
-  if (d?.version === 12 && d.state && typeof d.state === 'object') d = { ...d, version: 13, state: withBuilds(d.state as V12State) };
-  if (d?.version === 13 && d.state && typeof d.state === 'object') d = { ...d, version: 14, state: withJoints(d.state as V12State) };
-  if (d?.version === 14 && d.state && typeof d.state === 'object') d = { ...d, version: 15, state: quartersWithoutFace(d.state) };
-  if (d?.version === 15 && d.state && typeof d.state === 'object') d = { ...d, version: 16, state: hewingInPasses(d.state) };
   if (d?.version === 17 && d.state && typeof d.state === 'object') d = { ...d, version: 18, state: withClock(d.state as { day?: number }) };
   if (d?.version === 18 && d.state && typeof d.state === 'object') d = { ...d, version: 19, state: threeLevels(d.state as { stamina?: number }) };
   if (d?.version === 19 && d.state && typeof d.state === 'object') d = { ...d, version: 20, state: withWoke(d.state as { stamina?: { ceiling?: number } }) };
-  // 20 -> 21 : les travaux interrompus (`work` de chaque carte), vides au départ (le schéma les donne vides)
   if (d?.version === 20 && d.state && typeof d.state === 'object') d = { ...d, version: 21 };
   if (d?.version === 21 && d.state && typeof d.state === 'object') d = { ...d, version: 22, state: workByMatter(d.state as { maps?: Record<string, { work?: unknown }> }) };
-  // 22 -> 23 : le côté de l'entaille d'un arbre entamé (`side` d'un travail), facultatif : rien à convertir
   if (d?.version === 22 && d.state && typeof d.state === 'object') d = { ...d, version: 23 };
+  if (d?.version === 23 && d.state && typeof d.state === 'object') d = { ...d, version: 24, state: withoutChain(d.state as { maps?: Record<string, { spawned?: object[] }> }) };
   return d;
 }
 
-/**
- * Version 15 -> 16 : l'équarrissage par passes (docs/CONCEPTION.md, « Bois d'œuvre ») : la doloire dresse une face d'une passe le
- * long de la pièce, et la pièce garde la longueur dressée de sa face en cours (`dressed`). `hewn` compte toujours les faces finies,
- * `perFace` (3) par face ; les coups d'une face commencée à l'ancienne (le reste de `hewn`) deviennent cette part de la longueur,
- * dressée depuis le bout ouest ou nord (sauf dans un tas, qui ne garde que les faces finies). Toute pièce de bois de la partie
- * (posée, tenue, en tas, d'un chantier, du mode construction).
- */
-function hewingInPasses(state: object): object {
-  const per = 3;
-  const walk = (v: unknown): unknown => {
-    if (Array.isArray(v)) return v.map(walk);
-    if (!v || typeof v !== 'object') return v;
-    const o = Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([k, x]) => [k, walk(x)]));
-    const wood = typeof o.size === 'string' && typeof o.shape === 'string' && typeof o.length === 'number';
-    const hewn = typeof o.hewn === 'number' ? o.hewn : 0;
-    if (!wood || hewn % per === 0 || hewn >= 4 * per) return o;
-    const { hewn: _h, ...rest } = o;
-    const faces = Math.floor(hewn / per);
-    // la pièce d'un tas (sans sens) n'a pas de face entamée : ses coups en reste sont perdus
-    const length = typeof o.axis === 'string' ? Math.round(((o.length as number) * (hewn % per)) / per) : 0;
-    return { ...rest, ...(faces ? { hewn: faces * per } : {}), ...(length > 0 ? { dressed: { from: 'start', length } } : {}) };
-  };
-  return walk(state) as object;
-}
-
-/**
- * Version 14 -> 15 : les pièces fendues (docs/CONCEPTION.md, « Les pièces fendues ») : le quartier repose écorce en bas, pointe en
- * l'air, et n'a plus de côté de face debout. On retire `face` de toute pièce de bois de la partie (posée, tenue, en tas, d'un
- * chantier ou du mode construction) ; un tas de quartiers garde ses places (mêmes noms), rangées en triangles.
- */
-function quartersWithoutFace(state: object): object {
-  const strip = (v: unknown): unknown => {
-    if (Array.isArray(v)) return v.map(strip);
-    if (!v || typeof v !== 'object') return v;
-    const o = v as Record<string, unknown>;
-    const wood = typeof o.size === 'string' && typeof o.shape === 'string' && typeof o.length === 'number';
-    return Object.fromEntries(Object.entries(o).filter(([k]) => !(wood && k === 'face')).map(([k, x]) => [k, strip(x)]));
-  };
-  return strip(state) as object;
-}
-
-/** Version 13 -> 14 : les assemblages du mode construction. Aucun sur aucune carte, et le compteur de leurs identifiants à zéro. */
-function withJoints(state: V12State): object {
-  const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, joints: [] }]));
-  return { ...state, maps, nextJointId: 0 };
-}
-
-/** Ce que les conversions 12 -> 13 et 13 -> 14 lisent d'une partie : ses cartes. */
-interface V12State {
-  maps?: Record<string, object>;
-}
-
-/** Version 12 -> 13 : le mode construction. Aucune pièce posée sur aucune carte, et le compteur de ses identifiants à zéro. */
-function withBuilds(state: V12State): object {
-  const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, builds: [] }]));
-  return { ...state, maps, nextBuildId: 0 };
-}
-
-/**
- * Version 11 -> 12 : la pierre plate devient la dalle. Sa clé n'apparaît dans une partie que comme type d'objet (tenu, né, changé,
- * posé) : toute valeur `"flat-stone"` devient `"slab"`, où qu'elle soit.
- */
-function slabFromFlatStone(state: object): object {
-  const swap = (v: unknown): unknown =>
-    v === 'flat-stone' ? 'slab' : Array.isArray(v) ? v.map(swap) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, swap(x)])) : v;
-  return swap(state) as object;
-}
-
-/** Ce que la conversion 10 -> 11 lit en plus : la position du chantier (son piquet nord-ouest) et les objets nés (x, y). */
-type V10Sites = { maps?: Record<string, { spawned?: { id: number; x: number; y: number }[]; sites?: { plan: string; x: number; y: number; placed?: Record<string, number> }[] }> };
-
-/**
- * Version 10 -> 11 : chaque pièce posée d'un chantier (dé, poteau) est replacée à l'endroit où le plan la met aujourd'hui (le coin
- * bas gauche de son image : le piquet nord-ouest plus `at` en cm, 5 cm par pixel), puisque ses dimensions ont changé.
- */
-function replacePlaced(state: V10Sites): V10Sites {
+/** 23 -> 24 : `chain` retiré des objets nés de chaque carte. */
+function withoutChain(state: { maps?: Record<string, { spawned?: object[] }> }): object {
   const maps = Object.fromEntries(
-    Object.entries(state.maps ?? {}).map(([id, m]) => {
-      const spawned = (m.spawned ?? []).map((o) => ({ ...o }));
-      for (const site of m.sites ?? []) {
-        const places = Object.fromEntries((plans[site.plan]?.steps ?? []).flatMap((st) => Object.entries(st.places)));
-        for (const [place, spawnId] of Object.entries(site.placed ?? {})) {
-          const o = spawned.find((q) => q.id === spawnId);
-          const at = places[place]?.at;
-          if (o && at) [o.x, o.y] = [Math.round(site.x + at[0] / 5), Math.round(site.y + at[1] / 5)];
-        }
-      }
-      return [id, { ...m, spawned }];
-    }),
+    Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, spawned: (m.spawned ?? []).map((o) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'chain'))) }]),
   );
   return { ...state, maps };
-}
-
-/** Ce que la conversion 9 -> 10 lit d'une partie : par carte, les objets nés et les chantiers (place -> objet né, place -> pièce d'origine). */
-type V9State = {
-  maps?: Record<
-    string,
-    {
-      spawned?: { id: number; type: string; wood?: WoodPiece }[];
-      sites?: { plan: string; placed?: Record<string, number>; pieces?: Record<string, WoodPiece> }[];
-    }
-  >;
-};
-
-/** Les poteaux d'avant la pièce de bois, dessinés à part : ils deviennent la pièce de bois dressée que le plan demandait. */
-const OLD_POSTS = ['shed-post-high', 'shed-post-low'];
-
-/**
- * Version 9 -> 10 : un chantier montre les vraies pièces posées. Un poteau dressé sous l'ancien dessin (`shed-post-high`,
- * `shed-post-low`) devient une pièce de bois dressée (`wood-piece`, `axis: 'up'`) à la même place, de la pièce d'origine du chantier
- * (`pieces`) ; s'il n'en a pas gardé (poteau dressé avant la version 9), la conversion la complète avec la poutre que le plan demande
- * à cette place (équarrie sur ses quatre faces, la longueur du plan).
- */
-function postsAsWood(state: V9State): V9State {
-  const maps = Object.fromEntries(
-    Object.entries(state.maps ?? {}).map(([id, m]) => {
-      const spawned = (m.spawned ?? []).map((o) => ({ ...o }));
-      const sites = (m.sites ?? []).map((site) => {
-        const pieces = { ...(site.pieces ?? {}) };
-        for (const [place, spawnId] of Object.entries(site.placed ?? {})) {
-          const o = spawned.find((q) => q.id === spawnId);
-          if (!o || !OLD_POSTS.includes(o.type)) continue;
-          const beam = plans[site.plan]?.steps.flatMap((st) => Object.entries(st.places).map(([k, pl]) => ({ k, rule: (pl.accepts ?? st.accepts)?.wood }))).find((q) => q.k === place)?.rule;
-          const piece: WoodPiece | undefined = pieces[place] ?? (beam && { size: BEAM_SIZE, length: beam.length, shape: 'round', hewn: wood.hew.faces * wood.hew.perFace, axis: 'ew' });
-          if (!piece) continue;
-          pieces[place] = piece;
-          o.type = 'wood-piece';
-          o.wood = { size: piece.size, length: piece.length, shape: 'round', ...(piece.hewn ? { hewn: piece.hewn } : {}), axis: 'up' };
-        }
-        return { ...site, pieces };
-      });
-      return [id, { ...m, spawned, sites }];
-    }),
-  );
-  return { ...state, maps };
-}
-
-/** Ce que la conversion 8 -> 9 lit d'une partie : les chantiers de chaque carte. */
-type V8State = { maps?: Record<string, { sites?: object[] }> };
-
-/** 8 -> 9 : chaque chantier reçoit ses `pieces`, vides (les dés et les poteaux d'avant n'ont pas de pièce d'origine). */
-function sitesWithPieces(state: V8State): V8State {
-  const maps = Object.fromEntries(Object.entries(state.maps ?? {}).map(([id, m]) => [id, { ...m, sites: (m.sites ?? []).map((site) => ({ pieces: {}, ...site })) }]));
-  return { ...state, maps };
-}
-
-/** Ce que la conversion 7 -> 8 lit d'une partie : les tas de chaque carte. */
-type V7State = { maps?: Record<string, { piles?: { pile?: string; places?: string[] }[] }> };
-
-/**
- * Les anciens genres de tas de bois de piles.json (des pièces de 1 m) et la pièce de bois qu'ils entreposent. Les billes gardent
- * leurs places (la pyramide calculée a les mêmes : g0 g1 g2, u01 u12, top) ; les quartiers passent de la pyramide aux rangées
- * tête-bêche : les pièces du sol restent, celles des creux montent sur la pièce de gauche (u01 -> l1-0, u12 -> l1-1, top -> l2-0).
- */
-const OLD_WOOD_PILES: Record<string, { wood: PileWood; places?: Record<string, string> }> = {
-  'big-logs': { wood: { size: 'big', shape: 'round', length: 100 } },
-  'normal-logs': { wood: { size: 'normal', shape: 'round', length: 100 } },
-  'big-quarters': { wood: { size: 'big', shape: 'quarter', length: 100 }, places: { u01: 'l1-0', u12: 'l1-1', top: 'l2-0' } },
-};
-
-/** Version 7 -> 8 : un tas d'un ancien genre de bois (big-logs, normal-logs, big-quarters) entrepose la pièce de bois équivalente. */
-function woodPilesFromGenres(state: V7State): V7State {
-  const maps = Object.fromEntries(
-    Object.entries(state.maps ?? {}).map(([id, m]) => [
-      id,
-      {
-        ...m,
-        piles: (m.piles ?? []).map((p) => {
-          const old = p.pile ? OLD_WOOD_PILES[p.pile] : undefined;
-          if (!old) return p;
-          const { pile: _genre, ...rest } = p;
-          return { ...rest, wood: { ...old.wood }, places: (p.places ?? []).map((q) => old.places?.[q] ?? q) };
-        }),
-      },
-    ]),
-  );
-  return { ...state, maps };
-}
-
-/** Ce que la conversion 5 -> 6 lit d'une partie : seulement ce qui peut nommer une pièce de l'arbre normal. */
-type V5Piece = { type?: string; x: number; y: number; flip?: boolean; chain?: unknown; hits?: number; length?: number };
-type V5Held = { prop?: string } | null;
-type V5State = { hands?: V5Held[]; both?: V5Held; maps?: Record<string, { changes?: Record<string, V5Piece>; spawned?: V5Piece[] }> };
-
-/**
- * Les pièces de l'arbre normal d'avant le bois d'œuvre, et où était dessinée leur bille dans leur image (décalage du coin bas
- * gauche du rondin de 95 cm, couché vers la droite et vers la gauche) : les sections et les billes 1 à 4 avaient l'image du
- * rondin ; le houppier, la tête et la bille 5 (85 × 22 px) portaient la 5e bille à 21 px du bord, 6 px au-dessus du bas.
- */
-const OLD_NORMAL: Record<string, { right: [number, number]; left: [number, number] }> = {
-  ...Object.fromEntries(
-    [1, 2, 3, 4].flatMap((k) => [`normal-felled-section-${k}`, `normal-felled-log-${k}`]).map((t) => [t, { right: [0, 0] as [number, number], left: [0, 0] as [number, number] }]),
-  ),
-  ...Object.fromEntries(
-    ['normal-felled-crown', 'normal-felled-head', 'normal-felled-log-5'].map((t) => [t, { right: [21, -6] as [number, number], left: [45, -6] as [number, number] }]),
-  ),
-};
-
-function normalPiecesToLogs(state: V5State): V5State {
-  const piece = (o: V5Piece): V5Piece => {
-    const old = o.type && OLD_NORMAL[o.type];
-    if (!old) return o;
-    const [dx, dy] = o.flip ? old.left : old.right;
-    const { flip: _f, chain: _c, hits: _h, ...rest } = o;
-    return { ...rest, type: 'normal-felled-log', x: o.x + dx, y: o.y + dy, length: 95 };
-  };
-  const held = (h: V5Held | undefined) => (h && h.prop && /^normal-felled-log-\d$/.test(h.prop) ? { ...h, prop: 'normal-felled-log' } : h);
-  const maps = Object.fromEntries(
-    Object.entries(state.maps ?? {}).map(([id, m]) => [
-      id,
-      { ...m, changes: Object.fromEntries(Object.entries(m.changes ?? {}).map(([k, c]) => [k, piece(c)])), spawned: (m.spawned ?? []).map(piece) },
-    ]),
-  );
-  return { ...state, hands: (state.hands ?? []).map((h) => held(h) ?? null), both: held(state.both) ?? null, maps };
-}
-
-/** Ce que la conversion 6 -> 7 lit d'une partie : les objets de carte changés, les objets nés, ce que tiennent les mains. */
-type V6Piece = { type?: string; x: number; y: number; flip?: boolean; chain?: unknown; hits?: number; length?: number; notch?: unknown; hewn?: number; wood?: WoodPiece };
-type V6Held = { prop?: string; item?: string; turned?: boolean; flip?: boolean; length?: number; hewn?: number; wood?: WoodPiece } | null;
-type V6State = { hands?: V6Held[]; both?: V6Held; maps?: Record<string, { changes?: Record<string, V6Piece>; spawned?: V6Piece[] }> };
-
-/** Une longueur ancienne (au décimètre, ou 95 cm) ramenée sur la grille de wood.json, jamais sous la plus courte pièce. */
-const onGrid = (cm: number) => Math.max(wood.min, Math.round(cm / wood.grid) * wood.grid);
-
-/**
- * Les anciennes clés de bois et la pièce de bois qu'elles deviennent : diamètre, forme, sens, faces, bout du coin planté, et
- * décalage du coin bas gauche de la pièce dans l'image d'avant (couchée vers la droite, vers la gauche) : la 4e bille du gros et
- * sa tête ébranchée (53 × 30 px) portaient la bille à 9 px du bord gauche, 9 px au-dessus du bas.
- */
-const OLD_WOOD: Record<string, { size: string; shape: WoodPiece['shape']; axis: WoodPiece['axis']; hewn?: number; end?: End; at?: { right: [number, number]; left: [number, number] } }> = {
-  ...Object.fromEntries(
-    ['big-felled-section-1', 'big-felled-section-2', 'big-felled-section-3', 'big-felled-log-1', 'big-felled-log-2', 'big-felled-log-3', 'big-felled-log'].map((k) => [k, { size: 'big', shape: 'round', axis: 'ew' }]),
-  ),
-  ...Object.fromEntries(['big-felled-crown', 'big-felled-head', 'big-felled-log-4'].map((k) => [k, { size: 'big', shape: 'round', axis: 'ew', at: { right: [9, -9], left: [25, -9] } }])),
-  'big-felled-log-ns': { size: 'big', shape: 'round', axis: 'ns' },
-  'big-wedged-log': { size: 'big', shape: 'round', axis: 'ew', end: 'west' },
-  'big-wedged-log-east': { size: 'big', shape: 'round', axis: 'ew', end: 'east' },
-  'big-wedged-log-ns': { size: 'big', shape: 'round', axis: 'ns', end: 'south' },
-  'big-wedged-log-ns-north': { size: 'big', shape: 'round', axis: 'ns', end: 'north' },
-  'big-half-log': { size: 'big', shape: 'half', axis: 'ew' },
-  'big-half-log-ns': { size: 'big', shape: 'half', axis: 'ns' },
-  'big-wedged-half-log': { size: 'big', shape: 'half', axis: 'ew', end: 'west' },
-  'big-wedged-half-log-east': { size: 'big', shape: 'half', axis: 'ew', end: 'east' },
-  'big-wedged-half-log-ns': { size: 'big', shape: 'half', axis: 'ns', end: 'south' },
-  'big-wedged-half-log-ns-north': { size: 'big', shape: 'half', axis: 'ns', end: 'north' },
-  'big-quarter-log': { size: 'big', shape: 'quarter', axis: 'ew' },
-  'big-quarter-log-ns': { size: 'big', shape: 'quarter', axis: 'ns' },
-  'normal-felled-log': { size: 'normal', shape: 'round', axis: 'ew' },
-  'normal-felled-log-ns': { size: 'normal', shape: 'round', axis: 'ns' },
-  'normal-beam': { size: 'normal', shape: 'round', axis: 'ew', hewn: 12 },
-  'normal-beam-ns': { size: 'normal', shape: 'round', axis: 'ns', hewn: 12 },
-};
-
-/**
- * Version 6 -> 7 : la pièce de bois. Chaque ancienne clé de bois (sections et billes du gros, tête, houppier, bille coin planté,
- * demi-billes, quartiers, rondins, poutres) devient une pièce de bois `wood-piece` équivalente, à la même place : 1 m pour les
- * pièces de 95 cm, la longueur d'un rondin ramenée sur la grille de 20 cm ; les coups de doloire restent ; le coin planté reste
- * planté avec ses coups ; une coupe commencée (encoche) est perdue, comme les branches d'un houppier pas encore ébranché. Ce que
- * tiennent les mains suit (la bille tournée devient la pièce nord-sud). Les tas gardent leurs genres et leurs places.
- */
-function woodPiecesFromKeys(state: V6State): V6State {
-  const piece = (o: V6Piece): V6Piece => {
-    const old = o.type ? OLD_WOOD[o.type] : undefined;
-    const { hits, notch: _n, hewn, ...rest } = o;
-    if (!old) return rest;
-    const [dx, dy] = old.at ? (o.flip ? old.at.left : old.at.right) : [0, 0];
-    const { flip: _f, chain: _c, length, ...kept } = rest;
-    const faces = old.hewn ?? hewn;
-    const w: WoodPiece = {
-      size: old.size,
-      length: onGrid(old.size === 'normal' && length !== undefined ? length : 100),
-      shape: old.shape,
-      axis: old.axis,
-      ...(faces ? { hewn: faces } : {}),
-      ...(old.end ? { wedge: { end: old.end, hits: hits ?? 0 } } : {}),
-    };
-    return { ...kept, type: 'wood-piece', x: o.x + dx, y: o.y + dy, wood: w };
-  };
-  const held = (h: V6Held | undefined): V6Held => {
-    const old = h?.prop ? OLD_WOOD[h.prop] : undefined;
-    if (!h || !old) return h ?? null;
-    const faces = old.hewn ?? h.hewn;
-    const axis = h.turned || old.axis === 'ns' ? 'ns' : 'ew';
-    const length = onGrid(old.size === 'normal' && h.length !== undefined ? h.length : 100);
-    return { prop: 'wood-piece', wood: { size: old.size, length, shape: old.shape, axis, ...(faces ? { hewn: faces } : {}) } };
-  };
-  const maps = Object.fromEntries(
-    Object.entries(state.maps ?? {}).map(([id, m]) => [
-      id,
-      { ...m, changes: Object.fromEntries(Object.entries(m.changes ?? {}).map(([k, c]) => [k, piece(c)])), spawned: (m.spawned ?? []).map(piece) },
-    ]),
-  );
-  return { ...state, hands: (state.hands ?? []).map((h) => held(h)), both: held(state.both), maps };
 }
 
 /** Écrit la partie et la position de Xéros. Un stockage plein ou bloqué ne plante pas le jeu : on le note en console. */

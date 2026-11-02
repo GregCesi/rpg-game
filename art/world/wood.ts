@@ -51,7 +51,7 @@ export interface Wood {
 }
 
 /** Le gros arbre : tronc de 55 cm, 11 px d'écorce. */
-export const BIG_WOOD: Wood = {
+const BIG_WOOD: Wood = {
   diameter: DIAMETER,
   furrows: [
     [2, 13, 5, 0],
@@ -91,8 +91,6 @@ export const POLE_WOOD: Wood = {
 /** Teinte d'écorce de la perche un cran plus sombre (sa rampe S A B, puis Q et K). */
 export const POLE_DARKER: Record<string, string> = { S: 'A', A: 'B', B: 'Q', Q: 'K', K: 'K' };
 
-/** Écorce, de la lumière à l'ombre (palette `world`). */
-export const BARK = ['M', 'm', 'N', 'K'] as const;
 
 /** Teinte d'écorce un cran plus sombre. */
 export const DARKER: Record<string, string> = { M: 'm', m: 'N', N: 'K', K: 'K' };
@@ -103,7 +101,7 @@ export function barkTone(s: number): string {
 }
 
 /** Le pixel (`along` le long du tronc, `s` en travers) est-il dans un sillon ? */
-export function furrowAt(along: number, s: number, wood: Wood = BIG_WOOD): boolean {
+function furrowAt(along: number, s: number, wood: Wood = BIG_WOOD): boolean {
   const row = Math.floor(s * wood.diameter);
   const a = Math.floor(along);
   return wood.furrows.some(([r, p, n, ph]) => {
@@ -155,7 +153,7 @@ export function paintFace(c: Canvas, cx: number, cy: number, rx: number, ry: num
 }
 
 /** Demi-largeur (le long du tronc) de l'ovale d'un bout de tronc couché est-ouest du gros arbre : 5 px de large. */
-export const END_A = BIG_WOOD.endA;
+const END_A = BIG_WOOD.endA;
 
 /**
  * Bout d'un tronc ou d'une bille couchés est-ouest, dont le bois commence à la colonne `x` (`side` 'left' : le bois

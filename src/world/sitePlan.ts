@@ -18,7 +18,7 @@ export interface PlanSlot {
 }
 
 /** Toutes les places d'un plan, étape par étape, dans l'ordre du chantier. */
-export function planSlots(plan: PlanDef): PlanSlot[] {
+function planSlots(plan: PlanDef): PlanSlot[] {
   return plan.steps.flatMap((s, step) => Object.entries(s.places).map(([id, place]) => ({ id, place, step })));
 }
 
@@ -31,7 +31,7 @@ export function placeCorner(site: Pick<Site, 'x' | 'y'>, place: PlanPlace): { x:
  * L'emprise au sol d'une place (cm) : celle de son objet (`dims` de props.json), sauf une place qui demande une poutre
  * (`accepts.wood`) : la pièce de bois y est dressée (`axis: 'up'`), son emprise est celle de la pièce debout (`woodDims`).
  */
-export function placeDims(place: PlanPlace, step?: PlanStep): { w: number; d: number } {
+function placeDims(place: PlanPlace, step?: PlanStep): { w: number; d: number } {
   const beam = (place.accepts ?? step?.accepts)?.wood;
   if (!beam) return props[place.piece].dims;
   const { w, d } = woodDims(beamPiece(beam.length, 'up'));
@@ -57,7 +57,7 @@ export function footprintBox(site: Pick<Site, 'x' | 'y'>, plan: PlanDef): { left
 }
 
 /** Le plan comme ensemble de places du moteur commun : couche = étape, porteuses = `on`, point visé = le milieu de l'emprise de la pièce. */
-export function planSet(site: Pick<Site, 'x' | 'y'>, plan: PlanDef): PlaceSet {
+function planSet(site: Pick<Site, 'x' | 'y'>, plan: PlanDef): PlaceSet {
   const places: PlaceSet['places'] = {};
   for (const { id, place, step } of planSlots(plan)) {
     const at = placeCorner(site, place);

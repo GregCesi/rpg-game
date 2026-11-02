@@ -9,9 +9,9 @@ export function wields(h: Harvest, tool: string | undefined): boolean {
   return !!tool && (tool === h.tool || tool in h.also);
 }
 
-/** Prix d'un coup de `tool` en endurance (clé de `costs`) : celui de son `also`, sinon `effort` (absent : `cutTie` sur ce qui porte une corde, `chop`). */
-export function effortOf(h: Harvest, tool: string, bears: boolean): NonNullable<Harvest['effort']> {
-  return h.also[tool] ?? h.effort ?? (bears ? 'cutTie' : 'chop');
+/** Prix d'un coup simple de `tool` (une récolte sans matière ; clé de `costs`) : celui de son `also`, sinon `cutTie` sur ce qui porte une corde, `chop`. */
+export function effortOf(h: Harvest, tool: string, bears: boolean): Harvest['also'][string] {
+  return h.also[tool] ?? (bears ? 'cutTie' : 'chop');
 }
 
 import { changeObject, changeSpawned, dropItem, game, replaceHeld, spawnObject, take, type Hand } from '../state';
@@ -341,17 +341,15 @@ export class HarvestSystem {
     const y = prop.y + dy;
     const { baseX, baseY } = prop;
     this.map.removeProp(prop);
-    const next = becomes ? this.map.placeProp({ id: prop.id, type: becomes, x, y }, { flip: keep, spawned: prop.spawned, chain: prop.chain, wood }) : undefined;
+    const next = becomes ? this.map.placeProp({ id: prop.id, type: becomes, x, y }, { flip: keep, spawned: prop.spawned, wood }) : undefined;
     const change = becomes ? { type: becomes, x, y, ...(keep ? { flip: true } : {}), ...(wood ? { wood } : {}) } : { x, y };
     if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
     else changeObject(game, mapId, prop.id, change);
     // ce qui naît (l'arbre couché) : noté tout de suite, montré à la fin de la chute
-    const group = game.nextSpawnId;
-    const born = h.spawns.map((sp, index) => {
-      const chain = { group, index, size: h.spawns.length };
+    const born = h.spawns.map((sp) => {
       const f = spawnFlip(sp.type);
-      const o = spawnObject(game, mapId, sp.type, prop.x + spawnX(sp.type, sp.x, this.imageWidth(sp.type)), prop.y + sp.y, { flip: f, chain });
-      return this.map.placeProp(o, { flip: f, spawned: true, chain });
+      const o = spawnObject(game, mapId, sp.type, prop.x + spawnX(sp.type, sp.x, this.imageWidth(sp.type)), prop.y + sp.y, { flip: f });
+      return this.map.placeProp(o, { flip: f, spawned: true });
     });
 
     // les objets lâchés entrent dans GameState tout de suite : quitter la carte pendant la chute ne les perd pas

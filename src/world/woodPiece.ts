@@ -10,10 +10,6 @@ import { facesOf, lookDef, lookOf, rollsLook, sizeOf, upOf, woodBody, woodTraits
 /** La clé de la pièce de bois dans props.json. */
 export const WOOD_PIECE = 'wood-piece';
 
-/** La définition de props.json de la pièce de bois (ses réglages par défaut, son image dans Tiled). */
-export function woodBase(): PropDef {
-  return propDefs[WOOD_PIECE];
-}
 
 /** Les réglages d'une pièce : les siens, sinon ceux par défaut de props.json (une pièce posée dans Tiled sans propriétés). */
 export function woodOf(base: PropDef, wood?: WoodPiece): WoodPiece {

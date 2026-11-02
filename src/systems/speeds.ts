@@ -15,7 +15,7 @@ export const pxPerSec = (metresPerSec: number): number => (metresPerSec * 100) /
 export const metresPerSec = (px: number): number => (px * CM_PER_PX) / 100;
 
 /** Les vitesses par défaut (config.ts, PLAYER, en m/s). */
-export const DEFAULT_SPEEDS: Speeds = { walk: pxPerSec(PLAYER.walk), run: pxPerSec(PLAYER.run) };
+const DEFAULT_SPEEDS: Speeds = { walk: pxPerSec(PLAYER.walk), run: pxPerSec(PLAYER.run) };
 
 function stored(): Speeds {
   try {

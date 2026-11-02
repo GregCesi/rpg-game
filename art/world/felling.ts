@@ -274,9 +274,9 @@ export const POLLARD: Standing = {
 // =====================================================================================================================
 
 /** Dernière étape de l'abattage : celle que la chute remplace. */
-export const LAST_STAGE = 7;
+const LAST_STAGE = 7;
 /** Angle de la première image dessinée de la chute (10°), que le raccord rejoint. */
-export const FALL_FIRST_DEG = 10;
+const FALL_FIRST_DEG = 10;
 /** Les angles du raccord, en part du chemin de la dernière étape à 10° : l'arbre accélère en basculant. */
 const LEAD = [0.3, 0.65];
 
@@ -307,10 +307,6 @@ export function leadIn(t: Standing, side: LeadSide): Canvas[] {
   return LEAD.map((s) => fellingStage(t, LAST_STAGE, { deg: from + (FALL_FIRST_DEG - from) * s, w: side.w, off, shade: leanShade(s) }, side.left));
 }
 
-/** L'arbre de la dernière étape tel que le jeu le montre, posé dans la planche (`-left-stage-7` vers la gauche). */
-export function lastStageIn(t: Standing, side: LeadSide): Canvas {
-  return new Canvas(side.w, t.h).stamp(fellingStage(t, LAST_STAGE, undefined, side.left).toGrid(), side.off, 0);
-}
 
 /**
  * Les copeaux de la dernière étape posés sur une image de la chute (sur le vide et l'ombre seulement) : ils restent au pied

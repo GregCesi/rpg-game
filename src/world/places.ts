@@ -8,7 +8,7 @@ import type { WoodPiece } from '../content/types';
 import { facesOf, WOOD } from './woodShape';
 
 /** Rectangle dans le repère de l'ensemble de places. */
-export interface PlaceRect {
+interface PlaceRect {
   x: number;
   y: number;
   w: number;
@@ -16,7 +16,7 @@ export interface PlaceRect {
 }
 
 /** Ce que le moteur sait d'une place : sa couche, ses porteuses, où elle se dessine, sa collision au sol, son point visé. */
-export interface PlaceBase {
+interface PlaceBase {
   /** Couche : 0 au sol, 1 posée sur des places de la couche 0... */
   layer: number;
   /** Places qui la portent : elle n'existe que quand elles sont toutes prises. */

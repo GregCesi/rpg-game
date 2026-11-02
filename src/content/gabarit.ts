@@ -32,7 +32,7 @@ export const CM_PER_PX = 5;
 export const RACCOURCI = 0.5;
 
 /** Plancher de lisibilité : largeur à l'écran jusqu'à laquelle un objet plus étroit peut être agrandi, en pixels. */
-export const LISIBLE = 6;
+const LISIBLE = 6;
 
 /** Écart toléré entre la taille attendue et la taille dessinée, en pixels (au-delà : refusé par validate.ts). */
 export const TOLERANCE = 2;
@@ -42,8 +42,8 @@ export const TOLERANCE = 2;
  * couché nord-sud (`'ns'`, d = longueur, w = h = diamètre) ou debout (`'up'`, w = d = diamètre, h = hauteur).
  * `flat` : posé à plat sur le sol (tache, éclats), vu comme le sol, sans raccourci.
  */
-export type Shape = 'box' | 'cylinder' | 'flat';
-export type Axis = 'ew' | 'ns' | 'up';
+type Shape = 'box' | 'cylinder' | 'flat';
+type Axis = 'ew' | 'ns' | 'up';
 
 /** Dimensions réelles d'un objet, en centimètres : largeur (est-ouest), profondeur (nord-sud), hauteur. */
 export interface Dims { w: number; d: number; h: number; shape: Shape; axis?: Axis; ground?: boolean }

@@ -16,7 +16,7 @@ import { toolPalette } from './tools';
  * Palette des deux outils : celle des outils, plus le fer bleuté du coin (le fer 2 3 4 refroidi vers le bleu de l'eau
  * W w q, pour qu'on le distingue de la masse et de la hache ; l'ombre glisse vers le brun-violet, comme le reste).
  */
-export const splittingPalette = {
+const splittingPalette = {
   ...toolPalette,
   I: '#adb6b6', // fer bleuté éclairé, tête martelée du coin
   p: '#7b8790', // fer bleuté

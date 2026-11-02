@@ -25,7 +25,7 @@ export interface Ring { size: number; diameter: number; furrows: [number, [numbe
  * Gros : 22 rangées (deux fois les 11 visibles). Couloirs 2, 5, 8 visibles à l'image 0, 12, 15, 18 sur la face cachée ; deux
  * tirets de 4 à 6 px par période, placés pour ne jamais s'aligner d'un couloir à l'autre.
  */
-export const BIG_RING: Ring = {
+const BIG_RING: Ring = {
   size: 22,
   diameter: 11,
   furrows: [
@@ -51,10 +51,10 @@ export const NORMAL_RING: Ring = {
 };
 
 /** Décalage de l'anneau à l'image k : un quart de tour par image. */
-export const shiftAt = (ring: Ring, k: number) => Math.round((k * ring.size) / 4);
+const shiftAt = (ring: Ring, k: number) => Math.round((k * ring.size) / 4);
 
 /** La rangée `v` de l'anneau (à l'image 0) est-elle dans un sillon à `along` et à l'image k ? */
-export function furrow(ring: Ring, along: number, v: number, k: number): boolean {
+function furrow(ring: Ring, along: number, v: number, k: number): boolean {
   const row = mod(v - shiftAt(ring, k), ring.size);
   const a = mod(Math.floor(along), TILE);
   return ring.furrows.some(([r, dashes]) => dashes.some(([s, n]) => {
@@ -65,7 +65,7 @@ export function furrow(ring: Ring, along: number, v: number, k: number): boolean
 }
 
 /** Écorce : la rampe en travers (`s` de 0, côté lumière, à 1), creusée d'un cran par les sillons de la rangée d'anneau `v`. */
-export function ringBark(ring: Ring, along: number, v: number, s: number, k: number): string {
+function ringBark(ring: Ring, along: number, v: number, s: number, k: number): string {
   const b = barkTone(s);
   return furrow(ring, along, v, k) ? DARKER[b] : b;
 }
@@ -75,23 +75,14 @@ export const barkV = (ring: Ring, along: number, v: number, k: number, plain = f
   plain ? barkTone((v + 0.5) / ring.diameter) : ringBark(ring, along, v, (v + 0.5) / ring.diameter, k);
 
 /** Écorce lisse de la perche : anneau de 8 rangées, gerçures courtes et rares, rampe S A B (bois grisé). */
-export const POLE_RING = 8;
+const POLE_RING = 8;
 const POLE_MARKS: [number, [number, number][]][] = [
   [1, [[3, 2], [15, 3]]],
   [3, [[9, 3], [21, 2]]],
   [5, [[0, 2], [12, 2]]],
   [7, [[6, 2], [18, 3]]],
 ];
-const POLE_TONES = ['S', 'A', 'B'];
 
-/** Écorce de la perche à `along`, rangée d'anneau `v`, teinte `s` (0 éclairée à 1), à l'image k. */
-export function poleBark(along: number, v: number, s: number, k: number): string {
-  const row = mod(v - 2 * k, POLE_RING);
-  const a = mod(Math.floor(along), TILE);
-  const base = POLE_TONES[Math.min(2, Math.floor(s * 3))];
-  const hit = POLE_MARKS.some(([r, dashes]) => r === row && dashes.some(([st, n]) => mod(a - st, TILE) < n));
-  return hit ? POLE_DARKER[base] : base;
-}
 
 // ---------- L'écorce des vues couchées (le rond qui se modèle en cylindre) ----------
 
@@ -101,18 +92,18 @@ export function poleBark(along: number, v: number, s: number, k: number): string
  * est en m, le flanc sud en N, et la dernière rangée, juste au-dessus du contour, en K : le rond se lit comme un cylindre, pas
  * comme une planche claire. La perche suit la même découpe dans sa rampe grisée S A B.
  */
-export function lyingBarkTone(s: number): string {
+function lyingBarkTone(s: number): string {
   return s < 0.15 ? 'M' : s < 0.5 ? 'm' : s < 0.8 ? 'N' : 'K';
 }
 
 /** L'écorce couchée à la rangée d'anneau `v` : la rampe en cylindre, creusée d'un cran par les sillons. */
-export function lyingRingBark(ring: Ring, along: number, v: number, s: number, k: number): string {
+function lyingRingBark(ring: Ring, along: number, v: number, s: number, k: number): string {
   const b = lyingBarkTone(s);
   return furrow(ring, along, v, k) ? DARKER[b] : b;
 }
 
 /** L'écorce couchée de la perche : la même découpe que le gros et le normal, dans la rampe S A B, gerçures en Q. */
-export function lyingPoleBark(along: number, v: number, s: number, k: number): string {
+function lyingPoleBark(along: number, v: number, s: number, k: number): string {
   const row = mod(v - 2 * k, POLE_RING);
   const a = mod(Math.floor(along), TILE);
   const base = s < 0.15 ? 'S' : s < 0.5 ? 'A' : 'B';
@@ -123,7 +114,7 @@ export function lyingPoleBark(along: number, v: number, s: number, k: number): s
 // ---------- Bois frais de la fente (faces fendues) ----------
 
 /** Couloirs de fibres d'une face fendue, en travers : tirets [début, longueur] sur 24 px. */
-export const SPLIT_LANES: [number, number][][] = [
+const SPLIT_LANES: [number, number][][] = [
   [[2, 5], [14, 4]],
   [[8, 2], [19, 2]],
   [[5, 6], [17, 3]],
@@ -190,7 +181,7 @@ export function plankTone(along: number, across: number, last: boolean): string 
 // ---------- Les matières, par diamètre ----------
 
 /** Ce que voit le calcul d'une matière en un point : où il est sur la pièce et comment il est éclairé. */
-export interface FaceAt {
+interface FaceAt {
   /** Le long de la pièce, en pixels (périodique sur TILE). */
   along: number;
   /** En travers de la face, en pixels depuis son bord côté lumière (0, 1, 2...). */

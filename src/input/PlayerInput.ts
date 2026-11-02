@@ -148,11 +148,6 @@ export class PlayerInput {
   }
 
   /** La touche R est enfoncée en ce moment : R maintenu (pivoter une bille couchée). */
-  /** Espace est enfoncé en ce moment : maintenu, les coups d'un travail s'enchaînent (docs/CONCEPTION.md, « Le travail »). */
-  useDown(): boolean {
-    return CODES.use.some((c) => this.held.has(c));
-  }
-
   turnDown(): boolean {
     return CODES.turn.some((c) => this.held.has(c));
   }

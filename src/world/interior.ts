@@ -31,7 +31,7 @@ export interface Rect {
 export type Side = 'north' | 'east' | 'south' | 'west';
 
 /** Une entrée d'un bâtiment : une porte (son identifiant de pièce posée) ou une ouverture sans porte. */
-export interface Entrance {
+interface Entrance {
   /** La pièce de porte, s'il y en a une. */
   door?: number;
   /** On passe : la porte est ouverte, ou l'ouverture n'a pas de porte. */
@@ -92,7 +92,7 @@ function swingOf(p: BuildPiece) {
 }
 
 /** Une porte : ce qui s'ouvre et qu'on passe (`swing.passage`). */
-export function isDoor(p: BuildPiece): boolean {
+function isDoor(p: BuildPiece): boolean {
   return !!swingOf(p)?.passage;
 }
 

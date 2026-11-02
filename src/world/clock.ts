@@ -1,7 +1,7 @@
 // L'horloge du jeu, sans Phaser (docs/CONCEPTION.md, « Le temps ») : une seule horloge de 24 h, un jour et une minute (de 0 à 1 440,
 // avec des fractions). Elle avance à la vitesse du temps choisie par le joueur (un palier de time.json : à x1, une minute réelle fait une
-// minute de jeu ; à x24, une journée dure une heure), et des minutes de travail pendant un geste (CONCEPTION : un travail garde la
-// durée de son geste, l'horloge avance de sa durée réaliste). Elle ne fait avancer que l'heure : la marche, les gestes, le souffle
+// minute de jeu ; la vitesse du temps est celle de la simulation : tout avance d'autant). ?dieu « Finir le travail » et « Transformer »
+// l'avancent d'un coup de la durée du travail. Elle ne fait avancer que l'heure : la marche, les gestes, le souffle
 // vivent sur la simulation (les secondes jouées).
 
 /** Un moment de la partie : le jour (1 au départ) et la minute du jour (de 0 à 1 440, avec des fractions). */

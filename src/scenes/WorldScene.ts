@@ -80,7 +80,7 @@ import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { heldWoodTexture } from '../world/woodTexture';
 import { pileWoodOf } from '../world/woodPile';
 import { naturalFor } from '../world/natural';
-import type { Interactable, PlacedGround, PlacedProp } from '../world/GameMap';
+import type { Interactable, PlacedGround, PlacedProp, Talker } from '../world/GameMap';
 
 /**
  * Ce que fait le monde en ce moment. Une seule valeur à la fois : le joueur ne peut pas
@@ -169,7 +169,7 @@ export class WorldScene extends Phaser.Scene {
   /** Le zoom de la caméra du monde, par paliers entiers. */
   private zoom!: ZoomControl;
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
-  private talking?: Npc;
+  private talking?: Talker;
   private mode: Mode = 'play';
   /** Espace ignoré jusque-là : l'appui qui ferme un dialogue ne doit pas lancer un geste. */
   private useLockedUntil = 0;
@@ -375,7 +375,7 @@ export class WorldScene extends Phaser.Scene {
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
-    // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V et Maj + V changent la vitesse du temps
+    // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V change la vitesse du temps (en boucle)
     this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work');
     this.daylight.update();
     // V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite), au palier suivant, en boucle
@@ -667,7 +667,7 @@ export class WorldScene extends Phaser.Scene {
       if (aim.work === 'hew') return this.hewPass(aim);
       if (aim.work === 'plant') {
         // le coin se plante d'un coup, sans geste
-        if (!this.effort.afford(this.player, this.wood.cost(this.player, aim))) return;
+        if (!this.effort.afford(this.player, this.player.stamina.costs.plant)) return;
         return this.woodHit(tool);
       }
       return this.woodWork(aim, tool);
@@ -681,7 +681,7 @@ export class WorldScene extends Phaser.Scene {
     // un outil que la cible écarte (la hache sur une grosse bille) ou une fente sans la place de s'ouvrir : on le dit, sans geste ni dépense
     const why = target && this.harvest.refusal(target, tool);
     if (why) return this.notice(why);
-    // une récolte au coup (sa matière, `work`) : un coup par appui, Espace maintenu enchaîne jusqu'au résultat
+    // une récolte au coup (sa matière, `work`) : un appui lance tout le travail, Xéros frappe seul jusqu'au résultat
     if (target && h?.work && wields(h, tool)) return this.harvestWork(target, tool);
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
     const costs = this.player.stamina.costs;
@@ -750,7 +750,7 @@ export class WorldScene extends Phaser.Scene {
     const settle = (cm: number) => {
       const plan = planOf(woodJob('hew', aim.piece, cm), who, this.player.stamina.max);
       this.clock.work(plan.seconds / 60);
-      this.player.stamina.force(plan.ceiling);
+      this.player.stamina.force(plan.ceiling, plan.breath);
     };
     this.rail.start(
       this.wood.hewPass(this.player, aim, { cm: perStroke(unit, stroke) / unit.amount, durations: phases ? frameMs(stroke, phases) : undefined }, pay, settle, (r, why) => {

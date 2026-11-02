@@ -422,16 +422,6 @@ export class WoodSystem {
     return { prop: p, piece, work: 'maul', at: 0, end, ...this.endAim(p, end), refusal };
   }
 
-  /**
-   * Prix du coup en endurance : la cognée, planter le coin, le coup de masse ; pour la doloire, celui d'un coup de sa passe (la passe
-   * se paie coup par coup, au fil de ce qu'elle dresse : `hewPass`).
-   */
-  cost(player: Player, aim: WoodAim): number {
-    const c = player.stamina.costs;
-    if (aim.work === 'cut') return c.chop;
-    if (aim.work === 'hew') return (c.hewPerM * W.hew.stroke) / 100;
-    return aim.work === 'plant' ? c.plant : c.maul;
-  }
 
   /**
    * À appeler à chaque image : l'invite « Espace » sur la coupe visée, et au-dessus les deux longueurs qu'elle donnerait (dans
@@ -502,9 +492,9 @@ export class WoodSystem {
   /** La pièce a de nouveaux réglages : notés dans GameState, et redessinée à sa place. */
   private update(p: PlacedProp, piece: WoodPiece): void {
     setWood(game, this.map.def.id, p.id, p.spawned, piece);
-    const { id, type, x, y, spawned, chain } = p;
+    const { id, type, x, y, spawned } = p;
     this.map.removeProp(p);
-    this.map.placeProp({ id, type, x, y }, { spawned, chain, wood: piece });
+    this.map.placeProp({ id, type, x, y }, { spawned, wood: piece });
   }
 
   private cutHit(p: PlacedProp, at: number): WoodHit {
@@ -539,7 +529,7 @@ export class WoodSystem {
   /** La pièce `p` devient `piece` en (x, y), sous son identifiant : à l'écran et dans GameState. */
   private replace(p: PlacedProp, piece: WoodPiece, at: { x: number; y: number }): PlacedProp {
     this.map.removeProp(p);
-    const next = this.map.placeProp({ id: p.id, type: WOOD_PIECE, ...at }, { spawned: p.spawned, chain: p.chain, wood: piece });
+    const next = this.map.placeProp({ id: p.id, type: WOOD_PIECE, ...at }, { spawned: p.spawned, wood: piece });
     if (p.spawned) changeSpawned(game, this.map.def.id, p.id, stateOf(next));
     else changeObject(game, this.map.def.id, p.id, stateOf(next));
     return next;

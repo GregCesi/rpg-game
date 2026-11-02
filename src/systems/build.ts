@@ -607,7 +607,7 @@ function intersects(a: Box3, b: Box3): boolean {
 }
 
 /** Le nom de fichier d'un plan, d'après son nom affiché : minuscules sans accent, tirets (« Mur d'essai » -> `mur-d-essai`). */
-export function planKeyOf(name: string): string {
+function planKeyOf(name: string): string {
   return name
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')

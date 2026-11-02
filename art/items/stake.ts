@@ -27,7 +27,7 @@ const LEN = 18;
  * coupé net, U) à `x0` ; la pointe à droite (ou à gauche, `pointLeft`) : ses facettes taillées en bois clair (U U u).
  * Une fente (m) au tiers de la tête.
  */
-export function stakeBody(x0: number, w: number, h: number, row: number, pointLeft = false, len = LEN): Canvas {
+function stakeBody(x0: number, w: number, h: number, row: number, pointLeft = false, len = LEN): Canvas {
   const c = new Canvas(w, h);
   const X = (i: number) => (pointLeft ? x0 + len - 1 - i : x0 + i);
   for (let i = 0; i < len; i++) {

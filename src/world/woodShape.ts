@@ -60,7 +60,7 @@ export function shapeOfLook(look: WoodLook): WoodPiece['shape'] {
 export const rollsLook = (look: WoodLook) => look === 'round' || look === 'peeled';
 
 /** Faces dressées à la doloire de chaque aspect. */
-export const LOOK_FACES: Record<WoodLook, number> = { round: 0, peeled: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 };
+const LOOK_FACES: Record<WoodLook, number> = { round: 0, peeled: 0, half: 0, quarter: 0, plank: 0, f1: 1, f2: 2, f3: 3, beam: 4 };
 
 /** La pièce de bois d'un aspect : sa forme, ses coups de doloire (une face tous les `perFace`), son écorce ôtée. */
 export function woodOfLook(size: string, look: WoodLook, length: number, axis: WoodAxis): WoodPiece {
@@ -152,7 +152,7 @@ export function woodBody(size: string, look: WoodLook, axis: WoodAxis, cm: numbe
 }
 
 /** Une partie posée dans l'image : laquelle, où (colonne est-ouest, rangée nord-sud), et combien de pixels on en garde. */
-export interface Placement {
+interface Placement {
   part: 'start' | 'mid' | 'end';
   at: number;
   size: number;
@@ -182,7 +182,7 @@ export function cutPixel(size: string, look: WoodLook, axis: WoodAxis, cm: numbe
 }
 
 /** Première colonne (est-ouest) ou rangée (nord-sud : la même bande, en rangées) de la bande d'encoche d'une coupe à `cm` du bout de départ. */
-export function notchPixel(size: string, look: WoodLook, axis: WoodAxis, cm: number): number {
+function notchPixel(size: string, look: WoodLook, axis: WoodAxis, cm: number): number {
   const n = sizeOf(size).notch;
   return cutPixel(size, look, axis, cm) - n.ew.at;
 }
@@ -193,7 +193,7 @@ export function cmAt(size: string, look: WoodLook, axis: WoodAxis, px: number): 
 }
 
 /** La partie de la planche (départ ou arrivée) où se trouve le bout `end` d'une pièce. */
-export const partOfEnd = (end: End): 'start' | 'end' => (end === 'west' || end === 'north' ? 'start' : 'end');
+const partOfEnd = (end: End): 'start' | 'end' => (end === 'west' || end === 'north' ? 'start' : 'end');
 
 /**
  * Une opération de dessin : poser les pixels [0, size[ (le long de la pièce) de l'image `frame` de l'animation `anim` à `at`
@@ -233,7 +233,7 @@ export function splitPieces(piece: WoodPiece): { piece: WoodPiece; dx: number; d
 }
 
 /** L'aspect tel qu'il est dessiné dans la planche : le quartier pointe en bas a ses parties à lui (`quarter-down`). */
-export function drawnLook(piece: WoodPiece): string {
+function drawnLook(piece: WoodPiece): string {
   const look = lookOf(piece);
   return look === 'quarter' && piece.point === 'down' ? 'quarter-down' : look;
 }
@@ -241,13 +241,13 @@ export function drawnLook(piece: WoodPiece): string {
 /** Images du coin planté (`wedge-…`) : il sort de moins en moins du bout à chaque coup de masse. */
 export const WEDGE_FRAMES = 3;
 
-/** Coups de masse pour fendre une pièce : `split.hits` par mètre commencé (3 pour 1 m, 6 pour 2 m), un seul coin dans le bout. */
+/** Étapes de la fente d'une pièce (les coups, eux, viennent de la fente et de la force : world/workPlan.ts) : `split.hits` par mètre commencé (3 pour 1 m, 6 pour 2 m), un seul coin dans le bout. */
 export function splitHits(piece: Pick<WoodPiece, 'length'>): number {
   return Math.ceil(piece.length / 100) * WOOD.split.hits;
 }
 
 /** L'image du coin planté après `hits` coups sur `total` : il s'enfonce par paliers, de 0 (planté) à WEDGE_FRAMES - 1. */
-export function wedgeFrame(hits: number, total: number): number {
+function wedgeFrame(hits: number, total: number): number {
   return Math.min(WEDGE_FRAMES - 1, Math.floor((WEDGE_FRAMES * hits) / total));
 }
 
@@ -284,7 +284,7 @@ export function dressedLook(piece: Pick<WoodPiece, 'shape' | 'hewn' | 'dressed'>
  * et la bande de l'image déjà dressée, [de, à[ le long de la pièce (colonnes est-ouest, rangées nord-sud), depuis son bout `from`
  * jusqu'à `length` cm de lui (la place de la coupe qui tomberait là, `cutPixel`). Rien sur une pièce sans face en cours.
  */
-export function dressedBand(piece: WoodPiece): { look: WoodLook; clip: [number, number] } | undefined {
+function dressedBand(piece: WoodPiece): { look: WoodLook; clip: [number, number] } | undefined {
   const d = piece.dressed;
   const look = dressedLook(piece);
   if (!d || !look || piece.axis === 'up') return undefined;
@@ -353,7 +353,7 @@ export function metresLabel(cm: number): string {
 }
 
 /** Le diamètre dont la poutre se dresse (le normal) : celui des poteaux d'un chantier. */
-export const BEAM_SIZE = Object.keys(WOOD.sizes).find((k) => WOOD.sizes[k].looks.beam?.up) ?? Object.keys(WOOD.sizes)[0];
+const BEAM_SIZE = Object.keys(WOOD.sizes).find((k) => WOOD.sizes[k].looks.beam?.up) ?? Object.keys(WOOD.sizes)[0];
 
 /** La poutre d'une place de chantier (`accepts.wood`) : la pièce de bois de BEAM_SIZE, équarrie sur ses quatre faces, de `length` cm, dans le sens `axis`. */
 export const beamPiece = (length: number, axis: WoodPiece['axis'] = 'ew'): WoodPiece => ({ size: BEAM_SIZE, length, shape: 'round', hewn: WOOD.hew.faces * WOOD.hew.perFace, axis });

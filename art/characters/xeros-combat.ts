@@ -355,10 +355,10 @@ const JAB_LEFT: Record<CombatDir, Frame[]> = {
 // son centre sur la main du temps de frappe (comme l'image de l'arme).
 
 /** Côté minimal d'une image de traînée ; plus grande si l'arme la plus longue n'y tient pas (toujours centrée sur la main). */
-export const SMEAR_SIZE = 64;
+const SMEAR_SIZE = 64;
 
 /** Les armes qui ont un `weapon` (items.json) : par clé, la portée de la lame, de la main à la pointe, en pixels. */
-export const WEAPON_REACH: Record<string, number> = Object.fromEntries(
+const WEAPON_REACH: Record<string, number> = Object.fromEntries(
   Object.entries(itemsJson as Record<string, { weapon?: { length: number; grip: number } }>)
     .filter(([, it]) => it.weapon && !(it.weapon as { fist?: boolean }).fist)
     // longueur devant la main (length − grip), 5 cm par px, la main comprise : l'épée (84 cm) a sa pointe à 16 px de la
@@ -442,7 +442,7 @@ function smearGrid(prev: Frame, cur: Frame, mode: 'ccw' | 'cw' | 'line', reach: 
 // cache la main (son bras passe sous le torse, la tête ou l'autre bras) : c'est la main seule (3 × 3 de peau et son contour,
 // sans la manche), image 5 × 5 `fx-grip-<geste>-<direction>-<n>` posée par son centre sur la main.
 
-export const GRIP_SIZE = 5;
+const GRIP_SIZE = 5;
 
 /** Le corps d'une image, la gauche pas encore retournée ; `handOver` : la main droite dessinée par-dessus tout. */
 function rawBody(dir: CombatDir, f: Frame, handOver = false): Grid {
@@ -484,14 +484,14 @@ const SPARK: Grid = [
   '...a.H.',
   '...a...',
 ];
-export const SPARK_IMAGE = 'fx-spark';
+const SPARK_IMAGE = 'fx-spark';
 
 // =====================================================================================================================
 // Les données, pour le jeu
 // =====================================================================================================================
 
-export interface CombatPoint { dx: number; dy: number }
-export interface CombatHand extends CombatPoint { behind: boolean }
+interface CombatPoint { dx: number; dy: number }
+interface CombatHand extends CombatPoint { behind: boolean }
 export interface CombatFrame {
   /** Nom du temps (garde, armer, frappe…). */
   name: string;

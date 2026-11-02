@@ -7,7 +7,7 @@ import { world } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 
 /** La pénombre au point x du monde (px depuis le bord ouest) : interpolée entre deux paliers de world.json ; rien au-delà du dernier. */
-export function gloomAt(wx: number): number {
+function gloomAt(wx: number): number {
   const m = (wx * CM_PER_PX) / 100;
   const stops = world.gloom;
   if (m <= stops[0].x) return stops[0].alpha;

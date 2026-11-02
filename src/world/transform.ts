@@ -7,7 +7,7 @@ import { itemMass, propMass, woodMass, type MassCatalog } from '../content/mass'
 import { lookDef, lookOf } from './woodShape';
 
 /** Longueur de référence d'une pièce de bois sans longueur (une transformation qui garde la longueur de son entrée) : 1 m. */
-export const REFERENCE_CM = 100;
+const REFERENCE_CM = 100;
 
 /** Les réglages d'une pièce de bois d'entrée ou de sortie, à la longueur `length` (la sienne, sinon celle de l'entrée, sinon 1 m). */
 export function partWood(part: TransformPart, length = REFERENCE_CM): WoodPiece {

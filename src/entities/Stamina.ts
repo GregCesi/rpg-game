@@ -151,11 +151,11 @@ export class Stamina {
     this.set(breath, this.ceiling - perSec * s, false);
   }
 
-  /** Un effort payé sans attendre son souffle (?dieu « Finir le travail ») : le plafond perd `cost`, le souffle `perCost` fois. */
-  force(cost: number): void {
-    if (this.infinite || cost <= 0) return;
+  /** Un travail payé d'un coup, sans attendre son souffle (?dieu « Finir le travail ») : le plafond perd `ceiling`, le souffle `breath` (au joule). */
+  force(ceiling: number, breath: number): void {
+    if (this.infinite || (ceiling <= 0 && breath <= 0)) return;
     this.rest = 0;
-    this.set(this.breath - cost * def.breath.perCost, this.ceiling - cost, true);
+    this.set(this.breath - breath, this.ceiling - ceiling, true);
   }
 
   /**

@@ -23,7 +23,7 @@ import { FALL_H, FALL_W, OFF, OFF_L, type Faller, crownRows, fallFrame, fallFram
 import { POLLARD as POLLARD_STANDING } from './felling';
 
 /** Le têtard debout, 64x96 : image `big-pollard` (le dessin d'origine du gros arbre). */
-export function standingPollard(): Canvas {
+function standingPollard(): Canvas {
   const c = shadedOutline(treeBody());
   groundShadow(c, 36, 89.5, 17, 4);
   return c;
@@ -79,8 +79,6 @@ const left = fallFrames(
   lying(true),
 ).map((c, i) => crop(c, LEFT_FROM, `image ${i + 1} de la chute à gauche`));
 
-/** Décalages x des planches de chute, pour props.json (repère : coin bas gauche de l'image `big-pollard` posée). */
-export const POLLARD_FALL = { x: -OFF, left: { x: -(OFF_L - LEFT_FROM) }, foot: FOOT[0] };
 
 const sheet = (name: string, frames: Canvas[]): SpriteSheetSource => ({
   kind: 'spritesheet',

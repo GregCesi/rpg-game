@@ -27,20 +27,20 @@ const view = z.number().int().min(1).max(3).optional();
  * commencera (le fagot) ; `length` : sa longueur restante, le rouleau de corde ; `wood` : les réglages d'une pièce de bois, dont
  * le sens où elle sera posée, que R change). Pas de besace : les mains sont tout l'inventaire.
  */
-export const HeldSchema = z.union([
+const HeldSchema = z.union([
   z.strictObject({ item: id, view, natural }),
   z.strictObject({ prop: id, flip: z.boolean().optional(), turned: z.boolean().optional(), length, wood: WoodPieceSchema.optional(), natural }),
 ]);
 
 /** Une main : 0 = la gauche, 1 = la droite. */
-export const HandSchema = z.union([z.literal(0), z.literal(1)]);
+const HandSchema = z.union([z.literal(0), z.literal(1)]);
 
 /**
  * Un objet de carte changé : il est devenu `type` (clé de props.json), posé en (x, y) (coin bas gauche) ; `type` absent = disparu.
  * `flip` : image retournée (ce qui est tombé vers la gauche) ; `length` : longueur restante de ce qu'il est ou porte (le
  * rouleau, le billot qui porte le rouleau).
  */
-export const WorldChangeSchema = z.strictObject({
+const WorldChangeSchema = z.strictObject({
   type: id.optional(),
   x: z.number(),
   y: z.number(),
@@ -52,25 +52,16 @@ export const WorldChangeSchema = z.strictObject({
   natural,
 });
 
-/** Place d'un objet né dans la chaîne de ce qui est né avec lui (les pièces de l'arbre couché, bout à bout). */
-export const ChainSchema = z.strictObject({
-  /** Identifiant du premier objet né de la chaîne. */
-  group: z.number().int().nonnegative(),
-  index: z.number().int().nonnegative(),
-  size: z.number().int().positive(),
-});
-
 /**
- * Un objet né pendant la partie (une pièce de l'arbre couché) : identifiant propre, type de props.json, coin bas gauche,
- * image retournée, place dans sa chaîne.
+ * Un objet né pendant la partie (l'arbre couché, une pièce de bois) : identifiant propre, type de props.json, coin bas gauche,
+ * image retournée.
  */
-export const SpawnedSchema = z.strictObject({
+const SpawnedSchema = z.strictObject({
   id: z.number().int().nonnegative(),
   type: id,
   x: z.number(),
   y: z.number(),
   flip: z.boolean().optional(),
-  chain: ChainSchema.optional(),
   /** Longueur restante de ce qu'il est ou porte (le rouleau posé, le billot qui porte le rouleau). */
   length,
   /** Les réglages de la pièce de bois qu'il est. */
@@ -80,7 +71,7 @@ export const SpawnedSchema = z.strictObject({
 });
 
 /** Un objet possédable posé au sol : (x, y) = son point au sol ; `view` : sa vue (le sens où il est couché). */
-export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number(), view, natural });
+const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number(), view, natural });
 
 /**
  * Un tas posé pendant la partie : un seul objet du monde, ce qu'il entrepose, son point au sol (x, y : l'origine du repère de
@@ -89,7 +80,7 @@ export const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegativ
  * (`pile`, clé de piles.json : branches, fagots), ou une pièce de bois (`wood` : diamètre, forme, longueur, faces ; sa forme se
  * calcule, world/woodPile.ts) ; l'un ou l'autre. Un tas lié peut n'avoir aucune pièce : le lien seul, par terre.
  */
-export const PileSchema = z
+const PileSchema = z
   .strictObject({
     id: z.number().int().nonnegative(),
     pile: id.optional(),
@@ -109,7 +100,7 @@ export const PileSchema = z
  * (`placed` : place du plan -> identifiant de l'objet né qui la montre) et, pour celles qui viennent d'une pièce de bois (un poteau),
  * la pièce d'origine (`pieces` : place -> ses réglages, longueur et diamètre d'arbre). Avant sa naissance, le tracé n'a que ses piquets.
  */
-export const SiteSchema = z.strictObject({
+const SiteSchema = z.strictObject({
   id: z.number().int().nonnegative(),
   plan: id,
   x: z.number(),
@@ -125,10 +116,10 @@ export const SiteSchema = z.strictObject({
  * en cm (coin nord-ouest de son emprise, hauteur de sa base), son sens, sa forme naturelle, son tirage (voir BuildPlacedSchema).
  * Ce qu'elle porte et sur quoi elle repose se calculent de ces boîtes (world/build.ts).
  */
-export const BuildPieceSchema = BuildPlacedSchema.extend({ id: z.number().int().nonnegative() });
+const BuildPieceSchema = BuildPlacedSchema.extend({ id: z.number().int().nonnegative() });
 
 /** Un assemblage posé en mode construction : son identifiant propre, son type, ses deux pièces (identifiants de `builds`). */
-export const JointSchema = z.strictObject({
+const JointSchema = z.strictObject({
   id: z.number().int().nonnegative(),
   type: JointTypeSchema,
   a: z.number().int().nonnegative(),
@@ -138,7 +129,7 @@ export const JointSchema = z.strictObject({
 });
 
 /** Ce qui a changé sur une carte. */
-export const MapStateSchema = z.strictObject({
+const MapStateSchema = z.strictObject({
   /** Par identifiant d'objet Tiled. */
   changes: z.record(z.string(), WorldChangeSchema),
   ground: z.array(GroundItemSchema),
@@ -206,7 +197,6 @@ export type Hand = z.infer<typeof HandSchema>;
 export type WorldChange = z.infer<typeof WorldChangeSchema>;
 export type GroundItem = z.infer<typeof GroundItemSchema>;
 export type Spawned = z.infer<typeof SpawnedSchema>;
-export type Chain = z.infer<typeof ChainSchema>;
 export type Pile = z.infer<typeof PileSchema>;
 export type Site = z.infer<typeof SiteSchema>;
 export type BuildPiece = z.infer<typeof BuildPieceSchema>;
@@ -227,7 +217,7 @@ export function revisionOf(): number {
 
 /** Une partie qui commence : mains vides, monde tel que les cartes le décrivent. */
 /** L'endurance de départ (stamina.json) : souffle, plafond et maximum pleins à `max.start`. */
-export function startStamina(): GameState['stamina'] {
+function startStamina(): GameState['stamina'] {
   const v = stamina.max.start;
   return { breath: v, ceiling: v, max: v, woke: v };
 }
@@ -399,10 +389,9 @@ export function removeGroundItem(s: GameState, mapId: string, groundId: number):
   revision++;
 }
 
-/** Ce qu'un objet né porte avec lui : retourné, sa chaîne, sa longueur restante (le rouleau), ses réglages de pièce de bois. */
+/** Ce qu'un objet né porte avec lui : retourné, sa longueur restante (le rouleau), ses réglages de pièce de bois. */
 export interface SpawnOpts {
   flip?: boolean;
-  chain?: Chain;
   length?: number;
   wood?: WoodPiece;
   natural?: Natural;
@@ -410,14 +399,13 @@ export interface SpawnOpts {
 
 /** Fait naître un objet sur une carte ; renvoie ce qui a été noté. */
 export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, opts: SpawnOpts = {}): Spawned {
-  const { flip, chain, length, wood, natural: nat } = opts;
+  const { flip, length, wood, natural: nat } = opts;
   const o = {
     id: s.nextSpawnId++,
     type,
     x,
     y,
     ...(flip ? { flip } : {}),
-    ...(chain ? { chain } : {}),
     ...(length !== undefined ? { length } : {}),
     ...(wood ? { wood: structuredClone(wood) } : {}),
     ...(nat ? { natural: { ...nat } } : {}),
@@ -427,22 +415,19 @@ export function spawnObject(s: GameState, mapId: string, type: string, x: number
   return o;
 }
 
-/** Un objet né a changé : il devient `type` en (x, y), ou disparaît (`type` absent). Il garde sa place dans sa chaîne. */
+/** Un objet né a changé : il devient `type` en (x, y), ou disparaît (`type` absent). */
 export function changeSpawned(s: GameState, mapId: string, spawnId: number, change: WorldChange): void {
   const m = mapState(s, mapId);
   const i = m.spawned.findIndex((o) => o.id === spawnId);
   if (i < 0) return;
   if (!change.type) m.spawned.splice(i, 1);
   else {
-    // nouvel objet : sa place dans la chaîne reste
-    const chain = m.spawned[i].chain;
     m.spawned[i] = {
       id: spawnId,
       type: change.type,
       x: change.x,
       y: change.y,
       ...(change.flip ? { flip: true } : {}),
-      ...(chain ? { chain } : {}),
       ...(change.length !== undefined ? { length: change.length } : {}),
       ...(change.wood ? { wood: structuredClone(change.wood) } : {}),
       ...(change.natural ? { natural: { ...change.natural } } : {}),

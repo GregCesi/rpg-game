@@ -45,15 +45,15 @@ export const TOOL_SIZE = 48;
  */
 export const GRIP: Vec = [24, 24];
 /** Pixel tenu par la main dans le dessin `diag`. */
-export const DIAG_GRIP: Vec = GRIP;
+const DIAG_GRIP: Vec = GRIP;
 /** Pixel tenu par la main dans le dessin `upright`. */
-export const UPRIGHT_GRIP: Vec = GRIP;
+const UPRIGHT_GRIP: Vec = GRIP;
 /** Pixel tenu par la main dans le dessin `flat`. */
-export const FLAT_GRIP: Vec = GRIP;
+const FLAT_GRIP: Vec = GRIP;
 /** Pixel tenu par la main dans le dessin `flatDiag`. */
-export const FLAT_DIAG_GRIP: Vec = GRIP;
+const FLAT_DIAG_GRIP: Vec = GRIP;
 /** Pixel tenu par la main dans le dessin `flatEnd`. */
-export const FLAT_END_GRIP: Vec = GRIP;
+const FLAT_END_GRIP: Vec = GRIP;
 
 export type Vec = [number, number];
 
@@ -85,7 +85,7 @@ export interface ToolArt {
 export const angleOf = (d: Dir8): number => (450 - DIRS.indexOf(d) * 45) % 360;
 
 /** Direction vue dans un miroir vertical (gauche <-> droite). */
-export const mirrorDir = (d: Dir8): Dir8 => DIRS[(8 - DIRS.indexOf(d)) % 8];
+const mirrorDir = (d: Dir8): Dir8 => DIRS[(8 - DIRS.indexOf(d)) % 8];
 /** Direction vue dans un miroir horizontal (haut <-> bas). */
 const flipDirY = (d: Dir8): Dir8 => DIRS[(12 - DIRS.indexOf(d)) % 8];
 
@@ -182,7 +182,7 @@ export const baseOf = (p: ToolPose): Base => transformFor(p.head, p.edge, p.view
  */
 export const HELD_SIZE = 80;
 /** Centre de l'image, arrondi vers le bas : le jeu pose ce pixel sur la main. */
-export const HELD_GRIP: Vec = [HELD_SIZE / 2, HELD_SIZE / 2];
+const HELD_GRIP: Vec = [HELD_SIZE / 2, HELD_SIZE / 2];
 
 /** Image de la planche : l'outil orienté, sa prise posée sur HELD_GRIP, éclairé une fois en place. */
 export function heldImage(art: ToolArt, head: Dir8, edge: Edge, view: View = 'face'): Grid {
@@ -196,7 +196,7 @@ export function heldImage(art: ToolArt, head: Dir8, edge: Edge, view: View = 'fa
  * plein (parchemin), `)` à moitié, `<` la queue (lumière du bois neuf, transparente). Des signes que la palette des outils
  * n'emploie pas.
  */
-export const TRAIL_PALETTE: Palette = {
+const TRAIL_PALETTE: Palette = {
   '(': `${world.a}e0`,
   ')': `${world.a}99`,
   '<': `${woodAges.new['^']}60`,
