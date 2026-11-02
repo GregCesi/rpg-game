@@ -19,6 +19,9 @@
 // le gros bout change de côté d'une place à la voisine et d'une couche à l'autre. Au sol, 3 px (15 cm) d'une
 // branche à l'autre ; une couche monte de 3 px. Les rameaux qui partent vers le bas de l'image sont couchés vers
 // le sud (sous la branche de devant, qui les cache) ; ceux qui partent vers le haut se dressent.
+// Le tas plein a 12 branches, 5-4-2-1 : cinq au sol (g0 à g4, du nord au sud), quatre sur la première couche (l1-0 à
+// l1-3, chacune dans le creux de deux branches du sol), deux, puis une au sommet. g4 et l1-3, venues après les dix
+// premières (le fagot de 11 et 12), sont au sud, devant : le tas s'allonge vers l'avant, son faîte reste à l'arrière.
 
 import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
@@ -37,9 +40,11 @@ const BRANCHES: Record<string, Branch & { x0: number }> = {
   g1: { len: 24, thickLeft: false, thick: 10, x0: 5, seed: 12, twigs: [{ at: 0.4, up: false, len: 5, fork: true }, { at: 0.6, up: true, len: 6 }] },
   g2: { len: 28, thickLeft: true, thick: 12, x0: 0, seed: 13, twigs: [{ at: 0.45, up: true, len: 5 }, { at: 0.7, up: false, len: 5, fork: true }] },
   g3: { len: 25, thickLeft: false, thick: 10, x0: 4, seed: 14, twigs: [{ at: 0.35, up: false, len: 6 }, { at: 0.55, up: true, len: 6, fork: true }] },
+  g4: { len: 26, thickLeft: true, thick: 11, x0: 2, seed: 15, twigs: [{ at: 0.38, up: false, len: 5, fork: true }, { at: 0.62, up: true, len: 5 }] },
   'l1-0': { len: 25, thickLeft: false, thick: 11, x0: 2, seed: 21, twigs: [{ at: 0.45, up: true, len: 6, fork: true }, { at: 0.7, up: false, len: 4 }] },
   'l1-1': { len: 23, thickLeft: true, thick: 10, x0: 4, seed: 22, twigs: [{ at: 0.4, up: false, len: 5 }, { at: 0.65, up: true, len: 5, fork: true }] },
   'l1-2': { len: 27, thickLeft: false, thick: 11, x0: 1, seed: 23, twigs: [{ at: 0.4, up: true, len: 5 }, { at: 0.7, up: false, len: 5, fork: true }] },
+  'l1-3': { len: 24, thickLeft: true, thick: 10, x0: 3, seed: 24, twigs: [{ at: 0.42, up: true, len: 6, fork: true }, { at: 0.68, up: false, len: 4 }] },
   'l2-0': { len: 24, thickLeft: true, thick: 10, x0: 4, seed: 31, twigs: [{ at: 0.45, up: true, len: 6, fork: true }, { at: 0.75, up: false, len: 4 }] },
   'l2-1': { len: 25, thickLeft: false, thick: 11, x0: 2, seed: 32, twigs: [{ at: 0.4, up: false, len: 5 }, { at: 0.6, up: true, len: 6, fork: true }] },
   'l3-0': { len: 22, thickLeft: true, thick: 9, x0: 5, seed: 41, twigs: [{ at: 0.4, up: true, len: 6, fork: true }, { at: 0.7, up: false, len: 4 }] },
@@ -53,9 +58,9 @@ const branches = Object.entries(BRANCHES).map(([p, b]) => img(`pile-branch-${p}`
 // x0 + 1 de son entrée de BRANCHES. Le côté du gros bout de l'est-ouest passe au nord (`thickLeft` : gros bout au nord), si
 // bien que le tête-bêche suit (le gros bout alterne au nord et au sud d'une place à la voisine). Les rameaux couchés partent
 // vers l'est, sous la branche voisine posée après elle ; les autres se dressent vers l'ouest. Places (piles.json, `turned`
-// de `branches`) : au sol x 0, 3, 6, 9 (3 px d'une branche à l'autre d'ouest en est, comme du nord au sud en est-ouest),
-// y 0 ; une couche monte de 3,5 px comme en est-ouest (y −4, −7, −11), au milieu de ses deux porteuses (x 2, 5, 8 ; 3, 6 ;
-// 5). Collision au sol : 3 px de large (la tige et son contour est) sur la longueur de la branche.
+// de `branches`) : au sol x 0, 3, 6, 9, 12 (3 px d'une branche à l'autre d'ouest en est, comme du nord au sud en est-ouest),
+// y 0 ; une couche monte de 3,5 px comme en est-ouest (y −4, −7, −11), au milieu de ses deux porteuses (x 2, 5, 8, 11 ;
+// 3, 6 ; 5). Collision au sol : 3 px de large (la tige et son contour est) sur la longueur de la branche.
 const NS_W = 13;
 const NS_H = 32;
 const NS_C0 = 5;
@@ -109,7 +114,7 @@ function crop(c: Canvas): Canvas {
 
 // ---------- Lien seul ----------
 // Le lien seul par terre (rope-tie dans un tas qui n'a encore aucune branche) : `tie.alone` de piles.json, posé au
-// milieu de l'emprise au sol du tas (les corps des branches du sol : colonnes 0 à 29, rangées −14 à −2), le centre de
+// milieu de l'emprise au sol du tas (les corps des quatre premières branches du sol : colonnes 0 à 29, rangées −14 à −2), le centre de
 // la boucle vers (15, −8).
 
 export default [
