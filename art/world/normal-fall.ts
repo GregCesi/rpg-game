@@ -1,11 +1,12 @@
 // Chute de l'arbre normal : planches `normal-tree-fall` (vers la droite) et `normal-tree-fall-left` (vers la gauche).
 //
 // Même logique que la chute du gros arbre (art/world/big-felled.ts, sections « Chute » et « Chute vers la gauche »), à
-// l'échelle de l'arbre normal (contrat : art/world/normal-geometry.ts). Quatre images :
-// 1. l'arbre debout (`standingTree` de normal-tree.ts) posé en (OFF, 0) ;
-// 2. le haut de l'arbre pivoté de 10° autour de la charnière (bord de la coupe du côté où il tombe), sur la souche ;
-// 3. pivoté de 45° ;
-// 4. l'arbre couché lui-même : `lyingFrame()` de normal-felled.ts, la souche et `normal-felled-tree` exactement comme le
+// l'échelle de l'arbre normal (contrat : art/world/normal-geometry.ts). Cinq images :
+// 1. et 2. le raccord (`leadIn` de art/world/felling.ts) : l'arbre de la dernière étape de l'abattage (`normal-tree-stage-7`,
+//    entaillé, qui penche de 2,5°), posé en (OFF, 0), dont le haut continue de basculer autour de la même charnière ;
+// 3. le haut de l'arbre pivoté de 10° autour de la charnière (bord de la coupe du côté où il tombe), sur la souche ;
+// 4. pivoté de 45° ;
+// 5. l'arbre couché lui-même : `lyingFrame()` de normal-felled.ts, la souche et `normal-felled-tree` exactement comme le
 //    jeu les posera, pour que rien ne saute au remplacement.
 //
 // En tombant, l'arbre passe de la vue de face (debout, hauteur en vraie grandeur) à la vue de dessus (couché) : le tronc
@@ -21,15 +22,26 @@ import { world } from '../palette';
 import { type Vec, despeckle, groundShadow, shadedOutline } from './big-tree';
 import { NORMAL_WOOD, bark, faceTone } from './wood';
 import { CROWN_BOTTOM, FALL_H, FALL_W, FOOT, OFF, OFF_L, STUMP_AT, TREE_W, TRUNK_ROW, TRUNK_X0 } from './normal-geometry';
-import { standingTree, stumpBody, treeBody } from './normal-tree';
+import { stumpBody, treeBody } from './normal-tree';
 import { lyingFrame, lyingFrameLeft } from './normal-felled';
+import { NORMAL, hingeOf, leadIn, withChips, type LeadSide } from './felling';
 
 /** Hauteur de la coupe dans le repère de l'arbre debout (13 px, 65 cm, au-dessus du pied) : tout ce qui est au-dessus tombe. */
 const CUT_Y = 148;
-/** Charnière de la chute à droite : contour droit du tronc, à la hauteur de la coupe. */
-const HINGE: Vec = [TRUNK_X0 + NORMAL_WOOD.diameter, CUT_Y];
-/** Charnière de la chute à gauche : première colonne d'écorce, côté gauche. */
-const HINGE_L: Vec = [TRUNK_X0, CUT_Y];
+/**
+ * Charnière de la chute à droite : celle des étapes de l'abattage (art/world/felling.ts), le bord droit de l'écorce au
+ * plancher de l'entaille, une rangée sous la coupe : l'arbre de la dernière étape continue de pivoter autour d'elle.
+ */
+const HINGE: Vec = hingeOf(NORMAL);
+/** Charnière de la chute à gauche : celle des étapes vers la gauche (`-left-stage-<n>`), le bord gauche de l'écorce au plancher. */
+const HINGE_L: Vec = hingeOf(NORMAL, true);
+
+/** Centre de la coupe (debout en (FOOT[0], CUT_Y)) pivoté de `deg` degrés (vers la droite si positif) autour de `h`. */
+function cutCentre(deg: number, h: Vec, off: number): Vec {
+  const t = (deg * Math.PI) / 180;
+  const [u, v] = [FOOT[0] - h[0], CUT_Y - h[1]];
+  return [h[0] + off + u * Math.cos(t) - v * Math.sin(t), h[1] + u * Math.sin(t) + v * Math.cos(t)];
+}
 /** Demi-largeur du tronc (6 px d'écorce, centré sur le pied) : jamais écrasée. */
 const HALF = NORMAL_WOOD.diameter / 2;
 /**
@@ -168,24 +180,20 @@ function stretch(s: number) {
 
 /** Pose pivotée vers la droite autour de la charnière (bord droit de la coupe), qui reste sur la souche. */
 function pivot(deg: number): Pose {
-  const t = (deg * Math.PI) / 180;
-  const s = Math.sin(t);
-  const d = HINGE[0] - FOOT[0];
-  return { deg, base: [HINGE[0] + OFF - d * Math.cos(t), HINGE[1] - d * s], ...stretch(s) };
+  const s = Math.sin((deg * Math.PI) / 180);
+  return { deg, base: cutCentre(deg, HINGE, OFF), ...stretch(s) };
 }
 
 /** Pose pivotée vers la gauche autour du bord gauche de la coupe. */
 function pivotLeft(deg: number): Pose {
-  const t = (deg * Math.PI) / 180;
-  const s = Math.sin(t);
-  const d = FOOT[0] - HINGE_L[0];
-  return { deg: -deg, base: [HINGE_L[0] + OFF_L + d * Math.cos(t), HINGE_L[1] - d * s], ...stretch(s) };
+  const s = Math.sin((deg * Math.PI) / 180);
+  return { deg: -deg, base: cutCentre(-deg, HINGE_L, OFF_L), ...stretch(s) };
 }
 
 const FOOT_X = FOOT[0] + OFF;
 const FOOT_XL = FOOT[0] + OFF_L;
 
-/** Ombre du pied à 10° : celle de l'arbre debout (standingTree), pour qu'elle ne saute pas de l'image 1 à la 2. */
+/** Ombre du pied à 10° : celle de l'arbre debout et des étapes, pour qu'elle ne saute pas du raccord à 10°. */
 const TREE_SHADOW = (fx: number): [number, number, number, number] => [fx + 2, GROUND_Y, 9, 2.4];
 /** Ombre de la souche à 45° : celle de `stump()`, que la dernière image pose. */
 const STUMP_SHADOW = (fx: number): [number, number, number, number] => [fx + 1.5, GROUND_Y, 6.5, 1.8];
@@ -194,17 +202,27 @@ const STUMP_SHADOW = (fx: number): [number, number, number, number] => [fx + 1.5
  * Ombres portées : sous la souche, puis sous le haut de l'arbre, projeté au sol du côté où il tombe (décalées vers la
  * droite, comme toutes les ombres). À 45°, l'ombre couvre à peu près ce que couvrira le tronc couché (environ 120 px).
  */
+/** Ombre du haut de l'arbre à 10°, de chaque côté : le raccord y mène. */
+const SHADE_10: [number, number, number, number] = [FOOT_X + 16, GROUND_Y + 0.5, 18, 3];
+const SHADE_10_L: [number, number, number, number] = [FOOT_XL - 10, GROUND_Y + 0.5, 18, 3];
+const RIGHT: LeadSide = { w: FALL_W, off: OFF, shade10: SHADE_10, left: false };
+const LEFT: LeadSide = { w: FALL_W, off: OFF_L, shade10: SHADE_10_L, left: true };
+
+/**
+ * Le raccord depuis la dernière étape de l'abattage (`normal-tree-stage-7`, art/world/felling.ts), 10° et 45° (les copeaux
+ * de l'abattage encore au pied), puis l'arbre couché.
+ */
 const frames = [
-  new Canvas(FALL_W, FALL_H).stamp(standingTree().toGrid(), OFF, 0),
-  fallFrame(pivot(10), [TREE_SHADOW(FOOT_X), [FOOT_X + 16, GROUND_Y + 0.5, 18, 3]], OFF),
-  fallFrame(pivot(45), [STUMP_SHADOW(FOOT_X), [FOOT_X + 62, GROUND_Y + 0.5, 50, 3]], OFF),
+  ...leadIn(NORMAL, RIGHT),
+  withChips(fallFrame(pivot(10), [TREE_SHADOW(FOOT_X), SHADE_10], OFF), NORMAL, RIGHT),
+  withChips(fallFrame(pivot(45), [STUMP_SHADOW(FOOT_X), [FOOT_X + 62, GROUND_Y + 0.5, 50, 3]], OFF), NORMAL, RIGHT),
   lyingFrame(),
 ];
 
 const framesLeft = [
-  new Canvas(FALL_W, FALL_H).stamp(standingTree().toGrid(), OFF_L, 0),
-  fallFrame(pivotLeft(10), [TREE_SHADOW(FOOT_XL), [FOOT_XL - 10, GROUND_Y + 0.5, 18, 3]], OFF_L),
-  fallFrame(pivotLeft(45), [STUMP_SHADOW(FOOT_XL), [FOOT_XL - 56, GROUND_Y + 0.5, 50, 3]], OFF_L),
+  ...leadIn(NORMAL, LEFT),
+  withChips(fallFrame(pivotLeft(10), [TREE_SHADOW(FOOT_XL), SHADE_10_L], OFF_L), NORMAL, LEFT),
+  withChips(fallFrame(pivotLeft(45), [STUMP_SHADOW(FOOT_XL), [FOOT_XL - 56, GROUND_Y + 0.5, 50, 3]], OFF_L), NORMAL, LEFT),
   lyingFrameLeft(),
 ];
 

@@ -1,11 +1,11 @@
 // Le cadran du temps, sans Phaser (docs/CONCEPTION.md, « Le temps » ; le contrat de pose de art/ui/clock.ts, dessiné par le
 // pixel-artist) : en haut à droite, une plaquette de bois « Jour 3 » sur « 14:20 », et un médaillon rond où le soleil puis la lune passent
-// sur un arc au-dessus d'une colline, au ciel du moment ; dessous, toujours (x1 compris), la vitesse du temps : cinq crans, autant de
+// sur un arc au-dessus d'une colline, au ciel du moment ; dessous, toujours (x1 compris), la vitesse du temps : un cran par palier (time.json, cinq au plus), autant de
 // pleins que le rang du palier, et le chiffre.
 // Rend la liste des images à poser, dans l'ordre de dessin, en px de l'écran du HUD (avant le zoom) ; HudScene les pose.
 import { time } from '../content';
-import { hhmm, type Clock } from './clock';
-import { momentAt, type Moment } from './daylight';
+import { MINUTES_PER_DAY, hhmm, type Clock } from './clock';
+import { momentAt, sunSpan, type Moment } from './daylight';
 
 /** Une image à poser : sa clé, son coin haut gauche ; `repeat` : la colonne répétée sur cette largeur (le milieu de la plaquette). */
 export interface FacePiece {
@@ -21,7 +21,6 @@ const FACE = {
   dial: { size: 23, overlap: 11 },
   arc: { cx: 11, cy: 14, rx: 5, ry: 6, half: 2 },
   speed: { plate: 29, y: 20, notch: { x: 4, step: 4, y: 24 }, digit: { x: 24, box: 13, y: 23 } },
-  sun: { rise: 6 * 60, set: 20 * 60 },
   margin: 4,
   space: 2,
 } as const;
@@ -57,11 +56,13 @@ export function speedRank(speed: number, speeds: readonly number[] = time.speeds
   return Math.max(1, speeds.filter((s) => s <= speed).length);
 }
 
-/** L'astre du moment et son coin haut gauche dans le médaillon : le soleil de 6 h à 20 h, la lune sinon. */
+/** L'astre du moment et son coin haut gauche dans le médaillon : le soleil de son lever à son coucher (`sunSpan`, d'après `daylight`), la lune sinon. */
 export function bodyAt(minute: number, moment: Moment): { key: string; x: number; y: number } {
-  const m = ((minute % 1440) + 1440) % 1440;
-  const sun = m >= FACE.sun.rise && m <= FACE.sun.set;
-  const t = sun ? (m - FACE.sun.rise) / (FACE.sun.set - FACE.sun.rise) : ((m - FACE.sun.set + 1440) % 1440) / (1440 - (FACE.sun.set - FACE.sun.rise));
+  const D = MINUTES_PER_DAY;
+  const { rise, set } = sunSpan();
+  const m = ((minute % D) + D) % D;
+  const sun = m >= rise && m <= set;
+  const t = sun ? (m - rise) / (set - rise) : ((m - set + D) % D) / (D - (set - rise));
   const a = Math.PI * (1 - t);
   const { cx, cy, rx, ry, half } = FACE.arc;
   const key = sun ? (moment === 'day' ? 'ui-clock-sun' : 'ui-clock-sun-low') : 'ui-clock-moon';
@@ -74,9 +75,9 @@ export function bodyAt(minute: number, moment: Moment): { key: string; x: number
  */
 export function clockFace(clock: Clock, speed: number, viewWidth: number, width: (key: string) => number): FacePiece[] {
   const day = glyphsOf(`Jour ${clock.day}`);
-  const time = glyphsOf(hhmm(clock));
+  const hour = glyphsOf(hhmm(clock));
   const w1 = textWidth(day, width);
-  const w2 = textWidth(time, width);
+  const w2 = textWidth(hour, width);
   const iw = Math.max(w1, w2) + 1;
   const pw = iw + FACE.plate.extra;
   // le médaillon est fixe, à la marge du bord ; la plaquette grandit vers la gauche
@@ -91,7 +92,7 @@ export function clockFace(clock: Clock, speed: number, viewWidth: number, width:
     { key: 'ui-clock-plate-mid', x: ox + p.end, y: oy + p.y, repeat: pw - 2 * p.end },
     { key: 'ui-clock-plate-right', x: ox + pw - p.end, y: oy + p.y },
     ...textPieces(day, ox + 3 + Math.round((iw - w1) / 2), oy + p.line1, width),
-    ...textPieces(time, ox + 3 + Math.round((iw - w2) / 2), oy + p.line2, width),
+    ...textPieces(hour, ox + 3 + Math.round((iw - w2) / 2), oy + p.line2, width),
     { key: `ui-clock-sky-${moment}`, x: dialX, y: oy },
     { key: body.key, x: dialX + body.x, y: oy + body.y },
     { key: moment === 'night' ? 'ui-clock-hill-night' : 'ui-clock-hill', x: dialX, y: oy },
@@ -106,7 +107,7 @@ export function clockFace(clock: Clock, speed: number, viewWidth: number, width:
   const ring = pieces.pop()!;
   pieces.push(
     { key: 'ui-clock-speed-plate', x: sx, y: oy + sp.y },
-    ...Array.from({ length: 5 }, (_, k) => ({ key: k < rank ? 'ui-clock-speed-on' : 'ui-clock-speed-off', x: sx + sp.notch.x + sp.notch.step * k, y: oy + sp.notch.y })),
+    ...Array.from({ length: time.speeds.length }, (_, k) => ({ key: k < rank ? 'ui-clock-speed-on' : 'ui-clock-speed-off', x: sx + sp.notch.x + sp.notch.step * k, y: oy + sp.notch.y })),
     ...textPieces(label, sx + sp.digit.x + Math.round((sp.digit.box - lw) / 2), oy + sp.digit.y, width),
     ring,
   );

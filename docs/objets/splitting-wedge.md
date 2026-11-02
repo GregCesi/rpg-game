@@ -34,8 +34,8 @@ Seul. Ne s'entrepose pas.
 Trouvé dans la réserve de la maison (`maison.tmj`), à côté de la masse. E le prend directement dans la main.
 
 ## Devenir
-Planté, il reste dans la bille jusqu'au troisième coup de masse : il tombe alors au sol à côté des morceaux, à ramasser. Rien ne le fait disparaître.
+Planté, il reste dans la bille jusqu'à ce qu'elle s'ouvre (la dernière étape du fendage, `splitHits`) : il tombe alors au sol à côté des morceaux, à ramasser. Rien ne le fait disparaître.
 
 ## Vérification
 - Aperçu : `.art-preview/fendage.png`.
-- En jeu : le donner (`?dieu`), le planter sur une grosse bille, frapper trois fois à la masse, le ramasser.
+- En jeu : le donner (`?dieu`), le planter sur une grosse bille, la fendre à la masse (un appui, le travail au coup), le ramasser.

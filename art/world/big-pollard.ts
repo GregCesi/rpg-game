@@ -10,8 +10,8 @@
 // du pied de 2 m (CROWN_SHIFT).
 //
 // Chutes (`big-pollard-fall`, `big-pollard-fall-left`) : même mécanique que celles du gros arbre (pivot autour de la
-// charnière sur la souche, lumière ramenée au nord-ouest), mais tirées de `treeBody`. Première image : `big-pollard`
-// posé ; dernière : la souche et l'arbre couché, exactement comme le jeu les pose. Les images sont composées dans la
+// charnière sur la souche, lumière ramenée au nord-ouest), mais tirées de `treeBody`. Deux premières images : le raccord
+// depuis `big-pollard-stage-7` (art/world/felling.ts) ; dernière : la souche et l'arbre couché, exactement comme le jeu les pose. Les images sont composées dans la
 // frame 160x96, puis recadrées à POLLARD_W colonnes : côté gauche de la frame pour la chute à droite, côté droit pour la
 // chute à gauche.
 
@@ -19,10 +19,11 @@ import { Canvas, EMPTY } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { FOOT, groundShadow, shadedOutline, treeBody } from './big-tree';
-import { FALL_H, FALL_W, OFF, OFF_L, type Faller, crownRows, fallFrame, felledImages, felledTree, lyingFrame, pivot, pivotLeft } from './big-felled';
+import { FALL_H, FALL_W, OFF, OFF_L, type Faller, crownRows, fallFrame, fallFrames, felledImages, felledTree, lyingFrame, pivot, pivotLeft } from './big-felled';
+import { POLLARD as POLLARD_STANDING } from './felling';
 
 /** Le têtard debout, 64x96 : image `big-pollard` (le dessin d'origine du gros arbre). */
-export function standingPollard(): Canvas {
+function standingPollard(): Canvas {
   const c = shadedOutline(treeBody());
   groundShadow(c, 36, 89.5, 17, 4);
   return c;
@@ -61,22 +62,23 @@ const FOOT_X = FOOT[0] + OFF;
 const FOOT_XL = FOOT[0] + OFF_L;
 const DY = 0; // les images de la chute ont la hauteur de l'arbre debout : la frame des pièces, sans décalage
 
-const right = [
-  new Canvas(FALL_W, FALL_H).stamp(standingPollard().toGrid(), OFF, 0),
+// le raccord depuis la dernière étape (`big-pollard-stage-7`), puis 10°, 45° et l'arbre couché (fallFrames de big-felled.ts)
+const right = fallFrames(
+  POLLARD_STANDING,
+  { w: FALL_W, off: OFF, shade10: [FOOT_X + 9, 90, 16, 3.5], left: false },
   fallFrame(pivot(10, POLLARD, DY), [[FOOT_X + 3, 89.5, 17, 4], [FOOT_X + 9, 90, 16, 3.5]], OFF, POLLARD, FALL_H),
   fallFrame(pivot(45, POLLARD, DY), [[FOOT_X + 3, 89.5, 14, 3.5], [FOOT_X + 30, 90.5, 21, 4]], OFF, POLLARD, FALL_H),
   lying(false),
-].map((c, i) => crop(c, 0, `image ${i + 1} de la chute à droite`));
+).map((c, i) => crop(c, 0, `image ${i + 1} de la chute à droite`));
 
-const left = [
-  new Canvas(FALL_W, FALL_H).stamp(standingPollard().toGrid(), OFF_L, 0),
+const left = fallFrames(
+  POLLARD_STANDING,
+  { w: FALL_W, off: OFF_L, shade10: [FOOT_XL - 5, 90, 16, 3.5], left: true },
   fallFrame(pivotLeft(10, POLLARD, DY), [[FOOT_XL + 3, 89.5, 17, 4], [FOOT_XL - 5, 90, 16, 3.5]], OFF_L, POLLARD, FALL_H),
   fallFrame(pivotLeft(45, POLLARD, DY), [[FOOT_XL + 3, 89.5, 14, 3.5], [FOOT_XL - 24, 90.5, 21, 4]], OFF_L, POLLARD, FALL_H),
   lying(true),
-].map((c, i) => crop(c, LEFT_FROM, `image ${i + 1} de la chute à gauche`));
+).map((c, i) => crop(c, LEFT_FROM, `image ${i + 1} de la chute à gauche`));
 
-/** Décalages x des planches de chute, pour props.json (repère : coin bas gauche de l'image `big-pollard` posée). */
-export const POLLARD_FALL = { x: -OFF, left: { x: -(OFF_L - LEFT_FROM) }, foot: FOOT[0] };
 
 const sheet = (name: string, frames: Canvas[]): SpriteSheetSource => ({
   kind: 'spritesheet',

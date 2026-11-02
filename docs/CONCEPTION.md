@@ -152,7 +152,8 @@ d'abord ; les bâtiments se posent quand leurs pièces existent.
   encore) ; la place et les cours en terre battue ; 4 rangées de zones (800 m au lieu de 710 : des prés et des friches en plus au sud) ;
   le panneau posé vieux, avec une pierre de calage au pied (le gabarit de ses vues de côté) ; la pénombre du sous-bois est une couleur
   posée sur tout (Xéros compris), comme celle des intérieurs ; le pont en tuiles, pas en objet.
-- **À trancher par Grégoire** : la vitesse de marche. Xéros marche à 100 px/s, soit 5 m/s : un kilomètre en 3 min 20 s (2 min en
+- **Tranché depuis** (clôture du *Temps*) : Xéros marche à 2 m/s et court à 2,5 m/s (`PLAYER.walk`, `PLAYER.run`, en m/s, une seule
+  source, réglables dans ?dieu). Ce qu'on en disait alors : la vitesse de marche. Xéros marche à 100 px/s, soit 5 m/s : un kilomètre en 3 min 20 s (2 min en
   courant). « Un kilomètre en 13 minutes », la marche d'un homme (1,3 m/s), voudrait 26 px/s (`PLAYER.walkSpeed`, config.ts) : un seul
   réglage, mais il change tout le jeu ; il n'est pas changé.
 
@@ -161,7 +162,7 @@ d'abord ; les bâtiments se posent quand leurs pièces existent.
 Première boucle : Xéros prend la hache sur le billot, abat un arbre, ramasse les bûches.
 
 - **Un seul état de partie, `GameState`**, objet typé et décrit avec Zod. Il contient l'inventaire et les changements du monde, rangés par carte et par identifiant d'objet Tiled (« objet 12 de la ferme : devenu `big-tree-stump` »). Les cartes décrivent le monde au début de la partie, `GameState` dit ce qui a changé. La sauvegarde l'écrit tel quel (voir *Sauvegarde et outils de test*). Pas le registry de Phaser : un objet à nous, vérifiable, indépendant du moteur.
-- **Ce qui se récolte porte un composant `harvest`** dans `props.json` : `tool` (outil nécessaire, absent = à la main), `hits` (nombre de coups), `fall` (animation de fin), `becomes` (objet qui le remplace), `drops` (objets qui tombent, `min`/`max`). Un seul système `systems/harvest.ts` pour l'arbre, le rocher, les baies, le billot. La repousse (`regrow`) attend que le temps existe.
+- **Ce qui se récolte porte un composant `harvest`** dans `props.json` : `tool` (outil nécessaire, absent = à la main), `hits` (nombre de coups ; depuis *Le travail*, les étapes d'un travail au coup, dont la matière est `work`), `fall` (animation de fin), `becomes` (objet qui le remplace), `drops` (objets qui tombent, `min`/`max`). Un seul système `systems/harvest.ts` pour l'arbre, le rocher, les baies, le billot. La repousse (`regrow`) attend que le temps existe.
 - **La hache est plantée dans un billot**, près du tas de bois de la maison. Le billot porte `harvest` sans outil, en un coup, devient `chopping-block` et donne la hache, directement dans les mains (`give` sur l'objet lâché) : un seul E, les deux mains libres.
 - **Les objets possédables sont décrits dans `items.json`** : nom, icône `item-<id>`, `kind` (`tool`, `resource`...), `hands` (mains qu'il demande ; `stack` retiré avec la barre, le 29 octobre 2026 : une main tient un objet).
 - **Un objet tombé reste au sol**, enregistré dans `GameState`, et se ramasse un par un avec E. Pas de ramassage automatique (choix de Grégoire).
@@ -180,7 +181,8 @@ Repris le 30 octobre 2026 par *Le bois* : les trois arbres se couchent d'un seul
 
 Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux mains. Rien de volumineux ne se range dans l'inventaire.
 
-- **L'arbre tombe du côté opposé à Xéros**, à gauche ou à droite seulement, et laisse sa souche.
+- **L'arbre tombe du côté opposé à Xéros**, à gauche ou à droite seulement, et laisse sa souche. Repris le 2 novembre 2026 (voir
+  *Le travail*, § 10) : il tombe **du côté où Xéros frappe**, celui de l'entaille de direction.
 - **L'arbre couché est un nouvel objet** qui garde la taille et la forme de l'arbre, à l'horizontale, et bloque le passage sur toute sa longueur. Il est fait d'**un houppier et de 2, 4 ou 5 sections de tronc** (selon l'arbre) posés bout à bout, chacun réagissant pour lui-même.
 - **Le houppier**, frappé à la hache, donne des branches ; les feuilles disparaissent avec lui. Il laisse le tronc nu, avec des chicots.
 - **Les sections se coupent de haut en bas**, à des encoches dessinées sur le tronc. Xéros se place au-dessus ou en dessous du tronc, face à une encoche ; l'invite apparaît sur l'encoche. Le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ou posé.
@@ -193,7 +195,7 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
   - le **têtard** (`big-pollard`), une trogne, l'arbre des haies, coupé régulièrement pour le bois de chauffage : le même tronc de 55 cm, court et épais, tête touffue ; couché, 2 sections (2 billes) et son houppier, sa longueur couchée égale à sa hauteur debout (environ 3,7 m). Il est de la même sorte que le gros grand : mêmes pièces couchées, même souche, mêmes billes, même tas ;
   - le **normal** (`normal-tree`), fin, pour la charpente : tronc de 30 cm (40 cm contour compris), environ 7 m de haut, élancé, billes de 95 cm sur 30 cm (40 contour compris), de la grosseur d'un bras, qui restent entières.
 
-  Les billes des gros (95 cm) se fendent en quatre sur place (voir *Fendre*) ; plus tard, les quartiers se refendront en bûches sur le billot. Tous se coupent de la même façon : ils tombent du côté opposé à Xéros, s'ébranchent, se tronçonnent aux encoches, et leurs billes se portent, se tournent et s'empilent, chacune en tas de sa propre sorte (les billes des deux gros vont ensemble, celles du normal à part). Chaque pièce porte le nom de sa sorte en tête de clé (`big-tree`, `big-pollard`, `normal-tree`, `big-felled-log`, `normal-felled-log`...). Depuis l'équarrissage (30 octobre 2026), l'arbre normal ne se tronçonne plus aux encoches : ébranché, il devient un rondin de 5 m qu'on coupe où l'on veut (voir *Bois d'œuvre*).
+  Les billes des gros (95 cm) se fendent en quatre sur place (voir *Fendre*) ; plus tard, les quartiers se refendront en bûches sur le billot. Tous se coupent de la même façon : ils tombent du côté opposé à Xéros (depuis le 2 novembre 2026 : du côté où il frappe), s'ébranchent, se tronçonnent aux encoches, et leurs billes se portent, se tournent et s'empilent, chacune en tas de sa propre sorte (les billes des deux gros vont ensemble, celles du normal à part). Chaque pièce porte le nom de sa sorte en tête de clé (`big-tree`, `big-pollard`, `normal-tree`, `big-felled-log`, `normal-felled-log`...). Depuis l'équarrissage (30 octobre 2026), l'arbre normal ne se tronçonne plus aux encoches : ébranché, il devient un rondin de 5 m qu'on coupe où l'on veut (voir *Bois d'œuvre*).
 - Pas encore discuté : la brouette. Le tas : voir *Les tas*.
 
 ## Les tas (décidé le 29 octobre 2026, repris le même jour, puis le 30 octobre 2026, « tas »)
@@ -248,7 +250,8 @@ précède) :
 
 - **Une fiche par objet, avant de le construire** (`docs/objets/`) : identité, dimensions réelles, toutes ses vues, regroupement, gestes, origine, devenir, vérification.
 - **Le rouleau de corde** (chanvre, Ø 30 × 10 cm, une main) porte sa longueur restante, 10 m au départ, gardée par la partie. Il ne se range pas en tas. On le trouve dans la réserve de la maison ; plus tard il s'achètera ou se fabriquera.
-- **Couper un lien** : on pose le rouleau sur le billot (E, rouleau en main, face au billot), puis Espace avec la hachette (l'outil naturel, 0,4 point d'endurance, ajouté le 30 octobre 2026) ou la cognée (0,5 point). Un lien de 2 m tombe au sol, le rouleau perd 2 m ; vide, il disparaît. On peut reprendre le rouleau posé sur le billot (E, mains libres).
+- **Couper un lien** : on pose le rouleau sur le billot (E, rouleau en main, face au billot), puis Espace avec la hachette (l'outil naturel, 0,4 point d'endurance, ajouté le 30 octobre 2026) ou la cognée (0,5 point). Toujours
+  vrai : couper un lien est un geste sans matière, au prix fixe de `costs` (`whittle`, `cutTie`). Un lien de 2 m tombe au sol, le rouleau perd 2 m ; vide, il disparaît. On peut reprendre le rouleau posé sur le billot (E, mains libres).
 - **Le lien** (2 m, une main) se pose par terre, où il commence un tas de branches sur lui, ou sous un tas de branches qui n'en a pas, qu'il ceinture par-dessous. Il reste visible sous le tas.
 - **Nouer et dénouer** : E maintenu environ une demi-seconde, mains libres, une jauge au-dessus de Xéros. E court garde son rôle (une branche, le fagot entier). Un tas de 10 branches lié se noue en fagot, à sa place ; sinon « Il faut un lien. » ou « Pas assez de branches. ». Un fagot seul se dénoue en un tas de 10 branches avec son lien ; dans un tas de fagots, « Un seul fagot à la fois. ».
 - **Le fagot** (130 × Ø 50 cm, deux mains) ralentit comme la bille ; il se pose seul ou en tas, même forme que les billes (6 au plus), et se tourne avec R.
@@ -297,7 +300,8 @@ précède) :
   (`hatchet`, fiche `docs/objets/hatchet.md` : fer d'environ 12 × 8 cm, manche de 40 cm, 1 kg, une main, trouvée dans la réserve de la
   maison avec la masse et le coin ; la cognée, à deux mains, ne change pas) dans l'autre. Face au billot, Espace : un coup (le geste
   `chop`, sans nouvelle pose) et la branche devient un piquet taillé en pointe, environ 100 × 5 × 5 cm, 1 kg, qui reste dans la main
-  qui la tenait. Le coup coûte 0,4 point (`whittle`), la moitié d'un coup de cognée. Si l'autre main ne tient pas une branche : « Tiens la
+  qui la tenait. Le coup coûte 0,4 point (`whittle`), la moitié d'un coup de cognée (repris par *Le travail* : tailler est un travail
+  au coup, `work.whittle` du billot, la pointe à enlever, payé au joule ; environ 58 coups de hachette, une demi-minute). Si l'autre main ne tient pas une branche : « Tiens la
   branche debout sur le billot, de l'autre main. » Planter un piquet coûte 0,5 point d'endurance.
 - **Tracer.** Piquet en main, plan connu, Espace sur le sol : le piquet se plante. Sans plan connu : « Xéros ne sait pas encore
   quoi tracer. » Le premier piquet fixe le coin nord-ouest de l'emprise ; les trois autres coins apparaissent en fantôme, et
@@ -665,6 +669,10 @@ Repris par *Le bois* (30 octobre 2026) : la masse se calcule d'après les régla
 
 Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter se roule.
 
+Repris par *Le travail* (§ 4 bis et § 10) : la force d'un coup (`swing` de strength.json) plafonne au plafond humain (`humanMax`) ;
+porter, marcher chargé et rouler plafonnent de même (décidé le 2 novembre 2026, fait au chantier 4 de l'audit : `human` de Strength.ts). La vitesse de la bille poussée
+est une part de la marche (`pushSpeed`, systems/speeds.ts), fatigue comprise.
+
 - **Masses** (`src/content/mass.ts`). Tout objet qu'on prend, pose ou roule a une masse en kg (`validate.ts` l'exige). Saisie pour les
   objets simples (hache 2,5 kg, branche 2,5 kg, lien 0,2 kg, rouleau de corde 1 kg les 10 m, au prorata de sa longueur). **Calculée
   pour le bois** : volume du tronc tiré des `dims` (le diamètre est celui des dimensions moins le contour d'un pixel de chaque côté :
@@ -690,6 +698,11 @@ Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter
 
 ## Endurance (décidé le 30 octobre 2026)
 
+Repris par *Le temps* (1er novembre 2026 : sa clôture et son § 3) et *Le travail* : l'endurance a trois niveaux (souffle, plafond du
+jour, maximum : 100 au départ, jusqu'à 200 en s'entraînant), une barre horizontale à trois teintes en bas à droite (`art/ui/stamina-bar.ts`)
+et non plus la jauge verticale ; fatigué, Xéros marche à la moitié de la marche (`tiredWalk` 0,5) ; le travail au coup se paie au
+joule (`work` de stamina.json), `costs` ne vaut plus que pour les gestes sans matière. Ce qui suit est la première décision.
+
 La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'essoufflement d'une course ou d'une charge, qui se reprend en quelques secondes) viendra plus tard comme **deuxième jauge**, à côté de celle-ci : l'endurance baisse tout le jour et ne remonte qu'en dormant.
 
 - **La jauge** : 100 points au maximum (`src/content/stamina.json`, composant `entities/Stamina.ts`, mécanique `src/systems/effort.ts`). Elle est dans GameState (`stamina`) et se sauvegarde avec la partie ; à l'écran, une jauge verticale à droite des deux cases des mains (`art/ui/stamina.ts`), rouge sous le seuil de fatigue, qui tremble quand un effort est refusé.
@@ -702,12 +715,17 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
 
 ## Le temps (décidé le 1er novembre 2026, chantier « temps »)
 
-**La clôture du chantier** (décidé par Grégoire après l'essai du travail au coup, même jour) :
-- **La vitesse du temps du joueur est réactivée, et c'est la vitesse de simulation** : V passe au palier suivant (x1, x2, x5, x10, x20 ;
-  `speeds` de time.json, x1 au départ ; en boucle : après x20, x1), Maj + V au précédent (en boucle aussi) ; un indicateur à côté du
-  cadran la montre toujours, x1 compris (des crans et le chiffre) ; elle accélère tout le jeu, marche comprise, par pas de jeu de taille
-  normale (systems/simSpeed.ts), et plus seulement l'horloge ; le cadran l'affiche ; une attaque ramène à x1 ; x50 reste réservé à
-  ?dieu pour les tests. La distinction d'avant (vitesse du temps / vitesse de simulation) tombe : il n'y a plus qu'une vitesse.
+**La règle : la clôture du chantier** (décidé par Grégoire après l'essai du travail au coup, même jour ; complétée le 2 novembre 2026,
+chantier 1 de l'audit). Elle fait foi : ce qui la contredit plus bas (les paragraphes de conception d'avant, l'ancien § 6, l'ancienne
+étape 2 du découpage) est rangé sous *Historique (remplacé)*, à la fin du chapitre. Le travail lui-même : *Le travail*, plus bas.
+- **Une seule vitesse : la vitesse du temps du joueur est la vitesse de simulation.** V passe au palier suivant (x1, x2, x5, x10, x20,
+  puis de nouveau x1 : en boucle ; `speeds` de time.json, x1 au départ) ; seul V existe, Maj tenue ou non (la touche qui revenait au
+  palier d'avant est retirée : pendant une course, V accélère aussi) ; un indicateur sous le cadran la montre toujours, x1 compris (des
+  crans et le chiffre) ; elle accélère tout le jeu, marche, gestes et horloge, par pas de jeu de taille normale (systems/simSpeed.ts),
+  jamais par un pas plus grand ; une attaque ramène à x1 ; x50 reste réservé à ?dieu pour les tests ; rien n'est gardé au
+  rechargement (x1). La distinction d'avant (vitesse du temps / vitesse de simulation) tombe : il n'y a plus qu'une vitesse.
+- **Pas de saut d'horloge pour un travail** : un travail dure ses coups et ses pauses de souffle (*Le travail*), l'horloge avance
+  d'autant ; seuls ?dieu « Finir le travail » et « Transformer » l'avancent d'un coup.
 - **L'interface du temps** : le cadran rond en haut à droite (l'essai, piste A) : « Jour 3 / 14:20 » et un médaillon où le soleil puis
   la lune passent sur une colline, au ciel du moment (aube, jour, crépuscule, nuit) ; les mains et la barre d'endurance passent en bas à
   droite.
@@ -716,58 +734,14 @@ La fatigue de la journée, comme l'énergie de Stardew Valley. Le souffle (l'ess
   par-dessus ; les rais de soleil des fenêtres et des portes suivent la force du soleil (éteints la nuit).
 - **Les vitesses de Xéros** : marche 2 m/s, course 2,5 m/s (9 km/h), fatigué 1 m/s (`tiredWalk` 0,5) ; une seule source
   (`PLAYER.walk`, `PLAYER.run`), dont dérivent la marche chargée, la marche fatiguée et la bille poussée.
-
-**L'accélération en pause, les travaux en temps réel** (décidé par Grégoire après l'essai des étapes 1 à 4, même jour ; remplacé
-depuis par la clôture ci-dessus pour la vitesse du temps). On met
-l'accélération du temps en pause et on joue tout à **x1**, pour calibrer le jeu petit à petit avant de décider comment la vitesse doit
-marcher :
-- **La vitesse du temps est verrouillée à x1** : V et les paliers sont éteints (`accelerate: false` dans `time.json` ; le code reste) ;
-  l'heure s'affiche, sans indicateur de vitesse. La vitesse de simulation des tests ne change pas (un test peut encore faire aller le
-  temps plus vite, `ClockSystem.speed`, pour voir un long travail avancer).
-- **Plus de saut de l'horloge.** Un travail (abattre, ébrancher, récolter, couper, fendre, équarrir, tailler) se lance d'un appui, puis
-  Xéros répète son geste pendant toute sa durée réaliste (les `minutes` des données), en temps réel : abattre un arbre normal prend
-  25 minutes réelles. Le nombre de coups découle de la durée et du rythme du geste ; les étapes des données (`hits` : l'arbre qui
-  tremble, la coupe qui se creuse, la fente qui s'allonge) tombent à intervalles égaux, chacune sur un coup ; le résultat arrive à la
-  fin (`systems/work.ts` ; la passe de doloire, sur son rail, dure `minutesPerM` par mètre de face). Une jauge au-dessus de Xéros montre
-  où il en est. **Bouger ou Échap interrompt**, et ce qui est fait reste fait : la part faite d'un travail est gardée dans GameState
-  (`work` de la carte, par objet ; la face entamée, `dressed`), sauvegarde comprise, et le travail repris continue de là. L'endurance se
-  paie au fil du travail, coup par coup (le prix du travail entier est celui de ses étapes d'avant : 4 × 0,8 pour un arbre normal) ; à
-  bout de souffle, le travail attend que Xéros reprenne son souffle puis continue.
-- Les petits gestes (nouer, planter un piquet, pivoter une bille, poser une pièce, dresser une poutre) ne durent que leur geste : leurs
-  minutes (`work` de time.json) attendent. Le coin se plante toujours d'un coup. Les transformations n'ont pas encore de geste : ?dieu
-  « Transformer » les applique, et avance l'horloge de leur durée, comme « Finir le travail ».
-- **?dieu « Finir le travail »** termine d'un coup le travail en cours (ou la passe de doloire), comme s'il avait duré son temps :
-  l'horloge avance de ce qui manquait, l'endurance en paie le reste (sans attendre son souffle), le résultat tombe.
-- Rien d'autre : pas de nouveau modèle d'endurance pour l'instant. Ce qui suit (la conception d'avant, la vitesse par paliers) reste la
-  référence pour le jour où l'accélération reviendra.
-
-**Validé par Grégoire** (même jour), avec ces réponses : la lumière qui suit l'heure en deuxième temps (étape 6) ; essoufflé, l'effort
-attend sans message d'épuisement, mais la barre clignote et Xéros souffle (une petite animation) ; x24 par défaut, x6 en repli ; la barre
-horizontale qui s'allonge avec le maximum, la teinte « revient » en torchis ; une durée réaliste fixe par travail, en minutes de jeu,
-dans les données. Et deux corrections : le malus du réveil commence au seuil « fatigué » (15 % du maximum) — la journée type, qui finit
-à 15, ne coûte rien le lendemain : seul le vrai épuisement se paie ; la vraie nuit blanche (aucun sommeil) est décrite plus bas. La
-course (5 de souffle par seconde, sans retour pendant l'effort : environ 20 s, 165 m) est gardée pour l'essai, en données, jugée en jeu.
-Cette section a d'abord été l'étape 1 du chantier (la conception, sans code). Les chiffres viennent de `tools/essai-temps.ts` (un modèle en petit, le
-même qu'on mettra dans stamina.json), l'aperçu est `.art-preview/temps-endurance.png` (la courbe de la journée type ; dessous, la barre
-à trois teintes à 6 h, 7 h 30, 16 h 30, 22 h et au réveil du 3e jour).
-
-**Décidé par Grégoire** : une horloge unique de 24 h ; à x1, une journée dure 24 h réelles ; une vitesse du temps par paliers, réglée
-par le joueur (à essayer : x1, x6, **x24 par défaut** — une journée en une heure —, x60, x360 pour attendre et dormir) ; une échelle de
-temps propre à chaque être (un facteur, 1 par défaut, inutilisé pour l'instant : plus tard, ralentir la perception sera un pouvoir) ;
-l'endurance en trois niveaux (souffle, plafond du jour, maximum), une barre à trois teintes ; pas d'effondrement forcé la nuit : la
-veille se paie au réveil. **Choisi par défaut** (Grégoire peut le contredire) : un travail garde la durée de son geste en jeu, et
-l'horloge avance pendant ce geste de la durée réaliste du travail (abattre un chêne ≈ 1 h de jeu, fendre une bille quelques minutes),
-en données pour chaque action et chaque transformation ; la vitesse revient d'elle-même à x1 quand un combat commence (coup donné ou
-reçu) ou qu'une créature hostile remarque Xéros (aucune n'existe encore ; le lapin à venir fuit).
-
-**Deux vitesses à ne jamais confondre.** La **vitesse du temps** (celle du joueur) ne fait avancer que l'horloge : Xéros marche
-toujours à 5 m/s (100 px/s), les gestes gardent leur durée. La **vitesse de simulation** accélère tout (gestes, marche, animaux) et est
-réservée aux tests et au débogage (`?debug`) : elle fait plusieurs pas de simulation de taille normale par image, comme la physique de
-Phaser quand le jeu rame (pas fixe de 1/60 s, plusieurs par image), et n'agrandit jamais les pas. L'inventaire des franchissements est
-fait (commit « Franchissement », `world/crossing.ts`) ; ce qui n'est pas dans la physique doit suivre cette vitesse sans sauter
-d'étape : vérifié ci-dessous, système par système.
+- **Ce qui reste de la conception d'avant** : une horloge unique de 24 h (à x1, une journée dure 24 h réelles) ; l'endurance en trois
+  niveaux (souffle, plafond du jour, maximum) et le sommeil, chiffrés au § 3 ; essoufflé, l'effort attend sans message (la barre
+  clignote, Xéros souffle) ; pas d'effondrement forcé la nuit : la veille se paie au réveil.
 
 ### 1. Ce qui dépend du temps aujourd'hui
+
+L'inventaire du début du chantier, gardé pour mémoire : depuis, la jauge de 100 est devenue l'endurance en trois niveaux (§ 3), les
+vitesses sont en m/s (la clôture), `SAVE_VERSION` a monté, et les pauses fixes des scénarios se remplacent par des attentes d'état.
 
 | Système | Fichier | Ce qui dépend du temps |
 | --- | --- | --- |
@@ -788,6 +762,9 @@ d'étape : vérifié ci-dessous, système par système.
 | Tests | `tools/lib/playtest.ts`, `tools/test-*.ts`, `tools/run-scenarios.ts` | 222 pauses fixes (`sleep`, `waitForTimeout`) dans les scénarios ; un garde-fou de 15 min par scénario |
 
 ### 2. Horloge ou simulation, système par système
+
+Repris par la clôture : il n'y a plus qu'une vitesse (l'horloge et la simulation vont du même pas, x1 à x20 en jeu) et les travaux
+n'ont plus de durée en minutes (*Le travail* : ils durent leurs coups) ; la ligne « Travaux » ci-dessous est remplacée.
 
 L'**horloge** compte les heures de jeu (elle avance à la vitesse du temps, et du temps de travail pendant un geste) ; la
 **simulation** compte les secondes jouées (elle avance à la vitesse de simulation, x1 en jeu).
@@ -814,6 +791,10 @@ par la physique (pas fixes) et décideront par pas fixes, jamais par `delta` agr
 hors de la physique avance par pas fixes de la simulation (une boucle `while (acc >= step)`), jamais d'un `delta` multiplié.
 
 ### 3. L'endurance chiffrée
+
+Fait ainsi (stamina.json), avec trois reprises : la marche fatiguée est à la moitié de la marche (`tiredWalk` 0,5, 1 m/s ; plus bas,
+« 85 % » est l'ancien chiffre) ; le travail au coup se paie au joule (`work` de stamina.json : `ceilingPerJ`, `breathPerJ` ; *Le
+travail*), et `costs` ne vaut plus que pour les gestes sans matière ; la barre est horizontale, en bas à droite.
 
 Le modèle proposé (à mettre dans stamina.json, à la place de `max`, `tired`, `tiredWalk`) :
 
@@ -872,7 +853,7 @@ marche à 85 % ; il lui reste 11 points de travail avant l'épuisement (à peu p
 jusqu'au sommeil ; il marche, parle, prend ce qui est léger ; le maximum ne monte pas (il faut une nuit). La nuit suivante, le malus de
 l'épuisement s'ajoute à celui des heures manquantes.
 
-### 4. Le jour et la nuit (à trancher)
+### 4. Le jour et la nuit (tranché : la lumière suit l'heure, faite ; le reste plus tard)
 
 - **Tout de suite, proposé** : l'horloge et son affichage ; le sommeil qui avance l'horloge ; le lever et le malus de veille ; la vitesse
   du temps par paliers. **La lumière qui suit l'heure** (une teinte du monde par heure : aube, jour, crépuscule, nuit, les feux et les
@@ -882,6 +863,9 @@ l'épuisement s'ajoute à celui des heures manquantes.
   boutiques du village et leurs horaires, la météo, les saisons (le compteur de jours y mène).
 
 ### 5. Les tests
+
+Proposé, en partie fait : ni `?simu`, ni `SCENARIOS_X1` n'existent ; un scénario attend un état, jamais un délai (`__until`,
+`__restart` de tools/lib/playtest.ts, CLAUDE.md) ; le remplacement des pauses fixes est le chantier 3 de l'audit.
 
 - **Vitesse de simulation dans `tools/lib/playtest.ts`** : x10 par défaut (`?simu=10`, lu par `main.ts` seulement avec `?debug` ou
   en test) ; une fonction `capture()` la remet à x1 (ou met la simulation en pause) le temps d'une capture d'écran, pour que l'image soit
@@ -902,12 +886,8 @@ l'épuisement s'ajoute à celui des heures manquantes.
 
 ### 6. L'heure, la vitesse, la touche
 
-- **L'heure** s'affiche en haut à droite de l'écran, petite, dans le style des chiffres du HUD (`ui-digit-*`) : « Jour 3 · 14:20 », et
-  la vitesse à côté quand elle n'est pas celle par défaut (« x60 »). Le HUD des mains et la barre d'endurance restent en bas.
-- **La touche** : **V** (« vitesse »), à la même place en AZERTY et en QWERTY, libre aujourd'hui (docs/COMMANDES.md : ni le jeu ni la
-  construction ne l'utilisent), lue par sa place : V passe au palier suivant, Maj + V au précédent ; un message court dit le palier
-  (« Le temps : x60 »). Refusée pendant un combat ou si une créature hostile le voit (la vitesse revient à x1).
-- **Dormir** passe par la paillasse (« Dormir ? ») : le sommeil se joue à x360 (quelques secondes de fondu), comme aujourd'hui.
+Remplacé par la clôture (en tête du chapitre) : le cadran en haut à droite, la vitesse toujours montrée, V seul en boucle, une attaque
+qui ramène à x1, le sommeil par la paillasse. L'ancien texte est dans l'historique.
 
 ### 7. La sauvegarde et le découpage
 
@@ -917,14 +897,84 @@ l'épuisement s'ajoute à celui des heures manquantes.
 - **Le découpage**, chaque étape testable et commitée seule :
   1. *L'horloge* : `clock` dans GameState, `systems/clock.ts` (avance à la vitesse du temps), l'affichage de l'heure, la touche V et les
      paliers, la conversion de sauvegarde ; test : l'heure avance au bon rythme à chaque palier.
-  2. *La durée des travaux* : `minutes` dans les récoltes, coupes, fendages, transformations ; l'horloge avance pendant le geste ;
-     test : abattre un arbre normal avance l'horloge de sa durée.
+  2. *(Remplacée par le travail au coup : voir* Le travail *; l'ancien texte est dans l'historique.)*
   3. *L'endurance en trois niveaux* : souffle, plafond, maximum ; la barre à trois teintes (le pixel-artist) ; test : la journée type
      simulée (`essai-temps.ts`) donne les mêmes chiffres en jeu.
   4. *Le sommeil et la veille* : le lever, le malus, le maximum qui monte ; test : nuit blanche, nuit courte, trois jours d'entraînement.
   5. *La vitesse de simulation* (`?debug`, playtest x10) et le remplacement des pauses fixes, scénario par scénario ; la copie figée
      qui régénère ; test : la suite plus courte, un scénario à x1.
   6. *La lumière qui suit l'heure* (si Grégoire la veut tout de suite).
+
+### Historique (remplacé)
+
+Ce qui suit a été décidé puis remplacé ; gardé pour comprendre d'où vient le code, **ne fait plus foi**. La règle est la clôture, en
+tête du chapitre ; le travail, *Le travail*. Remplacé : la vitesse du temps qui ne fait que l'horloge (et « Deux vitesses à ne jamais
+confondre »), l'accélération en pause, x24 par défaut, les travaux en minutes, la marche à 5 m/s, le § 6 d'origine (la vitesse
+affichée hors défaut, Maj + V, V refusé au combat, le sommeil à x360) et l'étape 2 du découpage.
+
+**Décidé par Grégoire** : une horloge unique de 24 h ; à x1, une journée dure 24 h réelles ; une vitesse du temps par paliers, réglée
+par le joueur (à essayer : x1, x6, **x24 par défaut** — une journée en une heure —, x60, x360 pour attendre et dormir) ; une échelle de
+temps propre à chaque être (un facteur, 1 par défaut, inutilisé pour l'instant : plus tard, ralentir la perception sera un pouvoir) ;
+l'endurance en trois niveaux (souffle, plafond du jour, maximum), une barre à trois teintes ; pas d'effondrement forcé la nuit : la
+veille se paie au réveil. **Choisi par défaut** (Grégoire peut le contredire) : un travail garde la durée de son geste en jeu, et
+l'horloge avance pendant ce geste de la durée réaliste du travail (abattre un chêne ≈ 1 h de jeu, fendre une bille quelques minutes),
+en données pour chaque action et chaque transformation ; la vitesse revient d'elle-même à x1 quand un combat commence (coup donné ou
+reçu) ou qu'une créature hostile remarque Xéros (aucune n'existe encore ; le lapin à venir fuit).
+
+**Deux vitesses à ne jamais confondre.** La **vitesse du temps** (celle du joueur) ne fait avancer que l'horloge : Xéros marche
+toujours à 5 m/s (100 px/s), les gestes gardent leur durée. La **vitesse de simulation** accélère tout (gestes, marche, animaux) et est
+réservée aux tests et au débogage (`?debug`) : elle fait plusieurs pas de simulation de taille normale par image, comme la physique de
+Phaser quand le jeu rame (pas fixe de 1/60 s, plusieurs par image), et n'agrandit jamais les pas. L'inventaire des franchissements est
+fait (commit « Franchissement », `world/crossing.ts`) ; ce qui n'est pas dans la physique doit suivre cette vitesse sans sauter
+d'étape : vérifié au § 2, système par système.
+
+**Validé par Grégoire** (même jour), avec ces réponses : la lumière qui suit l'heure en deuxième temps (étape 6) ; essoufflé, l'effort
+attend sans message d'épuisement, mais la barre clignote et Xéros souffle (une petite animation) ; x24 par défaut, x6 en repli ; la barre
+horizontale qui s'allonge avec le maximum, la teinte « revient » en torchis ; une durée réaliste fixe par travail, en minutes de jeu,
+dans les données. Et deux corrections : le malus du réveil commence au seuil « fatigué » (15 % du maximum) — la journée type, qui finit
+à 15, ne coûte rien le lendemain : seul le vrai épuisement se paie ; la vraie nuit blanche (aucun sommeil) est décrite au § 3. La
+course (5 de souffle par seconde, sans retour pendant l'effort : environ 20 s, 165 m) est gardée pour l'essai, en données, jugée en jeu.
+Cette section a d'abord été l'étape 1 du chantier (la conception, sans code). Les chiffres viennent de `tools/essai-temps.ts` (un modèle en petit, le
+même qu'on mettra dans stamina.json), l'aperçu est `.art-preview/temps-endurance.png` (la courbe de la journée type ; dessous, la barre
+à trois teintes à 6 h, 7 h 30, 16 h 30, 22 h et au réveil du 3e jour).
+
+**L'accélération en pause, les travaux en temps réel** (décidé par Grégoire après l'essai des étapes 1 à 4, même jour ; remplacé
+depuis par la clôture, en tête du chapitre, pour la vitesse du temps, puis par *Le travail* pour les travaux). On met
+l'accélération du temps en pause et on joue tout à **x1**, pour calibrer le jeu petit à petit avant de décider comment la vitesse doit
+marcher :
+- **La vitesse du temps est verrouillée à x1** : V et les paliers sont éteints (`accelerate: false` dans `time.json` ; le code reste) ;
+  l'heure s'affiche, sans indicateur de vitesse. La vitesse de simulation des tests ne change pas (un test peut encore faire aller le
+  temps plus vite, `ClockSystem.speed`, pour voir un long travail avancer).
+- **Plus de saut de l'horloge.** Un travail (abattre, ébrancher, récolter, couper, fendre, équarrir, tailler) se lance d'un appui, puis
+  Xéros répète son geste pendant toute sa durée réaliste (les `minutes` des données), en temps réel : abattre un arbre normal prend
+  25 minutes réelles. Le nombre de coups découle de la durée et du rythme du geste ; les étapes des données (`hits` : l'arbre qui
+  tremble, la coupe qui se creuse, la fente qui s'allonge) tombent à intervalles égaux, chacune sur un coup ; le résultat arrive à la
+  fin (`systems/work.ts` ; la passe de doloire, sur son rail, dure `minutesPerM` par mètre de face). Une jauge au-dessus de Xéros montre
+  où il en est. **Bouger ou Échap interrompt**, et ce qui est fait reste fait : la part faite d'un travail est gardée dans GameState
+  (`work` de la carte, par objet ; la face entamée, `dressed`), sauvegarde comprise, et le travail repris continue de là. L'endurance se
+  paie au fil du travail, coup par coup (le prix du travail entier est celui de ses étapes d'avant : 4 × 0,8 pour un arbre normal) ; à
+  bout de souffle, le travail attend que Xéros reprenne son souffle puis continue.
+- Les petits gestes (nouer, planter un piquet, pivoter une bille, poser une pièce, dresser une poutre) ne durent que leur geste : leurs
+  minutes (`work` de time.json) attendent. Le coin se plante toujours d'un coup. Les transformations n'ont pas encore de geste : ?dieu
+  « Transformer » les applique, et avance l'horloge de leur durée, comme « Finir le travail ».
+- **?dieu « Finir le travail »** termine d'un coup le travail en cours (ou la passe de doloire), comme s'il avait duré son temps :
+  l'horloge avance de ce qui manquait, l'endurance en paie le reste (sans attendre son souffle), le résultat tombe.
+- Rien d'autre : pas de nouveau modèle d'endurance pour l'instant. Ce qui suit (la conception d'avant, la vitesse par paliers) reste la
+  référence pour le jour où l'accélération reviendra.
+
+**L'ancien § 6, l'heure, la vitesse, la touche** :
+
+- **L'heure** s'affiche en haut à droite de l'écran, petite, dans le style des chiffres du HUD (`ui-digit-*`) : « Jour 3 · 14:20 », et
+  la vitesse à côté quand elle n'est pas celle par défaut (« x60 »). Le HUD des mains et la barre d'endurance restent en bas.
+- **La touche** : **V** (« vitesse »), à la même place en AZERTY et en QWERTY, libre aujourd'hui (docs/COMMANDES.md : ni le jeu ni la
+  construction ne l'utilisent), lue par sa place : V passe au palier suivant, Maj + V au précédent ; un message court dit le palier
+  (« Le temps : x60 »). Refusée pendant un combat ou si une créature hostile le voit (la vitesse revient à x1).
+- **Dormir** passe par la paillasse (« Dormir ? ») : le sommeil se joue à x360 (quelques secondes de fondu), comme aujourd'hui.
+
+**L'ancienne étape 2 du découpage** :
+
+  2. *La durée des travaux* : `minutes` dans les récoltes, coupes, fendages, transformations ; l'horloge avance pendant le geste ;
+     test : abattre un arbre normal avance l'horloge de sa durée.
 
 ## Le travail (décidé le 1er novembre 2026, chantier « temps » ; validé par Grégoire avec trois réponses : la loi du volume, deux points de calage, la cognée à 1,8 kg)
 
@@ -1142,6 +1192,10 @@ Les étapes se déclenchent à une part de la matière enlevée, en données (`s
 - **équarrir** : la face qui avance sous le fer (aujourd'hui) ; plus tard, sa netteté selon la précision des coups.
 - **tailler** : la pointe qui s'affine (deux étapes).
 
+Fait ainsi pour l'arbre debout (chantier 1 de l'audit, 2 novembre 2026) : l'entaille se dessine du côté où frappe Xéros, avec des étapes
+dessinées pour la gauche (`<arbre>-left-stage-<n>`, art/world/work-stages.ts, sans retournement) ; et deux images de raccord, en tête
+des planches de chute (art/world/felling.ts), passent de l'arbre qui penche à sa chute sans saut.
+
 ### 7. Les commandes
 
 **Corrigé par Grégoire après l'essai** : un seul appui sur Espace lance tout le travail, comme la doloire : Xéros se place, choisit son
@@ -1151,6 +1205,9 @@ jauge au-dessus de Xéros montre la part enlevée. ?dieu « Finir le travail » 
 endurance, pauses comprises).
 
 ### 8. La marche et la course
+
+Repris par la clôture du *Temps* : marche 2 m/s, course 2,5 m/s, fatigué 1 m/s ; `PLAYER.walk` et `PLAYER.run` (config.ts, en m/s)
+sont la seule source (systems/speeds.ts), réglables dans ?dieu « Vitesses » et retenus dans le navigateur. Le texte d'alors :
 
 Aujourd'hui Xéros marche à 5 m/s (100 px/s à 5 cm par pixel) et court à 8,25 m/s (165 px/s) : trois à quatre fois le réel (marche
 1,3 à 1,4 m/s, petit trot 2,5 à 3,1, en portant lourd 1 à 1,1). Proposé : un réglage dans le panneau ?dieu, « Vitesses » : marche,
@@ -1166,7 +1223,7 @@ toucher aux valeurs par défaut ; Grégoire calibre en jeu, puis on écrit ses v
 3. **Le geste lourd** : les cinq temps du coup de cognée (`use`, `chop`) et de la masse (`maul`), dessinés par le pixel-artist d'après
    l'essai validé, leurs durées tirées de `swing` ; test : la durée d'un coup en jeu égale celle du modèle.
 4. **Les commandes et le travail par coups** : `systems/work.ts` refait (Espace un coup, maintenu enchaîne, relâcher ou bouger arrête,
-   pauses de souffle automatiques), la part enlevée gardée ; scénario : un arbre abattu coup par coup, interrompu, repris après
+   pauses de souffle automatiques ; repris par le § 7 : un appui lance tout le travail, un pas ou Échap arrête), la part enlevée gardée ; scénario : un arbre abattu coup par coup, interrompu, repris après
    rechargement.
 5. **Les étapes visibles** : l'entaille, le craquement, l'arbre qui penche, les branches qui tombent, la pointe ; dessins par le
    pixel-artist ; aperçu et scénario.
@@ -1175,6 +1232,26 @@ toucher aux valeurs par défaut ; Grégoire calibre en jeu, puis on écrit ses v
 **La sauvegarde** : `work` de chaque carte garde aujourd'hui des minutes faites ; il gardera la **part de matière enlevée** (de 0 à 1,
 `{ work, done }`) : SAVE_VERSION 22, et une partie d'avant convertit ses minutes en part (minutes / la cible). Les étapes se déduisent
 de la part (rien d'autre à garder) ; les encoches et les coins plantés restent dans les réglages de la pièce de bois.
+
+### 10. Décidé par Grégoire le 2 novembre 2026 (audit)
+
+Tranché pendant l'audit (docs/AUDIT.md, « À trancher ») ; **fait** au chantier 4 de l'audit :
+- **Le rocher se travaille au coup**, comme le reste : la pioche (`work` d'items.json), la matière `stone` de work.json (8 J par cm³ de
+  calcaire), 3 dm³ à abattre (`break` de son `harvest.work`) : 576 coups, 28 min pour Xéros ; un homme fort, bien plus vite. La pioche
+  n'a pas encore son dessin en main (planche `tool-pickaxe`, pixel-artist) : elle ne se voit pas pendant le geste.
+- **Le prix d'une attaque au joule, comme le travail** : une seule physique pour les outils et les armes. L'énergie d'une attaque
+  (`strikeEnergy` de world/strike.ts : ½ × masse qui frappe × v² × `power`) fait ses dégâts et son prix (× `ceilingPerJ` au plafond,
+  × `breathPerJ` au souffle) : la taille à la branche, 130 J, 0,018 du plafond et 4,2 de souffle ; à l'épée, 58 J, 0,008 et 1,9.
+  `attackBase`, `attackPerKg` et le `cost` des attaques n'existent plus.
+- **Porter et rouler plafonnent aussi la force**, au même modèle réaliste que la frappe (`humanMax`, § 4 bis) : ?dieu « force »
+  multiplie tout, jusqu'au plus fort des humains (× 2,6 : 182 kg portés, 780 kg roulés). La force surhumaine lèvera tous les
+  plafonds, plus tard.
+
+**Déjà fait** (chantier 1 de l'audit) :
+- **L'arbre tombe du côté où Xéros frappe** : au lancement, Xéros se place lui-même de ce côté, le fer sur l'entaille (`FELL.reach` de
+  config.ts) ; l'entaille se dessine de ce côté, avec des étapes dessinées pour la gauche ; le côté est gardé avec le travail en cours
+  (`side` de `work` dans GameState), si bien qu'un travail repris tombe du même côté.
+- **Deux images de raccord** entre l'arbre qui penche (la dernière étape) et sa chute, en tête des planches de chute.
 
 ## Le combat (décidé le 1er novembre 2026, chantier « combat de base »)
 
@@ -1208,8 +1285,8 @@ Les touches : [docs/COMMANDES.md](COMMANDES.md).
   - les **dégâts** : l'énergie de l'arme au coup (½ I ω², la vitesse venant de l'angle que parcourt la pointe pendant le coup) ×
     un facteur × l'efficacité de l'arme : 8,2 à la taille avec la branche, 5,9 avec l'épée ; le coup d'en haut frappe plus fort et
     coûte plus ;
-  - le **prix en endurance** : `attackBase` + `attackPerKg` × la masse de l'arme (stamina.json), × le prix de l'attaque : 1,3 point
-    pour la branche, 0,6 pour l'épée. **Un coup dans le vide coûte aussi** (choix de Grégoire : c'est le geste qui fatigue) ; épuisé,
+  - le **prix en endurance** : au joule, comme le travail (*Le travail* § 10) : l'énergie du coup × `ceilingPerJ` et `breathPerJ` de
+    stamina.json ; la branche coûte plus que l'épée, qui frappe moins lourd. **Un coup dans le vide coûte aussi** (choix de Grégoire : c'est le geste qui fatigue) ; épuisé,
     rien ne part.
 - **Une attaque est des données** (combat.json, `attacks`) : son geste, ses trois temps, la fenêtre d'enchaînement, l'angle que
   parcourt la pointe, sa puissance, son prix, sa zone. **Une famille** (`families`, la seule aujourd'hui : `swing`, ce qu'on balance)
@@ -1310,6 +1387,12 @@ ceci.
 
 ## Fendre (décidé le 30 octobre 2026)
 
+Repris par *Le travail* (1er novembre 2026) : fendre est un travail au coup, lancé d'un appui. Les « 3 coups par mètre » sont devenus
+**3 étapes par mètre commencé** (`splitHits`, `split.hits` de wood.json : la fente qui s'allonge, le coin qui s'enfonce) ; le nombre de
+coups découle de la matière (la fente, diamètre × longueur, `split` de work.json) et de la force : une bille de 55 cm sur 1 m s'ouvre
+en une trentaine de coups de masse pour Xéros (1 min 30). Chaque coup se paie au joule ; planter le coin reste un geste sans matière,
+au prix fixe de `plant` (1 point). Les prix par coup ci-dessous (0,8 le coup de masse, 10,2 points la bille en quatre) sont ceux d'alors.
+
 Repris le 30 octobre 2026 (« tas ») : **toute longueur se fend**, toujours avec un seul coin planté dans le bout. Il faut **3 coups de
 masse par mètre**, arrondis au mètre au-dessus (3 pour 1 m, 6 pour 2 m, 9 pour 2,4 m) ; « Trop longue pour un seul coin. »
 disparaît. À chaque coup, la fente s'allonge sur les morceaux du milieu, du bout du coin jusqu'à l'autre bout, et **le coin
@@ -1338,7 +1421,9 @@ Une grosse bille pèse 203 kg : on ne la soulève pas. Alors on la fend **là o�
 ## Bois d'œuvre (décidé le 30 octobre 2026, « équarrissage »)
 
 Repris le 30 octobre 2026 par *Le bois* (une seule pièce de bois, la grille de 20 cm, les poteaux bas à 1,80 m) : ce qui suit
-garde la décision de l'équarrissage, les nombres à jour sont là-bas. Les poteaux de l'abri (2 de 3 m au nord, 2 de 1,80 m au sud,
+garde la décision de l'équarrissage, les nombres à jour sont là-bas. Repris ensuite par *L'équarrissage par passes* et *Le travail*
+(1er novembre 2026) : couper, ébrancher et équarrir sont des travaux au coup, payés au joule ; les « 3 coups » et les prix par coup
+ci-dessous (0,8 point le coup de cognée, 12 points le poteau) sont ceux d'alors. Les poteaux de l'abri (2 de 3 m au nord, 2 de 1,80 m au sud,
 section de 20 × 20 cm) viennent de l'arbre normal. Au Moyen Âge, les
 charpentes se faisaient avec des arbres jeunes de 25 à 35 cm, équarris à la hache, pas sciés, mis en œuvre verts : c'est ce que
 fait Xéros. Le gros arbre ne change pas : il reste le bois de chauffage (billes, fendage).
@@ -1372,6 +1457,13 @@ fait Xéros. Le gros arbre ne change pas : il reste le bois de chauffage (billes
   sablières et les chevrons, tirés de la même façon ; une scie, plus tard, qui raccourcira les étapes.
 
 ## L'équarrissage par passes (décidé le 1er novembre 2026, « doloire en passe »)
+
+Repris par *Le travail* (1er novembre 2026, même jour) : la passe est un travail au coup. Chaque coup lève ce que permet son énergie
+(`hew` de work.json, la doloire et la force de Xéros) et la face avance d'autant, non plus de `hew.stroke` cm ; chaque coup se paie au
+joule (`work` de stamina.json), non plus `hewPerM` par mètre ; **un pas ou Échap** arrête la passe après le coup en cours. Une face de
+3 m demande à Xéros bien plus de 9 s (la poutre de 3 m entière, environ 7 h 30 de coups et de pauses, *Le travail* § 5), et bien
+plus de 12 points (138 points du plafond : deux jours). Ce qui suit garde la décision d'alors : les chiffres « Échap, seule commande »,
+« 15 cm par coup », « 9 s », « 12 points » sont remplacés.
 
 Équarrir par douze coups sur place ne ressemblait pas au métier. En vrai, le charpentier avance le long du rondin en donnant des
 coups courts vers le bas, sur le flanc, et la face se dresse derrière lui à mesure qu'il avance. Xéros fait de même.
@@ -1422,7 +1514,8 @@ longueurs libres et le fendage. On garde la coupe libre et on change la façon d
   ses **faces dressées** à la doloire (0 à 4 ; 4 : la poutre), son **sens** (est-ouest, nord-sud), et s'il y en a, son **encoche** en
   cours (place, coups) et son **coin planté** (bout, coups). GameState garde ces réglages pour chaque pièce posée ou tenue ; Tiled
   peut les donner en propriétés.
-- **Les règles sont du contenu** (`src/content/wood.json`) : la densité (900 kg/m³), la grille, la plus courte pièce, la coupe (la
+- **Les règles sont du contenu** (`src/content/wood.json`) ; depuis *Le travail*, les « coups » ci-dessous sont des étapes, le nombre de
+  coups découlant de la matière et de la force : la densité (900 kg/m³), la grille, la plus courte pièce, la coupe (la
   cognée, 3 coups), l'équarrissage (la doloire, une passe par face, un coup tous les 15 cm, 4 faces, poutre de 20 cm), le fendage (le coin, la masse, 3 coups
   par mètre commencé, un seul coin dans le bout, à toute longueur), et par diamètre ce qu'on a le droit de faire : **seul le gros se fend** (la bille en
   deux demi-billes, la demi-bille en deux quartiers) ; **on n'équarrit qu'une pièce ronde**, et seulement le normal (« Trop grosse

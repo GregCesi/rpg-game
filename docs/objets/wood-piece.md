@@ -85,8 +85,8 @@ dresse. Elle ne vient que des places d'un plan (`accepts.wood`) : `lay` de `syst
   demi-billes côte à côte montrent leurs faces claires presque continues, l'écorce seulement sur la dernière, devant.
 - Encoche : une bande à sa place (un tiers, deux tiers).
 - Coin planté : la partie du bout où il est planté est remplacée (coin dans la face de coupe vue, tête qui dépasse au bout caché) ;
-  il s'enfonce à chaque coup (3 images : il sort de 3, 2, 1 px) ; la fente court depuis ce bout sur la part de la longueur déjà
-  fendue (coups reçus sur coups à donner) ; au dernier coup, le bois grand ouvert un instant.
+  il s'enfonce par paliers (3 images : il sort de 3, 2, 1 px) ; la fente court depuis ce bout sur la part de la longueur déjà
+  fendue (étapes faites sur étapes à faire, `wedge.hits` sur `splitHits`) ; à la dernière étape, le bois grand ouvert un instant.
 - Portée (`carry`), dans le sens de la marche : de face et de dos, par le bout (`held-wood-<diamètre>-<aspect>`, vue qui ne
   dépend pas de la longueur) ; de profil, la pièce assemblée à sa longueur, sans ombre, son milieu dans les mains.
 - Case d'interface : `item-wood-<diamètre>-<aspect>`, et sa longueur écrite en bas de la case (« 1 m »).
@@ -116,20 +116,23 @@ bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1
 - Espace, la cognée, contre son flanc : la coupe s'aimante tous les 20 cm depuis le bout le plus proche de Xéros ; refusée si un
   morceau ferait moins de 60 cm (« Le bout serait trop court. »), sur une pièce de moins de 1,20 m (« Trop court pour être
   recoupé. »), sur une demi ou un quart (« On coupe avant de fendre. »), sur une pièce dressée (« On coupe avant d'équarrir. ») ;
-  trois coups, deux pièces. 0,8 point le coup.
+  un appui lance le travail au coup (docs/CONCEPTION.md, « Le travail ») : la coupe se creuse en trois étapes (`cut.hits` de wood.json), le nombre de coups
+  découle du diamètre (deux V d'une demi-épaisseur, `buckVolume`) et de la force, chaque coup payé au joule ; deux pièces.
 - Espace, la doloire, contre le flanc d'une pièce ronde du normal, à un bout : une passe le long de la pièce, sur le rail, la face
-  dressée derrière Xéros (docs/CONCEPTION.md, « L'équarrissage par passes », fiche `broadaxe.md`) ; Échap l'arrête, la face entamée
+  dressée derrière Xéros (docs/CONCEPTION.md, « L'équarrissage par passes », fiche `broadaxe.md`) ; un pas ou Échap l'arrête, la face entamée
   est gardée et reprise là ; une passe par face, un quart de tour entre deux, la poutre à la quatrième ; le gros : « Trop grosse
-  pour une poutre. » ; 1 point par mètre de face. Une face entamée : elle ne roule plus (« Il ne roule plus : une face est
+  pour une poutre. » ; un travail au coup, payé au joule. Une face entamée : elle ne roule plus (« Il ne roule plus : une face est
   entamée. »), ne va pas en tas, ne se coupe ni ne se fend.
 - Espace, le coin, à un bout d'une bille ou d'une demi-bille du gros, de toute longueur : il se plante d'un coup, sans geste ; depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. » ; le quartier :
-  « Trop mince pour le coin. » ; le normal : « Ce bois ne se fend pas : il se coupe et s'équarrit. ». 1 point.
-- Espace, la masse, depuis le bout du coin : 3 coups par mètre commencé (6 pour 2 m ; la fente court, le coin s'enfonce), et deux
+  « Trop mince pour le coin. » ; le normal : « Ce bois ne se fend pas : il se coupe et s'équarrit. ». 1 point (`plant` de `costs` : un geste sans matière).
+- Espace, la masse, depuis le bout du coin : un appui lance le travail au coup ; 3 étapes par mètre commencé (`splitHits` : 6 pour 2 m ;
+  la fente court, le coin s'enfonce), le nombre de coups découlant de la fente (diamètre × longueur) et de la force (une trentaine
+  pour une bille de 55 cm sur 1 m), et deux
   morceaux identiques, dans le même sens, côte à côte, dans la position de leur section : deux demi-billes écorce en bas, face en
   l'air ; deux quartiers écorce en bas, pointe en l'air (31 octobre 2026). Deux quartiers sont plus larges que leur demi-bille : si
   leur place est prise (la demi-bille voisine), ils s'écartent ensemble en travers, de part et d'autre, jusqu'à 12 px (`SPLIT` de
   config.ts) ; le coin au sol ; sans coin : « Il faut d'abord un coin. » ; depuis l'autre bout : « Les coups se donnent sur le bout, là où le coin est
-  planté. » ; sans place : « Pas la place pour la fendre. ». 0,8 point le coup.
+  planté. » ; sans place : « Pas la place pour la fendre. ». Chaque coup payé au joule.
 
 ## La perche et la planche (chantier « briques », 31 octobre 2026)
 - **La perche** (`size: "pole"`, 12 cm de bois, 22 cm contour compris) : un jeune arbre de taillis, écorce lisse et fine ; ronde,

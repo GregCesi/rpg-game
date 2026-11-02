@@ -36,7 +36,7 @@ export interface Box3 extends Size3 {
 const ITEM_FALLBACK: Size3 = { w: 20, d: 20, h: 10 };
 
 /** Le cran de la grille le plus proche. */
-export const onGrid = (cm: number) => Math.round(cm / BUILD.grid) * BUILD.grid + 0;
+const onGrid = (cm: number) => Math.round(cm / BUILD.grid) * BUILD.grid + 0;
 
 /** Ce que nomme une pièce existe encore dans le contenu (objet, objet possédable, diamètre et aspect de bois) ; sinon le dire. */
 export function refMissing(ref: BuildRef): string | undefined {
@@ -58,7 +58,7 @@ export function refName(ref: BuildRef): string {
 }
 
 /** La pièce prend-elle l'âge du bois : la pièce de bois, ou un objet de bois (`aged` de props.json ou items.json). */
-export function ageable(ref: BuildRef): boolean {
+function ageable(ref: BuildRef): boolean {
   if ('wood' in ref) return true;
   return 'prop' in ref ? !!props[ref.prop]?.aged : !!items[ref.item]?.aged;
 }
@@ -81,7 +81,7 @@ export function withAge<P extends BuildPlaced>(p: P, age: WoodAge): P {
 }
 
 /** Le nombre de vues (de sens) d'une pièce : celles de sa symétrie ; la pièce de bois tourne par son `axis` (une seule vue). */
-export function viewsOf(ref: BuildRef): number {
+function viewsOf(ref: BuildRef): number {
   if ('prop' in ref) return viewCount(props[ref.prop].views);
   if ('item' in ref) return viewCount(items[ref.item].views);
   return 1;
@@ -109,7 +109,7 @@ export function overlaps(a: { x: number; y: number; w: number; d: number }, b: {
 }
 
 /** Le dessus d'une boîte (cm). */
-export const topOf = (b: Box3) => b.z + b.h;
+const topOf = (b: Box3) => b.z + b.h;
 
 /** La plus grande hauteur de dessus des pièces que recoupe l'emprise (0 : le sol). */
 export function supportAt(pieces: readonly BuildPlaced[], foot: { x: number; y: number; w: number; d: number }): number {
@@ -156,7 +156,7 @@ export function aimAt(pieces: readonly BuildPlaced[], size: Size3, cx: number, c
  * ou alignés) s'y colle, en x puis en y. Ce qui n'est pas sur la grille (le morceau de solin, 50 cm d'épaisseur) se joint ainsi
  * exactement, en angle comme en long.
  */
-export function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F): F {
+function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F): F {
   const reach = BUILD.grid / 2;
   const boxes = pieces.map(boxOf);
   const best = (deltas: number[]) => deltas.filter((d) => Math.abs(d) <= reach).sort((a, b) => Math.abs(a) - Math.abs(b))[0] ?? 0;

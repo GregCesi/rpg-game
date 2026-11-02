@@ -26,12 +26,23 @@ export function lightAt(minute: number, stops = world.daylight): Light {
   return { color: (mix(ra, rb) << 16) | (mix(ga, gb) << 8) | mix(ba, bb), alpha: a.alpha + (b.alpha - a.alpha) * t, sun: a.sun + (b.sun - a.sun) * t };
 }
 
-/** Le moment de la journée, pour le cadran : aube (5 h – 8 h), jour (8 h – 18 h 30), crépuscule (18 h 30 – 21 h 30), nuit. */
+/** Le moment de la journée, pour le cadran : celui que nomme le dernier repère passé de `daylight` (`moment`), la journée bouclant. */
 export type Moment = 'dawn' | 'day' | 'dusk' | 'night';
-export function momentAt(minute: number): Moment {
+export function momentAt(minute: number, stops = world.daylight): Moment {
   const h = (((minute / 60) % 24) + 24) % 24;
-  if (h >= 5 && h < 8) return 'dawn';
-  if (h >= 8 && h < 18.5) return 'day';
-  if (h >= 18.5 && h < 21.5) return 'dusk';
-  return 'night';
+  const named = stops.filter((s) => s.moment);
+  const last = [...named].reverse().find((s) => s.hour <= h) ?? named[named.length - 1];
+  return last.moment!;
+}
+
+/**
+ * Le lever et le coucher du soleil, en minutes : là où sa force quitte 0 et y revient (les repères de `daylight` qui encadrent les
+ * repères à soleil) ; l'astre du cadran suit ces heures, comme les rais de soleil du monde.
+ */
+export function sunSpan(stops = world.daylight): { rise: number; set: number } {
+  const first = stops.findIndex((s) => s.sun > 0);
+  const last = stops.length - 1 - [...stops].reverse().findIndex((s) => s.sun > 0);
+  const rise = first > 0 ? stops[first - 1].hour : 0;
+  const set = last < stops.length - 1 ? stops[last + 1].hour : 24;
+  return { rise: rise * 60, set: set * 60 };
 }

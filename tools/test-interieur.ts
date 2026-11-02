@@ -151,10 +151,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
   ]) {
     // 1. le plan posé d'un clic, en mode construction, au milieu de la place dégagée (la carte remise à zéro avant la grange)
     if (b.plan !== 'cabane') {
-      await page.evaluate(() => (window as any).game.events.emit('dieu', { kind: 'reset-map' }));
-      await sleep(300);
-      await until((w) => w.id === 'ferme' && w.mode === 'play');
-      await sleep(300);
+      await page.evaluate(() => (window as any).__restart({ kind: 'reset-map' }));
     }
     await page.keyboard.press('KeyB');
     await sleep(150);

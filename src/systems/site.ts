@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { DEPTH, INTERACT, SITE, TILE, UI, ZOOM_STEPS } from '../config';
-import { items, plans, props, wood } from '../content';
+import { DEPTH, INTERACT, SITE, UI, ZOOM_STEPS } from '../config';
+import { items, plans, props } from '../content';
+import { CM_PER_PX } from '../content/gabarit';
 import { heldMass, woodMass } from '../content/mass';
 import type { Corner, Natural, PlanDef, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
@@ -29,7 +30,7 @@ import { offerOf } from '../world/offer';
 import { beamLength, beamRefusal, refusal, type Accepts, type BeamRule } from '../world/places';
 import { acceptOf, cornerPoint, footprintBox, openSlots, placeCorner, placeGround, progress, statusLine, type PlanSlot } from '../world/sitePlan';
 import { uprightOf, WOOD_PIECE } from '../world/woodPiece';
-import { BEAM_SIZE } from '../world/woodShape';
+import { beamPiece } from '../world/woodShape';
 import { woodTexture } from '../world/woodTexture';
 import { Ghosts } from './ghost';
 
@@ -186,9 +187,9 @@ export class SiteSystem {
         else this.ghosts.show(n++, def.image, c.x, c.y, def.layer === 'floor' ? DEPTH.floor + 0.01 : c.y, alpha);
       }
       // la ligne d'état, sous le chantier
-      const bottom = site.y + Math.max(...Object.values(plan.steps).flatMap((s) => Object.values(s.places).map((p) => p.at[1]))) / 5;
+      const bottom = site.y + Math.max(...Object.values(plan.steps).flatMap((s) => Object.values(s.places).map((p) => p.at[1]))) / CM_PER_PX;
       const text = this.scene.add
-        .text(site.x + plan.footprint.w / 10, bottom + 12, statusLine(site, plan), { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
+        .text(site.x + plan.footprint.w / 2 / CM_PER_PX, bottom + 12, statusLine(site, plan), { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
         .setOrigin(0.5, 0)
         // net au palier de zoom le plus proche
         .setResolution(ZOOM_STEPS.max)
@@ -326,7 +327,7 @@ export class SiteSystem {
 
   /** La poutre qu'une place demande, en pièce de bois (diamètre du normal ; couchée pour l'exemple, la masse ne dépend pas du sens ; `up` pour la montrer dressée). */
   private beamOf(rule: BeamRule, axis: WoodPiece['axis'] = 'ew'): WoodPiece {
-    return { size: BEAM_SIZE, length: rule.length, shape: 'round', hewn: wood.hew.faces * wood.hew.perFace, axis };
+    return beamPiece(rule.length, axis);
   }
 
   /** La poutre demandée par une place jouable de l'étape en cours, ou undefined (une autre pièce, ou une étape « à venir »). */
@@ -355,7 +356,7 @@ export class SiteSystem {
     if (!rule) return undefined;
     const g = placeGround(site, slot.place, plan.steps[slot.step]);
     let best: PlacedProp | undefined;
-    let bestD: number = TILE;
+    let bestD: number = SITE.helpReach;
     for (const p of this.map.props) {
       if (p.type !== WOOD_PIECE || !p.image.visible || beamRefusal(rule, '', p.def.wood)) continue;
       const d = Math.min(...this.endsOf(p).map((e) => Math.hypot(e.x - g.x, e.y - g.y)));

@@ -8,8 +8,8 @@ import { combat, items, props, stamina as staminaDef, strength, wood as W, work 
 import type { HarvestWork, Swinger, WoodPiece } from '../content/types';
 import { removedBy, strokeOf, type Stroke } from './swing';
 
-/** La matière : enlevée en travers du fil, levée le long d'une face marquée, ou une fente à ouvrir. */
-export type Matter = 'cut' | 'hew' | 'split';
+/** La matière : enlevée en travers du fil, levée le long d'une face marquée, une fente à ouvrir, ou la pierre à casser. */
+export type Matter = 'cut' | 'hew' | 'split' | 'stone';
 
 /** Un travail : le coup (clé de work.json, `strokes`), l'outil (clé de items.json), la matière et sa quantité (cm³, ou m² de fente). */
 export interface WorkJobDef {
@@ -25,25 +25,33 @@ export const fellVolume = (d: number): number => {
   return v(0.4 * d) + v(0.5 * d);
 };
 /** Couper une pièce couchée : deux V d'une demi-épaisseur, un de chaque côté ; ≈ 0,21 D³. */
-export const buckVolume = (d: number): number => 2 * 0.5 * (0.5 * d) ** 2 * 0.85 * d;
+const buckVolume = (d: number): number => 2 * 0.5 * (0.5 * d) ** 2 * 0.85 * d;
 /** Ébrancher : chaque branche tranchée en V, ≈ 0,6 d³. */
-export const limbVolume = (count: number, d: number): number => count * 0.6 * d ** 3;
+const limbVolume = (count: number, d: number): number => count * 0.6 * d ** 3;
 /** Tailler une pointe : le cylindre moins le cône, sur sa longueur. */
 export const pointVolume = (d: number, length: number): number => Math.PI * (d / 2) ** 2 * length * (2 / 3);
 /** Équarrir une face sur `length` cm : un quart de ce qui sépare le rond de la poutre (le cercle moins le carré de côté `side`). */
-export const faceVolume = (d: number, side: number, length: number): number => ((Math.PI * (d / 2) ** 2 - side * side) / 4) * length;
+const faceVolume = (d: number, side: number, length: number): number => ((Math.PI * (d / 2) ** 2 - side * side) / 4) * length;
 /** Fendre : la surface de la fente, diamètre × longueur (m²). */
-export const splitArea = (d: number, length: number): number => (d / 100) * (length / 100);
+const splitArea = (d: number, length: number): number => (d / 100) * (length / 100);
+
+/** Le coup d'un genre de travail avec `tool` : celui de l'outil (`work.strokes` d'items.json), sinon le coup commun (`jobs` de work.json). */
+const strokeFor = (kind: keyof typeof work.jobs, tool: string): string => items[tool]?.work?.strokes?.[kind] ?? work.jobs[kind];
 
 /** La matière d'une récolte (`work` de son harvest) travaillée avec `tool`. */
 export function harvestJob(hw: HarvestWork, tool: string): WorkJobDef {
-  if ('fell' in hw) return { stroke: 'use', tool, matter: 'cut', amount: fellVolume(hw.fell.diameter) };
-  if ('limbs' in hw) return { stroke: 'chop', tool, matter: 'cut', amount: limbVolume(hw.limbs.count, hw.limbs.diameter) };
-  return { stroke: tool === 'hatchet' ? 'whittle' : 'chop', tool, matter: 'cut', amount: pointVolume(hw.whittle.diameter, hw.whittle.length) };
+  if ('fell' in hw) return { stroke: strokeFor('fell', tool), tool, matter: 'cut', amount: fellVolume(hw.fell.diameter) };
+  if ('limbs' in hw) return { stroke: strokeFor('limbs', tool), tool, matter: 'cut', amount: limbVolume(hw.limbs.count, hw.limbs.diameter) };
+  if ('break' in hw) return { stroke: strokeFor('break', tool), tool, matter: 'stone', amount: hw.break.volume };
+  return { stroke: strokeFor('whittle', tool), tool, matter: 'cut', amount: pointVolume(hw.whittle.diameter, hw.whittle.length) };
 }
 
-/** Le diamètre d'une pièce de bois (cm). */
-const diameterOf = (p: Pick<WoodPiece, 'size'>): number => W.sizes[p.size]?.diameter ?? 30;
+/** Le diamètre d'une pièce de bois (cm) : celui de sa taille (wood.json `sizes`) ; une taille inconnue est une erreur, jamais un repli. */
+function diameterOf(p: Pick<WoodPiece, 'size'>): number {
+  const d = W.sizes[p.size]?.diameter;
+  if (d === undefined) throw new Error(`taille de bois inconnue : '${p.size}' (wood.json, sizes)`);
+  return d;
+}
 
 /**
  * La matière d'un travail sur une pièce de bois : la couper à la cognée, la fendre à la masse, ou dresser une face à la doloire sur
@@ -83,6 +91,8 @@ export interface WorkPlan {
   pause: number;
   seconds: number;
   ceiling: number;
+  /** Le souffle de tous ses coups (au joule ; ?dieu « Finir le travail » le paie d'un coup). */
+  breath: number;
 }
 
 /** Le travail `job` mené jusqu'au bout par `who`, de maximum `max` (le souffle part plein ; pendant le travail il ne revient pas). */
@@ -96,7 +106,7 @@ export function planOf(job: WorkJobDef, who: Swinger, max: number, done = 0): Wo
   const first = Math.max(1, Math.floor(max / breath));
   const pauses = strokes <= first ? 0 : Math.ceil((strokes - first) / bout);
   const pause = staminaDef.breath.regenDelayMs / 1000 + (resume * max) / staminaDef.breath.regenPerSec;
-  return { stroke: s, per, strokes, bout, pauses, pause, seconds: strokes * s.cycle + pauses * pause, ceiling: strokes * ceiling };
+  return { stroke: s, per, strokes, bout, pauses, pause, seconds: strokes * s.cycle + pauses * pause, ceiling: strokes * ceiling, breath: strokes * breath };
 }
 
 /** Qui travaille : `xeros` (strength.json) ou un être de référence (work.json, `references`), avec son maximum. */

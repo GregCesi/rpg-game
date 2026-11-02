@@ -1,3 +1,4 @@
+// Hors du jeu (audit du 2 novembre 2026) : plus déclaré dans art/index.ts ; seul l'essai tools/essai-abattage.ts en lit la bille.
 // Billes de l'arbre normal (contrat : art/world/normal-geometry.ts) : la bille seule `normal-felled-log`, couchée
 // est-ouest (celle du tas et du sol), et la même bille couchée nord-sud `normal-felled-log-ns` (tas tourné), vue par
 // le bout. Mêmes constructions que les billes du gros arbre (art/world/big-felled.ts, `felledLog`, `felledLogNS`),
@@ -9,13 +10,12 @@
 // que les constructions d'origine, dont la bille portée part encore.
 
 import { Canvas, EMPTY } from '../lib/canvas';
-import type { ImageSource } from '../lib/types';
 import { despeckle, shadedOutline } from './big-tree';
-import { NORMAL_WOOD, bark, logByTheEnd, logEnd } from './wood';
+import { NORMAL_WOOD, bark, logEnd } from './wood';
 import { DIAMETER, SEC } from './normal-geometry';
 
 /** Bois entre les deux contours des bouts : 17 px (19 px contour compris, 95 cm, comme une pièce du tronc couché). */
-export const LOG_LEN = SEC - 2;
+const LOG_LEN = SEC - 2;
 /** Rayon du tronc à l'écran (6 px d'écorce). */
 const R = DIAMETER / 2;
 
@@ -42,26 +42,4 @@ export function normalFelledLog(): Canvas {
   return c;
 }
 
-/**
- * La même bille couchée nord-sud, vue par le bout (`logByTheEnd`) : 8 px de large (6 d'écorce et le contour) ; du
- * nord au sud, le contour, le rond du fond, le dessus d'écorce sur 9 px entre les deux ronds (19 × ½ = 9,5), la face
- * de coupe ovale de 6 × 4 px (Ø × 7/11 ≈ 3,8), le contour : 15 px de silhouette (gabarit : 5,1 + 9,5 ≈ 14,6).
- * Écorce éclairée à gauche, sillons dans le sens de la bille. L'ombre au sol, le corps décalé d'un pixel à droite et
- * de deux vers le bas, tombe le long du flanc droit (colonne 8) et sous la face (rangées 15 et 16).
- */
-export const LOG_NS = { w: 9, h: 17, cx: 4, back: 3, front: 12, rx: 3, ry: 2 } as const;
-export function normalFelledLogNS(): Canvas {
-  const { w, h, cx, back, front, rx, ry } = LOG_NS;
-  const c = logByTheEnd(new Canvas(w, h), cx, back, front, rx, ry, NORMAL_WOOD);
-  despeckle(c, 'K^%*N');
-  shadedOutline(c);
-  const body = Canvas.from(c.toGrid());
-  for (let Y = 0; Y < h; Y++) for (let X = 2; X < w; X++) {
-    if (c.get(X, Y) !== EMPTY || body.get(X - 1, Y - 2) === EMPTY) continue;
-    if (Y < back + 2) continue;
-    c.set(X, Y, 'x');
-  }
-  return c;
-}
 
-export default [] as ImageSource[];

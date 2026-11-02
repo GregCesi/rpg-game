@@ -9,9 +9,9 @@ export function wields(h: Harvest, tool: string | undefined): boolean {
   return !!tool && (tool === h.tool || tool in h.also);
 }
 
-/** Prix d'un coup de `tool` en endurance (clé de `costs`) : celui de son `also`, sinon `effort` (absent : `cutTie` sur ce qui porte une corde, `chop`). */
-export function effortOf(h: Harvest, tool: string, bears: boolean): NonNullable<Harvest['effort']> {
-  return h.also[tool] ?? h.effort ?? (bears ? 'cutTie' : 'chop');
+/** Prix d'un coup simple de `tool` (une récolte sans matière ; clé de `costs`) : celui de son `also`, sinon `cutTie` sur ce qui porte une corde, `chop`. */
+export function effortOf(h: Harvest, tool: string, bears: boolean): Harvest['also'][string] {
+  return h.also[tool] ?? (bears ? 'cutTie' : 'chop');
 }
 
 import { changeObject, changeSpawned, dropItem, game, replaceHeld, spawnObject, take, type Hand } from '../state';
@@ -276,12 +276,15 @@ export class HarvestSystem {
    * L'étape visible d'un travail (docs/CONCEPTION.md, « Le travail », § 6) : à la part `done` de la matière enlevée, l'objet prend
    * l'image de la dernière étape passée (`stages` de son harvest : `<son image>-stage-<n>`, dans sa vue), ou la sienne avant la première.
    */
-  showStage(prop: PlacedProp, done: number): void {
+  showStage(prop: PlacedProp, done: number, side?: 'left' | 'right'): void {
     const stages = prop.def.harvest?.stages;
     if (!stages || !this.map.props.includes(prop)) return;
-    const base = prop.flip && this.scene.textures.exists(`${prop.def.image}-left`) ? `${prop.def.image}-left` : prop.def.image;
+    // l'arbre debout frappé depuis la gauche : ses étapes dessinées pour la gauche (l'entaille à gauche, `<image>-left-stage-<n>`) ;
+    // l'arbre couché vers la gauche : sa vue -left et ses étapes
+    const left = prop.flip || (!!prop.def.harvest!.fall && side === 'left');
+    const base = left && this.scene.textures.exists(`${prop.def.image}-left`) ? `${prop.def.image}-left` : prop.def.image;
     const n = stages.filter((t) => done + 1e-9 >= t).length;
-    const key = n > 0 ? `${base}-stage-${n}` : base;
+    const key = n > 0 ? `${left ? `${prop.def.image}-left` : prop.def.image}-stage-${n}` : base;
     if (this.scene.textures.exists(key) && prop.image.texture.key !== key) prop.image.setTexture(key);
   }
 
@@ -315,8 +318,9 @@ export class HarvestSystem {
     const mapId = this.map.def.id;
     // un objet qui n'a pas de version dessinée vers la gauche (la bille coin planté) ne se retourne pas
     const hasLeft = (type: string) => this.scene.textures.exists(`${props[type].image}-left`);
-    // Xéros à gauche (tourné vers la droite) : chute à droite ; à droite : à gauche ; d'en haut ou d'en bas : au hasard
-    const fallLeft = !!h.fall && (facing === 'left' || (facing !== 'right' && Math.random() < 0.5));
+    // l'arbre tombe du côté de l'entaille, celui où Xéros frappe : Xéros à gauche (tourné vers la droite), chute à gauche ; à droite,
+    // à droite ; d'en haut ou d'en bas (ce qui ne s'abat pas debout) : au hasard
+    const fallLeft = !!h.fall && (facing === 'right' || (facing !== 'left' && Math.random() < 0.5));
     // ce qui naît vers la gauche (l'arbre couché) prend ses images `-left` ; le remplaçant (la souche) ne dépend pas du côté
     const flip = prop.flip !== fallLeft;
     // abscisse (dans le repère de l'objet) d'une image de largeur w décalée de `off`, côté gauche :
@@ -337,17 +341,15 @@ export class HarvestSystem {
     const y = prop.y + dy;
     const { baseX, baseY } = prop;
     this.map.removeProp(prop);
-    const next = becomes ? this.map.placeProp({ id: prop.id, type: becomes, x, y }, { flip: keep, spawned: prop.spawned, chain: prop.chain, wood }) : undefined;
+    const next = becomes ? this.map.placeProp({ id: prop.id, type: becomes, x, y }, { flip: keep, spawned: prop.spawned, wood }) : undefined;
     const change = becomes ? { type: becomes, x, y, ...(keep ? { flip: true } : {}), ...(wood ? { wood } : {}) } : { x, y };
     if (prop.spawned) changeSpawned(game, mapId, prop.id, change);
     else changeObject(game, mapId, prop.id, change);
     // ce qui naît (l'arbre couché) : noté tout de suite, montré à la fin de la chute
-    const group = game.nextSpawnId;
-    const born = h.spawns.map((sp, index) => {
-      const chain = { group, index, size: h.spawns.length };
+    const born = h.spawns.map((sp) => {
       const f = spawnFlip(sp.type);
-      const o = spawnObject(game, mapId, sp.type, prop.x + spawnX(sp.type, sp.x, this.imageWidth(sp.type)), prop.y + sp.y, { flip: f, chain });
-      return this.map.placeProp(o, { flip: f, spawned: true, chain });
+      const o = spawnObject(game, mapId, sp.type, prop.x + spawnX(sp.type, sp.x, this.imageWidth(sp.type)), prop.y + sp.y, { flip: f });
+      return this.map.placeProp(o, { flip: f, spawned: true });
     });
 
     // les objets lâchés entrent dans GameState tout de suite : quitter la carte pendant la chute ne les perd pas

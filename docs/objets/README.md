@@ -2,7 +2,8 @@
 
 Décidé le 29 octobre 2026 (rubrique « Masse » ajoutée le 30 octobre 2026 : tout objet qu'on prend, pose ou roule a une masse ;
 le même jour, toutes ses vues : un objet se crée vu de ses quatre côtés, selon sa symétrie ; le 31 octobre 2026, chantier
-« briques » : les rubriques « Variantes naturelles », « Transformations » et « Métier », voir CONCEPTION, *Les matières*) : **tout nouvel objet a sa fiche ici avant d'être construit.** Une fiche par objet,
+« briques » : les rubriques « Variantes naturelles », « Transformations » et « Métier », voir CONCEPTION, *Les matières* ; le 2 novembre
+2026, chantier 2 de l'audit : les rubriques « Travail », voir CONCEPTION, *Le travail*, et « Arme », voir *Le combat*) : **tout nouvel objet a sa fiche ici avant d'être construit.** Une fiche par objet,
 `docs/objets/<clé>.md`, qui remplit le modèle ci-dessous, rubrique par rubrique. Une rubrique sans objet le dit
 (« aucune », « pas encore ») plutôt que de disparaître : on voit qu'on y a pensé.
 
@@ -75,6 +76,24 @@ Seul, en tas (genre de `piles.json`, forme, maximum), ou quantité mesurée (ce 
 - Espace :
 - R :
 - (et Q, lâcher, s'il fait autre chose que d'habitude)
+
+## Travail
+Le travail au coup (CONCEPTION, *Le travail* : la durée découle des coups, chaque coup se paie au joule).
+- Un outil : son `work` dans items.json (`length`, `grip`, `balance`, `edge` : le tranchant, `aim` : combien la précision compte ;
+  sa masse est `mass`), le coup qu'il donne (`strokes` de work.json : `use`, `chop`, `maul`, `hew`, `whittle`), ce qui compte pour
+  lui (la force ou la précision), et ce qu'il donne pour Xéros (énergie d'un coup, durée d'un coup, `npm run check` pour les durées
+  de ses travaux).
+- Ce qu'on travaille : sa matière (`harvest.work` de props.json : `fell`, `limbs`, `whittle` ; ou, pour la pièce de bois, son
+  diamètre et sa longueur), ses étapes (`hits`) et ses images d'étape (`stages` : la part de matière à laquelle paraît
+  `<image>-stage-<n>`, et `<image>-left-stage-<n>` pour un arbre frappé de la gauche), la durée calculée pour Xéros.
+- Un geste sans matière (planter, nouer, couper un lien) : son prix fixe dans `costs` de stamina.json. Rien à travailler : « aucun ».
+
+## Arme
+Une arme (`weapon` dans items.json : `length`, `grip`, `balance`, `efficiency`, `family`, `image`) : ses réglages et pourquoi, et
+**son tableau**, calculé par world/strike.ts, à côté des autres armes (modèle : la fiche [branche](branch.md), « Au combat ») :
+longueur et prise, masse, équilibre et efficacité, portée au sol, précision, dégâts et durée de chaque attaque, dégâts par seconde,
+endurance par coup. Son dessin : un seul, couché vers l'est (`weapon-<clé>`, tiré en huit angles). Ce qui n'est pas une arme :
+« aucune ».
 
 ## Origine
 Trouvé (où), acheté, récolté (sur quoi), fabriqué (comment). Ce qui n'est pas encore construit le dit.

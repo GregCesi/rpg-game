@@ -15,7 +15,7 @@ import type { ArtSource } from './types';
 type Ageable = { aged?: boolean; image?: string; ground?: string; icon?: string; views: Views; variants?: number; natural?: { forms: number } };
 
 /** Les noms des images et planches neuves qui ont leurs âges. */
-export function ageableNames(): Set<string> {
+function ageableNames(): Set<string> {
   const defs = [...Object.values(propsJson as Record<string, Ageable>), ...Object.values(itemsJson as Record<string, Ageable>)];
   const names = defs.filter((d) => d.aged).flatMap((d) => ageableImages(d));
   // les icônes des aspects de la pièce de bois : les vignettes du catalogue du mode construction montrent l'âge choisi

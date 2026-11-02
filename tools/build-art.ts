@@ -42,7 +42,7 @@ import { silhouette } from '../src/content/gabarit';
 import type { WoodLook, WoodPiece } from '../src/content/types';
 import { shapeOfLook, WOOD } from '../src/world/woodShape';
 import { composeWood } from '../art/world/wood-pieces';
-import { world } from '../art/palette';
+import { woodAges, world } from '../art/palette';
 import type { ArtSource, SpriteSheetSource } from '../art/lib/types';
 import { WALL_STONES } from '../src/world/walls';
 import { stonePalette } from '../art/items/stones';
@@ -343,6 +343,13 @@ writeFileSync(
     `// Les gestes de combat du corps, image par image : la seule source de leurs durées et de la place de ce qui frappe.\n` +
     `import type { CombatPoses } from '../world/strike';\n` +
     `export const combatPoses: Record<string, CombatPoses> = ${JSON.stringify(COMBAT_POSES)};\n`,
+);
+// la teinte du bois (`*`) de chaque âge (art/palette.ts woodAges) : le panneau du mode construction en colore ses boutons ; le jeu ne lit
+// pas art/, il lit ceci (une seule source : la palette)
+writeFileSync(
+  join(OUT, 'woodAgeSwatch.ts'),
+  `// GÉNÉRÉ par tools/build-art.ts à partir de art/palette.ts (woodAges). Ne pas modifier à la main.\n` +
+    `export const WOOD_AGE_SWATCH = ${JSON.stringify(Object.fromEntries(Object.entries(woodAges).map(([a, r]) => [a, r['*']])))} as const;\n`,
 );
 // Même catalogue sans les images, lisible par Node (npm run check)
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(catalog, null, 2));

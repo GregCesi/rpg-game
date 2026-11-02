@@ -194,7 +194,7 @@ export function shadow(c: Canvas) {
 }
 
 /** Tout ce qui n'est ni vide, ni ombre au sol, ni contour. */
-export const isMatter = (ch: string) => ch !== EMPTY && ch !== 'x' && ch !== 'o';
+const isMatter = (ch: string) => ch !== EMPTY && ch !== 'x' && ch !== 'o';
 
 /** Contour d'un pixel autour de la matière (sur le vide et l'ombre au sol). */
 export function rim(c: Canvas) {

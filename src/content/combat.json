@@ -31,31 +31,27 @@
       "name": "taille",
       "gesture": "cut",
       "combo": 280,
-      "power": 1,
-      "cost": 1
+      "power": 1
     },
     "overhead": {
       "name": "coup d'en haut",
       "gesture": "overhead",
       "combo": 280,
-      "power": 1.7,
-      "cost": 1.25
+      "power": 1.7
     },
     "jab-right": {
       "name": "direct du droit",
       "gesture": "jab-right",
       "hand": "right",
       "combo": 280,
-      "power": 1,
-      "cost": 0.3
+      "power": 1
     },
     "jab-left": {
       "name": "direct du gauche",
       "gesture": "jab-left",
       "hand": "left",
       "combo": 280,
-      "power": 1,
-      "cost": 0.3
+      "power": 1
     }
   },
   "families": {

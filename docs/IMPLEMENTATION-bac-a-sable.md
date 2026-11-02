@@ -1,5 +1,10 @@
 # Le bac à sable : plan d'implémentation
 
+> **Archive, fichiers cités disparus** (bandeau du 2 novembre 2026, chantier 2 de l'audit, docs/AUDIT.md) : ce plan est fait et
+> n'est plus tenu à jour ; plusieurs fichiers qu'il cite n'existent plus (`docs/maison-chaumiere.md`, `tools/lib/chaumiere.ts`,
+> `tools/lib/maison-preview.ts`, `tools/plan-from-save.ts`, `art/proposals/chaumiere-geometry.ts`). Ce qui fait foi : CONCEPTION,
+> *Le mode construction*, et le README.
+
 Run de nuit « maquette », 31 octobre 2026. **À relire par Grégoire avant toute ligne de code.** Ce document ne change rien au jeu.
 
 > **État (31 octobre 2026, chantier « mode construction », branche `construction`)** : fait, en mode à part (`?construire`, caméra

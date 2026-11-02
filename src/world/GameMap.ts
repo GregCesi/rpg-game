@@ -1,12 +1,11 @@
 import Phaser from 'phaser';
-import { DEPTH, SHADOW, TILE } from '../config';
+import { DEPTH, GLOW, SHADOW, TILE } from '../config';
 import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
 import { drawOrder, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
 import { formImage, naturalGround, stableNatural } from './natural';
-import type { Chain, GroundItem, Joint, MapState, Pile, WorldChange } from '../state';
-import type { Npc } from '../entities/Npc';
+import type { GroundItem, Joint, MapState, Pile, WorldChange } from '../state';
 import { tilesets } from '../generated/assets';
 import { CM_PER_PX } from '../content/gabarit';
 import type { Natural, WoodPiece } from '../content/types';
@@ -142,8 +141,6 @@ export interface PlacedProp {
    * version de droite : collisions, point visé, fumées et lueurs sont retournés dans l'image.
    */
   flip: boolean;
-  /** Place dans la chaîne de ce qui est né avec lui (les objets nés d'une même récolte). */
-  chain?: Chain;
   type: string;
   def: PropDef;
   /** Coin bas gauche de l'image. */
@@ -212,13 +209,19 @@ export interface PlacedPile {
   parts: Phaser.GameObjects.GameObject[];
 }
 
+/** Celui à qui l'on parle (entities/Npc.ts) : il se tourne vers Xéros, puis reprend sa direction ; le modèle ne connaît que cela. */
+export interface Talker {
+  faceToward(x: number, y: number): void;
+  resume(): void;
+}
+
 /**
  * Ce que fait la touche E devant une cible. `rest` : poser ce qu'on tient sur l'objet (le rouleau, la branche sur le billot) ;
  * `unload` : reprendre ce qu'il porte ; `tie` : reprendre le lien d'un tas qui n'a plus de pièce ; `learn` : l'objet enseigne un
  * plan (la planchette) ; `stake` : reprendre un piquet planté ; `site-place` : poser ce qu'on tient à une place du chantier ; `site-help` : une place dont la pièce est trop lourde à porter, qu'on dresse avec l'aide de la mère.
  */
 export type Action =
-  | { kind: 'talk'; dialogue: string; npc?: Npc }
+  | { kind: 'talk'; dialogue: string; npc?: Talker }
   | { kind: 'harvest'; prop: PlacedProp }
   | { kind: 'pickup'; ground: PlacedGround }
   | { kind: 'take'; prop: PlacedProp }
@@ -311,7 +314,7 @@ export class GameMap {
       if (!c) this.placeProp(o);
       else if (c.type) this.placeProp({ id: o.id, type: c.type, x: c.x, y: c.y }, { flip: c.flip, length: c.length, wood: c.wood, natural: c.natural });
     }
-    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, chain: o.chain, length: o.length, wood: o.wood, natural: o.natural });
+    for (const o of changes.spawned) this.placeProp(o, { flip: o.flip, spawned: true, length: o.length, wood: o.wood, natural: o.natural });
     for (const g of changes.ground) this.placeGround(g);
     for (const pile of changes.piles) this.placePile(pile);
     for (const p of shell?.pieces ?? []) this.placeBuild(p, true);
@@ -509,7 +512,7 @@ export class GameMap {
    * (o.x, o.y) = coin bas gauche de l'image : c'est aussi la profondeur d'affichage (y des pieds).
    * `flip` : version couchée vers la gauche (image `-left`) ; `spawned` : objet né pendant la partie (o.id est alors son identifiant d'objet né).
    */
-  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; chain?: Chain; length?: number; wood?: WoodPiece; open?: boolean; natural?: Natural } = {}): PlacedProp {
+  placeProp(o: MapObject, opts: { flip?: boolean; spawned?: boolean; length?: number; wood?: WoodPiece; open?: boolean; natural?: Natural } = {}): PlacedProp {
     const scene = this.scene;
     const base = propDefs[o.type];
     // la pièce de bois : sa définition et son image assemblée tirées de ses réglages (GameState, Tiled, sinon props.json) ; jamais retournée
@@ -557,7 +560,6 @@ export class GameMap {
       id: o.id,
       spawned: !!opts.spawned,
       flip,
-      chain: opts.chain,
       type: o.type,
       def: p,
       x: o.x,
@@ -607,15 +609,15 @@ export class GameMap {
       const glow = scene.add
         .image(ox + fx(p.light.x), oy + p.light.y, 'glow')
         .setBlendMode(Phaser.BlendModes.ADD)
-        .setTint(0xffa040)
-        .setScale(p.light.radius / 64)
-        .setAlpha(0.32)
+        .setTint(GLOW.tint)
+        .setScale(p.light.radius / GLOW.image)
+        .setAlpha(GLOW.alpha)
         .setDepth(DEPTH.light);
       scene.tweens.add({
         targets: glow,
-        alpha: { from: 0.26, to: 0.4 },
-        scale: { from: (p.light.radius / 64) * 0.95, to: (p.light.radius / 64) * 1.04 },
-        duration: 180 + Math.random() * 140,
+        alpha: { from: GLOW.from, to: GLOW.to },
+        scale: { from: (p.light.radius / GLOW.image) * GLOW.scale[0], to: (p.light.radius / GLOW.image) * GLOW.scale[1] },
+        duration: GLOW.ms + Math.random() * GLOW.jitter,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.InOut',

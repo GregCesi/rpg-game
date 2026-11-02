@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { clockLabel, nextSpeed } from '../world/clock';
+import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
-import { CONSTRUIRE, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
+import { CONSTRUIRE, FEET, FELL, HELP, LOCKS, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
 import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -80,7 +80,7 @@ import { defOf, WOOD_PIECE } from '../world/woodPiece';
 import { heldWoodTexture } from '../world/woodTexture';
 import { pileWoodOf } from '../world/woodPile';
 import { naturalFor } from '../world/natural';
-import type { Interactable, PlacedGround, PlacedProp } from '../world/GameMap';
+import type { Interactable, PlacedGround, PlacedProp, Talker } from '../world/GameMap';
 
 /**
  * Ce que fait le monde en ce moment. Une seule valeur à la fois : le joueur ne peut pas
@@ -169,7 +169,7 @@ export class WorldScene extends Phaser.Scene {
   /** Le zoom de la caméra du monde, par paliers entiers. */
   private zoom!: ZoomControl;
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
-  private talking?: Npc;
+  private talking?: Talker;
   private mode: Mode = 'play';
   /** Espace ignoré jusque-là : l'appui qui ferme un dialogue ne doit pas lancer un geste. */
   private useLockedUntil = 0;
@@ -288,7 +288,7 @@ export class WorldScene extends Phaser.Scene {
     // les travaux commencés : l'étape visible de ce qui est entamé (l'arbre à moitié entaillé, retrouvé tel quel)
     for (const [key, w] of Object.entries(mapState(game, this.map.def.id).work)) {
       const p = w.work === 'harvest' ? this.map.props.find((q) => workKey(q.id, q.spawned) === key) : undefined;
-      if (p) this.harvest.showStage(p, w.done);
+      if (p) this.harvest.showStage(p, w.done, w.side);
     }
     this.dropHeavy();
     // ce qu'il portait sur la carte d'avant
@@ -313,7 +313,7 @@ export class WorldScene extends Phaser.Scene {
     cam.setRoundPixels(true);
     // passé le bord d'une zone : la vue reprend où elle était, sans fondu (la voisine était déjà là)
     if (this.edge) cam.centerOn(this.player.actor.x + this.edge.view.dx, this.player.actor.y + this.edge.view.dy);
-    else cam.fadeIn(220, 20, 14, 8);
+    else cam.fadeIn(LOCKS.fadeIn, 20, 14, 8);
     if (CONSTRUIRE && this.building) this.enterBuild();
 
     // la partie est écrite à l'arrivée sur la carte, puis à chaque changement, et quand la page se cache ou se ferme
@@ -375,13 +375,12 @@ export class WorldScene extends Phaser.Scene {
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
-    // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V et Maj + V changent la vitesse du temps
+    // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V change la vitesse du temps (en boucle)
     this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work');
     this.daylight.update();
-    // V et Maj + V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite) ; pas pendant un combat
-    const speed = input.speedPressed();
-    if (speed && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
-      const n = nextSpeed(timeDef.speeds, timeDef.speeds.includes(simSpeed()) ? simSpeed() : timeDef.default, speed);
+    // V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite), au palier suivant, en boucle
+    if (input.speedPressed() && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
+      const n = nextSpeed(timeDef.speeds, timeDef.speeds.includes(simSpeed()) ? simSpeed() : timeDef.default);
       setSimSpeed(this.game, n);
       this.notice(`Le temps : x${n}`);
     }
@@ -554,8 +553,8 @@ export class WorldScene extends Phaser.Scene {
         cam.fadeIn(HELP.fade, 20, 14, 8);
         cam.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
           this.mode = 'play';
-          this.interaction.lock(200);
-          this.useLockedUntil = this.time.now + 200;
+          this.interaction.lock(LOCKS.lock);
+          this.useLockedUntil = this.time.now + LOCKS.lock;
         });
       });
     });
@@ -668,7 +667,7 @@ export class WorldScene extends Phaser.Scene {
       if (aim.work === 'hew') return this.hewPass(aim);
       if (aim.work === 'plant') {
         // le coin se plante d'un coup, sans geste
-        if (!this.effort.afford(this.player, this.wood.cost(this.player, aim))) return;
+        if (!this.effort.afford(this.player, this.player.stamina.costs.plant)) return;
         return this.woodHit(tool);
       }
       return this.woodWork(aim, tool);
@@ -682,7 +681,7 @@ export class WorldScene extends Phaser.Scene {
     // un outil que la cible écarte (la hache sur une grosse bille) ou une fente sans la place de s'ouvrir : on le dit, sans geste ni dépense
     const why = target && this.harvest.refusal(target, tool);
     if (why) return this.notice(why);
-    // une récolte au coup (sa matière, `work`) : un coup par appui, Espace maintenu enchaîne jusqu'au résultat
+    // une récolte au coup (sa matière, `work`) : un appui lance tout le travail, Xéros frappe seul jusqu'au résultat
     if (target && h?.work && wields(h, tool)) return this.harvestWork(target, tool);
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
     const costs = this.player.stamina.costs;
@@ -700,12 +699,12 @@ export class WorldScene extends Phaser.Scene {
    * geste enchaîne la suivante.
    */
   private attack(p: AttackPlan): void {
-    // le combat ramène le temps à x1
-    if (simSpeed() > 1) {
-      setSimSpeed(this.game, 1);
-      this.notice('Le temps : x1');
+    // le combat ramène le temps à son palier de départ (time.json `default`, x1)
+    if (simSpeed() !== timeDef.default) {
+      setSimSpeed(this.game, timeDef.default);
+      this.notice(`Le temps : x${timeDef.default}`);
     }
-    if (!this.effort.afford(this.player, p.cost)) return;
+    if (!this.effort.affordStroke(this.player, p.cost)) return;
     this.combat.begin(p);
     this.mode = 'use';
     const striker = p.striker;
@@ -751,7 +750,7 @@ export class WorldScene extends Phaser.Scene {
     const settle = (cm: number) => {
       const plan = planOf(woodJob('hew', aim.piece, cm), who, this.player.stamina.max);
       this.clock.work(plan.seconds / 60);
-      this.player.stamina.force(plan.ceiling);
+      this.player.stamina.force(plan.ceiling, plan.breath);
     };
     this.rail.start(
       this.wood.hewPass(this.player, aim, { cm: perStroke(unit, stroke) / unit.amount, durations: phases ? frameMs(stroke, phases) : undefined }, pay, settle, (r, why) => {
@@ -761,7 +760,7 @@ export class WorldScene extends Phaser.Scene {
         this.player.stamina.flush();
         if (this.mode === 'rail') this.mode = 'play';
         // l'appui sur Échap ou l'Espace d'avant ne relance rien
-        this.useLockedUntil = this.time.now + 150;
+        this.useLockedUntil = this.time.now + LOCKS.afterWork;
       }),
     );
   }
@@ -805,6 +804,10 @@ export class WorldScene extends Phaser.Scene {
     const steps = h.convert ? 1 : h.hits;
     // les étapes déjà faites (l'arbre entamé, repris après un rechargement)
     if (steps > 1) prop.hits = Math.min(steps - 1, Math.floor(done * steps + 1e-9));
+    // un arbre debout (une chute) : le côté de l'entaille, celui où Xéros frappe (gardé avec le travail commencé) ; Xéros se met lui-même
+    // en place de ce côté, le fer sur l'entaille : la hache frappe toujours au même endroit, et l'arbre tombera de ce côté
+    const side = h.fall ? (saved?.side ?? (this.player.actor.x < prop.baseX ? 'left' : 'right')) : undefined;
+    if (side) this.standToFell(prop, side);
     const facing = this.player.actor.facing;
     this.startWork({
       def: harvestJob(h.work!, tool),
@@ -812,10 +815,25 @@ export class WorldScene extends Phaser.Scene {
       steps,
       step: () => this.report(this.harvest.hit(prop, tool, facing)),
       strike: () => this.harvest.strike(prop, facing),
-      progress: (d) => this.harvest.showStage(prop, d),
-      save: (d) => setWork(game, mapId, key, d === undefined ? undefined : { work: kind, done: d }),
+      progress: (d) => this.harvest.showStage(prop, d, side),
+      save: (d) => setWork(game, mapId, key, d === undefined ? undefined : { work: kind, done: d, ...(side ? { side } : {}) }),
       valid: () => this.map.props.includes(prop),
     });
+  }
+
+  /**
+   * Xéros se met en place pour abattre (docs/CONCEPTION.md, « Le travail ») : du côté `side` de l'arbre, tourné vers lui, ses pieds à
+   * `FELL.reach` px du point visé, à sa hauteur ; si la place est prise, il frappe d'où il est, tourné vers l'arbre.
+   */
+  private standToFell(prop: PlacedProp, side: 'left' | 'right'): void {
+    const a = this.player.actor;
+    const x = Math.round(prop.aimX + (side === 'left' ? -FELL.reach : FELL.reach));
+    const y = Math.round(prop.aimY);
+    const b = a.body;
+    const dx = x - a.x;
+    const dy = y - a.y;
+    if (this.map.areaFree({ left: b.left + dx, right: b.right + dx, top: b.top + dy, bottom: b.bottom + dy })) b.reset(x, y);
+    a.face(side === 'left' ? 'right' : 'left');
   }
 
   /**
@@ -854,8 +872,8 @@ export class WorldScene extends Phaser.Scene {
       end: () => {
         if (this.mode === 'work') this.mode = 'play';
         // l'Espace d'avant ou l'appui qui l'a arrêté ne relance rien
-        this.useLockedUntil = this.time.now + 150;
-        this.interaction.lock(150);
+        this.useLockedUntil = this.time.now + LOCKS.afterWork;
+        this.interaction.lock(LOCKS.afterWork);
       },
     });
     if (!ok) this.mode = 'play';
@@ -915,9 +933,9 @@ export class WorldScene extends Phaser.Scene {
     const W = this.map.width;
     const H = this.map.height;
     const box = (px: number, py: number) => ({
-      left: Math.max(0, px - 5),
-      right: Math.min(W, px + 5),
-      top: Math.max(0, py - 8),
+      left: Math.max(0, px - FEET.w / 2),
+      right: Math.min(W, px + FEET.w / 2),
+      top: Math.max(0, py - FEET.h),
       bottom: Math.min(H, py),
     });
     // arrivé par le bord ouest ou est, on glisse du nord au sud ; par le nord ou le sud, d'ouest en est
@@ -945,7 +963,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Fondu au noir, puis la scène redémarre sur `start`. */
-  private fadeTo(start: WorldStart, ms = 200): void {
+  private fadeTo(start: WorldStart, ms = LOCKS.fade): void {
     this.mode = 'transition';
     this.player.stamina.flush();
     const cam = this.cameras.main;
@@ -1039,7 +1057,7 @@ export class WorldScene extends Phaser.Scene {
         // la prochaine fois que l'horloge sonne cette heure (le jour même, ou le lendemain si elle est passée)
         const at = Math.max(0, Math.min(24, cmd.hour)) * 60;
         const c = game.clock;
-        setClock(game, { day: c.day + (at <= c.minute ? 1 : 0), minute: at % 1440 });
+        setClock(game, { day: c.day + (at <= c.minute ? 1 : 0), minute: at % MINUTES_PER_DAY });
         break;
       }
       case 'stamina-infinite':
@@ -1092,7 +1110,7 @@ export class WorldScene extends Phaser.Scene {
     this.building = false;
     this.builder.exit();
     this.parcels.show(false);
-    this.interaction.lock(200);
+    this.interaction.lock(LOCKS.lock);
   }
 
   /**
@@ -1126,7 +1144,7 @@ export class WorldScene extends Phaser.Scene {
     if (action === 'help') return this.helpNow();
     this.talking?.resume();
     this.talking = undefined;
-    this.interaction.lock(200);
-    this.useLockedUntil = this.time.now + 200;
+    this.interaction.lock(LOCKS.lock);
+    this.useLockedUntil = this.time.now + LOCKS.lock;
   }
 }

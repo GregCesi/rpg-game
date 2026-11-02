@@ -3,7 +3,9 @@ import { strength as base } from '../content';
 
 /**
  * Composant du joueur : la force de Xéros. Les seuils (strength.json : ce qu'il porte, ce avec quoi il marche normalement,
- * ce qu'il fait rouler) viennent du contenu ; `multiplier` (1, ou le champ « force » des outils de test) les multiplie tous.
+ * ce qu'il fait rouler) viennent du contenu ; `multiplier` (1, ou le champ « force » des outils de test) les multiplie tous, plafonné
+ * comme la frappe à la force d'un humain (`human`, tiré de `swing.humanMax`) : la force reste réaliste partout (la force surhumaine
+ * lèvera tous les plafonds, plus tard).
  * `load` est la masse qu'il porte en ce moment (la somme de ses deux mains, mise à jour par la scène à chaque changement
  * des mains). Ne sait rien du monde : il répond seulement « puis-je ? » et « à quelle vitesse ? ».
  */
@@ -12,8 +14,16 @@ export class Strength {
   /** Masse portée, en kg. */
   load = 0;
 
+  /**
+   * Le multiplicateur de la force tel qu'il agit : celui des outils de test, plafonné à celui du plus fort des humains, le même pour
+   * frapper, porter, marcher chargé et rouler (le couple d'un humain au plus fort, `swing.humanMax`, sur celui de Xéros).
+   */
+  get human(): number {
+    return Math.min(this.multiplier, base.swing.humanMax / base.swing.torque);
+  }
+
   get carry(): number {
-    return base.carry * this.multiplier;
+    return base.carry * this.human;
   }
 
   /** La force d'un coup de travail (strength.json, `swing` ; docs/CONCEPTION.md, « Le travail »), telle que dans le contenu. */
@@ -27,15 +37,15 @@ export class Strength {
    */
   get swinger() {
     const s = base.swing;
-    return { torque: Math.min(s.torque * this.multiplier, s.humanMax), omegaMax: s.omegaMax, skill: s.skill };
+    return { torque: s.torque * this.human, omegaMax: s.omegaMax, skill: s.skill };
   }
 
   get walk(): number {
-    return base.walk * this.multiplier;
+    return base.walk * this.human;
   }
 
   get roll(): number {
-    return base.roll * this.multiplier;
+    return base.roll * this.human;
   }
 
   /** Peut-il porter `kg` de plus en plus de ce qu'il tient ? (les deux mains ensemble : `carry`) */

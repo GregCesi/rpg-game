@@ -28,7 +28,7 @@ Seule. Ne s'entrepose pas.
 
 ## Gestes
 - E court : prendre (mains libres : les deux).
-- Espace : sur une bille coin planté (grosse bille ou demi-bille), un coup de masse ; sur une bille sans coin, « Il faut d'abord un coin. » ; ailleurs elle ne frappe rien (le geste se joue dans le vide).
+- Espace : sur une bille coin planté (grosse bille ou demi-bille), un appui lance le travail au coup (docs/CONCEPTION.md, « Le travail ») : Xéros frappe seul jusqu'à ce que la pièce s'ouvre (trois étapes par mètre commencé, `splitHits` ; une trentaine de coups pour une bille de 55 cm sur 1 m), chaque coup payé au joule ; un pas ou Échap l'arrête ; sur une bille sans coin, « Il faut d'abord un coin. » ; ailleurs elle ne frappe rien (le geste se joue dans le vide).
 - Q (A en AZERTY) : lâcher.
 
 ## Origine
@@ -39,4 +39,4 @@ Reste dans les mains ; se lâche comme un outil. Plus tard : forgée, achetée.
 
 ## Vérification
 - Aperçu : `.art-preview/fendage.png` (Xéros qui frappe à côté de la bille), `xeros-maul-maul.png`, `item-maul.png`.
-- En jeu : donner la masse (`?dieu`), la voir sur l'épaule, frapper une bille coin planté, trois coups.
+- En jeu : donner la masse (`?dieu`), la voir sur l'épaule, fendre une bille coin planté (le travail au coup, ses trois étapes).

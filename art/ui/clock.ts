@@ -66,7 +66,7 @@ export const palette: Palette = { ...world, ...sky };
 export type Moment = 'dawn' | 'day' | 'dusk' | 'night';
 
 /** Le contrat de pose, en chiffres (voir l'en-tête). */
-export const CLOCK = {
+const CLOCK = {
   plate: { h: 19, end: 3, y: 2, line1: 5, line2: 11, extra: 15 },
   dial: { size: 23, overlap: 11, center: 11 },
   arc: { cx: 11, cy: 14, rx: 5, ry: 6, half: 2 },
@@ -132,7 +132,7 @@ function glyph(rows: string[]): Canvas {
 }
 
 /** La clé d'image d'un caractère du cadran. */
-export const glyphKey = (ch: string): string => `ui-digit-${ch === ':' ? 'colon' : ch}`;
+const glyphKey = (ch: string): string => `ui-digit-${ch === ':' ? 'colon' : ch}`;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // La plaquette
@@ -218,7 +218,7 @@ const MOON: Grid = ['.aaa.', 'aaD..', 'aa...', 'aaD..', '.aaa.'];
 export interface Placed { key: string; x: number; y: number; repeat?: number }
 
 /** Les signes d'un texte posés à partir de (x, y), et sa largeur. */
-export function layText(s: string, x: number, y: number, width: (key: string) => number): { parts: Placed[]; w: number } {
+function layText(s: string, x: number, y: number, width: (key: string) => number): { parts: Placed[]; w: number } {
   const parts: Placed[] = [];
   let at = x;
   let last = 0;

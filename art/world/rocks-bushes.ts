@@ -170,31 +170,8 @@ function bush(): Canvas {
   return c;
 }
 
-// ---------- Buisson de baies ----------
 
-/** Grappes de baies posées sur le feuillage : chaque baie a son reflet, son rouge franc et son ombre. */
-const BERRIES: Vec[][] = [
-  [[9, 13], [11, 14], [9, 15]],
-  [[17, 11], [19, 12]],
-  [[22, 16], [24, 17], [22, 18]],
-  [[13, 19], [15, 20]],
-  [[8, 20], [10, 21], [8, 22]],
-  [[19, 22], [21, 23], [19, 24]],
-];
-
-function berryBush(): Canvas {
-  const c = bushBody();
-  for (const cluster of BERRIES) {
-    for (const [x, y] of cluster) {
-      // baie de 2x2 : reflet en haut à gauche, ombre en bas à droite
-      c.set(x, y, '6').set(x + 1, y, '7').set(x, y + 1, '7').set(x + 1, y + 1, '8');
-    }
-  }
-  shadedOutline(c);
-  groundShadow(c, 17.5, 27.6, 12, 2.6);
-  return c;
-}
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
-export default [img('rock', rock()), img('rock-rubble', rubble()), img('bush', bush()), img('bush-berries', berryBush())];
+export default [img('rock', rock()), img('rock-rubble', rubble()), img('bush', bush())];

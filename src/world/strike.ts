@@ -18,7 +18,7 @@ export type Box = { left: number; top: number; right: number; bottom: number };
 export type Segment = { a: Point; b: Point };
 
 /** Un point du corps depuis les pieds, à une image d'un geste (vers la gauche : dans le repère retourné, le jeu oppose dx). */
-export interface PosePoint {
+interface PosePoint {
   dx: number;
   dy: number;
   behind?: boolean;
@@ -74,7 +74,7 @@ export const reachCm = (s: SweepDef, w: Weapon): number => s.hand + ahead(w);
  * Masse qui frappe, en kg : m × 2/3 × `balance` (une tige uniforme, `balance` 0,5, frappe de son tiers ; un gourdin lourd du bout,
  * davantage ; une épée équilibrée près de la garde, moins). Le moment d'inertie autour de la main en est tiré : cette masse × L².
  */
-export const strikingMass = (w: Weapon, kg: number): number => (2 / 3) * w.balance * kg;
+const strikingMass = (w: Weapon, kg: number): number => (2 / 3) * w.balance * kg;
 
 /** Moment d'inertie de l'arme autour de la main (kg·m²) : la masse qui frappe × L² (L, sa longueur devant la main). */
 export function inertia(w: Weapon, kg: number): number {
@@ -86,7 +86,7 @@ export function inertia(w: Weapon, kg: number): number {
 export const precision = (rules: Rules, w: Weapon, kg: number): number => 1 / (1 + inertia(w, kg) / rules.controlRef);
 
 /** Facteur d'allongement du geste : 1 jusqu'à `inertiaRef`, puis `inertiaSlow` de plus par kg·m². */
-export const slowness = (rules: Rules, w: Weapon, kg: number): number => 1 + rules.inertiaSlow * Math.max(0, inertia(w, kg) - rules.inertiaRef);
+const slowness = (rules: Rules, w: Weapon, kg: number): number => 1 + rules.inertiaSlow * Math.max(0, inertia(w, kg) - rules.inertiaRef);
 
 /** Durée de chaque image du geste avec cette arme (ms) : celle des poses, allongée par l'inertie. Une seule source : les poses. */
 export const frameDurations = (rules: Rules, frames: CombatFrame[], w: Weapon, kg: number): number[] => {
@@ -97,8 +97,14 @@ export const frameDurations = (rules: Rules, frames: CombatFrame[], w: Weapon, k
 /** Durée d'un coup entier (garde comprise), en ms : la somme des images du geste avec cette arme. */
 export const cycle = (rules: Rules, frames: CombatFrame[], w: Weapon, kg: number): number => frameDurations(rules, frames, w, kg).reduce((s, d) => s + d, 0);
 
-/** Prix d'une attaque en endurance : `attackBase` + `attackPerKg` × la masse de l'arme, × `cost` de l'attaque (stamina.json). */
-export const attackCost = (costs: StaminaDef['costs'], a: Attack, kg: number): number => (costs.attackBase + costs.attackPerKg * kg) * a.cost;
+/**
+ * Prix d'une attaque en endurance, comme un coup de travail (une seule physique pour les outils et les armes) : son énergie (`strikeEnergy`)
+ * × `ceilingPerJ` au plafond, × `breathPerJ` au souffle (stamina.json, `work`) ; même dans le vide : c'est le geste qui fatigue.
+ */
+export const attackCost = (perJ: StaminaDef['work'], joules: number): { ceiling: number; breath: number } => ({
+  ceiling: joules * perJ.ceilingPerJ,
+  breath: joules * perJ.breathPerJ,
+});
 
 const FACE: Record<Facing, Point> = { right: { x: 1, y: 0 }, left: { x: -1, y: 0 }, up: { x: 0, y: -1 }, down: { x: 0, y: 1 } };
 
@@ -155,7 +161,7 @@ export function sweepAt(s: SweepDef, w: Weapon, facing: Facing, feet: Point, ste
 }
 
 /** Une lame de largeur `width` (cm) touche-t-elle la boîte ? Le long du segment, tous les demi-pixels, à une demi-largeur près. */
-export function bladeHits(b: Segment, width: number, box: Box): boolean {
+function bladeHits(b: Segment, width: number, box: Box): boolean {
   const h = width / CM_PER_PX / 2;
   const n = Math.max(1, Math.ceil(Math.hypot(b.b.x - b.a.x, b.b.y - b.a.y) * 2));
   for (let i = 0; i <= n; i++) {
@@ -167,7 +173,7 @@ export function bladeHits(b: Segment, width: number, box: Box): boolean {
 }
 
 /** Le plus grand angle, depuis la direction où regarde Xéros, auquel une cible peut être touchée : au-delà, elle est à côté de lui. */
-export const FRONT_DEG = 80;
+const FRONT_DEG = 80;
 
 /**
  * La cible est-elle hors de devant Xéros ? Le centre de son emprise est derrière ses pieds, ou à côté de lui (à plus de FRONT_DEG de
@@ -197,7 +203,7 @@ export const firstHit = (s: SweepDef, w: Weapon, facing: Facing, feet: Point, bo
  * Vitesse de ce qui frappe (m/s) : celle de l'image active la plus rapide, le chemin de la pointe dans l'espace (au sol, et en
  * hauteur : `z`) depuis l'image d'avant, sur sa durée avec cette arme (celle des poses, allongée par l'inertie).
  */
-export function tipSpeed(rules: Rules, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
+function tipSpeed(rules: Rules, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
   const ms = frameDurations(rules, frames, w, kg);
   const feet = { x: 0, y: 0 };
   let px = 0;
@@ -226,13 +232,17 @@ export function tipSpeed(rules: Rules, s: SweepDef, frames: CombatFrame[], w: We
 }
 
 /**
- * Dégâts d'un coup : l'énergie de ce qui frappe (½ × masse qui frappe × v², en joules) × `damagePerJoule` × `efficiency` de l'arme ×
- * `power` de l'attaque, au dixième.
+ * L'énergie d'une attaque, en joules : celle de ce qui frappe (½ × masse qui frappe × v²) × `power` de l'attaque (la part du corps qui
+ * s'y met : le coup d'en haut, plus). Elle fait les dégâts et se paie en endurance.
  */
-export function damage(rules: Rules, a: Attack, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
+export function strikeEnergy(rules: Rules, a: Attack, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
   const v = tipSpeed(rules, s, frames, w, kg);
-  const joules = 0.5 * strikingMass(w, kg) * v * v;
-  return Math.round(joules * rules.damagePerJoule * w.efficiency * a.power * 10) / 10;
+  return 0.5 * strikingMass(w, kg) * v * v * a.power;
+}
+
+/** Dégâts d'un coup : son énergie (`strikeEnergy`) × `damagePerJoule` × `efficiency` de l'arme, au dixième. */
+export function damage(rules: Rules, a: Attack, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
+  return Math.round(strikeEnergy(rules, a, s, frames, w, kg) * rules.damagePerJoule * w.efficiency * 10) / 10;
 }
 
 /** L'emprise au sol d'une cible debout, en px : ses `dims` (largeur, profondeur), centrée sur sa base, son bord sud à la base. */

@@ -32,7 +32,7 @@ const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, pa
 // ---------- Branches ----------
 
 /** Places des branches : longueur, côté du gros bout (tête-bêche), rameaux, décalage du gros bout dans l'image. */
-export const BRANCHES: Record<string, Branch & { x0: number }> = {
+const BRANCHES: Record<string, Branch & { x0: number }> = {
   g0: { len: 26, thickLeft: true, thick: 11, x0: 2, seed: 11, twigs: [{ at: 0.4, up: true, len: 6, fork: true }, { at: 0.7, up: false, len: 5 }] },
   g1: { len: 24, thickLeft: false, thick: 10, x0: 5, seed: 12, twigs: [{ at: 0.4, up: false, len: 5, fork: true }, { at: 0.6, up: true, len: 6 }] },
   g2: { len: 28, thickLeft: true, thick: 12, x0: 0, seed: 13, twigs: [{ at: 0.45, up: true, len: 5 }, { at: 0.7, up: false, len: 5, fork: true }] },
@@ -56,9 +56,9 @@ const branches = Object.entries(BRANCHES).map(([p, b]) => img(`pile-branch-${p}`
 // de `branches`) : au sol x 0, 3, 6, 9 (3 px d'une branche à l'autre d'ouest en est, comme du nord au sud en est-ouest),
 // y 0 ; une couche monte de 3,5 px comme en est-ouest (y −4, −7, −11), au milieu de ses deux porteuses (x 2, 5, 8 ; 3, 6 ;
 // 5). Collision au sol : 3 px de large (la tige et son contour est) sur la longueur de la branche.
-export const NS_W = 13;
-export const NS_H = 32;
-export const NS_C0 = 5;
+const NS_W = 13;
+const NS_H = 32;
+const NS_C0 = 5;
 const branchesNS = Object.entries(BRANCHES).map(([p, b]) =>
   img(`pile-branch-${p}-ns`, finishBranchNS(branchBodyNS(b, b.x0 + 1, NS_W, NS_H, NS_C0, b.thickLeft, 1), p.startsWith('g'))),
 );

@@ -18,8 +18,6 @@
 
 import type { Vec } from './big-tree';
 
-/** Nom de la sorte : préfixe de toutes les clés (`normal-tree`, `normal-felled-log`...). */
-export const KIND = 'normal';
 
 // ---------- Arbre debout ----------
 

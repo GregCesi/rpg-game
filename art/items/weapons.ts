@@ -66,7 +66,7 @@ function branchBase(): Grid {
   return c.toGrid();
 }
 
-export const branchWeapon = (): WeaponArt => ({ base: branchBase(), materials: branchMaterials });
+const branchWeapon = (): WeaponArt => ({ base: branchBase(), materials: branchMaterials });
 
 // =====================================================================================================================
 // L'épée de bois en arme
@@ -112,7 +112,7 @@ function swordDiag(dx: number, dy: number): Grid {
 /** Directions de la pointe pour les angles impairs (sens trigonométrique à l'écran : 45° = haut à droite). */
 const DIAG: Record<1 | 3 | 5 | 7, [number, number]> = { 1: [1, -1], 3: [-1, -1], 5: [-1, 1], 7: [1, 1] };
 
-export const swordWeapon = (): WeaponArt => ({
+const swordWeapon = (): WeaponArt => ({
   base: swordBase(),
   materials: swordMaterials,
   retouch: Object.fromEntries(Object.entries(DIAG).map(([k, [dx, dy]]) => [Number(k), swordDiag(dx, dy)])),

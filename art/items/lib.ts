@@ -43,12 +43,3 @@ export function capsule(
 /** Matière d'un pixel -> sa teinte la plus sombre, pour le contour côté lumière. */
 export const darkest = (map: Record<string, string>, fallback: string) => (k: string) => map[k] ?? fallback;
 
-/** Boule ombrée : clair en haut à gauche, sombre en bas à droite (`ramp` du plus clair au plus sombre). */
-export function ball(c: Canvas, cx: number, cy: number, rx: number, ry: number, ramp: [string, string, string]) {
-  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
-    const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
-    if (dx * dx + dy * dy > 1) continue;
-    const d = dx + dy * 1.1;
-    c.set(x, y, d < -0.55 ? ramp[0] : d < 0.55 ? ramp[1] : ramp[2]);
-  }
-}

@@ -1,7 +1,7 @@
 // L'horloge du jeu, sans Phaser (docs/CONCEPTION.md, « Le temps ») : une seule horloge de 24 h, un jour et une minute (de 0 à 1 440,
 // avec des fractions). Elle avance à la vitesse du temps choisie par le joueur (un palier de time.json : à x1, une minute réelle fait une
-// minute de jeu ; à x24, une journée dure une heure), et des minutes de travail pendant un geste (CONCEPTION : un travail garde la
-// durée de son geste, l'horloge avance de sa durée réaliste). Elle ne fait avancer que l'heure : la marche, les gestes, le souffle
+// minute de jeu ; la vitesse du temps est celle de la simulation : tout avance d'autant). ?dieu « Finir le travail » et « Transformer »
+// l'avancent d'un coup de la durée du travail. Elle ne fait avancer que l'heure : la marche, les gestes, le souffle
 // vivent sur la simulation (les secondes jouées).
 
 /** Un moment de la partie : le jour (1 au départ) et la minute du jour (de 0 à 1 440, avec des fractions). */
@@ -33,9 +33,8 @@ export function hhmm(c: Clock): string {
 /** Ce qu'affiche l'écran : « Jour 3 · 14:05 ». */
 export const clockLabel = (c: Clock): string => `Jour ${c.day} · ${hhmm(c)}`;
 
-/** Le palier voisin dans la liste (`dir` +1 : plus vite, −1 : moins vite), en boucle (V après x20 : x1 ; Maj + V après x1 : x20). */
-export function nextSpeed(speeds: readonly number[], current: number, dir: 1 | -1): number {
+/** Le palier suivant dans la liste, en boucle (V : x1, x2, x5, x10, x20, puis x1). */
+export function nextSpeed(speeds: readonly number[], current: number): number {
   const i = Math.max(0, speeds.indexOf(current));
-  // en boucle : après le dernier, le premier ; avant le premier, le dernier
-  return speeds[(i + dir + speeds.length) % speeds.length];
+  return speeds[(i + 1) % speeds.length];
 }

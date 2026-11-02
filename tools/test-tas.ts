@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';
 
-await playtest('tas', async ({ page, errors }) => {
+await playtest('tas', async ({ page, errors, load }) => {
   // TAS_SHOTS=1 : des captures aux moments clés, dans .art-preview/tas-<nom>.png (à regarder)
   await page.exposeFunction('shot', async (name: string) => {
     if (process.env.TAS_SHOTS) await page.screenshot({ path: `.art-preview/tas-${name}.png` });
@@ -81,8 +81,7 @@ await playtest('tas', async ({ page, errors }) => {
       return i && { visible: i.visible, key: i.texture.key, x: i.x, y: i.y, w: i.width };
     };
     const out: Record<string, unknown> = {};
-    emit({ kind: 'map', map: 'ferme' });
-    await sleep(2200);
+    await (window as any).__restart({ kind: 'map', map: 'ferme' });
     emit({ kind: 'stamina-infinite', on: true });
 
     /**
@@ -302,9 +301,7 @@ await playtest('tas', async ({ page, errors }) => {
   assert.equal(r.ghostEmpty, false, 'mains vides : pas de fantôme');
 
   // la page rechargée : les tas, leurs pièces, la pierre et la hachette sont retrouvés
-  await page.reload();
-  await page.waitForFunction(() => !!(window as any).game?.scene.getScene('world')?.player, null, { timeout: 30000 });
-  await page.waitForTimeout(500);
+  await load('?dieu');
   const after = (await page.evaluate(async () => {
     const stateUrl = '/src/state/index.ts';
     const gs = await import(stateUrl);

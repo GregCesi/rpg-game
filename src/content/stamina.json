@@ -36,15 +36,12 @@
     "plant": 1,
     "stake": 0.5,
     "whittle": 0.4,
-    "maul": 0.8,
     "knot": 1.5,
-    "hewPerM": 1,
     "turnPerKg": 0.03,
     "raisePerKg": 0.06,
+    "raiseHelped": 0.5,
     "carryPerKgSec": 0.034,
     "pushPerKgSec": 0.014,
-    "runPerSec": 0.2,
-    "attackBase": 0.3,
-    "attackPerKg": 0.4
+    "runPerSec": 0.2
   }
 }

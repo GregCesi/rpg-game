@@ -13,6 +13,7 @@ import type { Target as TargetDef } from '../content/types';
 import {
   aimShift,
   attackCost,
+  strikeEnergy,
   damage,
   directionOf,
   footprint,
@@ -64,7 +65,10 @@ export interface AttackPlan {
   frames: CombatFrame[];
   durations: number[];
   sweep: SweepDef;
-  cost: number;
+  /** Son énergie, en joules (strike.ts `strikeEnergy`). */
+  joules: number;
+  /** Son prix au plafond et au souffle (au joule, comme le travail). */
+  cost: { ceiling: number; breath: number };
   damage: number;
   precision: number;
   shift: Shift;
@@ -82,7 +86,10 @@ export interface StrikeLog {
   item: string;
   facing: Facing;
   reach: number;
+  /** Son prix au plafond du jour (au joule). */
   cost: number;
+  /** Son énergie, en joules. */
+  joules: number;
   damage: number;
   precision: number;
   shift: Shift;
@@ -169,7 +176,8 @@ export class CombatSystem {
       frames,
       durations: frameDurations(rules, frames, weapon, kg),
       sweep,
-      cost: attackCost(stamina.costs, attack, kg),
+      joules: strikeEnergy(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
+      cost: attackCost(stamina.work, strikeEnergy(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg)),
       damage: damage(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
       precision: precision(rules, weapon, kg),
       shift,
@@ -191,7 +199,8 @@ export class CombatSystem {
       item: CombatSystem.keyOf(p.striker),
       facing: p.facing,
       reach: reachCm(p.sweep, p.weapon),
-      cost: p.cost,
+      cost: p.cost.ceiling,
+      joules: p.joules,
       damage: p.damage,
       precision: p.precision,
       shift: p.shift,

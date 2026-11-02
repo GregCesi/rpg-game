@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 
-export const PropertySchema = z.object({
+const PropertySchema = z.object({
   name: z.string(),
   type: z.string().optional(),
   value: z.unknown(),
@@ -12,7 +12,7 @@ export const PropertySchema = z.object({
 
 const properties = z.array(PropertySchema).optional();
 
-export const ObjectSchema = z.object({
+const ObjectSchema = z.object({
   id: z.number().int(),
   name: z.string().default(''),
   type: z.string().optional(),
@@ -34,7 +34,7 @@ export const ObjectSchema = z.object({
 
 const layerBase = { id: z.number().int(), name: z.string(), offsetx: z.number().default(0), offsety: z.number().default(0) };
 
-export const LayerSchema = z.discriminatedUnion('type', [
+const LayerSchema = z.discriminatedUnion('type', [
   z.object({
     ...layerBase,
     type: z.literal('tilelayer'),
@@ -47,7 +47,7 @@ export const LayerSchema = z.discriminatedUnion('type', [
   z.object({ ...layerBase, type: z.enum(['imagelayer', 'group']) }),
 ]);
 
-export const TilesetRefSchema = z.object({ firstgid: z.number().int().positive(), source: z.string().optional() });
+const TilesetRefSchema = z.object({ firstgid: z.number().int().positive(), source: z.string().optional() });
 
 export const TmjSchema = z.object({
   orientation: z.string(),
@@ -61,7 +61,7 @@ export const TmjSchema = z.object({
   properties,
 });
 
-export const TsjTileSchema = z.object({
+const TsjTileSchema = z.object({
   id: z.number().int().nonnegative(),
   type: z.string().optional(),
   class: z.string().optional(),

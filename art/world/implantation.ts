@@ -48,7 +48,7 @@ const SLAB: Record<'a' | 'b', Grid> = {
 };
 
 /** La dalle sans ombre portée (silhouette 9 × 7), forme A ou B. */
-export function slabBody(form: 'a' | 'b' = 'a'): Grid {
+function slabBody(form: 'a' | 'b' = 'a'): Grid {
   const g = SLAB[form];
   g.forEach((r, i) => { if (r.length !== 9) throw new Error(`implantation : dalle ${form}, rangée ${i} de ${r.length} au lieu de 9`); });
   return g;

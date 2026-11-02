@@ -151,7 +151,7 @@ const HALVING_MATS: Record<'beam' | 'round', HalvingMat> = {
   beam: { ns: 'K*^^^*%o', ew: 'K^^***%o', joint: '%', endS: ['^^^^**', '^**%**'], endW: ['^^', '^*', '*%'] },
 };
 
-export const HALVING_MASKS = Array.from({ length: 16 }, (_, i) => i);
+const HALVING_MASKS = Array.from({ length: 16 }, (_, i) => i);
 
 /** Le croisement d'un mi-bois. */
 export function halving(aspect: 'beam' | 'round', top: 'ew' | 'ns', mask: number): Canvas {
@@ -232,8 +232,8 @@ export function halving(aspect: 'beam' | 'round', top: 'ew' | 'ns', mask: number
 //    assombrit d'un cran ce qu'elle couvre. Le rondin écorcé a les siennes (`joint-notch-normal-peeled-<dessus>-<masque>`) : les
 //    mêmes, composées de deux rondins écorcés.
 
-export const NOTCH_W = 10;
-export const NOTCH_H = 18;
+const NOTCH_W = 10;
+const NOTCH_H = 18;
 /** Un cran plus sombre (écorce, bois de bout) : l'ombre du rondin du dessus et le creux de l'encoche. */
 const SHADE: Record<string, string> = { M: 'm', m: 'N', N: 'K', K: 'K', '^': '*', '*': '%', '%': '&', '&': '@', '@': '@', o: 'o' };
 
@@ -310,7 +310,6 @@ export function notch(top: 'ew' | 'ns', mask: number, peeled = false): Canvas {
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: markPalette, grid: c.toGrid() });
 
-export const JOINT_SIZES = Object.keys(BANDS);
 
 export default [
   ...Object.keys(BANDS).flatMap((size) => {

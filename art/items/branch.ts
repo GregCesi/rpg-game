@@ -12,7 +12,7 @@ import { Canvas, EMPTY, rng } from '../lib/canvas';
 import { outline } from './lib';
 
 /** Un rameau : départ (fraction de la longueur depuis le gros bout), vers le haut ou le bas de l'image, longueur. */
-export interface Twig { at: number; up: boolean; len: number; fork?: boolean }
+interface Twig { at: number; up: boolean; len: number; fork?: boolean }
 /** Une branche : longueur, côté du gros bout, longueur du gros bout, rameaux, graine des détails. */
 export interface Branch { len: number; thickLeft: boolean; thick: number; twigs: Twig[]; seed: number }
 

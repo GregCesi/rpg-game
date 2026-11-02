@@ -16,7 +16,9 @@ async function main() {
   const cat = catalogFrom(manifest);
   // les poses des gestes de combat, écrites par npm run art juste avant (validate.ts ne les importe pas lui-même)
   const { combatPoses } = await import('../src/generated/combatPoses');
-  const errors = validateContent({ ...content, combatPoses }, cat);
+  // le catalogue du mode construction, passé à validate.ts (le contenu ne dépend pas du jeu)
+  const { catalog, looksOf } = await import('../src/build/catalog');
+  const errors = validateContent({ ...content, combatPoses, buildCatalog: { entries: catalog(), looksOf } }, cat);
   // les plans du bac à sable (src/content/plans/*.json) : le jeu les charge par Vite, ici on les lit sur le disque
   const { parseBuildPlans } = await import('../src/content/buildPlanFiles');
   const dir = 'src/content/plans';
@@ -32,6 +34,22 @@ async function main() {
   const { world } = await import('../art/palette');
   for (const [k, r] of Object.entries(content.rocks)) {
     for (const ch of r.ramp) if (!(ch in world)) errors.push(`rocks.json '${k}' : couleur '${ch}' de sa rampe absente de la palette commune (art/palette.ts)`);
+  }
+  // les tests d'accord entre eux : chaque scénario de la suite (SCENARIOS de tools/run-scenarios.ts) a son script test:<nom>, et chaque
+  // script de test rapide nommé dans test:fast existe ; un scénario (tools/test-*.ts qui passe par playtest) est dans la suite
+  const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { scripts: Record<string, string> };
+  const suite = /export const SCENARIOS = \[([^\]]*)\]/.exec(readFileSync('tools/run-scenarios.ts', 'utf8'))?.[1].match(/'([^']+)'/g)?.map((q) => q.slice(1, -1)) ?? [];
+  for (const n of suite) if (!pkg.scripts[`test:${n}`]) errors.push(`scénario '${n}' (SCENARIOS) sans script test:${n} dans package.json`);
+  for (const f of readdirSync('tools').filter((f) => /^test-.*\.ts$/.test(f))) {
+    const name = f.slice(5, -3);
+    if (readFileSync(`tools/${f}`, 'utf8').includes("from './lib/playtest'") && !suite.includes(name)) errors.push(`tools/${f} est un scénario absent de SCENARIOS (tools/run-scenarios.ts)`);
+  }
+  for (const m of pkg.scripts['test:fast'].matchAll(/tsx (tools\/[\w-]+\.ts)/g)) {
+    try {
+      readFileSync(m[1]);
+    } catch {
+      errors.push(`test:fast nomme ${m[1]}, absent`);
+    }
   }
   if (errors.length) {
     console.error(`\n✗ ${errors.length} problème(s) dans le contenu :`);

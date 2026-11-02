@@ -14,7 +14,6 @@ import { planProblems } from '../world/build';
 import { openSides } from '../world/zones';
 import { WEAPON_ANGLES } from '../world/strike';
 import type { CombatPoses } from '../world/strike';
-import { catalog, looksOf } from '../build/catalog';
 import { calibrationJob, gameJobs, planOf, swingerOf } from '../world/workPlan';
 import { JointTypeSchema } from './types';
 import type { BuildPlan, CombatDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
@@ -64,7 +63,7 @@ export function catalogFrom(m: ManifestLike): Catalog {
 }
 
 /** Détails posés au hasard : leurs images doivent être dessinées. */
-export function validateTilesCatalog(catalogs: Record<string, TilesetCatalog>, cat: Catalog): string[] {
+function validateTilesCatalog(catalogs: Record<string, TilesetCatalog>, cat: Catalog): string[] {
   const errors: string[] = [];
   for (const [set, c] of Object.entries(catalogs)) {
     if (!cat.tiles.has(set)) errors.push(`tiles.json : aucun jeu de tuiles '${set}' n'a été dessiné dans art/`);
@@ -104,7 +103,7 @@ function fallExtent(props: Record<string, PropDef>, type: string, left: boolean,
  * Cartes au format interne (issues de Tiled) : tout ce que le schéma ne voit pas.
  * `propsByType` : objets de props.json, indexés par le type que porte un objet de carte.
  */
-export function validateMaps(
+function validateMaps(
   maps: Record<string, MapData>,
   propsByType: Record<string, PropDef>,
   dialogues: Record<string, DialogueDef>,
@@ -224,12 +223,19 @@ export interface Content {
   combat: CombatDef;
   /** Le travail (work.json) : les coups, la matière, les points de calage. */
   work: WorkDef;
+  /** Le temps (time.json) : les paliers de la vitesse du temps. */
+  time?: { speeds: readonly number[]; dieuSpeed: number };
   /**
    * Les poses des gestes de combat (src/generated/combatPoses.ts), passées par qui les a (npm run check, le jeu) : validate.ts ne les
    * importe pas, car build-art, qui les écrit, l'utilise avant de les avoir écrites (sur un dossier neuf, elles n'existent pas encore).
    * Absentes : leur vérification est sautée.
    */
   combatPoses?: Record<string, CombatPoses>;
+  /**
+   * Le catalogue du mode construction (src/build/catalog.ts), passé par qui l'a (npm run check, le jeu) : le contenu ne dépend pas du
+   * jeu (règle d'architecture, .dependency-cruiser.cjs). Absent : sa vérification est sautée.
+   */
+  buildCatalog?: { entries: readonly { id: string; name: string; thumb: string }[]; looksOf: (size: string) => readonly string[] };
 }
 
 /** Clés de props.json : minuscules ASCII, chiffres, tirets. Les majuscules sont réservées aux types de Tiled (Spawn, Exit, Facing). */
@@ -468,13 +474,8 @@ export const VIEWS_TODO: Record<string, string> = {
   'shed-plate-side': "abri construit : pour un plan orienté autrement",
   'shed-rafter': "abri construit : pour un plan orienté autrement",
   'shed-roof': "abri construit : pour un plan orienté autrement",
-  // les outils qui ne sont pas encore en jeu : leur image au sol et ses vues, avec leur chantier
-  pickaxe: "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
-  hoe: "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
-  sickle: "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
-  'watering-can': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
-  'fishing-rod': "outil pas encore en jeu : son image au sol et ses vues avec son chantier",
-  sword: "arme pas encore en jeu : son image au sol et ses vues avec son chantier",
+  // la pioche : ses données de coup existent (le rocher), pas encore ses dessins
+  pickaxe: "outil au travail (le rocher), pas encore dessiné au sol ni en main : son image au sol, ses vues et sa planche tool-pickaxe (pixel-artist)",
 };
 
 /**
@@ -762,7 +763,6 @@ function validateWood(c: Content, cat: Catalog): string[] {
   if (W.cut.hits !== 3) err(`'cut.hits' : 3 coups (un tiers, deux tiers, coupé : les bandes notch1 et notch2)`);
   for (const tool of [W.cut.tool, W.hew.tool, W.split.wedge, W.split.maul]) if (c.items[tool]?.kind !== 'tool') err(`'${tool}' n'est pas un outil de items.json`);
   if (c.items[W.split.wedge]?.hands === 2) err(`le coin '${W.split.wedge}' se tient à une main (il se plante et quitte la main)`);
-  if (W.hew.stroke % CM_PER_PX) err(`'hew.stroke' : un nombre entier de pixels (${CM_PER_PX} cm le pixel), pour que la passe avance d'un pas régulier`);
   for (const [key, size] of Object.entries(W.sizes)) {
     const at = `diamètre '${key}'`;
     // la face entamée (`dressed`) pose les parties de l'aspect suivant par-dessus celles de l'aspect en cours : même géométrie
@@ -830,7 +830,7 @@ function validateWood(c: Content, cat: Catalog): string[] {
  * Objets de bois qui ne prennent pas l'âge du bois, avec leur raison : du bois vert, brut, qu'on ne travaille pas (l'âge est celui du
  * bois mis à nu). Un objet de bois travaillé ne s'ajoute pas ici : il est `aged`.
  */
-export const RAW_WOOD: Record<string, string> = {
+const RAW_WOOD: Record<string, string> = {
   'wattle-rod': 'baguette de coudrier verte, avec son écorce, tressée telle quelle',
 };
 
@@ -918,7 +918,7 @@ function validateCombat(c: Content, cat: Catalog): string[] {
  * Ce qui n'a pas à être au catalogue du mode construction, avec sa raison (effets, interface). Aujourd'hui rien : tout objet de
  * props.json et d'items.json y est ; ce qui ne se pose pas (un effet, une image d'interface) n'est de toute façon pas un objet.
  */
-export const CATALOG_EXCLUDED: Record<string, string> = {};
+const CATALOG_EXCLUDED: Record<string, string> = {};
 
 /**
  * Le catalogue du mode construction (src/build/catalog.ts) a tout : chaque objet de props.json (sauf la pièce de bois, présente par
@@ -927,7 +927,8 @@ export const CATALOG_EXCLUDED: Record<string, string> = {};
  */
 function validateCatalog(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
-  const entries = catalog();
+  if (!c.buildCatalog) return errors;
+  const { entries, looksOf } = c.buildCatalog;
   const ids = new Set(entries.map((e) => e.id));
   const want: [string, string][] = [
     ...Object.entries(c.props).filter(([, d]) => !d.wood).map(([k]) => [`prop:${k}`, `props.json '${k}'`] as [string, string]),
@@ -1130,11 +1131,18 @@ export function workDurations(): { name: string; strokes: number; pauses: number
 }
 
 /** Les points de calage du travail (work.json, `calibration`) : chacun doit tenir sa durée, à `tolerance` près. */
-export function validateWork(c: Pick<Content, 'work' | 'items' | 'props' | 'strength'>, cat: Catalog): string[] {
+function validateWork(c: Pick<Content, 'work' | 'items' | 'props' | 'strength' | 'wood'>, cat: Catalog): string[] {
   const errors: string[] = [];
   if (c.strength.swing.humanMax < c.strength.swing.torque) errors.push("strength.json swing : 'humanMax' sous le couple de Xéros");
   for (const r of Object.values(c.work.references)) if (r.torque > c.strength.swing.humanMax) errors.push(`work.json references : un couple (${r.torque}) au-delà du plafond humain`);
-  for (const k of ['axe', 'hatchet', 'maul', 'broadaxe']) if (!c.items[k]?.work) errors.push(`items.json '${k}' : un outil au travail sans 'work'`);
+  // les outils du bois (wood.json : couper, fendre, équarrir) se travaillent au coup ; les coups nommés existent
+  for (const k of [c.wood.cut.tool, c.wood.split.maul, c.wood.hew.tool]) if (!c.items[k]?.work) errors.push(`items.json '${k}' : un outil au travail sans 'work'`);
+  for (const [kind, st] of Object.entries(c.work.jobs)) if (!c.work.strokes[st]) errors.push(`work.json jobs '${kind}' : coup '${st}' absent de 'strokes'`);
+  for (const [k, it] of Object.entries(c.items))
+    for (const [kind, st] of Object.entries(it.work?.strokes ?? {})) {
+      if (!(kind in c.work.jobs)) errors.push(`items.json '${k}' work.strokes : genre de travail '${kind}' inconnu (jobs de work.json)`);
+      if (!c.work.strokes[st]) errors.push(`items.json '${k}' work.strokes : coup '${st}' absent de work.json`);
+    }
   for (const [k, p] of Object.entries(c.props)) {
     const h = p.harvest;
     if (h?.work && !h.tool) errors.push(`props.json '${k}' : une récolte travaillée au coup ('work') demande un outil`);
@@ -1147,7 +1155,8 @@ export function validateWork(c: Pick<Content, 'work' | 'items' | 'props' | 'stre
     if (!st) continue;
     if (!p.harvest!.work) errors.push(`props.json '${k}' : des étapes ('stages') sans matière ('work')`);
     if (st.some((t, i) => i > 0 && t <= st[i - 1])) errors.push(`props.json '${k}' : les étapes ('stages') doivent croître`);
-    for (const base of [p.image, ...(cat.textures.has(`${p.image}-left`) ? [`${p.image}-left`] : [])])
+    // l'arbre debout se frappe des deux côtés : ses étapes pour la gauche aussi (`<image>-left-stage-<n>`)
+    for (const base of [p.image, ...(cat.textures.has(`${p.image}-left`) || p.harvest!.fall ? [`${p.image}-left`] : [])])
       st.forEach((_, i) => {
         if (!cat.textures.has(`${base}-stage-${i + 1}`)) errors.push(`props.json '${k}' : image d'étape '${base}-stage-${i + 1}' introuvable (pixel-artist)`);
       });
@@ -1172,6 +1181,10 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // le travail : les outils, les récoltes au coup, les points de calage
   addAll(validateWork(c, cat));
+
+  // le temps : la plaquette du cadran (art/ui/clock.ts) a la place de cinq crans ; le palier de ?dieu au-dessus de ceux du joueur
+  if (c.time && c.time.speeds.length > 5) err(`time.json : ${c.time.speeds.length} paliers, la plaquette du cadran n'a que cinq crans`);
+  if (c.time && c.time.dieuSpeed <= Math.max(...c.time.speeds)) err(`time.json : 'dieuSpeed' (${c.time.dieuSpeed}) doit dépasser les paliers du joueur`);
 
   // Joueur
   for (const state of ['idle', 'walk']) {

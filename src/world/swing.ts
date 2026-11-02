@@ -31,7 +31,7 @@ export interface Stroke {
 const TORQUE_REF = 50;
 
 /** Un outil vu comme une arme, pour l'inertie et la précision de world/strike.ts. */
-export const asWeapon = (t: ToolWork): Weapon => ({ length: t.length, grip: t.grip, balance: t.balance }) as Weapon;
+const asWeapon = (t: ToolWork): Weapon => ({ length: t.length, grip: t.grip, balance: t.balance }) as Weapon;
 
 /** Le coup `stroke` de l'outil `tool` (de masse `kg`) donné par `who`. */
 export function strokeOf(who: Swinger, tool: ToolWork, kg: number, stroke: WorkStroke, rules: CombatDef['rules']): Stroke {

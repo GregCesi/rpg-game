@@ -9,7 +9,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { z } from 'zod';
 
-export const REGISTRY_PATH = 'art/tile-registry.json';
+const REGISTRY_PATH = 'art/tile-registry.json';
 const MAPS_DIR = 'tiled/maps';
 
 const NOTE =

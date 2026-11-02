@@ -3,15 +3,17 @@
 // envoie une BuildCommand (events.ts) que WorldScene transmet au mode construction (systems/build.ts), et il affiche ce que la
 // scène lui renvoie (BuildStatus). Vignettes : les images produites par build-art (src/generated/assets.ts).
 
+import { BUILD } from '../config';
 import { wood } from '../content';
 import { buildPlans, onBuildPlans } from '../content/buildPlans';
 import type { WoodAge, WoodLook } from '../content/types';
 import { agedKey } from '../world/woodShape';
 
-/** La teinte de chaque âge sur son bouton : la teinte du bois (`*`) de sa rampe, `woodAges` d'art/palette.ts. */
-const AGE_SWATCH: Record<WoodAge, string> = { new: '#b39469', worn: '#957c62', old: '#9a968d' };
+/** La teinte de chaque âge sur son bouton : la teinte du bois (`*`) de sa rampe, tirée de la palette par npm run art. */
+const AGE_SWATCH: Record<WoodAge, string> = WOOD_AGE_SWATCH;
 import type { BuildCommand, BuildStatus } from '../events';
 import { images, spritesheets } from '../generated/assets';
+import { WOOD_AGE_SWATCH } from '../generated/woodAgeSwatch';
 import { canStand, catalog, FAMILIES, looksOf, woodFrom, type CatalogEntry } from './catalog';
 
 const CSS = `
@@ -297,7 +299,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
         age = s.age;
         render();
       }
-      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool} (bois ${wood.ages[s.age]})${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * 20} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}${s.hint ? `\n${s.hint}` : ''}`;
+      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool} (bois ${wood.ages[s.age]})${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * BUILD.grid} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}${s.hint ? `\n${s.hint}` : ''}`;
     },
   };
 }

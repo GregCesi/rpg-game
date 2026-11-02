@@ -17,6 +17,23 @@ const subject = git('log', '-1', '--format=%s');
 const report = join(dir, 'rapport-scenarios.txt');
 const logFile = join(dir, 'scenarios.log');
 
+// un verrou : une seule suite à la fois dans la copie figée (une deuxième remettrait le worktree à un autre commit sous la première)
+const lock = join(dir, '.suite.lock');
+if (existsSync(lock)) {
+  const pid = Number(readFileSync(lock, 'utf8'));
+  let alive = false;
+  try {
+    process.kill(pid, 0);
+    alive = true;
+  } catch {
+    // le processus n'existe plus : un verrou oublié
+  }
+  if (alive) {
+    console.error(`Une suite tourne déjà dans ${dir} (processus ${pid}) : attendre sa fin, puis relancer.`);
+    process.exit(2);
+  }
+}
+
 // le worktree, au commit en cours : créé, ou remis à ce commit (ce qui y traîne d'un passage d'avant est effacé, sauf ce que git
 // ignore : les fichiers générés et les aperçus, qui sont refaits)
 const known = git('worktree', 'list', '--porcelain').split('\n').some((l) => l === `worktree ${dir}`);
@@ -39,6 +56,8 @@ if (!existsSync(link)) symlinkSync(join(work, 'node_modules'), link, 'dir');
 if (!existsSync(join(dir, 'src/generated'))) cpSync(join(work, 'src/generated'), join(dir, 'src/generated'), { recursive: true });
 mkdirSync(join(dir, '.art-preview'), { recursive: true });
 
+writeFileSync(lock, String(process.pid));
+process.on('exit', () => rmSync(lock, { force: true }));
 const started = new Date();
 writeFileSync(report, `Scénarios en cours sur ${sha.slice(0, 7)} (${subject}), lancés le ${started.toLocaleString('fr-FR')}…\n`);
 console.log(`Scénarios sur ${sha.slice(0, 7)} dans ${dir} ; rapport : ${report}`);

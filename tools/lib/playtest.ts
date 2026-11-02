@@ -3,8 +3,8 @@
 // (~/Library/Caches/ms-playwright, `npx playwright-core install chromium`), ou FENDAGE_CHROME=<exécutable>.
 // Sans Chromium le test dit qu'il est ignoré (FENDAGE_REQUIRED=1 le rend obligatoire).
 
-import { existsSync, readdirSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, type Page } from 'playwright-core';
 import { createServer } from 'vite';
@@ -43,10 +43,21 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     console.log(`${name} : test ignoré (aucun Chromium trouvé ; FENDAGE_CHROME=<exécutable>).`);
     process.exit(process.env.FENDAGE_REQUIRED ? 1 : 0);
   }
-  const server = await createServer({ logLevel: 'error', server: { port: 0 } });
+  // son propre cache des dépendances : les serveurs des scénarios parallèles (et le npm run dev de Grégoire) ne se rechargent pas les
+  // uns les autres en réoptimisant un cache commun
+  const cacheDir = mkdtempSync(join(tmpdir(), 'xeros-vite-'));
+  const server = await createServer({ logLevel: 'error', server: { port: 0 }, cacheDir });
   await server.listen();
   const url = server.resolvedUrls!.local[0];
-  const browser = await chromium.launch({ executablePath: chrome, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+  const browser = await chromium.launch({ executablePath: chrome, args: [
+      '--use-gl=swiftshader',
+      '--enable-unsafe-swiftshader',
+      // plusieurs scénarios à la fois chargent la machine : Chromium ne doit jamais mettre une page en veille (plus d'images, plus de
+      // minuteries), sinon le jeu s'arrête et le scénario attend sans fin
+      '--disable-renderer-backgrounding',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+    ] });
   let failed = false;
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -54,14 +65,38 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     page.on('pageerror', (e) => errors.push(e.message));
     // tsx ajoute des appels à __name aux fonctions : la page doit le connaître pour exécuter le scénario
     await page.addInitScript('window.__name = (f) => f;');
+    // attendre un état, jamais un délai (CLAUDE.md) : `__until(cond, label)` attend que `cond()` soit vrai, image après image, et lève une
+    // erreur nommée au bout d'une minute ; `__restart(command)` envoie une commande ?dieu qui redémarre la scène (`map`, `reset-map`) et
+    // attend la nouvelle carte, prête (le joueur posé, le mode jeu, ou construction sous ?construire)
+    await page.addInitScript(`
+      window.__until = async (cond, label, ms = 60000) => {
+        const t = performance.now();
+        while (!cond()) {
+          if (performance.now() - t > ms) throw new Error('attente trop longue : ' + label);
+          // une image, ou 50 ms si la page ne dessine plus (le délai compte toujours)
+          await new Promise((r) => { requestAnimationFrame(r); setTimeout(r, 50); });
+        }
+      };
+      window.__restart = async (command) => {
+        const g = window.game;
+        const old = g.scene.getScene('world').map;
+        g.events.emit('dieu', command);
+        await window.__until(() => {
+          const w = g.scene.getScene('world');
+          return !!w && w.map && w.map !== old && (w.mode === 'play' || w.mode === 'build') && !!w.player;
+        }, 'la carte ' + (command.map || command.kind));
+      };
+    `);
     const load = async (query = '?dieu&reset') => {
       await page.goto(`${url}${query}`);
-      // jusqu'à ce que le monde tourne, sans durée : un jeu qui démarre lentement (d'autres scénarios tournent en même temps) démarre
-      // plus tard ; mais une erreur de la page pendant le démarrage arrête tout de suite (le jeu ne démarrera plus) ; le lanceur des
-      // scénarios (tools/run-scenarios.ts) arrête celui qui ne finirait jamais
+      // jusqu'à ce que le monde tourne : un jeu qui démarre lentement (d'autres scénarios tournent en même temps) démarre plus tard,
+      // dans une borne de deux minutes (un scénario lancé seul ne reste pas suspendu) ; une erreur de la page pendant le démarrage
+      // arrête tout de suite (le jeu ne démarrera plus)
       const before = errors.length;
+      const t0 = Date.now();
       for (;;) {
         if (errors.length > before) throw new Error(`le jeu ne démarre pas : ${errors.slice(before).join(' | ')}`);
+        if (Date.now() - t0 > 120000) throw new Error(`le jeu ne démarre pas en deux minutes (${query})`);
         if (await page.evaluate(() => !!(window as any).game?.scene?.getScene?.('world')?.player).catch(() => false)) break;
         await new Promise((r) => setTimeout(r, 200));
       }
@@ -74,6 +109,7 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
   } finally {
     await browser.close();
     await server.close();
+    rmSync(cacheDir, { recursive: true, force: true });
   }
   process.exit(failed ? 1 : 0);
 }

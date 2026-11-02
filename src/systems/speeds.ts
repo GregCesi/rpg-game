@@ -15,7 +15,7 @@ export const pxPerSec = (metresPerSec: number): number => (metresPerSec * 100) /
 export const metresPerSec = (px: number): number => (px * CM_PER_PX) / 100;
 
 /** Les vitesses par défaut (config.ts, PLAYER, en m/s). */
-export const DEFAULT_SPEEDS: Speeds = { walk: pxPerSec(PLAYER.walk), run: pxPerSec(PLAYER.run) };
+const DEFAULT_SPEEDS: Speeds = { walk: pxPerSec(PLAYER.walk), run: pxPerSec(PLAYER.run) };
 
 function stored(): Speeds {
   try {
@@ -44,3 +44,9 @@ export function setSpeeds(v: Speeds | undefined): void {
     // stockage refusé : les vitesses valent pour cette session
   }
 }
+
+/**
+ * La vitesse d'une bille poussée (px/s) : la marche, × ce que permet la force pour cette masse (`rollFactor`), × la fatigue (`tired` :
+ * `walkFactor` de Stamina, 1 reposé) : comme la marche, jamais une vitesse à part.
+ */
+export const pushSpeed = (rollFactor: number, tired: number): number => SPEEDS.walk * rollFactor * tired;

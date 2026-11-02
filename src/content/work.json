@@ -56,10 +56,17 @@
       "freeK": 3
     }
   },
+  "jobs": {
+    "fell": "use",
+    "limbs": "chop",
+    "whittle": "chop",
+    "break": "chop"
+  },
   "matter": {
     "cut": 10.8,
     "hew": 4.3,
-    "split": 2200
+    "split": 2200,
+    "stone": 8
   },
   "references": {
     "adult": {

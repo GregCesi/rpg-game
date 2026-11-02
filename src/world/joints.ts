@@ -158,7 +158,7 @@ export function jointPoint(pieces: readonly BuildPiece[], j: JointRef, shift?: S
 }
 
 /** Les deux pièces sont-elles déjà assemblées ? */
-export const joined = (joints: readonly JointRef[], a: number, b: number) => joints.some((q) => (q.a === a && q.b === b) || (q.a === b && q.b === a));
+const joined = (joints: readonly JointRef[], a: number, b: number) => joints.some((q) => (q.a === a && q.b === b) || (q.a === b && q.b === a));
 
 /** Pourquoi on ne pose pas un assemblage de ce type à cette jonction, ou rien si on peut. */
 export function refusal(j: Junction | undefined, type: JointType, joints: readonly JointRef[]): string | undefined {

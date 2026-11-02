@@ -33,7 +33,7 @@ export interface WeaponArt {
  * Zones du dessin tournées de `k` × 45° dans le sens trigonométrique à l'écran (y vers le bas), autour de la main. Pour chaque
  * pixel d'arrivée, le pixel de départ au plus proche : pas de trou, une ligne droite reste d'un seul tenant.
  */
-export function rotateZones(base: Grid, k: number): Grid {
+function rotateZones(base: Grid, k: number): Grid {
   const src = Canvas.from(base);
   const out = new Canvas(WEAPON_SIZE, WEAPON_SIZE);
   const [gx, gy] = WEAPON_GRIP;
@@ -51,7 +51,7 @@ export function rotateZones(base: Grid, k: number): Grid {
 }
 
 /** Les huit images de l'arme, éclairées : la k-ième est tournée de k × 45° (reprise à la main si `retouch` la donne). */
-export function weaponFrames(art: WeaponArt): Grid[] {
+function weaponFrames(art: WeaponArt): Grid[] {
   return Array.from({ length: WEAPON_ANGLES }, (_, k) => lightUp(art.retouch?.[k] ?? rotateZones(art.base, k), art.materials));
 }
 

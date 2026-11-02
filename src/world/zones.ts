@@ -17,12 +17,12 @@ export interface Zone {
 export type Side = 'west' | 'east' | 'north' | 'south';
 
 /** Le rectangle d'une carte dans le monde, si elle en est une zone. */
-export function zoneOf(map: MapData): Zone | undefined {
+function zoneOf(map: MapData): Zone | undefined {
   return map.world && { map, x: map.world.x, y: map.world.y, w: map.width * TILE, h: map.height * TILE };
 }
 
 /** Toutes les zones du monde. */
-export function zonesOf(maps: Record<string, MapData>): Zone[] {
+function zonesOf(maps: Record<string, MapData>): Zone[] {
   return Object.values(maps).flatMap((m) => {
     const z = zoneOf(m);
     return z ? [z] : [];
@@ -30,7 +30,7 @@ export function zonesOf(maps: Record<string, MapData>): Zone[] {
 }
 
 /** La zone qui contient le point du monde (wx, wy), s'il y en a une. */
-export function zoneAt(maps: Record<string, MapData>, wx: number, wy: number): Zone | undefined {
+function zoneAt(maps: Record<string, MapData>, wx: number, wy: number): Zone | undefined {
   return zonesOf(maps).find((z) => wx >= z.x && wx < z.x + z.w && wy >= z.y && wy < z.y + z.h);
 }
 
@@ -51,7 +51,7 @@ export function neighborsOf(maps: Record<string, MapData>, map: MapData, margin:
  * Le monde continue-t-il au-delà de ce côté de la carte, entre `from` et `to` le long du bord (px de la carte) ? Vrai si une zone
  * touche ce bord à ses deux bouts et en son milieu (un arbre qui tombe par-dessus le bord, la caméra qui montre la voisine).
  */
-export function continues(maps: Record<string, MapData>, map: MapData, side: Side, from = 0, to = 1): boolean {
+function continues(maps: Record<string, MapData>, map: MapData, side: Side, from = 0, to = 1): boolean {
   const me = zoneOf(map);
   if (!me) return false;
   const probe = (t: number): [number, number] => {

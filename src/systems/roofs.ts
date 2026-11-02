@@ -1,11 +1,11 @@
-import { ROOF } from '../config';
+import { ROOF, XEROS_HEIGHT } from '../config';
 import type { Player } from '../entities/Player';
 import { CM_PER_PX } from '../content/gabarit';
 import { overHead, withAbove } from '../world/build';
 import type { GameMap, PlacedProp } from '../world/GameMap';
 
-/** Hauteur de Xéros à l'écran au-dessus de ses pieds (px, 1,60 m et le haut du bol de cheveux) : sa tête. */
-const HEAD = 34;
+/** Hauteur de Xéros à l'écran au-dessus de ses pieds (px) : sa tête (`XEROS_HEIGHT`). */
+const HEAD = XEROS_HEIGHT / CM_PER_PX;
 
 /**
  * Les toits (pièces `roof` de props.json : chevrons, toit de planches). Un toit se dessine par-dessus Xéros quand il est dessous

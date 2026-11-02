@@ -400,7 +400,7 @@ export const FELLED_TREE = (() => {
 const columns = (c: Canvas): Set<number> => new Set([...Array(c.w).keys()].filter((X) => c.px.some((r) => r[X] !== EMPTY)));
 
 /** L'arbre couché (sans la souche, dans la frame), son houppier réduit aux pixels que `keep` garde. */
-export function lightenedTree(left: boolean, keep: (h: number, g: number) => boolean): Canvas {
+function lightenedTree(left: boolean, keep: (h: number, g: number) => boolean): Canvas {
   const body = left ? crownBodyLeft() : crownBody();
   for (let Y = 0; Y < FALL_H; Y++) for (let X = 0; X < FALL_W; X++) {
     if (body.get(X, Y) === EMPTY) continue;

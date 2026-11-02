@@ -34,7 +34,7 @@ export interface WorkJob {
   end(why: WorkEnd): void;
 }
 
-/** Pourquoi un travail se termine : fini, arrêté (relâcher Espace, bouger, Échap), épuisé, la cible partie. */
+/** Pourquoi un travail se termine : fini, arrêté (un pas ou Échap), épuisé, la cible partie. */
 export type WorkEnd = 'done' | 'stopped' | 'spent' | 'gone';
 
 /** Ce que la scène dit à chaque image : un arrêt demandé (un pas, Échap). */
@@ -125,7 +125,7 @@ export class WorkSystem {
     this.player.tools.cancel();
     const plan = planOf(job.def, this.swinger, this.player.stamina.max, job.done);
     this.jump(plan.seconds / 60);
-    this.player.stamina.force(plan.ceiling);
+    this.player.stamina.force(plan.ceiling, plan.breath);
     job.done = 1;
     job.progress?.(1);
     this.reach(job.steps);

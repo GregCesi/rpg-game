@@ -106,7 +106,3 @@ export function woodFrom(size: string, length: number, look: WoodLook, axis: 'ew
   return woodOfLook(size, look, length, up ? 'up' : axis === 'up' ? 'ew' : axis);
 }
 
-/** La vignette d'une pièce de bois de cet aspect : son icône (wood.json). */
-export function woodThumb(size: string, look: WoodLook): string {
-  return wood.sizes[size].looks[look]!.icon;
-}

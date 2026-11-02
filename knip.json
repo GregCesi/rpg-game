@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["tools/*.ts", "art/**/*-preview.ts", "art/proposals/*.ts"],
+  "project": ["src/**/*.ts", "art/**/*.ts", "tools/**/*.ts"],
+  "ignoreDependencies": ["@swc/core"]
+}

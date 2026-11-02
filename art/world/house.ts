@@ -248,7 +248,7 @@ function blockBody(): Canvas {
 }
 
 /** Billot vide. */
-export function choppingBlock(): Canvas {
+function choppingBlock(): Canvas {
   return blockBody();
 }
 

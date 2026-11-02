@@ -62,7 +62,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     // les textes qui s'envolent au-dessus des cibles (dégâts, « raté »)
     const floats = () => w().children.list.filter((o: any) => o.type === 'Text').map((o: any) => o.text);
 
-    await send({ kind: 'map', map: 'ferme' }, 1500);
+    await (window as any).__restart({ kind: 'map', map: 'ferme' });
     const m = w().map;
     let spot: [number, number] | undefined;
     for (let y = 96; y < m.height - 200 && !spot; y += 8) {
@@ -141,7 +141,7 @@ await playtest('combat', async ({ page, errors, load }) => {
       const sweep = content.combat.sweeps.cut;
       res.expect = {
         damage: strike.damage(content.combat.rules, cut, sweep, combatPoses.cut.down, wpn, kg),
-        cost: Math.round(strike.attackCost(content.stamina.costs, cut, kg) * 1000) / 1000,
+        cost: Math.round(strike.attackCost(content.stamina.work, strike.strikeEnergy(content.combat.rules, cut, sweep, combatPoses.cut.down, wpn, kg)).ceiling * 1000) / 1000,
         cycle: strike.cycle(content.combat.rules, combatPoses.cut.down, wpn, kg),
         reach: strike.reachCm(sweep, wpn),
       };
@@ -291,8 +291,13 @@ await playtest('combat', async ({ page, errors, load }) => {
   // et encore après rechargement (la sauvegarde)
   await load('?construire&dieu&reset');
   const sleep = (t: number) => new Promise((res) => setTimeout(res, t));
-  await page.evaluate(() => (window as any).game.events.emit('dieu', { kind: 'map', map: 'ferme' }));
-  await sleep(1500);
+  // les outils ?dieu ne servent qu'en mode jeu : sortir du mode construction (B), changer de carte, y revenir
+  await page.keyboard.press('KeyB');
+  await page.evaluate(() => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === 'play', 'sortie du mode construction'));
+  await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
+  if ((await page.evaluate(() => (window as any).game.scene.getScene('world').mode)) !== 'build') await page.keyboard.press('KeyB');
+  await page.evaluate(() => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === 'build', 'le mode construction sur la ferme'));
+  assert.equal(await page.evaluate(() => (window as any).game.scene.getScene('world').map.def.id), 'ferme', 'le mannequin se pose sur la ferme');
   const spot = await page.evaluate(() => {
     const w = (window as any).game.scene.getScene('world');
     const m = w.map;

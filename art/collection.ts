@@ -18,18 +18,18 @@ export const families: Family[] = [
     title: 'Ressources',
     ground: 'grass',
     keys: [],
-    icons: ['branch', 'stone', 'iron-ore', 'straw', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'wood-big-round', 'wood-big-quarter'].map((n) => `item-${n}`),
+    icons: ['branch', 'stone', 'iron-ore', 'straw', 'wood-big-round', 'wood-big-quarter'].map((n) => `item-${n}`),
   },
   {
     title: 'Outils et armes',
     ground: 'grass',
     keys: [],
-    icons: ['axe', 'pickaxe', 'hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword', 'wooden-sword'].map((n) => `item-${n}`),
+    icons: ['axe', 'pickaxe', 'wooden-sword'].map((n) => `item-${n}`),
   },
   {
     title: 'Nature',
     ground: 'grass',
-    keys: ['big-tree', 'big-tree-stump', 'big-tree-fall', 'big-pollard', 'big-pollard-fall', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-big-round-100', 'rock', 'rock-rubble', 'bush', 'bush-berries'],
+    keys: ['big-tree', 'big-tree-stump', 'big-tree-fall', 'big-pollard', 'big-pollard-fall', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-big-round-100', 'rock', 'rock-rubble', 'bush'],
     allFrames: ['big-tree-fall', 'big-pollard-fall'],
   },
   {
@@ -42,7 +42,7 @@ export const families: Family[] = [
   { title: 'Personnages', ground: 'floor', keys: ['mother', 'portrait-mother-64'] },
   { title: 'Outil en main', ground: 'grass', keys: ['tool-axe', 'tool-hatchet'], allFrames: ['tool-axe', 'tool-hatchet'] },
   { title: "Éclats d'impact", ground: 'grass', keys: ['fx-wood', 'fx-stone', 'fx-leaves'], allFrames: ['fx-wood', 'fx-stone', 'fx-leaves'] },
-  { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-stamina-frame', 'ui-stamina-back', 'ui-stamina-fill', 'ui-stamina-fill-low', 'ui-bar-left', 'ui-bar-mid', 'ui-bar-right', 'ui-bar-lost', 'ui-bar-back-edge', 'ui-bar-back', 'ui-bar-breath-edge', 'ui-bar-breath', 'ui-bar-breath-low-edge', 'ui-bar-breath-low', 'ui-work-frame', 'ui-work-fill', 'fx-breath', 'ui-box', 'ui-key-e', 'ui-key-space', 'ui-clock-plate-left', 'ui-clock-plate-mid', 'ui-clock-plate-right', 'ui-clock-sky-dawn', 'ui-clock-sky-day', 'ui-clock-sky-dusk', 'ui-clock-sky-night', 'ui-clock-sun', 'ui-clock-sun-low', 'ui-clock-moon', 'ui-clock-hill', 'ui-clock-hill-night', 'ui-clock-ring', 'ui-clock-speed-plate', 'ui-clock-speed-on', 'ui-clock-speed-off', 'ui-digit-J', 'ui-digit-o', 'ui-digit-u', 'ui-digit-r', 'ui-digit-colon', 'ui-digit-x'], icons: ['ui-hand-left', 'ui-hand-right', 'ui-hands-both'], allFrames: ['fx-breath'] },
+  { title: 'Interface', ground: 'floor', keys: ['ui-slot', 'ui-slot-active', 'ui-bar-left', 'ui-bar-mid', 'ui-bar-right', 'ui-bar-lost', 'ui-bar-back-edge', 'ui-bar-back', 'ui-bar-breath-edge', 'ui-bar-breath', 'ui-bar-breath-low-edge', 'ui-bar-breath-low', 'ui-work-frame', 'ui-work-fill', 'fx-breath', 'ui-box', 'ui-key-e', 'ui-key-space', 'ui-clock-plate-left', 'ui-clock-plate-mid', 'ui-clock-plate-right', 'ui-clock-sky-dawn', 'ui-clock-sky-day', 'ui-clock-sky-dusk', 'ui-clock-sky-night', 'ui-clock-sun', 'ui-clock-sun-low', 'ui-clock-moon', 'ui-clock-hill', 'ui-clock-hill-night', 'ui-clock-ring', 'ui-clock-speed-plate', 'ui-clock-speed-on', 'ui-clock-speed-off', 'ui-digit-J', 'ui-digit-o', 'ui-digit-u', 'ui-digit-r', 'ui-digit-colon', 'ui-digit-x'], icons: ['ui-hand-left', 'ui-hand-right', 'ui-hands-both'], allFrames: ['fx-breath'] },
   {
     title: 'Corde et fagot',
     ground: 'grass',
@@ -51,7 +51,7 @@ export const families: Family[] = [
   },
   { title: 'Jauge et chiffres (herbe)', ground: 'grass', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },
   { title: 'Jauge et chiffres (plancher)', ground: 'floor', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },
-  { title: 'Mobilier et ferme', ground: 'grass', keys: ['barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'woodpile', 'chopping-block', 'chopping-block-axe'] },
+  { title: 'Mobilier et ferme', ground: 'grass', keys: ['crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'woodpile', 'chopping-block', 'chopping-block-axe'] },
   {
     title: 'Implantation',
     ground: 'grass',

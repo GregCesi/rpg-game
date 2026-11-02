@@ -183,8 +183,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     ];
     const ends: unknown[] = [];
     for (const [axis, end, other] of ENDS) {
-      emit({ kind: 'reset-map' });
-      await sleep(1700);
+      await (window as any).__restart({ kind: 'reset-map' });
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'wood', wood: wood('round', axis) });
       await sleep(200);
@@ -222,8 +221,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
 
     // 4 ter. une bille de 2 m : un seul coin dans le bout, 6 coups de masse (3 par mètre), la fente court et le coin s'enfonce
     {
-      emit({ kind: 'reset-map' });
-      await sleep(1700);
+      await (window as any).__restart({ kind: 'reset-map' });
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'wood', wood: { ...wood('round'), length: 200 } });
       await sleep(200);
@@ -268,8 +266,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     }
 
     // 5. un quartier tenu se tourne (R) et s'empile : un tas plein de six (dehors, à la ferme : de la place devant Xéros)
-    emit({ kind: 'map', map: 'ferme' });
-    await sleep(2200);
+    await (window as any).__restart({ kind: 'map', map: 'ferme' });
     // un coin dégagé de la carte, où le tas tient tout entier devant Xéros
     {
       const m = w().map;

@@ -27,10 +27,11 @@ Seule. Ne s'entrepose pas.
 
 ## Gestes
 - E court : la prendre, sur l'épaule, à deux mains.
-- Espace, contre le flanc d'un rondin couché, à un bout (au plus 40 cm du bout) : une passe (docs/CONCEPTION.md, « L'équarrissage par passes »). Xéros longe le rondin tout seul, sur un rail (`src/systems/rail.ts`), au pas, un coup (`chop`) tous les 15 cm (`hew.stroke` de wood.json), des copeaux à chaque coup ; la face se dresse derrière lui, jusqu'au fer. Ailleurs qu'à un bout : « Mets-toi à un bout de la pièce pour commencer la face. » ; pas la place de longer le rondin : « Pas la place de longer la pièce. ».
-- Échap pendant la passe (seule commande) : l'arrête là où il est ; la face entamée est gardée (`dressed` de la pièce de bois) et une nouvelle passe reprend là, dans le même sens (« Reprends la face là où tu l'as laissée. » ailleurs).
+- Espace, contre le flanc d'un rondin couché, à un bout (au plus 40 cm du bout) : une passe (docs/CONCEPTION.md, « L'équarrissage par passes »). Xéros longe le rondin tout seul, sur un rail (`src/systems/rail.ts`), un travail au coup (docs/CONCEPTION.md, « Le travail ») : chaque coup (`chop`) lève ce que permet son énergie (`hew` de work.json, la force de Xéros, `work` de la doloire dans items.json) et la face avance d'autant, des copeaux à chaque coup ; la face se dresse derrière lui, jusqu'au fer. Ailleurs qu'à un bout : « Mets-toi à un bout de la pièce pour commencer la face. » ; pas la place de longer le rondin : « Pas la place de longer la pièce. ».
+- Un pas ou Échap pendant la passe : l'arrête après le coup en cours, là où il est ; la face entamée est gardée (`dressed` de la pièce de bois) et une nouvelle passe reprend là, dans le même sens (« Reprends la face là où tu l'as laissée. » ailleurs).
 - Quatre passes, une par face (le dessus, le sud, le nord, le dessous) ; entre deux faces, le rondin est retourné d'un quart de tour (courte animation automatique), et la passe suivante repart du bout où Xéros est arrivé. La quatrième fait la poutre. Sur une bille du gros arbre : « Trop grosse pour une poutre. »
-- Endurance : 1 point par mètre de face (`hewPerM` de stamina.json), payé coup par coup : 12 points pour une poutre de 3 m.
+- Endurance : chaque coup se paie au joule (`work` de stamina.json : `ceilingPerJ`, `breathPerJ`) ; une poutre de 3 m demande à Xéros
+  environ 138 points de plafond (7 h 30 de coups et de pauses : deux jours), au bûcheron fort 2 h (CONCEPTION, « Le travail », § 5).
 - Q (A en AZERTY) : lâcher.
 
 ## Origine

@@ -53,7 +53,8 @@ Posé sur le billot, chaque coup de hachette ou de cognée (Espace, face au bill
 `rope-tie` tombe au sol à côté du billot, le rouleau perd 2 m (« Rouleau de corde : 8 m restants. »). À zéro il disparaît, le
 billot redevient nu (« Rouleau de corde : vide. ») : un rouleau de 10 m donne 5 liens.
 Le coup de hachette coûte 0,4 point d'endurance (`whittle`, `also` du `harvest` de `chopping-block-rope`), celui de la cognée
-0,5 (`cutTie`). Ajouté le 30 octobre 2026 : la hachette est l'outil naturel pour couper une corde.
+0,5 (`cutTie`) : couper un lien est un geste sans matière, au prix fixe de `costs` (le travail au coup, payé au joule, ne vaut que
+pour ce qui enlève de la matière). Ajouté le 30 octobre 2026 : la hachette est l'outil naturel pour couper une corde.
 
 ## Vérification
 - Aperçu : `.art-preview/collection.png` (rope-coil, chopping-block-rope, item-rope-coil), `.art-preview/hands.png`
