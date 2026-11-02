@@ -35,6 +35,11 @@
           "type": "string",
           "propertyType": "Facing",
           "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
         }
       ],
       "useAs": [
@@ -89,6 +94,16 @@
         },
         {
           "name": "dialogue",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "pose",
           "type": "string",
           "value": ""
         }
@@ -152,6 +167,28 @@
           "type": "string",
           "propertyType": "ParcelUse",
           "value": ""
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Place",
+      "type": "class",
+      "color": "#b07fd0",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "accepts",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
         }
       ],
       "useAs": [
