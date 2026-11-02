@@ -10,8 +10,10 @@
 // celui qui efface un plan (construction) tourne seul, après les autres (ALONE).
 
 import { spawn } from 'node:child_process';
-import { readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { sharedRig } from './lib/playtest';
 
 /** Les scénarios, les plus longs d'abord (pour finir plus tôt quand ils tournent à plusieurs). */
 export const SCENARIOS = ['maison', 'monde', 'noeud', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective'];
@@ -39,12 +41,22 @@ interface Result {
   error?: string;
 }
 
+/**
+ * Le banc partagé (SCENARIOS_SHARED=0 pour l'ancien : un serveur et un navigateur par scénario) : un serveur Vite et un Chromium pour
+ * tous, un contexte de navigateur par scénario ; les plans que les scénarios de construction enregistrent vont dans un dossier
+ * temporaire commun (chacun écrit le sien, sous son nom). Ceux de ALONE gardent leur serveur à eux.
+ */
+const SHARED = process.env.SCENARIOS_SHARED !== '0';
+const plansOut = SHARED ? mkdtempSync(join(tmpdir(), 'xeros-plans-')) : undefined;
+if (plansOut) process.env.XEROS_PLANS_OUT = plansOut;
+const rig = SHARED ? await sharedRig() : undefined;
+
 /** Lance un scénario et rend son résultat ; sa sortie est gardée, montrée seulement s'il échoue. */
 function run(name: string): Promise<Result> {
   const t0 = Date.now();
   return new Promise((resolve) => {
     // son propre groupe de processus : l'arrêter arrête aussi son navigateur et son serveur
-    const child = spawn('npx', ['tsx', `tools/test-${name}.ts`], { detached: true, env: { ...process.env, FENDAGE_REQUIRED: process.env.FENDAGE_REQUIRED ?? '1', ...(X1.includes(name) ? { PLAYTEST_SPEED: '1' } : {}) } });
+    const child = spawn('npx', ['tsx', `tools/test-${name}.ts`], { detached: true, env: envOf(name) });
     let out = '';
     // le seul garde-fou de temps : un scénario qui ne finit pas (une attente d'état qui ne vient jamais) est arrêté
     const guard = setTimeout(() => {
@@ -69,6 +81,17 @@ function run(name: string): Promise<Result> {
   });
 }
 
+/** L'environnement d'un scénario : sa vitesse, et le banc partagé s'il n'est pas de ceux qui tournent seuls. */
+function envOf(name: string): NodeJS.ProcessEnv {
+  const { XEROS_PLANS_OUT: _p, ...base } = process.env;
+  return {
+    ...base,
+    FENDAGE_REQUIRED: process.env.FENDAGE_REQUIRED ?? '1',
+    ...(X1.includes(name) ? { PLAYTEST_SPEED: '1' } : {}),
+    ...(rig && !ALONE.includes(name) ? { PLAYTEST_URL: rig.url, PLAYTEST_WS: rig.ws, XEROS_PLANS_OUT: plansOut } : {}),
+  };
+}
+
 const t0 = Date.now();
 const results: Result[] = [];
 const queue = SCENARIOS.filter((n) => !ALONE.includes(n));
@@ -81,6 +104,8 @@ await Promise.all(
     for (let name = queue.shift(); name; name = queue.shift()) done(await run(name));
   }),
 );
+await rig?.close();
+if (plansOut) rmSync(plansOut, { recursive: true, force: true });
 for (const name of ALONE) done(await run(name));
 // un plan d'essai qu'un scénario arrêté de force (SIGKILL : son \`finally\` ne passe pas) aurait laissé dans le contenu
 for (const f of readdirSync('src/content/plans')) if (f.startsWith('essai-')) rmSync(join('src/content/plans', f), { force: true });

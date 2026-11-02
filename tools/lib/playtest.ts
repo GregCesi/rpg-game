@@ -6,8 +6,8 @@
 import { appendFileSync, existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { chromium, type Page } from 'playwright-core';
-import { createServer } from 'vite';
+import { chromium, type Browser, type Page } from 'playwright-core';
+import { createServer, type ViteDevServer } from 'vite';
 
 function findChrome(): string | undefined {
   if (process.env.FENDAGE_CHROME) return process.env.FENDAGE_CHROME;
@@ -22,6 +22,56 @@ function findChrome(): string | undefined {
     }
   }
   return undefined;
+}
+
+/** Les options de Chromium : jamais de page mise en veille (plusieurs scénarios à la fois chargent la machine). */
+const CHROME_ARGS = [
+  '--use-gl=swiftshader',
+  '--enable-unsafe-swiftshader',
+  // plusieurs scénarios à la fois chargent la machine : Chromium ne doit jamais mettre une page en veille (plus d'images, plus de
+  // minuteries), sinon le jeu s'arrête et le scénario attend sans fin
+  '--disable-renderer-backgrounding',
+  '--disable-background-timer-throttling',
+  '--disable-backgrounding-occluded-windows',
+];
+
+/** Un serveur Vite du jeu sur un port libre, son propre cache de dépendances (supprimé à la fermeture). */
+async function startVite(): Promise<{ server: ViteDevServer; url: string; close: () => Promise<void> }> {
+  // son propre cache des dépendances : les serveurs (et le npm run dev de Grégoire) ne se rechargent pas les uns les autres en
+  // réoptimisant un cache commun
+  const cacheDir = mkdtempSync(join(tmpdir(), 'xeros-vite-'));
+  // les dépendances du jeu pré-assemblées au démarrage, sans découverte ensuite : sinon Vite, découvrant une dépendance en cours de
+  // route sur un cache neuf, recharge la page en plein scénario (« Execution context was destroyed »)
+  const server = await createServer({ logLevel: 'error', server: { port: 0 }, cacheDir, optimizeDeps: { include: ['phaser', 'zod'], noDiscovery: true } });
+  await server.listen();
+  return {
+    server,
+    url: server.resolvedUrls!.local[0],
+    close: async () => {
+      await server.close();
+      rmSync(cacheDir, { recursive: true, force: true });
+    },
+  };
+}
+
+/**
+ * Le banc partagé de tools/run-scenarios.ts : un serveur Vite et un Chromium pour tous les scénarios, chacun dans son propre contexte
+ * de navigateur (sa sauvegarde, localStorage, est à lui). Les scénarios le trouvent par PLAYTEST_URL et PLAYTEST_WS.
+ */
+export async function sharedRig(): Promise<{ url: string; ws: string; close: () => Promise<void> }> {
+  const chrome = findChrome();
+  if (!chrome) throw new Error('aucun Chromium trouvé (FENDAGE_CHROME=<exécutable>)');
+  const vite = await startVite();
+  // le serveur d'un navigateur, auquel chaque scénario se connecte
+  const server = await chromium.launchServer({ executablePath: chrome, args: CHROME_ARGS });
+  return {
+    url: vite.url,
+    ws: server.wsEndpoint(),
+    close: async () => {
+      await server.close();
+      await vite.close();
+    },
+  };
 }
 
 /** Ce que reçoit un test : la page, l'adresse du jeu, les erreurs de la page, et de quoi (re)charger le jeu. */
@@ -56,30 +106,20 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     console.log(`${name} : test ignoré (aucun Chromium trouvé ; FENDAGE_CHROME=<exécutable>).`);
     process.exit(process.env.FENDAGE_REQUIRED ? 1 : 0);
   }
-  // son propre cache des dépendances : les serveurs des scénarios parallèles (et le npm run dev de Grégoire) ne se rechargent pas les
-  // uns les autres en réoptimisant un cache commun
-  const cacheDir = mkdtempSync(join(tmpdir(), 'xeros-vite-'));
-  // les dépendances du jeu pré-assemblées au démarrage, sans découverte ensuite : sinon Vite, découvrant une dépendance en cours de
-  // route sur un cache neuf, recharge la page en plein scénario (« Execution context was destroyed »)
+  // le banc partagé (PLAYTEST_URL, PLAYTEST_WS : tools/run-scenarios.ts), sinon un serveur et un navigateur à soi (un scénario lancé seul)
+  const shared = process.env.PLAYTEST_URL && process.env.PLAYTEST_WS ? { url: process.env.PLAYTEST_URL, ws: process.env.PLAYTEST_WS } : undefined;
   let t = performance.now();
-  const server = await createServer({ logLevel: 'error', server: { port: 0 }, cacheDir, optimizeDeps: { include: ['phaser', 'zod'], noDiscovery: true } });
-  await server.listen();
-  const url = server.resolvedUrls!.local[0];
+  const vite = shared ? undefined : await startVite();
+  const url = shared?.url ?? vite!.url;
   lap('vite', t);
   t = performance.now();
-  const browser = await chromium.launch({ executablePath: chrome, args: [
-      '--use-gl=swiftshader',
-      '--enable-unsafe-swiftshader',
-      // plusieurs scénarios à la fois chargent la machine : Chromium ne doit jamais mettre une page en veille (plus d'images, plus de
-      // minuteries), sinon le jeu s'arrête et le scénario attend sans fin
-      '--disable-renderer-backgrounding',
-      '--disable-background-timer-throttling',
-      '--disable-backgrounding-occluded-windows',
-    ] });
+  const browser: Browser = shared ? await chromium.connect(shared.ws) : await chromium.launch({ executablePath: chrome, args: CHROME_ARGS });
+  // un contexte à lui : sa sauvegarde (localStorage) n'est qu'à lui, même sur le navigateur partagé
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   lap('chromium', t);
   let failed = false;
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    const page = await context.newPage();
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     // tsx ajoute des appels à __name aux fonctions : la page doit le connaître pour exécuter le scénario
@@ -163,9 +203,10 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     console.error(`  ✗ ${name} : ${(e as Error).message}`);
   } finally {
     t = performance.now();
+    await context.close();
+    // le navigateur partagé reste ouvert pour les autres : on s'en déconnecte seulement
     await browser.close();
-    await server.close();
-    rmSync(cacheDir, { recursive: true, force: true });
+    await vite?.close();
     lap('close', t);
     if (process.env.PLAYTEST_TIMES) {
       times.nodeSleeps = nodeSleeps;

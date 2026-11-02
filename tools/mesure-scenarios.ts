@@ -5,7 +5,10 @@
 // Écrit le tableau à l'écran et dans MESURE_OUT (par défaut .art-preview/mesure-scenarios.txt).
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { sharedRig } from './lib/playtest';
 
 // la liste de tools/run-scenarios.ts, lue dans son texte (l'importer lancerait la suite)
 const listed = /export const SCENARIOS = \[([^\]]*)\]/.exec(readFileSync('tools/run-scenarios.ts', 'utf8'))![1];
@@ -30,10 +33,17 @@ interface Row {
   pageSleeps?: number;
 }
 const sec = (v?: number, w = 5) => (v === undefined ? '-'.padStart(w) : (v / 1000).toFixed(1).padStart(w));
+// MESURE_SHARED=1 : le banc partagé de run-scenarios.ts (un serveur, un navigateur), démarré une fois avant le premier scénario
+const plansOut = process.env.MESURE_SHARED ? mkdtempSync(join(tmpdir(), 'xeros-plans-')) : undefined;
+if (plansOut) process.env.XEROS_PLANS_OUT = plansOut;
+const r0 = Date.now();
+const rig = process.env.MESURE_SHARED ? await sharedRig() : undefined;
+const rigMs = Date.now() - r0;
 const rows: Row[] = [];
 for (const name of names) {
   const t0 = Date.now();
-  const r = spawnSync('npx', ['tsx', `tools/test-${name}.ts`], { env: { ...process.env, PLAYTEST_TIMES: file, FENDAGE_REQUIRED: '1' }, encoding: 'utf8' });
+  const shared = rig && name !== 'construction' ? { PLAYTEST_URL: rig.url, PLAYTEST_WS: rig.ws, XEROS_PLANS_OUT: plansOut } : { XEROS_PLANS_OUT: undefined };
+  const r = spawnSync('npx', ['tsx', `tools/test-${name}.ts`], { env: { ...process.env, ...shared, PLAYTEST_TIMES: file, FENDAGE_REQUIRED: '1' }, encoding: 'utf8' });
   const wall = Date.now() - t0;
   const lines = existsSync(file) ? readFileSync(file, 'utf8').trim().split('\n').filter(Boolean) : [];
   const last = lines.map((l) => JSON.parse(l) as Row).at(-1);
@@ -42,8 +52,9 @@ for (const name of names) {
   console.log(`${row.ok ? '✓' : '✗'} ${name.padEnd(14)} ${sec(wall)} s`);
   if (r.status !== 0) console.log((r.stdout + r.stderr).split('\n').filter((l) => l.includes('✗')).slice(0, 2).join('\n'));
 }
+await rig?.close();
 const table = [
-  `Mesure (chacun seul, vitesse x${process.env.PLAYTEST_SPEED ?? '10'}), en secondes ; somme : ${(rows.reduce((a, r) => a + r.wall, 0) / 1000).toFixed(0)} s`,
+  `Mesure (chacun seul, vitesse x${process.env.PLAYTEST_SPEED ?? '10'}${rig ? `, banc partagé démarré en ${(rigMs / 1000).toFixed(1)} s` : ', un serveur et un navigateur par scénario'}), en secondes ; somme : ${(rows.reduce((a, r) => a + r.wall, 0) / 1000).toFixed(0)} s`,
   `${'scénario'.padEnd(14)} ${'total'.padStart(5)} ${'vite'.padStart(5)} ${'chrom'.padStart(5)} ${'charg'.padStart(5)} ${'scén.'.padStart(5)} ${'jeu'.padStart(5)} ${'p.node'.padStart(6)} ${'p.page'.padStart(6)} ${'ferm.'.padStart(5)}`,
   ...rows.map((r) => `${(r.ok ? '' : '✗ ') + r.name}`.padEnd(14) + ` ${sec(r.wall)} ${sec(r.vite)} ${sec(r.chromium)} ${sec(r.load)} ${sec(r.body)} ${sec(r.game)} ${sec(r.nodeSleeps, 6)} ${sec(r.pageSleeps, 6)} ${sec(r.close)}`),
   "total : du lancement à la sortie (npx, tsx compris) ; vite, chrom. : le serveur et le navigateur ; charg. : le jeu jusqu'au monde prêt ;",
