@@ -24,13 +24,20 @@ await playtest('noeud', async ({ page, errors, load }) => {
         const fagot = content.piles[branches!].tie.into as string;
         const ms = () => gs.mapState(gs.game, w().map.def.id);
         const key = (type: string, code: string) => window.dispatchEvent(new KeyboardEvent(type, { code }));
+        // deux images, que le jeu voie Xéros à sa nouvelle place et calcule sa cible avant l'appui
+        const frames = async () => {
+          await new Promise((r) => requestAnimationFrame(r));
+          await new Promise((r) => requestAnimationFrame(r));
+        };
         const tap = async (code: string, done: () => boolean, label: string) => {
+          await frames();
           key('keydown', code);
           await until(done, label);
           key('keyup', code);
         };
         // un appui court (E court : prendre ; Q : poser), relâché à l'image suivante, puis l'état attendu
         const press = async (code: string, done: () => boolean, label: string) => {
+          await frames();
           key('keydown', code);
           await new Promise((r) => requestAnimationFrame(r));
           await new Promise((r) => requestAnimationFrame(r));
@@ -136,8 +143,14 @@ await playtest('noeud', async ({ page, errors, load }) => {
     a.body.reset(Math.round(p.baseX), Math.round(p.top - 2));
     a.face('down');
     const piles = ms().piles.length;
+    await new Promise((r) => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' }));
-    await until(() => ms().piles.length > piles, 'le fagot rechargé, dénoué');
+    const notes: string[] = [];
+    g.events.on('notice', (t: string) => notes.push(t));
+    await until(() => ms().piles.length > piles, 'le fagot rechargé, dénoué').catch((e: Error) => {
+      throw new Error(`${e.message} (carte ${w().map.def.id} ; mode ${w().mode} ; messages ${notes.join(' / ')} ; objets nés ${JSON.stringify(ms().spawned)} ; pieds ${a.x},${a.y} ; fagot ${p?.baseX},${p?.top})`);
+    });
     window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE' }));
     return { map: w().map.def.id, bundle, untied: ms().piles.at(-1).places.length };
   });

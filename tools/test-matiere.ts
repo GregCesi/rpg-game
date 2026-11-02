@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { items, matters, piles, props, rocks, transforms, wood } from '../src/content';
 import { heldMass, pieceMass, propMass, woodMass } from '../src/content/mass';
 import { addPile, GameStateSchema, newGame, spawnObject } from '../src/state/GameState';
+import { upgrade } from '../src/state/save';
 import { pileOf } from '../src/world/offer';
 import { bundleOfKind } from '../src/world/pileShape';
 import { balance } from '../src/world/transform';
@@ -86,3 +87,22 @@ for (const [size, s] of Object.entries(wood.sizes)) {
   }
 }
 console.log(`✓ matière : ${splits} fentes et ${cuts} coupes, les morceaux pèsent la pièce`);
+
+// 5. une sauvegarde d'avant le tas de 12 (version 26) : un fagot sans nombre était plein, de 10 branches ; il les garde
+{
+  const old = {
+    version: 26,
+    state: {
+      hands: [{ prop: tie.into }, null],
+      both: null,
+      maps: { ferme: { piles: [{ id: 0, pile: fagots, x: 0, y: 0, places: ['a'] }], spawned: [{ id: 0, type: tie.into, x: 0, y: 0 }, { id: 1, type: tie.into, x: 0, y: 0, bundle: 4 }] } },
+    },
+  };
+  const up = upgrade(old) as { version: number; state: typeof old.state & { hands: { bundle?: number }[] } };
+  assert.equal(up.version, 27);
+  assert.equal((up.state.maps.ferme.piles[0] as { bundle?: number }).bundle, 10, 'tas de fagots sans nombre : 10 branches');
+  assert.deepEqual(up.state.maps.ferme.spawned.map((o) => (o as { bundle?: number }).bundle), [10, 4], 'fagot posé seul : 10 sans nombre, son nombre sinon');
+  assert.equal(up.state.hands[0].bundle, 10, 'fagot tenu sans nombre : 10 branches');
+  assert.equal(pieceMass(piles[branches].piece) * Object.keys(piles[branches].places).length + lien, propMass(tie.into), 'le fagot plein (sans nombre) : le tas de branches plein et son lien');
+  console.log(`✓ matière : une sauvegarde d'avant (fagot plein de 10) garde ses 10 branches ; le plein est maintenant de ${Object.keys(piles[branches].places).length}`);
+}

@@ -928,7 +928,8 @@ jamais « impossible ».
   totale (et le nombre de pièces quand il a un sens) est la même avant et après, sauf ce qu'un travail retire et nomme : le déchet
   (`waste`) d'une transformation (transforms.json) ou d'une fente (`split` de wood.json : les lattes tirées de la demi-perche laissent
   le cœur et l'écorce). Le fagot garde son nombre partout : en tas (`bundle` du tas), tenu, posé seul (`bundle` d'un objet né),
-  sauvegardé (`SAVE_VERSION` 26). `validate.ts` refuse une transformation ou une fente qui perd de la matière sans la nommer ;
+  sauvegardé (`SAVE_VERSION` 26). Le tas de branches plein a 12 places (deux de plus, `g4` et `l1-3`, pour qu'un fagot de 11 ou 12
+  se noue et se dénoue) ; une sauvegarde d'avant (`SAVE_VERSION` 27) donne 10 branches à un fagot sans nombre, le plein d'alors. `validate.ts` refuse une transformation ou une fente qui perd de la matière sans la nommer ;
   `tools/test-matiere.ts` (dans `npm run test:fast`) vérifie chaque transformation, chaque genre de tas, chaque fente, chaque coupe de
   la grille et le fagot de 2 à 12 branches ; `npm run test:noeud` noue, prend, pose seul, dénoue en jeu chaque fagot jusqu'au tas plein,
   et relit un fagot posé seul après rechargement.
