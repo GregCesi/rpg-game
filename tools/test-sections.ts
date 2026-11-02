@@ -5,8 +5,9 @@
 //    part : la pièce de devant le cache au pixel près. Et l'affichage d'un tas de bois va couche par couche (ce qui est plus haut
 //    cache ce qui est dessous), de l'arrière vers l'avant.
 // 2. Positions après la coupe : la bille donne deux demi-billes identiques, écorce en bas, face plate en l'air, côte à côte ; la
-//    demi-bille deux quartiers identiques, écorce en bas, pointe en l'air, côte à côte ; dans les deux sens, centrés sur la pièce
-//    fendue, à un pas l'un de l'autre.
+//    demi-bille deux quartiers identiques, écorce en bas, pointe en l'air, côte à côte ; la perche deux palançons, le palançon deux
+//    lattes (chaque diamètre, chaque règle de `split` de wood.json) ; dans les deux sens, centrés sur la pièce fendue, à un pas l'un
+//    de l'autre.
 // 3. Règle D : chaque aspect (le quartier pointe en l'air et pointe en bas), à plusieurs longueurs, nord-sud = est-ouest inversé, à
 //    1 px près.
 // Usage : npm run test:sections (lancé aussi par npm run test).
@@ -27,6 +28,8 @@ const STATES: PileWood[] = [
   { size: 'big', shape: 'half', length: 60 },
   { size: 'big', shape: 'quarter', length: 100 },
   { size: 'normal', shape: 'round', length: 180, hewn: 12 },
+  { size: 'pole', shape: 'half', length: 200 },
+  { size: 'pole', shape: 'lath', length: 200 },
 ];
 
 /** Une pièce posée dans un repère commun : coin bas gauche (x, y) et sa couche. */
@@ -87,14 +90,16 @@ for (const w of STATES) {
 }
 
 // ---------- 2. Positions après la coupe ----------
+const SPLITS = Object.entries(WOOD.sizes).flatMap(([size, def]) => Object.entries(def.split).map(([from, rule]) => ({ size, from: from as 'round' | 'half', into: rule!.into })));
+assert.ok(SPLITS.some((r) => r.size === 'pole' && r.into === 'lath'), 'la perche se fend en palançons, le palançon en lattes');
 for (const axis of ['ew', 'ns'] as const) {
-  for (const [from, into] of [['round', 'half'], ['half', 'quarter']] as const) {
-    const piece: WoodPiece = { size: 'big', shape: from, length: 100, axis };
+  for (const { size, from, into } of SPLITS) {
+    const piece: WoodPiece = { size, shape: from, length: 100, axis };
     const out = splitPieces(piece);
-    const what = `${from} ${axis}`;
+    const what = `${size} ${from} ${axis}`;
     assert.equal(out.length, 2, `${what} : deux morceaux`);
     assert.deepEqual(out[0].piece, out[1].piece, `${what} : deux morceaux identiques, dans le même sens`);
-    assert.deepEqual(out[0].piece, { size: 'big', length: 100, axis, shape: into }, `${what} : ${into}, dans sa position de section (sans pointe en bas)`);
+    assert.deepEqual(out[0].piece, { size, length: 100, axis, shape: into }, `${what} : ${into}, dans sa position de section (sans pointe en bas)`);
     // les collisions au sol des deux morceaux : côte à côte en travers, à un pas, centrées sur la pièce fendue
     const look = lookOf(out[0].piece);
     const box = (p: WoodPiece, dx: number, dy: number) => {
@@ -106,7 +111,7 @@ for (const axis of ['ew', 'ns'] as const) {
     const [a, b] = out.map((o) => box(o.piece, o.dx, o.dy));
     const across = axis === 'ew' ? Math.abs(a.cy - b.cy) : Math.abs(a.cx - b.cx);
     const along = axis === 'ew' ? Math.abs(a.cx - b.cx) : Math.abs(a.cy - b.cy);
-    const pitch = woodBody('big', look, 'ew', 100).h + 1;
+    const pitch = woodBody(size, look, 'ew', 100).h + 1;
     assert.ok(Math.abs(across - pitch) <= 1, `${what} : les deux ${into} côte à côte, à un pas (${across} px, pas ${pitch})`);
     assert.ok(along <= 1, `${what} : les deux ${into} à la même hauteur le long de la pièce`);
     const mid = axis === 'ew' ? (a.cy + b.cy) / 2 - whole.cy : (a.cx + b.cx) / 2 - whole.cx;

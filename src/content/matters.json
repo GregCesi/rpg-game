@@ -5,5 +5,6 @@
   "mortar": {"name": "mortier de terre", "density": 1900},
   "straw": {"name": "paille tassée", "density": 100},
   "wood": {"name": "bois vert", "density": 900},
-  "water": {"name": "eau", "density": 1000}
+  "water": {"name": "eau", "density": 1000},
+  "lime": {"name": "chaux", "density": 900}
 }

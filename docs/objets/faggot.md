@@ -26,6 +26,10 @@
 - En main (`held-faggot`, posture `carry`, à deux mains devant lui) : de face et de dos, en longueur (le fagot est-ouest
   sans son ombre) ; de profil (`right`, `left` en miroir), par le bout, comme la bille portée.
 - Case d'interface : `item-faggot`, 16×16, le fagot de trois quarts et son lien.
+- Selon son nombre de branches (2 novembre 2026, « Le monde ne limite pas ») : `faggot-n<n>` et `faggot-n<n>-ns`, de 2 à 12
+  branches (art/world/faggot.ts, `faggotDims`) : 130 cm de long, diamètre 10 + 40 × √(n/10) cm contour compris (28 cm pour 2,
+  50 pour 10, 54 pour 12) ; `faggot-n10` est `faggot`. Le jeu ne les choisit pas encore (le nombre de branches se branchera dans
+  knot.ts et GameState).
 - Fantôme : `faggot` ou `faggot-ns` en transparence, à la place exacte où il ira (tas visé ou nouveau tas).
 - Porté : `carry`, à deux mains, au pas (la marche, ralentie au-delà des 25 kg de `walk` : le fagot en pèse 25,2, `walkFactor` de
   `entities/Strength.ts` ; une seule source des vitesses, `systems/speeds.ts`), pas de course, rien d'autre.

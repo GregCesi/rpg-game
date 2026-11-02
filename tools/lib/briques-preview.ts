@@ -45,6 +45,11 @@ const GROUPS: { title: string; objects: Entry[]; chains: string[] }[] = [
     chains: ['dig-clay', 'fill-bucket', 'mix-mortar', 'mix-cob'],
   },
   {
+    title: 'La chaux (badigeon des pans de torchis)',
+    objects: [{ item: 'big-rough-stone' }, { item: 'quicklime' }, { item: 'slaked-lime' }, { prop: 'bucket-water' }],
+    chains: ['burn-lime', 'slake-lime'],
+  },
+  {
     title: 'Groupe 3 : les fibres (remplissage, toit)',
     objects: [{ item: 'wattle-rod' }, { item: 'straw' }, { item: 'thatch-bundle' }],
     chains: ['trim-rod', 'comb-thatch'],
@@ -53,6 +58,8 @@ const GROUPS: { title: string; objects: Entry[]; chains: string[] }[] = [
     title: 'Groupe 4 : le bois travaillé (charpente, ouvertures)',
     objects: [
       { wood: { size: 'pole', shape: 'round', length: 400 } },
+      { wood: { size: 'pole', shape: 'half', length: 200 } },
+      { wood: { size: 'pole', shape: 'lath', length: 200 } },
       { wood: { size: 'big', shape: 'plank', length: 200 } },
       { item: 'shingle' },
       { item: 'peg' },
