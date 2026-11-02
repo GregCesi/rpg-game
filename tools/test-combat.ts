@@ -124,7 +124,8 @@ await playtest('combat', async ({ page, errors, load }) => {
     const out: Record<string, any> = { weapons: {} };
     // pas d'écart pendant les mesures de portée : le coup va où le geste le dit
     w().combat.rand = () => 0;
-    for (const item of ['branch', 'wooden-sword']) {
+    // les armes déclarées (`weapon` d'items.json), tirées des données
+    for (const item of Object.keys(content.items).filter((k) => content.items[k].weapon)) {
       await give(item);
       const res: Record<string, any> = { dirs: {} };
       for (const dir of ['down', 'up', 'right', 'left']) {
@@ -207,6 +208,20 @@ await playtest('combat', async ({ page, errors, load }) => {
     const swordMs = strike.cycle(content.combat.rules, combatPoses.cut.left, weaponOf('wooden-sword'), mass.itemMass('wooden-sword'));
     out.air = { hits: air.entry?.hits.length, spent: air.spent, played: air.played, ms: Math.round(air.ms), expected: swordMs };
 
+    // tout objet tenu frappe (world/heft.ts) : la doloire, une pierre, une perche de 2 m, dans le vide ; portée, durée, prix
+    out.improvised = {};
+    for (const [name, held] of [
+      ['broadaxe', { item: 'broadaxe' }],
+      ['rough-stone', { item: 'rough-stone' }],
+      ['pole', { prop: 'wood-piece', wood: { size: 'pole', length: 200, shape: 'round', axis: 'ew' } }],
+    ] as const) {
+      await send({ kind: 'give', held });
+      await send({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
+      await facingDummy('left', 120);
+      const r = await strikeOnce();
+      out.improvised[name] = { played: r.played, spent: r.spent, ms: Math.round(r.ms), reach: r.entry?.reach, attack: r.entry?.attack, item: r.entry?.item };
+    }
+
     // l'enchaînement à l'épée : la taille puis le coup d'en haut
     await facingDummy('right', 6);
     await unchained();
@@ -273,7 +288,8 @@ await playtest('combat', async ({ page, errors, load }) => {
     const summary = (e: any) => ({ attack: e?.attack, damage: e?.damage, cost: e?.cost });
     out.twoBranches = { both, one: summary(one.entry), two: summary(two.entry) };
 
-    // la branche dans la main active, la hachette dans l'autre : Espace taille (ou frappe dans le vide à la hachette), n'attaque pas
+    // la branche dans la main active, la hachette dans l'autre : c'est la hachette qui sert (elle taille sur le billot) ; dans le vide,
+    // elle frappe, comme tout objet tenu
     await give('branch');
     gs.take(gs.game, { item: 'hatchet' }, 1);
     w().handsChanged();
@@ -281,7 +297,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     n = log().length;
     await press('Space');
     await settle();
-    out.whittle = log().length - n;
+    out.whittle = log().length > n ? log()[log().length - 1].item : 'rien';
 
     out.dummyLeft = w().map.props.filter((p: any) => p.type === 'training-dummy').length;
     out.dummyAngle = dummy.image.angle;
@@ -395,6 +411,13 @@ await playtest('combat', async ({ page, errors, load }) => {
   assert.ok(r.miss.texts.includes('raté'), `« raté » s'affiche au-dessus du mannequin (${r.miss.texts})`);
   assert.equal(r.air.hits, 0, 'dans le vide, rien n’est touché');
   assert.ok(r.air.played && r.air.spent > 0, 'dans le vide, le geste se joue et coûte');
+  const imp = r.improvised;
+  for (const [name, x] of Object.entries(imp) as [string, any][]) {
+    assert.ok(x.played && x.spent > 0 && x.attack, `${name} : tenu, il frappe, et le coup coûte (${JSON.stringify(x)})`);
+  }
+  assert.ok(imp.broadaxe.reach < imp.pole.reach, `la doloire porte moins loin que la perche (${imp.broadaxe.reach} contre ${imp.pole.reach} cm)`);
+  assert.ok(imp.pole.ms > imp.broadaxe.ms, `la perche frappe plus lentement que la doloire (${imp.pole.ms} contre ${imp.broadaxe.ms} ms)`);
+  assert.ok(imp['rough-stone'].reach < imp.broadaxe.reach, `la pierre porte moins loin que la doloire (${imp['rough-stone'].reach} cm)`);
   assert.ok(r.air.ms >= r.air.expected - 60, `dans le vide, tout le geste se joue (${r.air.ms} ms pour ${r.air.expected})`);
   assert.deepEqual(r.chain, ['cut', 'overhead'], 'un deuxième Espace pendant le geste enchaîne le coup d’en haut');
   assert.deepEqual(r.fists, ['jab-right:1', 'jab-left:1'], 'mains vides : le direct du droit, puis du gauche, chacun touche');
@@ -406,7 +429,7 @@ await playtest('combat', async ({ page, errors, load }) => {
   assert.match(r.exhausted.notice, /épuisé/, 'épuisé, on le dit');
   assert.deepEqual(r.twoBranches.both, ['branch', 'branch'], 'deux branches en main');
   assert.deepEqual(r.twoBranches.two, r.twoBranches.one, 'une ou deux branches : le même coup');
-  assert.equal(r.whittle, 0, 'branche et hachette : Espace n’attaque pas');
+  assert.equal(r.whittle, 'hatchet', 'branche et hachette : c’est la hachette qui sert (dans le vide, elle frappe), pas la branche');
   assert.equal(r.dummyLeft, 1, 'le mannequin ne casse pas');
   assert.equal(r.dummyAngle, 0, 'il revient droit');
   console.log(`  ✓ combat : zone au sol (touché au bord, manqué 2 px plus loin, jamais derrière ni au-dessus à l'écran, la suite compte) à la branche et à l’épée dans les quatre directions ; précision au bord : branche ${(b.rate * 100).toFixed(0)} %, épée ${(s.rate * 100).toFixed(0)} %, « raté » ; vide, enchaînements, poings, arbre, épuisé`);

@@ -1259,6 +1259,12 @@ export const CombatSchema = z.strictObject({
     damagePerJoule: z.number().positive(),
     controlRef: z.number().positive(),
     missPx: z.number().nonnegative(),
+    /**
+     * L'arme improvisée (world/heft.ts) : tout objet tenu sans `weapon` frappe comme une arme de sa plus grande dimension, tenue à
+     * `grip` de sa longueur depuis le bout, d'équilibre `balance` (0,5 : une tige uniforme), d'efficacité `efficiency`, dans la famille
+     * de gestes `family`.
+     */
+    improvised: z.strictObject({ grip: z.number().min(0).lt(1), balance: z.number().gt(0).lte(1), efficiency: z.number().gt(0).lte(1), family: id }),
   }),
   feel: FeelSchema,
   sweeps: z.record(id, SweepSchema),

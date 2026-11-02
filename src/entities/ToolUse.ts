@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
-import { gestures } from '../content';
+import { gestures, items, props } from '../content';
+import { CM_PER_PX } from '../content/gabarit';
+import type { Held } from '../state';
+import { woodTexture } from '../world/woodTexture';
 import type { Pose } from '../content/types';
 import type { Actor } from './Actor';
 import { weaponFrame, type CombatFrame, type Point } from '../world/strike';
@@ -15,6 +18,12 @@ export interface FightOptions {
   frames: CombatFrame[];
   durations: number[];
   weapon?: string;
+  /**
+   * Un objet tenu sans planche d'arme (l'arme improvisée, world/heft.ts) : son image couchée est-ouest (l'image au sol, l'objet, la
+   * pièce de bois) pivote à l'angle de chaque pose, tenue à `grip` cm de son bout ouest.
+   */
+  held?: Held;
+  grip?: number;
   shift: Point;
   /** Les images où le coup compte (`active` du geste, combat.json `sweeps`) : `onStrike` y est appelé, et l'arme y est décalée. */
   active: number[];
@@ -72,6 +81,7 @@ export class ToolUse {
     const anim = `tool-${item}-${gesture}`;
     this.gesture = gesture;
     this.fightOpts = undefined;
+    this.tool.setAngle(0);
     this.toolAnim = item && this.scene.anims.exists(`${anim}-${dir}`) ? anim : undefined;
     this.tool.setVisible(!!this.toolAnim);
     if (this.toolAnim) this.tool.setTexture(`tool-${item}`);
@@ -86,8 +96,10 @@ export class ToolUse {
   fight(gesture: string, o: FightOptions): void {
     this.fightOpts = o;
     this.toolAnim = undefined;
+    this.tool.setAngle(0);
     this.tool.setVisible(!!o.weapon && this.scene.textures.exists(o.weapon));
     if (this.tool.visible) this.tool.setTexture(o.weapon!);
+    else if (o.held) this.tool.setTexture(this.heldImage(o.held));
     this.run(this.timed(`${this.actor.skin}-${gesture}-${this.actor.facing}`, o.durations), (step) => o.active.includes(step) && o.onStrike(step), o.onDone);
     this.placeFight();
   }
@@ -200,6 +212,16 @@ export class ToolUse {
       centre(this.tool.setVisible(true).setFrame(frame.name).setFlipX(left))
         .setPosition(this.actor.x + sx * f.right.dx + shift.x, y0 + f.right.dy + shift.y)
         .setDepth(y0 + (f.weapon.behind ? -0.01 : 0.01));
+    } else if (o.held && f.weapon) {
+      // l'arme improvisée : son image couchée pivote autour de la main (l'angle de la pose : 0 vers l'est, 90 vers le nord)
+      const g = (o.grip ?? 0) / CM_PER_PX / this.tool.width;
+      this.tool
+        .setVisible(true)
+        .setFlipX(left)
+        .setOrigin(left ? 1 - g : g, 0.5)
+        .setAngle(left ? f.weapon.angle : -f.weapon.angle)
+        .setPosition(this.actor.x + sx * f.right.dx + shift.x, y0 + f.right.dy + shift.y)
+        .setDepth(y0 + (f.weapon.behind ? -0.01 : 0.01));
     } else this.tool.setVisible(false);
     // la traînée de cette arme, à sa longueur (`fx-smear-<arme>-<suffixe>`)
     const smearKey = f.smear && o.weapon ? `fx-smear-${o.weapon.replace(/^weapon-/, '')}-${f.smear.image}` : undefined;
@@ -219,5 +241,12 @@ export class ToolUse {
         .setPosition(this.actor.x + sx * f.grip.dx + shift.x, y0 + f.grip.dy + shift.y)
         .setDepth(y0 + 0.02);
     } else this.grip.setVisible(false);
+  }
+
+  /** L'image couchée est-ouest de ce qu'on tient : l'image au sol d'un objet possédable (son icône sans elle), l'objet du monde, la pièce de bois. */
+  private heldImage(h: Held): string {
+    if ('item' in h) return items[h.item].ground ?? items[h.item].icon;
+    if (h.wood) return woodTexture(this.scene, { ...h.wood, axis: 'ew' });
+    return props[h.prop].image;
   }
 }

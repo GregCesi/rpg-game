@@ -37,8 +37,6 @@ export const tiles = parse('tiles.json', z.record(z.string(), TilesetCatalogSche
 export const props = parse('props.json', z.record(z.string().min(1), PropDefSchema), propsJson);
 /** Objets possédables (dans les mains, au sol) : la clé est l'identifiant de l'objet. */
 export const items = parse('items.json', z.record(z.string().min(1), ItemDefSchema), itemsJson);
-/** Les images des rais de soleil (`sun` de props.json) : celle que posent les intérieurs est la première (validate.ts : il y en a une). */
-export const sunImages: readonly string[] = Object.values(props).filter((p) => p.sun).map((p) => p.image);
 /** Genres de tas : ce qu'on y entrepose et leur forme pour chaque nombre de pièces. */
 export const piles = parse('piles.json', z.record(z.string().min(1), PileDefSchema), pilesJson);
 /** Plans de bâtiment : emprise, coins, étapes dans l'ordre du chantier, places de chaque pièce (en cm). Un bâtiment = un plan. */
@@ -71,3 +69,20 @@ export const combat = parse('combat.json', CombatSchema, combatJson);
 export const time = parse('time.json', TimeSchema, timeJson);
 /** Le travail (docs/CONCEPTION.md, « Le travail ») : les coups, la résistance de la matière, les êtres de référence, les points de calage. */
 export const work = parse('work.json', WorkSchema, workJson);
+
+/**
+ * Les outils qui servent à un travail (une récolte, le bois, une transformation, le tracé d'un chantier) : Espace les y emploie ;
+ * tout le reste de ce qu'on tient frappe (world/heft.ts). Tiré des données, jamais d'une liste de noms.
+ */
+export const workTools: ReadonlySet<string> = new Set([
+  wood.cut.tool,
+  wood.split.maul,
+  wood.split.wedge,
+  wood.hew.tool,
+  ...Object.values(props).flatMap((p) => (p.harvest ? [p.harvest.tool, ...Object.keys(p.harvest.also)].filter((t): t is string => !!t) : [])),
+  ...Object.values(transforms).flatMap((t) => t.tools),
+  ...Object.values(plans).map((p) => p.stake),
+]);
+
+/** Les images des rais de soleil (`sun` de props.json) : celle que posent les intérieurs est la première (validate.ts : il y en a une). */
+export const sunImages: readonly string[] = Object.values(props).filter((p) => p.sun).map((p) => p.image);

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { CONSTRUIRE, FEET, FELL, HELP, LOCKS, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
-import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work } from '../content';
+import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, workTools } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
@@ -632,32 +632,40 @@ export class WorldScene extends Phaser.Scene {
    * L'objet possédable que l'Espace utilise : celui de la main active, sinon celui de l'autre main (le coin pris dans la main
    * qui n'est pas la main active ne doit pas rester sans effet) ; rien à deux mains pour un objet du monde porté.
    */
+  /** Ce qui est tenu et qui est l'objet possédable `item` : à deux mains, sinon la main active d'abord. */
+  private heldOf(item: string): Held | undefined {
+    return [game.both, game.hands[game.active], game.hands[1 - game.active]].find((h) => !!h && 'item' in h && h.item === item) ?? undefined;
+  }
+
   private usable(): string | undefined {
     const own = heldItem(game);
     // la branche dans la main active, la hachette dans l'autre : c'est l'outil qui sert
     const other = game.hands[1 - game.active];
-    if (own && items[own].kind === 'resource' && other && 'item' in other && items[other.item].kind === 'tool') return other.item;
+    if (own && !workTools.has(own) && other && 'item' in other && workTools.has(other.item)) return other.item;
     if (own || game.both || game.hands[game.active]) return own;
     return other && 'item' in other ? other.item : undefined;
   }
 
-  /** Espace : le geste avec ce qu'on tient, même dans le vide. Une ressource en main ne fait rien ; chargé, rien non plus. */
+  /**
+   * Espace : le geste avec ce qu'on tient, même dans le vide. Un outil devant ce qu'il travaille travaille ; tout le reste frappe
+   * (décidé par Grégoire : tout objet tenu peut frapper, world/heft.ts) : une arme, un outil sans travail devant lui, une pierre, un
+   * seau, une pièce de bois portée ; les mains vides, le poing.
+   */
   private useHeld(): void {
-    if (this.player.hold.loaded) return;
     const tool = this.usable();
+    const strike = (held: Held) => this.attack(this.combat.plan({ held }, this.player.actor.facing, this.time.now, this.player.strength.swinger));
     // une arme qui sert (la main active, ou l'autre si l'active est vide) : Espace attaque, toujours, dans le vide comme sur une cible
     // (la branche active et la hachette dans l'autre main : c'est la hachette qui sert, elle taille)
-    if (tool && items[tool].weapon) return this.attack(this.combat.plan({ item: tool }, this.player.actor.facing, this.time.now));
+    if (tool && items[tool].weapon) return strike(this.heldOf(tool)!);
     if (tool && SiteSystem.traces(tool)) return this.plantStake(tool);
-    // la main active vide, l'autre sans arme ni outil (rien, ou une ressource qui ne se plante pas) : le poing de la main libre
-    if (!game.both && !game.hands[game.active] && (!tool || items[tool].kind === 'resource')) {
-      return this.attack(this.combat.plan({ fist: true }, this.player.actor.facing, this.time.now));
+    // la main active vide, l'autre sans outil qui travaille : le poing de la main libre
+    if (!game.both && !game.hands[game.active] && (!tool || !workTools.has(tool))) {
+      return this.attack(this.combat.plan({ fist: true }, this.player.actor.facing, this.time.now, this.player.strength.swinger));
     }
-    if (!tool || items[tool].kind === 'resource') {
-      // mains vides devant ce qui demande un outil : on le dit
-      const t = this.harvest.target(this.player)?.def.harvest?.tool;
-      if (t) this.report({ kind: 'missing', tool: t });
-      return;
+    // ce qu'on tient ne travaille pas (une pierre, un seau, la pièce de bois portée) : il frappe
+    if (!tool || !workTools.has(tool)) {
+      const held = game.both ?? game.hands[game.active];
+      return held ? strike(held) : undefined;
     }
     // une pièce de bois : la cognée la coupe où l'on vise, la doloire en dresse une face d'une passe le long de la pièce ; le
     // coin se plante dans le bout, d'un coup, sans geste ; la masse frappe le coin depuis ce bout
@@ -686,6 +694,8 @@ export class WorldScene extends Phaser.Scene {
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
     const costs = this.player.stamina.costs;
     if (h && wields(h, tool) && !this.effort.afford(this.player, costs[effortOf(h, tool, !!target!.def.bears?.prop)])) return;
+    // un outil sans rien à travailler devant lui : il frappe, comme tout objet tenu
+    if (!h || !wields(h, tool)) return strike(this.heldOf(tool)!);
     // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
     this.gesture(gesture, tool, () => {
       const t = this.harvest.target(this.player, tool);
@@ -712,6 +722,8 @@ export class WorldScene extends Phaser.Scene {
       frames: p.frames,
       durations: p.durations,
       weapon: p.weapon.image,
+      held: p.improvised && 'held' in striker ? striker.held : undefined,
+      grip: p.weapon.grip,
       shift: p.drawShift,
       active: p.sweep.active,
       onStrike: (step) => this.combat.strike(this.player, p, step),
@@ -719,8 +731,8 @@ export class WorldScene extends Phaser.Scene {
         const chain = this.combat.end(p, this.time.now);
         if (this.mode === 'use') this.mode = 'play';
         // Espace pendant le geste : la suivante, avec la même arme (ou le même poing) si elle sert toujours
-        const same = 'item' in striker ? this.usable() === striker.item : !game.both && !game.hands[game.active];
-        if (chain && this.mode === 'play' && same) this.attack(this.combat.plan(striker, this.player.actor.facing, this.time.now));
+        const same = 'held' in striker ? [game.both, ...game.hands].includes(striker.held) : !game.both && !game.hands[game.active];
+        if (chain && this.mode === 'play' && same) this.attack(this.combat.plan(striker, this.player.actor.facing, this.time.now, this.player.strength.swinger));
       },
     });
   }

@@ -394,8 +394,9 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
   // un objet possédable qui a ses dimensions : son image au sol (vue 0) les suit, comme un objet du monde ; ses vues nord-sud et son
   // demi-tour se vérifient avec toutes ses vues (règle D)
   for (const [key, it] of Object.entries(c.items)) {
-    if (!it.dims) continue;
-    const image = it.ground ?? it.icon;
+    // l'image au sol suit le gabarit ; l'icône (16 px, la case de main) n'est pas à l'échelle
+    if (!it.dims || !it.ground) continue;
+    const image = it.ground;
     const drawn = cat.silhouettes.get(image);
     if (!drawn) continue;
     const want = expectedSize(it.dims);
@@ -986,7 +987,7 @@ function validateCapabilities(c: Content, cat: Catalog): string[] {
     if (genreOf.has(k) && it.pile !== genreOf.get(k)) err(`${at} : le genre de tas '${genreOf.get(k)}' le prend ; il le nomme ('pile')`);
     if (!it.ground && !todo.ground) err(`${at} : un objet qu'on pose a son image au sol ('ground', pixel-artist), ou DRAWINGS_TODO`);
     if (it.ground && todo.ground) err(`validate.ts DRAWINGS_TODO : '${k}' a son image au sol, à retirer de la liste`);
-    if (it.ground && !it.dims) err(`${at} : une image au sol a ses dimensions ('dims') : le gabarit la contrôle`);
+    if (!it.dims) err(`${at} : un objet portable a ses dimensions ('dims') : le gabarit de son image au sol et sa physique de coup en découlent (world/heft.ts)`);
     if (it.work && todo.tool && cat.textures.has(`tool-${k}`)) err(`validate.ts DRAWINGS_TODO : '${k}' a sa planche en main, à retirer de la liste`);
   }
   for (const [k, d] of [...Object.entries(c.items), ...Object.entries(c.props)]) {

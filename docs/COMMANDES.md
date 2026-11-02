@@ -64,7 +64,7 @@ Selon ce que tient Xéros (« ce qui sert » : la main active, sinon l'autre mai
 | Ce qu'il tient | Ce que fait Espace |
 | --- | --- |
 | **une arme qui sert** (la branche, l'épée de bois : dans la main active, ou dans l'autre si l'active est vide) | **attaquer** (la taille ; Espace de nouveau pendant le geste ou juste après : le coup d'en haut, puis de nouveau la taille) ; coûte même dans le vide |
-| **la main active vide**, l'autre vide ou tenant ce qui n'est ni une arme ni un outil (une pierre…) | **un direct du poing** de la main libre ; Espace de nouveau : l'autre poing (gauche-droite) si les deux sont libres |
+| **la main active vide**, l'autre vide ou tenant ce qui ne sert à aucun travail (une pierre…) | **un direct du poing** de la main libre ; Espace de nouveau : l'autre poing (gauche-droite) si les deux sont libres |
 | la branche (ou le piquet) dans la main active et la hachette dans l'autre, face au billot | tailler : la branche devient un piquet, le piquet une cheville (c'est la hachette qui sert) |
 | un piquet, un plan connu | le planter au tracé (le premier fixe le coin nord-ouest) |
 | la cognée, devant un arbre debout | abattre (`use`) : un appui lance tout le travail, Xéros frappe seul jusqu'à la chute (25 min environ pour l'arbre normal, 2 h 30 pour le gros, à la force de Xéros), avec ses pauses de souffle ; un pas ou Échap l'arrête, repris là où il en était |
@@ -73,9 +73,7 @@ Selon ce que tient Xéros (« ce qui sert » : la main active, sinon l'autre mai
 | la doloire, contre le flanc d'une pièce de bois | une passe sur le rail, lancée d'un appui : chaque coup lève sa part de la face et Xéros glisse avec le fer ; un pas ou Échap l'arrête |
 | le coin, contre le bout d'une grosse bille | le planter (sans geste) |
 | la masse, sur un coin planté | fendre (`maul`), lancé d'un appui ; la fente s'allonge (trois étapes par mètre commencé), la bille s'ouvre au bout |
-| une ressource seule dans la main active (pas une arme), devant ce qui demande un outil | « Sans hache, rien à faire. » (mains vides : le poing, voir plus haut) |
-| un outil dans le vide | le geste dans le vide, sans dépense |
-| ce qu'on porte à deux mains (`carry`) | rien |
+| **tout autre objet tenu** (une pierre, un seau, la pièce de bois portée, même à deux mains) ; **un outil sans rien à travailler devant lui** (la doloire, la hachette dans le vide) | **frapper avec** (l'arme improvisée, src/world/heft.ts) : sa portée vient de sa longueur, sa lenteur et son énergie de sa masse (le couple du bras) ; une perche porte loin et frappe lentement, la doloire porte court ; coûte au joule, même dans le vide |
 
 Un refus (mauvais outil, pas la place, épuisé) se dit sans geste ni dépense.
 
