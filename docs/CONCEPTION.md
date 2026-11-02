@@ -670,7 +670,7 @@ Repris par *Le bois* (30 octobre 2026) : la masse se calcule d'après les régla
 Chaque objet a une masse, Xéros a une force, et ce qui est trop lourd à porter se roule.
 
 Repris par *Le travail* (§ 4 bis et § 10) : la force d'un coup (`swing` de strength.json) plafonne au plafond humain (`humanMax`) ;
-porter et rouler plafonneront de même (décidé le 2 novembre 2026, en cours : chantier 4 de l'audit). La vitesse de la bille poussée
+porter, marcher chargé et rouler plafonnent de même (décidé le 2 novembre 2026, fait au chantier 4 de l'audit : `human` de Strength.ts). La vitesse de la bille poussée
 est une part de la marche (`pushSpeed`, systems/speeds.ts), fatigue comprise.
 
 - **Masses** (`src/content/mass.ts`). Tout objet qu'on prend, pose ou roule a une masse en kg (`validate.ts` l'exige). Saisie pour les
@@ -1235,13 +1235,17 @@ de la part (rien d'autre à garder) ; les encoches et les coins plantés restent
 
 ### 10. Décidé par Grégoire le 2 novembre 2026 (audit)
 
-Tranché pendant l'audit (docs/AUDIT.md, « À trancher ») ; **en cours de réalisation** (chantier 4 de l'audit) :
-- **Le rocher se travaille au coup**, comme le reste : la pioche, un travail où compte surtout la force ; aujourd'hui encore une
-  récolte à l'ancienne (5 coups au prix fixe de `chop`).
-- **Le prix d'une attaque au joule, comme le travail** : une seule physique pour les outils et les armes (l'énergie, et son prix) ;
-  aujourd'hui encore `attackBase` + `attackPerKg` × la masse de l'arme (*Le combat*).
-- **Porter et rouler plafonnent aussi la force**, au même modèle réaliste que la frappe (`humanMax`, § 4 bis) ; aujourd'hui ?dieu
-  « force » multiplie `carry`, `walk` et `roll` sans plafond. La force surhumaine lèvera tous les plafonds, plus tard.
+Tranché pendant l'audit (docs/AUDIT.md, « À trancher ») ; **fait** au chantier 4 de l'audit :
+- **Le rocher se travaille au coup**, comme le reste : la pioche (`work` d'items.json), la matière `stone` de work.json (8 J par cm³ de
+  calcaire), 3 dm³ à abattre (`break` de son `harvest.work`) : 576 coups, 28 min pour Xéros ; un homme fort, bien plus vite. La pioche
+  n'a pas encore son dessin en main (planche `tool-pickaxe`, pixel-artist) : elle ne se voit pas pendant le geste.
+- **Le prix d'une attaque au joule, comme le travail** : une seule physique pour les outils et les armes. L'énergie d'une attaque
+  (`strikeEnergy` de world/strike.ts : ½ × masse qui frappe × v² × `power`) fait ses dégâts et son prix (× `ceilingPerJ` au plafond,
+  × `breathPerJ` au souffle) : la taille à la branche, 130 J, 0,018 du plafond et 4,2 de souffle ; à l'épée, 58 J, 0,008 et 1,9.
+  `attackBase`, `attackPerKg` et le `cost` des attaques n'existent plus.
+- **Porter et rouler plafonnent aussi la force**, au même modèle réaliste que la frappe (`humanMax`, § 4 bis) : ?dieu « force »
+  multiplie tout, jusqu'au plus fort des humains (× 2,6 : 182 kg portés, 780 kg roulés). La force surhumaine lèvera tous les
+  plafonds, plus tard.
 
 **Déjà fait** (chantier 1 de l'audit) :
 - **L'arbre tombe du côté où Xéros frappe** : au lancement, Xéros se place lui-même de ce côté, le fer sur l'entaille (`FELL.reach` de
@@ -1281,9 +1285,8 @@ Les touches : [docs/COMMANDES.md](COMMANDES.md).
   - les **dégâts** : l'énergie de l'arme au coup (½ I ω², la vitesse venant de l'angle que parcourt la pointe pendant le coup) ×
     un facteur × l'efficacité de l'arme : 8,2 à la taille avec la branche, 5,9 avec l'épée ; le coup d'en haut frappe plus fort et
     coûte plus ;
-  - le **prix en endurance** : `attackBase` + `attackPerKg` × la masse de l'arme (stamina.json), × le prix de l'attaque : 1,3 point
-    pour la branche, 0,6 pour l'épée (décidé le 2 novembre 2026 : il se paiera au joule, comme le travail ; en cours, *Le travail*
-    § 10). **Un coup dans le vide coûte aussi** (choix de Grégoire : c'est le geste qui fatigue) ; épuisé,
+  - le **prix en endurance** : au joule, comme le travail (*Le travail* § 10) : l'énergie du coup × `ceilingPerJ` et `breathPerJ` de
+    stamina.json ; la branche coûte plus que l'épée, qui frappe moins lourd. **Un coup dans le vide coûte aussi** (choix de Grégoire : c'est le geste qui fatigue) ; épuisé,
     rien ne part.
 - **Une attaque est des données** (combat.json, `attacks`) : son geste, ses trois temps, la fenêtre d'enchaînement, l'angle que
   parcourt la pointe, sa puissance, son prix, sa zone. **Une famille** (`families`, la seule aujourd'hui : `swing`, ce qu'on balance)

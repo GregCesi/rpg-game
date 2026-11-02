@@ -160,9 +160,9 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   syncProp();
   const propButton = button('Poser', () => send({ kind: 'prop', prop: prop.value, length: lengthOf(propLength, prop.value) }));
 
-  // une pièce de bois : diamètre, longueur sur la grille (de la plus courte pièce à 7 m), aspect (forme, faces), sens
+  // une pièce de bois : diamètre, longueur sur la grille (de la plus courte pièce à la plus longue, wood.json `max`), aspect (forme, faces), sens
   const woodSize = select([['Diamètre', Object.entries(wood.sizes).map(([k, d]) => [k, `${d.name}, ${d.diameter} cm (${k})`])]]);
-  const woodLength = el('input', { type: 'number', min: String(wood.min / 100), max: '7', step: String(wood.grid / 100), value: '1' });
+  const woodLength = el('input', { type: 'number', min: String(wood.min / 100), max: String(wood.max / 100), step: String(wood.grid / 100), value: '1' });
   const woodLook = select([['État', []]]);
   const syncWood = () => {
     const looks = Object.keys(wood.sizes[woodSize.value].looks) as WoodLook[];
@@ -172,7 +172,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   syncWood();
   const woodAxis = select([['Sens', [['ew', 'est-ouest'], ['ns', 'nord-sud']]]]);
   const chosenWood = (): WoodPiece => {
-    const cm = Math.min(700, Math.max(wood.min, Math.round((Number(woodLength.value) * 100 || 100) / wood.grid) * wood.grid));
+    const cm = Math.min(wood.max, Math.max(wood.min, Math.round((Number(woodLength.value) * 100 || 100) / wood.grid) * wood.grid));
     woodLength.value = String(cm / 100);
     return woodFrom(woodSize.value, cm, woodLook.value as WoodLook, woodAxis.value as 'ew' | 'ns');
   };

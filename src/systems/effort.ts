@@ -55,6 +55,16 @@ export class EffortSystem {
     return r;
   }
 
+  /**
+   * Paye un coup au joule (un coup de travail, une attaque : son plafond et son souffle). Vrai si le coup part ; à bout de souffle, faux
+   * sans message (Xéros souffle) ; plafond vide, faux et « épuisé ».
+   */
+  affordStroke(player: Player, cost: { ceiling: number; breath: number }): boolean {
+    const r = player.stamina.spendStroke(cost.ceiling, cost.breath);
+    if (r === 'exhausted') this.exhausted();
+    return r === 'done';
+  }
+
   /** Un effort de `cost` points pourrait-il se faire maintenant ? Sans le payer ; plafond vide, « épuisé » est dit. */
   allows(player: Player, cost: number): boolean {
     const r = player.stamina.check(cost);

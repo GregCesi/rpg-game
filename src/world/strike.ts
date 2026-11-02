@@ -97,8 +97,14 @@ export const frameDurations = (rules: Rules, frames: CombatFrame[], w: Weapon, k
 /** Durée d'un coup entier (garde comprise), en ms : la somme des images du geste avec cette arme. */
 export const cycle = (rules: Rules, frames: CombatFrame[], w: Weapon, kg: number): number => frameDurations(rules, frames, w, kg).reduce((s, d) => s + d, 0);
 
-/** Prix d'une attaque en endurance : `attackBase` + `attackPerKg` × la masse de l'arme, × `cost` de l'attaque (stamina.json). */
-export const attackCost = (costs: StaminaDef['costs'], a: Attack, kg: number): number => (costs.attackBase + costs.attackPerKg * kg) * a.cost;
+/**
+ * Prix d'une attaque en endurance, comme un coup de travail (une seule physique pour les outils et les armes) : son énergie (`strikeEnergy`)
+ * × `ceilingPerJ` au plafond, × `breathPerJ` au souffle (stamina.json, `work`) ; même dans le vide : c'est le geste qui fatigue.
+ */
+export const attackCost = (perJ: StaminaDef['work'], joules: number): { ceiling: number; breath: number } => ({
+  ceiling: joules * perJ.ceilingPerJ,
+  breath: joules * perJ.breathPerJ,
+});
 
 const FACE: Record<Facing, Point> = { right: { x: 1, y: 0 }, left: { x: -1, y: 0 }, up: { x: 0, y: -1 }, down: { x: 0, y: 1 } };
 
@@ -226,13 +232,17 @@ export function tipSpeed(rules: Rules, s: SweepDef, frames: CombatFrame[], w: We
 }
 
 /**
- * Dégâts d'un coup : l'énergie de ce qui frappe (½ × masse qui frappe × v², en joules) × `damagePerJoule` × `efficiency` de l'arme ×
- * `power` de l'attaque, au dixième.
+ * L'énergie d'une attaque, en joules : celle de ce qui frappe (½ × masse qui frappe × v²) × `power` de l'attaque (la part du corps qui
+ * s'y met : le coup d'en haut, plus). Elle fait les dégâts et se paie en endurance.
  */
-export function damage(rules: Rules, a: Attack, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
+export function strikeEnergy(rules: Rules, a: Attack, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
   const v = tipSpeed(rules, s, frames, w, kg);
-  const joules = 0.5 * strikingMass(w, kg) * v * v;
-  return Math.round(joules * rules.damagePerJoule * w.efficiency * a.power * 10) / 10;
+  return 0.5 * strikingMass(w, kg) * v * v * a.power;
+}
+
+/** Dégâts d'un coup : son énergie (`strikeEnergy`) × `damagePerJoule` × `efficiency` de l'arme, au dixième. */
+export function damage(rules: Rules, a: Attack, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
+  return Math.round(strikeEnergy(rules, a, s, frames, w, kg) * rules.damagePerJoule * w.efficiency * 10) / 10;
 }
 
 /** L'emprise au sol d'une cible debout, en px : ses `dims` (largeur, profondeur), centrée sur sa base, son bord sud à la base. */

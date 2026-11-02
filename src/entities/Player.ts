@@ -68,7 +68,7 @@ export class Player {
     // portée garde sa cadence de dessin, accélérée ou ralentie d'autant (sans dépasser une foulée vive).
     // Fatigué (sous le seuil de stamina.json), il marche moins vite et ne court plus.
     const factor = this.strength.walkFactor() * this.stamina.walkFactor();
-    if (this.hold.loaded) this.actor.move(dir, SPEEDS.walk * factor, Math.max(PLAYER.carryCadence, (SPEEDS.walk * factor) / 1.4));
+    if (this.hold.loaded) this.actor.move(dir, SPEEDS.walk * factor, Math.max(PLAYER.carryCadence, (SPEEDS.walk * factor) / PLAYER.carryStride));
     else if (running && this.strength.canRun() && this.stamina.canRun()) {
       this.actor.move(dir, SPEEDS.run * factor, PLAYER.walkCadence);
       this.running = dir.lengthSq() > 0;

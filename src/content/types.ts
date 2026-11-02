@@ -59,12 +59,14 @@ const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
 /**
  * La matière d'une récolte qui se travaille au coup (docs/CONCEPTION.md, « Le travail » ; world/workPlan.ts) : abattre un arbre
  * (`fell` : le diamètre du tronc, cm), ébrancher (`limbs` : le nombre de branches et leur diamètre, cm), tailler une pointe sur le
- * billot (`whittle` : le diamètre de la branche et la longueur de la pointe, cm). Absent : une récolte de `hits` coups simples.
+ * billot (`whittle` : le diamètre de la branche et la longueur de la pointe, cm), casser un rocher (`break` : le volume de pierre à
+ * abattre, cm³). Absent : une récolte de `hits` coups simples.
  */
 export const HarvestWorkSchema = z.union([
   z.strictObject({ fell: z.strictObject({ diameter: z.number().positive() }) }),
   z.strictObject({ limbs: z.strictObject({ count: z.number().int().positive(), diameter: z.number().positive() }) }),
   z.strictObject({ whittle: z.strictObject({ diameter: z.number().positive(), length: z.number().positive() }) }),
+  z.strictObject({ break: z.strictObject({ volume: z.number().positive() }) }),
 ]);
 
 export const HarvestSchema = z.strictObject({
@@ -420,6 +422,8 @@ export const WoodSchema = z.strictObject({
   density: z.number().positive(),
   grid: z.number().int().positive(),
   min: z.number().int().positive(),
+  /** La plus longue pièce de bois (cm : le tronc de l'arbre normal, 7 m) ; ?dieu n'en propose pas de plus longue. */
+  max: z.number().int().positive(),
   /** La durée d'une coupe découle de ses coups (docs/CONCEPTION.md, « Le travail ») ; `hits` : ses étapes (l'encoche qui se creuse). */
   cut: z.strictObject({ tool: id, hits: z.number().int().positive() }),
   hew: z.strictObject({ tool: id, perFace: z.number().int().positive(), faces: z.literal(4), beam: z.number().positive(), stroke: z.number().int().positive() }),
@@ -948,7 +952,7 @@ export const SwingerSchema = z.strictObject({
  * Un outil au travail (items.json, `work`), comme une arme pour l'inertie (world/strike.ts) : `length` cm du bout du manche au tranchant,
  * `grip` cm de la main au bout, `balance` (l'équilibre : la masse qui frappe = ⅔ × balance × masse) ; `edge`, le tranchant (1 : une lame
  * affûtée ; la masse qui enfonce un coin, moins) ; `aim`, ce que la précision pèse dans ce qu'enlève un coup (0 : la force seule ; 1 :
- * la précision seule).
+ * la précision seule) ; `strokes`, son coup propre pour un genre de travail.
  */
 export const ToolWorkSchema = z
   .strictObject({
@@ -957,6 +961,8 @@ export const ToolWorkSchema = z
     balance: z.number().positive(),
     edge: z.number().gt(0).lte(1),
     aim: z.number().min(0).max(1),
+    /** Le coup de cet outil pour un genre de travail (clé de `jobs` de work.json → clé de `strokes`), à la place du coup commun : la hachette taille au coup court. */
+    strokes: z.record(id, id).optional(),
   })
   .refine((t) => t.grip < t.length, { message: "'grip' doit être en deçà de 'length' : la main tient l'outil" });
 
@@ -981,13 +987,16 @@ export const WorkStrokeSchema = z.strictObject({
 /**
  * Le travail (work.json ; docs/CONCEPTION.md, « Le travail ») : les coups (`strokes` : `use` de côté, `chop` de haut en bas, `maul` la
  * masse, `hew` le coup court de la doloire, `whittle` la hachette sur le billot) ; la résistance de la matière (`matter` : J pour enlever
- * 1 cm³ en travers du fil, `cut`, ou le long d'une face marquée, `hew` ; J pour ouvrir 1 m² de fente au coin, `split`) ; des êtres de
+ * 1 cm³ en travers du fil, `cut`, ou le long d'une face marquée, `hew` ; J pour ouvrir 1 m² de fente au coin, `split` ; J pour casser
+ * 1 cm³ de calcaire à la pioche, `stone`) ; des êtres de
  * référence (`references` : l'adulte, le bûcheron fort) ; les points de calage (`calibration` : une durée qu'un travail doit tenir pour
  * un être donné, vérifiée par validate.ts à `tolerance` près).
  */
 export const WorkSchema = z.strictObject({
   strokes: z.record(id, WorkStrokeSchema),
-  matter: z.strictObject({ cut: z.number().positive(), hew: z.number().positive(), split: z.number().positive() }),
+  /** Le coup commun de chaque genre de récolte travaillée (`harvest.work` de props.json : abattre, ébrancher, tailler, casser la pierre). */
+  jobs: z.strictObject({ fell: id, limbs: id, whittle: id, break: id }),
+  matter: z.strictObject({ cut: z.number().positive(), hew: z.number().positive(), split: z.number().positive(), stone: z.number().positive() }),
   references: z.record(id, SwingerSchema.required({ max: true })),
   calibration: z.array(
     z.strictObject({
@@ -1023,26 +1032,28 @@ export const StrengthSchema = z
  * (les « PerSec » se paient chaque seconde de l'effort, les « PerKg » sont proportionnels à la masse en kg) ; marcher ne coûte rien.
  * `chop` un coup d'outil (hache sur un arbre, une section, le houppier), `cutTie` un coup sur le lien du billot, `plant` planter
  * le coin de fendage, `whittle` tailler un piquet à la hachette, `stake` planter un piquet de tracé, `maul` un coup de masse sur le coin, `knot`
- * nouer ou dénouer, `hewPerM` un mètre de face dressé à la doloire (payé coup par coup au fil de la passe : équarrir une poutre de 3 m, 4 faces, coûte 12 × `hewPerM`), `turnPerKg` pivoter une bille, `raisePerKg` dresser une poutre sur son appui (par kg ; avec l'aide de la mère, la moitié), `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
- * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir, `attackBase` et `attackPerKg` une attaque (le prix de base, plus
- * tant par kg de l'arme, × `cost` de l'attaque ; même dans le vide : c'est le geste qui fatigue).
+ * nouer ou dénouer, `hewPerM` un mètre de face dressé à la doloire (payé coup par coup au fil de la passe : équarrir une poutre de 3 m, 4 faces, coûte 12 × `hewPerM`), `turnPerKg` pivoter une bille, `raisePerKg` dresser une poutre sur son appui (par kg ; avec l'aide de la mère, la part `raiseHelped`), `carryPerKgSec` marcher en portant (par kg au-delà de `walk` de
+ * strength.json), `pushPerKgSec` pousser une bille, `runPerSec` courir. Une attaque, comme un coup de travail, se paie au joule
+ * (`work` ci-dessous, world/strike.ts `attackCost`).
  */
 /**
  * Le temps (time.json, docs/CONCEPTION.md « Le temps ») : `speeds`, les paliers de la vitesse du temps que choisit le joueur (à x1,
- * une journée dure 24 h réelles ; une minute réelle fait `speed` minutes de jeu) ; `default`, le palier de départ (x24 : une journée
- * en une heure) ; `wakeHour`, l'heure du lever ; `saveEveryMinutes`, tous les combien de minutes de jeu l'horloge seule fait écrire la
+ * une journée dure 24 h réelles ; une minute réelle fait `speed` minutes de jeu) ; `default`, le palier de départ, celui où ramène une
+ * attaque ; `dieuSpeed`, le palier de plus que propose ?dieu (x50) ; `wakeHour`, l'heure du lever ; `saveEveryMinutes`, tous les combien de minutes de jeu l'horloge seule fait écrire la
  * sauvegarde (elle avance à chaque image : sans ce pas, la partie s'écrirait sans cesse).
  */
 export const TimeSchema = z
   .strictObject({
     /**
-     * La vitesse du temps du joueur (V, Maj + V, les paliers de `speeds`, depuis `default`) : c'est la vitesse de simulation, elle
+     * La vitesse du temps du joueur (V seul, en boucle sur les paliers de `speeds`, depuis `default` ; la plaquette du cadran en
+     * montre au plus cinq, validate.ts) : c'est la vitesse de simulation, elle
      * accélère tout le jeu, marche comprise (docs/CONCEPTION.md, « Le temps ») ; `false` : V ne fait rien. Le combat ramène à x1 ; x50
      * reste réservé à ?dieu.
      */
     accelerate: z.boolean(),
     speeds: z.array(z.number().positive()).min(1),
     default: z.number().positive(),
+    dieuSpeed: z.number().positive(),
     wakeHour: z.number().min(0).max(23),
     saveEveryMinutes: z.number().positive(),
     /**
@@ -1104,11 +1115,10 @@ export const StaminaSchema = z.strictObject({
     hewPerM: z.number().nonnegative(),
     turnPerKg: z.number().nonnegative(),
     raisePerKg: z.number().nonnegative(),
+    raiseHelped: z.number().min(0).max(1),
     carryPerKgSec: z.number().nonnegative(),
     pushPerKgSec: z.number().nonnegative(),
     runPerSec: z.number().nonnegative(),
-    attackBase: z.number().nonnegative(),
-    attackPerKg: z.number().nonnegative(),
   }),
 });
 
@@ -1153,7 +1163,7 @@ export const TargetSchema = z.strictObject({
  * la traînée, l'éclat, les images de frappe), qui ne sait pas ce que Xéros tient ; la durée du coup et la vitesse de ce qui frappe se
  * tirent de ses poses (une seule source), allongées par l'inertie de l'arme. `hand` : la main qui frappe (le poing : `right` ou
  * `left` ; une arme : `right`, la main de l'épée dans les dessins). `combo` : après la fin du geste, combien de ms un Espace enchaîne
- * l'attaque suivante de la posture (pendant le geste, l'appui est gardé). `power` multiplie les dégâts, `cost` le prix en endurance.
+ * l'attaque suivante de la posture (pendant le geste, l'appui est gardé). `power` : la part du corps qui s'y met, elle multiplie l'énergie du coup (ses dégâts et son prix au joule, world/strike.ts).
  */
 export const AttackSchema = z.strictObject({
   name: id,
@@ -1161,7 +1171,6 @@ export const AttackSchema = z.strictObject({
   hand: z.enum(['right', 'left']).default('right'),
   combo: z.number().nonnegative(),
   power: z.number().positive(),
-  cost: z.number().positive(),
 });
 
 /**
@@ -1418,9 +1427,20 @@ export const WorldSchema = z.strictObject({
    * rais de soleil des fenêtres et des portes) ; entre deux repères, tout s'interpole, et la journée boucle de minuit à minuit.
    */
   daylight: z
-    .array(z.strictObject({ hour: z.number().min(0).max(24), color: z.string().regex(/^#[0-9a-f]{6}$/i), alpha: z.number().min(0).max(1), sun: z.number().min(0).max(1) }))
+    .array(
+      z.strictObject({
+        hour: z.number().min(0).max(24),
+        color: z.string().regex(/^#[0-9a-f]{6}$/i),
+        alpha: z.number().min(0).max(1),
+        sun: z.number().min(0).max(1),
+        /** Le moment du cadran qui commence à ce repère (aube, jour, crépuscule, nuit) ; il dure jusqu'au repère suivant qui en nomme un. */
+        moment: z.enum(['dawn', 'day', 'dusk', 'night']).optional(),
+      }),
+    )
     .min(2)
-    .refine((d) => d.every((p, i) => i === 0 || p.hour > d[i - 1].hour), { message: "les heures de 'daylight' doivent croître" }),
+    .refine((d) => d.every((p, i) => i === 0 || p.hour > d[i - 1].hour), { message: "les heures de 'daylight' doivent croître" })
+    .refine((d) => d.some((p) => p.moment), { message: "un repère de 'daylight' au moins doit nommer son moment" })
+    .refine((d) => d.some((p) => p.sun === 0) && d.some((p) => p.sun > 0), { message: "'daylight' : le soleil doit se lever et se coucher (un repère à sun 0, un à sun > 0)" }),
 });
 
 export type Facing = z.infer<typeof FacingSchema>;

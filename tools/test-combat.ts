@@ -141,7 +141,7 @@ await playtest('combat', async ({ page, errors, load }) => {
       const sweep = content.combat.sweeps.cut;
       res.expect = {
         damage: strike.damage(content.combat.rules, cut, sweep, combatPoses.cut.down, wpn, kg),
-        cost: Math.round(strike.attackCost(content.stamina.costs, cut, kg) * 1000) / 1000,
+        cost: Math.round(strike.attackCost(content.stamina.work, strike.strikeEnergy(content.combat.rules, cut, sweep, combatPoses.cut.down, wpn, kg)).ceiling * 1000) / 1000,
         cycle: strike.cycle(content.combat.rules, combatPoses.cut.down, wpn, kg),
         reach: strike.reachCm(sweep, wpn),
       };

@@ -3,6 +3,7 @@
 // ouverture sans porte), tourné vers le dedans, entre : la scène passe à la carte de l'intérieur (world/interiorMap.ts), par le même
 // fondu qu'une sortie de Tiled. Dedans : le même passage, tourné vers le dehors, le ramène devant la porte.
 
+import { FEET } from '../config';
 import { crossed } from '../world/crossing';
 import { maps } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
@@ -20,10 +21,10 @@ export interface Passage {
   at: { x: number; y: number; facing: Facing };
 }
 
-/** Un point des pieds (px ; le point de collision, 3 px au-dessus, comme les sorties de Tiled) dans un rectangle en cm. */
+/** Un point des pieds (px ; le point de passage, `FEET.point` au-dessus, comme les sorties de Tiled) dans un rectangle en cm. */
 function pointIn(px: number, py: number, r: Rect): boolean {
   const x = px * CM_PER_PX;
-  const y = (py - 3) * CM_PER_PX;
+  const y = (py - FEET.point) * CM_PER_PX;
   return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.d;
 }
 

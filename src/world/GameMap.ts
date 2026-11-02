@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, SHADOW, TILE } from '../config';
+import { DEPTH, GLOW, SHADOW, TILE } from '../config';
 import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
@@ -607,15 +607,15 @@ export class GameMap {
       const glow = scene.add
         .image(ox + fx(p.light.x), oy + p.light.y, 'glow')
         .setBlendMode(Phaser.BlendModes.ADD)
-        .setTint(0xffa040)
-        .setScale(p.light.radius / 64)
-        .setAlpha(0.32)
+        .setTint(GLOW.tint)
+        .setScale(p.light.radius / GLOW.image)
+        .setAlpha(GLOW.alpha)
         .setDepth(DEPTH.light);
       scene.tweens.add({
         targets: glow,
-        alpha: { from: 0.26, to: 0.4 },
-        scale: { from: (p.light.radius / 64) * 0.95, to: (p.light.radius / 64) * 1.04 },
-        duration: 180 + Math.random() * 140,
+        alpha: { from: GLOW.from, to: GLOW.to },
+        scale: { from: (p.light.radius / GLOW.image) * GLOW.scale[0], to: (p.light.radius / GLOW.image) * GLOW.scale[1] },
+        duration: GLOW.ms + Math.random() * GLOW.jitter,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.InOut',

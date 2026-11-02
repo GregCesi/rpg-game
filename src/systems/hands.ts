@@ -143,7 +143,7 @@ export class HandsSystem {
         : 'wood' in piece
           ? { prop: WOOD_PIECE, wood: structuredClone(p.def.places[place].wood) ?? { ...piece.wood, axis: p.pile.turned ? 'ns' : 'ew' } }
           : { ...piece, ...(p.pile.turned ? { turned: true } : {}), ...(props[piece.prop].natural ? form : {}) };
-    const hands = 'item' in piece ? items[piece.item].hands : 'wood' in piece ? 2 : props[piece.prop].take!.hands;
+    const hands = 'item' in piece ? items[piece.item].hands : 'wood' in piece ? defOf(WOOD_PIECE, { ...piece.wood, axis: 'ew' }).take!.hands : props[piece.prop].take!.hands;
     if (!take(game, what, hands)) return false;
     emptyPlace(game, this.map.def.id, p.pile.id, place);
     if (!p.pile.places.length && !p.pile.tie) this.map.removePile(p);

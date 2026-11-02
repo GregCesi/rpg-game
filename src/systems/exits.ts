@@ -1,10 +1,11 @@
+import { FEET } from '../config';
 import type { Exit } from '../content/types';
 import type { Player } from '../entities/Player';
 import { crossed, type Point } from '../world/crossing';
 
-/** Sortie dont le rectangle contient les pieds (x, y), quelle que soit la direction : le point de collision, 3 px au-dessus. */
+/** Sortie dont le rectangle contient les pieds (x, y), quelle que soit la direction : le point de passage, `FEET.point` au-dessus. */
 export function exitAt(x: number, y: number, exits: readonly Exit[] = []): Exit | undefined {
-  const py = y - 3;
+  const py = y - FEET.point;
   return exits.find((e) => x >= e.x && x < e.x + e.w && py >= e.y && py < e.y + e.h);
 }
 

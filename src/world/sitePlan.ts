@@ -7,7 +7,7 @@ import type { Accept, Corner, PlanDef, PlanPlace, PlanStep } from '../content/ty
 import type { Site } from '../state';
 import { openPlaces, type PlaceSet } from './places';
 import { woodDims } from './woodPiece';
-import { BEAM_SIZE, WOOD } from './woodShape';
+import { beamPiece } from './woodShape';
 
 /** Une place du plan avec son étape. */
 export interface PlanSlot {
@@ -34,7 +34,7 @@ export function placeCorner(site: Pick<Site, 'x' | 'y'>, place: PlanPlace): { x:
 export function placeDims(place: PlanPlace, step?: PlanStep): { w: number; d: number } {
   const beam = (place.accepts ?? step?.accepts)?.wood;
   if (!beam) return props[place.piece].dims;
-  const { w, d } = woodDims({ size: BEAM_SIZE, length: beam.length, shape: 'round', hewn: WOOD.hew.faces * WOOD.hew.perFace, axis: 'up' });
+  const { w, d } = woodDims(beamPiece(beam.length, 'up'));
   return { w, d };
 }
 

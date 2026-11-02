@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { clockLabel, nextSpeed } from '../world/clock';
+import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
-import { CONSTRUIRE, FELL, HELP, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
+import { CONSTRUIRE, FEET, FELL, HELP, LOCKS, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
 import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -313,7 +313,7 @@ export class WorldScene extends Phaser.Scene {
     cam.setRoundPixels(true);
     // passé le bord d'une zone : la vue reprend où elle était, sans fondu (la voisine était déjà là)
     if (this.edge) cam.centerOn(this.player.actor.x + this.edge.view.dx, this.player.actor.y + this.edge.view.dy);
-    else cam.fadeIn(220, 20, 14, 8);
+    else cam.fadeIn(LOCKS.fadeIn, 20, 14, 8);
     if (CONSTRUIRE && this.building) this.enterBuild();
 
     // la partie est écrite à l'arrivée sur la carte, puis à chaque changement, et quand la page se cache ou se ferme
@@ -553,8 +553,8 @@ export class WorldScene extends Phaser.Scene {
         cam.fadeIn(HELP.fade, 20, 14, 8);
         cam.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
           this.mode = 'play';
-          this.interaction.lock(200);
-          this.useLockedUntil = this.time.now + 200;
+          this.interaction.lock(LOCKS.lock);
+          this.useLockedUntil = this.time.now + LOCKS.lock;
         });
       });
     });
@@ -699,12 +699,12 @@ export class WorldScene extends Phaser.Scene {
    * geste enchaîne la suivante.
    */
   private attack(p: AttackPlan): void {
-    // le combat ramène le temps à x1
-    if (simSpeed() > 1) {
-      setSimSpeed(this.game, 1);
-      this.notice('Le temps : x1');
+    // le combat ramène le temps à son palier de départ (time.json `default`, x1)
+    if (simSpeed() !== timeDef.default) {
+      setSimSpeed(this.game, timeDef.default);
+      this.notice(`Le temps : x${timeDef.default}`);
     }
-    if (!this.effort.afford(this.player, p.cost)) return;
+    if (!this.effort.affordStroke(this.player, p.cost)) return;
     this.combat.begin(p);
     this.mode = 'use';
     const striker = p.striker;
@@ -760,7 +760,7 @@ export class WorldScene extends Phaser.Scene {
         this.player.stamina.flush();
         if (this.mode === 'rail') this.mode = 'play';
         // l'appui sur Échap ou l'Espace d'avant ne relance rien
-        this.useLockedUntil = this.time.now + 150;
+        this.useLockedUntil = this.time.now + LOCKS.afterWork;
       }),
     );
   }
@@ -872,8 +872,8 @@ export class WorldScene extends Phaser.Scene {
       end: () => {
         if (this.mode === 'work') this.mode = 'play';
         // l'Espace d'avant ou l'appui qui l'a arrêté ne relance rien
-        this.useLockedUntil = this.time.now + 150;
-        this.interaction.lock(150);
+        this.useLockedUntil = this.time.now + LOCKS.afterWork;
+        this.interaction.lock(LOCKS.afterWork);
       },
     });
     if (!ok) this.mode = 'play';
@@ -933,9 +933,9 @@ export class WorldScene extends Phaser.Scene {
     const W = this.map.width;
     const H = this.map.height;
     const box = (px: number, py: number) => ({
-      left: Math.max(0, px - 5),
-      right: Math.min(W, px + 5),
-      top: Math.max(0, py - 8),
+      left: Math.max(0, px - FEET.w / 2),
+      right: Math.min(W, px + FEET.w / 2),
+      top: Math.max(0, py - FEET.h),
       bottom: Math.min(H, py),
     });
     // arrivé par le bord ouest ou est, on glisse du nord au sud ; par le nord ou le sud, d'ouest en est
@@ -963,7 +963,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Fondu au noir, puis la scène redémarre sur `start`. */
-  private fadeTo(start: WorldStart, ms = 200): void {
+  private fadeTo(start: WorldStart, ms = LOCKS.fade): void {
     this.mode = 'transition';
     this.player.stamina.flush();
     const cam = this.cameras.main;
@@ -1057,7 +1057,7 @@ export class WorldScene extends Phaser.Scene {
         // la prochaine fois que l'horloge sonne cette heure (le jour même, ou le lendemain si elle est passée)
         const at = Math.max(0, Math.min(24, cmd.hour)) * 60;
         const c = game.clock;
-        setClock(game, { day: c.day + (at <= c.minute ? 1 : 0), minute: at % 1440 });
+        setClock(game, { day: c.day + (at <= c.minute ? 1 : 0), minute: at % MINUTES_PER_DAY });
         break;
       }
       case 'stamina-infinite':
@@ -1110,7 +1110,7 @@ export class WorldScene extends Phaser.Scene {
     this.building = false;
     this.builder.exit();
     this.parcels.show(false);
-    this.interaction.lock(200);
+    this.interaction.lock(LOCKS.lock);
   }
 
   /**
@@ -1144,7 +1144,7 @@ export class WorldScene extends Phaser.Scene {
     if (action === 'help') return this.helpNow();
     this.talking?.resume();
     this.talking = undefined;
-    this.interaction.lock(200);
-    this.useLockedUntil = this.time.now + 200;
+    this.interaction.lock(LOCKS.lock);
+    this.useLockedUntil = this.time.now + LOCKS.lock;
   }
 }

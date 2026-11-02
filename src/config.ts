@@ -86,9 +86,10 @@ export const SHADOW = { dx: 0.25, dy: 0.1, color: 0x2b1a10, alpha: 0x40 / 255 };
 /**
  * Chantiers (systems/site.ts) : les piquets suivants s'aimantent au coin du tracé le plus près s'il est à moins de `snap` px du
  * point que regarde Xéros ; la ligne d'état « Abri à bois : dés, 2 sur 4 » paraît quand Xéros est à moins de `near` px de
- * l'emprise ; `ghost` et `aimed` : opacité des places à remplir, et de celle que vise Xéros avec une pièce qui lui convient.
+ * l'emprise ; `ghost` et `aimed` : opacité des places à remplir, et de celle que vise Xéros avec une pièce qui lui convient ;
+ * `helpReach` : la mère aide à dresser une poutre couchée dont un bout est à moins de ce rayon (px, une case) de sa place.
  */
-export const SITE = { snap: 12, near: 110, ghost: 0.35, aimed: 0.7 };
+export const SITE = { snap: 12, near: 110, ghost: 0.35, aimed: 0.7, helpReach: 32 };
 
 /**
  * Poser devant soi : écart entre la collision de Xéros et ce qu'il pose (`gap`, px) ; si la place juste devant lui est prise, on
@@ -156,16 +157,25 @@ export const BREATH = {
 } as const;
 
 /**
+ * Les pieds d'un personnage (px) : la boîte de collision (`w` × `h`, son bas `gap` au-dessus des pieds), et le point qui passe les
+ * sorties et les portes (`point` au-dessus des pieds). Une seule source : Actor, les sorties, les intérieurs, l'arrivée par le bord.
+ */
+export const FEET = { w: 10, h: 8, gap: 2, point: 3 };
+
+/** La taille de Xéros (cm, du sol au haut du bol de cheveux) : la seule ; les toits, le mode construction et les intérieurs en partent. */
+export const XEROS_HEIGHT = 170;
+
+/**
  * Le mode construction (le bac à sable, systems/build.ts, world/build.ts) : la grille (cm) de l'emprise et des crans de hauteur ;
  * `high` : une pièce posée à cette hauteur ou plus haut ne bloque plus le passage ; `head` : une pièce dont la base est à cette
- * hauteur ou plus haut s'efface quand Xéros passe dessous (sa tête, 1,60 m) ; `camera` : vitesse de la caméra libre (px/s, Maj :
+ * hauteur ou plus haut s'efface quand Xéros passe dessous (sa tête, `XEROS_HEIGHT`) ; `camera` : vitesse de la caméra libre (px/s, Maj :
  * `fast` fois plus) ; `ghost` : opacité du fantôme (`refused` : quand la pose est refusée).
  */
-export const BUILD = { grid: 20, high: 200, head: 160, camera: 260, fast: 3, ghost: 0.6, refused: 0.25 };
+export const BUILD = { grid: 20, high: 200, head: XEROS_HEIGHT, camera: 260, fast: 3, ghost: 0.6, refused: 0.25 };
 
 /**
  * Les intérieurs (chantier « intérieurs », world/interior.ts, world/interiorMap.ts) : un bâtiment posé en mode construction se
- * reconnaît à sa porte, la pièce est ce qui est clos autour d'elle. Hauteurs en cm : ce qui a sa base sous `headroom` barre le passage,
+ * reconnaît à sa porte, la pièce est ce qui est clos autour d'elle. Hauteurs en cm : ce qui a sa base sous `headroom` (la taille de Xéros et 10 cm de garde) barre le passage,
  * ce qui l'a entre `headroom` et `lintel` est un linteau (l'ouverture dessous est un passage, la pièce reste close) ; ce dont le dessus
  * est sous `floor` est au sol (dalles, seuil) ; `cell` : la grille de la recherche (cm, un pixel) ; `search` : jusqu'où l'on cherche le
  * dedans derrière une porte ; `maxCells` : au-delà, ce n'est pas une pièce close ; `reach` : l'épaisseur des murs qu'on prend autour de
@@ -175,7 +185,7 @@ export const BUILD = { grid: 20, high: 200, head: 160, camera: 260, fast: 3, gho
  * taille des taches de lumière (`light`, × l'image `sunpatch`).
  */
 export const INTERIOR = {
-  headroom: 180,
+  headroom: XEROS_HEIGHT + 10,
   lintel: 240,
   floor: 30,
   cell: 5,
@@ -227,7 +237,19 @@ export const PLAYER = {
    */
   walkCadence: 100,
   carryCadence: 55,
+  /** La marche portée : la cadence de son dessin suit la vitesse divisée par ce rapport (px/s par image/s), jamais sous `carryCadence`. */
+  carryStride: 1.4,
 };
+
+/**
+ * Les petits délais entre deux états (ms) : `fade` le fondu d'un changement de carte (`fadeIn` à l'arrivée) ; `lock` l'interaction
+ * bloquée après un fondu, un dialogue, la sortie du mode construction (l'appui qui l'a fermé ne relance rien) ; `afterWork` Espace
+ * bloqué après un travail ou une passe arrêtés.
+ */
+export const LOCKS = { fade: 200, fadeIn: 220, lock: 200, afterWork: 150 };
+
+/** La lueur d'un feu (`light` de props.json) : teinte, opacité de pose puis son battement, la taille de l'image `glow` (px), l'écart d'échelle, la durée d'un battement (ms, plus un tirage). */
+export const GLOW = { tint: 0xffa040, alpha: 0.32, from: 0.26, to: 0.4, image: 64, scale: [0.95, 1.04], ms: 180, jitter: 140 };
 
 /**
  * Faire rouler une bille (systems/roll.ts) : il faut pousser `startMs` ms sans lâcher avant qu'elle ne bouge ; elle avance

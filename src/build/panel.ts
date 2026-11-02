@@ -3,6 +3,7 @@
 // envoie une BuildCommand (events.ts) que WorldScene transmet au mode construction (systems/build.ts), et il affiche ce que la
 // scène lui renvoie (BuildStatus). Vignettes : les images produites par build-art (src/generated/assets.ts).
 
+import { BUILD } from '../config';
 import { wood } from '../content';
 import { buildPlans, onBuildPlans } from '../content/buildPlans';
 import type { WoodAge, WoodLook } from '../content/types';
@@ -298,7 +299,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
         age = s.age;
         render();
       }
-      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool} (bois ${wood.ages[s.age]})${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * 20} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}${s.hint ? `\n${s.hint}` : ''}`;
+      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool} (bois ${wood.ages[s.age]})${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * BUILD.grid} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}${s.hint ? `\n${s.hint}` : ''}`;
     },
   };
 }

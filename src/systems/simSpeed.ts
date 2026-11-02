@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
+import { time } from '../content';
 
-/** Les vitesses de simulation proposées dans ?dieu. */
-export const SIM_SPEEDS = [1, 2, 5, 10, 20, 50] as const;
+/** Les vitesses de simulation proposées dans ?dieu : les paliers du joueur (time.json), et celui de ?dieu. */
+export const SIM_SPEEDS: readonly number[] = [...time.speeds, time.dieuSpeed];
 
 /** Le facteur en ce moment (1 : le jeu normal). */
 let factor = 1;

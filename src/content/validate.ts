@@ -224,6 +224,8 @@ export interface Content {
   combat: CombatDef;
   /** Le travail (work.json) : les coups, la matière, les points de calage. */
   work: WorkDef;
+  /** Le temps (time.json) : les paliers de la vitesse du temps. */
+  time?: { speeds: readonly number[]; dieuSpeed: number };
   /**
    * Les poses des gestes de combat (src/generated/combatPoses.ts), passées par qui les a (npm run check, le jeu) : validate.ts ne les
    * importe pas, car build-art, qui les écrit, l'utilise avant de les avoir écrites (sur un dossier neuf, elles n'existent pas encore).
@@ -1130,11 +1132,18 @@ export function workDurations(): { name: string; strokes: number; pauses: number
 }
 
 /** Les points de calage du travail (work.json, `calibration`) : chacun doit tenir sa durée, à `tolerance` près. */
-export function validateWork(c: Pick<Content, 'work' | 'items' | 'props' | 'strength'>, cat: Catalog): string[] {
+export function validateWork(c: Pick<Content, 'work' | 'items' | 'props' | 'strength' | 'wood'>, cat: Catalog): string[] {
   const errors: string[] = [];
   if (c.strength.swing.humanMax < c.strength.swing.torque) errors.push("strength.json swing : 'humanMax' sous le couple de Xéros");
   for (const r of Object.values(c.work.references)) if (r.torque > c.strength.swing.humanMax) errors.push(`work.json references : un couple (${r.torque}) au-delà du plafond humain`);
-  for (const k of ['axe', 'hatchet', 'maul', 'broadaxe']) if (!c.items[k]?.work) errors.push(`items.json '${k}' : un outil au travail sans 'work'`);
+  // les outils du bois (wood.json : couper, fendre, équarrir) se travaillent au coup ; les coups nommés existent
+  for (const k of [c.wood.cut.tool, c.wood.split.maul, c.wood.hew.tool]) if (!c.items[k]?.work) errors.push(`items.json '${k}' : un outil au travail sans 'work'`);
+  for (const [kind, st] of Object.entries(c.work.jobs)) if (!c.work.strokes[st]) errors.push(`work.json jobs '${kind}' : coup '${st}' absent de 'strokes'`);
+  for (const [k, it] of Object.entries(c.items))
+    for (const [kind, st] of Object.entries(it.work?.strokes ?? {})) {
+      if (!(kind in c.work.jobs)) errors.push(`items.json '${k}' work.strokes : genre de travail '${kind}' inconnu (jobs de work.json)`);
+      if (!c.work.strokes[st]) errors.push(`items.json '${k}' work.strokes : coup '${st}' absent de work.json`);
+    }
   for (const [k, p] of Object.entries(c.props)) {
     const h = p.harvest;
     if (h?.work && !h.tool) errors.push(`props.json '${k}' : une récolte travaillée au coup ('work') demande un outil`);
@@ -1173,6 +1182,10 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // le travail : les outils, les récoltes au coup, les points de calage
   addAll(validateWork(c, cat));
+
+  // le temps : la plaquette du cadran (art/ui/clock.ts) a la place de cinq crans ; le palier de ?dieu au-dessus de ceux du joueur
+  if (c.time && c.time.speeds.length > 5) err(`time.json : ${c.time.speeds.length} paliers, la plaquette du cadran n'a que cinq crans`);
+  if (c.time && c.time.dieuSpeed <= Math.max(...c.time.speeds)) err(`time.json : 'dieuSpeed' (${c.time.dieuSpeed}) doit dépasser les paliers du joueur`);
 
   // Joueur
   for (const state of ['idle', 'walk']) {

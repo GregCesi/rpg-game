@@ -354,3 +354,6 @@ export function metresLabel(cm: number): string {
 
 /** Le diamètre dont la poutre se dresse (le normal) : celui des poteaux d'un chantier. */
 export const BEAM_SIZE = Object.keys(WOOD.sizes).find((k) => WOOD.sizes[k].looks.beam?.up) ?? Object.keys(WOOD.sizes)[0];
+
+/** La poutre d'une place de chantier (`accepts.wood`) : la pièce de bois de BEAM_SIZE, équarrie sur ses quatre faces, de `length` cm, dans le sens `axis`. */
+export const beamPiece = (length: number, axis: WoodPiece['axis'] = 'ew'): WoodPiece => ({ size: BEAM_SIZE, length, shape: 'round', hewn: WOOD.hew.faces * WOOD.hew.perFace, axis });

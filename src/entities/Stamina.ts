@@ -77,9 +77,9 @@ export class Stamina {
     return def.costs.turnPerKg * kg;
   }
 
-  /** Prix de dresser une poutre de `kg` sur son appui ; avec de l'aide (`helped`), la moitié. */
+  /** Prix de dresser une poutre de `kg` sur son appui ; avec de l'aide (`helped`), la part `raiseHelped` (stamina.json). */
   raiseCost(kg: number, helped = false): number {
-    return def.costs.raisePerKg * kg * (helped ? 0.5 : 1);
+    return def.costs.raisePerKg * kg * (helped ? def.costs.raiseHelped : 1);
   }
 
   /** Prix par seconde de marcher en portant `load` kg : proportionnel à ce qui dépasse `walk` (strength.json, × la force). */

@@ -16,5 +16,6 @@
     "turn": 2,
     "place": 5,
     "raise": 15
-  }
+  },
+  "dieuSpeed": 50
 }

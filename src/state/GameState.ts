@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { items, stamina, time } from '../content';
-import { between, later } from '../world/clock';
+import { MINUTES_PER_DAY, between, later } from '../world/clock';
 import { morning, wakeTime } from '../world/sleep';
 import { BuildPlacedSchema, JointTypeSchema, CornerSchema, NaturalSchema, PileWoodSchema, WoodPieceSchema, type BuildPlaced, type Natural, type WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
@@ -190,7 +190,7 @@ export const GameStateSchema = z.strictObject({
    * L'horloge (docs/CONCEPTION.md, « Le temps ») : le jour (1 au départ) et la minute du jour (0 à 1 440, avec des fractions). Elle
    * avance à la vitesse du temps (systems/clock.ts) et des minutes d'un travail ; le sommeil la mène au lever.
    */
-  clock: z.strictObject({ day: z.number().int().positive(), minute: z.number().min(0).lt(1440) }),
+  clock: z.strictObject({ day: z.number().int().positive(), minute: z.number().min(0).lt(MINUTES_PER_DAY) }),
   /** Les plans que Xéros connaît (clés de plans.json) : appris sur la planchette de la mère. */
   knownPlans: z.array(id),
   /** Prochain identifiant de chantier (unique dans toute la partie). */
@@ -361,9 +361,9 @@ export function setClock(s: GameState, clock: { day: number; minute: number }): 
  */
 export function advanceClock(s: GameState, minutes: number): void {
   if (minutes <= 0) return;
-  const before = Math.floor((s.clock.day * 1440 + s.clock.minute) / time.saveEveryMinutes);
+  const before = Math.floor((s.clock.day * MINUTES_PER_DAY + s.clock.minute) / time.saveEveryMinutes);
   s.clock = later(s.clock, minutes);
-  if (Math.floor((s.clock.day * 1440 + s.clock.minute) / time.saveEveryMinutes) !== before) revision++;
+  if (Math.floor((s.clock.day * MINUTES_PER_DAY + s.clock.minute) / time.saveEveryMinutes) !== before) revision++;
 }
 
 /** Ce que tient la main `slot` devient `what` (la branche taillée devient un piquet, dans la même main). */

@@ -2,6 +2,7 @@
   "density": 900,
   "grid": 20,
   "min": 60,
+  "max": 700,
   "cut": {"tool": "axe", "hits": 3},
   "hew": {"tool": "broadaxe", "perFace": 3, "faces": 4, "beam": 20, "stroke": 15},
   "split": {"wedge": "splitting-wedge", "maul": "maul", "hits": 3},

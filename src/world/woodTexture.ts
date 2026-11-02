@@ -5,11 +5,12 @@
 // par le bout de face et de dos (sa planche `held-…`), en long de profil, assemblée à sa longueur.
 
 import type Phaser from 'phaser';
+import { SHADOW } from '../config';
 import type { WoodPiece } from '../content/types';
 import { composeOps, framesOf, lookDef, lookOf, sheetOf, woodKey, woodSize, woodTraits, type ComposeOpts } from './woodShape';
 
-/** Couleur de l'ombre au sol (`x` de la palette `world`) : ôtée de la pièce portée, qui ne touche pas le sol. */
-const SHADOW_RGBA = [0x2b, 0x1a, 0x10, 0x40] as const;
+/** Couleur de l'ombre au sol (config.ts `SHADOW`, le `x` de la palette) : ôtée de la pièce portée, qui ne touche pas le sol. */
+const SHADOW_RGBA = [(SHADOW.color >> 16) & 0xff, (SHADOW.color >> 8) & 0xff, SHADOW.color & 0xff, Math.round(SHADOW.alpha * 255)] as const;
 
 /** Dessine les opérations d'une pièce dans `ctx`, décalées de `ox` (l'image de roulement `frame`). */
 function paint(scene: Phaser.Scene, ctx: CanvasRenderingContext2D, piece: WoodPiece, ox: number, opts: ComposeOpts): void {
