@@ -1,5 +1,11 @@
 // Le fagot (`faggot`, fiche docs/objets/faggot.md) : dix branches sèches serrées par un lien de chanvre.
 //
+// Selon son nombre de branches (le monde ne limite pas : il se noue à partir de deux, CONCEPTION « Le monde ne limite pas ») : une
+// image par nombre, de 2 à 12 (`faggot-n<n>`, `faggot-n<n>-ns`), calculée des branches liées (`faggotDims`) : le faisceau garde
+// la longueur des branches (130 cm) et sa section suit leur nombre, chaque branche y prenant la même part (le diamètre de bois
+// croît comme la racine du nombre : 40 cm pour dix) ; à l'écran, une rangée de bois sur deux est une branche vue de dessus,
+// l'autre l'interstice. `faggot` et `faggot-ns` sont le fagot de dix (`faggot-n10`).
+//
 // Gabarit : cylindre de 130 cm de long, Ø 50 cm, contour compris.
 // - Est-ouest (`faggot`) : 26 px de long, 11 de haut (Ø × 1,12) ; bouts en ovales de 5 × 10.
 // - Nord-sud (`faggot-ns`, tas tourné) : règle D (docs/STYLE.md section 8), la silhouette de l'est-ouest inversée, 13 × 27
@@ -151,22 +157,41 @@ function dropShadow(c: Canvas, down: number, fromY = 0) {
   }
 }
 
-/** Le fagot est-ouest, sans ombre : 26 × 11 px de silhouette (et ses rameaux), dans une image de 27 × 14. */
-const FAGGOT_TWIGS = [6, 16];
-export function faggotBody(): Canvas {
-  const c = new Canvas(27, 14);
-  // intérieur de 24 × 9, contour autour : 26 × 11 ; les rameaux montent de deux rangées au-dessus
-  bundleEW(c, 1, 3, 24, 9, 81, FAGGOT_TWIGS);
+/** Le nombre de branches du fagot de toujours (`faggot`, `faggot-ns`), et les nombres dessinés (`faggot-n<n>`). */
+export const FAGGOT_BRANCHES = 10;
+export const FAGGOT_COUNTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+
+/**
+ * Les dimensions réelles d'un fagot de `n` branches (cm, contour compris, comme `dims` de props.json) : la longueur des branches
+ * (130 cm), et le diamètre du faisceau, dont la section de bois est `n` fois celle d'une branche avec sa part de vide (dix branches :
+ * 40 cm de bois, 50 cm contour compris) ; à l'écran (cylindre couché est-ouest, gabarit) : 26 px de long, Ø × 1,12 de haut, et les
+ * rangées de bois sous le contour (`rows`).
+ */
+export function faggotDims(n: number): { w: number; d: number; h: number; rows: number } {
+  const dia = Math.round(10 + 40 * Math.sqrt(n / FAGGOT_BRANCHES));
+  return { w: 130, d: dia, h: dia, rows: Math.round((dia * 1.12) / 5) - 2 };
+}
+
+/** Les rameaux qui dépassent du dessus : deux pour un fagot de six branches et plus, un en dessous. */
+const twigsOf = (n: number) => (n >= 6 ? [6, 16] : [9]);
+
+/** Le fagot est-ouest de `n` branches, sans ombre : 26 px de long (et ses rameaux), Ø × 1,12 de haut (11 px pour dix branches). */
+export function faggotBody(n = FAGGOT_BRANCHES): Canvas {
+  const { rows } = faggotDims(n);
+  const c = new Canvas(27, rows + 5);
+  // intérieur de 24 × rows, contour autour ; les rameaux montent de deux rangées au-dessus
+  bundleEW(c, 1, 3, 24, rows, 81, twigsOf(n));
   return outlineBundle(c);
 }
 
-/** Le fagot est-ouest au sol : ombre sur les trois rangées sous la silhouette, décalée vers la droite. */
-function faggot(): Canvas {
-  const body = faggotBody();
+/** Le fagot est-ouest au sol : ombre sur les rangées sous la silhouette, décalée vers la droite. */
+function faggot(n = FAGGOT_BRANCHES): Canvas {
+  const { rows } = faggotDims(n);
+  const body = faggotBody(n);
   // deux rangées d'ombre sous la silhouette
-  const c = new Canvas(28, 17);
+  const c = new Canvas(28, rows + 8);
   c.stamp(body.toGrid(), 0, 0);
-  dropShadow(c, 2, 9);
+  dropShadow(c, 2, rows);
   return trimTop(c);
 }
 
@@ -233,11 +258,12 @@ function bundleNS(c: Canvas, x0: number, y0: number, len: number, dia: number, s
   return c;
 }
 
-/** Le fagot nord-sud : 13 × 27 px de silhouette (l'est-ouest inversé, règle D), ombre décalée à l'est et vers le sud. */
-function faggotNS(): Canvas {
-  const c = new Canvas(16, 31);
-  // intérieur de 9 × 24, contour autour : 11 × 26 ; les rameaux dépassent de deux colonnes à l'ouest
-  outlineBundle(bundleNS(c, 3, 2, 24, 9, 82, FAGGOT_TWIGS));
+/** Le fagot nord-sud de `n` branches : l'est-ouest inversé (règle D ; 13 × 27 px pour dix branches), ombre décalée à l'est et vers le sud. */
+function faggotNS(n = FAGGOT_BRANCHES): Canvas {
+  const { rows } = faggotDims(n);
+  const c = new Canvas(rows + 7, 31);
+  // intérieur de rows × 24, contour autour ; les rameaux dépassent de deux colonnes à l'ouest
+  outlineBundle(bundleNS(c, 3, 2, 24, rows, 82, twigsOf(n)));
   dropShadow(c, 2, 0);
   return trimTop(c);
 }
@@ -251,4 +277,10 @@ function faggotIcon(): Canvas {
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
 
-export default [img('faggot', faggot()), img('faggot-ns', faggotNS()), img('item-faggot', faggotIcon())];
+export default [
+  img('faggot', faggot()),
+  img('faggot-ns', faggotNS()),
+  img('item-faggot', faggotIcon()),
+  // le fagot selon son nombre de branches, de 2 à 12, dans ses deux vues
+  ...FAGGOT_COUNTS.flatMap((n) => [img(`faggot-n${n}`, faggot(n)), img(`faggot-n${n}-ns`, faggotNS(n))]),
+];

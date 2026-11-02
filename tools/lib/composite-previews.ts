@@ -209,6 +209,8 @@ const PILE_WOOD: PileWood[] = [
   { size: 'big', shape: 'quarter', length: 120 },
   { size: 'normal', shape: 'round', length: 100, hewn: 6 },
   { size: 'pole', shape: 'round', length: 200 },
+  { size: 'pole', shape: 'half', length: 200 },
+  { size: 'pole', shape: 'lath', length: 200 },
   { size: 'big', shape: 'plank', length: 200 },
 ];
 

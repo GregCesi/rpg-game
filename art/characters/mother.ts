@@ -235,6 +235,117 @@ const armSide: Grid = [
   '.DD.',
 ];
 
+// ---------- Assise (sur le banc de 45 cm, `bench`, ou le tabouret) ----------
+// Elle s'assoit sur un siège de 45 cm (9 px) : la tête descend de 2 px (HEAD_SIT), le buste se tasse, les cuisses se voient de
+// dessus (le giron, couvert du tablier), les jambes pendent devant le siège jusqu'aux sabots, au sol à y=45 comme debout. À
+// l'échelle stylisée du personnage (grosse tête, jambes courtes : les hanches à 9 px du sol debout), une assise « vraie » la ferait
+// grandir ; on garde l'impression de l'assise : plus basse de 2 px, le giron, les mains posées dessus.
+// Le siège se pose sous elle, dessiné avant elle (elle passe par-dessus) : SEAT, le point de la frame où tombe le milieu du bord
+// sud du siège, au sol (le bas de l'image du banc, sans son ombre). De face, ses pieds sont juste devant ce bord ; de dos, le
+// siège cache ses jambes (elles sont au-delà, au nord) : l'image s'arrête au bord du siège ; de profil, le siège est sous ses
+// cuisses, ses jambes pendent devant lui, à l'est.
+
+const HEAD_SIT = HEAD_Y + 2;
+const BODY_SIT = HEAD_SIT + 15;
+
+/** Où poser le siège sous elle, par vue : le milieu du bord sud du siège au sol (le bas de l'image du banc). */
+export const SEAT: Record<'down' | 'up' | 'right', { x: number; y: number }> = {
+  down: { x: 16, y: 44 },
+  up: { x: 16, y: 45 },
+  right: { x: 15, y: 45 },
+};
+
+// De face : buste tassé, les avant-bras repliés vers le giron, les mains posées l'une près de l'autre ; le giron (les cuisses
+// vues de dessus) couvert du tablier, son bord (les genoux) dans l'ombre ; la jupe qui pend des genoux aux sabots. Demi-grille.
+const sitFront = mirror([
+  '....oS', // cou
+  '..ooqs', // col
+  '.oRrqs', // encolure
+  'oRRraa', // bavette
+  'oRrqaa', // bras
+  'oRrqAA', // taille du tablier
+  'oqsSsa', // avant-bras repliés, les mains sur le giron
+  'oRraaa', // le giron, vu de dessus
+  'oRraaa',
+  'oqqAAA', // le bord des genoux, dans l'ombre
+  '.oqrra', // la jupe qui pend devant le siège
+  '.oqrra',
+  '.oqqqA', // ourlet
+  '.ookKK', // sabots
+  '...ooo',
+]);
+
+// De dos : le buste, le lien du tablier, puis la jupe étalée sur le siège ; le siège cache le reste. Demi-grille.
+const sitBack = mirror([
+  '....oS',
+  '..ooqq',
+  '.oRrrr',
+  'oRRrrr',
+  'oRrqrr',
+  'oRrqrr',
+  'oRrqAA', // lien du tablier
+  'oqrrrr', // la jupe sur le siège, qui s'étale
+  'oqrrrq',
+  'oqqqqq', // son bord, sur l'arête du siège
+  '.ooooo',
+]);
+
+// De profil (droite) : le buste droit, le giron qui avance vers l'est à la hauteur du siège, les jambes qui pendent devant lui ;
+// sous les cuisses, le vide où se voit le siège.
+const sitSide: Grid = [
+  '..ooQQQqSo......',
+  '.oRrrrrraAo.....',
+  '.oRrrrrraAo.....',
+  '.oRrrrrraAo.....',
+  '.oRrrrrraAo.....',
+  '.oRAAAAAaAo.....', // lien du tablier
+  '.oRrrrrraaaaAo..', // le giron : les cuisses vers l'est, le tablier dessus
+  '.oRrrrrraaaaaAo.',
+  '.oqqqqqqqqqqqAo.', // le dessous des cuisses, dans l'ombre
+  '.........oRraAo.', // les jambes qui pendent devant le siège
+  '.........oRraAo.',
+  '.........oRraAo.',
+  '.........oqqAAo.', // ourlet
+  '.........ookkKKo', // sabots, la pointe vers l'est
+  '..........ooooo.',
+];
+
+// Le bras de profil, assise : le haut du bras le long du buste, l'avant-bras posé sur le giron, la main vers le genou.
+const armSit: Grid = [
+  '.QQ....',
+  'QRrQ...',
+  'QRrQ...',
+  'QRqQ...',
+  'QRqsssD',
+  '.DSSSSD',
+];
+
+/** Assise, face ou dos. */
+function sitFrontal(facing: Facing): Grid {
+  const c = new Canvas(W, H);
+  if (facing === 'down') {
+    c.ellipse(16.5, 45.5, 5.5, 1.5, 'x');
+    c.stamp(sitFront, OX, BODY_SIT);
+    c.stamp(headFront, OX, HEAD_SIT);
+  } else {
+    c.stamp(sitBack, OX, BODY_SIT);
+    c.stamp(apronBow, OX + 4, BODY_SIT + 6);
+    c.stamp(headBack, OX, HEAD_SIT);
+    c.stamp(tailsBack, OX + 4, HEAD_SIT + 15);
+  }
+  return selOut(shadeRight(c.toGrid()), DARK);
+}
+
+/** Assise, profil droit. */
+function sitSideView(): Grid {
+  const c = new Canvas(W, H);
+  c.ellipse(21, 45.5, 3, 1.2, 'x');
+  c.stamp(sitSide, OX, BODY_SIT);
+  c.stamp(armSit, OX + 4, BODY_SIT + 1);
+  c.stamp(headSide, OX, HEAD_SIT);
+  return selOut(c.toGrid(), DARK);
+}
+
 // ---------- Composition ----------
 
 function shadow(c: Canvas) {
@@ -284,6 +395,11 @@ const mother: SpriteSheetSource = {
     'idle-up': { frames: breathe((b) => frontal('up', b)), frameRate: 2, repeat: -1 },
     'idle-right': { frames: breathe(side), frameRate: 2, repeat: -1 },
     'idle-left': { frames: breathe(side).map(flipX), frameRate: 2, repeat: -1 },
+    // assise, sur le banc ou le tabouret (SEAT : où poser le siège sous elle) ; une image, la gauche retournée
+    'sit-down': { frames: [sitFrontal('down')], frameRate: 1, repeat: 0 },
+    'sit-up': { frames: [sitFrontal('up')], frameRate: 1, repeat: 0 },
+    'sit-right': { frames: [sitSideView()], frameRate: 1, repeat: 0 },
+    'sit-left': { frames: [flipX(sitSideView())], frameRate: 1, repeat: 0 },
   },
 };
 

@@ -67,7 +67,7 @@ export const naturalFactor = (n: Natural | undefined) => (n ? (n.size / 100) ** 
 
 /**
  * Section du bois d'une pièce (m²) : le rond de son diamètre, la moitié pour une demi, le quart pour un quart, l'épaisseur × la
- * largeur pour une planche (`plank` de wood.json) ; la pièce qu'on
+ * largeur pour une planche (`plank` de wood.json) ou une latte (sa section) ; la pièce qu'on
  * équarrit perd à chaque face finie un quart de ce qui sépare son rond du carré de la poutre (`hew.beam` de côté), et la face en cours
  * (`dressed`) la part de ce quart qu'elle a dressée de la longueur (section moyenne).
  */
@@ -77,7 +77,13 @@ function woodSection(piece: WoodPiece): number {
   const round = Math.PI * (size.diameter / 200) ** 2;
   if (piece.shape === 'half') return round / 2;
   if (piece.shape === 'quarter') return round / 4;
-  if (piece.shape === 'plank') return (woodDef.plank.thick / 100) * (woodDef.plank.wide / 100);
+  // la planche et la latte : leur section rectangulaire (`wide` × `thick` de leur section, sinon `plank` de wood.json)
+  if (piece.shape === 'plank' || piece.shape === 'lath') {
+    const sec = size.looks[piece.shape]?.section;
+    const wide = sec?.wide ?? woodDef.plank.wide;
+    const thick = sec?.thick ?? woodDef.plank.thick;
+    return (thick / 100) * (wide / 100);
+  }
   const hew = woodDef.hew;
   const done = Math.min(hew.faces, Math.floor((piece.hewn ?? 0) / hew.perFace));
   // la face en cours ôte son bois sur la part dressée de la longueur : en moyenne, cette part d'une face

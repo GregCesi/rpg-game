@@ -37,6 +37,7 @@ import { lyingPreview } from './lib/lying-preview';
 import { agesPreview } from './lib/ages-preview';
 import { auditPreview } from './lib/audit-preview';
 import { briquesPreview } from './lib/briques-preview';
+import { maisonPiecesPreview } from './lib/maison-pieces-preview';
 import { sillPreview } from './lib/sill-preview';
 import { jointsPreview } from './lib/joints-preview';
 import gesturesJson from '../src/content/gestures.json';
@@ -436,6 +437,9 @@ if (withPreview) {
   // les matières : chaque objet du chantier « briques » dans toutes ses vues, puis chaque chaîne de transformation, avec le déchet
   const briques = briquesPreview(sources);
   if (briques) writeFileSync(join(PREVIEW, 'briques.png'), PNG.sync.write(briques));
+  // les petites pièces de la maison de Xéros : la perche fendue (palançon, latte), la chaux, la mère assise, le fagot de 2 à 12 branches
+  const maison = maisonPiecesPreview(sources);
+  if (maison) writeFileSync(join(PREVIEW, 'maison-petites-pieces.png'), PNG.sync.write(maison));
 }
 /**
  * Une carte Tiled lue pour l'aperçu d'un bâtiment : le sol (numéros du registre -> grilles du jeu de tuiles de la carte)

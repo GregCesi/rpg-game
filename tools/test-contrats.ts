@@ -20,7 +20,7 @@ import { damage, reachCm } from '../src/world/strike';
 import { harvestKind, wields, woodWorkOf } from '../src/world/tools';
 import { defOf, woodDims, WOOD_PIECE } from '../src/world/woodPiece';
 import { pileWoodOf, woodPileDef } from '../src/world/woodPile';
-import { agedKey, lookDef, sheetOf } from '../src/world/woodShape';
+import { agedKey, lookDef, sheetOf, shapeOfLook } from '../src/world/woodShape';
 import { harvestJob, planOf, swingerOf, woodJob } from '../src/world/workPlan';
 
 const manifest = JSON.parse(readFileSync('src/generated/manifest.json', 'utf8'));
@@ -122,7 +122,7 @@ function weapon(k: string, miss: (w: string) => void): void {
 function woodSize(size: string, miss: (w: string) => void): void {
   const s = wood.sizes[size];
   for (const look of looksOf(size)) {
-    const piece: WoodPiece = { size, length: 100, shape: ({ half: 'half', quarter: 'quarter', rect: 'plank' } as Record<string, WoodPiece['shape']>)[lookDef(size, look).section.shape] ?? 'round', axis: 'ew', ...(look === 'beam' ? { hewn: wood.hew.faces * wood.hew.perFace } : {}) } as WoodPiece;
+    const piece: WoodPiece = { size, length: 100, shape: shapeOfLook(look), axis: 'ew', ...(look === 'beam' ? { hewn: wood.hew.faces * wood.hew.perFace } : {}) } as WoodPiece;
     const at = `${look}`;
     for (const axis of ['ew', 'ns'] as const) for (const age of ['new', 'worn', 'old'] as const) if (!drawn(sheetOf({ size, axis, age }))) miss(`${at} : sa planche ${sheetOf({ size, axis, age })}`);
     const dims = woodDims(piece);
@@ -259,7 +259,7 @@ check('essai : validate.ts', (miss) => errs.forEach((e) => miss(e)));
   check('limites : la pièce de bois', (miss) => {
     for (const size of Object.keys(wood.sizes))
       for (const look of looksOf(size)) {
-        const shape = ({ half: 'half', quarter: 'quarter', rect: 'plank' } as Record<string, WoodPiece['shape']>)[lookDef(size, look).section.shape] ?? 'round';
+        const shape = shapeOfLook(look);
         for (let length = wood.min; length <= wood.max; length += wood.grid) {
           const piece = { size, length, shape, axis: 'ew', ...(look === 'beam' ? { hewn: wood.hew.faces * wood.hew.perFace } : {}) } as WoodPiece;
           const kg = woodMass(piece);
