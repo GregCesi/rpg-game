@@ -5,7 +5,7 @@
 //
 // Ce qui pourrait se gêner quand ils tournent ensemble, et pourquoi ça ne se gêne pas : chaque scénario a son navigateur (sa
 // sauvegarde, localStorage, est à lui) et son serveur sur un port libre (tools/lib/playtest.ts) ; chacun écrit ses propres aperçus
-// (.art-preview/<son nom>.png) ; les plans réécrits par la cabane, la grange et l'étal (src/content/plans/) ne sont jamais effacés,
+// (.art-preview/<son nom>.png) ; les plans réécrits par la cabane, la grange, l'étal et la maison (src/content/plans/) ne sont jamais effacés,
 // et le serveur les écrit d'un coup (renommage : vite.config.ts), si bien qu'un autre scénario qui démarre les lit toujours entiers ;
 // celui qui efface un plan (construction) tourne seul, après les autres (ALONE).
 
@@ -14,7 +14,7 @@ import { readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** Les scénarios, les plus longs d'abord (pour finir plus tôt quand ils tournent à plusieurs). */
-export const SCENARIOS = ['monde', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective'];
+export const SCENARIOS = ['maison', 'monde', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective'];
 
 /**
  * Ceux qui tournent seuls, après les autres : ils effacent un fichier que tous lisent au démarrage (construction écrit puis efface

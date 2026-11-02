@@ -30,6 +30,7 @@
     "test:cabane": "npm run art && npm run maps && tsx tools/test-cabane.ts",
     "test:grange": "npm run art && npm run maps && tsx tools/test-grange.ts",
     "test:etal": "npm run art && npm run maps && tsx tools/test-etal.ts",
+    "test:maison": "npm run art && npm run maps && tsx tools/test-maison.ts",
     "test:interieur": "npm run art && npm run maps && tsx tools/test-interieur.ts",
     "test:monde": "npm run art && npm run maps && tsx tools/test-monde.ts",
     "art:monde": "npm run art && npm run maps && tsx tools/world-preview.ts",
