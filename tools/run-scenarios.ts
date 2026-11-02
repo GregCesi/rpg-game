@@ -23,6 +23,11 @@ export const SCENARIOS = ['maison', 'monde', 'noeud', 'grange', 'equarrissage', 
 export const ALONE = ['construction'];
 
 const jobs = Math.max(1, Number(process.env.SCENARIOS_JOBS) || 4);
+/**
+ * Les scénarios qui tournent à x1 (SCENARIOS_X1, noms séparés par des virgules ; monde par défaut) : les autres tournent à x10 (la
+ * vitesse de simulation, tools/lib/playtest.ts), et celui-ci garde le jeu à sa vitesse vraie avant une fusion.
+ */
+const X1 = (process.env.SCENARIOS_X1 ?? 'monde').split(',').map((n) => n.trim()).filter(Boolean);
 /** Au-delà, un scénario est arrêté (SCENARIOS_LIMIT, en secondes ; 15 min par défaut). */
 const LIMIT_S = Math.max(60, Number(process.env.SCENARIOS_LIMIT) || 900);
 
@@ -39,7 +44,7 @@ function run(name: string): Promise<Result> {
   const t0 = Date.now();
   return new Promise((resolve) => {
     // son propre groupe de processus : l'arrêter arrête aussi son navigateur et son serveur
-    const child = spawn('npx', ['tsx', `tools/test-${name}.ts`], { detached: true, env: { ...process.env, FENDAGE_REQUIRED: process.env.FENDAGE_REQUIRED ?? '1' } });
+    const child = spawn('npx', ['tsx', `tools/test-${name}.ts`], { detached: true, env: { ...process.env, FENDAGE_REQUIRED: process.env.FENDAGE_REQUIRED ?? '1', ...(X1.includes(name) ? { PLAYTEST_SPEED: '1' } : {}) } });
     let out = '';
     // le seul garde-fou de temps : un scénario qui ne finit pas (une attente d'état qui ne vient jamais) est arrêté
     const guard = setTimeout(() => {

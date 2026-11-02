@@ -31,6 +31,7 @@
     "test:grange": "npm run art && npm run maps && tsx tools/test-grange.ts",
     "test:etal": "npm run art && npm run maps && tsx tools/test-etal.ts",
     "test:maison": "npm run art && npm run maps && tsx tools/test-maison.ts",
+    "test:mesure": "npm run art && npm run maps && tsx tools/mesure-scenarios.ts",
     "test:noeud": "npm run art && npm run maps && tsx tools/test-noeud.ts",
     "test:interieur": "npm run art && npm run maps && tsx tools/test-interieur.ts",
     "test:monde": "npm run art && npm run maps && tsx tools/test-monde.ts",
