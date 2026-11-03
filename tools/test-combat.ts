@@ -31,9 +31,9 @@ await playtest('combat', async ({ page, errors, load }) => {
     const { combatPoses } = await import(urls.poses);
     const notices: string[] = [];
     g.events.on('notice', (t: string) => notices.push(t));
-    const send = async (c: unknown, ms = 150) => {
+    const send = async (c: unknown) => {
       g.events.emit('dieu', c);
-      await sleep(ms);
+      await (window as any).__settle();
     };
     const press = async (code: string) => {
       window.dispatchEvent(new KeyboardEvent('keydown', { code }));
@@ -44,7 +44,7 @@ await playtest('combat', async ({ page, errors, load }) => {
       const a = w().player.actor;
       a.body.reset(Math.round(x), Math.round(y));
       a.face(face);
-      await sleep(100);
+      await (window as any).__frames(2);
     };
     // les attentes suivent l'état du jeu (le geste fini, l'enchaînement retombé), pas une durée : un jeu ralenti y arrive plus tard
     const frame = () => new Promise((res) => requestAnimationFrame(res));
@@ -70,7 +70,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     }
     if (!spot) throw new Error('pas de coin dégagé sur la ferme');
     await standAt(spot[0] + 80, spot[1] + 50, 'down');
-    await send({ kind: 'prop', prop: 'training-dummy' }, 300);
+    await send({ kind: 'prop', prop: 'training-dummy' });
     const dummy = w().map.props.find((p: any) => p.type === 'training-dummy');
     if (!dummy) throw new Error('le mannequin ne s’est pas posé');
     const foot = strike.footprint(dummy.def.dims, dummy.baseX, dummy.baseY);
@@ -102,6 +102,8 @@ await playtest('combat', async ({ page, errors, load }) => {
       // la durée du geste se mesure sur l'horloge du jeu : sous la charge, le temps réel d'une image ne suit pas celui du jeu
       const g0 = w().time.now;
       await press('Space');
+      // l'attaque a ramené le temps à x1 (règle du jeu, vérifiée par test-temps) : le coup se joue à la vitesse du scénario
+      await (window as any).__resume();
       let played = false;
       const texts = new Set<string>();
       // le premier pas du geste, puis jusqu'à sa fin
@@ -264,7 +266,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     const treeHits = tree.hits;
     await standAt(tree.aimX, tree.aimY + 12, 'up');
     const punch = await strikeOnce();
-    await sleep(300);
+    await (window as any).__idle();
     out.tree = { attack: punch.entry?.attack, hits: punch.entry?.hits.length, same: w().map.props.includes(tree) && tree.type === treeType && tree.hits === treeHits };
 
     // épuisé : rien ne part
@@ -308,7 +310,6 @@ await playtest('combat', async ({ page, errors, load }) => {
   // le mannequin posé par le catalogue du mode construction (une pièce de `builds`, pas un objet de la carte) : il est une cible ;
   // et encore après rechargement (la sauvegarde)
   await load('?construire&dieu&reset');
-  const sleep = (t: number) => new Promise((res) => setTimeout(res, t));
   // les outils ?dieu ne servent qu'en mode jeu : sortir du mode construction (B), changer de carte, y revenir
   await page.keyboard.press('KeyB');
   await page.evaluate(() => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === 'play', 'sortie du mode construction'));
@@ -330,7 +331,8 @@ await playtest('combat', async ({ page, errors, load }) => {
     return undefined;
   });
   assert.ok(spot, 'un coin dégagé sur la ferme');
-  await sleep(300);
+  const frames = (n: number) => page.evaluate((n) => (window as any).__frames(n), n);
+  await frames(2);
   const screen = (x: number, y: number) =>
     page.evaluate(([x, y]) => {
       const g = (window as any).game;
@@ -341,11 +343,13 @@ await playtest('combat', async ({ page, errors, load }) => {
   await page.evaluate(() => (window as any).game.events.emit('build', { kind: 'pick', piece: { prop: 'training-dummy' } }));
   const at = await screen(spot!.x, spot!.y);
   await page.mouse.move(at.x, at.y);
-  await sleep(100);
+  await frames(2);
   await page.mouse.click(at.x, at.y);
-  await sleep(200);
+  await page.evaluate(() =>
+    (window as any).__until(() => (window as any).game.scene.getScene('world').map.builds.some((b: any) => 'prop' in b.piece.piece && b.piece.piece.prop === 'training-dummy'), 'le mannequin posé'),
+  );
   await page.keyboard.press('KeyB');
-  await sleep(300);
+  await page.evaluate(() => (window as any).__idle('sorti du mode construction'));
   // frapper le mannequin posé : l'épée en main, droit devant lui, au sud ; rend les coups qui l'ont touché
   const hitBuilt = () =>
     page.evaluate(async () => {
@@ -356,25 +360,24 @@ await playtest('combat', async ({ page, errors, load }) => {
       if (!built) return { built: false };
       g.events.emit('dieu', { kind: 'give', held: { item: 'wooden-sword' } });
       g.events.emit('dieu', { kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
-      await sleep(200);
+      await (window as any).__frames(1);
       const t = w.combat.targets().find((q: any) => q.type === 'training-dummy');
       const a = w.player.actor;
       a.body.reset(Math.round((t.box.left + t.box.right) / 2), Math.round(t.box.bottom + 8));
       a.face('up');
-      await sleep(500);
+      await (window as any).__frames(2);
       const n = w.combat.log.length;
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
       await sleep(40);
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space' }));
-      for (let i = 0; i < 150 && (w.mode !== 'play' || w.combat.busy); i++) await sleep(20);
-      await sleep(100);
+      await (window as any).__frames(2);
+      await (window as any).__until(() => w.mode === 'play' && !w.combat.busy, 'le coup fini');
       const e = w.combat.log[n];
       return { built: true, mode: w.mode, attack: e?.attack, hits: e ? e.hits.filter((h: any) => h.type === 'training-dummy').map((h: any) => h.key.split(':')[0]) : [] };
     });
   const built = await hitBuilt();
-  await sleep(300);
+  await page.evaluate(() => (window as any).__idle());
   await load('?dieu');
-  await sleep(500);
   const reloaded = await hitBuilt();
   console.log(JSON.stringify({ built, reloaded }));
   assert.ok(built.built, 'le mannequin est posé par le catalogue du mode construction');

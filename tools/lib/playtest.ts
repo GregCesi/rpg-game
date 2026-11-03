@@ -191,6 +191,15 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     // par défaut, PLAYTEST_SPEED=<n> sinon (run-scenarios.ts met x1 aux scénarios de SCENARIOS_X1) ; remise après chaque chargement
     // `opts.speed` : un scénario qui mesure la vitesse du temps elle-même (test-temps) part de la sienne
     const speed = opts.speed ?? Math.max(1, Number(process.env.PLAYTEST_SPEED) || 10);
+    // `__resume()` : la vitesse du scénario, remise après ce qui la change dans le jeu (une attaque ramène le temps à x1)
+    await page.addInitScript(`
+      window.__speed = ${speed};
+      window.__resume = async () => {
+        const url = '/src/systems/simSpeed.ts';
+        const sim = await import(url);
+        if (sim.simSpeed() !== window.__speed) sim.setSimSpeed(window.game, window.__speed);
+      };
+    `);
     const setSpeed = (n: number) =>
       page.evaluate(async (n) => {
         const url = '/src/systems/simSpeed.ts';
