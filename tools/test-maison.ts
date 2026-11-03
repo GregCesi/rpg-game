@@ -9,7 +9,7 @@
 //     torchis, chaux : chaque couche remplace la précédente), la porte d'entrée et les trois portes intérieures entre leurs jambages,
 //     sept fenêtres et leurs volets, les sablières, les entraits des deux fermes, les pignons (le trou de fumée à l'ouest), les deux
 //     pans de chaume (chevronnage, demi couvert, plein : chacun remplace le précédent), le faîtage de terre ;
-//   - dedans : le foyer, la table et le banc, la jarre, deux sacs au cagibi, le lit, le coffre et l'établi de la mère (une demi-bille sur quatre pieds en perche, ses tenons) (la paillasse, les
+//   - dedans : l'âtre de la cheminée (sa hotte, son manteau, son conduit jusqu'au-dessus du faîte, par le pan nord percé), la table et le banc, la jarre, deux sacs au cagibi, le lit, le coffre et l'établi de la mère (une demi-bille sur quatre pieds en perche, ses tenons) (la paillasse, les
 //     outils, la corde, le tas de bois et le seau sont des objets de la carte : ils ne sont pas au plan) ;
 //   - la zone enregistrée comme plan : src/content/plans/maison-xeros.json (le plan s'écrit dans un dossier temporaire et se compare au
 //     plan commité ; PLANS_WRITE=1 le réécrit) ;
@@ -35,7 +35,7 @@ const PLAN_FILE = `${OUT_DIR}/maison-xeros.json`;
 const mtimeOf = (f: string) => (existsSync(f) ? statSync(f).mtimeMs : 0);
 const PLAN_BEFORE = mtimeOf(PLAN_FILE);
 /** Les pièces du catalogue dont la maison est faite (outre la pièce de bois, une poutre du normal). */
-const PROPS = /^(rough-sill-wall|narrow-sill-wall|threshold-stone|(staves|wattle|daub|lime)-(panel|window-panel|jamb|inner-jamb)|cottage-door|inner-door|plank-shutter|lime-gable|lime-gable-smoke|thatch-roof-frame|thatch-roof-half|thatch-roof|earth-ridge|hearth|table|bench|jar|sack|bed|chest)$/;
+const PROPS = /^(rough-sill-wall|narrow-sill-wall|threshold-stone|(staves|wattle|daub|lime)-(panel|window-panel|jamb|inner-jamb)|cottage-door|inner-door|plank-shutter|lime-gable|thatch-roof-frame|thatch-roof-half|thatch-roof|thatch-roof-pierced|earth-ridge|stone-hearth|chimney-hood|chimney-flue|chimney-cap|table|bench|jar|sack|bed|chest)$/;
 const START = Date.now();
 
 await playtest('maison', async ({ page, errors, load }) => {

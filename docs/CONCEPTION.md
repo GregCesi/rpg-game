@@ -725,6 +725,11 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
   - la table est contre le solin nord (y 30–120), le banc juste dessous (y 125–155) : 1,15 m de passage jusqu'au foyer ;
   - (essai d'avant le placement de Grégoire : la chambre au nord-ouest, la réserve à l'est ; l'étape 2 suit le placement ci-dessus) ;
   - les portes s'ouvrent vers le dedans, chaque porte intérieure vers la pièce qu'elle ferme ;
+  - **la cheminée de pierre** (retouche de Grégoire, 3 novembre 2026) remplace le foyer central : adossée au mur nord de la salle
+    (x 680 à 880 cm), l'âtre (`stone-hearth`, 2 × 0,8 × 1,2 m, ouverture de 1,40 m, le feu et sa lueur), le manteau (une poutre de
+    2,20 m), la hotte (`chimney-hood`), le conduit en six tronçons d'assises de pierre et de mortier (`chimney-flue`, jusqu'à 8,50 m),
+    le couronnement d'où sort la fumée (`chimney-cap`), par le pan nord percé (`thatch-roof-pierced`) ; le pignon ouest n'a plus de
+    trou de fumée ; la table et le banc passent sous la fenêtre du nord, la place du fagot à l'ouest de l'âtre ;
   - **le toit, dehors** (retouche de Grégoire, 3 novembre 2026) : il ne s'efface plus quand Xéros approche ; on n'est dedans que dans
     l'intérieur. Devant une fenêtre au volet ouvert, dehors, on voit l'intérieur de cette pièce-là seulement : le toit s'y ouvre (avec
     ce qui passe au-dessus d'elle), son mur sud coupé comme dans la vue intérieure, le reste de la maison garde son toit

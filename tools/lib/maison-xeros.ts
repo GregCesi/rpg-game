@@ -373,16 +373,32 @@ export function maisonSteps(): Step[] {
   const layers = ['thatch-roof-frame', 'thatch-roof-half', 'thatch-roof'];
   for (const [i, prop] of layers.entries()) {
     for (const [n, view, y] of roof) {
-      piece(`${prop} ${n}`, { prop }, -40, y, 1380, prop === 'thatch-roof' ? 390 : 410, { view, z: 280, ...(i ? { replaces: `${layers[i - 1]} ${n}` } : {}) });
+      // le chaume plein du pan nord : percé pour le conduit de la cheminée
+      const key = prop === 'thatch-roof' && n === 'pan nord' ? 'thatch-roof-pierced' : prop;
+      const was = (k: number) => `${layers[k]} ${n}`;
+      piece(`${prop} ${n}`, { prop: key }, -40, y, 1380, prop === 'thatch-roof' ? 390 : 410, { view, z: 280, ...(i ? { replaces: was(i - 1) } : {}) });
     }
     if (i === 0) {
-      piece('pignon ouest', { prop: 'lime-gable-smoke' }, -20, 0, 15, 640, { view: 1, z: 280, at: [-20, -5] });
+      // la fumée sort par la souche de la cheminée : le pignon ouest n'a plus de trou de fumée
+      piece('pignon ouest', { prop: 'lime-gable' }, -20, 0, 15, 640, { view: 1, z: 280, at: [-20, -5] });
       piece('pignon est', { prop: 'lime-gable' }, 1280, 0, 15, 640, { view: 3, z: 280, at: [1285, -5] });
     }
     frame(['le chevronnage et le lattis, les pignons', 'le chaume à demi', 'le chaume'][i]);
   }
   piece('faîtage', { prop: 'earth-ridge' }, -40, 300, 1385, 50, { z: 725 });
-  frame('le faîtage : la maison finie');
+  frame('le faîtage');
+
+  // 8. la cheminée de pierre adossée au mur nord de la salle (retouche de Grégoire ; son âtre est posé avec les meubles) : la hotte et le
+  // manteau sur l'âtre, le conduit en assises de pierre et de mortier jusqu'au-dessus du faîte, par le pan nord percé, et le couronnement
+  // d'où sort la fumée. Posée après le toit : visée, elle passe sous les pans (le mode construction ne vise pas à travers un toit), et
+  // les pans visés ne se poseraient pas sur sa souche.
+  // (posé avant les murs, l'âtre prendrait la visée du poteau du mur nord, juste au nord de lui)
+  piece('âtre', { prop: 'stone-hearth' }, 680, 30, 200, 80, { z: 0 });
+  piece('hotte', { prop: 'chimney-hood' }, 685, 30, 190, 50, { z: 120, at: [680, 20] });
+  piece('manteau', beam('ew', 220), 670, 80, 220, 30, { z: 120, at: [680, 80] });
+  for (let k = 0; k < 6; k++) piece(`conduit ${k + 1}`, { prop: 'chimney-flue' }, 730, 30, 100, 50, { z: 250 + 100 * k, at: [740, 20] });
+  piece('couronnement', { prop: 'chimney-cap' }, 740, 20, 110, 60, { z: 850, at: [740, 20] });
+  frame('la cheminée : la maison finie');
   return S;
 }
 
@@ -401,9 +417,10 @@ export function furnitureSteps(): Step[] {
   const S: Step[] = [];
   const piece = (name: string, prop: string, x: number, y: number, w: number, d: number, more: Partial<PieceStep> = {}) =>
     S.push({ kind: 'piece', name, ref: { prop }, x, y, w, d, z: 0, ...more });
-  piece('foyer', 'hearth', 600, 280, 100, 100);
-  piece('table', 'table', 540, 20, 210, 90, { at: [540, 30] });
-  piece('banc', 'bench', 540, 120, 200, 30);
+  // la table et le banc sous la fenêtre du nord (l'âtre de la cheminée, contre le mur nord de la salle, se pose avec elle, à la fin ;
+  // le foyer central n'est plus)
+  piece('table', 'table', 380, 20, 210, 90, { at: [380, 30] });
+  piece('banc', 'bench', 380, 120, 200, 30);
   piece('jarre', 'jar', 880, 20, 45, 45, { at: [880, 30] });
   piece('sac 1', 'sack', 40, 40, 50, 40, { at: [30, 30] });
   piece('sac 2', 'sack', 80, 40, 50, 40, { at: [80, 30] });

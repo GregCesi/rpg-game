@@ -6176,8 +6176,8 @@
           "name": "",
           "type": "Npc",
           "point": true,
-          "x": 3216,
-          "y": 1560,
+          "x": 3204,
+          "y": 1574,
           "width": 0,
           "height": 0,
           "properties": [
@@ -6215,10 +6215,10 @@
           "visible": true,
           "name": "fagot",
           "type": "Place",
-          "x": 3184,
-          "y": 1588,
-          "width": 22,
-          "height": 20,
+          "x": 3208,
+          "y": 1540,
+          "width": 14,
+          "height": 18,
           "properties": [
             {
               "name": "accepts",

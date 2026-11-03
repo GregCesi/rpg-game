@@ -214,158 +214,158 @@
     },
     {
       "type": "scarf",
-      "a": 136,
-      "b": 137
-    },
-    {
-      "type": "scarf",
-      "a": 137,
-      "b": 138
+      "a": 138,
+      "b": 139
     },
     {
       "type": "scarf",
       "a": 139,
-      "b": 143
-    },
-    {
-      "type": "scarf",
-      "a": 142,
-      "b": 146
-    },
-    {
-      "type": "scarf",
-      "a": 140,
-      "b": 144
+      "b": 140
     },
     {
       "type": "scarf",
       "a": 141,
-      "b": 145
+      "b": 146
     },
     {
       "type": "scarf",
-      "a": 148,
+      "a": 144,
       "b": 149
     },
     {
       "type": "scarf",
-      "a": 149,
-      "b": 150
-    },
-    {
-      "type": "mortise",
-      "a": 59,
-      "b": 136
-    },
-    {
-      "type": "mortise",
-      "a": 63,
-      "b": 136
-    },
-    {
-      "type": "mortise",
-      "a": 71,
-      "b": 137
-    },
-    {
-      "type": "mortise",
-      "a": 75,
-      "b": 138
-    },
-    {
-      "type": "mortise",
-      "a": 110,
-      "b": 148
-    },
-    {
-      "type": "mortise",
-      "a": 112,
-      "b": 148
-    },
-    {
-      "type": "mortise",
-      "a": 116,
-      "b": 149
-    },
-    {
-      "type": "mortise",
-      "a": 118,
-      "b": 150
-    },
-    {
-      "type": "mortise",
-      "a": 80,
-      "b": 139
-    },
-    {
-      "type": "mortise",
-      "a": 83,
-      "b": 142
-    },
-    {
-      "type": "mortise",
-      "a": 81,
-      "b": 140
-    },
-    {
-      "type": "mortise",
-      "a": 82,
-      "b": 141
-    },
-    {
-      "type": "mortise",
-      "a": 89,
-      "b": 143
-    },
-    {
-      "type": "mortise",
-      "a": 95,
-      "b": 146
-    },
-    {
-      "type": "mortise",
-      "a": 93,
-      "b": 144
-    },
-    {
-      "type": "mortise",
-      "a": 94,
-      "b": 145
-    },
-    {
-      "type": "mortise",
-      "a": 102,
-      "b": 143
-    },
-    {
-      "type": "mortise",
-      "a": 105,
-      "b": 146
-    },
-    {
-      "type": "mortise",
-      "a": 103,
-      "b": 144
-    },
-    {
-      "type": "mortise",
-      "a": 104,
-      "b": 145
-    },
-    {
-      "type": "mortise",
-      "a": 91,
+      "a": 142,
       "b": 147
     },
     {
       "type": "scarf",
-      "a": 154,
-      "b": 156
+      "a": 143,
+      "b": 148
     },
     {
       "type": "scarf",
-      "a": 155,
-      "b": 157
+      "a": 151,
+      "b": 152
+    },
+    {
+      "type": "scarf",
+      "a": 152,
+      "b": 153
+    },
+    {
+      "type": "mortise",
+      "a": 59,
+      "b": 138
+    },
+    {
+      "type": "mortise",
+      "a": 63,
+      "b": 138
+    },
+    {
+      "type": "mortise",
+      "a": 71,
+      "b": 139
+    },
+    {
+      "type": "mortise",
+      "a": 75,
+      "b": 140
+    },
+    {
+      "type": "mortise",
+      "a": 110,
+      "b": 151
+    },
+    {
+      "type": "mortise",
+      "a": 112,
+      "b": 151
+    },
+    {
+      "type": "mortise",
+      "a": 116,
+      "b": 152
+    },
+    {
+      "type": "mortise",
+      "a": 118,
+      "b": 153
+    },
+    {
+      "type": "mortise",
+      "a": 80,
+      "b": 141
+    },
+    {
+      "type": "mortise",
+      "a": 83,
+      "b": 144
+    },
+    {
+      "type": "mortise",
+      "a": 81,
+      "b": 142
+    },
+    {
+      "type": "mortise",
+      "a": 82,
+      "b": 143
+    },
+    {
+      "type": "mortise",
+      "a": 89,
+      "b": 146
+    },
+    {
+      "type": "mortise",
+      "a": 95,
+      "b": 149
+    },
+    {
+      "type": "mortise",
+      "a": 93,
+      "b": 147
+    },
+    {
+      "type": "mortise",
+      "a": 94,
+      "b": 148
+    },
+    {
+      "type": "mortise",
+      "a": 102,
+      "b": 146
+    },
+    {
+      "type": "mortise",
+      "a": 105,
+      "b": 149
+    },
+    {
+      "type": "mortise",
+      "a": 103,
+      "b": 147
+    },
+    {
+      "type": "mortise",
+      "a": 104,
+      "b": 148
+    },
+    {
+      "type": "mortise",
+      "a": 91,
+      "b": 150
+    },
+    {
+      "type": "scarf",
+      "a": 157,
+      "b": 159
+    },
+    {
+      "type": "scarf",
+      "a": 158,
+      "b": 160
     }
   ],
   "pieces": [
@@ -481,7 +481,16 @@
       "piece": {
         "prop": "table"
       },
-      "x": 580,
+      "x": 420,
+      "y": 90,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-hearth"
+      },
+      "x": 720,
       "y": 90,
       "z": 0,
       "view": 0
@@ -535,7 +544,7 @@
       "piece": {
         "prop": "bench"
       },
-      "x": 580,
+      "x": 420,
       "y": 180,
       "z": 0,
       "view": 0
@@ -557,15 +566,6 @@
       "y": 250,
       "z": 0,
       "view": 1
-    },
-    {
-      "piece": {
-        "prop": "hearth"
-      },
-      "x": 640,
-      "y": 340,
-      "z": 0,
-      "view": 0
     },
     {
       "piece": {
@@ -1834,7 +1834,7 @@
       },
       "x": 250,
       "y": 55,
-      "z": 90,
+      "z": 110,
       "view": 0
     },
     {
@@ -1843,7 +1843,7 @@
       },
       "x": 570,
       "y": 55,
-      "z": 90,
+      "z": 110,
       "view": 0
     },
     {
@@ -1852,7 +1852,7 @@
       },
       "x": 1050,
       "y": 55,
-      "z": 90,
+      "z": 110,
       "view": 0
     },
     {
@@ -1861,7 +1861,7 @@
       },
       "x": 1321,
       "y": 270,
-      "z": 90,
+      "z": 110,
       "view": 1
     },
     {
@@ -1870,7 +1870,7 @@
       },
       "x": 90,
       "y": 701,
-      "z": 90,
+      "z": 110,
       "view": 2
     },
     {
@@ -1879,7 +1879,7 @@
       },
       "x": 410,
       "y": 701,
-      "z": 90,
+      "z": 110,
       "view": 2
     },
     {
@@ -1888,8 +1888,32 @@
       },
       "x": 890,
       "y": 701,
-      "z": 90,
+      "z": 110,
       "view": 2
+    },
+    {
+      "piece": {
+        "prop": "chimney-hood"
+      },
+      "x": 720,
+      "y": 80,
+      "z": 120,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 220,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 720,
+      "y": 140,
+      "z": 120,
+      "view": 0
     },
     {
       "piece": {
@@ -2008,6 +2032,15 @@
       },
       "x": 1310,
       "y": 70,
+      "z": 250,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 780,
+      "y": 80,
       "z": 250,
       "view": 0
     },
@@ -2133,7 +2166,7 @@
     },
     {
       "piece": {
-        "prop": "thatch-roof"
+        "prop": "thatch-roof-pierced"
       },
       "x": 0,
       "y": 0,
@@ -2142,7 +2175,7 @@
     },
     {
       "piece": {
-        "prop": "lime-gable-smoke"
+        "prop": "lime-gable"
       },
       "x": 20,
       "y": 55,
@@ -2229,11 +2262,65 @@
     },
     {
       "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 780,
+      "y": 80,
+      "z": 350,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 780,
+      "y": 80,
+      "z": 450,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 780,
+      "y": 80,
+      "z": 550,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 780,
+      "y": 80,
+      "z": 650,
+      "view": 0
+    },
+    {
+      "piece": {
         "prop": "earth-ridge"
       },
       "x": 0,
       "y": 360,
       "z": 725,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 780,
+      "y": 80,
+      "z": 750,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-cap"
+      },
+      "x": 780,
+      "y": 80,
+      "z": 850,
       "view": 0
     }
   ]
