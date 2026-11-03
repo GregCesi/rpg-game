@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { stateImage } from '../world/pileShape';
-import { CONSTRUIRE, DEPTH, FEET, FELL, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
+import { AIM, CONSTRUIRE, DEPTH, FEET, FELL, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
 import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -37,7 +37,7 @@ import { WorkSystem, type WorkJob } from '../systems/work';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
 import { kinetic, throwPlan } from '../world/throw';
-import { FACING_VECTOR } from '../world/aim';
+import { aimProbe, FACING_VECTOR } from '../world/aim';
 import { crossed } from '../world/crossing';
 import { attackCost } from '../world/strike';
 import { pxPerSec, setSpeeds, SPEEDS } from '../systems/speeds';
@@ -460,8 +460,7 @@ export class WorldScene extends Phaser.Scene {
     this.pileCount.update(this.player, this.mode === 'play');
     if (this.mode === 'build') this.builder.update(delta, turn);
     // un clic pendant une attaque : la suivante de l'enchaînement partira à sa fin (à deux mains, celle du bouton)
-    if (this.mode === 'use')
-      for (const b of ['left', 'right'] as const) if (clicked[b]) this.combat.queue(game.both ? this.plans?.[b].short.from : undefined);
+    if (this.mode === 'use') for (const b of ['left', 'right'] as const) if (clicked[b]) this.combat.queue(b);
     // un lancer qu'on vise : le repère suit le curseur ; relâché, il part ; Échap l'annule
     if (this.mode === 'aim') this.updateAim(stop);
     if (this.mode !== 'play') {
@@ -550,7 +549,9 @@ export class WorldScene extends Phaser.Scene {
     if (a && this.knots.holds(a)) aimed.hold = (a.kind === 'pile' || a.kind === 'tie') && a.pile.def.tie ? 'knot' : 'unknot';
     this.turnTarget = this.turns.target(this.player);
     if (!aimed.hold && this.turnTarget) aimed.hold = 'turn';
-    aimed.target = this.combat.aimedAt(this.player.probe(INTERACT.reach), INTERACT.radius);
+    // ce qui encaisse un coup se vise sous le curseur jusqu'à la portée d'un long coup (AIM.strike)
+    const p = this.player;
+    aimed.target = this.combat.aimedAt(aimProbe(p.eye, p.cursor, p.actor.facing, AIM.strike, INTERACT.reach), INTERACT.radius);
     aimed.work = [this.workOf(0), this.workOf(1)];
     this.handTarget = t;
     this.aimedTarget = !!aimed.target;
@@ -1040,10 +1041,13 @@ export class WorldScene extends Phaser.Scene {
       onDone: () => {
         const chain = this.combat.end(p, this.time.now);
         if (this.mode === 'use') this.mode = 'play';
-        // un clic pendant le geste : la suivante, avec la même arme (ou le même poing) si elle sert toujours
-        const same = 'held' in striker ? [game.both, ...game.hands].includes(striker.held) : !game.both && !game.hands[striker.hand];
-        const from = this.combat.takeQueuedFrom();
-        if (chain && this.mode === 'play' && same) this.attack(this.combat.plan(striker, this.player.actor.facing, this.time.now, this.player.strength.swinger, from));
+        // un clic pendant le geste : le coup suivant, de la main de son bouton (la même arme enchaîne : la taille, puis d'en haut ; le
+        // poing de l'autre main suit le premier) ; ce que ce clic fait maintenant, s'il frappe toujours
+        const b = this.combat.takeQueued();
+        if (!chain || this.mode !== 'play' || !b) return;
+        this.refreshAim();
+        const plan = this.plans?.[b];
+        if (plan && (plan.short.kind === 'strike' || plan.short.kind === 'punch')) this.act(plan.hand, plan.short);
       },
     });
   }

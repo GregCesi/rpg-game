@@ -130,9 +130,9 @@ export class CombatSystem {
   private chainAt = -1;
   private chainWith?: string;
   private comboUntil = 0;
-  /** Un clic pendant l'attaque en cours : la suivante partira à sa fin (`queuedFrom` : le rang de départ demandé, à deux mains). */
+  /** Un clic pendant l'attaque en cours : la suivante partira à sa fin (`queuedButton` : le bouton de ce clic). */
   private queued = false;
-  private queuedFrom?: number;
+  private queuedButton?: 'left' | 'right';
   /** La réaction en cours de chaque cible touchée. */
   private readonly reacting = new Map<string, Phaser.Tweens.Tween>();
   /** Où est l'image de chaque cible au repos (avant sa réaction en cours) : elle y revient. */
@@ -229,18 +229,18 @@ export class CombatSystem {
     });
   }
 
-  /** Un clic pendant l'attaque : la suivante partira à sa fin (`from` : le rang demandé, à deux mains). */
-  queue(from?: number): void {
+  /** Un clic du bouton `button` pendant l'attaque : la suivante partira à sa fin. */
+  queue(button: 'left' | 'right'): void {
     if (!this.busy) return;
     this.queued = true;
-    this.queuedFrom = from;
+    this.queuedButton = button;
   }
 
-  /** Le rang de départ demandé par le clic mis en file (à deux mains), lu une fois. */
-  takeQueuedFrom(): number | undefined {
-    const f = this.queuedFrom;
-    this.queuedFrom = undefined;
-    return f;
+  /** Le bouton du clic mis en file, lu une fois. */
+  takeQueued(): 'left' | 'right' | undefined {
+    const b = this.queuedButton;
+    this.queuedButton = undefined;
+    return b;
   }
 
   /**

@@ -8,7 +8,7 @@
 // - La précision : sur un grand nombre de coups simulés au bord de sa portée (écart tiré à chaque coup), la branche touche nettement
 //   moins souvent que l'épée au bord de la sienne ; un coup que l'écart fait manquer affiche « raté ».
 // - Un coup dans le vide joue tout le geste et coûte ; le poing nu contre un arbre ne lui fait rien ; épuisé, rien ne part ; les poings
-//   enchaînent le droit puis le gauche ; une pierre dans une main, le poing de l'autre ; une ou deux branches ne changent rien ; branche
+//   enchaînent le droit puis le gauche (clic gauche, clic droit) ; une pierre dans une main, le poing de l'autre ; une ou deux branches ne changent rien ; branche
 //   et hachette taillent toujours.
 // - Le mannequin posé par le catalogue du mode construction est une cible, et encore après rechargement.
 // Usage : npm run test:combat (lancé aussi par npm run test:scenarios).
@@ -35,10 +35,19 @@ await playtest('combat', async ({ page, errors, load }) => {
       g.events.emit('dieu', c);
       await (window as any).__settle();
     };
-    const press = async (code: string) => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { code }));
+    // un clic, comme un joueur (tools/lib/playtest.ts) : le gauche est la main droite, le droit la main gauche ; le curseur devant Xéros,
+    // ou sur `at` (sur le mannequin : une ressource frappe ce qui encaisse un coup, au lieu de se poser)
+    const W = window as any;
+    let aimAt: { x: number; y: number } | undefined;
+    const click = async (button: 'left' | 'right' = 'left') => {
+      const p = aimAt ?? W.__front();
+      W.__aim(p.x, p.y);
+      await W.__frames(1);
+      W.__press(button);
       await sleep(40);
-      window.dispatchEvent(new KeyboardEvent('keyup', { code }));
+      W.__release(button);
+      await W.__frames(2);
+      W.__leave();
     };
     const standAt = async (x: number, y: number, face: string) => {
       const a = w().player.actor;
@@ -93,8 +102,8 @@ await playtest('combat', async ({ page, errors, load }) => {
       for (let gap = 0; gap <= 60; gap++) if (predicts(item, gesture, dir, feetAt(dir, gap)) >= 0) best = gap;
       return best;
     };
-    // un coup (Espace), seul : on laisse passer l'enchaînement d'avant
-    const strikeOnce = async () => {
+    // un coup (un clic), seul : on laisse passer l'enchaînement d'avant
+    const strikeOnce = async (button: 'left' | 'right' = 'left') => {
       await unchained();
       const n = log().length;
       const before = stamina();
@@ -118,7 +127,7 @@ await playtest('combat', async ({ page, errors, load }) => {
         for (const t of floats()) texts.add(t);
       };
       w().events.on('postupdate', watch);
-      await press('Space');
+      await click(button);
       // l'attaque a ramené le temps à x1 (règle du jeu, vérifiée par test-temps) : le coup se joue à la vitesse du scénario
       await (window as any).__resume();
       // le premier pas du geste, puis jusqu'à sa fin
@@ -144,6 +153,8 @@ await playtest('combat', async ({ page, errors, load }) => {
     // les armes déclarées (`weapon` d'items.json), tirées des données
     for (const item of Object.keys(content.items).filter((k) => content.items[k].weapon)) {
       await give(item);
+      // le curseur sur le mannequin, droit devant : la branche (une ressource) le frappe
+      aimAt = mid;
       const res: Record<string, any> = { dirs: {} };
       for (const dir of ['down', 'up', 'right', 'left']) {
         const edge = edgeOf(item, 'cut', dir);
@@ -175,6 +186,7 @@ await playtest('combat', async ({ page, errors, load }) => {
       res.rate = hits / tries;
       out.weapons[item] = res;
     }
+    aimAt = undefined;
 
     // derrière Xéros, et au-dessus de lui à l'écran sans être devant lui dans le monde : jamais touché (l'épée, la taille et le coup
     // vertical ; le mannequin juste au nord de ses pieds)
@@ -214,7 +226,9 @@ await playtest('combat', async ({ page, errors, load }) => {
       let i = 0;
       return () => seq[i++ % seq.length];
     })();
+    aimAt = mid;
     const miss = await strikeOnce();
+    aimAt = undefined;
     out.miss = { hits: miss.hits, misses: miss.entry?.misses.length, texts: miss.texts };
     w().combat.rand = Math.random;
 
@@ -225,7 +239,8 @@ await playtest('combat', async ({ page, errors, load }) => {
     const swordMs = strike.cycle(content.combat.rules, combatPoses.cut.left, weaponOf('wooden-sword'), mass.itemMass('wooden-sword'));
     out.air = { hits: air.entry?.hits.length, spent: air.spent, played: air.played, ms: Math.round(air.ms), expected: swordMs };
 
-    // tout objet tenu frappe (world/heft.ts) : la doloire, une pierre, une perche de 2 m, dans le vide ; portée, durée, prix
+    // tout objet tenu frappe (world/heft.ts) : la doloire (un outil, même dans le vide), une pierre, une perche de 2 m (des ressources :
+    // contre ce qui encaisse un coup, le curseur sur le mannequin ; sans lui, elles se posent) ; portée, durée, prix
     out.improvised = {};
     for (const [name, held] of [
       ['broadaxe', { item: 'broadaxe' }],
@@ -234,41 +249,58 @@ await playtest('combat', async ({ page, errors, load }) => {
     ] as const) {
       await send({ kind: 'give', held });
       await send({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
-      await facingDummy('left', 120);
+      await facingDummy('left', 30);
+      aimAt = mid;
       const r = await strikeOnce();
+      aimAt = undefined;
       out.improvised[name] = { played: r.played, spent: r.spent, ms: Math.round(r.ms), reach: r.entry?.reach, attack: r.entry?.attack, item: r.entry?.item };
     }
 
+    // à deux mains (la perche) : le clic gauche donne la taille, le clic droit le coup d'en haut
+    await facingDummy('right', 6);
+    aimAt = mid;
+    await unchained();
+    const n2 = log().length;
+    await click('left');
+    await settle();
+    await unchained();
+    await click('right');
+    await settle();
+    aimAt = undefined;
+    out.twoHands = log().slice(n2).map((e: any) => e.attack);
+
     // l'enchaînement à l'épée : la taille puis le coup d'en haut
+    await give('wooden-sword');
     await facingDummy('right', 6);
     await unchained();
     let n = log().length;
-    await press('Space');
-    await sleep(150);
-    await press('Space');
+    await click('left');
+    // le deuxième clic pendant le geste (attendu : le geste en cours, pas un délai)
+    await (window as any).__until(() => w().mode === 'use', 'le premier coup parti');
+    await click('left');
     await settle();
     out.chain = log().slice(n).map((e: any) => e.attack);
 
-    // les poings, mains vides : le droit puis le gauche ; une pierre dans la main gauche : le poing droit seul
+    // les poings, mains vides : le clic gauche (le poing droit) puis, pendant le geste, le clic droit (le gauche) ; une pierre dans la
+    // main gauche : le clic gauche, deux fois, le poing droit
     gs.emptyHands(gs.game);
     w().handsChanged();
     await facingDummy('down', 2);
     await unchained();
     n = log().length;
-    await press('Space');
-    await sleep(120);
-    await press('Space');
+    await click('left');
+    await (window as any).__until(() => w().mode === 'use', 'le premier poing parti');
+    await click('right');
     await settle();
     out.fists = log().slice(n).map((e: any) => `${e.attack}:${e.hits.length}`);
     gs.emptyHands(gs.game);
     gs.game.hands[0] = { item: 'small-rough-stone', natural: { form: 0, size: 100 } };
-    gs.game.active = 1;
     w().handsChanged();
     await unchained();
     n = log().length;
-    await press('Space');
-    await sleep(120);
-    await press('Space');
+    await click('left');
+    await (window as any).__until(() => w().mode === 'use', 'le premier poing parti');
+    await click('left');
     await settle();
     out.oneFist = log().slice(n).map((e: any) => e.attack);
 
@@ -289,7 +321,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     await send({ kind: 'stamina', breath: 0, ceiling: 0 });
     n = log().length;
     notices.length = 0;
-    await press('Space');
+    await click('left');
     await settle();
     out.exhausted = { attacks: log().length - n, notice: notices.join(' | ') };
     await send({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
@@ -297,22 +329,24 @@ await playtest('combat', async ({ page, errors, load }) => {
     // une ou deux branches : le même coup
     await give('branch');
     await facingDummy('down', 4);
+    aimAt = mid;
     const one = await strikeOnce();
     gs.take(gs.game, { item: 'branch' }, 1);
     w().handsChanged();
     const both = [gs.game.hands[0]?.item, gs.game.hands[1]?.item];
     const two = await strikeOnce();
+    aimAt = undefined;
     const summary = (e: any) => ({ attack: e?.attack, damage: e?.damage, cost: e?.cost });
     out.twoBranches = { both, one: summary(one.entry), two: summary(two.entry) };
 
-    // la branche dans la main active, la hachette dans l'autre : c'est la hachette qui sert (elle taille sur le billot) ; dans le vide,
-    // elle frappe, comme tout objet tenu
+    // la branche dans la main droite, la hachette dans la gauche : le clic droit (la main de la hachette) frappe avec elle dans le vide
+    // (sur le billot, elle taillerait), pas avec la branche
     await give('branch');
     gs.take(gs.game, { item: 'hatchet' }, 1);
     w().handsChanged();
     await facingDummy('left', 90);
     n = log().length;
-    await press('Space');
+    await click('right');
     await settle();
     out.whittle = log().length > n ? log()[log().length - 1].item : 'rien';
 
@@ -382,13 +416,18 @@ await playtest('combat', async ({ page, errors, load }) => {
       a.face('up');
       await (window as any).__frames(2);
       const n = w.combat.log.length;
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
+      // le curseur devant lui, vers le mannequin (la souris de la construction est restée ailleurs sur le canevas)
+      const W = window as any;
+      const f = W.__front('up');
+      W.__aim(f.x, f.y);
+      await W.__frames(1);
+      W.__press('left');
       await sleep(40);
-      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space' }));
+      W.__release('left');
       await (window as any).__frames(2);
       await (window as any).__until(() => w.mode === 'play' && !w.combat.busy, 'le coup fini');
       const e = w.combat.log[n];
-      return { built: true, mode: w.mode, attack: e?.attack, hits: e ? e.hits.filter((h: any) => h.type === 'training-dummy').map((h: any) => h.key.split(':')[0]) : [] };
+      return { built: true, facing: e?.facing, mode: w.mode, attack: e?.attack, hits: e ? e.hits.filter((h: any) => h.type === 'training-dummy').map((h: any) => h.key.split(':')[0]) : [] };
     });
   const built = await hitBuilt();
   await page.evaluate(() => (window as any).__idle());
@@ -437,8 +476,9 @@ await playtest('combat', async ({ page, errors, load }) => {
   assert.ok(imp.pole.ms > imp.broadaxe.ms, `la perche frappe plus lentement que la doloire (${imp.pole.ms} contre ${imp.broadaxe.ms} ms)`);
   assert.ok(imp['rough-stone'].reach < imp.broadaxe.reach, `la pierre porte moins loin que la doloire (${imp['rough-stone'].reach} cm)`);
   assert.ok(r.air.ms >= r.air.expected - 60, `dans le vide, tout le geste se joue (${r.air.ms} ms pour ${r.air.expected})`);
-  assert.deepEqual(r.chain, ['cut', 'overhead'], 'un deuxième Espace pendant le geste enchaîne le coup d’en haut');
-  assert.deepEqual(r.fists, ['jab-right:1', 'jab-left:1'], 'mains vides : le direct du droit, puis du gauche, chacun touche');
+  assert.deepEqual(r.twoHands, ['cut', 'overhead'], 'à deux mains, le clic gauche donne la taille, le droit le coup d’en haut');
+  assert.deepEqual(r.chain, ['cut', 'overhead'], 'un deuxième clic pendant le geste enchaîne le coup d’en haut');
+  assert.deepEqual(r.fists, ['jab-right:1', 'jab-left:1'], 'mains vides : le clic gauche donne le direct du droit, le clic droit celui du gauche, chacun touche');
   assert.deepEqual(r.oneFist, ['jab-right', 'jab-right'], 'une pierre dans la main gauche : le poing droit seul');
   assert.equal(r.tree.attack, 'jab-right', 'mains vides devant un arbre : un coup de poing');
   assert.equal(r.tree.hits, 0, 'le poing ne touche pas l’arbre comme une cible');
