@@ -244,8 +244,18 @@ await playtest('tas', async ({ page, errors, load }) => {
       const front = (window as any).__front();
       (window as any).__aim(front.x, front.y);
       await (window as any).__frames(2);
-      const gh = ghost();
+      // le fantôme tel que le joueur le voit au pas où son clic pose la dalle : le dernier montré avant qu'elle paraisse (sous la charge,
+      // plusieurs pas passent entre la lecture et le clic, et le fantôme suit ce qui change devant Xéros)
+      const slabs = () => w().map.props.filter((p: any) => p.type === 'slab' && p.spawned).length;
+      const before = slabs();
+      let gh = ghost();
+      const watch = () => {
+        const g = ghost();
+        if (slabs() === before && g?.visible) gh = g;
+      };
+      w().events.on('postupdate', watch);
       await act();
+      w().events.off('postupdate', watch);
       const stone = w().map.props.find((p: any) => p.type === 'slab' && p.spawned && p.x === gh.x && p.y === gh.y);
       out.stone = { ghost: gh.visible, key: gh.key, at: !!stone, hands: JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both) };
     }
