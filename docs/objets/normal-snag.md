@@ -12,18 +12,23 @@ ensemble, ils sont l'[arbre normal](normal-tree.md) entier, rien de plus, rien d
 
 ## Masse
 Tronc de 30 cm, bois vert à 900 kg/m³ (wood.json) : 63,6 kg par mètre.
-- Chicot : **159 kg**, les 2,5 m de tronc depuis le sol (la souche de 40 cm comprise).
-- Cime : **286,4 kg** : 3,7 m de tronc (235,4 kg) et tout le houppier (51,0 kg : l'arbre couché, 420 kg, moins sa pièce de bois
-  de 5,8 m, 369,0 kg).
-- Ensemble : 445,4 kg, exactement la souche (40 cm, 25,4 kg) plus l'arbre couché (420 kg) : l'arbre entier. `tools/test-paysage.ts`
-  le vérifie.
+Cassé à 2,6 m du sol (chantier « maison-2 », version B de la planche chicot-26, accord de Grégoire) : ses deux pièces tombent sur la
+grille du bois, sans perte.
+- Chicot : **169,89 kg** = sa souche (40 cm, 25,45 kg), sa pièce de 2,2 m (139,96 kg) et les copeaux de l'entaille quand on l'abat
+  (4,48 kg, `waste` de son abattage).
+- Cime : **280,04 kg** : sa pièce de 3,6 m (229,02 kg) et tout le houppier (51,02 kg : l'arbre couché, 420 kg, moins sa pièce de 5,8 m,
+  368,98 kg), qui part en branches et en feuilles et ramilles (`waste` de son ébranchage).
+- Ensemble : 449,93 kg, exactement l'arbre normal debout (sa souche, l'arbre couché, les copeaux) ; les deux pièces font les 5,8 m de
+  l'arbre couché. Le bilan de validate.ts (`harvestBalance`) et `tools/test-paysage.ts` le vérifient. Le dessin garde l'arbre recollé
+  à 6,95 m debout ; la cime couchée n'a que 3,1 m de tronc dessiné pour 3,6 m pesés (l'arbre couché du jeu compte son houppier depuis
+  le sol), choisi par Grégoire pour garder l'arbre entier à sa taille.
 - Ni l'un ni l'autre ne se déplace : pas de prise, pas de roulement.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
-- Chicot : 65 × 55 × 290 cm (boîte : le pied évasé de l'arbre ; les esquilles du côté ouest montent jusqu'à 2,9 m, le côté est
-  casse à 2,5 m) : silhouette 13 × 63,5 px.
-- Cime : 455 × 100 × 50 cm (boîte, couchée) : 91 × 20 px (le reste des 140 px de l'arbre couché), son houppier entier.
-- Images : `normal-snag` 24 × 70 (pied en (12, 63), comme l'arbre debout : à sa place, coin bas gauche + (12, 0)) ;
+- Chicot : 65 × 55 × 300 cm (boîte : le pied évasé de l'arbre ; les esquilles du côté ouest montent jusqu'à 3 m, le côté est
+  casse à 2,6 m) : silhouette 13 × 65 px.
+- Cime : 445 × 100 × 50 cm (boîte, couchée) : 89 × 20 px, son houppier entier.
+- Images : `normal-snag` 24 × 72 (pied en (12, 65), comme l'arbre debout : à sa place, coin bas gauche + (12, 0)) ;
   `normal-snag-top` 91 × 22, `-r1` et `-r3` 22 × 91 ; la cime posée à côté du chicot : coin bas gauche du chicot + (18, 3).
 
 ## Vues

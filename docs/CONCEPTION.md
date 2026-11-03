@@ -72,9 +72,9 @@ tempête. **La forêt de l'ouest n'a absolument rien** (de 0 à 300 m du monde, 
   arbres déracinés (la [galette de racines](objets/root-plate.md) dressée au pied de l'arbre couché, qui cache son bout scié, et le
   trou qu'elle laisse, à 24 et 28 m de la maison : jamais à moins de 20 m) et deux [chicots](objets/normal-snag.md) avec leur cime
   couchée à côté ; le long du chemin, un arbre déraciné et un chicot avec sa cime, à côté du chemin. **La matière se conserve** :
-  le chicot (2,5 m de tronc, 159 kg) et sa cime (3,7 m de tronc et tout le houppier, 286,4 kg) font l'arbre normal entier, la
-  souche et l'arbre couché (445,4 kg). Le chicot s'abat comme un arbre (sa souche, et le tronc qui restait debout couché à son
-  pied, 2 m), la cime s'ébranche comme l'arbre couché (une pièce de bois de 3,6 m, ses branches) ; la galette ne se travaille pas
+  le chicot (cassé à 2,6 m : sa souche et 2,2 m de bois, 169,89 kg avec les copeaux de son abattage) et sa cime (3,6 m de bois et tout le
+  houppier, 280,04 kg) font l'arbre normal debout entier (449,93 kg), et leurs deux pièces les 5,8 m de l'arbre couché. Le chicot s'abat comme un arbre (sa souche, et le tronc qui restait debout couché à son
+  pied, 2,2 m), la cime s'ébranche comme l'arbre couché (une pièce de bois de 3,6 m, ses branches) ; la galette ne se travaille pas
   encore. Dessins : `art/world/storm.ts` (pixel-artist), planche `.art-preview/tempete.png` (`npx tsx tools/essai-tempete.ts`).
 - **Vérification** : `tools/test-paysage.ts` (test:fast : rien dans la forêt de l'ouest, des arbres normaux, aucun en travers d'un
   chemin, la ferme, le chemin et les prés touchés ; chicot + cime = l'arbre entier ; chaque galette au pied de son arbre couché, à

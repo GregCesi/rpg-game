@@ -68,7 +68,7 @@ for (const m of Object.values(maps)) {
   }
   for (const f of felled) {
     assert.ok(/^normal-/.test(f.type), `${m.id} : la tempête a couché des arbres normaux (${f.type})`);
-    for (let k = 0; k <= (f.type === 'normal-snag-top' ? 91 : 140); k += 8) {
+    for (let k = 0; k <= (f.type === 'normal-snag-top' ? 89 : 140); k += 8) {
       const v = m.layers.ground[Math.floor((f.y - 6) / TILE) * m.width + Math.floor((f.x + k) / TILE)];
       assert.ok(!/^(path|road|yard)/.test(nameOf(v)), `${m.id} : l'arbre couché en (${f.x}, ${f.y}) ne barre pas un chemin`);
     }

@@ -2909,7 +2909,7 @@
           "x": 2795,
           "y": 1999,
           "width": 24,
-          "height": 70,
+          "height": 72,
           "gid": 1161,
           "id": 218
         },
@@ -2920,7 +2920,7 @@
           "type": "normal-snag-top",
           "x": 2813,
           "y": 2002,
-          "width": 91,
+          "width": 89,
           "height": 22,
           "gid": 1162,
           "id": 219

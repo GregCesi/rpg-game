@@ -883,9 +883,7 @@ function validateWood(c: Content, cat: Catalog): string[] {
 /**
  * Récoltes dont le bilan attend un dessin, avec leur raison : retirées dès que le bilan tombe juste (validate.ts le dit).
  */
-export const HARVEST_TODO: Record<string, string> = {
-  'normal-snag': "cassé à 2,5 m, il perd 10 cm à chaque bout de la grille du bois : la cassure à 2,6 m (pièces de 2,2 et 3,6 m) attend l'accord de Grégoire sur la planche .art-preview/chicot-26.png",
-};
+export const HARVEST_TODO: Record<string, string> = {};
 
 /**
  * Le bilan d'une récolte (la matière se conserve, chantier « maison-2 ») : ce qui naît (ce qu'il devient, ses `spawns`, ses `drops` au
