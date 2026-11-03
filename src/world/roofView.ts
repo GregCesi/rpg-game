@@ -4,20 +4,22 @@
 //   que dans son intérieur, une carte à part ;
 // - le toit d'un abri ouvert (sans intérieur) s'efface quand Xéros est dessous, ses pieds sous son emprise (sans marge : il ne
 //   s'efface plus quand Xéros approche), avec tout ce qui repose dessus ;
-// - devant une fenêtre au volet ouvert, dehors, on voit l'intérieur de cette pièce-là seulement : le toit s'ouvre au-dessus d'elle
-//   (`reveal`, en cm), le reste de la maison garde son toit ;
+// - devant une fenêtre au volet ouvert, dehors, on voit l'intérieur (chantier « maison-2 », Grégoire : comme l'effet d'avant) : tout
+//   le bâtiment devient transparent (ROOF.alpha, avec le fondu des toits) : son toit, ce qui passe en hauteur (sablières, entraits,
+//   faîtage) et ses murs côté sud ; ce qui sort au-dessus du toit (le conduit et sa souche) et les pignons restent opaques
+//   (`windowFade`) ;
 // - ce qui est caché ne se voit pas, lumière comprise (chantier « correctifs ») : la lueur d'un feu posé sous un toit (l'âtre) suit
 //   l'opacité de ce toit (`lightCovers`) : cachée sous le toit opaque, revenue quand il s'efface ou s'ouvre au-dessus de sa pièce.
 
-import { ROOF } from '../config';
+import { INTERIOR, ROOF } from '../config';
 import { props } from '../content';
 import { boxOf, overHead, withAbove, type BuildPiece } from './build';
 import type { Building, Rect, Window } from './interior';
 
 export interface RoofView {
-  /** Les pièces qui s'effacent (l'abri ouvert sous lequel est Xéros). */
+  /** Les pièces qui s'effacent (l'abri ouvert sous lequel est Xéros ; le bâtiment devant la fenêtre ouverte duquel il est). */
   faded: Set<number>;
-  /** La pièce dont on voit l'intérieur par sa fenêtre ouverte (cm), et le bâtiment dont le toit s'y ouvre. */
+  /** La pièce dont on voit l'intérieur par sa fenêtre ouverte (cm), et son bâtiment. */
   reveal?: { room: Rect; building: Building };
 }
 
@@ -77,9 +79,42 @@ export function roofView(pieces: readonly BuildPiece[], buildings: readonly Buil
   }
   for (const b of buildings) {
     const room = windowRoom(b, fx, fy);
-    if (room) return { faded, reveal: { room, building: b } };
+    if (!room) continue;
+    for (const id of windowFade(pieces, b)) faded.add(id);
+    return { faded, reveal: { room, building: b } };
   }
   return { faded };
+}
+
+/**
+ * Ce qui devient transparent devant une fenêtre ouverte (Grégoire : tout le bâtiment, comme l'effet d'avant) : les pièces du bâtiment
+ * (dans sa pièce, ses murs et son avant-toit : `ROOF.eaves`) qui sont son toit, ce qui passe au-dessus de la tête (sablières, entraits,
+ * faîtage), et ses murs côté sud, qui cacheraient le sol de la pièce vue de trois quarts. Restent opaques, plus lisibles : ce qui sort
+ * au-dessus du toit (le conduit et sa souche, qui ne sont pas dans la maison) et les pignons (les murs de bout au-dessus de la
+ * sablière, sur les côtés est et ouest : ils ne cachent pas la pièce).
+ */
+export function windowFade(pieces: readonly BuildPiece[], b: Building): number[] {
+  const r = b.room;
+  const e = ROOF.eaves;
+  const around = { x: r.x - e, y: r.y - e, w: r.w + 2 * e, d: r.d + 2 * e };
+  const roofs = pieces.filter((p) => isRoof(p) && cross(boxOf(p), around));
+  const top = Math.max(0, ...roofs.map((p) => boxOf(p).z));
+  const ridge = Math.max(0, ...roofs.map((p) => boxOf(p).z + boxOf(p).h));
+  // ce qui sort au-dessus du toit (la souche), et toute la colonne au-dessus de la tête qui la porte (le conduit)
+  const stacks = pieces.filter((p) => !isRoof(p) && boxOf(p).z + boxOf(p).h > ridge).map(boxOf);
+  const out: number[] = [];
+  for (const p of pieces) {
+    const box = boxOf(p);
+    if (!cross(box, around)) continue;
+    if (isRoof(p)) out.push(p.id);
+    else if (box.z >= INTERIOR.headroom && stacks.some((q) => cross(q, box))) continue;
+    // les pignons : au-dessus de la sablière, sur un mur de bout (à l'ouest ou à l'est de la pièce)
+    else if (box.z >= top && box.z > INTERIOR.headroom && (box.x + box.w <= r.x + ROOF.wall || box.x >= r.x + r.w - ROOF.wall)) continue;
+    else if (box.z >= INTERIOR.headroom) out.push(p.id);
+    // les murs côté sud (le solin et le seuil, au ras du sol, restent : ils ne cachent rien)
+    else if (box.y + box.d > r.y + r.d - ROOF.wall && box.y < r.y + r.d + ROOF.wall && box.z + box.h > INTERIOR.floor) out.push(p.id);
+  }
+  return out;
 }
 
 /** Une pièce de toit (`roof` de props.json). */

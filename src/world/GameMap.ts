@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, GLOW, SHADOW, TILE } from '../config';
+import { DEPTH, GLOW, INTERIOR, SHADOW, TILE } from '../config';
 import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
@@ -377,7 +377,7 @@ export class GameMap {
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
     if (def.ambient) {
-      this.shade = scene.add.rectangle(0, 0, this.width, this.height, 0x1a0e06, def.ambient).setOrigin(0).setDepth(DEPTH.ambient);
+      this.shade = scene.add.rectangle(0, 0, this.width, this.height, INTERIOR.shade, def.ambient).setOrigin(0).setDepth(DEPTH.ambient);
     }
   }
 

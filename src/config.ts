@@ -99,7 +99,7 @@ export const PILE_COUNT = { near: 12 };
  * la touche à cette distance est à lui) ; `window` : devant une fenêtre ouverte, dehors, jusqu'où (cm de la face du mur) et à quel
  * écart de ses bords on voit la pièce (src/world/roofView.ts) ; `reveal` : la hauteur des murs qu'on voit au fond de la pièce découverte (cm).
  */
-export const ROOF = { alpha: 0.35, fadeMs: 250, wall: 30, window: { front: 150, side: 40 }, reveal: 260 };
+export const ROOF = { alpha: 0.35, fadeMs: 250, wall: 30, eaves: 100, window: { front: 150, side: 40 } };
 
 /**
  * Ombre portée d'un toit (`shadow` de props.json) : la lumière vient du nord-ouest, d'en haut (docs/STYLE.md section 2) ;
@@ -223,6 +223,8 @@ export const INTERIOR = {
   margin: { side: 32, top: 128, bottom: 32 },
   ambient: 0.22,
   dark: 0.36,
+  /** La teinte de la pénombre (dedans, et la pièce vue de dehors). */
+  shade: 0x1a0e06,
   void: 0x1e1610,
   light: { door: 0.75, window: 0.8, alpha: 0.9 },
 };

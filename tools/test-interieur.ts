@@ -310,7 +310,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     assert.equal(await mapId(), inside, `${b.plan} : on rentre dans le même intérieur`);
     assert.deepEqual(await furniture(), put, `${b.plan} : le tabouret est retrouvé`);
     await out();
-    // 7. dehors, le toit reste (on n'est dedans que dans l'intérieur) ; devant la fenêtre au volet ouvert, on voit la pièce, plus loin non
+    // 7. dehors, le toit reste (on n'est dedans que dans l'intérieur) ; devant la fenêtre au volet ouvert, le bâtiment devient transparent, plus loin non
     if (b.window) {
       const view = await page.evaluate(async (key: string) => {
         const w = (window as any).game.scene.getScene('world');
@@ -331,15 +331,18 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
         const mid = (win.span[0] + win.span[1]) / 2;
         await stand(bd.room.x + bd.room.w + cfg.ROOF.wall + 60, mid + 30);
         const front = w.roofs.revealed;
+        await (window as any).__until(() => roofs().every((q: any) => q.image.alpha === cfg.ROOF.alpha), 'le toit transparent devant la fenêtre');
+        const faded = roofs().map((q: any) => q.image.alpha);
         await stand(bd.room.x + bd.room.w + cfg.ROOF.wall + cfg.ROOF.window.front + 80, mid + 30);
         const far = w.roofs.revealed;
-        return { side: win.side, eave, front, far };
+        return { side: win.side, eave, front, far, faded };
       }, building[0].key);
       assert.equal(view.side, 'east');
       assert.ok(view.eave.length && view.eave.every((a: number) => a === 1), `${b.plan} : sous l'avant-toit, dehors, le toit reste (${view.eave})`);
       assert.ok(view.front, `${b.plan} : devant la fenêtre ouverte, on voit la pièce`);
+      assert.ok(view.faded.length && view.faded.every((a: number) => a < 1), `${b.plan} : devant la fenêtre ouverte, tout le toit devient transparent (${view.faded})`);
       assert.equal(view.far, undefined, `${b.plan} : plus loin, le toit se referme`);
-      // l'aperçu : dehors, devant la fenêtre ouverte, le toit ouvert au-dessus de la pièce
+      // l'aperçu : dehors, devant la fenêtre ouverte, le bâtiment transparent, la terre battue et la pénombre de la pièce
       const win = building[0].windows.find((q: any) => q.side === 'east');
       const room = building[0].room;
       await stand(Math.round((room.x + room.w + 90) / 5), Math.round(((win.span[0] + win.span[1]) / 2 + 30) / 5), 'left');

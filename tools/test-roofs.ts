@@ -1,7 +1,8 @@
 // Les toits vus du dehors (src/world/roofView.ts ; retouche de Grégoire, CONCEPTION « La maison de Xéros »), sans navigateur, sur le
 // plan de la maison de Xéros (src/content/plans/maison-xeros.json) :
 // - dehors, le toit de la maison ne s'efface pas, même sous l'avant-toit : on n'est dedans que dans son intérieur ;
-// - devant une fenêtre au volet ouvert, dehors, on voit la pièce de cette fenêtre, et elle seule ; pas devant un volet fermé, ni de loin ;
+// - devant une fenêtre au volet ouvert, dehors, tout le bâtiment devient transparent (son toit, ce qui passe en hauteur, ses murs côté
+//   sud), sauf le conduit et sa souche (chantier « maison-2 ») ; pas devant un volet fermé, ni de loin ;
 // - le toit d'un abri ouvert s'efface quand Xéros est dessous, plus quand il approche.
 // Usage : npx tsx tools/test-roofs.ts (lancé par npm run test:fast).
 
@@ -9,7 +10,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { BUILD, ROOF } from '../src/config';
 import type { BuildPlan } from '../src/content/types';
-import { planPieces, type BuildPiece } from '../src/world/build';
+import { boxOf, planPieces, type BuildPiece } from '../src/world/build';
 import { buildingsOf } from '../src/world/interior';
 import { lightCovers, lightShown, roofView } from '../src/world/roofView';
 
@@ -34,7 +35,7 @@ for (const [fx, fy, where] of [
   assert.equal(v.reveal, undefined, `${where} : rien ne se découvre (volets fermés)`);
 }
 
-// 2. un volet du sud ouvert : devant sa fenêtre, dehors, on voit sa pièce, elle seule
+// 2. un volet du sud ouvert : devant sa fenêtre, dehors, on voit dedans : tout le bâtiment devient transparent (Grégoire)
 const south = house.windows.filter((w) => w.side === 'south');
 assert.ok(south.length >= 2, 'des fenêtres au sud');
 const win = south[0];
@@ -44,10 +45,15 @@ const mid = (win.span[0] + win.span[1]) / 2;
 const front = roofView(opened, houses, mid, r.y + r.d + ROOF.wall + 60);
 assert.ok(front.reveal, 'devant la fenêtre ouverte, on voit la pièce');
 const room = front.reveal!.room;
-assert.ok(house.rooms.some((q) => q.x === room.x && q.y === room.y && q.w === room.w && q.d === room.d), 'une des pièces de la maison');
 assert.ok(mid >= room.x && mid <= room.x + room.w && room.y + room.d >= r.y + r.d - 2 * ROOF.wall, `la pièce de cette fenêtre, au sud (${JSON.stringify(room)})`);
-assert.ok(room.w < r.w, 'cette pièce-là seulement, pas toute la maison');
-assert.deepEqual([...front.faded], [], 'le toit ne s’efface pas : il s’ouvre au-dessus de la pièce');
+for (const id of roofIds) assert.ok(front.faded.has(id), 'tout le toit du bâtiment devient transparent, pas la seule pièce');
+const boxOfP = (p: BuildPiece) => boxOf(p);
+const facade = opened.filter((p) => !roofIds.includes(p.id) && boxOfP(p).y >= r.y + r.d - 5 && boxOfP(p).z >= 40 && boxOfP(p).z < 250);
+assert.ok(facade.length >= 10 && facade.every((p) => front.faded.has(p.id)), `les murs côté sud deviennent transparents (${facade.filter((p) => !front.faded.has(p.id)).length} restent)`);
+const flue = opened.filter((p) => isProp(p, /^chimney-(flue|cap)$/));
+assert.ok(flue.length && flue.every((p) => !front.faded.has(p.id)), 'le conduit et sa souche restent opaques');
+const north = opened.filter((p) => !roofIds.includes(p.id) && boxOfP(p).y + boxOfP(p).d <= r.y && boxOfP(p).z < 180);
+assert.ok(north.length && north.every((p) => !front.faded.has(p.id)), 'le mur du fond reste : on voit la pièce');
 // de loin, ou devant une autre fenêtre (fermée) : rien
 assert.equal(roofView(opened, houses, mid, r.y + r.d + ROOF.wall + ROOF.window.front + 50).reveal, undefined, 'de loin : rien');
 const other = south[1];
@@ -71,4 +77,4 @@ assert.equal(lightShown([ROOF.alpha]), 1, 'le toit effacé : la lueur se voit');
 assert.equal(lightShown([]), 1, 'sans toit, la lueur se voit');
 assert.ok(lightShown([(1 + ROOF.alpha) / 2]) > 0 && lightShown([(1 + ROOF.alpha) / 2]) < 1, 'pendant le fondu du toit, la lueur revient peu à peu');
 
-console.log("✓ toits : la maison garde son toit dehors ; devant une fenêtre ouverte, on voit sa pièce seulement ; l'abri ouvert s'efface dessous ; la lueur de l'âtre cachée sous le toit");
+console.log("✓ toits : la maison garde son toit dehors ; devant une fenêtre ouverte, tout le bâtiment transparent sauf le conduit ; l'abri ouvert s'efface dessous ; la lueur de l'âtre cachée sous le toit");
