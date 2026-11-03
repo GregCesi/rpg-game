@@ -95,13 +95,19 @@ await playtest('monde', async ({ page, errors, load }) => {
           for (const k of keys) if (!held.has(k)) (key('keydown', k), held.add(k));
         };
         const frame = () => new Promise((res) => requestAnimationFrame(res));
-        /** Attend `n` pas de la physique du monde (une image peut en contenir plusieurs). */
-        const steps = (n: number) =>
-          new Promise<void>((res) => {
-            let k = 0;
-            const tick = () => (++k >= n ? (world().physics.world.off('worldstep', tick), res()) : undefined);
-            world().physics.world.on('worldstep', tick);
-          });
+        /**
+         * Attend `n` pas de la physique du monde (une image peut en contenir plusieurs), image après image ; un bord de zone passé en
+         * route redémarre la scène, dont l'ancien monde physique ne fera plus de pas : l'attente s'arrête alors (on est arrivé ailleurs).
+         */
+        const steps = async (n: number) => {
+          const pw = world()?.physics?.world;
+          if (!pw) return;
+          let k = 0;
+          const tick = () => void k++;
+          pw.on('worldstep', tick);
+          while (k < n && world()?.physics?.world === pw) await frame();
+          pw.off('worldstep', tick);
+        };
         const at = () => {
           const w = world();
           const a = w?.player?.actor;
@@ -291,10 +297,10 @@ await playtest('monde', async ({ page, errors, load }) => {
   assert.ok(post, 'le panneau est posé');
   // devant lui, au sud, tourné vers le nord
   await goTo(post.x, post.y + 22, 'x');
+  // se tourner vers le nord : W tenu jusqu'à ce qu'il regarde au nord (un état, pas une durée : à x10, 60 ms le feraient marcher loin)
   await page.keyboard.down('KeyW');
-  await sleep(60);
+  await page.evaluate(() => (window as any).__until(() => (window as any).game.scene.getScene('world').player.actor.facing === 'up', 'tourné vers le nord'));
   await page.keyboard.up('KeyW');
-  await sleep(150);
   await page.keyboard.press('KeyE');
   await until(() => page.evaluate(() => !!(window as any).game.scene.isActive('dialogue')), 3000, 'lire le panneau');
   const said = await page.evaluate(() => (window as any).game.scene.getScene('dialogue').def?.lines?.[0]?.text ?? (window as any).game.scene.getScene('dialogue').lines?.[0]?.text);
