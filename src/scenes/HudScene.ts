@@ -28,7 +28,7 @@ function lengthGlyphs(cm: number): string[] {
 const EMPTY = ['ui-hand-left', 'ui-hand-right'];
 
 /**
- * Les deux mains, au-dessus du monde : main gauche (G) et main droite (D), la case active marquée ; une main vide montre
+ * Les deux mains, au-dessus du monde : main gauche (G, le clic droit) et main droite (D, le clic gauche) ; une main vide montre
  * une main ouverte. Ce qu'on tient à deux mains s'affiche dans la case droite, la gauche montre alors « deux mains »
  * (`ui-hands-both`), et les deux cases sont marquées.
  * Affiche aussi les messages courts (GameEvent.Notice). Lit GameState ; se redessine sur GameEvent.HandsChanged.
@@ -190,7 +190,8 @@ export class HudScene extends Phaser.Scene {
   private redraw(): void {
     const shown = game.both ? ['ui-hands-both', icon(game.both)] : game.hands.map((h, i) => (h ? icon(h) : EMPTY[i]));
     shown.forEach((key, i) => {
-      this.slots[i].setTexture(game.both || i === game.active ? 'ui-slot-active' : 'ui-slot');
+      // à deux mains, les deux cases sont marquées (il n'y a plus de main active : chaque clic dit sa main)
+      this.slots[i].setTexture(game.both ? 'ui-slot-active' : 'ui-slot');
       this.icons[i].setTexture(key);
       // ce qu'on tient à deux mains s'affiche dans la case droite
       const h = game.both ? (i === 1 ? game.both : null) : game.hands[i];

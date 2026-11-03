@@ -23,6 +23,8 @@ import {
   spawnObject,
   startSite,
   take,
+  type Hand,
+  type Held,
   type Site,
 } from '../state';
 import type { Box, GameMap, Interactable, PlacedProp } from '../world/GameMap';
@@ -104,7 +106,7 @@ export class SiteSystem {
   /** Ce que E peut viser : les piquets d'un tracé qu'on reprend, et, avec une pièce en main, les places à remplir de l'étape en cours. */
   interactables(): Interactable[] {
     const list: Interactable[] = [];
-    const holding = !!held(game);
+    const holding = !!(game.both || game.hands[0] || game.hands[1]);
     for (const site of this.sites) {
       const plan = plans[site.plan];
       if (!site.born) {
@@ -129,7 +131,8 @@ export class SiteSystem {
    * une place qui se dresse avec de l'aide, quand une poutre qui convient est couchée près d'elle.
    */
   private aimed(player: Player): { site: Site; slot: PlanSlot } | undefined {
-    const what = held(game);
+    // ce que tient chaque main : une place qui accepte l'un d'eux se montre
+    const whats = [game.both, game.hands[1], game.hands[0]].filter((h): h is NonNullable<typeof h> => !!h);
     const probe = player.probe(INTERACT.reach);
     let best: { site: Site; slot: PlanSlot } | undefined;
     let bestD: number = INTERACT.radius;
@@ -140,7 +143,7 @@ export class SiteSystem {
         const g = placeGround(site, slot.place, plan.steps[slot.step]);
         const d = Math.hypot(g.x - probe.x, g.y - probe.y);
         if (d >= bestD) continue;
-        const ok = this.needsHelp(plan, slot) ? !!this.beamNear(site, plan, slot) : !!what && !this.refusalOf(plan, slot, what);
+        const ok = this.needsHelp(plan, slot) ? !!this.beamNear(site, plan, slot) : whats.some((what) => !this.refusalOf(plan, slot, what));
         if (!ok) continue;
         best = { site, slot };
         bestD = d;
@@ -150,7 +153,7 @@ export class SiteSystem {
   }
 
   /** Pourquoi cette place refuse ce qu'on tient (son message), ou undefined si elle l'accepte (étape à venir : refusée aussi). */
-  private refusalOf(plan: PlanDef, slot: PlanSlot, what: NonNullable<ReturnType<typeof held>>): string | undefined {
+  private refusalOf(plan: PlanDef, slot: PlanSlot, what: Held): string | undefined {
     const step = plan.steps[slot.step];
     if (step.soon) return 'Cette étape viendra plus tard.';
     const rule = acceptOf(step, slot.place)!;
@@ -240,7 +243,7 @@ export class SiteSystem {
   private spend(item: string, change: () => void): void {
     if (game.both && 'item' in game.both && game.both.item === item) clearHeld(game, 'both');
     else {
-      const slot = [game.active, 1 - game.active].find((i) => { const h = game.hands[i]; return !!h && 'item' in h && h.item === item; });
+      const slot = [1, 0].find((i) => { const h = game.hands[i]; return !!h && 'item' in h && h.item === item; });
       if (slot !== undefined) clearHeld(game, slot as 0 | 1);
     }
     change();
@@ -265,12 +268,12 @@ export class SiteSystem {
     return !this.map.props.some((p) => p.def.layer !== 'floor' && !p.box && overlaps(box, { left: p.x, top: p.y - p.image.height, right: p.x + p.image.width, bottom: p.y }));
   }
 
-  /** E sur un piquet d'un tracé : le reprendre. Renvoie false si les mains sont pleines. */
-  takeStake(siteId: number, corner: Corner): boolean {
+  /** Le clic d'une main vide sur un piquet d'un tracé : le reprendre dans cette main. Renvoie false si les mains sont pleines. */
+  takeStake(siteId: number, corner: Corner, hand: Hand): boolean {
     const site = this.sites.find((s) => s.id === siteId);
     if (!site || site.born) return true;
     const item = plans[site.plan].stake;
-    if (!take(game, { item }, items[item].hands)) return false;
+    if (!take(game, { item }, items[item].hands, hand)) return false;
     pullSiteStake(game, this.map.def.id, siteId, corner);
     return true;
   }
@@ -278,13 +281,13 @@ export class SiteSystem {
   // --- poser les pièces ---
 
   /**
-   * E sur une place du chantier avec ce qu'on tient : refusée avec le message du plan (rien ne change, la pièce reste en main), ou
+   * Un clic sur une place du chantier avec ce que tient la main `hand` : refusée avec le message du plan (rien ne change, la pièce reste en main), ou
    * possible. `commit` pose la pièce (un objet né à la place du plan) ; si la place est celle d'un coin, le piquet de ce coin est
    * arraché et retombe au sol à côté, réutilisable. `kg` : la masse d'une poutre à dresser (la scène fait payer l'effort), sinon 0.
    */
-  tryPlace(siteId: number, placeId: string): PlaceResult | undefined {
+  tryPlace(siteId: number, placeId: string, hand: Hand): PlaceResult | undefined {
     const site = this.sites.find((s) => s.id === siteId);
-    const what = held(game);
+    const what = held(game, hand);
     if (!site || !what) return undefined;
     const plan = plans[site.plan];
     const slot = openSlots(site, plan).find((s) => s.id === placeId);
@@ -296,7 +299,7 @@ export class SiteSystem {
       ok: true,
       kg: beam ? heldMass(what) : 0,
       commit: () => {
-        release(game);
+        release(game, hand);
         this.lay(site, plan, slot, beam && 'wood' in what ? what.wood : undefined, what.natural);
       },
     };

@@ -436,7 +436,9 @@ export class WoodSystem {
   updatePrompt(time: number, player: Player, tool: string | undefined, active: boolean): void {
     const aim = active ? this.target(player, tool) : undefined;
     const ok = !!aim && !aim.refusal;
-    this.prompt.setVisible(ok);
+    // l'invite d'une touche n'a plus lieu d'être (le clic de la main de l'outil travaille, et le HUD dit son mot) : seule la ligne des
+    // deux longueurs se montre, au-dessus de la coupe visée
+    this.prompt.setVisible(false);
     this.label.setVisible(ok && aim.work === 'cut');
     if (!ok) return;
     const bob = Math.round((Math.sin(time / 220) + 1) / 2) * 2;

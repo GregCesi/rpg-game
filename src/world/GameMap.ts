@@ -333,15 +333,15 @@ export class GameMap {
   }
 
   /**
-   * Ce que E peut viser en ce moment : dialogues, récoltes à la main, objets à prendre, objets au sol, pièces de tas,
-   * lien seul d'un tas, objets qui portent quelque chose ; et, `held` étant la clé de ce que tient la main active (le
+   * Ce que E et les clics peuvent viser en ce moment : dialogues, récoltes à la main, objets à prendre, objets au sol, pièces de tas,
+   * lien seul d'un tas, objets qui portent quelque chose ; et, `held` étant les clés de ce que tiennent les mains (le
    * rouleau, la branche), les objets sur lesquels le poser (`rest`).
    */
-  interactables(held?: string): Interactable[] {
+  interactables(held: readonly string[] = []): Interactable[] {
     const list: Interactable[] = [];
     for (const p of this.props) {
       const dialogue = p.interact ?? p.def.interact;
-      if (held && p.def.rest?.[held]) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'rest', prop: p } });
+      if (held.some((h) => p.def.rest?.[h])) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'rest', prop: p } });
       else if (dialogue) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'talk', dialogue } });
       else if (p.def.teaches) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'learn', prop: p, plan: p.def.teaches } });
       // ce qu'il porte se reprend avec E (le rouleau sur le billot) ; on le coupe avec l'outil (Espace)

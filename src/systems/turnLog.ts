@@ -12,7 +12,7 @@ const SIDES: Facing[] = ['down', 'up', 'left', 'right'];
 
 /**
  * Pivoter une bille couchée (`turn` de props.json) : Xéros, les deux mains libres, au contact d'une bille de n'importe quel
- * côté, maintient R (la jauge de systems/longPress.ts, `TURN_PRESS`) ; la bille fait un quart de tour autour du centre de sa
+ * côté, maintient le clic (la jauge de systems/longPress.ts, `LONG_PRESS`) ; la bille fait un quart de tour autour du centre de sa
  * collision (est-ouest <-> nord-sud). La nouvelle emprise doit être libre (carte, objets, tas, personnages) ; Xéros, qu'elle
  * pourrait toucher du bout, est repoussé d'autant s'il y a la place, sinon rien ne bouge. Le prix en endurance est
  * proportionnel à la masse : la scène le paie. Ne lit pas le clavier.

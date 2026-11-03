@@ -63,16 +63,14 @@ export const AIM = { reach: 32 };
 export const TRANSFORM = { near: 40 };
 
 /**
- * E maintenu (nouer, dénouer) : durée de l'appui (ms) ; avant, relâcher E fait le geste court (reprendre une pièce).
- * La jauge (`ui-gauge`) se remplit au-dessus de la tête de Xéros, `above` px au-dessus de ses pieds (bas de la jauge).
+ * Le clic maintenu (docs/COMMANDES.md : nouer, dénouer, pivoter une bille, appeler la mère, viser un lancer) : le seuil (ms), le même
+ * pour les deux boutons ; avant, le relâcher fait le clic court (prendre, poser, travailler, frapper). La jauge (`ui-gauge`) se remplit au-dessus de la tête de Xéros, `above` px au-dessus de ses pieds (bas de la jauge).
  */
 export const LONG_PRESS = { ms: 500, above: 35 };
 
 /** L'aide de la mère pour dresser une poutre trop lourde (systems/site.ts) : durée du fondu (ms) et temps passé dans le noir, le temps de lire « Ta mère vient t'aider. ». */
 export const HELP = { fade: 500, hold: 1600 };
 
-/** R maintenu (pivoter une bille couchée, systems/turnLog.ts) : durée de l'appui (ms), avec la même jauge que pour nouer. */
-export const TURN_PRESS = { ms: 1000 };
 
 /** Nombre de pièces d'un tas (`count` de piles.json) : affiché quand les pieds de Xéros sont à moins de `near` px du tas au sol. */
 export const PILE_COUNT = { near: 12 };

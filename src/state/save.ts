@@ -18,7 +18,8 @@ const SAVE_KEY = 'xeros-partie';
 const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
-export const SAVE_VERSION = 27;
+// 28 (chantier « commandes ») : plus de main active (`active` retiré : chaque clic dit sa main).
+export const SAVE_VERSION = 28;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -80,7 +81,7 @@ export function readSave(): ReadResult {
  * de l'entaille (`side`), facultatif ; 23 -> 24 : la place d'un objet né dans sa « chaîne » (`chain`), jamais lue, n'existe plus ;
  * 24 -> 25 : le nombre de branches d'un fagot (`bundle`), facultatif ; 25 -> 26 : celui d'un fagot posé seul (`bundle` d'un objet né),
  * facultatif ; 26 -> 27 : le tas de branches plein passe de 10 à 12, un fagot sans nombre (le plein d'alors) reçoit `bundle: 10`
- * (`withOldFullBundle`).
+ * (`withOldFullBundle`) ; 27 -> 28 : la main active n'existe plus (`active` retiré, `withoutActive`).
  */
 export function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -97,7 +98,14 @@ export function upgrade(data: unknown): unknown {
   if (d?.version === 25 && d.state && typeof d.state === 'object') d = { ...d, version: 26 };
   // 26 -> 27 : le tas de branches plein passe de 10 à 12 branches ; un fagot sans nombre était plein, il en avait 10
   if (d?.version === 26 && d.state && typeof d.state === 'object') d = { ...d, version: 27, state: withOldFullBundle(d.state as OldBundles) };
+  // 27 -> 28 : la main active n'existe plus (chaque clic dit sa main)
+  if (d?.version === 27 && d.state && typeof d.state === 'object') d = { ...d, version: 28, state: withoutActive(d.state as object) };
   return d;
+}
+
+/** 27 -> 28 : `active` retiré de la partie. */
+function withoutActive(state: object): object {
+  return Object.fromEntries(Object.entries(state).filter(([k]) => k !== 'active'));
 }
 
 type OldBundles = { hands?: unknown[]; both?: unknown; maps?: Record<string, { piles?: { pile?: string; bundle?: number }[]; spawned?: { type?: string; bundle?: number }[] }> };

@@ -1,11 +1,18 @@
 import Phaser from 'phaser';
 import { DEPTH, INTERACT } from '../config';
 import type { Player } from '../entities/Player';
-import type { Interactable } from '../world/GameMap';
+import type { Action, Interactable } from '../world/GameMap';
+
+/** Ce que fait E, sans les mains : parler (la paillasse, « Dormir ? », est un dialogue), ouvrir ou fermer, lire la planchette. */
+const E_KINDS: readonly Action['kind'][] = ['talk', 'swing', 'learn'];
+
+/** Ce qui est visé : par E (`talk`, `swing`, `learn`), ou par un clic (tout le reste : prendre, poser sur, une place de chantier). */
+export const isEAction = (a: Action): boolean => E_KINDS.includes(a.kind);
 
 /**
- * Repère ce qui est devant Xéros (objet, personnage, objet au sol), affiche l'invite (touche E) au-dessus,
- * et signale quand le joueur appuie sur E, devant une cible ou dans le vide. Ne sait pas ce que fait la cible : c'est la scène qui décide.
+ * Repère ce que vise Xéros (sous le curseur à portée, sinon dans sa direction : src/world/aim.ts) : pour E, ce qui se fait sans les
+ * mains (l'invite « touche E » au-dessus) ; pour les clics, ce que les mains prennent ou sur quoi elles posent (`handTarget`). Signale
+ * quand le joueur appuie sur E. Ne sait pas ce que fait la cible : c'est la scène qui décide.
  */
 export class InteractionSystem {
   private target?: Interactable;
@@ -23,12 +30,12 @@ export class InteractionSystem {
 
   /**
    * À appeler à chaque image. `active` = false pendant un dialogue ou un changement de carte.
-   * `pressed` : le joueur vient d'appuyer sur la touche des mains ; `target` : ce qu'il y a devant lui, s'il y a quelque chose.
+   * `pressed` : le joueur vient d'appuyer sur E ; `target` : ce que E viserait, s'il y a quelque chose.
    */
   update(time: number, active: boolean): { pressed: boolean; target?: Interactable } {
     // Toujours lue, même inactif : sinon un appui fait pendant un dialogue ressortirait juste après.
     const pressed = this.player.input.handsPressed() && active && time >= this.lockedUntil;
-    this.setTarget(active ? this.nearest() : undefined);
+    this.setTarget(active ? this.nearest(isEAction) : undefined);
     if (this.target) {
       const bob = Math.round((Math.sin(time / 220) + 1) / 2) * 2;
       this.prompt.setPosition(this.target.x, this.target.top + 4 - bob);
@@ -36,17 +43,28 @@ export class InteractionSystem {
     return { pressed, target: this.target };
   }
 
-  /** Ignore la touche d'action pendant `ms` : l'appui qui ferme un dialogue ne doit pas en rouvrir un. */
+  /** Ce que vise un clic (prendre, reprendre, poser sur, une place de chantier) : le plus proche du point visé, à portée. */
+  handTarget(): Interactable | undefined {
+    return this.nearest((a) => !isEAction(a));
+  }
+
+  /** E et les clics sont ignorés en ce moment (juste après un dialogue, un travail). */
+  get locked(): boolean {
+    return this.scene.time.now < this.lockedUntil;
+  }
+
+  /** Ignore E et les clics pendant `ms` : l'appui qui ferme un dialogue ne doit pas en rouvrir un. */
   lock(ms: number): void {
     this.lockedUntil = this.scene.time.now + ms;
   }
 
-  /** Objet le plus proche du point que regarde Xéros, s'il est à portée. */
-  private nearest(): Interactable | undefined {
+  /** Objet le plus proche du point que vise Xéros, s'il est à portée, parmi ceux que `keep` garde. */
+  private nearest(keep: (a: Action) => boolean): Interactable | undefined {
     const probe = this.player.probe(INTERACT.reach);
     let best: Interactable | undefined;
     let bestD = INTERACT.radius;
     for (const it of this.items()) {
+      if (!keep(it.action)) continue;
       const d = Phaser.Math.Distance.Between(probe.x, probe.y, it.x, it.y);
       if (d < bestD) {
         best = it;

@@ -14,12 +14,14 @@ const CODES = {
   left: ['KeyA', 'ArrowLeft'],
   right: ['KeyD', 'ArrowRight'],
   run: ['ShiftLeft', 'ShiftRight'],
+  // E (ou Entrée) : ce qui se fait sans les mains (parler, ouvrir, lire) ; dans un dialogue, la suite
   hands: ['KeyE', 'Enter', 'NumpadEnter'],
-  use: ['Space'],
+  // lâcher : le A d'un AZERTY (Q en QWERTY)
   drop: ['KeyQ'],
-  swap: ['Tab'],
   turn: ['KeyR'],
-  // arrêter une passe sur un rail (la doloire le long d'une pièce)
+  // Alt (Option sur Mac) maintenu : marcher discrètement
+  sneak: ['AltLeft', 'AltRight'],
+  // arrêter un travail ou une passe sur un rail ; annuler un lancer pendant qu'on vise
   stop: ['Escape'],
   // mode construction (?construire) : B entre et sort ; T et G (ou Page haut, Page bas) montent et descendent d'un cran. Ces trois
   // lettres sont à la même place en AZERTY et en QWERTY, et ne servent à rien d'autre.
@@ -92,17 +94,17 @@ if (typeof window !== 'undefined') {
   });
 }
 
-/**
- * Traduit le clavier en intention : direction, course, et les gestes des mains.
- * E (ou Entrée) : prendre dans une main libre, parler, cueillir, ou reposer ce qu'on tient à deux mains.
- * Espace : utiliser ce qu'on tient. Q (A en AZERTY) : lâcher ce que tient la main active. Tab : changer de main active.
- * R : tourner la bille portée (est-ouest, nord-sud). Échap : arrêter une passe sur un rail. Molette, + et − : le zoom.
- */
 /** Oublie les touches enfoncées : un passage avec fondu (une porte, une sortie) repart à l'arrêt, comme avant les zones. */
 export function forgetHeldKeys(): void {
   LATCH.clear();
 }
 
+/**
+ * Traduit le clavier et la souris en intention (docs/COMMANDES.md) : direction, course, pas discrets (Alt), les deux clics (gauche : la
+ * main droite ; droit : la main gauche ; courts ou maintenus), le curseur. E (ou Entrée) : parler, ouvrir, lire. A (Q en QWERTY) :
+ * lâcher. R : tourner ce qu'on tient. Échap : arrêter un travail, annuler un lancer. V : la vitesse du temps. Molette, + et − : le zoom.
+ * Espace ne fait rien (réservé).
+ */
 export class PlayerInput {
   /** Le clavier, commun à toutes les scènes (LATCH). */
   private readonly keys = LATCH;
@@ -116,7 +118,7 @@ export class PlayerInput {
     // pas de menu du navigateur au clic droit sur le canevas : c'est la main gauche
     scene.input.mouse?.disableContextMenu();
     const kb = scene.input.keyboard!;
-    // Tab et Espace ne doivent pas faire défiler la page ni changer le focus
+    // Tab et Espace (réservé à l'esquive et au saut, plus tard) ne doivent pas faire défiler la page ni changer le focus
     kb.addCapture([K.TAB, K.SPACE, K.UP, K.DOWN, K.LEFT, K.RIGHT, K.PAGE_UP, K.PAGE_DOWN]);
     // les appuis d'avant cette scène (lus par la précédente, ou pendant un fondu) ne la concernent pas
     for (const codes of Object.values(CODES)) this.keys.take(codes);
@@ -151,42 +153,22 @@ export class PlayerInput {
     });
   }
 
-  /** Les mains (E ou Entrée) : vrai une seule fois par appui. */
+  /** E (ou Entrée) : vrai une seule fois par appui. */
   handsPressed(): boolean {
     return this.take('hands');
   }
 
-  /** La touche des mains (E ou Entrée) est enfoncée en ce moment : E maintenu (nouer, dénouer). */
-  handsDown(): boolean {
-    return this.keys.isDown(CODES.hands);
-  }
-
-  /** La durée (ms) du dernier appui d'E fini : la vraie, pas le temps que le jeu a mis à le lire (systems/longPress.ts). */
-  handsLasted(): number | undefined {
-    return this.keys.lastedFor(CODES.hands);
-  }
-
-  /** Utiliser ce qu'on tient (Espace) : vrai une seule fois par appui. */
-  usePressed(): boolean {
-    return this.take('use');
-  }
-
-  /** Lâcher ce que tient la main active (Q) : vrai une seule fois par appui. */
+  /** Lâcher (A en AZERTY, Q en QWERTY : la même place) : vrai une seule fois par appui. */
   dropPressed(): boolean {
     return this.take('drop');
   }
 
-  /** Changer de main active (Tab) : vrai une seule fois par appui. */
-  swapPressed(): boolean {
-    return this.take('swap');
-  }
-
-  /** Tourner la bille portée (R) : vrai une seule fois par appui. */
+  /** R : tourner ce qu'on tient avant de le poser ; vrai une seule fois par appui. */
   turnPressed(): boolean {
     return this.take('turn');
   }
 
-  /** Échap : arrêter la passe en cours ; vrai une seule fois par appui. */
+  /** Échap : arrêter le travail ou la passe en cours, annuler un lancer ; vrai une seule fois par appui. */
   stopPressed(): boolean {
     return this.take('stop');
   }
@@ -194,16 +176,6 @@ export class PlayerInput {
   /** Une flèche ou ZQSD vient d'être pressée (pas maintenue) : interrompt un travail. Lit les quatre, une fois par appui. */
   movePressed(): boolean {
     return [this.take('up'), this.take('down'), this.take('left'), this.take('right')].some(Boolean);
-  }
-
-  /** La touche R est enfoncée en ce moment : R maintenu (pivoter une bille couchée). */
-  turnDown(): boolean {
-    return this.keys.isDown(CODES.turn);
-  }
-
-  /** La durée (ms) du dernier appui de R fini. */
-  turnLasted(): number | undefined {
-    return this.keys.lastedFor(CODES.turn);
   }
 
   /** V : la vitesse du temps, au palier suivant (en boucle) ; vrai une fois par appui, Maj tenue ou non (pendant une course). */
