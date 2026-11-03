@@ -16,7 +16,7 @@ import { TENON } from '../../src/world/jointView';
 import { lookOf, upOf } from '../../src/world/woodShape';
 import { Board, grassOf } from './composite-previews';
 import stones, { stonePalette } from '../../art/items/stones';
-import { runLayout, wallRuns } from '../../src/world/wallRuns';
+import { runLayout, runPx, wallRuns } from '../../src/world/wallRuns';
 import { wallKit } from '../../src/world/walls';
 
 const kit = wallKit((name) => {
@@ -45,7 +45,7 @@ const sill = (id: number, x: number, y: number, view: number): BuildPiece => ({ 
 /** Les morceaux de solin d'une scène, en tronçons (world/wallRuns.ts), chacun sa part du dessin. */
 function drawWalls(board: Board, pieces: BuildPiece[], ox: number, oy: number): void {
   for (const run of wallRuns(pieces)) {
-    const g = kit.run({ kind: run.kind, axis: run.axis, pieces: run.pieces.length, start: run.start, end: run.end, seed: run.seed, ...(run.extra ? { extra: run.extra } : {}) });
+    const g = kit.run({ kind: run.kind, axis: run.axis, length: runPx(run), start: run.start, end: run.end, seed: run.seed, ...(run.extra ? { extra: run.extra } : {}) });
     const lay = runLayout(run, g[0].length, g.length);
     board.blit(g, stonePalette, lay.x + ox, lay.y - g.length + oy);
   }

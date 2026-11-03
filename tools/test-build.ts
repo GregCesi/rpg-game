@@ -287,3 +287,25 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   assert.ok(rooms >= 6, 'des pièces closes dans les plans du dépôt');
   console.log(`✓ test-build : le mur du fond derrière tout ce qui est dans la pièce (${rooms} pièces closes, tous les plans du dépôt)`);
 }
+
+// Le solin de toute longueur (chantier « maison-2 ») : un morceau se règle sur la grille de walls.json (10 cm, au moins 40), sa boîte
+// en suit la longueur, des morceaux de longueurs mêlées font un seul tronçon, et un plan refuse une longueur hors de la grille
+{
+  const { WALL_PIECE } = await import('../src/world/walls');
+  const { wallRuns, runPx } = await import('../src/world/wallRuns');
+  assert.deepEqual(WALL_PIECE, { grid: 10, min: 40 });
+  assert.deepEqual(sizeOf({ prop: 'rough-sill-wall', length: 70 }), { w: 70, d: 50, h: 40 });
+  assert.deepEqual(sizeOf({ prop: 'rough-sill-wall', length: 70 }, 1), { w: 50, d: 70, h: 40 });
+  const mixed: BuildPiece[] = [
+    { id: 1, piece: { prop: 'rough-sill-wall', length: 70 }, x: 0, y: 0, z: 0, view: 0 },
+    { id: 2, piece: { prop: 'rough-sill-wall' }, x: 70, y: 0, z: 0, view: 0 },
+    { id: 3, piece: { prop: 'rough-sill-wall', length: 40 }, x: 230, y: 0, z: 0, view: 0 },
+  ];
+  const runs = wallRuns(mixed);
+  assert.equal(runs.length, 1, 'des longueurs mêlées bout à bout : un tronçon');
+  assert.equal(runPx(runs[0]), 54, '70 + 160 + 40 cm = 54 px');
+  const bad = { name: 'x', size: { w: 100, d: 50 }, pieces: [{ piece: { prop: 'rough-sill-wall', length: 75 }, x: 0, y: 0, z: 0, view: 0 }, { piece: { prop: 'slab', length: 60 }, x: 0, y: 0, z: 0, view: 0 }] };
+  const why = planProblems(bad as never);
+  assert.equal(why.length, 2, `deux refus : ${why.join(' ; ')}`);
+  console.log('✓ test-build : le solin de toute longueur (grille de 10 cm, au moins 40), des tronçons de longueurs mêlées');
+}

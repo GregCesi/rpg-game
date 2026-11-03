@@ -34,7 +34,14 @@ const WALLS = wallsJson as {
   ns: string[];
   header: { label: string; image: string };
   chips: { label: string; image: string };
+  piece: { grid: number; min: number };
 };
+
+/**
+ * La longueur d'un morceau de mur (chantier « maison-2 », Grégoire : une seule règle, comme le bois) : toute longueur sur la grille
+ * de `grid` cm, au moins `min` cm (walls.json, `piece`) ; ses tronçons restent calculés ici, pour toute longueur.
+ */
+export const WALL_PIECE: { grid: number; min: number } = WALLS.piece;
 
 /** Les images des pierres dont l'algorithme se sert (images au sol du jeu, ombre comprise, palette `stonePalette`). */
 export const WALL_STONES: readonly string[] = [...WALLS.rough.map((p) => p.image), ...WALLS.rubble.map((p) => p.image), ...WALLS.ns, WALLS.chips.image];
@@ -59,11 +66,15 @@ export type WallKind = 'rough' | 'dressed';
  * `corner-e`, `corner-w` (un nord-sud qui tiendrait l'angle) restent dessinés mais le jeu ne s'en sert plus.
  */
 export type RunEnd = 'head' | 'abut' | 'corner-n' | 'corner-s' | 'corner-e' | 'corner-w';
-/** Un tronçon : `pieces` morceaux de 1,60 m ; `start` le bout ouest (ou nord), `end` le bout est (ou sud). */
+/**
+ * Un tronçon : sa longueur `length` (px, la somme de ses morceaux, de toute longueur ; absente : `pieces` morceaux de 1,60 m) ; `start`
+ * le bout ouest (ou nord), `end` le bout est (ou sud).
+ */
 export interface RunSpec {
   kind: WallKind;
   axis: 'ew' | 'ns';
-  pieces: number;
+  pieces?: number;
+  length?: number;
   start: RunEnd;
   end: RunEnd;
   seed: number;
@@ -73,10 +84,13 @@ export interface RunSpec {
   extra?: { start?: number; end?: number };
 }
 
-/** Longueur dessinée d'un tronçon le long de son axe (sans la rangée ou la colonne d'ombre) : 32 × pieces + ses `extra`. */
+/** La longueur couverte par un tronçon (px) : `length`, sinon 32 × `pieces`. */
+export const coveredLength = (spec: RunSpec): number => spec.length ?? PIECE_PX * (spec.pieces ?? 1);
+
+/** Longueur dessinée d'un tronçon le long de son axe (sans la rangée ou la colonne d'ombre) : sa longueur couverte + ses `extra`. */
 export function runLength(spec: RunSpec): number {
-  const L = PIECE_PX * spec.pieces + (spec.extra?.start ?? 0) + (spec.extra?.end ?? 0);
-  if (L < 4) throw new Error(`Mur : un tronçon de ${L} px de long (${spec.pieces} morceaux, extra ${JSON.stringify(spec.extra)})`);
+  const L = coveredLength(spec) + (spec.extra?.start ?? 0) + (spec.extra?.end ?? 0);
+  if (L < 4) throw new Error(`Mur : un tronçon de ${L} px de long (${coveredLength(spec)} px, extra ${JSON.stringify(spec.extra)})`);
   return L;
 }
 
@@ -683,7 +697,9 @@ function course(t: Tables, W: number, r: () => number, prev: Course | undefined,
     }
     if (!pieces.length) continue;
     const end = layout(pieces, joints).at(-1)! + pieces.at(-1)!.full[0].length;
-    if (end !== W) continue;
+    // provisoire (chantier « maison-2 ») : un mur trop court pour qu'aucune suite de pierres tombe juste rend son assise telle quelle
+    // après assez d'essais, plutôt que de chercher sans fin ; la sortie dessinée (la boutisse) attend la planche du pixel-artist
+    if (end !== W && tries < 5000) continue;
     if (chainRight && tries < 500 && (pieces.at(-1) === HEADER) !== lastHeader) continue;
     const c: Course = { pieces, joints, xs: layout(pieces, joints) };
     const lens = new Set(pieces.map((p) => p.image));
@@ -1094,7 +1110,7 @@ export function wallKit(image: (name: string) => Grid): WallKit {
      * extra + 10 (l'épaisseur) à ce bout et le nord-sud extra − 10 : le dessin est le même que dans l'autre cas.
      */
     run(spec: RunSpec): Grid {
-      if (spec.pieces < 1) throw new Error(`Mur : un tronçon de ${spec.pieces} morceau`);
+      if (coveredLength(spec) < WALL_PIECE.min / 5) throw new Error(`Mur : un tronçon de ${coveredLength(spec)} px, moins que le plus court morceau (${WALL_PIECE.min} cm)`);
       return spec.axis === 'ew' ? runEW(spec) : runNS(spec);
     },
     roughWall: (seed, size = ESSAY_ROUGH) => roughWall(t, seed, size),

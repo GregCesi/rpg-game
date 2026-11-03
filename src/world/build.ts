@@ -13,6 +13,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildPlan, BuildRef, JointType, WoodAge, WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { woodDims } from './woodPiece';
+import { WALL_PIECE } from './walls';
 import { lookDef, lookOf, turnedWood, upOf } from './woodShape';
 
 /** Une pièce posée en mode construction, telle que GameState la garde : son identifiant propre, et ce que dit `BuildPlaced`. */
@@ -94,7 +95,9 @@ export function sizeOf(ref: BuildRef, view = 0): Size3 {
     return { w: d.w, d: d.d, h: d.h };
   }
   const dims = 'prop' in ref ? props[ref.prop].dims : items[ref.item].dims;
-  const s = dims ? { w: dims.w, d: dims.d, h: dims.h } : ITEM_FALLBACK;
+  // un morceau de mur de toute longueur (le solin) : sa longueur réglée remplace celle de `dims`
+  const long = 'prop' in ref && ref.length && props[ref.prop].wall ? ref.length : undefined;
+  const s = dims ? { w: long ?? dims.w, d: dims.d, h: dims.h } : ITEM_FALLBACK;
   return view % 2 === 1 && viewsOf(ref) > 1 ? { w: s.d, d: s.w, h: s.h } : s;
 }
 
@@ -496,6 +499,11 @@ export function planProblems(plan: BuildPlan): string[] {
     if ('prop' in p.piece && p.variant !== undefined && p.variant >= (props[p.piece.prop].variants ?? 1)) out.push(`${at} : tirage ${p.variant} inconnu`);
     if (p.age && !('wood' in p.piece) && !ageable(p.piece)) out.push(`${at} : un âge (${p.age}), mais ce n'est pas un objet de bois (\`aged\`)`);
     if ('wood' in p.piece && p.age) out.push(`${at} : la pièce de bois garde son âge dans \`wood.age\`, pas dans \`age\``);
+    if ('prop' in p.piece && p.piece.length !== undefined) {
+      const { grid, min } = WALL_PIECE;
+      if (!props[p.piece.prop].wall) out.push(`${at} : une longueur (${p.piece.length} cm), mais ce n'est pas un morceau de mur (\`wall\`)`);
+      else if (p.piece.length % grid || p.piece.length < min) out.push(`${at} : un morceau de mur de ${p.piece.length} cm, hors de la grille (multiple de ${grid}, au moins ${min})`);
+    }
   });
   return out;
 }

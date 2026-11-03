@@ -14,5 +14,6 @@
   ],
   "ns": ["short-rubble-stone-ground-ns", "rubble-stone-ground-ns", "long-rubble-stone-ground-ns"],
   "header": {"label": "boutisse 40", "image": "rubble-stone-ground-ns"},
-  "chips": {"label": "eclats", "image": "stone-chips"}
+  "chips": {"label": "eclats", "image": "stone-chips"},
+  "piece": {"grid": 10, "min": 40}
 }

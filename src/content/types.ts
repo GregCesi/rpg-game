@@ -850,7 +850,11 @@ export const PlanSchema = z.strictObject({
  * possédable (`item`, clé de items.json) ou une pièce de bois (`wood`, ses réglages ; son sens est son `axis`).
  */
 const BuildRefSchema = z.union([
-  z.strictObject({ prop: id }),
+  /**
+   * Un objet de props.json ; `length` : la longueur d'un morceau de mur (`wall`, le solin), en cm, sur la grille de `piece` de
+   * walls.json (10 cm, au moins 40) ; absente : sa longueur de `dims`.
+   */
+  z.strictObject({ prop: id, length: z.number().int().positive().optional() }),
   z.strictObject({ item: id }),
   z.strictObject({ wood: z.lazy(() => WoodPieceSchema) }),
 ]);
