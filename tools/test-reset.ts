@@ -14,7 +14,7 @@ await playtest('reset', async ({ page, errors, load }) => {
       const g = (window as any).game;
       g.events.emit('dieu', { kind: 'stamina', breath: 30, ceiling: 40, max: 150 });
       g.events.emit('dieu', { kind: 'clock', hour: 20 });
-      await new Promise((r) => setTimeout(r, 300));
+      await (window as any).__until(() => g.scene.getScene('world').player.stamina.max === 150, "l'endurance réglée par ?dieu");
       g.scene.getScene('world').player.stamina.drain(0.5, 800, 2);
     });
   const read = () =>
@@ -43,14 +43,8 @@ await playtest('reset', async ({ page, errors, load }) => {
 
   // ?dieu « Toute la partie »
   await spend();
-  await page.evaluate(async () => {
-    (window as any).game.events.emit('dieu', { kind: 'reset-game' });
-    const w = () => (window as any).game.scene.getScene('world');
-    const t = performance.now();
-    await new Promise((r) => setTimeout(r, 300));
-    while ((w().mode !== 'play' || !w().player) && performance.now() - t < 8000) await new Promise((r) => setTimeout(r, 50));
-    await new Promise((r) => setTimeout(r, 300));
-  });
+  // la scène redémarre sur une partie neuve : attendre la nouvelle carte prête (pas l'ancienne, encore en `play` juste après l'ordre)
+  await page.evaluate(() => (window as any).__restart({ kind: 'reset-game' }));
   fresh(await read(), 'recommencer depuis ?dieu');
 
   // ?reset
@@ -62,8 +56,9 @@ await playtest('reset', async ({ page, errors, load }) => {
   await spend();
   const hour = (await read()).hour;
   await page.evaluate(async () => {
-    (window as any).game.events.emit('dieu', { kind: 'stamina-start' });
-    await new Promise((r) => setTimeout(r, 300));
+    const g = (window as any).game;
+    g.events.emit('dieu', { kind: 'stamina-start' });
+    await (window as any).__until(() => g.scene.getScene('world').player.stamina.max !== 150, "l'endurance de départ");
   });
   const r = await read();
   assert.deepEqual(r.state, r.start, `Endurance de départ : ${JSON.stringify(r.state)}`);

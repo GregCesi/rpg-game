@@ -114,16 +114,28 @@ await playtest('monde', async ({ page, errors, load }) => {
         let axis = first;
         let last = { wx: start.wx, wy: start.wy };
         let still = 0;
+        // bornes en images, jamais en durée : hors du mode `play` trop longtemps (un dialogue ouvert en route), ou plus aucun progrès
+        // vers le but (une approche qui oscille) ; le test échoue alors en le disant, au lieu d'attendre sans fin
+        let away = 0;
+        let best = Infinity;
+        let stale = 0;
         for (;;) {
           await frame();
           const p = at();
           if (!p) continue;
           // une sortie prise en route (la porte de la maison) : on est arrivé ailleurs
           if (!start.zone && p.id !== start.id) return (hold([]), { ok: true, p });
-          if (p.mode !== 'play') continue;
+          if (p.mode !== 'play') {
+            if (++away > 1200) return (hold([]), { ok: false, p, why: `mode ${p.mode} depuis 1200 images` });
+            continue;
+          }
+          away = 0;
           const dx = wx - p.wx;
           const dy = wy - p.wy;
           if (Math.abs(dx) <= tol && Math.abs(dy) <= tol) return (hold([]), { ok: true, p });
+          const dist = Math.abs(dx) + Math.abs(dy);
+          if (dist < best - 1) (best = dist), (stale = 0);
+          else if (++stale > 1500) return (hold([]), { ok: false, p, why: `plus de progrès depuis 1500 images (au plus près : ${best.toFixed(1)} px)` });
           if (axis === 'x' && Math.abs(dx) <= tol) axis = 'y';
           if (axis === 'y' && Math.abs(dy) <= tol) axis = 'x';
           const dir = axis === 'x' ? (dx > 0 ? 'KeyD' : 'KeyA') : dy > 0 ? 'KeyS' : 'KeyW';
@@ -151,7 +163,7 @@ await playtest('monde', async ({ page, errors, load }) => {
       },
       { wx, wy, first, tol },
     );
-    if (!r.ok) throw new Error(`Xéros est bloqué en route vers (${wx}, ${wy}) : ${JSON.stringify(r.p)}`);
+    if (!r.ok) throw new Error(`Xéros est bloqué en route vers (${wx}, ${wy}) : ${(r as any).why ?? 'il ne bouge plus'} ; ${JSON.stringify(r.p)}`);
   };
 
   // 1. le réveil dans son coin de la maison (l'intérieur calculé de la maison bâtie sur la ferme), puis la sortie : un chemin calculé

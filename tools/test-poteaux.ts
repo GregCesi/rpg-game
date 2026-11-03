@@ -205,13 +205,18 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       out.shortGood = notices.at(-1);
       out.shortMode = w().mode;
       await press('KeyE', 700);
-      await sleep(400);
+      await (window as any).__until(() => w().mode !== 'play', 'la question après E maintenu');
       out.askMode = w().mode;
       await shot('2-appeler-la-mere');
       await press('KeyE'); // la question s'affiche d'un coup
+      // les modes de la scène à chaque pas de jeu : le fondu se voit même s'il passe pendant l'appui (à x10, il dure quelques images)
+      const modes = new Set<string>();
+      const watch = () => modes.add(w().mode);
+      w().events.on('update', watch);
       await press('KeyE'); // « Oui »
-      await sleep(900);
-      out.fadeMode = w().mode;
+      await (window as any).__until(() => modes.has('transition') && w().mode === 'play', 'fondu au noir, puis le retour au jeu');
+      w().events.off('update', watch);
+      out.fadeMode = modes.has('transition') ? 'transition' : [...modes].join(',');
       out.motherNotice = notices.at(-1);
       await shot('3-fondu');
       await settled();
