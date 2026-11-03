@@ -285,6 +285,64 @@ await playtest('monde', async ({ page, errors, load }) => {
   const zonesSeen = await page.evaluate(() => (window as any).crossings.map((c: any) => c.from));
   assert.deepEqual(zonesSeen, ['ferme -> chemin', 'chemin -> village'], 'ferme, chemin, village : deux bords passés');
 
+  // 3 bis. vers le nord, comme un joueur : de la place, droit au nord jusqu'à la zone voisine, puis retour à la place (le bord nord
+  // arrêtait Xéros : le passage testait le bas de ses pieds, que le corps empêchait d'atteindre le bord ; tools/test-zones.ts)
+  // un chemin libre de la place au bord nord (une recherche en largeur sur une grille de 8 px, la place des pieds libre à chaque pas),
+  // en px du monde ; puis, au bord, droit au nord
+  const northRoute = (await page.evaluate(() => {
+    const w = (window as any).game.scene.getScene('world');
+    const m = w.map;
+    const o = m.def.world;
+    const S = 8;
+    const W = Math.floor(m.width / S);
+    const H = Math.floor(m.height / S);
+    const free = (x: number, y: number) => m.areaFree({ left: x - 6, top: y - 9, right: x + 6, bottom: y });
+    const start = Math.round(w.player.actor.y / S) * W + Math.round(w.player.actor.x / S);
+    const prev = new Int32Array(W * H).fill(-2);
+    prev[start] = -1;
+    const q = [start];
+    let end = -1;
+    for (let k = 0; k < q.length; k++) {
+      const i = q[k];
+      const x = i % W;
+      const y = Math.floor(i / W);
+      if (y <= 1) {
+        end = i;
+        break;
+      }
+      for (const [dx, dy] of [[0, -1], [1, 0], [-1, 0], [0, 1]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        const n = ny * W + nx;
+        if (nx < 1 || ny < 1 || nx >= W - 1 || ny >= H - 1 || prev[n] !== -2 || !free(nx * S, ny * S)) continue;
+        prev[n] = i;
+        q.push(n);
+      }
+    }
+    if (end < 0) return [];
+    const out: { x: number; y: number }[] = [];
+    for (let i = end; i >= 0; i = prev[i]) out.unshift({ x: (i % W) * S + o.x, y: Math.floor(i / W) * S + o.y });
+    // seulement les coins
+    return out.filter((_q, i) => i === 0 || i === out.length - 1 || out[i - 1].x !== out[i + 1].x && out[i - 1].y !== out[i + 1].y);
+  })) as { x: number; y: number }[];
+  assert.ok(northRoute.length > 1, 'un chemin libre de la place au bord nord du village');
+  for (const c of northRoute.slice(1)) {
+    const now = await where();
+    await goTo(c.x, c.y, Math.abs(c.x - now.wx) > Math.abs(c.y - now.wy) ? 'x' : 'y', 2);
+  }
+  const lane = { x: northRoute[northRoute.length - 1].x, top: (await where()).wy - ((await where()).y) };
+  await goTo(lane.x, lane.top - 48, 'y');
+  const north = await where();
+  assert.notEqual(north.id, 'village', `passé au nord du village (${north.id})`);
+  assert.ok(north.wy < lane.top, `dans la zone au nord (y du monde ${north.wy})`);
+  // et retour : vers le sud, dans le village, puis sur la place par le même chemin
+  await goTo(lane.x, lane.top + 48, 'y');
+  assert.equal((await where()).id, 'village', 'revenu au village par le sud');
+  for (const c of [...northRoute].reverse().slice(1)) {
+    const now = await where();
+    await goTo(c.x, c.y, Math.abs(c.x - now.wx) > Math.abs(c.y - now.wy) ? 'x' : 'y', 2);
+  }
+
   // 4. de la place au panneau : la route de la ville, jusqu'au bord du monde
   await goTo(615 * TILE, ROAD, 'x');
   p = await where();
@@ -368,7 +426,7 @@ await playtest('monde', async ({ page, errors, load }) => {
 
   assert.deepEqual(errors, [], 'aucune erreur dans la page');
   assert.equal(said, 'Vers la ville. La route n’est pas encore pour moi.'.replace('’', "'"), 'le panneau se lit');
-  console.log(`  ✓ monde : du cagibi à la place (${zonesSeen.join(', ')}), puis au panneau ; le bord du monde arrête ; rechargé à la même place`);
+  console.log(`  ✓ monde : du cagibi à la place (${zonesSeen.join(", ")}), au nord du village et retour, puis au panneau ; le bord du monde arrête ; rechargé à la même place`);
   console.log(`    passages de bord (redémarrage de la scène) : ${crossings.map((c: any) => `${c.from} ${c.ms} ms`).join(' ; ')}`);
   console.log(
     `    forêt profonde (${still.objects} objets, ${still.band} objets affichés avec la bande des voisines) : une image ${still.mean.toFixed(1)} ms en moyenne (pire ${still.worst.toFixed(0)} ms) immobile, ${walking.mean.toFixed(1)} ms (pire ${walking.worst.toFixed(0)} ms) en marche (Chromium sans écran, rendu logiciel)`,

@@ -1,7 +1,7 @@
 // Les zones du monde, sans Phaser (chantier « monde », CONCEPTION « Le monde ») : le monde est fait de cartes Tiled assemblées côte à
 // côte (tiled/maps/monde.world) ; chaque zone sait sa place (`world` de la carte, en pixels). On passe de l'une à sa voisine en marchant
 // hors du bord, à la position correspondante : ici, qui est la voisine, où l'on arrive, et ce qu'on voit d'elle par-delà le bord.
-import { TILE } from '../config';
+import { FEET, TILE } from '../config';
 import type { MapData } from '../content/types';
 
 /** Une zone et son rectangle dans le monde (px). */
@@ -87,4 +87,15 @@ export function crossing(maps: Record<string, MapData>, map: MapData, x: number,
   const to = zoneAt(maps, wx, wy);
   if (!to || to.map.id === map.id) return undefined;
   return { map: to.map, x: wx - to.x, y: wy - to.y };
+}
+
+/**
+ * Le passage d'un bord par les pieds de Xéros (x, y : le bas de ses pieds, l'origine de son sprite) : c'est leur point de passage,
+ * `FEET.point` au-dessus du bas (le même que pour les sorties et les portes), qui doit passer de l'autre côté. Tester le bas des pieds
+ * faisait buter Xéros au nord : son corps (`FEET.gap` + `FEET.h` au-dessus du bas) touche les bornes de marche (`ZONES.edge` au-delà du
+ * bord) quand le bas est encore dans la carte. Renvoie la voisine et le bas de ses pieds dans son repère (le même point du monde).
+ */
+export function feetCrossing(maps: Record<string, MapData>, map: MapData, x: number, y: number): { map: MapData; x: number; y: number } | undefined {
+  const c = crossing(maps, map, x, y - FEET.point);
+  return c && { ...c, y: c.y + FEET.point };
 }

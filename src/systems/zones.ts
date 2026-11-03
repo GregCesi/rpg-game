@@ -6,7 +6,7 @@ import { TILE, ZONES } from '../config';
 import { maps } from '../content';
 import type { MapData } from '../content/types';
 import type { Player } from '../entities/Player';
-import { crossing, openSides, type Side } from '../world/zones';
+import { feetCrossing, openSides, type Side } from '../world/zones';
 
 /** Un rectangle en px dans le repère de la carte. */
 export interface Rect {
@@ -53,9 +53,9 @@ export class ZoneCrossing {
     return this.grown(ZONES.band.x * TILE, ZONES.band.y * TILE);
   }
 
-  /** Xéros vient de passer un bord ouvert : la voisine et l'arrivée (ses pieds au même point du monde), sinon rien. */
+  /** Xéros vient de passer un bord ouvert (le point de passage de ses pieds) : la voisine et l'arrivée (ses pieds au même point du monde), sinon rien. */
   update(player: Player): { map: MapData; x: number; y: number } | undefined {
     if (!this.isZone || player.dir.lengthSq() === 0) return undefined;
-    return crossing(maps, this.map, player.actor.x, player.actor.y);
+    return feetCrossing(maps, this.map, player.actor.x, player.actor.y);
   }
 }
