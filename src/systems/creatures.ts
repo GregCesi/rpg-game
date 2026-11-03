@@ -240,8 +240,14 @@ export class CreatureSystem {
     return [...this.warrens].sort((a, b) => d(a) - d(b))[0];
   }
 
-  /** Les bêtes dehors, leur état, la distance de chacune à (x, y) en m : les tests de scénario. */
-  census(x: number, y: number): { id: string; mode: string; pose: string; hp: number; x: number; y: number; dist: number }[] {
-    return this.all().map((c) => ({ id: c.id, mode: c.mode, pose: c.pose, hp: c.hp, x: c.x, y: c.y, dist: metres(Math.hypot(c.x - x, c.y - y)) }));
+  /**
+   * Les bêtes dehors, leur état, la distance de chacune à (x, y) en m (`dist`), et celle d'où elle a perçu Xéros à ce pas (`seenAt` : sa
+   * place au début du pas, avant de bouger) : les tests de scénario.
+   */
+  census(x: number, y: number): { id: string; mode: string; pose: string; hp: number; x: number; y: number; dist: number; seenAt: number }[] {
+    return this.all().map((c) => {
+      const f = c.from ?? c;
+      return { id: c.id, mode: c.mode, pose: c.pose, hp: c.hp, x: c.x, y: c.y, dist: metres(Math.hypot(c.x - x, c.y - y)), seenAt: metres(Math.hypot(f.x - x, f.y - y)) };
+    });
   }
 }
