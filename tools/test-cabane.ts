@@ -30,7 +30,8 @@ import { agesShortPreview, SHORT_MAX_H } from './lib/ages-preview';
 /** Le plan commité (le contenu du jeu) ; le scénario écrit le sien dans un dossier temporaire et le compare, sauf avec PLANS_WRITE=1
  * (pour mettre à jour le plan commité quand le bâtiment change exprès). */
 const COMMITTED = 'src/content/plans/cabane.json';
-const OUT_DIR = process.env.PLANS_WRITE ? 'src/content/plans' : mkdtempSync(join(tmpdir(), 'xeros-plans-'));
+// le dossier des plans écrits : celui du banc partagé (tools/run-scenarios.ts, son serveur l'écrit), sinon un dossier temporaire à soi
+const OUT_DIR = process.env.PLANS_WRITE ? 'src/content/plans' : (process.env.XEROS_PLANS_OUT ?? mkdtempSync(join(tmpdir(), 'xeros-plans-')));
 process.env.XEROS_PLANS_OUT = OUT_DIR;
 const PLAN_FILE = `${OUT_DIR}/cabane.json`;
 /** Date du plan au départ (0 s'il n'existe pas) : le test attend qu'il soit réécrit. */
@@ -421,4 +422,4 @@ await playtest('cabane', async ({ page, errors, load }) => {
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   assert.equal(built.length, all.length);
   console.log(`  ✓ cabane : ${all.length} pièces, ${(await joints()).length} assemblages, enregistrée dans ${PLAN_FILE} ; .art-preview/cabane.png`);
-});
+}, { speed: 1 }); // x1 : bâtir dans le mode construction ne demande pas de temps de jeu, et x10 alourdit chaque image

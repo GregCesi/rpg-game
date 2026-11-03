@@ -56,10 +56,13 @@ export class LongPress {
     return !!this.target;
   }
 
-  /** E vient d'être pressé devant `target` : l'appui commence. */
-  begin(target: Interactable, time: number): void {
+  /**
+   * E vient d'être pressé devant `target` : l'appui commence. `now` est le temps vrai (`performance.now()`, l'horloge des événements du
+   * clavier), jamais celui du jeu : un appui est un geste du joueur, il dure autant à toutes les vitesses de simulation.
+   */
+  begin(target: Interactable, now: number): void {
     this.target = target;
-    this.start = time;
+    this.start = now;
   }
 
   /** Abandonne l'appui en cours (dialogue, changement de carte...). */
@@ -69,19 +72,19 @@ export class LongPress {
   }
 
   /**
-   * À appeler à chaque image : `down`, E est encore enfoncé ; `current`, ce que Xéros vise maintenant ; `lasted`, la durée vraie du
+   * À appeler à chaque image, avec le temps vrai (`now`, comme pour `begin`) : `down`, E est encore enfoncé ; `current`, ce que Xéros vise maintenant ; `lasted`, la durée vraie du
    * dernier appui fini (src/input/keyLatch.ts : une image longue ne fait pas d'un appui court un appui long). Renvoie le geste à faire
    * quand l'appui se termine, sinon undefined.
    */
-  update(time: number, down: boolean, current: Interactable | undefined, player: Player, lasted?: number): PressResult | undefined {
+  update(now: number, down: boolean, current: Interactable | undefined, player: Player, lasted?: number): PressResult | undefined {
     const target = this.target;
     if (!target) return undefined;
     if (!current || subject(current.action) !== subject(target.action)) {
       this.cancel();
       return undefined;
     }
-    const t = (time - this.start) / this.ms;
-    const end = pressEnd(down, time - this.start, this.ms, lasted);
+    const t = (now - this.start) / this.ms;
+    const end = pressEnd(down, now - this.start, this.ms, lasted);
     if (end) {
       this.cancel();
       return { kind: end, target };

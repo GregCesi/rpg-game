@@ -80,3 +80,23 @@ const FRAME = 16;
   assert.equal(k.isDown(UP), false);
 }
 console.log("✓ clavier : un appui plus court qu'une image est lu, une tape déplace d'une image, un appui court reste court après une image longue");
+
+// la vitesse de simulation (src/systems/simSpeed.ts) : à x10, l'horloge des pas (le `time` de chaque pas, `time.now` des scènes, que
+// lisent les verrous après une action) reste croissante d'un pas à l'autre et d'une image à l'autre, même quand les images s'allongent
+// (le jeu qui rame), et ne recule pas quand on revient à x1
+{
+  const { setSimSpeed } = await import('../src/systems/simSpeed');
+  const times: number[] = [];
+  const game = {
+    loop: { callback: (t: number) => void times.push(t) },
+    headlessStep: (t: number) => void times.push(t),
+  } as any;
+  setSimSpeed(game, 10);
+  let t = 0;
+  for (const d of [16, 16, 100, 250, 16, 100]) game.loop.callback((t += d), d);
+  setSimSpeed(game, 1);
+  for (const d of [16, 100, 16]) game.loop.callback((t += d), d);
+  for (let i = 1; i < times.length; i++) assert.ok(times[i] > times[i - 1], `l'horloge du jeu recule au pas ${i} : ${times[i - 1]} puis ${times[i]}`);
+  assert.equal(times.length, 6 * 10 + 3, 'x10 : dix pas par image ; x1 : un');
+  console.log("✓ vitesse de simulation : l'horloge du jeu ne recule jamais, à x10 comme au retour à x1");
+}

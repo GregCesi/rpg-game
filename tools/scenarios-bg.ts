@@ -75,7 +75,8 @@ const step = (cmd: string, args: string[], env: NodeJS.ProcessEnv = {}) =>
 
 const table = join(dir, '.scenarios-table.txt');
 let code = (await step('npm', ['run', 'art'])) || (await step('npm', ['run', 'maps']));
-if (code === 0) code = await step('npx', ['tsx', 'tools/run-scenarios.ts'], { SCENARIOS_REPORT: table });
+// `--all` (npm run test:scenarios:bg -- --all) : les scénarios lourds aussi (tools/run-scenarios.ts, HEAVY)
+if (code === 0) code = await step('npx', ['tsx', 'tools/run-scenarios.ts', ...(process.argv.includes('--all') ? ['--all'] : [])], { SCENARIOS_REPORT: table });
 const minutes = ((Date.now() - started.getTime()) / 60000).toFixed(1);
 const body = existsSync(table) ? readFileSync(table, 'utf8') : `La suite n'a pas tourné : npm run art ou npm run maps a échoué (voir ${logFile}).\n`;
 writeFileSync(report, `Scénarios sur ${sha.slice(0, 7)} (${subject}), le ${started.toLocaleString('fr-FR')}, en ${minutes} min\n${body}Sortie complète : ${logFile}\n`);

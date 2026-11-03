@@ -42,26 +42,25 @@ await playtest('implantation', async ({ page, errors, load }) => {
         window.dispatchEvent(new KeyboardEvent('keydown', { code }));
         await sleep(60);
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
-        await sleep(120);
+        await (window as any).__settle();
         // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
         // travail »), horloge, endurance et résultat compris
         if (code === 'Space') await finishWork();
       };
       const give = async (what: { item: string } | { prop: string }) => {
         emit({ kind: 'give', held: what });
-        await sleep(120);
+        await (window as any).__settle();
       };
       const standAt = async (x: number, y: number, face: string) => {
         const a = w().player.actor;
         a.body.reset(Math.round(x), Math.round(y));
         a.face(face);
-        await sleep(180);
+        await (window as any).__settle();
       };
       // Xéros regarde le point (x, y) : ses pieds 10 px au nord (il regarde vers le bas), le point visé est alors (x, y)
       const lookAt = (x: number, y: number) => standAt(x, y - 10, 'down');
       const settled = async () => {
-        for (let i = 0; i < 100 && w().mode !== 'play'; i++) await sleep(50);
-        await sleep(500);
+        await (window as any).__idle('le geste fini');
       };
       const mapId = () => w().map.def.id;
       const props = (re: RegExp) => w().map.props.filter((p: any) => re.test(p.type));
@@ -111,12 +110,12 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const block = find(32, 32)!;
       await standAt(block[0], block[1], 'down');
       emit({ kind: 'prop', prop: 'chopping-block' });
-      await sleep(250);
+      await (window as any).__settle();
       // la hachette seule, face au billot : refusé, sans geste ni dépense
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'hatchet' });
       await press('Space');
-      await sleep(300);
+      await (window as any).__settle();
       out.noBranchNotice = notices.at(-1);
       out.noBranchMode = w().mode;
       out.noBranchCost = 100 - w().player.stamina.ceiling;
@@ -126,7 +125,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
         gs.take(gs.game, { item: first }, 1);
         gs.take(gs.game, { item: second }, 1);
         w().handsChanged();
-        await sleep(100);
+        await (window as any).__settle();
       };
       await twoHands('hatchet', 'branch');
       out.beforeCut = hands();
@@ -145,7 +144,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       await twoHands('branch', 'hatchet');
       const activeBefore = gs.game.active;
       w().player.actor.face('up');
-      await sleep(100);
+      await (window as any).__settle();
       await press('KeyQ');
       out.dropFollow = JSON.stringify({ before: activeBefore, active: gs.game.active, hands: hands() });
       // la branche lâchée ôtée, Xéros de nouveau face au billot
@@ -156,7 +155,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       w().player.actor.face('down');
       // la main droite de nouveau active, comme au départ (la suite du scénario en dépend)
       if (gs.game.active !== 1) gs.switchHand(gs.game);
-      await sleep(100);
+      await (window as any).__settle();
       // le rouleau de corde posé sur le billot (E), puis coupé à la hachette (un lien de 2 m, 0,4 point), puis à la cognée
       gs.emptyHands(gs.game);
       await give({ prop: 'rope-coil' });
@@ -285,7 +284,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       await press('KeyE');
       out.postNotice = notices.at(-1);
       out.postPlaced = Object.keys(site().placed).length;
-      await sleep(400);
+      await (window as any).__settle();
       out.stateKept = JSON.stringify(site());
       return out;
     });

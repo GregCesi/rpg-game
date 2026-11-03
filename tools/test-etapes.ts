@@ -17,15 +17,15 @@ await playtest('etapes', async ({ page, errors, load }) => {
       const w = () => g.scene.getScene('world');
       const send = async (c: unknown) => {
         g.events.emit('dieu', c);
-        await sleep(150);
+        await (window as any).__settle();
       };
       if (w().map.def.id !== 'ferme') {
         await (window as any).__restart({ kind: 'map', map: 'ferme' });
       }
       await send({ kind: 'stamina-infinite', on: true });
-      // la force au plafond humain (×2,6) et la simulation à x20 : l'essai reste court, sans rien sauter
+      // la force au plafond humain (×2,6) et la simulation à x50 (celle de ?dieu) : l'essai reste court, sans rien sauter
       await send({ kind: 'force', multiplier: 10 });
-      await send({ kind: 'sim-speed', factor: 20 });
+      await send({ kind: 'sim-speed', factor: 50 });
       await send({ kind: 'give', held: { item: 'axe' } });
       const p = w().map.props.find((q: any) => q.type === type && q.image.visible && (id === undefined || q.id === id));
       if (!p) throw new Error(`pas de ${type} sur la ferme`);
@@ -39,34 +39,38 @@ await playtest('etapes', async ({ page, errors, load }) => {
         a.body.reset(Math.round(p.aimX), Math.round(p.aimY + 14));
         a.face('up');
       }
-      await sleep(200);
+      await (window as any).__frames(2);
       const keys: string[] = [p.image.texture.key];
       const flips: boolean[] = [];
       // un seul appui : le travail va seul
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
-      for (let i = 0; i < 100 && w().mode !== 'work'; i++) await sleep(20);
+      await (window as any).__until(() => w().mode === 'work', 'le travail lancé');
       const stood = { dx: Math.round(a.x - p.aimX), dy: Math.round(a.y - p.aimY), facing: a.facing };
-      const t0 = performance.now();
-      while (w().map.props.includes(p) && performance.now() - t0 < 120000) {
+      // l'image de l'arbre à chaque pas de jeu (à x50, une image du navigateur en contient cinquante : aucune étape n'échappe)
+      const look = () => {
+        if (!w().map.props.includes(p)) return;
         const k = p.image.texture.key;
         if (k !== keys.at(-1)) {
           keys.push(k);
           flips.push(p.image.flipX);
         }
-        if (until && k === until) break;
-        await sleep(20);
-      }
+      };
+      w().events.on('postupdate', look);
+      await (window as any).__until(() => !w().map.props.includes(p) || (!!until && p.image.texture.key === until), until ?? 'le travail fini', 120000);
+      w().events.off('postupdate', look);
       // Échap : arrêté après le coup en cours (sinon, le travail lancé va seul jusqu'au bout)
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
-      for (let i = 0; i < 200 && w().mode !== 'play'; i++) await sleep(20);
-      await send({ kind: 'sim-speed', factor: 1 });
-      await sleep(300);
+      await (window as any).__until(() => w().mode === 'play', 'arrêté');
+      // la vitesse du scénario
+      await (window as any).__resume();
       // l'arbre couché né de la chute : de quel côté du tronc
-      await sleep(1500);
+      const fresh = () => w().map.props.find((q: any) => q.type === 'normal-felled-tree' && !before.has(q));
+      if (type === 'normal-tree' && !w().map.props.includes(p)) await (window as any).__until(() => !!fresh(), "l'arbre couché");
+      await (window as any).__idle();
       const felled = w().map.props.find((q: any) => q.type === 'normal-felled-tree' && !before.has(q));
       const fellSide = felled ? (felled.x + felled.image.width / 2 < p.aimX ? 'left' : 'right') : null;
       return { keys, flips, stood, fellSide, id: p.id, spawned: !!p.spawned, gone: !w().map.props.includes(p), now: w().map.props.includes(p) ? p.image.texture.key : null, flipNow: p.image.flipX };

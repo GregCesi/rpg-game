@@ -22,6 +22,18 @@ const MAX_H = 1500;
 await playtest('intérieurs', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   await load('?construire&dieu&reset');
+  // attendre l'état du jeu, jamais une durée (tools/lib/playtest.ts) : des images, le jeu qui a réagi, le jeu au repos
+  const frames = (n: number) => page.evaluate((n) => (window as any).__frames(n), n);
+  const settle = () => page.evaluate(() => (window as any).__settle());
+  const idle = () => page.evaluate(() => (window as any).__idle());
+  // les toits au repos : chaque pièce posée à son opacité de fin de fondu (opaque, ou effacée : ROOF.alpha)
+  const roofsStill = () =>
+    page.evaluate(async () => {
+      const url = '/src/config.ts';
+      const cfg = await import(url);
+      const w = (window as any).game.scene.getScene('world');
+      await (window as any).__until(() => w.map.builds.every((b: any) => b.image.alpha === 1 || b.image.alpha === cfg.ROOF.alpha), 'les toits au repos');
+    });
   const world = () => page.evaluate(() => {
     const w = (window as any).game?.scene?.getScene('world');
     return { id: w?.map?.def.id as string, mode: w?.mode as string };
@@ -66,10 +78,9 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
   console.log(`  ✓ départ : dans la maison (une entrée), la mère assise, la place du fagot, ${home.types.length} objets posés dedans`);
 
   await page.keyboard.press('KeyB');
-  await sleep(150);
-  await page.evaluate(() => (window as any).game.events.emit('dieu', { kind: 'map', map: 'ferme' }));
-  await until((w) => w.id === 'ferme' && w.mode === 'play');
-  await sleep(400);
+  await until((w) => w.mode === 'play');
+  await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
+  await idle();
   const notices: string[] = [];
   await page.exposeFunction('noticed', (t: string) => notices.push(t));
   await page.evaluate(() => (window as any).game.events.on('notice', (t: string) => (window as any).noticed(t)));
@@ -100,9 +111,9 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
   const click = async (x: number, y: number) => {
     const s = await screen(x, y);
     await page.mouse.move(s.x, s.y);
-    await sleep(80);
+    await frames(2);
     await page.mouse.click(s.x, s.y);
-    await sleep(150);
+    await settle();
   };
   /** Capture du canevas (`zoom` pixels par pixel du jeu), cadrée sur un rectangle du monde (px), la caméra arrêtée. */
   const capture = async (x0: number, y0: number, x1: number, y1: number, zoom: number): Promise<PNG> => {
@@ -115,7 +126,8 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
       cam.setZoom(z);
       cam.centerOn((x0 + x1) / 2, (y0 + y1) / 2);
     }, [x0, y0, x1, y1, zoom] as const);
-    await sleep(500);
+    await frames(2);
+    await roofsStill();
     const url: string = await page.evaluate(([x0, y0, x1, y1]) => {
       const g = (window as any).game;
       const cam = g.scene.getScene('world').cameras.main;
@@ -143,7 +155,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
       w.player.actor.body.reset(x, y);
       w.player.actor.face(f);
     }, [x, y, facing] as const);
-    await sleep(120);
+    await frames(2);
   };
   /**
    * Marche dans une direction jusqu'à ce que la carte soit `to` (son nom, ou le début de son nom avec `*` : `interieur:*`), puis
@@ -162,7 +174,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     );
     await page.keyboard.up(key);
     await page.waitForFunction(() => (window as any).game.scene.getScene('world')?.mode === 'play', null, { timeout: 0, polling: 'raf' });
-    await sleep(300);
+    await idle();
   };
   /** Marche `ms` millisecondes dans une direction (la porte fermée : on vérifie ensuite qu'on n'est pas entré), puis s'arrête. */
   const walkFor = async (key: string, ms: number) => {
@@ -170,7 +182,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     await sleep(ms);
     await page.keyboard.up(key);
     await until((w) => w.mode === 'play');
-    await sleep(300);
+    await idle();
   };
   const lights = () => page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').interiorLights)));
   /** Les pièces posées de la carte qui ne sont pas au bâtiment (les meubles d'un intérieur). */
@@ -187,14 +199,14 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
       await page.evaluate(() => (window as any).__restart({ kind: 'reset-map' }));
     }
     await page.keyboard.press('KeyB');
-    await sleep(150);
+    await until((w) => w.mode === 'build');
     const before = (await page.evaluate(() => (window as any).game.scene.getScene('world').map.builds.length)) as number;
     await page.evaluate(([x, y]) => {
       const cam = (window as any).game.scene.getScene('world').cameras.main;
       cam.setZoom(2);
       cam.centerOn(x, y);
     }, [free!.x + 105, free!.y + 80] as const);
-    await sleep(200);
+    await frames(2);
     await send({ kind: 'pick-plan', plan: b.plan });
     await click(free!.x + 105, free!.y + 80);
     const after = (await page.evaluate(() => (window as any).game.scene.getScene('world').map.builds.length)) as number;
@@ -217,13 +229,13 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     assert.equal(await mapId(), 'ferme', `${b.plan} : porte fermée, on n'entre pas`);
     await stand(outside.x, outside.y, 'up');
     await page.keyboard.press('KeyE');
-    await sleep(300);
+    await settle();
     const door = ((await page.evaluate((k) => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').map.builds.map((q: any) => q.piece).filter((q: any) => 'prop' in q.piece && q.piece.prop.startsWith(k)))), b.door)) as any[]).find((q) => mine(q.x, q.y));
     assert.equal(door.piece.prop, `${b.door}-open`, `${b.plan} : E ouvre la porte (${notices.at(-1) ?? ''})`);
     // dehors : le bâtiment, la porte ouverte, Xéros à côté
     const room = building[0].room;
     await stand(Math.round((room.x + room.w + 210) / 5), Math.round((room.y + room.d + 60) / 5), 'down');
-    await sleep(1200);
+    await roofsStill();
     const outShot = await capture((room.x - 100) / 5, (room.y - b.top) / 5, (room.x + room.w + 260) / 5, (room.y + room.d + 200) / 5, b.zoom);
 
     // 3. on entre : la carte de l'intérieur, la pièce du plan
@@ -248,7 +260,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
       assert.equal(win.side, 'east');
       await stand(Math.round((interior.room.x + interior.room.w - 25) / 5), Math.round((win.span[0] + win.span[1]) / 10), 'right');
       await page.keyboard.press('KeyE');
-      await sleep(300);
+      await settle();
       assert.ok((await lights()).some((l: any) => l.kind === 'window'), `volet ouvert : la tache de lumière (${notices.at(-1) ?? ''})`);
     }
 
@@ -256,9 +268,9 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     const mid = { x: (interior.room.x + interior.room.w / 2) / 5, y: (interior.room.y + interior.room.d / 2) / 5 };
     await stand(Math.round((interior.room.x + 40) / 5), Math.round((interior.room.y + interior.room.d - 40) / 5), 'up');
     await page.keyboard.press('KeyB');
-    await sleep(150);
+    await until((w) => w.mode === 'build');
     await page.evaluate(([x, y]) => (window as any).game.scene.getScene('world').cameras.main.centerOn(x, y), [mid.x, mid.y] as const);
-    await sleep(150);
+    await frames(2);
     await send({ kind: 'pick', piece: { prop: 'stool' } });
     await click(mid.x, mid.y);
     const put = await furniture();

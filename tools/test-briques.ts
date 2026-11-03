@@ -27,17 +27,17 @@ await playtest('briques', async ({ page, errors, load }) => {
       window.dispatchEvent(new KeyboardEvent('keydown', { code }));
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code }));
-      await sleep(150);
+      await (window as any).__settle();
     };
-    const send = async (c: unknown, ms = 150) => {
+    const send = async (c: unknown) => {
       emit(c);
-      await sleep(ms);
+      await (window as any).__settle();
     };
     const standAt = async (x: number, y: number, face: string) => {
       const a = w().player.actor;
       a.body.reset(Math.round(x), Math.round(y));
       a.face(face);
-      await sleep(150);
+      await (window as any).__frames(2);
     };
     const mapId = () => w().map.def.id;
     const ms = () => gs.mapState(gs.game, mapId());
@@ -130,14 +130,14 @@ await playtest('briques', async ({ page, errors, load }) => {
     {
       const [x, y] = find(90, 90);
       await standAt(x + 45, y + 10, 'down');
-      await send({ kind: 'supply', what: 'clay-clod', count: 3 }, 250);
-      await send({ kind: 'supply', what: 'straw', count: 1 }, 250);
-      await send({ kind: 'prop', prop: 'bucket-water' }, 250);
+      await send({ kind: 'supply', what: 'clay-clod', count: 3 });
+      await send({ kind: 'supply', what: 'straw', count: 1 });
+      await send({ kind: 'prop', prop: 'bucket-water' });
       const ground = () => ms().ground.map((q: any) => q.item);
       const props = () => ms().spawned.map((o: any) => o.type);
       const clods = ground().filter((k: string) => k === 'clay-clod').length;
       notices.length = 0;
-      await send({ kind: 'transform', id: 'mix-cob' }, 300);
+      await send({ kind: 'transform', id: 'mix-cob' });
       out.cob = {
         clodsBefore: clods,
         clodsAfter: ground().filter((k: string) => k === 'clay-clod').length,
@@ -167,7 +167,7 @@ await playtest('briques', async ({ page, errors, load }) => {
       const before = carried();
       const planks = () => ms().spawned.filter((o: any) => o.type === 'wood-piece' && o.wood?.shape === 'plank');
       const n = planks().length;
-      await send({ kind: 'transform', id: 'rive-plank' }, 300);
+      await send({ kind: 'transform', id: 'rive-plank' });
       const kinds = planks().slice(n).map((o: any) => `${o.wood.size}:${o.wood.length}`);
       out.planks = { before, kinds, inHand: held()?.wood?.shape ?? null };
     }

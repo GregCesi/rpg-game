@@ -43,14 +43,25 @@ await playtest('noeud', async ({ page, errors, load }) => {
         // commencer, puis la touche est relâchée pendant une image de 700 ms (la page bloquée), plus longue qu'un appui maintenu (500 ms)
         const press = async (code: string, done: () => boolean, label: string, slow = false) => {
           await frames();
-          key('keydown', code);
           if (slow) {
-            await frames();
-            const t = performance.now();
-            key('keyup', code);
-            while (performance.now() - t < 700);
+            // enfoncée à un pas de jeu, relâchée au pas où le jeu a vu l'appui commencer (à x10, quelques ms plus tard ; jamais la durée
+            // d'une image, qui sous la charge dépasse celle d'un appui maintenu), puis la page bloquée 700 ms
+            await new Promise<void>((done) => {
+              let down = false;
+              const step = () => {
+                if (!down) return void ((down = true), key('keydown', code));
+                if (!w().press.pending) return;
+                w().events.off('postupdate', step);
+                key('keyup', code);
+                const t = performance.now();
+                while (performance.now() - t < 700);
+                done();
+              };
+              w().events.on('postupdate', step);
+            });
           } else {
-            await new Promise((r) => requestAnimationFrame(r));
+            // une tape : enfoncée puis relâchée aussitôt (le jeu la garde jusqu'à la lire, src/input/keyLatch.ts)
+            key('keydown', code);
             key('keyup', code);
           }
           await until(done, label).catch((e: Error) => {

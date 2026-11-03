@@ -426,21 +426,22 @@ export class WorldScene extends Phaser.Scene {
     }
     // R maintenu, mains vides, au contact d'une bille couchée : elle pivote d'un quart de tour (jauge comme pour nouer)
     const turnTarget = this.turns.target(this.player);
-    const turned = this.turnPress.update(time, input.turnDown(), turnTarget, this.player, input.turnLasted());
+    const turned = this.turnPress.update(performance.now(), input.turnDown(), turnTarget, this.player, input.turnLasted());
     if (turned?.kind === 'long') this.turnLog(turned.target);
     if (this.turnPress.pending) return;
-    if (turn && turnTarget) return this.turnPress.begin(turnTarget, time);
+    if (turn && turnTarget) return this.turnPress.begin(turnTarget, performance.now());
     // R : la bille portée tourne ; le fantôme suit à l'image suivante
     if (turn) this.handsSystem.turn();
     // E devant ce qui se noue ou se dénoue : l'appui attend, court (reprendre) ou maintenu (nouer, dénouer)
-    const press = this.press.update(time, input.handsDown(), e.target, this.player, input.handsLasted());
+    // (un appui se mesure en temps vrai, celui des événements du clavier, jamais au temps du jeu : à x10, un E court reste court)
+    const press = this.press.update(performance.now(), input.handsDown(), e.target, this.player, input.handsLasted());
     if (press?.kind === 'short') this.hands(press.target);
     else if (press?.kind === 'long') {
       if (press.target.action.kind === 'site-help') this.callMother(press.target.action);
       else this.knot(press.target);
     }
     else if (this.press.pending) return;
-    else if (e.pressed && e.target && (this.knots.holds(e.target.action) || e.target.action.kind === 'site-help')) this.press.begin(e.target, time);
+    else if (e.pressed && e.target && (this.knots.holds(e.target.action) || e.target.action.kind === 'site-help')) this.press.begin(e.target, performance.now());
     else if (e.pressed && e.target) this.hands(e.target);
     // E dans le vide (ou devant ce qu'on ne peut pas prendre) : poser ce que tient la main active, là où le montre le fantôme
     else if (e.pressed && held(game)) this.putDown();
@@ -1120,6 +1121,9 @@ export class WorldScene extends Phaser.Scene {
         this.roll.flush();
         clearSave();
         replaceState(game, newGame());
+        // pendant le fondu, la scène tourne encore (le souffle revient) : elle repart de l'endurance neuve, sinon elle réécrirait celle
+        // de l'ancienne partie dans la nouvelle
+        this.player.stamina.reset(game.stamina);
         this.fadeTo({ mapId: START.map, spawn: START.spawn });
         break;
     }

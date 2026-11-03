@@ -71,6 +71,13 @@ export class WoodSystem {
   private readonly label: Phaser.GameObjects.Container;
   /** Texte de la ligne affichée (pour ne la refaire que quand elle change). */
   private shown = '';
+  /** Les fentes ouvertes dont les morceaux ne sont pas encore montrés (le bois s'ouvre, puis ils paraissent : `HARVEST.splitMs`). */
+  private opening = 0;
+
+  /** Une fente vient de s'ouvrir : ses morceaux ne sont pas encore montrés. */
+  get splitting(): boolean {
+    return this.opening > 0;
+  }
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -597,7 +604,9 @@ export class WoodSystem {
     for (const q of [a, b]) q.image.setVisible(false);
     // le coin tombe au sol près de la pièce : noté tout de suite, montré quand le bois s'ouvre
     const { dropped } = this.harvest.dropAll([{ item: W.split.wedge, min: 1, max: 1, give: false }], cx, cy);
+    this.opening++;
     this.scene.time.delayedCall(HARVEST.splitMs, () => {
+      this.opening--;
       for (const q of [a, b]) if (this.map.props.includes(q)) q.image.setVisible(true);
       open.destroy();
       for (const g of dropped) this.harvest.pop(g, cx, cy);

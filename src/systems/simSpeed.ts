@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import { time } from '../content';
 
 /** Les vitesses de simulation proposées dans ?dieu : les paliers du joueur (time.json), et celui de ?dieu. */
@@ -19,15 +19,19 @@ export const simSpeed = (): number => factor;
 export function setSimSpeed(game: Phaser.Game, n: number): void {
   factor = Math.max(1, Math.round(n));
   const loop = game.loop as Phaser.Core.TimeStep & { callback: (time: number, delta: number) => void };
-  const g = game as Phaser.Game & { __simStep?: (time: number, delta: number) => void };
+  const g = game as Phaser.Game & { __simStep?: (time: number, delta: number) => void; __simAhead?: number };
   // la boucle d'origine, gardée une fois
   g.__simStep ??= loop.callback;
+  g.__simAhead ??= 0;
   const step = g.__simStep;
-  loop.callback =
-    factor === 1
-      ? step
-      : (time: number, delta: number) => {
-          for (let i = factor - 1; i > 0; i--) game.headlessStep(time - i * delta, delta);
-          step(time, delta);
-        };
+  // l'horloge du jeu (le `time` de chaque pas, que Phaser recopie dans `time.now` de chaque scène : les verrous après une action, le
+  // combat) avance de la durée de chaque pas, et reste croissante d'un pas à l'autre et d'une image à l'autre : les pas de plus d'une
+  // image se placent après ceux de l'image d'avant, jamais avant (`__simAhead` : l'avance prise sur le temps vrai, gardée quand on
+  // revient à x1, pour que l'horloge ne recule jamais)
+  loop.callback = (time: number, delta: number) => {
+    g.__simAhead! += (factor - 1) * delta;
+    const now = time + g.__simAhead!;
+    for (let i = factor - 1; i > 0; i--) game.headlessStep(now - i * delta, delta);
+    step(now, delta);
+  };
 }

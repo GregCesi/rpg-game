@@ -28,7 +28,8 @@ import { maisonSteps, SILL_NW, type PieceStep } from './lib/maison-xeros';
 
 /** Le plan commité (le contenu du jeu) ; le scénario écrit le sien dans un dossier temporaire et le compare, sauf avec PLANS_WRITE=1. */
 const COMMITTED = 'src/content/plans/maison-xeros.json';
-const OUT_DIR = process.env.PLANS_WRITE ? 'src/content/plans' : mkdtempSync(join(tmpdir(), 'xeros-plans-'));
+// le dossier des plans écrits : celui du banc partagé (tools/run-scenarios.ts, son serveur l'écrit), sinon un dossier temporaire à soi
+const OUT_DIR = process.env.PLANS_WRITE ? 'src/content/plans' : (process.env.XEROS_PLANS_OUT ?? mkdtempSync(join(tmpdir(), 'xeros-plans-')));
 process.env.XEROS_PLANS_OUT = OUT_DIR;
 const PLAN_FILE = `${OUT_DIR}/maison-xeros.json`;
 const mtimeOf = (f: string) => (existsSync(f) ? statSync(f).mtimeMs : 0);
@@ -473,4 +474,4 @@ await playtest('maison', async ({ page, errors, load }) => {
   console.log(
     `  ✓ maison : ${built.length} pièces, ${plan.joints.length} assemblages, enregistrée dans ${PLAN_FILE} ; le coin nord-ouest du solin à (${sill}) cm de l'origine du plan ; quatre pièces, une entrée ; ${shots.length} captures dans .art-preview/maison-xeros.png ; ${secs} s`,
   );
-});
+}, { speed: 1 }); // x1 : bâtir dans le mode construction ne demande pas de temps de jeu, et x10 alourdit chaque image

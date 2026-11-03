@@ -61,18 +61,18 @@ await playtest('temps', async ({ page, errors, load }) => {
     const hudClock = () => g.scene.getScene('hud').clockText as string;
     const sim = await import('/src/systems/simSpeed.ts' as string);
     await press('KeyV');
-    await sleep(300);
+    await (window as any).__frames(2);
     out.v = { speed: sim.simSpeed(), notices: notices.slice(told), hud: hudClock() };
     // en boucle : V, V, V mènent à x20 (Maj tenue comme pendant une course : V avance quand même, Maj + V n'existe plus) ;
     // V de nouveau : x1 ; les crans pleins suivent le rang du palier
     for (const shift of [false, true, false]) {
       await press('KeyV', shift);
-      await sleep(250);
+      await (window as any).__frames(2);
     }
     const face = await import('/src/world/clockFace.ts' as string);
     out.top = { speed: sim.simSpeed(), rank: face.speedRank(sim.simSpeed()) };
     await press('KeyV');
-    await sleep(300);
+    await (window as any).__frames(2);
     out.loopUp = { speed: sim.simSpeed(), rank: face.speedRank(sim.simSpeed()), hud: hudClock() };
     out.hud = hudClock();
 
@@ -83,7 +83,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     const a = w().player.actor;
     a.body.reset(Math.round(tree.aimX - 14), Math.round(tree.aimY));
     a.face('right');
-    await sleep(200);
+    await (window as any).__frames(2);
     const plan = await import(urls.plan);
     const job = plan.harvestJob(content.props['normal-tree'].harvest.work, 'axe');
     const stroke = plan.jobStroke(job, content.strength.swing);
@@ -114,7 +114,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     await press('KeyD');
     const t2 = performance.now();
     while (w().mode !== 'play' && performance.now() - t2 < 5000) await frame();
-    await sleep(200);
+    await (window as any).__settle();
     const kept = gs.mapState(gs.game, 'ferme').work[`o${tree.id}`];
     out.marks = marks.map((m) => ({ t: Math.round(m.t), done: m.done }));
     out.strongMarks = strongMarks.map((m) => ({ t: Math.round(m.t), done: m.done }));
@@ -122,7 +122,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     // la vitesse de simulation à x5 : les coups cinq fois plus serrés (tout le jeu va plus vite, par pas de taille normale)
     a.body.reset(Math.round(tree.aimX - 14), Math.round(tree.aimY));
     a.face('right');
-    await sleep(200);
+    await (window as any).__frames(2);
     await send({ kind: 'sim-speed', factor: 5 }, 0);
     // le temps du jeu (celui de la scène) et le nombre de pas de jeu par image du navigateur : ce que fait la vitesse de simulation,
     // quelle que soit la charge de la machine
@@ -149,7 +149,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     await send({ kind: 'sim-speed', factor: 1 }, 0);
     await press('Escape');
     while (w().mode !== 'play') await frame();
-    await sleep(300);
+    await (window as any).__settle();
     out.fast = fast.map((m) => ({ t: Math.round(m.t), done: m.done }));
     out.kept2 = gs.mapState(gs.game, 'ferme').work[`o${tree.id}`];
     out.tree = { id: tree.id, x: Math.round(tree.aimX - 14), y: Math.round(tree.aimY) };
@@ -232,9 +232,9 @@ await playtest('temps', async ({ page, errors, load }) => {
     const a = w().player.actor;
     a.body.reset(t.x, t.y);
     a.face('right');
-    await sleep(200);
+    await (window as any).__frames(2);
     await press('Space');
-    await sleep(300);
+    await (window as any).__settle();
     out.resumed = { mode: w().mode, done: w().works.done, debug: w().works.bar.infoText };
     const c1 = w().player.stamina.ceiling;
     const m1 = minutes();
@@ -279,7 +279,8 @@ await playtest('temps', async ({ page, errors, load }) => {
     const t1 = performance.now();
     while (w().player.stamina.winded && performance.now() - t1 < 15000) await frame();
     const ms = performance.now() - t1;
-    await sleep(1500);
+    // puis les signes s'éteignent et le travail reprend (un état, pas une durée)
+    await (window as any).__until(() => !puff.visible && !hud.blink && w().mode === 'work' && w().player.tools.busy, 'les signes éteints, le travail repris');
     out.recovered = { ms, puff: puff.visible, blink: !!hud.blink, mode: w().mode, busy: w().player.tools.busy };
     await send({ kind: 'finish-work' }, 2500);
     window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
@@ -346,7 +347,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     ClockSystem.speed = 360;
     const c0 = w().player.stamina.ceiling;
     const n0 = minutes();
-    await sleep(2500);
+    await (window as any).__until(() => minutes() - n0 > 6, 'six minutes de veille');
     ClockSystem.speed = 1;
     out.night = { minutes: minutes() - n0, worn: c0 - w().player.stamina.ceiling, perHour: content.stamina.sleep.nightAwakePerHour };
     w().player.stamina.flush();
@@ -359,7 +360,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     w().onDialogueEnd('sleep');
     const t2 = performance.now();
     while ((gs.game.clock.day === bed.day || w().mode !== 'play') && performance.now() - t2 < 8000) await frame();
-    await sleep(300);
+    await (window as any).__settle();
     out.slept = { bed, clock: { ...gs.game.clock }, wakeAt, stamina: { ...gs.game.stamina }, expect, live: w().player.stamina.ceiling, notices: notices.slice(told) };
     return out;
   })) as Record<string, any>;
@@ -379,4 +380,4 @@ await playtest('temps', async ({ page, errors, load }) => {
   console.log(
     "  ✓ temps : l'horloge à x1, V en boucle (la vitesse de simulation, affichée au cadran, Maj tenue ou non), une attaque ramène à x1, la lumière du jour et de la nuit ; le travail lancé d'un appui (au rythme du modèle, la force réglée en plein travail agit au coup suivant, un pas l'arrête, x5 serre les coups, ?debug), repris après rechargement, fini d'un coup ; à bout de souffle il souffle puis reprend ; la veille de nuit, dormir",
   );
-});
+}, { speed: 1 }); // x1 : il mesure la vitesse du temps elle-même : il part de x1, comme le joueur, et règle les autres par V et ?dieu

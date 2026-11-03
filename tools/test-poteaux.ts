@@ -45,23 +45,22 @@ await playtest('poteaux', async ({ page, errors, load }) => {
         window.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode }));
         await sleep(hold);
         window.dispatchEvent(new KeyboardEvent('keyup', { code, keyCode }));
-        await sleep(120);
+        await (window as any).__settle();
       };
       const give = async (what: object) => {
         emit({ kind: 'give', held: what });
-        await sleep(120);
+        await (window as any).__settle();
       };
       const standAt = async (x: number, y: number, face: string) => {
         const a = w().player.actor;
         a.body.reset(Math.round(x), Math.round(y));
         a.face(face);
-        await sleep(180);
+        await (window as any).__settle();
       };
       // Xéros regarde le point (x, y) : ses pieds 10 px au nord (il regarde vers le bas)
       const lookAt = (x: number, y: number) => standAt(x, y - 10, 'down');
       const settled = async () => {
-        for (let i = 0; i < 100 && w().mode !== 'play'; i++) await sleep(50);
-        await sleep(400);
+        await (window as any).__idle('le geste fini');
       };
       const mapId = () => w().map.def.id;
       const site = () => gs.mapState(gs.game, mapId()).sites[0];
@@ -114,7 +113,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       for (const c of ['ne', 'se', 'sw']) gs.plantSiteStake(gs.game, mapId(), created.id, c);
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'skip-step' });
-      await sleep(300);
+      await (window as any).__settle();
       out.start = JSON.stringify({ placed: Object.keys(site().placed).length, status: statusText() });
       out.ghostsHigh = ghost(upKey(300));
       out.ghostsLow = ghost(upKey(180));
@@ -155,7 +154,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
         await lookAt(a.x, a.y);
         await press('KeyE');
         low.push({ place, hands: hands(), cost: 100 - stamina(), status: statusText(), notice: notices.at(-1) });
-        await sleep(200);
+        await (window as any).__settle();
       }
       out.low = low;
       out.postsLow = posts(180).length;
@@ -204,14 +203,30 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       await press('KeyE');
       out.shortGood = notices.at(-1);
       out.shortMode = w().mode;
+      /** La question écrite en entier, ses choix affichés (à x10, elle s'écrit en quelques images : un E de plus répondrait déjà). */
+      const questionShown = () =>
+        (window as any).__until(() => {
+          const d = (window as any).game.scene.getScene('dialogue');
+          return d?.sys.isActive() && !d.typing && d.choices.length > 0;
+        }, 'la question et ses choix');
       await press('KeyE', 700);
-      await sleep(400);
+      await (window as any).__until(() => w().mode !== 'play', 'la question après E maintenu');
       out.askMode = w().mode;
       await shot('2-appeler-la-mere');
-      await press('KeyE'); // la question s'affiche d'un coup
+      await questionShown();
+      // les modes de la scène à chaque pas de jeu : le fondu se voit même s'il passe pendant l'appui (à x10, il dure quelques images)
+      const modes = new Set<string>();
+      const watch = () => modes.add(w().mode);
+      w().events.on('update', watch);
       await press('KeyE'); // « Oui »
-      await sleep(900);
-      out.fadeMode = w().mode;
+      try {
+        await (window as any).__until(() => modes.has('transition') && w().mode === 'play', 'fondu au noir, puis le retour au jeu');
+      } catch (e) {
+        const d = (window as any).game.scene.getScene('dialogue');
+        throw new Error(`${(e as Error).message} (modes vus : ${[...modes].join(', ')} ; mode ${w().mode} ; dialogue ${d?.sys.isActive() ? 'ouvert' : 'fermé'} ; avis « ${notices.at(-1)} »)`);
+      }
+      w().events.off('update', watch);
+      out.fadeMode = modes.has('transition') ? 'transition' : [...modes].join(',');
       out.motherNotice = notices.at(-1);
       await shot('3-fondu');
       await settled();
@@ -226,10 +241,9 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       await lookAt(ne.x, ne.y);
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await press('KeyE', 700);
-      await sleep(400);
-      await press('KeyE');
-      await press('KeyE');
-      await settled();
+      await questionShown();
+      await press('KeyE'); // « Oui »
+      await (window as any).__until(() => posts(300).length === 2 && w().mode === 'play', 'le second poteau haut dressé');
       out.secondHigh = JSON.stringify({ posts: posts(300).length, cost: 100 - stamina(), placed: Object.keys(site().placed).length });
 
       // 4. les quatre poteaux : la ligne passe aux sablières, dont les fantômes paraissent (étape encore « à venir »)
@@ -243,7 +257,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       await press('KeyE');
       out.plateNotice = notices.at(-1);
       out.pieces = JSON.stringify(site().pieces);
-      await sleep(400);
+      await (window as any).__settle();
       await shot('5-quatre-poteaux');
       return out;
     });

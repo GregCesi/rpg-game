@@ -40,23 +40,19 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         window.dispatchEvent(new KeyboardEvent('keydown', { code }));
         await sleep(ms);
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
-        await sleep(120);
+        await (window as any).__frames(2);
+        // un Espace sans rien à travailler frappe, et l'attaque ramène le temps à x1 : le scénario garde sa vitesse
+        if (code === 'Space') await (window as any).__resume();
         // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
         // travail »), horloge, endurance et résultat compris
         if (code === 'Space' && finish) await finishWork();
       };
-      const settled = async () => {
-        for (let i = 0; i < 100 && w().mode !== 'play'; i++) await sleep(50);
-        await sleep(300);
-      };
+      const settled = () => (window as any).__idle('le geste fini');
       // une passe de doloire entière : Xéros longe la pièce (près de 9 s pour 3 m), puis le quart de tour
-      const passed = async () => {
-        for (let i = 0; i < 1000 && w().mode !== 'play'; i++) await sleep(50);
-        await sleep(300);
-      };
+      const passed = () => (window as any).__idle('la passe finie');
       const give = async (item: string) => {
         emit({ kind: 'give', held: { item } });
-        await sleep(120);
+        await (window as any).__frames(1);
       };
       const props = (re: RegExp) => w().map.props.filter((p: any) => re.test(p.type));
       // les pièces de bois d'un diamètre, et leurs longueurs
@@ -70,7 +66,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       const standAt = async (x: number, y: number, face: string) => {
         a().body.reset(Math.round(x), Math.round(y));
         a().face(face);
-        await sleep(160);
+        await (window as any).__frames(2);
       };
       // écart entre les pieds de Xéros et le bas de sa collision
       const feet = () => a().body.bottom - a().y;
@@ -89,7 +85,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       // abattre : un travail (25 min), fini d'un coup
       await press('Space');
       await settled();
-      await sleep(2500);
+      await (window as any).__until(() => props(/^normal-felled-tree$/).length > 0, "l'arbre tombé, couché");
       const felled = props(/^normal-felled-tree$/)[0];
       out.felled = !!felled;
 
@@ -112,17 +108,15 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give('axe');
       await aboveAt(trunk, 8);
-      await sleep(100);
       out.shortLabel = w().wood.labelText ?? null;
       await press('Space');
-      await sleep(300);
+      await settled();
       out.shortNotice = notices.at(-1);
       out.shortMode = w().mode;
       out.shortCost = 100 - w().player.stamina.ceiling;
 
       // la coupe à 3 m du bout scié, aimantée à la grille : la ligne des deux longueurs, l'encoche notée, trois coups, deux pièces
       await aboveAt(trunk, 59);
-      await sleep(100);
       out.label = w().wood.labelText;
       // couper : un travail (le temps des trois étapes de la coupe), fini d'un coup ; l'encoche n'existe plus, la part faite non plus
       await press('Space');
@@ -160,7 +154,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await standAt((r.box.left + r.box.right) / 2, r.box.top - feet() - 0.5, 'down');
       const y0 = r.y;
       await press('KeyS', 1800);
-      await sleep(200);
+      await settled();
       out.rolled = three().y - y0;
       out.rolledSaved = spawned().find((q: any) => q.id === three().id)?.y === three().y;
 
@@ -173,7 +167,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       // au milieu de la pièce : refusé, sans geste ni dépense
       await aboveAt(hewing(), 30);
       await press('Space');
-      await sleep(200);
+      await settled();
       out.middleNotice = notices.at(-1);
       out.middleMode = w().mode;
       out.middleCost = 100 - w().player.stamina.ceiling;
@@ -183,15 +177,16 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await aboveAt(hewing(), 2);
       const [hx0, hy0] = [a().x, a().y];
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
-      for (let i = 0; i < 100 && w().mode !== 'rail'; i++) await sleep(20);
+      await (window as any).__until(() => w().mode === 'rail', 'la passe commence');
       // le rail pose Xéros au départ de la passe : la marche se mesure de là
       const railX = a().x;
       out.passMode = w().mode;
       out.passBar = w().rail.bar.frame.visible;
-      await sleep(3000);
-      // E ne fait rien pendant la passe
+      await (window as any).__until(() => a().x - railX > 0.5, 'Xéros longe la pièce');
+      // E ne fait rien pendant la passe : elle continue
       await press('KeyE');
-      await sleep(5000);
+      const afterE = a().x;
+      await (window as any).__until(() => w().mode === 'rail' && a().x - afterE > 0.5, 'la passe continue après E');
       out.walked = a().x - railX;
       out.passAnim = a().anims.currentAnim?.key;
       // un pas (S) : arrêtée là où il est ; la face entamée est gardée dans GameState, jusqu'au fer
@@ -200,14 +195,15 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await new Promise((res) => requestAnimationFrame(res));
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
       // le coup en cours s'achève, puis la passe s'arrête
-      for (let i = 0; i < 100 && w().mode === 'rail'; i++) await sleep(20);
+      await (window as any).__until(() => w().mode !== 'rail', 'la passe arrêtée');
       out.stopMode = w().mode;
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyS' }));
-      await sleep(150);
+      await (window as any).__frames(2);
       // le pas qui l'arrête pousse ensuite contre la pièce (qui ne roule plus) : le message d'arrêt est parmi les derniers
       out.stopNotice = notices.slice(-3).find((n: string) => n.startsWith('Arrêté')) ?? notices.at(-1);
       const stopX = a().x;
-      await sleep(600);
+      // trente images plus tard, toujours là
+      await (window as any).__frames(30);
       out.stopStill = Math.abs(a().x - stopX) < 1;
       const dressed = spawned().find((q: any) => q.id === hewnId)?.wood.dressed;
       out.dressed = dressed;
@@ -224,7 +220,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       // reprendre ailleurs : refusé ; reprendre là où elle s'est arrêtée : la passe va jusqu'au bout est
       await aboveAt(hewing(), 50);
       await press('Space');
-      await sleep(200);
+      await settled();
       out.resumeElsewhere = notices.at(-1);
       await standAt(stopX, hy0, "down");
       await press('Space', 60, false);
@@ -293,7 +289,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
           await press('Space');
           await settled();
         }
-        await sleep(2500);
+        await (window as any).__until(() => props(new RegExp(`^${lying}$`)).length > 0, `${tree} tombé, couché`);
         const f = props(new RegExp(`^${lying}$`)).at(-1);
         await standAt(f.aimX, f.aimY + 14, 'up');
         await press('Space');
@@ -325,7 +321,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
           .map((p: any) => [p.x, p.y, p.wood.size, p.wood.length])
           .sort(),
       });
-      await sleep(400);
+      await settled();
       return out;
     });
   };

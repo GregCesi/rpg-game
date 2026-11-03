@@ -34,17 +34,17 @@ await playtest('tas', async ({ page, errors, load }) => {
       window.dispatchEvent(new KeyboardEvent('keydown', { code }));
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code }));
-      await sleep(150);
+      await (window as any).__settle();
     };
     const give = async (held: unknown) => {
       emit({ kind: 'give', held });
-      await sleep(120);
+      await (window as any).__settle();
     };
     const standAt = async (x: number, y: number, face: string) => {
       const a = w().player.actor;
       a.body.reset(Math.round(x), Math.round(y));
       a.face(face);
-      await sleep(150);
+      await (window as any).__settle();
     };
     // Xéros regarde le point (x, y) : ses pieds 10 px au nord (il regarde vers le bas), le point visé est alors (x, y)
     const lookAt = (x: number, y: number) => standAt(x, y - 10, 'down');
@@ -165,7 +165,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       await give({ prop: 'wood-piece', wood: { ...quartier, axis: 'ns' } });
       const [ax, ay] = ps.placeAim(def, 'l1-1');
       await lookAt(ew.x + ax, ew.y + ay);
-      await sleep(100);
+      await (window as any).__settle();
       const gh = ghost();
       await (window as any).shot('sens');
       await press('KeyE');
@@ -191,9 +191,9 @@ await playtest('tas', async ({ page, errors, load }) => {
       const [x, y] = find(60, 60);
       await standAt(x + 30, y, 'down');
       emit({ kind: 'wood', wood: { ...lourd, axis: 'ew' } });
-      await sleep(200);
+      await (window as any).__settle();
       emit({ kind: 'force', multiplier: force });
-      await sleep(100);
+      await (window as any).__settle();
       await give({ prop: 'wood-piece', wood: { ...lourd, axis: 'ew' } });
       const b = woodProps(lourd).at(-1).box;
       await lookAt((b.left + b.right) / 2, b.bottom + (b.bottom - b.top) / 2 + 1);
@@ -203,7 +203,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       const hv = (out.heavy ??= {}) as Record<string, unknown>;
       hv[name] = { pile: pile?.places.length ?? 0, counts: !!w().map.piles.find((p: any) => p.pile === pile)?.def.count, notices: notices.slice(n0), both: gs.game.both };
       emit({ kind: 'force', multiplier: 1 });
-      await sleep(100);
+      await (window as any).__settle();
     }
     // à la force de Xéros, le quartier de 2 m posé au sol ne se prend pas : trop lourd pour lui
     {
@@ -211,7 +211,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       const [x, y] = find(60, 60);
       await standAt(x + 30, y, 'down');
       emit({ kind: 'wood', wood: { ...quart2, axis: 'ew' } });
-      await sleep(200);
+      await (window as any).__settle();
       const b = woodProps(quart2).at(-1).box;
       await lookAt((b.left + b.right) / 2, b.bottom + (b.bottom - b.top) / 2 + 1);
       const n0 = notices.length;
@@ -224,7 +224,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       const [x, y] = find(60, 60);
       await give({ prop: 'slab' });
       await standAt(x + 30, y, 'down');
-      await sleep(100);
+      await (window as any).__settle();
       const gh = ghost();
       await press('KeyE');
       const stone = w().map.props.find((p: any) => p.type === 'slab' && p.spawned && p.x === gh.x && p.y === gh.y);
@@ -234,7 +234,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       const [x, y] = find(60, 60);
       await give({ item: 'hatchet' });
       await standAt(x + 30, y, 'right');
-      await sleep(100);
+      await (window as any).__settle();
       const gh = ghost();
       await press('KeyE');
       const def = content.items.hatchet;
@@ -247,26 +247,26 @@ await playtest('tas', async ({ page, errors, load }) => {
       await give({ item: 'hatchet' });
       await standAt(x + 30, y, 'right');
       await press('KeyR');
-      await sleep(100);
+      await (window as any).__settle();
       const gh = ghost();
       await press('KeyE');
       const tool = w().map.ground.find((q: any) => q.item.item === 'hatchet' && q.item.view === 1);
       await standAt(x + 30, y, 'right');
       if (tool) w().pickUp(tool);
-      await sleep(100);
+      await (window as any).__settle();
       out.turned = { key: gh.key, image: tool?.image.texture.key, heldView: (gs.held(gs.game) as any)?.view };
       gs.emptyHands(gs.game);
       w().handsChanged();
-      await sleep(120);
+      await (window as any).__settle();
     }
     // sans rien en main, pas de fantôme
-    await sleep(100);
+    await (window as any).__settle();
     out.ghostEmpty = ghost()?.visible ?? false;
     out.piles = piles()
       .filter((p: any) => p.wood)
       .map((p: any) => [p.wood.shape, p.wood.length, p.wood.hewn ?? 0, !!p.turned, p.places.length].join(':'))
       .sort();
-    await sleep(500);
+    await (window as any).__settle();
     return out;
   })) as Record<string, any>;
 
