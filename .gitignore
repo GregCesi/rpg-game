@@ -10,3 +10,7 @@ tiled/sketches/
 
 # la poubelle : ce qu’un agent retire sans l’effacer (CLAUDE.md) ; Grégoire la vide
 .poubelle/
+
+# état du chantier pour le hook Stop (CLAUDE.md, règle 4) : propre à chaque session
+.claude/chantier.json
+.claude/chantier.arrets
