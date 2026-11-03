@@ -1121,6 +1121,9 @@ export class WorldScene extends Phaser.Scene {
         this.roll.flush();
         clearSave();
         replaceState(game, newGame());
+        // pendant le fondu, la scène tourne encore (le souffle revient) : elle repart de l'endurance neuve, sinon elle réécrirait celle
+        // de l'ancienne partie dans la nouvelle
+        this.player.stamina.reset(game.stamina);
         this.fadeTo({ mapId: START.map, spawn: START.spawn });
         break;
     }

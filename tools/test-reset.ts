@@ -43,8 +43,14 @@ await playtest('reset', async ({ page, errors, load }) => {
 
   // ?dieu « Toute la partie »
   await spend();
-  // la scène redémarre sur une partie neuve : attendre la nouvelle carte prête (pas l'ancienne, encore en `play` juste après l'ordre)
-  await page.evaluate(() => (window as any).__restart({ kind: 'reset-game' }));
+  // le souffle revient (le repos après l'effort est passé) : pendant le fondu, la vieille scène tourne encore, et ne doit pas réécrire
+  // l'endurance de l'ancienne partie dans la neuve ; puis la scène redémarre : attendre la nouvelle carte prête (pas l'ancienne)
+  await page.evaluate(async () => {
+    const s = () => (window as any).game.scene.getScene('world').player.stamina;
+    const b0 = s().breath;
+    await (window as any).__until(() => s().breath > b0 + 0.5, 'le souffle qui revient');
+    await (window as any).__restart({ kind: 'reset-game' });
+  });
   fresh(await read(), 'recommencer depuis ?dieu');
 
   // ?reset
