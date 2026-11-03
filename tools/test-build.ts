@@ -220,5 +220,24 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   assert.ok(g.south.length >= 4, 'la coupe du mur sud, de part et d’autre de la porte charretière');
   assert.deepEqual(parseInteriorId(interiorId('ferme', c.key)), { host: 'ferme', key: '1060,1080' });
   assert.equal(parseInteriorId('maison'), undefined);
-  console.log('✓ test-build : intérieurs (pièce close, porte, ouverture sous le linteau, fenêtre, coupe du mur sud)');
+  // la maison de Xéros : la cloison est-ouest entre le cagibi et le coin de Xéros est coupée avec tout ce qui est dans sa bande (chantier
+  // « correctifs » : la traverse qu'elle porte, son solin, le poteau du milieu ; la sablière cachée), quelle que soit la forme de chaque
+  // pièce ; les poteaux d'angle restent entiers avec les murs de côté
+  {
+    const [h] = buildingsOf(placed('maison-xeros'));
+    const cag = h.rooms.filter((r) => r.y === h.room.y).sort((a, b) => a.x - b.x)[0];
+    const line = cag.y + cag.d;
+    const inWall = (p: BuildPiece) => {
+      const b = boxOf(p);
+      return b.y >= line - 40 && b.y + b.d <= line + 70 && b.x < cag.x + cag.w && b.x + b.w > cag.x;
+    };
+    const whole = h.shell.filter(inWall);
+    assert.deepEqual(whole.map((p) => boxOf(p)), [], 'rien de la cloison du cagibi ne reste entier dans la vue de dedans');
+    const cut = h.southPieces.filter(inWall);
+    const beam = cut.find((p) => 'wood' in p.piece && p.piece.wood.axis === 'ew' && boxOf(p).z < 100);
+    assert.ok(beam, 'la traverse de la cloison du cagibi est coupée avec elle');
+    assert.ok(cut.some((p) => 'wood' in p.piece && p.piece.wood.axis === 'up'), 'le poteau du milieu de la cloison est coupé avec elle');
+    assert.ok(!h.shell.some((p) => 'wood' in p.piece && p.piece.wood.axis === 'ew' && boxOf(p).z >= 200 && inWall(p)), 'la sablière de la cloison est cachée');
+  }
+  console.log('✓ test-build : intérieurs (pièce close, porte, ouverture sous le linteau, fenêtre, coupe du mur sud ; la cloison du cagibi coupée avec sa traverse et son poteau)');
 }

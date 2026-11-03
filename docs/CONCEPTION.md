@@ -646,8 +646,12 @@ L'ancienne chaumière (`maison.tmj`, dessinée à la main) a été remplacée pa
   montre sa face du dedans (les rondins de la cabane ; le bardage vu du dedans, ses lisses et les poteaux de la grange, `-r2`), les
   murs est et ouest se voient par leur tranche, les poteaux, cloisons, dalles, foyer posés dans l'emprise sont à leur place ; ni les
   toits, ni ce qui passe au-dessus de la tête (faîtière, entraits, poinçons). **Le mur sud est en coupe** : le dessus tranché au ras du
-  sol, de la teinte moyenne de ses pièces (son âge suit), avec ses passages ; il barre le passage. Changer le bâtiment en mode
-  construction change son intérieur.
+  sol, de la teinte moyenne de ses pièces (son âge suit), avec ses passages ; il barre le passage. Une cloison est-ouest entre deux
+  pièces (le cagibi et le coin de Xéros) est coupée de même, **avec tout ce qui est dans sa bande** (corrigé le 3 novembre 2026,
+  chantier « correctifs » : la traverse qu'elle porte, son solin et le poteau du milieu restaient entiers au-dessus de la coupe, parce
+  que la coupe se décidait pièce par pièce, d'après sa forme) : sous la tête de Xéros, tranché ; au-dessus (la sablière), caché ; les
+  poteaux d'angle restent avec les murs de côté (`cutBands` de world/interior.ts). Changer le bâtiment en mode construction change son
+  intérieur.
 - **La lumière** : la pénombre de la chaumière (0,22) quand un volet est ouvert, plus sombre (0,36) quand tous sont fermés ; une tache
   de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **E de dedans
   ouvre et ferme le volet** (la pièce est à la carte du dehors : GameState la change là-bas, la vue suit).

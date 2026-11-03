@@ -289,6 +289,28 @@ function onSouthWall(room: Rect, b: Rect): boolean {
   return b.y >= s - 1 || (b.y + b.d >= s - INTERIOR.cell && b.y >= s - INTERIOR.south);
 }
 
+/**
+ * Les bandes des cloisons est-ouest coupées : entre deux pièces l'une au nord de l'autre (le bas de l'une, le haut de l'autre, à moins
+ * de INTERIOR.reach cm), sur leur largeur commune. Tout ce qui y est se coupe avec la cloison.
+ */
+function cutBands(rooms: readonly Rect[]): Rect[] {
+  const out: Rect[] = [];
+  for (const a of rooms) {
+    for (const c of rooms) {
+      const gap = c.y - (a.y + a.d);
+      const x0 = Math.max(a.x, c.x);
+      const x1 = Math.min(a.x + a.w, c.x + c.w);
+      if (gap >= 0 && gap <= INTERIOR.reach && x1 > x0) out.push({ x: x0, y: a.y + a.d, w: x1 - x0, d: gap });
+    }
+  }
+  return out;
+}
+
+/** Une pièce est dans la bande d'une cloison : son emprise nord-sud y tient (à INTERIOR.band cm près), et elle la recoupe d'ouest en est. */
+function inBand(k: Rect, b: Rect): boolean {
+  return b.y >= k.y - INTERIOR.band && b.y + b.d <= k.y + k.d + INTERIOR.band && b.x < k.x + k.w && b.x + b.w > k.x;
+}
+
 /** Ce qu'on voit dedans, la coupe du mur sud et les fenêtres d'une pièce, d'après les pièces posées autour d'elle. */
 function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly Entrance[], rooms: readonly Rect[] = [room]): Pick<Building, 'shell' | 'south' | 'southPieces' | 'windows'> {
   const r = INTERIOR.reach;
@@ -297,6 +319,7 @@ function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly
   const south: Rect[] = [];
   const southPieces: BuildPiece[] = [];
   const windows: Window[] = [];
+  const bands = cutBands(rooms);
   for (const p of pieces) {
     const b = boxOf(p);
     const closed = boxOf(closedOf(p));
@@ -324,15 +347,23 @@ function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly
       }
       continue;
     }
-    // ce qui passe au-dessus de la pièce (faîtière, entraits, poinçons) : seulement ce qui est dans la bande d'un mur
-    if (cross(room, b) && b.z >= INTERIOR.headroom && !wallSide(room, b)) continue;
-    // une cloison est-ouest entre deux pièces (elle barre le passage, hors de la bande des murs) : en coupe, comme le mur sud, sinon
-    // elle cacherait la pièce au nord ; une cloison nord-sud reste entière, comme les murs de côté
-    if (rooms.length > 1 && b.w > b.d && b.z < INTERIOR.headroom && !s?.passage && cross(room, b) && !wallSide(room, b) && !rooms.some((r) => cross(r, b))) {
-      south.push({ x: b.x, y: b.y, w: b.w, d: b.d });
-      southPieces.push(p);
+    // une cloison est-ouest entre deux pièces : en coupe, comme le mur sud, sinon elle cacherait la pièce au nord ; et tout ce qui est
+    // dans sa bande avec elle (la traverse, le solin, les poteaux qu'elle porte : tranchés sous la tête de Xéros ; la sablière et ce qui
+    // passe au-dessus : cachés), quelle que soit la forme de chaque pièce. Une cloison nord-sud reste entière, comme les murs de côté.
+    const band = s?.passage ? undefined : bands.find((k) => inBand(k, b));
+    if (band) {
+      if (b.z < INTERIOR.headroom) {
+        const x0 = Math.max(b.x, band.x);
+        const x1 = Math.min(b.x + b.w, band.x + band.w);
+        if (x1 > x0) {
+          south.push({ x: x0, y: b.y, w: x1 - x0, d: b.d });
+          southPieces.push(p);
+        }
+      }
       continue;
     }
+    // ce qui passe au-dessus de la pièce (faîtière, entraits, poinçons) : seulement ce qui est dans la bande d'un mur
+    if (cross(room, b) && b.z >= INTERIOR.headroom && !wallSide(room, b)) continue;
     shell.push(p);
   }
   // la coupe s'arrête aux passages du mur sud
