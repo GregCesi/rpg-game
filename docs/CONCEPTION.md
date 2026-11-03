@@ -50,7 +50,7 @@ Plan intérieur (validé) :
 Extérieur :
 
 - La maison est dans le coin en haut à droite du carrefour.
-- Derrière : un potager clôturé, et le tas de bois contre la cheminée.
+- Derrière : le tas de bois contre la cheminée. Le potager clôturé et les champs autour de la maison ont été retirés (chantier « correctifs », 3 novembre 2026, Grégoire) : le village est en champs ouverts, sans clôtures, et la maison est dans l'herbe.
 - Cheminée et fenêtres cohérentes entre l'intérieur et l'extérieur.
 
 ## Direction artistique
@@ -97,8 +97,9 @@ d'abord ; les bâtiments se posent quand leurs pièces existent.
     `src/content/world.json`, calculée au mètre du monde : elle ne change pas d'un coup au bord d'une zone) ;
   - la **rivière**, nord-sud, 8 m (5 cases), à 270 m, dans la forêt : la lisière est sur sa rive est ; le **pont de bois** la franchit
     sur le chemin, qui continue à l'ouest en sentier dans la forêt ;
-  - la **ferme de Xéros**, 100 × 80 m, de 300 à 400 m : la chaumière, le tas de bois, l'étang, le potager clos, le champ clos (l'ancienne
-    ferme, gardée telle quelle), un petit champ de plus à l'est ; le **cabanon du chasseur** (la cabane en rondins) à la lisière, juste
+  - la **ferme de Xéros**, 100 × 80 m, de 300 à 400 m : la chaumière, le tas de bois, l'étang, dans l'herbe et la prairie
+    (le potager clos, le champ clos et le grand champ de l'est, avec leurs clôtures, retirés le 3 novembre 2026 : un village en champs
+    ouverts, sans clôtures ; les haies de têtards et de buissons des grandes fermes restent) ; le **cabanon du chasseur** (la cabane en rondins) à la lisière, juste
     au sud ;
   - le **chemin de terre**, 250 m, de la ferme au village, entre les prés ;
   - le **village en croix latine** autour de la **place ronde** (30 m, terre battue `yard`) et de ses **huit étals** : à l'ouest les abords
