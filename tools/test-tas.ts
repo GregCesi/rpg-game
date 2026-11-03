@@ -230,12 +230,32 @@ await playtest('tas', async ({ page, errors, load }) => {
       await give({ prop: 'slab' });
       await standAt(x + 30, y, 'down');
       await (window as any).__settle();
+      // la caméra glisse jusqu'à Xéros (il vient d'être posé là) : on vise une fois qu'elle est arrivée, sinon le point visé sous le
+      // curseur bouge encore d'un pixel entre le fantôme lu et le clic
+      const cam = w().cameras.main;
+      let last = '';
+      await (window as any).__until(() => {
+        const now = `${cam.scrollX},${cam.scrollY}`;
+        const still = now === last;
+        last = now;
+        return still;
+      }, 'la caméra arrivée sur Xéros');
       // le curseur devant lui : le fantôme le suit, et le clic pose là
       const front = (window as any).__front();
       (window as any).__aim(front.x, front.y);
       await (window as any).__frames(2);
-      const gh = ghost();
+      // le fantôme tel que le joueur le voit au pas où son clic pose la dalle : le dernier montré avant qu'elle paraisse (sous la charge,
+      // plusieurs pas passent entre la lecture et le clic, et le fantôme suit ce qui change devant Xéros)
+      const slabs = () => w().map.props.filter((p: any) => p.type === 'slab' && p.spawned).length;
+      const before = slabs();
+      let gh = ghost();
+      const watch = () => {
+        const g = ghost();
+        if (slabs() === before && g?.visible) gh = g;
+      };
+      w().events.on('postupdate', watch);
       await act();
+      w().events.off('postupdate', watch);
       const stone = w().map.props.find((p: any) => p.type === 'slab' && p.spawned && p.x === gh.x && p.y === gh.y);
       out.stone = { ghost: gh.visible, key: gh.key, at: !!stone, hands: JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both) };
     }

@@ -5,13 +5,13 @@
 import { CM_PER_PX } from '../content/gabarit';
 import { buildPlans } from '../content/buildPlans';
 import type { MapData } from '../content/types';
-import { game, seedPiles, seedPlans } from '../state';
+import { game, seedGround, seedPiles, seedPlans } from '../state';
 import { planPieces } from './build';
 import { openPlaces } from './places';
 import { pileDefOf, shapeOf } from './pileShape';
 
 /**
- * Pose sur la carte les plans et les tas de bois de Tiled qui n'y sont pas encore (un tas : ses `count` premières places, couche par
+ * Pose sur la carte les plans, les tas de bois et les objets au sol de Tiled qui n'y sont pas encore (un tas : ses `count` premières places, couche par
  * couche, comme on l'aurait monté pièce à pièce) ; renvoie le nombre de plans et de tas posés.
  */
 export function seedMap(def: MapData): number {
@@ -26,8 +26,10 @@ export function seedMap(def: MapData): number {
     }
     return { wood: p.wood, x: p.x, y: p.y, places: taken, ...(p.turned ? { turned: true } : {}) };
   });
-  if (!def.plans.length) return piles;
-  return piles + seedPlans(game, def.id, def.plans, (o) => {
+  // les objets au sol (les branches de la tempête) : au sol de GameState, comme une branche lâchée
+  const ground = seedGround(game, def.id, def.items);
+  if (!def.plans.length) return piles + ground;
+  return piles + ground + seedPlans(game, def.id, def.plans, (o) => {
     const p = def.plans.find((q) => q.id === o.id)!;
     const plan = buildPlans[p.plan];
     if (!plan) return undefined;

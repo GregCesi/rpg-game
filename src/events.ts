@@ -1,7 +1,7 @@
 // Événements échangés entre scènes sur le bus du jeu (this.game.events).
 // Un événement = une constante ici, jamais une chaîne tapée à la main : une faute de frappe devient une erreur de compilation.
 // À l'intérieur d'une scène, pas d'événements : la scène appelle ses systèmes directement, c'est plus facile à suivre.
-import type { BuildRef, JointType, PileWood, WoodAge, WoodPiece } from './content/types';
+import type { BuildRef, Gait, JointType, PileWood, WoodAge, WoodPiece } from './content/types';
 import type { Area } from './world/build';
 import type { Held } from './state';
 
@@ -71,7 +71,10 @@ export interface BuildStatus {
  * plates (`supply` : `what` est la clé d'un objet possédable ou d'un objet du monde), effacer les chantiers de la carte
  * (`erase-sites`), remplir d'un coup l'étape en cours du chantier (`skip-step`), multiplier la force de Xéros (`force` : tester les seuils de masse), régler son endurance (`stamina` : souffle, plafond du jour, maximum, en points) ou la
  * rendre infinie (`stamina-infinite`), avancer l'horloge jusqu'à une heure (`clock` : la prochaine fois qu'elle sonne), finir d'un coup le travail en cours (`finish-work` : horloge, endurance et résultat compris), remettre l'endurance de départ (`stamina-start`), régler les vitesses de marche et de course (`speeds`, en m/s, et la part de la marche discrète `sneak` ; chargé ou fatigué, une part de la marche ; `speeds-default` : celles par défaut), la vitesse de simulation (`sim-speed` : x1 à x50, tout à l'écran plus vite, par pas de taille normale), poser devant Xéros une pièce de bois de réglages choisis (`wood` : diamètre, longueur sur la
- * grille, forme, faces, sens).
+ * grille, forme, faces, sens) ; les créatures (CONCEPTION « Les créatures ») : faire sortir une bête de la garenne la plus proche à 3 m de
+ * Xéros (`creature-spawn`), régler le nombre de bêtes de cette garenne (`creature-population`), régler les distances de perception d'une
+ * espèce à une allure (`creature-senses`, en m, le temps de la session : les données de creatures.json en mémoire), montrer autour de Xéros
+ * les deux cercles de son allure (`creature-rings`).
  */
 export type DieuCommand =
   | { kind: 'give'; held: Held }
@@ -94,4 +97,8 @@ export type DieuCommand =
   | { kind: 'transform'; id: string }
   | { kind: 'map'; map: string }
   | { kind: 'reset-map' }
-  | { kind: 'reset-game' };
+  | { kind: 'reset-game' }
+  | { kind: 'creature-spawn' }
+  | { kind: 'creature-population'; count: number }
+  | { kind: 'creature-senses'; creature: string; gait: Gait; alert: number; flee: number }
+  | { kind: 'creature-rings'; on: boolean };

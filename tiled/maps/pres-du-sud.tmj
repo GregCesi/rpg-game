@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 222,
+  "nextobjectid": 233,
   "properties": [
     {
       "name": "name",
@@ -177,6 +177,42 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 222,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 2436,
+          "y": 1708,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 223,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 2506,
+          "y": 1678,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 224,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 2546,
+          "y": 1758,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
         {
           "id": 1,
           "rotation": 0,
@@ -1328,18 +1364,6 @@
           "width": 64,
           "height": 96,
           "gid": 1072
-        },
-        {
-          "id": 97,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 1945,
-          "y": 2012,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
         },
         {
           "id": 98,
@@ -2816,6 +2840,162 @@
           "width": 32,
           "height": 32,
           "gid": 1003
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-felled-tree",
+          "x": 1977,
+          "y": 2011,
+          "width": 140,
+          "height": 22,
+          "gid": 1095,
+          "id": 226
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1391,
+          "y": 2671,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 227
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1760,
+          "y": 2278,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 228
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2802,
+          "y": 2393,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 229
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1706,
+          "y": 2374,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 230
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1887,
+          "y": 2541,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 231
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1429,
+          "y": 2585,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 232
         }
       ]
     },
@@ -2829,6 +3009,30 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 225,
+          "rotation": 0,
+          "visible": true,
+          "name": "garenne",
+          "type": "Warren",
+          "x": 2396,
+          "y": 1648,
+          "width": 200,
+          "height": 160,
+          "properties": [
+            {
+              "name": "creature",
+              "type": "string",
+              "propertytype": "CreatureKind",
+              "value": "rabbit"
+            },
+            {
+              "name": "population",
+              "type": "int",
+              "value": 5
+            }
+          ]
+        },
         {
           "id": 221,
           "rotation": 0,

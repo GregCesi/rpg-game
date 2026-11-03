@@ -19,7 +19,8 @@ const DAMAGED_KEY = 'xeros-partie-abimee';
 /** Version du format : à augmenter quand GameState ou ce fichier changent d'une façon que l'ancien format ne lit plus. */
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
 // 28 (chantier « commandes ») : plus de main active (`active` retiré : chaque clic dit sa main).
-export const SAVE_VERSION = 28;
+// 29 (chantier « lapins ») : les garennes de chaque carte (`warrens` : membres, points de vie des blessés, naissances).
+export const SAVE_VERSION = 29;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -81,7 +82,8 @@ export function readSave(): ReadResult {
  * de l'entaille (`side`), facultatif ; 23 -> 24 : la place d'un objet né dans sa « chaîne » (`chain`), jamais lue, n'existe plus ;
  * 24 -> 25 : le nombre de branches d'un fagot (`bundle`), facultatif ; 25 -> 26 : celui d'un fagot posé seul (`bundle` d'un objet né),
  * facultatif ; 26 -> 27 : le tas de branches plein passe de 10 à 12, un fagot sans nombre (le plein d'alors) reçoit `bundle: 10`
- * (`withOldFullBundle`) ; 27 -> 28 : la main active n'existe plus (`active` retiré, `withoutActive`).
+ * (`withOldFullBundle`) ; 27 -> 28 : la main active n'existe plus (`active` retiré, `withoutActive`) ; 28 -> 29 : les garennes
+ * (`warrens` de chaque carte), vides : elles se peuplent à la prochaine visite.
  */
 export function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -100,6 +102,8 @@ export function upgrade(data: unknown): unknown {
   if (d?.version === 26 && d.state && typeof d.state === 'object') d = { ...d, version: 27, state: withOldFullBundle(d.state as OldBundles) };
   // 27 -> 28 : la main active n'existe plus (chaque clic dit sa main)
   if (d?.version === 27 && d.state && typeof d.state === 'object') d = { ...d, version: 28, state: withoutActive(d.state as object) };
+  // 28 -> 29 : les garennes de chaque carte (`warrens`, une valeur par défaut du schéma : vides)
+  if (d?.version === 28 && d.state && typeof d.state === 'object') d = { ...d, version: 29 };
   return d;
 }
 
@@ -219,6 +223,8 @@ function missingContent(save: Save): string | undefined {
       }
     }
     for (const c of Object.values(m.changes)) if (c.type && !props[c.type]) return `l'objet « ${c.type} »`;
+    // une garenne gardée nomme une garenne de Tiled (`warrens` de la carte, par identifiant d'objet)
+    for (const id of Object.keys(m.warrens)) if (maps[mapId] && !maps[mapId].warrens.some((g) => String(g.id) === id)) return `la garenne n°${id} de « ${mapId} »`;
     for (const o of m.spawned) if (!props[o.type]) return `l'objet « ${o.type} »`;
     for (const w of [...Object.values(m.changes), ...m.spawned].flatMap((o) => (o.wood ? [o.wood] : []))) {
       const missing = woodMissing(w);

@@ -111,7 +111,7 @@ export function tilesetTsj(t: TilesetExport) {
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
-type Member = { name: string; type: string; propertyType?: string; value: string | boolean };
+type Member = { name: string; type: string; propertyType?: string; value: string | boolean | number };
 
 function objectClass(id: number, name: string, color: string, members: Member[]) {
   return { id, name, type: 'class', color, drawFill: true, members, useAs: ['object'] };
@@ -126,10 +126,12 @@ function objectClass(id: number, name: string, color: string, members: Member[])
  *   - `Parcel` : rectangle d'une parcelle réservée du village, sa destination (`use`, liste de src/content/parcels.json) ;
  *   - `Place` : rectangle d'une place nommée (`accepts` : ce qu'on y pose ; `inside` : dans un bâtiment posé) ;
  *   - `inside` d'un `Spawn`, d'un `Npc` ou d'un objet : il est dans un bâtiment posé, il ne vaut que dans son intérieur calculé ;
- *   - `Plan` : un plan du bac à sable posé là (`plan`, liste de src/content/plans/ ; `age` facultatif), coin nord-ouest du rectangle.
+ *   - `Plan` : un plan du bac à sable posé là (`plan`, liste de src/content/plans/ ; `age` facultatif), coin nord-ouest du rectangle ;
+ *   - `Warren` : rectangle d'une garenne (`creature`, liste de src/content/creatures.json ; `population`), qui contient ses entrées ;
+ *   - `Item` : point d'un objet possédable posé au sol (`item`, clé de src/content/items.json qui a une image au sol ; `view`, 0 à 3).
  * Un champ laissé vide n'est pas surchargé (le jeu prend la valeur de props.json, ou rien).
  */
-export function projectFile(propKeys: { id: number; key: string; wood?: boolean }[], parcelUses: string[] = [], planNames: string[] = []) {
+export function projectFile(propKeys: { id: number; key: string; wood?: boolean }[], parcelUses: string[] = [], planNames: string[] = [], creatureKinds: string[] = []) {
   const facing = { id: 1, name: 'Facing', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...DIRECTIONS] };
   const text = (name: string): Member => ({ name, type: 'string', value: '' });
   const direction: Member = { name: 'facing', type: 'string', propertyType: 'Facing', value: '' };
@@ -151,6 +153,12 @@ export function projectFile(propKeys: { id: number; key: string; wood?: boolean 
       { id: 7, name: 'WoodAge', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', 'new', 'worn', 'old'] },
       objectClass(8, 'Parcel', '#c9a05a', [{ name: 'use', type: 'string', propertyType: 'ParcelUse', value: '' }]),
       objectClass(10, 'Place', '#b07fd0', [text('accepts'), inside]),
+      { id: 12, name: 'CreatureKind', type: 'enum', storageType: 'string', valuesAsFlags: false, values: ['', ...creatureKinds] },
+      objectClass(11, 'Warren', '#7a8f3a', [
+        { name: 'creature', type: 'string', propertyType: 'CreatureKind', value: '' },
+        { name: 'population', type: 'int', value: 0 },
+      ]),
+      objectClass(13, 'Item', '#9a7a4a', [text('item'), { name: 'view', type: 'int', value: 0 }]),
       objectClass(9, 'Plan', '#8a6a3a', [
         { name: 'plan', type: 'string', propertyType: 'PlanName', value: '' },
         { name: 'age', type: 'string', propertyType: 'WoodAge', value: '' },

@@ -158,6 +158,21 @@ const MapStateSchema = z.strictObject({
    * à 1) ; `side`, pour un arbre debout, le côté de l'entaille, celui où Xéros frappe et où l'arbre tombera. Un travail fini s'efface.
    */
   work: z.record(z.string(), z.strictObject({ work: z.string(), done: z.number().min(0).max(1), side: z.enum(['left', 'right']).optional() })).default({}),
+  /**
+   * Les garennes de la carte (docs/CONCEPTION.md, « Les créatures » ; world/warren.ts), par identifiant de l'objet `Warren` de Tiled :
+   * leurs membres vivants (`n`, points de vie, `heal` : le jour où un blessé guérit), le prochain numéro, la minute absolue de la
+   * dernière naissance. Qui est dehors ne se garde pas : au retour, les bêtes de l'heure sont dehors.
+   */
+  warrens: z
+    .record(
+      z.string(),
+      z.strictObject({
+        members: z.array(z.strictObject({ n: z.number().int().nonnegative(), hp: z.number().positive(), heal: z.number().int().positive().optional() })),
+        next: z.number().int().nonnegative(),
+        birthAt: z.number(),
+      }),
+    )
+    .default({}),
 });
 
 export const GameStateSchema = z.strictObject({
@@ -204,6 +219,7 @@ export type Site = z.infer<typeof SiteSchema>;
 export type BuildPiece = z.infer<typeof BuildPieceSchema>;
 export type Joint = z.infer<typeof JointSchema>;
 export type MapState = z.infer<typeof MapStateSchema>;
+export type WarrenState = MapState['warrens'][string];
 export type GameState = z.infer<typeof GameStateSchema>;
 
 /**
@@ -236,7 +252,7 @@ export function newGame(): GameState {
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
 export function mapState(s: GameState, mapId: string): MapState {
-  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [], seeded: [], work: {} });
+  return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [], seeded: [], work: {}, warrens: {} });
 }
 
 /**
@@ -331,6 +347,17 @@ export function setWork(s: GameState, mapId: string, key: string, entry: { work:
   const m = mapState(s, mapId);
   if (entry) m.work[key] = { ...entry };
   else delete m.work[key];
+  revision++;
+}
+
+/** La garenne `id` de la carte `mapId`, telle que la partie la garde (undefined : jamais visitée). */
+export function warrenOf(s: GameState, mapId: string, id: number): WarrenState | undefined {
+  return s.maps[mapId]?.warrens[String(id)];
+}
+
+/** La garenne `id` de la carte `mapId` change (une naissance, une guérison, un membre blessé ou tué, la première visite). */
+export function setWarren(s: GameState, mapId: string, id: number, w: WarrenState): void {
+  mapState(s, mapId).warrens[String(id)] = w;
   revision++;
 }
 
@@ -656,6 +683,23 @@ export function seedPiles<T extends { id: number }>(s: GameState, mapId: string,
     if (m.seeded.includes(p.id)) continue;
     m.seeded.push(p.id);
     addPile(s, mapId, make(p));
+    n++;
+  }
+  if (n) revision++;
+  return n;
+}
+
+/**
+ * Pose au sol les objets possédables de Tiled (`items` de la carte) qui n'y sont pas encore, une seule fois par partie (`seeded`) :
+ * ensuite ils sont des objets au sol comme les autres (ramassés, ils ne reviennent pas). Renvoie le nombre posé.
+ */
+export function seedGround(s: GameState, mapId: string, list: readonly { id: number; x: number; y: number; item: string; view?: number }[]): number {
+  const m = mapState(s, mapId);
+  let n = 0;
+  for (const p of list) {
+    if (m.seeded.includes(p.id)) continue;
+    m.seeded.push(p.id);
+    m.ground.push({ id: s.nextGroundId++, item: p.item, x: p.x, y: p.y, ...(p.view ? { view: p.view } : {}) });
     n++;
   }
   if (n) revision++;

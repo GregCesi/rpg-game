@@ -8,6 +8,7 @@ import { itemMass, naturalFactor, propMass, woodMass, type MassCatalog } from '.
 import { ageableImages, crosswise, variantImage, viewImages } from './views';
 import { agedKey, framesOf, lookOf, WEDGE_FRAMES, woodSheets } from '../world/woodShape';
 import { formImage } from '../world/natural';
+import { warrenHoles } from '../world/warren';
 import { balance, partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
@@ -17,7 +18,7 @@ import { WEAPON_ANGLES } from '../world/strike';
 import type { CombatPoses } from '../world/strike';
 import { calibrationJob, gameJobs, planOf, swingerOf } from '../world/workPlan';
 import { JointTypeSchema } from './types';
-import type { BuildPlan, CombatDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
+import type { BuildPlan, CombatDef, CreatureDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -110,6 +111,7 @@ function validateMaps(
   dialogues: Record<string, DialogueDef>,
   characters: Record<string, CharacterDef>,
   cat: Catalog,
+  creatures?: Record<string, CreatureDef>,
 ): string[] {
   const errors: string[] = [];
   const err = (msg: string) => errors.push(msg);
@@ -154,6 +156,12 @@ function validateMaps(
     for (const p of m.parcels) {
       const at = `${where} : parcelle « ${p.name ?? p.use} » en (${p.x}, ${p.y})`;
       if (p.x < 0 || p.y < 0 || p.x + p.w > W || p.y + p.h > H) err(`${at} : sort de la carte`);
+    }
+    for (const g of m.warrens) {
+      const at = `${where} : garenne (objet n°${g.id}) en (${g.x}, ${g.y})`;
+      if (g.x < 0 || g.y < 0 || g.x + g.w > W || g.y + g.h > H) err(`${at} : sort de la carte`);
+      if (!creatures?.[g.creature]) err(`${at} : créature '${g.creature}' absente de creatures.json`);
+      if (!warrenHoles(m, g, propsByType).length) err(`${at} : aucune entrée (un objet à 'burrow' de props.json) posée dans son rectangle`);
     }
     for (const p of m.plans) {
       const at = `${where} : plan « ${p.plan} » (objet n°${p.id}) en (${p.x}, ${p.y})`;
@@ -224,6 +232,8 @@ export interface Content {
   combat: CombatDef;
   /** Le travail (work.json) : les coups, la matière, les points de calage. */
   work: WorkDef;
+  /** Les créatures (creatures.json, CONCEPTION « Les créatures ») ; absentes : leur vérification est sautée. */
+  creatures?: Record<string, CreatureDef>;
   /** Le temps (time.json) : les paliers de la vitesse du temps. */
   time?: { speeds: readonly number[]; dieuSpeed: number };
   /**
@@ -972,12 +982,42 @@ export const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> =
 };
 
 /**
+ * Les créatures dont les dessins (et l'objet qu'elles deviennent mortes) attendent : sautées par validateCreatures, avec leur raison.
+ * Vide : le lapin est dessiné (chantier « lapins », étape 4).
+ */
+export const CREATURES_TODO: Record<string, string> = {};
+
+/** Les poses dessinées d'une créature (animations `<pose>-<direction>` de sa planche), dans les quatre directions. */
+export const CREATURE_POSES = ['graze', 'sit', 'hop', 'alert', 'run', 'thump'] as const;
+
+/**
+ * Une créature (creatures.json) : elle devient morte un objet d'items.json de sa masse (la matière se conserve), qui se tient ; sa
+ * planche a chaque pose dans les quatre directions ; sa matière vole sous un coup (`fx-<matter>`) ; son rythme commence à minuit.
+ */
+function validateCreatures(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  for (const k of Object.keys(CREATURES_TODO)) if (!c.creatures?.[k]) errors.push(`validate.ts CREATURES_TODO : '${k}' absent de creatures.json`);
+  for (const [k, d] of Object.entries(c.creatures ?? {})) {
+    const err = (msg: string) => errors.push(`creatures.json '${k}' : ${msg}`);
+    if (d.schedule[0].hour !== 0) err("'schedule' commence à minuit (hour 0) : la journée boucle");
+    if (CREATURES_TODO[k]) continue;
+    const dead = c.items[d.becomes];
+    if (!dead) err(`'becomes' : objet '${d.becomes}' absent d'items.json`);
+    else if (typeof dead.mass !== 'number' || Math.abs(dead.mass - d.mass) > 1e-9) err(`'becomes' : '${d.becomes}' pèse ${JSON.stringify(dead.mass)} kg, la bête ${d.mass} kg : la matière se conserve`);
+    for (const pose of CREATURE_POSES)
+      for (const dir of DIRECTIONS) if (!cat.animations.get(d.image)?.has(`${pose}-${dir}`)) err(`planche '${d.image}' : animation '${pose}-${dir}' manquante`);
+    if (!cat.textures.has(`fx-${d.target.matter}`)) err(`cible : planche 'fx-${d.target.matter}' non dessinée`);
+  }
+  return errors;
+}
+
+/**
  * Les métiers qui restent à dire (CONCEPTION « Les matières » : chaque objet dit qui le fait) ; à décider avec Grégoire. Le naturel
  * (arbre, rocher, buisson) aura le sien (la nature, ou le cueilleur) ; les meubles et les lumières, celui qui les fabrique.
  */
 const TRADE_TODO = new Set([
   'big-tree', 'big-pollard', 'big-tree-stump', 'normal-tree', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-piece', 'normal-tree-stump',
-  'rock', 'bush', 'bush-berries', 'rock-rubble', 'cottage', 'chopping-block', 'chopping-block-rope', 'rope-coil', 'faggot',
+  'rock', 'bush', 'bush-berries', 'rock-rubble', 'warren-hole', 'cottage', 'chopping-block', 'chopping-block-rope', 'rope-coil', 'faggot',
   'chopping-block-axe', 'fireplace', 'worktable', 'workbench', 'stove', 'bed', 'pallet', 'sack', 'jar', 'sunpatch', 'lantern', 'wall-torch',
   'candle', 'barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'shed-plate-north', 'shed-plate-south', 'shed-plate-side', 'shed-rafter',
   'shed-roof', 'maul-ground', 'splitting-wedge-ground', 'well', 'planted-stake', 'plan-tablet', 'hatchet-ground', 'broadaxe-ground',
@@ -1311,6 +1351,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   const err = (msg: string) => errors.push(msg);
   const addAll = (msgs: string[]) => errors.push(...msgs);
 
+  // les créatures : ce qu'elles deviennent mortes (la même masse), leurs dessins
+  addAll(validateCreatures(c, cat));
+
   // le travail : les outils, les récoltes au coup, les points de calage
   addAll(validateWork(c, cat));
 
@@ -1448,6 +1491,6 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Cartes (issues de Tiled) et catalogue des tuiles
   addAll(validateTilesCatalog(c.tiles, cat));
-  addAll(validateMaps(c.maps, c.props, c.dialogues, c.characters, cat));
+  addAll(validateMaps(c.maps, c.props, c.dialogues, c.characters, cat, c.creatures));
   return errors;
 }

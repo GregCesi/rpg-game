@@ -50,8 +50,35 @@ Plan intérieur (validé) :
 Extérieur :
 
 - La maison est dans le coin en haut à droite du carrefour.
-- Derrière : un potager clôturé, et le tas de bois contre la cheminée.
+- Derrière : le tas de bois contre la cheminée. Le potager clôturé et les champs autour de la maison ont été retirés (chantier « correctifs », 3 novembre 2026, Grégoire) : le village est en champs ouverts, sans clôtures, et la maison est dans l'herbe.
 - Cheminée et fenêtres cohérentes entre l'intérieur et l'extérieur.
+
+## La tempête (ajout d'histoire voulu par Grégoire, 3 novembre 2026, chantier « correctifs »)
+
+Le jeu commence **le dimanche matin, après une nuit de tempête**. Le vent est venu de l'ouest : dehors, quelques arbres sont tombés,
+couchés vers l'est (certains déracinés), d'autres cassés debout, un a déjà été coupé, et il y a beaucoup de branches par terre. Ce n'est pas l'état naturel du pays, c'est la
+tempête. **La forêt de l'ouest n'a absolument rien** (de 0 à 300 m du monde, jusqu'à la lisière : elle est magique).
+
+- **Où** : autour de la ferme surtout (quatre arbres normaux couchés : au sud du grand chemin, à l'ouest de la maison au bord du
+  chemin du village, à l'est sur l'ancien grand champ ; un déjà coupé au sud du chemin, sa souche et deux pièces de bois de 2 m ;
+  une quarantaine de branches sous les arbres, dans la cour, sur le chemin) ; le long du chemin du village (deux arbres couchés à côté
+  du chemin, jamais en travers, une quinzaine de branches) ; dans le pré du nord et le pré du sud (un arbre couché, six branches
+  chacun). Le village, les grandes fermes et les autres prés n'ont rien.
+- **Avec les objets qui existent** : l'arbre normal couché (`normal-felled-tree`, à la place exacte où le jeu pose un arbre abattu
+  vers l'est, sans souche : il a été déraciné), la souche et les pièces de bois de l'arbre coupé, les branches (`branch`) posées par
+  terre. Tout est posé dans les cartes (Tiled) : les branches par un point `Item`, qui entre au sol de la partie à la première visite
+  (`seedGround`), comme une branche lâchée par Xéros. Rien n'est créé par du code.
+- **Les arbres cassés et déracinés** (accord de Grégoire le 3 novembre 2026, après deux retouches de la planche) : sur la ferme, deux
+  arbres déracinés (la [galette de racines](objets/root-plate.md) dressée au pied de l'arbre couché, qui cache son bout scié, et le
+  trou qu'elle laisse, à 24 et 28 m de la maison : jamais à moins de 20 m) et deux [chicots](objets/normal-snag.md) avec leur cime
+  couchée à côté ; le long du chemin, un arbre déraciné et un chicot avec sa cime, à côté du chemin. **La matière se conserve** :
+  le chicot (2,5 m de tronc, 159 kg) et sa cime (3,7 m de tronc et tout le houppier, 286,4 kg) font l'arbre normal entier, la
+  souche et l'arbre couché (445,4 kg). Le chicot s'abat comme un arbre (sa souche, et le tronc qui restait debout couché à son
+  pied, 2 m), la cime s'ébranche comme l'arbre couché (une pièce de bois de 3,6 m, ses branches) ; la galette ne se travaille pas
+  encore. Dessins : `art/world/storm.ts` (pixel-artist), planche `.art-preview/tempete.png` (`npx tsx tools/essai-tempete.ts`).
+- **Vérification** : `tools/test-paysage.ts` (test:fast : rien dans la forêt de l'ouest, des arbres normaux, aucun en travers d'un
+  chemin, la ferme, le chemin et les prés touchés ; chicot + cime = l'arbre entier ; chaque galette au pied de son arbre couché, à
+  20 m au moins de la maison) ; `npm run test:equarrissage` (le chicot abattu, sa cime ébranchée) ; `npm run test:monde` (les branches au sol de la ferme dans la partie).
 
 ## Direction artistique
 
@@ -60,6 +87,14 @@ Extérieur :
 - Sol varié avec des détails posés au hasard, pour casser la répétition.
 - **Échelle réaliste partout** (décidé le 29 octobre 2026) : environ 5 cm par pixel, une case d'environ 1,65 m. Une maison a la même taille dedans et dehors ; une longère paysanne tient sur environ 9 × 4 cases.
 - **Gabarit** (décidé le 29 octobre 2026) : une règle de dimensions et de perspective pour tous les objets, tirée des billes (`docs/STYLE.md`, section 8). Dimensions réelles contour compris, taille réelle pour tous les objets, plancher de lisibilité à 6 px de large, personnages de 12 px de large (60 cm, bras compris) ; la face de coupe d'un cylindre couché nord-sud était aplatie (× 7/11) pour qu'on le lise couché (remplacé le 30 octobre 2026 par la règle D, voir *La perspective*). Pour l'arbre, sa longueur couchée (5,65 m) fait foi.
+- **Le zoom** (décidé par Grégoire le 3 novembre 2026, chantier « correctifs » : l'échelle reste réelle, on aide la lecture) : de la vue
+  la plus large, 32 × 18 m (l'ancien palier 2 ; plus de palier 1), à la plus proche, 12,8 × 7,2 m (palier 5), par crans d'un quart de
+  palier à la molette ; la première fois, le palier 3 (environ 21 × 12 m), puis le cran choisi est retenu (`ZOOM_STEPS` de config.ts,
+  seule source ; `systems/zoom.ts`). Aux crans non entiers, un pixel du monde fait 2 ou 3 pixels d'écran : à l'arrêt c'est discret, en
+  marche il change de largeur d'une image à l'autre (un léger scintillement, déjà visible au palier entier quand la caméra glisse). Le
+  canevas en double définition (`RENDER` de config.ts) l'atténue (4 ou 5 pixels), mais une image passait de 25–30 à 80–90 ms dans
+  Chromium sans écran (rendu logiciel) : laissé à 1, à trancher par Grégoire sur les planches de `npx tsx tools/essai-zoom.ts`
+  (`.art-preview/zoom-crans-x1.png`, `zoom-crans-x2.png`).
 - **Jeu cosy et lent** : les gestes répétés et les étapes réalistes sont assumés. La progression passe par de meilleurs outils qui raccourcissent les étapes (une scie, plus tard une brouette).
 
 ## Feuille de route
@@ -97,8 +132,9 @@ d'abord ; les bâtiments se posent quand leurs pièces existent.
     `src/content/world.json`, calculée au mètre du monde : elle ne change pas d'un coup au bord d'une zone) ;
   - la **rivière**, nord-sud, 8 m (5 cases), à 270 m, dans la forêt : la lisière est sur sa rive est ; le **pont de bois** la franchit
     sur le chemin, qui continue à l'ouest en sentier dans la forêt ;
-  - la **ferme de Xéros**, 100 × 80 m, de 300 à 400 m : la chaumière, le tas de bois, l'étang, le potager clos, le champ clos (l'ancienne
-    ferme, gardée telle quelle), un petit champ de plus à l'est ; le **cabanon du chasseur** (la cabane en rondins) à la lisière, juste
+  - la **ferme de Xéros**, 100 × 80 m, de 300 à 400 m : la chaumière, le tas de bois, l'étang, dans l'herbe et la prairie
+    (le potager clos, le champ clos et le grand champ de l'est, avec leurs clôtures, retirés le 3 novembre 2026 : un village en champs
+    ouverts, sans clôtures ; les haies de têtards et de buissons des grandes fermes restent) ; le **cabanon du chasseur** (la cabane en rondins) à la lisière, juste
     au sud ;
   - le **chemin de terre**, 250 m, de la ferme au village, entre les prés ;
   - le **village en croix latine** autour de la **place ronde** (30 m, terre battue `yard`) et de ses **huit étals** : à l'ouest les abords
@@ -124,8 +160,9 @@ d'abord ; les bâtiments se posent quand leurs pièces existent.
 
 - **Passer d'une zone à l'autre** : Xéros qui marche hors du bord arrive dans la voisine, ses pieds au même point du monde, **sans
   fondu** : la scène redémarre sur la voisine (15 à 25 ms mesurés), la vue reprend sa place, la marche continue (les touches tenues sont
-  gardées). Pour que cela ne se voie pas, **la bande des voisines** est dessinée par-delà chaque bord ouvert (21 cases à l'est et à
-  l'ouest, 12 au nord et au sud : la moitié de la vue au zoom le plus éloigné) : leur sol, leurs détails, leurs objets tels que la partie
+  gardées). Pour que cela ne se voie pas, **la bande des voisines** est dessinée par-delà chaque bord ouvert (la moitié de la vue au
+  zoom le plus éloigné, plus une case : 11 cases à l'est et à l'ouest, 7 au nord et au sud depuis le 3 novembre 2026, tirées de
+  `ZOOM_STEPS.min`) : leur sol, leurs détails, leurs objets tels que la partie
   les a laissés, leurs pièces posées ; rien n'y bloque ni ne s'y prend. La caméra ne montre donc jamais le vide près d'un bord ouvert. Au
   bord du monde (rien de l'autre côté), Xéros s'arrête. La sauvegarde, déjà rangée par carte, suit : la position est notée dans la zone
   où il est. Ce qui ne passe pas un bord : une bille qu'on roule, un tas, une pièce posée en mode construction (chacun reste dans sa zone).
@@ -645,10 +682,17 @@ L'ancienne chaumière (`maison.tmj`, dessinée à la main) a été remplacée pa
   montre sa face du dedans (les rondins de la cabane ; le bardage vu du dedans, ses lisses et les poteaux de la grange, `-r2`), les
   murs est et ouest se voient par leur tranche, les poteaux, cloisons, dalles, foyer posés dans l'emprise sont à leur place ; ni les
   toits, ni ce qui passe au-dessus de la tête (faîtière, entraits, poinçons). **Le mur sud est en coupe** : le dessus tranché au ras du
-  sol, de la teinte moyenne de ses pièces (son âge suit), avec ses passages ; il barre le passage. Changer le bâtiment en mode
-  construction change son intérieur.
+  sol, de la teinte moyenne de ses pièces (son âge suit), avec ses passages ; il barre le passage. Une cloison est-ouest entre deux
+  pièces (le cagibi et le coin de Xéros) est coupée de même, **avec tout ce qui est dans sa bande** (corrigé le 3 novembre 2026,
+  chantier « correctifs » : la traverse qu'elle porte, son solin et le poteau du milieu restaient entiers au-dessus de la coupe, parce
+  que la coupe se décidait pièce par pièce, d'après sa forme) : sous la tête de Xéros, tranché ; au-dessus (la sablière), caché ; les
+  poteaux d'angle restent avec les murs de côté (`cutBands` de world/interior.ts). Changer le bâtiment en mode construction change son
+  intérieur.
 - **La lumière** : la pénombre de la chaumière (0,22) quand un volet est ouvert, plus sombre (0,36) quand tous sont fermés ; une tache
-  de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **E de dedans
+  de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **Dehors, ce
+  qui est caché ne se voit pas, lumière comprise** (3 novembre 2026, Grégoire) : la lueur d'un feu sous un toit opaque (l'âtre sous le
+  chaume) est cachée ; elle revient quand le toit s'efface, et dans le trou qu'ouvre une fenêtre au-dessus de sa pièce, seulement dans
+  le trou (`lightCovers`, `lightShown` de world/roofView.ts, systems/roofs.ts). **E de dedans
   ouvre et ferme le volet** (la pièce est à la carte du dehors : GameState la change là-bas, la vue suit).
 - **Les meubles** : le mode construction marche dans la vue intérieure (pas dans les murs : « Hors de la pièce. » ; les pièces du
   bâtiment ne s'y retirent pas). Ce qu'on y pose appartient au bâtiment : `builds` de la carte `interieur:…` dans GameState, pas au plan.
@@ -1673,7 +1717,7 @@ ceci.
   toucher au moteur ; le corps aura ses gestes à une main.
 - **Les attaques spéciales**, débloquées par **les idées de la nuit** (Xéros qui rêve d'un coup et le sait au réveil) : un champ de
   l'attaque qui la tient fermée tant que l'idée n'est pas venue.
-- **Les lapins** : les premières cibles qui bougent et meurent ; leurs points de vie finis, gardés par la partie (GameState).
+- **Les lapins** : faits (chantier « lapins », 3 novembre 2026) : voir *Les créatures*.
 - **La vie de Xéros** : une jauge à côté de l'endurance, ce qui le blesse, se soigner, dormir.
 - Les commandes à trancher : voir [docs/COMMANDES.md](COMMANDES.md), « À trancher ».
 
@@ -1712,6 +1756,73 @@ L'énergie à l'arrivée compte la chute depuis la main : la bille lâchée de l
 de sa chute. La cognée va plus loin que la pierre, plus lourde ; une hache bien plus lourde partirait moins loin encore. Le jeu n'a pas
 encore de caillou de quelques centaines de grammes : il partirait à la vitesse du bras, 17,5 m/s, à plus de 30 m. Pas encore de geste du
 corps pour lancer (l'objet part de la main sans animation : un dessin à faire avec le pixel-artist).
+
+## Les créatures (décidé les 2 et 3 novembre 2026, chantier « lapins »)
+
+Les premières bêtes du jeu : des lapins qui vivent autour de la ferme. **Une créature est des données** (`src/content/creatures.json`,
+`CreatureSchema` de types.ts) et ses dessins ; le moteur est commun à toutes, sans une ligne propre à une espèce (`tools/test-keys.ts`
+refuse une clé de creatures.json écrite dans src/). Un lapin échappe à Xéros parce que Xéros est lent et bruyant, jamais à cause d'une
+règle écrite pour le lapin (*Le monde ne limite pas*).
+
+- **Le moteur, sans Phaser** (`src/world/creature.ts`) : ce que la bête perçoit de Xéros (la distance, et son allure : immobile,
+  discret — Alt, l'état `sneaking` de Player —, à la marche, à la course : `senses`), ses trois états — **tranquille** (elle broute
+  par petits sauts lents autour de sa garenne, s'arrête souvent), **aux aguets** (dressée, elle regarde Xéros ; s'il s'arrête, recule
+  ou sort de sa vue pendant `calm` secondes, elle se calme ; s'il approche, le compte repart de zéro), **en fuite** (elle court en
+  zigzag vers l'entrée la plus proche de sa garenne, y tambourine, ce qui fait fuir ses voisines dans `thump.radius`, et entre au
+  terrier) —, plus deux mouvements : rentrer sans peur (le soir, ou quand la garenne veut moins de bêtes dehors) et tambouriner.
+  **Elle ne traverse jamais un obstacle** : chaque pas est suivi pixel par pixel contre ce qui a un corps (tuiles pleines, troncs,
+  murs : `areaFree` de GameMap) ; sa fuite suit un chemin calculé (A* sur des cases de 40 cm, tiré au plus court), le zigzag n'est
+  pris que s'il ne mène pas dans un obstacle ; l'entrée se prend au franchissement (`world/crossing.ts`).
+- **La garenne et le temps, sans Phaser** (`src/world/warren.ts`) : une garenne est un rectangle `Warren` de Tiled (`creature`,
+  `population`) et les entrées posées dedans (les objets à `burrow` de props.json : l'[entrée de garenne](objets/warren-hole.md)).
+  La partie garde ses membres (GameState, `warrens` de la carte : points de vie, jour de guérison d'un blessé, prochaine naissance ;
+  `SAVE_VERSION` 29) ; qui est dehors ne se garde pas : au retour sur la carte, les bêtes de l'heure sont déjà dehors. La part dehors
+  suit l'heure (`schedule`) ; elles sortent une à une (`burrow.emerge`), rentrent quand il en faut moins ; après une fuite, une bête
+  reste au terrier `burrow.stay` minutes de jeu. Blessée, elle reste au terrier et guérit `heal.days` jours plus tard. Tant qu'il en
+  manque, une naît toutes les `births.hours` heures.
+- **Le jeu** (`src/systems/creatures.ts`, appelé par `WorldScene.update` quand l'horloge avance) : chaque pas de jeu de taille normale,
+  donc aussi en temps accéléré (V, ?dieu) ; chaque bête dessinée par sa planche (`<image>-<pose>-<direction>` : `graze`, `sit`, `hop`,
+  `alert`, `run`, `thump`).
+- **La chasse** : une bête est une cible (`target` de sa créature : des points de vie finis, sa matière `fx-<matter>`) ; les dégâts
+  viennent des coups (world/strike.ts) et des lancers (world/throw.ts), sans exception. **Un lancer touche une bête qui bouge** : à
+  chaque pas du vol, le chemin de l'objet vu depuis la bête (les deux mouvements du pas) franchit-il son emprise, sous sa hauteur
+  (`flightHit`) ? Un seul choc par lancer ; l'objet finit son vol là où il devait tomber (un premier jet). Blessée, la bête fuit au
+  terrier ; tuée, **elle devient l'objet qu'elle devient** (`becomes`, de sa masse : validate.ts le vérifie), posé là où elle meurt ;
+  elle manque à sa garenne jusqu'aux naissances. Tuer n'a aucune conséquence (le seigneur ne chasse presque jamais dans cette forêt).
+- **Avec ?debug** : l'état et les points de vie au-dessus de chaque bête, et autour de Xéros les deux cercles de son allure (jaune :
+  aux aguets ; rouge : fuite). **?dieu**, « Créatures » : faire sortir une bête près de Xéros, régler la population de la garenne la
+  plus proche, montrer les cercles, régler les distances de chaque allure (en mémoire, le temps de la session).
+
+**Le lapin** ([fiche](objets/rabbit.md) ; mort : le [lapin mort](objets/dead-rabbit.md), 1,5 kg, à une main). Les chiffres de départ,
+à régler en jouant (creatures.json) :
+
+| | |
+| --- | --- |
+| Aux aguets, fuite (m) | immobile 3, 1,5 ; discret 4,5, 2,5 ; marche 7, 4,5 ; course 9, 7 (3 novembre 2026, Grégoire : dans le champ visible au zoom de départ, 10,7 m de part et d'autre de Xéros, avec une marge ; d'abord 5, 2 ; 8, 4 ; 15, 10 ; 25, 20) |
+| Se calme après | 4 s sans que Xéros approche |
+| Broute | à 12 m au plus d'une entrée (25 m d'abord : trop dispersés pour l'écran, on n'en voyait aucun) ; sauts de 15 à 50 cm à 1,2 m/s, pauses de 0,6 à 3 s, 4 à 20 s à une place |
+| Fuite | 10 m/s (Xéros court à 2,5 m/s : il ne la rattrape jamais), zigzag de 30° tous les 1,5 m |
+| Tambour | 0,5 s ; les voisines à 15 m fuient |
+| Terrier | il ressort 3 à 8 minutes après une fuite ; un lapin sort toutes les 20 s |
+| Dehors | la nuit (21 h 30 à 5 h) aucun ; à l'aube (5 h à 8 h 30) et au soir (18 h à 21 h 30) 85 % ; en journée 35 % (2 sur 7) |
+| Naissances, guérison | une toutes les 24 h tant qu'il en manque ; blessé, guéri le lendemain |
+| Vie | 4 points : le poing (1,6) blesse, la branche (8,4), l'épée de bois (6), une pierre bien lancée (9,5) tuent |
+| Taille à l'écran | de profil 8 × 6 px, de face 3 × 8 px : la vraie échelle, sans agrandir (de face, il se lit mal ; à voir en jeu) |
+
+Les garennes (Grégoire, après l'essai : « fais-en un peu partout, et deux à côté de la maison ») : sur la ferme, 7 lapins et 4 entrées sous
+les arbres à l'ouest de la maison, entre l'étang et le chemin, à 14 m de son pignon ouest (d'abord au coin nord-ouest du grand champ ;
+déplacée avec le champ le 3 novembre 2026, choix de Grégoire) ; 2 lapins et 2 entrées à côté de la
+maison, à l'est de son pignon ; 5 lapins au sud de la route. Puis une garenne de 5 lapins (3 entrées) dans chaque pré ouvert : les
+friches, le pré de l'est, du nord, du sud, les champs rivaux, ceux du riche, le chemin (posées au milieu de l'herbe libre la plus proche
+du centre de la zone).
+
+**Une nouvelle créature** = une entrée de creatures.json, sa planche dessinée par le pixel-artist (chaque pose dans chaque direction),
+l'objet qu'elle devient (items.json, sa masse), sa matière `fx-…` si elle est nouvelle, une garenne (ou plus tard un autre gîte) posée
+dans Tiled ; aucun code. Vérifier : `npm run test:fast` (`tools/test-creatures.ts`, `tools/test-garenne.ts`), `npm run test:contrats`
+(une créature d'essai faite de données vit, perçoit et fuit), `npm run test:lapins` (dans le vrai jeu). Le choix de ne pas prendre la
+bibliothèque Yuka : son modèle d'obstacles (des sphères) ne colle pas aux tuiles et aux boîtes du jeu, son errance tire au hasard sans
+graine (les tests le veulent fixé), et elle apporte son propre temps et ses entités, en double des pas de jeu de simSpeed ; ce qu'il
+fallait (trois états, une errance, un chemin) tient en un fichier.
 
 ## Fendre (décidé le 30 octobre 2026)
 

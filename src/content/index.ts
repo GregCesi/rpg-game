@@ -2,7 +2,7 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { CharacterDefSchema, CombatSchema, TimeSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, MatterSchema, PileDefSchema, RockSchema, PlanSchema, ParcelUseSchema, PropDefSchema, StaminaSchema, StrengthSchema, WorkSchema, TilesetCatalogSchema, TransformSchema, WoodSchema, WorldSchema } from './types';
+import { CharacterDefSchema, CombatSchema, CreatureSchema, TimeSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, MatterSchema, PileDefSchema, RockSchema, PlanSchema, ParcelUseSchema, PropDefSchema, StaminaSchema, StrengthSchema, WorkSchema, TilesetCatalogSchema, TransformSchema, WoodSchema, WorldSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import itemsJson from './items.json';
@@ -21,6 +21,7 @@ import transformsJson from './transforms.json';
 import parcelsJson from './parcels.json';
 import worldJson from './world.json';
 import combatJson from './combat.json';
+import creaturesJson from './creatures.json';
 import timeJson from './time.json';
 import workJson from './work.json';
 export { maps } from '../generated/maps';
@@ -68,6 +69,8 @@ export const parcelUses = parse('parcels.json', z.record(z.string(), ParcelUseSc
 export const world = parse('world.json', WorldSchema, worldJson);
 /** Le combat : les règles du calcul (portée, vitesse, dégâts), les attaques, les familles d'armes et leurs postures (CONCEPTION, « Le combat »). */
 export const combat = parse('combat.json', CombatSchema, combatJson);
+/** Les créatures (CONCEPTION, « Les créatures ») : des données pour le moteur commun (perception, états, rythme, garenne) ; la clé est l'espèce. */
+export const creatures = parse('creatures.json', z.record(z.string().min(1), CreatureSchema), creaturesJson);
 /** Le temps : les paliers de la vitesse du temps, le palier par défaut, l'heure du lever (CONCEPTION, « Le temps »). */
 export const time = parse('time.json', TimeSchema, timeJson);
 /** Le travail (docs/CONCEPTION.md, « Le travail ») : les coups, la résistance de la matière, les êtres de référence, les points de calage. */

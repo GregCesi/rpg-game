@@ -145,9 +145,10 @@ const HarvestSchema = z.strictObject({
    * Objets de props.json qui naissent à la fin (l'arbre couché : houppier et sections). (x, y) : coin bas gauche
    * de chacun par rapport à celui de l'objet récolté, pour une chute vers la droite ; vers la gauche, ils sont
    * posés en miroir autour du pied (`fall.foot`) avec leurs images `-left` (dessinées, pas retournées). Ils sont notés dans GameState
-   * comme objets nés, et forment une chaîne dans cet ordre.
+   * comme objets nés, et forment une chaîne dans cet ordre. `wood` : les réglages d'une pièce de bois qui naît (le chicot abattu
+   * laisse sa souche et le tronc qui restait debout, couché à son pied).
    */
-  spawns: z.array(z.strictObject({ type: id, x: px, y: px })).default([]),
+  spawns: z.array(z.strictObject({ type: id, x: px, y: px, wood: z.lazy(() => WoodPieceSchema).optional() })).default([]),
 });
 
 /**
@@ -766,6 +767,11 @@ export const PropDefSchema = z.strictObject({
     .optional(),
   /** Ce qu'on frappe avec une arme (le mannequin) : voir TargetSchema. */
   target: z.lazy(() => TargetSchema).optional(),
+  /**
+   * Une entrée de terrier (l'entrée de garenne) : une créature y entre et en sort (CONCEPTION « Les créatures ») ; les entrées posées
+   * dans le rectangle d'une garenne (`Warren` de Tiled) sont les siennes.
+   */
+  burrow: z.literal(true).optional(),
 });
 
 /** Les quatre coins d'une emprise : nord-ouest, nord-est, sud-est, sud-ouest. */
@@ -1276,6 +1282,61 @@ const TargetSchema = z.strictObject({
   tilt: z.number().min(0).max(30).default(0),
 });
 
+/** Un intervalle [min, max] : une valeur est tirée au hasard entre les deux (min ≤ max). */
+const SpanSchema = z.tuple([z.number().nonnegative(), z.number().nonnegative()]).refine(([a, b]) => a <= b, { message: 'un intervalle [min, max] : min ≤ max' });
+
+/**
+ * Ce qu'une créature perçoit de Xéros à une allure (`senses` d'une créature), en mètres : en deçà d'`alert`, elle passe aux aguets ; en
+ * deçà de `flee`, elle fuit. Plus Xéros est lent et silencieux, plus il approche.
+ */
+const GaitSensesSchema = z
+  .strictObject({ alert: z.number().positive(), flee: z.number().nonnegative() })
+  .refine((s) => s.flee < s.alert, { message: "'flee' doit être en deçà d'alert" });
+
+/**
+ * Une créature (creatures.json, CONCEPTION « Les créatures ») : des données pour le moteur commun (world/creature.ts, world/warren.ts,
+ * systems/creatures.ts), jamais du code propre à une bête. `image` : sa planche de dessins (animations `<image>-<pose>-<direction>`).
+ * - `mass` (kg), `dims` (cm, son corps au repos) ; `becomes` : l'objet qu'elle devient morte (items.json, de la même masse : la matière
+ *   se conserve) ; `target` : ses points de vie (finis, gardés par la partie) et ce qui vole sous un coup.
+ * - `senses` : les distances de perception (m) selon l'allure de Xéros : immobile (`still`), discret (`sneak`, Alt), à la marche, à la
+ *   course ; `calm` : combien de secondes Xéros doit rester immobile ou s'éloigner pour qu'une bête aux aguets se calme.
+ * - `graze` : la vie tranquille autour de sa garenne : `range` (m, au plus loin de l'entrée la plus proche), ses petits sauts (`hop` :
+ *   vitesse en m/s pendant le saut, longueur en m), les pauses entre deux sauts (`pause`, s) et le temps passé à brouter à une place
+ *   (`stay`, s) avant d'en chercher une autre.
+ * - `flee` : sa course (`speed`, m/s) en zigzag (`zigzag` : un écart d'`angle`° de part et d'autre, changé tous les `every` m).
+ * - `thump` : à l'entrée, elle tambourine `ms` ms ; les bêtes de son espèce à moins de `radius` m fuient aussi.
+ * - `burrow` : `reach` (m), à quelle distance de l'entrée elle y disparaît ; `stay` (minutes de jeu), combien de temps elle reste au
+ *   terrier après une fuite ; `emerge` (s), l'écart entre deux sorties.
+ * - `schedule` : la part de la population dehors à partir de chaque heure (`hour`, de 0 à 24 ; `out`, de 0 à 1), la journée bouclant.
+ * - `births` : `hours`, combien d'heures de jeu entre deux naissances tant qu'il manque des bêtes à la garenne.
+ * - `heal` : `days`, combien de jours une bête blessée reste au terrier (elle guérit au jour `days` après sa blessure).
+ */
+export const CreatureSchema = z.strictObject({
+  name: id,
+  image: id,
+  mass: z.number().positive(),
+  dims: z.lazy(() => DimsSchema),
+  becomes: id,
+  target: z.strictObject({ hp: z.number().positive(), matter: id, tilt: z.number().min(0).max(30).default(0) }),
+  senses: z.strictObject({ still: GaitSensesSchema, sneak: GaitSensesSchema, walk: GaitSensesSchema, run: GaitSensesSchema }),
+  calm: z.number().positive(),
+  graze: z.strictObject({
+    range: z.number().positive(),
+    hop: z.strictObject({ speed: z.number().positive(), length: SpanSchema }),
+    pause: SpanSchema,
+    stay: SpanSchema,
+  }),
+  flee: z.strictObject({ speed: z.number().positive(), zigzag: z.strictObject({ every: z.number().positive(), angle: z.number().min(0).max(80) }) }),
+  thump: z.strictObject({ ms: z.number().nonnegative(), radius: z.number().nonnegative() }),
+  burrow: z.strictObject({ reach: z.number().positive(), stay: SpanSchema, emerge: z.number().positive() }),
+  schedule: z
+    .array(z.strictObject({ hour: z.number().min(0).max(24), out: z.number().min(0).max(1) }))
+    .min(1)
+    .refine((s) => s.every((x, i) => i === 0 || x.hour > s[i - 1].hour), { message: "les heures de 'schedule' vont croissant" }),
+  births: z.strictObject({ hours: z.number().positive() }),
+  heal: z.strictObject({ days: z.number().int().positive() }),
+});
+
 /**
  * Une attaque (combat.json, `attacks`) : des données. `gesture` : le geste de combat du corps (COMBAT_POSES de
  * art/characters/xeros-combat.ts, tirées par build-art dans src/generated/combatPoses.ts : ses images, leur durée, la main, l'arme,
@@ -1557,6 +1618,35 @@ const MapPileSchema = z.strictObject({
   inside: z.literal(true).optional(),
 });
 
+/**
+ * Un objet possédable posé au sol depuis Tiled (un point de type `Item` : `item`, clé d'items.json qui a une image au sol, `ground` ;
+ * `view`, sa vue de 0 à 3 ; chantier « correctifs » : les branches de la tempête) : (x, y) = le milieu du bas de son image, comme un
+ * objet posé de GameState. À la première visite de la carte, il entre dans `ground` de GameState (`seedGround`) : c'est alors le même
+ * objet qu'une branche lâchée par Xéros. `id` est l'identifiant de l'objet dans Tiled.
+ */
+const MapItemSchema = z.strictObject({
+  id: z.number().int().nonnegative(),
+  x: px,
+  y: px,
+  item: id,
+  view: z.number().int().min(1).max(3).optional(),
+});
+
+/**
+ * Une garenne posée depuis Tiled (un rectangle de type `Warren` : `creature`, l'espèce, clé de creatures.json ; `population`, combien
+ * de bêtes elle compte pleine) : ses entrées sont les objets à `burrow` posés dans son rectangle (world/warren.ts). `id` est
+ * l'identifiant de l'objet dans Tiled (la partie garde la garenne sous ce numéro).
+ */
+const MapWarrenSchema = z.strictObject({
+  id: z.number().int().nonnegative(),
+  x: px,
+  y: px,
+  w: px.positive(),
+  h: px.positive(),
+  creature: id,
+  population: z.number().int().positive(),
+});
+
 export const MapSchema = z.strictObject({
   /** Nom du fichier .tmj. */
   id,
@@ -1587,6 +1677,10 @@ export const MapSchema = z.strictObject({
   places: z.array(PlaceSchema).default([]),
   /** Tas de bois posés depuis Tiled (les quartiers du cagibi). */
   piles: z.array(MapPileSchema).default([]),
+  /** Garennes posées depuis Tiled (les lapins de la ferme). */
+  warrens: z.array(MapWarrenSchema).default([]),
+  /** Objets possédables posés au sol depuis Tiled (les branches de la tempête). */
+  items: z.array(MapItemSchema).default([]),
 });
 
 /** Une destination de parcelle (parcels.json) : le nom dit, et une couleur pour la montrer (mode construction, ?debug). */
@@ -1665,6 +1759,8 @@ export type MapData = z.infer<typeof MapSchema>;
 export type Parcel = z.infer<typeof ParcelSchema>;
 export type MapPlan = z.infer<typeof MapPlanSchema>;
 export type MapPile = z.infer<typeof MapPileSchema>;
+export type MapItem = z.infer<typeof MapItemSchema>;
+export type MapWarren = z.infer<typeof MapWarrenSchema>;
 export type ParcelUse = z.infer<typeof ParcelUseSchema>;
 export type End = z.infer<typeof EndSchema>;
 export type WoodLook = z.infer<typeof WoodLookSchema>;
@@ -1687,6 +1783,8 @@ export type BuildPlan = z.infer<typeof BuildPlanSchema>;
 export type JointType = z.infer<typeof JointTypeSchema>;
 export type Weapon = z.infer<typeof WeaponSchema>;
 export type Target = z.infer<typeof TargetSchema>;
+export type CreatureDef = z.infer<typeof CreatureSchema>;
+export type Gait = keyof CreatureDef['senses'];
 export type Attack = z.infer<typeof AttackSchema>;
 export type StanceDef = z.infer<typeof StanceDefSchema>;
 export type CombatDef = z.infer<typeof CombatSchema>;

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { HUD, STAMINA_BAR, UI, VIEW, ZOOM } from '../config';
+import { HUD, STAMINA_BAR, UI, VIEW, UI_ZOOM } from '../config';
 import { items, props, stamina } from '../content';
 import type { StaminaLevels } from '../entities/Stamina';
 import { GameEvent } from '../events';
@@ -77,7 +77,7 @@ export class HudScene extends Phaser.Scene {
   clockText = '';
 
   create(data: { notice?: string } = {}): void {
-    this.cameras.main.setZoom(ZOOM).centerOn(VIEW.width / 2, VIEW.height / 2);
+    this.cameras.main.setZoom(UI_ZOOM).centerOn(VIEW.width / 2, VIEW.height / 2);
     const size = this.textures.get('ui-slot').getSourceImage().width;
     // les deux mains et la barre d'endurance en bas à droite ; la journée se surveille en haut à droite (le cadran)
     const x0 = VIEW.width - MARGIN - (2 * size + GAP);
@@ -88,13 +88,13 @@ export class HudScene extends Phaser.Scene {
       const x = x0 + i * (size + GAP);
       const slot = this.add.image(x, y0, 'ui-slot').setOrigin(0);
       const icon = this.add.image(x + size / 2, y0 + size / 2, EMPTY[i]);
-      const text = this.add.text(x + size / 2, y0 + size + 1, name, label).setOrigin(0.5, 0).setResolution(ZOOM);
+      const text = this.add.text(x + size / 2, y0 + size + 1, name, label).setOrigin(0.5, 0).setResolution(UI_ZOOM);
       this.slots.push(slot);
       this.icons.push(icon);
       this.corners.push([x + size - 1, y0 + size - 1]);
       // G : à gauche de sa case, au milieu ; D : au-dessus de la sienne, calé à droite (les deux mots ne se touchent jamais)
       const style = { ...label, fontSize: '7px', color: '#e8dab8', strokeThickness: 2 };
-      const word = (i === 0 ? this.add.text(x - 3, y0 + size / 2, '', style).setOrigin(1, 0.5) : this.add.text(x + size, y0 - 1, '', style).setOrigin(1, 1)).setResolution(ZOOM);
+      const word = (i === 0 ? this.add.text(x - 3, y0 + size / 2, '', style).setOrigin(1, 0.5) : this.add.text(x + size, y0 - 1, '', style).setOrigin(1, 1)).setResolution(UI_ZOOM);
       this.words.push(word);
       this.bar.add([slot, icon, text, word]);
     });
@@ -105,7 +105,7 @@ export class HudScene extends Phaser.Scene {
     this.notice = this.add
       .text(VIEW.width / 2, y0 - WORDS - STAMINA_BAR.gap - STAMINA_BAR.height - 4, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
-      .setResolution(ZOOM)
+      .setResolution(UI_ZOOM)
       .setAlpha(0);
 
     this.game.events.on(GameEvent.HandsChanged, this.redraw, this);

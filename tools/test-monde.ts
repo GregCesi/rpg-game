@@ -253,6 +253,21 @@ await playtest('monde', async ({ page, errors, load }) => {
   await until(async () => (await where()).id === 'ferme', 5000, 'sortir sur la ferme');
   await press([]);
   await until(async () => (await where()).mode === 'play', 5000, 'arrivé sur la ferme');
+  // dehors, le chaume couvre l'âtre : sa lueur ne se voit pas (ce qui est caché ne se voit pas, lumière comprise : systems/roofs.ts)
+  const glows = await page.evaluate(() =>
+    (window as any).game.scene
+      .getScene('world')
+      .map.builds.flatMap((b: any) => (b.parts ?? []).filter((q: any) => q.light).map((q: any) => ({ prop: b.piece.piece.prop, visible: q.obj.visible, alpha: q.obj.alpha }))),
+  );
+  assert.ok(glows.some((g: any) => g.prop === 'stone-hearth'), `la lueur de l'âtre existe (${JSON.stringify(glows)})`);
+  assert.ok(glows.every((g: any) => !g.visible || g.alpha < 0.01), `dehors, sous le toit, la lueur de l'âtre est cachée (${JSON.stringify(glows)})`);
+  // la tempête : les branches de Tiled sont entrées au sol de la partie, comme des branches lâchées (seedMap)
+  const fallen = await page.evaluate(async () => {
+    const stateUrl = '/src/state/index.ts';
+    const gs = await import(stateUrl);
+    return gs.game.maps.ferme.ground.filter((g: any) => g.item === 'branch').length;
+  });
+  assert.ok(fallen >= 30, `les branches de la tempête au sol de la ferme (${fallen})`);
 
   // 2. la ferme : le chemin de la cour, puis le chemin nord-sud jusqu'au chemin du village ; le monde, en px du monde
   const def = (id: string) => page.evaluate((i) => {
@@ -284,6 +299,65 @@ await playtest('monde', async ({ page, errors, load }) => {
   assert.ok(Math.hypot(p.wx - place.x, p.wy - place.y) < 15 * 20, `sur la place (${p.wx}, ${p.wy})`);
   const zonesSeen = await page.evaluate(() => (window as any).crossings.map((c: any) => c.from));
   assert.deepEqual(zonesSeen, ['ferme -> chemin', 'chemin -> village'], 'ferme, chemin, village : deux bords passés');
+
+  // 3 bis. vers le nord, comme un joueur : de la place, droit au nord jusqu'à la zone voisine, puis retour à la place (le bord nord
+  // arrêtait Xéros : le passage testait le bas de ses pieds, que le corps empêchait d'atteindre le bord ; tools/test-zones.ts)
+  // un chemin libre de la place au bord nord (une recherche en largeur sur une grille de 8 px, la place des pieds libre à chaque pas),
+  // en px du monde ; puis, au bord, droit au nord
+  const northRoute = (await page.evaluate(() => {
+    const w = (window as any).game.scene.getScene('world');
+    const m = w.map;
+    const o = m.def.world;
+    const S = 8;
+    const W = Math.floor(m.width / S);
+    const H = Math.floor(m.height / S);
+    const free = (x: number, y: number) => m.areaFree({ left: x - 6, top: y - 9, right: x + 6, bottom: y });
+    const start = Math.round(w.player.actor.y / S) * W + Math.round(w.player.actor.x / S);
+    const prev = new Int32Array(W * H).fill(-2);
+    prev[start] = -1;
+    const q = [start];
+    let end = -1;
+    for (let k = 0; k < q.length; k++) {
+      const i = q[k];
+      const x = i % W;
+      const y = Math.floor(i / W);
+      // le bord nord, à deux cases de la grille (16 px) : plus près, la boîte des pieds sortirait de la carte (areaFree la refuse)
+      if (y <= 2) {
+        end = i;
+        break;
+      }
+      for (const [dx, dy] of [[0, -1], [1, 0], [-1, 0], [0, 1]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        const n = ny * W + nx;
+        if (nx < 1 || ny < 1 || nx >= W - 1 || ny >= H - 1 || prev[n] !== -2 || !free(nx * S, ny * S)) continue;
+        prev[n] = i;
+        q.push(n);
+      }
+    }
+    if (end < 0) return [];
+    const out: { x: number; y: number }[] = [];
+    for (let i = end; i >= 0; i = prev[i]) out.unshift({ x: (i % W) * S + o.x, y: Math.floor(i / W) * S + o.y });
+    // seulement les coins
+    return out.filter((_q, i) => i === 0 || i === out.length - 1 || out[i - 1].x !== out[i + 1].x && out[i - 1].y !== out[i + 1].y);
+  })) as { x: number; y: number }[];
+  assert.ok(northRoute.length > 1, 'un chemin libre de la place au bord nord du village');
+  for (const c of northRoute.slice(1)) {
+    const now = await where();
+    await goTo(c.x, c.y, Math.abs(c.x - now.wx) > Math.abs(c.y - now.wy) ? 'x' : 'y', 2);
+  }
+  const lane = { x: northRoute[northRoute.length - 1].x, top: (await where()).wy - ((await where()).y) };
+  await goTo(lane.x, lane.top - 48, 'y');
+  const north = await where();
+  assert.notEqual(north.id, 'village', `passé au nord du village (${north.id})`);
+  assert.ok(north.wy < lane.top, `dans la zone au nord (y du monde ${north.wy})`);
+  // et retour : vers le sud, dans le village, puis sur la place par le même chemin
+  await goTo(lane.x, lane.top + 48, 'y');
+  assert.equal((await where()).id, 'village', 'revenu au village par le sud');
+  for (const c of [...northRoute].reverse().slice(1)) {
+    const now = await where();
+    await goTo(c.x, c.y, Math.abs(c.x - now.wx) > Math.abs(c.y - now.wy) ? 'x' : 'y', 2);
+  }
 
   // 4. de la place au panneau : la route de la ville, jusqu'au bord du monde
   await goTo(615 * TILE, ROAD, 'x');
@@ -368,7 +442,7 @@ await playtest('monde', async ({ page, errors, load }) => {
 
   assert.deepEqual(errors, [], 'aucune erreur dans la page');
   assert.equal(said, 'Vers la ville. La route n’est pas encore pour moi.'.replace('’', "'"), 'le panneau se lit');
-  console.log(`  ✓ monde : du cagibi à la place (${zonesSeen.join(', ')}), puis au panneau ; le bord du monde arrête ; rechargé à la même place`);
+  console.log(`  ✓ monde : du cagibi à la place (${zonesSeen.join(", ")}), au nord du village et retour, puis au panneau ; le bord du monde arrête ; rechargé à la même place`);
   console.log(`    passages de bord (redémarrage de la scène) : ${crossings.map((c: any) => `${c.from} ${c.ms} ms`).join(' ; ')}`);
   console.log(
     `    forêt profonde (${still.objects} objets, ${still.band} objets affichés avec la bande des voisines) : une image ${still.mean.toFixed(1)} ms en moyenne (pire ${still.worst.toFixed(0)} ms) immobile, ${walking.mean.toFixed(1)} ms (pire ${walking.worst.toFixed(0)} ms) en marche (Chromium sans écran, rendu logiciel)`,

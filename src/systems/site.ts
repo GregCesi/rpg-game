@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, INTERACT, SITE, UI, ZOOM_STEPS } from '../config';
+import { DEPTH, INTERACT, RENDER, SITE, UI, ZOOM_STEPS } from '../config';
 import { items, plans, props } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import { heldMass, woodMass } from '../content/mass';
@@ -195,7 +195,7 @@ export class SiteSystem {
         .text(site.x + plan.footprint.w / 2 / CM_PER_PX, bottom + 12, statusLine(site, plan), { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
         .setOrigin(0.5, 0)
         // net au palier de zoom le plus proche
-        .setResolution(ZOOM_STEPS.max)
+        .setResolution(ZOOM_STEPS.max * RENDER)
         .setDepth(DEPTH.prompt - 3)
         .setVisible(false);
       this.texts.push({ site, plan, text });

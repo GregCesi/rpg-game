@@ -331,8 +331,8 @@ export class HarvestSystem {
     // ce qui naît (l'arbre couché) : noté tout de suite, montré à la fin de la chute
     const born = h.spawns.map((sp) => {
       const f = spawnFlip(sp.type);
-      const o = spawnObject(game, mapId, sp.type, prop.x + spawnX(sp.type, sp.x, this.imageWidth(sp.type)), prop.y + sp.y, { flip: f });
-      return this.map.placeProp(o, { flip: f, spawned: true });
+      const o = spawnObject(game, mapId, sp.type, prop.x + spawnX(sp.type, sp.x, this.imageWidth(sp.type)), prop.y + sp.y, { flip: f, ...(sp.wood ? { wood: sp.wood } : {}) });
+      return this.map.placeProp(o, { flip: f, spawned: true, ...(sp.wood ? { wood: sp.wood } : {}) });
     });
 
     // les objets lâchés entrent dans GameState tout de suite : quitter la carte pendant la chute ne les perd pas

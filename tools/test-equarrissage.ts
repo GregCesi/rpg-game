@@ -62,7 +62,10 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       };
       const props = (re: RegExp) => w().map.props.filter((p: any) => re.test(p.type));
       // les pièces de bois d'un diamètre, et leurs longueurs
-      const logs = (size = 'normal') => w().map.props.filter((p: any) => p.wood?.size === size && !p.wood.hewn);
+      // ce que la carte avait avant le scénario (la tempête : ses arbres couchés, les pièces de bois de l'arbre déjà coupé) ne compte
+      // pas : le scénario suit ce que Xéros abat et coupe lui-même
+      const before = new Set<number>();
+      const logs = (size = 'normal') => w().map.props.filter((p: any) => p.wood?.size === size && !p.wood.hewn && !before.has(p.id));
       const beams = () => w().map.props.filter((p: any) => p.wood?.hewn >= 12);
       const lengths = (size: string) => logs(size).map((p: any) => p.wood.length).sort((x: number, y: number) => x - y);
       const kg = (wood: object) => Math.round(mass.woodMass(wood) * 10) / 10;
@@ -85,14 +88,16 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       // 1. à la ferme, un arbre normal : quatre coups de cognée depuis l'ouest, il tombe vers l'est
       await (window as any).__restart({ kind: 'map', map: 'ferme' });
       emit({ kind: 'stamina-infinite', on: true });
+      for (const p of w().map.props) if (p.wood || /felled-tree$/.test(p.type)) before.add(p.id);
       const tree = props(/^normal-tree$/)[0];
       await give('axe');
       await standAt(tree.box.left - 6, tree.box.bottom - 1, 'right');
       // abattre : un travail (25 min), fini d'un coup
       await press('use');
       await settled();
-      await (window as any).__until(() => props(/^normal-felled-tree$/).length > 0, "l'arbre tombé, couché");
-      const felled = props(/^normal-felled-tree$/)[0];
+      const fresh = () => props(/^normal-felled-tree$/).filter((p: any) => !before.has(p.id));
+      await (window as any).__until(() => fresh().length > 0, "l'arbre tombé, couché");
+      const felled = fresh()[0];
       out.felled = !!felled;
 
       // 2. le houppier : trois coups, des branches, et le tronc ébranché devient une seule pièce ronde de 5,8 m
@@ -318,6 +323,28 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         big[tree] = { trunk, label, cut };
       }
       out.big = big;
+
+      // 8. la tempête : le chicot s'abat (sa souche, et le tronc qui restait debout couché à son pied), sa cime s'ébranche (sa pièce de
+      // bois de 3,6 m et ses branches)
+      {
+        const had = new Set(logs().map((p: any) => p.id));
+        const snag = props(/^normal-snag$/)[0];
+        await give('axe');
+        await standAt(snag.box.left - 6, snag.box.bottom - 1, 'right');
+        await press('use');
+        await settled();
+        await (window as any).__until(() => !w().map.props.some((p: any) => p.id === snag.id && p.type === 'normal-snag'), 'le chicot abattu');
+        const stump = w().map.props.find((p: any) => p.id === snag.id);
+        const log = logs().find((p: any) => !had.has(p.id));
+        const top = props(/^normal-snag-top$/).sort((a: any, b: any) => Math.hypot(a.x - snag.x, a.y - snag.y) - Math.hypot(b.x - snag.x, b.y - snag.y))[0];
+        const branches = () => w().map.ground.filter((g: any) => g.item.item === 'branch').length;
+        const b0 = branches();
+        await standAt(top.aimX, top.aimY + 14, 'up');
+        await press('use');
+        await settled();
+        const topLog = logs().find((p: any) => !had.has(p.id) && p.id !== log?.id);
+        out.snag = { stump: stump?.type, log: log?.wood.length, top: topLog?.wood.length, branches: branches() - b0, topGone: !w().map.props.some((p: any) => p.id === top.id && p.type === 'normal-snag-top') };
+      }
       emit({ kind: 'stamina-infinite', on: false });
 
       out.before = JSON.stringify({
@@ -391,6 +418,11 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.billeLaid, 1, 'elle est au sol, seule');
   assert.equal(r.handsEnd, 'null');
   assert.deepEqual(r.big['big-tree'], { trunk: { length: 400, kg: 855 }, label: '1 m | 3 m', cut: [100, 300] }, 'le gros arbre : 4 m, 855 kg, coupé à 1 m');
+  assert.equal(r.snag.stump, 'normal-tree-stump', 'le chicot abattu laisse sa souche');
+  assert.equal(r.snag.log, 200, 'et le tronc qui restait debout, une pièce de bois de 2 m couchée à son pied');
+  assert.equal(r.snag.topGone, true, 'la cime ébranchée');
+  assert.equal(r.snag.top, 360, 'son tronc devient une pièce de bois de 3,6 m');
+  assert.ok(r.snag.branches >= 3, `elle lâche ses branches (${r.snag.branches})`);
   assert.deepEqual(r.big['big-pollard'], { trunk: { length: 200, kg: 428 }, label: '1 m | 1 m', cut: [100, 100] }, 'le têtard : 2 m, coupé à 1 m');
 
   // 7. la page rechargée : la poutre, les rondins et le tas sont retrouvés
@@ -416,5 +448,5 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(after.map, 'ferme');
   assert.equal(after.before, r.before, 'la poutre et les rondins sont retrouvés, à leur place et à leur longueur');
   assert.equal(after.piles, 0, 'toujours pas de tas');
-  console.log("  ✓ équarrissage : de l'arbre normal à la poutre de 3 m, le gros arbre et le têtard coupés à 1 m, et tout retrouvé après rechargement");
+  console.log("  ✓ équarrissage : de l'arbre normal à la poutre de 3 m, le gros arbre et le têtard coupés à 1 m, le chicot abattu et sa cime ébranchée, et tout retrouvé après rechargement");
 });

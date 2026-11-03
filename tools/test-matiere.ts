@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { items, matters, piles, props, rocks, transforms, wood } from '../src/content';
 import { heldMass, pieceMass, propMass, woodMass } from '../src/content/mass';
 import { addPile, GameStateSchema, newGame, spawnObject } from '../src/state/GameState';
-import { upgrade } from '../src/state/save';
+import { SAVE_VERSION, upgrade } from '../src/state/save';
 import { pileOf } from '../src/world/offer';
 import { bundleOfKind } from '../src/world/pileShape';
 import { balance } from '../src/world/transform';
@@ -100,8 +100,8 @@ console.log(`✓ matière : ${splits} fentes et ${cuts} coupes, les morceaux pè
     },
   };
   const up = upgrade(old) as { version: number; state: typeof old.state & { hands: { bundle?: number }[] } };
-  // jusqu'à la version d'aujourd'hui : la main active retirée en 28 (chantier « commandes »)
-  assert.equal(up.version, 28);
+  // jusqu'à la version d'aujourd'hui (la main active retirée en 28, chantier « commandes »)
+  assert.equal(up.version, SAVE_VERSION);
   assert.equal('active' in up.state, false, 'la main active n’existe plus');
   assert.equal((up.state.maps.ferme.piles[0] as { bundle?: number }).bundle, 10, 'tas de fagots sans nombre : 10 branches');
   assert.deepEqual(up.state.maps.ferme.spawned.map((o) => (o as { bundle?: number }).bundle), [10, 4], 'fagot posé seul : 10 sans nombre, son nombre sinon');

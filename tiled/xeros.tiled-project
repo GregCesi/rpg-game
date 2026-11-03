@@ -197,6 +197,62 @@
       ]
     },
     {
+      "id": 12,
+      "name": "CreatureKind",
+      "type": "enum",
+      "storageType": "string",
+      "valuesAsFlags": false,
+      "values": [
+        "",
+        "rabbit"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Warren",
+      "type": "class",
+      "color": "#7a8f3a",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "creature",
+          "type": "string",
+          "propertyType": "CreatureKind",
+          "value": ""
+        },
+        {
+          "name": "population",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Item",
+      "type": "class",
+      "color": "#9a7a4a",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "item",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "view",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
       "id": 9,
       "name": "Plan",
       "type": "class",
@@ -2668,6 +2724,116 @@
     {
       "id": 258,
       "name": "chimney-cap",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 259,
+      "name": "warren-hole",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 260,
+      "name": "normal-snag",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 261,
+      "name": "normal-snag-top",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 262,
+      "name": "root-plate",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 263,
+      "name": "uprooted-hole",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,

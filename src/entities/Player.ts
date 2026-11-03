@@ -28,7 +28,7 @@ export class Player {
   runRefused = false;
   /**
    * Il marche discrètement (Alt maintenu, à pas lents : une part de la marche, `sneak` de systems/speeds.ts) : l'état que liront les
-   * créatures (rien ne le lit encore). Vrai tant que la touche est tenue, même à l'arrêt.
+   * créatures (systems/creatures.ts : discret, il approche plus près). Vrai tant que la touche est tenue, même à l'arrêt.
    */
   sneaking = false;
   /** Il pousse une bille qui roule (posé par systems/roll.ts à chaque image) : posture `push`. */

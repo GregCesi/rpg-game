@@ -312,6 +312,11 @@
     "stone-hearth",
     "chimney-hood",
     "chimney-flue",
-    "chimney-cap"
+    "chimney-cap",
+    "warren-hole",
+    "normal-snag",
+    "normal-snag-top",
+    "root-plate",
+    "uprooted-hole"
   ]
 }

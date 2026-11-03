@@ -108,6 +108,8 @@ await playtest('poteaux', async ({ page, errors, load }) => {
 
       // 0. de quoi partir : un chantier né sur un coin dégagé de la ferme, ses quatre dés posés
       await (window as any).__restart({ kind: 'map', map: 'ferme' });
+      // les pièces de bois que la carte avait déjà (la tempête : celles de l'arbre déjà coupé) ne comptent pas : le scénario suit les siennes
+      const before = new Set(w().map.props.filter((p: any) => p.type === 'wood-piece').map((p: any) => p.id));
       const free = (l: number, t: number, r: number, b: number) => w().map.areaFree({ left: l, top: t, right: r, bottom: b });
       const find = () => {
         const m = w().map;
@@ -238,7 +240,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       out.motherNotice = notices.at(-1);
       await shot('3-fondu');
       await settled();
-      out.helped = JSON.stringify({ mode: w().mode, hands: hands(), posts: posts(300).length, status: statusText(), cost: 100 - stamina(), beamOnGround: w().map.props.filter((p: any) => p.type === 'wood-piece' && p.wood?.axis !== 'up').length });
+      out.helped = JSON.stringify({ mode: w().mode, hands: hands(), posts: posts(300).length, status: statusText(), cost: 100 - stamina(), beamOnGround: w().map.props.filter((p: any) => p.type === 'wood-piece' && p.wood?.axis !== 'up' && !before.has(p.id)).length });
       out.highPieces = JSON.stringify(site().pieces['post-nw']);
       out.massHigh = site().pieces['post-nw'] ? mass.woodMass(site().pieces['post-nw']) : -1;
       await shot('4-pose');
