@@ -12,12 +12,11 @@ await playtest('vitesses', async ({ page, errors, load }) => {
   // la vitesse du corps en marchant vers l'est (ou en courant, Maj), dans un coin dégagé de la ferme ; `load` : ce qu'il porte
   const measure = (o: { run?: boolean; carry?: boolean; tired?: boolean }) =>
     page.evaluate(async (o) => {
-      const sleep = (t: number) => new Promise((r) => setTimeout(r, t));
       const g = (window as any).game;
       const w = () => g.scene.getScene('world');
       const send = async (c: unknown) => {
         g.events.emit('dieu', c);
-        await sleep(150);
+        await (window as any).__settle();
       };
       if (w().map.def.id !== 'ferme') {
         await (window as any).__restart({ kind: 'map', map: 'ferme' });
@@ -32,15 +31,15 @@ await playtest('vitesses', async ({ page, errors, load }) => {
       }
       const a = w().player.actor;
       a.body.reset(spot![0], spot![1]);
-      await sleep(200);
+      await (window as any).__settle();
       if (o.run) window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', keyCode: 16 } as KeyboardEventInit));
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyD', keyCode: 68 } as KeyboardEventInit));
-      await sleep(400);
+      await (window as any).__settle();
       const v = Math.hypot(a.body.velocity.x, a.body.velocity.y);
       const factor = w().player.strength.walkFactor() * w().player.stamina.walkFactor();
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyD', keyCode: 68 } as KeyboardEventInit));
       if (o.run) window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft', keyCode: 16 } as KeyboardEventInit));
-      await sleep(150);
+      await (window as any).__settle();
       if (o.carry) {
         const gs = await import('/src/state/index.ts' as string);
         gs.emptyHands(gs.game);
