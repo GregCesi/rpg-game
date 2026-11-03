@@ -725,6 +725,10 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
   - la table est contre le solin nord (y 30–120), le banc juste dessous (y 125–155) : 1,15 m de passage jusqu'au foyer ;
   - (essai d'avant le placement de Grégoire : la chambre au nord-ouest, la réserve à l'est ; l'étape 2 suit le placement ci-dessus) ;
   - les portes s'ouvrent vers le dedans, chaque porte intérieure vers la pièce qu'elle ferme ;
+  - **le toit, dehors** (retouche de Grégoire, 3 novembre 2026) : il ne s'efface plus quand Xéros approche ; on n'est dedans que dans
+    l'intérieur. Devant une fenêtre au volet ouvert, dehors, on voit l'intérieur de cette pièce-là seulement : le toit s'y ouvre (avec
+    ce qui passe au-dessus d'elle), son mur sud coupé comme dans la vue intérieure, le reste de la maison garde son toit
+    (`world/roofView.ts`) ; on y voit le sol de la carte et les meubles du plan, pas ce que la carte pose dedans (la mère, la paillasse) ;
   - **le cagibi n'a pas de porte** (retouche de Grégoire, 3 novembre 2026) : une baie de 0,85 m, comme une baie où l'on n'a jamais mis
     de porte, entre deux jambages de 25 cm (ceux de la porte d'entrée), sous un linteau (une poutre de 1,20 m contre la face du cagibi,
     sa base à 1,90 m : l'intérieur y voit un passage entre deux pièces, le cagibi reste une pièce à lui) ;

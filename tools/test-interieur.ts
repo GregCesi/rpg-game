@@ -308,6 +308,43 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     assert.equal(await mapId(), inside, `${b.plan} : on rentre dans le même intérieur`);
     assert.deepEqual(await furniture(), put, `${b.plan} : le tabouret est retrouvé`);
     await out();
+    // 7. dehors, le toit reste (on n'est dedans que dans l'intérieur) ; devant la fenêtre au volet ouvert, on voit la pièce, plus loin non
+    if (b.window) {
+      const view = await page.evaluate(async (key: string) => {
+        const w = (window as any).game.scene.getScene('world');
+        const url = '/src/config.ts';
+        const cfg = await import(url);
+        const bd = w.interiors.buildings().find((q: any) => q.key === key);
+        const win = bd.windows.find((q: any) => q.open);
+        const stand = async (x: number, y: number) => {
+          w.player.actor.body.reset(Math.round(x / 5), Math.round(y / 5));
+          await (window as any).__frames(2);
+        };
+        const roofs = () => w.map.builds.filter((q: any) => 'prop' in q.piece.piece && /roof/.test(q.piece.piece.prop) && q.piece.x >= bd.room.x - 100 && q.piece.x < bd.room.x + bd.room.w);
+        // sous l'avant-toit du sud : le toit ne s'efface pas
+        await stand(bd.room.x + bd.room.w / 2, bd.room.y + bd.room.d + 40);
+        await (window as any).__frames(30);
+        const eave = roofs().map((q: any) => q.image.alpha);
+        // devant la fenêtre ouverte (à l'est), puis loin d'elle
+        const mid = (win.span[0] + win.span[1]) / 2;
+        await stand(bd.room.x + bd.room.w + cfg.ROOF.wall + 60, mid + 30);
+        const front = w.roofs.revealed;
+        await stand(bd.room.x + bd.room.w + cfg.ROOF.wall + cfg.ROOF.window.front + 80, mid + 30);
+        const far = w.roofs.revealed;
+        return { side: win.side, eave, front, far };
+      }, building[0].key);
+      assert.equal(view.side, 'east');
+      assert.ok(view.eave.length && view.eave.every((a: number) => a === 1), `${b.plan} : sous l'avant-toit, dehors, le toit reste (${view.eave})`);
+      assert.ok(view.front, `${b.plan} : devant la fenêtre ouverte, on voit la pièce`);
+      assert.equal(view.far, undefined, `${b.plan} : plus loin, le toit se referme`);
+      // l'aperçu : dehors, devant la fenêtre ouverte, le toit ouvert au-dessus de la pièce
+      const win = building[0].windows.find((q: any) => q.side === 'east');
+      const room = building[0].room;
+      await stand(Math.round((room.x + room.w + 90) / 5), Math.round(((win.span[0] + win.span[1]) / 2 + 30) / 5), 'left');
+      rows.at(-1)!.push(await capture((room.x - 100) / 5, (room.y - b.top) / 5, (room.x + room.w + 260) / 5, (room.y + room.d + 200) / 5, b.zoom));
+      // Xéros revient devant la porte (le plan suivant se pose sur la place dégagée, sans lui)
+      await stand(outside.x, outside.y, 'up');
+    }
     console.log(`  ✓ ${b.plan} : pièce de ${b.room.w} × ${b.room.d} cm, entrée, sortie, tabouret retrouvé${b.window ? ', le volet éclaire' : ''}`);
   }
 

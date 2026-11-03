@@ -287,7 +287,7 @@ export class WorldScene extends Phaser.Scene {
     this.knots = new KnotSystem(this.map, this.handsSystem);
     this.press = new LongPress(this);
     this.pileCount = new PileCount(this, this.map);
-    this.roofs = new Roofs(this.map);
+    this.roofs = new Roofs(this.map, this);
     this.effort = new EffortSystem((t) => this.notice(t), () => this.game.events.emit(GameEvent.StaminaDenied));
     this.works = new WorkSystem(this.player, this.effort, bar, (m) => this.clock.work(m));
     this.roll = new RollSystem(this.map, npcs.map((n) => n.actor.body), (t) => this.notice(t), () => this.effort.exhausted());
@@ -365,7 +365,7 @@ export class WorldScene extends Phaser.Scene {
     // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
     this.roll.update(this.player, delta, this.mode === 'play');
     // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes ; en mode construction, rien ne s'efface
-    this.roofs.update(this.player, delta, this.mode !== 'build' && !this.interior);
+    this.roofs.update(this.player, delta, this.mode !== 'build' && !this.interior, this.interior ? [] : this.interiors.buildings());
     if (this.mode === 'play') {
       // le bord d'une zone du monde : la voisine prend le relais, au même point du monde
       const cross = this.interior ? undefined : this.zones.update(this.player);
