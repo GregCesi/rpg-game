@@ -1339,10 +1339,20 @@ export function validateBuildPlans(plans: Record<string, BuildPlan>): string[] {
   const errors: string[] = [];
   for (const [key, plan] of Object.entries(plans)) {
     if (!KEBAB_CASE.test(key)) errors.push(`plans/${key}.json : le nom doit être en kebab-case (minuscules sans accent, chiffres, tirets)`);
-    const problems = planProblems(plan);
-    for (const p of problems) errors.push(`plans/${key}.json : ${p}`);
-    if (problems.length) continue;
-    // aucune pièce au-dessus du vide (chantier « maison-2 », world/overhang.ts)
+    for (const p of planProblems(plan)) errors.push(`plans/${key}.json : ${p}`);
+  }
+  return errors;
+}
+
+/**
+ * Aucune pièce au-dessus du vide dans les plans du dépôt (chantier « maison-2 », world/overhang.ts) : un contrôle de `npm run check`,
+ * pas du démarrage du jeu (un plan enregistré dans le bac à sable, bâti de travers, ne doit jamais empêcher le jeu de démarrer).
+ * `committed` : les plans suivis par git (un plan d'essai d'un scénario n'y est pas).
+ */
+export function validatePlanOverhangs(plans: Record<string, BuildPlan>, committed: (key: string) => boolean = () => true): string[] {
+  const errors: string[] = [];
+  for (const [key, plan] of Object.entries(plans)) {
+    if (!committed(key) || planProblems(plan).length) continue;
     const over = overhangs(planPieces(plan, { x: 0, y: 0, z: 0 }).map((p, i) => ({ ...p, id: i })), plan.joints ?? []);
     if (OVERHANG_TODO[key]) {
       if (!over.length) errors.push(`validate.ts OVERHANG_TODO : '${key}' n'a plus rien au-dessus du vide : le retirer de la liste`);
