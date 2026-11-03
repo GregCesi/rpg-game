@@ -13,7 +13,7 @@
 // - Le remplissage d'une travée (140 × 15 × 180 cm entre deux poteaux, sur la traverse basse, sous la sablière) en quatre
 //   étapes : `staves-` (les palançons fendus, tous les 30 cm environ), `wattle-` (le clayonnage de noisetier tressé), `daub-`
 //   (le torchis en mottes, ses brins de paille), `lime-` (la chaux, la terre rejaillie au pied) ; plein (`-panel`) ou à fenêtre
-//   (`-window-panel` : l'appui à 20 cm du bas de la travée, soit 80 cm du sol, la baie de 50 × 40 cm entre deux montants, le
+//   (`-window-panel` : l'appui à 30 cm du bas de la travée, soit 1 m du sol, la baie de 50 × 40 cm entre deux montants, le
 //   linteau ; le volet `plank-shutter` s'y pose). Face : 28 × 39 px ; de chant : 4 × 64 px.
 // - Les jambages d'une porte (le reste de la travée, de chaque côté de la porte, sa propre pièce) : `-jamb` (porte d'entrée,
 //   25 cm : 10 de remplissage et l'huisserie de 15) et `-inner-jamb` (porte intérieure, 30 cm : 15 et 15), l'huisserie du côté de
@@ -91,8 +91,11 @@ const plainPanel = (stage: Stage, seed: number) => (): Quad[] => {
   return Q;
 };
 
-/** La fenêtre : appui à 20 cm du bas de la travée (80 cm du sol), baie de 50 × 40 cm entre deux montants, linteau. */
-const SILL = 4;
+/**
+ * La fenêtre : le dessus de l'appui à 30 cm du bas de la travée, soit 1 m du sol (la travée sur la traverse basse, à 70 cm), baie de
+ * 50 × 40 cm entre deux montants (1,00 à 1,40 m), linteau.
+ */
+const SILL = 6;
 const WIN_H = 8;
 const windowPanel = (stage: Stage, seed: number) => (view: number): Quad[] => {
   const Q: Quad[] = [], m = BAY_W / 2, T = timberPart('fenêtre');

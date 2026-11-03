@@ -274,10 +274,11 @@ export function maisonSteps(): Step[] {
   // travée de porte, visé une fois dressé le poteau du rang d'après, tomberait sur sa tête, juste au sud dans la projection)
   const all = bays();
   const shutter = (b: Bay) => {
-    // le volet dans la baie, à la face du dedans, son bas à l'appui (80 cm du sol : la traverse, 70, et un cran), centré sur elle
+    // le volet dans la baie, à la face du dedans, son bas à l'appui (1 m du sol, retouche de Grégoire : la traverse, 70, et deux crans,
+    // 1,10 m), centré sur elle
     const sh = b.shutter!;
     const [x, y, w, dd] = b.ew ? [b.from + 40, sh.aim, 60, 4] : [sh.aim, b.from + 40, 4, 60];
-    piece(`volet ${bayName(b)}`, { prop: 'plank-shutter' }, x, y, w, dd, { view: sh.view, z: 90, up: 1, at: placed(b, b.from + 50, sh.across) });
+    piece(`volet ${bayName(b)}`, { prop: 'plank-shutter' }, x, y, w, dd, { view: sh.view, z: 110, up: 2, at: placed(b, b.from + 50, sh.across) });
   };
   // le linteau de la baie sans porte : une poutre de 1,20 m contre la face du cagibi, posée sur la traverse basse (70 cm) et montée de six
   // crans, sa base à 1,90 m (au-dessus d'un homme, sous les 2,40 m d'un linteau : l'intérieur y voit un passage entre deux pièces,
