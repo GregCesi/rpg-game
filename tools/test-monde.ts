@@ -306,7 +306,8 @@ await playtest('monde', async ({ page, errors, load }) => {
       const i = q[k];
       const x = i % W;
       const y = Math.floor(i / W);
-      if (y <= 1) {
+      // le bord nord, à deux cases de la grille (16 px) : plus près, la boîte des pieds sortirait de la carte (areaFree la refuse)
+      if (y <= 2) {
         end = i;
         break;
       }
