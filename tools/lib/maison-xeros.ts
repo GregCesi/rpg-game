@@ -40,6 +40,8 @@ export type PieceStep = {
   aimX?: number;
   /** Crans montés (T) avant la pose. */
   up?: number;
+  /** Crans descendus (G) avant la pose. */
+  down?: number;
   /** La pièce (son nom) que celle-ci recouvre et remplace (`over` de props.json). */
   replaces?: string;
 };
@@ -69,7 +71,8 @@ interface Bay {
   line: number;
   /** L'axe du poteau qui commence la travée (x ou y). */
   from: number;
-  kind: 'panel' | 'window' | 'door' | 'inner';
+  /** `opening` : une baie sans porte (le cagibi), entre deux jambages, sous un linteau. */
+  kind: 'panel' | 'window' | 'door' | 'inner' | 'opening';
   /** Le sens du remplissage (sa face du dehors). */
   view: number;
   /** La place du remplissage en travers du mur (y ou x de son emprise) : visée, et attendue après l'affleurement. */
@@ -79,6 +82,8 @@ interface Bay {
    * travers ; et la visée en travers du second (`jambAim`), si elle diffère. */
   jambs?: [number, number];
   jambAim?: number;
+  /** La place le long du mur du second jambage, s'il ne vient pas contre le poteau (la baie du cagibi : sur la grille). */
+  jamb2At?: number;
   /** La porte : son sens (intérieure, elle s'ouvre vers la pièce qu'elle ferme), sa place en travers (visée, attendue). */
   door?: { view: number; aim: number; across: number };
   /** Le volet, à la face du dedans : son sens (sa face du dehors vers le dedans : il s'ouvre dans la pièce), sa place en travers. */
@@ -105,8 +110,9 @@ function bays(): Bay[] {
   }
   // les cloisons : le remplissage s'affleure à une face de leur solin (celle que choisit alignOnWall)
   for (let y = 0; y < 640; y += 160) {
-    const jambs: [number, number] = y === 320 ? [320, 315] : [320, 320];
-    out.push({ ew: false, line: 320, from: y, kind: y === 160 || y === 320 ? 'inner' : 'panel', view: 1, aim: 320, across: 315, jambs, ...(y === 320 ? { jambAim: 300 } : {}), door: { view: 1, aim: 320, across: 320 } });
+    // la baie du cagibi (y = 160) : ses jambages de 25 cm, l'aimant les colle 5 cm à l'ouest de l'axe
+    const jambs: [number, number] = y === 320 ? [320, 315] : y === 160 ? [315, 320] : [320, 320];
+    out.push({ ew: false, line: 320, from: y, kind: y === 160 ? 'opening' : y === 320 ? 'inner' : 'panel', view: 1, aim: 320, across: 315, jambs, ...(y === 320 ? { jambAim: 300 } : {}), ...(y === 160 ? { jamb2At: 280 } : {}), door: { view: 1, aim: 320, across: 320 } });
   }
   for (let y = 0; y < 640; y += 160) {
     out.push({ ew: false, line: 960, from: y, kind: y === 320 ? 'inner' : 'panel', view: 3, aim: 960, across: 950, jambs: [960, 950], door: { view: 3, aim: 960, across: 960 } });
@@ -152,8 +158,11 @@ function bayStage(b: Bay, s: Stage, prev?: Stage): PieceStep[] {
   // jambage, celui de droite r0 ; pour un mur nord-sud, le jambage au nord a son huisserie au sud (r3), au sud au nord (r1). La porte
   // d'entrée se pose avec la première couche, entre ses jambages (elle s'aimante au premier, le second à elle) ; les portes
   // intérieures, sur la grille, sont posées avec le solin.
-  const [jw, dw] = b.kind === 'door' ? [25, 90] : [30, 80];
-  const jamb = `${s}-${b.kind === 'door' ? '' : 'inner-'}jamb`;
+  // la baie sans porte du cagibi : les jambages de 25 cm de la porte d'entrée, un passage de 85 cm (le second jambage sur la grille ;
+  // une porte intérieure : jambages de 30 cm, 80 de passage)
+  const wide = b.kind === 'door' || b.kind === 'opening';
+  const [jw, dw] = wide ? [25, 90] : [30, 80];
+  const jamb = `${s}-${wide ? '' : 'inner-'}jamb`;
   const [v1, v2] = b.ew ? [2, 0] : [3, 1];
   const far = a + 10 + jw + dw;
   const d = b.door!;
@@ -162,7 +171,7 @@ function bayStage(b: Bay, s: Stage, prev?: Stage): PieceStep[] {
   return [
     part(`jambage ${name} (1)`, jamb, v1, jw, a, b.aim, a + 10, b.jambs?.[0] ?? b.across),
     ...door,
-    part(`jambage ${name} (2)`, jamb, v2, jw, b.kind === 'door' ? far - 5 : far, b.jambAim ?? b.aim, far, b.jambs?.[1] ?? b.across),
+    part(`jambage ${name} (2)`, jamb, v2, jw, b.kind === 'door' ? far - 5 : far, b.jambAim ?? b.aim, b.jamb2At ?? far, b.jambs?.[1] ?? b.across),
   ];
 }
 
@@ -200,7 +209,6 @@ export function maisonSteps(): Step[] {
   // les portes intérieures, au sol (la terre battue passe dessous), dans le plan des jambages à venir ; elles s'ouvrent vers la pièce
   // qu'elles ferment (le cagibi et le coin de Xéros à l'ouest, l'atelier à l'est) ; entre celles de x = 320, la cloison y = 320 passe
   // sous le croisement
-  piece('porte cloison x=320 160', inner, 320, 200, 5, 80, { view: 1, z: 0 });
   piece('solin cloison y=320', narrow, 160, 300, 160, 30, { z: 0 });
   piece('porte cloison x=320 320', inner, 320, 360, 5, 80, { view: 1, z: 0 });
   piece('porte cloison x=960 320', inner, 960, 360, 5, 80, { view: 3, z: 0 });
@@ -270,10 +278,15 @@ export function maisonSteps(): Step[] {
     const [x, y, w, dd] = b.ew ? [b.from + 40, sh.aim, 60, 4] : [sh.aim, b.from + 40, 4, 60];
     piece(`volet ${bayName(b)}`, { prop: 'plank-shutter' }, x, y, w, dd, { view: sh.view, z: 90, up: 1, at: placed(b, b.from + 50, sh.across) });
   };
+  // le linteau de la baie sans porte : une poutre de 1,20 m contre la face du cagibi, posée sur la traverse basse (70 cm) et montée de six
+  // crans, sa base à 1,90 m (au-dessus d'un homme, sous les 2,40 m d'un linteau : l'intérieur y voit un passage entre deux pièces,
+  // CONCEPTION « Les intérieurs ») ; elle ne peut pas traverser les jambages (deux pièces ne se recouvrent pas)
+  const lintel = (b: Bay) => piece(`linteau ${bayName(b)}`, beam('ns', 120), 280, b.from + 20, 30, 120, { z: 190, up: 6 });
   const staves = (list: Bay[]) => {
     for (const b of list) {
       S.push(...bayStage(b, 'staves'));
       if (b.kind === 'window') shutter(b);
+      if (b.kind === 'opening') lintel(b);
     }
   };
   const nsBays = (from: number) => staves(all.filter((b) => !b.ew && b.from === from));

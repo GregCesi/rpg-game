@@ -684,7 +684,7 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
       |  RÉSERVE       |        table (est-ouest)           | DE LA MÈRE         |
       |  billot, outils|        ============  banc          |  lit       coffre  [F]
  y=160P  corde, sacs   P                                    P                    P
-      |  bûches        [p]                                  |                    |
+      |  bûches        [b]                                  |                    |
       |                |   fagot  ( foyer Ø 1 m )   mère    |  établi de         |
  y=320P-------P--------P                                    [p] sculptrice       P
       |  COIN DE       [p]           SALLE COMMUNE          |                    |
@@ -693,7 +693,7 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
       |                |                                    |                    |
  y=640P---[F]--P-------P---[F]--P--[porte]-P--------P--[F]--P--------P--------P--------P
       P : poteau (20 × 20) ; [F] : fenêtre à volet (60 × 40, appui à 80 cm) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
-      [p] : porte intérieure 0,80 × 1,80 m ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
+      [p] : porte intérieure 0,80 × 1,80 m ; [b] : la baie sans porte du cagibi (0,85 m, sous un linteau) ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
 ```
 
 - **Emprise** : axes des poteaux **12,80 × 6,40 m** (8 travées de 1,60 m sur 4) ; avec le solin, environ **13,30 × 6,90 m** au sol ;
@@ -722,6 +722,9 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
   - la table est contre le solin nord (y 30–120), le banc juste dessous (y 125–155) : 1,15 m de passage jusqu'au foyer ;
   - (essai d'avant le placement de Grégoire : la chambre au nord-ouest, la réserve à l'est ; l'étape 2 suit le placement ci-dessus) ;
   - les portes s'ouvrent vers le dedans, chaque porte intérieure vers la pièce qu'elle ferme ;
+  - **le cagibi n'a pas de porte** (retouche de Grégoire, 3 novembre 2026) : une baie de 0,85 m, comme une baie où l'on n'a jamais mis
+    de porte, entre deux jambages de 25 cm (ceux de la porte d'entrée), sous un linteau (une poutre de 1,20 m contre la face du cagibi,
+    sa base à 1,90 m : l'intérieur y voit un passage entre deux pièces, le cagibi reste une pièce à lui) ;
   - **à 45°, le faîte du chaume est à 6,58 m** (7,19 m à 50°) ; avec l'appui à 80 cm, les trois fenêtres du sud et la porte se lisent
     sous l'égout ; vue de l'ouest, le pignon entier et son trou de fumée sous la rive ; les entraits retroussés sur les deux fermes
     des cloisons ;

@@ -127,6 +127,10 @@ await playtest('maison', async ({ page, errors, load }) => {
       await page.keyboard.press('KeyT');
       await sleep(30);
     }
+    for (let i = 0; i < (s.down ?? 0); i++) {
+      await page.keyboard.press('KeyG');
+      await sleep(30);
+    }
     // la hauteur où on la voit : le dessus de ce qui la porte (les pans de toit ne portent que le faîtage)
     const ridge = 'prop' in s.ref && s.ref.prop === 'earth-ridge';
     const S = await page.evaluate(
@@ -392,9 +396,11 @@ await playtest('maison', async ({ page, errors, load }) => {
   const shift = interior.shift as { x: number; y: number };
   const rooms = house.rooms.map((q: any) => ({ ...q, x: q.x + shift.x, y: q.y + shift.y }));
 
-  // d'une pièce à l'autre : chaque porte intérieure, fermée, s'ouvre avec E (Xéros devant elle, du côté de la salle), puis il passe
+  // d'une pièce à l'autre : chaque porte intérieure, fermée, s'ouvre avec E (Xéros devant elle, du côté de la salle), puis il passe ;
+  // le cagibi n'a pas de porte : sa baie, sous son linteau, se passe tout droit
+  assert.ok(!named.has('porte cloison x=320 160'), "le cagibi n'a pas de porte");
   const doors: [string, number, string, string][] = [
-    ['porte cloison x=320 160', -1, 'le cagibi', 'KeyA'],
+    ['linteau cloison x=320 160', -1, 'le cagibi', 'KeyA'],
     ['porte cloison x=320 320', -1, 'le coin de Xéros', 'KeyA'],
     ['porte cloison x=960 320', 1, "l'atelier de la mère", 'KeyD'],
   ];
@@ -403,9 +409,11 @@ await playtest('maison', async ({ page, errors, load }) => {
     const sx = dir < 0 ? door.x + 45 : door.x - 40;
     // le corps de Xéros est au-dessus de ses pieds (le point du personnage) : les pieds 30 cm sous le milieu de la porte, le corps dans la baie
     await stand(Math.round(sx / 5), Math.round((door.y + 70) / 5), dir < 0 ? 'left' : 'right');
-    await page.keyboard.press('KeyE');
-    await sleep(300);
-    assert.equal(await propOf(name), 'inner-door-open', `E ouvre ${name} (${notices.at(-1) ?? ''} ; ${await where()})`);
+    if (!name.startsWith('linteau')) {
+      await page.keyboard.press('KeyE');
+      await sleep(300);
+      assert.equal(await propOf(name), 'inner-door-open', `E ouvre ${name} (${notices.at(-1) ?? ''} ; ${await where()})`);
+    }
     // il marche jusqu'à la pièce d'à côté, sans changer de carte
     await page.keyboard.down(key);
     try {
