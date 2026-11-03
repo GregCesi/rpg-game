@@ -37,12 +37,13 @@ await playtest('fendage', async ({ page, errors, load }) => {
       window.dispatchEvent(new KeyboardEvent('keydown', { code }));
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code }));
+      await (window as any).__frames(2);
       if (code === 'Space' && finish) await finishWork();
     };
     // le geste fini, et la fente ouverte un instant avant que les morceaux paraissent
     const settled = async () => {
-      for (let i = 0; i < 100 && w().mode !== 'play'; i++) await sleep(50);
-      await sleep(600);
+      await (window as any).__idle('le geste fini');
+      await (window as any).__until(() => !w().wood.splitting, 'les morceaux montrés');
     };
     // les pièces de bois posées, d'une forme donnée, et celles où un coin est planté
     const pieces = (shape: string) => w().map.props.filter((p: any) => p.wood?.shape === shape && !p.wood.wedge);
@@ -63,7 +64,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
       const [x, y, face] = spots[end];
       a.body.reset(x, y);
       a.face(face);
-      await sleep(150);
+      await (window as any).__frames(2);
     };
     const stand = (p: any) => standAt(p, 'west');
     // Xéros au nord du morceau, collé à son flanc, tourné vers lui
@@ -72,18 +73,18 @@ await playtest('fendage', async ({ page, errors, load }) => {
       // collé au flanc : le bas de sa collision touche le haut de celle du morceau
       a.body.reset(Math.round((p.box.left + p.box.right) / 2), Math.round(p.box.top - (a.body.bottom - a.y) - 0.5));
       a.face('down');
-      await sleep(150);
+      await (window as any).__frames(2);
     };
     const give = async (item: string) => {
       emit({ kind: 'give', held: { item } });
-      await sleep(120);
+      await (window as any).__frames(1);
     };
     const out: Record<string, unknown> = {};
 
     emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
     // une grosse bille posée devant Xéros, comme avec ?dieu
     emit({ kind: 'wood', wood: wood('round') });
-    await sleep(200);
+    await (window as any).__settle();
     await stand(pieces('round').at(-1));
 
     // 1. refus : la cognée contre le flanc (1 m ne se recoupe pas : deux bouts de moins de 60 cm), puis la masse sans coin ; ni
@@ -91,13 +92,13 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await give('axe');
     await standFlank(pieces('round').at(-1));
     await press('Space');
-    await sleep(300);
+    await (window as any).__settle();
     out.axeNotice = notices.at(-1);
     out.axeMode = w().mode;
     await give('maul');
     await stand(pieces('round').at(-1));
     await press('Space');
-    await sleep(300);
+    await (window as any).__settle();
     out.maulNotice = notices.at(-1);
     out.refusedCost = 100 - w().player.stamina.ceiling;
 
@@ -105,13 +106,13 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await give('splitting-wedge');
     await standFlank(pieces('round').at(-1));
     await press('Space');
-    await sleep(300);
+    await (window as any).__settle();
     out.flankNotice = notices.at(-1);
     out.flankPlanted = wedged().length;
     out.flankHands = JSON.stringify(gs.game.hands);
     await stand(pieces('round').at(-1));
     await press('Space');
-    await sleep(300);
+    await (window as any).__settle();
     out.planted = wedged().map((p: any) => p.wood.wedge.end);
     out.handsAfterPlant = JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both);
     out.plantCost = 100 - w().player.stamina.ceiling;
@@ -126,8 +127,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await stand(wedged()[0]);
     const s0 = w().player.stamina.ceiling;
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
-    const t0 = performance.now();
-    while (!(spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits >= 1) && performance.now() - t0 < 20000) await sleep(30);
+    await (window as any).__until(() => spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits >= 1, 'la première étape de la fente', 20000);
     out.workMode = w().mode;
     out.workBar = w().works.bar.frame.visible;
     window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
@@ -155,7 +155,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await give('splitting-wedge');
       await stand(pieces('half')[0]);
       await press('Space');
-      await sleep(300);
+      await (window as any).__settle();
       await give('maul');
       await stand(wedged()[0]);
       await press('Space');
@@ -169,7 +169,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     await give('splitting-wedge');
     await stand(pieces('quarter')[0]);
     await press('Space');
-    await sleep(300);
+    await (window as any).__settle();
     out.quarterWedge = notices.at(-1);
     out.stamina = w().player.stamina.ceiling;
     out.noRoom = notices.filter((n) => /Pas la place/.test(n));
@@ -188,17 +188,17 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await (window as any).__restart({ kind: 'reset-map' });
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'wood', wood: wood('round', axis) });
-      await sleep(200);
+      await (window as any).__settle();
       await give('splitting-wedge');
       await standAt(pieces('round').at(-1), end);
       await press('Space');
-      await sleep(300);
+      await (window as any).__settle();
       const planted = wedged().map((p: any) => p.wood.wedge.end);
       await give('maul');
       await standAt(wedged()[0], other);
       notices.length = 0;
       await press('Space');
-      await sleep(300);
+      await (window as any).__settle();
       const wrongNotice = notices.at(-1);
       const hitsWrong = spawned().find((o: any) => o.wood?.wedge)?.wood.wedge.hits;
       await standAt(wedged()[0], end);
@@ -211,7 +211,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await give('splitting-wedge');
       await standAt(pieces('half')[0], end);
       await press('Space');
-      await sleep(300);
+      await (window as any).__settle();
       await give('maul');
       await standAt(wedged()[0], end);
       await press('Space');
@@ -226,12 +226,12 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await (window as any).__restart({ kind: 'reset-map' });
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       emit({ kind: 'wood', wood: { ...wood('round'), length: 200 } });
-      await sleep(200);
+      await (window as any).__settle();
       await give('splitting-wedge');
       notices.length = 0;
       await standAt(pieces('round').at(-1), 'west');
       await press('Space');
-      await sleep(300);
+      await (window as any).__settle();
       const planted = wedged().length;
       await give('maul');
       // les six étapes du travail, lancées d'un appui (force humaine la plus grande, simulation x10) : la fente court, le coin s'enfonce
@@ -239,21 +239,24 @@ await playtest('fendage', async ({ page, errors, load }) => {
       const images: string[] = [];
       await standAt(wedged()[0], 'west');
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
-      for (let i = 0; i < 100 && w().mode !== 'work'; i++) await sleep(20);
-      const t1 = performance.now();
-      // les pauses de souffle comprises (frapper fort coûte beaucoup de souffle)
-      while (w().mode === 'work' && performance.now() - t1 < 90000) {
+      await (window as any).__until(() => w().mode === 'work', 'le travail lancé');
+      // à chaque pas de jeu (à x10, une image du navigateur en contient dix : aucune étape n'échappe), les pauses de souffle comprises
+      // (frapper fort coûte beaucoup de souffle)
+      const look = () => {
+        if (w().mode !== 'work') return;
         const p = wedged()[0];
         const h = p ? p.wood.wedge.hits : -1;
         if (h !== 0 && h !== hits.at(-1)) {
           hits.push(h);
           if (p) images.push(p.image.texture.key);
         }
-        await sleep(30);
-      }
+      };
+      w().events.on('postupdate', look);
+      await (window as any).__until(() => w().mode !== 'work', 'le travail fini', 90000);
+      w().events.off('postupdate', look);
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
       await settled();
-      emit({ kind: 'sim-speed', factor: 1 });
+      await (window as any).__resume();
       if (hits.at(-1) !== -1) hits.push(wedged()[0] ? wedged()[0].wood.wedge.hits : -1);
       const halves = pieces('half');
       out.long = {
@@ -278,29 +281,29 @@ await playtest('fendage', async ({ page, errors, load }) => {
       }
       w().player.actor.body.reset(spot![0], spot![1]);
       w().player.actor.face('down');
-      await sleep(150);
+      await (window as any).__settle();
     }
     emit({ kind: 'give', held: { prop: 'wood-piece', wood: wood('quarter') } });
-    await sleep(150);
+    await (window as any).__settle();
     await press('KeyR');
-    await sleep(150);
+    await (window as any).__settle();
     out.turned = JSON.stringify(gs.game.both);
     // un tour complet : R quatre fois, un quart de tour dans le sens des aiguilles d'une montre à chaque fois : seul le sens change
     // d'une montre à chaque fois, et le quartier revient comme au départ
     {
       const start = { ...wood('quarter') };
       emit({ kind: 'give', held: { prop: 'wood-piece', wood: start } });
-      await sleep(150);
+      await (window as any).__settle();
       const tour: string[] = [];
       for (let i = 0; i < 4; i++) {
         await press('KeyR');
-        await sleep(150);
+        await (window as any).__settle();
         tour.push(`${gs.game.both.wood.axis}:${gs.game.both.wood.point ?? 'up'}`);
       }
       out.tour = { tour, back: JSON.stringify(gs.game.both.wood) === JSON.stringify(start) };
     }
     emit({ kind: 'pile', wood: { size: 'big', shape: 'quarter', length: 100 }, count: 6, turned: false, tie: false });
-    await sleep(300);
+    await (window as any).__settle();
     out.pile = gs.mapState(gs.game, w().map.def.id).piles.map((p: any) => `${p.pile ?? `${p.wood.shape}-${p.wood.length}`}:${p.places.length}`);
     out.pileNotices = notices.slice(-3);
     out.at = [Math.round(w().player.actor.x), Math.round(w().player.actor.y), w().map.def.id];
