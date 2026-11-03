@@ -9,9 +9,10 @@
 // Ici, on tire de ces vues calculées une pièce de référence par aspect (bout de départ, deux milieux, bout d'arrivée), et on la
 // découpe en parties ; un garde-fou vérifie que les deux milieux sont identiques (le milieu se répète sans couture).
 //
-// Sept planches, une par diamètre et par sens : `wood-big`, `wood-big-ns`, `wood-normal`, `wood-normal-ns`, `wood-pole`,
-// `wood-pole-ns`, et debout (le poteau, le normal seulement) `wood-normal-up` (rond, rond écorcé, f1, f2, f3, poutre : `<aspect>-start|mid|end`,
-// une image chacune, `normalUpSheet`, encore dessiné à la main). Chaque partie est calée en haut à gauche d'un cadre commun.
+// Huit planches, une par diamètre et par sens : `wood-big`, `wood-big-ns`, `wood-normal`, `wood-normal-ns`, `wood-pole`,
+// `wood-pole-ns`, et debout `wood-normal-up` (le poteau : rond, rond écorcé, f1, f2, f3, poutre : `<aspect>-start|mid|end`,
+// une image chacune, `normalUpSheet`, encore dessiné à la main) et `wood-pole-up` (la perche ronde dressée, les pieds d'un établi :
+// `round-start|mid|end`, `poleUpSheet`, tirée de la couchée calculée). Chaque partie est calée en haut à gauche d'un cadre commun.
 // Animations :
 // - `<aspect>-start`, `<aspect>-mid`, `<aspect>-end` (gros : round, half, quarter, plank ; normal : round, peeled, f1, f2, f3, beam ;
 //   perche : round) ; le rond et le rond écorcé ont 4 images (le roulement, un tour : l'anneau d'écorce tourne d'un quart, la fente du bout aussi), les
@@ -31,7 +32,7 @@ import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { world } from '../palette';
 import { toolPalette } from '../items/tools';
 import { shadedOutline } from './big-tree';
-import { DARKER } from './wood';
+import { DARKER, POLE_DARKER } from './wood';
 import { barkV, grain, NORMAL_RING, SKINS, TILE, WOOD_DARKER } from './wood-skin';
 import { lyingView, type LyingView } from './wood-section';
 import { CM_PER_PX, RACCOURCI } from '../../src/content/gabarit';
@@ -44,7 +45,7 @@ const mod = (a: number, n: number) => ((a % n) + n) % n;
 for (const s of Object.values(WOOD.sizes)) if (s.tile !== TILE) throw new Error('wood-pieces : écorce et fibres périodiques sur 24 px (tile)');
 
 type Part = 'start' | 'mid' | 'end';
-/** Les sens couchés (le debout, `up`, a sa planche à part : `normalUpSheet`). */
+/** Les sens couchés (le debout, `up`, a ses planches à part : `normalUpSheet`, `poleUpSheet`). */
 type LyingAxis = Exclude<WoodAxis, 'up'>;
 const PARTS: Part[] = ['start', 'mid', 'end'];
 
@@ -449,6 +450,61 @@ function normalUpSheet(): SheetParts {
   return { axis: 'up', frame: frameOf('normal', 'up'), anims };
 }
 
+// ---------- La perche debout (`axis: 'up'`, l'aspect rond seulement) ----------
+// Règle D étendue : 5 colonnes contour compris, l'épaisseur de la perche couchée est-ouest (le contour, 3 rangées d'écorce, le
+// contour). C'est la couchée est-ouest calculée (wood-section.ts) redressée : sa colonne de corps (S clair au faîte, A, B côté
+// sol, les sillons de `lyingPoleBark`, périodiques sur 24 px) devient la rangée du poteau, de gauche (côté lumière) à droite. La
+// tête (`start`, avec 3 rangées de corps) : le bois de bout vu de dessus, 3 × 2 en raccourci (Ø/2), ^ clair en haut à gauche, le
+// cœur %, cerclé de B (le bord d'écorce de la perche) à droite et devant ; la rangée sous la tête un cran plus sombre (l'anneau
+// d'écorce qui cercle le bois de bout). Le pied (`end`, 2 rangées de corps, le contour arrondi, l'ombre) : la perche se plante au
+// sol sans dé (`lift` 0), elle porte donc son ombre (`x`, une rangée sous le pied, décalée d'un pixel à droite) ; `extra` = 4 : le
+// contour du haut, la tête, l'ombre. Le bois de bout est la rampe des âges (art/palette.ts `woodAges`), l'écorce garde la sienne.
+
+/** La tête de la perche vue de dessus, rangées de bois sous le contour du haut (3 × 2). */
+const POLE_UP_HEAD: Grid = ['^^B', '^%B'];
+
+/** Perche ronde debout de `total` rangées (contour du haut, tête, corps, contour du bas, ombre). */
+function poleUpFull(total: number): Canvas {
+  const u = lookDef('pole', 'round').up!;
+  const W = u.w;
+  const c = new Canvas(W, total);
+  // la couchée est-ouest calculée, assez longue pour qu'on n'en lise que le corps (ses bouts restent hors champ)
+  const ew = lookDef('pole', 'round').ew;
+  const lie = lyingCanvas('pole', 'round', 'ew', total + ew.start + ew.end);
+  const body = total - 2; // sans l'ombre ni le contour du bas
+  for (let Y = 1; Y < body; Y++) for (let X = 1; X <= W - 2; X++) {
+    const r = Y - 1;
+    if (r < POLE_UP_HEAD.length) { c.set(X, Y, POLE_UP_HEAD[r][X - 1]); continue; }
+    let q = lie.get(Y + ew.start, X);
+    if (q === EMPTY || q === 'o' || q === 'x') throw new Error(`wood-pieces : perche debout, corps hors de la couchée (${X}, ${Y})`);
+    if (r === POLE_UP_HEAD.length) q = POLE_DARKER[q] ?? q;
+    c.set(X, Y, q);
+  }
+  shadedOutline(c);
+  // côté lumière (le haut, la gauche), le contour prend la teinte la plus sombre de la matière : K, comme le poteau du normal
+  // (shadedOutline ne connaît pas la rampe grisée S A B de l'écorce de la perche, et y mettrait le brun d'ombre)
+  for (let X = 0; X < W; X++) if (c.get(X, 0) === 'o') c.set(X, 0, 'K');
+  for (let Y = 1; Y < body; Y++) if (c.get(0, Y) === 'o') c.set(0, Y, 'K');
+  // l'ombre au sol, sous le pied, décalée d'un pixel vers la droite
+  for (let X = 2; X < W; X++) c.set(X, total - 1, 'x');
+  return c;
+}
+
+function poleUpSheet(): SheetParts {
+  const anims: Record<string, Grid[]> = {};
+  for (const look of Object.keys(sizeOf('pole').looks) as WoodLook[]) {
+    const u = lookDef('pole', look).up;
+    if (!u) continue;
+    if (look !== 'round') throw new Error(`wood-pieces : la perche « ${look} » debout n'est pas dessinée (seule la ronde se dresse)`);
+    if (u.w !== 5 || u.extra !== POLE_UP_HEAD.length + 2 || u.start !== POLE_UP_HEAD.length + 1 + 3 || u.end !== 4 || u.lift !== 0) {
+      throw new Error('wood-pieces : géométrie debout de la perche hors du dessin');
+    }
+    const parts = cut3(poleUpFull(refTotal(u.start, u.end)), 'up', u.start, u.end, `pole-${look}-up`);
+    for (const part of PARTS) anims[`${look}-${part}`] = [parts[part]];
+  }
+  return { axis: 'up', frame: frameOf('pole', 'up'), anims };
+}
+
 // =====================================================================================================================
 // La perche (`pole`) : la vue se calcule comme les autres ; restent ses encoches
 // =====================================================================================================================
@@ -508,11 +564,11 @@ function frameOf(size: string, axis: WoodAxis): { w: number; h: number } {
   return { w: Math.max(...looks.map((l) => l!.ns.w)), h: Math.max(TILE, s.notch.ew.w, ...looks.flatMap((l) => [l!.ns.start, l!.ns.end])) };
 }
 
-/** Les planches par diamètre et par sens ; debout (`up`), seulement le normal (le gros ne se dresse pas). */
+/** Les planches par diamètre et par sens ; debout (`up`), le normal (le poteau) et la perche ronde (le gros ne se dresse pas). */
 const SHEETS: Record<string, Partial<Record<WoodAxis, SheetParts>>> = {
   big: { ew: bigSheet('ew'), ns: bigSheet('ns') },
   normal: { ew: normalSheet('ew'), ns: normalSheet('ns'), up: normalUpSheet() },
-  pole: { ew: poleSheet('ew'), ns: poleSheet('ns') },
+  pole: { ew: poleSheet('ew'), ns: poleSheet('ns'), up: poleUpSheet() },
 };
 
 /**
@@ -576,6 +632,7 @@ export default [
   sheetSource('normal', SHEETS.normal.up!),
   sheetSource('pole', SHEETS.pole.ew!),
   sheetSource('pole', SHEETS.pole.ns!),
+  sheetSource('pole', SHEETS.pole.up!),
   img('wood-normal-beam-300-up', composeWood({ size: 'normal', shape: 'round', axis: 'up', length: 300, hewn: WOOD.hew.faces * WOOD.hew.perFace })),
   img('wood-big-round-100', composeWood(piece('big', 'round', 'ew'))),
   img('wood-big-round-100-ns', composeWood(piece('big', 'round', 'ns'))),
