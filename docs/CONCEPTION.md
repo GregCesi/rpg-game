@@ -1596,8 +1596,10 @@ Tranché pendant l'audit (docs/AUDIT.md, « À trancher ») ; **fait** au chanti
   plafonds, plus tard.
 
 **Déjà fait** (chantier 1 de l'audit) :
-- **L'arbre tombe du côté où Xéros frappe** : au lancement, Xéros se place lui-même de ce côté, le fer sur l'entaille (`FELL.reach` de
-  config.ts) ; l'entaille se dessine de ce côté, avec des étapes dessinées pour la gauche ; le côté est gardé avec le travail en cours
+- **L'arbre tombe du côté où Xéros frappe** : au lancement, Xéros se place lui-même de ce côté, le fer sur l'entaille (à la distance
+  tirée du rayon du tronc et de la portée de l'outil : `fellDistance` de world/workStance.ts, chantier « maison-2 » : à 70 cm écrits en
+  dur, le fer de la cognée passait de l'autre côté du tronc ; le point de frappe sur une pièce de bois, à la cognée, à la doloire et à
+  la masse, se tire de même de la portée de l'outil, `strikeOffset`) ; l'entaille se dessine de ce côté, avec des étapes dessinées pour la gauche ; le côté est gardé avec le travail en cours
   (`side` de `work` dans GameState), si bien qu'un travail repris tombe du même côté.
 - **Deux images de raccord** entre l'arbre qui penche (la dernière étape) et sa chute, en tête des planches de chute.
 

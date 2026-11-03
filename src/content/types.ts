@@ -1019,10 +1019,13 @@ export const GestureSchema = z.strictObject({
   /** Image (à partir de 0) où le coup porte. */
   impact: z.number().int().min(0),
   /**
-   * Décalage horizontal du fer à l'impact par rapport aux pieds, par direction (la gauche en miroir de la droite) :
-   * c'est ce point que Xéros aligne sur l'encoche visée. Absent : la main de l'image d'impact.
+   * Où tombe le fer à l'impact, en x par rapport aux pieds (la gauche en miroir de la droite) : c'est ce point que Xéros aligne sur
+   * l'encoche visée (world/workStance.ts, `strikeOffset`). Vers le haut et le bas (`down`, `up`, px) : à côté de la main, quel que soit
+   * l'outil ; de côté, la main de l'image d'impact plus la portée de l'outil (de la main au tranchant : `length` − `grip` d'items.json)
+   * × `reach`, la part de l'outil vue en long à l'impact (1 : couché à l'horizontale ; moins : il fuit en raccourci, levé ou en biais).
+   * Absent : la main de l'image d'impact, plus toute la portée de côté.
    */
-  strike: z.strictObject({ down: px, up: px, right: px }).optional(),
+  strike: z.strictObject({ down: px, up: px, reach: z.number().min(0).max(1) }).optional(),
   poses: z.strictObject({ down: z.array(PoseSchema), up: z.array(PoseSchema), right: z.array(PoseSchema) }),
   /**
    * Le temps de chaque image d'un geste de travail (docs/CONCEPTION.md, « Le travail ») : `arm` (armer), `hold` (le temps en haut),

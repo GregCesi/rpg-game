@@ -37,7 +37,7 @@
   },
   "chop": {
     "impact": 5,
-    "strike": {"down": -1, "up": 7, "right": 19},
+    "strike": {"down": -1, "up": 7, "reach": 0.8},
     "phases": ["arm", "arm", "hold", "down", "down", "impact", "free", "free"],
     "poses": {
       "down": [
@@ -74,7 +74,7 @@
   },
   "maul": {
     "impact": 5,
-    "strike": {"down": -1, "up": 6, "right": 16},
+    "strike": {"down": -1, "up": 6, "reach": 0.5},
     "phases": ["arm", "arm", "hold", "down", "down", "impact", "free", "free"],
     "poses": {
       "down": [

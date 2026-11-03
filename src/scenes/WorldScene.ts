@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { stateImage } from '../world/pileShape';
-import { AIM, CONSTRUIRE, DEPTH, FEET, FELL, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
+import { AIM, CONSTRUIRE, DEPTH, FEET, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
 import { creatures, gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -35,6 +35,7 @@ import { Rail } from '../systems/rail';
 import { SiteSystem } from '../systems/site';
 import { WoodSystem, type WoodAim } from '../systems/wood';
 import { WorkSystem, type WorkJob } from '../systems/work';
+import { fellDistance } from '../world/workStance';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
 import { kinetic, throwPlan } from '../world/throw';
@@ -1164,8 +1165,9 @@ export class WorldScene extends Phaser.Scene {
     if (steps > 1) prop.hits = Math.min(steps - 1, Math.floor(done * steps + 1e-9));
     // un arbre debout (une chute) : le côté de l'entaille, celui où Xéros frappe (gardé avec le travail commencé) ; Xéros se met lui-même
     // en place de ce côté, le fer sur l'entaille : la hache frappe toujours au même endroit, et l'arbre tombera de ce côté
-    const side = h.fall ? (saved?.side ?? (this.player.actor.x < prop.baseX ? 'left' : 'right')) : undefined;
-    if (side) this.standToFell(prop, side);
+    const felling = !!h.work && 'fell' in h.work;
+    const side = felling ? (saved?.side ?? (this.player.actor.x < prop.baseX ? 'left' : 'right')) : undefined;
+    if (side) this.standToFell(prop, side, tool);
     const facing = this.player.actor.facing;
     this.startWork({
       def: harvestJob(h.work!, tool),
@@ -1180,13 +1182,22 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * Xéros se met en place pour abattre (docs/CONCEPTION.md, « Le travail ») : du côté `side` de l'arbre, tourné vers lui, ses pieds à
-   * `FELL.reach` px du point visé, à sa hauteur ; si la place est prise, il frappe d'où il est, tourné vers l'arbre.
+   * Xéros se met en place pour abattre (docs/CONCEPTION.md, « Le travail » ; chantier « maison-2 ») : du côté `side` du tronc, tourné vers
+   * lui, les pieds sur la ligne du pied du tronc, à la distance où le fer de son outil frappe l'écorce de son côté (`fellDistance` de
+   * world/workStance.ts : le rayon du tronc et la portée de l'outil, tirés des données) ; si la place est prise, il frappe d'où il est.
    */
-  private standToFell(prop: PlacedProp, side: 'left' | 'right'): void {
+  private standToFell(prop: PlacedProp, side: 'left' | 'right', tool: string): void {
     const a = this.player.actor;
-    const x = Math.round(prop.aimX + (side === 'left' ? -FELL.reach : FELL.reach));
-    const y = Math.round(prop.aimY);
+    const h = prop.def.harvest!;
+    const diameter = h.work && 'fell' in h.work ? h.work.fell.diameter : 0;
+    const gesture = gestures[work.strokes[harvestJob(h.work!, tool).stroke].gesture];
+    const d = fellDistance(diameter, gesture, tool);
+    // l'axe et le pied du tronc : dessinés (`tree.foot`), sinon le milieu et le bas de sa collision
+    const foot = prop.def.tree?.foot;
+    const axis = foot ? prop.image.x + foot[0] : prop.aimX;
+    const ground = foot ? prop.image.y - (prop.image.height - foot[1]) : prop.aimY + (prop.def.body?.h ?? 0) / 2;
+    const x = Math.round(axis + (side === 'left' ? -d : d));
+    const y = Math.round(ground);
     const b = a.body;
     const dx = x - a.x;
     const dy = y - a.y;
