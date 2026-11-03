@@ -71,6 +71,7 @@ assert.equal(HAND_OF.right, 0, 'le clic droit est la main gauche');
   assert.equal(plan('left', hands(null, { item: stake }), {}, false).short.kind, 'put', 'sans plan connu : il se pose');
   assert.equal(plan('left', hands(null, { item: stake }), { site: 'help' }, true).short.kind, 'help-info', 'devant une place trop lourde : dire ce qui manque, quoi qu’on tienne');
   assert.equal(plan('left', hands(null, { item: weapon1 })).short.kind, 'strike', 'une arme frappe');
+  assert.equal(plan('left', hands(null, { item: oneHandTool }), { site: 'place' }).short.kind, 'place', 'sur une place de chantier, ce qu’on tient s’y pose (ou la place dit son refus)');
   assert.equal(plan('left', hands(null, { item: weapon1 })).short.from, undefined, 'à une main, l’enchaînement part du début');
   const both = hands({ item: weapon1 }, { item: weapon1 });
   assert.equal(plan('left', both).short.kind, 'strike', 'une arme dans chaque main : chaque clic frappe');

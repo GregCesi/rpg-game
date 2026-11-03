@@ -125,7 +125,7 @@ const NONE: Click = { kind: 'none', label: '' };
  * Clic court, selon ce que tient la main du clic :
  * - rien : prendre ce qui est visé ; une place trop lourde : dire ce qui manque ; sinon un coup de poing ;
  * - un outil devant ce qu'il sait travailler : le travail ;
- * - devant une place trop lourde d'un chantier : dire ce qui manque ;
+ * - devant une place trop lourde d'un chantier : dire ce qui manque ; devant une autre place : y poser ce qu'on tient (ou dire son refus) ;
  * - le piquet d'un plan connu : le planter ;
  * - une arme (`kind: weapon`), un outil sans rien à travailler : frapper avec ;
  * - une ressource : frapper si ce qui est visé encaisse un coup ; sinon la poser (sur une place de chantier, sur ce qui l'accepte, ou
@@ -156,11 +156,12 @@ export function clickPlan(button: Button, hands: Hands, aimed: Aimed, knowsPlan:
   if (kit.tool && work) return { hand, short: click('work', WORK_LABEL[work], { work }), long };
   // une place trop lourde d'un chantier : le clic dit ce qui manque, quoi qu'on tienne
   if (aimed.site === 'help') return { hand, short: click('help-info', 'dresser'), long };
+  // une place de chantier visée : y poser ce qu'on tient (la place dit ce qu'elle refuse)
+  if (aimed.site === 'place') return { hand, short: click('place', 'poser'), long };
   if (kit.stake && knowsPlan) return { hand, short: click('plant', 'planter'), long };
   if (kit.weapon || kit.tool) return { hand, short: strike(), long };
   // une ressource : on se défend avec une pierre (contre ce qui encaisse), sinon elle se pose
   if (aimed.target) return { hand, short: strike(), long };
-  if (aimed.site === 'place') return { hand, short: click('place', 'poser'), long };
   if (aimed.rest?.includes(hand)) return { hand, short: click('rest', 'poser'), long };
   return { hand, short: click('put', 'poser'), long };
 }
