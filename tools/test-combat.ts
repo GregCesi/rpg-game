@@ -101,20 +101,35 @@ await playtest('combat', async ({ page, errors, load }) => {
       const t0 = performance.now();
       // la durée du geste se mesure sur l'horloge du jeu : sous la charge, le temps réel d'une image ne suit pas celui du jeu
       const g0 = w().time.now;
+      // le geste qui se joue, vu à chaque pas de jeu (à x10, sous la charge, il peut passer entre deux lectures du test)
+      // et sa durée, du premier au dernier pas où il se joue (plus la durée d'un pas), sur l'horloge du jeu
+      let played = false;
+      let first: number | undefined;
+      let last = 0;
+      let step = 0;
+      const texts = new Set<string>();
+      const watch = (_t: number, delta: number) => {
+        if (w().mode === 'use' && w().player.tools.busy) {
+          played = true;
+          first ??= w().time.now;
+          last = w().time.now;
+          step = delta;
+        }
+        for (const t of floats()) texts.add(t);
+      };
+      w().events.on('postupdate', watch);
       await press('Space');
       // l'attaque a ramené le temps à x1 (règle du jeu, vérifiée par test-temps) : le coup se joue à la vitesse du scénario
       await (window as any).__resume();
-      let played = false;
-      const texts = new Set<string>();
       // le premier pas du geste, puis jusqu'à sa fin
       while (log().length === n && w().mode === 'play' && stamina() > 0 && performance.now() - t0 < 2000) await frame();
       while (w().mode !== 'play' || w().combat.busy) {
-        played ||= w().mode === 'use' && w().player.tools.busy;
         for (const t of floats()) texts.add(t);
         await frame();
       }
-      const ms = w().time.now - g0;
+      const ms = first === undefined ? w().time.now - g0 : last - first + step;
       await settle();
+      w().events.off('postupdate', watch);
       for (const t of floats()) texts.add(t);
       const entry = log().length > n ? log()[log().length - 1] : undefined;
       const hits = entry ? entry.hits.filter((h: any) => h.type === 'training-dummy') : [];

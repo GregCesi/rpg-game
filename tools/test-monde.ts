@@ -297,10 +297,9 @@ await playtest('monde', async ({ page, errors, load }) => {
   assert.ok(post, 'le panneau est posé');
   // devant lui, au sud, tourné vers le nord
   await goTo(post.x, post.y + 22, 'x');
-  // se tourner vers le nord : W tenu jusqu'à ce qu'il regarde au nord (un état, pas une durée : à x10, 60 ms le feraient marcher loin)
-  await page.keyboard.down('KeyW');
-  await page.evaluate(() => (window as any).__until(() => (window as any).game.scene.getScene('world').player.actor.facing === 'up', 'tourné vers le nord'));
-  await page.keyboard.up('KeyW');
+  // tourné vers le nord, sans faire un pas (un appui de W, sous la charge, le ferait marcher plusieurs images avant d'être relâché)
+  await page.evaluate(() => (window as any).game.scene.getScene('world').player.actor.face('up'));
+  await page.evaluate(() => (window as any).__frames(2));
   await page.keyboard.press('KeyE');
   await until(() => page.evaluate(() => !!(window as any).game.scene.isActive('dialogue')), 3000, 'lire le panneau');
   const said = await page.evaluate(() => (window as any).game.scene.getScene('dialogue').def?.lines?.[0]?.text ?? (window as any).game.scene.getScene('dialogue').lines?.[0]?.text);
