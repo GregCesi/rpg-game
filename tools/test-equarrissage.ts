@@ -62,7 +62,10 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       };
       const props = (re: RegExp) => w().map.props.filter((p: any) => re.test(p.type));
       // les pièces de bois d'un diamètre, et leurs longueurs
-      const logs = (size = 'normal') => w().map.props.filter((p: any) => p.wood?.size === size && !p.wood.hewn);
+      // ce que la carte avait avant le scénario (la tempête : ses arbres couchés, les pièces de bois de l'arbre déjà coupé) ne compte
+      // pas : le scénario suit ce que Xéros abat et coupe lui-même
+      const before = new Set<number>();
+      const logs = (size = 'normal') => w().map.props.filter((p: any) => p.wood?.size === size && !p.wood.hewn && !before.has(p.id));
       const beams = () => w().map.props.filter((p: any) => p.wood?.hewn >= 12);
       const lengths = (size: string) => logs(size).map((p: any) => p.wood.length).sort((x: number, y: number) => x - y);
       const kg = (wood: object) => Math.round(mass.woodMass(wood) * 10) / 10;
@@ -85,14 +88,16 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       // 1. à la ferme, un arbre normal : quatre coups de cognée depuis l'ouest, il tombe vers l'est
       await (window as any).__restart({ kind: 'map', map: 'ferme' });
       emit({ kind: 'stamina-infinite', on: true });
+      for (const p of w().map.props) if (p.wood || /felled-tree$/.test(p.type)) before.add(p.id);
       const tree = props(/^normal-tree$/)[0];
       await give('axe');
       await standAt(tree.box.left - 6, tree.box.bottom - 1, 'right');
       // abattre : un travail (25 min), fini d'un coup
       await press('use');
       await settled();
-      await (window as any).__until(() => props(/^normal-felled-tree$/).length > 0, "l'arbre tombé, couché");
-      const felled = props(/^normal-felled-tree$/)[0];
+      const fresh = () => props(/^normal-felled-tree$/).filter((p: any) => !before.has(p.id));
+      await (window as any).__until(() => fresh().length > 0, "l'arbre tombé, couché");
+      const felled = fresh()[0];
       out.felled = !!felled;
 
       // 2. le houppier : trois coups, des branches, et le tronc ébranché devient une seule pièce ronde de 5,8 m
