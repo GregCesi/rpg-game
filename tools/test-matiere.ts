@@ -95,11 +95,14 @@ console.log(`✓ matière : ${splits} fentes et ${cuts} coupes, les morceaux pè
     state: {
       hands: [{ prop: tie.into }, null],
       both: null,
+      active: 1,
       maps: { ferme: { piles: [{ id: 0, pile: fagots, x: 0, y: 0, places: ['a'] }], spawned: [{ id: 0, type: tie.into, x: 0, y: 0 }, { id: 1, type: tie.into, x: 0, y: 0, bundle: 4 }] } },
     },
   };
   const up = upgrade(old) as { version: number; state: typeof old.state & { hands: { bundle?: number }[] } };
-  assert.equal(up.version, 27);
+  // jusqu'à la version d'aujourd'hui : la main active retirée en 28 (chantier « commandes »)
+  assert.equal(up.version, 28);
+  assert.equal('active' in up.state, false, 'la main active n’existe plus');
   assert.equal((up.state.maps.ferme.piles[0] as { bundle?: number }).bundle, 10, 'tas de fagots sans nombre : 10 branches');
   assert.deepEqual(up.state.maps.ferme.spawned.map((o) => (o as { bundle?: number }).bundle), [10, 4], 'fagot posé seul : 10 sans nombre, son nombre sinon');
   assert.equal(up.state.hands[0].bundle, 10, 'fagot tenu sans nombre : 10 branches');

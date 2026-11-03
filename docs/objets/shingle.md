@@ -24,7 +24,7 @@ Aucune : fendue à la mesure (le fil la rend un peu irrégulière, sans variatio
 En tas : genre `shingles`.
 
 ## Gestes
-E prendre, poser, R tourner.
+Clic court : prendre (main vide), poser (la main qui la tient) ; R tourner.
 
 ## Origine
 Fendue au coutre dans un quartier court (60 cm, la plus courte pièce de bois, recoupé à 40) : un bardeau sur son fil.

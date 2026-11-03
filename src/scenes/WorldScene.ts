@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { stateImage } from '../world/pileShape';
-import { CONSTRUIRE, FEET, FELL, HELP, LOCKS, HUD, START, TURN_PRESS, VIEW, ZONES } from '../config';
+import { AIM, CONSTRUIRE, DEPTH, FEET, FELL, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
 import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -24,7 +24,9 @@ import { HarvestSystem, effortOf, wields, type HitResult } from '../systems/harv
 import { HandsSystem } from '../systems/hands';
 import { InteractionSystem } from '../systems/InteractionSystem';
 import { KnotSystem } from '../systems/knot';
-import { LongPress } from '../systems/longPress';
+import { LongPress, subject } from '../systems/longPress';
+import { clickPlan, HAND_OF, type Aimed, type Button, type Click, type ClickPlan, type TakeKind, type WorkKind } from '../world/clickAction';
+import { harvestKind } from '../world/tools';
 import { PileCount } from '../systems/pileCount';
 import { Roofs } from '../systems/roofs';
 import { RollSystem } from '../systems/roll';
@@ -34,7 +36,11 @@ import { WoodSystem, type WoodAim } from '../systems/wood';
 import { WorkSystem, type WorkJob } from '../systems/work';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
-import { pxPerSec, setSpeeds } from '../systems/speeds';
+import { kinetic, throwPlan } from '../world/throw';
+import { aimProbe, FACING_VECTOR } from '../world/aim';
+import { crossed } from '../world/crossing';
+import { attackCost } from '../world/strike';
+import { pxPerSec, setSpeeds, SPEEDS } from '../systems/speeds';
 import { setSimSpeed, simSpeed } from '../systems/simSpeed';
 import { Daylight } from '../systems/daylight';
 import { WorkBar } from '../entities/WorkBar';
@@ -51,10 +57,9 @@ import {
   clearSave,
   emptyHands,
   game,
-  held,
-  heldItem,
   mapState,
   newGame,
+  release,
   removeGroundItem,
   revisionOf,
   replaceState,
@@ -64,8 +69,8 @@ import {
   setWork,
   workKey,
   sleep,
-  switchHand,
   take,
+  type Hand,
   type Held,
 } from '../state';
 import { blocks, boxOf, overlaps, swung } from '../world/build';
@@ -90,8 +95,26 @@ import type { Interactable, PlacedGround, PlacedProp, Talker } from '../world/Ga
  * `build` : le mode construction (?construire, systems/build.ts) : Xéros attend, la caméra est libre, la souris pose et retire.
  * `rail` : une passe sur un rail (systems/rail.ts, la doloire le long d'une pièce) : Xéros avance tout seul en frappant ; seule
  * Échap compte, elle l'arrête là où il est.
+ * `aim` : un clic maintenu vise un lancer (world/throw.ts) : Xéros se tourne vers le curseur, le repère montre où l'objet tombera ;
+ * relâché, il lance ; Échap annule.
  */
-type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'work';
+type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'work' | 'aim';
+
+/** Un objet lancé en vol (world/throw.ts) : déjà posé au sol dans GameState (la matière se conserve), son image cachée jusqu'à la fin. */
+interface Flight {
+  /** Ce qui vole, à l'écran. */
+  sprite: Phaser.GameObjects.Image;
+  /** Les points du vol : au sol (px), la hauteur (px), le temps (s). */
+  points: { x: number; y: number; z: number; t: number }[];
+  /** Le temps écoulé depuis le lâcher (s). */
+  t: number;
+  /** La cible touchée en chemin, à quel moment, avec quelle énergie (J). */
+  hit?: { key: string; t: number; joules: number };
+  item: string;
+  facing: Facing;
+  /** L'objet posé là où il est retombé : son image, montrée à la fin du vol. */
+  landed?: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
+}
 
 /** Ce que reçoit la scène à son lancement : la carte, et le point d'apparition ou la position exacte (`at`, sauvegarde). */
 export type WorldStart = {
@@ -123,6 +146,9 @@ function holdOf(scene: Phaser.Scene, h: Held): { stance: Stance; look: Look } {
   return { stance, look: { image: it.hold?.image, icon: it.icon } };
 }
 
+/** Pixels par mètre, au sol (5 cm par pixel, content/gabarit.ts). */
+const PX_PER_M = 100 / CM_PER_PX;
+
 /** Une longueur en centimètres, dite en mètres : « 8 m », « 1,5 m ». */
 function metres(cm: number): string {
   return `${String(Math.round(cm) / 100).replace('.', ',')} m`;
@@ -142,7 +168,22 @@ export class WorldScene extends Phaser.Scene {
   private readonly clock = new ClockSystem();
   private handsSystem!: HandsSystem;
   private knots!: KnotSystem;
-  private press!: LongPress;
+  /** Chaque bouton de la souris : son clic qui attend sa fin (court au relâchement, ou maintenu). */
+  private presses!: Record<Button, LongPress>;
+  /** La main du dernier clic : A lâche ce qu'elle tient (l'autre si elle est vide), R tourne ce qu'elle tient, le fantôme la suit. */
+  private lastHand: Hand = 1;
+  /** Ce que feraient les deux clics sur ce qui est visé à cette image (world/clickAction.ts) : le jeu et l'affichage le lisent. */
+  private plans: Record<Button, ClickPlan> | undefined;
+  /** Ce que vise un clic à cette image (prendre, poser sur, une place de chantier) ; la bille qu'un clic maintenu ferait pivoter. */
+  private handTarget?: Interactable;
+  private turnTarget?: Interactable;
+  /** Ce qui est visé encaisse un coup (le fantôme ne s'y montre pas : le clic frapperait). */
+  private aimedTarget = false;
+  /** Le lancer qu'on vise (mode `aim`) : la main, le bouton tenu ; le repère au sol où l'objet tombera ; les objets en vol. */
+  private aiming?: { hand: Hand; button: Button };
+  private clickButton: Button = 'left';
+  private mark?: Phaser.GameObjects.Image;
+  private flights: Flight[] = [];
   private pileCount!: PileCount;
   private roofs!: Roofs;
   private roll!: RollSystem;
@@ -158,8 +199,6 @@ export class WorldScene extends Phaser.Scene {
   private rail!: Rail;
   /** La transformation « magique » des outils de test (?dieu). */
   private transformer!: TransformSystem;
-  /** R maintenu : pivoter une bille couchée. */
-  private turnPress!: LongPress;
   /** Le mode construction (?construire). */
   private builder!: BuildSystem;
   /** Le mode construction était ouvert : il le reste d'une carte à l'autre (et ?construire l'ouvre au lancement). */
@@ -174,7 +213,7 @@ export class WorldScene extends Phaser.Scene {
   /** Le personnage à qui Xéros parle en ce moment (mode dialogue). */
   private talking?: Talker;
   private mode: Mode = 'play';
-  /** Espace ignoré jusque-là : l'appui qui ferme un dialogue ne doit pas lancer un geste. */
+  /** Les clics ignorés jusque-là : le clic qui ferme un dialogue ne doit pas lancer un geste. */
   private useLockedUntil = 0;
   private mapId = START.map;
   private spawn = START.spawn;
@@ -268,13 +307,13 @@ export class WorldScene extends Phaser.Scene {
       top: n.actor.y - n.actor.height,
       action: { kind: 'talk', dialogue: n.dialogue, npc: n },
     }));
-    // les deux mains prises par un seul objet : E ne fait que parler, ou reposer ce qu'on tient ; un objet du monde dans
-    // la main active (le rouleau) peut se poser sur ce qui l'accepte (le billot)
+    // les deux mains prises par un seul objet : rien à prendre, seulement parler, ouvrir ou poser sur une place ; un objet du monde
+    // dans une main (le rouleau) peut se poser sur ce qui l'accepte (le billot)
     this.interaction = new InteractionSystem(this, this.player, () => {
       // un chantier offre ses piquets à reprendre et, avec une pièce en main (même à deux mains : la pierre), ses places à remplir
-      if (game.both) return [...talkable, ...this.site.interactables()];
-      const h = game.hands[game.active];
-      return [...this.map.interactables(h && 'prop' in h ? h.prop : undefined), ...this.site.interactables(), ...talkable];
+      if (game.both) return [...talkable, ...this.site.interactables(), ...this.map.interactables().filter((i) => i.action.kind === 'swing' || i.action.kind === 'talk' || i.action.kind === 'learn')];
+      const held = game.hands.flatMap((h) => (h && 'prop' in h ? [h.prop] : []));
+      return [...this.map.interactables(held), ...this.site.interactables(), ...talkable];
     });
     this.harvest = new HarvestSystem(this, this.map);
     this.combat = new CombatSystem(this, this.map, this.harvest);
@@ -285,14 +324,13 @@ export class WorldScene extends Phaser.Scene {
     this.transformer = new TransformSystem(this.map, this.handsSystem);
     this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body), this.player.strength);
     this.knots = new KnotSystem(this.map, this.handsSystem);
-    this.press = new LongPress(this);
+    this.presses = { left: new LongPress(this), right: new LongPress(this) };
     this.pileCount = new PileCount(this, this.map);
     this.roofs = new Roofs(this.map, this);
     this.effort = new EffortSystem((t) => this.notice(t), () => this.game.events.emit(GameEvent.StaminaDenied));
     this.works = new WorkSystem(this.player, this.effort, bar, (m) => this.clock.work(m));
     this.roll = new RollSystem(this.map, npcs.map((n) => n.actor.body), (t) => this.notice(t), () => this.effort.exhausted());
     this.turns = new TurnSystem(this.map, this.roll, npcs.map((n) => n.actor.body), this);
-    this.turnPress = new LongPress(this, TURN_PRESS.ms);
     this.builder = new BuildSystem(this, this.map, this.player, (t) => this.notice(t), (st: BuildStatus) => this.game.events.emit(GameEvent.BuildStatus, st));
     this.player.strength.multiplier = this.force;
     this.player.stamina.infinite = this.infinite;
@@ -359,6 +397,8 @@ export class WorldScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
     this.autosave.update();
+    // le curseur oriente Xéros et dit ce qu'il vise (src/world/aim.ts) ; pas en mode construction, où la souris pose les pièces
+    this.player.cursor = this.mode === 'build' ? undefined : this.player.input.cursor(this.cameras.main);
     this.player.update(this.mode === 'play');
     // courir et porter puisent dans l'endurance
     this.effort.update(this.player, delta, this.mode === 'play');
@@ -376,23 +416,26 @@ export class WorldScene extends Phaser.Scene {
       const passage = exit ? undefined : this.interiors.update(this.player);
       if (passage) this.fadeTo(passage);
     }
-    // Espace, Q, Tab et R toujours lus, comme E : sinon un appui fait pendant un dialogue ressortirait juste après
+    // les clics, A et R toujours lus, comme E : sinon un appui fait pendant un geste ressortirait juste après ; pendant un dialogue, E,
+    // les clics et Z/S sont à lui (DialogueScene les lit par PlayerInput)
     const { input } = this.player;
-    const use = input.usePressed();
+    const talking = this.mode === 'dialogue';
+    const clicked = { left: !talking && input.clickPressed('left'), right: !talking && input.clickPressed('right') };
     const drop = input.dropPressed();
-    const swap = input.swapPressed();
     const turn = input.turnPressed();
     // Échap, ou un pas (une flèche, ZQSD) : arrête un travail ou une passe sur un rail, ce qui est fait reste fait
     const stop = input.stopPressed();
-    const moved = input.movePressed();
+    const moved = !talking && input.movePressed();
     if (this.mode === 'rail') this.rail.update(delta, { stop: stop || moved });
-    // un travail au coup : lancé d'un appui, Xéros frappe seul jusqu'au résultat ; un pas ou Échap l'arrête après le coup en cours
+    // un travail au coup : lancé d'un clic, Xéros frappe seul jusqu'au résultat ; un pas ou Échap l'arrête après le coup en cours
     if (this.mode === 'work') this.works.update({ stop: stop || moved });
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
     // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V change la vitesse du temps (en boucle)
-    this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work');
+    this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim');
+    // les objets lancés volent dans tous les modes (le temps du jeu)
+    this.updateFlights(delta);
     this.daylight.update();
     // V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite), au palier suivant, en boucle
     if (input.speedPressed() && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
@@ -405,70 +448,357 @@ export class WorldScene extends Phaser.Scene {
       if (this.mode === 'build') this.exitBuild();
       else this.enterBuild();
     }
-    const e = this.interaction.update(time, this.mode === 'play');
-    this.harvest.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
+    const e = talking ? { pressed: false, target: undefined } : this.interaction.update(time, this.mode === 'play');
+    // ce que vise chaque clic, et ce qu'il ferait (world/clickAction.ts) : lu par le jeu et par l'affichage
+    this.refreshAim();
     // la coupe visée sur une pièce de bois et ses deux longueurs, la face qu'on dresse, le bout où planter ou frapper le coin
-    this.wood.updatePrompt(time, this.player, this.player.hold.loaded ? undefined : this.usable(), this.mode === 'play');
-    // ce qu'on tient, en transparence, là où E ou Q le poserait (pas quand E vise autre chose : il agirait sur la cible)
-    this.handsSystem.updatePreview(this.player, this.mode === 'play' && !e.target);
+    this.wood.updatePrompt(time, this.player, this.mode === 'play' ? this.toolOf(this.lastHand) ?? this.toolOf((1 - this.lastHand) as Hand) : undefined, this.mode === 'play');
+    // ce qu'on tient, en transparence, là où le poserait le clic (ou A) de la main qui pose
+    const ghost = this.ghostHand();
+    this.handsSystem.updatePreview(this.player, this.mode === 'play' && ghost !== undefined, ghost ?? this.lastHand);
     // les chantiers : piquets, places à remplir en fantôme, ligne d'état
     this.site.update(this.player, this.mode === 'play');
     this.pileCount.update(this.player, this.mode === 'play');
     if (this.mode === 'build') this.builder.update(delta, turn);
-    // Espace pendant une attaque : la suivante de l'enchaînement partira à sa fin
-    if (use && this.mode === 'use') this.combat.queue();
+    // un clic pendant une attaque : la suivante de l'enchaînement partira à sa fin (à deux mains, celle du bouton)
+    if (this.mode === 'use') for (const b of ['left', 'right'] as const) if (clicked[b]) this.combat.queue(b);
+    // un lancer qu'on vise : le repère suit le curseur ; relâché, il part ; Échap l'annule
+    if (this.mode === 'aim') this.updateAim(stop);
     if (this.mode !== 'play') {
-      this.turnPress.cancel();
-      return this.press.cancel();
+      this.presses.left.cancel();
+      this.presses.right.cancel();
+      return;
     }
-    if (swap) {
-      switchHand(game);
-      this.handsChanged();
+    const locked = this.interaction.locked || time < this.useLockedUntil;
+    // un clic qui attend sa fin : court au relâchement, maintenu au bout du seuil (un seul seuil et une seule jauge : LONG_PRESS)
+    // (un clic se mesure en temps vrai, celui des événements de la souris, jamais au temps du jeu : à x10, un clic court reste court)
+    const now = performance.now();
+    for (const b of ['left', 'right'] as const) {
+      const press = this.presses[b];
+      const end = press.update(now, input.clickDown(b), this.pressKey(b), this.player, input.clickLasted(b));
+      if (end) return this.endClick(b, end);
+      if (press.pending) continue;
+      if (clicked[b] && !locked) {
+        this.lastHand = HAND_OF[b];
+        press.begin(this.pressKey(b), now, this.plans![b].long.kind !== 'none');
+      }
     }
-    // R maintenu, mains vides, au contact d'une bille couchée : elle pivote d'un quart de tour (jauge comme pour nouer)
-    const turnTarget = this.turns.target(this.player);
-    const turned = this.turnPress.update(performance.now(), input.turnDown(), turnTarget, this.player, input.turnLasted());
-    if (turned?.kind === 'long') this.turnLog(turned.target);
-    if (this.turnPress.pending) return;
-    if (turn && turnTarget) return this.turnPress.begin(turnTarget, performance.now());
-    // R : la bille portée tourne ; le fantôme suit à l'image suivante
-    if (turn) this.handsSystem.turn();
-    // E devant ce qui se noue ou se dénoue : l'appui attend, court (reprendre) ou maintenu (nouer, dénouer)
-    // (un appui se mesure en temps vrai, celui des événements du clavier, jamais au temps du jeu : à x10, un E court reste court)
-    const press = this.press.update(performance.now(), input.handsDown(), e.target, this.player, input.handsLasted());
-    if (press?.kind === 'short') this.hands(press.target);
-    else if (press?.kind === 'long') {
-      if (press.target.action.kind === 'site-help') this.callMother(press.target.action);
-      else this.knot(press.target);
-    }
-    else if (this.press.pending) return;
-    else if (e.pressed && e.target && (this.knots.holds(e.target.action) || e.target.action.kind === 'site-help')) this.press.begin(e.target, performance.now());
-    else if (e.pressed && e.target) this.hands(e.target);
-    // E dans le vide (ou devant ce qu'on ne peut pas prendre) : poser ce que tient la main active, là où le montre le fantôme
-    else if (e.pressed && held(game)) this.putDown();
-    else if (drop) this.putDown();
-    else if (use && time >= this.useLockedUntil) this.useHeld();
+    if (this.presses.left.pending || this.presses.right.pending) return;
+    // R : ce que tient la main du dernier clic tourne (l'autre si elle est vide) ; le fantôme suit à l'image suivante
+    if (turn) this.handsSystem.turn(this.handOf(this.lastHand));
+    // E : parler, ouvrir ou fermer, lire la planchette (sans les mains)
+    if (e.pressed && e.target) this.eAction(e.target);
+    // A (Q en QWERTY) : lâcher ce que tient la main du dernier clic, là où le montre le fantôme ; si elle est vide, l'autre main
+    else if (drop) this.putDown(this.handOf(this.lastHand));
   }
 
-  /** E devant une cible : parler, récolter à la main, prendre un objet du monde, reprendre d'un tas, ramasser. */
-  private hands(target: Interactable): void {
+  /** La main `hand` si elle tient quelque chose (ou les deux mains), sinon l'autre. */
+  private handOf(hand: Hand): Hand {
+    return game.both || game.hands[hand] ? hand : ((1 - hand) as Hand);
+  }
+
+  /** L'outil (un objet qui travaille, `worksWith`) que tient la main `hand`, ou les deux mains. */
+  private toolOf(hand: Hand): string | undefined {
+    const h = game.both ?? game.hands[hand];
+    return h && 'item' in h && worksWith(h.item) ? h.item : undefined;
+  }
+
+  /**
+   * La main dont le fantôme se montre : celle dont le clic poserait ce qu'elle tient (celle du dernier clic d'abord) ; sinon celle que
+   * lâcherait A (un outil, une arme, qui frappent au clic : A les pose), quand son clic ne vise rien (ni travail, ni cible, ni place).
+   */
+  private ghostHand(): Hand | undefined {
+    const plans = this.plans;
+    if (!plans) return undefined;
+    const button = (h: Hand): Button => (h === 1 ? 'left' : 'right');
+    const put = [this.lastHand, (1 - this.lastHand) as Hand].find((h) => plans[button(h)].short.kind === 'put');
+    if (put !== undefined) return put;
+    const h = this.handOf(this.lastHand);
+    if (!(game.both ?? game.hands[h])) return undefined;
+    return plans[button(h)].short.kind === 'strike' && !this.aimedTarget ? h : undefined;
+  }
+
+  /**
+   * Ce que vise chaque clic à cette image (world/clickAction.ts : `Aimed`) et ce que feraient les deux boutons, une fois pour le jeu et
+   * l'affichage : ce que prennent les mains vides, leur geste long, une place de chantier, ce qui accepte un objet tenu, ce qui encaisse
+   * un coup, ce que l'outil de chaque main travaillerait.
+   */
+  private refreshAim(): void {
+    if (this.mode !== 'play') {
+      this.handTarget = this.turnTarget = undefined;
+      this.plans = undefined;
+      this.game.events.emit(GameEvent.ClickPlans, undefined);
+      return;
+    }
+    const t = this.interaction.handTarget();
+    const a = t?.action;
+    const aimed: Aimed = {};
+    const takes: readonly string[] = ['take', 'pile', 'tie', 'pickup', 'unload', 'stake', 'harvest'];
+    if (a && takes.includes(a.kind)) aimed.take = a.kind as TakeKind;
+    if (a?.kind === 'site-place') aimed.site = 'place';
+    if (a?.kind === 'site-help') {
+      aimed.site = 'help';
+      aimed.hold = 'help';
+    }
+    if (a?.kind === 'rest') {
+      const prop = a.prop;
+      aimed.rest = ([0, 1] as const).filter((h) => {
+        const x = game.both ? undefined : game.hands[h];
+        return !!x && 'prop' in x && !!prop.def.rest?.[x.prop];
+      });
+    }
+    if (a && this.knots.holds(a)) aimed.hold = (a.kind === 'pile' || a.kind === 'tie') && a.pile.def.tie ? 'knot' : 'unknot';
+    this.turnTarget = this.turns.target(this.player);
+    if (!aimed.hold && this.turnTarget) aimed.hold = 'turn';
+    // ce qui encaisse un coup se vise sous le curseur jusqu'à la portée d'un long coup (AIM.strike)
+    const p = this.player;
+    aimed.target = this.combat.aimedAt(aimProbe(p.eye, p.cursor, p.actor.facing, AIM.strike, INTERACT.reach), INTERACT.radius);
+    aimed.work = [this.workOf(0), this.workOf(1)];
+    this.handTarget = t;
+    this.aimedTarget = !!aimed.target;
+    const knows = game.knownPlans.length > 0;
+    this.plans = { left: clickPlan('left', game, aimed, knows), right: clickPlan('right', game, aimed, knows) };
+    this.game.events.emit(GameEvent.ClickPlans, this.plans);
+  }
+
+  /**
+   * Ce que l'outil de la main `hand` ferait sur ce qui est visé : le travail du bois (couper, équarrir, planter le coin, fendre), la
+   * récolte au coup (abattre, ébrancher, tailler, casser) ou le coup simple (couper un lien du rouleau) ; un refus (la hache sur une
+   * grosse bille) compte aussi, le clic dira pourquoi. Rien : il n'y a rien à travailler pour lui.
+   */
+  private workOf(hand: Hand): WorkKind | undefined {
+    const tool = this.toolOf(hand);
+    if (!tool) return undefined;
+    const aim = this.wood.target(this.player, tool);
+    if (aim) return aim.work;
+    const target = this.harvest.target(this.player, tool);
+    const h = target?.def.harvest;
+    if (!target || !h) return undefined;
+    if (!wields(h, tool) && !this.harvest.refusal(target, tool)) return undefined;
+    return (h.work && harvestKind(h)) || 'hit';
+  }
+
+  /** Ce que vise le clic du bouton `b`, pour savoir s'il vise toujours la même chose à son relâchement. */
+  private pressKey(b: Button): unknown {
+    const plan = this.plans?.[b];
+    if (!plan) return undefined;
+    const t = plan.long.kind === 'turn' ? this.turnTarget : this.handTarget;
+    return t ? subject(t.action) : plan.short.kind;
+  }
+
+  /** La fin d'un clic : court (relâché avant le seuil), ou maintenu (tenu jusqu'au bout). Xéros se tourne vers le curseur avant d'agir. */
+  private endClick(b: Button, end: 'short' | 'long'): void {
+    this.player.faceCursor();
+    this.refreshAim();
+    const plan = this.plans![b];
+    this.clickButton = b;
+    this.act(plan.hand, end === 'short' ? plan.short : plan.long);
+  }
+
+  /** Ce que fait un clic (world/clickAction.ts), de la main `hand`. */
+  private act(hand: Hand, c: Click): void {
+    const t = this.handTarget;
+    const held = game.both ?? game.hands[hand];
+    switch (c.kind) {
+      case 'take':
+        if (t) this.takeAt(t, hand);
+        return;
+      case 'punch':
+        return this.attack(this.combat.plan({ fist: true, hand }, this.player.actor.facing, this.time.now, this.player.strength.swinger));
+      case 'strike':
+        if (held) this.attack(this.combat.plan({ held, hand }, this.player.actor.facing, this.time.now, this.player.strength.swinger, c.from));
+        return;
+      case 'work': {
+        const tool = this.toolOf(hand);
+        if (tool) this.useTool(tool, hand);
+        return;
+      }
+      case 'plant':
+        if (held && 'item' in held) this.plantStake(held.item);
+        return;
+      case 'put':
+        return this.putDown(hand);
+      case 'place':
+        if (t?.action.kind === 'site-place') this.placeOnSite(t.action, hand);
+        return;
+      case 'rest':
+        if (t?.action.kind === 'rest' && this.handsSystem.rest(t.action.prop, hand)) this.handsChanged();
+        return;
+      case 'help-info':
+        if (t?.action.kind === 'site-help') {
+          const r = this.site.help(t.action.site, t.action.place);
+          if (r) this.notice(r.ok ? 'Maintiens le clic pour appeler ta mère.' : r.message);
+        }
+        return;
+      default:
+        return this.longAct(hand, c);
+    }
+  }
+
+  /** Le geste long d'un clic maintenu, mains vides : nouer, dénouer, pivoter une bille, appeler la mère ; ou, la main pleine, lancer. */
+  private longAct(hand: Hand, c: Click): void {
+    const t = this.handTarget;
+    if ((c.kind === 'knot' || c.kind === 'unknot') && t) return this.knot(t);
+    if (c.kind === 'turn' && this.turnTarget) return this.turnLog(this.turnTarget);
+    if (c.kind === 'help' && t?.action.kind === 'site-help') return this.callMother(t.action);
+    if (c.kind === 'throw') return this.beginThrow(hand);
+  }
+
+  /**
+   * Le clic maintenu d'une main qui tient un objet (un objet à deux mains : l'un ou l'autre clic) : viser, puis lancer au relâchement
+   * (world/throw.ts). Xéros ne marche plus, il se tourne vers le curseur ; le repère au sol montre où l'objet tombera.
+   */
+  private beginThrow(hand: Hand): void {
+    if (!(game.both ?? game.hands[hand])) return;
+    this.aiming = { hand, button: this.clickButton };
+    this.mode = 'aim';
+    if (!this.mark && this.textures.exists('ui-throw-mark')) this.mark = this.add.image(0, 0, 'ui-throw-mark').setOrigin(0.5, 0.5).setDepth(DEPTH.shadow + 0.02);
+  }
+
+  /** Où le lancer en cours tomberait : la direction et la distance du curseur (sans curseur, devant Xéros, le plus loin possible). */
+  private throwAim(h: Held): { ux: number; uy: number; plan: ReturnType<typeof throwPlan> } {
+    const a = this.player.actor;
+    const c = this.player.cursor;
+    const f = FACING_VECTOR[a.facing];
+    const dx = c ? c.x - a.x : f.x;
+    const dy = c ? c.y - a.y : f.y;
+    const n = Math.hypot(dx, dy) || 1;
+    const d = c ? n / PX_PER_M : Infinity;
+    return { ux: dx / n, uy: dy / n, plan: throwPlan(h, this.player.strength.swinger, d) };
+  }
+
+  /** La visée d'un lancer, à chaque image : le repère suit le curseur (au bout de la portée s'il est plus loin) ; relâché, il part. */
+  private updateAim(stop: boolean): void {
+    const aim = this.aiming;
+    const held = aim && (game.both ?? game.hands[aim.hand]);
+    if (!aim || !held || stop) return this.endAim(stop ? 'Lancer annulé.' : undefined);
+    this.player.faceCursor();
+    const { ux, uy, plan } = this.throwAim(held);
+    const a = this.player.actor;
+    const px = plan.range * PX_PER_M;
+    if (this.mark) {
+      this.mark.setPosition(Math.round(a.x + ux * px), Math.round(a.y + uy * px)).setVisible(true);
+      this.mark.setAlpha(0.65 + 0.35 * Math.sin(this.time.now / 120));
+    }
+    // relâché (même entre deux images : le verrou garde le relâchement) : il part
+    if (!this.player.input.clickDown(aim.button)) this.launch(aim.hand, held, ux, uy, plan);
+  }
+
+  private endAim(message?: string): void {
+    this.aiming = undefined;
+    this.mark?.setVisible(false);
+    if (this.mode === 'aim') this.mode = 'play';
+    if (message) this.notice(message);
+  }
+
+  /**
+   * Le lâcher (docs/CONCEPTION.md, « Le lancer ») : le temps revient à x1 (comme une attaque) ; le travail du bras se paie au joule ;
+   * l'objet quitte la main et vole. Sa trajectoire est suivie pas à pas (`step` de combat.json) : la première cible dont l'emprise est
+   * franchie entre deux pas, à une hauteur où elle est (world/crossing.ts), est touchée de l'énergie de l'objet à cet instant (world/strike.ts) ;
+   * un obstacle l'arrête ; sinon il tombe au bout. Il est posé au sol tout de suite (GameState), à la place libre la plus proche de là où
+   * il retombe, son image cachée jusqu'à la fin du vol.
+   */
+  private launch(hand: Hand, what: Held, ux: number, uy: number, plan: ReturnType<typeof throwPlan>): void {
+    this.endAim();
+    if (simSpeed() !== timeDef.default) {
+      setSimSpeed(this.game, timeDef.default);
+      this.notice(`Le temps : x${timeDef.default}`);
+    }
+    if (!this.effort.affordStroke(this.player, attackCost(stamina.work, plan.release.joules))) return;
+    const a = this.player.actor;
+    const origin = { x: a.x, y: a.y };
+    const pts = plan.path.map((p) => ({ x: origin.x + ux * p.d * PX_PER_M, y: origin.y + uy * p.d * PX_PER_M, z: p.z * PX_PER_M, t: p.t, v: p.v }));
+    const targets = this.combat.throwTargets();
+    let end = pts.length - 1;
+    let hit: Flight['hit'];
+    for (let i = 1; i < pts.length && !hit; i++) {
+      const p0 = pts[i - 1];
+      const p1 = pts[i];
+      const z = p1.z / PX_PER_M;
+      const q = targets.find((t) => z <= t.height && crossed(p0, p1, (x, y) => x >= t.box.left && x <= t.box.right && y >= t.box.top && y <= t.box.bottom));
+      if (q) {
+        hit = { key: q.key, t: p1.t, joules: kinetic(plan.release.kg, p1.v) };
+        end = i;
+        break;
+      }
+      // un obstacle (un tronc, un mur, une bille couchée) l'arrête : il tombe devant
+      if (crossed(p0, p1, (x, y) => !this.map.areaFree({ left: x - 0.5, top: y - 0.5, right: x + 0.5, bottom: y + 0.5 }))) {
+        end = i - 1;
+        break;
+      }
+    }
+    const path = pts.slice(0, end + 1);
+    const last = path[path.length - 1];
+    release(game, hand);
+    this.handsChanged();
+    // la matière se conserve : l'objet est au sol dès le lâcher (GameState), là où il retombe ; caché pendant le vol
+    const landed = this.handsSystem.layNear(this.player, what, last.x, last.y);
+    landed?.setVisible(false);
+    const look = this.handsSystem.lookOf(what);
+    const sprite = this.add.image(origin.x, origin.y, look.key, look.frame).setOrigin(0.5, 0.5);
+    const item = 'item' in what ? what.item : what.prop;
+    this.flights.push({ sprite, points: path.map(({ x, y, z, t }) => ({ x, y, z, t })), t: 0, hit, item, facing: a.facing, landed });
+  }
+
+  /** Les objets en vol avancent du temps du jeu ; la cible touchée réagit à l'instant du choc ; au sol, l'objet posé se montre. */
+  private updateFlights(delta: number): void {
+    for (const f of [...this.flights]) {
+      f.t += delta / 1000;
+      if (f.hit && f.t >= f.hit.t) {
+        this.combat.thrownHit(f.hit.key, f.item, f.hit.joules, f.facing);
+        f.hit = undefined;
+      }
+      const pts = f.points;
+      const i = pts.findIndex((p) => p.t >= f.t);
+      if (i < 0) {
+        f.sprite.destroy();
+        f.landed?.setVisible(true);
+        this.flights.splice(this.flights.indexOf(f), 1);
+        continue;
+      }
+      const p1 = pts[i];
+      const p0 = pts[Math.max(0, i - 1)];
+      const k = p1.t > p0.t ? (f.t - p0.t) / (p1.t - p0.t) : 1;
+      const x = p0.x + (p1.x - p0.x) * k;
+      const y = p0.y + (p1.y - p0.y) * k;
+      const z = p0.z + (p1.z - p0.z) * k;
+      f.sprite.setPosition(Math.round(x), Math.round(y - z)).setDepth(y);
+    }
+  }
+
+  /** E devant une cible, sans les mains : parler (la paillasse : « Dormir ? »), ouvrir ou fermer, lire la planchette. */
+  private eAction(target: Interactable): void {
     const a = target.action;
+    this.player.faceCursor();
     if (a.kind === 'talk') {
       this.talking = a.npc;
       this.talking?.faceToward(this.player.actor.x, this.player.actor.y);
       this.openDialogue(a.dialogue);
-    } else if (a.kind === 'harvest') {
+    } else if (a.kind === 'learn') {
+      this.notice(this.site.learn(a.plan));
+    } else if (a.kind === 'swing') {
+      this.swing(a.id);
+    }
+  }
+
+  /**
+   * Le clic d'une main vide sur ce qu'elle prend : récolter à la main, prendre un objet du monde, reprendre d'un tas ou son lien,
+   * reprendre ce que porte le billot, ramasser, arracher un piquet planté. Ce qui va dans une seule main va dans celle du clic.
+   */
+  private takeAt(target: Interactable, hand: Hand): void {
+    const a = target.action;
+    if (a.kind === 'harvest') {
       // ce qui va directement dans les mains (la hache du billot) : il faut les mains libres avant le geste
       const gives = a.prop.def.harvest!.drops.filter((d) => d.give);
       if (gives.some((d) => !canTake(game, items[d.item].hands))) return this.notice('Les mains pleines.');
-      this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing)));
+      this.gesture(a.prop.def.harvest!.gesture, undefined, () => this.report(this.harvest.hit(a.prop, undefined, this.player.actor.facing, hand)));
     } else if (a.kind === 'take') {
       if (a.prop.wood?.notch) return this.notice("Finis d'abord la coupe.");
       if (a.prop.wood?.wedge) return this.notice('Le coin est planté : finis de la fendre.');
       const kg = propMass(a.prop.type, a.prop.length, undefined, a.prop.wood, a.prop.natural, a.prop.bundle);
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(a.prop.def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();
-      if (!this.handsSystem.takeProp(a.prop)) return this.notice('Les mains pleines.');
+      if (!this.handsSystem.takeProp(a.prop, hand)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'pile') {
       const piece = a.pile.def.piece;
@@ -477,38 +807,31 @@ export class WorldScene extends Phaser.Scene {
       const def = 'wood' in piece ? defOf(WOOD_PIECE, { ...piece.wood, axis: 'ew' }) : 'prop' in piece ? props[piece.prop] : undefined;
       if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(def, kg, this.player.strength));
       if (!this.canLift(kg)) return this.effort.exhausted();
-      if (!this.handsSystem.takeFromPile(a.pile, a.place)) return this.notice('Les mains pleines.');
+      if (!this.handsSystem.takeFromPile(a.pile, a.place, hand)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'tie') {
-      if (!this.handsSystem.takeTie(a.pile)) return this.notice('Les mains pleines.');
+      if (!this.handsSystem.takeTie(a.pile, hand)) return this.notice('Les mains pleines.');
       this.handsChanged();
-    } else if (a.kind === 'rest') {
-      if (this.handsSystem.rest(a.prop)) this.handsChanged();
     } else if (a.kind === 'unload') {
-      if (!this.handsSystem.unload(a.prop)) return this.notice('Les mains pleines.');
+      if (!this.handsSystem.unload(a.prop, hand)) return this.notice('Les mains pleines.');
       this.handsChanged();
     } else if (a.kind === 'pickup') {
-      this.pickUp(a.ground);
-    } else if (a.kind === 'learn') {
-      this.notice(this.site.learn(a.plan));
+      this.pickUp(a.ground, hand);
     } else if (a.kind === 'stake') {
-      if (!this.site.takeStake(a.site, a.corner)) return this.notice('Les mains pleines.');
+      if (!this.site.takeStake(a.site, a.corner, hand)) return this.notice('Les mains pleines.');
       this.handsChanged();
-    } else if (a.kind === 'site-place') {
-      const r = this.site.tryPlace(a.site, a.place);
-      if (!r) return;
-      if (!r.ok) return this.notice(r.message);
-      // dresser une poutre se paie selon sa masse ; une pierre qu'on pose, rien
-      if (r.kg > 0 && !this.effort.afford(this.player, this.player.stamina.raiseCost(r.kg))) return;
-      r.commit();
-      this.handsChanged();
-    } else if (a.kind === 'swing') {
-      this.swing(a.id);
-    } else if (a.kind === 'site-help') {
-      // E court : dire ce qui manque, ou comment appeler la mère
-      const r = this.site.help(a.site, a.place);
-      if (r) this.notice(r.ok ? 'Maintiens E pour appeler ta mère.' : r.message);
     }
+  }
+
+  /** Le clic d'une main qui tient la pièce d'une place de chantier : la poser (une poutre à dresser se paie selon sa masse). */
+  private placeOnSite(a: Extract<Interactable['action'], { kind: 'site-place' }>, hand: Hand): void {
+    const r = this.site.tryPlace(a.site, a.place, hand);
+    if (!r) return;
+    if (!r.ok) return this.notice(r.message);
+    // dresser une poutre se paie selon sa masse ; une pierre qu'on pose, rien
+    if (r.kg > 0 && !this.effort.afford(this.player, this.player.stamina.raiseCost(r.kg))) return;
+    r.commit();
+    this.handsChanged();
   }
 
   /**
@@ -578,7 +901,7 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** Espace avec un piquet : le planter au tracé d'un plan connu (rien n'est dépensé tant qu'il est refusé). */
+  /** Le clic d'une main qui tient un piquet : le planter au tracé d'un plan connu (rien n'est dépensé tant qu'il est refusé). */
   private plantStake(item: string): void {
     const r = this.site.plantStake(this.player, item);
     if (!r.ok) return this.notice(r.message);
@@ -587,7 +910,7 @@ export class WorldScene extends Phaser.Scene {
     this.handsChanged();
   }
 
-  /** R maintenu jusqu'au bout devant une bille : elle pivote (si elle a la place), et cela coûte de l'endurance selon sa masse. */
+  /** Le clic maintenu jusqu'au bout, mains vides, devant une bille : elle pivote (si elle a la place), et cela coûte de l'endurance selon sa masse. */
   private turnLog(target: Interactable): void {
     const a = target.action;
     if (a.kind !== 'turn') return;
@@ -599,7 +922,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.stamina.spend(cost);
   }
 
-  /** E maintenu devant un tas ou un fagot : nouer ou dénouer ; sinon, ce qui manque se dit. */
+  /** Le clic maintenu, mains vides, devant un tas ou un fagot : nouer ou dénouer ; sinon, ce qui manque se dit. */
   private knot(target: Interactable): void {
     if (!this.effort.allows(this.player, this.player.stamina.costs.knot)) return;
     const why = this.knots.act(target.action);
@@ -609,9 +932,10 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** Q, ou E dans le vide : pose devant soi ce que tient la main active, là où le montre le fantôme (HandsSystem.putDown), s'il y a la place. */
-  private putDown(): void {
-    const r = this.handsSystem.putDown(this.player);
+  /** A, ou le clic d'une main qui tient une ressource : pose ce que tient la main `hand`, là où le montre le fantôme (HandsSystem.putDown), s'il y a la place. */
+  private putDown(hand: Hand): void {
+    this.player.faceCursor();
+    const r = this.handsSystem.putDown(this.player, hand);
     if (r === 'blocked') this.notice('Pas la place ici.');
     if (r === 'done') this.handsChanged();
   }
@@ -647,50 +971,20 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * L'objet possédable que l'Espace utilise : celui de la main active, sinon celui de l'autre main (le coin pris dans la main
-   * qui n'est pas la main active ne doit pas rester sans effet) ; rien à deux mains pour un objet du monde porté.
+   * Le clic d'une main qui tient un outil, devant ce qu'il travaille (world/clickAction.ts) : le travail, lancé d'un clic ; un outil qui
+   * n'a rien à travailler devant lui frappe, comme tout objet tenu (décidé par Grégoire, world/heft.ts).
    */
-  /** Ce qui est tenu et qui est l'objet possédable `item` : à deux mains, sinon la main active d'abord. */
-  private heldOf(item: string): Held | undefined {
-    return [game.both, game.hands[game.active], game.hands[1 - game.active]].find((h) => !!h && 'item' in h && h.item === item) ?? undefined;
-  }
-
-  private usable(): string | undefined {
-    const own = heldItem(game);
-    // la branche dans la main active, la hachette dans l'autre : c'est l'outil qui sert
-    const other = game.hands[1 - game.active];
-    if (own && !worksWith(own) && other && 'item' in other && worksWith(other.item)) return other.item;
-    if (own || game.both || game.hands[game.active]) return own;
-    return other && 'item' in other ? other.item : undefined;
-  }
-
-  /**
-   * Espace : le geste avec ce qu'on tient, même dans le vide. Un outil devant ce qu'il travaille travaille ; tout le reste frappe
-   * (décidé par Grégoire : tout objet tenu peut frapper, world/heft.ts) : une arme, un outil sans travail devant lui, une pierre, un
-   * seau, une pièce de bois portée ; les mains vides, le poing.
-   */
-  private useHeld(): void {
-    const tool = this.usable();
-    const strike = (held: Held) => this.attack(this.combat.plan({ held }, this.player.actor.facing, this.time.now, this.player.strength.swinger));
-    // une arme qui sert (la main active, ou l'autre si l'active est vide) : Espace attaque, toujours, dans le vide comme sur une cible
-    // (la branche active et la hachette dans l'autre main : c'est la hachette qui sert, elle taille)
-    if (tool && items[tool].weapon) return strike(this.heldOf(tool)!);
-    if (tool && SiteSystem.traces(tool)) return this.plantStake(tool);
-    // la main active vide, l'autre sans outil qui travaille : le poing de la main libre
-    if (!game.both && !game.hands[game.active] && (!tool || !worksWith(tool))) {
-      return this.attack(this.combat.plan({ fist: true }, this.player.actor.facing, this.time.now, this.player.strength.swinger));
-    }
-    // ce qu'on tient ne travaille pas (une pierre, un seau, la pièce de bois portée) : il frappe
-    if (!tool || !worksWith(tool)) {
-      const held = game.both ?? game.hands[game.active];
-      return held ? strike(held) : undefined;
-    }
+  private useTool(tool: string, hand: Hand): void {
+    const strike = () => {
+      const held = game.both ?? game.hands[hand];
+      if (held) this.attack(this.combat.plan({ held, hand }, this.player.actor.facing, this.time.now, this.player.strength.swinger));
+    };
     // une pièce de bois : la cognée la coupe où l'on vise, la doloire en dresse une face d'une passe le long de la pièce ; le
     // coin se plante dans le bout, d'un coup, sans geste ; la masse frappe le coin depuis ce bout
     const aim = this.wood.target(this.player, tool);
     if (aim) {
       if (aim.refusal) return this.notice(aim.refusal);
-      if (aim.work === 'hew') return this.hewPass(aim);
+      if (aim.work === 'hew') return this.hewPass(aim, tool);
       if (aim.work === 'plant') {
         // le coin se plante d'un coup, sans geste
         if (!this.effort.afford(this.player, this.player.stamina.costs.plant)) return;
@@ -698,8 +992,8 @@ export class WorldScene extends Phaser.Scene {
       }
       return this.woodWork(aim, tool);
     }
-    // un outil du bois sans pièce à portée : le coin ne se joue pas dans le vide
-    if (WoodSystem.workOf(tool) === 'plant') return this.notice('Rien où le planter : colle-toi au bout d’une grosse bille couchée.');
+    // le coin sans bout de bille où se planter : il frappe, comme tout objet tenu
+    if (WoodSystem.workOf(tool) === 'plant') return strike();
     // le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ; dans le vide, de côté
     const target = this.harvest.target(this.player, tool);
     const h = target?.def.harvest;
@@ -707,23 +1001,23 @@ export class WorldScene extends Phaser.Scene {
     // un outil que la cible écarte (la hache sur une grosse bille) ou une fente sans la place de s'ouvrir : on le dit, sans geste ni dépense
     const why = target && this.harvest.refusal(target, tool);
     if (why) return this.notice(why);
-    // une récolte au coup (sa matière, `work`) : un appui lance tout le travail, Xéros frappe seul jusqu'au résultat
+    // une récolte au coup (sa matière, `work`) : un clic lance tout le travail, Xéros frappe seul jusqu'au résultat
     if (target && h?.work && wields(h, tool)) return this.harvestWork(target, tool);
     // un coup qui porte coûte de l'endurance (le lien du billot un peu moins qu'un arbre) ; dans le vide ou sans le bon outil, rien
     const costs = this.player.stamina.costs;
     if (h && wields(h, tool) && !this.effort.afford(this.player, costs[effortOf(h, tool, !!target!.def.bears?.prop)])) return;
     // un outil sans rien à travailler devant lui : il frappe, comme tout objet tenu
-    if (!h || !wields(h, tool)) return strike(this.heldOf(tool)!);
+    if (!h || !wields(h, tool)) return strike();
     // la cible est cherchée au moment du coup : celle qui est devant Xéros à l'impact
     this.gesture(gesture, tool, () => {
       const t = this.harvest.target(this.player, tool);
-      this.report(this.harvest.hit(t, tool, this.player.actor.facing));
+      this.report(this.harvest.hit(t, tool, this.player.actor.facing, hand));
     });
   }
 
   /**
    * Une attaque (systems/combat.ts) : elle se paie au départ, même dans le vide (c'est le geste qui fatigue) ; le geste de combat du
-   * corps avec l'arme dans la main droite (ou le poing), à chaque image de frappe la lame et ce qu'elle balaie ; Espace pendant le
+   * corps avec l'arme dans la main droite (ou le poing), à chaque image de frappe la lame et ce qu'elle balaie ; un clic pendant le
    * geste enchaîne la suivante.
    */
   private attack(p: AttackPlan): void {
@@ -748,25 +1042,28 @@ export class WorldScene extends Phaser.Scene {
       onDone: () => {
         const chain = this.combat.end(p, this.time.now);
         if (this.mode === 'use') this.mode = 'play';
-        // Espace pendant le geste : la suivante, avec la même arme (ou le même poing) si elle sert toujours
-        const same = 'held' in striker ? [game.both, ...game.hands].includes(striker.held) : !game.both && !game.hands[game.active];
-        if (chain && this.mode === 'play' && same) this.attack(this.combat.plan(striker, this.player.actor.facing, this.time.now, this.player.strength.swinger));
+        // un clic pendant le geste : le coup suivant, de la main de son bouton (la même arme enchaîne : la taille, puis d'en haut ; le
+        // poing de l'autre main suit le premier) ; ce que ce clic fait maintenant, s'il frappe toujours
+        const b = this.combat.takeQueued();
+        if (!chain || this.mode !== 'play' || !b) return;
+        this.refreshAim();
+        const plan = this.plans?.[b];
+        if (plan && (plan.short.kind === 'strike' || plan.short.kind === 'punch')) this.act(plan.hand, plan.short);
       },
     });
   }
 
 
   /**
-   * Une passe de doloire (Espace contre le flanc, à un bout de la pièce ou là où la face s'est arrêtée) : Xéros longe la pièce sur
+   * Une passe de doloire (un clic contre le flanc, à un bout de la pièce ou là où la face s'est arrêtée) : Xéros longe la pièce sur
    * le rail, chaque coup payé au fil de ce qu'il dresse ; à la fin, la face finie (et le quart de tour), la poutre, ou, arrêtée
    * par Échap ou par la fatigue, la face entamée qui attend la passe suivante.
    */
-  private hewPass(aim: WoodAim): void {
+  private hewPass(aim: WoodAim, tool: string): void {
     if (this.player.stamina.empty) return this.effort.exhausted();
     this.mode = 'rail';
     // un coup de doloire (world/swing.ts, la force de Xéros) : ce qu'il lève, rapporté à la section d'une face, et ses temps
     const who = this.player.strength.swinger;
-    const tool = this.usable();
     const unit = woodJob('hew', aim.piece, 1, tool);
     const stroke = jobStroke(unit, who);
     const cost = strokeCost(stroke);
@@ -790,7 +1087,7 @@ export class WorldScene extends Phaser.Scene {
         if (why === 'stopped') this.notice('Arrêté : la face reprendra là.');
         this.player.stamina.flush();
         if (this.mode === 'rail') this.mode = 'play';
-        // l'appui sur Échap ou l'Espace d'avant ne relance rien
+        // l'appui sur Échap ou le clic d'avant ne relance rien
         this.useLockedUntil = this.time.now + LOCKS.afterWork;
       }),
     );
@@ -902,7 +1199,7 @@ export class WorldScene extends Phaser.Scene {
       ...job,
       end: () => {
         if (this.mode === 'work') this.mode = 'play';
-        // l'Espace d'avant ou l'appui qui l'a arrêté ne relance rien
+        // le clic d'avant ou l'appui qui l'a arrêté ne relance rien
         this.useLockedUntil = this.time.now + LOCKS.afterWork;
         this.interaction.lock(LOCKS.afterWork);
       },
@@ -930,14 +1227,14 @@ export class WorldScene extends Phaser.Scene {
     return !this.player.stamina.empty || s.load + kg <= s.walk + 1e-9;
   }
 
-  /** Prend un objet au sol dans une main libre (les deux s'il le demande). */
-  private pickUp(g: PlacedGround): void {
+  /** Prend un objet au sol dans la main du clic, ou l'autre si elle est prise (les deux s'il le demande). */
+  private pickUp(g: PlacedGround, hand: Hand): void {
     const kg = itemMass(g.item.item, undefined, g.item.natural);
     if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(undefined, kg, this.player.strength));
     if (!this.canLift(kg)) return this.effort.exhausted();
     // il garde le sens où il était couché : reposé, il le retrouve (R le tourne) ; et, naturel, sa forme et sa taille
     const what = { item: g.item.item, ...(g.item.view ? { view: g.item.view } : {}), ...(g.item.natural ? { natural: g.item.natural } : {}) };
-    if (!take(game, what, items[g.item.item].hands)) return this.notice('Les mains pleines.');
+    if (!take(game, what, items[g.item.item].hands, hand)) return this.notice('Les mains pleines.');
     removeGroundItem(game, this.map.def.id, g.item.id);
     this.map.removeGround(g);
     this.handsChanged();
@@ -1104,8 +1401,8 @@ export class WorldScene extends Phaser.Scene {
         break;
       case 'speeds':
         // les vitesses à calibrer en jouant (systems/speeds.ts), retenues dans le navigateur
-        setSpeeds({ walk: pxPerSec(cmd.walk), run: pxPerSec(cmd.run) });
-        this.notice(`Vitesses : marche ${cmd.walk} m/s, course ${cmd.run} m/s.`);
+        setSpeeds({ walk: pxPerSec(cmd.walk), run: pxPerSec(cmd.run), sneak: cmd.sneak ?? SPEEDS.sneak });
+        this.notice(`Vitesses : marche ${cmd.walk} m/s, course ${cmd.run} m/s, discrète ${String(SPEEDS.sneak).replace('.', ',')} de la marche.`);
         break;
       case 'speeds-default':
         setSpeeds(undefined);

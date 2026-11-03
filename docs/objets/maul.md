@@ -27,12 +27,12 @@
 Seule. Ne s'entrepose pas.
 
 ## Gestes
-- E court : prendre (mains libres : les deux).
-- Espace : sur une bille coin planté (grosse bille ou demi-bille), un appui lance le travail au coup (docs/CONCEPTION.md, « Le travail ») : Xéros frappe seul jusqu'à ce que la pièce s'ouvre (trois étapes par mètre commencé, `splitHits` ; une trentaine de coups pour une bille de 55 cm sur 1 m), chaque coup payé au joule ; un pas ou Échap l'arrête ; sur une bille sans coin, « Il faut d'abord un coin. » ; ailleurs elle ne frappe rien (le geste se joue dans le vide).
-- Q (A en AZERTY) : lâcher.
+- Clic court, main vide : prendre (mains libres : les deux).
+- Clic court (l'un ou l'autre) : sur une bille coin planté (grosse bille ou demi-bille), un clic lance le travail au coup (docs/CONCEPTION.md, « Le travail ») : Xéros frappe seul jusqu'à ce que la pièce s'ouvre (trois étapes par mètre commencé, `splitHits` ; une trentaine de coups pour une bille de 55 cm sur 1 m), chaque coup payé au joule ; un pas ou Échap l'arrête ; sur une bille sans coin, « Il faut d'abord un coin. » ; ailleurs elle frappe comme une arme improvisée (le geste se joue, même dans le vide).
+- A (Q en QWERTY) : lâcher.
 
 ## Origine
-Trouvée dans le cagibi de la maison (`tiled/maps/ferme.tmj`, objet « dedans » `maul-ground`, à côté du rouleau de corde). E la prend directement dans les deux mains.
+Trouvée dans le cagibi de la maison (`tiled/maps/ferme.tmj`, objet « dedans » `maul-ground`, à côté du rouleau de corde). Un clic court d'une main vide la prend directement dans les deux mains.
 
 ## Devenir
 Reste dans les mains ; se lâche comme un outil. Plus tard : forgée, achetée.

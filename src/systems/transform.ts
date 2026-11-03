@@ -47,7 +47,7 @@ function fits(part: TransformPart, h: Held): boolean {
 function handSources(): Source[] {
   if (game.both) return [{ hand: 'both', held: game.both }];
   const out: Source[] = [];
-  for (const slot of [game.active, (1 - game.active) as Hand]) {
+  for (const slot of [1, 0] as Hand[]) {
     const h = game.hands[slot];
     if (h) out.push({ hand: slot, held: h });
   }

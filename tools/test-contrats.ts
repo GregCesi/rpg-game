@@ -22,6 +22,8 @@ import { defOf, woodDims, WOOD_PIECE } from '../src/world/woodPiece';
 import { pileWoodOf, woodPileDef } from '../src/world/woodPile';
 import { agedKey, lookDef, sheetOf, shapeOfLook } from '../src/world/woodShape';
 import { harvestJob, planOf, swingerOf, woodJob } from '../src/world/workPlan';
+import { clickPlan } from '../src/world/clickAction';
+import type { Held } from '../src/state/GameState';
 
 const manifest = JSON.parse(readFileSync('src/generated/manifest.json', 'utf8'));
 const cat = catalogFrom(manifest);
@@ -41,6 +43,21 @@ const check = (at: string, f: (miss: (why: string) => void) => void) => {
 
 // ---------- les contrats ----------
 
+/**
+ * Les commandes (src/world/clickAction.ts, docs/COMMANDES.md) : ce qu'on tient obtient une action à chaque clic, court et maintenu, de
+ * chaque bouton, devant le vide et devant ce qui encaisse un coup ; au maintien, il se lance.
+ */
+function clicks(h: Held, hands: 1 | 2, miss: (w: string) => void): void {
+  const held = { hands: [null, hands === 2 ? null : h] as [Held | null, Held | null], both: hands === 2 ? h : null };
+  for (const aimed of [{}, { target: true }]) {
+    for (const b of hands === 2 ? (['left', 'right'] as const) : (['left'] as const)) {
+      const p = clickPlan(b, held, aimed, true);
+      if (p.short.kind === 'none' || !p.short.label) miss(`une action au clic ${b} court${aimed.target ? ' devant une cible' : ''}`);
+      if (p.long.kind !== 'throw') miss(`se lancer au clic ${b} maintenu`);
+    }
+  }
+}
+
 /** Objet portable : il a une masse, des dimensions, ses mains, sa posture tenue dessinée, son image au sol et ses vues, frappe, et s'il s'empile, un tas qui compte. */
 function portable(k: string, miss: (w: string) => void): void {
   const it = items[k];
@@ -55,6 +72,7 @@ function portable(k: string, miss: (w: string) => void): void {
   else if (heft.improvised && !(improvisedStroke(heft, xeros.swinger).joules > 0)) miss('frapper : énergie nulle');
   if (it.pile && !woodPileOk(undefined, it.pile)) miss(`son tas '${it.pile}' compte ses pièces`);
   if (!catalog().some((e) => e.id === `item:${k}`)) miss('sa place au catalogue');
+  clicks({ item: k }, it.hands, miss);
 }
 
 /** Tas écrit de piles.json : il compte (count). */
@@ -139,6 +157,7 @@ function woodSize(size: string, miss: (w: string) => void): void {
     if (!Object.keys(pile.places).length) miss(`${at} : son tas a des places`);
     if (woodMass(piece) <= strength.carry && !pileWoodOf(piece)) miss(`${at} : se pose en tas (Xéros la porte)`);
     if (!heftOf({ prop: WOOD_PIECE, wood: piece })) miss(`${at} : frappe`);
+    if (def.take) clicks({ prop: WOOD_PIECE, wood: piece }, def.take.hands, (w) => miss(`${at} : ${w}`));
     for (const ageImg of [lookDef(size, look).icon]) if (!drawn(ageImg)) miss(`${at} : son icône ${ageImg}`);
   }
   // les travaux du bois : la coupe partout ; la fente et l'équarrissage là où le diamètre a ces aspects

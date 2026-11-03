@@ -72,11 +72,13 @@ régulier (à quel point le travail l'a rendu tel).
 Seul, en tas (genre de `piles.json`, forme, maximum), ou quantité mesurée (ce qui est mesuré, son unité, où c'est gardé).
 
 ## Gestes
-- E court :
-- E maintenu :
-- Espace :
+(docs/COMMANDES.md : clic gauche = main droite, clic droit = main gauche ; tenu, tout objet se lance au clic maintenu, inutile de le redire)
+- Clic court, main vide :
+- Clic court, de la main qui le tient :
+- Clic maintenu, main vide :
+- E (parler, ouvrir, lire), s'il sert :
 - R :
-- (et Q, lâcher, s'il fait autre chose que d'habitude)
+- (et A (Q en QWERTY), lâcher, s'il fait autre chose que d'habitude)
 
 ## Travail
 Le travail au coup (CONCEPTION, *Le travail* : la durée découle des coups, chaque coup se paie au joule).

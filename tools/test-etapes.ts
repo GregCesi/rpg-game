@@ -42,10 +42,8 @@ await playtest('etapes', async ({ page, errors, load }) => {
       await (window as any).__frames(2);
       const keys: string[] = [p.image.texture.key];
       const flips: boolean[] = [];
-      // un seul appui : le travail va seul
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
-      await sleep(60);
-      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+      // un seul clic de la main de la cognée : le travail va seul
+      await (window as any).__click('left');
       await (window as any).__until(() => w().mode === 'work', 'le travail lancé');
       const stood = { dx: Math.round(a.x - p.aimX), dy: Math.round(a.y - p.aimY), facing: a.facing };
       // l'image de l'arbre à chaque pas de jeu (à x50, une image du navigateur en contient cinquante : aucune étape n'échappe)

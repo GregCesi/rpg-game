@@ -8,6 +8,8 @@ const KEY = 'xeros-vitesses-2';
 export interface Speeds {
   walk: number;
   run: number;
+  /** La marche discrète : une part de la marche (Alt maintenu), pas une vitesse à part. */
+  sneak: number;
 }
 
 /** m/s en px/s (5 cm par pixel), et l'inverse. */
@@ -15,13 +17,14 @@ export const pxPerSec = (metresPerSec: number): number => (metresPerSec * 100) /
 export const metresPerSec = (px: number): number => (px * CM_PER_PX) / 100;
 
 /** Les vitesses par défaut (config.ts, PLAYER, en m/s). */
-const DEFAULT_SPEEDS: Speeds = { walk: pxPerSec(PLAYER.walk), run: pxPerSec(PLAYER.run) };
+const DEFAULT_SPEEDS: Speeds = { walk: pxPerSec(PLAYER.walk), run: pxPerSec(PLAYER.run), sneak: PLAYER.sneak };
 
 function stored(): Speeds {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<Speeds> | null;
     const ok = (x: unknown): x is number => typeof x === 'number' && x > 0 && x < 2000;
-    return { walk: ok(v?.walk) ? v.walk : DEFAULT_SPEEDS.walk, run: ok(v?.run) ? v.run : DEFAULT_SPEEDS.run };
+    const part = (x: unknown): x is number => typeof x === 'number' && x > 0 && x <= 1;
+    return { walk: ok(v?.walk) ? v.walk : DEFAULT_SPEEDS.walk, run: ok(v?.run) ? v.run : DEFAULT_SPEEDS.run, sneak: part(v?.sneak) ? v.sneak : DEFAULT_SPEEDS.sneak };
   } catch {
     return { ...DEFAULT_SPEEDS };
   }

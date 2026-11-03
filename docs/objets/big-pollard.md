@@ -40,7 +40,7 @@ Seul. Les deux pièces couchées forment une chaîne (ordre de `spawns`) ; leurs
 (`big-logs`).
 
 ## Gestes
-- Espace avec la hache, debout, de côté (`use`) : un travail au coup (docs/CONCEPTION.md, « Le travail ») (`work.fell`, 55 cm : environ 2 h 30 pour Xéros) ; il
+- Clic de la main de la hache, debout, de côté (`use`) : un travail au coup (docs/CONCEPTION.md, « Le travail ») (`work.fell`, 55 cm : environ 2 h 30 pour Xéros) ; il
   tombe du côté où Xéros frappe (Xéros s'y place au lancement, l'entaille s'y dessine), laisse sa souche et fait naître
   ses deux pièces : souche `at` [17, -2], section 1 en (45, -6), houppier en (55, 0) ; `fall` : x -14, `foot` 33, à
   gauche x -45.

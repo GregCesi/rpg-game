@@ -50,22 +50,28 @@ export const DEPTH = {
 export const INTERACT = { reach: 16, radius: 20 };
 
 /**
+ * La visée à la souris (src/world/aim.ts) : ce qui est sous le curseur est visé s'il est à moins de `reach` px du point d'où Xéros
+ * regarde ; plus loin, il vise dans la direction du curseur, à `INTERACT.reach` px. Le fantôme de pose suit le curseur sans sortir de
+ * `reach` px. Ce qui encaisse un coup (le mannequin) se vise sous le curseur plus loin, jusqu'à `strike` px (la portée d'un long coup) :
+ * le clic d'une ressource frappe alors au lieu de poser.
+ */
+export const AIM = { reach: 32, strike: 64 };
+
+/**
  * La transformation « magique » des outils de test (?dieu, systems/transform.ts) : ce qui entre se cherche dans les mains, puis au
  * sol à moins de `near` px des pieds de Xéros (le plus près du point qu'il regarde d'abord).
  */
 export const TRANSFORM = { near: 40 };
 
 /**
- * E maintenu (nouer, dénouer) : durée de l'appui (ms) ; avant, relâcher E fait le geste court (reprendre une pièce).
- * La jauge (`ui-gauge`) se remplit au-dessus de la tête de Xéros, `above` px au-dessus de ses pieds (bas de la jauge).
+ * Le clic maintenu (docs/COMMANDES.md : nouer, dénouer, pivoter une bille, appeler la mère, viser un lancer) : le seuil (ms), le même
+ * pour les deux boutons ; avant, le relâcher fait le clic court (prendre, poser, travailler, frapper). La jauge (`ui-gauge`) se remplit au-dessus de la tête de Xéros, `above` px au-dessus de ses pieds (bas de la jauge).
  */
 export const LONG_PRESS = { ms: 500, above: 35 };
 
 /** L'aide de la mère pour dresser une poutre trop lourde (systems/site.ts) : durée du fondu (ms) et temps passé dans le noir, le temps de lire « Ta mère vient t'aider. ». */
 export const HELP = { fade: 500, hold: 1600 };
 
-/** R maintenu (pivoter une bille couchée, systems/turnLog.ts) : durée de l'appui (ms), avec la même jauge que pour nouer. */
-export const TURN_PRESS = { ms: 1000 };
 
 /** Nombre de pièces d'un tas (`count` de piles.json) : affiché quand les pieds de Xéros sont à moins de `near` px du tas au sol. */
 export const PILE_COUNT = { near: 12 };
@@ -237,6 +243,11 @@ export const PLAYER = {
   walk: 2,
   run: 2.5,
   /**
+   * La marche discrète (Alt maintenu, Option sur Mac ; docs/COMMANDES.md) : une part de la marche (0,4 : 0,8 m/s), réglable dans ?dieu
+   * (systems/speeds.ts). Chargé ou fatigué, la même part de sa marche d'alors.
+   */
+  sneak: 0.4,
+  /**
    * Cadences des dessins (px/s) : la vitesse pour laquelle la marche (`walk-*`, 100 px/s) et la marche portée (`carry-walk-*`, 55 px/s)
    * ont été dessinées ; l'animation s'accélère ou ralentit avec la vitesse réelle. Pas des vitesses de déplacement.
    */
@@ -248,7 +259,7 @@ export const PLAYER = {
 
 /**
  * Les petits délais entre deux états (ms) : `fade` le fondu d'un changement de carte (`fadeIn` à l'arrivée) ; `lock` l'interaction
- * bloquée après un fondu, un dialogue, la sortie du mode construction (l'appui qui l'a fermé ne relance rien) ; `afterWork` Espace
+ * bloquée après un fondu, un dialogue, la sortie du mode construction (l'appui qui l'a fermé ne relance rien) ; `afterWork` les clics
  * bloqué après un travail ou une passe arrêtés.
  */
 export const LOCKS = { fade: 200, fadeIn: 220, lock: 200, afterWork: 150 };

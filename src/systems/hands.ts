@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
-import { INTERACT, PUT_DOWN } from '../config';
+import { AIM, INTERACT, PUT_DOWN } from '../config';
+import { clampTo } from '../world/aim';
 import { items, piles, props } from '../content';
 import { crosswise, viewCount } from '../content/views';
 import type { Facing, WoodPiece } from '../content/types';
@@ -19,6 +20,7 @@ import {
   spawnObject,
   take,
   turnHeld,
+  type Hand,
   type Held,
 } from '../state';
 import { groundBox, propFootprint, propSize, type Box, type GameMap, type PlacedGround, type PlacedPile, type PlacedProp } from '../world/GameMap';
@@ -71,6 +73,13 @@ function frontCorner(b: Phaser.Physics.Arcade.Body, facing: Facing, fw: number, 
   return corners[facing];
 }
 
+/** Les valeurs de `from` à `to`, de `step` en `step`. */
+const range = (from: number, to: number, step: number): number[] => {
+  const out: number[] = [];
+  for (let v = from; v <= to; v += step) out.push(v);
+  return out;
+};
+
 const overlaps = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 
 /**
@@ -98,10 +107,11 @@ export class HandsSystem {
 
   /**
    * À appeler à chaque image : montre en transparence ce qu'on tient, à la place exacte où il ira si on le pose, dans son sens.
-   * `active` = false pendant un geste, un dialogue, un changement de carte, ou quand E vise autre chose (E agirait sur la cible).
+   * `active` = false pendant un geste, un dialogue, un changement de carte, ou quand le clic vise autre chose. `hand` : la main dont
+   * on montre ce qu'elle tient (celle qui poserait).
    */
-  updatePreview(player: Player, active: boolean): void {
-    const what = held(game);
+  updatePreview(player: Player, active: boolean, hand: Hand): void {
+    const what = held(game, hand);
     const t = active && what ? this.dropTarget(player, what) : undefined;
     if (!what || !t) return this.ghost.hideFrom(0);
     const g = this.ghostOf(what, t);
@@ -112,13 +122,13 @@ export class HandsSystem {
    * Prend un objet du monde dans les mains (les deux s'il le demande) : il quitte la carte et GameState l'oublie là
    * (objet né retiré, objet de Tiled noté disparu). Renvoie false si les mains ne sont pas libres.
    */
-  takeProp(p: PlacedProp): boolean {
+  takeProp(p: PlacedProp, hand: Hand): boolean {
     // ce qui a une longueur (le rouleau) l'emporte avec lui ; la pièce de bois, tous ses réglages, son sens compris
     const length = p.def.length ? { length: p.length ?? p.def.length.start } : {};
     const what: Held = p.wood
       ? { prop: p.type, wood: structuredClone(p.wood) }
       : { prop: p.type, ...(p.flip ? { flip: true } : {}), ...length, ...(p.natural ? { natural: { ...p.natural } } : {}), ...(p.bundle ? { bundle: p.bundle } : {}) };
-    if (!take(game, what, p.def.take!.hands)) return false;
+    if (!take(game, what, p.def.take!.hands, hand)) return false;
     const mapId = this.map.def.id;
     if (p.spawned) changeSpawned(game, mapId, p.id, { x: p.x, y: p.y });
     else changeObject(game, mapId, p.id, { x: p.x, y: p.y });
@@ -130,7 +140,7 @@ export class HandsSystem {
    * Reprend la pièce de la place `place` d'un tas (la pièce ordinaire du genre : la bille, la branche) ; le tas disparaît
    * à la dernière. Renvoie false si les mains ne sont pas libres.
    */
-  takeFromPile(p: PlacedPile, place: string): boolean {
+  takeFromPile(p: PlacedPile, place: string, hand: Hand): boolean {
     const piece = p.def.piece;
     // une matière naturelle reprise d'un tas a la forme dessinée à sa place (`-b` : la seconde) et la taille type : le tas range des
     // pièces semblables, il ne garde pas la taille de chacune
@@ -144,7 +154,7 @@ export class HandsSystem {
           ? { prop: WOOD_PIECE, wood: structuredClone(p.def.places[place].wood) ?? { ...piece.wood, axis: p.pile.turned ? 'ns' : 'ew' } }
           : { ...piece, ...(p.pile.turned ? { turned: true } : {}), ...(props[piece.prop].natural ? form : {}), ...(p.pile.bundle ? { bundle: p.pile.bundle } : {}) };
     const hands = 'item' in piece ? items[piece.item].hands : 'wood' in piece ? defOf(WOOD_PIECE, { ...piece.wood, axis: 'ew' }).take!.hands : props[piece.prop].take!.hands;
-    if (!take(game, what, hands)) return false;
+    if (!take(game, what, hands, hand)) return false;
     emptyPlace(game, this.map.def.id, p.pile.id, place);
     if (!p.pile.places.length && !p.pile.tie) this.map.removePile(p);
     else this.map.refreshPile(p);
@@ -152,23 +162,23 @@ export class HandsSystem {
   }
 
   /** Reprend le lien d'un tas qui n'a plus de pièce : le tas disparaît. Renvoie false si aucune main n'est libre. */
-  takeTie(p: PlacedPile): boolean {
+  takeTie(p: PlacedPile, hand: Hand): boolean {
     const item = p.def.tie!.item;
-    if (!take(game, { item }, items[item].hands)) return false;
+    if (!take(game, { item }, items[item].hands, hand)) return false;
     setPileTie(game, this.map.def.id, p.pile.id, false);
     this.map.removePile(p);
     return true;
   }
 
   /**
-   * Pose ce que tient la main active sur l'objet `p` (le rouleau sur le billot) : il devient l'objet de son `rest` qui
-   * le porte, avec sa longueur. Renvoie false si la main active ne tient pas ce qu'il accepte.
+   * Pose ce que tient la main `hand` sur l'objet `p` (le rouleau sur le billot) : il devient l'objet de son `rest` qui
+   * le porte, avec sa longueur. Renvoie false si cette main ne tient pas ce qu'il accepte.
    */
-  rest(p: PlacedProp): boolean {
-    const what = game.both ? undefined : game.hands[game.active];
+  rest(p: PlacedProp, hand: Hand): boolean {
+    const what = game.both ? undefined : game.hands[hand];
     const becomes = what && 'prop' in what ? p.def.rest?.[what.prop] : undefined;
     if (!what || !('prop' in what) || !becomes) return false;
-    release(game);
+    release(game, hand);
     this.replace(p, becomes, what.length ?? props[what.prop].length?.start);
     return true;
   }
@@ -177,10 +187,10 @@ export class HandsSystem {
    * Reprend ce que porte l'objet `p` (le rouleau sur le billot), avec sa longueur : il redevient `bears.empty`.
    * Renvoie false si les mains ne sont pas libres.
    */
-  unload(p: PlacedProp): boolean {
+  unload(p: PlacedProp, hand: Hand): boolean {
     const { prop, empty } = p.def.bears!;
     const def = props[prop];
-    if (!take(game, { prop, ...(p.length !== undefined ? { length: p.length } : {}) }, def.take!.hands)) return false;
+    if (!take(game, { prop, ...(p.length !== undefined ? { length: p.length } : {}) }, def.take!.hands, hand)) return false;
     this.replace(p, empty, undefined);
     return true;
   }
@@ -195,13 +205,13 @@ export class HandsSystem {
     else changeObject(game, this.map.def.id, p.id, change);
   }
 
-  /** Pose devant Xéros ce que tient la main active (ou les deux mains), là où le montre le fantôme : le seul chemin de pose. */
-  putDown(player: Player): PutDownResult {
-    const what = held(game);
+  /** Pose devant Xéros ce que tient la main `hand` (ou les deux mains), là où le montre le fantôme : le seul chemin de pose. */
+  putDown(player: Player, hand: Hand): PutDownResult {
+    const what = held(game, hand);
     if (!what) return 'empty';
     const t = this.dropTarget(player, what);
     if (!t) return 'blocked';
-    release(game);
+    release(game, hand);
     this.put(what, t);
     this.ghost.hideFrom(0);
     return 'done';
@@ -212,12 +222,12 @@ export class HandsSystem {
    * possédable qui a plusieurs vues (`views` : la branche, le piquet, le lien, les outils), ou ce dont le genre de tas a une forme
    * tournée (`turned` de piles.json : le fagot). Renvoie false si ce qu'on tient ne se tourne pas (un objet rond).
    */
-  turn(): boolean {
-    const what = held(game);
+  turn(hand: Hand): boolean {
+    const what = held(game, hand);
     const kind = what && pileOf(what);
     const turns = what && ('item' in what ? viewCount(items[what.item].views) > 1 : what.wood || (kind && pileDefOf(kind).turned));
     if (!turns) return false;
-    turnHeld(game);
+    turnHeld(game, hand);
     return true;
   }
 
@@ -394,8 +404,8 @@ export class HandsSystem {
     return out;
   }
 
-  /** Pose `what` (déjà sorti des mains) là où le dit `t`, dans GameState et à l'écran. */
-  private put(what: Held, t: Drop): void {
+  /** Pose `what` (déjà sorti des mains) là où le dit `t`, dans GameState et à l'écran ; posé seul, rend son image. */
+  private put(what: Held, t: Drop): Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | undefined {
     const mapId = this.map.def.id;
     if (t.kind === 'pile') {
       fillPlace(game, mapId, t.pile.pile.id, t.place);
@@ -418,11 +428,49 @@ export class HandsSystem {
     } else if (t.kind === 'tie-alone') {
       this.map.placePile(addPile(game, mapId, { pile: t.genre, x: t.x, y: t.y, places: [], tie: true }));
     } else if ('item' in what) {
-      this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view, what.natural));
+      return this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view, what.natural)).image;
     } else {
       const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle });
-      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle });
+      return this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle }).image;
     }
+    return undefined;
+  }
+
+  /**
+   * Pose seul au sol `what` (déjà sorti des mains) là où il retombe, (x, y) étant le point du sol où il touche : à la place libre la plus
+   * proche (en spirale de `PUT_DOWN.step` px, au plus `PUT_DOWN.reach` px), sinon aux pieds de Xéros. Rend son image (le lancer la
+   * cache pendant le vol, world/throw.ts). La matière se conserve : il est dans GameState dès maintenant.
+   */
+  layNear(player: Player, what: Held, x: number, y: number): Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | undefined {
+    // le point du sol où l'objet touche est le milieu de son emprise : on le ramène à son point de pose
+    const at = this.centerToSpot(what, x, y);
+    const bodies = 'item' in what ? this.others : [...this.others, player.actor.body];
+    const { step, reach } = PUT_DOWN;
+    for (let r = 0; r <= reach; r += step) {
+      for (let dx = -r; dx <= r; dx += step) {
+        for (const dy of r === 0 ? [0] : Math.abs(dx) === r ? range(-r, r, step) : [-r, r]) {
+          const sx = Math.round(at.x + dx);
+          const sy = Math.round(at.y + dy);
+          if (this.map.areaFree(this.layBox(what, sx, sy), bodies)) return this.put(what, { kind: 'lay', x: sx, y: sy });
+        }
+      }
+    }
+    // nulle part autour (dans l'eau, contre un mur) : aux pieds de Xéros, comme ce qu'il ne peut plus porter
+    const feet = { x: Math.round(player.actor.x), y: Math.round(player.actor.y) };
+    return this.put(what, { kind: 'lay', ...(this.laySpot(player, what) ?? feet) });
+  }
+
+  /** Le point de pose de `what` seul dont l'emprise est centrée en (x, y). */
+  private centerToSpot(what: Held, x: number, y: number): { x: number; y: number } {
+    if ('item' in what) return { x: Math.round(x), y: Math.round(y + this.itemSize(what).h / 2) };
+    const { f, h } = this.footprint(what);
+    return { x: Math.round(x - (f.left + f.right) / 2), y: Math.round(y + h - (f.top + f.bottom) / 2) };
+  }
+
+  /** L'image de `what` comme il serait posé seul (la clé de texture, et l'image de planche) : l'objet qui vole. */
+  lookOf(what: Held): { key: string; frame?: string } {
+    const g = this.ghostOf(what, { kind: 'lay', x: 0, y: 0 });
+    return { key: g.key, frame: g.frame };
   }
 
   /** Le fantôme de `what` posé là où le dit `t` : image (et image de planche), coin bas gauche, profondeur. */
@@ -530,6 +578,12 @@ export class HandsSystem {
    */
   private layFront(player: Player, what: Held): [number, number] {
     const b = player.actor.body;
+    // à la souris, le fantôme suit le curseur, sans sortir de la portée de Xéros (AIM.reach) : l'objet centré sur le point visé
+    const c = player.cursor && clampTo(player.eye, player.cursor, AIM.reach);
+    if (c) {
+      const at = this.centerToSpot(what, c.x, c.y);
+      return [at.x, at.y];
+    }
     if ('item' in what) {
       const { w, h } = this.itemSize(what);
       const [l, t] = frontCorner(b, player.actor.facing, w, h);

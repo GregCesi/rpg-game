@@ -113,3 +113,39 @@ console.log("✓ clavier : un appui plus court qu'une image est lu, une tape dé
   assert.equal(times.length, 6 * 10 + 3, 'x10 : dix pas par image ; x1 : un');
   console.log("✓ vitesse de simulation : l'horloge du jeu ne recule jamais, à x10 comme au retour à x1");
 }
+
+// la souris (src/input/PlayerInput.ts) : ses deux boutons passent par le même verrou que le clavier (Mouse0, Mouse2), avec leur durée
+// vraie ; un clic plus court qu'une image est lu, une fois ; un clic tenu est long même lu tard
+{
+  const { MOUSE } = { MOUSE: { left: 'Mouse0', right: 'Mouse2' } };
+  const k = new KeyLatch();
+  k.down(MOUSE.left, 100);
+  k.up(MOUSE.left, 104);
+  assert.equal(k.take([MOUSE.left]), true, 'le clic de 4 ms est lu');
+  assert.equal(k.take([MOUSE.left]), false, 'une seule fois');
+  assert.equal(k.take([MOUSE.right]), false, "l'autre bouton n'a rien fait");
+  assert.equal(pressEnd(false, 900, LONG_PRESS.ms, k.lastedFor([MOUSE.left])), 'short', 'un clic court lu après une image longue reste court');
+  k.down(MOUSE.right, 1000);
+  k.up(MOUSE.right, 1000 + LONG_PRESS.ms + 50);
+  assert.equal(pressEnd(false, 0, LONG_PRESS.ms, k.lastedFor([MOUSE.right])), 'long', 'un clic maintenu est long');
+  console.log('✓ souris : les clics passent par le verrou du clavier, avec leur durée vraie');
+}
+
+// la visée (src/world/aim.ts) : Xéros se tourne vers la plus proche de ses directions de dessin ; il vise sous le curseur à portée,
+// sinon dans sa direction, à la distance d'habitude ; sans curseur, devant lui ; le fantôme ne sort pas de sa portée
+{
+  const { aimProbe, clampTo, facingToward } = await import('../src/world/aim');
+  assert.equal(facingToward(10, 3, 'down'), 'right');
+  assert.equal(facingToward(-2, -9, 'down'), 'up');
+  assert.equal(facingToward(5, 5, 'down'), 'down', 'à égalité, il garde sa direction si elle convient');
+  assert.equal(facingToward(5, 5, 'left'), 'right', 'sinon l’horizontale');
+  assert.equal(facingToward(0, 0, 'left'), 'left');
+  const c = { x: 100, y: 100 };
+  assert.deepEqual(aimProbe(c, { x: 110, y: 120 }, 'up', 32, 16), { x: 110, y: 120 }, 'à portée : sous le curseur');
+  const far = aimProbe(c, { x: 100, y: 400 }, 'up', 32, 16);
+  assert.deepEqual(far, { x: 100, y: 116 }, 'hors de portée : dans la direction du curseur, à 16 px');
+  assert.deepEqual(aimProbe(c, undefined, 'left', 32, 16), { x: 84, y: 100 }, 'sans curseur : devant lui');
+  const k = clampTo(c, { x: 400, y: 100 }, 32);
+  assert.deepEqual(k, { x: 132, y: 100 }, 'le fantôme reste à portée');
+  console.log('✓ visée : la direction la plus proche, sous le curseur à portée, sinon dans sa direction ; sans souris, devant lui');
+}

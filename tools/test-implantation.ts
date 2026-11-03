@@ -1,4 +1,4 @@
-// Test de scénario de l'implantation, dans le vrai jeu (voir tools/lib/playtest.ts) : refus sans plan, lire la planchette chez la
+// Test de scénario de l'implantation, dans le vrai jeu (voir tools/lib/playtest.ts), au clic : le piquet posé sans plan, lire la planchette chez la
 // mère, tailler un piquet à la hachette (refus sans branche dans l'autre main), poser le rouleau de corde
 // sur le billot et en couper un lien à la hachette puis à la cognée, tracer l'emprise (un piquet refusé hors des coins, un tracé gêné par un rocher), le
 // chantier qui naît, un objet refusé par une place, quatre dalles portées depuis la berge jusqu'aux quatre dés, le
@@ -38,14 +38,21 @@ await playtest('implantation', async ({ page, errors, load }) => {
         for (let i = 0; i < 20 && world().mode !== 'work' && world().mode !== 'rail'; i++) await new Promise((res) => requestAnimationFrame(res));
         if (world().mode === 'work' || world().mode === 'rail') (window as any).game.events.emit('dieu', { kind: 'finish-work' });
       };
+      // `use` : le clic de la main de l'outil (ou du piquet) ; `hands` : le clic d'une main vide (prendre) ou de la main qui tient
+      // (poser, sur une place de chantier, sur le billot ; devant une place trop lourde, ce qui manque) : comme un joueur qui lit le mot de
+      // chaque clic (tools/lib/playtest.ts `__do`) ; sinon une touche (E : la planchette ; A : lâcher)
       const press = async (code: string) => {
+        if (code === 'use' || code === 'hands') {
+          await (window as any).__do(code === 'use' ? ['work', 'plant', 'strike', 'punch'] : ['take', 'put', 'rest', 'place', 'help-info']);
+          await (window as any).__settle();
+          // un travail lancé dure son temps réel : il se finit d'un coup (?dieu « Finir le travail »), horloge, endurance et résultat compris
+          if (code === 'use') await finishWork();
+          return;
+        }
         window.dispatchEvent(new KeyboardEvent('keydown', { code }));
         await sleep(60);
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
         await (window as any).__settle();
-        // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
-        // travail »), horloge, endurance et résultat compris
-        if (code === 'Space') await finishWork();
       };
       const give = async (what: { item: string } | { prop: string }) => {
         emit({ kind: 'give', held: what });
@@ -74,11 +81,16 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const shot = (name: string) => (window as any).shot(name);
       const out: Record<string, unknown> = {};
 
-      // 1. sans plan connu, un piquet ne se plante pas
+      // 1. sans plan connu, un piquet ne se plante pas : c'est une ressource, le clic le pose
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'stake' });
-      await press('Space');
-      out.noPlanNotice = notices.at(-1);
+      out.noPlanClick = JSON.stringify(w().plans?.left.short.kind);
+      await press('hands');
+      out.noPlanGround = ground('stake');
+      for (const gr of w().map.ground.filter((q: any) => q.item.item === 'stake')) {
+        gs.removeGroundItem(gs.game, mapId(), gr.item.id);
+        w().map.removeGround(gr);
+      }
       out.noPlanSites = gs.mapState(gs.game, mapId()).sites.length;
       out.noPlanHands = hands();
 
@@ -114,7 +126,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
       // la hachette seule, face au billot : refusé, sans geste ni dépense
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'hatchet' });
-      await press('Space');
+      await press('use');
       await (window as any).__settle();
       out.noBranchNotice = notices.at(-1);
       out.noBranchMode = w().mode;
@@ -129,49 +141,50 @@ await playtest('implantation', async ({ page, errors, load }) => {
       };
       await twoHands('hatchet', 'branch');
       out.beforeCut = hands();
-      await press('Space');
+      await press('use');
       await settled();
       out.afterCut = hands();
       out.cutCost = 100 - w().player.stamina.ceiling;
       out.blockBare = props(/^chopping-block$/).length;
-      // et dans l'autre ordre : la branche dans la main active, la hachette dans l'autre
+      // et dans l'autre ordre : la branche dans la main droite, la hachette dans la gauche
       await twoHands('branch', 'hatchet');
       out.beforeCut2 = hands();
-      await press('Space');
+      await press('use');
       await settled();
       out.afterCut2 = hands();
-      // deux objets en main : lâcher celui de la main active (Q, A en AZERTY), la main active passe sur l'autre
+      // deux objets en main : A (Q en QWERTY) lâche ce que tient la main du dernier clic (la gauche, la hachette, qui vient de tailler)
       await twoHands('branch', 'hatchet');
-      const activeBefore = gs.game.active;
       w().player.actor.face('up');
       await (window as any).__settle();
       await press('KeyQ');
-      out.dropFollow = JSON.stringify({ before: activeBefore, active: gs.game.active, hands: hands() });
+      out.dropFollow = hands();
       // la branche lâchée ôtée, Xéros de nouveau face au billot
       for (const gr of w().map.ground.filter((q: any) => q.item.item === 'branch')) {
         gs.removeGroundItem(gs.game, mapId(), gr.item.id);
         w().map.removeGround(gr);
       }
+      for (const gr of w().map.ground.filter((q: any) => q.item.item === 'hatchet')) {
+        gs.removeGroundItem(gs.game, mapId(), gr.item.id);
+        w().map.removeGround(gr);
+      }
       w().player.actor.face('down');
-      // la main droite de nouveau active, comme au départ (la suite du scénario en dépend)
-      if (gs.game.active !== 1) gs.switchHand(gs.game);
       await (window as any).__settle();
       // le rouleau de corde posé sur le billot (E), puis coupé à la hachette (un lien de 2 m, 0,4 point), puis à la cognée
       gs.emptyHands(gs.game);
       await give({ prop: 'rope-coil' });
-      await press('KeyE');
+      await press('hands');
       out.ropeRested = JSON.stringify({ hands: hands(), block: props(/^chopping-block-rope$/).length });
       const ropeLength = () => props(/^chopping-block-rope$/)[0]?.length;
       const ties = () => ground('rope-tie');
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'hatchet' });
-      await press('Space');
+      await press('use');
       await settled();
       out.ropeHatchet = JSON.stringify({ length: ropeLength(), ties: ties(), notice: notices.at(-1) });
       out.ropeHatchetCost = 100 - w().player.stamina.ceiling;
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'axe' });
-      await press('Space');
+      await press('use');
       await settled();
       out.ropeAxe = JSON.stringify({ length: ropeLength(), ties: ties(), notice: notices.at(-1) });
       out.ropeAxeCost = 100 - w().player.stamina.ceiling;
@@ -184,36 +197,34 @@ await playtest('implantation', async ({ page, errors, load }) => {
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'stake' });
       await lookAt(corner.nw[0], corner.nw[1]);
-      await press('Space');
+      await press('use');
       out.plantCost = 100 - stamina();
       out.firstSite = JSON.stringify({ stakes: site()?.stakes, x: site()?.x, y: site()?.y, born: site()?.born });
       out.firstHands = hands();
       await give({ item: 'stake' });
       await lookAt(ox + 30, oy + 10);
-      await press('Space');
+      await press('use');
       out.farNotice = notices.at(-1);
       out.farStakes = [...site().stakes];
       out.farHands = hands();
       await lookAt(corner.ne[0] + 3, corner.ne[1] - 2);
-      await press('Space');
+      await press('use');
       out.neStakes = [...site().stakes];
       await shot('2-trace');
-      await press('KeyE');
+      await press('hands');
       out.neTaken = JSON.stringify({ stakes: site().stakes, hands: hands() });
-      await press('Space');
+      await press('use');
       out.neAgain = [...site().stakes];
-      // le piquet dans la main active, une branche dans l'autre : planté, la main active passe sur la branche
+      // le piquet dans la main droite, une branche dans la gauche : le clic gauche le plante, la branche reste dans la gauche
       gs.emptyHands(gs.game);
       gs.take(gs.game, { item: 'stake' }, 1);
       gs.take(gs.game, { item: 'branch' }, 1);
       w().handsChanged();
-      const stakeHand = gs.game.active;
       await lookAt(corner.se[0], corner.se[1]);
-      await press('Space');
+      await press('use');
       out.seStakes = [...site().stakes];
-      out.plantFollow = JSON.stringify({ before: stakeHand, active: gs.game.active, held: gs.game.hands[gs.game.active] });
+      out.plantFollow = hands();
       gs.emptyHands(gs.game);
-      if (gs.game.active !== 1) gs.switchHand(gs.game);
       w().handsChanged();
 
       // 5. une emprise gênée : le dernier piquet est refusé et reste en main ; dégagée, le chantier naît
@@ -221,12 +232,12 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const placedRock = w().map.placeProp(rock, { spawned: true });
       await give({ item: 'stake' });
       await lookAt(corner.sw[0], corner.sw[1]);
-      await press('Space');
+      await press('use');
       out.blockedNotice = notices.at(-1);
       out.blockedState = JSON.stringify({ stakes: site().stakes.length, born: site().born, hands: hands() });
       w().map.removeProp(placedRock);
       gs.changeSpawned(gs.game, mapId(), rock.id, { x: 0, y: 0 });
-      await press('Space');
+      await press('use');
       out.born = JSON.stringify({ stakes: site().stakes.length, born: site().born, hands: hands() });
       out.statusStart = statusText();
       await shot('3-chantier');
@@ -234,17 +245,17 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const ghostKeys = () => w().site.ghosts.images.filter((i: any) => i.visible).map((i: any) => i.texture.key).sort();
       out.ghostsDice = ghostKeys();
 
-      // 6. les dés : un objet qui n'est pas une dalle est refusé ; quatre pierres de la berge, portées une à une
+      // 6. les dés : un objet qui n'est pas une dalle (une branche) est refusé ; quatre pierres de la berge, portées une à une
       const plan = content.plans.woodshed;
       const places = Object.entries(plan.steps[0].places) as [string, any][];
       const aimOf = (id: string) => sp.placeGround(site(), plan.steps[0].places[id]);
-      await give({ item: 'axe' });
+      await give({ item: 'branch' });
       const nwAim = aimOf('footing-nw');
       await lookAt(nwAim.x, nwAim.y);
-      await press('KeyE');
+      await press('hands');
       out.wrongNotice = notices.at(-1);
       out.wrongPlaced = Object.keys(site().placed).length;
-      // la hache lâchée (sinon E la reposerait au lieu de prendre une pierre), puis quatre pierres de la berge
+      // la branche ôtée des mains, puis quatre pierres de la berge
       gs.emptyHands(gs.game);
       w().handsChanged();
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
@@ -252,11 +263,11 @@ await playtest('implantation', async ({ page, errors, load }) => {
       for (const [i, [id, place]] of places.entries()) {
         const stone = props(/^slab$/)[0];
         await standAt(stone.baseX, stone.y + 4, 'up');
-        await press('KeyE');
+        await press('hands');
         const carried = hands();
         const g2 = sp.placeGround(site(), place);
         await lookAt(g2.x, g2.y);
-        await press('KeyE');
+        await press('hands');
         dice.push({
           id,
           carried,
@@ -277,11 +288,11 @@ await playtest('implantation', async ({ page, errors, load }) => {
       out.ghostsPosts = ghostKeys();
       out.upKeys = [300, 180].map((length) => shape.woodKey({ size: 'normal', length, shape: 'round', hewn: 12, axis: 'up' }));
       await shot('5-quatre-des');
-      // les poteaux sont ouverts ; le poteau haut ne se porte pas : E devant sa place dit ce qu'il faut (une poutre au pied du dé), un piquet en main ou non
+      // les poteaux sont ouverts ; le poteau haut ne se porte pas : le clic devant sa place dit ce qu'il faut (une poutre au pied du dé), un piquet en main ou non
       await give({ item: 'stake' });
       const post = sp.placeGround(site(), plan.steps[1].places['post-nw']);
       await lookAt(post.x, post.y);
-      await press('KeyE');
+      await press('hands');
       out.postNotice = notices.at(-1);
       out.postPlaced = Object.keys(site().placed).length;
       await (window as any).__settle();
@@ -298,9 +309,10 @@ await playtest('implantation', async ({ page, errors, load }) => {
   console.log(JSON.stringify(result));
   const r = result as Record<string, any>;
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
-  assert.equal(r.noPlanNotice, 'Xéros ne sait pas encore quoi tracer.', 'sans plan connu : refusé, avec ce message');
+  assert.equal(r.noPlanClick, '"put"', 'sans plan connu, le clic du piquet le pose');
   assert.equal(r.noPlanSites, 0, 'sans plan, aucun chantier');
-  assert.equal(r.noPlanHands, '[null,{"item":"stake"}]null', 'le piquet reste en main');
+  assert.equal(r.noPlanGround, 1, 'le piquet est posé au sol');
+  assert.equal(r.noPlanHands, '[null,null]null', 'il a quitté la main');
   assert.equal(r.tablet, true, 'la planchette est chez la mère');
   assert.equal(r.learned, "Xéros connaît maintenant le plan de l'abri à bois.");
   assert.deepEqual(r.known, ['woodshed'], 'le plan est connu');
@@ -316,12 +328,8 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.ok(r.cutCost > 0.1 && r.cutCost < 0.6, `tailler se paie coup par coup, une fraction de point : ${r.cutCost}`);
   assert.equal(r.blockBare, 1, 'le billot ne change pas');
   assert.equal(r.afterCut2, '[{"item":"hatchet"},{"item":"stake"}]null', 'dans l\'autre ordre aussi : le piquet reste dans la main de la branche');
-  {
-    const d = JSON.parse(r.dropFollow);
-    assert.equal(d.active, 1 - d.before, 'lâcher la main active : elle passe sur l\'autre main, qui tient la hachette');
-    assert.equal(d.hands, d.before === 1 ? '[{"item":"hatchet"},null]null' : '[null,{"item":"hatchet"}]null');
-  }
-  assert.equal(r.ropeRested, JSON.stringify({ hands: '[null,null]null', block: 1 }), 'E pose le rouleau sur le billot');
+  assert.equal(r.dropFollow, '[null,{"item":"branch"}]null', 'A lâche ce que tient la main du dernier clic (la hachette, à gauche)');
+  assert.equal(r.ropeRested, JSON.stringify({ hands: '[null,null]null', block: 1 }), 'le clic pose le rouleau sur le billot');
   assert.equal(r.ropeHatchet, JSON.stringify({ length: 800, ties: 1, notice: 'Rouleau de corde : 8 m restants.' }), 'la hachette coupe un lien de 2 m');
   assert.ok(Math.abs(r.ropeHatchetCost - 0.4) < 1e-6, `un coup de hachette coûte 0,4 : ${r.ropeHatchetCost}`);
   assert.equal(r.ropeAxe, JSON.stringify({ length: 600, ties: 2, notice: 'Rouleau de corde : 6 m restants.' }), 'la cognée aussi');
@@ -333,15 +341,11 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.deepEqual(r.farStakes, ['nw'], 'rien de planté hors des coins');
   assert.equal(r.farHands, '[null,{"item":"stake"}]null', 'le piquet refusé reste en main');
   assert.deepEqual(r.neStakes, ['nw', 'ne'], 'près d’un coin, le piquet s’aimante');
-  assert.equal(JSON.parse(r.neTaken).hands, '[null,{"item":"stake"}]null', 'E reprend un piquet du tracé');
+  assert.equal(JSON.parse(r.neTaken).hands, '[null,{"item":"stake"}]null', 'le clic d’une main vide reprend un piquet du tracé');
   assert.deepEqual(JSON.parse(r.neTaken).stakes, ['nw'], 'le coin est libre à nouveau');
   assert.deepEqual(r.neAgain, ['nw', 'ne'], 'et se replante');
   assert.deepEqual(r.seStakes, ['nw', 'ne', 'se']);
-  {
-    const d = JSON.parse(r.plantFollow);
-    assert.equal(d.active, 1 - d.before, 'le piquet planté, la main active passe sur la branche');
-    assert.deepEqual(d.held, { item: 'branch' });
-  }
+  assert.equal(r.plantFollow, '[{"item":"branch"},null]null', 'le piquet planté, la branche reste dans l’autre main');
   assert.equal(r.blockedNotice, 'Il y a quelque chose dans le passage.', 'une emprise gênée refuse le dernier piquet');
   assert.equal(r.blockedState, JSON.stringify({ stakes: 3, born: false, hands: '[null,{"item":"stake"}]null' }), 'le 4e piquet reste en main');
   assert.equal(r.born, JSON.stringify({ stakes: 4, born: true, hands: '[null,null]null' }), 'dégagée, le chantier naît');

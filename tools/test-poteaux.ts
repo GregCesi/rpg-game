@@ -1,7 +1,7 @@
 // Test de scénario des poteaux de l'abri, dans le vrai jeu (voir tools/lib/playtest.ts) : on part des quatre dés posés ; une place
 // refuse un rondin non équarri, une poutre de 2 m, autre chose qu'une poutre (rien ne se dépense, la pièce reste en main) ; les deux
 // poteaux bas (1,80 m, 65 kg) se dressent portés, au prix de l'effort ; les deux poteaux hauts (3 m, 108 kg) ne se portent pas :
-// sans poutre au pied du dé on le dit, avec elle E maintenu appelle la mère (fondu, « Ta mère vient t'aider. », la moitié de
+// sans poutre au pied du dé on le dit, avec elle le clic maintenu appelle la mère (fondu, « Ta mère vient t'aider. », la moitié de
 // l'effort) ; les quatre poteaux posés, la ligne passe aux sablières ; la page rechargée les retrouve avec leur pièce d'origine.
 // Un chantier montre les vraies pièces posées : un poteau dressé est la pièce de bois debout (même état, même longueur, même clé
 // d'image que son fantôme), et sa silhouette a la taille au gabarit (une poutre de 1,80 m : 8 × 40 px ; de 3 m : 8 × 64), et sa largeur est l'épaisseur de la même poutre couchée (règle D étendue).
@@ -39,9 +39,17 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       const emit = (c: unknown) => g.events.emit('dieu', c);
       const notices: string[] = [];
       g.events.on('notice', (t: string) => notices.push(t));
+      // `hands` : le clic de la main qui tient (poser la poutre sur sa place) ou d'une main vide (prendre ; devant une place trop
+      // lourde, ce qui manque) ; `help` : le clic maintenu d'une main vide (appeler la mère) ; comme un joueur qui lit le mot de chaque clic
+      // (tools/lib/playtest.ts `__do`) ; sinon une touche (E dans le dialogue : « Oui »)
       const press = async (code: string, hold = 60) => {
-        // keyCode aussi : les touches de la scène des dialogues (Phaser) sont lues par leur code numérique
-        const keyCode = code === 'KeyE' ? 69 : 0;
+        if (code === 'hands' || code === 'help') {
+          if (code === 'hands') await (window as any).__do(['place', 'help-info', 'take', 'put', 'rest']);
+          else await (window as any).__do(['help'], { long: true });
+          await (window as any).__settle();
+          return;
+        }
+        const keyCode = 0;
         window.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode }));
         await sleep(hold);
         window.dispatchEvent(new KeyboardEvent('keyup', { code, keyCode }));
@@ -129,7 +137,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
         const cost0 = stamina();
         const a = aim(place);
         await lookAt(a.x, a.y);
-        await press('KeyE');
+        await press('hands');
         refusals[name] = JSON.stringify({ notice: notices.at(-1), kept: hands() === before, spent: cost0 - stamina(), placed: Object.keys(site().placed).length });
       };
       await refuse('rondin', beam(180, 0), 'post-sw');
@@ -152,7 +160,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
         out.carried = hands();
         const a = aim(place);
         await lookAt(a.x, a.y);
-        await press('KeyE');
+        await press('hands');
         low.push({ place, hands: hands(), cost: 100 - stamina(), status: statusText(), notice: notices.at(-1) });
         await (window as any).__settle();
       }
@@ -176,31 +184,31 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       // 3a. rien au pied du dé : « Il faut d'abord une poutre de 3 m au pied du dé. »
       await lookAt(nw.x, nw.y);
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
-      await press('KeyE');
+      await press('hands');
       out.shortNone = notices.at(-1);
-      await press('KeyE', 700);
+      await press('help');
       out.noBeamNotice = notices.at(-1);
       out.noBeamMode = w().mode;
       // 3b. une poutre qui ne convient pas au pied du dé (un rondin de 3 m, une poutre de 2 m) : même message
       const wrong1 = beamAt(nw.x - 80, nw.y + 14, beam(300, 0));
       const wrong2 = beamAt(nw.x - 80, nw.y + 22, beam(200));
       await lookAt(nw.x, nw.y);
-      await press('KeyE', 700);
+      await press('help');
       out.wrongBeamNotice = notices.at(-1);
       // 3c. une bonne poutre, mais loin (plus d'une case du dé)
       const far = beamAt(nw.x - 160, nw.y + 14);
       await lookAt(nw.x, nw.y);
-      await press('KeyE', 700);
+      await press('help');
       out.farNotice = notices.at(-1);
       for (const p of [wrong1, wrong2, far]) {
         gs.changeSpawned(gs.game, mapId(), p.id, { x: 0, y: 0 });
         w().map.removeProp(p);
       }
-      // 3d. la bonne, couchée à l'ouest du dé, son bout est-ouest à moins d'une case : E court dit comment faire, E maintenu appelle
+      // 3d. la bonne, couchée à l'ouest du dé, son bout est-ouest à moins d'une case : le clic court dit comment faire, le clic maintenu appelle
       beamAt(nw.x - 56, nw.y + 8);
       await lookAt(nw.x, nw.y);
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
-      await press('KeyE');
+      await press('hands');
       out.shortGood = notices.at(-1);
       out.shortMode = w().mode;
       /** La question écrite en entier, ses choix affichés (à x10, elle s'écrit en quelques images : un E de plus répondrait déjà). */
@@ -209,8 +217,8 @@ await playtest('poteaux', async ({ page, errors, load }) => {
           const d = (window as any).game.scene.getScene('dialogue');
           return d?.sys.isActive() && !d.typing && d.choices.length > 0;
         }, 'la question et ses choix');
-      await press('KeyE', 700);
-      await (window as any).__until(() => w().mode !== 'play', 'la question après E maintenu');
+      await press('help');
+      await (window as any).__until(() => w().mode !== 'play', 'la question après le clic maintenu');
       out.askMode = w().mode;
       await shot('2-appeler-la-mere');
       await questionShown();
@@ -240,7 +248,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       beamAt(ne.x + 8, ne.y + 50, { wood: { size: 'normal', length: 300, shape: 'round', hewn: 12, axis: 'ns' } });
       await lookAt(ne.x, ne.y);
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
-      await press('KeyE', 700);
+      await press('help');
       await questionShown();
       await press('KeyE'); // « Oui »
       await (window as any).__until(() => posts(300).length === 2 && w().mode === 'play', 'le second poteau haut dressé');
@@ -254,7 +262,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       await give({ item: 'stake' });
       const plate = sp.placeGround(site(), plan.steps[2].places['plate-north']);
       await lookAt(plate.x, plate.y);
-      await press('KeyE');
+      await press('hands');
       out.plateNotice = notices.at(-1);
       out.pieces = JSON.stringify(site().pieces);
       await (window as any).__settle();
@@ -317,12 +325,12 @@ await playtest('poteaux', async ({ page, errors, load }) => {
     assert.deepEqual(d.posts, d.ghosts, 'un poteau dressé est exactement là où était son fantôme');
   }
 
-  assert.equal(r.shortNone, "Il faut d'abord une poutre de 3 m au pied du dé.", 'E court : ce qui manque');
+  assert.equal(r.shortNone, "Il faut d'abord une poutre de 3 m au pied du dé.", 'le clic court : ce qui manque');
   assert.equal(r.noBeamNotice, "Il faut d'abord une poutre de 3 m au pied du dé.");
   assert.equal(r.noBeamMode, 'play', 'sans poutre, pas de question');
   assert.equal(r.wrongBeamNotice, "Il faut d'abord une poutre de 3 m au pied du dé.", 'un rondin ou une poutre de 2 m ne comptent pas');
   assert.equal(r.farNotice, "Il faut d'abord une poutre de 3 m au pied du dé.", 'une poutre à plus d’une case ne compte pas');
-  assert.equal(r.shortGood, 'Maintiens E pour appeler ta mère.');
+  assert.equal(r.shortGood, 'Maintiens le clic pour appeler ta mère.');
   assert.equal(r.shortMode, 'play');
   assert.equal(r.askMode, 'dialogue', '« Appeler ta mère pour la dresser ? »');
   assert.equal(r.fadeMode, 'transition', 'fondu au noir');

@@ -221,12 +221,16 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   const walkSpeed = speedInput(SPEEDS.walk);
   const runSpeed = speedInput(SPEEDS.run);
   const metres = (i: HTMLInputElement) => Math.min(20, Math.max(0.2, Number(i.value) || 1));
-  const speedsButton = button('Appliquer', () => send({ kind: 'speeds', walk: metres(walkSpeed), run: metres(runSpeed) }));
+  // la marche discrète (Alt) : une part de la marche
+  const sneakPart = el('input', { type: 'number', min: '0.05', max: '1', step: '0.05', value: String(SPEEDS.sneak) });
+  const part = (i: HTMLInputElement) => Math.min(1, Math.max(0.05, Number(i.value) || 0.4));
+  const speedsButton = button('Appliquer', () => send({ kind: 'speeds', walk: metres(walkSpeed), run: metres(runSpeed), sneak: part(sneakPart) }));
   const speedsDefault = button('Par défaut', () => {
     send({ kind: 'speeds-default' });
     setTimeout(() => {
       walkSpeed.value = String(Math.round(metresPerSec(SPEEDS.walk) * 100) / 100);
       runSpeed.value = String(Math.round(metresPerSec(SPEEDS.run) * 100) / 100);
+      sneakPart.value = String(SPEEDS.sneak);
     }, 50);
   });
 
@@ -330,7 +334,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('h3', { textContent: 'Vitesse de simulation' }),
     el('div', { className: 'row' }, [...simButtons, simLabel]),
     el('h3', { textContent: 'Vitesses (m/s)' }),
-    el('div', { className: 'row' }, [el('label', {}, ['marche', walkSpeed]), el('label', {}, ['course', runSpeed])]),
+    el('div', { className: 'row' }, [el('label', {}, ['marche', walkSpeed]), el('label', {}, ['course', runSpeed]), el('label', {}, ['discrète (part de la marche)', sneakPart])]),
     el('div', { className: 'row' }, [speedsButton, speedsDefault]),
     el('h3', { textContent: 'Force de Xéros' }),
     el('div', { className: 'row' }, [el('label', {}, ['force ×', force]), forceButton]),

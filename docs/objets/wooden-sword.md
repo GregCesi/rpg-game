@@ -30,7 +30,7 @@ branche (CONCEPTION, « Le combat »).
 - En attaque (`weapon-wooden-sword`) : un seul dessin, la pointe à l'est, tiré en huit angles (art/lib/weapon.ts), les diagonales
   reprises à la main ; le geste choisit l'angle à chaque image.
 - Case d'interface : `item-wooden-sword` (16 × 16, déjà dessinée).
-- Fantôme : son image au sol en transparence, là où E ou Q la poserait.
+- Fantôme : son image au sol en transparence, là où A (Q en QWERTY) la poserait.
 
 ## Au combat
 Arme de la famille `swing` (combat.json). Ses réglages (`weapon` d'items.json) : longueur 90 cm, prise à 6 cm, équilibre 0,25 (le
@@ -63,11 +63,11 @@ Aucune : taillée, régulière.
 Seule. Ne s'entrepose pas.
 
 ## Gestes
-- E court : la prendre (au sol).
-- E maintenu : rien.
-- Espace (dans la main active, ou dans l'autre si l'active est vide) : attaquer, dans le vide comme sur une cible (CONCEPTION, « Le combat ») ; un deuxième Espace pendant la récupération enchaîne le coup
+- Clic court, main vide : la prendre (au sol).
+- Clic court de sa main : attaquer, dans le vide comme sur une cible (CONCEPTION, « Le combat ») ; un deuxième clic pendant le geste enchaîne le coup
   suivant (la taille, puis le coup d'en haut). Coûte de l'endurance selon sa masse, même dans le vide.
-- R : la tourne à la pose. Q : la lâche devant Xéros.
+- Clic maintenu : la lancer.
+- R : la tourne à la pose. A (Q en QWERTY) : la lâche devant Xéros.
 
 ## Origine
 Taillée dans une planche fendue (la pièce de bois `big`, forme `plank`, 1 m) par le menuisier, à l'établi, à la hachette :
@@ -87,5 +87,5 @@ Le menuisier (`joiner`).
 - Aperçu : `.art-preview/combat.png` (Xéros à trois moments de chaque geste avec l'épée, et l'épée dans ses huit angles),
   `.art-preview/collection.png`, `.art-preview/bois-ages.png`.
 - Outils de test : ?dieu, « Donner » l'épée de bois.
-- En jeu : `npm run test:combat` ; à la main, l'épée en main active devant le mannequin, Espace dans les quatre directions : le
+- En jeu : `npm run test:combat` ; à la main, l'épée en main devant le mannequin, un clic de sa main dans les quatre directions : le
   mannequin tremble et penche, de la paille vole ; avec `?debug`, les dégâts au-dessus de lui et la zone de coup dessinée.

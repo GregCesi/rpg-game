@@ -12,6 +12,15 @@
       "family": "swing"
     }
   },
+  "throw": {
+    "angle": 2.5,
+    "arm": 0.7,
+    "armInertia": 0.15,
+    "height": 1.6,
+    "gravity": 9.81,
+    "efficiency": 0.5,
+    "step": 0.01
+  },
   "feel": {
     "hitStopMs": 50,
     "recoilPx": 1,

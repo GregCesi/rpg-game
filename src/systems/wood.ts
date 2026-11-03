@@ -66,7 +66,7 @@ const END_OF_FACING: Record<Facing, End> = { right: 'west', left: 'east', down: 
  * Chaque coup est noté dans GameState (les réglages de la pièce). Ne lit pas le clavier.
  */
 export class WoodSystem {
-  /** Invite « Espace » sur la coupe visée, et la ligne des deux longueurs au-dessus. */
+  /** L'ancienne invite de touche (cachée : le HUD dit le mot du clic), et la ligne des deux longueurs au-dessus de la coupe visée. */
   private readonly prompt: Phaser.GameObjects.Image;
   private readonly label: Phaser.GameObjects.Container;
   /** Texte de la ligne affichée (pour ne la refaire que quand elle change). */
@@ -429,14 +429,16 @@ export class WoodSystem {
 
 
   /**
-   * À appeler à chaque image : l'invite « Espace » sur la coupe visée, et au-dessus les deux longueurs qu'elle donnerait (dans
+   * À appeler à chaque image : au-dessus de la coupe visée les deux longueurs qu'elle donnerait (dans
    * l'ordre de l'écran : ouest | est, nord | sud) ; ailleurs, l'invite seule. `active` = false pendant un geste, un dialogue ou un
    * changement de carte.
    */
   updatePrompt(time: number, player: Player, tool: string | undefined, active: boolean): void {
     const aim = active ? this.target(player, tool) : undefined;
     const ok = !!aim && !aim.refusal;
-    this.prompt.setVisible(ok);
+    // l'invite d'une touche n'a plus lieu d'être (le clic de la main de l'outil travaille, et le HUD dit son mot) : seule la ligne des
+    // deux longueurs se montre, au-dessus de la coupe visée
+    this.prompt.setVisible(false);
     this.label.setVisible(ok && aim.work === 'cut');
     if (!ok) return;
     const bob = Math.round((Math.sin(time / 220) + 1) / 2) * 2;

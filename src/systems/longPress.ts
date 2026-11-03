@@ -2,13 +2,13 @@ import type Phaser from 'phaser';
 import { pressEnd } from '../input/keyLatch';
 import { DEPTH, LONG_PRESS } from '../config';
 import type { Player } from '../entities/Player';
-import type { Action, Interactable } from '../world/GameMap';
+import type { Action } from '../world/GameMap';
 
-/** Ce qu'a donné un appui sur E qui attendait : relâché tôt (le geste court), ou tenu jusqu'au bout (le geste long). */
-export type PressResult = { kind: 'short' | 'long'; target: Interactable };
+/** Ce qu'a donné un clic qui attendait sa fin : relâché tôt (le clic court), ou tenu jusqu'au bout (le clic maintenu). */
+export type PressEnd = 'short' | 'long';
 
 /** Ce que vise une action, pour savoir si Xéros vise toujours la même chose (les cibles sont refaites à chaque image). */
-function subject(a: Action): unknown {
+export function subject(a: Action): unknown {
   switch (a.kind) {
     case 'pile':
     case 'tie':
@@ -30,19 +30,21 @@ function subject(a: Action): unknown {
 }
 
 /**
- * E maintenu. Devant une cible où E maintenu a un sens (nouer, dénouer : systems/knot.ts), l'appui attend : relâché avant
- * `LONG_PRESS.ms`, c'est le geste court (reprendre une pièce) ; tenu jusque-là, le geste long. Pendant l'attente, une
- * jauge (`ui-gauge`, animation `fill`, de vide à plein) se remplit au-dessus de la tête de Xéros. Si Xéros cesse de
- * viser la cible, l'appui est abandonné. Ne fait rien lui-même : la scène dit quoi faire du résultat.
+ * Un clic qui attend sa fin (docs/COMMANDES.md, « La souris ») : relâché avant `LONG_PRESS.ms`, c'est le clic court (il agit au
+ * relâchement : un clic gardé trop longtemps sur un arbre ne lance pas la cognée) ; tenu jusque-là, le clic maintenu. Un seul seuil et
+ * une seule jauge pour tous les clics (`LONG_PRESS` de config.ts) : quand le clic maintenu a un sens (`gauge`), la jauge (`ui-gauge`,
+ * animation `fill`, de vide à plein) se remplit au-dessus de la tête de Xéros. Si Xéros cesse de viser ce qu'il visait au début du
+ * clic (`key`), le clic est abandonné. Ne fait rien lui-même : la scène dit quoi faire du résultat.
  */
 export class LongPress {
-  private target?: Interactable;
+  private key: unknown;
+  private waiting = false;
+  private gaugeOn = false;
   private start = 0;
   private readonly gauge: Phaser.GameObjects.Image;
   /** Images de la jauge, de vide à plein. */
   private readonly frames: (string | number)[];
 
-  /** `ms` : durée de l'appui (par défaut celle d'E maintenu, `LONG_PRESS`). */
   constructor(
     scene: Phaser.Scene,
     private readonly ms: number = LONG_PRESS.ms,
@@ -51,44 +53,48 @@ export class LongPress {
     this.gauge = scene.add.image(0, 0, 'ui-gauge', this.frames[0]).setOrigin(0.5, 1).setDepth(DEPTH.prompt).setVisible(false);
   }
 
-  /** Un appui attend sa fin. */
+  /** Un clic attend sa fin. */
   get pending(): boolean {
-    return !!this.target;
+    return this.waiting;
   }
 
   /**
-   * E vient d'être pressé devant `target` : l'appui commence. `now` est le temps vrai (`performance.now()`, l'horloge des événements du
-   * clavier), jamais celui du jeu : un appui est un geste du joueur, il dure autant à toutes les vitesses de simulation.
+   * Le clic commence, en visant `key` (ce que vise Xéros ; undefined : rien). `now` est le temps vrai (`performance.now()`, l'horloge des
+   * événements), jamais celui du jeu : un clic est un geste du joueur, il dure autant à toutes les vitesses de simulation. `gauge` : le
+   * clic maintenu a un sens, la jauge se montre.
    */
-  begin(target: Interactable, now: number): void {
-    this.target = target;
+  begin(key: unknown, now: number, gauge: boolean): void {
+    this.key = key;
+    this.waiting = true;
+    this.gaugeOn = gauge;
     this.start = now;
   }
 
-  /** Abandonne l'appui en cours (dialogue, changement de carte...). */
+  /** Abandonne le clic en cours (dialogue, changement de carte...). */
   cancel(): void {
-    this.target = undefined;
+    this.waiting = false;
+    this.key = undefined;
     this.gauge.setVisible(false);
   }
 
   /**
-   * À appeler à chaque image, avec le temps vrai (`now`, comme pour `begin`) : `down`, E est encore enfoncé ; `current`, ce que Xéros vise maintenant ; `lasted`, la durée vraie du
-   * dernier appui fini (src/input/keyLatch.ts : une image longue ne fait pas d'un appui court un appui long). Renvoie le geste à faire
-   * quand l'appui se termine, sinon undefined.
+   * À appeler à chaque image, avec le temps vrai (`now`, comme pour `begin`) : `down`, le bouton est encore enfoncé ; `key`, ce que vise
+   * Xéros maintenant ; `lasted`, la durée vraie du dernier clic fini (src/input/keyLatch.ts : une image longue ne fait pas d'un clic
+   * court un clic maintenu). Renvoie la fin du clic quand il se termine, sinon undefined.
    */
-  update(now: number, down: boolean, current: Interactable | undefined, player: Player, lasted?: number): PressResult | undefined {
-    const target = this.target;
-    if (!target) return undefined;
-    if (!current || subject(current.action) !== subject(target.action)) {
+  update(now: number, down: boolean, key: unknown, player: Player, lasted?: number): PressEnd | undefined {
+    if (!this.waiting) return undefined;
+    if (key !== this.key) {
       this.cancel();
       return undefined;
     }
-    const t = (now - this.start) / this.ms;
     const end = pressEnd(down, now - this.start, this.ms, lasted);
     if (end) {
       this.cancel();
-      return { kind: end, target };
+      return end;
     }
+    if (!this.gaugeOn) return undefined;
+    const t = (now - this.start) / this.ms;
     const frame = this.frames[Math.min(this.frames.length - 1, Math.floor(t * this.frames.length))];
     this.gauge
       .setFrame(frame)

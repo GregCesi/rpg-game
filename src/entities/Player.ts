@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { PLAYER } from '../config';
+import { AIM, PLAYER } from '../config';
+import { aimProbe, facingToward, type Point } from '../world/aim';
 import { SPEEDS } from '../systems/speeds';
 import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
@@ -25,6 +26,11 @@ export class Player {
   running = false;
   /** Maj est pressée mais Xéros est épuisé (plafond vide) : lu par la scène pour le dire. Fatigué ou à bout de souffle, il marche sans message. */
   runRefused = false;
+  /**
+   * Il marche discrètement (Alt maintenu, à pas lents : une part de la marche, `sneak` de systems/speeds.ts) : l'état que liront les
+   * créatures (rien ne le lit encore). Vrai tant que la touche est tenue, même à l'arrêt.
+   */
+  sneaking = false;
   /** Il pousse une bille qui roule (posé par systems/roll.ts à chaque image) : posture `push`. */
   pushing = false;
   /** Direction demandée au dernier tour (0,0 si immobile). */
@@ -35,6 +41,11 @@ export class Player {
    */
   from?: { x: number; y: number };
   private feet?: { x: number; y: number };
+  /**
+   * Le point du monde sous le curseur, posé par la scène à chaque image (src/world/aim.ts) ; undefined sans souris (au clavier seul, il
+   * vise devant lui) ou quand le curseur ne compte pas (le mode construction).
+   */
+  cursor?: Point;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.actor = new Actor(scene, x, y, PLAYER.skin);
@@ -61,26 +72,47 @@ export class Player {
       this.actor.move(this.dir, SPEEDS.walk, PLAYER.walkCadence);
       return;
     }
-    const { dir, running } = this.input.read();
+    const { dir, running, sneaking } = this.input.read();
     this.dir = dir;
+    this.sneaking = sneaking;
+    // à l'arrêt, il se tourne vers le curseur ; en marchant, il regarde où il va (Actor.move)
+    if (dir.lengthSq() === 0) this.faceCursor();
     this.actor.stance = this.pushing ? 'push' : this.hold.stance;
     // au-delà de ce qu'il porte sans peine, il ne court pas et marche de moins en moins vite (Strength) ; la marche
     // portée garde sa cadence de dessin, accélérée ou ralentie d'autant (sans dépasser une foulée vive).
     // Fatigué (sous le seuil de stamina.json), il marche moins vite et ne court plus.
     const factor = this.strength.walkFactor() * this.stamina.walkFactor();
-    if (this.hold.loaded) this.actor.move(dir, SPEEDS.walk * factor, Math.max(PLAYER.carryCadence, (SPEEDS.walk * factor) / PLAYER.carryStride));
+    // discret : la même part de la marche d'alors (chargé, fatigué), la cadence du dessin ralentie d'autant
+    const part = sneaking ? SPEEDS.sneak : 1;
+    if (this.hold.loaded) this.actor.move(dir, SPEEDS.walk * factor * part, Math.max(PLAYER.carryCadence, (SPEEDS.walk * factor) / PLAYER.carryStride));
     else if (running && this.strength.canRun() && this.stamina.canRun()) {
       this.actor.move(dir, SPEEDS.run * factor, PLAYER.walkCadence);
       this.running = dir.lengthSq() > 0;
     } else {
       this.runRefused = running && this.strength.canRun() && this.stamina.empty && dir.lengthSq() > 0;
-      this.actor.move(dir, SPEEDS.walk * factor, PLAYER.walkCadence);
+      this.actor.move(dir, SPEEDS.walk * factor * part, PLAYER.walkCadence);
     }
   }
 
-  /** Point au sol juste devant Xéros, là où il "regarde". */
+  /** Le point d'où Xéros regarde : un peu au-dessus de ses pieds. */
+  get eye(): Point {
+    return { x: this.actor.x, y: this.actor.y - 6 };
+  }
+
+  /**
+   * Le point qu'il vise (src/world/aim.ts) : sous le curseur s'il est à portée (`AIM.reach`), sinon à `distance` px dans la direction du
+   * curseur ; sans curseur, à `distance` px devant lui.
+   */
   probe(distance: number): Phaser.Math.Vector2 {
-    const d = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[this.actor.facing];
-    return new Phaser.Math.Vector2(this.actor.x + d[0] * distance, this.actor.y - 6 + d[1] * distance);
+    const p = aimProbe(this.eye, this.cursor, this.actor.facing, AIM.reach, distance);
+    return new Phaser.Math.Vector2(p.x, p.y);
+  }
+
+  /** Se tourner vers le curseur, dans la plus proche de ses directions de dessin (à l'arrêt, et au moment de toute action). */
+  faceCursor(): void {
+    const c = this.cursor;
+    if (!c) return;
+    const f = facingToward(c.x - this.eye.x, c.y - this.eye.y, this.actor.facing);
+    if (f !== this.actor.facing) this.actor.face(f);
   }
 }

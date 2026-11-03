@@ -2,7 +2,7 @@
 // couper son houppier (le tronc ébranché devient une seule pièce de bois ronde de 5,8 m), refuser une coupe qui laisserait un
 // bout de moins de 60 cm, couper à 3 m sur la grille de 20 cm (la ligne « 3 m | 2,8 m » au-dessus de la coupe, l'encoche gardée
 // dans GameState, deux pièces), recouper la pièce de 2,8 m en 1,8 m et 1 m, rouler la pièce de 3 m, l'équarrir à la doloire par
-// passes sur le rail (refusée au milieu ; à un bout, Espace lance la passe : Xéros longe la pièce tout seul, sourd aux autres
+// passes sur le rail (refusée au milieu ; à un bout, un clic de la main de la doloire lance la passe : Xéros longe la pièce tout seul, sourd aux autres
 // touches ; Échap l'arrête, la longueur dressée est gardée dans GameState à la position du fer, la pièce entamée ne roule plus ;
 // reprise ailleurs refusée, reprise là où elle s'est arrêtée ; puis une passe par face, aller et retour, la poutre à la quatrième :
 // sa masse, son prix d'endurance proportionnel à la longueur, elle ne roule plus et ne se porte pas), la
@@ -36,16 +36,22 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         for (let i = 0; i < 20 && world().mode !== 'work' && world().mode !== 'rail'; i++) await new Promise((res) => requestAnimationFrame(res));
         if (world().mode === 'work' || world().mode === 'rail') (window as any).game.events.emit('dieu', { kind: 'finish-work' });
       };
+      // un geste du joueur : `use`, le clic de la main de l'outil (il lit le mot de chaque clic : tools/lib/playtest.ts `__do`) ;
+      // `hands`, le clic d'une main vide (prendre) ou de la main qui tient (poser) ; sinon une touche, tenue `ms` ms
       const press = async (code: string, ms = 60, finish = true) => {
+        if (code === 'use' || code === 'hands') {
+          await (window as any).__do(code === 'use' ? ['work', 'plant', 'strike', 'punch'] : ['take', 'put', 'rest', 'place']);
+          // un clic sans rien à travailler frappe, et l'attaque ramène le temps à x1 : le scénario garde sa vitesse
+          if (code === 'use') await (window as any).__resume();
+          // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
+          // travail »), horloge, endurance et résultat compris
+          if (code === 'use' && finish) await finishWork();
+          return;
+        }
         window.dispatchEvent(new KeyboardEvent('keydown', { code }));
         await sleep(ms);
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
         await (window as any).__frames(2);
-        // un Espace sans rien à travailler frappe, et l'attaque ramène le temps à x1 : le scénario garde sa vitesse
-        if (code === 'Space') await (window as any).__resume();
-        // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
-        // travail »), horloge, endurance et résultat compris
-        if (code === 'Space' && finish) await finishWork();
       };
       const settled = () => (window as any).__idle('le geste fini');
       // une passe de doloire entière : Xéros longe la pièce (près de 9 s pour 3 m), puis le quart de tour
@@ -83,7 +89,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await give('axe');
       await standAt(tree.box.left - 6, tree.box.bottom - 1, 'right');
       // abattre : un travail (25 min), fini d'un coup
-      await press('Space');
+      await press('use');
       await settled();
       await (window as any).__until(() => props(/^normal-felled-tree$/).length > 0, "l'arbre tombé, couché");
       const felled = props(/^normal-felled-tree$/)[0];
@@ -91,7 +97,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
 
       // 2. le houppier : trois coups, des branches, et le tronc ébranché devient une seule pièce ronde de 5,8 m
       await standAt(felled.aimX, felled.aimY + 14, 'up');
-      await press('Space');
+      await press('use');
       await settled();
       out.trunk = lengths('normal');
       out.branches = gs.mapState(gs.game, w().map.def.id).ground.filter((q: any) => q.item === 'branch').length;
@@ -109,7 +115,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await give('axe');
       await aboveAt(trunk, 8);
       out.shortLabel = w().wood.labelText ?? null;
-      await press('Space');
+      await press('use');
       await settled();
       out.shortNotice = notices.at(-1);
       out.shortMode = w().mode;
@@ -119,7 +125,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await aboveAt(trunk, 59);
       out.label = w().wood.labelText;
       // couper : un travail (le temps des trois étapes de la coupe), fini d'un coup ; l'encoche n'existe plus, la part faite non plus
-      await press('Space');
+      await press('use');
       await settled();
       out.notch = JSON.stringify(spawned().find((q: any) => q.id === trunk.id)?.wood.notch ?? null);
       out.workLeft = Object.keys(gs.mapState(gs.game, w().map.def.id).work).length;
@@ -136,13 +142,13 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       w().handsChanged();
       const rest = logs().find((p: any) => p.wood.length === 280);
       await standAt((rest.box.left + rest.box.right) / 2, rest.box.bottom + 9, 'up');
-      await press('KeyE');
+      await press('hands');
       out.restNotice = notices.at(-1);
       emit({ kind: 'stamina-infinite', on: true });
       await give('axe');
       await aboveAt(logs().find((p: any) => p.id === rest.id) ?? rest, 36);
       out.restLabel = w().wood.labelText;
-      await press('Space');
+      await press('use');
       await settled();
       emit({ kind: 'stamina-infinite', on: false });
       out.pieces2 = lengths('normal');
@@ -166,34 +172,34 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       const hewing = () => w().map.props.find((p: any) => p.id === hewnId && p.spawned);
       // au milieu de la pièce : refusé, sans geste ni dépense
       await aboveAt(hewing(), 30);
-      await press('Space');
+      await press('use');
       await settled();
       out.middleNotice = notices.at(-1);
       out.middleMode = w().mode;
       out.middleCost = 100 - w().player.stamina.ceiling;
-      // au bout ouest : Espace maintenu, la passe au coup (chaque coup lève sa part de la face, Xéros glisse avec le fer) ; pour l'essai,
+      // au bout ouest : un clic, la passe au coup (chaque coup lève sa part de la face, Xéros glisse avec le fer) ; pour l'essai,
       // Xéros à la force humaine la plus grande (?dieu « force » ×10, plafonnée à ×2,6)
       emit({ kind: 'force', multiplier: 10 });
       await aboveAt(hewing(), 2);
       const [hx0, hy0] = [a().x, a().y];
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+      // un clic de la main de la doloire lance la passe
+      await (window as any).__do('work');
       await (window as any).__until(() => w().mode === 'rail', 'la passe commence');
       // le rail pose Xéros au départ de la passe : la marche se mesure de là
       const railX = a().x;
       out.passMode = w().mode;
       out.passBar = w().rail.bar.frame.visible;
       await (window as any).__until(() => a().x - railX > 0.5, 'Xéros longe la pièce');
-      // E ne fait rien pendant la passe : elle continue
-      await press('KeyE');
+      // un clic ne fait rien pendant la passe : elle continue
+      await (window as any).__click('left');
       const afterE = a().x;
-      await (window as any).__until(() => w().mode === 'rail' && a().x - afterE > 0.5, 'la passe continue après E');
+      await (window as any).__until(() => w().mode === 'rail' && a().x - afterE > 0.5, 'la passe continue après le clic');
       out.walked = a().x - railX;
       out.passAnim = a().anims.currentAnim?.key;
       // un pas (S) : arrêtée là où il est ; la face entamée est gardée dans GameState, jusqu'au fer
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyS' }));
       await new Promise((res) => requestAnimationFrame(res));
       await new Promise((res) => requestAnimationFrame(res));
-      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
       // le coup en cours s'achève, puis la passe s'arrête
       await (window as any).__until(() => w().mode !== 'rail', 'la passe arrêtée');
       out.stopMode = w().mode;
@@ -219,11 +225,11 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       await give('broadaxe');
       // reprendre ailleurs : refusé ; reprendre là où elle s'est arrêtée : la passe va jusqu'au bout est
       await aboveAt(hewing(), 50);
-      await press('Space');
+      await press('use');
       await settled();
       out.resumeElsewhere = notices.at(-1);
       await standAt(stopX, hy0, "down");
-      await press('Space', 60, false);
+      await press('use', 60, false);
       out.resumeMode = w().mode;
       await finishWork();
       await passed();
@@ -232,7 +238,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.afterFace = spawned().find((q: any) => q.id === hewnId)?.wood;
       // les trois autres faces : depuis le bout où il est, aller et retour
       for (let i = 2; i <= 4; i++) {
-        await press('Space');
+        await press('use');
         await passed();
         faces.push(notices.at(-1));
       }
@@ -261,14 +267,14 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.beamRollNotice = notices.at(-1);
       out.beamMoved = beams()[0].y - by;
       await standAt((beam.box.left + beam.box.right) / 2, beam.box.bottom + 9, 'up');
-      await press('KeyE');
+      await press('hands');
       out.beamTakeNotice = notices.at(-1);
 
       // 6. la bille de 1 m tirée du tronc : elle se porte (64 kg) et va en tas
       const bille = logs().find((p: any) => p.wood.length === 100);
       out.billeMass = kg(bille.wood);
       await standAt((bille.box.left + bille.box.right) / 2, bille.box.top - feet() - 0.5, 'down');
-      await press('KeyE');
+      await press('hands');
       out.billeHeld = JSON.stringify(gs.game.both);
       await standAt(a().x, a().y + 30, 'down');
       await press('KeyQ');
@@ -286,13 +292,13 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         await give('axe');
         await standAt(t.box.left - 6, t.box.bottom - 1, 'right');
         for (let i = 0; i < 4; i++) {
-          await press('Space');
+          await press('use');
           await settled();
         }
         await (window as any).__until(() => props(new RegExp(`^${lying}$`)).length > 0, `${tree} tombé, couché`);
         const f = props(new RegExp(`^${lying}$`)).at(-1);
         await standAt(f.aimX, f.aimY + 14, 'up');
-        await press('Space');
+        await press('use');
         await settled();
         const piece = logs('big').find((p: any) => !before.has(p.id));
         const trunk = { length: piece?.wood.length, kg: piece && Math.round(mass.woodMass(piece.wood)) };
@@ -303,7 +309,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         // la coupe à 1 m du bout scié (ouest : l'arbre est tombé vers l'est)
         await aboveAt(w().map.props.find((p: any) => p.id === piece.id && p.spawned), 20);
         const label: string | undefined = w().wood.labelText;
-        await press('Space');
+        await press('use');
         await settled();
         const cut = logs('big')
           .filter((p: any) => !before.has(p.id))
@@ -356,7 +362,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.middleNotice, 'Mets-toi à un bout de la pièce pour commencer la face.', 'la passe commence à un bout');
   assert.equal(r.middleMode, 'play', 'refus sans geste');
   assert.equal(r.middleCost, 0, 'un refus ne coûte rien');
-  assert.equal(r.passMode, 'rail', 'Espace au bout lance la passe');
+  assert.equal(r.passMode, 'rail', 'un clic au bout lance la passe');
   assert.equal(r.passBar, true, 'la jauge du travail se voit pendant la passe');
   assert.ok(r.walked > 0, `Xéros longe la pièce avec le fer : ${r.walked} px`);
   assert.match(r.passAnim ?? '', /chop-down/, 'en frappant (le geste chop)');

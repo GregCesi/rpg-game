@@ -27,7 +27,7 @@
 - Case d'interface : `item-rope-coil`, 16×16, le rouleau vu de trois quarts, plus grand qu'au sol ; sa longueur restante
   en petits signes en bas à droite de la case (« 10 m », « 8 m », « 1,5 m » : `ui-digit-<chiffre>`, `-comma`, `-m`),
   dans le style du nombre de pièces d'un tas.
-- Fantôme : aucun (il ne se range pas en tas ; Q le pose juste devant Xéros, comme une bille hors d'un tas).
+- Fantôme : aucun (il ne se range pas en tas ; un clic ou A le pose juste devant Xéros, comme une bille hors d'un tas).
 - Porté : à une main (`hand`), l'autre main reste libre.
 - Posé sur le billot : `chopping-block-rope`, le billot nu (`chopping-block`) avec le rouleau à plat sur sa face de coupe.
 
@@ -36,20 +36,19 @@ Quantité mesurée : sa **longueur restante**, en centimètres (`length` dans Ga
 né ou changé, ou sur le billot qui le porte). 10 m au départ (`length.start` = 1000). Il ne se range pas en tas.
 
 ## Gestes
-- E court : le prendre dans une main libre (au sol) ; rouleau dans la main active, face au billot nu : le poser dessus ;
-  face au billot qui le porte, mains libres : le reprendre, avec sa longueur.
-- E maintenu : rien.
-- Espace : rien en main (c'est une ressource) ; posé sur le billot, la hachette (l'outil naturel, une main) ou la cognée en
-  main coupe un lien (voir Devenir).
+- Clic court, main vide : le prendre dans cette main (au sol) ; face au billot qui le porte : le reprendre, avec sa longueur.
+- Clic court de la main qui le tient (c'est une ressource) : face au billot nu, le poser dessus ; ailleurs, le poser devant Xéros.
+  Posé sur le billot, le clic de la main de la hachette (l'outil naturel, une main) ou de la cognée coupe un lien (voir Devenir).
+- Clic maintenu, main vide : rien.
 - R : rien.
-- Q : le pose devant Xéros (objet né, sa longueur notée).
+- A (Q en QWERTY) : le pose devant Xéros (objet né, sa longueur notée).
 
 ## Origine
 Trouvé : un rouleau posé dans le cagibi de la maison (objet « dedans » de `tiled/maps/ferme.tmj`). Plus tard il s'achètera ou se fabriquera : pas
 encore construit.
 
 ## Devenir
-Posé sur le billot, chaque coup de hachette ou de cognée (Espace, face au billot, geste de haut en bas) en coupe un lien : 2 m (`length.cut` = 200), un
+Posé sur le billot, chaque coup de hachette ou de cognée (un clic de la main de l'outil, face au billot, geste de haut en bas) en coupe un lien : 2 m (`length.cut` = 200), un
 `rope-tie` tombe au sol à côté du billot, le rouleau perd 2 m (« Rouleau de corde : 8 m restants. »). À zéro il disparaît, le
 billot redevient nu (« Rouleau de corde : vide. ») : un rouleau de 10 m donne 5 liens.
 Le coup de hachette coûte 0,4 point d'endurance (`whittle`, `also` du `harvest` de `chopping-block-rope`), celui de la cognée
@@ -60,5 +59,5 @@ pour ce qui enlève de la matière). Ajouté le 30 octobre 2026 : la hachette es
 - Aperçu : `.art-preview/collection.png` (rope-coil, chopping-block-rope, item-rope-coil), `.art-preview/hands.png`
   (held-rope-coil dans les deux mains, 4 directions), à côté de `gabarit.png`. `npm run check` vérifie 6 × 5 et 18 × 16.
 - En jeu : voir la liste de [la corde au fagot](rope-tie.md#vérification).
-- Test : `npm run test:implantation` pose le rouleau sur le billot (E), en coupe un lien à la hachette (8 m restants, 0,4 point)
+- Test : `npm run test:implantation` pose le rouleau sur le billot (un clic), en coupe un lien à la hachette (8 m restants, 0,4 point)
   puis à la cognée (6 m, 0,5 point).

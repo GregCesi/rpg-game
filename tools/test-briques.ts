@@ -42,7 +42,7 @@ await playtest('briques', async ({ page, errors, load }) => {
     const mapId = () => w().map.def.id;
     const ms = () => gs.mapState(gs.game, mapId());
     const carried = () => (gs.game.both ? mass.heldMass(gs.game.both) : mass.heldMass(gs.game.hands[0]) + mass.heldMass(gs.game.hands[1]));
-    const held = () => JSON.parse(JSON.stringify(gs.game.both ?? gs.game.hands[gs.game.active] ?? null));
+    const held = () => JSON.parse(JSON.stringify(gs.game.both ?? gs.game.hands[1] ?? gs.game.hands[0] ?? null));
     const free = (l: number, t: number, rr: number, b: number) => w().map.areaFree({ left: l, top: t, right: rr, bottom: b });
     // un coin dégagé de `width` × `height` px, loin de ceux déjà pris
     const used: [number, number, number, number][] = [];
@@ -60,8 +60,8 @@ await playtest('briques', async ({ page, errors, load }) => {
       }
       throw new Error(`pas de coin dégagé de ${width} × ${height}`);
     };
-    // deux pièces de `what` posées l'une devant l'autre (Q, lâcher : le même chemin de pose que E dans le vide ; E, une main libre,
-    // reprendrait la pièce au sol) : la seconde, contre la première seule au sol, fait naître un tas
+    // deux pièces de `what` posées l'une devant l'autre (A, Q en QWERTY : lâcher, le même chemin de pose que le clic) : la seconde,
+    // contre la première seule au sol, fait naître un tas
     const pileOf = async (what: unknown) => {
       const [x, y] = find(40, 40);
       await standAt(x + 20, y, 'down');
@@ -100,7 +100,9 @@ await playtest('briques', async ({ page, errors, load }) => {
       out.lone = held();
       const [lx, ly] = find(60, 60);
       await standAt(lx + 30, ly, 'down');
-      await press('KeyE');
+      // le clic de la main qui la tient : elle se pose (une ressource, sans ennemi devant)
+      await (window as any).__do('put');
+      await (window as any).__settle();
       out.loneGround = ms().ground.filter((q: any) => q.item === 'big-rough-stone').map((q: any) => q.natural);
       // casser une grosse pierre : deux moyennes et une petite, les éclats au sol
       const [bx, by] = find(48, 48);

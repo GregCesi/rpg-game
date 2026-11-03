@@ -1,13 +1,13 @@
 # Les commandes
 
-L'inventaire de toutes les touches du jeu au 2 novembre 2026 (après le chantier 1 de l'audit, docs/AUDIT.md) : ce qu'elles font
-selon ce que Xéros tient et où il est, puis les conflits et incohérences relevés, avec ce qu'il faudra trancher. Depuis le premier
-inventaire (1er novembre, chantier « combat de base », qui ajoutait « Espace avec une arme en main attaque ») : le travail au coup
-lancé d'un appui (modes `work` et `rail`, arrêtés par un pas ou Échap) et la vitesse du temps (V seul, en boucle).
+Le schéma des commandes depuis le chantier « commandes » (3 novembre 2026) : le clavier fait marcher et sert à ce qui se fait sans les
+mains ; la souris vise, et chaque bouton est une main. Premier jet à jouer : Grégoire l'essaie en jeu, on ajuste. L'inventaire d'avant
+(Espace pour tout, la main active, Tab, E qui pose, E et R maintenus) et ses conflits sont résolus plus bas.
 
 Les touches sont lues **par leur place** sur le clavier (`KeyboardEvent.code`, `src/input/PlayerInput.ts`) : la même place sert en
-AZERTY et en QWERTY. Dans ce document, une touche est nommée par sa lettre en AZERTY, la lettre QWERTY entre parenthèses quand elle
-diffère.
+AZERTY et en QWERTY. Une touche est nommée ici par sa lettre en AZERTY, la lettre QWERTY entre parenthèses quand elle diffère. Les clics
+passent par le même verrou que le clavier (`src/input/keyLatch.ts`) : écoutés à l'instant de l'événement, jamais perdus, avec leur durée
+vraie (une image longue ne fait pas d'un clic court un clic maintenu).
 
 ## Où l'on est
 
@@ -15,94 +15,81 @@ Le monde a un mode à la fois (`WorldScene`) :
 
 | Mode | Quand | Ce qui est lu |
 | --- | --- | --- |
-| **jeu** (`play`) | Xéros marche | tout ce qui suit, dont V (la vitesse du temps) |
-| **geste** (`use`) | un coup d'outil ou une attaque se joue | le zoom ; Espace (gardé : enchaîner l'attaque suivante) ; le reste est lu et jeté |
-| **rail** (`rail`) | une passe de doloire le long d'une pièce, au coup, lancée d'un appui | un pas ou Échap : arrêter après le coup en cours ; V (la vitesse du temps) ; le zoom |
-| **travail** (`work`) | un travail au coup (abattre, ébrancher, couper, fendre, tailler), lancé d'un appui : Xéros frappe seul jusqu'au résultat, avec ses pauses de souffle ; une jauge au-dessus de lui | un pas ou Échap : arrêter après le coup en cours (ce qui est fait reste fait) ; V (la vitesse du temps) ; le zoom |
-| **dialogue** (`dialogue`) | une ligne de dialogue est ouverte (DialogueScene) | E, Espace, Entrée, clic : la suite ; Z/S (W/S) ou flèches : choisir ; le zoom |
+| **jeu** (`play`) | Xéros marche | tout ce qui suit |
+| **geste** (`use`) | un coup d'outil ou une attaque se joue | un clic (enchaîner l'attaque suivante) ; le zoom ; le reste est lu et jeté |
+| **visée** (`aim`) | un clic maintenu vise un lancer | relâcher : lancer ; Échap : annuler ; le curseur ; le zoom |
+| **rail** (`rail`) | une passe de doloire le long d'une pièce | un pas ou Échap : arrêter après le coup en cours ; V ; le zoom |
+| **travail** (`work`) | un travail au coup, lancé d'un clic : Xéros frappe seul jusqu'au résultat, avec ses pauses de souffle | un pas ou Échap : arrêter après le coup en cours (ce qui est fait reste fait) ; V ; le zoom |
+| **dialogue** (`dialogue`) | une ligne de dialogue est ouverte (DialogueScene) | E, Entrée, clic : la suite ; Z/S (W/S), flèches, survol : choisir ; le zoom |
 | **passage** (`transition`) | fondu d'une carte à l'autre, aide de la mère | le zoom |
 | **construction** (`build`, `?construire`) | le bac à sable | voir plus bas |
 
-Dedans (un intérieur calculé) : les mêmes touches que dehors.
+Dedans (un intérieur calculé) : les mêmes commandes que dehors.
 
-## Le jeu : touche par touche
+## Le clavier
 
-### Se déplacer
-- **Z Q S D (W A S D)** ou **flèches** : marcher. Chargé au-delà de 25 kg, il marche plus lentement ; à deux mains (`carry`), lentement.
-- **Maj** (maintenu) : courir (0,2 point du plafond et 5 de souffle par seconde : environ 20 s à plein souffle) ; refusé chargé au-delà de 25 kg, à deux mains, fatigué ou épuisé ; à bout de souffle, Xéros repasse au pas et souffle, la barre clignote, sans message.
-- **Pousser** (pas de touche) : marcher contre une bille ronde couchée, les mains libres, 0,3 s : elle roule.
-- Marcher dans une sortie, hors du bord d'une zone, par une porte ouverte : changer de carte.
-
-### E (ou Entrée), appui court
-Selon ce que vise Xéros (la cible la plus proche devant lui) :
-
-| Ce qu'il vise | Ce que fait E |
+| Touche | Effet |
 | --- | --- |
-| un personnage | lui parler |
-| la paillasse du cagibi | « Dormir ? » (dialogue à choix) |
-| la planchette gravée | apprendre le plan de l'abri |
-| un objet à récolter à la main (le billot et sa hache) | le récolter (un geste), mains libres pour ce qui vient dans les mains |
-| un objet du monde qui se prend (bille, fagot, rouleau, pièce de bois…) | le prendre (refusé au-delà de 70 kg : « Trop lourde… Pousse-la ») |
-| un tas | reprendre la pièce du dessus |
-| le lien seul d'un tas | le reprendre |
-| un objet par terre | le ramasser |
-| le billot, en tenant le rouleau | poser le rouleau dessus (`rest`) ; mains libres, le reprendre (`unload`) |
-| un piquet planté (chantier pas né) | le reprendre |
-| une place en fantôme d'un chantier, avec la bonne pièce | la poser |
-| une place trop lourde d'un chantier | dire ce qui manque, ou « Maintiens E pour appeler ta mère. » |
-| une porte, un volet posés (`swing`) | l'ouvrir, le fermer |
-| **rien** (ou ce qu'on ne peut pas prendre), en tenant quelque chose | **poser** ce que tient la main active, là où le montre le fantôme (comme Q) |
+| **Z Q S D (W A S D)**, flèches | marcher. Chargé au-delà de 25 kg, plus lentement ; à deux mains (`carry`), lentement |
+| **Maj** maintenu | courir (0,2 point du plafond et 5 de souffle par seconde) ; refusé chargé au-delà de 25 kg, à deux mains, fatigué ou épuisé ; à bout de souffle, Xéros repasse au pas et souffle |
+| **Alt** (Option sur Mac) maintenu | marcher discrètement, à pas lents : une part de la marche (`PLAYER.sneak`, 0,4 ; `systems/speeds.ts`, réglable dans ?dieu). L'état `sneaking` de Player, que liront les créatures (rien ne le lit encore). Il l'emporte sur Maj. Le navigateur n'en fait rien |
+| **E** (ou Entrée) | sans les mains : parler, ouvrir ou fermer une porte ou un volet (`swing`), dormir (la paillasse : « Dormir ? »), lire la planchette (apprendre un plan) ; dans un dialogue, la suite. E ne pose rien et ne se maintient pas |
+| **A (Q)** | lâcher ce que tient la main du dernier clic, là où le montre le fantôme (seul, en tas, un lien sous un tas) ; si cette main est vide, l'autre |
+| **R** | tourner d'un quart de tour ce que tient la main du dernier clic (l'autre si elle est vide), avant de le poser : le fantôme suit |
+| **Échap** | arrêter un travail ou une passe de doloire après le coup en cours ; annuler un lancer pendant qu'on vise. Plus tard, un menu |
+| **V** | la vitesse du temps, au palier suivant (x1, x2, x5, x10, x20, puis x1) ; lue en jeu, pendant un travail et sur un rail ; une attaque ou un lancer ramène à x1 ; x50 est réservé à ?dieu |
+| **B** | le mode construction (`?construire`) |
+| molette, **+**, **−** | le zoom, dans tous les modes |
+| **Espace** | rien : réservé à l'esquive et au saut, plus tard |
 
-### E maintenu (une demi-seconde, une jauge au-dessus de la tête)
-- Mains libres, devant un tas de branches plein et lié : nouer (il devient un fagot) ; devant un fagot : le dénouer.
-- Devant une place de chantier qui demande une poutre trop lourde : appeler la mère (dialogue, fondu, la poutre est dressée).
-- Relâché avant la fin : c'est E court.
+Ctrl n'est jamais une touche du jeu : sur Mac, Ctrl + clic gauche devient un clic droit.
 
-### Espace
-Selon ce que tient Xéros (« ce qui sert » : la main active, sinon l'autre main si l'active est vide) et ce qu'il vise :
+## La souris
 
-| Ce qu'il tient | Ce que fait Espace |
+### Le curseur
+- **Il oriente Xéros.** Pendant la marche, Xéros regarde où il va ; à l'arrêt et au moment de toute action, il se tourne vers le
+  curseur, dans la plus proche de ses quatre directions de dessin (`src/world/aim.ts`).
+- **Il vise.** Ce qui est sous le curseur, s'il est à portée (`AIM.reach` de config.ts, 32 px, 1,6 m) ; plus loin, la cible la plus
+  proche dans la direction du curseur, à la distance où Xéros regarde d'habitude. Sans souris (le curseur jamais passé sur le canevas),
+  il vise devant lui, comme avant.
+- **Le fantôme de pose suit le curseur**, sans sortir de la portée de Xéros ; si la place est prise, il va à la place libre la plus
+  proche (`PUT_DOWN`). Il montre ce que tient la main dont le clic poserait (celle du dernier clic d'abord).
+
+### Les boutons
+- **Clic gauche = main droite** (la case D), **clic droit = main gauche** (la case G). Le menu du navigateur est coupé sur le canevas.
+- Chaque clic est **court** ou **maintenu**, avec un seul seuil (`LONG_PRESS.ms` de config.ts, 500 ms) et une seule jauge au-dessus de
+  Xéros (quand le maintien a un sens). Le clic court agit **au relâchement** : un clic gardé trop longtemps sur un arbre ne lance pas
+  la cognée. Xéros visant autre chose avant la fin du clic, le clic est abandonné.
+- **Ce que fera chaque clic** est dit par une seule fonction pure (`src/world/clickAction.ts`, `clickPlan`), lue par le jeu et par le
+  HUD : près de chaque case, un mot discret pour son clic sur ce qui est visé (« prendre », « couper », « poser », « frapper »,
+  « prendre · nouer »…).
+
+### Le clic court, selon ce que tient la main du clic
+
+| La main du clic tient | Ce que fait le clic court |
 | --- | --- |
-| **une arme qui sert** (la branche, l'épée de bois : dans la main active, ou dans l'autre si l'active est vide) | **attaquer** (la taille ; Espace de nouveau pendant le geste ou juste après : le coup d'en haut, puis de nouveau la taille) ; coûte même dans le vide |
-| **la main active vide**, l'autre vide ou tenant ce qui ne sert à aucun travail (une pierre…) | **un direct du poing** de la main libre ; Espace de nouveau : l'autre poing (gauche-droite) si les deux sont libres |
-| la branche (ou le piquet) dans la main active et la hachette dans l'autre, face au billot | tailler : la branche devient un piquet, le piquet une cheville (c'est la hachette qui sert) |
-| un piquet, un plan connu | le planter au tracé (le premier fixe le coin nord-ouest) |
-| la cognée, devant un arbre debout | abattre (`use`) : un appui lance tout le travail, Xéros frappe seul jusqu'à la chute (25 min environ pour l'arbre normal, 2 h 30 pour le gros, à la force de Xéros), avec ses pauses de souffle ; un pas ou Échap l'arrête, repris là où il en était |
-| la cognée, sur un arbre couché, un houppier, une pièce de bois | de haut en bas (`chop`), lancé d'un appui : ébrancher, couper sur la grille |
-| la hachette ou la cognée, sur le rouleau posé sur le billot | couper un lien de 2 m |
-| la doloire, contre le flanc d'une pièce de bois | une passe sur le rail, lancée d'un appui : chaque coup lève sa part de la face et Xéros glisse avec le fer ; un pas ou Échap l'arrête |
-| le coin, contre le bout d'une grosse bille | le planter (sans geste) |
-| la masse, sur un coin planté | fendre (`maul`), lancé d'un appui ; la fente s'allonge (trois étapes par mètre commencé), la bille s'ouvre au bout |
-| **tout autre objet tenu** (une pierre, un seau, la pièce de bois portée, même à deux mains) ; **un outil sans rien à travailler devant lui** (la doloire, la hachette dans le vide) | **frapper avec** (l'arme improvisée, src/world/heft.ts) : sa portée vient de sa longueur, sa lenteur et son énergie de sa masse (le couple du bras) ; une perche porte loin et frappe lentement, la doloire porte court ; coûte au joule, même dans le vide |
+| **rien** | prendre ce qui est visé (un objet, la pièce du dessus d'un tas, un lien, un piquet planté, le rouleau posé sur le billot, une récolte à la main) dans cette main ; sur une place trop lourde d'un chantier, dire ce qui manque ; sinon **un coup de poing** de cette main, payé même dans le vide |
+| **un outil, devant ce qu'il sait travailler** | le travail, lancé d'un clic : la cognée abat, ébranche, coupe ; la hachette, sur le billot, taille ce que tient l'autre main (la branche devient un piquet, le piquet une cheville) ou coupe un lien sur le rouleau ; la doloire fait une passe sur le rail ; le coin se plante au bout d'une grosse bille ; la masse fend sur un coin planté. Un pas ou Échap arrête |
+| **un outil, sans rien à travailler** | frapper avec (l'arme improvisée, `src/world/heft.ts`) |
+| **le piquet, un plan connu** | le planter sur le tracé |
+| **une arme** (`kind: weapon`) | frapper (la taille) ; un nouveau clic pendant le geste enchaîne le coup d'en haut. Une arme dans chaque main : chaque clic frappe avec sa main |
+| **un objet à deux mains** | les deux clics agissent ; en frappe, le gauche donne la taille (le coup horizontal), le droit le coup d'en haut ; devant ce qu'un outil sait travailler, l'un ou l'autre lance le travail |
+| **une ressource** (branche, pierre, bûche, pièce de bois, fagot, rouleau…) | c'est la cible qui décide : devant ce qui encaisse un coup (`target` : le mannequin, plus tard les créatures), frapper avec ; sinon la poser là où le montre le fantôme (seule, sur un tas compatible, sur une place de chantier, le rouleau sur le billot) |
 
-Un refus (mauvais outil, pas la place, épuisé) se dit sans geste ni dépense.
+Décision de Grégoire : on se défend avec une pierre, on se bat avec une épée ; sans ennemi, la pierre se pose. La branche frappe bien
+(`weapon`) mais reste une ressource (`kind: resource`). Toute attaque, lancer compris, ramène le temps à x1.
 
-### Q (A en AZERTY)
-- Lâcher devant soi ce que tient la main active, là où le montre le fantôme (seul, en tas, ou un lien sous un tas).
-
-### Tab
-- Changer de main active. (La main active passe aussi seule sur l'autre quand elle se vide.)
-
-### R
-- Appui court, en tenant une pièce, un objet à plusieurs vues : le tourner d'un quart de tour pour la pose (le fantôme suit).
-- Maintenu une seconde, mains vides, au contact d'une bille couchée : la faire pivoter d'un quart de tour (jauge).
-
-### Échap
-- Sur un rail ou pendant un travail : l'arrêter après le coup en cours (ce qui est fait reste fait ; un pas fait de même). Ailleurs : rien.
-
-### V (la vitesse du temps)
-- V : le palier suivant de la vitesse du temps (x1, x2, x5, x10, x20, puis de nouveau x1 : en boucle ; x1 au départ), Maj tenue ou
-  non (pendant une course, V accélère aussi) ; aucune touche ne revient au palier d'avant (la combinaison avec Maj est retirée depuis
-  le chantier 1 de l'audit). Lue en jeu, pendant un travail et sur un rail ; pas pendant un geste, un dialogue, un passage, la
-  construction. Un message dit le palier (« Le temps : x5 ») et l'indicateur sous
-  le cadran le montre toujours, x1 compris. C'est la vitesse de simulation : elle accélère tout le jeu (la marche, les coups, les pauses,
-  l'horloge), par pas de taille normale. Une attaque ramène à x1. x50 est réservé à ?dieu (les tests). Pas gardée d'une session à
-  l'autre (docs/CONCEPTION.md, « Le temps »).
-
-### Le zoom (dans tous les modes)
-- Molette (vers l'avant : plus près), **+** et **−** (lus par leur signe, où qu'ils soient), ou + et − du pavé numérique.
+### Le clic maintenu
+- **Main vide** : nouer un tas lié en fagot, dénouer un fagot (les deux mains libres), faire pivoter une bille au sol (au contact,
+  les deux mains libres), appeler la mère pour une pièce trop lourde d'un chantier. Rien d'autre à maintenir : relâché, rien ne se fait.
+- **Main qui tient un objet** : viser, puis relâcher pour **lancer** (un objet à deux mains : l'un ou l'autre clic). Pendant la visée,
+  Xéros ne marche plus et se tourne vers le curseur ; le repère au sol (`ui-throw-mark`) montre où l'objet tombera ; Échap annule.
+  Tout se lance, c'est la physique qui dit jusqu'où (docs/CONCEPTION.md, « Le lancer »).
 
 ## La construction (`?construire`)
+
+Ses commandes ne changent pas ; elles restent cohérentes avec le jeu (le clic gauche pose, comme la main droite pose ce qu'elle tient ;
+R tourne ce qu'on tient).
 
 | Touche | Effet |
 | --- | --- |
@@ -112,48 +99,32 @@ Un refus (mauvais outil, pas la place, épuisé) se dit sans geste ni dépense.
 | clic droit ; Maj + clic droit | retirer la pièce visée ; avec tout ce qui repose dessus et lui est assemblé |
 | R | tourner la pièce (est-ouest, nord-sud, debout) |
 | T, G (Page haut, Page bas) | monter, descendre d'un cran de 20 cm |
-| Ctrl+Z ; Ctrl+Y ou Ctrl+Maj+Z | annuler ; refaire (lus par la lettre, comme partout ailleurs sur l'ordinateur) |
+| Ctrl+Z ou Cmd+Z ; Ctrl+Y, Cmd+Y, Ctrl+Maj+Z ou Cmd+Maj+Z | annuler ; refaire (lus par la lettre, comme partout ailleurs sur l'ordinateur) |
 
-Le panneau du catalogue et `?dieu` se manient à la souris.
+Le panneau du catalogue et `?dieu` se manient à la souris ; leurs clics ne sont pas des clics du jeu (seuls ceux du canevas comptent).
 
-## Conflits et incohérences
+## Les conflits d'avant, et ce qui les règle
 
-1. **Espace fait trop de choses, et dépend d'une règle cachée sur les mains.** Selon l'objet, Espace coupe, équarrit, plante un
-   coin sans geste, frappe à la masse, plante un piquet, taille par l'autre main… et maintenant attaque. « Ce qui sert » est la main
-   active, sauf si elle est vide (l'autre sert), sauf si elle tient une ressource et l'autre un outil (l'outil sert). La branche est
-   à la fois une ressource qu'on taille et une arme : branche active seule, Espace attaque ; branche active et hachette dans l'autre
-   main, Espace taille. **Avant ce chantier, la branche en main devant un arbre disait « Sans hache, rien à faire. » ; maintenant
-   elle frappe.**
-2. ~~L'arme ne sert que de la main active, les outils de n'importe laquelle.~~ Réglé après le premier essai de Grégoire : une arme
-   sert comme un outil (la main active, sinon l'autre si l'active est vide), toujours, dans le vide comme sur une cible. Une épée
-   dans la main non active, l'active vide, ne faisait rien de visible : c'est ce qui cachait l'attaque.
-3. **E et Q posent tous les deux.** E dans le vide pose ce que tient la main active, exactement comme Q ; mais E près d'une cible
-   (un tas, un personnage, un objet à prendre) fait autre chose, si bien qu'on ne sait pas toujours d'avance si E va poser ou prendre.
-4. **E maintenu réunit trois gestes sans rapport** : nouer, dénouer, appeler la mère. Le même appui court, devant la même cible,
-   reprend une pièce du tas.
-5. **R a deux sens selon les mains** : tourner ce qu'on tient (pour la pose), ou, mains vides et maintenu, pivoter une bille au
-   sol. En construction, R tourne la pièce en main : le même sens que le premier.
-6. **Le nom de la touche « lâcher »** : le code et le README disent « Q », qui est la lettre QWERTY ; en AZERTY c'est **A**, et Q
-   y sert à marcher à gauche. Les messages et la documentation devraient nommer la place, pas la lettre.
-7. **Les dialogues ne lisent pas les touches comme le reste.** `DialogueScene` écoute E, Espace et Entrée par leur code de touche
-   (la lettre E), pas par leur place via `PlayerInput` ; le choix se fait par Z/S (W/S) et les flèches. Un clic fait aussi
-   défiler. Sans conséquence aujourd'hui (E est à la même place partout), mais c'est une deuxième lecture du clavier.
-8. **Échap ne sert qu'à arrêter un travail ou une passe.** Pas de menu, pas de pause, pas d'annulation d'une attaque ou d'un geste : un coup parti va au bout.
-9. **Maj** : courir en jeu, accélérer la caméra et étendre le clic droit en construction. Cohérent, mais à garder en tête.
-10. **Deux armes en main** : Espace attaque avec celle de la main active, Tab change d'arme. Rien ne dit à l'écran qu'on est « en
-    garde » ; tenir une ou deux branches ne change rien (voulu pour ce chantier).
-11. **Un coup dans le vide** : gratuit avec un outil, payé avec une arme (choix de Grégoire, 1er novembre 2026 : c'est le geste qui
-    fatigue).
-12. **Le poing remplace le message des mains vides** : mains vides devant un arbre, Espace donnait « Sans hache, rien à faire. » ; il
-    donne maintenant un coup de poing (deuxième passe du combat, 1er novembre 2026). Un piquet dans l'autre main se plante toujours.
+1. **Espace faisait trop de choses, selon une règle cachée sur les mains.** Réglé : Espace ne fait plus rien ; chaque bouton de la
+   souris est une main, et ce que fait son clic dépend de ce que tient cette main (une seule fonction, `clickPlan`). La branche est une
+   ressource qui frappe bien : la cible décide.
+2. **L'arme ne servait que de la main active.** Réglé : il n'y a plus de main active ; chaque clic frappe avec sa main.
+3. **E et Q posaient tous les deux.** Réglé : E ne pose plus ; on pose d'un clic (au fantôme) ou avec A.
+4. **E maintenu réunissait trois gestes sans rapport.** Réglé : E ne se maintient plus ; le clic maintenu d'une main vide fait les
+   gestes longs (nouer, dénouer, pivoter, appeler la mère), le clic court reprend.
+5. **R avait deux sens selon les mains.** Réglé : R tourne ce qu'on tient, seulement ; pivoter une bille au sol est le clic maintenu.
+6. **Le nom de la touche « lâcher ».** Réglé dans les textes : A (Q en QWERTY), la même place.
+7. **Les dialogues ne lisaient pas les touches comme le reste.** Réglé : DialogueScene lit E, Entrée, les clics et Z/S par PlayerInput.
+8. **Échap ne servait qu'à arrêter un travail.** En partie : il annule aussi un lancer qu'on vise ; un menu viendra.
+9. **Maj** : courir en jeu, accélérer la caméra et étendre le clic droit en construction. Inchangé, cohérent.
+10. **Deux armes en main, rien ne disait laquelle sert.** Réglé : chaque clic sa main, et le mot de chaque clic s'affiche.
+11. **Un coup dans le vide** : gratuit avec un outil, payé avec une arme. Changé : un outil sans rien à travailler frappe, et se paie
+    comme une arme (le geste qui fatigue).
+12. **Le poing remplaçait le message des mains vides.** Gardé : une main vide sans rien à prendre donne un coup de poing.
 
-## À trancher
-
-- **Une touche d'attaque à part** (ou le clic gauche) plutôt qu'Espace partagé avec les outils ? Elle réglerait 1, 2 et une partie
-  de 10, et laisserait la branche être à la fois ressource et arme sans ambiguïté.
-- **E dans le vide qui pose** : le garder (rapide), ou laisser poser à Q seul (E ne ferait que prendre et parler) ?
-- **La règle des mains** pour Espace : une seule (toujours la main active, Tab pour choisir), ou la règle actuelle étendue aux armes ?
-- **E maintenu** : réserver l'appui long aux gestes sur un tas (nouer, dénouer) et donner un autre chemin à l'aide de la mère ?
-- **Échap** : lui donner un rôle général (annuler le geste en cours, puis un menu), ou le garder pour le rail ?
-- **Nommer les touches par leur place** dans tous les textes (« lâcher : la touche à droite de Tab »), et faire lire les dialogues
-  par `PlayerInput`.
+## À essayer, à trancher après l'essai
+- La visée sous le curseur ou dans sa direction : si elle pose un vrai problème en jeu, le repli est l'orientation par Z Q S D et le
+  clic qui agit devant Xéros.
+- La marche à reculons (regarder le curseur en marchant) : possible avec les dessins existants (jouer `walk-<direction du curseur>` en
+  allant dans l'autre sens), mais les jambes avanceraient vers l'avant ; pas faite, à décider.
+- Le lancer n'a pas encore de geste du corps (l'objet part de la main sans animation).

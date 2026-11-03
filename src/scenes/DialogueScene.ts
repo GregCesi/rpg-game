@@ -3,13 +3,15 @@ import { PORTRAIT_SIZE, UI, VIEW, ZOOM } from '../config';
 import { characters, dialogues } from '../content';
 import { GameEvent } from '../events';
 import type { DialogueAction, DialogueLine } from '../content/types';
+import { PlayerInput } from '../input/PlayerInput';
 
-const K = Phaser.Input.Keyboard.KeyCodes;
 const BORDER = 8;
 
 /**
  * Boîte de dialogue lancée par-dessus le monde. Portrait du personnage au-dessus du cadre, à gauche,
- * nom à côté, texte qui s'écrit lettre par lettre. E / Espace / Entrée / clic : finir la ligne, puis passer à la suivante.
+ * nom à côté, texte qui s'écrit lettre par lettre. E, Entrée ou un clic : finir la ligne, puis passer à la suivante ; à une question,
+ * Z et S (W, S en QWERTY), les flèches ou le survol de la souris choisissent, E, Entrée ou le clic valident. Les touches et les clics
+ * sont lus par PlayerInput (par leur place, sans jamais perdre un appui), comme dans le reste du jeu ; Espace n'y fait rien.
  * Émet GameEvent.DialogueEnd sur le bus du jeu quand il se ferme.
  */
 export class DialogueScene extends Phaser.Scene {
@@ -29,6 +31,9 @@ export class DialogueScene extends Phaser.Scene {
   /** Choix de la ligne en cours (« Oui », « Non ») : un texte chacun, le choisi précédé d'une flèche. */
   private choices: Phaser.GameObjects.Text[] = [];
   private picked = 0;
+  /** Le choix sous le curseur, s'il y en a un : un clic le prend. */
+  private hovered?: number;
+  private keys!: PlayerInput;
 
   constructor() {
     super('dialogue');
@@ -57,20 +62,28 @@ export class DialogueScene extends Phaser.Scene {
     this.namePlate = this.add.nineslice(0, 0, 'ui-box', undefined, 32, 22, BORDER, BORDER, BORDER, BORDER).setOrigin(0, 1);
     this.nameText = this.label(0, 0, 11, UI.ink).setOrigin(0, 0.5);
 
-    const kb = this.input.keyboard!;
-    for (const code of [K.E, K.SPACE, K.ENTER]) kb.addKey(code).on('down', () => this.advance());
-    this.input.on('pointerdown', () => !this.lines[this.index].choices && this.advance());
-    // monter, descendre parmi les choix (touches lues par leur place, comme PlayerInput : ZQSD/WASD ou flèches)
-    kb.on('keydown', (e: KeyboardEvent) => {
-      if (!this.choices.length) return;
-      if (e.code === 'KeyW' || e.code === 'ArrowUp') this.pick(this.picked - 1);
-      if (e.code === 'KeyS' || e.code === 'ArrowDown') this.pick(this.picked + 1);
-    });
+    this.keys = new PlayerInput(this);
+    this.hovered = undefined;
 
     this.showLine();
     // entrée en douceur
     const all = [this.box, this.text, this.portraitPanel, this.portrait, this.namePlate, this.nameText];
     this.tweens.add({ targets: all, alpha: { from: 0, to: 1 }, y: { from: (o: { y: number }) => o.y + 6, to: (o: { y: number }) => o.y }, duration: 140, ease: 'Quad.Out' });
+  }
+
+  /** Les entrées, à chaque image (PlayerInput) : E, Entrée ou un clic font la suite ; Z, S ou les flèches choisissent. */
+  update(): void {
+    const k = this.keys;
+    const up = k.upPressed();
+    const down = k.downPressed();
+    const clicked = [k.clickPressed('left'), k.clickPressed('right')].some(Boolean);
+    const next = k.handsPressed();
+    if (this.choices.length) {
+      if (up) this.pick(this.picked - 1);
+      if (down) this.pick(this.picked + 1);
+    }
+    if (clicked && this.hovered !== undefined && this.choices.length) this.pick(this.hovered);
+    if (next || clicked) this.advance();
   }
 
   private label(x: number, y: number, size: number, color: string): Phaser.GameObjects.Text {
@@ -109,7 +122,7 @@ export class DialogueScene extends Phaser.Scene {
 
   private advance(): void {
     if (this.typing) return this.finishLine();
-    // à une question, E (ou Espace, Entrée) valide le choix marqué
+    // à une question, E (ou Entrée, un clic) valide le choix marqué
     const line = this.lines[this.index];
     if (line.choices) return this.end(line.choices[this.picked].action);
     this.index++;
@@ -128,11 +141,11 @@ export class DialogueScene extends Phaser.Scene {
     const x = this.box.x + this.box.width - 90;
     this.choices = choices.map((_c, i) => {
       const t = this.label(x, this.box.y + 18 + i * 18, 12, UI.ink).setInteractive({ useHandCursor: true });
-      t.on('pointerover', () => this.pick(i));
-      t.on('pointerdown', () => {
+      t.on('pointerover', () => {
+        this.hovered = i;
         this.pick(i);
-        this.advance();
       });
+      t.on('pointerout', () => this.hovered === i && (this.hovered = undefined));
       return t;
     });
     this.picked = 0;
@@ -148,6 +161,7 @@ export class DialogueScene extends Phaser.Scene {
   }
 
   private clearChoices(): void {
+    this.hovered = undefined;
     for (const t of this.choices) t.destroy();
     this.choices = [];
   }

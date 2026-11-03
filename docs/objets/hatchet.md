@@ -26,16 +26,17 @@
 Seule. Ne s'entrepose pas.
 
 ## Gestes
-- E court : prendre (une main libre).
-- Espace, hachette dans une main, branche dans l'autre, face au billot : un appui lance le travail (`chop`) : la pointe se taille au coup, un travail au coup (docs/CONCEPTION.md, « Le travail ») dont la matière est `work.whittle` du billot (la pointe de 12 cm sur une branche de 5 cm : une soixantaine de coups, une demi-minute pour Xéros), chaque coup payé au joule (`work` de stamina.json) ; la branche devient un piquet (`stake`), qui reste dans la main qui tenait la branche. Si l'autre main ne tient pas de branche : « Tiens la branche ou le piquet debout sur le billot, de l'autre main. »
-- Q (A en AZERTY) : lâcher.
+- Clic court, main vide : prendre (une main libre).
+- Clic de la main de la hachette, branche dans l'autre, face au billot : un clic lance le travail (`chop`) : la pointe se taille au coup, un travail au coup (docs/CONCEPTION.md, « Le travail ») dont la matière est `work.whittle` du billot (la pointe de 12 cm sur une branche de 5 cm : une soixantaine de coups, une demi-minute pour Xéros), chaque coup payé au joule (`work` de stamina.json) ; la branche devient un piquet (`stake`), qui reste dans la main qui tenait la branche. Si l'autre main ne tient pas de branche : « Tiens la branche ou le piquet debout sur le billot, de l'autre main. »
+- Sans rien à travailler : frapper avec.
+- A (Q en QWERTY) : lâcher.
 
 ## Origine
-Trouvée dans le cagibi de la maison (`tiled/maps/ferme.tmj`, objet « dedans » `hatchet-ground`, à côté de la masse et du coin). E la prend dans une main.
+Trouvée dans le cagibi de la maison (`tiled/maps/ferme.tmj`, objet « dedans » `hatchet-ground`, à côté de la masse et du coin). Un clic court d'une main vide la prend dans cette main.
 
 ## Devenir
 Reste dans la main ; se lâche comme un outil. Plus tard : tailler d'autres pièces (chevilles, manches).
 
 ## Vérification
 - Aperçu : `.art-preview/collection.png`, `xeros-chop-hatchet.png`, `item-hatchet.png`.
-- En jeu : la donner (`?dieu`), une branche dans l'autre main, face au billot, Espace : un piquet dans la main de la branche.
+- En jeu : la donner (`?dieu`), une branche dans l'autre main, face au billot, un clic de la main de la hachette : un piquet dans la main de la branche.

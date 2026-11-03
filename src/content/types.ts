@@ -54,7 +54,7 @@ const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
 
 /**
  * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.
- * Avec `tool`, on frappe avec Espace, l'outil en main ; sans, on récolte à la main avec E.
+ * Avec `tool`, on travaille au clic de la main de l'outil ; sans, on récolte au clic d'une main vide.
  */
 /**
  * La matière d'une récolte qui se travaille au coup (docs/CONCEPTION.md, « Le travail » ; world/workPlan.ts) : abattre un arbre
@@ -514,7 +514,7 @@ export const ItemDefSchema = z.strictObject({
   trade: z.lazy(() => TradeSchema).optional(),
   /** Bois travaillé (le bardeau, la cheville) : il prend l'âge du bois, voir `aged` de PropDefSchema (ses images au sol). */
   aged: z.literal(true).optional(),
-  /** C'est une arme (la branche, l'épée de bois) : Espace, dans la main active, attaque. Voir WeaponSchema. */
+  /** Ses données d'arme (la branche, l'épée de bois) : le clic de sa main frappe avec (une ressource, contre ce qui encaisse un coup). Voir WeaponSchema. */
   weapon: z.lazy(() => WeaponSchema).optional(),
   /** Un outil au travail (docs/CONCEPTION.md, « Le travail ») : son inertie, son tranchant, ce que la précision y pèse. */
   work: z.lazy(() => ToolWorkSchema).optional(),
@@ -1281,7 +1281,7 @@ const TargetSchema = z.strictObject({
  * art/characters/xeros-combat.ts, tirées par build-art dans src/generated/combatPoses.ts : ses images, leur durée, la main, l'arme,
  * la traînée, l'éclat, les images de frappe), qui ne sait pas ce que Xéros tient ; la durée du coup et la vitesse de ce qui frappe se
  * tirent de ses poses (une seule source), allongées par l'inertie de l'arme. `hand` : la main qui frappe (le poing : `right` ou
- * `left` ; une arme : `right`, la main de l'épée dans les dessins). `combo` : après la fin du geste, combien de ms un Espace enchaîne
+ * `left` ; une arme : `right`, la main de l'épée dans les dessins). `combo` : après la fin du geste, combien de ms un clic enchaîne
  * l'attaque suivante de la posture (pendant le geste, l'appui est gardé). `power` : la part du corps qui s'y met, elle multiplie l'énergie du coup (ses dégâts et son prix au joule, world/strike.ts).
  */
 const AttackSchema = z.strictObject({
@@ -1334,7 +1334,7 @@ const FeelSchema = z.strictObject({
 });
 
 /**
- * Une posture d'une famille d'armes : ce que tiennent les mains (`when`) et la suite des attaques qu'enchaîne Espace (`chain`).
+ * Une posture d'une famille d'armes : ce que tiennent les mains (`when`) et la suite des attaques qu'enchaînent les clics (`chain`).
  * `when.other` : ce que tient l'autre main (`empty` rien, `weapon` une arme, `any` n'importe quoi) ; `when.both` : l'arme est tenue
  * à deux mains ; `when.free` : les mains libres (le poing : `both`, les deux ; `right`, `left` : celle-là seule). Absents : tout convient. La première posture qui convient sert. Plus tard : deux mains, bouclier, deux armes
  * (CONCEPTION, « Le combat ») ; aujourd'hui, une seule posture, qui convient à tout.
@@ -1372,6 +1372,22 @@ export const CombatSchema = z.strictObject({
      * de gestes `family`.
      */
     improvised: z.strictObject({ grip: z.number().min(0).lt(1), balance: z.number().gt(0).lte(1), efficiency: z.number().gt(0).lte(1), family: id }),
+  }),
+  /**
+   * Le lancer (world/throw.ts ; docs/CONCEPTION.md, « Le lancer ») : le bras de Xéros applique son couple (`swing` de strength.json) sur
+   * l'angle `angle` (rad) ; `arm` : la longueur du bras, de l'épaule à la main (m) ; `armInertia` : l'inertie du bras seul autour de
+   * l'épaule (kg·m²) ; `height` : la hauteur de la main au lâcher (m) ; `gravity` : la pesanteur (m/s²) ; `efficiency` : la part de
+   * l'énergie à l'arrivée qui fait des dégâts (comme `efficiency` d'une arme) ; `step` : le pas de la trajectoire (s), sur lequel se teste
+   * le franchissement d'une cible (world/crossing.ts).
+   */
+  throw: z.strictObject({
+    angle: z.number().positive(),
+    arm: z.number().positive(),
+    armInertia: z.number().positive(),
+    height: z.number().positive(),
+    gravity: z.number().positive(),
+    efficiency: z.number().gt(0).lte(1),
+    step: z.number().positive(),
   }),
   feel: FeelSchema,
   sweeps: z.record(id, SweepSchema),

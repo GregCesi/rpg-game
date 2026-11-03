@@ -4,7 +4,7 @@ import { combat, items, props, stamina, strength } from '../content';
 import type { Attack, Facing, SweepDef, Swinger, Weapon } from '../content/types';
 import type { Player } from '../entities/Player';
 import { combatPoses } from '../generated/combatPoses';
-import { game, type Held } from '../state';
+import { game, type Hand, type Held } from '../state';
 import { heftOf, improvisedStroke } from '../world/heft';
 import type { GameMap } from '../world/GameMap';
 import { boxOf } from '../world/build';
@@ -18,6 +18,7 @@ import {
   directionOf,
   footprint,
   frameDurations,
+  impactDamage,
   NO_SHIFT,
   precision,
   reachCm,
@@ -50,9 +51,10 @@ interface Target {
 
 /**
  * Ce qui frappe : ce qu'on tient (`held` : un objet possédable, un objet du monde porté, une pièce de bois ; son arme déclarée, sinon
- * l'arme improvisée de ses dimensions, world/heft.ts), ou la main nue (`fist`, combat.json `unarmed`).
+ * l'arme improvisée de ses dimensions, world/heft.ts), ou la main nue (`fist`, combat.json `unarmed`) ; `hand`, la main du clic (0 la
+ * gauche, 1 la droite).
  */
-export type Striker = { held: Held } | { fist: true };
+export type Striker = { held: Held; hand: Hand } | { fist: true; hand: Hand };
 
 /** La clé de ce qu'on tient : l'objet possédable, ou l'objet du monde (la pièce de bois avec son diamètre et sa longueur). */
 export const heldKey = (h: Held): string => ('item' in h ? h.item : h.wood ? `${h.prop}:${h.wood.size}:${h.wood.length}` : h.prop);
@@ -106,15 +108,15 @@ export interface StrikeLog {
 }
 
 /**
- * Le combat (docs/CONCEPTION.md, « Le combat ») : Espace avec une arme en main (la main active, ou l'autre si l'active est vide), ou,
- * la main active vide et l'autre sans arme ni outil, la main nue : le geste complet se joue toujours et se paie, dans le vide comme sur
+ * Le combat (docs/CONCEPTION.md, « Le combat ») : le clic de la main qui tient une arme (ou ce qui frappe), ou celui d'une main vide
+ * sans rien à prendre, la main nue : le geste complet se joue toujours et se paie, dans le vide comme sur
  * une cible. L'arme est des données (`weapon` d'items.json ; la main nue, `unarmed` de combat.json), l'attaque et son geste aussi
  * (combat.json : `attacks`, `sweeps`) ; le corps joue le geste (COMBAT_POSES) avec l'arme dessinée dans la main droite
  * (entities/ToolUse.ts). La zone de coup est calculée au sol, dans le monde (world/strike.ts) : à chaque image active, ce que l'arme
  * balaie devant Xéros depuis l'image d'avant, décalé de l'écart que laisse la précision ; une cible (`target` de props.json) dont
  * l'emprise au sol y entre est touchée, une seule fois par coup : arrêt sur image, elle penche et recule, sa matière vole, l'écran
  * tremble sur un gros coup, et le chiffre des dégâts s'envole au-dessus d'elle ; une cible que l'écart a fait manquer affiche
- * « raté ». Avec ?debug, la zone de chaque image active, au sol, en rouge. Un deuxième Espace pendant le geste, ou peu après
+ * « raté ». Avec ?debug, la zone de chaque image active, au sol, en rouge. Un deuxième clic pendant le geste, ou peu après
  * (`combo`), enchaîne l'attaque suivante de la posture. Ne lit pas le clavier.
  */
 export class CombatSystem {
@@ -128,8 +130,9 @@ export class CombatSystem {
   private chainAt = -1;
   private chainWith?: string;
   private comboUntil = 0;
-  /** Espace a été appuyé pendant l'attaque en cours : la suivante partira à sa fin. */
+  /** Un clic pendant l'attaque en cours : la suivante partira à sa fin (`queuedButton` : le bouton de ce clic). */
   private queued = false;
+  private queuedButton?: 'left' | 'right';
   /** La réaction en cours de chaque cible touchée. */
   private readonly reacting = new Map<string, Phaser.Tweens.Tween>();
   /** Où est l'image de chaque cible au repos (avant sa réaction en cours) : elle y revient. */
@@ -149,22 +152,25 @@ export class CombatSystem {
   /** Ce que tiennent les mains, pour la posture : l'arme à deux mains, ce que tient l'autre main, les mains libres. */
   private grip(s: Striker): Grip {
     const [l, r] = game.hands;
-    const free: Grip['free'] = game.both ? 'none' : !l && !r ? 'both' : !r ? 'right' : !l ? 'left' : 'none';
+    // le poing : celui de la main du clic (chaque clic frappe avec sa main)
+    const free: Grip['free'] = game.both ? 'none' : 'fist' in s ? (s.hand === 1 ? 'right' : 'left') : !l && !r ? 'both' : !r ? 'right' : !l ? 'left' : 'none';
     if (game.both) return { other: 'empty', both: true, free };
-    const own = game.hands[game.active];
-    const mine = 'held' in s && own === s.held ? game.active : 1 - game.active;
+    const mine = s.hand;
     const other = game.hands[1 - mine];
     return { other: !other ? 'empty' : 'item' in other && items[other.item].weapon ? 'weapon' : 'other', both: false, free };
   }
 
-  /** L'attaque que jouerait Espace à `time` avec `s`, vers `facing` : la suivante de l'enchaînement s'il tient, sinon la première. */
-  plan(s: Striker, facing: Facing, time: number, who: Swinger = strength.swing): AttackPlan {
+  /**
+   * L'attaque que jouerait un clic à `time` avec `s`, vers `facing` : la suivante de l'enchaînement s'il tient, sinon la première ; `from`
+   * (à deux mains : 0 au clic gauche, 1 au droit) : l'attaque de ce rang dans l'enchaînement de la posture.
+   */
+  plan(s: Striker, facing: Facing, time: number, who: Swinger = strength.swing, from?: number): AttackPlan {
     const heft = 'held' in s ? heftOf(s.held) : undefined;
     const weapon: Weapon = heft?.weapon ?? combat.unarmed;
     const kg = heft?.kg ?? combat.unarmed.mass;
     const chain = stanceFor(combat, weapon.family, this.grip(s)).chain;
     const key0 = CombatSystem.keyOf(s);
-    const at = this.chainWith === key0 && this.chainAt >= 0 && time <= this.comboUntil ? (this.chainAt + 1) % chain.length : 0;
+    const at = from !== undefined ? from % chain.length : this.chainWith === key0 && this.chainAt >= 0 && time <= this.comboUntil ? (this.chainAt + 1) % chain.length : 0;
     const key = chain[at];
     const attack = combat.attacks[key];
     const frames = combatPoses[attack.gesture][facing];
@@ -192,7 +198,7 @@ export class CombatSystem {
       sweep,
       joules,
       cost: attackCost(stamina.work, joules),
-      damage: imp ? Math.round(joules * rules.damagePerJoule * weapon.efficiency * 10) / 10 : damage(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
+      damage: imp ? impactDamage(rules, joules, weapon.efficiency) : damage(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
       precision: precision(rules, weapon, kg),
       shift,
       drawShift,
@@ -223,14 +229,23 @@ export class CombatSystem {
     });
   }
 
-  /** Espace pendant l'attaque : la suivante partira à sa fin. */
-  queue(): void {
-    if (this.busy) this.queued = true;
+  /** Un clic du bouton `button` pendant l'attaque : la suivante partira à sa fin. */
+  queue(button: 'left' | 'right'): void {
+    if (!this.busy) return;
+    this.queued = true;
+    this.queuedButton = button;
+  }
+
+  /** Le bouton du clic mis en file, lu une fois. */
+  takeQueued(): 'left' | 'right' | undefined {
+    const b = this.queuedButton;
+    this.queuedButton = undefined;
+    return b;
   }
 
   /**
    * La fin du geste, à `time` : les cibles que l'écart a fait manquer affichent « raté » ; l'enchaînement tient `combo` ms. Rend vrai si
-   * Espace a été appuyé pendant le geste (enchaîner tout de suite).
+   * un clic a été fait pendant le geste (enchaîner tout de suite).
    */
   end(p: AttackPlan, time: number): boolean {
     for (const [key, q] of p.missed) {
@@ -243,6 +258,18 @@ export class CombatSystem {
     const q = this.queued;
     this.queued = false;
     return q;
+  }
+
+  /**
+   * Ce qui est visé au point `p` (src/world/aim.ts) encaisse un coup : une cible (`target` de props.json) dont l'emprise au sol est à moins
+   * de `radius` px du point. Le clic d'une main qui tient une ressource frappe alors avec elle, au lieu de la poser.
+   */
+  aimedAt(p: { x: number; y: number }, radius: number): boolean {
+    return this.targets().some((q) => {
+      const dx = Math.max(q.box.left - p.x, 0, p.x - q.box.right);
+      const dy = Math.max(q.box.top - p.y, 0, p.y - q.box.bottom);
+      return Math.hypot(dx, dy) < radius;
+    });
   }
 
   /**
@@ -296,6 +323,31 @@ export class CombatSystem {
       this.scene.time.delayedCall(feel.hitStopMs, () => this.react(q, p.facing));
       this.float(q, String(p.damage).replace('.', ','));
     }
+  }
+
+  /**
+   * Un objet lancé (world/throw.ts) touche la cible `key` en volant vers `facing` : l'impact vaut son énergie à l'arrivée (`joules`), ses
+   * dégâts passent par la règle des coups (world/strike.ts `impactDamage`, l'efficacité du lancer de combat.json) ; la cible réagit comme
+   * à un coup, le chiffre s'envole, le journal le note (`throw`).
+   */
+  thrownHit(key: string, item: string, joules: number, facing: Facing): number {
+    const q = this.targets().find((t) => t.key === key);
+    const dmg = impactDamage(combat.rules, joules, combat.throw.efficiency);
+    if (!q) return dmg;
+    this.log.push({ attack: 'throw', item, facing, reach: 0, cost: 0, joules, damage: dmg, precision: 1, shift: NO_SHIFT, hits: [{ key, type: q.type, damage: dmg, step: 0 }], misses: [] });
+    if (dmg >= combat.feel.shakeFrom) this.scene.cameras.main.shake(combat.feel.shakeMs, combat.feel.shakeIntensity);
+    this.react(q, facing);
+    this.float(q, String(dmg).replace('.', ','));
+    return dmg;
+  }
+
+  /** Les cibles de la carte, avec leur emprise au sol (px) et leur hauteur (m) : ce qu'un objet lancé peut toucher en passant. */
+  throwTargets(): { key: string; box: Box; height: number }[] {
+    return this.targets().map((q) => ({ key: q.key, box: q.box, height: (this.heightOf(q.type) ?? 100) / 100 }));
+  }
+
+  private heightOf(type: string): number | undefined {
+    return props[type]?.dims?.h;
   }
 
   /**

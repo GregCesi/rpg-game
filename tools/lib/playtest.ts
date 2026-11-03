@@ -187,6 +187,90 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
         }, 'la carte ' + (command.map || command.kind));
       };
     `);
+    // la souris, avec le geste d'un joueur (docs/COMMANDES.md : le curseur oriente Xéros et vise ; le clic gauche est la main droite, le
+    // droit la main gauche) : `__aim(x, y)` pose le curseur sur un point du monde et l'y garde (le joueur suit ce qu'il vise : la caméra
+    // qui bouge ne le déplace pas) ; `__front(dir)` : le point devant Xéros (là où il regarde, ou dans la direction `dir`) ;
+    // `__click(button, at, ms)` : un clic court (`ms` = 0 : enfoncé puis relâché aussitôt, le jeu le garde jusqu'à le lire) ou maintenu
+    // `ms` ms en temps vrai (un geste), sur `at` (sinon devant Xéros) ; `__press(button)`, `__release(button)` : enfoncer, relâcher
+    await page.addInitScript(`
+      window.__screen = (x, y) => {
+        const g = window.game;
+        const cam = g.scene.getScene('world').cameras.main;
+        const rect = g.canvas.getBoundingClientRect();
+        return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
+      };
+      window.__mouse = (type, button) => {
+        const g = window.game;
+        const at = window.__aimAt;
+        const s = at ? window.__screen(at.x, at.y) : { x: 0, y: 0 };
+        const b = button === 'right' ? 2 : 0;
+        const ev = new MouseEvent(type, { clientX: s.x, clientY: s.y, button: b, buttons: type === 'mouseup' ? 0 : b === 2 ? 2 : 1, bubbles: true });
+        (type === 'mouseup' ? window : g.canvas).dispatchEvent(ev);
+      };
+      window.__aim = (x, y) => {
+        window.__aimAt = { x, y };
+        const w = window.game.scene.getScene('world');
+        if (!window.__aimFollow) {
+          window.__aimFollow = true;
+          window.game.events.on('prestep', () => window.__aimAt && window.__mouse('mousemove'));
+        }
+        window.__mouse('mousemove');
+        void w;
+      };
+      window.__front = (dir) => {
+        const w = window.game.scene.getScene('world');
+        const a = w.player.actor;
+        const f = dir || a.facing;
+        const d = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[f];
+        return { x: a.x + d[0] * 16, y: a.y - 6 + d[1] * 16 };
+      };
+      window.__press = (button = 'left') => window.__mouse('mousedown', button);
+      window.__release = (button = 'left') => window.__mouse('mouseup', button);
+      // la souris quitte le canevas : le jeu n'a plus de curseur (Xéros vise devant lui, comme au clavier seul)
+      window.__leave = () => {
+        window.__aimAt = undefined;
+        window.game.canvas.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+      };
+      window.__click = async (button = 'left', at, ms = 0) => {
+        const p = at || window.__front();
+        window.__aim(p.x, p.y);
+        await window.__frames(1);
+        window.__press(button);
+        if (ms > 0) await new Promise((r) => setTimeout(r, ms));
+        window.__release(button);
+        // le jeu lit le relâchement, puis la main quitte le canevas
+        await window.__frames(2);
+        window.__leave();
+      };
+      // \`__do(kinds, { at, ms, long })\` : le joueur lit le mot de chaque clic (le HUD, world/clickAction.ts) et clique le bouton qui
+      // fait ce qu'il veut (\`kinds\` : une ou plusieurs sortes de clic, dans l'ordre de préférence ; le gauche d'abord à égalité) ;
+      // \`long\` : le clic maintenu (\`ms\`, par défaut le seuil et un peu plus) ; échoue en nommant ce que disent les deux clics
+      window.__do = async (kinds, opts = {}) => {
+        const list = Array.isArray(kinds) ? kinds : [kinds];
+        const w = window.game.scene.getScene('world');
+        const p = opts.at || window.__front(opts.face);
+        window.__aim(p.x, p.y);
+        await window.__frames(2);
+        const plans = w.plans;
+        const of = (b) => plans && (opts.long ? plans[b].long : plans[b].short).kind;
+        let button;
+        for (const k of list) {
+          button = ['left', 'right'].find((b) => of(b) === k);
+          if (button) break;
+        }
+        if (!button) {
+          window.__leave();
+          throw new Error('aucun clic ne fait ' + list.join(' ou ') + ' : gauche ' + JSON.stringify(plans?.left) + ', droit ' + JSON.stringify(plans?.right));
+        }
+        window.__press(button);
+        const ms = opts.ms ?? (opts.long ? 650 : 0);
+        if (ms > 0) await new Promise((r) => setTimeout(r, ms));
+        window.__release(button);
+        await window.__frames(2);
+        window.__leave();
+        return button;
+      };
+    `);
     // la vitesse de simulation (src/systems/simSpeed.ts : N pas de jeu de taille normale par image, jamais une image sautée) : x10
     // par défaut, PLAYTEST_SPEED=<n> sinon (run-scenarios.ts met x1 aux scénarios de SCENARIOS_X1) ; remise après chaque chargement
     // `opts.speed` : un scénario qui mesure la vitesse du temps elle-même (test-temps) part de la sienne

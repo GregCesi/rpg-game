@@ -316,6 +316,8 @@ await playtest('cabane', async ({ page, errors, load }) => {
   const before = await shutterOf();
   await page.evaluate(([x, y]) => {
     const w = (window as any).game.scene.getScene('world');
+    // la souris lâchée (sortie du canevas) : Xéros garde la direction qu'on lui donne, vers le volet
+    (window as any).__leave();
     w.player.actor.body.reset(x, y);
     w.player.actor.face('left');
   }, [(O!.x + 422) / 5, (O!.y + 240) / 5] as const);
@@ -350,6 +352,8 @@ await playtest('cabane', async ({ page, errors, load }) => {
   shots.push({ name: 'le volet ouvert (en jeu)', png: PNG.sync.read(await page.screenshot({ clip: { x: shot.x, y: shot.y, width: shot.w, height: Math.min(shot.h, 720 - shot.y) } })) });
   await page.evaluate(([x, y]) => {
     const w = (window as any).game.scene.getScene('world');
+    // la souris lâchée (sortie du canevas) : Xéros garde la direction qu'on lui donne, vers le volet
+    (window as any).__leave();
     w.player.actor.body.reset(x, y);
     w.player.actor.face('left');
   }, [(O!.x + 422) / 5, (O!.y + 240) / 5] as const);

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, HARVEST, INTERACT, TILE } from '../config';
+import { HARVEST, INTERACT, TILE } from '../config';
 import type { Player } from '../entities/Player';
 import { items, props } from '../content';
 import type { Drop, Facing, Harvest } from '../content/types';
@@ -13,7 +13,6 @@ export function effortOf(h: Harvest, tool: string, bears: boolean): Harvest['als
 }
 
 import { changeObject, changeSpawned, dropItem, game, replaceHeld, spawnObject, take, type Hand } from '../state';
-import { promptTop } from '../world/GameMap';
 import { WOOD_PIECE } from '../world/woodPiece';
 import { woodSize } from '../world/woodShape';
 import type { WoodPiece } from '../content/types';
@@ -38,28 +37,12 @@ export type HitResult =
  * Ne lit pas le clavier : la scène dit quand un coup part et avec quoi.
  */
 export class HarvestSystem {
-  /** Invite « Espace » sur ce que l'outil en main peut frapper. */
-  private readonly prompt: Phaser.GameObjects.Image;
-
+  /** La main du clic du coup en cours : ce que la récolte met dans les mains y va d'abord. */
+  private giveHand: Hand = 1;
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly map: GameMap,
-  ) {
-    this.prompt = scene.add.image(0, 0, 'ui-key-space').setOrigin(0.5, 1).setDepth(DEPTH.prompt).setVisible(false);
-  }
-
-  /**
-   * À appeler à chaque image : montre l'invite « Espace » sur la cible devant Xéros (sur l'encoche visée s'il y en a une)
-   * quand l'objet en main est l'outil qu'elle demande. `active` = false pendant un geste, un dialogue ou un changement de carte.
-   */
-  updatePrompt(time: number, player: Player, held: string | undefined, active: boolean): void {
-    const t = active && held ? this.target(player, held) : undefined;
-    const ok = !!t && t.image.visible && !!t.def.harvest && wields(t.def.harvest, held);
-    this.prompt.setVisible(ok);
-    if (!ok) return;
-    const bob = Math.round((Math.sin(time / 220) + 1) / 2) * 2;
-    this.prompt.setPosition(t.aimX, promptTop(t) + 4 - bob);
-  }
+  ) {}
 
   /** Largeur de l'image d'un objet de props.json. */
   private imageWidth(type: string): number {
@@ -141,10 +124,12 @@ export class HarvestSystem {
   /**
    * Un coup porté à `prop` avec l'objet `tool` en main (undefined = à mains nues).
    * Un objet qui se récolte à la main ignore les outils ; un objet qui demande un outil refuse les autres.
-   * `facing` : la direction de celui qui frappe ; l'objet tombe de l'autre côté.
+   * `facing` : la direction de celui qui frappe ; l'objet tombe de l'autre côté. `hand` : la main du clic (ce qui vient dans les mains
+   * y va d'abord).
    */
-  hit(prop: PlacedProp | undefined, tool: string | undefined, facing: Facing): HitResult {
+  hit(prop: PlacedProp | undefined, tool: string | undefined, facing: Facing, hand: Hand = 1): HitResult {
     const h = prop?.def.harvest;
+    this.giveHand = hand;
     // l'objet a pu être récolté entre le début du geste et le coup
     if (!prop || !h || !this.map.props.includes(prop)) return { kind: 'none' };
     if (h.tool && !wields(h, tool)) {
@@ -212,7 +197,7 @@ export class HarvestSystem {
    * Ce que lâche un objet récolté, près de (bx, by) : dans les mains si `give` (au sol si elles ne sont pas libres), sinon au sol.
    * Entre dans GameState tout de suite ; les objets au sol sont posés cachés, à montrer avec pop().
    */
-  dropAll(drops: Drop[], bx: number, by: number): { given: number; overflow: boolean; dropped: PlacedGround[] } {
+  dropAll(drops: Drop[], bx: number, by: number, hand: Hand = 1): { given: number; overflow: boolean; dropped: PlacedGround[] } {
     const dropped: PlacedGround[] = [];
     let given = 0;
     let overflow = false;
@@ -220,7 +205,7 @@ export class HarvestSystem {
       const n = Phaser.Math.Between(d.min, d.max);
       for (let i = 0; i < n; i++) {
         if (d.give) {
-          if (take(game, { item: d.item }, items[d.item].hands)) {
+          if (take(game, { item: d.item }, items[d.item].hands, hand)) {
             given++;
             continue;
           }
@@ -351,7 +336,7 @@ export class HarvestSystem {
     });
 
     // les objets lâchés entrent dans GameState tout de suite : quitter la carte pendant la chute ne les perd pas
-    const { given, overflow, dropped } = this.dropAll(h.drops, baseX, baseY);
+    const { given, overflow, dropped } = this.dropAll(h.drops, baseX, baseY, this.giveHand);
     const scatter = () => {
       for (const g of dropped) this.pop(g, baseX, baseY);
     };

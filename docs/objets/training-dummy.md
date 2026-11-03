@@ -34,8 +34,8 @@ Aucune : un assemblage fait de main d'homme.
 Seul.
 
 ## Gestes
-- E court, E maintenu, R, Q : rien.
-- Espace avec une arme : le frapper. Il ne casse jamais (`target.hp: "infinite"`).
+- Clic maintenu, E, R, A : rien.
+- Clic de la main qui tient une arme, un outil ou une ressource : le frapper (une main vide : un coup de poing). Il ne casse jamais (`target.hp: "infinite"`).
 
 ## Origine
 Dressé par le paysan : la perche plantée à la bêche, la botte liée dessus. Transformation `raise-training-dummy`, geste à venir. En
@@ -54,5 +54,5 @@ Le paysan (`peasant`).
 ## Vérification
 - Aperçu : `.art-preview/collection.png`, `.art-preview/combat.png`, à côté de `gabarit.png`.
 - Outils de test : ?dieu, « Poser » le mannequin ; `?construire` : le poser du catalogue.
-- En jeu : `npm run test:combat` ; à la main, une branche ou l'épée de bois en main active devant lui, Espace : il tremble et
+- En jeu : `npm run test:combat` ; à la main, une branche ou l'épée de bois en main devant lui, un clic de cette main : il tremble et
   penche, la paille vole ; avec `?debug`, les dégâts au-dessus de lui.

@@ -165,8 +165,6 @@ export const GameStateSchema = z.strictObject({
   hands: z.tuple([HeldSchema.nullable(), HeldSchema.nullable()]),
   /** Ce que Xéros tient à deux mains (la hache, une bille) ; les deux cases de `hands` sont alors libres. */
   both: HeldSchema.nullable(),
-  /** Main active : celle qui utilise (Espace) et qui lâche (Q). */
-  active: HandSchema,
   /** Par identifiant de carte. */
   maps: z.record(id, MapStateSchema),
   /** Prochain identifiant d'objet au sol (unique dans toute la partie). */
@@ -233,7 +231,7 @@ export function resetStamina(s: GameState): void {
 }
 
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, active: 1, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: startStamina(), clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
+  return { hands: [null, null], both: null, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: startStamina(), clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
@@ -241,14 +239,17 @@ export function mapState(s: GameState, mapId: string): MapState {
   return (s.maps[mapId] ??= { changes: {}, ground: [], spawned: [], piles: [], sites: [], builds: [], joints: [], seeded: [], work: {} });
 }
 
-/** Ce que tient la main active (ou les deux mains), ou undefined. */
-export function held(s: GameState): Held | undefined {
-  return s.both ?? s.hands[s.active] ?? undefined;
+/**
+ * Ce que tient la main `hand` (0 : la gauche, celle du clic droit ; 1 : la droite, celle du clic gauche), ou les deux mains, ou
+ * undefined. Il n'y a pas de main active : chaque clic dit sa main (docs/COMMANDES.md).
+ */
+export function held(s: GameState, hand: Hand): Held | undefined {
+  return s.both ?? s.hands[hand] ?? undefined;
 }
 
-/** L'objet possédable que tient la main active (ou les deux mains) : ce qu'Espace utilise. Un objet du monde porté n'en est pas un. */
-export function heldItem(s: GameState): string | undefined {
-  const h = held(s);
+/** L'objet possédable que tient la main `hand` (ou les deux mains). Un objet du monde porté n'en est pas un. */
+export function heldItem(s: GameState, hand: Hand): string | undefined {
+  const h = held(s, hand);
   return h && 'item' in h ? h.item : undefined;
 }
 
@@ -259,32 +260,22 @@ export function canTake(s: GameState, hands: 1 | 2): boolean {
 }
 
 /**
- * Prend un objet : à deux mains si `hands` = 2, sinon dans la main active si elle est libre, ou dans l'autre.
- * Renvoie false si les mains ne sont pas libres (rien n'est changé).
+ * Prend un objet : à deux mains si `hands` = 2, sinon dans la main `hand` si elle est libre (celle du clic ; la droite par défaut), ou
+ * dans l'autre. Renvoie false si les mains ne sont pas libres (rien n'est changé).
  */
-export function take(s: GameState, what: Held, hands: 1 | 2): boolean {
+export function take(s: GameState, what: Held, hands: 1 | 2, hand: Hand = 1): boolean {
   if (!canTake(s, hands)) return false;
   if (hands === 2) s.both = what;
-  else s.hands[s.hands[s.active] ? ((1 - s.active) as Hand) : s.active] = what;
+  else s.hands[s.hands[hand] ? ((1 - hand) as Hand) : hand] = what;
   revision++;
   return true;
 }
 
-/**
- * La règle unique de la main active : quand elle se vide et que l'autre main tient un objet, la main active passe sur l'autre
- * (comme Tab). Appelée par chaque fonction qui vide une main (`release`, `clearHeld`) : poser, lâcher, planter un piquet ou le
- * coin, utiliser un lien, tout geste qui consomme ou libère l'objet tenu y passe. Les deux mains vides : rien ne change.
- */
-function followHeld(s: GameState): void {
-  if (!s.both && !s.hands[s.active] && s.hands[1 - s.active]) s.active = (1 - s.active) as Hand;
-}
-
-/** Lâche ce que tient la main active (ou les deux mains) ; renvoie ce qui a été lâché. */
-export function release(s: GameState): Held | undefined {
-  const what = held(s);
+/** Lâche ce que tient la main `hand` (ou les deux mains) ; renvoie ce qui a été lâché. */
+export function release(s: GameState, hand: Hand): Held | undefined {
+  const what = held(s, hand);
   if (s.both) s.both = null;
-  else s.hands[s.active] = null;
-  followHeld(s);
+  else s.hands[hand] = null;
   revision++;
   return what;
 }
@@ -294,8 +285,8 @@ export function release(s: GameState): Held | undefined {
  * sens (la face debout d'un quartier suit, `turnedWood`) ; un objet possédable passe à sa vue suivante (selon sa symétrie : la
  * branche, le piquet, les outils) ; un autre objet du monde (le fagot) est noté tourné ou non.
  */
-export function turnHeld(s: GameState): void {
-  const h = held(s);
+export function turnHeld(s: GameState, hand: Hand): void {
+  const h = held(s, hand);
   if (!h) return;
   if ('item' in h) {
     const next = ((h.view ?? 0) + 1) % viewCount(items[h.item].views);
@@ -363,12 +354,6 @@ export function advanceClock(s: GameState, minutes: number): void {
 /** Ce que tient la main `slot` devient `what` (la branche taillée devient un piquet, dans la même main). */
 export function replaceHeld(s: GameState, slot: Hand, what: Held): void {
   s.hands[slot] = what;
-  revision++;
-}
-
-/** Change de main active. */
-export function switchHand(s: GameState): void {
-  s.active = (1 - s.active) as Hand;
   revision++;
 }
 
@@ -619,7 +604,6 @@ export function removeJoints(s: GameState, mapId: string, ids: readonly number[]
 export function clearHeld(s: GameState, slot: 'both' | Hand): void {
   if (slot === 'both') s.both = null;
   else s.hands[slot] = null;
-  followHeld(s);
   revision++;
 }
 

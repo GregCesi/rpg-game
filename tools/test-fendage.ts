@@ -1,5 +1,5 @@
 // Test de scénario du fendage, dans le vrai jeu : un Chromium sans écran pilote le jeu servi par Vite, avec de vrais
-// appuis de touches (Espace, R), comme le joueur. De la grosse bille de 1 m posée par ?dieu (une pièce de bois `big`, ronde)
+// clics (la main de l'outil) et touches (R, Échap), comme le joueur. De la grosse bille de 1 m posée par ?dieu (une pièce de bois `big`, ronde)
 // jusqu'aux quatre quartiers : refus (cognée sur une pièce trop courte pour être recoupée, masse sans coin), planter le coin,
 // trois coups de masse, demi-billes, coin lâché, quartiers, masses, endurance, coups gardés dans GameState (les réglages de la
 // pièce), une bille de 2 m (un seul coin, 6 coups), quartier tourné et tas de quartiers.
@@ -33,12 +33,17 @@ await playtest('fendage', async ({ page, errors, load }) => {
     };
     // un appui ; `finish` : un travail lancé (fendre) dure son temps réel, il se finit d'un coup (?dieu « Finir le travail »),
     // horloge, endurance et résultat compris
+    // `use` : le clic de la main de l'outil, comme un joueur qui lit le mot de chaque clic (tools/lib/playtest.ts `__do`) ; sinon une touche
     const press = async (code: string, finish = true) => {
+      if (code === 'use') {
+        await (window as any).__do(['work', 'plant', 'strike', 'punch']);
+        if (finish) await finishWork();
+        return;
+      }
       window.dispatchEvent(new KeyboardEvent('keydown', { code }));
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code }));
       await (window as any).__frames(2);
-      if (code === 'Space' && finish) await finishWork();
     };
     // le geste fini, et la fente ouverte un instant avant que les morceaux paraissent
     const settled = async () => {
@@ -91,13 +96,13 @@ await playtest('fendage', async ({ page, errors, load }) => {
     // geste ni dépense
     await give('axe');
     await standFlank(pieces('round').at(-1));
-    await press('Space');
+    await press('use');
     await (window as any).__settle();
     out.axeNotice = notices.at(-1);
     out.axeMode = w().mode;
     await give('maul');
     await stand(pieces('round').at(-1));
-    await press('Space');
+    await press('use');
     await (window as any).__settle();
     out.maulNotice = notices.at(-1);
     out.refusedCost = 100 - w().player.stamina.ceiling;
@@ -105,32 +110,31 @@ await playtest('fendage', async ({ page, errors, load }) => {
     // 2. depuis le flanc, le coin ne se plante pas (la bille reste) ; depuis le bout, face à la coupe, si
     await give('splitting-wedge');
     await standFlank(pieces('round').at(-1));
-    await press('Space');
+    await press('use');
     await (window as any).__settle();
     out.flankNotice = notices.at(-1);
     out.flankPlanted = wedged().length;
     out.flankHands = JSON.stringify(gs.game.hands);
     await stand(pieces('round').at(-1));
-    await press('Space');
+    await press('use');
     await (window as any).__settle();
     out.planted = wedged().map((p: any) => p.wood.wedge.end);
     out.handsAfterPlant = JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both);
     out.plantCost = 100 - w().player.stamina.ceiling;
 
-    // 3. fendre : un travail au coup (docs/CONCEPTION.md, « Le travail ») ; Espace maintenu enchaîne les coups de masse, la fente
-    // s'allonge à chaque étape (trois pour 1 m) ; un appui sur Espace lance tout le travail. Pour l'essai, Xéros à la force humaine la plus grande (?dieu « force », plafonnée) et la simulation à x10 : le coup frappe plus fort et
-    // plus vite. Arrêté (Espace relâché) après la première étape : elle est notée dans la pièce, la part enlevée dans GameState ; repris,
+    // 3. fendre : un travail au coup (docs/CONCEPTION.md, « Le travail ») ; la fente s'allonge à chaque étape (trois pour 1 m) ; un clic
+    // de la main de la masse lance tout le travail. Pour l'essai, Xéros à la force humaine la plus grande (?dieu « force », plafonnée) et la simulation à x10 : le coup frappe plus fort et
+    // plus vite. Arrêté (Échap) après la première étape : elle est notée dans la pièce, la part enlevée dans GameState ; repris,
     // il continue de là, puis il est fini d'un coup (?dieu)
     emit({ kind: 'force', multiplier: 10 });
     emit({ kind: 'sim-speed', factor: 10 });
     await give('maul');
     await stand(wedged()[0]);
     const s0 = w().player.stamina.ceiling;
-    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+    await (window as any).__do('work');
     await (window as any).__until(() => spawned().find((q: any) => q.wood?.wedge)?.wood.wedge.hits >= 1, 'la première étape de la fente', 20000);
     out.workMode = w().mode;
     out.workBar = w().works.bar.frame.visible;
-    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
     // Échap : le coup en cours s'achève, puis le travail s'arrête
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape', keyCode: 27 } as KeyboardEventInit));
     await sleep(60);
@@ -141,7 +145,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     out.splitSteps = spawned().find((q: any) => q.wood?.wedge) ? 3 : 0;
     out.stoppedMode = w().mode;
     await stand(wedged()[0]);
-    await press('Space');
+    await press('use');
     await settled();
     out.hitCosts = [s0 - w().player.stamina.ceiling];
     out.workLeft = Object.keys(gs.mapState(gs.game, w().map.def.id).work).length;
@@ -154,11 +158,11 @@ await playtest('fendage', async ({ page, errors, load }) => {
     for (let k = 0; k < 2; k++) {
       await give('splitting-wedge');
       await stand(pieces('half')[0]);
-      await press('Space');
+      await press('use');
       await (window as any).__settle();
       await give('maul');
       await stand(wedged()[0]);
-      await press('Space');
+      await press('use');
       await settled();
     }
     out.quarters = pieces('quarter').length;
@@ -168,7 +172,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
     // le quartier ne se refend pas ici
     await give('splitting-wedge');
     await stand(pieces('quarter')[0]);
-    await press('Space');
+    await press('use');
     await (window as any).__settle();
     out.quarterWedge = notices.at(-1);
     out.stamina = w().player.stamina.ceiling;
@@ -191,18 +195,18 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await (window as any).__settle();
       await give('splitting-wedge');
       await standAt(pieces('round').at(-1), end);
-      await press('Space');
+      await press('use');
       await (window as any).__settle();
       const planted = wedged().map((p: any) => p.wood.wedge.end);
       await give('maul');
       await standAt(wedged()[0], other);
       notices.length = 0;
-      await press('Space');
+      await press('use');
       await (window as any).__settle();
       const wrongNotice = notices.at(-1);
       const hitsWrong = spawned().find((o: any) => o.wood?.wedge)?.wood.wedge.hits;
       await standAt(wedged()[0], end);
-      await press('Space');
+      await press('use');
       await settled();
       // la demi-bille de ce bout, fendue à son tour depuis le même bout : deux quartiers identiques, écorce en bas, pointe en l'air
       const halves = pieces('half').length;
@@ -210,11 +214,11 @@ await playtest('fendage', async ({ page, errors, load }) => {
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give('splitting-wedge');
       await standAt(pieces('half')[0], end);
-      await press('Space');
+      await press('use');
       await (window as any).__settle();
       await give('maul');
       await standAt(wedged()[0], end);
-      await press('Space');
+      await press('use');
       await settled();
       const quarters = pieces('quarter').map((p: any) => ({ ...p.wood }));
       ends.push({ axis, end, planted, wrongNotice, hitsWrong, halves, halfFaces, quarters });
@@ -230,7 +234,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
       await give('splitting-wedge');
       notices.length = 0;
       await standAt(pieces('round').at(-1), 'west');
-      await press('Space');
+      await press('use');
       await (window as any).__settle();
       const planted = wedged().length;
       await give('maul');
@@ -238,7 +242,7 @@ await playtest('fendage', async ({ page, errors, load }) => {
       const hits: number[] = [];
       const images: string[] = [];
       await standAt(wedged()[0], 'west');
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+      await (window as any).__do('work');
       await (window as any).__until(() => w().mode === 'work', 'le travail lancé');
       // à chaque pas de jeu (à x10, une image du navigateur en contient dix : aucune étape n'échappe), les pauses de souffle comprises
       // (frapper fort coûte beaucoup de souffle)
@@ -254,7 +258,6 @@ await playtest('fendage', async ({ page, errors, load }) => {
       w().events.on('postupdate', look);
       await (window as any).__until(() => w().mode !== 'work', 'le travail fini', 90000);
       w().events.off('postupdate', look);
-      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
       await settled();
       await (window as any).__resume();
       if (hits.at(-1) !== -1) hits.push(wedged()[0] ? wedged()[0].wood.wedge.hits : -1);
@@ -326,10 +329,10 @@ await playtest('fendage', async ({ page, errors, load }) => {
   assert.equal(r.flankNotice, 'Le coin se plante dans le bout, là où on voit les cernes.', 'depuis le flanc : refusé, avec ce message');
   assert.equal(r.flankPlanted, 0, 'depuis le flanc, rien n\'est planté');
   assert.equal(r.flankHands, '[null,{"item":"splitting-wedge"}]', 'le coin reste en main');
-  assert.deepEqual(r.planted, ['west'], 'Espace plante le coin depuis le bout');
+  assert.deepEqual(r.planted, ['west'], 'le clic plante le coin depuis le bout');
   assert.equal(r.handsAfterPlant, '[null,null]null', 'la main est libérée');
   assert.ok(Math.abs(r.plantCost - 1) < 1e-6, `coût du plantage : ${r.plantCost}`);
-  assert.equal(r.workMode, 'work', 'Espace lance le travail : Xéros fend tant qu\'il n\'a pas fini');
+  assert.equal(r.workMode, 'work', 'le clic lance le travail : Xéros fend tant qu\'il n\'a pas fini');
   assert.ok(r.workBar, 'la jauge du travail se voit au-dessus de Xéros');
   assert.equal(r.stoppedMode, 'play', 'Échap arrête le travail');
   assert.ok(r.hitsKept >= 1 && r.hitsKept < 3, `arrêté après la première étape (le coup en cours s'achève) : notée dans la pièce (${r.hitsKept})`);

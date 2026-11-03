@@ -1,9 +1,9 @@
 // Le fagot garde son nombre de branches, dans le vrai jeu (tools/lib/playtest.ts), au vrai clavier (bug vu par Grégoire : un tas de 2
 // branches noué donnait un fagot de 10, et le dénouer rendait 10 branches). Pour chaque nombre de 2 au tas plein : un tas lié de n branches
-// devant Xéros (?dieu), E maintenu le noue (un tas d'un fagot de n branches) ; E le prend (le fagot tenu compte n) ; Q le pose seul
-// (un objet né qui compte n, dessiné à son nombre) ; E maintenu le dénoue : le tas lié a exactement n branches. Puis un fagot de 3
-// posé seul, la page rechargée : il compte toujours 3, et dénoué rend 3 branches. Pour un nombre sur deux, E court pour prendre le
-// fagot se fait sur une machine lente (une image de 700 ms juste après l'appui) : il reste un appui court. Jusqu'au tas de branches plein (ses places dans
+// devant Xéros (?dieu), le clic maintenu le noue (un tas d'un fagot de n branches) ; le clic court le prend (le fagot tenu compte n) ;
+// A (Q en QWERTY) le pose seul (un objet né qui compte n, dessiné à son nombre) ; le clic maintenu le dénoue : le tas lié a exactement n
+// branches. Puis un fagot de 3 posé seul, la page rechargée : il compte toujours 3, et dénoué rend 3 branches. Pour un nombre sur deux,
+// le clic court pour prendre le fagot se fait sur une machine lente (une image de 700 ms juste après le clic) : il reste un clic court. Jusqu'au tas de branches plein (ses places dans
 // piles.json). Usage : npm run test:noeud.
 
 import assert from 'node:assert/strict';
@@ -24,7 +24,18 @@ await playtest('noeud', async ({ page, errors, load }) => {
         const branches = Object.keys(content.piles).find((k: string) => content.piles[k].tie?.into);
         const fagot = content.piles[branches!].tie.into as string;
         const ms = () => gs.mapState(gs.game, w().map.def.id);
-        const key = (type: string, code: string) => window.dispatchEvent(new KeyboardEvent(type, { code }));
+        const W = window as any;
+        // une touche (A : lâcher), ou le clic gauche (`click` : la main droite), visant devant Xéros, comme un joueur
+        const key = (type: string, code: string) => {
+          if (code !== 'click') return void window.dispatchEvent(new KeyboardEvent(type, { code }));
+          if (type === 'keydown') {
+            const f = W.__front();
+            W.__aim(f.x, f.y);
+            W.__press('left');
+          } else {
+            W.__release('left');
+          }
+        };
         // deux images, que le jeu voie Xéros à sa nouvelle place et calcule sa cible avant l'appui
         const frames = async () => {
           await new Promise((r) => requestAnimationFrame(r));
@@ -50,7 +61,7 @@ await playtest('noeud', async ({ page, errors, load }) => {
               let down = false;
               const step = () => {
                 if (!down) return void ((down = true), key('keydown', code));
-                if (!w().press.pending) return;
+                if (!w().presses.left.pending) return;
                 w().events.off('postupdate', step);
                 key('keyup', code);
                 const t = performance.now();
@@ -94,15 +105,15 @@ await playtest('noeud', async ({ page, errors, load }) => {
           a.face('down');
         };
         facePile();
-        // E maintenu : noué
-        await tap('KeyE', () => ms().piles.some((p: any) => p.pile !== branches), 'le fagot noué').catch((e: Error) => {
+        // le clic maintenu, main vide : noué
+        await tap('click', () => ms().piles.some((p: any) => p.pile !== branches), 'le fagot noué').catch((e: Error) => {
           throw new Error(`${e.message} (messages : ${notices.join(' / ')} ; mode ${w().mode} ; tas ${JSON.stringify(ms().piles)} ; pieds ${a.x},${a.y})`);
         });
         const tied = ms().piles.find((p: any) => p.pile !== branches);
         out.tiedBundle = tied.bundle ?? null;
         // E : pris dans les mains
         await until(() => w().mode === 'play', 'le jeu');
-        await press('KeyE', () => !!gs.game.both || !!gs.game.hands[0] || !!gs.game.hands[1], 'le fagot pris', n % 2 === 1);
+        await press('click', () => !!gs.game.both || !!gs.game.hands[0] || !!gs.game.hands[1], 'le fagot pris', n % 2 === 1);
         const held = gs.game.both ?? gs.game.hands[0] ?? gs.game.hands[1];
         out.held = held.prop;
         out.heldBundle = held.bundle ?? null;
@@ -112,9 +123,9 @@ await playtest('noeud', async ({ page, errors, load }) => {
         out.loneBundle = lone.bundle ?? null;
         out.image = w().map.props.find((p: any) => p.spawned && p.id === lone.id)?.image.texture.key;
         if (keep) return out;
-        // E maintenu : dénoué
+        // le clic maintenu : dénoué
         const piles = ms().piles.length;
-        await tap('KeyE', () => ms().piles.length > piles, 'le fagot dénoué');
+        await tap('click', () => ms().piles.length > piles, 'le fagot dénoué');
         const back = ms().piles.at(-1);
         out.untied = back.places.length;
         out.untiedTie = !!back.tie;
@@ -169,13 +180,16 @@ await playtest('noeud', async ({ page, errors, load }) => {
     const piles = ms().piles.length;
     await new Promise((r) => requestAnimationFrame(r));
     await new Promise((r) => requestAnimationFrame(r));
-    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' }));
+    const W = window as any;
+    const f = W.__front();
+    W.__aim(f.x, f.y);
+    W.__press('left');
     const notes: string[] = [];
     g.events.on('notice', (t: string) => notes.push(t));
     await until(() => ms().piles.length > piles, 'le fagot rechargé, dénoué').catch((e: Error) => {
       throw new Error(`${e.message} (carte ${w().map.def.id} ; mode ${w().mode} ; messages ${notes.join(' / ')} ; objets nés ${JSON.stringify(ms().spawned)} ; pieds ${a.x},${a.y} ; fagot ${p?.baseX},${p?.top})`);
     });
-    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE' }));
+    W.__release('left');
     return { map: w().map.def.id, bundle, untied: ms().piles.at(-1).places.length };
   });
   assert.equal(after.bundle, 3, `rechargé, le fagot posé seul compte 3 : ${JSON.stringify(after)}`);
