@@ -307,6 +307,11 @@
     "earth-ridge",
     "hearth",
     "threshold-stone",
-    "bench"
+    "bench",
+    "thatch-roof-pierced",
+    "stone-hearth",
+    "chimney-hood",
+    "chimney-flue",
+    "chimney-cap"
   ]
 }

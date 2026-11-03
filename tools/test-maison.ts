@@ -9,7 +9,7 @@
 //     torchis, chaux : chaque couche remplace la précédente), la porte d'entrée et les trois portes intérieures entre leurs jambages,
 //     sept fenêtres et leurs volets, les sablières, les entraits des deux fermes, les pignons (le trou de fumée à l'ouest), les deux
 //     pans de chaume (chevronnage, demi couvert, plein : chacun remplace le précédent), le faîtage de terre ;
-//   - dedans : le foyer, la table et le banc, la jarre, deux sacs au cagibi, le lit, le coffre et l'établi de la mère (la paillasse, les
+//   - dedans : l'âtre de la cheminée (sa hotte, son manteau, son conduit jusqu'au-dessus du faîte, par le pan nord percé), la table et le banc, la jarre, deux sacs au cagibi, le lit, le coffre et l'établi de la mère (une demi-bille sur quatre pieds en perche, ses tenons) (la paillasse, les
 //     outils, la corde, le tas de bois et le seau sont des objets de la carte : ils ne sont pas au plan) ;
 //   - la zone enregistrée comme plan : src/content/plans/maison-xeros.json (le plan s'écrit dans un dossier temporaire et se compare au
 //     plan commité ; PLANS_WRITE=1 le réécrit) ;
@@ -35,7 +35,7 @@ const PLAN_FILE = `${OUT_DIR}/maison-xeros.json`;
 const mtimeOf = (f: string) => (existsSync(f) ? statSync(f).mtimeMs : 0);
 const PLAN_BEFORE = mtimeOf(PLAN_FILE);
 /** Les pièces du catalogue dont la maison est faite (outre la pièce de bois, une poutre du normal). */
-const PROPS = /^(rough-sill-wall|narrow-sill-wall|threshold-stone|(staves|wattle|daub|lime)-(panel|window-panel|jamb|inner-jamb)|cottage-door|inner-door|plank-shutter|lime-gable|lime-gable-smoke|thatch-roof-frame|thatch-roof-half|thatch-roof|earth-ridge|hearth|table|bench|jar|sack|bed|chest|workbench)$/;
+const PROPS = /^(rough-sill-wall|narrow-sill-wall|threshold-stone|(staves|wattle|daub|lime)-(panel|window-panel|jamb|inner-jamb)|cottage-door|inner-door|plank-shutter|lime-gable|thatch-roof-frame|thatch-roof-half|thatch-roof|thatch-roof-pierced|earth-ridge|stone-hearth|chimney-hood|chimney-flue|chimney-cap|table|bench|jar|sack|bed|chest)$/;
 const START = Date.now();
 
 await playtest('maison', async ({ page, errors, load }) => {
@@ -125,6 +125,10 @@ await playtest('maison', async ({ page, errors, load }) => {
     await send({ kind: 'pick', piece: s.ref, ...(s.view ? { view: s.view } : {}) });
     for (let i = 0; i < (s.up ?? 0); i++) {
       await page.keyboard.press('KeyT');
+      await sleep(30);
+    }
+    for (let i = 0; i < (s.down ?? 0); i++) {
+      await page.keyboard.press('KeyG');
       await sleep(30);
     }
     // la hauteur où on la voit : le dessus de ce qui la porte (les pans de toit ne portent que le faîtage)
@@ -310,9 +314,11 @@ await playtest('maison', async ({ page, errors, load }) => {
   if (!process.env.PLANS_WRITE) assert.deepEqual(plan, JSON.parse(readFileSync(COMMITTED, 'utf8')), `le plan bâti est celui de ${COMMITTED} (PLANS_WRITE=1 pour le mettre à jour)`);
   assert.equal(plan.pieces.length, built.length, 'toutes les pièces sont dans le plan');
   assert.equal(plan.joints.length, (await joints()).length, 'et tous les assemblages');
-  // seulement des pièces du catalogue : des poutres du normal (équarries, 5,80 m au plus) et les éléments de la chaumière
+  // seulement des pièces du catalogue : des poutres du normal (équarries, 5,80 m au plus), l'établi (une demi-bille du gros, des perches
+  // rondes debout) et les éléments de la chaumière
+  const bench = (w: any) => (w.size === 'big' && w.shape === 'half' && !w.hewn) || (w.size === 'pole' && w.shape === 'round' && w.axis === 'up');
   for (const p of plan.pieces) {
-    if ('wood' in p.piece) assert.ok(p.piece.wood.size === 'normal' && p.piece.wood.hewn === 12 && p.piece.wood.length <= 580, JSON.stringify(p.piece));
+    if ('wood' in p.piece) assert.ok((p.piece.wood.size === 'normal' && p.piece.wood.hewn === 12 && p.piece.wood.length <= 580) || bench(p.piece.wood), JSON.stringify(p.piece));
     else assert.match(p.piece.prop, PROPS, JSON.stringify(p.piece));
   }
   assert.equal(plan.age, 'worn', "le plan fixe l'âge de toutes ses pièces de bois (patiné)");
@@ -392,9 +398,11 @@ await playtest('maison', async ({ page, errors, load }) => {
   const shift = interior.shift as { x: number; y: number };
   const rooms = house.rooms.map((q: any) => ({ ...q, x: q.x + shift.x, y: q.y + shift.y }));
 
-  // d'une pièce à l'autre : chaque porte intérieure, fermée, s'ouvre avec E (Xéros devant elle, du côté de la salle), puis il passe
+  // d'une pièce à l'autre : chaque porte intérieure, fermée, s'ouvre avec E (Xéros devant elle, du côté de la salle), puis il passe ;
+  // le cagibi n'a pas de porte : sa baie, sous son linteau, se passe tout droit
+  assert.ok(!named.has('porte cloison x=320 160'), "le cagibi n'a pas de porte");
   const doors: [string, number, string, string][] = [
-    ['porte cloison x=320 160', -1, 'le cagibi', 'KeyA'],
+    ['linteau cloison x=320 160', -1, 'le cagibi', 'KeyA'],
     ['porte cloison x=320 320', -1, 'le coin de Xéros', 'KeyA'],
     ['porte cloison x=960 320', 1, "l'atelier de la mère", 'KeyD'],
   ];
@@ -403,9 +411,11 @@ await playtest('maison', async ({ page, errors, load }) => {
     const sx = dir < 0 ? door.x + 45 : door.x - 40;
     // le corps de Xéros est au-dessus de ses pieds (le point du personnage) : les pieds 30 cm sous le milieu de la porte, le corps dans la baie
     await stand(Math.round(sx / 5), Math.round((door.y + 70) / 5), dir < 0 ? 'left' : 'right');
-    await page.keyboard.press('KeyE');
-    await sleep(300);
-    assert.equal(await propOf(name), 'inner-door-open', `E ouvre ${name} (${notices.at(-1) ?? ''} ; ${await where()})`);
+    if (!name.startsWith('linteau')) {
+      await page.keyboard.press('KeyE');
+      await sleep(300);
+      assert.equal(await propOf(name), 'inner-door-open', `E ouvre ${name} (${notices.at(-1) ?? ''} ; ${await where()})`);
+    }
     // il marche jusqu'à la pièce d'à côté, sans changer de carte
     await page.keyboard.down(key);
     try {

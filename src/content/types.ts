@@ -1541,6 +1541,22 @@ const ParcelSchema = z.strictObject({ x: px, y: px, w: px.positive(), h: px.posi
  */
 const MapPlanSchema = z.strictObject({ id: z.number().int().nonnegative(), x: px, y: px, plan: id, age: z.lazy(() => WoodAgeSchema).optional() });
 
+/**
+ * Un tas de bois posé depuis Tiled (un point de type `Pile` : ses propriétés de pièce de bois, `size`, `length`, `shape`, `hewn` ;
+ * `count`, le nombre de pièces ; `turned`, nord-sud ; `inside`, dedans) : (x, y) = l'origine du tas, comme un tas de GameState. À la
+ * première visite de la carte (ou de l'intérieur qui le reprend), il entre dans `piles` de GameState (`seedPiles`), calculé comme
+ * tout tas de bois (`world/woodPile.ts`) : il compte ses pièces, on les reprend une à une. `id` est l'identifiant de l'objet dans Tiled.
+ */
+const MapPileSchema = z.strictObject({
+  id: z.number().int().nonnegative(),
+  x: px,
+  y: px,
+  wood: PileWoodSchema,
+  count: z.number().int().positive(),
+  turned: z.literal(true).optional(),
+  inside: z.literal(true).optional(),
+});
+
 export const MapSchema = z.strictObject({
   /** Nom du fichier .tmj. */
   id,
@@ -1569,6 +1585,8 @@ export const MapSchema = z.strictObject({
   plans: z.array(MapPlanSchema),
   /** Places nommées (la place du fagot près du foyer). */
   places: z.array(PlaceSchema).default([]),
+  /** Tas de bois posés depuis Tiled (les quartiers du cagibi). */
+  piles: z.array(MapPileSchema).default([]),
 });
 
 /** Une destination de parcelle (parcels.json) : le nom dit, et une couleur pour la montrer (mode construction, ?debug). */
@@ -1646,6 +1664,7 @@ export type Npc = z.infer<typeof NpcSchema>;
 export type MapData = z.infer<typeof MapSchema>;
 export type Parcel = z.infer<typeof ParcelSchema>;
 export type MapPlan = z.infer<typeof MapPlanSchema>;
+export type MapPile = z.infer<typeof MapPileSchema>;
 export type ParcelUse = z.infer<typeof ParcelUseSchema>;
 export type End = z.infer<typeof EndSchema>;
 export type WoodLook = z.infer<typeof WoodLookSchema>;

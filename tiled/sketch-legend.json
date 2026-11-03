@@ -42,7 +42,6 @@
     "b": "bush",
     "S": "bucket",
     "H": {"prop": "cottage", "anchor": "left"},
-    "L": "woodpile",
     "C": {"prop": "fireplace", "anchor": "left"},
     "P": {"prop": "worktable", "anchor": "left"},
     "E": {"prop": "workbench", "anchor": "left"},

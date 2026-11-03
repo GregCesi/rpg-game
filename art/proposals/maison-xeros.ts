@@ -701,7 +701,7 @@ export const LONG_FURNISH: Furnish[] = [
   { label: 'DOLOIRE', image: 'broadaxe-ground', at: [224, 17, 236, 22], plan: false },
   { label: 'COIN', image: 'splitting-wedge-ground', at: [240, 17, 246, 21], plan: false },
   { label: 'CORDE', image: 'rope-coil', at: [243, 25, 249, 31], plan: false },
-  { label: 'BUCHES', image: 'woodpile', at: [205, 111, 244, 123] },
+  { label: 'BUCHES', image: 'wood-big-quarter-100', at: [205, 111, 244, 123] },
   { label: 'SAC', image: 'sack', at: [228, 64, 238, 72] },
   { label: 'SAC', image: 'sack', at: [240, 64, 250, 72] },
   { label: 'JARRE', image: 'jar', at: [241, 84, 250, 93] },

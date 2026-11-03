@@ -274,8 +274,9 @@ export class WorldScene extends Phaser.Scene {
     const sp = this.at ?? def.spawns[this.spawn];
     if (!sp) throw new Error(`Carte ${def.id} : point d'apparition '${this.spawn}' inconnu`);
 
-    // les plans posés depuis Tiled (la cabane, les étals, les granges) entrent dans la partie à la première visite
-    if (!this.interior) seedMap(def);
+    // les plans posés depuis Tiled (la cabane, les étals, les granges) et les tas de bois (les quartiers du cagibi, dans l'intérieur)
+    // entrent dans la partie à la première visite
+    seedMap(def);
     // la carte telle que la partie l'a laissée : objets récoltés, objets au sol
     this.map = new GameMap(this, def, mapState(game, def.id), this.interior && { pieces: this.interior.shell, joints: this.interior.joints });
     this.inside = this.interior && new InteriorView(this, this.map, this.interior);
@@ -325,7 +326,7 @@ export class WorldScene extends Phaser.Scene {
     this.knots = new KnotSystem(this.map, this.handsSystem);
     this.presses = { left: new LongPress(this), right: new LongPress(this) };
     this.pileCount = new PileCount(this, this.map);
-    this.roofs = new Roofs(this.map);
+    this.roofs = new Roofs(this.map, this);
     this.effort = new EffortSystem((t) => this.notice(t), () => this.game.events.emit(GameEvent.StaminaDenied));
     this.works = new WorkSystem(this.player, this.effort, bar, (m) => this.clock.work(m));
     this.roll = new RollSystem(this.map, npcs.map((n) => n.actor.body), (t) => this.notice(t), () => this.effort.exhausted());
@@ -404,7 +405,7 @@ export class WorldScene extends Phaser.Scene {
     // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
     this.roll.update(this.player, delta, this.mode === 'play');
     // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes ; en mode construction, rien ne s'efface
-    this.roofs.update(this.player, delta, this.mode !== 'build' && !this.interior);
+    this.roofs.update(this.player, delta, this.mode !== 'build' && !this.interior, this.interior ? [] : this.interiors.buildings());
     if (this.mode === 'play') {
       // le bord d'une zone du monde : la voisine prend le relais, au même point du monde
       const cross = this.interior ? undefined : this.zones.update(this.player);

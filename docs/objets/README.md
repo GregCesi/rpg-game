@@ -17,7 +17,8 @@ Fiches : les matières (chantier « briques », CONCEPTION *Les matières*) : la
 [gerbe de paille](straw.md), [botte de chaume](thatch-bundle.md) ; le bois travaillé, la perche et la planche (des réglages de la
 [pièce de bois](wood-piece.md)), [bardeau](shingle.md), [cheville](peg.md), [coutre](froe.md). Puis le [têtard](big-pollard.md), les [gros arbres couchés](big-felled-tree.md) ; l'[arbre normal](normal-tree.md) ; la [pièce de bois](wood-piece.md) (bille, demi-bille, quartier, rondin, poutre : un seul objet, des réglages) ; l'implantation : [planchette gravée](plan-tablet.md), [piquet](stake.md), [hachette](hatchet.md), [dalle](slab.md) ; l'équarrissage : [doloire](broadaxe.md) ; la [cognée](axe.md) ; [rouleau de corde](rope-coil.md), [lien](rope-tie.md), [fagot](faggot.md) ; le fendage : [masse de bûcheron](maul.md), [coin de fendage](splitting-wedge.md) ; le combat : [branche](branch.md), [épée de bois](wooden-sword.md), [mannequin d'entraînement](training-dummy.md) ; les pièces de l'abri à bois, dans
 l'ordre du chantier : [dé de pierre](footing-stone.md), [poteaux](shed-post.md), [sablières](shed-plate.md),
-[chevron](shed-rafter.md), [toit de planches](shed-roof.md). Les pièces d'un même genre (les deux poteaux, les trois
+[chevron](shed-rafter.md), [toit de planches](shed-roof.md) ; la cheminée de pierre de la maison de Xéros : [âtre](stone-hearth.md), [hotte](chimney-hood.md),
+[conduit](chimney-flue.md), [couronnement](chimney-cap.md), [pan de chaume percé](thatch-roof-pierced.md). Les pièces d'un même genre (les deux poteaux, les trois
 sablières) partagent une fiche, qui nomme toutes leurs clés.
 
 ## Modèle

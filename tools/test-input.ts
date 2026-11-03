@@ -41,6 +41,19 @@ const FRAME = 16;
   assert.equal(k.downOrTapped(UP), true, 'tenue, elle compte encore');
 }
 
+// deux appuis dans une même image (le jeu qui rame) : deux appuis lus, l'un après l'autre (deux crans en mode construction)
+{
+  const k = new KeyLatch();
+  k.down('KeyT', 0);
+  k.up('KeyT', 5);
+  k.down('KeyT', 10);
+  k.up('KeyT', 15);
+  const T = ['KeyT'];
+  assert.equal(k.take(T), true, 'le premier appui');
+  assert.equal(k.take(T), true, 'le second, jamais perdu');
+  assert.equal(k.take(T), false, 'et rien de plus');
+}
+
 // la répétition du clavier n'est pas un nouvel appui
 {
   const k = new KeyLatch();

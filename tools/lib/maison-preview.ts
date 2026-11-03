@@ -56,13 +56,46 @@ export function maisonPreview(sources: ArtSource[]): PNG | undefined {
     [{ label: 'thatch-roof-frame', names: all('thatch-roof-frame') }],
     [{ label: 'thatch-roof-half', names: all('thatch-roof-half') }],
     [{ label: 'thatch-roof', names: all('thatch-roof') }, { label: 'earth-ridge', names: ['earth-ridge', 'earth-ridge-ns'] }],
+    [{ label: 'thatch-roof-pierced', names: all('thatch-roof-pierced') }],
+    [
+      { label: 'stone-hearth (3 images)', names: ['stone-hearth'] },
+      { label: 'stone-hearth r1 r2 r3', names: ['stone-hearth-r1', 'stone-hearth-r2', 'stone-hearth-r3'] },
+      { label: 'chimney-hood', names: ['chimney-hood', 'chimney-hood-ns'] },
+      { label: 'chimney-flue', names: ['chimney-flue', 'chimney-flue-ns'] },
+      { label: 'chimney-cap', names: ['chimney-cap', 'chimney-cap-ns'] },
+    ],
+    [
+      { label: 'cheminee montee (sud)', names: ['@chimney'] },
+      { label: 'six troncons (est-ouest, nord-sud)', names: ['@flue6', '@flue6-ns'] },
+    ],
   ];
-  // le foyer : ses trois images côte à côte
-  const hearth = sources.find((s) => s.name === 'hearth');
+  // le foyer, l'âtre : leurs trois images côte à côte
   const framesOf = (name: string): Img[] => {
-    if (name === 'hearth' && hearth?.kind === 'spritesheet') return hearth.animations.burn.frames.map((g) => ({ grid: g, palette: hearth.palette }));
+    if (name.startsWith('@')) {
+      const m = mounted(name.slice(1));
+      return m ? [m] : [];
+    }
+    const sheet = sources.find((s) => s.name === name);
+    if ((name === 'hearth' || name === 'stone-hearth') && sheet?.kind === 'spritesheet') return sheet.animations.burn.frames.map((g) => ({ grid: g, palette: sheet.palette }));
     const i = find(name);
     return i ? [i] : [];
+  };
+  // la cheminée montée comme le mode construction la pose (tools/lib/maison-xeros.ts, en cm : centre x, bord sud y, hauteur z) : le
+  // bas de chaque image au bord sud de son emprise relevé de sa hauteur (y − z), centrée sur l'emprise ; dans l'ordre de pose
+  const mounted = (what: string): Img | undefined => {
+    const ns = what.endsWith('-ns') ? '-ns' : '';
+    const flues = Array.from({ length: 6 }, (_, k) => ({ name: `chimney-flue${ns}`, x: 780, y: 80, z: 250 + 100 * k }));
+    const parts = what === 'chimney'
+      ? [{ name: 'stone-hearth', x: 780, y: 110, z: 0 }, { name: 'chimney-hood', x: 780, y: 80, z: 120 }, ...flues, { name: 'chimney-cap', x: 780, y: 85, z: 850 }]
+      : flues;
+    const imgs = parts.map((q) => ({ q, i: q.name === 'stone-hearth' ? framesOf('stone-hearth')[0] : find(q.name) }));
+    if (imgs.some((e) => !e.i)) return undefined;
+    const at = imgs.map(({ q, i }) => ({ g: i!.grid, x: Math.round(q.x / 5 - i!.grid[0].length / 2), y: Math.round((q.y - q.z) / 5) - i!.grid.length }));
+    const x0 = Math.min(...at.map((a) => a.x)), y0 = Math.min(...at.map((a) => a.y));
+    const W = Math.max(...at.map((a) => a.x + a.g[0].length)) - x0, H = Math.max(...at.map((a) => a.y + a.g.length)) - y0;
+    const rows = Array.from({ length: H }, () => Array<string>(W).fill('.'));
+    for (const a of at) a.g.forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') rows[a.y - y0 + j][a.x - x0 + i] = ch; }));
+    return { grid: rows.map((r) => r.join('')), palette: imgs[0].i!.palette };
   };
   const XW = 12; // Xéros, 12 px de large (rangées 14 à 45)
   const layout = rows.map((items) => {

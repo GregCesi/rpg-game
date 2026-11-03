@@ -189,6 +189,11 @@ export interface PlacedBuild {
    * d'ici (le mode construction l'ignore au clic droit).
    */
   fixed?: boolean;
+  /**
+   * Ce que la pièce porte en plus de son image (ce que `anim`, `light`, `smoke` de props.json font d'un objet posé depuis Tiled) : la
+   * lueur de l'âtre, la fumée du couronnement de la cheminée ; chacune à sa place dans l'image (`at`, px depuis son coin haut gauche).
+   */
+  parts?: { obj: Phaser.GameObjects.Image | Phaser.GameObjects.Particles.ParticleEmitter; at: [number, number]; above?: boolean }[];
 }
 
 /** Un objet possédable posé au sol, affiché. */
@@ -641,15 +646,55 @@ export class GameMap {
    */
   placeBuild(piece: BuildPiece, fixed = false): PlacedBuild {
     const look = buildLook(this.scene, piece);
-    const image = this.scene.add.image(look.x, look.y, look.key, look.frame).setOrigin(0, 1);
+    const def = 'prop' in piece.piece ? propDefs[piece.piece.prop] : undefined;
+    // une pièce qui s'anime (le feu de l'âtre) : sa planche jouée, comme un objet posé depuis Tiled
+    const anim = def?.anim && this.scene.anims.exists(`${look.key}-${def.anim}`) ? `${look.key}-${def.anim}` : undefined;
+    const image = (anim ? this.scene.add.sprite(look.x, look.y, look.key).play(anim) : this.scene.add.image(look.x, look.y, look.key, look.frame)).setOrigin(0, 1);
     let zone: Phaser.GameObjects.Zone | undefined;
     if (blocks(piece)) {
       const b = boxOf(piece);
       zone = this.addObstacle((b.x + b.w / 2) / CM_PER_PX, (b.y + b.d / 2) / CM_PER_PX, b.w / CM_PER_PX, b.d / CM_PER_PX);
     }
     const placed: PlacedBuild = { piece, image, zone, ...(fixed ? { fixed } : {}) };
+    if (def) placed.parts = this.buildParts(def, piece.view ?? 0, image);
     this.builds.push(placed);
     return placed;
+  }
+
+  /**
+   * La lueur et la fumée d'une pièce posée (`light`, `smoke` de props.json, en px de sa vue de base ; dans une autre vue, au milieu de
+   * l'image), placées par `placeParts`.
+   */
+  private buildParts(def: (typeof propDefs)[string], view: number, image: Phaser.GameObjects.Image): NonNullable<PlacedBuild['parts']> {
+    const scene = this.scene;
+    const parts: NonNullable<PlacedBuild['parts']> = [];
+    const at = (x: number, y: number): [number, number] => (view === 0 ? [x, y] : [Math.round(image.width / 2), y]);
+    for (const [sx, sy] of def.smoke ?? []) {
+      const obj = scene.add.particles(0, 0, 'smoke', {
+        speedY: { min: -18, max: -10 },
+        speedX: { min: -2, max: 7 },
+        lifespan: 3000,
+        scale: { start: 0.8, end: 2 },
+        alpha: { start: 0.7, end: 0 },
+        frequency: 220,
+      });
+      parts.push({ obj, at: at(sx, sy), above: true });
+    }
+    if (def.light) {
+      const r = def.light.radius / GLOW.image;
+      const obj = scene.add.image(0, 0, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(GLOW.tint).setScale(r).setAlpha(GLOW.alpha).setDepth(DEPTH.light);
+      scene.tweens.add({ targets: obj, alpha: { from: GLOW.from, to: GLOW.to }, scale: { from: r * GLOW.scale[0], to: r * GLOW.scale[1] }, duration: GLOW.ms + Math.random() * GLOW.jitter, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+      parts.push({ obj, at: at(def.light.x, def.light.y) });
+    }
+    return parts;
+  }
+
+  /** La lueur et la fumée d'une pièce posée suivent son image (après un reclassement : sa place et sa profondeur). */
+  private placeParts(b: PlacedBuild): void {
+    for (const p of b.parts ?? []) {
+      p.obj.setPosition(b.image.x + p.at[0], b.image.y - b.image.height + p.at[1]);
+      if (p.above) p.obj.setDepth(b.image.depth + 1);
+    }
   }
 
   /** Retire une pièce posée en mode construction (image et collision). */
@@ -658,6 +703,7 @@ export class GameMap {
     if (i < 0) return;
     this.builds[i].image.destroy();
     this.builds[i].zone?.destroy();
+    for (const p of this.builds[i].parts ?? []) p.obj.destroy();
     this.builds.splice(i, 1);
   }
 
@@ -687,6 +733,7 @@ export class GameMap {
     for (const b of this.builds) {
       const floor = b.piece.z === 0 && 'prop' in b.piece.piece && propDefs[b.piece.piece.prop].layer === 'floor';
       b.image.setDepth(floor ? DEPTH.floor : depths.get(b.piece.id)!);
+      this.placeParts(b);
     }
     for (const o of this.overlays) o.destroy();
     this.overlays = halvingOverlays(this.scene, this.builds, joints).map((o) =>

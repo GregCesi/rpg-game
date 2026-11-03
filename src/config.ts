@@ -80,7 +80,12 @@ export const PILE_COUNT = { near: 12 };
  * Toits (pièces `roof` de props.json : chevrons, toit de planches) : opacité quand Xéros est dessous ou caché derrière, et durée
  * du fondu (ms) pour aller d'opaque à cette opacité.
  */
-export const ROOF = { alpha: 0.35, fadeMs: 250 };
+/**
+ * Les toits : opacité d'un toit effacé, durée du fondu ; `wall` : l'épaisseur des murs autour de la pièce d'un bâtiment (cm : ce qui
+ * la touche à cette distance est à lui) ; `window` : devant une fenêtre ouverte, dehors, jusqu'où (cm de la face du mur) et à quel
+ * écart de ses bords on voit la pièce (src/world/roofView.ts) ; `reveal` : la hauteur des murs qu'on voit au fond de la pièce découverte (cm).
+ */
+export const ROOF = { alpha: 0.35, fadeMs: 250, wall: 30, window: { front: 150, side: 40 }, reveal: 260 };
 
 /**
  * Ombre portée d'un toit (`shadow` de props.json) : la lumière vient du nord-ouest, d'en haut (docs/STYLE.md section 2) ;
