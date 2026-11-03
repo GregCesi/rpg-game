@@ -7,9 +7,14 @@
 //   population dehors à chaque heure (`schedule`) ; au retour sur la carte, les bêtes qui doivent être dehors y sont déjà.
 // Le jeu (systems/creatures.ts) avance la vie par pas de jeu de taille normale, et écrit dans GameState ce que la partie garde.
 
-import type { CreatureDef } from '../content/types';
+import type { CreatureDef, MapData, MapWarren, PropDef } from '../content/types';
 import { MINUTES_PER_DAY, type Clock } from './clock';
 import { between, emerge, grazeSpot, sendHome, step, type Creature, type CreatureEvent, type Point, type Surroundings } from './creature';
+
+/** Les entrées d'une garenne : les objets de la carte à `burrow` (props.json) dont l'ancrage (coin bas gauche) est dans son rectangle. */
+export function warrenHoles(m: MapData, g: MapWarren, propsByType: Record<string, PropDef>): MapData['objects'] {
+  return m.objects.filter((o) => propsByType[o.type]?.burrow && !o.inside && o.x >= g.x && o.x <= g.x + g.w && o.y >= g.y && o.y <= g.y + g.h);
+}
 
 /** Une garenne posée dans une carte : son identifiant (l'objet Tiled), l'espèce, la population voulue, ses entrées (px). */
 export interface WarrenSite {

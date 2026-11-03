@@ -3,11 +3,11 @@
 // l'herbe, la silhouette portée par le contour sombre ; c'est le test de la règle « la silhouette d'abord » (docs/STYLE.md,
 // section 5). De face et de dos, 4 px (20 cm, 1 px de tolérance) : deux oreilles, les yeux sur les côtés de la tête.
 // Couleurs : la pierre de art/palette.ts (r z Z) réchauffée vers la terre ; le blanc `a`, son ombre `D` ; l'œil, l'humus `5`.
-// Les dessins sont communs aux propositions (art/proposals/lapins-shapes.ts) ; contrat : art/proposals/lapins-types.ts.
+// Les dessins sont communs (art/world/rabbit-shapes.ts) ; contrat : art/world/rabbit-types.ts.
 
 import { world } from '../palette';
-import { EARTH_KEYS } from './lapins-lib';
-import { buildProposal } from './lapins-shapes';
+import { EARTH_KEYS } from '../world/rabbit-lib';
+import { buildProposal } from '../world/rabbit-shapes';
 
 export const palette: Record<string, string> = {
   ...Object.fromEntries(EARTH_KEYS.map((k) => [k, world[k as keyof typeof world]])),

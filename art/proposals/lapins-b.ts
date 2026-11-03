@@ -5,11 +5,11 @@
 // blanc au milieu ; le profil est celui de A (8 px, la fiche).
 // Couleurs : la rampe de l'écorce de art/palette.ts (M m N K), éteinte vers le gris de la pierre ; le blanc `a`, son ombre `d` ;
 // l'œil, l'humus `5`.
-// Les dessins sont communs aux propositions (art/proposals/lapins-shapes.ts) ; contrat : art/proposals/lapins-types.ts.
+// Les dessins sont communs (art/world/rabbit-shapes.ts) ; contrat : art/world/rabbit-types.ts.
 
 import { world } from '../palette';
-import { EARTH_KEYS } from './lapins-lib';
-import { buildProposal } from './lapins-shapes';
+import { EARTH_KEYS } from '../world/rabbit-lib';
+import { buildProposal } from '../world/rabbit-shapes';
 
 export const palette: Record<string, string> = {
   ...Object.fromEntries(EARTH_KEYS.map((k) => [k, world[k as keyof typeof world]])),

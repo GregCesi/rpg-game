@@ -1,13 +1,13 @@
 // Essai du lapin (chantier « lapins ») : npx tsx tools/essai-lapins.ts écrit .art-preview/lapins.png.
 //
-// Pose côte à côte les propositions de dessin du lapin (art/proposals/lapins-a.ts, lapins-b.ts, lapins-c.ts : celles qui
+// Pose côte à côte la version du jeu (art/world/rabbit.ts) et les propositions de dessin du lapin (art/proposals/lapins-a.ts, lapins-b.ts, lapins-c.ts : celles qui
 // existent), pour que Grégoire choisisse avant toute intégration. Une bande par proposition, son titre et son parti pris :
 //   1. trois rangées, une par direction (profil, de face, de dos) : Xéros pour l'échelle, puis chaque pose image par image ;
 //   2. le lapin mort : ses quatre vues au sol, en main sur Xéros (de face, de dos, de profil), son icône 16 × 16, l'entrée de
 //      garenne, les touffes de poil (fx-fur) ;
 //   3. une petite scène à l'échelle du jeu (x2 et x3, les zooms usuels de la caméra) : Xéros, des lapins dans plusieurs poses,
 //      la garenne, un lapin mort, sur l'herbe ; c'est là qu'on juge s'il se lit.
-// Tout le reste est agrandi x6. Le contrat d'un module est dans art/proposals/lapins-types.ts. Ne touche ni au jeu ni à
+// Tout le reste est agrandi x6. Le contrat d'un module est dans art/world/rabbit-types.ts. Ne touche ni au jeu ni à
 // src/generated/.
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -18,8 +18,9 @@ import { flipX, rng, type Grid, type Palette } from '../art/lib/canvas';
 import xeros from '../art/characters/xeros';
 import { HAND_POINTS } from '../art/characters/xeros';
 import { world } from '../art/palette';
-import { checkColors } from '../art/proposals/lapins-lib';
-import { RABBIT_DIRS, RABBIT_POSES, type RabbitDir, type RabbitProposal } from '../art/proposals/lapins-types';
+import { checkColors } from '../art/world/rabbit-lib';
+import { RABBIT_DIRS, RABBIT_POSES, type RabbitDir, type RabbitProposal } from '../art/world/rabbit-types';
+import { rabbitArt } from '../art/world/rabbit';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
 
 const PROPOSALS = ['a', 'b', 'c'];
@@ -153,7 +154,8 @@ function band(p: RabbitProposal) {
 }
 
 async function main() {
-  const proposals: RabbitProposal[] = [];
+  // la version du jeu d'abord (art/world/rabbit.ts), puis les propositions d'origine
+  const proposals: RabbitProposal[] = [rabbitArt];
   for (const id of PROPOSALS) {
     const file = join(ROOT, 'art', 'proposals', `lapins-${id}.ts`);
     if (!existsSync(file)) continue;

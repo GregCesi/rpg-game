@@ -1,6 +1,7 @@
-// Les dessins du lapin communs aux propositions (art/proposals/lapins-a.ts, -b.ts, -c.ts) : chaque proposition y met sa robe
-// (sa palette : teinte et contraste) et la largeur de sa vue de face et de dos (3, 4 ou 5 px). Le profil, à 8 px, est le même
-// partout : la fiche fixe sa taille, et c'est là que la silhouette se joue (l'oreille, la tête plus haute que le dos, la queue).
+// Les dessins du lapin : `buildRabbit` les tire d'une robe (une palette : teinte et contraste) et d'une largeur de vue de face et
+// de dos (3, 4 ou 5 px). Le jeu prend la robe rousse et la face à 3 px (art/world/rabbit.ts) ; les propositions de l'essai
+// (art/proposals/lapins-a.ts, -b.ts, -c.ts) en tirent les leurs. Le profil, à 8 px, est le même partout : la fiche fixe sa
+// taille, et c'est là que la silhouette se joue (l'oreille, la tête plus haute que le dos, la queue).
 //
 // Signes des grilles (la palette de chaque proposition leur donne leurs teintes) : `l` robe au soleil, `b` robe, `s` robe à
 // l'ombre, `k` le plus sombre de la robe (contour côté lumière, oreilles), `w` blanc (ventre, queue), `v` blanc à l'ombre, `i`
@@ -8,8 +9,8 @@
 
 import { castShadow, type Grid } from '../lib/canvas';
 import { lightUp } from '../lib/light';
-import { ROBE, edit, frame, onGrip, posesOf, trim, type Frames } from './lapins-lib';
-import { HELD_SIZE, type RabbitDir, type RabbitPose, type RabbitProposal } from './lapins-types';
+import { ROBE, edit, frame, onGrip, posesOf, trim, type Frames } from './rabbit-lib';
+import { HELD_SIZE, type RabbitDir, type RabbitPose, type RabbitArt } from './rabbit-types';
 
 // ---------- De profil (la vue `right`, tête à droite) ----------
 // Corps recadrés, contour compris, sans ombre ; `frame` les pose dans la frame de la planche.
@@ -167,8 +168,8 @@ const FUR: Grid[] = [
   ['........', '........', '........', '..fw....', '...ww...', '........', '........', '........'],
 ];
 
-/** Une proposition : sa robe, la largeur de face et de dos. */
-export function buildProposal(o: { id: string; title: string; note: string; palette: Record<string, string>; width: FrontWidth }): RabbitProposal {
+/** Les dessins d'une robe, à la largeur de face et de dos donnée. */
+export function buildRabbit(o: { id: string; title: string; note: string; palette: Record<string, string>; width: FrontWidth }): RabbitArt {
   const deadGround = DEAD.map(castShadow) as [Grid, Grid, Grid, Grid];
   const w = o.width;
   return {
@@ -187,3 +188,6 @@ export function buildProposal(o: { id: string; title: string; note: string; pale
     fur: FUR.map((g) => lightUp(g, ROBE)),
   };
 }
+
+/** Le nom d'origine, pour les propositions de l'essai. */
+export const buildProposal = buildRabbit;

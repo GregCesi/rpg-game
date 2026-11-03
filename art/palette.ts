@@ -151,6 +151,16 @@ export const woad = {
   deep: '#443f55',
 };
 
+// Robe du lapin de garenne (art/world/rabbit.ts, chantier « lapins » : la proposition B retenue par Grégoire). La rampe de
+// l'écorce (M m N K) éteinte vers le gris de la pierre : rousse et contrastée, elle se détache de l'herbe olive ; la lumière
+// glisse vers le jaune, l'ombre vers le brun-violet. Le blanc du ventre et de la queue est le `a` des fleurs, son ombre `d`.
+export const rabbitFur = {
+  light: '#b39069', // robe au soleil (le dos) : M éteint, un peu jaune
+  base: '#8a6a4c', // robe (les flancs) : m vers la pierre
+  shade: '#634a38', // robe à l'ombre : N réchauffé
+  deep: '#3f2c27', // le plus sombre : contour côté lumière, oreilles ; K vers le brun-violet
+};
+
 /**
  * Les ciels du cadran du temps (art/ui/clock.ts, chantier « le temps ») : deux aplats par moment de la journée, le haut et
  * l'horizon, sans dégradé. Ils restent terreux comme le reste : la lumière glisse vers le jaune, l'ombre vers le brun-violet.

@@ -5,12 +5,12 @@
 // Couleurs : la robe est une rampe dérivée de la terre et de la pierre de art/palette.ts (E, z, Z, l'ombre vers le brun-violet) ;
 // le blanc du ventre et de la queue est le `a` des fleurs, son ombre le torchis `D` ; l'œil, l'humus `5` ; la garenne, la terre
 // u U n e et le sous-bois 3 5.
-// Les dessins sont communs aux propositions (art/proposals/lapins-shapes.ts) ; contrat : art/proposals/lapins-types.ts.
+// Les dessins sont communs (art/world/rabbit-shapes.ts) ; contrat : art/world/rabbit-types.ts.
 // Planche : npx tsx tools/essai-lapins.ts.
 
 import { world } from '../palette';
-import { EARTH_KEYS } from './lapins-lib';
-import { buildProposal } from './lapins-shapes';
+import { EARTH_KEYS } from '../world/rabbit-lib';
+import { buildProposal } from '../world/rabbit-shapes';
 
 export const palette: Record<string, string> = {
   ...Object.fromEntries(EARTH_KEYS.map((k) => [k, world[k as keyof typeof world]])),

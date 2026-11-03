@@ -1,11 +1,11 @@
-// Outils communs des propositions du lapin (art/proposals/lapins-<x>.ts) : poser un corps dans la frame de la planche `rabbit`
+// Outils des dessins du lapin (art/world/rabbit-shapes.ts) : poser un corps dans la frame de la planche `rabbit`
 // avec son ombre, tirer les quatre vues au sol du lapin mort d'un dessin en zones, éclairer un dessin en zones de la robe.
 
 import { Canvas, EMPTY, castShadow, type Grid } from '../lib/canvas';
 import { lightUp, type Materials } from '../lib/light';
-import { FRAME, type RabbitDir, type RabbitPose } from './lapins-types';
+import { FRAME, type RabbitDir, type RabbitPose } from './rabbit-types';
 
-/** Couleurs de la terre et du trou que toutes les propositions reprennent de `world` (art/palette.ts), pour l'entrée de garenne. */
+/** Couleurs de la terre et du trou que toute robe reprend de `world` (art/palette.ts), pour l'entrée de garenne. */
 export const EARTH_KEYS = ['u', 'U', 'n', 'e', 'f', 'F', '3', '5', 'g', 'G', 'y', 'V', 'o', 'x'] as const;
 
 /** Matières de la robe, pour `lightUp` : la robe (zone `f`), le blanc du ventre et de la queue (`w`), l'œil (`i`). */
@@ -89,7 +89,7 @@ export function onGrip(g: Grid, size: number, gripCol: number, gripRow: number):
   return new Canvas(size, size).stamp(g, c - gripCol, c - gripRow).toGrid();
 }
 
-/** Vérifie qu'une grille n'utilise que des couleurs de la palette (sinon l'essai s'arrête en le disant). */
+/** Vérifie qu'une grille n'utilise que des couleurs de la palette (sinon le build ou l'essai s'arrête en le disant). */
 export function checkColors(name: string, g: Grid, palette: Record<string, string>): void {
   for (const r of g) for (const ch of r) if (ch !== EMPTY && !palette[ch]) throw new Error(`lapins : ${name} utilise « ${ch} », absent de la palette`);
 }

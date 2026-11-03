@@ -2720,6 +2720,28 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 259,
+      "name": "warren-hole",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

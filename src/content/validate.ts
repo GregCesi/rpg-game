@@ -8,6 +8,7 @@ import { itemMass, naturalFactor, propMass, woodMass, type MassCatalog } from '.
 import { ageableImages, crosswise, variantImage, viewImages } from './views';
 import { agedKey, framesOf, lookOf, WEDGE_FRAMES, woodSheets } from '../world/woodShape';
 import { formImage } from '../world/natural';
+import { warrenHoles } from '../world/warren';
 import { balance, partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
 import { planProblems } from '../world/build';
@@ -17,7 +18,7 @@ import { WEAPON_ANGLES } from '../world/strike';
 import type { CombatPoses } from '../world/strike';
 import { calibrationJob, gameJobs, planOf, swingerOf } from '../world/workPlan';
 import { JointTypeSchema } from './types';
-import type { BuildPlan, CombatDef, CreatureDef, MapWarren, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
+import type { BuildPlan, CombatDef, CreatureDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -980,19 +981,11 @@ export const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> =
   ...Object.fromEntries(['hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword'].map((k) => [k, { ground: 'pas encore en jeu : son image au sol avec son chantier' }])),
 };
 
-/** Les entrées d'une garenne : les objets de la carte à `burrow` (props.json) dont l'ancrage (coin bas gauche) est dans son rectangle. */
-export function warrenHoles(m: MapData, g: MapWarren, propsByType: Record<string, PropDef>): MapData['objects'] {
-  return m.objects.filter((o) => propsByType[o.type]?.burrow && !o.inside && o.x >= g.x && o.x <= g.x + g.w && o.y >= g.y && o.y <= g.y + g.h);
-}
-
 /**
- * Les créatures dont les dessins (et l'objet qu'elles deviennent mortes, qui en reprend les dessins) attendent : sautées par
- * validateCreatures, avec leur raison. Le lapin : ses dessins sont proposés hors du jeu (art/proposals/lapins-*.ts,
- * .art-preview/lapins.png), Grégoire choisit avant l'intégration (chantier « lapins », étape 4).
+ * Les créatures dont les dessins (et l'objet qu'elles deviennent mortes) attendent : sautées par validateCreatures, avec leur raison.
+ * Vide : le lapin est dessiné (chantier « lapins », étape 4).
  */
-export const CREATURES_TODO: Record<string, string> = {
-  rabbit: 'dessins proposés (art/proposals/lapins-*.ts), en attente du choix de Grégoire ; le lapin mort arrive avec eux',
-};
+export const CREATURES_TODO: Record<string, string> = {};
 
 /** Les poses dessinées d'une créature (animations `<pose>-<direction>` de sa planche), dans les quatre directions. */
 export const CREATURE_POSES = ['graze', 'sit', 'hop', 'alert', 'run', 'thump'] as const;
@@ -1024,7 +1017,7 @@ function validateCreatures(c: Content, cat: Catalog): string[] {
  */
 const TRADE_TODO = new Set([
   'big-tree', 'big-pollard', 'big-tree-stump', 'normal-tree', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-piece', 'normal-tree-stump',
-  'rock', 'bush', 'bush-berries', 'rock-rubble', 'cottage', 'chopping-block', 'chopping-block-rope', 'rope-coil', 'faggot',
+  'rock', 'bush', 'bush-berries', 'rock-rubble', 'warren-hole', 'cottage', 'chopping-block', 'chopping-block-rope', 'rope-coil', 'faggot',
   'chopping-block-axe', 'fireplace', 'worktable', 'workbench', 'stove', 'bed', 'pallet', 'sack', 'jar', 'sunpatch', 'lantern', 'wall-torch',
   'candle', 'barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'shed-plate-north', 'shed-plate-south', 'shed-plate-side', 'shed-rafter',
   'shed-roof', 'maul-ground', 'splitting-wedge-ground', 'well', 'planted-stake', 'plan-tablet', 'hatchet-ground', 'broadaxe-ground',

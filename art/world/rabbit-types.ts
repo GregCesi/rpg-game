@@ -1,17 +1,17 @@
-// Contrat commun des propositions de dessin du lapin (chantier « lapins », fiches docs/objets/rabbit.md, dead-rabbit.md,
-// warren-hole.md) : ce qu'un module art/proposals/lapins-<x>.ts exporte par défaut (un `RabbitProposal`), pour que
-// tools/essai-lapins.ts le pose sur la planche .art-preview/lapins.png à côté des autres. Rien de art/proposals/ ne se déclare
-// dans art/index.ts : le jeu ne charge pas ces dessins.
+// Contrat des dessins du lapin (fiches docs/objets/rabbit.md, dead-rabbit.md, warren-hole.md) : ce que tire `buildRabbit`
+// (art/world/rabbit-shapes.ts) d'une robe et d'une largeur de face. Le jeu en prend la version retenue (art/world/rabbit.ts :
+// la robe rousse de la proposition B, la face à 3 px de la fiche) ; les propositions d'origine (art/proposals/lapins-a.ts, -b.ts,
+// -c.ts) en tirent les leurs pour la planche d'essai tools/essai-lapins.ts (.art-preview/lapins.png).
 //
-// Pensé pour l'intégration sans redessiner : chaque champ est déjà une image finie à la forme d'une planche du jeu.
+// Chaque champ est une image finie à la forme d'une planche du jeu :
 // - `poses[pose][direction]` : les images de la planche `rabbit`, animation `<pose>-<direction>` (left = miroir de right),
 //   toutes de FRAME.w × FRAME.h, les pieds sur la rangée FRAME.ground, l'ombre portée dessous ; `rates` : images par seconde.
-// - `deadGround` : `dead-rabbit-ground`, `-r1`, `-r2`, `-r3` (images recadrées, ombre comprise) ; `dead` : l'image `dead-right`
-//   de la planche (la première vue au sol, posée dans la frame).
+// - `deadGround` : `dead-rabbit-ground`, `-r1`, `-r2`, `-r3` (images recadrées, ombre comprise) ; `dead` : la première vue au
+//   sol posée dans la frame de la planche (pour l'essai).
 // - `held` : la planche `held-dead-rabbit` (art/items/carried.ts `sheet`), images carrées HELD_SIZE, la prise au centre.
 // - `icon` : `item-dead-rabbit`, 16 × 16, sans ombre. `hole` : `warren-hole`, recadré, sans ombre (à plat). `fur` : la planche
 //   `fx-fur`, 4 images de 8 × 8 (art/world/fx.ts).
-// Toutes les grilles d'une proposition partagent sa `palette` (dérivée de art/palette.ts : `world` plus la robe du lapin).
+// Toutes les grilles partagent la `palette` de la robe (dérivée de art/palette.ts : la terre de `world` plus la robe du lapin).
 //
 // Échelle et règles : celles du jeu (docs/STYLE.md) : 5 cm par pixel, sans agrandissement (consigne de Grégoire), lumière en
 // haut à gauche, contour d'un pixel (le plus sombre de la robe en haut et à gauche, OUTLINE `o` en bas et à droite), ombre `x`.
@@ -28,8 +28,8 @@ export const FRAME = { w: 14, h: 14, ground: 11 } as const;
 /** Image carrée de la planche `held-dead-rabbit` (impaire : le centre est la prise de la main). */
 export const HELD_SIZE = 21;
 
-export interface RabbitProposal {
-  /** « A », « B », « C ». */
+export interface RabbitArt {
+  /** « A », « B », « C » pour une proposition ; « jeu » pour la version retenue. */
   id: string;
   /** Titre court de la bande. */
   title: string;
@@ -45,3 +45,6 @@ export interface RabbitProposal {
   hole: Grid;
   fur: Grid[];
 }
+
+/** Une proposition de l'essai : la même forme. */
+export type RabbitProposal = RabbitArt;
