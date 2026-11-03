@@ -1,7 +1,7 @@
 // Test de scénario du temps (docs/CONCEPTION.md, « Le temps »), dans le vrai jeu (voir tools/lib/playtest.ts) :
 // - l'horloge à x1 par défaut ; V passe la vitesse du temps du joueur au palier suivant (x2 : la vitesse de simulation, tout le jeu plus
 //   vite), le dit et l'affiche ; en boucle jusqu'à x20 puis x1, Maj tenue (une course) ou non : Maj + V n'existe plus ;
-// - le travail au coup (docs/CONCEPTION.md, « Le travail ») : devant un arbre normal, un seul appui sur Espace lance tout le travail,
+// - le travail au coup (docs/CONCEPTION.md, « Le travail ») : devant un arbre normal, un seul clic de la main de la cognée lance tout le travail,
 //   Xéros frappe seul au rythme du modèle (world/swing.ts), chaque coup enlève sa part (world/workPlan.ts) et se paie au plafond ; la
 //   force réglée dans ?dieu en plein travail agit au coup suivant (le bûcheron fort enlève plus de deux fois plus par coup) ; un pas
 //   l'arrête, la part enlevée est gardée (sauvegarde comprise : retrouvée après rechargement) et le travail repris continue de là ; la
@@ -32,7 +32,7 @@ await playtest('temps', async ({ page, errors, load }) => {
       await sleep(ms);
     };
     // de vrais keyCode : Phaser tient pour doublon deux appuis de même keyCode au même instant
-    const KEY_CODES: Record<string, number> = { KeyV: 86, Space: 32, KeyD: 68, Escape: 27 };
+    const KEY_CODES: Record<string, number> = { KeyV: 86, KeyD: 68, Escape: 27 };
     // Maj enfoncée une image avant la touche, qui porte `shiftKey` (comme un vrai clavier)
     const press = async (code: string, shift = false) => {
       const keyCode = KEY_CODES[code] ?? 0;
@@ -99,7 +99,7 @@ await playtest('temps', async ({ page, errors, load }) => {
         await frame();
       }
     };
-    await press('Space');
+    await (window as any).__click('left');
     await watch(7000, marks);
     out.launched = { mode: w().mode, bar: w().works.bar.frame.visible };
     // la force du bûcheron fort, réglée en plein travail : elle agit dès le coup suivant
@@ -134,7 +134,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     };
     g.events.on('prestep', count);
     const fast: { t: number; done: number }[] = [];
-    await press('Space');
+    await (window as any).__click('left');
     const f0 = steps;
     let frames = 0;
     const tf = performance.now();
@@ -218,7 +218,7 @@ await playtest('temps', async ({ page, errors, load }) => {
       await sleep(ms);
     };
     const press = async (code: string) => {
-      const keyCode = code === 'Space' ? 32 : 0;
+      const keyCode = 0;
       window.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode } as KeyboardEventInit));
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code, keyCode } as KeyboardEventInit));
@@ -233,7 +233,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     a.body.reset(t.x, t.y);
     a.face('right');
     await (window as any).__frames(2);
-    await press('Space');
+    await (window as any).__click('left');
     await (window as any).__settle();
     out.resumed = { mode: w().mode, done: w().works.done, debug: w().works.bar.infoText };
     const c1 = w().player.stamina.ceiling;
@@ -259,8 +259,8 @@ await playtest('temps', async ({ page, errors, load }) => {
     await send({ kind: 'stamina', breath: 0, ceiling: 80, max: 100 }, 50);
     const told = notices.length;
     const ceiling0 = gs.game.stamina.ceiling;
-    // Espace maintenu : le premier coup trouve le souffle vide, Xéros s'arrête et souffle
-    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+    // un clic lance le travail : le premier coup trouve le souffle vide, Xéros s'arrête et souffle
+    await (window as any).__click('left');
     const t3 = performance.now();
     while (!w().player.stamina.winded && performance.now() - t3 < 3000) await frame();
     await frame();
@@ -275,7 +275,7 @@ await playtest('temps', async ({ page, errors, load }) => {
       ceiling: gs.game.stamina.ceiling - ceiling0,
       mode: w().mode,
     };
-    // le souffle revient (délai, puis 90 % du plafond à 12 par seconde : 7 s environ), le travail reprend, Espace toujours tenu
+    // le souffle revient (délai, puis 90 % du plafond à 12 par seconde : 7 s environ), le travail reprend tout seul
     const t1 = performance.now();
     while (w().player.stamina.winded && performance.now() - t1 < 15000) await frame();
     const ms = performance.now() - t1;
@@ -283,7 +283,6 @@ await playtest('temps', async ({ page, errors, load }) => {
     await (window as any).__until(() => !puff.visible && !hud.blink && w().mode === 'work' && w().player.tools.busy, 'les signes éteints, le travail repris');
     out.recovered = { ms, puff: puff.visible, blink: !!hud.blink, mode: w().mode, busy: w().player.tools.busy };
     await send({ kind: 'finish-work' }, 2500);
-    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
     out.secondFelled = !w().map.props.includes(other);
     return out;
   }, first.tree)) as Record<string, any>;
@@ -291,7 +290,7 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   assert.deepEqual(second.reloaded.kept, first.kept2, 'la part faite est retrouvée après rechargement');
   assert.match(second.resumed.debug, /force 50 N·m · 90 J · [0-9.]+ % par coup/, `?debug : la force, l'énergie, la part par coup (${second.resumed.debug})`);
-  assert.equal(second.resumed.mode, 'work', 'Espace reprend le travail');
+  assert.equal(second.resumed.mode, 'work', 'un clic reprend le travail');
   assert.ok(second.resumed.done >= first.kept2.done, `il reprend là où il s’était arrêté (${second.resumed.done} ≥ ${first.kept2.done})`);
   assert.ok(second.finished.gone && second.finished.felled, '« Finir le travail » : l’arbre est abattu');
   assert.equal(second.finished.mode, 'play', 'le travail fini rend la main');
@@ -334,9 +333,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     const sim = await import('/src/systems/simSpeed.ts' as string);
     await send({ kind: 'sim-speed', factor: 5 });
     await send({ kind: 'give', held: { item: 'wooden-sword' } });
-    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
-    await sleep(80);
-    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', keyCode: 32 } as KeyboardEventInit));
+    await (window as any).__click('left');
     for (let i = 0; i < 100 && w().mode !== 'play'; i++) await sleep(20);
     out.combat = { speed: sim.simSpeed() };
     await send({ kind: 'clock', hour: 22 });
