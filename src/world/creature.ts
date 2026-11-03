@@ -278,8 +278,8 @@ function run(c: Creature, s: Surroundings, speed: number, dt: number, reach: num
   return inHole(c.x, c.y);
 }
 
-/** Une place où brouter : à `range` m au plus d'une entrée tirée au hasard, libre. */
-function grazeSpot(def: CreatureDef, c: Creature, s: Surroundings): Point | undefined {
+/** Une place où brouter : à `range` m au plus d'une entrée tirée au hasard (sans entrée : autour de `c`), libre. */
+export function grazeSpot(def: CreatureDef, c: Point, s: Surroundings): Point | undefined {
   for (let k = 0; k < 12; k++) {
     const h = s.holes[Math.floor(s.rand() * s.holes.length)] ?? c;
     const r = pixels(def.graze.range) * Math.sqrt(s.rand());
