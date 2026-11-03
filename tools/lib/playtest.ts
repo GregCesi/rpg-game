@@ -143,11 +143,39 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     await page.addInitScript(`
       window.__until = async (cond, label, ms = 60000) => {
         const t = performance.now();
+        // le temps de jeu écoulé pendant l'attente (pour PLAYTEST_WAITS : les pas de jeu, leur durée)
+        if (window.__waits && !window.__gameMs && window.game) {
+          window.__gameMs = { v: 0 };
+          window.game.events.on('prestep', (_t, d) => (window.__gameMs.v += d));
+        }
+        const g0 = window.__gameMs?.v ?? 0;
         while (!cond()) {
           if (performance.now() - t > ms) throw new Error('attente trop longue : ' + label);
           // une image, ou 50 ms si la page ne dessine plus (le délai compte toujours)
           await new Promise((r) => { r.__until = true; requestAnimationFrame(r); setTimeout(r, 50); });
         }
+        const dt = performance.now() - t;
+        if (window.__waits && dt > 400) console.log('[attente] ' + Math.round(dt) + ' ms (jeu : ' + Math.round((window.__gameMs?.v ?? 0) - g0) + ' ms) : ' + label);
+      };
+      // \`__idle(label)\` : le jeu a fini de réagir (le mode jeu, plus de verrou après une action : l'E qui suit sera lu) ;
+      // \`__frames(n)\` : n images du jeu (le temps que le jeu lise un appui envoyé, à toutes les vitesses)
+      window.__idle = (label = 'le jeu au repos') =>
+        window.__until(() => {
+          const w = window.game.scene.getScene('world');
+          return !!w && !!w.player && w.mode === 'play' && w.time.now >= (w.interaction?.lockedUntil ?? 0) && w.time.now >= (w.useLockedUntil ?? 0);
+        }, label);
+      // \`__settle(label)\` : le jeu a fini de réagir à ce qu'on vient de faire (deux images pour lire l'appui, puis le geste fini, le
+      // fondu passé, les verrous levés) ; un dialogue, un travail ou une passe ouverts comptent comme finis : ils attendent le joueur
+      window.__settle = async (label = 'le jeu a réagi') => {
+        await window.__frames(2);
+        await window.__until(() => {
+          const w = window.game.scene.getScene('world');
+          if (!w || !w.player || w.mode === 'use' || w.mode === 'transition') return false;
+          return w.mode !== 'play' || (w.time.now >= (w.interaction?.lockedUntil ?? 0) && w.time.now >= (w.useLockedUntil ?? 0));
+        }, label);
+      };
+      window.__frames = async (n = 1) => {
+        for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r));
       };
       window.__restart = async (command) => {
         const g = window.game;
@@ -207,6 +235,12 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
       }
       if (speed > 1) await setSpeed(speed);
     };
+    // PLAYTEST_WAITS=1 : chaque attente d'état de plus de 0,4 s est dite, avec le temps de jeu écoulé pendant (où passe le temps d'un
+    // scénario : une attente longue en temps de jeu est le jeu qui travaille ; courte en jeu mais longue en vrai, le jeu qui rame)
+    if (process.env.PLAYTEST_WAITS) {
+      await page.addInitScript('window.__waits = true');
+      page.on('console', (m) => m.text().startsWith('[attente]') && console.log(m.text()));
+    }
     t = performance.now();
     await load();
     lap('load', t);
