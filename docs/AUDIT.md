@@ -125,6 +125,21 @@ mesures de durée (2 s d'horloge, 4 s à x5, la passe observée, la mesure d'ima
 
 La copie figée régénère bien tout (`npm run art` puis `npm run maps`) : rien à corriger, sinon l'écrire dans l'en-tête du script.
 
+**Suite au chantier tests-rapides (3 novembre 2026).** La suite courante (15 scénarios, 4 à la fois) passe en 4 à 5 min selon la charge
+de la machine (contre 15 min, puis un blocage, avant) ; les pauses fixes des scénarios courants sont devenues des attentes d'état. Ce qui
+reste, à reprendre plus tard :
+
+- **monde attendra** (décision de Grégoire) : c'est lui qui fait la durée de la suite courante (70 à 180 s selon la charge). Il marche
+  vraiment de la maison au bord du monde, à x10 ; il irait plus vite à x50 sur les longues lignes droites, mais son approche fine (à 2 px
+  près, un appui d'une image) oscillerait : il faudrait conduire la marche au pas de jeu, pas à l'image.
+- Les pauses fixes des scénarios lourds (maison, grange, cabane, étal, construction : une pause après chaque pièce posée) restent.
+- La mesure (`npm run test:mesure`) ne voit pas les pauses posées dans la page par un `sleep` local : elle les compte dans le temps du
+  scénario, pas dans ses pauses. `PLAYTEST_WAITS=1` dit où passe le temps.
+- Le nombre de scénarios simultanés n'a pas été mesuré à 6 et 8 : la suite à 4 occupe déjà 5 à 6 cœurs sur 8 (Chromium sans écran, rendu
+  logiciel, dix pas de jeu par image).
+- Un E pressé pendant le verrou qui suit une action (200 ms, `lock` de `InteractionSystem`) est lu puis ignoré : c'est voulu (l'E qui ferme
+  un dialogue n'en rouvre pas un), mais c'est un appui perdu au sens de la règle « un appui n'est jamais perdu » ; à trancher par Grégoire.
+
 ## 6. Les process et la documentation
 
 | Constat | Fichier | Gravité | Correction |
