@@ -49,6 +49,26 @@ await playtest('combat', async ({ page, errors, load }) => {
       await W.__frames(2);
       W.__leave();
     };
+    // un deuxième clic de `button` pendant le geste du premier (`first`) : guetté à chaque pas de jeu (à x10, sous la charge, un poing
+    // passe en quelques pas), le clic fait dès que le geste se joue
+    const during = async (button: 'left' | 'right', first: () => Promise<void>) => {
+      const fired = new Promise<void>((done) => {
+        const step = () => {
+          if (w().mode !== 'use') return;
+          w().events.off('postupdate', step);
+          const f = W.__front();
+          W.__aim(f.x, f.y);
+          W.__press(button);
+          W.__release(button);
+          done();
+        };
+        w().events.on('postupdate', step);
+      });
+      await first();
+      await fired;
+      await W.__frames(2);
+      W.__leave();
+    };
     const standAt = async (x: number, y: number, face: string) => {
       const a = w().player.actor;
       a.body.reset(Math.round(x), Math.round(y));
@@ -274,10 +294,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     await facingDummy('right', 6);
     await unchained();
     let n = log().length;
-    await click('left');
-    // le deuxième clic pendant le geste (attendu : le geste en cours, pas un délai)
-    await (window as any).__until(() => w().mode === 'use', 'le premier coup parti');
-    await click('left');
+    await during('left', () => click('left'));
     await settle();
     out.chain = log().slice(n).map((e: any) => e.attack);
 
@@ -288,9 +305,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     await facingDummy('down', 2);
     await unchained();
     n = log().length;
-    await click('left');
-    await (window as any).__until(() => w().mode === 'use', 'le premier poing parti');
-    await click('right');
+    await during('right', () => click('left'));
     await settle();
     out.fists = log().slice(n).map((e: any) => `${e.attack}:${e.hits.length}`);
     gs.emptyHands(gs.game);
@@ -298,9 +313,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     w().handsChanged();
     await unchained();
     n = log().length;
-    await click('left');
-    await (window as any).__until(() => w().mode === 'use', 'le premier poing parti');
-    await click('left');
+    await during('left', () => click('left'));
     await settle();
     out.oneFist = log().slice(n).map((e: any) => e.attack);
 

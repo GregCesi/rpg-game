@@ -256,6 +256,8 @@ await playtest('etal', async ({ page, errors, load }) => {
   const shutterOf = async () => (await pieces()).find((q: any) => q.id === shutter.id);
   /** Xéros tourné vers le nord, le point qu'il regarde sur ce point (cm) du sol. */
   const faceAt = async (x: number, y: number) => {
+    // la souris lâchée (sortie du canevas) : Xéros garde la direction qu'on lui donne, vers le volet
+    await page.evaluate(() => (window as any).__leave());
     await page.evaluate(([x, y]) => {
       const w = (window as any).game.scene.getScene('world');
       w.player.actor.body.reset(x, y);

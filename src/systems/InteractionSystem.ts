@@ -17,6 +17,8 @@ export const isEAction = (a: Action): boolean => E_KINDS.includes(a.kind);
 export class InteractionSystem {
   private target?: Interactable;
   private lockedUntil = 0;
+  /** Les cibles de cette image : la liste n'est faite qu'une fois par image, pour E et pour les clics. */
+  private list?: readonly Interactable[];
   private readonly prompt: Phaser.GameObjects.Image;
 
   constructor(
@@ -35,6 +37,7 @@ export class InteractionSystem {
   update(time: number, active: boolean): { pressed: boolean; target?: Interactable } {
     // Toujours lue, même inactif : sinon un appui fait pendant un dialogue ressortirait juste après.
     const pressed = this.player.input.handsPressed() && active && time >= this.lockedUntil;
+    this.list = active ? this.items() : undefined;
     this.setTarget(active ? this.nearest(isEAction) : undefined);
     if (this.target) {
       const bob = Math.round((Math.sin(time / 220) + 1) / 2) * 2;
@@ -63,7 +66,7 @@ export class InteractionSystem {
     const probe = this.player.probe(INTERACT.reach);
     let best: Interactable | undefined;
     let bestD = INTERACT.radius;
-    for (const it of this.items()) {
+    for (const it of this.list ?? this.items()) {
       if (!keep(it.action)) continue;
       const d = Phaser.Math.Distance.Between(probe.x, probe.y, it.x, it.y);
       if (d < bestD) {
