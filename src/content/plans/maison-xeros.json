@@ -8,344 +8,364 @@
   "joints": [
     {
       "type": "scarf",
-      "a": 39,
-      "b": 40
-    },
-    {
-      "type": "scarf",
-      "a": 40,
-      "b": 41
-    },
-    {
-      "type": "mortise",
-      "a": 44,
-      "b": 78
-    },
-    {
-      "type": "mortise",
-      "a": 44,
-      "b": 90
-    },
-    {
-      "type": "scarf",
       "a": 42,
-      "b": 46
+      "b": 43
+    },
+    {
+      "type": "scarf",
+      "a": 43,
+      "b": 44
+    },
+    {
+      "type": "mortise",
+      "a": 47,
+      "b": 82
+    },
+    {
+      "type": "mortise",
+      "a": 47,
+      "b": 94
+    },
+    {
+      "type": "mortise",
+      "a": 23,
+      "b": 58
+    },
+    {
+      "type": "mortise",
+      "a": 24,
+      "b": 58
+    },
+    {
+      "type": "mortise",
+      "a": 27,
+      "b": 58
+    },
+    {
+      "type": "mortise",
+      "a": 28,
+      "b": 58
     },
     {
       "type": "scarf",
       "a": 45,
-      "b": 47
-    },
-    {
-      "type": "halving",
-      "a": 49,
-      "b": 48,
-      "top": 48
+      "b": 49
     },
     {
       "type": "scarf",
-      "a": 53,
-      "b": 54
+      "a": 48,
+      "b": 50
     },
     {
-      "type": "mortise",
-      "a": 39,
-      "b": 55
+      "type": "halving",
+      "a": 52,
+      "b": 51,
+      "top": 51
     },
     {
-      "type": "mortise",
-      "a": 39,
+      "type": "scarf",
+      "a": 56,
       "b": 57
     },
     {
       "type": "mortise",
-      "a": 39,
+      "a": 42,
       "b": 59
     },
     {
       "type": "mortise",
-      "a": 39,
+      "a": 42,
       "b": 61
     },
     {
       "type": "mortise",
-      "a": 40,
+      "a": 42,
       "b": 63
     },
     {
       "type": "mortise",
-      "a": 40,
+      "a": 42,
       "b": 65
     },
     {
       "type": "mortise",
-      "a": 40,
+      "a": 43,
       "b": 67
     },
     {
       "type": "mortise",
-      "a": 40,
+      "a": 43,
       "b": 69
     },
     {
       "type": "mortise",
-      "a": 41,
+      "a": 43,
       "b": 71
     },
     {
       "type": "mortise",
-      "a": 42,
-      "b": 76
+      "a": 43,
+      "b": 73
     },
     {
       "type": "mortise",
-      "a": 43,
-      "b": 77
+      "a": 44,
+      "b": 75
     },
     {
       "type": "mortise",
       "a": 45,
-      "b": 79
+      "b": 80
     },
     {
       "type": "mortise",
       "a": 46,
-      "b": 85
-    },
-    {
-      "type": "mortise",
-      "a": 49,
-      "b": 87
+      "b": 81
     },
     {
       "type": "mortise",
       "a": 48,
+      "b": 83
+    },
+    {
+      "type": "mortise",
+      "a": 49,
       "b": 89
     },
     {
       "type": "mortise",
-      "a": 47,
+      "a": 52,
       "b": 91
     },
     {
       "type": "mortise",
-      "a": 46,
-      "b": 98
+      "a": 51,
+      "b": 93
     },
     {
       "type": "mortise",
       "a": 50,
-      "b": 99
+      "b": 95
     },
     {
       "type": "mortise",
-      "a": 51,
-      "b": 100
-    },
-    {
-      "type": "mortise",
-      "a": 47,
-      "b": 101
-    },
-    {
-      "type": "mortise",
-      "a": 52,
-      "b": 106
-    },
-    {
-      "type": "mortise",
-      "a": 52,
-      "b": 107
-    },
-    {
-      "type": "mortise",
-      "a": 52,
-      "b": 108
-    },
-    {
-      "type": "mortise",
-      "a": 52,
-      "b": 109
+      "a": 49,
+      "b": 102
     },
     {
       "type": "mortise",
       "a": 53,
-      "b": 110
-    },
-    {
-      "type": "mortise",
-      "a": 53,
-      "b": 111
-    },
-    {
-      "type": "mortise",
-      "a": 53,
-      "b": 112
+      "b": 103
     },
     {
       "type": "mortise",
       "a": 54,
-      "b": 113
+      "b": 104
     },
     {
       "type": "mortise",
-      "a": 54,
-      "b": 114
-    },
-    {
-      "type": "scarf",
-      "a": 132,
-      "b": 133
-    },
-    {
-      "type": "scarf",
-      "a": 133,
-      "b": 134
-    },
-    {
-      "type": "scarf",
-      "a": 135,
-      "b": 139
-    },
-    {
-      "type": "scarf",
-      "a": 138,
-      "b": 142
-    },
-    {
-      "type": "scarf",
-      "a": 136,
-      "b": 140
-    },
-    {
-      "type": "scarf",
-      "a": 137,
-      "b": 141
-    },
-    {
-      "type": "scarf",
-      "a": 144,
-      "b": 145
-    },
-    {
-      "type": "scarf",
-      "a": 145,
-      "b": 146
+      "a": 50,
+      "b": 105
     },
     {
       "type": "mortise",
       "a": 55,
-      "b": 132
+      "b": 110
     },
     {
       "type": "mortise",
-      "a": 59,
-      "b": 132
+      "a": 55,
+      "b": 111
     },
     {
       "type": "mortise",
-      "a": 67,
-      "b": 133
+      "a": 55,
+      "b": 112
     },
     {
       "type": "mortise",
-      "a": 71,
-      "b": 134
+      "a": 55,
+      "b": 113
     },
     {
       "type": "mortise",
-      "a": 106,
-      "b": 144
+      "a": 56,
+      "b": 114
     },
     {
       "type": "mortise",
-      "a": 108,
-      "b": 144
+      "a": 56,
+      "b": 115
     },
     {
       "type": "mortise",
-      "a": 112,
-      "b": 145
+      "a": 56,
+      "b": 116
     },
     {
       "type": "mortise",
-      "a": 114,
-      "b": 146
+      "a": 57,
+      "b": 117
     },
     {
       "type": "mortise",
-      "a": 76,
-      "b": 135
+      "a": 57,
+      "b": 118
     },
     {
-      "type": "mortise",
-      "a": 79,
-      "b": 138
-    },
-    {
-      "type": "mortise",
-      "a": 77,
-      "b": 136
-    },
-    {
-      "type": "mortise",
-      "a": 78,
+      "type": "scarf",
+      "a": 136,
       "b": 137
     },
     {
-      "type": "mortise",
-      "a": 85,
-      "b": 139
+      "type": "scarf",
+      "a": 137,
+      "b": 138
     },
     {
-      "type": "mortise",
-      "a": 91,
-      "b": 142
-    },
-    {
-      "type": "mortise",
-      "a": 89,
-      "b": 140
-    },
-    {
-      "type": "mortise",
-      "a": 90,
-      "b": 141
-    },
-    {
-      "type": "mortise",
-      "a": 98,
-      "b": 139
-    },
-    {
-      "type": "mortise",
-      "a": 101,
-      "b": 142
-    },
-    {
-      "type": "mortise",
-      "a": 99,
-      "b": 140
-    },
-    {
-      "type": "mortise",
-      "a": 100,
-      "b": 141
-    },
-    {
-      "type": "mortise",
-      "a": 87,
+      "type": "scarf",
+      "a": 139,
       "b": 143
     },
     {
       "type": "scarf",
-      "a": 150,
-      "b": 152
+      "a": 142,
+      "b": 146
     },
     {
       "type": "scarf",
-      "a": 151,
-      "b": 153
+      "a": 140,
+      "b": 144
+    },
+    {
+      "type": "scarf",
+      "a": 141,
+      "b": 145
+    },
+    {
+      "type": "scarf",
+      "a": 148,
+      "b": 149
+    },
+    {
+      "type": "scarf",
+      "a": 149,
+      "b": 150
+    },
+    {
+      "type": "mortise",
+      "a": 59,
+      "b": 136
+    },
+    {
+      "type": "mortise",
+      "a": 63,
+      "b": 136
+    },
+    {
+      "type": "mortise",
+      "a": 71,
+      "b": 137
+    },
+    {
+      "type": "mortise",
+      "a": 75,
+      "b": 138
+    },
+    {
+      "type": "mortise",
+      "a": 110,
+      "b": 148
+    },
+    {
+      "type": "mortise",
+      "a": 112,
+      "b": 148
+    },
+    {
+      "type": "mortise",
+      "a": 116,
+      "b": 149
+    },
+    {
+      "type": "mortise",
+      "a": 118,
+      "b": 150
+    },
+    {
+      "type": "mortise",
+      "a": 80,
+      "b": 139
+    },
+    {
+      "type": "mortise",
+      "a": 83,
+      "b": 142
+    },
+    {
+      "type": "mortise",
+      "a": 81,
+      "b": 140
+    },
+    {
+      "type": "mortise",
+      "a": 82,
+      "b": 141
+    },
+    {
+      "type": "mortise",
+      "a": 89,
+      "b": 143
+    },
+    {
+      "type": "mortise",
+      "a": 95,
+      "b": 146
+    },
+    {
+      "type": "mortise",
+      "a": 93,
+      "b": 144
+    },
+    {
+      "type": "mortise",
+      "a": 94,
+      "b": 145
+    },
+    {
+      "type": "mortise",
+      "a": 102,
+      "b": 143
+    },
+    {
+      "type": "mortise",
+      "a": 105,
+      "b": 146
+    },
+    {
+      "type": "mortise",
+      "a": 103,
+      "b": 144
+    },
+    {
+      "type": "mortise",
+      "a": 104,
+      "b": 145
+    },
+    {
+      "type": "mortise",
+      "a": 91,
+      "b": 147
+    },
+    {
+      "type": "scarf",
+      "a": 154,
+      "b": 156
+    },
+    {
+      "type": "scarf",
+      "a": 155,
+      "b": 157
     }
   ],
   "pieces": [
@@ -540,15 +560,6 @@
     },
     {
       "piece": {
-        "prop": "workbench"
-      },
-      "x": 1220,
-      "y": 300,
-      "z": 0,
-      "view": 1
-    },
-    {
-      "piece": {
         "prop": "hearth"
       },
       "x": 640,
@@ -561,6 +572,34 @@
         "prop": "narrow-sill-wall"
       },
       "x": 200,
+      "y": 360,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "pole",
+          "length": 60,
+          "shape": "round",
+          "axis": "up"
+        }
+      },
+      "x": 1220,
+      "y": 360,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "pole",
+          "length": 60,
+          "shape": "round",
+          "axis": "up"
+        }
+      },
+      "x": 1260,
       "y": 360,
       "z": 0,
       "view": 0
@@ -582,6 +621,34 @@
       "y": 420,
       "z": 0,
       "view": 3
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "pole",
+          "length": 60,
+          "shape": "round",
+          "axis": "up"
+        }
+      },
+      "x": 1220,
+      "y": 500,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "pole",
+          "length": 60,
+          "shape": "round",
+          "axis": "up"
+        }
+      },
+      "x": 1260,
+      "y": 500,
+      "z": 0,
+      "view": 0
     },
     {
       "piece": {
@@ -938,6 +1005,20 @@
       "x": 1040,
       "y": 690,
       "z": 40,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 200,
+          "shape": "half",
+          "axis": "ns"
+        }
+      },
+      "x": 1220,
+      "y": 340,
+      "z": 60,
       "view": 0
     },
     {

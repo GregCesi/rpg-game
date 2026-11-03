@@ -18,7 +18,7 @@
 // - les cloisons sont sur la grille : leur solin de 30 cm est à 5 cm à l'ouest (au nord) de leur axe.
 
 /** Une pièce du catalogue : un objet de props.json, ou la pièce de bois. */
-export type Ref = { prop: string } | { wood: { size: string; length: number; shape: 'round'; hewn: number; axis: 'ew' | 'ns' | 'up' } };
+export type Ref = { prop: string } | { wood: { size: string; length: number; shape: 'round' | 'half'; hewn?: number; axis: 'ew' | 'ns' | 'up' } };
 
 export type PieceStep = {
   kind: 'piece';
@@ -244,7 +244,8 @@ export function maisonSteps(): Step[] {
   S.push({ kind: 'remove', name: 'cale du seuil' });
   frame('le solin, le seuil, les portes intérieures');
 
-  // 2. les meubles, au sol, avant les murs (visés une fois les murs montés, ils se poseraient sur la sablière au sud d'eux)
+  // 2. les meubles, au sol, avant les murs (visés une fois les murs montés, ils se poseraient sur la sablière au sud d'eux) ; l'établi
+  // de la mère, fait de nos pièces, avec ses assemblages
   S.push(...furnitureSteps());
   frame('les meubles');
 
@@ -384,9 +385,19 @@ export function maisonSteps(): Step[] {
   return S;
 }
 
-/** Les meubles : dans la salle, l'atelier et la chambre de la mère ; deux sacs au cagibi. Le reste se pose sur la carte (Tiled). */
-export function furnitureSteps(): PieceStep[] {
-  const S: PieceStep[] = [];
+/** Une perche ronde (12 cm), de cette longueur, dans ce sens. */
+export const pole = (axis: 'ew' | 'ns' | 'up', length: number): Ref => ({ wood: { size: 'pole', length, shape: 'round', axis } });
+/** Une demi-bille du gros bois (55 cm fendu en deux), de cette longueur, dans ce sens : écorce en bas, face plane en l'air. */
+export const halfLog = (axis: 'ew' | 'ns', length: number): Ref => ({ wood: { size: 'big', length, shape: 'half', axis } });
+
+/**
+ * Les meubles : dans la salle, l'atelier et la chambre de la mère ; deux sacs au cagibi. Le reste se pose sur la carte (Tiled).
+ * L'établi de la mère est un meuble de nos pièces, comme un bâtiment (retouche de Grégoire) : un établi paysan, une demi-bille de 2 m,
+ * face plane en haut, sur quatre pieds en perche de 60 cm emmanchés dans ses trous (le tenon et mortaise : la tête du pied sous la
+ * pièce couchée) ; son plateau à un peu moins d'un mètre.
+ */
+export function furnitureSteps(): Step[] {
+  const S: Step[] = [];
   const piece = (name: string, prop: string, x: number, y: number, w: number, d: number, more: Partial<PieceStep> = {}) =>
     S.push({ kind: 'piece', name, ref: { prop }, x, y, w, d, z: 0, ...more });
   piece('foyer', 'hearth', 600, 280, 100, 100);
@@ -397,6 +408,14 @@ export function furnitureSteps(): PieceStep[] {
   piece('sac 2', 'sack', 80, 40, 50, 40, { at: [80, 30] });
   piece('lit', 'bed', 980, 40, 150, 200, { at: [980, 30] });
   piece('coffre', 'chest', 1160, 40, 90, 50, { at: [1160, 30] });
-  piece('établi', 'workbench', 1180, 240, 70, 320, { view: 1 });
+  const legs: [number, number][] = [
+    [1180, 300],
+    [1220, 300],
+    [1180, 440],
+    [1220, 440],
+  ];
+  for (const [i, [x, y]] of legs.entries()) S.push({ kind: 'piece', name: `pied d'établi ${i + 1}`, ref: pole('up', 60), x, y, w: 25, d: 25, z: 0 });
+  S.push({ kind: 'piece', name: "plateau d'établi", ref: halfLog('ns', 200), x: 1180, y: 280, w: 65, d: 200, z: 60 });
+  for (let i = 1; i <= 4; i++) S.push({ kind: 'joint', type: 'mortise', a: `pied d'établi ${i}`, b: "plateau d'établi" });
   return S;
 }

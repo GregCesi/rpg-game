@@ -713,7 +713,9 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
   - **le coin de Xéros** (sud-ouest, 3,20 × 3,20 m) : sa paillasse le long du mur ouest, de la place autour ; sa porte vers la salle ;
     une fenêtre au sud ;
   - **l'atelier et la chambre de la mère** (est, 3,20 × 6,40 m, 20 m² ; placement de Grégoire) : son lit et son coffre au nord, son
-    **établi de sculptrice** au sud (la mère sculpte) ; sa porte vers la salle ; une fenêtre à l'est et une au nord, pour la lumière
+    **établi de sculptrice** au sud (la mère sculpte : un établi paysan fait de nos pièces, comme un bâtiment, retouche de Grégoire du
+    3 novembre 2026 : une demi-bille du gros de 2 m, face plane en haut, sur quatre pieds en perche de 60 cm debout, emmanchés dans ses
+    trous, un tenon et mortaise par pied ; le plateau à un peu moins d'un mètre ; l'établi dessiné d'un bloc ne sert plus à la maison) ; sa porte vers la salle ; une fenêtre à l'est et une au nord, pour la lumière
     de l'établi.
 - **La place pour vivre** : les passages font au moins 1 m ; la salle garde un grand espace libre autour du foyer, la réserve de quoi
   poser des tas.
