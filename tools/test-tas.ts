@@ -230,6 +230,16 @@ await playtest('tas', async ({ page, errors, load }) => {
       await give({ prop: 'slab' });
       await standAt(x + 30, y, 'down');
       await (window as any).__settle();
+      // la caméra glisse jusqu'à Xéros (il vient d'être posé là) : on vise une fois qu'elle est arrivée, sinon le point visé sous le
+      // curseur bouge encore d'un pixel entre le fantôme lu et le clic
+      const cam = w().cameras.main;
+      let last = '';
+      await (window as any).__until(() => {
+        const now = `${cam.scrollX},${cam.scrollY}`;
+        const still = now === last;
+        last = now;
+        return still;
+      }, 'la caméra arrivée sur Xéros');
       // le curseur devant lui : le fantôme le suit, et le clic pose là
       const front = (window as any).__front();
       (window as any).__aim(front.x, front.y);
