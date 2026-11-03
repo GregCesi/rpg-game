@@ -15,7 +15,8 @@ import { pileDefOf, shapeOf } from './pileShape';
  * couche, comme on l'aurait monté pièce à pièce) ; renvoie le nombre de plans et de tas posés.
  */
 export function seedMap(def: MapData): number {
-  const piles = seedPiles(game, def.id, def.piles, (p) => {
+  // un tas posé dedans (`inside`) naît dans l'intérieur qui le reprend, jamais sur la carte du dehors
+  const piles = seedPiles(game, def.id, def.piles.filter((p) => !p.inside), (p) => {
     const shape = shapeOf(pileDefOf({ wood: p.wood }), !!p.turned);
     const taken = [shape.start];
     while (taken.length < p.count) {

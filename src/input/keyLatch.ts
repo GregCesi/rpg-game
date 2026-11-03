@@ -8,8 +8,8 @@ export class KeyLatch {
   readonly held = new Set<string>();
   /** Touches enfoncées depuis la dernière image lue (un appui plus court qu'une image compte une image de déplacement). */
   private readonly taps = new Set<string>();
-  /** Touches pressées, pas encore lues (une fois par appui). */
-  private readonly pressed = new Set<string>();
+  /** Touches pressées, pas encore lues : combien d'appuis de chacune (deux appuis dans une même image en font deux, lus l'un après l'autre). */
+  private readonly pressed = new Map<string, number>();
   /** Quand chaque touche enfoncée l'a été (horodatage de l'événement, ms). */
   private readonly downAt = new Map<string, number>();
   /** La durée du dernier appui fini de chaque touche (ms), jusqu'au prochain appui de cette touche. */
@@ -19,7 +19,7 @@ export class KeyLatch {
   down(code: string, at: number, repeat = false): void {
     this.held.add(code);
     if (repeat) return;
-    this.pressed.add(code);
+    this.pressed.set(code, (this.pressed.get(code) ?? 0) + 1);
     this.taps.add(code);
     this.downAt.set(code, at);
     this.lasted.delete(code);
@@ -43,9 +43,15 @@ export class KeyLatch {
 
   /** Une des touches `codes` a été pressée depuis la dernière fois : vrai une seule fois par appui. */
   take(codes: readonly string[]): boolean {
-    let p = false;
-    for (const c of codes) if (this.pressed.delete(c)) p = true;
-    return p;
+    // un appui à la fois : un second appui de la même image se lit à la lecture suivante, jamais perdu
+    for (const c of codes) {
+      const n = this.pressed.get(c) ?? 0;
+      if (!n) continue;
+      if (n > 1) this.pressed.set(c, n - 1);
+      else this.pressed.delete(c);
+      return true;
+    }
+    return false;
   }
 
   /** Une des touches `codes` est enfoncée en ce moment. */
