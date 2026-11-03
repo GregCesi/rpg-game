@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 575,
+  "nextobjectid": 583,
   "properties": [
     {
       "name": "name",
@@ -2228,18 +2228,6 @@
           "gid": 1057
         },
         {
-          "id": 185,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 2477,
-          "y": 1051,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
-        },
-        {
           "id": 186,
           "rotation": 0,
           "visible": true,
@@ -3879,18 +3867,6 @@
           "type": "normal-tree",
           "x": 1599,
           "y": 2395,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
-        },
-        {
-          "id": 326,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 2741,
-          "y": 2384,
           "width": 48,
           "height": 168,
           "gid": 1057
@@ -7215,6 +7191,102 @@
             }
           ],
           "id": 574
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "uprooted-hole",
+          "x": 2778,
+          "y": 2045,
+          "width": 23,
+          "height": 21,
+          "gid": 1164,
+          "id": 575
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "root-plate",
+          "x": 2791,
+          "y": 2048,
+          "width": 24,
+          "height": 29,
+          "gid": 1163,
+          "id": 576
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "uprooted-hole",
+          "x": 3480,
+          "y": 2218,
+          "width": 23,
+          "height": 21,
+          "gid": 1164,
+          "id": 577
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "root-plate",
+          "x": 3493,
+          "y": 2221,
+          "width": 24,
+          "height": 29,
+          "gid": 1163,
+          "id": 578
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-snag",
+          "x": 2489,
+          "y": 1051,
+          "width": 24,
+          "height": 70,
+          "gid": 1161,
+          "id": 579
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-snag-top",
+          "x": 2507,
+          "y": 1054,
+          "width": 91,
+          "height": 22,
+          "gid": 1162,
+          "id": 580
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-snag",
+          "x": 2753,
+          "y": 2384,
+          "width": 24,
+          "height": 70,
+          "gid": 1161,
+          "id": 581
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-snag-top",
+          "x": 2771,
+          "y": 2387,
+          "width": 91,
+          "height": 22,
+          "gid": 1162,
+          "id": 582
         }
       ]
     },

@@ -313,6 +313,10 @@
     "chimney-hood",
     "chimney-flue",
     "chimney-cap",
-    "warren-hole"
+    "warren-hole",
+    "normal-snag",
+    "normal-snag-top",
+    "root-plate",
+    "uprooted-hole"
   ]
 }

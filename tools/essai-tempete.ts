@@ -1,7 +1,7 @@
-// Essai de la tempête (chantier « la tempête ») : npx tsx tools/essai-tempete.ts écrit .art-preview/tempete.png.
+// Planche de la tempête (chantier « la tempête ») : npx tsx tools/essai-tempete.ts écrit .art-preview/tempete.png.
 //
-// Pose la proposition de dessin art/proposals/tempete.ts (le chicot, la galette de racines et son trou), hors du jeu, pour que
-// Grégoire la valide avant toute intégration. Agrandi x4 (le détail x8), sur la grille des cases (32 px du jeu, 1,60 m), avec
+// Pose les dessins du jeu (art/world/storm.ts : le chicot, sa cime, la galette de racines et son trou, toutes leurs vues),
+// tirés de leur seule source. Agrandi x4 (le détail x8), sur la grille des cases (32 px du jeu, 1,60 m), avec
 // Xéros pour l'échelle et, pour comparaison, l'arbre normal du jeu tel qu'il est (debout, souche, couché : les images de
 // src/generated/, lues sans y toucher ; lancer `npm run art` si elles manquent). Sous chaque dessin : ses dimensions réelles,
 // la taille attendue par le gabarit (src/content/gabarit.ts) et la taille dessinée (silhouette, contour compris, ombre exclue).
@@ -17,9 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
 import type { Grid, Palette } from '../art/lib/canvas';
 import xeros from '../art/characters/xeros';
-import {
-  DIMS, MATTER, PROFILE, SNAG_FOOT, UPROOTED, crown, palette as pal, rootHole, rootPlateEast, rootPlateFace, snag, snagLying,
-} from '../art/proposals/tempete';
+import { CROWN_AT, DIMS, MATTER, PROFILE, SNAG_TOP_AT, UPROOTED, palette as pal, snagLying, views } from '../art/world/storm';
 import { expectedSize, silhouette, type Dims } from '../src/content/gabarit';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
 
@@ -65,7 +63,7 @@ function generated(key: string): { grid: Grid; palette: Palette } {
 
 const sizeOf = (g: Grid, p: Palette) => { const s = silhouette(g, p); return `${s.w}X${s.h} px`; };
 const expected = (d: Dims) => { const e = expectedSize(d); return `${fmt(e.w)}X${fmt(e.h)}`; };
-const dimsText = (d: Dims) => `${d.w}X${d.d}X${d.h} cm`;
+const dimsText = (d: Dims) => `${d.w}X${d.d}X${d.h} cm${d.shape === 'cylinder' ? ' cyl' : ''}`;
 
 type Cell = { w: number; art: number; below: number; draw: (s: Sheet, x: number, ground: number) => void };
 
@@ -90,32 +88,30 @@ const xerosCell = (k = K) => cell(xg, xeros.palette, ['xeros', '1,60 m', sizeOf(
 const tree = generated('normal-tree');
 const stump = generated('normal-tree-stump');
 const felled = generated('normal-felled-tree');
-const snagG = snag();
-const crownG = crown();
+const snagG = views.snag();
+const [crownG, crownR1, crownR2, crownR3] = views.snagTop;
+const [plateE, plateR1, plateW, plateF] = views.plate;
+const hole = views.hole();
 const snagLyingG = snagLying();
 const fmt2 = (n: number) => n.toFixed(3).replace('.', ',');
 
-/**
- * Le chicot debout et sa cime couchée à côté, vers l'est : la cassure de la cime à 2 px à l'est du pied du chicot, son tronc
- * posé au sol au niveau du pied (l'axe du tronc couché, rangée 9,5 de l'image couchée, à 4 px au nord du pied).
- */
+/** Le chicot debout et sa cime couchée à côté, vers l'est, posés par leurs coins bas gauches (SNAG_TOP_AT). */
 function snagScene(k: number): Cell {
-  const cx0 = Math.min(...PROFILE) - 3; // première colonne de la cime dans son image
-  const sil = silhouette(snagG, pal);
-  const w = snagG[0].length + 140 - cx0 + 2;
+  const sh = snagG.length, ch = crownG.length;
+  const [dx, dy] = SNAG_TOP_AT;
+  const w = dx + crownG[0].length;
+  const top = Math.min(0, sh + dy - ch);
+  const bottom = Math.max(sh, sh + dy);
   return {
     w: w * k + 2 * PAD,
-    art: (SNAG_FOOT[1] + 2) * k,
+    art: (bottom - top) * k,
     below: 4 * 12 + 12,
     draw: (s, x, ground) => {
-      const oy = ground - (SNAG_FOOT[1] + 1) * k;
-      const crownX = x + PAD + (SNAG_FOOT[0] + 4 - cx0) * k;
-      const crownY = oy + (SNAG_FOOT[1] - 12) * k;
-      s.blit(crownG, pal, crownX, crownY, k);
-      s.blit(snagG, pal, x + PAD, oy, k);
-      void sil;
+      const by = ground - (bottom - sh) * k; // le bas de l'image du chicot
+      s.blit(snagG, pal, x + PAD, by - sh * k, k);
+      s.blit(crownG, pal, x + PAD + dx * k, by + dy * k - ch * k, k);
       const lines = [
-        'chicot debout + sa cime couchee vers l est (proposes)',
+        `normal-snag + normal-snag-top, cime posee a (${dx}, ${dy}) du chicot (coins bas gauches)`,
         `chicot ${dimsText(DIMS.snag)} : attendu ${expected(DIMS.snag)}, dessine ${sizeOf(snagG, pal)}`,
         `cime : ${fmt(MATTER.crown.len)} m (${fmt(MATTER.crown.boleLen)} m de tronc + le houppier), dessinee ${sizeOf(crownG, pal)}`,
         'la cime = l image de l arbre couche du jeu, coupee par le profil de la cassure',
@@ -130,7 +126,7 @@ function proof(k: number): Cell {
   const gap = 3;
   const lines = [
     'preuve : chicot couche + cime, cassure contre cassure (ecartes de 3 px pour voir la cassure),',
-    'au-dessus de l arbre couche du jeu (normal-felled-tree) : meme longueur, 50 px + 90 px = 140 px (7 m)',
+    'au-dessus de l arbre couche du jeu (normal-felled-tree) : meme longueur, 140 px (7 m)',
     `bois vert ${MATTER.density} kg/m3, tronc de 30 cm (${fmt2(MATTER.section)} m2) :`,
     `chicot 2,5 m : ${fmt2(MATTER.snag.vol)} m3, ${Math.round(MATTER.snag.kg)} kg  /  cime : ${fmt(MATTER.crown.boleLen)} m de tronc ${fmt2(MATTER.crown.vol)} m3 + houppier ${Math.round(MATTER.crownMass)} kg = ${Math.round(MATTER.crown.kg)} kg`,
     `somme ${Math.round(MATTER.snag.kg + MATTER.crown.kg)} kg = souche 0,4 m ${Math.round(MATTER.whole.stumpKg)} kg + arbre couche ${MATTER.whole.felledKg} kg (piece de 580 cm + houppier)`,
@@ -142,9 +138,8 @@ function proof(k: number): Cell {
     draw: (s, x, ground) => {
       const ox = x + PAD, top = ground - 48 * k;
       s.blit(snagLyingG, pal, ox, top, k);
-      s.blit(crownG, pal, ox + gap * k, top, k);
+      s.blit(crownG, pal, ox + (gap + CROWN_AT[0]) * k, top + CROWN_AT[1] * k, k);
       s.blit(felled.grid, felled.palette, ox, top + 24 * k, k);
-      // repères : le pied, la cassure (au plus bas et au plus haut), la pointe
       const tick = (px: number, c: Rgb) => s.rect(ox + px * k, top - 6, 2, 48 * k + 6, c);
       tick(0, GOLD); tick(140, GOLD);
       tick(Math.min(...PROFILE), WHITE); tick(Math.max(...PROFILE), WHITE);
@@ -152,28 +147,26 @@ function proof(k: number): Cell {
     },
   };
 }
-const plateE = rootPlateEast();
-const plateF = rootPlateFace();
-const hole = rootHole();
 
-/** L'ensemble : le trou, l'arbre couché vers l'est, la galette sur son pied ; Xéros debout au sud-ouest du trou. */
+/** L'ensemble : le trou, l'arbre couché vers l'est, la galette sur son pied (UPROOTED) ; Xéros debout au sud-ouest du trou. */
 function ensemble(k: number): Cell {
-  const [hx, hy] = UPROOTED.hole, [px, py] = UPROOTED.plate;
+  const [hx, hy] = UPROOTED.holeTop, [px, py] = UPROOTED.plateTop;
   const minX = Math.min(hx, px) - 2, minY = Math.min(hy, py) - 2;
   const w = 140 - minX + 2, h = 26 - minY;
-  const xw = 16; // Xéros, à gauche de l'ensemble
+  const xw = 16;
   return {
     w: (w + xw) * k + 2 * PAD,
     art: (h + 8) * k,
-    below: 36,
+    below: 48,
     draw: (s, x, ground) => {
       const ox = x + PAD + xw * k - minX * k, oy = ground - 8 * k - (h + minY) * k;
       s.blit(hole, pal, ox + hx * k, oy + hy * k, k);
       s.blit(felled.grid, felled.palette, ox, oy, k);
       s.blit(plateE, pal, ox + px * k, oy + py * k, k);
       s.blit(xg, xeros.palette, x + PAD - 8 * k, ground - 46 * k, k);
-      s.text('l arbre deracine, couche vers l est : trou + galette + normal-felled-tree', x + PAD, ground + 10, WHITE, T);
-      s.text('la galette remplace le bout scie ; le trou a l ouest, sous sa base', x + PAD, ground + 22, GREY, T);
+      s.text('l arbre deracine, couche vers l est : uprooted-hole + root-plate + normal-felled-tree', x + PAD, ground + 10, WHITE, T);
+      s.text(`coins bas gauches par rapport a l arbre couche : galette (${UPROOTED.plate.join(', ')}), trou (${UPROOTED.hole.join(', ')})`, x + PAD, ground + 22, GREY, T);
+      s.text('la galette cache le bout scie ; le trou a l ouest, sous sa base', x + PAD, ground + 34, GREY, T);
     },
   };
 }
@@ -182,6 +175,8 @@ function ensemble(k: number): Cell {
 function crop(g: Grid, x0: number, y0: number, w: number, h: number): Grid {
   return g.slice(y0, y0 + h).map((r) => [...r].slice(x0, x0 + w).join(''));
 }
+
+const faceSwap = { ...DIMS.plate, w: DIMS.plate.d, d: DIMS.plate.w };
 
 type Row = { title: string; cells: Cell[] };
 
@@ -197,23 +192,36 @@ const rows: Row[] = [
   },
   { title: '1 bis. chicot + cime = l arbre normal', cells: [proof(K)] },
   {
-    title: '2. la galette de racines et son trou',
+    title: '1 ter. normal-snag-top, ses quatre vues (couchee, regle D)',
+    cells: [
+      cell(crownG, pal, ['base : vers l est', sizeOf(crownG, pal)]),
+      cell(crownR1, pal, ['r1 : vers le sud', sizeOf(crownR1, pal)]),
+      cell(crownR2, pal, ['r2 : vers l ouest', sizeOf(crownR2, pal)]),
+      cell(crownR3, pal, ['r3 : vers le nord', sizeOf(crownR3, pal)]),
+      xerosCell(),
+    ],
+  },
+  {
+    title: '2. root-plate, ses quatre vues, et uprooted-hole',
     cells: [
       xerosCell(),
-      cell(plateE, pal, ['galette, vue est-ouest', 'arbre couche vers l est', 'motte 170, racines 225X180 cm', 'attendu 8+17+8=33X40', `dessine ${sizeOf(plateE, pal)}`]),
-      cell(plateF, pal, ['galette, vue de face', 'arbre couche vers le nord', dimsText(DIMS.plateFace), `attendu ${expected(DIMS.plateFace)}`, `dessine ${sizeOf(plateF, pal)}`]),
+      cell(plateE, pal, ['base : arbre couche', 'vers l est (profil)', dimsText(DIMS.plate), `attendu ${expected(DIMS.plate)}`, `dessine ${sizeOf(plateE, pal)}`]),
+      cell(plateR1, pal, ['r1 : couche vers', 'le sud (le dessus)', dimsText(faceSwap), `attendu ${expected(faceSwap)}`, `dessine ${sizeOf(plateR1, pal)}`]),
+      cell(plateW, pal, ['r2 : couche vers', 'l ouest (profil)', dimsText(DIMS.plate), `attendu ${expected(DIMS.plate)}`, `dessine ${sizeOf(plateW, pal)}`]),
+      cell(plateF, pal, ['r3 : couche vers', 'le nord (de face)', dimsText(faceSwap), `attendu ${expected(faceSwap)}`, `dessine ${sizeOf(plateF, pal)}`]),
       cell(hole, pal, ['trou (a plat)', `${DIMS.hole.w}X${DIMS.hole.d} cm`, `attendu ${expected(DIMS.hole)}`, `dessine ${sizeOf(hole, pal)}`]),
-      cell(felled.grid, felled.palette, ['arbre couche (jeu)', 'normal-felled-tree', sizeOf(felled.grid, felled.palette)]),
     ],
   },
   { title: '3. l ensemble', cells: [ensemble(K)] },
   {
     title: '4. detail x8',
     cells: [
-      cell(crop(snagG, 4, 0, 16, 30), pal, ['cassure du chicot'], 8),
-      cell(crop(crownG, 44, 3, 30, 14), pal, ['cassure de la cime'], 8),
-      cell(plateE, pal, ['galette est-ouest'], 8),
-      cell(plateF, pal, ['galette de face'], 8),
+      cell(crop(snagG, 4, 0, 16, 26), pal, ['cassure du chicot'], 8),
+      cell(crop(crownG, 0, 0, 22, crownG.length), pal, ['cassure de la cime'], 8),
+      cell(plateE, pal, ['profil (base)'], 8),
+      cell(plateR1, pal, ['dessus (r1)'], 8),
+      cell(plateW, pal, ['profil (r2)'], 8),
+      cell(plateF, pal, ['de face (r3)'], 8),
       cell(hole, pal, ['trou'], 8),
     ],
   },
@@ -240,4 +248,7 @@ const out = join(ROOT, '.art-preview', 'tempete.png');
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, PNG.sync.write(sheet.png));
 console.log(`essai-tempete -> ${out}`);
-console.log(`chicot ${sizeOf(snagG, pal)} (attendu ${expected(DIMS.snag)}) ; galette est ${sizeOf(plateE, pal)} ; face ${sizeOf(plateF, pal)} (attendu ${expected(DIMS.plateFace)}) ; trou ${sizeOf(hole, pal)} (attendu ${expected(DIMS.hole)})`);
+const size = (g: Grid) => `${g[0].length}x${g.length} (silhouette ${sizeOf(g, pal)})`;
+console.log(`normal-snag ${size(snagG)} ; normal-snag-top ${views.snagTop.map(size).join(' / ')}`);
+console.log(`root-plate ${views.plate.map(size).join(' / ')} ; uprooted-hole ${size(hole)}`);
+console.log(`UPROOTED plate ${UPROOTED.plate} hole ${UPROOTED.hole} ; SNAG_TOP_AT ${SNAG_TOP_AT}`);

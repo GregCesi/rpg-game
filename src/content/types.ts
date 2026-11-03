@@ -145,9 +145,10 @@ const HarvestSchema = z.strictObject({
    * Objets de props.json qui naissent à la fin (l'arbre couché : houppier et sections). (x, y) : coin bas gauche
    * de chacun par rapport à celui de l'objet récolté, pour une chute vers la droite ; vers la gauche, ils sont
    * posés en miroir autour du pied (`fall.foot`) avec leurs images `-left` (dessinées, pas retournées). Ils sont notés dans GameState
-   * comme objets nés, et forment une chaîne dans cet ordre.
+   * comme objets nés, et forment une chaîne dans cet ordre. `wood` : les réglages d'une pièce de bois qui naît (le chicot abattu
+   * laisse sa souche et le tronc qui restait debout, couché à son pied).
    */
-  spawns: z.array(z.strictObject({ type: id, x: px, y: px })).default([]),
+  spawns: z.array(z.strictObject({ type: id, x: px, y: px, wood: z.lazy(() => WoodPieceSchema).optional() })).default([]),
 });
 
 /**

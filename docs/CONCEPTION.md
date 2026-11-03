@@ -56,7 +56,7 @@ Extérieur :
 ## La tempête (ajout d'histoire voulu par Grégoire, 3 novembre 2026, chantier « correctifs »)
 
 Le jeu commence **le dimanche matin, après une nuit de tempête**. Le vent est venu de l'ouest : dehors, quelques arbres sont tombés,
-couchés vers l'est, un a déjà été coupé, et il y a beaucoup de branches par terre. Ce n'est pas l'état naturel du pays, c'est la
+couchés vers l'est (certains déracinés), d'autres cassés debout, un a déjà été coupé, et il y a beaucoup de branches par terre. Ce n'est pas l'état naturel du pays, c'est la
 tempête. **La forêt de l'ouest n'a absolument rien** (de 0 à 300 m du monde, jusqu'à la lisière : elle est magique).
 
 - **Où** : autour de la ferme surtout (quatre arbres normaux couchés : au sud du grand chemin, à l'ouest de la maison au bord du
@@ -68,11 +68,17 @@ tempête. **La forêt de l'ouest n'a absolument rien** (de 0 à 300 m du monde, 
   vers l'est, sans souche : il a été déraciné), la souche et les pièces de bois de l'arbre coupé, les branches (`branch`) posées par
   terre. Tout est posé dans les cartes (Tiled) : les branches par un point `Item`, qui entre au sol de la partie à la première visite
   (`seedGround`), comme une branche lâchée par Xéros. Rien n'est créé par du code.
-- **À venir, avec l'accord de Grégoire** : l'arbre cassé debout (le chicot) et l'arbre déraciné (sa galette de racines dressée et son
-  trou), proposés sur la planche `.art-preview/tempete.png` (`npx tsx tools/essai-tempete.ts`, dessins hors du jeu dans
-  `art/proposals/tempete.ts`) ; en attendant, les arbres tombés sont des arbres couchés.
+- **Les arbres cassés et déracinés** (accord de Grégoire le 3 novembre 2026, après deux retouches de la planche) : sur la ferme, deux
+  arbres déracinés (la [galette de racines](objets/root-plate.md) dressée au pied de l'arbre couché, qui cache son bout scié, et le
+  trou qu'elle laisse, à 24 et 28 m de la maison : jamais à moins de 20 m) et deux [chicots](objets/normal-snag.md) avec leur cime
+  couchée à côté ; le long du chemin, un arbre déraciné et un chicot avec sa cime, à côté du chemin. **La matière se conserve** :
+  le chicot (2,5 m de tronc, 159 kg) et sa cime (3,7 m de tronc et tout le houppier, 286,4 kg) font l'arbre normal entier, la
+  souche et l'arbre couché (445,4 kg). Le chicot s'abat comme un arbre (sa souche, et le tronc qui restait debout couché à son
+  pied, 2 m), la cime s'ébranche comme l'arbre couché (une pièce de bois de 3,6 m, ses branches) ; la galette ne se travaille pas
+  encore. Dessins : `art/world/storm.ts` (pixel-artist), planche `.art-preview/tempete.png` (`npx tsx tools/essai-tempete.ts`).
 - **Vérification** : `tools/test-paysage.ts` (test:fast : rien dans la forêt de l'ouest, des arbres normaux, aucun en travers d'un
-  chemin, la ferme, le chemin et les prés touchés) ; `npm run test:monde` (les branches au sol de la ferme dans la partie).
+  chemin, la ferme, le chemin et les prés touchés ; chicot + cime = l'arbre entier ; chaque galette au pied de son arbre couché, à
+  20 m au moins de la maison) ; `npm run test:equarrissage` (le chicot abattu, sa cime ébranchée) ; `npm run test:monde` (les branches au sol de la ferme dans la partie).
 
 ## Direction artistique
 

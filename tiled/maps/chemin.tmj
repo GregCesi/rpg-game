@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 216,
+  "nextobjectid": 220,
   "properties": [
     {
       "name": "name",
@@ -1436,18 +1436,6 @@
           "width": 32,
           "height": 32,
           "gid": 1003
-        },
-        {
-          "id": 103,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 2783,
-          "y": 1999,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
         },
         {
           "id": 105,
@@ -2888,6 +2876,54 @@
             }
           ],
           "id": 215
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "uprooted-hole",
+          "x": 1459,
+          "y": 2214,
+          "width": 23,
+          "height": 21,
+          "gid": 1164,
+          "id": 216
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "root-plate",
+          "x": 1472,
+          "y": 2217,
+          "width": 24,
+          "height": 29,
+          "gid": 1163,
+          "id": 217
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-snag",
+          "x": 2795,
+          "y": 1999,
+          "width": 24,
+          "height": 70,
+          "gid": 1161,
+          "id": 218
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-snag-top",
+          "x": 2813,
+          "y": 2002,
+          "width": 91,
+          "height": 22,
+          "gid": 1162,
+          "id": 219
         }
       ]
     },

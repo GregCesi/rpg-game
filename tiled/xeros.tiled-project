@@ -2764,6 +2764,94 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 260,
+      "name": "normal-snag",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 261,
+      "name": "normal-snag-top",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 262,
+      "name": "root-plate",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 263,
+      "name": "uprooted-hole",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }
