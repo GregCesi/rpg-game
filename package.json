@@ -39,6 +39,7 @@
     "test:monde": "npm run art && npm run maps && tsx tools/test-monde.ts",
     "art:monde": "npm run art && npm run maps && tsx tools/world-preview.ts",
     "test:combat": "npm run art && npm run maps && tsx tools/test-combat.ts",
+    "test:lapins": "npm run art && npm run maps && tsx tools/test-lapins.ts",
     "test:temps": "npm run art && npm run maps && tsx tools/test-temps.ts",
     "test:reset": "npm run art && npm run maps && tsx tools/test-reset.ts",
     "test:vitesses": "npm run art && npm run maps && tsx tools/test-vitesses.ts",

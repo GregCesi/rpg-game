@@ -223,6 +223,8 @@ function missingContent(save: Save): string | undefined {
       }
     }
     for (const c of Object.values(m.changes)) if (c.type && !props[c.type]) return `l'objet « ${c.type} »`;
+    // une garenne gardée nomme une garenne de Tiled (`warrens` de la carte, par identifiant d'objet)
+    for (const id of Object.keys(m.warrens)) if (maps[mapId] && !maps[mapId].warrens.some((g) => String(g.id) === id)) return `la garenne n°${id} de « ${mapId} »`;
     for (const o of m.spawned) if (!props[o.type]) return `l'objet « ${o.type} »`;
     for (const w of [...Object.values(m.changes), ...m.spawned].flatMap((o) => (o.wood ? [o.wood] : []))) {
       const missing = woodMissing(w);

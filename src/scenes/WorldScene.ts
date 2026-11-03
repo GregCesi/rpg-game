@@ -3,7 +3,7 @@ import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { stateImage } from '../world/pileShape';
 import { AIM, CONSTRUIRE, DEPTH, FEET, FELL, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
-import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
+import { creatures, gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
@@ -14,6 +14,7 @@ import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand } from
 import { BuildSystem } from '../systems/build';
 import { ClockSystem } from '../systems/clock';
 import { CombatSystem, type AttackPlan } from '../systems/combat';
+import { CreatureSystem } from '../systems/creatures';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
@@ -104,8 +105,14 @@ type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'wor
 interface Flight {
   /** Ce qui vole, à l'écran. */
   sprite: Phaser.GameObjects.Image;
-  /** Les points du vol : au sol (px), la hauteur (px), le temps (s). */
-  points: { x: number; y: number; z: number; t: number }[];
+  /** Les points du vol : au sol (px), la hauteur (px), le temps (s), la vitesse (m/s). */
+  points: { x: number; y: number; z: number; t: number; v: number }[];
+  /** La masse de ce qui vole (kg) : l'énergie d'un choc en chemin. */
+  kg: number;
+  /** Où il était au pas d'avant (au sol, px) : un choc avec une bête qui bouge se teste sur les deux chemins. */
+  last?: { x: number; y: number };
+  /** Il a déjà touché une bête : un seul choc par lancer. */
+  struck?: boolean;
   /** Le temps écoulé depuis le lâcher (s). */
   t: number;
   /** La cible touchée en chemin, à quel moment, avec quelle énergie (J). */
@@ -164,6 +171,8 @@ export class WorldScene extends Phaser.Scene {
   private interaction!: InteractionSystem;
   private harvest!: HarvestSystem;
   private combat!: CombatSystem;
+  /** Les créatures de la carte (les garennes de Tiled, systems/creatures.ts). */
+  private creatures!: CreatureSystem;
   /** L'horloge (docs/CONCEPTION.md, « Le temps ») : une pour toutes les cartes, le palier est partagé (ClockSystem.speed). */
   private readonly clock = new ClockSystem();
   private handsSystem!: HandsSystem;
@@ -316,11 +325,20 @@ export class WorldScene extends Phaser.Scene {
       return [...this.map.interactables(held), ...this.site.interactables(), ...talkable];
     });
     this.harvest = new HarvestSystem(this, this.map);
-    this.combat = new CombatSystem(this, this.map, this.harvest);
+    this.combat = new CombatSystem(this, this.map, this.harvest, () => this.creatures?.targets() ?? []);
     this.wood = new WoodSystem(this, this.map, this.harvest);
     const bar = new WorkBar(this);
     this.rail = new Rail(this.player, bar);
     this.handsSystem = new HandsSystem(this, this.map, npcs.map((n) => n.actor.body));
+    // les créatures : une bête tuée devient son objet, posé là où elle meurt (la matière se conserve)
+    this.creatures = new CreatureSystem(
+      this,
+      this.map,
+      (item, x, y) => void this.handsSystem.layNear(this.player, { item }, x, y),
+      (x, y, depth, matter, facing) => this.harvest.chipsAt(x, y, depth, matter, facing),
+      (x, y, label) => this.combat.floatAt(x, y, label),
+      !!this.interior,
+    );
     this.transformer = new TransformSystem(this.map, this.handsSystem);
     this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body), this.player.strength);
     this.knots = new KnotSystem(this.map, this.handsSystem);
@@ -434,6 +452,9 @@ export class WorldScene extends Phaser.Scene {
     if (zoom) this.zoom.step(zoom);
     // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V change la vitesse du temps (en boucle)
     this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim');
+    // les créatures vivent quand l'horloge avance ; elles perçoivent Xéros dans ces mêmes modes
+    const living = this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim';
+    if (living) this.creatures.update(this.player, delta, true);
     // les objets lancés volent dans tous les modes (le temps du jeu)
     this.updateFlights(delta);
     this.daylight.update();
@@ -737,7 +758,7 @@ export class WorldScene extends Phaser.Scene {
     const look = this.handsSystem.lookOf(what);
     const sprite = this.add.image(origin.x, origin.y, look.key, look.frame).setOrigin(0.5, 0.5);
     const item = 'item' in what ? what.item : what.prop;
-    this.flights.push({ sprite, points: path.map(({ x, y, z, t }) => ({ x, y, z, t })), t: 0, hit, item, facing: a.facing, landed });
+    this.flights.push({ sprite, points: path.map(({ x, y, z, t, v }) => ({ x, y, z, t, v })), kg: plan.release.kg, t: 0, hit, item, facing: a.facing, landed });
   }
 
   /** Les objets en vol avancent du temps du jeu ; la cible touchée réagit à l'instant du choc ; au sol, l'objet posé se montre. */
@@ -762,6 +783,15 @@ export class WorldScene extends Phaser.Scene {
       const x = p0.x + (p1.x - p0.x) * k;
       const y = p0.y + (p1.y - p0.y) * k;
       const z = p0.z + (p1.z - p0.z) * k;
+      // une bête qui bouge : le choc se teste sur le chemin de l'objet et le sien pendant ce pas (systems/creatures.ts)
+      if (f.last && !f.struck) {
+        const key = this.creatures.flightHit(f.last, { x, y }, z / PX_PER_M);
+        if (key) {
+          f.struck = true;
+          this.combat.thrownHit(key, f.item, kinetic(f.kg, p0.v + (p1.v - p0.v) * k), f.facing);
+        }
+      }
+      f.last = { x, y };
       f.sprite.setPosition(Math.round(x), Math.round(y - z)).setDepth(y);
     }
   }
@@ -1403,6 +1433,26 @@ export class WorldScene extends Phaser.Scene {
         // les vitesses à calibrer en jouant (systems/speeds.ts), retenues dans le navigateur
         setSpeeds({ walk: pxPerSec(cmd.walk), run: pxPerSec(cmd.run), sneak: cmd.sneak ?? SPEEDS.sneak });
         this.notice(`Vitesses : marche ${cmd.walk} m/s, course ${cmd.run} m/s, discrète ${String(SPEEDS.sneak).replace('.', ',')} de la marche.`);
+        break;
+      case 'creature-spawn':
+        this.notice(this.creatures.spawnNear(this.player.actor.x, this.player.actor.y));
+        break;
+      case 'creature-population':
+        this.notice(this.creatures.setPopulation(this.player.actor.x, this.player.actor.y, cmd.count));
+        break;
+      case 'creature-senses': {
+        // les distances d'une espèce, réglées en jouant : les données de creatures.json, en mémoire le temps de la session
+        const d = creatures[cmd.creature];
+        if (!d || !(cmd.flee < cmd.alert)) {
+          this.notice('Distances refusées : la fuite doit être en deçà de l’alerte.');
+          break;
+        }
+        d.senses[cmd.gait] = { alert: cmd.alert, flee: cmd.flee };
+        this.notice(`${d.name}, ${cmd.gait} : aux aguets à ${cmd.alert} m, fuite à ${cmd.flee} m.`);
+        break;
+      }
+      case 'creature-rings':
+        this.creatures.showRanges = cmd.on;
         break;
       case 'speeds-default':
         setSpeeds(undefined);

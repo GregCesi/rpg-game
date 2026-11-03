@@ -47,6 +47,10 @@ interface Target {
   image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
   x: number;
   y: number;
+  /** Une cible vivante (une créature, systems/creatures.ts) : le coup lui fait ce que dit sa vie (blessée, elle fuit ; tuée, elle devient son objet) ; elle ne penche pas. */
+  hurt?: (damage: number, facing: Facing) => void;
+  /** Sa hauteur, en m (un objet lancé plus haut passe au-dessus). */
+  height?: number;
 }
 
 /**
@@ -142,6 +146,8 @@ export class CombatSystem {
     private readonly scene: Phaser.Scene,
     private readonly map: GameMap,
     private readonly harvest: HarvestSystem,
+    /** Les cibles vivantes de la carte (les créatures, systems/creatures.ts). */
+    private readonly living: () => (Omit<Target, 'def'> & { hurt: NonNullable<Target['hurt']> })[] = () => [],
   ) {}
 
   /** La clé de ce qui frappe, pour l'enchaînement et le journal. */
@@ -291,6 +297,7 @@ export class CombatSystem {
       const box = { left: c.x / CM_PER_PX, top: c.y / CM_PER_PX, right: (c.x + c.w) / CM_PER_PX, bottom: (c.y + c.d) / CM_PER_PX };
       out.push({ key: `build:${b.piece.id}`, type: ref.prop, def: def.target, box, image: b.image, x: b.image.x, y: b.image.y });
     }
+    for (const q of this.living()) out.push({ ...q, def: { hp: 'infinite', matter: '', tilt: 0 } });
     return out;
   }
 
@@ -320,8 +327,12 @@ export class CombatSystem {
     if (p.damage >= feel.shakeFrom) this.scene.cameras.main.shake(feel.shakeMs, feel.shakeIntensity);
     for (const q of hit) {
       entry?.hits.push({ key: q.key, type: q.type, damage: p.damage, step });
-      this.scene.time.delayedCall(feel.hitStopMs, () => this.react(q, p.facing));
-      this.float(q, String(p.damage).replace('.', ','));
+      // une cible vivante : ses points de vie, sa fuite ou sa mort, ses éclats et le chiffre (systems/creatures.ts)
+      if (q.hurt) q.hurt(p.damage, p.facing);
+      else {
+        this.scene.time.delayedCall(feel.hitStopMs, () => this.react(q, p.facing));
+        this.float(q, String(p.damage).replace('.', ','));
+      }
     }
   }
 
@@ -336,14 +347,18 @@ export class CombatSystem {
     if (!q) return dmg;
     this.log.push({ attack: 'throw', item, facing, reach: 0, cost: 0, joules, damage: dmg, precision: 1, shift: NO_SHIFT, hits: [{ key, type: q.type, damage: dmg, step: 0 }], misses: [] });
     if (dmg >= combat.feel.shakeFrom) this.scene.cameras.main.shake(combat.feel.shakeMs, combat.feel.shakeIntensity);
-    this.react(q, facing);
-    this.float(q, String(dmg).replace('.', ','));
+    if (q.hurt) q.hurt(dmg, facing);
+    else {
+      this.react(q, facing);
+      this.float(q, String(dmg).replace('.', ','));
+    }
     return dmg;
   }
 
   /** Les cibles de la carte, avec leur emprise au sol (px) et leur hauteur (m) : ce qu'un objet lancé peut toucher en passant. */
   throwTargets(): { key: string; box: Box; height: number }[] {
-    return this.targets().map((q) => ({ key: q.key, box: q.box, height: (this.heightOf(q.type) ?? 100) / 100 }));
+    // les cibles vivantes bougent : le vol les teste à chaque pas (systems/creatures.ts `flightHit`), pas au lâcher
+    return this.targets().filter((q) => !q.hurt).map((q) => ({ key: q.key, box: q.box, height: (this.heightOf(q.type) ?? 100) / 100 }));
   }
 
   private heightOf(type: string): number | undefined {
@@ -406,8 +421,13 @@ export class CombatSystem {
   /** Le chiffre des dégâts (ou « raté ») s'envole au-dessus de la cible et s'efface. */
   private float(q: Target, label: string): void {
     const home = this.rest.get(q.key) ?? { x: q.x, y: q.y };
+    this.floatAt(home.x + q.image.width / 2, home.y - q.image.height - 2, label);
+  }
+
+  /** Un chiffre (ou « raté ») s'envole au-dessus du point (x, y) et s'efface. */
+  floatAt(x: number, y: number, label: string): void {
     const text = this.scene.add
-      .text(home.x + q.image.width / 2, home.y - q.image.height - 2, label, { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
+      .text(x, y, label, { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setResolution(ZOOM_STEPS.max)
       .setDepth(DEPTH.prompt - 1);

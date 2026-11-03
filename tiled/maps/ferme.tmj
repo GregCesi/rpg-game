@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 516,
+  "nextobjectid": 521,
   "properties": [
     {
       "name": "name",
@@ -177,6 +177,54 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 516,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 3555,
+          "y": 1330,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 517,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 3615,
+          "y": 1300,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 518,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 3695,
+          "y": 1352,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 519,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 3605,
+          "y": 1405,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
         {
           "id": 1,
           "rotation": 0,
@@ -6092,6 +6140,30 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 520,
+          "rotation": 0,
+          "visible": true,
+          "name": "garenne",
+          "type": "Warren",
+          "x": 3530,
+          "y": 1260,
+          "width": 200,
+          "height": 160,
+          "properties": [
+            {
+              "name": "creature",
+              "type": "string",
+              "propertytype": "CreatureKind",
+              "value": "rabbit"
+            },
+            {
+              "name": "population",
+              "type": "int",
+              "value": 7
+            }
+          ]
+        },
         {
           "id": 20,
           "rotation": 0,

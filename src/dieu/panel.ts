@@ -2,8 +2,8 @@
 // ?dieu : main.ts ne charge ce fichier que dans ce cas. Il ne touche jamais à la partie lui-même : chaque bouton envoie
 // une DieuCommand (events.ts), que WorldScene exécute par les fonctions de GameState, comme le reste du jeu.
 import { clockLabel } from '../world/clock';
-import { items, maps, piles, plans, props, stamina, strength, transforms, wood, work } from '../content';
-import type { WoodLook, WoodPiece } from '../content/types';
+import { creatures, items, maps, piles, plans, props, stamina, strength, transforms, wood, work } from '../content';
+import type { Gait, WoodLook, WoodPiece } from '../content/types';
 import { WOOD_PIECE } from '../world/woodPiece';
 import { woodOfLook } from '../world/woodShape';
 import { heldMass } from '../content/mass';
@@ -248,6 +248,34 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
 
   // la force : un multiplicateur de tous les seuils (porter, marcher, rouler) et de la force des coups de travail (le couple de
   // strength.json `swing`) ; réglée pendant un travail, elle agit au coup suivant ; la masse portée se lit à côté
+  // les créatures (CONCEPTION « Les créatures ») : faire sortir une bête près de Xéros, régler la population de la garenne la plus proche,
+  // voir et régler les distances de perception d'une espèce à chaque allure (en mémoire, le temps de la session)
+  const kinds = Object.keys(creatures);
+  const creature = el('select', {}, kinds.map((k) => el('option', { value: k, textContent: creatures[k].name })));
+  const GAITS: [Gait, string][] = [['still', 'immobile'], ['sneak', 'discret'], ['walk', 'marche'], ['run', 'course']];
+  const senseInputs = GAITS.map(([g, name]) => {
+    const alert = el('input', { type: 'number', min: '0.5', max: '100', step: '0.5', value: '0' });
+    const flee = el('input', { type: 'number', min: '0', max: '100', step: '0.5', value: '0' });
+    const apply = button('Appliquer', () => send({ kind: 'creature-senses', creature: creature.value, gait: g, alert: Number(alert.value), flee: Number(flee.value) }));
+    return { g, alert, flee, row: el('div', { className: 'row' }, [el('span', { textContent: `${name} ` }), el('label', {}, ['aguets', alert]), el('label', {}, ['fuite', flee]), apply]) };
+  });
+  const showSenses = () => {
+    const d = creatures[creature.value];
+    for (const s of senseInputs) if (d) [s.alert.value, s.flee.value] = [String(d.senses[s.g].alert), String(d.senses[s.g].flee)];
+  };
+  creature.addEventListener('change', showSenses);
+  showSenses();
+  const rings = el('input', { type: 'checkbox' });
+  rings.addEventListener('change', () => send({ kind: 'creature-rings', on: rings.checked }));
+  const population = el('input', { type: 'number', min: '0', max: '30', step: '1', value: '7' });
+  const creatureBox = [
+    el('h3', { textContent: 'Créatures' }),
+    el('div', { className: 'row' }, [button('Faire sortir près de Xéros', () => send({ kind: 'creature-spawn' }))]),
+    el('div', { className: 'row' }, [el('label', {}, ['population de la garenne', population]), button('Appliquer', () => send({ kind: 'creature-population', count: Math.max(0, Math.round(Number(population.value) || 0)) }))]),
+    el('div', { className: 'row' }, [creature, el('label', {}, [rings, 'distances autour de Xéros'])]),
+    ...senseInputs.map((s) => s.row),
+  ];
+
   const force = el('input', { type: 'number', min: '0.1', step: '0.5', value: '1' });
   const forceButton = button('Appliquer', () => {
     const m = Math.max(0.1, Number(force.value) || 1);
@@ -336,6 +364,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('h3', { textContent: 'Vitesses (m/s)' }),
     el('div', { className: 'row' }, [el('label', {}, ['marche', walkSpeed]), el('label', {}, ['course', runSpeed]), el('label', {}, ['discrète (part de la marche)', sneakPart])]),
     el('div', { className: 'row' }, [speedsButton, speedsDefault]),
+    ...creatureBox,
     el('h3', { textContent: 'Force de Xéros' }),
     el('div', { className: 'row' }, [el('label', {}, ['force ×', force]), forceButton]),
     el('div', { className: 'row' }, [
