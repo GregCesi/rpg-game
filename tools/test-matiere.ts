@@ -109,3 +109,14 @@ console.log(`✓ matière : ${splits} fentes et ${cuts} coupes, les morceaux pè
   assert.equal(pieceMass(piles[branches].piece) * Object.keys(piles[branches].places).length + lien, propMass(tie.into), 'le fagot plein (sans nombre) : le tas de branches plein et son lien');
   console.log(`✓ matière : une sauvegarde d'avant (fagot plein de 10) garde ses 10 branches ; le plein est maintenant de ${Object.keys(piles[branches].places).length}`);
 }
+
+// Récolter (chantier « maison-2 ») : abattre et ébrancher ne créent ni ne perdent de matière sans la nommer ; ce qui part (les copeaux
+// de l'entaille, les feuilles et ramilles) est nommé par la récolte (`waste`), le bilan est celui de validate.ts (`harvestBalance`)
+{
+  const { harvestBalance } = await import('../src/content/validate');
+  const content = await import('../src/content');
+  assert.deepEqual(harvestBalance(content as never), [], 'le bilan de chaque récolte tombe juste');
+  const wooded = Object.entries(content.props).filter(([, p]) => p.harvest?.work && ('fell' in p.harvest.work || 'limbs' in p.harvest.work));
+  for (const [k, p] of wooded) assert.ok(p.harvest!.waste, `${k} : abattre ou ébrancher nomme ce qui part`);
+  console.log(`✓ matière : ${wooded.length} récoltes d'arbres (abattre, ébrancher), ce qui part est nommé, rien ne se crée`);
+}

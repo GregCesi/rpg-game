@@ -73,6 +73,12 @@ const HarvestSchema = z.strictObject({
   /** La matière, si la récolte se travaille au coup (voir HarvestWorkSchema). */
   work: HarvestWorkSchema.optional(),
   /**
+   * Ce que la récolte retire sans le rendre (la matière se conserve, CLAUDE.md : ce qui part est nommé) : les copeaux de l'entaille d'un
+   * abattage, les feuilles et ramilles d'un ébranchage. Le bilan de validate.ts (`harvestBalance`) refuse une récolte dont ce qui naît
+   * pèse moins que l'objet sans `waste`, et toute récolte dont ce qui naît pèse plus.
+   */
+  waste: z.strictObject({ name: id, fate: id }).optional(),
+  /**
    * Les étapes visibles du travail (docs/CONCEPTION.md, « Le travail », § 6) : la part de la matière enlevée (de 0 à 1, croissante) à
    * laquelle l'objet prend l'image `<son image>-stage-<n>` (n à partir de 1 ; pour chaque vue qu'il a : `<image de la vue>-stage-<n>`),
    * dessinée par le pixel-artist (art/world/work-stages.ts). L'arbre debout : l'entaille, le trait d'abattage, le craquement, il penche ;

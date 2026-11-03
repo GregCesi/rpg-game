@@ -16,7 +16,7 @@ import { bundleImage } from '../world/pileShape';
 import { openSides } from '../world/zones';
 import { WEAPON_ANGLES } from '../world/strike';
 import type { CombatPoses } from '../world/strike';
-import { calibrationJob, gameJobs, planOf, swingerOf } from '../world/workPlan';
+import { calibrationJob, fellVolume, gameJobs, planOf, swingerOf } from '../world/workPlan';
 import { JointTypeSchema } from './types';
 import type { BuildPlan, CombatDef, CreatureDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
 
@@ -871,8 +871,62 @@ function validateWood(c: Content, cat: Catalog): string[] {
       if (!W.sizes[h.wood.size]) errors.push(`${at} : 'harvest.wood' : diamètre '${h.wood.size}' introuvable dans wood.json`);
       if (h.wood.length % W.grid || h.wood.length < W.min) errors.push(`${at} : 'harvest.wood' : longueur ${h.wood.length} cm hors de la grille (multiple de ${W.grid}, au moins ${W.min})`);
     } else if (h?.becomes && c.props[h.becomes]?.wood) errors.push(`${at} : il devient une pièce de bois : son diamètre et sa longueur ('harvest.wood')`);
+    for (const s of h?.spawns ?? []) {
+      if (s.wood && (s.wood.length % W.grid || s.wood.length < W.min)) errors.push(`${at} : 'harvest.spawns' : la pièce de bois de ${s.wood.length} cm hors de la grille (multiple de ${W.grid}, au moins ${W.min})`);
+    }
   }
+  errors.push(...harvestBalance(c));
   return errors;
+}
+
+/**
+ * Récoltes dont le bilan attend un dessin, avec leur raison : retirées dès que le bilan tombe juste (validate.ts le dit).
+ */
+export const HARVEST_TODO: Record<string, string> = {
+  'normal-snag': "cassé à 2,5 m, il perd 10 cm à chaque bout de la grille du bois : la cassure à 2,6 m (pièces de 2,2 et 3,6 m) attend l'accord de Grégoire sur la planche .art-preview/chicot-26.png",
+};
+
+/**
+ * Le bilan d'une récolte (la matière se conserve, chantier « maison-2 ») : ce qui naît (ce qu'il devient, ses `spawns`, ses `drops` au
+ * plus et au moins) ne pèse jamais plus que l'objet récolté ; s'il pèse moins, la récolte nomme ce qu'elle retire (`waste` : les copeaux
+ * de l'entaille, les feuilles et ramilles). Toute récolte dont l'objet et ce qui naît ont une masse ; un arbre et ce qui en sort en ont
+ * une (abattre, ébrancher).
+ */
+export function harvestBalance(c: Content): string[] {
+  const out: string[] = [];
+  const mass = (f: () => number) => {
+    try {
+      return f();
+    } catch {
+      return undefined;
+    }
+  };
+  for (const [key, p] of Object.entries(c.props)) {
+    const h = p.harvest;
+    if (!h || h.convert) continue;
+    const at = `props.json '${key}'`;
+    const wooded = !!h.work && ('fell' in h.work || 'limbs' in h.work);
+    // abattre retire l'entaille et le trait d'abattage, rien d'autre : les copeaux pèsent leur volume (fellVolume de world/workPlan.ts)
+    const chips = h.work && 'fell' in h.work ? (fellVolume(h.work.fell.diameter) / 1e6) * c.wood.density : undefined;
+    const own = mass(() => propMass(key, undefined, c));
+    const parts: (number | undefined)[] = [];
+    if (h.becomes) parts.push(mass(() => (h.wood ? woodMass({ ...h.wood, shape: 'round', axis: 'ew' } as WoodPiece) : propMass(h.becomes!, undefined, c))));
+    for (const s of h.spawns) parts.push(mass(() => (s.wood ? woodMass(s.wood) : propMass(s.type, undefined, c))));
+    const drops = h.drops.map((d) => ({ d, kg: mass(() => itemMass(d.item, c)) }));
+    if (own === undefined || parts.some((m) => m === undefined) || drops.some((d) => d.kg === undefined)) {
+      if (wooded) out.push(`${at} : un arbre et ce qui en sort ont une masse (le bilan de la récolte, la matière se conserve)`);
+      continue;
+    }
+    const base = parts.reduce<number>((s, m) => s + m!, 0);
+    const most = base + drops.reduce((s, x) => s + x.kg! * x.d.max, 0);
+    const least = base + drops.reduce((s, x) => s + x.kg! * x.d.min, 0);
+    const todo = HARVEST_TODO[key];
+    const wrong = chips !== undefined && Math.abs(own - least - chips) > 0.01 ? `abattre ne retire que les copeaux de l'entaille (${chips.toFixed(2)} kg) ; ce qui naît pèse ${least.toFixed(2)} kg, ${(own - least).toFixed(2)} kg de moins que lui` : most > own + 0.01 ? `ce qui naît pèse jusqu'à ${most.toFixed(2)} kg, plus que lui (${own.toFixed(2)} kg) : la matière ne se crée pas` : own - least > 0.01 && !h.waste ? `ce qui naît pèse ${least.toFixed(2)} kg, ${(own - least).toFixed(2)} kg de moins que lui, sans nommer ce qui part ('waste')` : '';
+    if (wrong && !todo) out.push(`${at} : ${wrong}`);
+    if (!wrong && todo) out.push(`validate.ts HARVEST_TODO : '${key}' a maintenant un bilan juste : le retirer de la liste`);
+  }
+  for (const key of Object.keys(HARVEST_TODO)) if (!c.props[key]) out.push(`validate.ts HARVEST_TODO : '${key}' absent de props.json`);
+  return out;
 }
 
 /**

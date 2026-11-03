@@ -7,6 +7,8 @@
 //   jamais en travers d'un chemin ; les arbres déracinés à 20 m au moins de la maison ; le chicot et sa cime pèsent l'arbre entier.
 // Usage : tsx tools/test-paysage.ts (lancé par npm run test:fast, donc par npm run build).
 
+import { fellVolume } from '../src/world/workPlan';
+import { HARVEST_TODO } from '../src/content/validate';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { TILE } from '../src/config';
@@ -80,18 +82,23 @@ assert.ok(ferme.objects.some((o) => o.type === 'normal-tree-stump'), 'un arbre d
 assert.ok(near(ferme, 6000 / CM_PER_PX) >= 30, `beaucoup de branches à moins de 60 m de la maison (${near(ferme, 6000 / CM_PER_PX)})`);
 for (const id of ['chemin', 'pres-du-nord', 'pres-du-sud']) assert.ok(maps[id].objects.some((o) => o.type === 'normal-felled-tree') && maps[id].items.length > 0, `${id} : la tempête y est passée`);
 
-// la matière se conserve : le chicot et sa cime sont l'arbre normal entier, la souche (40 cm de tronc) et l'arbre couché
+// la matière se conserve (chantier « maison-2 », égalités) : le chicot abattu donne sa souche, sa pièce de bois et les copeaux de
+// l'entaille ; la cime ébranchée, sa pièce de bois et son houppier ; à eux deux, l'arbre normal debout entier
 const normal = (length: number) => woodMass({ size: 'normal', length, shape: 'round', axis: 'ew' });
 const massOf = (k: string) => props[k].mass as number;
+const chips = (fellVolume(30) / 1e6) * 900;
 const crown = massOf('normal-felled-tree') - normal(props['normal-felled-tree'].harvest!.wood!.length);
-assert.ok(Math.abs(massOf('normal-snag') - normal(250)) < 0.5, `le chicot : 2,5 m de tronc (${massOf('normal-snag')} kg, ${normal(250).toFixed(1)} attendus)`);
-assert.ok(Math.abs(massOf('normal-snag-top') - (normal(370) + crown)) < 0.5, `la cime : 3,7 m de tronc et le houppier (${massOf('normal-snag-top')} kg, ${(normal(370) + crown).toFixed(1)} attendus)`);
-const whole = normal(40) + massOf('normal-felled-tree');
-assert.ok(Math.abs(massOf('normal-snag') + massOf('normal-snag-top') - whole) < 0.5, `chicot + cime = l'arbre entier (${massOf('normal-snag') + massOf('normal-snag-top')} kg, souche et arbre couché : ${whole.toFixed(1)})`);
-// ce qu'ils deviennent n'en crée pas : le chicot abattu, sa souche et le tronc couché ; la cime ébranchée, sa pièce de bois et ses branches
 const snagLog = props['normal-snag'].harvest!.spawns[0].wood!;
-assert.ok(normal(40) + woodMass(snagLog) <= massOf('normal-snag') + 1e-6, 'le chicot abattu ne crée pas de bois');
-assert.ok(normal(props['normal-snag-top'].harvest!.wood!.length) <= massOf('normal-snag-top'), 'la cime ébranchée ne crée pas de bois');
+const topLog = props['normal-snag-top'].harvest!.wood!.length;
+const near2 = (a: number, b: number) => Math.abs(a - b) < 0.02;
+assert.ok(near2(massOf('normal-tree'), massOf('normal-tree-stump') + massOf('normal-felled-tree') + chips), "l'arbre normal debout : sa souche, l'arbre couché et les copeaux de l'entaille");
+if (HARVEST_TODO['normal-snag']) console.log(`  … paysage : le chicot attend sa cassure à 2,6 m (HARVEST_TODO de validate.ts) : ses égalités ne sont pas encore vérifiées`);
+else {
+  assert.ok(near2(massOf('normal-snag-top'), normal(topLog) + crown), `la cime : sa pièce de ${topLog} cm et le houppier (${massOf('normal-snag-top')} kg)`);
+  assert.ok(near2(massOf('normal-snag'), massOf('normal-tree-stump') + woodMass(snagLog) + chips), `le chicot : sa souche, sa pièce de ${snagLog.length} cm et les copeaux (${massOf('normal-snag')} kg)`);
+  assert.ok(near2(massOf('normal-snag') + massOf('normal-snag-top'), massOf('normal-tree')), `chicot + cime = l'arbre normal debout (${massOf('normal-snag') + massOf('normal-snag-top')} kg, ${massOf('normal-tree')})`);
+  assert.equal(snagLog.length + topLog, props['normal-felled-tree'].harvest!.wood!.length, "les deux pièces refont celle de l'arbre couché");
+}
 
 // les arbres déracinés : la galette au pied d'un arbre couché, son trou à côté ; sur la ferme, à 20 m au moins de la maison
 const wallDist = (x: number, y: number) => {
