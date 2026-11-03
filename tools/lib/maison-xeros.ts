@@ -18,7 +18,7 @@
 // - les cloisons sont sur la grille : leur solin de 30 cm est à 5 cm à l'ouest (au nord) de leur axe.
 
 /** Une pièce du catalogue : un objet de props.json, ou la pièce de bois. */
-export type Ref = { prop: string } | { wood: { size: string; length: number; shape: 'round'; hewn: number; axis: 'ew' | 'ns' | 'up' } };
+export type Ref = { prop: string } | { wood: { size: string; length: number; shape: 'round' | 'half'; hewn?: number; axis: 'ew' | 'ns' | 'up' } };
 
 export type PieceStep = {
   kind: 'piece';
@@ -40,6 +40,8 @@ export type PieceStep = {
   aimX?: number;
   /** Crans montés (T) avant la pose. */
   up?: number;
+  /** Crans descendus (G) avant la pose. */
+  down?: number;
   /** La pièce (son nom) que celle-ci recouvre et remplace (`over` de props.json). */
   replaces?: string;
 };
@@ -69,7 +71,8 @@ interface Bay {
   line: number;
   /** L'axe du poteau qui commence la travée (x ou y). */
   from: number;
-  kind: 'panel' | 'window' | 'door' | 'inner';
+  /** `opening` : une baie sans porte (le cagibi), entre deux jambages, sous un linteau. */
+  kind: 'panel' | 'window' | 'door' | 'inner' | 'opening';
   /** Le sens du remplissage (sa face du dehors). */
   view: number;
   /** La place du remplissage en travers du mur (y ou x de son emprise) : visée, et attendue après l'affleurement. */
@@ -79,6 +82,8 @@ interface Bay {
    * travers ; et la visée en travers du second (`jambAim`), si elle diffère. */
   jambs?: [number, number];
   jambAim?: number;
+  /** La place le long du mur du second jambage, s'il ne vient pas contre le poteau (la baie du cagibi : sur la grille). */
+  jamb2At?: number;
   /** La porte : son sens (intérieure, elle s'ouvre vers la pièce qu'elle ferme), sa place en travers (visée, attendue). */
   door?: { view: number; aim: number; across: number };
   /** Le volet, à la face du dedans : son sens (sa face du dehors vers le dedans : il s'ouvre dans la pièce), sa place en travers. */
@@ -105,8 +110,9 @@ function bays(): Bay[] {
   }
   // les cloisons : le remplissage s'affleure à une face de leur solin (celle que choisit alignOnWall)
   for (let y = 0; y < 640; y += 160) {
-    const jambs: [number, number] = y === 320 ? [320, 315] : [320, 320];
-    out.push({ ew: false, line: 320, from: y, kind: y === 160 || y === 320 ? 'inner' : 'panel', view: 1, aim: 320, across: 315, jambs, ...(y === 320 ? { jambAim: 300 } : {}), door: { view: 1, aim: 320, across: 320 } });
+    // la baie du cagibi (y = 160) : ses jambages de 25 cm, l'aimant les colle 5 cm à l'ouest de l'axe
+    const jambs: [number, number] = y === 320 ? [320, 315] : y === 160 ? [315, 320] : [320, 320];
+    out.push({ ew: false, line: 320, from: y, kind: y === 160 ? 'opening' : y === 320 ? 'inner' : 'panel', view: 1, aim: 320, across: 315, jambs, ...(y === 320 ? { jambAim: 300 } : {}), ...(y === 160 ? { jamb2At: 280 } : {}), door: { view: 1, aim: 320, across: 320 } });
   }
   for (let y = 0; y < 640; y += 160) {
     out.push({ ew: false, line: 960, from: y, kind: y === 320 ? 'inner' : 'panel', view: 3, aim: 960, across: 950, jambs: [960, 950], door: { view: 3, aim: 960, across: 960 } });
@@ -152,8 +158,11 @@ function bayStage(b: Bay, s: Stage, prev?: Stage): PieceStep[] {
   // jambage, celui de droite r0 ; pour un mur nord-sud, le jambage au nord a son huisserie au sud (r3), au sud au nord (r1). La porte
   // d'entrée se pose avec la première couche, entre ses jambages (elle s'aimante au premier, le second à elle) ; les portes
   // intérieures, sur la grille, sont posées avec le solin.
-  const [jw, dw] = b.kind === 'door' ? [25, 90] : [30, 80];
-  const jamb = `${s}-${b.kind === 'door' ? '' : 'inner-'}jamb`;
+  // la baie sans porte du cagibi : les jambages de 25 cm de la porte d'entrée, un passage de 85 cm (le second jambage sur la grille ;
+  // une porte intérieure : jambages de 30 cm, 80 de passage)
+  const wide = b.kind === 'door' || b.kind === 'opening';
+  const [jw, dw] = wide ? [25, 90] : [30, 80];
+  const jamb = `${s}-${wide ? '' : 'inner-'}jamb`;
   const [v1, v2] = b.ew ? [2, 0] : [3, 1];
   const far = a + 10 + jw + dw;
   const d = b.door!;
@@ -162,7 +171,7 @@ function bayStage(b: Bay, s: Stage, prev?: Stage): PieceStep[] {
   return [
     part(`jambage ${name} (1)`, jamb, v1, jw, a, b.aim, a + 10, b.jambs?.[0] ?? b.across),
     ...door,
-    part(`jambage ${name} (2)`, jamb, v2, jw, b.kind === 'door' ? far - 5 : far, b.jambAim ?? b.aim, far, b.jambs?.[1] ?? b.across),
+    part(`jambage ${name} (2)`, jamb, v2, jw, b.kind === 'door' ? far - 5 : far, b.jambAim ?? b.aim, b.jamb2At ?? far, b.jambs?.[1] ?? b.across),
   ];
 }
 
@@ -200,7 +209,6 @@ export function maisonSteps(): Step[] {
   // les portes intérieures, au sol (la terre battue passe dessous), dans le plan des jambages à venir ; elles s'ouvrent vers la pièce
   // qu'elles ferment (le cagibi et le coin de Xéros à l'ouest, l'atelier à l'est) ; entre celles de x = 320, la cloison y = 320 passe
   // sous le croisement
-  piece('porte cloison x=320 160', inner, 320, 200, 5, 80, { view: 1, z: 0 });
   piece('solin cloison y=320', narrow, 160, 300, 160, 30, { z: 0 });
   piece('porte cloison x=320 320', inner, 320, 360, 5, 80, { view: 1, z: 0 });
   piece('porte cloison x=960 320', inner, 960, 360, 5, 80, { view: 3, z: 0 });
@@ -236,7 +244,8 @@ export function maisonSteps(): Step[] {
   S.push({ kind: 'remove', name: 'cale du seuil' });
   frame('le solin, le seuil, les portes intérieures');
 
-  // 2. les meubles, au sol, avant les murs (visés une fois les murs montés, ils se poseraient sur la sablière au sud d'eux)
+  // 2. les meubles, au sol, avant les murs (visés une fois les murs montés, ils se poseraient sur la sablière au sud d'eux) ; l'établi
+  // de la mère, fait de nos pièces, avec ses assemblages
   S.push(...furnitureSteps());
   frame('les meubles');
 
@@ -265,15 +274,21 @@ export function maisonSteps(): Step[] {
   // travée de porte, visé une fois dressé le poteau du rang d'après, tomberait sur sa tête, juste au sud dans la projection)
   const all = bays();
   const shutter = (b: Bay) => {
-    // le volet dans la baie, à la face du dedans, son bas à l'appui (80 cm du sol : la traverse, 70, et un cran), centré sur elle
+    // le volet dans la baie, à la face du dedans, son bas à l'appui (1 m du sol, retouche de Grégoire : la traverse, 70, et deux crans,
+    // 1,10 m), centré sur elle
     const sh = b.shutter!;
     const [x, y, w, dd] = b.ew ? [b.from + 40, sh.aim, 60, 4] : [sh.aim, b.from + 40, 4, 60];
-    piece(`volet ${bayName(b)}`, { prop: 'plank-shutter' }, x, y, w, dd, { view: sh.view, z: 90, up: 1, at: placed(b, b.from + 50, sh.across) });
+    piece(`volet ${bayName(b)}`, { prop: 'plank-shutter' }, x, y, w, dd, { view: sh.view, z: 110, up: 2, at: placed(b, b.from + 50, sh.across) });
   };
+  // le linteau de la baie sans porte : une poutre de 1,20 m contre la face du cagibi, posée sur la traverse basse (70 cm) et montée de six
+  // crans, sa base à 1,90 m (au-dessus d'un homme, sous les 2,40 m d'un linteau : l'intérieur y voit un passage entre deux pièces,
+  // CONCEPTION « Les intérieurs ») ; elle ne peut pas traverser les jambages (deux pièces ne se recouvrent pas)
+  const lintel = (b: Bay) => piece(`linteau ${bayName(b)}`, beam('ns', 120), 280, b.from + 20, 30, 120, { z: 190, up: 6 });
   const staves = (list: Bay[]) => {
     for (const b of list) {
       S.push(...bayStage(b, 'staves'));
       if (b.kind === 'window') shutter(b);
+      if (b.kind === 'opening') lintel(b);
     }
   };
   const nsBays = (from: number) => staves(all.filter((b) => !b.ew && b.from === from));
@@ -358,32 +373,67 @@ export function maisonSteps(): Step[] {
   const layers = ['thatch-roof-frame', 'thatch-roof-half', 'thatch-roof'];
   for (const [i, prop] of layers.entries()) {
     for (const [n, view, y] of roof) {
-      piece(`${prop} ${n}`, { prop }, -40, y, 1380, prop === 'thatch-roof' ? 390 : 410, { view, z: 280, ...(i ? { replaces: `${layers[i - 1]} ${n}` } : {}) });
+      // le chaume plein du pan nord : percé pour le conduit de la cheminée
+      const key = prop === 'thatch-roof' && n === 'pan nord' ? 'thatch-roof-pierced' : prop;
+      const was = (k: number) => `${layers[k]} ${n}`;
+      piece(`${prop} ${n}`, { prop: key }, -40, y, 1380, prop === 'thatch-roof' ? 390 : 410, { view, z: 280, ...(i ? { replaces: was(i - 1) } : {}) });
     }
     if (i === 0) {
-      piece('pignon ouest', { prop: 'lime-gable-smoke' }, -20, 0, 15, 640, { view: 1, z: 280, at: [-20, -5] });
+      // la fumée sort par la souche de la cheminée : le pignon ouest n'a plus de trou de fumée
+      piece('pignon ouest', { prop: 'lime-gable' }, -20, 0, 15, 640, { view: 1, z: 280, at: [-20, -5] });
       piece('pignon est', { prop: 'lime-gable' }, 1280, 0, 15, 640, { view: 3, z: 280, at: [1285, -5] });
     }
     frame(['le chevronnage et le lattis, les pignons', 'le chaume à demi', 'le chaume'][i]);
   }
   piece('faîtage', { prop: 'earth-ridge' }, -40, 300, 1385, 50, { z: 725 });
-  frame('le faîtage : la maison finie');
+  frame('le faîtage');
+
+  // 8. la cheminée de pierre adossée au mur nord de la salle (retouche de Grégoire ; son âtre est posé avec les meubles) : la hotte et le
+  // manteau sur l'âtre, le conduit en assises de pierre et de mortier jusqu'au-dessus du faîte, par le pan nord percé, et le couronnement
+  // d'où sort la fumée. Posée après le toit : visée, elle passe sous les pans (le mode construction ne vise pas à travers un toit), et
+  // les pans visés ne se poseraient pas sur sa souche.
+  // (posé avant les murs, l'âtre prendrait la visée du poteau du mur nord, juste au nord de lui)
+  piece('âtre', { prop: 'stone-hearth' }, 680, 30, 200, 80, { z: 0 });
+  piece('hotte', { prop: 'chimney-hood' }, 685, 30, 190, 50, { z: 120, at: [680, 20] });
+  piece('manteau', beam('ew', 220), 670, 80, 220, 30, { z: 120, at: [680, 80] });
+  for (let k = 0; k < 6; k++) piece(`conduit ${k + 1}`, { prop: 'chimney-flue' }, 730, 30, 100, 50, { z: 250 + 100 * k, at: [740, 20] });
+  piece('couronnement', { prop: 'chimney-cap' }, 740, 20, 110, 60, { z: 850, at: [740, 20] });
+  frame('la cheminée : la maison finie');
   return S;
 }
 
-/** Les meubles : dans la salle, l'atelier et la chambre de la mère ; deux sacs au cagibi. Le reste se pose sur la carte (Tiled). */
-export function furnitureSteps(): PieceStep[] {
-  const S: PieceStep[] = [];
+/** Une perche ronde (12 cm), de cette longueur, dans ce sens. */
+export const pole = (axis: 'ew' | 'ns' | 'up', length: number): Ref => ({ wood: { size: 'pole', length, shape: 'round', axis } });
+/** Une demi-bille du gros bois (55 cm fendu en deux), de cette longueur, dans ce sens : écorce en bas, face plane en l'air. */
+export const halfLog = (axis: 'ew' | 'ns', length: number): Ref => ({ wood: { size: 'big', length, shape: 'half', axis } });
+
+/**
+ * Les meubles : dans la salle, l'atelier et la chambre de la mère ; deux sacs au cagibi. Le reste se pose sur la carte (Tiled).
+ * L'établi de la mère est un meuble de nos pièces, comme un bâtiment (retouche de Grégoire) : un établi paysan, une demi-bille de 2 m,
+ * face plane en haut, sur quatre pieds en perche de 60 cm emmanchés dans ses trous (le tenon et mortaise : la tête du pied sous la
+ * pièce couchée) ; son plateau à un peu moins d'un mètre.
+ */
+export function furnitureSteps(): Step[] {
+  const S: Step[] = [];
   const piece = (name: string, prop: string, x: number, y: number, w: number, d: number, more: Partial<PieceStep> = {}) =>
     S.push({ kind: 'piece', name, ref: { prop }, x, y, w, d, z: 0, ...more });
-  piece('foyer', 'hearth', 600, 280, 100, 100);
-  piece('table', 'table', 540, 20, 210, 90, { at: [540, 30] });
-  piece('banc', 'bench', 540, 120, 200, 30);
+  // la table et le banc sous la fenêtre du nord (l'âtre de la cheminée, contre le mur nord de la salle, se pose avec elle, à la fin ;
+  // le foyer central n'est plus)
+  piece('table', 'table', 380, 20, 210, 90, { at: [380, 30] });
+  piece('banc', 'bench', 380, 120, 200, 30);
   piece('jarre', 'jar', 880, 20, 45, 45, { at: [880, 30] });
   piece('sac 1', 'sack', 40, 40, 50, 40, { at: [30, 30] });
   piece('sac 2', 'sack', 80, 40, 50, 40, { at: [80, 30] });
   piece('lit', 'bed', 980, 40, 150, 200, { at: [980, 30] });
   piece('coffre', 'chest', 1160, 40, 90, 50, { at: [1160, 30] });
-  piece('établi', 'workbench', 1180, 240, 70, 320, { view: 1 });
+  const legs: [number, number][] = [
+    [1180, 300],
+    [1220, 300],
+    [1180, 440],
+    [1220, 440],
+  ];
+  for (const [i, [x, y]] of legs.entries()) S.push({ kind: 'piece', name: `pied d'établi ${i + 1}`, ref: pole('up', 60), x, y, w: 25, d: 25, z: 0 });
+  S.push({ kind: 'piece', name: "plateau d'établi", ref: halfLog('ns', 200), x: 1180, y: 280, w: 65, d: 200, z: 60 });
+  for (let i = 1; i <= 4; i++) S.push({ kind: 'joint', type: 'mortise', a: `pied d'établi ${i}`, b: "plateau d'établi" });
   return S;
 }

@@ -684,7 +684,7 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
       |  RÉSERVE       |        table (est-ouest)           | DE LA MÈRE         |
       |  billot, outils|        ============  banc          |  lit       coffre  [F]
  y=160P  corde, sacs   P                                    P                    P
-      |  bûches        [p]                                  |                    |
+      |  bûches        [b]                                  |                    |
       |                |   fagot  ( foyer Ø 1 m )   mère    |  établi de         |
  y=320P-------P--------P                                    [p] sculptrice       P
       |  COIN DE       [p]           SALLE COMMUNE          |                    |
@@ -693,7 +693,7 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
       |                |                                    |                    |
  y=640P---[F]--P-------P---[F]--P--[porte]-P--------P--[F]--P--------P--------P--------P
       P : poteau (20 × 20) ; [F] : fenêtre à volet (60 × 40, appui à 80 cm) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
-      [p] : porte intérieure 0,80 × 1,80 m ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
+      [p] : porte intérieure 0,80 × 1,80 m ; [b] : la baie sans porte du cagibi (0,85 m, sous un linteau) ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
 ```
 
 - **Emprise** : axes des poteaux **12,80 × 6,40 m** (8 travées de 1,60 m sur 4) ; avec le solin, environ **13,30 × 6,90 m** au sol ;
@@ -708,11 +708,14 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
     est-ouest) près du mur nord et **un banc** au sud de la table ; **la place du fagot** à l'ouest du foyer ; **la place de la mère**,
     assise sur le banc, tournée vers le feu ; **la porte d'entrée au sud** (travée x 480–640) ; deux fenêtres au sud, une au nord ;
   - **le cagibi, la réserve** (nord-ouest, 3,20 × 3,20 m ; placement de Grégoire) : les outils (le billot et la cognée plantée, la
-    hachette, la masse, les coins, la doloire), la corde, les sacs, les bûches ; sa porte vers la salle ; une fenêtre au nord ;
+    hachette, la masse, les coins, la doloire), la corde, les sacs, les bûches (un vrai tas de neuf quartiers d'un mètre, calculé, qui
+    compte ses pièces : un point `Pile` de Tiled ; l'ancien tas dessiné d'un bloc n'existe plus, retouche de Grégoire du 3 novembre 2026) ; sa porte vers la salle ; une fenêtre au nord ;
   - **le coin de Xéros** (sud-ouest, 3,20 × 3,20 m) : sa paillasse le long du mur ouest, de la place autour ; sa porte vers la salle ;
     une fenêtre au sud ;
   - **l'atelier et la chambre de la mère** (est, 3,20 × 6,40 m, 20 m² ; placement de Grégoire) : son lit et son coffre au nord, son
-    **établi de sculptrice** au sud (la mère sculpte) ; sa porte vers la salle ; une fenêtre à l'est et une au nord, pour la lumière
+    **établi de sculptrice** au sud (la mère sculpte : un établi paysan fait de nos pièces, comme un bâtiment, retouche de Grégoire du
+    3 novembre 2026 : une demi-bille du gros de 2 m, face plane en haut, sur quatre pieds en perche de 60 cm debout, emmanchés dans ses
+    trous, un tenon et mortaise par pied ; le plateau à un peu moins d'un mètre ; l'établi dessiné d'un bloc ne sert plus à la maison) ; sa porte vers la salle ; une fenêtre à l'est et une au nord, pour la lumière
     de l'établi.
 - **La place pour vivre** : les passages font au moins 1 m ; la salle garde un grand espace libre autour du foyer, la réserve de quoi
   poser des tas.
@@ -722,6 +725,18 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
   - la table est contre le solin nord (y 30–120), le banc juste dessous (y 125–155) : 1,15 m de passage jusqu'au foyer ;
   - (essai d'avant le placement de Grégoire : la chambre au nord-ouest, la réserve à l'est ; l'étape 2 suit le placement ci-dessus) ;
   - les portes s'ouvrent vers le dedans, chaque porte intérieure vers la pièce qu'elle ferme ;
+  - **la cheminée de pierre** (retouche de Grégoire, 3 novembre 2026) remplace le foyer central : adossée au mur nord de la salle
+    (x 680 à 880 cm), l'âtre (`stone-hearth`, 2 × 0,8 × 1,2 m, ouverture de 1,40 m, le feu et sa lueur), le manteau (une poutre de
+    2,20 m), la hotte (`chimney-hood`), le conduit en six tronçons d'assises de pierre et de mortier (`chimney-flue`, jusqu'à 8,50 m),
+    le couronnement d'où sort la fumée (`chimney-cap`), par le pan nord percé (`thatch-roof-pierced`) ; le pignon ouest n'a plus de
+    trou de fumée ; la table et le banc passent sous la fenêtre du nord, la place du fagot à l'ouest de l'âtre ;
+  - **le toit, dehors** (retouche de Grégoire, 3 novembre 2026) : il ne s'efface plus quand Xéros approche ; on n'est dedans que dans
+    l'intérieur. Devant une fenêtre au volet ouvert, dehors, on voit l'intérieur de cette pièce-là seulement : le toit s'y ouvre (avec
+    ce qui passe au-dessus d'elle), son mur sud coupé comme dans la vue intérieure, le reste de la maison garde son toit
+    (`world/roofView.ts`) ; on y voit le sol de la carte et les meubles du plan, pas ce que la carte pose dedans (la mère, la paillasse) ;
+  - **le cagibi n'a pas de porte** (retouche de Grégoire, 3 novembre 2026) : une baie de 0,85 m, comme une baie où l'on n'a jamais mis
+    de porte, entre deux jambages de 25 cm (ceux de la porte d'entrée), sous un linteau (une poutre de 1,20 m contre la face du cagibi,
+    sa base à 1,90 m : l'intérieur y voit un passage entre deux pièces, le cagibi reste une pièce à lui) ;
   - **à 45°, le faîte du chaume est à 6,58 m** (7,19 m à 50°) ; avec l'appui à 80 cm, les trois fenêtres du sud et la porte se lisent
     sous l'égout ; vue de l'ouest, le pignon entier et son trou de fumée sous la rive ; les entraits retroussés sur les deux fermes
     des cloisons ;

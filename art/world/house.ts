@@ -183,20 +183,6 @@ function cottage(): Canvas {
   return c;
 }
 
-/** Tas de bûches fendues, à adosser contre la cheminée. */
-function woodpile(): Canvas {
-  const c = new Canvas(48, 32);
-  const logs: [number, number][] = [[8, 24], [17, 24], [26, 24], [35, 24], [12, 17], [21, 17], [30, 17], [17, 10], [26, 10]];
-  for (const [x, y] of logs) {
-    c.ellipse(x, y, 5, 4.4, 'N');
-    c.ellipse(x - 0.5, y - 0.3, 3.8, 3.3, 'M');
-    c.ellipse(x - 0.5, y - 0.3, 1.6, 1.4, 'm');
-  }
-  c.outline('o');
-  for (let x = 2; x < 44; x++) if (c.get(x, 30) === '.') c.set(x, 30, 'x');
-  return c;
-}
-
 // ---------- Billot ----------
 // Une bille de chêne debout, à côté du tas de bois : on y fend les bûches. Image 32x32, silhouette en x 11 à 21, y 14 à
 // 28 (bas de la silhouette au sol, à son bord sud, en y=28, comme avant la reprise : rien ne bouge sur la carte).
@@ -346,7 +332,6 @@ const smokePalette = { a: '#d9d2c6' };
 
 export default [
   { kind: 'image', name: 'cottage', palette: world, grid: cottage().toGrid() },
-  { kind: 'image', name: 'woodpile', palette: world, grid: woodpile().toGrid() },
   { kind: 'image', name: 'chopping-block', palette: world, grid: choppingBlock().toGrid() },
   { kind: 'image', name: 'chopping-block-rope', palette: world, grid: choppingBlockRope().toGrid() },
   { kind: 'image', name: 'chopping-block-axe', palette: toolPalette, grid: choppingBlockAxe().toGrid() },

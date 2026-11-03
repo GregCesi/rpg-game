@@ -331,28 +331,6 @@
       ]
     },
     {
-      "id": 105,
-      "name": "woodpile",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        },
-        {
-          "name": "inside",
-          "type": "bool",
-          "value": false
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
       "id": 106,
       "name": "fireplace",
       "type": "class",
@@ -2580,6 +2558,116 @@
     {
       "id": 253,
       "name": "bench",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 254,
+      "name": "thatch-roof-pierced",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 255,
+      "name": "stone-hearth",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 256,
+      "name": "chimney-hood",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 257,
+      "name": "chimney-flue",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 258,
+      "name": "chimney-cap",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,

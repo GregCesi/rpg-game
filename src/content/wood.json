@@ -43,7 +43,7 @@
       "looks": {
         "round": {"name": "perche", "gender": "f", "icon": "item-wood-pole-round", "held": "held-wood-pole-round",
           "section": {"shape": "round", "bark": "arc", "heart": "center", "rests": "bark"},
-          "ew": {"h": 6, "start": 4, "end": 4, "body": {"h": 3, "bottom": 1}}, "ns": {"w": 6, "extra": 2, "back": 0, "start": 4, "end": 5, "bottom": 2}},
+          "ew": {"h": 6, "start": 4, "end": 4, "body": {"h": 3, "bottom": 1}}, "ns": {"w": 6, "extra": 2, "back": 0, "start": 4, "end": 5, "bottom": 2}, "up": {"name": "poteau", "w": 5, "extra": 4, "start": 6, "end": 4, "lift": 0, "body": {"w": 2, "h": 2}}},
         "half": {"name": "palançon", "gender": "m", "icon": "item-wood-pole-half", "held": "held-wood-pole-half",
           "section": {"shape": "half", "bark": "arc", "heart": "face", "rests": "bark", "faces": "split"},
           "ew": {"h": 6, "start": 4, "end": 4, "body": {"h": 3, "bottom": 1}}, "ns": {"w": 6, "extra": 2, "back": 0, "start": 4, "end": 5, "bottom": 2}},

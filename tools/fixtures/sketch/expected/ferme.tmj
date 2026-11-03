@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 25,
+  "nextobjectid": 24,
   "properties": [
     {
       "name": "name",
@@ -115,18 +115,6 @@
           "rotation": 0,
           "visible": true,
           "name": "",
-          "type": "woodpile",
-          "x": 728,
-          "y": 128,
-          "width": 48,
-          "height": 32,
-          "gid": 1006
-        },
-        {
-          "id": 5,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
           "type": "big-tree",
           "x": 976,
           "y": 224,
@@ -135,7 +123,7 @@
           "gid": 1001
         },
         {
-          "id": 6,
+          "id": 5,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -147,7 +135,7 @@
           "gid": 1002
         },
         {
-          "id": 7,
+          "id": 6,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -159,7 +147,7 @@
           "gid": 1003
         },
         {
-          "id": 8,
+          "id": 7,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -171,7 +159,7 @@
           "gid": 1001
         },
         {
-          "id": 9,
+          "id": 8,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -183,7 +171,7 @@
           "gid": 1004
         },
         {
-          "id": 10,
+          "id": 9,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -195,7 +183,7 @@
           "gid": 1005
         },
         {
-          "id": 11,
+          "id": 10,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -207,7 +195,7 @@
           "gid": 1003
         },
         {
-          "id": 12,
+          "id": 11,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -219,7 +207,7 @@
           "gid": 1001
         },
         {
-          "id": 13,
+          "id": 12,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -231,7 +219,7 @@
           "gid": 1003
         },
         {
-          "id": 14,
+          "id": 13,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -243,7 +231,7 @@
           "gid": 1001
         },
         {
-          "id": 15,
+          "id": 14,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -255,7 +243,7 @@
           "gid": 1001
         },
         {
-          "id": 16,
+          "id": 15,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -267,7 +255,7 @@
           "gid": 1002
         },
         {
-          "id": 17,
+          "id": 16,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -279,7 +267,7 @@
           "gid": 1001
         },
         {
-          "id": 18,
+          "id": 17,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -291,7 +279,7 @@
           "gid": 1001
         },
         {
-          "id": 19,
+          "id": 18,
           "rotation": 0,
           "visible": true,
           "name": "",
@@ -315,7 +303,7 @@
       "y": 0,
       "objects": [
         {
-          "id": 20,
+          "id": 19,
           "rotation": 0,
           "visible": true,
           "name": "default",
@@ -327,7 +315,7 @@
           "height": 0
         },
         {
-          "id": 21,
+          "id": 20,
           "rotation": 0,
           "visible": true,
           "name": "porte",
@@ -347,7 +335,7 @@
           ]
         },
         {
-          "id": 22,
+          "id": 21,
           "rotation": 0,
           "visible": true,
           "name": "jardin",
@@ -367,7 +355,7 @@
           ]
         },
         {
-          "id": 23,
+          "id": 22,
           "rotation": 0,
           "visible": true,
           "name": "vers maison",
@@ -396,7 +384,7 @@
           ]
         },
         {
-          "id": 24,
+          "id": 23,
           "rotation": 0,
           "visible": true,
           "name": "vers maison",

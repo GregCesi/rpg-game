@@ -1,0 +1,62 @@
+// Les toits vus du dehors (src/world/roofView.ts ; retouche de Grégoire, CONCEPTION « La maison de Xéros »), sans navigateur, sur le
+// plan de la maison de Xéros (src/content/plans/maison-xeros.json) :
+// - dehors, le toit de la maison ne s'efface pas, même sous l'avant-toit : on n'est dedans que dans son intérieur ;
+// - devant une fenêtre au volet ouvert, dehors, on voit la pièce de cette fenêtre, et elle seule ; pas devant un volet fermé, ni de loin ;
+// - le toit d'un abri ouvert s'efface quand Xéros est dessous, plus quand il approche.
+// Usage : npx tsx tools/test-roofs.ts (lancé par npm run test:fast).
+
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { BUILD, ROOF } from '../src/config';
+import type { BuildPlan } from '../src/content/types';
+import { planPieces, type BuildPiece } from '../src/world/build';
+import { buildingsOf } from '../src/world/interior';
+import { roofView } from '../src/world/roofView';
+
+const plan = JSON.parse(readFileSync('src/content/plans/maison-xeros.json', 'utf8')) as BuildPlan;
+const pieces: BuildPiece[] = planPieces(plan, { x: 0, y: 0, z: 0 }).map((p, i) => ({ ...p, id: i + 1 }));
+const isProp = (p: BuildPiece, k: RegExp) => 'prop' in p.piece && k.test(p.piece.prop);
+const roofIds = pieces.filter((p) => isProp(p, /^(thatch-roof|earth-ridge)/)).map((p) => p.id);
+assert.ok(roofIds.length >= 3, 'la maison a ses pans de chaume et son faîtage');
+
+let houses = buildingsOf(pieces);
+assert.equal(houses.length, 1, "un bâtiment où l'on entre");
+const house = houses[0];
+const r = house.room;
+
+// 1. sous l'avant-toit du sud, dehors, et au milieu du mur : le toit reste
+for (const [fx, fy, where] of [
+  [r.x + r.w / 2, r.y + r.d + 40, "sous l'avant-toit du sud"],
+  [r.x + 200, r.y - 30, 'contre le mur nord'],
+] as const) {
+  const v = roofView(pieces, houses, fx, fy);
+  assert.deepEqual([...v.faded], [], `${where} : le toit de la maison ne s'efface pas`);
+  assert.equal(v.reveal, undefined, `${where} : rien ne se découvre (volets fermés)`);
+}
+
+// 2. un volet du sud ouvert : devant sa fenêtre, dehors, on voit sa pièce, elle seule
+const south = house.windows.filter((w) => w.side === 'south');
+assert.ok(south.length >= 2, 'des fenêtres au sud');
+const win = south[0];
+const opened = pieces.map((p) => (p.id === win.id ? { ...p, piece: { prop: 'plank-shutter-open' } } : p));
+houses = buildingsOf(opened);
+const mid = (win.span[0] + win.span[1]) / 2;
+const front = roofView(opened, houses, mid, r.y + r.d + ROOF.wall + 60);
+assert.ok(front.reveal, 'devant la fenêtre ouverte, on voit la pièce');
+const room = front.reveal!.room;
+assert.ok(house.rooms.some((q) => q.x === room.x && q.y === room.y && q.w === room.w && q.d === room.d), 'une des pièces de la maison');
+assert.ok(mid >= room.x && mid <= room.x + room.w && room.y + room.d >= r.y + r.d - 2 * ROOF.wall, `la pièce de cette fenêtre, au sud (${JSON.stringify(room)})`);
+assert.ok(room.w < r.w, 'cette pièce-là seulement, pas toute la maison');
+assert.deepEqual([...front.faded], [], 'le toit ne s’efface pas : il s’ouvre au-dessus de la pièce');
+// de loin, ou devant une autre fenêtre (fermée) : rien
+assert.equal(roofView(opened, houses, mid, r.y + r.d + ROOF.wall + ROOF.window.front + 50).reveal, undefined, 'de loin : rien');
+const other = south[1];
+assert.equal(roofView(opened, houses, (other.span[0] + other.span[1]) / 2, r.y + r.d + ROOF.wall + 60).reveal, undefined, 'devant un volet fermé : rien');
+
+// 3. un abri ouvert (un pan de toit de planches seul, en hauteur, sans murs) : il s'efface quand Xéros est dessous, pas à côté
+const shed = { id: 999, piece: { prop: 'plank-roof' }, x: 5000, y: 5000, z: BUILD.head + 20 } as BuildPiece;
+const alone = [shed];
+assert.deepEqual([...roofView(alone, [], 5020, 5020).faded], [999], "sous l'abri : son toit s'efface");
+assert.deepEqual([...roofView(alone, [], 4990, 5020).faded], [], "à côté de l'abri : il ne s'efface plus quand Xéros approche");
+
+console.log("✓ toits : la maison garde son toit dehors ; devant une fenêtre ouverte, on voit sa pièce seulement ; l'abri ouvert s'efface dessous");

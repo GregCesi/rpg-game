@@ -51,7 +51,7 @@ export const families: Family[] = [
   },
   { title: 'Jauge et chiffres (herbe)', ground: 'grass', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },
   { title: 'Jauge et chiffres (plancher)', ground: 'floor', keys: ['ui-gauge', ...Array.from({ length: 10 }, (_, n) => `ui-digit-${n}`)], allFrames: ['ui-gauge'] },
-  { title: 'Mobilier et ferme', ground: 'grass', keys: ['barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'woodpile', 'chopping-block', 'chopping-block-axe'] },
+  { title: 'Mobilier et ferme', ground: 'grass', keys: ['barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'well', 'chopping-block', 'chopping-block-axe'] },
   {
     title: 'Implantation',
     ground: 'grass',

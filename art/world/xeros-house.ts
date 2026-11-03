@@ -13,7 +13,7 @@
 // - Le remplissage d'une travée (140 × 15 × 180 cm entre deux poteaux, sur la traverse basse, sous la sablière) en quatre
 //   étapes : `staves-` (les palançons fendus, tous les 30 cm environ), `wattle-` (le clayonnage de noisetier tressé), `daub-`
 //   (le torchis en mottes, ses brins de paille), `lime-` (la chaux, la terre rejaillie au pied) ; plein (`-panel`) ou à fenêtre
-//   (`-window-panel` : l'appui à 20 cm du bas de la travée, soit 80 cm du sol, la baie de 50 × 40 cm entre deux montants, le
+//   (`-window-panel` : l'appui à 30 cm du bas de la travée, soit 1 m du sol, la baie de 50 × 40 cm entre deux montants, le
 //   linteau ; le volet `plank-shutter` s'y pose). Face : 28 × 39 px ; de chant : 4 × 64 px.
 // - Les jambages d'une porte (le reste de la travée, de chaque côté de la porte, sa propre pièce) : `-jamb` (porte d'entrée,
 //   25 cm : 10 de remplissage et l'huisserie de 15) et `-inner-jamb` (porte intérieure, 30 cm : 15 et 15), l'huisserie du côté de
@@ -26,6 +26,8 @@
 // - Le pan de toit, sur 13,80 m (12,80 + deux débords de 50 cm) : `thatch-roof-frame` (chevrons en perches avec leur écorce tous
 //   les 40 cm, croisés au faîte ; lattes tous les 30 cm), `thatch-roof-half` (une couche de chaume, le bas du pan), `thatch-roof`
 //   (le chaume plein, 40 cm, ses rives) ; `earth-ridge`, le faîtage de terre où l'herbe prend.
+//   `thatch-roof-pierced` : le chaume plein du pan nord, percé pour le conduit de la cheminée (art/world/chimney.ts), son solin de
+//   mortier de chaux.
 // - Le solin des cloisons (`narrow-sill-wall`) : le morceau de solin brut à 30 cm d'épaisseur (3 rangées de dessus).
 // - Le foyer (`hearth`), le seuil (`threshold-stone`), le banc (`bench`).
 
@@ -34,7 +36,7 @@ import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { stonePalette } from '../items/stones';
 import { gameImage, walls } from '../lib/walls';
 import {
-  box, crop, daub, doorTex, earthRidge, gableTex, hash, lath, mirror, part, polyPrism, pole, prism, renderPiece, rotQuads, slabTex, stick, thatchEave,
+  box, crop, daub, doorTex, earthRidge, gableTex, hash, lath, mirror, part, polyPrism, pole, prism, renderPiece, rotP, rotQuads, rotRect, slabTex, stick, thatchEave,
   thatchSlope, timber, unit, voidTex, wattle, withGroundShadow, type Quad, type Rot, type Tex, type V3,
 } from '../lib/volumes';
 
@@ -91,8 +93,11 @@ const plainPanel = (stage: Stage, seed: number) => (): Quad[] => {
   return Q;
 };
 
-/** La fenêtre : appui à 20 cm du bas de la travée (80 cm du sol), baie de 50 × 40 cm entre deux montants, linteau. */
-const SILL = 4;
+/**
+ * La fenêtre : le dessus de l'appui à 30 cm du bas de la travée, soit 1 m du sol (la travée sur la traverse basse, à 70 cm), baie de
+ * 50 × 40 cm entre deux montants (1,00 à 1,40 m), linteau.
+ */
+const SILL = 6;
 const WIN_H = 8;
 const windowPanel = (stage: Stage, seed: number) => (view: number): Quad[] => {
   const Q: Quad[] = [], m = BAY_W / 2, T = timberPart('fenêtre');
@@ -251,6 +256,45 @@ const roof = (stage: RoofStage) => (): Quad[] => {
   return Q;
 };
 
+/**
+ * Le conduit de la cheminée dans le repère du pan (px ; le pan sud, avant sa vue), quand le pan percé sert de pan nord (vue r2) :
+ * le conduit est en x 740 à 840 cm et y 20 à 70 cm dans le repère de la maison (là où l'aimant du mode construction le pose) (tools/lib/maison-xeros.ts), le pan nord posé à
+ * x = −40 cm ; tourné d'un demi-tour autour du faîte, le point (x, y) de la maison est (268 − x, 128 − y) dans le pan, en px.
+ * Le haut : celui du couronnement (8,60 m).
+ */
+const FLUE = { x0: 100, x1: 120, y0: 114, y1: 124, z1: 172 };
+
+/**
+ * Le pan de chaume percé (`thatch-roof-pierced`) : le chaume plein, percé au droit du conduit, bordé d'un solin de mortier de chaux
+ * (d au nord et à l'ouest, D au sud et à l'est). Le pan est dessiné d'une pièce par-dessus le conduit (le jeu l'ordonne par son bord
+ * sud) : tout ce que le conduit cache, dans la vue, est vide (le trou, et derrière lui la bande qu'il couvre jusqu'au faîte), pour
+ * que le conduit posé derrière se voie au-dessus du chaume. Vu du sud (r2, le pan nord à 45° vu par la tranche), rien ne change.
+ */
+const piercedRoof = (view: number): Quad[] => {
+  const r = VIEW_ROT[view];
+  const [fx0, fx1, fy0, fy1] = rotRect([FLUE.x0, FLUE.x1, FLUE.y0, FLUE.y1], r, [0, 0]);
+  const E = 0.4;
+  // un point de la vue est caché par le conduit s'il a, au même pixel de l'écran (x, y − z), un point du conduit devant lui (plus au sud)
+  const hidden = (p: V3) => {
+    if (p[0] <= fx0 - E || p[0] >= fx1 + E) return false;
+    const y = Math.max(fy0 - E, p[1]);
+    return y <= fy1 + E && y - p[1] + p[2] <= FLUE.z1;
+  };
+  const back = ((4 - r) % 4) as Rot;
+  return roof('full')().map((q) => {
+    const tex: Tex = (s, t, c) => {
+      if (hidden(c.p)) return null;
+      const k = q.tex(s, t, c);
+      if (k === null || q.part.name !== 'chaume' || c.face !== 'slope') return k;
+      // le solin de mortier autour du conduit, sur le chaume
+      const [x, y] = rotP(c.p, back, [0, 0]);
+      if (x > FLUE.x0 - 2.1 && x < FLUE.x1 + 2.1 && y > FLUE.y0 - 2.1 && y < FLUE.y1 + 2.1) return x < FLUE.x0 + 0.5 || y < FLUE.y0 ? 'd' : 'D';
+      return k;
+    };
+    return { ...q, tex };
+  });
+};
+
 /** Le faîtage de terre : un bourrelet sur le faîte, ses pieds dans le chaume des deux pans, sur toute la longueur du toit. */
 const ridge = (): Quad[] => {
   const top = zU(-TH_HI * SIN) + TH_HI * COS;
@@ -401,6 +445,7 @@ const sources: (ImageSource | SpriteSheetSource)[] = [
   ...fourViews('thatch-roof-frame', roof('frame')),
   ...fourViews('thatch-roof-half', roof('half')),
   ...fourViews('thatch-roof', roof('full')),
+  ...fourViews('thatch-roof-pierced', piercedRoof),
   ...fourViews('earth-ridge', ridge).filter((_, v) => v < 2).map((s, v) => ({ ...s, name: v ? 'earth-ridge-ns' : 'earth-ridge' })),
   ...Array.from({ length: NARROW_SILL_VARIANTS }, (_, k) => [0, 1, 2, 3].map((v): ImageSource => ({ kind: 'image', name: `narrow-sill-wall${k ? `-s${k}` : ''}${suffix(v)}`, palette: PAL, grid: narrowSill(k, v) }))).flat(),
   { kind: 'spritesheet', name: 'hearth', frameW: HEARTH_W, frameH: HEARTH_H, palette: PAL, animations: { burn: { frames: [0, 1, 2].map((f) => pad(hearth(f), HEARTH_W, HEARTH_H)), frameRate: 7, repeat: -1 } } },

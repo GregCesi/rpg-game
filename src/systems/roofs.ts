@@ -1,8 +1,12 @@
-import { ROOF, XEROS_HEIGHT } from '../config';
+import Phaser from 'phaser';
+import { INTERIOR, ROOF, XEROS_HEIGHT } from '../config';
 import type { Player } from '../entities/Player';
 import { CM_PER_PX } from '../content/gabarit';
-import { overHead, withAbove } from '../world/build';
-import type { GameMap, PlacedProp } from '../world/GameMap';
+import { boxOf } from '../world/build';
+import type { GameMap, PlacedBuild, PlacedProp } from '../world/GameMap';
+import { props } from '../content';
+import type { Building, Rect } from '../world/interior';
+import { roofView } from '../world/roofView';
 
 /** Hauteur de Xéros à l'écran au-dessus de ses pieds (px) : sa tête (`XEROS_HEIGHT`). */
 const HEAD = XEROS_HEIGHT / CM_PER_PX;
@@ -14,11 +18,22 @@ const HEAD = XEROS_HEIGHT / CM_PER_PX;
  * dès qu'il en sort, il redevient opaque. Son ombre portée (`shadow`, posée par GameMap) suit son opacité. Le fondu prend ROOF.fadeMs.
  */
 export class Roofs {
-  constructor(private readonly map: GameMap) {}
+  /** Le trou du toit au-dessus de la pièce qu'on voit par sa fenêtre ouverte (un masque inversé), et la pièce qu'il découvre. */
+  private hole?: { g: Phaser.GameObjects.Graphics; mask: Phaser.Display.Masks.GeometryMask; key: string };
+  /** Les pièces posées que le trou masque en ce moment. */
+  private masked: PlacedBuild[] = [];
 
-  /** À appeler à chaque image, dans tous les modes (le toit suit Xéros même pendant un geste ou un dialogue). */
-  update(player: Player, delta: number, builds = true): void {
-    this.builds(player, delta, builds);
+  constructor(
+    private readonly map: GameMap,
+    private readonly scene?: Phaser.Scene,
+  ) {}
+
+  /**
+   * À appeler à chaque image, dans tous les modes (le toit suit Xéros même pendant un geste ou un dialogue). `buildings` : les bâtiments
+   * où l'on entre de la carte du dehors (leur toit ne s'efface pas ; leurs fenêtres ouvertes montrent leur pièce).
+   */
+  update(player: Player, delta: number, builds = true, buildings: readonly Building[] = []): void {
+    this.builds(player, delta, builds, buildings);
     const roofs = this.map.props.filter((p) => p.def.roof);
     if (!roofs.length) return;
     const { x, y } = player.actor;
@@ -39,17 +54,19 @@ export class Roofs {
   }
 
   /**
-   * Les pièces posées en mode construction : celles dont la base est au-dessus de la tête de Xéros (BUILD.head) et dont l'emprise au
-   * sol couvre ses pieds (à une demi-case près : il est caché un peu avant d'être dessous) s'effacent, avec tout ce qui repose dessus ;
-   * les autres redeviennent opaques. Même fondu que les toits. `on` faux (le mode construction) : rien ne s'efface.
+   * Les pièces posées en mode construction (src/world/roofView.ts) : dehors, le toit d'un bâtiment où l'on entre ne s'efface pas ; celui
+   * d'un abri ouvert s'efface quand Xéros est dessous, avec tout ce qui repose dessus ; devant une fenêtre au volet ouvert, le toit de
+   * la maison s'ouvre au-dessus de cette pièce seulement. Même fondu que les toits. `on` faux (le mode construction, un intérieur) : rien
+   * ne s'efface.
    */
-  private builds(player: Player, delta: number, on: boolean): void {
+  private builds(player: Player, delta: number, on: boolean, buildings: readonly Building[]): void {
     if (!this.map.builds.length) return;
     const pieces = this.map.builds.map((b) => b.piece);
     const fx = player.actor.x * CM_PER_PX;
     const fy = player.actor.y * CM_PER_PX;
-    const faded = new Set<number>();
-    if (on) for (const p of pieces) if (overHead(p, fx, fy, 80)) for (const q of withAbove(pieces, p.id)) faded.add(q.id);
+    const view = on ? roofView(pieces, buildings, fx, fy) : { faded: new Set<number>() };
+    const faded = view.faded;
+    this.reveal(view.reveal);
     const step = ((1 - ROOF.alpha) * delta) / ROOF.fadeMs;
     for (const b of this.map.builds) {
       const target = faded.has(b.piece.id) ? ROOF.alpha : 1;
@@ -57,6 +74,56 @@ export class Roofs {
       if (a !== target) b.image.setAlpha(a < target ? Math.min(target, a + step) : Math.max(target, a - step));
     }
   }
+
+  /** La pièce qu'on voit par sa fenêtre ouverte (ou plus rien) : le toit de son bâtiment s'ouvre au-dessus d'elle, le reste le garde. */
+  private reveal(r: { room: Rect; building: Building } | undefined): void {
+    const key = r ? `${r.room.x},${r.room.y},${r.room.w},${r.room.d}` : '';
+    if ((this.hole?.key ?? '') === key || !this.scene) return;
+    const roofs = this.map.builds.filter((b) => 'prop' in b.piece.piece && props[b.piece.piece.prop]?.roof);
+    for (const b of this.masked) b.image.clearMask();
+    this.masked = [];
+    if (!r) {
+      if (this.hole) this.hole.key = '';
+      return;
+    }
+    this.hole ??= (() => {
+      const g = this.scene!.make.graphics({}, false);
+      const mask = g.createGeometryMask().setInvertAlpha(true);
+      return { g, mask, key: '' };
+    })();
+    const h = holeOf(r.room);
+    this.hole.g.clear().fillStyle(0xffffff).fillRect(h.x, h.y, h.w, h.h);
+    this.hole.key = key;
+    const room = r.building.room;
+    const inside = (b: (typeof roofs)[number]) => {
+      const box = boxOf(b.piece);
+      return box.x < room.x + room.w + ROOF.wall && box.x + box.w > room.x - ROOF.wall && box.y < room.y + room.d + ROOF.wall && box.y + box.d > room.y - ROOF.wall;
+    };
+    // le toit du bâtiment, et le mur sud de la pièce (vu de trois quarts, il en cacherait le sol) : coupé dans le trou, comme dans la vue
+    // intérieure ; sa base reste, sous le bord du trou
+    const q = r.room;
+    const south = this.map.builds.filter((b) => {
+      const box = boxOf(b.piece);
+      return box.z < INTERIOR.headroom && box.z + box.h > INTERIOR.floor && box.y >= q.y + q.d - ROOF.wall && box.y < q.y + q.d + ROOF.wall && box.x < q.x + q.w && box.x + box.w > q.x;
+    });
+    // et ce qui passe au-dessus de la pièce (faîtière, entraits, pignons), comme la vue intérieure le cache
+    const above = this.map.builds.filter((b) => {
+      const box = boxOf(b.piece);
+      return box.z >= INTERIOR.headroom && box.x < q.x + q.w + ROOF.wall && box.x + box.w > q.x - ROOF.wall && box.y < q.y + q.d + ROOF.wall && box.y + box.d > q.y - ROOF.wall;
+    });
+    this.masked = [...new Set([...roofs.filter(inside), ...south, ...above])];
+    for (const b of this.masked) b.image.setMask(this.hole.mask);
+  }
+
+  /** La pièce découverte en ce moment (pour les tests de scénario), ou rien. */
+  get revealed(): string | undefined {
+    return this.hole?.key || undefined;
+  }
+}
+
+/** La pièce découverte par sa fenêtre ouverte : un trou dans le toit de son bâtiment, du haut de ses murs au sol (px). */
+function holeOf(room: Rect): { x: number; y: number; w: number; h: number } {
+  return { x: room.x / CM_PER_PX, y: (room.y - ROOF.reveal) / CM_PER_PX, w: room.w / CM_PER_PX, h: (room.d + ROOF.reveal) / CM_PER_PX };
 }
 
 /** Les images des deux pièces se recouvrent. */
