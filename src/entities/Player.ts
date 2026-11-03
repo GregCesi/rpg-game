@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { PLAYER } from '../config';
+import { AIM, PLAYER } from '../config';
+import { aimProbe, facingToward, type Point } from '../world/aim';
 import { SPEEDS } from '../systems/speeds';
 import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
@@ -35,6 +36,11 @@ export class Player {
    */
   from?: { x: number; y: number };
   private feet?: { x: number; y: number };
+  /**
+   * Le point du monde sous le curseur, posé par la scène à chaque image (src/world/aim.ts) ; undefined sans souris (au clavier seul, il
+   * vise devant lui) ou quand le curseur ne compte pas (le mode construction).
+   */
+  cursor?: Point;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.actor = new Actor(scene, x, y, PLAYER.skin);
@@ -63,6 +69,8 @@ export class Player {
     }
     const { dir, running } = this.input.read();
     this.dir = dir;
+    // à l'arrêt, il se tourne vers le curseur ; en marchant, il regarde où il va (Actor.move)
+    if (dir.lengthSq() === 0) this.faceCursor();
     this.actor.stance = this.pushing ? 'push' : this.hold.stance;
     // au-delà de ce qu'il porte sans peine, il ne court pas et marche de moins en moins vite (Strength) ; la marche
     // portée garde sa cadence de dessin, accélérée ou ralentie d'autant (sans dépasser une foulée vive).
@@ -78,9 +86,25 @@ export class Player {
     }
   }
 
-  /** Point au sol juste devant Xéros, là où il "regarde". */
+  /** Le point d'où Xéros regarde : un peu au-dessus de ses pieds. */
+  get eye(): Point {
+    return { x: this.actor.x, y: this.actor.y - 6 };
+  }
+
+  /**
+   * Le point qu'il vise (src/world/aim.ts) : sous le curseur s'il est à portée (`AIM.reach`), sinon à `distance` px dans la direction du
+   * curseur ; sans curseur, à `distance` px devant lui.
+   */
   probe(distance: number): Phaser.Math.Vector2 {
-    const d = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[this.actor.facing];
-    return new Phaser.Math.Vector2(this.actor.x + d[0] * distance, this.actor.y - 6 + d[1] * distance);
+    const p = aimProbe(this.eye, this.cursor, this.actor.facing, AIM.reach, distance);
+    return new Phaser.Math.Vector2(p.x, p.y);
+  }
+
+  /** Se tourner vers le curseur, dans la plus proche de ses directions de dessin (à l'arrêt, et au moment de toute action). */
+  faceCursor(): void {
+    const c = this.cursor;
+    if (!c) return;
+    const f = facingToward(c.x - this.eye.x, c.y - this.eye.y, this.actor.facing);
+    if (f !== this.actor.facing) this.actor.face(f);
   }
 }

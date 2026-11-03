@@ -358,6 +358,8 @@ export class WorldScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
     this.autosave.update();
+    // le curseur oriente Xéros et dit ce qu'il vise (src/world/aim.ts) ; pas en mode construction, où la souris pose les pièces
+    this.player.cursor = this.mode === 'build' ? undefined : this.player.input.cursor(this.cameras.main);
     this.player.update(this.mode === 'play');
     // courir et porter puisent dans l'endurance
     this.effort.update(this.player, delta, this.mode === 'play');

@@ -50,6 +50,13 @@ export const DEPTH = {
 export const INTERACT = { reach: 16, radius: 20 };
 
 /**
+ * La visée à la souris (src/world/aim.ts) : ce qui est sous le curseur est visé s'il est à moins de `reach` px du point d'où Xéros
+ * regarde ; plus loin, il vise dans la direction du curseur, à `INTERACT.reach` px. Le fantôme de pose suit le curseur sans sortir de
+ * `reach` px.
+ */
+export const AIM = { reach: 32 };
+
+/**
  * La transformation « magique » des outils de test (?dieu, systems/transform.ts) : ce qui entre se cherche dans les mains, puis au
  * sol à moins de `near` px des pieds de Xéros (le plus près du point qu'il regarde d'abord).
  */

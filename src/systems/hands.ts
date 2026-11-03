@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
-import { INTERACT, PUT_DOWN } from '../config';
+import { AIM, INTERACT, PUT_DOWN } from '../config';
+import { clampTo } from '../world/aim';
 import { items, piles, props } from '../content';
 import { crosswise, viewCount } from '../content/views';
 import type { Facing, WoodPiece } from '../content/types';
@@ -530,12 +531,16 @@ export class HandsSystem {
    */
   private layFront(player: Player, what: Held): [number, number] {
     const b = player.actor.body;
+    // à la souris, le fantôme suit le curseur, sans sortir de la portée de Xéros (AIM.reach) : l'objet centré sur le point visé
+    const c = player.cursor && clampTo(player.eye, player.cursor, AIM.reach);
     if ('item' in what) {
       const { w, h } = this.itemSize(what);
+      if (c) return [Math.round(c.x), Math.round(c.y + h / 2)];
       const [l, t] = frontCorner(b, player.actor.facing, w, h);
       return [Math.round(l + w / 2), Math.round(t + h)];
     }
     const { f, h } = this.footprint(what);
+    if (c) return [Math.round(c.x - (f.left + f.right) / 2), Math.round(c.y + h - (f.top + f.bottom) / 2)];
     const [l, t] = frontCorner(b, player.actor.facing, f.right - f.left, f.bottom - f.top);
     return [Math.round(l - f.left), Math.round(t - f.top + h)];
   }
