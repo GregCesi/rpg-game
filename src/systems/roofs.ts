@@ -3,10 +3,10 @@ import { INTERIOR, ROOF, XEROS_HEIGHT } from '../config';
 import type { Player } from '../entities/Player';
 import { CM_PER_PX } from '../content/gabarit';
 import { boxOf } from '../world/build';
-import type { GameMap, PlacedBuild, PlacedProp } from '../world/GameMap';
+import { setGlowCover, type GameMap, type PlacedBuild, type PlacedProp } from '../world/GameMap';
 import { props } from '../content';
 import type { Building, Rect } from '../world/interior';
-import { roofView } from '../world/roofView';
+import { lightCovers, lightShown, roofView } from '../world/roofView';
 
 /** Hauteur de Xéros à l'écran au-dessus de ses pieds (px) : sa tête (`XEROS_HEIGHT`). */
 const HEAD = XEROS_HEIGHT / CM_PER_PX;
@@ -19,7 +19,9 @@ const HEAD = XEROS_HEIGHT / CM_PER_PX;
  */
 export class Roofs {
   /** Le trou du toit au-dessus de la pièce qu'on voit par sa fenêtre ouverte (un masque inversé), et la pièce qu'il découvre. */
-  private hole?: { g: Phaser.GameObjects.Graphics; mask: Phaser.Display.Masks.GeometryMask; key: string };
+  private hole?: { g: Phaser.GameObjects.Graphics; mask: Phaser.Display.Masks.GeometryMask; inner: Phaser.Display.Masks.GeometryMask; key: string; room?: Rect };
+  /** Les lueurs des pièces posées et les toits qui les couvrent (`lightCovers`), recalculés quand les pièces changent. */
+  private covers?: { version: number; map: Map<number, number[]> };
   /** Les pièces posées que le trou masque en ce moment. */
   private masked: PlacedBuild[] = [];
 
@@ -51,6 +53,12 @@ export class Roofs {
       // son ombre portée s'efface avec lui
       p.shadow?.setAlpha(p.image.alpha);
     }
+    // la lueur d'un feu sous un toit posé depuis Tiled : cachée tant que le toit est opaque
+    for (const p of this.map.props) {
+      if (!p.glow) continue;
+      const over = roofs.filter((r) => p.glow!.x >= r.x && p.glow!.x <= r.x + r.image.width && p.glow!.y >= r.top && p.glow!.y <= r.y);
+      setGlowCover(p.glow, lightShown(over.map((r) => r.image.alpha)));
+    }
   }
 
   /**
@@ -73,6 +81,31 @@ export class Roofs {
       const a = b.image.alpha;
       if (a !== target) b.image.setAlpha(a < target ? Math.min(target, a + step) : Math.max(target, a - step));
     }
+    this.lights();
+  }
+
+  /**
+   * Les lueurs des pièces posées sous un toit (l'âtre de la maison) : ce qui est caché ne se voit pas, lumière comprise. Cachée sous le
+   * toit opaque ; revenue quand il s'efface ; dans le trou ouvert au-dessus de sa pièce par une fenêtre, elle se voit, mais seulement
+   * dans le trou.
+   */
+  private lights(): void {
+    if (this.covers?.version !== this.map.buildsVersion) this.covers = { version: this.map.buildsVersion, map: lightCovers(this.map.builds.map((b) => b.piece)) };
+    const byId = new Map(this.map.builds.map((b) => [b.piece.id, b]));
+    for (const b of this.map.builds) {
+      const glows = (b.parts ?? []).filter((p) => p.light).map((p) => p.obj as Phaser.GameObjects.Image);
+      if (!glows.length) continue;
+      const roofs = (this.covers.map.get(b.piece.id) ?? []).map((id) => byId.get(id)).filter((r): r is PlacedBuild => !!r);
+      const room = this.hole?.room;
+      const box = boxOf(b.piece);
+      const revealed = !!room && box.x < room.x + room.w && box.x + box.w > room.x && box.y < room.y + room.d && box.y + box.d > room.y;
+      const shown = revealed ? 1 : lightShown(roofs.map((r) => r.image.alpha));
+      for (const g of glows) {
+        setGlowCover(g, shown);
+        if (revealed && roofs.length) g.setMask(this.hole!.inner);
+        else g.clearMask();
+      }
+    }
   }
 
   /** La pièce qu'on voit par sa fenêtre ouverte (ou plus rien) : le toit de son bâtiment s'ouvre au-dessus d'elle, le reste le garde. */
@@ -83,14 +116,20 @@ export class Roofs {
     for (const b of this.masked) b.image.clearMask();
     this.masked = [];
     if (!r) {
-      if (this.hole) this.hole.key = '';
+      if (this.hole) {
+        this.hole.key = '';
+        this.hole.room = undefined;
+      }
       return;
     }
     this.hole ??= (() => {
       const g = this.scene!.make.graphics({}, false);
       const mask = g.createGeometryMask().setInvertAlpha(true);
-      return { g, mask, key: '' };
+      // la lueur d'un feu de la pièce découverte : seulement dans le trou
+      const inner = g.createGeometryMask();
+      return { g, mask, inner, key: '' };
     })();
+    this.hole.room = r.room;
     const h = holeOf(r.room);
     this.hole.g.clear().fillStyle(0xffffff).fillRect(h.x, h.y, h.w, h.h);
     this.hole.key = key;

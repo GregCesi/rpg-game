@@ -158,6 +158,8 @@ export interface PlacedProp {
   image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
   /** Ombre portée d'un toit (`shadow` de props.json), au sol ; elle suit l'opacité du toit. */
   shadow?: Phaser.GameObjects.Graphics;
+  /** La lueur de son feu (`light` de props.json) : cachée sous un toit opaque (systems/roofs.ts). */
+  glow?: Phaser.GameObjects.Image;
   /** Tout ce qui a été créé pour lui (image, collisions, fumées, lueurs) : détruit quand il change. */
   parts: Phaser.GameObjects.GameObject[];
   /** Dialogue propre à cet exemplaire (propriété `interact` dans Tiled). */
@@ -193,7 +195,43 @@ export interface PlacedBuild {
    * Ce que la pièce porte en plus de son image (ce que `anim`, `light`, `smoke` de props.json font d'un objet posé depuis Tiled) : la
    * lueur de l'âtre, la fumée du couronnement de la cheminée ; chacune à sa place dans l'image (`at`, px depuis son coin haut gauche).
    */
-  parts?: { obj: Phaser.GameObjects.Image | Phaser.GameObjects.Particles.ParticleEmitter; at: [number, number]; above?: boolean }[];
+  parts?: { obj: Phaser.GameObjects.Image | Phaser.GameObjects.Particles.ParticleEmitter; at: [number, number]; above?: boolean; light?: boolean }[];
+}
+
+/**
+ * La lueur d'un feu (`light` de props.json) : l'image `glow`, additive, qui vacille. Son opacité est celle du vacillement multipliée
+ * par sa part visible (`setGlowCover` : 0 sous un toit opaque, 1 à découvert ; systems/roofs.ts) : ce qui est caché ne se voit pas,
+ * lumière comprise.
+ */
+export function glowAt(scene: Phaser.Scene, x: number, y: number, radius: number): Phaser.GameObjects.Image {
+  const r = radius / GLOW.image;
+  const glow = scene.add.image(x, y, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(GLOW.tint).setScale(r).setAlpha(GLOW.alpha).setDepth(DEPTH.light);
+  glow.setData('cover', 1);
+  const flicker = { a: GLOW.alpha, s: r };
+  scene.tweens.add({
+    targets: flicker,
+    a: { from: GLOW.from, to: GLOW.to },
+    s: { from: r * GLOW.scale[0], to: r * GLOW.scale[1] },
+    duration: GLOW.ms + Math.random() * GLOW.jitter,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.InOut',
+    onUpdate: () => {
+      if (!glow.active) return;
+      glow.setAlpha(flicker.a * (glow.getData('cover') as number)).setScale(flicker.s);
+    },
+  });
+  return glow;
+}
+
+/** La part visible d'une lueur (0 : cachée sous un toit opaque, 1 : à découvert), appliquée tout de suite. */
+export function setGlowCover(glow: Phaser.GameObjects.Image, cover: number): void {
+  const was = glow.getData('cover') as number;
+  if (was === cover) return;
+  glow.setData('cover', cover);
+  glow.setVisible(cover > 0.001);
+  if (was > 0) glow.setAlpha((glow.alpha / was) * cover);
+  else glow.setAlpha(GLOW.alpha * cover);
 }
 
 /** Un objet possédable posé au sol, affiché. */
@@ -619,23 +657,8 @@ export class GameMap {
     }
 
     if (p.light) {
-      const glow = scene.add
-        .image(ox + fx(p.light.x), oy + p.light.y, 'glow')
-        .setBlendMode(Phaser.BlendModes.ADD)
-        .setTint(GLOW.tint)
-        .setScale(p.light.radius / GLOW.image)
-        .setAlpha(GLOW.alpha)
-        .setDepth(DEPTH.light);
-      scene.tweens.add({
-        targets: glow,
-        alpha: { from: GLOW.from, to: GLOW.to },
-        scale: { from: (p.light.radius / GLOW.image) * GLOW.scale[0], to: (p.light.radius / GLOW.image) * GLOW.scale[1] },
-        duration: GLOW.ms + Math.random() * GLOW.jitter,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.InOut',
-      });
-      parts.push(glow);
+      placed.glow = glowAt(scene, ox + fx(p.light.x), oy + p.light.y, p.light.radius);
+      parts.push(placed.glow);
     }
     return placed;
   }
@@ -680,12 +703,7 @@ export class GameMap {
       });
       parts.push({ obj, at: at(sx, sy), above: true });
     }
-    if (def.light) {
-      const r = def.light.radius / GLOW.image;
-      const obj = scene.add.image(0, 0, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(GLOW.tint).setScale(r).setAlpha(GLOW.alpha).setDepth(DEPTH.light);
-      scene.tweens.add({ targets: obj, alpha: { from: GLOW.from, to: GLOW.to }, scale: { from: r * GLOW.scale[0], to: r * GLOW.scale[1] }, duration: GLOW.ms + Math.random() * GLOW.jitter, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
-      parts.push({ obj, at: at(def.light.x, def.light.y) });
-    }
+    if (def.light) parts.push({ obj: glowAt(scene, 0, 0, def.light.radius), at: at(def.light.x, def.light.y), light: true });
     return parts;
   }
 

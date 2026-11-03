@@ -11,7 +11,7 @@ import { BUILD, ROOF } from '../src/config';
 import type { BuildPlan } from '../src/content/types';
 import { planPieces, type BuildPiece } from '../src/world/build';
 import { buildingsOf } from '../src/world/interior';
-import { roofView } from '../src/world/roofView';
+import { lightCovers, lightShown, roofView } from '../src/world/roofView';
 
 const plan = JSON.parse(readFileSync('src/content/plans/maison-xeros.json', 'utf8')) as BuildPlan;
 const pieces: BuildPiece[] = planPieces(plan, { x: 0, y: 0, z: 0 }).map((p, i) => ({ ...p, id: i + 1 }));
@@ -59,4 +59,16 @@ const alone = [shed];
 assert.deepEqual([...roofView(alone, [], 5020, 5020).faded], [999], "sous l'abri : son toit s'efface");
 assert.deepEqual([...roofView(alone, [], 4990, 5020).faded], [], "à côté de l'abri : il ne s'efface plus quand Xéros approche");
 
-console.log("✓ toits : la maison garde son toit dehors ; devant une fenêtre ouverte, on voit sa pièce seulement ; l'abri ouvert s'efface dessous");
+// ce qui est caché ne se voit pas, lumière comprise (chantier « correctifs ») : l'âtre est sous le chaume ; sa lueur est cachée tant
+// que le toit est opaque, entière quand il est effacé
+const hearth = pieces.find((p) => isProp(p, /^stone-hearth$/));
+assert.ok(hearth, "la maison a son âtre");
+const covers = lightCovers(pieces);
+assert.ok((covers.get(hearth.id) ?? []).some((id) => roofIds.includes(id)), "l'âtre est sous un pan de chaume");
+assert.equal(lightShown([1]), 0, 'sous le toit opaque, la lueur est cachée');
+assert.equal(lightShown([1, ROOF.alpha]), 0, 'le plus opaque des toits l’emporte');
+assert.equal(lightShown([ROOF.alpha]), 1, 'le toit effacé : la lueur se voit');
+assert.equal(lightShown([]), 1, 'sans toit, la lueur se voit');
+assert.ok(lightShown([(1 + ROOF.alpha) / 2]) > 0 && lightShown([(1 + ROOF.alpha) / 2]) < 1, 'pendant le fondu du toit, la lueur revient peu à peu');
+
+console.log("✓ toits : la maison garde son toit dehors ; devant une fenêtre ouverte, on voit sa pièce seulement ; l'abri ouvert s'efface dessous ; la lueur de l'âtre cachée sous le toit");

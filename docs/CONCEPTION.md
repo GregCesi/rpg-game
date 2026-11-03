@@ -662,7 +662,10 @@ L'ancienne chaumière (`maison.tmj`, dessinée à la main) a été remplacée pa
   poteaux d'angle restent avec les murs de côté (`cutBands` de world/interior.ts). Changer le bâtiment en mode construction change son
   intérieur.
 - **La lumière** : la pénombre de la chaumière (0,22) quand un volet est ouvert, plus sombre (0,36) quand tous sont fermés ; une tache
-  de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **E de dedans
+  de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **Dehors, ce
+  qui est caché ne se voit pas, lumière comprise** (3 novembre 2026, Grégoire) : la lueur d'un feu sous un toit opaque (l'âtre sous le
+  chaume) est cachée ; elle revient quand le toit s'efface, et dans le trou qu'ouvre une fenêtre au-dessus de sa pièce, seulement dans
+  le trou (`lightCovers`, `lightShown` de world/roofView.ts, systems/roofs.ts). **E de dedans
   ouvre et ferme le volet** (la pièce est à la carte du dehors : GameState la change là-bas, la vue suit).
 - **Les meubles** : le mode construction marche dans la vue intérieure (pas dans les murs : « Hors de la pièce. » ; les pièces du
   bâtiment ne s'y retirent pas). Ce qu'on y pose appartient au bâtiment : `builds` de la carte `interieur:…` dans GameState, pas au plan.

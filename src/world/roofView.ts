@@ -5,9 +5,12 @@
 // - le toit d'un abri ouvert (sans intérieur) s'efface quand Xéros est dessous, ses pieds sous son emprise (sans marge : il ne
 //   s'efface plus quand Xéros approche), avec tout ce qui repose dessus ;
 // - devant une fenêtre au volet ouvert, dehors, on voit l'intérieur de cette pièce-là seulement : le toit s'ouvre au-dessus d'elle
-//   (`reveal`, en cm), le reste de la maison garde son toit.
+//   (`reveal`, en cm), le reste de la maison garde son toit ;
+// - ce qui est caché ne se voit pas, lumière comprise (chantier « correctifs ») : la lueur d'un feu posé sous un toit (l'âtre) suit
+//   l'opacité de ce toit (`lightCovers`) : cachée sous le toit opaque, revenue quand il s'efface ou s'ouvre au-dessus de sa pièce.
 
 import { ROOF } from '../config';
+import { props } from '../content';
 import { boxOf, overHead, withAbove, type BuildPiece } from './build';
 import type { Building, Rect, Window } from './interior';
 
@@ -77,4 +80,36 @@ export function roofView(pieces: readonly BuildPiece[], buildings: readonly Buil
     if (room) return { faded, reveal: { room, building: b } };
   }
   return { faded };
+}
+
+/** Une pièce de toit (`roof` de props.json). */
+const isRoof = (p: BuildPiece) => 'prop' in p.piece && !!props[p.piece.prop]?.roof;
+
+/**
+ * Les pièces qui portent une lueur (`light` de props.json) et les toits qui les couvrent : les pièces de toit dont l'emprise recoupe la
+ * leur et qui passent au-dessus d'elles (leur base au-dessus du haut de la pièce). Une lueur sans toit au-dessus n'y est pas.
+ */
+export function lightCovers(pieces: readonly BuildPiece[]): Map<number, number[]> {
+  const roofs = pieces.filter(isRoof);
+  const out = new Map<number, number[]>();
+  for (const p of pieces) {
+    if (!('prop' in p.piece) || !props[p.piece.prop]?.light) continue;
+    const b = boxOf(p);
+    const over = roofs.filter((r) => {
+      const rb = boxOf(r);
+      return cross(rb, b) && rb.z >= b.z + b.h;
+    });
+    if (over.length) out.set(p.id, over.map((r) => r.id));
+  }
+  return out;
+}
+
+/**
+ * La part visible d'une lueur sous ses toits (0 à 1), d'après l'opacité de chacun (1 : opaque, `ROOF.alpha` : effacé) : le plus opaque
+ * l'emporte ; effacé, la lueur se voit en entier.
+ */
+export function lightShown(opacities: readonly number[]): number {
+  if (!opacities.length) return 1;
+  const most = Math.max(...opacities);
+  return Math.min(1, Math.max(0, (1 - most) / (1 - ROOF.alpha)));
 }

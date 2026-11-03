@@ -253,6 +253,14 @@ await playtest('monde', async ({ page, errors, load }) => {
   await until(async () => (await where()).id === 'ferme', 5000, 'sortir sur la ferme');
   await press([]);
   await until(async () => (await where()).mode === 'play', 5000, 'arrivé sur la ferme');
+  // dehors, le chaume couvre l'âtre : sa lueur ne se voit pas (ce qui est caché ne se voit pas, lumière comprise : systems/roofs.ts)
+  const glows = await page.evaluate(() =>
+    (window as any).game.scene
+      .getScene('world')
+      .map.builds.flatMap((b: any) => (b.parts ?? []).filter((q: any) => q.light).map((q: any) => ({ prop: b.piece.piece.prop, visible: q.obj.visible, alpha: q.obj.alpha }))),
+  );
+  assert.ok(glows.some((g: any) => g.prop === 'stone-hearth'), `la lueur de l'âtre existe (${JSON.stringify(glows)})`);
+  assert.ok(glows.every((g: any) => !g.visible || g.alpha < 0.01), `dehors, sous le toit, la lueur de l'âtre est cachée (${JSON.stringify(glows)})`);
 
   // 2. la ferme : le chemin de la cour, puis le chemin nord-sud jusqu'au chemin du village ; le monde, en px du monde
   const def = (id: string) => page.evaluate((i) => {
