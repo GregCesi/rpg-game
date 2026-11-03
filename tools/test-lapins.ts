@@ -39,16 +39,38 @@ await playtest('lapins', async ({ page, load }) => {
     out.kind = kind;
     const def = content.creatures[kind];
 
-    // une bande de pré libre de 25 m d'ouest en est, au nord de la maison, pour marcher droit vers un lapin
+    // une bande libre de 28 m d'ouest en est, près d'une garenne, pour marcher droit vers un lapin : le lapin sort à son bout est (3 m
+    // à l'est de Xéros, ?dieu « Faire sortir », de la garenne la plus proche), assez près des entrées de sa garenne pour y brouter sans
+    // partir (`graze.range`, moins une marge), et Xéros s'en éloigne de 20 m vers l'ouest dans la bande
     const lane = (y: number, x0: number, x1: number) => {
       for (let x = x0; x <= x1; x += 2) if (!w().map.areaFree({ left: x - 8, top: y - 8, right: x + 8, bottom: y + 2 })) return false;
       return true;
     };
-    const X0 = 2850;
-    const X1 = X0 + 560;
+    const warrens = (w().creatures as any).warrens as { site: { id: number; population: number; holes: { x: number; y: number }[] } }[];
+    const holeDist = (site: { holes: { x: number; y: number }[] }, x: number, y: number) => Math.min(...site.holes.map((h) => Math.hypot(h.x - x, h.y - y)));
+    const reach = (def.graze.range - 4) * 20;
+    let X0 = 0;
     let laneY = 0;
-    for (let y = 1100; y <= 1480 && !laneY; y += 4) if (lane(y, X0, X1)) laneY = y;
+    for (const { site } of [...warrens].sort((a, b) => b.site.population - a.site.population)) {
+      const xs = site.holes.map((h) => h.x);
+      const ys = site.holes.map((h) => h.y);
+      for (let y = Math.min(...ys) - reach; y <= Math.max(...ys) + reach && !laneY; y += 4) {
+        for (let x0 = Math.min(...xs) - 560; x0 <= Math.max(...xs) && !laneY; x0 += 8) {
+          const rx = x0 + 480;
+          if (holeDist(site, rx, y) > reach) continue;
+          // la garenne dont sortira le lapin : la plus proche de Xéros, par son entrée la plus proche
+          if (warrens.some((o) => o.site !== site && holeDist(o.site, x0 + 420, y) < holeDist(site, x0 + 420, y))) continue;
+          if (lane(y, x0, x0 + 560)) {
+            X0 = x0;
+            laneY = y;
+          }
+        }
+      }
+      if (laneY) break;
+    }
+    if (!laneY) throw new Error('aucune bande libre de 28 m près d’une garenne');
     out.laneY = laneY;
+    out.laneX = X0;
     const stand = async (x: number, y: number, face: string) => {
       me().body.reset(Math.round(x), Math.round(y));
       me().face(face);
@@ -64,7 +86,8 @@ await playtest('lapins', async ({ page, load }) => {
       return c.id;
     };
     /**
-     * Xéros recule à 20 m à l'ouest du lapin `id`, attend qu'il soit calme, puis marche vers lui (les touches `keys`) : à chaque pas de
+     * Xéros recule à 20 m à l'ouest du lapin `id`, attend qu'il soit calme, puis marche vers lui (les touches `keys`, et il se dirige
+     * vers lui s'il s'écarte de sa ligne) : à chaque pas de
      * jeu, l'état du lapin et sa distance à Xéros ; s'arrête quand il fuit (ou qu'il n'est plus là). Rend la distance au premier passage
      * aux aguets, à la fuite, et la plus courte avant la fuite.
      */
@@ -81,10 +104,24 @@ await playtest('lapins', async ({ page, load }) => {
         if (q.mode === 'flee' && seen.flee === undefined) seen.flee = q.seenAt;
         if (seen.flee === undefined) seen.min = Math.min(seen.min, q.dist);
       };
+      // Xéros marche vers le lapin, comme un joueur qui le vise : vers l'est (les touches `keys`), et vers le nord ou le sud quand le
+      // lapin, qui broute en sautillant, s'écarte de sa ligne
+      let side = '';
+      const steer = () => {
+        const q = find(id);
+        const want = !q ? '' : q.y < me().y - 6 ? 'KeyW' : q.y > me().y + 6 ? 'KeyS' : '';
+        if (want === side) return;
+        if (side) key('keyup', side);
+        if (want) key('keydown', want);
+        side = want;
+      };
       w().events.on('postupdate', watch);
+      w().events.on('postupdate', steer);
       for (const k of keys) key('keydown', k);
       await W.__until(() => seen.flee !== undefined || !find(id), `le lapin ${id} fuit devant Xéros (${keys.join('+')})`);
       for (const k of keys) key('keyup', k);
+      w().events.off('postupdate', steer);
+      if (side) key('keyup', side);
       w().events.off('postupdate', watch);
       return seen;
     };
