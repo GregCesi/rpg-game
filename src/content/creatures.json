@@ -7,10 +7,10 @@
     "becomes": "dead-rabbit",
     "target": { "hp": 4, "matter": "fur", "tilt": 0 },
     "senses": {
-      "still": { "alert": 5, "flee": 2 },
-      "sneak": { "alert": 8, "flee": 4 },
-      "walk": { "alert": 15, "flee": 10 },
-      "run": { "alert": 25, "flee": 20 }
+      "still": { "alert": 3, "flee": 1.5 },
+      "sneak": { "alert": 4.5, "flee": 2.5 },
+      "walk": { "alert": 7, "flee": 4.5 },
+      "run": { "alert": 9, "flee": 7 }
     },
     "calm": 4,
     "graze": {

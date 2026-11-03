@@ -6,16 +6,30 @@ export const TILE = 32;
 export const VIEW = { width: 640, height: 360 };
 
 /**
- * Le canvas est rendu à VIEW x ZOOM et les caméras zooment d'autant : le pixel art garde sa taille,
- * mais le texte des dialogues est rendu à pleine résolution, donc net.
+ * L'interface (HUD, dialogues) est dessinée sur VIEW et agrandie ZOOM fois ; le canvas est rendu à VIEW × ZOOM × RENDER et les caméras
+ * de l'interface zooment de ZOOM × RENDER (`UI_ZOOM`) : le pixel art garde sa taille, le texte est rendu à pleine résolution, donc net.
  */
 export const ZOOM = 2;
 
 /**
- * Paliers du zoom de la caméra du monde (molette, + et −, systems/zoom.ts) : des entiers seulement, d'un cran sous `ZOOM` à trois
- * au-dessus (les petits objets, à leur vraie taille, se voient de près). Le plus bas est relevé sur une carte trop petite pour lui.
+ * La définition du canevas (chantier « correctifs ») : RENDER fois plus de pixels que VIEW × ZOOM. Aux crans de zoom non entiers, un
+ * pixel du monde fait 4 ou 5 pixels du canevas au lieu de 2 ou 3 : l'écart entre deux pixels voisins (et le scintillement quand la
+ * caméra glisse) se voit beaucoup moins. La caméra du monde zoome de palier × RENDER (systems/zoom.ts). Laissée à 1 en attendant
+ * Grégoire : à 2, une image passait de 25–30 ms à 80–90 ms dans Chromium sans écran (rendu logiciel) ; captures comparées par
+ * `npx tsx tools/essai-zoom.ts` (.art-preview/zoom-crans-x1.png, zoom-crans-x2.png).
  */
-export const ZOOM_STEPS = { min: ZOOM - 1, max: ZOOM + 3 };
+export const RENDER = 1;
+
+/** Le zoom des caméras de l'interface, et la résolution de leurs textes. */
+export const UI_ZOOM = ZOOM * RENDER;
+
+/**
+ * Le zoom de la caméra du monde (molette, + et −, systems/zoom.ts ; décidé par Grégoire, chantier « correctifs » : l'échelle reste réelle,
+ * on aide la lecture). `min` : la vue la plus large (640 × 360 px du monde, 32 × 18 m) ; `start` : la première fois (environ 21 × 12 m) ;
+ * `max` : la plus proche (12,8 × 7,2 m : les petits objets, à leur vraie taille, se voient de près) ; `step` : un cran de molette, un quart
+ * de palier. Le plus bas est relevé sur une carte trop petite pour lui. La seule source de ces réglages.
+ */
+export const ZOOM_STEPS = { min: 2, start: 3, max: 5, step: 0.25 };
 
 export const UI = {
   font: '"Pixelify Sans", monospace',
@@ -217,12 +231,16 @@ export const INTERIOR = {
 export const START = { map: 'ferme', spawn: 'reveil' };
 
 /**
- * Les zones du monde (chantier « monde », systems/zones.ts) : `band`, ce qu'on voit des voisines par-delà le bord, en cases (assez pour
- * la moitié de la vue au palier de zoom le plus bas : la caméra ne montre jamais le vide près d'un bord ouvert) ; `reach`, en cases, ce
+ * Les zones du monde (chantier « monde », systems/zones.ts) : `band`, ce qu'on voit des voisines par-delà le bord, en cases, tirée de la
+ * moitié de la vue au palier de zoom le plus bas (`ZOOM_STEPS.min`), plus une case (la caméra ne montre jamais le vide près d'un bord ouvert) ; `reach`, en cases, ce
  * qu'on prend d'objets au-delà de la bande (un arbre planté plus bas qui dépasse vers le haut) ; `edge`, en px, ce dont les pieds de
  * Xéros passent le bord avant que la voisine prenne le relais (le milieu de ses pieds).
  */
-export const ZONES = { band: { x: 21, y: 12 }, reach: 8, edge: 8 };
+export const ZONES = {
+  band: { x: Math.ceil((VIEW.width * ZOOM) / ZOOM_STEPS.min / 2 / TILE) + 1, y: Math.ceil((VIEW.height * ZOOM) / ZOOM_STEPS.min / 2 / TILE) + 1 },
+  reach: 8,
+  edge: 8,
+};
 
 /** La pénombre du sous-bois (`gloom` de world.json) : sa couleur, et la largeur des bandes où elle varie (px). */
 export const GLOOM = { color: 0x0b1611, strip: 64 };

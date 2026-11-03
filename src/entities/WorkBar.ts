@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEBUG, UI, WORK_BAR, ZOOM } from '../config';
+import { DEBUG, UI, WORK_BAR, UI_ZOOM } from '../config';
 import type { Actor } from './Actor';
 
 /**
@@ -19,7 +19,7 @@ export class WorkBar {
       this.debug = scene.add
         .text(0, 0, '', { fontFamily: UI.font, fontSize: '6px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 2 })
         .setOrigin(0.5, 1)
-        .setResolution(ZOOM)
+        .setResolution(UI_ZOOM)
         .setVisible(false);
     }
   }

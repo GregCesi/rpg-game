@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { creatures, items } from '../src/content';
 import { CREATURES_TODO } from '../src/content/validate';
 import type { Clock } from '../src/world/clock';
-import { pixels, type Surroundings } from '../src/world/creature';
+import { metres, pixels, type Surroundings } from '../src/world/creature';
 import { rng } from '../src/world/gridCanvas';
 import { able, absMinute, death, outShare, seedWarren, settle, wantedOut, wounded, WarrenLife, type WarrenSite, type WarrenState } from '../src/world/warren';
 import { DT } from './lib/creature-trial';
@@ -93,13 +93,20 @@ for (const [kind, def] of Object.entries(creatures)) {
     const life = new WarrenLife(site, def);
     life.populate(w, t, { blocked: () => false, holes, rand });
     const before = outside(life);
-    // Xéros arrive en courant au milieu de la garenne : celles à portée fuient, le tambour fait fuir leurs voisines, les plus loin
-    // restent aux aguets
+    // Xéros arrive en courant au milieu de la garenne : celles à portée de fuite (`senses.run.flee`) rentrent au terrier ; celles à portée
+    // d'alerte restent aux aguets ; les plus loin ne s'en soucient pas (sans le tambour, qui est du jeu : systems/creatures.ts)
+    const xeros = { x: pixels(2), y: pixels(2) };
+    const away = (c: { x: number; y: number }) => metres(Math.hypot(c.x - xeros.x, c.y - xeros.y));
     const ids = new Set(life.out.map((c) => c.id));
-    const r = live(life, w, t, 0.5, rand, { x: pixels(2), y: pixels(2), gait: 'run' });
+    const near = life.out.filter((c) => away(c) < def.senses.run.flee).map((c) => c.id);
+    assert.ok(near.length >= 1, `${kind} : au moins une bête à portée de fuite de Xéros (${def.senses.run.flee} m)`);
+    const r = live(life, w, t, 0.5, rand, { ...xeros, gait: 'run' });
     const fled = [...ids].filter((id) => !life.out.some((c) => c.id === id));
-    assert.ok(fled.length >= Math.ceil(before / 2), `${kind} : Xéros qui court au milieu de la garenne, la plupart au terrier en 30 s (${fled.length} sur ${before})`);
-    assert.ok(life.out.every((c) => c.mode === 'alert'), `${kind} : celles qui restent sont aux aguets (${life.out.map((c) => c.mode).join(', ')})`);
+    assert.ok(near.every((id) => fled.includes(id)), `${kind} : Xéros qui court au milieu de la garenne, celles à moins de ${def.senses.run.flee} m au terrier en 30 s (${fled.length} sur ${before}, ${near.length} à portée)`);
+    for (const c of life.out) {
+      if (away(c) < def.senses.run.alert - 0.5) assert.equal(c.mode, 'alert', `${kind} : celle à ${away(c).toFixed(1)} m reste aux aguets`);
+      assert.notEqual(c.mode, 'flee', `${kind} : celle à ${away(c).toFixed(1)} m ne fuit plus`);
+    }
     // il s'en va : celles qui ont fui ne ressortent pas avant `burrow.stay[0]` minutes
     const r2 = live(life, r.w, r.clock, def.burrow.stay[0] - 0.6, rand);
     assert.ok(!life.out.some((c) => fled.includes(c.id)), `${kind} : pas avant ${def.burrow.stay[0]} minutes`);

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEBUG, DEPTH, UI, ZOOM_STEPS } from '../config';
+import { DEBUG, DEPTH, UI, RENDER, ZOOM_STEPS } from '../config';
 import { combat, items, props, stamina, strength } from '../content';
 import type { Attack, Facing, SweepDef, Swinger, Weapon } from '../content/types';
 import type { Player } from '../entities/Player';
@@ -429,7 +429,7 @@ export class CombatSystem {
     const text = this.scene.add
       .text(x, y, label, { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
-      .setResolution(ZOOM_STEPS.max)
+      .setResolution(ZOOM_STEPS.max * RENDER)
       .setDepth(DEPTH.prompt - 1);
     this.scene.tweens.add({ targets: text, y: text.y - 10, alpha: 0, duration: combat.feel.floatMs, ease: 'Quad.easeIn', onComplete: () => text.destroy() });
   }

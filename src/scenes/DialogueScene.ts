@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PORTRAIT_SIZE, UI, VIEW, ZOOM } from '../config';
+import { PORTRAIT_SIZE, UI, VIEW, UI_ZOOM } from '../config';
 import { characters, dialogues } from '../content';
 import { GameEvent } from '../events';
 import type { DialogueAction, DialogueLine } from '../content/types';
@@ -45,7 +45,7 @@ export class DialogueScene extends Phaser.Scene {
     this.lines = def.lines;
     this.index = 0;
 
-    this.cameras.main.setZoom(ZOOM).centerOn(VIEW.width / 2, VIEW.height / 2);
+    this.cameras.main.setZoom(UI_ZOOM).centerOn(VIEW.width / 2, VIEW.height / 2);
 
     const bw = VIEW.width - 24;
     const bh = 78;
@@ -87,7 +87,7 @@ export class DialogueScene extends Phaser.Scene {
   }
 
   private label(x: number, y: number, size: number, color: string): Phaser.GameObjects.Text {
-    return this.add.text(x, y, '', { fontFamily: UI.font, fontSize: `${size}px`, color }).setResolution(ZOOM);
+    return this.add.text(x, y, '', { fontFamily: UI.font, fontSize: `${size}px`, color }).setResolution(UI_ZOOM);
   }
 
   private showLine(): void {

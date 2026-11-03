@@ -4,7 +4,8 @@
 // Usage : tsx tools/test-creatures.ts (lancé par npm run test:fast, donc par npm run build).
 
 import assert from 'node:assert/strict';
-import { PLAYER } from '../src/config';
+import { PLAYER, VIEW, ZOOM, ZOOM_STEPS } from '../src/config';
+import { CM_PER_PX } from '../src/content/gabarit';
 import { creatures } from '../src/content';
 import type { CreatureDef, Gait } from '../src/content/types';
 import { alarm, clear, hurt, metres, perceive, pixels, type Creature } from '../src/world/creature';
@@ -28,6 +29,10 @@ for (const [kind, def] of Object.entries(creatures)) {
     const b = def.senses[GAITS[i]];
     assert.ok(a.alert <= b.alert && a.flee <= b.flee, `${kind} : ${GAITS[i - 1]} se perçoit moins loin que ${GAITS[i]}`);
   }
+  // ses distances d'alerte tiennent dans le champ visible au zoom de départ, de part et d'autre de Xéros, avec une marge d'un mètre
+  // (Grégoire, chantier « correctifs » : on voit la bête qui se dresse)
+  const half = (((VIEW.width * ZOOM) / ZOOM_STEPS.start / 2) * CM_PER_PX) / 100;
+  for (const g of GAITS) assert.ok(def.senses[g].alert <= half - 1, `${kind}, ${g} : alerte à ${def.senses[g].alert} m, au-delà de la demi-vue au zoom de départ moins 1 m (${(half - 1).toFixed(1)} m)`);
   // Xéros à la course ne la rattrape jamais en fuite (voulu)
   assert.ok(def.flee.speed > PLAYER.run, `${kind} : sa fuite (${def.flee.speed} m/s) est plus rapide que la course de Xéros (${PLAYER.run} m/s)`);
 

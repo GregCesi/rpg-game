@@ -5,7 +5,7 @@
 // removeBuildPieces), donc tout est sauvegardé et se retrouve en jeu. Le calcul (boîtes, hauteur, porteurs) est dans world/build.ts.
 
 import Phaser from 'phaser';
-import { BUILD, DEPTH } from '../config';
+import { BUILD, DEPTH, RENDER } from '../config';
 import { items, props } from '../content';
 import { buildPlans, putBuildPlan } from '../content/buildPlans';
 import { CM_PER_PX } from '../content/gabarit';
@@ -185,7 +185,7 @@ export class BuildSystem {
     const cam = this.scene.cameras.main;
     const { dir } = input.read();
     if (dir.lengthSq()) {
-      const speed = (BUILD.camera * (input.shiftDown() ? BUILD.fast : 1) * delta) / 1000 / cam.zoom;
+      const speed = (BUILD.camera * (input.shiftDown() ? BUILD.fast : 1) * delta) / 1000 / (cam.zoom / RENDER);
       cam.scrollX += dir.x * speed;
       cam.scrollY += dir.y * speed;
     }

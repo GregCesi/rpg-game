@@ -60,6 +60,14 @@ Extérieur :
 - Sol varié avec des détails posés au hasard, pour casser la répétition.
 - **Échelle réaliste partout** (décidé le 29 octobre 2026) : environ 5 cm par pixel, une case d'environ 1,65 m. Une maison a la même taille dedans et dehors ; une longère paysanne tient sur environ 9 × 4 cases.
 - **Gabarit** (décidé le 29 octobre 2026) : une règle de dimensions et de perspective pour tous les objets, tirée des billes (`docs/STYLE.md`, section 8). Dimensions réelles contour compris, taille réelle pour tous les objets, plancher de lisibilité à 6 px de large, personnages de 12 px de large (60 cm, bras compris) ; la face de coupe d'un cylindre couché nord-sud était aplatie (× 7/11) pour qu'on le lise couché (remplacé le 30 octobre 2026 par la règle D, voir *La perspective*). Pour l'arbre, sa longueur couchée (5,65 m) fait foi.
+- **Le zoom** (décidé par Grégoire le 3 novembre 2026, chantier « correctifs » : l'échelle reste réelle, on aide la lecture) : de la vue
+  la plus large, 32 × 18 m (l'ancien palier 2 ; plus de palier 1), à la plus proche, 12,8 × 7,2 m (palier 5), par crans d'un quart de
+  palier à la molette ; la première fois, le palier 3 (environ 21 × 12 m), puis le cran choisi est retenu (`ZOOM_STEPS` de config.ts,
+  seule source ; `systems/zoom.ts`). Aux crans non entiers, un pixel du monde fait 2 ou 3 pixels d'écran : à l'arrêt c'est discret, en
+  marche il change de largeur d'une image à l'autre (un léger scintillement, déjà visible au palier entier quand la caméra glisse). Le
+  canevas en double définition (`RENDER` de config.ts) l'atténue (4 ou 5 pixels), mais une image passait de 25–30 à 80–90 ms dans
+  Chromium sans écran (rendu logiciel) : laissé à 1, à trancher par Grégoire sur les planches de `npx tsx tools/essai-zoom.ts`
+  (`.art-preview/zoom-crans-x1.png`, `zoom-crans-x2.png`).
 - **Jeu cosy et lent** : les gestes répétés et les étapes réalistes sont assumés. La progression passe par de meilleurs outils qui raccourcissent les étapes (une scie, plus tard une brouette).
 
 ## Feuille de route
@@ -125,8 +133,9 @@ d'abord ; les bâtiments se posent quand leurs pièces existent.
 
 - **Passer d'une zone à l'autre** : Xéros qui marche hors du bord arrive dans la voisine, ses pieds au même point du monde, **sans
   fondu** : la scène redémarre sur la voisine (15 à 25 ms mesurés), la vue reprend sa place, la marche continue (les touches tenues sont
-  gardées). Pour que cela ne se voie pas, **la bande des voisines** est dessinée par-delà chaque bord ouvert (21 cases à l'est et à
-  l'ouest, 12 au nord et au sud : la moitié de la vue au zoom le plus éloigné) : leur sol, leurs détails, leurs objets tels que la partie
+  gardées). Pour que cela ne se voie pas, **la bande des voisines** est dessinée par-delà chaque bord ouvert (la moitié de la vue au
+  zoom le plus éloigné, plus une case : 11 cases à l'est et à l'ouest, 7 au nord et au sud depuis le 3 novembre 2026, tirées de
+  `ZOOM_STEPS.min`) : leur sol, leurs détails, leurs objets tels que la partie
   les a laissés, leurs pièces posées ; rien n'y bloque ni ne s'y prend. La caméra ne montre donc jamais le vide près d'un bord ouvert. Au
   bord du monde (rien de l'autre côté), Xéros s'arrête. La sauvegarde, déjà rangée par carte, suit : la position est notée dans la zone
   où il est. Ce qui ne passe pas un bord : une bille qu'on roule, un tas, une pièce posée en mode construction (chacun reste dans sa zone).
@@ -1759,7 +1768,7 @@ règle écrite pour le lapin (*Le monde ne limite pas*).
 
 | | |
 | --- | --- |
-| Aux aguets, fuite (m) | immobile 5, 2 ; discret 8, 4 ; marche 15, 10 ; course 25, 20 |
+| Aux aguets, fuite (m) | immobile 3, 1,5 ; discret 4,5, 2,5 ; marche 7, 4,5 ; course 9, 7 (3 novembre 2026, Grégoire : dans le champ visible au zoom de départ, 10,7 m de part et d'autre de Xéros, avec une marge ; d'abord 5, 2 ; 8, 4 ; 15, 10 ; 25, 20) |
 | Se calme après | 4 s sans que Xéros approche |
 | Broute | à 12 m au plus d'une entrée (25 m d'abord : trop dispersés pour l'écran, on n'en voyait aucun) ; sauts de 15 à 50 cm à 1,2 m/s, pauses de 0,6 à 3 s, 4 à 20 s à une place |
 | Fuite | 10 m/s (Xéros court à 2,5 m/s : il ne la rattrape jamais), zigzag de 30° tous les 1,5 m |

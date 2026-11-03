@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEBUG, DEPTH, UI, ZOOM_STEPS } from '../config';
+import { DEBUG, DEPTH, UI, RENDER, ZOOM_STEPS } from '../config';
 import { creatures, props } from '../content';
 import type { CreatureDef, Facing, Gait } from '../content/types';
 import type { Player } from '../entities/Player';
@@ -130,7 +130,7 @@ export class CreatureSystem {
         if (DEBUG) {
           let t = this.labels.get(c.id);
           if (!t) {
-            t = this.scene.add.text(0, 0, '', { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 }).setOrigin(0.5, 1).setResolution(ZOOM_STEPS.max);
+            t = this.scene.add.text(0, 0, '', { fontFamily: UI.font, fontSize: '8px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 }).setOrigin(0.5, 1).setResolution(ZOOM_STEPS.max * RENDER);
             this.labels.set(c.id, t);
           }
           t.setText(`${c.mode} ${String(c.hp).replace('.', ',')}`).setPosition(Math.round(c.x), Math.round(c.y) - 10).setDepth(DEPTH.prompt - 2);

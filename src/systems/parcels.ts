@@ -2,7 +2,7 @@
 // avec ?debug, chacune se montre par son rectangle, de la couleur de sa destination (parcels.json), avec son nom et sa taille, pour
 // qu'on y bâtisse ce qu'elle attend (une maison du quartier, la mairie…).
 import type Phaser from 'phaser';
-import { DEBUG, DEPTH, UI, ZOOM_STEPS } from '../config';
+import { DEBUG, DEPTH, UI, RENDER, ZOOM_STEPS } from '../config';
 import { parcelUses } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import type { MapData } from '../content/types';
@@ -28,7 +28,7 @@ export class Parcels {
       const label = `${p.name ?? use.name}\n${metres(p.w)} × ${metres(p.h)}`;
       const t = scene.add
         .text(p.x + 3, p.y + 2, label, { fontFamily: UI.font, fontSize: '8px', color: use.color, stroke: '#1a120a', strokeThickness: 2 })
-        .setResolution(ZOOM_STEPS.max)
+        .setResolution(ZOOM_STEPS.max * RENDER)
         .setDepth(DEPTH.prompt - 1);
       this.parts.push(t);
     }

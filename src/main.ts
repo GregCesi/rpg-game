@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import '@fontsource/pixelify-sans/latin-400.css';
-import { CONSTRUIRE, DEBUG, DIEU, UI, VIEW, ZOOM } from './config';
+import { CONSTRUIRE, DEBUG, DIEU, RENDER, UI, VIEW, ZOOM } from './config';
 import * as content from './content';
 import { buildPlans } from './content/buildPlans';
 import { catalogFrom, validateBuildPlans, validateContent } from './content/validate';
@@ -40,8 +40,8 @@ async function start() {
   game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
-    width: VIEW.width * ZOOM,
-    height: VIEW.height * ZOOM,
+    width: VIEW.width * ZOOM * RENDER,
+    height: VIEW.height * ZOOM * RENDER,
     pixelArt: true,
     roundPixels: true,
     backgroundColor: '#14110d',

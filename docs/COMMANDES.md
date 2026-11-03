@@ -39,7 +39,7 @@ Dedans (un intérieur calculé) : les mêmes commandes que dehors.
 | **Échap** | arrêter un travail ou une passe de doloire après le coup en cours ; annuler un lancer pendant qu'on vise. Plus tard, un menu |
 | **V** | la vitesse du temps, au palier suivant (x1, x2, x5, x10, x20, puis x1) ; lue en jeu, pendant un travail et sur un rail ; une attaque ou un lancer ramène à x1 ; x50 est réservé à ?dieu |
 | **B** | le mode construction (`?construire`) |
-| molette, **+**, **−** | le zoom, dans tous les modes |
+| molette, **+**, **−** | le zoom, dans tous les modes : un quart de palier par cran, de la vue la plus large (32 × 18 m) à la plus proche (12,8 × 7,2 m) ; la première fois, environ 21 × 12 m ; le cran choisi est retenu (`ZOOM_STEPS` de config.ts) |
 | **Espace** | rien : réservé à l'esquive et au saut, plus tard |
 
 Ctrl n'est jamais une touche du jeu : sur Mac, Ctrl + clic gauche devient un clic droit.
