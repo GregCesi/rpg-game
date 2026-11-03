@@ -17,7 +17,8 @@
 import { INTERIOR } from '../config';
 import { props } from '../content';
 import type { Facing } from '../content/types';
-import { boxOf, OUTWARD, swung, type Box3, type BuildPiece } from './build';
+import { boxOf, OUTWARD, solidOf, swung, type Box3, type BuildPiece } from './build';
+import { CM_PER_PX } from '../content/gabarit';
 
 /** Un rectangle au sol, en cm (coin nord-ouest, largeur est-ouest, profondeur nord-sud). */
 export interface Rect {
@@ -370,6 +371,28 @@ function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly
   const gaps = entrances.filter((e) => e.side === 'south');
   const cut = south.flatMap((q) => gaps.reduce<Rect[]>((list, e) => list.flatMap((s) => minus(s, e.span[0], e.span[1])), [q]));
   return { shell, south: cut, southPieces, windows };
+}
+
+/**
+ * Le mur du fond de chaque pièce close (règle de Grégoire : il est toujours derrière Xéros et derrière tout ce qui est dans la pièce,
+ * dedans comme dehors, pour toute maison) : les pièces posées tout entières au nord de la face intérieure nord d'une pièce, à moins de
+ * INTERIOR.reach cm d'elle, sur sa largeur (et ses coins, à INTERIOR.reach près), avec leur plafond de profondeur (px) : juste derrière
+ * cette face. Ce qui est dans la pièce a pour profondeur son bord sud, au moins la face : le mur du fond reste derrière, quoi qui le
+ * porte (une traverse portée aussi par le solin d'une cloison qui traverse le mur n'hérite plus de son bord sud). Pour `depthsOf`.
+ */
+export function backCaps(pieces: readonly BuildPiece[], rooms: readonly Rect[]): Map<number, number> {
+  const out = new Map<number, number>();
+  const r = INTERIOR.reach;
+  for (const p of pieces) {
+    const b = solidOf(p);
+    const s = b.y + b.d;
+    for (const q of rooms) {
+      if (s > q.y || s < q.y - r || b.x >= q.x + q.w + r || b.x + b.w <= q.x - r) continue;
+      const cap = q.y / CM_PER_PX - 0.5;
+      out.set(p.id, Math.min(out.get(p.id) ?? Infinity, cap));
+    }
+  }
+  return out;
 }
 
 /** Un rectangle sans l'intervalle [a, b[ en x. */

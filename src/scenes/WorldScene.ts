@@ -287,7 +287,7 @@ export class WorldScene extends Phaser.Scene {
     // entrent dans la partie à la première visite
     seedMap(def);
     // la carte telle que la partie l'a laissée : objets récoltés, objets au sol
-    this.map = new GameMap(this, def, mapState(game, def.id), this.interior && { pieces: this.interior.shell, joints: this.interior.joints });
+    this.map = new GameMap(this, def, mapState(game, def.id), this.interior && { pieces: this.interior.shell, joints: this.interior.joints, rooms: this.interior.rooms });
     this.inside = this.interior && new InteriorView(this, this.map, this.interior);
     this.interiors = new Interiors(this.map, this.interior);
     // une zone du monde : ses voisines se voient par-delà le bord, et les pieds de Xéros passent un bord ouvert

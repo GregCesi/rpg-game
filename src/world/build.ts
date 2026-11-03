@@ -283,8 +283,13 @@ export function withAbove(pieces: readonly BuildPiece[], id: number): BuildPiece
  * Profondeur d'affichage de chaque pièce (px) : le bord sud de son emprise au sol (comme les pieds d'un personnage), puis la hauteur
  * pour départager deux pièces au même bord sud ; une pièce est toujours dessinée après celles qui la portent (une pierre posée au
  * fond d'une dalle passe devant la dalle).
+ *
+ * `caps` (px, par identifiant) : le mur du fond d'une pièce close (`backCaps` de world/interior.ts) ne passe jamais devant ce qui est
+ * dans la pièce, quoi qui le porte (règle de Grégoire, CONCEPTION « Les intérieurs ») : une pièce plafonnée qui dépasse son plafond y
+ * est ramenée, juste derrière la face intérieure du mur, en gardant l'ordre de ce qui porte et de ce qui est porté (la profondeur
+ * relevée ne fait plus que départager, au dix-millième).
  */
-export function depthsOf(pieces: readonly BuildPiece[]): Map<number, number> {
+export function depthsOf(pieces: readonly BuildPiece[], caps?: ReadonlyMap<number, number>): Map<number, number> {
   const out = new Map<number, number>();
   const sorted = [...pieces].sort((a, b) => a.z - b.z);
   for (const p of sorted) {
@@ -292,6 +297,12 @@ export function depthsOf(pieces: readonly BuildPiece[]): Map<number, number> {
     let d = (b.y + b.d) / CM_PER_PX + b.z / 100000;
     for (const s of supportsOf(pieces, p)) d = Math.max(d, (out.get(s.id) ?? 0) + 0.001);
     out.set(p.id, d);
+  }
+  if (caps?.size) {
+    for (const [id, d] of out) {
+      const cap = caps.get(id);
+      if (cap !== undefined && d > cap) out.set(id, cap + d / 10000);
+    }
   }
   return out;
 }

@@ -19,6 +19,7 @@ import { buildLook } from './buildView';
 import { runLayout, wallOf, wallRuns } from './wallRuns';
 import { wallTexture } from './wallTexture';
 import { drawJoints, halvingOverlays } from './jointView';
+import { backCaps, buildingsOf, type Building, type Rect } from './interior';
 
 /**
  * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois, celle de ses réglages
@@ -320,6 +321,10 @@ export class GameMap {
   private readonly shown = new Map<number, { dx: number; down: number }>();
   /** Les assemblages des pièces fixes (le bâtiment vu de son intérieur), qui appartiennent à la carte du dehors. */
   private readonly shellJoints: Joint[] = [];
+  /** Les pièces closes d'un intérieur (cm), données par la vue de dedans ; rien dehors, où elles se calculent des pièces posées. */
+  private readonly shellRooms?: readonly Rect[];
+  /** Les bâtiments où l'on entre de cette carte (dehors), recalculés à chaque pose ou retrait de pièce (`sortBuilds`). */
+  buildings: Building[] = [];
   /** La pénombre (intérieurs), si la carte en a une. */
   private shade?: Phaser.GameObjects.Rectangle;
   /** Augmente à chaque pose ou retrait de pièce (`sortBuilds`) : ce qui se calcule des pièces posées sait quand recommencer. */
@@ -334,7 +339,7 @@ export class GameMap {
     readonly def: MapData,
     private readonly changes: MapState,
     /** Les pièces d'un bâtiment vues de son intérieur, et leurs assemblages (fixes : elles sont à la carte du dehors). */
-    shell?: { pieces: readonly BuildPiece[]; joints: readonly Joint[] },
+    shell?: { pieces: readonly BuildPiece[]; joints: readonly Joint[]; rooms: readonly Rect[] },
   ) {
     const tileset = tilesets.find((t) => t.key === def.tileset)!;
     this.width = def.width * TILE;
@@ -366,6 +371,7 @@ export class GameMap {
     for (const pile of changes.piles) this.placePile(pile);
     for (const p of shell?.pieces ?? []) this.placeBuild(p, true);
     this.shellJoints.push(...(shell?.joints ?? []));
+    this.shellRooms = shell?.rooms;
     for (const b of changes.builds) this.placeBuild(b);
     this.sortBuilds();
 
@@ -747,7 +753,11 @@ export class GameMap {
       this.shown.set(b.piece.id, o);
       if (o.dx || o.down) b.image.setPosition(b.image.x + o.dx, b.image.y + o.down);
     }
-    const depths = depthsOf(this.builds.map((b) => b.piece));
+    // le mur du fond de chaque pièce close reste derrière ce qui est dans la pièce, dedans comme dehors (world/interior.ts)
+    const pieces = this.builds.map((b) => b.piece);
+    this.buildings = this.shellRooms ? [] : buildingsOf(pieces);
+    const rooms = this.shellRooms ?? this.buildings.flatMap((q) => q.rooms);
+    const depths = depthsOf(pieces, rooms.length ? backCaps(pieces, rooms) : undefined);
     for (const b of this.builds) {
       const floor = b.piece.z === 0 && 'prop' in b.piece.piece && propDefs[b.piece.piece.prop].layer === 'floor';
       b.image.setDepth(floor ? DEPTH.floor : depths.get(b.piece.id)!);

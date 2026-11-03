@@ -241,3 +241,49 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   }
   console.log('✓ test-build : intérieurs (pièce close, porte, ouverture sous le linteau, fenêtre, coupe du mur sud ; la cloison du cagibi coupée avec sa traverse et son poteau)');
 }
+
+// Le mur du fond (chantier maison-2, règle de Grégoire) : dans une pièce close, rien du mur du fond ne passe devant ce qui est dans la
+// pièce, quoi qui le porte, pour tout bâtiment des plans du dépôt, dehors comme dedans ; ce qui est dans la pièce garde sa profondeur
+{
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const { backCaps, buildingsOf } = await import('../src/world/interior');
+  const { planPieces, solidOf } = await import('../src/world/build');
+  const { CM_PER_PX } = await import('../src/content/gabarit');
+  let rooms = 0;
+  for (const f of readdirSync('src/content/plans').filter((n) => n.endsWith('.json'))) {
+    const plan = JSON.parse(readFileSync(`src/content/plans/${f}`, 'utf8'));
+    const ps = planPieces(plan, { x: 1000, y: 1000, z: 0 }).map((p, i) => ({ ...p, id: i }));
+    const all = buildingsOf(ps).flatMap((b) => b.rooms);
+    const caps = backCaps(ps, all);
+    const raw = depthsOf(ps);
+    const depth = depthsOf(ps, caps);
+    for (const r of all) {
+      rooms++;
+      const face = r.y / CM_PER_PX;
+      // ce qui est dans la pièce (tout entier dedans) : jamais derrière sa face
+      const inside = ps.filter((p) => {
+        const b = solidOf(p);
+        return b.y >= r.y && b.y + b.d <= r.y + r.d && b.x >= r.x && b.x + b.w <= r.x + r.w;
+      });
+      for (const p of inside) assert.ok(depth.get(p.id)! >= Math.min(face, raw.get(p.id)!), `${f} : une pièce dans la pièce reste devant sa face`);
+      // le mur du fond : derrière la face
+      for (const p of ps.filter((q) => caps.has(q.id) && (caps.get(q.id) ?? 0) <= face)) {
+        const b = solidOf(p);
+        if (b.y + b.d > r.y || b.x >= r.x + r.w || b.x + b.w <= r.x) continue;
+        assert.ok(depth.get(p.id)! < face, `${f} : la pièce ${p.id} du mur du fond (${depth.get(p.id)}) passe derrière la face ${face}`);
+        for (const q of inside) assert.ok(depth.get(p.id)! < depth.get(q.id)!, `${f} : le mur du fond derrière ce qui est dans la pièce`);
+      }
+    }
+    // l'ordre de ce qui porte et de ce qui est porté reste vrai dans le mur du fond d'une même pièce (une poutre de côté qui traverse
+    // la face d'une pièce et borde la suivante relève des murs de côté, à part)
+    for (const p of ps) {
+      if (!caps.has(p.id)) continue;
+      for (const s of ps.filter((q) => caps.get(q.id) === caps.get(p.id) && q.z + boxOf(q).h === p.z && q.id !== p.id)) {
+        const a = boxOf(p), c = boxOf(s);
+        if (a.x < c.x + c.w && c.x < a.x + a.w && a.y < c.y + c.d && c.y < a.y + a.d) assert.ok(depth.get(p.id)! > depth.get(s.id)!, `${f} : porté après porteur dans le fond`);
+      }
+    }
+  }
+  assert.ok(rooms >= 6, 'des pièces closes dans les plans du dépôt');
+  console.log(`✓ test-build : le mur du fond derrière tout ce qui est dans la pièce (${rooms} pièces closes, tous les plans du dépôt)`);
+}

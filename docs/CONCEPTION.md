@@ -688,6 +688,16 @@ L'ancienne chaumière (`maison.tmj`, dessinée à la main) a été remplacée pa
   que la coupe se décidait pièce par pièce, d'après sa forme) : sous la tête de Xéros, tranché ; au-dessus (la sablière), caché ; les
   poteaux d'angle restent avec les murs de côté (`cutBands` de world/interior.ts). Changer le bâtiment en mode construction change son
   intérieur.
+- **Le mur du fond est toujours derrière** (règle de Grégoire, 3 novembre 2026, chantier « maison-2 ») : dans une pièce close, le mur
+  du fond et tout ce qui en fait partie (solin, traverses, poteaux, remplissages, sablière, coins de mur) est derrière Xéros et
+  derrière tout ce qui est dans la pièce, dedans comme dehors (la pièce vue par sa fenêtre), pour toute maison. Une pièce est dessinée
+  après celles qui la portent : la traverse nord de la maison, portée aussi par le solin de la cloison x = 320 qui traversait le mur,
+  héritait de son bord sud et passait sur la tête de Xéros dans le cagibi et la moitié ouest de la salle, pas ailleurs. Désormais ce
+  qui est tout entier au nord de la face intérieure nord d'une pièce, à moins de 80 cm, a sa profondeur plafonnée juste derrière cette
+  face, en gardant l'ordre de ce qui porte et de ce qui est porté (`backCaps` de world/interior.ts, `depthsOf` de world/build.ts ; les
+  pièces se calculent pour tout bâtiment, aucune liste). Vérifié par `tools/test-build.ts` sur tous les plans du dépôt. Les murs de
+  côté (une pièce longue nord-sud n'a qu'une profondeur, son bord sud) relèvent du même défaut : à montrer à Grégoire avant d'être
+  corrigés.
 - **La lumière** : la pénombre de la chaumière (0,22) quand un volet est ouvert, plus sombre (0,36) quand tous sont fermés ; une tache
   de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **Dehors, ce
   qui est caché ne se voit pas, lumière comprise** (3 novembre 2026, Grégoire) : la lueur d'un feu sous un toit opaque (l'âtre sous le
