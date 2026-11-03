@@ -136,6 +136,9 @@ export class BuildSystem {
 
   /** Une commande du catalogue (le mode est déjà ouvert). */
   command(cmd: BuildCommand): void {
+    // les clics faits avant la commande se jouent d'abord, avec l'outil qu'on avait en main en cliquant (un jeu qui rame les garde en
+    // file jusqu'à l'image suivante : changer d'outil entre-temps ne doit pas changer ce qu'ils posent)
+    this.flushClicks();
     switch (cmd.kind) {
       case 'pick': {
         this.tool = { kind: 'piece', piece: structuredClone(cmd.piece), view: cmd.view ?? 0, natural: cmd.natural, variant: drawVariant(cmd.piece) };
@@ -198,6 +201,13 @@ export class BuildSystem {
 
     const pointer = this.scene.input.activePointer;
     const at = cam.getWorldPoint(pointer.x, pointer.y);
+    this.flushClicks();
+    this.updateAim(at.x, at.y);
+    this.draw(at);
+  }
+
+  /** Les clics en file, joués dans l'ordre avec l'outil en main (pose au clic gauche, retrait au clic droit). */
+  private flushClicks(): void {
     for (const c of this.clicks.splice(0)) {
       if (c.button === 'right') this.remove(c.x, c.y, c.shift);
       else {
@@ -205,8 +215,6 @@ export class BuildSystem {
         this.place();
       }
     }
-    this.updateAim(at.x, at.y);
-    this.draw(at);
   }
 
   /** R : la pièce en main tourne d'un quart de tour (la pièce de bois : est-ouest, nord-sud, debout). */

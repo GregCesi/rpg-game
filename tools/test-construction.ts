@@ -111,11 +111,23 @@ await playtest('construction', async ({ page, errors, load }) => {
     const { x, y } = spot!;
     center = { x: x + 60, y: y - 10 };
 
-    // 1. une dalle au sol
+    // 1. une dalle au sol ; l'outil change juste après le clic, avant que le jeu l'ait joué (le clic attend l'image suivante, en file) :
+    // c'est la dalle qui se pose, l'outil qu'on avait en cliquant
     await send({ kind: 'pick', piece: { prop: 'slab' }, natural: { form: 0, size: 100 } });
-    await click(x, y);
+    const s0 = await screen(x, y);
+    await page.mouse.move(s0.x, s0.y);
+    await sleep(80);
+    await page.evaluate(([cx, cy, post]) => {
+      const g = (window as any).game;
+      const ev = (type: string) => new MouseEvent(type, { clientX: cx, clientY: cy, button: 0, buttons: type === 'mousedown' ? 1 : 0, bubbles: true });
+      g.canvas.dispatchEvent(ev('mousedown'));
+      window.dispatchEvent(ev('mouseup'));
+      g.events.emit('build', { kind: 'pick', piece: { wood: post } });
+    }, [s0.x, s0.y, post] as const);
+    await page.evaluate(() => (window as any).__frames(2));
     let list = await pieces();
     assert.equal(list.length, 1, 'la dalle est posée');
+    assert.equal(list[0].piece.prop, 'slab', `le clic garde l'outil qu'on avait en cliquant (${JSON.stringify(list[0].piece)})`);
     assert.equal(list[0].z, 0);
     const slab = list[0];
 
