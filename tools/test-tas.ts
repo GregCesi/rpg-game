@@ -1,4 +1,4 @@
-// Test de scénario des tas, dans le vrai jeu (voir tools/lib/playtest.ts) : trois tas montés pièce par pièce avec E, chacun né
+// Test de scénario des tas, dans le vrai jeu (voir tools/lib/playtest.ts) : trois tas montés pièce par pièce au clic, chacun né
 // d'une première pièce posée seule puis d'une pièce identique posée contre elle (des rondins de 80 cm en pyramide, des quartiers
 // de 1,20 m nord-sud en rangées de triangles, des poutres de 1,80 m en rangées) ; leur forme (nombre de pièces, pièces par couche) ;
 // le refus de mélanger (un rondin visé sur un tas de quartiers est posé seul, sans message) ; une pièce de plus de 70 kg (portée
@@ -34,6 +34,11 @@ await playtest('tas', async ({ page, errors, load }) => {
       window.dispatchEvent(new KeyboardEvent('keydown', { code }));
       await sleep(60);
       window.dispatchEvent(new KeyboardEvent('keyup', { code }));
+      await (window as any).__settle();
+    };
+    // un clic, comme un joueur qui lit le mot de chaque clic (tools/lib/playtest.ts `__do`) : poser ce qu'on tient, ou prendre, main vide
+    const act = async (kinds: string[] = ['put', 'take', 'rest', 'place']) => {
+      await (window as any).__do(kinds);
       await (window as any).__settle();
     };
     const give = async (held: unknown) => {
@@ -95,7 +100,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       const steps: Record<string, unknown> = {};
       await give({ prop: 'wood-piece', wood: piece });
       await standAt(x + 35, y, 'down');
-      await press('KeyE');
+      await act();
       steps.firstAlone = { lone: woodProps(wood).length, pile: !!pile(), both: gs.game.both };
       const lone = woodProps(wood).at(-1);
       // la deuxième contre la première : visée juste au sud d'elle (est-ouest) ou à l'est (nord-sud)
@@ -103,7 +108,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       const b = lone.box;
       if (axis === 'ew') await lookAt((b.left + b.right) / 2, b.bottom + (b.bottom - b.top) / 2 + 1);
       else await lookAt(b.right + (b.right - b.left) / 2 + 1, (b.top + b.bottom) / 2);
-      await press('KeyE');
+      await act();
       steps.born = { places: pile()?.places.length, lone: woodProps(wood).length, turned: !!pile()?.turned };
       for (let guard = 0; pile() && pile().places.length < count && guard < 20; guard++) {
         const p = pile();
@@ -113,7 +118,7 @@ await playtest('tas', async ({ page, errors, load }) => {
         await give({ prop: 'wood-piece', wood: piece });
         const [ax, ay] = ps.placeAim(def, next);
         await lookAt(p.x + ax, p.y + ay);
-        await press('KeyE');
+        await act();
       }
       steps.count = pile()?.places.length;
       steps.layers = pile() ? layersOf(pile()) : [];
@@ -146,7 +151,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       await lookAt(started.x + ax, started.y + ay);
       const n0 = notices.length;
       const lonesBefore = woodProps(rondin).length;
-      await press('KeyE');
+      await act();
       out.mixed = {
         started: JSON.stringify(piles().find((p: any) => p.id === started.id).places),
         rondinAlone: woodProps(rondin).length - lonesBefore,
@@ -168,7 +173,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       await (window as any).__settle();
       const gh = ghost();
       await (window as any).shot('sens');
-      await press('KeyE');
+      await act();
       const placed = w().map.piles.find((p: any) => p.pile.id === ew.id);
       out.senses = {
         ghost: gh.key,
@@ -198,7 +203,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       const b = woodProps(lourd).at(-1).box;
       await lookAt((b.left + b.right) / 2, b.bottom + (b.bottom - b.top) / 2 + 1);
       const n0 = notices.length;
-      await press('KeyE');
+      await act();
       const pile = piles().find((p: any) => p.wood?.length === lourd.length && p.wood?.shape === lourd.shape);
       const hv = (out.heavy ??= {}) as Record<string, unknown>;
       hv[name] = { pile: pile?.places.length ?? 0, counts: !!w().map.piles.find((p: any) => p.pile === pile)?.def.count, notices: notices.slice(n0), both: gs.game.both };
@@ -215,7 +220,7 @@ await playtest('tas', async ({ page, errors, load }) => {
       const b = woodProps(quart2).at(-1).box;
       await lookAt((b.left + b.right) / 2, b.bottom + (b.bottom - b.top) / 2 + 1);
       const n0 = notices.length;
-      await press('KeyE');
+      await act();
       out.tooHeavy = { notices: notices.slice(n0), both: gs.game.both };
     }
 
@@ -225,8 +230,12 @@ await playtest('tas', async ({ page, errors, load }) => {
       await give({ prop: 'slab' });
       await standAt(x + 30, y, 'down');
       await (window as any).__settle();
+      // le curseur devant lui : le fantôme le suit, et le clic pose là
+      const front = (window as any).__front();
+      (window as any).__aim(front.x, front.y);
+      await (window as any).__frames(2);
       const gh = ghost();
-      await press('KeyE');
+      await act();
       const stone = w().map.props.find((p: any) => p.type === 'slab' && p.spawned && p.x === gh.x && p.y === gh.y);
       out.stone = { ghost: gh.visible, key: gh.key, at: !!stone, hands: JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both) };
     }
@@ -236,7 +245,8 @@ await playtest('tas', async ({ page, errors, load }) => {
       await standAt(x + 30, y, 'right');
       await (window as any).__settle();
       const gh = ghost();
-      await press('KeyE');
+      // un outil frappe au clic : A (Q en QWERTY) le pose, là où le montre le fantôme
+      await press('KeyQ');
       const def = content.items.hatchet;
       const tool = w().map.ground.find((q: any) => q.item.item === 'hatchet' && q.item.x === gh.x + gh.w / 2 && q.item.y === gh.y);
       out.tool = { ghost: gh.visible, key: gh.key, want: def.ground ?? def.icon, at: !!tool, hands: JSON.stringify(gs.game.hands) + JSON.stringify(gs.game.both) };
@@ -249,12 +259,12 @@ await playtest('tas', async ({ page, errors, load }) => {
       await press('KeyR');
       await (window as any).__settle();
       const gh = ghost();
-      await press('KeyE');
+      await press('KeyQ');
       const tool = w().map.ground.find((q: any) => q.item.item === 'hatchet' && q.item.view === 1);
       await standAt(x + 30, y, 'right');
-      if (tool) w().pickUp(tool);
+      if (tool) w().pickUp(tool, 1);
       await (window as any).__settle();
-      out.turned = { key: gh.key, image: tool?.image.texture.key, heldView: (gs.held(gs.game) as any)?.view };
+      out.turned = { key: gh.key, image: tool?.image.texture.key, heldView: (gs.held(gs.game, 1) as any)?.view };
       gs.emptyHands(gs.game);
       w().handsChanged();
       await (window as any).__settle();

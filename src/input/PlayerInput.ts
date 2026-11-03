@@ -114,7 +114,11 @@ export class PlayerInput {
   private history: 'undo' | 'redo' | undefined;
 
   constructor(scene: Phaser.Scene) {
-    CANVAS = scene.game.canvas;
+    if (CANVAS !== scene.game.canvas) {
+      CANVAS = scene.game.canvas;
+      // la souris sort du canevas (vers le panneau ?dieu, le catalogue) : plus de curseur, Xéros vise devant lui, comme au clavier seul
+      CANVAS.addEventListener('mouseleave', () => (CURSOR = undefined));
+    }
     // pas de menu du navigateur au clic droit sur le canevas : c'est la main gauche
     scene.input.mouse?.disableContextMenu();
     const kb = scene.input.keyboard!;

@@ -226,6 +226,11 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
       };
       window.__press = (button = 'left') => window.__mouse('mousedown', button);
       window.__release = (button = 'left') => window.__mouse('mouseup', button);
+      // la souris quitte le canevas : le jeu n'a plus de curseur (Xéros vise devant lui, comme au clavier seul)
+      window.__leave = () => {
+        window.__aimAt = undefined;
+        window.game.canvas.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+      };
       window.__click = async (button = 'left', at, ms = 0) => {
         const p = at || window.__front();
         window.__aim(p.x, p.y);
@@ -233,6 +238,37 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
         window.__press(button);
         if (ms > 0) await new Promise((r) => setTimeout(r, ms));
         window.__release(button);
+        // le jeu lit le relâchement, puis la main quitte le canevas
+        await window.__frames(2);
+        window.__leave();
+      };
+      // \`__do(kinds, { at, ms, long })\` : le joueur lit le mot de chaque clic (le HUD, world/clickAction.ts) et clique le bouton qui
+      // fait ce qu'il veut (\`kinds\` : une ou plusieurs sortes de clic, dans l'ordre de préférence ; le gauche d'abord à égalité) ;
+      // \`long\` : le clic maintenu (\`ms\`, par défaut le seuil et un peu plus) ; échoue en nommant ce que disent les deux clics
+      window.__do = async (kinds, opts = {}) => {
+        const list = Array.isArray(kinds) ? kinds : [kinds];
+        const w = window.game.scene.getScene('world');
+        const p = opts.at || window.__front(opts.face);
+        window.__aim(p.x, p.y);
+        await window.__frames(2);
+        const plans = w.plans;
+        const of = (b) => plans && (opts.long ? plans[b].long : plans[b].short).kind;
+        let button;
+        for (const k of list) {
+          button = ['left', 'right'].find((b) => of(b) === k);
+          if (button) break;
+        }
+        if (!button) {
+          window.__leave();
+          throw new Error('aucun clic ne fait ' + list.join(' ou ') + ' : gauche ' + JSON.stringify(plans?.left) + ', droit ' + JSON.stringify(plans?.right));
+        }
+        window.__press(button);
+        const ms = opts.ms ?? (opts.long ? 650 : 0);
+        if (ms > 0) await new Promise((r) => setTimeout(r, ms));
+        window.__release(button);
+        await window.__frames(2);
+        window.__leave();
+        return button;
       };
     `);
     // la vitesse de simulation (src/systems/simSpeed.ts : N pas de jeu de taille normale par image, jamais une image sautée) : x10

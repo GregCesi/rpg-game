@@ -177,6 +177,8 @@ export class WorldScene extends Phaser.Scene {
   /** Ce que vise un clic à cette image (prendre, poser sur, une place de chantier) ; la bille qu'un clic maintenu ferait pivoter. */
   private handTarget?: Interactable;
   private turnTarget?: Interactable;
+  /** Ce qui est visé encaisse un coup (le fantôme ne s'y montre pas : le clic frapperait). */
+  private aimedTarget = false;
   /** Le lancer qu'on vise (mode `aim`) : la main, le bouton tenu ; le repère au sol où l'objet tombera ; les objets en vol. */
   private aiming?: { hand: Hand; button: Button };
   private clickButton: Button = 'left';
@@ -501,12 +503,19 @@ export class WorldScene extends Phaser.Scene {
     return h && 'item' in h && worksWith(h.item) ? h.item : undefined;
   }
 
-  /** La main dont le clic poserait ce qu'elle tient (le fantôme la montre) : celle du dernier clic d'abord. */
+  /**
+   * La main dont le fantôme se montre : celle dont le clic poserait ce qu'elle tient (celle du dernier clic d'abord) ; sinon celle que
+   * lâcherait A (un outil, une arme, qui frappent au clic : A les pose), quand son clic ne vise rien (ni travail, ni cible, ni place).
+   */
   private ghostHand(): Hand | undefined {
     const plans = this.plans;
     if (!plans) return undefined;
     const button = (h: Hand): Button => (h === 1 ? 'left' : 'right');
-    return [this.lastHand, (1 - this.lastHand) as Hand].find((h) => plans[button(h)].short.kind === 'put');
+    const put = [this.lastHand, (1 - this.lastHand) as Hand].find((h) => plans[button(h)].short.kind === 'put');
+    if (put !== undefined) return put;
+    const h = this.handOf(this.lastHand);
+    if (!(game.both ?? game.hands[h])) return undefined;
+    return plans[button(h)].short.kind === 'strike' && !this.aimedTarget ? h : undefined;
   }
 
   /**
@@ -544,6 +553,7 @@ export class WorldScene extends Phaser.Scene {
     aimed.target = this.combat.aimedAt(this.player.probe(INTERACT.reach), INTERACT.radius);
     aimed.work = [this.workOf(0), this.workOf(1)];
     this.handTarget = t;
+    this.aimedTarget = !!aimed.target;
     const knows = game.knownPlans.length > 0;
     this.plans = { left: clickPlan('left', game, aimed, knows), right: clickPlan('right', game, aimed, knows) };
     this.game.events.emit(GameEvent.ClickPlans, this.plans);
