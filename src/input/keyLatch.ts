@@ -83,7 +83,7 @@ export class KeyLatch {
 
 /**
  * Un appui maintenu (E maintenu : nouer ; R maintenu : pivoter) qui se termine : `long` s'il a duré `ms`, sinon `short`. Encore enfoncé,
- * il est long dès que le jeu a avancé de `ms` depuis son début (`elapsed`, le temps du jeu) ; relâché, c'est la durée vraie de l'appui
+ * il est long dès que `ms` se sont écoulées en temps vrai depuis son début (`elapsed`, jamais le temps du jeu, qui va plus vite à x10) ; relâché, c'est la durée vraie de l'appui
  * qui décide (`lasted`, l'horodatage des événements), jamais le temps qu'a mis le jeu à le lire : une image longue ne fait pas d'un
  * appui court un appui long. Undefined : l'appui continue.
  */
