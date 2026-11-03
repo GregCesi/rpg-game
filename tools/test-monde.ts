@@ -306,33 +306,45 @@ await playtest('monde', async ({ page, errors, load }) => {
   const said = await page.evaluate(() => (window as any).game.scene.getScene('dialogue').def?.lines?.[0]?.text ?? (window as any).game.scene.getScene('dialogue').lines?.[0]?.text);
   for (let i = 0; i < 4 && (await page.evaluate(() => (window as any).game.scene.isActive('dialogue'))); i++) {
     await page.keyboard.press('KeyE');
-    await sleep(300);
+    await page.evaluate(() => (window as any).__frames(2));
   }
   // 5. le bord du monde, à l'est : on ne passe pas
   p = await where();
   await press(['KeyD']);
-  await sleep(1500);
+  // jusqu'à ce qu'il ne bouge plus : dix images de suite au même endroit, contre le bord
+  await page.evaluate(() => {
+    const a = (window as any).game.scene.getScene('world').player.actor;
+    let last = NaN;
+    let still = 0;
+    return (window as any).__until(() => {
+      still = Math.abs(a.x - last) < 0.01 ? still + 1 : 0;
+      last = a.x;
+      return still >= 10;
+    }, 'arrêté au bord du monde');
+  });
   await press([]);
   const edge = await where();
   assert.equal(edge.id, 'route-de-la-ville', 'le bord du monde arrête Xéros');
   assert.ok(edge.x <= 125 * TILE, `toujours dans la zone (x = ${edge.x})`);
   // un pas en arrière, loin du poteau (collé à lui, sa collision le repousserait de quelques px à la reprise)
   await goTo(post.x, post.y + 48, 'x');
-  await sleep(200);
+  await page.evaluate(() => (window as any).__idle());
   const before = await where();
 
   const crossings = await page.evaluate(() => (window as any).crossings);
   // 6. la page rechargée : la partie le retrouve là
-  await sleep(300);
   await load('?dieu');
   const after = await where();
   assert.equal(after.id, before.id, 'la même zone après le rechargement');
   assert.ok(Math.abs(after.x - before.x) <= 1 && Math.abs(after.y - before.y) <= 1, `les mêmes pieds (${before.x}, ${before.y}) -> (${after.x}, ${after.y})`);
 
-  // 7. la forêt profonde : le temps d'une image, immobile puis en marche (moyenne et pire sur 3 s)
+  // 7. la forêt profonde : le temps d'une image, immobile puis en marche (moyenne et pire sur 1,5 s), à x1 (l'image d'un joueur, pas
+  // celle de dix pas de jeu)
   emit({ kind: 'map', map: 'foret-profonde' });
   await until(async () => (await where()).id === 'foret-profonde' && (await where()).mode === 'play', 15000, 'la forêt profonde');
-  await sleep(800);
+  await page.evaluate(() => (window as any).__idle());
+  await emit({ kind: 'sim-speed', factor: 1 });
+  await page.evaluate(() => (window as any).__frames(10));
   const measure = () =>
     page.evaluate(
       () =>
@@ -343,7 +355,7 @@ await playtest('monde', async ({ page, errors, load }) => {
           const start = performance.now();
           const step = () => {
             ds.push(g.loop.delta);
-            if (performance.now() - start < 3000) requestAnimationFrame(step);
+            if (performance.now() - start < 1500) requestAnimationFrame(step);
             else resolve({ mean: ds.reduce((a, b) => a + b, 0) / ds.length, worst: Math.max(...ds), objects: w.map.props.length, band: w.children.list.length });
           };
           requestAnimationFrame(step);
@@ -353,6 +365,7 @@ await playtest('monde', async ({ page, errors, load }) => {
   await press(['KeyD']);
   const walking = await measure();
   await press([]);
+  await page.evaluate(() => (window as any).__resume());
 
   assert.deepEqual(errors, [], 'aucune erreur dans la page');
   assert.equal(said, 'Vers la ville. La route n’est pas encore pour moi.'.replace('’', "'"), 'le panneau se lit');
