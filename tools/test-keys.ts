@@ -1,13 +1,13 @@
 // Aucune clé de contenu écrite en dur dans le code (docs/AUDIT.md, « Normalisation » : le comportement vient d'une capacité déclarée
 // dans les données, jamais du nom de l'objet). Cherche dans src/ (hors src/generated/) toute chaîne entre guillemets qui est une clé
-// de props.json, d'items.json ou de piles.json. Seuls passent : validate.ts (ses listes d'exceptions nomment les objets, chacun avec
+// de props.json, d'items.json, de piles.json ou de creatures.json (une créature est des données : aucune espèce nommée dans le code). Seuls passent : validate.ts (ses listes d'exceptions nomment les objets, chacun avec
 // sa raison), la clé unique de la pièce de bois (`WOOD_PIECE`, voulue), et les mots qui sont aussi le nom d'autre chose (ALLOWED).
 // Usage : npx tsx tools/test-keys.ts (lancé par npm run test:fast).
 
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { items, piles, props } from '../src/content';
+import { creatures, items, piles, props } from '../src/content';
 
 /** Les mots qui sont une clé de contenu et le nom d'autre chose, avec ce qu'ils nomment dans le code. */
 const ALLOWED: Record<string, string> = {
@@ -21,7 +21,7 @@ const FILES_ALLOWED = new Set(['src/content/validate.ts']);
 /** La clé unique de la pièce de bois, voulue (tout le bois du monde est cette pièce, décrite par ses réglages). */
 const LINES_ALLOWED = [/^export const WOOD_PIECE = 'wood-piece';$/];
 
-const keys = new Set([...Object.keys(props), ...Object.keys(items), ...Object.keys(piles)]);
+const keys = new Set([...Object.keys(props), ...Object.keys(items), ...Object.keys(piles), ...Object.keys(creatures)]);
 const files: string[] = [];
 const walk = (dir: string) => {
   for (const f of readdirSync(dir)) {

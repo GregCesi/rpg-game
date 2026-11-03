@@ -1276,6 +1276,61 @@ const TargetSchema = z.strictObject({
   tilt: z.number().min(0).max(30).default(0),
 });
 
+/** Un intervalle [min, max] : une valeur est tirée au hasard entre les deux (min ≤ max). */
+const SpanSchema = z.tuple([z.number().nonnegative(), z.number().nonnegative()]).refine(([a, b]) => a <= b, { message: 'un intervalle [min, max] : min ≤ max' });
+
+/**
+ * Ce qu'une créature perçoit de Xéros à une allure (`senses` d'une créature), en mètres : en deçà d'`alert`, elle passe aux aguets ; en
+ * deçà de `flee`, elle fuit. Plus Xéros est lent et silencieux, plus il approche.
+ */
+const GaitSensesSchema = z
+  .strictObject({ alert: z.number().positive(), flee: z.number().nonnegative() })
+  .refine((s) => s.flee < s.alert, { message: "'flee' doit être en deçà d'alert" });
+
+/**
+ * Une créature (creatures.json, CONCEPTION « Les créatures ») : des données pour le moteur commun (world/creature.ts, world/warren.ts,
+ * systems/creatures.ts), jamais du code propre à une bête. `image` : sa planche de dessins (animations `<image>-<pose>-<direction>`).
+ * - `mass` (kg), `dims` (cm, son corps au repos) ; `becomes` : l'objet qu'elle devient morte (items.json, de la même masse : la matière
+ *   se conserve) ; `target` : ses points de vie (finis, gardés par la partie) et ce qui vole sous un coup.
+ * - `senses` : les distances de perception (m) selon l'allure de Xéros : immobile (`still`), discret (`sneak`, Alt), à la marche, à la
+ *   course ; `calm` : combien de secondes Xéros doit rester immobile ou s'éloigner pour qu'une bête aux aguets se calme.
+ * - `graze` : la vie tranquille autour de sa garenne : `range` (m, au plus loin de l'entrée la plus proche), ses petits sauts (`hop` :
+ *   vitesse en m/s pendant le saut, longueur en m), les pauses entre deux sauts (`pause`, s) et le temps passé à brouter à une place
+ *   (`stay`, s) avant d'en chercher une autre.
+ * - `flee` : sa course (`speed`, m/s) en zigzag (`zigzag` : un écart d'`angle`° de part et d'autre, changé tous les `every` m).
+ * - `thump` : à l'entrée, elle tambourine `ms` ms ; les bêtes de son espèce à moins de `radius` m fuient aussi.
+ * - `burrow` : `reach` (m), à quelle distance de l'entrée elle y disparaît ; `stay` (minutes de jeu), combien de temps elle reste au
+ *   terrier après une fuite ; `emerge` (s), l'écart entre deux sorties.
+ * - `schedule` : la part de la population dehors à partir de chaque heure (`hour`, de 0 à 24 ; `out`, de 0 à 1), la journée bouclant.
+ * - `births` : `hours`, combien d'heures de jeu entre deux naissances tant qu'il manque des bêtes à la garenne.
+ * - `heal` : `days`, combien de jours une bête blessée reste au terrier (elle guérit au jour `days` après sa blessure).
+ */
+export const CreatureSchema = z.strictObject({
+  name: id,
+  image: id,
+  mass: z.number().positive(),
+  dims: z.lazy(() => DimsSchema),
+  becomes: id,
+  target: z.strictObject({ hp: z.number().positive(), matter: id, tilt: z.number().min(0).max(30).default(0) }),
+  senses: z.strictObject({ still: GaitSensesSchema, sneak: GaitSensesSchema, walk: GaitSensesSchema, run: GaitSensesSchema }),
+  calm: z.number().positive(),
+  graze: z.strictObject({
+    range: z.number().positive(),
+    hop: z.strictObject({ speed: z.number().positive(), length: SpanSchema }),
+    pause: SpanSchema,
+    stay: SpanSchema,
+  }),
+  flee: z.strictObject({ speed: z.number().positive(), zigzag: z.strictObject({ every: z.number().positive(), angle: z.number().min(0).max(80) }) }),
+  thump: z.strictObject({ ms: z.number().nonnegative(), radius: z.number().nonnegative() }),
+  burrow: z.strictObject({ reach: z.number().positive(), stay: SpanSchema, emerge: z.number().positive() }),
+  schedule: z
+    .array(z.strictObject({ hour: z.number().min(0).max(24), out: z.number().min(0).max(1) }))
+    .min(1)
+    .refine((s) => s.every((x, i) => i === 0 || x.hour > s[i - 1].hour), { message: "les heures de 'schedule' vont croissant" }),
+  births: z.strictObject({ hours: z.number().positive() }),
+  heal: z.strictObject({ days: z.number().int().positive() }),
+});
+
 /**
  * Une attaque (combat.json, `attacks`) : des données. `gesture` : le geste de combat du corps (COMBAT_POSES de
  * art/characters/xeros-combat.ts, tirées par build-art dans src/generated/combatPoses.ts : ses images, leur durée, la main, l'arme,
@@ -1687,6 +1742,8 @@ export type BuildPlan = z.infer<typeof BuildPlanSchema>;
 export type JointType = z.infer<typeof JointTypeSchema>;
 export type Weapon = z.infer<typeof WeaponSchema>;
 export type Target = z.infer<typeof TargetSchema>;
+export type CreatureDef = z.infer<typeof CreatureSchema>;
+export type Gait = keyof CreatureDef['senses'];
 export type Attack = z.infer<typeof AttackSchema>;
 export type StanceDef = z.infer<typeof StanceDefSchema>;
 export type CombatDef = z.infer<typeof CombatSchema>;

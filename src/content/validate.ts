@@ -17,7 +17,7 @@ import { WEAPON_ANGLES } from '../world/strike';
 import type { CombatPoses } from '../world/strike';
 import { calibrationJob, gameJobs, planOf, swingerOf } from '../world/workPlan';
 import { JointTypeSchema } from './types';
-import type { BuildPlan, CombatDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
+import type { BuildPlan, CombatDef, CreatureDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -224,6 +224,8 @@ export interface Content {
   combat: CombatDef;
   /** Le travail (work.json) : les coups, la matière, les points de calage. */
   work: WorkDef;
+  /** Les créatures (creatures.json, CONCEPTION « Les créatures ») ; absentes : leur vérification est sautée. */
+  creatures?: Record<string, CreatureDef>;
   /** Le temps (time.json) : les paliers de la vitesse du temps. */
   time?: { speeds: readonly number[]; dieuSpeed: number };
   /**
@@ -972,6 +974,39 @@ export const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> =
 };
 
 /**
+ * Les créatures dont les dessins (et l'objet qu'elles deviennent mortes, qui en reprend les dessins) attendent : sautées par
+ * validateCreatures, avec leur raison. Le lapin : ses dessins sont proposés hors du jeu (art/proposals/lapins-*.ts,
+ * .art-preview/lapins.png), Grégoire choisit avant l'intégration (chantier « lapins », étape 4).
+ */
+export const CREATURES_TODO: Record<string, string> = {
+  rabbit: 'dessins proposés (art/proposals/lapins-*.ts), en attente du choix de Grégoire ; le lapin mort arrive avec eux',
+};
+
+/** Les poses dessinées d'une créature (animations `<pose>-<direction>` de sa planche), dans les quatre directions. */
+export const CREATURE_POSES = ['graze', 'sit', 'hop', 'alert', 'run', 'thump'] as const;
+
+/**
+ * Une créature (creatures.json) : elle devient morte un objet d'items.json de sa masse (la matière se conserve), qui se tient ; sa
+ * planche a chaque pose dans les quatre directions ; sa matière vole sous un coup (`fx-<matter>`) ; son rythme commence à minuit.
+ */
+function validateCreatures(c: Content, cat: Catalog): string[] {
+  const errors: string[] = [];
+  for (const k of Object.keys(CREATURES_TODO)) if (!c.creatures?.[k]) errors.push(`validate.ts CREATURES_TODO : '${k}' absent de creatures.json`);
+  for (const [k, d] of Object.entries(c.creatures ?? {})) {
+    const err = (msg: string) => errors.push(`creatures.json '${k}' : ${msg}`);
+    if (d.schedule[0].hour !== 0) err("'schedule' commence à minuit (hour 0) : la journée boucle");
+    if (CREATURES_TODO[k]) continue;
+    const dead = c.items[d.becomes];
+    if (!dead) err(`'becomes' : objet '${d.becomes}' absent d'items.json`);
+    else if (typeof dead.mass !== 'number' || Math.abs(dead.mass - d.mass) > 1e-9) err(`'becomes' : '${d.becomes}' pèse ${JSON.stringify(dead.mass)} kg, la bête ${d.mass} kg : la matière se conserve`);
+    for (const pose of CREATURE_POSES)
+      for (const dir of DIRECTIONS) if (!cat.animations.get(d.image)?.has(`${pose}-${dir}`)) err(`planche '${d.image}' : animation '${pose}-${dir}' manquante`);
+    if (!cat.textures.has(`fx-${d.target.matter}`)) err(`cible : planche 'fx-${d.target.matter}' non dessinée`);
+  }
+  return errors;
+}
+
+/**
  * Les métiers qui restent à dire (CONCEPTION « Les matières » : chaque objet dit qui le fait) ; à décider avec Grégoire. Le naturel
  * (arbre, rocher, buisson) aura le sien (la nature, ou le cueilleur) ; les meubles et les lumières, celui qui les fabrique.
  */
@@ -1310,6 +1345,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   const err = (msg: string) => errors.push(msg);
   const addAll = (msgs: string[]) => errors.push(...msgs);
+
+  // les créatures : ce qu'elles deviennent mortes (la même masse), leurs dessins
+  addAll(validateCreatures(c, cat));
 
   // le travail : les outils, les récoltes au coup, les points de calage
   addAll(validateWork(c, cat));

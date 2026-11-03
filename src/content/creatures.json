@@ -1,0 +1,35 @@
+{
+  "rabbit": {
+    "name": "lapin",
+    "image": "rabbit",
+    "mass": 1.5,
+    "dims": { "w": 40, "d": 15, "h": 20, "shape": "box" },
+    "becomes": "dead-rabbit",
+    "target": { "hp": 4, "matter": "fur", "tilt": 0 },
+    "senses": {
+      "still": { "alert": 5, "flee": 2 },
+      "sneak": { "alert": 8, "flee": 4 },
+      "walk": { "alert": 15, "flee": 10 },
+      "run": { "alert": 25, "flee": 20 }
+    },
+    "calm": 4,
+    "graze": {
+      "range": 25,
+      "hop": { "speed": 1.2, "length": [0.15, 0.5] },
+      "pause": [0.6, 3],
+      "stay": [4, 20]
+    },
+    "flee": { "speed": 10, "zigzag": { "every": 1.5, "angle": 30 } },
+    "thump": { "ms": 500, "radius": 15 },
+    "burrow": { "reach": 0.3, "stay": [3, 8], "emerge": 20 },
+    "schedule": [
+      { "hour": 0, "out": 0 },
+      { "hour": 5, "out": 0.85 },
+      { "hour": 8.5, "out": 0.35 },
+      { "hour": 18, "out": 0.85 },
+      { "hour": 21.5, "out": 0 }
+    ],
+    "births": { "hours": 24 },
+    "heal": { "days": 1 }
+  }
+}

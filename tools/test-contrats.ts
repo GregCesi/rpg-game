@@ -7,10 +7,12 @@
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { combat, items, matters, props, rocks, stamina, strength, transforms, wood, work } from '../src/content';
+import { combat, creatures, items, matters, props, rocks, stamina, strength, transforms, wood, work } from '../src/content';
 import { itemMass, propMass, woodMass } from '../src/content/mass';
-import { ItemDefSchema, type ItemDef, type WoodPiece } from '../src/content/types';
-import { catalogFrom, DRAWINGS_TODO, validateContent, VIEWS_TODO } from '../src/content/validate';
+import { CreatureSchema, ItemDefSchema, type CreatureDef, type ItemDef, type WoodPiece } from '../src/content/types';
+import { catalogFrom, CREATURES_TODO, DRAWINGS_TODO, validateContent, VIEWS_TODO } from '../src/content/validate';
+import { perceive, pixels } from '../src/world/creature';
+import { beast, blockedIn, drive, DT, field } from './lib/creature-trial';
 import { viewImages } from '../src/content/views';
 import { toolSheet, worksWith } from '../src/content';
 import { catalog, looksOf } from '../src/build/catalog';
@@ -262,6 +264,46 @@ const errs = validateContent({ ...content, combatPoses: poses, buildCatalog: { e
 );
 check('essai : validate.ts', (miss) => errs.forEach((e) => miss(e)));
 
+// ---------- une créature d'essai : rien que des données ----------
+
+// un lièvre d'essai : il reprend les dessins du lapin et l'objet qu'il devient, ses chiffres sont les siens (plus craintif, plus rapide,
+// sans zigzag) ; le moteur commun (src/world/creature.ts) le fait vivre, percevoir, fuir à l'entrée en contournant un mur, tambouriner
+const model = Object.entries(creatures)[0];
+if (!model) throw new Error('creatures.json : aucune créature à prendre pour modèle');
+const [modelKey, modelDef] = model;
+const hare = CreatureSchema.parse({
+  ...modelDef,
+  name: 'lièvre d’essai',
+  senses: { still: { alert: 9, flee: 4 }, sneak: { alert: 14, flee: 7 }, walk: { alert: 30, flee: 18 }, run: { alert: 40, flee: 30 } },
+  flee: { speed: 14, zigzag: { every: 3, angle: 0 } },
+  graze: { ...modelDef.graze, range: 40 },
+});
+(creatures as Record<string, CreatureDef>)['essai-lievre'] = hare;
+check('essai : créature', (miss) => {
+  if (perceive(hare, { x: 0, y: 0 }, { x: pixels(25), y: 0, gait: 'walk' }) !== 'alert') miss('à 25 m de Xéros qui marche, aux aguets');
+  if (perceive(hare, { x: 0, y: 0 }, { x: pixels(25), y: 0, gait: 'sneak' }) !== undefined) miss('à 25 m de Xéros discret, rien');
+  // elle vit : elle broute (elle bouge) sans Xéros
+  const f = field([], [{ x: 0, y: 0 }], 4);
+  const c = beast(hare, { x: pixels(5), y: 0 }, 'essai-lievre');
+  let moved = 0;
+  drive(c, hare, f, Math.ceil(30 / DT), undefined, (b) => (moved += b.from ? Math.hypot(b.x - b.from.x, b.y - b.from.y) : 0));
+  if (c.mode !== 'calm' || moved < pixels(0.5)) miss(`elle broute en bougeant (${c.mode}, ${moved.toFixed(0)} px en 30 s)`);
+  // elle fuit, contourne un mur et entre au terrier
+  const wall = [{ x: pixels(4), y: -pixels(5), w: 3, h: pixels(10) }];
+  const g = field(wall, [{ x: 0, y: 0 }], 9);
+  const d = beast(hare, { x: pixels(10), y: 0 }, 'essai-lievre');
+  g.threat = { x: pixels(20), y: 0, gait: 'walk' };
+  const r = drive(d, hare, g, Math.ceil(30 / DT), (_, ev) => ev.some((e) => e.kind === 'enter'), (b) => {
+    if (blockedIn(wall)(b.x, b.y)) miss('jamais dans le mur');
+  });
+  if (!r.events.some((e) => e.kind === 'thump')) miss('elle tambourine à l’entrée');
+  if (d.mode !== 'burrow') miss(`elle entre au terrier (${d.mode})`);
+});
+const creatureErrs = validateContent({ ...content, creatures, combatPoses: poses, buildCatalog: { entries: cat2(), looksOf: lo } } as never, cat).filter(
+  (e) => e.includes("'essai-lievre'") && !(CREATURES_TODO[modelKey] && /planche|becomes|fx-/.test(e)),
+);
+check('essai : créature, validate.ts', (miss) => creatureErrs.forEach((e) => miss(e)));
+
 // ---------- le monde ne limite pas, seul Xéros limite (Grégoire) ----------
 // À la force maximale (?dieu « force », plafonnée au plus fort des humains), toute pièce de bois (chaque diamètre, chaque aspect,
 // chaque longueur de la grille) et tout objet qu'il soulève se prend, et ce qui s'empile forme un tas qui compte au moins 2 ; à la force
@@ -386,5 +428,5 @@ const lines = bad.map((r) => `  ${r.at} :\n${r.missing.map((m) => `    - ${m}`).
 assert.deepEqual(bad, [], `contrats non remplis :\n${lines.join('\n')}`);
 const count = (p: string) => reports.filter((r) => r.at.startsWith(p)).length;
 console.log(
-  `✓ contrats : ${count('arbre')} arbres, ${count('outil')} outils, ${count('arme')} armes, ${count('portable')} objets portables, ${count('pièce de bois')} diamètres de bois, ${count('matière')} matières, ${count('meuble')} meubles ; membres d'essai (arbre, hache, épée) : tout le contrat, du dessin à la pièce en tas comptée`,
+  `✓ contrats : ${count('arbre')} arbres, ${count('outil')} outils, ${count('arme')} armes, ${count('portable')} objets portables, ${count('pièce de bois')} diamètres de bois, ${count('matière')} matières, ${count('meuble')} meubles ; membres d'essai (arbre, hache, épée, créature) : tout le contrat, du dessin à la pièce en tas comptée`,
 );
