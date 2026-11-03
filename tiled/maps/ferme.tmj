@@ -243,8 +243,8 @@
           "visible": true,
           "name": "",
           "type": "warren-hole",
-          "x": 3555,
-          "y": 1330,
+          "x": 2885,
+          "y": 1690,
           "width": 10,
           "height": 8,
           "gid": 1160
@@ -255,8 +255,8 @@
           "visible": true,
           "name": "",
           "type": "warren-hole",
-          "x": 3615,
-          "y": 1300,
+          "x": 2790,
+          "y": 1760,
           "width": 10,
           "height": 8,
           "gid": 1160
@@ -267,8 +267,8 @@
           "visible": true,
           "name": "",
           "type": "warren-hole",
-          "x": 3695,
-          "y": 1352,
+          "x": 2850,
+          "y": 1840,
           "width": 10,
           "height": 8,
           "gid": 1160
@@ -279,8 +279,8 @@
           "visible": true,
           "name": "",
           "type": "warren-hole",
-          "x": 3605,
-          "y": 1405,
+          "x": 2760,
+          "y": 1880,
           "width": 10,
           "height": 8,
           "gid": 1160
@@ -6254,10 +6254,10 @@
           "visible": true,
           "name": "garenne",
           "type": "Warren",
-          "x": 3530,
-          "y": 1260,
-          "width": 200,
-          "height": 160,
+          "x": 2690,
+          "y": 1580,
+          "width": 290,
+          "height": 320,
           "properties": [
             {
               "name": "creature",
