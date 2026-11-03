@@ -117,6 +117,8 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     await frames(2);
     await page.mouse.click(s.x, s.y);
     await settle();
+    // la main quitte le canevas : sans curseur, Xéros vise devant lui (stand), et E ouvre la porte qu'il regarde
+    await page.evaluate(() => (window as any).__leave());
   };
   /** Capture du canevas (`zoom` pixels par pixel du jeu), cadrée sur un rectangle du monde (px), la caméra arrêtée. */
   const capture = async (x0: number, y0: number, x1: number, y1: number, zoom: number): Promise<PNG> => {
