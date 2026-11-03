@@ -197,6 +197,40 @@
       ]
     },
     {
+      "id": 12,
+      "name": "CreatureKind",
+      "type": "enum",
+      "storageType": "string",
+      "valuesAsFlags": false,
+      "values": [
+        "",
+        "rabbit"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Warren",
+      "type": "class",
+      "color": "#7a8f3a",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "creature",
+          "type": "string",
+          "propertyType": "CreatureKind",
+          "value": ""
+        },
+        {
+          "name": "population",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
       "id": 9,
       "name": "Plan",
       "type": "class",

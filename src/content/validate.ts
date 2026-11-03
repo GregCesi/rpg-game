@@ -17,7 +17,7 @@ import { WEAPON_ANGLES } from '../world/strike';
 import type { CombatPoses } from '../world/strike';
 import { calibrationJob, gameJobs, planOf, swingerOf } from '../world/workPlan';
 import { JointTypeSchema } from './types';
-import type { BuildPlan, CombatDef, CreatureDef, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
+import type { BuildPlan, CombatDef, CreatureDef, MapWarren, Facing, Views, CharacterDef, Hold, HoldPoses, DialogueDef, Gesture, ItemDef, MapData, PileDef, PlanDef, PropDef, Strength, TilesetCatalog, WoodDef, WoodLook, WoodPiece, Matter, Rock, TransformDef, WorkDef } from './types';
 
 const DIRECTIONS = ['down', 'up', 'left', 'right'];
 
@@ -110,6 +110,7 @@ function validateMaps(
   dialogues: Record<string, DialogueDef>,
   characters: Record<string, CharacterDef>,
   cat: Catalog,
+  creatures?: Record<string, CreatureDef>,
 ): string[] {
   const errors: string[] = [];
   const err = (msg: string) => errors.push(msg);
@@ -154,6 +155,12 @@ function validateMaps(
     for (const p of m.parcels) {
       const at = `${where} : parcelle « ${p.name ?? p.use} » en (${p.x}, ${p.y})`;
       if (p.x < 0 || p.y < 0 || p.x + p.w > W || p.y + p.h > H) err(`${at} : sort de la carte`);
+    }
+    for (const g of m.warrens) {
+      const at = `${where} : garenne (objet n°${g.id}) en (${g.x}, ${g.y})`;
+      if (g.x < 0 || g.y < 0 || g.x + g.w > W || g.y + g.h > H) err(`${at} : sort de la carte`);
+      if (!creatures?.[g.creature]) err(`${at} : créature '${g.creature}' absente de creatures.json`);
+      if (!warrenHoles(m, g, propsByType).length) err(`${at} : aucune entrée (un objet à 'burrow' de props.json) posée dans son rectangle`);
     }
     for (const p of m.plans) {
       const at = `${where} : plan « ${p.plan} » (objet n°${p.id}) en (${p.x}, ${p.y})`;
@@ -973,6 +980,11 @@ export const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> =
   ...Object.fromEntries(['hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword'].map((k) => [k, { ground: 'pas encore en jeu : son image au sol avec son chantier' }])),
 };
 
+/** Les entrées d'une garenne : les objets de la carte à `burrow` (props.json) dont l'ancrage (coin bas gauche) est dans son rectangle. */
+export function warrenHoles(m: MapData, g: MapWarren, propsByType: Record<string, PropDef>): MapData['objects'] {
+  return m.objects.filter((o) => propsByType[o.type]?.burrow && !o.inside && o.x >= g.x && o.x <= g.x + g.w && o.y >= g.y && o.y <= g.y + g.h);
+}
+
 /**
  * Les créatures dont les dessins (et l'objet qu'elles deviennent mortes, qui en reprend les dessins) attendent : sautées par
  * validateCreatures, avec leur raison. Le lapin : ses dessins sont proposés hors du jeu (art/proposals/lapins-*.ts,
@@ -1486,6 +1498,6 @@ export function validateContent(c: Content, cat: Catalog): string[] {
 
   // Cartes (issues de Tiled) et catalogue des tuiles
   addAll(validateTilesCatalog(c.tiles, cat));
-  addAll(validateMaps(c.maps, c.props, c.dialogues, c.characters, cat));
+  addAll(validateMaps(c.maps, c.props, c.dialogues, c.characters, cat, c.creatures));
   return errors;
 }

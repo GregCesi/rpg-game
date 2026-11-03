@@ -766,6 +766,11 @@ export const PropDefSchema = z.strictObject({
     .optional(),
   /** Ce qu'on frappe avec une arme (le mannequin) : voir TargetSchema. */
   target: z.lazy(() => TargetSchema).optional(),
+  /**
+   * Une entrée de terrier (l'entrée de garenne) : une créature y entre et en sort (CONCEPTION « Les créatures ») ; les entrées posées
+   * dans le rectangle d'une garenne (`Warren` de Tiled) sont les siennes.
+   */
+  burrow: z.literal(true).optional(),
 });
 
 /** Les quatre coins d'une emprise : nord-ouest, nord-est, sud-est, sud-ouest. */
@@ -1612,6 +1617,21 @@ const MapPileSchema = z.strictObject({
   inside: z.literal(true).optional(),
 });
 
+/**
+ * Une garenne posée depuis Tiled (un rectangle de type `Warren` : `creature`, l'espèce, clé de creatures.json ; `population`, combien
+ * de bêtes elle compte pleine) : ses entrées sont les objets à `burrow` posés dans son rectangle (world/warren.ts). `id` est
+ * l'identifiant de l'objet dans Tiled (la partie garde la garenne sous ce numéro).
+ */
+const MapWarrenSchema = z.strictObject({
+  id: z.number().int().nonnegative(),
+  x: px,
+  y: px,
+  w: px.positive(),
+  h: px.positive(),
+  creature: id,
+  population: z.number().int().positive(),
+});
+
 export const MapSchema = z.strictObject({
   /** Nom du fichier .tmj. */
   id,
@@ -1642,6 +1662,8 @@ export const MapSchema = z.strictObject({
   places: z.array(PlaceSchema).default([]),
   /** Tas de bois posés depuis Tiled (les quartiers du cagibi). */
   piles: z.array(MapPileSchema).default([]),
+  /** Garennes posées depuis Tiled (les lapins de la ferme). */
+  warrens: z.array(MapWarrenSchema).default([]),
 });
 
 /** Une destination de parcelle (parcels.json) : le nom dit, et une couleur pour la montrer (mode construction, ?debug). */
@@ -1720,6 +1742,7 @@ export type MapData = z.infer<typeof MapSchema>;
 export type Parcel = z.infer<typeof ParcelSchema>;
 export type MapPlan = z.infer<typeof MapPlanSchema>;
 export type MapPile = z.infer<typeof MapPileSchema>;
+export type MapWarren = z.infer<typeof MapWarrenSchema>;
 export type ParcelUse = z.infer<typeof ParcelUseSchema>;
 export type End = z.infer<typeof EndSchema>;
 export type WoodLook = z.infer<typeof WoodLookSchema>;

@@ -8,10 +8,11 @@ import { z } from 'zod';
 import { TILE } from '../src/config';
 import { MapSchema, WoodPieceSchema } from '../src/content/types';
 import propsJson from '../src/content/props.json';
-import type { Exit, MapData, MapObject, MapPile, MapPlan, Npc, Parcel, Spawn } from '../src/content/types';
+import type { Exit, MapData, MapObject, MapPile, MapPlan, MapWarren, Npc, Parcel, Spawn } from '../src/content/types';
 import { pileWoodOf } from '../src/world/woodPile';
 import { WoodAgeSchema } from '../src/content/types';
 import parcelsJson from '../src/content/parcels.json';
+import creaturesJson from '../src/content/creatures.json';
 import { TmjSchema, TsjSchema } from './lib/tiled-schema';
 import type { Tmj, TmjObject, Tsj } from './lib/tiled-schema';
 
@@ -152,6 +153,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   const places: { x: number; y: number; w: number; h: number; name: string; accepts: string; inside?: true }[] = [];
   const plans: MapPlan[] = [];
   const piles: MapPile[] = [];
+  const warrens: MapWarren[] = [];
 
   // deux tilesets dont les numéros se chevauchent : l'un a grossi depuis la dernière sauvegarde de la carte dans Tiled
   const sorted = [...uses].sort((a, b) => a.firstgid - b.firstgid);
@@ -291,6 +293,15 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       const wood = pileWoodOf(piece);
       if (!wood) return oerr('une pièce entamée ne va pas en tas');
       piles.push({ id: o.id, x: o.x, y: o.y, wood, count, ...(bool('turned') ? { turned: true as const } : {}), ...(bool('inside') ? { inside: true as const } : {}) });
+    } else if (cls === 'Warren') {
+      only(['creature', 'population']);
+      if (o.point || o.gid !== undefined || o.width <= 0 || o.height <= 0) return oerr('une garenne est un rectangle (outil « Insérer un rectangle ») qui contient ses entrées');
+      const creature = text('creature');
+      const population = Number(props.get('population'));
+      if (!creature) return oerr("champ 'creature' (l'espèce, clé de src/content/creatures.json) manquant");
+      if (!(creaturesJson as Record<string, unknown>)[creature]) return oerr(`créature '${creature}' inconnue (attendues : ${Object.keys(creaturesJson).join(', ')})`);
+      if (!Number.isInteger(population) || population < 1) return oerr("champ 'population' (combien de bêtes, au moins 1) manquant ou faux");
+      warrens.push({ id: o.id, x: o.x, y: o.y, w: o.width, h: o.height, creature, population });
     } else if (cls === 'Plan') {
       only(['plan', 'age']);
       if (o.gid !== undefined) return oerr('un plan posé est un rectangle ou un point (son coin nord-ouest)');
@@ -338,6 +349,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
     parcels,
     plans,
     places,
+    warrens,
     piles,
   });
   if (!map.success) {
