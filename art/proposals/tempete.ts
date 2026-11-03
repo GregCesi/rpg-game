@@ -36,14 +36,16 @@ import { world } from '../palette';
 import { groundShadow } from '../world/big-tree';
 import { NORMAL_WOOD, bark } from '../world/wood';
 import { FOOT as TREE_FOOT, TRUNK_X0 as TREE_TRUNK_X0 } from '../world/normal-geometry';
+import '../world/normal-felled';
+import { treeArt } from '../world/tree-registry';
 
 export const palette = world;
 
 /** Dimensions réelles proposées (cm), forme du gabarit, et la taille attendue à l'écran (px). */
 export const DIMS = {
   snag: { w: 65, d: 55, h: 290, shape: 'box' as const },
-  plateEast: { w: 40, d: 170, h: 170, shape: 'box' as const },
-  plateFace: { w: 170, d: 40, h: 170, shape: 'box' as const },
+  plateEast: { w: 40, d: 225, h: 180, shape: 'box' as const },
+  plateFace: { w: 225, d: 40, h: 180, shape: 'box' as const },
   hole: { w: 150, d: 140, h: 0, shape: 'flat' as const },
 };
 
@@ -90,42 +92,45 @@ const X1 = X0 + NORMAL_WOOD.diameter - 1;
 const FLARE: [number, number][] = [[-2, 2], [-1, 2], [-1, 1], [0, 1], [0, 1]];
 
 /**
- * La cassure, colonnes X0 à X1 + 1, à partir de la rangée BREAK_TOP : '.' vide, sinon la teinte. À gauche (le vent venait de
- * l'ouest), les fibres arrachées en tension restent hautes : deux longues esquilles, l'écorce sur leur dos ; au milieu, la face
- * arrachée vue d'en haut, bois frais (^ au jour, * et % dans le fil) ; à droite le bois écrasé en compression, bas et sombre
- * (% &), et une lanière de bois arrachée qui pend vers l'est, où la tête est tombée. Sous la dernière rangée, l'écorce reprend.
+ * Le profil de la cassure, partagé par le chicot et sa cime (la matière se conserve : ce qui manque à l'un est l'autre) : pour
+ * chaque colonne d'écorce du fût (0 à l'ouest, 5 à l'est), la longueur du chicot depuis le pied, en pixels. À l'ouest (le vent
+ * venait de là), les fibres arrachées en tension restent hautes, en longues esquilles (jusqu'à 61 px, 3 m) ; à l'est, où la
+ * tête est tombée, le bois écrasé en compression casse bas (50 px, 2,5 m). Couché vers l'est, l'ouest du fût devient le dessus
+ * du tronc : la colonne c du chicot debout est la rangée TRUNK_ROWS[0] + c de l'arbre couché.
  */
-const BREAK_TOP = 4;
-const BREAK: string[] = [
-  '^......',
-  '^......',
-  '^*.....',
-  'M^.....',
-  'M^..^..',
-  'M*.^*..',
-  'M%.^^..',
-  'M*^*%^.',
-  'M%^^*^^',
-  'MM^^*%*',
-  'MM*^^%%',
-  'MMm**%.',
-  'MMmm%&.',
-];
+export const PROFILE = [61, 59, 54, 56, 52, 50];
+const BREAK_LOW = Math.min(...PROFILE);
+
+/** Teinte de la cassure du chicot debout, colonne `c`, `k` pixels sous la pointe de son esquille. */
+function splinterTone(c: number, k: number, y: number): string {
+  if (k === 0) return c >= 4 ? '*' : '^';
+  if (c === 0) return 'M'; // l'écorce reste sur le dos de l'esquille ouest
+  if (c === 5) return k > 1 ? 'N' : '%';
+  // le fil : une fibre plus sombre toutes les trois rangées, décalée d'une colonne à l'autre
+  const fibre = (y + c) % 3 === 0;
+  return [, fibre ? '*' : '^', fibre ? '%' : '^', fibre ? '%' : '*', fibre ? '&' : '%'][c] as string;
+}
 
 export function snagBody(): Canvas {
   const c = new Canvas(SNAG_W, SNAG_H);
   const [, FY] = SNAG_FOOT;
-  const top = BREAK_TOP + BREAK.length;
-  for (let y = top; y < FY; y++) {
+  for (let y = 0; y < FY; y++) {
     const [dl, dr] = FLARE[FY - 1 - y] ?? [0, 0];
     const x0 = X0 + dl, x1 = X1 + dr, w = x1 - x0 + 1;
-    for (let x = x0; x <= x1; x++) c.set(x, y, bark(y + SDY, (x + 0.5 - x0) / w, NORMAL_WOOD));
+    for (let x = x0; x <= x1; x++) {
+      const col = x - X0;
+      const len = PROFILE[Math.max(0, Math.min(5, col))];
+      if (FY - y > len) continue;
+      // au-dessus de la cassure la plus basse (et deux rangées dessous, le dessus arraché qu'on voit d'en haut) : bois frais
+      if (FY - y > BREAK_LOW - 2 && col >= 0 && col <= 5) c.set(x, y, splinterTone(col, len - (FY - y), y));
+      else c.set(x, y, bark(y + SDY, (x + 0.5 - x0) / w, NORMAL_WOOD));
+    }
   }
-  BREAK.forEach((row, j) => [...row].forEach((k, i) => { if (k !== '.') c.set(X0 + i, BREAK_TOP + j, k); }));
+  const top = FY - BREAK_LOW + 2;
   // l'ombre de la cassure sur le haut du fût, côté est
   for (let y = top; y < top + 3; y++) c.set(X1, y, 'K');
   // une fente qui descend de la cassure dans le fût (le bois s'est ouvert en cassant), côté jour
-  for (let y = top; y < top + 6; y++) c.set(X0 + 2 + (y > top + 2 ? 1 : 0), y, 'N');
+  for (let y = top; y < top + 5; y++) c.set(X0 + 2 + (y > top + 2 ? 1 : 0), y, 'N');
   // moignon de branche à droite, 1,8 m (36 px au-dessus du pied), qui monte vers la droite ; bout cassé, bois frais
   const by = FY - 36;
   c.set(X1 + 1, by, 'M').set(X1 + 1, by + 1, 'N');
@@ -144,6 +149,87 @@ export function snag(): Grid {
   groundShadow(c, SNAG_FOOT[0] + 1.5, SNAG_FOOT[1] + 0.5, 6.5, 1.8);
   return c.toGrid();
 }
+
+
+// ---------- 1 bis. La cime ----------
+//
+// Ce qui manque au chicot, couché à l'est : l'arbre couché du jeu (`normal-felled-tree`, le même houppier couché, le même
+// aplatissement, la règle D), coupé par le profil de la cassure. Le chicot couché (pour la preuve) en est l'autre part : les
+// deux réunis font l'image de l'arbre couché, pixel pour pixel.
+
+/** Rangées de l'écorce du tronc dans l'image de l'arbre couché (le contour au-dessus et au-dessous). */
+const TRUNK_ROWS = [7, 12];
+
+/** La longueur du chicot à la rangée `y` de l'image couchée : le profil sur l'écorce, les contours suivent leur voisine. */
+function splitAt(y: number): number {
+  const [r0, r1] = TRUNK_ROWS;
+  if (y >= r0 && y <= r1) return PROFILE[y - r0];
+  if (y === r0 - 1) return PROFILE[0];
+  return BREAK_LOW; // le contour du bas, l'ombre, le houppier (il commence bien plus loin)
+}
+
+/** L'arbre couché du jeu, tel qu'il est dessiné (art/world/normal-felled.ts). */
+export function felledTree(): Canvas {
+  return Canvas.from(treeArt('normal-tree').lying(580, 'normal-felled-tree').right.toGrid());
+}
+
+/**
+ * Une part de l'arbre couché (`side` 'snag' : le pied jusqu'à la cassure ; 'crown' : la cime), avec sa cassure dessinée : sur
+ * les deux pixels de bois au bord, le bois frais (^ au jour en haut, * puis % vers le bas) ; le dessus d'une esquille qui
+ * dépasse, au jour ; puis le contour de la cassure (le plus sombre de la matière côté jour, OUTLINE côté ombre).
+ */
+function lyingPart(side: 'snag' | 'crown'): Canvas {
+  const src = felledTree();
+  const c = new Canvas(src.w, src.h);
+  const mine = (x: number, y: number) => (side === 'snag' ? x < splitAt(y) : x >= splitAt(y));
+  for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) if (mine(x, y)) c.set(x, y, src.get(x, y));
+  const [r0, r1] = TRUNK_ROWS;
+  const fresh = (y: number) => (y - r0 < 3 ? '^' : y - r0 < 5 ? '*' : '%');
+  for (let y = r0; y <= r1; y++) {
+    const s = splitAt(y);
+    const xs = side === 'snag' ? [s - 1, s - 2] : [s, s + 1];
+    xs.forEach((x, i) => c.set(x, y, i === 0 ? fresh(y) : side === 'snag' ? '*' : fresh(y)));
+    // une esquille qui dépasse de sa voisine du dessus : son dessus au jour
+    const above = splitAt(y - 1);
+    if (side === 'crown' && s < above) for (let x = s; x < above; x++) c.set(x, y, '^');
+    if (side === 'snag' && s > above) for (let x = above; x < s; x++) c.set(x, y, '^');
+  }
+  // le contour de la cassure, dans la zone de la cassure seulement (ailleurs l'image a déjà le sien)
+  const zone = (x: number) => x >= BREAK_LOW - 3 && x <= Math.max(...PROFILE) + 2;
+  const add: [number, number, string][] = [];
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    if (!zone(x) || c.get(x, y) !== EMPTY || y < r0 - 1 || y > r1 + 1) continue;
+    const wood = (dx: number, dy: number) => { const k = c.get(x + dx, y + dy); return k !== EMPTY && k !== 'x'; };
+    if (!(wood(1, 0) || wood(-1, 0) || wood(0, 1) || wood(0, -1))) continue;
+    add.push([x, y, wood(1, 0) || wood(0, 1) ? 'K' : 'o']);
+  }
+  for (const [x, y, k] of add) c.set(x, y, k);
+  return c;
+}
+
+/** La cime couchée vers l'est, dans le repère de l'image de l'arbre couché (sa cassure vers x = 50 à 61). */
+export const crown = () => lyingPart('crown').toGrid();
+/** Le chicot couché, pour la preuve seulement : l'autre part de l'arbre couché. */
+export const snagLying = () => lyingPart('snag').toGrid();
+/** L'arbre couché du jeu, en grille de la palette `world`. */
+export const felled = () => felledTree().toGrid();
+
+/** Longueurs et matière (cm, m³, kg) : le chicot et la cime font l'arbre normal (la souche et l'arbre couché du jeu). */
+export const MATTER = (() => {
+  const density = 900; // wood.json, bois vert
+  const section = Math.PI * 0.15 ** 2; // tronc de 30 cm
+  const felledMass = 420; // props.json, normal-felled-tree
+  const bole = 5.8; // la pièce de bois du normal-felled-tree (size normal, length 580)
+  const crownMass = felledMass - section * bole * density; // houppier : branches et pointe
+  const stump = 0.4, snagLen = 2.5;
+  const snagVol = section * snagLen, crownBole = section * (stump + bole - snagLen);
+  return {
+    density, section, crownMass, felledMass,
+    snag: { len: snagLen, vol: snagVol, kg: snagVol * density },
+    crown: { len: 7 - snagLen, boleLen: stump + bole - snagLen, vol: crownBole, kg: crownBole * density + crownMass },
+    whole: { stumpKg: section * stump * density, felledKg: felledMass },
+  };
+})();
 
 // ---------- 2. La galette de racines ----------
 
@@ -280,23 +366,71 @@ function stubs(c: Canvas, list: [number, number, number][]) {
 }
 
 /**
- * La frange : des racines arrachées qui dépassent du bord de la motte de 1 à 3 px, vers l'extérieur (angles en degrés, 0
- * vers la droite) ; le bout clair si `broken`, sinon l'écorce qui s'effile.
+ * La frange : les racines arrachées qui sortent du bord de la motte et rayonnent, de 2 à 7 px (10 à 35 cm), en se tordant un
+ * peu ; les grosses ont 2 px sur leur première moitié (le côté au jour en M), toutes finissent par un bout cassé clair (^).
+ * `deg` : direction (0 vers la droite, sens horaire à l'écran), `len` : longueur hors de la motte en pixels.
  */
-function fringe(c: Canvas, f: Face, list: [number, number, boolean][]) {
-  for (const [deg, out, broken] of list) {
+function fringe(c: Canvas, f: Face, list: [number, number, boolean, number][]) {
+  for (const [deg, len, thick, bend] of list) {
     const a = (deg * Math.PI) / 180;
-    const e = edge(f, a);
-    let last: [number, number] = [0, 0];
-    for (let r = e * 0.85; r <= e + out / Math.min(f.rx, f.ry) * 1.6; r += 0.02) {
-      const x = Math.floor(f.cx + Math.cos(a) * r * f.rx);
-      const y = Math.floor(f.cy + Math.sin(a) * r * f.ry);
-      if (x === last[0] && y === last[1]) continue;
-      c.set(x, y, Math.sin(a) + Math.cos(a) > 0.4 ? 'N' : 'm');
-      last = [x, y];
+    // départ : un peu en dedans du bord, dans la direction `a` de l'ovale
+    const e = edge(f, a) * 0.9;
+    let x = f.cx + Math.cos(a) * e * f.rx, y = f.cy + Math.sin(a) * e * f.ry;
+    let d = Math.atan2(Math.sin(a) * f.ry, Math.cos(a) * f.rx);
+    const inside = 3;
+    const total = len + inside;
+    let last = '';
+    let lx = 0, ly = 0;
+    for (let i = 0; i <= total * 2; i++) {
+      const t = i / 2;
+      const X = Math.floor(x), Y = Math.floor(y);
+      const key = `${X},${Y}`;
+      if (key !== last) {
+        last = key;
+        const shade = Math.sin(d) > 0.5 || Math.cos(d) > 0.8;
+        c.set(X, Y, shade ? 'N' : 'm');
+        if (thick && t < total * 0.55) {
+          const horiz = Math.abs(Math.cos(d)) > Math.abs(Math.sin(d));
+          c.set(horiz ? X : X - 1, horiz ? Y - 1 : Y, shade ? 'm' : 'M');
+        }
+        lx = X; ly = Y;
+      }
+      x += Math.cos(d) * 0.5;
+      y += Math.sin(d) * 0.5;
+      d += bend * 0.05;
     }
-    if (broken) c.set(last[0], last[1], '^');
+    c.set(lx, ly, '^');
   }
+}
+
+/** Mottes de terre tombées au pied de la galette : x, y du coin haut gauche, largeur (2 rangées : dessus au jour, dessous). */
+function clods(c: Canvas, list: [number, number, number][]) {
+  for (const [x, y, w] of list) {
+    for (let i = 0; i < w; i++) {
+      c.set(x + i, y, i === 0 ? 'n' : 'e');
+      c.set(x + i, y + 1, i === w - 1 ? '9' : '2');
+    }
+  }
+}
+
+/** Marge ajoutée autour d'une galette pour ses racines (px). */
+const ROOM = 6;
+
+/** La galette dessinée dans un cadre agrandi de ROOM de chaque côté, la face poussée d'autant. */
+function roomy(body: Canvas, f: Face): { c: Canvas; f: Face } {
+  const c = new Canvas(body.w + 2 * ROOM, body.h + 2 * ROOM).stamp(body.toGrid(), ROOM, ROOM);
+  return { c, f: { ...f, cx: f.cx + ROOM, cy: f.cy + ROOM } };
+}
+
+/** Ombre portée sous la base d'une image : l'ovale centré sous sa rangée la plus basse. */
+function shadowUnder(c: Canvas, rx: number) {
+  let yb = -1, xs: number[] = [];
+  for (let y = c.h - 1; y >= 0 && yb < 0; y--) {
+    xs = [...Array(c.w).keys()].filter((x) => c.get(x, y) !== EMPTY && c.get(x, y) !== 'x');
+    if (xs.length) yb = y;
+  }
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2 + 2;
+  groundShadow(c, cx, yb + 0.5, rx, 2);
 }
 
 /** Herbe de l'ancien sol : une rampe de touffes, du jour à l'ombre. */
@@ -354,16 +488,24 @@ export function rootPlateEastBody(): Canvas {
   root(c, FACE_E, 40, 0.95, 0.9, true);
   root(c, FACE_E, 150, 1.0, -0.7, true);
   stubs(c, [[8, 10, 2], [6, 20, 2], [11, 30, 1], [8, 34, 2]]);
-  fringe(c, FACE_E, [[-178, 2, true], [-155, 1, false], [-125, 1, true], [165, 2, true], [192, 1, false], [140, 1, true]]);
   collar(c, FACE_E, 1.8, 3.2);
   return c;
 }
 
 /** La galette, l'arbre couché vers l'est : contour et ombre portée (vers le sud-est, sous sa base). */
 export function rootPlateEast(): Grid {
-  const c = contour(rootPlateEastBody());
-  groundShadow(c, 15, 37.5, 11, 2);
-  return c.toGrid();
+  const { c, f } = roomy(rootPlateEastBody(), FACE_E);
+  // les racines qui rayonnent du bord de la face : vers l'ouest, le haut et le bas-ouest (pas sous la base, posée au sol)
+  fringe(c, f, [
+    [-178, 6, true, 0.4], [-160, 4, false, -0.5], [-140, 6, true, 0.3], [-118, 4, false, 0.6], [-98, 5, true, -0.4],
+    [-80, 3, false, 0.5], [-60, 3, false, -0.4], [160, 5, true, -0.3], [140, 3, false, 0.5], [196, 4, false, -0.5],
+  ]);
+  // les mottes tombées au pied, devant la face et contre la tranche
+  const base = f.cy + f.ry * f.flat;
+  clods(c, [[f.cx - 9, Math.floor(base) - 1, 3], [f.cx - 5, Math.floor(base), 2], [f.cx + 13, Math.floor(base) - 1, 2]]);
+  const out = contour(c);
+  shadowUnder(out, 12);
+  return out.toGrid();
 }
 
 /** Vue de face de la galette (l'arbre couché vers le nord) : environ 32 × 36 px contour compris, avec une marge. */
@@ -408,15 +550,23 @@ export function rootPlateFaceBody(): Canvas {
   root(c, FACE_F, 75, 0.85, -0.9, false);
   root(c, FACE_F, 150, 1.0, 0.7, true);
   stubs(c, [[13, 16, 2], [24, 20, 2], [9, 26, 2], [21, 33, 2], [28, 28, 1]]);
-  fringe(c, FACE_F, [[-172, 1, true], [-140, 1, false], [-112, 1, true], [-35, 1, false], [-8, 1, true], [22, 1, false], [40, 1, true], [145, 1, false], [168, 1, true], [195, 1, false]]);
   collar(c, FACE_F, 3.3, 3.3);
   return c;
 }
 
 export function rootPlateFace(): Grid {
-  const c = contour(rootPlateFaceBody());
-  groundShadow(c, 22, 41.5, 15, 2);
-  return c.toGrid();
+  const { c, f } = roomy(rootPlateFaceBody(), FACE_F);
+  // les racines rayonnent tout autour, sauf sous la base ; plus nombreuses et plus longues en haut (les racines d'ancrage)
+  fringe(c, f, [
+    [-175, 5, true, 0.4], [-155, 4, false, -0.5], [-135, 6, true, 0.3], [-112, 4, false, 0.5], [-92, 5, true, -0.3],
+    [-70, 4, false, 0.4], [-48, 6, true, -0.4], [-25, 4, false, 0.5], [-5, 5, true, -0.3], [18, 4, false, 0.5],
+    [38, 3, true, -0.4], [148, 3, true, 0.4], [165, 4, false, -0.4], [195, 5, true, 0.3],
+  ]);
+  const base = f.cy + f.ry * f.flat;
+  clods(c, [[f.cx - 19, Math.floor(base) - 1, 3], [f.cx - 15, Math.floor(base), 2], [f.cx + 14, Math.floor(base) - 1, 3], [f.cx + 18, Math.floor(base), 2]]);
+  const out = contour(c);
+  shadowUnder(out, 16);
+  return out.toGrid();
 }
 
 // ---------- Le trou ----------
@@ -470,6 +620,6 @@ export function rootHole(): Grid {
  * de l'axe du tronc (16 px) ; le trou, centré sur l'axe du tronc, à l'ouest, sous la base de la galette.
  */
 export const UPROOTED = {
-  plate: [-21, -12] as [number, number],
+  plate: [-21 - ROOM, -12 - ROOM] as [number, number],
   hole: [-41, -5] as [number, number],
 };

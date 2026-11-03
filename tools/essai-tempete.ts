@@ -18,7 +18,7 @@ import { PNG } from 'pngjs';
 import type { Grid, Palette } from '../art/lib/canvas';
 import xeros from '../art/characters/xeros';
 import {
-  DIMS, UPROOTED, palette as pal, rootHole, rootPlateEast, rootPlateFace, snag,
+  DIMS, MATTER, PROFILE, SNAG_FOOT, UPROOTED, crown, palette as pal, rootHole, rootPlateEast, rootPlateFace, snag, snagLying,
 } from '../art/proposals/tempete';
 import { expectedSize, silhouette, type Dims } from '../src/content/gabarit';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
@@ -91,6 +91,67 @@ const tree = generated('normal-tree');
 const stump = generated('normal-tree-stump');
 const felled = generated('normal-felled-tree');
 const snagG = snag();
+const crownG = crown();
+const snagLyingG = snagLying();
+const fmt2 = (n: number) => n.toFixed(3).replace('.', ',');
+
+/**
+ * Le chicot debout et sa cime couchée à côté, vers l'est : la cassure de la cime à 2 px à l'est du pied du chicot, son tronc
+ * posé au sol au niveau du pied (l'axe du tronc couché, rangée 9,5 de l'image couchée, à 4 px au nord du pied).
+ */
+function snagScene(k: number): Cell {
+  const cx0 = Math.min(...PROFILE) - 3; // première colonne de la cime dans son image
+  const sil = silhouette(snagG, pal);
+  const w = snagG[0].length + 140 - cx0 + 2;
+  return {
+    w: w * k + 2 * PAD,
+    art: (SNAG_FOOT[1] + 2) * k,
+    below: 4 * 12 + 12,
+    draw: (s, x, ground) => {
+      const oy = ground - (SNAG_FOOT[1] + 1) * k;
+      const crownX = x + PAD + (SNAG_FOOT[0] + 4 - cx0) * k;
+      const crownY = oy + (SNAG_FOOT[1] - 12) * k;
+      s.blit(crownG, pal, crownX, crownY, k);
+      s.blit(snagG, pal, x + PAD, oy, k);
+      void sil;
+      const lines = [
+        'chicot debout + sa cime couchee vers l est (proposes)',
+        `chicot ${dimsText(DIMS.snag)} : attendu ${expected(DIMS.snag)}, dessine ${sizeOf(snagG, pal)}`,
+        `cime : ${fmt(MATTER.crown.len)} m (${fmt(MATTER.crown.boleLen)} m de tronc + le houppier), dessinee ${sizeOf(crownG, pal)}`,
+        'la cime = l image de l arbre couche du jeu, coupee par le profil de la cassure',
+      ];
+      lines.forEach((l, i) => s.text(l, x + PAD, ground + 10 + i * 12, i === 0 ? WHITE : GREY, T));
+    },
+  };
+}
+
+/** La preuve : chicot couché et cime remis bout à bout (3 px d'écart), au-dessus de l'arbre couché du jeu, mêmes repères. */
+function proof(k: number): Cell {
+  const gap = 3;
+  const lines = [
+    'preuve : chicot couche + cime, cassure contre cassure (ecartes de 3 px pour voir la cassure),',
+    'au-dessus de l arbre couche du jeu (normal-felled-tree) : meme longueur, 50 px + 90 px = 140 px (7 m)',
+    `bois vert ${MATTER.density} kg/m3, tronc de 30 cm (${fmt2(MATTER.section)} m2) :`,
+    `chicot 2,5 m : ${fmt2(MATTER.snag.vol)} m3, ${Math.round(MATTER.snag.kg)} kg  /  cime : ${fmt(MATTER.crown.boleLen)} m de tronc ${fmt2(MATTER.crown.vol)} m3 + houppier ${Math.round(MATTER.crownMass)} kg = ${Math.round(MATTER.crown.kg)} kg`,
+    `somme ${Math.round(MATTER.snag.kg + MATTER.crown.kg)} kg = souche 0,4 m ${Math.round(MATTER.whole.stumpKg)} kg + arbre couche ${MATTER.whole.felledKg} kg (piece de 580 cm + houppier)`,
+  ];
+  return {
+    w: (140 + gap + 4) * k + 2 * PAD,
+    art: 48 * k,
+    below: lines.length * 12 + 12,
+    draw: (s, x, ground) => {
+      const ox = x + PAD, top = ground - 48 * k;
+      s.blit(snagLyingG, pal, ox, top, k);
+      s.blit(crownG, pal, ox + gap * k, top, k);
+      s.blit(felled.grid, felled.palette, ox, top + 24 * k, k);
+      // repères : le pied, la cassure (au plus bas et au plus haut), la pointe
+      const tick = (px: number, c: Rgb) => s.rect(ox + px * k, top - 6, 2, 48 * k + 6, c);
+      tick(0, GOLD); tick(140, GOLD);
+      tick(Math.min(...PROFILE), WHITE); tick(Math.max(...PROFILE), WHITE);
+      lines.forEach((l, i) => s.text(l, x + PAD, ground + 10 + i * 12, i < 2 ? WHITE : GREY, T));
+    },
+  };
+}
 const plateE = rootPlateEast();
 const plateF = rootPlateFace();
 const hole = rootHole();
@@ -126,19 +187,20 @@ type Row = { title: string; cells: Cell[] };
 
 const rows: Row[] = [
   {
-    title: '1. le chicot : l arbre normal casse debout a 2,5 m',
+    title: '1. le chicot : l arbre normal casse debout a 2,5 m, sa cime couchee a l est',
     cells: [
       xerosCell(),
       cell(tree.grid, tree.palette, ['arbre normal (jeu)', '190X190X700 cm', sizeOf(tree.grid, tree.palette)]),
-      cell(snagG, pal, ['chicot (propose)', dimsText(DIMS.snag), `attendu ${expected(DIMS.snag)}`, `dessine ${sizeOf(snagG, pal)}`]),
       cell(stump.grid, stump.palette, ['souche (jeu)', '60X55X40 cm', sizeOf(stump.grid, stump.palette)]),
+      snagScene(K),
     ],
   },
+  { title: '1 bis. chicot + cime = l arbre normal', cells: [proof(K)] },
   {
     title: '2. la galette de racines et son trou',
     cells: [
       xerosCell(),
-      cell(plateE, pal, ['galette, vue est-ouest', 'arbre couche vers l est', 'ep. 40, diam. 170 cm', 'attendu 8+17=25X38', `dessine ${sizeOf(plateE, pal)}`]),
+      cell(plateE, pal, ['galette, vue est-ouest', 'arbre couche vers l est', 'motte 170, racines 225X180 cm', 'attendu 8+17+8=33X40', `dessine ${sizeOf(plateE, pal)}`]),
       cell(plateF, pal, ['galette, vue de face', 'arbre couche vers le nord', dimsText(DIMS.plateFace), `attendu ${expected(DIMS.plateFace)}`, `dessine ${sizeOf(plateF, pal)}`]),
       cell(hole, pal, ['trou (a plat)', `${DIMS.hole.w}X${DIMS.hole.d} cm`, `attendu ${expected(DIMS.hole)}`, `dessine ${sizeOf(hole, pal)}`]),
       cell(felled.grid, felled.palette, ['arbre couche (jeu)', 'normal-felled-tree', sizeOf(felled.grid, felled.palette)]),
@@ -148,7 +210,8 @@ const rows: Row[] = [
   {
     title: '4. detail x8',
     cells: [
-      cell(crop(snagG, 4, 2, 16, 34), pal, ['cassure du chicot'], 8),
+      cell(crop(snagG, 4, 0, 16, 30), pal, ['cassure du chicot'], 8),
+      cell(crop(crownG, 44, 3, 30, 14), pal, ['cassure de la cime'], 8),
       cell(plateE, pal, ['galette est-ouest'], 8),
       cell(plateF, pal, ['galette de face'], 8),
       cell(hole, pal, ['trou'], 8),
