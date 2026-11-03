@@ -217,13 +217,6 @@ await playtest('temps', async ({ page, errors, load }) => {
       g.events.emit('dieu', c);
       await sleep(ms);
     };
-    const press = async (code: string) => {
-      const keyCode = 0;
-      window.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode } as KeyboardEventInit));
-      await sleep(60);
-      window.dispatchEvent(new KeyboardEvent('keyup', { code, keyCode } as KeyboardEventInit));
-      await frame();
-    };
     const minutes = () => gs.game.clock.day * 1440 + gs.game.clock.minute;
     const out: Record<string, any> = {};
     const job = plan.harvestJob(content.props['normal-tree'].harvest.work, 'axe');
