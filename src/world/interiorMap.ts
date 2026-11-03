@@ -154,6 +154,7 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
     places,
     piles,
     warrens: [],
+    items: [],
   };
   return {
     def,

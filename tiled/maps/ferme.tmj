@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 528,
+  "nextobjectid": 575,
   "properties": [
     {
       "name": "name",
@@ -522,18 +522,6 @@
           "width": 64,
           "height": 96,
           "gid": 1072
-        },
-        {
-          "id": 18,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 2777,
-          "y": 2048,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
         },
         {
           "id": 19,
@@ -3536,18 +3524,6 @@
           "gid": 1057
         },
         {
-          "id": 293,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 3549,
-          "y": 1962,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
-        },
-        {
           "id": 294,
           "rotation": 0,
           "visible": true,
@@ -3726,30 +3702,6 @@
           "width": 32,
           "height": 32,
           "gid": 1003
-        },
-        {
-          "id": 309,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 3130,
-          "y": 2226,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
-        },
-        {
-          "id": 310,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 3479,
-          "y": 2221,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
         },
         {
           "id": 311,
@@ -3939,18 +3891,6 @@
           "type": "normal-tree",
           "x": 2741,
           "y": 2384,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
-        },
-        {
-          "id": 327,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 2999,
-          "y": 2392,
           "width": 48,
           "height": 168,
           "gid": 1057
@@ -6187,6 +6127,1094 @@
               "value": true
             }
           ]
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-felled-tree",
+          "x": 3581,
+          "y": 1961,
+          "width": 140,
+          "height": 22,
+          "gid": 1095,
+          "id": 528
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-felled-tree",
+          "x": 2809,
+          "y": 2047,
+          "width": 140,
+          "height": 22,
+          "gid": 1095,
+          "id": 529
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-felled-tree",
+          "x": 3511,
+          "y": 2220,
+          "width": 140,
+          "height": 22,
+          "gid": 1095,
+          "id": 530
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-felled-tree",
+          "x": 3031,
+          "y": 2391,
+          "width": 140,
+          "height": 22,
+          "gid": 1095,
+          "id": 531
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-tree-stump",
+          "x": 3142,
+          "y": 2224,
+          "width": 24,
+          "height": 24,
+          "gid": 1070,
+          "id": 532
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "wood-piece",
+          "x": 3170,
+          "y": 2246,
+          "width": 21,
+          "height": 16,
+          "gid": 1098,
+          "properties": [
+            {
+              "name": "axis",
+              "type": "string",
+              "value": "ew"
+            },
+            {
+              "name": "length",
+              "type": "string",
+              "value": "200"
+            },
+            {
+              "name": "shape",
+              "type": "string",
+              "value": "round"
+            },
+            {
+              "name": "size",
+              "type": "string",
+              "value": "normal"
+            }
+          ],
+          "id": 533
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "wood-piece",
+          "x": 3174,
+          "y": 2266,
+          "width": 21,
+          "height": 16,
+          "gid": 1098,
+          "properties": [
+            {
+              "name": "axis",
+              "type": "string",
+              "value": "ew"
+            },
+            {
+              "name": "length",
+              "type": "string",
+              "value": "200"
+            },
+            {
+              "name": "shape",
+              "type": "string",
+              "value": "round"
+            },
+            {
+              "name": "size",
+              "type": "string",
+              "value": "normal"
+            }
+          ],
+          "id": 534
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3368,
+          "y": 1125,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 535
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2520,
+          "y": 1303,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 536
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2262,
+          "y": 1450,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 537
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2245,
+          "y": 1958,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 538
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2657,
+          "y": 1768,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 539
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2786,
+          "y": 1865,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 540
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2627,
+          "y": 2060,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 541
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3538,
+          "y": 1878,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 542
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2590,
+          "y": 1759,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 543
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2906,
+          "y": 2555,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 544
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3648,
+          "y": 1815,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 545
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3579,
+          "y": 803,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 546
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2552,
+          "y": 1078,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 547
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2533,
+          "y": 1359,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 548
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3643,
+          "y": 1841,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 549
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2648,
+          "y": 1956,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 550
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2669,
+          "y": 2051,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 551
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2174,
+          "y": 1922,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 552
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3496,
+          "y": 857,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 553
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2601,
+          "y": 2021,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 554
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3088,
+          "y": 2220,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 555
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3209,
+          "y": 2230,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 556
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3104,
+          "y": 2255,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 557
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3141,
+          "y": 2274,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 558
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2970,
+          "y": 1608,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 559
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2934,
+          "y": 1213,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 560
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3155,
+          "y": 1471,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 561
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2657,
+          "y": 1720,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 562
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3403,
+          "y": 1450,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 563
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2899,
+          "y": 1746,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 564
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2987,
+          "y": 1939,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 565
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3416,
+          "y": 1130,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 566
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3427,
+          "y": 1428,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 567
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3212,
+          "y": 1908,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 568
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3020,
+          "y": 1266,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 569
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2858,
+          "y": 1220,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 570
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3540,
+          "y": 1837,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 571
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3048,
+          "y": 1354,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 572
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3087,
+          "y": 1378,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 573
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 3233,
+          "y": 1832,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 574
         }
       ]
     },

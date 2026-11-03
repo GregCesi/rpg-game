@@ -261,6 +261,13 @@ await playtest('monde', async ({ page, errors, load }) => {
   );
   assert.ok(glows.some((g: any) => g.prop === 'stone-hearth'), `la lueur de l'âtre existe (${JSON.stringify(glows)})`);
   assert.ok(glows.every((g: any) => !g.visible || g.alpha < 0.01), `dehors, sous le toit, la lueur de l'âtre est cachée (${JSON.stringify(glows)})`);
+  // la tempête : les branches de Tiled sont entrées au sol de la partie, comme des branches lâchées (seedMap)
+  const fallen = await page.evaluate(async () => {
+    const stateUrl = '/src/state/index.ts';
+    const gs = await import(stateUrl);
+    return gs.game.maps.ferme.ground.filter((g: any) => g.item === 'branch').length;
+  });
+  assert.ok(fallen >= 30, `les branches de la tempête au sol de la ferme (${fallen})`);
 
   // 2. la ferme : le chemin de la cour, puis le chemin nord-sud jusqu'au chemin du village ; le monde, en px du monde
   const def = (id: string) => page.evaluate((i) => {

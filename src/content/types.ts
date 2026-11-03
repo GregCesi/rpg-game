@@ -1618,6 +1618,20 @@ const MapPileSchema = z.strictObject({
 });
 
 /**
+ * Un objet possédable posé au sol depuis Tiled (un point de type `Item` : `item`, clé d'items.json qui a une image au sol, `ground` ;
+ * `view`, sa vue de 0 à 3 ; chantier « correctifs » : les branches de la tempête) : (x, y) = le milieu du bas de son image, comme un
+ * objet posé de GameState. À la première visite de la carte, il entre dans `ground` de GameState (`seedGround`) : c'est alors le même
+ * objet qu'une branche lâchée par Xéros. `id` est l'identifiant de l'objet dans Tiled.
+ */
+const MapItemSchema = z.strictObject({
+  id: z.number().int().nonnegative(),
+  x: px,
+  y: px,
+  item: id,
+  view: z.number().int().min(1).max(3).optional(),
+});
+
+/**
  * Une garenne posée depuis Tiled (un rectangle de type `Warren` : `creature`, l'espèce, clé de creatures.json ; `population`, combien
  * de bêtes elle compte pleine) : ses entrées sont les objets à `burrow` posés dans son rectangle (world/warren.ts). `id` est
  * l'identifiant de l'objet dans Tiled (la partie garde la garenne sous ce numéro).
@@ -1664,6 +1678,8 @@ export const MapSchema = z.strictObject({
   piles: z.array(MapPileSchema).default([]),
   /** Garennes posées depuis Tiled (les lapins de la ferme). */
   warrens: z.array(MapWarrenSchema).default([]),
+  /** Objets possédables posés au sol depuis Tiled (les branches de la tempête). */
+  items: z.array(MapItemSchema).default([]),
 });
 
 /** Une destination de parcelle (parcels.json) : le nom dit, et une couleur pour la montrer (mode construction, ?debug). */
@@ -1742,6 +1758,7 @@ export type MapData = z.infer<typeof MapSchema>;
 export type Parcel = z.infer<typeof ParcelSchema>;
 export type MapPlan = z.infer<typeof MapPlanSchema>;
 export type MapPile = z.infer<typeof MapPileSchema>;
+export type MapItem = z.infer<typeof MapItemSchema>;
 export type MapWarren = z.infer<typeof MapWarrenSchema>;
 export type ParcelUse = z.infer<typeof ParcelUseSchema>;
 export type End = z.infer<typeof EndSchema>;

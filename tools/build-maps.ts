@@ -8,11 +8,12 @@ import { z } from 'zod';
 import { TILE } from '../src/config';
 import { MapSchema, WoodPieceSchema } from '../src/content/types';
 import propsJson from '../src/content/props.json';
-import type { Exit, MapData, MapObject, MapPile, MapPlan, MapWarren, Npc, Parcel, Spawn } from '../src/content/types';
+import type { Exit, MapData, MapItem, MapObject, MapPile, MapPlan, MapWarren, Npc, Parcel, Spawn } from '../src/content/types';
 import { pileWoodOf } from '../src/world/woodPile';
 import { WoodAgeSchema } from '../src/content/types';
 import parcelsJson from '../src/content/parcels.json';
 import creaturesJson from '../src/content/creatures.json';
+import itemsJson from '../src/content/items.json';
 import { TmjSchema, TsjSchema } from './lib/tiled-schema';
 import type { Tmj, TmjObject, Tsj } from './lib/tiled-schema';
 
@@ -154,6 +155,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   const plans: MapPlan[] = [];
   const piles: MapPile[] = [];
   const warrens: MapWarren[] = [];
+  const items: MapItem[] = [];
 
   // deux tilesets dont les numéros se chevauchent : l'un a grossi depuis la dernière sauvegarde de la carte dans Tiled
   const sorted = [...uses].sort((a, b) => a.firstgid - b.firstgid);
@@ -302,6 +304,17 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (!(creaturesJson as Record<string, unknown>)[creature]) return oerr(`créature '${creature}' inconnue (attendues : ${Object.keys(creaturesJson).join(', ')})`);
       if (!Number.isInteger(population) || population < 1) return oerr("champ 'population' (combien de bêtes, au moins 1) manquant ou faux");
       warrens.push({ id: o.id, x: o.x, y: o.y, w: o.width, h: o.height, creature, population });
+    } else if (cls === 'Item') {
+      only(['item', 'view']);
+      if (!o.point) return oerr("un objet au sol est un point (outil « Insérer un point ») : le milieu du bas de son image");
+      const item = text('item');
+      if (!item) return oerr("champ 'item' (une clé de src/content/items.json) manquant");
+      const def = (itemsJson as Record<string, { ground?: string }>)[item];
+      if (!def) return oerr(`objet '${item}' inconnu dans src/content/items.json`);
+      if (!def.ground) return oerr(`'${item}' n'a pas d'image au sol (\`ground\` d'items.json) : il ne se pose pas par terre`);
+      const view = props.get('view') === undefined || props.get('view') === '' ? 0 : Number(props.get('view'));
+      if (!Number.isInteger(view) || view < 0 || view > 3) return oerr("champ 'view' : une vue de 0 à 3");
+      items.push({ id: o.id, x: o.x, y: o.y, item, ...(view ? { view } : {}) });
     } else if (cls === 'Plan') {
       only(['plan', 'age']);
       if (o.gid !== undefined) return oerr('un plan posé est un rectangle ou un point (son coin nord-ouest)');
@@ -351,6 +364,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
     places,
     warrens,
     piles,
+    items,
   });
   if (!map.success) {
     err(`format interne invalide :\n${indent(z.prettifyError(map.error))}`);

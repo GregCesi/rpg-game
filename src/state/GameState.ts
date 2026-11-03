@@ -689,6 +689,23 @@ export function seedPiles<T extends { id: number }>(s: GameState, mapId: string,
   return n;
 }
 
+/**
+ * Pose au sol les objets possédables de Tiled (`items` de la carte) qui n'y sont pas encore, une seule fois par partie (`seeded`) :
+ * ensuite ils sont des objets au sol comme les autres (ramassés, ils ne reviennent pas). Renvoie le nombre posé.
+ */
+export function seedGround(s: GameState, mapId: string, list: readonly { id: number; x: number; y: number; item: string; view?: number }[]): number {
+  const m = mapState(s, mapId);
+  let n = 0;
+  for (const p of list) {
+    if (m.seeded.includes(p.id)) continue;
+    m.seeded.push(p.id);
+    m.ground.push({ id: s.nextGroundId++, item: p.item, x: p.x, y: p.y, ...(p.view ? { view: p.view } : {}) });
+    n++;
+  }
+  if (n) revision++;
+  return n;
+}
+
 export function resetMap(s: GameState, mapId: string): void {
   delete s.maps[mapId];
   for (const id of Object.keys(s.maps)) if (id.startsWith(`interieur:${mapId}:`)) delete s.maps[id];

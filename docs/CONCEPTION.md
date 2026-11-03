@@ -53,6 +53,27 @@ Extérieur :
 - Derrière : le tas de bois contre la cheminée. Le potager clôturé et les champs autour de la maison ont été retirés (chantier « correctifs », 3 novembre 2026, Grégoire) : le village est en champs ouverts, sans clôtures, et la maison est dans l'herbe.
 - Cheminée et fenêtres cohérentes entre l'intérieur et l'extérieur.
 
+## La tempête (ajout d'histoire voulu par Grégoire, 3 novembre 2026, chantier « correctifs »)
+
+Le jeu commence **le dimanche matin, après une nuit de tempête**. Le vent est venu de l'ouest : dehors, quelques arbres sont tombés,
+couchés vers l'est, un a déjà été coupé, et il y a beaucoup de branches par terre. Ce n'est pas l'état naturel du pays, c'est la
+tempête. **La forêt de l'ouest n'a absolument rien** (de 0 à 300 m du monde, jusqu'à la lisière : elle est magique).
+
+- **Où** : autour de la ferme surtout (quatre arbres normaux couchés : au sud du grand chemin, à l'ouest de la maison au bord du
+  chemin du village, à l'est sur l'ancien grand champ ; un déjà coupé au sud du chemin, sa souche et deux pièces de bois de 2 m ;
+  une quarantaine de branches sous les arbres, dans la cour, sur le chemin) ; le long du chemin du village (deux arbres couchés à côté
+  du chemin, jamais en travers, une quinzaine de branches) ; dans le pré du nord et le pré du sud (un arbre couché, six branches
+  chacun). Le village, les grandes fermes et les autres prés n'ont rien.
+- **Avec les objets qui existent** : l'arbre normal couché (`normal-felled-tree`, à la place exacte où le jeu pose un arbre abattu
+  vers l'est, sans souche : il a été déraciné), la souche et les pièces de bois de l'arbre coupé, les branches (`branch`) posées par
+  terre. Tout est posé dans les cartes (Tiled) : les branches par un point `Item`, qui entre au sol de la partie à la première visite
+  (`seedGround`), comme une branche lâchée par Xéros. Rien n'est créé par du code.
+- **À venir, avec l'accord de Grégoire** : l'arbre cassé debout (le chicot) et l'arbre déraciné (sa galette de racines dressée et son
+  trou), proposés sur la planche `.art-preview/tempete.png` (`npx tsx tools/essai-tempete.ts`, dessins hors du jeu dans
+  `art/proposals/tempete.ts`) ; en attendant, les arbres tombés sont des arbres couchés.
+- **Vérification** : `tools/test-paysage.ts` (test:fast : rien dans la forêt de l'ouest, des arbres normaux, aucun en travers d'un
+  chemin, la ferme, le chemin et les prés touchés) ; `npm run test:monde` (les branches au sol de la ferme dans la partie).
+
 ## Direction artistique
 
 - Direction B, « conte rustique » : tons terreux, légèrement ocrés.

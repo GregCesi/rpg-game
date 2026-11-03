@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 226,
+  "nextobjectid": 233,
   "properties": [
     {
       "name": "name",
@@ -1364,18 +1364,6 @@
           "width": 64,
           "height": 96,
           "gid": 1072
-        },
-        {
-          "id": 97,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 1945,
-          "y": 2012,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
         },
         {
           "id": 98,
@@ -2852,6 +2840,162 @@
           "width": 32,
           "height": 32,
           "gid": 1003
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "normal-felled-tree",
+          "x": 1977,
+          "y": 2011,
+          "width": 140,
+          "height": 22,
+          "gid": 1095,
+          "id": 226
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1391,
+          "y": 2671,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 227
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1760,
+          "y": 2278,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 3
+            }
+          ],
+          "id": 228
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 2802,
+          "y": 2393,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 229
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1706,
+          "y": 2374,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 2
+            }
+          ],
+          "id": 230
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1887,
+          "y": 2541,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 0
+            }
+          ],
+          "id": 231
+        },
+        {
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "Item",
+          "x": 1429,
+          "y": 2585,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            {
+              "name": "item",
+              "type": "string",
+              "value": "branch"
+            },
+            {
+              "name": "view",
+              "type": "int",
+              "value": 1
+            }
+          ],
+          "id": 232
         }
       ]
     },

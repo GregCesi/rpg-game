@@ -127,7 +127,8 @@ function objectClass(id: number, name: string, color: string, members: Member[])
  *   - `Place` : rectangle d'une place nommée (`accepts` : ce qu'on y pose ; `inside` : dans un bâtiment posé) ;
  *   - `inside` d'un `Spawn`, d'un `Npc` ou d'un objet : il est dans un bâtiment posé, il ne vaut que dans son intérieur calculé ;
  *   - `Plan` : un plan du bac à sable posé là (`plan`, liste de src/content/plans/ ; `age` facultatif), coin nord-ouest du rectangle ;
- *   - `Warren` : rectangle d'une garenne (`creature`, liste de src/content/creatures.json ; `population`), qui contient ses entrées.
+ *   - `Warren` : rectangle d'une garenne (`creature`, liste de src/content/creatures.json ; `population`), qui contient ses entrées ;
+ *   - `Item` : point d'un objet possédable posé au sol (`item`, clé de src/content/items.json qui a une image au sol ; `view`, 0 à 3).
  * Un champ laissé vide n'est pas surchargé (le jeu prend la valeur de props.json, ou rien).
  */
 export function projectFile(propKeys: { id: number; key: string; wood?: boolean }[], parcelUses: string[] = [], planNames: string[] = [], creatureKinds: string[] = []) {
@@ -157,6 +158,7 @@ export function projectFile(propKeys: { id: number; key: string; wood?: boolean 
         { name: 'creature', type: 'string', propertyType: 'CreatureKind', value: '' },
         { name: 'population', type: 'int', value: 0 },
       ]),
+      objectClass(13, 'Item', '#9a7a4a', [text('item'), { name: 'view', type: 'int', value: 0 }]),
       objectClass(9, 'Plan', '#8a6a3a', [
         { name: 'plan', type: 'string', propertyType: 'PlanName', value: '' },
         { name: 'age', type: 'string', propertyType: 'WoodAge', value: '' },

@@ -231,6 +231,28 @@
       ]
     },
     {
+      "id": 13,
+      "name": "Item",
+      "type": "class",
+      "color": "#9a7a4a",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "item",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "view",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
       "id": 9,
       "name": "Plan",
       "type": "class",
