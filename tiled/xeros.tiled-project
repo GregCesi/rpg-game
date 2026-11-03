@@ -331,28 +331,6 @@
       ]
     },
     {
-      "id": 105,
-      "name": "woodpile",
-      "type": "class",
-      "color": "#a08060",
-      "drawFill": true,
-      "members": [
-        {
-          "name": "interact",
-          "type": "string",
-          "value": ""
-        },
-        {
-          "name": "inside",
-          "type": "bool",
-          "value": false
-        }
-      ],
-      "useAs": [
-        "object"
-      ]
-    },
-    {
       "id": 106,
       "name": "fireplace",
       "type": "class",

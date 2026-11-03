@@ -17,7 +17,7 @@ for (const [k, p] of Object.entries(props)) assert.ok(!(p.harvest && 'effort' in
 // le ménage retire le code mort et les dessins inutilisés, jamais un objet (décidé par Grégoire le 2 novembre 2026) : les objets
 // sans chaîne prévue sont restés, avec leurs dessins
 for (const k of ['wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword', 'iron-ore', 'stone', 'pickaxe', 'wooden-sword']) assert.ok(items[k], `items.json : '${k}' gardé`);
-for (const k of ['barrel', 'bush-berries', 'well', 'lantern', 'candle', 'rock-rubble', 'woodpile']) assert.ok(props[k], `props.json : '${k}' gardé`);
+for (const k of ['barrel', 'bush-berries', 'well', 'lantern', 'candle', 'rock-rubble']) assert.ok(props[k], `props.json : '${k}' gardé`);
 
 // la sauvegarde : relue depuis la version 17 ; la « chaîne » des objets nés disparaît ; une partie plus ancienne reste refusée
 assert.ok(SAVE_VERSION >= 24, 'la sauvegarde relue depuis 17');

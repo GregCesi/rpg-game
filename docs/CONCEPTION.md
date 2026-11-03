@@ -708,7 +708,8 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
     est-ouest) près du mur nord et **un banc** au sud de la table ; **la place du fagot** à l'ouest du foyer ; **la place de la mère**,
     assise sur le banc, tournée vers le feu ; **la porte d'entrée au sud** (travée x 480–640) ; deux fenêtres au sud, une au nord ;
   - **le cagibi, la réserve** (nord-ouest, 3,20 × 3,20 m ; placement de Grégoire) : les outils (le billot et la cognée plantée, la
-    hachette, la masse, les coins, la doloire), la corde, les sacs, les bûches ; sa porte vers la salle ; une fenêtre au nord ;
+    hachette, la masse, les coins, la doloire), la corde, les sacs, les bûches (un vrai tas de neuf quartiers d'un mètre, calculé, qui
+    compte ses pièces : un point `Pile` de Tiled ; l'ancien tas dessiné d'un bloc n'existe plus, retouche de Grégoire du 3 novembre 2026) ; sa porte vers la salle ; une fenêtre au nord ;
   - **le coin de Xéros** (sud-ouest, 3,20 × 3,20 m) : sa paillasse le long du mur ouest, de la place autour ; sa porte vers la salle ;
     une fenêtre au sud ;
   - **l'atelier et la chambre de la mère** (est, 3,20 × 6,40 m, 20 m² ; placement de Grégoire) : son lit et son coffre au nord, son

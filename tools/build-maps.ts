@@ -8,7 +8,8 @@ import { z } from 'zod';
 import { TILE } from '../src/config';
 import { MapSchema, WoodPieceSchema } from '../src/content/types';
 import propsJson from '../src/content/props.json';
-import type { Exit, MapData, MapObject, MapPlan, Npc, Parcel, Spawn } from '../src/content/types';
+import type { Exit, MapData, MapObject, MapPile, MapPlan, Npc, Parcel, Spawn } from '../src/content/types';
+import { pileWoodOf } from '../src/world/woodPile';
 import { WoodAgeSchema } from '../src/content/types';
 import parcelsJson from '../src/content/parcels.json';
 import { TmjSchema, TsjSchema } from './lib/tiled-schema';
@@ -150,6 +151,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   const parcels: Parcel[] = [];
   const places: { x: number; y: number; w: number; h: number; name: string; accepts: string; inside?: true }[] = [];
   const plans: MapPlan[] = [];
+  const piles: MapPile[] = [];
 
   // deux tilesets dont les numéros se chevauchent : l'un a grossi depuis la dernière sauvegarde de la carte dans Tiled
   const sorted = [...uses].sort((a, b) => a.firstgid - b.firstgid);
@@ -279,6 +281,16 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (!use) return oerr("champ 'use' (destination, clé de src/content/parcels.json) manquant");
       if (!(parcelsJson as Record<string, unknown>)[use]) return oerr(`destination '${use}' inconnue (attendues : ${Object.keys(parcelsJson).join(', ')})`);
       parcels.push({ x: o.x, y: o.y, w: o.width, h: o.height, use, ...(o.name ? { name: o.name } : {}) });
+    } else if (cls === 'Pile') {
+      only(['count', 'turned', 'inside', ...WOOD_FIELDS]);
+      if (!o.point) return oerr("un tas de bois est un point (outil « Insérer un point ») : l'origine du tas");
+      const count = Number(props.get('count'));
+      if (!Number.isInteger(count) || count < 1) return oerr("champ 'count' (le nombre de pièces, au moins 1) manquant ou faux");
+      const piece = readWood('wood-piece', props, oerr);
+      if (!piece) return oerr('un tas de bois dit sa pièce (propriétés size, length, shape, hewn)');
+      const wood = pileWoodOf(piece);
+      if (!wood) return oerr('une pièce entamée ne va pas en tas');
+      piles.push({ id: o.id, x: o.x, y: o.y, wood, count, ...(bool('turned') ? { turned: true as const } : {}), ...(bool('inside') ? { inside: true as const } : {}) });
     } else if (cls === 'Plan') {
       only(['plan', 'age']);
       if (o.gid !== undefined) return oerr('un plan posé est un rectangle ou un point (son coin nord-ouest)');
@@ -326,6 +338,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
     parcels,
     plans,
     places,
+    piles,
   });
   if (!map.success) {
     err(`format interne invalide :\n${indent(z.prettifyError(map.error))}`);

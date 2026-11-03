@@ -661,6 +661,23 @@ export function seedPlans(
   return n;
 }
 
+/**
+ * Les tas de bois de Tiled (`piles` d'une carte) qui ne sont pas encore entrés dans la partie y entrent (`make` : le tas à poser),
+ * notés dans `seeded` (avec les plans : les identifiants d'objets Tiled d'une carte sont uniques) ; renvoie le nombre de tas posés.
+ */
+export function seedPiles<T extends { id: number }>(s: GameState, mapId: string, list: readonly T[], make: (p: T) => Omit<Pile, 'id'>): number {
+  const m = mapState(s, mapId);
+  let n = 0;
+  for (const p of list) {
+    if (m.seeded.includes(p.id)) continue;
+    m.seeded.push(p.id);
+    addPile(s, mapId, make(p));
+    n++;
+  }
+  if (n) revision++;
+  return n;
+}
+
 export function resetMap(s: GameState, mapId: string): void {
   delete s.maps[mapId];
   for (const id of Object.keys(s.maps)) if (id.startsWith(`interieur:${mapId}:`)) delete s.maps[id];

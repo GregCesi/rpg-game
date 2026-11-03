@@ -63,6 +63,8 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
       reveil: w.map.def.spawns.reveil && inRoom(w.map.def.spawns.reveil.x, w.map.def.spawns.reveil.y),
       npcs: w.map.def.npcs.map((n: any) => ({ character: n.character, pose: n.pose, inRoom: inRoom(n.x, n.y) })),
       places: w.map.def.places.map((p: any) => ({ name: p.name, accepts: p.accepts, inRoom: inRoom(p.x + p.w / 2, p.y + p.h / 2) })),
+      // les tas : les quartiers du cagibi, un vrai tas calculé, né dans la partie à la première visite (Tiled : un point `Pile`)
+      piles: w.map.piles.map((p: any) => ({ wood: p.pile.wood, count: p.pile.places.length, inRoom: inRoom(p.pile.x + 10, p.pile.y - 10) })),
       types,
       outside: w.map.def.objects.filter((o: any) => !inRoom(o.x + 2, o.y - 1)).map((o: any) => `${o.type} (${o.x}, ${o.y})`),
     };
@@ -71,10 +73,11 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
   assert.ok(home.player && home.reveil, 'Xéros se réveille dans la maison');
   assert.deepEqual(home.npcs, [{ character: 'mother', pose: 'sit', inRoom: true }], `la mère, assise, dans la maison : ${JSON.stringify(home.npcs)}`);
   assert.deepEqual(home.places, [{ name: 'fagot', accepts: 'faggot', inRoom: true }], `la place du fagot : ${JSON.stringify(home.places)}`);
-  for (const t of ['pallet', 'plan-tablet', 'chopping-block-axe', 'woodpile', 'maul-ground', 'splitting-wedge-ground', 'hatchet-ground', 'broadaxe-ground', 'rope-coil']) {
+  for (const t of ['pallet', 'plan-tablet', 'chopping-block-axe', 'maul-ground', 'splitting-wedge-ground', 'hatchet-ground', 'broadaxe-ground', 'rope-coil']) {
     assert.ok(home.types.includes(t), `dans la maison : ${t}`);
   }
   assert.deepEqual(home.outside, [], 'chaque objet posé dedans est dans la maison');
+  assert.deepEqual(home.piles, [{ wood: { size: 'big', shape: 'quarter', length: 100 }, count: 9, inRoom: true }], `au cagibi, un tas de neuf quartiers d'un mètre (${JSON.stringify(home.piles)})`);
   console.log(`  ✓ départ : dans la maison (une entrée), la mère assise, la place du fagot, ${home.types.length} objets posés dedans`);
 
   await page.keyboard.press('KeyB');

@@ -464,7 +464,6 @@ export const VIEWS_TODO: Record<string, string> = {
   cottage: 'objet fixé du monde : pour le poser tourné dans Tiled',
   well: 'objet fixé du monde : pour le poser tourné dans Tiled',
   fireplace: 'objet fixé du monde : pour le poser tourné dans Tiled',
-  woodpile: 'objet fixé du monde (ancien tas de décor) : pour le poser tourné dans Tiled',
   'chopping-block-axe': 'objet fixé du monde (la hache plantée) : pour le poser tourné dans Tiled',
   'plan-tablet': 'objet fixé du monde (sur la table de la mère) : pour la poser tournée dans Tiled',
   'big-felled-tree': 'arbre couché : ses chutes vers le nord et le sud (le demi-tour est -left)',
@@ -978,7 +977,7 @@ export const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> =
  */
 const TRADE_TODO = new Set([
   'big-tree', 'big-pollard', 'big-tree-stump', 'normal-tree', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-piece', 'normal-tree-stump',
-  'rock', 'bush', 'bush-berries', 'rock-rubble', 'cottage', 'woodpile', 'chopping-block', 'chopping-block-rope', 'rope-coil', 'faggot',
+  'rock', 'bush', 'bush-berries', 'rock-rubble', 'cottage', 'chopping-block', 'chopping-block-rope', 'rope-coil', 'faggot',
   'chopping-block-axe', 'fireplace', 'worktable', 'workbench', 'stove', 'bed', 'pallet', 'sack', 'jar', 'sunpatch', 'lantern', 'wall-torch',
   'candle', 'barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'shed-plate-north', 'shed-plate-south', 'shed-plate-side', 'shed-rafter',
   'shed-roof', 'maul-ground', 'splitting-wedge-ground', 'well', 'planted-stake', 'plan-tablet', 'hatchet-ground', 'broadaxe-ground',

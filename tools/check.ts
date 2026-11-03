@@ -54,7 +54,7 @@ async function main() {
   // chaque objet a sa fiche (docs/objets/<clé>.md, ou une fiche de groupe qui nomme sa clé sur sa ligne « Clé ») ; celles qui restent à
   // écrire (FICHE_TODO, docs/AUDIT.md « Normalisation » : des fiches de groupe pour les meubles, les lumières, la végétation)
   const FICHE_TODO = new Set(
-    'big-tree big-tree-stump normal-felled-tree rock bush bush-berries rock-rubble cottage woodpile chopping-block chopping-block-rope fireplace worktable workbench stove bed pallet sack jar sunpatch lantern wall-torch candle barrel crate hay-bale chest table stool shed-plate-side well cart-door-open stone iron-ore wheat seeds berries mushroom egg apple wool pickaxe hoe sickle watering-can fishing-rod sword'.split(' '),
+    'big-tree big-tree-stump normal-felled-tree rock bush bush-berries rock-rubble cottage chopping-block chopping-block-rope fireplace worktable workbench stove bed pallet sack jar sunpatch lantern wall-torch candle barrel crate hay-bale chest table stool shed-plate-side well cart-door-open stone iron-ore wheat seeds berries mushroom egg apple wool pickaxe hoe sickle watering-can fishing-rod sword'.split(' '),
   );
   const ficheFiles = readdirSync('docs/objets').filter((f) => f.endsWith('.md') && f !== 'README.md');
   const named = new Set<string>(ficheFiles.map((f) => f.slice(0, -3)));
