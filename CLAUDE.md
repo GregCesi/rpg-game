@@ -2,6 +2,14 @@
 
 Lis `README.md` (architecture et quatre règles) avant toute modification, et `docs/CONCEPTION.md` (univers, personnages, lieux, feuille de route) avant tout travail sur le contenu.
 
+## Façon de travailler (voulue par Grégoire : les erreurs coûtent cher)
+
+1. **Le cadrage** : lire ce qu'il faut, puis dire point par point ce qu'on va faire et comment, et poser toutes ses questions d'un coup ; puis rendre la main. C'est le seul arrêt prévu.
+2. **L'exécution** : après les réponses, aller jusqu'au bout sans rendre la main. On ne travaille que pendant sa réponse : un plan annoncé suivi d'une main rendue, c'est un chantier arrêté.
+3. **Les images** : tout dessin passe par le sous-agent pixel-artist, sur une planche dans `.art-preview/` (à côté de Xéros pour l'échelle), avec une notification macOS (`osascript -e 'display notification "<ce qui est prêt>" with title "Xéros"'`) et une ligne « DESSIN À VALIDER » avec le chemin. Rien n'est intégré sans l'accord écrit de Grégoire. En attendant, avancer sur ce qui n'en dépend pas ; arrivé à l'intégration sans accord, renotifier et rendre la main.
+
+## Consignes
+
 - Ne jamais éditer `src/generated/` ni `tiled/tilesets/` : modifier `art/` ou `src/content/`, puis `npm run art`.
 - Nouvel objet : sa fiche dans docs/objets/ d'abord (modèle dans `docs/objets/README.md` : identité, masse, dimensions, toutes ses vues, regroupement, gestes, travail, arme, origine, devenir, vérification).
 - Nouvel objet : ses vues de tous les côtés, selon sa symétrie, dès sa création (`views` dans props.json ou items.json : `round` une vue, `symmetric` deux, `<image>-ns`, `four` quatre, `<image>-r1` à `-r3` ; `lying` pour ce qui est couché : le nord-sud a les dimensions de l'est-ouest inversées, règle D de `docs/STYLE.md` section 8). `validate.ts` le vérifie ; un objet ancien sans toutes ses vues va dans `VIEWS_TODO` (validate.ts), avec sa raison, et `npm run check` affiche ce qui reste.
