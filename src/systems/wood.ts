@@ -66,7 +66,7 @@ const END_OF_FACING: Record<Facing, End> = { right: 'west', left: 'east', down: 
  * Chaque coup est noté dans GameState (les réglages de la pièce). Ne lit pas le clavier.
  */
 export class WoodSystem {
-  /** Invite « Espace » sur la coupe visée, et la ligne des deux longueurs au-dessus. */
+  /** L'ancienne invite de touche (cachée : le HUD dit le mot du clic), et la ligne des deux longueurs au-dessus de la coupe visée. */
   private readonly prompt: Phaser.GameObjects.Image;
   private readonly label: Phaser.GameObjects.Container;
   /** Texte de la ligne affichée (pour ne la refaire que quand elle change). */
@@ -429,7 +429,7 @@ export class WoodSystem {
 
 
   /**
-   * À appeler à chaque image : l'invite « Espace » sur la coupe visée, et au-dessus les deux longueurs qu'elle donnerait (dans
+   * À appeler à chaque image : au-dessus de la coupe visée les deux longueurs qu'elle donnerait (dans
    * l'ordre de l'écran : ouest | est, nord | sud) ; ailleurs, l'invite seule. `active` = false pendant un geste, un dialogue ou un
    * changement de carte.
    */

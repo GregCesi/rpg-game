@@ -70,9 +70,10 @@ creux, 1 au sommet, décalée ; formes a et b mêlées. Les tas de petites et de
 grosses dès la première.
 
 ## Gestes
-- E court : la prendre (la petite dans une main libre, les autres à deux mains) ; sur un pierrier, reprendre la plus haute.
-- E dans le vide, Q : la poser devant soi, à son fantôme ; contre une pierre identique seule au sol, un pierrier naît.
-- E maintenu, Espace, R : rien.
+- Clic court, main vide : la prendre (la petite dans cette main, les autres à deux mains) ; sur un pierrier, reprendre la plus haute.
+- Clic court de la main qui la tient, ou A (Q en QWERTY) : la poser à son fantôme ; contre une pierre identique seule au sol, un
+  pierrier naît ; devant ce qui encaisse un coup (le mannequin), frapper avec.
+- Clic maintenu, main vide ; R : rien.
 
 ## Origine
 - **La carrière**, toute proche du village (pas encore de carte) : achetée au carrier, la moins chère des pierres. Plus tard,

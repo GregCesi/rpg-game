@@ -25,8 +25,8 @@ Aucune : un outil forgé ou tourné, régulier.
 Seul.
 
 ## Gestes
-- E court : le ramasser ; E dans le vide, Q : le poser à son fantôme ; R : le tourner.
-- Espace : rien encore : tailler au ciseau viendra avec son geste (le maillet dans l'autre main) (pas de planche `tool-stone-chisel` encore : le geste se jouerait mains vides).
+- Clic court, main vide : le ramasser ; A (Q en QWERTY) : le poser à son fantôme ; R : le tourner.
+- Clic court de sa main : frapper avec (l'arme improvisée, rien à travailler) ; tailler au ciseau viendra avec son geste (le maillet dans l'autre main) (pas de planche `tool-stone-chisel` encore : le geste se jouerait mains vides).
 
 ## Origine
 Acheté au forgeron. En attendant le village : ?dieu le donne.

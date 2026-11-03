@@ -35,12 +35,12 @@ Une fiche pour les poteaux de l'abri à bois : la même pièce, à deux hauteurs
 Seul ; quatre par abri, aux quatre coins : nord-ouest, nord-est, sud-ouest, sud-est.
 
 ## Gestes
-- E court, E maintenu, Espace, R, Q : rien.
+- Clics, E, R, A : rien.
 
 ## Origine
 Places du plan `woodshed`. Une poutre équarrie à la doloire (arbre normal abattu, ébranché, coupé à 1,80 m ou 3 m, quatre passes de doloire, un travail au coup) :
-le poteau bas est porté et dressé avec E sur son dé ; le poteau haut est équarri au pied de son dé, puis dressé avec l'aide de la
-mère (E maintenu, fondu). Le chantier garde la pièce de bois d'origine (`pieces`).
+le poteau bas est porté et dressé d'un clic sur son dé ; le poteau haut est équarri au pied de son dé, puis dressé avec l'aide de la
+mère (clic maintenu d'une main vide, fondu). Le chantier garde la pièce de bois d'origine (`pieces`).
 
 ## Devenir
 Porte les sablières. **C'est la seule pièce de l'abri qui bloque le passage** : une collision de 4 × 4 px (20 × 20 cm)

@@ -24,20 +24,21 @@ Fiche écrite le 30 octobre 2026 (chantier « perspective »), pour son image au
 - Portée (`held-axe`, posture `shoulder`, vues `down`, `up`, `right`, la gauche est le miroir) : sur l'épaule.
 - En main pendant le geste (`tool-axe`, planche tirée de `heldToolSheet` : cinq dessins de base, convention dans l'en-tête de
   `art/lib/held.ts`) : `use` de côté sur ce qui est debout, `chop` de haut en bas sur ce qui est couché.
-- Fantôme : la vue au sol en transparence, là où E ou Q la posera, dans son sens.
+- Fantôme : la vue au sol en transparence, là où un clic ou A la posera, dans son sens.
 
 ## Regroupement
 Seule. Ne s'entrepose pas.
 
 ## Gestes
-- E court : la prendre (deux mains libres) ; E dans le vide ou Q : la poser devant soi, dans le sens de son fantôme.
-- E maintenu : rien.
-- Espace : abattre un arbre (`use`), ébrancher le houppier, couper une pièce de bois sur la grille (`chop`), couper un lien sur
-  le billot.
+- Clic court, main vide : la prendre (deux mains libres).
+- Clic court (l'un ou l'autre, elle tient les deux mains) : abattre un arbre (`use`), ébrancher le houppier, couper une pièce de
+  bois sur la grille (`chop`), couper un lien sur le billot ; sans rien à travailler, frapper avec ; sinon A (Q en QWERTY) : la
+  poser devant soi, dans le sens de son fantôme.
+- Clic maintenu : la lancer.
 - R : tourner la vue où elle sera posée, d'un quart de tour.
 
 ## Origine
-Plantée dans le billot de la ferme (`chopping-block-axe`) : E la donne dans les mains.
+Plantée dans le billot de la ferme (`chopping-block-axe`) : le clic court d'une main vide la donne dans les mains.
 
 ## Devenir
 Ne s'use pas, ne disparaît pas.

@@ -47,10 +47,10 @@ Repris le 30 octobre 2026 (équarrissage, puis pièce de bois) : couché, l'arbr
 Seuls. Les billes de 95 cm qu'on coupe du rondin s'entassent en tas de leur propre genre (`normal-logs`).
 
 ## Gestes
-- Espace avec la hache, debout, de côté (`use`) : un appui lance le travail au coup (`harvest.work.fell`, le tronc de 30 cm : environ
+- Clic de la main de la hache, debout, de côté (`use`) : un clic lance le travail au coup (`harvest.work.fell`, le tronc de 30 cm : environ
   25 min et 780 coups pour Xéros, CONCEPTION « Le travail ») ; Xéros se place du côté où il frappe, l'entaille s'y dessine (`stages`,
   et `-left-stage-<n>` à gauche), l'arbre tombe de ce côté, laisse sa souche et fait naître l'arbre couché.
-- Espace, de haut en bas (`chop`), sur le houppier : un travail au coup (`work.limbs` : 12 branches de 7 cm, en trois étapes), il lâche 3 à 4 branches (la cime comprise) et le tronc ébranché
+- Clic de la main de la hache, de haut en bas (`chop`), sur le houppier : un travail au coup (`work.limbs` : 12 branches de 7 cm, en trois étapes), il lâche 3 à 4 branches (la cime comprise) et le tronc ébranché
   devient un rondin de 5 m. Le rondin se coupe où l'on veut (voir sa fiche).
 
 ## Origine

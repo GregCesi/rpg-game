@@ -876,7 +876,7 @@ const RAW_WOOD: Record<string, string> = {
 
 /**
  * Le combat (combat.json, docs/CONCEPTION.md « Le combat ») : chaque attaque joue un geste qui existe ; chaque famille a des postures
- * dont les suites nomment des attaques, et sa dernière posture convient à tout (Espace a toujours une attaque) ; chaque arme
+ * dont les suites nomment des attaques, et sa dernière posture convient à tout (un clic a toujours une attaque) ; chaque arme
  * (`weapon` de items.json) nomme une famille, a sa planche `weapon-<…>` en huit angles et une masse ; chaque cible (`target` de
  * props.json) a les éclats de sa matière (`fx-<matter>`), et des points de vie infinis tant que rien ne garde les blessures.
  */
@@ -928,7 +928,7 @@ function validateCombat(c: Content, cat: Catalog): string[] {
       for (const a of s.chain) if (!c.combat.attacks[a]) err(`combat.json famille '${key}' posture '${s.name}' : attaque '${a}' inconnue`);
       const last = i === f.stances.length - 1;
       if (last && (s.when.other !== undefined && s.when.other !== 'any' || s.when.both !== undefined)) {
-        err(`combat.json famille '${key}' : la dernière posture ('${s.name}') doit convenir à tout ('when' vide), pour qu'Espace ait toujours une attaque`);
+        err(`combat.json famille '${key}' : la dernière posture ('${s.name}') doit convenir à tout ('when' vide), pour qu'un clic ait toujours une attaque`);
       }
     });
   }
@@ -1378,7 +1378,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.take) addAll(validateHold(`props.json '${key}' take`, p.take.hold, p.take.hands, cat));
     if (p.take) addAll(validateStates(key, p, c, cat));
     if (p.take && !cat.textures.has(p.take.icon)) err(`props.json '${key}' : icône '${p.take.icon}' non dessinée`);
-    // E sur l'objet : le prendre, le récolter à la main ou ouvrir son dialogue, pas deux à la fois (une récolte à l'outil se fait avec Espace)
+    // un objet se prend, se récolte à la main (au clic) ou ouvre son dialogue (E), pas deux à la fois (une récolte à l'outil se fait au clic de sa main)
     if (p.take && ((p.harvest && !p.harvest.tool) || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
     addAll(validateRope(key, p, c));
     // un morceau de mur qui se raccorde (le solin) : couché à quatre vues (est-ouest, nord-sud), plus long qu'épais

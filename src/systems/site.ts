@@ -211,7 +211,7 @@ export class SiteSystem {
   }
 
   /**
-   * Espace avec un piquet en main : le planter. Le premier fixe le coin nord-ouest du tracé, au point que regarde Xéros ; les
+   * Le clic de la main qui tient un piquet : le planter. Le premier fixe le coin nord-ouest du tracé, au point que regarde Xéros ; les
    * suivants ne se plantent qu'aux coins en fantôme (le plus près, à `SITE.snap` px). Au quatrième, le chantier naît si toute
    * l'emprise est libre, sinon le piquet reste en main. Sans plan connu, Xéros ne sait pas quoi tracer.
    */

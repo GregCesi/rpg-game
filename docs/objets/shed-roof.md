@@ -47,7 +47,7 @@
 Seul ; un par abri.
 
 ## Gestes
-- E court, E maintenu, Espace, R, Q : rien.
+- Clics, E, R, A : rien.
 
 ## Origine
 Place du plan `woodshed` (étape « à venir » : le chantier ne l'ouvre pas encore). Plus tard : des planches refendues dans une bille (coins et maillet), clouées sur des

@@ -52,9 +52,10 @@ export const INTERACT = { reach: 16, radius: 20 };
 /**
  * La visée à la souris (src/world/aim.ts) : ce qui est sous le curseur est visé s'il est à moins de `reach` px du point d'où Xéros
  * regarde ; plus loin, il vise dans la direction du curseur, à `INTERACT.reach` px. Le fantôme de pose suit le curseur sans sortir de
- * `reach` px.
+ * `reach` px. Ce qui encaisse un coup (le mannequin) se vise sous le curseur plus loin, jusqu'à `strike` px (la portée d'un long coup) :
+ * le clic d'une ressource frappe alors au lieu de poser.
  */
-export const AIM = { reach: 32 };
+export const AIM = { reach: 32, strike: 64 };
 
 /**
  * La transformation « magique » des outils de test (?dieu, systems/transform.ts) : ce qui entre se cherche dans les mains, puis au
@@ -253,7 +254,7 @@ export const PLAYER = {
 
 /**
  * Les petits délais entre deux états (ms) : `fade` le fondu d'un changement de carte (`fadeIn` à l'arrivée) ; `lock` l'interaction
- * bloquée après un fondu, un dialogue, la sortie du mode construction (l'appui qui l'a fermé ne relance rien) ; `afterWork` Espace
+ * bloquée après un fondu, un dialogue, la sortie du mode construction (l'appui qui l'a fermé ne relance rien) ; `afterWork` les clics
  * bloqué après un travail ou une passe arrêtés.
  */
 export const LOCKS = { fade: 200, fadeIn: 220, lock: 200, afterWork: 150 };

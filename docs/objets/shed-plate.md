@@ -44,7 +44,7 @@ Une fiche pour les quatre sablières de l'abri à bois : les poutres posées en 
 Seules ; quatre par abri, en cadre sur la tête des poteaux (assemblage à mi-bois aux coins).
 
 ## Gestes
-- E court, E maintenu, Espace, R, Q : rien.
+- Clics, E, R, A : rien.
 
 ## Origine
 Places du plan `woodshed` (étape « à venir »). Plus tard : un tronc équarri, porté à deux, posé sur les poteaux : pas encore

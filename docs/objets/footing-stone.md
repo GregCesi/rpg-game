@@ -34,10 +34,10 @@
 Seul. Quatre par abri, un sous chaque poteau.
 
 ## Gestes
-- E court, E maintenu, Espace, R, Q : rien.
+- Clics, E, R, A : rien.
 
 ## Origine
-Naît d'une dalle posée sur une place du chantier (E, la dalle portée à deux mains), trouvée sur la berge de la ferme. Le piquet du coin est arraché au même moment.
+Naît d'une dalle posée sur une place du chantier (un clic, la dalle portée à deux mains), trouvée sur la berge de la ferme. Le piquet du coin est arraché au même moment.
 
 ## Devenir
 Reste sous son poteau. Ne bloque pas le passage (seul le poteau bloque) ; il est dessiné à plat sous les personnages

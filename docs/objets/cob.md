@@ -23,7 +23,7 @@ Aucune : pétri à la main à la mesure de l'unité, une seule forme.
 En tas : genre `cob-clods`, deux rangées de 3 (6), comme des pâtons alignés ; bloque à 3.
 
 ## Gestes
-E prendre, poser ; le reste : rien.
+Clic court : prendre (main vide), poser (la main qui le tient) ; le reste : rien.
 
 ## Origine
 Mêlé au sol, dans la fosse à torchis, en foulant la terre avec la paille et l'eau.

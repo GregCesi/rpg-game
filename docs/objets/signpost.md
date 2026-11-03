@@ -40,7 +40,7 @@ Aucune : fait par le charpentier.
 Seul.
 
 ## Gestes
-- E court : lire (« Vers la ville. La route n'est pas encore pour moi. », dit par Xéros), dialogue `signpost-town`.
+- E : lire (« Vers la ville. La route n'est pas encore pour moi. », dit par Xéros), dialogue `signpost-town`.
 
 ## Origine
 Planté par la ville au bord de la route officielle (zone `route-de-la-ville`).

@@ -25,8 +25,8 @@ Aucune : un outil forgé ou tourné, régulier.
 Seul.
 
 ## Gestes
-- E court : le ramasser ; E dans le vide, Q : le poser à son fantôme ; R : le tourner.
-- Espace : rien encore : creuser viendra avec son geste (pas de planche `tool-spade` encore : le geste se jouerait mains vides).
+- Clic court, main vide : le ramasser ; A (Q en QWERTY) : le poser à son fantôme ; R : le tourner.
+- Clic court de sa main : frapper avec (l'arme improvisée, rien à travailler) ; creuser viendra avec son geste (pas de planche `tool-spade` encore : le geste se jouerait mains vides).
 
 ## Origine
 Achetée au forgeron (le fer ; la pelle et le manche se font à la maison). En attendant le village : ?dieu le donne.

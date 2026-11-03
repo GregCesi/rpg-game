@@ -74,7 +74,7 @@ export const time = parse('time.json', TimeSchema, timeJson);
 export const work = parse('work.json', WorkSchema, workJson);
 
 /**
- * L'objet sert-il à un travail (Espace l'y emploie ; tout le reste de ce qu'on tient frappe, world/heft.ts) ? Ce qu'il déclare faire
+ * L'objet sert-il à un travail (le clic de sa main l'y emploie ; tout le reste de ce qu'on tient frappe, world/heft.ts) ? Ce qu'il déclare faire
  * (`does`), ou ce qui le demande : une récolte, une transformation, le tracé d'un chantier. Tiré des données, jamais d'une liste de noms ;
  * calculé à chaque appel (un objet ajouté au contenu, l'outil d'essai des contrats, compte aussitôt).
  */

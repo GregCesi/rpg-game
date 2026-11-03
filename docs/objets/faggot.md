@@ -39,15 +39,16 @@ En tas (`piles.json`, `faggots`), même forme que les billes : 3 au sol côte à
 est-ouest ou nord-sud (`turned`). Un fagot posé seul est un tas d'une pièce. Il bloque le passage dès la première pièce.
 
 ## Gestes
-- E court : le prendre à deux mains (le plus haut d'un tas, ou le seul) ; le portant, E le pose devant soi (en tas).
-- E maintenu (mains libres, une demi-seconde, jauge au-dessus de Xéros) : sur un fagot seul, il se dénoue en un tas de
+- Clic court, main vide : le prendre à deux mains (le plus haut d'un tas, ou le seul) ; le portant, l'un ou l'autre clic le pose
+  à son fantôme (en tas).
+- Clic maintenu (mains libres, une demi-seconde, jauge au-dessus de Xéros) : sur un fagot seul, il se dénoue en un tas de
   10 branches avec son lien, à la même place. Sur un tas de plusieurs fagots : « Un seul fagot à la fois. ».
-- Espace : rien (porté, Xéros n'utilise rien).
+- Clic maintenu, le portant : le lancer.
 - R : le portant, il tourne entre est-ouest et nord-sud ; le fantôme suit.
-- Q : le pose devant soi (en tas), comme E.
+- A (Q en QWERTY) : le pose à son fantôme (en tas), comme un clic.
 
 ## Origine
-Fabriqué : un tas de 10 branches plein, ceinturé d'un [lien](rope-tie.md), noué avec E maintenu. Le fagot prend la place du
+Fabriqué : un tas de 10 branches plein, ceinturé d'un [lien](rope-tie.md), noué d'un clic maintenu. Le fagot prend la place du
 tas, couché est-ouest.
 
 ## Devenir

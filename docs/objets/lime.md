@@ -41,7 +41,7 @@ Aucune : la chaux vive est un produit du four (le travail du feu), en mottes ; l
 Seules (pas de tas pour l'instant : on n'en fait que pour badigeonner la maison).
 
 ## Gestes
-E prendre, poser ; le reste : rien.
+Clic court : prendre (main vide), poser (la main qui la tient) ; le reste : rien.
 
 ## Travail
 Aucun.

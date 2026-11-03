@@ -25,8 +25,8 @@ Aucune : un outil forgé ou tourné, régulier.
 Seul.
 
 ## Gestes
-- E court : le ramasser ; E dans le vide, Q : le poser à son fantôme ; R : le tourner.
-- Espace : rien encore : frapper le ciseau ou le coutre viendra avec leurs gestes (pas de planche `tool-mallet` encore : le geste se jouerait mains vides).
+- Clic court, main vide : le ramasser ; A (Q en QWERTY) : le poser à son fantôme ; R : le tourner.
+- Clic court de sa main : frapper avec (l'arme improvisée, rien à travailler) ; frapper le ciseau ou le coutre viendra avec leurs gestes (pas de planche `tool-mallet` encore : le geste se jouerait mains vides).
 
 ## Origine
 Tourné dans une bille de bois dur ; acheté au menuisier, ou fait par la mère, qui sculpte. En attendant le village : ?dieu le donne.

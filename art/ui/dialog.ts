@@ -184,7 +184,7 @@ function bothHands(): Canvas {
 const GAUGE_STEPS = 9;
 
 /**
- * Jauge d'un geste maintenu (E maintenu), au-dessus de la tête de Xéros : 14 × 4 px, cadre sombre (OUTLINE, coins
+ * Jauge d'un geste maintenu (le clic maintenu), au-dessus de la tête de Xéros : 14 × 4 px, cadre sombre (OUTLINE, coins
  * arrondis), creux de bois sombre (N K) que remplit l'or de la case active (H en haut, b en bas), de gauche à droite.
  * Image k : k/8 des 12 colonnes du creux.
  */
