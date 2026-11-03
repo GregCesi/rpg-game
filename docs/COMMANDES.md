@@ -32,7 +32,7 @@ Dedans (un intérieur calculé) : les mêmes commandes que dehors.
 | --- | --- |
 | **Z Q S D (W A S D)**, flèches | marcher. Chargé au-delà de 25 kg, plus lentement ; à deux mains (`carry`), lentement |
 | **Maj** maintenu | courir (0,2 point du plafond et 5 de souffle par seconde) ; refusé chargé au-delà de 25 kg, à deux mains, fatigué ou épuisé ; à bout de souffle, Xéros repasse au pas et souffle |
-| **Alt** (Option sur Mac) maintenu | marcher discrètement, à pas lents : une part de la marche (`PLAYER.sneak`, 0,4 ; `systems/speeds.ts`, réglable dans ?dieu). L'état `sneaking` de Player, que liront les créatures (rien ne le lit encore). Il l'emporte sur Maj. Le navigateur n'en fait rien |
+| **Alt** (Option sur Mac) maintenu | marcher discrètement, à pas lents : une part de la marche (`PLAYER.sneak`, 0,4 ; `systems/speeds.ts`, réglable dans ?dieu). L'état `sneaking` de Player : les créatures le perçoivent (elles s'alertent et fuient de moins loin, CONCEPTION « Les créatures »). Il l'emporte sur Maj. Le navigateur n'en fait rien |
 | **E** (ou Entrée) | sans les mains : parler, ouvrir ou fermer une porte ou un volet (`swing`), dormir (la paillasse : « Dormir ? »), lire la planchette (apprendre un plan) ; dans un dialogue, la suite. E ne pose rien et ne se maintient pas |
 | **A (Q)** | lâcher ce que tient la main du dernier clic, là où le montre le fantôme (seul, en tas, un lien sous un tas) ; si cette main est vide, l'autre |
 | **R** | tourner d'un quart de tour ce que tient la main du dernier clic (l'autre si elle est vide), avant de le poser : le fantôme suit |
@@ -74,7 +74,7 @@ Ctrl n'est jamais une touche du jeu : sur Mac, Ctrl + clic gauche devient un cli
 | **le piquet, un plan connu** | le planter sur le tracé |
 | **une arme** (`kind: weapon`) | frapper (la taille) ; un nouveau clic pendant le geste enchaîne le coup d'en haut. Une arme dans chaque main : chaque clic frappe avec sa main |
 | **un objet à deux mains** | les deux clics agissent ; en frappe, le gauche donne la taille (le coup horizontal), le droit le coup d'en haut ; devant ce qu'un outil sait travailler, l'un ou l'autre lance le travail |
-| **une ressource** (branche, pierre, bûche, pièce de bois, fagot, rouleau…) | c'est la cible qui décide : devant ce qui encaisse un coup (`target` : le mannequin, plus tard les créatures), frapper avec ; sinon la poser là où le montre le fantôme (seule, sur un tas compatible, sur une place de chantier, le rouleau sur le billot) |
+| **une ressource** (branche, pierre, bûche, pièce de bois, fagot, rouleau…) | c'est la cible qui décide : devant ce qui encaisse un coup (`target` : le mannequin, les lapins), frapper avec ; sinon la poser là où le montre le fantôme (seule, sur un tas compatible, sur une place de chantier, le rouleau sur le billot) |
 
 Décision de Grégoire : on se défend avec une pierre, on se bat avec une épée ; sans ennemi, la pierre se pose. La branche frappe bien
 (`weapon`) mais reste une ressource (`kind: resource`). Toute attaque, lancer compris, ramène le temps à x1.

@@ -1673,7 +1673,7 @@ ceci.
   toucher au moteur ; le corps aura ses gestes à une main.
 - **Les attaques spéciales**, débloquées par **les idées de la nuit** (Xéros qui rêve d'un coup et le sait au réveil) : un champ de
   l'attaque qui la tient fermée tant que l'idée n'est pas venue.
-- **Les lapins** : les premières cibles qui bougent et meurent ; leurs points de vie finis, gardés par la partie (GameState).
+- **Les lapins** : faits (chantier « lapins », 3 novembre 2026) : voir *Les créatures*.
 - **La vie de Xéros** : une jauge à côté de l'endurance, ce qui le blesse, se soigner, dormir.
 - Les commandes à trancher : voir [docs/COMMANDES.md](COMMANDES.md), « À trancher ».
 
@@ -1712,6 +1712,69 @@ L'énergie à l'arrivée compte la chute depuis la main : la bille lâchée de l
 de sa chute. La cognée va plus loin que la pierre, plus lourde ; une hache bien plus lourde partirait moins loin encore. Le jeu n'a pas
 encore de caillou de quelques centaines de grammes : il partirait à la vitesse du bras, 17,5 m/s, à plus de 30 m. Pas encore de geste du
 corps pour lancer (l'objet part de la main sans animation : un dessin à faire avec le pixel-artist).
+
+## Les créatures (décidé les 2 et 3 novembre 2026, chantier « lapins »)
+
+Les premières bêtes du jeu : des lapins qui vivent autour de la ferme. **Une créature est des données** (`src/content/creatures.json`,
+`CreatureSchema` de types.ts) et ses dessins ; le moteur est commun à toutes, sans une ligne propre à une espèce (`tools/test-keys.ts`
+refuse une clé de creatures.json écrite dans src/). Un lapin échappe à Xéros parce que Xéros est lent et bruyant, jamais à cause d'une
+règle écrite pour le lapin (*Le monde ne limite pas*).
+
+- **Le moteur, sans Phaser** (`src/world/creature.ts`) : ce que la bête perçoit de Xéros (la distance, et son allure : immobile,
+  discret — Alt, l'état `sneaking` de Player —, à la marche, à la course : `senses`), ses trois états — **tranquille** (elle broute
+  par petits sauts lents autour de sa garenne, s'arrête souvent), **aux aguets** (dressée, elle regarde Xéros ; s'il s'arrête, recule
+  ou sort de sa vue pendant `calm` secondes, elle se calme ; s'il approche, le compte repart de zéro), **en fuite** (elle court en
+  zigzag vers l'entrée la plus proche de sa garenne, y tambourine, ce qui fait fuir ses voisines dans `thump.radius`, et entre au
+  terrier) —, plus deux mouvements : rentrer sans peur (le soir, ou quand la garenne veut moins de bêtes dehors) et tambouriner.
+  **Elle ne traverse jamais un obstacle** : chaque pas est suivi pixel par pixel contre ce qui a un corps (tuiles pleines, troncs,
+  murs : `areaFree` de GameMap) ; sa fuite suit un chemin calculé (A* sur des cases de 40 cm, tiré au plus court), le zigzag n'est
+  pris que s'il ne mène pas dans un obstacle ; l'entrée se prend au franchissement (`world/crossing.ts`).
+- **La garenne et le temps, sans Phaser** (`src/world/warren.ts`) : une garenne est un rectangle `Warren` de Tiled (`creature`,
+  `population`) et les entrées posées dedans (les objets à `burrow` de props.json : l'[entrée de garenne](objets/warren-hole.md)).
+  La partie garde ses membres (GameState, `warrens` de la carte : points de vie, jour de guérison d'un blessé, prochaine naissance ;
+  `SAVE_VERSION` 29) ; qui est dehors ne se garde pas : au retour sur la carte, les bêtes de l'heure sont déjà dehors. La part dehors
+  suit l'heure (`schedule`) ; elles sortent une à une (`burrow.emerge`), rentrent quand il en faut moins ; après une fuite, une bête
+  reste au terrier `burrow.stay` minutes de jeu. Blessée, elle reste au terrier et guérit `heal.days` jours plus tard. Tant qu'il en
+  manque, une naît toutes les `births.hours` heures.
+- **Le jeu** (`src/systems/creatures.ts`, appelé par `WorldScene.update` quand l'horloge avance) : chaque pas de jeu de taille normale,
+  donc aussi en temps accéléré (V, ?dieu) ; chaque bête dessinée par sa planche (`<image>-<pose>-<direction>` : `graze`, `sit`, `hop`,
+  `alert`, `run`, `thump`).
+- **La chasse** : une bête est une cible (`target` de sa créature : des points de vie finis, sa matière `fx-<matter>`) ; les dégâts
+  viennent des coups (world/strike.ts) et des lancers (world/throw.ts), sans exception. **Un lancer touche une bête qui bouge** : à
+  chaque pas du vol, le chemin de l'objet vu depuis la bête (les deux mouvements du pas) franchit-il son emprise, sous sa hauteur
+  (`flightHit`) ? Un seul choc par lancer ; l'objet finit son vol là où il devait tomber (un premier jet). Blessée, la bête fuit au
+  terrier ; tuée, **elle devient l'objet qu'elle devient** (`becomes`, de sa masse : validate.ts le vérifie), posé là où elle meurt ;
+  elle manque à sa garenne jusqu'aux naissances. Tuer n'a aucune conséquence (le seigneur ne chasse presque jamais dans cette forêt).
+- **Avec ?debug** : l'état et les points de vie au-dessus de chaque bête, et autour de Xéros les deux cercles de son allure (jaune :
+  aux aguets ; rouge : fuite). **?dieu**, « Créatures » : faire sortir une bête près de Xéros, régler la population de la garenne la
+  plus proche, montrer les cercles, régler les distances de chaque allure (en mémoire, le temps de la session).
+
+**Le lapin** ([fiche](objets/rabbit.md) ; mort : le [lapin mort](objets/dead-rabbit.md), 1,5 kg, à une main). Les chiffres de départ,
+à régler en jouant (creatures.json) :
+
+| | |
+| --- | --- |
+| Aux aguets, fuite (m) | immobile 5, 2 ; discret 8, 4 ; marche 15, 10 ; course 25, 20 |
+| Se calme après | 4 s sans que Xéros approche |
+| Broute | à 25 m au plus d'une entrée ; sauts de 15 à 50 cm à 1,2 m/s, pauses de 0,6 à 3 s, 4 à 20 s à une place |
+| Fuite | 10 m/s (Xéros court à 2,5 m/s : il ne la rattrape jamais), zigzag de 30° tous les 1,5 m |
+| Tambour | 0,5 s ; les voisines à 15 m fuient |
+| Terrier | il ressort 3 à 8 minutes après une fuite ; un lapin sort toutes les 20 s |
+| Dehors | la nuit (21 h 30 à 5 h) aucun ; à l'aube (5 h à 8 h 30) et au soir (18 h à 21 h 30) 85 % ; en journée 35 % (2 sur 7) |
+| Naissances, guérison | une toutes les 24 h tant qu'il en manque ; blessé, guéri le lendemain |
+| Vie | 4 points : le poing (1,6) blesse, la branche (8,4), l'épée de bois (6), une pierre bien lancée (9,5) tuent |
+| Taille à l'écran | de profil 8 × 6 px, de face 3 × 8 px : la vraie échelle, sans agrandir (de face, il se lit mal ; à voir en jeu) |
+
+La garenne de la ferme : 7 lapins, 4 entrées, au coin nord-ouest du grand champ, sous la haie (une souche têtard, des buissons), à une
+vingtaine de mètres au nord-est de la maison, hors du chemin.
+
+**Une nouvelle créature** = une entrée de creatures.json, sa planche dessinée par le pixel-artist (chaque pose dans chaque direction),
+l'objet qu'elle devient (items.json, sa masse), sa matière `fx-…` si elle est nouvelle, une garenne (ou plus tard un autre gîte) posée
+dans Tiled ; aucun code. Vérifier : `npm run test:fast` (`tools/test-creatures.ts`, `tools/test-garenne.ts`), `npm run test:contrats`
+(une créature d'essai faite de données vit, perçoit et fuit), `npm run test:lapins` (dans le vrai jeu). Le choix de ne pas prendre la
+bibliothèque Yuka : son modèle d'obstacles (des sphères) ne colle pas aux tuiles et aux boîtes du jeu, son errance tire au hasard sans
+graine (les tests le veulent fixé), et elle apporte son propre temps et ses entités, en double des pas de jeu de simSpeed ; ce qu'il
+fallait (trois états, une errance, un chemin) tient en un fichier.
 
 ## Fendre (décidé le 30 octobre 2026)
 
