@@ -330,4 +330,4 @@ await playtest('grange', async ({ page, errors, load }) => {
   writeFileSync('.art-preview/grange.png', PNG.sync.write(out));
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   console.log(`  ✓ grange : ${all.length} pièces, ${(await joints()).length} assemblages, enregistrée dans ${PLAN_FILE} ; .art-preview/grange.png`);
-});
+}, { speed: 1 }); // x1 : bâtir dans le mode construction ne demande pas de temps de jeu, et x10 alourdit chaque image

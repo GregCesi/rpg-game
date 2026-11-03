@@ -468,4 +468,4 @@ await playtest('construction', async ({ page, errors, load }) => {
   } finally {
     rmSync(PLAN_FILE, { force: true });
   }
-});
+}, { speed: 1 }); // x1 : bâtir dans le mode construction ne demande pas de temps de jeu, et x10 alourdit chaque image

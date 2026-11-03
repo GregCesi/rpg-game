@@ -288,4 +288,4 @@ await playtest('etal', async ({ page, errors, load }) => {
   writeFileSync('.art-preview/etal.png', PNG.sync.write(out));
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   console.log(`  ✓ étal : ${all.length} pièces, ${(await joints()).length} assemblages, enregistré dans ${PLAN_FILE} ; .art-preview/etal.png`);
-});
+}, { speed: 1 }); // x1 : bâtir dans le mode construction ne demande pas de temps de jeu, et x10 alourdit chaque image

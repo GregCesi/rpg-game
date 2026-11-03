@@ -422,4 +422,4 @@ await playtest('cabane', async ({ page, errors, load }) => {
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   assert.equal(built.length, all.length);
   console.log(`  ✓ cabane : ${all.length} pièces, ${(await joints()).length} assemblages, enregistrée dans ${PLAN_FILE} ; .art-preview/cabane.png`);
-});
+}, { speed: 1 }); // x1 : bâtir dans le mode construction ne demande pas de temps de jeu, et x10 alourdit chaque image

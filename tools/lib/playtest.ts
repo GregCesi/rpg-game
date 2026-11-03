@@ -87,7 +87,7 @@ export interface Playtest {
  * Lance le jeu, exécute `body`, puis quitte avec le bon code (0 : réussi ou ignoré, 1 : échec). Une assertion qui échoue dans `body`
  * est un échec ; une erreur de la page aussi (le test le dit).
  */
-export async function playtest(name: string, body: (t: Playtest) => Promise<void>): Promise<never> {
+export async function playtest(name: string, body: (t: Playtest) => Promise<void>, opts: { speed?: number } = {}): Promise<never> {
   // les temps de chaque phase (PLAYTEST_TIMES=<fichier> : une ligne JSON par scénario, pour tools/mesure-scenarios.ts)
   const T0 = performance.now();
   const times: Record<string, number> = {};
@@ -161,7 +161,8 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     `);
     // la vitesse de simulation (src/systems/simSpeed.ts : N pas de jeu de taille normale par image, jamais une image sautée) : x10
     // par défaut, PLAYTEST_SPEED=<n> sinon (run-scenarios.ts met x1 aux scénarios de SCENARIOS_X1) ; remise après chaque chargement
-    const speed = Math.max(1, Number(process.env.PLAYTEST_SPEED) || 10);
+    // `opts.speed` : un scénario qui mesure la vitesse du temps elle-même (test-temps) part de la sienne
+    const speed = opts.speed ?? Math.max(1, Number(process.env.PLAYTEST_SPEED) || 10);
     const setSpeed = (n: number) =>
       page.evaluate(async (n) => {
         const url = '/src/systems/simSpeed.ts';

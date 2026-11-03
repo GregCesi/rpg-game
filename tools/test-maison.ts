@@ -474,4 +474,4 @@ await playtest('maison', async ({ page, errors, load }) => {
   console.log(
     `  ✓ maison : ${built.length} pièces, ${plan.joints.length} assemblages, enregistrée dans ${PLAN_FILE} ; le coin nord-ouest du solin à (${sill}) cm de l'origine du plan ; quatre pièces, une entrée ; ${shots.length} captures dans .art-preview/maison-xeros.png ; ${secs} s`,
   );
-});
+}, { speed: 1 }); // x1 : bâtir dans le mode construction ne demande pas de temps de jeu, et x10 alourdit chaque image

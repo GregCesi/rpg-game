@@ -379,4 +379,4 @@ await playtest('temps', async ({ page, errors, load }) => {
   console.log(
     "  ✓ temps : l'horloge à x1, V en boucle (la vitesse de simulation, affichée au cadran, Maj tenue ou non), une attaque ramène à x1, la lumière du jour et de la nuit ; le travail lancé d'un appui (au rythme du modèle, la force réglée en plein travail agit au coup suivant, un pas l'arrête, x5 serre les coups, ?debug), repris après rechargement, fini d'un coup ; à bout de souffle il souffle puis reprend ; la veille de nuit, dormir",
   );
-});
+}, { speed: 1 }); // x1 : il mesure la vitesse du temps elle-même : il part de x1, comme le joueur, et règle les autres par V et ?dieu

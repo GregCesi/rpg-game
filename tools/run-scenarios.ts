@@ -36,10 +36,11 @@ const RUN = SCENARIOS.filter((n) => ALL || !HEAVY.includes(n));
 
 const jobs = Math.max(1, Number(process.env.SCENARIOS_JOBS) || 4);
 /**
- * Les scénarios qui tournent à x1 (SCENARIOS_X1, noms séparés par des virgules ; monde par défaut) : les autres tournent à x10 (la
- * vitesse de simulation, tools/lib/playtest.ts), et celui-ci garde le jeu à sa vitesse vraie avant une fusion.
+ * Chaque scénario déclare sa vitesse (`speed` de playtest : x1 pour bâtir dans le mode construction et pour test-temps ; x10 par
+ * défaut, la vitesse de simulation de tools/lib/playtest.ts, pour ceux qui marchent ou travaillent). SCENARIOS_X1 (noms séparés par
+ * des virgules) fait tourner en plus ceux-là à x1, pour voir le jeu à sa vitesse vraie.
  */
-const X1 = (process.env.SCENARIOS_X1 ?? 'monde').split(',').map((n) => n.trim()).filter(Boolean);
+const X1 = (process.env.SCENARIOS_X1 ?? '').split(',').map((n) => n.trim()).filter(Boolean);
 /** Au-delà, un scénario est arrêté (SCENARIOS_LIMIT, en secondes ; 15 min par défaut). */
 const LIMIT_S = Math.max(60, Number(process.env.SCENARIOS_LIMIT) || 900);
 
