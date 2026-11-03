@@ -41,6 +41,8 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         await sleep(ms);
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
         await (window as any).__frames(2);
+        // un Espace sans rien à travailler frappe, et l'attaque ramène le temps à x1 : le scénario garde sa vitesse
+        if (code === 'Space') await (window as any).__resume();
         // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
         // travail »), horloge, endurance et résultat compris
         if (code === 'Space' && finish) await finishWork();
