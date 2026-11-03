@@ -751,21 +751,21 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
  y=480P  paillasse     P                                    P                    P
       |                |                                    |                    |
  y=640P---[F]--P-------P---[F]--P--[porte]-P--------P--[F]--P--------P--------P--------P
-      P : poteau (20 × 20) ; [F] : fenêtre à volet (60 × 40, appui à 80 cm) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
+      P : poteau (20 × 20) ; [F] : fenêtre à volet (60 × 40, appui à 1 m) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
       [p] : porte intérieure 0,80 × 1,80 m ; [b] : la baie sans porte du cagibi (0,85 m, sous un linteau) ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
 ```
 
 - **Emprise** : axes des poteaux **12,80 × 6,40 m** (8 travées de 1,60 m sur 4) ; avec le solin, environ **13,30 × 6,90 m** au sol ;
   environ 80 m² au dedans.
-- **Hauteurs** : comme le premier plan (solin 0–40, traverse basse 40–60, poteaux 60–240, sablière 240–260). **La pente passe à
-  45°** sur cette portée de 6,40 m : à 50°, le faîte du chaume monterait vers 7,2 m et le toit écraserait la maison ; à 45°, le faîte
-  de la charpente est vers 5,80 m, celui du chaume vers 6,40 m (Grégoire avait dit 45 à 55°).
+- **Hauteurs** (celles du plan bâti) : solin 0–40, traverse basse 40–70, poteaux 70–250, sablière 250–280 (une poutre fait 20 cm,
+  30 avec son contour). **La pente passe à 45°** sur cette portée de 6,40 m : à 50°, le faîte du chaume monterait vers 7,2 m et le
+  toit écraserait la maison ; à 45°, le faîte de la charpente est vers 5,80 m, celui du chaume à 6,58 m (Grégoire avait dit 45 à 55°).
 - **Poteaux** : au sud et au nord, x = 0 à 1280 tous les 1,60 m ; à l'est et à l'ouest, y = 0 à 640 ; et ceux des cloisons. Les deux
   cloisons pleines (x = 320 et x = 960) portent chacune une ferme (l'entrait, les arbalétriers) : le toit de 12,80 m a ses appuis.
 - **Les pièces** :
-  - **la salle commune** (x 320–960, 6,40 × 6,40 m, 41 m²) : **le foyer au centre** (640, 320), Ø 1 m ; **la table** (210 × 90,
-    est-ouest) près du mur nord et **un banc** au sud de la table ; **la place du fagot** à l'ouest du foyer ; **la place de la mère**,
-    assise sur le banc, tournée vers le feu ; **la porte d'entrée au sud** (travée x 480–640) ; deux fenêtres au sud, une au nord ;
+  - **la salle commune** (x 320–960, 6,40 × 6,40 m, 41 m²) : **la cheminée** adossée au mur nord (l'ancien foyer central, Ø 1 m,
+    a été retiré le 3 novembre 2026 : voir plus bas) ; **la table** (210 × 90, est-ouest) contre le mur nord, sous la fenêtre, et **un
+    banc** au sud de la table ; **la place du fagot** entre la table et l'âtre ; **la place de la mère**, assise au milieu du banc ; **la porte d'entrée au sud** (travée x 480–640) ; deux fenêtres au sud, une au nord ;
   - **le cagibi, la réserve** (nord-ouest, 3,20 × 3,20 m ; placement de Grégoire) : les outils (le billot et la cognée plantée, la
     hachette, la masse, les coins, la doloire), la corde, les sacs, les bûches (un vrai tas de neuf quartiers d'un mètre, calculé, qui
     compte ses pièces : un point `Pile` de Tiled ; l'ancien tas dessiné d'un bloc n'existe plus, retouche de Grégoire du 3 novembre 2026) ; sa porte vers la salle ; une fenêtre au nord ;
@@ -776,12 +776,12 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
     3 novembre 2026 : une demi-bille du gros de 2 m, face plane en haut, sur quatre pieds en perche de 60 cm debout, emmanchés dans ses
     trous, un tenon et mortaise par pied ; le plateau à un peu moins d'un mètre ; l'établi dessiné d'un bloc ne sert plus à la maison) ; sa porte vers la salle ; une fenêtre à l'est et une au nord, pour la lumière
     de l'établi.
-- **La place pour vivre** : les passages font au moins 1 m ; la salle garde un grand espace libre autour du foyer, la réserve de quoi
+- **La place pour vivre** : les passages font au moins 1 m ; la salle garde un grand espace libre au milieu, la réserve de quoi
   poser des tas.
 - **Ajusté sur l'essai du plan** (pixel-artist, `.art-preview/essai-maison-xeros.png`, rangées 3 à 6) :
   - les cloisons reposent sur un solin **de 30 cm** (Grégoire), coupé aux portes intérieures (la terre battue passe dessous) : les
     surfaces libres sont d'environ 2,90 × 2,90 m (cagibi, coin de Xéros), 6,05 × 5,90 m (salle), 2,90 × 5,90 m (atelier) ;
-  - la table est contre le solin nord (y 30–120), le banc juste dessous (y 125–155) : 1,15 m de passage jusqu'au foyer ;
+  - la table est contre le solin nord (y 30–120), le banc juste dessous (y 120–150) ;
   - (essai d'avant le placement de Grégoire : la chambre au nord-ouest, la réserve à l'est ; l'étape 2 suit le placement ci-dessus) ;
   - les portes s'ouvrent vers le dedans, chaque porte intérieure vers la pièce qu'elle ferme ;
   - **la cheminée de pierre** (retouche de Grégoire, 3 novembre 2026) remplace le foyer central : adossée au mur nord de la salle
@@ -790,13 +790,13 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
     le couronnement d'où sort la fumée (`chimney-cap`), par le pan nord percé (`thatch-roof-pierced`) ; le pignon ouest n'a plus de
     trou de fumée ; la table et le banc passent sous la fenêtre du nord, la place du fagot à l'ouest de l'âtre ;
   - **le toit, dehors** (retouche de Grégoire, 3 novembre 2026) : il ne s'efface plus quand Xéros approche ; on n'est dedans que dans
-    l'intérieur. Devant une fenêtre au volet ouvert, dehors, on voit l'intérieur de cette pièce-là seulement : le toit s'y ouvre (avec
-    ce qui passe au-dessus d'elle), son mur sud coupé comme dans la vue intérieure, le reste de la maison garde son toit
-    (`world/roofView.ts`) ; on y voit le sol de la carte et les meubles du plan, pas ce que la carte pose dedans (la mère, la paillasse) ;
+    l'intérieur. Devant une fenêtre au volet ouvert, dehors, tout le bâtiment devient transparent, sauf le conduit (chantier « maison-2 »,
+    au lieu de la découpe de la seule pièce, `windowFade` de `world/roofView.ts`) ; on y voit la terre battue assombrie et les meubles
+    du plan, pas ce que la carte pose dedans (la mère, la paillasse) ;
   - **le cagibi n'a pas de porte** (retouche de Grégoire, 3 novembre 2026) : une baie de 0,85 m, comme une baie où l'on n'a jamais mis
     de porte, entre deux jambages de 25 cm (ceux de la porte d'entrée), sous un linteau (une poutre de 1,20 m contre la face du cagibi,
     sa base à 1,90 m : l'intérieur y voit un passage entre deux pièces, le cagibi reste une pièce à lui) ;
-  - **à 45°, le faîte du chaume est à 6,58 m** (7,19 m à 50°) ; avec l'appui à 80 cm, les trois fenêtres du sud et la porte se lisent
+  - **à 45°, le faîte du chaume est à 6,58 m** (7,19 m à 50°) ; avec l'appui à 1 m, les trois fenêtres du sud et la porte se lisent
     sous l'égout ; vue de l'ouest, le pignon entier et son trou de fumée sous la rive ; les entraits retroussés sur les deux fermes
     des cloisons ;
   - l'intérieur se voit sans toit, le mur sud et la cloison est-ouest coupés à 70 cm (sinon la cloison cache la chambre).
@@ -825,7 +825,7 @@ par groupe. Les dimensions sont celles de la pièce posée (cm, `dims` de props.
     la baie, et le calcul de l'intérieur ne trouverait plus la pièce derrière) : pour la porte d'entrée de 0,90 m, `staves-jamb`,
     `wattle-jamb`, `daub-jamb`, `lime-jamb` (25 cm de large, l'huisserie du côté de la baie) ; pour une porte intérieure de 0,80 m,
     `staves-inner-jamb`, `wattle-inner-jamb`, `daub-inner-jamb`, `lime-inner-jamb` (30 cm) ;
-  - avec une fenêtre (baie de 60 × 40, appui à 80 cm, le volet `plank-shutter` s'y pose) : `staves-window-panel`, `wattle-window-panel`,
+  - avec une fenêtre (baie de 60 × 40, appui à 1 m, le volet `plank-shutter` s'y pose) : `staves-window-panel`, `wattle-window-panel`,
     `daub-window-panel`, `lime-window-panel` ;
   - les cloisons sont ces mêmes remplissages, posés dedans (chaulés des deux côtés).
 - **Les portes** : `cottage-door` (0,90 × 1,80 m, en planches, `swing` vers `cottage-door-open`, `passage`) ; `inner-door`
