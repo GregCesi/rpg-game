@@ -240,9 +240,15 @@ export function strikeEnergy(rules: Rules, a: Attack, s: SweepDef, frames: Comba
   return 0.5 * strikingMass(w, kg) * v * v * a.power;
 }
 
+/**
+ * Dégâts d'un impact de `joules` J, d'une efficacité `efficiency` (celle de l'arme, de l'arme improvisée, ou du lancer : combat.json) :
+ * l'énergie × `damagePerJoule`, au dixième. La seule règle des dégâts : un coup d'arme, d'objet tenu, un objet lancé.
+ */
+export const impactDamage = (rules: Rules, joules: number, efficiency: number): number => Math.round(joules * rules.damagePerJoule * efficiency * 10) / 10;
+
 /** Dégâts d'un coup : son énergie (`strikeEnergy`) × `damagePerJoule` × `efficiency` de l'arme, au dixième. */
 export function damage(rules: Rules, a: Attack, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
-  return Math.round(strikeEnergy(rules, a, s, frames, w, kg) * rules.damagePerJoule * w.efficiency * 10) / 10;
+  return impactDamage(rules, strikeEnergy(rules, a, s, frames, w, kg), w.efficiency);
 }
 
 /** L'emprise au sol d'une cible debout, en px : ses `dims` (largeur, profondeur), centrée sur sa base, son bord sud à la base. */

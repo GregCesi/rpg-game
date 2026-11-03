@@ -1373,6 +1373,22 @@ export const CombatSchema = z.strictObject({
      */
     improvised: z.strictObject({ grip: z.number().min(0).lt(1), balance: z.number().gt(0).lte(1), efficiency: z.number().gt(0).lte(1), family: id }),
   }),
+  /**
+   * Le lancer (world/throw.ts ; docs/CONCEPTION.md, « Le lancer ») : le bras de Xéros applique son couple (`swing` de strength.json) sur
+   * l'angle `angle` (rad) ; `arm` : la longueur du bras, de l'épaule à la main (m) ; `armInertia` : l'inertie du bras seul autour de
+   * l'épaule (kg·m²) ; `height` : la hauteur de la main au lâcher (m) ; `gravity` : la pesanteur (m/s²) ; `efficiency` : la part de
+   * l'énergie à l'arrivée qui fait des dégâts (comme `efficiency` d'une arme) ; `step` : le pas de la trajectoire (s), sur lequel se teste
+   * le franchissement d'une cible (world/crossing.ts).
+   */
+  throw: z.strictObject({
+    angle: z.number().positive(),
+    arm: z.number().positive(),
+    armInertia: z.number().positive(),
+    height: z.number().positive(),
+    gravity: z.number().positive(),
+    efficiency: z.number().gt(0).lte(1),
+    step: z.number().positive(),
+  }),
   feel: FeelSchema,
   sweeps: z.record(id, SweepSchema),
   unarmed: UnarmedSchema,

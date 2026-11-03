@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { stateImage } from '../world/pileShape';
-import { CONSTRUIRE, FEET, FELL, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
+import { CONSTRUIRE, DEPTH, FEET, FELL, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
 import { gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -36,6 +36,10 @@ import { WoodSystem, type WoodAim } from '../systems/wood';
 import { WorkSystem, type WorkJob } from '../systems/work';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
+import { kinetic, throwPlan } from '../world/throw';
+import { FACING_VECTOR } from '../world/aim';
+import { crossed } from '../world/crossing';
+import { attackCost } from '../world/strike';
 import { pxPerSec, setSpeeds } from '../systems/speeds';
 import { setSimSpeed, simSpeed } from '../systems/simSpeed';
 import { Daylight } from '../systems/daylight';
@@ -55,6 +59,7 @@ import {
   game,
   mapState,
   newGame,
+  release,
   removeGroundItem,
   revisionOf,
   replaceState,
@@ -90,8 +95,26 @@ import type { Interactable, PlacedGround, PlacedProp, Talker } from '../world/Ga
  * `build` : le mode construction (?construire, systems/build.ts) : Xéros attend, la caméra est libre, la souris pose et retire.
  * `rail` : une passe sur un rail (systems/rail.ts, la doloire le long d'une pièce) : Xéros avance tout seul en frappant ; seule
  * Échap compte, elle l'arrête là où il est.
+ * `aim` : un clic maintenu vise un lancer (world/throw.ts) : Xéros se tourne vers le curseur, le repère montre où l'objet tombera ;
+ * relâché, il lance ; Échap annule.
  */
-type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'work';
+type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'work' | 'aim';
+
+/** Un objet lancé en vol (world/throw.ts) : déjà posé au sol dans GameState (la matière se conserve), son image cachée jusqu'à la fin. */
+interface Flight {
+  /** Ce qui vole, à l'écran. */
+  sprite: Phaser.GameObjects.Image;
+  /** Les points du vol : au sol (px), la hauteur (px), le temps (s). */
+  points: { x: number; y: number; z: number; t: number }[];
+  /** Le temps écoulé depuis le lâcher (s). */
+  t: number;
+  /** La cible touchée en chemin, à quel moment, avec quelle énergie (J). */
+  hit?: { key: string; t: number; joules: number };
+  item: string;
+  facing: Facing;
+  /** L'objet posé là où il est retombé : son image, montrée à la fin du vol. */
+  landed?: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
+}
 
 /** Ce que reçoit la scène à son lancement : la carte, et le point d'apparition ou la position exacte (`at`, sauvegarde). */
 export type WorldStart = {
@@ -123,6 +146,9 @@ function holdOf(scene: Phaser.Scene, h: Held): { stance: Stance; look: Look } {
   return { stance, look: { image: it.hold?.image, icon: it.icon } };
 }
 
+/** Pixels par mètre, au sol (5 cm par pixel, content/gabarit.ts). */
+const PX_PER_M = 100 / CM_PER_PX;
+
 /** Une longueur en centimètres, dite en mètres : « 8 m », « 1,5 m ». */
 function metres(cm: number): string {
   return `${String(Math.round(cm) / 100).replace('.', ',')} m`;
@@ -151,6 +177,11 @@ export class WorldScene extends Phaser.Scene {
   /** Ce que vise un clic à cette image (prendre, poser sur, une place de chantier) ; la bille qu'un clic maintenu ferait pivoter. */
   private handTarget?: Interactable;
   private turnTarget?: Interactable;
+  /** Le lancer qu'on vise (mode `aim`) : la main, le bouton tenu ; le repère au sol où l'objet tombera ; les objets en vol. */
+  private aiming?: { hand: Hand; button: Button };
+  private clickButton: Button = 'left';
+  private mark?: Phaser.GameObjects.Image;
+  private flights: Flight[] = [];
   private pileCount!: PileCount;
   private roofs!: Roofs;
   private roll!: RollSystem;
@@ -397,7 +428,9 @@ export class WorldScene extends Phaser.Scene {
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
     // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V change la vitesse du temps (en boucle)
-    this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work');
+    this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim');
+    // les objets lancés volent dans tous les modes (le temps du jeu)
+    this.updateFlights(delta);
     this.daylight.update();
     // V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite), au palier suivant, en boucle
     if (input.speedPressed() && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
@@ -425,6 +458,8 @@ export class WorldScene extends Phaser.Scene {
     // un clic pendant une attaque : la suivante de l'enchaînement partira à sa fin (à deux mains, celle du bouton)
     if (this.mode === 'use')
       for (const b of ['left', 'right'] as const) if (clicked[b]) this.combat.queue(game.both ? this.plans?.[b].short.from : undefined);
+    // un lancer qu'on vise : le repère suit le curseur ; relâché, il part ; Échap l'annule
+    if (this.mode === 'aim') this.updateAim(stop);
     if (this.mode !== 'play') {
       this.presses.left.cancel();
       this.presses.right.cancel();
@@ -542,6 +577,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.faceCursor();
     this.refreshAim();
     const plan = this.plans![b];
+    this.clickButton = b;
     this.act(plan.hand, end === 'short' ? plan.short : plan.long);
   }
 
@@ -594,8 +630,127 @@ export class WorldScene extends Phaser.Scene {
     if (c.kind === 'throw') return this.beginThrow(hand);
   }
 
-  /** Le clic maintenu d'une main qui tient un objet : viser, puis lancer au relâchement (world/throw.ts). */
-  private beginThrow(_hand: Hand): void {}
+  /**
+   * Le clic maintenu d'une main qui tient un objet (un objet à deux mains : l'un ou l'autre clic) : viser, puis lancer au relâchement
+   * (world/throw.ts). Xéros ne marche plus, il se tourne vers le curseur ; le repère au sol montre où l'objet tombera.
+   */
+  private beginThrow(hand: Hand): void {
+    if (!(game.both ?? game.hands[hand])) return;
+    this.aiming = { hand, button: this.clickButton };
+    this.mode = 'aim';
+    if (!this.mark && this.textures.exists('ui-throw-mark')) this.mark = this.add.image(0, 0, 'ui-throw-mark').setOrigin(0.5, 0.5).setDepth(DEPTH.shadow + 0.02);
+  }
+
+  /** Où le lancer en cours tomberait : la direction et la distance du curseur (sans curseur, devant Xéros, le plus loin possible). */
+  private throwAim(h: Held): { ux: number; uy: number; plan: ReturnType<typeof throwPlan> } {
+    const a = this.player.actor;
+    const c = this.player.cursor;
+    const f = FACING_VECTOR[a.facing];
+    const dx = c ? c.x - a.x : f.x;
+    const dy = c ? c.y - a.y : f.y;
+    const n = Math.hypot(dx, dy) || 1;
+    const d = c ? n / PX_PER_M : Infinity;
+    return { ux: dx / n, uy: dy / n, plan: throwPlan(h, this.player.strength.swinger, d) };
+  }
+
+  /** La visée d'un lancer, à chaque image : le repère suit le curseur (au bout de la portée s'il est plus loin) ; relâché, il part. */
+  private updateAim(stop: boolean): void {
+    const aim = this.aiming;
+    const held = aim && (game.both ?? game.hands[aim.hand]);
+    if (!aim || !held || stop) return this.endAim(stop ? 'Lancer annulé.' : undefined);
+    this.player.faceCursor();
+    const { ux, uy, plan } = this.throwAim(held);
+    const a = this.player.actor;
+    const px = plan.range * PX_PER_M;
+    if (this.mark) {
+      this.mark.setPosition(Math.round(a.x + ux * px), Math.round(a.y + uy * px)).setVisible(true);
+      this.mark.setAlpha(0.65 + 0.35 * Math.sin(this.time.now / 120));
+    }
+    // relâché (même entre deux images : le verrou garde le relâchement) : il part
+    if (!this.player.input.clickDown(aim.button)) this.launch(aim.hand, held, ux, uy, plan);
+  }
+
+  private endAim(message?: string): void {
+    this.aiming = undefined;
+    this.mark?.setVisible(false);
+    if (this.mode === 'aim') this.mode = 'play';
+    if (message) this.notice(message);
+  }
+
+  /**
+   * Le lâcher (docs/CONCEPTION.md, « Le lancer ») : le temps revient à x1 (comme une attaque) ; le travail du bras se paie au joule ;
+   * l'objet quitte la main et vole. Sa trajectoire est suivie pas à pas (`step` de combat.json) : la première cible dont l'emprise est
+   * franchie entre deux pas, à une hauteur où elle est (world/crossing.ts), est touchée de l'énergie de l'objet à cet instant (world/strike.ts) ;
+   * un obstacle l'arrête ; sinon il tombe au bout. Il est posé au sol tout de suite (GameState), à la place libre la plus proche de là où
+   * il retombe, son image cachée jusqu'à la fin du vol.
+   */
+  private launch(hand: Hand, what: Held, ux: number, uy: number, plan: ReturnType<typeof throwPlan>): void {
+    this.endAim();
+    if (simSpeed() !== timeDef.default) {
+      setSimSpeed(this.game, timeDef.default);
+      this.notice(`Le temps : x${timeDef.default}`);
+    }
+    if (!this.effort.affordStroke(this.player, attackCost(stamina.work, plan.release.joules))) return;
+    const a = this.player.actor;
+    const origin = { x: a.x, y: a.y };
+    const pts = plan.path.map((p) => ({ x: origin.x + ux * p.d * PX_PER_M, y: origin.y + uy * p.d * PX_PER_M, z: p.z * PX_PER_M, t: p.t, v: p.v }));
+    const targets = this.combat.throwTargets();
+    let end = pts.length - 1;
+    let hit: Flight['hit'];
+    for (let i = 1; i < pts.length && !hit; i++) {
+      const p0 = pts[i - 1];
+      const p1 = pts[i];
+      const z = p1.z / PX_PER_M;
+      const q = targets.find((t) => z <= t.height && crossed(p0, p1, (x, y) => x >= t.box.left && x <= t.box.right && y >= t.box.top && y <= t.box.bottom));
+      if (q) {
+        hit = { key: q.key, t: p1.t, joules: kinetic(plan.release.kg, p1.v) };
+        end = i;
+        break;
+      }
+      // un obstacle (un tronc, un mur, une bille couchée) l'arrête : il tombe devant
+      if (crossed(p0, p1, (x, y) => !this.map.areaFree({ left: x - 0.5, top: y - 0.5, right: x + 0.5, bottom: y + 0.5 }))) {
+        end = i - 1;
+        break;
+      }
+    }
+    const path = pts.slice(0, end + 1);
+    const last = path[path.length - 1];
+    release(game, hand);
+    this.handsChanged();
+    // la matière se conserve : l'objet est au sol dès le lâcher (GameState), là où il retombe ; caché pendant le vol
+    const landed = this.handsSystem.layNear(this.player, what, last.x, last.y);
+    landed?.setVisible(false);
+    const look = this.handsSystem.lookOf(what);
+    const sprite = this.add.image(origin.x, origin.y, look.key, look.frame).setOrigin(0.5, 0.5);
+    const item = 'item' in what ? what.item : what.prop;
+    this.flights.push({ sprite, points: path.map(({ x, y, z, t }) => ({ x, y, z, t })), t: 0, hit, item, facing: a.facing, landed });
+  }
+
+  /** Les objets en vol avancent du temps du jeu ; la cible touchée réagit à l'instant du choc ; au sol, l'objet posé se montre. */
+  private updateFlights(delta: number): void {
+    for (const f of [...this.flights]) {
+      f.t += delta / 1000;
+      if (f.hit && f.t >= f.hit.t) {
+        this.combat.thrownHit(f.hit.key, f.item, f.hit.joules, f.facing);
+        f.hit = undefined;
+      }
+      const pts = f.points;
+      const i = pts.findIndex((p) => p.t >= f.t);
+      if (i < 0) {
+        f.sprite.destroy();
+        f.landed?.setVisible(true);
+        this.flights.splice(this.flights.indexOf(f), 1);
+        continue;
+      }
+      const p1 = pts[i];
+      const p0 = pts[Math.max(0, i - 1)];
+      const k = p1.t > p0.t ? (f.t - p0.t) / (p1.t - p0.t) : 1;
+      const x = p0.x + (p1.x - p0.x) * k;
+      const y = p0.y + (p1.y - p0.y) * k;
+      const z = p0.z + (p1.z - p0.z) * k;
+      f.sprite.setPosition(Math.round(x), Math.round(y - z)).setDepth(y);
+    }
+  }
 
   /** E devant une cible, sans les mains : parler (la paillasse : « Dormir ? »), ouvrir ou fermer, lire la planchette. */
   private eAction(target: Interactable): void {

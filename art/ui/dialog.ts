@@ -202,6 +202,25 @@ function gaugeSheet(): SpriteSheetSource {
   return { kind: 'spritesheet', name: 'ui-gauge', frameW: 14, frameH: 4, palette, animations: { fill: { frames, frameRate: 16, repeat: 0 } } };
 }
 
+// ---------- Repère de visée du lancer ----------
+
+/**
+ * Repère posé au sol là où retombera l'objet lancé (clic maintenu pour viser) : anneau vu en trois quarts, écrasé en
+ * ellipse (13 × 7 px), le centre vide pour laisser voir le sol. Parchemin des touches (a, A en bas à droite, côté
+ * ombre) entre deux contours sombres (OUTLINE), lisible sur l'herbe, la terre et les pavés. Le jeu le fait battre.
+ */
+function throwMark(): Canvas {
+  return Canvas.from([
+    '...ooooooo...',
+    '.ooaaaaaaaoo.',
+    'oaaoo...ooaAo',
+    'oao.......oAo',
+    'oaAoo...ooAAo',
+    '.ooAAAAAAAoo.',
+    '...ooooooo...',
+  ]);
+}
+
 // ---------- Chiffres ----------
 
 /**
@@ -242,4 +261,4 @@ const digit = (n: number) => glyph(DIGITS[n]);
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
-export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-key-space', keySpace()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true)), img('ui-hand-left', emptyHand(true)), img('ui-hand-right', emptyHand(false)), img('ui-hands-both', bothHands()), gaugeSheet(), ...DIGITS.map((_, n) => img(`ui-digit-${n}`, digit(n))), ...Object.entries(SIGNS).map(([k, rows]) => img(`ui-digit-${k}`, glyph(rows)))];
+export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-key-space', keySpace()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true)), img('ui-hand-left', emptyHand(true)), img('ui-hand-right', emptyHand(false)), img('ui-hands-both', bothHands()), img('ui-throw-mark', throwMark()), gaugeSheet(), ...DIGITS.map((_, n) => img(`ui-digit-${n}`, digit(n))), ...Object.entries(SIGNS).map(([k, rows]) => img(`ui-digit-${k}`, glyph(rows)))];

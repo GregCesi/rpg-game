@@ -73,6 +73,13 @@ function frontCorner(b: Phaser.Physics.Arcade.Body, facing: Facing, fw: number, 
   return corners[facing];
 }
 
+/** Les valeurs de `from` à `to`, de `step` en `step`. */
+const range = (from: number, to: number, step: number): number[] => {
+  const out: number[] = [];
+  for (let v = from; v <= to; v += step) out.push(v);
+  return out;
+};
+
 const overlaps = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 
 /**
@@ -397,8 +404,8 @@ export class HandsSystem {
     return out;
   }
 
-  /** Pose `what` (déjà sorti des mains) là où le dit `t`, dans GameState et à l'écran. */
-  private put(what: Held, t: Drop): void {
+  /** Pose `what` (déjà sorti des mains) là où le dit `t`, dans GameState et à l'écran ; posé seul, rend son image. */
+  private put(what: Held, t: Drop): Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | undefined {
     const mapId = this.map.def.id;
     if (t.kind === 'pile') {
       fillPlace(game, mapId, t.pile.pile.id, t.place);
@@ -421,11 +428,49 @@ export class HandsSystem {
     } else if (t.kind === 'tie-alone') {
       this.map.placePile(addPile(game, mapId, { pile: t.genre, x: t.x, y: t.y, places: [], tie: true }));
     } else if ('item' in what) {
-      this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view, what.natural));
+      return this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view, what.natural)).image;
     } else {
       const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle });
-      this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle });
+      return this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle }).image;
     }
+    return undefined;
+  }
+
+  /**
+   * Pose seul au sol `what` (déjà sorti des mains) là où il retombe, (x, y) étant le point du sol où il touche : à la place libre la plus
+   * proche (en spirale de `PUT_DOWN.step` px, au plus `PUT_DOWN.reach` px), sinon aux pieds de Xéros. Rend son image (le lancer la
+   * cache pendant le vol, world/throw.ts). La matière se conserve : il est dans GameState dès maintenant.
+   */
+  layNear(player: Player, what: Held, x: number, y: number): Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | undefined {
+    // le point du sol où l'objet touche est le milieu de son emprise : on le ramène à son point de pose
+    const at = this.centerToSpot(what, x, y);
+    const bodies = 'item' in what ? this.others : [...this.others, player.actor.body];
+    const { step, reach } = PUT_DOWN;
+    for (let r = 0; r <= reach; r += step) {
+      for (let dx = -r; dx <= r; dx += step) {
+        for (const dy of r === 0 ? [0] : Math.abs(dx) === r ? range(-r, r, step) : [-r, r]) {
+          const sx = Math.round(at.x + dx);
+          const sy = Math.round(at.y + dy);
+          if (this.map.areaFree(this.layBox(what, sx, sy), bodies)) return this.put(what, { kind: 'lay', x: sx, y: sy });
+        }
+      }
+    }
+    // nulle part autour (dans l'eau, contre un mur) : aux pieds de Xéros, comme ce qu'il ne peut plus porter
+    const feet = { x: Math.round(player.actor.x), y: Math.round(player.actor.y) };
+    return this.put(what, { kind: 'lay', ...(this.laySpot(player, what) ?? feet) });
+  }
+
+  /** Le point de pose de `what` seul dont l'emprise est centrée en (x, y). */
+  private centerToSpot(what: Held, x: number, y: number): { x: number; y: number } {
+    if ('item' in what) return { x: Math.round(x), y: Math.round(y + this.itemSize(what).h / 2) };
+    const { f, h } = this.footprint(what);
+    return { x: Math.round(x - (f.left + f.right) / 2), y: Math.round(y + h - (f.top + f.bottom) / 2) };
+  }
+
+  /** L'image de `what` comme il serait posé seul (la clé de texture, et l'image de planche) : l'objet qui vole. */
+  lookOf(what: Held): { key: string; frame?: string } {
+    const g = this.ghostOf(what, { kind: 'lay', x: 0, y: 0 });
+    return { key: g.key, frame: g.frame };
   }
 
   /** Le fantôme de `what` posé là où le dit `t` : image (et image de planche), coin bas gauche, profondeur. */
@@ -535,14 +580,16 @@ export class HandsSystem {
     const b = player.actor.body;
     // à la souris, le fantôme suit le curseur, sans sortir de la portée de Xéros (AIM.reach) : l'objet centré sur le point visé
     const c = player.cursor && clampTo(player.eye, player.cursor, AIM.reach);
+    if (c) {
+      const at = this.centerToSpot(what, c.x, c.y);
+      return [at.x, at.y];
+    }
     if ('item' in what) {
       const { w, h } = this.itemSize(what);
-      if (c) return [Math.round(c.x), Math.round(c.y + h / 2)];
       const [l, t] = frontCorner(b, player.actor.facing, w, h);
       return [Math.round(l + w / 2), Math.round(t + h)];
     }
     const { f, h } = this.footprint(what);
-    if (c) return [Math.round(c.x - (f.left + f.right) / 2), Math.round(c.y + h - (f.top + f.bottom) / 2)];
     const [l, t] = frontCorner(b, player.actor.facing, f.right - f.left, f.bottom - f.top);
     return [Math.round(l - f.left), Math.round(t - f.top + h)];
   }

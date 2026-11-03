@@ -18,6 +18,7 @@ import {
   directionOf,
   footprint,
   frameDurations,
+  impactDamage,
   NO_SHIFT,
   precision,
   reachCm,
@@ -197,7 +198,7 @@ export class CombatSystem {
       sweep,
       joules,
       cost: attackCost(stamina.work, joules),
-      damage: imp ? Math.round(joules * rules.damagePerJoule * weapon.efficiency * 10) / 10 : damage(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
+      damage: imp ? impactDamage(rules, joules, weapon.efficiency) : damage(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
       precision: precision(rules, weapon, kg),
       shift,
       drawShift,
@@ -322,6 +323,31 @@ export class CombatSystem {
       this.scene.time.delayedCall(feel.hitStopMs, () => this.react(q, p.facing));
       this.float(q, String(p.damage).replace('.', ','));
     }
+  }
+
+  /**
+   * Un objet lancé (world/throw.ts) touche la cible `key` en volant vers `facing` : l'impact vaut son énergie à l'arrivée (`joules`), ses
+   * dégâts passent par la règle des coups (world/strike.ts `impactDamage`, l'efficacité du lancer de combat.json) ; la cible réagit comme
+   * à un coup, le chiffre s'envole, le journal le note (`throw`).
+   */
+  thrownHit(key: string, item: string, joules: number, facing: Facing): number {
+    const q = this.targets().find((t) => t.key === key);
+    const dmg = impactDamage(combat.rules, joules, combat.throw.efficiency);
+    if (!q) return dmg;
+    this.log.push({ attack: 'throw', item, facing, reach: 0, cost: 0, joules, damage: dmg, precision: 1, shift: NO_SHIFT, hits: [{ key, type: q.type, damage: dmg, step: 0 }], misses: [] });
+    if (dmg >= combat.feel.shakeFrom) this.scene.cameras.main.shake(combat.feel.shakeMs, combat.feel.shakeIntensity);
+    this.react(q, facing);
+    this.float(q, String(dmg).replace('.', ','));
+    return dmg;
+  }
+
+  /** Les cibles de la carte, avec leur emprise au sol (px) et leur hauteur (m) : ce qu'un objet lancé peut toucher en passant. */
+  throwTargets(): { key: string; box: Box; height: number }[] {
+    return this.targets().map((q) => ({ key: q.key, box: q.box, height: (this.heightOf(q.type) ?? 100) / 100 }));
+  }
+
+  private heightOf(type: string): number | undefined {
+    return props[type]?.dims?.h;
   }
 
   /**

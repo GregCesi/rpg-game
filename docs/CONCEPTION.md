@@ -1659,6 +1659,42 @@ ceci.
 - **La vie de Xéros** : une jauge à côté de l'endurance, ce qui le blesse, se soigner, dormir.
 - Les commandes à trancher : voir [docs/COMMANDES.md](COMMANDES.md), « À trancher ».
 
+## Le lancer (décidé le 3 novembre 2026, chantier « commandes »)
+
+Tout objet tenu se lance : le clic maintenu de la main qui le tient vise (un objet à deux mains : l'un ou l'autre clic), le relâcher
+lance, Échap annule. Aucune liste d'objets lançables : c'est la physique qui dit jusqu'où (`src/world/throw.ts`, réglages `throw` de
+`src/content/combat.json`).
+
+- **Le lâcher, par le même modèle que les coups** : le bras applique le couple de Xéros (`swing` de strength.json, plafonné à
+  `humanMax` comme pour frapper) sur l'angle du lancer (`angle`, 2,5 rad). Ce qu'il met en mouvement : le bras seul (`armInertia`),
+  l'objet au bout du bras (masse × `arm`², le bras de 0,7 m), l'objet autour de la main (son inertie de world/strike.ts, tirée de ses
+  dimensions comme pour l'arme improvisée). La main arrive à ω = min(√(2 τ θ / I), ω du bras) et lâche l'objet à ω × la longueur du bras.
+  Un objet léger plafonne à la vitesse du bras ; un lourd prend toute la force et part lentement.
+- **Une vraie trajectoire** : lâché à `height` (1,6 m), sous la pesanteur. L'angle est celui qui fait tomber l'objet au point visé
+  (le curseur) s'il est à portée, la trajectoire basse ; sinon l'angle de la plus grande portée. Le repère `ui-throw-mark` montre au sol où il
+  tombera pendant qu'on vise.
+- **Le choc au franchissement** : la trajectoire est suivie pas à pas (`step`, 10 ms) ; une cible (`target` de props.json) dont
+  l'emprise au sol est franchie entre deux pas (world/crossing.ts), à une hauteur sous la sienne (`dims.h`), est touchée : l'impact vaut
+  l'énergie de l'objet à cet instant (½ m v²), ses dégâts passent par la règle des coups (`impactDamage` de world/strike.ts, l'efficacité
+  `efficiency` du lancer). Un obstacle (une collision : un tronc, un mur) l'arrête, il tombe devant (sans hauteur : un premier jet).
+- **La matière se conserve** : l'objet quitte la main et est posé au sol dans GameState dès le lâcher, à la place libre la plus proche de
+  là où il retombe (`layNear` de systems/hands.ts, `PUT_DOWN`), son image cachée pendant le vol ; il se ramasse comme tout objet au sol.
+- **Le prix** : le travail du bras, ½ I ω², au joule comme un coup (`attackCost`) ; un lancer ramène le temps à x1, comme une attaque.
+
+À la force de Xéros (couple 50 N·m), lancés au plus loin :
+
+| Objet | Masse | Vitesse au lâcher | Portée | Énergie à l'arrivée | Dégâts sur une cible |
+| --- | --- | --- | --- | --- | --- |
+| la plus petite pierre brute | 4,5 kg | 7,2 m/s | 6,7 m | 185 J | 9,5 |
+| une branche | 2,5 kg | 6,7 m/s | 6,0 m | 96 J | 4,9 |
+| la cognée | 1,8 kg | 9,3 m/s | 10,2 m | 106 J | 5,4 |
+| la bille de l'arbre normal, d'un mètre | 64 kg | 1,6 m/s | 0,9 m | 1 079 J | 55,6 |
+
+L'énergie à l'arrivée compte la chute depuis la main : la bille lâchée de l'épaule tombe à ses pieds avec plus de 1 000 J, presque toute
+de sa chute. La cognée va plus loin que la pierre, plus lourde ; une hache bien plus lourde partirait moins loin encore. Le jeu n'a pas
+encore de caillou de quelques centaines de grammes : il partirait à la vitesse du bras, 17,5 m/s, à plus de 30 m. Pas encore de geste du
+corps pour lancer (l'objet part de la main sans animation : un dessin à faire avec le pixel-artist).
+
 ## Fendre (décidé le 30 octobre 2026)
 
 Repris par *Le travail* (1er novembre 2026) : fendre est un travail au coup, lancé d'un appui. Les « 3 coups par mètre » sont devenus
