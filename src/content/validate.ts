@@ -11,7 +11,8 @@ import { formImage } from '../world/natural';
 import { warrenHoles } from '../world/warren';
 import { balance, partMass, partName } from '../world/transform';
 import { woodDims } from '../world/woodPiece';
-import { planProblems } from '../world/build';
+import { planPieces, planProblems } from '../world/build';
+import { overhangs } from '../world/overhang';
 import { bundleImage } from '../world/pileShape';
 import { openSides } from '../world/zones';
 import { WEAPON_ANGLES } from '../world/strike';
@@ -1338,10 +1339,23 @@ export function validateBuildPlans(plans: Record<string, BuildPlan>): string[] {
   const errors: string[] = [];
   for (const [key, plan] of Object.entries(plans)) {
     if (!KEBAB_CASE.test(key)) errors.push(`plans/${key}.json : le nom doit être en kebab-case (minuscules sans accent, chiffres, tirets)`);
-    for (const p of planProblems(plan)) errors.push(`plans/${key}.json : ${p}`);
+    const problems = planProblems(plan);
+    for (const p of problems) errors.push(`plans/${key}.json : ${p}`);
+    if (problems.length) continue;
+    // aucune pièce au-dessus du vide (chantier « maison-2 », world/overhang.ts)
+    const over = overhangs(planPieces(plan, { x: 0, y: 0, z: 0 }).map((p, i) => ({ ...p, id: i })), plan.joints ?? []);
+    if (OVERHANG_TODO[key]) {
+      if (!over.length) errors.push(`validate.ts OVERHANG_TODO : '${key}' n'a plus rien au-dessus du vide : le retirer de la liste`);
+    } else for (const o of over) errors.push(`plans/${key}.json : ${o}`);
   }
+  for (const key of Object.keys(OVERHANG_TODO)) if (!plans[key]) errors.push(`validate.ts OVERHANG_TODO : '${key}' n'est pas un plan du dépôt`);
   return errors;
 }
+
+/** Les plans qui ont encore des pièces au-dessus du vide, avec leur raison (`npm run check` les liste) : retirés une fois corrigés. */
+export const OVERHANG_TODO: Record<string, string> = {
+  'maison-xeros': "la baie de porte de l'essai validé (huisseries, tête de baie, seuils) et le solin de toute longueur attendent l'accord de Grégoire sur la planche baie-porte : la maison se refait avec eux",
+};
 
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 /**

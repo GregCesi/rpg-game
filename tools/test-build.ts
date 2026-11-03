@@ -309,3 +309,30 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   assert.equal(why.length, 2, `deux refus : ${why.join(' ; ')}`);
   console.log('✓ test-build : le solin de toute longueur (grille de 10 cm, au moins 40), des tronçons de longueurs mêlées');
 }
+
+// Le porte-à-faux (chantier « maison-2 ») : une pièce posée au-dessus du vide est signalée ; les plans du dépôt n'en ont pas, sauf
+// ceux de OVERHANG_TODO (validate.ts)
+{
+  const { overhangs } = await import('../src/world/overhang');
+  const { OVERHANG_TODO } = await import('../src/content/validate');
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const beam = (length: number, axis: 'ew' | 'ns' | 'up') => ({ wood: { size: 'normal', length, shape: 'round' as const, hewn: 12, axis } });
+  const sill = (x: number, length: number) => ({ piece: { prop: 'rough-sill-wall', length }, x, y: 0, z: 0, view: 0 });
+  // une traverse sur deux morceaux de solin, avec un trou d'un mètre entre eux ; un poteau au-dessus du trou
+  const ps: BuildPiece[] = [sill(0, 200), sill(300, 200), { piece: beam(500, 'ew'), x: 0, y: 10, z: 40, view: 0 }, { piece: beam(180, 'up'), x: 240, y: 5, z: 70, view: 0 }].map((p, i) => ({ ...p, id: i }));
+  const found = overhangs(ps);
+  assert.ok(found.some((m) => m.startsWith('n° 3')), `le poteau au-dessus du trou du solin est signalé (${found.join(' ; ')})`);
+  const fixed = overhangs([...ps.slice(0, 3), { ...ps[3], x: 100 }]);
+  assert.deepEqual(fixed, [], 'le poteau au-dessus du solin : rien');
+  const lone = overhangs([{ id: 0, piece: { prop: 'slab' }, x: 0, y: 0, z: 40, view: 0 }]);
+  assert.equal(lone.length, 1, 'une dalle en l’air');
+  let n = 0;
+  for (const f of readdirSync('src/content/plans').filter((x) => x.endsWith('.json'))) {
+    const key = f.replace(/\.json$/, '');
+    if (OVERHANG_TODO[key]) continue;
+    const plan = JSON.parse(readFileSync(`src/content/plans/${f}`, 'utf8'));
+    assert.deepEqual(overhangs(planPieces(plan, { x: 0, y: 0, z: 0 }).map((p, i) => ({ ...p, id: i })), plan.joints ?? []), [], `${f} : rien au-dessus du vide`);
+    n++;
+  }
+  console.log(`✓ test-build : le porte-à-faux (un poteau au-dessus d'un trou du solin, une dalle en l'air) ; ${n} plans du dépôt sans pièce au-dessus du vide`);
+}
