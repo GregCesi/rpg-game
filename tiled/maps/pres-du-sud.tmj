@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 222,
+  "nextobjectid": 226,
   "properties": [
     {
       "name": "name",
@@ -177,6 +177,42 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 222,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 2436,
+          "y": 1708,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 223,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 2506,
+          "y": 1678,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 224,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 2546,
+          "y": 1758,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
         {
           "id": 1,
           "rotation": 0,
@@ -2829,6 +2865,30 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 225,
+          "rotation": 0,
+          "visible": true,
+          "name": "garenne",
+          "type": "Warren",
+          "x": 2396,
+          "y": 1648,
+          "width": 200,
+          "height": 160,
+          "properties": [
+            {
+              "name": "creature",
+              "type": "string",
+              "propertytype": "CreatureKind",
+              "value": "rabbit"
+            },
+            {
+              "name": "population",
+              "type": "int",
+              "value": 5
+            }
+          ]
+        },
         {
           "id": 221,
           "rotation": 0,

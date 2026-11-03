@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 521,
+  "nextobjectid": 528,
   "properties": [
     {
       "name": "name",
@@ -177,6 +177,66 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 521,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 3440,
+          "y": 1600,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 522,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 3495,
+          "y": 1635,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 524,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 3204,
+          "y": 2860,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 525,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 3274,
+          "y": 2830,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
+        {
+          "id": 526,
+          "rotation": 0,
+          "visible": true,
+          "name": "",
+          "type": "warren-hole",
+          "x": 3314,
+          "y": 2910,
+          "width": 10,
+          "height": 8,
+          "gid": 1160
+        },
         {
           "id": 516,
           "rotation": 0,
@@ -6140,6 +6200,54 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 523,
+          "rotation": 0,
+          "visible": true,
+          "name": "garenne",
+          "type": "Warren",
+          "x": 3420,
+          "y": 1580,
+          "width": 110,
+          "height": 80,
+          "properties": [
+            {
+              "name": "creature",
+              "type": "string",
+              "propertytype": "CreatureKind",
+              "value": "rabbit"
+            },
+            {
+              "name": "population",
+              "type": "int",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "id": 527,
+          "rotation": 0,
+          "visible": true,
+          "name": "garenne",
+          "type": "Warren",
+          "x": 3164,
+          "y": 2800,
+          "width": 200,
+          "height": 160,
+          "properties": [
+            {
+              "name": "creature",
+              "type": "string",
+              "propertytype": "CreatureKind",
+              "value": "rabbit"
+            },
+            {
+              "name": "population",
+              "type": "int",
+              "value": 5
+            }
+          ]
+        },
         {
           "id": 520,
           "rotation": 0,

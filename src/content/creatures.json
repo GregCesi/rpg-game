@@ -14,7 +14,7 @@
     },
     "calm": 4,
     "graze": {
-      "range": 25,
+      "range": 12,
       "hop": { "speed": 1.2, "length": [0.15, 0.5] },
       "pause": [0.6, 3],
       "stay": [4, 20]

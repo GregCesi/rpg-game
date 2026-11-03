@@ -1756,7 +1756,7 @@ règle écrite pour le lapin (*Le monde ne limite pas*).
 | --- | --- |
 | Aux aguets, fuite (m) | immobile 5, 2 ; discret 8, 4 ; marche 15, 10 ; course 25, 20 |
 | Se calme après | 4 s sans que Xéros approche |
-| Broute | à 25 m au plus d'une entrée ; sauts de 15 à 50 cm à 1,2 m/s, pauses de 0,6 à 3 s, 4 à 20 s à une place |
+| Broute | à 12 m au plus d'une entrée (25 m d'abord : trop dispersés pour l'écran, on n'en voyait aucun) ; sauts de 15 à 50 cm à 1,2 m/s, pauses de 0,6 à 3 s, 4 à 20 s à une place |
 | Fuite | 10 m/s (Xéros court à 2,5 m/s : il ne la rattrape jamais), zigzag de 30° tous les 1,5 m |
 | Tambour | 0,5 s ; les voisines à 15 m fuient |
 | Terrier | il ressort 3 à 8 minutes après une fuite ; un lapin sort toutes les 20 s |
@@ -1765,8 +1765,11 @@ règle écrite pour le lapin (*Le monde ne limite pas*).
 | Vie | 4 points : le poing (1,6) blesse, la branche (8,4), l'épée de bois (6), une pierre bien lancée (9,5) tuent |
 | Taille à l'écran | de profil 8 × 6 px, de face 3 × 8 px : la vraie échelle, sans agrandir (de face, il se lit mal ; à voir en jeu) |
 
-La garenne de la ferme : 7 lapins, 4 entrées, au coin nord-ouest du grand champ, sous la haie (une souche têtard, des buissons), à une
-vingtaine de mètres au nord-est de la maison, hors du chemin.
+Les garennes (Grégoire, après l'essai : « fais-en un peu partout, et deux à côté de la maison ») : sur la ferme, 7 lapins et 4 entrées au
+coin nord-ouest du grand champ, sous la haie, à une vingtaine de mètres au nord-est de la maison ; 2 lapins et 2 entrées à côté de la
+maison, à l'est de son pignon ; 5 lapins au sud de la route. Puis une garenne de 5 lapins (3 entrées) dans chaque pré ouvert : les
+friches, le pré de l'est, du nord, du sud, les champs rivaux, ceux du riche, le chemin (posées au milieu de l'herbe libre la plus proche
+du centre de la zone).
 
 **Une nouvelle créature** = une entrée de creatures.json, sa planche dessinée par le pixel-artist (chaque pose dans chaque direction),
 l'objet qu'elle devient (items.json, sa masse), sa matière `fx-…` si elle est nouvelle, une garenne (ou plus tard un autre gîte) posée

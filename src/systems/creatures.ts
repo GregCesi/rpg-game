@@ -206,15 +206,17 @@ export class CreatureSystem {
 
   // ---------- ?dieu ----------
 
-  /** ?dieu : une bête de la garenne la plus proche sort à 3 m de Xéros (un membre au terrier qui peut sortir). */
+  /** ?dieu : une bête sort à 3 m de Xéros, de la garenne la plus proche qui a un membre au terrier qui peut sortir. */
   spawnNear(x: number, y: number): string {
-    const w = this.nearest(x, y);
-    if (!w) return 'Pas de garenne sur cette carte.';
-    const state = this.settled(w.site, w.def);
-    const m = state.members.find((m) => !w.life.find(m.n) && (m.heal === undefined || game.clock.day >= m.heal));
-    if (!m) return `Toute la garenne est dehors (${state.members.length}).`;
-    w.life.out.push(emerge(`${w.site.id}:${m.n}`, w.site.kind, w.def, { x: x + pixels(3), y }, m.hp));
-    return `Un ${w.def.name} sort près de Xéros.`;
+    if (!this.warrens.length) return 'Pas de garenne sur cette carte.';
+    for (const w of this.byDistance(x, y)) {
+      const state = this.settled(w.site, w.def);
+      const m = state.members.find((m) => !w.life.find(m.n) && (m.heal === undefined || game.clock.day >= m.heal));
+      if (!m) continue;
+      w.life.out.push(emerge(`${w.site.id}:${m.n}`, w.site.kind, w.def, { x: x + pixels(3), y }, m.hp));
+      return `Un ${w.def.name} sort près de Xéros.`;
+    }
+    return 'Toutes les bêtes des garennes de la carte sont dehors.';
   }
 
   /** ?dieu : la garenne la plus proche compte `n` bêtes vivantes tout de suite, et autant pleine (le temps de la session). */
@@ -235,9 +237,14 @@ export class CreatureSystem {
     return this.warrens[0]?.def;
   }
 
-  private nearest(x: number, y: number): Warren | undefined {
+  /** Les garennes de la carte, de la plus proche de (x, y) à la plus loin (par leur entrée la plus proche). */
+  private byDistance(x: number, y: number): Warren[] {
     const d = (w: Warren) => Math.min(...w.site.holes.map((h) => Math.hypot(h.x - x, h.y - y)));
-    return [...this.warrens].sort((a, b) => d(a) - d(b))[0];
+    return [...this.warrens].sort((a, b) => d(a) - d(b));
+  }
+
+  private nearest(x: number, y: number): Warren | undefined {
+    return this.byDistance(x, y)[0];
   }
 
   /**

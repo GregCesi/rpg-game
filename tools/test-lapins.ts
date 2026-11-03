@@ -106,8 +106,9 @@ await playtest('lapins', async ({ page, load }) => {
     // un lapin qui se laisse approcher (ses distances réglées dans ?dieu), la précision du coup sans écart
     for (const gait of ['still', 'sneak', 'walk', 'run']) await send({ kind: 'creature-senses', creature: kind, gait, alert: 0.2, flee: 0.1 });
     w().combat.rand = () => 0;
-    const membersBefore = Object.values(gs.game.maps.ferme.warrens)[0] as { members: unknown[] };
-    out.membersBefore = membersBefore.members.length;
+    // toutes les garennes de la ferme : le lapin tué manque à la sienne
+    const members = () => (Object.values(gs.game.maps.ferme.warrens) as { members: unknown[] }[]).reduce((n, g) => n + g.members.length, 0);
+    out.membersBefore = members();
     const c = await spawnAt(X0 + 200);
     const q = find(c)!;
     await stand(q.x - 22, q.y, 'right');
@@ -120,7 +121,7 @@ await playtest('lapins', async ({ page, load }) => {
     const ground = gs.game.maps.ferme.ground as { item?: string; x: number; y: number }[];
     const dead = ground.find((o) => o.item === def.becomes);
     out.dead = dead ? { x: dead.x, y: dead.y, from: { x: at.x, y: at.y } } : undefined;
-    out.membersAfter = (Object.values(gs.game.maps.ferme.warrens)[0] as { members: unknown[] }).members.length;
+    out.membersAfter = members();
     out.deadCount = ground.filter((o) => o.item === def.becomes).length;
     // le ramasser : la main gauche (clic droit) est libre
     if (dead) {

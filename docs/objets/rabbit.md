@@ -54,7 +54,7 @@ En colonie : une **garenne** (un rectangle `Warren` de Tiled, qui dit sa créatu
   passe sur lui, en vol, sous sa hauteur.
 
 ## Comportement (`creatures.json`, CONCEPTION « Les créatures »)
-- **Trois états** : tranquille (il broute par petits sauts, à quelques dizaines de mètres au plus de sa garenne, et s'arrête souvent) ;
+- **Trois états** : tranquille (il broute par petits sauts, à une douzaine de mètres au plus de sa garenne, et s'arrête souvent) ;
   aux aguets (il se dresse et regarde Xéros ; si Xéros s'arrête ou recule, il se calme et se remet à brouter) ; en fuite (il court en
   zigzag vers l'entrée la plus proche de sa garenne, tambourine, ce qui fait fuir ses voisins, entre au terrier et ressort quelques
   minutes de jeu plus tard).
