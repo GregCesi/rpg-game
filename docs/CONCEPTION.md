@@ -1603,7 +1603,7 @@ Tranché pendant l'audit (docs/AUDIT.md, « À trancher ») ; **fait** au chanti
 - **L'arbre tombe du côté où Xéros frappe** : au lancement, Xéros se place lui-même de ce côté, le fer sur l'entaille (à la distance
   tirée du rayon du tronc et de la portée de l'outil : `fellDistance` de world/workStance.ts, chantier « maison-2 » : à 70 cm écrits en
   dur, le fer de la cognée passait de l'autre côté du tronc ; le point de frappe sur une pièce de bois, à la cognée, à la doloire et à
-  la masse, se tire de même de la portée de l'outil, `strikeOffset`) ; l'entaille se dessine de ce côté, avec des étapes dessinées pour la gauche ; le côté est gardé avec le travail en cours
+  la masse, se tire de même de la portée de l'outil, `strikeOffset`) ; le coup de côté d'abattage est un geste à lui (`fell` de gestures.json, accord de Grégoire sur `.art-preview/abattage-2.png` : un coup en écharpe, de haut en bas, le fer dans l'entaille du côté de Xéros ; `use` reste le geste par défaut, `chop` le coup d'en haut) ; l'entaille se dessine de ce côté, avec des étapes dessinées pour la gauche ; le côté est gardé avec le travail en cours
   (`side` de `work` dans GameState), si bien qu'un travail repris tombe du même côté.
 - **Deux images de raccord** entre l'arbre qui penche (la dernière étape) et sa chute, en tête des planches de chute.
 

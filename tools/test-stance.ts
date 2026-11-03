@@ -28,5 +28,7 @@ for (const [key, p] of Object.entries(props)) {
   const edge = d - hand - toolReach(tool); // où est le tranchant, depuis l'axe du tronc
   assert.ok(edge > 0 && edge <= fell.diameter / 2 / CM_PER_PX + 1, `${key} : le tranchant mord l'écorce du côté de Xéros (${edge} px de l'axe, rayon ${fell.diameter / 2 / CM_PER_PX})`);
 }
-assert.equal(fellDistance(30, gestures.use, 'axe'), 3 + 1 + gestures.use.poses.right[gestures.use.impact].dx + 15 - 1);
-console.log(`✓ position de travail : abattre à ${fellDistance(30, gestures.use, 'axe')} px (tronc de 30 cm) et ${fellDistance(55, gestures.use, 'axe')} px (55 cm) ; le fer de la cognée à 19 px, de la doloire à ${strikeOffset(gestures.chop, 'broadaxe', 'right')}, de la masse à 16`);
+assert.equal(work.strokes[work.jobs.fell].gesture, 'fell', 'abattre : le coup en écharpe propre à l\'abattage (gestures.json `fell`)');
+assert.equal(fellDistance(30, gestures.fell, 'axe'), 23, 'tronc de 30 cm : 3 + 1 + 5 (main à l\'impact) + 15 (cognée) − 1');
+assert.equal(fellDistance(55, gestures.fell, 'axe'), 25.5, 'tronc de 55 cm : 5,5 + 1 + 5 + 15 − 1');
+console.log(`✓ position de travail : abattre à ${fellDistance(30, gestures.fell, 'axe')} px (tronc de 30 cm) et ${fellDistance(55, gestures.fell, 'axe')} px (55 cm) ; le fer de la cognée à 19 px, de la doloire à ${strikeOffset(gestures.chop, 'broadaxe', 'right')}, de la masse à 16`);

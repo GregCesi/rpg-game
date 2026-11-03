@@ -35,6 +35,42 @@
       ]
     }
   },
+  "fell": {
+    "impact": 5,
+    "phases": ["arm", "arm", "hold", "down", "down", "impact", "free", "free"],
+    "poses": {
+      "down": [
+        {"dx": -5, "dy": -14, "angle": 180, "base": "upright"},
+        {"dx": -7, "dy": -18, "angle": 135, "base": "diag", "behind": true},
+        {"dx": -7, "dy": -20, "angle": 90, "base": "upright", "behind": true},
+        {"dx": -7, "dy": -15, "angle": 180, "base": "upright", "ahead": 16},
+        {"dx": -4, "dy": -11, "angle": 225, "base": "diag", "ahead": 16},
+        {"dx": 1, "dy": -11, "angle": 225, "base": "diag", "ahead": 16},
+        {"dx": -1, "dy": -12, "angle": 225, "base": "diag", "ahead": 16},
+        {"dx": -3, "dy": -10, "angle": 270, "base": "upright", "ahead": 16}
+      ],
+      "up": [
+        {"dx": 7, "dy": -14, "angle": 0, "base": "upright"},
+        {"dx": 7, "dy": -18, "angle": 45, "base": "diag", "behind": true},
+        {"dx": 6, "dy": -21, "angle": 90, "base": "upright", "behind": true},
+        {"dx": 8, "dy": -17, "angle": 0, "base": "upright"},
+        {"dx": 7, "dy": -13, "angle": 315, "base": "diag"},
+        {"dx": 5, "dy": -15, "angle": 45, "base": "diag", "behind": true},
+        {"dx": 6, "dy": -14, "angle": 45, "base": "diag", "behind": true},
+        {"dx": 6, "dy": -11, "angle": 45, "base": "diag", "behind": true}
+      ],
+      "right": [
+        {"dx": 2, "dy": -18, "angle": 135, "base": "diag", "behind": true},
+        {"dx": -2, "dy": -23, "angle": 180, "base": "upright", "behind": true},
+        {"dx": -3, "dy": -26, "angle": 225, "base": "diag", "behind": true},
+        {"dx": -2, "dy": -29, "angle": 180, "base": "upright", "behind": true},
+        {"dx": 0, "dy": -33, "angle": 135, "base": "diag", "behind": true},
+        {"dx": 5, "dy": -10, "angle": 45, "base": "diag", "ahead": 8},
+        {"dx": -1, "dy": -13, "angle": 45, "base": "diag", "ahead": 8},
+        {"dx": -1, "dy": -9, "angle": 45, "base": "diag", "ahead": 8}
+      ]
+    }
+  },
   "chop": {
     "impact": 5,
     "strike": {"down": -1, "up": 7, "reach": 0.8},
