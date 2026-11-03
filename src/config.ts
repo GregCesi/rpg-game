@@ -237,6 +237,11 @@ export const PLAYER = {
   walk: 2,
   run: 2.5,
   /**
+   * La marche discrète (Alt maintenu, Option sur Mac ; docs/COMMANDES.md) : une part de la marche (0,4 : 0,8 m/s), réglable dans ?dieu
+   * (systems/speeds.ts). Chargé ou fatigué, la même part de sa marche d'alors.
+   */
+  sneak: 0.4,
+  /**
    * Cadences des dessins (px/s) : la vitesse pour laquelle la marche (`walk-*`, 100 px/s) et la marche portée (`carry-walk-*`, 55 px/s)
    * ont été dessinées ; l'animation s'accélère ou ralentit avec la vitesse réelle. Pas des vitesses de déplacement.
    */

@@ -70,7 +70,7 @@ export interface BuildStatus {
  * remettre la carte ou la partie à zéro, apprendre un plan (`learn-plan`), mettre au sol autour de Xéros des piquets ou des pierres
  * plates (`supply` : `what` est la clé d'un objet possédable ou d'un objet du monde), effacer les chantiers de la carte
  * (`erase-sites`), remplir d'un coup l'étape en cours du chantier (`skip-step`), multiplier la force de Xéros (`force` : tester les seuils de masse), régler son endurance (`stamina` : souffle, plafond du jour, maximum, en points) ou la
- * rendre infinie (`stamina-infinite`), avancer l'horloge jusqu'à une heure (`clock` : la prochaine fois qu'elle sonne), finir d'un coup le travail en cours (`finish-work` : horloge, endurance et résultat compris), remettre l'endurance de départ (`stamina-start`), régler les vitesses de marche et de course (`speeds`, en m/s ; chargé ou fatigué, une part de la marche ; `speeds-default` : celles par défaut), la vitesse de simulation (`sim-speed` : x1 à x50, tout à l'écran plus vite, par pas de taille normale), poser devant Xéros une pièce de bois de réglages choisis (`wood` : diamètre, longueur sur la
+ * rendre infinie (`stamina-infinite`), avancer l'horloge jusqu'à une heure (`clock` : la prochaine fois qu'elle sonne), finir d'un coup le travail en cours (`finish-work` : horloge, endurance et résultat compris), remettre l'endurance de départ (`stamina-start`), régler les vitesses de marche et de course (`speeds`, en m/s, et la part de la marche discrète `sneak` ; chargé ou fatigué, une part de la marche ; `speeds-default` : celles par défaut), la vitesse de simulation (`sim-speed` : x1 à x50, tout à l'écran plus vite, par pas de taille normale), poser devant Xéros une pièce de bois de réglages choisis (`wood` : diamètre, longueur sur la
  * grille, forme, faces, sens).
  */
 export type DieuCommand =
@@ -84,7 +84,7 @@ export type DieuCommand =
   | { kind: 'clock'; hour: number }
   | { kind: 'finish-work' }
   | { kind: 'stamina-start' }
-  | { kind: 'speeds'; walk: number; run: number }
+  | { kind: 'speeds'; walk: number; run: number; sneak?: number }
   | { kind: 'speeds-default' }
   | { kind: 'sim-speed'; factor: number }
   | { kind: 'learn-plan'; plan: string }

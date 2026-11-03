@@ -40,7 +40,7 @@ import { kinetic, throwPlan } from '../world/throw';
 import { FACING_VECTOR } from '../world/aim';
 import { crossed } from '../world/crossing';
 import { attackCost } from '../world/strike';
-import { pxPerSec, setSpeeds } from '../systems/speeds';
+import { pxPerSec, setSpeeds, SPEEDS } from '../systems/speeds';
 import { setSimSpeed, simSpeed } from '../systems/simSpeed';
 import { Daylight } from '../systems/daylight';
 import { WorkBar } from '../entities/WorkBar';
@@ -413,14 +413,16 @@ export class WorldScene extends Phaser.Scene {
       const passage = exit ? undefined : this.interiors.update(this.player);
       if (passage) this.fadeTo(passage);
     }
-    // les clics, A et R toujours lus, comme E : sinon un appui fait pendant un dialogue ressortirait juste après
+    // les clics, A et R toujours lus, comme E : sinon un appui fait pendant un geste ressortirait juste après ; pendant un dialogue, E,
+    // les clics et Z/S sont à lui (DialogueScene les lit par PlayerInput)
     const { input } = this.player;
-    const clicked = { left: input.clickPressed('left'), right: input.clickPressed('right') };
+    const talking = this.mode === 'dialogue';
+    const clicked = { left: !talking && input.clickPressed('left'), right: !talking && input.clickPressed('right') };
     const drop = input.dropPressed();
     const turn = input.turnPressed();
     // Échap, ou un pas (une flèche, ZQSD) : arrête un travail ou une passe sur un rail, ce qui est fait reste fait
     const stop = input.stopPressed();
-    const moved = input.movePressed();
+    const moved = !talking && input.movePressed();
     if (this.mode === 'rail') this.rail.update(delta, { stop: stop || moved });
     // un travail au coup : lancé d'un clic, Xéros frappe seul jusqu'au résultat ; un pas ou Échap l'arrête après le coup en cours
     if (this.mode === 'work') this.works.update({ stop: stop || moved });
@@ -443,7 +445,7 @@ export class WorldScene extends Phaser.Scene {
       if (this.mode === 'build') this.exitBuild();
       else this.enterBuild();
     }
-    const e = this.interaction.update(time, this.mode === 'play');
+    const e = talking ? { pressed: false, target: undefined } : this.interaction.update(time, this.mode === 'play');
     // ce que vise chaque clic, et ce qu'il ferait (world/clickAction.ts) : lu par le jeu et par l'affichage
     this.refreshAim();
     // la coupe visée sur une pièce de bois et ses deux longueurs, la face qu'on dresse, le bout où planter ou frapper le coin
@@ -1384,8 +1386,8 @@ export class WorldScene extends Phaser.Scene {
         break;
       case 'speeds':
         // les vitesses à calibrer en jouant (systems/speeds.ts), retenues dans le navigateur
-        setSpeeds({ walk: pxPerSec(cmd.walk), run: pxPerSec(cmd.run) });
-        this.notice(`Vitesses : marche ${cmd.walk} m/s, course ${cmd.run} m/s.`);
+        setSpeeds({ walk: pxPerSec(cmd.walk), run: pxPerSec(cmd.run), sneak: cmd.sneak ?? SPEEDS.sneak });
+        this.notice(`Vitesses : marche ${cmd.walk} m/s, course ${cmd.run} m/s, discrète ${String(SPEEDS.sneak).replace('.', ',')} de la marche.`);
         break;
       case 'speeds-default':
         setSpeeds(undefined);

@@ -173,6 +173,16 @@ export class PlayerInput {
     return this.take('stop');
   }
 
+  /** Z (W en QWERTY) ou flèche du haut : vrai une fois par appui (choisir une réponse dans un dialogue). */
+  upPressed(): boolean {
+    return this.take('up');
+  }
+
+  /** S ou flèche du bas : vrai une fois par appui. */
+  downPressed(): boolean {
+    return this.take('down');
+  }
+
   /** Une flèche ou ZQSD vient d'être pressée (pas maintenue) : interrompt un travail. Lit les quatre, une fois par appui. */
   movePressed(): boolean {
     return [this.take('up'), this.take('down'), this.take('left'), this.take('right')].some(Boolean);
@@ -211,12 +221,14 @@ export class PlayerInput {
    * La direction et la course de cette image : les touches enfoncées, et celles pressées puis relâchées depuis l'image d'avant (la
    * plus brève des pressions déplace d'une image).
    */
-  read(): { dir: Phaser.Math.Vector2; running: boolean } {
+  read(): { dir: Phaser.Math.Vector2; running: boolean; sneaking: boolean } {
     const down = (a: Action) => (this.keys.downOrTapped(CODES[a]) ? 1 : 0);
     const dir = new Phaser.Math.Vector2(down('right') - down('left'), down('down') - down('up'));
     const running = down('run') === 1;
+    // Alt (Option sur Mac) : marcher discrètement, à pas lents ; il l'emporte sur la course
+    const sneaking = this.keys.isDown(CODES.sneak);
     this.keys.forgetTaps();
-    return { dir, running };
+    return { dir, running: running && !sneaking, sneaking };
   }
 
   /** Un clic du bouton `button` (gauche : la main droite ; droit : la main gauche) commencé depuis la dernière lecture : une fois par clic. */
