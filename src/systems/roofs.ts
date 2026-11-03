@@ -88,6 +88,8 @@ export class Roofs {
       const target = faded.has(b.piece.id) ? ROOF.alpha : 1;
       const a = b.image.alpha;
       if (a !== target) b.image.setAlpha(toward(a, target));
+      // les tranches d'une pièce longue nord-sud suivent son opacité
+      for (const sl of b.slices ?? []) sl.setAlpha(b.image.alpha);
     }
     this.splitRoofs(view.reveal, toward);
     this.lights();

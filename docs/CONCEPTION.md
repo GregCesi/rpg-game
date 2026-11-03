@@ -696,8 +696,10 @@ L'ancienne chaumière (`maison.tmj`, dessinée à la main) a été remplacée pa
   qui est tout entier au nord de la face intérieure nord d'une pièce, à moins de 80 cm, a sa profondeur plafonnée juste derrière cette
   face, en gardant l'ordre de ce qui porte et de ce qui est porté (`backCaps` de world/interior.ts, `depthsOf` de world/build.ts ; les
   pièces se calculent pour tout bâtiment, aucune liste). Vérifié par `tools/test-build.ts` sur tous les plans du dépôt. Les murs de
-  côté (une pièce longue nord-sud n'a qu'une profondeur, son bord sud) relèvent du même défaut : à montrer à Grégoire avant d'être
-  corrigés.
+  côté (une pièce longue nord-sud n'avait qu'une profondeur, son bord sud, et passait devant tout ce qui la longe) : leur image est
+  découpée en tranches de 2 rangées, chacune à la profondeur du point le plus au sud qu'elle montre (`sideSlices` de world/GameMap.ts ;
+  accord de Grégoire sur `.art-preview/murs-de-cote.png`, et le cas de l'établi, `.art-preview/etabli.png` : la tête et le corps de
+  Xéros sont toujours du même côté).
 - **La lumière** : la pénombre de la chaumière (0,22) quand un volet est ouvert, plus sombre (0,36) quand tous sont fermés ; une tache
   de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **Dehors, ce
   qui est caché ne se voit pas, lumière comprise** (3 novembre 2026, Grégoire) : la lueur d'un feu sous un toit opaque (l'âtre sous le
