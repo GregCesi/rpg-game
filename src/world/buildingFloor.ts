@@ -1,5 +1,5 @@
 // Ce qu'on voit d'un bâtiment par sa fenêtre ou sa porte ouverte, de dehors (chantier « maison-2 », Grégoire) : sa terre battue, posée
-// sous chaque pièce close de chaque bâtiment détecté (world/interior.ts : la maison de Xéros comme une maison du joueur), refaite à
+// sous chaque bâtiment détecté (ses pièces closes et le pied de ses cloisons) (world/interior.ts : la maison de Xéros comme une maison du joueur), refaite à
 // chaque changement du bâtiment ; et sa pénombre, comme dedans (INTERIOR.ambient), toujours là : sous le toit opaque elle ne se voit
 // pas, devant une fenêtre ouverte elle assombrit la pièce, pas Xéros qui regarde ni le mur sud.
 
@@ -8,9 +8,10 @@ import { DEPTH, INTERIOR } from '../config';
 import { CM_PER_PX } from '../content/gabarit';
 import { tilesets } from '../generated/assets';
 import type { Building, Rect } from './interior';
+import { WALLS_SEEN } from './roofView';
 
-/** La hauteur des murs au-dessus de la pièce que la pénombre couvre aussi à l'écran (cm) : la sablière et ce qui pend dessous. */
-const WALLS = 300;
+/** La hauteur des murs au-dessus de la pièce que la pénombre couvre aussi à l'écran (cm) : celle qu'on voit par une fenêtre. */
+const WALLS = WALLS_SEEN;
 
 /** Hachage stable d'une case : la même terre battue au même endroit. */
 const hash = (i: number, j: number) => {
@@ -23,7 +24,7 @@ const hash = (i: number, j: number) => {
 export type BuildingInsides = Phaser.GameObjects.GameObject[];
 
 /**
- * Pose la terre battue de chaque pièce close et la pénombre de chaque bâtiment ; rend ce qui est posé. La terre battue est faite des
+ * Pose la terre battue et la pénombre de chaque bâtiment ; rend ce qui est posé. La terre battue est faite des
  * tuiles `floor`… `floor4` du jeu de tuiles de l'intérieur, sur la grille de la carte, rognée à la pièce ; la pénombre, la teinte de
  * celle des intérieurs, couvre la pièce et ses murs à l'écran, à la profondeur juste sous son bord sud : tout ce qui est dans la
  * pièce et son mur du fond s'assombrissent, pas son mur sud ni ce qui est devant.
@@ -36,7 +37,8 @@ export function drawInsides(scene: Phaser.Scene, buildings: readonly Building[])
   const cols = Math.max(1, Math.floor(src.width / size));
   const floors = ['floor', 'floor2', 'floor3', 'floor4'].map((k) => ts?.tiles[k]).filter((n): n is number => n !== undefined);
   for (const b of buildings) {
-    for (const r of b.rooms) out.push(floorOf(scene, r, src, size, cols, floors));
+    // tout le dedans : les pièces et le pied des cloisons entre elles (le rectangle des pièces, entre les faces intérieures des murs)
+    out.push(floorOf(scene, b.room, src, size, cols, floors));
     const q = b.room;
     const veil = scene.add
       .rectangle(q.x / CM_PER_PX, (q.y - WALLS) / CM_PER_PX, q.w / CM_PER_PX, (q.d + WALLS) / CM_PER_PX, INTERIOR.shade, INTERIOR.ambient)

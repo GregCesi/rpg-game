@@ -3,8 +3,9 @@ import { ROOF, XEROS_HEIGHT } from '../config';
 import type { Player } from '../entities/Player';
 import { CM_PER_PX } from '../content/gabarit';
 import { setGlowCover, type GameMap, type PlacedBuild, type PlacedProp } from '../world/GameMap';
-import type { Building } from '../world/interior';
-import { lightCovers, lightShown, roofView } from '../world/roofView';
+import type { Building, Rect } from '../world/interior';
+import { lightCovers, lightShown, roofView, windowHole } from '../world/roofView';
+import { boxOf } from '../world/build';
 import { drawInsides, type BuildingInsides } from '../world/buildingFloor';
 
 /** Hauteur de Xéros à l'écran au-dessus de ses pieds (px) : sa tête (`XEROS_HEIGHT`). */
@@ -23,6 +24,11 @@ export class Roofs {
   private covers?: { version: number; map: Map<number, number[]> };
   /** La terre battue et la pénombre des bâtiments vus de dehors (world/buildingFloor.ts), et la version des pièces posées qui les a faites. */
   private insides?: { version: number; objects: BuildingInsides };
+  /**
+   * Les pans de toit découpés à la pièce vue par sa fenêtre (C1 du rapport : deux images par pan, en WebGL comme en Canvas) : l'original,
+   * masqué hors du trou, reste opaque ; sa copie, masquée dans le trou, passe à ROOF.alpha avec le fondu ; `alpha` : celui des copies.
+   */
+  private split?: { key: string; g: Phaser.GameObjects.Graphics; outside: Phaser.Display.Masks.GeometryMask; inside: Phaser.Display.Masks.GeometryMask; copies: Map<number, Phaser.GameObjects.Image>; room: Rect; alpha: number };
 
   constructor(
     private readonly map: GameMap,
@@ -63,9 +69,9 @@ export class Roofs {
 
   /**
    * Les pièces posées en mode construction (src/world/roofView.ts) : dehors, le toit d'un bâtiment où l'on entre ne s'efface pas ; celui
-   * d'un abri ouvert s'efface quand Xéros est dessous, avec tout ce qui repose dessus ; devant une fenêtre au volet ouvert, tout le
-   * bâtiment devient transparent (son toit, ce qui passe en hauteur, ses murs côté sud : `windowFade`). Même fondu que les toits. `on`
-   * faux (le mode construction, un intérieur) : rien ne s'efface.
+   * d'un abri ouvert s'efface quand Xéros est dessous, avec tout ce qui repose dessus ; devant une fenêtre au volet ouvert, la pièce de
+   * cette fenêtre seule devient transparente (le toit au-dessus d'elle, ce qui passe en hauteur, son mur sud : `windowFade`). Même
+   * fondu que les toits. `on` faux (le mode construction, un intérieur) : rien ne s'efface.
    */
   private builds(player: Player, delta: number, on: boolean, buildings: readonly Building[]): void {
     if (!this.map.builds.length) return;
@@ -77,11 +83,13 @@ export class Roofs {
     const r = view.reveal?.room;
     this.seen = r ? `${r.x},${r.y},${r.w},${r.d}` : '';
     const step = ((1 - ROOF.alpha) * delta) / ROOF.fadeMs;
+    const toward = (a: number, target: number) => (a < target ? Math.min(target, a + step) : Math.max(target, a - step));
     for (const b of this.map.builds) {
       const target = faded.has(b.piece.id) ? ROOF.alpha : 1;
       const a = b.image.alpha;
-      if (a !== target) b.image.setAlpha(a < target ? Math.min(target, a + step) : Math.max(target, a - step));
+      if (a !== target) b.image.setAlpha(toward(a, target));
     }
+    this.splitRoofs(view.reveal, toward);
     this.lights();
   }
 
@@ -96,9 +104,59 @@ export class Roofs {
       const glows = (b.parts ?? []).filter((p) => p.light).map((p) => p.obj as Phaser.GameObjects.Image);
       if (!glows.length) continue;
       const roofs = (this.covers.map.get(b.piece.id) ?? []).map((id) => byId.get(id)).filter((r): r is PlacedBuild => !!r);
-      const shown = lightShown(roofs.map((r) => r.image.alpha));
-      for (const g of glows) setGlowCover(g, shown);
+      // dans la pièce vue par sa fenêtre, la lueur suit la part transparente des pans (leurs copies) ; ailleurs, les pans eux-mêmes
+      const box = boxOf(b.piece);
+      const q = this.split?.room;
+      const inRoom = !!q && box.x < q.x + q.w && box.x + box.w > q.x && box.y < q.y + q.d && box.y + box.d > q.y;
+      const shown = lightShown(roofs.map((r) => (inRoom && this.split!.copies.has(r.piece.id) ? this.split!.alpha : r.image.alpha)));
+      for (const g of glows) {
+        setGlowCover(g, shown);
+        // vue par sa fenêtre, la lueur ne se voit que dans le trou : hors de lui, le toit reste opaque
+        if (inRoom && roofs.length) g.setMask(this.split!.inside);
+        else g.clearMask();
+      }
     }
+  }
+
+  /**
+   * Les pans de toit au-dessus de la pièce vue par sa fenêtre (`reveal`) : transparents dans le trou de cette pièce seulement
+   * (`windowHole`), le reste du pan opaque. Une autre pièce, ou plus de fenêtre : la découpe revient à l'opaque par le fondu, puis s'en va.
+   */
+  private splitRoofs(reveal: { room: Rect; roofs: number[] } | undefined, toward: (a: number, target: number) => number): void {
+    if (!this.scene) return;
+    const key = reveal ? `${reveal.room.x},${reveal.room.y},${reveal.room.w},${reveal.room.d}:${reveal.roofs.join(',')}` : '';
+    // une autre pièce : l'ancienne découpe s'en va d'un coup (on est passé d'une fenêtre à une autre)
+    if (this.split && reveal && this.split.key !== key) this.unsplit();
+    if (!this.split && reveal) {
+      const g = this.scene.make.graphics({}, false);
+      const h = windowHole(reveal.room);
+      g.fillStyle(0xffffff).fillRect(h.x, h.y, h.w, h.h);
+      const outside = g.createGeometryMask().setInvertAlpha(true);
+      const inside = g.createGeometryMask();
+      const copies = new Map<number, Phaser.GameObjects.Image>();
+      for (const b of this.map.builds) {
+        if (!reveal.roofs.includes(b.piece.id)) continue;
+        const o = b.image;
+        const c = this.scene.add.image(o.x, o.y, o.texture.key, o.frame.name).setOrigin(o.originX, o.originY).setDepth(o.depth).setAlpha(o.alpha);
+        c.setMask(inside);
+        o.setMask(outside);
+        copies.set(b.piece.id, c);
+      }
+      this.split = { key, g, outside, inside, copies, room: reveal.room, alpha: 1 };
+    }
+    if (!this.split) return;
+    this.split.alpha = toward(this.split.alpha, reveal ? ROOF.alpha : 1);
+    for (const c of this.split.copies.values()) c.setAlpha(this.split.alpha);
+    if (!reveal && this.split.alpha === 1) this.unsplit();
+  }
+
+  /** La découpe des pans retirée : les originaux sans masque, les copies détruites. */
+  private unsplit(): void {
+    if (!this.split) return;
+    for (const b of this.map.builds) if (this.split.copies.has(b.piece.id)) b.image.clearMask();
+    for (const c of this.split.copies.values()) c.destroy();
+    this.split.g.destroy();
+    this.split = undefined;
   }
 
   /** La terre battue et la pénombre des bâtiments, refaites quand une pièce est posée ou retirée. */
@@ -106,6 +164,11 @@ export class Roofs {
     if (!this.scene || this.insides?.version === this.map.buildsVersion) return;
     for (const o of this.insides?.objects ?? []) o.destroy();
     this.insides = { version: this.map.buildsVersion, objects: drawInsides(this.scene, buildings) };
+  }
+
+  /** L'opacité des pans au-dessus de la pièce vue par sa fenêtre (1 : opaques, ou rien à voir ; pour les tests de scénario). */
+  get revealAlpha(): number {
+    return this.split?.alpha ?? 1;
   }
 
   /** La pièce qu'on voit en ce moment par sa fenêtre ouverte (pour les tests de scénario), ou rien. */

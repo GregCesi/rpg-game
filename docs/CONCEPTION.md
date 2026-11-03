@@ -702,10 +702,12 @@ L'ancienne chaumière (`maison.tmj`, dessinée à la main) a été remplacée pa
   de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **Dehors, ce
   qui est caché ne se voit pas, lumière comprise** (3 novembre 2026, Grégoire) : la lueur d'un feu sous un toit opaque (l'âtre sous le
   chaume) est cachée ; elle revient quand le toit s'efface (`lightCovers`, `lightShown` de world/roofView.ts, systems/roofs.ts).
-  **Devant une fenêtre au volet ouvert** (Xéros dehors, à moins de 1,50 m, dans sa largeur), tout le bâtiment devient transparent
-  (0,35, le fondu des toits ; Grégoire, chantier « maison-2 », comme l'effet d'avant, au lieu de la découpe de la seule pièce) : son
-  toit, ce qui passe en hauteur et ses murs côté sud ; le conduit et sa souche restent opaques, plus lisibles (`windowFade`).
-  Dehors, chaque bâtiment détecté a **sa terre battue** sous ses pièces (les tuiles de l'intérieur) et **sa pénombre**, comme dedans,
+  **Devant une fenêtre au volet ouvert** (Xéros dehors, à moins de 1,50 m, dans sa largeur), la pièce de cette fenêtre, et elle
+  seule, devient transparente (0,35, le fondu des toits ; Grégoire, chantier « maison-2 », retouche après les aperçus
+  `.art-preview/fenetre-*.png`) : le toit au-dessus d'elle (les pans de chaume, qui couvrent toute la maison, sont découpés à
+  l'écran : l'original opaque hors du trou de la pièce, une copie transparente dans le trou, `windowHole`), ce qui passe en hauteur
+  et son mur sud ; le conduit et sa souche restent opaques, plus lisibles (`windowFade`) ; la lueur de l'âtre suit, dans le trou.
+  Dehors, chaque bâtiment détecté a **sa terre battue** sous ses pièces et le pied de ses cloisons (les tuiles de l'intérieur) et **sa pénombre**, comme dedans,
   toujours là (world/buildingFloor.ts), pour la maison du joueur aussi. **E de dedans
   ouvre et ferme le volet** (la pièce est à la carte du dehors : GameState la change là-bas, la vue suit).
 - **Les meubles** : le mode construction marche dans la vue intérieure (pas dans les murs : « Hors de la pièce. » ; les pièces du
@@ -790,8 +792,8 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
     le couronnement d'où sort la fumée (`chimney-cap`), par le pan nord percé (`thatch-roof-pierced`) ; le pignon ouest n'a plus de
     trou de fumée ; la table et le banc passent sous la fenêtre du nord, la place du fagot à l'ouest de l'âtre ;
   - **le toit, dehors** (retouche de Grégoire, 3 novembre 2026) : il ne s'efface plus quand Xéros approche ; on n'est dedans que dans
-    l'intérieur. Devant une fenêtre au volet ouvert, dehors, tout le bâtiment devient transparent, sauf le conduit (chantier « maison-2 »,
-    au lieu de la découpe de la seule pièce, `windowFade` de `world/roofView.ts`) ; on y voit la terre battue assombrie et les meubles
+    l'intérieur. Devant une fenêtre au volet ouvert, dehors, la pièce de cette fenêtre seule devient transparente, sauf le conduit
+    (chantier « maison-2 », `windowFade` et `windowHole` de `world/roofView.ts`) ; on y voit la terre battue assombrie et les meubles
     du plan, pas ce que la carte pose dedans (la mère, la paillasse) ;
   - **le cagibi n'a pas de porte** (retouche de Grégoire, 3 novembre 2026) : une baie de 0,85 m, comme une baie où l'on n'a jamais mis
     de porte, entre deux jambages de 25 cm (ceux de la porte d'entrée), sous un linteau (une poutre de 1,20 m contre la face du cagibi,

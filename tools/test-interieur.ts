@@ -331,8 +331,8 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
         const mid = (win.span[0] + win.span[1]) / 2;
         await stand(bd.room.x + bd.room.w + cfg.ROOF.wall + 60, mid + 30);
         const front = w.roofs.revealed;
-        await (window as any).__until(() => roofs().every((q: any) => q.image.alpha === cfg.ROOF.alpha), 'le toit transparent devant la fenêtre');
-        const faded = roofs().map((q: any) => q.image.alpha);
+        await (window as any).__until(() => w.roofs.revealAlpha === cfg.ROOF.alpha, 'le toit transparent au-dessus de la pièce, devant la fenêtre');
+        const faded = [w.roofs.revealAlpha];
         await stand(bd.room.x + bd.room.w + cfg.ROOF.wall + cfg.ROOF.window.front + 80, mid + 30);
         const far = w.roofs.revealed;
         return { side: win.side, eave, front, far, faded };
@@ -340,7 +340,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
       assert.equal(view.side, 'east');
       assert.ok(view.eave.length && view.eave.every((a: number) => a === 1), `${b.plan} : sous l'avant-toit, dehors, le toit reste (${view.eave})`);
       assert.ok(view.front, `${b.plan} : devant la fenêtre ouverte, on voit la pièce`);
-      assert.ok(view.faded.length && view.faded.every((a: number) => a < 1), `${b.plan} : devant la fenêtre ouverte, tout le toit devient transparent (${view.faded})`);
+      assert.ok(view.faded.length && view.faded.every((a: number) => a < 1), `${b.plan} : devant la fenêtre ouverte, le toit devient transparent au-dessus de la pièce (${view.faded})`);
       assert.equal(view.far, undefined, `${b.plan} : plus loin, le toit se referme`);
       // l'aperçu : dehors, devant la fenêtre ouverte, le bâtiment transparent, la terre battue et la pénombre de la pièce
       const win = building[0].windows.find((q: any) => q.side === 'east');
