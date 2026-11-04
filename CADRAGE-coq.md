@@ -1006,3 +1006,32 @@ Champs optionnels : **une ancienne sauvegarde se lit telle quelle**, `SAVE_VERSI
 - **30 : non au dalle par dalle.** Par cohérence avec la réponse 23, **le dallage se pose par pans qui consomment leurs dalles** (un pan
   de dallage = une rangée de dalles de 40 cm, de toute longueur, comme le mur). La dalle seule reste posable une à une, pour les
   retouches.
+
+### 12.15 Les dessins d'intégration (pixel-artist, hors jeu) : à valider
+
+Le moteur de l'étage est fait et testé seul, sans dessin (commits « Étage, moteur (1) » et « (2) », `tools/test-etage.ts` dans
+`test:fast`, CONCEPTION « L'étage »). La parcelle « Maison du coq » est posée dans `ferme-du-riche.tmj`, le normal de la case
+(88, 120) retiré (réponse 20). Rien d'autre ne s'intègre avant l'accord de Grégoire sur ces planches (refaire :
+`npx tsx tools/essai-coq-integration.ts`) :
+
+| Planche | Ce qu'il faut y regarder |
+| --- | --- |
+| `.art-preview/coq-integration-mur.png` (x4) | les pierres du mur une à une (carreaux de 50, 70, 90, boutisse de 40, pierre d'angle, de tableau, recoupée ; trois tons), les mêmes comme objets qu'on porte, **le pan d'une assise** (pair, impair, R1, R2 nue et enduite, l'arase), le refend, **le mur de 9 assises** avec un angle et une demi-croisée (joints à 15 cm au moins d'une assise à l'autre) |
+| `.art-preview/coq-integration-sol.png` (x3) | la dalle seule (les retouches), **le pan de dallage** (une rangée de 40 cm de toute longueur, joints décalés par la parité de la rangée), la salle dallée (189 dalles, 8,2 t) |
+| `.art-preview/coq-integration-baies.png` (x4) | **la clef au coq de 50 cm**, le claveau à 0,73, l'arc remonté avec elle, les dimensions corrigées (arbalétrier, chevron, écritoire) |
+| `.art-preview/coq-integration-lave.png` (x2) | **la lave, seule lauze du jeu** : `lauze-roof-large` à 55° avant et après, ses quatre vues, notre pan à 45° |
+| `.art-preview/coq-integration-cloison.png` (x3) | **la cloison de l'étage en pan de bois chaulé**, de face, posée, et sa coupe vue de l'étage (la lisse chaulée de 25 cm, la porte qui se lit) |
+
+Ce que l'intégration ajoutera : les pierres du mur en données (comme celles du solin) et le pan `ashlar-wall` (`wall: "ashlar"`, 60 cm,
+et `ashlar-wall-40` pour les refends), dessiné par `world/walls.ts` ; le pan de dallage `flagstone-row` (`walk: true`) ; les carreaux,
+la boutisse, la clef ; la texture de la lave à la place de `slatesTex` (les quatre signes `lave` dans `art/palette.ts`) ; la lisse
+chaulée `lime-rail` et le remplissage bas `lime-panel-low`.
+
+Deux choix, sur les planches :
+
+31. **La face du dedans du mur** (R2 du pan, ce qu'on voit dans la maison) : la pierre nue (les mêmes joints, d'autres tons) ou un
+    **enduit de chaux** ? *Recommandation : l'enduit*, comme dans les maisons de ce temps (une pierre de taille se montre dehors ; dedans,
+    on enduit et on chaule, c'est plus clair et plus chaud), et la salle reste lisible avec sa tapisserie.
+32. **La coupe de la cloison chaulée** : sa lisse est à 1,95-2,10 m, au-dessus de la coupe d'une cloison (1,90 m). La cloison est
+    nord-sud : elle se voit entière, comme un mur de côté, sans coupe. Rien à changer au moteur. *Recommandation : la garder entière*,
+    comme sur la planche « posée ».

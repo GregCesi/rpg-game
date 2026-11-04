@@ -7,7 +7,7 @@
 // coq-catalogue-pierre.ts, coq-catalogue-bois.ts (les pièces du catalogue, mises aux dimensions des réponses 24, 25 et 27) ; les
 // dimensions : coq-catalogue-data.ts ; les images du jeu, lues dans src/generated/ (lecture seule).
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
@@ -19,7 +19,7 @@ import { PAL as STONE_PAL, pieceView, archAssembly, archAssembly50, lavePan } fr
 import { DRAWINGS, PAL as WOOD_PAL } from '../art/proposals/coq-catalogue-bois';
 import {
   PAL, ASHLAR_COURSE, ASHLAR_STONES, Paint, checkStagger, consumption, courseFace, courseImage, courseInner, courseNS, courseTop,
-  layCourse, layWall, courseJointsOf, outline, shadowed, type CourseSpec, type End,
+  layWall, courseJointsOf, outline, shadowed, type CourseSpec,
 } from '../art/proposals/coq-integration-mur';
 import { FLAG, FLAGSTONES, flagColumn, flagFloor, flagRow, layFlags } from '../art/proposals/coq-integration-sol';
 import { LAVE_PAL, lavePanImage, KG_PER_M2, EAVE } from '../art/proposals/coq-integration-lave';
@@ -56,7 +56,6 @@ const turnedDims = (d: Dims): Dims => ({ ...d, w: d.d, d: d.w });
 
 // ---------- les cellules ----------
 
-const shadow = (g: Grid) => withGroundShadow(g);
 const xg = xeros.animations['idle-down'].frames[0];
 const xs = silhouette(xg, xeros.palette);
 
@@ -339,14 +338,15 @@ function baiesSheet(): Section[] {
       ],
     };
   };
-  const slant = 'POSEE A 45 DEG, VUE PAR SA TRANCHE : LES BOUTS COUPES D EQUERRE';
+  const slant = 'VUE DANS SON AXE (45 DEG) : LE BOUT SEUL';
+  const chant = 'VUE DE CHANT : BOUTS COUPES D EQUERRE, COINS DE LA BOITE VIDES';
   return [
     { title: 'LA CLEF AU COQ ET L ARC', cells: [key, vou, arch] },
     {
       title: 'LES DIMENSIONS CORRIGEES (REPONSE 27)',
       cells: [
-        wood('wood-piece:normal:beam-principal', { 0: 'DE BOUT, 45 DEG', 2: slant }, 'BOITE 355 X 355 : R1, R3 TOMBENT JUSTE (71 X 75)'),
-        wood('wood-piece:normal:rafter', { 0: 'DE BOUT, 45 DEG', 2: slant }, 'BOITE 347 X 347 : R1, R3 TOMBENT JUSTE (69 X 71)'),
+        wood('wood-piece:normal:beam-principal', { 0: chant, 2: slant }, 'BOITE 355 X 355 : R1, R3 TOMBENT JUSTE (71 X 75)'),
+        wood('wood-piece:normal:rafter', { 0: chant, 2: slant }, 'BOITE 347 X 347 : R1, R3 TOMBENT JUSTE (69 X 71)'),
         wood('writing-desk', {}, '90 CM DE HAUT : LE PUPITRE ET LES LIVRES'),
       ],
     },
@@ -371,12 +371,16 @@ function laveSheet(): Section[] {
       judge('lauze-roof-large', 'R0 (AVANT)', oldPan, expectedSize(d55)), judge('lauze-roof-large', 'R0 (APRES)', newPan, expectedSize(d55)),
     ],
   };
-  const views = [1, 2, 3].map((v) => ({ label: `APRES R${v}`, grid: lavePanImage(LARGE_55, v), pal: LAVE_PAL }));
+  const views = [1, 2, 3].flatMap((v) => [
+    { label: `AVANT R${v}`, grid: panImage('slates', LARGE_55, v), pal: ROOF_PAL },
+    { label: `APRES R${v}`, grid: lavePanImage(LARGE_55, v), pal: LAVE_PAL },
+  ]);
   const four: Cell = {
     views,
     lines: [
-      { text: 'LES AUTRES VUES DU MEME PAN (LA LAVE SE DESSINE SUR TOUTE PENTE)', color: GOLD },
-      ...views.map((v, i) => judge('lauze-roof-large', `R${i + 1}`, v, expectedSize(i % 2 === 0 ? turnedDims(d55) : d55))),
+      { text: 'LES AUTRES VUES DU MEME PAN, AVANT ET APRES (LA LAVE SE DESSINE SUR TOUTE PENTE)', color: GOLD },
+      { text: 'R2 : VU DU NORD, ON NE VOIT QUE LE DESSOUS (LES LATTES), COMME LA LAUZE DU JEU', color: WHITE },
+      ...views.map((v, i) => judge('lauze-roof-large', `R${(i >> 1) + 1} ${i % 2 ? 'APRES' : 'AVANT'}`, v, expectedSize((i >> 1) % 2 === 0 ? turnedDims(d55) : d55), (i >> 1) === 1 ? 'LE DESSOUS SEUL, COMME AU JEU' : undefined)),
     ],
   };
   const d45: Dims = { w: 960, d: 340, h: 340, shape: 'box', ground: true };
@@ -404,7 +408,7 @@ function cloisonSheet(): Section[] {
   const asPlaced: View = { label: 'POSEE (NORD-SUD), R0', grid: withGroundShadow(renderPiece(cloisonQuads(), { k: 1 })), pal: PAL };
   const fromSouth: View = { label: 'R1 (EST-OUEST)', grid: elev.grid, pal: PAL };
   // la coupe : ce que voit le joueur à l'étage, la cloison coupée au-dessus de la lisse, le plancher autour ; large et étroite
-  const scene = (narrow: boolean) => renderPiece([...floorQuads(-24, 27, -6, C.len + 6), ...cloisonQuads({ cut: true, narrow })], { k: 1 });
+  const scene = (narrow: boolean) => renderPiece([...floorQuads(-30, 33, -50, C.len + 6), ...cloisonQuads({ cut: true, narrow })], { k: 1 });
   const cutW: View = { label: 'LA COUPE : LISSE CHAULEE DE 25 CM', grid: scene(false), pal: PAL };
   const cutN: View = { label: 'POUR COMPARER : LISSE DE 15 CM, EN BOIS', grid: scene(true), pal: PAL };
   const woodKg = (2 * 5.6 * 0.15 * 0.15 + 7 * 0.15 * 0.15 * 2.35 + 0.9 * 1.8 * 0.05 * 0.6) * 900 + 5.6 * 0.25 * 0.15 * 900 * 0.3;
@@ -427,7 +431,8 @@ function cloisonSheet(): Section[] {
         lines: [
           { text: 'CE QUE VOIT LE JOUEUR A L ETAGE : LA CLOISON COUPEE AU-DESSUS DE LA LISSE', color: GOLD },
           { text: 'LA LISSE CHAULEE DONNE UNE BANDE BLANCHE DE 5 PX AU LIEU D UN TRAIT DE 3 PX', color: WHITE },
-          { text: 'LA PORTE SE LIT : LA LISSE PASSE AU-DESSUS, LE VANTAIL DESSOUS', color: WHITE },
+          { text: 'LA PORTE SE LIT : AU-DESSUS D ELLE, LA LISSE RESTE DE BOIS (SON LINTEAU)', color: WHITE },
+          { text: 'SOUS LA BANDE, LE BOUT SUD DE LA CLOISON (SA COUPE CONTRE LE MUR SUD)', color: GREY },
           { text: 'LA COUPE EST A 2,10 M ICI (LE HAUT DE LA LISSE), PAS A 1,90 (INTERIOR.HEADROOM)', color: GOLD },
         ],
       },
@@ -463,5 +468,3 @@ function main() {
 }
 
 main();
-void readFileSync;
-void ([] as End[]);

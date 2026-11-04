@@ -325,6 +325,42 @@ function keyMark(i: number, j: number, c: { w: number; h: number; face: Face }):
   return intradosMark(i, j, c);
 }
 
+/**
+ * La clef au coq de 50 × 60 × 50 cm (réponse 25) : une clef passante, flancs droits à 25 cm de l'axe, le dessous en arc (l'intrados),
+ * le dessus à plat 50 cm au-dessus de ses flancs : elle dépasse l'extrados des claveaux de 15 cm, comme sur la planche validée
+ * (coq-pierre-tapisserie.png, `keystone` de coq-baies.ts). Section (x, z) dans le repère de l'arc (centre 0, naissance z 0).
+ */
+export const KEY50 = { half: 5, top: 20 };
+const KEY50_SEC: [number, number][] = (() => {
+  const { r } = ARCH, out: [number, number][] = [];
+  for (let k = 0; k <= 8; k++) { const x = -KEY50.half + (2 * KEY50.half * k) / 8; out.push([x, Math.sqrt(r * r - x * x)]); }
+  out.push([KEY50.half, KEY50.top], [-KEY50.half, KEY50.top]);
+  return out;
+})();
+export const key50Sec = () => KEY50_SEC;
+
+/** Le coq validé (coq-baies.ts, `COQ_RELIEF`, 8 × 6 px, tourné vers l'ouest), repris au pixel près. */
+const COQ_RELIEF = [
+  '...!....',
+  '..!+...!',
+  '.++!..!+',
+  '..+++!+.',
+  '..++++..',
+  '...+.+..',
+];
+/** La face sud de la clef de 50 cm : le coq en relief sur le fond refouillé, la ciselure en haut, les joints (la règle de `keystone`). */
+export function key50Mark(i: number, j: number, c: { w: number; h: number; face: Face }): string | undefined {
+  if (c.face !== 'S') return undefined;
+  const w = Math.round(c.w), h = Math.round(c.h);
+  if (i <= 0 || i >= w - 1) return undefined;
+  if (j >= h - 1) return '!';
+  const gx = i - 1, gy = h - 3 - j;
+  const ch = COQ_RELIEF[gy]?.[gx];
+  if (ch && ch !== '.') return ch;
+  if (gx >= 0 && gx < 8 && gy >= 0 && gy < 6) return ';';
+  return undefined;
+}
+
 /** Le chanfrein le long du bas de la face sud d'un linteau, entre ses portées : une rangée au jour. */
 const lintelMark = (bear: number) => (i: number, j: number, c: { w: number; h: number; face: Face }) =>
   c.face === 'S' && j === 1 && i >= bear && i < Math.round(c.w) - bear ? ';' : undefined;
@@ -332,10 +368,19 @@ const lintelMark = (bear: number) => (i: number, j: number, c: { w: number; h: n
 /** Les pièces de pierre, par clé (art/proposals/coq-catalogue-data.ts). */
 export const STONE_PIECES: Record<string, StonePiece> = {
   // ---------------- la pierre ----------------
+  // les carreaux de 50, 70, 90 cm et la boutisse de 40 de face (réponse 24) ; les anciens (40, 60, 80, boutisse de 30) restent
+  // pour le morceau de mur de la première planche (`wallSample`), qui montre pourquoi on en a changé
+  'ashlar-block-50': carreau(10, 51),
+  'ashlar-block-70': carreau(14, 71),
+  'ashlar-block-90': carreau(18, 91),
+  'ashlar-header': {
+    w: 8, d: 12, matter: 'calcaire layé et ciselé sur ses deux bouts',
+    quads: (o) => box(0, 8, 0, 12, 0, 6, P('boutisse'), stoneTex({ seed: 31, finish: F_THROUGH, wall: o?.wall })),
+  },
   'ashlar-block-40': carreau(8, 41),
   'ashlar-block-60': carreau(12, 61),
   'ashlar-block-80': carreau(16, 81),
-  'ashlar-header': {
+  'ashlar-header-30': {
     w: 6, d: 12, matter: 'calcaire layé et ciselé sur ses deux bouts',
     quads: (o) => box(0, 6, 0, 12, 0, 6, P('boutisse'), stoneTex({ seed: 31, finish: F_THROUGH, wall: o?.wall })),
   },
@@ -452,6 +497,10 @@ export const STONE_PIECES: Record<string, StonePiece> = {
     quads: (o) => extrudeY(0, 12, grounded(voussoirSec()), P('claveau'), stoneTex({ seed: 109, tint: -1, finish: { S: 'dressed', N: 'layed', top: 'bed' }, wall: o?.wall, mark: intradosMark })),
   },
   'door-keystone': {
+    w: 10, d: 12, matter: 'calcaire layé, le coq sculpté en relief',
+    quads: (o) => extrudeY(0, 12, grounded(KEY50_SEC), P('clef'), stoneTex({ seed: 113, tint: -1, finish: { S: 'dressed', N: 'layed', top: 'bed', under: 'layed' }, wall: o?.wall, mark: key50Mark })),
+  },
+  'door-keystone-30': {
     w: 6, d: 12, matter: 'calcaire layé, le coq sculpté en relief',
     quads: (o) => extrudeY(0, 12, grounded(voussoirSec(1)), P('clef'), stoneTex({ seed: 113, tint: -1, finish: { S: 'dressed', N: 'layed', top: 'bed' }, wall: o?.wall, mark: keyMark })),
   },
@@ -462,8 +511,8 @@ export const STONE_PIECES: Record<string, StonePiece> = {
 
   // ---------------- les refends ----------------
   'ashlar-header-40': {
-    w: 6, d: 8, matter: 'calcaire layé et ciselé sur ses deux bouts',
-    quads: (o) => box(0, 6, 0, 8, 0, 6, P('boutisse'), stoneTex({ seed: 131, finish: F_THROUGH, wall: o?.wall })),
+    w: 8, d: 8, matter: 'calcaire layé et ciselé sur ses deux bouts',
+    quads: (o) => box(0, 8, 0, 8, 0, 6, P('boutisse'), stoneTex({ seed: 131, finish: F_THROUGH, wall: o?.wall })),
   },
 
   // ---------------- les cheminées ----------------
@@ -592,7 +641,7 @@ export function wallSample(): Quad[] {
       } else q.push(...placeAt('ashlar-quoin', 0, 0, z, 3, true)); // 40 de face, 60 de retour
       continue;
     }
-    if (b.kind === 'B') { q.push(...placeAt('ashlar-header', b.x, 0, z)); continue; }
+    if (b.kind === 'B') { q.push(...placeAt('ashlar-header-30', b.x, 0, z)); continue; }
     if (b.kind === 'T') { q.push(...placeAt('ashlar-jamb', b.x, 0, z)); continue; }
     if (b.kind === 'T60') {
       // la pierre de tableau tournée : 60 de face, 40 de tableau ; derrière elle, un carreau de 60 du dedans
@@ -629,6 +678,34 @@ export function archAssembly(): Quad[] {
     v.push(...rotY(moved(extrudeY(0, 12, voussoirSec(key ? 1 : 0), part(`claveau-${n}`, 3 + (n % 2), ';', 'full'), tex), [cx, 0, spring]), a, cx, spring));
   }
   // les claveaux gardent chacun leur part (une priorité sur deux) : leurs joints rayonnants se voient comme un contour mince
+  return [...one(q), ...v, ...back(cx - r, cx + r, 0, 0, spring + r)];
+}
+
+/**
+ * L'arc de la porte remonté avec la clef de 50 cm : les tableaux, les deux sommiers (10°), trois claveaux de chaque côté (de 10° à
+ * 63°, l'angle où le flanc droit de la clef coupe l'intrados), le troisième taillé droit contre la clef, et la clef au coq.
+ */
+export function archAssembly50(): Quad[] {
+  const { r, ring, springer } = ARCH, R = r + ring, cx = 8 + r, spring = 5 * COURSE + 3, q: Quad[] = [], v: Quad[] = [];
+  for (let k = 0; k < 5; k++) {
+    q.push(...placeAt('ashlar-jamb', cx - r - 8, 0, k * COURSE));
+    q.push(...placeAt('ashlar-jamb', cx + r, 0, k * COURSE, 0, true));
+  }
+  const sp = extrudeY(0, 12, springerSec(), P('sommier'), stoneTex({ seed: 127, tint: -1, finish: { S: 'dressed', N: 'layed', slope: 'bed', top: 'bed' }, wall: true }));
+  q.push(...moved(sp, [cx, 0, spring]), ...moved(mirrorX(sp, 0), [cx, 0, spring]));
+  const aKey = Math.acos(KEY50.half / r), step = (aKey - springer) / 3;
+  const at = (rad: number, a: number): [number, number] => [-rad * Math.cos(a), rad * Math.sin(a)];
+  for (const side of [1, -1]) for (let n = 0; n < 3; n++) {
+    const a0 = springer + n * step, a1 = a0 + step;
+    const sec: [number, number][] = n < 2
+      ? [at(r, a0), at(R, a0), at(R, a1), at(r, a1)]
+      : [at(r, a0), at(R, a0), [-KEY50.half, Math.sqrt(R * R - KEY50.half ** 2)], [-KEY50.half, Math.sqrt(r * r - KEY50.half ** 2)]];
+    const s2 = side === 1 ? sec : sec.map(([x, z]) => [-x, z] as [number, number]);
+    const tex = stoneTex({ seed: 109 + n + (side === 1 ? 0 : 5), tint: -1, finish: { S: 'dressed', N: 'layed', top: 'bed' }, wall: true, mark: intradosMark });
+    v.push(...moved(extrudeY(0, 12, s2, part(`claveau-${side}-${n}`, 3 + (n % 2), ';', 'full'), tex), [cx, 0, spring]));
+  }
+  const keyTex = stoneTex({ seed: 113, tint: -1, finish: { S: 'dressed', N: 'layed', top: 'bed', under: 'layed' }, wall: true, mark: key50Mark });
+  v.push(...moved(extrudeY(0, 12, KEY50_SEC, part('clef', 5, ';', 'full'), keyTex), [cx, 0, spring]));
   return [...one(q), ...v, ...back(cx - r, cx + r, 0, 0, spring + r)];
 }
 
