@@ -15,7 +15,7 @@ import xeros from '../art/characters/xeros';
 import tileset from '../art/world/tiles';
 import world from '../src/content/world.json';
 import { silhouette } from '../art/proposals/sanglier-profil-lib';
-import { palette, FOOT, entries } from '../art/proposals/sanglier-profil-bc';
+import { palette, FOOT, entries } from '../art/proposals/sanglier-bc-annule/sanglier-profil-bc';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');

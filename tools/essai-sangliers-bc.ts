@@ -18,8 +18,8 @@ import { EMPTY, flipX, rng, type Grid, type Palette } from '../art/lib/canvas';
 import xeros from '../art/characters/xeros';
 import tileset from '../art/world/tiles';
 import world from '../src/content/world.json';
-import * as boar from '../art/proposals/sanglier-bc';
-import * as down from '../art/proposals/xeros-renverse-2';
+import * as boar from '../art/proposals/sanglier-bc-annule/sanglier-bc';
+import * as down from '../art/proposals/sanglier-bc-annule/xeros-renverse-2';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');

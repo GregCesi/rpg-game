@@ -14,11 +14,11 @@
 // de l'essai 3 (art/proposals/sanglier-c.ts : le liseré gris du dos, le groin clair), puis l'ombre `x`.
 // Pour la comparaison, B et C passent par le même rendu et les mêmes poses : seul le corps change d'une colonne à l'autre.
 
-import { Canvas, EMPTY, type Grid } from '../lib/canvas';
-import { lightUp } from '../lib/light';
-import { palette, MATS, dab, SIDE, GY, FOOT, type Dab, type Leg, type P } from './sanglier-c';
-import { body as bBody } from './sanglier-profil-b';
-import { body as cBody } from './sanglier-profil-c';
+import { Canvas, EMPTY, type Grid } from '../../lib/canvas';
+import { lightUp } from '../../lib/light';
+import { palette, MATS, dab, SIDE, GY, FOOT, type Dab, type Leg, type P } from '../sanglier-c';
+import { body as bBody } from '../sanglier-profil-b';
+import { body as cBody } from '../sanglier-profil-c';
 
 export { palette, FOOT };
 

@@ -27,9 +27,9 @@
 // Zones : B robe (côté vu), U dessus du dos (sa teinte claire Q fait le liseré), C soies, crinière, oreille, queue, F robe du côté
 // caché, K joue grise, G pattes du côté vu, J pattes du fond, S groin (clair), N narines, H sabots, W défense, E œil, V ventre.
 
-import { Canvas, EMPTY, castShadow, type Grid, type Palette } from '../lib/canvas';
-import { lightUp, type Materials } from '../lib/light';
-import { world } from '../palette';
+import { Canvas, EMPTY, castShadow, type Grid, type Palette } from '../../lib/canvas';
+import { lightUp, type Materials } from '../../lib/light';
+import { world } from '../../palette';
 
 /**
  * La robe, éclaircie d'un cran par rapport à l'essai C : un brun-gris tiré de l'écorce (N, m) et de la pierre (z, Z), sans
