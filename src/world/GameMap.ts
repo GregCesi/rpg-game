@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DEPTH, GLOW, INTERIOR, RELIEF, SHADOW, TILE } from '../config';
 import { deepAt, heightAt } from './relief';
+import { hasRelief, TerrainView } from './terrainView';
 import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
@@ -363,6 +364,11 @@ export class GameMap {
     this.floor = map.createLayer(0, ts, 0, 0)!;
     this.floor.setDepth(DEPTH.ground);
     this.floor.setCollision(tileset.solid);
+    // le relief (chantier « relief ») : le sol se dessine en projection (world/terrainView.ts) ; le calque d'origine reste pour les collisions
+    if (hasRelief(def)) {
+      this.floor.setVisible(false);
+      new TerrainView(scene, def, 0, 0, { x0: 0, y0: 0, x1: def.width, y1: def.height });
+    }
 
     // Détails au sol, posés de façon stable (même carte = mêmes détails)
     drawDecals(scene, def, 0, 0, { x0: 0, y0: 0, x1: def.width, y1: def.height });

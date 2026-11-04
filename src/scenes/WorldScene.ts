@@ -21,6 +21,10 @@ import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
 import { ZoneCrossing } from '../systems/zones';
 import { Footing } from '../systems/footing';
+import { LiftPass } from '../systems/lift';
+import { neighborsOf } from '../world/zones';
+import { heightAt, pick, reliefOf } from '../world/relief';
+import { hasRelief } from '../world/terrainView';
 import { Parcels } from '../systems/parcels';
 import { Interiors, resolveInterior } from '../systems/interiors';
 import { HarvestSystem, effortOf, wields, type HitResult } from '../systems/harvest';
@@ -41,7 +45,6 @@ import { fellDistance } from '../world/workStance';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
 import { kinetic, landing, throwPlan } from '../world/throw';
-import { heightAt } from '../world/relief';
 import { aimProbe, FACING_VECTOR } from '../world/aim';
 import { crossed } from '../world/crossing';
 import { attackCost } from '../world/strike';
@@ -213,6 +216,8 @@ export class WorldScene extends Phaser.Scene {
   private roll!: RollSystem;
   /** Où Xéros pose le pied : les marches, les sauts, l'eau (chantier « relief »). */
   private footing!: Footing;
+  /** Le soulèvement de ce qui est en hauteur (projection A, systems/lift.ts). */
+  private lifts!: LiftPass;
   /** ?dieu « escalade » : gardée d'une carte à l'autre, comme la force. */
   private climber = false;
   private effort!: EffortSystem;
@@ -376,6 +381,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.stamina.infinite = this.infinite;
     this.player.mobility.climber = this.climber;
     this.footing = new Footing(this, def, this.player, (t) => this.notice(t));
+    this.lifts = new LiftPass(this, def, !this.interior && neighborsOf(maps, def, 1).some((n) => hasRelief(n.map)));
     // éveillé la nuit, Xéros s'use : la veille se paie (stamina.json, `sleep`)
     const night = stamina.sleep;
     this.clock.onAdvance = (from, minutes) =>
@@ -402,13 +408,18 @@ export class WorldScene extends Phaser.Scene {
       cam.setBounds((this.map.width - bw) / 2, (this.map.height - bh) / 2, bw, bh);
       this.zoom = new ZoomControl(cam, bw, bh);
     } else {
-      cam.setBounds(view.x, view.y, view.w, view.h);
-      this.zoom = new ZoomControl(cam, view.w, view.h);
+      // le relief : ce qui est en hauteur monte à l'écran, la caméra va d'autant plus au nord
+      const up = this.lifts.active ? Math.ceil(Math.max(reliefOf(def).max, 500) / CM_PER_PX) : 0;
+      cam.setBounds(view.x, view.y - up, view.w, view.h + up);
+      this.zoom = new ZoomControl(cam, view.w, view.h + up);
     }
     cam.startFollow(this.player.actor, true, 0.15, 0.15);
     cam.setRoundPixels(true);
+    // elle suit l'image de Xéros (soulevée de la hauteur de son sol), pas ses pieds dans le monde
+    const lifted = this.lifts.active ? this.lifts.liftAt(this.player.actor.x, this.player.actor.y) : 0;
+    cam.setFollowOffset(0, lifted);
     // passé le bord d'une zone : la vue reprend où elle était, sans fondu (la voisine était déjà là)
-    if (this.edge) cam.centerOn(this.player.actor.x + this.edge.view.dx, this.player.actor.y + this.edge.view.dy);
+    if (this.edge) cam.centerOn(this.player.actor.x + this.edge.view.dx, this.player.actor.y + this.edge.view.dy - lifted);
     else cam.fadeIn(LOCKS.fadeIn, 20, 14, 8);
     if (CONSTRUIRE && this.building) this.enterBuild();
 
@@ -458,9 +469,12 @@ export class WorldScene extends Phaser.Scene {
     // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
     this.autosave.update();
     // le curseur oriente Xéros et dit ce qu'il vise (src/world/aim.ts) ; pas en mode construction, où la souris pose les pièces
-    this.player.cursor = this.mode === 'build' ? undefined : this.player.input.cursor(this.cameras.main);
+    // la souris montre un point de l'écran : le point du monde qu'on y voit (le sol soulevé de sa hauteur, world/relief.ts `pick`)
+    const seen = this.mode === 'build' ? undefined : this.player.input.cursor(this.cameras.main);
+    this.player.cursor = seen && this.lifts.active ? pick(this.map.def, seen.x, seen.y) : seen;
     this.player.update(this.mode === 'play');
     this.footing.update();
+    if (this.lifts.active) this.cameras.main.followOffset.set(0, this.lifts.liftAt(this.player.actor.x, this.player.actor.y));
     // courir et porter puisent dans l'endurance
     this.effort.update(this.player, delta, this.mode === 'play');
     // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
@@ -717,7 +731,7 @@ export class WorldScene extends Phaser.Scene {
     if (!(game.both ?? game.hands[hand])) return;
     this.aiming = { hand, button: this.clickButton };
     this.mode = 'aim';
-    if (!this.mark && this.textures.exists('ui-throw-mark')) this.mark = this.add.image(0, 0, 'ui-throw-mark').setOrigin(0.5, 0.5).setDepth(DEPTH.shadow + 0.02);
+    if (!this.mark && this.textures.exists('ui-throw-mark')) this.mark = this.add.image(0, 0, 'ui-throw-mark').setOrigin(0.5, 0.5).setDepth(DEPTH.shadow + 0.02).setData('noLift', true);
   }
 
   /**
@@ -819,7 +833,7 @@ export class WorldScene extends Phaser.Scene {
     const landed = this.handsSystem.layNear(this.player, what, last.x, last.y);
     landed?.setVisible(false);
     const look = this.handsSystem.lookOf(what);
-    const sprite = this.add.image(origin.x, origin.y, look.key, look.frame).setOrigin(0.5, 0.5);
+    const sprite = this.add.image(origin.x, origin.y, look.key, look.frame).setOrigin(0.5, 0.5).setData('noLift', true);
     const item = 'item' in what ? what.item : what.prop;
     // les hauteurs du vol en px d'écran (absolues : l'image monte de la hauteur, comme tout ce qui est en l'air ou en hauteur)
     const px = 100 / CM_PER_PX;

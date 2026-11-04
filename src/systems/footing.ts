@@ -24,8 +24,10 @@ export class Footing {
     private readonly player: Player,
     private readonly notice: (text: string) => void,
   ) {
-    scene.physics.world.on('worldstep', this.onStep);
-    scene.events.once('shutdown', () => scene.physics.world.off('worldstep', this.onStep));
+    // le monde de la physique de cette scène (au redémarrage de la scène, il est refait : on se détache de celui-ci)
+    const world = scene.physics.world;
+    world.on('worldstep', this.onStep);
+    scene.events.once('shutdown', () => world?.off('worldstep', this.onStep));
   }
 
   /** Un pas de la physique vient de se faire. */

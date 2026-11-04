@@ -17,6 +17,7 @@ import { woodDef, woodOf } from './woodPiece';
 import { woodTexture } from './woodTexture';
 import { agedKey } from './woodShape';
 import { neighborsOf } from './zones';
+import { hasRelief, TerrainView } from './terrainView';
 import { seedMap } from './mapPlans';
 
 /** Ce qui est dessiné des voisines : détruit avec la scène. */
@@ -51,6 +52,12 @@ export class ZoneBand {
 
   /** Le sol de la voisine, cases [x0, x1[ × [y0, y1[, posé à sa place (son coin haut gauche en (dx, dy)), et ses détails. */
   private ground(def: MapData, dx: number, dy: number, r: { x0: number; y0: number; x1: number; y1: number }): void {
+    // une voisine qui a du relief : son terrain en projection (world/terrainView.ts), ses détails soulevés de sa hauteur (systems/lift.ts)
+    if (hasRelief(def)) {
+      this.parts.push(...new TerrainView(this.scene, def, dx, dy, r).parts);
+      for (const d of drawDecals(this.scene, def, dx, dy, r)) this.parts.push(d.setData('liftMap', { def, dx, dy }));
+      return;
+    }
     const tileset = tilesets.find((t) => t.key === def.tileset)!;
     const cells = def.layers.ground;
     const data = Array.from({ length: r.y1 - r.y0 }, (_, j) => cells.slice((r.y0 + j) * def.width + r.x0, (r.y0 + j) * def.width + r.x1));
@@ -66,21 +73,22 @@ export class ZoneBand {
     const st = game.maps[def.id];
     for (const o of def.objects) {
       const c = st?.changes[o.id];
-      if (!c) this.prop(o, dx, dy, inside, { natural: undefined, seed: o.id });
-      else if (c.type) this.prop({ ...o, type: c.type, x: c.x, y: c.y }, dx, dy, inside, { flip: c.flip, wood: c.wood, natural: c.natural });
+      if (!c) this.prop(def, o, dx, dy, inside, { natural: undefined, seed: o.id });
+      else if (c.type) this.prop(def, { ...o, type: c.type, x: c.x, y: c.y }, dx, dy, inside, { flip: c.flip, wood: c.wood, natural: c.natural });
     }
-    for (const o of st?.spawned ?? []) this.prop(o, dx, dy, inside, { flip: o.flip, wood: o.wood, natural: o.natural });
+    for (const o of st?.spawned ?? []) this.prop(def, o, dx, dy, inside, { flip: o.flip, wood: o.wood, natural: o.natural });
     const pieces: BuildPiece[] = (st?.builds ?? []).filter((b) => !wallOf(b));
     const depths = depthsOf(pieces);
     for (const b of pieces) {
       const look = buildLook(this.scene, b);
       if (!inside(look.x, look.y)) continue;
-      this.parts.push(this.scene.add.image(dx + look.x, dy + look.y, look.key, look.frame).setOrigin(0, 1).setDepth(dy + (depths.get(b.id) ?? look.y)));
+      this.parts.push(this.scene.add.image(dx + look.x, dy + look.y, look.key, look.frame).setOrigin(0, 1).setDepth(dy + (depths.get(b.id) ?? look.y)).setData('liftMap', { def, dx, dy }));
     }
   }
 
   /** Un objet de la voisine, à sa place dans le repère de la carte : son image (la pièce de bois assemblée), rien d'autre. */
   private prop(
+    def: MapData,
     o: MapObject,
     dx: number,
     dy: number,
@@ -98,6 +106,7 @@ export class ZoneBand {
     const img = this.scene.add.image(dx + o.x, dy + o.y, key, wood ? '0' : p.anim ? 0 : undefined).setOrigin(0, 1);
     img.setDepth(p.layer === 'floor' ? DEPTH.floor : dy + o.y);
     if (p.blend === 'add') img.setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.light);
+    img.setData('liftMap', { def, dx, dy });
     this.parts.push(img);
   }
 }

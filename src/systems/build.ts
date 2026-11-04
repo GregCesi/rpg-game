@@ -21,6 +21,7 @@ import { JOINT_NAMES, jointGroup, jointPoint, junctionAt, refusal as jointRefusa
 import type { GameMap } from '../world/GameMap';
 import { drawNatural } from '../world/natural';
 import { Ghosts } from './ghost';
+import { pick } from '../world/relief';
 
 /** Ce qu'on a en main : une pièce (avec son sens, ses réglages de forme naturelle et son tirage), un plan, ou l'outil de zone. */
 type Tool =
@@ -93,7 +94,11 @@ export class BuildSystem {
     this.gfx = scene.add.graphics().setDepth(DEPTH.prompt - 2);
     const input = scene.input;
     input.mouse?.disableContextMenu();
-    const point = (p: Phaser.Input.Pointer) => this.scene.cameras.main.getWorldPoint(p.x, p.y);
+    // le point du monde qu'on voit sous la souris (le relief soulève ce qui est en hauteur : world/relief.ts `pick`)
+    const point = (p: Phaser.Input.Pointer) => {
+      const w = this.scene.cameras.main.getWorldPoint(p.x, p.y);
+      return pick(this.map.def, w.x, w.y);
+    };
     const down = (p: Phaser.Input.Pointer) => {
       if (!this.active) return;
       const w = point(p);
@@ -200,7 +205,8 @@ export class BuildSystem {
     if (h === 'redo') this.redo();
 
     const pointer = this.scene.input.activePointer;
-    const at = cam.getWorldPoint(pointer.x, pointer.y);
+    const seen = cam.getWorldPoint(pointer.x, pointer.y);
+    const at = pick(this.map.def, seen.x, seen.y);
     this.flushClicks();
     this.updateAim(at.x, at.y);
     this.draw(at);
