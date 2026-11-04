@@ -44,10 +44,10 @@ c'est la même pierre. Le plan accepte toute dalle, quelle que soit sa forme.
 Seule. Pas de tas de dalles pour l'instant.
 
 ## Gestes
-- Clic court, main vide : la prendre, à deux mains. La portant, face à une place de l'étape « les dés », un clic : la poser, elle devient un dé ; un autre objet :
+- E : la prendre, à deux mains. La portant, face à une place de l'étape « les dés », A : la poser, elle devient un dé ; un autre objet :
   « Il faut une dalle. »
-- Ailleurs, un clic ou A (Q en QWERTY) : la poser devant Xéros, à son fantôme.
-- Clic maintenu, main vide ; R : rien.
+- Ailleurs, A (Q en QWERTY) : la poser devant Xéros, à son fantôme.
+- E maintenu ; R : rien.
 
 ## Origine
 - Trouvée sur la berge de l'étang, à l'ouest de la ferme (six dalles posées dans `ferme.tmj` : quatre pour les dés de l'abri, deux de

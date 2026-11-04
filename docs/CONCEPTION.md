@@ -294,16 +294,16 @@ Première boucle : Xéros prend la hache sur le billot, abat un arbre, ramasse l
 
 - **Un seul état de partie, `GameState`**, objet typé et décrit avec Zod. Il contient l'inventaire et les changements du monde, rangés par carte et par identifiant d'objet Tiled (« objet 12 de la ferme : devenu `big-tree-stump` »). Les cartes décrivent le monde au début de la partie, `GameState` dit ce qui a changé. La sauvegarde l'écrit tel quel (voir *Sauvegarde et outils de test*). Pas le registry de Phaser : un objet à nous, vérifiable, indépendant du moteur.
 - **Ce qui se récolte porte un composant `harvest`** dans `props.json` : `tool` (outil nécessaire, absent = à la main), `hits` (nombre de coups ; depuis *Le travail*, les étapes d'un travail au coup, dont la matière est `work`), `fall` (animation de fin), `becomes` (objet qui le remplace), `drops` (objets qui tombent, `min`/`max`). Un seul système `systems/harvest.ts` pour l'arbre, le rocher, les baies, le billot. La repousse (`regrow`) attend que le temps existe.
-- **La hache est plantée dans un billot**, près du tas de bois de la maison. Le billot porte `harvest` sans outil, en un coup, devient `chopping-block` et donne la hache, directement dans les mains (`give` sur l'objet lâché) : un seul clic d'une main vide, les deux mains libres.
+- **La hache est plantée dans un billot**, près du tas de bois de la maison. Le billot porte `harvest` sans outil, en un coup, devient `chopping-block` et donne la hache, directement dans les mains (`give` sur l'objet lâché) : un seul appui sur E, les deux mains libres.
 - **Les objets possédables sont décrits dans `items.json`** : nom, icône `item-<id>`, `kind` (`tool`, `resource`...), `hands` (mains qu'il demande ; `stack` retiré avec la barre, le 29 octobre 2026 : une main tient un objet).
-- **Un objet tombé reste au sol**, enregistré dans `GameState`, et se ramasse un par un, d'un clic court de la main vide. Pas de ramassage automatique (choix de Grégoire).
-- **Deux gestes.** E (ou Entrée) : les mains (parler, ramasser, prendre, cueillir). Espace : utiliser l'objet en main, même dans le vide. Sans le bon outil, un message court l'indique ; les mains prises, « Les mains pleines. » (depuis le 3 novembre 2026, chantier « commandes » : la souris vise, chaque bouton est une main, clic gauche la droite, clic droit la gauche ; le clic court prend, pose, travaille ou frappe selon ce que tient sa main ; E ne fait plus que parler, ouvrir ou fermer, lire ; Espace ne fait rien ; docs/COMMANDES.md).
+- **Un objet tombé reste au sol**, enregistré dans `GameState`, et se ramasse un par un, avec E. Pas de ramassage automatique (choix de Grégoire).
+- **Deux gestes.** E (ou Entrée) : les mains (parler, ramasser, prendre, cueillir). Espace : utiliser l'objet en main, même dans le vide. Sans le bon outil, un message court l'indique ; les mains prises, « Les mains pleines. » (le 3 novembre 2026, chantier « commandes » : la souris visait, chaque bouton était une main, et le clic court prenait, posait, travaillait ou frappait ; depuis le 4 novembre, « commandes v2 » : E agit sans outil et prend, F travaille avec l'outil en main, A pose, la souris ne sert qu'au combat ; Espace ne fait rien ; docs/COMMANDES.md).
 - ~~Barre de 8 cases~~, remplacée le 29 octobre 2026 par **deux mains** (voir ci-dessous).
 - **Deux mains** (décidé le 29 octobre 2026). Xéros a une main gauche et une main droite, chacune tient un objet. Un objet lourd ou long prend les deux mains : la bille, la hache de bûcheron. Pas de besace pour l'instant : les mains sont tout l'inventaire.
-  - Touches : **E** prend dans une main libre, ou repose devant soi ce qu'on tient à deux mains ; **Q** lâche l'objet de la main active devant soi ; **Tab** change de main active ; **Espace** utilise ce qu'on tient (depuis le 3 novembre 2026, chantier « commandes » : plus de main active ni de Tab ; le clic d'une main prend dans cette main ou utilise ce qu'elle tient, **A** (Q en QWERTY) lâche ce que tient la main du dernier clic ; docs/COMMANDES.md).
+  - Touches : **E** prend dans une main libre, ou repose devant soi ce qu'on tient à deux mains ; **Q** lâche l'objet de la main active devant soi ; **Tab** change de main active ; **Espace** utilise ce qu'on tient (depuis le 3 novembre 2026, chantier « commandes » : plus de main active ni de Tab ; depuis le 4 novembre, « commandes v2 » : **E** prend dans la main droite, puis la gauche, Maj + E dans la gauche ; **F** travaille avec l'outil en main ; **A** (Q en QWERTY) pose ce que tient la main droite, sinon la gauche, Maj + A la gauche ; docs/COMMANDES.md).
   - Les touches se lisent par leur place sur le clavier : **lâcher est la touche à la place du Q d'un QWERTY, soit A sur AZERTY** (confirmé le 29 octobre 2026), pour ne pas croiser le Q de ZQSD.
   - Un objet lâché reste au sol, enregistré dans `GameState`.
-  - À l'écran : deux cases (main gauche, main droite), et près de chacune le mot de son clic sur ce qui est visé (« prendre », « couper », « poser »…) ; les deux marquées quand un objet tient les deux mains (la marque de la main active a disparu avec elle, le 3 novembre 2026).
+  - À l'écran : deux cases (main gauche, main droite) ; les deux marquées quand un objet tient les deux mains (la marque de la main active a disparu avec elle, le 3 novembre 2026). La touche qui agit (E, F, A) s'affiche au-dessus de ce qui est devant Xéros (`systems/keyPrompts.ts`) ; le mot de chaque clic près des cases, du 3 novembre 2026, a disparu le 4 novembre.
 - **Le coup d'outil se compose** : une animation de geste pour le corps de Xéros, plus un petit sprite par outil posé dans la main image par image. Un nouvel outil = un sprite d'outil, pas une nouvelle animation du corps.
 
 ## Abattre un arbre (décidé le 29 octobre 2026)
@@ -319,7 +319,7 @@ Principe : ce qui est petit va dans le sac, ce qui est lourd se porte à deux ma
 - **Les sections se coupent de haut en bas**, à des encoches dessinées sur le tronc. Xéros se place au-dessus ou en dessous du tronc, face à une encoche ; l'invite apparaît sur l'encoche. Le geste dépend de la cible : de côté sur ce qui est debout, de haut en bas sur ce qui est couché ou posé.
 - **Chaque section coupée devient une bille** d'environ 1 m, qui reste au sol et bloque le passage tant qu'on ne la déplace pas.
 - Ébrancher et tronçonner se font **dans l'ordre qu'on veut** ; la dernière section garde le houppier tant qu'il n'est pas coupé.
-- **Porter** : une seule série d'animations « porter » pour Xéros (bras tendus, mains jointes devant le ventre, marche et attente dans les 4 directions), avec l'objet porté posé par-dessus à un point d'accroche, devant lui ou derrière sa tête selon la direction. Xéros marche plus lentement, ne fait rien d'autre, et repose l'objet d'un clic (ou A). Un nouvel objet portable n'a besoin que de son sprite.
+- **Porter** : une seule série d'animations « porter » pour Xéros (bras tendus, mains jointes devant le ventre, marche et attente dans les 4 directions), avec l'objet porté posé par-dessus à un point d'accroche, devant lui ou derrière sa tête selon la direction. Xéros marche plus lentement, ne fait rien d'autre, et repose l'objet avec A. Un nouvel objet portable n'a besoin que de son sprite.
 - La bûche (`item-log`, 99 par case) contredisait le principe : retirée le 29 octobre 2026, avec l'ancien objet `log` (la bille de l'atelier est maintenant une `big-felled-log`).
 - **Il y a trois arbres, de deux sortes** (deux arbres décidés le 29 octobre 2026, l'arbre normal le 30 octobre 2026, le têtard le 30 octobre 2026) :
   - le **gros grand** (`big-tree`), l'arbre de forêt : tronc de 55 cm (65 cm contour compris), 5,65 m, couché en 4 sections (4 billes) sous son houppier ;
@@ -336,11 +336,11 @@ mais seules celles de 1 m s'empilaient, et beaucoup d'objets n'avaient ni fantô
 base : ranger ce qu'on vient de faire.
 
 - **Tout se pose, avec son fantôme.** Tout ce qu'on porte (pièce de bois de toute longueur et de tout état, pierre plate, piquet,
-  branche, corde, outils, fagot...) se pose d'un clic court de la main qui le tient (ou A, Q en QWERTY), là où le montre un fantôme en transparence : où il va tomber,
+  branche, corde, outils, fagot...) se pose avec A (Q en QWERTY ; Maj + A, la main gauche), là où le montre un fantôme en transparence, devant Xéros : où il va tomber,
   dans quel sens (R le tourne avant de poser). Si la place juste devant Xéros est prise, il se pose à côté, à la place libre la plus
-  proche ; sans aucune place, « Pas la place ici. ». Un seul chemin de pose pour tout (`systems/hands.ts`). Le fantôme ne se montre
-  pas quand E vise autre chose (E agirait alors sur la cible) (depuis le 3 novembre 2026, chantier « commandes » : E ne pose plus ; le fantôme suit le curseur, sans sortir de la
-  portée de Xéros, et montre ce que tient la main dont le clic poserait ; docs/COMMANDES.md).
+  proche ; sans aucune place, « Pas la place ici. ». Un seul chemin de pose pour tout (`systems/hands.ts`). Le fantôme montre
+  ce que poserait A ; il ne se montre pas quand F travaille ce qui est devant (depuis le 3 novembre 2026, E ne pose plus ; ce jour-là le
+  fantôme suivait le curseur ; depuis le 4 novembre, « commandes v2 », il est devant Xéros ; docs/COMMANDES.md).
 - **La règle de la première pièce.** Un tas naît quand on pose une pièce contre une pièce identique déjà seule au sol, ou s'agrandit
   quand on la pose sur un tas commencé. Il prend tout de sa première pièce : diamètre, état, longueur, sens (et elle reste à sa place
   exacte). On n'y ajoute que des pièces identiques ; une autre pièce visée sur le tas est posée à côté, avec son fantôme, sans
@@ -364,7 +364,7 @@ base : ranger ce qu'on vient de faire.
   pièce n'est pas du bois : les branches (10 places tête-bêche dessinées une à une, leur lien et leur compte), les fagots (6 places,
   nord-sud avec R). Les anciens tas de billes, de rondins et de quartiers de 1 m sont des tas calculés (sauvegarde : `SAVE_VERSION` 8,
   convertie ; les quartiers passent de la pyramide aux rangées).
-- Le reste ne change pas : reprendre (un clic court d'une main vide) enlève la pièce la plus haute, la place visée dépend de l'endroit où se tient
+- Le reste ne change pas : reprendre (E) enlève la pièce la plus haute, la place visée dépend de l'endroit où se tient
   Xéros (le creux au centre, le sol à côté), un tas bloque le passage dès sa première pièce (les branches à 3), le lien et le nœud
   des fagots sont les mêmes.
 
@@ -372,7 +372,7 @@ Ce qui suit est la décision du 29 octobre 2026, gardée pour mémoire (les tas 
 précède) :
 
 - **On construit un tas pièce par pièce, comme en vrai.** Un tas a des places, décrites en données : leur position, leur couche, et les places qui les portent (une place du dessus n'existe que quand celles qui la portent sont prises). Chaque place a sa pièce ; le tas s'affiche couche par couche, du bas vers le haut, sauf les billes, affichées de l'arrière vers l'avant : la bille de devant se voit entière et ne cache de celle de derrière que ce qu'elle cacherait vraiment (précisé le 29 octobre 2026). Une bille a la même longueur (19 px, 95 cm, celle de la pièce du tronc) et le même diamètre (13 px contour compris, 65 cm, dont 11 px d'écorce) dans les deux sens ; au sol, deux billes voisines sont à 11 px l'une de l'autre.
-- **Poser** : la place visée dépend de l'endroit où se tient Xéros le long du tas. Au centre entre deux pièces posées, la pièce monte dans le creux ; décalé, elle va au sol à côté. Une prévisualisation en transparence montre la pièce à la place exacte où elle ira, et suit Xéros. **Reprendre** (E, mains libres) enlève la pièce la plus haute accessible (depuis le 3 novembre 2026, chantier « commandes » : un clic court d'une main vide).
+- **Poser** : la place visée dépend de l'endroit où se tient Xéros le long du tas. Au centre entre deux pièces posées, la pièce monte dans le creux ; décalé, elle va au sol à côté. Une prévisualisation en transparence montre la pièce à la place exacte où elle ira, et suit Xéros. **Reprendre** (E, mains libres) enlève la pièce la plus haute accessible (le 3 novembre 2026, chantier « commandes » : un clic court d'une main vide ; de nouveau E depuis le 4 novembre).
 - **Billes** : toutes parallèles, dans le sens où elles reposent après la coupe. 3 au sol côte à côte, 2 dessus dans les creux, 1 au sommet : 6. Le tas plein ressemble à un petit tas de bois.
 - **Branches** : toutes parallèles, posées tête-bêche (le gros bout alterne d'un côté et de l'autre), côte à côte puis par couches. Dimensions réalistes : une branche fait 1 à 1,5 m. Le tas plein a à peu près le volume d'une bille : c'est la future matière d'un fagot.
 - **Une bille peut être tournée** (décidé le 29 octobre 2026). R (lu par sa place sur le clavier) tourne la bille portée entre est-ouest et nord-sud ; le fantôme suit. La première bille d'un tas fixe le sens du tas ; les suivantes s'y alignent d'elles-mêmes. Un tas nord-sud se construit face à lui : Xéros se tient au sud et se déplace d'est en ouest pour choisir le sol ou le creux ; on y voit le triangle des faces coupées.
@@ -382,10 +382,10 @@ précède) :
 
 - **Une fiche par objet, avant de le construire** (`docs/objets/`) : identité, dimensions réelles, toutes ses vues, regroupement, gestes, origine, devenir, vérification.
 - **Le rouleau de corde** (chanvre, Ø 30 × 10 cm, une main) porte sa longueur restante, 10 m au départ, gardée par la partie. Il ne se range pas en tas. On le trouve dans la réserve de la maison ; plus tard il s'achètera ou se fabriquera.
-- **Couper un lien** : on pose le rouleau sur le billot (un clic de la main du rouleau, face au billot), puis un clic de la main de la hachette (l'outil naturel, 0,4 point d'endurance, ajouté le 30 octobre 2026) ou la cognée (0,5 point). Toujours
-  vrai : couper un lien est un geste sans matière, au prix fixe de `costs` (`whittle`, `cutTie`). Un lien de 2 m tombe au sol, le rouleau perd 2 m ; vide, il disparaît. On peut reprendre le rouleau posé sur le billot (un clic court d'une main vide).
+- **Couper un lien** : on pose le rouleau sur le billot (A, face au billot), puis F, la hachette en main (l'outil naturel, 0,4 point d'endurance, ajouté le 30 octobre 2026) ou la cognée (0,5 point). Toujours
+  vrai : couper un lien est un geste sans matière, au prix fixe de `costs` (`whittle`, `cutTie`). Un lien de 2 m tombe au sol, le rouleau perd 2 m ; vide, il disparaît. On peut reprendre le rouleau posé sur le billot (E).
 - **Le lien** (2 m, une main) se pose par terre, où il commence un tas de branches sur lui, ou sous un tas de branches qui n'en a pas, qu'il ceinture par-dessous. Il reste visible sous le tas.
-- **Nouer et dénouer** : E maintenu environ une demi-seconde, mains libres, une jauge au-dessus de Xéros. E court garde son rôle (une branche, le fagot entier). (depuis le 3 novembre 2026, chantier « commandes » : le clic maintenu d'une main vide, le même seuil de 500 ms et la même jauge ; le clic court reprend une branche ou le fagot ; docs/COMMANDES.md.) Un tas de 10 branches lié se noue en fagot, à sa place ; sinon « Il faut un lien. » ou « Pas assez de branches. ». Un fagot seul se dénoue en un tas de 10 branches avec son lien ; dans un tas de fagots, « Un seul fagot à la fois. ».
+- **Nouer et dénouer** : E maintenu environ une demi-seconde, mains libres ; la touche E au-dessus du tas se remplit d'or. E court garde son rôle (une branche, le fagot entier). (Le 3 novembre 2026, chantier « commandes » : le clic maintenu d'une main vide, avec une jauge au-dessus de Xéros ; revenu à E le 4 novembre, au même seuil de 500 ms ; docs/COMMANDES.md.) Un tas de 10 branches lié se noue en fagot, à sa place ; sinon « Il faut un lien. » ou « Pas assez de branches. ». Un fagot seul se dénoue en un tas de 10 branches avec son lien ; dans un tas de fagots, « Un seul fagot à la fois. ».
 - **Le fagot** (130 × Ø 50 cm, deux mains) ralentit comme la bille ; il se pose seul ou en tas, même forme que les billes (6 au plus), et se tourne avec R.
 - **Le nombre de branches** d'un tas s'affiche en tout petit en bas à droite du tas, seulement quand Xéros est tout près.
 
@@ -430,15 +430,15 @@ précède) :
 - **Le piquet** (`stake`, fiche `docs/objets/stake.md`), corrigé le 30 octobre 2026 : en vrai, on ne frappe pas une branche couchée à la
   cognée. On tient la branche debout d'une main, la pointe appuyée sur le billot, et on taille la pointe avec **la hachette**
   (`hatchet`, fiche `docs/objets/hatchet.md` : fer d'environ 12 × 8 cm, manche de 40 cm, 1 kg, une main, trouvée dans la réserve de la
-  maison avec la masse et le coin ; la cognée, à deux mains, ne change pas) dans l'autre. Face au billot, un clic de la main de la hachette : un coup (le geste
+  maison avec la masse et le coin ; la cognée, à deux mains, ne change pas) dans l'autre. Face au billot, F, la hachette en main : un coup (le geste
   `chop`, sans nouvelle pose) et la branche devient un piquet taillé en pointe, environ 100 × 5 × 5 cm, 1 kg, qui reste dans la main
   qui la tenait. Le coup coûte 0,4 point (`whittle`), la moitié d'un coup de cognée (repris par *Le travail* : tailler est un travail
   au coup, `work.whittle` du billot, la pointe à enlever, payé au joule ; environ 58 coups de hachette, une demi-minute). Si l'autre main ne tient pas une branche : « Tiens la
   branche debout sur le billot, de l'autre main. » Planter un piquet coûte 0,5 point d'endurance.
-- **Tracer.** Piquet en main, plan connu, un clic de sa main sur le sol : le piquet se plante. Sans plan connu : « Xéros ne sait pas encore
+- **Tracer.** Piquet en main, plan connu, F devant Xéros : le piquet se plante (A le pose seulement). Sans plan connu : « Xéros ne sait pas encore
   quoi tracer. » Le premier piquet fixe le coin nord-ouest de l'emprise ; les trois autres coins apparaissent en fantôme, et
   les piquets suivants ne se plantent que là (un coin à moins de 12 px du point visé aimante le piquet ; ailleurs : « Les
-  piquets se plantent aux coins du tracé. »). Un clic court d'une main vide sur un piquet planté, tant que le chantier n'est pas né : on le reprend, ce qui
+  piquets se plantent aux coins du tracé. »). E sur un piquet planté, tant que le chantier n'est pas né : on le reprend, ce qui
   permet de changer d'emplacement. Au quatrième piquet, le chantier naît si toute l'emprise est libre (pas d'objet, d'eau, de
   mur, de tas ni d'objet au sol ; Xéros lui-même ne compte pas) ; sinon « Il y a quelque chose dans le passage. » et le
   quatrième piquet reste en main.
@@ -447,7 +447,7 @@ précède) :
   62 kg, portée à deux mains, lentement (au-dessus de 25 kg : pas de course). La ferme a un étang : les pierres sont sur sa berge
   (six, posées dans Tiled : quatre pour l'abri, deux de marge), pas dans un pierrier. Une pierre posée sur une place du chantier
   devient un dé (`footing-stone`).
-- **Le chantier.** On voit en fantôme seulement les places de l'étape en cours : les quatre dés, aux coins. Pierre en main, un clic sur
+- **Le chantier.** On voit en fantôme seulement les places de l'étape en cours : les quatre dés, aux coins. Pierre en main, A face à
   une place : le dé est posé, et le piquet de ce coin est arraché et retombe au sol à côté, réutilisable. Autre chose en main :
   « Il faut une pierre plate. » Près du chantier, une petite ligne d'état : « Abri à bois : dés, 2 sur 4 ». Les quatre dés
   posés : « Abri à bois : poteaux, 0 sur 4 », et les poteaux apparaissent en fantôme. Le chantier (plan, position du piquet nord-ouest, coins plantés, pièces posées) est dans GameState
@@ -469,13 +469,13 @@ précède) :
   fantôme ; le chantier garde dans `pieces` (GameState) la pièce de bois d'origine de chaque poteau (longueur, diamètre d'arbre,
   faces), ce qui lui permettra plus tard de savoir d'où vient le bois ; `SAVE_VERSION` 9, les chantiers de la version 8 n'ont aucune
   pièce d'origine.
-  - **Le poteau bas** (1,80 m, 65 kg) se porte à deux mains : face à sa place, un clic, et la poutre est dressée sur le dé. Dresser
+  - **Le poteau bas** (1,80 m, 65 kg) se porte à deux mains : face à sa place, A, et la poutre est dressée sur le dé. Dresser
     coûte de l'endurance, proportionnellement à la masse de la poutre (`raisePerKg`, 0,06 point par kg : 3,9 points pour 1,80 m).
   - **Le poteau haut** (3 m, 108 kg) ne se porte pas (Xéros porte 70 kg) : on équarrit la poutre sur place, couchée au pied du dé
-    (un de ses bouts à moins d'une case, 32 px, de la place), puis, face à la place, **E maintenu** (même jauge que nouer ; depuis le 3 novembre 2026, chantier « commandes » : le clic maintenu d'une main vide) : la
+    (un de ses bouts à moins d'une case, 32 px, de la place), puis, face à la place, **E maintenu** (la touche E se remplit d'or, comme pour nouer ; le 3 novembre 2026, chantier « commandes » : le clic maintenu d'une main vide, revenu à E le 4 novembre) : la
     question « Appeler ta mère pour la dresser ? ». Sans poutre qui convienne au pied du dé (rondin, mauvaise longueur, trop
-    loin) : « Il faut d'abord une poutre de 3 m au pied du dé. » ; le clic court dit la même chose, ou « Maintiens le clic pour appeler ta
-    mère. » quand la poutre est là (« Maintiens E… » jusqu'au 3 novembre 2026). Oui : fondu au noir, « Ta mère vient t'aider. », et au retour la poutre couchée a disparu, le
+    loin) : « Il faut d'abord une poutre de 3 m au pied du dé. » ; E court dit la même chose, ou « Maintiens E pour appeler ta
+    mère. » quand la poutre est là (« Maintiens le clic… » le 3 novembre 2026). Oui : fondu au noir, « Ta mère vient t'aider. », et au retour la poutre couchée a disparu, le
     poteau est debout sur le dé ; Xéros paie **la moitié** de l'effort qu'il aurait fait seul (3,2 points). La mère n'est pas
     montrée : elle vient et repart pendant que l'écran est noir.
   - **La règle de l'aide est générale** : toute place dont la poutre pèse plus que ce que Xéros porte (`strength.json`, × la force
@@ -688,6 +688,27 @@ enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche
   comptoir avec E** en jeu (`swing`, gond `bottom`) ; un [auvent en planches](objets/plank-roof.md) de 2,80 × 2,20 m en pente vers les
   clients, sur la sablière de devant, 40 cm au-delà des poteaux. 16 pièces, 4 assemblages. Le comptoir en planches de la demande est
   le volet rabattu : le même objet, ouvert le jour, fermé la nuit.
+- **La forge du village** (décidée le 4 novembre 2026, chantier « forge », `CADRAGE-forge.md` ; `npm run test:forge`, plan
+  `src/content/plans/forge.json`, liste de montage `tools/lib/forge.ts`, aperçu `.art-preview/forge.png` ; le bois vieux, gris) : sur la
+  première parcelle au nord de la rue, à l'entrée ouest du village (`village.tmj`, la parcelle `smithy`), à 300 m de la maison de Xéros
+  et 100 m de la place. **L'atelier** est la charpente de la grange relevée à 45° (poinçons de 3 m, [pignons à 45°](objets/board-gable-tall.md),
+  faîtage à 6,42 m), **ouvert au sud** sur la rue : un abri ouvert, sans intérieur ; on y entre en marchant, et tout son toit s'efface
+  quand Xéros est dessous (les pans qui se touchent font un même toit : `roofView`). Bardage au nord, à l'ouest et à l'est ; deux
+  [grands pans de bardeaux](objets/shingle-roof-large.md) de chêne fendu, le pan nord percé pour le conduit. Dedans : la
+  [forge](objets/forge-hearth.md) et son feu (la hotte, le conduit et le couronnement de la maison de Xéros), le
+  [soufflet](objets/forge-bellows.md) et sa perche, l'[auge](objets/quench-trough.md), l'[enclume](objets/anvil.md) sur son
+  [billot](objets/anvil-block.md), le [four](objets/forge-oven.md) à chauffer et à recuire, l'établi et son [étau](objets/vise.md),
+  le [râtelier à outils](objets/tool-rack.md), le [râtelier à barres](objets/bar-rack.md), la [meule](objets/grindstone.md), le
+  [coffre à charbon](objets/charcoal-bin.md), la [caisse de ferraille](objets/scrap-crate.md). À l'est, **l'abri à charbon** (un
+  [appentis de bardeaux](objets/shingle-shed-roof.md) à 35° sur quatre poteaux, ses sacs) et **le puits**. 89 pièces, 33 assemblages.
+  **La place de la fonderie** (fondre le bronze, réduire le minerai : plus tard) est une parcelle réservée vide (`foundry`). Le
+  forgeron et son logis sont mis de côté (leurs essais dans `art/proposals/`). La visite : `npm run test:forge-visite` (de la maison
+  au feu de la forge, à pied, par le chemin).
+- **Les couvertures** (chantier « forge ») : en plus du chaume et des planches, trois couvertures pour les maisons du village, chacune
+  à sa pente (connaissance générale, non sourcée) : les [bardeaux de chêne fendu](objets/shingle-roof-large.md) (45°), les
+  [tuiles plates de terre cuite](objets/tile-roof-large.md) (45°, la couverture des métiers du feu ; il faudra un tuilier) et les
+  [lauzes de calcaire](objets/lauze-roof-large.md) (55°, 300 kg/m² : une charpente forte, son [pignon à 55°](objets/board-gable-tall.md)).
+  Chacune a son grand pan et son pan percé ; le métier du couvreur (`roofer`).
 - **Les huit boutiques** : un étal par métier, le même plan, ce qui change de l'un à l'autre (à décider avec Grégoire, rien n'est
   fait) : l'**enseigne** (une planchette peinte pendue à la sablière de devant : le pain, le couteau, le poisson…) ; ce qui est **sur
   le comptoir** (des objets du jeu, posés : miches et paniers pour le boulanger ; poissons sur un lit de paille, un seau d'eau pour le
@@ -1138,7 +1159,7 @@ est une part de la marche (`pushSpeed`, systems/speeds.ts), fatigue comprise.
   214 et 64 kg : l'ordre de grandeur est le bon. Le fagot pèse la somme de ses dix branches et de son lien (25,2 kg).
 - **Force** (`src/content/strength.json`, composant `Strength` du joueur). Il **porte jusqu'à 70 kg** (les deux mains ensemble), **marche
   normalement jusqu'à 25 kg** (au-delà : pas de course, et une marche qui ralentit progressivement jusqu'à la moitié de la vitesse
-  normale à 70 kg), **fait rouler jusqu'à 300 kg**. Plus tard la force progressera : seuls ces chiffres changeront. Un clic pour prendre plus
+  normale à 70 kg), **fait rouler jusqu'à 300 kg**. Plus tard la force progressera : seuls ces chiffres changeront. E pour prendre plus
   de 70 kg : « Trop lourde à porter. Pousse-la pour la faire rouler. »
 - **Roulement** (`src/systems/roll.ts`, constantes `ROLL` de `config.ts`). Une bille couchée roule seulement perpendiculairement à son
   axe (est-ouest : vers le nord ou le sud ; nord-sud : vers l'est ou l'ouest). Pousser = marcher contre elle, face à elle, les deux
@@ -1150,7 +1171,7 @@ est une part de la marche (`pushSpeed`, systems/speeds.ts), fatigue comprise.
   roulent jusqu'à leur place ; le fendage (en quatre sur place, des quartiers de 50 kg qui se portent, voir *Fendre*) les
   rend empilables. Les billes de l'arbre normal (60 kg) se portent et s'empilent comme avant. Un tas de grosses billes déjà
   posé reste, mais on n'en reprend plus.
-- **Pivoter une bille au sol** (`src/systems/turnLog.ts`, `turn` de props.json). Mains vides, au contact d'une bille couchée de n'importe quel côté, R maintenu une seconde (la jauge de l'appui long, la même que pour nouer ; depuis le 3 novembre 2026, chantier « commandes » : le clic maintenu d'une main vide, au seuil commun `LONG_PRESS` de 500 ms ; `TURN_PRESS` n'existe plus) la fait pivoter d'un quart de tour (est-ouest <-> nord-sud) autour du centre de sa collision. Avant, la nouvelle emprise doit être libre (carte, objets, tas, personnages) ; Xéros, que le bout de la bille toucherait, est repoussé d'autant s'il y a la place ; sinon « Pas la place pour la tourner. » et rien ne bouge. Un petit nuage (la fumée du jeu, teintée de terre) se lève au pivot. Le coût en endurance est proportionnel à la masse (0,03 point par kg : 6 points pour une bille du gros arbre, 1,8 pour une du normal). R en main (tourner la bille portée) ne change pas : R ne fait plus que cela.
+- **Pivoter une bille au sol** (`src/systems/turnLog.ts`, `turn` de props.json). Mains vides, au contact d'une bille couchée de n'importe quel côté, R maintenu une seconde (la jauge de l'appui long, la même que pour nouer ; depuis le 3 novembre 2026, chantier « commandes » : le clic maintenu d'une main vide, au seuil commun `LONG_PRESS` de 500 ms ; `TURN_PRESS` n'existe plus ; depuis le 4 novembre, « commandes v2 » : E maintenu, la touche E se remplit d'or) la fait pivoter d'un quart de tour (est-ouest <-> nord-sud) autour du centre de sa collision. Avant, la nouvelle emprise doit être libre (carte, objets, tas, personnages) ; Xéros, que le bout de la bille toucherait, est repoussé d'autant s'il y a la place ; sinon « Pas la place pour la tourner. » et rien ne bouge. Un petit nuage (la fumée du jeu, teintée de terre) se lève au pivot. Le coût en endurance est proportionnel à la masse (0,03 point par kg : 6 points pour une bille du gros arbre, 1,8 pour une du normal). R en main (tourner la bille portée) ne change pas : R ne fait plus que cela.
 - Une sauvegarde où Xéros tient plus qu'il ne porte (d'avant les masses) : l'objet est posé au sol devant lui au chargement.
 
 ## Endurance (décidé le 30 octobre 2026)
@@ -1210,7 +1231,7 @@ vitesses sont en m/s (la clôture), `SAVE_VERSION` a monté, et les pauses fixes
 | Combat | `systems/combat.ts`, `combat.json` | durées des poses × inertie, fenêtre d'enchaînement (`combo`, ms), arrêt sur image, réactions |
 | Rail de la doloire | `systems/rail.ts` | avance de `speed × delta` (px/ms) ; un coup par geste, au rythme du geste |
 | Bille qui roule | `systems/roll.ts`, `ROLL` | 300 ms de poussée avant de rouler ; vitesse en px/s, avance pixel par pixel |
-| Appuis longs | `systems/longPress.ts`, `turnLog.ts` | E maintenu 500 ms, R maintenu 1 000 ms (depuis le 3 novembre 2026 : le clic maintenu, un seul seuil, `LONG_PRESS`, 500 ms) |
+| Appuis longs | `systems/longPress.ts`, `turnLog.ts` | E maintenu 500 ms, R maintenu 1 000 ms (depuis le 3 novembre 2026 : un seul seuil, `LONG_PRESS`, 500 ms ; le clic maintenu ce jour-là, E maintenu depuis le 4 novembre) |
 | Effets | `harvest.ts` (tremblement, chute, éclats), `roofs.ts` (fondu 250 ms), lueurs et fumées (`GameMap`), HUD (messages 1,8 s / 7 s) | durées d'affichage |
 | Transformations | `transforms.json`, `systems/transform.ts` | aucune durée (« Transformer » est instantané ; les gestes réels ont la durée de leurs coups) |
 | Âge du bois | `art/palette.ts` `woodAges`, `world/build.ts` | un réglage (neuf, patiné, vieux), pas une horloge |
@@ -1655,8 +1676,8 @@ des planches de chute (art/world/felling.ts), passent de l'arbre qui penche à s
 
 ### 7. Les commandes
 
-**Corrigé par Grégoire après l'essai** : un seul appui sur Espace lance tout le travail (depuis le 3 novembre 2026, chantier « commandes » : un clic court de la main de l'outil ; docs/COMMANDES.md), comme la doloire : Xéros se place, choisit son
-côté, un appui, puis il travaille seul jusqu'au résultat, avec ses pauses de souffle. Bouger ou Échap arrête (le coup en cours
+**Corrigé par Grégoire après l'essai** : un seul appui sur Espace lance tout le travail (le 3 novembre 2026, chantier « commandes » : un clic court de la main de l'outil ; depuis le 4 novembre, F, l'outil en main ; docs/COMMANDES.md), comme la doloire : Xéros se place, choisit son
+côté, un appui, puis il travaille seul jusqu'au résultat, avec ses pauses de souffle. Bouger, Échap ou un clic arrête (le coup en cours
 s'achève) ; ce qui est fait reste fait (la matière enlevée, gardée par objet dans GameState). La
 jauge au-dessus de Xéros montre la part enlevée. ?dieu « Finir le travail » reste : il fait tous les coups d'un coup (horloge,
 endurance, pauses comprises).
@@ -1756,8 +1777,8 @@ Les touches : [docs/COMMANDES.md](COMMANDES.md).
   complet (armer, frapper, revenir) se joue et se paie dans le vide comme sur une cible : on s'entraîne dans le vide, le mannequin
   sert à voir les dégâts et les réactions. Un deuxième Espace (depuis le 3 novembre 2026 : un deuxième clic) pendant le geste, ou juste après, **enchaîne** l'attaque
   suivante de la posture (la taille, puis le coup d'en haut, puis de nouveau la taille). C'est la seule commande changée ; la branche
-  active et la hachette dans l'autre main taillent toujours, comme avant (depuis le 3 novembre 2026 : le clic de la main de la
-  hachette taille la branche que tient l'autre).
+  active et la hachette dans l'autre main taillent toujours, comme avant (le 3 novembre 2026 : le clic de la main de la
+  hachette ; depuis le 4 novembre : F, la hachette en main, taille la branche que tient l'autre).
 - **Une cible** : `target` d'un objet de props.json : ses points de vie (le mannequin : infinis), sa matière (ce qui vole : `fx-straw`,
   des brins de paille), de combien elle penche. Touchée, elle tremble, recule d'un pixel et penche autour de son pied du côté opposé
   à Xéros, puis revient ; sa matière vole. Des points de vie finis attendent que la partie garde les blessures (validate.ts les
@@ -1789,7 +1810,7 @@ des attaques est remplacé par ceci.
   gardent la durée de leurs poses.
 - **La main nue est une arme en données** (`unarmed` de combat.json : le bras de 60 cm, 2 kg qui frappent, famille `fists`). Espace,
   la main active vide et l'autre sans arme ni outil (rien, une pierre…), frappe du poing de la main libre (depuis le 3 novembre 2026, chantier « commandes » : le clic d'une main
-  vide sans rien à prendre donne un coup de poing de cette main) ; un deuxième Espace enchaîne
+  vide donne un coup de poing de cette main ; sans rien à prendre ce jour-là, toujours depuis le 4 novembre) ; un deuxième Espace enchaîne
   le direct de l'autre poing (gauche-droite) si les deux mains sont libres. Postures de la famille `fists` : selon les mains libres
   (`when.free`).
 - **La zone de coup suit ce qui frappe** (`world/strike.ts`) : à chaque image de frappe, la lame est le segment dessiné, de la main à
@@ -1974,7 +1995,7 @@ Une grosse bille pèse 203 kg : on ne la soulève pas. Alors on la fend **là o�
 - **Pourquoi sur place.** Il n'y a rien à soulever ni à rouler : la bille est trop lourde pour l'un comme pour l'autre dans l'état actuel de Xéros, et elle reste où elle est. Le geste ne demande que de la place autour (les morceaux sont plus larges que la bille couchée, voir plus bas). On ne cherche pas le billot : il servira plus tard à refendre un quartier en bûches, debout.
 - **Deux outils**, trouvés dans la réserve de la maison, à côté du rouleau de corde. **La masse de bûcheron** : tête de fer de 15 × 8 × 8 cm, manche de 80 cm, 4 kg, deux mains. **Le coin de fendage** : fer de 20 × 7 × 4 cm, 2 kg, une main ; il n'y en a qu'un dans le jeu pour l'instant, ce qui oblige à finir une fente avant d'en commencer une autre.
 - **Pourquoi dans le bout** (corrigé le 30 octobre 2026). Le coin ne se plante pas dans l'écorce, mais dans le **bois de bout**, la face coupée où l'on voit les cernes, comme on fendait les longues pièces couchées. Planté sur le flanc, le coup pousserait la bille de côté et l'écorce l'amortirait ; planté dans le bout, le coup pousse dans le sens de la longueur, la bille ne roule pas, et le bois s'ouvre le long de ses fibres. La bille reste couchée.
-- **Planter** : Xéros se place à un bout de la bille, face à la coupe : à l'est ou à l'ouest d'une bille est-ouest, au nord ou au sud d'une bille nord-sud. Le coin en main, un clic de sa main : il se plante au milieu de la face coupée du bout où se tient Xéros, la pointe dans le sens de la fente, d'un coup, sans geste ; il y reste, visible, et la main est libre. **Le bout choisi est gardé avec la pièce** (c'est son type : `big-wedged-log` depuis l'ouest, `-east` depuis l'est, `big-wedged-log-ns` depuis le sud, `-ns-north` depuis le nord, et de même pour la demi-bille) : la fente part de ce bout, et les coups ne se donnent que depuis lui. Depuis l'est ou le nord, la face coupée est cachée à l'écran : on voit la tête du coin dépasser au bord de la bille et la fente courir sur le dessus. Depuis le flanc, rien ne se plante : « Le coin se plante dans le bout, là où on voit les cernes. » **Frapper** : la masse en main, depuis ce même bout, un clic : un coup de masse (geste vertical à deux mains, nouvelle pose de Xéros, comme la hache sur une encoche mais plus lourd). La fente part de la face coupée et s'allonge sur la longueur à chaque coup, jusqu'à l'autre bout. Une demi-bille se fend de la même façon : le coin dans le bout, au milieu de la face plate. **Trois coups par fente** (chiffre du contenu : `hits` du `harvest`) : le coin s'enfonce, la fente dessinée s'allonge à chaque coup, et le troisième ouvre le bois un instant avant que les morceaux paraissent. Les coups sont gardés dans la partie : quitter la carte entre deux coups ne perd pas la fente.
+- **Planter** : Xéros se place à un bout de la bille, face à la coupe : à l'est ou à l'ouest d'une bille est-ouest, au nord ou au sud d'une bille nord-sud. Le coin en main, F : il se plante au milieu de la face coupée du bout où se tient Xéros, la pointe dans le sens de la fente, d'un coup, sans geste ; il y reste, visible, et la main est libre. **Le bout choisi est gardé avec la pièce** (c'est son type : `big-wedged-log` depuis l'ouest, `-east` depuis l'est, `big-wedged-log-ns` depuis le sud, `-ns-north` depuis le nord, et de même pour la demi-bille) : la fente part de ce bout, et les coups ne se donnent que depuis lui. Depuis l'est ou le nord, la face coupée est cachée à l'écran : on voit la tête du coin dépasser au bord de la bille et la fente courir sur le dessus. Depuis le flanc, rien ne se plante : « Le coin se plante dans le bout, là où on voit les cernes. » **Frapper** : la masse en main, depuis ce même bout, F : un coup de masse (geste vertical à deux mains, nouvelle pose de Xéros, comme la hache sur une encoche mais plus lourd). La fente part de la face coupée et s'allonge sur la longueur à chaque coup, jusqu'à l'autre bout. Une demi-bille se fend de la même façon : le coin dans le bout, au milieu de la face plate. **Trois coups par fente** (chiffre du contenu : `hits` du `harvest`) : le coin s'enfonce, la fente dessinée s'allonge à chaque coup, et le troisième ouvre le bois un instant avant que les morceaux paraissent. Les coups sont gardés dans la partie : quitter la carte entre deux coups ne perd pas la fente.
 - **Au dernier coup**, la bille devient **deux demi-billes** couchées côte à côte, à la place exacte de la bille (centrées sur elle), face plate vers le haut ; le coin tombe au sol à côté, à ramasser. Une demi-bille (environ 101 kg) ne se porte pas et ne roule pas, la face plate l'en empêche. On la fend de la même façon (coin, trois coups) : **deux quartiers** (environ 51 kg), qui se portent à deux mains, lentement (au-dessus de 25 kg : pas de course, endurance par kg de trop).
 - **Les messages.** Masse sans coin : « Il faut d'abord un coin. » Hache sur une grosse bille, une demi-bille ou un coin planté : « Trop grosse pour la hache. Il faut le coin et la masse. » Sans la place d'ouvrir le bois au dernier coup : « Pas la place pour la fendre. » (rien n'est joué, rien n'est payé). Les billes de l'arbre normal ne se fendent pas : ce sont des rondins de la grosseur d'un bras, la hache les tronçonne déjà.
 - **Endurance.** Planter le coin coûte 1 point, un coup de masse 0,8 point. Une grosse bille fendue en quatre (un coin planté sur la bille, deux sur les moitiés, soit trois fois, et neuf coups de masse) coûte 10,2 points, un dixième de la jauge du jour (`stamina.json`).
@@ -1998,7 +2019,7 @@ fait Xéros. Le gros arbre ne change pas : il reste le bois de chauffage (billes
   3 m, un de 1,80 m et une bille de 1 m, sans chute.
 - **Le rondin** est une pièce de bois (voir *Le bois*) : sa longueur est gardée par la partie, sa masse calculée (63,6 kg le
   mètre) : porté jusqu'à 70 kg (1 m sur la grille), roulé jusqu'à 300 kg (4,6 m), sinon il ne bouge pas (le tronc entier, 369 kg).
-- **Couper à la longueur.** La cognée en main, contre le flanc, un clic : l'encoche se fait sur la grille de 20 cm, mesurée depuis le
+- **Couper à la longueur.** La cognée en main, contre le flanc, F : l'encoche se fait sur la grille de 20 cm, mesurée depuis le
   bout le plus proche de Xéros, jamais un morceau de moins de 60 cm ; la coupe visée s'affiche avec les deux longueurs (« 3 m |
   2,8 m »). Trois coups (un tiers, deux tiers, coupé), et deux pièces. Une seule coupe à la fois ; une pièce entaillée ne roule
   pas, ne se porte pas, ne pivote pas avant la fin de la coupe.
@@ -2033,7 +2054,7 @@ plus de 12 points (138 points du plafond : deux jours). Ce qui suit garde la dé
 coups courts vers le bas, sur le flanc, et la face se dresse derrière lui à mesure qu'il avance. Xéros fait de même.
 
 - **Une passe par face.** La doloire en main, Xéros se met contre le flanc du rondin couché, à un bout (au plus 40 cm du bout,
-  `HEW_PASS.reach` de config.ts) ; ailleurs : « Mets-toi à un bout de la pièce pour commencer la face. ». Un clic lance la passe :
+  `HEW_PASS.reach` de config.ts) ; ailleurs : « Mets-toi à un bout de la pièce pour commencer la face. ». F lance la passe :
   il longe le rondin tout seul, sur un rail, au pas, en frappant en rythme (le geste `chop` de la doloire), des copeaux tombent à
   chaque coup, et la face devient claire et plate derrière lui, au fil de sa position (dressée jusqu'au fer, ronde au-delà).
 - **Échap, seule commande pendant la passe.** Elle l'arrête là où il est (« Arrêté : la face reprendra là. ») : la partie déjà

@@ -26,7 +26,7 @@ import { defOf, woodDims, WOOD_PIECE } from '../src/world/woodPiece';
 import { pileWoodOf, woodPileDef } from '../src/world/woodPile';
 import { agedKey, lookDef, sheetOf, shapeOfLook } from '../src/world/woodShape';
 import { harvestJob, planOf, swingerOf, woodJob } from '../src/world/workPlan';
-import { clickPlan } from '../src/world/clickAction';
+import { clickPlan } from '../src/world/actionPlan';
 import type { Held } from '../src/state/GameState';
 
 const manifest = JSON.parse(readFileSync('src/generated/manifest.json', 'utf8'));
@@ -48,17 +48,15 @@ const check = (at: string, f: (miss: (why: string) => void) => void) => {
 // ---------- les contrats ----------
 
 /**
- * Les commandes (src/world/clickAction.ts, docs/COMMANDES.md) : ce qu'on tient obtient une action à chaque clic, court et maintenu, de
- * chaque bouton, devant le vide et devant ce qui encaisse un coup ; au maintien, il se lance.
+ * Les commandes (src/world/actionPlan.ts, docs/COMMANDES.md) : ce qu'on tient frappe au clic court de chaque bouton de sa main (même
+ * dans le vide) et se lance au clic maintenu.
  */
 function clicks(h: Held, hands: 1 | 2, miss: (w: string) => void): void {
   const held = { hands: [null, hands === 2 ? null : h] as [Held | null, Held | null], both: hands === 2 ? h : null };
-  for (const aimed of [{}, { target: true }]) {
-    for (const b of hands === 2 ? (['left', 'right'] as const) : (['left'] as const)) {
-      const p = clickPlan(b, held, aimed, true);
-      if (p.short.kind === 'none' || !p.short.label) miss(`une action au clic ${b} court${aimed.target ? ' devant une cible' : ''}`);
-      if (p.long.kind !== 'throw') miss(`se lancer au clic ${b} maintenu`);
-    }
+  for (const b of hands === 2 ? (['left', 'right'] as const) : (['left'] as const)) {
+    const p = clickPlan(b, held);
+    if (p.short.kind !== 'strike') miss(`frapper au clic ${b} court`);
+    if (p.long.kind !== 'throw') miss(`se lancer au clic ${b} maintenu`);
   }
 }
 

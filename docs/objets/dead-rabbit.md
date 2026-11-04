@@ -36,11 +36,10 @@ Aucune pour l'instant (une seule robe, comme le lapin).
 Seul. Pas de tas (plus tard, peut-être une gibecière ou des lapins liés par les pattes).
 
 ## Gestes
-- Clic court, main vide : le prendre.
-- Clic court, de la main qui le tient : c'est une ressource, la cible décide : devant ce qui encaisse un coup, frapper avec (une arme
-  improvisée très molle) ; sinon le poser au fantôme.
+- E : le prendre.
+- Clic de la main qui le tient : frapper avec, même dans le vide (une arme improvisée très molle).
 - Clic maintenu, de la main qui le tient : viser et le lancer.
-- R : le tourner avant de le poser. A (Q) : le lâcher.
+- R : le tourner avant de le poser. A (Q) : le poser au fantôme.
 
 ## Travail
 Aucun.

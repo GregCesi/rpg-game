@@ -176,3 +176,32 @@ export const sky = {
   '-': '#2c3049', // nuit, haut : indigo sombre
   '_': '#434b68', // nuit, horizon : indigo
 };
+
+/**
+ * Le fer forgé (chantier « forge » : l'enclume, la tuyère et la buse, les outils pendus, les barres, l'étau, la tôle de la porte du
+ * four, la ferraille). Un gris bleu sombre : la lumière glisse vers le jaune-gris (le poli d'une table d'enclume au jour), l'ombre
+ * vers le brun-violet, jamais un noir. Du plus clair au plus sombre ; `>` sert aussi de contour côté lumière d'une pièce de fer.
+ * Signes libres dans toute la palette du monde (`world`, `stonePalette`) : ils ne servent ailleurs qu'aux ciels du cadran (`sky`),
+ * une palette d'interface qu'on ne mêle jamais à celle d'un objet du monde.
+ */
+export const iron = {
+  '(': '#a9a99d', // fer poli au soleil : la table de l'enclume, l'arête d'une barre
+  ')': '#727980', // fer : la face au jour, gris bleu
+  '<': '#50566a', // fer à l'ombre (le bleu glisse vers le violet)
+  '>': '#363343', // fer au plus sombre : le creux, le contour côté lumière (brun-violet)
+};
+
+/**
+ * La terre cuite (chantier « forge » : les tuiles plates, `tile-roof-large`) : un brun-rouge chaud un peu passé, la lumière qui
+ * glisse vers le jaune (la tuile lavée par la pluie, au soleil), l'ombre vers le brun-violet (le creux sous le rang du dessus, la
+ * tuile la plus cuite). Plus rouge et plus saturée que le bois (écorce M m N K, bois travaillé ^ * % & @) et que le chemin
+ * (U u n e), dont elle se détache. Du plus clair au plus sombre. Signes pris hors des lettres, libres dans toute la palette du monde
+ * (le `?` n'est ailleurs qu'au ciel du cadran, `sky`, une palette d'interface).
+ */
+export const terracotta = {
+  "'": '#c58c68', // tuile au soleil, passée (vers le jaune)
+  '"': '#a8664c', // la tuile
+  '`': '#965843', // une tuile plus cuite, le coin arrondi
+  '\\': '#844b3c', // l'ombre sous le rang du dessus
+  '?': '#5d3634', // le creux, la tuile la plus cuite, contour côté lumière (vers le brun-violet)
+};

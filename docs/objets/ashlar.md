@@ -25,7 +25,7 @@ Aucune : parfaitement régulière, c'est tout le travail du tailleur.
 En tas : genre `ashlars`, rangées de 3 sur 3 (9). Bloque dès la première.
 
 ## Gestes
-Ceux du moellon : clic court d'une main vide, prendre ; de la main qui le tient, poser à son fantôme ; R tourner.
+Ceux du moellon : E, prendre ; A, poser à son fantôme ; R tourner.
 
 ## Origine
 Taillée dans un moellon, au ciseau et au maillet. S'achète au maçon.

@@ -26,16 +26,16 @@
 Seul. Ne s'entrepose pas.
 
 ## Gestes
-- Clic court, main vide : prendre.
-- Clic de la main du coin, depuis un bout d'une grosse bille ou d'une demi-bille couchée, face à la coupe (à l'est ou à l'ouest d'une pièce est-ouest, au nord ou au sud d'une pièce nord-sud) : le coin se plante dans le bois de bout, au milieu de la face coupée, la pointe dans le sens de la fente ; sans geste, d'un coup ; la main est libérée. Depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. »
+- E : prendre.
+- F, le coin en main, depuis un bout d'une grosse bille ou d'une demi-bille couchée, face à la coupe (à l'est ou à l'ouest d'une pièce est-ouest, au nord ou au sud d'une pièce nord-sud) : le coin se plante dans le bois de bout, au milieu de la face coupée, la pointe dans le sens de la fente ; sans geste, d'un coup ; la main est libérée. Depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. »
 - A (Q en QWERTY) : lâcher.
 
 ## Origine
-Trouvé dans le cagibi de la maison (objet « dedans » de `tiled/maps/ferme.tmj`), à côté de la masse. Un clic court d'une main vide le prend directement dans cette main.
+Trouvé dans le cagibi de la maison (objet « dedans » de `tiled/maps/ferme.tmj`), à côté de la masse. E le prend directement dans la main droite, sinon la gauche.
 
 ## Devenir
 Planté, il reste dans la bille jusqu'à ce qu'elle s'ouvre (la dernière étape du fendage, `splitHits`) : il tombe alors au sol à côté des morceaux, à ramasser. Rien ne le fait disparaître.
 
 ## Vérification
 - Aperçu : `.art-preview/fendage.png`.
-- En jeu : le donner (`?dieu`), le planter sur une grosse bille, la fendre à la masse (un clic, le travail au coup), le ramasser.
+- En jeu : le donner (`?dieu`), le planter sur une grosse bille, la fendre à la masse (F, le travail au coup), le ramasser.

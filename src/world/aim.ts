@@ -1,6 +1,6 @@
-// La visée au curseur, sans Phaser (docs/COMMANDES.md, « La souris ») : Xéros se tourne vers le curseur (la plus proche de ses quatre
-// directions de dessin), et ce qu'il vise est sous le curseur s'il est à portée, sinon dans la direction du curseur, à la distance où il
-// regarde d'habitude. Sans curseur (la souris jamais vue sur le canevas), il vise devant lui, comme au clavier seul.
+// La visée, sans Phaser (docs/COMMANDES.md) : hors du combat, Xéros vise devant lui (Player.probe, sans curseur). Au coup et au lancer,
+// il se tourne vers le curseur (la plus proche de ses quatre directions de dessin), et ce qu'il frappe est sous le curseur s'il est à
+// portée, sinon dans la direction du curseur, à la distance où il regarde d'habitude.
 
 import type { Facing } from '../content/types';
 
@@ -38,13 +38,4 @@ export function aimProbe(center: Point, cursor: Point | undefined, facing: Facin
   }
   const f = FACING_VECTOR[facing];
   return { x: center.x + f.x * distance, y: center.y + f.y * distance };
-}
-
-/** Un point ramené à moins de `reach` px de `center` (le fantôme de pose ne sort pas de la portée de Xéros). */
-export function clampTo(center: Point, p: Point, reach: number): Point {
-  const dx = p.x - center.x;
-  const dy = p.y - center.y;
-  const d = Math.hypot(dx, dy);
-  if (d <= reach) return { x: p.x, y: p.y };
-  return { x: center.x + (dx / d) * reach, y: center.y + (dy / d) * reach };
 }

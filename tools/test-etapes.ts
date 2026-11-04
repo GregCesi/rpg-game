@@ -50,8 +50,8 @@ await playtest('etapes', async ({ page, errors, load }) => {
       await (window as any).__frames(2);
       const keys: string[] = [p.image.texture.key];
       const flips: boolean[] = [];
-      // un seul clic de la main de la cognée : le travail va seul
-      await (window as any).__click('left');
+      // un seul appui de F, la cognée en main : le travail va seul
+      await (window as any).__do('work');
       await (window as any).__until(() => w().mode === 'work', 'le travail lancé');
       const stood = { dx: Math.round(a.x - p.aimX), dy: Math.round(a.y - p.aimY), facing: a.facing };
       // l'image de l'arbre à chaque pas de jeu (à x50, une image du navigateur en contient cinquante : aucune étape n'échappe)

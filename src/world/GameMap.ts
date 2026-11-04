@@ -4,7 +4,7 @@ import { DEPTH, GLOW, INTERIOR, RELIEF, SHADOW, TILE } from '../config';
 import { deepAt, heightAt } from './relief';
 import { hasRelief, TerrainView } from './terrainView';
 import { roofShadow } from './roofShadow';
-import { items, props as propDefs } from '../content';
+import { items, props as propDefs, tiles as tileCatalog } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
 import { drawOrder, stateImage, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
 import { formImage, naturalGround, stableNatural } from './natural';
@@ -370,6 +370,7 @@ export class GameMap {
       this.floor.setVisible(false);
       new TerrainView(scene, def, 0, 0, { x0: 0, y0: 0, x1: def.width, y1: def.height });
     }
+    this.tileNames = Object.fromEntries(Object.entries(tileset.tiles).map(([n, i]) => [i, n]));
 
     // Détails au sol, posés de façon stable (même carte = mêmes détails)
     drawDecals(scene, def, 0, 0, { x0: 0, y0: 0, x1: def.width, y1: def.height });
@@ -410,7 +411,7 @@ export class GameMap {
       if (held.some((h) => p.def.rest?.[h])) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'rest', prop: p } });
       else if (dialogue) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'talk', dialogue } });
       else if (p.def.teaches) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'learn', prop: p, plan: p.def.teaches } });
-      // ce qu'il porte se reprend d'un clic main vide (le rouleau sur le billot) ; on le coupe au clic de la main de l'outil
+      // ce qu'il porte se reprend par E (le rouleau sur le billot) ; on le coupe par F, l'outil en main
       else if (p.def.bears) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'unload', prop: p } });
       else if (p.def.harvest && !p.def.harvest.tool) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'harvest', prop: p } });
       // un objet à prendre (la bille) se vise au centre de sa collision ; caché (il attend la fin d'une chute), il ne se prend pas
@@ -447,7 +448,22 @@ export class GameMap {
   }
 
   /**
-   * Le rectangle (repère de la carte) est libre  /**
+   * Le poste qu'offre le sol au point (x, y) (`station` du terrain de sa case, tiles.json : l'eau, l'étang où l'on puise), ou undefined.
+   * Le terrain d'une case se lit au nom de sa tuile (`<terrain>-<masque>`).
+   */
+  stationAt(x: number, y: number): string | undefined {
+    const tile = this.floor.getTileAtWorldXY(x, y);
+    if (!tile || tile.index < 0) return undefined;
+    const name = this.tileNames?.[tile.index];
+    if (!name) return undefined;
+    const terrain = name.replace(/-\d+$/, '');
+    return tileCatalog[this.def.tileset]?.terrains[terrain]?.station;
+  }
+
+  /** Le nom de chaque tuile du jeu de tuiles de la carte, par numéro (stationAt). */
+  private tileNames?: Record<number, string>;
+
+  /**
    * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante ni dans l'eau profonde (rien ne s'y pose),
    * pas à cheval sur une marche du relief (`RELIEF.straddle`), sur aucune collision d'objet ni sur l'un des corps `others` (les
    * personnages). Les collisions de `ignore` ne comptent pas (le tas qui grandit). `overWater` : l'eau ne compte pas (ce qui vole au-dessus).

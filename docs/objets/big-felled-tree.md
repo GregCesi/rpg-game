@@ -28,7 +28,7 @@ Pas déplaçables. Leur masse sert au bilan de la récolte (la matière se conse
 Seul.
 
 ## Gestes
-- Clic de la main de la cognée, de haut en bas sur le houppier : un clic lance le travail au coup (docs/CONCEPTION.md, « Le travail ») (`work.limbs` : 16 branches de
+- F, la cognée en main, de haut en bas sur le houppier : un appui lance le travail au coup (docs/CONCEPTION.md, « Le travail ») (`work.limbs` : 16 branches de
   10 cm, en trois étapes, `stages`) : des branches tombent, et le tronc ébranché devient une seule pièce
   de bois ronde de sa longueur utile, à la place exacte du tronc (`harvest` : `becomes: "wood-piece"`, `wood`, `at`).
 

@@ -126,7 +126,9 @@
         "town-hall",
         "tavern",
         "reserve",
-        "farmhouse"
+        "farmhouse",
+        "smithy",
+        "foundry"
       ]
     },
     {
@@ -139,6 +141,7 @@
         "",
         "cabane",
         "etal",
+        "forge",
         "grange",
         "maison-xeros"
       ]
@@ -2987,7 +2990,7 @@
     },
     {
       "id": 270,
-      "name": "lane-curtain",
+      "name": "forge-hearth",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -3009,7 +3012,7 @@
     },
     {
       "id": 271,
-      "name": "lane-overhang-1",
+      "name": "forge-oven",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -3031,7 +3034,7 @@
     },
     {
       "id": 272,
-      "name": "lane-overhang-2",
+      "name": "forge-bellows",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -3053,7 +3056,7 @@
     },
     {
       "id": 273,
-      "name": "lane-overhang-3",
+      "name": "anvil",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -3075,7 +3078,7 @@
     },
     {
       "id": 274,
-      "name": "water-cut",
+      "name": "anvil-block",
       "type": "class",
       "color": "#a08060",
       "drawFill": true,
@@ -3097,6 +3100,468 @@
     },
     {
       "id": 275,
+      "name": "quench-trough",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 276,
+      "name": "charcoal-bin",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 277,
+      "name": "tool-rack",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 278,
+      "name": "bar-rack",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 279,
+      "name": "grindstone",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 280,
+      "name": "vise",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 281,
+      "name": "scrap-crate",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 282,
+      "name": "shingle-roof-large",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 283,
+      "name": "shingle-roof-large-pierced",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 284,
+      "name": "tile-roof-large",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 285,
+      "name": "tile-roof-large-pierced",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 286,
+      "name": "lauze-roof-large",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 287,
+      "name": "lauze-roof-large-pierced",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 288,
+      "name": "board-gable-tall",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 289,
+      "name": "board-gable-steep",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 290,
+      "name": "shingle-shed-roof",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 291,
+      "name": "lane-curtain",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 292,
+      "name": "lane-overhang-1",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 293,
+      "name": "lane-overhang-2",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 294,
+      "name": "lane-overhang-3",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 295,
+      "name": "water-cut",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 296,
       "name": "shimmer",
       "type": "class",
       "color": "#a08060",

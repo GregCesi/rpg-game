@@ -24,6 +24,9 @@ const TileInfoSchema = z.strictObject({
  * Famille de 16 tuiles `<terrain>-<masque>` (masque N=1 E=2 S=4 O=8 : un bit à 1 = le voisin est du même terrain).
  * Devient un ensemble de terrains Wang dans le tileset de Tiled.
  */
+/** Le poste d'une transformation (transforms.json `station`) : par terre, le billot, l'établi, l'étang, la braie, le four. */
+const StationSchema = z.enum(['ground', 'block', 'bench', 'pond', 'brake', 'kiln']);
+
 const TerrainDefSchema = z.strictObject({
   /** Couleur du terrain dans Tiled (#rrggbb). */
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -33,6 +36,8 @@ const TerrainDefSchema = z.strictObject({
    * (`swim` de mobility.json, world/relief.ts). Rien ne s'y pose.
    */
   deep: z.boolean().optional(),
+  /** Le poste que ce terrain offre à une transformation, Xéros tourné vers lui (l'eau : l'étang, où l'on puise ; GameMap.stationAt). */
+  station: StationSchema.optional(),
 });
 
 /** Catalogue d'un jeu de tuiles : ce que `build-art` ajoute aux tuiles dessinées dans art/. */
@@ -59,7 +64,7 @@ const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
 
 /**
  * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.
- * Avec `tool`, on travaille au clic de la main de l'outil ; sans, on récolte au clic d'une main vide.
+ * Avec `tool`, on travaille par F, l'outil en main ; sans, on récolte par E, une main libre.
  */
 /**
  * La matière d'une récolte qui se travaille au coup (docs/CONCEPTION.md, « Le travail » ; world/workPlan.ts) : abattre un arbre
@@ -231,7 +236,8 @@ export const NaturalSchema = z.strictObject({ form: z.union([z.literal(0), z.lit
  * fait et le vendrait (`trade` de props.json, items.json, et des transformations de transforms.json) : le carrier (la pierre
  * tirée, le moellon), le maçon (la pierre de taille, le mortier), le terrassier (la terre, le torchis), le chaumier (la paille, le
  * chaume), le bûcheron (le bois abattu, les baguettes), le charpentier (la poutre, la cheville), le fendeur (le bois fendu, la
- * planche, le bardeau), le menuisier (le bois travaillé fin, le maillet), le forgeron (les outils de fer), le paysan (ce que tout
+ * planche, le bardeau), le menuisier (le bois travaillé fin, le maillet), le forgeron (les outils de fer, l'enclume, l'étau), le couvreur (les pans de
+ * bardeaux, de tuiles et de lauzes), le paysan (ce que tout
  * le monde fait : puiser, ramasser).
  */
 /**
@@ -241,7 +247,7 @@ export const NaturalSchema = z.strictObject({ form: z.union([z.literal(0), z.lit
 export const FAMILIES = ['éléments', 'assemblages', 'bois', 'pierre', 'terre', 'fibres', 'outils', 'mobilier', 'chantier', 'nature', 'divers'] as const;
 const FamilySchema = z.enum(FAMILIES);
 
-const TradeSchema = z.enum(['quarryman', 'mason', 'digger', 'thatcher', 'woodcutter', 'carpenter', 'splitter', 'joiner', 'smith', 'peasant']);
+const TradeSchema = z.enum(['quarryman', 'mason', 'digger', 'thatcher', 'woodcutter', 'carpenter', 'splitter', 'joiner', 'smith', 'roofer', 'peasant']);
 
 /**
  * Ce qui roule quand Xéros le pousse (la pièce de bois ronde : `roll` de sa définition tirée de ses réglages, world/woodPiece.ts) :
@@ -1517,8 +1523,6 @@ const TransformPartSchema = z
  * l'on puise l'eau et creuse l'argile), sur un chevalet de fendeur (`brake`), au four à chaux (`kiln`, à venir : on y cuit le
  * calcaire).
  */
-const StationSchema = z.enum(['ground', 'block', 'bench', 'pond', 'brake', 'kiln']);
-
 /**
  * Le geste d'une transformation : `soon`, à venir (en attendant, ?dieu l'applique d'un coup : « Transformer ») ; ou le geste réel,
  * déjà jouable : `system`, le fichier qui le joue, et `keys`, ce que fait le joueur.
