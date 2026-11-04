@@ -253,7 +253,8 @@ export function stepRefusal(map: MapData, from: { x: number; y: number }, to: { 
 
 /** Une hauteur dite à un joueur, comme on l'estime à l'œil : « 80 cm », « 1,2 m », au-delà de 2 m au demi-mètre (« 2,5 m », « 5 m »). */
 export function heightText(cm: number): string {
-  if (cm < 100) return `${Math.round(cm / 10) * 10} cm`;
+  // arrondi d'abord : 99,8 cm se dit « 1 m », pas « 100 cm »
+  if (Math.round(cm / 10) * 10 < 100) return `${Math.round(cm / 10) * 10} cm`;
   const m = cm < 200 ? Math.round(cm / 10) / 10 : Math.round(cm / 50) / 2;
   return `${String(m).replace('.', ',')} m`;
 }
@@ -272,7 +273,8 @@ export function pick(map: MapData, sx: number, sy: number): { x: number; y: numb
   if (f.flat) return { x: sx, y: sy + f.base / CM_PER_PX };
   const top = Math.ceil(f.max / CM_PER_PX);
   for (let y = Math.floor(sy) + top; y >= Math.floor(sy); y--) {
-    if (y - fieldHeight(f, sx, y) / CM_PER_PX <= sy) return { x: sx, y };
+    // au pixel près, puis la fraction : le point dont l'image tombe juste sur sy (sur un sol plat, sy + h / 5 exactement)
+    if (y - fieldHeight(f, sx, y) / CM_PER_PX <= sy) return { x: sx, y: Math.max(y, Math.min(y + 1, sy + fieldHeight(f, sx, y) / CM_PER_PX)) };
   }
   return { x: sx, y: sy };
 }

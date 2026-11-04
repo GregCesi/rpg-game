@@ -80,6 +80,7 @@ for (const [h, up, dn] of [
 }
 assert.equal(heightText(120), '1,2 m');
 assert.equal(heightText(80), '80 cm');
+assert.equal(heightText(99.8), '1 m', 'arrondi, 99,8 cm se dit 1 m');
 assert.equal(heightText(500), '5 m');
 
 // --- un talus en long et un couloir creusé : la crête, le flanc, le sol, le talus intérieur

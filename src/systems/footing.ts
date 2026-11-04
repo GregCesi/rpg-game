@@ -12,6 +12,12 @@ import { refusalText, stepRefusal } from '../world/relief';
  * une fois par appui. Le principe des franchissements (world/crossing.ts) : on teste le chemin depuis le pas d'avant, jamais la
  * position de l'instant.
  */
+/**
+ * Au-delà de cette distance entre deux pas de la physique (px), Xéros a été posé, il n'a pas marché : 64 px en 1/60 s, c'est 190 m/s,
+ * dix fois au-dessus de toute course ; la règle du pas ne s'applique pas à une pose.
+ */
+const PLACED = 64;
+
 export class Footing {
   private last?: { x: number; y: number };
   /** Le refus déjà dit pendant cet appui (rien de nouveau tant qu'il pousse contre la même chose). */
@@ -37,6 +43,8 @@ export class Footing {
     const last = this.last;
     this.last = now;
     if (!last || (last.x === now.x && last.y === now.y)) return;
+    // un saut qu'aucun pas de la physique ne fait (posé par le jeu : un point d'arrivée, ?dieu, un test) : une pose, pas un pas
+    if (Math.hypot(now.x - last.x, now.y - last.y) > PLACED) return;
     const mob = this.player.mobility.def;
     const refused = stepRefusal(this.map, last, now, mob);
     if (!refused) return;
