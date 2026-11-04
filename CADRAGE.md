@@ -734,3 +734,12 @@ B. **Les arbres penchés** : un arbre est un objet complet (abattre des deux cô
    dessins de plus).
 C. **Le rideau et les avancées** : des dessins du terrain du couloir, placés par `relief.ts` le long du `Lane` (ma proposition, ils ne
    se coupent pas), ou des objets posés dans Tiled, qui auraient alors un jour une récolte ?
+
+### 12.10 Réponses de Grégoire (4 novembre)
+
+- A : oui, `slope` 20 % dans `mobility.json`, une capacité de Xéros ; ce qui est plus raide compte comme une marche de toute sa hauteur.
+- B : oui, la voûte avec le rideau, les avancées et les arbres ordinaires au bord des talus ; l'arbre penché abattable est une limite
+  listée. **Condition** : la voûte doit se refermer au-dessus du couloir autant que sur l'essai 4 ; sinon, le dire, et les arbres
+  penchés reviennent dans le chantier.
+- C : le rideau et les avancées sont **des objets dans Tiled**, posés automatiquement le long du tracé par l'outil jetable. Leur
+  récolte n'est pas pour ce chantier (limite listée), mais leurs données doivent la permettre plus tard.
