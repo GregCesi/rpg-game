@@ -512,3 +512,225 @@ s'arrête à leur pied : la coupure suit le pied du flanc, pas une ligne droite)
 
 **Question 25.** Le flanc sud au-dessus de l'eau : une matière de flanc planté (terre sombre, racines, lierre jusqu'à l'eau), comme la
 falaise ? C'est le dessin qui manque le plus sur la planche de la coupure.
+
+---
+
+## 12. Cadrage technique de l'implémentation (4 novembre)
+
+Grégoire a validé l'essai 4 (« parfait, on peut implémenter ») et répondu à toutes les questions 1 à 25 ; ses réponses font foi et ne
+sont pas reprises ici. `origin/main` (la petite carte, maison-2) est déjà fusionné dans `relief` (c7d5a6d). Le seul conflit était
+CADRAGE.md, que la petite carte avait aussi créé : celui du relief est gardé, celui de la petite carte reste dans l'historique
+(b99f4c1). Les faits ci-dessous sont lus dans ce code fusionné.
+
+### 12.1 Faits qui décident de la technique
+
+- **Le rendu.** Tout dépend de `DEPTH` (`src/config.ts:48` : sol −1, décors −0,9, plancher −0,8, ombres −0,7, voile 90 000) et de la
+  règle « profondeur = y des pieds ». Le sol est **un seul calque de tuiles** (`GameMap.ts:358`). Il n'existe pas d'aide commune pour la
+  profondeur : une soixantaine d'endroits, dans environ 25 fichiers, posent une image au sol avec leur propre `setDepth(y)`. Seules les
+  pièces bâties portent déjà une hauteur à l'écran (`buildLook` de `world/buildView.ts:76` : `y − z`).
+- **Xéros** est un `Arcade.Sprite` (`entities/Actor.ts`) dont le corps ne couvre que les pieds (10 × 8 px). Le décaler à l'écran
+  déplacerait aussi le corps, et des dizaines de lectures de `actor.x/y` le prennent pour ses pieds dans le monde.
+- **La souris** ne devient un point du monde qu'à deux endroits : `cursor()` de `input/PlayerInput.ts:263`, d'où tout le reste découle
+  (`player.cursor`, `aimProbe`, la visée du lancer, le fantôme de pose), et le mode construction (`systems/build.ts:96`, `:203`).
+- **Les toits.** `systems/roofs.ts` fait passer un toit à `ROOF.alpha` (0,35) en 250 ms. Un effacement par région existe déjà :
+  `splitRoofs` double l'image, masque l'original hors d'un rectangle et fait passer la copie dans le rectangle (`windowHole` de
+  `world/roofView.ts`). Le rectangle est fixe, posé autour d'une pièce. Ombre fixe : `roofShadow` (un parallélogramme, `SHADOW`).
+- **La pénombre** (`world/gloom.ts`) et le jour (`systems/daylight.ts`) sont des voiles au-dessus de tout, Xéros compris.
+- **Les déplacements.** Xéros entre en collision avec les tuiles `solid` (l'eau et la clôture, `tiles.json`) et avec les obstacles
+  (`WorldScene.ts:312`). `areaFree` (`GameMap.ts:446`) est le seul test de place libre (poses, roulement, lapins, lancer, arrivée).
+  Rien ne connaît une hauteur ni « d'où l'on vient ».
+- **Les lapins** cherchent leur chemin en A* sur des cases de 40 cm (`world/creature.ts:128`), dont la case seule est testée
+  (`blocked(x, y)` = `!areaFree`, `systems/creatures.ts:98`).
+- **Le lancer** (`world/throw.ts`) lâche à 1,6 m et retombe à z = 0. Il s'arrête à ce qui n'est pas libre, donc aujourd'hui à l'eau
+  (`WorldScene.ts:770`). Ce qui retombe dans l'eau est posé à côté (`layNear`, `hands.ts:444`).
+- **Les cartes.** `tools/build-maps.ts` lit les objets de tous les calques sans regarder leur nom, et **refuse les polygones**
+  (`:226`). `MapSchema` (`types.ts:1673`) n'a pas de champ de hauteur. Une carte d'intérieur passe aussi par `GameMap`, sans hauteur.
+- **La rivière** dans la zone `ferme` occupe les cases 38 à 47. Le pont est aux cases 41-47, rangées 65-66. L'étang est dans la ferme,
+  31 tuiles, cases 79-86, rangées 45-49.
+- **Le tracé est libre** : sur l'emprise du couloir et de ses talus (cases 4 à 60, rangées ≈ 60 à 71), il n'y a que des arbres et des
+  buissons de la forêt et un rocher (case 37). Les branches de la tempête (cases 67,9 et 70,2, rangées 60-61) et le plan de la cabane
+  (case 65, rangée 72) sont à l'est de l'entrée (case 60) : **rien à déplacer**. Les arbres qui bordent le chemin côté ferme (cases
+  47,8 à 54, rangées ≈ 59,5-62 et 69,5) se retrouvent sur les talus et y restent.
+- **Aucun test** ne passe le pont ni ne parle de la rivière (`tools/test-*.ts`). `SAVE_VERSION` = 30.
+
+### 12.2 La hauteur : `src/world/relief.ts` (sans Phaser) et le calque `relief` de Tiled
+
+- **Dans Tiled**, un calque d'objets `relief` dans les cartes qui ont du relief, avec trois sortes de formes (en cm) :
+  - `Level` (polygone, `height`) : un niveau plat, ici le plateau à 500, son bord est collé à la rive ouest case par case ;
+  - `Ridge` (polyligne, `heights` sommet par sommet, `crest`, `flank`) : un talus en long, dont la crête suit la polyligne à la hauteur
+    interpolée et dont le flanc extérieur descend à 0 sur `flank` (470 sur la ferme, 110 au-dessus de l'eau, par sommet) ;
+  - `Lane` (polyligne, `heights` sommet par sommet, `width` 250, `inner`) : le couloir creusé dans ce qu'il traverse ; son sol est à la
+    hauteur interpolée le long de l'axe (0 sur la ferme et sur l'eau, puis 0 → 500 sur 60 m), son talus intérieur (20 + 0,2 × h cm)
+    raccorde le sol à ce qui l'entoure.
+  - Une zone entièrement haute (les quatre de la forêt profonde) a une propriété de carte `height` (500), la hauteur de fond.
+- **Composition** : la hauteur d'un point = le plus haut des `Level` et `Ridge` qui le couvrent (ou la hauteur de fond), puis le
+  `Lane` creuse (le plus bas des deux). Une seule fonction, déterministe, testée.
+- **`build-maps`** accepte les polygones et polylignes du seul calque `relief`, vérifie chaque forme (fermée, hauteurs en cm, propriétés
+  connues) et l'écrit dans `MapData.relief` (`ReliefSchema` dans `types.ts`, `validate.ts` : un `Level` sur l'eau est refusé, sauf
+  sous un `Ridge`). Le jeu ne lit jamais Tiled.
+- **`relief.ts`** rastérise les formes d'une carte une fois, à son chargement, en cases de 40 cm (≈ 250 000 cases pour une zone,
+  avec un cache par carte), et donne :
+  - `heightAt(map, x, y)` (cm, interpolé) ;
+  - `liftAt(map, x, y)` (px à l'écran = hauteur / 5) ;
+  - `step(map, from, to, mobility)` : le passage d'un point à l'autre est permis, ou refusé (`up`, `down`, `swim`) avec sa hauteur ;
+  - `pick(map, sx, sy)` : le point du monde vu sous un point de l'écran (12.5).
+  - Une carte sans relief (un intérieur) a partout une hauteur de 0, sans coût.
+
+### 12.3 Monter, descendre, nager : `mobility.json` et `entities/Mobility.ts`
+
+- **`src/content/mobility.json`** (`MobilitySchema`) : `step` 50 (monter et descendre sans y penser), `drop` 100 (sauter pour
+  descendre), `slope` (la pente qu'il monte en marchant, question A), `swim` false. Composant `Mobility` attaché à `Player`, comme
+  `Strength`. ?dieu : une case « escalade » qui lève `step` et `drop` (comme la force surhumaine, pour vérifier que seul le personnage
+  limite).
+- **La règle**, dans `step()` : sur le trajet, ce qui est plus raide que `slope` compte comme une marche, de sa hauteur totale (on suit
+  la partie raide jusqu'au bout). Une marche qui monte de plus que `step` est refusée ; une marche qui descend de plus que `drop` est
+  refusée ; de 50 cm à 1 m en descente, c'est un saut, permis. Le couloir (8,3 %) se marche ; la falaise et les flancs (≈ 100 %)
+  font 5 m.
+- **L'eau** : la tuile d'eau perd `solid` et prend `deep` (`tiles.json`, `TerrainDefSchema`, `build-art.ts`). Elle ne bloque plus par
+  elle-même : `step()` refuse d'y entrer quand `swim` est faux. Une pose reste refusée dans l'eau profonde (`areaFree`).
+- **Où la règle s'applique** : à chaque pas de la physique (`worldstep` d'Arcade), du point des pieds d'avant au point d'après. Un
+  pas refusé ramène Xéros au dernier point permis et le laisse glisser le long de l'obstacle (l'autre axe), comme une collision. C'est
+  le principe du franchissement (`crossing.ts` : on teste depuis le pas d'avant, jamais à la position de l'instant). Plusieurs pas de
+  physique par image restent donc justes sur une machine lente.
+- **Les phrases** : « Trop haute pour lui (5 m). » (la hauteur de la marche, arrondie : « 1,2 m ») et « Il ne sait pas nager. »,
+  par `Notice`, une fois par appui, construites comme `heavyNotice` (`systems/weight.ts`).
+- **Les lapins** : `mobility` dans leur entrée de `creatures.json` (`step` 30, `drop` 60, `slope` comme Xéros, `swim` false).
+  `Surroundings` prend `passes(from, to)` ; l'A* et `advance()` testent le passage d'une case à l'autre, pas la case seule. Aucune
+  garenne n'est près du couloir ; rien à déplacer.
+- **Les autres actions** :
+  - **Le lancer** : lâché à `heightAt(Xéros)` + 1,6 m. L'objet retombe quand il passe sous le sol survolé, et il s'arrête au pied
+    d'une face plus haute que lui. Il passe au-dessus de l'eau (l'eau n'arrête plus le vol) et, s'il y retombe, il est posé sur la rive
+    la plus proche (`layNear`, inchangé). `angleFor` reçoit la différence de hauteur. Une cible est touchée au-dessus de son sol.
+  - **Le roulement** : une bille s'arrête au bord d'une marche plus haute que `step` (« la bille s'arrête au bord »).
+  - **L'arbre** abattu par-dessus le bord reste au niveau de son pied (son image est soulevée de la hauteur du pied, sa collision ne se
+    pose que là où il touche ce sol).
+  - **Une pose** (et une pièce en mode construction) est refusée à cheval sur une marche ou dans l'eau profonde, et posée à la
+    hauteur du sol de son ancrage. Le message dit la marche.
+  - **Les sorties de zone** : la hauteur se recalcule au point d'arrivée (les zones sont continues, rien à faire).
+- **La vraie chute** (de l'arbre, de la bille, de Xéros dans l'eau) : listée comme limite en attente (CONCEPTION).
+
+### 12.4 Le rendu en projection A
+
+Tout ce qui est à une hauteur h se dessine h / 5 px plus haut. **Rien ne bouge dans le monde** : `x/y` restent les pieds, seule
+l'image monte.
+
+- **Une aide unique**, `src/world/lift.ts` : `lift(obj, map)` règle l'origine d'affichage (`displayOriginY` + la hauteur en px) au lieu
+  de `y`. Le point du monde, la profondeur et le corps restent justes. Pour `Actor`, le décalage du corps (`body.offset`) compense,
+  recalculé à chaque image dans `Actor.preUpdate`, là où la profondeur l'est déjà. Les endroits qui posent une image au sol l'appellent :
+  - `GameMap` : objets, objets au sol, tas, pièces bâties (avec `buildLook`, qui ajoute le sol à leur `z`), fumée, lueurs ;
+  - les acteurs, `Hold`, `ToolUse`, `Breath`, `WorkBar`, les invites (`InteractionSystem`) ;
+  - les créatures ;
+  - les systèmes `harvest`, `wood`, `combat`, `site`, `ghost`, `hands`, `build`, `longPress`, `pileCount`, `parcels`, `turnLog` ;
+  - le vol du lancer (`WorldScene` : déjà `y − z`, avec z devenu absolu) ;
+  - `zoneBand`, `interiorView`, `buildingFloor`, `jointView`.
+  La liste exacte vient d'un `grep` de `setDepth(` et de `add.image(` / `add.sprite(`. `tools/test-keys.ts` gagne une règle : pas de
+  `setDepth(` d'une image du monde hors de `lift.ts` et de ses appelants connus.
+- **La caméra** suit l'image (`setFollowOffset(0, −lift)` à chaque image). Ses bornes s'étendent de 100 px au nord (`zones.cameraBounds`).
+- **Le sol** :
+  - les cases à 0 m restent dans le calque de tuiles d'aujourd'hui ;
+  - **un second calque** porte les cases du plateau plat (500), posé 100 px plus haut ; chaque case est vide dans l'un des deux ;
+  - **le terrain qui varie** (le bord de la falaise, le couloir, les talus) est rendu par `world/terrainView.ts` dans des textures par
+    morceaux de 512 px, construites au chargement de la carte et seulement là où la hauteur varie. Les colonnes sont peintes du nord au
+    sud à `y − h/5` (la méthode de la planche A) et les faces sud remplissent les trous ;
+  - ce terrain est découpé en bandes de 2 rangées du monde, chacune à la profondeur de son bord sud (la méthode des `sideSlices` des
+    murs). Ainsi la paroi nord passe derrière Xéros, et le bord sud du couloir devant lui, comme sur les planches.
+- **Les faces** :
+  - les faces sud en vraie grandeur (la paroi nord du couloir, les flancs) ;
+  - les faces est et ouest en raccourci (12 px pour 5 m : la falaise, avec la lèvre et le lierre qui pend sur l'eau, et les flancs
+    au-dessus de l'eau) ;
+  - leurs matières viennent des dessins du pixel-artist, collées le long des bords que donne `relief.ts`.
+- **L'ombre** de la falaise et des talus est calculée comme celle des toits (`SHADOW`, fixe : 25 px vers l'est et 10 px vers le sud
+  pour 5 m), dessinée en `DEPTH.shadow` sur le terrain plus bas.
+- **L'effacement sous la voûte** : quand les pieds de Xéros sont dans un `Lane` dont le bord sud le cache, les bandes du terrain au sud
+  de lui et les feuillages qui le surplombent passent à 0,2, dans un rectangle de la largeur de l'écran autour de lui (la méthode
+  `windowHole` et `splitRoofs` des toits, avec un rectangle qui suit Xéros au lieu d'un rectangle fixe). Les objets du talus sud dans ce
+  rectangle (arbres, rideau, avancées) passent entiers à 0,2. Code : `world/roofView.ts` (le rectangle), `systems/roofs.ts` (le fondu),
+  `ROOF.lane` (0,2) dans `config.ts`.
+- **La pénombre du couloir** se tire de la profondeur du creux (0,3 × profondeur / 5 m), plus l'ombre des feuillages qui le
+  surplombent. Elle est **cuite dans le terrain** (les bandes du sol et des parois), jamais un voile au-dessus : Xéros reste net.
+- **Les coupures** : `ferme.tmj` ne porte plus d'eau sous les talus ; les tuiles de bord de l'eau suivent le pied du flanc ; un objet
+  plat `water-cut` (liseré mouillé) et un objet plat animé `shimmer` (4 images) sont posés dans Tiled le long de chaque coupure.
+- **La bande des zones voisines** (`zoneBand.ts`) prend le même rendu (le plateau d'une voisine apparaît soulevé). La petite carte ne
+  change pas (le plateau a sa couleur de tuile) : à dire si tu la veux ombrée.
+- **La souris** : `pick(map, sx, sy)` cherche, sur la verticale de l'écran, le point du monde le plus au sud dont l'image passe là
+  (y − h/5 = sy). C'est le premier visible, celui qui est devant. On l'applique dans `cursor()` (`PlayerInput.ts`) et dans les deux
+  conversions du mode construction : tout le reste suit.
+
+### 12.5 Les cartes (étape 3)
+
+Un outil jetable, `tools/relief-cartes.ts`, rangé ensuite dans `.poubelle/tools/relief-cartes.ts`. Les .tmj font foi après lui.
+- Dans les quatre zones de la rivière (`bois-du-nord`, `ferme`, `bois-du-sud`, `bois-de-la-riviere`), il pose un calque `relief` avec
+  un `Level` à 500 tracé depuis le bord ouest de l'eau, case par case. Les quatre zones de la forêt profonde reçoivent `height` 500.
+- Dans `ferme.tmj` :
+  - le `Lane` (cases 60 → 4,5, sur l'axe des rangées 65-66, qui ondule de ± 45 cm) et les deux `Ridge` (nord et sud, cases 60 → 42) ;
+  - le pont remplacé par le sol clair ; l'eau sous les talus remplacée par de la terre, les tuiles de bord de l'eau recalculées par le
+    même calcul de bords que l'esquisse ;
+  - les objets des coupures et le rideau de la bouche ;
+  - le sol clair (tuiles `lane-floor`) sur tout le couloir, raccordé au chemin de terre aux deux bouts.
+  Les dessins du pont restent dans `art/`, leurs numéros dans le registre ; ses lettres sortent de `sketch-legend.json`.
+
+### 12.6 Les dessins (étape 5, après ton accord, par le pixel-artist)
+
+Ceux que tu as listés : matière des talus plantés (tuiles autoassemblées, sans motif répété), flanc au-dessus de l'eau, face de la
+falaise en raccourci et sa lèvre, sol clair en variantes et son raccord au chemin, rideau de la bouche et avancées de feuillage, arbres
+penchés, liseré, miroitement en 4 images. Chacun a sa fiche dans `docs/objets/`. Planches x2 et x4 avec Xéros, dans le vrai jeu dès
+que le rendu de l'étape 4 marche (une capture en jeu vaut mieux qu'un essai hors jeu). En attendant, l'étape 4 se fait avec les
+matières provisoires des essais, qui ne s'intègrent pas.
+
+### 12.7 Les tests
+
+- **`tools/test-relief.ts`** (dans `test:fast`), sans navigateur :
+  - `heightAt` sur les formes (niveau, talus, couloir, composition) et sur les vraies cartes : 0 sur la ferme, 500 sur le plateau,
+    le profil du couloir de bout en bout, jamais d'eau sous le sol du couloir ;
+  - `step` : 50 cm passent, 1 m se saute en descente et pas en montée, 1,2 m est refusé, 5 m aussi, l'eau est refusée sans nage ;
+    le couloir passe de bout en bout ; le flanc est refusé depuis la ferme ;
+  - `pick`, l'inverse de la projection ;
+  - le lancer vers le haut et vers le bas, au-dessus de l'eau ;
+  - le chemin d'un lapin, qui ne prend que le couloir ;
+  - une pose à cheval sur une marche, refusée.
+- **`npm run test:relief`**, un scénario dans le vrai jeu, depuis une partie neuve, ajouté à `SCENARIOS` :
+  - de la ferme au plateau par le couloir, puis le retour ;
+  - le refus au pied de la falaise et sur les flancs des talus, avec « Trop haute pour lui (5 m). » ;
+  - le refus au bord de la rivière et de l'étang, avec « Il ne sait pas nager. » ;
+  - la marche de 50 cm, le saut de 1 m, le refus au-delà (sur des marches du couloir ou un `Level` d'essai) ;
+  - aucune tuile d'eau sous Xéros de tout le couloir.
+- **`test:contrats`** : à l'escalade maximale (?dieu), la falaise se monte (seul le personnage limite) ; à la sienne, le refus dit
+  « pour lui ».
+- Gardés à jour : `test-paysage` (la forêt du plateau intacte, aussi en hauteur), `test-roofs` (le fondu du couloir), `test-minimap`,
+  `test-monde`.
+
+### 12.8 L'ordre et les arrêts
+
+1. Ce cadrage, puis l'attente de ta réponse. **C'est le seul arrêt avant les dessins.**
+2. La logique sans dessin : `relief.ts`, `mobility.json`, `Mobility`, la règle de pas, la nage, les phrases, les lapins, le lancer, le
+   roulement et les poses, puis `test-relief` (des cartes d'essai dans le test).
+3. Les cartes, par l'outil jetable.
+4. Le rendu A avec les matières provisoires : soulèvement, sol en deux calques, terrain par morceaux, faces, ombres, effacement,
+   pénombre, coupures, souris, caméra, bande des zones.
+5. Les dessins (planches en jeu, notification, « DESSIN À VALIDER », attente de ton accord) ; puis leur intégration.
+6. Les scénarios et les contrats.
+7. La documentation : CONCEPTION « Le relief » (le chemin creux, les capacités, la vraie chute en limite), « Le monde » corrigé (le
+   pont), CLAUDE.md (une ligne), README, COMMANDES si ?dieu change.
+8. `SAVE_VERSION` : je charge une sauvegarde d'avant, avec Xéros sur l'ancien pont. S'il s'y retrouve libre dans le couloir, rien ne
+   change ; sinon, je passe à 31.
+9. La fusion : `origin/main` fusionné à nouveau, `npm run build`, la suite complète des scénarios, `test:contrats` sur le dernier
+   commit, puis la fusion dans main et le push.
+
+**Le coût et le risque** : c'est le plus gros chantier du moteur depuis le mode construction. Le risque est dans l'étape 4 : le
+soulèvement touche tous les endroits qui posent une image, et la suite complète des scénarios dira si l'un a été oublié. Les étapes 2
+et 3 ne changent rien à l'écran.
+
+### 12.9 Questions qui restent ouvertes
+
+A. **La pente de marche** (`slope` de `mobility.json`). Sans elle, un défaut : à l'entrée côté ferme, les talus ne font que quelques
+   dizaines de centimètres, Xéros y monte en un pas, puis il suit la crête (≈ 24 % sur 21 m) jusqu'au plateau, par-dessus le couloir.
+   Ma proposition : `slope` 20 %. Le couloir (8,3 %) se marche ; ce qui est plus raide compte comme une marche, de toute sa hauteur
+   (« Trop haute pour lui (2,3 m). » à mi-crête). Une alternative est une crête trop étroite pour lui (30 cm), mais ce serait une
+   règle de forme, pas une capacité.
+B. **Les arbres penchés** : un arbre est un objet complet (abattre des deux côtés, chute, ébranchage, tout dessiné) ; un arbre penché
+   serait une troisième sorte, avec tous ses dessins. Ma proposition : la voûte se fait avec les avancées de feuillage et le rideau
+   (des dessins du terrain du couloir, pas des objets) et les arbres ordinaires sur les lèvres ; un arbre penché qu'on abat viendrait
+   plus tard (une limite listée, « en attente d'un dessin »). Sinon : de vrais arbres penchés abattables dans ce chantier (beaucoup de
+   dessins de plus).
+C. **Le rideau et les avancées** : des dessins du terrain du couloir, placés par `relief.ts` le long du `Lane` (ma proposition, ils ne
+   se coupent pas), ou des objets posés dans Tiled, qui auraient alors un jour une récolte ?
