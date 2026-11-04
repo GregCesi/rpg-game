@@ -6,6 +6,18 @@ fusion du relief (branche `relief`, `CADRAGE.md` section 12).
 
 Chaque point sépare **les faits** (lus dans le code, les cartes, la conception), **ce que je propose** et, à la fin, **les questions**.
 
+### Le retour de Grégoire (4 novembre, après les premières planches)
+
+« C'est très bien. » **Les recommandations des 18 questions sont validées** (section 8), sauf l'emplacement : la maison va **plus
+près du centre, vers le nord, juste avant sa ferme, entre le quartier riche et la ferme du riche, avec la place d'un grand jardin**
+(section 1, refaite). Avant d'aller plus loin, **chaque pièce de la maison se valide une par une** : le catalogue des pièces
+(section 9, ses planches en section 7). **La lauze se reprend de la forge** (une seule source, section 10). La construction attend
+toujours la fusion du relief.
+
+Ce que le catalogue a changé dans la structure (à valider avec lui, section 11) : le plancher porte sur des **muraillères et
+des corbeaux** (section 2) ; le toit est **à pannes**, sur les pignons, les refends et **une ferme** au-dessus de la salle ; **la
+cloison de pierre de l'étage (question 18) ne peut pas reposer sur le plancher** (question 19).
+
 ---
 
 ## 0. Ce que veut Grégoire (rappel)
@@ -43,9 +55,68 @@ Chaque point sépare **les faits** (lus dans le code, les cartes, la conception)
 | Ce qu'on voit en arrivant | En remontant la rue du nord, la cour s'ouvre, la grange à gauche, la maison de pierre au fond à droite | Sur la rue, à 60 m de la place |
 | Ce qui reste pour la suite | Les quatre parcelles du quartier riche gardent leur destination (d'autres familles en vue, des rivaux du coq) | Une parcelle de moins pour les autres ; la parcelle du logis reste vide |
 
-**Ma recommandation : A, dans la cour de sa ferme.** La parcelle est déjà nommée pour lui, sa richesse vient de la ferme, et la
-maison de pierre au bout de la cour, à côté de la grange grise, raconte qui commande ici. Les dessins ci-dessous sont faits pour
-elle : la façade principale regarde le sud, vers la cour et la rue.
+Ma première recommandation était A, la cour de sa ferme. **Grégoire a choisi autrement** : plus près du centre, vers le nord,
+juste avant sa ferme, entre le quartier riche et la ferme du riche, avec la place d'un grand jardin.
+
+### La parcelle proposée : « Maison du coq », au bas de la ferme du riche
+
+**Faits** (`ferme-du-riche.tmj` et `village.tmj`, lus case par case) : la zone du village est juste au sud de celle de la ferme du
+riche (`monde.world` : même x, 4 000 px plus bas). La rue du nord du village (cases 101-106, entre les quatre parcelles `rich-house`,
+qui commencent à 3,20 m du bord nord du village) monte tout droit dans la zone de la ferme : un chemin de terre battue de trois cases
+(102-104, px 3264-3360) qui court du bord sud de la zone (y 4000) jusqu'à la cour de la ferme (dont le bas est à la case 104, px
+3328). Entre les deux, **une bande de 33 m de prés et d'herbe, des deux côtés du chemin, que rien n'occupe** : quelques têtards, un gros
+arbre, deux normaux et des buissons. Le relief (branche `relief`) ne touche ni à cette zone ni au village : **le sol y est plat**.
+
+```
+   ferme-du-riche.tmj, cases 78 à 124 (x) et 100 à 124 (y) ; = le chemin, , le pré, . l'herbe, ~ les champs
+   T gros arbre, P têtard, n normal, b buisson ; ┌─┐ la parcelle proposée, ▓ la maison (16,40 × 6,80 m) ; schéma à l'échelle grossière
+
+         x : 80        90        100  104
+   y 100     ..........................====   ← le bas de la cour de la ferme (case 104)
+   y 106   ┌──────────────────────┐   ===
+   y 107   │.....n.....b...P......│   ===T          le jardin du nord : le potager, le verger,
+   y 110   │,,,,,,,,,,,,,,,.......P   ===           le gros arbre et les têtards gardés
+   y 112   │,,,,,,,,,,,,,,,...T...│   ===
+   y 114   │,,▓▓▓▓▓▓▓▓▓▓▓,,.......│   ===
+   y 117   │,,▓▓▓▓▓▓▓▓▓▓▓,,.......P   ===           la maison, façade au sud
+   y 118   │,,,,,,,,,,,,,,,,......│   ===
+   y 120   │,,,,,,,,n,,,,,,,,.....│   ===  ← l'allée vers le chemin
+   y 124   └──────────────────────┘   ===  ← bord sud de la zone ; 3,20 m plus loin, les parcelles riches
+```
+
+- **La parcelle** (un rectangle `Parcel`, `use: rich-house`, nom « Maison du coq ») : px **x 2560 à 3264, y 3392 à 4000**
+  (35,20 × 30,40 m, 1 070 m²), du pré à l'ouest jusqu'au bord du chemin, de la ferme au bord de la zone.
+- **La maison** : coin nord-ouest hors œuvre en px **(2624, 3648)**, emprise 328 × 136 px (x 2624 à 2952, y 3648 à 3784), façade
+  principale et porte en arc au sud, vers le village. Le gros arbre de la case (95, 112) reste à 4,40 m à l'est du pignon : il
+  ombre le jardin, pas le toit.
+- **Le jardin** : au nord (12,80 m de profondeur sur toute la largeur), le potager et le verger, avec les têtards et le gros arbre
+  qui y sont déjà ; à l'est (15,60 m jusqu'au chemin), l'allée qui mène de la rue à la porte ; au sud (10,80 m jusqu'au bord de la
+  zone), le devant de la maison, que l'on voit en remontant la rue du nord.
+- **Ce qui gêne** : le normal de la case (88, 120) est à 2,80 m devant la façade, presque devant la porte : il la cacherait. À
+  retirer de la carte au moment de poser la maison (question 20).
+- **Ce qu'on voit** : en remontant la rue du nord, passé les quatre parcelles riches, la maison de pierre à gauche du chemin, son
+  jardin, puis la cour de la ferme au bout ; c'est la dernière maison du village et la tête de la ferme. Elle est à 120 m de la
+  place (la parcelle « Logis du riche », dans la cour, en était à 185 m).
+- **La parcelle « Logis du riche »** de la cour garde sa destination (`farmhouse`) : un logis de ferme pour plus tard (le maître
+  valet, les communs ; question 21).
+
+### La déplacer plus tard
+
+La maison n'est jamais dessinée dans la carte : c'est **un rectangle `Plan` dans le calque `parcelles` de `ferme-du-riche.tmj`**
+(propriété `plan` : `maison-coq`, le plan enregistré `src/content/plans/maison-coq.json`). Son coin haut-gauche (`x`, `y` du
+rectangle, en px) est **le coin nord-ouest du plan** (`planPieces` de `world/build.ts`, appelé par `world/mapPlans.ts`). La
+déplacer, c'est déplacer ce rectangle dans Tiled (et la parcelle avec lui), puis `npm run maps`.
+
+Ce qui doit être **libre** dessous : l'emprise de la maison (16,40 × 6,80 m), plus les débords du toit au nord et au sud (le pied
+des laves, 30 cm), plus **1 m tout autour** pour que Xéros puisse bâtir et passer (les échafaudages du maçon plus tard) : aucun
+objet de Tiled qui a un corps (arbre, têtard, buisson, rocher, tas `Pile`, objet `Item`), aucune autre parcelle, aucune sortie
+`Exit`, aucun PNJ. Et **plat** : une seule hauteur de relief sous toute l'emprise (aucune forme `Relief` du relief ne la coupe ; un
+terrain en pente demanderait un soubassement, un autre chantier).
+
+Une chose à savoir : un plan entre dans la partie **à la première visite de la carte** (`seedPlans`, noté dans `seeded`) ; une
+sauvegarde qui a déjà visité la ferme du riche garde la maison là où elle a été posée. Déplacer la maison après sa sortie demande
+donc soit une partie neuve, soit un nouvel identifiant d'objet Tiled pour le rectangle et le retrait des pièces de l'ancien
+(une ligne de `missingContent`, ou `SAVE_VERSION`).
 
 ---
 
@@ -76,6 +147,15 @@ règle des vraies maisons de ce temps : la largeur suit la longueur des bois, la
 - **Pourquoi 2,60 m à l'étage** : la croisée (appui à 90 cm, 1,60 m de jour) monte à 2,50 m au-dessus du plancher ; avec
   2,40 m, elle aurait coupé la sablière (relevé par le pixel-artist sur la planche de détail).
 - **L'escalier** : 15 marches de 19 cm de haut (2,85 m), 14 girons de 26 cm (3,64 m de long), 1 m de large.
+- **Ce qui porte le plancher** (revu pour le catalogue) : les solives ne s'encastrent plus de 10 cm dans les murs (trop peu pour une
+  solive de 200 kg chargée) ; elles portent de 20 cm sur deux **muraillères**, des poutres couchées le long des murs nord et sud,
+  posées sur des **corbeaux** de pierre (une console tous les 1,60 m, 20 cm dans le mur, 20 cm dehors). La solive fait 5,60 m
+  (la portée libre entre muraillères est de 5,20 m), sous les 5,80 m du normal. Le plancher reste à 2,85 m.
+- **Ce qui porte le toit** (revu pour le catalogue) : **un toit à pannes**, sans fermes sur les refends. La panne faîtière et deux
+  pannes par pan vont d'un pignon à un refend, d'un refend à l'autre. Une travée dépasse 5,80 m : la salle (7,60 m). Elle reçoit
+  **une ferme** à x 1300 (au droit de la séparation des chambres de l'étage) : un entrait de 6,60 m fait de deux poutres entées
+  (l'enture existe), deux arbalétriers, un poinçon. Les travées font alors 4,60, 2,20, 4,80 et 2,60 m. Sur les pannes, des
+  **chevrons** de 10 × 10 tous les 40 cm, et sur eux les lattes qui tiennent les laves.
 - **À l'écran** : la maison fait 328 px de large (16,40 m), et du pied de la façade sud au faîte environ 180 px (9,10 m) de plus que son
   emprise. Au zoom de départ (palier 3, 21,3 × 12 m), **elle tient en largeur mais pas en hauteur** : on en voit le bas en arrivant,
   le toit en reculant (au zoom le plus large, 32 × 18 m, elle tient entière). Les planches le montrent avec le cadre de la vue.
@@ -186,6 +266,9 @@ montent jusqu'au toit et portent la charpente avec les pignons.
 
 ## 5. Les pièces : ce qui existe et ce qui manque
 
+*Premier inventaire, celui des premières planches. Il est remplacé par **le catalogue pièce par pièce de la section 9**, qui fait
+foi : les tableaux ci-dessous restent pour l'historique.*
+
 ### Réutilisées telles quelles
 
 | Pièce existante | Où elle sert |
@@ -261,8 +344,8 @@ la salle à 0, la chambre à 2,85 m. Le relief seul ne peut pas le dire.
 - **Le mode construction** pose déjà une pièce sur le plus haut dessus sous son emprise (`world/build.ts`) : une table posée sur le
   plancher est à 2,85 m sans rien changer. Il lui faut **un réglage du niveau affiché** (un bouton du panneau, et une touche), pour
   voir et viser l'étage, et `pick` pour viser à la bonne hauteur.
-- **Rien au-dessus du vide** : les solives portent sur les murs (10 cm d'appui), les planches sur les solives, le chevêtre de la
-  trémie sur deux solives, chaque marche sur la précédente et le mur d'échiffre (`overhangs` de `world/overhang.ts`, inchangé).
+- **Rien au-dessus du vide** : les corbeaux sortent du mur (20 cm dedans), les muraillères portent sur les corbeaux, les solives
+  sur les muraillères, les planches sur les solives, le chevêtre de la trémie sur deux solives, chaque marche sur la précédente et le mur d'échiffre (`overhangs` de `world/overhang.ts`, inchangé).
 
 ### 6.2 Un seul niveau affiché à la fois
 
@@ -345,83 +428,10 @@ Le modèle en volumes : `art/proposals/coq-maison.ts` ; la pierre, les baies, le
 | `.art-preview/coq-escalier.png` (x4) | Xéros en bas, sur la 7ᵉ marche (encore le rez-de-chaussée), sur la 8ᵉ (l'étage s'affiche), en haut sur le palier |
 | `.art-preview/coq-vue-joueur.png` (x2) | ce que voit le joueur au zoom de départ, au pied de l'escalier puis en haut (la caméra a glissé de 57 px) |
 | `.art-preview/coq-pierre-tapisserie.png` (x4) | le moyen appareil proposé, le petit appareil de la pierre de taille du jeu (il se lit comme de la brique), la pierre brute de Xéros ; la croisée et la demi-croisée, volets fermés et ouverts ; la porte en arc et son coq sur la clef ; les laves ; la verdure au coq et la tenture |
-
-**Ce que les dessins ont appris :**
-- **L'arase passe de 5,25 à 5,45 m** : la croisée de l'étage (appui à 90 cm, 1,60 m de jour) dépassait le mur. La croisée fait
-  1,05 m de large (deux jours égaux) ; le faîte est vers 9,15 m.
-- **Le toit est haut** : environ 250 px du pied au faîte, pour une vue de 240 px. Il ne cache rien du dedans (on n'est dedans que
-  dans l'intérieur calculé).
-- **À la 8ᵉ marche, Xéros est dans la trémie** : l'étage s'affiche alors que ses pieds sont encore 1,33 m sous le plancher, et le
-  bord du plancher et le garde-corps lui cachent les jambes. C'est le rendu exact par profondeur (question 17).
-- **À l'étage, il faut un cache** sous la coupe du mur sud : sans lui, l'escalier et les dalles du bas « pendent » sous la maison.
-  Les planches posent un cache du vide (`INTERIOR.void`) ; le moteur devra faire de même (6.2).
-- **Les pièces tiennent leur mobilier** : la salle loge la grande table de 4,20 m et ses bancs sans peine ; la chambre de la fille
-  (2,65 m) loge le lit, le coffre et la table de tailleuse, sans marge.
-- **La cloison de pan de bois**, coupée à 70 cm, n'est vue d'en haut qu'un trait de 3 px : elle se lit mal (une cloison de pierre de
-  40 cm se lirait comme les refends).
-- **La version C** : de face, l'aile n'est qu'un grand toit gris derrière le corps ; seule la tourelle fait le manoir.
-
-**Ce qui ne va pas encore** (à reprendre après tes réponses) :
-- ni rai de lumière ni pénombre dans les pièces ; les portes intérieures sont des trous, sans battant ; la fenêtre du pignon est ne se
-  voit sur aucune planche ; le faîtage de laves se lit un peu comme des créneaux ;
-- le lit du fainéant n'est pas défait (pas d'image) ; les meubles neufs n'ont que leur vue du sud ;
-- la noue entre l'aile et le corps de la version C n'est pas dessinée ;
-- sur la planche de détail : le coq de la clef est à la limite de la lisibilité à x1 ; les feuilles de la verdure sont rondes plutôt
-  que découpées et le coq s'y détache moyennement ; un petit morceau de laves rappelle encore un mur de pierre sèche (sur la maison
-  entière, il se lit comme un toit).
-
----
-
-## 8. Questions pour Grégoire
-
-Chacune avec ma recommandation ; une réponse « oui » prend la recommandation.
-
-1. **L'emplacement** : dans la cour de sa ferme, sur la parcelle « Logis du riche » (A), ou sur une parcelle du quartier riche (B) ?
-   *Recommandation : A, la cour de sa ferme* (section 1).
-2. **La version** : A (le logis de pierre, l'escalier dedans), B (l'escalier dehors et son palier couvert), C (en L, avec une tour
-   d'escalier à vis) ? *Recommandation : A.* B met l'escalier dehors, donc deux entrées à deux hauteurs et le relief dehors en plus de
-   l'étage dedans ; C demande un escalier à vis, qui tourne sur lui-même et se lit mal vu de dessus, et fait de lui un seigneur plus
-   qu'un paysan.
-3. **L'appareil des murs** : le moyen appareil (assises de 30 cm, un bloc nouveau de 50 × 30 × 30 cm, 108 kg, qu'on porte à deux ou
-   avec l'aide de la mère), ou le petit appareil de la pierre de taille qui existe (`ashlar`, assises de 15 cm, 29 kg) ?
-   *Recommandation : le moyen appareil* (il se lit comme de la pierre de riche ; le petit appareil, à 3 px par assise, tire vers la
-   brique : à juger sur `coq-pierre-tapisserie.png`). La pierre de taille existante sert alors aux appuis, aux seuils et aux marches.
-4. **« Traitées »** : la face layée et ciselée, la pierre nue (ma lecture), ou un badigeon de chaux sur la pierre ? *Recommandation : la
-   pierre nue, layée et ciselée* : c'est la pierre elle-même qu'on montre quand on a payé le tailleur.
-5. **Le toit** : des laves de calcaire (la même carrière que les murs, le plus lourd, le plus cher), de la tuile plate (une tuilerie
-   qui n'existe pas encore au monde), ou du chaume ? *Recommandation : les laves.*
-6. **Les fenêtres** : des croisées de pierre à l'étage avec des vitraux en losanges plombés dans les jours du haut, ou seulement des
-   volets (du papier huilé, de la toile cirée) ? *Recommandation : les vitraux en haut, les volets en bas* ; le verre est le luxe qui
-   se voit de la cour.
-7. **L'escalier** : de pierre, marche par marche sur un mur d'échiffre plein (ce que montrent les planches), ou de bois (une volée
-   droite de chêne, ses limons, un placard dessous) ? *Recommandation : la pierre* : la maison est de pierre du sol au faîte, chaque
-   marche est une pièce posée sur la précédente (bâtie pièce par pièce), et rien n'est à calculer dessous.
-8. **Les chambres de l'étage** : la fille derrière ses parents, en enfilade (on traverse leur chambre pour aller chez elle), ou un
-   couloir le long du mur nord qui la dessert (la chambre du coq rétrécit d'un mètre) ? *Recommandation : l'enfilade* (le vrai de ce
-   temps, et le père qui veille dit qui il est).
-9. **Le coq** : un coq sculpté sur la clef de l'arc de la porte, et un coq dans la verdure de la salle, l'emblème de la famille ? Et
-   une girouette en coq sur le faîte ? *Recommandation : oui à la clef et à la verdure, non à la girouette* (au village, la girouette est
-   celle du clocher).
-10. **La tapisserie** : une verdure de laine (feuillages, un coq) dans la salle et une tenture plus simple dans la chambre (ce que montre
-    la planche), ou une seule, dans la salle ? *Recommandation : les deux*, la verdure seule dans la salle, la tenture dans la chambre.
-11. **Les sols** : des dalles de calcaire dans la salle et le passage, la terre battue dans la cuisine, des planches à l'étage ?
-    *Recommandation : oui.* Le dallage est une pièce posée (la dalle de sol, `walk: true`) ; la terre battue de la cuisine est celle
-    des intérieurs calculés.
-12. **Le niveau affiché** : il change au milieu de l'escalier (la 8ᵉ marche), par un fondu de 250 ms, sans changer de carte (ma
-    proposition), ou à la dernière marche, ou par un fondu au noir comme une porte ? *Recommandation : au milieu, sans noir* : on monte en
-    marchant, et c'est le moment où la tête de Xéros passe le plancher.
-13. **Le grenier et la cave** : le grenier (sous les laves, le grain, la lucarne à poulie) se voit dehors mais ne se visite pas dans ce
-    chantier ; pas de cave. *Recommandation : oui*, un deuxième étage et un sous-sol viendront avec le même moteur, plus tard.
-14. **Le mode construction** : un bouton « niveau » dans le panneau (et une touche) pour voir et viser l'étage pendant qu'on bâtit ?
-    *Recommandation : oui*, sinon on ne pose rien sur le plancher une fois les murs montés.
-15. **Les gens de maison** : une servante qui dort dans la cuisine, des valets à la grange ? Pas demandé ; le plan leur laisse la
-    place (une paillasse près de l'âtre). *Recommandation : plus tard, avec la famille* (un autre chantier).
-16. **L'ordre** : la maison attend la fusion du relief ; avant, les pièces une à une (fiche, dessins, accord), en commençant par le
-    mur de pierre de taille et ses baies. *Recommandation : oui*, le mur haut de pierre est aussi ce qui manque à la petite maison de
-    pierre de l'essai « bâtiments ».
-17. **Xéros dans la trémie** (`coq-escalier.png`, 8ᵉ marche) : quand l'étage s'affiche, le bord du plancher lui cache les jambes. On
-    garde le rendu exact (on voit qu'il sort du trou), ou on le dessine par-dessus le plancher jusqu'à ce qu'il soit en haut ?
-    *Recommandation : le rendu exact*, c'est ce qu'on verrait, et cela dure deux pas.
-18. **La cloison de l'étage** (fille / parents) : en pan de bois chaulé (les remplissages de la maison de Xéros, réutilisés, mais un
-    trait de 3 px vu d'en haut), ou en pierre de 40 cm comme les refends ? *Recommandation : la pierre*, qui se lit et va avec la
-    maison ; la chambre de la fille perd 25 cm.
+| `.art-preview/coq-catalogue-pierre-1.png` (x4) | **le catalogue, la pierre** : les carreaux, la boutisse, la pierre d'angle, la pierre de tableau, le cordon, le corbeau, le bloc biais, la dalle de rampant, les seuils du jeu, la boutisse de refend ; « dans le mur » : un morceau de cinq assises, nu puis une lettre par bloc (le joint à 10 cm en rouge) |
+| `.art-preview/coq-catalogue-pierre-2.png` (x4) | la dalle de sol, la planche et la terre battue du jeu ; la lave (« à reprendre de la forge »), la faîtière, le couronnement, le fronton ; **notre pan de laves contre la lauze de la forge** ; la marche et la pierre d'échiffre |
+| `.art-preview/coq-catalogue-pierre-3.png` (x4) | les pierres des baies (appui, linteau, meneaux, traverse, claveau, clef au coq, sommier), la clef à 50 cm, **l'arc assemblé**, **la croisée assemblée** |
+| `.art-preview/coq-catalogue-pierre-4.png` (x4) | les pierres des cheminées, l'évier, le potager, l'âtre du jeu, **le manteau de la salle assemblé** |
+| `.art-preview/coq-catalogue-bois-1.png` (x4) | **la ferme de la salle assemblée**, la solive, la muraillère, le chevêtre, la panne, l'entrait, la sablière (les images du jeu de la poutre), l'arbalétrier, le poinçon, le chevron (nouvel aspect), la latte |
+| `.art-preview/coq-catalogue-bois-2.png` (x4) | la potence, **le garde-corps assemblé** et ses pièces, le vitrail, le volet fermé et ouvert, le barreau, la porte en arc fermée et ouverte, dehors et dedans, le linteau intérieur, la porte intérieure du jeu, la poutre de manteau |
+| `.art-preview/coq-catalogue-bois-3.png` (x4) | les meubles en quatre vues (les vues du sud validées reprises au pixel près), le lit défait à côté du lit du jeu, la verdure redessinée, la tenture, la tringle, le coupon, les étains |
