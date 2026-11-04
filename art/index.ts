@@ -18,6 +18,7 @@ import ui from './ui/dialog';
 import staminaBar from './ui/stamina-bar';
 import workBar from './ui/work-bar';
 import clock from './ui/clock';
+import minimap from './ui/minimap';
 import breath from './characters/breath';
 import resources from './items/resources';
 import tools from './items/tools';
@@ -62,6 +63,6 @@ import deadRabbit from './items/dead-rabbit';
 import storm from './world/storm';
 import { agedSources } from './lib/ages';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...rabbit, ...deadRabbit, ...storm];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...minimap, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...rabbit, ...deadRabbit, ...storm];
 // le bois travaillé à ses autres âges (patiné, vieux), tiré des images neuves
 sources.push(...agedSources(sources));

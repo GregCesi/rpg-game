@@ -164,6 +164,28 @@ export const HARVEST = {
 export const HUD = { noticeMs: 1800, longNoticeMs: 7000 };
 
 /**
+ * La petite carte du HUD (docs/CONCEPTION.md, « La petite carte » ; src/world/minimap.ts, src/systems/minimap.ts) : ronde, en haut à
+ * gauche, nord en haut, calculée depuis les cartes et la partie. La seule source de ses réglages.
+ * `steps` : ses crans, dans l'ordre où un clic sur la carte les fait passer (puis retour au premier) ; `px` : pixels du canevas par
+ * case de 1,60 m (avant RENDER ; 2 = un pixel du HUD) ; `inner` : le diamètre de la fenêtre ronde en px du HUD (impair ; le cadre de
+ * bois de art/ui/minimap.ts est tiré à chaque diamètre). Les cases montrées : inner × ZOOM ÷ px (81 cases, 65 m autour ; 40,5 cases,
+ * 32 m ; 126 cases, 100 m). `start` : le cran de la première fois (ensuite le cran choisi est retenu, comme le zoom de la caméra).
+ * `margin` : du bord de l'écran (px du HUD, comme le cadran) ; `refreshMs` : la zone de Xéros repeinte au plus une fois par
+ * `refreshMs` quand la partie a changé ; `outside` : l'aplat au-delà du bord du monde (l'humus `5` de la palette).
+ */
+export const MINIMAP = {
+  steps: [
+    { px: 2, inner: 81 },
+    { px: 4, inner: 81 },
+    { px: 1, inner: 63 },
+  ],
+  start: 0,
+  margin: 4,
+  refreshMs: 500,
+  outside: '#2c292d',
+} as const;
+
+/**
  * La barre d'endurance du HUD (art/ui/stamina-bar.ts, contrat de pose) : `pxPerPoint` px de creux par point (le maximum de 100 fait
  * 50 px), le creux en (`inner`, `inner`) du cadre, `gap` px au-dessus des cases des mains ; essoufflé, la part « revient » clignote
  * (`blinkMs` par demi-période, jusqu'à `blinkAlpha`).
