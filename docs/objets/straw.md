@@ -23,7 +23,7 @@ Aucune : une gerbe se lie à la brassée, à une mesure d'usage.
 En tas : genre `straw-sheaves`.
 
 ## Gestes
-Clic court : prendre (main vide), poser à son fantôme (la main qui la tient) ; R tourner.
+E : prendre ; A : poser à son fantôme ; R tourner.
 
 ## Origine
 La moisson (à la faucille), battue sans casser la tige. S'achète au paysan riche de la ferme commune.

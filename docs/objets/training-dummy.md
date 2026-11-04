@@ -34,7 +34,7 @@ Aucune : un assemblage fait de main d'homme.
 Seul.
 
 ## Gestes
-- Clic maintenu, E, R, A : rien.
+- E, F, R, A : rien.
 - Clic de la main qui tient une arme, un outil ou une ressource : le frapper (une main vide : un coup de poing). Il ne casse jamais (`target.hp: "infinite"`).
 
 ## Origine

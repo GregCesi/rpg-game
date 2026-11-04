@@ -24,10 +24,15 @@ const TileInfoSchema = z.strictObject({
  * Famille de 16 tuiles `<terrain>-<masque>` (masque N=1 E=2 S=4 O=8 : un bit à 1 = le voisin est du même terrain).
  * Devient un ensemble de terrains Wang dans le tileset de Tiled.
  */
+/** Le poste d'une transformation (transforms.json `station`) : par terre, le billot, l'établi, l'étang, la braie, le four. */
+const StationSchema = z.enum(['ground', 'block', 'bench', 'pond', 'brake', 'kiln']);
+
 const TerrainDefSchema = z.strictObject({
   /** Couleur du terrain dans Tiled (#rrggbb). */
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   solid: z.boolean().optional(),
+  /** Le poste que ce terrain offre à une transformation, Xéros tourné vers lui (l'eau : l'étang, où l'on puise ; GameMap.stationAt). */
+  station: StationSchema.optional(),
 });
 
 /** Catalogue d'un jeu de tuiles : ce que `build-art` ajoute aux tuiles dessinées dans art/. */
@@ -54,7 +59,7 @@ const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
 
 /**
  * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.
- * Avec `tool`, on travaille au clic de la main de l'outil ; sans, on récolte au clic d'une main vide.
+ * Avec `tool`, on travaille par F, l'outil en main ; sans, on récolte par E, une main libre.
  */
 /**
  * La matière d'une récolte qui se travaille au coup (docs/CONCEPTION.md, « Le travail » ; world/workPlan.ts) : abattre un arbre
@@ -1505,8 +1510,6 @@ const TransformPartSchema = z
  * l'on puise l'eau et creuse l'argile), sur un chevalet de fendeur (`brake`), au four à chaux (`kiln`, à venir : on y cuit le
  * calcaire).
  */
-const StationSchema = z.enum(['ground', 'block', 'bench', 'pond', 'brake', 'kiln']);
-
 /**
  * Le geste d'une transformation : `soon`, à venir (en attendant, ?dieu l'applique d'un coup : « Transformer ») ; ou le geste réel,
  * déjà jouable : `system`, le fichier qui le joue, et `keys`, ce que fait le joueur.

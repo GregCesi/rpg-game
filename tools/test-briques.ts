@@ -4,7 +4,7 @@
 // et par longueur (moellons de 40 et 50 cm, petites et moyennes pierres) ; de même la terre mêlée en torchis (trois mottes, une gerbe de paille
 // et un seau d'eau au sol : trois mottes de torchis et le seau vide), mise en tas, la branche parée en baguette, mise en tas, un quartier fendu en cinq planches et deux perches en tas ; une
 // transformation à qui il manque une entrée ne change rien ; puis la page rechargée : tout est retrouvé, la pierre posée seule avec
-// sa forme et sa taille.
+// sa forme et sa taille ; enfin, face à l'eau de la ferme, F remplit le seau vide (puiser).
 // Usage : npm run test:briques (lancé aussi par npm run test:scenarios).
 
 import assert from 'node:assert/strict';
@@ -251,5 +251,44 @@ await playtest('briques', async ({ page, errors, load }) => {
   assert.equal(after.chips, r.chipsTotal, 'les éclats aussi');
   assert.deepEqual(after.lone, r.loneGround, 'la pierre seule, avec sa forme et sa taille');
   assert.deepEqual(after.loneImage, r.loneGround.map((n: any) => (n.form ? 'big-rough-stone-ground-b' : 'big-rough-stone-ground')), 'dessinée dans sa forme');
+
+  // puiser (docs/COMMANDES.md, F) : le seau vide en main, face à l'eau de la ferme (le terrain `water` offre l'étang), F le remplit ;
+  // dos à l'eau, F n'en fait rien
+  const drawn = (await page.evaluate(async () => {
+    const W = window as any;
+    const w = () => W.game.scene.getScene('world');
+    const gs = await import('/src/state/index.ts' as string);
+    W.game.events.emit('dieu', { kind: 'give', held: { prop: 'bucket' } });
+    await W.__settle();
+    // une case d'eau dont la case du sud est libre : Xéros y est posé, tourné vers le nord
+    const m = w().map;
+    let spot: { x: number; y: number } | undefined;
+    for (let ty = 0; ty < m.def.height && !spot; ty++) {
+      for (let tx = 0; tx < m.def.width && !spot; tx++) {
+        const cx = tx * 32 + 16;
+        const cy = ty * 32 + 16;
+        if (m.stationAt(cx, cy) !== 'pond') continue;
+        const fy = ty * 32 + 32 + 14;
+        if (m.areaFree({ left: cx - 6, top: fy - 10, right: cx + 6, bottom: fy + 1 })) spot = { x: cx, y: fy };
+      }
+    }
+    if (!spot) return { spot: null };
+    const a = w().player.actor;
+    a.body.reset(spot.x, spot.y);
+    a.face('down');
+    await W.__frames(3);
+    const away = JSON.stringify(w().keys?.f);
+    a.face('up');
+    await W.__frames(3);
+    const plan = JSON.stringify(w().keys?.f);
+    await W.__do('work');
+    await W.__settle();
+    return { spot, away, plan, held: JSON.stringify([gs.game.hands, gs.game.both]) };
+  })) as Record<string, any>;
+  console.log(JSON.stringify(drawn));
+  assert.ok(drawn.spot, 'la ferme a de l’eau au bord libre');
+  assert.equal(JSON.parse(drawn.away).kind, 'none', 'dos à l’eau, F n’a rien à faire du seau');
+  assert.equal(JSON.parse(drawn.plan).work, 'draw', 'face à l’eau, F puise');
+  assert.match(drawn.held, /bucket-water/, `F remplit le seau, dans la même main : ${drawn.held}`);
   console.log('  ✓ briques : pierre brute dégrossie en moellon (éclats au sol) puis en pierre de taille, grosse pierre cassée, un tas par taille et par longueur, terre mêlée en torchis, branche parée en baguette, quartier fendu en planches, perches, chacun en tas, la forme et la taille d\'une pierre gardées, tout retrouvé après rechargement');
 });
