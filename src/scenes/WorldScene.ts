@@ -3,7 +3,7 @@ import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { stateImage } from '../world/pileShape';
 import { CONSTRUIRE, DEPTH, FEET, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
-import { combat as combatDef, creatures, gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
+import { combat as combatDef, creatures, gestures, health, items, maps, props, stamina, strength, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
@@ -16,6 +16,8 @@ import { BuildSystem } from '../systems/build';
 import { ClockSystem } from '../systems/clock';
 import { CombatSystem, type AttackPlan } from '../systems/combat';
 import { CreatureSystem } from '../systems/creatures';
+import { Knockdown } from '../systems/knockdown';
+import { goreXeros } from '../world/charge';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
@@ -50,7 +52,7 @@ import { frameMs, type Phase } from '../world/swing';
 import { kinetic, landing, throwPlan } from '../world/throw';
 import { FACING_VECTOR } from '../world/aim';
 import { crossed } from '../world/crossing';
-import { attackCost } from '../world/strike';
+import { attackCost, impactDamage } from '../world/strike';
 import { pxPerSec, setSpeeds, SPEEDS } from '../systems/speeds';
 import { setSimSpeed, simSpeed } from '../systems/simSpeed';
 import { Daylight } from '../systems/daylight';
@@ -67,6 +69,7 @@ import {
   clearHeld,
   clearSave,
   emptyHands,
+  faint,
   game,
   mapState,
   newGame,
@@ -108,8 +111,9 @@ import type { Interactable, PlacedGround, PlacedProp, Talker } from '../world/Ga
  * Échap compte, elle l'arrête là où il est.
  * `aim` : un clic maintenu vise un lancer (world/throw.ts) : Xéros se tourne vers le curseur, le repère montre où l'objet tombera ;
  * relâché, il lance ; Échap annule.
+ * `down` : Xéros renversé par une charge (systems/knockdown.ts) : il tombe, glisse, se relève ; rien ne le mène.
  */
-type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'work' | 'aim';
+type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'work' | 'aim' | 'down';
 
 /** Un objet lancé en vol (world/throw.ts) : déjà posé au sol dans GameState (la matière se conserve), son image cachée jusqu'à la fin. */
 interface Flight {
@@ -139,6 +143,8 @@ export type WorldStart = {
   spawn?: string;
   at?: { x: number; y: number; facing: Facing };
   wake?: boolean;
+  /** Il se réveille d'un évanouissement : la mère l'a trouvé et ramené (sa ligne, `faint.dialogue` de health.json). */
+  fainted?: boolean;
   /**
    * On arrive en passant le bord d'une zone (systems/zones.ts) : pas de fondu (la voisine était déjà à l'écran, world/zoneBand.ts), et
    * la caméra reprend où elle était par rapport à Xéros (`view` : le milieu de la vue moins ses pieds).
@@ -194,6 +200,8 @@ export class WorldScene extends Phaser.Scene {
   private combat!: CombatSystem;
   /** Les créatures de la carte (les garennes de Tiled, systems/creatures.ts). */
   private creatures!: CreatureSystem;
+  /** Xéros renversé par une charge : la chute, la glissade, le relevé. */
+  private knockdown!: Knockdown;
   /** L'horloge (docs/CONCEPTION.md, « Le temps ») : une pour toutes les cartes, le palier est partagé (ClockSystem.speed). */
   private readonly clock = new ClockSystem();
   private handsSystem!: HandsSystem;
@@ -250,6 +258,8 @@ export class WorldScene extends Phaser.Scene {
   private force = 1;
   /** Case « endurance infinie » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
   private infinite = false;
+  /** ?dieu « vie infinie », gardée d'une carte à l'autre (la scène redémarre). */
+  private healthInfinite = false;
   private autosave!: AutoSave;
   /** Le zoom de la caméra du monde, par paliers entiers. */
   private zoom!: ZoomControl;
@@ -264,6 +274,8 @@ export class WorldScene extends Phaser.Scene {
   private at?: WorldStart['at'];
   /** On arrive d'une nuit de sommeil : le jour est dit à l'écran. */
   private wake = false;
+  /** On arrive d'un évanouissement : la mère le dit. */
+  private fainted = false;
   /** Entrer dans les bâtiments posés, en sortir (systems/interiors.ts). */
   private interiors!: Interiors;
   /** L'intérieur où l'on est (sa carte calculée, ce que la vue y ajoute), ou rien dehors. */
@@ -287,6 +299,7 @@ export class WorldScene extends Phaser.Scene {
     if (data.spawn) this.spawn = data.spawn;
     this.at = data.at;
     this.wake = !!data.wake;
+    this.fainted = !!data.fainted;
     this.edge = data.edge;
     this.mode = 'play';
     this.talking = undefined;
@@ -371,11 +384,17 @@ export class WorldScene extends Phaser.Scene {
     this.creatures = new CreatureSystem(
       this,
       this.map,
-      (item, x, y) => void this.handsSystem.layNear(this.player, { item }, x, y),
+      (item, x, y, view) => void this.handsSystem.layNear(this.player, { item, ...(view ? { view } : {}) }, x, y),
       (x, y, depth, matter, facing) => this.harvest.chipsAt(x, y, depth, matter, facing),
       (x, y, label) => this.combat.floatAt(x, y, label),
       !!this.interior,
+      {
+        gore: (hit) => this.gored(hit),
+        impact: (at, joules) => this.chargeImpact(at, joules),
+        brush: (at) => this.brushed(at),
+      },
     );
+    this.knockdown = new Knockdown(this.map, this.player);
     this.transformer = new TransformSystem(this.map, this.handsSystem);
     this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body), this.player.strength);
     this.knots = new KnotSystem(this.map, this.handsSystem);
@@ -391,6 +410,7 @@ export class WorldScene extends Phaser.Scene {
     this.builder = new BuildSystem(this, this.map, this.player, (t) => this.notice(t), (st: BuildStatus) => this.game.events.emit(GameEvent.BuildStatus, st));
     this.player.strength.multiplier = this.force;
     this.player.stamina.infinite = this.infinite;
+    this.player.health.infinite = this.healthInfinite;
     this.player.mobility.climber = this.climber;
     this.footing = new Footing(this, def, this.player, (t) => this.notice(t));
     this.lifts = new LiftPass(this, def, !this.interior && neighborsOf(maps, def, 1).some((n) => hasRelief(n.map)));
@@ -400,6 +420,7 @@ export class WorldScene extends Phaser.Scene {
     this.clock.onAdvance = (from, minutes) =>
       this.player.stamina.wear((nightMinutes(from, minutes, night.nightFrom, time.wakeHour) / 60) * night.nightAwakePerHour);
     this.player.stamina.onChange = () => this.game.events.emit(GameEvent.Stamina, this.player.stamina.levels());
+    this.player.health.onChange = () => this.game.events.emit(GameEvent.Health, game.health);
     // les travaux commencés : l'étape visible de ce qui est entamé (l'arbre à moitié entaillé, retrouvé tel quel)
     for (const [key, w] of Object.entries(mapState(game, this.map.def.id).work)) {
       const p = w.work === 'harvest' ? this.map.props.find((q) => workKey(q.id, q.spawned) === key) : undefined;
@@ -409,7 +430,10 @@ export class WorldScene extends Phaser.Scene {
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
     this.game.events.emit(GameEvent.Stamina, this.player.stamina.levels());
+    this.game.events.emit(GameEvent.Health, game.health);
     if (this.wake) this.game.events.emit(GameEvent.Notice, clockLabel(game.clock), HUD.longNoticeMs / 2);
+    // réveillé d'un évanouissement : la mère l'a trouvé (sa ligne, après le fondu)
+    if (this.fainted) this.time.delayedCall(LOCKS.fadeIn, () => this.mode === 'play' && this.openDialogue(health.faint.dialogue));
     if (lost) this.notice("Le bâtiment n'est plus là.");
 
     const cam = this.cameras.main;
@@ -522,13 +546,15 @@ export class WorldScene extends Phaser.Scene {
     if (this.mode === 'rail') this.rail.update(delta, { stop: halt });
     // un travail au coup : lancé de F, Xéros frappe seul jusqu'au résultat
     if (this.mode === 'work') this.works.update({ stop: halt });
+    // renversé : la glissade
+    if (this.mode === 'down') this.knockdown.update(delta);
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
     // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V change la vitesse du temps (en boucle)
-    this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim');
+    this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim' || this.mode === 'down');
     // les créatures vivent quand l'horloge avance ; elles perçoivent Xéros dans ces mêmes modes
-    const living = this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim';
+    const living = this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim' || this.mode === 'down';
     if (living) this.creatures.update(this.player, delta, true);
     // les objets lancés volent dans tous les modes (le temps du jeu)
     this.updateFlights(delta);
@@ -1430,6 +1456,9 @@ export class WorldScene extends Phaser.Scene {
   private pickUp(g: PlacedGround, hand: Hand): void {
     const kg = itemMass(g.item.item, undefined, g.item.natural);
     if (!this.player.strength.canCarry(kg)) return this.notice(heavyNotice(undefined, kg, this.player.strength));
+    // une limite qui ne vient que d'un dessin manquant (CONCEPTION « Le monde ne limite pas ») : le sanglier mort porté n'est pas dessiné
+    const it = items[g.item.item];
+    if (!this.textures.exists(it.icon)) return this.notice(`${it.name[0].toUpperCase()}${it.name.slice(1)} : son dessin porté manque encore.`);
     if (!this.canLift(kg)) return this.effort.exhausted();
     // il garde le sens où il était couché : reposé, il le retrouve (R le tourne) ; et, naturel, sa forme et sa taille
     const what = { item: g.item.item, ...(g.item.view ? { view: g.item.view } : {}), ...(g.item.natural ? { natural: g.item.natural } : {}) };
@@ -1608,7 +1637,16 @@ export class WorldScene extends Phaser.Scene {
         this.notice(`Vitesses : marche ${cmd.walk} m/s, course ${cmd.run} m/s, discrète ${String(SPEEDS.sneak).replace('.', ',')} de la marche.`);
         break;
       case 'creature-spawn':
-        this.notice(this.creatures.spawnNear(this.player.actor.x, this.player.actor.y));
+        this.notice(this.creatures.spawnNear(this.player.actor.x, this.player.actor.y, cmd.dx, cmd.dy));
+        break;
+      case 'health':
+        // la vie de Xéros, réglée ; à zéro, il s'évanouit sur place
+        this.player.health.set(cmd.value);
+        if (this.player.health.fainted) this.faintNow();
+        break;
+      case 'health-infinite':
+        this.healthInfinite = cmd.on;
+        this.player.health.infinite = cmd.on;
         break;
       case 'creature-population':
         this.notice(this.creatures.setPopulation(this.player.actor.x, this.player.actor.y, cmd.count));
@@ -1616,12 +1654,12 @@ export class WorldScene extends Phaser.Scene {
       case 'creature-senses': {
         // les distances d'une espèce, réglées en jouant : les données de creatures.json, en mémoire le temps de la session
         const d = creatures[cmd.creature];
-        if (!d || !(cmd.flee < cmd.alert)) {
-          this.notice('Distances refusées : la fuite doit être en deçà de l’alerte.');
+        if (!d || !(cmd.near < cmd.alert)) {
+          this.notice('Distances refusées : la réaction doit être en deçà de l’alerte.');
           break;
         }
-        d.senses[cmd.gait] = { alert: cmd.alert, flee: cmd.flee };
-        this.notice(`${d.name}, ${cmd.gait} : aux aguets à ${cmd.alert} m, fuite à ${cmd.flee} m.`);
+        d.senses[cmd.gait] = { alert: cmd.alert, near: cmd.near };
+        this.notice(`${d.name}, ${cmd.gait} : aux aguets à ${cmd.alert} m, réagit à ${cmd.near} m.`);
         break;
       }
       case 'creature-rings':
@@ -1682,6 +1720,79 @@ export class WorldScene extends Phaser.Scene {
   private openDialogue(id: string): void {
     this.mode = 'dialogue';
     this.scene.launch('dialogue', { id });
+  }
+
+  /**
+   * Une charge emporte Xéros (world/charge.ts) : le choc mou le blesse (l'énergie perdue × l'efficacité des défenses, la règle des coups
+   * de world/strike.ts) ; ce qu'il faisait s'arrête ; il lâche ce qu'il tient, à ses pieds (la matière se conserve) ; il tombe et glisse
+   * à la vitesse commune (systems/knockdown.ts) ; à zéro de vie, il reste à terre et s'évanouit.
+   */
+  private gored(hit: { kg: number; speed: number; dir: { x: number; y: number }; tusk: number }): void {
+    if (this.player.down || !['play', 'use', 'aim', 'work', 'rail'].includes(this.mode)) return;
+    const r = goreXeros(hit.kg, hit.speed, strength.mass, health.knockdown.friction, combatDef.throw.gravity);
+    const dmg = impactDamage(combatDef.rules, r.lost, hit.tusk);
+    // ce qu'il faisait s'arrête net
+    if (this.mode === 'work') this.works.interrupt();
+    if (this.mode === 'rail') this.rail.interrupt();
+    if (this.mode === 'aim') this.endAim();
+    this.player.tools.cancel();
+    this.combat.abort();
+    // une charge ramène le temps à x1, comme une attaque
+    if (simSpeed() !== timeDef.default) setSimSpeed(this.game, timeDef.default);
+    this.dropAll();
+    const a = this.player.actor;
+    this.combat.floatAt(a.x, a.y - 34, String(dmg).replace('.', ','));
+    this.cameras.main.shake(combatDef.feel.shakeMs, combatDef.feel.shakeIntensity);
+    const fainted = this.player.health.hurt(dmg);
+    this.mode = 'down';
+    this.knockdown.start(
+      hit.dir,
+      r.after,
+      () => {
+        if (fainted) return this.faintNow();
+        if (this.mode === 'down') this.mode = 'play';
+        this.interaction.lock(LOCKS.lock);
+        this.useLockedUntil = this.time.now + LOCKS.lock;
+      },
+      fainted,
+    );
+  }
+
+  /** Il lâche tout ce qu'il tient, à ses pieds (renversé, évanoui). */
+  private dropAll(): void {
+    const a = this.player.actor;
+    for (const slot of ['both', 0, 1] as const) {
+      const h = slot === 'both' ? game.both : game.hands[slot];
+      if (!h) continue;
+      this.handsSystem.layNear(this.player, h, a.x, a.y);
+      clearHeld(game, slot);
+    }
+    this.handsChanged();
+  }
+
+  /** La charge heurte un obstacle (le tronc) : il tremble, l'écran aussi un peu, à la mesure du choc. */
+  private chargeImpact(at: { x: number; y: number }, joules: number): void {
+    const p = this.map.props.find((q) => q.box && at.x >= q.box.left - 2 && at.x <= q.box.right + 2 && at.y >= q.box.top - 2 && at.y <= q.box.bottom + 2);
+    if (p) this.tweens.add({ targets: p.image, x: { from: p.image.x - 1, to: p.image.x + 1 }, duration: 40, yoyo: true, repeat: 3, onComplete: () => p.image.setX(p.x) });
+    // l'écran tremble à la mesure du choc (un plein élan, quelque 5 000 J : la secousse d'un coup)
+    this.cameras.main.shake(combatDef.feel.shakeMs, Math.min(1, joules / 5000) * combatDef.feel.shakeIntensity);
+  }
+
+  /** La charge traverse un buisson : il tremble. */
+  private brushed(at: { x: number; y: number }): void {
+    const p = this.map.softAt(at.x, at.y);
+    if (p && !this.tweens.isTweening(p.image)) this.tweens.add({ targets: p.image, x: { from: p.image.x - 1, to: p.image.x + 1 }, duration: 50, yoyo: true, repeat: 2, onComplete: () => p.image.setX(p.x) });
+  }
+
+  /**
+   * Xéros s'évanouit (sa vie à zéro, docs/CONCEPTION.md « La vie de Xéros ») : ce qu'il tenait reste là où il est tombé ; la nuit passe
+   * (`faint` de GameState : l'endurance et la vie qu'elle rend) ; il se réveille au cagibi, la mère l'a trouvé.
+   */
+  private faintNow(): void {
+    this.dropAll();
+    this.player.stamina.flush();
+    faint(game);
+    this.fadeTo({ mapId: START.map, spawn: START.spawn, wake: true, fainted: true }, 1400);
   }
 
   /** « Dormir ? » -> Oui : fondu au noir, l'horloge au lever, ce que rend la nuit (`sleep` de GameState), réveil dans le cagibi (la partie s'écrit à l'arrivée). */

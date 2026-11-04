@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { sharedRig } from './lib/playtest';
 
 /** Les scénarios, les plus longs d'abord (pour finir plus tôt quand ils tournent à plusieurs). */
-export const SCENARIOS = ['maison', 'monde', 'noeud', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'lapins', 'relief', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective', 'portes', 'forge', 'forge-visite'];
+export const SCENARIOS = ['maison', 'monde', 'noeud', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'lapins', 'sangliers', 'vie', 'relief', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective', 'portes', 'forge', 'forge-visite'];
 
 /**
  * Ceux qui tournent seuls, après les autres : ils effacent un fichier que tous lisent au démarrage (construction écrit puis efface

@@ -68,7 +68,7 @@ function portable(k: string, miss: (w: string) => void): void {
   if (!it.ground && !DRAWINGS_TODO[k]?.ground) miss('son image au sol');
   if (it.ground) for (const v of viewImages(it.ground, it.views, drawn)) if (!drawn(v) && !VIEWS_TODO[k]) miss(`sa vue ${v}`);
   if (it.hold?.image) for (const d of DIRS) if (!animated(it.hold.image, d)) miss(`sa posture tenue ${it.hold.image}-${d}`);
-  if (!drawn(it.icon)) miss(`son icône ${it.icon}`);
+  if (!drawn(it.icon) && !DRAWINGS_TODO[k]?.carried) miss(`son icône ${it.icon}`);
   const heft = heftOf({ item: k });
   if (!heft) miss('frapper : pas d’arme (ni weapon, ni dims)');
   else if (heft.improvised && !(improvisedStroke(heft, xeros.swinger).joules > 0)) miss('frapper : énergie nulle');
@@ -274,7 +274,7 @@ const [modelKey, modelDef] = model;
 const hare = CreatureSchema.parse({
   ...modelDef,
   name: 'lièvre d’essai',
-  senses: { still: { alert: 9, flee: 4 }, sneak: { alert: 14, flee: 7 }, walk: { alert: 30, flee: 18 }, run: { alert: 40, flee: 30 } },
+  senses: { still: { alert: 9, near: 4 }, sneak: { alert: 14, near: 7 }, walk: { alert: 30, near: 18 }, run: { alert: 40, near: 30 } },
   flee: { speed: 14, zigzag: { every: 3, angle: 0 } },
   graze: { ...modelDef.graze, range: 40 },
 });

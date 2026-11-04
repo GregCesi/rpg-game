@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { HUD, STAMINA_BAR, UI, VIEW, UI_ZOOM } from '../config';
-import { items, props, stamina } from '../content';
+import { health, items, props, stamina } from '../content';
 import type { StaminaLevels } from '../entities/Stamina';
 import { GameEvent, type PlayerCell } from '../events';
 import { game, type Held } from '../state';
@@ -59,6 +59,14 @@ export class HudScene extends Phaser.Scene {
   private energyX = 0;
   /** Le clignotement de la part « revient », pendant que Xéros est essoufflé. */
   private blink?: Phaser.Tweens.Tween;
+  /**
+   * La barre de vie (docs/CONCEPTION.md, « La vie de Xéros »), au-dessus de celle d'endurance, du même cadre (art/ui/stamina-bar.ts) :
+   * le creux hachuré de ce qui est perdu, la vie en rouge (les pièces du souffle fatigué, `ui-bar-breath-low`).
+   */
+  private life!: Phaser.GameObjects.Container;
+  private lifeParts!: Record<'mid' | 'right' | 'lost' | 'edge' | 'fill', Phaser.GameObjects.TileSprite>;
+  /** Ce que montre la barre de vie (« 65/100 ») : lu par les tests de scénario. */
+  healthText = '';
 
   constructor() {
     super('hud');
@@ -95,11 +103,12 @@ export class HudScene extends Phaser.Scene {
       this.bar.add([slot, icon, text]);
     });
     this.makeEnergy(VIEW.width - MARGIN, y0 - STAMINA_BAR.gap);
+    this.makeLife(VIEW.width - MARGIN, y0 - STAMINA_BAR.gap - STAMINA_BAR.height - 1);
     // le cadran du temps, en haut à droite (docs/CONCEPTION.md, « Le temps »)
     this.face = this.add.container(0, 0);
     this.bar.add(this.face);
     this.notice = this.add
-      .text(VIEW.width / 2, y0 - STAMINA_BAR.gap - STAMINA_BAR.height - 4, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
+      .text(VIEW.width / 2, y0 - STAMINA_BAR.gap - 2 * STAMINA_BAR.height - 5, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setResolution(UI_ZOOM)
       .setAlpha(0);
@@ -110,8 +119,10 @@ export class HudScene extends Phaser.Scene {
     this.game.events.on(GameEvent.HandsChanged, this.redraw, this);
     this.game.events.on(GameEvent.Stamina, this.showEnergy, this);
     this.game.events.on(GameEvent.StaminaDenied, this.shakeEnergy, this);
+    this.game.events.on(GameEvent.Health, this.showLife, this);
     this.game.events.on(GameEvent.Notice, this.showNotice, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off(GameEvent.Health, this.showLife, this);
       this.game.events.off(GameEvent.PlayerCell, this.onCell, this);
       this.game.events.off(GameEvent.HandsChanged, this.redraw, this);
       this.game.events.off(GameEvent.Stamina, this.showEnergy, this);
@@ -191,6 +202,39 @@ export class HudScene extends Phaser.Scene {
       p.backEdge.setAlpha(1);
       p.back.setAlpha(1);
     }
+  }
+
+  /** La barre de vie, son bord droit en `right`, son bas en `bottom` : le cadre de la barre d'endurance, un creux de `health.max` points. */
+  private makeLife(right: number, bottom: number): void {
+    const { inner, end, height, pxPerPoint } = STAMINA_BAR;
+    const tile = (x: number, y: number, h: number, key: string) => this.add.tileSprite(x, y, 1, h, key).setOrigin(0);
+    const iw = Math.max(1, Math.round(health.max * pxPerPoint));
+    const left = this.add.image(0, 0, 'ui-bar-left').setOrigin(0);
+    this.lifeParts = {
+      mid: tile(end, 0, height, 'ui-bar-mid'),
+      right: tile(end + iw, 0, height, 'ui-bar-right'),
+      lost: tile(inner, inner, 4, 'ui-bar-lost'),
+      edge: tile(inner, inner, 4, 'ui-bar-breath-low-edge'),
+      fill: tile(inner, inner, 4, 'ui-bar-breath-low'),
+    };
+    const p = this.lifeParts;
+    p.mid.setSize(iw, height);
+    p.right.setSize(end, height);
+    p.lost.setSize(iw, 4);
+    this.life = this.add.container(Math.round(right - (iw + 2 * end)), bottom - height, [left, p.mid, p.right, p.lost, p.edge, p.fill]);
+    this.bar.add(this.life);
+    this.showLife(game.health);
+  }
+
+  /** La vie : la part rouge, de sa colonne de bord au reste ; le perdu, hachuré. */
+  private showLife(points: number): void {
+    const { pxPerPoint, inner } = STAMINA_BAR;
+    const iw = Math.max(1, Math.round(health.max * pxPerPoint));
+    const w = points <= 0 ? 0 : Math.min(iw, Math.max(1, Math.round(points * pxPerPoint)));
+    const p = this.lifeParts;
+    p.edge.setVisible(w > 0).setX(inner).setSize(1, 4);
+    p.fill.setVisible(w > 1).setX(inner + 1).setSize(Math.max(1, w - 1), 4);
+    this.healthText = `${Math.round(points)}/${health.max}`;
   }
 
   /** Un effort a été refusé (épuisé) : la barre tremble un instant. */

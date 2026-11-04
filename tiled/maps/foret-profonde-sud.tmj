@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 1828,
+  "nextobjectid": 1829,
   "properties": [
     {
       "name": "name",
@@ -22106,6 +22106,30 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 1828,
+          "rotation": 0,
+          "visible": true,
+          "name": "bauge",
+          "type": "Warren",
+          "x": 940,
+          "y": 1870,
+          "width": 120,
+          "height": 120,
+          "properties": [
+            {
+              "name": "creature",
+              "type": "string",
+              "propertytype": "CreatureKind",
+              "value": "boar"
+            },
+            {
+              "name": "population",
+              "type": "int",
+              "value": 2
+            }
+          ]
+        },
         {
           "id": 1827,
           "rotation": 0,

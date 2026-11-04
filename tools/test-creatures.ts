@@ -13,28 +13,30 @@ import { around, beast, blockedIn, drive, DT, field, type Box } from './lib/crea
 
 const GAITS: Gait[] = ['still', 'sneak', 'walk', 'run'];
 
-for (const [kind, def] of Object.entries(creatures)) {
+// les bêtes qui fuient (le lapin) ; celles qui chargent (le sanglier) ont leur banc : tools/test-charge.ts
+const FLEERS = Object.entries(creatures).filter(([, d]) => d.reaction === 'flee');
+for (const [kind, def] of FLEERS) {
   // ---------- les états selon la distance et l'allure ----------
   const at = { x: 0, y: 0 };
   for (const g of GAITS) {
     const s = def.senses[g];
     const xeros = (m: number) => ({ x: pixels(m), y: 0, gait: g });
-    assert.equal(perceive(def, at, xeros(s.flee - 0.1)), 'flee', `${kind}, ${g} : en deçà de ${s.flee} m, elle fuit`);
-    assert.equal(perceive(def, at, xeros(s.alert - 0.1)), s.alert - 0.1 < s.flee ? 'flee' : 'alert', `${kind}, ${g} : en deçà de ${s.alert} m, aux aguets`);
+    assert.equal(perceive(def, at, xeros(s.near - 0.1)), 'near', `${kind}, ${g} : en deçà de ${s.near} m, elle fuit`);
+    assert.equal(perceive(def, at, xeros(s.alert - 0.1)), s.alert - 0.1 < s.near ? 'near' : 'alert', `${kind}, ${g} : en deçà de ${s.alert} m, aux aguets`);
     assert.equal(perceive(def, at, xeros(s.alert + 0.1)), undefined, `${kind}, ${g} : au-delà de ${s.alert} m, rien`);
   }
   // plus Xéros va vite, plus elle le perçoit de loin
   for (let i = 1; i < GAITS.length; i++) {
     const a = def.senses[GAITS[i - 1]];
     const b = def.senses[GAITS[i]];
-    assert.ok(a.alert <= b.alert && a.flee <= b.flee, `${kind} : ${GAITS[i - 1]} se perçoit moins loin que ${GAITS[i]}`);
+    assert.ok(a.alert <= b.alert && a.near <= b.near, `${kind} : ${GAITS[i - 1]} se perçoit moins loin que ${GAITS[i]}`);
   }
   // ses distances d'alerte tiennent dans le champ visible au zoom de départ, de part et d'autre de Xéros, avec une marge d'un mètre
   // (Grégoire, chantier « correctifs » : on voit la bête qui se dresse)
   const half = (((VIEW.width * ZOOM) / ZOOM_STEPS.start / 2) * CM_PER_PX) / 100;
   for (const g of GAITS) assert.ok(def.senses[g].alert <= half - 1, `${kind}, ${g} : alerte à ${def.senses[g].alert} m, au-delà de la demi-vue au zoom de départ moins 1 m (${(half - 1).toFixed(1)} m)`);
   // Xéros à la course ne la rattrape jamais en fuite (voulu)
-  assert.ok(def.flee.speed > PLAYER.run, `${kind} : sa fuite (${def.flee.speed} m/s) est plus rapide que la course de Xéros (${PLAYER.run} m/s)`);
+  assert.ok(def.flee!.speed > PLAYER.run, `${kind} : sa fuite (${def.flee!.speed} m/s) est plus rapide que la course de Xéros (${PLAYER.run} m/s)`);
 
   calmTest(kind, def);
   fleeTests(kind, def);
@@ -47,7 +49,7 @@ function calmTest(kind: string, def: CreatureDef): void {
   const s = def.senses.walk;
   const f = field([], [{ x: -pixels(200), y: 0 }]);
   const c = beast(def, { x: 0, y: 0 });
-  const mid = (s.alert + s.flee) / 2;
+  const mid = (s.alert + s.near) / 2;
   f.threat = { x: pixels(mid), y: 0, gait: 'walk' };
   drive(c, def, f, 1);
   assert.equal(c.mode, 'alert', `${kind} : Xéros qui marche à ${mid} m, elle est aux aguets`);
@@ -63,7 +65,7 @@ function calmTest(kind: string, def: CreatureDef): void {
   const c2 = beast(def, { x: 0, y: 0 });
   const steps = Math.ceil((def.calm * 2) / DT);
   const from = s.alert - 0.05;
-  const by = (from - s.flee - 0.05) / steps;
+  const by = (from - s.near - 0.05) / steps;
   let x = from;
   f.threat = { x: pixels(x), y: 0, gait: 'walk' };
   drive(c2, def, f, steps, undefined, () => {
@@ -105,7 +107,7 @@ function fleeTests(kind: string, def: CreatureDef): void {
       const f = field(L.boxes, [hole], seed);
       const blocked = blockedIn(L.boxes);
       const c = beast(def, L.start);
-      f.threat = { x: L.start.x + pixels(def.senses.walk.flee / 2), y: L.start.y, gait: 'walk' };
+      f.threat = { x: L.start.x + pixels(def.senses.walk.near / 2), y: L.start.y, gait: 'walk' };
       const r = drive(
         c,
         def,
@@ -128,23 +130,23 @@ function fleeTests(kind: string, def: CreatureDef): void {
   let side = 0;
   const r = drive(c, def, f, Math.ceil(30 / DT), (b) => b.mode === 'thump', (b) => (side = Math.max(side, Math.abs(b.y))));
   const t = r.steps * DT;
-  const ideal = 20 / def.flee.speed;
+  const ideal = 20 / def.flee!.speed;
   assert.ok(t >= ideal * 0.98 && t <= ideal * 1.4, `${kind} : 20 m de fuite en ${t.toFixed(2)} s (en ligne droite : ${ideal.toFixed(2)} s)`);
-  if (def.flee.zigzag.angle > 0) assert.ok(side >= 3, `${kind} : elle zigzague (écart de ${side.toFixed(1)} px)`);
+  if (def.flee!.zigzag.angle > 0) assert.ok(side >= 3, `${kind} : elle zigzague (écart de ${side.toFixed(1)} px)`);
 }
 
 /** Le tambour à l'entrée fait fuir les voisines dans son rayon, pas les autres. */
 function alarmTest(kind: string, def: CreatureDef): void {
   const hole = { x: 0, y: 0 };
   const f = field([], [hole], 3);
-  const near = beast(def, { x: pixels(def.thump.radius * 0.6), y: 0 });
-  const far = beast(def, { x: 0, y: pixels(def.thump.radius + 10) });
+  const near = beast(def, { x: pixels(def.thump!.radius * 0.6), y: 0 });
+  const far = beast(def, { x: 0, y: pixels(def.thump!.radius + 10) });
   near.id = `${kind}#1`;
   far.id = `${kind}#2`;
   const all: Creature[] = [near, far];
   alarm(all, def, hole, 'essai', () => around(f));
-  assert.equal(near.mode, 'flee', `${kind} : à ${def.thump.radius * 0.6} m du tambour, elle fuit`);
-  assert.equal(far.mode, 'calm', `${kind} : à ${def.thump.radius + 10} m, elle broute encore`);
+  assert.equal(near.mode, 'flee', `${kind} : à ${def.thump!.radius * 0.6} m du tambour, elle fuit`);
+  assert.equal(far.mode, 'calm', `${kind} : à ${def.thump!.radius + 10} m, elle broute encore`);
 }
 
 /** Un coup qui ne tue pas : blessée, elle fuit ; un coup qui dépasse ses points de vie : morte. */
@@ -157,5 +159,5 @@ function hurtTest(kind: string, def: CreatureDef): void {
 }
 
 console.log(
-  `✓ créatures (${Object.keys(creatures).join(', ')}) : les états selon la distance et l'allure, le calme quand Xéros s'arrête ou recule, la fuite qui atteint l'entrée sans jamais traverser un obstacle (4 terrains × 12 graines), le zigzag, le tambour qui fait fuir les voisines, blessée ou tuée`,
+  `✓ créatures qui fuient (${FLEERS.map(([k]) => k).join(', ')}) : les états selon la distance et l'allure, le calme quand Xéros s'arrête ou recule, la fuite qui atteint l'entrée sans jamais traverser un obstacle (4 terrains × 12 graines), le zigzag, le tambour qui fait fuir les voisines, blessée ou tuée`,
 );

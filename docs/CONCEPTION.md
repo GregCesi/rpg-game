@@ -1784,6 +1784,13 @@ Les touches : [docs/COMMANDES.md](COMMANDES.md).
   à Xéros, puis revient ; sa matière vole. Des points de vie finis attendent que la partie garde les blessures (validate.ts les
   refuse en attendant).
 - **Avec `?debug`** : les dégâts chiffrés au-dessus de la cible et la zone de coup dessinée au sol, un instant.
+- **La peau** (décidé le 4 novembre 2026, chantier « sangliers ») : une cible peut avoir une peau (`hide` de son `target`, en joules) qui
+  encaisse cette énergie à chaque choc ; un tranchant la coupe d'autant (`edge` du `work` de l'outil, de 0 à 1 : la hache 1). Les
+  dégâts sont ceux de l'énergie qui passe : `throughHide` de world/strike.ts, `impactDamage(max(0, J − hide × (1 − edge)))`. La règle
+  vaut pour **toute cible**, tout coup et tout objet lancé (un objet lancé n'a pas de tranchant) ; sans peau (`hide` 0, le mannequin,
+  le lapin), rien ne change. Le sanglier a 120 J : le poing et l'épée de bois ne le blessent jamais, la branche presque pas, la hache
+  le tue en quatre coups d'en haut. **Frapper une bête qui charge** compte comme frapper une bête arrêtée : la vitesse ajoutée viendra
+  avec l'épieu.
 - **Le mannequin** : un poteau planté (une perche de 2 m), une botte de chaume liée dessus avec un lien ; la transformation
   `raise-training-dummy` (à venir), et il se pose en mode construction. L'épée de bois : taillée dans une planche fendue par le
   menuisier, `carve-wooden-sword` (à venir).
@@ -1864,7 +1871,9 @@ ceci.
 - **Les attaques spéciales**, débloquées par **les idées de la nuit** (Xéros qui rêve d'un coup et le sait au réveil) : un champ de
   l'attaque qui la tient fermée tant que l'idée n'est pas venue.
 - **Les lapins** : faits (chantier « lapins », 3 novembre 2026) : voir *Les créatures*.
-- **La vie de Xéros** : une jauge à côté de l'endurance, ce qui le blesse, se soigner, dormir.
+- **La vie de Xéros** : faite (chantier « sangliers », 4 novembre 2026) : voir *La vie de Xéros*. Reste : se soigner (autrement
+  qu'en dormant), d'autres choses qui blessent.
+- **L'épieu** : l'arme de la chasse au sanglier ; la vitesse de la bête qui charge s'ajoute à celle du coup (la vitesse relative).
 - Les commandes à trancher : voir [docs/COMMANDES.md](COMMANDES.md), « À trancher ».
 
 ## Le lancer (décidé le 3 novembre 2026, chantier « commandes »)
@@ -1928,7 +1937,13 @@ règle écrite pour le lapin (*Le monde ne limite pas*).
   manque, une naît toutes les `births.hours` heures.
 - **Le jeu** (`src/systems/creatures.ts`, appelé par `WorldScene.update` quand l'horloge avance) : chaque pas de jeu de taille normale,
   donc aussi en temps accéléré (V, ?dieu) ; chaque bête dessinée par sa planche (`<image>-<pose>-<direction>` : `graze`, `sit`, `hop`,
-  `alert`, `run`, `thump`).
+  `alert`, `run`, `thump` ; une bête qui charge : `tell`, `charge`, `impact`, `stunned`, `rest`, `die`), chaque image avec sa durée
+  si sa planche le dit (`durations`), posée à ses pieds (`feet` de la planche).
+- **Deux réactions, deux gîtes** (4 novembre 2026, chantier « sangliers ») : quand Xéros entre dans sa distance `near`, ou qu'un coup la
+  blesse, une bête **fuit** (`reaction: "flee"`, le lapin) ou **charge** (`"charge"`, le sanglier : `world/charge.ts`) ; son gîte est un
+  **terrier** (`den: "burrow"` : invisible dedans, des entrées dans le rectangle `Warren`) ou une **bauge** (`"wallow"` : au milieu du
+  rectangle, sans objet ; chaque bête y a sa place, couchée et visible, et perçoit Xéros à la part `asleep` de ses distances). Une
+  heure de `schedule` peut dire jusqu'où elles errent (`range`).
 - **La chasse** : une bête est une cible (`target` de sa créature : des points de vie finis, sa matière `fx-<matter>`) ; les dégâts
   viennent des coups (world/strike.ts) et des lancers (world/throw.ts), sans exception. **Un lancer touche une bête qui bouge** : à
   chaque pas du vol, le chemin de l'objet vu depuis la bête (les deux mouvements du pas) franchit-il son emprise, sous sa hauteur
@@ -1962,13 +1977,60 @@ maison, à l'est de son pignon ; 5 lapins au sud de la route. Puis une garenne d
 friches, le pré de l'est, du nord, du sud, les champs rivaux, ceux du riche, le chemin (posées au milieu de l'herbe libre la plus proche
 du centre de la zone).
 
+**Le sanglier** (décidé le 4 novembre 2026, chantier « sangliers » ; [fiche](objets/boar.md) ; mort : le
+[sanglier mort](objets/dead-boar.md), 80 kg). Les décisions de Grégoire sur le cadrage (`CADRAGE-sangliers.md`) :
+
+- **Un seul sanglier, de 80 kg** (140 × 40 × 80 cm ; le solitaire, la laie et ses marcassins viendront plus tard, en données). Huit
+  bêtes, une bauge par zone de forêt profonde, dans une clairière du sol `deepwoods` (nord 2, forêt profonde 1, sud 2, ronces 3) ;
+  la nuit, ils fouillent jusqu'à 60 m de leur bauge, ce qui les garde dans la forêt profonde et son sous-bois : **jamais à la ferme**.
+- **Le jour** (7 h à 19 h), couchés à la bauge, ils perçoivent deux fois moins loin, et 10 % sont debout (à 10 m de la bauge).
+- **Perception** (aux aguets / il charge, en m) : immobile 4 / 2, discret 7 / 4, marche 12 / 8, course 16 / 11 ; réglables dans ?dieu
+  comme celles du lapin. À la marche, il voit Xéros au bord de l'écran ou au-delà (voulu : le danger vient de ce qu'on ne voit pas ;
+  la règle « dans le champ visible » du lapin ne vaut que pour les bêtes qui fuient).
+- **Il ne charge que si la ligne jusqu'à Xéros est libre** (rien de dur ; un buisson ne compte pas). **La ligne est visée une fois**, à
+  la fin de l'annonce (0,6 s), et jamais corrigée : Xéros qui voit venir la charge s'écarte. Il accélère à 8 m/s² jusqu'à 11 m/s,
+  court jusqu'à l'endroit où était Xéros plus 4 m (au plus 25 m), freine à 9 m/s², souffle 1,5 s.
+- **La charge traverse les buissons en les secouant** (`soft` de props.json) ; tout le reste de ce qui a un corps l'arrête, et le bord
+  de la zone aussi. Contre un obstacle, toute l'énergie reste dans la bête : **sonnée** 5 s pour une pleine charge (4 840 J), au
+  prorata, pas sous 1 500 J ; l'arbre tremble. C'est le jeu du torero : un gros tronc derrière soi, s'écarter au dernier moment.
+- **Frappé pendant qu'il est sonné**, il le reste jusqu'au bout ; ensuite, s'il est blessé, il charge aussitôt. Blessé quand il ne
+  l'est pas, il charge aussitôt.
+- **Contre Xéros**, le choc est mou : il l'emporte (Xéros 70 kg, `mass` de strength.json) ; l'énergie perdue (½ μ v²) le blesse pour
+  15 % (`tusk`) : 35 points à pleine vitesse, trois charges l'évanouissent ; Xéros **renversé** (*La vie de Xéros*).
+- **La peau** (*Le combat*) : 120 J. Tué, il bascule sur le flanc et devient le sanglier mort, trop lourd pour Xéros (80 kg, il en
+  porte 70) ; son dessin porté et son icône attendent le **dépeçage**, un autre chantier.
+- Les dessins : la variante C de l'essai (la tête massive en coin, la joue grise ; la face et le dos à 10 × 30, la tolérance du gabarit
+  prise pour la masse de la tête) ; le profil hybride B + C essayé ensuite est annulé, rangé dans `art/proposals/sanglier-bc-annule/`.
+
 **Une nouvelle créature** = une entrée de creatures.json, sa planche dessinée par le pixel-artist (chaque pose dans chaque direction),
-l'objet qu'elle devient (items.json, sa masse), sa matière `fx-…` si elle est nouvelle, une garenne (ou plus tard un autre gîte) posée
-dans Tiled ; aucun code. Vérifier : `npm run test:fast` (`tools/test-creatures.ts`, `tools/test-garenne.ts`), `npm run test:contrats`
-(une créature d'essai faite de données vit, perçoit et fuit), `npm run test:lapins` (dans le vrai jeu). Le choix de ne pas prendre la
+l'objet qu'elle devient (items.json, sa masse), sa matière `fx-…` si elle est nouvelle, un gîte (terrier ou bauge) posé dans Tiled ;
+aucun code. Vérifier : `npm run test:fast` (`tools/test-creatures.ts`, `tools/test-garenne.ts` pour celles qui fuient,
+`tools/test-charge.ts` pour celles qui chargent), `npm run test:contrats` (une créature d'essai faite de données vit, perçoit et fuit),
+`npm run test:lapins` et `npm run test:sangliers` (dans le vrai jeu). Le choix de ne pas prendre la
 bibliothèque Yuka : son modèle d'obstacles (des sphères) ne colle pas aux tuiles et aux boîtes du jeu, son errance tire au hasard sans
 graine (les tests le veulent fixé), et elle apporte son propre temps et ses entités, en double des pas de jeu de simSpeed ; ce qu'il
 fallait (trois états, une errance, un chemin) tient en un fichier.
+
+## La vie de Xéros (décidé le 4 novembre 2026, chantier « sangliers »)
+
+- **100 points** (`max` de `src/content/health.json`), une barre au HUD, au-dessus de celle de l'endurance, du même cadre de bois : la
+  vie en rouge, le perdu hachuré (art/ui/stamina-bar.ts, les pièces existantes : aucun dessin nouveau). Composant `entities/Health.ts`
+  attaché à Player ; la valeur vit dans GameState (`health`, `setHealth` ; `SAVE_VERSION` 31, une partie d'avant la reçoit pleine).
+- **Ce qui la fait baisser** : pour l'instant, la charge d'un sanglier (*Les créatures*) : l'énergie perdue dans le choc × l'efficacité
+  des défenses, par la règle des coups (`impactDamage`).
+- **Renversé** (`systems/knockdown.ts`, le geste validé `xeros-down`, art/characters/xeros-down.ts) : ce qu'il faisait s'arrête net (un
+  coup, un travail, une passe, une visée), **il lâche ce qu'il tient**, à ses pieds (la matière se conserve) ; il tombe à l'opposé de la
+  bête et **glisse** dans le sens de la charge à la vitesse commune du choc, freiné par le frottement (`knockdown.friction`, 0,7 :
+  2,5 m pour une pleine charge), sans jamais traverser un obstacle ; **1,5 s à terre**, puis il s'assoit, se met à genoux, se relève
+  (le geste dure 2,3 s). Rien ne le mène pendant ce temps ; le temps revient à x1, comme pour une attaque.
+- **À zéro, il s'évanouit** : il reste à terre, puis le fondu ; ce qu'il tenait reste là où il est tombé ; il se réveille **dans son
+  cagibi le lendemain matin** (`faint` de GameState : la nuit passe jusqu'au lever, elle rend l'endurance comme une nuit de sommeil), et
+  la mère l'a trouvé (sa ligne, `faint.dialogue`). **Pas de mort définitive** pour l'instant.
+- **La nuit** rend la moitié du maximum (`sleepHeal`) pour une nuit pleine, au prorata d'une nuit plus courte ; l'évanouissement compte
+  comme une nuit.
+- **?dieu** « Vie » : régler ses points (à zéro, il s'évanouit sur place), la vie infinie.
+- Vérifier : `npm run test:vie` (une charge le met à zéro, il se réveille au cagibi, la mère parle, la moitié de sa vie, la hache restée
+  dans la forêt), `npm run test:sangliers` (renversé, il lâche la branche et glisse).
 
 ## Fendre (décidé le 30 octobre 2026)
 

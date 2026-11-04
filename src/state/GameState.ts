@@ -3,7 +3,7 @@
 // Les cartes décrivent le monde au début de la partie ; GameState dit seulement ce qui a changé.
 
 import { z } from 'zod';
-import { items, stamina, time } from '../content';
+import { health, items, stamina, time } from '../content';
 import { MINUTES_PER_DAY, between, later } from '../world/clock';
 import { morning, wakeTime } from '../world/sleep';
 import { BuildPlacedSchema, JointTypeSchema, CornerSchema, NaturalSchema, PileWoodSchema, WoodPieceSchema, type BuildPlaced, type Natural, type WoodPiece } from '../content/types';
@@ -195,6 +195,11 @@ export const GameStateSchema = z.strictObject({
    */
   stamina: z.strictObject({ breath: z.number().nonnegative(), ceiling: z.number().nonnegative(), max: z.number().positive(), woke: z.number().nonnegative() }),
   /**
+   * La vie de Xéros (docs/CONCEPTION.md, « La vie de Xéros » ; health.json) : de 0 au maximum (`max`). Une charge la fait baisser ; la
+   * nuit en rend la moitié du maximum ; à zéro, il s'évanouit (`faint`) et se réveille au cagibi le lendemain matin.
+   */
+  health: z.number().nonnegative(),
+  /**
    * L'horloge (docs/CONCEPTION.md, « Le temps ») : le jour (1 au départ) et la minute du jour (0 à 1 440, avec des fractions). Elle
    * avance à la vitesse du temps (systems/clock.ts) et des minutes d'un travail ; le sommeil la mène au lever.
    */
@@ -247,7 +252,7 @@ export function resetStamina(s: GameState): void {
 }
 
 export function newGame(): GameState {
-  return { hands: [null, null], both: null, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: startStamina(), clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
+  return { hands: [null, null], both: null, maps: {}, nextGroundId: 0, nextSpawnId: 0, nextPileId: 0, stamina: startStamina(), health: health.max, clock: { day: 1, minute: time.wakeHour * 60 }, knownPlans: [], nextSiteId: 0, nextBuildId: 0, nextJointId: 0 };
 }
 
 /** Ce qui a changé sur une carte (créé vide au premier besoin). */
@@ -331,11 +336,34 @@ export function setStamina(s: GameState, value: { breath?: number; ceiling?: num
  * la nuit rend le plafond selon l'épuisement du coucher et le sommeil pris, et fait monter le maximum si la journée l'a entraîné.
  */
 export function sleep(s: GameState): void {
-  const bed = s.clock;
-  const wake = wakeTime(bed, time.wakeHour, stamina.sleep.hours);
-  const { max, ceiling } = morning(stamina, s.stamina, between(bed, wake));
+  restUntil(s, wakeTime(s.clock, time.wakeHour, stamina.sleep.hours));
+}
+
+/**
+ * Xéros dort ou reste évanoui jusqu'à `wake` : la nuit rend l'endurance (world/sleep.ts `morning`) et la vie, la part `sleepHeal` du
+ * maximum pour une nuit pleine (`sleep.hours` de stamina.json), au prorata d'une nuit plus courte.
+ */
+function restUntil(s: GameState, wake: { day: number; minute: number }): void {
+  const slept = between(s.clock, wake);
+  const { max, ceiling } = morning(stamina, s.stamina, slept);
   s.stamina = { breath: ceiling, ceiling, max, woke: ceiling };
+  s.health = Math.min(health.max, s.health + health.max * health.sleepHeal * Math.min(1, slept / (stamina.sleep.hours * 60)));
   s.clock = wake;
+  revision++;
+}
+
+/**
+ * Xéros s'évanouit (sa vie à zéro, docs/CONCEPTION.md « La vie de Xéros ») : il reste sans connaissance jusqu'au prochain lever
+ * (`wakeHour` de time.json, le lendemain matin), et cette nuit lui rend ce que rend une nuit (`restUntil`). La scène le ramène au cagibi.
+ */
+export function faint(s: GameState): void {
+  const at = time.wakeHour * 60;
+  restUntil(s, s.clock.minute < at ? { day: s.clock.day, minute: at } : { day: s.clock.day + 1, minute: at });
+}
+
+/** La vie de Xéros vaut `value` (bornée de 0 au maximum). */
+export function setHealth(s: GameState, value: number): void {
+  s.health = Math.min(health.max, Math.max(0, value));
   revision++;
 }
 
