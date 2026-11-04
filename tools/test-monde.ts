@@ -190,15 +190,20 @@ await playtest('monde', async ({ page, errors, load }) => {
       const S = 4;
       // les portes fermées de la maison (les portes intérieures) ne barrent pas le chemin : Xéros les ouvre en route (E)
       const doors = m.builds.filter((b: any) => b.zone && /door$/.test(b.piece.piece.prop ?? '')).map((b: any) => b.zone);
-      const free = (x: number, y: number) => m.areaFree({ left: x - 5, top: y - 8, right: x + 5, bottom: y }, [], doors);
+      // comme un joueur, par le milieu des passages : 2 px de marge autour du corps quand il y a la place (une porte de 90 cm laisse
+      // 18 px à un corps de 10 : collé à une huisserie, le moindre écart sous la charge l'y arrête) ; sinon au plus juste
+      let margin = 2;
+      const free = (x: number, y: number) => m.areaFree({ left: x - 5 - margin, top: y - 8 - margin, right: x + 5 + margin, bottom: y + margin }, [], doors);
       const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
       const goal = to
         ? (x: number, y: number) => Math.abs(x * S - to.x) <= S / 2 && Math.abs(y * S - to.y) <= S / 2
         : (x: number, y: number) => Math.abs(x * S - door.x) <= S && Math.abs(y * S - door.y) <= S;
       const prev = new Map<string, string>();
+      let end: number[] | undefined;
+      const search = () => {
+      prev.clear();
       const q = [start];
       prev.set(start.join(), '');
-      let end: number[] | undefined;
       while (q.length) {
         const [x, y] = q.shift()!;
         if (goal(x, y)) {
@@ -211,6 +216,12 @@ await playtest('monde', async ({ page, errors, load }) => {
           prev.set(n.join(), `${x},${y}`);
           q.push(n);
         }
+      }
+      };
+      search();
+      if (!end) {
+        margin = 0;
+        search();
       }
       const out: { x: number; y: number }[] = [];
       for (let k = end?.join(); k; k = prev.get(k)) {
@@ -236,6 +247,8 @@ await playtest('monde', async ({ page, errors, load }) => {
   for (const c of route.slice(1)) {
     const now = await where();
     const axis = Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y';
+    // à un pas de la grille de la route (4 px) : sous la charge, une image longue contient plusieurs pas de la physique et le plus petit
+    // déplacement (une image d'appui, environ 4 px en marchant) sauterait par-dessus une fenêtre plus étroite (chantier « maison-2 »)
     await goTo(c.x, c.y, axis, 2);
     if (!c.open) continue;
     // devant une porte intérieure fermée : tourné vers elle, il l'ouvre (E) ; elle ne barre plus le passage
