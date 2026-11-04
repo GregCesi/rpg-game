@@ -778,6 +778,28 @@ moteur (les hauteurs, la marche, le saut, la nage, les refus) reste tel quel. Le
 trou rond aux parois lisses, « presque parfaits » pour Grégoire (13.6, `art/proposals/relief-plans-v2.png`) ; les premiers, la mauvaise
 forme à deux talus (13.7, `art/proposals/relief-plans-v1.png`).
 
+### 13.0 Les plans en gradins validés, deux corrections (4 novembre)
+
+**Grégoire valide les plans en gradins.** Réponses : **37**, oui, 4 marches de 1,25 m ; **38**, oui, de petits arbres et des buissons
+sur les gradins, les grands sur le dessus, abattables plus tard ; **39**, oui, un chantier à part. **Deux corrections**, qui priment
+sur ce qui suit (13.1 à 13.4 et la planche `relief-plans.png` les montrent encore à l'ancienne) :
+
+- **Les arbres sont droits**, pas penchés au-dessus du chemin. **Ce sont les étages d'arbres, les uns au-dessus des autres, qui
+  referment le cercle** : chaque rangée pousse droit sur son gradin, et sa couronne monte devant la marche et le gradin du dessus.
+- **Chaque gradin n'a que la place d'un tronc** : une seule rangée d'arbres par gradin, alignée le long du chemin. **La profondeur
+  des gradins passe de 1 m à 50 cm** : 1 m laissait la place de deux rangées, 50 cm ne porte qu'un tronc (15 à 20 cm) et ses
+  racines au bord de la marche. Le trou s'ouvre alors sur **5,5 m** en haut (2,5 m de chemin et 1,5 m de gradins de chaque côté), le
+  diamètre du cercle des deuxièmes plans ; le cercle qui passe par les bords du chemin et le bord du dessus a son centre à 3,1 m
+  au-dessus du chemin et son haut à 6,4 m, que les couronnes du gradin 3 et du dessus atteignent sans se pencher. À l'écran
+  (côté ferme), les gradins nord tombent aux lignes −50 / −60 (gradin 1), −85 / −95 (gradin 2) et −120 / −130 (gradin 3) depuis les
+  pieds : **les trois gradins nord entrent dans l'écran**, la marche 4 et le dessus sont juste au-dessus.
+
+**Les essais de dessins** (pixel-artist, hors jeu, rien ne change dans le jeu) : les matières une par une en x4 avec Xéros (le dessus
+du gradin, la contremarche de 1,25 m avec racines et lierre, la terre en coupe, le sol clair du chemin, les petits arbres des
+gradins et les buissons, droits, dans leurs vues) ; les scènes du joueur en x2 au zoom de départ (côté ferme, au-dessus de la
+rivière, à la bouche est) ; la vue d'ensemble du tunnel de la ferme au plateau, vue de dehors ; la bouche est vue depuis la ferme.
+Planches `.art-preview/relief-gradins-*.png` (`npx tsx tools/essai-relief-gradins.ts`).
+
 ### 13.1 La forme : ce que j'ai compris (les gradins)
 
 Tout ce qui avait été compris du trou rond tient toujours : **une masse de terre au dessus plat, à 5 m au-dessus du chemin, dans
