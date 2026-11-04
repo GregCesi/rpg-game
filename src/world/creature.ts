@@ -49,6 +49,8 @@ export interface Creature {
   path?: Point[];
   /** Le zigzag de la fuite : de quel côté elle s'écarte, combien de px avant de changer. */
   zig: { side: 1 | -1; left: number };
+  /** Pourquoi elle fuit : Xéros trop près (`seen`), le tambour d'une voisine (`alarm`), un coup (`hurt`). */
+  fled?: 'seen' | 'alarm' | 'hurt';
   /** Au terrier : combien de secondes avant de pouvoir ressortir. */
   den: number;
 }
@@ -215,9 +217,10 @@ function headHome(c: Creature, s: Surroundings, mode: 'flee' | 'home'): void {
 }
 
 /** Fuir (Xéros trop près, un tambour, un coup) : vers l'entrée la plus proche, en zigzag. */
-export function startFlee(c: Creature, s: Surroundings): void {
+export function startFlee(c: Creature, s: Surroundings, why: NonNullable<Creature['fled']> = 'seen'): void {
   if (c.mode === 'flee' || c.mode === 'thump' || c.mode === 'burrow') return;
   headHome(c, s, 'flee');
+  c.fled = why;
 }
 
 /** Rentrer au terrier sans peur (la garenne veut moins de bêtes dehors). */
@@ -411,11 +414,11 @@ export function step(c: Creature, def: CreatureDef, s: Surroundings, dt: number)
 export function hurt(c: Creature, damage: number, s: Surroundings): 'dead' | 'wounded' {
   c.hp = Math.max(0, Math.round((c.hp - damage) * 10) / 10);
   if (c.hp <= 0) return 'dead';
-  startFlee(c, s);
+  startFlee(c, s, 'hurt');
   return 'wounded';
 }
 
 /** Les bêtes de l'espèce à moins de `thump.radius` m d'un tambour fuient aussi (l'alerte partagée). */
 export function alarm(all: Creature[], def: CreatureDef, at: Point, kind: string, around: (c: Creature) => Surroundings): void {
-  for (const o of all) if (o.kind === kind && o.mode !== 'burrow' && metres(dist(o, at)) <= def.thump.radius) startFlee(o, around(o));
+  for (const o of all) if (o.kind === kind && o.mode !== 'burrow' && metres(dist(o, at)) <= def.thump.radius) startFlee(o, around(o), 'alarm');
 }

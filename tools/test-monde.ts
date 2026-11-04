@@ -125,6 +125,9 @@ await playtest('monde', async ({ page, errors, load }) => {
         let away = 0;
         let best = Infinity;
         let stale = 0;
+        // le plus petit pas obtenu d'un appui bref (sous la charge, une image d'appui fait plusieurs pas de la physique : un joueur ne
+        // s'approche pas plus près que la moitié de ce pas ; la tolérance demandée ne descend jamais sous elle)
+        let minMove = Infinity;
         for (;;) {
           await frame();
           const p = at();
@@ -138,12 +141,14 @@ await playtest('monde', async ({ page, errors, load }) => {
           away = 0;
           const dx = wx - p.wx;
           const dy = wy - p.wy;
-          if (Math.abs(dx) <= tol && Math.abs(dy) <= tol) return (hold([]), { ok: true, p });
+          // dans la maison, la précision demandée (passer une porte) ; dehors, jamais plus près que la moitié d'un pas d'image
+          const near = minMove === Infinity || !start.zone ? tol : Math.max(tol, minMove / 2);
+          if (Math.abs(dx) <= near && Math.abs(dy) <= near) return (hold([]), { ok: true, p });
           const dist = Math.abs(dx) + Math.abs(dy);
           if (dist < best - 1) (best = dist), (stale = 0);
           else if (++stale > 1500) return (hold([]), { ok: false, p, why: `plus de progrès depuis 1500 images (au plus près : ${best.toFixed(1)} px)` });
-          if (axis === 'x' && Math.abs(dx) <= tol) axis = 'y';
-          if (axis === 'y' && Math.abs(dy) <= tol) axis = 'x';
+          if (axis === 'x' && Math.abs(dx) <= near) axis = 'y';
+          if (axis === 'y' && Math.abs(dy) <= near) axis = 'x';
           const dir = axis === 'x' ? (dx > 0 ? 'KeyD' : 'KeyA') : dy > 0 ? 'KeyS' : 'KeyW';
           const d = axis === 'x' ? Math.abs(dx) : Math.abs(dy);
           if (d < 12) {
@@ -153,6 +158,9 @@ await playtest('monde', async ({ page, errors, load }) => {
             await steps(2);
             hold([]);
             await steps(3);
+            const q = at();
+            const moved = q ? Math.hypot(q.wx - p.wx, q.wy - p.wy) : 0;
+            if (moved > 0.5) minMove = Math.min(minMove, moved);
           } else hold(tol < 6 || d < 24 ? [dir] : ['ShiftLeft', dir]);
           // buté sur un coin (un piquet de clôture, l'angle d'un mur) : un petit pas de côté, d'un côté puis de l'autre, et on reprend ;
           // bloqué pour de bon : des centaines d'images sans bouger (et non une durée)
@@ -190,15 +198,20 @@ await playtest('monde', async ({ page, errors, load }) => {
       const S = 4;
       // les portes fermées de la maison (les portes intérieures) ne barrent pas le chemin : Xéros les ouvre en route (E)
       const doors = m.builds.filter((b: any) => b.zone && /door$/.test(b.piece.piece.prop ?? '')).map((b: any) => b.zone);
-      const free = (x: number, y: number) => m.areaFree({ left: x - 5, top: y - 8, right: x + 5, bottom: y }, [], doors);
+      // dans la maison, comme un joueur, par le milieu des passages : 2 px de marge autour du corps quand il y a la place (une porte de
+      // 90 cm laisse 18 px à un corps de 10 : collé à une huisserie, le moindre écart sous la charge l'y arrête) ; sinon au plus juste
+      let margin = w.interior ? 2 : 0;
+      const free = (x: number, y: number) => m.areaFree({ left: x - 5 - margin, top: y - 8 - margin, right: x + 5 + margin, bottom: y + margin }, [], doors);
       const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
       const goal = to
         ? (x: number, y: number) => Math.abs(x * S - to.x) <= S / 2 && Math.abs(y * S - to.y) <= S / 2
         : (x: number, y: number) => Math.abs(x * S - door.x) <= S && Math.abs(y * S - door.y) <= S;
       const prev = new Map<string, string>();
+      let end: number[] | undefined;
+      const search = () => {
+      prev.clear();
       const q = [start];
       prev.set(start.join(), '');
-      let end: number[] | undefined;
       while (q.length) {
         const [x, y] = q.shift()!;
         if (goal(x, y)) {
@@ -211,6 +224,12 @@ await playtest('monde', async ({ page, errors, load }) => {
           prev.set(n.join(), `${x},${y}`);
           q.push(n);
         }
+      }
+      };
+      search();
+      if (!end) {
+        margin = 0;
+        search();
       }
       const out: { x: number; y: number }[] = [];
       for (let k = end?.join(); k; k = prev.get(k)) {
@@ -236,6 +255,8 @@ await playtest('monde', async ({ page, errors, load }) => {
   for (const c of route.slice(1)) {
     const now = await where();
     const axis = Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y';
+    // à un pas de la grille de la route (4 px) : sous la charge, une image longue contient plusieurs pas de la physique et le plus petit
+    // déplacement (une image d'appui, environ 4 px en marchant) sauterait par-dessus une fenêtre plus étroite (chantier « maison-2 »)
     await goTo(c.x, c.y, axis, 2);
     if (!c.open) continue;
     // devant une porte intérieure fermée : tourné vers elle, il l'ouvre (E) ; elle ne barre plus le passage

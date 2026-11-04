@@ -33,8 +33,17 @@ const WALLS = wallsJson as {
   rubble: { label: string; image: string; crop: number }[];
   ns: string[];
   header: { label: string; image: string };
+  /** La pierre recoupée : un moellon (`image`) recoupé à la largeur qui manque pour finir une assise juste au bout (au moins `min` px). */
+  closer: { label: string; image: string; min: number };
   chips: { label: string; image: string };
+  piece: { grid: number; min: number };
 };
+
+/**
+ * La longueur d'un morceau de mur (chantier « maison-2 », Grégoire : une seule règle, comme le bois) : toute longueur sur la grille
+ * de `grid` cm, au moins `min` cm (walls.json, `piece`) ; ses tronçons restent calculés ici, pour toute longueur.
+ */
+export const WALL_PIECE: { grid: number; min: number } = WALLS.piece;
 
 /** Les images des pierres dont l'algorithme se sert (images au sol du jeu, ombre comprise, palette `stonePalette`). */
 export const WALL_STONES: readonly string[] = [...WALLS.rough.map((p) => p.image), ...WALLS.rubble.map((p) => p.image), ...WALLS.ns, WALLS.chips.image];
@@ -59,11 +68,15 @@ export type WallKind = 'rough' | 'dressed';
  * `corner-e`, `corner-w` (un nord-sud qui tiendrait l'angle) restent dessinés mais le jeu ne s'en sert plus.
  */
 export type RunEnd = 'head' | 'abut' | 'corner-n' | 'corner-s' | 'corner-e' | 'corner-w';
-/** Un tronçon : `pieces` morceaux de 1,60 m ; `start` le bout ouest (ou nord), `end` le bout est (ou sud). */
+/**
+ * Un tronçon : sa longueur `length` (px, la somme de ses morceaux, de toute longueur ; absente : `pieces` morceaux de 1,60 m) ; `start`
+ * le bout ouest (ou nord), `end` le bout est (ou sud).
+ */
 export interface RunSpec {
   kind: WallKind;
   axis: 'ew' | 'ns';
-  pieces: number;
+  pieces?: number;
+  length?: number;
   start: RunEnd;
   end: RunEnd;
   seed: number;
@@ -73,10 +86,13 @@ export interface RunSpec {
   extra?: { start?: number; end?: number };
 }
 
-/** Longueur dessinée d'un tronçon le long de son axe (sans la rangée ou la colonne d'ombre) : 32 × pieces + ses `extra`. */
+/** La longueur couverte par un tronçon (px) : `length`, sinon 32 × `pieces`. */
+export const coveredLength = (spec: RunSpec): number => spec.length ?? PIECE_PX * (spec.pieces ?? 1);
+
+/** Longueur dessinée d'un tronçon le long de son axe (sans la rangée ou la colonne d'ombre) : sa longueur couverte + ses `extra`. */
 export function runLength(spec: RunSpec): number {
-  const L = PIECE_PX * spec.pieces + (spec.extra?.start ?? 0) + (spec.extra?.end ?? 0);
-  if (L < 4) throw new Error(`Mur : un tronçon de ${L} px de long (${spec.pieces} morceaux, extra ${JSON.stringify(spec.extra)})`);
+  const L = coveredLength(spec) + (spec.extra?.start ?? 0) + (spec.extra?.end ?? 0);
+  if (L < 4) throw new Error(`Mur : un tronçon de ${L} px de long (${coveredLength(spec)} px, extra ${JSON.stringify(spec.extra)})`);
   return L;
 }
 
@@ -145,6 +161,18 @@ function turn(p: Piece): Piece {
     if (at(x + 1, y) === 'o' && '=DR!'.includes(g[y][x])) g[y][x] = ';';
   }
   return { ...p, full: g.map((r) => r.join('')), turned: true };
+}
+
+/**
+ * Un moellon recoupé à `w` colonnes (contour compris) : ses deux colonnes de chaque bord (le contour et l'arête éclairée à
+ * gauche, le flanc à l'ombre et le contour à droite) et, entre elles, les colonnes du milieu de sa face : la même pierre, plus
+ * courte, avec ses taches. À 3 colonnes (la plus étroite) : le contour gauche, une colonne du milieu, le contour droit.
+ */
+function recut(full: Grid, w: number): Grid {
+  const W0 = full[0].length;
+  const mid = (n: number) => Array.from({ length: n }, (_, i) => Math.floor((W0 - n) / 2) + i);
+  const cols = w >= 4 ? [0, 1, ...mid(w - 4), W0 - 2, W0 - 1] : [0, ...mid(w - 2), W0 - 1];
+  return full.map((row) => cols.map((x) => row[x]).join(''));
 }
 
 /** Ce qui a été posé, pour une planche. */
@@ -266,6 +294,8 @@ interface Tables {
   SMALL: Piece[];
   RUBBLE: Piece[];
   HEADER: Piece;
+  /** Les moellons recoupés, par largeur de dessin (contour compris) : celles qu'aucun moellon entier n'a. */
+  CLOSERS: Piece[];
   STONE_VARIANTS: Stone[];
   BITS: Stone[];
   CAPS: (Stone & { crop: number })[];
@@ -281,6 +311,14 @@ function tables(image: (name: string) => Grid): Tables {
   const RUBBLE: Piece[] = WALLS.rubble.map(({ label, image: im, crop }) => ({ label, image: im, crop, full: bodyOf(image(im)) }));
   const headerFull = bodyOf(image(WALLS.header.image));
   const HEADER: Piece = { label: WALLS.header.label, image: WALLS.header.image, full: headerFull, crop: headerFull.length - 4 };
+  // les moellons recoupés : le moellon de `closer` tranché à chaque largeur qu'aucune pierre entière n'a, jusqu'à la sienne
+  const whole = new Set([...RUBBLE, HEADER].map((p) => p.full[0].length));
+  const closerSrc = RUBBLE.find((p) => p.image === WALLS.closer.image);
+  if (!closerSrc) throw new Error(`Mur : la pierre recoupée ${WALLS.closer.image} n'est pas un moellon de walls.json`);
+  const CLOSERS: Piece[] = [];
+  for (let w = WALLS.closer.min; w < closerSrc.full[0].length; w++) {
+    if (!whole.has(w)) CLOSERS.push({ label: WALLS.closer.label, image: WALLS.closer.image, full: recut(closerSrc.full, w), crop: closerSrc.crop });
+  }
   const sizeOf = (p: Piece) => (BIG.includes(p) ? 'big' : MEDIUM.includes(p) ? 'medium' : 'small') as Stone['size'];
   /** Toutes les manières de poser chaque pierre brute (à plat, retournée, debout, de travers, en biais). */
   const STONE_VARIANTS: Stone[] = [];
@@ -315,7 +353,7 @@ function tables(image: (name: string) => Grid): Tables {
   }
   /** Les pierres entières de l'assise haute (le dessin complet : leur dessus fait le dessus du mur), retournées ou non. */
   const CAPS = ROUGH.flatMap((p) => [p, turn(p)].map((q) => ({ g: q.full, base: p, size: sizeOf(p), how: 'cap' as const, crop: q.crop })));
-  return { image, ROUGH, BIG, MEDIUM, SMALL, RUBBLE, HEADER, STONE_VARIANTS, BITS, CAPS, CHIPS: bodyOf(image(WALLS.chips.image)) };
+  return { image, ROUGH, BIG, MEDIUM, SMALL, RUBBLE, HEADER, CLOSERS, STONE_VARIANTS, BITS, CAPS, CHIPS: bodyOf(image(WALLS.chips.image)) };
 }
 
 function count(t: Tables, used: Used, p: Piece): void {
@@ -492,42 +530,54 @@ function roughWall(t: Tables, seed: number, size: WallSize, ends?: Ends): { grid
   const bottomOf = (s: Stone, y: number) => y + s.g.length - 1;
   const low = size.face < 12;
 
+  // (le solin étroit, face basse et dessus de moins de 5 rangées : les pierres d'about et les grosses après l'assise haute, sous
+  // elle ; posées d'abord, elles montaient si haut qu'aucune pierre de l'assise haute ne tenait au-dessus : une bande de terre
+  // sous le dessus, des éclats en ligne)
+  const narrow = low && size.top < 5;
   // 0. les pierres d'about des bouts finis (tronçon) : la plus droite du côté du bout, grosse de préférence, au pied
-  if (ends) for (const side of ['left', 'right'] as const) {
-    if (ends[side] !== 'head') continue;
-    const outer = (g: Grid) => g.filter((row) => row[side === 'left' ? 0 : row.length - 1] !== EMPTY).length / g.length;
-    const cands = all.filter((s) => s.how === 'flat' && (s.size === 'big' || s.size === 'medium') && s.g.length <= size.face)
-      .map((s) => ({ s, k: outer(s.g) + (s.size === 'big' ? 0.3 : 0) + r() * 0.3 }))
-      .sort((a, b) => b.k - a.k);
-    for (const { s } of cands) {
-      const x = side === 'left' ? 0 : W - s.g[0].length, y = wall.ground - s.g.length + 1;
-      if (!wall.fitsStone(s.g, x, y)) continue;
-      put(s, x, y);
-      break;
+  const aboutStep = () => {
+    if (ends) for (const side of ['left', 'right'] as const) {
+      if (ends[side] !== 'head') continue;
+      const outer = (g: Grid) => g.filter((row) => row[side === 'left' ? 0 : row.length - 1] !== EMPTY).length / g.length;
+      const cands = all.filter((s) => s.how === 'flat' && (s.size === 'big' || s.size === 'medium') && s.g.length <= size.face)
+        .map((s) => ({ s, k: outer(s.g) + (s.size === 'big' ? 0.3 : 0) + r() * 0.3 }))
+        .sort((a, b) => b.k - a.k);
+      for (const { s } of cands) {
+        const x = side === 'left' ? 0 : W - s.g[0].length, y = wall.ground - s.g.length + 1;
+        if (!wall.fitsStone(s.g, x, y)) continue;
+        put(s, x, y);
+        break;
+      }
     }
-  }
+  };
+  if (!narrow) aboutStep();
   // 1. les grosses : 4 ou 5, dont une ou deux dressées, posées sur ce qui est dessous (sur une face basse, une au plus)
   const bigs = all.filter((s) => s.size === 'big');
-  for (const w of wins) {
-    win = w;
-    const nBig = low ? (r() < 0.5 ? 1 : 0) : 3 + (r() < 0.5 ? 1 : 0);
-    const up0 = stats.upright;
-    for (let k = 0; k < nBig; k++) {
-      const pool = bigs.filter((s) => (s.how === 'upright' ? stats.upright - up0 < 2 : true));
-      // une pierre sur trois tirée parmi les dressées, pour qu'il y en ait toujours
-      const from = !low && (k === 1 || (k === 3 && r() < 0.5)) ? pool.filter((s) => s.how === 'upright') : pool;
-      best(from, (s, _x, y, sn) => bottomOf(s, y) >= wall.ground - 6 && sn > 0.2,
-        (s, _x, y) => 0.12 * (bottomOf(s, y) - wall.ground));
+  const bigsStep = () => {
+    for (const w of wins) {
+      win = w;
+      const nBig = low ? (r() < 0.5 ? 1 : 0) : 3 + (r() < 0.5 ? 1 : 0);
+      const up0 = stats.upright;
+      for (let k = 0; k < nBig; k++) {
+        const pool = bigs.filter((s) => (s.how === 'upright' ? stats.upright - up0 < 2 : true));
+        // une pierre sur trois tirée parmi les dressées, pour qu'il y en ait toujours
+        const from = !low && (k === 1 || (k === 3 && r() < 0.5)) ? pool.filter((s) => s.how === 'upright') : pool;
+        best(from, (s, _x, y, sn) => bottomOf(s, y) >= wall.ground - 6 && sn > 0.2,
+          (s, _x, y) => 0.12 * (bottomOf(s, y) - wall.ground));
+      }
     }
-  }
+  };
+  if (!narrow) bigsStep();
   // 2. le dessus profond : des rangs de pierres entières derrière l'assise haute, du nord (rangée 0) au sud, tous les 3
   // pixels à peu près (le dessus d'une moyenne) ; de chacune on ne voit que le dessus, jusqu'à son arête éclairée : sa face
   // est contre la pierre suivante, au même niveau, cachée
   // (le dernier rang finit sous le haut de l'assise haute, qui le recouvre : pas de bande de mortier entre les deux)
+  // (sur une face basse, le solin, dès 2 rangées de dessus : celui de 30 cm, le nord-sud court ; ses grosses du pied y laissent
+  // l'assise haute sans place, et son dessus restait vide, une pierre isolée dépassant de la terre)
   const backRows: number[] = [];
-  if (size.top >= 5) {
-    const span = wall.faceTop - 3, n = Math.ceil(span / 3) + 1;
-    for (let i = 0; i < n; i++) backRows.push(Math.round((i * span) / (n - 1)));
+  if (size.top >= 5 || (low && size.top >= 2)) {
+    const span = Math.max(0, wall.faceTop - 3), n = Math.ceil(span / 3) + 1;
+    for (let i = 0; i < n; i++) backRows.push(n === 1 ? 0 : Math.round((i * span) / (n - 1)));
   }
   const rowOf = Array.from({ length: wall.c.h }, () => Array(W).fill(-1));
   // pas deux fois le même dessin côte à côte, ni juste au nord (à 4 px près) : la répétition se verrait sur un long dessus
@@ -570,6 +620,10 @@ function roughWall(t: Tables, seed: number, size: WallSize, ends?: Ends): { grid
       if (done) break;
     }
     if (!done) x++;
+  }
+  if (narrow) {
+    aboutStep();
+    bigsStep();
   }
   for (const w of wins) {
     win = w;
@@ -681,9 +735,13 @@ function course(t: Tables, W: number, r: () => number, prev: Course | undefined,
       x += w - 1 + j;
       if (x + 1 === W) break; // la dernière pierre ferme le mur : son contour droit sur la dernière colonne
     }
-    if (!pieces.length) continue;
-    const end = layout(pieces, joints).at(-1)! + pieces.at(-1)!.full[0].length;
-    if (end !== W) continue;
+    const end = pieces.length ? layout(pieces, joints).at(-1)! + pieces.at(-1)!.full[0].length : 0;
+    // un mur court où le tirage ne tombe pas juste (40 et 50 cm qui commencent par une boutisse : rien ne finit les 2 ou 4
+    // colonnes qui restent) : l'assise se compose exactement (`exactCourse` : la boutisse, une pierre recoupée s'il le faut)
+    if (end !== W) {
+      if (tries < 300) continue;
+      return exactCourse(t, W, r, prev, prev2, headerFirst, chainRight ? lastHeader : undefined);
+    }
     if (chainRight && tries < 500 && (pieces.at(-1) === HEADER) !== lastHeader) continue;
     const c: Course = { pieces, joints, xs: layout(pieces, joints) };
     const lens = new Set(pieces.map((p) => p.image));
@@ -692,7 +750,11 @@ function course(t: Tables, W: number, r: () => number, prev: Course | undefined,
     const j = jointXs(c);
     const near = prev ? jointXs(prev) : [];
     const far = prev2 ? jointXs(prev2) : [];
-    if (tries < 2000 && !j.every((a) => near.every((b) => Math.abs(a - b) >= 2) && far.every((b) => Math.abs(a - b) >= 1))) continue;
+    if (!j.every((a) => near.every((b) => Math.abs(a - b) >= 2) && far.every((b) => Math.abs(a - b) >= 1))) {
+      // joints toujours sur ceux du dessous (60 cm : seules deux pierres de 30 y tiennent) : l'assise composée les décale
+      if (tries < 300) continue;
+      return exactCourse(t, W, r, prev, prev2, headerFirst, chainRight ? lastHeader : undefined);
+    }
     return c;
   }
 }
@@ -752,9 +814,91 @@ function longCourse(t: Tables, W: number, r: () => number, prev: Course | undefi
       if (pick.p.full[0].length === rem) break;
       x += pick.p.full[0].length - 1 + pick.j;
     }
-    if (!ok && tries < 40) continue;
+    if (!ok) {
+      if (tries < 40) continue;
+      return exactCourse(t, W, r, prev, prev2, headerFirst, lastHeader);
+    }
     return { pieces, joints, xs: layout(pieces, joints) };
   }
+}
+
+/**
+ * Une assise composée pour finir juste au bout, quand le tirage n'y arrive pas : pierre après pierre, chacune choisie parmi
+ * celles qui laissent de quoi finir exactement (`fin` : les restes qu'une suite de pierres comble, la dernière au ras du bout),
+ * joints décalés de ceux du dessous autant que possible. Dans l'ordre, jusqu'à ce qu'une composition existe :
+ *   1. les pierres entières, le chaînage demandé (boutisse au début, au bout) ;
+ *   2. avec une pierre recoupée (`CLOSERS`), toujours le chaînage : la boutisse ouvre l'assise et un moellon recoupé à la largeur
+ *      qui reste la ferme (à 40 cm, la boutisse de 30 et un recoupé de 10 ; à 50 cm, un de 25), comme le closoir d'une chaîne d'angle ;
+ *   3. puis 4. sans chaînage, entières puis avec une recoupée (toujours possible dès 3 colonnes).
+ */
+function exactCourse(t: Tables, W: number, r: () => number, prev: Course | undefined, prev2: Course | undefined, headerFirst: boolean, lastHeader: boolean | undefined): Course {
+  const H = t.HEADER;
+  const near = prev ? jointXs(prev) : [];
+  const far = prev2 ? jointXs(prev2) : [];
+  const width = (p: Piece) => p.full[0].length;
+  const whole = [...t.RUBBLE, H];
+  // pas deux assises recoupées l'une sur l'autre : sur une assise qui a sa recoupée, celle-ci se fait de pierres entières, sans
+  // chaînage (à 40 cm : le moellon de 40 seul, puis la boutisse et sa recoupée, en alternance)
+  const cutBelow = !!prev?.pieces.some((p) => t.CLOSERS.includes(p));
+  const withCut = cutBelow ? [] : [...whole, ...t.CLOSERS];
+  // `strict` : chaque joint décalé de ceux du dessous (sinon, pas de composition) ; à 60 cm, seules deux pierres de 30 font
+  // l'assise : la suivante prend une recoupée pour décaler son joint, plutôt que de faire une croix
+  const tries = [
+    { stones: whole, hf: headerFirst, lh: lastHeader, strict: true },
+    { stones: withCut, hf: headerFirst, lh: lastHeader, strict: true },
+    { stones: whole, hf: false, lh: undefined, strict: true },
+    { stones: withCut, hf: false, lh: undefined, strict: true },
+    { stones: whole, hf: headerFirst, lh: lastHeader, strict: false },
+    { stones: whole, hf: false, lh: undefined, strict: false },
+    { stones: [...whole, ...t.CLOSERS], hf: false, lh: undefined, strict: false },
+  ].filter((a) => a.stones.length);
+  for (const a of tries) for (let walk = 0; walk < (a.strict ? 20 : 1); walk++) {
+    const lastOk = (p: Piece) => a.lh === undefined || (p === H) === a.lh;
+    // fin[rem] : une suite de pierres comble exactement `rem` colonnes (la dernière au ras du bout)
+    const fin: boolean[] = Array(W + 1).fill(false);
+    for (let rem = 1; rem <= W; rem++) {
+      fin[rem] = a.stones.some((p) => {
+        const w = width(p);
+        if (w === rem) return lastOk(p);
+        return w < rem && [0, 1].some((j) => fin[rem - (w - 1 + j)]);
+      });
+    }
+    const pieces: Piece[] = [];
+    const joints: number[] = [];
+    let x = 0;
+    let done = false;
+    while (!done) {
+      const rem = W - x;
+      const opts: { p: Piece; j: number; v: number }[] = [];
+      const pool = pieces.length === 0 && a.hf ? [H] : a.stones;
+      for (const p of pool) {
+        const w = width(p);
+        const cut = t.CLOSERS.includes(p) ? -3 : 0;
+        // la recoupée se met contre la boutisse (le closoir), pas au milieu de l'assise
+        const byHeader = cut && (pieces.at(-1) === H || (w + width(H) - 1 === rem && a.lh)) ? 1 : 0;
+        if (w === rem) {
+          if (lastOk(p)) opts.push({ p, j: 0, v: r() + cut + byHeader + 0.5 });
+          continue;
+        }
+        if (w > rem) continue;
+        for (const j of [0, 1]) {
+          if (!fin[rem - (w - 1 + j)]) continue;
+          const jx = x + w - 1;
+          const staggered = near.every((b) => Math.abs(jx - b) >= 2) && far.every((b) => Math.abs(jx - b) >= 1);
+          if (a.strict && !staggered) continue;
+          opts.push({ p, j, v: r() + cut + byHeader + (j ? -0.4 : 0) + (staggered ? 0 : -1.5) });
+        }
+      }
+      if (!opts.length) break;
+      const pick = opts.reduce((m, o) => (o.v > m.v ? o : m));
+      pieces.push(pick.p);
+      joints.push(pick.j);
+      if (width(pick.p) === rem) done = true;
+      else x += width(pick.p) - 1 + pick.j;
+    }
+    if (done) return { pieces, joints, xs: layout(pieces, joints) };
+  }
+  throw new Error(`Mur : aucune assise ne finit juste sur ${W} px`);
 }
 
 
@@ -771,13 +915,15 @@ function dressedTop(t: Tables, wall: Wall, r: () => number, axis: 'ew' | 'ns', u
     wall.owner[py][px] = 9999;
   }));
   if (axis === 'ew') {
-    for (let x = r() < 0.5 ? 0 : -3; x < W - 2;) {
+    // jusqu'au bout du mur : la dernière pierre se serre contre lui (sans quoi les deux dernières colonnes restaient vides)
+    for (let x = r() < 0.5 ? 0 : -3; x < W - 1;) {
       const p = t.RUBBLE[Math.floor(r() * t.RUBBLE.length)];
       const q = r() < 0.4 ? turn(p) : p;
       const g = q.full.slice(0, 3);
       const px = x < 0 ? x : Math.min(x, W - g[0].length);
       stamp(g, px, 0);
       count(t, used, p);
+      if (px + g[0].length >= W) break;
       x = px + g[0].length - 1 + (r() < 0.3 ? 1 : 0);
     }
     return;
@@ -901,7 +1047,9 @@ function dressedWall(t: Tables, seed: number, size: WallSize, ends?: Ends): { gr
   const wall = new Wall(size, size.top);
   const W = wall.W;
   const courses = Math.round(size.face / COURSE);
-  const deep = size.top >= 5;
+  // le dessus profond (rangs de dessus derrière l'assise haute) : le solin de 50 cm, et le nord-sud dès qu'il a 2 rangées de
+  // dessus (un nord-sud court, 50 et 60 cm, n'en a que 2 ou 4 : sans eux, son dessus restait vide)
+  const deep = size.top >= 5 || (size.axis === 'ns' && size.top >= 2);
   const used: Used = new Map();
   const cs: Course[] = [];
   const chainRight = ends?.right === 'head';
@@ -927,12 +1075,18 @@ function dressedWall(t: Tables, seed: number, size: WallSize, ends?: Ends): { gr
       // cinq, un pixel plus basse (du mortier au-dessus, la pierre du dessus repose sur ses voisines)
       let h = Math.max(3, Math.min(5, bottom - target + 1));
       if (!cap && h > 3 && r() < 0.2) h--;
-      if (cap) h = Math.min(h, bottom - 2 + 1); // le dessus de l'assise haute reste dans l'image
+      // le solin de 30 cm (3 rangées de dessus, sans rangs derrière) : le dessus de la pierre de l'assise haute couvre toute son
+      // épaisseur (sa rangée claire répétée ; la boutisse, les dernières rangées de son long dessus), sans quoi la rangée du fond restait vide
+      const thin = !deep && size.top >= 3 ? size.top - 1 : 0;
+      if (cap) h = Math.min(h, bottom - (thin ? thin + 1 : 2) + 1); // le dessus de l'assise haute reste dans l'image
       const fc = p.full.slice(p.full.length - h);
       // l'assise haute : le contour arrière et la rangée de dessus du dessin, puis la face (la boutisse ne montre de son long
       // dessus que l'épaisseur du mur : sur un dessus profond, tout son dessus)
       // (ni au pied du mur ni à ses deux bouts, qui restent pleins)
-      const head = cap && deep && p.image === t.HEADER.image ? p.full.slice(0, p.full.length - 4) : [p.full[0], p.full[1]];
+      const topOf = (q: Piece) => (q.image === t.HEADER.image
+        ? [q.full[0], ...q.full.slice(Math.max(1, q.full.length - 4 - thin), q.full.length - 4)]
+        : [q.full[0], ...Array(thin).fill(q.full[1])]);
+      const head = cap && deep && p.image === t.HEADER.image ? p.full.slice(0, p.full.length - 4) : thin ? topOf(p) : [p.full[0], p.full[1]];
       const g = notch(cap ? [...head, ...fc] : fc, r, { top: !cap, bottom: ci > 0, left: x > 0, right: x + w < W });
       put.push({ x, y: bottom - g.length + 1, g });
       count(t, used, p);
@@ -954,7 +1108,7 @@ function dressedWall(t: Tables, seed: number, size: WallSize, ends?: Ends): { gr
       if (!open && r() >= 0.25) continue;
       const jx = put[i].x;
       const y0 = Math.max(put[i].y, put[i - 1].y) + (cap ? 2 : 0), y1 = Math.min(put[i].y + put[i].g.length, put[i - 1].y + put[i - 1].g.length) - 1;
-      for (let y = y0 + 1; y < y1; y++) if ('o~'.includes(wall.c.get(jx, y))) wall.c.set(jx, y, MORTAR);
+      for (let y = y0 + 1; y < y1; y++) if ('o~'.includes(wall.c.get(jx, y))) wall.c.set(jx, y, y < wall.faceTop ? MORTAR_TOP : MORTAR);
     }
   });
   // éclats : fragments du dessin des éclats du jeu, là où le mortier fait un vide d'au moins leur taille
@@ -1094,7 +1248,7 @@ export function wallKit(image: (name: string) => Grid): WallKit {
      * extra + 10 (l'épaisseur) à ce bout et le nord-sud extra − 10 : le dessin est le même que dans l'autre cas.
      */
     run(spec: RunSpec): Grid {
-      if (spec.pieces < 1) throw new Error(`Mur : un tronçon de ${spec.pieces} morceau`);
+      if (coveredLength(spec) < WALL_PIECE.min / 5) throw new Error(`Mur : un tronçon de ${coveredLength(spec)} px, moins que le plus court morceau (${WALL_PIECE.min} cm)`);
       return spec.axis === 'ew' ? runEW(spec) : runNS(spec);
     },
     roughWall: (seed, size = ESSAY_ROUGH) => roughWall(t, seed, size),

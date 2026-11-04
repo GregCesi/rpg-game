@@ -73,8 +73,8 @@ export const families: Family[] = [
     title: 'Maison de Xéros : murs et portes',
     ground: 'grass',
     keys: [
-      ...['staves', 'wattle', 'daub', 'lime'].flatMap((s) => [`${s}-panel`, `${s}-window-panel`, `${s}-jamb`, `${s}-inner-jamb`]),
-      'cottage-door', 'inner-door', 'narrow-sill-wall', 'threshold-stone',
+      ...['staves', 'wattle', 'daub', 'lime'].flatMap((s) => [`${s}-panel`, `${s}-window-panel`, `${s}-jamb`, `${s}-inner-jamb`, `${s}-door-head`]),
+      'cottage-door', 'inner-door', 'door-frame', 'narrow-sill-wall', 'threshold-stone', 'inner-threshold-stone',
     ],
   },
   { title: 'Maison de Xéros : pignons et toit', ground: 'grass', keys: ['lime-gable', 'lime-gable-smoke', 'thatch-roof-frame', 'thatch-roof-half', 'thatch-roof', 'earth-ridge'] },

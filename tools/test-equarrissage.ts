@@ -419,7 +419,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.handsEnd, 'null');
   assert.deepEqual(r.big['big-tree'], { trunk: { length: 400, kg: 855 }, label: '1 m | 3 m', cut: [100, 300] }, 'le gros arbre : 4 m, 855 kg, coupé à 1 m');
   assert.equal(r.snag.stump, 'normal-tree-stump', 'le chicot abattu laisse sa souche');
-  assert.equal(r.snag.log, 200, 'et le tronc qui restait debout, une pièce de bois de 2 m couchée à son pied');
+  assert.equal(r.snag.log, 220, 'et le tronc qui restait debout, une pièce de bois de 2,2 m couchée à son pied (cassé à 2,6 m)');
   assert.equal(r.snag.topGone, true, 'la cime ébranchée');
   assert.equal(r.snag.top, 360, 'son tronc devient une pièce de bois de 3,6 m');
   assert.ok(r.snag.branches >= 3, `elle lâche ses branches (${r.snag.branches})`);

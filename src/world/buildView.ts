@@ -11,6 +11,8 @@ import { boxOf } from './build';
 import { formView, naturalGround } from './natural';
 import { agedKey, lookOf, upOf } from './woodShape';
 import { woodTexture } from './woodTexture';
+import { runLayout, wallRuns } from './wallRuns';
+import { wallTexture } from './wallTexture';
 
 /** L'image d'une pièce : sa texture (et son image dans une planche), et le coin bas gauche où la poser, en pixels du monde. */
 export interface BuildLook {
@@ -41,6 +43,15 @@ export function buildLook(scene: Phaser.Scene, p: BuildPlaced): BuildLook {
     const def = items[p.piece.item];
     key = naturalGround(def, p.view, p.natural, has);
     if (def.aged) key = agedKey(key, p.age);
+  } else if (props[p.piece.prop].wall && p.piece.length && p.piece.length !== props[p.piece.prop].dims.w) {
+    // un morceau de mur d'une autre longueur que son dessin (le solin de toute longueur) : un tronçon d'un morceau, à deux têtes,
+    // calculé comme les murs posés (world/walls.ts)
+    const run = wallRuns([{ ...p, id: -1 }])[0];
+    key = wallTexture(scene, run);
+    const w = scene.textures.getFrame(key).width;
+    const h = scene.textures.getFrame(key).height;
+    const at = runLayout(run, w, h);
+    return { key, frame: undefined, x: at.x, y: at.y, w, h };
   } else {
     const def = props[p.piece.prop];
     key = formView(variantImage(def.image, p.variant), def.views, p.view, p.natural, has);
