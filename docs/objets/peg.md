@@ -24,8 +24,8 @@ Aucune : taillée à la mesure.
 Seule (plus tard, un panier).
 
 ## Gestes
-- Clic court : prendre (main vide), poser (la main qui la tient) ; R tourner.
-- La faire : la hachette dans une main, un piquet dans l'autre, clic de la main de la hachette face au billot (le geste du piquet, `convert` du billot : branche → piquet, piquet → cheville).
+- E : prendre ; A : poser ; R tourner.
+- La faire : la hachette dans une main, un piquet dans l'autre, F face au billot (le geste du piquet, `convert` du billot : branche → piquet, piquet → cheville).
 
 ## Origine
 Taillée dans un piquet, sur le billot. **Choix** : une cheville par piquet (le reste part au feu) : le geste réel du piquet ne rend qu'un objet dans la main.
@@ -41,4 +41,4 @@ Charpentier (`carpenter`).
 
 ## Vérification
 - Aperçu : `briques.png` (groupe 4), `couches.png`.
-- En jeu : la hachette et un piquet en main, clic de la main de la hachette face au billot.
+- En jeu : la hachette et un piquet en main, F face au billot.

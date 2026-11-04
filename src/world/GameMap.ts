@@ -402,7 +402,7 @@ export class GameMap {
       if (held.some((h) => p.def.rest?.[h])) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'rest', prop: p } });
       else if (dialogue) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'talk', dialogue } });
       else if (p.def.teaches) list.push({ x: p.baseX, y: p.baseY, top: p.top, action: { kind: 'learn', prop: p, plan: p.def.teaches } });
-      // ce qu'il porte se reprend d'un clic main vide (le rouleau sur le billot) ; on le coupe au clic de la main de l'outil
+      // ce qu'il porte se reprend par E (le rouleau sur le billot) ; on le coupe par F, l'outil en main
       else if (p.def.bears) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'unload', prop: p } });
       else if (p.def.harvest && !p.def.harvest.tool) list.push({ x: p.aimX, y: p.aimY, top: promptTop(p), action: { kind: 'harvest', prop: p } });
       // un objet à prendre (la bille) se vise au centre de sa collision ; caché (il attend la fin d'une chute), il ne se prend pas

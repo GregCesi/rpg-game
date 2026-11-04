@@ -9,14 +9,11 @@ import { stateImage } from '../world/pileShape';
 import { clockLabel } from '../world/clock';
 import { clockFace } from '../world/clockFace';
 import { simSpeed } from '../systems/simSpeed';
-import type { ClickPlan } from '../world/clickAction';
 
 /** Écart entre les deux cases (px), marge sous les cases, et au bord droit de l'écran. */
 const GAP = 4;
 const BOTTOM = 10;
 const MARGIN = 4;
-/** La hauteur de la ligne des mots des clics, au-dessus des cases (px). */
-const WORDS = 9;
 
 /**
  * Signes (images `ui-digit-<signe>`) de la longueur restante d'un objet tenu, en mètres : « 8 m » donne 8 puis m,
@@ -52,10 +49,6 @@ export class HudScene extends Phaser.Scene {
   /** Coin bas droit de chaque case, où s'aligne la longueur. */
   private corners: [number, number][] = [];
   private notice!: Phaser.GameObjects.Text;
-  /** Près de chaque case, le mot de ce que ferait son clic sur ce qui est visé (G : le clic droit, D : le clic gauche). */
-  private words: Phaser.GameObjects.Text[] = [];
-  /** Ce que disent les mots (lu par les tests de scénario). */
-  wordsText: [string, string] = ['', ''];
   private bar!: Phaser.GameObjects.Container;
   /** Barre d'endurance, au-dessus des deux cases : le cadre, puis dans le creux le perdu, le « revient » et le souffle. */
   private energy!: Phaser.GameObjects.Container;
@@ -92,30 +85,24 @@ export class HudScene extends Phaser.Scene {
       this.slots.push(slot);
       this.icons.push(icon);
       this.corners.push([x + size - 1, y0 + size - 1]);
-      // G : à gauche de sa case, au milieu ; D : au-dessus de la sienne, calé à droite (les deux mots ne se touchent jamais)
-      const style = { ...label, fontSize: '7px', color: '#e8dab8', strokeThickness: 2 };
-      const word = (i === 0 ? this.add.text(x - 3, y0 + size / 2, '', style).setOrigin(1, 0.5) : this.add.text(x + size, y0 - 1, '', style).setOrigin(1, 1)).setResolution(UI_ZOOM);
-      this.words.push(word);
-      this.bar.add([slot, icon, text, word]);
+      this.bar.add([slot, icon, text]);
     });
-    this.makeEnergy(VIEW.width - MARGIN, y0 - WORDS - STAMINA_BAR.gap);
+    this.makeEnergy(VIEW.width - MARGIN, y0 - STAMINA_BAR.gap);
     // le cadran du temps, en haut à droite (docs/CONCEPTION.md, « Le temps »)
     this.face = this.add.container(0, 0);
     this.bar.add(this.face);
     this.notice = this.add
-      .text(VIEW.width / 2, y0 - WORDS - STAMINA_BAR.gap - STAMINA_BAR.height - 4, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
+      .text(VIEW.width / 2, y0 - STAMINA_BAR.gap - STAMINA_BAR.height - 4, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setResolution(UI_ZOOM)
       .setAlpha(0);
 
     this.game.events.on(GameEvent.HandsChanged, this.redraw, this);
-    this.game.events.on(GameEvent.ClickPlans, this.showWords, this);
     this.game.events.on(GameEvent.Stamina, this.showEnergy, this);
     this.game.events.on(GameEvent.StaminaDenied, this.shakeEnergy, this);
     this.game.events.on(GameEvent.Notice, this.showNotice, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(GameEvent.HandsChanged, this.redraw, this);
-      this.game.events.off(GameEvent.ClickPlans, this.showWords, this);
       this.game.events.off(GameEvent.Stamina, this.showEnergy, this);
       this.game.events.off(GameEvent.StaminaDenied, this.shakeEnergy, this);
       this.game.events.off(GameEvent.Notice, this.showNotice, this);
@@ -214,25 +201,6 @@ export class HudScene extends Phaser.Scene {
       const length = p?.wood ? p.wood.length : def?.length ? (p!.length ?? def.length.start) : undefined;
       this.showLength(i, length);
     });
-  }
-
-  /**
-   * Le mot de chaque clic (world/clickAction.ts, la même fonction que le jeu) : à gauche de la case G, celui du clic droit ; au-dessus de
-   * la case D, celui du clic gauche. Le clic court d'abord ; le geste long d'une main vide s'y ajoute (« prendre · nouer ») ; « lancer », qui vaut
-   * pour tout ce qu'on tient, ne s'écrit pas. Rien hors du jeu (un geste, un dialogue).
-   */
-  private showWords(plans?: { left: ClickPlan; right: ClickPlan }): void {
-    const word = (p: ClickPlan | undefined) => {
-      if (!p) return '';
-      const long = p.long.kind !== 'none' && p.long.kind !== 'throw' ? p.long.label : '';
-      return [p.short.label, long].filter(Boolean).join(' · ');
-    };
-    const next: [string, string] = [word(plans?.right), word(plans?.left)];
-    next.forEach((t, i) => {
-      if (t === this.wordsText[i]) return;
-      this.words[i].setText(t);
-    });
-    this.wordsText = next;
   }
 
   /** Écrit la longueur `cm` (ou rien) en bas à droite de la case `i`, comme le nombre de pièces d'un tas. */

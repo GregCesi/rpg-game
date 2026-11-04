@@ -54,7 +54,7 @@ const EffortSchema = z.enum(['chop', 'cutTie', 'whittle']);
 
 /**
  * Ce qui se récolte (arbre, rocher, baies, billot). Le système `systems/harvest.ts` le lit, quel que soit l'objet.
- * Avec `tool`, on travaille au clic de la main de l'outil ; sans, on récolte au clic d'une main vide.
+ * Avec `tool`, on travaille par F, l'outil en main ; sans, on récolte par E, une main libre.
  */
 /**
  * La matière d'une récolte qui se travaille au coup (docs/CONCEPTION.md, « Le travail » ; world/workPlan.ts) : abattre un arbre

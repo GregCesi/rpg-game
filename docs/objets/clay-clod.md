@@ -25,7 +25,7 @@ Deux formes, ± 7 % (`natural: {forms: 2, vary: 7}`) : la bêche ne tranche jama
 En tas : genre `clay-clods`, pyramide de 6, formes alternées ; bloque à 3.
 
 ## Gestes
-Clic court : prendre (main vide), poser à son fantôme (la main qui la tient ; un tas naît contre une motte seule) ; R, clic maintenu d'une main vide : rien.
+E : prendre ; A : poser à son fantôme (un tas naît contre une motte seule) ; R, E maintenu : rien.
 
 ## Origine
 Creusée à la bêche au bord de l'étang (l'argile de la berge), geste à venir : ?dieu « Transformer » (`dig-clay`) la fait naître.

@@ -22,11 +22,6 @@ export const GameEvent = {
   Build: 'build',
   /** Mode construction : ce que le catalogue affiche a changé (argument : un BuildStatus). */
   BuildStatus: 'build-status',
-  /**
-   * Ce que feraient les deux clics sur ce qui est visé (argument : `{ left, right }` de ClickPlan, world/clickAction.ts ; undefined hors du
-   * jeu) : le HUD l'écrit au-dessus des mains. Émis à chaque image par WorldScene.
-   */
-  ClickPlans: 'click-plans',
 } as const;
 
 /**

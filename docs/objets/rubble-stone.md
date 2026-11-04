@@ -56,10 +56,10 @@ tirée à la sortie de la taille ou au don, gardée par GameState ; masse au cub
 la première pièce.
 
 ## Gestes
-- Clic court, main vide : le prendre ; sur un tas, reprendre le plus haut.
-- Clic court de la main qui le tient, ou A (Q en QWERTY) : le poser à son fantôme ; contre un moellon identique seul au sol, un tas naît.
+- E : le prendre ; sur un tas, reprendre le plus haut.
+- A (Q en QWERTY) : le poser à son fantôme ; contre un moellon identique seul au sol, un tas naît.
 - R : le tourner (est-ouest, nord-sud).
-- Clic maintenu, main vide : rien (le dégrossir et le maçonner sont à venir).
+- E maintenu : rien (le dégrossir et le maçonner sont à venir).
 
 ## Origine
 - **Dégrossi dans une grosse pierre brute** au têtu : la longueur de 40 cm d'ordinaire, celle de 30 cm quand la pierre casse mal. La

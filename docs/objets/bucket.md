@@ -25,8 +25,8 @@ Aucune : fait par le menuisier.
 Seul.
 
 ## Gestes
-- Clic court, main vide : le prendre (une main) ; de la main qui le tient, ou A (Q en QWERTY) : le poser à son fantôme.
-- Puiser (un clic de sa main au bord de l'étang) : à venir.
+- E : le prendre (une main) ; A (Q en QWERTY) : le poser à son fantôme.
+- Puiser (le seau en main, au bord de l'étang) : à venir.
 
 ## Origine
 Le seau de la traite, dans la cour de la ferme (`ferme.tmj`).
@@ -43,4 +43,4 @@ Menuisier (`joiner`, le tonnelier du village) ; puiser, c'est le paysan.
 
 ## Vérification
 - Aperçu : `briques.png` (groupe 2), `hands.png`.
-- En jeu : à la ferme, un clic d'une main vide sur le seau ; ?dieu « Transformer » (`fill-bucket`) : il devient plein. `npm run test:briques` (le seau d'eau vidé dans le torchis).
+- En jeu : à la ferme, E sur le seau ; ?dieu « Transformer » (`fill-bucket`) : il devient plein. `npm run test:briques` (le seau d'eau vidé dans le torchis).

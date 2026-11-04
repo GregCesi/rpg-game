@@ -25,8 +25,8 @@ Aucune : un outil forgé ou tourné, régulier.
 Seul.
 
 ## Gestes
-- Clic court, main vide : le ramasser ; A (Q en QWERTY) : le poser à son fantôme ; R : le tourner.
-- Clic court de sa main : frapper avec (l'arme improvisée, rien à travailler) ; dégrossir au têtu viendra avec son geste (pas de planche `tool-stone-hammer` encore : le geste se jouerait mains vides).
+- E : le ramasser ; A (Q en QWERTY) : le poser à son fantôme ; R : le tourner.
+- Clic de sa main : frapper avec (l'arme improvisée) ; F : rien à travailler encore ; dégrossir au têtu viendra avec son geste (pas de planche `tool-stone-hammer` encore : le geste se jouerait mains vides).
 
 ## Origine
 Acheté au forgeron. En attendant le village : ?dieu le donne.

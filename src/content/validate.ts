@@ -1542,8 +1542,10 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   // Plans de bâtiment : emprise, étapes du chantier, places
   addAll(validatePlans(c));
 
-  // Interface : la jauge de E maintenu (de vide à plein) et les chiffres du nombre de pièces d'un tas
-  if (!cat.animations.get('ui-gauge')?.has('fill')) err("Interface : planche 'ui-gauge' et son animation 'fill' non dessinées (jauge de E maintenu)");
+  // Interface : les touches affichées (systems/keyPrompts.ts : E, F, poser en A ou Q, les trois points de E maintenable, E qui se
+  // remplit d'or pendant qu'on la maintient) et les chiffres du nombre de pièces d'un tas
+  for (const k of ['ui-key-e', 'ui-key-f', 'ui-key-a', 'ui-key-q', 'ui-key-dots']) if (!cat.textures.has(k)) err(`Interface : touche '${k}' non dessinée (systems/keyPrompts.ts)`);
+  if (!cat.animations.get('ui-key-e-fill')?.has('fill')) err("Interface : planche 'ui-key-e-fill' et son animation 'fill' non dessinées (E maintenu)");
   for (const d of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'm', 'comma']) {
     if (!cat.textures.has(`ui-digit-${d}`)) err(`Interface : signe 'ui-digit-${d}' non dessiné (nombre de pièces d'un tas, longueur du rouleau)`);
   }

@@ -44,7 +44,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
       // (tools/lib/playtest.ts `__do`) ; sinon une touche (E dans le dialogue : « Oui »)
       const press = async (code: string, hold = 60) => {
         if (code === 'hands' || code === 'help') {
-          if (code === 'hands') await (window as any).__do(['place', 'help-info', 'take', 'put', 'rest']);
+          if (code === 'hands') await (window as any).__do(['place', 'help-info', 'take', 'rest', 'put']);
           else await (window as any).__do(['help'], { long: true });
           await (window as any).__settle();
           return;
@@ -332,7 +332,7 @@ await playtest('poteaux', async ({ page, errors, load }) => {
   assert.equal(r.noBeamMode, 'play', 'sans poutre, pas de question');
   assert.equal(r.wrongBeamNotice, "Il faut d'abord une poutre de 3 m au pied du dé.", 'un rondin ou une poutre de 2 m ne comptent pas');
   assert.equal(r.farNotice, "Il faut d'abord une poutre de 3 m au pied du dé.", 'une poutre à plus d’une case ne compte pas');
-  assert.equal(r.shortGood, 'Maintiens le clic pour appeler ta mère.');
+  assert.equal(r.shortGood, 'Maintiens E pour appeler ta mère.');
   assert.equal(r.shortMode, 'play');
   assert.equal(r.askMode, 'dialogue', '« Appeler ta mère pour la dresser ? »');
   assert.equal(r.fadeMode, 'transition', 'fondu au noir');
