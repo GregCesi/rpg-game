@@ -245,7 +245,7 @@ const CHIN_ROWS: Record<Exclude<Chin, 'M0'>, Record<HeadFacing, Record<number, [
 /** La rangée du bas du menton de T1 selon la version du menton. */
 export const CHIN_BOTTOM: Record<Chin, number> = { M0: 21, M1: 21, M2: 22, M3: 22 };
 
-function spec(version: Version, facing: HeadFacing, chin: Chin = 'M0'): Spec {
+export function spec(version: Version, facing: HeadFacing, chin: Chin = 'M0'): Spec {
   // De face : le corps de C sous les deltoïdes (y=24 ; la rangée y=23 est SHOULDER_HAIR). De profil : celui de A à partir de y=25 (les rangées y=23-24,
   // les pointes des cheveux sur le dos, sont dans NAPE).
   const body = facing === 'down' ? SPECS['C-down-loose'].slice(16) : SPECS['A-right-loose'].slice(17);
