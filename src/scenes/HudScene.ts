@@ -2,13 +2,14 @@ import Phaser from 'phaser';
 import { HUD, STAMINA_BAR, UI, VIEW, UI_ZOOM } from '../config';
 import { items, props, stamina } from '../content';
 import type { StaminaLevels } from '../entities/Stamina';
-import { GameEvent } from '../events';
+import { GameEvent, type PlayerCell } from '../events';
 import { game, type Held } from '../state';
 import { defOf } from '../world/woodPiece';
 import { stateImage } from '../world/pileShape';
 import { clockLabel } from '../world/clock';
 import { clockFace } from '../world/clockFace';
 import { simSpeed } from '../systems/simSpeed';
+import { Minimap } from '../systems/minimap';
 import type { ClickPlan } from '../world/clickAction';
 
 /** Écart entre les deux cases (px), marge sous les cases, et au bord droit de l'écran. */
@@ -75,6 +76,12 @@ export class HudScene extends Phaser.Scene {
   private faceKey = '';
   /** Ce que dit le cadran (« Jour 3 · 14:20  x1 » : l'heure et la vitesse, toujours) : lu par les tests de scénario. */
   clockText = '';
+  /** La petite carte, en haut à gauche (systems/minimap.ts). */
+  private minimap!: Minimap;
+  /** Ce que montre la petite carte (la case de Xéros, son sens, le cran) : lu par les tests de scénario. */
+  get minimapText(): string {
+    return this.minimap.view.visible ? this.minimap.text : '';
+  }
 
   create(data: { notice?: string } = {}): void {
     this.cameras.main.setZoom(UI_ZOOM).centerOn(VIEW.width / 2, VIEW.height / 2);
@@ -108,12 +115,16 @@ export class HudScene extends Phaser.Scene {
       .setResolution(UI_ZOOM)
       .setAlpha(0);
 
+    // la petite carte, en haut à gauche (docs/CONCEPTION.md, « La petite carte »)
+    this.minimap = new Minimap(this);
+    this.game.events.on(GameEvent.PlayerCell, this.onCell, this);
     this.game.events.on(GameEvent.HandsChanged, this.redraw, this);
     this.game.events.on(GameEvent.ClickPlans, this.showWords, this);
     this.game.events.on(GameEvent.Stamina, this.showEnergy, this);
     this.game.events.on(GameEvent.StaminaDenied, this.shakeEnergy, this);
     this.game.events.on(GameEvent.Notice, this.showNotice, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off(GameEvent.PlayerCell, this.onCell, this);
       this.game.events.off(GameEvent.HandsChanged, this.redraw, this);
       this.game.events.off(GameEvent.ClickPlans, this.showWords, this);
       this.game.events.off(GameEvent.Stamina, this.showEnergy, this);
@@ -124,9 +135,11 @@ export class HudScene extends Phaser.Scene {
     if (data.notice) this.showNotice(data.notice, HUD.longNoticeMs);
   }
 
-  update(): void {
+  update(time: number): void {
     this.drawFace();
     const talking = this.scene.isActive('dialogue');
+    // cachée pendant un dialogue, comme le reste
+    this.minimap.update(time, talking);
     this.bar.setVisible(!talking);
     if (talking) this.notice.setAlpha(0);
   }
@@ -251,6 +264,10 @@ export class HudScene extends Phaser.Scene {
       this.lengths[i].push(g);
       this.bar.add(g);
     }
+  }
+
+  private onCell(cell: PlayerCell | undefined): void {
+    this.minimap.setCell(cell);
   }
 
   /** Le cadran : redessiné seulement quand ce qu'il montre change (la minute, le jour, la vitesse). */

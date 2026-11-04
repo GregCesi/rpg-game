@@ -194,6 +194,34 @@ d'abord ; les bâtiments se posent quand leurs pièces existent.
   courant). « Un kilomètre en 13 minutes », la marche d'un homme (1,3 m/s), voudrait 26 px/s (`PLAYER.walkSpeed`, config.ts) : un seul
   réglage, mais il change tout le jeu ; il n'est pas changé.
 
+## La petite carte (décidé les 3 et 4 novembre 2026, chantier « petite carte »)
+
+Décidé par Grégoire : **une petite carte ronde en haut à gauche de l'écran**, nord en haut, centrée sur Xéros, **calculée et jamais
+dessinée**, sans couture entre les zones. La carte entière (M) viendra plus tard.
+
+- **Ce qu'on y voit** : le sol, une couleur par case (1,60 m) ; les arbres debout, un point vert sombre d'une case à leur pied (ce
+  qui a une géométrie d'arbre, `tree` de props.json : un arbre abattu perd son point) ; les bâtiments, chaque pièce posée colorant les
+  cases dont le centre tombe dans son emprise, de la plus basse à la plus haute, si bien que le toit donne sa couleur et sa forme. Ni
+  arbres couchés, ni chicots, ni souches, ni tas, ni branches, buissons, rochers ou bêtes, pour l'instant.
+- **Les couleurs** se tirent des dessins (`npm run art`, `tools/build-minimap.ts` → `src/generated/minimap.json`) : la teinte moyenne
+  de chaque famille de tuiles (`path-7` → `path`, `grass3` → `grass`), et de chaque image d'objet à son âge, ramenée à la teinte la plus
+  proche de la palette du monde. Aucune couleur n'est écrite à la main.
+- **Le calcul** (`src/world/minimap.ts`, sans Phaser) : la grille du monde (625 × 500 cases) se peint au lancement depuis les cartes
+  et la partie (objets changés et nés, `builds`, les plans de Tiled pas encore posés, les pièces des chantiers) ; ensuite, quand la
+  partie a changé, les zones que touche la fenêtre sont repeintes, au plus deux fois par seconde (`MINIMAP.refreshMs`), sans rien
+  changer au moteur ni à la sauvegarde. Au-delà du bord du monde, un aplat sombre.
+- **Dedans**, la carte du dehors, toit gardé, Xéros à sa vraie place (sa position dans l'intérieur moins son décalage).
+- **Les crans** (`MINIMAP.steps` de config.ts, la seule source) : un clic sur la carte, un clic d'interface qui n'est ni une main ni
+  un coup (`src/input/uiClicks.ts`), passe de 2 px par case (81 cases, 65 m autour, le cran de départ) à 4 px par case (32 m), puis
+  1 px par case (126 cases, 100 m, dans un cadre plus petit), et revient au premier. Le cran choisi est retenu d'une session à
+  l'autre, comme le zoom de la caméra (`localStorage`, hors de la sauvegarde).
+- **Le dessin** (pixel-artist, `art/ui/minimap.ts`, accord de Grégoire) : un cadre de bois en douelles, de la famille de l'anneau du
+  cadran, avec le fil du bois et une flèche de parchemin au nord, tiré à chaque diamètre de fenêtre ; le point de Xéros, rond, avec
+  un cran du côté où il regarde et un liseré clair pour se voir aussi sur la forêt profonde. Cachée pendant un dialogue.
+- **La carte entière (M), plus tard** : la même grille, montrée en entier, le point de Xéros ; ouverte par M et par un clic sur la
+  petite carte (la zone de clic d'interface est prête) ; peut-être les noms des zones et un « déjà vu » (nouveau champ de GameState).
+- Aperçu : `.art-preview/petite-carte.png` (`npm run art:carte`) ; test : `tools/test-minimap.ts` (dans `npm run test:fast`).
+
 ## Boucle de jeu : récolte et inventaire (décidé le 29 octobre 2026)
 
 Première boucle : Xéros prend la hache sur le billot, abat un arbre, ramasse les bûches.

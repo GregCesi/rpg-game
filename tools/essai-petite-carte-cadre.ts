@@ -1,14 +1,15 @@
-// Planche de contrôle de la proposition art/proposals/petite-carte-cadre.ts (chantier « petite carte », hors jeu) :
-// npx tsx tools/essai-petite-carte-cadre.ts écrit .art-preview/petite-carte-cadre.png.
-// En haut : les trois cadres (fenêtre de 63, 81, 125 px) agrandis ×4 sur l'herbe, avec dans la fenêtre un remplissage d'essai en
-// aplats (herbe, chemin, eau, chaume, points d'arbre) et le point de Xéros au centre ; à droite, au même ×4, le cadran de l'heure
-// et Xéros (première image) pour l'échelle. En bas : le point de Xéros dans ses quatre sens, ×8, sur six fonds (herbe, chemin,
-// eau, chaume, forêt profonde, terre battue) ; puis les trois cadres à la taille de l'écran (×2), pour juger la lecture réelle.
+// Planche de contrôle de la petite carte du HUD, art/ui/minimap.ts (chantier « petite carte ») :
+// npx tsx tools/essai-petite-carte-cadre.ts écrit .art-preview/petite-carte-cadre.png (et -detail.png).
+// En haut : les cadres du jeu (une fenêtre par diamètre de MINIMAP.steps, aujourd'hui 81 et 63) agrandis ×4 sur l'herbe, avec dans
+// la fenêtre un remplissage d'essai en aplats (forêt profonde, herbe, chemin, eau, chaume) et le point de Xéros au centre, posés
+// selon le contrat de pose ; à droite, au même ×4, le cadran de l'heure et Xéros (première image) pour l'échelle. En bas : le
+// point de Xéros liseré dans ses quatre sens, ×8, sur la forêt profonde, l'herbe, le chemin, le chaume et l'eau, chaque fond avec
+// Xéros à ×8 ; puis les cadres à la taille de l'écran (×2), pour juger la lecture réelle.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
 import { Canvas, rng } from '../art/lib/canvas';
-import { FRAME_BORDER, FRAME_PALETTE, minimapFrame, playerDot, type Facing } from '../art/proposals/petite-carte-cadre';
+import { DOT_CENTER, FRAME_BORDER, FRAME_PALETTE, FRAME_SIZES, minimapFrame, playerDot, type Facing } from '../art/ui/minimap';
 
 type RGBA = [number, number, number, number];
 const hex = (h: string): RGBA => {
@@ -18,7 +19,7 @@ const hex = (h: string): RGBA => {
 
 const BG = hex('#7b8544');
 const W = 1900;
-const H = 1110;
+const H = 1460;
 const out = new PNG({ width: W, height: H });
 for (let i = 0; i < out.data.length; i += 4) [out.data[i], out.data[i + 1], out.data[i + 2], out.data[i + 3]] = BG;
 
@@ -67,10 +68,13 @@ function mapFill(inner: number): Canvas {
     const v = (y - c0) / inner;
     let k = 'g';
     if (u < -0.15 && v < -0.05) k = rand() < 0.55 ? 'k' : 'l'; // un bois au nord-ouest
+    if (u < -0.05 && v > -0.12 && v < 0.06) k = '4'; // la forêt profonde, jusqu'au centre
     if (Math.abs(v - 0.08 - 0.25 * u) < 0.03) k = 'u'; // un chemin
     if (Math.abs(u - 0.18) < 0.025 && v > 0.08) k = 'u'; // une branche du chemin vers le sud
     if (Math.hypot(u - 0.24, v + 0.22) < 0.1) k = 'w'; // une mare
     if (u > -0.1 && u < 0.04 && v > 0.16 && v < 0.27) k = 't'; // un toit de chaume
+    if (inner > 70 && u > -0.02 && u < 0.09 && v > -0.05 && v < 0.05) k = 't'; // un toit de chaume sous le point (grand cadre)
+    if (inner < 70 && u > -0.1 && u < 0.1 && v > -0.1 && v < 0.06) k = '4'; // la forêt profonde sous le point (petit cadre)
     if (u > 0.28 && v > 0.12 && v < 0.3 && rand() < 0.12) k = 'k'; // quelques arbres isolés
     c.set(x, y, k);
   }
@@ -78,7 +82,7 @@ function mapFill(inner: number): Canvas {
 }
 
 const FACINGS: Facing[] = ['up', 'right', 'down', 'left'];
-const sizes = [63, 81, 125];
+const sizes = FRAME_SIZES;
 
 // --- en haut : les cadres ×4 ---
 let x = 16;
@@ -86,10 +90,9 @@ const top = 16;
 for (const [i, inner] of sizes.entries()) {
   const size = inner + 2 * FRAME_BORDER;
   drawCanvas(mapFill(inner), x, top, 4);
-  const dot = playerDot(FACINGS[i]);
-  const c0 = (size - 1) / 2;
-  drawCanvas(dot, x + (c0 - 3) * 4, top + (c0 - 3) * 4, 4);
+  const c0 = FRAME_BORDER + (inner - 1) / 2; // le centre de la fenêtre (contrat de pose)
   drawCanvas(minimapFrame(inner), x, top, 4);
+  drawCanvas(playerDot(FACINGS[i]), x + (c0 - DOT_CENTER) * 4, top + (c0 - DOT_CENTER) * 4, 4);
   x += size * 4 + 24;
 }
 
@@ -100,26 +103,31 @@ drawPng(`${gen}/ui-clock-hill.png`, x, top, 4);
 drawPng(`${gen}/ui-clock-ring.png`, x, top, 4);
 drawPng(`${gen}/xeros.png`, x, top + 23 * 4 + 16, 4, [0, 0, 32, 48]);
 
-// --- en bas : le point de Xéros ×8 sur six fonds ---
-const grounds = ['g', 'u', 'w', 't', '5', 'U', 'k'];
-let y = top + 137 * 4 + 24;
+// --- en bas : le point de Xéros liseré ×8 sur cinq fonds, avec Xéros ×8 sur chacun ---
+const grounds = ['4', 'g', 'u', 't', 'w'];
+let y = top + (FRAME_SIZES[0] + 2 * FRAME_BORDER) * 4 + 24;
+const cell = 9 * 8 + 8;
+const gw = 4 * cell + 32 * 8 + 16;
+const gh = 48 * 8 + 16;
 let bx = 16;
 for (const g of grounds) {
-  rect(bx, y, 4 * (7 * 8 + 8) + 8, 7 * 8 + 16, hex(FRAME_PALETTE[g]));
-  FACINGS.forEach((f, i) => drawCanvas(playerDot(f), bx + 8 + i * (7 * 8 + 8), y + 8, 8));
-  bx += 4 * (7 * 8 + 8) + 8 + 12;
-  if (bx > W - 300) { bx = 16; y += 7 * 8 + 16 + 12; }
+  if (bx + gw > W) { bx = 16; y += gh + 12; }
+  rect(bx, y, gw, gh, hex(FRAME_PALETTE[g]));
+  FACINGS.forEach((f, i) => drawCanvas(playerDot(f), bx + 8 + i * cell, y + 8, 8));
+  drawPng('src/generated/xeros.png', bx + 8 + 4 * cell, y + 8, 8, [0, 0, 32, 48]);
+  bx += gw + 12;
 }
+y += gh + 12;
 
 // --- à la taille de l'écran (×2) ---
 let sx = 16;
-const sy = H - 137 * 2 - 16;
+const sy = y;
 for (const [i, inner] of sizes.entries()) {
   const size = inner + 2 * FRAME_BORDER;
   drawCanvas(mapFill(inner), sx, sy, 2);
-  const c0 = (size - 1) / 2;
-  drawCanvas(playerDot(FACINGS[(i + 2) % 4]), sx + (c0 - 3) * 2, sy + (c0 - 3) * 2, 2);
+  const c0 = FRAME_BORDER + (inner - 1) / 2;
   drawCanvas(minimapFrame(inner), sx, sy, 2);
+  drawCanvas(playerDot(FACINGS[(i + 2) % 4]), sx + (c0 - DOT_CENTER) * 2, sy + (c0 - DOT_CENTER) * 2, 2);
   sx += size * 2 + 16;
 }
 drawPng(`${gen}/ui-clock-sky-day.png`, sx, sy, 2);
@@ -139,8 +147,8 @@ console.log('  ✓ .art-preview/petite-carte-cadre.png');
   const dw = size * S + 20;
   const d = new PNG({ width: dw, height: dw });
   for (let i = 0; i < d.data.length; i += 4) [d.data[i], d.data[i + 1], d.data[i + 2], d.data[i + 3]] = BG;
-  const c0 = (size - 1) / 2;
-  const layers: [Canvas, number][] = [[mapFill(inner), 0], [playerDot('up'), c0 - 3], [minimapFrame(inner), 0]];
+  const c0 = FRAME_BORDER + (inner - 1) / 2;
+  const layers: [Canvas, number][] = [[mapFill(inner), 0], [minimapFrame(inner), 0], [playerDot('up'), c0 - DOT_CENTER]];
   for (const [L, o] of layers) for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) {
     const k = L.get(x, y);
     if (k === '.') continue;
