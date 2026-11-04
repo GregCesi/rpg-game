@@ -12,7 +12,7 @@ import xeros from '../art/characters/xeros';
 import type { Canvas, Grid } from '../art/lib/canvas';
 import { world } from '../art/palette';
 import {
-  bankTile, curtain, faceEarth, faceWet, lane, lip, overhang, pathLane, PROPS, rakedEast, rakedWest, rotate, shimmer, waterCut,
+  bankTile, curtain, faceEarth, facePlanted, facePlantedEdge, faceWet, lane, lip, overhang, pathLane, PROPS, rakedEast, rakedWest, rotate, shimmer, waterCut,
 } from '../art/proposals/relief-final';
 import tileset from '../art/world/tiles';
 import { expectedSize, silhouette, type Dims } from '../src/content/gabarit';
@@ -25,7 +25,7 @@ const GREY: Rgb = [215, 215, 200];
 const RED: Rgb = [240, 90, 70];
 const XG = xeros.animations['idle-down'].frames[0];
 
-const s = new Sheet(1900, 2620, BG);
+const s = new Sheet(1900, 3100, BG);
 const PAD = 24;
 s.text('1 - matieres et objets du chemin creux (definitifs, a valider)', PAD, 14, GOLD, 4);
 const g = (c: Canvas | Grid) => (Array.isArray(c) ? c : c.toGrid());
@@ -70,6 +70,23 @@ label('coupees : 2 m, 1 m', PAD, fy + 120);
 put(lips[0], PAD, fy + 210, 4); put(lips[1], PAD + 270, fy + 210, 4);
 label('lip-0, lip-1 (x4)', PAD, fy + 264);
 y = fy + 440;
+
+// --- le flanc planté (correction de Grégoire, 4 nov.) : earth | planted-edge | planted 0 | planted 1 | planted 0, raccordés
+label('relief-face-planted-0..1 et relief-face-planted-edge-0..1 (64 x 100) : earth-0 | edge-0 | planted-0 | planted-1 | planted-0 ; puis edge-1, x1 et x4', PAD, y, GOLD);
+y += 20;
+{
+  const py = y + 8;
+  const row = [faceEarth(0), facePlantedEdge(0), facePlanted(0), facePlanted(1), facePlanted(0)];
+  row.forEach((f, i) => { put(f, PAD + i * 64, py, 1); put(lips[i % 2], PAD + i * 64, py - 4, 1); });
+  put(facePlantedEdge(1), PAD, py + 120, 1); put(facePlanted(1), PAD + 64, py + 120, 1);
+  label('edge-1 | planted-1', PAD, py + 226);
+  s.blit(XG, xeros.palette, PAD + 150, py + 100 - 46, 1, [14, 45]);
+  const px4 = PAD + 5 * 64 + 30;
+  [facePlantedEdge(0), facePlanted(0), facePlanted(1)].forEach((f, i) => { put(f, px4 + i * 256, py, 4); put(lips[i % 2], px4 + i * 256, py - 16, 4); });
+  s.blit(XG, xeros.palette, px4 + 330, py + 400 - 184, 4, [14, 45]);
+  label('edge-0', px4, py + 410); label('planted-0', px4 + 256, py + 410); label('planted-1', px4 + 512, py + 410);
+  y = py + 440;
+}
 
 // --- raked
 label('relief-face-raked-0..1 (24 x 64 : 12 de face + 12 de lierre sur l eau) et relief-face-raked-west-0..1 (12 x 64), x1 et x4, empiles 2 fois', PAD, y, GOLD);

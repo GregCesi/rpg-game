@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { creatures, maps, mobility } from '../src/content';
 import type { MapData, Relief } from '../src/content/types';
 import terrain from '../src/generated/terrain.json';
-import { deepAt, heightAt, heightText, pick, refusalText, stepRefusal, wallAt } from '../src/world/relief';
+import { deepAt, heightAt, heightText, pick, plantedAt, refusalText, stepRefusal, wallAt } from '../src/world/relief';
 import { landing } from '../src/world/throw';
 
 const WATER = (terrain as Record<string, { deep: number[] }>).world.deep[0];
@@ -156,6 +156,13 @@ if (ferme.relief) {
   }
   near(heightAt(ferme, west.x, west.y), 500, 2, 'ferme : le couloir finit sur le plateau');
   near(heightAt(ferme, east.x, east.y), 0, 2, 'ferme : le couloir commence sur la ferme');
+  // la matière des faces (CADRAGE 12.11) : flanc extérieur planté sur la terre ferme, terre sombre dedans, sur l'eau, à la falaise
+  near(plantedAt(ferme, 52 * T, 63.5 * T), 1, 0, 'ferme : le flanc extérieur du talus, planté');
+  near(plantedAt(ferme, 52 * T, east.y), 0, 0, 'ferme : la paroi intérieure du couloir, terre sombre');
+  near(plantedAt(ferme, 45 * T, 63.5 * T), 0, 0, 'ferme : le flanc au-dessus de l’eau, terre sombre');
+  near(plantedAt(ferme, 41 * T, 30 * T), 0, 0, 'ferme : la falaise, terre sombre');
+  const edge = plantedAt(ferme, 47.8 * T, 63.5 * T);
+  assert.ok(edge > 0 && edge < 1, `ferme : le passage d'une matière à l'autre sur la rive est (${edge})`);
   for (const id of ['bois-du-nord', 'bois-du-sud', 'bois-de-la-riviere', 'foret-profonde-nord', 'foret-profonde', 'foret-profonde-sud', 'foret-des-ronces'])
     near(heightAt(maps[id], 10 * T, 60 * T), 500, 1, `${id} : sur le plateau`);
 }

@@ -743,3 +743,19 @@ C. **Le rideau et les avancées** : des dessins du terrain du couloir, placés p
   penchés reviennent dans le chantier.
 - C : le rideau et les avancées sont **des objets dans Tiled**, posés automatiquement le long du tracé par l'outil jetable. Leur
   récolte n'est pas pour ce chantier (limite listée), mais leurs données doivent la permettre plus tard.
+
+### 12.11 Accord de Grégoire sur les dessins définitifs (4 novembre)
+
+Les planches `relief-final-1` à `6` sont validées, avec deux corrections, passées par le pixel-artist sur une planche à part
+(`relief-final-7-corrections.png`, avant et après) :
+1. **Côté ferme (cases 47 à 60), le flanc extérieur des talus redevient un talus planté**, comme à l'essai 4 (herbe, broussailles,
+   végétation sur une pente). La terre sombre, avec ses racines et son lierre, reste pour les parois intérieures du couloir, le flanc
+   au-dessus de l'eau et la falaise. Le passage d'une matière à l'autre se fait sur les premiers mètres de la rive est, comme le
+   changement de pente.
+2. **Le sol du couloir reste clair, presque blanc, aussi dans la pénombre** ; la pénombre du reste ne change pas.
+
+Les vues tournées (`-r1` à `-r3`) du rideau et des avancées ne servent pas : le couloir est est-ouest. Elles vont dans `VIEWS_TODO`
+avec cette raison.
+
+Après l'accord sur la planche des corrections : intégrer tous les dessins, refaire les captures en jeu (`relief-jeu-*.png`), puis la
+fusion prévue ; le récapitulatif donne le temps de chargement d'une zone avec relief comparé à main.

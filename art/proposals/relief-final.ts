@@ -8,6 +8,12 @@
 //   - `relief-face-earth-0..2` 64×100 : la face de terre tournée vers le sud (5 m) ; raccord horizontal libre entre les trois ;
 //                             coupée par le haut pour une face plus basse (la rangée 99 est toujours le pied) ;
 //   - `relief-face-wet-0..1`  64×100 : la même au-dessus de l'eau (lierre jusqu'à l'eau, pied mouillé) ;
+//   - `relief-face-planted-0..1` 64×100 : le flanc extérieur d'un talus sur la terre ferme (pente d'herbe et de broussailles), lu
+//                             comme les faces de terre ; raccord horizontal libre entre les deux (correction de Grégoire, 4 nov.) ;
+//   - `relief-face-planted-edge-0..1` 64×100 : le passage, sur les 64 px (3,2 m) de la rive est : colonne 0 la terre sombre
+//                             (`relief-face-earth-k`), colonne 63 le flanc planté (`relief-face-planted-k`), lu à la colonne
+//                             (x − rive) ; règle de choix : `flankMatter` de relief-final-scene.ts ;
+//   - le sol du couloir reçoit FLOOR_GLOOM (0,35) de la pénombre, le reste la reçoit entière ;
 //   - `relief-lip-0..1`       64×12  : la lèvre d'une face sud ; sa rangée LIP_CREST (4) se pose sur l'arête du haut ;
 //   - `relief-face-raked-0..1` 24×64 : la face est en raccourci (colonnes 0-11 : de la lèvre au pied ; 12-23 : le lierre qui
 //                             déborde sur l'eau, fond transparent), raccord vertical libre ; posée à l'écran, en bande ;
@@ -164,7 +170,8 @@ export const FACE_W = 64;
 export const FACE_H = 100;
 const FACE_SHARED = 5100;
 
-interface FaceOpts { wet: boolean; seed: number }
+/** `body` : le corps de la face seul, sans broussailles sous la lèvre ni cône au pied, périodique en hauteur. */
+interface FaceOpts { wet: boolean; seed: number; body?: boolean }
 
 /**
  * La face de terre tournée vers le sud, en vraie grandeur (64 × 100, 5 m). Terre très sombre (`3`, `5`), mottes éclairées sur
@@ -175,10 +182,13 @@ interface FaceOpts { wet: boolean; seed: number }
  */
 function face(o: FaceOpts): Canvas {
   const { wet, seed } = o;
+  const body = !!o.body;
   const r = rng(seed);
   const W = FACE_W;
   const H = FACE_H;
-  const c = new Canvas(W, H, '3');
+  const c0 = new Canvas(W, H, '3');
+  // le corps seul (`body`) est périodique en hauteur : ce qui dépasse en bas revient en haut
+  const c = body ? { get: (x: number, y: number) => c0.get(x, ((y % H) + H) % H), set(x: number, y: number, ch: string) { c0.set(x, ((y % H) + H) % H, ch); return this; } } : c0;
   const f = (s: number, cx: number, cy: number) => (x: number, y: number) => pnoise(x, y, W, H, cx, cy, s);
   const mix2 = (a: (x: number, y: number) => number, b: (x: number, y: number) => number) => (x: number, y: number) => a(x, y) * 0.6 + b(x, y) * 0.4;
   const soil = blended(mix2(f(seed + 1, 9, 14), f(seed + 2, 4, 7)), mix2(f(FACE_SHARED + 1, 9, 14), f(FACE_SHARED + 2, 4, 7)), W, H, 6, false);
@@ -200,14 +210,14 @@ function face(o: FaceOpts): Canvas {
   }
   // la mousse et le lierre en plaques, plus fournis en haut et (mouillé) en bas
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const m = moss(x, y) + (y < 30 ? (30 - y) / 120 : 0) + (wet && y > 70 ? (y - 70) / 90 : 0);
+    const m = moss(x, y) + (y < 30 && !body ? (30 - y) / 120 : 0) + (wet && y > 70 ? (y - 70) / 90 : 0);
     if (m < (wet ? 0.64 : 0.7)) continue;
-    const lit = moss(x - 1, y - 1) + (y < 31 ? (31 - y) / 120 : 0) + (wet && y > 71 ? (y - 71) / 90 : 0) < (wet ? 0.64 : 0.7);
+    const lit = moss(x - 1, y - 1) + (y < 31 && !body ? (31 - y) / 120 : 0) + (wet && y > 71 ? (y - 71) / 90 : 0) < (wet ? 0.64 : 0.7);
     const g = g2(x + 3, y);
     c.set(x, y, m > 0.82 ? (lit ? 'L' : g < 0.5 ? 'l' : 'k') : lit && g < 0.35 ? '6' : '8');
   }
   // les broussailles qui pendent sous la lèvre (la lèvre elle-même est `relief-lip`)
-  for (let x = 0; x < W; x++) {
+  for (let x = 0; x < W && !body; x++) {
     const len = Math.floor(pnoise(x, 0, W, H, 5, 10, seed + 7) * 9) + (hash(Math.floor(x / 3), 1, seed + 8) < 0.2 ? 6 : 0);
     for (let y = 0; y < len; y++) {
       const g = hash(x, y, seed + 9);
@@ -236,14 +246,14 @@ function face(o: FaceOpts): Canvas {
   const roots = wet ? 5 : 8;
   for (let i = 0; i < roots; i++) {
     let x = 5 + r() * (W - 10);
-    const y0 = Math.floor(r() * 6);
+    const y0 = Math.floor(r() * 6) + (body ? Math.floor(r() * H) : 0);
     const long = r() < 0.35;
     const len = long ? 55 + Math.floor(r() * 35) : 10 + Math.floor(r() * 30);
     let drift = 0;
     const thick = r() < 0.4 && !wet;
     for (let j = 0; j < len; j++) {
       const y = y0 + j;
-      if (y >= H - 6) break;
+      if (y >= H - 6 && !body) break;
       drift += (r() - 0.5) * 0.7;
       drift = Math.max(-0.9, Math.min(0.9, drift));
       x += drift * 0.35;
@@ -268,7 +278,7 @@ function face(o: FaceOpts): Canvas {
     c.set(x, y, 'N').set(x + s, y, 'N').set(x + 2 * s, y + 1, 'K').set(x, y - 1, 'm');
   }
   // la terre tombée au pied, en cône inégal, et quelques cailloux
-  for (let x = 0; x < W; x++) {
+  for (let x = 0; x < W && !body; x++) {
     const cone = 3 + Math.floor(pnoise(x, 0, W, H, 13, 10, seed + 12) * 7) + Math.floor(pnoise(x, 0, W, H, 4, 10, seed + 13) * 3);
     for (let d = 0; d < cone; d++) {
       const y = H - 1 - d;
@@ -278,7 +288,7 @@ function face(o: FaceOpts): Canvas {
       c.set(x, y, ch);
     }
   }
-  for (let i = 0; i < (wet ? 1 : 3); i++) {
+  for (let i = 0; i < (body ? 0 : wet ? 1 : 3); i++) {
     const x = 6 + Math.floor(r() * (W - 14));
     const y = H - 3 - Math.floor(r() * 2);
     c.set(x, y, 'r').set(x + 1, y, 'z').set(x, y + 1, 'z').set(x + 1, y + 1, 'Z').set(x - 1, y + 1, 'r');
@@ -290,11 +300,137 @@ function face(o: FaceOpts): Canvas {
       c.set(x, H - 1, hash(Math.floor(x / 2), 0, seed + 16) < 0.6 ? 'q' : 'w');
     }
   }
-  return c;
+  return c0;
 }
 
 export const faceEarth = (k: number) => face({ wet: false, seed: 5200 + k * 41 });
 export const faceWet = (k: number) => face({ wet: true, seed: 5400 + k * 43 });
+/** Le corps de la face de terre (`relief-face-earth-k`), périodique en hauteur : la part de terre du passage au flanc planté. */
+export const faceEarthBody = (k: number) => face({ wet: false, seed: 5200 + k * 41, body: true });
+
+// ---------- 3. relief-face-planted : le flanc extérieur d'un talus sur la terre ferme ----------
+
+const PLANTED_SHARED = 5600;
+
+/**
+ * Le flanc extérieur d'un talus planté, sur la terre ferme (64 × 100, les dimensions de `relief-face-earth`). Une pente se voit à
+ * l'écran plus haute que sa hauteur (5 m de haut sur 4,7 m d'emprise : près de 200 px), et la lire par la hauteur l'étirerait : elle
+ * se lit par sa distance à l'écran au-dessus de son pied (rangée 99 au pied), et la tuile est périodique en hauteur pour la couvrir
+ * entière (règle : `flankAt` de relief-final-scene.ts). Une pente d'herbe vue de face (`v`, éclairée `g` en haut à
+ * gauche des bosses, creux `V`, brins `G` `y`), mangée de broussailles en grappes arrondies (éclat `j` `L` en haut à gauche, corps
+ * `l`, ombre `k` en bas à droite, l'herbe ombrée `V` dessous) ; quelques plaques de terre nue (`e`, `n`) où la pente a glissé, de rares
+ * fleurs (`a`, `b`).
+ * Raccord horizontal libre entre les variantes (bande commune, comme les faces de terre), raccord vertical avec elle-même.
+ */
+export function facePlanted(k: number): Canvas {
+  const seed = 5700 + k * 47;
+  const r = rng(seed);
+  const W = FACE_W;
+  const H = FACE_H;
+  const c0 = new Canvas(W, H, 'v');
+  // périodique en hauteur : ce qui dépasse en haut ou en bas revient de l'autre côté
+  const wy = (y: number) => ((y % H) + H) % H;
+  const c = { get: (x: number, y: number) => c0.get(x, wy(y)), set(x: number, y: number, ch: string) { c0.set(x, wy(y), ch); return this; } };
+  const f = (s: number, cx: number, cy: number) => (x: number, y: number) => pnoise(x, y, W, H, cx, cy, s);
+  const mix2 = (a: (x: number, y: number) => number, b: (x: number, y: number) => number) => (x: number, y: number) => a(x, y) * 0.7 + b(x, y) * 0.3;
+  const field = (s: number, cx: number, cy: number, cx2: number, cy2: number) =>
+    blended(mix2(f(seed + s, cx, cy), f(seed + s + 1, cx2, cy2)), mix2(f(PLANTED_SHARED + s, cx, cy), f(PLANTED_SHARED + s + 1, cx2, cy2)), W, H, 6, false);
+  const tone = field(1, 16, 14, 6, 5);
+  const bare = field(5, 9, 7, 4, 3);
+  // le grain : commun à toutes les variantes près des bords gauche et droit (raccord sans couture), propre à chacune dedans
+  const own = (x: number) => (x < 4 || x > W - 5 ? PLANTED_SHARED : seed);
+  const g2 = (x: number, y: number) => hash(Math.floor(x / 2), Math.floor(y / 2), own(x) + 7);
+  // l'herbe de la pente : de grandes plages plus claires et plus sombres, sans motif
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const t = tone(x, y);
+    const g = g2(x, y);
+    let ch = t > 0.62 ? (g < 0.25 ? 'v' : 'g') : t < 0.36 ? (g < 0.3 ? 'v' : 'V') : g < 0.12 ? 'g' : g > 0.92 ? 'V' : 'v';
+    c.set(x, y, ch);
+  }
+  // la terre nue où la pente a glissé : petites plaques, arête du haut au jour, dessous à l'ombre
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (bare(x, y) < 0.78) continue;
+    c.set(x, y, bare(x, y - 1) < 0.78 ? 'n' : 'e');
+    if (bare(x, y + 1) < 0.78) c.set(x, y + 1, 'V');
+  }
+  // l'herbe en brins : traits verticaux de 2 ou 3 px (pointe claire, pied à l'ombre), serrés, de toutes les teintes
+  for (let i = 0; i < 260; i++) {
+    const x = Math.floor(r() * W);
+    const y = Math.floor(r() * H);
+    const base = c.get(x, y);
+    if (base !== 'v' && base !== 'g' && base !== 'V') continue;
+    const hgt = r() < 0.5 ? 2 : 3;
+    const lit = base === 'g' ? 'G' : base === 'v' ? 'g' : 'v';
+    for (let j = 0; j < hgt; j++) c.set(x, y - j, j === hgt - 1 && base === 'g' && r() < 0.4 ? 'y' : lit);
+    if (c.get(x, y + 1) === base) c.set(x, y + 1, base === 'V' ? 'V' : 'V');
+  }
+  // les broussailles : des grappes arrondies (deux ou trois boules), de toutes tailles ; dessinées du nord au sud
+  const bushes: [number, number, number][] = [];
+  const dyw = (a: number, b: number) => { const d = Math.abs(a - b) % H; return Math.min(d, H - d); };
+  for (let i = 0; i < 80 && bushes.length < 22; i++) {
+    const y = Math.floor(r() * H);
+    const rad = 2.5 + r() * 3.2;
+    const x = Math.round(rad + 2 + r() * (W - 2 * rad - 5));
+    if (bushes.some(([bx, by, br]) => Math.hypot(bx - x, dyw(by, y) * 1.3) < br + rad - 1)) continue;
+    bushes.push([x, y, rad]);
+  }
+  bushes.sort((a, b) => a[1] - b[1]);
+  for (const [bx, by, br] of bushes) {
+    const balls: [number, number, number][] = [[bx, by, br]];
+    const n = 1 + Math.floor(r() * 2);
+    for (let j = 0; j < n; j++) balls.push([bx + (r() - 0.4) * br * 1.4, by + (r() - 0.2) * br * 0.7, br * (0.55 + r() * 0.3)]);
+    const inside = (x: number, y: number) => balls.some(([cx, cy, cr]) => Math.hypot(x + 0.5 - cx, (y + 0.5 - cy) * 1.15) < cr);
+    // l'ombre portée sur l'herbe, sous la grappe et à droite
+    for (let y = Math.floor(by - br * 2); y <= by + br * 2 + 2; y++) for (let x = Math.floor(bx - br * 2); x <= bx + br * 2 + 2; x++) {
+      if (x < 0 || x >= W || inside(x, y)) continue;
+      if (inside(x - 1, y - 1) || inside(x, y - 1)) c.set(x, y, 'V');
+    }
+    for (let y = Math.floor(by - br * 2); y <= by + br * 2; y++) for (let x = Math.floor(bx - br * 2); x <= bx + br * 2; x++) {
+      if (x < 0 || x >= W || !inside(x, y)) continue;
+      // la lumière en haut à gauche de chaque boule, l'ombre en bas à droite
+      const [cx, cy, cr] = balls.reduce((best, b) => (Math.hypot(x + 0.5 - b[0], y + 0.5 - b[1]) - b[2] < Math.hypot(x + 0.5 - best[0], y + 0.5 - best[1]) - best[2] ? b : best));
+      const sl = ((x + 0.5 - cx) + (y + 0.5 - cy)) / (cr * 1.41) + (hash(x, y, seed + 9) - 0.5) * 0.35;
+      const edgeBottom = !inside(x, y + 1) || !inside(x + 1, y);
+      const ch = sl < -0.45 ? (hash(x, y, seed + 10) < 0.5 ? 'j' : 'L') : sl < -0.1 ? 'L' : sl > 0.4 || edgeBottom ? 'k' : 'l';
+      c.set(x, y, ch);
+    }
+  }
+  // quelques fleurs, seules (détail voulu)
+  for (let i = 0; i < 6; i++) {
+    const x = 6 + Math.floor(r() * (W - 12));
+    const y = 16 + Math.floor(r() * (H - 28));
+    if (c.get(x, y) === 'v' || c.get(x, y) === 'g') c.set(x, y, r() < 0.5 ? 'a' : 'b');
+  }
+  return c0;
+}
+
+/**
+ * Le passage de la terre sombre au flanc planté (64 × 100, périodique en hauteur comme le flanc planté), posé sur les 64 premiers
+ * px (3,2 m) de la rive est, là où la pente change (`steep` de la scène) : à gauche (colonnes 0-2) le corps de la face de terre
+ * (`faceEarthBody`, la matière de `relief-face-earth-k` sans lèvre ni pied), à droite (colonnes 61-63) le flanc planté
+ * (`relief-face-planted-k`). Entre les deux, une limite déchirée : l'herbe et les broussailles avancent vers l'ouest en langues, la
+ * terre reste en poches côté planté ; sous une langue d'herbe, l'arête de terre au jour (`e`), contre elle la terre éclairée (`9`).
+ */
+export function facePlantedEdge(k: number): Canvas {
+  const earth = faceEarthBody(k);
+  const planted = facePlanted(k);
+  const W = FACE_W;
+  const H = FACE_H;
+  const c = new Canvas(W, H);
+  const n = (x: number, y: number) => pnoise(x, y, W, H, 7, 9, 5800 + k) * 0.65 + pnoise(x, y, W, H, 3, 4, 5810 + k) * 0.35;
+  const isP = (x: number, y: number) => {
+    if (x < 0 || x >= W) return false;
+    const yy = ((y % H) + H) % H;
+    return x < 3 ? false : x > W - 4 ? true : x / (W - 1) + (n(x, yy) - 0.5) * 0.55 > 0.5;
+  };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) c.set(x, y, isP(x, y) ? planted.get(x, y) : earth.get(x, y));
+  for (let y = 0; y < H; y++) for (let x = 3; x < W - 3; x++) {
+    const below = (y + 1) % H;
+    if (isP(x, y) && !isP(x, below) && c.get(x, below) !== 'K' && c.get(x, below) !== 'N') c.set(x, below, 'e');
+    if (!isP(x, y) && isP(x + 1, y) && (c.get(x, y) === '3' || c.get(x, y) === '5')) c.set(x, y, '9');
+  }
+  return c;
+}
 
 // ---------- 4. relief-lip : la lèvre d'une face sud ----------
 
@@ -424,15 +560,27 @@ export function rakedWest(k: number): Canvas {
 
 // ---------- 6. lane : le sol clair du couloir ----------
 
-/** Le sol clair (32×32) : terre tassée presque blanche, plaques lissées, cailloux de calcaire éclairés en haut à gauche. */
+/**
+ * La part de la pénombre du couloir que reçoit son sol clair (et le sol clair des raccords `path-lane-*`) : la pénombre du creux
+ * (0,3 × profondeur / 5 m) et l'ombre des feuillages de la voûte, multipliées par FLOOR_GLOOM sur le seul sol ; les parois, les
+ * talus, Xéros et le reste gardent la leur entière. Correction de Grégoire (4 nov.) : le sol reste le chemin clair qu'on suit dans
+ * le noir. Le jeu la reprend dans son rendu (la pénombre cuite dans les bandes du sol).
+ */
+export const FLOOR_GLOOM = 0.2;
+
+/**
+ * Le sol clair (32×32) : calcaire tassé presque blanc (`+`), plaques lissées au jour (`!`), creux patinés (`=`), cailloux de calcaire
+ * éclairés en haut à gauche. Éclairci le 4 novembre (correction de Grégoire) : plus de terre battue `#` dans le fond, qui le tirait
+ * vers le gris sous la pénombre.
+ */
 function laneBase(seed: number): Canvas {
   const r = rng(seed);
   const c = new Canvas(T, T, '+');
   const f = (x: number, y: number) => pnoise(x, y, T, T, 8, 6, 8800) * 0.6 + pnoise(x, y, T, T, 4, 4, seed) * 0.4;
   for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
     const v = f(x, y);
-    if (v > 0.66) c.set(x, y, '#');
-    else if (v < 0.3) c.set(x, y, hash(Math.floor(x / 2), y, seed) < 0.5 ? '=' : '+');
+    if (v > 0.5) c.set(x, y, '!');
+    else if (v < 0.28) c.set(x, y, hash(Math.floor(x / 2), y, seed) < 0.35 ? '=' : '+');
   }
   for (let i = 0; i < 2; i++) c.ellipse(4 + r() * 24, 4 + r() * 24, 1.5 + r() * 2, 1 + r() * 0.8, '!');
   for (let i = 0; i < 8; i++) {
@@ -768,6 +916,8 @@ export function reliefImages(): ImageSource[] {
   const out: ImageSource[] = [];
   for (let k = 0; k < 3; k++) out.push(img(`relief-face-earth-${k}`, faceEarth(k)));
   for (let k = 0; k < 2; k++) out.push(img(`relief-face-wet-${k}`, faceWet(k)));
+  for (let k = 0; k < 2; k++) out.push(img(`relief-face-planted-${k}`, facePlanted(k)));
+  for (let k = 0; k < 2; k++) out.push(img(`relief-face-planted-edge-${k}`, facePlantedEdge(k)));
   for (let k = 0; k < 2; k++) out.push(img(`relief-lip-${k}`, lip(k)));
   for (let k = 0; k < 2; k++) out.push(img(`relief-face-raked-${k}`, rakedEast(k)));
   for (let k = 0; k < 2; k++) out.push(img(`relief-face-raked-west-${k}`, rakedWest(k)));

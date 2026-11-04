@@ -5,8 +5,10 @@
 //     côté et de l'autre, `path-lane-w` et `path-lane-e` au raccord ; la bande de 2,5 m qui ondule prend les rangées des tuiles par
 //     ses deux bords (le haut de la tuile du haut contre le pied nord, le bas de la tuile du bas contre le pied sud) ;
 //   - le dessus des talus plantés : `bank-0..3` ; le talus sud, qui regarde le nord, la même tuile à l'ombre ;
-//   - toute face tournée vers le sud (paroi nord, flancs des talus vus du sud) : `relief-face-earth` (au-dessus de l'eau :
-//     `relief-face-wet`), lue depuis son pied (la rangée 99), sa lèvre `relief-lip` sur l'arête ;
+//   - toute face tournée vers le sud : la paroi nord, `relief-face-earth` ; le flanc extérieur d'un talus, selon `flankMatter`
+//     (au-dessus de l'eau `relief-face-wet`, sur la terre ferme `relief-face-planted`, le passage `relief-face-planted-edge`),
+//     lue depuis son pied (la rangée 99), sa lèvre `relief-lip` sur l'arête ;
+//   - le sol du couloir ne reçoit que FLOOR_GLOOM de la pénombre (relief-final.ts ; appliqué par l'outil des planches) ;
 //   - la face est de la falaise en raccourci : `relief-face-raked` posé en bande à l'écran ;
 //   - la coupure de l'eau : `water-cut` puis `shimmer` ;
 //   - la voûte : le rideau `lane-curtain`, les avancées `lane-overhang-1..3` et les arbres du jeu, debout (aucun arbre penché).
@@ -19,7 +21,7 @@ import {
 } from './relief-creux4-scene';
 import { hash, wave } from './relief-a';
 import {
-  bankTile, curtain, faceEarth, faceWet, FACE_H, lane, lip, LIP_CREST, overhang, pathLane, PROPS, rakedEast, RAKE_H, RAKE_W,
+  bankTile, curtain, faceEarth, facePlanted, facePlantedEdge, faceWet, FACE_H, FACE_W, lane, lip, LIP_CREST, overhang, pathLane, PROPS, rakedEast, RAKE_H, RAKE_W,
   rotate, shimmer, waterCut,
 } from './relief-final';
 
@@ -34,6 +36,8 @@ const SHADE: Record<string, string> = { g: 'v', v: 'V', G: 'v', '6': '8', '7': '
 const BANK_SHADE = BANK.map((b) => { const c = bankTile(0); for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) { const ch = b.get(x, y); c.set(x, y, SHADE[ch] ?? ch); } return c; });
 const EARTH = [0, 1, 2].map((k) => faceEarth(k));
 const WET = [0, 1].map((k) => faceWet(k));
+const PLANTED = [0, 1].map((k) => facePlanted(k));
+const PLANTED_EDGE = [0, 1].map((k) => facePlantedEdge(k));
 const LIP = [0, 1].map((k) => lip(k));
 const RAKED = [0, 1].map((k) => rakedEast(k));
 const CUT_S = waterCut();
@@ -127,6 +131,53 @@ export function faceAt(x: number, up: number, wet: boolean): string {
   return f.get(((x % 64) + 64) % 64, Math.max(0, FACE_H - 1 - Math.round(up)));
 }
 
+/**
+ * La matière du flanc extérieur d'un talus (correction de Grégoire, 4 nov.), d'après la place du point, en px depuis la rive est
+ * (XR, le bord est de l'eau ; 64 px = 3,2 m, la même bande que le changement de pente `steep`) :
+ *   - x < XR (au-dessus de l'eau) : `wet`, la terre sombre mouillée (`relief-face-wet`), lue par la hauteur comme avant ;
+ *   - 0 ≤ x − XR < 64 (les 3,2 premiers mètres de la rive est) : `planted-edge`, le passage (`relief-face-planted-edge`), colonne
+ *     x − XR ;
+ *   - x − XR ≥ 64 (la terre ferme) : `planted`, le flanc planté (`relief-face-planted`), par segments de 64 px comptés depuis
+ *     XR + 64, colonne (x − XR − 64) mod 64, variante tirée par segment.
+ * Le flanc planté et le passage se lisent par la distance à l'écran au-dessus du pied du flanc (`upS`, en px d'écran : 0 sur la
+ * rangée de l'écran où le flanc touche le sol à 0 m), rangée 99 − (upS mod 100) : ils sont périodiques en hauteur, et un flanc en
+ * pente se voit plus haut que 100 px. Tout ce qui est au-delà de la crête du talus, sur la terre ferme, en est fait, les parties
+ * raides (faces) comme les parties douces (sol étiré).
+ * Les parois intérieures du couloir (la paroi nord, le talus intérieur) et la falaise gardent la terre sombre, quelle que soit leur place.
+ */
+export type FlankMatter = 'wet' | 'planted-edge' | 'planted';
+export const PLANT_EDGE = FACE_W;
+export const flankMatter = (x: number): FlankMatter => (x < XR ? 'wet' : x - XR < PLANT_EDGE ? 'planted-edge' : 'planted');
+/** Le flanc extérieur au point x : `upZ` px de hauteur au-dessus de son pied (pour `wet`), `upS` px d'écran au-dessus de son pied. */
+export function flankAt(x: number, upZ: number, upS: number): string {
+  const m = flankMatter(x);
+  if (m === 'wet') return faceAt(x, upZ, true);
+  const row = FACE_H - 1 - ((((Math.round(upS)) % FACE_H) + FACE_H) % FACE_H);
+  const dx = x - XR;
+  if (m === 'planted-edge') return PLANTED_EDGE[variantOf(0, 2, 2, 91)].get(dx, row);
+  const seg = Math.floor((dx - PLANT_EDGE) / FACE_W);
+  return PLANTED[variantOf(seg, 3, 2, 93)].get((dx - PLANT_EDGE) % FACE_W, row);
+}
+
+/** Par colonne, la rangée de l'écran où le flanc extérieur du talus sud touche le sol (son pied, à 0 m) ; −1 sans flanc. */
+const FOOT = new WeakMap<Terrain, Int32Array>();
+function flankFootSy(t: Terrain, x: number): number {
+  let f = FOOT.get(t);
+  if (!f) {
+    f = new Int32Array(W).fill(-1);
+    for (let c = 0; c < W; c++) {
+      let seen = false;
+      for (let y = Math.round(axisY(c)); y < H; y++) {
+        const k = y * W + c;
+        if (t.zone[k] === Z.BERM && t.side[k] > 0) seen = true;
+        else if (seen) { f[c] = y + OY - t.h[k]; break; }
+      }
+    }
+    FOOT.set(t, f);
+  }
+  return f[x];
+}
+
 function groundAt(t: Terrain, x: number, y: number): string {
   const k = y * W + x;
   const col = Math.floor(x / T);
@@ -148,7 +199,10 @@ function groundAt(t: Terrain, x: number, y: number): string {
       // le flanc extérieur du talus sud, qui descend vers le sud : on le voit de face, comme une face (lue depuis le sol, 0) ;
       // le dessus et les pentes douces : la tuile
       const kn = Math.max(0, y - 1) * W + x;
-      if (t.side[k] > 0 && t.h[kn] - t.h[k] >= 1) return faceAt(x, t.h[k], x >= XC && x < XR);
+      const sy = y - t.h[k] + OY;
+      if (t.side[k] > 0 && t.h[kn] - t.h[k] >= 1) return flankAt(x, t.h[k], flankFootSy(t, x) - sy);
+      // au-delà de la crête, sur la terre ferme : la pente plantée, même là où elle s'adoucit (au nord, lue sur l'écran seul)
+      if (x >= XR && d - t.hw[k] - t.run[k] >= crestAt(x)) return flankAt(x, t.h[k], t.side[k] > 0 ? flankFootSy(t, x) - sy : -sy);
       return bankAt(x, y, false);
     }
     case Z.TRAIL:
@@ -200,7 +254,7 @@ export function render(t: Terrain): Rendered {
           const sy = y - z + OY;
           if (sy < 0 || sy >= SH) continue;
           const i = sy * W + x;
-          grid[sy][x] = faceAt(x, z - foot, over);
+          grid[sy][x] = zn === Z.BERM && t.side[kn] > 0 ? flankAt(x, z - foot, flankFootSy(t, x) - sy) : faceAt(x, z - foot, over);
           dep[i] = y - 1;
           zone[i] = zn === Z.PLATEAU ? Z.NBANK : zn;
           gloom[i] = gloomAt(t, x, y - 1);

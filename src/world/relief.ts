@@ -296,3 +296,32 @@ export function wallAt(map: MapData, x: number, y: number, mob: Mobility): boole
   }
   return false;
 }
+
+/** Sur combien de pixels, depuis l'eau, le flanc planté d'un talus passe à la terre sombre (64 px = 3,2 m, la rive est). */
+export const PLANTED_EDGE = 64;
+
+/**
+ * La matière d'une face de relief au point (x, y) du sol de la carte (CADRAGE 12.11) : 1 pour le flanc planté (herbe, broussailles),
+ * 0 pour la terre sombre (racines, lierre), entre les deux sur les premiers mètres de la rive. Terre sombre : la paroi intérieure d'un
+ * couloir, le flanc au-dessus de l'eau, le bord d'un niveau (la falaise). Planté : le flanc extérieur d'un talus sur la terre ferme.
+ */
+export function plantedAt(map: MapData, x: number, y: number): number {
+  const relief = map.relief;
+  if (!relief || deepAt(map, x, y)) return 0;
+  const f = reliefOf(map);
+  for (const ln of relief.lanes) {
+    const reach = (ln.width / 2 + ln.inner + ln.innerSlope * f.max) / CM_PER_PX;
+    if (nearest(ln.points, x, y).d <= reach) return 0;
+  }
+  let flank = false;
+  for (const rg of relief.ridges) {
+    const near = nearest(rg.points, x, y);
+    const p = lerpPoint(rg.points, near);
+    if (near.d * CM_PER_PX <= p.crest / 2 + p.flank) flank = true;
+  }
+  if (!flank) return 0;
+  // la distance à l'eau la plus proche sur la même ligne (de part et d'autre)
+  for (let d = TILE / 4; d <= PLANTED_EDGE; d += TILE / 4)
+    if (deepAt(map, x - d, y) || deepAt(map, x + d, y)) return d / PLANTED_EDGE;
+  return 1;
+}
