@@ -40,6 +40,7 @@ Dedans (un intérieur calculé) : les mêmes commandes que dehors.
 | **V** | la vitesse du temps, au palier suivant (x1, x2, x5, x10, x20, puis x1) ; lue en jeu, pendant un travail et sur un rail ; une attaque ou un lancer ramène à x1 ; x50 est réservé à ?dieu |
 | **B** | le mode construction (`?construire`) |
 | molette, **+**, **−** | le zoom, dans tous les modes : un quart de palier par cran, de la vue la plus large (32 × 18 m) à la plus proche (12,8 × 7,2 m) ; la première fois, environ 21 × 12 m ; le cran choisi est retenu (`ZOOM_STEPS` de config.ts) |
+| clic sur la **petite carte** (en haut à gauche) | le cran suivant de la petite carte : 65 m autour, 32 m, 100 m, puis retour ; le cran choisi est retenu (`MINIMAP` de config.ts). Ce clic n'est ni une main ni un coup (`src/input/uiClicks.ts`) |
 | **Espace** | rien : réservé à l'esquive et au saut, plus tard |
 
 Ctrl n'est jamais une touche du jeu : sur Mac, Ctrl + clic gauche devient un clic droit.

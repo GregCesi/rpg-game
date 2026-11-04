@@ -4,6 +4,7 @@
 //   - de la place jusqu'au panneau de la route de la ville (zone route-de-la-ville), qu'il lit (E : dialogue signpost-town) ;
 //   - au bord du monde, à l'est, il ne passe pas ;
 //   - la page rechargée, la partie le retrouve à sa place (même zone, mêmes pieds) ;
+//   - la petite carte suit la case de Xéros, un clic sur elle change son cran (capture .art-preview/petite-carte-jeu.png) ;
 //   - chaque passage de bord est mesuré (la scène qui redémarre sur la voisine) ; puis, dans la forêt profonde (la zone la plus
 //     chargée), le temps d'une image, Xéros immobile puis en marche. Les mesures sont dites à la fin.
 // Écrit aussi .art-preview/monde.png (tools/world-preview.ts). Usage : npm run test:monde.
@@ -320,6 +321,33 @@ await playtest('monde', async ({ page, errors, load }) => {
   assert.ok(Math.hypot(p.wx - place.x, p.wy - place.y) < 15 * 20, `sur la place (${p.wx}, ${p.wy})`);
   const zonesSeen = await page.evaluate(() => (window as any).crossings.map((c: any) => c.from));
   assert.deepEqual(zonesSeen, ['ferme -> chemin', 'chemin -> village'], 'ferme, chemin, village : deux bords passés');
+  // la petite carte (src/systems/minimap.ts) : centrée sur la case du monde de Xéros, passée de zone en zone sans couture
+  const cellOnMap = () => page.evaluate(() => (window as any).game.scene.getScene('hud').minimapText as string);
+  const cellHere = async () => {
+    const q = await where();
+    return `${Math.floor(q.wx / TILE)},${Math.floor(q.wy / TILE)}`;
+  };
+  await until(async () => (await cellOnMap()).startsWith((await cellHere()) + ' '), 3000, 'la petite carte sur la case de Xéros au village');
+  // à regarder : la petite carte en jeu, sur la place du village (.art-preview/petite-carte-jeu.png)
+  await page.screenshot({ path: '.art-preview/petite-carte-jeu.png' });
+  // un clic sur la carte (un clic d'interface : ni une main ni un coup) passe au cran suivant ; trois clics, retour au premier
+  const step = async () => (await cellOnMap()).split(' ')[2];
+  const first = await step();
+  const clickMap = async () => {
+    const box = await page.evaluate(() => {
+      const r = (window as any).game.canvas.getBoundingClientRect();
+      return { x: r.left, y: r.top, k: r.width / 640 };
+    });
+    await page.mouse.click(box.x + 30 * box.k, box.y + 30 * box.k);
+  };
+  for (let k = 1; k <= 3; k++) {
+    await clickMap();
+    const want = `${((Number(first.split('/')[0]) - 1 + k) % Number(first.split('/')[1])) + 1}/${first.split('/')[1]}`;
+    await until(async () => (await step()) === want, 3000, `la petite carte au cran ${want} après ${k} clic(s)`);
+  }
+  assert.equal((await where()).mode, 'play', 'un clic sur la petite carte ne lance aucun geste');
+  // la souris quitte le canevas (vers le panneau ?dieu) : plus de curseur, Xéros vise devant lui, comme avant les clics
+  await page.evaluate(() => (window as any).game.canvas.dispatchEvent(new MouseEvent('mouseleave')));
 
   // 3 bis. vers le nord, comme un joueur : de la place, droit au nord jusqu'à la zone voisine, puis retour à la place (le bord nord
   // arrêtait Xéros : le passage testait le bas de ses pieds, que le corps empêchait d'atteindre le bord ; tools/test-zones.ts)

@@ -10,7 +10,8 @@ import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
 import { forgetHeldKeys } from '../input/PlayerInput';
-import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand } from '../events';
+import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand, type PlayerCell } from '../events';
+import { worldCell } from '../world/minimap';
 import { BuildSystem } from '../systems/build';
 import { ClockSystem } from '../systems/clock';
 import { CombatSystem, type AttackPlan } from '../systems/combat';
@@ -235,6 +236,8 @@ export class WorldScene extends Phaser.Scene {
   private interiors!: Interiors;
   /** L'intérieur où l'on est (sa carte calculée, ce que la vue y ajoute), ou rien dehors. */
   private interior?: InteriorMap;
+  /** La dernière case du monde et le sens annoncés à la petite carte (GameEvent.PlayerCell) ; vidée à chaque create. */
+  private cellKey = '';
   private inside?: InteriorView;
   /** Le passage d'une zone du monde à sa voisine (systems/zones.ts). */
   private zones!: ZoneCrossing;
@@ -258,6 +261,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cellKey = '';
     // un point d'apparition « dedans » (le réveil de Xéros chez lui) : dans l'intérieur du bâtiment posé où il est
     const hostSpawn = !this.at && maps[this.mapId]?.spawns[this.spawn];
     if (hostSpawn && hostSpawn.inside) {
@@ -413,6 +417,24 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * La case du monde où est Xéros et son sens, pour la petite carte (GameEvent.PlayerCell), seulement quand elle change ; dedans, la case
+   * du dehors : la position dans l'intérieur moins son décalage (`shift` de InteriorMap), dans la carte qui l'accueille.
+   */
+  private announceCell(): void {
+    const a = this.player.actor;
+    const host = maps[this.interior ? this.interior.host : this.mapId];
+    let cell: PlayerCell | undefined;
+    if (host?.world) {
+      const shift = this.interior?.shift ?? { x: 0, y: 0 };
+      cell = { ...worldCell(host, a.x - shift.x / CM_PER_PX, a.y - shift.y / CM_PER_PX), facing: a.facing };
+    }
+    const key = cell ? `${cell.x},${cell.y},${cell.facing}` : 'none';
+    if (key === this.cellKey) return;
+    this.cellKey = key;
+    this.game.events.emit(GameEvent.PlayerCell, cell);
+  }
+
   update(time: number, delta: number): void {
     // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
     this.autosave.update();
@@ -459,6 +481,7 @@ export class WorldScene extends Phaser.Scene {
     // les objets lancés volent dans tous les modes (le temps du jeu)
     this.updateFlights(delta);
     this.daylight.update();
+    this.announceCell();
     // V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite), au palier suivant, en boucle
     if (input.speedPressed() && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
       const n = nextSpeed(timeDef.speeds, timeDef.speeds.includes(simSpeed()) ? simSpeed() : timeDef.default);

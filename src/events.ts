@@ -27,7 +27,20 @@ export const GameEvent = {
    * jeu) : le HUD l'écrit au-dessus des mains. Émis à chaque image par WorldScene.
    */
   ClickPlans: 'click-plans',
+  /**
+   * La case du monde où est Xéros, et son sens (argument : `PlayerCell`, ou undefined hors du monde) : la petite carte du HUD se
+   * centre sur elle (systems/minimap.ts). Dedans, la case du dehors (le décalage de l'intérieur ôté). Émis par WorldScene quand la
+   * case ou le sens change, pour que le HUD ne lise jamais la scène du monde.
+   */
+  PlayerCell: 'player-cell',
 } as const;
+
+/** La case du monde (en cases de 1,60 m, world/minimap.ts) où sont les pieds de Xéros, et le sens où il regarde. */
+export interface PlayerCell {
+  x: number;
+  y: number;
+  facing: 'down' | 'up' | 'left' | 'right';
+}
 
 /**
  * Ce que demande le catalogue du mode construction (src/build/panel.ts) : entrer ou sortir (`toggle`), prendre une pièce
