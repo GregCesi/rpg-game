@@ -6,11 +6,12 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { basename, dirname, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { TILE } from '../src/config';
-import { MapSchema, WoodPieceSchema } from '../src/content/types';
+import { MapSchema, NpcPoseSchema, WoodPieceSchema } from '../src/content/types';
 import propsJson from '../src/content/props.json';
 import type { Exit, MapData, MapItem, MapObject, MapPile, MapPlan, MapWarren, Npc, Parcel, Relief, Spawn } from '../src/content/types';
 import { pileWoodOf } from '../src/world/woodPile';
 import { WoodAgeSchema } from '../src/content/types';
+import { CM_PER_PX } from '../src/content/gabarit';
 import parcelsJson from '../src/content/parcels.json';
 import creaturesJson from '../src/content/creatures.json';
 import itemsJson from '../src/content/items.json';
@@ -328,8 +329,10 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (!character) oerr("champ 'character' (clé de characters.json) manquant");
       if (!dialogue) oerr("champ 'dialogue' (clé de dialogues.json) manquant");
       const pose = text('pose');
-      if (pose !== undefined && pose !== 'sit') oerr(`pose '${pose}' inconnue (attendue : sit)`);
-      if (character && dialogue) npcs.push({ x: o.x, y: o.y, character, dialogue, ...(facing() ? { facing: facing() } : {}), ...(bool('inside') ? { inside: true as const } : {}), ...(pose === 'sit' ? { pose: 'sit' as const } : {}) });
+      const poses = NpcPoseSchema.options;
+      const known = poses.find((q) => q === pose);
+      if (pose !== undefined && !known) oerr(`pose '${pose}' inconnue (attendues : ${poses.join(', ')})`);
+      if (character && dialogue) npcs.push({ x: o.x, y: o.y, character, dialogue, ...(facing() ? { facing: facing() } : {}), ...(bool('inside') ? { inside: true as const } : {}), ...(known ? { pose: known } : {}) });
     } else if (cls === 'Place') {
       only(['accepts', 'inside']);
       if (o.point || o.gid !== undefined || o.width <= 0 || o.height <= 0) return oerr('une place est un rectangle (outil « Insérer un rectangle »)');
@@ -383,6 +386,9 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (!existsSync(`src/content/plans/${plan}.json`)) return oerr(`plan '${plan}' introuvable (src/content/plans/${plan}.json)`);
       if (age !== undefined && !WoodAgeSchema.safeParse(age).success) return oerr(`âge '${age}' inconnu (attendus : ${WoodAgeSchema.options.join(', ')})`);
       plans.push({ id: o.id, x: o.x, y: o.y, plan, ...(age ? { age: age as MapPlan['age'] } : {}) });
+      // les personnages du plan (le forgeron à son enclume) : avec ceux de la carte, leurs pieds ramenés de cm en px de la carte
+      const def = JSON.parse(readFileSync(`src/content/plans/${plan}.json`, 'utf8')) as { npcs?: (Omit<Npc, 'inside'>)[] };
+      for (const n of def.npcs ?? []) npcs.push({ ...n, x: Math.round(o.x + n.x / CM_PER_PX), y: Math.round(o.y + n.y / CM_PER_PX) });
     } else {
       only(['interact', 'age', 'inside', 'view', ...WOOD_FIELDS]);
       if (o.gid === undefined) return oerr("objet sans image : type inconnu (attendus : Spawn, Exit, Npc, ou un objet posé depuis le tileset 'props')");
