@@ -388,3 +388,85 @@ les planches :
 18. **La largeur du lit sec** : 3 m comme dessiné (la largeur du chemin), ou plus large ?
 19. **La falaise de la rivière** : on la laisse presque invisible (lèvre et ombre), ou on la montre (rideaux de lierre qui pendent sur
     l'eau, face en raccourci comme A+) ?
+
+---
+
+## 10. Troisième essai : le chemin creux d'est en ouest (4 novembre)
+
+Grégoire, sur l'essai 2 : « c'est magnifique, mais pas dans le bon sens ». Le principe est gardé, le tracé change. La question 12 est
+tranchée : **est-ouest**, et le sol caché par le bord sud est accepté (il sert l'idée du tunnel). Gardés de l'essai 2 : le plateau
+à 5 m, les talus de terre très sombre, le sol clair, l'ondulation, les arbres penchés. Le choix A/B et les questions 1 à 11 et 13 à 19
+qui ne sont pas tranchées ici restent en suspens.
+
+### 10.1 Le tracé et les valeurs (dessinés)
+
+Sur la ligne du chemin d'aujourd'hui (zone `ferme`, rangées 65-66, l'ancien pont), une case = 1,6 m :
+
+| Tronçon | Cases | Longueur | Sol | Parois |
+| --- | --- | --- | --- | --- |
+| Côté ferme | 60 → 47 | 20,8 m | 0 m (le niveau de la ferme) | deux talus plantés qui montent de 0 à 5 m (courbe douce) ; crête de 0,7 m, pente extérieure de 4,7 m pour 5 m |
+| La rivière | 47 → 42 | 8 m | 0 m | aucune : ciel ouvert, l'eau s'arrête net de chaque côté du couloir |
+| Côté plateau | 42 → 4,5 | 60 m | monte de 0 à 5 m (8,3 %) | de 5 m à 0 |
+
+- **Longueur totale 88,8 m** ; tout tient dans la zone `ferme` (le bord ouest est à la case 0).
+- **Largeur du sol 2,5 m** (à 12 cm près), l'axe ondule de ± 45 cm ; sur le dernier mètre de montée, il se resserre en sentier (0,9 m).
+- Talus intérieurs : emprise au sol de 0,2 m + 0,2 × la hauteur (≈ 1,2 m pour 5 m).
+- **La rivière reste droite**, sans décalage ni avancée.
+- **Quand Xéros est dans le couloir**, le bord sud et ses feuillages s'effacent comme un toit : il en reste **0,2** (au lieu de 0,35 en essai 2).
+- **Pénombre** : 0,3 au plus profond (la couleur de la pénombre du sous-bois), 0,18 au-dessus de l'eau. Ombre du rideau d'entrée : 0,42
+  de plus sur le sol, 0,14 sous les autres feuillages en surplomb ; jamais sur Xéros.
+- **La falaise le long de la rivière** : sa face est montrée en raccourci, une bande sombre de 12 px pour 5 m, et du lierre qui pend sur l'eau.
+
+**À la coupure, ciel ouvert** (choix du pixel-artist, que je partage) : des parois de 5 m sur l'eau feraient une digue, et l'eau qui
+s'arrête « comme par magie » ne se verrait plus. À ciel ouvert, le sol clair et les deux bords d'eau se voient. Le tunnel tient par les
+arbres des deux rives, penchés, et par deux avancées de feuillage au-dessus du couloir.
+
+### 10.2 Les planches (pixel-artist ; refaire : `npx tsx tools/essai-relief-creux3.ts`, 9 s)
+
+Dessins : `art/proposals/relief-creux3.ts` (le rideau de feuillage de la bouche, la face en raccourci), `art/proposals/relief-creux3-scene.ts`
+(un seul modèle de hauteur, cases 0 à 69, rangées 50 à 79) ; les matières de l'essai 2 (`relief-creux.ts`) sans changement. Une seule
+variante ; chaque vue est cadrée sur l'écran de départ (427 × 240 px), x2, avec un détail x4.
+
+| Planche | Ce qu'il faut regarder |
+| --- | --- |
+| `.art-preview/relief-creux3-1-ensemble.png` | Toute la scène à x1 avec les cadres des quatre vues, et dessous le plan des hauteurs (courbes tous les mètres, cotes du sol et des parois). De loin : la paroi nord sombre et les feuillages, le sol caché par le bord sud ; sur l'eau, le sol visible ; la falaise en bande sombre le long de la rive ouest. |
+| `.art-preview/relief-creux3-2-entree.png` | Xéros sur le chemin de la ferme (case 62), face à l'entrée (case 60). Les talus plantés qui montent, le grand rideau (230 px de large, crête irrégulière, lianes) qui déborde sur les deux talus, la bouche sombre dessous. |
+| `.art-preview/relief-creux3-3-avant.png` | Xéros case 50 (talus de 4,4 m) : le bord sud s'est effacé, on le voit net sur le sol clair. |
+| `.art-preview/relief-creux3-4-coupure.png` | Xéros au milieu de la rivière, sur le sol sec : l'eau coupée net des deux côtés (liseré, miroitement), la falaise en raccourci avec son lierre, le bout du talus de la ferme, les feuillages qui ferment la voûte au-dessus de l'eau. |
+| `.art-preview/relief-creux3-5-sortie.png` | Xéros case 7,4 (sol à 4,6 m) : le sol clair qui se fond dans le sentier, la forêt plus claire autour de la sortie. |
+
+**Mon avis.** C'est le bon tracé, et les trois corrections demandées sont faites : une bouche sous un vrai rideau, Xéros net sous la
+voûte, la falaise visible. Défauts vus sur les planches :
+- **entrée** : les buissons du talus sud cachent une partie de la bouche, on ne voit le sol sombre qu'entre les lianes ; le sol clair
+  ne « s'enfonce » pas encore assez visiblement dans le noir ; la crête du rideau reste un peu horizontale, en étagère ;
+- **dans le couloir** : là où le bord sud s'efface, il ne reste qu'un aplat gris-vert uniforme, sur tout le tronçon visible et pas
+  seulement autour de Xéros ; la pente extérieure sud du talus de la ferme est une grande surface aux touffes répétées ;
+- **dessins provisoires** : les arbres penchés sont encore des arbres du jeu déformés ; le miroitement n'a qu'une image ; quelques pixels
+  isolés dans le rideau ; les courbes du talus de la ferme, sur le plan, se lisent mal.
+
+### 10.3 Ce que ce tracé demande au jeu (pour l'étape technique)
+
+1. **Des hauteurs positives hors du plateau** : les talus de la ferme (de 0 à 5 m, avec leur pente extérieure). La hauteur n'est donc
+   plus « plateau ou ferme » : c'est une hauteur par endroit (polygones ou courbes), ce qui penche vers H1 (calque `relief` de Tiled),
+   avec des formes en pente et pas seulement des niveaux plats.
+2. **Un sol de couloir en pente** (le `Slope` du cadrage), long de 60 m, dans un couloir de 2,5 m qui ondule.
+3. **Le bord sud qui s'efface comme un toit** quand Xéros est dans le couloir, par tronçon, ses feuillages compris : le mécanisme des
+   toits (`src/world/roofView.ts`, `src/systems/roofs.ts`) étendu au terrain et aux feuillages, avec un alpha de 0,2.
+4. **Les faces est et ouest dessinées en raccourci** (la falaise de la rivière, 12 px pour 5 m) avec le lierre qui pend sur l'eau.
+5. **La coupure de l'eau** : pas d'eau sur la largeur du couloir, une tuile de bord et un miroitement aux deux bords.
+6. **La pénombre tirée de la profondeur du creux**, plus l'ombre des feuillages en surplomb, jamais sur Xéros.
+7. **Des dessins nouveaux** (pixel-artist) : arbres penchés, rideau de la bouche, avancées de feuillage, talus, sol clair, miroitement animé.
+8. **Les cartes** : le chemin de la ferme et les arbres qui le bordent (`ferme.tmj`, rangées ≈ 62 et ≈ 69, cases 47-60) sont posés sur
+   les talus. À vérifier : les deux branches de la tempête (cases 68-70, rangées 60-61) sont hors du tracé ; le plan de la cabane
+   (case 65, rangée 72) aussi.
+9. **Les capacités** du cadrage (sections 2 et 3) ne changent pas, à la hauteur près : « Trop haute pour lui (5 m). » le long de la
+   falaise et sur les flancs extérieurs des talus si on les veut infranchissables.
+
+### 10.4 Questions pour Grégoire (essai 3)
+
+20. **Les valeurs** : 21 m de talus côté ferme, 8 m sur l'eau, 60 m de montée (8,3 %), 2,5 m de large, 89 m en tout ?
+21. **La coupure à ciel ouvert** (planche 4), ou des parois de 5 m qui continuent au-dessus de l'eau ?
+22. **Les talus de la ferme** : Xéros peut-il monter sur leur pente extérieure (4,7 m pour 5 m, à peu près 45°) ? Ma proposition : non,
+    comme la falaise (« Trop haute pour lui »), pour que le seul passage reste le couloir.
+23. **L'effacement** : tout le tronçon visible du bord sud (planche 3), ou seulement autour de Xéros ?
+24. **L'entrée** : enlever les buissons du talus sud devant la bouche, et faire descendre le sol clair plus loin dans le noir ?
