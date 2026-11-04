@@ -44,6 +44,7 @@
     "test:temps": "npm run art && npm run maps && tsx tools/test-temps.ts",
     "test:reset": "npm run art && npm run maps && tsx tools/test-reset.ts",
     "test:vitesses": "npm run art && npm run maps && tsx tools/test-vitesses.ts",
+    "test:portes": "npm run art && npm run maps && tsx tools/test-portes.ts",
     "test:etapes": "npm run art && npm run maps && tsx tools/test-etapes.ts",
     "build": "npm run check && npm run test:fast && tsc --noEmit && vite build",
     "build:single": "npm run check && npm run test:fast && tsc --noEmit && vite build --mode single",

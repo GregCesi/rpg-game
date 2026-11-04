@@ -24,8 +24,11 @@ export type TakeKind = 'take' | 'pile' | 'tie' | 'pickup' | 'unload' | 'stake' |
 export type UseKind = 'talk' | 'swing' | 'learn';
 /** Le geste long de E maintenu sur ce qui est devant. */
 export type HoldKind = 'knot' | 'unknot' | 'turn' | 'help';
-/** Ce que fait un outil sur ce qui est devant : le genre de travail (`does` d'items.json), ou un coup simple sans matière (`hit`). */
-export type WorkKind = 'fell' | 'limbs' | 'whittle' | 'break' | 'cut' | 'hew' | 'plant' | 'maul' | 'hit';
+/**
+ * Ce que fait F sur ce qui est devant : le genre de travail d'un outil (`does` d'items.json), un coup simple sans matière (`hit`), ou
+ * une transformation au poste du sol, quoi qu'on tienne (`draw` : puiser, le seau vide face à l'eau ; systems/draw.ts).
+ */
+export type WorkKind = 'fell' | 'limbs' | 'whittle' | 'break' | 'cut' | 'hew' | 'plant' | 'maul' | 'hit' | 'draw';
 
 /** Ce qui est devant Xéros, tel que le voit chaque touche. La scène le calcule une fois par image ; le jeu et l'affichage le lisent. */
 export interface Aimed {
@@ -152,8 +155,8 @@ function ePlan(hands: Hands, aimed: Aimed): EPlan {
 }
 
 /**
- * F : le travail de l'outil de la main droite s'il travaille ce qui est devant, sinon celui de la gauche ; le piquet d'un plan connu
- * se plante (F ; A le pose toujours). Un outil sans rien à travailler devant lui : rien.
+ * F : le travail de l'outil de la main droite s'il travaille ce qui est devant, sinon celui de la gauche ; puiser (le seau vide face à
+ * l'eau) ; le piquet d'un plan connu se plante (F ; A le pose toujours). Un outil sans rien à travailler devant lui : rien.
  */
 function fPlan(hands: Hands, aimed: Aimed, knowsPlan: boolean): FPlan {
   for (const hand of [1, 0] as const) {
@@ -161,7 +164,7 @@ function fPlan(hands: Hands, aimed: Aimed, knowsPlan: boolean): FPlan {
     if (!held) continue;
     const kit = kitOf(held);
     const work = aimed.work?.[hand];
-    if (kit.tool && work) return { kind: 'work', hand, work };
+    if ((kit.tool && work) || work === 'draw') return { kind: 'work', hand, work };
     if (kit.stake && knowsPlan) return { kind: 'plant', hand };
   }
   return { kind: 'none' };

@@ -29,6 +29,7 @@ import { KnotSystem } from '../systems/knot';
 import { LongPress, subject } from '../systems/longPress';
 import { actionPlan, clickPlan, takeHand, type ActionPlan, type Aimed, type APlan, type Button, type Click, type EKind, type HoldKind, type TakeKind, type UseKind, type WorkKind } from '../world/actionPlan';
 import { KeyPrompts, type PromptSpot, type Prompts } from '../systems/keyPrompts';
+import { drawAt } from '../systems/draw';
 import { harvestKind } from '../world/tools';
 import { PileCount } from '../systems/pileCount';
 import { Roofs } from '../systems/roofs';
@@ -637,6 +638,9 @@ export class WorldScene extends Phaser.Scene {
    */
   private workOf(hand: Hand): { work: WorkKind; spot: PromptSpot } | undefined {
     const tool = this.toolOf(hand);
+    // ce qui se fait au poste du sol, quoi qu'on tienne : puiser, le seau vide face à l'eau (systems/draw.ts)
+    const draw = tool ? undefined : drawAt(this.player, this.map, game.both ?? game.hands[hand]);
+    if (draw) return { work: 'draw', spot: { x: draw.x, y: draw.y, top: draw.y - 8 } };
     if (!tool) return undefined;
     const aim = this.wood.target(this.player, tool);
     if (aim) return { work: aim.work, spot: { x: Math.round(aim.x), y: aim.prop.baseY, top: aim.prop.top } };
@@ -710,6 +714,7 @@ export class WorldScene extends Phaser.Scene {
   private doF(): void {
     const f = this.keys?.f;
     if (!f || f.hand === undefined) return;
+    if (f.kind === 'work' && f.work === 'draw') return this.drawAt(f.hand);
     if (f.kind === 'work') {
       const tool = this.toolOf(f.hand);
       if (tool) this.useTool(tool, f.hand);
@@ -717,6 +722,19 @@ export class WorldScene extends Phaser.Scene {
     }
     const held = game.both ?? game.hands[f.hand];
     if (f.kind === 'plant' && held && 'item' in held) this.plantStake(held.item);
+  }
+
+  /** F face à un poste du sol (systems/draw.ts) : puiser ; la transformation faite, l'horloge avance de sa durée (transforms.json). */
+  private drawAt(hand: Hand): void {
+    const d = drawAt(this.player, this.map, game.both ?? game.hands[hand]);
+    if (!d) return;
+    const before = revisionOf();
+    const said = this.transformer.apply(this.player, d.id);
+    if (revisionOf() !== before) {
+      this.clock.work(transforms[d.id].minutes);
+      this.handsChanged();
+    }
+    this.notice(said);
   }
 
   /** A (ou Maj + A) : poser ce que tient sa main, là où le montre le fantôme, sur une place de chantier, sur ce qui l'accepte. */

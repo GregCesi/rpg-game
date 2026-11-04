@@ -26,7 +26,7 @@ Seul.
 
 ## Gestes
 - E : le prendre (une main) ; A (Q en QWERTY) : le poser à son fantôme.
-- Puiser (le seau en main, au bord de l'étang) : à venir.
+- F, le seau vide en main, face à l'eau : puiser (`fill-bucket` de transforms.json, `systems/draw.ts`) ; il devient le seau d'eau (11,5 kg), dans la même main ; 2 minutes passent.
 
 ## Origine
 Le seau de la traite, dans la cour de la ferme (`ferme.tmj`).

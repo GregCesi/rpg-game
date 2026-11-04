@@ -2,7 +2,8 @@
 // l'affichage des touches (docs/COMMANDES.md).
 // - E : prendre ce qui est devant (la main droite, puis la gauche), parler, ouvrir, lire ; les mains pleines : rien à montrer ;
 //   une place trop lourde : dire ce qui manque ; maintenu, les mains vides : nouer, dénouer, pivoter ; une main libre : appeler la mère ;
-// - F : l'outil de la main droite s'il travaille ce qui est devant, sinon celui de la gauche ; le piquet d'un plan connu se plante ;
+// - F : l'outil de la main droite s'il travaille ce qui est devant, sinon celui de la gauche ; puiser face à l'eau ; le piquet d'un
+//   plan connu se plante ;
 //   un outil sans rien à travailler : rien ;
 // - A : poser ce que tient la main droite (sinon la gauche), Maj + A la gauche ; sur une place de chantier, sur le billot, sinon devant ;
 // - les clics : chaque bouton sa main frappe (le poing, une arme, un outil, une ressource, même dans le vide) ; maintenu, il lance ;
@@ -74,6 +75,7 @@ assert.equal(HAND_OF.right, 0, 'le clic droit est la main gauche');
   assert.equal(plan(hands(null, { item: stake }), {}, true).f.kind, 'plant', 'le piquet, un plan connu : F le plante');
   assert.equal(plan(hands(null, { item: stake }), {}, false).f.kind, 'none', 'sans plan connu : F ne fait rien');
   assert.equal(plan(hands(null, { item: resource }), { work: [undefined, 'hit'] }).f.kind, 'none', 'une ressource ne travaille pas');
+  assert.deepEqual(plan(hands({ item: resource }, null), { work: ['draw', undefined] }).f, { kind: 'work', hand: 0, work: 'draw' }, 'face à un poste du sol (le seau face à l’eau) : F puise, quoi qu’on tienne');
 }
 
 // A et Maj + A
