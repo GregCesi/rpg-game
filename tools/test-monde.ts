@@ -125,6 +125,9 @@ await playtest('monde', async ({ page, errors, load }) => {
         let away = 0;
         let best = Infinity;
         let stale = 0;
+        // le plus petit pas obtenu d'un appui bref (sous la charge, une image d'appui fait plusieurs pas de la physique : un joueur ne
+        // s'approche pas plus près que la moitié de ce pas ; la tolérance demandée ne descend jamais sous elle)
+        let minMove = Infinity;
         for (;;) {
           await frame();
           const p = at();
@@ -138,12 +141,14 @@ await playtest('monde', async ({ page, errors, load }) => {
           away = 0;
           const dx = wx - p.wx;
           const dy = wy - p.wy;
-          if (Math.abs(dx) <= tol && Math.abs(dy) <= tol) return (hold([]), { ok: true, p });
+          // dans la maison, la précision demandée (passer une porte) ; dehors, jamais plus près que la moitié d'un pas d'image
+          const near = minMove === Infinity || !start.zone ? tol : Math.max(tol, minMove / 2);
+          if (Math.abs(dx) <= near && Math.abs(dy) <= near) return (hold([]), { ok: true, p });
           const dist = Math.abs(dx) + Math.abs(dy);
           if (dist < best - 1) (best = dist), (stale = 0);
           else if (++stale > 1500) return (hold([]), { ok: false, p, why: `plus de progrès depuis 1500 images (au plus près : ${best.toFixed(1)} px)` });
-          if (axis === 'x' && Math.abs(dx) <= tol) axis = 'y';
-          if (axis === 'y' && Math.abs(dy) <= tol) axis = 'x';
+          if (axis === 'x' && Math.abs(dx) <= near) axis = 'y';
+          if (axis === 'y' && Math.abs(dy) <= near) axis = 'x';
           const dir = axis === 'x' ? (dx > 0 ? 'KeyD' : 'KeyA') : dy > 0 ? 'KeyS' : 'KeyW';
           const d = axis === 'x' ? Math.abs(dx) : Math.abs(dy);
           if (d < 12) {
@@ -153,6 +158,9 @@ await playtest('monde', async ({ page, errors, load }) => {
             await steps(2);
             hold([]);
             await steps(3);
+            const q = at();
+            const moved = q ? Math.hypot(q.wx - p.wx, q.wy - p.wy) : 0;
+            if (moved > 0.5) minMove = Math.min(minMove, moved);
           } else hold(tol < 6 || d < 24 ? [dir] : ['ShiftLeft', dir]);
           // buté sur un coin (un piquet de clôture, l'angle d'un mur) : un petit pas de côté, d'un côté puis de l'autre, et on reprend ;
           // bloqué pour de bon : des centaines d'images sans bouger (et non une durée)
