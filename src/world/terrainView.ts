@@ -80,8 +80,9 @@ const hash = (x: number, y: number) => {
 /** La couleur d'une face de terre à `k` px sous son bord haut, en (x, y) du monde. */
 function faceColor(x: number, y: number, k: number): Rgb {
   if (k <= 2 + Math.floor(hash(x, 7) * 3)) return mix(MOSS, EARTH[0], hash(x, y) * 0.4);
-  const c = EARTH[Math.floor(hash(x >> 1, (y + k) >> 2) * EARTH.length)];
-  return hash(x, y + k * 31) < 0.06 ? mix(c, MOSS, 0.5) : c;
+  // des plaques de 3 × 3 px, pas des rayures (provisoire)
+  const c = EARTH[Math.floor(hash(Math.floor(x / 3), Math.floor(k / 3) + Math.floor(y / 8) * 97) * EARTH.length)];
+  return hash(Math.floor(x / 3), Math.floor(k / 3) * 31 + y) < 0.05 ? mix(c, MOSS, 0.5) : c;
 }
 
 /**
@@ -215,23 +216,28 @@ export class TerrainView {
       for (let y = y0; y < y1; y++) {
         const h = L(x, y);
         const sy = Math.round(y - h);
-        // une face tournée vers le sud : le trou entre le sol d'avant et celui-ci
-        for (let fy = Math.round(prev) + 1, k = 1; fy < sy; fy++, k++) {
-          const iy = fy - top;
-          if (iy >= 0 && iy < H) put(out, W, lx, iy, shade(x, y, h, faceColor(x, y, k)));
-        }
-        const c = shade(x, y, h, ground(x, y));
-        if (sy < lowest - 0.5) {
-          // plus au sud et plus haut que ce qui est déjà peint ici : il passe devant, dans la bande de son rang
-          const b = Math.floor((y - y0) / BAND);
-          let buf = bands.get(b);
-          if (!buf) bands.set(b, (buf = new Uint8ClampedArray(W * bandH * 4)));
-          const iy = sy - bandTop(b);
-          if (iy >= 0 && iy < bandH) put(buf, W, lx, iy, c);
-        } else {
-          const iy = sy - top;
-          if (iy >= 0 && iy < H) put(out, W, lx, iy, c);
-        }
+        // (plus raide que 2 px de trou par rangée, le sol lui-même est de la face : pas de liseré de sol à chaque rangée)
+        const steepFace = sy - Math.round(prev) - 1 > 2;
+        const c = shade(x, y, h, steepFace ? faceColor(x, y, Math.max(3, sy - Math.round(prev))) : ground(x, y));
+        // le trou entre le sol d'avant et celui-ci : une pente tournée vers le sud (un trou de 1 ou 2 px : le sol s'étire), ou une face
+        // (plus raide : la terre de la face)
+        const gap = sy - Math.round(prev) - 1;
+        // un point peint à la rangée d'écran `fy` : plus haut que ce qui est déjà peint dans cette colonne (au nord), il passe devant et va
+        // dans la bande de son rang (Xéros, plus au nord, passe derrière) ; sinon dans l'image du sol
+        const paint = (fy: number, col: Rgb) => {
+          if (fy < lowest - 1.5) {
+            const b = Math.floor((y - y0) / BAND);
+            let buf = bands.get(b);
+            if (!buf) bands.set(b, (buf = new Uint8ClampedArray(W * bandH * 4)));
+            const iy = fy - bandTop(b);
+            if (iy >= 0 && iy < bandH) put(buf, W, lx, iy, col);
+          } else {
+            const iy = fy - top;
+            if (iy >= 0 && iy < H) put(out, W, lx, iy, col);
+          }
+        };
+        for (let fy = Math.round(prev) + 1, k = 1; fy < sy; fy++, k++) paint(fy, gap <= 2 ? c : shade(x, y, h, faceColor(x, y, k)));
+        paint(sy, c);
         prev = sy;
         if (sy > lowest) lowest = sy;
       }

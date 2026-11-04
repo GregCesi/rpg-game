@@ -214,13 +214,14 @@ export type StepRefusal = { why: 'up' | 'down'; height: number } | { why: 'swim'
  * nage pas (en sortir, jamais). Rend `undefined` si le pas est permis.
  */
 export function stepRefusal(map: MapData, from: { x: number; y: number }, to: { x: number; y: number }, mob: Mobility): StepRefusal | undefined {
-  if (!mob.swim && deepAt(map, to.x, to.y) && !deepAt(map, from.x, from.y)) return { why: 'swim' };
+  // l'eau en dernier : au bord du plateau, c'est la hauteur qui l'arrête (il tomberait de 5 m), pas l'eau en bas
+  const swim = !mob.swim && deepAt(map, to.x, to.y) && !deepAt(map, from.x, from.y) ? ({ why: 'swim' } as const) : undefined;
   const f = reliefOf(map);
-  if (f.flat) return undefined;
+  if (f.flat) return swim;
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const len = Math.hypot(dx, dy);
-  if (len === 0) return undefined;
+  if (len === 0) return swim;
   const ux = dx / len;
   const uy = dy / len;
   const at = (s: number) => fieldHeight(f, from.x + ux * s, from.y + uy * s);
@@ -237,13 +238,13 @@ export function stepRefusal(map: MapData, from: { x: number; y: number }, to: { 
     if (-rise > mob.drop) return { why: 'down', height: -rise };
     s = Math.max(s, b);
   }
-  return undefined;
+  return swim;
 }
 
-/** Une hauteur dite à un joueur : « 5 m », « 1,2 m », « 80 cm ». */
+/** Une hauteur dite à un joueur, comme on l'estime à l'œil : « 80 cm », « 1,2 m », au-delà de 2 m au demi-mètre (« 2,5 m », « 5 m »). */
 export function heightText(cm: number): string {
   if (cm < 100) return `${Math.round(cm / 10) * 10} cm`;
-  const m = Math.round(cm / 10) / 10;
+  const m = cm < 200 ? Math.round(cm / 10) / 10 : Math.round(cm / 50) / 2;
   return `${String(m).replace('.', ',')} m`;
 }
 

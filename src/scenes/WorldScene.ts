@@ -22,6 +22,7 @@ import { findExit } from '../systems/exits';
 import { ZoneCrossing } from '../systems/zones';
 import { Footing } from '../systems/footing';
 import { LiftPass } from '../systems/lift';
+import { LaneFade } from '../systems/laneFade';
 import { neighborsOf } from '../world/zones';
 import { heightAt, pick, reliefOf } from '../world/relief';
 import { hasRelief } from '../world/terrainView';
@@ -218,6 +219,8 @@ export class WorldScene extends Phaser.Scene {
   private footing!: Footing;
   /** Le soulèvement de ce qui est en hauteur (projection A, systems/lift.ts). */
   private lifts!: LiftPass;
+  /** Sous la voûte d'un chemin creux, le bord sud s'efface autour de Xéros (systems/laneFade.ts). */
+  private laneFade?: LaneFade;
   /** ?dieu « escalade » : gardée d'une carte à l'autre, comme la force. */
   private climber = false;
   private effort!: EffortSystem;
@@ -382,6 +385,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.mobility.climber = this.climber;
     this.footing = new Footing(this, def, this.player, (t) => this.notice(t));
     this.lifts = new LiftPass(this, def, !this.interior && neighborsOf(maps, def, 1).some((n) => hasRelief(n.map)));
+    this.laneFade = hasRelief(def) ? new LaneFade(this, def) : undefined;
     // éveillé la nuit, Xéros s'use : la veille se paie (stamina.json, `sleep`)
     const night = stamina.sleep;
     this.clock.onAdvance = (from, minutes) =>
@@ -475,6 +479,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.update(this.mode === 'play');
     this.footing.update();
     if (this.lifts.active) this.cameras.main.followOffset.set(0, this.lifts.liftAt(this.player.actor.x, this.player.actor.y));
+    this.laneFade?.update(this.player, delta);
     // courir et porter puisent dans l'endurance
     this.effort.update(this.player, delta, this.mode === 'play');
     // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
