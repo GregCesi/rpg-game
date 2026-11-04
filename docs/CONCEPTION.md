@@ -236,8 +236,17 @@ Le monde n'est plus plat. **Tout l'ouest de la rivière est un plateau 5 m plus 
   l'écran autour de lui (`systems/laneFade.ts`, `RELIEF` de config.ts) ; Xéros reste net. La pénombre du couloir suit sa profondeur
   (0,3 au plus profond), cuite dans le terrain, jamais sur Xéros.
 - **La voûte** : le rideau de feuillage de la bouche (`lane-curtain`), les avancées de feuillage (`lane-overhang-1..3`) et les arbres
-  ordinaires au bord des talus ; ce sont des objets posés dans Tiled (leur récolte viendra, leurs données la permettent). Le liseré mouillé
-  (`water-cut`) et le miroitement (`shimmer`, 4 images) le long des coupures.
+  ordinaires au bord des talus ; ce sont des objets posés dans Tiled (leur récolte viendra, leurs données la permettent), avec la capacité
+  `vault` de props.json : ils s'effacent avec le bord sud quand Xéros est dessous. Chacun est posé de sorte que sa rangée d'enracinement
+  tombe à l'écran sur la lèvre du talus. Le liseré mouillé (`water-cut`, au nord sa vue `-r2` : propriété `view` de l'objet dans Tiled)
+  et le miroitement (`shimmer`, 4 images) au pied des flancs, dans la rivière.
+- **Les matières** (art/world/relief.ts, pixel-artist, validées le 4 novembre) : le sol clair du couloir (`lane-*`, ses raccords au
+  chemin `path-lane-w-*` et `path-lane-e-*`) et le dessus des talus (`bank-*`) sont des tuiles du jeu `world`, posées dans Tiled ; un
+  talus posé sur des cases d'eau se dessine avec `bank-*`. Les faces (`relief-face-earth-*`, au-dessus de l'eau `relief-face-wet-*`,
+  la lèvre `relief-lip-*`, les raccourcis `relief-face-raked-*`) sont lues par `world/terrainView.ts` : une face sud depuis son pied
+  (la rangée 99 de l'image au pied), sa lèvre une fois sous l'arête. Deux corrections proposées ensuite (le flanc extérieur planté côté
+  ferme, le sol plus clair dans la pénombre : `art/proposals/relief-final.ts`, `.art-preview/relief-final-7-corrections.png`, la règle
+  `plantedAt` de `world/relief.ts`) sont **à revoir avec Grégoire**.
 - **Sauvegarde** : rien de la hauteur n'est gardé (elle se recalcule des cartes).
 - **Limites en attente** (d'une mécanique ou d'un dessin) :
   - **la vraie chute** : un arbre abattu par-dessus le bord du plateau reste couché au niveau de son pied ; une bille s'arrête au bord ;
@@ -245,9 +254,7 @@ Le monde n'est plus plat. **Tout l'ouest de la rivière est un plateau 5 m plus 
   - **l'arbre penché qu'on abat** : la voûte se fait sans (rideau, avancées, arbres ordinaires) ; une sorte d'arbre penchée demanderait
     tous ses dessins d'abattage ;
   - **couper le rideau et les avancées** : leur récolte n'est pas dessinée ;
-  - **les dessins définitifs du relief** (matières des talus et des faces, sol clair, lierre, rideau, avancées, liseré, miroitement) :
-    proposés par le pixel-artist (`art/proposals/relief-final.ts`, `.art-preview/relief-final-*.png`), intégrés après l'accord de
-    Grégoire ; d'ici là, des couleurs provisoires ;
+  - **les vues tournées du rideau et des avancées** (`-r1` à `-r3`) : le couloir est est-ouest, elles ne servent pas (`VIEWS_TODO`) ;
   - **la petite carte** ne montre pas le relief (le plateau a la couleur de ses tuiles).
 - Tests : `tools/test-hauteurs.ts` (test:fast : les formes, les pas, l'eau, les lapins, `pick`, le lancer, les vraies cartes),
   `npm run test:relief` (le chemin creux aller et retour, les refus, les marches d'essai), le contrat du relief dans `test:contrats` ;

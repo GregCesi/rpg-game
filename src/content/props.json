@@ -158,5 +158,11 @@
   "chimney-hood": {"name": "hotte", "family": "éléments", "gender": "f", "image": "chimney-hood", "views": "four", "dims": {"w": 220, "d": 80, "h": 100, "shape": "box", "ground": true}, "mass": {"matter": "cob", "fill": 0.55}, "trade": "mason"},
   "chimney-flue": {"name": "conduit", "family": "éléments", "gender": "m", "image": "chimney-flue", "views": "symmetric", "dims": {"w": 100, "d": 80, "h": 100, "shape": "box", "ground": true}, "mass": {"matter": "stone", "fill": 0.7}, "trade": "mason"},
   "chimney-cap": {"name": "couronnement", "family": "éléments", "gender": "m", "image": "chimney-cap", "views": "symmetric", "ledge": 20, "dims": {"w": 140, "d": 100, "h": 10, "shape": "box", "ground": true}, "smoke": [[14, 10]], "mass": {"matter": "stone", "fill": 0.83}, "trade": "mason"},
-  "warren-hole": {"name": "entrée de garenne", "family": "nature", "image": "warren-hole", "views": "round", "dims": {"w": 50, "d": 40, "h": 0, "shape": "flat"}, "layer": "floor", "burrow": true}
+  "warren-hole": {"name": "entrée de garenne", "family": "nature", "image": "warren-hole", "views": "round", "dims": {"w": 50, "d": 40, "h": 0, "shape": "flat"}, "layer": "floor", "burrow": true},
+  "lane-curtain": {"name": "rideau de feuillage", "gender": "m", "family": "nature", "image": "lane-curtain", "views": "four", "dims": {"w": 1150, "d": 160, "h": 340, "shape": "box"}, "vault": true},
+  "lane-overhang-1": {"name": "avancée de feuillage", "family": "nature", "image": "lane-overhang-1", "views": "four", "dims": {"w": 800, "d": 140, "h": 230, "shape": "box"}, "vault": true},
+  "lane-overhang-2": {"name": "avancée de feuillage", "family": "nature", "image": "lane-overhang-2", "views": "four", "dims": {"w": 640, "d": 120, "h": 270, "shape": "box"}, "vault": true},
+  "lane-overhang-3": {"name": "avancée de feuillage", "family": "nature", "image": "lane-overhang-3", "views": "four", "dims": {"w": 520, "d": 100, "h": 190, "shape": "box"}, "vault": true},
+  "water-cut": {"name": "liseré de l'eau", "gender": "m", "family": "nature", "image": "water-cut", "views": "four", "layer": "floor", "dims": {"w": 160, "d": 20, "h": 0, "shape": "flat"}},
+  "shimmer": {"name": "miroitement", "gender": "m", "family": "nature", "image": "shimmer", "views": "symmetric", "layer": "floor", "anim": "shimmer", "dims": {"w": 160, "d": 15, "h": 0, "shape": "flat"}}
 }

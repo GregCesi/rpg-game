@@ -304,6 +304,8 @@ export const PLANTED_EDGE = 64;
  * La matière d'une face de relief au point (x, y) du sol de la carte (CADRAGE 12.11) : 1 pour le flanc planté (herbe, broussailles),
  * 0 pour la terre sombre (racines, lierre), entre les deux sur les premiers mètres de la rive. Terre sombre : la paroi intérieure d'un
  * couloir, le flanc au-dessus de l'eau, le bord d'un niveau (la falaise). Planté : le flanc extérieur d'un talus sur la terre ferme.
+ * Prête pour la correction proposée (le flanc planté, art/proposals/relief-final.ts), À REVOIR AVEC GRÉGOIRE (CADRAGE.md 12.12) : le
+ * rendu ne s'en sert pas encore.
  */
 export function plantedAt(map: MapData, x: number, y: number): number {
   const relief = map.relief;

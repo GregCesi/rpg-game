@@ -759,3 +759,11 @@ avec cette raison.
 
 Après l'accord sur la planche des corrections : intégrer tous les dessins, refaire les captures en jeu (`relief-jeu-*.png`), puis la
 fusion prévue ; le récapitulatif donne le temps de chargement d'une zone avec relief comparé à main.
+
+### 12.12 Les deux corrections : à revoir avec Grégoire (4 novembre)
+
+Grégoire hésite : il trouve la version d'avant presque mieux, et on reverra ça en détail plus tard. **Ce sont les dessins d'avant
+(`relief-final-1` à `6`) qui sont intégrés**, sans les deux corrections. Les corrections restent dans `art/proposals/` : le flanc
+planté côté ferme (`relief-face-planted*`), le sol éclairci et `FLOOR_GLOOM` (le sol ne reçoit que 20 % de la pénombre), dans
+`art/proposals/relief-final.ts` et sa scène ; planche `relief-final-7-corrections.png` ; côté jeu, la règle de matière est prête
+(`plantedAt` de `src/world/relief.ts`, testée, pas encore utilisée par le rendu). **À revoir avec Grégoire.**

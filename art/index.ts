@@ -61,8 +61,11 @@ import rabbit from './world/rabbit';
 import deadRabbit from './items/dead-rabbit';
 // la tempête : le chicot et sa cime couchée, la galette de racines et son trou (art/world/storm.ts)
 import storm from './world/storm';
+// le relief : les matières des faces (terre, au-dessus de l'eau, lèvre, raccourcis), la voûte du chemin creux (rideau, avancées), le
+// liseré et le miroitement de l'eau coupée (art/world/relief.ts ; ses tuiles sont dans le jeu de tuiles `world`)
+import { reliefImages, shimmerSheet } from './world/relief';
 import { agedSources } from './lib/ages';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...minimap, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...rabbit, ...deadRabbit, ...storm];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...minimap, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...rabbit, ...deadRabbit, ...storm, ...reliefImages(), shimmerSheet(), shimmerSheet(true)];
 // le bois travaillé à ses autres âges (patiné, vieux), tiré des images neuves
 sources.push(...agedSources(sources));

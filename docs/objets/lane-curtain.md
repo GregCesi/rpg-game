@@ -29,8 +29,8 @@ déborde largement sur les deux talus.
 - Au sol (posé) : `lane-curtain`, une masse basse à la crête cassée (jamais en étagère, jamais en boules), plus haute à l'ouest (le
   côté du couloir), effilochée à l'est ; feuillage en petites grappes éclairées en haut à gauche ; lianes de longueurs très inégales,
   plusieurs jusqu'au bas. Contour `o` en bas et à droite, `k` côté lumière.
-- Symétrie : une seule vue dessinée, pour un couloir est-ouest. **Manque** : les vues tournées (`-r1` à `-r3`, un couloir nord-sud
-  ou une bouche tournée vers l'est), à dessiner avant de l'intégrer, ou `VIEWS_TODO` avec cette raison.
+- Symétrie : une seule vue dessinée, pour un couloir est-ouest. **Manque** : les vues tournées (`-r1` à `-r3`), qui ne servent pas tant que le couloir est est-ouest :
+  `VIEWS_TODO` (validate.ts), avec cette raison (décision de Grégoire, 4 novembre).
 - En main, porté, case d'interface : non.
 - Fantôme : en mode construction, son image en transparence.
 - L'ombre : aucune peinte ; le jeu la calcule (fixe, comme celle des toits) et assombrit la bouche dessous.

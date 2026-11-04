@@ -13,7 +13,7 @@ const HIDES = 100;
  * Sous la voûte (chantier « relief », CADRAGE.md 12.4) : quand Xéros est dans un creux dont le bord sud le cache (le terrain juste au
  * sud de lui est plus haut que lui de HIDES cm), ce qui le cache s'efface comme un toit, à RELIEF.lane, sur la largeur de l'écran autour
  * de lui seulement : les bandes du terrain qui passent devant (world/terrainView.ts) et ce qui est posé sur ce bord, plus haut que lui
- * (le rideau, les avancées, les arbres de la lèvre). Xéros reste net. Le fondu dure RELIEF.fadeMs.
+ * (les arbres de la lèvre), et les pièces de la voûte (`vault` de props.json : le rideau, les avancées). Xéros reste net. Le fondu dure RELIEF.fadeMs.
  */
 export class LaneFade {
   private readonly faded = new Set<Phaser.GameObjects.Image>();
@@ -44,8 +44,9 @@ export class LaneFade {
         const right = left + (o.displayWidth ?? 0);
         if (right < a.x - half || left > a.x + half) continue;
         const terrain = o.getData?.('noLift') && typeof o.texture?.key === 'string' && o.texture.key.startsWith('terrain:');
-        // posé plus haut que lui sur le bord (sa hauteur au pied), ou une bande du terrain qui passe devant
-        if (terrain || worldHeight(this.def, o.x + (0.5 - (o.originX ?? 0.5)) * (o.displayWidth ?? 0), o.depth) - h > HIDES / 2) want.add(o);
+        // posé plus haut que lui sur le bord (sa hauteur au pied), une pièce de la voûte (`vault` de props.json), ou une bande du terrain
+        // qui passe devant
+        if (terrain || o.getData?.('vault') || worldHeight(this.def, o.x + (0.5 - (o.originX ?? 0.5)) * (o.displayWidth ?? 0), o.depth) - h > HIDES / 2) want.add(o);
       }
     }
     const step = (1 - RELIEF.lane) * (delta / RELIEF.fadeMs);

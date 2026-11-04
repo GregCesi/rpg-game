@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { viewImage } from '../content/views';
 import { DEPTH, GLOW, INTERIOR, RELIEF, SHADOW, TILE } from '../config';
 import { deepAt, heightAt } from './relief';
 import { hasRelief, TerrainView } from './terrainView';
@@ -617,13 +618,15 @@ export class GameMap {
     // un fagot posé seul : le dessin de son nombre de branches (`<image>-n<n>`)
     const bundle = opts.bundle;
     const drawn = stateImage(p.image, o.type, bundle);
-    const image = flip ? `${drawn}-left` : agedKey(formImage(drawn, natural), p.aged ? o.age : undefined);
+    const image = flip ? `${drawn}-left` : agedKey(o.view ? viewImage(formImage(drawn, natural), p.views, o.view) : formImage(drawn, natural), p.aged ? o.age : undefined);
     const obj = wood
       ? scene.add.image(o.x, ay, woodTexture(scene, wood, { open: opts.open }), '0')
       : p.anim
         ? scene.add.sprite(o.x, ay, image).play(`${image}-${p.anim}`)
         : scene.add.image(o.x, ay, image);
     obj.setOrigin(0, 1).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
+    // une pièce de la voûte d'un chemin creux s'efface quand Xéros est dessous (systems/laneFade.ts)
+    if (p.vault) obj.setData('vault', true);
     if (p.blend === 'add') obj.setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.light);
     const parts: Phaser.GameObjects.GameObject[] = [obj];
     // coin haut gauche de l'image, pour les coordonnées "dans l'image"

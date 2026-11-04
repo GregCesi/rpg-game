@@ -1,8 +1,4 @@
-// ÉTAT VALIDÉ du 4 novembre (avant les deux corrections de Grégoire : le flanc planté côté ferme, le sol clair dans la pénombre),
-// figé pour la planche avant / après (tools/essai-relief-final-corrections.ts). Ne pas modifier : les dessins vivent dans
-// relief-final.ts.
-//
-// Dessins définitifs du chemin creux (chantier « relief », proposition hors jeu, en attente de l'accord de Grégoire). Repris des
+// Dessins définitifs du chemin creux (chantier « relief », validés par Grégoire le 4 novembre ; CADRAGE.md 12.11). Repris des
 // essais 2 à 4 (relief-creux*.ts), qui restent intacts. Le jeu calculera la géométrie (hauteurs, faces, raccourcis) et les ombres ;
 // ces dessins sont les MATIÈRES qu'il pose dessus, et les OBJETS (props) qui referment la voûte. Palette `world` (art/palette.ts),
 // lumière en haut à gauche, terrain sans contour (STYLE section 3), objets avec contour.
@@ -22,12 +18,20 @@
 //     côté ferme ; à l'est, côté plateau) : le chemin s'y défait en sol clair ; pour les masques, `lane` et `path` se comptent
 //     l'un pour l'autre comme voisins ;
 //   - objets : `lane-curtain`, `lane-overhang-1..3`, `water-cut` (+ `-r1..-r3`), `shimmer` (+ `-ns`, animation de 4 images).
-// Rien de art/proposals/ ne se déclare dans art/index.ts. Scène : relief-final-scene.ts ; planches : tools/essai-relief-final.ts.
+// Déclarés : les tuiles dans le jeu de tuiles `world` (art/world/tiles.ts), les images et le miroitement dans art/index.ts. Les deux
+// corrections proposées ensuite (flanc planté côté ferme, sol clair : art/proposals/relief-final.ts) sont à revoir avec Grégoire.
+// Planche d'avant / après : tools/essai-relief-final-corrections.ts (scène art/proposals/relief-final-v1-scene.ts).
 
 import { Canvas, rng, type Grid } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource, TilesetSource } from '../lib/types';
 import { world } from '../palette';
-import { hash } from './relief-a';
+
+/** Un nombre tiré de (x, y, s), entre 0 et 1, toujours le même (le même que celui des essais, art/proposals/relief-a.ts). */
+export function hash(x: number, y: number, s = 0): number {
+  let h = (x * 374761393 + y * 668265263 + s * 1442695041) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
 
 const T = 32;
 
@@ -753,7 +757,7 @@ export function shimmer(f: number): Canvas {
   return c;
 }
 
-// ---------- les sources, prêtes à déclarer (art/index.ts) quand Grégoire aura dit oui ----------
+// ---------- les sources (art/world/tiles.ts, art/index.ts) ----------
 
 export function reliefTileset(pathTiles: Record<string, Grid>): TilesetSource {
   const tiles: Record<string, Grid> = {};

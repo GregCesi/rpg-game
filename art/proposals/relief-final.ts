@@ -1,3 +1,9 @@
+// À REVOIR AVEC GRÉGOIRE (4 novembre) : les deux corrections proposées après l'accord sur les dessins (le flanc extérieur planté
+// côté ferme, `relief-face-planted*` ; le sol du couloir éclairci, et `FLOOR_GLOOM` : le sol ne reçoit que 20 % de la pénombre).
+// Grégoire trouve la version d'avant presque mieux : c'est elle qui est dans le jeu (art/world/relief.ts). Planche :
+// .art-preview/relief-final-7-corrections.png (tools/essai-relief-final-corrections.ts). Côté jeu, la règle de matière est prête :
+// `plantedAt` de src/world/relief.ts. CADRAGE.md 12.11.
+//
 // Dessins définitifs du chemin creux (chantier « relief », proposition hors jeu, en attente de l'accord de Grégoire). Repris des
 // essais 2 à 4 (relief-creux*.ts), qui restent intacts. Le jeu calculera la géométrie (hauteurs, faces, raccourcis) et les ombres ;
 // ces dessins sont les MATIÈRES qu'il pose dessus, et les OBJETS (props) qui referment la voûte. Palette `world` (art/palette.ts),

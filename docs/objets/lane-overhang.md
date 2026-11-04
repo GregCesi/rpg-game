@@ -26,8 +26,8 @@ Boîtes (`box`) : W × (H + D/2), contour compris.
 
 ## Vues
 - Au sol (posé) : chacune son image, son contour (`o` en bas et à droite, `k` côté lumière), lumière en haut à gauche.
-- Symétrie : une vue chacune, pour un couloir est-ouest. **Manque** : les vues tournées (`-r1` à `-r3`), à dessiner avant
-  l'intégration, ou `VIEWS_TODO` avec cette raison.
+- Symétrie : une vue chacune, pour un couloir est-ouest. **Manque** : les vues tournées (`-r1` à `-r3`), qui ne servent pas tant que le couloir est est-ouest :
+  `VIEWS_TODO` (validate.ts), avec cette raison (décision de Grégoire, 4 novembre).
 - En main, porté, case d'interface : non. Fantôme : leur image en transparence.
 - L'ombre : calculée par le jeu, jamais peinte.
 

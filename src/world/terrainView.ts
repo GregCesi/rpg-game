@@ -8,7 +8,7 @@
 //   des toits (SHADOW, fixe) ; la pénombre d'un creux suit sa profondeur (RELIEF.gloom à 5 m), cuite dans le terrain, jamais sur Xéros ;
 //   ce qui, plus au sud et plus haut, se dessine par-dessus le sol plus au nord (le bord sud du chemin creux, le flanc nord d'un talus)
 //   va dans des bandes de 8 px du monde, chacune à la profondeur de son bord nord : Xéros passe derrière elles.
-// Les matières des faces sont provisoires (des couleurs de la palette) en attendant les dessins du pixel-artist.
+// Les matières des faces sont les dessins du pixel-artist (art/world/relief.ts : MATTER ci-dessous).
 
 import Phaser from 'phaser';
 import { DEPTH, GLOOM, RELIEF, SHADOW, TILE } from '../config';
@@ -16,7 +16,7 @@ import { maps } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import type { MapData } from '../content/types';
 import { tilesets } from '../generated/assets';
-import { heightAt, reliefOf } from './relief';
+import { deepAt, heightAt, reliefOf } from './relief';
 
 /** La taille d'un morceau du terrain (px du monde). */
 const CHUNK = 256;
@@ -69,20 +69,35 @@ const rgb = (n: number): Rgb => [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 const mix = (a: Rgb, b: Rgb, t: number): Rgb => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 const SHADE = rgb(SHADOW.color);
 const DARK = rgb(GLOOM.color);
-/** Les faces, provisoires (terre très sombre, racines, mousse en haut) : à remplacer par les dessins du pixel-artist. */
-const EARTH: Rgb[] = [rgb(0x2b1d14), rgb(0x3b2a1c), rgb(0x241811), rgb(0x33251a)];
-const MOSS: Rgb = rgb(0x3d4a22);
 const hash = (x: number, y: number) => {
   let h = (x * 374761393 + y * 668265263) | 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 };
-/** La couleur d'une face de terre à `k` px sous son bord haut, en (x, y) du monde. */
-function faceColor(x: number, y: number, k: number): Rgb {
-  if (k <= 2 + Math.floor(hash(x, 7) * 3)) return mix(MOSS, EARTH[0], hash(x, y) * 0.4);
-  // des plaques de 3 × 3 px, pas des rayures (provisoire)
-  const c = EARTH[Math.floor(hash(Math.floor(x / 3), Math.floor(k / 3) + Math.floor(y / 8) * 97) * EARTH.length)];
-  return hash(Math.floor(x / 3), Math.floor(k / 3) * 31 + y) < 0.05 ? mix(c, MOSS, 0.5) : c;
+
+/**
+ * Les matières des faces (art/world/relief.ts, dessinées par le pixel-artist) : la face sud de terre (`relief-face-earth-*`, 64 × 100,
+ * la rangée 99 au pied, coupée par le haut pour une face plus basse), la même au-dessus de l'eau (`relief-face-wet-*`), la lèvre
+ * (`relief-lip-*`, 64 × 12, sa rangée LIP.crest sur l'arête), les faces est et ouest en raccourci (`relief-face-raked-*`, 24 × 64 :
+ * 12 colonnes de la lèvre au pied, puis le lierre qui déborde ; `relief-face-raked-west-*`, 12 × 64, la lèvre à droite).
+ */
+const MATTER = {
+  earth: ['relief-face-earth-0', 'relief-face-earth-1', 'relief-face-earth-2'],
+  wet: ['relief-face-wet-0', 'relief-face-wet-1'],
+  lip: ['relief-lip-0', 'relief-lip-1'],
+  east: ['relief-face-raked-0', 'relief-face-raked-1'],
+  west: ['relief-face-raked-west-0', 'relief-face-raked-west-1'],
+};
+const FACE_W = 64;
+const FACE_H = 100;
+const LIP = { h: 12, crest: 4 };
+const RAKE = { w: 12, h: 64 };
+type Matter = { data: Uint8ClampedArray; w: number };
+const choose = (list: string[], k: number) => list[Math.floor(hash(k, 3) * list.length)];
+/** Le pixel (x, y) d'une image, ou undefined s'il est transparent. */
+function at(m: Matter, x: number, y: number): Rgb | undefined {
+  const i = (y * m.w + x) * 4;
+  return m.data[i + 3] < 128 ? undefined : [m.data[i], m.data[i + 1], m.data[i + 2]];
 }
 
 /**
@@ -173,6 +188,22 @@ export class TerrainView {
     };
     const def = this.def;
     const src = pixelsOf(scene, key);
+    const matter = (k: string): Matter => pixelsOf(scene, k);
+    /**
+     * Le pixel d'une face sud à la colonne x du monde, `up` px d'écran au-dessus de son pied, `fromTop` px sous son arête (la lèvre ;
+     * Infinity : sans lèvre), au-dessus de l'eau ou non.
+     */
+    const face = (x: number, up: number, fromTop: number, wet: boolean): Rgb => {
+      const seg = Math.floor(x / FACE_W);
+      const cx = ((x % FACE_W) + FACE_W) % FACE_W;
+      if (fromTop + LIP.crest < LIP.h) {
+        const l = at(matter(choose(MATTER.lip, seg * 7 + 1)), cx, fromTop + LIP.crest);
+        if (l) return l;
+      }
+      const m = matter(choose(wet ? MATTER.wet : MATTER.earth, seg));
+      const row = Math.max(0, Math.min(FACE_H - 1, FACE_H - 1 - Math.round(up)));
+      return at(m, cx, row) ?? at(m, cx, FACE_H - 1) ?? [0, 0, 0];
+    };
     const cols = Math.floor(src.w / TILE);
     const W = x1 - x0;
     // l'image va du plus haut (le sol le plus soulevé, au nord) au plus bas (le sol à 0, au sud, et les faces)
@@ -189,10 +220,14 @@ export class TerrainView {
       buf[i + 2] = c[2];
       buf[i + 3] = 255;
     };
+    // le dessus d'un talus posé sur l'eau (le flanc au-dessus de la rivière : ses cases restent de l'eau sous lui) : `bank-*`
+    const named = tilesets.find((t) => t.key === key)?.tiles ?? {};
+    const banks = [0, 1, 2, 3].map((k) => named[`bank-${k}`]).filter((n) => n !== undefined);
     const ground = (x: number, y: number): Rgb => {
       const tx = Math.max(0, Math.min(def.width - 1, Math.floor(x / TILE)));
       const ty = Math.max(0, Math.min(def.height - 1, Math.floor(y / TILE)));
-      const n = def.layers.ground[ty * def.width + tx];
+      let n = def.layers.ground[ty * def.width + tx];
+      if (banks.length && L(x, y) > 2 && deepAt(def, x, y)) n = banks[Math.floor(hash(tx, ty) * banks.length)];
       const sx = (n % cols) * TILE + (x - tx * TILE);
       const sy = Math.floor(n / cols) * TILE + (y - ty * TILE);
       const i = (Math.max(0, sy) * src.w + Math.max(0, Math.min(src.w - 1, sx))) * 4;
@@ -209,16 +244,44 @@ export class TerrainView {
       const g = depth > 0 ? RELIEF.gloom * Math.min(1, depth / (500 / CM_PER_PX)) : 0;
       return mix(mix(c, SHADE, s), DARK, g);
     };
+    // le pied de la face où tombe chaque rangée d'une colonne (sa rangée d'écran, et s'il est dans l'eau), tiré du sud vers le nord :
+    // tant que le sol descend vers le sud de plus d'1 px par px, on est sur la même face
+    const REACH = 128;
+    const footSy = new Float32Array(y1 - y0 + 1);
+    const footWet = new Uint8Array(y1 - y0 + 1);
     for (let x = x0; x < x1; x++) {
       const lx = x - x0;
+      {
+        let fs = 0;
+        let fw = 0;
+        let next = L(x, y1 + REACH);
+        for (let y = y1 + REACH - 1; y >= y0; y--) {
+          const h = L(x, y);
+          if (!(h - next > 1) || y === y1 + REACH - 1) {
+            fs = y - h;
+            fw = deepAt(def, x, y) ? 1 : 0;
+          }
+          if (y <= y1) {
+            footSy[y - y0] = fs;
+            footWet[y - y0] = fw;
+          }
+          next = h;
+        }
+      }
       let prev = y0 - 1 - L(x, y0 - 1);
       let lowest = prev;
+      // la rangée d'écran de l'arête de la face en cours (sa lèvre se pose dessous, une fois)
+      let faceTop = Math.round(prev);
+      let onFace = false;
       for (let y = y0; y < y1; y++) {
         const h = L(x, y);
         const sy = Math.round(y - h);
         // (plus raide que 2 px de trou par rangée, le sol lui-même est de la face : pas de liseré de sol à chaque rangée)
         const steepFace = sy - Math.round(prev) - 1 > 2;
-        const c = shade(x, y, h, steepFace ? faceColor(x, y, Math.max(3, sy - Math.round(prev))) : ground(x, y));
+        if (steepFace && !onFace) faceTop = Math.round(prev);
+        onFace = steepFace;
+        const wet = footWet[y - y0] === 1;
+        const c = shade(x, y, h, steepFace ? face(x, footSy[y - y0] - sy, sy - faceTop - 1, wet) : ground(x, y));
         // le trou entre le sol d'avant et celui-ci : une pente tournée vers le sud (un trou de 1 ou 2 px : le sol s'étire), ou une face
         // (plus raide : la terre de la face)
         const gap = sy - Math.round(prev) - 1;
@@ -236,7 +299,7 @@ export class TerrainView {
             if (iy >= 0 && iy < H) put(out, W, lx, iy, col);
           }
         };
-        for (let fy = Math.round(prev) + 1, k = 1; fy < sy; fy++, k++) paint(fy, gap <= 2 ? c : shade(x, y, h, faceColor(x, y, k)));
+        for (let fy = Math.round(prev) + 1; fy < sy; fy++) paint(fy, gap <= 2 ? c : shade(x, y, h, face(x, footSy[y - y0] - fy, gap > 2 && fy - faceTop - 1 >= 0 ? fy - faceTop - 1 : Infinity, wet)));
         paint(sy, c);
         prev = sy;
         if (sy > lowest) lowest = sy;
@@ -252,10 +315,16 @@ export class TerrainView {
           if (drop < 20 || L(x - dir, y) - here < 0.5 || Math.abs(L(x + dir, y) - here) > 0.5) continue;
           const w = Math.max(1, Math.round((FACE.raked * drop) / FACE.full));
           const iy = Math.round(y - here) - top;
-          for (let k = 0; k < w; k++) {
+          // la matière en raccourci : sa colonne de la lèvre (0) au pied (RAKE.w − 1), puis, à l'est, le lierre qui déborde
+          const m = matter(choose(dir > 0 ? MATTER.east : MATTER.west, Math.floor(y / RAKE.h) * 5 + 2));
+          const row = (((iy + top) % RAKE.h) + RAKE.h) % RAKE.h;
+          const over = dir > 0 ? RAKE.w : 0;
+          for (let k = 0; k < w + over; k++) {
             const lx = x + dir * k - x0;
             if (lx < 0 || lx >= W || iy < 0 || iy >= H) continue;
-            put(out, W, lx, iy, faceColor(x, y, Math.round((k / w) * drop) + 3));
+            const col = k < w ? Math.min(RAKE.w - 1, Math.floor((k * RAKE.w) / w)) : RAKE.w + (k - w);
+            const c = at(m, dir > 0 ? col : RAKE.w - 1 - col, row);
+            if (c) put(out, W, lx, iy, shade(x + dir * k, y, here, c));
           }
         }
       }

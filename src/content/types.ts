@@ -740,6 +740,11 @@ export const PropDefSchema = z.strictObject({
    */
   roof: z.literal(true).optional(),
   /**
+   * Pièce de la voûte d'un chemin creux (le rideau, les avancées de feuillage ; CONCEPTION « Le relief ») : quand Xéros est sous la
+   * voûte, elle s'efface autour de lui avec le bord sud (`systems/laneFade.ts`, RELIEF.lane), quelle que soit sa hauteur.
+   */
+  vault: z.literal(true).optional(),
+  /**
    * Ombre portée d'un toit (la couverture, pièce `roof` et `ground`), calculée par le jeu (`world/roofShadow.ts`) : son
    * emprise au sol (largeur `dims.w`, profondeur `dims.d`, bord sud au bas de l'image) projetée sur le sol, décalée selon
    * la lumière (`SHADOW` de config.ts). `south`, `north` : hauteur du dessus du toit à son bord sud et à son bord nord, en cm.
@@ -1581,6 +1586,11 @@ const MapObjectSchema = z.strictObject({
    * (la paillasse où l'on dort, la planchette qui enseigne, les outils du cagibi) ; ce qu'on en fait se garde sous l'intérieur.
    */
   inside: z.literal(true).optional(),
+  /**
+   * Posé tourné (propriété `view` dans Tiled, comme un `Item`) : sa vue de 1 à 3, selon sa symétrie (`views` de props.json :
+   * `symmetric` 1 = `-ns`, `four` 1 à 3 = `-r1` à `-r3` ; content/views.ts `viewImage`). Le liseré de l'eau au nord d'un flanc.
+   */
+  view: z.number().int().min(1).max(3).optional(),
 });
 
 /** Point d'apparition : (x, y) = position des pieds du joueur. */

@@ -384,7 +384,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (age !== undefined && !WoodAgeSchema.safeParse(age).success) return oerr(`âge '${age}' inconnu (attendus : ${WoodAgeSchema.options.join(', ')})`);
       plans.push({ id: o.id, x: o.x, y: o.y, plan, ...(age ? { age: age as MapPlan['age'] } : {}) });
     } else {
-      only(['interact', 'age', 'inside', ...WOOD_FIELDS]);
+      only(['interact', 'age', 'inside', 'view', ...WOOD_FIELDS]);
       if (o.gid === undefined) return oerr("objet sans image : type inconnu (attendus : Spawn, Exit, Npc, ou un objet posé depuis le tileset 'props')");
       if (o.gid > 0x0fffffff || (o.gid & FLIP_BITS) !== 0) return oerr('image retournée ou pivotée, non gérée');
       const u = owner(o.gid);
@@ -401,7 +401,11 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       const age = text('age');
       if (age !== undefined && !WoodAgeSchema.safeParse(age).success) return oerr(`âge '${age}' inconnu (attendus : ${WoodAgeSchema.options.join(', ')})`);
       if (age && !(propsJson as Record<string, { aged?: boolean }>)[key]?.aged) return oerr(`propriété 'age' : seul un objet de bois travaillé (\`aged\` de props.json) en a`);
-      objects.push({ id: o.id, type: key, x: o.x, y: o.y, ...(interact ? { interact } : {}), ...(wood ? { wood } : {}), ...(age ? { age: age as MapObject['age'] } : {}), ...(bool('inside') ? { inside: true as const } : {}) });
+      const view = props.get('view') === undefined || props.get('view') === '' ? 0 : Number(props.get('view'));
+      const views = (propsJson as Record<string, { views?: string }>)[key]?.views;
+      const most = views === 'four' ? 3 : views === 'symmetric' ? 1 : 0;
+      if (!Number.isInteger(view) || view < 0 || view > most) return oerr(`champ 'view' : une vue de 0 à ${most} (\`views\` '${views}' de props.json)`);
+      objects.push({ id: o.id, type: key, x: o.x, y: o.y, ...(view ? { view } : {}), ...(interact ? { interact } : {}), ...(wood ? { wood } : {}), ...(age ? { age: age as MapObject['age'] } : {}), ...(bool('inside') ? { inside: true as const } : {}) });
     }
   }
 

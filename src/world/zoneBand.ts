@@ -2,6 +2,7 @@
 // que la partie les a laissés (un arbre abattu reste abattu), leurs pièces posées. Rien n'y bloque ni ne s'y prend : c'est un décor. La
 // caméra peut donc s'approcher du bord sans montrer le vide, et quand Xéros passe le bord, la voisine qu'on charge est déjà à l'écran,
 // à la même place : le passage ne se voit presque pas (systems/zones.ts).
+import { viewImage } from '../content/views';
 import Phaser from 'phaser';
 import { DEPTH, TILE, ZONES } from '../config';
 import { maps, props as propDefs } from '../content';
@@ -101,7 +102,7 @@ export class ZoneBand {
     const wood = base.wood ? woodOf(base, opts.wood ?? o.wood) : undefined;
     const p = wood ? woodDef(base, wood) : base;
     const natural = p.natural ? (opts.natural ?? (opts.seed !== undefined ? stableNatural(p.natural, opts.seed) : undefined)) : undefined;
-    const key = wood ? woodTexture(this.scene, wood) : opts.flip ? `${p.image}-left` : agedKey(formImage(p.image, natural), p.aged ? o.age : undefined);
+    const key = wood ? woodTexture(this.scene, wood) : opts.flip ? `${p.image}-left` : agedKey(o.view ? viewImage(formImage(p.image, natural), p.views, o.view) : formImage(p.image, natural), p.aged ? o.age : undefined);
     // un objet animé (le feu) montre sa première image
     const img = this.scene.add.image(dx + o.x, dy + o.y, key, wood ? '0' : p.anim ? 0 : undefined).setOrigin(0, 1);
     img.setDepth(p.layer === 'floor' ? DEPTH.floor : dy + o.y);

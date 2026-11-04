@@ -1,4 +1,4 @@
-// ÉTAT VALIDÉ du 4 novembre, figé (voir relief-final-v1.ts) : la scène d'avant les deux corrections. Ne pas modifier.
+// ÉTAT VALIDÉ du 4 novembre, figé (art/world/relief.ts) : la scène d'avant les deux corrections. Ne pas modifier.
 //
 // La scène des dessins définitifs du chemin creux (chantier « relief », hors jeu) : le terrain de l'essai 4 (le même modèle de
 // hauteur, art/proposals/relief-creux4-scene.ts, qui reste intact), rendu cette fois avec les MATIÈRES et les OBJETS définitifs
@@ -23,7 +23,7 @@ import { hash, wave } from './relief-a';
 import {
   bankTile, curtain, faceEarth, faceWet, FACE_H, lane, lip, LIP_CREST, overhang, pathLane, PROPS, rakedEast, RAKE_H, RAKE_W,
   rotate, shimmer, waterCut,
-} from './relief-final-v1';
+} from '../world/relief';
 
 export { COLS, H, OY, RAKE, ROW0, SH, T, TOP, W, XC, XE, XR, XT, Z, axisY, floorZ, heightOf, terrain, wallZ, xerosAt };
 export type { Placed, Pose, Rendered, Terrain };
