@@ -1,6 +1,6 @@
 // Une passe sur un rail : Xéros longe une pièce, en ligne droite, en répétant un geste d'outil (la doloire qui dresse une face, plus
 // tard le rabot et la scie de long). Un travail au coup (docs/CONCEPTION.md, « Le travail ») : chaque coup avance la face de ce qu'il
-// a levé (`advance`), Xéros glisse jusque-là pendant le coup suivant ; lancée d'un clic de la main de la doloire, la passe va seule jusqu'au bout ;
+// a levé (`advance`), Xéros glisse jusque-là pendant le coup suivant ; lancée de F, la doloire en main, la passe va seule jusqu'au bout ;
 // un pas ou Échap l'arrête après le coup en cours, là où il est ; à bout de souffle, il souffle sur place et reprend. Le rail ne sait rien du travail :
 // celui qui le lance dit, à chaque coup, ce que le coup fait (et s'il peut se faire), et ce qu'on fait de la passe finie ou arrêtée.
 import type { Player } from '../entities/Player';

@@ -2,7 +2,8 @@
 // - chaque chemin de fichier cité entre accents graves dans CLAUDE.md et README.md (`src/…`, `tools/…`, `art/…`, `docs/…`, avec une
 //   extension .ts, .json, .md ou .cjs) existe ; les chemins à motif (`<sorte>`, `*`, `{a,b}`, `…`) sont laissés de côté ;
 // - chaque `npm run <script>` cité dans CLAUDE.md, README.md et docs/COMMANDES.md existe dans package.json ;
-// - les formules périmées (Maj + V, les vitesses `walkSpeed` et `carrySpeed`, x24, le prix fixe d'un coup de cognée) n'y reviennent
+// - les formules périmées (Maj + V, les vitesses `walkSpeed` et `carrySpeed`, x24, le prix fixe d'un coup de cognée, le clic qui faisait
+//   tout : `clickAction`, `AIM.reach`, le fantôme qui suivait le curseur) n'y reviennent
 //   pas ; docs/CONCEPTION.md est laissé de côté : son historique les garde, sous un bandeau.
 // Usage : tsx tools/test-docs.ts.
 
@@ -42,7 +43,7 @@ for (const file of ['CLAUDE.md', 'README.md', 'docs/COMMANDES.md']) {
 }
 
 /** Ce qui a été remplacé (CONCEPTION, « Le temps » et « Le travail ») et ne doit plus être donné comme actuel. */
-const STALE = ['Maj + V', 'walkSpeed', 'carrySpeed', 'x24', '0,8 le coup'];
+const STALE = ['Maj + V', 'walkSpeed', 'carrySpeed', 'x24', '0,8 le coup', 'clickAction', 'AIM.reach', 'suit le curseur'];
 for (const file of ['CLAUDE.md', 'README.md', 'docs/COMMANDES.md']) {
   const text = read(file);
   for (const s of STALE) assert.ok(!text.includes(s), `${file} dit encore « ${s} » (remplacé : voir docs/CONCEPTION.md)`);

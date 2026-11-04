@@ -23,7 +23,7 @@ Aucune : on coupe les rejets à la longueur au taillis.
 En tas : genre `wattle-rods`.
 
 ## Gestes
-Clic court : prendre (main vide), poser (la main qui la tient) ; R tourner.
+E : prendre ; A : poser ; R tourner.
 
 ## Origine
 Un taillis de noisetiers (à créer). En attendant, parée à la hachette dans une branche du houppier. **Triche notée** : la branche fait 1 à 1,5 m, la baguette 2 m ; la longueur sera juste quand le taillis viendra.

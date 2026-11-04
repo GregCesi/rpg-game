@@ -90,9 +90,9 @@ dresse. Elle ne vient que des places d'un plan (`accepts.wood`) : `lay` de `syst
 - Portée (`carry`), dans le sens de la marche : de face et de dos, par le bout (`held-wood-<diamètre>-<aspect>`, vue qui ne
   dépend pas de la longueur) ; de profil, la pièce assemblée à sa longueur, sans ombre, son milieu dans les mains.
 - Case d'interface : `item-wood-<diamètre>-<aspect>`, et sa longueur écrite en bas de la case (« 1 m »).
-- Fantôme : la pièce en transparence là où un clic ou A la posera, dans son sens : seule au sol, contre une pièce identique (le tas qui naît),
+- Fantôme : la pièce en transparence là où A la posera, devant Xéros, dans son sens : seule au sol, contre une pièce identique (le tas qui naît),
   ou à la place d'un tas.
-- Invite de coupe : au-dessus de la coupe visée, les deux longueurs (« 3 m | 2,8 m ») ; le mot « couper » près de la case de la main de la cognée.
+- Invite de coupe : au-dessus de la coupe visée, les deux longueurs (« 3 m | 2,8 m ») ; la touche F au-dessus de la pièce.
 
 ## Regroupement
 Seule, ou en tas si elle se porte (70 kg ou moins), de toute longueur et de tout état. Un tas naît quand on la pose contre une pièce
@@ -105,27 +105,27 @@ bille du gros de 1 m (non : 214 kg), rondin de 80 cm à 1 m, quartier jusqu'à 1
 1,80 m.
 
 ## Gestes
-- Clic court, main vide : la prendre à deux mains si elle pèse 70 kg ou moins (sinon « Trop lourd(e) à porter. Pousse-le (-la) pour le (la)
+- E : la prendre à deux mains si elle pèse 70 kg ou moins (sinon « Trop lourd(e) à porter. Pousse-le (-la) pour le (la)
   faire rouler. ») ; pas pendant une coupe ni avec un coin planté.
 - Pousser (mains libres, contre elle) : la pièce ronde roule perpendiculairement à son axe jusqu'à 300 kg ; la poutre (« Elle ne
   roule pas : elle est carrée. »), une pièce à une face dressée, la demi-bille et le quartier (à plat) ne roulent pas.
-- Clic maintenu au contact, mains libres : un quart de tour dans le sens des aiguilles d'une montre (est-ouest <-> nord-sud ; le
+- E maintenu au contact, mains libres : un quart de tour dans le sens des aiguilles d'une montre (est-ouest <-> nord-sud ; le
   quartier reste écorce en bas, pointe en l'air), à toute longueur, s'il y a la place. R en main : de même, elle sera posée
   dans ce sens.
-- La portant, un clic (l'un ou l'autre) ou A (Q en QWERTY) : la poser là où le montre son fantôme (seule, contre une pièce identique, ou sur son tas).
-- Clic de la main de la cognée, contre son flanc : la coupe s'aimante tous les 20 cm depuis le bout le plus proche de Xéros ; refusée si un
+- La portant, A (Q en QWERTY) : la poser là où le montre son fantôme (seule, contre une pièce identique, ou sur son tas).
+- F, la cognée en main, contre son flanc : la coupe s'aimante tous les 20 cm depuis le bout le plus proche de Xéros ; refusée si un
   morceau ferait moins de 60 cm (« Le bout serait trop court. »), sur une pièce de moins de 1,20 m (« Trop court pour être
   recoupé. »), sur une demi ou un quart (« On coupe avant de fendre. »), sur une pièce dressée (« On coupe avant d'équarrir. ») ;
-  un clic lance le travail au coup (docs/CONCEPTION.md, « Le travail ») : la coupe se creuse en trois étapes (`cut.hits` de wood.json), le nombre de coups
+  un appui lance le travail au coup (docs/CONCEPTION.md, « Le travail ») : la coupe se creuse en trois étapes (`cut.hits` de wood.json), le nombre de coups
   découle du diamètre (deux V d'une demi-épaisseur, `buckVolume`) et de la force, chaque coup payé au joule ; deux pièces.
-- Clic de la main de la doloire, contre le flanc d'une pièce ronde du normal, à un bout : une passe le long de la pièce, sur le rail, la face
-  dressée derrière Xéros (docs/CONCEPTION.md, « L'équarrissage par passes », fiche `broadaxe.md`) ; un pas ou Échap l'arrête, la face entamée
+- F, la doloire en main, contre le flanc d'une pièce ronde du normal, à un bout : une passe le long de la pièce, sur le rail, la face
+  dressée derrière Xéros (docs/CONCEPTION.md, « L'équarrissage par passes », fiche `broadaxe.md`) ; un pas, Échap ou un clic l'arrête, la face entamée
   est gardée et reprise là ; une passe par face, un quart de tour entre deux, la poutre à la quatrième ; le gros : « Trop grosse
   pour une poutre. » ; un travail au coup, payé au joule. Une face entamée : elle ne roule plus (« Il ne roule plus : une face est
   entamée. »), ne va pas en tas, ne se coupe ni ne se fend.
-- Clic de la main du coin, à un bout d'une bille ou d'une demi-bille du gros, de toute longueur : il se plante d'un coup, sans geste ; depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. » ; le quartier :
+- F, le coin en main, à un bout d'une bille ou d'une demi-bille du gros, de toute longueur : il se plante d'un coup, sans geste ; depuis le flanc : « Le coin se plante dans le bout, là où on voit les cernes. » ; le quartier :
   « Trop mince pour le coin. » ; le normal : « Ce bois ne se fend pas : il se coupe et s'équarrit. ». 1 point (`plant` de `costs` : un geste sans matière).
-- Clic de la main de la masse, depuis le bout du coin : un clic lance le travail au coup ; 3 étapes par mètre commencé (`splitHits` : 6 pour 2 m ;
+- F, la masse en main, depuis le bout du coin : un appui lance le travail au coup ; 3 étapes par mètre commencé (`splitHits` : 6 pour 2 m ;
   la fente court, le coin s'enfonce), le nombre de coups découlant de la fente (diamètre × longueur) et de la force (une trentaine
   pour une bille de 55 cm sur 1 m), et deux
   morceaux identiques, dans le même sens, côte à côte, dans la position de leur section : deux demi-billes écorce en bas, face en

@@ -5,5 +5,7 @@
   "town-hall": {"name": "mairie", "color": "#5a8fd9"},
   "tavern": {"name": "taverne", "color": "#d95a5a"},
   "reserve": {"name": "parcelle réservée", "color": "#9a9a9a"},
-  "farmhouse": {"name": "logis de ferme", "color": "#7ad97a"}
+  "farmhouse": {"name": "logis de ferme", "color": "#7ad97a"},
+  "smithy": {"name": "forge", "color": "#d9805a"},
+  "foundry": {"name": "place de la fonderie (réservée)", "color": "#8a5a3a"}
 }

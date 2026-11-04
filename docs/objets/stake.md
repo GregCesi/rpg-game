@@ -28,13 +28,13 @@ Une fiche pour le piquet qu'on porte (`stake`, objet possédable) et le piquet p
 Seul. Ne s'entrepose pas ; quatre piquets tracent l'emprise d'un plan.
 
 ## Gestes
-- Clic court, main vide : le prendre (au sol) ; sur un piquet planté dont le chantier n'est pas encore né, le reprendre (on change d'emplacement).
-- Clic maintenu, main vide : rien.
-- Clic de la main du piquet, plan connu : le planter, au point que regarde Xéros. Le premier fixe le coin nord-ouest du tracé ; les trois autres coins apparaissent en fantôme et les piquets suivants ne se plantent que là (le coin le plus près à 12 px s'aimante). Sans plan : « Xéros ne sait pas encore quoi tracer. ». Hors d'un coin : « Les piquets se plantent aux coins du tracé. ». Coûte 0,5 point d'endurance (`stake` de `costs`, stamina.json : un geste sans matière, au prix fixe).
-- R : rien. A (Q en QWERTY) : le lâche devant Xéros.
+- E : le prendre (au sol) ; sur un piquet planté dont le chantier n'est pas encore né, le reprendre (on change d'emplacement).
+- E maintenu : rien.
+- F, le piquet en main, plan connu : le planter, devant Xéros. Le premier fixe le coin nord-ouest du tracé ; les trois autres coins apparaissent en fantôme et les piquets suivants ne se plantent que là (le coin le plus près à 12 px s'aimante). Sans plan : « Xéros ne sait pas encore quoi tracer. ». Hors d'un coin : « Les piquets se plantent aux coins du tracé. ». Coûte 0,5 point d'endurance (`stake` de `costs`, stamina.json : un geste sans matière, au prix fixe).
+- R : rien. A (Q en QWERTY) : le pose devant Xéros, toujours (F seul le plante).
 
 ## Origine
-Taillé à la [hachette](hatchet.md) : on tient la branche debout d'une main, la pointe appuyée sur le billot (`chopping-block`), la hachette dans l'autre main, face au billot, un clic de la main de la hachette : un travail au coup (geste `chop`, `work.whittle` du billot, payé au joule (docs/CONCEPTION.md, « Le travail »)), et la branche devient un piquet, qui reste dans la main qui la tenait. Si l'autre main ne tient pas de branche : « Tiens la branche ou le piquet debout sur le billot, de l'autre main. »
+Taillé à la [hachette](hatchet.md) : on tient la branche debout d'une main, la pointe appuyée sur le billot (`chopping-block`), la hachette dans l'autre main, face au billot, F : un travail au coup (geste `chop`, `work.whittle` du billot, payé au joule (docs/CONCEPTION.md, « Le travail »)), et la branche devient un piquet, qui reste dans la main qui la tenait. Si l'autre main ne tient pas de branche : « Tiens la branche ou le piquet debout sur le billot, de l'autre main. »
 
 ## Devenir
 Planté, il trace un coin du chantier. Quand le dé de ce coin est posé, le piquet est arraché et retombe au sol à côté, réutilisable.

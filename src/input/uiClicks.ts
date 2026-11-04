@@ -1,5 +1,5 @@
 // Les clics d'interface (chantier « petite carte ») : une zone du HUD qui prend le clic avant le monde. Un clic enfoncé sur elle n'est
-// ni une main ni un coup (world/clickAction.ts ne le voit jamais) : PlayerInput le lui donne à l'instant de l'événement, au lieu de
+// ni une main ni un coup (world/actionPlan.ts ne le voit jamais) : PlayerInput le lui donne à l'instant de l'événement, au lieu de
 // l'inscrire comme un appui de souris. Aujourd'hui, la petite carte (un clic change son cran) ; plus tard, son bouton vers la carte
 // entière (M).
 

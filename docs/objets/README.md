@@ -18,7 +18,7 @@ Fiches : les créatures (chantier « lapins », CONCEPTION *Les créatures*) : [
 [pièce de bois](wood-piece.md)), [bardeau](shingle.md), [cheville](peg.md), [coutre](froe.md). Puis le [têtard](big-pollard.md), les [gros arbres couchés](big-felled-tree.md) ; l'[arbre normal](normal-tree.md) ; la tempête : [chicot et sa cime](normal-snag.md), [galette de racines et trou](root-plate.md) ; la [pièce de bois](wood-piece.md) (bille, demi-bille, quartier, rondin, poutre : un seul objet, des réglages) ; l'implantation : [planchette gravée](plan-tablet.md), [piquet](stake.md), [hachette](hatchet.md), [dalle](slab.md) ; l'équarrissage : [doloire](broadaxe.md) ; la [cognée](axe.md) ; [rouleau de corde](rope-coil.md), [lien](rope-tie.md), [fagot](faggot.md) ; le fendage : [masse de bûcheron](maul.md), [coin de fendage](splitting-wedge.md) ; le combat : [branche](branch.md), [épée de bois](wooden-sword.md), [mannequin d'entraînement](training-dummy.md) ; les pièces de l'abri à bois, dans
 l'ordre du chantier : [dé de pierre](footing-stone.md), [poteaux](shed-post.md), [sablières](shed-plate.md),
 [chevron](shed-rafter.md), [toit de planches](shed-roof.md) ; la cheminée de pierre de la maison de Xéros : [âtre](stone-hearth.md), [hotte](chimney-hood.md),
-[conduit](chimney-flue.md), [couronnement](chimney-cap.md), [pan de chaume percé](thatch-roof-pierced.md). Les pièces d'un même genre (les deux poteaux, les trois
+[conduit](chimney-flue.md), [couronnement](chimney-cap.md), [pan de chaume percé](thatch-roof-pierced.md) ; la forge du village (chantier « forge », l'atelier) : [forge](forge-hearth.md), [four de forge](forge-oven.md), [soufflet de forge](forge-bellows.md), [enclume](anvil.md), [billot d'enclume](anvil-block.md), [auge de forge](quench-trough.md), [coffre à charbon](charcoal-bin.md), [râtelier à outils](tool-rack.md), [râtelier à barres](bar-rack.md), [meule](grindstone.md), [étau](vise.md), [caisse de ferraille](scrap-crate.md), et ses couvertures, gardées pour d'autres maisons : [grand pan de bardeaux](shingle-roof-large.md) (et percé), [grand pan de tuiles plates](tile-roof-large.md) (et percé), [grand pan de lauzes](lauze-roof-large.md) (et percé), [pignons en bardage à 45° et à 55°](board-gable-tall.md), [pan d'appentis en bardeaux](shingle-shed-roof.md). Les pièces d'un même genre (les deux poteaux, les trois
 sablières) partagent une fiche, qui nomme toutes leurs clés.
 
 ## Modèle
@@ -72,13 +72,12 @@ régulier (à quel point le travail l'a rendu tel).
 Seul, en tas (genre de `piles.json`, forme, maximum), ou quantité mesurée (ce qui est mesuré, son unité, où c'est gardé).
 
 ## Gestes
-(docs/COMMANDES.md : clic gauche = main droite, clic droit = main gauche ; tenu, tout objet se lance au clic maintenu, inutile de le redire)
-- Clic court, main vide :
-- Clic court, de la main qui le tient :
-- Clic maintenu, main vide :
-- E (parler, ouvrir, lire), s'il sert :
+(docs/COMMANDES.md : la cible est devant Xéros ; tenu, tout objet frappe au clic de sa main et se lance au clic maintenu, inutile de le redire)
+- E (prendre ; parler, ouvrir, lire, s'il sert) :
+- E maintenu (nouer, dénouer, pivoter, appeler la mère) :
+- F, l'outil en main (le travail qu'il fait, ou qu'on fait sur l'objet) :
+- A (Q en QWERTY), poser, s'il fait autre chose que d'habitude :
 - R :
-- (et A (Q en QWERTY), lâcher, s'il fait autre chose que d'habitude)
 
 ## Travail
 Le travail au coup (CONCEPTION, *Le travail* : la durée découle des coups, chaque coup se paie au joule).
