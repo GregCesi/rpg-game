@@ -787,3 +787,214 @@ pans de la forge) : la lauze se dessine sur toute pente, comme la forge l'a fait
     non 340), l'écritoire à 90 cm de haut (et non 75), les claveaux à 0,73 de plein. *Recommandation : oui*, à l'intégration de
     chaque pièce.
     **Réponse : validée**, à l'intégration de chaque pièce.
+
+---
+
+## 12. Le cadrage technique : l'étage sur le relief de main (4 novembre)
+
+`origin/main` (9616dd8 : relief, sangliers, vie de Xéros) est fusionné dans `maison-coq`, sans conflit. Cette section remplace la
+section 6, écrite avant que le relief existe, partout où elles diffèrent.
+
+### 12.1 Ce que main donne, et ce qui manque (faits, lus dans le code)
+
+| Ce qui existe | Où | Ce qui manque pour l'étage |
+| --- | --- | --- |
+| La hauteur du sol est **une fonction du point** (`heightAt`, grille de 40 cm) ; Xéros n'a pas de hauteur à lui | `world/relief.ts` | deux sols au même (x, y) : la salle à 0, la chambre à 2,85 m |
+| Chaque pas de la physique est jugé depuis le pas d'avant (`worldstep`, `stepRefusal`, la glissade, le refus dit une fois) | `systems/footing.ts` | le pas sur une marche posée (19 cm), le bord de la trémie |
+| Tout ce qui est affiché monte de la hauteur **du sol sous lui** (`LiftPass`) ; **inactif dans un intérieur** (carte plate) | `systems/lift.ts` | Xéros et ce qui est posé à l'étage montent de **leur** hauteur |
+| La caméra suit l'image soulevée : `setFollowOffset` posé **une fois**, à l'arrivée | `WorldScene.create` | le décalage suit Xéros à chaque image (57 px dans l'escalier) |
+| Un intérieur est **une carte à part** (`interieur:<carte>:<x>,<y>`), plate ; on y voit ce qui est sous la tête (`INTERIOR.headroom`, 190 cm), le mur sud en coupe | `world/interior.ts`, `interiorMap.ts` | un intérieur à deux niveaux, chacun avec ses pièces, sa coupe, ses fenêtres |
+| Une pièce posée bloque à **toute hauteur** si elle est sous `BUILD.high` (2 m), sinon **jamais** | `blocks` de `world/build.ts`, `placeBuild` de `GameMap.ts` | un lit de l'étage bloque à l'étage, pas dans la salle dessous |
+| Ce qui est au sol, né ou en tas n'a que `x`, `y` | `GameState.ts` (`GroundItemSchema`, `Spawned`, piles) | la hache posée sur le plancher reste sur le plancher |
+| Le mode construction pose sur **le plus haut dessus** sous l'emprise (`aimAt`, `supportAt`), vise par `pick` | `world/build.ts`, `systems/build.ts` | viser l'étage une fois les murs montés : un niveau affiché |
+| Un mur (`wall` de props.json) est un morceau **de toute longueur et de hauteur fixe** (le solin : 40 cm), dessiné par `world/walls.ts` | `walls.json`, `wallRuns.ts` | le mur de pierre de taille, en assises de 30 cm |
+
+### 12.2 Les dessus qui se marchent : `src/world/decks.ts` (nouveau, sans Phaser)
+
+- **Une capacité en données** : `walk: true` dans props.json (la dalle de sol `floor-flagstone`, la marche `stone-step`) et dans
+  l'aspect planche de `wood.json` (le plancher). Rien d'autre ne devient marchable : une bille couchée bloque comme aujourd'hui.
+- `decksOf(pieces)` : le dessus de chaque pièce `walk`, sa **boîte exacte** (x, y, w, d en cm, et son haut `z + h`), jamais
+  rastérisée : un giron de 26 cm reste une marche de 19 cm, pas une pente de 73 %. Indexé par cases de 1,60 m pour aller vite (85
+  planches, 230 dalles, 15 marches).
+- `floorAt(decks, terrain, x, y, z, mob)` : **le sol sous les pieds**, le plus haut dessus qui couvre ce point **sans dépasser
+  `z + step`** et qui a la tête libre au-dessus de lui (aucun autre dessus entre lui et lui + `INTERIOR.headroom`) ; sinon le terrain
+  (`heightAt`, 0 dans un intérieur). Sous le plancher on reste en bas, sur la 3ᵉ marche on monte d'une marche.
+- `deckRefusal(from, to, z, …)` : le pas d'un point à l'autre change de sol ; **plus haut que `step`**, refusé (« Trop haute pour lui
+  (… ) ») ; **plus bas que `drop`**, refusé (« Trop haut pour lui (2,9 m). », le bord de la trémie sans garde-corps) ; entre les deux, il
+  saute (il descend de côté depuis la 4ᵉ marche). Les mêmes textes que le relief (`refusalText`), le même `Mobility`.
+- **Là où il n'y a aucun dessus** (tout le dehors d'aujourd'hui), rien ne change : la règle du relief seule, à l'identique.
+
+### 12.3 La hauteur propre de Xéros : `z`
+
+- `z` (cm) devient un **état de Xéros**, à côté de ses pieds : un champ du composant `Mobility` (la capacité reste dans `def`).
+- **À chaque pas de la physique** (`Footing`, `worldstep`, déjà là) : `z` devient `floorAt` du nouveau point, depuis le `z` du pas
+  d'avant ; un pas refusé le ramène et le fait glisser, comme contre le relief. Dehors sans dessus, `z = heightAt`.
+- **Le changement de niveau ne peut pas être sauté** (la règle « au franchissement » du dépôt) : `z` est suivi pas de physique par
+  pas de physique, et le niveau affiché se lit de `z` ; une machine lente qui fait trois pas par image passe quand même par chaque
+  marche. `test-etage` le vérifie à 1, 3 et 8 pas par image.
+- **Une pose** (arrivée par une porte, rechargement, ?dieu, test : `PLACED` de footing.ts) prend le `z` donné (la sauvegarde) et se
+  recale sur le dessus le plus proche de ce `z` ; sans `z` donné, le sol le plus bas.
+- **L'affichage** : `LiftPass` devient actif dans un intérieur qui a des dessus, et un objet peut porter sa hauteur
+  (`setData('z', cm)`) : Xéros, ce qu'il tient (Hold suit l'image), ce qui est posé à l'étage. Sans `z`, la hauteur du sol sous lui,
+  comme aujourd'hui. Les pièces posées en mode construction ont déjà leur `z` dans leur image (`buildLook`) : inchangées.
+- **La caméra** : son décalage suit l'image de Xéros à chaque image, adouci (la même douceur que le suivi, 0,15) : elle glisse de
+  57 px pendant la montée. Le dehors en profite : sur le chemin creux, la caméra suivra désormais la pente (aujourd'hui, figée à la
+  hauteur d'arrivée).
+
+### 12.4 Les meubles et les murs ne bloquent qu'à leur niveau
+
+- Chaque corps d'une pièce posée garde **sa tranche** : de son `z` à `z + h` (sa boîte de `solidOf`). `blocks` perd sa coupure à 2 m
+  (`BUILD.high`) : il ne dit plus que **si** la pièce a un corps (un `body` de props.json, une pièce de bois, pas un dessus `walk`).
+- La collision de Xéros avec les obstacles passe par un `processCallback` d'Arcade : elle ne bloque que si la tranche de la pièce
+  croise celle de Xéros (`z` à `z + XEROS_HEIGHT`). Le lit de l'étage, à 285, ne barre pas la salle ; la pierre d'échiffre, de 0 à
+  266, ne barre pas l'étage ; un mur qui monte de fond barre les deux.
+- **Les dessus ne sont jamais des obstacles** : la marche, la dalle et la planche se franchissent par la règle du pas (12.2), jamais
+  par un corps (sinon Xéros sur la 7ᵉ marche serait arrêté par la 8ᵉ).
+- **Ce qui ne change pas dehors** : une pièce posée sous 2 m bloquait déjà, et Xéros y est au sol, sa tranche les croise toujours ;
+  une pièce posée au-dessus de 2 m (un linteau, une sablière) ne croise sa tranche que si Xéros monte à sa hauteur. Les objets de
+  Tiled (arbres, rochers) n'ont pas de tranche : ils bloquent à toute hauteur, comme aujourd'hui. Les créatures gardent leur règle (au
+  sol). `test:contrats`, `test:maison`, `test:interieur` et `test:portes` le gardent.
+
+### 12.5 Ce qu'on pose à l'étage reste à l'étage
+
+Le monde ne limite pas : poser la hache sur le plancher, y lâcher un fagot, y faire un tas, tout cela doit marcher. Un champ `z`
+**optionnel** (cm, absent = au sol) sur ce qui est au sol (`GroundItemSchema`), ce qui est né (`Spawned`) et les tas (`piles`) ; `put`,
+`dropTarget` et `ghostOf` (systems/hands.ts) posent sur le dessus sous la place visée, au plus `step` au-dessus de Xéros (une table
+reste une table : on y pose comme aujourd'hui) ; l'image monte de son `z` (12.3), et ce qui est posé en haut ne se prend que d'en
+haut (la portée compte la hauteur). Le lancer retombe sur le plus haut dessus qu'il croise (la règle du relief, en hauteurs absolues).
+Champs optionnels : **une ancienne sauvegarde se lit telle quelle**, `SAVE_VERSION` ne monte pas pour eux.
+
+### 12.6 Un seul niveau affiché à la fois, et le fondu
+
+- **Les niveaux d'un bâtiment** (`storeysOf` de world/interior.ts) : les hauteurs de ses dessus qui couvrent au moins 4 m², deux
+  hauteurs à moins de `step` l'une de l'autre n'en font qu'une (la dalle de 8 cm et la terre battue de la cuisine : le rez-de-chaussée,
+  à 0) ; les marches, trop petites, ne sont pas des niveaux. Ici : 0 et 285.
+- **Le niveau de Xéros** : le plus haut niveau dont le plancher est au plus à une demi-hauteur au-dessus de ses pieds
+  (`z ≥ plancher − (plancher − niveau d'en dessous) / 2`, soit 142,5 cm) : il change **sur la 8ᵉ marche** (`z` = 152), dans les deux sens.
+- **Ce qu'un niveau montre** (règle générale, pour tout bâtiment à étages) : une pièce posée est du niveau `k` si son haut est au moins à
+  son plancher et sa base sous le plancher du niveau `k + 1` ; dans ce niveau, la règle d'aujourd'hui (ce qui passe au-dessus de la
+  tête est caché, sauf dans la bande des murs) vaut à partir de son plancher. En bas : le mur jusqu'à l'arase du rez-de-chaussée, les
+  meubles, l'escalier jusqu'à la 10ᵉ marche, les corbeaux et les muraillères contre le mur ; cachés : les solives, les planches, l'étage.
+  En haut : les planches et tout ce qui est dessus, les murs de l'étage, la sablière ; cachés : le rez-de-chaussée, la charpente au-dessus
+  de la tête, le grenier. Un bâtiment d'un seul niveau (toutes les maisons d'aujourd'hui) : exactement la règle d'aujourd'hui.
+- **Par la trémie** (en haut) : le rez-de-chaussée est montré **dans le trou du plancher seulement** : un masque de géométrie Phaser,
+  partagé, découpé dans l'image du trou au niveau des planches (le contour des dessus du niveau, moins là où il n'y en a pas), et voilé
+  de la pénombre (`INTERIOR.shade`) : on voit l'escalier descendre dans l'ombre jusqu'aux dalles du passage. La terre battue de la carte
+  de l'intérieur, plate, se voit dans le trou à sa vraie place (57 px plus bas que le plancher) : c'est la projection exacte.
+- **Le fondu** : un système nouveau, `src/systems/storeys.ts` (appelé par `WorldScene.update` dans un intérieur à étages) : au
+  changement de niveau, les pièces du niveau quitté vont vers 0 et celles du niveau atteint vers 1 en `ROOF.fadeMs` (250 ms), le masque
+  de la trémie avec elles ; **pas de changement de carte, pas d'écran noir, aucun verrou** : Xéros continue de marcher pendant le fondu.
+  Xéros sur la 8ᵉ marche, l'étage affiché, a les jambes cachées par le bord du plancher (réponse 17 : le rendu exact).
+- **La lumière par niveau** : chaque niveau a ses fenêtres, ses taches de lumière (`lightsOf`) et sa pénombre (`ambientOf` de ses
+  volets ouverts) ; au changement de niveau, la pénombre glisse vers celle du niveau atteint, dans le même fondu.
+- **Dehors, rien ne change** : la maison est close, son toit ne s'efface jamais (`roofView`) ; une fenêtre du rez-de-chaussée au volet
+  ouvert montre sa pièce (`windowFade`) ; celles de l'étage ne montrent rien (trop hautes : la règle de `windowRoom` ne prend que les
+  fenêtres dont l'appui est sous `ROOF.window`).
+
+### 12.7 La coupe des intérieurs sur deux niveaux
+
+- **La recherche des pièces, par niveau** (`gridOf`, `buildingsOf`) : la même projection, dans la tranche du niveau (de plancher + 30
+  à plancher + `INTERIOR.lintel`, au lieu de 30 à 240) ; au-dessus du rez-de-chaussée, le remplissage ne passe que sur les dessus de ce
+  niveau (le trou de la trémie n'est pas une pièce) et part de **l'arrivée de chaque escalier** : un dessus du niveau qui touche un dessus
+  plus bas d'au plus `step` (la dernière marche). On trouve la cuisine, le passage, la salle ; le palier, la chambre des garçons, celle
+  du coq, celle de la fille. Les portes intérieures de l'étage les relient comme en bas, et l'escalier relie le palier au passage : **un
+  seul bâtiment**, une seule carte d'intérieur.
+- **La coupe** : le mur sud et les cloisons est-ouest de chaque niveau, de son plancher à plancher + `INTERIOR.headroom`, en coupe
+  (`south`, `southPieces` par niveau) ; le mur du fond toujours derrière (`backCaps`, par niveau : les faces nord des pièces de ce
+  niveau).
+- **La carte de l'intérieur** (`interiorOf`) : une seule, l'emprise de toutes les pièces de tous les niveaux ; `InteriorMap` gagne
+  `storeys` (par niveau : son plancher, ses pièces, `shell`, `south`, `southPieces`, `windows`, `lights`, `ambient`) ; les champs
+  d'aujourd'hui restent ceux du rez-de-chaussée, pour que tout ce qui les lit marche sans changer. Les meubles posés dedans gardent leur
+  `z` dans `builds` de la carte de l'intérieur ; les sorties restent celles des portes du rez-de-chaussée.
+- **Les PNJ à l'étage** (la fille à sa table) viendront avec la famille, un autre chantier : rien n'est posé ici ; le point `Npc`
+  recevra alors une propriété `z`.
+
+### 12.8 Le mode construction : le niveau
+
+- **Un réglage du niveau affiché** : un bouton « Niveau » du panneau (`src/build/panel.ts`, ▲ ▼ et le niveau en clair : « Rez-de-
+  chaussée », « Étage 1 », « Tout ») et la touche **N** (lue par sa place, `KeyN`), en boucle : tout, puis chaque niveau des bâtiments
+  sous la caméra. Libre en mode construction (on y voit d'en haut, sans Xéros).
+- **Ce qu'il fait** : au niveau `k`, les pièces au-dessus du niveau sont en fantôme très clair (`BUILD.refused`) ou cachées, la règle de
+  12.6 ; **la visée** (`aimAt`, `supportAt`) ne prend que les dessus jusqu'au plancher de ce niveau + sa hauteur sous plafond : une table
+  posée « à l'étage » tombe sur le plancher, pas sur le toit ; `pick` vise à la hauteur de ce niveau (le point vu, soulevé de 57 px).
+- **Ce qui ne change pas** : T et G montent et descendent d'un cran, R tourne, les plans s'enregistrent et se posent d'un coup ; le
+  niveau n'est pas gardé dans la sauvegarde (comme la caméra du mode construction).
+
+### 12.9 Monter : la vitesse et le souffle
+
+- **La vitesse** : sur un pas qui monte d'une marche, la marche × `climb` (une part de la marche, `PLAYER.climb` de config.ts, 0,75
+  proposé), dans `systems/speeds.ts` : jamais une vitesse à part ; en descendant, la marche. Le relief n'est pas touché (ses pentes de
+  20 % au plus se marchent à pleine allure, comme décidé au chantier « relief »).
+- **Le souffle** : monter chargé coûte, au mètre de montée et au kilo porté (`breath.perSec` ne convient pas : c'est la hauteur qui
+  coûte, pas le temps) : `breath.climbPerKgM` de stamina.json (une valeur proposée : un sac de 30 kg en haut de l'escalier, 2,85 m,
+  coûte environ 15 de souffle sur 100). À vide, rien : on ne compte pas l'effort de porter son corps, nulle part dans le jeu.
+
+### 12.10 La sauvegarde
+
+- `Where` (save.ts) gagne `z` (optionnel) : la page rechargée en haut le retrouve en haut ; absent, le sol le plus bas.
+- Les `z` de ce qui est posé (12.5) : optionnels.
+- `missingContent` : rien de nouveau (la maison est un plan de Tiled, `seedPlans`, déjà contrôlé).
+- **`SAVE_VERSION` ne monte pas**, sauf si l'exécution trouve un format que l'ancien ne lit plus (je le dirai au récapitulatif).
+
+### 12.11 Les étapes et les fichiers touchés
+
+1. **Le moteur de l'étage, testé seul, sans dessin** (sur des pièces d'essai : une dalle, une planche, une marche qui existent en
+   données avec un dessin provisoire hors jeu, ou des pièces existantes marquées `walk` dans le seul banc de test) :
+   - nouveaux : `src/world/decks.ts`, `src/systems/storeys.ts`, `tools/test-etage.ts` (dans `test:fast`) ;
+   - touchés : `src/entities/Mobility.ts` (`z`), `src/systems/footing.ts` (le pas sur les dessus, `z`), `src/systems/lift.ts`
+     (actif dans un intérieur à étages, la hauteur propre), `src/world/build.ts` (`blocks` sans `BUILD.high`, la tranche, `aimAt`
+     borné au niveau), `src/world/GameMap.ts` (le `processCallback` des obstacles, la tranche de chaque zone), `src/world/interior.ts`
+     (`storeysOf`, la recherche et la coupe par niveau), `src/world/interiorMap.ts` (`storeys`), `src/world/interiorView.ts` (la coupe
+     par niveau), `src/systems/interiors.ts`, `src/scenes/WorldScene.ts` (la caméra, l'appel de `storeys.ts`), `src/systems/hands.ts`
+     (poser sur un dessus), `src/world/throw.ts`, `src/state/GameState.ts` (les `z` optionnels), `src/state/save.ts` et
+     `src/systems/autosave.ts` (`Where.z`), `src/systems/speeds.ts`, `src/config.ts` (`PLAYER.climb`, `INTERIOR.storey`),
+     `src/content/types.ts` (`walk`, `climbPerKgM`), `src/content/stamina.json`, `src/systems/build.ts` et `src/build/panel.ts` (le
+     niveau, N), `src/content/validate.ts` (un `walk` a une boîte pleine et pas de `body`).
+2. **Les dessins d'intégration** (pixel-artist), planche `.art-preview/coq-integration-*.png`, puis **DESSIN À VALIDER** et l'attente :
+   le mur de pierre de taille (`wall: "ashlar"`, ses pierres dans walls.json, les carreaux de 50, 70 et 90 cm, la boutisse de 40), la
+   clef au coq de 50 × 60 × 50 cm, la lave seule lauze (`slatesTex` et la faîtière de la forge remplacés, une seule source), la cloison
+   de l'étage en pan de bois chaulé (sa lisse lisible vue d'en haut), les vues `-r2` des faces du dedans qui manquent, et le reste du
+   catalogue mis aux nouvelles dimensions (réponse 27). Pendant l'attente : les fiches, les données sans image, la documentation.
+3. **Après l'accord** : l'intégration (`art/`, `art/index.ts`, `props.json`, `wood.json`, `walls.json`), `npm run art`, les fiches de
+   `docs/objets/` ; le plan bâti dans le mode construction par un scénario, `npm run test:maison-coq` (sa liste de montage dans
+   `tools/lib/maison-coq.ts`, comme la maison de Xéros), enregistré `src/content/plans/maison-coq.json` ; posé dans
+   `tiled/maps/ferme-du-riche.tmj` (le rectangle `Plan` et la parcelle `Parcel` « Maison du coq », section 1 ; le normal de la case
+   (88, 120) retiré), `npm run maps`.
+4. **Le scénario `npm run test:etage`** (partie neuve) : entrer par la porte en arc, monter l'escalier (le niveau change à la 8ᵉ marche,
+   pas avant), le palier, la chambre du coq, la chambre de la fille ; recharger la page en haut (`__restart`, il est toujours en haut,
+   l'étage affiché) ; redescendre, ressortir. Dans `SCENARIOS` de `tools/run-scenarios.ts`, `test:maison-coq` dans `HEAVY`.
+5. **Les contrats** (`test:contrats`) : à la force et à l'escalade maximales, tout se monte ; à sa force, la trémie sans garde-corps
+   refusée « pour lui » ; ce qui est posé à l'étage y reste (la matière se conserve, rechargée).
+6. **La documentation** : CONCEPTION « L'étage » (le moteur) et « La maison du coq », ses limites (le grenier qui ne se visite pas, pas
+   de cave, ni gens de maison ni famille, Xéros ne bâtit pas lui-même la maison : pas de chantier `plans.json`, la chèvre plus tard) ;
+   CLAUDE.md, README, docs/COMMANDES.md (N en mode construction).
+7. **La fusion** : `origin/main` de nouveau, `npm run build`, la suite complète des scénarios et `test:contrats` sur le dernier commit
+   (un chantier moteur), puis main.
+
+### 12.12 Les tests prévus
+
+- **`tools/test-etage.ts`** (sans navigateur, dans `test:fast`) : `floorAt` (sous le plancher on reste en bas ; sur la marche on monte
+  de 19 cm ; la tête libre) ; `deckRefusal` (une marche de 60 cm refusée, la trémie sans garde-corps refusée « Trop haut pour lui
+  (2,9 m). », le saut de côté depuis la 4ᵉ marche permis) ; le changement de niveau à la 8ᵉ marche à 1, 3 et 8 pas de physique par
+  image ; la tranche (le lit de l'étage ne bloque pas la salle, la pierre d'échiffre pas l'étage, le mur les deux) ; `storeysOf` (0 et
+  285, la dalle de 8 cm fondue au rez-de-chaussée, les marches qui n'en sont pas) ; les pièces trouvées par niveau sur le plan
+  `maison-coq` (3 en bas, 4 en haut, un seul bâtiment) ; la coupe par niveau ; ce que montre chaque niveau ; une maison d'un niveau
+  (maison-xeros, cabane, grange, forge) **identique à aujourd'hui** (shell, south, rooms comparés).
+- **Les scénarios qui gardent le reste** : `test:maison`, `test:interieur`, `test:portes`, `test:relief`, `test:construction`, `test:forge-
+  visite` (la tranche et la caméra ne doivent rien y changer), et la suite complète avant la fusion.
+- **`test:etage`** et **`test:maison-coq`** (12.11) ; un aperçu `.art-preview/coq-etage-jeu-*.png` pris dans le vrai jeu (au pied de
+  l'escalier, sur la 7ᵉ et la 8ᵉ marche, en haut, par la trémie).
+
+### 12.13 Les questions qui restent ouvertes
+
+28. **La hauteur des murs de l'étage** : en assises réglées de 30 cm au-dessus du cordon (270-290), l'arase tombe à 530 (8 assises), pas à
+    525 ni 545 ; avec la sablière de 20 cm, **le haut des murs passe de 545 à 550 cm** (le faîtage d'environ 915 à 920). On prend 550, ou
+    on garde 545 avec une demi-assise de 15 cm sous la sablière ? *Recommandation : 550*, des assises toutes égales ; 5 cm ne changent ni
+    la croisée ni le toit.
+29. **Le morceau de mur de pierre de taille** : **une assise** de 30 cm de toute longueur par morceau (environ 250 poses pour la
+    maison, les joints décalés d'une assise à l'autre par le dessin, le mur de chaque niveau fait des siennes), ou un morceau de la
+    hauteur d'un niveau (une quarantaine de poses, mais un dessin de 2,70 m qui doit savoir où sont les baies) ? *Recommandation : une
+    assise*, comme le solin : le dessin reste celui d'une rangée de blocs, et le niveau d'un morceau est sans ambiguïté.
+30. **Le dallage** : dalle par dalle (environ 230 poses, de vraies pièces, comme le plancher planche par planche), ou un morceau de
+    dallage de toute surface qui consomme ses dalles, comme le mur ? *Recommandation : dalle par dalle* : rien de nouveau dans le moteur,
+    et chaque dalle reste un objet qu'on taille, porte et pose ; le scénario de montage est plus long, il va dans les scénarios lourds.
