@@ -36,7 +36,7 @@ Seule.
 
 ## Gestes
 - Mode construction : clic gauche la pose sur le billot, R la tourne (est-ouest, nord-sud), clic droit la retire.
-- En jeu : le billot bloque ; l'enclume posée dessus n'ajoute rien au sol. Plus tard, le poste du forgeron (forger, au marteau).
+- En jeu : le billot bloque ; l'enclume a son petit corps (`body` 12 × 3 px, le contrat des meubles), presque tout entier dans celui du billot. Plus tard, le poste du forgeron (forger, au marteau).
 
 ## Travail
 Aucun pour l'instant.
@@ -59,8 +59,9 @@ Le forgeron (`smith`).
 ## Points ouverts
 - **La prendre** : la règle « le monde ne limite pas » voudrait qu'elle se prenne à deux mains (`take`), avec le refus « Trop lourde
   pour lui (83 kg, il en porte 70) » à la force de Xéros. Pas demandé pour l'instant : à décider.
-- Si la vérification des porte-à-faux (`overhangs`, src/world/overhang.ts) relève les 5 cm de bigorne et de talon au-dessus du vide
-  sur le plan de la forge, l'écart est voulu (c'est la forme d'une enclume).
+- Le débord de la bigorne et du talon au-dessus du vide est voulu (c'est la forme d'une enclume) : `"ledge": 10` dans props.json, que
+  la vérification des porte-à-faux (`overhangs`, src/world/overhang.ts) accepte aux bouts. Sur le plan de la forge, posée sur la
+  grille de 20 cm, elle déborde de 10 cm à l'est du billot.
 
 ## Vérification
 - `.art-preview/forge-pieces.png` : ses deux vues au gabarit, posées sur le billot, Xéros à côté (la table à hauteur de son poing).

@@ -35,7 +35,7 @@ Seul.
 
 ## Gestes
 - Mode construction : clic gauche le pose sur l'établi, R le tourne (les mâchoires), clic droit le retire.
-- En jeu : posé en hauteur, il ne bloque rien de plus que l'établi.
+- En jeu : posé en hauteur, son petit corps (`body` 4 × 4 px, le contrat des meubles) est dans celui de l'établi : il ne bloque rien de plus.
 
 ## Travail
 Aucun pour l'instant.
