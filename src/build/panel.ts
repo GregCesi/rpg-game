@@ -4,7 +4,8 @@
 // scène lui renvoie (BuildStatus). Vignettes : les images produites par build-art (src/generated/assets.ts).
 
 import { BUILD } from '../config';
-import { wood } from '../content';
+import { props, wood } from '../content';
+import { WALL_PIECE } from '../world/walls';
 import { buildPlans, onBuildPlans } from '../content/buildPlans';
 import type { WoodAge, WoodLook } from '../content/types';
 import { agedKey } from '../world/woodShape';
@@ -148,6 +149,20 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     render();
   };
 
+  // la longueur d'un morceau de mur (le solin) : toute longueur sur la grille de walls.json (`piece`), comme le bois
+  const sLen = el('input', { type: 'number', min: String(WALL_PIECE.min), max: '800', step: String(WALL_PIECE.grid), value: '160', style: 'width:64px' });
+  let wallEntry: CatalogEntry | undefined;
+  const pickWall = () => {
+    sLen.value = String(Math.max(WALL_PIECE.min, Math.round(Number(sLen.value) / WALL_PIECE.grid) * WALL_PIECE.grid || 160));
+    if (wallEntry && 'prop' in wallEntry.ref) send({ kind: 'pick', piece: { prop: wallEntry.ref.prop, length: Number(sLen.value) } });
+    render();
+  };
+  sLen.addEventListener('change', () => {
+    pickWall();
+    sLen.blur();
+  });
+  const wallBox = el('div', {}, [el('h3', { textContent: 'Morceau de mur' }), el('div', { className: 'row' }, ['longueur', sLen, 'cm'])]);
+
   // les réglages d'une matière naturelle : forme et taille, au hasard par défaut
   const nForm = select([['', 'au hasard'], ['0', 'a'], ['1', 'b']], () => pickNatural());
   const nSize = el('input', { type: 'number', placeholder: 'au hasard', style: 'width:80px' });
@@ -208,6 +223,8 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
       else if (wAxis.value === 'up') wAxis.value = 'ew';
       return pickWood();
     }
+    wallEntry = 'prop' in e.ref && props[e.ref.prop]?.wall ? e : undefined;
+    if (wallEntry) return pickWall();
     natEntry = e.natural ? e : undefined;
     if (e.natural) {
       nForm.value = '';
@@ -260,7 +277,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     }
     list.replaceChildren(...nodes);
     showAge();
-    settings.replaceChildren(...(chosen?.startsWith('wood:') ? [woodBox] : natEntry && chosen === natEntry.id ? [natBox] : []));
+    settings.replaceChildren(...(chosen?.startsWith('wood:') ? [woodBox] : natEntry && chosen === natEntry.id ? [natBox] : wallEntry && chosen === wallEntry.id ? [wallBox] : []));
   };
   onBuildPlans(render);
 

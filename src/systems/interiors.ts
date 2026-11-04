@@ -52,8 +52,6 @@ export function resolveInterior(id: string): InteriorMap | undefined {
 }
 
 export class Interiors {
-  private cache?: { version: number; buildings: Building[] };
-
   constructor(
     private readonly map: GameMap,
     /** L'intérieur où l'on est, ou rien dehors. */
@@ -63,10 +61,7 @@ export class Interiors {
   /** Les bâtiments de la carte (dehors), recalculés après chaque pose ou retrait de pièce. */
   buildings(): Building[] {
     if (this.interior) return [];
-    if (this.cache?.version !== this.map.buildsVersion) {
-      this.cache = { version: this.map.buildsVersion, buildings: buildingsOf(mapState(game, this.map.def.id).builds) };
-    }
-    return this.cache.buildings;
+    return this.map.buildings;
   }
 
   /**

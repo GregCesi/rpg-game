@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { stateImage } from '../world/pileShape';
-import { AIM, CONSTRUIRE, DEPTH, FEET, FELL, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
+import { AIM, CONSTRUIRE, DEPTH, FEET, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
 import { creatures, gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -10,7 +10,8 @@ import type { Look } from '../entities/Hold';
 import { Npc } from '../entities/Npc';
 import { Player } from '../entities/Player';
 import { forgetHeldKeys } from '../input/PlayerInput';
-import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand } from '../events';
+import { GameEvent, type BuildCommand, type BuildStatus, type DieuCommand, type PlayerCell } from '../events';
+import { worldCell } from '../world/minimap';
 import { BuildSystem } from '../systems/build';
 import { ClockSystem } from '../systems/clock';
 import { CombatSystem, type AttackPlan } from '../systems/combat';
@@ -35,6 +36,7 @@ import { Rail } from '../systems/rail';
 import { SiteSystem } from '../systems/site';
 import { WoodSystem, type WoodAim } from '../systems/wood';
 import { WorkSystem, type WorkJob } from '../systems/work';
+import { fellDistance } from '../world/workStance';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
 import { kinetic, throwPlan } from '../world/throw';
@@ -234,6 +236,8 @@ export class WorldScene extends Phaser.Scene {
   private interiors!: Interiors;
   /** L'intérieur où l'on est (sa carte calculée, ce que la vue y ajoute), ou rien dehors. */
   private interior?: InteriorMap;
+  /** La dernière case du monde et le sens annoncés à la petite carte (GameEvent.PlayerCell) ; vidée à chaque create. */
+  private cellKey = '';
   private inside?: InteriorView;
   /** Le passage d'une zone du monde à sa voisine (systems/zones.ts). */
   private zones!: ZoneCrossing;
@@ -257,6 +261,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cellKey = '';
     // un point d'apparition « dedans » (le réveil de Xéros chez lui) : dans l'intérieur du bâtiment posé où il est
     const hostSpawn = !this.at && maps[this.mapId]?.spawns[this.spawn];
     if (hostSpawn && hostSpawn.inside) {
@@ -287,7 +292,7 @@ export class WorldScene extends Phaser.Scene {
     // entrent dans la partie à la première visite
     seedMap(def);
     // la carte telle que la partie l'a laissée : objets récoltés, objets au sol
-    this.map = new GameMap(this, def, mapState(game, def.id), this.interior && { pieces: this.interior.shell, joints: this.interior.joints });
+    this.map = new GameMap(this, def, mapState(game, def.id), this.interior && { pieces: this.interior.shell, joints: this.interior.joints, rooms: this.interior.rooms });
     this.inside = this.interior && new InteriorView(this, this.map, this.interior);
     this.interiors = new Interiors(this.map, this.interior);
     // une zone du monde : ses voisines se voient par-delà le bord, et les pieds de Xéros passent un bord ouvert
@@ -412,6 +417,24 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * La case du monde où est Xéros et son sens, pour la petite carte (GameEvent.PlayerCell), seulement quand elle change ; dedans, la case
+   * du dehors : la position dans l'intérieur moins son décalage (`shift` de InteriorMap), dans la carte qui l'accueille.
+   */
+  private announceCell(): void {
+    const a = this.player.actor;
+    const host = maps[this.interior ? this.interior.host : this.mapId];
+    let cell: PlayerCell | undefined;
+    if (host?.world) {
+      const shift = this.interior?.shift ?? { x: 0, y: 0 };
+      cell = { ...worldCell(host, a.x - shift.x / CM_PER_PX, a.y - shift.y / CM_PER_PX), facing: a.facing };
+    }
+    const key = cell ? `${cell.x},${cell.y},${cell.facing}` : 'none';
+    if (key === this.cellKey) return;
+    this.cellKey = key;
+    this.game.events.emit(GameEvent.PlayerCell, cell);
+  }
+
   update(time: number, delta: number): void {
     // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
     this.autosave.update();
@@ -458,6 +481,7 @@ export class WorldScene extends Phaser.Scene {
     // les objets lancés volent dans tous les modes (le temps du jeu)
     this.updateFlights(delta);
     this.daylight.update();
+    this.announceCell();
     // V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite), au palier suivant, en boucle
     if (input.speedPressed() && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
       const n = nextSpeed(timeDef.speeds, timeDef.speeds.includes(simSpeed()) ? simSpeed() : timeDef.default);
@@ -1164,8 +1188,9 @@ export class WorldScene extends Phaser.Scene {
     if (steps > 1) prop.hits = Math.min(steps - 1, Math.floor(done * steps + 1e-9));
     // un arbre debout (une chute) : le côté de l'entaille, celui où Xéros frappe (gardé avec le travail commencé) ; Xéros se met lui-même
     // en place de ce côté, le fer sur l'entaille : la hache frappe toujours au même endroit, et l'arbre tombera de ce côté
-    const side = h.fall ? (saved?.side ?? (this.player.actor.x < prop.baseX ? 'left' : 'right')) : undefined;
-    if (side) this.standToFell(prop, side);
+    const felling = !!h.work && 'fell' in h.work;
+    const side = felling ? (saved?.side ?? (this.player.actor.x < prop.baseX ? 'left' : 'right')) : undefined;
+    if (side) this.standToFell(prop, side, tool);
     const facing = this.player.actor.facing;
     this.startWork({
       def: harvestJob(h.work!, tool),
@@ -1180,13 +1205,22 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * Xéros se met en place pour abattre (docs/CONCEPTION.md, « Le travail ») : du côté `side` de l'arbre, tourné vers lui, ses pieds à
-   * `FELL.reach` px du point visé, à sa hauteur ; si la place est prise, il frappe d'où il est, tourné vers l'arbre.
+   * Xéros se met en place pour abattre (docs/CONCEPTION.md, « Le travail » ; chantier « maison-2 ») : du côté `side` du tronc, tourné vers
+   * lui, les pieds sur la ligne du pied du tronc, à la distance où le fer de son outil frappe l'écorce de son côté (`fellDistance` de
+   * world/workStance.ts : le rayon du tronc et la portée de l'outil, tirés des données) ; si la place est prise, il frappe d'où il est.
    */
-  private standToFell(prop: PlacedProp, side: 'left' | 'right'): void {
+  private standToFell(prop: PlacedProp, side: 'left' | 'right', tool: string): void {
     const a = this.player.actor;
-    const x = Math.round(prop.aimX + (side === 'left' ? -FELL.reach : FELL.reach));
-    const y = Math.round(prop.aimY);
+    const h = prop.def.harvest!;
+    const diameter = h.work && 'fell' in h.work ? h.work.fell.diameter : 0;
+    const gesture = gestures[work.strokes[harvestJob(h.work!, tool).stroke].gesture];
+    const d = fellDistance(diameter, gesture, tool);
+    // l'axe et le pied du tronc : dessinés (`tree.foot`), sinon le milieu et le bas de sa collision
+    const foot = prop.def.tree?.foot;
+    const axis = foot ? prop.image.x + foot[0] : prop.aimX;
+    const ground = foot ? prop.image.y - (prop.image.height - foot[1]) : prop.aimY + (prop.def.body?.h ?? 0) / 2;
+    const x = Math.round(axis + (side === 'left' ? -d : d));
+    const y = Math.round(ground);
     const b = a.body;
     const dx = x - a.x;
     const dy = y - a.y;

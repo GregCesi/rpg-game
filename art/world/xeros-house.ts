@@ -15,11 +15,13 @@
 //   (le torchis en mottes, ses brins de paille), `lime-` (la chaux, la terre rejaillie au pied) ; plein (`-panel`) ou à fenêtre
 //   (`-window-panel` : l'appui à 30 cm du bas de la travée, soit 1 m du sol, la baie de 50 × 40 cm entre deux montants, le
 //   linteau ; le volet `plank-shutter` s'y pose). Face : 28 × 39 px ; de chant : 4 × 64 px.
-// - Les jambages d'une porte (le reste de la travée, de chaque côté de la porte, sa propre pièce) : `-jamb` (porte d'entrée,
-//   25 cm : 10 de remplissage et l'huisserie de 15) et `-inner-jamb` (porte intérieure, 30 cm : 15 et 15), l'huisserie du côté de
-//   la baie : à l'ouest en r0 (le jambage de droite de la baie) ; en r2, l'autre côté, à l'est (le jambage de gauche).
-// - Les portes en planches, 0,90 × 1,80 m (`cottage-door`) et 0,80 × 1,80 m (`inner-door`) : quatre planches debout, les
-//   chevilles des traverses, le loquet, le bas mouillé (l'essai) ; du dedans, les deux traverses et l'écharpe.
+// - La baie de porte (proposition validée par Grégoire, art/proposals/baie-porte.ts) : la travée de 1,40 m = une bande de
+//   remplissage de 10 cm (`-jamb`, sans bois, quatre étapes), l'huisserie (`door-frame`, 15 × 15 × 180, sur le seuil), la porte de
+//   90, l'huisserie, la bande ; au-dessus, la tête de baie (`-door-head`, 120 × 15 × 50 : les huisseries prolongées jusqu'à la
+//   sablière, le linteau à 2 m, le remplissage au-dessus, quatre étapes) ; le seuil intérieur (`inner-threshold-stone`,
+//   120 × 30 × 20). Les anciens jambages intérieurs de 30 cm (`-inner-jamb`, l'huisserie du côté de la baie) restent au catalogue.
+// - Les portes en planches, 0,90 × 1,80 m (`cottage-door`, `inner-door`) : quatre planches debout, les chevilles des traverses,
+//   le loquet, le bas mouillé (l'essai) ; du dedans, les deux traverses et l'écharpe.
 // - Les pignons en torchis chaulé (`lime-gable`, `lime-gable-smoke`) : le triangle d'une demi-portée de 3,20 m à 45°, 6,40 m sur
 //   3,20 m au-dessus de la sablière, l'entrait retroussé à 1,40 m ; le trou de fumée (50 × 40 cm, sous le faîte, sa traverse
 //   dessous, le noir du comble derrière).
@@ -34,6 +36,7 @@
 import { Canvas, type Grid } from '../lib/canvas';
 import type { ImageSource, SpriteSheetSource } from '../lib/types';
 import { stonePalette } from '../items/stones';
+import { PAN_STACK } from './chimney';
 import { gameImage, walls } from '../lib/walls';
 import {
   box, crop, daub, doorTex, earthRidge, gableTex, hash, lath, mirror, part, polyPrism, pole, prism, renderPiece, rotP, rotQuads, rotRect, slabTex, stick, thatchEave,
@@ -71,8 +74,11 @@ function staves(w: number): number[] {
 
 const timberPart = (name: string) => part(name, 6, 'K', 'full');
 
-/** Le remplissage d'une bande de la travée (x a0 à a1, z z0 à z1), à son étape ; le mur dans le plan y = 0, le dehors vers +y. */
-function fill(Q: Quad[], stage: Stage, seed: number, a0: number, a1: number, z0: number, z1: number) {
+/**
+ * Le remplissage d'une bande de la travée (x a0 à a1, z z0 à z1), à son étape ; le mur dans le plan y = 0, le dehors vers +y.
+ * `raised` : une bande en l'air (au-dessus du linteau d'une porte) n'a pas de terre rejaillie au pied (la matière lue 3 px plus haut).
+ */
+export function fill(Q: Quad[], stage: Stage, seed: number, a0: number, a1: number, z0: number, z1: number, raised = false) {
   const w = a1 - a0;
   if (w < 1 || z1 - z0 < 1) return;
   const st = staves(w);
@@ -82,7 +88,9 @@ function fill(Q: Quad[], stage: Stage, seed: number, a0: number, a1: number, z0:
     Q.push(...box(a0, a1, -1.5, 1.5, z0, z1, part('clayonnage', 1, 'Q', 'full'), wattle(seed, w, st)));
   } else {
     const lime = stage === 'lime';
-    Q.push(...box(a0, a1, -2, 2, z0, z1, part(lime ? 'chaux' : 'torchis', 1, lime ? ';' : 'e', 'full'), daub(seed, lime)));
+    const d = daub(seed, lime);
+    const tex: Tex = raised ? (s, t, c) => (c.face === 'top' ? d(s, t, c) : d(s, t + 3, { ...c, h: c.h + 3 })) : d;
+    Q.push(...box(a0, a1, -2, 2, z0, z1, part(lime ? 'chaux' : 'torchis', 1, lime ? ';' : 'e', 'full'), tex));
   }
 }
 
@@ -115,13 +123,75 @@ const windowPanel = (stage: Stage, seed: number) => (view: number): Quad[] => {
 };
 
 /**
- * Le jambage d'une porte : `w` px, l'huisserie de 15 cm du côté de la baie (à l'ouest, x de 0 à 3 : le jambage de droite ; tourné
- * d'un demi-tour, r2, il est celui de gauche), le remplissage à côté.
+ * L'ancien jambage d'une porte intérieure (`-inner-jamb`, 30 cm : l'huisserie de 15 du côté de la baie, le remplissage à côté),
+ * gardé au catalogue ; la maison prend désormais la baie de porte ci-dessous (décision de Grégoire, « la baie de porte »).
  */
-const jamb = (stage: Stage, seed: number, w: number) => (): Quad[] => {
+const innerJamb = (stage: Stage, seed: number, w: number) => (): Quad[] => {
   const Q: Quad[] = [];
   Q.push(...box(0, 3, -2, 2, 0, BAY_H, timberPart('huisserie'), timber(seed + 41, [[1, 33], [1, 2]])));
   fill(Q, stage, seed, 3, w, 0, BAY_H);
+  return Q;
+};
+
+// =====================================================================================================================
+// La baie de porte (proposition validée par Grégoire : art/proposals/baie-porte.ts, planche .art-preview/baie-porte.png)
+// =====================================================================================================================
+
+/**
+ * Les mesures de la baie, en px (5 cm). La travée fait 28 px entre les faces des poteaux (1,40 m) = 2 (bande) + 3 (huisserie)
+ * + 18 (porte) + 3 (huisserie) + 2 (bande) ; le seuil et la tête de baie couvrent les 24 px du milieu. Hauteurs de la maison :
+ * solin 0-40, traverse basse 40-70, poteaux 70-250, sablière 250-280 ; le seuil 0-20, les huisseries et la porte 20-200, la tête
+ * de baie 200-250.
+ */
+export const DOOR_BAY = {
+  band: 2, // la bande de remplissage entre poteau et huisserie, 10 cm
+  frame: 3, // l'huisserie, 15 cm
+  door: 18, // la porte, 90 cm
+  opening: 24, // huisseries et porte : 120 cm, la largeur du seuil et de la tête de baie
+  frameH: 36, // l'huisserie, 180 cm
+  headH: 10, // la tête de baie, 50 cm
+  lintel: 3, // le linteau, 15 cm
+} as const;
+const M = DOOR_BAY;
+
+/** L'huisserie : le bois équarri de la porte, un peu devant le linteau à profondeur égale (le linteau vient entre les deux montants). */
+export const framePart = () => part('huisserie', 6.5, 'K', 'full');
+/** La demi-épaisseur de l'huisserie et du linteau : 15 cm. */
+export const FT = 1.5;
+
+/**
+ * Le bois d'une huisserie, sur toute sa hauteur apparente (180 cm sous le linteau, 50 de plus dans la tête de baie) : `from` décale
+ * la face (la tête de baie la reprend à 36 px du pied), si bien que le fil se suit de l'une à l'autre. La cheville du linteau, au
+ * tiers haut du tenon (z ≈ 2,05 m).
+ */
+export function frameTex(seed: number, from: number): Tex {
+  const full = M.frameH + M.headH;
+  const t0 = timber(seed, [[1, M.frameH + 1]]);
+  return (s, t, c) => (c.face === 'top' ? t0(s, t, c) : t0(s, t + from, { ...c, h: full }));
+}
+
+/** `door-frame` : l'huisserie, 15 × 15 × 180, posée sur le seuil. */
+export const doorFrame = (seed = 41) => (): Quad[] => box(0, M.frame, -FT, FT, 0, M.frameH, framePart(), frameTex(seed, 0));
+
+/**
+ * `<étape>-door-head` : la tête de baie, 120 × 15 × 50 : les deux huisseries prolongées jusqu'à la sablière, le linteau de 15 cm
+ * entre elles (son dessous à 2 m, le haut de la porte), le remplissage au-dessus, à son étape. Les huisseries et le linteau sont là
+ * dès la première étape (on les pose avant de garnir).
+ */
+export const doorHead = (stage: Stage, seed: number) => (): Quad[] => {
+  const Q: Quad[] = [];
+  const W = M.opening, F = M.frame;
+  Q.push(...box(0, F, -FT, FT, 0, M.headH, framePart(), frameTex(41, M.frameH)));
+  Q.push(...box(W - F, W, -FT, FT, 0, M.headH, framePart(), frameTex(41, M.frameH)));
+  Q.push(...box(F, W - F, -FT, FT, 0, M.lintel, part('linteau', 6, 'K', 'full'), timber(seed + 45)));
+  fill(Q, stage, seed, F, W - F, M.lintel, M.headH, true);
+  return Q;
+};
+
+/** `<étape>-jamb` : la bande de remplissage de 10 cm entre le poteau et l'huisserie, 10 × 15 × 180, sans bois. */
+export const jamb = (stage: Stage, seed: number) => (): Quad[] => {
+  const Q: Quad[] = [];
+  fill(Q, stage, seed, 0, M.band, 0, M.frameH);
   return Q;
 };
 
@@ -130,7 +200,7 @@ const jamb = (stage: Stage, seed: number, w: number) => (): Quad[] => {
 // =====================================================================================================================
 
 /** Le dos d'une porte en planches : les planches (doorTex), deux traverses et l'écharpe, du bas côté gond au haut côté loquet. */
-function doorBack(seed: number, w: number): Tex {
+export function doorBack(seed: number, w: number): Tex {
   const face = doorTex(seed, w);
   return (s, t, c) => {
     const i = Math.floor(s), j = Math.floor(t), h = Math.floor(c.h);
@@ -257,30 +327,29 @@ const roof = (stage: RoofStage) => (): Quad[] => {
 };
 
 /**
- * Le conduit de la cheminée dans le repère du pan (px ; le pan sud, avant sa vue), quand le pan percé sert de pan nord (vue r2) :
- * le conduit est en x 740 à 840 cm et y 20 à 70 cm dans le repère de la maison (là où l'aimant du mode construction le pose) (tools/lib/maison-xeros.ts), le pan nord posé à
- * x = −40 cm ; tourné d'un demi-tour autour du faîte, le point (x, y) de la maison est (268 − x, 128 − y) dans le pan, en px.
- * Le haut : celui du couronnement (8,60 m).
- */
-const FLUE = { x0: 100, x1: 120, y0: 114, y1: 124, z1: 172 };
-
-/**
  * Le pan de chaume percé (`thatch-roof-pierced`) : le chaume plein, percé au droit du conduit, bordé d'un solin de mortier de chaux
- * (d au nord et à l'ouest, D au sud et à l'est). Le pan est dessiné d'une pièce par-dessus le conduit (le jeu l'ordonne par son bord
- * sud) : tout ce que le conduit cache, dans la vue, est vide (le trou, et derrière lui la bande qu'il couvre jusqu'au faîte), pour
- * que le conduit posé derrière se voie au-dessus du chaume. Vu du sud (r2, le pan nord à 45° vu par la tranche), rien ne change.
+ * (d au nord et à l'ouest, D au sud et à l'est). Le trou se tire de la souche de la cheminée (`PAN_STACK` d'art/world/chimney.ts :
+ * le conduit en x 720–820, y 30–110 cm dans le repère de la maison, le couronnement au-dessus ; le pan nord posé à x = −40,
+ * y = −65 cm, tourné d'un demi-tour autour du faîte : le point (x, y) de la maison est (268 − x, 129 − y) dans le pan, en px). Le pan est
+ * dessiné d'une pièce par-dessus la souche (le jeu l'ordonne par son bord sud) : tout ce que la souche cache, dans la vue, est vide
+ * (le trou, et derrière lui la bande qu'elle couvre jusqu'au faîte), pour que la souche posée derrière se voie au-dessus du chaume.
+ * Vu du sud (r2, le pan nord à 45° vu par la tranche), rien ne change.
  */
-const piercedRoof = (view: number): Quad[] => {
+export const piercedRoof = (view: number): Quad[] => {
   const r = VIEW_ROT[view];
-  const [fx0, fx1, fy0, fy1] = rotRect([FLUE.x0, FLUE.x1, FLUE.y0, FLUE.y1], r, [0, 0]);
+  const boxes = PAN_STACK.map((b) => {
+    const [x0, x1, y0, y1] = rotRect([b.x0, b.x1, b.y0, b.y1], r, [0, 0]);
+    return { x0, x1, y0, y1, z0: b.z0, z1: b.z1 };
+  });
   const E = 0.4;
-  // un point de la vue est caché par le conduit s'il a, au même pixel de l'écran (x, y − z), un point du conduit devant lui (plus au sud)
-  const hidden = (p: V3) => {
-    if (p[0] <= fx0 - E || p[0] >= fx1 + E) return false;
-    const y = Math.max(fy0 - E, p[1]);
-    return y <= fy1 + E && y - p[1] + p[2] <= FLUE.z1;
-  };
+  // un point est caché par une boîte s'il a, au même pixel de l'écran (x, y − z), un point de la boîte devant lui (plus au sud)
+  const hidden = (p: V3) => boxes.some((b) => {
+    if (p[0] <= b.x0 - E || p[0] >= b.x1 + E) return false;
+    const y = Math.max(b.y0 - E, p[1]);
+    return y <= b.y1 + E && y - p[1] + p[2] <= b.z1 && b.y1 + E - p[1] + p[2] >= b.z0;
+  });
   const back = ((4 - r) % 4) as Rot;
+  const F = PAN_STACK[0];
   return roof('full')().map((q) => {
     const tex: Tex = (s, t, c) => {
       if (hidden(c.p)) return null;
@@ -288,7 +357,7 @@ const piercedRoof = (view: number): Quad[] => {
       if (k === null || q.part.name !== 'chaume' || c.face !== 'slope') return k;
       // le solin de mortier autour du conduit, sur le chaume
       const [x, y] = rotP(c.p, back, [0, 0]);
-      if (x > FLUE.x0 - 2.1 && x < FLUE.x1 + 2.1 && y > FLUE.y0 - 2.1 && y < FLUE.y1 + 2.1) return x < FLUE.x0 + 0.5 || y < FLUE.y0 ? 'd' : 'D';
+      if (x > F.x0 - 2.1 && x < F.x1 + 2.1 && y > F.y0 - 2.1 && y < F.y1 + 2.1) return x < F.x0 + 0.5 || y < F.y0 ? 'd' : 'D';
       return k;
     };
     return { ...q, tex };
@@ -376,7 +445,9 @@ function hearth(f: number): Grid {
 // =====================================================================================================================
 
 /** Le seuil : une dalle de calcaire de 120 × 50 × 20 cm, posée à la place du solin sous la porte d'entrée. */
-const threshold = (): Quad[] => box(0, 24, 0, 10, 0, 4, part('seuil', 3, '~', 'full'), slabTex(3));
+export const threshold = (): Quad[] => box(0, 24, 0, 10, 0, 4, part('seuil', 3, '~', 'full'), slabTex(3));
+/** Le seuil intérieur : 120 × 30 × 20 cm, la même dalle de calcaire, à la largeur du solin des cloisons (30 cm). */
+export const innerThreshold = (): Quad[] => box(0, 24, 0, 6, 0, 4, part('seuil', 3, '~', 'full'), slabTex(5));
 
 /**
  * Le banc (200 × 30 × 45 cm, en planches) : le siège d'une planche épaisse (le dessus éclairé, son chant), deux pieds pleins en
@@ -429,17 +500,19 @@ const BENCH_NS: Grid = (() => {
 // Les images
 // =====================================================================================================================
 
-const SEEDS: Record<Stage, number> = { staves: 7, wattle: 17, daub: 27, lime: 37 };
+export const SEEDS: Record<Stage, number> = { staves: 7, wattle: 17, daub: 27, lime: 37 };
 
 const sources: (ImageSource | SpriteSheetSource)[] = [
   ...STAGES.flatMap((s) => [
     ...fourViews(`${s}-panel`, plainPanel(s, SEEDS[s])),
     ...fourViews(`${s}-window-panel`, windowPanel(s, SEEDS[s] + 100)),
-    ...fourViews(`${s}-jamb`, jamb(s, SEEDS[s] + 200, 5)),
-    ...fourViews(`${s}-inner-jamb`, jamb(s, SEEDS[s] + 300, 6)),
+    ...fourViews(`${s}-jamb`, jamb(s, SEEDS[s] + 200)),
+    ...fourViews(`${s}-inner-jamb`, innerJamb(s, SEEDS[s] + 300, 6)),
+    ...fourViews(`${s}-door-head`, doorHead(s, SEEDS[s] + 400)),
   ]),
   ...fourViews('cottage-door', door(18, 7)),
-  ...fourViews('inner-door', door(16, 9)),
+  ...fourViews('inner-door', door(18, 9)),
+  ...fourViews('door-frame', doorFrame()),
   ...fourViews('lime-gable', gable(false)),
   ...fourViews('lime-gable-smoke', gable(true)),
   ...fourViews('thatch-roof-frame', roof('frame')),
@@ -450,6 +523,7 @@ const sources: (ImageSource | SpriteSheetSource)[] = [
   ...Array.from({ length: NARROW_SILL_VARIANTS }, (_, k) => [0, 1, 2, 3].map((v): ImageSource => ({ kind: 'image', name: `narrow-sill-wall${k ? `-s${k}` : ''}${suffix(v)}`, palette: PAL, grid: narrowSill(k, v) }))).flat(),
   { kind: 'spritesheet', name: 'hearth', frameW: HEARTH_W, frameH: HEARTH_H, palette: PAL, animations: { burn: { frames: [0, 1, 2].map((f) => pad(hearth(f), HEARTH_W, HEARTH_H)), frameRate: 7, repeat: -1 } } },
   ...fourViews('threshold-stone', threshold, 0.5, withGroundShadow).filter((_, v) => v < 2).map((s, v) => ({ ...s, name: v ? 'threshold-stone-ns' : 'threshold-stone' })),
+  ...fourViews('inner-threshold-stone', innerThreshold, 0.5, withGroundShadow).filter((_, v) => v < 2).map((s, v) => ({ ...s, name: v ? 'inner-threshold-stone-ns' : 'inner-threshold-stone' })),
   { kind: 'image', name: 'bench', palette: PAL, grid: BENCH },
   { kind: 'image', name: 'bench-ns', palette: PAL, grid: BENCH_NS },
 ];

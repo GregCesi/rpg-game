@@ -138,9 +138,14 @@ export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
   return runs;
 }
 
+/** La longueur d'un tronçon (px) : celle de ses morceaux, de toute longueur, bout à bout. */
+export function runPx(r: WallRun): number {
+  return Math.round((r.axis === 'ew' ? r.box.w : r.box.d) / CM_PER_PX);
+}
+
 /** Le tronçon dessiné : la clé de sa texture (tout ce qui change son dessin). */
 export function runKey(r: WallRun): string {
-  return ['wall', r.kind, r.axis, r.thick, r.pieces.length, r.start, r.end, r.extra?.start ?? 0, r.extra?.end ?? 0, r.seed].join(':');
+  return ['wall', r.kind, r.axis, r.thick, runPx(r), r.start, r.end, r.extra?.start ?? 0, r.extra?.end ?? 0, r.seed].join(':');
 }
 
 /**

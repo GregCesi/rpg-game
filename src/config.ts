@@ -99,7 +99,7 @@ export const PILE_COUNT = { near: 12 };
  * la touche à cette distance est à lui) ; `window` : devant une fenêtre ouverte, dehors, jusqu'où (cm de la face du mur) et à quel
  * écart de ses bords on voit la pièce (src/world/roofView.ts) ; `reveal` : la hauteur des murs qu'on voit au fond de la pièce découverte (cm).
  */
-export const ROOF = { alpha: 0.35, fadeMs: 250, wall: 30, window: { front: 150, side: 40 }, reveal: 260 };
+export const ROOF = { alpha: 0.35, fadeMs: 250, wall: 30, eaves: 100, window: { front: 150, side: 40 } };
 
 /**
  * Ombre portée d'un toit (`shadow` de props.json) : la lumière vient du nord-ouest, d'en haut (docs/STYLE.md section 2) ;
@@ -156,6 +156,28 @@ export const HARVEST = {
 
 /** Les mains à l'écran : durée d'un message court (ms), et d'un message important (sauvegarde refusée). */
 export const HUD = { noticeMs: 1800, longNoticeMs: 7000 };
+
+/**
+ * La petite carte du HUD (docs/CONCEPTION.md, « La petite carte » ; src/world/minimap.ts, src/systems/minimap.ts) : ronde, en haut à
+ * gauche, nord en haut, calculée depuis les cartes et la partie. La seule source de ses réglages.
+ * `steps` : ses crans, dans l'ordre où un clic sur la carte les fait passer (puis retour au premier) ; `px` : pixels du canevas par
+ * case de 1,60 m (avant RENDER ; 2 = un pixel du HUD) ; `inner` : le diamètre de la fenêtre ronde en px du HUD (impair ; le cadre de
+ * bois de art/ui/minimap.ts est tiré à chaque diamètre). Les cases montrées : inner × ZOOM ÷ px (81 cases, 65 m autour ; 40,5 cases,
+ * 32 m ; 126 cases, 100 m). `start` : le cran de la première fois (ensuite le cran choisi est retenu, comme le zoom de la caméra).
+ * `margin` : du bord de l'écran (px du HUD, comme le cadran) ; `refreshMs` : la zone de Xéros repeinte au plus une fois par
+ * `refreshMs` quand la partie a changé ; `outside` : l'aplat au-delà du bord du monde (l'humus `5` de la palette).
+ */
+export const MINIMAP = {
+  steps: [
+    { px: 2, inner: 81 },
+    { px: 4, inner: 81 },
+    { px: 1, inner: 63 },
+  ],
+  start: 0,
+  margin: 4,
+  refreshMs: 500,
+  outside: '#2c292d',
+} as const;
 
 /**
  * La barre d'endurance du HUD (art/ui/stamina-bar.ts, contrat de pose) : `pxPerPoint` px de creux par point (le maximum de 100 fait
@@ -223,6 +245,8 @@ export const INTERIOR = {
   margin: { side: 32, top: 128, bottom: 32 },
   ambient: 0.22,
   dark: 0.36,
+  /** La teinte de la pénombre (dedans, et la pièce vue de dehors). */
+  shade: 0x1a0e06,
   void: 0x1e1610,
   light: { door: 0.75, window: 0.8, alpha: 0.9 },
 };
@@ -244,12 +268,6 @@ export const ZONES = {
 
 /** La pénombre du sous-bois (`gloom` de world.json) : sa couleur, et la largeur des bandes où elle varie (px). */
 export const GLOOM = { color: 0x0b1611, strip: 64 };
-
-/**
- * Abattre (docs/CONCEPTION.md, « Le travail ») : au lancement du travail, Xéros se met en place à `reach` px du point visé de l'arbre,
- * du côté où il frappe (le fer sur l'entaille).
- */
-export const FELL = { reach: 14 };
 
 export const PLAYER = {
   skin: 'xeros',

@@ -1,7 +1,8 @@
 # Portes de la maison de Xéros (`cottage-door`, `inner-door`)
 
-Décidé le 2 novembre 2026 (CONCEPTION « La maison de Xéros ») : la porte d'entrée de 0,90 × 1,80 m et la porte intérieure de
-0,80 × 1,80 m, en planches, à la manière de la porte de la cabane (`plank-door`, 1 × 2 m, qui reste celle de la cabane et de la
+Décidé le 2 novembre 2026 (CONCEPTION « La maison de Xéros ») : la porte d'entrée et la porte intérieure, toutes deux de
+0,90 × 1,80 m (la porte intérieure passée de 80 à 90 cm le 3 novembre 2026 avec la baie de porte validée par Grégoire,
+`art/proposals/baie-porte.ts`), en planches, à la manière de la porte de la cabane (`plank-door`, 1 × 2 m, qui reste celle de la cabane et de la
 grange). Dessin de l'essai validé par Grégoire (art/lib/volumes.ts `doorTex`).
 
 ## Identité
@@ -12,11 +13,11 @@ grange). Dessin de l'essai validé par Grégoire (art/lib/volumes.ts `doorTex`).
 - Âge : bois travaillé, `"aged": true`.
 
 ## Masse
-Par la matière : `{"matter": "wood", "fill": 0.6}` sur 90 × 5 × 180 cm : 44 kg (80 cm : 39 kg).
+Par la matière : `{"matter": "wood", "fill": 0.6}` sur 90 × 5 × 180 cm : 44 kg, l'une comme l'autre.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
-90 × 5 × 180 cm et 80 × 5 × 180 cm, pièces `ground` (elles se posent dans la baie entre les deux jambages). Face : 18 × 38 et
-16 × 38 px ; de chant : 2 × 54 et 2 × 52 px.
+90 × 5 × 180 cm, pièces `ground` (elles se posent sur le seuil, entre les deux [huisseries](door-frame.md)). Face : 18 × 38 px ;
+de chant : 2 × 54 px.
 
 ## Vues
 Quatre (`four`) : r0 le dehors (quatre planches debout, leurs joints, les chevilles des traverses, le loquet, le bas mouillé) ; r2
@@ -26,7 +27,8 @@ le dedans (les deux traverses et l'écharpe) ; r1, r3 de chant.
 Aucune.
 
 ## Regroupement
-Seule, dans la baie, entre `*-jamb` (entrée) ou `*-inner-jamb` (intérieure).
+Seule, dans la baie : sur le seuil (`threshold-stone` à l'entrée, `inner-threshold-stone` dedans), entre deux huisseries
+(`door-frame`), sous la [tête de baie](door-head.md).
 
 ## Gestes
 - E : ouvrir, fermer ; ouverte, on passe (`passage`).
@@ -50,4 +52,5 @@ Aucune.
 Le menuisier (`joiner`).
 
 ## Vérification
-`.art-preview/maison-pieces.png` (rangées 3 à 5 : la porte dans ses vues, montée dans sa travée, patinée).
+`.art-preview/maison-pieces.png` (rangées 3 à 5 : la porte dans ses vues, patinée) ; `.art-preview/baie-porte.png` (la porte
+intérieure de 90 dans ses vues et ses âges, montée dans sa travée, fermée et ouverte).

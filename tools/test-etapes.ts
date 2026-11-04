@@ -7,6 +7,14 @@
 
 import assert from 'node:assert/strict';
 import { playtest } from './lib/playtest';
+import { gestures, props, work } from '../src/content';
+import { fellDistance } from '../src/world/workStance';
+
+/** Où Xéros se met pour abattre l'arbre normal (chantier « maison-2 ») : à la portée de la cognée, tirée des données (world/workStance.ts),
+ * les pieds sur la ligne du pied du tronc (au bas de sa collision, la moitié de sa hauteur sous son point visé). */
+const tree = props['normal-tree'];
+const fell = tree.harvest!.work as { fell: { diameter: number } };
+const STAND = { dx: Math.round(fellDistance(fell.fell.diameter, gestures[work.strokes[work.jobs.fell].gesture], tree.harvest!.tool)), dy: tree.body!.h / 2 };
 
 await playtest('etapes', async ({ page, errors, load }) => {
   // Espace devant la cible (le travail va seul) ; relève l'image de l'objet à chaque changement ; s'arrête (Échap) à l'image `until`
@@ -96,13 +104,13 @@ await playtest('etapes', async ({ page, errors, load }) => {
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   const stages = (base: string, n: number) => Array.from({ length: n }, (_, i) => `${base}-stage-${i + 1}`);
   assert.deepEqual(part.keys, ['normal-tree', ...stages('normal-tree-left', 3)], `depuis la gauche, l'entaille se creuse à gauche en trois temps (${part.keys.join(', ')})`);
-  assert.deepEqual(part.stood, { dx: -14, dy: 0, facing: 'right' }, 'au lancement, Xéros se met en place à gauche de l’arbre, tourné vers lui');
+  assert.deepEqual(part.stood, { dx: -STAND.dx, dy: STAND.dy, facing: 'right' }, 'au lancement, Xéros se met en place à gauche de l’arbre, tourné vers lui');
   assert.ok(part.flips.every((f: boolean) => !f), 'les étapes de gauche sont dessinées, pas retournées');
   assert.equal(part.now, 'normal-tree-left-stage-3', 'arrêté, l’arbre garde son entaille');
   assert.deepEqual(after, { key: 'normal-tree-left-stage-3', flip: false }, 'l’entaille est retrouvée après rechargement, du même côté');
   assert.equal(rest.stood.facing, 'right', 'repris depuis la droite, Xéros retourne du côté de l’entaille commencée');
   assert.equal(rest.fellSide, 'left', 'l’arbre tombe du côté de l’entaille : à gauche');
-  assert.deepEqual(right.stood, { dx: 14, dy: 0, facing: 'left' }, 'depuis la droite : Xéros en place à droite, tourné vers l’arbre');
+  assert.deepEqual(right.stood, { dx: STAND.dx, dy: STAND.dy, facing: 'left' }, 'depuis la droite : Xéros en place à droite, tourné vers l’arbre');
   assert.ok(right.keys.slice(1).every((k: string) => /^normal-tree-stage-\d$/.test(k)), `depuis la droite : l'entaille à droite (${right.keys.join(', ')})`);
   assert.equal(right.fellSide, 'right', 'l’arbre tombe à droite');
   assert.deepEqual(rest.keys.slice(0, 5), stages('normal-tree-left', 7).slice(2), `puis le trait d'abattage, le craquement, il penche (${rest.keys.join(', ')})`);

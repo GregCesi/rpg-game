@@ -7,9 +7,9 @@
 // bas et à droite), ombre portée `x`. Pas de bois travaillé ici : pas d'âges.
 //
 // Les images (clés d'image) :
-// - `normal-snag` : le chicot, l'arbre normal cassé debout vers 2,5 m. Une vue (rond). Même pied et même ancrage que l'arbre
+// - `normal-snag` : le chicot, l'arbre normal cassé debout vers 2,6 m. Une vue (rond). Même pied et même ancrage que l'arbre
 //   normal : le pied du tronc à la colonne SNAG_FOOT[0], six rangées sous lui (l'ombre), comme FOOT de `normal-tree`.
-//   dims : 65 × 55 × 290 cm, boîte : 13 × 63,5 px.
+//   dims : 65 × 55 × 300 cm, boîte : 13 × 65,5 px.
 // - `normal-snag-top` : sa cime, couchée vers l'est (cassure à l'ouest), découpée dans l'arbre couché du jeu
 //   (`normal-felled-tree`) par le même profil de cassure (`PROFILE`) : chicot + cime = l'arbre entier, en longueur et en
 //   matière. Quatre vues, couchée (règle D) : `-r2` découpée de `normal-felled-tree-left` par le profil retourné ; `-r1` et
@@ -39,7 +39,7 @@ export const palette = world;
 
 /** Dimensions réelles (cm), forme du gabarit (src/content/gabarit.ts). */
 export const DIMS = {
-  snag: { w: 65, d: 55, h: 290, shape: 'box' as const },
+  snag: { w: 65, d: 55, h: 300, shape: 'box' as const },
   /**
    * La galette, l'arbre couché vers l'est (vue de base) : un disque dressé de 1,10 m (la motte), 1,50 m racines comprises,
    * 30 cm d'épaisseur. Pour le gabarit, un cylindre couché est-ouest très court : `d` 150 (sa largeur nord-sud, racines
@@ -105,9 +105,9 @@ function transpose(c: Canvas): Canvas {
 // ---------- 1. Le chicot ----------
 
 export const SNAG_W = 24;
-export const SNAG_H = 70;
+export const SNAG_H = 72;
 /** Le pied du tronc (rangée du contour sous le tronc), comme FOOT de l'arbre debout : six rangées dessous, l'ombre. */
-export const SNAG_FOOT: [number, number] = [12, 63];
+export const SNAG_FOOT: [number, number] = [12, 65];
 /** Décalage du repère de l'arbre debout à celui du chicot : les sillons et l'évasement sont ceux de l'arbre, rangée pour rangée. */
 const SDX = TREE_FOOT[0] - SNAG_FOOT[0];
 const SDY = TREE_FOOT[1] - SNAG_FOOT[1];
@@ -119,11 +119,13 @@ const FLARE: [number, number][] = [[-2, 2], [-1, 2], [-1, 1], [0, 1], [0, 1]];
 /**
  * Le profil de la cassure, partagé par le chicot et sa cime (la matière se conserve : ce qui manque à l'un est l'autre) : pour
  * chaque colonne d'écorce du fût (0 à l'ouest, 5 à l'est), la longueur du chicot depuis le pied, en pixels. À l'ouest (le vent
- * venait de là), les fibres arrachées en tension restent hautes, en longues esquilles (jusqu'à 61 px, 3 m) ; à l'est, où la
- * tête est tombée, le bois écrasé en compression casse bas (50 px, 2,5 m). Couché vers l'est, l'ouest du fût devient le dessus
+ * venait de là), les fibres arrachées en tension restent hautes, en longues esquilles (jusqu'à 63 px, 3,15 m) ; à l'est, où la
+ * tête est tombée, le bois écrasé en compression casse bas (52 px, 2,6 m : la cassure tombe sur la grille du bois de 20 cm,
+ * le chicot abattu donne 2,2 m, de 40 à 260 cm, la cime 3,6 m ; proposition B de art/proposals/chicot-26.ts, accord de
+ * Grégoire : l'arbre recollé debout garde 6,95 m, comme l'arbre du jeu). Couché vers l'est, l'ouest du fût devient le dessus
  * du tronc : la colonne c du chicot debout est la rangée TRUNK_ROWS[0] + c de l'arbre couché.
  */
-export const PROFILE = [61, 59, 54, 56, 52, 50];
+export const PROFILE = [63, 61, 56, 58, 54, 52];
 const BREAK_LOW = Math.min(...PROFILE);
 const BREAK_HIGH = Math.max(...PROFILE);
 
@@ -132,8 +134,9 @@ function splinterTone(c: number, k: number, y: number): string {
   if (k === 0) return c >= 4 ? '*' : '^';
   if (c === 0) return 'M'; // l'écorce reste sur le dos de l'esquille ouest
   if (c === 5) return k > 1 ? 'N' : '%';
-  // le fil : une fibre plus sombre toutes les trois rangées, décalée d'une colonne à l'autre
-  const fibre = (y + c) % 3 === 0;
+  // le fil : une fibre plus sombre toutes les trois rangées, décalée d'une colonne à l'autre, comptée depuis le pied (les
+  // fibres gardent leur place sur le tronc, comme l'écorce)
+  const fibre = (y + c + 1) % 3 === 0;
   return [, fibre ? '*' : '^', fibre ? '%' : '^', fibre ? '%' : '*', fibre ? '&' : '%'][c] as string;
 }
 
@@ -169,7 +172,7 @@ function snagBody(): Canvas {
   return c;
 }
 
-/** Le chicot, avec contour et ombre portée (24 × 70, le pied en SNAG_FOOT). */
+/** Le chicot, avec contour et ombre portée (24 × 72, le pied en SNAG_FOOT). */
 export function snag(): Grid {
   const c = contour(snagBody());
   groundShadow(c, SNAG_FOOT[0] + 1.5, SNAG_FOOT[1] + 0.5, 6.5, 1.8);
@@ -269,7 +272,7 @@ export const MATTER = (() => {
   const felledMass = 420; // props.json, normal-felled-tree
   const bole = 5.8; // la pièce de bois du normal-felled-tree (size normal, length 580)
   const crownMass = felledMass - section * bole * density; // houppier : branches et pointe
-  const stump = 0.4, snagLen = 2.5;
+  const stump = 0.4, snagLen = 2.6; // la cassure à 2,6 m (accord de Grégoire, version B) : des pièces de 2,2 et 3,6 m, sur la grille
   const snagVol = section * snagLen, crownBole = section * (stump + bole - snagLen);
   return {
     density, section, crownMass, felledMass,

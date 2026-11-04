@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
+import { UI_ZOOM } from '../config';
 import { KeyLatch } from './keyLatch';
+import { uiClick } from './uiClicks';
 
 const K = Phaser.Input.Keyboard.KeyCodes;
 
@@ -82,8 +84,12 @@ if (typeof window !== 'undefined') {
   // la souris : enfoncée sur le canevas, relâchée n'importe où (comme Phaser) ; à l'instant de l'événement
   window.addEventListener('mousedown', (e) => {
     if (!CANVAS || e.target !== CANVAS) return;
-    CURSOR = gamePoint(e) ?? CURSOR;
-    if (e.button === 0 || e.button === 2) LATCH.down(`Mouse${e.button}`, e.timeStamp);
+    const p = gamePoint(e);
+    CURSOR = p ?? CURSOR;
+    if (e.button !== 0 && e.button !== 2) return;
+    // un clic enfoncé sur une zone d'interface (la petite carte) est à elle : ni une main ni un coup (input/uiClicks.ts)
+    if (p && uiClick(p.x / UI_ZOOM, p.y / UI_ZOOM, e.button === 0 ? 'left' : 'right')) return;
+    LATCH.down(`Mouse${e.button}`, e.timeStamp);
   });
   window.addEventListener('mouseup', (e) => {
     if (e.button === 0 || e.button === 2) LATCH.up(`Mouse${e.button}`, e.timeStamp);

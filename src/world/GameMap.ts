@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH, GLOW, SHADOW, TILE } from '../config';
+import { DEPTH, GLOW, INTERIOR, SHADOW, TILE } from '../config';
 import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
@@ -12,13 +12,14 @@ import type { Natural, WoodPiece } from '../content/types';
 import { woodDef, woodOf } from './woodPiece';
 import { agedKey, lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
-import { blocks, boxOf, depthsOf, overlaps, supportsOf, type BuildPiece } from './build';
+import { blocks, boxOf, depthsOf, overlaps, solidOf, supportsOf, type BuildPiece } from './build';
 import type { BuildPlaced } from '../content/types';
 import { lookDef, lookOf as woodLookOf } from './woodShape';
 import { buildLook } from './buildView';
 import { runLayout, wallOf, wallRuns } from './wallRuns';
 import { wallTexture } from './wallTexture';
 import { drawJoints, halvingOverlays } from './jointView';
+import { backCaps, buildingsOf, type Building, type Rect } from './interior';
 
 /**
  * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois, celle de ses réglages
@@ -196,7 +197,16 @@ export interface PlacedBuild {
    * lueur de l'âtre, la fumée du couronnement de la cheminée ; chacune à sa place dans l'image (`at`, px depuis son coin haut gauche).
    */
   parts?: { obj: Phaser.GameObjects.Image | Phaser.GameObjects.Particles.ParticleEmitter; at: [number, number]; above?: boolean; light?: boolean }[];
+  /**
+   * Une pièce longue nord-sud (un mur de côté, une poutre, un plateau) : les tranches de son image après la première (que montre
+   * `image`, rognée), chacune à la profondeur de l'endroit du sol qu'elle montre (`sideSlices`, chantier « maison-2 »). Elles suivent
+   * l'opacité de `image` (systems/roofs.ts).
+   */
+  slices?: Phaser.GameObjects.Image[];
 }
+
+/** La hauteur d'une tranche d'une pièce longue nord-sud (px) : assez fine pour qu'un personnage soit devant ou derrière d'un seul tenant. */
+const SLICE = 2;
 
 /**
  * La lueur d'un feu (`light` de props.json) : l'image `glow`, additive, qui vacille. Son opacité est celle du vacillement multipliée
@@ -320,6 +330,10 @@ export class GameMap {
   private readonly shown = new Map<number, { dx: number; down: number }>();
   /** Les assemblages des pièces fixes (le bâtiment vu de son intérieur), qui appartiennent à la carte du dehors. */
   private readonly shellJoints: Joint[] = [];
+  /** Les pièces closes d'un intérieur (cm), données par la vue de dedans ; rien dehors, où elles se calculent des pièces posées. */
+  private readonly shellRooms?: readonly Rect[];
+  /** Les bâtiments où l'on entre de cette carte (dehors), recalculés à chaque pose ou retrait de pièce (`sortBuilds`). */
+  buildings: Building[] = [];
   /** La pénombre (intérieurs), si la carte en a une. */
   private shade?: Phaser.GameObjects.Rectangle;
   /** Augmente à chaque pose ou retrait de pièce (`sortBuilds`) : ce qui se calcule des pièces posées sait quand recommencer. */
@@ -334,7 +348,7 @@ export class GameMap {
     readonly def: MapData,
     private readonly changes: MapState,
     /** Les pièces d'un bâtiment vues de son intérieur, et leurs assemblages (fixes : elles sont à la carte du dehors). */
-    shell?: { pieces: readonly BuildPiece[]; joints: readonly Joint[] },
+    shell?: { pieces: readonly BuildPiece[]; joints: readonly Joint[]; rooms: readonly Rect[] },
   ) {
     const tileset = tilesets.find((t) => t.key === def.tileset)!;
     this.width = def.width * TILE;
@@ -366,12 +380,13 @@ export class GameMap {
     for (const pile of changes.piles) this.placePile(pile);
     for (const p of shell?.pieces ?? []) this.placeBuild(p, true);
     this.shellJoints.push(...(shell?.joints ?? []));
+    this.shellRooms = shell?.rooms;
     for (const b of changes.builds) this.placeBuild(b);
     this.sortBuilds();
 
     // Pénombre (intérieurs) : les lueurs des feux sont posées par-dessus
     if (def.ambient) {
-      this.shade = scene.add.rectangle(0, 0, this.width, this.height, 0x1a0e06, def.ambient).setOrigin(0).setDepth(DEPTH.ambient);
+      this.shade = scene.add.rectangle(0, 0, this.width, this.height, INTERIOR.shade, def.ambient).setOrigin(0).setDepth(DEPTH.ambient);
     }
   }
 
@@ -715,10 +730,43 @@ export class GameMap {
     }
   }
 
+  /**
+   * Les murs de côté (Grégoire, chantier « maison-2 » : rien du mur ne passe devant ce qui est à côté de lui) : une pièce longue
+   * nord-sud n'a pas une seule profondeur, son bord sud, qui la ferait passer devant tout ce qui la longe. Son image est découpée en
+   * tranches de `SLICE` rangées ; chaque tranche montre le point le plus au sud de la pièce sur ses rangées (vue de trois quarts :
+   * y à l'écran = y au sol − hauteur, le point vu est au plus haut, dans l'emprise) et prend la profondeur de ce point, jamais plus
+   * que celle de la pièce entière (son plafond du mur du fond, l'ordre de ce qui la porte). Un personnage qui longe le mur est derrière
+   * ce qui est au sud de lui, devant ce qui est au nord.
+   */
+  private sideSlices(b: PlacedBuild): void {
+    for (const s of b.slices ?? []) s.destroy();
+    b.slices = undefined;
+    const img = b.image;
+    const full = { x: 0, y: 0, w: img.frame.width, h: img.frame.height };
+    const base = b.crop ?? full;
+    img.setCrop(base.x, base.y, base.w, base.h);
+    const box = solidOf(b.piece);
+    if (box.d <= box.w || box.d < 60 || img instanceof Phaser.GameObjects.Sprite) return;
+    const depth = img.depth;
+    const top = img.y - img.displayOriginY;
+    const topZ = (box.z + box.h) / CM_PER_PX;
+    const south = (box.y + box.d) / CM_PER_PX;
+    const at = (r1: number) => Math.min(depth, Math.min(top + r1 + topZ, south) + box.z / 100000);
+    const rows: [number, number][] = [];
+    for (let r = base.y; r < base.y + base.h; r += SLICE) rows.push([r, Math.min(base.y + base.h, r + SLICE)]);
+    if (rows.length < 2) return;
+    const [r0, r1] = rows[0];
+    img.setCrop(base.x, r0, base.w, r1 - r0).setDepth(at(r1));
+    b.slices = rows.slice(1).map(([a, c]) =>
+      this.scene.add.image(img.x, img.y, img.texture.key, img.frame.name).setOrigin(img.originX, img.originY).setCrop(base.x, a, base.w, c - a).setDepth(at(c)).setAlpha(img.alpha),
+    );
+  }
+
   /** Retire une pièce posée en mode construction (image et collision). */
   removeBuild(id: number): void {
     const i = this.builds.findIndex((b) => b.piece.id === id);
     if (i < 0) return;
+    for (const s of this.builds[i].slices ?? []) s.destroy();
     this.builds[i].image.destroy();
     this.builds[i].zone?.destroy();
     for (const p of this.builds[i].parts ?? []) p.obj.destroy();
@@ -747,11 +795,16 @@ export class GameMap {
       this.shown.set(b.piece.id, o);
       if (o.dx || o.down) b.image.setPosition(b.image.x + o.dx, b.image.y + o.down);
     }
-    const depths = depthsOf(this.builds.map((b) => b.piece));
+    // le mur du fond de chaque pièce close reste derrière ce qui est dans la pièce, dedans comme dehors (world/interior.ts)
+    const pieces = this.builds.map((b) => b.piece);
+    this.buildings = this.shellRooms ? [] : buildingsOf(pieces);
+    const rooms = this.shellRooms ?? this.buildings.flatMap((q) => q.rooms);
+    const depths = depthsOf(pieces, rooms.length ? backCaps(pieces, rooms) : undefined);
     for (const b of this.builds) {
       const floor = b.piece.z === 0 && 'prop' in b.piece.piece && propDefs[b.piece.piece.prop].layer === 'floor';
       b.image.setDepth(floor ? DEPTH.floor : depths.get(b.piece.id)!);
       this.placeParts(b);
+      if (!floor) this.sideSlices(b);
     }
     for (const o of this.overlays) o.destroy();
     this.overlays = halvingOverlays(this.scene, this.builds, joints).map((o) =>

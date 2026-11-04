@@ -10,7 +10,7 @@ tenant**, tronc et houppier, au lieu de sections à encoches fixes et de billes 
 - Nature : objets du monde (`props.json`), avec un `harvest` (la cognée, le houppier). Mains : ils ne se prennent pas.
 
 ## Masse
-Pas déplaçables, pas de masse. Ébranchés, leur tronc est une pièce de bois ronde du gros : 4 m, **855 kg** (le gros grand), 2 m,
+Pas déplaçables. Leur masse sert au bilan de la récolte (la matière se conserve, `harvestBalance` de validate.ts) : couchés, **994,13 kg** (le gros grand : la pièce de 4 m, 855,30 kg, et le houppier, 138,83 kg) et **514,42 kg** (le têtard : 2 m, 427,65 kg, et 86,77 kg) ; le houppier est celui de l'arbre normal (51,02 kg pour 12 branches de 7 cm) au prorata du nombre de branches × leur diamètre² (choisi faute de source). Ébranchés, il en reste la pièce et 3 ou 4 branches : le reste, **les feuilles et ramilles** (`waste`), pourrit sur place. Ébranchés, leur tronc est une pièce de bois ronde du gros : 4 m, **855 kg** (le gros grand), 2 m,
 **428 kg** (le têtard) ; au-delà des 300 kg que Xéros fait rouler, ils ne bougent pas : c'est le calcul qui le dit.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)

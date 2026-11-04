@@ -73,6 +73,12 @@ const HarvestSchema = z.strictObject({
   /** La matière, si la récolte se travaille au coup (voir HarvestWorkSchema). */
   work: HarvestWorkSchema.optional(),
   /**
+   * Ce que la récolte retire sans le rendre (la matière se conserve, CLAUDE.md : ce qui part est nommé) : les copeaux de l'entaille d'un
+   * abattage, les feuilles et ramilles d'un ébranchage. Le bilan de validate.ts (`harvestBalance`) refuse une récolte dont ce qui naît
+   * pèse moins que l'objet sans `waste`, et toute récolte dont ce qui naît pèse plus.
+   */
+  waste: z.strictObject({ name: id, fate: id }).optional(),
+  /**
    * Les étapes visibles du travail (docs/CONCEPTION.md, « Le travail », § 6) : la part de la matière enlevée (de 0 à 1, croissante) à
    * laquelle l'objet prend l'image `<son image>-stage-<n>` (n à partir de 1 ; pour chaque vue qu'il a : `<image de la vue>-stage-<n>`),
    * dessinée par le pixel-artist (art/world/work-stages.ts). L'arbre debout : l'entaille, le trait d'abattage, le craquement, il penche ;
@@ -753,6 +759,16 @@ export const PropDefSchema = z.strictObject({
    */
   pitch: z.literal('south').optional(),
   /**
+   * Pièce qui franchit un vide, portée par ses deux bouts comme une poutre (la tête de baie : son linteau sur les deux huisseries) :
+   * le contrôle du porte-à-faux (world/overhang.ts) demande un appui à chaque bout, pas sur toute sa longueur.
+   */
+  spans: z.literal(true).optional(),
+  /**
+   * Ce qu'une pièce déborde de ce qui la porte, à chacun de ses bouts (cm) : le larmier du couronnement de la cheminée, plus large que
+   * son conduit. Le contrôle du porte-à-faux (world/overhang.ts) le permet aux bouts, jamais au milieu.
+   */
+  ledge: z.number().int().positive().optional(),
+  /**
    * Ce qui s'ouvre et se ferme en jeu (E, une pièce posée en mode construction) : `into`, l'objet qu'il devient (son autre état, qui
    * nomme celui-ci en retour) ; `hinge`, où il tourne : `side`, le bord gauche de sa face du dehors vu du dehors (un volet, une
    * porte : ouvert, il a tourné d'un quart vers le dehors, dans le sens des aiguilles d'une montre), `bottom`, le bas de sa face du
@@ -844,7 +860,11 @@ export const PlanSchema = z.strictObject({
  * possédable (`item`, clé de items.json) ou une pièce de bois (`wood`, ses réglages ; son sens est son `axis`).
  */
 const BuildRefSchema = z.union([
-  z.strictObject({ prop: id }),
+  /**
+   * Un objet de props.json ; `length` : la longueur d'un morceau de mur (`wall`, le solin), en cm, sur la grille de `piece` de
+   * walls.json (10 cm, au moins 40) ; absente : sa longueur de `dims`.
+   */
+  z.strictObject({ prop: id, length: z.number().int().positive().optional() }),
   z.strictObject({ item: id }),
   z.strictObject({ wood: z.lazy(() => WoodPieceSchema) }),
 ]);
@@ -1013,10 +1033,13 @@ export const GestureSchema = z.strictObject({
   /** Image (à partir de 0) où le coup porte. */
   impact: z.number().int().min(0),
   /**
-   * Décalage horizontal du fer à l'impact par rapport aux pieds, par direction (la gauche en miroir de la droite) :
-   * c'est ce point que Xéros aligne sur l'encoche visée. Absent : la main de l'image d'impact.
+   * Où tombe le fer à l'impact, en x par rapport aux pieds (la gauche en miroir de la droite) : c'est ce point que Xéros aligne sur
+   * l'encoche visée (world/workStance.ts, `strikeOffset`). Vers le haut et le bas (`down`, `up`, px) : à côté de la main, quel que soit
+   * l'outil ; de côté, la main de l'image d'impact plus la portée de l'outil (de la main au tranchant : `length` − `grip` d'items.json)
+   * × `reach`, la part de l'outil vue en long à l'impact (1 : couché à l'horizontale ; moins : il fuit en raccourci, levé ou en biais).
+   * Absent : la main de l'image d'impact, plus toute la portée de côté.
    */
-  strike: z.strictObject({ down: px, up: px, right: px }).optional(),
+  strike: z.strictObject({ down: px, up: px, reach: z.number().min(0).max(1) }).optional(),
   poses: z.strictObject({ down: z.array(PoseSchema), up: z.array(PoseSchema), right: z.array(PoseSchema) }),
   /**
    * Le temps de chaque image d'un geste de travail (docs/CONCEPTION.md, « Le travail ») : `arm` (armer), `hold` (le temps en haut),

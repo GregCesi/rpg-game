@@ -4,6 +4,7 @@
 //   - de la place jusqu'au panneau de la route de la ville (zone route-de-la-ville), qu'il lit (E : dialogue signpost-town) ;
 //   - au bord du monde, à l'est, il ne passe pas ;
 //   - la page rechargée, la partie le retrouve à sa place (même zone, mêmes pieds) ;
+//   - la petite carte suit la case de Xéros, un clic sur elle change son cran (capture .art-preview/petite-carte-jeu.png) ;
 //   - chaque passage de bord est mesuré (la scène qui redémarre sur la voisine) ; puis, dans la forêt profonde (la zone la plus
 //     chargée), le temps d'une image, Xéros immobile puis en marche. Les mesures sont dites à la fin.
 // Écrit aussi .art-preview/monde.png (tools/world-preview.ts). Usage : npm run test:monde.
@@ -125,6 +126,9 @@ await playtest('monde', async ({ page, errors, load }) => {
         let away = 0;
         let best = Infinity;
         let stale = 0;
+        // le plus petit pas obtenu d'un appui bref (sous la charge, une image d'appui fait plusieurs pas de la physique : un joueur ne
+        // s'approche pas plus près que la moitié de ce pas ; la tolérance demandée ne descend jamais sous elle)
+        let minMove = Infinity;
         for (;;) {
           await frame();
           const p = at();
@@ -138,12 +142,14 @@ await playtest('monde', async ({ page, errors, load }) => {
           away = 0;
           const dx = wx - p.wx;
           const dy = wy - p.wy;
-          if (Math.abs(dx) <= tol && Math.abs(dy) <= tol) return (hold([]), { ok: true, p });
+          // dans la maison, la précision demandée (passer une porte) ; dehors, jamais plus près que la moitié d'un pas d'image
+          const near = minMove === Infinity || !start.zone ? tol : Math.max(tol, minMove / 2);
+          if (Math.abs(dx) <= near && Math.abs(dy) <= near) return (hold([]), { ok: true, p });
           const dist = Math.abs(dx) + Math.abs(dy);
           if (dist < best - 1) (best = dist), (stale = 0);
           else if (++stale > 1500) return (hold([]), { ok: false, p, why: `plus de progrès depuis 1500 images (au plus près : ${best.toFixed(1)} px)` });
-          if (axis === 'x' && Math.abs(dx) <= tol) axis = 'y';
-          if (axis === 'y' && Math.abs(dy) <= tol) axis = 'x';
+          if (axis === 'x' && Math.abs(dx) <= near) axis = 'y';
+          if (axis === 'y' && Math.abs(dy) <= near) axis = 'x';
           const dir = axis === 'x' ? (dx > 0 ? 'KeyD' : 'KeyA') : dy > 0 ? 'KeyS' : 'KeyW';
           const d = axis === 'x' ? Math.abs(dx) : Math.abs(dy);
           if (d < 12) {
@@ -153,6 +159,9 @@ await playtest('monde', async ({ page, errors, load }) => {
             await steps(2);
             hold([]);
             await steps(3);
+            const q = at();
+            const moved = q ? Math.hypot(q.wx - p.wx, q.wy - p.wy) : 0;
+            if (moved > 0.5) minMove = Math.min(minMove, moved);
           } else hold(tol < 6 || d < 24 ? [dir] : ['ShiftLeft', dir]);
           // buté sur un coin (un piquet de clôture, l'angle d'un mur) : un petit pas de côté, d'un côté puis de l'autre, et on reprend ;
           // bloqué pour de bon : des centaines d'images sans bouger (et non une durée)
@@ -190,15 +199,20 @@ await playtest('monde', async ({ page, errors, load }) => {
       const S = 4;
       // les portes fermées de la maison (les portes intérieures) ne barrent pas le chemin : Xéros les ouvre en route (E)
       const doors = m.builds.filter((b: any) => b.zone && /door$/.test(b.piece.piece.prop ?? '')).map((b: any) => b.zone);
-      const free = (x: number, y: number) => m.areaFree({ left: x - 5, top: y - 8, right: x + 5, bottom: y }, [], doors);
+      // dans la maison, comme un joueur, par le milieu des passages : 2 px de marge autour du corps quand il y a la place (une porte de
+      // 90 cm laisse 18 px à un corps de 10 : collé à une huisserie, le moindre écart sous la charge l'y arrête) ; sinon au plus juste
+      let margin = w.interior ? 2 : 0;
+      const free = (x: number, y: number) => m.areaFree({ left: x - 5 - margin, top: y - 8 - margin, right: x + 5 + margin, bottom: y + margin }, [], doors);
       const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
       const goal = to
         ? (x: number, y: number) => Math.abs(x * S - to.x) <= S / 2 && Math.abs(y * S - to.y) <= S / 2
         : (x: number, y: number) => Math.abs(x * S - door.x) <= S && Math.abs(y * S - door.y) <= S;
       const prev = new Map<string, string>();
+      let end: number[] | undefined;
+      const search = () => {
+      prev.clear();
       const q = [start];
       prev.set(start.join(), '');
-      let end: number[] | undefined;
       while (q.length) {
         const [x, y] = q.shift()!;
         if (goal(x, y)) {
@@ -211,6 +225,12 @@ await playtest('monde', async ({ page, errors, load }) => {
           prev.set(n.join(), `${x},${y}`);
           q.push(n);
         }
+      }
+      };
+      search();
+      if (!end) {
+        margin = 0;
+        search();
       }
       const out: { x: number; y: number }[] = [];
       for (let k = end?.join(); k; k = prev.get(k)) {
@@ -236,6 +256,8 @@ await playtest('monde', async ({ page, errors, load }) => {
   for (const c of route.slice(1)) {
     const now = await where();
     const axis = Math.abs(c.x - now.x) > Math.abs(c.y - now.y) ? 'x' : 'y';
+    // à un pas de la grille de la route (4 px) : sous la charge, une image longue contient plusieurs pas de la physique et le plus petit
+    // déplacement (une image d'appui, environ 4 px en marchant) sauterait par-dessus une fenêtre plus étroite (chantier « maison-2 »)
     await goTo(c.x, c.y, axis, 2);
     if (!c.open) continue;
     // devant une porte intérieure fermée : tourné vers elle, il l'ouvre (E) ; elle ne barre plus le passage
@@ -299,6 +321,33 @@ await playtest('monde', async ({ page, errors, load }) => {
   assert.ok(Math.hypot(p.wx - place.x, p.wy - place.y) < 15 * 20, `sur la place (${p.wx}, ${p.wy})`);
   const zonesSeen = await page.evaluate(() => (window as any).crossings.map((c: any) => c.from));
   assert.deepEqual(zonesSeen, ['ferme -> chemin', 'chemin -> village'], 'ferme, chemin, village : deux bords passés');
+  // la petite carte (src/systems/minimap.ts) : centrée sur la case du monde de Xéros, passée de zone en zone sans couture
+  const cellOnMap = () => page.evaluate(() => (window as any).game.scene.getScene('hud').minimapText as string);
+  const cellHere = async () => {
+    const q = await where();
+    return `${Math.floor(q.wx / TILE)},${Math.floor(q.wy / TILE)}`;
+  };
+  await until(async () => (await cellOnMap()).startsWith((await cellHere()) + ' '), 3000, 'la petite carte sur la case de Xéros au village');
+  // à regarder : la petite carte en jeu, sur la place du village (.art-preview/petite-carte-jeu.png)
+  await page.screenshot({ path: '.art-preview/petite-carte-jeu.png' });
+  // un clic sur la carte (un clic d'interface : ni une main ni un coup) passe au cran suivant ; trois clics, retour au premier
+  const step = async () => (await cellOnMap()).split(' ')[2];
+  const first = await step();
+  const clickMap = async () => {
+    const box = await page.evaluate(() => {
+      const r = (window as any).game.canvas.getBoundingClientRect();
+      return { x: r.left, y: r.top, k: r.width / 640 };
+    });
+    await page.mouse.click(box.x + 30 * box.k, box.y + 30 * box.k);
+  };
+  for (let k = 1; k <= 3; k++) {
+    await clickMap();
+    const want = `${((Number(first.split('/')[0]) - 1 + k) % Number(first.split('/')[1])) + 1}/${first.split('/')[1]}`;
+    await until(async () => (await step()) === want, 3000, `la petite carte au cran ${want} après ${k} clic(s)`);
+  }
+  assert.equal((await where()).mode, 'play', 'un clic sur la petite carte ne lance aucun geste');
+  // la souris quitte le canevas (vers le panneau ?dieu) : plus de curseur, Xéros vise devant lui, comme avant les clics
+  await page.evaluate(() => (window as any).game.canvas.dispatchEvent(new MouseEvent('mouseleave')));
 
   // 3 bis. vers le nord, comme un joueur : de la place, droit au nord jusqu'à la zone voisine, puis retour à la place (le bord nord
   // arrêtait Xéros : le passage testait le bas de ses pieds, que le corps empêchait d'atteindre le bord ; tools/test-zones.ts)
