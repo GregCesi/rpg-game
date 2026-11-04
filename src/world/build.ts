@@ -324,13 +324,27 @@ export function depthsOf(pieces: readonly BuildPiece[], caps?: ReadonlyMap<numbe
   return out;
 }
 
-/** Une pièce bloque Xéros : un objet du monde qui a une collision (ou une pièce de bois), posé sous BUILD.high. */
+/**
+ * Une pièce a un corps : un objet du monde qui a une collision (ou une pièce de bois), sauf un dessus qui se marche (la planche du
+ * plancher, la dalle, la marche : on le franchit par la règle du pas, world/decks.ts). Son corps ne bloque qu'à sa hauteur, de sa base
+ * à son dessus (`sliceOf`, `sliceHits`) : le lit de l'étage ne barre pas la salle dessous (chantier « maison du coq »).
+ */
 export function blocks(p: BuildPlaced): boolean {
-  if (p.z >= BUILD.high) return false;
-  if ('wood' in p.piece) return true;
   if ('item' in p.piece) return false;
+  if ('wood' in p.piece) return !(p.piece.wood.axis !== 'up' && lookDef(p.piece.wood.size, lookOf(p.piece.wood)).walk);
   const def = props[p.piece.prop];
-  return !!(def.body || def.bodies) && def.layer !== 'floor';
+  return !!(def.body || def.bodies) && def.layer !== 'floor' && !def.walk;
+}
+
+/** La tranche de hauteur où une pièce bloque (cm) : de sa base à son dessus. */
+export function sliceOf(p: BuildPlaced): [number, number] {
+  const b = solidOf(p);
+  return [b.z, b.z + b.h];
+}
+
+/** Une tranche [base, dessus] croise-t-elle le corps de qui a les pieds à `z` (cm) et `height` de haut ? */
+export function sliceHits(slice: readonly [number, number] | undefined, z: number, height = BUILD.head): boolean {
+  return !slice || (slice[0] < z + height && z < slice[1]);
 }
 
 /** Une pièce s'efface au-dessus de Xéros : sa base au-dessus de sa tête (BUILD.head) et son emprise, à `margin` cm près, sur ses pieds. */

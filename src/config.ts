@@ -256,6 +256,13 @@ export const INTERIOR = {
   band: 40,
   south: 60,
   passage: 60,
+  /**
+   * Un étage (chantier « maison du coq », CONCEPTION « L'étage ») : les dessus qui se marchent à une même hauteur font un plancher
+   * s'ils couvrent au moins `storey` cm² (4 m² ; les marches de l'escalier n'en font pas un) ; les trous du plancher (la trémie) se
+   * cherchent par bandes de `holeCell` cm.
+   */
+  storey: 40000,
+  holeCell: 10,
   margin: { side: 32, top: 128, bottom: 32 },
   ambient: 0.22,
   dark: 0.36,

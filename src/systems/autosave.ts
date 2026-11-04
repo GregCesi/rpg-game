@@ -33,6 +33,7 @@ export class AutoSave {
     const arrival = exit && maps[exit.to]?.spawns[exit.spawn];
     // validate.ts garantit la carte et le point d'arrivée ; sans eux, on garde la position telle quelle
     if (exit && arrival) return { map: exit.to, x: arrival.x, y: arrival.y, facing: arrival.facing ?? 'down' };
-    return { map: this.map.id, x: Math.round(x), y: Math.round(y), facing };
+    const z = this.player.mobility.z;
+    return { map: this.map.id, x: Math.round(x), y: Math.round(y), facing, ...(z > 0 ? { z: Math.round(z) } : {}) };
   }
 }

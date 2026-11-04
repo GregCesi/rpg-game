@@ -15,7 +15,7 @@ import { hasRelief, worldHeight } from '../world/terrainView';
  * Un objet de la bande d'une voisine (`liftMap` : sa carte et son décalage) prend la hauteur de sa carte.
  */
 export class LiftPass {
-  private readonly applied = new WeakMap<Phaser.GameObjects.GameObject, { x: number; y: number; lift: number; base: number; off?: number }>();
+  private readonly applied = new WeakMap<Phaser.GameObjects.GameObject, { x: number; y: number; lift: number; base: number; off?: number; z?: number }>();
   private readonly onPost = () => this.update();
   readonly active: boolean;
 
@@ -23,8 +23,10 @@ export class LiftPass {
     private readonly scene: Phaser.Scene,
     private readonly def: MapData,
     neighbors: boolean,
+    /** Une carte où des choses ont leur hauteur à elles (un intérieur : une maison à étages). */
+    own = false,
   ) {
-    this.active = hasRelief(def) || neighbors;
+    this.active = hasRelief(def) || neighbors || own;
     if (!this.active) return;
     scene.events.on('postupdate', this.onPost);
     scene.events.once('shutdown', () => scene.events.off('postupdate', this.onPost));
@@ -52,13 +54,16 @@ export class LiftPass {
     const h = o.height || 1;
     const ax = o.x + (0.5 - (o.originX ?? 0.5)) * w;
     const ay = d >= 0 && d < DEPTH.ambient ? d : o.y + (h - base) * (o.scaleY ?? 1);
-    if (st && st.x === ax && st.y === ay && o.displayOriginY === st.base + st.lift) return;
+    // ce qui porte sa hauteur à lui (Xéros dans une maison à étages, ce qu'il tient, ce qui est posé à l'étage : `z` en cm, sur lui ou
+    // sur celui qu'il suit, `liftOf`), sinon la hauteur du sol sous lui
+    const carrierZ = ((obj.getData?.('liftOf') as Phaser.GameObjects.GameObject | undefined) ?? obj).getData?.('z') as number | undefined;
+    if (st && st.x === ax && st.y === ay && st.z === carrierZ && o.displayOriginY === st.base + st.lift) return;
     const band = obj.getData?.('liftMap') as { def: MapData; dx: number; dy: number } | undefined;
-    const lift = band ? Math.round(worldHeight(band.def, ax - band.dx, ay - band.dy) / CM_PER_PX) : this.liftAt(ax, ay);
+    const lift = typeof carrierZ === 'number' ? Math.round(carrierZ / CM_PER_PX) : band ? Math.round(worldHeight(band.def, ax - band.dx, ay - band.dy) / CM_PER_PX) : this.liftAt(ax, ay);
     const body = (obj as Actor).body as Phaser.Physics.Arcade.Body | undefined;
     const dynamic = body instanceof Phaser.Physics.Arcade.Body ? body : undefined;
     const off = dynamic ? (st?.off ?? dynamic.offset.y - (st?.lift ?? 0)) : undefined;
-    const next = { x: ax, y: ay, lift, base, off };
+    const next = { x: ax, y: ay, lift, base, off, z: carrierZ };
     st = next;
     this.applied.set(obj, st);
     o.setDisplayOrigin(o.displayOriginX, base + lift);

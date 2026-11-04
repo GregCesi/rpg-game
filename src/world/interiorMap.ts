@@ -9,7 +9,7 @@ import type { Facing, MapData } from '../content/types';
 import { maps } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPiece, Joint } from '../state';
-import { BACK, interiorId, type Building, type Rect, type Side, type Window } from './interior';
+import { BACK, interiorId, type Building, type Rect, type Side, type Storey, type Window } from './interior';
 
 /** Une sortie de l'intérieur : la zone de passage (repère de l'intérieur), la direction de Xéros qui sort, où il arrive dehors. */
 interface InteriorExit {
@@ -53,6 +53,12 @@ export interface InteriorMap {
   lights: InteriorLight[];
   /** Où l'on arrive par chaque entrée (pieds, px), par identifiant de porte ou par rang. */
   arrivals: { x: number; y: number; facing: Facing }[];
+  /**
+   * Ses niveaux, s'il en a plus d'un (repère de l'intérieur ; le rez-de-chaussée d'abord, celui des champs ci-dessus), avec leurs
+   * taches de lumière : chantier « maison du coq », CONCEPTION « L'étage ». `shell` est alors la réunion des pièces de tous les
+   * niveaux ; systems/storeys.ts n'en montre qu'un à la fois.
+   */
+  storeys?: (Storey & { lights: InteriorLight[] })[];
 }
 
 /** Un nombre de cm ramené au cran de la grille du mode construction en dessous. */
@@ -99,7 +105,9 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
   const shift = { x: m.side * CM_PER_PX - floorGrid(b.room.x), y: m.top * CM_PER_PX - floorGrid(b.room.y) };
   const room = moved(b.room, shift);
   const south = b.south.map((r) => moved(r, shift));
-  const shell = b.shell.map((p) => ({ ...p, x: p.x + shift.x, y: p.y + shift.y }));
+  const at = (p: BuildPiece): BuildPiece => ({ ...p, x: p.x + shift.x, y: p.y + shift.y });
+  const seenIds = new Set<number>();
+  const shell = (b.storeys ? b.storeys.flatMap((st) => st.shell) : b.shell).filter((p) => !seenIds.has(p.id) && !!seenIds.add(p.id)).map(at);
   const ids = new Set(shell.map((p) => p.id));
   // la carte : la pièce et ses marges, la coupe du mur sud comprise
   const bottom = Math.max(room.y + room.d, ...south.map((r) => r.y + r.d)) / CM_PER_PX + m.bottom;
@@ -138,6 +146,23 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
   const objects = (hostDef?.objects ?? []).filter((o) => o.inside && inRoom(o.x, o.y)).map(({ inside: _, ...o }) => ({ ...o, x: o.x + dx, y: o.y + dy }));
   // les tas de bois posés dedans (les quartiers du cagibi) : ils naissent dans la partie à la première visite (world/mapPlans.ts)
   const piles = (hostDef?.piles ?? []).filter((q) => q.inside && inRoom(q.x, q.y)).map(({ inside: _, ...q }) => ({ ...q, x: q.x + dx, y: q.y + dy }));
+  const along = (w: Window) => ({ ...w, span: w.span.map((v) => v + (w.side === 'north' || w.side === 'south' ? shift.x : shift.y)) as [number, number] });
+  const storeys = b.storeys?.map((st, k) => {
+    const sroom = moved(st.room, shift);
+    const swin = st.windows.map(along);
+    const open = [...(k === 0 ? openings.filter((o) => o.kind === 'door') : []), ...swin.filter((w) => w.open).map((w) => ({ kind: 'window' as const, id: w.id, side: w.side, span: w.span }))];
+    return {
+      z: st.z,
+      room: sroom,
+      rooms: st.rooms.map((r) => moved(r, shift)),
+      shell: st.shell.map(at),
+      south: st.south.map((r) => moved(r, shift)),
+      southPieces: st.southPieces.map(at),
+      windows: swin,
+      holes: st.holes.map((r) => moved(r, shift)),
+      lights: lightsOf(sroom, open),
+    };
+  });
   const id = interiorId(host, b.key);
   const def: MapData = {
     id,
@@ -171,7 +196,8 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
     southPieces: b.southPieces.map((p) => ({ ...p, x: p.x + shift.x, y: p.y + shift.y })),
     exits,
     windows,
-    lights: lightsOf(room, openings),
+    lights: lightsOf(storeys ? storeys[0].room : room, openings),
     arrivals,
+    ...(storeys ? { storeys } : {}),
   };
 }

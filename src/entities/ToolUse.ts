@@ -62,10 +62,10 @@ export class ToolUse {
     private readonly scene: Phaser.Scene,
     private readonly actor: Actor,
   ) {
-    this.tool = scene.add.image(0, 0, '__DEFAULT').setVisible(false);
-    this.smear = scene.add.image(0, 0, '__DEFAULT').setVisible(false);
-    this.spark = scene.add.image(0, 0, '__DEFAULT').setVisible(false);
-    this.grip = scene.add.image(0, 0, '__DEFAULT').setVisible(false);
+    this.tool = scene.add.image(0, 0, '__DEFAULT').setVisible(false).setData('liftOf', actor);
+    this.smear = scene.add.image(0, 0, '__DEFAULT').setVisible(false).setData('liftOf', actor);
+    this.spark = scene.add.image(0, 0, '__DEFAULT').setVisible(false).setData('liftOf', actor);
+    this.grip = scene.add.image(0, 0, '__DEFAULT').setVisible(false).setData('liftOf', actor);
     actor.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => (this.fightOpts ? this.placeFight() : this.place()));
     actor.once(Phaser.GameObjects.Events.DESTROY, () => [this.tool, this.smear, this.spark, this.grip].forEach((o) => o.destroy()));
   }

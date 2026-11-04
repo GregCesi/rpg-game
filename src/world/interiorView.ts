@@ -10,7 +10,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import { buildLook } from './buildView';
 import type { GameMap } from './GameMap';
 import { ambientOf, lightsOf, type InteriorLight, type InteriorMap } from './interiorMap';
-import type { Rect } from './interior';
+import type { Rect, Window } from './interior';
 
 /** Les angles de la tache de lumière (l'image `sunpatch` a son grand côté en bas, contre la fenêtre sud). */
 const ANGLE = { south: 0, north: 180, east: -90, west: 90 } as const;
@@ -36,6 +36,11 @@ export class InteriorView {
   /** Les taches de lumière en ce moment (le test les lit). */
   lights: InteriorLight[] = [];
   private glows: Phaser.GameObjects.Image[] = [];
+  /** Les coupes du mur sud de chaque niveau (une maison à étages : systems/storeys.ts n'en montre qu'une). */
+  readonly cuts: Phaser.GameObjects.Graphics[][] = [];
+  /** Le niveau dont on montre la lumière (0 sans étage). */
+  private storey = 0;
+  private shutters: { id: number; open: boolean }[] = [];
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -57,20 +62,38 @@ export class InteriorView {
     // la coupe du mur sud, de la teinte de ses pièces, et sa collision
     const base = southPieces.length ? meanColor(scene, buildLook(scene, southPieces[0]).key, buildLook(scene, southPieces[0]).frame) : new Phaser.Display.Color(0x6a, 0x4d, 0x34);
     const tone = (k: number) => Phaser.Display.Color.GetColor(base.red * k, base.green * k, base.blue * k);
-    for (const r of interior.south) this.cut(r, tone);
-    for (const r of interior.south) map.addBlock(r);
-    this.refresh(interior.windows.map((w) => ({ id: w.id, open: w.open })));
+    const storeys = interior.storeys ?? [{ z: 0, south: interior.south }];
+    storeys.forEach((st, k) => {
+      // chaque niveau, sa coupe à la hauteur de son plancher (soulevée de z / 5 px), et sa collision à sa hauteur seulement
+      const top = storeys[k + 1]?.z ?? Infinity;
+      this.cuts.push(st.south.map((r) => this.cut(r, tone, st.z)));
+      for (const r of st.south) {
+        const zone = map.addBlock(r);
+        if (interior.storeys) zone.setData('slice', [st.z, top]);
+      }
+    });
+    this.shutters = (interior.storeys?.flatMap((st) => st.windows) ?? interior.windows).map((w) => ({ id: w.id, open: w.open }));
+    this.refresh(this.shutters);
+  }
+
+  /** Le niveau où est Xéros : sa lumière et sa pénombre (systems/storeys.ts). */
+  setStorey(k: number): void {
+    if (k === this.storey) return;
+    this.storey = k;
+    this.refresh([]);
   }
 
   /** Une coupe de mur : le dessus tranché, son bord du dedans éclairé, son bord du dehors dans l'ombre. */
-  private cut(r: Rect, tone: (k: number) => number): void {
+  private cut(r: Rect, tone: (k: number) => number, z = 0): Phaser.GameObjects.Graphics {
     const x = Math.round(r.x / CM_PER_PX);
+    const lift = Math.round(z / CM_PER_PX);
     const y = Math.round(r.y / CM_PER_PX);
     const w = Math.max(1, Math.round((r.x + r.w) / CM_PER_PX) - x);
     const h = Math.max(2, Math.round((r.y + r.d) / CM_PER_PX) - y);
-    this.scene.add
+    return this.scene.add
       .graphics()
-      .setDepth(y + h)
+      .setY(-lift)
+      .setDepth(y + h + z / 100000)
       .fillStyle(tone(0.55), 1)
       .fillRect(x, y, w, h)
       .fillStyle(tone(0.85), 1)
@@ -85,11 +108,19 @@ export class InteriorView {
    */
   refresh(state: readonly { id: number; open: boolean }[]): void {
     const it = this.interior;
-    const windows = it.windows.map((w) => ({ ...w, open: state.find((s) => s.id === w.id)?.open ?? w.open }));
+    for (const s of state) {
+      const known = this.shutters.find((q) => q.id === s.id);
+      if (known) known.open = s.open;
+      else this.shutters.push({ ...s });
+    }
+    // dans une maison à étages, la lumière et la pénombre du niveau où est Xéros : ses fenêtres, et les portes du rez-de-chaussée
+    const st = it.storeys?.[this.storey];
+    const windows = (st?.windows ?? it.windows).map((w: Window) => ({ ...w, open: this.shutters.find((s) => s.id === w.id)?.open ?? w.open }));
     this.map.setAmbient(ambientOf(windows));
-    const doors = it.lights.filter((l) => l.kind === 'door');
+    const doors = this.storey === 0 ? it.lights.filter((l) => l.kind === 'door') : [];
     const open = windows.filter((w) => w.open).map((w) => ({ kind: 'window' as const, id: w.id, side: w.side, span: w.span }));
-    this.lights = [...doors, ...lightsOf(it.room, open)];
+    const lift = Math.round((st?.z ?? 0) / CM_PER_PX);
+    this.lights = [...doors, ...lightsOf(st?.room ?? it.room, open)].map((l) => ({ ...l, y: l.y - lift }));
     for (const g of this.glows) g.destroy();
     this.glows = this.lights.map((l) => {
       const k = INTERIOR.light[l.kind] * Math.sqrt(l.span / 100);

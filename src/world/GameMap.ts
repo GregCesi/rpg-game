@@ -1,3 +1,4 @@
+import { deckField, NO_DECKS, type DeckField } from './decks';
 import Phaser from 'phaser';
 import { viewImage } from '../content/views';
 import { DEPTH, GLOW, INTERIOR, RELIEF, SHADOW, TILE } from '../config';
@@ -15,7 +16,7 @@ import type { Natural, WoodPiece } from '../content/types';
 import { woodDef, woodOf } from './woodPiece';
 import { agedKey, lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
-import { blocks, boxOf, depthsOf, overlaps, solidOf, supportsOf, type BuildPiece } from './build';
+import { blocks, boxOf, depthsOf, overlaps, sliceHits, sliceOf, solidOf, supportsOf, type BuildPiece } from './build';
 import type { BuildPlaced } from '../content/types';
 import { lookDef, lookOf as woodLookOf } from './woodShape';
 import { buildLook } from './buildView';
@@ -323,6 +324,8 @@ export class GameMap {
   readonly piles: PlacedPile[] = [];
   /** Les pièces posées en mode construction. */
   readonly builds: PlacedBuild[] = [];
+  /** Les dessus qui se marchent parmi les pièces posées (world/decks.ts), refaits à chaque pose ou retrait (`sortBuilds`). */
+  decks: DeckField = NO_DECKS;
   /** Les croisements des mi-bois, posés par-dessus leurs deux pièces (redessinés à chaque changement). */
   private overlays: Phaser.GameObjects.Image[] = [];
   /**
@@ -467,8 +470,9 @@ export class GameMap {
    * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante ni dans l'eau profonde (rien ne s'y pose),
    * pas à cheval sur une marche du relief (`RELIEF.straddle`), sur aucune collision d'objet ni sur l'un des corps `others` (les
    * personnages). Les collisions de `ignore` ne comptent pas (le tas qui grandit). `overWater` : l'eau ne compte pas (ce qui vole au-dessus).
+   * `z` : la hauteur où l'on pose (cm, au sol par défaut) ; un corps de pièce posée ne compte qu'à sa hauteur (`slice`).
    */
-  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = [], ignore: readonly Phaser.GameObjects.GameObject[] = [], opts: { overWater?: boolean } = {}): boolean {
+  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = [], ignore: readonly Phaser.GameObjects.GameObject[] = [], opts: { overWater?: boolean; z?: number } = {}): boolean {
     if (b.left < 0 || b.top < 0 || b.right > this.width || b.bottom > this.height) return false;
     for (let ty = Math.floor(b.top / TILE); ty <= Math.floor((b.bottom - 0.01) / TILE); ty++) {
       for (let tx = Math.floor(b.left / TILE); tx <= Math.floor((b.right - 0.01) / TILE); tx++) {
@@ -482,7 +486,7 @@ export class GameMap {
     const near = this.scene.physics.overlapRect(b.left - 1, b.top - 1, b.right - b.left + 2, b.bottom - b.top + 2, false, true) as Phaser.Physics.Arcade.StaticBody[];
     const zones = near
       .map((body) => body.gameObject as Phaser.GameObjects.Zone)
-      .filter((z) => z && this.obstacles.contains(z) && !ignore.includes(z));
+      .filter((z) => z && this.obstacles.contains(z) && !ignore.includes(z) && sliceHits(z.getData('slice'), opts.z ?? 0));
     if (zones.some((z) => overlaps(z.x - z.width / 2, z.y - z.height / 2, z.x + z.width / 2, z.y + z.height / 2))) return false;
     return !others.some((o) => overlaps(o.left, o.top, o.right, o.bottom));
   }
@@ -517,7 +521,7 @@ export class GameMap {
     let soft = false;
     for (const body of near) {
       const z = body.gameObject as Phaser.GameObjects.Zone;
-      if (!z || !this.obstacles.contains(z)) continue;
+      if (!z || !this.obstacles.contains(z) || !sliceHits(z.getData('slice'), 0)) continue;
       if (x < z.x - z.width / 2 || x >= z.x + z.width / 2 || y < z.y - z.height / 2 || y >= z.y + z.height / 2) continue;
       if (!z.getData('soft')) return 'solid';
       soft = true;
@@ -760,7 +764,7 @@ export class GameMap {
 
   /**
    * Affiche une pièce posée en mode construction : son image (relevée de sa hauteur), et sa collision, son emprise au sol en vraie
-   * grandeur, si elle bloque (posée sous BUILD.high). Appeler `sortBuilds` ensuite pour l'ordre d'affichage.
+   * grandeur, si elle a un corps (`blocks`), avec sa tranche de hauteur (`slice` : il ne bloque qu'à sa hauteur). Appeler `sortBuilds` ensuite pour l'ordre d'affichage.
    */
   placeBuild(piece: BuildPiece, fixed = false): PlacedBuild {
     const look = buildLook(this.scene, piece);
@@ -771,7 +775,7 @@ export class GameMap {
     let zone: Phaser.GameObjects.Zone | undefined;
     if (blocks(piece)) {
       const b = boxOf(piece);
-      zone = this.addObstacle((b.x + b.w / 2) / CM_PER_PX, (b.y + b.d / 2) / CM_PER_PX, b.w / CM_PER_PX, b.d / CM_PER_PX);
+      zone = this.addObstacle((b.x + b.w / 2) / CM_PER_PX, (b.y + b.d / 2) / CM_PER_PX, b.w / CM_PER_PX, b.d / CM_PER_PX).setData('slice', sliceOf(piece));
     }
     const placed: PlacedBuild = { piece, image, zone, ...(fixed ? { fixed } : {}) };
     if (def) placed.parts = this.buildParts(def, piece.view ?? 0, image);
@@ -866,6 +870,7 @@ export class GameMap {
       b.image.setPosition(look.x, look.y);
     }
     this.buildsVersion++;
+    this.decks = deckField(this.builds.map((b) => b.piece));
     const joints = [...this.shellJoints, ...this.changes.joints];
     this.drawWalls();
     drawJoints(this.scene, this.builds, joints);

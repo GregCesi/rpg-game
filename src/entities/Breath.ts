@@ -11,7 +11,7 @@ export class Breath {
   private readonly puff: Phaser.GameObjects.Sprite;
 
   constructor(scene: Phaser.Scene, private readonly actor: Actor) {
-    this.puff = scene.add.sprite(0, 0, 'fx-breath').setOrigin(0).setVisible(false);
+    this.puff = scene.add.sprite(0, 0, 'fx-breath').setOrigin(0).setVisible(false).setData('liftOf', actor);
     actor.once(Phaser.GameObjects.Events.DESTROY, () => this.puff.destroy());
   }
 

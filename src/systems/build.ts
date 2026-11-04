@@ -13,7 +13,7 @@ import type { BuildPlaced, BuildRef, JointType, Natural, WoodAge } from '../cont
 import type { BuildCommand, BuildStatus } from '../events';
 import type { Player } from '../entities/Player';
 import { addBuildPieces, addJoints, game, mapState, moveBuildPiece, removeBuildPieces, removeJoints, type BuildPiece, type Joint } from '../state';
-import { aimAt, aimOnGrid, centerOnFace, supportAt, solidOf, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, withAge, type Area, type Box3 } from '../world/build';
+import { aimAt, aimOnGrid, centerOnFace, supportAt, solidOf, boxOf, carriedBy, overlaps, sliceHits, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, withAge, type Area, type Box3 } from '../world/build';
 import { buildLook } from '../world/buildView';
 import { viewDrawn } from '../content/views';
 import { alignOnWall } from '../world/wallRuns';
@@ -375,7 +375,7 @@ export class BuildSystem {
       if (b.x < 0 || b.y < 0 || b.x + b.w > W || b.y + b.d > H) return 'Hors de la carte.';
       if (room && (b.x < room.x || b.y < room.y || b.x + b.w > room.x + room.w || b.y + b.d > room.y + room.d)) return 'Hors de la pièce.';
       if (!isRoof(p) && others.some((o) => intersects(o, solidOf(p)))) return 'Une autre pièce est déjà là.';
-      if (b.z < BUILD.high && overlaps(b, feet)) return 'Xéros est là.';
+      if (sliceHits([b.z, b.z + b.h], this.player.mobility.z) && overlaps(b, feet)) return 'Xéros est là.';
       // le relief : une pièce au sol tient sur un seul niveau ; dans l'eau profonde, rien ne se pose
       const box = { left: b.x / CM_PER_PX, top: b.y / CM_PER_PX, right: (b.x + b.w) / CM_PER_PX, bottom: (b.y + b.d) / CM_PER_PX };
       if (b.z === 0 && !this.map.level(box)) return 'À cheval sur une marche.';

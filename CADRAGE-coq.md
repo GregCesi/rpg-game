@@ -998,3 +998,11 @@ Champs optionnels : **une ancienne sauvegarde se lit telle quelle**, `SAVE_VERSI
 30. **Le dallage** : dalle par dalle (environ 230 poses, de vraies pièces, comme le plancher planche par planche), ou un morceau de
     dallage de toute surface qui consomme ses dalles, comme le mur ? *Recommandation : dalle par dalle* : rien de nouveau dans le moteur,
     et chaque dalle reste un objet qu'on taille, porte et pose ; le scénario de montage est plus long, il va dans les scénarios lourds.
+
+### 12.14 Les réponses de Grégoire (4 novembre) : la section 12 est validée
+
+- **28 : oui**, les murs de l'étage montent à **550 cm**, en assises toutes égales de 30 cm (l'arase à 530, la sablière de 20 cm).
+- **29 : oui**, **un pan de mur = une assise de 30 cm**, de toute longueur.
+- **30 : non au dalle par dalle.** Par cohérence avec la réponse 23, **le dallage se pose par pans qui consomment leurs dalles** (un pan
+  de dallage = une rangée de dalles de 40 cm, de toute longueur, comme le mur). La dalle seule reste posable une à une, pour les
+  retouches.

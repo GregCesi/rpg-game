@@ -418,6 +418,11 @@ const WoodLookDefSchema = z.strictObject({
   ns: WoodNsSchema,
   /** Debout (poteau) : absent, cet aspect ne se dresse pas. */
   up: WoodUpSchema.optional(),
+  /**
+   * Couché, son dessus se marche (la planche du plancher : chantier « maison du coq », CONCEPTION « L'étage ») : posé, il porte
+   * Xéros à sa hauteur, sans corps (world/decks.ts).
+   */
+  walk: z.literal(true).optional(),
 });
 
 /**
@@ -773,6 +778,12 @@ export const PropDefSchema = z.strictObject({
    * (world/wallRuns.ts, world/walls.ts) ; deux tronçons à angle droit forment un angle ; un tronçon qui s'arrête montre une tête.
    */
   wall: z.enum(['rough', 'dressed']).optional(),
+  /**
+   * Son dessus se marche (la dalle de sol, la marche de pierre : chantier « maison du coq », CONCEPTION « L'étage ») : posé, il
+   * porte Xéros à la hauteur de son dessus (world/decks.ts : le plus haut dessus qu'il atteint d'un pas). Il n'a pas de corps : on le
+   * franchit par la règle du pas (`step`, `drop` de mobility.json), jamais en s'y heurtant (validate.ts).
+   */
+  walk: z.literal(true).optional(),
   /**
    * Pan de toit (le pan de toit en planches) : le côté de sa rive basse dans la vue 0 (`south`) ; un quart de tour de plus à chaque
    * vue (ouest, nord, est). En mode construction, il se pose sur ce qui porte sa rive basse et ne se heurte pas à ce qui est sous sa
