@@ -13,6 +13,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildPlan, BuildRef, JointType, WoodAge, WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { woodDims } from './woodPiece';
+import { WALL_PIECE } from './walls';
 import { lookDef, lookOf, turnedWood, upOf } from './woodShape';
 
 /** Une pièce posée en mode construction, telle que GameState la garde : son identifiant propre, et ce que dit `BuildPlaced`. */
@@ -94,7 +95,9 @@ export function sizeOf(ref: BuildRef, view = 0): Size3 {
     return { w: d.w, d: d.d, h: d.h };
   }
   const dims = 'prop' in ref ? props[ref.prop].dims : items[ref.item].dims;
-  const s = dims ? { w: dims.w, d: dims.d, h: dims.h } : ITEM_FALLBACK;
+  // un morceau de mur de toute longueur (le solin) : sa longueur réglée remplace celle de `dims`
+  const long = 'prop' in ref && ref.length && props[ref.prop].wall ? ref.length : undefined;
+  const s = dims ? { w: long ?? dims.w, d: dims.d, h: dims.h } : ITEM_FALLBACK;
   return view % 2 === 1 && viewsOf(ref) > 1 ? { w: s.d, d: s.w, h: s.h } : s;
 }
 
@@ -224,6 +227,20 @@ function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces
   const ysAt = (dx: number) => ys({ ...f, x: f.x + dx });
   const first = at(xs[0], ysAt(xs[0])[0]);
   if (!hits(first)) return first;
+  // une pièce trapue (la bande de 10 cm entre un poteau et une huisserie, chantier « maison-2 ») : la place qui tient la moins éloignée,
+  // dans un sens ou dans l'autre, de préférence encore portée à la hauteur visée (glisser hors de ce qui la porte la ferait tomber)
+  if (Math.max(f.w, f.d) < 2 * Math.min(f.w, f.d)) {
+    let best: F | undefined;
+    let cost = Infinity;
+    for (const dx of [...xs, 0]) {
+      for (const dy of [...ysAt(dx), 0]) {
+        const c = at(dx, dy);
+        const m = Math.abs(dx) + Math.abs(dy) + (z > 0 && supportAt(pieces, c) !== z ? 1000 : 0);
+        if (m < cost && !hits(c)) [best, cost] = [c, m];
+      }
+    }
+    return best ?? first;
+  }
   // la place la plus proche qui tient : d'abord en glissant le long de la pièce (un remplissage nord-sud entre ses poteaux, en y),
   // puis par tous les couples de bords
   if (f.d > f.w) {
@@ -283,8 +300,13 @@ export function withAbove(pieces: readonly BuildPiece[], id: number): BuildPiece
  * Profondeur d'affichage de chaque pièce (px) : le bord sud de son emprise au sol (comme les pieds d'un personnage), puis la hauteur
  * pour départager deux pièces au même bord sud ; une pièce est toujours dessinée après celles qui la portent (une pierre posée au
  * fond d'une dalle passe devant la dalle).
+ *
+ * `caps` (px, par identifiant) : le mur du fond d'une pièce close (`backCaps` de world/interior.ts) ne passe jamais devant ce qui est
+ * dans la pièce, quoi qui le porte (règle de Grégoire, CONCEPTION « Les intérieurs ») : une pièce plafonnée qui dépasse son plafond y
+ * est ramenée, juste derrière la face intérieure du mur, en gardant l'ordre de ce qui porte et de ce qui est porté (la profondeur
+ * relevée ne fait plus que départager, au dix-millième).
  */
-export function depthsOf(pieces: readonly BuildPiece[]): Map<number, number> {
+export function depthsOf(pieces: readonly BuildPiece[], caps?: ReadonlyMap<number, number>): Map<number, number> {
   const out = new Map<number, number>();
   const sorted = [...pieces].sort((a, b) => a.z - b.z);
   for (const p of sorted) {
@@ -292,6 +314,12 @@ export function depthsOf(pieces: readonly BuildPiece[]): Map<number, number> {
     let d = (b.y + b.d) / CM_PER_PX + b.z / 100000;
     for (const s of supportsOf(pieces, p)) d = Math.max(d, (out.get(s.id) ?? 0) + 0.001);
     out.set(p.id, d);
+  }
+  if (caps?.size) {
+    for (const [id, d] of out) {
+      const cap = caps.get(id);
+      if (cap !== undefined && d > cap) out.set(id, cap + d / 10000);
+    }
   }
   return out;
 }
@@ -485,6 +513,11 @@ export function planProblems(plan: BuildPlan): string[] {
     if ('prop' in p.piece && p.variant !== undefined && p.variant >= (props[p.piece.prop].variants ?? 1)) out.push(`${at} : tirage ${p.variant} inconnu`);
     if (p.age && !('wood' in p.piece) && !ageable(p.piece)) out.push(`${at} : un âge (${p.age}), mais ce n'est pas un objet de bois (\`aged\`)`);
     if ('wood' in p.piece && p.age) out.push(`${at} : la pièce de bois garde son âge dans \`wood.age\`, pas dans \`age\``);
+    if ('prop' in p.piece && p.piece.length !== undefined) {
+      const { grid, min } = WALL_PIECE;
+      if (!props[p.piece.prop].wall) out.push(`${at} : une longueur (${p.piece.length} cm), mais ce n'est pas un morceau de mur (\`wall\`)`);
+      else if (p.piece.length % grid || p.piece.length < min) out.push(`${at} : un morceau de mur de ${p.piece.length} cm, hors de la grille (multiple de ${grid}, au moins ${min})`);
+    }
   });
   return out;
 }

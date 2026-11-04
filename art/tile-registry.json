@@ -317,6 +317,12 @@
     "normal-snag",
     "normal-snag-top",
     "root-plate",
-    "uprooted-hole"
+    "uprooted-hole",
+    "door-frame",
+    "staves-door-head",
+    "wattle-door-head",
+    "daub-door-head",
+    "lime-door-head",
+    "inner-threshold-stone"
   ]
 }

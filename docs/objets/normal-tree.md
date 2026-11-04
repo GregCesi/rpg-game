@@ -25,7 +25,7 @@ Repris le 30 octobre 2026 (équarrissage, puis pièce de bois) : couché, l'arbr
 - Longueur utile du tronc : **5,8 m** (116 px), du bout scié jusqu'où la cime commence à s'amincir : le rondin qu'il devient.
 
 ## Masse
-- L'arbre debout et l'arbre couché : pas déplaçables, pas de masse. Le rondin de 5,8 m pèse **369 kg** : au-delà des 300 kg que
+- L'arbre debout et l'arbre couché : pas déplaçables. Masses du bilan de la récolte (validate.ts, `harvestBalance`) : debout **449,93 kg** = la souche (40 cm, 25,45 kg) + l'arbre couché (420 kg) + les copeaux de l'entaille (4,48 kg, `fellVolume`) ; couché, 420 kg = la pièce de 5,8 m (368,98 kg) + 3 ou 4 branches + **les feuilles et ramilles** (`waste`), qui pourrissent sur place. Le gros grand debout : 1 107,29 kg (souche 85,53, couché 994,13, copeaux 27,63). Le rondin de 5,8 m pèse **369 kg** : au-delà des 300 kg que
   Xéros fait rouler, il ne bouge pas, c'est voulu (on le coupe d'abord ; voir la [pièce de bois](wood-piece.md)).
 
 ## Vues

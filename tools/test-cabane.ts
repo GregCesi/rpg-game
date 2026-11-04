@@ -180,8 +180,9 @@ await playtest('cabane', async ({ page, errors, load }) => {
   // l'âge du bois, réglé au catalogue : une cabane patinée (toutes ses pièces de bois le prennent)
   await send({ kind: 'age', age: 'worn' });
 
-  // 1. les dalles aux quatre angles, sous les croisements
-  for (const [x, y] of [[20, 20], [320, 20], [20, 380], [320, 380]]) {
+  // 1. les dalles aux quatre angles, sous les croisements ; et sous le bout des rondins de part et d'autre de la porte (chantier
+  // « maison-2 » : aucune pièce au-dessus du vide, world/overhang.ts : ils avaient 75 cm dans le vide)
+  for (const [x, y] of [[20, 20], [320, 20], [20, 380], [320, 380], [80, 380], [260, 380]]) {
     await send({ kind: 'pick', piece: { prop: 'slab' }, natural: { form: 0, size: 100 } });
     await put(`dalle ${x},${y}`, x, y, 45, 40, 0);
   }
@@ -228,9 +229,9 @@ await playtest('cabane', async ({ page, errors, load }) => {
     if (k === 0) await frame('la première assise');
     if (k === 2) await frame('trois assises, la fenêtre');
   }
-  // le seuil : deux dalles dans l'ouverture, chacune contre un rondin de la porte (l'aimant des bords), un joint de 10 cm entre elles ;
-  // posées une fois les murs montés (posées avant, elles aimanteraient les rondins de la porte), et pas bord à bord (la faîtière
-  // s'aimanterait au joint, l'aimant ne regarde pas la hauteur)
+  // le seuil : deux dalles dans l'ouverture, chacune contre un rondin de la porte (l'aimant des bords), un joint de 10 cm entre elles
+  // (la porte pend à ses gonds, elle ne repose pas sur le seuil) ; posées une fois les murs montés (posées avant, elles
+  // aimanteraient les rondins de la porte)
   for (const x of [195, 140]) {
     await send({ kind: 'pick', piece: { prop: 'slab' }, natural: { form: 0, size: 100 } });
     await put(`seuil ${x}`, x, 380, 45, 40, 0);

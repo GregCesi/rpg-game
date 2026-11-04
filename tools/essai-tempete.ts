@@ -128,7 +128,7 @@ function proof(k: number): Cell {
     'preuve : chicot couche + cime, cassure contre cassure (ecartes de 3 px pour voir la cassure),',
     'au-dessus de l arbre couche du jeu (normal-felled-tree) : meme longueur, 140 px (7 m)',
     `bois vert ${MATTER.density} kg/m3, tronc de 30 cm (${fmt2(MATTER.section)} m2) :`,
-    `chicot 2,5 m : ${fmt2(MATTER.snag.vol)} m3, ${Math.round(MATTER.snag.kg)} kg  /  cime : ${fmt(MATTER.crown.boleLen)} m de tronc ${fmt2(MATTER.crown.vol)} m3 + houppier ${Math.round(MATTER.crownMass)} kg = ${Math.round(MATTER.crown.kg)} kg`,
+    `chicot 2,6 m : ${fmt2(MATTER.snag.vol)} m3, ${Math.round(MATTER.snag.kg)} kg  /  cime : ${fmt(MATTER.crown.boleLen)} m de tronc ${fmt2(MATTER.crown.vol)} m3 + houppier ${Math.round(MATTER.crownMass)} kg = ${Math.round(MATTER.crown.kg)} kg`,
     `somme ${Math.round(MATTER.snag.kg + MATTER.crown.kg)} kg = souche 0,4 m ${Math.round(MATTER.whole.stumpKg)} kg + arbre couche ${MATTER.whole.felledKg} kg (piece de 580 cm + houppier)`,
   ];
   return {
@@ -182,7 +182,7 @@ type Row = { title: string; cells: Cell[] };
 
 const rows: Row[] = [
   {
-    title: '1. le chicot : l arbre normal casse debout a 2,5 m, sa cime couchee a l est',
+    title: '1. le chicot : l arbre normal casse debout a 2,6 m, sa cime couchee a l est',
     cells: [
       xerosCell(),
       cell(tree.grid, tree.palette, ['arbre normal (jeu)', '190X190X700 cm', sizeOf(tree.grid, tree.palette)]),

@@ -97,7 +97,7 @@ function side(spread: number, arm: number, bob: number, swapLegs = false): Grid 
 }
 
 
-// ---------- Gestes de travail (use-*, chop-*, maul-*) ----------
+// ---------- Gestes de travail (use-*, fell-*, chop-*, maul-*) ----------
 // Le corps seul : l'outil est une image à part (planche tool-<objet>, art/lib/held.ts) que le jeu pose sur les mains, devant ou
 // derrière le corps. Le coup lourd (docs/CONCEPTION.md, « Le travail ») : huit images en cinq temps, les mêmes pour les trois gestes
 // (WORK_PHASES, `phases` de gestures.json) : armer (2), le temps en haut (1), abattre (2 : l'outil part du sommet puis arrive, avec
@@ -204,6 +204,36 @@ export const USE_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
   down: USE_BODY.down.map((b) => b.tool),
   up: USE_BODY.up.map((b) => b.tool),
   right: USE_BODY.right.map((b) => b.tool),
+};
+
+// Le coup de cognée pour abattre (fell-*), propre à l'abattage (accord de Grégoire sur la planche .art-preview/abattage-2.png,
+// proposition art/proposals/abattage-2.ts) : un coup en écharpe, de haut en bas, le fer dans l'entaille DU CÔTÉ DE XÉROS. De profil, la
+// cognée part par-dessus l'épaule (armée derrière le dos, le fer pendu dans le dos au temps en haut), passe au-dessus de la tête et
+// s'abat en biais dans l'entaille ; à l'impact elle est en biais vers le haut à droite (dessin `diag`, angle 45), le fer en haut, le
+// tranchant vers le bas à droite (côté 'cw') : il descend dans la face haute de l'entaille. Tout le geste tourne dans le sens horaire
+// de l'écran (tranchant 'cw' du début à la fin) ; hors de l'impact, le fer ne touche jamais le tronc. La portée (main à l'impact,
+// dx 5, plus les 15 px de la cognée réelle) place Xéros à rayon + 1 + 5 + 15 − 1 de l'axe du tronc (world/workStance.ts,
+// `fellDistance`). Vers le haut et le bas, le geste reprend les images de `use` (vues inchangées).
+// Images : 0 armer, la cognée bascule par-dessus l'épaule ; 1 armer, couchée derrière lui, cambré ; 2 en haut, mains à la nuque, le
+// fer pendu dans le dos ; 3 abattre, elle remonte derrière lui (traînée) ; 4 abattre, par-dessus la tête (traînée) ; 5 impact, en
+// biais, le fer dans l'entaille, tassé ; 6 dégager, le fer retiré ; 7 garde, en biais devant lui, le fer visant l'entaille.
+const FELL_RIGHT: WorkBody[] = [
+  face([18, 30], 'nw', 'cw', true, [[18, 33]], 0),
+  face([14, 25], 'w', 'cw', true, [[16, 29]], -1, { arms: 'head' }),
+  face([13, 22], 'sw', 'cw', true, [[14, 27]], -1, { arms: 'head' }),
+  face([14, 19], 'w', 'cw', true, [[15, 26]], -1, { arms: 'head', trail: true }),
+  face([16, 15], 'nw', 'cw', true, [[16, 23]], 0, { arms: 'head', trail: true }),
+  face([21, 38], 'ne', 'cw', false, [[19, 35]], 1),
+  face([15, 35], 'ne', 'cw', false, [[16, 34]], 0),
+  face([15, 39], 'ne', 'cw', false, [[15, 36]], 0),
+];
+const FELL_BODY: Record<'down' | 'up' | 'right', WorkBody[]> = { down: USE_BODY.down, up: USE_BODY.up, right: FELL_RIGHT };
+
+/** Pose de l'outil pour chaque image des animations fell-down, fell-up et fell-right. */
+export const FELL_POSES: Record<'down' | 'up' | 'right', ToolPose[]> = {
+  down: FELL_BODY.down.map((b) => b.tool),
+  up: FELL_BODY.up.map((b) => b.tool),
+  right: FELL_BODY.right.map((b) => b.tool),
 };
 
 // Coup vertical (chop-*), de haut en bas sur ce qui est couché ou posé au sol (ébrancher, couper, la doloire, la hachette sur le
@@ -693,6 +723,7 @@ const workAnims = (bodies: Record<'down' | 'up' | 'right', WorkBody[]>) => {
   return { down: bodies.down.map((b) => workFrontal('down', b)), up: bodies.up.map((b) => workFrontal('up', b)), right, left: right.map(flipX) };
 };
 const useAnim = workAnims(USE_BODY);
+const fellAnim = workAnims(FELL_BODY);
 const chopAnim = workAnims(CHOP_BODY);
 const maulAnim = workAnims(MAUL_BODY);
 
@@ -715,6 +746,10 @@ const xeros: SpriteSheetSource = {
     'use-up': { frames: useAnim.up, frameRate: USE_FRAME_RATE, repeat: 0 },
     'use-right': { frames: useAnim.right, frameRate: USE_FRAME_RATE, repeat: 0 },
     'use-left': { frames: useAnim.left, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'fell-down': { frames: fellAnim.down, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'fell-up': { frames: fellAnim.up, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'fell-right': { frames: fellAnim.right, frameRate: USE_FRAME_RATE, repeat: 0 },
+    'fell-left': { frames: fellAnim.left, frameRate: USE_FRAME_RATE, repeat: 0 },
     'chop-down': { frames: chopAnim.down, frameRate: CHOP_FRAME_RATE, repeat: 0 },
     'chop-up': { frames: chopAnim.up, frameRate: CHOP_FRAME_RATE, repeat: 0 },
     'chop-right': { frames: chopAnim.right, frameRate: CHOP_FRAME_RATE, repeat: 0 },

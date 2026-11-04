@@ -11,7 +11,7 @@ async function main() {
     console.error(`\n✗ ${(e as Error).message}\n`);
     process.exit(1);
   }
-  const { catalogFrom, validateBuildPlans, validateContent, viewsTodo, workDurations } = await import('../src/content/validate');
+  const { catalogFrom, validateBuildPlans, validateContent, validatePlanOverhangs, viewsTodo, workDurations } = await import('../src/content/validate');
   const manifest = JSON.parse(readFileSync('src/generated/manifest.json', 'utf8'));
   const cat = catalogFrom(manifest);
   // les poses des gestes de combat, écrites par npm run art juste avant (validate.ts ne les importe pas lui-même)
@@ -30,6 +30,10 @@ async function main() {
     errors.push((e as Error).message);
   }
   errors.push(...validateBuildPlans(buildPlans));
+  // aucune pièce au-dessus du vide, dans les plans suivis par git (pas les plans d'essai des scénarios)
+  const { execSync } = await import('node:child_process');
+  const tracked = new Set(execSync('git ls-files src/content/plans', { encoding: 'utf8' }).split('\n').filter(Boolean).map((f) => f.replace(/^.*\//, '').replace(/\.json$/, '')));
+  errors.push(...validatePlanOverhangs(buildPlans, (k) => tracked.has(k)));
   // la rampe de chaque roche (rocks.json) est faite de couleurs de la palette commune (le jeu ne lit pas art/ : on le vérifie ici)
   const { world } = await import('../art/palette');
   for (const [k, r] of Object.entries(content.rocks)) {

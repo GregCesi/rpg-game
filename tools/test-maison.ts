@@ -35,7 +35,7 @@ const PLAN_FILE = `${OUT_DIR}/maison-xeros.json`;
 const mtimeOf = (f: string) => (existsSync(f) ? statSync(f).mtimeMs : 0);
 const PLAN_BEFORE = mtimeOf(PLAN_FILE);
 /** Les pièces du catalogue dont la maison est faite (outre la pièce de bois, une poutre du normal). */
-const PROPS = /^(rough-sill-wall|narrow-sill-wall|threshold-stone|(staves|wattle|daub|lime)-(panel|window-panel|jamb|inner-jamb)|cottage-door|inner-door|plank-shutter|lime-gable|thatch-roof-frame|thatch-roof-half|thatch-roof|thatch-roof-pierced|earth-ridge|stone-hearth|chimney-hood|chimney-flue|chimney-cap|table|bench|jar|sack|bed|chest)$/;
+const PROPS = /^(rough-sill-wall|narrow-sill-wall|threshold-stone|(staves|wattle|daub|lime)-(panel|window-panel|jamb|door-head)|door-frame|inner-threshold-stone|cottage-door|inner-door|plank-shutter|lime-gable|thatch-roof-frame|thatch-roof-half|thatch-roof|thatch-roof-pierced|earth-ridge|stone-hearth|chimney-hood|chimney-flue|chimney-cap|table|bench|jar|sack|bed|chest)$/;
 const START = Date.now();
 
 await playtest('maison', async ({ page, errors, load }) => {
@@ -169,18 +169,64 @@ await playtest('maison', async ({ page, errors, load }) => {
     }
     await sleep(40);
     // ce que montre le fantôme (pour le message, si la pièce n'est pas où elle doit)
-    const ghost = await page.evaluate(() => {
-      const w = (window as any).game.scene.getScene('world');
-      const a = w.builder.aim;
-      const p = w.input.activePointer;
-      const at = w.cameras.main.getWorldPoint(p.x, p.y);
-      return { pointer: [at.x * 5, at.y * 5], aim: a && a.pieces.map((q: any) => [q.x, q.y, q.z]), why: a?.why };
-    });
+    const readGhost = () =>
+      page.evaluate(() => {
+        const w = (window as any).game.scene.getScene('world');
+        const a = w.builder.aim;
+        const p = w.input.activePointer;
+        const at = w.cameras.main.getWorldPoint(p.x, p.y);
+        return { pointer: [at.x * 5, at.y * 5], aim: a && a.pieces.map((q: any) => [q.x, q.y, q.z]), why: a?.why };
+      });
+    let ghost = await readGhost();
+    const seenGhosts = new Set<string>();
+    // comme un joueur : si le fantôme ne montre pas la pièce à sa place (une bande de 10 cm, une huisserie de 15, hors de la grille de
+    // 20 cm), la souris se déplace de quelques centimètres autour de la visée jusqu'à ce qu'il la montre, puis clic (chantier « maison-2 »)
+    const want = s.at ?? [s.x, s.y];
+    const right = (g: typeof ghost) => !!g.aim && !s.replaces && g.aim[0][0] === O!.x + want[0] && g.aim[0][1] === O!.y + want[1] && (s.z === undefined || g.aim[0][2] === s.z);
+    if (!s.replaces && !right(ghost)) {
+      const k = await page.evaluate(() => {
+        const g = (window as any).game;
+        const w = g.scene.getScene('world');
+        const rect = g.canvas.getBoundingClientRect();
+        return (w.cameras.main.zoom * (rect.width / g.scale.width)) / 5;
+      });
+      const steps = [-15, -10, -5, 0, 5, 10, 15];
+      const tries = [...steps.map((d) => [d, 0]), ...steps.map((d) => [0, d]), ...steps.flatMap((a) => steps.map((b) => [a, b]))];
+      // la souris seule, puis un cran plus bas (G) ou plus haut (T) avec elle : ce qu'offre le mode construction à un joueur
+      let found = false;
+      seenGhosts.clear();
+      for (const crans of [0, -1, 1, -2]) {
+        const key = crans < 0 ? 'KeyG' : 'KeyT';
+        for (let i = 0; i < Math.abs(crans); i++) {
+          await page.keyboard.press(key);
+          await sleep(30);
+        }
+        for (const [dx, dy] of tries) {
+          await page.mouse.move(sp.x + dx * k, sp.y + dy * k);
+          await sleep(40);
+          const g = await readGhost();
+          seenGhosts.add(JSON.stringify([crans, g.aim?.[0]]));
+          if (right(g)) {
+            sp = { x: sp.x + dx * k, y: sp.y + dy * k };
+            ghost = g;
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+        for (let i = 0; i < Math.abs(crans); i++) {
+          await page.keyboard.press(crans < 0 ? 'KeyT' : 'KeyG');
+          await sleep(30);
+        }
+      }
+      if (!found) await page.mouse.move(sp.x, sp.y);
+    }
     await page.mouse.click(sp.x, sp.y);
     await sleep(110);
     const list = await pieces();
     const p = list.find((q: any) => !before.some((o: any) => o.id === q.id));
     const seen = () => `visé en (${px * 5 - O!.x}, ${py * 5 - O!.y}), S ${S} ; souris ${ghost.pointer.map((v: number, i: number) => Math.round(v - (i ? O!.y : O!.x)))} ; fantôme ${JSON.stringify(ghost.aim?.map((q: number[]) => [q[0] - O!.x, q[1] - O!.y, q[2]]))} ${ghost.why ?? ''}`;
+    if (seenGhosts.size && !(p && p.x - O!.x === (s.at ?? [s.x, s.y])[0] && p.y - O!.y === (s.at ?? [s.x, s.y])[1])) console.log(`  … ${s.name} : fantômes essayés ${[...seenGhosts].map((g) => { const [c, a] = JSON.parse(g); return a ? `${c}:${a[0] - O!.x},${a[1] - O!.y},${a[2]}` : `${c}:—`; }).join(' ')}`);
     assert.ok(p, `${s.name} : posée (${notices.at(-1) ?? ''} ; ${seen()})`);
     const at = s.at ?? [s.x, s.y];
     assert.deepEqual([p.x - O!.x, p.y - O!.y], at, `${s.name} : à sa place (${seen()})`);
@@ -399,10 +445,10 @@ await playtest('maison', async ({ page, errors, load }) => {
   const rooms = house.rooms.map((q: any) => ({ ...q, x: q.x + shift.x, y: q.y + shift.y }));
 
   // d'une pièce à l'autre : chaque porte intérieure, fermée, s'ouvre avec E (Xéros devant elle, du côté de la salle), puis il passe ;
-  // le cagibi n'a pas de porte : sa baie, sous son linteau, se passe tout droit
+  // le cagibi n'a pas de porte : sa baie, sous sa tête de baie, se passe tout droit
   assert.ok(!named.has('porte cloison x=320 160'), "le cagibi n'a pas de porte");
   const doors: [string, number, string, string][] = [
-    ['linteau cloison x=320 160', -1, 'le cagibi', 'KeyA'],
+    ['lime tête cloison x=320 160', -1, 'le cagibi', 'KeyA'],
     ['porte cloison x=320 320', -1, 'le coin de Xéros', 'KeyA'],
     ['porte cloison x=960 320', 1, "l'atelier de la mère", 'KeyD'],
   ];
@@ -411,7 +457,7 @@ await playtest('maison', async ({ page, errors, load }) => {
     const sx = dir < 0 ? door.x + 45 : door.x - 40;
     // le corps de Xéros est au-dessus de ses pieds (le point du personnage) : les pieds 30 cm sous le milieu de la porte, le corps dans la baie
     await stand(Math.round(sx / 5), Math.round((door.y + 70) / 5), dir < 0 ? 'left' : 'right');
-    if (!name.startsWith('linteau')) {
+    if (!name.includes('tête')) {
       await page.keyboard.press('KeyE');
       await sleep(300);
       assert.equal(await propOf(name), 'inner-door-open', `E ouvre ${name} (${notices.at(-1) ?? ''} ; ${await where()})`);

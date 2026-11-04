@@ -11,6 +11,17 @@
       "free": 0.25,
       "freeK": 3
     },
+    "fell": {
+      "gesture": "fell",
+      "angle": 1.8,
+      "arm": 0.3,
+      "armK": 3,
+      "hold": 0.12,
+      "holdK": 1.2,
+      "impact": 0.12,
+      "free": 0.25,
+      "freeK": 3
+    },
     "chop": {
       "gesture": "chop",
       "angle": 1.9,
@@ -57,7 +68,7 @@
     }
   },
   "jobs": {
-    "fell": "use",
+    "fell": "fell",
     "limbs": "chop",
     "whittle": "chop",
     "break": "chop"

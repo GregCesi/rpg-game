@@ -10,7 +10,7 @@ import stones, { stonePalette } from '../../art/items/stones';
 import type { Grid } from '../../art/lib/canvas';
 import { CM_PER_PX } from '../../src/content/gabarit';
 import { depthsOf, type BuildPiece } from '../../src/world/build';
-import { runLayout, wallRuns } from '../../src/world/wallRuns';
+import { runLayout, runPx, wallRuns } from '../../src/world/wallRuns';
 import { wallKit } from '../../src/world/walls';
 
 const K = 4;
@@ -68,7 +68,7 @@ export function sillPreview(): PNG {
   const depth = depthsOf(pieces);
   const draws: { depth: number; draw: () => void }[] = [];
   for (const run of wallRuns(pieces)) {
-    const grid = kit.run({ kind: run.kind, axis: run.axis, pieces: run.pieces.length, start: run.start, end: run.end, seed: run.seed, ...(run.extra ? { extra: run.extra } : {}) });
+    const grid = kit.run({ kind: run.kind, axis: run.axis, length: runPx(run), start: run.start, end: run.end, seed: run.seed, ...(run.extra ? { extra: run.extra } : {}) });
     const lay = runLayout(run, grid[0].length, grid.length);
     run.pieces.forEach((p, i) => {
       const c = lay.crops[i];

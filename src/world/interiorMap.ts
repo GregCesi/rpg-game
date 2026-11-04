@@ -39,6 +39,8 @@ export interface InteriorMap {
   shift: { x: number; y: number };
   /** L'emprise de la pièce (cm, repère de l'intérieur). */
   room: Rect;
+  /** Ses pièces closes (cm, repère de l'intérieur) : la face nord de chacune borne son mur du fond (`backCaps`). */
+  rooms: Rect[];
   /** Les pièces du bâtiment qu'on voit dedans, et leurs assemblages (repère de l'intérieur). */
   shell: BuildPiece[];
   joints: Joint[];
@@ -162,6 +164,7 @@ export function interiorOf(host: string, b: Building, joints: readonly Joint[], 
     key: b.key,
     shift,
     room,
+    rooms: b.rooms.map((r) => moved(r, shift)),
     shell,
     joints: joints.filter((j) => ids.has(j.a) && ids.has(j.b)),
     south,

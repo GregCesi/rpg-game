@@ -241,3 +241,98 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   }
   console.log('✓ test-build : intérieurs (pièce close, porte, ouverture sous le linteau, fenêtre, coupe du mur sud ; la cloison du cagibi coupée avec sa traverse et son poteau)');
 }
+
+// Le mur du fond (chantier maison-2, règle de Grégoire) : dans une pièce close, rien du mur du fond ne passe devant ce qui est dans la
+// pièce, quoi qui le porte, pour tout bâtiment des plans du dépôt, dehors comme dedans ; ce qui est dans la pièce garde sa profondeur
+{
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const { backCaps, buildingsOf } = await import('../src/world/interior');
+  const { planPieces, solidOf } = await import('../src/world/build');
+  const { CM_PER_PX } = await import('../src/content/gabarit');
+  let rooms = 0;
+  for (const f of readdirSync('src/content/plans').filter((n) => n.endsWith('.json'))) {
+    const plan = JSON.parse(readFileSync(`src/content/plans/${f}`, 'utf8'));
+    const ps = planPieces(plan, { x: 1000, y: 1000, z: 0 }).map((p, i) => ({ ...p, id: i }));
+    const all = buildingsOf(ps).flatMap((b) => b.rooms);
+    const caps = backCaps(ps, all);
+    const raw = depthsOf(ps);
+    const depth = depthsOf(ps, caps);
+    for (const r of all) {
+      rooms++;
+      const face = r.y / CM_PER_PX;
+      // ce qui est dans la pièce (tout entier dedans) : jamais derrière sa face
+      const inside = ps.filter((p) => {
+        const b = solidOf(p);
+        return b.y >= r.y && b.y + b.d <= r.y + r.d && b.x >= r.x && b.x + b.w <= r.x + r.w;
+      });
+      for (const p of inside) assert.ok(depth.get(p.id)! >= Math.min(face, raw.get(p.id)!), `${f} : une pièce dans la pièce reste devant sa face`);
+      // le mur du fond : derrière la face
+      for (const p of ps.filter((q) => caps.has(q.id) && (caps.get(q.id) ?? 0) <= face)) {
+        const b = solidOf(p);
+        if (b.y + b.d > r.y || b.x >= r.x + r.w || b.x + b.w <= r.x) continue;
+        assert.ok(depth.get(p.id)! < face, `${f} : la pièce ${p.id} du mur du fond (${depth.get(p.id)}) passe derrière la face ${face}`);
+        for (const q of inside) assert.ok(depth.get(p.id)! < depth.get(q.id)!, `${f} : le mur du fond derrière ce qui est dans la pièce`);
+      }
+    }
+    // l'ordre de ce qui porte et de ce qui est porté reste vrai dans le mur du fond d'une même pièce (une poutre de côté qui traverse
+    // la face d'une pièce et borde la suivante relève des murs de côté, à part)
+    for (const p of ps) {
+      if (!caps.has(p.id)) continue;
+      for (const s of ps.filter((q) => caps.get(q.id) === caps.get(p.id) && q.z + boxOf(q).h === p.z && q.id !== p.id)) {
+        const a = boxOf(p), c = boxOf(s);
+        if (a.x < c.x + c.w && c.x < a.x + a.w && a.y < c.y + c.d && c.y < a.y + a.d) assert.ok(depth.get(p.id)! > depth.get(s.id)!, `${f} : porté après porteur dans le fond`);
+      }
+    }
+  }
+  assert.ok(rooms >= 6, 'des pièces closes dans les plans du dépôt');
+  console.log(`✓ test-build : le mur du fond derrière tout ce qui est dans la pièce (${rooms} pièces closes, tous les plans du dépôt)`);
+}
+
+// Le solin de toute longueur (chantier « maison-2 ») : un morceau se règle sur la grille de walls.json (10 cm, au moins 40), sa boîte
+// en suit la longueur, des morceaux de longueurs mêlées font un seul tronçon, et un plan refuse une longueur hors de la grille
+{
+  const { WALL_PIECE } = await import('../src/world/walls');
+  const { wallRuns, runPx } = await import('../src/world/wallRuns');
+  assert.deepEqual(WALL_PIECE, { grid: 10, min: 40 });
+  assert.deepEqual(sizeOf({ prop: 'rough-sill-wall', length: 70 }), { w: 70, d: 50, h: 40 });
+  assert.deepEqual(sizeOf({ prop: 'rough-sill-wall', length: 70 }, 1), { w: 50, d: 70, h: 40 });
+  const mixed: BuildPiece[] = [
+    { id: 1, piece: { prop: 'rough-sill-wall', length: 70 }, x: 0, y: 0, z: 0, view: 0 },
+    { id: 2, piece: { prop: 'rough-sill-wall' }, x: 70, y: 0, z: 0, view: 0 },
+    { id: 3, piece: { prop: 'rough-sill-wall', length: 40 }, x: 230, y: 0, z: 0, view: 0 },
+  ];
+  const runs = wallRuns(mixed);
+  assert.equal(runs.length, 1, 'des longueurs mêlées bout à bout : un tronçon');
+  assert.equal(runPx(runs[0]), 54, '70 + 160 + 40 cm = 54 px');
+  const bad = { name: 'x', size: { w: 100, d: 50 }, pieces: [{ piece: { prop: 'rough-sill-wall', length: 75 }, x: 0, y: 0, z: 0, view: 0 }, { piece: { prop: 'slab', length: 60 }, x: 0, y: 0, z: 0, view: 0 }] };
+  const why = planProblems(bad as never);
+  assert.equal(why.length, 2, `deux refus : ${why.join(' ; ')}`);
+  console.log('✓ test-build : le solin de toute longueur (grille de 10 cm, au moins 40), des tronçons de longueurs mêlées');
+}
+
+// Le porte-à-faux (chantier « maison-2 ») : une pièce posée au-dessus du vide est signalée ; les plans du dépôt n'en ont pas, sauf
+// ceux de OVERHANG_TODO (validate.ts)
+{
+  const { overhangs } = await import('../src/world/overhang');
+  const { OVERHANG_TODO } = await import('../src/content/validate');
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const beam = (length: number, axis: 'ew' | 'ns' | 'up') => ({ wood: { size: 'normal', length, shape: 'round' as const, hewn: 12, axis } });
+  const sill = (x: number, length: number) => ({ piece: { prop: 'rough-sill-wall', length }, x, y: 0, z: 0, view: 0 });
+  // une traverse sur deux morceaux de solin, avec un trou d'un mètre entre eux ; un poteau au-dessus du trou
+  const ps: BuildPiece[] = [sill(0, 200), sill(300, 200), { piece: beam(500, 'ew'), x: 0, y: 10, z: 40, view: 0 }, { piece: beam(180, 'up'), x: 240, y: 5, z: 70, view: 0 }].map((p, i) => ({ ...p, id: i }));
+  const found = overhangs(ps);
+  assert.ok(found.some((m) => m.startsWith('n° 3')), `le poteau au-dessus du trou du solin est signalé (${found.join(' ; ')})`);
+  const fixed = overhangs([...ps.slice(0, 3), { ...ps[3], x: 100 }]);
+  assert.deepEqual(fixed, [], 'le poteau au-dessus du solin : rien');
+  const lone = overhangs([{ id: 0, piece: { prop: 'slab' }, x: 0, y: 0, z: 40, view: 0 }]);
+  assert.equal(lone.length, 1, 'une dalle en l’air');
+  let n = 0;
+  for (const f of readdirSync('src/content/plans').filter((x) => x.endsWith('.json'))) {
+    const key = f.replace(/\.json$/, '');
+    if (OVERHANG_TODO[key]) continue;
+    const plan = JSON.parse(readFileSync(`src/content/plans/${f}`, 'utf8'));
+    assert.deepEqual(overhangs(planPieces(plan, { x: 0, y: 0, z: 0 }).map((p, i) => ({ ...p, id: i })), plan.joints ?? []), [], `${f} : rien au-dessus du vide`);
+    n++;
+  }
+  console.log(`✓ test-build : le porte-à-faux (un poteau au-dessus d'un trou du solin, une dalle en l'air) ; ${n} plans du dépôt sans pièce au-dessus du vide`);
+}

@@ -1,6 +1,7 @@
 // Aperçu des pièces de la maison de Xéros (art/world/xeros-house.ts, CONCEPTION « La maison de Xéros », étape 2) :
 // .art-preview/maison-pieces.png (npm run art:preview), x3. Chaque pièce dans toutes ses vues (r0 à r3, ou est-ouest et nord-sud),
-// les quatre étapes d'un remplissage côte à côte, une travée de porte montée (jambage r2, porte, jambage r0), Xéros pour l'échelle.
+// les quatre étapes d'un remplissage côte à côte, les travées de porte montées à leurs vraies hauteurs (chantier « maison-2 »), Xéros
+// pour l'échelle.
 
 import type { PNG } from 'pngjs';
 import type { Grid, Palette } from '../../art/lib/canvas';
@@ -37,11 +38,14 @@ export function maisonPreview(sources: ArtSource[]): PNG | undefined {
     STAGES.map((s) => ({ label: `${s}-window-panel`, names: all(`${s}-window-panel`) })),
     [
       ...STAGES.map((s) => ({ label: `${s}-jamb`, names: all(`${s}-jamb`) })),
-      { label: 'travee : porte d\'entree', names: ['lime-jamb-r2', 'cottage-door', 'lime-jamb'], tight: true },
+      { label: 'travee : porte d\'entree (vraies hauteurs)', names: ['@bay-door'] },
     ],
     [
       ...STAGES.map((s) => ({ label: `${s}-inner-jamb`, names: all(`${s}-inner-jamb`) })),
-      { label: 'travee : porte interieure', names: ['lime-inner-jamb-r2', 'inner-door', 'lime-inner-jamb'], tight: true },
+      { label: 'travee : porte interieure (vraies hauteurs)', names: ['@bay-inner'] },
+      { label: 'door-frame', names: all('door-frame') },
+      { label: 'lime-door-head', names: all('lime-door-head') },
+      { label: 'inner-threshold-stone', names: ['inner-threshold-stone', 'inner-threshold-stone-ns'] },
     ],
     [
       { label: 'cottage-door', names: all('cottage-door') },
@@ -66,7 +70,7 @@ export function maisonPreview(sources: ArtSource[]): PNG | undefined {
     ],
     [
       { label: 'cheminee montee (sud)', names: ['@chimney'] },
-      { label: 'six troncons (est-ouest, nord-sud)', names: ['@flue6', '@flue6-ns'] },
+      { label: 'cinq troncons (est-ouest, nord-sud)', names: ['@flue5', '@flue5-ns'] },
     ],
   ];
   // le foyer, l'âtre : leurs trois images côte à côte
@@ -84,9 +88,22 @@ export function maisonPreview(sources: ArtSource[]): PNG | undefined {
   // bas de chaque image au bord sud de son emprise relevé de sa hauteur (y − z), centrée sur l'emprise ; dans l'ordre de pose
   const mounted = (what: string): Img | undefined => {
     const ns = what.endsWith('-ns') ? '-ns' : '';
-    const flues = Array.from({ length: 6 }, (_, k) => ({ name: `chimney-flue${ns}`, x: 780, y: 80, z: 250 + 100 * k }));
+    const flues = Array.from({ length: 5 }, (_, k) => ({ name: `chimney-flue${ns}`, x: 780, y: 110, z: 250 + 100 * k }));
+    // une baie de porte (chantier « maison-2 ») à ses vraies hauteurs : les bandes sur la traverse (70 cm), le seuil au sol, les
+    // huisseries et la porte sur le seuil (20 cm), la tête de baie sur les huisseries (2 m) ; la travée d'entrée, de x 490 à 630
+    const bay = (door: string, sill: string, south: number) => [
+      { name: 'lime-jamb', x: 495, y: south, z: 70 },
+      { name: 'lime-jamb', x: 625, y: south, z: 70 },
+      { name: sill, x: 560, y: south, z: 0 },
+      { name: 'door-frame', x: 507, y: south, z: 20 },
+      { name: door, x: 560, y: south - 15, z: 20 },
+      { name: 'door-frame', x: 612, y: south, z: 20 },
+      { name: 'lime-door-head', x: 560, y: south, z: 200 },
+    ];
     const parts = what === 'chimney'
-      ? [{ name: 'stone-hearth', x: 780, y: 110, z: 0 }, { name: 'chimney-hood', x: 780, y: 80, z: 120 }, ...flues, { name: 'chimney-cap', x: 780, y: 85, z: 850 }]
+      ? [{ name: 'stone-hearth', x: 780, y: 140, z: 0 }, { name: 'chimney-hood', x: 780, y: 110, z: 150 }, ...flues, { name: 'chimney-cap', x: 780, y: 130, z: 750 }]
+      : what === 'bay-door' ? bay('cottage-door', 'threshold-stone', 660)
+      : what === 'bay-inner' ? bay('inner-door', 'inner-threshold-stone', 640)
       : flues;
     const imgs = parts.map((q) => ({ q, i: q.name === 'stone-hearth' ? framesOf('stone-hearth')[0] : find(q.name) }));
     if (imgs.some((e) => !e.i)) return undefined;

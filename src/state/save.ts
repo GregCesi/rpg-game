@@ -20,7 +20,10 @@ const DAMAGED_KEY = 'xeros-partie-abimee';
 // 17 (chantier « monde ») : la ferme agrandie en zone du monde (ses objets ont bougé), les plans posés depuis Tiled (`seeded`).
 // 28 (chantier « commandes ») : plus de main active (`active` retiré : chaque clic dit sa main).
 // 29 (chantier « lapins ») : les garennes de chaque carte (`warrens` : membres, points de vie des blessés, naissances).
-export const SAVE_VERSION = 29;
+// 30 (chantier « maison-2 ») : la maison de Xéros refaite (le solin de toute longueur, `length` d'une pièce posée ; la baie de porte,
+// les seuils, la cheminée où l'on cuisine) : une partie d'avant garderait l'ancienne maison, posée une fois (accord de Grégoire : une
+// partie neuve).
+export const SAVE_VERSION = 30;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
