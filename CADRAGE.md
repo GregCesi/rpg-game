@@ -770,15 +770,113 @@ planté côté ferme (`relief-face-planted*`), le sol éclairci et `FLOOR_GLOOM`
 
 ---
 
-## 13. L'intérieur du tunnel : un trou rond dans la terre (4 novembre, plans seulement)
+## 13. L'intérieur du tunnel : un trou rond en gradins dans la terre (4 novembre, plans seulement)
 
-**Stop de Grégoire** : rien ne s'intègre, rien ne se fusionne. La version 7 (`relief-final-7-corrections.png`) et le rendu de
-l'intérieur du couloir ne sont pas validés. **Le moteur reste tel quel** (les hauteurs, la marche, le saut, la nage, les refus). Les
-premiers plans (13.7, planche gardée dans `art/proposals/relief-plans-v1.png`) ne sont pas validés non plus : **ils partaient d'une
-mauvaise forme**, deux talus en pente posés sur un sol plat, le couloir entre les deux. Tout repart de la forme ci-dessous. Cette section
-ne contient que des plans en aplats (`.art-preview/relief-plans.png`) ; aucun dessin définitif, rien ne change dans le jeu.
+**Le relief est déjà dans main** (fusion ce4e6d2) avec ses dessins d'avant ; **cette forme sera un chantier à part**. Cette section
+ne contient que des plans en aplats (`.art-preview/relief-plans.png`) : aucun dessin définitif, **rien ne change dans le jeu**, et le
+moteur (les hauteurs, la marche, le saut, la nage, les refus) reste tel quel. Les plans précédents sont gardés : les deuxièmes, le
+trou rond aux parois lisses, « presque parfaits » pour Grégoire (13.6, `art/proposals/relief-plans-v2.png`) ; les premiers, la mauvaise
+forme à deux talus (13.7, `art/proposals/relief-plans-v1.png`).
 
-### 13.1 La forme : ce que j'ai compris
+### 13.1 La forme : ce que j'ai compris (les gradins)
+
+Tout ce qui avait été compris du trou rond tient toujours : **une masse de terre au dessus plat, à 5 m au-dessus du chemin, dans
+laquelle on a creusé un trou rond** ; le chemin plat et clair au fond (2,5 m) ; la rivière qui s'arrête contre les deux faces de la
+masse et n'entre jamais dans le trou ; la bouche est ouverte dans une face de terre, la bouche ouest à fleur du plateau. **Une seule
+chose change, les parois.**
+
+- **Les parois ne sont pas lisses : elles descendent en demi-escalier.** Du dessus de la terre jusqu'au chemin, une suite de
+  **gradins** : une marche de terre (la contremarche, une face presque droite), un replat (le gradin), une marche, un replat, et ainsi
+  jusqu'au chemin. Les deux parois, au nord et au sud, sont pareilles.
+- **Chaque gradin est planté.** Il n'y a pas seulement des arbres en haut, sur le dessus : **à chaque niveau**, sur chaque replat,
+  des deux côtés, de petits arbres et des buissons ; sur le dessus, les grands arbres.
+- **Tous ces arbres se penchent au-dessus du chemin**, ceux du bas comme ceux du haut. **Les racines et le lierre pendent d'un
+  gradin à l'autre** : du bord de chaque replat, ils couvrent la marche qui descend au replat du dessous.
+- **Le cercle, c'est l'ensemble.** Sa moitié basse est la terre en gradins (les nez des marches s'alignent sur sa courbe) ; sa
+  moitié haute, ce sont les houppiers penchés de tous les étages, qui se rejoignent au-dessus du chemin. **Ce sont les gradins et
+  leur végétation qui referment le cercle** (réponse de Grégoire à la question 36) : il n'y a plus de lèvres de terre lisses, et le
+  ciel ne passe qu'entre les feuilles.
+
+**Ma proposition de mesures** (à régler au dessin, question 37) : **4 marches de 1,25 m** de chaque côté, donc **3 gradins plantés
+et le dessus**, 4 niveaux d'arbres. Une marche de 1,25 m arrive à la poitrine de Xéros (1,70 m) : c'est plus que son saut (1 m),
+il ne monte pas sur les gradins, le chemin reste un chemin. Chaque gradin a **1 m de profondeur** : la place d'une rangée de
+petits arbres (tronc de 15 à 20 cm, 3 à 4 m de haut : noisetier, jeune frêne) et de buissons. En haut, le trou s'ouvre sur 8,5 m
+(2,5 m de chemin et 3 m de gradins de chaque côté). Le cercle qui passe par les bords du chemin et par le bord du dessus a 8,7 m de
+diamètre (centre à 4,15 m au-dessus du chemin) : les houppiers le ferment vers 8,5 m de haut, ce qu'atteignent les grands arbres du
+dessus, penchés.
+
+**Ce que cela change, et ce que cela ne change pas.** Le moteur ne change pas : une hauteur par point, comme le plateau (chaque
+gradin est un replat à sa hauteur, chaque marche une marche trop haute pour Xéros, et le refus déjà écrit le dit : « Trop haute pour
+lui »). **Les formes de la carte** changent : de chaque côté du chemin (`Lane`), trois bandes plates à 1,25, 2,5 et 3,75 m, puis le
+dessus à 5 m (des `Level`), au lieu des deux talus d'aujourd'hui. **Les dessins** sont neufs : les marches de terre, le lierre et les
+racines qui les couvrent, les petits arbres penchés des gradins (pixel-artist, dans le chantier à part).
+
+### 13.2 La coupe nord-sud, côté ferme (la première image de la planche)
+
+De gros aplats : le ciel, la masse de terre, les 4 marches et les 3 gradins de chaque côté avec leurs arbres à chaque niveau, le
+lierre et les racines qui pendent d'un gradin à l'autre, le chemin clair au fond, Xéros debout au milieu à l'échelle. Les cotes : les
+hauteurs (1,25 / 2,50 / 3,75 / 5 m), la profondeur d'un gradin (1 m), le chemin (2,5 m), l'ouverture du haut (8,5 m). Le cercle en
+pointillé : en bas il suit les nez des marches, en haut il passe dans les houppiers.
+
+### 13.3 La même coupe au-dessus de la rivière
+
+La même coupe, les mêmes gradins. De chaque côté, au moins 6 m de dessus plat au-delà du bord du trou (question 33, validée), puis
+une face de terre qui descend dans l'eau. **L'eau est dehors**, contre la terre, au niveau du chemin, jamais dans le trou.
+
+### 13.4 Ce que voit le joueur
+
+Le jeu montre tout depuis le sud, à 45° (un point à y cm au sud de Xéros et h cm de haut se dessine (y − h) / 5 px sous ses pieds).
+**Côté ferme**, du haut de l'écran vers le bas (les pieds de Xéros à la ligne 130 de 240) :
+
+- **la paroi nord, étage par étage** : la marche 1 (du chemin à 1,25 m), le gradin 1 et ses arbres, la marche 2, le gradin 2 et ses
+  arbres, puis le début de la marche 3, coupée par le haut de l'écran. Les arbres du gradin 1 se voient en entier, ceux du gradin 2
+  par leur tronc et le bas de leur houppier. **Le gradin 3 et le dessus nord ne se voient pas du tout** (relevé en traçant : leurs
+  houppiers penchés restent au-dessus du haut de l'écran ; il faudrait les pencher jusqu'au-dessus de Xéros pour qu'ils
+  l'effleurent) ;
+- **le chemin clair et Xéros** ;
+- devant lui, **la masse sud tranchée au niveau du chemin** : de la terre en coupe jusqu'au bas de l'écran, comme le mur sud d'une
+  maison coupé au ras du sol ;
+- **ce qui devient transparent** (réponse 34, validée), en fantôme par-dessus : les gradins sud (leurs bords tombent entre 15 px
+  au-dessus des pieds et les pieds), leurs arbres penchés vers le nord (houppiers jusque vers 80 px au-dessus des pieds) et **les
+  grands arbres du dessus sud, qui traversent tout l'écran** en fantôme : leur pied est à la hauteur des pieds de Xéros, leur houppier
+  au-dessus du haut de l'écran.
+
+Au-dessus de la rivière, c'est la même image : la masse est assez large pour que l'eau reste hors de l'écran.
+
+**À la bouche est**, Xéros qui vient de la ferme entre dans la face de terre : à sa droite la ferme en pleine lumière ; la transparence
+commence dès que la masse sud passe devant lui (elle s'arrête à la face), et la lumière du dehors entre sur les premiers mètres
+(environ 3,5 m). **Le jeu voit la face est par la tranche** (il regarde depuis le sud) : le fer à cheval en gradins ne se voit pas
+dans l'écran, il n'est qu'un trait. La planche le montre à côté, vu de face depuis la ferme : la face de terre, les gradins et leurs
+arbres de part et d'autre, le chemin qui entre.
+
+### 13.5 Réponses de Grégoire et questions
+
+**Validées** (4 novembre) : 32, le dessus de la masse côté ferme est un sol où l'on marche, rejoint par une pente plantée depuis la
+ferme ; 33, au moins 6 m de masse de chaque côté du trou au-dessus de la rivière ; 34, la masse sud tranchée au niveau du chemin, ce
+qui la surmonte en fantôme ; 35, la version 7 reprise avec la nouvelle forme. **36** : ce sont les gradins et leur végétation qui
+referment le cercle (13.1). La forme ronde (31) est corrigée par les gradins.
+
+37. **Les gradins** : 4 marches de 1,25 m et des gradins de 1 m (3 gradins plantés et le dessus), comme sur la planche ? *Recommandation :
+    oui* : chaque marche est trop haute pour Xéros, le chemin reste le seul passage, et chaque gradin a la place d'une rangée d'arbres.
+    *Autre possibilité* : 5 marches de 1 m, que Xéros franchit d'un saut (il pourrait sortir du trou par les gradins).
+38. **Les arbres des gradins** : de petits arbres (noisetier, jeune frêne, 3 à 4 m) et des buissons sur les gradins, les grands arbres
+    seulement sur le dessus ? *Recommandation : oui*, un gradin de 1 m ne porte pas un grand arbre. Ces arbres des gradins sont-ils
+    abattables comme les autres (les données de `props.json`, sans code) ? *Recommandation : oui, plus tard* (le monde ne limite pas),
+    dans le chantier de la forme.
+39. **La suite** : si la planche est la bonne, un chantier à part pour cette forme (les formes de la carte, puis les dessins du
+    pixel-artist : marches, lierre, racines, arbres penchés, et la transparence de la masse sud) ? *Recommandation : oui.*
+
+**La planche** `.art-preview/relief-plans.png` (pixel-artist, en aplats ; refaire : `npx tsx tools/essai-relief-plans.ts`), dans
+l'ordre : 1, la coupe côté ferme ; 2, la coupe au-dessus de la rivière ; 3, ce que voit le joueur, côté ferme et à la bouche est, avec
+ce qui devient transparent.
+
+### 13.6 Les deuxièmes plans : le trou rond aux parois lisses (« presque parfaits »)
+
+Gardés tels qu'ils étaient (planche `art/proposals/relief-plans-v2.png`, refaire : `npx tsx tools/essai-relief-plans-v2.ts`). Ils
+avaient la bonne forme d'ensemble, mais des parois lisses et des arbres seulement sur le bord ; les questions 32 à 36 y ont reçu leur
+réponse (13.5).
+
+#### 13.6.1 La forme : ce que j'ai compris
 
 Le chemin creux n'est pas un couloir entre deux collines. **C'est un trou rond creusé dans une masse de terre.**
 
@@ -815,25 +913,25 @@ formes de la carte**, elles, changent : les deux talus (`Ridge`, crête et flanc
 `Level`, comme le plateau) qui s'avance jusqu'à la ferme, et le chemin (`Lane`) y est creusé. Le dessus de la masse devient un sol où
 l'on pourrait marcher, monté par sa pente côté ferme (question 32).
 
-### 13.2 La coupe nord-sud, côté ferme (la première image de la planche)
+#### 13.6.2 La coupe nord-sud, côté ferme (la première image de la planche)
 
 De gros aplats : la terre (la masse et ses parois), le ciel (la fente), le chemin clair au fond, Xéros debout au milieu à l'échelle
 (1,70 m : il tient trois fois dans la hauteur du trou), l'herbe sur le dessus plat de chaque côté, les arbres sur le bord de la fente,
 penchés au-dessus, les racines qui pendent des lèvres. Le cercle entier en pointillé, pour voir ce qui a été enlevé en haut.
 
-### 13.3 La même coupe au-dessus de la rivière
+#### 13.6.3 La même coupe au-dessus de la rivière
 
 La même masse et le même trou. De chaque côté, à quelques mètres, la masse s'arrête par une face de terre qui descend dans l'eau.
 L'eau est **dehors**, contre ces faces, au niveau du chemin, jamais dans le cercle.
 
-### 13.4 La vue de dessus, de la ferme au plateau
+#### 13.6.4 La vue de dessus, de la ferme au plateau
 
 Le nord en haut. La ferme à droite (est), le plateau à gauche (ouest). La masse de terre (le dessus plat, herbe) d'un seul tenant du
 plateau jusqu'à la ferme, la rivière qui la traverse du nord au sud et s'arrête contre ses deux faces. Dans la masse, la fente
 ouverte et le chemin au fond, d'un bout à l'autre. Les deux bouches : le fer à cheval dans la face est, sur la ferme ; la sortie à fleur
 du plateau, à l'ouest. Les arbres le long des deux bords de la fente.
 
-### 13.5 Ce que voit le joueur
+#### 13.6.5 Ce que voit le joueur
 
 Le jeu montre tout depuis le sud, à 45° : ce qui est haut se dessine plus haut à l'écran. **Dans le trou, le dessus de la masse au sud
 du chemin (avec sa lèvre et ses arbres) passe devant Xéros et le cache tout entier.** Il faut donc le rendre transparent, comme un
@@ -857,7 +955,7 @@ mètres.
 arbres (ils sont du tunnel : c'est son bord) ; au sud, la terre en coupe remplit le bas de l'écran. La ferme et la rivière ne
 paraissent qu'aux bouches. Le voile du dehors des premiers plans n'est plus nécessaire.
 
-### 13.6 Questions pour Grégoire (la forme ronde)
+#### 13.6.6 Questions pour Grégoire (la forme ronde)
 
 31. **La forme** : est-ce bien elle (le trou rond dans une masse plate, la fente en haut, le chemin plat au fond, les lèvres qui
     reviennent au-dessus du chemin, les arbres sur le bord) ? *Si oui*, je refais les écrans en vraie vue de jeu sur cette forme, puis
@@ -875,7 +973,7 @@ paraissent qu'aux bouches. Le voile du dehors des premiers plans n'est plus néc
     qu'un cercle, comme une goutte renversée) ? *Recommandation : le cercle, fermé par ce qui pend* : c'est la forme décrite, et la
     végétation se dessine sans toucher au chemin.
 
-**La planche** `.art-preview/relief-plans.png` (pixel-artist, en aplats ; refaire : `npx tsx tools/essai-relief-plans.ts`), dans
+**La planche** `art/proposals/relief-plans-v2.png` (pixel-artist, en aplats ; refaire : `npx tsx tools/essai-relief-plans-v2.ts`), dans
 l'ordre : 1, la coupe côté ferme ; 2, la coupe au-dessus de la rivière ; 3, la vue de dessus entière ; 4, ce que voit le joueur, côté
 ferme, au-dessus de la rivière, à la bouche est, avec ce qui devient transparent.
 

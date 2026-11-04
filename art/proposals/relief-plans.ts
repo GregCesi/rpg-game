@@ -1,16 +1,20 @@
-// Plans du chemin creux (chantier « relief », CADRAGE.md section 13.1 à 13.5) : des SCHÉMAS en gros aplats, pas des dessins.
+// Plans du chemin creux (chantier « relief », troisièmes plans) : des SCHÉMAS en gros aplats, pas des dessins.
 // Planche : .art-preview/relief-plans.png (npx tsx tools/essai-relief-plans.ts). Rien de ce fichier n'entre dans le jeu.
-// (Les premiers plans, la mauvaise forme à deux talus : art/proposals/relief-plans-v1.ts, gardés tels quels.)
+// (Les plans d'avant : art/proposals/relief-plans-v1.ts, le double talus ; relief-plans-v2.ts, le trou rond lisse.)
 //
-// La forme : une masse de terre au dessus plat (5 m au-dessus du chemin), creusée d'un cercle de 5,50 m de diamètre dont le centre
-// est à 2,45 m au-dessus du chemin ; le bas du cercle aplati (le chemin, 2,5 m), le haut ouvert (la fente, environ 2 m, là où le
-// cercle coupe le dessus).
+// La forme (Grégoire) : les parois descendent en demi-escalier, par gradins, du dessus de la terre jusqu'au chemin.
+// Chaque gradin porte de petits arbres et des buissons penchés vers le chemin, le dessus porte les grands arbres penchés ;
+// racines et lierre pendent d'un gradin à l'autre. Ce sont les gradins et leur végétation qui referment le cercle.
 //
-// Quatre parties, de haut en bas :
-//   1. la grande coupe nord-sud, côté ferme (nord à gauche) ;
+// Les mesures, en mètres depuis le milieu du chemin (h depuis le chemin) :
+//   chemin ±1,25 ; quatre contremarches de 1,25 m aux distances 1,25 / 2,25 / 3,25 / 4,25 ; trois gradins de 1 m ; le dessus à 5 m.
+//   Le cercle (l'enveloppe) passe par (±1,25 ; 0) et (±4,25 ; 5) : centre à 4,15 m, rayon 4,33 m, haut à 8,48 m.
+//
+// Trois parties, de haut en bas :
+//   1. la coupe nord-sud côté ferme (nord à gauche) ;
 //   2. la même coupe au-dessus de la rivière ;
-//   3. la vue de dessus du tunnel entier, et l'encart de la bouche est vue de face ;
-//   4. ce que voit le joueur : trois écrans de 427 × 240 px (agrandis x2), Xéros les pieds à la ligne 130.
+//   3. ce que voit le joueur : deux écrans de 427 × 240 px (agrandis x2), Xéros les pieds à la ligne 130 ;
+//   puis la légende des couleurs.
 
 import type { Grid, Palette } from '../lib/canvas';
 import xeros from '../characters/xeros';
@@ -37,20 +41,21 @@ const WHITE: Rgb = [245, 245, 235];
 const GOLD: Rgb = [245, 215, 120];
 
 const EARTH: Rgb = [146, 100, 60]; // la terre
-const EARTH_DARK: Rgb = [100, 66, 38]; // la terre dans l'ombre (sous la lèvre, le bord du trou)
-const EARTH_LIGHT: Rgb = [176, 128, 82]; // la terre éclairée (le bas de la paroi)
-const GRASS: Rgb = [92, 162, 62]; // l'herbe du dessus
+const EARTH_DARK: Rgb = [100, 66, 38]; // la terre au bord de l'air (les contremarches)
+const EARTH_LIGHT: Rgb = [176, 128, 82]; // la terre éclairée (les contremarches vues du jeu)
+const GRASS: Rgb = [92, 162, 62]; // l'herbe du dessus et des gradins
 const SKY: Rgb = [204, 230, 248]; // le ciel
 const PATH: Rgb = [242, 234, 210]; // le chemin
 const WATER: Rgb = [60, 126, 204]; // l'eau
 const CUT: Rgb = [84, 50, 32]; // la terre en coupe
 const CUT_HATCH: Rgb = [150, 100, 64];
-const FARM: Rgb = [184, 218, 124]; // le sol de la ferme, en bas, en pleine lumière
+const FARM: Rgb = [184, 218, 124]; // le sol de la ferme, en pleine lumière
 const IVY: Rgb = [34, 86, 36]; // le lierre
 const ROOT: Rgb = [66, 40, 22]; // les racines
 const TRUNK: Rgb = [92, 58, 32];
 const LEAF: Rgb = [42, 104, 50];
 const LEAF_EDGE: Rgb = [24, 66, 30];
+const BUSH: Rgb = [70, 134, 54]; // les buissons des gradins
 const LIGHT: Rgb = [255, 236, 150];
 
 /** Ce qui est rendu transparent : son contour en pointillé clair, et une teinte très légère par-dessus. */
@@ -60,11 +65,21 @@ const GHOST_LINE: Rgb = [250, 250, 235];
 
 // ---------- la forme (en mètres, depuis le milieu du chemin) ----------
 
-const CY = 2.45; // centre du cercle
-const R = 2.75; // rayon
 const TOP = 5; // le dessus de la masse
 const PATH_HALF = 1.25;
-const SLIT_HALF = Math.sqrt(R * R - (TOP - CY) ** 2); // 1,03 m
+const STEP_H = 1.25; // hauteur d'une contremarche
+const STEP_D = 1; // profondeur d'un gradin
+const RISERS = [1.25, 2.25, 3.25, 4.25]; // la distance de chaque contremarche au milieu
+const EDGE = RISERS[3]; // le bord du dessus
+const CY = 4.15; // centre du cercle-enveloppe
+const R = Math.sqrt(PATH_HALF ** 2 + CY ** 2); // 4,33 m
+
+/** La hauteur du sol à la distance a du milieu (dans la masse) ; le bord des contremarches un peu irrégulier (de la terre). */
+function groundAt(a: number, hh: number): number {
+  const wob = 0.05 * Math.sin(hh * 7.3) + 0.03 * Math.sin(hh * 17);
+  for (let i = 0; i < RISERS.length; i++) if (a <= RISERS[i] + wob) return i * STEP_H;
+  return TOP;
+}
 
 // ---------- primitives ----------
 
@@ -93,7 +108,7 @@ function arrow(x0: number, y0: number, x1: number, y1: number, c: Rgb = WHITE, t
   const l = Math.hypot(x1 - x0, y1 - y0);
   const ux = (x1 - x0) / l;
   const uy = (y1 - y0) / l;
-  const size = 14;
+  const size = 12;
   for (const s of [1, -1]) line(Math.round(x1 - size * ux - s * size * 0.55 * uy), Math.round(y1 - size * uy + s * size * 0.55 * ux), x1, y1, c, t);
 }
 function disc(cx: number, cy: number, r: number, c: Rgb, a = 1): void {
@@ -138,10 +153,10 @@ function wrap(s: string, max: number): string[] {
 }
 /** Un titre (or, gros) et une ou deux phrases dessous ; rend la hauteur prise. */
 function heading(title: string, caption: string, x: number, y: number, width: number): number {
-  text(title, x, y, GOLD, 5);
+  text(title, x, y, GOLD, 6);
   const lines = wrap(clean(caption), Math.floor(width / 12));
-  lines.forEach((l, i) => text(l, x, y + 42 + i * 24, WHITE, 3));
-  return 42 + lines.length * 24 + 16;
+  lines.forEach((l, i) => text(l, x, y + 50 + i * 24, WHITE, 3));
+  return 50 + lines.length * 24 + 18;
 }
 /** Un texte de plusieurs lignes ; rend la hauteur prise. */
 function para(s: string, x: number, y: number, width: number, k = 3): number {
@@ -170,14 +185,28 @@ function drawXeros(x: number, y: number, k: number): void {
 
 // ---------- 1 et 2 : les coupes nord-sud ----------
 
-interface Tree { base: number; top: [number, number]; crown: [number, number, number] }
+interface Tree { base: [number, number]; top: [number, number]; trunk: number; crown: [number, number, number] }
 
-/** Deux arbres de chaque côté : le plus près du trou se penche au-dessus. */
-const TREES: Tree[] = [
-  { base: -2.5, top: [-1.5, 8.4], crown: [-1.8, 9.2, 1.5] },
-  { base: -7.2, top: [-7.0, 8.8], crown: [-7.2, 9.4, 1.6] },
-  { base: 2.3, top: [1.5, 8.0], crown: [1.9, 8.8, 1.4] },
-  { base: 6.6, top: [6.3, 8.6], crown: [6.4, 9.2, 1.5] },
+/** Les arbres du côté sud (m > 0) ; le nord est leur miroir, un peu décalé. Chacun penche vers le chemin. */
+const SOUTH_TREES: Tree[] = [
+  // le dessus : les grands arbres (tronc 30 cm, 7 m), le premier penché au-dessus du chemin
+  { base: [7.6, TOP], top: [6.7, 11.0], trunk: 0.3, crown: [6.5, 11.0, 1.6] },
+  { base: [5.0, TOP], top: [1.7, 8.9], trunk: 0.3, crown: [1.35, 9.2, 1.6] },
+  // gradin 3 (h 3,75), gradin 2 (h 2,5), gradin 1 (h 1,25) : petits arbres (tronc 18 cm, 3 à 4 m)
+  { base: [3.8, 3 * STEP_H], top: [2.95, 6.8], trunk: 0.18, crown: [2.85, 7.0, 1.0] },
+  { base: [2.8, 2 * STEP_H], top: [1.95, 5.6], trunk: 0.18, crown: [1.9, 5.75, 0.95] },
+  { base: [1.8, STEP_H], top: [1.05, 4.3], trunk: 0.18, crown: [0.95, 4.4, 0.85] },
+];
+const mirror = (t: Tree, d: number): Tree => ({
+  base: [-t.base[0], t.base[1]], top: [-t.top[0], t.top[1] + d], trunk: t.trunk, crown: [-t.crown[0], t.crown[1] + d, t.crown[2]],
+});
+const TREES: Tree[] = SOUTH_TREES.flatMap((t, i) => [t, mirror(t, i % 2 ? 0.12 : -0.1)]);
+/** Les buissons de chaque gradin (m, h, rayon), côté sud ; le nord en miroir. */
+const SOUTH_BUSHES: [number, number, number][] = [
+  [2.15, STEP_H, 0.35], [1.45, STEP_H, 0.25],
+  [3.15, 2 * STEP_H, 0.3], [2.45, 2 * STEP_H, 0.28],
+  [4.12, 3 * STEP_H, 0.32], [3.45, 3 * STEP_H, 0.26],
+  [4.6, TOP, 0.35],
 ];
 
 interface Section {
@@ -185,7 +214,7 @@ interface Section {
   y: number;
   w: number;
   h: number;
-  /** px par mètre : 60 (Xéros x3) ou 40 (Xéros x2) */
+  /** px par mètre */
   ppm: number;
   /** hauteur du haut du cadre, en m */
   top: number;
@@ -193,385 +222,353 @@ interface Section {
   faces?: number;
   /** dehors, au pied des faces : l'eau ou le sol de la ferme */
   outside?: 'water' | 'farm';
-  trees: Tree[];
 }
 
 type Cell = 'sky' | 'earth' | 'grass' | 'path' | 'water' | 'farm';
 
 function cellAt(sec: Section, m: number, hh: number): Cell {
-  const face = sec.faces === undefined ? Infinity : sec.faces + Math.max(0, TOP - hh) * 0.12;
+  const face = sec.faces === undefined ? Infinity : sec.faces + Math.max(0, TOP - hh) * 0.15;
   if (Math.abs(m) > face) {
     if (hh > 0) return 'sky';
     if (sec.outside === 'water') return hh > -1.6 ? 'water' : 'earth';
     return hh > -0.2 ? 'farm' : 'earth';
   }
-  if (hh > TOP) return 'sky';
-  if (hh >= 0 && m * m + (hh - CY) ** 2 <= R * R) return 'sky';
-  if (hh > TOP - 0.2) return 'grass';
-  if (Math.abs(m) <= PATH_HALF && hh > -0.22) return 'path';
+  const g = groundAt(Math.abs(m), hh);
+  if (hh > g) return 'sky';
+  if (g > 0 && hh > g - 0.14) return 'grass';
+  if (g === 0 && hh > -0.22) return 'path';
   return 'earth';
 }
 const CELL_COLOR: Record<Cell, Rgb> = { sky: SKY, earth: EARTH, grass: GRASS, path: PATH, water: WATER, farm: FARM };
+
+function drawTree(tr: Tree, X: (m: number) => number, Y: (h: number) => number, ppm: number): void {
+  const w0 = tr.trunk / 2 + 0.03;
+  const w1 = tr.trunk / 2 - 0.02;
+  fillPoly([[X(tr.base[0] - w0), Y(tr.base[1])], [X(tr.base[0] + w0), Y(tr.base[1])], [X(tr.top[0] + w1), Y(tr.top[1])], [X(tr.top[0] - w1), Y(tr.top[1])]], TRUNK);
+}
+function drawCrown(tr: Tree, X: (m: number) => number, Y: (h: number) => number, ppm: number): void {
+  const [mx, my, r] = tr.crown;
+  disc(X(mx), Y(my), Math.round(r * ppm), LEAF_EDGE);
+  disc(X(mx), Y(my), Math.round(r * ppm) - 3, LEAF);
+}
 
 function drawSection(sec: Section): { X: (m: number) => number; Y: (h: number) => number } {
   const cx = sec.x + sec.w / 2;
   const X = (m: number) => Math.round(cx + m * sec.ppm);
   const Y = (hh: number) => Math.round(sec.y + (sec.top - hh) * sec.ppm);
+  // tout ce que la coupe dessine reste dans son cadre
+  const outer = S;
+  S = { w: outer.w, h: outer.h, text: outer.text.bind(outer), blit: outer.blit.bind(outer),
+    dot: (x, y, c, a) => { if (x >= sec.x && x < sec.x + sec.w && y >= sec.y && y < sec.y + sec.h) outer.dot(x, y, c, a); } };
   const cells: Cell[][] = [];
   for (let j = 0; j < sec.h; j++) {
     const row: Cell[] = [];
     for (let i = 0; i < sec.w; i++) row.push(cellAt(sec, (sec.x + i - cx) / sec.ppm, sec.top - j / sec.ppm));
     cells.push(row);
   }
-  // aplats, avec un bord sombre de 3 px là où la terre touche l'air (le bord du trou, les faces)
+  // aplats ; la terre qui touche l'air (les contremarches, les faces) plus sombre sur quelques px
+  const dark = Math.max(3, Math.round(sec.ppm / 12));
   for (let j = 0; j < sec.h; j++) for (let i = 0; i < sec.w; i++) {
     const c = cells[j][i];
     let col = CELL_COLOR[c];
-    if (c === 'earth' || c === 'grass') {
-      for (let d = 1; d <= 5 && col !== EARTH_DARK; d++) {
-        for (const [di, dj] of [[d, 0], [-d, 0], [0, d], [0, -d]]) {
-          const n = cells[j + dj]?.[i + di];
-          if (n === 'sky' && c === 'earth') col = EARTH_DARK;
-        }
+    if (c === 'earth') {
+      for (let d = 1; d <= dark && col !== EARTH_DARK; d++) {
+        for (const [di, dj] of [[d, 0], [-d, 0], [0, -d]]) if (cells[j + dj]?.[i + di] === 'sky') col = EARTH_DARK;
       }
     }
     S.dot(sec.x + i, sec.y + j, col);
   }
-  // le cercle entier, en pointillé fin : le haut enlevé (au-dessus du dessus) et le bas aplati (sous le chemin)
-  const steps = Math.round(2 * Math.PI * R * sec.ppm);
-  for (let k = 0; k < steps; k++) {
-    if (Math.floor(k / 7) % 2) continue;
-    const a = (2 * Math.PI * k) / steps;
-    const px = X(R * Math.sin(a));
-    const py = Y(CY + R * Math.cos(a));
-    rect(px - 1, py - 1, 2, 2, WHITE);
-  }
-  // les racines, le lierre et l'herbe qui pendent des lèvres
-  const t = Math.max(2, Math.round(sec.ppm / 20));
+  const t = Math.max(2, Math.round(sec.ppm / 22));
+  // le lierre et les racines : ils pendent de chaque lèvre jusqu'au gradin du dessous (ou au chemin)
   for (const s of [-1, 1]) {
-    for (let i = 0; i < 9; i++) {
-      const theta = ((24 + i * 4.6) * Math.PI) / 180;
-      const m0 = s * R * Math.sin(theta) - s * 0.06;
-      const h0 = CY + R * Math.cos(theta);
-      const len = 0.5 + (((i * 7 + (s > 0 ? 3 : 0)) % 9) / 9) * 1.3;
-      const end = Math.max(2.1, h0 - len);
-      const col = i % 3 === 0 ? ROOT : IVY;
-      const n = Math.round((h0 - end) * sec.ppm);
-      for (let k = 0; k <= n; k++) {
-        const wob = Math.round(Math.sin(k / 9 + i) * (t / 2));
-        rect(X(m0) + wob, Y(h0) + k, t, 1, col);
-        if (col === IVY && k % 10 === 5) rect(X(m0) + wob - t, Y(h0) + k, t * 3, t, IVY);
+    for (let r = 0; r < RISERS.length; r++) {
+      const hTop = (r + 1) * STEP_H;
+      const hLow = r * STEP_H;
+      for (let i = 0; i < 4; i++) {
+        const m0 = s * (RISERS[r] - 0.06 - i * 0.09);
+        const len = 0.55 + (((i * 5 + r * 3 + (s > 0 ? 2 : 0)) % 7) / 6) * (STEP_H - 0.7);
+        const end = Math.max(hLow + 0.08, hTop - len);
+        const col = (i + r) % 3 === 0 ? ROOT : IVY;
+        const n = Math.round((hTop - end) * sec.ppm);
+        for (let k = 0; k <= n; k++) {
+          const wob = Math.round(Math.sin(k / 8 + i + r) * (t / 2));
+          rect(X(m0) + wob, Y(hTop) + k, t, 1, col);
+          if (col === IVY && k % 9 === 4) rect(X(m0) + wob - t, Y(hTop) + k, t * 3, t, IVY);
+        }
       }
     }
-    // l'herbe du dessus, qui retombe au bord de la fente
-    for (let i = 0; i < 4; i++) {
-      const m0 = s * (SLIT_HALF + 0.04 + i * 0.1);
-      line(X(m0), Y(TOP), X(m0 - s * 0.08), Y(TOP - 0.35 - (i % 2) * 0.2), GRASS, t);
-    }
   }
-  // les arbres, sur le dessus, au bord de la fente
-  for (const tr of sec.trees) {
-    const w0 = 0.22;
-    const w1 = 0.12;
-    fillPoly([[X(tr.base - w0), Y(TOP)], [X(tr.base + w0), Y(TOP)], [X(tr.top[0] + w1), Y(tr.top[1])], [X(tr.top[0] - w1), Y(tr.top[1])]], TRUNK);
-    const [mx, my, r] = tr.crown;
-    disc(X(mx), Y(my), Math.round(r * sec.ppm), LEAF_EDGE);
-    disc(X(mx), Y(my), Math.round(r * sec.ppm) - 3, LEAF);
+  // les buissons, puis les arbres (troncs d'abord, houppiers par-dessus)
+  for (const [m, hh, r] of SOUTH_BUSHES) for (const s of [-1, 1]) {
+    disc(X(s * m), Y(hh + r * 0.7), Math.round(r * sec.ppm), LEAF_EDGE);
+    disc(X(s * m), Y(hh + r * 0.7), Math.round(r * sec.ppm) - 2, BUSH);
+  }
+  const inFrame = (tr: Tree) => sec.faces === undefined || Math.abs(tr.base[0]) < sec.faces;
+  for (const tr of TREES) if (inFrame(tr)) drawTree(tr, X, Y, sec.ppm);
+  for (const tr of TREES) if (inFrame(tr)) drawCrown(tr, X, Y, sec.ppm);
+  // le cercle-enveloppe, en pointillé épais
+  const steps = Math.round(2 * Math.PI * R * sec.ppm);
+  const dot = Math.max(3, Math.round(sec.ppm / 15));
+  for (let k = 0; k < steps; k++) {
+    if (Math.floor(k / 9) % 2) continue;
+    const a = (2 * Math.PI * k) / steps;
+    rect(X(R * Math.sin(a)) - 1, Y(CY + R * Math.cos(a)) - 1, dot, dot, WHITE);
   }
   drawXeros(X(0), Y(0), sec.ppm / 20);
+  S = outer;
   frame(sec.x, sec.y, sec.w, sec.h, WHITE, 2);
   return { X, Y };
 }
 
-/** Une barre d'échelle de `meters` m. */
-function scaleBar(x: number, y: number, ppm: number, meters: number): void {
-  const w = Math.round(meters * ppm);
-  rect(x, y, w, 6, WHITE);
-  rect(x, y - 6, 3, 18, WHITE);
-  rect(x + w - 3, y - 6, 3, 18, WHITE);
-  text(`${meters} M`, x + w + 12, y - 4, WHITE, 3);
-}
-
-/** Une cote verticale (de h0 à h1) avec son texte. */
-function vDim(x: number, y0: number, y1: number, label: string): void {
-  arrow(x, Math.round((y0 + y1) / 2), x, y0);
-  arrow(x, Math.round((y0 + y1) / 2), x, y1);
-  rect(x - 12, y0 - 1, 25, 3, WHITE);
-  rect(x - 12, y1 - 1, 25, 3, WHITE);
-  tag(label, x + 18, Math.round((y0 + y1) / 2) - 9, 4);
+/** Une cote horizontale (de xa à xb) avec son texte centré dessous. */
+function hDim(xa: number, xb: number, y: number, label: string, k = 3, below = true): void {
+  const xm = Math.round((xa + xb) / 2);
+  arrow(xm, y, xa, y, WHITE, 3);
+  arrow(xm, y, xb, y, WHITE, 3);
+  rect(xa - 1, y - 10, 3, 21, WHITE);
+  rect(xb - 1, y - 10, 3, 21, WHITE);
+  tag(label, xm - Math.round(tw(label, k) / 2), below ? y + 16 : y - 16 - 5 * k, k);
 }
 
 function partFarm(y: number): number {
   const width = PLAN_W - 100;
-  y += heading('LE CHEMIN CREUX : UN TROU ROND CREUSE DANS LA TERRE',
-    'Coupe du nord au sud, cote ferme. Une terre au dessus plat, et dedans un trou rond : le haut est ouvert (la fente), le bas est aplati (le chemin). Les bords du trou reviennent au-dessus du chemin.',
+  y += heading('1. LA COUPE COTE FERME',
+    'Du nord (a gauche) au sud. Les parois descendent en gradins, du dessus jusqu au chemin. Des arbres a chaque etage, penches vers le chemin. Le cercle en pointille : en bas la terre en gradins, en haut les houppiers.',
     50, y, width);
-  const sec: Section = { x: 50, y, w: width, h: 13.5 * 60, ppm: 60, top: 12, trees: TREES };
+  const sec: Section = { x: 50, y, w: width, h: Math.round(14.2 * 60), ppm: 60, top: 12.9 };
   const { X, Y } = drawSection(sec);
-  // le nord, le sud
-  tag('NORD', sec.x + 16, sec.y + 16, 4, GOLD);
-  tag('SUD', sec.x + sec.w - 16 - tw('SUD', 4), sec.y + 16, 4, GOLD);
-  // le dessus, de chaque côté
-  tag('LE DESSUS : LE SOL DU PAYS', X(-13.4), Y(6.3), 3);
-  arrow(X(-10.5), Y(6.0), X(-10.5), Y(5.05));
-  tag('LE DESSUS : LE SOL DU PAYS', X(8.4), Y(6.3), 3);
-  arrow(X(11.2), Y(6.0), X(11.2), Y(5.05));
-  // la fente
-  tag('LA FENTE VERS LE CIEL', X(0) - Math.round(tw('LA FENTE VERS LE CIEL', 4) / 2), Y(11.6), 4);
-  arrow(X(0.15), Y(11.1), X(0.15), Y(5.35));
-  // les lèvres et les racines, côté nord
-  tag('LES LEVRES : LA VOUTE', X(-12.8), Y(3.9), 4);
-  arrow(X(-12.8) + tw('LES LEVRES : LA VOUTE', 4) + 10, Y(3.9) + 10, X(-1.3), Y(4.75));
-  tag('LES RACINES QUI PENDENT', X(-12.8), Y(1.9), 4);
-  arrow(X(-12.8) + tw('LES RACINES QUI PENDENT', 4) + 10, Y(1.9) + 10, X(-2.05), Y(2.6));
-  // la profondeur
-  vDim(X(4.0), Y(TOP), Y(0), '5 M');
+  tag('NORD', sec.x + 16, sec.y + 16, 5, GOLD);
+  tag('SUD', sec.x + sec.w - 16 - tw('SUD', 5), sec.y + 16, 5, GOLD);
+  // les hauteurs : un trait par niveau, à travers la terre du sud, et la cote
+  for (let i = 1; i <= 4; i++) {
+    const hh = i * STEP_H;
+    line(X(RISERS[i - 1] + (i < 4 ? STEP_D * 0.6 : 0.4)), Y(hh), X(11.3), Y(hh), WHITE, 2, 8);
+    const label = i === 4 ? '5 M' : `${(hh).toFixed(2).replace('.', ',')} M`;
+    tag(label, X(11.5), Y(hh) - 10, 4);
+  }
+  line(X(-1.3), Y(0), X(11.3), Y(0), WHITE, 2, 8);
+  tag('0', X(11.5), Y(0) - 10, 4);
+  // sous le chemin : le chemin et les gradins du sud, en largeur
+  const yd = Y(-0.55);
+  hDim(X(-PATH_HALF), X(PATH_HALF), yd, 'CHEMIN 2,5 M', 4);
+  for (let i = 0; i < 3; i++) hDim(X(RISERS[i]), X(RISERS[i + 1]), yd, '1 M', 4);
+  // l'ouverture en haut
+  hDim(X(-EDGE), X(EDGE), Y(TOP) - 2, 'OUVERTURE 8,5 M', 4, false);
+  // les noms, côté nord, sur la terre
+  tag('LE DESSUS', X(-13.6), Y(TOP + 0.8), 4);
+  tag('GRADIN 3', X(-8.4), Y(3.75) - 12, 4);
+  arrow(X(-8.4) + tw('GRADIN 3', 4) + 12, Y(3.75) - 2, X(-3.85), Y(3.85));
+  tag('GRADIN 2', X(-8.4), Y(2.5) - 12, 4);
+  arrow(X(-8.4) + tw('GRADIN 2', 4) + 12, Y(2.5) - 2, X(-2.85), Y(2.6));
+  tag('GRADIN 1', X(-8.4), Y(1.25) - 12, 4);
+  arrow(X(-8.4) + tw('GRADIN 1', 4) + 12, Y(1.25) - 2, X(-1.85), Y(1.35));
+  tag('LIERRE ET RACINES', X(-13.6), Y(0.4), 4);
+  tag("D'UN GRADIN A L'AUTRE", X(-13.6), Y(0.4) + 32, 3);
+  arrow(X(-13.6) + tw('LIERRE ET RACINES', 4) + 12, Y(0.4) + 8, X(-1.35), Y(0.7));
+  // le cercle
+  tag('LE CERCLE : HAUT 8,48 M', X(-12.6), Y(8.5) - 10, 4);
+  arrow(X(-12.6) + tw('LE CERCLE : HAUT 8,48 M', 4) + 12, Y(8.5), X(-0.3), Y(8.46), WHITE, 3);
+  tag('LES HOUPPIERS FERMENT LE HAUT', X(-13.6), Y(11.6), 4, GOLD);
   // Xéros
-  tag('XEROS', X(0.55), Y(1.2), 4);
-  // le chemin
-  const yb = Y(-0.5);
-  rect(X(-PATH_HALF), yb, X(PATH_HALF) - X(-PATH_HALF), 3, WHITE);
-  rect(X(-PATH_HALF), yb - 8, 3, 19, WHITE);
-  rect(X(PATH_HALF) - 3, yb - 8, 3, 19, WHITE);
-  tag('LE CHEMIN (2,5 M)', X(0) - Math.round(tw('LE CHEMIN (2,5 M)', 4) / 2), Y(-0.75), 4);
-  scaleBar(sec.x, sec.y + sec.h + 28, sec.ppm, 2);
-  text('POINTILLE : LE CERCLE ENTIER', sec.x + 260, sec.y + sec.h + 20, WHITE, 3);
-  return y + sec.h + 60;
+  tag('XEROS 1,70 M', X(0.4), Y(0.9), 3);
+  return y + sec.h + 110;
 }
 
 function partRiver(y: number): number {
   const width = PLAN_W - 100;
-  y += heading('LA MEME COUPE, AU-DESSUS DE LA RIVIERE',
-    'Le meme trou, la meme terre. La terre s arrete a quelques metres du trou, et l eau arrive contre elle, dehors.',
+  y += heading('2. LA MEME COUPE, AU-DESSUS DE LA RIVIERE',
+    'Les memes gradins. De chaque cote, au moins 6 m de dessus plat, puis la terre descend dans l eau. L eau reste dehors, au niveau du chemin.',
     50, y, width);
-  const w = 32 * 40;
-  const sec: Section = { x: 50 + Math.round((width - w) / 2), y, w, h: 13.5 * 40, ppm: 40, top: 11.5, faces: 9.8, outside: 'water', trees: TREES.slice(0, 1).concat(TREES.slice(2, 3)) };
+  const ppm = 40;
+  const w = 34 * ppm;
+  const sec: Section = { x: 50 + Math.round((width - w) / 2), y, w, h: Math.round(13.4 * ppm), ppm, top: 11.4, faces: EDGE + 6, outside: 'water' };
   const { X, Y } = drawSection(sec);
-  tag('NORD', sec.x + 12, sec.y + 12, 3, GOLD);
-  tag('SUD', sec.x + sec.w - 12 - tw('SUD', 3), sec.y + 12, 3, GOLD);
-  tag("L'EAU", X(-14.2), Y(-0.75), 4);
-  tag("L'EAU", X(12.6), Y(-0.75), 4);
-  tag('LA TERRE', X(-6.4), Y(2.2), 4);
-  tag('LA TERRE', X(3.6), Y(2.2), 4);
-  const msg = "L'EAU RESTE DEHORS, CONTRE LA MASSE DE TERRE : JAMAIS DANS LE TROU";
-  tag(msg, sec.x + Math.round((sec.w - tw(msg, 3)) / 2), sec.y + sec.h + 22, 3, GOLD);
-  arrow(X(-12.2), Y(-0.2), X(-10.4), Y(-0.2), GOLD);
-  arrow(X(12.2), Y(-0.2), X(10.4), Y(-0.2), GOLD);
-  return y + sec.h + 70;
+  tag('NORD', sec.x + 12, sec.y + 12, 4, GOLD);
+  tag('SUD', sec.x + sec.w - 12 - tw('SUD', 4), sec.y + 12, 4, GOLD);
+  tag("L'EAU", X(-16.2), Y(-0.75), 4);
+  tag("L'EAU", X(13.9), Y(-0.75), 4);
+  for (const s of [-1, 1]) {
+    const a = X(s * EDGE);
+    const b = X(s * (EDGE + 6));
+    hDim(Math.min(a, b), Math.max(a, b), Y(3.6), '6 M', 4);
+  }
+  const msg = "L'EAU RESTE DEHORS, CONTRE LA TERRE : JAMAIS DANS LE TROU";
+  tag(msg, sec.x + Math.round((sec.w - tw(msg, 4)) / 2), sec.y + sec.h + 24, 4, GOLD);
+  return y + sec.h + 90;
 }
 
-// ---------- 3 : la vue de dessus ----------
-
-function partTop(y: number): number {
-  const width = PLAN_W - 100;
-  y += heading('VU DE DESSUS : LE TUNNEL ENTIER',
-    'Le nord en haut. La terre d un seul tenant, du plateau a la ferme, et la fente ouverte au milieu, d un bout a l autre. La riviere s arrete contre la terre, au nord et au sud : elle ne passe ni dessous ni dedans.',
-    50, y, width);
-  const x0 = 50;
-  const W = 1240;
-  const H = 520;
-  const yc = y + H / 2;
-  const half = 118; // demi-largeur de la masse
-  const slit = 16; // demi-largeur de la fente
-  const plateau = x0 + 230;
-  const xE = x0 + 1010; // la face est
-  const xr = x0 + 600; // la rivière
-  const rw = 110;
-  // le sol bas (la ferme, au niveau du chemin)
-  rect(x0, y, W, H, FARM);
-  // la rivière, du nord au sud
-  rect(xr, y, rw, H, WATER);
-  for (let j = y + 14; j < y + H; j += 26) for (let i = xr + 14; i < xr + rw - 20; i += 34) rect(i + ((j / 26) % 2) * 12, j, 14, 3, [150, 196, 240]);
-  // le plateau et la masse : l'herbe du dessus, d'un seul tenant
-  rect(x0, y, plateau - x0, H, GRASS);
-  rect(plateau, yc - half, xE - plateau, 2 * half, GRASS);
-  // les faces (là où le dessus s'arrête) : une bande de terre
-  const F = 9;
-  rect(plateau, y, F, yc - half - y, EARTH_DARK);
-  rect(plateau, yc + half, F, y + H - yc - half, EARTH_DARK);
-  rect(plateau, yc - half - F, xE - plateau + F, F, EARTH_DARK);
-  rect(plateau, yc + half, xE - plateau + F, F, EARTH_DARK);
-  rect(xE, yc - half - F, F, 2 * half + 2 * F, EARTH_DARK);
-  // la fente : son ombre de chaque côté, le chemin clair au fond ; à l'ouest, elle s'efface, le chemin sort à fleur du plateau
-  const west = x0 + 70;
-  for (let x = west; x < xE + F; x++) {
-    const fade = Math.min(1, Math.max(0, (x - west) / 170));
-    for (let j = -slit - 8; j <= slit + 8; j++) {
-      const inner = Math.abs(j) <= slit - 4;
-      if (inner) S.dot(x, yc + j, PATH);
-      else S.dot(x, yc + j, EARTH_DARK, fade);
-    }
-  }
-  rect(x0, yc - 12, west - x0, 25, PATH);
-  // le chemin continue sur la ferme
-  rect(xE + F, yc - 12, x0 + W - xE - F, 25, PATH);
-  // les arbres le long des deux bords, penchés vers la fente
-  for (let x = plateau + 50; x < xE - 20; x += 64) {
-    for (const s of [-1, 1]) {
-      const cyy = yc + s * (slit + 12 + 22) + Math.round(Math.sin(x) * 3);
-      disc(x, cyy, 22, LEAF_EDGE);
-      disc(x, cyy, 19, LEAF);
-    }
-  }
-  // un peu d'arbres sur le plateau
-  for (const [tx, ty] of [[x0 + 60, y + 60], [x0 + 150, y + 120], [x0 + 80, y + 400], [x0 + 170, y + 460]] as [number, number][]) {
-    disc(tx, ty, 22, LEAF_EDGE);
-    disc(tx, ty, 19, LEAF);
-  }
-  // la ferme : deux toits
-  rect(x0 + 1090, y + 60, 90, 60, [168, 84, 60]);
-  rect(x0 + 1120, y + 380, 70, 50, [168, 84, 60]);
-  frame(x0, y, W, H, WHITE, 2);
-  // les légendes
-  tag('LE PLATEAU', x0 + 18, y + 190, 4);
-  tag('LA FERME', x0 + W - 18 - tw('LA FERME', 4), y + 200, 4);
-  tag('LA RIVIERE', xr + rw / 2 - Math.round(tw('LA RIVIERE', 4) / 2), y + 40, 4);
-  tag('LA RIVIERE', xr + rw / 2 - Math.round(tw('LA RIVIERE', 4) / 2), y + H - 60, 4);
-  tag('LA FENTE', x0 + 760, yc - half - 70, 4);
-  arrow(x0 + 800, yc - half - 46, x0 + 820, yc - 6);
-  tag('BOUCHE EST', xE - 40, yc + half + 50, 4);
-  arrow(xE + 30, yc + half + 44, xE + 6, yc + 14);
-  tag('BOUCHE OUEST', x0 + 18, yc + 60, 4);
-  arrow(x0 + 80, yc + 54, x0 + 90, yc + 14);
-  tag('LA TERRE (SON DESSUS)', plateau + 70, yc + half - 36, 3);
-  // le nord
-  arrow(x0 + W - 40, y + 70, x0 + W - 40, y + 20, WHITE);
-  text('N', x0 + W - 66, y + 30, WHITE, 4);
-
-  // l'encart : la bouche est, vue de face, depuis la ferme
-  const ex = x0 + W + 40;
-  const ew = PLAN_W - 50 - ex;
-  text('LA BOUCHE EST,', ex, y, GOLD, 4);
-  text('VUE DE FACE', ex, y + 30, GOLD, 4);
-  const ppm = 20;
-  const sec: Section = { x: ex, y: y + 70, w: ew, h: Math.round(12.5 * ppm), ppm, top: 11.5, faces: 9.8, outside: 'farm', trees: TREES };
-  drawSection(sec);
-  const t = para('Le trou en fer a cheval : le cercle sans son haut. On y entre comme dans un tronc creux.', ex, sec.y + sec.h + 20, ew, 3);
-  return y + Math.max(H, sec.h + 90 + t) + 50;
-}
-
-// ---------- 4 : ce que voit le joueur ----------
+// ---------- 3 : ce que voit le joueur ----------
 
 const GW = 427;
 const GH = 240;
 const FEET = 130;
 
-type Shot = 'farm' | 'river' | 'mouth';
+/** Les lignes du nord, depuis les pieds (px, négatif = plus haut) : contremarche, gradin, contremarche... */
+const N_RISER = [[-50, -25], [-95, -70], [-140, -115]] as const;
+const N_STEP = [[-70, -50], [-115, -95]] as const;
+/** Les lèvres sud (vues du dessus, cachées par la masse sud) : dessus, gradin 3, gradin 2, gradin 1. */
+const S_LIPS = [-15, -10, -5, 0];
+
+type Shot = 'farm' | 'mouth';
 
 /** Un écran du jeu (427 × 240), agrandi x2. Les lignes sont comptées depuis les pieds de Xéros (bas positif). */
-function screen(ox: number, oy: number, shot: Shot, labels: boolean): void {
+function screen(ox: number, oy: number, shot: Shot): void {
   const k = 2;
   const cx = Math.floor(GW / 2);
-  const face = shot === 'mouth' ? cx + 40 : Infinity; // Xéros 2 m (40 px) à l'intérieur
-  const hang = (x: number, seed: number) => 8 + ((x * 7 + seed) % 15); // longueur d'une racine
-  const px = (x: number, y: number, c: Rgb, a = 1) => { for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) S.dot(ox + x * k + i, oy + y * k + j, c, a); };
+  const face = shot === 'mouth' ? cx + 40 : GW + 10; // Xéros 2 m (40 px) à l'intérieur
+  const inside = (x: number) => x < face;
+  const px = (x: number, y: number, c: Rgb, a = 1) => {
+    if (x < 0 || y < 0 || x >= GW || y >= GH) return;
+    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) S.dot(ox + x * k + i, oy + y * k + j, c, a);
+  };
+  const row = (r: number) => FEET + r;
+  // le fond : la ferme dehors, et dedans les contremarches et les gradins du nord, le chemin, la masse sud en coupe
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
     const r = y - FEET;
     let c: Rgb;
-    if (x >= face + 4) c = r >= -25 && r < 25 ? PATH : FARM; // la ferme, en pleine lumière
-    else if (x >= face) c = r < 25 ? EARTH_DARK : CUT; // la face est, en raccourci
-    else if (r < -121) c = GRASS; // le dessus au nord
-    else if (r < -25) c = r < -104 ? EARTH_DARK : r < -60 ? EARTH : EARTH_LIGHT; // la paroi nord
-    else if (r < 25) c = PATH;
-    else c = hatchAt(x, y, 7) ? CUT_HATCH : CUT; // la masse sud, tranchée au niveau du chemin
+    if (x >= face + 3) c = r >= -25 && r < 25 ? PATH : FARM;
+    else if (x >= face) c = EARTH_DARK; // la face est, vue par la tranche
+    else if (r >= 25) c = hatchAt(x, y, 7) ? CUT_HATCH : CUT;
+    else if (r >= -25) c = PATH;
+    else if (N_STEP.some(([a, b]) => r >= a && r < b)) c = GRASS;
+    else c = r >= -28 || N_RISER.some(([a]) => r >= a && r < a + 3) ? EARTH_DARK : EARTH_LIGHT;
     px(x, y, c);
   }
-  // la lèvre nord, ses racines et son lierre
-  for (let x = 0; x < Math.min(GW, face); x++) {
-    px(x, FEET - 121, EARTH_DARK);
-    px(x, FEET - 120, EARTH_DARK);
-    if (x % 11 === 0) {
-      const len = hang(x, 3);
-      const col = x % 33 === 0 ? ROOT : IVY;
-      for (let j = 0; j < len; j++) { px(x + (j % 10 < 5 ? 0 : 1), FEET - 121 + j, col); px(x + 1 + (j % 10 < 5 ? 0 : 1), FEET - 121 + j, col); }
-      if (col === IVY) for (let j = 4; j < len; j += 5) { px(x - 1, FEET - 121 + j, IVY); px(x + 3, FEET - 119 + j, IVY); }
+  // le lierre et les racines, de chaque lèvre nord jusqu'au gradin du dessous
+  for (const [lip, foot] of N_RISER) {
+    for (let x = 2; x < face - 2; x += 7) {
+      const len = 6 + ((x * 13 + lip) % 17);
+      const n = Math.min(len, foot - lip - 1);
+      const col = (x + lip) % 21 === 0 ? ROOT : IVY;
+      for (let j = 0; j < n; j++) px(x + ((j >> 2) % 2), row(lip) + j, col);
+      if (col === IVY) for (let j = 3; j < n; j += 4) px(x - 1 + (j % 3), row(lip) + j, IVY);
     }
-    if (x % 6 === 3) for (let j = 0; j < 3; j++) px(x, FEET - 122 + j, GRASS); // l'herbe qui retombe
   }
-  // le pied des arbres du bord nord
-  for (const tx of [40, 150, 300, 390]) if (tx < face - 6) for (let j = 0; j < 7; j++) for (let i = 0; i < 6; i++) px(tx + i, FEET - 130 + j, TRUNK);
-  // la lumière qui entre par la bouche
-  if (shot === 'mouth') for (let y = FEET - 121; y < FEET + 25; y++) for (let x = face - 60; x < face; x++) px(x, y, LIGHT, 0.4 * ((x - face + 60) / 60));
-  // par-dessus, ce qui devient transparent (la terre sud, de sa lèvre au bas du cadre, ses racines, ses arbres) :
-  // une teinte très légère, et le contour de chaque forme en pointillé clair d'un pixel
-  const GROUND = 1;
-  const ROOTS = 2;
-  const WOOD = 3;
-  const CROWN = 4;
+  // les buissons des gradins nord
+  for (const [a, b] of N_STEP) for (let x = 18; x < face - 6; x += 46) {
+    const yy = row(b) - 4;
+    for (let j = -5; j <= 3; j++) for (let i = -7; i <= 7; i++) if ((i * i) / 49 + (j * j) / 25 <= 1) px(x + ((a * 3) % 13) + i, yy + j, (i * i) / 49 + (j * j) / 25 > 0.6 ? LEAF_EDGE : BUSH);
+  }
+  // les arbres du nord : gradin 2 (pied à −105, houppier qui n'entre que par son bas), gradin 1 (pied à −60, houppier vers −97)
+  const crownN = (x0: number, yc: number, r: number) => {
+    for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+      const d = i * i + j * j;
+      if (d <= r * r && inside(x0 + i)) px(x0 + i, row(yc) + j, d > (r - 2) * (r - 2) ? LEAF_EDGE : LEAF);
+    }
+  };
+  const trunkN = (x0: number, r0: number, r1: number, w: number) => {
+    for (let r = r1; r <= r0; r++) for (let i = 0; i < w; i++) if (inside(x0 + i)) px(x0 + i + Math.round((r0 - r) / 30), row(r), TRUNK);
+  };
+  for (const x0 of [70, 250, 370]) { trunkN(x0, -105, -135, 4); crownN(x0 + 2, -143, 18); }
+  for (const x0 of [20, 150, 300]) { trunkN(x0, -60, -108, 4); crownN(x0 + 3, -98, 17); }
+  // la lumière du dehors, sur les premiers mètres
+  if (shot === 'mouth') for (let y = 0; y < FEET + 25; y++) for (let x = face - 70; x < face; x++) px(x, y, LIGHT, 0.45 * ((x - face + 70) / 70));
+  // par-dessus, ce qui devient transparent : la masse sud (son dessus et ses gradins cachés, de −15 à +25)
+  // et ses arbres penchés vers le nord. Une teinte très légère, le contour de chaque forme en pointillé clair.
   const mask: number[][] = Array.from({ length: GH }, () => new Array<number>(GW).fill(0));
-  const put = (x: number, y: number, id: number) => { if (x >= 0 && x < Math.min(GW, face) && y >= 0 && y < GH) mask[y][x] = id; };
-  for (let y = FEET - 79; y < GH; y++) for (let x = 0; x < GW; x++) put(x, y, GROUND);
-  for (const [tx, lean] of [[110, 14], [280, 10]] as [number, number][]) {
-    const ccx = tx + lean + 4;
-    for (let j = -40; j <= 40; j++) for (let i = -46; i <= 46; i++) if ((i * i) / 2116 + (j * j) / 1600 <= 1) put(ccx + i, FEET - 150 + j, CROWN);
-    for (let y = FEET - 140; y < FEET - 79; y++) {
-      const xx = Math.round(tx + lean * ((FEET - 72 - y) / 68));
-      for (let i = -5; i <= 5; i++) put(xx + i, y, WOOD);
-    }
-  }
-  for (let x = 0; x < GW; x++) if (x % 11 === 5) { const len = hang(x, 11); for (let j = 3; j < len; j++) put(x, FEET - 79 + j, ROOTS); }
-  const same = (x: number, y: number, id: number) => x < 0 || y < 0 || x >= GW || y >= GH || x >= face || mask[y][x] === id;
+  const put = (x: number, y: number, id: number) => { if (x >= 0 && inside(x) && y >= 0 && y < GH) mask[y][x] = id; };
+  let id = 1;
+  for (let y = row(S_LIPS[0]); y < row(25); y++) for (let x = 0; x < GW; x++) put(x, y, id);
+  const ghostTree = (x0: number, base: number, top: number, w: number, ccy: number, rc: number) => {
+    id++;
+    for (let r = top; r <= base; r++) for (let i = 0; i < w; i++) put(x0 + i, row(r), id);
+    id++;
+    for (let j = -rc; j <= rc; j++) for (let i = -rc; i <= rc; i++) if (i * i + j * j <= rc * rc) put(x0 + 2 + i, row(ccy) + j, id);
+  };
+  // le dessus sud : grands arbres, pied à 0, tronc qui sort par le haut, houppier centré vers −150 (n'entre que son bas)
+  for (const x0 of [120, 330]) ghostTree(x0, 0, -130, 6, -152, 30);
+  // gradins 3, 2, 1 sud : pied à +2, +7, +12 ; houppier vers −80, −74, −70
+  for (const x0 of [30, 280]) ghostTree(x0, 2, -80, 4, -82, 19);
+  for (const x0 of [190, 400]) ghostTree(x0, 7, -74, 4, -76, 18);
+  for (const x0 of [75, 245]) ghostTree(x0, 12, -68, 4, -70, 17);
+  const same = (x: number, y: number, v: number) => x < 0 || y < 0 || x >= GW || y >= GH || !inside(x) || mask[y][x] === v;
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-    const id = mask[y][x];
-    if (!id) continue;
+    const v = mask[y][x];
+    if (!v) continue;
     px(x, y, GHOST_TINT, GHOST_A);
-    const edge = !same(x - 1, y, id) || !same(x + 1, y, id) || !same(x, y - 1, id) || !same(x, y + 1, id);
-    if (edge && (id === ROOTS ? y % 4 < 2 : (x + y) % 4 < 2)) px(x, y, GHOST_LINE);
+    const edge = !same(x - 1, y, v) || !same(x + 1, y, v) || !same(x, y - 1, v) || !same(x, y + 1, v);
+    if (edge && (x + y) % 4 < 2) px(x, y, GHOST_LINE);
   }
-  // Xéros, par-dessus pour qu'on le lise (dans le jeu, il est vu à travers la teinte légère)
+  // les lèvres sud cachées (gradins 3, 2, 1), en pointillé plus lâche
+  for (const r of S_LIPS.slice(1)) for (let x = 0; x < face; x++) if (x % 6 < 2) px(x, row(r), GHOST_LINE);
   drawXeros(ox + cx * k, oy + FEET * k, k);
   frame(ox, oy, GW * k, GH * k, WHITE, 2);
-  if (labels) {
-    tag('LE DESSUS NORD', ox + 12, oy + 4, 2);
-    tag('LA PAROI NORD', ox + 12, oy + (FEET - 50) * k, 3);
-    tag('LE CHEMIN', ox + 12, oy + (FEET - 6) * k, 3);
-    tag('LA TERRE EN COUPE', ox + 12, oy + (FEET + 70) * k, 3);
-    tag('TRANSPARENT : LA TERRE SUD, SA LEVRE, SES ARBRES', ox + (GW - 196) * k, oy + (FEET - 50) * k, 2);
-    arrow(ox + (GW - 150) * k, oy + (FEET - 50) * k - 8, ox + (GW - 150) * k, oy + (FEET - 74) * k);
-    tag('LA LEVRE NORD ET SES RACINES', ox + (GW - 150) * k, oy + (FEET - 98) * k, 2);
-  }
   if (shot === 'mouth') {
-    tag('LA FERME', ox + (face + 20) * k, oy + (FEET - 115) * k, 3);
-    text('LA LUMIERE ENTRE', ox + (face + 14) * k, oy + (FEET - 76) * k, BG, 3);
-    text('PAR LA BOUCHE', ox + (face + 14) * k, oy + (FEET - 64) * k, BG, 3);
-    arrow(ox + (GW - 14) * k, oy + (FEET - 40) * k, ox + (face - 24) * k, oy + (FEET - 40) * k, LIGHT, 7);
+    tag('LA FERME', ox + (face + 16) * k, oy + 12 * k, 3);
+    arrow(ox + (GW - 10) * k, oy + (FEET - 40) * k, ox + (face - 30) * k, oy + (FEET - 40) * k, LIGHT, 7);
+    tag('LA LUMIERE ENTRE', ox + (face + 16) * k, oy + (FEET - 70) * k, 3);
+  }
+}
+
+/** La règle des lignes, à droite de l'écran : chaque ligne depuis les pieds. */
+function ruler(x: number, oy: number): void {
+  const marks: [number, string][] = [[-130, '-130'], [-115, '-115'], [-95, '-95'], [-70, '-70'], [-50, '-50'], [-25, '-25'], [-15, '-15'], [0, '0 PIEDS'], [25, '+25']];
+  rect(x, oy, 3, GH * 2, WHITE);
+  for (const [r, s] of marks) {
+    const yy = oy + (FEET + r) * 2;
+    rect(x, yy - 1, 14, 3, r === 0 ? GOLD : WHITE);
+    text(s, x + 20, yy - 6, r === 0 ? GOLD : WHITE, 3);
   }
 }
 
 function partScreens(y: number): number {
   const width = PLAN_W - 100;
-  y += heading('CE QUE VOIT LE JOUEUR',
-    'Le jeu regarde depuis le sud, de biais : ce qui est haut se dessine plus haut. Dans le trou, la terre au sud de Xeros passe devant lui : on la rend transparente, comme un toit.',
+  y += heading('3. CE QUE VOIT LE JOUEUR',
+    'Le jeu regarde depuis le sud, de biais. Derriere Xeros, les gradins nord montent l ecran. Devant lui, la masse sud : tranchee au ras du chemin, ses gradins et ses arbres en fantome.',
     50, y, width);
   const sw = GW * 2;
-  const xc = 50 + sw + 40; // la colonne du texte, à droite de l'écran
+  const xr = 50 + sw + 14;
+  const xc = xr + 150;
   const cw = PLAN_W - 50 - xc;
-  const shots: [Shot, string, string][] = [
-    ['farm', 'A. COTE FERME', 'Dans le trou : la terre au sud et ses arbres deviennent transparents. Devant Xeros, la terre en coupe. Derriere lui, la paroi et les racines.'],
-    ['river', 'B. AU-DESSUS DE LA RIVIERE', 'La meme chose : sous Xeros, de la terre, jamais l eau. La terre au sud est assez large pour que l eau reste hors de l ecran.'],
-    ['mouth', 'C. A LA BOUCHE EST', "Xeros juste a l'interieur. A l'entree : la transparence ne commence que la ou la terre passe devant Xeros. A droite, la ferme en pleine lumiere : ni terre en coupe, ni transparence."],
-  ];
-  for (const [shot, title, caption] of shots) {
-    screen(50, y, shot, shot === 'farm');
-    text(title, xc, y + 10, GOLD, 4);
-    para(caption, xc, y + 56, cw, 3);
-    y += GH * 2 + 40;
-  }
+
+  // A. côté ferme
+  screen(50, y, 'farm');
+  ruler(xr, y);
+  const k = 2;
+  const L = (r: number) => y + (FEET + r) * k;
+  tag('GRADIN 2', 50 + 8, L(-106), 3);
+  tag('GRADIN 1', 50 + 8, L(-62), 3);
+  tag('LE CHEMIN', 50 + 8, L(14), 3);
+  tag('LA TERRE EN COUPE', 50 + 8, L(70), 3);
+  tag('FANTOME : LE SUD', 50 + 520, L(-40), 3, GOLD);
+  text('A. COTE FERME', xc, y + 6, GOLD, 5);
+  para('Derriere Xeros : 2 gradins nord entiers et le bas de la 3e contremarche. Les arbres du gradin 1 en entier, ceux du gradin 2 par leur tronc.', xc, y + 56, cw, 3);
+  para('Devant lui, en fantome : le dessus sud et ses gradins (lignes de -15 a 0), leurs arbres penches vers le nord. Les houppiers du dessus sud entrent par le haut de l ecran.', xc, y + 56 + 8 * 24, cw, 3);
+  y += GH * 2 + 50;
+
+  // B. à la bouche est
+  screen(50, y, 'mouth');
+  ruler(xr, y);
+  text('B. A LA BOUCHE EST', xc, y + 6, GOLD, 5);
+  const t = para('Xeros 2 m a l interieur. A droite, la ferme en pleine lumiere. Le jeu voit la face est par la tranche : le fer a cheval en gradins se voit de face, depuis la ferme :', xc, y + 56, cw, 3);
+  // l'encart : la bouche est vue de face, depuis la ferme
+  const ppm = 18;
+  const iw = Math.min(cw, 30 * ppm);
+  const sec: Section = { x: xc, y: y + 56 + t + 14, w: iw, h: Math.round(13.4 * ppm), ppm, top: 12.4, faces: EDGE + 6, outside: 'farm' };
+  drawSection(sec);
+  y += Math.max(GH * 2, 56 + t + 14 + sec.h) + 50;
   return y;
 }
 
 // ---------- la légende et la planche ----------
 
 function legend(y: number): number {
+  text('LES COULEURS', 50, y, GOLD, 4);
+  y += 40;
+  const swatch = (c: Rgb) => (x: number, yy: number) => rect(x, yy, 40, 40, c);
   const chips: [string, (x: number, y: number) => void][] = [
-    ['LA TERRE', (x, yy) => rect(x, yy, 40, 40, EARTH)],
-    ["L'HERBE DU DESSUS", (x, yy) => rect(x, yy, 40, 40, GRASS)],
-    ['LE CIEL', (x, yy) => rect(x, yy, 40, 40, SKY)],
-    ['LE CHEMIN', (x, yy) => rect(x, yy, 40, 40, PATH)],
-    ["L'EAU", (x, yy) => rect(x, yy, 40, 40, WATER)],
+    ['LA TERRE', swatch(EARTH)],
+    ['CONTREMARCHE', swatch(EARTH_DARK)],
+    ["L'HERBE (DESSUS, GRADINS)", swatch(GRASS)],
+    ['LE CIEL', swatch(SKY)],
+    ['LE CHEMIN', swatch(PATH)],
+    ["L'EAU", swatch(WATER)],
+    ['LA FERME', swatch(FARM)],
+    ['FEUILLAGE', (x, yy) => { rect(x, yy, 40, 40, LEAF_EDGE); rect(x + 3, yy + 3, 34, 34, LEAF); }],
+    ['BUISSON', swatch(BUSH)],
+    ['LIERRE ET RACINES', (x, yy) => { rect(x, yy, 40, 40, EARTH_DARK); for (let j = 0; j < 36; j++) { rect(x + 10 + ((j >> 2) % 2), yy + j, 3, 1, IVY); rect(x + 26 + ((j >> 2) % 2), yy + j, 3, 1, ROOT); } }],
     ['LA TERRE EN COUPE', (x, yy) => { for (let j = 0; j < 40; j++) for (let i = 0; i < 40; i++) S.dot(x + i, yy + j, hatchAt(i, j, 7) ? CUT_HATCH : CUT); }],
     ['TRANSPARENT', (x, yy) => {
-      // un carré de terre en coupe, teinté, et une forme (une lèvre et une racine) en pointillé clair
       for (let j = 0; j < 40; j++) for (let i = 0; i < 40; i++) {
         S.dot(x + i, yy + j, hatchAt(i, j, 7) ? CUT_HATCH : CUT);
         S.dot(x + i, yy + j, GHOST_TINT, GHOST_A);
@@ -579,6 +576,7 @@ function legend(y: number): number {
       for (let i = 4; i < 36; i++) if (i % 4 < 2) { S.dot(x + i, yy + 10, GHOST_LINE); S.dot(x + i, yy + 11, GHOST_LINE); }
       for (let j = 12; j < 32; j++) if (j % 4 < 2) { S.dot(x + 18, yy + j, GHOST_LINE); S.dot(x + 21, yy + j, GHOST_LINE); }
     }],
+    ['LE CERCLE (POINTILLE)', (x, yy) => { rect(x, yy, 40, 40, SKY); for (let a = 0; a < 40; a += 2) if ((a >> 2) % 2 === 0) { const t = (a / 40) * Math.PI; rect(x + 20 + Math.round(16 * Math.cos(t)) - 1, yy + 32 - Math.round(16 * Math.sin(t)) - 1, 3, 3, BG); } }],
   ];
   let x = 50;
   let yy = y;
@@ -590,18 +588,17 @@ function legend(y: number): number {
     text(name, x + 56, yy + 13, WHITE, 3);
     x += w;
   }
-  return yy + 60 - y;
+  return yy + 60 - (y - 40);
 }
 
 export function drawReliefPlans(surface: PlanSurface): number {
   S = surface;
   let y = 30;
-  text('LE CHEMIN CREUX - LES PLANS', 50, y, WHITE, 6);
-  y += 60;
-  y += legend(y) + 30;
+  text('LE CHEMIN CREUX - LES PLANS (3)', 50, y, WHITE, 7);
+  y += 80;
   y = partFarm(y);
   y = partRiver(y);
-  y = partTop(y);
   y = partScreens(y);
+  y += legend(y) + 20;
   return y;
 }
