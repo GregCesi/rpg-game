@@ -225,14 +225,21 @@ export function stepRefusal(map: MapData, from: { x: number; y: number }, to: { 
   const ux = dx / len;
   const uy = dy / len;
   const at = (s: number) => fieldHeight(f, from.x + ux * s, from.y + uy * s);
-  const steep = (s: number) => Math.abs(at(s + PROBE) - at(s)) / (PROBE * CM_PER_PX) > mob.slope / 100;
+  const limit = (mob.slope / 100) * PROBE * CM_PER_PX;
+  /** La pente du pas qui part de `s` : +1 raide en montant, −1 raide en descendant, 0 marchable. */
+  const steep = (s: number) => {
+    const d = at(s + PROBE) - at(s);
+    return d > limit ? 1 : d < -limit ? -1 : 0;
+  };
   for (let s = 0; s < len; s += PROBE) {
-    if (!steep(s)) continue;
-    // la marche : la partie raide d'un bout à l'autre, en arrière et au-delà du trajet
+    const sign = steep(s);
+    if (!sign) continue;
+    // la marche : la partie raide dans le même sens, d'un bout à l'autre, en arrière et au-delà du trajet (une crête étroite est
+    // une montée puis une descente : deux marches, pas une)
     let a = s;
-    while (a > -RUN_REACH && steep(a - PROBE)) a -= PROBE;
+    while (a > -RUN_REACH && steep(a - PROBE) === sign) a -= PROBE;
     let b = s;
-    while (b < RUN_REACH && steep(b + PROBE)) b += PROBE;
+    while (b < RUN_REACH && steep(b + PROBE) === sign) b += PROBE;
     const rise = at(b + PROBE) - at(a);
     if (rise > mob.step) return { why: 'up', height: rise };
     if (-rise > mob.drop) return { why: 'down', height: -rise };

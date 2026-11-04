@@ -103,6 +103,11 @@ assert.ok(crest, 'la crête (≈ 24 %) ne se monte pas comme un chemin : elle co
 assert.ok(!wallAt(bank, 25 * T, y, creatures[Object.keys(creatures)[0]].mobility), 'le couloir n’est pas un mur pour un lapin');
 assert.ok(wallAt(plateau, 20 * T, 10 * T, creatures[Object.keys(creatures)[0]].mobility), 'la falaise est un mur pour un lapin');
 
+// --- une crête étroite (un talus fin, 30 cm de crête) : la montée puis la descente sont deux marches, il ne passe pas par-dessus
+const thin = trial({ ...none, ridges: [{ id: 4, points: [{ x: 5 * T, y: 10 * T, h: 500, crest: 30, flank: 110 }, { x: 35 * T, y: 10 * T, h: 500, crest: 30, flank: 110 }] }] });
+const over = stepRefusal(thin, { x: 20 * T, y: 7 * T }, { x: 20 * T, y: 13 * T }, mobility);
+assert.ok(over && over.why === 'up', 'on ne passe pas par-dessus une crête étroite');
+
 // --- l'eau : il n'y entre pas, il en sort
 const river = trial(none, 40, 20, [20, 21, 22]);
 assert.ok(deepAt(river, 21 * T, 5 * T));

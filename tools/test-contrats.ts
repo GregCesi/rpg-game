@@ -7,7 +7,9 @@
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { combat, creatures, items, matters, props, rocks, stamina, strength, transforms, wood, work } from '../src/content';
+import { combat, creatures, items, maps, matters, mobility, props, rocks, stamina, strength, transforms, wood, work } from '../src/content';
+import { Mobility } from '../src/entities/Mobility';
+import { refusalText, stepRefusal } from '../src/world/relief';
 import { itemMass, propMass, woodMass } from '../src/content/mass';
 import { CreatureSchema, ItemDefSchema, type CreatureDef, type ItemDef, type WoodPiece } from '../src/content/types';
 import { catalogFrom, CREATURES_TODO, DRAWINGS_TODO, validateContent, VIEWS_TODO } from '../src/content/validate';
@@ -419,6 +421,29 @@ for (const k of trees) check(`arbre ${k}`, (m) => tree(k, m));
     if (!a) return m('ses décalages calculés');
     if (JSON.stringify(a.fall) !== JSON.stringify(b.fall) || JSON.stringify(a.at) !== JSON.stringify(b.at)) m('les décalages de l’arbre dont il reprend le dessin');
   });
+}
+
+// ---------- le relief : seul le personnage limite (chantier « relief ») ----------
+// Sur les vraies cartes : la falaise (le bord du plateau, dans les deux sens) et le flanc d'un talus se refusent à Xéros tel qu'il
+// est, et le refus dit « pour lui » avec la hauteur ; avec l'escalade (?dieu, `climber` de entities/Mobility.ts), tout passe : rien
+// dans le monde n'interdit de monter.
+{
+  const ferme = maps.ferme;
+  const T = 32;
+  const climbs: [string, { x: number; y: number }, { x: number; y: number }][] = [
+    ['monter la falaise', { x: 43.5 * T, y: 30 * T }, { x: 40 * T, y: 30 * T }],
+    ['descendre la falaise', { x: 40 * T, y: 30 * T }, { x: 43.5 * T, y: 30 * T }],
+    ['monter le flanc du talus', { x: 47.4 * T, y: 60 * T }, { x: 47.4 * T, y: 64 * T }],
+  ];
+  const climber = new Mobility();
+  climber.climber = true;
+  for (const [what, a, b] of climbs)
+    check(`relief : ${what}`, (miss) => {
+      const r = stepRefusal(ferme, a, b, { ...mobility, swim: true });
+      if (!r) miss('Xéros tel qu’il est passe : la hauteur ne l’arrête pas');
+      else if (!/^Trop haute pour lui \(.+\)\.$/.test(refusalText(r))) miss(`le refus ne dit pas ce qui lui manque : ${refusalText(r)}`);
+      if (stepRefusal(ferme, a, b, { ...climber.def, swim: true })) miss('à l’escalade, la hauteur l’arrête encore : le monde limite');
+    });
 }
 
 // ---------- le rapport ----------
