@@ -7,6 +7,7 @@ Lis `README.md` (architecture et quatre règles) avant toute modification, et `d
 1. **Le cadrage** : lire ce qu'il faut, puis dire point par point ce qu'on va faire et comment, et poser toutes ses questions d'un coup ; puis rendre la main. C'est le seul arrêt prévu.
 2. **L'exécution** : après les réponses, aller jusqu'au bout sans rendre la main. On ne travaille que pendant sa réponse : un plan annoncé suivi d'une main rendue, c'est un chantier arrêté.
 3. **Les images** : tout dessin passe par le sous-agent pixel-artist, sur une planche dans `.art-preview/` (à côté de Xéros pour l'échelle), avec une notification macOS (`osascript -e 'display notification "<ce qui est prêt>" with title "Xéros"'`) et une ligne « DESSIN À VALIDER » avec le chemin. Rien n'est intégré sans l'accord écrit de Grégoire. En attendant, avancer sur ce qui n'en dépend pas ; arrivé à l'intégration sans accord, renotifier et rendre la main.
+4. **L'état du chantier** : au début de tout travail, cadrage compris, écrire `{"etat": "en-cours"}` dans `.claude/chantier.json` ; juste avant un arrêt prévu (cadrage fini, accord de dessin attendu), y écrire `{"etat": "attente", "raison": "..."}` ; à la fin du chantier, `{"etat": "fini"}` ; en reprenant après une réponse de Grégoire, remettre « en-cours ». Le hook Stop (`.claude/hooks/chantier-stop.mjs`) refuse tout autre arrêt et renvoie au travail.
 
 ## Consignes
 
