@@ -4,6 +4,7 @@ import type { Facing } from '../content/types';
 import type { Player } from '../entities/Player';
 import { pixels } from '../world/creature';
 import type { GameMap } from '../world/GameMap';
+import { wallAt } from '../world/relief';
 
 /** L'image du geste où il est à terre, immobile (la cinquième : planche `xeros-down`), et combien de temps il y reste évanoui avant le fondu. */
 const GROUND = 4;
@@ -13,7 +14,7 @@ const FAINT_MS = 1200;
  * Xéros renversé par une charge (docs/CONCEPTION.md, « La vie de Xéros ») : le geste validé (planche `xeros-down`,
  * art/characters/xeros-down.ts) dans le sens où il tombe, et la glissade : il part à la vitesse commune du choc (world/charge.ts
  * `goreXeros`) dans le sens de la charge, freiné par son frottement au sol (health.json `knockdown.friction`, μ g), pixel par pixel sans
- * jamais traverser un obstacle (ses pieds, comme quand il marche) ; il se relève à la fin du geste (à terre 1,5 s en tout). Pendant ce
+ * jamais traverser un obstacle (ses pieds, comme quand il marche) ni passer une marche du relief trop haute pour lui ; il se relève à la fin du geste (à terre 1,5 s en tout). Pendant ce
  * temps, ni le clavier ni la marche ne le mènent (`Player.down`) ; son corps ne compte plus pour la physique, il est mené ici.
  */
 export class Knockdown {
@@ -91,7 +92,8 @@ export class Knockdown {
       const x = a.x + this.dir.x * s;
       const y = a.y + this.dir.y * s;
       const feet = { left: x - FEET.w / 2, right: x + FEET.w / 2, top: y - FEET.gap - FEET.h, bottom: y - FEET.gap };
-      if (!this.map.areaFree(feet)) {
+      // ce qui barre ses pieds, ou une marche du relief plus haute que ce qu'il monte (world/relief.ts) : il s'arrête net
+      if (!this.map.areaFree(feet) || wallAt(this.map.def, x, y, this.player.mobility.def)) {
         this.speed = 0;
         break;
       }

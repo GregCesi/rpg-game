@@ -3450,6 +3450,138 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "id": 291,
+      "name": "lane-curtain",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 292,
+      "name": "lane-overhang-1",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 293,
+      "name": "lane-overhang-2",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 294,
+      "name": "lane-overhang-3",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 295,
+      "name": "water-cut",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "id": 296,
+      "name": "shimmer",
+      "type": "class",
+      "color": "#a08060",
+      "drawFill": true,
+      "members": [
+        {
+          "name": "interact",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

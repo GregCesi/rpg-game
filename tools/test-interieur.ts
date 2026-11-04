@@ -109,7 +109,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
       const cam = g.scene.getScene('world').cameras.main;
       cam.preRender();
       const rect = g.canvas.getBoundingClientRect();
-      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
+      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
     }, [x, y] as const);
   const click = async (x: number, y: number) => {
     const s = await screen(x, y);
@@ -274,7 +274,7 @@ await playtest('intérieurs', async ({ page, errors, load }) => {
     await stand(Math.round((interior.room.x + 40) / 5), Math.round((interior.room.y + interior.room.d - 40) / 5), 'up');
     await page.keyboard.press('KeyB');
     await until((w) => w.mode === 'build');
-    await page.evaluate(([x, y]) => (window as any).game.scene.getScene('world').cameras.main.centerOn(x, y), [mid.x, mid.y] as const);
+    await page.evaluate(([x, y]) => (window as any).game.scene.getScene('world').cameras.main.centerOn(x, y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0)), [mid.x, mid.y] as const);
     await frames(2);
     await send({ kind: 'pick', piece: { prop: 'stool' } });
     await click(mid.x, mid.y);

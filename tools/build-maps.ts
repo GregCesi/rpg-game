@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { TILE } from '../src/config';
 import { MapSchema, WoodPieceSchema } from '../src/content/types';
 import propsJson from '../src/content/props.json';
-import type { Exit, MapData, MapItem, MapObject, MapPile, MapPlan, MapWarren, Npc, Parcel, Spawn } from '../src/content/types';
+import type { Exit, MapData, MapItem, MapObject, MapPile, MapPlan, MapWarren, Npc, Parcel, Relief, Spawn } from '../src/content/types';
 import { pileWoodOf } from '../src/world/woodPile';
 import { WoodAgeSchema } from '../src/content/types';
 import parcelsJson from '../src/content/parcels.json';
@@ -141,9 +141,11 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   const mapProps = readProps(tmj.properties);
   const name = mapProps.get('name');
   const ambient = mapProps.get('ambient');
+  const baseHeight = mapProps.get('height');
   if (typeof name !== 'string' || !name) err("propriété personnalisée 'name' (texte) manquante : c'est le nom affiché de la carte");
   if (ambient !== undefined && typeof ambient !== 'number') err("propriété 'ambient' : un nombre entre 0 et 1 est attendu");
-  for (const k of mapProps.keys()) if (k !== 'name' && k !== 'ambient') err(`propriété de carte inconnue '${k}' (attendues : name, ambient)`);
+  if (baseHeight !== undefined && (typeof baseHeight !== 'number' || baseHeight < 0)) err("propriété 'height' : une hauteur en cm (nombre positif) est attendue");
+  for (const k of mapProps.keys()) if (k !== 'name' && k !== 'ambient' && k !== 'height') err(`propriété de carte inconnue '${k}' (attendues : name, ambient, height)`);
 
   const layers: Record<string, number[]> = {};
   const objects: MapObject[] = [];
@@ -156,6 +158,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   const piles: MapPile[] = [];
   const warrens: MapWarren[] = [];
   const items: MapItem[] = [];
+  const relief: Relief = { base: typeof baseHeight === 'number' ? baseHeight : 0, levels: [], ridges: [], lanes: [] };
 
   // deux tilesets dont les numéros se chevauchent : l'un a grossi depuis la dernière sauvegarde de la carte dans Tiled
   const sorted = [...uses].sort((a, b) => a.firstgid - b.firstgid);
@@ -211,6 +214,8 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
         return local;
       });
       if (bad > MAX_PER_LAYER) err(`calque '${layer.name}' : ${bad - MAX_PER_LAYER} autre(s) tuile(s) fautive(s) non listée(s)`);
+    } else if (layer.type === 'objectgroup' && layer.name === 'relief') {
+      for (const o of layer.objects) readRelief(o);
     } else if (layer.type === 'objectgroup') {
       for (const o of layer.objects) readObject(o);
     } else {
@@ -218,6 +223,60 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
     }
   }
   if (!layers.ground) err("calque de tuiles 'ground' manquant");
+
+  /**
+   * Une forme du calque `relief` (docs/CONCEPTION.md, « Le relief ») : `Level` (polygone, `height`), `Ridge` (polyligne : `heights`,
+   * `crests`, `flanks`, une valeur par sommet, en cm, séparées par des virgules), `Lane` (polyligne : `heights` par sommet, `width`,
+   * `inner`, `innerSlope`).
+   */
+  function readRelief(o: TmjObject) {
+    const cls = o.type || o.class || '';
+    const oerr = (m: string) => err(`relief « ${cls} » (n°${o.id}) en (${round(o.x)}, ${round(o.y)}) : ${m}`);
+    const props = readProps(o.properties);
+    const pts = (o.polygon ?? o.polyline) as { x: number; y: number }[] | undefined;
+    if (!Array.isArray(pts) || pts.some((p) => typeof p?.x !== 'number' || typeof p?.y !== 'number')) return oerr('un polygone ou une polyligne est attendu');
+    if (o.rotation !== 0) return oerr('rotation non gérée');
+    const abs = pts.map((p) => ({ x: round(o.x + p.x), y: round(o.y + p.y) }));
+    const num = (key: string) => {
+      const v = props.get(key);
+      if (typeof v !== 'number' || v < 0) oerr(`propriété '${key}' : un nombre positif (cm) est attendu`);
+      return typeof v === 'number' ? v : 0;
+    };
+    const list = (key: string) => {
+      const v = props.get(key);
+      const xs = typeof v === 'string' ? v.split(',').map((t) => Number(t.trim())) : [];
+      if (xs.length !== abs.length || xs.some((x) => !Number.isFinite(x) || x < 0)) {
+        oerr(`propriété '${key}' : ${abs.length} nombres (cm, un par sommet) séparés par des virgules sont attendus`);
+        return abs.map(() => 0);
+      }
+      return xs;
+    };
+    const known = (keys: string[]) => {
+      for (const k of props.keys()) if (!keys.includes(k)) oerr(`propriété inconnue '${k}' (attendues : ${keys.join(', ')})`);
+    };
+    if (cls === 'Level') {
+      if (!o.polygon) return oerr('un niveau est un polygone');
+      known(['height']);
+      relief.levels.push({ id: o.id, height: num('height'), points: abs });
+    } else if (cls === 'Ridge') {
+      if (!o.polyline) return oerr('un talus est une polyligne');
+      known(['heights', 'crests', 'flanks']);
+      const h = list('heights');
+      const c = list('crests');
+      const f = list('flanks');
+      if (f.some((x) => x <= 0)) oerr("propriété 'flanks' : chaque flanc a une largeur (cm, plus de 0)");
+      relief.ridges.push({ id: o.id, points: abs.map((p, i) => ({ ...p, h: h[i], crest: c[i], flank: Math.max(1, f[i]) })) });
+    } else if (cls === 'Lane') {
+      if (!o.polyline) return oerr('un couloir est une polyligne');
+      known(['heights', 'width', 'inner', 'innerSlope']);
+      const h = list('heights');
+      const width = num('width');
+      if (width <= 0) oerr("propriété 'width' : la largeur du sol (cm, plus de 0)");
+      relief.lanes.push({ id: o.id, width: Math.max(1, width), inner: num('inner'), innerSlope: num('innerSlope'), points: abs.map((p, i) => ({ ...p, h: h[i] })) });
+    } else {
+      oerr("forme de relief inconnue (attendues : Level, Ridge, Lane)");
+    }
+  }
 
   function readObject(o: TmjObject) {
     const cls = o.type || o.class || '';
@@ -325,7 +384,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       if (age !== undefined && !WoodAgeSchema.safeParse(age).success) return oerr(`âge '${age}' inconnu (attendus : ${WoodAgeSchema.options.join(', ')})`);
       plans.push({ id: o.id, x: o.x, y: o.y, plan, ...(age ? { age: age as MapPlan['age'] } : {}) });
     } else {
-      only(['interact', 'age', 'inside', ...WOOD_FIELDS]);
+      only(['interact', 'age', 'inside', 'view', ...WOOD_FIELDS]);
       if (o.gid === undefined) return oerr("objet sans image : type inconnu (attendus : Spawn, Exit, Npc, ou un objet posé depuis le tileset 'props')");
       if (o.gid > 0x0fffffff || (o.gid & FLIP_BITS) !== 0) return oerr('image retournée ou pivotée, non gérée');
       const u = owner(o.gid);
@@ -342,7 +401,11 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       const age = text('age');
       if (age !== undefined && !WoodAgeSchema.safeParse(age).success) return oerr(`âge '${age}' inconnu (attendus : ${WoodAgeSchema.options.join(', ')})`);
       if (age && !(propsJson as Record<string, { aged?: boolean }>)[key]?.aged) return oerr(`propriété 'age' : seul un objet de bois travaillé (\`aged\` de props.json) en a`);
-      objects.push({ id: o.id, type: key, x: o.x, y: o.y, ...(interact ? { interact } : {}), ...(wood ? { wood } : {}), ...(age ? { age: age as MapObject['age'] } : {}), ...(bool('inside') ? { inside: true as const } : {}) });
+      const view = props.get('view') === undefined || props.get('view') === '' ? 0 : Number(props.get('view'));
+      const views = (propsJson as Record<string, { views?: string }>)[key]?.views;
+      const most = views === 'four' ? 3 : views === 'symmetric' ? 1 : 0;
+      if (!Number.isInteger(view) || view < 0 || view > most) return oerr(`champ 'view' : une vue de 0 à ${most} (\`views\` '${views}' de props.json)`);
+      objects.push({ id: o.id, type: key, x: o.x, y: o.y, ...(view ? { view } : {}), ...(interact ? { interact } : {}), ...(wood ? { wood } : {}), ...(age ? { age: age as MapObject['age'] } : {}), ...(bool('inside') ? { inside: true as const } : {}) });
     }
   }
 
@@ -365,6 +428,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
     warrens,
     piles,
     items,
+    ...(relief.base || relief.levels.length || relief.ridges.length || relief.lanes.length ? { relief } : {}),
   });
   if (!map.success) {
     err(`format interne invalide :\n${indent(z.prettifyError(map.error))}`);

@@ -32,7 +32,8 @@
       { "hour": 21.5, "out": 0 }
     ],
     "births": { "hours": 24 },
-    "heal": { "days": 1 }
+    "heal": { "days": 1 },
+    "mobility": { "step": 30, "drop": 30, "slope": 20, "swim": false }
   },
   "boar": {
     "name": "sanglier",
@@ -65,6 +66,7 @@
       { "hour": 19, "out": 1, "range": 60 }
     ],
     "births": { "hours": 72 },
-    "heal": { "days": 2 }
+    "heal": { "days": 2 },
+    "mobility": { "step": 40, "drop": 60, "slope": 35, "swim": true }
   }
 }

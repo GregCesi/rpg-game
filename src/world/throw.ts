@@ -72,13 +72,17 @@ export interface FlightPoint {
   v: number;
 }
 
-/** La trajectoire, pas à pas (`step` s, combat.json `throw`), du lâcher jusqu'au sol (le dernier point est au sol, z = 0). */
-export function flight(v: number, a: number, h: number, g: number, step = combat.throw.step): FlightPoint[] {
+/**
+ * La trajectoire, pas à pas (`step` s, combat.json `throw`), du lâcher jusqu'au sol (le dernier point est au sol, z = 0) ; avec `below`
+ * (m), elle continue sous ce sol jusqu'à z = −below : le relief (un lancer du haut de la falaise) dit où elle retombe vraiment
+ * (`landing`).
+ */
+export function flight(v: number, a: number, h: number, g: number, step = combat.throw.step, below = 0): FlightPoint[] {
   const vx = v * Math.cos(a);
   const vy = v * Math.sin(a);
-  const tEnd = (vy + Math.sqrt(vy * vy + 2 * g * h)) / g;
+  const tEnd = (vy + Math.sqrt(vy * vy + 2 * g * (h + below))) / g;
   const out: FlightPoint[] = [];
-  const at = (t: number): FlightPoint => ({ t, d: vx * t, z: Math.max(0, h + vy * t - (g * t * t) / 2), v: Math.hypot(vx, vy - g * t) });
+  const at = (t: number): FlightPoint => ({ t, d: vx * t, z: Math.max(-below, h + vy * t - (g * t * t) / 2), v: Math.hypot(vx, vy - g * t) });
   for (let t = 0; t < tEnd; t += step) out.push(at(t));
   out.push(at(tEnd));
   return out;
@@ -91,11 +95,27 @@ export const kinetic = (kg: number, v: number): number => 0.5 * kg * v * v;
  * Le lancer vers un point à `d` m, depuis la main au lâcher : son lâcher, l'angle, la trajectoire, où il tombe (m), et l'énergie à
  * l'arrivée au sol (J).
  */
-export function throwPlan(h: Weighed, who: Swinger, d: number): { release: Release; angle: number; path: FlightPoint[]; range: number; landing: number } {
+export function throwPlan(h: Weighed, who: Swinger, d: number, rise = 0, below = 0): { release: Release; angle: number; path: FlightPoint[]; range: number; landing: number } {
   const t = combat.throw;
   const release = releaseOf(h, who);
-  const angle = angleFor(Math.max(0, d), release.speed, t.height, t.gravity);
-  const path = flight(release.speed, angle, t.height, t.gravity);
+  // le point visé est `rise` m plus haut (ou plus bas) que le sol de Xéros : la main est d'autant moins haut au-dessus de lui ; plus haut
+  // que la main, on vise juste sous elle, et le relief arrête l'objet là où il rencontre le sol (`landing`)
+  const above = Math.max(0.1, t.height - rise);
+  const angle = angleFor(Math.max(0, d), release.speed, above, t.gravity);
+  const path = flight(release.speed, angle, above, t.gravity, t.step, below);
   const last = path[path.length - 1];
   return { release, angle, path, range: last.d, landing: kinetic(release.kg, last.v) };
+}
+
+/**
+ * Où s'arrête un vol au-dessus du relief (chantier « relief ») : `z(i)`, la hauteur de l'objet au point `i` (m, absolue), `ground(i)`
+ * celle du sol sous lui. Il retombe au premier point où il passe sous le sol ; si le sol y a monté d'un coup plus haut que lui (une
+ * face, une falaise), il s'arrête contre elle et tombe à son pied, au point d'avant. Rend l'indice du dernier point du vol.
+ */
+export function landing(n: number, z: (i: number) => number, ground: (i: number) => number, wall = 0.5): number {
+  for (let i = 1; i < n; i++) {
+    if (z(i) > ground(i)) continue;
+    return ground(i) - ground(i - 1) > wall && z(i - 1) > ground(i - 1) ? i - 1 : i;
+  }
+  return n - 1;
 }

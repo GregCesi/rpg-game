@@ -22,6 +22,12 @@ import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
 import { ZoneCrossing } from '../systems/zones';
+import { Footing } from '../systems/footing';
+import { LiftPass } from '../systems/lift';
+import { LaneFade } from '../systems/laneFade';
+import { neighborsOf } from '../world/zones';
+import { heightAt, pick, reliefOf } from '../world/relief';
+import { hasRelief } from '../world/terrainView';
 import { Parcels } from '../systems/parcels';
 import { Interiors, resolveInterior } from '../systems/interiors';
 import { HarvestSystem, effortOf, wields, type HitResult } from '../systems/harvest';
@@ -43,7 +49,7 @@ import { WorkSystem, type WorkJob } from '../systems/work';
 import { fellDistance } from '../world/workStance';
 import { harvestJob, jobStroke, perStroke, planOf, strokeCost, woodJob } from '../world/workPlan';
 import { frameMs, type Phase } from '../world/swing';
-import { kinetic, throwPlan } from '../world/throw';
+import { kinetic, landing, throwPlan } from '../world/throw';
 import { FACING_VECTOR } from '../world/aim';
 import { crossed } from '../world/crossing';
 import { attackCost, impactDamage } from '../world/strike';
@@ -113,8 +119,8 @@ type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'wor
 interface Flight {
   /** Ce qui vole, à l'écran. */
   sprite: Phaser.GameObjects.Image;
-  /** Les points du vol : au sol (px), la hauteur (px), le temps (s), la vitesse (m/s). */
-  points: { x: number; y: number; z: number; t: number; v: number }[];
+  /** Les points du vol : au sol (px), la hauteur absolue et celle du sol sous lui (px d'écran), le temps (s), la vitesse (m/s). */
+  points: { x: number; y: number; z: number; ground: number; t: number; v: number }[];
   /** La masse de ce qui vole (kg) : l'énergie d'un choc en chemin. */
   kg: number;
   /** Où il était au pas d'avant (au sol, px) : un choc avec une bête qui bouge se teste sur les deux chemins. */
@@ -165,6 +171,17 @@ function holdOf(scene: Phaser.Scene, h: Held): { stance: Stance; look: Look } {
 
 /** Pixels par mètre, au sol (5 cm par pixel, content/gabarit.ts). */
 const PX_PER_M = 100 / CM_PER_PX;
+/** Jusqu'où un vol peut descendre sous le point visé (m) : du haut du plateau au pied de la falaise, et un peu plus. */
+const THROW_BELOW = 8;
+/** Un point de la trajectoire au-dessus du relief : au sol (px), la hauteur de l'objet et celle du sol sous lui (m, absolues). */
+interface AimPoint {
+  x: number;
+  y: number;
+  z: number;
+  ground: number;
+  t: number;
+  v: number;
+}
 
 /** Une longueur en centimètres, dite en mètres : « 8 m », « 1,5 m ». */
 function metres(cm: number): string {
@@ -213,6 +230,14 @@ export class WorldScene extends Phaser.Scene {
   private pileCount!: PileCount;
   private roofs!: Roofs;
   private roll!: RollSystem;
+  /** Où Xéros pose le pied : les marches, les sauts, l'eau (chantier « relief »). */
+  private footing!: Footing;
+  /** Le soulèvement de ce qui est en hauteur (projection A, systems/lift.ts). */
+  private lifts!: LiftPass;
+  /** Sous la voûte d'un chemin creux, le bord sud s'efface autour de Xéros (systems/laneFade.ts). */
+  private laneFade?: LaneFade;
+  /** ?dieu « escalade » : gardée d'une carte à l'autre, comme la force. */
+  private climber = false;
   private effort!: EffortSystem;
   /** Le travail en cours (abattre, couper, fendre, tailler) : il dure son temps réel (systems/work.ts). */
   private works!: WorkSystem;
@@ -386,6 +411,10 @@ export class WorldScene extends Phaser.Scene {
     this.player.strength.multiplier = this.force;
     this.player.stamina.infinite = this.infinite;
     this.player.health.infinite = this.healthInfinite;
+    this.player.mobility.climber = this.climber;
+    this.footing = new Footing(this, def, this.player, (t) => this.notice(t));
+    this.lifts = new LiftPass(this, def, !this.interior && neighborsOf(maps, def, 1).some((n) => hasRelief(n.map)));
+    this.laneFade = hasRelief(def) ? new LaneFade(this, def) : undefined;
     // éveillé la nuit, Xéros s'use : la veille se paie (stamina.json, `sleep`)
     const night = stamina.sleep;
     this.clock.onAdvance = (from, minutes) =>
@@ -416,13 +445,18 @@ export class WorldScene extends Phaser.Scene {
       cam.setBounds((this.map.width - bw) / 2, (this.map.height - bh) / 2, bw, bh);
       this.zoom = new ZoomControl(cam, bw, bh);
     } else {
-      cam.setBounds(view.x, view.y, view.w, view.h);
-      this.zoom = new ZoomControl(cam, view.w, view.h);
+      // le relief : ce qui est en hauteur monte à l'écran, la caméra va d'autant plus au nord
+      const up = this.lifts.active ? Math.ceil(Math.max(reliefOf(def).max, 500) / CM_PER_PX) : 0;
+      cam.setBounds(view.x, view.y - up, view.w, view.h + up);
+      this.zoom = new ZoomControl(cam, view.w, view.h + up);
     }
     cam.startFollow(this.player.actor, true, 0.15, 0.15);
     cam.setRoundPixels(true);
+    // elle suit l'image de Xéros (soulevée de la hauteur de son sol), pas ses pieds dans le monde
+    const lifted = this.lifts.active ? this.lifts.liftAt(this.player.actor.x, this.player.actor.y) : 0;
+    cam.setFollowOffset(0, lifted);
     // passé le bord d'une zone : la vue reprend où elle était, sans fondu (la voisine était déjà là)
-    if (this.edge) cam.centerOn(this.player.actor.x + this.edge.view.dx, this.player.actor.y + this.edge.view.dy);
+    if (this.edge) cam.centerOn(this.player.actor.x + this.edge.view.dx, this.player.actor.y + this.edge.view.dy - lifted);
     else cam.fadeIn(LOCKS.fadeIn, 20, 14, 8);
     if (CONSTRUIRE && this.building) this.enterBuild();
 
@@ -472,8 +506,13 @@ export class WorldScene extends Phaser.Scene {
     // ce qui a changé à l'image d'avant (un coup porté, un objet posé...) est écrit maintenant
     this.autosave.update();
     // le curseur oriente Xéros et dit ce qu'il vise (src/world/aim.ts) ; pas en mode construction, où la souris pose les pièces
-    this.player.cursor = this.mode === 'build' ? undefined : this.player.input.cursor(this.cameras.main);
+    // la souris montre un point de l'écran : le point du monde qu'on y voit (le sol soulevé de sa hauteur, world/relief.ts `pick`)
+    const seen = this.mode === 'build' ? undefined : this.player.input.cursor(this.cameras.main);
+    this.player.cursor = seen && this.lifts.active ? pick(this.map.def, seen.x, seen.y) : seen;
     this.player.update(this.mode === 'play');
+    this.footing.update();
+    if (this.lifts.active) this.cameras.main.followOffset.set(0, this.lifts.liftAt(this.player.actor.x, this.player.actor.y));
+    this.laneFade?.update(this.player, delta);
     // courir et porter puisent dans l'endurance
     this.effort.update(this.player, delta, this.mode === 'play');
     // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
@@ -804,11 +843,15 @@ export class WorldScene extends Phaser.Scene {
     if (!(game.both ?? game.hands[hand])) return;
     this.aiming = { hand, button: this.clickButton };
     this.mode = 'aim';
-    if (!this.mark && this.textures.exists('ui-throw-mark')) this.mark = this.add.image(0, 0, 'ui-throw-mark').setOrigin(0.5, 0.5).setDepth(DEPTH.shadow + 0.02);
+    if (!this.mark && this.textures.exists('ui-throw-mark')) this.mark = this.add.image(0, 0, 'ui-throw-mark').setOrigin(0.5, 0.5).setDepth(DEPTH.shadow + 0.02).setData('noLift', true);
   }
 
-  /** Où le lancer en cours tomberait : la direction et la distance du curseur (sans curseur, devant Xéros, le plus loin possible). */
-  private throwAim(h: Held): { ux: number; uy: number; plan: ReturnType<typeof throwPlan> } {
+  /**
+   * Où le lancer en cours tomberait : la direction et la distance du curseur (sans curseur, devant Xéros, le plus loin possible), la
+   * trajectoire au-dessus du relief (hauteurs absolues, m : le lâcher à la main au-dessus du sol de Xéros ; le point visé plus haut ou
+   * plus bas que lui), et l'indice du point où il retombe (world/throw.ts `landing` : sous le sol, ou au pied d'une face plus haute).
+   */
+  private throwAim(h: Held): { ux: number; uy: number; plan: ReturnType<typeof throwPlan>; pts: AimPoint[]; end: number } {
     const a = this.player.actor;
     const c = this.player.cursor;
     const f = FACING_VECTOR[a.facing];
@@ -816,7 +859,21 @@ export class WorldScene extends Phaser.Scene {
     const dy = c ? c.y - a.y : f.y;
     const n = Math.hypot(dx, dy) || 1;
     const d = c ? n / PX_PER_M : Infinity;
-    return { ux: dx / n, uy: dy / n, plan: throwPlan(h, this.player.strength.swinger, d) };
+    const ux = dx / n;
+    const uy = dy / n;
+    const def = this.map.def;
+    const g0 = heightAt(def, a.x, a.y) / 100;
+    const gt = c ? heightAt(def, c.x, c.y) / 100 : g0;
+    const plan = throwPlan(h, this.player.strength.swinger, d, gt - g0, THROW_BELOW);
+    const hand = g0 + combatDef.throw.height;
+    const above = hand - plan.path[0].z;
+    const pts = plan.path.map((p) => {
+      const x = a.x + ux * p.d * PX_PER_M;
+      const y = a.y + uy * p.d * PX_PER_M;
+      return { x, y, z: above + p.z, ground: heightAt(def, x, y) / 100, t: p.t, v: p.v };
+    });
+    const end = landing(pts.length, (i) => pts[i].z, (i) => pts[i].ground);
+    return { ux, uy, plan, pts, end };
   }
 
   /** La visée d'un lancer, à chaque image : le repère suit le curseur (au bout de la portée s'il est plus loin) ; relâché, il part. */
@@ -825,15 +882,15 @@ export class WorldScene extends Phaser.Scene {
     const held = aim && (game.both ?? game.hands[aim.hand]);
     if (!aim || !held || stop) return this.endAim(stop ? 'Lancer annulé.' : undefined);
     this.player.faceCursor();
-    const { ux, uy, plan } = this.throwAim(held);
-    const a = this.player.actor;
-    const px = plan.range * PX_PER_M;
+    const t = this.throwAim(held);
+    const at = t.pts[t.end];
     if (this.mark) {
-      this.mark.setPosition(Math.round(a.x + ux * px), Math.round(a.y + uy * px)).setVisible(true);
+      // le repère au sol, à l'image du sol (soulevé de sa hauteur)
+      this.mark.setPosition(Math.round(at.x), Math.round(at.y - (at.ground * 100) / CM_PER_PX)).setVisible(true);
       this.mark.setAlpha(0.65 + 0.35 * Math.sin(this.time.now / 120));
     }
     // relâché (même entre deux images : le verrou garde le relâchement) : il part
-    if (!this.player.input.clickDown(aim.button)) this.launch(aim.hand, held, ux, uy, plan);
+    if (!this.player.input.clickDown(aim.button)) this.launch(aim.hand, held, t);
   }
 
   private endAim(message?: string): void {
@@ -850,31 +907,32 @@ export class WorldScene extends Phaser.Scene {
    * un obstacle l'arrête ; sinon il tombe au bout. Il est posé au sol tout de suite (GameState), à la place libre la plus proche de là où
    * il retombe, son image cachée jusqu'à la fin du vol.
    */
-  private launch(hand: Hand, what: Held, ux: number, uy: number, plan: ReturnType<typeof throwPlan>): void {
+  private launch(hand: Hand, what: Held, aim: ReturnType<WorldScene['throwAim']>): void {
     this.endAim();
     if (simSpeed() !== timeDef.default) {
       setSimSpeed(this.game, timeDef.default);
       this.notice(`Le temps : x${timeDef.default}`);
     }
+    const { plan, pts } = aim;
     if (!this.effort.affordStroke(this.player, attackCost(stamina.work, plan.release.joules))) return;
     const a = this.player.actor;
     const origin = { x: a.x, y: a.y };
-    const pts = plan.path.map((p) => ({ x: origin.x + ux * p.d * PX_PER_M, y: origin.y + uy * p.d * PX_PER_M, z: p.z * PX_PER_M, t: p.t, v: p.v }));
     const targets = this.combat.throwTargets();
-    let end = pts.length - 1;
+    let end = aim.end;
     let hit: Flight['hit'];
-    for (let i = 1; i < pts.length && !hit; i++) {
+    for (let i = 1; i <= aim.end && !hit; i++) {
       const p0 = pts[i - 1];
       const p1 = pts[i];
-      const z = p1.z / PX_PER_M;
+      // la hauteur au-dessus du sol de la cible (son pied est sur ce sol)
+      const z = p1.z - p1.ground;
       const q = targets.find((t) => z <= t.height && crossed(p0, p1, (x, y) => x >= t.box.left && x <= t.box.right && y >= t.box.top && y <= t.box.bottom));
       if (q) {
         hit = { key: q.key, t: p1.t, joules: kinetic(plan.release.kg, p1.v) };
         end = i;
         break;
       }
-      // un obstacle (un tronc, un mur, une bille couchée) l'arrête : il tombe devant
-      if (crossed(p0, p1, (x, y) => !this.map.areaFree({ left: x - 0.5, top: y - 0.5, right: x + 0.5, bottom: y + 0.5 }))) {
+      // un obstacle (un tronc, un mur, une bille couchée) l'arrête : il tombe devant ; l'eau ne l'arrête pas, il vole au-dessus
+      if (crossed(p0, p1, (x, y) => !this.map.areaFree({ left: x - 0.5, top: y - 0.5, right: x + 0.5, bottom: y + 0.5 }, [], [], { overWater: true }))) {
         end = i - 1;
         break;
       }
@@ -887,9 +945,11 @@ export class WorldScene extends Phaser.Scene {
     const landed = this.handsSystem.layNear(this.player, what, last.x, last.y);
     landed?.setVisible(false);
     const look = this.handsSystem.lookOf(what);
-    const sprite = this.add.image(origin.x, origin.y, look.key, look.frame).setOrigin(0.5, 0.5);
+    const sprite = this.add.image(origin.x, origin.y, look.key, look.frame).setOrigin(0.5, 0.5).setData('noLift', true);
     const item = 'item' in what ? what.item : what.prop;
-    this.flights.push({ sprite, points: path.map(({ x, y, z, t, v }) => ({ x, y, z, t, v })), kg: plan.release.kg, t: 0, hit, item, facing: a.facing, landed });
+    // les hauteurs du vol en px d'écran (absolues : l'image monte de la hauteur, comme tout ce qui est en l'air ou en hauteur)
+    const px = 100 / CM_PER_PX;
+    this.flights.push({ sprite, points: path.map(({ x, y, z, ground, t, v }) => ({ x, y, z: z * px, ground: ground * px, t, v })), kg: plan.release.kg, t: 0, hit, item, facing: a.facing, landed });
   }
 
   /** Les objets en vol avancent du temps du jeu ; la cible touchée réagit à l'instant du choc ; au sol, l'objet posé se montre. */
@@ -914,9 +974,10 @@ export class WorldScene extends Phaser.Scene {
       const x = p0.x + (p1.x - p0.x) * k;
       const y = p0.y + (p1.y - p0.y) * k;
       const z = p0.z + (p1.z - p0.z) * k;
-      // une bête qui bouge : le choc se teste sur le chemin de l'objet et le sien pendant ce pas (systems/creatures.ts)
+      const ground = p0.ground + (p1.ground - p0.ground) * k;
+      // une bête qui bouge : le choc se teste sur le chemin de l'objet et le sien pendant ce pas (systems/creatures.ts), à sa hauteur au-dessus du sol
       if (f.last && !f.struck) {
-        const key = this.creatures.flightHit(f.last, { x, y }, z / PX_PER_M);
+        const key = this.creatures.flightHit(f.last, { x, y }, (z - ground) / (100 / CM_PER_PX));
         if (key) {
           f.struck = true;
           this.combat.thrownHit(key, f.item, kinetic(f.kg, p0.v + (p1.v - p0.v) * k), f.facing);
@@ -1558,6 +1619,10 @@ export class WorldScene extends Phaser.Scene {
       case 'stamina-infinite':
         this.infinite = cmd.on;
         this.player.stamina.infinite = cmd.on;
+        break;
+      case 'climber':
+        this.climber = cmd.on;
+        this.player.mobility.climber = cmd.on;
         break;
       case 'map':
         this.fadeTo({ mapId: cmd.map, spawn: Object.keys(maps[cmd.map].spawns)[0] });

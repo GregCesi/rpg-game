@@ -320,6 +320,12 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     send({ kind: 'stamina-infinite', on: infinite.checked });
     infinite.blur();
   });
+  // l'escalade (chantier « relief ») : il monte et descend toute hauteur, pour vérifier que seul le personnage limite
+  const climber = el('input', { type: 'checkbox' });
+  climber.addEventListener('change', () => {
+    send({ kind: 'climber', on: climber.checked });
+    climber.blur();
+  });
   const energyNow = el('div', { className: 'row' });
   const showEnergy = () => {
     const e = game.stamina;
@@ -393,6 +399,7 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('div', { className: 'row' }, [el('label', {}, ['points', lifeValue]), button('Régler la vie', () => send({ kind: 'health', value: Number(lifeValue.value) }))]),
     el('div', { className: 'row' }, [el('label', {}, [lifeInfinite, 'vie infinie'])]),
     el('div', { className: 'row' }, [el('label', {}, [infinite, 'endurance infinie'])]),
+    el('div', { className: 'row' }, [el('label', {}, [climber, 'escalade (toute hauteur)'])]),
     el('div', { className: 'row' }, [el('label', {}, ['heure', clockHour]), clockButton]),
     el('div', { className: 'row' }, [button('Finir le travail', () => send({ kind: 'finish-work' }))]),
     energyNow,

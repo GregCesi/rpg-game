@@ -8,6 +8,7 @@ import { game, setWarren, warrenOf } from '../state';
 import type { GameMap } from '../world/GameMap';
 import { crossed } from '../world/crossing';
 import { spritesheets } from '../generated/assets';
+import { wallAt } from '../world/relief';
 import { alarm, emerge, hurt, metres, pixels, setXerosFeet, setXerosMass, type Creature, type CreatureEvent, type Point, type Surroundings } from '../world/creature';
 import { footprint, type Box } from '../world/strike';
 import { death, memberOf, outRange, seedWarren, settle, warrenHoles, wounded, WarrenLife, type WarrenSite } from '../world/warren';
@@ -124,17 +125,20 @@ export class CreatureSystem {
   }
 
   /**
-   * Ce qui entoure une bête : Xéros, ce qui barre le passage (une tuile pleine, un corps), ce qui arrête une charge (dur, mou, le bord de
-   * la zone : GameMap `groundAt`), les entrées de sa garenne, la distance où elle broute à cette heure.
+   * Ce qui entoure une bête : Xéros, ce qui barre le passage (une tuile pleine, un corps, une marche plus haute que ce qu'elle monte),
+   * ce qui arrête une charge (dur, mou, le bord de la zone : GameMap `groundAt` ; une marche trop haute est dure), les entrées de sa
+   * garenne, la distance où elle broute à cette heure.
    */
-  private around(holes: Point[], threat: Surroundings['threat'], def?: CreatureDef): Surroundings {
+  private around(holes: Point[], threat: Surroundings['threat'], def: CreatureDef): Surroundings {
+    // une marche plus haute que ce que la bête monte (sa `mobility`, creatures.json) est un mur pour elle (world/relief.ts)
+    const mob = def.mobility;
     return {
       threat,
-      blocked: (x, y) => !this.map.areaFree({ left: x - 0.5, top: y - 0.5, right: x + 0.5, bottom: y + 0.5 }),
-      ground: (x, y) => this.map.groundAt(x, y),
+      blocked: (x, y) => !this.map.areaFree({ left: x - 0.5, top: y - 0.5, right: x + 0.5, bottom: y + 0.5 }) || wallAt(this.map.def, x, y, mob),
+      ground: (x, y) => (wallAt(this.map.def, x, y, mob) ? 'solid' : this.map.groundAt(x, y)),
       holes,
       rand: this.rand,
-      range: def ? outRange(def, game.clock.minute) : undefined,
+      range: outRange(def, game.clock.minute),
     };
   }
 
