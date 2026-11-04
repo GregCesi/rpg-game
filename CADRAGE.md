@@ -470,3 +470,45 @@ voûte, la falaise visible. Défauts vus sur les planches :
     comme la falaise (« Trop haute pour lui »), pour que le seul passage reste le couloir.
 23. **L'effacement** : tout le tronçon visible du bord sud (planche 3), ou seulement autour de Xéros ?
 24. **L'entrée** : enlever les buissons du talus sud devant la bouche, et faire descendre le sol clair plus loin dans le noir ?
+
+---
+
+## 11. Quatrième essai : le tunnel continu au-dessus de la rivière (4 novembre)
+
+Correction de Grégoire : **le chemin creux ne passe jamais dans l'eau.** Sur les 8 m de la rivière (cases 47 → 42), le couloir
+continue exactement la partie côté ferme : mêmes talus de 5 m, mêmes parois, même voûte, même sol à 0 m, sans tronçon à ciel
+ouvert. Le tunnel a un début (case 60, sur la ferme) et une fin (case ≈ 4,5, sur le plateau), et il est continu de bout en bout. La
+rivière, droite, s'arrête contre les flancs extérieurs des talus. La question 21 (le ciel ouvert) est tranchée : non.
+
+**Ce qui a changé dans le modèle** (pixel-artist ; `art/proposals/relief-creux4-scene.ts`, refaire : `npx tsx tools/essai-relief-creux4.ts`) :
+- sur l'eau, les talus font 5 m des deux côtés, avec la même paroi et le même talus intérieur que sur la ferme ; deux avancées de feuillage
+  au-dessus du couloir remplacent celles de l'essai 3 ;
+- les flancs extérieurs sont plus raides sur l'eau (crête de 30 cm, pente de 1,1 m pour 5 m) que sur la ferme (crête de 70 cm, 4,7 m
+  pour 5 m), pour que l'eau vienne contre eux ; le passage de l'un à l'autre se fait sur les 3 premiers mètres de la rive est ;
+- à la case 42, les talus rejoignent la falaise du plateau à la même hauteur et dans la même forme, sans couture ; ailleurs la falaise garde
+  sa face en raccourci (12 px pour 5 m) et son lierre ;
+- l'eau s'arrête là où le flanc extérieur arrive à 0 : un liseré mouillé, puis deux rangées de miroitement, au nord comme au sud ;
+- le bord sud s'efface sur la largeur de l'écran autour de Xéros (au lieu de tronçons fixes).
+Les valeurs ne changent pas : 20,8 m côté ferme, 8 m sur la rivière, 60 m de montée (8,3 %), 88,8 m en tout, 2,5 m de sol, effacement 0,2,
+pénombre 0,3.
+
+| Planche | Ce qu'il faut regarder |
+| --- | --- |
+| `.art-preview/relief-creux4-1-ensemble.png` | Le couloir continu de la case 60 à la case 4,5 : la paroi nord et la voûte passent la rivière sans interruption, l'eau bute contre les flancs au nord et au sud. Dessous, le plan des hauteurs coté. |
+| `.art-preview/relief-creux4-4-coupure.png` | Xéros case 44,5, au-dessus du lit de la rivière, dans le couloir : le bord sud effacé, aucune eau dans le couloir ; le détail du bas montre la coupure sud (le pied du flanc dans l'eau, le liseré, le miroitement). |
+
+**Défauts vus :**
+- la coupure nord ne se voit pas quand Xéros est au milieu : le talus de 5 m (100 px) la cache, comme le bord sud cache le sol ; seule
+  l'eau au-delà paraît en haut de l'écran. Les deux coupures ne tiennent pas ensemble dans les 240 px de l'écran. C'est la projection, pas
+  le dessin : la coupure nord se voit de loin, en arrivant ;
+- la coupure sud n'occupe qu'une bande d'environ 30 px en bas de l'écran ;
+- le flanc sud au-dessus de l'eau est rendu par de l'herbe étirée en traînées verticales : il lui faut une vraie matière de flanc planté
+  (terre sombre, racines, pied mouillé) ;
+- de l'essai 3 : le motif de touffes répété sur les talus de la ferme, l'aplat gris-vert dans la zone effacée, les arbres penchés cisaillés,
+  le miroitement à une seule image.
+
+**Ce que le jeu devra savoir faire** : comme en 10.3, avec en plus des talus qui portent leur hauteur au-dessus de l'eau (l'eau
+s'arrête à leur pied : la coupure suit le pied du flanc, pas une ligne droite), et sans tronçon à ciel ouvert.
+
+**Question 25.** Le flanc sud au-dessus de l'eau : une matière de flanc planté (terre sombre, racines, lierre jusqu'à l'eau), comme la
+falaise ? C'est le dessin qui manque le plus sur la planche de la coupure.
