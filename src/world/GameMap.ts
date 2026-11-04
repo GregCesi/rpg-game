@@ -478,6 +478,35 @@ export class GameMap {
   }
 
   /**
+   * Ce qu'il y a au point (x, y) pour une bête qui charge (world/charge.ts) : `edge` hors de la carte (le bord de la zone), `solid` sur une
+   * case bloquante ou une collision d'objet, `soft` sur le seul corps d'un objet mou (`soft` de props.json : le buisson), rien sinon.
+   */
+  groundAt(x: number, y: number): 'solid' | 'soft' | 'edge' | undefined {
+    if (x < 0 || y < 0 || x >= this.width || y >= this.height) return 'edge';
+    if (this.floor.getTileAt(Math.floor(x / TILE), Math.floor(y / TILE))?.collides) return 'solid';
+    const near = this.scene.physics.overlapRect(x - 1, y - 1, 2, 2, false, true) as Phaser.Physics.Arcade.StaticBody[];
+    let soft = false;
+    for (const body of near) {
+      const z = body.gameObject as Phaser.GameObjects.Zone;
+      if (!z || !this.obstacles.contains(z)) continue;
+      if (x < z.x - z.width / 2 || x >= z.x + z.width / 2 || y < z.y - z.height / 2 || y >= z.y + z.height / 2) continue;
+      if (!z.getData('soft')) return 'solid';
+      soft = true;
+    }
+    return soft ? 'soft' : undefined;
+  }
+
+  /** L'objet mou dont le corps est au point (x, y) (le buisson qu'une charge traverse : il tremble). */
+  softAt(x: number, y: number): PlacedProp | undefined {
+    const near = this.scene.physics.overlapRect(x - 2, y - 2, 4, 4, false, true) as Phaser.Physics.Arcade.StaticBody[];
+    for (const body of near) {
+      const z = body.gameObject as Phaser.GameObjects.Zone;
+      if (z && this.obstacles.contains(z) && z.getData('soft')) return this.props.find((p) => p.parts.includes(z));
+    }
+    return undefined;
+  }
+
+  /**
    * La pièce de bois qui roule montre l'image de sa texture que donne sa position : un tour complet (π × diamètre du tronc, au
    * gabarit de 5 cm par pixel) = les 4 images, dans le sens où elle avance ; à l'arrêt comme en route, donc l'écorce tourne
    * exactement du chemin parcouru. Une pièce qui ne roule pas (dressée, demi, quart, coin planté) garde son image.
@@ -623,7 +652,10 @@ export class GameMap {
     let baseY = ay - 8;
     if (p.body) {
       baseY = ay - p.body.bottom - p.body.h / 2;
-      parts.push(this.addObstacle(ox + obj.width / 2, baseY, p.body.w, p.body.h));
+      const z = this.addObstacle(ox + obj.width / 2, baseY, p.body.w, p.body.h);
+      // un corps mou (le buisson) : une bête lancée le traverse (`groundAt`)
+      if (p.soft) z.setData('soft', p);
+      parts.push(z);
     }
     for (const b of p.bodies ?? []) {
       parts.push(this.addObstacle(ox + fx(b.x, b.w) + b.w / 2, oy + b.y + b.h / 2, b.w, b.h));

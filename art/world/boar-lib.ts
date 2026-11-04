@@ -1,5 +1,6 @@
-// Deuxième essai du profil du sanglier (chantier « sangliers », hors jeu). Module commun aux variantes
-// art/proposals/sanglier-profil-a.ts, -b.ts, -c.ts ; planche : npx tsx tools/essai-sangliers-profil.ts.
+// Le sanglier, module commun (chantier « sangliers ») : sa palette, ses matières, sa frame de profil et les outils de dessin en
+// zones. Né du deuxième essai du profil (les variantes art/proposals/sanglier-profil-a.ts, -b.ts, -c.ts ; planche : npx tsx
+// tools/essai-sangliers-profil.ts) ; le dessin du jeu, la variante C retenue par Grégoire, est dans art/world/boar-shapes.ts.
 //
 // Retour de Grégoire sur le premier essai (art/proposals/sanglier.ts) : la tête de profil tombait trop bas et pendait sous la
 // ligne du corps. Ici, le corps et la tête sont dessinés à la main, pixel par pixel, en zones de matière (un tableau de lignes par
@@ -17,11 +18,28 @@
 
 import { Canvas, EMPTY, type Grid, type Palette } from '../lib/canvas';
 import { lightUp, type Materials } from '../lib/light';
-import { palette as first } from './sanglier';
+import { world } from '../palette';
 
-/** La palette du premier essai (tirée de l'écorce, de la pierre sombre et de l'humus), plus le ventre clair. */
+/**
+ * La palette du sanglier (celle du premier essai, art/proposals/sanglier.ts : tirée de l'écorce, de la pierre sombre et de l'humus),
+ * plus le ventre clair.
+ */
 export const palette: Palette = {
-  ...first,
+  q: '#7d6a52', // soies au soleil (le dos, le haut de l'écu) : z mêlé à m
+  r: '#56463a', // robe : N mêlé à Z
+  s: '#3e322e', // robe à l'ombre : K vers l'humus
+  t: world['5'], // le plus sombre : soies de la crête, contour côté lumière, sabots
+  g: '#8f7f6a', // groin et bas des pattes au soleil : z mêlé à n
+  h: '#6e6052', // groin, pattes
+  i: '#52463d', // pattes à l'ombre, pattes du fond
+  w: world.a, // défenses
+  v: world.D, // défense à l'ombre
+  e: '#1e1a1d', // l'œil : l'humus 5 assombri
+  d: world.n, // poussière, mottes (terre)
+  D: world.u, // poussière au soleil
+  y: world['9'], // litière soulevée (feuille pourrie)
+  o: world.o,
+  x: world.x,
   b: '#a39279', // ventre au soleil : la terre u mêlée à la pierre z (les soies du ventre, plus claires et clairsemées)
 };
 

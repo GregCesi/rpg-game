@@ -259,13 +259,14 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   const GAITS: [Gait, string][] = [['still', 'immobile'], ['sneak', 'discret'], ['walk', 'marche'], ['run', 'course']];
   const senseInputs = GAITS.map(([g, name]) => {
     const alert = el('input', { type: 'number', min: '0.5', max: '100', step: '0.5', value: '0' });
-    const flee = el('input', { type: 'number', min: '0', max: '100', step: '0.5', value: '0' });
-    const apply = button('Appliquer', () => send({ kind: 'creature-senses', creature: creature.value, gait: g, alert: Number(alert.value), flee: Number(flee.value) }));
-    return { g, alert, flee, row: el('div', { className: 'row' }, [el('span', { textContent: `${name} ` }), el('label', {}, ['aguets', alert]), el('label', {}, ['fuite', flee]), apply]) };
+    const near = el('input', { type: 'number', min: '0', max: '100', step: '0.5', value: '0' });
+    const apply = button('Appliquer', () => send({ kind: 'creature-senses', creature: creature.value, gait: g, alert: Number(alert.value), near: Number(near.value) }));
+    // `near` : la distance où la bête réagit (le lapin fuit, le sanglier charge)
+    return { g, alert, near, row: el('div', { className: 'row' }, [el('span', { textContent: `${name} ` }), el('label', {}, ['aguets', alert]), el('label', {}, ['réagit', near]), apply]) };
   });
   const showSenses = () => {
     const d = creatures[creature.value];
-    for (const s of senseInputs) if (d) [s.alert.value, s.flee.value] = [String(d.senses[s.g].alert), String(d.senses[s.g].flee)];
+    for (const s of senseInputs) if (d) [s.alert.value, s.near.value] = [String(d.senses[s.g].alert), String(d.senses[s.g].near)];
   };
   creature.addEventListener('change', showSenses);
   showSenses();

@@ -194,7 +194,7 @@ for (const src of sources) {
     const sil = silhouette(cells[0], src.palette);
     catalog.spritesheets.push({ key: src.name, frameWidth: src.frameW, frameHeight: src.frameH, animations: anims, silhouette: sil });
     spritesheets.push(
-      `  { key: '${src.name}', url: ${id}, frameWidth: ${src.frameW}, frameHeight: ${src.frameH}, animations: ${JSON.stringify(anims)}, silhouette: ${JSON.stringify(sil)} },`,
+      `  { key: '${src.name}', url: ${id}, frameWidth: ${src.frameW}, frameHeight: ${src.frameH}, ${src.feet !== undefined ? `feet: ${src.feet}, ` : ''}animations: ${JSON.stringify(anims)}, silhouette: ${JSON.stringify(sil)} },`,
     );
   } else if (src.kind === 'tileset') {
     const names = Object.keys(src.tiles);
@@ -295,6 +295,8 @@ export interface SpriteSheetAsset {
   url: string;
   frameWidth: number;
   frameHeight: number;
+  /** Combien de rangées sous les pieds dans chaque image (une créature) ; absent : 2. */
+  feet?: number;
   /** durations : la durée de chaque image (ms), quand elle n'est pas la même pour toutes (sinon frameRate). */
   animations: Record<string, { frames: number[]; frameRate: number; repeat: number; durations?: number[] }>;
   /** Silhouette de la première image (gabarit) : pixels opaques, contour compris, ombre et lueurs exclues. */

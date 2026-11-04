@@ -246,6 +246,14 @@ export function strikeEnergy(rules: Rules, a: Attack, s: SweepDef, frames: Comba
  */
 export const impactDamage = (rules: Rules, joules: number, efficiency: number): number => Math.round(joules * rules.damagePerJoule * efficiency * 10) / 10;
 
+/**
+ * Dégâts d'un impact de `joules` J sur une cible à peau (`hide` de son `target`, docs/CONCEPTION.md « Le combat ») : la peau encaisse
+ * `hide` J de chaque choc, sauf la part que coupe le tranchant (`edge` de l'outil, de 0 à 1) ; le reste passe par `impactDamage`. Sans
+ * peau (`hide` 0), c'est `impactDamage`. La règle vaut pour toute cible, toute arme, tout objet lancé.
+ */
+export const throughHide = (rules: Rules, joules: number, efficiency: number, hide = 0, edge = 0): number =>
+  impactDamage(rules, Math.max(0, joules - hide * (1 - Math.min(1, Math.max(0, edge)))), efficiency);
+
 /** Dégâts d'un coup : son énergie (`strikeEnergy`) × `damagePerJoule` × `efficiency` de l'arme, au dixième. */
 export function damage(rules: Rules, a: Attack, s: SweepDef, frames: CombatFrame[], w: Weapon, kg: number): number {
   return impactDamage(rules, strikeEnergy(rules, a, s, frames, w, kg), w.efficiency);

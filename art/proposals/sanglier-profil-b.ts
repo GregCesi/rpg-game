@@ -3,7 +3,7 @@
 // touffes sur deux rangées, du garrot au milieu du dos), le dos plus droit.
 // Gabarit : 28 × 20 px debout (zones 26 × 18, voir sanglier-profil-lib.ts).
 
-import { standing, lowerFrom, type Variant } from './sanglier-profil-lib';
+import { standing, lowerFrom, type Variant } from '../world/boar-lib';
 import { standLegs, chargeLegs } from './sanglier-profil-a';
 
 //              0         1         2

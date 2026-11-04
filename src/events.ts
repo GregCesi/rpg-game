@@ -84,8 +84,8 @@ export interface BuildStatus {
  * grille, forme, faces, sens) ; les créatures (CONCEPTION « Les créatures ») : faire sortir une bête de la garenne la plus proche à 3 m de
  * Xéros (`creature-spawn`), régler le nombre de bêtes de cette garenne (`creature-population`), régler les distances de perception d'une
  * espèce à une allure (`creature-senses`, en m, le temps de la session : les données de creatures.json en mémoire), montrer autour de Xéros
- * les deux cercles de son allure (`creature-rings`) ; la vie de Xéros (`health` : ses points ; à zéro, il s'évanouit ; `health-infinite` :
- * rien ne la fait baisser).
+ * les deux cercles de son allure (`creature-rings`) ; `creature-spawn` peut dire où, en m de Xéros (`dx`, `dy`) ; la vie de Xéros
+ * (`health` : ses points ; à zéro, il s'évanouit ; `health-infinite` : rien ne la fait baisser).
  */
 export type DieuCommand =
   | { kind: 'give'; held: Held }
@@ -109,9 +109,9 @@ export type DieuCommand =
   | { kind: 'map'; map: string }
   | { kind: 'reset-map' }
   | { kind: 'reset-game' }
-  | { kind: 'creature-spawn' }
+  | { kind: 'creature-spawn'; dx?: number; dy?: number }
   | { kind: 'health'; value: number }
   | { kind: 'health-infinite'; on: boolean }
   | { kind: 'creature-population'; count: number }
-  | { kind: 'creature-senses'; creature: string; gait: Gait; alert: number; flee: number }
+  | { kind: 'creature-senses'; creature: string; gait: Gait; alert: number; near: number }
   | { kind: 'creature-rings'; on: boolean };

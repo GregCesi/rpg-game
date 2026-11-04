@@ -36,7 +36,9 @@ function live(life: WarrenLife, w: WarrenState, clock: Clock, minutes: number, r
 const outside = (life: WarrenLife) => life.out.filter((c) => c.mode !== 'home').length;
 const at = (h: number, m = 0): Clock => ({ day: 1, minute: h * 60 + m });
 
-for (const [kind, def] of Object.entries(creatures)) {
+// les garennes (le terrier) ; la bauge du sanglier a son banc : tools/test-charge.ts
+const BURROWERS = Object.entries(creatures).filter(([, d]) => d.den === 'burrow');
+for (const [kind, def] of BURROWERS) {
   const site: WarrenSite = { id: 1, kind, population: POP, holes };
 
   // ---------- à chaque heure, combien dehors ----------
@@ -93,25 +95,25 @@ for (const [kind, def] of Object.entries(creatures)) {
     const life = new WarrenLife(site, def);
     life.populate(w, t, { blocked: () => false, holes, rand });
     const before = outside(life);
-    // Xéros arrive en courant au milieu de la garenne : celles à portée de fuite (`senses.run.flee`) rentrent au terrier ; celles à portée
+    // Xéros arrive en courant au milieu de la garenne : celles à portée de fuite (`senses.run.near`) rentrent au terrier ; celles à portée
     // d'alerte restent aux aguets ; les plus loin ne s'en soucient pas (sans le tambour, qui est du jeu : systems/creatures.ts)
     const xeros = { x: pixels(2), y: pixels(2) };
     const away = (c: { x: number; y: number }) => metres(Math.hypot(c.x - xeros.x, c.y - xeros.y));
     const ids = new Set(life.out.map((c) => c.id));
-    const near = life.out.filter((c) => away(c) < def.senses.run.flee).map((c) => c.id);
-    assert.ok(near.length >= 1, `${kind} : au moins une bête à portée de fuite de Xéros (${def.senses.run.flee} m)`);
+    const near = life.out.filter((c) => away(c) < def.senses.run.near).map((c) => c.id);
+    assert.ok(near.length >= 1, `${kind} : au moins une bête à portée de fuite de Xéros (${def.senses.run.near} m)`);
     const r = live(life, w, t, 0.5, rand, { ...xeros, gait: 'run' });
     const fled = [...ids].filter((id) => !life.out.some((c) => c.id === id));
-    assert.ok(near.every((id) => fled.includes(id)), `${kind} : Xéros qui court au milieu de la garenne, celles à moins de ${def.senses.run.flee} m au terrier en 30 s (${fled.length} sur ${before}, ${near.length} à portée)`);
+    assert.ok(near.every((id) => fled.includes(id)), `${kind} : Xéros qui court au milieu de la garenne, celles à moins de ${def.senses.run.near} m au terrier en 30 s (${fled.length} sur ${before}, ${near.length} à portée)`);
     for (const c of life.out) {
       if (away(c) < def.senses.run.alert - 0.5) assert.equal(c.mode, 'alert', `${kind} : celle à ${away(c).toFixed(1)} m reste aux aguets`);
       assert.notEqual(c.mode, 'flee', `${kind} : celle à ${away(c).toFixed(1)} m ne fuit plus`);
     }
     // il s'en va : celles qui ont fui ne ressortent pas avant `burrow.stay[0]` minutes
-    const r2 = live(life, r.w, r.clock, def.burrow.stay[0] - 0.6, rand);
-    assert.ok(!life.out.some((c) => fled.includes(c.id)), `${kind} : pas avant ${def.burrow.stay[0]} minutes`);
-    live(life, r2.w, r2.clock, def.burrow.stay[1] - def.burrow.stay[0] + 0.6 + (POP * def.burrow.emerge) / 60, rand);
-    assert.equal(outside(life), before, `${kind} : après ${def.burrow.stay[1]} minutes, elles sont ressorties`);
+    const r2 = live(life, r.w, r.clock, def.burrow!.stay[0] - 0.6, rand);
+    assert.ok(!life.out.some((c) => fled.includes(c.id)), `${kind} : pas avant ${def.burrow!.stay[0]} minutes`);
+    live(life, r2.w, r2.clock, def.burrow!.stay[1] - def.burrow!.stay[0] + 0.6 + (POP * def.burrow!.emerge) / 60, rand);
+    assert.equal(outside(life), before, `${kind} : après ${def.burrow!.stay[1]} minutes, elles sont ressorties`);
   }
 
   // ---------- les naissances ----------
@@ -165,5 +167,5 @@ for (const [kind, def] of Object.entries(creatures)) {
 }
 
 console.log(
-  `✓ garenne (${Object.keys(creatures).join(', ')}) : le nombre dehors à chaque heure, le soir au terrier, la sortie de l'aube une à une, la fuite puis la ressortie après quelques minutes, les naissances qui reforment la population, le blessé guéri le lendemain, la bête tuée qui devient un seul objet${Object.keys(CREATURES_TODO).length ? ` (sa masse vérifiée quand l'objet existera : ${Object.keys(CREATURES_TODO).join(', ')})` : ' de sa masse'}`,
+  `✓ garenne (${BURROWERS.map(([k]) => k).join(', ')}) : le nombre dehors à chaque heure, le soir au terrier, la sortie de l'aube une à une, la fuite puis la ressortie après quelques minutes, les naissances qui reforment la population, le blessé guéri le lendemain, la bête tuée qui devient un seul objet${Object.keys(CREATURES_TODO).length ? ` (sa masse vérifiée quand l'objet existera : ${Object.keys(CREATURES_TODO).join(', ')})` : ' de sa masse'}`,
 );

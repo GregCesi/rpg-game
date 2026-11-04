@@ -3,7 +3,7 @@
 // continue la pente du garrot jusqu'au groin, le dessous de la mâchoire reste à la hauteur du ventre.
 // Gabarit : 28 × 20 px debout (zones 26 × 18, voir sanglier-profil-lib.ts).
 
-import { standing, lowerFrom, type Leg, type Variant } from './sanglier-profil-lib';
+import { standing, lowerFrom, type Leg, type Variant } from '../world/boar-lib';
 
 //              0         1         2
 //              01234567890123456789012345

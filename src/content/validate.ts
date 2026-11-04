@@ -162,7 +162,8 @@ function validateMaps(
       const at = `${where} : garenne (objet n°${g.id}) en (${g.x}, ${g.y})`;
       if (g.x < 0 || g.y < 0 || g.x + g.w > W || g.y + g.h > H) err(`${at} : sort de la carte`);
       if (!creatures?.[g.creature]) err(`${at} : créature '${g.creature}' absente de creatures.json`);
-      if (!warrenHoles(m, g, propsByType).length) err(`${at} : aucune entrée (un objet à 'burrow' de props.json) posée dans son rectangle`);
+      // un terrier a ses entrées ; une bauge (`den: "wallow"`) est au milieu du rectangle, sans objet
+      if (creatures?.[g.creature]?.den !== 'wallow' && !warrenHoles(m, g, propsByType).length) err(`${at} : aucune entrée (un objet à 'burrow' de props.json) posée dans son rectangle`);
     }
     for (const p of m.plans) {
       const at = `${where} : plan « ${p.plan} » (objet n°${p.id}) en (${p.x}, ${p.y})`;
@@ -1028,7 +1029,10 @@ const CATALOG_EXCLUDED: Record<string, string> = {};
  * Les dessins qui manquent encore à un objet qui a la capacité (à faire avec le pixel-artist, docs/AUDIT.md « Normalisation ») :
  * `ground` l'image au sol, `tool` la planche en main d'un outil qui frappe. Chacun avec sa raison ; un objet dessiné en sort.
  */
-export const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> = {
+export const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string; carried?: string }> = {
+  // porté (son icône, sa posture tenue) : il pèse plus que Xéros ne porte (80 kg, 70) ; à la force de ?dieu, il se porterait, mais son
+  // dessin porté n'existe pas encore (chantier du dépeçage, à venir) : le jeu le dit (« son dessin porté manque »)
+  'dead-boar': { carried: 'son icône et sa posture tenue, pas encore dessinées (le dépeçage viendra dans un autre chantier)' },
   pickaxe: { ground: 'pas encore dessinée au sol', tool: 'ses cinq dessins en main (le rocher se travaille déjà au coup)' },
   stone: { ground: 'pierre ancienne, à redessiner au sol (ou remplacée par les pierres brutes)' },
   'iron-ore': { ground: 'pas encore dessiné au sol (la chaîne du fer est à venir)' },
@@ -1042,8 +1046,15 @@ export const DRAWINGS_TODO: Record<string, { ground?: string; tool?: string }> =
  */
 export const CREATURES_TODO: Record<string, string> = {};
 
-/** Les poses dessinées d'une créature (animations `<pose>-<direction>` de sa planche), dans les quatre directions. */
-export const CREATURE_POSES = ['graze', 'sit', 'hop', 'alert', 'run', 'thump'] as const;
+/**
+ * Les poses dessinées d'une créature (animations `<pose>-<direction>` de sa planche), dans les quatre directions, selon sa réaction :
+ * celle qui fuit (le lapin) court et tambourine ; celle qui charge (le sanglier) annonce, charge, heurte, reste sonnée, dort couchée
+ * à sa bauge et meurt en basculant (world/creature.ts).
+ */
+export const CREATURE_POSES = {
+  flee: ['graze', 'sit', 'hop', 'alert', 'run', 'thump'],
+  charge: ['graze', 'sit', 'hop', 'alert', 'tell', 'charge', 'impact', 'stunned', 'rest', 'die'],
+} as const;
 
 /**
  * Une créature (creatures.json) : elle devient morte un objet d'items.json de sa masse (la matière se conserve), qui se tient ; sa
@@ -1059,7 +1070,7 @@ function validateCreatures(c: Content, cat: Catalog): string[] {
     const dead = c.items[d.becomes];
     if (!dead) err(`'becomes' : objet '${d.becomes}' absent d'items.json`);
     else if (typeof dead.mass !== 'number' || Math.abs(dead.mass - d.mass) > 1e-9) err(`'becomes' : '${d.becomes}' pèse ${JSON.stringify(dead.mass)} kg, la bête ${d.mass} kg : la matière se conserve`);
-    for (const pose of CREATURE_POSES)
+    for (const pose of CREATURE_POSES[d.reaction])
       for (const dir of DIRECTIONS) if (!cat.animations.get(d.image)?.has(`${pose}-${dir}`)) err(`planche '${d.image}' : animation '${pose}-${dir}' manquante`);
     if (!cat.textures.has(`fx-${d.target.matter}`)) err(`cible : planche 'fx-${d.target.matter}' non dessinée`);
   }
@@ -1517,7 +1528,8 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   for (const [key, it] of Object.entries(c.items)) {
     if (it.hold) addAll(validateHold(`items.json '${key}'`, it.hold, it.hands, cat));
     if (!KEBAB_CASE.test(key)) err(`items.json '${key}' : la clé doit être un identifiant anglais en kebab-case`);
-    if (!cat.textures.has(it.icon)) err(`items.json '${key}' : icône '${it.icon}' non dessinée`);
+    if (!cat.textures.has(it.icon) && !DRAWINGS_TODO[key]?.carried) err(`items.json '${key}' : icône '${it.icon}' non dessinée`);
+    if (cat.textures.has(it.icon) && DRAWINGS_TODO[key]?.carried) err(`validate.ts DRAWINGS_TODO : '${key}' a son icône, à retirer de la liste`);
     if (it.ground && !cat.textures.has(it.ground)) err(`items.json '${key}' : image au sol '${it.ground}' non dessinée`);
   }
 

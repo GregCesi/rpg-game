@@ -22,8 +22,23 @@
 
 import { Canvas, EMPTY, castShadow, type Grid, type Palette } from '../lib/canvas';
 import { lightUp, type Materials } from '../lib/light';
-import { palette as second, MATS as SECOND } from './sanglier-profil-lib';
-import { body as cBody } from './sanglier-profil-c';
+import { palette as second, MATS as SECOND } from './boar-lib';
+
+/** Le corps de profil de la variante C (art/proposals/sanglier-profil-c.ts, essai 2), retenue par Grégoire. */
+const cBody = [
+  '..........C.CC.CC.C.......', // 0  soies du garrot, pointe de l'oreille
+  '........UCCCCCCC.CC.......', // 1  le garrot, la crinière ; l'oreille, détachée de la nuque
+  '.....UUUUUUCCCCBBBBBB.....', // 2
+  '...UUUUUUUUUUBBBBBBBBB....', // 3
+  '..BBBBBBBBBBBBBBBBBBEBBB..', // 4  l'œil
+  '.BBBBBBBBBBBBBBBBBBBBBBBBS', // 5  le haut du groin
+  'CBBBBBBBBBBBBBBBBBGGGBWBBS', // 6  la queue ; la joue grise ; la défense
+  'CBBBBBBBBBBBBBBBBGGGGWBBBS', // 7
+  'CBBBBBBBBBBBBBBBBBGGGBBBB.', // 8
+  '.BBBBBBBBBBBBBBBBBBBBB....', // 9  la ganache, à la hauteur du ventre
+  '..BBBBBBBBBBBBBBBBBBB.....', // 10 le ventre
+  '..BBBBB....BBBBBBB........', // 11 le jambon, le poitrail
+];
 
 export const palette: Palette = {
   ...second,

@@ -4,7 +4,7 @@
 // Avec elle, la mort (bascule sur le flanc, pattes raides) et le couché à la bauge (sur le ventre, pattes repliées, tête posée).
 // Gabarit : 28 × 20 px debout (zones 26 × 18, voir sanglier-profil-lib.ts) ; mort sur le flanc 28 × 16 (140 × 80 × 40 cm couché).
 
-import { standing, lying, flipped, lowerFrom, type Anim, type Leg, type P, type Variant } from './sanglier-profil-lib';
+import { standing, lying, flipped, lowerFrom, type Anim, type Leg, type P, type Variant } from '../world/boar-lib';
 import { standLegs, chargeLegs } from './sanglier-profil-a';
 
 //              0         1         2

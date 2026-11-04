@@ -16,7 +16,7 @@
 
 import { Canvas, EMPTY, type Grid } from '../../lib/canvas';
 import { lightUp } from '../../lib/light';
-import { palette, MATS, dab, SIDE, GY, FOOT, type Dab, type Leg, type P } from '../sanglier-c';
+import { palette, MATS, dab, SIDE, GY, FOOT, type Dab, type Leg, type P } from '../../world/boar-shapes';
 import { body as bBody } from '../sanglier-profil-b';
 import { body as cBody } from '../sanglier-profil-c';
 

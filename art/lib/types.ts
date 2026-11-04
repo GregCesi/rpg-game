@@ -6,6 +6,8 @@ export interface SpriteSheetSource {
   name: string;
   frameW: number;
   frameH: number;
+  /** Combien de rangées sous les pieds dans chaque image (une créature : le jeu la pose d'autant) ; absent : 2 (le lapin, Xéros). */
+  feet?: number;
   palette: Palette;
   /**
    * Les animations ; `durations` (ms, une par image) : la durée de chaque image quand elles ne durent pas toutes autant (le sanglier,

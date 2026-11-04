@@ -14,7 +14,7 @@ import { EMPTY, rng, type Grid, type Palette } from '../art/lib/canvas';
 import xeros from '../art/characters/xeros';
 import tileset from '../art/world/tiles';
 import world from '../src/content/world.json';
-import { silhouette } from '../art/proposals/sanglier-profil-lib';
+import { silhouette } from '../art/world/boar-lib';
 import { palette, FOOT, entries } from '../art/proposals/sanglier-bc-annule/sanglier-profil-bc';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
 

@@ -16,7 +16,7 @@ import xeros from '../art/characters/xeros';
 import tileset from '../art/world/tiles';
 import world from '../src/content/world.json';
 import * as first from '../art/proposals/sanglier';
-import { palette, silhouette, FOOT, type Variant } from '../art/proposals/sanglier-profil-lib';
+import { palette, silhouette, FOOT, type Variant } from '../art/world/boar-lib';
 import A from '../art/proposals/sanglier-profil-a';
 import B from '../art/proposals/sanglier-profil-b';
 import C, { death, dead, bed } from '../art/proposals/sanglier-profil-c';

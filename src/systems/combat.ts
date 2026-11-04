@@ -19,6 +19,7 @@ import {
   footprint,
   frameDurations,
   impactDamage,
+  throughHide,
   NO_SHIFT,
   precision,
   reachCm,
@@ -83,7 +84,10 @@ export interface AttackPlan {
   joules: number;
   /** Son prix au plafond et au souffle (au joule, comme le travail). */
   cost: { ceiling: number; breath: number };
+  /** Ses dégâts sur une cible sans peau ; sur une cible à peau, `throughHide` avec `edge`. */
   damage: number;
+  /** Le tranchant de ce qui frappe (`edge` du `work` de l'outil, de 0 à 1 ; 0 sans tranchant) : il coupe la peau d'une cible. */
+  edge: number;
   precision: number;
   shift: Shift;
   drawShift: Point;
@@ -147,7 +151,7 @@ export class CombatSystem {
     private readonly map: GameMap,
     private readonly harvest: HarvestSystem,
     /** Les cibles vivantes de la carte (les créatures, systems/creatures.ts). */
-    private readonly living: () => (Omit<Target, 'def'> & { hurt: NonNullable<Target['hurt']> })[] = () => [],
+    private readonly living: () => (Omit<Target, 'def'> & { hurt: NonNullable<Target['hurt']>; hide: number })[] = () => [],
   ) {}
 
   /** La clé de ce qui frappe, pour l'enchaînement et le journal. */
@@ -205,6 +209,7 @@ export class CombatSystem {
       joules,
       cost: attackCost(stamina.work, joules),
       damage: imp ? impactDamage(rules, joules, weapon.efficiency) : damage(rules, attack, sweep, combatPoses[attack.gesture].down, weapon, kg),
+      edge: 'held' in s && 'item' in s.held ? (items[s.held.item]?.work?.edge ?? 0) : 0,
       precision: precision(rules, weapon, kg),
       shift,
       drawShift,
@@ -304,7 +309,7 @@ export class CombatSystem {
       const box = { left: c.x / CM_PER_PX, top: c.y / CM_PER_PX, right: (c.x + c.w) / CM_PER_PX, bottom: (c.y + c.d) / CM_PER_PX };
       out.push({ key: `build:${b.piece.id}`, type: ref.prop, def: def.target, box, image: b.image, x: b.image.x, y: b.image.y });
     }
-    for (const q of this.living()) out.push({ ...q, def: { hp: 'infinite', matter: '', tilt: 0 } });
+    for (const q of this.living()) out.push({ ...q, def: { hp: 'infinite', matter: '', tilt: 0, hide: q.hide } });
     return out;
   }
 
@@ -331,14 +336,17 @@ export class CombatSystem {
     const feel = combat.feel;
     // l'arrêt sur image : le geste se fige, puis la cible réagit
     player.tools.hold(feel.hitStopMs);
-    if (p.damage >= feel.shakeFrom) this.scene.cameras.main.shake(feel.shakeMs, feel.shakeIntensity);
+    // les dégâts de chaque cible : ce que sa peau laisse passer (world/strike.ts `throughHide`)
+    const dealt = (q: Target) => throughHide(combat.rules, p.joules, p.weapon.efficiency, q.def.hide, p.edge);
+    if (Math.max(...hit.map(dealt)) >= feel.shakeFrom) this.scene.cameras.main.shake(feel.shakeMs, feel.shakeIntensity);
     for (const q of hit) {
-      entry?.hits.push({ key: q.key, type: q.type, damage: p.damage, step });
-      // une cible vivante : ses points de vie, sa fuite ou sa mort, ses éclats et le chiffre (systems/creatures.ts)
-      if (q.hurt) q.hurt(p.damage, p.facing);
+      const dmg = dealt(q);
+      entry?.hits.push({ key: q.key, type: q.type, damage: dmg, step });
+      // une cible vivante : ses points de vie, sa réaction ou sa mort, ses éclats et le chiffre (systems/creatures.ts)
+      if (q.hurt) q.hurt(dmg, p.facing);
       else {
         this.scene.time.delayedCall(feel.hitStopMs, () => this.react(q, p.facing));
-        this.float(q, String(p.damage).replace('.', ','));
+        this.float(q, String(dmg).replace('.', ','));
       }
     }
   }
@@ -350,7 +358,8 @@ export class CombatSystem {
    */
   thrownHit(key: string, item: string, joules: number, facing: Facing): number {
     const q = this.targets().find((t) => t.key === key);
-    const dmg = impactDamage(combat.rules, joules, combat.throw.efficiency);
+    // ce que la peau de la cible laisse passer (un objet lancé n'a pas de tranchant)
+    const dmg = throughHide(combat.rules, joules, combat.throw.efficiency, q?.def.hide ?? 0);
     if (!q) return dmg;
     this.log.push({ attack: 'throw', item, facing, reach: 0, cost: 0, joules, damage: dmg, precision: 1, shift: NO_SHIFT, hits: [{ key, type: q.type, damage: dmg, step: 0 }], misses: [] });
     if (dmg >= combat.feel.shakeFrom) this.scene.cameras.main.shake(combat.feel.shakeMs, combat.feel.shakeIntensity);

@@ -18,7 +18,7 @@ import { EMPTY, flipX, rng, type Grid, type Palette } from '../art/lib/canvas';
 import xeros from '../art/characters/xeros';
 import tileset from '../art/world/tiles';
 import world from '../src/content/world.json';
-import * as boar from '../art/proposals/sanglier-c';
+import * as boar from '../art/world/boar-shapes';
 import * as down from '../art/characters/xeros-knockdown';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
 
