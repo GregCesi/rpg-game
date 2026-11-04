@@ -1182,6 +1182,8 @@ export const StrengthSchema = z
     walk: z.number().positive(),
     roll: z.number().positive(),
     slowest: z.number().gt(0).lte(1),
+    /** La masse de Xéros, en kg (son corps : ce qu'emporte une charge, docs/CONCEPTION.md « La vie de Xéros »). */
+    mass: z.number().positive(),
   })
   .refine((s) => s.walk < s.carry, { message: "'walk' doit être au-dessous de 'carry'" });
 
@@ -1213,6 +1215,18 @@ export const TimeSchema = z
  * la part `tired` du maximum, il ne court plus et marche à la part `tiredWalk`), le travail au joule (`work`), le sommeil (`sleep`) et le
  * prix des gestes sans matière (`costs`).
  */
+/**
+ * La vie de Xéros (health.json, docs/CONCEPTION.md « La vie de Xéros ») : `max` points ; la nuit en rend la part `sleepHeal` du maximum ;
+ * à zéro, il s'évanouit et se réveille au cagibi le lendemain matin, la mère l'a trouvé (`faint.dialogue`, sa ligne). Renversé par une
+ * charge, il glisse au sol, freiné par `knockdown.friction` (le frottement de son corps sur la terre : la longueur de la glissade en découle).
+ */
+export const HealthSchema = z.strictObject({
+  max: z.number().positive(),
+  sleepHeal: z.number().min(0).max(1),
+  faint: z.strictObject({ dialogue: id }),
+  knockdown: z.strictObject({ friction: z.number().positive() }),
+});
+
 export const StaminaSchema = z.strictObject({
   /**
    * Le maximum (docs/CONCEPTION.md, « Le temps ») : `start` au départ, au plus `cap` ; chaque nuit, si la journée a entamé le plafond
@@ -1762,6 +1776,7 @@ export type WorkDef = z.infer<typeof WorkSchema>;
 export type HarvestWork = z.infer<typeof HarvestWorkSchema>;
 export type DialogueAction = z.infer<typeof DialogueActionSchema>;
 export type StaminaDef = z.infer<typeof StaminaSchema>;
+export type HealthDef = z.infer<typeof HealthSchema>;
 export type PilePlace = z.infer<typeof PilePlaceSchema>;
 export type PileDef = z.infer<typeof PileDefSchema>;
 export type Corner = z.infer<typeof CornerSchema>;

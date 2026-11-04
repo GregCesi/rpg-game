@@ -153,6 +153,13 @@ export class Rail {
     return true;
   }
 
+  /** La passe s'arrête tout de suite, au milieu du coup (Xéros renversé par une charge) : ce qui est fait reste fait. */
+  interrupt(): void {
+    if (!this.pass) return;
+    this.player.tools.cancel();
+    this.finish('stopped');
+  }
+
   private finish(why: RailEnd): void {
     const pass = this.pass!;
     // arrêtée : les pieds au fer, là où la face reprendra

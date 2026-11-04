@@ -14,6 +14,8 @@ export const GameEvent = {
   Stamina: 'stamina',
   /** Un effort a été refusé, Xéros étant épuisé : la jauge tremble. */
   StaminaDenied: 'stamina-denied',
+  /** La vie de Xéros a changé (argument : ses points, de 0 au maximum de health.json). */
+  Health: 'health',
   /** Message court à afficher au-dessus des mains (argument : le texte). Ex. l'outil manque. */
   Notice: 'notice',
   /** Outils de test (?dieu) : une commande du panneau, pour WorldScene (argument : une DieuCommand). */
@@ -82,7 +84,8 @@ export interface BuildStatus {
  * grille, forme, faces, sens) ; les créatures (CONCEPTION « Les créatures ») : faire sortir une bête de la garenne la plus proche à 3 m de
  * Xéros (`creature-spawn`), régler le nombre de bêtes de cette garenne (`creature-population`), régler les distances de perception d'une
  * espèce à une allure (`creature-senses`, en m, le temps de la session : les données de creatures.json en mémoire), montrer autour de Xéros
- * les deux cercles de son allure (`creature-rings`).
+ * les deux cercles de son allure (`creature-rings`) ; la vie de Xéros (`health` : ses points ; à zéro, il s'évanouit ; `health-infinite` :
+ * rien ne la fait baisser).
  */
 export type DieuCommand =
   | { kind: 'give'; held: Held }
@@ -107,6 +110,8 @@ export type DieuCommand =
   | { kind: 'reset-map' }
   | { kind: 'reset-game' }
   | { kind: 'creature-spawn' }
+  | { kind: 'health'; value: number }
+  | { kind: 'health-infinite'; on: boolean }
   | { kind: 'creature-population'; count: number }
   | { kind: 'creature-senses'; creature: string; gait: Gait; alert: number; flee: number }
   | { kind: 'creature-rings'; on: boolean };

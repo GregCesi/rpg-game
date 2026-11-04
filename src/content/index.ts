@@ -2,7 +2,7 @@
 // une faute de frappe plante tout de suite, avec le chemin exact.
 // Les cartes ne sont pas ici : elles viennent de Tiled (tiled/maps/*.tmj) et sont traduites par `npm run maps`.
 import { z } from 'zod';
-import { CharacterDefSchema, CombatSchema, CreatureSchema, TimeSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, MatterSchema, PileDefSchema, RockSchema, PlanSchema, ParcelUseSchema, PropDefSchema, StaminaSchema, StrengthSchema, WorkSchema, TilesetCatalogSchema, TransformSchema, WoodSchema, WorldSchema } from './types';
+import { CharacterDefSchema, CombatSchema, CreatureSchema, TimeSchema, HoldPosesSchema, DialogueDefSchema, GestureSchema, ItemDefSchema, MatterSchema, PileDefSchema, RockSchema, PlanSchema, ParcelUseSchema, PropDefSchema, StaminaSchema, HealthSchema, StrengthSchema, WorkSchema, TilesetCatalogSchema, TransformSchema, WoodSchema, WorldSchema } from './types';
 import tilesJson from './tiles.json';
 import propsJson from './props.json';
 import itemsJson from './items.json';
@@ -12,6 +12,7 @@ import gesturesJson from './gestures.json';
 import holdJson from './hold.json';
 import strengthJson from './strength.json';
 import staminaJson from './stamina.json';
+import healthJson from './health.json';
 import charactersJson from './characters.json';
 import dialoguesJson from './dialogues.json';
 import woodJson from './wood.json';
@@ -55,6 +56,8 @@ export const dialogues = parse('dialogues.json', z.record(z.string(), DialogueDe
 export const strength = parse('strength.json', StrengthSchema, strengthJson);
 /** L'endurance de Xéros : son maximum, le seuil de fatigue et le prix de chaque effort. */
 export const stamina = parse('stamina.json', StaminaSchema, staminaJson);
+/** La vie de Xéros : son maximum, ce que rend la nuit, l'évanouissement, la glissade quand une charge le renverse. */
+export const health = parse('health.json', HealthSchema, healthJson);
 /** Le bois : diamètres, géométrie de leurs dessins, règles (grille de coupe, longueur minimale, équarrir, fendre). */
 export const wood = parse('wood.json', WoodSchema, woodJson);
 /** Les matières : nom et densité (pierre, terre crue, torchis, mortier, paille, bois vert, eau), d'où se calculent les masses. */

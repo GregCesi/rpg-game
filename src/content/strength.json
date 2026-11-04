@@ -1,1 +1,1 @@
-{"swing": {"torque": 50, "omegaMax": 25, "skill": 0.8, "humanMax": 130}, "carry": 70, "walk": 25, "roll": 300, "slowest": 0.5}
+{"swing": {"torque": 50, "omegaMax": 25, "skill": 0.8, "humanMax": 130}, "carry": 70, "walk": 25, "roll": 300, "slowest": 0.5, "mass": 70}

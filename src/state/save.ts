@@ -4,7 +4,7 @@
 // La future sauvegarde au cagibi passera par ces mêmes fonctions.
 
 import { z } from 'zod';
-import { items, maps, piles, plans, props, stamina, time, wood } from '../content';
+import { health, items, maps, piles, plans, props, stamina, time, wood } from '../content';
 import { FacingSchema, type WoodPiece } from '../content/types';
 import { refMissing } from '../world/build';
 import { parseInteriorId } from '../world/interior';
@@ -23,7 +23,8 @@ const DAMAGED_KEY = 'xeros-partie-abimee';
 // 30 (chantier « maison-2 ») : la maison de Xéros refaite (le solin de toute longueur, `length` d'une pièce posée ; la baie de porte,
 // les seuils, la cheminée où l'on cuisine) : une partie d'avant garderait l'ancienne maison, posée une fois (accord de Grégoire : une
 // partie neuve).
-export const SAVE_VERSION = 30;
+// 31 (chantier « sangliers ») : la vie de Xéros (`health`) ; une partie d'avant la reçoit pleine.
+export const SAVE_VERSION = 31;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
@@ -86,7 +87,8 @@ export function readSave(): ReadResult {
  * 24 -> 25 : le nombre de branches d'un fagot (`bundle`), facultatif ; 25 -> 26 : celui d'un fagot posé seul (`bundle` d'un objet né),
  * facultatif ; 26 -> 27 : le tas de branches plein passe de 10 à 12, un fagot sans nombre (le plein d'alors) reçoit `bundle: 10`
  * (`withOldFullBundle`) ; 27 -> 28 : la main active n'existe plus (`active` retiré, `withoutActive`) ; 28 -> 29 : les garennes
- * (`warrens` de chaque carte), vides : elles se peuplent à la prochaine visite.
+ * (`warrens` de chaque carte), vides : elles se peuplent à la prochaine visite ; 30 -> 31 : la vie de Xéros (`health`), pleine
+ * (`withHealth`).
  */
 export function upgrade(data: unknown): unknown {
   let d = data as { version?: unknown; state?: unknown } | null;
@@ -107,7 +109,14 @@ export function upgrade(data: unknown): unknown {
   if (d?.version === 27 && d.state && typeof d.state === 'object') d = { ...d, version: 28, state: withoutActive(d.state as object) };
   // 28 -> 29 : les garennes de chaque carte (`warrens`, une valeur par défaut du schéma : vides)
   if (d?.version === 28 && d.state && typeof d.state === 'object') d = { ...d, version: 29 };
+  // 30 -> 31 : la vie de Xéros, pleine (la partie de la version 29 n'est pas relue : la maison refaite de la version 30 demande une partie neuve)
+  if (d?.version === 30 && d.state && typeof d.state === 'object') d = { ...d, version: 31, state: withHealth(d.state as object) };
   return d;
+}
+
+/** 30 -> 31 : la vie de Xéros, pleine. */
+function withHealth(state: object): object {
+  return { ...state, health: health.max };
 }
 
 /** 27 -> 28 : `active` retiré de la partie. */

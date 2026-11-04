@@ -52,5 +52,14 @@
         "text": "Vers la ville. La route n'est pas encore pour moi."
       }
     ]
+  },
+  "mother-found": {
+    "lines": [
+      {
+        "speaker": "mother",
+        "expression": "neutral",
+        "text": "Je t'ai trouvé par terre dans la forêt et je t'ai ramené. Repose-toi, et ne retourne pas seul dans les bois profonds."
+      }
+    ]
   }
 }

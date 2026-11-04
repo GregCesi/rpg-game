@@ -19,7 +19,7 @@ import xeros from '../art/characters/xeros';
 import tileset from '../art/world/tiles';
 import world from '../src/content/world.json';
 import * as boar from '../art/proposals/sanglier-c';
-import * as down from '../art/proposals/xeros-renverse';
+import * as down from '../art/characters/xeros-knockdown';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');

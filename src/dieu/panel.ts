@@ -250,6 +250,10 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   // strength.json `swing`) ; réglée pendant un travail, elle agit au coup suivant ; la masse portée se lit à côté
   // les créatures (CONCEPTION « Les créatures ») : faire sortir une bête près de Xéros, régler la population de la garenne la plus proche,
   // voir et régler les distances de perception d'une espèce à chaque allure (en mémoire, le temps de la session)
+  // la vie de Xéros (CONCEPTION « La vie de Xéros ») : la régler (à zéro, il s'évanouit), la rendre infinie
+  const lifeValue = el('input', { type: 'number', min: '0', max: '100', step: '5', value: '100' });
+  const lifeInfinite = el('input', { type: 'checkbox' });
+  lifeInfinite.addEventListener('change', () => send({ kind: 'health-infinite', on: lifeInfinite.checked }));
   const kinds = Object.keys(creatures);
   const creature = el('select', {}, kinds.map((k) => el('option', { value: k, textContent: creatures[k].name })));
   const GAITS: [Gait, string][] = [['still', 'immobile'], ['sneak', 'discret'], ['walk', 'marche'], ['run', 'course']];
@@ -384,6 +388,9 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('div', { className: 'row' }, [el('label', {}, ['souffle', energyBreath]), el('label', {}, ['plafond', energyCeiling])]),
     el('div', { className: 'row' }, [el('label', {}, ['maximum', energyMax]), energyButton]),
     el('div', { className: 'row' }, [button('Endurance de départ', () => send({ kind: 'stamina-start' }))]),
+    el('h3', { textContent: 'Vie' }),
+    el('div', { className: 'row' }, [el('label', {}, ['points', lifeValue]), button('Régler la vie', () => send({ kind: 'health', value: Number(lifeValue.value) }))]),
+    el('div', { className: 'row' }, [el('label', {}, [lifeInfinite, 'vie infinie'])]),
     el('div', { className: 'row' }, [el('label', {}, [infinite, 'endurance infinie'])]),
     el('div', { className: 'row' }, [el('label', {}, ['heure', clockHour]), clockButton]),
     el('div', { className: 'row' }, [button('Finir le travail', () => send({ kind: 'finish-work' }))]),

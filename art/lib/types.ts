@@ -7,7 +7,11 @@ export interface SpriteSheetSource {
   frameW: number;
   frameH: number;
   palette: Palette;
-  animations: Record<string, { frames: Grid[]; frameRate: number; repeat: number }>;
+  /**
+   * Les animations ; `durations` (ms, une par image) : la durée de chaque image quand elles ne durent pas toutes autant (le sanglier,
+   * Xéros renversé) ; elle remplace alors `frameRate`.
+   */
+  animations: Record<string, { frames: Grid[]; frameRate: number; repeat: number; durations?: number[] }>;
 }
 
 /** Jeu de tuiles carrées, référencées par nom. */

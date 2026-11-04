@@ -20,7 +20,7 @@ import { world } from '../palette';
 import {
   W, H, HEAD_Y, BODY_Y, FRONT_X, SIDE_X, palette as xp, DARK, headFront, headBack, torsoFront, torsoBack, legLeft, legRight, LEG_L, LEG_R,
   headSide, bodySide, legSide, LEG_SIDE, backLeg, rim, arm, bareTorso,
-} from '../characters/xeros-body';
+} from './xeros-body';
 
 /** La palette de Xéros, plus la poussière (des signes que sa planche n'emploie pas). */
 export const palette: Palette = { ...xp, 1: world.n, 2: world.u, 3: world['9'] };

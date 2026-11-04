@@ -178,9 +178,10 @@ for (const src of sources) {
 
   if (src.kind === 'spritesheet') {
     const cells: Grid[] = [];
-    const anims: Record<string, { frames: number[]; frameRate: number; repeat: number }> = {};
+    const anims: Record<string, { frames: number[]; frameRate: number; repeat: number; durations?: number[] }> = {};
     for (const [anim, def] of Object.entries(src.animations)) {
-      anims[anim] = { frames: [], frameRate: def.frameRate, repeat: def.repeat };
+      if (def.durations && def.durations.length !== def.frames.length) throw new Error(`${src.name}/${anim} : ${def.durations.length} durées pour ${def.frames.length} images`);
+      anims[anim] = { frames: [], frameRate: def.frameRate, repeat: def.repeat, ...(def.durations ? { durations: def.durations } : {}) };
       def.frames.forEach((g, f) => {
         check(g, src.frameW, src.frameH, src.palette, `${src.name}/${anim}[${f}]`);
         anims[anim].frames.push(cells.length);
@@ -294,7 +295,8 @@ export interface SpriteSheetAsset {
   url: string;
   frameWidth: number;
   frameHeight: number;
-  animations: Record<string, { frames: number[]; frameRate: number; repeat: number }>;
+  /** durations : la durée de chaque image (ms), quand elle n'est pas la même pour toutes (sinon frameRate). */
+  animations: Record<string, { frames: number[]; frameRate: number; repeat: number; durations?: number[] }>;
   /** Silhouette de la première image (gabarit) : pixels opaques, contour compris, ombre et lueurs exclues. */
   silhouette: { x: number; y: number; w: number; h: number };
 }

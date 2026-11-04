@@ -237,6 +237,8 @@ export interface Content {
   creatures?: Record<string, CreatureDef>;
   /** Le temps (time.json) : les paliers de la vitesse du temps. */
   time?: { speeds: readonly number[]; dieuSpeed: number };
+  /** La vie de Xéros (health.json) ; absente : sa vérification est sautée. */
+  health?: { faint: { dialogue: string } };
   /**
    * Les poses des gestes de combat (src/generated/combatPoses.ts), passées par qui les a (npm run check, le jeu) : validate.ts ne les
    * importe pas, car build-art, qui les écrit, l'utilise avant de les avoir écrites (sur un dossier neuf, elles n'existent pas encore).
@@ -1434,6 +1436,9 @@ export function validateContent(c: Content, cat: Catalog): string[] {
   // le temps : la plaquette du cadran (art/ui/clock.ts) a la place de cinq crans ; le palier de ?dieu au-dessus de ceux du joueur
   if (c.time && c.time.speeds.length > 5) err(`time.json : ${c.time.speeds.length} paliers, la plaquette du cadran n'a que cinq crans`);
   if (c.time && c.time.dieuSpeed <= Math.max(...c.time.speeds)) err(`time.json : 'dieuSpeed' (${c.time.dieuSpeed}) doit dépasser les paliers du joueur`);
+
+  // la vie de Xéros : la ligne de la mère qui l'a trouvé évanoui existe
+  if (c.health && !c.dialogues[c.health.faint.dialogue]) err(`health.json : dialogue '${c.health.faint.dialogue}' introuvable (faint)`);
 
   // Joueur
   for (const state of ['idle', 'walk']) {

@@ -235,6 +235,13 @@ export class CombatSystem {
     });
   }
 
+  /** L'attaque est interrompue (Xéros renversé) : ni sa fin ni la suivante. */
+  abort(): void {
+    this.busy = false;
+    this.queued = false;
+    this.queuedButton = undefined;
+  }
+
   /** Un clic du bouton `button` pendant l'attaque : la suivante partira à sa fin. */
   queue(button: 'left' | 'right'): void {
     if (!this.busy) return;

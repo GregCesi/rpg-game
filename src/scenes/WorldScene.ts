@@ -3,7 +3,7 @@ import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { stateImage } from '../world/pileShape';
 import { CONSTRUIRE, DEPTH, FEET, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
-import { creatures, gestures, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
+import { creatures, gestures, health, items, maps, props, stamina, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
 import type { Look } from '../entities/Hold';
@@ -16,6 +16,7 @@ import { BuildSystem } from '../systems/build';
 import { ClockSystem } from '../systems/clock';
 import { CombatSystem, type AttackPlan } from '../systems/combat';
 import { CreatureSystem } from '../systems/creatures';
+import { Knockdown } from '../systems/knockdown';
 import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
@@ -61,6 +62,7 @@ import {
   clearHeld,
   clearSave,
   emptyHands,
+  faint,
   game,
   mapState,
   newGame,
@@ -102,8 +104,9 @@ import type { Interactable, PlacedGround, PlacedProp, Talker } from '../world/Ga
  * Échap compte, elle l'arrête là où il est.
  * `aim` : un clic maintenu vise un lancer (world/throw.ts) : Xéros se tourne vers le curseur, le repère montre où l'objet tombera ;
  * relâché, il lance ; Échap annule.
+ * `down` : Xéros renversé par une charge (systems/knockdown.ts) : il tombe, glisse, se relève ; rien ne le mène.
  */
-type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'work' | 'aim';
+type Mode = 'play' | 'use' | 'dialogue' | 'transition' | 'build' | 'rail' | 'work' | 'aim' | 'down';
 
 /** Un objet lancé en vol (world/throw.ts) : déjà posé au sol dans GameState (la matière se conserve), son image cachée jusqu'à la fin. */
 interface Flight {
@@ -133,6 +136,8 @@ export type WorldStart = {
   spawn?: string;
   at?: { x: number; y: number; facing: Facing };
   wake?: boolean;
+  /** Il se réveille d'un évanouissement : la mère l'a trouvé et ramené (sa ligne, `faint.dialogue` de health.json). */
+  fainted?: boolean;
   /**
    * On arrive en passant le bord d'une zone (systems/zones.ts) : pas de fondu (la voisine était déjà à l'écran, world/zoneBand.ts), et
    * la caméra reprend où elle était par rapport à Xéros (`view` : le milieu de la vue moins ses pieds).
@@ -177,6 +182,8 @@ export class WorldScene extends Phaser.Scene {
   private combat!: CombatSystem;
   /** Les créatures de la carte (les garennes de Tiled, systems/creatures.ts). */
   private creatures!: CreatureSystem;
+  /** Xéros renversé par une charge : la chute, la glissade, le relevé. */
+  private knockdown!: Knockdown;
   /** L'horloge (docs/CONCEPTION.md, « Le temps ») : une pour toutes les cartes, le palier est partagé (ClockSystem.speed). */
   private readonly clock = new ClockSystem();
   private handsSystem!: HandsSystem;
@@ -225,6 +232,8 @@ export class WorldScene extends Phaser.Scene {
   private force = 1;
   /** Case « endurance infinie » des outils de test (?dieu) : garde sa valeur d'une carte à l'autre. */
   private infinite = false;
+  /** ?dieu « vie infinie », gardée d'une carte à l'autre (la scène redémarre). */
+  private healthInfinite = false;
   private autosave!: AutoSave;
   /** Le zoom de la caméra du monde, par paliers entiers. */
   private zoom!: ZoomControl;
@@ -239,6 +248,8 @@ export class WorldScene extends Phaser.Scene {
   private at?: WorldStart['at'];
   /** On arrive d'une nuit de sommeil : le jour est dit à l'écran. */
   private wake = false;
+  /** On arrive d'un évanouissement : la mère le dit. */
+  private fainted = false;
   /** Entrer dans les bâtiments posés, en sortir (systems/interiors.ts). */
   private interiors!: Interiors;
   /** L'intérieur où l'on est (sa carte calculée, ce que la vue y ajoute), ou rien dehors. */
@@ -262,6 +273,7 @@ export class WorldScene extends Phaser.Scene {
     if (data.spawn) this.spawn = data.spawn;
     this.at = data.at;
     this.wake = !!data.wake;
+    this.fainted = !!data.fainted;
     this.edge = data.edge;
     this.mode = 'play';
     this.talking = undefined;
@@ -351,6 +363,7 @@ export class WorldScene extends Phaser.Scene {
       (x, y, label) => this.combat.floatAt(x, y, label),
       !!this.interior,
     );
+    this.knockdown = new Knockdown(this.map, this.player);
     this.transformer = new TransformSystem(this.map, this.handsSystem);
     this.site = new SiteSystem(this, this.map, npcs.map((n) => n.actor.body), this.player.strength);
     this.knots = new KnotSystem(this.map, this.handsSystem);
@@ -366,11 +379,13 @@ export class WorldScene extends Phaser.Scene {
     this.builder = new BuildSystem(this, this.map, this.player, (t) => this.notice(t), (st: BuildStatus) => this.game.events.emit(GameEvent.BuildStatus, st));
     this.player.strength.multiplier = this.force;
     this.player.stamina.infinite = this.infinite;
+    this.player.health.infinite = this.healthInfinite;
     // éveillé la nuit, Xéros s'use : la veille se paie (stamina.json, `sleep`)
     const night = stamina.sleep;
     this.clock.onAdvance = (from, minutes) =>
       this.player.stamina.wear((nightMinutes(from, minutes, night.nightFrom, time.wakeHour) / 60) * night.nightAwakePerHour);
     this.player.stamina.onChange = () => this.game.events.emit(GameEvent.Stamina, this.player.stamina.levels());
+    this.player.health.onChange = () => this.game.events.emit(GameEvent.Health, game.health);
     // les travaux commencés : l'étape visible de ce qui est entamé (l'arbre à moitié entaillé, retrouvé tel quel)
     for (const [key, w] of Object.entries(mapState(game, this.map.def.id).work)) {
       const p = w.work === 'harvest' ? this.map.props.find((q) => workKey(q.id, q.spawned) === key) : undefined;
@@ -380,7 +395,10 @@ export class WorldScene extends Phaser.Scene {
     // ce qu'il portait sur la carte d'avant
     this.handsChanged();
     this.game.events.emit(GameEvent.Stamina, this.player.stamina.levels());
+    this.game.events.emit(GameEvent.Health, game.health);
     if (this.wake) this.game.events.emit(GameEvent.Notice, clockLabel(game.clock), HUD.longNoticeMs / 2);
+    // réveillé d'un évanouissement : la mère l'a trouvé (sa ligne, après le fondu)
+    if (this.fainted) this.time.delayedCall(LOCKS.fadeIn, () => this.mode === 'play' && this.openDialogue(health.faint.dialogue));
     if (lost) this.notice("Le bâtiment n'est plus là.");
 
     const cam = this.cameras.main;
@@ -483,13 +501,15 @@ export class WorldScene extends Phaser.Scene {
     if (this.mode === 'rail') this.rail.update(delta, { stop: halt });
     // un travail au coup : lancé de F, Xéros frappe seul jusqu'au résultat
     if (this.mode === 'work') this.works.update({ stop: halt });
+    // renversé : la glissade
+    if (this.mode === 'down') this.knockdown.update(delta);
     // le zoom change dans tous les modes (même pendant un dialogue : seule la caméra du monde bouge)
     const zoom = input.zoomPressed();
     if (zoom) this.zoom.step(zoom);
     // l'horloge avance (pas pendant un dialogue, un fondu, le mode construction) ; V change la vitesse du temps (en boucle)
-    this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim');
+    this.clock.update(delta, this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim' || this.mode === 'down');
     // les créatures vivent quand l'horloge avance ; elles perçoivent Xéros dans ces mêmes modes
-    const living = this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim';
+    const living = this.mode === 'play' || this.mode === 'use' || this.mode === 'rail' || this.mode === 'work' || this.mode === 'aim' || this.mode === 'down';
     if (living) this.creatures.update(this.player, delta, true);
     // les objets lancés volent dans tous les modes (le temps du jeu)
     this.updateFlights(delta);
@@ -1545,6 +1565,15 @@ export class WorldScene extends Phaser.Scene {
       case 'creature-spawn':
         this.notice(this.creatures.spawnNear(this.player.actor.x, this.player.actor.y));
         break;
+      case 'health':
+        // la vie de Xéros, réglée ; à zéro, il s'évanouit sur place
+        this.player.health.set(cmd.value);
+        if (this.player.health.fainted) this.faintNow();
+        break;
+      case 'health-infinite':
+        this.healthInfinite = cmd.on;
+        this.player.health.infinite = cmd.on;
+        break;
       case 'creature-population':
         this.notice(this.creatures.setPopulation(this.player.actor.x, this.player.actor.y, cmd.count));
         break;
@@ -1617,6 +1646,29 @@ export class WorldScene extends Phaser.Scene {
   private openDialogue(id: string): void {
     this.mode = 'dialogue';
     this.scene.launch('dialogue', { id });
+  }
+
+  /** Il lâche tout ce qu'il tient, à ses pieds (renversé, évanoui). */
+  private dropAll(): void {
+    const a = this.player.actor;
+    for (const slot of ['both', 0, 1] as const) {
+      const h = slot === 'both' ? game.both : game.hands[slot];
+      if (!h) continue;
+      this.handsSystem.layNear(this.player, h, a.x, a.y);
+      clearHeld(game, slot);
+    }
+    this.handsChanged();
+  }
+
+  /**
+   * Xéros s'évanouit (sa vie à zéro, docs/CONCEPTION.md « La vie de Xéros ») : ce qu'il tenait reste là où il est tombé ; la nuit passe
+   * (`faint` de GameState : l'endurance et la vie qu'elle rend) ; il se réveille au cagibi, la mère l'a trouvé.
+   */
+  private faintNow(): void {
+    this.dropAll();
+    this.player.stamina.flush();
+    faint(game);
+    this.fadeTo({ mapId: START.map, spawn: START.spawn, wake: true, fainted: true }, 1400);
   }
 
   /** « Dormir ? » -> Oui : fondu au noir, l'horloge au lever, ce que rend la nuit (`sleep` de GameState), réveil dans le cagibi (la partie s'écrit à l'arrivée). */
