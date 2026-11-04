@@ -767,3 +767,146 @@ Grégoire hésite : il trouve la version d'avant presque mieux, et on reverra ç
 planté côté ferme (`relief-face-planted*`), le sol éclairci et `FLOOR_GLOOM` (le sol ne reçoit que 20 % de la pénombre), dans
 `art/proposals/relief-final.ts` et sa scène ; planche `relief-final-7-corrections.png` ; côté jeu, la règle de matière est prête
 (`plantedAt` de `src/world/relief.ts`, testée, pas encore utilisée par le rendu). **À revoir avec Grégoire.**
+
+---
+
+## 13. L'intérieur du tunnel : le repenser (4 novembre, plans seulement)
+
+**Stop de Grégoire** : rien ne s'intègre, rien ne se fusionne. La version 7 (`relief-final-7-corrections.png`) et le rendu de
+l'intérieur du couloir ne sont pas validés. **La logique reste telle quelle** (les hauteurs, la marche, le saut, la nage, les refus).
+C'est la façon de montrer l'intérieur du tunnel qui est à repenser. Cette section ne contient que des plans et des schémas en aplats
+(planche `.art-preview/relief-plans.png`) ; aucun dessin définitif, rien ne change dans le jeu.
+
+### 13.1 Ce que j'ai compris
+
+Entrer dans le chemin creux doit faire le même effet que se glisser dans un tronc creux : **une fois dedans, Xéros est dans la terre**,
+pas au-dessus d'elle. Autour de lui, il n'y a que le tunnel : la paroi de terre et ses racines derrière lui, le sol clair sous ses
+pieds, l'épaisseur du talus devant lui, la voûte de feuillage au-dessus. Ce qui le cacherait (le talus sud) devient transparent ou se
+coupe, mais reste **de la matière du tunnel** : on ne doit pas, en l'enlevant, découvrir le monde
+du dehors juste sous ses pieds. Aujourd'hui, au-dessus de la rivière, l'écran se lit de haut en bas « paroi, sol clair, face de terre
+verticale, eau » : c'est exactement l'image d'un pont, le sol clair faisant le tablier.
+
+**Pourquoi c'est la projection, pas le dessin.** Le jeu montre tout depuis le sud, à 45° (une hauteur h se dessine h / 5 px plus haut).
+Le talus sud a 5 m : sa crête se dessine 100 px plus haut que son pied et passe devant Xéros, qui en est caché de la tête aux pieds
+(c'est pourquoi il s'efface). Mais la **face extérieure** de ce talus, qui regarde le sud, se voit en vraie grandeur **sous** le sol du
+couloir à l'écran, puis le dehors au-delà de son pied : sur la ferme, les champs ; sur la rivière, l'eau, 77 px sous les pieds de Xéros.
+
+### 13.2 Les deux coupes nord-sud (cm, le sol du couloir à 0, Xéros au milieu)
+
+Les profils sont ceux du jeu (`Lane` et `Ridge` de `ferme.tmj`, section 10.1) : sol de 250, talus intérieurs de 120 au sol pour 500,
+crête, flanc extérieur.
+
+| | Talus nord, du dehors au couloir | Couloir | Talus sud, du couloir au dehors | Au-delà |
+| --- | --- | --- | --- | --- |
+| **Côté ferme** (case 52) | champs à 0 ; flanc de 470 ; crête de 70 à 500 ; paroi de 120 | sol de 250 à 0 | paroi de 120 ; crête de 70 à 500 ; flanc de 470 | champs à 0, à 7,85 m de Xéros |
+| **Sur la rivière** (case 44,5) | eau ; flanc de 110 ; crête de 30 à 500 ; paroi de 120 | sol de 250 à 0 | paroi de 120 ; crête de 30 à 500 ; flanc de 110 | eau, à 3,85 m de Xéros |
+
+La voûte : les avancées de feuillage partent des crêtes, vers 4,50 à 5,50 m, et couvrent le couloir ; des arbres ordinaires sur les
+crêtes. **L'œil du joueur** : des rayons parallèles qui descendent vers le nord à 45°. Un point est vu si son rayon ne traverse pas de
+terre avant lui. Sur les deux coupes, le rayon des pieds de Xéros comme celui de sa tête (1,70 m) entre dans le talus sud : **Xéros est
+caché par le talus sud**. La paroi nord ne se voit qu'**au-dessus de 1,05 m** : le rayon qui rase l'arête de la crête sud la
+touche à cette hauteur, et en dessous le talus sud la cache aussi (relevé par le pixel-artist en traçant la planche).
+
+**Où chaque chose tombe à l'écran** (px, comptés depuis les pieds de Xéros, vers le bas positif ; l'écran fait 240 px de haut, ses
+pieds vers 130) :
+
+| | Côté ferme | Sur la rivière |
+| --- | --- | --- |
+| Crête nord (le haut de la paroi nord) | −149 à −163 (hors de l'écran) | −149 à −155 (hors de l'écran) |
+| Paroi nord, sa face | −51 à −149 : tout le haut de l'écran (de −25 à −51, son pied est caché par le talus sud) | la même |
+| Sol du couloir | −25 à +25 | la même |
+| Xéros | 0 à −34 | la même |
+| Crête sud | −51 à −37 | −51 à −45 |
+| Avancées de la voûte | la sud de −106 à −34, la nord de −172 à −96 : sur la paroi nord, **au-dessus de la tête de Xéros**, jamais sur lui | la même |
+| Face extérieure du talus sud | −37 à +157 (jusqu'au bas de l'écran) | −45 à +77 |
+| Le dehors au sud | au-delà de +157 (hors de l'écran) | **l'eau, à partir de +77** : les 33 px du bas de l'écran |
+
+### 13.3 Ce que le joueur voit aujourd'hui
+
+- **Côté ferme** : la paroi nord en haut, le sol clair et Xéros, puis, dans la largeur de l'écran, le talus sud effacé à 0,2 : un aplat
+  vert-brun où transparaissent la face extérieure et le sol. Ni dehors, ni dedans.
+- **Sur la rivière** : la paroi nord, le sol clair, la face extérieure du talus sud (terre et lierre) et l'eau en bas : le pont.
+- Dans les deux cas, au-delà des crêtes, la forêt au nord et les champs ou l'eau au sud restent en pleine lumière : le dehors entre dans
+  le tunnel.
+
+### 13.4 Comment le jeu montre l'intérieur d'une maison, et ce que le tunnel peut en prendre
+
+**Faits** (CONCEPTION « Les intérieurs », `world/interiorMap.ts`, `world/interiorView.ts`, `systems/roofs.ts`) :
+- **Une maison où l'on entre** : on passe la porte, un fondu, et l'on est **dans une carte calculée** (`interieur:<carte>:<x>,<y>`), au
+  même zoom : la terre battue dans la pièce, **le vide autour** (le dehors n'est ni assombri ni montré : il n'existe plus), le mur du fond
+  par sa face du dedans, les murs de côté par leur tranche, **le mur sud en coupe**, tranché au ras du sol, de la teinte de ses pièces ;
+  ni les toits ni ce qui passe au-dessus de la tête.
+- **Dehors**, le toit d'un bâtiment où l'on entre ne s'efface jamais ; celui d'un abri ouvert s'efface quand Xéros est dessous, et le
+  dehors reste alors tel quel autour de lui. Devant une fenêtre au volet ouvert, la pièce seule devient transparente.
+
+**Le tunnel peut se montrer de la même façon**, pièce pour pièce : la paroi nord est le mur du fond (sa face du dedans se voit déjà) ;
+**le talus sud est le mur sud, en coupe** ; la voûte est le toit (à une différence près : à l'écran, elle ne couvre pas Xéros, et peut rester pleine, 13.5) ; le
+dehors est le vide. Deux différences empêchent de copier la
+maison telle quelle : le tunnel fait 88,8 m et **n'a pas de porte** (on y entre en marchant, en montant même, sans fondu de carte, avec les
+lapins, les objets lancés, la petite carte qui continuent) ; et **il est ouvert aux deux bouts** (on doit voir la lumière de la sortie).
+La vue doit donc changer **sur place**, dans la même carte, au franchissement de l'entrée (`crossed`, règle du dépôt), comme le fondu
+d'un toit.
+
+**Le dehors doit-il être caché ou assombri ?** **Assombri, presque jusqu'au noir, jamais montré en pleine lumière** : c'est lui qui
+fait « pont », et c'est son absence qui fait « trou », comme le vide autour d'une pièce. Pas tout à fait le vide, parce que le tunnel est
+ouvert : vers ses deux bouts, le voile s'éclaircit et l'on voit la lumière du dehors par la bouche. Ce qui est assombri ne se vise pas
+(la souris ne prend que ce qui est dans le tunnel), comme ce qui est caché dans une maison.
+
+### 13.5 Trois façons de faire (chacune son schéma d'écran sur la planche)
+
+**1. La coupe, comme la maison.** Dedans, le talus sud se montre **tranché au ras du sol** du couloir : son emprise (de la paroi à son
+pied extérieur : 6,60 m côté ferme, 2,60 m sur l'eau) se dessine à plat, en **coupe de terre** (terre sombre, racines et cailloux
+tranchés, la teinte de la matière du talus, et un liseré d'herbe au pied extérieur, là où le flanc planté est tranché ; le bord
+qui touche le couloir est le pied de la paroi, de la terre nue). Ses arbres et ses broussailles sont cachés comme ce qui passe
+au-dessus de la tête. **La voûte reste pleine** : à l'écran, ses avancées tombent sur la paroi nord, au-dessus de la tête de Xéros,
+jamais sur lui (tableau 13.2) ; rien n'oblige à l'effacer, et c'est elle qui ferme le haut du trou. Elle ne passerait en fantôme que
+là où elle couvrirait Xéros (une avancée plus basse, une pente). Au-delà du pied des deux talus, **le voile du dehors** : la
+couleur de la terre profonde, à 0,85, qui s'éclaircit sur les 3 premiers mètres à chaque bouche. À l'écran : en haut la paroi nord (racines, terre, lierre), au milieu le sol clair et Xéros, en bas
+une bande de terre en coupe (de +25 à +157 côté ferme, dont 85 px dans l'écran : tout le bas ; 52 px sur l'eau, puis le
+liseré), puis, sur l'eau seulement, l'obscurité.
+L'eau ne se voit plus.
+*Ce qu'il demande au jeu* : l'état « dans le tunnel » (le `hidden` de `systems/laneFade.ts`, testé au franchissement de la bouche, avec
+son fondu) ; une seconde version des bandes du talus sud dans `world/terrainView.ts` (la coupe, peinte à hauteur 0), échangée par fondu ;
+le voile du dehors, une texture qui couvre l'écran avec un trou à la forme du tunnel (la méthode `windowHole` et `splitRoofs` des toits,
+avec une forme tirée des `Lane` au lieu d'un rectangle) ; la souris limitée au tunnel (`pick`) ; un dessin, **la coupe de terre**
+(pixel-artist) ; des tests dans `test-relief` (dedans, le voile est là, le dehors ne se vise pas ; dehors, rien ne change).
+
+**2. Le tube transparent.** Rien n'est coupé : le talus sud et la voûte restent entiers mais passent à 0,25 au-dessus de Xéros, comme un
+toit ; seule la **face extérieure** du talus sud disparaît, et le dehors est voilé comme en 1. À l'écran : la paroi nord, puis le sol et
+Xéros vus à travers un voile de terre et de feuillage, puis l'obscurité. On se sent sous quelque chose, mais Xéros paraît enterré et le
+sol se brouille : c'est l'aplat gris-vert déjà reproché à l'essai 3. *Ce qu'il demande* : le voile du dehors et le masque de la face
+extérieure ; aucun dessin nouveau.
+
+**3. Le voile seul.** Le rendu d'aujourd'hui, plus le voile du dehors, sans coupe : au-dessus de l'eau, la face extérieure du talus
+reste, assombrie, et l'eau devient noire. À l'écran : paroi, sol, une face sombre, du noir. Le pont devient un pont de nuit. *Ce qu'il
+demande* : le voile seul ; c'est le moins de travail, et le moins sûr.
+
+**Ma recommandation : la façon 1.** C'est la règle déjà apprise au joueur par les maisons (le mur sud en coupe, le dehors qui
+n'est plus là), elle met de la terre des deux côtés de Xéros sur tout l'écran, et elle ne laisse jamais voir l'eau sous lui. Elle demande un seul dessin, la
+coupe de terre, et le voile, qui sert aussi à la sortie (la lumière au bout).
+
+### 13.6 Questions pour Grégoire (intérieur du tunnel)
+
+26. **La façon** : 1 (la coupe, comme la maison), 2 (le tube transparent) ou 3 (le voile seul) ? *Recommandation : 1.*
+27. **Le dehors** : assombri à 0,85 vers la couleur de la terre profonde, éclairci aux deux bouches, ou le vide comme dans une maison
+    (noir, sans lumière au bout) ? *Recommandation : assombri, avec la lumière aux bouches.*
+28. **Les arbres et les broussailles du talus sud**, dedans : cachés avec le dehors (comme ce qui passe au-dessus de la tête dans une
+    maison), ou en fantôme ? *Recommandation : cachés.* **La voûte** (le rideau, les avancées) : pleine au-dessus de la tête de Xéros
+    (elle ne le couvre pas à l'écran), au lieu du fantôme d'aujourd'hui et de la planche ? *Recommandation : pleine* ; c'est le plafond
+    du trou.
+29. **La coupe** : au ras du sol, comme le mur sud d'une maison, ou à 70 cm au-dessus du sol du couloir, comme les murs de la maison du
+    coq ? *Recommandation : au ras du sol* : 70 cm de talus en plus cacheraient les pieds de Xéros.
+30. **La version 7** (le flanc planté côté ferme, le sol éclairci) : on la laisse de côté jusqu'à ce que l'intérieur soit décidé, puis on
+    la reprend avec lui ? *Recommandation : oui* ; la coupe de la façon 1 change ce que l'on voit du flanc, et le sol clair se juge dans le noir
+    du voile.
+
+**La planche** `.art-preview/relief-plans.png` (pixel-artist, en aplats ; refaire : `npx tsx tools/essai-relief-plans.ts`) :
+1. les deux coupes nord-sud à l'échelle (côté ferme, sur la rivière), Xéros dedans, les rayons de l'œil à 45° (numérotés : les
+   pieds et la tête cachés, le haut de la paroi nord, le rayon qui rase la crête sud, l'eau vue sous Xéros), la voûte, l'eau ;
+2. pour chacune, l'écran d'aujourd'hui (ce qui est opaque, effacé, au-delà des parois) ;
+3. pour chacune, l'écran des façons 1, 2 et 3, avec la même légende de couleurs : terre pleine, terre en coupe, sol du couloir, Xéros,
+   fantôme, voile du dehors, eau, feuillage de la voûte, champs ; sous la façon 1, un encart vu d'en haut (le voile qui s'éclaircit
+   sur 3 m à chaque bouche) ;
+4. la maison pour comparer : dehors (le toit opaque), dedans (le mur du fond, la terre battue, le mur sud en coupe, le vide), et la
+   correspondance avec le tunnel.
+Sur les écrans, la voûte est encore en fantôme, comme aujourd'hui ; la question 28 propose de la garder pleine.
