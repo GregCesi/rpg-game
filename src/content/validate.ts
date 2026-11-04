@@ -438,6 +438,9 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
       // ouverts, les deux battants laissent le passage libre : pas de collision
       else if (p.swing.passage && p.swing.open && p.swing.hinge === 'double' && (p.body || p.bodies)) errors.push(`${at} : ouverts, les deux battants laissent le passage libre (pas de 'body')`);
     }
+    // un dessus qui se marche (CONCEPTION « L'étage ») : on le franchit par la règle du pas, jamais en s'y heurtant ; une boîte pleine
+    if (p.walk && (p.body || p.bodies)) errors.push(`props.json '${key}' : un dessus qui se marche ('walk') n'a pas de collision ('body')`);
+    if (p.walk && (p.roof || p.dims.shape !== 'box')) errors.push(`props.json '${key}' : un dessus qui se marche ('walk') est une boîte ('dims.shape' : box), pas un toit`);
     const drawn = cat.silhouettes.get(p.image);
     if (!drawn) continue; // image non dessinée : signalé ailleurs
     const want = expectedSize(p.dims);

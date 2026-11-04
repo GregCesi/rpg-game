@@ -147,7 +147,7 @@ assert.ok(sliceHits(sliceOf(piece('essai-mur-n-0')), 0) && sliceHits(sliceOf(pie
 assert.ok(!blocks(piece('essai-marche-3')) && !blocks(piece('essai-plancher-a')), "les dessus qui se marchent n'ont pas de corps");
 
 // 6. la planche couchée se marche ; les maisons d'avant n'ont pas d'étage
-const plank: BuildPiece = { id: 999, piece: { wood: { size: 'big', length: 400, shape: 'plank', axis: 'ew' } }, x: 0, y: 0, z: 0 };
+const plank: BuildPiece = { id: 999, piece: { wood: { size: 'big', length: 400, shape: 'plank', axis: 'ew' } }, x: 0, y: 0, z: 0, view: 0 };
 assert.equal(deckField([plank]).decks.length, 1, 'la planche couchée se marche');
 assert.ok(!blocks(plank), "la planche couchée n'a pas de corps");
 assert.equal(deckField([plank]).decks[0].top, boxOf(plank).h, 'son dessus est le haut de sa boîte');

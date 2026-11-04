@@ -1263,13 +1263,15 @@ export const StaminaSchema = z.strictObject({
    * Le souffle : chaque effort lui coûte `perCost` fois son prix (le plafond, son prix) ; les efforts continus, `perSec` par seconde
    * jouée (`run` courir, `carryPerKg` porter au-delà de la marche normale, `pushPerKg` pousser une bille) ; il revient vers le plafond de
    * `regenPerSec` par seconde, `regenDelayMs` après le dernier effort ; essoufflé (un effort qui attend), Xéros souffle jusqu'à ce qu'il
-   * soit revenu à `recovered` du plafond.
+   * soit revenu à `recovered` du plafond. `climbPerKgM` : monter chargé (l'escalier d'un étage : chantier « maison du coq »), par kilo
+   * porté et par mètre de montée ; à vide, rien (on ne compte nulle part l'effort de porter son corps).
    */
   breath: z.strictObject({
     regenPerSec: z.number().positive(),
     regenDelayMs: z.number().nonnegative(),
     perCost: z.number().nonnegative(),
     perSec: z.strictObject({ run: z.number().nonnegative(), carryPerKg: z.number().nonnegative(), pushPerKg: z.number().nonnegative() }),
+    climbPerKgM: z.number().nonnegative(),
     recovered: z.number().gt(0).lte(1),
   }),
   tired: z.number().gt(0).lt(1),

@@ -14,6 +14,7 @@
       "carryPerKg": 0.1,
       "pushPerKg": 0.05
     },
+    "climbPerKgM": 0.175,
     "recovered": 0.3
   },
   "tired": 0.15,

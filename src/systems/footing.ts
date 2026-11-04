@@ -63,7 +63,10 @@ export class Footing {
     const mob = mobility.def;
     const refused = this.refusal(last, now, mob);
     if (!refused) {
+      const before = mobility.z;
       mobility.z = this.zAfter(last, now, mob);
+      // une marche montée (sur les dessus d'une maison : le relief garde son allure, ses pentes se marchent)
+      if (mobility.z > before && this.onDecks(last, now)) this.risen += mobility.z - before;
       return;
     }
     // glisser : le pas sur un seul axe, s'il passe
@@ -85,6 +88,18 @@ export class Footing {
     }
   }
 
+  /** Ce qu'il a monté sur des marches depuis la dernière lecture (cm) : le souffle de qui monte chargé (systems/effort.ts). */
+  private risen = 0;
+  /** Il vient de monter une marche (à la dernière image) : la marche d'alors × PLAYER.climb. */
+  climbing = false;
+
+  /** Ce qu'il a monté depuis la dernière lecture (cm), remis à zéro. */
+  takeRisen(): number {
+    const r = this.risen;
+    this.risen = 0;
+    return r;
+  }
+
   /** La hauteur à donner à Xéros à sa prochaine pose (la sauvegarde la garde : la page rechargée en haut le retrouve en haut). */
   private pending?: number;
 
@@ -101,31 +116,38 @@ export class Footing {
     return decksNear(f, a.x * CM_PER_PX, a.y * CM_PER_PX) || decksNear(f, b.x * CM_PER_PX, b.y * CM_PER_PX) ? f : undefined;
   }
 
-  private readonly ground = (x: number, y: number) => heightAt(this.map, x / CM_PER_PX, y / CM_PER_PX);
+  /** La hauteur du terrain sous un point (px) : les pièces posées ont leur hauteur au-dessus de lui (le mode construction). */
+  private terrain(p: { x: number; y: number }): number {
+    return heightAt(this.map, p.x, p.y);
+  }
 
   /** Ce qui empêche le pas de `from` à `to` (px), s'il y a quelque chose. */
   private refusal(from: { x: number; y: number }, to: { x: number; y: number }, mob: Mobility): StepRefusal | undefined {
     const f = this.onDecks(from, to);
     if (!f) return stepRefusal(this.map, from, to, mob);
-    return deckStep(f, this.ground, { x: from.x * CM_PER_PX, y: from.y * CM_PER_PX }, { x: to.x * CM_PER_PX, y: to.y * CM_PER_PX }, this.player.mobility.z, mob).refused;
+    // les dessus sont posés au-dessus du terrain (une maison se bâtit sur un sol plat) : le pas se juge au-dessus de lui
+    const rel = this.player.mobility.z - this.terrain(from);
+    return deckStep(f, () => 0, { x: from.x * CM_PER_PX, y: from.y * CM_PER_PX }, { x: to.x * CM_PER_PX, y: to.y * CM_PER_PX }, rel, mob).refused;
   }
 
   /** Sa hauteur après le pas permis de `from` à `to` (px). */
   private zAfter(from: { x: number; y: number }, to: { x: number; y: number }, mob: Mobility): number {
     const f = this.onDecks(from, to);
     if (!f) return heightAt(this.map, to.x, to.y);
-    return deckStep(f, this.ground, { x: from.x * CM_PER_PX, y: from.y * CM_PER_PX }, { x: to.x * CM_PER_PX, y: to.y * CM_PER_PX }, this.player.mobility.z, mob).z;
+    const rel = this.player.mobility.z - this.terrain(from);
+    return this.terrain(to) + deckStep(f, () => 0, { x: from.x * CM_PER_PX, y: from.y * CM_PER_PX }, { x: to.x * CM_PER_PX, y: to.y * CM_PER_PX }, rel, mob).z;
   }
 
   /** Posé en `at` (px) : le sol le plus proche de `z` (sans `z` : le plus bas). */
   private settle(at: { x: number; y: number }, z: number | undefined): number {
-    const ground = heightAt(this.map, at.x, at.y);
+    const ground = this.terrain(at);
     const f = this.onDecks(at, at);
-    return f ? settleAt(f, ground, at.x * CM_PER_PX, at.y * CM_PER_PX, z) : ground;
+    return f ? ground + settleAt(f, 0, at.x * CM_PER_PX, at.y * CM_PER_PX, z === undefined ? undefined : z - ground) : ground;
   }
 
   /** À chaque image : un appui relâché (il ne pousse plus) permet de redire le refus. */
   update(): void {
     if (this.player.dir.lengthSq() === 0) this.said = undefined;
+    this.climbing = this.risen > 0;
   }
 }

@@ -36,6 +36,8 @@ const CODES = {
   speed: ['KeyV'],
   raise: ['KeyT', 'PageUp'],
   lower: ['KeyG', 'PageDown'],
+  // mode construction : N (même place en AZERTY et en QWERTY) change le niveau affiché d'une maison à étages
+  level: ['KeyN'],
 } as const;
 
 type Action = keyof typeof CODES;
@@ -250,6 +252,11 @@ export class PlayerInput {
     const up = this.take('raise');
     const down = this.take('lower');
     return up === down ? 0 : up ? 1 : -1;
+  }
+
+  /** Mode construction : N, le niveau affiché suivant ; vrai une seule fois par appui. */
+  levelPressed(): boolean {
+    return this.take('level');
   }
 
   /** Mode construction : Ctrl+Z (annuler) ou Ctrl+Y (refaire) demandé depuis la dernière lecture. */

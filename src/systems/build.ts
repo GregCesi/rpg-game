@@ -5,8 +5,9 @@
 // removeBuildPieces), donc tout est sauvegardé et se retrouve en jeu. Le calcul (boîtes, hauteur, porteurs) est dans world/build.ts.
 
 import Phaser from 'phaser';
-import { BUILD, DEPTH, RENDER } from '../config';
-import { items, props } from '../content';
+import { BUILD, DEPTH, INTERIOR, RENDER } from '../config';
+import { items, mobility, props } from '../content';
+import { deckField, storeyHeights } from '../world/decks';
 import { buildPlans, putBuildPlan } from '../content/buildPlans';
 import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildRef, JointType, Natural, WoodAge } from '../content/types';
@@ -97,7 +98,7 @@ export class BuildSystem {
     // le point du monde qu'on voit sous la souris (le relief soulève ce qui est en hauteur : world/relief.ts `pick`)
     const point = (p: Phaser.Input.Pointer) => {
       const w = this.scene.cameras.main.getWorldPoint(p.x, p.y);
-      return pick(this.map.def, w.x, w.y);
+      return this.seenAt(w.x, w.y);
     };
     const down = (p: Phaser.Input.Pointer) => {
       if (!this.active) return;
@@ -131,6 +132,7 @@ export class BuildSystem {
   /** Sort du mode : plus de fantôme ni de zone, la caméra reprend Xéros. */
   exit(): void {
     this.active = false;
+    this.showLevel();
     this.ghosts.hideFrom(0);
     this.gfx.clear();
     this.dragFrom = undefined;
@@ -179,6 +181,8 @@ export class BuildSystem {
         return this.redo();
       case 'toggle':
         return;
+      case 'level':
+        return this.nextLevel();
     }
     this.step = 0;
     this.status();
@@ -194,6 +198,7 @@ export class BuildSystem {
       cam.scrollX += dir.x * speed;
       cam.scrollY += dir.y * speed;
     }
+    if (input.levelPressed()) this.nextLevel();
     const step = input.stepPressed();
     if (step) {
       this.step += step;
@@ -206,7 +211,7 @@ export class BuildSystem {
 
     const pointer = this.scene.input.activePointer;
     const seen = cam.getWorldPoint(pointer.x, pointer.y);
-    const at = pick(this.map.def, seen.x, seen.y);
+    const at = this.seenAt(seen.x, seen.y);
     this.flushClicks();
     this.updateAim(at.x, at.y);
     this.draw(at);
@@ -294,7 +299,7 @@ export class BuildSystem {
       // pose sur le faîte des pans (et se dessine après eux)
       const pitch = 'prop' in t.piece && props[t.piece.prop].pitch;
       const ridge = 'prop' in t.piece && !!props[t.piece.prop].roof && !pitch;
-      let b = aimAt(this.shown.filter((q) => ridge || !isRoof(q)), sizeOf(t.piece, t.view), cx, cy, this.step, aimOnGrid(t.piece));
+      let b = aimAt(this.shown.filter((q) => (ridge || !isRoof(q)) && this.belowCeiling(q)), sizeOf(t.piece, t.view), cx, cy, this.step, aimOnGrid(t.piece));
       // un pan de toit : sa base est le dessus de ce qui porte sa rive basse (une bande de 60 cm le long du côté bas)
       if (pitch) {
         const low = (['south', 'west', 'north', 'east'] as const)[t.view % 4];
@@ -375,7 +380,7 @@ export class BuildSystem {
       if (b.x < 0 || b.y < 0 || b.x + b.w > W || b.y + b.d > H) return 'Hors de la carte.';
       if (room && (b.x < room.x || b.y < room.y || b.x + b.w > room.x + room.w || b.y + b.d > room.y + room.d)) return 'Hors de la pièce.';
       if (!isRoof(p) && others.some((o) => intersects(o, solidOf(p)))) return 'Une autre pièce est déjà là.';
-      if (sliceHits([b.z, b.z + b.h], this.player.mobility.z) && overlaps(b, feet)) return 'Xéros est là.';
+      if (sliceHits([b.z, b.z + b.h], this.map.standZ) && overlaps(b, feet)) return 'Xéros est là.';
       // le relief : une pièce au sol tient sur un seul niveau ; dans l'eau profonde, rien ne se pose
       const box = { left: b.x / CM_PER_PX, top: b.y / CM_PER_PX, right: (b.x + b.w) / CM_PER_PX, bottom: (b.y + b.d) / CM_PER_PX };
       if (b.z === 0 && !this.map.level(box)) return 'À cheval sur une marche.';
@@ -653,12 +658,68 @@ export class BuildSystem {
     }
   }
 
+  // --- le niveau affiché d'une maison à étages (N ; chantier « maison du coq », CONCEPTION « L'étage ») ---
+
+  /** Le niveau affiché : son rang dans `levels()`, ou rien (tout). */
+  private level?: number;
+
+  /** Les niveaux des pièces posées (les planchers : world/decks.ts). */
+  private levels(): number[] {
+    return storeyHeights(deckField(this.shown).decks, INTERIOR.storey, mobility.step);
+  }
+
+  /** N : tout, puis chaque niveau, puis tout. Une maison d'un seul niveau : toujours tout. */
+  private nextLevel(): void {
+    const n = this.levels().length;
+    this.level = n < 2 ? undefined : this.level === undefined ? 0 : this.level + 1 < n ? this.level + 1 : undefined;
+    this.showLevel();
+    this.status();
+  }
+
+  /** Le plancher du niveau affiché et celui du niveau d'au-dessus (cm). */
+  private span(): { floor: number; ceiling: number } | undefined {
+    if (this.level === undefined) return undefined;
+    const lv = this.levels();
+    return { floor: lv[this.level] ?? 0, ceiling: lv[this.level + 1] ?? Infinity };
+  }
+
+  /** Une pièce est du niveau affiché (la règle des intérieurs : elle monte jusqu'à son plancher et commence sous celui d'au-dessus). */
+  private ofLevel(q: BuildPlaced): boolean {
+    const s = this.span();
+    if (!s) return true;
+    const b = boxOf(q);
+    return (s.floor === 0 || b.z + b.h >= s.floor) && b.z < s.ceiling;
+  }
+
+  /** On ne vise que sous le plancher du niveau d'au-dessus : une table posée « à l'étage » tombe sur le plancher, pas sur le toit. */
+  private belowCeiling(q: BuildPlaced): boolean {
+    const s = this.span();
+    return !s || boxOf(q).z < s.ceiling;
+  }
+
+  /** Le point du monde vu à l'écran : au niveau affiché, ce qui est à la hauteur de son plancher (soulevé de floor / 5 px). */
+  private seenAt(x: number, y: number): { x: number; y: number } {
+    const at = pick(this.map.def, x, y);
+    const s = this.span();
+    return s ? { x: at.x, y: at.y + s.floor / CM_PER_PX } : at;
+  }
+
+  /** Les pièces du niveau affiché en entier, les autres presque effacées ; tout, hors du mode. */
+  showLevel(): void {
+    for (const b of this.map.builds) {
+      const a = !this.active || this.ofLevel(b.piece) ? 1 : BUILD.otherLevel;
+      for (const o of [b.image, ...(b.slices ?? [])]) o.setAlpha(a);
+    }
+  }
+
   /** Ce que le catalogue affiche. */
   status(): void {
+    this.showLevel();
     const t = this.tool;
     const tool = !t ? 'rien' : t.kind === 'select' ? 'choisir une zone' : t.kind === 'joint' ? JOINT_NAMES[t.type] : t.kind === 'plan' ? `plan « ${buildPlans[t.plan]?.name ?? t.plan} »` : refName(t.piece);
     const hint = t?.kind === 'joint' ? (this.jointAim?.junction ? (this.jointAim.why ?? 'Elles vont ensemble : clic gauche.') : 'Vise une jonction.') : undefined;
-    this.emit({ active: this.active, tool, age: this.age, step: this.step, selection: this.selection, count: this.pieces.length, undo: this.undoStack.length, redo: this.redoStack.length, ...(hint ? { hint } : {}) });
+    const level = this.level === undefined ? 'Tout' : this.level === 0 ? 'Rez-de-chaussée' : `Étage ${this.level}`;
+    this.emit({ active: this.active, tool, age: this.age, step: this.step, selection: this.selection, count: this.pieces.length, undo: this.undoStack.length, redo: this.redoStack.length, level, ...(hint ? { hint } : {}) });
   }
 }
 

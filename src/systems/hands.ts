@@ -314,7 +314,8 @@ export class HandsSystem {
       if (!next) break;
       taken.push(next);
     }
-    this.map.placePile(addPile(game, this.map.def.id, { ...kind, x: spot.x, y: spot.y, places: taken, turned, tie: tie && !!def.tie }));
+    const height = this.map.dropZ(spot.x, spot.y);
+    this.map.placePile(addPile(game, this.map.def.id, { ...kind, x: spot.x, y: spot.y, places: taken, turned, tie: tie && !!def.tie, ...(height ? { z: height } : {}) }));
     return taken.length;
   }
 
@@ -428,16 +429,19 @@ export class HandsSystem {
         removeGroundItem(game, mapId, t.lone.ground.item.id);
         this.map.removeGround(t.lone.ground);
       }
-      this.map.placePile(addPile(game, mapId, { ...t.pile, x: t.x, y: t.y, places: [t.lonePlace, t.place], ...(t.turned ? { turned: true } : {}) }));
+      const height = this.map.dropZ(t.x, t.y);
+      this.map.placePile(addPile(game, mapId, { ...t.pile, x: t.x, y: t.y, places: [t.lonePlace, t.place], ...(t.turned ? { turned: true } : {}), ...(height ? { z: height } : {}) }));
     } else if (t.kind === 'tie') {
       setPileTie(game, mapId, t.pile.pile.id, true);
       this.map.refreshPile(t.pile);
     } else if (t.kind === 'tie-alone') {
-      this.map.placePile(addPile(game, mapId, { pile: t.genre, x: t.x, y: t.y, places: [], tie: true }));
+      const height = this.map.dropZ(t.x, t.y);
+      this.map.placePile(addPile(game, mapId, { pile: t.genre, x: t.x, y: t.y, places: [], tie: true, ...(height ? { z: height } : {}) }));
     } else if ('item' in what) {
-      return this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view, what.natural)).image;
+      // sur le plancher d'un étage, il reste à l'étage (chantier « maison du coq ») : à la hauteur du dessus où il est posé
+      return this.map.placeGround(dropItem(game, mapId, what.item, t.x, t.y, what.view, what.natural, this.map.dropZ(t.x, t.y))).image;
     } else {
-      const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle });
+      const o = spawnObject(game, mapId, what.prop, t.x, t.y, { flip: !!what.flip, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle, z: this.map.dropZ(t.x, t.y) });
       return this.map.placeProp(o, { flip: what.flip, spawned: true, length: what.length, wood: what.wood, natural: what.natural, bundle: what.bundle }).image;
     }
     return undefined;

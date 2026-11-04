@@ -228,11 +228,12 @@ export const XEROS_HEIGHT = 170;
 
 /**
  * Le mode construction (le bac à sable, systems/build.ts, world/build.ts) : la grille (cm) de l'emprise et des crans de hauteur ;
- * `high` : une pièce posée à cette hauteur ou plus haut ne bloque plus le passage ; `head` : une pièce dont la base est à cette
- * hauteur ou plus haut s'efface quand Xéros passe dessous (sa tête, `XEROS_HEIGHT`) ; `camera` : vitesse de la caméra libre (px/s, Maj :
- * `fast` fois plus) ; `ghost` : opacité du fantôme (`refused` : quand la pose est refusée).
+ * `head` : une pièce dont la base est à cette hauteur ou plus haut s'efface quand Xéros passe dessous (sa tête, `XEROS_HEIGHT`), et la
+ * hauteur de son corps (un corps de pièce posée ne bloque qu'à sa tranche de hauteur : `sliceHits`) ; `camera` : vitesse de la caméra
+ * libre (px/s, Maj : `fast` fois plus) ; `ghost` : opacité du fantôme (`refused` : quand la pose est refusée) ; `otherLevel` : celle des
+ * pièces des autres niveaux quand un niveau est affiché (N, une maison à étages : chantier « maison du coq »).
  */
-export const BUILD = { grid: 20, high: 200, head: XEROS_HEIGHT, camera: 260, fast: 3, ghost: 0.6, refused: 0.25 };
+export const BUILD = { grid: 20, head: XEROS_HEIGHT, camera: 260, fast: 3, ghost: 0.6, refused: 0.25, otherLevel: 0.12 };
 
 /**
  * Les intérieurs (chantier « intérieurs », world/interior.ts, world/interiorMap.ts) : un bâtiment posé en mode construction se
@@ -299,6 +300,11 @@ export const PLAYER = {
    */
   walk: 2,
   run: 2.5,
+  /**
+   * Monter une marche (l'escalier d'un étage, chantier « maison du coq ») : une part de la marche d'alors (chargé, fatigué), jamais une
+   * vitesse à part ; en descendant, la marche.
+   */
+  climb: 0.75,
   /**
    * La marche discrète (Alt maintenu, Option sur Mac ; docs/COMMANDES.md) : une part de la marche (0,4 : 0,8 m/s), réglable dans ?dieu
    * (systems/speeds.ts). Chargé ou fatigué, la même part de sa marche d'alors.
