@@ -23,7 +23,8 @@ export class BootScene extends Phaser.Scene {
       for (const [name, a] of Object.entries(s.animations)) {
         this.anims.create({
           key: `${s.key}-${name}`,
-          frames: a.frames.map((frame) => ({ key: s.key, frame })),
+          // une durée par image (le sanglier, Xéros renversé) : elle remplace la cadence de l'animation
+          frames: a.frames.map((frame, i) => ({ key: s.key, frame, ...(a.durations ? { duration: a.durations[i] } : {}) })),
           frameRate: a.frameRate,
           repeat: a.repeat,
         });

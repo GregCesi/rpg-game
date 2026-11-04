@@ -3,7 +3,7 @@
 // - dehors, le toit de la maison ne s'efface pas, même sous l'avant-toit : on n'est dedans que dans son intérieur ;
 // - devant une fenêtre au volet ouvert, dehors, la pièce de cette fenêtre seule devient transparente (le toit au-dessus d'elle, ce qui
 //   passe en hauteur, son mur sud), sauf le conduit et sa souche (chantier « maison-2 ») ; pas devant un volet fermé, ni de loin ;
-// - le toit d'un abri ouvert s'efface quand Xéros est dessous, plus quand il approche.
+// - le toit d'un abri ouvert s'efface quand Xéros est dessous, plus quand il approche ; tout le toit, ses pans qui se touchent (forge).
 // Usage : npx tsx tools/test-roofs.ts (lancé par npm run test:fast).
 
 import assert from 'node:assert/strict';
@@ -73,6 +73,21 @@ const shed = { id: 999, piece: { prop: 'plank-roof' }, x: 5000, y: 5000, z: BUIL
 const alone = [shed];
 assert.deepEqual([...roofView(alone, [], 5020, 5020).faded], [999], "sous l'abri : son toit s'efface");
 assert.deepEqual([...roofView(alone, [], 4990, 5020).faded], [], "à côté de l'abri : il ne s'efface plus quand Xéros approche");
+// un abri ouvert à deux pans (l'atelier de la forge, src/content/plans/forge.json) : sous le pan nord, devant le feu, le pan sud s'efface
+// aussi (il cacherait Xéros et la forge) ; dans la rue, rien ne s'efface (chantier « forge »)
+const forgePlan = JSON.parse(readFileSync('src/content/plans/forge.json', 'utf8')) as BuildPlan;
+const forge: BuildPiece[] = planPieces(forgePlan, { x: 0, y: 0, z: 0 }).map((p, i) => ({ ...p, id: i + 1 }));
+assert.deepEqual(buildingsOf(forge), [], "l'atelier de la forge est un abri ouvert, pas un bâtiment où l'on entre");
+const pans = forge.filter((p) => isProp(p, /^shingle-roof-large/));
+assert.equal(pans.length, 2, "l'atelier a ses deux pans de bardeaux");
+const northPan = pans.reduce((a, b) => (boxOf(a).y < boxOf(b).y ? a : b));
+const nb = boxOf(northPan);
+const under = roofView(forge, [], nb.x + nb.w / 4, nb.y + nb.d - 40);
+for (const p of pans) assert.ok(under.faded.has(p.id), `sous le pan nord, les deux pans s'effacent (${p.id})`);
+const shedPan = forge.find((p) => isProp(p, /^shingle-shed-roof$/));
+assert.ok(shedPan && !under.faded.has(shedPan.id), "le toit de l'abri à charbon, à part, reste");
+const street = roofView(forge, [], nb.x + nb.w / 4, Math.max(...pans.map((p) => boxOf(p).y + boxOf(p).d)) + 200);
+assert.deepEqual([...street.faded], [], 'dans la rue, le toit de la forge reste');
 
 // ce qui est caché ne se voit pas, lumière comprise (chantier « correctifs ») : l'âtre est sous le chaume ; sa lueur est cachée tant
 // que le toit est opaque, entière quand il est effacé

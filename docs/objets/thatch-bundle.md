@@ -23,7 +23,7 @@ Aucune : le chaumier peigne et lie à une mesure régulière.
 En tas : genre `thatch-bundles`.
 
 ## Gestes
-Clic court : prendre (main vide), poser (la main qui la tient) ; R tourner.
+E : prendre ; A : poser ; R tourner.
 
 ## Origine
 Peignée dans trois gerbes de paille longue.

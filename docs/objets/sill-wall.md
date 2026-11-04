@@ -55,7 +55,7 @@ Seul. Plusieurs morceaux bout à bout font un solin ; un plan du bac à sable le
 ## Gestes
 - En mode construction : clic gauche le pose (le fantôme s'accroche sur ce qu'il y a dessous), R le tourne (r0 à r3), clic droit
   le retire.
-- En jeu : il bloque le passage (posé sous 2 m), comme un mur. E, clics, A : rien.
+- En jeu : il bloque le passage (posé sous 2 m), comme un mur. E, F, A : rien.
 
 ## Origine
 Pas encore construit en jeu : posé en mode construction. Plus tard, monté par le maçon (ou Xéros) pierre à pierre, avec le mortier

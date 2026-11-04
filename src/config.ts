@@ -64,12 +64,17 @@ export const DEPTH = {
 export const INTERACT = { reach: 16, radius: 20 };
 
 /**
- * La visée à la souris (src/world/aim.ts) : ce qui est sous le curseur est visé s'il est à moins de `reach` px du point d'où Xéros
- * regarde ; plus loin, il vise dans la direction du curseur, à `INTERACT.reach` px. Le fantôme de pose suit le curseur sans sortir de
- * `reach` px. Ce qui encaisse un coup (le mannequin) se vise sous le curseur plus loin, jusqu'à `strike` px (la portée d'un long coup) :
- * le clic d'une ressource frappe alors au lieu de poser.
+ * Les touches affichées au-dessus de ce qui est devant Xéros (systems/keyPrompts.ts) : `lift` px au-dessus du haut de l'objet (4 :
+ * un peu dedans), balancées de `bob` px ; un objet de plus de `tall` cm (l'arbre) a sa touche à `at` cm du sol, sur le tronc ; deux
+ * touches sur la même cible (E et F) côte à côte, `gap` px d'écart (E à gauche) ; les trois points de E maintenable `dots` px sous E.
  */
-export const AIM = { reach: 32, strike: 64 };
+export const KEY_PROMPT = { lift: 4, bob: 2, tall: 250, at: 150, gap: 1, dots: 1 };
+
+/**
+ * La visée d'un coup à la souris (src/world/aim.ts ; hors du combat, Xéros vise devant lui) : ce qui encaisse un coup (le mannequin,
+ * une bête) se vise sous le curseur jusqu'à `strike` px du point d'où Xéros regarde (la portée d'un long coup), sinon dans sa direction.
+ */
+export const AIM = { strike: 64 };
 
 /**
  * La transformation « magique » des outils de test (?dieu, systems/transform.ts) : ce qui entre se cherche dans les mains, puis au
@@ -78,10 +83,11 @@ export const AIM = { reach: 32, strike: 64 };
 export const TRANSFORM = { near: 40 };
 
 /**
- * Le clic maintenu (docs/COMMANDES.md : nouer, dénouer, pivoter une bille, appeler la mère, viser un lancer) : le seuil (ms), le même
- * pour les deux boutons ; avant, le relâcher fait le clic court (prendre, poser, travailler, frapper). La jauge (`ui-gauge`) se remplit au-dessus de la tête de Xéros, `above` px au-dessus de ses pieds (bas de la jauge).
+ * L'appui maintenu (docs/COMMANDES.md : E maintenu noue, dénoue, fait pivoter une bille, appelle la mère ; le clic maintenu vise un
+ * lancer) : le seuil (ms), le même pour toutes ; avant, le relâcher fait l'appui court. Pendant E maintenu, la touche E se remplit d'or
+ * (`ui-key-e-fill`, systems/keyPrompts.ts).
  */
-export const LONG_PRESS = { ms: 500, above: 35 };
+export const LONG_PRESS = { ms: 500 };
 
 /** L'aide de la mère pour dresser une poutre trop lourde (systems/site.ts) : durée du fondu (ms) et temps passé dans le noir, le temps de lire « Ta mère vient t'aider. ». */
 export const HELP = { fade: 500, hold: 1600 };
@@ -107,6 +113,14 @@ export const ROOF = { alpha: 0.35, fadeMs: 250, wall: 30, eaves: 100, window: { 
  * de l'ombre portée des sprites (`x` de la palette, #2b1a10 à 0x40).
  */
 export const SHADOW = { dx: 0.25, dy: 0.1, color: 0x2b1a10, alpha: 0x40 / 255 };
+
+/**
+ * Le relief (chantier « relief », world/relief.ts) : `straddle` (cm), l'écart de hauteur au-delà duquel une chose posée serait à
+ * cheval sur une marche (elle basculerait) : la place n'est pas libre ; `lane`, l'opacité du bord sud d'un chemin creux et des
+ * feuillages qui le surplombent quand Xéros est dessous (comme un toit, plus effacé), `fadeMs` le fondu ; `gloom`, la pénombre du
+ * creux à 5 m de profondeur (elle suit la profondeur, cuite dans le terrain, jamais sur Xéros).
+ */
+export const RELIEF = { straddle: 50, lane: 0.2, fadeMs: 250, gloom: 0.3 };
 
 /**
  * Chantiers (systems/site.ts) : les piquets suivants s'aimantent au coin du tracé le plus près s'il est à moins de `snap` px du

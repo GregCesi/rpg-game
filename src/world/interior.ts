@@ -14,7 +14,7 @@
 //   entraits), ni le mur sud, montré en coupe (`south` : l'emprise de ses pièces, hors des passages).
 // - Les fenêtres : ce qui s'ouvre et n'est pas une porte (le volet) ; ouvert, il fait entrer une tache de lumière.
 
-import { INTERIOR } from '../config';
+import { FEET, INTERIOR } from '../config';
 import { props } from '../content';
 import type { Facing } from '../content/types';
 import { boxOf, OUTWARD, solidOf, swung, type Box3, type BuildPiece } from './build';
@@ -223,7 +223,9 @@ function entranceOf(room: Rect, gap: Rect, ox: number, oy: number, open: boolean
   const a = Math.min(edge - s * 5, outer + s * 10);
   const b = Math.max(edge - s * 5, outer + s * 10);
   const zone = ns ? { x: span[0], y: a, w: span[1] - span[0], d: b - a } : { x: a, y: span[0], w: b - a, d: span[1] - span[0] };
-  const out = outer + s * 30;
+  // dehors, ses pieds à 30 cm de la face du mur ; devant un mur sud, son corps (de FEET.gap à FEET.gap + FEET.h au-dessus des pieds,
+  // vers le nord) ne doit pas toucher la porte fermée : 10 cm de plus que lui (sinon il était déjà dans la porte, et la traversait)
+  const out = outer + s * (side === 'south' ? Math.max(30, (FEET.gap + FEET.h) * CM_PER_PX + 10) : 30);
   const inn = edge - s * 30;
   return {
     ...(door !== undefined ? { door } : {}),

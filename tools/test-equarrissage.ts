@@ -2,7 +2,7 @@
 // couper son houppier (le tronc ébranché devient une seule pièce de bois ronde de 5,8 m), refuser une coupe qui laisserait un
 // bout de moins de 60 cm, couper à 3 m sur la grille de 20 cm (la ligne « 3 m | 2,8 m » au-dessus de la coupe, l'encoche gardée
 // dans GameState, deux pièces), recouper la pièce de 2,8 m en 1,8 m et 1 m, rouler la pièce de 3 m, l'équarrir à la doloire par
-// passes sur le rail (refusée au milieu ; à un bout, un clic de la main de la doloire lance la passe : Xéros longe la pièce tout seul, sourd aux autres
+// passes sur le rail (refusée au milieu ; à un bout, F, la doloire en main, lance la passe : Xéros longe la pièce tout seul, sourd aux autres
 // touches ; Échap l'arrête, la longueur dressée est gardée dans GameState à la position du fer, la pièce entamée ne roule plus ;
 // reprise ailleurs refusée, reprise là où elle s'est arrêtée ; puis une passe par face, aller et retour, la poutre à la quatrième :
 // sa masse, son prix d'endurance proportionnel à la longueur, elle ne roule plus et ne se porte pas), la
@@ -36,13 +36,13 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         for (let i = 0; i < 20 && world().mode !== 'work' && world().mode !== 'rail'; i++) await new Promise((res) => requestAnimationFrame(res));
         if (world().mode === 'work' || world().mode === 'rail') (window as any).game.events.emit('dieu', { kind: 'finish-work' });
       };
-      // un geste du joueur : `use`, le clic de la main de l'outil (il lit le mot de chaque clic : tools/lib/playtest.ts `__do`) ;
-      // `hands`, le clic d'une main vide (prendre) ou de la main qui tient (poser) ; sinon une touche, tenue `ms` ms
+      // un geste du joueur : `use`, F (le travail de l'outil en main : il lit les touches affichées, tools/lib/playtest.ts `__do`) ;
+      // `hands`, E (prendre) ou A (poser) ; sinon une touche, tenue `ms` ms
       const press = async (code: string, ms = 60, finish = true) => {
         if (code === 'use' || code === 'hands') {
-          await (window as any).__do(code === 'use' ? ['work', 'plant', 'strike', 'punch'] : ['take', 'put', 'rest', 'place']);
-          // un clic sans rien à travailler frappe, et l'attaque ramène le temps à x1 : le scénario garde sa vitesse
-          if (code === 'use') await (window as any).__resume();
+          await (window as any).__do(code === 'use' ? ['work', 'plant'] : ['take', 'place', 'rest', 'put']).catch((e: Error) => {
+            throw new Error(`${e.message} (après ${Object.keys(out).at(-1) ?? 'le début'})`);
+          });
           // un travail lancé (abattre, couper, fendre ; la passe de doloire) dure son temps réel : il se finit d'un coup (?dieu « Finir le
           // travail »), horloge, endurance et résultat compris
           if (code === 'use' && finish) await finishWork();
@@ -182,12 +182,12 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.middleNotice = notices.at(-1);
       out.middleMode = w().mode;
       out.middleCost = 100 - w().player.stamina.ceiling;
-      // au bout ouest : un clic, la passe au coup (chaque coup lève sa part de la face, Xéros glisse avec le fer) ; pour l'essai,
+      // au bout ouest : F, la passe au coup (chaque coup lève sa part de la face, Xéros glisse avec le fer) ; pour l'essai,
       // Xéros à la force humaine la plus grande (?dieu « force » ×10, plafonnée à ×2,6)
       emit({ kind: 'force', multiplier: 10 });
       await aboveAt(hewing(), 2);
       const [hx0, hy0] = [a().x, a().y];
-      // un clic de la main de la doloire lance la passe
+      // F, la doloire en main, lance la passe
       await (window as any).__do('work');
       await (window as any).__until(() => w().mode === 'rail', 'la passe commence');
       // le rail pose Xéros au départ de la passe : la marche se mesure de là
@@ -195,22 +195,20 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
       out.passMode = w().mode;
       out.passBar = w().rail.bar.frame.visible;
       await (window as any).__until(() => a().x - railX > 0.5, 'Xéros longe la pièce');
-      // un clic ne fait rien pendant la passe : elle continue
-      await (window as any).__click('left');
+      // F ne fait rien pendant la passe : elle continue
+      await (window as any).__key('KeyF');
       const afterE = a().x;
-      await (window as any).__until(() => w().mode === 'rail' && a().x - afterE > 0.5, 'la passe continue après le clic');
+      await (window as any).__until(() => w().mode === 'rail' && a().x - afterE > 0.5, 'la passe continue après F');
       out.walked = a().x - railX;
       out.passAnim = a().anims.currentAnim?.key;
-      // un pas (S) : arrêtée là où il est ; la face entamée est gardée dans GameState, jusqu'au fer
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyS' }));
-      await new Promise((res) => requestAnimationFrame(res));
-      await new Promise((res) => requestAnimationFrame(res));
+      // un clic (docs/COMMANDES.md : il arrête le travail, sans frapper) : arrêtée là où il est ; la face entamée est gardée dans
+      // GameState, jusqu'au fer
+      await (window as any).__click('left');
       // le coup en cours s'achève, puis la passe s'arrête
       await (window as any).__until(() => w().mode !== 'rail', 'la passe arrêtée');
       out.stopMode = w().mode;
-      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyS' }));
       await (window as any).__frames(2);
-      // le pas qui l'arrête pousse ensuite contre la pièce (qui ne roule plus) : le message d'arrêt est parmi les derniers
+      // le message d'arrêt est parmi les derniers
       out.stopNotice = notices.slice(-3).find((n: string) => n.startsWith('Arrêté')) ?? notices.at(-1);
       const stopX = a().x;
       // trente images plus tard, toujours là
@@ -296,7 +294,8 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
         const t = props(new RegExp(`^${tree}$`))[0];
         await give('axe');
         await standAt(t.box.left - 6, t.box.bottom - 1, 'right');
-        for (let i = 0; i < 4; i++) {
+        // F jusqu'à ce qu'il tombe (le travail fini d'un coup : un seul appui suffit ; tombé, F n'a plus rien à travailler)
+        for (let i = 0; i < 4 && !props(new RegExp(`^${lying}$`)).length; i++) {
           await press('use');
           await settled();
         }
@@ -389,7 +388,7 @@ await playtest('équarrissage', async ({ page, errors, load }) => {
   assert.equal(r.middleNotice, 'Mets-toi à un bout de la pièce pour commencer la face.', 'la passe commence à un bout');
   assert.equal(r.middleMode, 'play', 'refus sans geste');
   assert.equal(r.middleCost, 0, 'un refus ne coûte rien');
-  assert.equal(r.passMode, 'rail', 'un clic au bout lance la passe');
+  assert.equal(r.passMode, 'rail', 'F au bout lance la passe');
   assert.equal(r.passBar, true, 'la jauge du travail se voit pendant la passe');
   assert.ok(r.walked > 0, `Xéros longe la pièce avec le fer : ${r.walked} px`);
   assert.match(r.passAnim ?? '', /chop-down/, 'en frappant (le geste chop)');

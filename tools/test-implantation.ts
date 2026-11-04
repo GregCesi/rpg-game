@@ -38,12 +38,12 @@ await playtest('implantation', async ({ page, errors, load }) => {
         for (let i = 0; i < 20 && world().mode !== 'work' && world().mode !== 'rail'; i++) await new Promise((res) => requestAnimationFrame(res));
         if (world().mode === 'work' || world().mode === 'rail') (window as any).game.events.emit('dieu', { kind: 'finish-work' });
       };
-      // `use` : le clic de la main de l'outil (ou du piquet) ; `hands` : le clic d'une main vide (prendre) ou de la main qui tient
-      // (poser, sur une place de chantier, sur le billot ; devant une place trop lourde, ce qui manque) : comme un joueur qui lit le mot de
-      // chaque clic (tools/lib/playtest.ts `__do`) ; sinon une touche (E : la planchette ; A : lâcher)
+      // `use` : F (l'outil ou le piquet en main) ; `hands` : E (prendre ; devant une place trop lourde, ce qui manque) ou A (poser, sur
+      // une place de chantier, sur le billot) : comme un joueur qui lit les touches affichées (tools/lib/playtest.ts `__do`) ; sinon une
+      // touche (E : la planchette ; A : poser)
       const press = async (code: string) => {
         if (code === 'use' || code === 'hands') {
-          await (window as any).__do(code === 'use' ? ['work', 'plant', 'strike', 'punch'] : ['take', 'put', 'rest', 'place', 'help-info']);
+          await (window as any).__do(code === 'use' ? ['work', 'plant', 'strike', 'punch'] : ['help-info', 'take', 'place', 'rest', 'put']);
           await (window as any).__settle();
           // un travail lancé dure son temps réel : il se finit d'un coup (?dieu « Finir le travail »), horloge, endurance et résultat compris
           if (code === 'use') await finishWork();
@@ -81,10 +81,10 @@ await playtest('implantation', async ({ page, errors, load }) => {
       const shot = (name: string) => (window as any).shot(name);
       const out: Record<string, unknown> = {};
 
-      // 1. sans plan connu, un piquet ne se plante pas : c'est une ressource, le clic le pose
+      // 1. sans plan connu, un piquet ne se plante pas : c'est une ressource, F n'en fait rien, A le pose
       emit({ kind: 'stamina', breath: 100, ceiling: 100, max: 100 });
       await give({ item: 'stake' });
-      out.noPlanClick = JSON.stringify(w().plans?.left.short.kind);
+      out.noPlanClick = JSON.stringify(w().keys?.f.kind === 'none' ? w().keys?.a.kind : 'plant');
       await press('hands');
       out.noPlanGround = ground('stake');
       for (const gr of w().map.ground.filter((q: any) => q.item.item === 'stake')) {
@@ -152,12 +152,16 @@ await playtest('implantation', async ({ page, errors, load }) => {
       await press('use');
       await settled();
       out.afterCut2 = hands();
-      // deux objets en main : A (Q en QWERTY) lâche ce que tient la main du dernier clic (la gauche, la hachette, qui vient de tailler)
+      // deux objets en main (la branche à droite, la hachette à gauche) : A (Q en QWERTY) pose la main droite ; Maj + A, la gauche
       await twoHands('branch', 'hatchet');
       w().player.actor.face('up');
       await (window as any).__settle();
       await press('KeyQ');
       out.dropFollow = hands();
+      await twoHands('branch', 'hatchet');
+      await (window as any).__key('KeyQ', 0, true);
+      await (window as any).__settle();
+      out.dropLeft = hands();
       // la branche lâchée ôtée, Xéros de nouveau face au billot
       for (const gr of w().map.ground.filter((q: any) => q.item.item === 'branch')) {
         gs.removeGroundItem(gs.game, mapId(), gr.item.id);
@@ -309,7 +313,7 @@ await playtest('implantation', async ({ page, errors, load }) => {
   console.log(JSON.stringify(result));
   const r = result as Record<string, any>;
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
-  assert.equal(r.noPlanClick, '"put"', 'sans plan connu, le clic du piquet le pose');
+  assert.equal(r.noPlanClick, '"put"', 'sans plan connu, F ne plante pas le piquet, A le pose');
   assert.equal(r.noPlanSites, 0, 'sans plan, aucun chantier');
   assert.equal(r.noPlanGround, 1, 'le piquet est posé au sol');
   assert.equal(r.noPlanHands, '[null,null]null', 'il a quitté la main');
@@ -328,7 +332,8 @@ await playtest('implantation', async ({ page, errors, load }) => {
   assert.ok(r.cutCost > 0.1 && r.cutCost < 0.6, `tailler se paie coup par coup, une fraction de point : ${r.cutCost}`);
   assert.equal(r.blockBare, 1, 'le billot ne change pas');
   assert.equal(r.afterCut2, '[{"item":"hatchet"},{"item":"stake"}]null', 'dans l\'autre ordre aussi : le piquet reste dans la main de la branche');
-  assert.equal(r.dropFollow, '[null,{"item":"branch"}]null', 'A lâche ce que tient la main du dernier clic (la hachette, à gauche)');
+  assert.equal(r.dropFollow, '[{"item":"hatchet"},null]null', 'A pose ce que tient la main droite (la branche)');
+  assert.equal(r.dropLeft, '[null,{"item":"branch"}]null', 'Maj + A pose ce que tient la main gauche (la hachette)');
   assert.equal(r.ropeRested, JSON.stringify({ hands: '[null,null]null', block: 1 }), 'le clic pose le rouleau sur le billot');
   assert.equal(r.ropeHatchet, JSON.stringify({ length: 800, ties: 1, notice: 'Rouleau de corde : 8 m restants.' }), 'la hachette coupe un lien de 2 m');
   assert.ok(Math.abs(r.ropeHatchetCost - 0.4) < 1e-6, `un coup de hachette coûte 0,4 : ${r.ropeHatchetCost}`);

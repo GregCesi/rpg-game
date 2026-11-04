@@ -1,8 +1,8 @@
 // Un travail au coup (docs/CONCEPTION.md, « Le travail ») : abattre, ébrancher, couper, fendre, tailler. Un travail est une quantité de
 // matière (world/workPlan.ts) ; chaque coup en enlève une part, selon son énergie (world/swing.ts : la force de Xéros, la masse et la
-// longueur de l'outil), le tranchant, la résistance et la précision. Un clic de la main de l'outil lance tout le travail : Xéros frappe seul
+// longueur de l'outil), le tranchant, la résistance et la précision. F, l'outil en main, lance tout le travail : Xéros frappe seul
 // jusqu'au résultat. Chaque coup coûte du plafond et du souffle ; pendant le travail le souffle ne revient pas ; vide, Xéros s'arrête et
-// souffle, puis reprend tout seul. Bouger ou Échap arrête après le coup en cours ; ce qui est fait reste fait (la part enlevée, dans GameState : `work` de la carte). Les étapes du travail (l'arbre qui
+// souffle, puis reprend tout seul. Bouger, Échap ou un clic arrête après le coup en cours ; ce qui est fait reste fait (la part enlevée, dans GameState : `work` de la carte). Les étapes du travail (l'arbre qui
 // tremble, la coupe qui se creuse, la fente qui s'allonge) tombent quand la part enlevée passe leurs seuils ; le résultat, au bout. La
 // durée n'est imposée nulle part : elle découle des coups et des pauses. Une jauge au-dessus de Xéros montre la part enlevée.
 import { gestures, work } from '../content';
@@ -34,10 +34,10 @@ export interface WorkJob {
   end(why: WorkEnd): void;
 }
 
-/** Pourquoi un travail se termine : fini, arrêté (un pas ou Échap), épuisé, la cible partie. */
+/** Pourquoi un travail se termine : fini, arrêté (un pas, Échap ou un clic), épuisé, la cible partie. */
 export type WorkEnd = 'done' | 'stopped' | 'spent' | 'gone';
 
-/** Ce que la scène dit à chaque image : un arrêt demandé (un pas, Échap). */
+/** Ce que la scène dit à chaque image : un arrêt demandé (un pas, Échap, un clic). */
 export interface WorkInput {
   stop: boolean;
 }
@@ -205,6 +205,13 @@ export class WorkSystem {
       },
       durations,
     );
+  }
+
+  /** Le travail s'arrête tout de suite, au milieu du coup (Xéros renversé par une charge) : ce qui est fait reste fait. */
+  interrupt(): void {
+    if (!this.job) return;
+    this.player.tools.cancel();
+    this.close('stopped');
   }
 
   private close(why: WorkEnd): void {

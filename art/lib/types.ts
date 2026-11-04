@@ -6,8 +6,14 @@ export interface SpriteSheetSource {
   name: string;
   frameW: number;
   frameH: number;
+  /** Combien de rangées sous les pieds dans chaque image (une créature : le jeu la pose d'autant) ; absent : 2 (le lapin, Xéros). */
+  feet?: number;
   palette: Palette;
-  animations: Record<string, { frames: Grid[]; frameRate: number; repeat: number }>;
+  /**
+   * Les animations ; `durations` (ms, une par image) : la durée de chaque image quand elles ne durent pas toutes autant (le sanglier,
+   * Xéros renversé) ; elle remplace alors `frameRate`.
+   */
+  animations: Record<string, { frames: Grid[]; frameRate: number; repeat: number; durations?: number[] }>;
 }
 
 /** Jeu de tuiles carrées, référencées par nom. */

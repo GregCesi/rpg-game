@@ -6,10 +6,12 @@
 // - la vie du moment (`WarrenLife`, jamais sauvegardée) : qui est dehors, qui rentre, qui sort du terrier, selon la part de la
 //   population dehors à chaque heure (`schedule`) ; au retour sur la carte, les bêtes qui doivent être dehors y sont déjà.
 // Le jeu (systems/creatures.ts) avance la vie par pas de jeu de taille normale, et écrit dans GameState ce que la partie garde.
+// Le même rectangle `Warren` sert de bauge à une bête qui dort couchée (`den: "wallow"`, le sanglier) : la bauge est au milieu du
+// rectangle, chaque bête y a sa place ; celles qui ne sont pas debout y sont couchées, visibles (pas au terrier).
 
 import type { CreatureDef, MapData, MapWarren, PropDef } from '../content/types';
 import { MINUTES_PER_DAY, type Clock } from './clock';
-import { between, emerge, grazeSpot, sendHome, step, type Creature, type CreatureEvent, type Point, type Surroundings } from './creature';
+import { between, emerge, getUp, grazeSpot, pixels, sendHome, sendToBed, step, type Creature, type CreatureEvent, type Point, type Surroundings } from './creature';
 
 /** Les entrées d'une garenne : les objets de la carte à `burrow` (props.json) dont l'ancrage (coin bas gauche) est dans son rectangle. */
 export function warrenHoles(m: MapData, g: MapWarren, propsByType: Record<string, PropDef>): MapData['objects'] {
@@ -55,6 +57,21 @@ export function outShare(def: CreatureDef, minute: number): number {
 
 /** Les membres qui peuvent sortir : tous sauf les blessés qui n'ont pas encore guéri. */
 export const able = (w: WarrenState, clock: Clock): Member[] => w.members.filter((m) => m.heal === undefined || clock.day >= m.heal);
+
+/** La distance où les bêtes broutent ou fouillent à la minute `minute` : celle du dernier repère passé de `schedule` qui la dit, sinon `graze.range`. */
+export function outRange(def: CreatureDef, minute: number): number {
+  const h = (((minute / 60) % 24) + 24) % 24;
+  const s = def.schedule;
+  return ([...s].reverse().find((x) => x.hour <= h) ?? s[s.length - 1]).range ?? def.graze.range;
+}
+
+/** La place de la bête `n` à la bauge (px) : autour du milieu, en spirale, à une longueur de bête de la voisine. */
+export function bedSpot(center: Point, n: number): Point {
+  if (n === 0) return { ...center };
+  const r = pixels(1.6) * Math.sqrt(n);
+  const t = n * 2.4;
+  return { x: Math.round(center.x + Math.cos(t) * r), y: Math.round(center.y + Math.sin(t) * r * 0.6) };
+}
 
 /** Combien de bêtes devraient être dehors en ce moment : la part de l'heure × celles qui peuvent sortir, arrondie. */
 export const wantedOut = (w: WarrenState, def: CreatureDef, clock: Clock): number => Math.round(outShare(def, clock.minute) * able(w, clock).length);
@@ -118,9 +135,39 @@ export class WarrenLife {
     return `${this.site.id}:${n}`;
   }
 
+  /** La place à la bauge du membre `n` (une bête qui dort couchée). */
+  private bedOf(n: number): Point {
+    return bedSpot(this.site.holes[0] ?? { x: 0, y: 0 }, n);
+  }
+
+  /** Une bête couchée à sa place de la bauge. */
+  private lieDown(m: Member, rand: () => number): Creature {
+    const bed = this.bedOf(m.n);
+    const c = emerge(this.idOf(m.n), this.site.kind, this.def, bed, m.hp);
+    c.bed = bed;
+    c.mode = 'rest';
+    c.pose = 'rest';
+    c.facing = rand() < 0.5 ? 'left' : 'right';
+    return c;
+  }
+
   /** L'arrivée sur la carte : les bêtes qui doivent être dehors à cette heure y sont déjà, dispersées autour de la garenne. */
   populate(w: WarrenState, clock: Clock, s: Surroundings): void {
     const want = wantedOut(w, this.def, clock);
+    if (this.def.den === 'wallow') {
+      // à la bauge : celles de l'heure debout, autour ; les autres (et les blessées) couchées à leur place
+      const up = new Set(able(w, clock).slice(0, want).map((m) => m.n));
+      for (const m of w.members) {
+        const c = this.lieDown(m, s.rand);
+        if (up.has(m.n)) {
+          const at = grazeSpot(this.def, c, s);
+          if (at) [c.x, c.y] = [at.x, at.y];
+          getUp(c);
+        }
+        this.out.push(c);
+      }
+      return;
+    }
     for (const m of able(w, clock).slice(0, want)) {
       const at = grazeSpot(this.def, this.site.holes[0] ?? { x: 0, y: 0 }, s) ?? this.site.holes[Math.floor(s.rand() * this.site.holes.length)];
       if (!at) continue;
@@ -149,6 +196,7 @@ export class WarrenLife {
   step(w: WarrenState, clock: Clock, dt: number, around: (c: Creature) => Surroundings, rand: () => number): LifeEvent[] {
     const alive = new Set(w.members.map((m) => m.n));
     for (const c of [...this.out]) if (!alive.has(memberOf(c))) this.remove(c);
+    if (this.def.den === 'wallow') return this.stepBed(w, clock, dt, around, rand);
     for (const [n, t] of this.den) this.den.set(n, t - dt);
     this.emergeIn -= dt;
     const want = wantedOut(w, this.def, clock);
@@ -159,7 +207,7 @@ export class WarrenLife {
         const hole = this.site.holes[Math.floor(rand() * this.site.holes.length)];
         const c = emerge(this.idOf(m.n), this.site.kind, this.def, hole, m.hp);
         this.out.push(c);
-        this.emergeIn = this.def.burrow.emerge;
+        this.emergeIn = this.def.burrow!.emerge;
       }
     } else if (outside.length > want) {
       const calm = outside.filter((c) => c.mode === 'calm');
@@ -172,10 +220,35 @@ export class WarrenLife {
         events.push({ ...e, creature: c });
         if (e.kind === 'enter') {
           this.remove(c);
-          if (fled) this.den.set(memberOf(c), between(rand, this.def.burrow.stay) * 60);
+          if (fled) this.den.set(memberOf(c), between(rand, this.def.burrow!.stay) * 60);
         }
       }
     }
+    return events;
+  }
+
+  /**
+   * Un pas de la bauge : un membre qui n'est pas là (né, revenu) s'y couche ; une bête couchée se lève si la bauge en veut plus debout
+   * (une à la fois, à quelques secondes d'écart), une bête tranquille rentre se coucher si elle en veut moins ; chaque bête fait son pas.
+   */
+  private stepBed(w: WarrenState, clock: Clock, dt: number, around: (c: Creature) => Surroundings, rand: () => number): LifeEvent[] {
+    for (const m of w.members) if (!this.find(m.n)) this.out.push(this.lieDown(m, rand));
+    this.emergeIn -= dt;
+    const want = wantedOut(w, this.def, clock);
+    const healed = new Set(able(w, clock).map((m) => m.n));
+    const standing = this.out.filter((c) => c.mode !== 'rest' && c.mode !== 'home');
+    if (standing.length < want && this.emergeIn <= 0) {
+      const c = this.out.find((x) => x.mode === 'rest' && healed.has(memberOf(x)));
+      if (c) {
+        getUp(c);
+        this.emergeIn = between(rand, this.def.graze.pause);
+      }
+    } else if (standing.length > want) {
+      const calm = standing.filter((c) => c.mode === 'calm');
+      for (const c of calm.slice(0, standing.length - want)) sendToBed(c, around(c));
+    }
+    const events: LifeEvent[] = [];
+    for (const c of [...this.out]) for (const e of step(c, this.def, around(c), dt)) events.push({ ...e, creature: c });
     return events;
   }
 }

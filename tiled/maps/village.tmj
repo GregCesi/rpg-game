@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 182,
+  "nextobjectid": 184,
   "properties": [
     {
       "name": "name",
@@ -2049,7 +2049,7 @@
           "id": 154,
           "rotation": 0,
           "visible": true,
-          "name": "",
+          "name": "Forge",
           "type": "Parcel",
           "x": 1024,
           "y": 1536,
@@ -2060,7 +2060,7 @@
               "name": "use",
               "type": "string",
               "propertytype": "ParcelUse",
-              "value": "cottage"
+              "value": "smithy"
             }
           ]
         },
@@ -2574,6 +2574,44 @@
               "type": "string",
               "propertytype": "PlanName",
               "value": "etal"
+            }
+          ]
+        },
+        {
+          "id": 182,
+          "rotation": 0,
+          "visible": true,
+          "name": "Fonderie",
+          "type": "Parcel",
+          "x": 1324,
+          "y": 1586,
+          "width": 160,
+          "height": 150,
+          "properties": [
+            {
+              "name": "use",
+              "type": "string",
+              "propertytype": "ParcelUse",
+              "value": "foundry"
+            }
+          ]
+        },
+        {
+          "id": 183,
+          "rotation": 0,
+          "visible": true,
+          "name": "forge",
+          "type": "Plan",
+          "x": 1084,
+          "y": 1836,
+          "width": 300,
+          "height": 160,
+          "properties": [
+            {
+              "name": "plan",
+              "type": "string",
+              "propertytype": "PlanName",
+              "value": "forge"
             }
           ]
         }

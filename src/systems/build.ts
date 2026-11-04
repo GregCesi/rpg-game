@@ -21,6 +21,7 @@ import { JOINT_NAMES, jointGroup, jointPoint, junctionAt, refusal as jointRefusa
 import type { GameMap } from '../world/GameMap';
 import { drawNatural } from '../world/natural';
 import { Ghosts } from './ghost';
+import { pick } from '../world/relief';
 
 /** Ce qu'on a en main : une pièce (avec son sens, ses réglages de forme naturelle et son tirage), un plan, ou l'outil de zone. */
 type Tool =
@@ -93,7 +94,11 @@ export class BuildSystem {
     this.gfx = scene.add.graphics().setDepth(DEPTH.prompt - 2);
     const input = scene.input;
     input.mouse?.disableContextMenu();
-    const point = (p: Phaser.Input.Pointer) => this.scene.cameras.main.getWorldPoint(p.x, p.y);
+    // le point du monde qu'on voit sous la souris (le relief soulève ce qui est en hauteur : world/relief.ts `pick`)
+    const point = (p: Phaser.Input.Pointer) => {
+      const w = this.scene.cameras.main.getWorldPoint(p.x, p.y);
+      return pick(this.map.def, w.x, w.y);
+    };
     const down = (p: Phaser.Input.Pointer) => {
       if (!this.active) return;
       const w = point(p);
@@ -200,7 +205,8 @@ export class BuildSystem {
     if (h === 'redo') this.redo();
 
     const pointer = this.scene.input.activePointer;
-    const at = cam.getWorldPoint(pointer.x, pointer.y);
+    const seen = cam.getWorldPoint(pointer.x, pointer.y);
+    const at = pick(this.map.def, seen.x, seen.y);
     this.flushClicks();
     this.updateAim(at.x, at.y);
     this.draw(at);
@@ -353,7 +359,7 @@ export class BuildSystem {
     return cands.sort((p, q) => d(p) - d(q))[0];
   }
 
-  /** Pourquoi on ne peut pas poser ces pièces : hors de la carte, dans une autre pièce, sur Xéros ; sinon rien. `replacing` : la pièce que la pose remplace (elle ne gêne pas). */
+  /** Pourquoi on ne peut pas poser ces pièces : hors de la carte, dans une autre pièce, sur Xéros, à cheval sur une marche, dans l'eau ; sinon rien. `replacing` : la pièce que la pose remplace (elle ne gêne pas). */
   private refusal(list: BuildPlaced[], replacing?: number): string | undefined {
     const W = this.map.width * CM_PER_PX;
     const H = this.map.height * CM_PER_PX;
@@ -370,6 +376,10 @@ export class BuildSystem {
       if (room && (b.x < room.x || b.y < room.y || b.x + b.w > room.x + room.w || b.y + b.d > room.y + room.d)) return 'Hors de la pièce.';
       if (!isRoof(p) && others.some((o) => intersects(o, solidOf(p)))) return 'Une autre pièce est déjà là.';
       if (b.z < BUILD.high && overlaps(b, feet)) return 'Xéros est là.';
+      // le relief : une pièce au sol tient sur un seul niveau ; dans l'eau profonde, rien ne se pose
+      const box = { left: b.x / CM_PER_PX, top: b.y / CM_PER_PX, right: (b.x + b.w) / CM_PER_PX, bottom: (b.y + b.d) / CM_PER_PX };
+      if (b.z === 0 && !this.map.level(box)) return 'À cheval sur une marche.';
+      if (b.z === 0 && this.map.inWater(box)) return "Dans l'eau.";
     }
     return undefined;
   }

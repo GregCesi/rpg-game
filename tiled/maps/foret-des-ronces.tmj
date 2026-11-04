@@ -10,12 +10,17 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 4,
-  "nextobjectid": 1771,
+  "nextobjectid": 1772,
   "properties": [
     {
       "name": "name",
       "type": "string",
       "value": "La forêt des ronces"
+    },
+    {
+      "name": "height",
+      "type": "int",
+      "value": 500
     }
   ],
   "tilesets": [
@@ -21417,6 +21422,30 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 1771,
+          "rotation": 0,
+          "visible": true,
+          "name": "bauge",
+          "type": "Warren",
+          "x": 550,
+          "y": 2284,
+          "width": 120,
+          "height": 120,
+          "properties": [
+            {
+              "name": "creature",
+              "type": "string",
+              "propertytype": "CreatureKind",
+              "value": "boar"
+            },
+            {
+              "name": "population",
+              "type": "int",
+              "value": 3
+            }
+          ]
+        },
         {
           "id": 1770,
           "rotation": 0,

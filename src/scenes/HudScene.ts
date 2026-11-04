@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { HUD, STAMINA_BAR, UI, VIEW, UI_ZOOM } from '../config';
-import { items, props, stamina } from '../content';
+import { health, items, props, stamina } from '../content';
 import type { StaminaLevels } from '../entities/Stamina';
 import { GameEvent, type PlayerCell } from '../events';
 import { game, type Held } from '../state';
@@ -10,14 +10,11 @@ import { clockLabel } from '../world/clock';
 import { clockFace } from '../world/clockFace';
 import { simSpeed } from '../systems/simSpeed';
 import { Minimap } from '../systems/minimap';
-import type { ClickPlan } from '../world/clickAction';
 
 /** Écart entre les deux cases (px), marge sous les cases, et au bord droit de l'écran. */
 const GAP = 4;
 const BOTTOM = 10;
 const MARGIN = 4;
-/** La hauteur de la ligne des mots des clics, au-dessus des cases (px). */
-const WORDS = 9;
 
 /**
  * Signes (images `ui-digit-<signe>`) de la longueur restante d'un objet tenu, en mètres : « 8 m » donne 8 puis m,
@@ -53,10 +50,6 @@ export class HudScene extends Phaser.Scene {
   /** Coin bas droit de chaque case, où s'aligne la longueur. */
   private corners: [number, number][] = [];
   private notice!: Phaser.GameObjects.Text;
-  /** Près de chaque case, le mot de ce que ferait son clic sur ce qui est visé (G : le clic droit, D : le clic gauche). */
-  private words: Phaser.GameObjects.Text[] = [];
-  /** Ce que disent les mots (lu par les tests de scénario). */
-  wordsText: [string, string] = ['', ''];
   private bar!: Phaser.GameObjects.Container;
   /** Barre d'endurance, au-dessus des deux cases : le cadre, puis dans le creux le perdu, le « revient » et le souffle. */
   private energy!: Phaser.GameObjects.Container;
@@ -66,6 +59,14 @@ export class HudScene extends Phaser.Scene {
   private energyX = 0;
   /** Le clignotement de la part « revient », pendant que Xéros est essoufflé. */
   private blink?: Phaser.Tweens.Tween;
+  /**
+   * La barre de vie (docs/CONCEPTION.md, « La vie de Xéros »), au-dessus de celle d'endurance, du même cadre (art/ui/stamina-bar.ts) :
+   * le creux hachuré de ce qui est perdu, la vie en rouge (les pièces du souffle fatigué, `ui-bar-breath-low`).
+   */
+  private life!: Phaser.GameObjects.Container;
+  private lifeParts!: Record<'mid' | 'right' | 'lost' | 'edge' | 'fill', Phaser.GameObjects.TileSprite>;
+  /** Ce que montre la barre de vie (« 65/100 ») : lu par les tests de scénario. */
+  healthText = '';
 
   constructor() {
     super('hud');
@@ -99,18 +100,15 @@ export class HudScene extends Phaser.Scene {
       this.slots.push(slot);
       this.icons.push(icon);
       this.corners.push([x + size - 1, y0 + size - 1]);
-      // G : à gauche de sa case, au milieu ; D : au-dessus de la sienne, calé à droite (les deux mots ne se touchent jamais)
-      const style = { ...label, fontSize: '7px', color: '#e8dab8', strokeThickness: 2 };
-      const word = (i === 0 ? this.add.text(x - 3, y0 + size / 2, '', style).setOrigin(1, 0.5) : this.add.text(x + size, y0 - 1, '', style).setOrigin(1, 1)).setResolution(UI_ZOOM);
-      this.words.push(word);
-      this.bar.add([slot, icon, text, word]);
+      this.bar.add([slot, icon, text]);
     });
-    this.makeEnergy(VIEW.width - MARGIN, y0 - WORDS - STAMINA_BAR.gap);
+    this.makeEnergy(VIEW.width - MARGIN, y0 - STAMINA_BAR.gap);
+    this.makeLife(VIEW.width - MARGIN, y0 - STAMINA_BAR.gap - STAMINA_BAR.height - 1);
     // le cadran du temps, en haut à droite (docs/CONCEPTION.md, « Le temps »)
     this.face = this.add.container(0, 0);
     this.bar.add(this.face);
     this.notice = this.add
-      .text(VIEW.width / 2, y0 - WORDS - STAMINA_BAR.gap - STAMINA_BAR.height - 4, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
+      .text(VIEW.width / 2, y0 - STAMINA_BAR.gap - 2 * STAMINA_BAR.height - 5, '', { fontFamily: UI.font, fontSize: '11px', color: '#f3e6c8', stroke: UI.ink, strokeThickness: 3 })
       .setOrigin(0.5, 1)
       .setResolution(UI_ZOOM)
       .setAlpha(0);
@@ -119,14 +117,14 @@ export class HudScene extends Phaser.Scene {
     this.minimap = new Minimap(this);
     this.game.events.on(GameEvent.PlayerCell, this.onCell, this);
     this.game.events.on(GameEvent.HandsChanged, this.redraw, this);
-    this.game.events.on(GameEvent.ClickPlans, this.showWords, this);
     this.game.events.on(GameEvent.Stamina, this.showEnergy, this);
     this.game.events.on(GameEvent.StaminaDenied, this.shakeEnergy, this);
+    this.game.events.on(GameEvent.Health, this.showLife, this);
     this.game.events.on(GameEvent.Notice, this.showNotice, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off(GameEvent.Health, this.showLife, this);
       this.game.events.off(GameEvent.PlayerCell, this.onCell, this);
       this.game.events.off(GameEvent.HandsChanged, this.redraw, this);
-      this.game.events.off(GameEvent.ClickPlans, this.showWords, this);
       this.game.events.off(GameEvent.Stamina, this.showEnergy, this);
       this.game.events.off(GameEvent.StaminaDenied, this.shakeEnergy, this);
       this.game.events.off(GameEvent.Notice, this.showNotice, this);
@@ -206,6 +204,39 @@ export class HudScene extends Phaser.Scene {
     }
   }
 
+  /** La barre de vie, son bord droit en `right`, son bas en `bottom` : le cadre de la barre d'endurance, un creux de `health.max` points. */
+  private makeLife(right: number, bottom: number): void {
+    const { inner, end, height, pxPerPoint } = STAMINA_BAR;
+    const tile = (x: number, y: number, h: number, key: string) => this.add.tileSprite(x, y, 1, h, key).setOrigin(0);
+    const iw = Math.max(1, Math.round(health.max * pxPerPoint));
+    const left = this.add.image(0, 0, 'ui-bar-left').setOrigin(0);
+    this.lifeParts = {
+      mid: tile(end, 0, height, 'ui-bar-mid'),
+      right: tile(end + iw, 0, height, 'ui-bar-right'),
+      lost: tile(inner, inner, 4, 'ui-bar-lost'),
+      edge: tile(inner, inner, 4, 'ui-bar-breath-low-edge'),
+      fill: tile(inner, inner, 4, 'ui-bar-breath-low'),
+    };
+    const p = this.lifeParts;
+    p.mid.setSize(iw, height);
+    p.right.setSize(end, height);
+    p.lost.setSize(iw, 4);
+    this.life = this.add.container(Math.round(right - (iw + 2 * end)), bottom - height, [left, p.mid, p.right, p.lost, p.edge, p.fill]);
+    this.bar.add(this.life);
+    this.showLife(game.health);
+  }
+
+  /** La vie : la part rouge, de sa colonne de bord au reste ; le perdu, hachuré. */
+  private showLife(points: number): void {
+    const { pxPerPoint, inner } = STAMINA_BAR;
+    const iw = Math.max(1, Math.round(health.max * pxPerPoint));
+    const w = points <= 0 ? 0 : Math.min(iw, Math.max(1, Math.round(points * pxPerPoint)));
+    const p = this.lifeParts;
+    p.edge.setVisible(w > 0).setX(inner).setSize(1, 4);
+    p.fill.setVisible(w > 1).setX(inner + 1).setSize(Math.max(1, w - 1), 4);
+    this.healthText = `${Math.round(points)}/${health.max}`;
+  }
+
   /** Un effort a été refusé (épuisé) : la barre tremble un instant. */
   private shakeEnergy(): void {
     const x = this.energyX;
@@ -227,25 +258,6 @@ export class HudScene extends Phaser.Scene {
       const length = p?.wood ? p.wood.length : def?.length ? (p!.length ?? def.length.start) : undefined;
       this.showLength(i, length);
     });
-  }
-
-  /**
-   * Le mot de chaque clic (world/clickAction.ts, la même fonction que le jeu) : à gauche de la case G, celui du clic droit ; au-dessus de
-   * la case D, celui du clic gauche. Le clic court d'abord ; le geste long d'une main vide s'y ajoute (« prendre · nouer ») ; « lancer », qui vaut
-   * pour tout ce qu'on tient, ne s'écrit pas. Rien hors du jeu (un geste, un dialogue).
-   */
-  private showWords(plans?: { left: ClickPlan; right: ClickPlan }): void {
-    const word = (p: ClickPlan | undefined) => {
-      if (!p) return '';
-      const long = p.long.kind !== 'none' && p.long.kind !== 'throw' ? p.long.label : '';
-      return [p.short.label, long].filter(Boolean).join(' · ');
-    };
-    const next: [string, string] = [word(plans?.right), word(plans?.left)];
-    next.forEach((t, i) => {
-      if (t === this.wordsText[i]) return;
-      this.words[i].setText(t);
-    });
-    this.wordsText = next;
   }
 
   /** Écrit la longueur `cm` (ou rien) en bas à droite de la case `i`, comme le nombre de pièces d'un tas. */

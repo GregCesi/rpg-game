@@ -159,7 +159,7 @@ await playtest('lapins', async ({ page, load }) => {
     await send({ kind: 'force', multiplier: 10 });
     await send({ kind: 'give', held: { item: 'branch' } });
     // un lapin qui se laisse approcher (ses distances réglées dans ?dieu), la précision du coup sans écart
-    for (const gait of ['still', 'sneak', 'walk', 'run']) await send({ kind: 'creature-senses', creature: kind, gait, alert: 0.2, flee: 0.1 });
+    for (const gait of ['still', 'sneak', 'walk', 'run']) await send({ kind: 'creature-senses', creature: kind, gait, alert: 0.2, near: 0.1 });
     w().combat.rand = () => 0;
     // toutes les garennes de la ferme : le lapin tué manque à la sienne
     const members = () => (Object.values(gs.game.maps.ferme.warrens) as { members: unknown[] }[]).reduce((n, g) => n + g.members.length, 0);
@@ -193,11 +193,11 @@ await playtest('lapins', async ({ page, load }) => {
   assert.ok(r.laneY > 0, 'une bande de pré libre pour marcher');
   const { walk, sneak, senses } = r;
   assert.ok(walk.why === 'seen' && (sneak.why === undefined || sneak.why === 'seen'), `les fuites mesurées sont dues à Xéros (${walk.why}, ${sneak.why} ; ${r.alarms ?? 0} alertes d'un autre lapin)`);
-  assert.ok(walk.alert !== undefined && walk.alert < senses.walk.alert && walk.alert >= senses.walk.flee, `à la marche, aux aguets entre ${senses.walk.flee} et ${senses.walk.alert} m (${walk.alert})`);
-  assert.ok(walk.flee !== undefined && walk.flee < senses.walk.flee, `à la marche, il fuit en deçà de ${senses.walk.flee} m (${walk.flee})`);
+  assert.ok(walk.alert !== undefined && walk.alert < senses.walk.alert && walk.alert >= senses.walk.near, `à la marche, aux aguets entre ${senses.walk.near} et ${senses.walk.alert} m (${walk.alert})`);
+  assert.ok(walk.flee !== undefined && walk.flee < senses.walk.near, `à la marche, il fuit en deçà de ${senses.walk.near} m (${walk.flee})`);
   assert.ok(r.walkEntered, 'il entre au terrier');
-  assert.ok(sneak.min < senses.walk.flee - 1, `en marche discrète, Xéros approche à ${sneak.min.toFixed(1)} m sans le faire fuir (à la marche, ${senses.walk.flee} m)`);
-  assert.ok(sneak.flee === undefined || sneak.flee < senses.sneak.flee, `en marche discrète, il fuit en deçà de ${senses.sneak.flee} m (${sneak.flee})`);
+  assert.ok(sneak.min < senses.walk.near - 1, `en marche discrète, Xéros approche à ${sneak.min.toFixed(1)} m sans le faire fuir (à la marche, ${senses.walk.near} m)`);
+  assert.ok(sneak.flee === undefined || sneak.flee < senses.sneak.near, `en marche discrète, il fuit en deçà de ${senses.sneak.near} m (${sneak.flee})`);
   assert.ok(r.dead, 'un lapin mort au sol');
   assert.ok(Math.hypot(r.dead.x - r.dead.from.x, r.dead.y - r.dead.from.y) < 40, `le lapin mort là où le lapin est mort (${JSON.stringify(r.dead)})`);
   assert.equal(r.deadCount, 1, 'un seul lapin mort');

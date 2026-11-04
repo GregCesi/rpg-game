@@ -31,7 +31,7 @@
       "path": {"color": "#b8956a"},
       "yard": {"color": "#b9a178"},
       "road": {"color": "#a89c84"},
-      "water": {"color": "#4a7fa8", "solid": true},
+      "water": {"color": "#4a7fa8", "deep": true, "station": "pond"},
       "fence": {"color": "#7a5a3e", "solid": true}
     }
   },

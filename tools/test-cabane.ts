@@ -62,7 +62,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
     for (let y = 100; y < m.height - 140; y += 8) for (let x = 40; x < m.width - 140; x += 8) {
       if (Math.hypot(x + 40 - px.x, y + 40 - px.y) > 140 && m.areaFree({ left: x - 16, top: y - 80, right: x + 112, bottom: y + 120 })) {
         w.cameras.main.setZoom(2);
-        w.cameras.main.centerOn(x + 40, y + 20);
+        w.cameras.main.centerOn(x + 40, y + 20 - (w.lifts?.liftAt?.(x + 40, y + 20) ?? 0));
         return { x: Math.round((x * 5) / 20) * 20, y: Math.round((y * 5) / 20) * 20 };
       }
     }
@@ -77,7 +77,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
       const g = (window as any).game;
       const cam = g.scene.getScene('world').cameras.main;
       const rect = g.canvas.getBoundingClientRect();
-      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
+      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
     }, [x, y] as const);
   const click = async (x: number, y: number) => {
     const s = await screen(x, y);
@@ -161,7 +161,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
       cam.preRender();
       const rect = g.canvas.getBoundingClientRect();
       const k = cam.zoom * (rect.width / g.scale.width);
-      const at = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - cam.worldView.y) * k });
+      const at = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * k });
       const a = at((ox - 40) / 5, (oy - 460) / 5);
       const b = at((ox + 560) / 5, (oy + 520) / 5);
       return { x: Math.max(0, Math.round(a.x)), y: Math.max(0, Math.round(a.y)), w: Math.round(b.x - a.x), h: Math.round(b.y - a.y) };
@@ -345,7 +345,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
     cam.preRender();
     const rect = g.canvas.getBoundingClientRect();
     const k = cam.zoom * (rect.width / g.scale.width);
-    const at = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - cam.worldView.y) * k });
+    const at = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * k });
     const a = at((ox - 40) / 5, (oy - 460) / 5);
     const b = at((ox + 560) / 5, (oy + 520) / 5);
     return { x: Math.max(0, Math.round(a.x)), y: Math.max(0, Math.round(a.y)), w: Math.round(b.x - a.x), h: Math.round(b.y - a.y) };

@@ -55,7 +55,7 @@ await playtest('etal', async ({ page, errors, load }) => {
       for (let y = 80; y < m.height - b; y += 8) for (let x = 30; x < m.width - r; x += 8) {
         if (Math.hypot(x + 24 - px.x, y + 16 - px.y) > 120 && m.areaFree({ left: x - l, top: y - t, right: x + r, bottom: y + b })) {
           w.cameras.main.setZoom(3);
-          w.cameras.main.centerOn(x + 24, y + 16);
+          w.cameras.main.centerOn(x + 24, y + 16 - (w.lifts?.liftAt?.(x + 24, y + 16) ?? 0));
           return { x: Math.round((x * 5) / 20) * 20, y: Math.round((y * 5) / 20) * 20 };
         }
       }
@@ -70,7 +70,7 @@ await playtest('etal', async ({ page, errors, load }) => {
       const g = (window as any).game;
       const cam = g.scene.getScene('world').cameras.main;
       const rect = g.canvas.getBoundingClientRect();
-      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
+      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
     }, [x, y] as const);
   const click = async (x: number, y: number) => {
     const s = await screen(x, y);
@@ -164,7 +164,7 @@ await playtest('etal', async ({ page, errors, load }) => {
       cam.preRender();
       const rect = g.canvas.getBoundingClientRect();
       const k = cam.zoom * (rect.width / g.scale.width);
-      const pt = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - cam.worldView.y) * k });
+      const pt = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * k });
       const a = pt(L, T);
       const b = pt(R, B);
       return { x: Math.max(0, Math.round(a.x)), y: Math.max(0, Math.round(a.y)), w: Math.round(b.x - a.x), h: Math.round(b.y - a.y) };
@@ -178,7 +178,7 @@ await playtest('etal', async ({ page, errors, load }) => {
     await page.mouse.move(5, 5);
     await sleep(200);
     await capture(name);
-    await page.evaluate(([ox, oy]) => (window as any).game.scene.getScene('world').cameras.main.centerOn((ox + 120) / 5, (oy + 80) / 5), [O!.x, O!.y] as const);
+    await page.evaluate(([ox, oy]) => (window as any).game.scene.getScene('world').cameras.main.centerOn((ox + 120) / 5, (oy + 80) / 5 - ((window as any).game.scene.getScene('world').lifts?.liftAt?.((ox + 120) / 5, (oy + 80) / 5) ?? 0)), [O!.x, O!.y] as const);
     await sleep(150);
   };
   const panel = async (what: string, prop: string, view: number, x: number, y: number, w: number, d: number, z: number) => {

@@ -5,6 +5,7 @@
 import { Canvas, castShadow, rng, selOut } from '../lib/canvas';
 import type { ImageSource, TilesetSource } from '../lib/types';
 import { world } from '../palette';
+import { reliefTileset } from './relief';
 
 const T = 32;
 
@@ -628,6 +629,11 @@ for (let m = 0; m < 16; m++) {
   tiles[`yard-${m}`] = yard(200 + m, m).toGrid();
   tiles[`road-${m}`] = road(m).toGrid();
 }
+// le relief (art/world/relief.ts) : le dessus des talus `bank-*`, le sol clair du chemin creux `lane-*` et ses raccords au chemin
+// `path-lane-w-*` (le couloir à l'ouest de la case) et `path-lane-e-*`
+const pathGrids: Record<string, string[]> = {};
+for (let m = 0; m < 16; m++) pathGrids[`path-${m}`] = tiles[`path-${m}`];
+Object.assign(tiles, reliefTileset(pathGrids).tiles);
 
 // ---------- Détails au sol (posés au hasard par la carte, ils cassent la grille) ----------
 

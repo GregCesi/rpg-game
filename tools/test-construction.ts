@@ -61,7 +61,7 @@ await playtest('construction', async ({ page, errors, load }) => {
       for (let y = 120; y < m.height - 120; y += 8) {
         for (let x = 80; x < m.width - 200; x += 8) {
           if (Math.hypot(x - px.x, y - px.y) > 80 && free(x - 40, y - 80, x + 160, y + 40)) {
-            w.cameras.main.centerOn(x + 40, y - 20);
+            w.cameras.main.centerOn(x + 40, y - 20 - (w.lifts?.liftAt?.(x + 40, y - 20) ?? 0));
             return { x, y };
           }
         }
@@ -79,7 +79,7 @@ await playtest('construction', async ({ page, errors, load }) => {
         const rect = g.canvas.getBoundingClientRect();
         const sx = rect.width / g.scale.width;
         const sy = rect.height / g.scale.height;
-        return { x: rect.left + (x - cam.worldView.x) * cam.zoom * sx, y: rect.top + (y - cam.worldView.y) * cam.zoom * sy };
+        return { x: rect.left + (x - cam.worldView.x) * cam.zoom * sx, y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * cam.zoom * sy };
       }, [x, y] as const);
     const click = async (x: number, y: number, button: 'left' | 'right' = 'left') => {
       const s = await screen(x, y);
@@ -236,7 +236,7 @@ await playtest('construction', async ({ page, errors, load }) => {
       const clear = (l: number, t: number, r: number, b: number) =>
         m.areaFree({ left: l, top: t, right: r, bottom: b }) && !m.builds.some((q: any) => q.image.x < r && q.image.x + q.image.width > l && q.image.y - q.image.height < b && q.image.y > t);
       for (let y = 100; y < m.height - 120; y += 8) for (let x = 60; x < m.width - 160; x += 8) if (clear(x - 20, y - 40, x + 120, y + 80)) {
-        w.cameras.main.centerOn(x + 48, y + 20);
+        w.cameras.main.centerOn(x + 48, y + 20 - (w.lifts?.liftAt?.(x + 48, y + 20) ?? 0));
         return { x, y };
       }
       return undefined;
@@ -310,7 +310,7 @@ await playtest('construction', async ({ page, errors, load }) => {
       const clear = (l: number, t: number, r: number, b: number) =>
         m.areaFree({ left: l, top: t, right: r, bottom: b }) && !m.builds.some((q: any) => q.image.x < r && q.image.x + q.image.width > l && q.image.y - q.image.height < b && q.image.y > t);
       for (let y = 140; y < m.height - 60; y += 8) for (let x = 60; x < m.width - 160; x += 8) if (clear(x - 40, y - 110, x + 140, y + 30)) {
-        w.cameras.main.centerOn(x + 40, y - 40);
+        w.cameras.main.centerOn(x + 40, y - 40 - (w.lifts?.liftAt?.(x + 40, y - 40) ?? 0));
         return { x, y };
       }
       return undefined;
@@ -384,7 +384,7 @@ await playtest('construction', async ({ page, errors, load }) => {
     await page.waitForFunction(() => (window as any).game?.scene?.getScene('world')?.map?.def.id === 'ferme', null, { timeout: 10000 });
     await sleep(300);
     await listen();
-    await page.evaluate(([x, y]) => (window as any).game.scene.getScene('world').cameras.main.centerOn(x, y), [jx + 40, jy - 40] as const);
+    await page.evaluate(([x, y]) => (window as any).game.scene.getScene('world').cameras.main.centerOn(x, y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0)), [jx + 40, jy - 40] as const);
     await sleep(200);
     assert.equal((await jointsNow()).length, 2, 'les assemblages reviennent au rechargement');
     shown = await shownOf([low.id, high2.id]);
@@ -412,7 +412,7 @@ await playtest('construction', async ({ page, errors, load }) => {
       const clear = (l: number, t: number, r: number, b: number) =>
         m.areaFree({ left: l, top: t, right: r, bottom: b }) && !m.builds.some((q: any) => q.image.x < r && q.image.x + q.image.width > l && q.image.y - q.image.height < b && q.image.y > t);
       for (let y = 140; y < m.height - 120; y += 8) for (let x = 60; x < m.width - 160; x += 8) if (clear(x - 20, y - 70, x + 120, y + 90)) {
-        w.cameras.main.centerOn(x + 30, y + 10);
+        w.cameras.main.centerOn(x + 30, y + 10 - (w.lifts?.liftAt?.(x + 30, y + 10) ?? 0));
         return { x, y };
       }
       return undefined;

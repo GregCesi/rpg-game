@@ -114,6 +114,36 @@ console.log("✓ clavier : un appui plus court qu'une image est lu, une tape dé
   console.log("✓ vitesse de simulation : l'horloge du jeu ne recule jamais, à x10 comme au retour à x1");
 }
 
+// E maintenu et F (src/input/PlayerInput.ts, src/systems/longPress.ts) : F se lit une fois par appui ; Maj + E est noté sous son propre
+// code (`Shift:KeyE`, à l'instant de l'appui : la main gauche) ; E maintenu se juge à sa durée vraie, jamais au temps mis à le lire ;
+// l'appui en cours dit où il en est (la touche qui se remplit d'or) et s'abandonne si Xéros cesse de viser la même chose
+{
+  const { LongPress } = await import('../src/systems/longPress');
+  const k = new KeyLatch();
+  k.down('KeyF', 10);
+  k.up('KeyF', 12);
+  assert.equal(k.take(['KeyF']), true, 'F tapé est lu');
+  assert.equal(k.take(['KeyF']), false, 'une seule fois');
+  k.down('Shift:KeyE', 20);
+  k.up('Shift:KeyE', 25);
+  assert.equal(k.take(['KeyE']), false, 'Maj + E n’est pas E seul');
+  assert.equal(k.take(['Shift:KeyE']), true, 'Maj + E est lu sous son code');
+  const press = new LongPress();
+  press.begin('tas', 1000);
+  assert.equal(press.progress(1000 + LONG_PRESS.ms / 2), 0.5, 'à mi-seuil, la touche est à moitié pleine');
+  k.down('KeyE', 1000);
+  assert.equal(press.update(1100, k.isDown(['KeyE']), 'tas', k.lastedFor(['KeyE'])), undefined, 'E enfoncé avant le seuil : il attend');
+  k.up('KeyE', 1100);
+  assert.equal(press.update(1000 + LONG_PRESS.ms * 3, k.isDown(['KeyE']), 'tas', k.lastedFor(['KeyE'])), 'short', 'relâché tôt mais lu tard : court');
+  press.begin('tas', 2000);
+  assert.equal(press.update(2000 + LONG_PRESS.ms, true, 'tas'), 'long', 'tenu jusqu’au seuil : maintenu');
+  assert.equal(press.progress(2000), undefined, 'fini : plus d’appui en cours');
+  press.begin('tas', 3000);
+  assert.equal(press.update(3100, true, 'bille'), undefined, 'Xéros vise autre chose : abandonné');
+  assert.equal(press.pending, false);
+  console.log('✓ E maintenu et F : un appui chacun, Maj + E à part, la durée vraie, la touche qui se remplit');
+}
+
 // la souris (src/input/PlayerInput.ts) : ses deux boutons passent par le même verrou que le clavier (Mouse0, Mouse2), avec leur durée
 // vraie ; un clic plus court qu'une image est lu, une fois ; un clic tenu est long même lu tard
 {
@@ -132,9 +162,9 @@ console.log("✓ clavier : un appui plus court qu'une image est lu, une tape dé
 }
 
 // la visée (src/world/aim.ts) : Xéros se tourne vers la plus proche de ses directions de dessin ; il vise sous le curseur à portée,
-// sinon dans sa direction, à la distance d'habitude ; sans curseur, devant lui ; le fantôme ne sort pas de sa portée
+// sinon dans sa direction, à la distance d'habitude ; sans curseur, devant lui (hors du combat, le jeu vise toujours devant lui)
 {
-  const { aimProbe, clampTo, facingToward } = await import('../src/world/aim');
+  const { aimProbe, facingToward } = await import('../src/world/aim');
   assert.equal(facingToward(10, 3, 'down'), 'right');
   assert.equal(facingToward(-2, -9, 'down'), 'up');
   assert.equal(facingToward(5, 5, 'down'), 'down', 'à égalité, il garde sa direction si elle convient');
@@ -145,7 +175,5 @@ console.log("✓ clavier : un appui plus court qu'une image est lu, une tape dé
   const far = aimProbe(c, { x: 100, y: 400 }, 'up', 32, 16);
   assert.deepEqual(far, { x: 100, y: 116 }, 'hors de portée : dans la direction du curseur, à 16 px');
   assert.deepEqual(aimProbe(c, undefined, 'left', 32, 16), { x: 84, y: 100 }, 'sans curseur : devant lui');
-  const k = clampTo(c, { x: 400, y: 100 }, 32);
-  assert.deepEqual(k, { x: 132, y: 100 }, 'le fantôme reste à portée');
   console.log('✓ visée : la direction la plus proche, sous le curseur à portée, sinon dans sa direction ; sans souris, devant lui');
 }

@@ -58,6 +58,48 @@ function keyE(): Canvas {
   ]);
 }
 
+/** Lettres de 5 × 5 px des touches, posées dans la touche en (3, 2). La lettre de « poser » suit le clavier : A, Q. */
+const KEY_LETTERS: Record<string, string[]> = {
+  E: ['#####', '#....', '####.', '#....', '#####'],
+  F: ['#####', '#....', '####.', '#....', '#....'],
+  A: ['.###.', '#...#', '#####', '#...#', '#...#'],
+  Q: ['.###.', '#...#', '#...#', '#..#.', '.##.#'],
+};
+
+/**
+ * Touche de 11 × 10 px, même facture que la touche E. `fill` : nombre de rangées du parchemin (les 7 de `a` puis
+ * l'ombre `A`, 8 en tout) passées à l'or de la jauge (H, b pour la rangée d'ombre), de bas en haut.
+ */
+function key(letter: string, fill = 0): Canvas {
+  const c = new Canvas(11, 10, 'o');
+  for (const [x, y] of [[0, 0], [10, 0], [0, 9], [10, 9]]) c.set(x, y, '.');
+  c.rect(1, 1, 9, 7, 'a').rect(1, 8, 9, 1, 'A');
+  for (let i = 0; i < fill; i++) {
+    const y = 8 - i;
+    c.rect(1, y, 9, 1, y === 8 ? 'b' : 'H');
+  }
+  KEY_LETTERS[letter].forEach((row, y) => [...row].forEach((k, x) => { if (k === '#') c.set(3 + x, 2 + y, 'o'); }));
+  return c;
+}
+
+/** Nombre d'images du remplissage de la touche E maintenue : 0 (crème) à 8 (pleine d'or), une rangée par image. */
+const KEY_FILL_STEPS = 9;
+
+function keyFillSheet(): SpriteSheetSource {
+  const frames = Array.from({ length: KEY_FILL_STEPS }, (_, k) => key('E', k).toGrid());
+  return { kind: 'spritesheet', name: 'ui-key-e-fill', frameW: 11, frameH: 10, palette, animations: { fill: { frames, frameRate: 16, repeat: 0 } } };
+}
+
+/**
+ * Trois points sous la touche E quand on peut la maintenir : trois grains de parchemin cerclés de contour,
+ * 11 × 3 px, à poser 1 px sous la touche (en y = 11 depuis le haut de la touche).
+ */
+function keyDots(): Canvas {
+  const c = new Canvas(11, 3);
+  for (const x0 of [0, 4, 8]) c.rect(x0, 0, 3, 3, 'o').set(x0 + 1, 1, 'a');
+  return c;
+}
+
 /**
  * Touche Espace, même facture que la touche E mais en barre large, marquée du signe ␣ :
  * affichée sur l'encoche visée quand Xéros tient la hache.
@@ -261,4 +303,4 @@ const digit = (n: number) => glyph(DIGITS[n]);
 
 const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette, grid: c.toGrid() });
 
-export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-key-space', keySpace()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true)), img('ui-hand-left', emptyHand(true)), img('ui-hand-right', emptyHand(false)), img('ui-hands-both', bothHands()), img('ui-throw-mark', throwMark()), gaugeSheet(), ...DIGITS.map((_, n) => img(`ui-digit-${n}`, digit(n))), ...Object.entries(SIGNS).map(([k, rows]) => img(`ui-digit-${k}`, glyph(rows)))];
+export default [img('ui-box', box()), img('ui-next', next()), img('ui-key-e', keyE()), img('ui-key-f', key('F')), img('ui-key-a', key('A')), img('ui-key-q', key('Q')), keyFillSheet(), img('ui-key-dots', keyDots()), img('ui-key-space', keySpace()), img('ui-slot', slot(false)), img('ui-slot-active', slot(true)), img('ui-hand-left', emptyHand(true)), img('ui-hand-right', emptyHand(false)), img('ui-hands-both', bothHands()), img('ui-throw-mark', throwMark()), gaugeSheet(), ...DIGITS.map((_, n) => img(`ui-digit-${n}`, digit(n))), ...Object.entries(SIGNS).map(([k, rows]) => img(`ui-digit-${k}`, glyph(rows)))];

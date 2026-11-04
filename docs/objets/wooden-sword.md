@@ -63,7 +63,7 @@ Aucune : taillée, régulière.
 Seule. Ne s'entrepose pas.
 
 ## Gestes
-- Clic court, main vide : la prendre (au sol).
+- E : la prendre (au sol).
 - Clic court de sa main : attaquer, dans le vide comme sur une cible (CONCEPTION, « Le combat ») ; un deuxième clic pendant le geste enchaîne le coup
   suivant (la taille, puis le coup d'en haut). Coûte de l'endurance selon sa masse, même dans le vide.
 - Clic maintenu : la lancer.
