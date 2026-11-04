@@ -44,6 +44,32 @@ variantes (lâchés, attachés, barbe courte) et le portrait.
 **Les planches de l'essai 2** : `.art-preview/forge-dehors.png` (l'atelier seul sur la rue, en x2 avec Xéros, dans chacune des
 couvertures, tuiles d'abord) et `.art-preview/forge-forgeron.png`.
 
+## 0 bis. Retour de Grégoire sur l'essai 2 (4 novembre 2026) : la forge se bâtit
+
+- **Le forgeron est mis de côté** : on ne crée pas le personnage pour l'instant. Ses dessins restent dans
+  `art/proposals/forgeron.ts` (les trois variantes, les deux portraits, la rangée de l'essai 1), hors du jeu ; la section 5 le décrit
+  tel qu'il était proposé.
+- **Le toit de l'atelier et de l'abri à charbon : les bardeaux de chêne fendu, gris** (le bois vieux). Les trois couvertures sont
+  gardées comme pièces du jeu, chacune avec sa fiche, pour d'autres maisons du village : `shingle-roof-large`, `tile-roof-large`,
+  `lauze-roof-large`, et leur pan percé (`-pierced`). **Question 13, la pente** (connaissance générale, non sourcée) : les bardeaux
+  et les tuiles plates à **45°**, les lauzes de calcaire à **55°** (les toits de lauzes calcaires sont raides). La charpente de la
+  forge est celle de la grange relevée à 45° : des poinçons de 2,80 m au lieu de 2,20, des pignons à 45° (`board-gable-tall`), le
+  faîtage à 6,22 m. Le pignon à 55° (`board-gable-steep`) attend une maison couverte de lauzes. L'abri à charbon est un appentis de
+  bardeaux à environ 34° (poteaux nord de 3 m, sud de 1,60 m) : c'est le bas de ce qui convient aux bardeaux, pour garder un abri bas.
+- **Validé** : l'emplacement A (la première parcelle au nord de la rue, à l'entrée ouest), l'atelier version A seul, ses pièces (forge,
+  hotte, soufflet et sa perche, enclume et billot, auge, four, établi et étau, meule, râteliers, coffre à charbon, ferraille), l'abri
+  à charbon, le puits, la place réservée de la fonderie.
+- **Les questions restées ouvertes, réglées selon mes recommandations** (section 7) : 3, la charpente de la grange (relevée à 45°) ;
+  4, le four à chauffer et à recuire dans l'atelier, le bas fourneau plus tard à sa place réservée ; 6, le billot d'enclume, une pièce
+  nouvelle (Ø 60 × 55) ; 8, le puits à lui ; 10, le frère vendeur à un étal de la place, plus tard, avec les huit boutiques ; 11, le
+  travail à ferrer : la place seulement, quand il y aura des chevaux ; 12, l'ordre : les pièces (fiche, dessin), puis le plan par un
+  scénario (`npm run test:forge`), puis le rectangle `Plan` sur la carte. Sans objet, avec le logis et le forgeron mis de côté : 2
+  (la disposition : l'atelier seul), 5 (le toit : les bardeaux, choisis), 7 (le toit du logis), 9 (le forgeron).
+- **Ce qui est bâti** : le plan `src/content/plans/forge.json` (l'atelier, son mobilier, l'abri à charbon et ses sacs, le puits),
+  monté par `npm run test:forge` (`tools/lib/forge.ts`, la liste des pièces dans l'ordre du montage), posé sur `village.tmj` dans la
+  parcelle (destination `smithy`) ; la place de la fonderie, une parcelle réservée (destination `foundry`), vide ; la visite,
+  `npm run test:forge-visite`.
+
 ---
 
 ## 1. L'emplacement
