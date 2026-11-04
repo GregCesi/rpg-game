@@ -1035,3 +1035,26 @@ Deux choix, sur les planches :
 32. **La coupe de la cloison chaulée** : sa lisse est à 1,95-2,10 m, au-dessus de la coupe d'une cloison (1,90 m). La cloison est
     nord-sud : elle se voit entière, comme un mur de côté, sans coupe. Rien à changer au moteur. *Recommandation : la garder entière*,
     comme sur la planche « posée ».
+
+### 12.16 Accord de Grégoire sur les planches (5 novembre) ; le défaut de la hauteur du bois, arrêté avant correction
+
+**Accord écrit sur les cinq planches `coq-integration-*.png`.** Q31 : l'enduit de chaux sur la face du dedans. Q32 : la cloison chaulée
+se voit entière, comme un mur de côté.
+
+**Le défaut** (relevé par Grégoire) : la hauteur physique d'une pièce ne doit jamais venir de son dessin. Mesuré dans le code :
+
+- Seule **la pièce de bois** est en cause. `woodDims` (src/world/woodPiece.ts) ajoute le contour du dessin (`CONTOUR_CM`, 10 cm : un
+  pixel de chaque côté) à sa section couchée : une planche de 3 cm compte 13 cm, une poutre de 20 cm en compte 30, une bille du normal
+  de 30 cm en compte 40. Les autres objets ont des `dims` vraies (leur dessin est fait pour y tenir, contour compris).
+- Cette boîte sert à tout : l'empilement du mode construction (`boxOf`, `supportAt`, ce qui porte quoi), les dessus qui se marchent,
+  les tas de bois calculés (`woodPile.ts` : l'écart des couches), l'arme improvisée (`heft.ts`), le gabarit des dessins (validate.ts).
+- **Les cinq plans du monde sont bâtis sur ces hauteurs** : 118 pièces y reposent sur du bois couché (la cabane 28 sur 43, la maison
+  de Xéros 76 sur 171, la forge 7, la grange 6, l'étal 1). Avec des hauteurs vraies, toutes flotteraient (contrôle du porte-à-faux,
+  `validate.ts`) : il faut les recaler, donc réécrire les cinq plans et refaire leurs scénarios de montage (`test:cabane`, `test:grange`,
+  `test:etal`, `test:maison`, `test:forge`, les plus lourds de la suite) ; les parties sauvegardées qui ont bâti quelque chose aussi
+  (`SAVE_VERSION`, ou un recalage à la lecture).
+- **Ce qui se verra** : le dessin d'une pièce de bois garde son contour ; posées l'une sur l'autre à leur hauteur vraie, deux billes
+  se recouvrent de 2 px (la cabane en rondins, les poutres de la maison de Xéros, les tas de billes). C'est juste pour des rondins
+  entaillés, mais l'aspect de bâtiments déjà validés change : à regarder avec le pixel-artist et Grégoire.
+- Le relief et les marches de pierre ne sont pas touchés (leurs hauteurs viennent des données).
+
