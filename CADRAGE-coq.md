@@ -11,12 +11,23 @@ Chaque point sépare **les faits** (lus dans le code, les cartes, la conception)
 « C'est très bien. » **Les recommandations des 18 questions sont validées** (section 8), sauf l'emplacement : la maison va **plus
 près du centre, vers le nord, juste avant sa ferme, entre le quartier riche et la ferme du riche, avec la place d'un grand jardin**
 (section 1, refaite). Avant d'aller plus loin, **chaque pièce de la maison se valide une par une** : le catalogue des pièces
-(section 9, ses planches en section 7). **La lauze se reprend de la forge** (une seule source, section 10). La construction attend
-toujours la fusion du relief.
+(section 9, ses planches en section 7). **La lauze se reprend de la forge** (une seule source, section 10 ; renversé ensuite par
+la réponse 26 : c'est la nôtre qui reste). La construction attend toujours la fusion du relief.
 
 Ce que le catalogue a changé dans la structure (à valider avec lui, section 11) : le plancher porte sur des **muraillères et
 des corbeaux** (section 2) ; le toit est **à pannes**, sur les pignons, les refends et **une ferme** au-dessus de la salle ; **la
 cloison de pierre de l'étage (question 18) ne peut pas reposer sur le plancher** (question 19).
+
+### Le deuxième retour de Grégoire (4 novembre, après le catalogue)
+
+« C'est ce que je voulais. » Il regardera les planches en détail plus tard. **Les recommandations des questions 19 à 25 et 27
+sont validées** : la cloison de l'étage en pan de bois chaulé, le normal devant la façade retiré de la carte, la parcelle
+« Logis du riche » gardée pour un futur logis de ferme, l'aide de la mère jusqu'à environ 140 kg puis un engin de levage dans un
+chantier plus tard, les murs bâtis par morceaux qui consomment leurs blocs, les carreaux de 50, 70 et 90 cm, la clef au coq de
+50 cm, les dimensions corrigées. **Question 26, autrement que ma recommandation : notre lave, plus sombre et moussue, devient la
+seule lauze du jeu** ; celle de la forge sera remplacée par la nôtre quand la maison s'intégrera. La forge elle-même est couverte
+de bardeaux : rien ne change pour elle (section 10). Les réponses sont notées sous chaque question (section 11). **La maison est
+prête ; sa construction attend la fusion du relief.**
 
 ---
 
@@ -249,8 +260,8 @@ montent jusqu'au toit et portent la charpente avec les pignons.
     `dress-ashlar`). En façade, ses assises de 15 cm (3 px) risquent de se lire comme de la brique, le défaut déjà vu au chantier
     « pierre ». La planche de détail montre les deux, côte à côte (question 3).
 - **Le toit** : **des laves**, les lauzes de calcaire posées à sec en rangs serrés, de la même carrière que les murs : le toit le plus
-  lourd (de l'ordre de 600 kg/m²) et le plus cher, sur une charpente forte (chevrons du normal tous les 40 cm, deux fermes sur les
-  refends, les pignons). Pente de 45° (la même que la maison de Xéros). Faîtage de pierres, **pignons découverts** : les murs de bout
+  lourd (de l'ordre de 600 kg/m²) et le plus cher, sur une charpente forte (des pannes sur les pignons et les refends, une ferme
+  au-dessus de la salle, des chevrons tous les 40 cm : section 2, revue pour le catalogue). Pente de 45° (la même que la maison de Xéros). Faîtage de pierres, **pignons découverts** : les murs de bout
   montent au-dessus du toit, couronnés de dalles en rampant. Une lucarne de pierre au sud pour le grenier. Pas de chaume : c'est le
   toit des pauvres, et la maison de Xéros l'a.
 - **Les fenêtres** : de vraies **croisées de pierre** à l'étage (un meneau, une traverse, quatre jours), le signe des maisons riches.
@@ -429,9 +440,350 @@ Le modèle en volumes : `art/proposals/coq-maison.ts` ; la pierre, les baies, le
 | `.art-preview/coq-vue-joueur.png` (x2) | ce que voit le joueur au zoom de départ, au pied de l'escalier puis en haut (la caméra a glissé de 57 px) |
 | `.art-preview/coq-pierre-tapisserie.png` (x4) | le moyen appareil proposé, le petit appareil de la pierre de taille du jeu (il se lit comme de la brique), la pierre brute de Xéros ; la croisée et la demi-croisée, volets fermés et ouverts ; la porte en arc et son coq sur la clef ; les laves ; la verdure au coq et la tenture |
 | `.art-preview/coq-catalogue-pierre-1.png` (x4) | **le catalogue, la pierre** : les carreaux, la boutisse, la pierre d'angle, la pierre de tableau, le cordon, le corbeau, le bloc biais, la dalle de rampant, les seuils du jeu, la boutisse de refend ; « dans le mur » : un morceau de cinq assises, nu puis une lettre par bloc (le joint à 10 cm en rouge) |
-| `.art-preview/coq-catalogue-pierre-2.png` (x4) | la dalle de sol, la planche et la terre battue du jeu ; la lave (« à reprendre de la forge »), la faîtière, le couronnement, le fronton ; **notre pan de laves contre la lauze de la forge** ; la marche et la pierre d'échiffre |
+| `.art-preview/coq-catalogue-pierre-2.png` (x4) | la dalle de sol, la planche et la terre battue du jeu ; la lave (la seule lauze du jeu, réponse 26), la faîtière, le couronnement, le fronton ; **notre pan de laves contre la lauze de la forge** ; la marche et la pierre d'échiffre |
 | `.art-preview/coq-catalogue-pierre-3.png` (x4) | les pierres des baies (appui, linteau, meneaux, traverse, claveau, clef au coq, sommier), la clef à 50 cm, **l'arc assemblé**, **la croisée assemblée** |
 | `.art-preview/coq-catalogue-pierre-4.png` (x4) | les pierres des cheminées, l'évier, le potager, l'âtre du jeu, **le manteau de la salle assemblé** |
 | `.art-preview/coq-catalogue-bois-1.png` (x4) | **la ferme de la salle assemblée**, la solive, la muraillère, le chevêtre, la panne, l'entrait, la sablière (les images du jeu de la poutre), l'arbalétrier, le poinçon, le chevron (nouvel aspect), la latte |
 | `.art-preview/coq-catalogue-bois-2.png` (x4) | la potence, **le garde-corps assemblé** et ses pièces, le vitrail, le volet fermé et ouvert, le barreau, la porte en arc fermée et ouverte, dehors et dedans, le linteau intérieur, la porte intérieure du jeu, la poutre de manteau |
 | `.art-preview/coq-catalogue-bois-3.png` (x4) | les meubles en quatre vues (les vues du sud validées reprises au pixel près), le lit défait à côté du lit du jeu, la verdure redessinée, la tenture, la tringle, le coupon, les étains |
+
+---
+
+## 8. Questions pour Grégoire
+
+**Réponses du 4 novembre** : les dix-huit recommandations sont prises, sauf la 1 (l'emplacement : la parcelle « Maison du coq »,
+section 1). Les questions ouvertes par le catalogue sont **19 à 27, en section 11**. La réponse 18 (la cloison de pierre) est
+remplacée par la réponse 19 : une cloison de pan de bois chaulé, qu'aucun plancher n'a de mal à porter.
+
+Chacune avec ma recommandation ; une réponse « oui » prend la recommandation.
+
+1. **L'emplacement** : dans la cour de sa ferme, sur la parcelle « Logis du riche » (A), ou sur une parcelle du quartier riche (B) ?
+   *Recommandation : A, la cour de sa ferme* (section 1).
+2. **La version** : A (le logis de pierre, l'escalier dedans), B (l'escalier dehors et son palier couvert), C (en L, avec une tour
+   d'escalier à vis) ? *Recommandation : A.* B met l'escalier dehors, donc deux entrées à deux hauteurs et le relief dehors en plus de
+   l'étage dedans ; C demande un escalier à vis, qui tourne sur lui-même et se lit mal vu de dessus, et fait de lui un seigneur plus
+   qu'un paysan.
+3. **L'appareil des murs** : le moyen appareil (assises de 30 cm, un bloc nouveau de 50 × 30 × 30 cm, 108 kg, qu'on porte à deux ou
+   avec l'aide de la mère), ou le petit appareil de la pierre de taille qui existe (`ashlar`, assises de 15 cm, 29 kg) ?
+   *Recommandation : le moyen appareil* (il se lit comme de la pierre de riche ; le petit appareil, à 3 px par assise, tire vers la
+   brique : à juger sur `coq-pierre-tapisserie.png`). La pierre de taille existante sert alors aux appuis, aux seuils et aux marches.
+4. **« Traitées »** : la face layée et ciselée, la pierre nue (ma lecture), ou un badigeon de chaux sur la pierre ? *Recommandation : la
+   pierre nue, layée et ciselée* : c'est la pierre elle-même qu'on montre quand on a payé le tailleur.
+5. **Le toit** : des laves de calcaire (la même carrière que les murs, le plus lourd, le plus cher), de la tuile plate (une tuilerie
+   qui n'existe pas encore au monde), ou du chaume ? *Recommandation : les laves.*
+6. **Les fenêtres** : des croisées de pierre à l'étage avec des vitraux en losanges plombés dans les jours du haut, ou seulement des
+   volets (du papier huilé, de la toile cirée) ? *Recommandation : les vitraux en haut, les volets en bas* ; le verre est le luxe qui
+   se voit de la cour.
+7. **L'escalier** : de pierre, marche par marche sur un mur d'échiffre plein (ce que montrent les planches), ou de bois (une volée
+   droite de chêne, ses limons, un placard dessous) ? *Recommandation : la pierre* : la maison est de pierre du sol au faîte, chaque
+   marche est une pièce posée sur la précédente (bâtie pièce par pièce), et rien n'est à calculer dessous.
+8. **Les chambres de l'étage** : la fille derrière ses parents, en enfilade (on traverse leur chambre pour aller chez elle), ou un
+   couloir le long du mur nord qui la dessert (la chambre du coq rétrécit d'un mètre) ? *Recommandation : l'enfilade* (le vrai de ce
+   temps, et le père qui veille dit qui il est).
+9. **Le coq** : un coq sculpté sur la clef de l'arc de la porte, et un coq dans la verdure de la salle, l'emblème de la famille ? Et
+   une girouette en coq sur le faîte ? *Recommandation : oui à la clef et à la verdure, non à la girouette* (au village, la girouette est
+   celle du clocher).
+10. **La tapisserie** : une verdure de laine (feuillages, un coq) dans la salle et une tenture plus simple dans la chambre (ce que montre
+    la planche), ou une seule, dans la salle ? *Recommandation : les deux*, la verdure seule dans la salle, la tenture dans la chambre.
+11. **Les sols** : des dalles de calcaire dans la salle et le passage, la terre battue dans la cuisine, des planches à l'étage ?
+    *Recommandation : oui.* Le dallage est une pièce posée (la dalle de sol, `walk: true`) ; la terre battue de la cuisine est celle
+    des intérieurs calculés.
+12. **Le niveau affiché** : il change au milieu de l'escalier (la 8ᵉ marche), par un fondu de 250 ms, sans changer de carte (ma
+    proposition), ou à la dernière marche, ou par un fondu au noir comme une porte ? *Recommandation : au milieu, sans noir* : on monte en
+    marchant, et c'est le moment où la tête de Xéros passe le plancher.
+13. **Le grenier et la cave** : le grenier (sous les laves, le grain, la lucarne à poulie) se voit dehors mais ne se visite pas dans ce
+    chantier ; pas de cave. *Recommandation : oui*, un deuxième étage et un sous-sol viendront avec le même moteur, plus tard.
+14. **Le mode construction** : un bouton « niveau » dans le panneau (et une touche) pour voir et viser l'étage pendant qu'on bâtit ?
+    *Recommandation : oui*, sinon on ne pose rien sur le plancher une fois les murs montés.
+15. **Les gens de maison** : une servante qui dort dans la cuisine, des valets à la grange ? Pas demandé ; le plan leur laisse la
+    place (une paillasse près de l'âtre). *Recommandation : plus tard, avec la famille* (un autre chantier).
+16. **L'ordre** : la maison attend la fusion du relief ; avant, les pièces une à une (fiche, dessins, accord), en commençant par le
+    mur de pierre de taille et ses baies. *Recommandation : oui*, le mur haut de pierre est aussi ce qui manque à la petite maison de
+    pierre de l'essai « bâtiments ».
+17. **Xéros dans la trémie** (`coq-escalier.png`, 8ᵉ marche) : quand l'étage s'affiche, le bord du plancher lui cache les jambes. On
+    garde le rendu exact (on voit qu'il sort du trou), ou on le dessine par-dessus le plancher jusqu'à ce qu'il soit en haut ?
+    *Recommandation : le rendu exact*, c'est ce qu'on verrait, et cela dure deux pas.
+18. **La cloison de l'étage** (fille / parents) : en pan de bois chaulé (les remplissages de la maison de Xéros, réutilisés, mais un
+    trait de 3 px vu d'en haut), ou en pierre de 40 cm comme les refends ? *Recommandation : la pierre*, qui se lit et va avec la
+    maison ; la chambre de la fille perd 25 cm.
+
+---
+
+## 9. Le catalogue des pièces (version A, une par une)
+
+La maison ne marche que si chacune de ses pièces existe. Voici toutes celles de la version A, avec les réponses aux 18 questions
+(moyen appareil, pierre nue layée et ciselée, laves, vitraux en haut, escalier de pierre, enfilade, coq sur la clef et dans la
+verdure, deux tentures). **Une seule source** : `art/proposals/coq-catalogue-data.ts` (clé, dimensions, matière, part pleine, vues,
+pièce du jeu reprise, combien). Les planches et ce tableau en sortent. Les dessins sont du pixel-artist (section 7).
+
+- **La masse** : le volume de la boîte × la densité × la part pleine, comme `src/content/mass.ts` (calcaire 2 400 kg/m³, bois vert
+  900, fer 7 870, celui que la forge ajoute). « À deux, ou plus » : au-dessus des 70 kg que Xéros porte seul (`carry` de
+  strength.json). La plupart des pierres de taille sont dans ce cas (question 22).
+- **Les vues** : R0, la vue du sud ; R1 à R3, un quart de tour de plus à chaque fois, dans le sens des aiguilles d'une montre
+  (docs/STYLE.md). `symmetric` : R2 = R0 et R3 = R1, deux dessins. Les quatre vues de chaque pièce sont sur les planches.
+- **Le gabarit** : la silhouette de chaque vue mesurée contre `expectedSize` de ses dimensions (`src/content/gabarit.ts`, 2 px de
+  tolérance). Les vues nord-sud des pièces de bois couchées sont jugées par la règle D, comme au jeu.
+- **Refaire** : `npx tsx tools/essai-coq-catalogue-pierre.ts`, `npx tsx tools/essai-coq-catalogue-bois.ts`, puis
+  `npx tsx tools/essai-coq-catalogue-table.ts`, qui écrit ce tableau.
+
+#### La pierre de taille (assises de 30 cm)
+
+| Pièce | Dimensions (cm) | Masse | Matière | Vues | Gabarit | Au jeu | Combien |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **carreau de 40** `ashlar-block-40` | 40 × 20 × 30 | 58 kg | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | environ 700 |
+| **carreau de 60** `ashlar-block-60` | 60 × 20 × 30 | 86 kg (à deux, ou plus) | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | environ 1 200 |
+| **carreau de 80** `ashlar-block-80` | 80 × 20 × 30 | 115 kg (à deux, ou plus) | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | environ 500 |
+| **boutisse** `ashlar-header` | 30 × 60 × 30 | 130 kg (à deux, ou plus) | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | environ 350 |
+| **pierre d'angle** `ashlar-quoin` | 60 × 40 × 30 | 173 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 72 (4 angles × 18 assises) |
+| **pierre de tableau** `ashlar-jamb` | 40 × 60 × 30 | 173 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | environ 90 |
+| **cordon** `ashlar-string-course` | 60 × 30 × 20 | 82 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 78 (46 m de façade) |
+| **corbeau** `ashlar-corbel` | 30 × 40 × 30 | 69 kg | calcaire | R0 R1 R2 R3 | OK | nouvelle | 22 |
+| **bloc biais** `ashlar-slope-block` | 60 × 20 × 30 | 65 kg | calcaire | R0 R1 R2 R3 | HORS TOLÉRANCE (R3 : 4 × 9 px pour 4 × 12) | nouvelle | environ 80 |
+| **dalle de rampant** `gable-coping` | 60 × 70 × 15 | 151 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 36 (4 rampants de 4,80 m) |
+| **seuil de pierre** `threshold-stone` | 120 × 50 × 20 | 274 kg (à deux, ou plus) | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | existe : `threshold-stone` | 1 |
+| **seuil intérieur** `inner-threshold-stone` | 120 × 30 × 20 | 164 kg (à deux, ou plus) | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | existe : `inner-threshold-stone` | 5 |
+
+#### Les sols
+
+| Pièce | Dimensions (cm) | Masse | Matière | Vues | Gabarit | Au jeu | Combien |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **dalle de sol** `floor-flagstone` | 60 × 40 × 8 | 46 kg | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | environ 230 (55 m²) |
+| **planche de plancher** `wood-piece:big:plank` | 400 × 25 × 3 | 27 kg | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | HORS TOLÉRANCE (R0 : 80 × 6 px pour 80 × 3 ; R1 : 6 × 80 px pour 5 × 41) | existe : `wood-piece (gros, planche)` | environ 85 (8 rangs de 22 planches de 4 m) |
+| **terre battue (rappel)** `packed-earth` | — | — | terre | une (ronde) | OK | existe : `le sol calculé des intérieurs (world/buildingFloor.ts)` | la cuisine (26 m²) |
+
+#### La charpente et le plancher
+
+| Pièce | Dimensions (cm) | Masse | Matière | Vues | Gabarit | Au jeu | Combien |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **solive** `wood-piece:normal:beam-560` | 560 × 20 × 20 | 202 kg (à deux, ou plus) | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | existe : `wood-piece (normal, poutre)` | 30 (tous les 50 cm) |
+| **muraillère** `wood-piece:normal:beam-wallplate` | 480 × 20 × 20 | 173 kg (à deux, ou plus) | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | existe : `wood-piece (normal, poutre)` | 8 (deux files, les pièces entées) |
+| **chevêtre** `wood-piece:normal:beam-120` | 120 × 20 × 20 | 43 kg | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | existe : `wood-piece (normal, poutre)` | 2 |
+| **panne** `wood-piece:normal:beam-purlin` | 500 × 20 × 20 | 180 kg (à deux, ou plus) | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | existe : `wood-piece (normal, poutre)` | 15 (faîtière et deux pannes par pan, 5 travées) |
+| **entrait (une moitié)** `wood-piece:normal:beam-tie` | 360 × 20 × 20 | 130 kg (à deux, ou plus) | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | existe : `wood-piece (normal, poutre)` | 2 (entées) |
+| **arbalétrier** `wood-piece:normal:beam-principal` | 20 × 340 × 340 | 173 kg (à deux, ou plus) | bois (chêne) | R0 R1 R2 R3 | HORS TOLÉRANCE (R1 : 71 × 75 px pour 68 × 72 ; R2 : 4 × 6 px pour 4 × 136 ; R3 : 71 × 75 px pour 68 × 72) | existe : `wood-piece (normal, poutre)` | 2 |
+| **poinçon** `wood-piece:normal:beam-kingpost` | 20 × 20 × 340 | 122 kg (à deux, ou plus) | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | existe : `wood-piece (normal, poutre, debout)` | 1 |
+| **sablière** `wood-piece:normal:beam-plate` | 560 × 20 × 20 | 202 kg (à deux, ou plus) | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | existe : `wood-piece (normal, poutre)` | 6 |
+| **chevron** `wood-piece:normal:rafter` | 10 × 340 × 340 | 43 kg | bois (chêne) | R0 R1 R2 R3 | HORS TOLÉRANCE (R2 : 2 × 3 px pour 2 × 136) | nouvel aspect du bois (`wood.json`) | 82 (tous les 40 cm, deux pans) |
+| **latte** `wood-piece:pole:lath` | 400 × 6 × 3 | 6,5 kg | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | HORS TOLÉRANCE (R0 : 80 × 4 px pour 80 × 1) | existe : `wood-piece (perche, latte)` | environ 120 (un rang par rang de laves) |
+
+#### Le toit
+
+| Pièce | Dimensions (cm) | Masse | Matière | Vues | Gabarit | Au jeu | Combien |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **lave** `stone-slate` | 40 × 50 × 4 | 15 kg | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle : **la seule lauze du jeu** (remplace celle de la forge) | environ 5 000 (170 m², 3 épaisseurs) |
+| **faîtière de pierre** `ridge-stone` | 40 × 60 × 20 | 58 kg | calcaire | R0 R1 (R2 = R0, R3 = R1) | HORS TOLÉRANCE (R0 : 8 × 7 px pour 8 × 10) | nouvelle | 41 (16,40 m de faîte) |
+| **couronnement** `chimney-cap` | 140 × 100 × 10 | 279 kg (à deux, ou plus) | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | existe : `chimney-cap` | 2 |
+| **fronton de lucarne** `dormer-pediment` | 120 × 30 × 70 | 302 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | HORS TOLÉRANCE (R1 : 6 × 21 px pour 6 × 26 ; R3 : 6 × 21 px pour 6 × 26) | nouvelle | 1 |
+| **potence à poulie** `hoist-beam` | 20 × 100 × 20 | 32 kg | bois (chêne) | R0 R1 R2 R3 | OK | nouvelle | 1 |
+
+#### L'escalier et la trémie
+
+| Pièce | Dimensions (cm) | Masse | Matière | Vues | Gabarit | Au jeu | Combien |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **marche de pierre** `stone-step` | 100 × 30 × 19 | 137 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 14 |
+| **pierre d'échiffre** `stair-stringer-block` | 60 × 20 × 30 | 69 kg | calcaire | R0 R1 R2 R3 | OK | nouvelle | environ 20 |
+| **poteau de garde-corps** `wood-piece:normal:post` | 10 × 10 × 100 | 9,0 kg | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK | nouvel aspect du bois (`wood.json`) | 4 |
+| **main courante** `wood-piece:normal:rail` | 280 × 10 × 10 | 25 kg | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | nouvel aspect du bois (`wood.json`) | 2 (280 et 100 cm) |
+| **balustre** `wood-piece:pole:lath-baluster` | 6 × 3 × 80 | 1,3 kg | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK | existe : `wood-piece (perche, latte, debout)` | 24 (tous les 15 cm) |
+
+#### Les baies (croisée, demi-croisée, porte)
+
+| Pièce | Dimensions (cm) | Masse | Matière | Vues | Gabarit | Au jeu | Combien |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **appui de baie** `window-sill` | 125 × 30 × 15 | 135 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 11 |
+| **linteau de baie** `window-lintel` | 145 × 30 × 30 | 313 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 12 |
+| **meneau du bas** `mullion-low` | 15 × 20 × 90 | 65 kg | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | 6 |
+| **meneau du haut** `mullion-high` | 15 × 20 × 55 | 40 kg | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | 6 |
+| **traverse** `transom` | 105 × 20 × 15 | 76 kg (à deux, ou plus) | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | 11 |
+| **vitrail en losanges** `leaded-glass` | 45 × 3 × 55 | 4,0 kg | verre et plomb | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | 12 (croisées) + 5 (impostes des demi-croisées, 105 × 45) |
+| **volet de croisée** `casement-shutter` | 45 × 3 × 90 | 9,8 kg | bois (chêne) | R0 R1 R2 R3 | OK | nouvelle | 22 |
+| **barreau de fer** `window-bar` | 3 × 3 × 90 | 4,5 kg | fer | une (ronde) | OK | nouvelle | 20 (4 par demi-croisée) |
+| **claveau de l'arc** `door-voussoir` | 30 × 60 × 30 | 105 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 8 |
+| **clef au coq** `door-keystone` | 30 × 60 × 35 | 124 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 1 |
+| **sommier de l'arc** `door-springer` | 40 × 60 × 30 | 164 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 2 |
+| **porte de chêne en arc** `oak-arch-door` | 110 × 8 × 220 | 162 kg (à deux, ou plus) | bois (chêne) | R0 R1 R2 R3 | HORS TOLÉRANCE (R1 : 2 × 60 px pour 2 × 66 ; R3 : 2 × 60 px pour 2 × 66 ; R0 : 2 × 60 px pour 2 × 66 ; R2 : 2 × 60 px pour 2 × 66) | nouvelle | 1 (et son état ouvert) |
+
+#### Les refends et la cloison
+
+| Pièce | Dimensions (cm) | Masse | Matière | Vues | Gabarit | Au jeu | Combien |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **boutisse de refend** `ashlar-header-40` | 30 × 40 × 30 | 86 kg (à deux, ou plus) | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | environ 200 |
+| **linteau de porte intérieure** `wood-piece:normal:beam-inner-lintel` | 130 × 20 × 20 | 47 kg | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | existe : `wood-piece (normal, poutre)` | 10 (deux par porte) |
+| **porte intérieure** `inner-door` | 90 × 5 × 180 | 44 kg | bois (chêne) | R0 R1 R2 R3 | OK | existe : `inner-door` | 5 |
+
+#### Les cheminées
+
+| Pièce | Dimensions (cm) | Masse | Matière | Vues | Gabarit | Au jeu | Combien |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **jambage de cheminée** `fireplace-jamb` | 40 × 50 × 110 | 528 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 2 (la salle) |
+| **console de hotte** `fireplace-console` | 40 × 60 × 30 | 121 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | HORS TOLÉRANCE (R0 : 8 × 9 px pour 8 × 12) | nouvelle | 2 (la salle) |
+| **claveau de manteau** `mantel-voussoir` | 30 × 40 × 40 | 104 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 8 (la salle, 2,40 m) |
+| **contrecœur** `fireback` | 120 × 10 × 100 | 288 kg (à deux, ou plus) | calcaire | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | 3 |
+| **jambage de cheminée de chambre** `small-fireplace-jamb` | 30 × 40 × 100 | 288 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 2 |
+| **linteau de cheminée de chambre** `small-fireplace-lintel` | 160 × 30 × 30 | 346 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 1 |
+| **poutre de manteau** `wood-piece:normal:beam-mantel` | 260 × 20 × 20 | 94 kg (à deux, ou plus) | bois (chêne) | R0 R1 (R2 = R0, R3 = R1) | OK (R1 par la règle D) | existe : `wood-piece (normal, poutre)` | 1 (la cuisine) |
+| **âtre** `stone-hearth` | 220 × 110 × 150 | 3 659 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | existe : `stone-hearth` | 1 (la cuisine) |
+| **évier de pierre** `stone-sink` | 80 × 50 × 15 | 101 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 1 (la cuisine) |
+| **dalle de potager** `stove-slab` | 120 × 60 × 12 | 176 kg (à deux, ou plus) | calcaire | R0 R1 R2 R3 | OK | nouvelle | 1 (la cuisine) |
+
+#### Les meubles nouveaux et les tentures
+
+| Pièce | Dimensions (cm) | Masse | Matière | Vues | Gabarit | Au jeu | Combien |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **lit à courtines** `canopy-bed` | 160 × 210 × 200 | 121 kg (à deux, ou plus) | bois (chêne) | R0 R1 R2 R3 | OK | nouvelle | 1 |
+| **dressoir** `dresser` | 100 × 45 × 180 | 73 kg (à deux, ou plus) | bois (chêne) | R0 R1 R2 R3 | HORS TOLÉRANCE (R0 : 22 × 43 px pour 20 × 41) | nouvelle | 1 |
+| **chaise à haut dossier** `high-chair` | 55 × 50 × 130 | 26 kg | bois (chêne) | R0 R1 R2 R3 | HORS TOLÉRANCE (R2 : 10 × 27 px pour 11 × 31) | nouvelle | 1 |
+| **pétrin** `kneading-trough` | 150 × 60 × 80 | 78 kg (à deux, ou plus) | bois (chêne) | R0 R1 R2 R3 | OK | nouvelle | 1 |
+| **écritoire** `writing-desk` | 90 × 60 × 75 | 29 kg | bois (chêne) | R0 R1 R2 R3 | HORS TOLÉRANCE (R3 : 12 × 27 px pour 12 × 24) | nouvelle | 1 |
+| **table de tailleuse** `tailor-table` | 140 × 70 × 75 | 33 kg | bois (chêne) | R0 R1 R2 R3 | OK | nouvelle | 1 |
+| **coupon d'étoffe** `cloth-bolt` | 40 × 30 × 10 | 2,0 kg | laine, étoffe ou étain | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | quelques-uns |
+| **étains (plat, pichet)** `pewter` | 30 × 30 × 25 | 2,0 kg | laine, étoffe ou étain | une (ronde) | OK | nouvelle | 6 |
+| **lit défait (état)** `bed:unmade` | 150 × 200 × 80 | 65 kg | bois (chêne) | R0 R1 R2 R3 | HORS TOLÉRANCE (R2 : 31 × 30 px pour 30 × 36) | existe : `bed` | 1 (le fainéant) |
+| **verdure au coq** `verdure-tapestry` | 240 × 5 × 160 | 8,0 kg | laine, étoffe ou étain | R0 R1 R2 R3 | OK | nouvelle | 1 (la salle) |
+| **tenture** `wall-hanging` | 160 × 5 × 120 | 3,0 kg | laine, étoffe ou étain | R0 R1 R2 R3 | OK | nouvelle | 1 (la chambre) |
+| **tringle de fer** `hanging-rod` | 260 × 6 × 8 | 2,9 kg | fer | R0 R1 (R2 = R0, R3 = R1) | OK | nouvelle | 2 |
+
+*72 pièces ; 226 vues mesurées, 20 hors tolérance (± 2 px, `TOLERANCE` de src/content/gabarit.ts).*
+
+
+### Les écarts au gabarit, un par un
+
+Aucun n'est une faute de dessin. Ce sont tous des pièces qui ne remplissent pas leur boîte, ou des images du jeu :
+
+| Pièce, vue | Pourquoi |
+| --- | --- |
+| bloc biais R3, faîtière R0, fronton R1 et R3, console de hotte R0 | la pièce n'est pas une boîte : la pente à 45°, le V du faîte, le triangle, la gorge ne remplissent pas le haut de la boîte |
+| planche de plancher R0 et R1 (image du jeu) | la pièce de bois du jeu a 6 px de haut pour 3 cm ; la boîte en voudrait 3 |
+| latte R0 et R1 (image du jeu) | la latte de 3 cm fait 4 px au jeu, pas 1 |
+| arbalétrier R1 et R3 (71 × 75 pour 68 × 72) | une poutre de 20 cm posée à 45° déborde sa boîte de 340 cm : la boîte juste serait 355 × 355 (à corriger dans les données) |
+| arbalétrier et chevron R2 | posés à 45°, vus par leur tranche : c'est la projection |
+| poinçon R0 | debout, la règle D debout (la largeur de la poutre couchée) |
+| porte en arc R1, R3, ouverte R0, R2 | le plein cintre n'a pas toute sa hauteur sur toute sa largeur |
+| dressoir R0 (validé) | la corniche déborde de 2,5 cm de chaque côté ; la vue validée est gardée |
+| chaise R2, lit défait R2 | vus du nord, le dossier ou le chevet cachent le siège ou le lit : la boîte surestime |
+| écritoire R3 | le pupitre et les livres montent à 92 cm : la hauteur juste est 90, pas 75 (à corriger dans les données) |
+
+### Ce que le catalogue a appris
+
+- **Le mur se fait de peu de pièces** : trois carreaux, une boutisse, la pierre d'angle, la pierre de tableau. On le voit sur la
+  planche « dans le mur » (`coq-catalogue-pierre-1.png`, une lettre par bloc). Il faut environ **2 800 blocs et 430 t de pierre**
+  (l'ordre de grandeur : 500 m² de parement, 5,6 blocs au m²). Le toit pèse environ 100 t de laves.
+- **Les longueurs 40, 60 et 80 avec une boutisse de 30 de face** : une recherche complète du pixel-artist le montre, aucun
+  morceau de cinq assises avec chaîne d'angle et tableau ne garde tous ses joints à 15 cm d'écart. Il reste un joint à 10 cm
+  (en rouge sur la planche). Le parement validé (`ashlarWall`) tire, lui, des blocs de 50 à 90 cm. Il faut accorder les deux
+  (question 24).
+- **La pierre d'angle et la pierre de tableau** d'une assise sur deux ne sont pas la même pierre tournée : à cause de leurs deux
+  faces vues, il faut la retourner lit pour lit (en miroir). Une pièce, quatre vues, posée tantôt dans un sens, tantôt dans l'autre.
+- **La clef au coq de 30 cm** ne laisse que 4 px de face : le coq y fait 4 × 4 px, à peine lisible. Le coq validé fait 8 × 6 px, sur
+  une clef d'environ 50 cm. La planche montre les deux (question 25).
+- **Le sommier de l'arc** porte les dix premiers degrés de l'arc. Les claveaux remplissent alors 0,73 de leur boîte, au lieu de
+  0,81 : 95 kg chacun, au lieu de 105.
+- **Le balustre** : la latte existe au jeu, mais pas debout. Le pixel-artist l'a dessinée debout, 2 × 17 px : c'est une vue de plus
+  à ajouter à la latte.
+- **Les meubles** : les six vues du sud validées sont reprises au pixel près, et leurs trois autres vues sont dessinées. Pour
+  l'instant, leurs modèles existent en double (`coq-maison.ts` n'exporte que leurs images) : à réunir à l'intégration.
+- **Le lit défait** reprend la palette du lit du jeu, dont le bois est dans la rampe de l'écorce, pas dans les signes du bois
+  patiné. C'est l'écart déjà présent au jeu, à reprendre avec le lit.
+- **La verdure** est redessinée selon les remarques : des feuilles en lobes et en pointes, le coq sur un médaillon cerné d'ocre.
+
+### Ce qui ne va pas encore
+
+- La clef au coq de 30 cm est illisible (question 25). Les sommiers se distinguent mal des pierres de tableau, et les tableaux
+  de l'arc se lisent comme des boîtes empilées.
+- Les plus petites pièces (le carreau vu de côté, 4 px ; les meneaux, 3 px ; le barreau, 2 px ; les étains, 6 × 8 px) montrent
+  peu de leur matière : c'est l'échelle.
+- Le volet ouvert et la porte ouverte sont la pièce fermée tournée d'un quart, comme `inner-door-open` au jeu. Ils ne sont pas
+  montrés posés dans leur baie.
+- La potence à poulie : sa corde ne pend que de 5 cm, pour tenir dans la boîte de 20 × 100 × 20. Une vraie corde qui pend
+  demande une boîte plus haute.
+
+---
+
+## 10. Les lauzes : une seule source, la nôtre
+
+La session de la forge (branche `forge`, commit `e77165c`, `art/proposals/forge-toits.ts`) rendait alors les trois couvertures
+(tuiles, bardeaux, lauzes) utilisables au jeu. Je recommandais de prendre sa lauze telle quelle. **Grégoire a choisi la nôtre
+(réponse 26)** : notre lave, plus sombre et moussue, devient **la seule lauze du jeu**. Quand la maison s'intégrera, la lauze de
+la forge sera remplacée par la nôtre : une seule source, celle de ce chantier. La forge elle-même est couverte de **bardeaux** :
+rien ne change pour elle.
+
+**Ce qui est au jeu depuis la fusion de la forge** (`origin/main`, 0694dc8) : la couverture `slates` de `art/world/forge-roofs.ts`
+(la rampe du calcaire, rangs de 6 px à l'égout à 3 au faîte, lichens, lauzes de faîtage à cheval), à 55° et non plus à 37° comme
+dans l'essai e77165c comparé ci-dessous ; deux pièces la portent, `lauze-roof-large` et `lauze-roof-large-pierced` (props.json,
+fiche `docs/objets/lauze-roof-large.md`). **Aucun plan ne les pose** : les remplacer ne change aucun bâtiment du monde. À
+l'intégration, `slatesTex` et les lauzes de faîtage prennent nos matières (pixel-artist), et les deux pièces gardent leur clé.
+
+`coq-catalogue-pierre-2.png` met côte à côte notre pan à 45°, la lauze de l'essai de la forge sur le même pan à 45° et un
+morceau du toit de l'atelier de cet essai, à 37°.
+
+Ce qui diffère :
+
+| | Notre lave (`laves`, `lavesRidge` de coq-pierre.ts) | La lauze de la forge (`roofQuads('slates')`) |
+| --- | --- | --- |
+| Couleurs | quatre signes propres, plus gris et plus sombres que le calcaire (#a8a194 à #463d3e) | la rampe du calcaire du monde (`! + = ; ~`), claire, crème |
+| Largeur des dalles | 35 à 80 cm à l'égout, 35 % plus étroites vers le faîte ; coins arrondis | 25 à 50 cm, la même partout |
+| Pureau | 25 cm à l'égout, 15 cm au faîte, le long de la pente | environ 21 cm à l'égout, 11 cm au faîte |
+| Lecture d'un rang | le chant, son arête au soleil, le dos, le creux sous le rang du dessus | la tranche au jour, l'ombre portée |
+| Pente | 45° | 37° (la charpente de la grange) |
+| Épaisseur à l'égout | 3 px, des laves empilées | 2,5 px, d'un seul ton |
+| Mousse, lichen | mousse verte en plaques, dans les creux | lichen jaune et vert sur 4 % des dalles |
+| Faîtage | faîtières taillées en bâtière de 40 cm | grosses lauzes posées à cheval |
+| Masse | environ 600 kg/m² (trois épaisseurs) | « 300 kg/m² et plus » |
+
+**À l'œil**, la nôtre est plus sombre, plus moussue, à grandes dalles. Celle de la forge est plus claire, plus petite, plus
+régulière. **À l'intégration**, la lauze du jeu prend de la nôtre : les quatre signes et leurs couleurs, la largeur des dalles qui
+diminue vers le faîte, le pureau, la mousse dans les creux, l'épaisseur à l'égout, la faîtière de pierre taillée et la masse au
+mètre carré (environ 600 kg/m², sur laquelle se calcule la charpente). La pente reste celle de chaque toit (45° ici, 55° pour les
+pans de la forge) : la lauze se dessine sur toute pente, comme la forge l'a fait.
+
+---
+
+## 11. Les questions ouvertes par le catalogue
+
+19. **La cloison de pierre de l'étage** (question 18, validée) : un mur de pierre de 40 cm entre la chambre du coq et celle de sa
+    fille pèse environ 14 t. Il ne peut pas reposer sur le plancher de bois : rien au-dessus du vide, et un plancher ne porte pas un
+    mur. Trois façons de faire :
+    a. **un refend de fond** : le mur descend jusqu'au sol, à x 1300. La salle passe de 43 à 27 m² (4,80 × 5,60 m), et un **cabinet**
+       de 13 m² naît sous la chambre de la fille (le coffre des comptes du coq). La grande table de 4,20 m y tient sans marge ;
+    b. **une cloison de pan de bois chaulé** sous la ferme de la salle : légère, posée sur une solive doublée, faite des pièces qui
+       existent déjà (`lime-panel`, `door-frame`). La salle garde ses 43 m². Il faudra dessiner sa coupe pour qu'elle se lise ;
+    c. **une cloison de planches** (des planches debout entre deux poteaux) : la plus légère, la moins riche.
+    *Recommandation : b.* « De plus grandes pièces » était la demande, et la salle de 43 m² est ce qui la tient. La ferme qui est
+    au-dessus porte le toit, et la cloison n'a rien d'autre à porter. Le défaut de lecture (le trait de 3 px) se règle au dessin : une
+    lisse chaulée plus large au-dessus de la coupe.
+    **Réponse : b, validée.** La cloison de x 1300 est en pan de bois chaulé ; la salle garde ses 43 m².
+20. **Le normal devant la façade** (case 88, 120 de la ferme du riche) : on le retire de la carte quand on pose la maison, ou on
+    décale la maison ? *Recommandation : le retirer* (c'est un objet de Tiled ; la maison reste où elle est le mieux vue).
+    **Réponse : validée.** Le normal de la case (88, 120) sera retiré de la carte quand on posera la maison.
+21. **La parcelle « Logis du riche »** de la cour : elle garde sa destination de logis de ferme (le maître valet, les communs) ?
+    *Recommandation : oui, telle quelle.*
+    **Réponse : validée.** Elle reste pour un futur logis de ferme.
+22. **Lever les pierres** : presque tous les blocs dépassent les 70 kg de Xéros (le carreau de 60 pèse 86 kg, le linteau de baie
+    313 kg, le jambage de la cheminée 528 kg). Comme pour les poutres, l'aide de la mère (clic maintenu) jusqu'à environ 140 kg, et
+    plus tard **une chèvre** (un engin de levage à treuil, et la louve qui tient le bloc) pour le reste ? *Recommandation : oui.* La
+    chèvre est un autre chantier, et le monde ne limite pas : le refus dira ce qui manque à Xéros.
+    **Réponse : validée.** L'aide de la mère jusqu'à environ 140 kg ; un engin de levage dans un chantier plus tard.
+23. **Poser le mur** : bloc par bloc (2 800 poses), ou par **morceau de mur de pierre de taille** (un élément `wall` de toute
+    longueur, comme le solin taillé, qui consomme ses blocs et les dessine depuis `walls.json`), avec les pièces de forme (angle,
+    tableau, appui, linteau, cordon, claveaux, marches) posées une à une ? *Recommandation : le morceau de mur*, avec les pièces de
+    forme une à une. Les blocs restent de vrais objets : on les taille, on les porte, le mur les prend.
+    **Réponse : validée.** Les murs se bâtissent par morceaux qui consomment leurs blocs ; les pièces de forme se posent une à une.
+24. **Les longueurs des carreaux** : 40, 60, 80 avec une boutisse de 30 de face (un joint reste à 10 cm), ou **50, 70, 90** avec une
+    boutisse de 40 de face (les longueurs du parement validé) ? *Recommandation : 50, 70, 90 et une boutisse de 40.* Le parement
+    validé n'en est pas changé, et les joints tiennent. Les masses passent à 72, 101, 130 et 173 kg.
+    **Réponse : validée.** Carreaux de 50, 70 et 90 cm, boutisse de 40 de face. Le catalogue (dessins et tableau) est encore en 40,
+    60 et 80 : il passera aux nouvelles longueurs avec les dessins de l'intégration (pixel-artist).
+25. **La clef au coq** : 30 cm de large (le coq à 4 × 4 px, illisible) ou **50 × 60 × 50 cm** (le coq validé, 8 × 6 px, environ 300 kg) ?
+    *Recommandation : 50 cm*, celle de la planche validée.
+    **Réponse : validée.** La clef au coq fait 50 × 60 × 50 cm ; elle aussi passera dans les données à l'intégration.
+26. **La lauze** : on prend celle de la forge telle qu'elle sera, et la maison du coq ne garde que sa pente et sa faîtière ; ou on
+    propose à la forge de rapprocher sa lauze de la nôtre (plus grande, plus sombre, de la mousse plutôt que du lichen) ? *Recommandation :
+    prendre celle de la forge telle quelle.* Une seule source, et c'est la forge qui la met au jeu. La faîtière de pierre de ce
+    catalogue lui est proposée.
+    **Réponse : notre lave**, plus sombre et moussue, devient la seule lauze du jeu ; elle remplacera celle de la forge à
+    l'intégration de la maison. La forge est en bardeaux : rien ne change pour elle (section 10). Le tableau et la planche le
+    disent déjà (« la seule lauze »).
+27. **Les dimensions à corriger** (relevées par les dessins) : l'arbalétrier et le chevron en boîte de 355 × 355 et 347 × 347 (et
+    non 340), l'écritoire à 90 cm de haut (et non 75), les claveaux à 0,73 de plein. *Recommandation : oui*, à l'intégration de
+    chaque pièce.
+    **Réponse : validée**, à l'intégration de chaque pièce.

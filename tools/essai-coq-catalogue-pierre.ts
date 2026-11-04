@@ -162,7 +162,7 @@ function pieceCell(p: Piece): Cell {
     { text: `${w} X ${d} X ${h} CM${p.dims.ground ? ' (PIECE DE BATIMENT)' : ''}${p.dims.shape === 'flat' ? ' (A PLAT)' : ''}`, color: GREY },
     { text: p.matter === 'fixed' && !p.kg ? 'MASSE : SANS (LE SOL)' : `MASSE ${Math.round(m)} KG, XEROS SEUL : ${m <= CARRY ? 'OUI' : `NON (${Math.round(m)} KG, IL EN PORTE ${CARRY})`}`, color: m <= CARRY ? GREY : RED },
     { text: EXISTING_MATTER[p.key] ?? STONE_PIECES[p.key]?.matter ?? '', color: GREY },
-    { text: p.forge ? 'NOUVELLE, A REPRENDRE DE LA FORGE' : p.existing ? `EXISTE : ${p.existing}` : 'NOUVELLE', color: p.forge ? RED : p.existing ? GREEN : WHITE },
+    { text: p.forge ? 'NOUVELLE, LA SEULE LAUZE (REMPLACE CELLE DE LA FORGE)' : p.existing ? `EXISTE : ${p.existing}` : 'NOUVELLE', color: p.forge ? GOLD : p.existing ? GREEN : WHITE },
   ];
   const rs: (0 | 1 | 2 | 3)[] = p.views === 'four' ? [0, 1, 2, 3] : p.views === 'symmetric' ? [0, 1] : [0];
   views.forEach((v, i) => {
@@ -244,7 +244,7 @@ async function laveCell(): Promise<Cell> {
     lines.push(
       { text: '2 : LAUZE DE LA FORGE (forge-toits.ts leanToQuads slates) MEME PAN', color: WHITE },
       { text: '3 : LAUZE DE LA FORGE SUR SON TOIT (roofQuads slates), 2 M DE LARGE', color: WHITE },
-      { text: 'IL N EN FAUT QU UNE : LA NOTRE EST A REPRENDRE DE LA FORGE', color: RED },
+      { text: 'IL N EN FAUT QU UNE : LA NOTRE, QUI REMPLACE CELLE DE LA FORGE', color: GOLD },
     );
   }
   return { views, lines };

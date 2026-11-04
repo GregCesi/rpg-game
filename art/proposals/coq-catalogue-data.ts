@@ -45,7 +45,7 @@ export interface Piece {
   existing?: string;
   /** Un nouvel aspect de la pièce de bois (wood.json), pas une nouvelle clé (CLAUDE.md : « un nouveau bois = un état »). */
   woodLook?: boolean;
-  /** À reprendre de la branche forge (une seule source). */
+  /** La seule lauze du jeu (réponse 26 de Grégoire) : elle remplacera celle de la forge quand la maison s'intégrera. */
   forge?: boolean;
   /** Combien la maison en demande (ordre de grandeur). */
   count: string;

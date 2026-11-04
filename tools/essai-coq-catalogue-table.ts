@@ -34,7 +34,7 @@ function gabarit(p: Piece): string {
 }
 
 function origin(p: Piece): string {
-  if (p.forge) return '**à reprendre de la forge**';
+  if (p.forge) return 'nouvelle : **la seule lauze du jeu** (remplace celle de la forge)';
   if (p.woodLook) return 'nouvel aspect du bois (`wood.json`)';
   if (p.existing) return `existe : \`${p.existing}\``;
   return 'nouvelle';
@@ -50,7 +50,7 @@ for (const g of GROUPS) {
   for (const p of ps) {
     const m = massOf(p);
     const mass = p.matter === 'fixed' && !m ? '—' : `${kg(m)} kg${m > CARRY ? ' (à deux, ou plus)' : ''}`;
-    const matter = p.matter === 'fixed' ? (p.group === 'meubles' ? 'laine, étoffe ou étain' : 'verre et plomb') : MATTER[p.matter];
+    const matter = p.matter === 'fixed' ? (p.group === 'meubles' ? 'laine, étoffe ou étain' : p.group === 'sols' ? 'terre' : 'verre et plomb') : MATTER[p.matter];
     const dims = p.dims.shape === 'flat' ? '—' : `${p.dims.w} × ${p.dims.d} × ${p.dims.h}`;
     out.push(`| **${p.name}** \`${p.key}\` | ${dims} | ${mass} | ${matter} | ${viewsOf(p)} | ${gabarit(p)} | ${origin(p)} | ${p.count} |`);
   }
