@@ -149,7 +149,10 @@ await playtest('lapins', async ({ page, load }) => {
     out.walkEntered = true;
 
     // ---------- en marche discrète : plus près ----------
-    out.sneak = (await measure(['AltLeft', 'KeyD'])).seen;
+    const b = await measure(['AltLeft', 'KeyD']);
+    out.sneak = b.seen;
+    // il rentre au terrier et y tambourine : l'alerte ferait fuir le lapin de l'essai suivant, sorti à 11 m de là
+    await W.__until(() => !find(b.id), `le lapin ${b.id} entre au terrier`);
     out.senses = { walk: def.senses.walk, sneak: def.senses.sneak };
 
     // ---------- la force au maximum, un coup de branche : un lapin mort ----------
@@ -168,7 +171,7 @@ await playtest('lapins', async ({ page, load }) => {
     // la branche est dans la main droite (clic gauche) : contre ce qui encaisse un coup, une ressource frappe
     const button = await W.__do('strike', { at: { x: at.x, y: at.y - 3 } });
     out.button = button;
-    await W.__until(() => !find(c), 'le lapin tué disparaît');
+    await W.__until(() => !find(c), `le lapin tué disparaît (coup : ${JSON.stringify(button)} ; le lapin ${JSON.stringify(find(c))} ; Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}))`);
     await W.__settle();
     const ground = gs.game.maps.ferme.ground as { item?: string; x: number; y: number }[];
     const dead = ground.find((o) => o.item === def.becomes);
