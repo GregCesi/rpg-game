@@ -800,6 +800,20 @@ gradins et les buissons, droits, dans leurs vues) ; les scènes du joueur en x2 
 rivière, à la bouche est) ; la vue d'ensemble du tunnel de la ferme au plateau, vue de dehors ; la bouche est vue depuis la ferme.
 Planches `.art-preview/relief-gradins-*.png` (`npx tsx tools/essai-relief-gradins.ts`).
 
+**Les essais (4 novembre, pixel-artist, à valider)** : `.art-preview/relief-gradins-1-matieres.png` (les matières en x4, les plantes
+dans leurs vues : noisetier, jeune frêne et églantier ronds, une vue ; le buisson long symétrique, deux vues), `relief-gradins-2-scenes.png`
+(côté ferme, au-dessus de la rivière, à la bouche est, en x2 au zoom de départ), `relief-gradins-3-ensemble.png` (le tunnel vu de
+dehors), `relief-gradins-4-bouche.png` (le fer à cheval vu depuis la ferme) ; refaire : `npx tsx tools/essai-relief-gradins.ts`
+(art/proposals/relief-gradins.ts, relief-gradins-scene.ts). Les 50 cm se lisent à l'écran : un gradin fait 10 px, une marche 25 px.
+
+40. **Vers le plateau**, le chemin monte de 0 à 5 m et le trou s'aplatit : sur la planche, les quatre marches rapetissent ensemble
+    (trois rangées d'arbres jusqu'au bout), mais sous 1 m une marche devient franchissable et Xéros pourrait sortir du trou par les
+    côtés. *Autre façon* : les marches du bas s'enterrent une à une (une rangée d'arbres de moins à chaque fois). *Recommandation :
+    s'enterrer une à une*, le chemin reste le seul passage.
+41. **La vue d'ensemble** : vus de dehors, les grands arbres du dessus sud cachent les gradins ; deux sur trois sont retirés sur la
+    planche pour voir dedans. Dans le jeu, en garder autant que sur le dessus nord ? *Recommandation : oui*, le joueur voit le dedans
+    par la transparence du sud quand il y est.
+
 ### 13.1 La forme : ce que j'ai compris (les gradins)
 
 Tout ce qui avait été compris du trou rond tient toujours : **une masse de terre au dessus plat, à 5 m au-dessus du chemin, dans
