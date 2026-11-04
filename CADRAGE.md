@@ -770,14 +770,122 @@ planté côté ferme (`relief-face-planted*`), le sol éclairci et `FLOOR_GLOOM`
 
 ---
 
-## 13. L'intérieur du tunnel : le repenser (4 novembre, plans seulement)
+## 13. L'intérieur du tunnel : un trou rond dans la terre (4 novembre, plans seulement)
 
 **Stop de Grégoire** : rien ne s'intègre, rien ne se fusionne. La version 7 (`relief-final-7-corrections.png`) et le rendu de
-l'intérieur du couloir ne sont pas validés. **La logique reste telle quelle** (les hauteurs, la marche, le saut, la nage, les refus).
-C'est la façon de montrer l'intérieur du tunnel qui est à repenser. Cette section ne contient que des plans et des schémas en aplats
-(planche `.art-preview/relief-plans.png`) ; aucun dessin définitif, rien ne change dans le jeu.
+l'intérieur du couloir ne sont pas validés. **Le moteur reste tel quel** (les hauteurs, la marche, le saut, la nage, les refus). Les
+premiers plans (13.7, planche gardée dans `art/proposals/relief-plans-v1.png`) ne sont pas validés non plus : **ils partaient d'une
+mauvaise forme**, deux talus en pente posés sur un sol plat, le couloir entre les deux. Tout repart de la forme ci-dessous. Cette section
+ne contient que des plans en aplats (`.art-preview/relief-plans.png`) ; aucun dessin définitif, rien ne change dans le jeu.
 
-### 13.1 Ce que j'ai compris
+### 13.1 La forme : ce que j'ai compris
+
+Le chemin creux n'est pas un couloir entre deux collines. **C'est un trou rond creusé dans une masse de terre.**
+
+- On part d'une **masse de terre** dont le dessus est plat : c'est le sol du pays autour, à 5 m au-dessus du chemin. À l'ouest, c'est
+  le plateau lui-même. Côté ferme et au-dessus de la rivière, c'est une langue de ce même terrain qui s'avance jusqu'à la ferme. Vu de
+  dedans comme vu de dessus, **on ne voit pas deux collines, on voit un sol plat dans lequel on a creusé une tranchée ronde.**
+- Dans cette masse, **un cercle**. **Le haut du cercle est enlevé** : c'est une fente ouverte vers le ciel, plus étroite que le tube.
+  **Le bas du cercle est aplati** : c'est le chemin, le sol clair, 2,5 m de large. Entre les deux, **les parois suivent le cercle** :
+  elles s'écartent d'abord en montant, puis se courbent vers l'intérieur et reviennent en partie au-dessus du chemin, comme les bords
+  d'un tube.
+- **La voûte, ce sont ces bords** : les lèvres de terre qui surplombent le chemin, avec les racines, le lierre et les herbes qui en
+  pendent. Ce n'est plus un feuillage posé au-dessus de deux collines.
+- **Les arbres poussent sur le bord du cercle**, dans la terre autour de la fente, et se penchent au-dessus du trou.
+- **Au-dessus de la rivière**, la masse de terre passe d'une rive à l'autre comme une digue pleine. L'eau arrive contre ses deux
+  faces, au nord et au sud, et s'y arrête (la décision de la section 11) : elle n'entre jamais dans le cercle. Le chemin, au fond du
+  cercle, est au niveau de l'eau.
+- **Les deux bouches** : à l'est, côté ferme, la masse s'arrête par une face de terre où s'ouvre le trou, un fer à cheval (le cercle
+  sans son haut) ; on y entre comme dans un tronc creux. À l'ouest, le chemin monte (8,3 %) : le trou devient de moins en moins
+  profond et le chemin sort à fleur du plateau.
+
+**Une proportion pour les plans** (à régler au dessin) : un cercle de 5,50 m de diamètre, le chemin de 2,5 m en bas, le dessus de la
+masse à 5 m au-dessus du chemin. Le tube est large de 5,50 m à mi-hauteur, et la fente du haut fait environ 2 m.
+
+**Ce que la géométrie impose** (relevé en traçant la planche) : avec un chemin de 2,5 m au fond et 5 m de profondeur, le cercle est
+**presque entier**. Le dessus n'en retire qu'une vingtaine de centimètres, et les lèvres de terre ne reviennent que d'environ 20 cm
+au-dessus des bords du chemin. Pour que la terre elle-même se referme davantage, il faudrait un trou plus profond ou un chemin plus
+étroit, ce que le moteur ne permet pas sans changer la carte et la marche. **Ce sont donc les racines, le lierre et les herbes qui
+pendent des lèvres qui ferment la fente** et font la voûte, comme le dit Grégoire ; la planche les montre pendant sur le premier tiers
+du trou (question 36).
+
+**Ce que cela change, et ce que cela ne change pas.** Le moteur ne change pas : il connaît une hauteur par point, et l'on ne marche
+que sur le chemin, comme aujourd'hui. Le creux du tube sous les lèvres ne se marche pas (c'est une paroi), il ne fait que se voir. **Les
+formes de la carte**, elles, changent : les deux talus (`Ridge`, crête et flanc qui redescend) deviennent un dessus plat à 5 m (un
+`Level`, comme le plateau) qui s'avance jusqu'à la ferme, et le chemin (`Lane`) y est creusé. Le dessus de la masse devient un sol où
+l'on pourrait marcher, monté par sa pente côté ferme (question 32).
+
+### 13.2 La coupe nord-sud, côté ferme (la première image de la planche)
+
+De gros aplats : la terre (la masse et ses parois), le ciel (la fente), le chemin clair au fond, Xéros debout au milieu à l'échelle
+(1,70 m : il tient trois fois dans la hauteur du trou), l'herbe sur le dessus plat de chaque côté, les arbres sur le bord de la fente,
+penchés au-dessus, les racines qui pendent des lèvres. Le cercle entier en pointillé, pour voir ce qui a été enlevé en haut.
+
+### 13.3 La même coupe au-dessus de la rivière
+
+La même masse et le même trou. De chaque côté, à quelques mètres, la masse s'arrête par une face de terre qui descend dans l'eau.
+L'eau est **dehors**, contre ces faces, au niveau du chemin, jamais dans le cercle.
+
+### 13.4 La vue de dessus, de la ferme au plateau
+
+Le nord en haut. La ferme à droite (est), le plateau à gauche (ouest). La masse de terre (le dessus plat, herbe) d'un seul tenant du
+plateau jusqu'à la ferme, la rivière qui la traverse du nord au sud et s'arrête contre ses deux faces. Dans la masse, la fente
+ouverte et le chemin au fond, d'un bout à l'autre. Les deux bouches : le fer à cheval dans la face est, sur la ferme ; la sortie à fleur
+du plateau, à l'ouest. Les arbres le long des deux bords de la fente.
+
+### 13.5 Ce que voit le joueur
+
+Le jeu montre tout depuis le sud, à 45° : ce qui est haut se dessine plus haut à l'écran. **Dans le trou, le dessus de la masse au sud
+du chemin (avec sa lèvre et ses arbres) passe devant Xéros et le cache tout entier.** Il faut donc le rendre transparent, comme un
+toit, autour de Xéros. Ce qu'on voit alors, du haut de l'écran vers le bas :
+
+- le dessus de la masse au nord (l'herbe, le pied des arbres), puis **la lèvre nord** et ses racines qui pendent ;
+- **la paroi nord**, qui descend en se creusant jusqu'au chemin (c'est la seule paroi qui se voit, elle regarde vers nous) ;
+- **le chemin clair et Xéros** ;
+- devant lui, **la masse sud, tranchée au niveau du chemin** : de la terre en coupe jusqu'au bas de l'écran, comme le mur sud
+  d'une maison tranché au ras du sol ; **par-dessus, en fantôme, ce qui a été rendu transparent** (la lèvre sud, ses racines, les arbres
+  du bord sud).
+
+Au-dessus de la rivière, c'est **la même image** : la masse sud est assez large pour que l'eau reste hors de l'écran ; on ne voit
+qu'elle, de la terre, comme côté ferme. **Il n'y a plus rien qui ressemble à un pont** : sous Xéros, il n'y a que la terre en coupe.
+
+**À la bouche est**, Xéros qui vient de la ferme entre dans la face de terre : à sa droite la ferme, en pleine lumière ; à sa gauche le
+trou, où la transparence commence dès que la masse sud passe devant lui. La lumière du dehors entre par la bouche sur les premiers
+mètres.
+
+**Ce qui se voit au-delà**, quand Xéros est dedans : le dehors est loin. Au nord, au-delà de la lèvre, le dessus de la masse et ses
+arbres (ils sont du tunnel : c'est son bord) ; au sud, la terre en coupe remplit le bas de l'écran. La ferme et la rivière ne
+paraissent qu'aux bouches. Le voile du dehors des premiers plans n'est plus nécessaire.
+
+### 13.6 Questions pour Grégoire (la forme ronde)
+
+31. **La forme** : est-ce bien elle (le trou rond dans une masse plate, la fente en haut, le chemin plat au fond, les lèvres qui
+    reviennent au-dessus du chemin, les arbres sur le bord) ? *Si oui*, je refais les écrans en vraie vue de jeu sur cette forme, puis
+    les dessins (pixel-artist).
+32. **Le dessus de la masse**, côté ferme : un sol où l'on marche, rejoint par une pente plantée depuis la ferme (au nord et au sud de
+    la bouche), ou une butte qu'on ne monte pas ? *Recommandation : un sol où l'on marche* : le monde ne limite pas, et c'est le
+    plateau qui continue.
+33. **La largeur de la masse** au-dessus de la rivière, de chaque côté du trou : au moins 6 m, pour que l'eau reste hors de l'écran
+    quand Xéros est dedans ? *Recommandation : oui.*
+34. **Ce qui devient transparent** : la masse sud tranchée au niveau du chemin, sa lèvre et ses arbres en fantôme (comme le mur sud
+    et le toit d'une maison) ? *Recommandation : oui.*
+35. **La version 7** (le flanc planté, le sol éclairci) : laissée de côté, reprise avec la nouvelle forme ? *Recommandation : oui.*
+36. **Les lèvres** : la terre ne revient qu'à peine au-dessus du chemin (le cercle est presque entier, 13.1). On garde le cercle et ce
+    sont les racines et la végétation qui ferment la fente, ou on veut des lèvres de terre plus marquées (un trou plus étroit en haut
+    qu'un cercle, comme une goutte renversée) ? *Recommandation : le cercle, fermé par ce qui pend* : c'est la forme décrite, et la
+    végétation se dessine sans toucher au chemin.
+
+**La planche** `.art-preview/relief-plans.png` (pixel-artist, en aplats ; refaire : `npx tsx tools/essai-relief-plans.ts`), dans
+l'ordre : 1, la coupe côté ferme ; 2, la coupe au-dessus de la rivière ; 3, la vue de dessus entière ; 4, ce que voit le joueur, côté
+ferme, au-dessus de la rivière, à la bouche est, avec ce qui devient transparent.
+
+### 13.7 Les premiers plans, non validés (la mauvaise forme : deux talus)
+
+*Gardés pour l'historique. Grégoire n'a pas validé ces plans : la forme de départ était fausse (deux talus en pente sur un sol plat).
+Les questions 26 à 30 qu'ils posaient sont remplacées par les questions 31 à 35. Planche : `art/proposals/relief-plans-v1.png`
+(refaire : `npx tsx tools/essai-relief-plans-v1.ts`).*
+
+#### 13.7.1 Ce que j'ai compris
 
 Entrer dans le chemin creux doit faire le même effet que se glisser dans un tronc creux : **une fois dedans, Xéros est dans la terre**,
 pas au-dessus d'elle. Autour de lui, il n'y a que le tunnel : la paroi de terre et ses racines derrière lui, le sol clair sous ses
@@ -791,7 +899,7 @@ Le talus sud a 5 m : sa crête se dessine 100 px plus haut que son pied et passe
 (c'est pourquoi il s'efface). Mais la **face extérieure** de ce talus, qui regarde le sud, se voit en vraie grandeur **sous** le sol du
 couloir à l'écran, puis le dehors au-delà de son pied : sur la ferme, les champs ; sur la rivière, l'eau, 77 px sous les pieds de Xéros.
 
-### 13.2 Les deux coupes nord-sud (cm, le sol du couloir à 0, Xéros au milieu)
+#### 13.7.2 Les deux coupes nord-sud (cm, le sol du couloir à 0, Xéros au milieu)
 
 Les profils sont ceux du jeu (`Lane` et `Ridge` de `ferme.tmj`, section 10.1) : sol de 250, talus intérieurs de 120 au sol pour 500,
 crête, flanc extérieur.
@@ -821,7 +929,7 @@ pieds vers 130) :
 | Face extérieure du talus sud | −37 à +157 (jusqu'au bas de l'écran) | −45 à +77 |
 | Le dehors au sud | au-delà de +157 (hors de l'écran) | **l'eau, à partir de +77** : les 33 px du bas de l'écran |
 
-### 13.3 Ce que le joueur voit aujourd'hui
+#### 13.7.3 Ce que le joueur voit aujourd'hui
 
 - **Côté ferme** : la paroi nord en haut, le sol clair et Xéros, puis, dans la largeur de l'écran, le talus sud effacé à 0,2 : un aplat
   vert-brun où transparaissent la face extérieure et le sol. Ni dehors, ni dedans.
@@ -829,7 +937,7 @@ pieds vers 130) :
 - Dans les deux cas, au-delà des crêtes, la forêt au nord et les champs ou l'eau au sud restent en pleine lumière : le dehors entre dans
   le tunnel.
 
-### 13.4 Comment le jeu montre l'intérieur d'une maison, et ce que le tunnel peut en prendre
+#### 13.7.4 Comment le jeu montre l'intérieur d'une maison, et ce que le tunnel peut en prendre
 
 **Faits** (CONCEPTION « Les intérieurs », `world/interiorMap.ts`, `world/interiorView.ts`, `systems/roofs.ts`) :
 - **Une maison où l'on entre** : on passe la porte, un fondu, et l'on est **dans une carte calculée** (`interieur:<carte>:<x>,<y>`), au
@@ -852,7 +960,7 @@ fait « pont », et c'est son absence qui fait « trou », comme le vide autour 
 ouvert : vers ses deux bouts, le voile s'éclaircit et l'on voit la lumière du dehors par la bouche. Ce qui est assombri ne se vise pas
 (la souris ne prend que ce qui est dans le tunnel), comme ce qui est caché dans une maison.
 
-### 13.5 Trois façons de faire (chacune son schéma d'écran sur la planche)
+#### 13.7.5 Trois façons de faire (chacune son schéma d'écran sur la planche)
 
 **1. La coupe, comme la maison.** Dedans, le talus sud se montre **tranché au ras du sol** du couloir : son emprise (de la paroi à son
 pied extérieur : 6,60 m côté ferme, 2,60 m sur l'eau) se dessine à plat, en **coupe de terre** (terre sombre, racines et cailloux
@@ -885,7 +993,7 @@ demande* : le voile seul ; c'est le moins de travail, et le moins sûr.
 n'est plus là), elle met de la terre des deux côtés de Xéros sur tout l'écran, et elle ne laisse jamais voir l'eau sous lui. Elle demande un seul dessin, la
 coupe de terre, et le voile, qui sert aussi à la sortie (la lumière au bout).
 
-### 13.6 Questions pour Grégoire (intérieur du tunnel)
+#### 13.7.6 Questions pour Grégoire (intérieur du tunnel)
 
 26. **La façon** : 1 (la coupe, comme la maison), 2 (le tube transparent) ou 3 (le voile seul) ? *Recommandation : 1.*
 27. **Le dehors** : assombri à 0,85 vers la couleur de la terre profonde, éclairci aux deux bouches, ou le vide comme dans une maison
@@ -900,7 +1008,7 @@ coupe de terre, et le voile, qui sert aussi à la sortie (la lumière au bout).
     la reprend avec lui ? *Recommandation : oui* ; la coupe de la façon 1 change ce que l'on voit du flanc, et le sol clair se juge dans le noir
     du voile.
 
-**La planche** `.art-preview/relief-plans.png` (pixel-artist, en aplats ; refaire : `npx tsx tools/essai-relief-plans.ts`) :
+**La planche** `art/proposals/relief-plans-v1.png` (pixel-artist, en aplats ; refaire : `npx tsx tools/essai-relief-plans-v1.ts`) :
 1. les deux coupes nord-sud à l'échelle (côté ferme, sur la rivière), Xéros dedans, les rayons de l'œil à 45° (numérotés : les
    pieds et la tête cachés, le haut de la paroi nord, le rayon qui rase la crête sud, l'eau vue sous Xéros), la voûte, l'eau ;
 2. pour chacune, l'écran d'aujourd'hui (ce qui est opaque, effacé, au-delà des parois) ;
