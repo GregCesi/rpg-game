@@ -814,6 +814,13 @@ dehors), `relief-gradins-4-bouche.png` (le fer à cheval vu depuis la ferme) ; r
     planche pour voir dedans. Dans le jeu, en garder autant que sur le dessus nord ? *Recommandation : oui*, le joueur voit le dedans
     par la transparence du sud quand il y est.
 
+**Validé (4 novembre)** : « c'est exactement ça » ; 40 oui (les marches du bas s'enterrent une à une vers le plateau), 41 oui (autant de
+grands arbres au sud qu'au nord). Les deux anciennes corrections (flanc planté, sol éclairci) n'ont plus lieu d'être. **Trois corrections
+de dessin** (pixel-artist, `.art-preview/relief-gradins-5-corrections.png`, avant et après, à valider) : la bande sombre sous le chemin
+(la terre en coupe reçoit partout la pénombre du sol du chemin de sa colonne ; le fantôme du sud ne se peint jamais sur la coupe :
+il s'arrête au bord sud du chemin) ; la terre en coupe en 8 variantes à bord commun, tirées par case ; le buisson long vu par le bout
+(12 × 32 px, le bout sud bombé, le dos qui file vers le nord). Pendant ce temps, la forme entre dans le moteur (rien de poussé).
+
 ### 13.1 La forme : ce que j'ai compris (les gradins)
 
 Tout ce qui avait été compris du trou rond tient toujours : **une masse de terre au dessus plat, à 5 m au-dessus du chemin, dans

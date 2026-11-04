@@ -4,7 +4,9 @@
 //   .art-preview/relief-gradins-2-scenes.png    ce que voit le joueur (x2, l'écran du zoom de départ, 427 × 240) : côté ferme, au-dessus
 //                                               de la rivière, à la bouche est ;
 //   .art-preview/relief-gradins-3-ensemble.png  le tunnel entier vu de dehors, depuis le sud, de la ferme au plateau ;
-//   .art-preview/relief-gradins-4-bouche.png    la bouche est vue de face, depuis la ferme.
+//   .art-preview/relief-gradins-4-bouche.png    la bouche est vue de face, depuis la ferme ;
+//   .art-preview/relief-gradins-5-corrections.png  les trois corrections, avant et après (x2, avec Xéros) : la bande sombre sous
+//                                               le chemin, les variantes de la terre en coupe, le buisson long vu par le bout.
 // Dessins : art/proposals/relief-gradins.ts ; terrain et rendu : art/proposals/relief-gradins-scene.ts. Les grands arbres, le sol
 // clair, les faces de terre et Xéros sont ceux du jeu (src/generated/, art/world/relief.ts).
 
@@ -16,11 +18,11 @@ import xeros from '../art/characters/xeros';
 import type { Canvas, Grid } from '../art/lib/canvas';
 import { sky as skyPal, world } from '../art/palette';
 import {
-  cut, PLANTS, riser, roots, STEP, tread, type PlantKey,
+  bushLong, bushLongNs, bushLongNsBefore, cut, cutBefore, cutVariant, CUT_VARIANTS, PLANTS, riser, roots, STEP, tread, type PlantKey,
 } from '../art/proposals/relief-gradins';
 import {
   applyGloom, drawSprites, EDGE, ground, MASS, MOUTH, plantRows, Raster, renderTerrain, rgbOf, spriteOf, TOP, XF, XR0, XR1, XW,
-  type Placed, type Sprite, SLOPE, RAMP,
+  type Placed, type Sprite, SLOPE, RAMP, MODE,
 } from '../art/proposals/relief-gradins-scene';
 import { FLOOR_GLOOM } from '../art/proposals/relief-final';
 import { faceEarth, lane } from '../art/world/relief';
@@ -87,13 +89,29 @@ function save(sheet: Sheet, name: string) {
 }
 /** Xéros (rangées 14 à 45), les pieds sur la ligne `foot`. */
 const xerosAt = (s: Sheet, x: number, foot: number, k: number, grid: Grid = XG) => s.blit(grid, xeros.palette, x, foot - 46 * k, k, [14, 45]);
+/** Un champ de terre en coupe de nx × ny cases, tirées comme dans le jeu (`cutVariant`), ou comme avant (`before`). */
+function cutField(nx: number, ny: number, tx0: number, ty0: number, before = false): Grid {
+  const tiles = before ? [0, 1, 2].map((k) => g(cutBefore(k))) : Array.from({ length: CUT_VARIANTS }, (_, k) => g(cut(k)));
+  const out: string[] = [];
+  for (let j = 0; j < ny * 32; j++) {
+    let line = '';
+    for (let i = 0; i < nx; i++) {
+      const tx = tx0 + i;
+      const ty = ty0 + Math.floor(j / 32);
+      const v = before ? Math.floor(hashOf(tx, ty, 77) * 3) : cutVariant(tx, ty);
+      line += tiles[v][j % 32];
+    }
+    out.push(line);
+  }
+  return out;
+}
 
 // =====================================================================================================================
 // 1. les matières
 // =====================================================================================================================
 
 function sheet1() {
-  const s = new Sheet(1900, 2300, BG);
+  const s = new Sheet(1900, 2480, BG);
   const P = 24;
   say(s, 'Le tunnel en gradins - 1. les matieres, une par une (x4), avec Xeros', P, 14, GOLD, 4);
   say(s, 'Essais hors jeu. Xeros mesure 1,60 m. Un gradin a 50 cm de profondeur, une marche 1,25 m de haut.', P, 46, SOFT);
@@ -144,11 +162,23 @@ function sheet1() {
 
   // --- la terre en coupe
   say(s, 'La terre en coupe : la masse sud, tranchee au ras du chemin, vue de dessus (comme le mur sud d une maison coupe au ras du sol).', P, y, GOLD);
-  say(s, 'Une terre pleine et plate, des racines et des cailloux tranches, un trait leger en biais. Trois variantes, puis 2 x 2.', P, y + 16, GOLD);
+  say(s, 'Une terre pleine et plate, des racines et des cailloux tranches, un trait leger en biais. Huit variantes (x4), puis posees par case (x2).', P, y + 16, GOLD);
   y += 40;
-  [0, 1, 2].forEach((k) => s.blit(g(cut(k)), world, P + k * 150, y, 4));
-  [[0, 1], [2, 0]].forEach((row, j) => row.forEach((k, i) => s.blit(g(cut(k)), world, P + 470 + i * 128, y + j * 128, 4)));
-  xerosAt(s, P + 760, y + 200, 4);
+  for (let k = 0; k < CUT_VARIANTS; k++) {
+    s.blit(g(cut(k)), world, P + k * 140, y, 4);
+    say(s, String(k), P + k * 140, y + 132, SOFT);
+  }
+  y += 156;
+  s.blit(cutField(12, 4, 0, 0), world, P, y, 2);
+  xerosAt(s, P + 820, y + 200, 4);
+  para(s, [
+    'Le tirage, par case de 32 px :',
+    'v = partie entiere de hash(tx, ty, 77) x 8 ;',
+    'tant que v vaut le tirage brut de la case de',
+    'gauche ou de celle du dessus, v = (v + 1) mod 8.',
+    'Toutes les variantes ont le meme bord (5 px) :',
+    'n importe laquelle se raccorde a n importe laquelle.',
+  ], P + 900, y + 10, GREY);
   y += 280;
 
   // --- le sol clair
@@ -234,6 +264,7 @@ interface Shot { x: number; dir: string; extraBelow?: number }
 
 /** Ce que voit le joueur, Xéros en (x, 0) au milieu de l'écran, les pieds à la rangée 130. */
 function playerView(shot: Shot, seed: number): Raster {
+  // la bande sombre sous le chemin (correction 1) : le fantôme ne se peint pas sur la terre en coupe ; voir applyGloom pour sa pénombre
   const extra = shot.extraBelow ?? 0;
   const x0 = Math.round(shot.x - VW / 2);
   const r0 = -FEET_ROW;
@@ -259,6 +290,7 @@ function playerView(shot: Shot, seed: number): Raster {
   for (let k = 0; k < main.w * main.h; k++) {
     if (!ghost.what[k]) continue;
     if (main.x0 + (k % main.w) >= XF) continue;
+    if (!MODE.before && main.what[k] === 1 && main.kind[k] === 'cut') continue;
     // seulement là où le sud passe devant ce que l'on voit (pas sur la terre en coupe, qui est déjà lui)
     main.put(k, [ghost.rgb[k * 3], ghost.rgb[k * 3 + 1], ghost.rgb[k * 3 + 2]], FADE);
   }
@@ -294,7 +326,9 @@ function sheet2() {
       '',
       'Par-dessus, en fantome (il en reste 0,2) : les',
       'gradins sud, leurs arbres et les grands arbres',
-      'du dessus sud, qui traversent tout l ecran.',
+      'du dessus sud, sur le chemin et ce qui est',
+      'derriere ; jamais sur la terre en coupe, qui',
+      'garde la penombre du sol du chemin, partout.',
     ]],
     ['b. au-dessus de la riviere', { x: (XR0 + XR1) / 2, dir: 'left', extraBelow: 110 }, 23, [
       'La meme image : la masse passe au-dessus de',
@@ -558,7 +592,105 @@ function sheet4() {
   save(s, 'relief-gradins-4-bouche.png');
 }
 
+// =====================================================================================================================
+// 5. les trois corrections, avant et après
+// =====================================================================================================================
+
+function sheet5() {
+  const K = 2;
+  const P = 24;
+  const s = new Sheet(1900, 1640, BG);
+  say(s, 'Le tunnel en gradins - 5. les trois corrections, avant et apres (x2, avec Xeros)', P, 14, GOLD, 4);
+  say(s, 'Essais hors jeu. A gauche avant, a droite apres.', P, 46, SOFT);
+  let y = 80;
+
+  // --- 1. la bande sombre
+  say(s, '1. La bande sombre sous le chemin, cote ferme', P, y, GOLD, 3);
+  y += 30;
+  const shot: Shot = { x: XF - 225, dir: 'left' };
+  MODE.before = true;
+  const A = playerView(shot, 11);
+  MODE.before = false;
+  const B = playerView(shot, 11);
+  const xB = P + VW * K + 40;
+  say(s, 'avant', P, y, SOFT);
+  say(s, 'apres', xB, y, SOFT);
+  y += 16;
+  blitRaster(s, A, P, y, K, [0, 0, A.w, VH]);
+  blitRaster(s, B, xB, y, K, [0, 0, B.w, VH]);
+  s.outline(P - 2, y - 2, VW * K + 4, VH * K + 4, GOLD);
+  s.outline(xB - 2, y - 2, VW * K + 4, VH * K + 4, GOLD);
+  y += VH * K + 14;
+  y = para(s, [
+    'D ou venait la bande : la penombre du trou etait donnee a la terre en coupe sur ses seules rangees a moins de 2,85 m de l axe (la ou',
+    'etaient les gradins sud), entiere (0,3) ; plus loin, rien. Et le fantome (0,2) peignait le dessus sud, vert sombre, sur toute la coupe.',
+    'La regle retenue : (a) la terre en coupe recoit partout la penombre du sol du chemin a la meme colonne (celle du chemin : 0,3 x FLOOR_GLOOM,',
+    'x la lumiere de la bouche, x la profondeur), sans limite de rangee ; (b) le fantome du sud (terrain et plantes, 0,2) ne se peint jamais',
+    'sur un pixel de terre en coupe : il s arrete au bord sud du chemin ; ailleurs, inchange (chemin, gradins nord, plantes nord, Xeros, arret a la face).',
+  ], P, y, GREY);
+  y += 26;
+
+  // --- 2. la terre en coupe
+  say(s, '2. La terre en coupe : 3 variantes sans bord commun (avant), 8 variantes a bord commun tirees par case (apres)', P, y, GOLD, 3);
+  y += 30;
+  const fA = cutField(8, 3, 3, 1, true);
+  const fB = cutField(8, 3, 3, 1);
+  const xC = P + 8 * 32 * K + 140;
+  say(s, 'avant', P, y, SOFT);
+  say(s, 'apres', xC, y, SOFT);
+  y += 16;
+  s.blit(fA, world, P, y, K);
+  xerosAt(s, P + 8 * 32 * K + 20, y + 3 * 32 * K, K);
+  s.blit(fB, world, xC, y, K);
+  xerosAt(s, xC + 8 * 32 * K + 20, y + 3 * 32 * K, K);
+  y += 3 * 32 * K + 14;
+  y = para(s, [
+    'Avant : chaque variante avait sa propre terre de fond, d un bord a l autre : les cases se voyaient (coutures), trois motifs se repetaient.',
+    'Apres : la terre de fond melange un bruit commun a toutes les variantes et un bruit propre a chacune ; sur les 5 px du bord, le commun',
+    'l emporte (fondu lisse) : toutes se raccordent entre elles. Au milieu, chacune a sa terre, ses racines (2 a 4), ses cailloux (1 a 3),',
+    'une poche de gravier (paires) ou une racine coupee en long (3 et 7). Le trait en biais suit (x + y) mod 8 du monde.',
+    'Tirage par case (tx, ty) : v = ent(hash(tx, ty, 77) x 8) ; tant que v = ent(hash(tx - 1, ty, 77) x 8) ou ent(hash(tx, ty - 1, 77) x 8),',
+    'v = (v + 1) mod 8. (hash : art/world/relief.ts.)',
+  ], P, y, GREY);
+  y += 26;
+
+  // --- 3. le buisson long vu par le bout
+  say(s, '3. Le buisson long vu par le bout (nord-sud) : gabarit 10 x 33 (50 cm x 90 cm + 1,5 m / 2)', P, y, GOLD, 3);
+  y += 40;
+  const foot = y + 46 * 4 + 10;
+  s.rect(P, foot, 1840, 1, [90, 98, 80]);
+  const before = bushLongNsBefore().toGrid();
+  const after = bushLongNs().toGrid();
+  const ew = bushLong().toGrid();
+  let x = P;
+  const put = (grid: Grid, k: number, fy: number, label: string[]) => {
+    s.blit(grid, world, x, foot - (fy + 1) * k, k);
+    label.forEach((l, i) => say(s, l, x, foot + 12 + i * 14, i === 0 ? GREY : SOFT));
+    x += Math.max(grid[0].length * k + 30, 130);
+  };
+  xerosAt(s, x, foot, 2); x += 76;
+  const sb = silhouette(before, world);
+  const sa = silhouette(after, world);
+  put(before, 2, 33, ['avant x2', `${sb.w} x ${sb.h}`]);
+  put(after, 2, 33, ['apres x2', `${sa.w} x ${sa.h}`]);
+  put(ew, 2, 24, ['est-ouest x2', '30 x 23']);
+  x += 40;
+  xerosAt(s, x, foot, 4); x += 150;
+  put(before, 4, 33, ['avant x4']);
+  put(after, 4, 33, ['apres x4']);
+  put(ew, 4, 24, ['est-ouest x4']);
+  y = foot + 60;
+  para(s, [
+    'Apres : en bas, le bout sud, une touffe ronde et bombee, plus sombre (elle tourne le dos au ciel), les tiges et le creux sombre au pied ;',
+    'au-dessus, separe par un lisere d ombre, le dos du buisson qui file vers le nord, vu de dessus : un coussin de touffes serrees, clair',
+    '(le dessus prend la lumiere), le bout nord arrondi, les flancs bosseles ; l ombre au sol longe le flanc est sur toute la longueur.',
+    `Silhouette ${sa.w} x ${sa.h} px (gabarit 10 x 33, a 2 px pres).`,
+  ], P, y, GREY);
+  save(s, 'relief-gradins-5-corrections.png');
+}
+
 sheet1();
 sheet2();
 sheet3();
 sheet4();
+sheet5();

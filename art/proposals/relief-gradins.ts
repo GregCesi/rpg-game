@@ -11,9 +11,12 @@
 //   - `riser(k)`     64 × 25 : la contremarche de 1,25 m (terre, mottes, coulures), avec ce qui pend du gradin du dessus
 //                    (herbe, lierre, racines fines) et la terre tombée au pied ; raccord libre en largeur ;
 //   - `roots(k)`     14 × 25 : les racines d'un arbre du gradin, qui descendent la contremarche sous lui (posées par-dessus) ;
-//   - `cut(k)`       32 × 32 : la terre en coupe (la masse sud tranchée au ras du chemin), vue de dessus, raccord libre ;
+//   - `cut(k)`       32 × 32, k de 0 à 7 (CUT_VARIANTS) : la terre en coupe (la masse sud tranchée au ras du chemin), vue de
+//                    dessus ; bord commun de 5 px (CUT_FRAME) : toute variante se raccorde à toute autre ; tirage par case :
+//                    `cutVariant(tx, ty)` ;
 //   - `hazel()`      le noisetier (cépée, 3,8 m), `ash()` le jeune frêne (4,2 m), `bushLong()` / `bushLongNs()` le buisson
-//                    long (deux vues), `briar()` l'églantier (une vue). Terrain sans contour, plantes avec contour (STYLE 3).
+//                    long (deux vues : est-ouest 30 × 23, nord-sud vu par le bout 12 × 32 dans une image 14 × 40),
+//                    `briar()` l'églantier (une vue). `cutBefore`, `bushLongNsBefore` : l'état d'avant, pour la planche 5. Terrain sans contour, plantes avec contour (STYLE 3).
 // Le sol clair du chemin, le dessus planté (`bank`), les faces, les grands arbres et Xéros sont ceux du jeu, repris tels quels.
 
 import { Canvas, EMPTY, rng } from '../lib/canvas';
@@ -212,12 +215,86 @@ export function roots(k: number): Canvas {
 
 // ---------- 3. la terre en coupe ----------
 
+/** Le nombre de variantes de la terre en coupe, et les graines du tirage par case (`cutVariant`). */
+export const CUT_VARIANTS = 8;
+export const CUT_SEED = 77;
+/** Le cadre commun : sur ses CUT_FRAME px de bord, toutes les variantes ont la même terre (raccord entre variantes). */
+export const CUT_FRAME = 5;
+
 /**
- * La masse sud tranchée au ras du chemin, vue de dessus (32 × 32) : la tranche d'une terre pleine, plus claire et plus plate que les
- * faces (`e`, taches `9`, `n`), un trait léger en biais (`9`, la convention d'une coupe, une rangée sur cinq), des racines tranchées
- * (anneau `N`, cœur `m`), des cailloux de calcaire tranchés (`=`, `;`). Sans contour, raccord libre dans les deux sens.
+ * La masse sud tranchée au ras du chemin, vue de dessus (32 × 32), variante `k` de 0 à CUT_VARIANTS - 1 : la tranche d'une terre
+ * pleine, plus claire et plus plate que les faces (`e`, taches `9`, `n`), un trait léger en biais (`9`, la convention d'une coupe :
+ * (x + y) multiple de 8, en coordonnées du monde, donc continu d'une case à l'autre), des racines tranchées (anneau `N`, cœur
+ * `m`), des cailloux de calcaire tranchés (`=`, `;`), selon la variante une poche de gravier (`n`, `;`) ou une grosse racine.
+ * Sans contour. Raccord : la terre de fond est un mélange de deux bruits périodiques sur 32 px, l'un commun à toutes les variantes,
+ * l'autre propre à chacune ; au bord (CUT_FRAME px), le commun l'emporte : n'importe quelle variante se raccorde à n'importe quelle
+ * autre, dans les deux sens ; au milieu, chacune a sa terre. Les détails restent à 3 px du bord.
  */
 export function cut(k: number): Canvas {
+  const T = 32;
+  const seed = 34000 + k * 71;
+  const r = rng(seed);
+  const c = new Canvas(T, T, 'e');
+  const common = (x: number, y: number) => pnoise(x, y, T, T, 8, 8, 34001) * 0.6 + pnoise(x, y, T, T, 4, 4, 34002) * 0.4;
+  const own = (x: number, y: number) => pnoise(x, y, T, T, 8, 8, seed + 1) * 0.55 + pnoise(x, y, T, T, 4, 4, seed + 2) * 0.3 + pnoise(x, y, T, T, 16, 16, seed + 3) * 0.15;
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    const d = Math.min(x, T - 1 - x, y, T - 1 - y);
+    const w = smooth(Math.min(1, d / CUT_FRAME));
+    const v = common(x, y) * (1 - w) + own(x, y) * w;
+    const hatch = (((x + y) % 8) + 8) % 8 === 0;
+    c.set(x, y, v < 0.3 ? '9' : v > 0.68 ? 'n' : hatch ? '9' : 'e');
+  }
+  // une poche de gravier (variantes paires) : des petits éclats clairs serrés
+  if (k % 2 === 0) {
+    const gx = 6 + Math.floor(r() * 16);
+    const gy = 6 + Math.floor(r() * 16);
+    for (let i = 0; i < 9; i++) {
+      const x = gx + Math.floor((r() - 0.5) * 9);
+      const y = gy + Math.floor((r() - 0.5) * 6);
+      c.set(x, y, r() < 0.5 ? 'n' : ';');
+    }
+  }
+  // racines tranchées : un petit anneau d'écorce et un cœur clair (2 à 4)
+  const nRoots = 2 + (k % 3);
+  for (let i = 0; i < nRoots; i++) {
+    const x = 3 + Math.floor(r() * 25);
+    const y = 3 + Math.floor(r() * 25);
+    const big = r() < 0.35 || (k % 4 === 1 && i === 0);
+    c.set(x, y, 'm').set(x + 1, y, 'N').set(x, y + 1, 'N').set(x + 1, y + 1, 'K');
+    if (big) c.set(x - 1, y, 'N').set(x, y - 1, 'N').set(x + 1, y - 1, 'N').set(x - 1, y + 1, 'N').set(x + 2, y, 'K').set(x + 2, y + 1, 'K').set(x, y + 2, 'K').set(x + 1, y + 2, 'K');
+  }
+  // une racine coupée en long (variantes 3 et 7) : un trait d'écorce en biais
+  if (k % 4 === 3) {
+    const x0 = 6 + Math.floor(r() * 14);
+    const y0 = 6 + Math.floor(r() * 14);
+    for (let i = 0; i < 7; i++) c.set(x0 + i, y0 + Math.floor(i / 2), i === 6 ? 'K' : 'N').set(x0 + i, y0 + Math.floor(i / 2) - 1, i % 2 ? 'm' : 'N');
+  }
+  // cailloux tranchés (1 à 3)
+  const nStones = 1 + ((k * 5) % 3);
+  for (let i = 0; i < nStones; i++) {
+    const x = 3 + Math.floor(r() * 24);
+    const y = 3 + Math.floor(r() * 25);
+    c.set(x, y, '=').set(x + 1, y, '=').set(x + 2, y, ';').set(x, y + 1, '=').set(x + 1, y + 1, ';').set(x + 2, y + 1, ';');
+  }
+  return c;
+}
+
+/**
+ * Le tirage de la variante de terre en coupe d'une case (tx, ty) (cases de 32 px du monde) : v = ⌊hash(tx, ty, 77) × 8⌋ ; tant
+ * que v est égal au tirage brut de la case de gauche (⌊hash(tx − 1, ty, 77) × 8⌋) ou à celui de la case du dessus
+ * (⌊hash(tx, ty − 1, 77) × 8⌋), v = (v + 1) mod 8. `hash` est celui d'art/world/relief.ts.
+ */
+export function cutVariant(tx: number, ty: number): number {
+  const raw = (i: number, j: number) => Math.floor(hash(i, j, CUT_SEED) * CUT_VARIANTS);
+  let v = raw(tx, ty);
+  const left = raw(tx - 1, ty);
+  const up = raw(tx, ty - 1);
+  while (v === left || v === up) v = (v + 1) % CUT_VARIANTS;
+  return v;
+}
+
+/** AVANT (planche 5 seulement) : l'ancienne terre en coupe, trois variantes sans bord commun. */
+export function cutBefore(k: number): Canvas {
   const T = 32;
   const seed = 34000 + k * 71;
   const r = rng(seed);
@@ -227,7 +304,6 @@ export function cut(k: number): Canvas {
     const hatch = (((x + y) % 8) + 8) % 8 === 0;
     c.set(x, y, v < 0.3 ? '9' : v > 0.68 ? 'n' : hatch ? '9' : 'e');
   }
-  // racines tranchées : un petit anneau d'écorce et un cœur clair
   for (let i = 0; i < 3; i++) {
     const x = 2 + Math.floor(r() * 27);
     const y = 2 + Math.floor(r() * 27);
@@ -235,7 +311,6 @@ export function cut(k: number): Canvas {
     c.set(x, y, 'm').set(x + 1, y, 'N').set(x, y + 1, 'N').set(x + 1, y + 1, 'K');
     if (big) c.set(x - 1, y, 'N').set(x, y - 1, 'N').set(x + 1, y - 1, 'N').set(x - 1, y + 1, 'N').set(x + 2, y, 'K').set(x + 2, y + 1, 'K').set(x, y + 2, 'K').set(x + 1, y + 2, 'K');
   }
-  // cailloux tranchés
   for (let i = 0; i < 2; i++) {
     const x = 2 + Math.floor(r() * 26);
     const y = 2 + Math.floor(r() * 26);
@@ -430,16 +505,16 @@ export function ash(): Canvas {
 }
 
 /** Un buisson en touffes rondes (comme `bush` du jeu) : chaque touffe éclairée en haut à gauche, un liseré d'ombre en bas à droite. */
-function puffs(w: number, h: number, list: [number, number, number][], center: Vec, flowers: number, seed: number): Canvas {
+function puffs(w: number, h: number, list: ([number, number, number] | [number, number, number, number])[], center: Vec, flowers: number, seed: number): Canvas {
   const c = new Canvas(w, h);
   const ramp = ['k', 'l', 'L', 'j'];
-  for (const [cx, cy, r] of list) {
+  for (const [cx, cy, r, fy = 0.85] of list) {
     const v = (-(cx - center[0]) / (w * 0.35) - (cy - center[1]) / (h * 0.25)) * 0.5;
     const base = v > -0.45 ? 1 : 0;
     const top = v > 0.25 ? 3 : v > -0.45 ? 2 : 1;
-    const own = new Canvas(w, h).ellipse(cx, cy, r, r * 0.85, ramp[base]);
-    own.within(ramp[base], (o) => o.ellipse(cx - 0.9, cy - 1, r * 0.62, r * 0.52, ramp[top]));
-    if (top === 3) own.within('j', (o) => o.ellipse(cx + 0.6, cy + 0.4, r * 0.5, r * 0.42, 'L'));
+    const own = new Canvas(w, h).ellipse(cx, cy, r, r * fy, ramp[base]);
+    own.within(ramp[base], (o) => o.ellipse(cx - 0.9, cy - 1, r * 0.62, r * fy * 0.61, ramp[top]));
+    if (top === 3) own.within('j', (o) => o.ellipse(cx + 0.6, cy + 0.4, r * 0.5, r * fy * 0.5, 'L'));
     const rim: Vec[] = [];
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       if (own.get(x, y) !== EMPTY && (own.get(x + 1, y) === EMPTY || own.get(x, y + 1) === EMPTY)) rim.push([x, y]);
@@ -474,7 +549,87 @@ export function bushLong(): Canvas {
   return c;
 }
 
+/**
+ * Le buisson long vu par son bout (nord-sud) : 50 cm de large, 1,5 m de long qui s'en va vers le nord, 90 cm de haut ; gabarit
+ * 10 × (18 + 15) = 10 × 33 (largeur et profondeur échangées). Deux parties qui se lisent : en bas, le bout sud, une touffe ronde et
+ * large (la face de 90 cm, 18 px), à l'ombre en bas, avec les tiges et le creux sombre au pied ; au-dessus, le dos du buisson qui
+ * file vers le nord (15 px), vu de dessus : des touffes qui se chevauchent, éclairées (le dessus prend la lumière), un peu plus
+ * petites et plus sombres vers le fond, la silhouette bosselée des deux côtés, quelques brindilles qui dépassent.
+ */
 export function bushLongNs(): Canvas {
+  const w = 14;
+  const h = 40;
+  const ramp = ['k', 'l', 'L', 'j'];
+  const c = new Canvas(w, h);
+  // le dos : un long coussin de feuilles vu de dessus, de la rangée 4 (le bout nord, arrondi) à la rangée 22, 9 px de large ;
+  // ses flancs à peine bosselés ; des grappes de feuilles (cellules de 3 × 2,5 px), chacune claire en haut à gauche
+  const X0 = 3;
+  const X1 = 11;
+  const Y0 = 4;
+  const Y1 = 22;
+  const rr = (X1 - X0) / 2;
+  const cx = (X0 + X1) / 2;
+  // la forme du coussin, puis des touffes rondes serrées dedans, posées du nord au sud (la plus proche passe devant), le fond
+  // entre elles sombre
+  const mask = new Canvas(w, h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const px = x + 0.5;
+    const py = y + 0.5;
+    // les flancs à peine bosselés, vers l'intérieur seulement (la largeur reste celle du gabarit)
+    const bump = pnoise(0, py, 1, 40, 1, 2.5, 36101) ** 2 * 2.6;
+    const bumpR = pnoise(0, py, 1, 40, 1, 2.5, 36102) ** 2 * 2.6;
+    if (px < X0 - 1 + bump || px > X1 + 1 - bumpR || py > Y1) continue;
+    if (py < Y0 + rr * 0.6 && ((px - cx) / rr) ** 2 + ((py - (Y0 + rr * 0.6)) / (rr * 0.6)) ** 2 > 1) continue;
+    mask.set(x, y, 'k');
+  }
+  const back: [number, number, number, number][] = [];
+  for (let j = 0, y = Y0 + 1.5; y <= Y1 + 1; j++, y += 2.7) {
+    const o = j % 2 ? 0.9 : -0.6;
+    back.push([4.8 + o, y, 2.8, 0.72], [9 + o, y + 0.6, 2.8, 0.72]);
+    if (j % 2 === 0) back.push([7 + o, y + 1.4, 2.4, 0.7]);
+  }
+  const tufts = puffs(w, h, back, [7, 8], 0, 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (mask.get(x, y) === EMPTY) continue;
+    const p = tufts.get(x, y);
+    // le dos prend la lumière : un cran de plus sur sa moitié gauche
+    const i = p === EMPTY ? 0 : Math.min(3, ramp.indexOf(p) + (x < 7 && y > Y0 + 1 ? 1 : 0));
+    c.set(x, y, ramp[i]);
+  }
+  // le bout sud : une touffe ronde et pleine, face à nous, plus sombre que le dos (elle tourne le dos au ciel), et deux plus
+  // petites au pied ; la ligne où elle passe devant le dos, un liseré d'ombre
+  const end: [number, number, number][] = [[7, 24.2, 3.1], [4.9, 26.2, 2.7], [9.1, 26.4, 2.7], [7, 27.5, 3.4], [5.3, 30, 2.5], [8.7, 30, 2.5], [7, 30.5, 3]];
+  const face = puffs(w, h, end, [4, 18], 0, 5);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const p = face.get(x, y);
+    if (p === EMPTY) continue;
+    const i = ramp.indexOf(p);
+    face.set(x, y, ramp[Math.max(0, Math.min(y >= 31 ? 1 : y >= 27 ? 2 : 3, i - (y >= 31 ? 1 : 0)))]);
+  }
+  for (let x = 0; x < w; x++) for (let y = 15; y < 26; y++) {
+    if (face.get(x, y) !== EMPTY) { if (c.get(x, y - 1) !== EMPTY) c.set(x, y - 1, 'k'); break; }
+  }
+  c.stamp(face.toGrid(), 0, 0);
+  // le pied : le creux sombre sous les branches, deux tiges
+  for (const [x, y] of [[6, 32], [7, 32], [8, 32]] as Vec[]) if (c.get(x, y) !== EMPTY) c.set(x, y, 'K');
+  c.set(5, 33, 'N').set(9, 33, 'N');
+  const out = shadedOutline(despeckleEdges(c, 'KN'));
+  groundShadow(out, 7.5, 34.5, 6, 1.6);
+  // l'ombre au sol le long du flanc est (la lumière vient du nord-ouest) : elle file vers le nord sur toute la longueur du
+  // buisson, c'est ce qui dit qu'il est long et couché dans ce sens
+  for (let y = 9; y < 35; y++) {
+    let e = -1;
+    for (let x = w - 1; x >= 0; x--) if (out.get(x, y) !== EMPTY && out.get(x, y) !== 'x') { e = x; break; }
+    if (e < 0) continue;
+    const n = y < 13 ? 1 : 2;
+    for (let i = 1; i <= n; i++) if (out.get(e + i, y) === EMPTY) out.set(e + i, y, 'x');
+  }
+  return out;
+}
+
+/** AVANT (planche 5 seulement) : l'ancien buisson long nord-sud, en colonne de touffes égales. */
+export function bushLongNsBefore(): Canvas {
+
   const w = 14;
   const h = 38;
   const list: [number, number, number][] = [

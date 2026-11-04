@@ -19,7 +19,7 @@ import { world } from '../palette';
 import { bankTile, faceEarth, faceWet, lane, pathLane } from '../world/relief';
 import tileset from '../world/tiles';
 import { hash } from '../world/relief';
-import { cut, PLANTS, riser, roots, STEP, tread, type PlantKey } from './relief-gradins';
+import { cut, cutBefore, cutVariant, CUT_VARIANTS, PLANTS, riser, roots, STEP, tread, type PlantKey } from './relief-gradins';
 
 export type Rgb = [number, number, number];
 
@@ -92,7 +92,11 @@ const G = (c: Canvas) => c.toGrid();
 const banks = [0, 1, 2, 3].map((k) => G(bankTile(k)));
 const treads = [0, 1, 2, 3, 4, 5].map((k) => G(tread(k)));
 const risers = [0, 1, 2, 3].map((k) => G(riser(k)));
-const cuts = [0, 1, 2].map((k) => G(cut(k)));
+const cuts = Array.from({ length: CUT_VARIANTS }, (_, k) => G(cut(k)));
+const cutsBefore = [0, 1, 2].map((k) => G(cutBefore(k)));
+
+/** Pour la planche 5 (avant / après) : `before` rend la terre en coupe, sa pénombre et le fantôme comme avant les corrections. */
+export const MODE = { before: false };
 const lanesN = [0, 2, 3, 4].map((v) => G(lane(14, v)));
 const lanesS = [0, 2, 3, 4].map((v) => G(lane(11, v)));
 const faces = [0, 1, 2].map((k) => G(faceEarth(k)));
@@ -139,7 +143,8 @@ function topChar(x: number, y: number, g: Ground): string {
       return T[y < 0 ? 'path-14' : 'path-11'][md(y, COL)][md(x, COL)];
     }
     case 'cut':
-      return pick(cuts, tx, ty, 77)[md(y, COL)][md(x, COL)];
+      if (MODE.before) return pick(cutsBefore, tx, ty, 77)[md(y, COL)][md(x, COL)];
+      return cuts[cutVariant(tx, ty)][md(y, COL)][md(x, COL)];
   }
 }
 
@@ -304,14 +309,20 @@ export const GLOOM_MAX = 0.3;
 /** La lumière du dehors entre par la bouche est sur 3,5 m. */
 export const MOUTH_LIGHT = 70;
 
-/** La pénombre d'un pixel du trou : forte au fond, nulle sur le dessus ; le sol n'en reçoit que `floor` ; s'éclaircit vers la bouche. */
+/**
+ * La pénombre d'un pixel du trou : forte au fond, nulle sur le dessus ; le sol n'en reçoit que `floor` ; s'éclaircit vers la bouche.
+ * La terre en coupe (correction 1) reçoit partout, sur toute sa largeur, la pénombre du sol du chemin à la même colonne x (t = 1,
+ * × `floor`) : elle est le plan de coupe, au niveau du sol, pas une partie du trou ; avant, seules ses rangées à moins de
+ * EDGE + 2 px de l'axe la recevaient entière, ce qui faisait la bande sombre sous le chemin.
+ */
 export function applyGloom(R: Raster, floor: number, plants = 0.55) {
   for (let k = 0; k < R.w * R.h; k++) {
     if (!R.what[k]) continue;
     const x = R.x0 + (k % R.w);
     if (x >= XF) continue;
     const y = R.dep[k];
-    if (Math.abs(y) > EDGE + 2 && R.what[k] === 1) continue;
+    const isCut = R.what[k] === 1 && R.kind[k] === 'cut' && !MODE.before;
+    if (Math.abs(y) > EDGE + 2 && R.what[k] === 1 && !isCut) continue;
     const hp = pathH(x);
     const depth = TOP - hp;
     if (depth < 1) continue;
@@ -320,7 +331,7 @@ export function applyGloom(R: Raster, floor: number, plants = 0.55) {
     let a = GLOOM_MAX * Math.sqrt(t) * mouth * (depth / TOP);
     if (R.what[k] === 2) a *= plants;
     if (R.what[k] === 3) a *= 0.5;
-    if (R.kind[k] === 'path') a *= floor;
+    if (R.kind[k] === 'path' || isCut) a *= floor;
     R.put(k, GLOOM, a);
   }
 }
