@@ -26,7 +26,7 @@ await playtest('lapins', async ({ page, load }) => {
     };
     const key = (type: 'keydown' | 'keyup', code: string) => window.dispatchEvent(new KeyboardEvent(type, { code }));
     const me = () => w().player.actor;
-    const census = () => w().creatures.census(me().x, me().y) as { id: string; mode: string; x: number; y: number; dist: number; seenAt: number; hp: number }[];
+    const census = () => w().creatures.census(me().x, me().y) as { id: string; mode: string; x: number; y: number; dist: number; seenAt: number; hp: number; fled?: string }[];
     const find = (id: string) => census().find((c) => c.id === id);
     const out: Record<string, unknown> = {};
 
@@ -95,13 +95,13 @@ await playtest('lapins', async ({ page, load }) => {
       const c = find(id)!;
       await stand(c.x - 400, c.y, 'right');
       await W.__until(() => find(id)?.mode === 'calm', `le lapin ${id} calme, Xéros à 20 m`);
-      const seen: { alert?: number; flee?: number; min: number } = { min: Infinity };
+      const seen: { alert?: number; flee?: number; why?: string; min: number } = { min: Infinity };
       const watch = () => {
         const q = find(id);
         if (!q) return;
         // la distance d'où il a perçu Xéros (sa place au début du pas) : au pas où il fuit, il a déjà fait son premier bond
         if (q.mode === 'alert' && seen.alert === undefined) seen.alert = q.seenAt;
-        if (q.mode === 'flee' && seen.flee === undefined) seen.flee = q.seenAt;
+        if (q.mode === 'flee' && seen.flee === undefined) [seen.flee, seen.why] = [q.seenAt, q.fled];
         if (seen.flee === undefined) seen.min = Math.min(seen.min, q.dist);
       };
       // Xéros marche vers le lapin, comme un joueur qui le vise : vers l'est (les touches `keys`), et vers le nord ou le sud quand le
@@ -118,7 +118,7 @@ await playtest('lapins', async ({ page, load }) => {
       w().events.on('postupdate', watch);
       w().events.on('postupdate', steer);
       for (const k of keys) key('keydown', k);
-      await W.__until(() => seen.flee !== undefined || !find(id), `le lapin ${id} fuit devant Xéros (${keys.join('+')})`);
+      await W.__until(() => seen.flee !== undefined || !find(id), `le lapin ${id} fuit devant Xéros (${keys.join('+')}) ; Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}), le lapin en (${Math.round(find(id)?.x ?? 0)}, ${Math.round(find(id)?.y ?? 0)}), ${find(id)?.mode}`);
       for (const k of keys) key('keyup', k);
       w().events.off('postupdate', steer);
       if (side) key('keyup', side);
@@ -126,15 +126,30 @@ await playtest('lapins', async ({ page, load }) => {
       return seen;
     };
 
+    /**
+     * Un lapin sort, Xéros l'approche (`approach`). Les lapins d'une garenne broutent ensemble : celui que Xéros fait fuir en passant
+     * tambourine en entrant au terrier, et l'alerte fait fuir tous ceux qui sont à `thump.radius` m (le jeu, voulu). Une fuite sur
+     * l'alerte d'un autre (`fled` : `alarm`) ne mesure pas ce que le lapin perçoit de Xéros : un autre lapin sort, et Xéros recommence
+     * (trois fois au plus, chacune comptée dans `alarms`).
+     */
+    const measure = async (keys: string[]) => {
+      for (let n = 0; ; n++) {
+        const id = await spawnAt(X0 + 420);
+        const seen = await approach(id, keys);
+        if (seen.why !== 'alarm' || n === 2) return { id, seen };
+        out.alarms = ((out.alarms as number) ?? 0) + 1;
+        await W.__until(() => !find(id), `le lapin ${id}, alerté par un autre, entre au terrier`);
+      }
+    };
+
     // ---------- à la marche : aux aguets, puis la fuite, puis le terrier ----------
-    const a = await spawnAt(X0 + 420);
-    out.walk = await approach(a, ['KeyD']);
-    await W.__until(() => !find(a), `le lapin ${a} entre au terrier`);
+    const a = await measure(['KeyD']);
+    out.walk = a.seen;
+    await W.__until(() => !find(a.id), `le lapin ${a.id} entre au terrier`);
     out.walkEntered = true;
 
     // ---------- en marche discrète : plus près ----------
-    const b = await spawnAt(X0 + 420);
-    out.sneak = await approach(b, ['AltLeft', 'KeyD']);
+    out.sneak = (await measure(['AltLeft', 'KeyD'])).seen;
     out.senses = { walk: def.senses.walk, sneak: def.senses.sneak };
 
     // ---------- la force au maximum, un coup de branche : un lapin mort ----------
@@ -174,6 +189,7 @@ await playtest('lapins', async ({ page, load }) => {
   assert.ok(r.outside >= 4, `à l'aube, des lapins dehors (${r.outside})`);
   assert.ok(r.laneY > 0, 'une bande de pré libre pour marcher');
   const { walk, sneak, senses } = r;
+  assert.ok(walk.why === 'seen' && (sneak.why === undefined || sneak.why === 'seen'), `les fuites mesurées sont dues à Xéros (${walk.why}, ${sneak.why} ; ${r.alarms ?? 0} alertes d'un autre lapin)`);
   assert.ok(walk.alert !== undefined && walk.alert < senses.walk.alert && walk.alert >= senses.walk.flee, `à la marche, aux aguets entre ${senses.walk.flee} et ${senses.walk.alert} m (${walk.alert})`);
   assert.ok(walk.flee !== undefined && walk.flee < senses.walk.flee, `à la marche, il fuit en deçà de ${senses.walk.flee} m (${walk.flee})`);
   assert.ok(r.walkEntered, 'il entre au terrier');
@@ -185,6 +201,6 @@ await playtest('lapins', async ({ page, load }) => {
   assert.equal(r.membersAfter, r.membersBefore - 1, 'la garenne compte une bête de moins');
   assert.ok(r.held.includes('dead-rabbit'), `le lapin mort ramassé (${JSON.stringify(r.held)})`);
   console.log(
-    `✓ lapins : ${r.outside} dehors à l'aube ; à la marche, aux aguets à ${walk.alert.toFixed(1)} m, fuite à ${walk.flee.toFixed(1)} m, au terrier ; en marche discrète, approché à ${sneak.min.toFixed(1)} m ; la force au maximum, un coup de branche le tue, un lapin mort à sa place, ramassé`,
+    `✓ lapins : ${r.outside} dehors à l'aube ; à la marche, aux aguets à ${walk.alert.toFixed(1)} m, fuite à ${walk.flee.toFixed(1)} m, au terrier ; en marche discrète, approché à ${sneak.min.toFixed(1)} m${r.alarms ? ` (${r.alarms} fuite${r.alarms > 1 ? 's' : ''} sur l'alerte d'un autre lapin, recommencée${r.alarms > 1 ? 's' : ''})` : ''} ; la force au maximum, un coup de branche le tue, un lapin mort à sa place, ramassé`,
   );
 });
