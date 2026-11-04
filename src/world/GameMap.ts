@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { DEPTH, GLOW, INTERIOR, SHADOW, TILE } from '../config';
+import { DEPTH, GLOW, INTERIOR, RELIEF, SHADOW, TILE } from '../config';
+import { deepAt, heightAt } from './relief';
 import { roofShadow } from './roofShadow';
 import { items, props as propDefs } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
@@ -440,16 +441,19 @@ export class GameMap {
 
   /**
    * Le rectangle (repère de la carte) est libre  /**
-   * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante, sur aucune collision d'objet
-   * ni sur l'un des corps `others` (les personnages). Les collisions de `ignore` ne comptent pas (le tas qui grandit).
+   * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante ni dans l'eau profonde (rien ne s'y pose),
+   * pas à cheval sur une marche du relief (`RELIEF.straddle`), sur aucune collision d'objet ni sur l'un des corps `others` (les
+   * personnages). Les collisions de `ignore` ne comptent pas (le tas qui grandit). `overWater` : l'eau ne compte pas (ce qui vole au-dessus).
    */
-  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = [], ignore: readonly Phaser.GameObjects.GameObject[] = []): boolean {
+  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = [], ignore: readonly Phaser.GameObjects.GameObject[] = [], opts: { overWater?: boolean } = {}): boolean {
     if (b.left < 0 || b.top < 0 || b.right > this.width || b.bottom > this.height) return false;
     for (let ty = Math.floor(b.top / TILE); ty <= Math.floor((b.bottom - 0.01) / TILE); ty++) {
       for (let tx = Math.floor(b.left / TILE); tx <= Math.floor((b.right - 0.01) / TILE); tx++) {
         if (this.floor.getTileAt(tx, ty)?.collides) return false;
+        if (!opts.overWater && deepAt(this.def, tx * TILE + TILE / 2, ty * TILE + TILE / 2)) return false;
       }
     }
+    if (!this.level(b)) return false;
     const overlaps = (l: number, t: number, r: number, bo: number) => b.left < r && b.right > l && b.top < bo && b.bottom > t;
     // les obstacles proches seulement, par l'arbre des collisions fixes (une forêt en a des milliers), puis le contrôle exact
     const near = this.scene.physics.overlapRect(b.left - 1, b.top - 1, b.right - b.left + 2, b.bottom - b.top + 2, false, true) as Phaser.Physics.Arcade.StaticBody[];
@@ -458,6 +462,25 @@ export class GameMap {
       .filter((z) => z && this.obstacles.contains(z) && !ignore.includes(z));
     if (zones.some((z) => overlaps(z.x - z.width / 2, z.y - z.height / 2, z.x + z.width / 2, z.y + z.height / 2))) return false;
     return !others.some((o) => overlaps(o.left, o.top, o.right, o.bottom));
+  }
+
+  /** Le rectangle touche-t-il l'eau profonde ? */
+  inWater(b: Box): boolean {
+    for (let ty = Math.floor(b.top / TILE); ty <= Math.floor((b.bottom - 0.01) / TILE); ty++)
+      for (let tx = Math.floor(b.left / TILE); tx <= Math.floor((b.right - 0.01) / TILE); tx++) if (deepAt(this.def, tx * TILE + TILE / 2, ty * TILE + TILE / 2)) return true;
+    return false;
+  }
+
+  /** Le rectangle tient sur un seul niveau (ou une pente douce) : l'écart des hauteurs de ses coins et de son centre ne dépasse pas `RELIEF.straddle`. */
+  level(b: Box): boolean {
+    const hs = [
+      heightAt(this.def, b.left, b.top),
+      heightAt(this.def, b.right, b.top),
+      heightAt(this.def, b.left, b.bottom),
+      heightAt(this.def, b.right, b.bottom),
+      heightAt(this.def, (b.left + b.right) / 2, (b.top + b.bottom) / 2),
+    ];
+    return Math.max(...hs) - Math.min(...hs) <= RELIEF.straddle;
   }
 
   /**

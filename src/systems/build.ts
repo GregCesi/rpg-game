@@ -353,7 +353,7 @@ export class BuildSystem {
     return cands.sort((p, q) => d(p) - d(q))[0];
   }
 
-  /** Pourquoi on ne peut pas poser ces pièces : hors de la carte, dans une autre pièce, sur Xéros ; sinon rien. `replacing` : la pièce que la pose remplace (elle ne gêne pas). */
+  /** Pourquoi on ne peut pas poser ces pièces : hors de la carte, dans une autre pièce, sur Xéros, à cheval sur une marche, dans l'eau ; sinon rien. `replacing` : la pièce que la pose remplace (elle ne gêne pas). */
   private refusal(list: BuildPlaced[], replacing?: number): string | undefined {
     const W = this.map.width * CM_PER_PX;
     const H = this.map.height * CM_PER_PX;
@@ -370,6 +370,10 @@ export class BuildSystem {
       if (room && (b.x < room.x || b.y < room.y || b.x + b.w > room.x + room.w || b.y + b.d > room.y + room.d)) return 'Hors de la pièce.';
       if (!isRoof(p) && others.some((o) => intersects(o, solidOf(p)))) return 'Une autre pièce est déjà là.';
       if (b.z < BUILD.high && overlaps(b, feet)) return 'Xéros est là.';
+      // le relief : une pièce au sol tient sur un seul niveau ; dans l'eau profonde, rien ne se pose
+      const box = { left: b.x / CM_PER_PX, top: b.y / CM_PER_PX, right: (b.x + b.w) / CM_PER_PX, bottom: (b.y + b.d) / CM_PER_PX };
+      if (b.z === 0 && !this.map.level(box)) return 'À cheval sur une marche.';
+      if (b.z === 0 && this.map.inWater(box)) return "Dans l'eau.";
     }
     return undefined;
   }

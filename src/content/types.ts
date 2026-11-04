@@ -28,6 +28,11 @@ const TerrainDefSchema = z.strictObject({
   /** Couleur du terrain dans Tiled (#rrggbb). */
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   solid: z.boolean().optional(),
+  /**
+   * L'eau profonde (chantier « relief ») : elle ne bloque pas par elle-même ; c'est le personnage qui n'y entre pas s'il ne nage pas
+   * (`swim` de mobility.json, world/relief.ts). Rien ne s'y pose.
+   */
+  deep: z.boolean().optional(),
 });
 
 /** Catalogue d'un jeu de tuiles : ce que `build-art` ajoute aux tuiles dessinées dans art/. */
@@ -1358,6 +1363,8 @@ export const CreatureSchema = z.strictObject({
     .refine((s) => s.every((x, i) => i === 0 || x.hour > s[i - 1].hour), { message: "les heures de 'schedule' vont croissant" }),
   births: z.strictObject({ hours: z.number().positive() }),
   heal: z.strictObject({ days: z.number().int().positive() }),
+  /** Ce qu'elle monte, descend, saute et si elle nage (MobilitySchema) : elle ne passe que là où ses capacités la laissent passer. */
+  mobility: z.lazy(() => MobilitySchema),
 });
 
 /**
@@ -1670,6 +1677,46 @@ const MapWarrenSchema = z.strictObject({
   population: z.number().int().positive(),
 });
 
+/** Un point d'une forme du relief, en px de la carte. */
+const ReliefPointSchema = z.strictObject({ x: px, y: px });
+
+/**
+ * Le relief d'une carte (docs/CONCEPTION.md, « Le relief »), lu par build-maps dans le calque d'objets `relief` de Tiled ; hauteurs et
+ * largeurs en cm. `base` : la hauteur de fond (la propriété de carte `height` : une zone toute sur le plateau). `levels` : des niveaux
+ * plats (polygones). `ridges` : des talus en long (polylignes) : la crête suit la ligne à la hauteur interpolée `h`, large de `crest`,
+ * et le flanc descend à 0 sur `flank`, chacun donné sommet par sommet. `lanes` : des couloirs creusés (polylignes) : le sol suit la
+ * ligne à la hauteur `h` interpolée, sur `width` de large, et un talus intérieur large de `inner` + `innerSlope` × la profondeur le
+ * raccorde à ce qui l'entoure. La hauteur d'un point : le plus haut des niveaux et des talus (ou le fond), creusé par les couloirs.
+ */
+export const ReliefSchema = z.strictObject({
+  base: z.number().nonnegative(),
+  levels: z.array(z.strictObject({ id: z.number().int(), height: z.number().nonnegative(), points: z.array(ReliefPointSchema).min(3) })),
+  ridges: z.array(
+    z.strictObject({
+      id: z.number().int(),
+      points: z.array(ReliefPointSchema.extend({ h: z.number().nonnegative(), crest: z.number().nonnegative(), flank: z.number().positive() })).min(2),
+    }),
+  ),
+  lanes: z.array(
+    z.strictObject({
+      id: z.number().int(),
+      width: z.number().positive(),
+      inner: z.number().nonnegative(),
+      innerSlope: z.number().nonnegative(),
+      points: z.array(ReliefPointSchema.extend({ h: z.number().nonnegative() })).min(2),
+    }),
+  ),
+});
+
+/**
+ * Monter, descendre, nager (mobility.json pour Xéros, `mobility` d'une créature) : des capacités du personnage, jamais une règle du
+ * monde (« Le monde ne limite pas »). `step` (cm) : ce qu'il monte ou descend d'un pas ; `drop` (cm) : ce dont il saute pour descendre ;
+ * `slope` (%) : la pente qu'il marche ; plus raide, elle compte comme une marche de toute sa hauteur ; `swim` : il nage.
+ */
+export const MobilitySchema = z
+  .strictObject({ step: z.number().nonnegative(), drop: z.number().nonnegative(), slope: z.number().positive(), swim: z.boolean() })
+  .refine((m) => m.drop >= m.step, { message: "'drop' ne peut pas être au-dessous de 'step'" });
+
 export const MapSchema = z.strictObject({
   /** Nom du fichier .tmj. */
   id,
@@ -1704,6 +1751,8 @@ export const MapSchema = z.strictObject({
   warrens: z.array(MapWarrenSchema).default([]),
   /** Objets possédables posés au sol depuis Tiled (les branches de la tempête). */
   items: z.array(MapItemSchema).default([]),
+  /** Le relief (calque `relief` de Tiled) ; sans : une carte plate, à 0 partout (les intérieurs). */
+  relief: ReliefSchema.optional(),
 });
 
 /** Une destination de parcelle (parcels.json) : le nom dit, et une couleur pour la montrer (mode construction, ?debug). */
@@ -1741,6 +1790,8 @@ export const WorldSchema = z.strictObject({
 export type Facing = z.infer<typeof FacingSchema>;
 export type DecalSet = z.infer<typeof DecalSetSchema>;
 export type TerrainDef = z.infer<typeof TerrainDefSchema>;
+export type Relief = z.infer<typeof ReliefSchema>;
+export type Mobility = z.infer<typeof MobilitySchema>;
 export type TilesetCatalog = z.infer<typeof TilesetCatalogSchema>;
 export type PropDef = z.infer<typeof PropDefSchema>;
 export type TreeDef = z.infer<typeof TreeSchema>;

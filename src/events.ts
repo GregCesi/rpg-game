@@ -97,6 +97,8 @@ export type DieuCommand =
   | { kind: 'force'; multiplier: number }
   | { kind: 'stamina'; breath?: number; ceiling?: number; max?: number }
   | { kind: 'stamina-infinite'; on: boolean }
+  /** Escalade (chantier « relief ») : Xéros monte et descend toute hauteur ; seul le personnage limite. */
+  | { kind: 'climber'; on: boolean }
   | { kind: 'clock'; hour: number }
   | { kind: 'finish-work' }
   | { kind: 'stamina-start' }

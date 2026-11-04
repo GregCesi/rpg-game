@@ -6,6 +6,7 @@ import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
 import { Breath } from './Breath';
 import { Hold } from './Hold';
+import { Mobility } from './Mobility';
 import { Stamina } from './Stamina';
 import { Strength } from './Strength';
 import { ToolUse } from './ToolUse';
@@ -20,6 +21,8 @@ export class Player {
   readonly strength = new Strength();
   /** L'endurance : la fatigue de la journée (courir, porter, pousser et les gestes y puisent). */
   readonly stamina = new Stamina();
+  /** Monter, descendre, sauter, nager (mobility.json) : ce qui l'arrête au pied d'une falaise ou au bord de l'eau. */
+  readonly mobility = new Mobility();
   /** Essoufflé, il souffle : la bouffée près de sa bouche. */
   readonly breath: Breath;
   /** Il court à cette image (lu par systems/effort.ts, qui en fait payer la course). */

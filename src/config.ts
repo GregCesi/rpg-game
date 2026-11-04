@@ -109,6 +109,14 @@ export const ROOF = { alpha: 0.35, fadeMs: 250, wall: 30, eaves: 100, window: { 
 export const SHADOW = { dx: 0.25, dy: 0.1, color: 0x2b1a10, alpha: 0x40 / 255 };
 
 /**
+ * Le relief (chantier « relief », world/relief.ts) : `straddle` (cm), l'écart de hauteur au-delà duquel une chose posée serait à
+ * cheval sur une marche (elle basculerait) : la place n'est pas libre ; `lane`, l'opacité du bord sud d'un chemin creux et des
+ * feuillages qui le surplombent quand Xéros est dessous (comme un toit, plus effacé), `fadeMs` le fondu ; `gloom`, la pénombre du
+ * creux à 5 m de profondeur (elle suit la profondeur, cuite dans le terrain, jamais sur Xéros).
+ */
+export const RELIEF = { straddle: 50, lane: 0.2, fadeMs: 250, gloom: 0.3 };
+
+/**
  * Chantiers (systems/site.ts) : les piquets suivants s'aimantent au coin du tracé le plus près s'il est à moins de `snap` px du
  * point que regarde Xéros ; la ligne d'état « Abri à bois : dés, 2 sur 4 » paraît quand Xéros est à moins de `near` px de
  * l'emprise ; `ghost` et `aimed` : opacité des places à remplir, et de celle que vise Xéros avec une pièce qui lui convient ;

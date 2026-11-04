@@ -43,7 +43,7 @@ export interface Catalog {
 
 interface ManifestLike {
   spritesheets: { key: string; frameWidth: number; frameHeight: number; animations: Record<string, { frames: unknown[] }>; silhouette: { w: number; h: number } }[];
-  tilesets: { key: string; tiles: Record<string, number>; solid: number[] }[];
+  tilesets: { key: string; tiles: Record<string, number>; solid: number[]; deep?: number[] }[];
   images: { key: string; width: number; height: number; silhouette: { w: number; h: number } }[];
   woodSilhouettes?: readonly { piece: WoodPiece; w: number; h: number }[];
 }
@@ -61,7 +61,8 @@ export function catalogFrom(m: ManifestLike): Catalog {
     frameCounts: new Map(m.spritesheets.map((s) => [s.key, new Map(Object.entries(s.animations).map(([k, a]) => [k, a.frames.length]))])),
     tiles: new Map(m.tilesets.map((t) => [t.key, new Set(Object.keys(t.tiles))])),
     tileNumbers: new Map(m.tilesets.map((t) => [t.key, new Set(Object.values(t.tiles))])),
-    solid: new Map(m.tilesets.map((t) => [t.key, new Set(t.solid)])),
+    // l'eau profonde compte avec le plein : un point d'arrivée, un PNJ, une sortie n'y sont jamais
+    solid: new Map(m.tilesets.map((t) => [t.key, new Set([...t.solid, ...(t.deep ?? [])])])),
   };
 }
 
