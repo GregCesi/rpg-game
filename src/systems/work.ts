@@ -207,6 +207,13 @@ export class WorkSystem {
     );
   }
 
+  /** Le travail s'arrête tout de suite, au milieu du coup (Xéros renversé par une charge) : ce qui est fait reste fait. */
+  interrupt(): void {
+    if (!this.job) return;
+    this.player.tools.cancel();
+    this.close('stopped');
+  }
+
   private close(why: WorkEnd): void {
     const job = this.job!;
     this.job = undefined;

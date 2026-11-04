@@ -5,7 +5,9 @@ import { SPEEDS } from '../systems/speeds';
 import { PlayerInput } from '../input/PlayerInput';
 import { Actor } from './Actor';
 import { Breath } from './Breath';
+import { Health } from './Health';
 import { Hold } from './Hold';
+import { Mobility } from './Mobility';
 import { Stamina } from './Stamina';
 import { Strength } from './Strength';
 import { ToolUse } from './ToolUse';
@@ -20,6 +22,8 @@ export class Player {
   readonly strength = new Strength();
   /** L'endurance : la fatigue de la journée (courir, porter, pousser et les gestes y puisent). */
   readonly stamina = new Stamina();
+  /** Monter, descendre, sauter, nager (mobility.json) : ce qui l'arrête au pied d'une falaise ou au bord de l'eau. */
+  readonly mobility = new Mobility();
   /** Essoufflé, il souffle : la bouffée près de sa bouche. */
   readonly breath: Breath;
   /** Il court à cette image (lu par systems/effort.ts, qui en fait payer la course). */
@@ -33,6 +37,10 @@ export class Player {
   sneaking = false;
   /** Il pousse une bille qui roule (posé par systems/roll.ts à chaque image) : posture `push`. */
   pushing = false;
+  /** Renversé par une charge (systems/knockdown.ts) : il tombe, glisse et se relève ; ni le clavier ni la marche ne le mènent. */
+  down = false;
+  /** La vie : une charge la fait baisser ; à zéro, il s'évanouit. */
+  readonly health = new Health();
   /** Direction demandée au dernier tour (0,0 si immobile). */
   dir = new Phaser.Math.Vector2(0, 0);
   /**
@@ -62,6 +70,11 @@ export class Player {
     this.running = false;
     this.runRefused = false;
     this.breath.update(this.stamina.winded && !this.stamina.infinite);
+    // renversé : le geste de la chute mène le corps (systems/knockdown.ts)
+    if (this.down) {
+      this.dir.set(0, 0);
+      return;
+    }
     // pendant un geste, le corps reste sur place et garde son animation
     if (this.tools.busy) {
       this.dir.set(0, 0);

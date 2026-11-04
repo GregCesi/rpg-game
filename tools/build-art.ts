@@ -140,7 +140,7 @@ type Box = { x: number; y: number; w: number; h: number };
 const imports: string[] = [];
 const catalog = {
   spritesheets: [] as { key: string; frameWidth: number; frameHeight: number; animations: Record<string, unknown>; silhouette: Box }[],
-  tilesets: [] as { key: string; tiles: Record<string, number>; count: number; solid: number[]; decals: Record<number, DecalSet> }[],
+  tilesets: [] as { key: string; tiles: Record<string, number>; count: number; solid: number[]; deep: number[]; decals: Record<number, DecalSet> }[],
   images: [] as { key: string; width: number; height: number; silhouette: Box }[],
   woodSilhouettes: [] as { piece: WoodPiece; w: number; h: number }[],
 };
@@ -178,9 +178,10 @@ for (const src of sources) {
 
   if (src.kind === 'spritesheet') {
     const cells: Grid[] = [];
-    const anims: Record<string, { frames: number[]; frameRate: number; repeat: number }> = {};
+    const anims: Record<string, { frames: number[]; frameRate: number; repeat: number; durations?: number[] }> = {};
     for (const [anim, def] of Object.entries(src.animations)) {
-      anims[anim] = { frames: [], frameRate: def.frameRate, repeat: def.repeat };
+      if (def.durations && def.durations.length !== def.frames.length) throw new Error(`${src.name}/${anim} : ${def.durations.length} durées pour ${def.frames.length} images`);
+      anims[anim] = { frames: [], frameRate: def.frameRate, repeat: def.repeat, ...(def.durations ? { durations: def.durations } : {}) };
       def.frames.forEach((g, f) => {
         check(g, src.frameW, src.frameH, src.palette, `${src.name}/${anim}[${f}]`);
         anims[anim].frames.push(cells.length);
@@ -193,7 +194,7 @@ for (const src of sources) {
     const sil = silhouette(cells[0], src.palette);
     catalog.spritesheets.push({ key: src.name, frameWidth: src.frameW, frameHeight: src.frameH, animations: anims, silhouette: sil });
     spritesheets.push(
-      `  { key: '${src.name}', url: ${id}, frameWidth: ${src.frameW}, frameHeight: ${src.frameH}, animations: ${JSON.stringify(anims)}, silhouette: ${JSON.stringify(sil)} },`,
+      `  { key: '${src.name}', url: ${id}, frameWidth: ${src.frameW}, frameHeight: ${src.frameH}, ${src.feet !== undefined ? `feet: ${src.feet}, ` : ''}animations: ${JSON.stringify(anims)}, silhouette: ${JSON.stringify(sil)} },`,
     );
   } else if (src.kind === 'tileset') {
     const names = Object.keys(src.tiles);
@@ -219,6 +220,8 @@ for (const src of sources) {
     for (const [terrain, def] of Object.entries(cat.terrains)) {
       for (let m = 0; m < 16; m++) if (def.solid) solid.add(`${terrain}-${m}`);
     }
+    // l'eau profonde (chantier « relief ») : elle ne bloque pas, le personnage qui ne nage pas n'y entre pas (world/relief.ts)
+    const deep = new Set(Object.entries(cat.terrains).flatMap(([terrain, def]) => (def.deep ? Array.from({ length: 16 }, (_, m) => `${terrain}-${m}`) : [])));
     const tsj = tilesetTsj({
       name: src.name,
       tileSize: src.tileSize,
@@ -239,11 +242,12 @@ for (const src of sources) {
       tiles: index,
       count: slots.length,
       solid: [...solid].filter((n) => n in index).map((n) => index[n]).sort((a, b) => a - b),
+      deep: [...deep].filter((n) => n in index).map((n) => index[n]).sort((a, b) => a - b),
       decals: Object.fromEntries([...decalOf].map(([n, d]) => [index[n], cat.decals[d]])),
     };
     catalog.tilesets.push(entry);
     tilesets.push(
-      `  { key: '${src.name}', url: ${id}, tileSize: ${src.tileSize}, tiles: ${JSON.stringify(index)}, solid: ${JSON.stringify(entry.solid)}, decals: ${JSON.stringify(entry.decals)} },`,
+      `  { key: '${src.name}', url: ${id}, tileSize: ${src.tileSize}, tiles: ${JSON.stringify(index)}, solid: ${JSON.stringify(entry.solid)}, deep: ${JSON.stringify(entry.deep)}, decals: ${JSON.stringify(entry.decals)} },`,
     );
   } else {
     const w = src.grid[0].length;
@@ -294,7 +298,10 @@ export interface SpriteSheetAsset {
   url: string;
   frameWidth: number;
   frameHeight: number;
-  animations: Record<string, { frames: number[]; frameRate: number; repeat: number }>;
+  /** Combien de rangées sous les pieds dans chaque image (une créature) ; absent : 2. */
+  feet?: number;
+  /** durations : la durée de chaque image (ms), quand elle n'est pas la même pour toutes (sinon frameRate). */
+  animations: Record<string, { frames: number[]; frameRate: number; repeat: number; durations?: number[] }>;
   /** Silhouette de la première image (gabarit) : pixels opaques, contour compris, ombre et lueurs exclues. */
   silhouette: { x: number; y: number; w: number; h: number };
 }
@@ -306,6 +313,8 @@ export interface TilesetAsset {
   tiles: Record<string, number>;
   /** Numéros des tuiles bloquantes. */
   solid: number[];
+  /** Numéros des tuiles d'eau profonde (on n'y entre pas sans nager, on n'y pose rien). */
+  deep: number[];
   /** Numéro de tuile -> détails posés au hasard dessus. */
   decals: Record<number, { images: string[]; chance: number }>;
 }
@@ -327,6 +336,8 @@ ${images.join('\n')}
 export const woodSilhouettes: { piece: WoodPiece; w: number; h: number }[] = ${JSON.stringify(catalog.woodSilhouettes)};
 `;
 writeFileSync(join(OUT, 'assets.ts'), manifest);
+// les tuiles d'eau profonde par jeu de tuiles, en JSON (lu sans Phaser ni images : world/relief.ts, les tests)
+writeFileSync(join(OUT, 'terrain.json'), JSON.stringify(Object.fromEntries(catalog.tilesets.map((t) => [t.key, { deep: t.deep }]))) + '\n');
 // les dessins des pierres dont le jeu monte ses murs (le tronçon de solin, src/world/walls.ts) : des grilles, et leur palette ; le
 // jeu ne lit pas art/, il lit ceci
 const wallStones = Object.fromEntries(

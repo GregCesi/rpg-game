@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
-import { DEPTH, GLOW, INTERIOR, SHADOW, TILE } from '../config';
+import { viewImage } from '../content/views';
+import { DEPTH, GLOW, INTERIOR, RELIEF, SHADOW, TILE } from '../config';
+import { deepAt, heightAt } from './relief';
+import { hasRelief, TerrainView } from './terrainView';
 import { roofShadow } from './roofShadow';
 import { items, props as propDefs, tiles as tileCatalog } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
@@ -362,6 +365,11 @@ export class GameMap {
     this.floor = map.createLayer(0, ts, 0, 0)!;
     this.floor.setDepth(DEPTH.ground);
     this.floor.setCollision(tileset.solid);
+    // le relief (chantier « relief ») : le sol se dessine en projection (world/terrainView.ts) ; le calque d'origine reste pour les collisions
+    if (hasRelief(def)) {
+      this.floor.setVisible(false);
+      new TerrainView(scene, def, 0, 0, { x0: 0, y0: 0, x1: def.width, y1: def.height });
+    }
     this.tileNames = Object.fromEntries(Object.entries(tileset.tiles).map(([n, i]) => [i, n]));
 
     // Détails au sol, posés de façon stable (même carte = mêmes détails)
@@ -440,7 +448,6 @@ export class GameMap {
   }
 
   /**
-   * Le rectangle (repère de la carte) est libre  /**
    * Le poste qu'offre le sol au point (x, y) (`station` du terrain de sa case, tiles.json : l'eau, l'étang où l'on puise), ou undefined.
    * Le terrain d'une case se lit au nom de sa tuile (`<terrain>-<masque>`).
    */
@@ -457,16 +464,19 @@ export class GameMap {
   private tileNames?: Record<number, string>;
 
   /**
-   * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante, sur aucune collision d'objet
-   * ni sur l'un des corps `others` (les personnages). Les collisions de `ignore` ne comptent pas (le tas qui grandit).
+   * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante ni dans l'eau profonde (rien ne s'y pose),
+   * pas à cheval sur une marche du relief (`RELIEF.straddle`), sur aucune collision d'objet ni sur l'un des corps `others` (les
+   * personnages). Les collisions de `ignore` ne comptent pas (le tas qui grandit). `overWater` : l'eau ne compte pas (ce qui vole au-dessus).
    */
-  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = [], ignore: readonly Phaser.GameObjects.GameObject[] = []): boolean {
+  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = [], ignore: readonly Phaser.GameObjects.GameObject[] = [], opts: { overWater?: boolean } = {}): boolean {
     if (b.left < 0 || b.top < 0 || b.right > this.width || b.bottom > this.height) return false;
     for (let ty = Math.floor(b.top / TILE); ty <= Math.floor((b.bottom - 0.01) / TILE); ty++) {
       for (let tx = Math.floor(b.left / TILE); tx <= Math.floor((b.right - 0.01) / TILE); tx++) {
         if (this.floor.getTileAt(tx, ty)?.collides) return false;
+        if (!opts.overWater && deepAt(this.def, tx * TILE + TILE / 2, ty * TILE + TILE / 2)) return false;
       }
     }
+    if (!this.level(b)) return false;
     const overlaps = (l: number, t: number, r: number, bo: number) => b.left < r && b.right > l && b.top < bo && b.bottom > t;
     // les obstacles proches seulement, par l'arbre des collisions fixes (une forêt en a des milliers), puis le contrôle exact
     const near = this.scene.physics.overlapRect(b.left - 1, b.top - 1, b.right - b.left + 2, b.bottom - b.top + 2, false, true) as Phaser.Physics.Arcade.StaticBody[];
@@ -475,6 +485,54 @@ export class GameMap {
       .filter((z) => z && this.obstacles.contains(z) && !ignore.includes(z));
     if (zones.some((z) => overlaps(z.x - z.width / 2, z.y - z.height / 2, z.x + z.width / 2, z.y + z.height / 2))) return false;
     return !others.some((o) => overlaps(o.left, o.top, o.right, o.bottom));
+  }
+
+  /** Le rectangle touche-t-il l'eau profonde ? */
+  inWater(b: Box): boolean {
+    for (let ty = Math.floor(b.top / TILE); ty <= Math.floor((b.bottom - 0.01) / TILE); ty++)
+      for (let tx = Math.floor(b.left / TILE); tx <= Math.floor((b.right - 0.01) / TILE); tx++) if (deepAt(this.def, tx * TILE + TILE / 2, ty * TILE + TILE / 2)) return true;
+    return false;
+  }
+
+  /** Le rectangle tient sur un seul niveau (ou une pente douce) : l'écart des hauteurs de ses coins et de son centre ne dépasse pas `RELIEF.straddle`. */
+  level(b: Box): boolean {
+    const hs = [
+      heightAt(this.def, b.left, b.top),
+      heightAt(this.def, b.right, b.top),
+      heightAt(this.def, b.left, b.bottom),
+      heightAt(this.def, b.right, b.bottom),
+      heightAt(this.def, (b.left + b.right) / 2, (b.top + b.bottom) / 2),
+    ];
+    return Math.max(...hs) - Math.min(...hs) <= RELIEF.straddle;
+  }
+
+  /**
+   * Ce qu'il y a au point (x, y) pour une bête qui charge (world/charge.ts) : `edge` hors de la carte (le bord de la zone), `solid` sur une
+   * case bloquante ou une collision d'objet, `soft` sur le seul corps d'un objet mou (`soft` de props.json : le buisson), rien sinon.
+   */
+  groundAt(x: number, y: number): 'solid' | 'soft' | 'edge' | undefined {
+    if (x < 0 || y < 0 || x >= this.width || y >= this.height) return 'edge';
+    if (this.floor.getTileAt(Math.floor(x / TILE), Math.floor(y / TILE))?.collides) return 'solid';
+    const near = this.scene.physics.overlapRect(x - 1, y - 1, 2, 2, false, true) as Phaser.Physics.Arcade.StaticBody[];
+    let soft = false;
+    for (const body of near) {
+      const z = body.gameObject as Phaser.GameObjects.Zone;
+      if (!z || !this.obstacles.contains(z)) continue;
+      if (x < z.x - z.width / 2 || x >= z.x + z.width / 2 || y < z.y - z.height / 2 || y >= z.y + z.height / 2) continue;
+      if (!z.getData('soft')) return 'solid';
+      soft = true;
+    }
+    return soft ? 'soft' : undefined;
+  }
+
+  /** L'objet mou dont le corps est au point (x, y) (le buisson qu'une charge traverse : il tremble). */
+  softAt(x: number, y: number): PlacedProp | undefined {
+    const near = this.scene.physics.overlapRect(x - 2, y - 2, 4, 4, false, true) as Phaser.Physics.Arcade.StaticBody[];
+    for (const body of near) {
+      const z = body.gameObject as Phaser.GameObjects.Zone;
+      if (z && this.obstacles.contains(z) && z.getData('soft')) return this.props.find((p) => p.parts.includes(z));
+    }
+    return undefined;
   }
 
   /**
@@ -605,13 +663,15 @@ export class GameMap {
     // un fagot posé seul : le dessin de son nombre de branches (`<image>-n<n>`)
     const bundle = opts.bundle;
     const drawn = stateImage(p.image, o.type, bundle);
-    const image = flip ? `${drawn}-left` : agedKey(formImage(drawn, natural), p.aged ? o.age : undefined);
+    const image = flip ? `${drawn}-left` : agedKey(o.view ? viewImage(formImage(drawn, natural), p.views, o.view) : formImage(drawn, natural), p.aged ? o.age : undefined);
     const obj = wood
       ? scene.add.image(o.x, ay, woodTexture(scene, wood, { open: opts.open }), '0')
       : p.anim
         ? scene.add.sprite(o.x, ay, image).play(`${image}-${p.anim}`)
         : scene.add.image(o.x, ay, image);
     obj.setOrigin(0, 1).setDepth(p.layer === 'floor' ? DEPTH.floor : ay);
+    // une pièce de la voûte d'un chemin creux s'efface quand Xéros est dessous (systems/laneFade.ts)
+    if (p.vault) obj.setData('vault', true);
     if (p.blend === 'add') obj.setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.light);
     const parts: Phaser.GameObjects.GameObject[] = [obj];
     // coin haut gauche de l'image, pour les coordonnées "dans l'image"
@@ -623,7 +683,10 @@ export class GameMap {
     let baseY = ay - 8;
     if (p.body) {
       baseY = ay - p.body.bottom - p.body.h / 2;
-      parts.push(this.addObstacle(ox + obj.width / 2, baseY, p.body.w, p.body.h));
+      const z = this.addObstacle(ox + obj.width / 2, baseY, p.body.w, p.body.h);
+      // un corps mou (le buisson) : une bête lancée le traverse (`groundAt`)
+      if (p.soft) z.setData('soft', p);
+      parts.push(z);
     }
     for (const b of p.bodies ?? []) {
       parts.push(this.addObstacle(ox + fx(b.x, b.w) + b.w / 2, oy + b.y + b.h / 2, b.w, b.h));

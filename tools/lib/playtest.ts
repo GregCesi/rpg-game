@@ -197,11 +197,12 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
     // `__click(button, at, ms)` : un clic court (`ms` = 0 : enfoncé puis relâché aussitôt, le jeu le garde jusqu'à le lire) ou maintenu
     // `ms` ms en temps vrai (un geste), sur `at` (sinon devant Xéros) ; `__press(button)`, `__release(button)` : enfoncer, relâcher
     await page.addInitScript(`
+      // le point vu : ce qui est posé en hauteur se dessine plus haut (projection du relief, systems/lift.ts) ; on vise ce qu'on voit
       window.__screen = (x, y) => {
         const g = window.game;
         const cam = g.scene.getScene('world').cameras.main;
         const rect = g.canvas.getBoundingClientRect();
-        return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
+        return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - (g.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
       };
       window.__mouse = (type, button) => {
         const g = window.game;

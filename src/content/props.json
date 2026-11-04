@@ -44,8 +44,8 @@
   "normal-tree-stump": {"name": "souche", "mass": 25.45, "family": "nature", "image": "normal-tree-stump", "views": "round", "dims": {"w": 60, "d": 55, "h": 40, "shape": "box"}, "body": {"w": 10, "h": 6, "bottom": 5}},
   "rock": {"name": "rocher", "family": "pierre", "image": "rock", "views": "round", "dims": {"w": 130, "d": 80, "h": 60, "shape": "box"}, "body": {"w": 22, "h": 10, "bottom": 4},
     "harvest": {"work": {"break": {"volume": 3000}}, "tool": "pickaxe", "gesture": "chop", "hits": 5, "impact": "stone", "becomes": "rock-rubble", "drops": [{"item": "stone", "min": 2, "max": 3}, {"item": "iron-ore", "min": 0, "max": 1}]}},
-  "bush": {"name": "buisson", "family": "nature", "image": "bush", "views": "round", "dims": {"w": 135, "d": 90, "h": 55, "shape": "box"}, "body": {"w": 22, "h": 10, "bottom": 4}},
-  "bush-berries": {"name": "buisson de baies", "family": "nature", "image": "bush-berries", "views": "round", "dims": {"w": 135, "d": 90, "h": 55, "shape": "box"}, "body": {"w": 22, "h": 10, "bottom": 4},
+  "bush": {"name": "buisson", "family": "nature", "image": "bush", "views": "round", "dims": {"w": 135, "d": 90, "h": 55, "shape": "box"}, "body": {"w": 22, "h": 10, "bottom": 4}, "soft": true},
+  "bush-berries": {"name": "buisson de baies", "family": "nature", "image": "bush-berries", "views": "round", "dims": {"w": 135, "d": 90, "h": 55, "shape": "box"}, "body": {"w": 22, "h": 10, "bottom": 4}, "soft": true,
     "harvest": {"hits": 1, "becomes": "bush", "impact": "leaves", "drops": [{"item": "berries", "min": 2, "max": 3}]}},
   "rock-rubble": {"name": "éclats de pierre", "family": "pierre", "image": "rock-rubble", "views": "round", "dims": {"w": 135, "d": 75, "h": 0, "shape": "flat"}, "layer": "floor"},
   "bucket": {"name": "seau", "family": "mobilier", "aged": true, "gender": "m", "image": "bucket", "views": "round", "dims": {"w": 30, "d": 30, "h": 30, "shape": "cylinder", "axis": "up"}, "body": {"w": 6, "h": 3, "bottom": 3}, "mass": 1.5, "trade": "joiner",
@@ -179,5 +179,11 @@
   "board-gable-tall": {"name": "pignon en bardage, 45°", "family": "éléments", "gender": "m", "aged": true, "image": "board-gable-tall", "views": "four", "dims": {"w": 520, "d": 20, "h": 300, "shape": "box"}, "mass": {"matter": "wood", "fill": 0.091}, "trade": "carpenter"},
   "board-gable-steep": {"name": "pignon en bardage, 55°", "family": "éléments", "gender": "m", "aged": true, "image": "board-gable-steep", "views": "four", "dims": {"w": 520, "d": 20, "h": 440, "shape": "box"}, "mass": {"matter": "wood", "fill": 0.087}, "trade": "carpenter"},
   "shingle-shed-roof": {"name": "pan d'appentis en bardeaux", "family": "éléments", "gender": "m", "aged": true, "image": "shingle-shed-roof", "views": "four", "dims": {"w": 380, "d": 320, "h": 232, "shape": "box", "ground": true}, "roof": true, "pitch": "south", "shadow": {"south": 180, "north": 404}, "mass": {"matter": "wood", "fill": 0.0245}, "trade": "roofer"},
-  "warren-hole": {"name": "entrée de garenne", "family": "nature", "image": "warren-hole", "views": "round", "dims": {"w": 50, "d": 40, "h": 0, "shape": "flat"}, "layer": "floor", "burrow": true}
+  "warren-hole": {"name": "entrée de garenne", "family": "nature", "image": "warren-hole", "views": "round", "dims": {"w": 50, "d": 40, "h": 0, "shape": "flat"}, "layer": "floor", "burrow": true},
+  "lane-curtain": {"name": "rideau de feuillage", "gender": "m", "family": "nature", "image": "lane-curtain", "views": "four", "dims": {"w": 1150, "d": 160, "h": 340, "shape": "box"}, "vault": true},
+  "lane-overhang-1": {"name": "avancée de feuillage", "family": "nature", "image": "lane-overhang-1", "views": "four", "dims": {"w": 800, "d": 140, "h": 230, "shape": "box"}, "vault": true},
+  "lane-overhang-2": {"name": "avancée de feuillage", "family": "nature", "image": "lane-overhang-2", "views": "four", "dims": {"w": 640, "d": 120, "h": 270, "shape": "box"}, "vault": true},
+  "lane-overhang-3": {"name": "avancée de feuillage", "family": "nature", "image": "lane-overhang-3", "views": "four", "dims": {"w": 520, "d": 100, "h": 190, "shape": "box"}, "vault": true},
+  "water-cut": {"name": "liseré de l'eau", "gender": "m", "family": "nature", "image": "water-cut", "views": "four", "layer": "floor", "dims": {"w": 160, "d": 20, "h": 0, "shape": "flat"}},
+  "shimmer": {"name": "miroitement", "gender": "m", "family": "nature", "image": "shimmer", "views": "symmetric", "layer": "floor", "anim": "shimmer", "dims": {"w": 160, "d": 15, "h": 0, "shape": "flat"}}
 }

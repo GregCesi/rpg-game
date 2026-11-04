@@ -1,0 +1,6 @@
+{
+  "step": 50,
+  "drop": 100,
+  "slope": 20,
+  "swim": false
+}

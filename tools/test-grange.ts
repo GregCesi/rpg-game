@@ -60,7 +60,7 @@ await playtest('grange', async ({ page, errors, load }) => {
       for (let y = 90; y < m.height - b; y += 8) for (let x = 30; x < m.width - r; x += 8) {
         if (Math.hypot(x + 90 - px.x, y + 60 - px.y) > 160 && m.areaFree({ left: x - l, top: y - t, right: x + r, bottom: y + b })) {
           w.cameras.main.setZoom(2);
-          w.cameras.main.centerOn(x + 90, y + 40);
+          w.cameras.main.centerOn(x + 90, y + 40 - (w.lifts?.liftAt?.(x + 90, y + 40) ?? 0));
           return { x: Math.round((x * 5) / 20) * 20, y: Math.round((y * 5) / 20) * 20 };
         }
       }
@@ -75,7 +75,7 @@ await playtest('grange', async ({ page, errors, load }) => {
       const g = (window as any).game;
       const cam = g.scene.getScene('world').cameras.main;
       const rect = g.canvas.getBoundingClientRect();
-      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
+      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
     }, [x, y] as const);
   const click = async (x: number, y: number) => {
     const s = await screen(x, y);
@@ -172,7 +172,7 @@ await playtest('grange', async ({ page, errors, load }) => {
       cam.preRender();
       const rect = g.canvas.getBoundingClientRect();
       const k = cam.zoom * (rect.width / g.scale.width);
-      const at = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - cam.worldView.y) * k });
+      const at = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * k });
       const a = at((ox - 80) / 5, (oy - 420) / 5);
       const b = at((ox + 1060) / 5, (oy + 720) / 5);
       return { x: Math.max(0, Math.round(a.x)), y: Math.max(0, Math.round(a.y)), w: Math.round(b.x - a.x), h: Math.round(b.y - a.y) };
@@ -180,7 +180,7 @@ await playtest('grange', async ({ page, errors, load }) => {
     await sleep(250);
     const buf = await page.screenshot({ clip: { x: box.x, y: box.y, width: box.w, height: Math.min(box.h, 720 - box.y) } });
     shots.push({ name, png: PNG.sync.read(buf) });
-    await page.evaluate(([ox, oy]) => (window as any).game.scene.getScene('world').cameras.main.centerOn((ox + 440) / 5, (oy + 200) / 5), [O!.x, O!.y] as const);
+    await page.evaluate(([ox, oy]) => (window as any).game.scene.getScene('world').cameras.main.centerOn((ox + 440) / 5, (oy + 200) / 5 - ((window as any).game.scene.getScene('world').lifts?.liftAt?.((ox + 440) / 5, (oy + 200) / 5) ?? 0)), [O!.x, O!.y] as const);
     await sleep(150);
   };
 

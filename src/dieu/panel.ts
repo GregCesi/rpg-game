@@ -250,18 +250,23 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   // strength.json `swing`) ; réglée pendant un travail, elle agit au coup suivant ; la masse portée se lit à côté
   // les créatures (CONCEPTION « Les créatures ») : faire sortir une bête près de Xéros, régler la population de la garenne la plus proche,
   // voir et régler les distances de perception d'une espèce à chaque allure (en mémoire, le temps de la session)
+  // la vie de Xéros (CONCEPTION « La vie de Xéros ») : la régler (à zéro, il s'évanouit), la rendre infinie
+  const lifeValue = el('input', { type: 'number', min: '0', max: '100', step: '5', value: '100' });
+  const lifeInfinite = el('input', { type: 'checkbox' });
+  lifeInfinite.addEventListener('change', () => send({ kind: 'health-infinite', on: lifeInfinite.checked }));
   const kinds = Object.keys(creatures);
   const creature = el('select', {}, kinds.map((k) => el('option', { value: k, textContent: creatures[k].name })));
   const GAITS: [Gait, string][] = [['still', 'immobile'], ['sneak', 'discret'], ['walk', 'marche'], ['run', 'course']];
   const senseInputs = GAITS.map(([g, name]) => {
     const alert = el('input', { type: 'number', min: '0.5', max: '100', step: '0.5', value: '0' });
-    const flee = el('input', { type: 'number', min: '0', max: '100', step: '0.5', value: '0' });
-    const apply = button('Appliquer', () => send({ kind: 'creature-senses', creature: creature.value, gait: g, alert: Number(alert.value), flee: Number(flee.value) }));
-    return { g, alert, flee, row: el('div', { className: 'row' }, [el('span', { textContent: `${name} ` }), el('label', {}, ['aguets', alert]), el('label', {}, ['fuite', flee]), apply]) };
+    const near = el('input', { type: 'number', min: '0', max: '100', step: '0.5', value: '0' });
+    const apply = button('Appliquer', () => send({ kind: 'creature-senses', creature: creature.value, gait: g, alert: Number(alert.value), near: Number(near.value) }));
+    // `near` : la distance où la bête réagit (le lapin fuit, le sanglier charge)
+    return { g, alert, near, row: el('div', { className: 'row' }, [el('span', { textContent: `${name} ` }), el('label', {}, ['aguets', alert]), el('label', {}, ['réagit', near]), apply]) };
   });
   const showSenses = () => {
     const d = creatures[creature.value];
-    for (const s of senseInputs) if (d) [s.alert.value, s.flee.value] = [String(d.senses[s.g].alert), String(d.senses[s.g].flee)];
+    for (const s of senseInputs) if (d) [s.alert.value, s.near.value] = [String(d.senses[s.g].alert), String(d.senses[s.g].near)];
   };
   creature.addEventListener('change', showSenses);
   showSenses();
@@ -314,6 +319,12 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
   infinite.addEventListener('change', () => {
     send({ kind: 'stamina-infinite', on: infinite.checked });
     infinite.blur();
+  });
+  // l'escalade (chantier « relief ») : il monte et descend toute hauteur, pour vérifier que seul le personnage limite
+  const climber = el('input', { type: 'checkbox' });
+  climber.addEventListener('change', () => {
+    send({ kind: 'climber', on: climber.checked });
+    climber.blur();
   });
   const energyNow = el('div', { className: 'row' });
   const showEnergy = () => {
@@ -384,7 +395,11 @@ export function mountPanel(send: (cmd: DieuCommand) => void): void {
     el('div', { className: 'row' }, [el('label', {}, ['souffle', energyBreath]), el('label', {}, ['plafond', energyCeiling])]),
     el('div', { className: 'row' }, [el('label', {}, ['maximum', energyMax]), energyButton]),
     el('div', { className: 'row' }, [button('Endurance de départ', () => send({ kind: 'stamina-start' }))]),
+    el('h3', { textContent: 'Vie' }),
+    el('div', { className: 'row' }, [el('label', {}, ['points', lifeValue]), button('Régler la vie', () => send({ kind: 'health', value: Number(lifeValue.value) }))]),
+    el('div', { className: 'row' }, [el('label', {}, [lifeInfinite, 'vie infinie'])]),
     el('div', { className: 'row' }, [el('label', {}, [infinite, 'endurance infinie'])]),
+    el('div', { className: 'row' }, [el('label', {}, [climber, 'escalade (toute hauteur)'])]),
     el('div', { className: 'row' }, [el('label', {}, ['heure', clockHour]), clockButton]),
     el('div', { className: 'row' }, [button('Finir le travail', () => send({ kind: 'finish-work' }))]),
     energyNow,

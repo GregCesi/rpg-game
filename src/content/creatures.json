@@ -7,12 +7,14 @@
     "becomes": "dead-rabbit",
     "target": { "hp": 4, "matter": "fur", "tilt": 0 },
     "senses": {
-      "still": { "alert": 3, "flee": 1.5 },
-      "sneak": { "alert": 4.5, "flee": 2.5 },
-      "walk": { "alert": 7, "flee": 4.5 },
-      "run": { "alert": 9, "flee": 7 }
+      "still": { "alert": 3, "near": 1.5 },
+      "sneak": { "alert": 4.5, "near": 2.5 },
+      "walk": { "alert": 7, "near": 4.5 },
+      "run": { "alert": 9, "near": 7 }
     },
     "calm": 4,
+    "reaction": "flee",
+    "den": "burrow",
     "graze": {
       "range": 12,
       "hop": { "speed": 1.2, "length": [0.15, 0.5] },
@@ -30,6 +32,41 @@
       { "hour": 21.5, "out": 0 }
     ],
     "births": { "hours": 24 },
-    "heal": { "days": 1 }
+    "heal": { "days": 1 },
+    "mobility": { "step": 30, "drop": 30, "slope": 20, "swim": false }
+  },
+  "boar": {
+    "name": "sanglier",
+    "image": "boar",
+    "mass": 80,
+    "dims": { "w": 140, "d": 40, "h": 80, "shape": "box" },
+    "becomes": "dead-boar",
+    "target": { "hp": 30, "matter": "fur", "tilt": 0, "hide": 120 },
+    "senses": {
+      "still": { "alert": 4, "near": 2 },
+      "sneak": { "alert": 7, "near": 4 },
+      "walk": { "alert": 12, "near": 8 },
+      "run": { "alert": 16, "near": 11 }
+    },
+    "calm": 6,
+    "reaction": "charge",
+    "den": "wallow",
+    "asleep": 0.5,
+    "graze": {
+      "range": 60,
+      "hop": { "speed": 1.2, "length": [1, 4] },
+      "pause": [1, 4],
+      "stay": [5, 20]
+    },
+    "charge": { "tell": 0.6, "accel": 8, "speed": 11, "past": 4, "max": 25, "brake": 9, "breath": 1.5, "tusk": 0.15 },
+    "stun": { "from": 1500, "at": 4840, "seconds": 5 },
+    "schedule": [
+      { "hour": 0, "out": 1, "range": 60 },
+      { "hour": 7, "out": 0.1, "range": 10 },
+      { "hour": 19, "out": 1, "range": 60 }
+    ],
+    "births": { "hours": 72 },
+    "heal": { "days": 2 },
+    "mobility": { "step": 40, "drop": 60, "slope": 35, "swim": true }
   }
 }

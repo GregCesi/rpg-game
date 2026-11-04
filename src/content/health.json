@@ -1,0 +1,10 @@
+{
+  "max": 100,
+  "sleepHeal": 0.5,
+  "faint": {
+    "dialogue": "mother-found"
+  },
+  "knockdown": {
+    "friction": 0.7
+  }
+}

@@ -7,7 +7,9 @@
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { combat, creatures, items, matters, props, rocks, stamina, strength, transforms, wood, work } from '../src/content';
+import { combat, creatures, items, maps, matters, mobility, props, rocks, stamina, strength, transforms, wood, work } from '../src/content';
+import { Mobility } from '../src/entities/Mobility';
+import { refusalText, stepRefusal } from '../src/world/relief';
 import { itemMass, propMass, woodMass } from '../src/content/mass';
 import { CreatureSchema, ItemDefSchema, type CreatureDef, type ItemDef, type WoodPiece } from '../src/content/types';
 import { catalogFrom, CREATURES_TODO, DRAWINGS_TODO, validateContent, VIEWS_TODO } from '../src/content/validate';
@@ -66,7 +68,7 @@ function portable(k: string, miss: (w: string) => void): void {
   if (!it.ground && !DRAWINGS_TODO[k]?.ground) miss('son image au sol');
   if (it.ground) for (const v of viewImages(it.ground, it.views, drawn)) if (!drawn(v) && !VIEWS_TODO[k]) miss(`sa vue ${v}`);
   if (it.hold?.image) for (const d of DIRS) if (!animated(it.hold.image, d)) miss(`sa posture tenue ${it.hold.image}-${d}`);
-  if (!drawn(it.icon)) miss(`son icône ${it.icon}`);
+  if (!drawn(it.icon) && !DRAWINGS_TODO[k]?.carried) miss(`son icône ${it.icon}`);
   const heft = heftOf({ item: k });
   if (!heft) miss('frapper : pas d’arme (ni weapon, ni dims)');
   else if (heft.improvised && !(improvisedStroke(heft, xeros.swinger).joules > 0)) miss('frapper : énergie nulle');
@@ -272,7 +274,7 @@ const [modelKey, modelDef] = model;
 const hare = CreatureSchema.parse({
   ...modelDef,
   name: 'lièvre d’essai',
-  senses: { still: { alert: 9, flee: 4 }, sneak: { alert: 14, flee: 7 }, walk: { alert: 30, flee: 18 }, run: { alert: 40, flee: 30 } },
+  senses: { still: { alert: 9, near: 4 }, sneak: { alert: 14, near: 7 }, walk: { alert: 30, near: 18 }, run: { alert: 40, near: 30 } },
   flee: { speed: 14, zigzag: { every: 3, angle: 0 } },
   graze: { ...modelDef.graze, range: 40 },
 });
@@ -417,6 +419,29 @@ for (const k of trees) check(`arbre ${k}`, (m) => tree(k, m));
     if (!a) return m('ses décalages calculés');
     if (JSON.stringify(a.fall) !== JSON.stringify(b.fall) || JSON.stringify(a.at) !== JSON.stringify(b.at)) m('les décalages de l’arbre dont il reprend le dessin');
   });
+}
+
+// ---------- le relief : seul le personnage limite (chantier « relief ») ----------
+// Sur les vraies cartes : la falaise (le bord du plateau, dans les deux sens) et le flanc d'un talus se refusent à Xéros tel qu'il
+// est, et le refus dit « pour lui » avec la hauteur ; avec l'escalade (?dieu, `climber` de entities/Mobility.ts), tout passe : rien
+// dans le monde n'interdit de monter.
+{
+  const ferme = maps.ferme;
+  const T = 32;
+  const climbs: [string, { x: number; y: number }, { x: number; y: number }][] = [
+    ['monter la falaise', { x: 43.5 * T, y: 30 * T }, { x: 40 * T, y: 30 * T }],
+    ['descendre la falaise', { x: 40 * T, y: 30 * T }, { x: 43.5 * T, y: 30 * T }],
+    ['monter le flanc du talus', { x: 47.4 * T, y: 60 * T }, { x: 47.4 * T, y: 64 * T }],
+  ];
+  const climber = new Mobility();
+  climber.climber = true;
+  for (const [what, a, b] of climbs)
+    check(`relief : ${what}`, (miss) => {
+      const r = stepRefusal(ferme, a, b, { ...mobility, swim: true });
+      if (!r) miss('Xéros tel qu’il est passe : la hauteur ne l’arrête pas');
+      else if (!/^Trop haute pour lui \(.+\)\.$/.test(refusalText(r))) miss(`le refus ne dit pas ce qui lui manque : ${refusalText(r)}`);
+      if (stepRefusal(ferme, a, b, { ...climber.def, swim: true })) miss('à l’escalade, la hauteur l’arrête encore : le monde limite');
+    });
 }
 
 // ---------- le rapport ----------
