@@ -227,6 +227,20 @@ function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces
   const ysAt = (dx: number) => ys({ ...f, x: f.x + dx });
   const first = at(xs[0], ysAt(xs[0])[0]);
   if (!hits(first)) return first;
+  // une pièce trapue (la bande de 10 cm entre un poteau et une huisserie, chantier « maison-2 ») : la place qui tient la moins éloignée,
+  // dans un sens ou dans l'autre, de préférence encore portée à la hauteur visée (glisser hors de ce qui la porte la ferait tomber)
+  if (Math.max(f.w, f.d) < 2 * Math.min(f.w, f.d)) {
+    let best: F | undefined;
+    let cost = Infinity;
+    for (const dx of [...xs, 0]) {
+      for (const dy of [...ysAt(dx), 0]) {
+        const c = at(dx, dy);
+        const m = Math.abs(dx) + Math.abs(dy) + (z > 0 && supportAt(pieces, c) !== z ? 1000 : 0);
+        if (m < cost && !hits(c)) [best, cost] = [c, m];
+      }
+    }
+    return best ?? first;
+  }
   // la place la plus proche qui tient : d'abord en glissant le long de la pièce (un remplissage nord-sud entre ses poteaux, en y),
   // puis par tous les couples de bords
   if (f.d > f.w) {

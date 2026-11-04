@@ -759,6 +759,16 @@ export const PropDefSchema = z.strictObject({
    */
   pitch: z.literal('south').optional(),
   /**
+   * Pièce qui franchit un vide, portée par ses deux bouts comme une poutre (la tête de baie : son linteau sur les deux huisseries) :
+   * le contrôle du porte-à-faux (world/overhang.ts) demande un appui à chaque bout, pas sur toute sa longueur.
+   */
+  spans: z.literal(true).optional(),
+  /**
+   * Ce qu'une pièce déborde de ce qui la porte, à chacun de ses bouts (cm) : le larmier du couronnement de la cheminée, plus large que
+   * son conduit. Le contrôle du porte-à-faux (world/overhang.ts) le permet aux bouts, jamais au milieu.
+   */
+  ledge: z.number().int().positive().optional(),
+  /**
    * Ce qui s'ouvre et se ferme en jeu (E, une pièce posée en mode construction) : `into`, l'objet qu'il devient (son autre état, qui
    * nomme celui-ci en retour) ; `hinge`, où il tourne : `side`, le bord gauche de sa face du dehors vu du dehors (un volet, une
    * porte : ouvert, il a tourné d'un quart vers le dehors, dans le sens des aiguilles d'une montre), `bottom`, le bas de sa face du

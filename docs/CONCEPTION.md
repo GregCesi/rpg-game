@@ -756,7 +756,7 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
       |                |                                    |                    |
  y=640P---[F]--P-------P---[F]--P--[porte]-P--------P--[F]--P--------P--------P--------P
       P : poteau (20 × 20) ; [F] : fenêtre à volet (60 × 40, appui à 1 m) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
-      [p] : porte intérieure 0,80 × 1,80 m ; [b] : la baie sans porte du cagibi (0,85 m, sous un linteau) ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
+      [p] : porte intérieure 0,90 × 1,80 m ; [b] : la baie sans porte du cagibi (0,90 m, sous une tête de baie) ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
 ```
 
 - **Emprise** : axes des poteaux **12,80 × 6,40 m** (8 travées de 1,60 m sur 4) ; avec le solin, environ **13,30 × 6,90 m** au sol ;
@@ -788,18 +788,30 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
   - la table est contre le solin nord (y 30–120), le banc juste dessous (y 120–150) ;
   - (essai d'avant le placement de Grégoire : la chambre au nord-ouest, la réserve à l'est ; l'étape 2 suit le placement ci-dessus) ;
   - les portes s'ouvrent vers le dedans, chaque porte intérieure vers la pièce qu'elle ferme ;
-  - **la cheminée de pierre** (retouche de Grégoire, 3 novembre 2026) remplace le foyer central : adossée au mur nord de la salle
-    (x 680 à 880 cm), l'âtre (`stone-hearth`, 2 × 0,8 × 1,2 m, ouverture de 1,40 m, le feu et sa lueur), le manteau (une poutre de
-    2,20 m), la hotte (`chimney-hood`), le conduit en six tronçons d'assises de pierre et de mortier (`chimney-flue`, jusqu'à 8,50 m),
-    le couronnement d'où sort la fumée (`chimney-cap`), par le pan nord percé (`thatch-roof-pierced`) ; le pignon ouest n'a plus de
-    trou de fumée ; la table et le banc passent sous la fenêtre du nord, la place du fagot à l'ouest de l'âtre ;
+  - **la cheminée** (retouche de Grégoire, 3 novembre 2026) remplace le foyer central ; **une cheminée paysanne où l'on cuisine**
+    (chantier « maison-2 », accord de Grégoire sur `.art-preview/cheminee-2.png`), adossée au mur nord de la salle, centrée sur son axe
+    (x = 780) : l'âtre (`stone-hearth`, 2,20 × 1,10 × 1,50 m : jambages de 30 cm, ouverture de 1,60 m, 1,50 m de haut, 0,90 m de
+    profond, contrecœur, sole ; le feu et sa lueur) ; le manteau, une poutre de 2,20 m posée sur l'âtre à l'avant, linteau de
+    l'ouverture ; la hotte droite de torchis chaulé (`chimney-hood`, 2,20 × 0,80 × 1 m) posée à 1,50 m sur les jambages et le
+    contrecœur, sa face contre le dos du manteau, sans vide derrière ; le conduit (`chimney-flue`, passage de 60 × 40 cm, parois de pierre
+    de 20) en cinq tronçons centrés sur la hotte, par le pan nord percé (`thatch-roof-pierced`, le trou à la place du conduit) ; le
+    couronnement d'où sort la fumée (`chimney-cap`), la souche à 7,60 m, un mètre au-dessus du faîte. Prévu pour cuire (rien n'est
+    encore posé, les places sont notées dans la fiche de l'âtre) : la crémaillère et le chaudron, les landiers et la broche, et un
+    potager maçonné à côté. Les dimensions et leurs sources : `docs/objets/stone-hearth.md` et voisines (ce qui est choisi faute de
+    source le dit). La table et le banc sous la fenêtre du nord, la jarre à l'est de l'âtre, la place du fagot entre la table et l'âtre ;
   - **le toit, dehors** (retouche de Grégoire, 3 novembre 2026) : il ne s'efface plus quand Xéros approche ; on n'est dedans que dans
     l'intérieur. Devant une fenêtre au volet ouvert, dehors, la pièce de cette fenêtre seule devient transparente, sauf le conduit
     (chantier « maison-2 », `windowFade` et `windowHole` de `world/roofView.ts`) ; on y voit la terre battue assombrie et les meubles
     du plan, pas ce que la carte pose dedans (la mère, la paillasse) ;
-  - **le cagibi n'a pas de porte** (retouche de Grégoire, 3 novembre 2026) : une baie de 0,85 m, comme une baie où l'on n'a jamais mis
-    de porte, entre deux jambages de 25 cm (ceux de la porte d'entrée), sous un linteau (une poutre de 1,20 m contre la face du cagibi,
-    sa base à 1,90 m : l'intérieur y voit un passage entre deux pièces, le cagibi reste une pièce à lui) ;
+  - **le cagibi n'a pas de porte** (retouche de Grégoire, 3 novembre 2026) : une baie de 0,90 m, comme une baie où l'on n'a jamais mis
+    de porte, la même que les autres sans la porte (chantier « maison-2 ») : son seuil de pierre, ses huisseries, sa tête de baie
+    (l'intérieur y voit un passage entre deux pièces, le cagibi reste une pièce à lui) ;
+  - **les baies de porte** (chantier « maison-2 », l'essai validé par Grégoire, `.art-preview/baie-porte.png`) : le seuil de pierre
+    (120 cm ; `inner-threshold-stone`, 30 cm d'épais, sous les portes intérieures et la baie du cagibi) ; deux huisseries de 15 cm
+    (`door-frame`) posées dessus jusqu'à 2 m ; la porte de 90 cm (toutes les portes, l'entrée comme les intérieures) entre elles, sur le
+    seuil ; la tête de baie (`<couche>-door-head`) sur les huisseries : le linteau à 2 m et le remplissage jusqu'à la sablière, l'huisserie
+    continue du seuil à la sablière ; des bandes de remplissage de 10 cm entre poteau et huisserie (`<couche>-jamb`) ; le solin et la
+    traverse s'arrêtent exactement au seuil. Plus aucune pièce au-dessus du vide (`world/overhang.ts`) ;
   - **à 45°, le faîte du chaume est à 6,58 m** (7,19 m à 50°) ; avec l'appui à 1 m, les trois fenêtres du sud et la porte se lisent
     sous l'égout ; vue de l'ouest, le pignon entier et son trou de fumée sous la rive ; les entraits retroussés sur les deux fermes
     des cloisons ;
@@ -833,9 +845,9 @@ par groupe. Les dimensions sont celles de la pièce posée (cm, `dims` de props.
     `daub-window-panel`, `lime-window-panel` ;
   - les cloisons sont ces mêmes remplissages, posés dedans (chaulés des deux côtés).
 - **Les portes** : `cottage-door` (0,90 × 1,80 m, en planches, `swing` vers `cottage-door-open`, `passage`) ; `inner-door`
-  (0,80 × 1,80 m, vers `inner-door-open`). Bois : `aged`.
-- **Le solin des cloisons** : `narrow-sill-wall` (morceau de solin brut de 1,60 m, 30 cm d'épais, 40 de haut), qui se raccorde comme
-  le solin des murs (`wall`).
+  (0,90 × 1,80 m depuis le chantier « maison-2 », vers `inner-door-open`). Bois : `aged`.
+- **Le solin des cloisons** : `narrow-sill-wall` (solin brut de 30 cm d'épais, 40 de haut, de toute longueur sur la grille de 10 cm),
+  qui se raccorde comme le solin des murs (`wall`).
 - **Les pignons** : `lime-gable` (torchis chaulé sur clayonnage, sous la rive ; le triangle d'une demi-portée de 3,20 m à 45° : 640 de
   large, 320 de haut au-dessus de la sablière, l'entrait retroussé) et `lime-gable-smoke` (le même, avec le trou de fumée de 50 × 40 cm
   sous le faîte) ; vues `four`.
@@ -944,12 +956,11 @@ vues ; le foyer est un meuble.
    sur 40 cm) et se vise sur la grille sans aimant ; l'aimant ne colle pas une pièce là où elle heurterait (le jambage contre son
    poteau) ; de deux dessus possibles, la visée prend celui qui est sous la souris (le remplissage sur la traverse, pas sur la tête du
    poteau suivant) ; une couche se pose en visant la pièce qu'elle recouvre ; le volet se centre sur son remplissage ; le faîtage se
-   pose sur les pans. **Ce qui reste imparfait** : le solin en morceaux de 1,60 m laisse des trous (30 cm au nord comblé par la
-   cloison, un joint de 10 cm, 40 cm de part et d'autre du seuil, un mètre à l'ouest et à l'est, sous les cloisons aux portes) que la
-   traverse enjambe ; il faudrait des morceaux plus courts. Les cloisons sont à 5 cm de leur axe ; les pans de toit débordent de 70 cm
-   au sud et 60 au nord, de 40 à l'ouest et 60 à l'est (la grille de 20 cm) ; le foyer est en (650, 330), pas (640, 320). Une pièce
-   visée au sol juste au nord d'une pièce plus haute se pose dessus : le scénario monte du nord au sud et se sert de cales (bancs,
-   coffre) qu'il retire.
+   pose sur les pans. Le solin en morceaux de 1,60 m laissait des trous (sous les cloisons, de part et d'autre du seuil, un mètre à
+   l'ouest et à l'est) : depuis le chantier « maison-2 », il se pose de toute longueur et il est continu, coupé aux seuils.
+   **Ce qui reste imparfait** : les cloisons sont à 5 cm de leur axe ; les pans de toit débordent de 70 cm
+   au sud et 60 au nord, de 40 à l'ouest et 60 à l'est (la grille de 20 cm). Une pièce visée au sol juste au nord d'une pièce plus haute
+   se pose dessus : le scénario monte du nord au sud.
 4. **L'intérieur calculé** (`world/interior.ts`) : la pièce close par les pans de mur, les fenêtres lues dans les pans à fenêtre, le
    foyer, la lumière ; `npm run test:interieur` y entre.
 4 bis. **Les intérieurs à plusieurs pièces** : aujourd'hui `world/interior.ts` trouve une pièce, le rectangle clos. Avec des cloisons

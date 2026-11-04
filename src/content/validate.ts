@@ -1361,9 +1361,7 @@ export function validatePlanOverhangs(plans: Record<string, BuildPlan>, committe
 }
 
 /** Les plans qui ont encore des pièces au-dessus du vide, avec leur raison (`npm run check` les liste) : retirés une fois corrigés. */
-export const OVERHANG_TODO: Record<string, string> = {
-  'maison-xeros': "la baie de porte de l'essai validé (huisseries, tête de baie, seuils) et le solin de toute longueur attendent l'accord de Grégoire sur la planche baie-porte : la maison se refait avec eux",
-};
+export const OVERHANG_TODO: Record<string, string> = {};
 
 /** Renvoie la liste des problèmes trouvés (vide si tout va bien). */
 /**

@@ -17,8 +17,12 @@ pour le [conduit](chimney-flue.md) de la cheminée de pierre. La même pièce qu
 Celles du pan plein : 1380 × 390 × 445 cm, `ground` : 276 × 168 px (de côté 78 × 365).
 
 ## Vues
-Quatre (`four`), comme le pan plein. Il sert de pan **nord** (vue r2) : le trou et son solin sont au droit du conduit (x 730 à 830,
-y 30 à 80 dans le repère de la maison, tools/lib/maison-xeros.ts ; dans le dessin du pan, x 102 à 122, y 112 à 122 px).
+Quatre (`four`), comme le pan plein. Il sert de pan **nord** (vue r2) : le trou et son solin sont au droit du conduit (x 720 à 820,
+y 30 à 110 cm dans le repère de la maison ; dans le dessin du pan, x 104 à 124, y 107 à 123 px : le pan nord posé à x = −40,
+y = −65 cm (l'aimant du mode construction le tire de 5 cm au nord), le point (x, y) de la maison en px devient (268 − x, 129 − y),
+la relation de la proposition validée de la cheminée, `art/proposals/cheminee-2.ts`, (268 − x, 130 − y) pour le pan à y = −60,
+avancée d'un pixel au nord avec lui). Le trou se tire de la souche elle-même (`PAN_STACK` d'art/world/chimney.ts : le conduit jusqu'à
+7,50 m, le couronnement au-dessus) : il suit la cheminée si elle change.
 - Vu du sud (r2) : le pan nord à 45° se voit par la tranche ; rien du trou ne paraît.
 - Vu du nord (r0) et de côté (r1, r3) : le chaume est percé, bordé d'un solin de mortier de chaux de 10 cm (clair à l'ouest, plus
   sombre au sud et à l'est). Le pan est affiché d'une pièce, par son bord sud, par-dessus le conduit : tout ce que le conduit cache
@@ -53,4 +57,5 @@ Aucune.
 Le chaumier (`thatcher`).
 
 ## Vérification
-`.art-preview/maison-pieces.png` (rangée `thatch-roof-pierced`, ses quatre vues), `.art-preview/thatch-roof-pierced.png`.
+`.art-preview/maison-pieces.png` (rangée `thatch-roof-pierced`, ses quatre vues), `.art-preview/thatch-roof-pierced.png`,
+`.art-preview/cheminee-2.png` (le pan posé par-dessus la souche, comme le jeu, et la maison vue du nord).

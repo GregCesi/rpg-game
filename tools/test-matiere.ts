@@ -100,8 +100,9 @@ console.log(`✓ matière : ${splits} fentes et ${cuts} coupes, les morceaux pè
     },
   };
   const up = upgrade(old) as { version: number; state: typeof old.state & { hands: { bundle?: number }[] } };
-  // jusqu'à la version d'aujourd'hui (la main active retirée en 28, chantier « commandes »)
-  assert.equal(up.version, SAVE_VERSION);
+  // jusqu'à la version 29 (la main active retirée en 28, chantier « commandes ») ; la 30 refait la maison de Xéros : une partie d'avant
+  // n'est plus convertie (partie neuve, accord de Grégoire, chantier « maison-2 »)
+  assert.equal(up.version, Math.min(SAVE_VERSION, 29));
   assert.equal('active' in up.state, false, 'la main active n’existe plus');
   assert.equal((up.state.maps.ferme.piles[0] as { bundle?: number }).bundle, 10, 'tas de fagots sans nombre : 10 branches');
   assert.deepEqual(up.state.maps.ferme.spawned.map((o) => (o as { bundle?: number }).bundle), [10, 4], 'fagot posé seul : 10 sans nombre, son nombre sinon');

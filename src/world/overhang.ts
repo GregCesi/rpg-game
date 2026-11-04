@@ -25,8 +25,8 @@ const top = (b: Box3) => b.z + b.h;
 const cross = (a: Box3, b: Box3) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.d && b.y < a.y + a.d;
 const propOf = (p: BuildPiece) => ('prop' in p.piece ? props[p.piece.prop] : undefined);
 const isRoof = (p: BuildPiece) => !!(propOf(p)?.roof || propOf(p)?.pitch);
-/** Une pièce qui enjambe ce qui la porte : le bois couché. */
-const spans = (p: BuildPiece) => 'wood' in p.piece && p.piece.wood.axis !== 'up';
+/** Une pièce qui enjambe ce qui la porte : le bois couché, ou ce qui franchit un vide (`spans` de props.json : la tête de baie). */
+const spans = (p: BuildPiece) => ('wood' in p.piece && p.piece.wood.axis !== 'up') || !!propOf(p)?.spans;
 const isPost = (p: BuildPiece) => 'wood' in p.piece && p.piece.wood.axis === 'up';
 /** La maçonnerie (le solin, une dalle, un seuil) : une pièce de pierre. */
 const masonry = (p: BuildPiece) => {
@@ -107,7 +107,9 @@ export function overhangs(pieces: readonly BuildPiece[], joints: readonly Joint[
       return;
     }
     const [lo, hi] = ew ? [b.x, b.x + b.w] : [b.y, b.y + b.d];
-    const h = holes(lo, hi, sup.map((j) => proj(j))).filter(([a, c]) => c - a > GAP);
+    // un débord voulu aux bouts (`ledge` de props.json : le larmier du couronnement) n'est pas un vide
+    const ledge = propOf(p)?.ledge ?? 0;
+    const h = holes(lo, hi, sup.map((j) => proj(j))).filter(([a, c]) => c - a > GAP && !(ledge && c - a <= ledge && (a === lo || c === hi)));
     if (h.length) out.push(`${at(i)} : au-dessus du vide en ${h.map(([a, c]) => `${a}–${c}`).join(', ')} (${ew ? 'x' : 'y'})`);
     // une charge sur une pièce qui enjambe et repose sur de la maçonnerie : un appui sous elle, au droit de la charge
     for (const j of sup.filter((k) => spans(pieces[k]) && supportsOf(k).length > 0 && supportsOf(k).every((m) => masonry(pieces[m])))) {
