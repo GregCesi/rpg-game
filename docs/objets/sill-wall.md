@@ -20,6 +20,10 @@ avec les dessins mêmes des pierres du jeu (`art/items/stones.ts`). Les deux cl�
   1 040 kg. Ni porté, ni roulé : il se pose en mode construction seulement.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
+
+**Toute longueur** (chantier « maison-2 », Grégoire : une seule règle, comme le bois) : un morceau se pose de toute longueur sur la
+grille de 10 cm, à partir de 40 cm (`piece` de `src/content/walls.json`, `length` de la pièce posée ; la ligne « longueur » du
+catalogue) ; ses tronçons se calculent pour toute longueur (`src/world/walls.ts`), sa vignette reste le morceau de 1,60 m ci-dessous.
 - 1,60 m de long, 50 cm d'épaisseur, environ 60 cm de haut, dont **40 cm visibles** (20 cm enterrés, non dessinés) :
   `dims` 160 × 50 × 40 cm, boîte.
 - À l'écran, est-ouest : W = 32 px ; H + D/2 = 8 + 5 = **32 × 13** px (5 rangées de dessus, 8 de face), ombre portée en plus.

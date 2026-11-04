@@ -249,12 +249,12 @@ export class CreatureSystem {
 
   /**
    * Les bêtes dehors, leur état, la distance de chacune à (x, y) en m (`dist`), et celle d'où elle a perçu Xéros à ce pas (`seenAt` : sa
-   * place au début du pas, avant de bouger) : les tests de scénario.
+   * place au début du pas, avant de bouger), et pourquoi elle fuit (`fled`) : les tests de scénario.
    */
-  census(x: number, y: number): { id: string; mode: string; pose: string; hp: number; x: number; y: number; dist: number; seenAt: number }[] {
+  census(x: number, y: number): { id: string; mode: string; pose: string; hp: number; x: number; y: number; dist: number; seenAt: number; fled?: string }[] {
     return this.all().map((c) => {
       const f = c.from ?? c;
-      return { id: c.id, mode: c.mode, pose: c.pose, hp: c.hp, x: c.x, y: c.y, dist: metres(Math.hypot(c.x - x, c.y - y)), seenAt: metres(Math.hypot(f.x - x, f.y - y)) };
+      return { id: c.id, mode: c.mode, pose: c.pose, hp: c.hp, x: c.x, y: c.y, dist: metres(Math.hypot(c.x - x, c.y - y)), seenAt: metres(Math.hypot(f.x - x, f.y - y)), fled: c.fled };
     });
   }
 }

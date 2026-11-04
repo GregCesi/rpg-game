@@ -72,9 +72,9 @@ tempête. **La forêt de l'ouest n'a absolument rien** (de 0 à 300 m du monde, 
   arbres déracinés (la [galette de racines](objets/root-plate.md) dressée au pied de l'arbre couché, qui cache son bout scié, et le
   trou qu'elle laisse, à 24 et 28 m de la maison : jamais à moins de 20 m) et deux [chicots](objets/normal-snag.md) avec leur cime
   couchée à côté ; le long du chemin, un arbre déraciné et un chicot avec sa cime, à côté du chemin. **La matière se conserve** :
-  le chicot (2,5 m de tronc, 159 kg) et sa cime (3,7 m de tronc et tout le houppier, 286,4 kg) font l'arbre normal entier, la
-  souche et l'arbre couché (445,4 kg). Le chicot s'abat comme un arbre (sa souche, et le tronc qui restait debout couché à son
-  pied, 2 m), la cime s'ébranche comme l'arbre couché (une pièce de bois de 3,6 m, ses branches) ; la galette ne se travaille pas
+  le chicot (cassé à 2,6 m : sa souche et 2,2 m de bois, 169,89 kg avec les copeaux de son abattage) et sa cime (3,6 m de bois et tout le
+  houppier, 280,04 kg) font l'arbre normal debout entier (449,93 kg), et leurs deux pièces les 5,8 m de l'arbre couché. Le chicot s'abat comme un arbre (sa souche, et le tronc qui restait debout couché à son
+  pied, 2,2 m), la cime s'ébranche comme l'arbre couché (une pièce de bois de 3,6 m, ses branches) ; la galette ne se travaille pas
   encore. Dessins : `art/world/storm.ts` (pixel-artist), planche `.art-preview/tempete.png` (`npx tsx tools/essai-tempete.ts`).
 - **Vérification** : `tools/test-paysage.ts` (test:fast : rien dans la forêt de l'ouest, des arbres normaux, aucun en travers d'un
   chemin, la ferme, le chemin et les prés touchés ; chicot + cime = l'arbre entier ; chaque galette au pied de son arbre couché, à
@@ -688,11 +688,29 @@ L'ancienne chaumière (`maison.tmj`, dessinée à la main) a été remplacée pa
   que la coupe se décidait pièce par pièce, d'après sa forme) : sous la tête de Xéros, tranché ; au-dessus (la sablière), caché ; les
   poteaux d'angle restent avec les murs de côté (`cutBands` de world/interior.ts). Changer le bâtiment en mode construction change son
   intérieur.
+- **Le mur du fond est toujours derrière** (règle de Grégoire, 3 novembre 2026, chantier « maison-2 ») : dans une pièce close, le mur
+  du fond et tout ce qui en fait partie (solin, traverses, poteaux, remplissages, sablière, coins de mur) est derrière Xéros et
+  derrière tout ce qui est dans la pièce, dedans comme dehors (la pièce vue par sa fenêtre), pour toute maison. Une pièce est dessinée
+  après celles qui la portent : la traverse nord de la maison, portée aussi par le solin de la cloison x = 320 qui traversait le mur,
+  héritait de son bord sud et passait sur la tête de Xéros dans le cagibi et la moitié ouest de la salle, pas ailleurs. Désormais ce
+  qui est tout entier au nord de la face intérieure nord d'une pièce, à moins de 80 cm, a sa profondeur plafonnée juste derrière cette
+  face, en gardant l'ordre de ce qui porte et de ce qui est porté (`backCaps` de world/interior.ts, `depthsOf` de world/build.ts ; les
+  pièces se calculent pour tout bâtiment, aucune liste). Vérifié par `tools/test-build.ts` sur tous les plans du dépôt. Les murs de
+  côté (une pièce longue nord-sud n'avait qu'une profondeur, son bord sud, et passait devant tout ce qui la longe) : leur image est
+  découpée en tranches de 2 rangées, chacune à la profondeur du point le plus au sud qu'elle montre (`sideSlices` de world/GameMap.ts ;
+  accord de Grégoire sur `.art-preview/murs-de-cote.png`, et le cas de l'établi, `.art-preview/etabli.png` : la tête et le corps de
+  Xéros sont toujours du même côté).
 - **La lumière** : la pénombre de la chaumière (0,22) quand un volet est ouvert, plus sombre (0,36) quand tous sont fermés ; une tache
   de lumière (l'image du rai de soleil) dans chaque porte ouverte et sous chaque volet ouvert, tournée vers le dedans. **Dehors, ce
   qui est caché ne se voit pas, lumière comprise** (3 novembre 2026, Grégoire) : la lueur d'un feu sous un toit opaque (l'âtre sous le
-  chaume) est cachée ; elle revient quand le toit s'efface, et dans le trou qu'ouvre une fenêtre au-dessus de sa pièce, seulement dans
-  le trou (`lightCovers`, `lightShown` de world/roofView.ts, systems/roofs.ts). **E de dedans
+  chaume) est cachée ; elle revient quand le toit s'efface (`lightCovers`, `lightShown` de world/roofView.ts, systems/roofs.ts).
+  **Devant une fenêtre au volet ouvert** (Xéros dehors, à moins de 1,50 m, dans sa largeur), la pièce de cette fenêtre, et elle
+  seule, devient transparente (0,35, le fondu des toits ; Grégoire, chantier « maison-2 », retouche après les aperçus
+  `.art-preview/fenetre-*.png`) : le toit au-dessus d'elle (les pans de chaume, qui couvrent toute la maison, sont découpés à
+  l'écran : l'original opaque hors du trou de la pièce, une copie transparente dans le trou, `windowHole`), ce qui passe en hauteur
+  et son mur sud ; le conduit et sa souche restent opaques, plus lisibles (`windowFade`) ; la lueur de l'âtre suit, dans le trou.
+  Dehors, chaque bâtiment détecté a **sa terre battue** sous ses pièces et le pied de ses cloisons (les tuiles de l'intérieur) et **sa pénombre**, comme dedans,
+  toujours là (world/buildingFloor.ts), pour la maison du joueur aussi. **E de dedans
   ouvre et ferme le volet** (la pièce est à la carte du dehors : GameState la change là-bas, la vue suit).
 - **Les meubles** : le mode construction marche dans la vue intérieure (pas dans les murs : « Hors de la pièce. » ; les pièces du
   bâtiment ne s'y retirent pas). Ce qu'on y pose appartient au bâtiment : `builds` de la carte `interieur:…` dans GameState, pas au plan.
@@ -737,21 +755,21 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
  y=480P  paillasse     P                                    P                    P
       |                |                                    |                    |
  y=640P---[F]--P-------P---[F]--P--[porte]-P--------P--[F]--P--------P--------P--------P
-      P : poteau (20 × 20) ; [F] : fenêtre à volet (60 × 40, appui à 80 cm) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
-      [p] : porte intérieure 0,80 × 1,80 m ; [b] : la baie sans porte du cagibi (0,85 m, sous un linteau) ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
+      P : poteau (20 × 20) ; [F] : fenêtre à volet (60 × 40, appui à 1 m) ; [porte] : porte d'entrée 0,90 × 1,80 m ;
+      [p] : porte intérieure 0,90 × 1,80 m ; [b] : la baie sans porte du cagibi (0,90 m, sous une tête de baie) ; cloisons : x = 320 et x = 960 sur toute la profondeur, y = 320 de x 0 à 320
 ```
 
 - **Emprise** : axes des poteaux **12,80 × 6,40 m** (8 travées de 1,60 m sur 4) ; avec le solin, environ **13,30 × 6,90 m** au sol ;
   environ 80 m² au dedans.
-- **Hauteurs** : comme le premier plan (solin 0–40, traverse basse 40–60, poteaux 60–240, sablière 240–260). **La pente passe à
-  45°** sur cette portée de 6,40 m : à 50°, le faîte du chaume monterait vers 7,2 m et le toit écraserait la maison ; à 45°, le faîte
-  de la charpente est vers 5,80 m, celui du chaume vers 6,40 m (Grégoire avait dit 45 à 55°).
+- **Hauteurs** (celles du plan bâti) : solin 0–40, traverse basse 40–70, poteaux 70–250, sablière 250–280 (une poutre fait 20 cm,
+  30 avec son contour). **La pente passe à 45°** sur cette portée de 6,40 m : à 50°, le faîte du chaume monterait vers 7,2 m et le
+  toit écraserait la maison ; à 45°, le faîte de la charpente est vers 5,80 m, celui du chaume à 6,58 m (Grégoire avait dit 45 à 55°).
 - **Poteaux** : au sud et au nord, x = 0 à 1280 tous les 1,60 m ; à l'est et à l'ouest, y = 0 à 640 ; et ceux des cloisons. Les deux
   cloisons pleines (x = 320 et x = 960) portent chacune une ferme (l'entrait, les arbalétriers) : le toit de 12,80 m a ses appuis.
 - **Les pièces** :
-  - **la salle commune** (x 320–960, 6,40 × 6,40 m, 41 m²) : **le foyer au centre** (640, 320), Ø 1 m ; **la table** (210 × 90,
-    est-ouest) près du mur nord et **un banc** au sud de la table ; **la place du fagot** à l'ouest du foyer ; **la place de la mère**,
-    assise sur le banc, tournée vers le feu ; **la porte d'entrée au sud** (travée x 480–640) ; deux fenêtres au sud, une au nord ;
+  - **la salle commune** (x 320–960, 6,40 × 6,40 m, 41 m²) : **la cheminée** adossée au mur nord (l'ancien foyer central, Ø 1 m,
+    a été retiré le 3 novembre 2026 : voir plus bas) ; **la table** (210 × 90, est-ouest) contre le mur nord, sous la fenêtre, et **un
+    banc** au sud de la table ; **la place du fagot** entre la table et l'âtre ; **la place de la mère**, assise au milieu du banc ; **la porte d'entrée au sud** (travée x 480–640) ; deux fenêtres au sud, une au nord ;
   - **le cagibi, la réserve** (nord-ouest, 3,20 × 3,20 m ; placement de Grégoire) : les outils (le billot et la cognée plantée, la
     hachette, la masse, les coins, la doloire), la corde, les sacs, les bûches (un vrai tas de neuf quartiers d'un mètre, calculé, qui
     compte ses pièces : un point `Pile` de Tiled ; l'ancien tas dessiné d'un bloc n'existe plus, retouche de Grégoire du 3 novembre 2026) ; sa porte vers la salle ; une fenêtre au nord ;
@@ -762,27 +780,39 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
     3 novembre 2026 : une demi-bille du gros de 2 m, face plane en haut, sur quatre pieds en perche de 60 cm debout, emmanchés dans ses
     trous, un tenon et mortaise par pied ; le plateau à un peu moins d'un mètre ; l'établi dessiné d'un bloc ne sert plus à la maison) ; sa porte vers la salle ; une fenêtre à l'est et une au nord, pour la lumière
     de l'établi.
-- **La place pour vivre** : les passages font au moins 1 m ; la salle garde un grand espace libre autour du foyer, la réserve de quoi
+- **La place pour vivre** : les passages font au moins 1 m ; la salle garde un grand espace libre au milieu, la réserve de quoi
   poser des tas.
 - **Ajusté sur l'essai du plan** (pixel-artist, `.art-preview/essai-maison-xeros.png`, rangées 3 à 6) :
   - les cloisons reposent sur un solin **de 30 cm** (Grégoire), coupé aux portes intérieures (la terre battue passe dessous) : les
     surfaces libres sont d'environ 2,90 × 2,90 m (cagibi, coin de Xéros), 6,05 × 5,90 m (salle), 2,90 × 5,90 m (atelier) ;
-  - la table est contre le solin nord (y 30–120), le banc juste dessous (y 125–155) : 1,15 m de passage jusqu'au foyer ;
+  - la table est contre le solin nord (y 30–120), le banc juste dessous (y 120–150) ;
   - (essai d'avant le placement de Grégoire : la chambre au nord-ouest, la réserve à l'est ; l'étape 2 suit le placement ci-dessus) ;
   - les portes s'ouvrent vers le dedans, chaque porte intérieure vers la pièce qu'elle ferme ;
-  - **la cheminée de pierre** (retouche de Grégoire, 3 novembre 2026) remplace le foyer central : adossée au mur nord de la salle
-    (x 680 à 880 cm), l'âtre (`stone-hearth`, 2 × 0,8 × 1,2 m, ouverture de 1,40 m, le feu et sa lueur), le manteau (une poutre de
-    2,20 m), la hotte (`chimney-hood`), le conduit en six tronçons d'assises de pierre et de mortier (`chimney-flue`, jusqu'à 8,50 m),
-    le couronnement d'où sort la fumée (`chimney-cap`), par le pan nord percé (`thatch-roof-pierced`) ; le pignon ouest n'a plus de
-    trou de fumée ; la table et le banc passent sous la fenêtre du nord, la place du fagot à l'ouest de l'âtre ;
+  - **la cheminée** (retouche de Grégoire, 3 novembre 2026) remplace le foyer central ; **une cheminée paysanne où l'on cuisine**
+    (chantier « maison-2 », accord de Grégoire sur `.art-preview/cheminee-2.png`), adossée au mur nord de la salle, centrée sur son axe
+    (x = 780) : l'âtre (`stone-hearth`, 2,20 × 1,10 × 1,50 m : jambages de 30 cm, ouverture de 1,60 m, 1,50 m de haut, 0,90 m de
+    profond, contrecœur, sole ; le feu et sa lueur) ; le manteau, une poutre de 2,20 m posée sur l'âtre à l'avant, linteau de
+    l'ouverture ; la hotte droite de torchis chaulé (`chimney-hood`, 2,20 × 0,80 × 1 m) posée à 1,50 m sur les jambages et le
+    contrecœur, sa face contre le dos du manteau, sans vide derrière ; le conduit (`chimney-flue`, passage de 60 × 40 cm, parois de pierre
+    de 20) en cinq tronçons centrés sur la hotte, par le pan nord percé (`thatch-roof-pierced`, le trou à la place du conduit) ; le
+    couronnement d'où sort la fumée (`chimney-cap`), la souche à 7,60 m, un mètre au-dessus du faîte. Prévu pour cuire (rien n'est
+    encore posé, les places sont notées dans la fiche de l'âtre) : la crémaillère et le chaudron, les landiers et la broche, et un
+    potager maçonné à côté. Les dimensions et leurs sources : `docs/objets/stone-hearth.md` et voisines (ce qui est choisi faute de
+    source le dit). La table et le banc sous la fenêtre du nord, la jarre à l'est de l'âtre, la place du fagot entre la table et l'âtre ;
   - **le toit, dehors** (retouche de Grégoire, 3 novembre 2026) : il ne s'efface plus quand Xéros approche ; on n'est dedans que dans
-    l'intérieur. Devant une fenêtre au volet ouvert, dehors, on voit l'intérieur de cette pièce-là seulement : le toit s'y ouvre (avec
-    ce qui passe au-dessus d'elle), son mur sud coupé comme dans la vue intérieure, le reste de la maison garde son toit
-    (`world/roofView.ts`) ; on y voit le sol de la carte et les meubles du plan, pas ce que la carte pose dedans (la mère, la paillasse) ;
-  - **le cagibi n'a pas de porte** (retouche de Grégoire, 3 novembre 2026) : une baie de 0,85 m, comme une baie où l'on n'a jamais mis
-    de porte, entre deux jambages de 25 cm (ceux de la porte d'entrée), sous un linteau (une poutre de 1,20 m contre la face du cagibi,
-    sa base à 1,90 m : l'intérieur y voit un passage entre deux pièces, le cagibi reste une pièce à lui) ;
-  - **à 45°, le faîte du chaume est à 6,58 m** (7,19 m à 50°) ; avec l'appui à 80 cm, les trois fenêtres du sud et la porte se lisent
+    l'intérieur. Devant une fenêtre au volet ouvert, dehors, la pièce de cette fenêtre seule devient transparente, sauf le conduit
+    (chantier « maison-2 », `windowFade` et `windowHole` de `world/roofView.ts`) ; on y voit la terre battue assombrie et les meubles
+    du plan, pas ce que la carte pose dedans (la mère, la paillasse) ;
+  - **le cagibi n'a pas de porte** (retouche de Grégoire, 3 novembre 2026) : une baie de 0,90 m, comme une baie où l'on n'a jamais mis
+    de porte, la même que les autres sans la porte (chantier « maison-2 ») : son seuil de pierre, ses huisseries, sa tête de baie
+    (l'intérieur y voit un passage entre deux pièces, le cagibi reste une pièce à lui) ;
+  - **les baies de porte** (chantier « maison-2 », l'essai validé par Grégoire, `.art-preview/baie-porte.png`) : le seuil de pierre
+    (120 cm ; `inner-threshold-stone`, 30 cm d'épais, sous les portes intérieures et la baie du cagibi) ; deux huisseries de 15 cm
+    (`door-frame`) posées dessus jusqu'à 2 m ; la porte de 90 cm (toutes les portes, l'entrée comme les intérieures) entre elles, sur le
+    seuil ; la tête de baie (`<couche>-door-head`) sur les huisseries : le linteau à 2 m et le remplissage jusqu'à la sablière, l'huisserie
+    continue du seuil à la sablière ; des bandes de remplissage de 10 cm entre poteau et huisserie (`<couche>-jamb`) ; le solin et la
+    traverse s'arrêtent exactement au seuil. Plus aucune pièce au-dessus du vide (`world/overhang.ts`) ;
+  - **à 45°, le faîte du chaume est à 6,58 m** (7,19 m à 50°) ; avec l'appui à 1 m, les trois fenêtres du sud et la porte se lisent
     sous l'égout ; vue de l'ouest, le pignon entier et son trou de fumée sous la rive ; les entraits retroussés sur les deux fermes
     des cloisons ;
   - l'intérieur se voit sans toit, le mur sud et la cloison est-ouest coupés à 70 cm (sinon la cloison cache la chambre).
@@ -811,13 +841,13 @@ par groupe. Les dimensions sont celles de la pièce posée (cm, `dims` de props.
     la baie, et le calcul de l'intérieur ne trouverait plus la pièce derrière) : pour la porte d'entrée de 0,90 m, `staves-jamb`,
     `wattle-jamb`, `daub-jamb`, `lime-jamb` (25 cm de large, l'huisserie du côté de la baie) ; pour une porte intérieure de 0,80 m,
     `staves-inner-jamb`, `wattle-inner-jamb`, `daub-inner-jamb`, `lime-inner-jamb` (30 cm) ;
-  - avec une fenêtre (baie de 60 × 40, appui à 80 cm, le volet `plank-shutter` s'y pose) : `staves-window-panel`, `wattle-window-panel`,
+  - avec une fenêtre (baie de 60 × 40, appui à 1 m, le volet `plank-shutter` s'y pose) : `staves-window-panel`, `wattle-window-panel`,
     `daub-window-panel`, `lime-window-panel` ;
   - les cloisons sont ces mêmes remplissages, posés dedans (chaulés des deux côtés).
 - **Les portes** : `cottage-door` (0,90 × 1,80 m, en planches, `swing` vers `cottage-door-open`, `passage`) ; `inner-door`
-  (0,80 × 1,80 m, vers `inner-door-open`). Bois : `aged`.
-- **Le solin des cloisons** : `narrow-sill-wall` (morceau de solin brut de 1,60 m, 30 cm d'épais, 40 de haut), qui se raccorde comme
-  le solin des murs (`wall`).
+  (0,90 × 1,80 m depuis le chantier « maison-2 », vers `inner-door-open`). Bois : `aged`.
+- **Le solin des cloisons** : `narrow-sill-wall` (solin brut de 30 cm d'épais, 40 de haut, de toute longueur sur la grille de 10 cm),
+  qui se raccorde comme le solin des murs (`wall`).
 - **Les pignons** : `lime-gable` (torchis chaulé sur clayonnage, sous la rive ; le triangle d'une demi-portée de 3,20 m à 45° : 640 de
   large, 320 de haut au-dessus de la sablière, l'entrait retroussé) et `lime-gable-smoke` (le même, avec le trou de fumée de 50 × 40 cm
   sous le faîte) ; vues `four`.
@@ -926,12 +956,11 @@ vues ; le foyer est un meuble.
    sur 40 cm) et se vise sur la grille sans aimant ; l'aimant ne colle pas une pièce là où elle heurterait (le jambage contre son
    poteau) ; de deux dessus possibles, la visée prend celui qui est sous la souris (le remplissage sur la traverse, pas sur la tête du
    poteau suivant) ; une couche se pose en visant la pièce qu'elle recouvre ; le volet se centre sur son remplissage ; le faîtage se
-   pose sur les pans. **Ce qui reste imparfait** : le solin en morceaux de 1,60 m laisse des trous (30 cm au nord comblé par la
-   cloison, un joint de 10 cm, 40 cm de part et d'autre du seuil, un mètre à l'ouest et à l'est, sous les cloisons aux portes) que la
-   traverse enjambe ; il faudrait des morceaux plus courts. Les cloisons sont à 5 cm de leur axe ; les pans de toit débordent de 70 cm
-   au sud et 60 au nord, de 40 à l'ouest et 60 à l'est (la grille de 20 cm) ; le foyer est en (650, 330), pas (640, 320). Une pièce
-   visée au sol juste au nord d'une pièce plus haute se pose dessus : le scénario monte du nord au sud et se sert de cales (bancs,
-   coffre) qu'il retire.
+   pose sur les pans. Le solin en morceaux de 1,60 m laissait des trous (sous les cloisons, de part et d'autre du seuil, un mètre à
+   l'ouest et à l'est) : depuis le chantier « maison-2 », il se pose de toute longueur et il est continu, coupé aux seuils.
+   **Ce qui reste imparfait** : les cloisons sont à 5 cm de leur axe ; les pans de toit débordent de 70 cm
+   au sud et 60 au nord, de 40 à l'ouest et 60 à l'est (la grille de 20 cm). Une pièce visée au sol juste au nord d'une pièce plus haute
+   se pose dessus : le scénario monte du nord au sud.
 4. **L'intérieur calculé** (`world/interior.ts`) : la pièce close par les pans de mur, les fenêtres lues dans les pans à fenêtre, le
    foyer, la lumière ; `npm run test:interieur` y entre.
 4 bis. **Les intérieurs à plusieurs pièces** : aujourd'hui `world/interior.ts` trouve une pièce, le rectangle clos. Avec des cloisons
@@ -1582,8 +1611,10 @@ Tranché pendant l'audit (docs/AUDIT.md, « À trancher ») ; **fait** au chanti
   plafonds, plus tard.
 
 **Déjà fait** (chantier 1 de l'audit) :
-- **L'arbre tombe du côté où Xéros frappe** : au lancement, Xéros se place lui-même de ce côté, le fer sur l'entaille (`FELL.reach` de
-  config.ts) ; l'entaille se dessine de ce côté, avec des étapes dessinées pour la gauche ; le côté est gardé avec le travail en cours
+- **L'arbre tombe du côté où Xéros frappe** : au lancement, Xéros se place lui-même de ce côté, le fer sur l'entaille (à la distance
+  tirée du rayon du tronc et de la portée de l'outil : `fellDistance` de world/workStance.ts, chantier « maison-2 » : à 70 cm écrits en
+  dur, le fer de la cognée passait de l'autre côté du tronc ; le point de frappe sur une pièce de bois, à la cognée, à la doloire et à
+  la masse, se tire de même de la portée de l'outil, `strikeOffset`) ; le coup de côté d'abattage est un geste à lui (`fell` de gestures.json, accord de Grégoire sur `.art-preview/abattage-2.png` : un coup en écharpe, de haut en bas, le fer dans l'entaille du côté de Xéros ; `use` reste le geste par défaut, `chop` le coup d'en haut) ; l'entaille se dessine de ce côté, avec des étapes dessinées pour la gauche ; le côté est gardé avec le travail en cours
   (`side` de `work` dans GameState), si bien qu'un travail repris tombe du même côté.
 - **Deux images de raccord** entre l'arbre qui penche (la dernière étape) et sa chute, en tête des planches de chute.
 

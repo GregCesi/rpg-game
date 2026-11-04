@@ -22,7 +22,7 @@ Seuls l'arbre debout, ses deux chutes et son arbre couché lui sont propres (fic
   billes de 1 m.
 
 ## Masse
-- L'arbre debout : pas déplaçable, pas de masse. Son tronc ébranché (2 m) : **428 kg**, il ne bouge pas ; ses billes de 1 m : **214 kg** chacune
+- L'arbre debout : pas déplaçable ; **627,58 kg** pour le bilan de l'abattage : sa souche (40 cm, 85,53 kg), l'arbre couché (514,42 kg) et les copeaux de l'entaille (27,63 kg, `fellVolume` de world/workPlan.ts). Son tronc ébranché (2 m) : **428 kg**, il ne bouge pas ; ses billes de 1 m : **214 kg** chacune
   (calculée, volume × 900 kg/m³), donc **trop lourdes à porter** (70 kg) : elles se roulent (300 kg), et se fendent.
 
 ## Vues

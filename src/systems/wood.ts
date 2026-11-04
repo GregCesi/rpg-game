@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { DEPTH, HARVEST, HEW_PASS, SPLIT, WOOD_AIM } from '../config';
 import { gestures, wood as W, work } from '../content';
 import { woodWorkOf } from '../world/tools';
+import { strikeOffset } from '../world/workStance';
 import { CM_PER_PX } from '../content/gabarit';
 import type { End, Facing, WoodPiece } from '../content/types';
 import type { Player } from '../entities/Player';
@@ -33,6 +34,8 @@ export interface WoodAim {
   x: number;
   y: number;
   refusal?: string;
+  /** L'outil qui ferait le travail (son fer tombe à sa portée : world/workStance.ts). */
+  tool?: string;
 }
 
 /**
@@ -112,7 +115,7 @@ export class WoodSystem {
     for (const p of this.map.props) {
       // une pièce dressée (un poteau de chantier) porte le bâtiment : ni coupe, ni doloire, ni coin
       if (!p.wood || p.wood.axis === 'up' || !p.box || !p.image.visible) continue;
-      const aim = this.aimAt(player, p, work);
+      const aim = this.aimAt(player, p, work, tool);
       if (aim && !aim.refusal) return aim;
       // la masse : le refus de la pièce où le coin est planté (« Pas la place pour la fendre. ») passe avant celui d'une voisine
       if (aim && (!refused || (work === 'maul' && p.wood.wedge))) refused = aim;
@@ -121,12 +124,17 @@ export class WoodSystem {
   }
 
   /** Ce que le travail `work` ferait à la pièce `p`, si Xéros y est collé. */
-  private aimAt(player: Player, p: PlacedProp, work: WoodWork): WoodAim | undefined {
+  private aimAt(player: Player, p: PlacedProp, work: WoodWork, tool: string | undefined): WoodAim | undefined {
+    const aim = this.aimWith(player, p, work, tool);
+    return aim && { ...aim, tool };
+  }
+
+  private aimWith(player: Player, p: PlacedProp, work: WoodWork, tool: string | undefined): WoodAim | undefined {
     if (work === 'plant' || work === 'maul') {
       const end = this.endOf(player, p);
       if (end) return work === 'plant' ? this.plantAim(p, end) : this.maulAim(p, end);
     }
-    const along = this.flank(player, p);
+    const along = this.flank(player, p, work, tool);
     if (along === undefined) return undefined;
     if (work === 'cut') return this.cutAim(p, along);
     if (work === 'hew') return this.hewAim(player, p, along);
@@ -138,12 +146,12 @@ export class WoodSystem {
    * Contre le flanc de la pièce, tourné vers elle : au nord ou au sud d'une pièce est-ouest (la colonne de l'image où tombe le fer),
    * à l'ouest ou à l'est d'une pièce nord-sud (la rangée de ses pieds). Undefined sinon.
    */
-  private flank(player: Player, p: PlacedProp): number | undefined {
+  private flank(player: Player, p: PlacedProp, work: WoodWork, tool: string | undefined): number | undefined {
     const { actor } = player;
     const b = actor.body;
     const box = p.box!;
     const f = actor.facing;
-    const strike = this.strikeX(player);
+    const strike = this.strikeX(player, work, tool);
     const { w, h } = this.sizeOf(p);
     if (p.wood!.axis === 'ew') {
       const above = f === 'down' && Math.abs(box.top - b.bottom) <= WOOD_AIM.gap;
@@ -156,12 +164,12 @@ export class WoodSystem {
     return (west || east) && b.center.y >= box.top && b.center.y <= box.bottom ? b.center.y - (p.y - h) : undefined;
   }
 
-  /** Où tombe le fer du geste `chop` en x, par rapport aux pieds de Xéros (`strike` de gestures.json, retourné vers la gauche). */
-  private strikeX(player: Player): number {
-    const f = player.actor.facing;
-    const gesture = gestures.chop;
-    const dir = f === 'left' ? 'right' : (f as 'down' | 'up' | 'right');
-    return (gesture.strike?.[dir] ?? gesture.poses[dir][gesture.impact].dx) * (f === 'left' ? -1 : 1);
+  /**
+   * Où tombe le fer en x par rapport aux pieds de Xéros (chantier « maison-2 ») : le geste du travail (le coup de haut en bas, ou le coup
+   * de masse) et la portée de l'outil tenu (world/workStance.ts), pas un nombre réglé pour la seule cognée.
+   */
+  private strikeX(player: Player, work: WoodWork, tool: string | undefined): number {
+    return strikeOffset(gestures[work === 'maul' ? 'maul' : 'chop'], tool, player.actor.facing);
   }
 
   /**
@@ -265,7 +273,7 @@ export class WoodSystem {
     const startPx = px(aim.at);
     const endPx = px(aim.from === 'start' ? piece.length : 0);
     const feet = (at: number) => {
-      if (piece.axis === 'ew') return { x: p.x + at - this.strikeX(player), y: actor.y };
+      if (piece.axis === 'ew') return { x: p.x + at - this.strikeX(player, aim.work, aim.tool), y: actor.y };
       const top = p.y - this.sizeOf(p).h;
       return { x: actor.x, y: actor.y + (top + at - actor.body.center.y) };
     };

@@ -100,12 +100,24 @@ console.log(`✓ matière : ${splits} fentes et ${cuts} coupes, les morceaux pè
     },
   };
   const up = upgrade(old) as { version: number; state: typeof old.state & { hands: { bundle?: number }[] } };
-  // jusqu'à la version d'aujourd'hui (la main active retirée en 28, chantier « commandes »)
-  assert.equal(up.version, SAVE_VERSION);
+  // jusqu'à la version 29 (la main active retirée en 28, chantier « commandes ») ; la 30 refait la maison de Xéros : une partie d'avant
+  // n'est plus convertie (partie neuve, accord de Grégoire, chantier « maison-2 »)
+  assert.equal(up.version, Math.min(SAVE_VERSION, 29));
   assert.equal('active' in up.state, false, 'la main active n’existe plus');
   assert.equal((up.state.maps.ferme.piles[0] as { bundle?: number }).bundle, 10, 'tas de fagots sans nombre : 10 branches');
   assert.deepEqual(up.state.maps.ferme.spawned.map((o) => (o as { bundle?: number }).bundle), [10, 4], 'fagot posé seul : 10 sans nombre, son nombre sinon');
   assert.equal(up.state.hands[0].bundle, 10, 'fagot tenu sans nombre : 10 branches');
   assert.equal(pieceMass(piles[branches].piece) * Object.keys(piles[branches].places).length + lien, propMass(tie.into), 'le fagot plein (sans nombre) : le tas de branches plein et son lien');
   console.log(`✓ matière : une sauvegarde d'avant (fagot plein de 10) garde ses 10 branches ; le plein est maintenant de ${Object.keys(piles[branches].places).length}`);
+}
+
+// Récolter (chantier « maison-2 ») : abattre et ébrancher ne créent ni ne perdent de matière sans la nommer ; ce qui part (les copeaux
+// de l'entaille, les feuilles et ramilles) est nommé par la récolte (`waste`), le bilan est celui de validate.ts (`harvestBalance`)
+{
+  const { harvestBalance } = await import('../src/content/validate');
+  const content = await import('../src/content');
+  assert.deepEqual(harvestBalance(content as never), [], 'le bilan de chaque récolte tombe juste');
+  const wooded = Object.entries(content.props).filter(([, p]) => p.harvest?.work && ('fell' in p.harvest.work || 'limbs' in p.harvest.work));
+  for (const [k, p] of wooded) assert.ok(p.harvest!.waste, `${k} : abattre ou ébrancher nomme ce qui part`);
+  console.log(`✓ matière : ${wooded.length} récoltes d'arbres (abattre, ébrancher), ce qui part est nommé, rien ne se crée`);
 }
