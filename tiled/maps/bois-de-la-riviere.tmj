@@ -9,8 +9,8 @@
   "height": 125,
   "tilewidth": 32,
   "tileheight": 32,
-  "nextlayerid": 4,
-  "nextobjectid": 483,
+  "nextlayerid": 5,
+  "nextobjectid": 484,
   "properties": [
     {
       "name": "name",
@@ -5978,6 +5978,118 @@
               "type": "string",
               "propertytype": "Facing",
               "value": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "relief",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {
+          "id": 483,
+          "name": "plateau",
+          "type": "Level",
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "rotation": 0,
+          "visible": true,
+          "polygon": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1344,
+              "y": 0
+            },
+            {
+              "x": 1344,
+              "y": 256
+            },
+            {
+              "x": 1312,
+              "y": 256
+            },
+            {
+              "x": 1312,
+              "y": 1248
+            },
+            {
+              "x": 1344,
+              "y": 1248
+            },
+            {
+              "x": 1344,
+              "y": 1664
+            },
+            {
+              "x": 1376,
+              "y": 1664
+            },
+            {
+              "x": 1376,
+              "y": 2016
+            },
+            {
+              "x": 1408,
+              "y": 2016
+            },
+            {
+              "x": 1408,
+              "y": 2400
+            },
+            {
+              "x": 1440,
+              "y": 2400
+            },
+            {
+              "x": 1440,
+              "y": 3296
+            },
+            {
+              "x": 1408,
+              "y": 3296
+            },
+            {
+              "x": 1408,
+              "y": 3648
+            },
+            {
+              "x": 1376,
+              "y": 3648
+            },
+            {
+              "x": 1376,
+              "y": 3936
+            },
+            {
+              "x": 1344,
+              "y": 3936
+            },
+            {
+              "x": 1344,
+              "y": 4000
+            },
+            {
+              "x": 0,
+              "y": 4000
+            }
+          ],
+          "properties": [
+            {
+              "name": "height",
+              "type": "int",
+              "value": 500
             }
           ]
         }
