@@ -1,5 +1,8 @@
 # Cadrage : les sangliers
 
+**Décidé le 4 novembre 2026** : Grégoire a répondu aux treize questions (la variante C validée, voir docs/CONCEPTION.md « Les créatures »,
+« Le combat », « La vie de Xéros ») ; le sanglier et la vie de Xéros sont dans le jeu. Ce qui suit est le cadrage tel qu'il a été proposé.
+
 Essai du 4 novembre 2026, branche `sangliers`, worktree `~/Code/rpg-game-sangliers`, parti de `origin/main` (c264a42). **Rien du jeu
 n'a changé.** Seuls des essais sont écrits : ce cadrage, `tools/essai-sangliers-chiffres.ts` (les chiffres, tirés du vrai moteur), et
 les planches du pixel-artist (`art/proposals/sanglier*.ts`, `tools/essai-sangliers.ts`, `tools/essai-sangliers-carte.ts`).
