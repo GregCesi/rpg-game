@@ -9,8 +9,8 @@
   "height": 125,
   "tilewidth": 32,
   "tileheight": 32,
-  "nextlayerid": 4,
-  "nextobjectid": 433,
+  "nextlayerid": 5,
+  "nextobjectid": 434,
   "properties": [
     {
       "name": "name",
@@ -5378,6 +5378,134 @@
               "type": "string",
               "propertytype": "Facing",
               "value": "down"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "relief",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {
+          "id": 433,
+          "name": "plateau",
+          "type": "Level",
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "rotation": 0,
+          "visible": true,
+          "polygon": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1216,
+              "y": 0
+            },
+            {
+              "x": 1216,
+              "y": 352
+            },
+            {
+              "x": 1248,
+              "y": 352
+            },
+            {
+              "x": 1248,
+              "y": 736
+            },
+            {
+              "x": 1280,
+              "y": 736
+            },
+            {
+              "x": 1280,
+              "y": 992
+            },
+            {
+              "x": 1312,
+              "y": 992
+            },
+            {
+              "x": 1312,
+              "y": 1216
+            },
+            {
+              "x": 1344,
+              "y": 1216
+            },
+            {
+              "x": 1344,
+              "y": 1472
+            },
+            {
+              "x": 1376,
+              "y": 1472
+            },
+            {
+              "x": 1376,
+              "y": 1696
+            },
+            {
+              "x": 1408,
+              "y": 1696
+            },
+            {
+              "x": 1408,
+              "y": 2016
+            },
+            {
+              "x": 1440,
+              "y": 2016
+            },
+            {
+              "x": 1440,
+              "y": 3200
+            },
+            {
+              "x": 1408,
+              "y": 3200
+            },
+            {
+              "x": 1408,
+              "y": 3552
+            },
+            {
+              "x": 1376,
+              "y": 3552
+            },
+            {
+              "x": 1376,
+              "y": 3872
+            },
+            {
+              "x": 1344,
+              "y": 3872
+            },
+            {
+              "x": 1344,
+              "y": 4000
+            },
+            {
+              "x": 0,
+              "y": 4000
+            }
+          ],
+          "properties": [
+            {
+              "name": "height",
+              "type": "int",
+              "value": 500
             }
           ]
         }

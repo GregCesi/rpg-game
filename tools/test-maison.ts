@@ -60,7 +60,7 @@ await playtest('maison', async ({ page, errors, load }) => {
     for (let y = 240; y < m.height - 220; y += 8) for (let x = 200; x < m.width - 480; x += 8) {
       if (Math.hypot(x + 130 - px.x, y + 60 - px.y) > 200 && m.areaFree({ left: x - 64, top: y - 24, right: x + 336, bottom: y + 156 })) {
         w.cameras.main.setZoom(2);
-        w.cameras.main.centerOn(x + 130, y + 40);
+        w.cameras.main.centerOn(x + 130, y + 40 - (w.lifts?.liftAt?.(x + 130, y + 40) ?? 0));
         return { x: Math.round((x * 5) / 20) * 20, y: Math.round((y * 5) / 20) * 20 };
       }
     }
@@ -82,7 +82,7 @@ await playtest('maison', async ({ page, errors, load }) => {
       const g = (window as any).game;
       const cam = g.scene.getScene('world').cameras.main;
       const rect = g.canvas.getBoundingClientRect();
-      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
+      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
     }, [x, y] as const);
   /** La caméra centrée sur un point du monde (px), au zoom 2 par défaut : ce qu'on vise est à l'écran. */
   const look = (x: number, y: number, zoom = 2) =>
@@ -316,7 +316,7 @@ await playtest('maison', async ({ page, errors, load }) => {
       cam.preRender();
       const rect = g.canvas.getBoundingClientRect();
       const k = cam.zoom * (rect.width / g.scale.width);
-      const at = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - cam.worldView.y) * k });
+      const at = (x: number, y: number) => ({ x: rect.left + (x - cam.worldView.x) * k, y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * k });
       const a = at(l, t);
       const c = at(r, b);
       return { x: Math.max(0, Math.round(a.x)), y: Math.max(0, Math.round(a.y)), w: Math.round(c.x - a.x), h: Math.round(c.y - a.y) };

@@ -385,7 +385,7 @@ await playtest('combat', async ({ page, errors, load }) => {
     for (let y = 120; y < m.height - 120; y += 8) {
       for (let x = 80; x < m.width - 200; x += 8) {
         if (m.areaFree({ left: x - 60, top: y - 80, right: x + 60, bottom: y + 60 })) {
-          w.cameras.main.centerOn(x, y);
+          w.cameras.main.centerOn(x, y - (w.lifts?.liftAt?.(x, y) ?? 0));
           return { x, y };
         }
       }
@@ -400,7 +400,7 @@ await playtest('combat', async ({ page, errors, load }) => {
       const g = (window as any).game;
       const cam = g.scene.getScene('world').cameras.main;
       const rect = g.canvas.getBoundingClientRect();
-      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
+      return { x: rect.left + (x - cam.worldView.x) * cam.zoom * (rect.width / g.scale.width), y: rect.top + (y - ((window as any).game.scene.getScene('world').lifts?.liftAt?.(x, y) ?? 0) - cam.worldView.y) * cam.zoom * (rect.height / g.scale.height) };
     }, [x, y] as const);
   await page.evaluate(() => (window as any).game.events.emit('build', { kind: 'pick', piece: { prop: 'training-dummy' } }));
   const at = await screen(spot!.x, spot!.y);

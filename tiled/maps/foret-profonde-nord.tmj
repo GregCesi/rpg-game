@@ -16,6 +16,11 @@
       "name": "name",
       "type": "string",
       "value": "La forêt profonde, au nord"
+    },
+    {
+      "name": "height",
+      "type": "int",
+      "value": 500
     }
   ],
   "tilesets": [

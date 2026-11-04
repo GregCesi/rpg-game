@@ -43,7 +43,7 @@ export interface Catalog {
 
 interface ManifestLike {
   spritesheets: { key: string; frameWidth: number; frameHeight: number; animations: Record<string, { frames: unknown[] }>; silhouette: { w: number; h: number } }[];
-  tilesets: { key: string; tiles: Record<string, number>; solid: number[] }[];
+  tilesets: { key: string; tiles: Record<string, number>; solid: number[]; deep?: number[] }[];
   images: { key: string; width: number; height: number; silhouette: { w: number; h: number } }[];
   woodSilhouettes?: readonly { piece: WoodPiece; w: number; h: number }[];
 }
@@ -61,7 +61,8 @@ export function catalogFrom(m: ManifestLike): Catalog {
     frameCounts: new Map(m.spritesheets.map((s) => [s.key, new Map(Object.entries(s.animations).map(([k, a]) => [k, a.frames.length]))])),
     tiles: new Map(m.tilesets.map((t) => [t.key, new Set(Object.keys(t.tiles))])),
     tileNumbers: new Map(m.tilesets.map((t) => [t.key, new Set(Object.values(t.tiles))])),
-    solid: new Map(m.tilesets.map((t) => [t.key, new Set(t.solid)])),
+    // l'eau profonde compte avec le plein : un point d'arrivée, un PNJ, une sortie n'y sont jamais
+    solid: new Map(m.tilesets.map((t) => [t.key, new Set([...t.solid, ...(t.deep ?? [])])])),
   };
 }
 
@@ -483,6 +484,11 @@ export const VIEWS_TODO: Record<string, string> = {
   'shed-plate-north': "abri construit : pour un plan orienté autrement",
   'shed-plate-south': "abri construit : pour un plan orienté autrement",
   'shed-plate-side': "abri construit : pour un plan orienté autrement",
+  // la voûte du chemin creux (CADRAGE.md 12.11) : une seule vue dessinée, le couloir est est-ouest
+  'lane-curtain': 'couloir est-ouest : ses vues tournées ne servent pas (un couloir nord-sud les demandera)',
+  'lane-overhang-1': 'couloir est-ouest : ses vues tournées ne servent pas (un couloir nord-sud les demandera)',
+  'lane-overhang-2': 'couloir est-ouest : ses vues tournées ne servent pas (un couloir nord-sud les demandera)',
+  'lane-overhang-3': 'couloir est-ouest : ses vues tournées ne servent pas (un couloir nord-sud les demandera)',
   'shed-rafter': "abri construit : pour un plan orienté autrement",
   'shed-roof': "abri construit : pour un plan orienté autrement",
   // la pioche : ses données de coup existent (le rocher), pas encore ses dessins
@@ -1074,6 +1080,7 @@ const TRADE_TODO = new Set([
   'chopping-block-axe', 'fireplace', 'worktable', 'workbench', 'stove', 'bed', 'pallet', 'sack', 'jar', 'sunpatch', 'lantern', 'wall-torch',
   'candle', 'barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'shed-plate-north', 'shed-plate-south', 'shed-plate-side', 'shed-rafter',
   'shed-roof', 'maul-ground', 'splitting-wedge-ground', 'well', 'planted-stake', 'plan-tablet', 'hatchet-ground', 'broadaxe-ground',
+  'lane-curtain', 'lane-overhang-1', 'lane-overhang-2', 'lane-overhang-3', 'water-cut', 'shimmer',
   'stone', 'iron-ore', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'pickaxe', 'hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword',
 ]);
 

@@ -6,6 +6,7 @@ import type { Player } from '../entities/Player';
 import { game, setWarren, warrenOf } from '../state';
 import type { GameMap } from '../world/GameMap';
 import { crossed } from '../world/crossing';
+import { wallAt } from '../world/relief';
 import { alarm, emerge, hurt, metres, pixels, type Creature, type Point, type Surroundings } from '../world/creature';
 import { footprint, type Box } from '../world/strike';
 import { death, memberOf, seedWarren, settle, warrenHoles, wounded, WarrenLife, type WarrenSite } from '../world/warren';
@@ -76,7 +77,7 @@ export class CreatureSystem {
       const site: WarrenSite = { id: g.id, kind: g.creature, population: g.population, holes };
       if (!warrenOf(game, def.id, g.id)) setWarren(game, def.id, g.id, seedWarren(site, cd, game.clock));
       const life = new WarrenLife(site, cd);
-      life.populate(this.settled(site, cd), game.clock, this.around(holes, undefined));
+      life.populate(this.settled(site, cd), game.clock, this.around(holes, undefined, cd));
       this.warrens.push({ site, def: cd, life });
     }
   }
@@ -95,8 +96,15 @@ export class CreatureSystem {
   }
 
   /** Ce qui entoure une bête : Xéros, ce qui barre le passage (une tuile pleine, un corps), les entrées de sa garenne. */
-  private around(holes: Point[], threat: Surroundings['threat']): Surroundings {
-    return { threat, blocked: (x, y) => !this.map.areaFree({ left: x - 0.5, top: y - 0.5, right: x + 0.5, bottom: y + 0.5 }), holes, rand: this.rand };
+  private around(holes: Point[], threat: Surroundings['threat'], def: CreatureDef): Surroundings {
+    // une marche plus haute que ce que la bête monte (sa `mobility`, creatures.json) est un mur pour elle (world/relief.ts)
+    const mob = def.mobility;
+    return {
+      threat,
+      blocked: (x, y) => !this.map.areaFree({ left: x - 0.5, top: y - 0.5, right: x + 0.5, bottom: y + 0.5 }) || wallAt(this.map.def, x, y, mob),
+      holes,
+      rand: this.rand,
+    };
   }
 
   /** Un pas de jeu de `delta` ms : chaque garenne vit (Xéros perçu si `active`), ses bêtes se dessinent. */
@@ -106,8 +114,8 @@ export class CreatureSystem {
     const threat = active ? { x: a.x, y: a.y, gait: gaitOf(player) } : undefined;
     for (const w of this.warrens) {
       const state = this.settled(w.site, w.def);
-      for (const e of w.life.step(state, game.clock, dt, () => this.around(w.site.holes, threat), this.rand))
-        if (e.kind === 'thump') for (const o of this.warrens) alarm(o.life.out, w.def, e.at, w.site.kind, () => this.around(o.site.holes, threat));
+      for (const e of w.life.step(state, game.clock, dt, () => this.around(w.site.holes, threat, w.def), this.rand))
+        if (e.kind === 'thump') for (const o of this.warrens) alarm(o.life.out, w.def, e.at, w.site.kind, () => this.around(o.site.holes, threat, o.def));
     }
     this.draw(player);
   }
@@ -196,7 +204,7 @@ export class CreatureSystem {
     this.chips(c.x, c.y - 2, c.y + 1, w.def.target.matter, facing);
     this.float(c.x, c.y - (s?.height ?? 8), String(damage).replace('.', ','));
     const state = this.settled(w.site, w.def);
-    if (hurt(c, damage, this.around(w.site.holes, undefined)) === 'dead') {
+    if (hurt(c, damage, this.around(w.site.holes, undefined, w.def)) === 'dead') {
       const d = death(state, c, w.site, w.def, game.clock);
       setWarren(game, this.map.def.id, w.site.id, d.state);
       w.life.remove(c);

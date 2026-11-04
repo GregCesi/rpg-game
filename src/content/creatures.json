@@ -30,6 +30,7 @@
       { "hour": 21.5, "out": 0 }
     ],
     "births": { "hours": 24 },
-    "heal": { "days": 1 }
+    "heal": { "days": 1 },
+    "mobility": { "step": 30, "drop": 30, "slope": 20, "swim": false }
   }
 }

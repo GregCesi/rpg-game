@@ -16,6 +16,11 @@
       "name": "name",
       "type": "string",
       "value": "La forêt des ronces"
+    },
+    {
+      "name": "height",
+      "type": "int",
+      "value": 500
     }
   ],
   "tilesets": [

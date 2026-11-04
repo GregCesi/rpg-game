@@ -22,6 +22,9 @@ type Rgb = [number, number, number];
 export function tileFamily(name: string): string {
   const base = name.replace(/-\d+$/, '').replace(/\d+$/, '');
   if (base.startsWith('bridge')) return 'bridge';
+  // le relief : le dessus des talus, le sol clair du chemin creux (ses variantes et ses raccords au chemin)
+  if (base.startsWith('bank')) return 'bank';
+  if (base.startsWith('lane') || base.startsWith('path-lane')) return 'lane';
   if (base === 'field-ns') return 'field';
   if (base === 'flowers') return 'grass';
   return base;
@@ -69,7 +72,7 @@ const cols = tileset.width / TILE;
 const names = registry.world as string[];
 const sums = new Map<string, number[]>();
 names.forEach((name, n) => {
-  if (/-\d+$/.test(name) && !name.endsWith('-15')) return;
+  if (/-\d+$/.test(name) && !name.endsWith('-15') && !/^(bank|lane)-/.test(name)) return;
   const data = new Uint8Array(TILE * TILE * 4);
   const sx = (n % cols) * TILE;
   const sy = Math.floor(n / cols) * TILE;
