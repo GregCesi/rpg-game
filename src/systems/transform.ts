@@ -36,7 +36,7 @@ function woodFits(part: NonNullable<TransformPart['wood']>, w: WoodPiece): boole
 }
 
 /** Une source est ce que demande l'entrée `part`. */
-function fits(part: TransformPart, h: Held): boolean {
+export function fits(part: TransformPart, h: Held): boolean {
   if (part.item) return 'item' in h && h.item === part.item;
   if (part.prop) return 'prop' in h && h.prop === part.prop && !h.wood;
   if (part.wood) return 'prop' in h && !!h.wood && woodFits(part.wood, h.wood);

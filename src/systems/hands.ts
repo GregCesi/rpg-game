@@ -1,6 +1,5 @@
 import type Phaser from 'phaser';
-import { AIM, INTERACT, PUT_DOWN } from '../config';
-import { clampTo } from '../world/aim';
+import { INTERACT, PUT_DOWN } from '../config';
 import { items, piles, props } from '../content';
 import { crosswise, viewCount } from '../content/views';
 import type { Facing, WoodPiece } from '../content/types';
@@ -107,15 +106,23 @@ export class HandsSystem {
 
   /**
    * À appeler à chaque image : montre en transparence ce qu'on tient, à la place exacte où il ira si on le pose, dans son sens.
-   * `active` = false pendant un geste, un dialogue, un changement de carte, ou quand le clic vise autre chose. `hand` : la main dont
-   * on montre ce qu'elle tient (celle qui poserait).
+   * `active` = false pendant un geste, un dialogue, un changement de carte, ou quand A ferait autre chose. `hand` : la main dont on
+   * montre ce qu'elle tient (celle que poserait A). Renvoie où est le fantôme (le milieu de son image, son haut, son bas), pour y
+   * montrer la touche A (systems/keyPrompts.ts).
    */
-  updatePreview(player: Player, active: boolean, hand: Hand): void {
+  updatePreview(player: Player, active: boolean, hand: Hand): { x: number; y: number; top: number } | undefined {
     const what = held(game, hand);
     const t = active && what ? this.dropTarget(player, what) : undefined;
-    if (!what || !t) return this.ghost.hideFrom(0);
+    if (!what || !t) {
+      this.ghost.hideFrom(0);
+      return undefined;
+    }
     const g = this.ghostOf(what, t);
     this.ghost.show(0, g.key, g.x, g.y, g.depth, undefined, g.frame);
+    const f = this.scene.textures.getFrame(g.key, g.frame);
+    const w = f?.width ?? 0;
+    const h = f?.height ?? 0;
+    return { x: Math.round(g.x + w / 2), y: g.y, top: g.y - h };
   }
 
   /**
@@ -578,12 +585,6 @@ export class HandsSystem {
    */
   private layFront(player: Player, what: Held): [number, number] {
     const b = player.actor.body;
-    // à la souris, le fantôme suit le curseur, sans sortir de la portée de Xéros (AIM.reach) : l'objet centré sur le point visé
-    const c = player.cursor && clampTo(player.eye, player.cursor, AIM.reach);
-    if (c) {
-      const at = this.centerToSpot(what, c.x, c.y);
-      return [at.x, at.y];
-    }
     if ('item' in what) {
       const { w, h } = this.itemSize(what);
       const [l, t] = frontCorner(b, player.actor.facing, w, h);

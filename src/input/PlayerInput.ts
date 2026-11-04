@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { UI_ZOOM } from '../config';
 import { KeyLatch } from './keyLatch';
+import type { HandIndex } from '../world/actionPlan';
 import { uiClick } from './uiClicks';
 
 const K = Phaser.Input.Keyboard.KeyCodes;
@@ -16,9 +17,12 @@ const CODES = {
   left: ['KeyA', 'ArrowLeft'],
   right: ['KeyD', 'ArrowRight'],
   run: ['ShiftLeft', 'ShiftRight'],
-  // E (ou Entrée) : ce qui se fait sans les mains (parler, ouvrir, lire) ; dans un dialogue, la suite
+  // E (ou Entrée) : agir sans outil sur ce qui est devant (parler, ouvrir, lire, prendre) ; maintenu, les gestes longs ; dans un
+  // dialogue, la suite
   hands: ['KeyE', 'Enter', 'NumpadEnter'],
-  // lâcher : le A d'un AZERTY (Q en QWERTY)
+  // F (même place partout) : travailler avec l'outil en main
+  work: ['KeyF'],
+  // poser : le A d'un AZERTY (Q en QWERTY)
   drop: ['KeyQ'],
   turn: ['KeyR'],
   // Alt (Option sur Mac) maintenu : marcher discrètement
@@ -35,6 +39,13 @@ const CODES = {
 } as const;
 
 type Action = keyof typeof CODES;
+
+/**
+ * Les touches dont Maj change la main (Maj + E prend dans la main gauche, Maj + A pose la main gauche) : avec Maj, l'appui est noté sous
+ * un autre code du verrou (`Shift:KeyE`), à l'instant de l'événement (Maj lâchée avant que le jeu lise l'appui ne change rien).
+ */
+const SHIFTED: ReadonlySet<string> = new Set([...CODES.hands, ...CODES.drop]);
+const shifted = (codes: readonly string[]) => codes.map((c) => `Shift:${c}`);
 
 /** Zoom au pavé numérique (les + et − du clavier principal sont lus par leur signe). */
 const ZOOM_IN = ['NumpadAdd'];
@@ -74,11 +85,13 @@ if (typeof window !== 'undefined') {
   window.addEventListener('keydown', (e) => {
     // Alt (Option sur Mac) : marcher discrètement ; le navigateur n'en fait rien (pas de menu)
     if (e.code === 'AltLeft' || e.code === 'AltRight') e.preventDefault();
-    LATCH.down(e.code, e.timeStamp, e.repeat || e.ctrlKey || e.metaKey);
+    const code = e.shiftKey && SHIFTED.has(e.code) ? `Shift:${e.code}` : e.code;
+    LATCH.down(code, e.timeStamp, e.repeat || e.ctrlKey || e.metaKey);
   });
   window.addEventListener('keyup', (e) => {
     if (e.code === 'AltLeft' || e.code === 'AltRight') e.preventDefault();
     LATCH.up(e.code, e.timeStamp);
+    if (SHIFTED.has(e.code)) LATCH.up(`Shift:${e.code}`, e.timeStamp);
   });
   window.addEventListener('blur', () => LATCH.clear());
   // la souris : enfoncée sur le canevas, relâchée n'importe où (comme Phaser) ; à l'instant de l'événement
@@ -106,10 +119,11 @@ export function forgetHeldKeys(): void {
 }
 
 /**
- * Traduit le clavier et la souris en intention (docs/COMMANDES.md) : direction, course, pas discrets (Alt), les deux clics (gauche : la
- * main droite ; droit : la main gauche ; courts ou maintenus), le curseur. E (ou Entrée) : parler, ouvrir, lire. A (Q en QWERTY) :
- * lâcher. R : tourner ce qu'on tient. Échap : arrêter un travail, annuler un lancer. V : la vitesse du temps. Molette, + et − : le zoom.
- * Espace ne fait rien (réservé).
+ * Traduit le clavier et la souris en intention (docs/COMMANDES.md) : direction, course, pas discrets (Alt) ; E (ou Entrée) : agir sans
+ * outil sur ce qui est devant, prendre (Maj + E : dans la main gauche), maintenu les gestes longs ; F : travailler avec l'outil ; A (Q
+ * en QWERTY) : poser (Maj + A : la main gauche) ; R : tourner ce qu'on poserait ; les deux clics, pour le combat (gauche : la main
+ * droite ; droit : la main gauche ; courts ou maintenus), le curseur. Échap : arrêter un travail, annuler un lancer. V : la vitesse du
+ * temps. Molette, + et − : le zoom. Espace ne fait rien (réservé).
  */
 export class PlayerInput {
   /** Le clavier, commun à toutes les scènes (LATCH). */
@@ -132,6 +146,7 @@ export class PlayerInput {
     kb.addCapture([K.TAB, K.SPACE, K.UP, K.DOWN, K.LEFT, K.RIGHT, K.PAGE_UP, K.PAGE_DOWN]);
     // les appuis d'avant cette scène (lus par la précédente, ou pendant un fondu) ne la concernent pas
     for (const codes of Object.values(CODES)) this.keys.take(codes);
+    this.keys.take(shifted([...SHIFTED]));
     this.keys.take([MOUSE.left, MOUSE.right]);
     const onDown = (e: KeyboardEvent) => {
       // + et − : lus par leur signe (ils ne sont pas à la même place en AZERTY et en QWERTY), ou sur le pavé numérique ; maintenus, ils répètent
@@ -163,17 +178,39 @@ export class PlayerInput {
     });
   }
 
-  /** E (ou Entrée) : vrai une seule fois par appui. */
+  /** E (ou Entrée), avec Maj ou non : vrai une seule fois par appui (un dialogue : la suite). */
   handsPressed(): boolean {
-    return this.take('hands');
+    return this.actPressed() !== undefined;
   }
 
-  /** Lâcher (A en AZERTY, Q en QWERTY : la même place) : vrai une seule fois par appui. */
-  dropPressed(): boolean {
-    return this.take('drop');
+  /** E (ou Entrée) pressé : la main où il prend d'abord (la droite ; avec Maj, la gauche), une fois par appui ; sinon undefined. */
+  actPressed(): HandIndex | undefined {
+    if (this.take('hands')) return 1;
+    return this.keys.take(shifted(CODES.hands)) ? 0 : undefined;
   }
 
-  /** R : tourner ce qu'on tient avant de le poser ; vrai une seule fois par appui. */
+  /** E (ou Entrée) est enfoncé en ce moment (E maintenu), avec Maj ou non. */
+  actDown(): boolean {
+    return this.keys.isDown([...CODES.hands, ...shifted(CODES.hands)]);
+  }
+
+  /** La durée vraie (ms) du dernier appui fini de E (src/input/keyLatch.ts). */
+  actLasted(): number | undefined {
+    return this.keys.lastedFor([...CODES.hands, ...shifted(CODES.hands)]);
+  }
+
+  /** F : travailler avec l'outil en main ; vrai une seule fois par appui. */
+  workPressed(): boolean {
+    return this.take('work');
+  }
+
+  /** Poser (A en AZERTY, Q en QWERTY : la même place) : la main qui pose d'abord (la droite ; avec Maj, la gauche), une fois par appui. */
+  putPressed(): HandIndex | undefined {
+    if (this.take('drop')) return 1;
+    return this.keys.take(shifted(CODES.drop)) ? 0 : undefined;
+  }
+
+  /** R : tourner ce qu'on poserait ; vrai une seule fois par appui. */
   turnPressed(): boolean {
     return this.take('turn');
   }

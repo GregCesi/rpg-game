@@ -1,7 +1,7 @@
 // Test de scénario du temps (docs/CONCEPTION.md, « Le temps »), dans le vrai jeu (voir tools/lib/playtest.ts) :
 // - l'horloge à x1 par défaut ; V passe la vitesse du temps du joueur au palier suivant (x2 : la vitesse de simulation, tout le jeu plus
 //   vite), le dit et l'affiche ; en boucle jusqu'à x20 puis x1, Maj tenue (une course) ou non : Maj + V n'existe plus ;
-// - le travail au coup (docs/CONCEPTION.md, « Le travail ») : devant un arbre normal, un seul clic de la main de la cognée lance tout le travail,
+// - le travail au coup (docs/CONCEPTION.md, « Le travail ») : devant un arbre normal, un seul appui de F, la cognée en main, lance tout le travail,
 //   Xéros frappe seul au rythme du modèle (world/swing.ts), chaque coup enlève sa part (world/workPlan.ts) et se paie au plafond ; la
 //   force réglée dans ?dieu en plein travail agit au coup suivant (le bûcheron fort enlève plus de deux fois plus par coup) ; un pas
 //   l'arrête, la part enlevée est gardée (sauvegarde comprise : retrouvée après rechargement) et le travail repris continue de là ; la
@@ -99,7 +99,7 @@ await playtest('temps', async ({ page, errors, load }) => {
         await frame();
       }
     };
-    await (window as any).__click('left');
+    await (window as any).__do('work');
     await watch(7000, marks);
     out.launched = { mode: w().mode, bar: w().works.bar.frame.visible };
     // la force du bûcheron fort, réglée en plein travail : elle agit dès le coup suivant
@@ -134,7 +134,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     };
     g.events.on('prestep', count);
     const fast: { t: number; done: number }[] = [];
-    await (window as any).__click('left');
+    await (window as any).__do('work');
     const f0 = steps;
     let frames = 0;
     const tf = performance.now();
@@ -226,7 +226,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     a.body.reset(t.x, t.y);
     a.face('right');
     await (window as any).__frames(2);
-    await (window as any).__click('left');
+    await (window as any).__do('work');
     await (window as any).__settle();
     out.resumed = { mode: w().mode, done: w().works.done, debug: w().works.bar.infoText };
     const c1 = w().player.stamina.ceiling;
@@ -252,8 +252,8 @@ await playtest('temps', async ({ page, errors, load }) => {
     await send({ kind: 'stamina', breath: 0, ceiling: 80, max: 100 }, 50);
     const told = notices.length;
     const ceiling0 = gs.game.stamina.ceiling;
-    // un clic lance le travail : le premier coup trouve le souffle vide, Xéros s'arrête et souffle
-    await (window as any).__click('left');
+    // F lance le travail : le premier coup trouve le souffle vide, Xéros s'arrête et souffle
+    await (window as any).__do('work');
     const t3 = performance.now();
     while (!w().player.stamina.winded && performance.now() - t3 < 3000) await frame();
     await frame();
@@ -283,7 +283,7 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   assert.deepEqual(second.reloaded.kept, first.kept2, 'la part faite est retrouvée après rechargement');
   assert.match(second.resumed.debug, /force 50 N·m · 90 J · [0-9.]+ % par coup/, `?debug : la force, l'énergie, la part par coup (${second.resumed.debug})`);
-  assert.equal(second.resumed.mode, 'work', 'un clic reprend le travail');
+  assert.equal(second.resumed.mode, 'work', 'F reprend le travail');
   assert.ok(second.resumed.done >= first.kept2.done, `il reprend là où il s’était arrêté (${second.resumed.done} ≥ ${first.kept2.done})`);
   assert.ok(second.finished.gone && second.finished.felled, '« Finir le travail » : l’arbre est abattu');
   assert.equal(second.finished.mode, 'play', 'le travail fini rend la main');

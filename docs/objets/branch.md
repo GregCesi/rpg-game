@@ -52,15 +52,14 @@ poing ne ralentissent) ; la vitesse du coup est celle de la pointe, dans l'espac
 Aucune pour l'instant : une seule forme dessinée, une seule taille.
 
 ## Regroupement
-En tas (`branches` : le compte s'affiche près du tas), lié en fagot (clic maintenu d'une main vide sur un tas plein et lié).
+En tas (`branches` : le compte s'affiche près du tas), lié en fagot (E maintenu sur un tas plein et lié).
 
 ## Gestes
-- Clic court, main vide : la prendre (au sol, ou la reprendre d'un tas).
-- Clic maintenu, main vide : sur un tas de branches plein et lié, nouer le fagot.
-- Clic court de la main qui la tient : c'est une ressource, la cible décide : devant ce qui encaisse un coup (le mannequin),
-  attaquer avec ; sinon la poser à son fantôme (sur un tas de branches si elle s'y range). Tenue d'une main, la hachette dans
-  l'autre, face au billot : le clic de la main de la hachette la taille en piquet.
-- R : la tourner à la pose. A (Q en QWERTY) : la lâcher devant Xéros (sur un tas de branches si elle s'y range).
+- E : la prendre (au sol, ou la reprendre d'un tas).
+- E maintenu, mains libres : sur un tas de branches plein et lié, nouer le fagot.
+- Clic de la main qui la tient : frapper avec, même dans le vide (une ressource frappe comme le reste). Tenue d'une main, la
+  hachette dans l'autre, face au billot : F la taille en piquet.
+- R : la tourner à la pose. A (Q en QWERTY) : la poser à son fantôme, devant Xéros (sur un tas de branches si elle s'y range).
 
 ## Origine
 Elle tombe du houppier d'un arbre couché (trois coups de cognée de haut en bas).

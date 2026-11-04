@@ -34,7 +34,7 @@
 Seul ; cinq par abri, tous les 75 à 80 cm (deux de rive sur les sablières de côté, et trois entre).
 
 ## Gestes
-- Clics, E, R, A : rien.
+- E, F, R, A : rien.
 
 ## Origine
 Places du plan `woodshed` (étape « à venir » : le chantier ne les ouvre pas encore). Plus tard : une perche équarrie (un arbre normal, plus fin) : pas encore construit.

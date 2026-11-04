@@ -23,7 +23,7 @@ Seule.
 
 ## Gestes
 - E : Xéros apprend le plan (« Xéros connaît maintenant le plan de l'abri à bois. ») ; déjà connu : « Xéros connaît déjà ce plan. ». La planchette reste en place. Les plans connus sont dans GameState (`knownPlans`).
-- Clics, R, A : rien (elle ne se prend pas).
+- F, R, A : rien (elle ne se prend pas).
 
 ## Origine
 Gravée par la mère, posée sur sa table. Rien d'autre ne l'enseigne dans ce chantier.
@@ -33,4 +33,4 @@ Reste sur la table. Plus tard : d'autres planchettes, d'autres plans (cabane, ma
 
 ## Vérification
 - Aperçu : `.art-preview/collection.png`.
-- En jeu, en cinq étapes : 1. `?dieu`, ou à la main : E sur la planchette, chez la mère (le plan est appris). 2. Hachette (réserve de la maison) dans une main, branche dans l'autre, face au billot, clic de la main de la hachette : la branche devient un piquet ; en tailler quatre. 3. Un piquet en main, un clic de sa main : le coin nord-ouest ; les trois autres coins en fantôme, y planter les trois autres (un piquet loin des coins est refusé, un tracé gêné aussi). 4. Le chantier naît : six dalles sur la berge, en porter une jusqu'à un coin, un clic sur la place : le dé, et le piquet arraché tombe à côté. 5. Quatre dés : « Abri à bois : poteaux, 0 sur 4 » et les poteaux en fantôme.
+- En jeu, en cinq étapes : 1. `?dieu`, ou à la main : E sur la planchette, chez la mère (le plan est appris). 2. Hachette (réserve de la maison) dans une main, branche dans l'autre, face au billot, F : la branche devient un piquet ; en tailler quatre. 3. Un piquet en main, F : le coin nord-ouest ; les trois autres coins en fantôme, y planter les trois autres (un piquet loin des coins est refusé, un tracé gêné aussi). 4. Le chantier naît : six dalles sur la berge, en porter une jusqu'à un coin, A face à la place : le dé, et le piquet arraché tombe à côté. 5. Quatre dés : « Abri à bois : poteaux, 0 sur 4 » et les poteaux en fantôme.

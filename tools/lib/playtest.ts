@@ -125,7 +125,11 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
   try {
     const page = await context.newPage();
     const errors: string[] = [];
-    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('pageerror', (e) => {
+      errors.push(e.message);
+      // PLAYTEST_STACK=1 : la pile de chaque erreur de la page
+      if (process.env.PLAYTEST_STACK) console.error(e.stack);
+    });
     // tsx ajoute des appels à __name aux fonctions : la page doit le connaître pour exécuter le scénario
     await page.addInitScript('window.__name = (f) => f;');
     // les pauses fixes dans la page (setTimeout de plus de 30 ms, sauf celle de __until), en somme
@@ -187,8 +191,8 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
         }, 'la carte ' + (command.map || command.kind));
       };
     `);
-    // la souris, avec le geste d'un joueur (docs/COMMANDES.md : le curseur oriente Xéros et vise ; le clic gauche est la main droite, le
-    // droit la main gauche) : `__aim(x, y)` pose le curseur sur un point du monde et l'y garde (le joueur suit ce qu'il vise : la caméra
+    // la souris, avec le geste d'un joueur (docs/COMMANDES.md : la souris ne sert qu'au combat ; au coup, Xéros se tourne vers le
+    // curseur ; le clic gauche est la main droite, le droit la main gauche) : `__aim(x, y)` pose le curseur sur un point du monde et l'y garde (le joueur suit ce qu'il vise : la caméra
     // qui bouge ne le déplace pas) ; `__front(dir)` : le point devant Xéros (là où il regarde, ou dans la direction `dir`) ;
     // `__click(button, at, ms)` : un clic court (`ms` = 0 : enfoncé puis relâché aussitôt, le jeu le garde jusqu'à le lire) ou maintenu
     // `ms` ms en temps vrai (un geste), sur `at` (sinon devant Xéros) ; `__press(button)`, `__release(button)` : enfoncer, relâcher
@@ -242,33 +246,82 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
         await window.__frames(2);
         window.__leave();
       };
-      // \`__do(kinds, { at, ms, long })\` : le joueur lit le mot de chaque clic (le HUD, world/clickAction.ts) et clique le bouton qui
-      // fait ce qu'il veut (\`kinds\` : une ou plusieurs sortes de clic, dans l'ordre de préférence ; le gauche d'abord à égalité) ;
-      // \`long\` : le clic maintenu (\`ms\`, par défaut le seuil et un peu plus) ; échoue en nommant ce que disent les deux clics
+      // \`__key(code, ms, shift)\` : une touche du clavier, avec le geste d'un joueur (un KeyboardEvent sur la fenêtre, lu par sa place :
+      // KeyE, KeyF, KeyQ = le A d'un AZERTY) : enfoncée puis relâchée aussitôt (\`ms\` = 0 : le jeu la garde jusqu'à la lire), ou
+      // maintenue \`ms\` ms en temps vrai (E maintenu) ; \`shift\` : avec Maj (Maj + E, Maj + A : la main gauche)
+      window.__key = async (code, ms = 0, shift = false) => {
+        const ev = (type) => new KeyboardEvent(type, { code, key: code.replace(/^Key/, '').toLowerCase(), shiftKey: shift, bubbles: true });
+        window.dispatchEvent(ev('keydown'));
+        if (ms > 0) await new Promise((r) => setTimeout(r, ms));
+        window.dispatchEvent(ev('keyup'));
+        await window.__frames(2);
+      };
+      // \`__face(dir | point)\` : Xéros se tourne (vers une direction, ou vers un point du monde) sans faire de pas : c'est la flèche
+      // tapée d'un joueur à x1 (moins d'un pixel), que la vitesse du scénario ferait marcher de plusieurs pixels
+      window.__face = (to) => {
+        const w = window.game.scene.getScene('world');
+        const a = w.player.actor;
+        let f = to;
+        if (typeof to === 'object') {
+          const dx = to.x - a.x;
+          const dy = to.y - (a.y - 6);
+          f = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down';
+        }
+        if (f && f !== a.facing) a.face(f);
+      };
+      // \`__do(kinds, { at, face, ms, long, left })\` : le joueur lit les touches au-dessus de ce qui est devant Xéros (le plan des
+      // touches, world/actionPlan.ts : \`keys\` de la scène) et appuie celle qui fait ce qu'il veut (\`kinds\` : une ou plusieurs sortes,
+      // dans l'ordre de préférence) : E (prendre : \`take\` ou la sorte exacte ; parler, ouvrir, lire, \`help-info\`), E maintenu
+      // (\`knot\`, \`unknot\`, \`turn\`, \`help\`), F (\`work\`, \`plant\`), A ou Maj + A (\`put\`, \`place\`, \`rest\` ; \`left\` : Maj + A
+      // d'abord), un clic (\`strike\`, \`punch\` ; \`throw\`, maintenu) visant \`at\` (sinon devant Xéros) ; \`at\` ou \`face\` d'une
+      // touche : Xéros se tourne d'abord vers ce point (\`__face\`). Échoue en nommant ce que proposent les touches et les clics.
       window.__do = async (kinds, opts = {}) => {
         const list = Array.isArray(kinds) ? kinds : [kinds];
         const w = window.game.scene.getScene('world');
+        const TAKES = ['take', 'pile', 'tie', 'pickup', 'unload', 'stake', 'harvest'];
+        const MOUSE = ['strike', 'punch', 'throw'];
+        if (!list.every((k) => MOUSE.includes(k)) && (opts.at || opts.face)) {
+          window.__face(opts.at || opts.face);
+          await window.__frames(2);
+        }
         const p = opts.at || window.__front(opts.face);
         window.__aim(p.x, p.y);
         await window.__frames(2);
-        const plans = w.plans;
-        const of = (b) => plans && (opts.long ? plans[b].long : plans[b].short).kind;
-        let button;
+        const plan = w.keys;
+        const via = (k) => {
+          if (!plan) return undefined;
+          if (k === 'take' ? TAKES.includes(plan.e.short) : plan.e.short === k) return { key: 'KeyE' };
+          if (plan.e.long === k) return { key: 'KeyE', ms: opts.ms ?? 650 };
+          if ((k === 'work' || k === 'plant') && plan.f.kind === k) return { key: 'KeyF' };
+          if (['put', 'place', 'rest'].includes(k)) {
+            const order = opts.left ? [['aLeft', true], ['a', false]] : [['a', false], ['aLeft', true]];
+            for (const [a, shift] of order) if (plan[a].kind === k) return { key: 'KeyQ', shift };
+          }
+          const long = k === 'throw';
+          const b = ['left', 'right'].find((b) => (long ? plan.clicks[b].long : plan.clicks[b].short).kind === k);
+          if (b) return { button: b, ms: opts.ms ?? (long ? 650 : 0) };
+          return undefined;
+        };
+        let how;
         for (const k of list) {
-          button = ['left', 'right'].find((b) => of(b) === k);
-          if (button) break;
+          how = via(k);
+          if (how) break;
         }
-        if (!button) {
+        if (!how) {
           window.__leave();
-          throw new Error('aucun clic ne fait ' + list.join(' ou ') + ' : gauche ' + JSON.stringify(plans?.left) + ', droit ' + JSON.stringify(plans?.right));
+          throw new Error('aucune touche ne fait ' + list.join(' ou ') + ' : E ' + JSON.stringify(plan?.e) + ', F ' + JSON.stringify(plan?.f) + ', A ' + JSON.stringify(plan?.a) + ', Maj + A ' + JSON.stringify(plan?.aLeft) + ' ; Xéros ' + Math.round(w.player.actor.x) + ',' + Math.round(w.player.actor.y) + ' ' + w.player.actor.facing);
         }
-        window.__press(button);
-        const ms = opts.ms ?? (opts.long ? 650 : 0);
-        if (ms > 0) await new Promise((r) => setTimeout(r, ms));
-        window.__release(button);
+        if (how.key) {
+          window.__leave();
+          await window.__key(how.key, how.ms ?? 0, !!how.shift);
+          return how.key;
+        }
+        window.__press(how.button);
+        if (how.ms > 0) await new Promise((r) => setTimeout(r, how.ms));
+        window.__release(how.button);
         await window.__frames(2);
         window.__leave();
-        return button;
+        return how.button;
       };
     `);
     // la vitesse de simulation (src/systems/simSpeed.ts : N pas de jeu de taille normale par image, jamais une image sautée) : x10
