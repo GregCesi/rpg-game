@@ -131,7 +131,77 @@ interface Head {
   trap: number;
   /** Le creux doux sous la pommette : 0 (joue plate) à 2. */
   hollow: number;
+  /** Le menton retouché de T1 (essai 5) ; absent, le menton plat de l'essai 4. */
+  tip?: ChinTip;
 }
+
+// ---------- Le menton de T1 (essai 5) ----------
+// Grégoire choisit T1 « le rectangle » et ne demande qu'une correction, le menton : plus saillant (un plan de lumière franc
+// sur la bosse, une ombre portée nette dessous sur le cou), un peu plus pointu vers le bas (sans devenir un V), une fossette
+// au milieu qui le sépare en deux bosses (un trait d'ombre vertical entre deux reflets). Le visage, la mâchoire jusqu'à ses
+// angles (y=43) et le coin où elle rejoint le menton (x=24, y=46), les traits, les cheveux et le buste ne bougent pas : le
+// menton est ajouté sous la ligne de la mâchoire.
+// - M0 : T1 telle quelle (essai 4) ;
+// - M1 « la bosse » : le bas descend d'une rangée (y=47), 11 px de large ; fossette courte ;
+// - M2 « le menton en avant » : deux rangées (y=48), 10 px ; la fossette sur trois rangées, l'ombre portée sur deux ;
+// - M3 « le menton fort » : trois rangées (y=49), 9 px, une échancrure au bas de la fossette (les deux bosses se lisent dans
+//   la silhouette) ; l'ombre la plus dure.
+export type ChinVersion = 'M0' | 'M1' | 'M2' | 'M3';
+
+interface ChinTip {
+  /** Demi-largeur du bas du menton, et la rangée sous lui (le polygone s'arrête au-dessus). */
+  half: number;
+  bottom: number;
+  /**
+   * Le modelé du menton, 11 px centrés (x=27 à 37), ses rangées au-dessus du dessous du menton (la dernière juste au-dessus) :
+   * l, c, la bosse gauche au jour et son reflet ; s, S, la droite en demi-teinte, son reflet c ; au milieu, la fossette (S, D) ;
+   * v, le creux doux qui détache la bosse (ses flancs ; pour M3, le pli sous la lèvre).
+   */
+  model: Grid;
+  /** Rangées d'ombre profonde portée sous le menton, sur le cou. */
+  shadow: number;
+  /** Une échancrure au bas, au milieu : la fossette entame le dessous du menton (un pixel d'ombre profonde). */
+  notch: boolean;
+}
+
+const TIPS: Record<Exclude<ChinVersion, 'M0'>, ChinTip> = {
+  M1: {
+    half: 5.5, bottom: 47, shadow: 1, notch: false,
+    model: [
+      '..cccssss..',
+      '.cllcSccss.',
+      '.ccccSsssS.',
+    ],
+  },
+  M2: {
+    half: 5, bottom: 48, shadow: 2, notch: false,
+    model: [
+      '..cccsssss.',
+      'vcllcScccsv',
+      'vclccSsccSv',
+      '.sccsDssSS.',
+    ],
+  },
+  M3: {
+    half: 4.5, bottom: 49, shadow: 2, notch: true,
+    model: [
+      '..vvvvvvv..',
+      '.ccccssssS.',
+      'vlllcScccSv',
+      'vclccDsccSv',
+      '.sccsDssSS.',
+    ],
+  },
+};
+
+const headOf = (v: HeadVersion, chin: ChinVersion): Head => {
+  if (chin === 'M0') return HEADS[v];
+  if (v !== 'T1') throw new Error(`forgeron-tetes-portraits : le menton ${chin} n'existe que pour T1`);
+  return { ...HEADS[v], tip: TIPS[chin] };
+};
+
+/** Le bas du visage : le menton retouché, ou celui de l'essai 4. */
+const bottomOf = (h: Head): number => h.tip?.bottom ?? h.chinY;
 
 const HEADS: Record<HeadVersion, Head> = {
   T1: { brow: 11, cheek: 11, cheekY: 27, jaw: 11, jawY: 43, chin: 7.5, chinY: 46, hairline: 12, crown: 3, eyeY: 24, eyeGap: 2.5,
@@ -154,6 +224,11 @@ function facePoly(h: Head): P[] {
     [32 - h.chin - 0.5, h.chinY - 0.3],
     [32 - h.chin, h.chinY],
   ];
+  if (h.tip) {
+    // le menton retouché : du coin de la mâchoire, il descend sous elle en se resserrant, son bas plat
+    const k = h.tip;
+    left.splice(-1, 1, [32 - k.half - 0.5, k.bottom - 0.4], [32 - k.half, k.bottom]);
+  }
   return [...left, ...left.map(([x, y]) => [64 - x, y] as P).reverse()];
 }
 
@@ -227,9 +302,9 @@ function face(c: Canvas, h: Head): void {
   };
   c.within('s', (c) => {
     // le flanc droit à l'ombre, une bande qui suit le contour : 3 px sur la tempe et la joue, qui tourne avec la mâchoire
-    for (let y = h.hairline - 4; y <= h.chinY; y++) {
+    for (let y = h.hairline - 4; y <= bottomOf(h); y++) {
       const r = ex(y);
-      const w = y < h.jawY ? 3 : y < h.chinY - 2 ? 3 : 2;
+      const w = y < h.jawY ? 3 : y < bottomOf(h) - 2 ? 3 : 2;
       for (let x = r - w + 1; x <= r; x++) c.set(x, y, 'S');
     }
     // le dessous de la mâchoire et du menton, tourné vers le bas
@@ -253,9 +328,12 @@ function face(c: Canvas, h: Head): void {
     c.line(jl + 1, h.jawY - 2, jl + 1, h.jawY, 'c');
     c.line(jl + 2, h.jawY + 1, 32 - h.chin, h.chinY - 1, 'c');
     // le menton : son plan au jour, carré
-    c.rect(28, h.chinY - 5, 4, 2, 'c');
-    c.line(29, h.chinY - 5, 30, h.chinY - 5, 'l');
+    if (!h.tip) {
+      c.rect(28, h.chinY - 5, 4, 2, 'c');
+      c.line(29, h.chinY - 5, 30, h.chinY - 5, 'l');
+    }
   });
+  if (h.tip) chinTip(c, h.tip);
   // le creux doux sous la pommette : une grappe de `v`, sans bord net
   if (h.hollow > 0) {
     c.within('sc', (c) => {
@@ -284,6 +362,19 @@ function face(c: Canvas, h: Head): void {
     if (y <= h.jawY - 3) continue;
     if ('sScl'.includes(c.get(x, y + 1))) c.set(x, y + 1, 'D');
     if ('sScl'.includes(c.get(x, y + 2))) c.set(x, y + 2, 'S');
+  }
+}
+
+/** Le menton retouché : deux bosses au jour séparées par la fossette, l'ombre portée nette sur le cou. */
+function chinTip(c: Canvas, k: ChinTip): void {
+  const last = k.bottom - 1; // la dernière rangée du menton, son dessous à l'ombre
+  c.within('slcS', (c) => c.stamp(k.model, 27, last - k.model.length));
+  // l'échancrure : la fossette entame le bas du menton, l'ombre du cou s'y voit
+  if (k.notch) c.set(32, last, 'D');
+  // l'ombre portée nette sous le menton, sur le cou : la forme du menton
+  for (let x = Math.ceil(32 - k.half); x <= Math.floor(32 + k.half); x++) {
+    for (let i = 1; i <= k.shadow; i++) if ('sScl'.includes(c.get(x, last + i))) c.set(x, last + i, 'D');
+    if ('sScl'.includes(c.get(x, last + k.shadow + 1))) c.set(x, last + k.shadow + 1, 'S');
   }
 }
 
@@ -409,8 +500,8 @@ function earLocks(c: Canvas, h: Head): void {
   lock(c, mx(ear), 2.8, 2.4, SHADE, { tip: 0.35, hi: [0.05, 0.3] });
 }
 
-function draw(v: HeadVersion): Canvas {
-  const h = HEADS[v];
+function draw(v: HeadVersion, chin: ChinVersion = 'M0'): Canvas {
+  const h = headOf(v, chin);
   const c = new Canvas(64, 64);
   hairBack(c, h);
   bust(c, h);
@@ -424,8 +515,8 @@ function draw(v: HeadVersion): Canvas {
 }
 
 /** Le portrait 64 px du forgeron, de face, rasé avec la moustache : tête T1, T2 ou T3, les cheveux de C. */
-export function portrait(version: HeadVersion): { grid: Grid; pal: Record<string, string> } {
-  const c = draw(version);
+export function portrait(version: HeadVersion, chin: ChinVersion = 'M0'): { grid: Grid; pal: Record<string, string> } {
+  const c = draw(version, chin);
   c.outline('o');
   return { grid: selOut(c.toGrid(), DARK), pal: palette };
 }
@@ -434,13 +525,13 @@ export function portrait(version: HeadVersion): { grid: Grid; pal: Record<string
  * La taille du visage, en px : la largeur de la peau du visage à sa rangée la plus large (oreilles et cheveux exclus), la
  * hauteur de la ligne des cheveux au bas du menton (au milieu du front).
  */
-export function faceSize(version: HeadVersion): { w: number; h: number } {
-  const h = HEADS[version];
+export function faceSize(version: HeadVersion, chin: ChinVersion = 'M0'): { w: number; h: number } {
+  const h = headOf(version, chin);
   const mask = new Canvas(64, 64).polygon(facePoly(h), '#').toGrid();
   let w = 0;
   for (const row of mask) w = Math.max(w, row.split('').filter((ch) => ch === '#').length);
-  const g = portrait(version).grid;
+  const g = portrait(version, chin).grid;
   let top = 0;
   while (top < 64 && !'slcSDv'.includes(g[top][32])) top++;
-  return { w, h: Math.ceil(h.chinY) - top };
+  return { w, h: Math.ceil(bottomOf(h)) - top };
 }

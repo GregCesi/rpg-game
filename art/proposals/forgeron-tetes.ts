@@ -187,12 +187,82 @@ const SIDE: Record<Version, Spec> = { T1: T1_SIDE, T2: T2_SIDE, T3: T3_SIDE };
 /** La rangée du menton (le bas de la tête), pour mesurer la tête. */
 export const CHIN: Record<Version, number> = { T1: 21, T2: 21, T3: 22 };
 
-function spec(version: Version, facing: HeadFacing): Spec {
+// ---------- Le menton de T1 (essai 5 : Grégoire choisit T1 et ne demande que le menton) ----------
+// Plus saillant (il avance devant la lèvre, de profil ; de face, un plan de lumière franc et une ombre portée nette dessous),
+// un peu plus pointu vers le bas (les coins du bas dans l'ombre, ou le milieu qui descend d'une rangée), une fossette au milieu
+// (un pixel d'ombre entre deux reflets). Tout le reste de T1 est identique : seules les rangées y=20 à 23 changent.
+// - M0 : T1 telle quelle (essai 4), pour comparer ;
+// - M1 « la bosse » : la silhouette de T1 (menton à y=21) ; de face, les coins du bas à l'ombre (le menton se lit sur 5 px),
+//   le plan de lumière, la fossette, l'ombre portée sur le cou ; de profil, le menton avance d'un pixel devant la lèvre ;
+// - M2 « le menton en avant » : le milieu descend d'une rangée (y=22, 5 px sous la mâchoire de 9 px, les angles gardés), la
+//   fossette au bas, l'ombre portée sur le haut de la bavette ; de profil, il avance et descend ;
+// - M3 « le menton fort » : M2 plus marqué (le bas plus étroit à l'ombre, la fossette plus sombre entre deux reflets
+//   clairs ; de profil, la bosse plus pleine).
+export type Chin = 'M0' | 'M1' | 'M2' | 'M3';
+export const CHINS: Chin[] = ['M0', 'M1', 'M2', 'M3'];
+
+/** Les rangées remplacées, par y, de face (`down`) et de profil (`right`). */
+const CHIN_ROWS: Record<Exclude<Chin, 'M0'>, Record<HeadFacing, Record<number, [number, string]>>> = {
+  M1: {
+    down: {
+      20: [9, 'YdssswwwsSSdh'], // le plan de lumière du menton
+      21: [11, 'SSswSwsSD'], // les coins à l'ombre ; la fossette (x=15) entre deux reflets
+      22: [6, 'whHhd.DQQQQQDD.hhddD'], // l'ombre portée du menton sur le cou, nette
+    },
+    right: {
+      // y=20 : le creux sous la lèvre (x=24, à l'ombre), inchangé ; y=21 : la bosse du menton avance d'un pixel (x=25), au jour
+      21: [13, 'dYhDSSSSSswsS'],
+    },
+  },
+  M2: {
+    down: {
+      21: [11, 'SsswwwsSD'], // le plan de lumière ; les angles de la mâchoire gardés
+      22: [6, 'whHhd.QswSsSDQ.hhddD'], // le bas du menton (x=13 à 17), la fossette (x=15)
+      23: [3, 'swwwhHdwsAQQQQQaqShddSSSSD'], // son ombre portée sur la bavette
+    },
+    right: {
+      20: [12, 'hYhdDssssswsD'], // le creux sous la lèvre (x=24), plus sombre
+      21: [13, 'dYhDSSSSssswS'], // la bosse du menton avance (x=25), son haut au jour
+      22: [10, 'hYhdhsSSDDDQSSS'], // le dessous du menton, une rangée plus bas ; l'ombre portée sur le cou (Q)
+      23: [9, 'dhYhdDwwwsssSQQQAq'], // l'ombre portée sur la poitrine
+    },
+  },
+  M3: {
+    down: {
+      21: [11, 'SSswwwsSD'], // les coins du menton à l'ombre dès y=21
+      22: [6, 'whHhd.QSwDwSDQ.hhddD'], // le bas étroit à l'ombre ; la fossette sombre entre deux reflets
+      23: [3, 'swwwhHdwsAQQQQQaqShddSSSSD'],
+    },
+    right: {
+      20: [12, 'hYhdDssssswD'], // le creux sous la lèvre rentre d'un pixel (x=23) : la lèvre (x=24) et le menton (x=25) le bordent
+      21: [13, 'dYhDSSSSsswwS'], // la bosse pleine, son haut au jour
+      22: [10, 'hYhdhsSSDDDQSssD'], // le bas plein, jusqu'à x=25
+      23: [9, 'dhYhdDwwwsssSQQQQq'],
+    },
+  },
+};
+
+/** La rangée du bas du menton de T1 selon la version du menton. */
+export const CHIN_BOTTOM: Record<Chin, number> = { M0: 21, M1: 21, M2: 22, M3: 22 };
+
+function spec(version: Version, facing: HeadFacing, chin: Chin = 'M0'): Spec {
   // De face : le corps de C sous les deltoïdes (y=24 ; la rangée y=23 est SHOULDER_HAIR). De profil : celui de A à partir de y=25 (les rangées y=23-24,
   // les pointes des cheveux sur le dos, sont dans NAPE).
   const body = facing === 'down' ? SPECS['C-down-loose'].slice(16) : SPECS['A-right-loose'].slice(17);
   const head = facing === 'down' ? FRONT[version] : SIDE[version];
   const all = [...head, ...body];
+  if (chin !== 'M0') {
+    if (version !== 'T1') throw new Error(`forgeron-tetes : le menton ${chin} n'existe que pour T1`);
+    for (const [y, row] of Object.entries(CHIN_ROWS[chin][facing])) {
+      const i = Number(y) - TOP;
+      const [x0, old] = all[i];
+      if (x0 + old.length !== row[0] + row[1].length && facing === 'down' && i < 14) {
+        // de face, la largeur des rangées du visage ne change pas
+        throw new Error(`forgeron-tetes : ${chin} y=${y} change la largeur de la rangée`);
+      }
+      all[i] = row;
+    }
+  }
   if (all.length !== 37) throw new Error(`forgeron-tetes : ${version} ${facing} a ${all.length} rangées, il en faut 37`);
   return all;
 }
@@ -210,16 +280,17 @@ function finish(matter: Grid, shadowW: number): Grid {
 }
 
 /** Le forgeron avec la tête `version`, de face (corps de C) ou de profil droit (corps de A), cheveux lâchés. */
-export function head(version: Version, facing: HeadFacing): Grid {
-  return finish(grid(spec(version, facing)), facing === 'right' ? 6 : 9);
+export function head(version: Version, facing: HeadFacing, chin: Chin = 'M0'): Grid {
+  return finish(grid(spec(version, facing, chin)), facing === 'right' ? 6 : 9);
 }
 
 /** La tête seule (matière, sans contour) : largeur et hauteur contour compris, de y=7 (le contour du sommet) au menton. */
-export function headSize(version: Version, facing: HeadFacing): { w: number; h: number } {
-  const g = grid(spec(version, facing));
+export function headSize(version: Version, facing: HeadFacing, chin: Chin = 'M0'): { w: number; h: number } {
+  const g = grid(spec(version, facing, chin));
   let x0 = 99, x1 = -1;
   for (let y = TOP; y <= Math.min(CHIN[version], 21); y++) { // y=22 de T3 : le menton entre les trapèzes
     [...g[y]].forEach((ch, x) => { if (ch !== '.') { x0 = Math.min(x0, x); x1 = Math.max(x1, x); } });
   }
-  return { w: x1 - x0 + 3, h: CHIN[version] - TOP + 2 };
+  const bottom = chin === 'M0' ? CHIN[version] : CHIN_BOTTOM[chin];
+  return { w: x1 - x0 + 3, h: bottom - TOP + 2 };
 }
