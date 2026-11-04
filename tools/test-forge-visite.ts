@@ -79,7 +79,7 @@ await playtest('forge-visite', async ({ page, errors, load }) => {
   assert.equal(forge.roofs.length, 2, `les deux pans de bardeaux de l'atelier (${forge.roofs})`);
   const ox = forge.world.x;
   const oy = forge.world.y;
-  const front = { x: forge.box!.x + 22, y: forge.box!.y + forge.box!.d + 6 }; // devant le feu, au milieu de la forge (px de la carte)
+  const front = { x: forge.box!.x + 22, y: forge.box!.y + forge.box!.d + 10 }; // devant le feu, au milieu de la forge (px de la carte)
   // dans la rue, au droit de la forge
   await goTo(ox + front.x, ROAD, 'x', 2);
 

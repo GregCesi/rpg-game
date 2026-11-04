@@ -48,7 +48,38 @@ export function forgeSteps(): ForgeStep[] {
   for (const [x, y] of POSTS) post(`poteau ${x},${y}`, 300, x, y);
   frame('les dalles et les poteaux');
 
-  // 2. les sablières des longs murs (3 m et 5,80 m entées), au sud au ras du dehors des poteaux (visées à 580, aimantées à 570)
+  // 2. le bardage au nord, à l'ouest et à l'est, contre la face du dehors des poteaux ; le sud reste ouvert
+  for (const x of [40, 160, 320, 440, 600, 720]) piece(`bardage nord ${x}`, 'board-wall', x, -20, 120, 20, { view: 2, z: 0 });
+  for (const y of [40, 160, 320, 440]) piece(`bardage ouest ${y}`, 'board-wall', -20, y, 20, 120, { view: 1, z: 0 });
+  for (const y of [40, 160, 320, 440]) piece(`bardage est ${y}`, 'board-wall', 880, y, 20, 120, { view: 3, z: 0 });
+  frame('le bardage, ouvert au sud');
+
+  // 3. dedans, avant les sablières et les entraits (la visée prend le plus haut dessus sous l'emprise : sous un entrait, elle
+  // viserait l'entrait) : la forge contre le bardage nord, sa hotte (le conduit, après la charpente : sa tête cacherait la sablière nord à la visée)
+  const [hx, hy] = HEARTH;
+  piece('forge', 'forge-hearth', hx, hy, 220, 110, { z: 0 });
+  piece('hotte', 'chimney-hood', hx, hy, 220, 80, { z: 160 });
+  // le soufflet nord-sud contre le bardage ouest, sa buse vers la joue ouest de la forge ; l'auge à droite du feu
+  piece('soufflet', 'forge-bellows', 40, 40, 75, 180, { view: 1, z: 0 });
+  piece('auge', 'quench-trough', 360, 40, 120, 50, { z: 0 });
+  // l'enclume sur son billot, à un pas et demi du feu
+  piece("billot d'enclume", 'anvil-block', 200, 280, 60, 60, { z: 0 });
+  piece('enclume', 'anvil', 200, 300, 70, 20, { z: 55 });
+  // le four dans la travée du milieu, contre le bardage nord
+  piece('four', 'forge-oven', 600, 40, 140, 140, { z: 0 });
+  // contre le bardage ouest : le râtelier à outils, le coffre à charbon
+  piece('râtelier à outils', 'tool-rack', 40, 320, 15, 120, { view: 1, z: 0 });
+  piece('coffre à charbon', 'charcoal-bin', 40, 460, 100, 100, { z: 0 });
+  // contre le bardage est : l'établi (nord-sud), son étau au bout sud, le râtelier à barres
+  piece('établi', 'workbench', 760, 60, 70, 320, { view: 3, z: 0, at: [770, 60] });
+  piece('étau', 'vise', 780, 340, 30, 20, { view: 3, z: 85, at: [770, 340] });
+  piece('râtelier à barres', 'bar-rack', 800, 400, 40, 160, { view: 3, z: 0 });
+  // près de l'ouverture, pour la lumière : la meule ; la caisse de ferraille
+  piece('meule', 'grindstone', 640, 460, 100, 50, { z: 0 });
+  piece('ferraille', 'scrap-crate', 520, 480, 60, 50, { z: 0 });
+  frame("le mobilier de l'atelier");
+
+  // 4. les sablières des longs murs (3 m et 5,80 m entées), au sud au ras du dehors des poteaux (visées à 580, aimantées à 570)
   for (const side of ['n', 's'] as const) {
     const y = side === 'n' ? 0 : 580;
     const ay = side === 'n' ? 0 : 570;
@@ -83,13 +114,7 @@ export function forgeSteps(): ForgeStep[] {
   }
   frame("l'ossature : poteaux, sablières, entraits");
 
-  // 3. le bardage au nord, à l'ouest et à l'est, contre la face du dehors des poteaux ; le sud reste ouvert
-  for (const x of [40, 160, 320, 440, 600, 720]) piece(`bardage nord ${x}`, 'board-wall', x, -20, 120, 20, { view: 2, z: 0 });
-  for (const y of [40, 160, 320, 440]) piece(`bardage ouest ${y}`, 'board-wall', -20, y, 20, 120, { view: 1, z: 0 });
-  for (const y of [40, 160, 320, 440]) piece(`bardage est ${y}`, 'board-wall', 880, y, 20, 120, { view: 3, z: 0 });
-  frame('le bardage, ouvert au sud');
-
-  // 4. les poinçons de 3 m (45°), les pignons à 45° sur les sablières des murs de bout, le faîtage sur les poinçons (6,42 m)
+  // 5. les poinçons de 3 m (45°), les pignons à 45° sur les sablières des murs de bout, le faîtage sur les poinçons (6,42 m)
   for (const x of [280, 560]) {
     piece(`poinçon ${x}`, beam('up', 300), x, 280, 40, 40, { z: 342 });
     joint('mortise', `poinçon ${x}`, `entrait ${x} nord`);
@@ -103,37 +128,13 @@ export function forgeSteps(): ForgeStep[] {
   joint('mortise', 'poinçon 560', 'faîtage est');
   frame('les poinçons, les pignons, le faîtage');
 
-  // 5. dedans : la forge contre le bardage nord, sa hotte, le premier tronçon du conduit (les autres, après le toit, qu'ils percent)
-  const [hx, hy] = HEARTH;
-  piece('forge', 'forge-hearth', hx, hy, 220, 110, { z: 0 });
-  piece('hotte', 'chimney-hood', hx, hy, 220, 80, { z: 160 });
-  piece('conduit 1', 'chimney-flue', hx + 60, hy, 100, 80, { z: 260 });
-  // le soufflet nord-sud contre le bardage ouest, sa buse vers la joue ouest de la forge ; l'auge à droite du feu
-  piece('soufflet', 'forge-bellows', 40, 40, 75, 180, { view: 1, z: 0 });
-  piece('auge', 'quench-trough', 360, 50, 120, 50, { z: 0 });
-  // l'enclume sur son billot, à un pas et demi du feu
-  piece("billot d'enclume", 'anvil-block', 200, 270, 60, 60, { z: 0 });
-  piece('enclume', 'anvil', 195, 290, 70, 20, { z: 55 });
-  // le four dans la travée du milieu, contre le bardage nord
-  piece('four', 'forge-oven', 590, 40, 140, 140, { z: 0 });
-  // contre le bardage ouest : le râtelier à outils, le coffre à charbon
-  piece('râtelier à outils', 'tool-rack', 40, 330, 15, 120, { view: 1, z: 0 });
-  piece('coffre à charbon', 'charcoal-bin', 40, 460, 100, 100, { z: 0 });
-  // contre le bardage est : l'établi (nord-sud), son étau au bout sud, le râtelier à barres
-  piece('établi', 'workbench', 770, 60, 70, 320, { view: 3, z: 0 });
-  piece('étau', 'vise', 790, 340, 30, 20, { view: 3, z: 85 });
-  piece('râtelier à barres', 'bar-rack', 800, 400, 40, 160, { view: 3, z: 0 });
-  // près de l'ouverture, pour la lumière : la meule ; la caisse de ferraille
-  piece('meule', 'grindstone', 640, 470, 100, 50, { z: 0 });
-  piece('ferraille', 'scrap-crate', 520, 480, 60, 50, { z: 0 });
-  frame("le mobilier de l'atelier");
-
-  // 6. les deux grands pans de bardeaux (rive basse au sud : vue 0 ; au nord : R deux fois, le pan percé), puis le conduit jusqu'au-dessus
+  // 6. le premier tronçon du conduit, les deux grands pans de bardeaux (rive basse au sud : vue 0 ; au nord : R deux fois, le pan percé), puis le conduit jusqu'au-dessus
   // du faîte (7,60 m ; le faîte à 6,82 m) et son couronnement
+  piece('conduit 1', 'chimney-flue', hx + 60, hy, 100, 80, { z: 260 });
   piece('pan sud', 'shingle-roof-large', -40, 300, 960, 340, { z: 342 });
   piece('pan nord', 'shingle-roof-large-pierced', -40, -40, 960, 340, { view: 2, z: 342 });
   for (let k = 1; k < 5; k++) piece(`conduit ${k + 1}`, 'chimney-flue', hx + 60, hy, 100, 80, { z: 260 + 100 * k });
-  piece('couronnement', 'chimney-cap', hx + 40, hy - 10, 140, 100, { z: 760 });
+  piece('couronnement', 'chimney-cap', hx + 40, hy - 10, 140, 100, { z: 760, at: [hx + 40, hy - 20] });
   frame("l'atelier fini");
 
   // ---- l'abri à charbon, à l'est ----
@@ -148,7 +149,7 @@ export function forgeSteps(): ForgeStep[] {
   joint('mortise', 'poteau abri 0,200', 'sablière abri sud');
   joint('mortise', 'poteau abri 300,200', 'sablière abri sud');
   // les sacs de charbon, à l'abri
-  for (const k of [0, 1, 2]) piece(`sac de charbon ${k + 1}`, 'sack', sx + 50 + 60 * k, sy + 60, 50, 40, { z: 0 });
+  for (const k of [0, 1, 2]) piece(`sac de charbon ${k + 1}`, 'sack', sx + 40 + 50 * k, sy + 60, 50, 40, { z: 0 });
   piece('pan abri', 'shingle-shed-roof', sx - 20, sy - 40, 380, 320, {});
   // le puits, au sud de l'abri : l'auge s'y remplit à une dizaine de mètres
   piece('puits', 'well', sx + 20, 600, 235, 160, { z: 0 });

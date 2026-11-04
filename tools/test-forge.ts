@@ -10,7 +10,7 @@
 //     commité ; PLANS_WRITE=1 le réécrit) ;
 //   - hors du mode construction : l'atelier n'est pas un bâtiment où l'on entre (un abri ouvert) ; Xéros dessous, ses pans s'effacent
 //     et la lueur de la forge se voit ; dehors, elle est cachée sous le toit opaque ;
-//   - .art-preview/forge.png : la forge montée étape par étape, puis finie, puis Xéros devant le feu, le toit effacé.
+//   - .art-preview/forge.png : la forge montée étape par étape, puis finie (Xéros devant le feu, en jeu : npm run test:forge-visite).
 // Usage : npm run test:forge.
 
 import assert from 'node:assert/strict';
@@ -405,7 +405,6 @@ await playtest('forge', async ({ page, errors, load }) => {
   }, [named.get('pan sud').id, named.get('pan nord').id] as const);
   const under = await seen();
   assert.ok(under.glow > 0, `dessous, la lueur de la forge se voit (${JSON.stringify(under)})`);
-  await frame('Xéros devant le feu, le toit effacé');
 
   // .art-preview/forge.png : les étapes de montage, trois par rangée
   const per = 3;

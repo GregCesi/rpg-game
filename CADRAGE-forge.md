@@ -53,9 +53,9 @@ couvertures, tuiles d'abord) et `.art-preview/forge-forgeron.png`.
   gardées comme pièces du jeu, chacune avec sa fiche, pour d'autres maisons du village : `shingle-roof-large`, `tile-roof-large`,
   `lauze-roof-large`, et leur pan percé (`-pierced`). **Question 13, la pente** (connaissance générale, non sourcée) : les bardeaux
   et les tuiles plates à **45°**, les lauzes de calcaire à **55°** (les toits de lauzes calcaires sont raides). La charpente de la
-  forge est celle de la grange relevée à 45° : des poinçons de 2,80 m au lieu de 2,20, des pignons à 45° (`board-gable-tall`), le
-  faîtage à 6,22 m. Le pignon à 55° (`board-gable-steep`) attend une maison couverte de lauzes. L'abri à charbon est un appentis de
-  bardeaux à environ 34° (poteaux nord de 3 m, sud de 1,60 m) : c'est le bas de ce qui convient aux bardeaux, pour garder un abri bas.
+  forge est celle de la grange relevée à 45° : des poinçons de 3 m au lieu de 2,20, des pignons à 45° (`board-gable-tall`, 3 m), le
+  faîtage à 6,42 m, sous le faîte des pans à 6,82 m. Le pignon à 55° (`board-gable-steep`) attend une maison couverte de lauzes. L'abri à charbon est un appentis de
+  bardeaux à 35° (poteaux nord de 3 m, sud de 1,60 m) : c'est le bas de ce qui convient aux bardeaux, pour garder un abri bas.
 - **Validé** : l'emplacement A (la première parcelle au nord de la rue, à l'entrée ouest), l'atelier version A seul, ses pièces (forge,
   hotte, soufflet et sa perche, enclume et billot, auge, four, établi et étau, meule, râteliers, coffre à charbon, ferraille), l'abri
   à charbon, le puits, la place réservée de la fonderie.

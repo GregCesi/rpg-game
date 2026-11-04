@@ -4,7 +4,7 @@ Décidé le 4 novembre 2026 (chantier « forge », `CADRAGE-forge.md` ; décisio
 charpente de la grange ouverte au sud, en bois vieux, sur la première parcelle au nord de la rue, à l'entrée ouest du village ; ses
 pièces validées) : **le toit de l'atelier et de l'abri à charbon est en bardeaux de chêne fendu, gris** (le bois vieux). Les planches
 sombres de l'essai 1 sont refusées : elles se lisaient comme de la tôle. La charpente de la forge est celle de la grange **relevée à
-45°** (poinçons de 2,80 m au lieu de 2,20, pignons [`board-gable-tall`](board-gable-tall.md)). Les trois couvertures (bardeaux,
+45°** (poinçons de 3 m au lieu de 2,20, faîtage à 6,42 m, pignons [`board-gable-tall`](board-gable-tall.md)). Les trois couvertures (bardeaux,
 [tuiles plates](tile-roof-large.md), [lauzes](lauze-roof-large.md)) restent des pièces du jeu pour d'autres maisons, chacune à sa pente.
 Le **pan percé** est le même pan, troué pour le [conduit](chimney-flue.md) de la [forge](forge-hearth.md) : il sert de pan nord.
 

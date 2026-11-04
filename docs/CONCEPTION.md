@@ -622,6 +622,27 @@ enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche
   comptoir avec E** en jeu (`swing`, gond `bottom`) ; un [auvent en planches](objets/plank-roof.md) de 2,80 × 2,20 m en pente vers les
   clients, sur la sablière de devant, 40 cm au-delà des poteaux. 16 pièces, 4 assemblages. Le comptoir en planches de la demande est
   le volet rabattu : le même objet, ouvert le jour, fermé la nuit.
+- **La forge du village** (décidée le 4 novembre 2026, chantier « forge », `CADRAGE-forge.md` ; `npm run test:forge`, plan
+  `src/content/plans/forge.json`, liste de montage `tools/lib/forge.ts`, aperçu `.art-preview/forge.png` ; le bois vieux, gris) : sur la
+  première parcelle au nord de la rue, à l'entrée ouest du village (`village.tmj`, la parcelle `smithy`), à 300 m de la maison de Xéros
+  et 100 m de la place. **L'atelier** est la charpente de la grange relevée à 45° (poinçons de 3 m, [pignons à 45°](objets/board-gable-tall.md),
+  faîtage à 6,42 m), **ouvert au sud** sur la rue : un abri ouvert, sans intérieur ; on y entre en marchant, et tout son toit s'efface
+  quand Xéros est dessous (les pans qui se touchent font un même toit : `roofView`). Bardage au nord, à l'ouest et à l'est ; deux
+  [grands pans de bardeaux](objets/shingle-roof-large.md) de chêne fendu, le pan nord percé pour le conduit. Dedans : la
+  [forge](objets/forge-hearth.md) et son feu (la hotte, le conduit et le couronnement de la maison de Xéros), le
+  [soufflet](objets/forge-bellows.md) et sa perche, l'[auge](objets/quench-trough.md), l'[enclume](objets/anvil.md) sur son
+  [billot](objets/anvil-block.md), le [four](objets/forge-oven.md) à chauffer et à recuire, l'établi et son [étau](objets/vise.md),
+  le [râtelier à outils](objets/tool-rack.md), le [râtelier à barres](objets/bar-rack.md), la [meule](objets/grindstone.md), le
+  [coffre à charbon](objets/charcoal-bin.md), la [caisse de ferraille](objets/scrap-crate.md). À l'est, **l'abri à charbon** (un
+  [appentis de bardeaux](objets/shingle-shed-roof.md) à 35° sur quatre poteaux, ses sacs) et **le puits**. 89 pièces, 33 assemblages.
+  **La place de la fonderie** (fondre le bronze, réduire le minerai : plus tard) est une parcelle réservée vide (`foundry`). Le
+  forgeron et son logis sont mis de côté (leurs essais dans `art/proposals/`). La visite : `npm run test:forge-visite` (de la maison
+  au feu de la forge, à pied, par le chemin).
+- **Les couvertures** (chantier « forge ») : en plus du chaume et des planches, trois couvertures pour les maisons du village, chacune
+  à sa pente (connaissance générale, non sourcée) : les [bardeaux de chêne fendu](objets/shingle-roof-large.md) (45°), les
+  [tuiles plates de terre cuite](objets/tile-roof-large.md) (45°, la couverture des métiers du feu ; il faudra un tuilier) et les
+  [lauzes de calcaire](objets/lauze-roof-large.md) (55°, 300 kg/m² : une charpente forte, son [pignon à 55°](objets/board-gable-tall.md)).
+  Chacune a son grand pan et son pan percé ; le métier du couvreur (`roofer`).
 - **Les huit boutiques** : un étal par métier, le même plan, ce qui change de l'un à l'autre (à décider avec Grégoire, rien n'est
   fait) : l'**enseigne** (une planchette peinte pendue à la sablière de devant : le pain, le couteau, le poisson…) ; ce qui est **sur
   le comptoir** (des objets du jeu, posés : miches et paniers pour le boulanger ; poissons sur un lit de paille, un seau d'eau pour le

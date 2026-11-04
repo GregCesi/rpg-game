@@ -1,0 +1,1234 @@
+{
+  "name": "Forge",
+  "size": {
+    "w": 1500,
+    "d": 800
+  },
+  "age": "old",
+  "joints": [
+    {
+      "type": "scarf",
+      "a": 63,
+      "b": 66
+    },
+    {
+      "type": "mortise",
+      "a": 43,
+      "b": 63
+    },
+    {
+      "type": "mortise",
+      "a": 44,
+      "b": 63
+    },
+    {
+      "type": "mortise",
+      "a": 45,
+      "b": 66
+    },
+    {
+      "type": "mortise",
+      "a": 46,
+      "b": 66
+    },
+    {
+      "type": "scarf",
+      "a": 74,
+      "b": 75
+    },
+    {
+      "type": "mortise",
+      "a": 53,
+      "b": 74
+    },
+    {
+      "type": "mortise",
+      "a": 54,
+      "b": 74
+    },
+    {
+      "type": "mortise",
+      "a": 55,
+      "b": 75
+    },
+    {
+      "type": "mortise",
+      "a": 56,
+      "b": 75
+    },
+    {
+      "type": "halving",
+      "a": 63,
+      "b": 64,
+      "top": 64
+    },
+    {
+      "type": "halving",
+      "a": 74,
+      "b": 70,
+      "top": 70
+    },
+    {
+      "type": "scarf",
+      "a": 64,
+      "b": 70
+    },
+    {
+      "type": "mortise",
+      "a": 49,
+      "b": 64
+    },
+    {
+      "type": "halving",
+      "a": 66,
+      "b": 68,
+      "top": 68
+    },
+    {
+      "type": "halving",
+      "a": 75,
+      "b": 73,
+      "top": 73
+    },
+    {
+      "type": "scarf",
+      "a": 68,
+      "b": 73
+    },
+    {
+      "type": "mortise",
+      "a": 50,
+      "b": 68
+    },
+    {
+      "type": "halving",
+      "a": 63,
+      "b": 65,
+      "top": 65
+    },
+    {
+      "type": "halving",
+      "a": 74,
+      "b": 71,
+      "top": 71
+    },
+    {
+      "type": "scarf",
+      "a": 65,
+      "b": 71
+    },
+    {
+      "type": "halving",
+      "a": 66,
+      "b": 67,
+      "top": 67
+    },
+    {
+      "type": "halving",
+      "a": 75,
+      "b": 72,
+      "top": 72
+    },
+    {
+      "type": "scarf",
+      "a": 67,
+      "b": 72
+    },
+    {
+      "type": "mortise",
+      "a": 65,
+      "b": 79
+    },
+    {
+      "type": "mortise",
+      "a": 67,
+      "b": 80
+    },
+    {
+      "type": "scarf",
+      "a": 85,
+      "b": 86
+    },
+    {
+      "type": "mortise",
+      "a": 79,
+      "b": 85
+    },
+    {
+      "type": "mortise",
+      "a": 80,
+      "b": 86
+    },
+    {
+      "type": "mortise",
+      "a": 47,
+      "b": 69
+    },
+    {
+      "type": "mortise",
+      "a": 48,
+      "b": 69
+    },
+    {
+      "type": "mortise",
+      "a": 51,
+      "b": 60
+    },
+    {
+      "type": "mortise",
+      "a": 52,
+      "b": 60
+    }
+  ],
+  "pieces": [
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 80,
+      "y": 20,
+      "z": 0,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 200,
+      "y": 20,
+      "z": 0,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 360,
+      "y": 20,
+      "z": 0,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 480,
+      "y": 20,
+      "z": 0,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 640,
+      "y": 20,
+      "z": 0,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 760,
+      "y": 20,
+      "z": 0,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 40,
+      "y": 40,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 320,
+      "y": 40,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 600,
+      "y": 40,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 880,
+      "y": 40,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 20,
+      "y": 80,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "forge-bellows"
+      },
+      "x": 80,
+      "y": 80,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "forge-hearth"
+      },
+      "x": 160,
+      "y": 80,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "quench-trough"
+      },
+      "x": 400,
+      "y": 80,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "forge-oven"
+      },
+      "x": 640,
+      "y": 80,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 920,
+      "y": 80,
+      "z": 0,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "workbench"
+      },
+      "x": 810,
+      "y": 100,
+      "z": 0,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 20,
+      "y": 200,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 920,
+      "y": 200,
+      "z": 0,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 1140,
+      "y": 240,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 1440,
+      "y": 240,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "sack"
+      },
+      "x": 1180,
+      "y": 300,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "sack"
+      },
+      "x": 1230,
+      "y": 300,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "sack"
+      },
+      "x": 1280,
+      "y": 300,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 40,
+      "y": 320,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "anvil-block"
+      },
+      "x": 240,
+      "y": 320,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 880,
+      "y": 320,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 20,
+      "y": 360,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "tool-rack"
+      },
+      "x": 80,
+      "y": 360,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 920,
+      "y": 360,
+      "z": 0,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "bar-rack"
+      },
+      "x": 840,
+      "y": 440,
+      "z": 0,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 1140,
+      "y": 440,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 1440,
+      "y": 440,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 20,
+      "y": 480,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "board-wall"
+      },
+      "x": 920,
+      "y": 480,
+      "z": 0,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "charcoal-bin"
+      },
+      "x": 80,
+      "y": 500,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "grindstone"
+      },
+      "x": 680,
+      "y": 500,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "scrap-crate"
+      },
+      "x": 560,
+      "y": 520,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 40,
+      "y": 600,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 320,
+      "y": 600,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 600,
+      "y": 600,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 880,
+      "y": 600,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "prop": "well"
+      },
+      "x": 1160,
+      "y": 640,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 40,
+      "y": 40,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 320,
+      "y": 40,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 600,
+      "y": 40,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 880,
+      "y": 40,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1140,
+      "y": 240,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1440,
+      "y": 240,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 40,
+      "y": 320,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 880,
+      "y": 320,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 160,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1140,
+      "y": 440,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 160,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 1440,
+      "y": 440,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 40,
+      "y": 600,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 320,
+      "y": 600,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 600,
+      "y": 600,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 880,
+      "y": 600,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "anvil"
+      },
+      "x": 240,
+      "y": 340,
+      "z": 55,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "vise"
+      },
+      "x": 810,
+      "y": 380,
+      "z": 85,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "chimney-hood"
+      },
+      "x": 160,
+      "y": 80,
+      "z": 160,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 340,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1140,
+      "y": 450,
+      "z": 172,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "shingle-shed-roof"
+      },
+      "x": 1120,
+      "y": 200,
+      "z": 202,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 220,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 40,
+      "y": 40,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 40,
+      "y": 40,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 320,
+      "y": 40,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 340,
+      "y": 40,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 600,
+      "y": 40,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 880,
+      "y": 40,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 340,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1140,
+      "y": 240,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 40,
+      "y": 340,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 320,
+      "y": 340,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 600,
+      "y": 340,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 880,
+      "y": 340,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 40,
+      "y": 610,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 340,
+      "y": 610,
+      "z": 312,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "shingle-roof-large-pierced"
+      },
+      "x": 0,
+      "y": 0,
+      "z": 342,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "board-gable-tall"
+      },
+      "x": 40,
+      "y": 80,
+      "z": 342,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "board-gable-tall"
+      },
+      "x": 900,
+      "y": 80,
+      "z": 342,
+      "view": 3
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 320,
+      "y": 320,
+      "z": 342,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 600,
+      "y": 320,
+      "z": 342,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "shingle-roof-large"
+      },
+      "x": 0,
+      "y": 340,
+      "z": 342,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 220,
+      "y": 80,
+      "z": 360,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 220,
+      "y": 80,
+      "z": 460,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 220,
+      "y": 80,
+      "z": 560,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 300,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 40,
+      "y": 320,
+      "z": 642,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 340,
+      "y": 320,
+      "z": 642,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 220,
+      "y": 80,
+      "z": 660,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-cap"
+      },
+      "x": 200,
+      "y": 60,
+      "z": 760,
+      "view": 0
+    }
+  ]
+}
