@@ -108,6 +108,10 @@ const thin = trial({ ...none, ridges: [{ id: 4, points: [{ x: 5 * T, y: 10 * T, 
 const over = stepRefusal(thin, { x: 20 * T, y: 7 * T }, { x: 20 * T, y: 13 * T }, mobility);
 assert.ok(over && over.why === 'up', 'on ne passe pas par-dessus une crête étroite');
 
+// --- posé sur un flanc (une partie d'avant le relief) : il en redescend, il ne le monte pas
+assert.equal(stepRefusal(bank, { x: 21 * T, y: y - 56 - 40 }, { x: 21 * T, y: y - 56 - 80 }, mobility), undefined, 'posé sur le flanc, il en redescend');
+assert.ok(stepRefusal(bank, { x: 21 * T, y: y - 56 - 40 }, { x: 21 * T, y: y - 56 - 10 }, mobility), 'posé sur le flanc, il ne le monte pas');
+
 // --- l'eau : il n'y entre pas, il en sort
 const river = trial(none, 40, 20, [20, 21, 22]);
 assert.ok(deepAt(river, 21 * T, 5 * T));

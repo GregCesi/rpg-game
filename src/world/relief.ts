@@ -240,9 +240,12 @@ export function stepRefusal(map: MapData, from: { x: number; y: number }, to: { 
     while (a > -RUN_REACH && steep(a - PROBE) === sign) a -= PROBE;
     let b = s;
     while (b < RUN_REACH && steep(b + PROBE) === sign) b += PROBE;
-    const rise = at(b + PROBE) - at(a);
+    // déjà debout sur la partie raide (une partie d'avant le relief, posé là) : il en redescend toujours, et ne compte en montant
+    // que ce qui reste devant lui
+    const on = a < 0;
+    const rise = at(b + PROBE) - at(on ? 0 : a);
     if (rise > mob.step) return { why: 'up', height: rise };
-    if (-rise > mob.drop) return { why: 'down', height: -rise };
+    if (-rise > mob.drop && !on) return { why: 'down', height: -rise };
     s = Math.max(s, b);
   }
   return swim;
