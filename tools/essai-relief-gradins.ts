@@ -19,7 +19,7 @@ import type { Canvas, Grid } from '../art/lib/canvas';
 import { sky as skyPal, world } from '../art/palette';
 import {
   bushLong, bushLongNs, bushLongNsBefore, cut, cutBefore, cutVariant, CUT_VARIANTS, PLANTS, riser, roots, STEP, tread, type PlantKey,
-} from '../art/proposals/relief-gradins';
+} from '../art/world/relief-gradins';
 import {
   applyGloom, drawSprites, EDGE, ground, MASS, MOUTH, plantRows, Raster, renderTerrain, rgbOf, spriteOf, TOP, XF, XR0, XR1, XW,
   type Placed, type Sprite, SLOPE, RAMP, MODE,

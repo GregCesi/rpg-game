@@ -19,7 +19,7 @@ import { world } from '../palette';
 import { bankTile, faceEarth, faceWet, lane, pathLane } from '../world/relief';
 import tileset from '../world/tiles';
 import { hash } from '../world/relief';
-import { cut, cutBefore, cutVariant, CUT_VARIANTS, PLANTS, riser, roots, STEP, tread, type PlantKey } from './relief-gradins';
+import { cut, cutBefore, cutVariant, CUT_VARIANTS, PLANTS, riser, roots, STEP, tread, type PlantKey } from '../world/relief-gradins';
 
 export type Rgb = [number, number, number];
 

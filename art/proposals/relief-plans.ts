@@ -241,7 +241,7 @@ function cellAt(sec: Section, m: number, hh: number): Cell {
 }
 const CELL_COLOR: Record<Cell, Rgb> = { sky: SKY, earth: EARTH, grass: GRASS, path: PATH, water: WATER, farm: FARM };
 
-function drawTree(tr: Tree, X: (m: number) => number, Y: (h: number) => number, ppm: number): void {
+function drawTree(tr: Tree, X: (m: number) => number, Y: (h: number) => number, _ppm: number): void {
   const w0 = tr.trunk / 2 + 0.03;
   const w1 = tr.trunk / 2 - 0.02;
   fillPoly([[X(tr.base[0] - w0), Y(tr.base[1])], [X(tr.base[0] + w0), Y(tr.base[1])], [X(tr.top[0] + w1), Y(tr.top[1])], [X(tr.top[0] - w1), Y(tr.top[1])]], TRUNK);

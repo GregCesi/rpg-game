@@ -1,5 +1,6 @@
-// Essais de dessins du tunnel en gradins (chantier « relief », CADRAGE.md section 13, surtout 13.0) : HORS JEU, rien n'entre
-// dans le jeu. Planches : npx tsx tools/essai-relief-gradins.ts (.art-preview/relief-gradins-*.png).
+// Les dessins du tunnel en gradins (chantier « relief », CADRAGE.md section 13, surtout 13.0 ; pixel-artist, validés par Grégoire
+// le 4 novembre 2026). Dans le jeu : `gradinImages()` (art/index.ts) ; les matières sont lues par src/world/terrainView.ts, les
+// plantes sont des objets de props.json. Planches : npx tsx tools/essai-relief-gradins.ts (.art-preview/relief-gradins-*.png).
 //
 // Les mesures de 13.0, à 5 cm par pixel : quatre marches de 1,25 m (25 px) de chaque côté, trois gradins plantés de 50 cm
 // (10 px) et le dessus à 5 m (100 px) ; le chemin plat de 2,5 m (50 px) ; l'ouverture du haut 5,5 m (110 px).
@@ -20,9 +21,11 @@
 // Le sol clair du chemin, le dessus planté (`bank`), les faces, les grands arbres et Xéros sont ceux du jeu, repris tels quels.
 
 import { Canvas, EMPTY, rng } from '../lib/canvas';
-import { hash } from '../world/relief';
-import { despeckle, groundShadow, shadedOutline, type Vec } from '../world/big-tree';
-import { bark, type Wood } from '../world/wood';
+import { hash } from './relief';
+import { despeckle, groundShadow, shadedOutline, type Vec } from './big-tree';
+import { bark, type Wood } from './wood';
+import type { ImageSource } from '../lib/types';
+import { world } from '../palette';
 
 // ---------- bruits (les mêmes que art/world/relief.ts) ----------
 
@@ -659,3 +662,24 @@ export const PLANTS = {
   'gradin-briar': { name: 'eglantier', views: 'round', dims: { w: 90, d: 50, h: 70, shape: 'box' }, draw: briar, foot: [11, 18] as Vec },
 } as const;
 export type PlantKey = keyof typeof PLANTS;
+
+/** Les plantes des gradins, sous leur clé du jeu (props.json) : l'image et sa vue nord-sud. */
+export const GRADIN_PLANTS: Record<string, PlantKey> = {
+  hazel: 'gradin-hazel',
+  'young-ash': 'gradin-ash',
+  'long-bush': 'gradin-bush',
+  'long-bush-ns': 'gradin-bush-ns',
+  briar: 'gradin-briar',
+};
+
+/** Les images du jeu : les matières des gradins (lues par world/terrainView.ts), les racines, et les plantes. */
+export function gradinImages(): ImageSource[] {
+  const img = (name: string, c: Canvas): ImageSource => ({ kind: 'image', name, palette: world, grid: c.toGrid() });
+  const out: ImageSource[] = [];
+  for (let k = 0; k < 6; k++) out.push(img(`relief-tread-${k}`, tread(k)));
+  for (let k = 0; k < 4; k++) out.push(img(`relief-riser-${k}`, riser(k)));
+  for (let k = 0; k < 4; k++) out.push(img(`relief-roots-${k}`, roots(k)));
+  for (let k = 0; k < CUT_VARIANTS; k++) out.push(img(`relief-cut-${k}`, cut(k)));
+  for (const [key, plant] of Object.entries(GRADIN_PLANTS)) out.push(img(key, PLANTS[plant].draw()));
+  return out;
+}

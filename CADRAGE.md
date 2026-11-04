@@ -821,6 +821,12 @@ de dessin** (pixel-artist, `.art-preview/relief-gradins-5-corrections.png`, avan
 il s'arrête au bord sud du chemin) ; la terre en coupe en 8 variantes à bord commun, tirées par case ; le buisson long vu par le bout
 (12 × 32 px, le bout sud bombé, le dos qui file vers le nord). Pendant ce temps, la forme entre dans le moteur (rien de poussé).
 
+**Intégré (5 novembre)** : accord de Grégoire sur les trois corrections. Les gradins sont dans le jeu (`steps` du `Lane` de la
+ferme ; la masse élargie à 6 m de dessus de chaque côté du trou ; 220 plantes des gradins, sans corps, hors de portée ; le rideau et
+les avancées retirés de la carte, l'ancienne forme gardée dans `art/proposals/relief-talus-forme.json`) ; un refus dit la vraie
+hauteur, au centimètre (« Trop haute pour lui (1,25 m). ») ; les anciennes corrections (`art/proposals/relief-final.ts`) n'ont plus
+lieu d'être. Ce qui reste : CONCEPTION « Le relief », limites.
+
 ### 13.1 La forme : ce que j'ai compris (les gradins)
 
 Tout ce qui avait été compris du trou rond tient toujours : **une masse de terre au dessus plat, à 5 m au-dessus du chemin, dans

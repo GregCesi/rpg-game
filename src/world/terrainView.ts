@@ -12,11 +12,11 @@
 
 import Phaser from 'phaser';
 import { DEPTH, GLOOM, RELIEF, SHADOW, TILE } from '../config';
-import { maps } from '../content';
+import { maps, props } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import type { MapData } from '../content/types';
 import { tilesets } from '../generated/assets';
-import { deepAt, heightAt, reliefOf } from './relief';
+import { deepAt, heightAt, reliefOf, stepsAt, type StepPlace } from './relief';
 
 /** La taille d'un morceau du terrain (px du monde). */
 const CHUNK = 256;
@@ -82,6 +82,12 @@ const hash = (x: number, y: number) => {
  * 12 colonnes de la lèvre au pied, puis le lierre qui déborde ; `relief-face-raked-west-*`, 12 × 64, la lèvre à droite).
  */
 const MATTER = {
+  /** Les parois en gradins (CADRAGE 13.0) : le dessus d'un gradin (64 × 10), la marche (64 × 25), la terre en coupe (32 × 32). */
+  tread: [0, 1, 2, 3, 4, 5].map((k) => `relief-tread-${k}`),
+  riser: [0, 1, 2, 3].map((k) => `relief-riser-${k}`),
+  /** Les racines d'un arbre des gradins (`roots` de props.json), 14 × 25, posées sur la marche sous lui, centrées sur son pied. */
+  roots: [0, 1, 2, 3].map((k) => `relief-roots-${k}`),
+  cut: [0, 1, 2, 3, 4, 5, 6, 7].map((k) => `relief-cut-${k}`),
   earth: ['relief-face-earth-0', 'relief-face-earth-1', 'relief-face-earth-2'],
   wet: ['relief-face-wet-0', 'relief-face-wet-1'],
   lip: ['relief-lip-0', 'relief-lip-1'],
@@ -91,14 +97,32 @@ const MATTER = {
 const FACE_W = 64;
 const FACE_H = 100;
 const LIP = { h: 12, crest: 4 };
+const TREAD = { w: 64, h: 10 };
+const RISER = { w: 64, h: 25 };
+const CUT = 32;
+const ROOTS = { w: 14, half: 7 };
 const RAKE = { w: 12, h: 64 };
 type Matter = { data: Uint8ClampedArray; w: number };
+/**
+ * La variante de la terre en coupe d'une case de 32 px (à l'écran), tirée de sa place (règle du pixel-artist, CADRAGE 13.0) : son tirage,
+ * décalé tant qu'il vaut le tirage brut de la case à l'ouest ou au nord (toutes les variantes se raccordent par leur bord commun).
+ */
+function cutVariant(tx: number, ty: number): number {
+  const n = MATTER.cut.length;
+  const raw = (i: number, j: number) => Math.floor(hash(i * 7 + 3, j * 13 + 5) * n);
+  let v = raw(tx, ty);
+  for (let k = 0; k < n && (v === raw(tx - 1, ty) || v === raw(tx, ty - 1)); k++) v = (v + 1) % n;
+  return v;
+}
 const choose = (list: string[], k: number) => list[Math.floor(hash(k, 3) * list.length)];
 /** Le pixel (x, y) d'une image, ou undefined s'il est transparent. */
 function at(m: Matter, x: number, y: number): Rgb | undefined {
   const i = (y * m.w + x) * 4;
   return m.data[i + 3] < 128 ? undefined : [m.data[i], m.data[i + 1], m.data[i + 2]];
 }
+
+/** Ce qu'un morceau peint a produit (gardé dans le registre : une fois par carte). */
+type Made = { top: number; h: number; bands: { key: string; x: number; y: number; depth: number }[]; cut?: string };
 
 /**
  * Le terrain d'une carte (ou de la part d'une voisine qu'on voit dans la bande, posée à (ox, oy)), cases [x0, x1[ × [y0, y1[. Les
@@ -164,10 +188,12 @@ export class TerrainView {
   private paint(key: string, _cx: number, _cy: number, x1: number, y1: number, x0: number, y0: number, L: (x: number, y: number) => number, max: number): void {
     const scene = this.scene;
     const base = `terrain:${this.def.id}:${x0},${y0}`;
-    const meta = scene.registry.get(base) as { top: number; h: number; bands: { key: string; x: number; y: number; depth: number }[] } | undefined;
+    const meta = scene.registry.get(base) as Made | undefined;
     const made = meta ?? this.render(key, base, x0, y0, x1, y1, L, max);
     if (!meta) scene.registry.set(base, made);
     this.parts.push(scene.add.image(this.ox + x0, this.oy + made.top, base).setOrigin(0, 0).setDepth(DEPTH.ground).setData('noLift', true));
+    // la terre en coupe, cachée tant que Xéros n'est pas sous la voûte (systems/laneFade.ts la montre)
+    if (made.cut) this.parts.push(scene.add.image(this.ox + x0, this.oy + made.top, made.cut).setOrigin(0, 0).setDepth(DEPTH.ground + 0.05).setAlpha(0).setData('noLift', true).setData('cut', true));
     for (const b of made.bands) this.parts.push(scene.add.image(this.ox + b.x, this.oy + b.y, b.key).setOrigin(0, 0).setDepth(this.oy + b.depth).setData('noLift', true));
   }
 
@@ -210,6 +236,8 @@ export class TerrainView {
     const top = y0 - max - 2;
     const H = y1 - top + 2;
     const out = new Uint8ClampedArray(W * H * 4);
+    const cutBuf = new Uint8ClampedArray(W * H * 4);
+    let cutUsed = false;
     const bands = new Map<number, Uint8ClampedArray<ArrayBuffer>>();
     const bandTop = (b: number) => y0 + b * BAND - max - 2;
     const bandH = BAND + max + 4;
@@ -223,7 +251,29 @@ export class TerrainView {
     // le dessus d'un talus posé sur l'eau (le flanc au-dessus de la rivière : ses cases restent de l'eau sous lui) : `bank-*`
     const named = tilesets.find((t) => t.key === key)?.tiles ?? {};
     const banks = [0, 1, 2, 3].map((k) => named[`bank-${k}`]).filter((n) => n !== undefined);
+    // les parois en gradins : où en est le point (le gradin, la marche), lu une fois par point
+    const field = reliefOf(def);
+    const place = (x: number, y: number): StepPlace | undefined => stepsAt(field, x, y);
+    // les arbres des gradins dont les racines descendent la marche sous eux (`roots` de props.json) : leur pied et leur gradin
+    const rooted: { x: number; k: number; m: Matter }[] = [];
+    for (const o of def.objects) {
+      if (!props[o.type]?.roots || o.x < x0 - 64 || o.x > x1 + 64) continue;
+      const fx = o.x + scene.textures.get(props[o.type].image).getSourceImage().width / 2;
+      const sp = place(fx, o.y - 1);
+      if (sp && sp.side < 0 && sp.k >= 1) rooted.push({ x: fx, k: sp.k, m: matter(choose(MATTER.roots, o.id)) });
+    }
+    /** Le dessus d'un gradin : sa rangée 0 contre la marche du dessus, sa rangée 9 sur l'arête au-dessus de la marche du dessous. */
+    const treadAt = (x: number, sp: StepPlace): Rgb | undefined => {
+      const m = matter(choose(MATTER.tread, Math.floor(x / TREAD.w) * 13 + sp.k * 5 + (sp.side > 0 ? 101 : 0)));
+      const row = Math.max(0, Math.min(TREAD.h - 1, Math.floor((sp.k * sp.steps.tread - sp.e) / CM_PER_PX)));
+      return at(m, ((x % TREAD.w) + TREAD.w) % TREAD.w, row);
+    };
     const ground = (x: number, y: number): Rgb => {
+      const sp = place(x, y);
+      if (sp && sp.k >= 1 && sp.k < sp.steps.count && L(x, y) * CM_PER_PX > sp.floor + 1) {
+        const c = treadAt(x, sp);
+        if (c) return c;
+      }
       const tx = Math.max(0, Math.min(def.width - 1, Math.floor(x / TILE)));
       const ty = Math.max(0, Math.min(def.height - 1, Math.floor(y / TILE)));
       let n = def.layers.ground[ty * def.width + tx];
@@ -281,7 +331,9 @@ export class TerrainView {
         if (steepFace && !onFace) faceTop = Math.round(prev);
         onFace = steepFace;
         const wet = footWet[y - y0] === 1;
-        const c = shade(x, y, h, steepFace ? face(x, footSy[y - y0] - sy, sy - faceTop - 1, wet) : ground(x, y));
+        // (au pied d'une marche des gradins, le point reste le sol : la marche se peint au-dessus de lui)
+        const atRiser = (sp0: StepPlace | undefined) => !!sp0 && sp0.side < 0 && sp0.e < sp0.steps.count * sp0.steps.tread;
+        const c = shade(x, y, h, steepFace && !atRiser(place(x, y)) ? face(x, footSy[y - y0] - sy, sy - faceTop - 1, wet) : ground(x, y));
         // le trou entre le sol d'avant et celui-ci : une pente tournée vers le sud (un trou de 1 ou 2 px : le sol s'étire), ou une face
         // (plus raide : la terre de la face)
         const gap = sy - Math.round(prev) - 1;
@@ -299,8 +351,37 @@ export class TerrainView {
             if (iy >= 0 && iy < H) put(out, W, lx, iy, col);
           }
         };
-        for (let fy = Math.round(prev) + 1; fy < sy; fy++) paint(fy, gap <= 2 ? c : shade(x, y, h, face(x, footSy[y - y0] - fy, gap > 2 && fy - faceTop - 1 >= 0 ? fy - faceTop - 1 : Infinity, wet)));
+        // une marche des gradins (tournée vers le sud, au nord du chemin) : sa matière, accrochée par le haut (une marche enterrée
+        // à moitié garde ce qui pend du gradin du dessus)
+        const sp = gap > 2 ? place(x, y) : undefined;
+        const riser = sp && atRiser(sp) ? matter(choose(MATTER.riser, Math.floor(x / RISER.w) * 7 + sp.k)) : undefined;
+        for (let fy = Math.round(prev) + 1; fy < sy; fy++) {
+          const row = Math.min(RISER.h - 1, fy - Math.round(prev) - 1);
+          // les racines d'un arbre du gradin du dessus, s'il y en a un à l'aplomb, par-dessus la marche
+          let r: Rgb | undefined;
+          if (riser && sp)
+            for (const t of rooted) {
+              const cx = Math.round(x - t.x) + ROOTS.half;
+              if (t.k === sp.k + 1 && cx >= 0 && cx < ROOTS.w && (r = at(t.m, cx, row))) break;
+            }
+          r ??= riser ? at(riser, ((x % RISER.w) + RISER.w) % RISER.w, row) : undefined;
+          paint(fy, gap <= 2 ? c : shade(x, y, h, r ?? face(x, footSy[y - y0] - fy, gap > 2 && fy - faceTop - 1 >= 0 ? fy - faceTop - 1 : Infinity, wet)));
+        }
         paint(sy, c);
+        // la terre en coupe : la masse au sud d'un chemin en gradins, tranchée au ras de son sol (ce que voit Xéros sous la voûte)
+        const cp = place(x, y);
+        if (cp && cp.side > 0 && h * CM_PER_PX > cp.floor + 2) {
+          const fy = Math.round(y - cp.floor / CM_PER_PX);
+          const iy = fy - top;
+          if (iy >= 0 && iy < H) {
+            const m = matter(MATTER.cut[cutVariant(Math.floor(x / CUT), Math.floor(fy / CUT))]);
+            const cc = at(m, ((x % CUT) + CUT) % CUT, ((fy % CUT) + CUT) % CUT);
+            if (cc) {
+              put(cutBuf, W, lx, iy, cc);
+              cutUsed = true;
+            }
+          }
+        }
         prev = sy;
         if (sy > lowest) lowest = sy;
       }
@@ -332,7 +413,14 @@ export class TerrainView {
     const canvas = scene.textures.createCanvas(base, W, H)!;
     canvas.context.putImageData(new ImageData(out, W, H), 0, 0);
     canvas.refresh();
-    const made: { top: number; h: number; bands: { key: string; x: number; y: number; depth: number }[] } = { top, h: H, bands: [] };
+    const made: Made = { top, h: H, bands: [] };
+    if (cutUsed) {
+      const k = `${base}:cut`;
+      const t = scene.textures.createCanvas(k, W, H)!;
+      t.context.putImageData(new ImageData(cutBuf, W, H), 0, 0);
+      t.refresh();
+      made.cut = k;
+    }
     for (const [b, buf] of bands) {
       const k = `${base}:b${b}`;
       const t = scene.textures.createCanvas(k, W, bandH)!;

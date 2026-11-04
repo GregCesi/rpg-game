@@ -1,0 +1,853 @@
+{
+  "_lisez_moi": "L'ancienne forme du chemin creux (deux talus, le rideau et les avancées), retirée de tiled/maps/ferme.tmj le 4 novembre 2026 quand les gradins l'ont remplacée (CADRAGE 13.0). Le calque relief, les objets de la voûte, les water-cut et shimmer à leur ancienne place, et les cases bank-* de l'époque.",
+  "relief": [
+    {
+      "id": 583,
+      "name": "plateau",
+      "type": "Level",
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "rotation": 0,
+      "visible": true,
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1280,
+          "y": 0
+        },
+        {
+          "x": 1280,
+          "y": 288
+        },
+        {
+          "x": 1312,
+          "y": 288
+        },
+        {
+          "x": 1312,
+          "y": 672
+        },
+        {
+          "x": 1344,
+          "y": 672
+        },
+        {
+          "x": 1344,
+          "y": 1088
+        },
+        {
+          "x": 1376,
+          "y": 1088
+        },
+        {
+          "x": 1376,
+          "y": 1792
+        },
+        {
+          "x": 1344,
+          "y": 1792
+        },
+        {
+          "x": 1344,
+          "y": 2080
+        },
+        {
+          "x": 1312,
+          "y": 2080
+        },
+        {
+          "x": 1312,
+          "y": 2144
+        },
+        {
+          "x": 1344,
+          "y": 2144
+        },
+        {
+          "x": 1344,
+          "y": 2656
+        },
+        {
+          "x": 1312,
+          "y": 2656
+        },
+        {
+          "x": 1312,
+          "y": 2912
+        },
+        {
+          "x": 1280,
+          "y": 2912
+        },
+        {
+          "x": 1280,
+          "y": 3232
+        },
+        {
+          "x": 1248,
+          "y": 3232
+        },
+        {
+          "x": 1248,
+          "y": 3616
+        },
+        {
+          "x": 1216,
+          "y": 3616
+        },
+        {
+          "x": 1216,
+          "y": 4000
+        },
+        {
+          "x": 0,
+          "y": 4000
+        }
+      ],
+      "properties": [
+        {
+          "name": "height",
+          "type": "int",
+          "value": 500
+        }
+      ]
+    },
+    {
+      "id": 584,
+      "name": "chemin creux",
+      "type": "Lane",
+      "x": 1920,
+      "y": 2112,
+      "width": 0,
+      "height": 0,
+      "rotation": 0,
+      "visible": true,
+      "polyline": [
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": -64,
+          "y": 6
+        },
+        {
+          "x": -128,
+          "y": 2
+        },
+        {
+          "x": -192,
+          "y": -1
+        },
+        {
+          "x": -256,
+          "y": -9
+        },
+        {
+          "x": -320,
+          "y": -2
+        },
+        {
+          "x": -384,
+          "y": -3
+        },
+        {
+          "x": -448,
+          "y": 7
+        },
+        {
+          "x": -512,
+          "y": 4
+        },
+        {
+          "x": -576,
+          "y": 3
+        },
+        {
+          "x": -640,
+          "y": -3
+        },
+        {
+          "x": -704,
+          "y": -7
+        },
+        {
+          "x": -768,
+          "y": -2
+        },
+        {
+          "x": -832,
+          "y": -2
+        },
+        {
+          "x": -896,
+          "y": 8
+        },
+        {
+          "x": -960,
+          "y": 3
+        },
+        {
+          "x": -1024,
+          "y": 4
+        },
+        {
+          "x": -1088,
+          "y": -5
+        },
+        {
+          "x": -1152,
+          "y": -6
+        },
+        {
+          "x": -1216,
+          "y": -3
+        },
+        {
+          "x": -1280,
+          "y": 0
+        },
+        {
+          "x": -1344,
+          "y": 8
+        },
+        {
+          "x": -1408,
+          "y": 2
+        },
+        {
+          "x": -1472,
+          "y": 4
+        },
+        {
+          "x": -1536,
+          "y": -7
+        },
+        {
+          "x": -1600,
+          "y": -4
+        },
+        {
+          "x": -1664,
+          "y": -4
+        },
+        {
+          "x": -1728,
+          "y": 3
+        },
+        {
+          "x": -1776,
+          "y": 8
+        }
+      ],
+      "properties": [
+        {
+          "name": "heights",
+          "type": "string",
+          "value": "0,0,0,0,0,0,0,0,0,0,27,53,80,107,133,160,187,213,240,267,293,320,347,373,400,427,453,480,500"
+        },
+        {
+          "name": "width",
+          "type": "int",
+          "value": 250
+        },
+        {
+          "name": "inner",
+          "type": "int",
+          "value": 20
+        },
+        {
+          "name": "innerSlope",
+          "type": "float",
+          "value": 0.2
+        }
+      ]
+    },
+    {
+      "id": 585,
+      "name": "talus",
+      "type": "Ridge",
+      "x": 1920,
+      "y": 2112,
+      "width": 0,
+      "height": 0,
+      "rotation": 0,
+      "visible": true,
+      "polyline": [
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": -64,
+          "y": 6
+        },
+        {
+          "x": -128,
+          "y": 2
+        },
+        {
+          "x": -192,
+          "y": -1
+        },
+        {
+          "x": -256,
+          "y": -9
+        },
+        {
+          "x": -320,
+          "y": -2
+        },
+        {
+          "x": -356,
+          "y": -2
+        },
+        {
+          "x": -416,
+          "y": 2
+        },
+        {
+          "x": -496,
+          "y": 6
+        },
+        {
+          "x": -576,
+          "y": 3
+        },
+        {
+          "x": -640,
+          "y": -3
+        }
+      ],
+      "properties": [
+        {
+          "name": "heights",
+          "type": "string",
+          "value": "0,32,113,221,335,432,472,500,500,500,500"
+        },
+        {
+          "name": "crests",
+          "type": "string",
+          "value": "630,630,630,630,630,630,630,550,550,550,550"
+        },
+        {
+          "name": "flanks",
+          "type": "string",
+          "value": "470,470,470,470,470,470,470,110,110,110,110"
+        }
+      ]
+    }
+  ],
+  "vault": [
+    {
+      "id": 586,
+      "name": "",
+      "type": "lane-curtain",
+      "x": 1655,
+      "y": 2174,
+      "width": 230,
+      "height": 84,
+      "gid": 1192,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 587,
+      "name": "",
+      "type": "lane-overhang-2",
+      "x": 1626,
+      "y": 2073,
+      "width": 128,
+      "height": 66,
+      "gid": 1194,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 588,
+      "name": "",
+      "type": "lane-overhang-1",
+      "x": 1520,
+      "y": 2182,
+      "width": 160,
+      "height": 60,
+      "gid": 1193,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 589,
+      "name": "",
+      "type": "lane-overhang-3",
+      "x": 1478,
+      "y": 2065,
+      "width": 104,
+      "height": 48,
+      "gid": 1195,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 590,
+      "name": "",
+      "type": "lane-overhang-3",
+      "x": 1463,
+      "y": 2174,
+      "width": 104,
+      "height": 48,
+      "gid": 1195,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 591,
+      "name": "",
+      "type": "lane-overhang-1",
+      "x": 1360,
+      "y": 2178,
+      "width": 160,
+      "height": 60,
+      "gid": 1193,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 592,
+      "name": "",
+      "type": "lane-overhang-2",
+      "x": 1306,
+      "y": 2073,
+      "width": 128,
+      "height": 66,
+      "gid": 1194,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 593,
+      "name": "",
+      "type": "lane-overhang-3",
+      "x": 1248,
+      "y": 2185,
+      "width": 104,
+      "height": 48,
+      "gid": 1195,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 594,
+      "name": "",
+      "type": "lane-overhang-1",
+      "x": 1130,
+      "y": 2064,
+      "width": 160,
+      "height": 60,
+      "gid": 1193,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 595,
+      "name": "",
+      "type": "lane-overhang-2",
+      "x": 1086,
+      "y": 2196,
+      "width": 128,
+      "height": 66,
+      "gid": 1194,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 596,
+      "name": "",
+      "type": "lane-overhang-3",
+      "x": 1008,
+      "y": 2074,
+      "width": 104,
+      "height": 48,
+      "gid": 1195,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 597,
+      "name": "",
+      "type": "lane-overhang-1",
+      "x": 910,
+      "y": 2196,
+      "width": 160,
+      "height": 60,
+      "gid": 1193,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 598,
+      "name": "",
+      "type": "lane-overhang-2",
+      "x": 836,
+      "y": 2082,
+      "width": 128,
+      "height": 66,
+      "gid": 1194,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 599,
+      "name": "",
+      "type": "lane-overhang-3",
+      "x": 778,
+      "y": 2177,
+      "width": 104,
+      "height": 48,
+      "gid": 1195,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 600,
+      "name": "",
+      "type": "lane-overhang-1",
+      "x": 660,
+      "y": 2074,
+      "width": 160,
+      "height": 60,
+      "gid": 1193,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 601,
+      "name": "",
+      "type": "lane-overhang-2",
+      "x": 596,
+      "y": 2188,
+      "width": 128,
+      "height": 66,
+      "gid": 1194,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 602,
+      "name": "",
+      "type": "lane-overhang-3",
+      "x": 528,
+      "y": 2089,
+      "width": 104,
+      "height": 48,
+      "gid": 1195,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 603,
+      "name": "",
+      "type": "lane-overhang-1",
+      "x": 400,
+      "y": 2182,
+      "width": 160,
+      "height": 60,
+      "gid": 1193,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 604,
+      "name": "",
+      "type": "lane-overhang-3",
+      "x": 348,
+      "y": 2081,
+      "width": 104,
+      "height": 48,
+      "gid": 1195,
+      "rotation": 0,
+      "visible": true
+    }
+  ],
+  "waterEdge": [
+    {
+      "id": 605,
+      "name": "",
+      "type": "water-cut",
+      "x": 1344,
+      "y": 2031,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true,
+      "properties": [
+        {
+          "name": "view",
+          "type": "int",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": 606,
+      "name": "",
+      "type": "shimmer",
+      "x": 1344,
+      "y": 2026,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 607,
+      "name": "",
+      "type": "water-cut",
+      "x": 1344,
+      "y": 2204,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 608,
+      "name": "",
+      "type": "shimmer",
+      "x": 1344,
+      "y": 2208,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 609,
+      "name": "",
+      "type": "water-cut",
+      "x": 1376,
+      "y": 2033,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true,
+      "properties": [
+        {
+          "name": "view",
+          "type": "int",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": 610,
+      "name": "",
+      "type": "shimmer",
+      "x": 1376,
+      "y": 2028,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 611,
+      "name": "",
+      "type": "water-cut",
+      "x": 1376,
+      "y": 2205,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 612,
+      "name": "",
+      "type": "shimmer",
+      "x": 1376,
+      "y": 2209,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 613,
+      "name": "",
+      "type": "water-cut",
+      "x": 1408,
+      "y": 2040,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true,
+      "properties": [
+        {
+          "name": "view",
+          "type": "int",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": 614,
+      "name": "",
+      "type": "shimmer",
+      "x": 1408,
+      "y": 2035,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 615,
+      "name": "",
+      "type": "water-cut",
+      "x": 1408,
+      "y": 2205,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 616,
+      "name": "",
+      "type": "shimmer",
+      "x": 1408,
+      "y": 2209,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 617,
+      "name": "",
+      "type": "water-cut",
+      "x": 1440,
+      "y": 2032,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true,
+      "properties": [
+        {
+          "name": "view",
+          "type": "int",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": 618,
+      "name": "",
+      "type": "shimmer",
+      "x": 1440,
+      "y": 2027,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 619,
+      "name": "",
+      "type": "water-cut",
+      "x": 1440,
+      "y": 2204,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 620,
+      "name": "",
+      "type": "shimmer",
+      "x": 1440,
+      "y": 2208,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 621,
+      "name": "",
+      "type": "water-cut",
+      "x": 1472,
+      "y": 2032,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true,
+      "properties": [
+        {
+          "name": "view",
+          "type": "int",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": 622,
+      "name": "",
+      "type": "shimmer",
+      "x": 1472,
+      "y": 2027,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 623,
+      "name": "",
+      "type": "water-cut",
+      "x": 1472,
+      "y": 2197,
+      "width": 32,
+      "height": 4,
+      "gid": 1196,
+      "rotation": 0,
+      "visible": true
+    },
+    {
+      "id": 624,
+      "name": "",
+      "type": "shimmer",
+      "x": 1472,
+      "y": 2201,
+      "width": 32,
+      "height": 3,
+      "gid": 1197,
+      "rotation": 0,
+      "visible": true
+    }
+  ]
+}
