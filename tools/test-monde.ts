@@ -190,9 +190,9 @@ await playtest('monde', async ({ page, errors, load }) => {
       const S = 4;
       // les portes fermées de la maison (les portes intérieures) ne barrent pas le chemin : Xéros les ouvre en route (E)
       const doors = m.builds.filter((b: any) => b.zone && /door$/.test(b.piece.piece.prop ?? '')).map((b: any) => b.zone);
-      // comme un joueur, par le milieu des passages : 2 px de marge autour du corps quand il y a la place (une porte de 90 cm laisse
-      // 18 px à un corps de 10 : collé à une huisserie, le moindre écart sous la charge l'y arrête) ; sinon au plus juste
-      let margin = 2;
+      // dans la maison, comme un joueur, par le milieu des passages : 2 px de marge autour du corps quand il y a la place (une porte de
+      // 90 cm laisse 18 px à un corps de 10 : collé à une huisserie, le moindre écart sous la charge l'y arrête) ; sinon au plus juste
+      let margin = w.interior ? 2 : 0;
       const free = (x: number, y: number) => m.areaFree({ left: x - 5 - margin, top: y - 8 - margin, right: x + 5 + margin, bottom: y + margin }, [], doors);
       const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
       const goal = to
