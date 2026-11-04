@@ -21,6 +21,8 @@ async function start() {
     pre.style.cssText = 'color:#f3d9b0;background:#14110d;padding:16px;white-space:pre-wrap;font:13px monospace';
     pre.textContent = `Contenu invalide (${problems.length}) :\n\n- ${problems.join('\n- ')}`;
     document.body.replaceChildren(pre);
+    // aussi dans la console : les tests de scénario (tools/lib/playtest.ts) disent pourquoi le jeu ne démarre pas
+    console.error(pre.textContent);
     throw new Error('Contenu invalide, voir la page');
   }
 
