@@ -231,7 +231,8 @@ export const NaturalSchema = z.strictObject({ form: z.union([z.literal(0), z.lit
  * fait et le vendrait (`trade` de props.json, items.json, et des transformations de transforms.json) : le carrier (la pierre
  * tirée, le moellon), le maçon (la pierre de taille, le mortier), le terrassier (la terre, le torchis), le chaumier (la paille, le
  * chaume), le bûcheron (le bois abattu, les baguettes), le charpentier (la poutre, la cheville), le fendeur (le bois fendu, la
- * planche, le bardeau), le menuisier (le bois travaillé fin, le maillet), le forgeron (les outils de fer), le paysan (ce que tout
+ * planche, le bardeau), le menuisier (le bois travaillé fin, le maillet), le forgeron (les outils de fer, l'enclume, l'étau), le couvreur (les pans de
+ * bardeaux, de tuiles et de lauzes), le paysan (ce que tout
  * le monde fait : puiser, ramasser).
  */
 /**
@@ -241,7 +242,7 @@ export const NaturalSchema = z.strictObject({ form: z.union([z.literal(0), z.lit
 export const FAMILIES = ['éléments', 'assemblages', 'bois', 'pierre', 'terre', 'fibres', 'outils', 'mobilier', 'chantier', 'nature', 'divers'] as const;
 const FamilySchema = z.enum(FAMILIES);
 
-const TradeSchema = z.enum(['quarryman', 'mason', 'digger', 'thatcher', 'woodcutter', 'carpenter', 'splitter', 'joiner', 'smith', 'peasant']);
+const TradeSchema = z.enum(['quarryman', 'mason', 'digger', 'thatcher', 'woodcutter', 'carpenter', 'splitter', 'joiner', 'smith', 'roofer', 'peasant']);
 
 /**
  * Ce qui roule quand Xéros le pousse (la pièce de bois ronde : `roll` de sa définition tirée de ses réglages, world/woodPiece.ts) :

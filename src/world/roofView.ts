@@ -71,6 +71,26 @@ function edge(q: Rect, side: Window['side']): number {
   return side === 'south' ? q.y + q.d : side === 'north' ? -q.y : side === 'east' ? q.x + q.w : -q.x;
 }
 
+/**
+ * Les pans du même toit que les pans effacés : de proche en proche, les pièces de toit dont l'emprise touche celle d'un pan déjà pris
+ * (à 1 cm près), hors des bâtiments où l'on entre.
+ */
+function roofOf(pieces: readonly BuildPiece[], faded: ReadonlySet<number>): number[] {
+  const roofs = pieces.filter(isRoof);
+  const out = new Set(roofs.filter((p) => faded.has(p.id)).map((p) => p.id));
+  const todo = [...out];
+  while (todo.length) {
+    const id = todo.pop();
+    const a = boxOf(roofs.find((p) => p.id === id)!);
+    for (const q of roofs) {
+      if (out.has(q.id)) continue;
+      const b = boxOf(q);
+      if (a.x <= b.x + b.w + 1 && b.x <= a.x + a.w + 1 && a.y <= b.y + b.d + 1 && b.y <= a.y + a.d + 1) (out.add(q.id), todo.push(q.id));
+    }
+  }
+  return [...out];
+}
+
 /** Ce que montrent les toits des pièces posées, Xéros dehors, ses pieds en (fx, fy) cm. */
 export function roofView(pieces: readonly BuildPiece[], buildings: readonly Building[], fx: number, fy: number): RoofView {
   const faded = new Set<number>();
@@ -78,6 +98,9 @@ export function roofView(pieces: readonly BuildPiece[], buildings: readonly Buil
     if (enclosed(p, buildings) || !overHead(p, fx, fy, 0)) continue;
     for (const q of withAbove(pieces, p.id)) faded.add(q.id);
   }
+  // tout le toit de l'abri, pas le seul pan au-dessus de sa tête (chantier « forge ») : sous le pan nord d'un toit à deux pans, le pan
+  // sud, plus près de l'œil, cacherait Xéros et ce qu'il regarde ; les pans qui se touchent font un même toit
+  for (const id of roofOf(pieces, faded)) for (const q of withAbove(pieces, id)) faded.add(q.id);
   for (const b of buildings) {
     const room = windowRoom(b, fx, fy);
     if (!room) continue;

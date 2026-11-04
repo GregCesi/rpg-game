@@ -6,5 +6,7 @@
   "straw": {"name": "paille tassée", "density": 100},
   "wood": {"name": "bois vert", "density": 900},
   "water": {"name": "eau", "density": 1000},
-  "lime": {"name": "chaux", "density": 900}
+  "lime": {"name": "chaux", "density": 900},
+  "iron": {"name": "fer", "density": 7870},
+  "terracotta": {"name": "terre cuite", "density": 1900}
 }

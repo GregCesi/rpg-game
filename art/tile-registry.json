@@ -323,6 +323,27 @@
     "wattle-door-head",
     "daub-door-head",
     "lime-door-head",
-    "inner-threshold-stone"
+    "inner-threshold-stone",
+    "forge-hearth",
+    "forge-oven",
+    "forge-bellows",
+    "anvil",
+    "anvil-block",
+    "quench-trough",
+    "charcoal-bin",
+    "tool-rack",
+    "bar-rack",
+    "grindstone",
+    "vise",
+    "scrap-crate",
+    "shingle-roof-large",
+    "shingle-roof-large-pierced",
+    "tile-roof-large",
+    "tile-roof-large-pierced",
+    "lauze-roof-large",
+    "lauze-roof-large-pierced",
+    "board-gable-tall",
+    "board-gable-steep",
+    "shingle-shed-roof"
   ]
 }
