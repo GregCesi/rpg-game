@@ -8,6 +8,44 @@ Unités : centimètres, nord en haut ; 5 cm par pixel ; une case = 32 px = 1,60 
 
 ---
 
+## 0. Retour de Grégoire sur l'essai 1 (4 novembre 2026), et l'essai 2
+
+**Validé** : l'emplacement A (la première parcelle des abords au nord de la rue), la taille de l'atelier (la charpente de la grange,
+9,60 × 6,80 m, ouverte au sud), ses pièces, son intérieur (version A, `forge-interieur.png`).
+
+**L'atelier seul** : pas de logis pour le forgeron pour l'instant. Sur la parcelle restent l'atelier, l'abri à charbon et à bois, la
+place réservée de la fonderie et **le puits**, que je garde : l'auge se vide et se remplit tous les jours, et une forge sans eau à
+portée de main n'est pas réaliste (le puits du village est à 100 m). Les sections 2 et 3 décrivent encore le logis tel qu'il était
+proposé.
+
+**Le logis est mis de côté pour un autre emplacement.** Grégoire le trouve bien, mais trop proche de la maison de Xéros : il servira
+ailleurs. Son plan (section 2 : 8 × 6,40 m, une salle et une chambre, la cheminée de la maison de Xéros, le chaume en 9 m) et ses
+images restent dans `art/proposals/` : `art/proposals/forge-logis.ts`, et l'essai 1 dans l'historique de la branche (commit
+`20f49a9`, `forge-dehors.png` et `forge-interieur.png` de cet essai).
+
+**Le toit de l'atelier** : les planches sombres sont refusées. Elles se lisent comme de la tôle, et ce serait du bois juste au-dessus
+d'un feu de forge. Ce qui est réaliste pour un atelier de forgeron :
+
+| Couverture | Pour | Contre | Ce qu'il faut au jeu |
+| --- | --- | --- | --- |
+| **Tuiles plates de terre cuite** (recommandé) | ne brûlent pas : c'est la couverture des métiers du feu (forges, fours, boulangeries), souvent imposée par les villes à la fin du Moyen Âge pour cette raison (connaissance générale, **non sourcée**) ; brun-rouge chaud, elle se lit tout de suite comme un toit, et distingue la forge du chaume et des planches des autres bâtiments | il faut un **tuilier** (de l'argile, un four à tuiles), un métier de plus au village ou acheté à la ville ; une tuile plate veut une pente d'environ 45° (la grange est à 37°) ; environ 70 kg/m² | le pan de tuiles (`tile-roof-large`, et son pan percé pour les conduits), la tuile (objet, matière terre cuite), plus tard le tuilier |
+| **Bardeaux de chêne fendu** | la chaîne existe déjà en partie (le bardeau, la coutre, le chêne) ; ils sont de la couleur du bois, assez clairs, avec un dessin d'écailles, pas de tôle ; légers | du bois au-dessus du feu : les escarbilles du conduit, même si le conduit dépasse le faîte ; il faut d'abord **les lattes**, qui n'existent pas encore | le pan de bardeaux (`shingle-roof-large`), les lattes |
+| **Lauzes de calcaire** (troisième idée, sur la planche) | ne brûlent pas ; c'est **la pierre commune du jeu** (le calcaire), taillée par le carrier, sans métier nouveau | très lourdes (300 kg/m² et plus) : il faut une charpente bien plus forte que celle de la grange ; elles sont propres à certains pays de causses, et grisent le bâtiment | le pan de lauzes, la lauze ; une charpente renforcée |
+
+**Ma recommandation : les tuiles plates.** C'est le plus réaliste pour un atelier où l'on fait du feu toute la journée, et c'est le
+plus lisible à l'écran. Pour l'essai 2, la charpente de la grange garde ses 37°. Le jour où on la bâtit, il faudra choisir : la
+relever à 45° (des poinçons plus longs, le faîte vers 6,80 m) ou garder 37° avec plus de recouvrement (question 13).
+
+**Le forgeron est à refaire** : il faisait un peu féminin et avait de grosses joues. Il faut un beau gosse, très masculin : une
+mâchoire carrée et marquée, des joues creuses, un cou épais, des épaules et des bras nettement plus larges que ceux de Xéros, et des
+muscles qui se voient sous le tablier de cuir, sans rien dessous. Il garde ses cheveux longs et blonds. Il faut refaire les trois
+variantes (lâchés, attachés, barbe courte) et le portrait.
+
+**Les planches de l'essai 2** : `.art-preview/forge-dehors.png` (l'atelier seul sur la rue, en x2 avec Xéros, dans chacune des
+couvertures, tuiles d'abord) et `.art-preview/forge-forgeron.png`.
+
+---
+
 ## 1. L'emplacement
 
 ### Ce qu'il y a sur les cartes
@@ -269,3 +307,5 @@ Toutes par le sous-agent pixel-artist, hors jeu (`art/proposals/forge*.ts`, `too
 12. **La suite** : après ton choix, on bâtit d'abord **les pièces nouvelles** une par une (fiche, dessin, contrat), puis le plan par
     un scénario dans le mode construction (`npm run test:forge`), puis le rectangle `Plan` sur la carte. *Recommandé : dans cet
     ordre.*
+13. **La pente du toit de tuiles** : relever la charpente de la grange à 45° (poinçons plus longs, faîte vers 6,80 m) ou garder 37°
+    avec plus de recouvrement ? *Recommandé : 45°, la pente juste pour la tuile plate.*

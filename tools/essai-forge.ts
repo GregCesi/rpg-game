@@ -22,10 +22,9 @@ import worldTiles from '../art/world/tiles';
 import { agedPalette } from '../art/world/wood';
 import { composeWood } from '../art/world/wood-pieces';
 import { world } from '../art/palette';
-import { chimneyQuads, AT as CH_AT } from '../art/world/chimney';
 import { box, part, prism, timber, pole, type Quad, type Tex, type V3, type Board, type Scene } from '../art/lib/volumes';
-import { hash, houseScene, render, type Bounds, type Layer, type Plan } from '../art/proposals/maison-xeros';
-import { mantel } from '../art/proposals/cheminee-2';
+import { hash, render, type Bounds, type Layer } from '../art/proposals/maison-xeros';
+import { logisScene, logisFurniture } from '../art/proposals/forge-logis';
 import { interiorTiles } from '../art/interior/house';
 import {
   PAL, PIECES, SCRAP, VISE, forgeFrames, ovenFlueModel, pieceImage, view, masonry, iron,
@@ -38,6 +37,7 @@ import { upOf, lookOf, beamPiece } from '../src/world/woodShape';
 import propsJson from '../src/content/props.json';
 import plansJson from '../src/content/plans.json';
 import grangeJson from '../src/content/plans/grange.json';
+import { COVERS, leanToQuads, roofQuads, type Cover } from '../art/proposals/forge-toits';
 import { Sheet, textWidth, type Rgb } from './lib/audit-preview';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -98,10 +98,6 @@ function who(name: string, x: number, y: number): Board {
   const f = frame(name), s = silhouette(f.grid, f.pal);
   return { grid: f.grid, pal: f.pal, x: Math.round(x - s.x - s.w / 2), y: Math.round(y - (s.y + s.h)), depth: () => y };
 }
-const moveBoard = (b: Board, dx: number, dy: number): Board => ({ ...b, x: b.x + dx, y: b.y + dy, depth: (r) => b.depth(r) + dy });
-const moveQuads = (qs: Quad[], [dx, dy, dz]: V3): Quad[] =>
-  qs.map((q) => ({ ...q, o: [q.o[0] + dx, q.o[1] + dy, q.o[2] + dz] as V3, tex: (s, t, c) => q.tex(s, t, { ...c, p: [c.p[0] - dx, c.p[1] - dy, c.p[2] - dz] }) }));
-
 // =====================================================================================================================
 // La planche
 // =====================================================================================================================
@@ -368,12 +364,14 @@ function grangeRoofShadow(o: [number, number]): Quad[] {
 }
 
 /** L'abri à charbon : l'abri à bois du jeu (src/content/plans.json `woodshed`), place par place, au bois vieux. */
-function shedBoards(o: [number, number], roof: boolean): Board[] {
+function shedBoards(o: [number, number], roof: boolean, covered = false): Board[] {
   const plan = (plansJson as unknown as Record<string, { steps: { places: Record<string, { piece: string; at: [number, number]; accepts?: { wood?: { length: number } } }> }[] }>).woodshed;
   const out: Board[] = [];
   plan.steps.forEach((st, si) => {
     for (const pl of Object.values(st.places)) {
       if (!roof && (pl.piece === 'shed-roof' || pl.piece === 'shed-rafter')) continue;
+      // sous une couverture de l'essai (un pan en volumes), les sablières sont cachées par lui
+      if (covered && pl.piece.startsWith('shed-plate')) continue;
       let g: Img;
       if (pl.piece === 'wood-piece') g = { grid: composeWood(beamPiece(pl.accepts!.wood!.length, 'up')).toGrid(), pal: OLD };
       else g = has(`${pl.piece}-old`) ? img(`${pl.piece}-old`) : img(pl.piece);
@@ -383,62 +381,6 @@ function shedBoards(o: [number, number], roof: boolean): Board[] {
     }
   });
   return out;
-}
-
-/** Le logis : la maison de Xéros raccourcie, 8 × 6,40 m entre les axes, cinq travées sur quatre, la salle et la chambre. */
-const LOGIS: Plan = {
-  L: 160, D: 128, pitch: 45, sill: 16, doorW: 18, innerDoorW: 16, trusses: [96],
-  walls: [
-    { side: 'S', ew: true, c: 128, posts: [0, 32, 64, 96, 128, 160], out: 1, bays: ['plain', 'window', 'door', 'plain', 'window'] },
-    { side: 'N', ew: true, c: 0, posts: [0, 32, 64, 96, 128, 160], out: -1, bays: ['plain', 'plain', 'window', 'plain', 'plain'] },
-    { side: 'W', ew: false, c: 0, posts: [0, 32, 64, 96, 128], out: -1, bays: ['plain', 'plain', 'plain', 'plain'], ends: [true, true] },
-    { side: 'E', ew: false, c: 160, posts: [0, 32, 64, 96, 128], out: 1, bays: ['plain', 'window', 'plain', 'plain'], ends: [true, true] },
-    { ew: false, c: 96, posts: [0, 32, 64, 96, 128], out: 1, bays: ['plain', 'plain', 'inner-door', 'plain'], ends: [true, true] },
-  ],
-};
-/** La cheminée du jeu dans le logis : l'âtre en x 10–54 px (contre le mur nord de la salle). */
-const CH_DX = 10 - CH_AT.hearth[0];
-
-/** Le chaume percé au droit du conduit (repère de la maison). */
-function pierce(quads: Quad[]): Quad[] {
-  const x0 = CH_AT.flue(0)[0] + CH_DX, y0 = CH_AT.flue(0)[1], x1 = x0 + 20, y1 = y0 + 16;
-  return quads.map((q) => {
-    if (q.part.name !== 'chaume' && q.part.name !== 'latte' && q.part.name !== 'chevron') return q;
-    const tex: Tex = (s, t, cx) => {
-      const [x, y] = cx.p;
-      if (x > x0 - 0.3 && x < x1 + 0.3 && y > y0 - 0.3 && y < y1 + 0.3) return null;
-      const k = q.tex(s, t, cx);
-      if (k === null || q.part.name !== 'chaume' || cx.face !== 'slope') return k;
-      if (x > x0 - 2.1 && x < x1 + 2.1 && y > y0 - 2.1 && y < y1 + 2.1) return x < x0 + 0.5 || y < y0 ? 'd' : 'D';
-      return k;
-    };
-    return { ...q, tex };
-  });
-}
-
-/** Le logis dans la scène, à l'origine o (px, l'axe du poteau nord-ouest) ; toit posé ou non (le mur sud et la cloison coupés bas). */
-function logisScene(o: [number, number], roof: boolean, frame = 0): { quads: Quad[]; boards: Board[]; floor: [number, number, number, number] } {
-  const house = houseScene(roof ? { rot: 0, wall: 4, roof: 5, plan: LOGIS } : { rot: 0, wall: 4, roof: 0, cut: true, plan: LOGIS }, img);
-  let quads = house.quads;
-  if (roof) quads = pierce(quads);
-  const chim = moveQuads(chimneyQuads(frame, roof ? Infinity : 52), [CH_DX, 0, 0]);
-  const m = mantel('ew');
-  const mb: Board = { grid: m.grid, pal: m.pal, x: CH_AT.mantel[0] + CH_DX, y: Math.round(28 - 30 - m.grid.length), depth: () => 28 };
-  return {
-    quads: moveQuads([...quads, ...chim], [o[0], o[1], 0]),
-    boards: [...house.boards, mb].map((b) => moveBoard(b, o[0], o[1])),
-    floor: [o[0] + 5, o[0] + 155, o[1] + 5, o[1] + 123],
-  };
-}
-
-/** Les meubles du logis (repère du logis, px) : la salle et la chambre. */
-function logisFurniture(o: [number, number]): Board[] {
-  const at = (key: string, x: number, y: number, v = 0) => prop(key, x * 5, y * 5, v, 0, o);
-  return [
-    at('table', 28, 58), at('bench', 29, 77), at('stool', 34, 50), at('stool', 58, 50),
-    at('barrel', 7, 90), at('jar', 8, 106), at('bucket-water', 58, 12), at('chest', 6, 38, 1),
-    at('bed', 122, 6), at('chest', 102, 6), at('crate', 140, 108),
-  ];
 }
 
 // ---------- l'atelier meublé (repère de l'atelier, cm ; plan de la grange : poteaux en x 40, 320, 600, 880 et y 40, 320, 600) ----------
@@ -527,14 +469,14 @@ interface Version { key: string; title: string; notes: string[]; scene: Scene; g
 /** A, « la cour » : l'atelier au sud sur la rue, le logis derrière une cour de 5 m, l'abri à charbon à l'est, le puits. */
 function versionA(roof: boolean, frame = 0): Version {
   const shop: [number, number] = [60, 300], logis: [number, number] = [60, 50], shed: [number, number] = [280, 320];
-  const L = logisScene(logis, roof, frame);
+  const L = logisScene(logis, roof, frame, img);
   const F = shopFurniture(shop, roof, frame);
   const boards = [
     ...grangeBoards(shop, { roof, eastWall: true }), ...F.boards, ...L.boards, ...shedBoards(shed, roof),
     prop('well', 0, 0, 0, 0, [150, 204]),
     prop('sack', 0, 0, 0, 0, [290, 335]), prop('sack', 0, 0, 0, 0, [302, 337]), prop('sack', 0, 0, 0, 0, [314, 334]),
   ];
-  if (!roof) boards.push(...logisFurniture(logis));
+  if (!roof) boards.push(...logisFurniture(logis, prop));
   const yards: Rect[] = [[60, 252, 184, 480], [128, 192, 480, 544], [270, 350, 300, 400]];
   return {
     key: 'A', title: 'A, LA COUR (RECOMMANDEE)',
@@ -548,7 +490,7 @@ function versionA(roof: boolean, frame = 0): Version {
 /** B, « en long » : l'atelier à l'ouest, le logis à l'est, côte à côte sur la rue, un mur mitoyen de pierre entre les deux. */
 function versionB(): Version {
   const shop: [number, number] = [40, 300], logis: [number, number] = [244, 308];
-  const L = logisScene(logis, true);
+  const L = logisScene(logis, true, 0, img);
   const boards = [...grangeBoards(shop, { roof: true, eastWall: false }), ...L.boards];
   // le mur mitoyen : 50 cm de moellons, de la dalle nord à la dalle sud, jusque sous le toit (3,42 m)
   const wx = shop[0] + 184;
@@ -574,7 +516,7 @@ function versionB(): Version {
 /** C, « l'appentis » : le logis seul sur la rue, un appentis ouvert contre son pignon ouest maçonné, la forge adossée au pignon. */
 function versionC(): Version {
   const lx = 220, ly = 308;
-  const L = logisScene([lx, ly], true);
+  const L = logisScene([lx, ly], true, 0, img);
   const quads: Quad[] = [...L.quads];
   // le pignon ouest maçonné : 45 cm de moellons contre le pan de bois, jusqu'au faîte, par assises en gradins
   const S = part('pignon de pierre', 6, '~', 'full'), mas = masonry(301, (f) => (f === 'S' ? [true, true] : [false, false]));
@@ -629,6 +571,77 @@ function outsideBlock(v: Version): Block {
       sh.text('CADRE DU JEU', x + 6, fy + 6, GOLD, T);
     },
   };
+}
+
+// =====================================================================================================================
+// L'essai 2 : l'atelier seul, trois couvertures (CADRAGE-forge.md, section 0)
+// =====================================================================================================================
+
+/** L'atelier seul sur sa parcelle (emplacement A) : la grange ouverte au sud sous une couverture, l'abri à charbon, le puits. */
+function atelierAlone(cover: Cover): Version {
+  const shop: [number, number] = [60, 300], shed: [number, number] = [280, 320];
+  const F = shopFurniture(shop, true);
+  const boards = [
+    ...grangeBoards(shop, { roof: false, eastWall: true }), ...F.boards, ...shedBoards(shed, false, true),
+    // le puits : juste à côté de l'atelier, dans la cour de devant à l'est, entre l'ouverture et l'abri à charbon (à 7 m de l'auge)
+    prop('well', 0, 0, 0, 0, [258, 428]),
+    prop('sack', 0, 0, 0, 0, [290, 335]), prop('sack', 0, 0, 0, 0, [302, 337]), prop('sack', 0, 0, 0, 0, [314, 334]),
+  ];
+  const yards: Rect[] = [[60, 252, 300, 480], [128, 192, 480, 544], [252, 350, 300, 480]];
+  return {
+    key: 'A', title: COVERS.find((c) => c.key === cover)!.title, notes: COVERS.find((c) => c.key === cover)!.notes,
+    // l'abri à charbon sous la même couverture : son pan de 3,65 × 4,45 m (celui du jeu, `shed-roof`), de 3,20 m au nord à 1,90 m au sud
+    scene: { quads: [...F.quads, ...roofQuads(cover, shop), ...leanToQuads(cover, [shed[0] - 6, shed[1] + 80, 38], [73, 0, 0], [0, -89, 26])], boards },
+    ground: groundFor(yards, []), frameX: -12, fires: [],
+  };
+}
+
+/** Un morceau du pan sud (2 m de large, le faîtage en haut, environ 1,50 m de pente), x4, avec le conduit de la forge derrière le faîte. */
+function swatchBlock(cover: Cover): Block {
+  const k = 4, v = atelierAlone(cover);
+  // le faîte à l'écran : y = 300 + 68 − 120,4 ; la pente sous lui
+  const top = Math.round(300 + 68 - 120.4) - 14;
+  const bd: Bounds = [60 + 40, top, 60 + 80, top + 56];
+  const l = render(v.scene, bd, { grass: v.ground, floor: v.ground });
+  return {
+    title: [`${COVERS.find((c) => c.key === cover)!.title.split(' ')[0]} LA MATIERE, X4`, '2 M DE LARGE, 1,50 M DE PENTE, LE FAITAGE ET LE CONDUIT'],
+    notes: [], w: l.w * k, h: l.h * k, draw: (sh, x, y) => blitLayer(sh, l, x, y, k),
+  };
+}
+
+/** Xéros dans la cour de devant, 2,50 m devant les poteaux de l'atelier ; le cadre du jeu centré sur lui (la caméra le suit). */
+const XEROS_YARD: [number, number] = [150, 486];
+function outside2Block(v: Version): Block {
+  const k = 2;
+  const [x0, y0, x1, y1] = [-70, 150, 420, 648];
+  const sc: Scene = { ...v.scene, boards: [...v.scene.boards, who('xeros', ...XEROS_YARD)] };
+  const l = render(sc, [x0, y0, x1, y1], { grass: v.ground, floor: v.ground });
+  const fx = XEROS_YARD[0] - 213.5, fy = XEROS_YARD[1] - 120;
+  return {
+    title: [v.title, 'XEROS DANS LA COUR DE DEVANT, 2,50 M DEVANT LES POTEAUX ; POINTILLE : LE CADRE DU JEU (427 X 240) CENTRE SUR LUI'],
+    notes: v.notes,
+    w: l.w * k, h: l.h * k,
+    draw: (sh, x, y) => {
+      blitLayer(sh, l, x, y, k);
+      const X0 = x + Math.round((fx - x0) * k), Y0 = y + Math.round((fy - y0) * k), W = 427 * k, H = 240 * k;
+      const cl = (a: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, a));
+      for (let i = 0; i < W; i += 10) { const xx = X0 + i; if (xx >= x && xx < x + l.w * k) { sh.rect(xx, Y0, 5, 2, GOLD); sh.rect(xx, Y0 + H - 2, 5, 2, GOLD); } }
+      for (let j = 0; j < H; j += 10) { for (const xx of [X0, X0 + W - 2]) if (xx >= x && xx < x + l.w * k) sh.rect(xx, Y0 + j, 2, 5, GOLD); }
+      sh.text('CADRE DU JEU', cl(X0 + 6, x, x + l.w * k - 100), Y0 + 6, GOLD, T);
+    },
+  };
+}
+
+function dehors2(): Sheet {
+  const covers: Cover[] = ['tiles', 'shingles', 'slates'];
+  const outs = covers.map((c) => outside2Block(atelierAlone(c)));
+  return sheetOf([outs, covers.map(swatchBlock)], [
+    'LA FORGE DU VILLAGE, ESSAI 2 : L ATELIER SEUL SUR LA RUE, TROIS COUVERTURES (ESSAI HORS JEU)',
+    'x2 ; la charpente de la grange (37 deg, pans de 9,60 X 3,40 m), ouverte au sud ; l abri a charbon, le puits ; xeros dans la rue',
+    'tout en pleine lumiere, aux couleurs du jeu ; pointille : le cadre du jeu au palier 3 (427 X 240 px), centre sur xeros ; les conduits percent le pan nord',
+    'l abri a charbon sous la meme couverture que l atelier',
+    'la pente de 37 deg est trop faible pour la tuile plate (45 deg) : gardee pour l essai (question 13 du cadrage)',
+  ]);
 }
 
 // =====================================================================================================================
@@ -696,11 +709,13 @@ cornerBlock = (k: number): Block => {
 function main(): void {
   const only = process.argv[2];
   if (!only || only === 'detail') write(detailSheet(), 'forge-detail.png');
-  if (!only || only === 'dehors') write(sheetOf([[outsideBlock(versionA(true)), outsideBlock(versionB()), outsideBlock(versionC())]], [
+  if (!only || only === 'dehors') write(dehors2(), 'forge-dehors.png');
+  // l'essai 1 (les trois dispositions avec le logis), gardé pour mémoire : npx tsx tools/essai-forge.ts dehors-1
+  if (only === 'dehors-1') write(sheetOf([[outsideBlock(versionA(true)), outsideBlock(versionB()), outsideBlock(versionC())]], [
     'LA FORGE DU VILLAGE, VUE DE LA RUE : TROIS VERSIONS (ESSAI HORS JEU)',
     'x2 ; la rue de terre battue (3 cases, 4,80 m) en bas, xeros dedans ; images du jeu (grange, abri, hotte, conduit) et pieces nouvelles',
     'le cadre du jeu au palier 3 (427 X 240 px du monde) en clair : debout dans la rue, on ne voit que le bas du batiment',
-  ]), 'forge-dehors.png');
+  ]), 'forge-dehors-1.png');
   if (!only || only === 'interieur') write(sheetOf([[interiorBlock()]], [
     'LA FORGE DU VILLAGE, VERSION A, SANS SES TOITS (ESSAI HORS JEU)',
     'atelier, cour et puits, logis (salle, chambre, cheminee), abri a charbon, place de la fonderie reservee (pointille or)',
