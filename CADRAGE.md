@@ -264,3 +264,127 @@ en B, le coin net où la paroi nord rejoint la face est, le fond du lit uniforme
     sentier sur le plateau ?
 11. **La hauteur dans Tiled** (H1 : polygones `Level` et rectangle `Slope` dans un calque `relief`) plutôt que dans `world.json` (H2) ?
     Mon avis : H1.
+
+---
+
+## 9. Deuxième essai : le chemin creux (4 novembre, après les planches A et B)
+
+Grégoire a vu A et B : aucune ne convient. Le choix A/B et les 11 questions de la section 8 restent en suspens. Cet essai cherche
+d'abord **à quoi ressemble le passage** ; la technique viendra ensuite. Référence : `~/Code/rpg-game/.captures/chemin-creux-reference.png`
+(un chemin de terre claire qui s'enfonce dans une masse de verdure, une bouche sombre au fond sous les arbres).
+
+### 9.1 Ce que Grégoire veut (rappel)
+
+- Le passage est un **chemin creux** : un couloir encaissé dans le plateau, « comme si un ver de terre avait creusé un trou », de 2 à 3 m
+  de large (deux personnes s'y croisent à peine), qui ondule un peu.
+- Le plateau, ou au moins les parois du chemin, monte à 5 ou 6 m.
+- Parois de terre très foncée, racines, mousse, broussailles, irrégulières ; sol du passage clair, presque blanc (terre tassée, cailloux).
+- Ouvert en haut, mais on croit entrer dans un tunnel : la végétation du plateau se penche et se referme presque ; vue de la ferme,
+  l'entrée est une bouche sombre sous les feuillages. Ces feuillages deviennent transparents quand Xéros passe dessous, comme un toit.
+- Une pénombre de sous-bois dans le couloir.
+- La rivière est coupée net par le passage et reprend de l'autre côté ; le miroitement reste une proposition.
+- La forêt du plateau n'a rien subi de la tempête.
+
+### 9.2 Faits
+
+- **L'écran au zoom de départ** (`ZOOM_STEPS.start` = 3, `src/config.ts`) : 427 × 240 px du monde, 21,3 × 12 m. À 5 cm par pixel,
+  une face tournée vers le sud de **5 m fait 100 px, 42 % de la hauteur de l'écran** ; de 6 m, 120 px, la moitié. Au zoom le plus large
+  (32 × 18 m, 360 px de haut), 28 % et 33 %.
+- **La forêt du plateau est déjà intacte** : aucun objet de la tempête à l'ouest de la rivière, dans aucune des huit zones de la
+  colonne 0-400 m (seulement `big-tree`, `normal-tree`, `bush`, `rock`, lus dans les `.tmj`). Rien à retirer.
+- **La place du couloir** (zone `ferme`) : la trouée du chemin d'aujourd'hui, rangées 63 à 69 (≈ 10 m), est vide d'arbres de la case 0
+  à la case 42 ; les arbres les plus proches sont aux rangées 62,8-62,9 et 69,3-69,9 (`big-tree` 9,7 / 24,3, `normal-tree` 13,8,
+  rocher 37,0 au nord ; une rangée d'arbres au sud). Un couloir de 2,5 m (≈ 1,6 case) y tient, avec environ 4 m de chaque côté
+  entre ses bords et ces arbres : c'est la place des lèvres, des broussailles et des branches qui se penchent.
+- **La longueur** : de la falaise (case 42, 267,2 m du monde) au bord ouest de la zone (case 0, 200 m), il y a 67 m. Un couloir de
+  **60 m** (jusqu'à la case ≈ 4,5) reste dans la zone `ferme` ; au-delà de 67 m, il passerait dans `foret-profonde` et franchirait un
+  bord de zone en montée (la bande des voisines, `world/zoneBand.ts`, devrait alors montrer la pente : plus cher).
+- **L'ombre portée** du plateau (même calcul que les toits, `SHADOW` de `src/config.ts` : 0,25 × z vers l'est, 0,1 × z vers le sud) :
+  pour 5 m, 25 px sur l'eau (1,25 m, un sixième de la rivière de 8 m) et 10 px vers le sud ; pour 6 m, 30 px et 12 px.
+- **La géométrie d'un couloir est-ouest** dans la projection du jeu : la lèvre sud du plateau, soulevée de 100 px (5 m), recouvre
+  entièrement le fond d'un couloir de 2,5 m (50 px) : seule la paroi nord (face au sud, vraie grandeur) se voit. La bouche d'un couloir
+  qui entre vers l'ouest dans une falaise tournée vers l'est est vue en raccourci. Un tronçon orienté nord-sud montre au contraire son
+  sol clair entre deux parois en raccourci.
+
+### 9.3 Options
+
+**La hauteur.**
+- **H5 : tout le plateau à 5 m** (ma proposition). La falaise le long de la rivière passe de 3 à 5 m : son refus devient « Trop haute pour
+  lui (5 m). » ; son ombre sur l'eau passe de 15 à 25 px ; au bord sud du monde, une face de 100 px ; la caméra s'étend de 100 px au nord
+  dans la façon A. Rien d'autre ne change par rapport au cadrage (le lancer, les créatures et la sauvegarde suivent la hauteur, quelle
+  qu'elle soit). Pente : 5 m sur 60 m, 8,3 %.
+- **H6 : tout le plateau à 6 m.** La moitié de l'écran pour une face au sud ; 6 m sur 60 m, 10 % (la pente du premier cadrage).
+- **H3+talus : le plateau reste à 3 m, des talus de 2 à 3 m bordent le chemin** (le vrai chemin creux du bocage : le chemin s'enfonce
+  et la terre rejetée fait un talus planté de haies). La falaise de la rivière reste à 3 m et rien ne change ailleurs ; mais il faut une
+  deuxième sorte de hauteur (un talus en long, des deux côtés du couloir), et les parois atteignent 5-6 m seulement près de l'entrée.
+
+**La longueur.** 60 m (proposée : dans la seule zone `ferme`, pente de 8 à 10 %). Plus long : franchit le bord de la zone (voir 9.2).
+
+**Le tracé.** Voir les planches (9.4) : la difficulté d'un couloir est-ouest (9.2, dernier point) décide de la forme.
+
+**Les feuillages qui se referment.** Une seule mécanique du jeu existe déjà pour « devenir transparent quand Xéros est dessous » :
+le toit d'un abri ouvert (`src/world/roofView.ts`, `src/systems/roofs.ts`, `ROOF` de `src/config.ts`). Le couvert du chemin creux
+serait une pièce de ce genre (un objet à `roof`, ou un calque de feuillage marqué de la même façon) : à décider à l'étape technique.
+
+**La pénombre.** Faits : la pénombre du sous-bois ne dépend aujourd'hui que de l'abscisse du monde (`gloom` de
+`src/content/world.json` : 0,34 à 0 m, 0,15 à 200 m, 0,05 à 280 m, 0 à 300 m). Sur la ligne du couloir (207 à 267 m), elle vaut déjà
+0,14 à 0,07 : à peine visible. Une pénombre propre au couloir demande une petite extension : une pénombre par rectangle (un objet
+Tiled, comme `Parcel`) ou tirée de la profondeur du creux (la hauteur des parois au-dessus du sol du chemin). Avis : la seconde,
+qui vient du relief lui-même et suivra n'importe quel autre creux.
+
+### 9.4 Les planches du chemin creux (pixel-artist ; refaire : `npx tsx tools/essai-relief-creux.ts`)
+
+Dessins : `art/proposals/relief-creux.ts` (sol clair, talus et paroi de terre, racines, lierre, mousse, broussailles de lèvre, masses de
+feuillage), `art/proposals/relief-creux-scene.ts` (un seul modèle de hauteur, quatre cadrages, trois variantes). Arbres, buissons et
+Xéros sont ceux du jeu. Hauteur 5 m, couloir de 60 m, 2,5 m de sol, pente 8,3 %, vraie partout. Chaque vue est cadrée sur l'écran de
+départ (427 × 240 px), montrée x2, avec un détail x4 autour de Xéros.
+
+**Le tracé dessiné (fait, et c'est un choix à valider).** Pour que la bouche et le sol se voient (9.2, dernier point), le pixel-artist
+a tourné le couloir **nord-sud** :
+- la rivière est coupée sur 3 m (le lit sec, sur la ligne du chemin d'aujourd'hui) et **reprend décalée de 7 m vers l'ouest** au sud
+  de la coupure ; au nord, le plateau avance en promontoire, dont la face sud (5 m, 100 px en vraie grandeur) regarde la ferme ;
+- **la bouche s'ouvre dans cette face, tournée vers le sud** ; le couloir monte vers le nord en ondulant, **le long de la rivière**,
+  séparé d'elle par une bande de plateau de quelques mètres ; puis, dans son dernier quart (1,3 m de fond), il tourne vers l'ouest et
+  sort sur le sentier du plateau.
+Ce que ce tracé change par rapport au cadrage : la rive ouest n'est plus droite à la coupure (décalage de 7 m), et le sentier du plateau
+ne part plus de la falaise sur la ligne du pont mais ≈ 50 m plus au nord.
+
+| Planche | Ce qu'il faut regarder |
+| --- | --- |
+| `.art-preview/relief-creux-1-ensemble.png` | La scène de 55 × 65 m (V2, x1), les cadres des trois vues, et à droite le plan des hauteurs (falaise en rouge, cotes 0 à 5 m). La rivière coupée et décalée, le couloir clair qui serpente sous les arbres le long de l'eau, sa sortie dans le sentier. |
+| `.art-preview/relief-creux-2-entree.png` | Xéros sur le lit sec devant la bouche. La face de terre sombre de 100 px (racines, mousse, frange d'herbe), le sol clair qui monte dans l'entaille et s'assombrit ; en V2 et V3, le rideau de feuillage en arche au-dessus de la bouche. |
+| `.art-preview/relief-creux-3-couloir.png` | Xéros à mi-pente (sol à 2,5 m, parois de 2,5 m). Les talus de chaque côté, les arbres de la lèvre penchés au-dessus, et les feuillages au-dessus de lui transparents (alpha 0,35, comme `ROOF`), la pénombre plus forte sous la voûte. |
+| `.art-preview/relief-creux-4-sortie.png` | Xéros sort à 5 m : le dernier tronçon est-ouest (sa paroi nord basse, face au sud), le sol clair qui rejoint le sentier brun. |
+
+**Les variantes** (côte à côte sur chaque planche) :
+- **V1** : talus de terre, arbres peu penchés, pénombre 0,36. Le sol se lit très bien, mais c'est un ravin à ciel ouvert, pas un tunnel.
+- **V2** : mêmes talus, arbres très penchés (40 px), rideau en arche à la bouche, pénombre 0,5.
+- **V3** : parois presque à pic noyées dans la pénombre (0,6), voûte plus fermée. La bouche la plus sombre, la plus proche de la photo ;
+  mais les parois ne se lisent plus et Xéros devient terne sous le voile.
+
+**Mon avis.** V2, comme le pixel-artist. C'est la seule où l'on croit au tunnel sans perdre Xéros. Ce qui ne va pas encore, vu sur
+les planches :
+- vue 2 : la bouche se lit comme une entaille dans un mur de terre plus que comme « une bouche sombre sous les feuillages » ; le rideau
+  est trop petit et fait des boules rondes. Il faudrait que les feuillages débordent largement la face, plus bas, avec des lianes ;
+- vue 3 : sous la voûte, le voile transparent et la pénombre ensemble rendent la scène grise et Xéros terne, même en V2 ;
+- vue 4 : la forêt du plateau, posée en grille lâche, est dense et gêne la lecture de la sortie ; le sol clair finit net contre le
+  sentier brun ;
+- la falaise le long de la rivière (5 m, tournée vers l'est) n'a toujours aucune largeur à l'écran : lèvre de broussailles, pied
+  mouillé, ombre de 25 px. Même point faible que la planche A ;
+- les arbres penchés sont des images du jeu cisaillées : il faudra les dessiner vraiment. Et dans le jeu, un arbre ne s'efface pas
+  comme un toit aujourd'hui (voir 9.3).
+
+### 9.5 Questions pour Grégoire (chemin creux)
+
+12. **Le tracé** : le couloir nord-sud le long de la rivière, avec la rivière décalée de 7 m à la coupure (planche 1) ? Ou un couloir
+    est-ouest sur la ligne du chemin d'aujourd'hui, en acceptant que la lèvre sud et ses feuillages (transparents quand Xéros est
+    dessous) cachent le sol, et qu'on voie surtout la paroi nord ?
+13. **La hauteur** : H5 (tout le plateau à 5 m, ma proposition), H6, ou H3 + talus de 2 à 3 m le long du chemin (la falaise de la
+    rivière reste à 3 m) ? (9.3)
+14. **La longueur** : 60 m (tout dans la zone `ferme`, 8,3 % à 5 m) ?
+15. **La variante** : V1, V2 ou V3 ? Et pour la suivante : un rideau de feuillage plus grand et plus bas à la bouche ?
+16. **Sous la voûte** : les feuillages transparents à 0,35 comme un toit, ou plus effacés encore (Xéros terne en V2 et V3) ?
+17. **La pénombre du couloir** : tirée de la profondeur du creux (mon avis), ou un rectangle posé dans Tiled ? (9.3)
+18. **La largeur du lit sec** : 3 m comme dessiné (la largeur du chemin), ou plus large ?
+19. **La falaise de la rivière** : on la laisse presque invisible (lèvre et ombre), ou on la montre (rideaux de lierre qui pendent sur
+    l'eau, face en raccourci comme A+) ?
