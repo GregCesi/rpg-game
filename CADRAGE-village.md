@@ -1141,3 +1141,102 @@ qui restent pleine hauteur. Les couleurs nouvelles (toile guède et garance, mie
 - **Les arbres** : quatorze retirés (sous un bâtiment, une cour ou une ruelle), cinq gardés autour de la place.
 - **À corriger à l'intégration** : les enseignes de la mercière et de la tailleuse ne sont pas dans les `pieces` de leurs bâtiments ;
   quelques vues de pièces hors gabarit, de forme (nommées sur la planche).
+
+---
+
+## 14. La place resserrée (retour de Grégoire, 5 novembre)
+
+« Le style des bâtiments est parfait, mais la place est à refaire. » Ce qui ne va pas, en ses mots : trop de vide, **le centre doit être
+rempli, presque étouffant, plein et vivant**, quitte à ajouter des choses un peu inutiles ; les bâtiments **trop espacés et trop
+petits** : ils sont serrés tout autour du rond, presque collés ; **toutes les entrées donnent sur le rond** ; la maison de la
+tailleuse et de son mari **beaucoup plus grande**, deux boutiques en une avec leurs étalages chargés ; les étals **grands et
+chargés** de marchandises qu'on voit, car on doit vraiment pouvoir acheter sur la place ; **chaque bâtiment est à la fois le commerce
+et la maison de quelqu'un** (pour les deux fermes et le bûcheron, qui vivent ailleurs, celui qui tient la boutique y loge).
+
+Réponses : 16 voir 14.2 ; 17 oui (l'auvent aux couleurs du coq) ; **18 : la boutique abandonnée est prévue pour la mère**, qui la
+rachètera un jour avec l'aide de Xéros pour y ouvrir sa menuiserie ; 19 oui, plus tard ; 20 oui ; **21 : les deux**, rapprocher les
+bâtiments et réduire le rond ; **22 oui** : le grand arbre au milieu, ses bancs.
+
+### 14.1 Le nouveau plan (px de la zone village ; centre de la place C = (3312, 2128))
+
+- **Le rond** passe de 30,40 m à **20 m** (rayon 200 px). La terre battue va du rond jusqu'aux façades : la place, c'est le rond et les
+  recoins entre lui et les bâtiments.
+- **Chaque quart est bâti en équerre autour du rond** : un bâtiment le long de la rue est-ouest, un le long de la rue nord-sud, qui se
+  touchent presque à l'angle ; leurs bouts tournés vers le rond, **leurs portes sur le rond**. Les emprises proposées (hors œuvre ;
+  le pixel-artist peut les ajuster d'un mètre ou deux pour serrer encore, et dit ses coordonnées finales) :
+
+| Quart | Bâtiment | Emprise (x0-x1 × y0-y1) | Taille | Face vers le rond |
+| --- | --- | --- | --- | --- |
+| nord-ouest | la boutique de la ferme du riche (au rond) | 3024-3248 × 1744-1928 | 11,2 × 9,2 m, à étage | sud : **se voit** |
+| | son logis et sa réserve (le long de la rue de l'ouest) | 2800-3088 × 1936-2064 | 14,4 × 6,4 m, à étage | sud, sur la rue, au bord du rond : se voit |
+| nord-est | la boutique du bûcheron (au rond) | 3376-3600 × 1744-1928 | 11,2 × 9,2 m, à étage | sud : se voit |
+| | la boutique abandonnée (le long de la rue de l'est) | 3536-3824 × 1936-2064 | 14,4 × 6,4 m | sud, sur la rue, au bord du rond : se voit |
+| sud-ouest | la tailleuse et le frère du forgeron, **en équerre** : l'aile des vêtements le long de la rue de l'ouest et l'aile du cuir et des armes le long de la rue du sud, d'un seul tenant | aile ouest 2720-3104 × 2192-2432 ; aile sud 3008-3248 × 2320-2704 | environ 19 × 12 m + 12 × 19 m, à étage | nord et est : **ne se voit pas** (14.2) |
+| sud-est | la mercière (le long de la rue de l'est) | 3520-3872 × 2192-2384 | 17,6 × 9,6 m, à étage | nord : ne se voit pas |
+| | la ferme rivale (le long de la rue du sud) | 3376-3584 × 2400-2672 | 10,4 × 13,6 m, à étage | nord : ne se voit pas |
+
+- **Le milieu** : **le grand arbre** (un tilleul, le gros arbre du jeu ou plus gros), un **banc rond** autour de son tronc ; **le panneau
+  des nouvelles** à côté ; **un abreuvoir** de pierre près de la bouche de la rue du sud (les chevaux du maquignon, les bœufs) ; des
+  bancs.
+- **Ce qui remplit** (tout ce qui fait un marché vivant, même un peu inutile) : les étals débordants, les auvents, les caisses, les
+  tonneaux, les paniers, les sacs, **une charrette** à bras chargée, une **charrette à deux roues** dételée, les enseignes, **du linge**
+  qui sèche à une corde entre deux fenêtres d'étage, **des pots de fleurs** aux appuis, des **cageots empilés**, un **seau**, une **échelle**
+  contre un mur, des **bottes de paille**, **des poules** plus tard (des créatures), un **chat** plus tard.
+
+### 14.2 Les bâtiments du sud, qui tournent le dos au joueur
+
+Le jeu ne montre que les faces sud, et **un bâtiment cache le sol juste au nord de lui sur la hauteur de son avant-toit** (son toit monte
+à l'écran par-dessus). Les trois bâtiments au sud du rond ont leur entrée sur le rond, au nord : on n'en verrait que le toit. Deux
+façons de faire vivre leur côté place, **montrées toutes les deux sur la planche** :
+
+- **Solution 1 (recommandée) : l'appentis bas et les étals en avant.** Côté rond, le toit du bâtiment se prolonge en **un appentis
+  ouvert, bas** (l'égout à 1,80-2 m, peu pentu), profond de 2,50 à 3 m, qui abrite la porte et les marchandises fragiles ; **devant
+  lui, à 2 m au moins de son égout**, sur la terre battue, **les grands étals à ciel ouvert** et les marchandises dehors (caisses,
+  tonneaux, paniers, mannequins, râteliers), qui se voient d'en haut. Quand Xéros passe sous l'appentis, son toit s'efface comme celui
+  d'un abri ouvert (le jeu le fait déjà : `roofView`), et l'on voit ce qu'il abrite. Ce qui est à moins de 2 m de l'égout est caché :
+  on y met ce qui n'a pas besoin d'être vu (le passage, des sacs).
+- **Solution 2 : la boutique qui s'ouvre.** Le bâtiment garde sa façade sur le rond, sans appentis ; quand Xéros est devant la porte
+  de la boutique, **la pièce de la boutique devient transparente** (toit et mur du nord coupés), comme une fenêtre au volet ouvert le
+  fait déjà pour sa pièce (`windowFade`, `windowHole`), et l'on voit les comptoirs et les marchandises dedans. Moins de choses dehors,
+  mais le moteur existe presque ; de loin, on ne voit qu'un toit.
+
+### 14.3 Chaque bâtiment : le commerce et le logis
+
+| Bâtiment | Qui y loge | Ce qu'on vend, comment c'est montré |
+| --- | --- | --- |
+| **La ferme du riche** | le commis et sa femme (à l'étage du logis) | miel, cire, fromages affinés, épices, confitures, huile, laine fine : **l'étal luxueux** sous l'auvent rayé guède et garance, sur le rond devant la boutique, deux comptoirs sculptés en équerre, présentoirs à gradins, claies à fromages, pots en pyramide ; dans la boutique, les étagères |
+| **Le bûcheron** | son neveu et sa femme, qui tiennent la boutique (à l'étage) ; le bûcheron vit dans sa cabane | bûches, quartiers, perches, fagots, planches, piquets, bardeaux, **outils du bois** (cognées, coins, scies) : les tas débordent sur le recoin devant la boutique, un râtelier d'outils sous l'avant-toit, le comptoir sur billots, une charrette de bûches |
+| **La boutique abandonnée** | personne (prévue pour la mère et sa menuiserie) | rien : les volets cloués, l'enseigne tombée ; quelques planches oubliées, l'herbe |
+| **La tailleuse et le frère du forgeron** | eux, à l'étage des deux ailes | **deux boutiques, deux étalages chargés** : côté ouest, **les vêtements et les tissus** (habits pendus à des perches, mannequins d'osier, coupons empilés sur de longues tables, rubans, chapeaux, capes) ; côté sud, **le cuir, les armures, les armes et l'équipement d'aventure** (selles, sacs, besaces, ceintures, bottes, gambisons et cottes de cuir sur mannequins, boucliers ronds au mur, lances et haches au râtelier, couteaux au présentoir, cordes, lanternes, outres) |
+| **La mercière** | elle et sa fille, à l'étage | fils, aiguilles, boutons, rubans, galons, dés, petits pots, **et la mercerie de tout le monde** (savon, chandelles, peignes, paniers du vannier) : un étal long devant son appentis, le casier à tiroirs, le présentoir à rubans |
+| **La ferme rivale** | sa fille aînée et son mari, qui tiennent la boutique (à l'étage) | **légumes, fruits, œufs, pain de la ferme** : le grand étal de légumes, **deux fois plus long**, cageots et paniers débordants à terre, la balance, l'ardoise, une charrette de choux |
+
+Les marchandises à dessiner, lisibles à la taille du jeu (au moins 6 px pour ce qui doit se reconnaître, en tas et en cageots
+plutôt qu'à l'unité) : **légumes** (choux, raves, poireaux, oignons, carottes, citrouilles), **fruits** (pommes, poires, prunes),
+**pain** (miches, couronnes), **fromages** (meules, tommes), **œufs** en panier, **bois** (les tas du jeu), **outils**, **tissus** (coupons,
+rouleaux), **vêtements**, **cuir** (sacs, selles, bottes), **armes et armures** (épées, haches, lances, boucliers, gambisons), **pots**
+(miel, grès), **chandelles**, **savon**.
+
+### 14.4 Ce qu'il faudra pour acheter (un chantier à part, rien maintenant)
+
+Le commerce n'existe pas dans le jeu ; ici, on ne dessine que les marchandises et les comptoirs. Pour acheter, il faudra :
+- **la monnaie** : une matière et des pièces (deniers, sous, livres ?), gardées par GameState, une bourse (une case du HUD, ou un objet
+  qu'on tient ?) ; la monnaie se gagne (vendre, travailler à la journée, les quêtes du panneau) ;
+- **les prix** : un prix par objet (`price` de items.json et props.json, tiré de sa matière et de son travail ? `rocks.json` a déjà un
+  prix pour la pierre), les prix de chaque vendeur (le riche plus cher) ;
+- **les vendeurs** : des PNJ (characters.json) posés derrière leur comptoir, **leurs horaires** (la boutique ouverte, fermée la nuit ;
+  les jours de marché, question 19), leur stock (ce qu'ils ont, ce qui s'épuise, ce qui revient) ;
+- **le geste** : E sur un comptoir ou une marchandise de l'étal devant un vendeur présent → un dialogue d'achat (le prix, oui ou non),
+  la marchandise dans la main (les deux mains : on ne porte pas plus qu'on ne tient) ; vendre à son tour (le bois de Xéros au
+  bûcheron ?) ;
+- **les marchandises sont de vrais objets** du monde, posés sur l'étal (le mode construction les pose déjà), pris par le geste
+  d'achat : la matière se conserve (un objet acheté quitte l'étal) ;
+- **les tests** : un scénario qui achète, la monnaie et la matière conservées.
+
+### 14.5 Les planches à refaire
+
+`.art-preview/place-ensemble.png` (la place à la vraie échelle, puis les vues de départ en x2 : au milieu de la place, devant chaque
+boutique ; les solutions 1 et 2 des bâtiments du sud côte à côte), `place-batiments-dehors.png` (chaque bâtiment, en x2, avec Xéros) et
+les pièces nouvelles (`place-pieces*.png`). Par le pixel-artist : `place-nord.ts` (la ferme du riche, le bûcheron, la boutique
+abandonnée), `place-sud.ts` (la tailleuse et le frère du forgeron, la mercière, la ferme rivale), `place-centre.ts` (le grand arbre,
+les bancs, l'abreuvoir, les charrettes, le linge, les pots, tout ce qui remplit), monté par `tools/essai-place.ts`.
