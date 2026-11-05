@@ -1058,3 +1058,7 @@ se voit entière, comme un mur de côté.
   entaillés, mais l'aspect de bâtiments déjà validés change : à regarder avec le pixel-artist et Grégoire.
 - Le relief et les marches de pierre ne sont pas touchés (leurs hauteurs viennent des données).
 
+
+**Décision de Grégoire (5 novembre)** : le défaut est corrigé dans **un chantier séparé, « hauteurs »**, qui passe **avant** la maison
+du coq. Rien n'en est corrigé ici. Quand il sera dans main : fusionner origin/main, puis l'intégration des dessins validés, les fiches,
+le plan de la maison bâti par un scénario directement sur les hauteurs vraies, `test:etage`, les contrats et la fusion.
