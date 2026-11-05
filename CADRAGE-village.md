@@ -1263,3 +1263,34 @@ les bancs, l'abreuvoir, les charrettes, le linge, les pots, tout ce qui remplit)
 - **Solution 2** : de loin, trois toits ; devant la porte, la boutique fondue montre bien les comptoirs, une pièce à la fois. **Recommandation des dessinateurs et la mienne : la solution 1, complétée du fondu de la solution 2 quand on entre** (le fondu ne coûte presque rien : le jeu sait déjà le faire pour une fenêtre).
 - **Le centre** : le tilleul (6,50 m de houppier, 7,50 m de haut) et son banc rond au milieu, son ombre ; l'échelle de la cueillette contre le tronc ; l'abreuvoir de pierre à la bouche de la rue du sud ; une charrette à deux roues dételée chargée de bûches au nord-est ; une charrette à bras au sud-ouest ; des tas de tonneaux couchés en pyramide, de la paille, des cageots, des sacs, des bancs, des pots de fleurs, du linge ; les quatre bouches de rue libres sur 4 m, un tour de 3 m autour du banc.
 - **Ce qui reste à trancher au montage** : les choses du centre qui chevauchent les étals du sud (le centre a été composé avant que le sud ne recule), le linge et les jardinières dessinés deux fois, les rues de l'ouest et de l'est qui se resserrent à 2,60-3,30 m de passage.
+
+### 14.7 Ce que montre la place resserrée (`place-ensemble.png`)
+
+- **Pleine et vivante, étouffante par endroits** : tout le tour du tilleul est chargé (l'étal rayé du riche, les tas et la charrette
+  du bûcheron, les perches à habits et les mannequins de la tailleuse, les râteliers et les boucliers du cuir) ; au sud-est, un amas
+  serré de tonneaux, de cageots, de paille autour de l'abreuvoir, de la charrette à bras et du grand étal de légumes.
+- **Ce qui reste libre, exprès** : les quatre bouches de rue (4 m) et le tour du banc rond (3 m). Le sud-ouest, entre le panneau et
+  l'aile du cuir, est plus clair que le sud-est.
+- **Solution 1 contre solution 2** : la solution 1 fait vivre tout le bord sud ; avec la solution 2, la rue de l'ouest et le recoin
+  sud-ouest restent presque vides, et Xéros devant une porte est caché sous le toit ; le fondu montre bien la boutique meublée, mais
+  seulement quand on est devant la porte.
+- **Le montage a déplacé 30 choses du centre et en a retiré 2** (une corde à linge, un banc), parce que le centre avait été composé
+  avant que le sud ne recule (la liste est sur `place-batiments-dehors.png`, en orange). On ne garde qu'une série de linge et de
+  jardinières (celle des fenêtres d'étage).
+- **Ce qui ne va pas encore** : les rues de l'ouest et de l'est n'ont plus qu'environ **2,50 m** de passage entre les façades du nord
+  et les étals du sud (question 24) ; l'amas du sud-est, réglé par une règle automatique, gagnerait à être posé à la main ; l'ombre du
+  tilleul en damier tramé ; l'échelle dessinée deux fois (le nord et le centre) ; des vues de dos hors gabarit (enseignes, auvent,
+  présentoir, échelle, chaise), de forme ; `PLACE_META` de `place-types.ts` périmé (les planches lisent `WHO` et `NOTES`).
+- **Le plan** (`village-plan-data.ts`, planche `village-plan.png`) suit la place resserrée : le rond de 20 m, les emprises finales, le
+  panneau au sud-ouest du tilleul ; les huitièmes en triangle deviennent des rectangles (le découpage en équerre les remplace).
+
+### 14.8 Les questions de la place resserrée (chacune avec ma recommandation)
+
+23. **La solution 1** (l'appentis et les étals en avant au sud) **complétée du fondu de la solution 2** quand on entre dans une
+    boutique ? *Recommandé : oui.*
+24. **Les rues de l'ouest et de l'est** n'ont plus que 2,50 m de passage devant les étals du sud : reculer ces étals de 50 cm (3 m de
+    passage), ou garder l'étroit, très village ? *Recommandé : reculer de 50 cm*, une charrette doit passer.
+25. **Le tilleul** : son ombre tramée et l'échelle de la cueillette contre le tronc te vont ? *Recommandé : oui*, l'ombre à revoir
+    au dessin si elle gêne en jeu.
+26. **Le commerce** (14.4) : un chantier à part, après les maisons de bois ? *Recommandé : oui*, avec la monnaie, les prix, les
+    vendeurs et leurs horaires.

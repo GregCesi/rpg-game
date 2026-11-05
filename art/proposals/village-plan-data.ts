@@ -65,9 +65,9 @@ export interface Parcel {
 export interface Way { id: string; zone: ZoneId; rect: Rect; label: string; fate: 'kept' | 'new' }
 
 /** La place ronde (existe) et ce qu'il y a dessus. */
-export const PLACE = { zone: 'village' as ZoneId, center: [3312, 2128] as [number, number], radius: 304 };
+export const PLACE = { zone: 'village' as ZoneId, center: [3312, 2128] as [number, number], radius: 200 }; // 20 m depuis la place resserrée (section 14)
 /** Le panneau des nouvelles, au milieu de la place (pièce nouvelle) ; 1,60 × 0,30 m. */
-export const NOTICE_BOARD = { zone: 'village' as ZoneId, rect: [3296, 2112, 3328, 2118] as Rect };
+export const NOTICE_BOARD = { zone: 'village' as ZoneId, rect: [3234, 2172, 3266, 2178] as Rect }; // au sud-ouest du tilleul
 
 export const WAYS: Way[] = [
   // les rues qui existent (gardées)
@@ -94,7 +94,6 @@ export const WAYS: Way[] = [
   { id: 'venelle-qs', zone: 'quartier-sud', rect: [2048, 0, 2112, 640], label: '', fate: 'new' },
 ];
 
-const tri = (a: [number, number], b: [number, number], c: [number, number]): Shape => ({ poly: [a, b, c] });
 
 export const PARCELS: Parcel[] = [
   // ---------------------------------------------------------------- la place : quatre quarts, huit huitièmes
@@ -102,41 +101,41 @@ export const PARCELS: Parcel[] = [
     id: 'no', zone: 'village', shape: { rect: [2688, 1504, 3264, 2080] }, kind: 'shop', fate: 'new',
     label: 'Ferme du riche : la boutique',
     who: "La ferme du riche prend tout le quart : sa boutique sur la rue de l'ouest, l'étal luxueux sous un auvent tourné vers la place (produits rares : miel, fromages affinés, épices de la ville, cire), la cour et la réserve derrière. Tenue par un commis de la ferme.",
-    buildings: [[2720, 1888, 2944, 2048], [2960, 1952, 3056, 2032], [2720, 1568, 2912, 1696]],
-    yards: [[2720, 1696, 3200, 1856]],
+    buildings: [[3040, 1744, 3256, 1928], [2784, 1936, 3072, 2064], [3088, 1984, 3224, 2064]],
+    yards: [[2784, 1744, 3040, 1936]],
   },
   {
-    id: 'ne-n', zone: 'village', shape: tri([3360, 2080], [3360, 1504], [3936, 1504]), kind: 'shop', fate: 'new',
+    id: 'ne-n', zone: 'village', shape: { rect: [3360, 1504, 3600, 2080] }, kind: 'shop', fate: 'new',
     label: 'La boutique du bûcheron',
     who: "La boutique du bûcheron, qui vend son bois (il vit dans sa cabane en lisière : ici, il n'a que sa boutique) : le magasin au fond, dans le large du huitième ; le long de la rue du nord, le chantier de vente, les tas de bois (bûches, quartiers, perches, fagots, planches) sous un appentis.",
-    buildings: [[3392, 1536, 3584, 1664], [3520, 1696, 3648, 1760]],
-    yards: [[3392, 1696, 3568, 1856]],
+    buildings: [[3368, 1744, 3584, 1928]],
+    yards: [[3368, 1928, 3584, 2040]],
   },
   {
-    id: 'ne-e', zone: 'village', shape: tri([3360, 2080], [3936, 2080], [3936, 1504]), kind: 'shop', fate: 'new',
+    id: 'ne-e', zone: 'village', shape: { rect: [3576, 1504, 3936, 2080] }, kind: 'shop', fate: 'new',
     label: "Boutique abandonnée (l'ancien menuisier)",
     who: "Personne. La boutique de l'ancien menuisier, fermée depuis sa mort : volets cloués, l'enseigne tombée, le bois vieux, une herbe haute devant. On pourra la reprendre un jour.",
-    buildings: [[3680, 1904, 3904, 2032]],
+    buildings: [[3576, 1936, 3864, 2064]],
   },
   {
-    id: 'se-s', zone: 'village', shape: tri([3360, 2176], [3360, 2752], [3936, 2752]), kind: 'farm', fate: 'new',
+    id: 'se-s', zone: 'village', shape: { rect: [3360, 2176, 3576, 2752] }, kind: 'farm', fate: 'new',
     label: 'Ferme rivale : dépôt et étal de légumes',
     who: "Personne n'y dort. La ferme rivale y a une maison simple qui sert de dépôt (paniers, cageots, sacs) et, tourné vers la place, un grand étal de légumes en planches qui ne paie pas de mine (deux travées d'étal, des cageots à terre devant).",
-    buildings: [[3392, 2560, 3552, 2688], [3392, 2400, 3520, 2448]],
+    buildings: [[3376, 2408, 3568, 2672], [3376, 2284, 3520, 2298]],
   },
   {
-    id: 'se-e', zone: 'village', shape: tri([3360, 2176], [3936, 2176], [3936, 2752]), kind: 'shop', fate: 'new',
+    id: 'se-e', zone: 'village', shape: { rect: [3536, 2176, 3936, 2752] }, kind: 'shop', fate: 'new',
     label: 'La mercière',
     who: "La mercière, sœur du coq, veuve, et sa fille. La boutique au rez-de-chaussée sur la rue de l'est (fils, aiguilles, rubans, boutons, petits pots), son logis à l'étage.",
-    buildings: [[3712, 2208, 3904, 2368]],
-    yards: [[3792, 2400, 3936, 2600]],
+    buildings: [[3536, 2240, 3872, 2400]],
+    yards: [[3576, 2400, 3936, 2560]],
   },
   {
     id: 'so', zone: 'village', shape: { rect: [2688, 2176, 3264, 2752] }, kind: 'shop', fate: 'new',
     label: 'La tailleuse et son mari',
     who: "La tailleuse (vêtements) et son mari, le frère du forgeron, qui travaille le cuir et tient la boutique d'équipement d'aventure (sacs, ceintures, fourreaux, outres, cordes, lanternes, et ce que fait son frère : couteaux, haches, pointes). Un seul grand bâtiment tout en bois, à étage, sans étal : les deux boutiques au rez-de-chaussée, leur logis au-dessus. La fille du coq y est apprentie.",
-    buildings: [[2720, 2208, 3008, 2400]],
-    yards: [[2720, 2432, 3200, 2720]],
+    buildings: [[2720, 2272, 3040, 2432], [3040, 2320, 3248, 2704]],
+    yards: [[2720, 2432, 3040, 2704]],
   },
   // ---------------------------------------------------------------- au sud : la taverne, puis les maisons
   {
