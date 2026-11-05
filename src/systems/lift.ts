@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEPTH } from '../config';
+import { DEPTH, FEET } from '../config';
 import { CM_PER_PX } from '../content/gabarit';
 import type { MapData } from '../content/types';
 import type { Actor } from '../entities/Actor';
@@ -51,12 +51,14 @@ export class LiftPass {
     const w = o.displayWidth ?? 0;
     const h = o.height || 1;
     const ax = o.x + (0.5 - (o.originX ?? 0.5)) * w;
-    const ay = d >= 0 && d < DEPTH.ambient ? d : o.y + (h - base) * (o.scaleY ?? 1);
+    const body = (obj as Actor).body as Phaser.Physics.Arcade.Body | undefined;
+    const dynamic = body instanceof Phaser.Physics.Arcade.Body ? body : undefined;
+    // un personnage se tient sur le point de ses pieds (`FEET.point` au-dessus du bas, celui que teste systems/footing.ts) : au bord
+    // d'une marche, son image monte quand ce point la franchit, pas quand le bas de l'image la touche
+    const ay = (d >= 0 && d < DEPTH.ambient ? d : o.y + (h - base) * (o.scaleY ?? 1)) - (dynamic ? FEET.point : 0);
     if (st && st.x === ax && st.y === ay && o.displayOriginY === st.base + st.lift) return;
     const band = obj.getData?.('liftMap') as { def: MapData; dx: number; dy: number } | undefined;
     const lift = band ? Math.round(worldHeight(band.def, ax - band.dx, ay - band.dy) / CM_PER_PX) : this.liftAt(ax, ay);
-    const body = (obj as Actor).body as Phaser.Physics.Arcade.Body | undefined;
-    const dynamic = body instanceof Phaser.Physics.Arcade.Body ? body : undefined;
     const off = dynamic ? (st?.off ?? dynamic.offset.y - (st?.lift ?? 0)) : undefined;
     const next = { x: ax, y: ay, lift, base, off };
     st = next;

@@ -196,27 +196,35 @@ d'abord ; les bâtiments se posent quand leurs pièces existent.
   courant). « Un kilomètre en 13 minutes », la marche d'un homme (1,3 m/s), voudrait 26 px/s (`PLAYER.walkSpeed`, config.ts) : un seul
   réglage, mais il change tout le jeu ; il n'est pas changé.
 
-## Le relief (décidé du 2 au 4 novembre 2026, chantier « relief » ; CADRAGE.md de la branche, sections 0 à 12)
+## Le relief (décidé du 2 au 5 novembre 2026, chantier « relief » ; CADRAGE.md de la branche, sections 0 à 13)
 
 Le monde n'est plus plat. **Tout l'ouest de la rivière est un plateau 5 m plus haut que la ferme**, sur les 800 m du monde, et sa
 **falaise** suit la rive ouest. La forêt de l'ouest est dessus, intacte (la tempête ne l'a pas touchée).
 
-- **Le chemin creux** (essai 4 validé par Grégoire, « parfait, on peut implémenter ») : le seul passage, sur la ligne du chemin
-  (rangées 65-66 de la zone `ferme`), d'est en ouest, un couloir encaissé « comme si un ver de terre avait creusé un trou ». Il commence
-  sur la ferme entre deux talus plantés qui montent de 0 à 5 m en 20,8 m, passe **au-dessus de la rivière** sur 8 m avec les mêmes talus,
-  la même voûte et le même sol (jamais d'eau dans le couloir, jamais de ciel ouvert), puis monte de 0 à 5 m en 60 m (8,3 %) dans le
-  plateau, 88,8 m en tout ; son sol clair fait 2,5 m et ondule. La rivière, droite, s'arrête net contre le pied des flancs extérieurs des
-  talus, au nord et au sud, « comme par magie » (l'ouest est magique) ; un miroitement le long de chaque coupure.
+- **Le chemin creux en gradins** (CADRAGE 13, plans et dessins validés par Grégoire le 4 novembre : « c'est exactement ça ») : le seul
+  passage, sur la ligne du chemin (rangées 65-66 de la zone `ferme`), d'est en ouest. **Un trou creusé dans une masse de terre au
+  dessus plat**, à 5 m au-dessus du chemin : son chemin clair et plat (2,5 m) au fond ; ses parois, au nord et au sud, **descendent en
+  gradins** : 4 marches de terre de 1,25 m et 3 gradins de 50 cm, la place d'un tronc ; le trou s'ouvre sur 5,5 m en haut. **Une seule
+  rangée de petits arbres droits par gradin** (noisetier, jeune frêne, buisson long, églantier : `docs/objets/gradin-plants.md`), les
+  grands arbres sur le dessus : ce sont les étages d'arbres, les uns au-dessus des autres, qui referment le cercle. Racines et lierre
+  pendent d'un gradin à l'autre. La masse passe **au-dessus de la rivière** avec 6 m de dessus de chaque côté du trou ; l'eau s'arrête
+  contre ses deux faces, « comme par magie », jamais dans le trou (un liseré et un miroitement le long de chaque coupure). Côté ferme,
+  le bout de la masse s'arrondit en fer à cheval autour de la bouche est, sa pente plantée descend vers la ferme. Vers le plateau, le
+  chemin monte de 0 à 5 m en 60 m (8,3 %) et **les marches du bas s'enterrent une à une** (le chemin s'élargit d'autant), 88,8 m en
+  tout. Chaque marche est plus haute que ce que Xéros monte (« Trop haute pour lui (1,25 m). ») : il ne sort pas du trou par les
+  gradins. L'ancienne forme (deux talus, le rideau et les avancées de la voûte) est gardée dans `art/proposals/relief-talus-forme.json`.
 - **Où est la hauteur** : dans Tiled, un calque d'objets `relief` (`Level` : un polygone à une hauteur ; `Ridge` : un talus en long,
   hauteur, crête et flanc à chaque sommet ; `Lane` : un couloir creusé, la hauteur de son sol à chaque sommet, sa largeur, son talus
-  intérieur) et la propriété de carte `height` (une zone toute sur le plateau) ; build-maps les écrit dans `MapData.relief`
-  (`ReliefSchema`) ; le jeu les lit par `src/world/relief.ts` (`heightAt`, grille de 40 cm ; une carte sans relief est à 0).
+  intérieur, ou ses gradins : `steps`, « marche,gradin,nombre », 125,50,4 pour la ferme) et la propriété de carte `height` (une zone toute sur le plateau) ; build-maps les écrit dans `MapData.relief`
+  (`ReliefSchema`) ; le jeu les lit par `src/world/relief.ts` (`heightAt`, grille de 40 cm ; une carte sans relief est à 0). Dans un
+  couloir en gradins, la grille garde la distance à l'axe, le sol et ce qui l'entoure, qui varient doucement ; la règle des gradins
+  (`stepHeight`) s'applique après l'interpolation : des marches droites et des gradins plats au pixel près.
 - **Ce que Xéros franchit, une capacité du personnage** (`src/content/mobility.json`, composant `entities/Mobility.ts`) : il monte et
   descend 50 cm sans y penser (`step`), saute jusqu'à 1 m pour descendre (`drop`), marche une pente jusqu'à 20 % (`slope`) : plus raide,
   elle compte comme une marche de toute sa hauteur (une marche va dans un seul sens : une crête étroite est une montée puis une
-  descente) ; il ne nage pas (`swim`). Au-delà, il s'arrête et le dit : « Trop haute pour lui (5 m). » (la hauteur à l'œil : au
-  décimètre sous 2 m, au demi-mètre au-delà), « Il ne sait pas nager. ». Les flancs extérieurs des talus sont trop hauts pour lui : le
-  couloir reste le seul passage. ?dieu « escalade » lève tout (seul le personnage limite, `test:contrats`). Chaque pas de la physique est
+  descente) ; il ne nage pas (`swim`). Au-delà, il s'arrête et le dit : « Trop haute pour lui (5 m). » (la vraie hauteur, au centimètre,
+  mesurée d'un replat à l'autre : « 80 cm », « 1,25 m », « 5 m »), « Il ne sait pas nager. ». Les gradins et les flancs de la masse sont trop hauts pour lui :
+  le couloir reste le seul passage. ?dieu « escalade » lève tout (seul le personnage limite, `test:contrats`). Chaque pas de la physique est
   testé depuis le pas d'avant (`systems/footing.ts`, `stepRefusal`) ; un pas refusé le laisse glisser le long de l'obstacle.
 - **L'eau ne bloque plus par elle-même** : la tuile d'eau est profonde (`deep` de `tiles.json`), plus pleine ; c'est le personnage qui
   n'y entre pas, à la rivière comme à l'étang. Rien ne s'y pose ; un objet qui y tombe est posé sur la rive la plus proche, comme avant.
@@ -230,34 +238,35 @@ Le monde n'est plus plat. **Tout l'ouest de la rivière est un plateau 5 m plus 
   dessine par morceaux (`world/terrainView.ts`) : un calque de tuiles par hauteur là où elle ne varie pas, et, là où elle varie, une
   peinture colonne par colonne : les faces tournées vers le sud en vraie grandeur (5 m = 100 px), les faces est et ouest en raccourci
   (12 px pour 5 m, avec le lierre qui pend sur l'eau), l'ombre fixe comme celle des toits (`SHADOW`), et ce qui passe devant (le bord
-  sud du couloir) en bandes triées avec le reste : Xéros passe derrière. La caméra suit l'image de Xéros ; la souris vise le point qu'on
+  sud du couloir) en bandes triées avec le reste : Xéros passe derrière. Un personnage est soulevé de la hauteur sous le point de ses
+  pieds (`FEET.point`, celui que teste `footing.ts`) : au bord d'une marche, son image monte quand il la franchit, pas avant. La caméra suit l'image de Xéros ; la souris vise le point qu'on
   voit (`pick`). La bande des zones voisines prend le même dessin.
-- **Sous la voûte** : quand Xéros est dans le couloir, le bord sud et ses feuillages s'effacent comme un toit, à 0,2, sur la largeur de
-  l'écran autour de lui (`systems/laneFade.ts`, `RELIEF` de config.ts) ; Xéros reste net. La pénombre du couloir suit sa profondeur
-  (0,3 au plus profond), cuite dans le terrain, jamais sur Xéros.
-- **La voûte** : le rideau de feuillage de la bouche (`lane-curtain`), les avancées de feuillage (`lane-overhang-1..3`) et les arbres
-  ordinaires au bord des talus ; ce sont des objets posés dans Tiled (leur récolte viendra, leurs données la permettent), avec la capacité
-  `vault` de props.json : ils s'effacent avec le bord sud quand Xéros est dessous. Chacun est posé de sorte que sa rangée d'enracinement
-  tombe à l'écran sur la lèvre du talus. Le liseré mouillé (`water-cut`, au nord sa vue `-r2` : propriété `view` de l'objet dans Tiled)
-  et le miroitement (`shimmer`, 4 images) au pied des flancs, dans la rivière.
-- **Les matières** (art/world/relief.ts, pixel-artist, validées le 4 novembre) : le sol clair du couloir (`lane-*`, ses raccords au
-  chemin `path-lane-w-*` et `path-lane-e-*`) et le dessus des talus (`bank-*`) sont des tuiles du jeu `world`, posées dans Tiled ; un
-  talus posé sur des cases d'eau se dessine avec `bank-*`. Les faces (`relief-face-earth-*`, au-dessus de l'eau `relief-face-wet-*`,
-  la lèvre `relief-lip-*`, les raccourcis `relief-face-raked-*`) sont lues par `world/terrainView.ts` : une face sud depuis son pied
-  (la rangée 99 de l'image au pied), sa lèvre une fois sous l'arête. Deux corrections proposées ensuite (le flanc extérieur planté côté
-  ferme, le sol plus clair dans la pénombre : `art/proposals/relief-final.ts`, `.art-preview/relief-final-7-corrections.png`, la règle
-  `plantedAt` de `world/relief.ts`) sont **à revoir avec Grégoire**.
+- **Sous la voûte** : quand Xéros est dans le trou (le terrain juste au sud de lui le dépasse de plus d'1 m), **la masse sud est tranchée
+  au ras du chemin** : la terre en coupe (`relief-cut-*`, peinte par `world/terrainView.ts` dans une image à part, cachée dehors)
+  apparaît sous le chemin, et ce qui la surmonte (ses gradins, ses plantes, les grands arbres de son dessus, jusqu'à 20 m au sud)
+  passe **en fantôme**, à 0,2, sur la largeur de l'écran autour de lui (`systems/laneFade.ts`, `RELIEF` de config.ts), comme le mur sud
+  d'une maison coupé au ras du sol ; le fantôme ne se peint jamais sur la coupe. Xéros reste net. La pénombre du trou suit sa
+  profondeur (0,3 au plus profond), cuite dans le terrain (la coupe prend celle du chemin de sa colonne), jamais sur Xéros ; aux
+  bouches, la lumière du dehors entre avec la terre qui baisse.
+- **Les matières** (pixel-artist, validées le 4 novembre) : le sol clair du chemin (`lane-*`, ses raccords au chemin `path-lane-w-*`
+  et `path-lane-e-*`) et le dessus de la masse (`bank-*`) sont des tuiles du jeu `world`, posées dans Tiled ; une masse posée sur des
+  cases d'eau se dessine avec `bank-*`. Les gradins (`art/world/relief-gradins.ts`) sont lus par `world/terrainView.ts` : le dessus d'un
+  gradin (`relief-tread-*`, 64 × 10), la marche (`relief-riser-*`, 64 × 25, accrochée par le haut : une marche à moitié enterrée garde
+  ce qui pend), les racines d'un arbre du gradin (`relief-roots-*`, posées sur la marche sous un objet à `roots` de props.json), la
+  terre en coupe (`relief-cut-*`, 8 variantes à bord commun, tirées par case). Les autres faces (`relief-face-earth-*`, au-dessus de
+  l'eau `relief-face-wet-*`, la lèvre `relief-lip-*`, les raccourcis `relief-face-raked-*`) gardent leur dessin. Le rideau et les
+  avancées (`lane-curtain`, `lane-overhang-*`, capacité `vault`) restent au catalogue, hors des cartes.
 - **Sauvegarde** : rien de la hauteur n'est gardé (elle se recalcule des cartes).
 - **Limites en attente** (d'une mécanique ou d'un dessin) :
   - **la vraie chute** : un arbre abattu par-dessus le bord du plateau reste couché au niveau de son pied ; une bille s'arrête au bord ;
     Xéros ne tombe pas dans l'eau (il s'arrête au bord) ; sauter dans l'eau et couler viendront avec la nage ;
-  - **l'arbre penché qu'on abat** : la voûte se fait sans (rideau, avancées, arbres ordinaires) ; une sorte d'arbre penchée demanderait
-    tous ses dessins d'abattage ;
-  - **couper le rideau et les avancées** : leur récolte n'est pas dessinée ;
-  - **les vues tournées du rideau et des avancées** (`-r1` à `-r3`) : le couloir est est-ouest, elles ne servent pas (`VIEWS_TODO`) ;
+  - **abattre les plantes des gradins** (décision de Grégoire : plus tard) : leurs données d'abattage et leurs dessins d'étapes ;
+  - **monter sur le dessus de la masse** côté ferme : sa pente plantée est trop raide pour lui (la question 32 voulait un sol où l'on
+    marche, rejoint par une pente : à reprendre avec une pente de 20 % au plus) ;
+  - **les vues tournées du rideau et des avancées** (`-r1` à `-r3`), hors des cartes : elles ne servent pas (`VIEWS_TODO`) ;
   - **la petite carte** ne montre pas le relief (le plateau a la couleur de ses tuiles).
 - Tests : `tools/test-hauteurs.ts` (test:fast : les formes, les pas, l'eau, les lapins, `pick`, le lancer, les vraies cartes),
-  `npm run test:relief` (le chemin creux aller et retour, les refus, les marches d'essai), le contrat du relief dans `test:contrats` ;
+  `npm run test:relief` (le chemin creux aller et retour, les gradins qu'il ne monte pas, les refus, les marches d'essai), le contrat du relief dans `test:contrats` ;
   captures en jeu : `npx tsx tools/essai-relief-jeu.ts` (`.art-preview/relief-jeu-*.png`).
 
 ## La petite carte (décidé les 3 et 4 novembre 2026, chantier « petite carte »)

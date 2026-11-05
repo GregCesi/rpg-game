@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { creatures, maps, mobility } from '../src/content';
 import type { MapData, Relief } from '../src/content/types';
 import terrain from '../src/generated/terrain.json';
-import { deepAt, heightAt, heightText, pick, plantedAt, refusalText, stepRefusal, wallAt } from '../src/world/relief';
+import { deepAt, heightAt, heightText, pick, refusalText, stepHeight, stepRefusal, wallAt } from '../src/world/relief';
 import { landing } from '../src/world/throw';
 
 const WATER = (terrain as Record<string, { deep: number[] }>).world.deep[0];
@@ -80,7 +80,10 @@ for (const [h, up, dn] of [
 }
 assert.equal(heightText(120), '1,2 m');
 assert.equal(heightText(80), '80 cm');
-assert.equal(heightText(99.8), '1 m', 'arrondi, 99,8 cm se dit 1 m');
+assert.equal(heightText(99.8), '1 m', 'au centimètre, 99,8 cm se dit 1 m');
+assert.equal(heightText(125), '1,25 m', 'la vraie hauteur, jamais arrondie à l’œil');
+assert.equal(heightText(87.4), '87 cm');
+assert.equal(heightText(237), '2,37 m');
 assert.equal(heightText(500), '5 m');
 
 // --- un talus en long et un couloir creusé : la crête, le flanc, le sol, le talus intérieur
@@ -157,13 +160,32 @@ if (ferme.relief) {
   }
   near(heightAt(ferme, west.x, west.y), 500, 2, 'ferme : le couloir finit sur le plateau');
   near(heightAt(ferme, east.x, east.y), 0, 2, 'ferme : le couloir commence sur la ferme');
-  // la matière des faces (CADRAGE 12.11) : flanc extérieur planté sur la terre ferme, terre sombre dedans, sur l'eau, à la falaise
-  near(plantedAt(ferme, 52 * T, 63.5 * T), 1, 0, 'ferme : le flanc extérieur du talus, planté');
-  near(plantedAt(ferme, 52 * T, east.y), 0, 0, 'ferme : la paroi intérieure du couloir, terre sombre');
-  near(plantedAt(ferme, 45 * T, 63.5 * T), 0, 0, 'ferme : le flanc au-dessus de l’eau, terre sombre');
-  near(plantedAt(ferme, 41 * T, 30 * T), 0, 0, 'ferme : la falaise, terre sombre');
-  const edge = plantedAt(ferme, 47.8 * T, 63.5 * T);
-  assert.ok(edge > 0 && edge < 1, `ferme : le passage d'une matière à l'autre sur la rive est (${edge})`);
+  // les gradins (CADRAGE 13.0) : 4 marches de 1,25 m et des gradins de 50 cm de chaque côté du chemin, le dessus à 5 m
+  assert.ok(lane.steps, 'ferme : le chemin creux est en gradins');
+  const mid = lane.points[4];
+  for (const side of [-1, 1]) {
+    const at = (cm: number) => heightAt(ferme, mid.x, mid.y + (side * cm) / 5);
+    near(at(100), 0, 1, `ferme : le chemin (${side})`);
+    near(at(150), 125, 1, `ferme : le gradin 1 (${side})`);
+    near(at(200), 250, 1, `ferme : le gradin 2 (${side})`);
+    near(at(250), 375, 1, `ferme : le gradin 3 (${side})`);
+    near(at(300), 500, 1, `ferme : le dessus (${side})`);
+    near(at(800), 500, 1, `ferme : 6 m de dessus au-delà du trou (${side})`);
+    // la marche est droite : 1 px avant elle, encore le chemin ; 1 px après, le gradin
+    near(at(120), 0, 1, `ferme : le pied de la marche 1 (${side})`);
+    near(at(130), 125, 1, `ferme : le haut de la marche 1 (${side})`);
+    const from = { x: mid.x, y: mid.y + side * 20 };
+    const r = stepRefusal(ferme, from, { x: mid.x, y: mid.y + side * 30 }, mobility);
+    assert.equal(r && refusalText(r), 'Trop haute pour lui (1,25 m).', `ferme : on ne monte pas sur les gradins (${side})`);
+  }
+  // vers le plateau, le sol monte et les marches du bas s'enterrent une à une : la marche restante ne dépasse jamais 1,25 m
+  const st = { rise: 125, tread: 50, count: 4 };
+  near(stepHeight(st, 10, 200, 500), 200, 0, 'gradins : le gradin 1 enterré, le sol s’élargit');
+  near(stepHeight(st, 60, 200, 500), 250, 0, 'gradins : le gradin 2 dépasse de 50 cm');
+  near(stepHeight(st, 110, 200, 500), 375, 0, 'gradins : le gradin 3');
+  near(stepHeight(st, -1, 200, 500), 200, 0, 'gradins : le sol');
+  near(stepHeight(st, 500, 0, 300), 300, 0, 'gradins : le dessus plus bas (le bout de la masse)');
+  near(stepHeight(st, 60, 0, 300), 50, 0, 'gradins : sous un dessus plus bas, les marches gardent leur hauteur depuis le haut');
   for (const id of ['bois-du-nord', 'bois-du-sud', 'bois-de-la-riviere', 'foret-profonde-nord', 'foret-profonde', 'foret-profonde-sud', 'foret-des-ronces'])
     near(heightAt(maps[id], 10 * T, 60 * T), 500, 1, `${id} : sur le plateau`);
 }
