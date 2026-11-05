@@ -866,3 +866,225 @@ posent faîtage est-ouest, pignon sur la rue, façade au sud sur une petite cour
 disparaissent du sud ; la lavandière passe au bout sud. **h1 et h2** (faîtage nord-sud aujourd'hui) **tourneront** à leur retouche ;
 la rue (`village-rue.png`) est remontée sur ce découpage, les maisons pas encore tournées (le couvreur déborde encore sur la ruelle).
 29 foyers.
+
+---
+
+## 13. La place en détail (essai, 5 novembre ; rien ne change dans le jeu)
+
+Repris du plan validé : les quarts coupés en diagonale, chaque huitième avec son bout de place, le panneau au milieu. Les emprises sont
+dans `art/proposals/village-plan-data.ts` (parcelles `no`, `ne-n`, `ne-e`, `se-s`, `se-e`, `so`), les bâtiments dans
+`art/proposals/place-nord.ts` et `place-sud.ts` (interface `place-types.ts`), les planches par `npx tsx tools/essai-place.ts`.
+
+### 13.1 La règle qui commande la place : la face sud
+
+Le jeu ne montre que les faces sud (section 8.1), et **un bâtiment haut cache ce qui est juste au nord de lui** (son mur et son toit
+montent à l'écran sur le sol qui est derrière). Deux conséquences pour la place :
+
+- **Les quarts nord** (la ferme du riche, le bûcheron, le menuisier) ouvrent au sud, sur la rue de l'ouest ou de l'est : **leur devant
+  se voit**, c'est le bon côté de la place.
+- **Les quarts sud** (la ferme rivale, la mercière, la tailleuse) ont la rue au nord : une boutique qui ouvrirait sur la rue ne
+  montrerait que son dos et son toit. **Je propose qu'ils ouvrent au sud**, sur une cour ou une galerie où l'on entre depuis la rue
+  du sud ou la ruelle de l'est, et que **ce qui se vend sur la place soit à la pointe du huitième, dégagé**, assez loin du bâtiment
+  pour ne pas être caché (l'étal de légumes). Question 16.
+
+### 13.2 Le quart nord-ouest : la boutique de la ferme du riche
+
+- **Qui** : la ferme du riche y vend ce que les autres n'ont pas ; **le commis** de la ferme tient la boutique, logé avec sa femme dans
+  la chambre de derrière. Les jours de marché, la femme du coq passe voir.
+- **Les bâtiments** : la **boutique** sur la rue de l'ouest, 11,20 × 8 m hors œuvre, façade au sud ; à la pointe, **l'étal luxueux**,
+  4,80 × 4 m, sur le bord de la place ; au fond du quart, **la réserve** (9,60 × 6,40 m) et une cour.
+- **Matières, couverture** : la maison de pierre du riche, comme son coq en plus simple : moellons enduits à la chaux, encadrements et
+  angles de pierre de taille (les pierres du coq), **laves** ; une fenêtre vitrée sur la rue, la seule de la place.
+- **Plan** (la rue au sud) :
+
+```
+ x : 0  50                          640 680          1070 1120      N ↑
+ y=0  #############################################################
+      ## RÉSERVE FRAÎCHE             ## CHAMBRE DU COMMIS        ##
+      ##  claies à fromages, jarres  ##  lit, coffre             ##
+      ##  de miel, tonnelets         [p]                          ##
+ y=360##---------[p]-----------------##-------------------------##
+      ## BOUTIQUE : le comptoir de chêne sculpté (2,40 m),        ##
+      ##  derrière lui les étagères (pots de miel, cire, épices,   ##
+      ##  fromages affinés), le présentoir à gradins devant        ##
+ y=750##--[VITRAIL]-------[PORTE]------[F]------------------------##     étal luxueux à la pointe →
+      #############################################################
+```
+
+- **Ce qu'on vend et comment** : miel et cire (pots de grès, pains de cire, cierges), fromages affinés sur claies, épices de la ville
+  en boîtes, pots de confiture, une jarre d'huile ; dans la boutique, sur **le comptoir sculpté** et les **étagères** ; dehors, sur
+  **l'étal luxueux** : un **comptoir sculpté** sous un **auvent de toile rayée** aux couleurs du coq (guède et garance), sur deux
+  poteaux tournés, un **présentoir à gradins** couvert d'une nappe, les produits en pyramide ; **une enseigne** au pot de miel et au
+  coq.
+- **Existant** : `table`, `chest`, `bed`, `jar`, `barrel`, `crate`, `sack`, `candle` ; du coq : les pierres de taille, la lave, le
+  vitrail ; du module de pierre : le mur enduit.
+- **Nouveau** : `luxury-counter` (le comptoir sculpté, 240 × 70 × 95), `striped-awning` (l'auvent de toile rayée, 480 × 300 × 260,
+  sur poteaux tournés), `tiered-display` (le présentoir à gradins, 120 × 60 × 100), `shop-shelves` (les étagères de boutique, 200 × 40 ×
+  180), `cheese-rack` (la claie à fromages), `honey-pot` (pot de miel, une vue ronde), `wax-cake` (pain de cire), `spice-box`,
+  `hanging-sign` (l'enseigne pendue à sa potence, un dessin par métier).
+
+### 13.3 Le huitième nord-est, côté rue du nord : la boutique du bûcheron
+
+- **Qui** : le bûcheron y vend son bois ; **il vit dans sa cabane en lisière** : la boutique n'a pas de logis. Il y vient avec sa
+  charrette les jours de vente ; le reste du temps, le bois attend sous l'appentis.
+- **Les bâtiments** : le **magasin**, un hangar ouvert au sud, 9,60 × 6,40 m, au fond du huitième (dans le large) ; devant lui, au sud,
+  **le chantier de vente** le long de la rue du nord : les tas de bois du jeu, un appentis bas pour les fagots.
+- **Matières, couverture** : poteaux et bardage de planches (la grange, en plus petit), ouvert au sud ; **bardeaux** ; bois patiné.
+- **Plan** :
+
+```
+ x : 0                                   960        N ↑
+ y=0  P=====bardage=====P=====bardage=====P
+      | planches debout, perches,          |
+      | piles de bûches sèches             |
+      | le billot, le chevalet, la scie    |
+ y=640P - - - - - - (ouvert au sud) - - - - P
+         comptoir (une planche sur deux billots)
+      CHANTIER : tas de quartiers, de bûches d'1 m, de perches, de fagots ; l'enseigne à la hache
+```
+
+- **Ce qu'on vend et comment** : bûches, quartiers, perches, fagots, planches, piquets, bardeaux ; **en tas** (les tas calculés du
+  jeu, comptés), **debout contre le bardage** (perches, planches), **en fagots** ; un **comptoir** fait d'une planche sur deux
+  billots ; **une enseigne** à la hache et à la bûche.
+- **Existant** : les tas de bois du jeu (pièces de bois, quartiers, fagots), `chopping-block`, `faggot`, `board-wall`, `wood-piece` ;
+  du module de bois : `sawhorse`, `shingle-shed-roof-low`.
+- **Nouveau** : `plank-counter` (le comptoir sur billots, 200 × 50 × 90), `wood-rack` (le râtelier où les perches et les planches
+  tiennent debout), `hanging-sign` (motif : la hache).
+
+### 13.4 Le huitième nord-est, côté rue de l'est : la boutique abandonnée de l'ancien menuisier
+
+- **Qui** : personne. Le menuisier est mort ; sa veuve vit avec leurs deux enfants dans la petite maison de la rue de l'ouest (`o-s3`)
+  et n'a pas pu reprendre l'atelier. On pourra le reprendre un jour (une quête, une boutique pour Xéros ?).
+- **Le bâtiment** : 11,20 × 6,40 m, façade au sud sur la rue de l'est : l'atelier (6,40 m) et le logis (4,80 m). Pan de bois **vieux**,
+  torchis chaulé **écaillé**, bardeaux **dont il manque des rangs** ; **les volets cloués** de planches en croix ; **l'enseigne tombée**
+  au pied du mur, sa potence vide ; **l'herbe haute** contre le solin.
+- **Plan** :
+
+```
+ x : 0      160     320     480     640     800     960     1120    N ↑
+ y=0  P------P-------P-------P-------P-------P-------P-------P
+      | ATELIER : l'établi, une chaise pas finie,  | LOGIS : un châlit vide, |
+      | des planches, des outils rouillés,          [p] une table, un coffre   |
+      | la poussière                                |                         |
+ y=640P--[F cloué]--P--[PORTE à deux battants]--P---P--[F cloué]--P--[porte]-P
+         enseigne tombée                herbes hautes
+```
+
+- **Existant** : le kit de la maison de Xéros au bois vieux, `workbench`, `table`, `chest`, `bed`, `crate` ; du module de bois :
+  `lime-panel-flaking`, `twin-plank-door`, `sawhorse`.
+- **Nouveau** : `nailed-shutter` (le volet cloué), `fallen-sign` (l'enseigne tombée) et `sign-bracket` (la potence vide),
+  `tall-weeds` (l'herbe haute), `shingle-roof-damaged` (les bardeaux dont il manque des rangs), `unfinished-chair` (la chaise pas finie).
+
+### 13.5 Le huitième sud-est, côté rue du sud : le dépôt et l'étal de la ferme rivale
+
+- **Qui** : la ferme rivale ; **ses filles** tiennent l'étal les jours de marché, son fils aîné (le dépanneur du village) apporte les
+  légumes en charrette. Personne n'y dort.
+- **Les bâtiments** : à la pointe, sur le bord de la place, **le grand étal de légumes**, 6,40 × 2,40 m, tourné vers la place ; au
+  large du huitième, **le dépôt**, une maison simple de 8 × 6,40 m, façade au sud sur la ruelle des quarts, à 5,60 m de l'étal (pour ne
+  pas le cacher).
+- **Matières, couverture** : le dépôt en pan de bois et torchis chaulé, chaume (comme les maisons modestes) ; l'étal **ne paie pas de
+  mine** : des planches brutes sur des tréteaux, un auvent de planches mal jointes sur quatre perches, **sans fond** (on voit les
+  légumes de toute la place).
+- **Plan** :
+
+```
+ ÉTAL (6,40 × 2,40 m), face à la place (nord-ouest)            DÉPÔT (8 × 6,40 m), façade au sud
+   ┌ auvent de planches sur 4 perches ┐                          P------P------P------P------P
+   │ plateaux sur tréteaux : choux,   │                          | cageots vides, paniers,      |
+   │ raves, poireaux, oignons, pommes │                          | sacs de pommes de terre,     |
+   │ cageots et paniers à terre devant│                          | la balance, la charrette     |
+   └ la balance à plateaux ───────────┘                          P--[F]--P--[PORTE]--P--[F]--P
+```
+
+- **Ce qu'on vend et comment** : les légumes de saison en tas sur les plateaux, en **cageots** (du vannier) et en **paniers** posés à
+  terre devant, une **balance à plateaux**, une ardoise pour les prix ; pas d'enseigne : tout le monde sait.
+- **Existant** : `crate`, `sack`, `barrel`, `bucket-water`, le kit de Xéros pour le dépôt (torchis chaulé, chaume) ; du module de bois :
+  les tréteaux-chevalets (`sawhorse`).
+- **Nouveau** : `rough-stall` (l'étal de planches sur tréteaux, une travée de 3,20 m), `plank-awning-poles` (l'auvent de planches sur
+  perches), `vegetable-crate` (le cageot de légumes, en trois tirages : choux, raves et poireaux, pommes), `vegetable-basket`,
+  `scale` (la balance à plateaux), `price-slate`.
+
+### 13.6 Le huitième sud-est, côté rue de l'est : la mercière
+
+- **Qui** : **la mercière, sœur du coq**, veuve d'un marchand de la ville, et sa fille. Elle a de quoi : elle vit de sa boutique et de
+  ce que son frère lui laisse. La boutique en bas, **son logis à l'étage**.
+- **Le bâtiment** : 9,60 × 8 m hors œuvre, à étage ; rez de pierre enduite (comme la famille du coq), étage de pan de bois chaulé,
+  **tuiles plates** ; **façade et porte de boutique au sud** (question 16), sur sa petite cour, où l'on entre par la ruelle de l'est ;
+  côté rue, une fenêtre et un volet-comptoir (l'ouvroir) pour les jours de marché.
+- **Plan, rez-de-chaussée** :
+
+```
+ x : 0  50                             910 960      N ↑ (la rue de l'est)
+ y=0  ##########################################
+      ## CUISINE, ARRIÈRE-BOUTIQUE ║ escalier   ##
+      ##  âtre, table, réserve    ║ de bois     ##
+ y=380##-----------[p]-----------------[p]------##
+      ## BOUTIQUE : le comptoir, le casier à   ##
+      ##  tiroirs (fils, aiguilles, boutons),  ##
+      ##  le présentoir à rubans               ##
+ y=800##--[F]------[PORTE]--------[F]----------##
+            cour de la mercière (vers la ruelle de l'est)
+```
+
+- **Étage** : sa chambre et celle de sa fille, une petite salle.
+- **Ce qu'on vend et comment** : fils de lin et de laine en écheveaux, aiguilles, épingles, boutons d'os et de corne, rubans, galons,
+  dés à coudre, petits pots (pommades) ; sur **un comptoir**, dans **un casier à tiroirs**, sur **un présentoir à rubans** ; **une
+  enseigne** à l'aiguille et au fil.
+- **Existant** : `chest`, `table`, `bed`, `stool` ; du module de pierre : `rendered-wall`, `wooden-stair`, `close-stud-panel`,
+  `chair` ; du coq : le plancher et l'étage.
+- **Nouveau** : `haberdashery-cabinet` (le casier à tiroirs, 160 × 45 × 180), `ribbon-rack` (le présentoir à rubans), `shop-counter`
+  (le comptoir simple, 200 × 60 × 95), `shop-flap` (l'ouvroir : le volet qui se rabat en comptoir sur la rue, comme le volet d'étal du
+  jeu), `hanging-sign` (motif : l'aiguille).
+
+### 13.7 Le quart sud-ouest : la tailleuse et le frère du forgeron
+
+- **Qui** : **la tailleuse** (elle coud et vend les vêtements ; la fille du coq est son apprentie, le jour) et **son mari, le frère du
+  forgeron**, qui travaille le cuir (sacs, ceintures, fourreaux, outres, bottes rapiécées) et vend l'équipement d'aventure, avec ce que
+  fait son frère (couteaux, haches, pointes, crochets). Leur logis à l'étage. Le charbon de la forge vient d'un village du nord, le
+  métal de la ville : c'est lui qui les fait venir.
+- **Le bâtiment** : **un seul grand bâtiment tout en bois, à étage, sans étal**, 14,40 × 9,60 m ; **façade au sud** sur sa cour
+  (question 16), sous **une galerie de bois** à l'étage qui fait auvent devant les deux boutiques ; on entre dans la cour par un
+  portail sur la rue du sud. Ossature de bois, **bardage à clins** (planches horizontales qui se recouvrent : la seule maison de
+  planches de la place, et la plus soignée), **bardeaux**, bois patiné.
+- **Plan, rez-de-chaussée** :
+
+```
+ x : 0                          720 740                         1440    N ↑ (la rue de l'ouest)
+ y=0  P========================P=P==========================P
+      | ATELIER DE COUTURE      ║ ║ ATELIER DU CUIR            |
+      |  table de coupe, coupons║E║  établi de bourrelier, peaux|
+      |  rouet, mannequin d'osier║S║  outils, la meule          |
+ y=420P----------[p]-----------P C P----------[p]-------------P
+      | BOUTIQUE DE VÊTEMENTS   ║ ║ BOUTIQUE D'AVENTURE          |
+      |  perches à habits,       ║ ║  râtelier (sacs, outres,     |
+      |  comptoir, coupons       ║ ║  cordes, lanternes), le      |
+      |                          ║ ║  présentoir à couteaux       |
+ y=960P--[F]--[PORTE]--[F]-----P-P--[F]--[PORTE]--[F]-------P
+      ══════════ galerie de bois (l'étage, 1,60 m de profondeur), auvent des deux portes ══════════
+                  COUR (l'enseigne aux ciseaux, l'enseigne au sac) ; portail sur la rue du sud
+```
+
+- **Étage** : la salle et la cuisine, leur chambre, une réserve d'étoffes et de cuirs ; la galerie au sud.
+- **Ce qu'on vend et comment** : vêtements (chemises, cottes, chaperons, capes) **pendus à des perches**, étoffes en **coupons** sur
+  la table, un **mannequin d'osier** habillé ; sacs, besaces, outres, ceintures, fourreaux, cordes, lanternes sur **un râtelier**,
+  couteaux et haches du forgeron sur **un présentoir** de bois ; **deux enseignes** (les ciseaux, le sac).
+- **Existant** : `table`, `chest`, `bed`, `bench`, `stool`, `barrel`, `lantern`, `rope-coil`, `grindstone` (la meule de la forge) ;
+  du coq : `tailor-table`, `cloth-bolt` ; du module de bois : `spinning-wheel` ; du module de pierre : `wooden-stair`.
+- **Nouveau** : `clapboard-wall` (le bardage à clins, sur l'ossature), `timber-gallery` (la galerie de bois à l'étage, ses poteaux, son
+  garde-corps), `clothes-rack` (la perche à habits, 200 × 40 × 170, et ses vêtements), `dress-form` (le mannequin d'osier), `gear-rack`
+  (le râtelier d'équipement, 200 × 40 × 180), `knife-display` (le présentoir à couteaux et à haches), `saddler-bench` (l'établi du
+  cuir), `leather-hides` (les peaux pendues), `yard-gate` (le portail de cour), `hanging-sign` (motifs : les ciseaux, le sac).
+
+### 13.8 Le panneau des nouvelles
+
+- Au centre de la place, 1,60 × 0,30 m, 2,10 m de haut : **deux poteaux** plantés, **un tableau de planches**, **un petit toit de
+  bardeaux** à deux pans, des **feuillets** cloués (avis du sire, ventes, objets perdus : plus tard, les quêtes), une **pierre** au pied
+  pour monter lire. Bois patiné, vues `symmetric` (on le lit des deux côtés).
+- **Nouveau** : `notice-board` (le panneau), `notice-sheet` (un feuillet, à poser).
+
+### 13.9 Les enseignes
+
+Une seule pièce, `hanging-sign` : une potence de fer forgé (du forgeron) et un panneau de bois peint pendu dessous, **un motif par
+métier** (des `variants`) : le pot de miel au coq (ferme du riche), la hache (bûcheron), l'aiguille (mercière), les ciseaux (la
+tailleuse), le sac (son mari) ; tombée, celle du menuisier (`fallen-sign`, un rabot). Pas d'enseigne à la ferme rivale ni au panneau.
+

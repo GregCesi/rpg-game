@@ -102,7 +102,7 @@ export const PARCELS: Parcel[] = [
     id: 'no', zone: 'village', shape: { rect: [2688, 1504, 3264, 2080] }, kind: 'shop', fate: 'new',
     label: 'Ferme du riche : la boutique',
     who: "La ferme du riche prend tout le quart : sa boutique sur la rue de l'ouest, l'étal luxueux sous un auvent tourné vers la place (produits rares : miel, fromages affinés, épices de la ville, cire), la cour et la réserve derrière. Tenue par un commis de la ferme.",
-    buildings: [[2720, 1888, 2976, 2048], [2976, 1856, 3072, 1920], [2720, 1568, 2912, 1696]],
+    buildings: [[2720, 1888, 2944, 2048], [2960, 1952, 3056, 2032], [2720, 1568, 2912, 1696]],
     yards: [[2720, 1696, 3200, 1856]],
   },
   {
@@ -122,13 +122,14 @@ export const PARCELS: Parcel[] = [
     id: 'se-s', zone: 'village', shape: tri([3360, 2176], [3360, 2752], [3936, 2752]), kind: 'farm', fate: 'new',
     label: 'Ferme rivale : dépôt et étal de légumes',
     who: "Personne n'y dort. La ferme rivale y a une maison simple qui sert de dépôt (paniers, cageots, sacs) et, tourné vers la place, un grand étal de légumes en planches qui ne paie pas de mine (deux travées d'étal, des cageots à terre devant).",
-    buildings: [[3392, 2496, 3552, 2624], [3392, 2432, 3552, 2480]],
+    buildings: [[3392, 2560, 3552, 2688], [3392, 2400, 3520, 2448]],
   },
   {
     id: 'se-e', zone: 'village', shape: tri([3360, 2176], [3936, 2176], [3936, 2752]), kind: 'shop', fate: 'new',
     label: 'La mercière',
     who: "La mercière, sœur du coq, veuve, et sa fille. La boutique au rez-de-chaussée sur la rue de l'est (fils, aiguilles, rubans, boutons, petits pots), son logis à l'étage.",
     buildings: [[3712, 2208, 3904, 2368]],
+    yards: [[3792, 2400, 3936, 2600]],
   },
   {
     id: 'so', zone: 'village', shape: { rect: [2688, 2176, 3264, 2752] }, kind: 'shop', fate: 'new',
