@@ -27,7 +27,7 @@ import { CM_PER_PX, CONTOUR_CM } from '../src/content/gabarit';
 import type { BuildPlaced, BuildPlan, PileWood, PropDef, WoodPiece } from '../src/content/types';
 import { variantImage } from '../src/content/views';
 import { wallPalette, wallStones } from '../src/generated/wallStones';
-import { boxOf, overlaps, planPieces, type Box3, type BuildPiece } from '../src/world/build';
+import { boxOf, overlaps, planPieces, swung, type Box3, type BuildPiece } from '../src/world/build';
 import { formView } from '../src/world/natural';
 import { roofShadow } from '../src/world/roofShadow';
 import { runLayout, runPx, wallOf, wallRuns } from '../src/world/wallRuns';
@@ -40,7 +40,7 @@ import { world, woodAges } from '../art/palette';
 import { blank, blit, rect, text, textWidth, toPng, type Img, type RGBA } from './lib/world-render';
 
 const PX = CM_PER_PX; // 5 cm par pixel
-type Mode = 'avant' | 'apres';
+export type Mode = 'avant' | 'apres';
 
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Images
@@ -50,7 +50,7 @@ function readImg(path: string): Img {
   const p = PNG.sync.read(readFileSync(path));
   return { w: p.width, h: p.height, data: new Uint8Array(p.data) };
 }
-function png(key: string): Img | undefined {
+export function png(key: string): Img | undefined {
   if (!pngCache.has(key)) pngCache.set(key, existsSync(`src/generated/${key}.png`) ? readImg(`src/generated/${key}.png`) : null);
   return pngCache.get(key) ?? undefined;
 }
@@ -62,7 +62,7 @@ for (const line of readFileSync('src/generated/assets.ts', 'utf8').split('\n')) 
   if (m) SHEETS.set(m[1], { fw: Number(m[2]), fh: Number(m[3]), anims: JSON.parse(m[4]) });
 }
 
-function crop(src: Img, x: number, y: number, w: number, h: number): Img {
+export function crop(src: Img, x: number, y: number, w: number, h: number): Img {
   const out = blank(w, h, [0, 0, 0, 0]);
   for (let j = 0; j < h; j++)
     for (let i = 0; i < w; i++) {
@@ -73,7 +73,7 @@ function crop(src: Img, x: number, y: number, w: number, h: number): Img {
     }
   return out;
 }
-function frameOf(sheet: string, n: number): Img {
+export function frameOf(sheet: string, n: number): Img {
   const s = SHEETS.get(sheet);
   const img = png(sheet);
   if (!s || !img) throw new Error(`essai-hauteurs : pas de planche « ${sheet} »`);
@@ -89,14 +89,14 @@ function over(dst: Img, x: number, y: number, c: ArrayLike<number>): void {
   for (let k = 0; k < 3; k++) dst.data[i + k] = Math.round((c[k] * sa + dst.data[i + k] * da * (1 - sa)) / oa);
   dst.data[i + 3] = Math.round(oa * 255);
 }
-function overImg(dst: Img, src: Img, x: number, y: number): void {
+export function overImg(dst: Img, src: Img, x: number, y: number): void {
   for (let j = 0; j < src.h; j++) for (let i = 0; i < src.w; i++) over(dst, x + i, y + j, src.data.subarray((j * src.w + i) * 4, (j * src.w + i) * 4 + 4));
 }
-const hex = (h: string): RGBA => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), h.length === 9 ? parseInt(h.slice(7, 9), 16) : 255];
+export const hex = (h: string): RGBA => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), h.length === 9 ? parseInt(h.slice(7, 9), 16) : 255];
 const opaque = (img: Img, x: number, y: number) => x >= 0 && y >= 0 && x < img.w && y < img.h && img.data[(y * img.w + x) * 4 + 3] > 0;
 
 /** Une grille des dessins proposés en image, dans la rampe du bois à l'âge voulu. */
-function propoImg(key: string, age: 'new' | 'worn' | 'old' = 'new'): Img {
+export function propoImg(key: string, age: 'new' | 'worn' | 'old' = 'new'): Img {
   const g = proposals[key];
   if (!g) throw new Error(`essai-hauteurs : pas de dessin proposé « ${key} »`);
   const pal: Record<string, string> = { ...world, ...woodAges[age] };
@@ -107,7 +107,7 @@ function propoImg(key: string, age: 'new' | 'worn' | 'old' = 'new'): Img {
   return out;
 }
 
-function woodImg(piece: WoodPiece): Img {
+export function woodImg(piece: WoodPiece): Img {
   const { w, h } = woodSize(piece.size, lookOf(piece), piece.axis, piece.length);
   const out = blank(w, h, [0, 0, 0, 0]);
   const src = sheetOf(piece);
@@ -154,7 +154,7 @@ function gridImg(grid: string[]): Img {
 /** Les hauteurs nouvelles des objets que le cadrage change (cm). */
 const PROP_H: Record<string, number> = { 'rough-sill-wall': 50, 'narrow-sill-wall': 50, 'plank-door': 210 };
 
-interface Opts {
+export interface Opts {
   mode: Mode;
   /** Variante B de la cabane : le volet de cabane de 60 × 60 à la place du volet de 40. */
   cabinShutter?: boolean;
@@ -164,6 +164,8 @@ interface Opts {
   noRoof?: boolean;
   /** Coupe : les pièces posées à cette hauteur (cm) ou plus haut sont ôtées (la fenêtre du mur est, vue d'en haut). */
   cutAbove?: number;
+  /** Les volets ouverts (world/build.ts `swung`) : pour la planche du volet de cabane (tools/essai-volet-cabane.ts). */
+  openShutters?: boolean;
 }
 
 /** Une pièce de couverture ou ce qui la suit (pignon, faîtage, conduit de cheminée). */
@@ -175,7 +177,7 @@ function hOf(p: BuildPlaced, o: Opts): number {
   const b = boxOf(p);
   if (o.mode === 'avant') return b.h;
   if ('prop' in p.piece) {
-    if (o.cabinShutter && p.piece.prop === 'plank-shutter') return 60;
+    if (o.cabinShutter && (p.piece.prop === 'plank-shutter' || p.piece.prop === 'plank-shutter-open')) return 60;
     return PROP_H[p.piece.prop] ?? b.h;
   }
   return lyingWood(p) ? b.h - CONTOUR_CM : b.h;
@@ -219,13 +221,13 @@ function propImg(p: BuildPiece, o: Opts): Img | undefined {
   const def = props[p.piece.prop];
   const suffix = p.view ? `-r${p.view}` : '';
   if (o.mode === 'apres' && p.piece.prop === 'plank-door') return propoImg(`plank-door${suffix}`, p.age ?? 'new');
-  if (o.cabinShutter && p.piece.prop === 'plank-shutter') return propoImg(`cabin-shutter${suffix}`, p.age ?? 'new');
+  if (o.cabinShutter && (p.piece.prop === 'plank-shutter' || p.piece.prop === 'plank-shutter-open')) return propoImg(`cabin-shutter${suffix}`, p.age ?? 'new');
   let key = formView(variantImage(def.image, p.variant), def.views, p.view, p.natural, has);
   if (def.aged) key = agedKey(key, p.age);
   return SHEETS.has(key) ? frameOf(key, 0) : png(key);
 }
 
-function pieceSprites(pieces: BuildPiece[], o: Opts): Sprite[] {
+export function pieceSprites(pieces: BuildPiece[], o: Opts): Sprite[] {
   const depths = depthsM(pieces, o);
   const look = new Map<number, { img: Img; x: number; y: number }>();
   for (const run of wallRuns(pieces)) {
@@ -322,12 +324,12 @@ function fillPoly(img: Img, pts: { x: number; y: number }[], c: RGBA): void {
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Une scène : un plan posé à l'origine, Xéros à côté
 
-const GROUND: RGBA = hex(world.g);
+export const GROUND: RGBA = hex(world.g);
 const SHADOW: RGBA = [43, 26, 16, 64];
-const XEROS = frameOf('xeros', SHEETS.get('xeros')!.anims['idle-down'].frames[0]);
+export const XEROS = frameOf('xeros', SHEETS.get('xeros')!.anims['idle-down'].frames[0]);
 
 /** Une scène rendue : son image et le coin haut gauche de l'image en px du monde (le plan à l'origine). */
-interface Scene {
+export interface Scene {
   img: Img;
   x0: number;
   y0: number;
@@ -352,7 +354,7 @@ function jointShade(canvas: Img, s: Sprite, under: Sprite, x0: number, y0: numbe
   }
 }
 
-function renderScene(pieces: BuildPiece[], o: Opts, xeros: { x: number; y: number } | undefined, pad = 12): Scene {
+export function renderScene(pieces: BuildPiece[], o: Opts, xeros: { x: number; y: number } | undefined, pad = 12): Scene {
   const report: string[] = [];
   for (const p of pieces) if (p.z > 0 && !supportsM(pieces, p, o).length) report.push(`${o.mode} : pièce sans appui ${JSON.stringify(p.piece).slice(0, 80)} z ${p.z}`);
   const sprites = pieceSprites(pieces, o);
@@ -372,9 +374,9 @@ function renderScene(pieces: BuildPiece[], o: Opts, xeros: { x: number; y: numbe
   return { img, x0, y0, report };
 }
 
-function planScene(name: string, o: Opts, xeros?: { x: number; y: number }): Scene {
+export function planScene(name: string, o: Opts, xeros?: { x: number; y: number }): Scene {
   const plan = loadPlan(o.mode === 'avant' ? `${name}-avant` : name);
-  const all = ided(planPieces(plan, { x: 0, y: 0, z: 0 }));
+  const all = ided(planPieces(plan, { x: 0, y: 0, z: 0 }).map((p) => (o.openShutters && 'prop' in p.piece && p.piece.prop === 'plank-shutter' ? swung(p) ?? p : p)));
   // sans toit : la couverture ôtée, et ce qui ne reposait que sur elle (la faîtière de la cabane sur ses pignons)
   const gone = new Set<number>();
   if (o.noRoof)
@@ -388,11 +390,11 @@ function planScene(name: string, o: Opts, xeros?: { x: number; y: number }): Sce
 }
 
 /** Un recadrage d'une scène sur un rectangle en px du monde. */
-const cut = (s: Scene, r: { x: number; y: number; w: number; h: number }): Img => crop(s.img, r.x - s.x0, r.y - s.y0, r.w, r.h);
+export const cut = (s: Scene, r: { x: number; y: number; w: number; h: number }): Img => crop(s.img, r.x - s.x0, r.y - s.y0, r.w, r.h);
 /** Le bord sud d'un plan (px du monde). */
-const southOf = (name: string) => Math.round(loadPlan(name).size.d / PX);
+export const southOf = (name: string) => Math.round(loadPlan(name).size.d / PX);
 /** Un recadrage calé sur le bord sud : de `up` px au-dessus à `down` px au-dessous, de x à x + w. */
-const band = (name: string, x: number, w: number, up: number, down = 8) => ({ x, y: southOf(name) - up, w, h: up + down });
+export const band = (name: string, x: number, w: number, up: number, down = 8) => ({ x, y: southOf(name) - up, w, h: up + down });
 
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Les tas de bois : woodPlaces (world/woodPile.ts) au rapport voulu
@@ -436,7 +438,7 @@ const SOFT: RGBA = [210, 196, 160, 255];
 const HOT: RGBA = [236, 160, 90, 255];
 const BG: RGBA = [40, 31, 24, 255];
 
-function enlarge(src: Img, k: number): Img {
+export function enlarge(src: Img, k: number): Img {
   const out = blank(src.w * k, src.h * k, [0, 0, 0, 0]);
   for (let y = 0; y < out.h; y++)
     for (let x = 0; x < out.w; x++) {
@@ -460,6 +462,8 @@ interface Panel {
   hot?: boolean;
 }
 
+/** La planche avant / après (lancée seule : `npx tsx tools/essai-hauteurs.ts` ; importée par tools/essai-volet-cabane.ts, elle ne se fait pas). */
+function main(): void {
 const W = 2600;
 const sheet = blank(W, 12000, BG);
 let cy = 16;
@@ -659,3 +663,6 @@ mkdirSync('.art-preview', { recursive: true });
 writeFileSync('.art-preview/hauteurs-avant-apres.png', toPng(out));
 console.log([...new Set(reports)].join('\n') || 'aucune pièce sans appui');
 console.log(`.art-preview/hauteurs-avant-apres.png : ${W} x ${cy + 10}`);
+}
+
+if (/essai-hauteurs\.ts$/.test(process.argv[1] ?? '')) main();

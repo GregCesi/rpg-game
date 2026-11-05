@@ -16,5 +16,5 @@
   "header": {"label": "boutisse 40", "image": "rubble-stone-ground-ns"},
   "closer": {"label": "moellon recoupe", "image": "long-rubble-stone-ground", "min": 3},
   "chips": {"label": "eclats", "image": "stone-chips"},
-  "piece": {"grid": 10, "min": 40}
+  "piece": {"grid": 10, "min": 40, "height": 50}
 }

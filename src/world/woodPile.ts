@@ -14,13 +14,13 @@
 // Au sol, les pièces sont côte à côte, à la largeur de leur collision (`woodBody`) plus un pixel (pour que le contour de celle de
 // derrière se lise) : est-ouest, l'une derrière l'autre ; nord-sud, l'une à côté de l'autre, au même écart (règle D, docs/STYLE.md
 // section 8 : l'emprise au sol est la vraie, tournée). Une couche monte de la hauteur de la section rapportée à sa largeur
-// (`woodDims`) : dans les creux, √3/2 de plus (des cercles qui se touchent) ; en rangée, toute la hauteur ; comptée depuis la
+// (`woodSection`, la section vraie) : dans les creux, √3/2 de plus (des cercles qui se touchent) ; en rangée, toute la hauteur ; comptée depuis la
 // pièce porteuse de devant, si bien que toutes les pièces s'emboîtent avec le même pas, dans les deux sens (est-ouest, le demi-pas
 // en arrière d'un creux fait partie de la montée : la 4e bille couvre le quart haut de celle du centre). L'image
 // de chaque place est la pièce elle-même, assemblée à sa longueur (`woodKey` ; world/woodTexture.ts en jeu, composeWood à l'aperçu).
 
 import type { PileDef, PilePlace, PileWood, WoodPiece } from '../content/types';
-import { woodDims } from './woodPiece';
+import { woodSection } from './woodPiece';
 import { ageOfWood, lookDef, lookOf, woodBody, woodKey, woodSize, woodTraits, type WoodAxis } from './woodShape';
 
 /** Une place de tas telle que le jeu la lit : celle de piles.json, ou celle d'un tas de bois, dont la pièce s'assemble (`wood`). */
@@ -65,8 +65,10 @@ function woodPlaces(w: PileWood, axis: Exclude<WoodAxis, 'up'>): Record<string, 
   const body = woodBody(w.size, look, axis, w.length);
   // la section vue de l'est-ouest : le nord-sud a la même (règle D)
   const ew = woodBody(w.size, look, 'ew', w.length);
-  const dims = woodDims({ ...piece, axis: 'ew' });
-  const ratio = dims.h / dims.d;
+  // la section vraie des deux côtés (chantier « hauteurs ») : 1 pour la bille, le rondin, la poutre ; la demi-bille, le quartier, la
+  // planche se serrent
+  const section = woodSection(piece);
+  const ratio = section.high / section.across;
   const rows = ROWS.has(look);
   const tri = TRIANGLES.has(look);
   // écart entre deux pièces voisines au sol (le pas), et montée d'une couche à l'écran : une pièce est à un pas de sa porteuse de

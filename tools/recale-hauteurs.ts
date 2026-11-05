@@ -2,7 +2,7 @@
 // (sa section, sans les 10 cm du contour de son dessin). Script d'un seul usage, rangé dans .poubelle/ après usage.
 //
 //   npx tsx tools/recale-hauteurs.ts            essai : les plans recalés dans .art-preview/hauteurs/<plan>.json, et le rapport
-//   npx tsx tools/recale-hauteurs.ts --write    les plans recalés écrits dans src/content/plans/
+//   npx tsx tools/recale-hauteurs.ts --write [plan…]    les plans recalés écrits dans src/content/plans/
 //
 // À lancer AVANT le changement du moteur : la hauteur d'avant est celle de boxOf (contour compris), la nouvelle en retire le contour.
 //
@@ -21,13 +21,15 @@ import { overlaps, solidOf } from '../src/world/build';
 import { CONTOUR_CM } from '../src/content/gabarit';
 
 const WRITE = process.argv.includes('--write');
+/** Les plans à traiter (tous par défaut) : les noms donnés après les options. */
+const ONLY = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 /** Les hauteurs nouvelles des objets de props.json que le cadrage change (cm). */
 const PROP_H: Record<string, number> = { 'rough-sill-wall': 50, 'narrow-sill-wall': 50, 'plank-door': 210 };
 
 const lying = (p: BuildPlaced) => 'wood' in p.piece && p.piece.wood.axis !== 'up';
 const hOld = (p: BuildPlaced) => solidOf(p).h;
-const hNew = (p: BuildPlaced) => ('prop' in p.piece && PROP_H[p.piece.prop]) || hOld(p) - (lying(p) ? CONTOUR_CM : 0);
-const label = (p: BuildPlaced) => ('wood' in p.piece ? `bois ${p.piece.wood.axis} L${p.piece.wood.length}${p.piece.wood.hewn ? ' (poutre)' : ''}` : p.piece.prop);
+const hNew = (p: BuildPlaced) => ('prop' in p.piece ? PROP_H[p.piece.prop] : undefined) || hOld(p) - (lying(p) ? CONTOUR_CM : 0);
+const label = (p: BuildPlaced) => ('wood' in p.piece ? `bois ${p.piece.wood.axis} L${p.piece.wood.length}${p.piece.wood.hewn ? ' (poutre)' : ''}` : 'prop' in p.piece ? p.piece.prop : p.piece.item);
 
 /** La descente : chaque pièce sur le nouveau dessus de ses appuis d'avant. */
 function settle(plan: BuildPlan, name: string, report: string[]): BuildPlan {
@@ -88,7 +90,7 @@ function cabin(old: BuildPlan): BuildPlan {
     west = log('ns', 440, 20, 0, NS(k));
     if (WINDOW.includes(k)) {
       east = [log('ns', 180, 320, 0, NS(k)), log('ns', 200, 320, 240, NS(k))];
-      if (k === WINDOW[0]) prop('plank-shutter', 340, 180, NS(k), 3);
+      if (k === WINDOW[0]) prop('cabin-shutter', 340, 180, NS(k), 3);
     } else east = [log('ns', 440, 320, 0, NS(k))];
     joints.push([west, north], [west, southL], [east[0], north], [east.at(-1)!, southR]);
   }
@@ -116,7 +118,7 @@ function cabin(old: BuildPlan): BuildPlan {
 const report: string[] = [];
 const outDir = WRITE ? 'src/content/plans' : '.art-preview/hauteurs';
 mkdirSync(outDir, { recursive: true });
-for (const name of ['cabane', 'maison-xeros', 'forge', 'grange', 'etal']) {
+for (const name of ['cabane', 'maison-xeros', 'forge', 'grange', 'etal'].filter((n) => !ONLY.length || ONLY.includes(n))) {
   const plan = JSON.parse(readFileSync(`src/content/plans/${name}.json`, 'utf8')) as BuildPlan;
   const next = name === 'cabane' ? cabin(plan) : settle(plan, name, report);
   if (name === 'cabane') report.push(`cabane : remontée, ${plan.pieces.length} → ${next.pieces.length} pièces, ${next.joints?.length} encoches`);

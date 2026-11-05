@@ -2,7 +2,9 @@
 
 Décidé le 31 octobre 2026 (chantier « bâtiments », finition de la cabane, réponse de Grégoire : « un volet de planches à la
 fenêtre, qui s'ouvre et se ferme en jeu ») : le volet de la fenêtre de la cabane (une ouverture de 60 × 40 cm dans le mur est). Le
-premier objet qui s'ouvre et se ferme.
+premier objet qui s'ouvre et se ferme. Depuis le chantier « hauteurs » (5 novembre 2026), la cabane a des rondins de 30 cm et une
+fenêtre de deux assises : elle prend le [volet de cabane](cabin-shutter.md) de 60 × 60 ; celui-ci reste aux fenêtres de la maison de
+Xéros.
 
 ## Identité
 - Clés : `plank-shutter` (fermé) et `plank-shutter-open` (ouvert), deux objets du monde (`props.json`) qui sont les deux états du
@@ -57,4 +59,4 @@ Le menuisier (`joiner`).
 
 ## Vérification
 - `.art-preview/plank-shutter*.png` ; `.art-preview/cabane.png` (la dernière image : le volet ouvert, en jeu).
-- `npm run test:cabane` le pose dans la fenêtre, sort du mode construction, l'ouvre et le referme avec E.
+- `npm run test:maison` le pose aux fenêtres de la maison de Xéros.

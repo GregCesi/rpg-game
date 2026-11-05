@@ -220,9 +220,9 @@ await playtest('etal', async ({ page, errors, load }) => {
   const shutter = await panel("volet d'étal", 'stall-shutter', 0, 40, 160, 160, 4, 100);
   await frame('le bardage, le volet fermé');
 
-  // 3. l'auvent, sa rive basse sur la sablière de devant (2,22 m), 40 cm au-delà des poteaux
+  // 3. l'auvent, sa rive basse sur la sablière de devant (2,12 m), 40 cm au-delà des poteaux
   await send({ kind: 'pick', piece: { prop: 'plank-awning' } });
-  const awning = await put('auvent', -20, -20, 280, 220, 222);
+  const awning = await put('auvent', -20, -20, 280, 220, 212);
   assert.equal(awning.view, 0);
   await frame("l'étal fini, fermé");
 

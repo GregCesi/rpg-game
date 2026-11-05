@@ -17,7 +17,7 @@
 
 import type { PieceStep, Ref, Step } from './maison-xeros';
 
-/** Une poutre du normal équarrie (20 × 20 cm, 30 avec son contour), de cette longueur, dans ce sens. */
+/** Une poutre du normal équarrie (20 × 20 cm ; son emprise compte encore le contour : 30), de cette longueur, dans ce sens. */
 export const beam = (axis: 'ew' | 'ns' | 'up', length: number): Ref => ({ wood: { size: 'normal', length, shape: 'round', hewn: 12, axis } });
 
 /** Une étape de pièce, et ce que la forge y ajoute : une pierre naturelle à sa taille type (la dalle). */
@@ -96,9 +96,9 @@ export function forgeSteps(): ForgeStep[] {
   for (const side of ['w', 'e'] as const) {
     const x = side === 'w' ? 0 : 840;
     const long = side === 'w' ? 'ouest' : 'est';
-    piece(`sablière ${side} nord`, beam('ns', 300), x, 0, 30, 300, { z: 342 });
+    piece(`sablière ${side} nord`, beam('ns', 300), x, 0, 30, 300, { z: 332 });
     joint('halving', `sablière ${side} nord`, `sablière n ${long}`);
-    piece(`sablière ${side} sud`, beam('ns', 300), x, 300, 30, 300, { z: 342 });
+    piece(`sablière ${side} sud`, beam('ns', 300), x, 300, 30, 300, { z: 332 });
     joint('halving', `sablière ${side} sud`, `sablière s ${long}`);
     joint('scarf', `sablière ${side} nord`, `sablière ${side} sud`);
     joint('mortise', `poteau ${x},280`, `sablière ${side} nord`);
@@ -106,9 +106,9 @@ export function forgeSteps(): ForgeStep[] {
   // les entraits, d'une sablière à l'autre (deux poutres de 3 m entées), à mi-bois
   for (const x of [280, 560]) {
     const long = x === 280 ? 'ouest' : 'est';
-    piece(`entrait ${x} nord`, beam('ns', 300), x, 0, 30, 300, { z: 342 });
+    piece(`entrait ${x} nord`, beam('ns', 300), x, 0, 30, 300, { z: 332 });
     joint('halving', `entrait ${x} nord`, `sablière n ${long}`);
-    piece(`entrait ${x} sud`, beam('ns', 300), x, 300, 30, 300, { z: 342 });
+    piece(`entrait ${x} sud`, beam('ns', 300), x, 300, 30, 300, { z: 332 });
     joint('halving', `entrait ${x} sud`, `sablière s ${long}`);
     joint('scarf', `entrait ${x} nord`, `entrait ${x} sud`);
   }
@@ -116,13 +116,13 @@ export function forgeSteps(): ForgeStep[] {
 
   // 5. les poinçons de 3 m (45°), les pignons à 45° sur les sablières des murs de bout, le faîtage sur les poinçons (6,42 m)
   for (const x of [280, 560]) {
-    piece(`poinçon ${x}`, beam('up', 300), x, 280, 40, 40, { z: 342 });
+    piece(`poinçon ${x}`, beam('up', 300), x, 280, 40, 40, { z: 332 });
     joint('mortise', `poinçon ${x}`, `entrait ${x} nord`);
   }
-  piece('pignon ouest', 'board-gable-tall', 0, 40, 20, 520, { view: 1, z: 342 });
-  piece('pignon est', 'board-gable-tall', 860, 40, 20, 520, { view: 3, z: 342 });
-  piece('faîtage ouest', beam('ew', 300), 0, 280, 300, 30, { z: 642 });
-  piece('faîtage est', beam('ew', 580), 300, 280, 580, 30, { z: 642 });
+  piece('pignon ouest', 'board-gable-tall', 0, 40, 20, 520, { view: 1, z: 332 });
+  piece('pignon est', 'board-gable-tall', 860, 40, 20, 520, { view: 3, z: 332 });
+  piece('faîtage ouest', beam('ew', 300), 0, 280, 300, 30, { z: 632 });
+  piece('faîtage est', beam('ew', 580), 300, 280, 580, 30, { z: 632 });
   joint('scarf', 'faîtage ouest', 'faîtage est');
   joint('mortise', 'poinçon 280', 'faîtage ouest');
   joint('mortise', 'poinçon 560', 'faîtage est');
@@ -131,8 +131,8 @@ export function forgeSteps(): ForgeStep[] {
   // 6. le premier tronçon du conduit, les deux grands pans de bardeaux (rive basse au sud : vue 0 ; au nord : R deux fois, le pan percé), puis le conduit jusqu'au-dessus
   // du faîte (7,60 m ; le faîte à 6,82 m) et son couronnement
   piece('conduit 1', 'chimney-flue', hx + 60, hy, 100, 80, { z: 260 });
-  piece('pan sud', 'shingle-roof-large', -40, 300, 960, 340, { z: 342 });
-  piece('pan nord', 'shingle-roof-large-pierced', -40, -40, 960, 340, { view: 2, z: 342 });
+  piece('pan sud', 'shingle-roof-large', -40, 300, 960, 340, { z: 332 });
+  piece('pan nord', 'shingle-roof-large-pierced', -40, -40, 960, 340, { view: 2, z: 332 });
   for (let k = 1; k < 5; k++) piece(`conduit ${k + 1}`, 'chimney-flue', hx + 60, hy, 100, 80, { z: 260 + 100 * k });
   piece('couronnement', 'chimney-cap', hx + 40, hy - 10, 140, 100, { z: 760, at: [hx + 40, hy - 20] });
   frame("l'atelier fini");

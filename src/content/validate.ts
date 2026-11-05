@@ -10,7 +10,8 @@ import { agedKey, framesOf, lookOf, WEDGE_FRAMES, woodSheets } from '../world/wo
 import { formImage } from '../world/natural';
 import { warrenHoles } from '../world/warren';
 import { balance, partMass, partName } from '../world/transform';
-import { woodDims } from '../world/woodPiece';
+import { woodDims, woodDrawnDims } from '../world/woodPiece';
+import wallsJson from './walls.json';
 import { planPieces, planProblems } from '../world/build';
 import { overhangs } from '../world/overhang';
 import { bundleImage } from '../world/pileShape';
@@ -376,7 +377,7 @@ export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
 function validateGabarit(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   for (const key of Object.keys(EXCEPTIONS)) if (!c.props[key]) errors.push(`validate.ts EXCEPTIONS : '${key}' absent de props.json`);
-  // les pièces de bois assemblées : est-ouest, leur silhouette a la taille de leurs dimensions (woodDims), à toute longueur ;
+  // les pièces de bois assemblées : est-ouest, leur silhouette a la taille de leurs dimensions (woodDrawnDims : la hauteur couchée contour compris), à toute longueur ;
   // nord-sud, celle de la même pièce est-ouest, inversée, à 1 px près (règle D : une pièce tournée garde sa taille)
   for (const { piece, w, h } of cat.woodSilhouettes) {
     if (piece.axis === 'ns') {
@@ -399,7 +400,7 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
     }
     // les faces dressées en cours (f1 à f3) sont entre le rond et la poutre : pas de forme de base, seul leur nord-sud se contrôle
     if (['f1', 'f2', 'f3'].includes(lookOf(piece))) continue;
-    const want = expectedSize(woodDims(piece));
+    const want = expectedSize(woodDrawnDims(piece));
     const ok = (n: number, lo: number, hi: number) => n >= lo - TOLERANCE && n <= hi + TOLERANCE;
     if (ok(w, want.w, want.wMax) && ok(h, want.h, want.hMax)) continue;
     const f = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
@@ -1521,6 +1522,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.take && ((p.harvest && !p.harvest.tool) || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
     addAll(validateRope(key, p, c));
     // un morceau de mur qui se raccorde (le solin) : couché à quatre vues (est-ouest, nord-sud), plus long qu'épais
+    if (p.wall && p.dims.h !== wallsJson.piece.height) err(`props.json '${key}' : un mur a la hauteur d'un morceau de walls.json (${wallsJson.piece.height} cm), pas ${p.dims.h}`);
     if (p.wall && (p.views !== 'four' || !p.lying || p.dims.shape !== 'box' || p.dims.w <= p.dims.d)) err(`props.json '${key}' : 'wall' demande un morceau couché à quatre vues ('four', 'lying'), une boîte plus longue qu'épaisse`);
   }
 
