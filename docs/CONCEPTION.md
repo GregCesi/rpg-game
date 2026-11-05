@@ -701,8 +701,16 @@ enregistré comme plan. Une pièce qui manque est créée avec sa chaîne (fiche
   le [râtelier à outils](objets/tool-rack.md), le [râtelier à barres](objets/bar-rack.md), la [meule](objets/grindstone.md), le
   [coffre à charbon](objets/charcoal-bin.md), la [caisse de ferraille](objets/scrap-crate.md). À l'est, **l'abri à charbon** (un
   [appentis de bardeaux](objets/shingle-shed-roof.md) à 35° sur quatre poteaux, ses sacs) et **le puits**. 89 pièces, 33 assemblages.
-  **La place de la fonderie** (fondre le bronze, réduire le minerai : plus tard) est une parcelle réservée vide (`foundry`). Le
-  forgeron et son logis sont mis de côté (leurs essais dans `art/proposals/`). La visite : `npm run test:forge-visite` (de la maison
+  **La place de la fonderie** (fondre le bronze, réduire le minerai : plus tard) est une parcelle réservée vide (`foundry`). **Le
+  forgeron** (chantier « forgeron », validé par Grégoire le 5 novembre 2026, `CADRAGE-forgeron.md`) : un colosse calme et bienveillant
+  d'une trentaine d'années, 1,95 m, les cheveux blonds lâchés, rasé avec la moustache, le tablier de cuir et les brassards ; pas encore
+  de nom (« le forgeron »). Il est déclaré dans le plan `forge` (`npcs` : derrière l'enclume, tourné vers le sud, au travail, `pose`
+  `work`), toujours là pour l'instant (ses horaires viendront avec les routines des PNJ) ; sa collision aux pieds est de 14 × 8 px
+  (`feet` de characters.json) et ne ferme pas le passage vers le feu. Quand Xéros lui parle, il pose son marteau et se tourne vers lui
+  (`talk-<direction>`) : « Tiens, le petit de la ferme. Fais attention, le fer est chaud. Si tu as besoin d'un outil, tu sais où me
+  trouver. » (`smith-greeting`, portrait souriant), puis reprend le travail. Sprite `art/characters/smith.ts`, portrait
+  `art/portraits/smith.ts` (neutre, souriant), couleurs `smith` de `art/palette.ts` ; scénario `npm run test:forgeron`. Plus tard :
+  sa journée, ses dialogues qui changent, son nom, son logis (mis de côté). La visite : `npm run test:forge-visite` (de la maison
   au feu de la forge, à pied, par le chemin).
 - **Les couvertures** (chantier « forge ») : en plus du chaume et des planches, trois couvertures pour les maisons du village, chacune
   à sa pente (connaissance générale, non sourcée) : les [bardeaux de chêne fendu](objets/shingle-roof-large.md) (45°), les

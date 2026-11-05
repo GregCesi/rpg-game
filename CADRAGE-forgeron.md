@@ -100,9 +100,13 @@ Pas d'animation : on choisit d'abord le personnage.
 Les essais intermédiaires (`forgeron-colosse.ts`, `forgeron-tetes.ts`, `forgeron-tetes-portraits.ts`) restent dans
 `art/proposals/` : le dessin final les assemble.
 
-## 8. Pour le mettre en jeu (propositions, à décider ensemble)
+## 8. Pour le mettre en jeu
 
-Chaque point est une proposition avec ma recommandation. Rien n'est fait : c'est le prochain chantier.
+Grégoire a validé ces propositions le 5 novembre 2026 (les animations de 8.2, sa place de 8.3, le niveau 1 de 8.4, la réplique A
+avec le portrait souriant), puis une carrure affinée (24 px de face et de dos, 15 px de profil : `.art-preview/forgeron-carrure.png`).
+Elles sont faites : le forgeron est dans le jeu (`art/characters/smith.ts`, `art/portraits/smith.ts`, figés depuis les essais par
+`tools/essai-forgeron-bake.ts` ; `characters.json` avec `feet` ; la pose `work` ; `npcs` du plan `forge` ; `smith-greeting` ;
+`npm run test:forgeron`). Le texte ci-dessous est celui des propositions.
 
 ### 8.1 Ce qui entre dans le jeu
 

@@ -1230,5 +1230,15 @@
       "z": 760,
       "view": 0
     }
+  ],
+  "npcs": [
+    {
+      "x": 275,
+      "y": 315,
+      "character": "smith",
+      "facing": "down",
+      "dialogue": "smith-greeting",
+      "pose": "work"
+    }
   ]
 }
