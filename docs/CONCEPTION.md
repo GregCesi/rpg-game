@@ -1237,7 +1237,8 @@ chantier 1 de l'audit). Elle fait foi : ce qui la contredit plus bas (les paragr
 - **Le pas de jeu est fixe, quelle que soit la machine** (décidé par Grégoire le 5 novembre 2026, chantier « sangliers-charge ») : le
   jeu avance toujours par pas de 1/60 s (`STEP` de config.ts, celui de la physique d'Arcade) ; chaque image du navigateur en fait autant
   que le temps vrai écoulé (× la vitesse) en demande (`world/timeStep.ts`, la boucle de `systems/simSpeed.ts`) : une machine lente en
-  fait plusieurs par image, jamais un plus grand ; sous 7,5 images par seconde, le jeu ralentit. Avant, chaque pas durait le temps vrai
+  fait plusieurs par image, jamais un plus grand ; sous 5 images par seconde, le jeu ralentit (à xN, au plus N pas par image : le
+  temps accéléré ralentit sur une machine qui ne suit pas, au lieu de s'emballer). Avant, chaque pas durait le temps vrai
   de l'image : sur une machine chargée, la charge d'un sanglier s'intégrait autrement (moins vite au choc, moins longtemps sonnée), les
   bêtes tiraient leur hasard à d'autres pas, et chaque geste de Xéros (mené par ses images) perdait un pas long à son début et à sa fin :
   le scénario des sangliers échouait sous la charge. Tout ce qui dure (sonnée, bascule, gestes, délais, horloge) se compte donc en temps

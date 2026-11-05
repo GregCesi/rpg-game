@@ -11,9 +11,9 @@ export const STEP_MS = 1000 * (1 / STEP.fps);
  * machine. Une image du navigateur arrive `réel` ms après la précédente ; à la vitesse `factor` (la vitesse de simulation,
  * systems/simSpeed.ts), elle doit faire avancer le jeu de `réel × factor` ms : autant de pas fixes que cela en contient (le reste attend
  * l'image suivante). Une machine lente fait donc plusieurs pas par image, une rapide un seul : le jeu, ses bêtes, ses gestes, ses
- * tirages au hasard voient exactement la même suite de pas, donc donnent le même résultat. Au-delà de `maxPerImage × factor` pas pour
- * une image (la page cachée, une machine à moins de 7,5 images par seconde), le jeu ralentit : le retard est abandonné, jamais rattrapé
- * d'un coup ni par un pas plus grand.
+ * tirages au hasard voient exactement la même suite de pas, donc donnent le même résultat. Au-delà de `maxPerImage` pas pour une image
+ * (`factor` si la vitesse en demande plus ; la page cachée, une machine à moins de 5 images par seconde à x1), le jeu ralentit : le
+ * retard est abandonné, jamais rattrapé d'un coup ni par un pas plus grand.
  */
 export class TimeStep {
   /** Le temps à jouer (ms de jeu), pas encore fait ; jusqu'à `-slack` : un pas fait un peu en avance, sur une image un peu courte. */
@@ -48,7 +48,9 @@ export class TimeStep {
     this.last = time;
     this.owed += real * factor;
     let n = Math.floor((this.owed + this.slack) / STEP_MS);
-    const max = this.maxPerImage * Math.max(1, factor);
+    // au plus `maxPerImage` pas par image, ou `factor` si la vitesse en demande plus (à x10 sur un écran à 60 Hz : dix) : une machine
+    // trop lente pour suivre ralentit le jeu au lieu de s'emballer (plus de pas par image, des images plus lentes, encore plus de pas)
+    const max = Math.max(this.maxPerImage, Math.round(factor));
     if (n > max) {
       n = max;
       this.owed = 0;

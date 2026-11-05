@@ -1,7 +1,7 @@
 // Le pas de jeu fixe (src/world/timeStep.ts, src/systems/simSpeed.ts ; docs/CONCEPTION.md, « Le temps »), sans navigateur : le jeu
 // donne le même résultat quelle que soit la vitesse de la machine.
 // - la boucle : chaque pas dure STEP_MS ; une machine à 60, 20 ou 7,5 images par seconde fait 1, 3 ou 8 pas par image et joue le même
-//   temps de jeu ; un écran à 60 Hz qui tremble fait un pas par image ; plus lent que 7,5 images par seconde, le jeu ralentit, jamais
+//   temps de jeu ; un écran à 60 Hz qui tremble fait un pas par image ; plus lent que 5 images par seconde, le jeu ralentit, jamais
 //   un pas plus grand ; à x10, dix fois plus de pas ;
 // - le combat du sanglier, mené par cette boucle à 1, 3 et 8 pas par image : il voit Xéros, annonce, charge ; Xéros s'écarte ; la
 //   charge s'écrase contre un tronc, sonnée au prorata de son énergie ; Xéros la frappe à la hache (la taille, puis le coup d'en haut,
@@ -50,11 +50,16 @@ for (const [fps, per] of [[60, 1], [20, 3], [7.5, 8]] as const) {
   const n = machine(1000 / 60, 10, 1, 0.8);
   assert.ok(n.every((k) => k === 1), `un écran à 60 Hz qui tremble de 0,8 ms : un pas par image (${[...new Set(n)].join(', ')})`);
   const slow = machine(250, 10);
-  assert.ok(slow.every((k) => k === STEP.maxPerImage), `4 images/s : au plus ${STEP.maxPerImage} pas par image, le jeu ralentit (${[...new Set(slow)].join(', ')})`);
+  assert.ok(slow.every((k) => k === STEP.maxPerImage), `4 images/s (il en faudrait 15 par image) : au plus ${STEP.maxPerImage} pas par image, le jeu ralentit (${[...new Set(slow)].join(', ')})`);
   const x10 = machine(1000 / 60, 10, 10);
   assert.ok(Math.abs(sum(x10) - 6000) <= 10, `x10 : dix fois plus de pas (${sum(x10)})`);
+  // x10 sur une machine à 20 images par seconde (il en faudrait 30 par image) : au plus max(maxPerImage, 10) pas par image, le temps
+  // accéléré ralentit, il ne s'emballe pas
+  const cap10 = Math.max(STEP.maxPerImage, 10);
+  const x10slow = machine(50, 10, 10);
+  assert.ok(x10slow.every((k) => k === cap10), `x10 à 20 images/s : ${cap10} pas par image (${[...new Set(x10slow)].join(', ')})`);
 }
-console.log('✓ boucle : des pas fixes ; 1, 3 ou 8 par image selon la machine, le même temps de jeu ; un pas par image à 60 Hz ; plus lente que 7,5 images/s, le jeu ralentit ; x10');
+console.log('✓ boucle : des pas fixes ; 1, 3 ou 8 par image selon la machine, le même temps de jeu ; un pas par image à 60 Hz ; plus lente que 5 images/s, le jeu ralentit ; x10, au plus douze pas par image');
 
 // ---------- un monde d'essai : un pré, un tronc, Xéros ----------
 type Box = { x: number; y: number; w: number; h: number };

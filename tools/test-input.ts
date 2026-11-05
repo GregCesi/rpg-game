@@ -115,7 +115,12 @@ console.log("✓ clavier : un appui plus court qu'une image est lu, une tape dé
   for (const d of [16, 100, 16]) game.loop.callback((t += d), d);
   for (let i = 1; i < times.length; i++) assert.ok(times[i] > times[i - 1], `l'horloge du jeu recule au pas ${i} : ${times[i - 1]} puis ${times[i]}`);
   assert.ok(deltas.every((d) => d === STEP_MS), `chaque pas dure ${STEP_MS} ms (${[...new Set(deltas)].join(', ')})`);
-  assert.equal(at10, Math.floor((298 * 10 + 2) / STEP_MS), 'x10 : le temps vrai × 10, en pas fixes');
+  // à x10, chaque image fait ses pas de 1/60 s (le temps vrai × 10), au plus max(maxPerImage, 10) : le temps accéléré ralentit plutôt
+  // que de s'emballer
+  const { STEP } = await import('../src/config');
+  const cap = Math.max(STEP.maxPerImage, 10);
+  const want = [16, 16, 100, 50, 16, 100].reduce((a, d) => a + Math.min(cap, (d * 10) / STEP_MS), 0);
+  assert.ok(Math.abs(at10 - want) <= 3, `x10 : des pas fixes, au plus ${cap} par image (${at10}, attendu près de ${Math.round(want)})`);
   console.log("✓ vitesse de simulation : des pas fixes, dix fois plus nombreux à x10 ; l'horloge du jeu ne recule jamais, au retour à x1 non plus");
 }
 

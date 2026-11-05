@@ -201,7 +201,7 @@ await playtest('temps', async ({ page, errors, load }) => {
   const { STEP } = await import('../src/config');
   const { STEP_MS } = await import('../src/world/timeStep');
   assert.deepEqual(first.sizes, [STEP_MS], `à x5, des pas de jeu de ${STEP_MS.toFixed(2)} ms (${first.sizes.join(', ')})`);
-  const capped = first.stepsPerFrame >= 5 * STEP.maxPerImage - 0.5;
+  const capped = first.stepsPerFrame >= Math.max(STEP.maxPerImage, 5) - 0.5;
   assert.ok(first.ratio <= 5.2 && (capped || first.ratio >= 4.6), `à x5, cinq fois le temps vrai (${first.ratio.toFixed(2)}, ${first.stepsPerFrame.toFixed(1)} pas par image)`);
   // (une marge large : sous forte charge, Phaser n'avance une animation que d'une image par pas, et un geste dont les images sont plus
   // courtes qu'un pas s'étire un peu, à x5 comme à x1 ; l'essentiel, cinq pas de taille normale par image, est vérifié juste au-dessus)
