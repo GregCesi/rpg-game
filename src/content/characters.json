@@ -1,4 +1,5 @@
 {
   "xeros": { "name": "Xéros", "portrait": "xeros" },
-  "mother": { "name": "Mère", "portrait": "mother" }
+  "mother": { "name": "Mère", "portrait": "mother" },
+  "smith": { "name": "Le forgeron", "portrait": "smith", "feet": { "w": 14, "h": 8 } }
 }

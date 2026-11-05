@@ -205,3 +205,24 @@ export const terracotta = {
   '\\': '#844b3c', // l'ombre sous le rang du dessus
   '?': '#5d3634', // le creux, la tuile la plus cuite, contour côté lumière (vers le brun-violet)
 };
+
+/**
+ * Le forgeron du village (chantier « forgeron », validé par Grégoire le 5 novembre 2026 ; art/characters/smith.ts,
+ * art/portraits/smith.ts). Du plus clair au plus sombre dans chaque rampe ; la lumière glisse vers le jaune, l'ombre vers le
+ * brun-violet. Le fer de ses outils, le manche du marteau, le fer rouge et l'étincelle ne sont pas ici : ce sont le fer (`iron`), le
+ * bois neuf (`woodAges.new`) et le feu de la forge (`world` h, H, i).
+ */
+export const smith = {
+  /** Ses cheveux : un blond doré chaud, plus chaud que le chaume. `glint` et `root` : le reflet doux et le creux des mèches du portrait. */
+  hair: { light: '#f6e2a0', glint: '#efcd7e', base: '#e3b65c', shade: '#be8a36', deep: '#835a26', root: '#5e3c1d' },
+  /** Sa peau hâlée par le feu ; `soft` (le portrait) : le passage du jour à la peau ; `hollow` : le creux doux sous la pommette. */
+  skin: { light: '#f1c597', soft: '#e4b082', base: '#d69c6c', shade: '#ae7350', deep: '#7e4b37', hollow: '#c38a60' },
+  /** Le cuir épais du tablier et des brassards : un brun-roux, nettement plus sombre que la peau. */
+  leather: { light: '#a0653b', base: '#7d4a2b', shade: '#5c3420', deep: '#3e2218' },
+  /** Son pantalon de grosse toile sombre. */
+  canvas: { light: '#5f5650', base: '#49423f', deep: '#332d2f' },
+  /** Ses bottes de cuir. */
+  boots: { light: '#6e4c34', base: '#4f3626', deep: '#35241b' },
+  /** Son visage au portrait : le blanc des yeux, l'iris brun et son ombre, les lèvres et leur ombre. */
+  face: { white: '#f0e7d6', iris: '#a27646', irisShade: '#74502c', lip: '#b86e52', lipShade: '#8a4a3a' },
+} as const;

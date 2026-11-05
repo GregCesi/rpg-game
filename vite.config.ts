@@ -1,4 +1,4 @@
-import { renameSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { defineConfig, type Plugin } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
@@ -25,6 +25,11 @@ function buildPlanWriter(): Plugin {
             // écrit à côté puis renommé : un autre serveur (les scénarios tournent en parallèle) ne lit jamais un plan à moitié écrit
             // les scénarios écrivent leurs plans dans un dossier temporaire (XEROS_PLANS_OUT), jamais par-dessus le contenu commité
             const file = `${process.env.XEROS_PLANS_OUT ?? 'src/content/plans'}/${key}.json`;
+            // les personnages d'un plan (`npcs` : le forgeron) ne se posent pas en mode construction : un plan réenregistré garde ceux
+            // du plan du même nom
+            const before = `src/content/plans/${key}.json`;
+            const npcs = existsSync(before) ? (JSON.parse(readFileSync(before, 'utf8')) as { npcs?: unknown[] }).npcs : undefined;
+            if (npcs && !('npcs' in plan)) Object.assign(plan, { npcs });
             writeFileSync(`${file}.tmp`, `${JSON.stringify(plan, null, 2)}\n`);
             renameSync(`${file}.tmp`, file);
             res.statusCode = 200;

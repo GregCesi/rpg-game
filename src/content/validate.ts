@@ -191,6 +191,9 @@ function validateMaps(
         for (const dir of DIRECTIONS) {
           if (!cat.animations.get(n.character)?.has(`idle-${dir}`)) err(`${at} : animation 'idle-${dir}' manquante dans le sprite '${n.character}'`);
         }
+        // sa pose, dans sa direction (le forgeron au travail, de face : `work-down`)
+        const pose = n.pose && `${n.pose}-${n.facing ?? 'down'}`;
+        if (pose && !cat.animations.get(n.character)?.has(pose)) err(`${at} : pose '${n.pose}' sans l'animation '${pose}' dans le sprite '${n.character}'`);
       }
       if (!dialogues[n.dialogue]) err(`${at} : dialogue '${n.dialogue}' introuvable`);
       if (n.x < 0 || n.y < 0 || n.x >= W || n.y >= H) err(`${at} : hors de la carte`);
@@ -1359,6 +1362,10 @@ export function validateBuildPlans(plans: Record<string, BuildPlan>): string[] {
   for (const [key, plan] of Object.entries(plans)) {
     if (!KEBAB_CASE.test(key)) errors.push(`plans/${key}.json : le nom doit être en kebab-case (minuscules sans accent, chiffres, tirets)`);
     for (const p of planProblems(plan)) errors.push(`plans/${key}.json : ${p}`);
+    // ses personnages (le forgeron) : dans son emprise ; le reste se vérifie sur la carte où le plan est posé (validateMaps)
+    for (const n of plan.npcs ?? []) {
+      if (n.x > plan.size.w || n.y > plan.size.d) errors.push(`plans/${key}.json : personnage « ${n.character} » en (${n.x}, ${n.y}) cm, hors de l'emprise du plan (${plan.size.w} × ${plan.size.d})`);
+    }
   }
   return errors;
 }
