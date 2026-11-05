@@ -118,7 +118,13 @@ await playtest('lapins', async ({ page, load }) => {
       w().events.on('postupdate', watch);
       w().events.on('postupdate', steer);
       for (const k of keys) key('keydown', k);
-      await W.__until(() => seen.flee !== undefined || !find(id), `le lapin ${id} fuit devant Xéros (${keys.join('+')}) ; Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}), le lapin en (${Math.round(find(id)?.x ?? 0)}, ${Math.round(find(id)?.y ?? 0)}), ${find(id)?.mode}`);
+      try {
+        await W.__until(() => seen.flee !== undefined || !find(id), `le lapin ${id} fuit devant Xéros (${keys.join('+')}) ; au départ, Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}), le lapin en (${Math.round(find(id)?.x ?? 0)}, ${Math.round(find(id)?.y ?? 0)}), ${find(id)?.mode}`);
+      } catch (e) {
+        // ce qu'il en est au bout de l'attente : où sont Xéros et le lapin, le mode du jeu, l'horloge des pas, la marche lue
+        const q = find(id);
+        throw new Error(`${(e as Error).message} ; au bout : Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}), ${w().mode}, discret ${w().player.sneaking}, direction ${JSON.stringify(w().player.dir)}, le lapin ${JSON.stringify(q)}, au plus près ${seen.min.toFixed(1)} m, temps du jeu ${Math.round(w().time.now)}`);
+      }
       for (const k of keys) key('keyup', k);
       w().events.off('postupdate', steer);
       if (side) key('keyup', side);
