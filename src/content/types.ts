@@ -756,6 +756,11 @@ export const PropDefSchema = z.strictObject({
    */
   vault: z.literal(true).optional(),
   /**
+   * Un arbre des gradins (CONCEPTION « Le relief ») : ses racines (`relief-roots-*`) descendent la marche sous lui, peintes par le terrain
+   * (`world/terrainView.ts`) à l'aplomb de son pied.
+   */
+  roots: z.literal(true).optional(),
+  /**
    * Ombre portée d'un toit (la couverture, pièce `roof` et `ground`), calculée par le jeu (`world/roofShadow.ts`) : son
    * emprise au sol (largeur `dims.w`, profondeur `dims.d`, bord sud au bas de l'image) projetée sur le sol, décalée selon
    * la lumière (`SHADOW` de config.ts). `south`, `north` : hauteur du dessus du toit à son bord sud et à son bord nord, en cm.
@@ -1810,6 +1815,11 @@ export const ReliefSchema = z.strictObject({
       width: z.number().positive(),
       inner: z.number().nonnegative(),
       innerSlope: z.number().nonnegative(),
+      /**
+       * Les parois en gradins (chantier « relief », CADRAGE 13.0) : `count` marches de `rise` cm, séparées par des gradins de `tread` cm,
+       * du bord du sol jusqu'au dessus ; les marches du bas s'enterrent une à une quand le sol monte. Sans `steps`, le talus intérieur.
+       */
+      steps: z.strictObject({ rise: z.number().positive(), tread: z.number().positive(), count: z.number().int().positive() }).optional(),
       points: z.array(ReliefPointSchema.extend({ h: z.number().nonnegative() })).min(2),
     }),
   ),

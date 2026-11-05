@@ -228,7 +228,7 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
   /**
    * Une forme du calque `relief` (docs/CONCEPTION.md, « Le relief ») : `Level` (polygone, `height`), `Ridge` (polyligne : `heights`,
    * `crests`, `flanks`, une valeur par sommet, en cm, séparées par des virgules), `Lane` (polyligne : `heights` par sommet, `width`,
-   * `inner`, `innerSlope`).
+   * `inner`, `innerSlope` ; `steps` : les parois en gradins, « marche,gradin,nombre »).
    */
   function readRelief(o: TmjObject) {
     const cls = o.type || o.class || '';
@@ -269,11 +269,19 @@ function convert(id: string, path: string, errors: string[]): MapData | undefine
       relief.ridges.push({ id: o.id, points: abs.map((p, i) => ({ ...p, h: h[i], crest: c[i], flank: Math.max(1, f[i]) })) });
     } else if (cls === 'Lane') {
       if (!o.polyline) return oerr('un couloir est une polyligne');
-      known(['heights', 'width', 'inner', 'innerSlope']);
+      known(['heights', 'width', 'inner', 'innerSlope', 'steps']);
       const h = list('heights');
       const width = num('width');
       if (width <= 0) oerr("propriété 'width' : la largeur du sol (cm, plus de 0)");
-      relief.lanes.push({ id: o.id, width: Math.max(1, width), inner: num('inner'), innerSlope: num('innerSlope'), points: abs.map((p, i) => ({ ...p, h: h[i] })) });
+      // les gradins : « marche,gradin,nombre » (cm, cm, nombre de marches)
+      let steps: { rise: number; tread: number; count: number } | undefined;
+      const sv = props.get('steps');
+      if (sv !== undefined) {
+        const xs = typeof sv === 'string' ? sv.split(',').map((t) => Number(t.trim())) : [];
+        if (xs.length !== 3 || xs.some((x) => !Number.isFinite(x) || x <= 0) || !Number.isInteger(xs[2])) oerr("propriété 'steps' : « marche,gradin,nombre » attendu (cm, cm, un entier), par exemple 125,50,4");
+        else steps = { rise: xs[0], tread: xs[1], count: xs[2] };
+      }
+      relief.lanes.push({ id: o.id, width: Math.max(1, width), inner: num('inner'), innerSlope: num('innerSlope'), ...(steps ? { steps } : {}), points: abs.map((p, i) => ({ ...p, h: h[i] })) });
     } else {
       oerr("forme de relief inconnue (attendues : Level, Ridge, Lane)");
     }

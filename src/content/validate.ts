@@ -1096,7 +1096,7 @@ const TRADE_TODO = new Set([
   'chopping-block-axe', 'fireplace', 'worktable', 'workbench', 'stove', 'bed', 'pallet', 'sack', 'jar', 'sunpatch', 'lantern', 'wall-torch',
   'candle', 'barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'shed-plate-north', 'shed-plate-south', 'shed-plate-side', 'shed-rafter',
   'shed-roof', 'maul-ground', 'splitting-wedge-ground', 'well', 'planted-stake', 'plan-tablet', 'hatchet-ground', 'broadaxe-ground',
-  'lane-curtain', 'lane-overhang-1', 'lane-overhang-2', 'lane-overhang-3', 'water-cut', 'shimmer',
+  'lane-curtain', 'lane-overhang-1', 'lane-overhang-2', 'lane-overhang-3', 'water-cut', 'shimmer', 'hazel', 'young-ash', 'long-bush', 'briar',
   'stone', 'iron-ore', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'pickaxe', 'hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword',
 ]);
 
