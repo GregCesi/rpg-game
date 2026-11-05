@@ -16,6 +16,7 @@
 // la terre cuite) ; les faces d'une scène passent par `hexify` (ce que le rendu de l'essai ne connaît pas s'écrit en #rrggbb), comme
 // le module de pierre : une scène de la place se rend à côté de n'importe quelle maison du village.
 
+import { passable, withFoot } from './place-types';
 import type { Grid } from '../lib/canvas';
 import { sources } from '../index';
 import { hearthModel } from '../world/chimney';
@@ -61,7 +62,7 @@ export function placeImg(o: Img, x0: number, x1: number, ySouth: number, z = 0, 
 /** Un objet de props.json, son emprise au coin nord-ouest (x, y) en px, dans sa vue, posé à la hauteur z (px). */
 export function prop(key: string, x: number, y: number, view = 0, z = 0): Board {
   const d = props[key].dims, [w, dd] = view % 2 ? [d.d / 5, d.w / 5] : [d.w / 5, d.d / 5];
-  return placeImg(propImg(key, view), x, x + w, y + dd, z);
+  return withFoot(placeImg(propImg(key, view), x, x + w, y + dd, z), x, x + w, dd);
 }
 export const lift = (b: Board, z: number): Board => ({ ...b, y: b.y - z });
 export const moveBoard = (b: Board, dx: number, dy: number): Board => ({ ...b, x: b.x + dx, y: b.y + dy, depth: (r) => b.depth(r) + dy });
@@ -189,7 +190,7 @@ export function openShutter(x: number, yFace: number, z: number): Board {
   return { grid: s.grid, pal: s.pal, x: Math.round(x - 8), y: Math.round(yFace + 1 - z - s.grid.length), depth: () => yFace + 0.5 };
 }
 export function threshold(x0: number, x1: number, yFace: number): Board {
-  return placeImg(propImg('threshold-stone'), x0, x1, yFace + 5);
+  return passable(placeImg(propImg('threshold-stone'), x0, x1, yFace + 5));
 }
 /** L'âtre du jeu (`stone-hearth`) le dos au nord, posé en (x, y, z). */
 export function hearth(frame: number, x: number, y: number, z = 0): Quad[] {

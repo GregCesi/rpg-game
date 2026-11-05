@@ -24,7 +24,7 @@
 // (village-maisons-bois-pieces.ts) ; les meubles, les volets, les fagots, les tas de bois (calculés comme le jeu) : les images du jeu.
 
 import { box, hash, part, timber, voidTex, type Board, type Quad, type Scene, type Tex, type V3 } from '../lib/volumes';
-import { PLACE_META, type PlaceBuilding, type PlaceBuildingId } from './place-types';
+import { PLACE_META, passable, withFoot, type PlaceAccess, type PlaceBuilding, type PlaceBuildingId } from './place-types';
 import {
   PIECE_PAL, aged, fillTex, foreign, frameQuads, leafTex, leanTo, solinBoards,
   type HouseSpec, type Wall,
@@ -36,6 +36,8 @@ import {
   XPAL, C, darkBay, has, img, imgBoard, lavesRoof, moveBoard, moveScene, moved, onFace, pileBoards, prop, propImg, quad, sill, stack,
   stoneHex, wallRun, woodBoard, type Hole,
 } from './place-nord-lib';
+import { model as centreModel, viewImg as centreView } from './place-centre-pieces';
+import { pieceBoard } from './place-centre-lib';
 import { MENUISIER_ROOF, PIECES, PIECE_INFO, PIECE_USES, damagedShingles, hangingSign, ladenCounter, pieceModel, pieceView } from './place-nord-pieces';
 
 export { PIECES, PIECE_USES, PIECE_INFO, hangingSign, pieceView };
@@ -55,13 +57,20 @@ export const PANNEAU: [number, number, number, number] = [3232, 2064, 3264, 2070
 function piece(key: string, x: number, y: number, v = 0, z = 0): Board {
   const p = PIECES.find((q) => q.key === key)!;
   const [w, d] = v % 2 ? [p.dims.d / 5, p.dims.w / 5] : [p.dims.w / 5, p.dims.d / 5];
-  return imgBoard(pieceView(key, v), x, x + w, y + d, z);
+  const b = withFoot(imgBoard(pieceView(key, v), x, x + w, y + d, z), x, x + w, d);
+  return key === 'tall-weeds' ? passable(b) : b;
+}
+/** L'échelle appuyée (la seule de la place : celle du centre, art/proposals/place-centre-pieces.ts), le coin nord-ouest de son emprise
+ * en (x, y), dans sa vue (R0 : penchée vers le nord, contre un mur au nord ; R1 : vers l'est, contre un pignon ouest). */
+function ladderBoard(x: number, y: number, v = 0): Board {
+  const d = centreModel('leaning-ladder').dims, dd = (v % 2 ? d.w : d.d) / 5, ww = (v % 2 ? d.d : d.w) / 5;
+  return withFoot(pieceBoard(centreView(centreModel('leaning-ladder'), v), x, y, dd, 0.5), x, x + ww, dd);
 }
 /** Le chevalet du module de bois. */
 function sawhorse(x: number, y: number, v = 0): Board {
   const g = boisPiece('sawhorse', v);
   const [w, d] = v % 2 ? [10, 20] : [20, 10];
-  return imgBoard({ grid: g, pal: PIECE_PAL }, x, x + w, y + d);
+  return withFoot(imgBoard({ grid: g, pal: PIECE_PAL }, x, x + w, y + d), x, x + w, d);
 }
 /** Les faces de toit d'une scène (ce que la vue « dedans » efface). */
 const noRoof = (qs: Quad[]) => qs.filter((q) => !q.part.roof);
@@ -171,7 +180,7 @@ function stoneOutside(s: StoneSpec): { quads: Quad[]; boards: Board[] } {
     if (b.kind === 'blind') continue;
     if (b.kind === 'door') {
       Q.push(...box(x0, x1, yS - 4, yS - 3, 0, hh, part('porte', 3, '&', 'full'), strapDoorTex(7 + b.s0)));
-      B.push(imgBoard(propImg('threshold-stone'), m - 12, m + 12, yS + 5));
+      B.push(passable(imgBoard(propImg('threshold-stone'), m - 12, m + 12, yS + 5)));
       continue;
     }
     if (b.kind === 'cart') {
@@ -274,6 +283,10 @@ const RL: StoneSpec = {
   stacks: [[2784 + 124, 2784 + 140, 1936 + 57, 1936 + 71]],
 };
 const STALL = { x: 3092, y: 1984 };
+/** Les escaliers (on y monte vers le nord) : celui de la boutique, au nord-est (la réserve fraîche de l'étage) ; celui du logis, contre le
+ * mur est du logis-réserve, à côté de l'entrée du logis (le logis du commis et de sa femme, à l'étage). */
+const RB_STAIR: V3 = [RB.x + 196 - STAIR.w, RB.y + 30, 0];
+const RL_STAIR: V3 = [RL.x + RL.W - 10 - STAIR.w - 1, RL.y + 14, 0];
 
 function richStall(roof: boolean): { quads: Quad[]; boards: Board[] } {
   const { x, y } = STALL;
@@ -281,7 +294,7 @@ function richStall(roof: boolean): { quads: Quad[]; boards: Board[] } {
   const Q = stoneHex(roof ? aw : noRoof(aw));
   const counter = (v: number, x0: number, y0: number) => {
     const im = ladenCounter(v), [w, d] = v % 2 ? [14, 48] : [48, 14];
-    return imgBoard(im, x0, x0 + w, y0 + d);
+    return withFoot(imgBoard(im, x0, x0 + w, y0 + d), x0, x0 + w, d);
   };
   const B: Board[] = [
     // sous l'auvent, au fond : la réserve de l'étal (cachée par la toile, sauf quand Xéros entre dessous)
@@ -304,9 +317,12 @@ function richStall(roof: boolean): { quads: Quad[]; boards: Board[] } {
 function richLogisFront(): Board[] {
   const { x, y, D } = RL, yS = y + D;
   return [
-    prop('barrel', x + 6, yS + 2), prop('barrel', x + 70, yS + 1), prop('barrel', x + 70, yS + 1, 0, 'worn', 18),
-    prop('crate', x + 100, yS + 3), prop('crate', x + 112, yS + 4), prop('crate', x + 104, yS + 2, 0, 'worn', 10), prop('sack', x + 124, yS + 4),
-    piece('leaning-ladder', x + 116, yS - 2), prop('bench', x + 186, yS + 2), prop('bucket-water', x + 260, yS + 3),
+    // contre le mur (au plus 60 cm de la façade) : la rue de l'ouest garde 3 m de passage jusqu'aux étals de la tailleuse
+    prop('barrel', x + 6, yS), prop('barrel', x + 70, yS), prop('barrel', x + 70, yS, 0, 'worn', 18),
+    prop('crate', x + 100, yS), prop('crate', x + 112, yS), prop('crate', x + 104, yS, 0, 'worn', 10), prop('sack', x + 124, yS),
+    prop('bench', x + 186, yS + 1), prop('bucket-water', x + 260, yS + 1),
+    // l'échelle contre le pignon ouest du logis, hors de la rue (l'échelle du centre, tournée : le pied à l'ouest)
+    ladderBoard(x - 32, y + 54, 1),
   ];
 }
 /** L'enseigne au pot de miel et au coq, sur le pignon est de la boutique, au-dessus de la rue du nord : le bras vers l'est (R0). */
@@ -324,7 +340,7 @@ function richInsideBoards(level: 0 | 1): Board[] {
     prop('barrel', l.x + 14, l.y + 12), prop('barrel', l.x + 28, l.y + 12), prop('barrel', l.x + 42, l.y + 12), prop('barrel', l.x + 14, l.y + 28),
     prop('sack', l.x + 64, l.y + 14), prop('sack', l.x + 76, l.y + 16), prop('sack', l.x + 88, l.y + 14), prop('sack', l.x + 70, l.y + 30),
     prop('crate', l.x + 120, l.y + 14), prop('crate', l.x + 134, l.y + 14), prop('jar', l.x + 156, l.y + 14), prop('jar', l.x + 168, l.y + 16),
-    piece('cheese-rack', l.x + 110, l.y + 70), piece('wax-stack', l.x + 150, l.y + 80), prop('table', l.x + 230, l.y + 60), prop('bench', l.x + 226, l.y + 82),
+    piece('cheese-rack', l.x + 110, l.y + 70), piece('wax-stack', l.x + 150, l.y + 80), prop('table', l.x + 186, l.y + 40), prop('bench', l.x + 187, l.y + 62),
   ];
   const F = ST.floor;
   return [
@@ -332,7 +348,7 @@ function richInsideBoards(level: 0 | 1): Board[] {
     piece('cheese-rack', b.x + 20, b.y + 14), piece('cheese-rack', b.x + 50, b.y + 14), piece('cheese-rack', b.x + 80, b.y + 14), prop('jar', b.x + 120, b.y + 16), prop('barrel', b.x + 140, b.y + 14),
     // l'étage du logis : la chambre du commis et de sa femme, la salle
     prop('bed', l.x + 20, l.y + 14), prop('chest', l.x + 22, l.y + 60), prop('table', l.x + 120, l.y + 50), prop('bench', l.x + 121, l.y + 40), prop('stool', l.x + 150, l.y + 54),
-    prop('chest', l.x + 200, l.y + 14), prop('bed', l.x + 240, l.y + 14),
+    prop('chest', l.x + 200, l.y + 14), prop('bed', l.x + 224, l.y + 14),
   ].map((bd) => lift(bd, F));
 }
 
@@ -348,7 +364,7 @@ const fermeRiche: Def = {
   inside: (level) => {
     const stall = richStall(false);
     const Q = [...stoneInside(RB, level, 'flags'), ...stoneInside(RL, level, 'earth')];
-    if (level === 0) Q.push(...moved(stairModel(), [RB.x + 196 - STAIR.w, RB.y + 30, 0]));
+    if (level === 0) Q.push(...moved(stairModel(), RB_STAIR), ...moved(stairModel(), RL_STAIR));
     return { quads: [...stoneHex(Q), ...stall.quads], boards: [...richInsideBoards(level), ...stall.boards, ...richLogisFront()] };
   },
 };
@@ -367,6 +383,8 @@ const fermeRiche: Def = {
 
 const BU = { x: 3368, y: 1744, L: 216, D: 184, T: 60, U: 48 };
 const BU_NS = [0, 46, 92, 138, 184];
+/** L'escalier du logis (on y monte vers le nord), contre le mur est du magasin, au nord de la table : px de la zone. */
+const BU_STAIR: V3 = [BU.x + BU.L - 4 - STAIR.w, BU.y + 26, 0];
 const BU_S = [0, 44, 84, 124, 148, 188, 216];
 const BU_UP = [0, 36, 72, 108, 144, 180, 216];
 /** Les devantures : les travées ouvertes du rez (posts de BU_S). */
@@ -440,7 +458,8 @@ function bucheronHouse(roof: boolean, cut: 0 | 1 | null): { quads: Quad[]; board
     Q.push(...box(-2, BU.L + 2, BU.D - 2, BU.D + 2, 0, T - 4, part('vide', 3, 'o', 'none', { cast: false }), () => VOID));
   }
   if (cut !== 1) B.push(...solinBoards(BU_REZ, 0, 1655));
-  return { quads: foreign(moved(Q, [x, y, 0])), boards: B.map((b) => moveBoard(b, x, y)) };
+  const stair = cut === 0 ? stoneHex(moved(stairModel(), BU_STAIR)) : [];
+  return { quads: [...foreign(moved(Q, [x, y, 0])), ...stair], boards: B.map((b) => moveBoard(b, x, y)) };
 }
 
 /** Les volets ouverts, les jardinières et le linge des fenêtres de l'étage (dehors). */
@@ -478,15 +497,17 @@ function bucheronYard(): Board[] {
   B.push(...pileBoards({ size: 'normal', shape: 'round', length: 100 }, x + 166, yS + 64, 5));
   // ce qui déborde jusque sur le rond : un second tas de perches, des fagots couchés, des bûches de 60 en vrac, une botte de piquets
   B.push(...pileBoards({ size: 'pole', shape: 'round', length: 300 }, x + 30, yS + 84, 3));
-  for (const [dx, dy] of [[100, 80], [128, 82], [112, 92]] as const) B.push(prop('faggot', x + dx, yS + dy - 10));
+  // (les fagots couchés et le chevalet un peu à l'ouest : un chemin de 1,20 m reste de la porte jusqu'au rond, x 3490-3514)
+  for (const [dx, dy] of [[66, 98], [94, 100], [80, 110]] as const) B.push(prop('faggot', x + dx, yS + dy - 10));
   for (const [dx, dy] of [[150, 82], [160, 88], [146, 92], [172, 80]] as const) B.push(woodBoard({ size: 'normal', shape: 'round', axis: (dx + dy) % 3 ? 'ew' : 'ns', length: 60 }, x + dx, yS + dy));
   B.push(...pileBoards({ size: 'big', shape: 'plank', length: 200 }, x + 6, yS + 108, 5));
   // le comptoir sur billots devant la devanture de l'est, une bûche et un quartier dessus ; le billot et sa hache
   B.push(piece('plank-counter', x + 148, yS + 14));
   B.push(woodBoard({ size: 'normal', shape: 'round', axis: 'ew', length: 60 }, x + 152, yS + 22, 18));
   B.push(woodBoard({ size: 'big', shape: 'quarter', axis: 'ew', length: 60 }, x + 168, yS + 22, 18));
-  B.push(imgBoard(img(has('chopping-block-axe-worn') ? 'chopping-block-axe-worn' : 'chopping-block-axe'), x + 120, x + 131, yS + 44));
-  B.push(sawhorse(x + 104, yS + 56), woodBoard({ size: 'normal', shape: 'round', axis: 'ew', length: 100 }, x + 104, yS + 64, 15));
+  // le billot un peu à l'ouest de la porte : 1,45 m de passage jusqu'au comptoir
+  B.push(withFoot(imgBoard(img(has('chopping-block-axe-worn') ? 'chopping-block-axe-worn' : 'chopping-block-axe'), x + 108, x + 119, yS + 44), x + 108, x + 119, 11));
+  B.push(sawhorse(x + 88, yS + 56), woodBoard({ size: 'normal', shape: 'round', axis: 'ew', length: 100 }, x + 88, yS + 64, 15));
   // l'enseigne à la hache, au pignon ouest, le bras vers l'ouest (R2), au-dessus de la rue du nord
   B.push(imgBoard(pieceView('hanging-sign-s1', 2), x - 22, x - 2, yS - 6, 48));
   return B;
@@ -567,8 +588,9 @@ function menuisierGround(): Board[] {
   const { x, y } = MN, yS = y + 128;
   return [
     piece('fallen-sign', x + 292, yS - 2, 1),
-    woodBoard({ size: 'big', shape: 'plank', axis: 'ew', length: 200, age: 'old' }, x + 196, yS + 10),
-    woodBoard({ size: 'big', shape: 'plank', axis: 'ew', length: 200, age: 'old' }, x + 200, yS + 14),
+    // les planches oubliées, au pied du mur entre les deux fenêtres de l'est (plus devant la porte du logis)
+    woodBoard({ size: 'big', shape: 'plank', axis: 'ew', length: 200, age: 'old' }, x + 228, yS + 5),
+    woodBoard({ size: 'big', shape: 'plank', axis: 'ew', length: 200, age: 'old' }, x + 232, yS + 8),
     ...WEEDS.map(([dx, dy, v]) => piece('tall-weeds', x + dx, yS + dy, v)),
   ];
 }
@@ -656,3 +678,13 @@ export const FOOTPRINTS = {
   'boutique abandonnée': [MN.x, MN.x + MN_SPEC.L, MN.y, MN.y + MN_SPEC.D],
   'panneau des nouvelles': [PANNEAU[0], PANNEAU[2], PANNEAU[1], PANNEAU[3]],
 } as const;
+
+/** Les portes qui donnent dehors et ce qui mène au logis (px de la zone), pour la vérification des accès (tools/essai-place.ts acces). */
+const stairFoot = (s: V3): [number, number] => [s[0] + STAIR.w / 2, s[1] + STAIR.d];
+export const ACCESS: PlaceAccess[] = [
+  { id: 'p-ferme-riche', name: 'La boutique du riche', door: { x0: RB.x + 96, x1: RB.x + 116, y: RB.y + RB.D, out: 'S', wall: 'façade sud, sur le rond' }, inside: [RB.x + 106, RB.y + RB.D - 22], to: { kind: 'stair', at: stairFoot(RB_STAIR), label: 'escalier au nord-est de la boutique (la réserve de l’étage)' } },
+  { id: 'p-ferme-riche', name: 'Le logis-réserve du riche', door: { x0: RL.x + 238, x1: RL.x + 256, y: RL.y + RL.D, out: 'S', wall: 'façade sud, bout est, sur la rue de l’ouest' }, inside: [RL.x + 247, RL.y + RL.D - 22], to: { kind: 'stair', at: stairFoot(RL_STAIR), label: 'escalier contre le mur est, à côté de l’entrée (le logis à l’étage)' } },
+  { id: 'p-bucheron', name: 'La boutique du bûcheron', door: { x0: BU.x + 127, x1: BU.x + 145, y: BU.y + BU.D, out: 'S', wall: 'façade sud, entre les devantures, sur le recoin du rond' }, inside: [BU.x + 136, BU.y + BU.D - 16], to: { kind: 'stair', at: stairFoot(BU_STAIR), label: 'escalier contre le mur est du magasin (le logis à l’étage)' } },
+  { id: 'p-menuisier', name: 'La boutique abandonnée (atelier)', door: { x0: MN.x + 80, x1: MN.x + 112, y: MN.y + 128, out: 'S', wall: 'porte à deux battants, façade sud, sur la rue de l’est' }, inside: [MN.x + 96, MN.y + 112], to: { kind: 'door', at: [MN.x + 174, MN.y + 80], label: 'porte intérieure dans la cloison (le logis, de plain-pied)' } },
+  { id: 'p-menuisier', name: 'La boutique abandonnée (logis)', door: { x0: MN.x + 199, x1: MN.x + 217, y: MN.y + 128, out: 'S', wall: 'porte du logis, façade sud, sur la rue de l’est' }, inside: [MN.x + 208, MN.y + 112] },
+];

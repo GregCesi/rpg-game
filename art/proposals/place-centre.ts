@@ -26,9 +26,9 @@
 //     corde à linge sur ses poteaux, un panier ; deux caisses, un banc, des sacs ;
 //   - sud-ouest (devant l'aile du cuir) : la charrette à bras chargée, bras vers l'ouest ; trois bottes de paille, des sacs, des
 //     cageots, un tas de tonneaux couchés, des jarres, un banc ;
-//   - sud-est (dans le rond) : l'abreuvoir de pierre à la bouche de la rue du sud (à l'est du passage), deux seaux ; un banc tourné vers
-//     l'arbre, le tas de tonneaux couchés, deux piles de cageots, des sacs, des tonneaux debout ;
-//   - sud-est (le recoin entre le rond, la mercière et la ferme rivale) : la paille, un banc, des caisses, des cageots, des pots.
+//   - sud-est (le recoin entre le rond, la mercière et la ferme rivale), posé à la main (`fixed`) : l'abreuvoir de pierre au bord de la
+//     rue du sud, deux seaux ; un banc tourné vers l'arbre, le tas de tonneaux couchés, deux piles de cageots, des sacs, des tonneaux
+//     debout, la paille, des caisses, des pots.
 
 import type { Scene } from '../lib/volumes';
 import { placeImg, pieceBoard, prop, sceneOf, type Img } from './place-centre-lib';
@@ -58,7 +58,7 @@ export const PLAN = {
     { name: 'boutique abandonnée', rect: [3576, 1936, 3864, 2064] as Rect },
     { name: 'tailleuse (aile ouest)', rect: [2720, 2192, 3104, 2432] as Rect },
     { name: 'frère du forgeron (aile sud)', rect: [3008, 2320, 3248, 2704] as Rect },
-    { name: 'mercière', rect: [3520, 2192, 3872, 2384] as Rect },
+    { name: 'mercière', rect: [3536, 2252, 3872, 2400] as Rect },
     { name: 'ferme rivale', rect: [3376, 2400, 3584, 2672] as Rect },
   ],
   /** Ce que les autres modules posent dehors, devant leurs façades (place-nord.ts `FOOTPRINTS`, `bucheronYard` ; place-sud.ts). */
@@ -94,6 +94,8 @@ export interface CentreItem {
   /** Le petit nom écrit sur la planche. */
   label?: string;
   scene(o: [number, number]): Scene;
+  /** Posé à la main à sa place définitive : le montage (tools/essai-place.ts) ne le pousse pas. */
+  fixed?: boolean;
 }
 
 /** L'emprise au sol d'une pièce de ce module dans sa vue (px). */
@@ -112,6 +114,8 @@ function piece(key: string, at: [number, number], view = 0, label?: string, z = 
     },
   };
 }
+/** Des choses posées à la main : le montage les laisse où elles sont. */
+const hand = (items: CentreItem[]): CentreItem[] => items.map((it) => ({ ...it, fixed: true }));
 /** Un objet du jeu (props.json) posé. */
 function game(key: string, at: [number, number], view = 0, label?: string, z = 0, dz = 0): CentreItem {
   return { key, at, view, label, scene: (o) => sceneOf([prop(key, o[0], o[1], view, z, dz)]) };
@@ -175,17 +179,18 @@ export const CENTRE: CentreItem[] = [
   piece('flower-pot-yellow', [CX + 27, CY + 15], 0),
   game('stool', [CX + 30, CY + 26], 0),
 
-  // nord-est : entre les tas du bûcheron (jusqu'en y 2037) et la rue de l'est ; la charrette de bûches, brancards vers le rond ; la
-  // corde à linge des gens du bûcheron, à 1 m de la boutique abandonnée
-  piece('two-wheel-cart', [3366, 2044], 0, 'charrette de bûches'),
-  piece('laundry-line', [3466, 2040], 0, 'linge'),
-  piece('basket', [3500, 2050], 0),
-  game('crate', [3456, 2066], 0),
-  game('crate', [3456, 2066], 0, undefined, 10, 0.2),
-  game('bench', [3478, 2080], 0, 'banc'),
-  piece('flower-pot-yellow', [3470, 2080], 0),
-  game('sack', [3524, 2066], 0),
-  game('sack', [3532, 2074], 0),
+  // nord-est, posé à la main (`fixed`) : entre les tas du bûcheron (jusqu'en y 2037) et la rue de l'est ; la charrette de bûches,
+  // brancards vers le rond ; deux caisses, des sacs, un panier, un pot. Le chemin de la porte du bûcheron (x 3490-3514) reste libre
+  // jusqu'au rond ; le banc et la corde à linge n'y sont plus (le linge des bâtiments suffit).
+  ...hand([
+    piece('two-wheel-cart', [3366, 2044], 0, 'charrette de bûches'),
+    game('crate', [3456, 2056], 0),
+    game('crate', [3456, 2056], 0, undefined, 10, 0.2),
+    game('sack', [3470, 2060], 0),
+    piece('flower-pot-yellow', [3452, 2070], 0),
+    game('sack', [3540, 2040], 0),
+    piece('basket', [3552, 2042], 0),
+  ]),
 
   // sud-ouest : entre le panneau et l'aile du cuir (à 1 m de ses façades, x 3104 et y 2320)
   piece('hand-cart', [3150, 2172], 0, 'charrette à bras'),
@@ -204,32 +209,31 @@ export const CENTRE: CentreItem[] = [
   game('jar', [3150, 2262], 0),
   game('jar', [3160, 2270], 0),
 
-  // sud-est, dans le rond : un banc tourné vers l'arbre, les tonneaux, les cageots, les sacs ; l'abreuvoir à la bouche de la rue du
-  // sud, son seau
-  game('bench', [3384, 2172], 1, 'banc'),
-  barrelPile([3404, 2190], 'tonneaux'),
-  cageotStack([3448, 2192], 4, 'cageot-apples', 'cageots'),
-  cageotStack([3452, 2212], 2, 'cageot'),
-  game('sack', [3410, 2214], 0),
-  game('sack', [3424, 2218], 0),
-  piece('basket', [3424, 2232], 1),
-  game('barrel', [3470, 2194], 0),
-  game('barrel', [3482, 2202], 0),
-  piece('stone-trough', [3358, 2262], 0, 'abreuvoir'),
-  game('bucket-water', [3422, 2270], 0),
-  game('bucket', [3430, 2276], 0),
-
-  // sud-est, le recoin entre le rond, la mercière (x 3520) et la ferme rivale (y 2400) : la paille, un banc, des caisses, des cageots
-  hayStack([3444, 2240], 'paille'),
-  piece('cageot', [3484, 2250], 0),
-  cageotStack([3486, 2242], 3, 'cageot'),
-  game('crate', [3478, 2280], 0),
-  game('crate', [3478, 2280], 0, undefined, 10, 0.2),
-  game('barrel', [3462, 2296], 0),
-  game('bench', [3432, 2318], 0, 'banc'),
-  piece('flower-pot', [3424, 2318], 0),
-  piece('flower-pot-yellow', [3474, 2320], 0),
-  piece('basket', [3486, 2330], 1),
+  // sud-est, posé à la main (le montage ne le déplace pas, `fixed`) : le recoin entre le rond, la mercière et la ferme rivale, dans
+  // x 3360-3466 × y 2172-2252 ; ce qu'il laisse libre : la bouche de la rue du sud (x < 3352, 4 m) et celle de la rue de l'est
+  // (y < 2168), le tour de 3 m du banc rond, 1,10 m devant les deux étals de la ferme rivale (y > 2252 au sud, x > 3468 à l'est) pour
+  // les clients, le chemin de la porte de la ferme rivale (par la rue du sud, à l'ouest de son étal) et celui de la mercière (par le
+  // bout est de son étal). De l'arbre vers l'étal : le banc tourné vers l'arbre, puis le tas de tonneaux couchés, les cageots, les
+  // tonneaux debout et les sacs, la paille ; l'abreuvoir à part, au bord de la rue du sud, à 1 m du tas de tonneaux, ses deux seaux.
+  ...hand([
+    game('bench', [3398, 2176], 1, 'banc'),
+    piece('flower-pot', [3408, 2172], 0),
+    game('crate', [3376, 2200], 0),
+    game('crate', [3376, 2200], 0, undefined, 10, 0.2),
+    barrelPile([3414, 2190], 'tonneaux'),
+    cageotStack([3456, 2190], 4, 'cageot-apples', 'cageots'),
+    cageotStack([3456, 2200], 2, 'cageot'),
+    piece('flower-pot-yellow', [3459, 2211], 0),
+    game('barrel', [3412, 2212], 0),
+    game('barrel', [3426, 2214], 0),
+    game('sack', [3442, 2213], 0),
+    game('sack', [3453, 2219], 0),
+    piece('basket', [3442, 2224], 1),
+    hayStack([3428, 2234], 'paille'),
+    piece('stone-trough', [3360, 2228], 0, 'abreuvoir'),
+    game('bucket-water', [3366, 2248], 0),
+    game('bucket', [3376, 2250], 0),
+  ]),
 ];
 
 /** Toute la composition en une scène (dans l'ordre de `CENTRE`). */

@@ -127,7 +127,7 @@ export const PARCELS: Parcel[] = [
     id: 'se-e', zone: 'village', shape: { rect: [3536, 2176, 3936, 2752] }, kind: 'shop', fate: 'new',
     label: 'La mercière',
     who: "La mercière, sœur du coq, veuve, et sa fille. La boutique au rez-de-chaussée sur la rue de l'est (fils, aiguilles, rubans, boutons, petits pots), son logis à l'étage.",
-    buildings: [[3536, 2240, 3872, 2400]],
+    buildings: [[3536, 2252, 3872, 2400]],
     yards: [[3576, 2400, 3936, 2560]],
   },
   {

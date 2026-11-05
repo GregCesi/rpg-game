@@ -9,7 +9,7 @@
 // Le modèle est celui des maisons du village (art/proposals/village-types.ts, village-maisons-bois-lib.ts, village-maisons-pierre*.ts).
 
 import type { Palette } from '../lib/canvas';
-import type { Scene } from '../lib/volumes';
+import type { Board, Scene } from '../lib/volumes';
 import type { VillagePiece } from './village-types';
 
 export type PlaceBuildingId =
@@ -48,3 +48,30 @@ export interface PlaceBuilding {
 }
 
 export type { VillagePiece };
+
+// =====================================================================================================================
+// Les emprises au sol et les accès (pour la vérification des passages : npx tsx tools/essai-place.ts acces)
+// =====================================================================================================================
+
+/**
+ * L'emprise au sol d'une image posée, gardée sur l'image : `foot` = [x0, x1 relatifs à son x, d : sa profondeur nord-sud au nord de son
+ * bord sud] ; elle suit l'image quand on la déplace (`moveBoard`, `place`). `pass` : ce qu'on enjambe (le seuil, l'herbe).
+ */
+export interface Footed { foot?: [number, number, number]; pass?: boolean }
+export function withFoot<B extends Board>(b: B, x0: number, x1: number, d: number): B & Footed {
+  return Object.assign(b, { foot: [x0 - b.x, x1 - b.x, d] as [number, number, number] });
+}
+export const passable = <B extends Board>(b: B): B & Footed => Object.assign(b, { pass: true });
+
+/**
+ * Une porte qui donne dehors, et ce qui mène au logis depuis elle (px de la zone village). `door` : l'ouverture (x0, x1) dans le mur
+ * dont le nu extérieur est en y, tournée vers `out` ; `inside` : un point juste dedans ; `to` : le pied de l'escalier (on y monte vers
+ * le nord : on l'aborde par le sud, en (x, y)) ou le point au-delà de la porte intérieure qui mène au logis.
+ */
+export interface PlaceAccess {
+  id: PlaceBuildingId;
+  name: string;
+  door: { x0: number; x1: number; y: number; out: 'N' | 'S'; wall: string };
+  inside: [number, number];
+  to?: { kind: 'stair' | 'door'; at: [number, number]; label: string };
+}

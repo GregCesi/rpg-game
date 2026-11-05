@@ -16,6 +16,7 @@
 // par son `hexify`, celles du module de bois par son `foreign` (leurs signes propres, le fer du bois et la lave de la pierre, se
 // recouvrent : chacun les convertit avec sa palette avant qu'on les mêle).
 
+import { withFoot } from './place-types';
 import type { Grid, Palette } from '../lib/canvas';
 import { sources } from '../index';
 import { woodAges, iron, terracotta, woad, world } from '../palette';
@@ -98,7 +99,7 @@ export function placeImg(o: Img, x0: number, x1: number, ySouth: number, z = 0, 
 /** Un objet de props.json posé comme le jeu le pose : le coin nord-ouest de son emprise en (x, y) px, dans sa vue, à la hauteur z (px). */
 export function prop(key: string, x: number, y: number, view = 0, age: Age = 'worn', z = 0): Board {
   const d = props[key].dims, [w, dd] = view % 2 ? [d.d / 5, d.w / 5] : [d.w / 5, d.d / 5];
-  return placeImg(propImg(key, view, age), x, x + w, y + dd, z);
+  return withFoot(placeImg(propImg(key, view, age), x, x + w, y + dd, z), x, x + w, dd);
 }
 export const propDims = (key: string) => props[key].dims;
 

@@ -39,7 +39,7 @@ import * as Nord from '../art/proposals/place-nord';
 import * as Sud from '../art/proposals/place-sud';
 import * as Centre from '../art/proposals/place-centre';
 import { PIECE_MODELS, PIECE_USERS } from '../art/proposals/place-sud-pieces';
-import { PLACE_META, type PlaceBuilding, type PlaceBuildingId, type VillagePiece } from '../art/proposals/place-types';
+import { PLACE_META, type Footed, type PlaceAccess, type PlaceBuilding, type PlaceBuildingId, type VillagePiece } from '../art/proposals/place-types';
 import { WAYS, type Rect } from '../art/proposals/village-plan-data';
 import { fontWidth, write as writeText, wrap } from '../art/proposals/village-plan-font';
 import { blank, rect, toPng, type Img, type RGBA } from './lib/world-render';
@@ -190,8 +190,8 @@ function fitCentre(): Fitted {
   C.forEach((it, i) => {
     if (i === 0) return; // l'ombre du houppier : elle suit le tilleul
     const g = groups.find((x) => x.at[0] === it.at[0] && x.at[1] === it.at[1]);
-    if (g) { g.idx.push(i); const r = itemRect(it, it.at); g.r = [Math.min(g.r[0], r[0]), Math.min(g.r[1], r[1]), Math.max(g.r[2], r[2]), Math.max(g.r[3], r[3])]; return; }
-    groups.push({ idx: [i], at: it.at, r: itemRect(it, it.at), fixed: i <= 2 });
+    if (g && !!it.fixed === g.fixed) { g.idx.push(i); const r = itemRect(it, it.at); g.r = [Math.min(g.r[0], r[0]), Math.min(g.r[1], r[1]), Math.max(g.r[2], r[2]), Math.max(g.r[3], r[3])]; return; }
+    groups.push({ idx: [i], at: it.at, r: itemRect(it, it.at), fixed: i <= 2 || !!it.fixed });
   });
   const moved: string[] = [], removed: string[] = [];
   const dropped = new Set<number>();
@@ -835,6 +835,216 @@ function piecesSheets(): void {
 }
 
 // =====================================================================================================================
+// 5. Les accès : les portes depuis le rond, l'escalier du logis depuis la porte, la largeur des rues (calculés au sol, 5 cm)
+// =====================================================================================================================
+
+/** Ce qui gêne au sol : les faces qui descendent sous 1,70 m (sauf toits et sol), les images posées (leur emprise `foot`, sinon le bas
+ * de leurs colonnes peintes), les choses du centre (leur emprise). Grille d'1 px (5 cm) sur `fr`. */
+const WHAT: string[] = [];
+let WHO_GRID: Int32Array | null = null;
+function obstacleGrid(fr: Rect, sc: Scene, extra: Rect[], names: string[] = []): Uint8Array {
+  const W = fr[2] - fr[0], H = fr[3] - fr[1], g = new Uint8Array(W * H);
+  const who = new Int32Array(W * H).fill(-1);
+  WHO_GRID = who;
+  let label = '';
+  const mark = (r: Rect) => {
+    const k = WHAT.push(`${label} [${r.map(Math.round).join(' ')}]`) - 1;
+    const x0 = Math.max(0, Math.floor(r[0]) - fr[0]), x1 = Math.min(W, Math.ceil(r[2]) - fr[0]);
+    const y0 = Math.max(0, Math.floor(r[1]) - fr[1]), y1 = Math.min(H, Math.ceil(r[3]) - fr[1]);
+    for (let y = y0; y < y1; y++) { g.fill(1, y * W + x0, y * W + Math.max(x0, x1)); who.fill(k, y * W + x0, y * W + Math.max(x0, x1)); }
+  };
+  for (const q of sc.quads) {
+    if (q.part.roof || q.part.name.startsWith('porte') || q.part.name === 'battant') continue; // une porte s'ouvre
+    const cs = [q.o, [q.o[0] + q.u[0], q.o[1] + q.u[1], q.o[2] + q.u[2]], [q.o[0] + q.v[0], q.o[1] + q.v[1], q.o[2] + q.v[2]],
+      [q.o[0] + q.u[0] + q.v[0], q.o[1] + q.u[1] + q.v[1], q.o[2] + q.u[2] + q.v[2]]];
+    const z0 = Math.min(...cs.map((c) => c[2])), z1 = Math.max(...cs.map((c) => c[2]));
+    if (z0 >= 34 || z1 < 4.5) continue; // un seuil, une marche de moins de 20 cm s'enjambe
+    const xs = cs.map((c) => c[0]), ys = cs.map((c) => c[1]);
+    let r: Rect = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+    if (r[2] - r[0] < 1) r = [Math.floor(r[0]), r[1], Math.floor(r[0]) + 1, r[3]];
+    if (r[3] - r[1] < 1) r = [r[0], Math.floor(r[1]), r[2], Math.floor(r[1]) + 1];
+    label = `face « ${q.part.name} »`;
+    mark(r);
+  }
+  for (const b of sc.boards as (Board & Footed)[]) {
+    if (b.pass || b.part) continue;
+    const rows = b.grid.length, d = b.depth(rows - 1), lift = d - (b.y + rows);
+    label = `image ${b.x},${b.y} ${b.grid[0].length}x${rows}`;
+    if (b.foot) { if (lift <= 30) mark([b.x + b.foot[0], d - b.foot[2], b.x + b.foot[1], d]); continue; }
+    if (lift > 4) continue;
+    const br = boardRect(b);
+    if (br) mark([br[0], d - Math.min(Math.ceil(rows / 2), 16), br[2], d]);
+  }
+  extra.forEach((r, i) => { label = names[i] ?? 'centre'; mark(r); });
+  return g;
+}
+/** La distance de chaque case libre à la case gênée la plus proche (px, centre à centre ; Felzenszwalb). */
+function clearance(g: Uint8Array, W: number, H: number): Float32Array {
+  const INF = 1e9, f = new Float64Array(Math.max(W, H)), d = new Float64Array(Math.max(W, H)), v = new Int32Array(Math.max(W, H)), z = new Float64Array(Math.max(W, H) + 1);
+  const edt1 = (n: number) => {
+    let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
+    for (let q = 1; q < n; q++) {
+      let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+      k++; v[k] = q; z[k] = s; z[k + 1] = INF;
+    }
+    k = 0;
+    for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) ** 2 + f[v[k]]; }
+  };
+  const D = new Float64Array(W * H);
+  for (let x = 0; x < W; x++) { for (let y = 0; y < H; y++) f[y] = g[y * W + x] ? 0 : INF; edt1(H); for (let y = 0; y < H; y++) D[y * W + x] = d[y]; }
+  const out = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) { for (let x = 0; x < W; x++) f[x] = D[y * W + x]; edt1(W); for (let x = 0; x < W; x++) out[y * W + x] = Math.sqrt(d[x]); }
+  return out;
+}
+/** Le chemin le plus large (maximin) des cases `from` à chaque case : la largeur la plus étroite du meilleur chemin (px), et d'où l'on vient. */
+function widest(c: Float32Array, W: number, H: number, from: number[]): { best: Float32Array; prev: Int32Array } {
+  const best = new Float32Array(W * H).fill(-1), prev = new Int32Array(W * H).fill(-1);
+  // file à priorité : un tas binaire sur la largeur (2 × (dégagement − ½))
+  const heap: number[] = [], key = (i: number) => best[i];
+  const push = (i: number) => { heap.push(i); let k = heap.length - 1; while (k > 0) { const p = (k - 1) >> 1; if (key(heap[p]) >= key(heap[k])) break; [heap[p], heap[k]] = [heap[k], heap[p]]; k = p; } };
+  const pop = () => { const top = heap[0], last = heap.pop()!; if (heap.length) { heap[0] = last; let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = k; if (l < heap.length && key(heap[l]) > key(heap[m])) m = l; if (r < heap.length && key(heap[r]) > key(heap[m])) m = r; if (m === k) break; [heap[m], heap[k]] = [heap[k], heap[m]]; k = m; } } return top; };
+  const wid = (i: number) => 2 * (c[i] - 0.5);
+  for (const i of from) if (c[i] > 0.5) { best[i] = wid(i); push(i); }
+  const done = new Uint8Array(W * H);
+  while (heap.length) {
+    const i = pop();
+    if (done[i]) continue;
+    done[i] = 1;
+    const x = i % W, y = (i / W) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const X = x + dx, Y = y + dy;
+      if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+      const j = Y * W + X;
+      if (done[j] || c[j] <= 0.5) continue;
+      const b = Math.min(best[i], wid(j));
+      if (b > best[j]) { best[j] = b; prev[j] = i; push(j); }
+    }
+  }
+  return { best, prev };
+}
+interface AccessResult { a: PlaceAccess; outW: number; outPath: [number, number][]; seuil: boolean; inW?: number; inPath?: [number, number][]; landing?: boolean }
+const fmtW = (px: number, cap: number) => (px >= cap - 1 ? `${fmtM(cap)} m ou plus` : `${fmtM(Math.max(0, px))} m`);
+/** Le meilleur point d'une boîte et le chemin qui y mène. */
+function bestIn(res: { best: Float32Array; prev: Int32Array }, fr: Rect, W: number, box: Rect): { w: number; path: [number, number][] } {
+  let bi = -1;
+  for (let y = Math.max(fr[1], box[1]); y < Math.min(fr[3], box[3]); y++) for (let x = Math.max(fr[0], box[0]); x < Math.min(fr[2], box[2]); x++) {
+    const i = (y - fr[1]) * W + (x - fr[0]);
+    if (bi < 0 || res.best[i] > res.best[bi]) bi = i;
+  }
+  const path: [number, number][] = [];
+  for (let i = bi; i >= 0 && path.length < 20000; i = res.prev[i]) path.push([fr[0] + (i % W), fr[1] + ((i / W) | 0)]);
+  return { w: bi < 0 ? -1 : res.best[bi], path };
+}
+const freeBox = (g: Uint8Array, fr: Rect, W: number, r: Rect) => {
+  const what = new Set<string>();
+  for (let y = r[1]; y < r[3]; y++) for (let x = r[0]; x < r[2]; x++) if (g[(y - fr[1]) * W + (x - fr[0])]) what.add(WHAT[WHO_GRID![(y - fr[1]) * W + (x - fr[0])]]);
+  if (what.size && process.env.PLACE_DEBUG) console.log(`    gêne [${r.join(' ')}] : ${[...what].slice(0, 6).join(' ; ')}`);
+  return !what.size;
+};
+
+/** Le passage de chaque rue (rue de l'ouest et de l'est) : colonne par colonne, la plus longue course libre dans la bande, au plus court. */
+const STREET_BANDS: { name: string; x0: number; x1: number; y0: number; y1: number; line: number }[] = [
+  { name: 'rue de l’ouest', x0: 2724, x1: 3070, y0: 2040, y1: 2240, line: 2100 },
+  { name: 'rue de l’est', x0: 3580, x1: 3860, y0: 2040, y1: 2236, line: 2096 },
+];
+
+function acces(): void {
+  const fr: Rect = FRAME, W = fr[2] - fr[0], H = fr[3] - fr[1];
+  const ids: PlaceBuildingId[] = [...NORD_IDS, 'p-panneau', ...SUD_IDS];
+  const scs = ids.map((id) => outsideOf(id, 1));
+  const out: Scene = { quads: scs.flatMap((s) => s.quads), boards: scs.flatMap((s) => s.boards) };
+  const cc = FIT.items.slice(1).map((it, i) => ({ it, r: CENTRE_RECTS[i] })).filter((x) => x.it.key !== 'linden-tree');
+  const centre = cc.map((x) => x.r);
+  const g = obstacleGrid(fr, out, centre, cc.map((x) => `centre : ${nameOf(x.it)}`)), c = clearance(g, W, H);
+  const outWho = WHO_GRID!;
+  const seeds = [[3312, 1690], [3312, 2740], [2650, 2100], [3990, 2100]].map(([x, y]) => (y - fr[1]) * W + (x - fr[0]));
+  const res = widest(c, W, H, seeds);
+  const results: AccessResult[] = [];
+  for (const a of [...Nord.ACCESS, ...Sud.ACCESS]) {
+    const m = Math.round((a.door.x0 + a.door.x1) / 2), sgn = a.door.out === 'S' ? 1 : -1, y = a.door.y;
+    const box: Rect = sgn > 0 ? [m - 10, y + 4, m + 11, y + 41] : [m - 10, y - 41, m + 11, y - 4];
+    const strip: Rect = sgn > 0 ? [m - 10, y + 4, m + 10, y + 24] : [m - 10, y - 24, m + 10, y - 4]; // hors du nu du mur (huisseries, solin)
+    const o = bestIn(res, fr, W, box);
+    WHO_GRID = outWho;
+    const r: AccessResult = { a, outW: o.w, outPath: o.path, seuil: freeBox(g, fr, W, strip) };
+    if (process.env.PLACE_DEBUG) { const k = o.path.reduce((m, p, j) => (c[(p[1] - fr[1]) * W + p[0] - fr[0]] < c[(o.path[m][1] - fr[1]) * W + o.path[m][0] - fr[0]] ? j : m), 0); const p = o.path[k]; console.log(`    ${a.name} : le plus étroit en ${p}`); freeBox(g, fr, W, [p[0] - 12, p[1] - 12, p[0] + 13, p[1] + 13]); }
+    if (a.to) {
+      const b = (ofId(a.id, 1)).inside(ofId(a.id, 1).at, 0);
+      const ifr: Rect = [Math.min(a.inside[0], a.to.at[0]) - 140, Math.min(a.inside[1], a.to.at[1]) - 140, Math.max(a.inside[0], a.to.at[0]) + 140, Math.max(a.inside[1], a.to.at[1]) + 140];
+      const iW = ifr[2] - ifr[0], iH = ifr[3] - ifr[1];
+      const ig = obstacleGrid(ifr, b, []), ic = clearance(ig, iW, iH);
+      const [sx, sy] = a.inside, from: number[] = [];
+      for (let yy = sy - 10; yy <= sy + 10; yy++) for (let xx = sx - 10; xx <= sx + 10; xx++) from.push((yy - ifr[1]) * iW + (xx - ifr[0]));
+      const ir = widest(ic, iW, iH, from);
+      const [tx, ty] = a.to.at;
+      const tbox: Rect = a.to.kind === 'stair' ? [tx - 9, ty + 6, tx + 10, ty + 30] : [tx - 8, ty - 8, tx + 9, ty + 9];
+      const t = bestIn(ir, ifr, iW, tbox);
+      if (process.env.PLACE_PROBE) for (const pr of process.env.PLACE_PROBE.split(';')) { const [px, py] = pr.split(',').map(Number); if (px >= ifr[0] && px < ifr[2] && py >= ifr[1] && py < ifr[3]) { const q = (py - ifr[1]) * iW + px - ifr[0]; console.log(`    sonde ${a.name} ${px},${py} : dégagement ${ic[q].toFixed(1)}, meilleur ${ir.best[q].toFixed(1)}`); } }
+      if (process.env.PLACE_DEBUG && t.path.length) { const k = t.path.reduce((m, p, j) => (ic[(p[1] - ifr[1]) * iW + p[0] - ifr[0]] < ic[(t.path[m][1] - ifr[1]) * iW + t.path[m][0] - ifr[0]] ? j : m), 0); const p = t.path[k]; console.log(`    ${a.name} dedans : le plus étroit en ${p}`); freeBox(ig, ifr, iW, [p[0] - 10, p[1] - 10, p[0] + 11, p[1] + 11]); for (const [dx, dy] of [[-12, 0], [12, 0], [0, -12], [0, 12]]) { const q = (p[1] + dy - ifr[1]) * iW + p[0] + dx - ifr[0]; void q; } }
+      r.inW = t.w; r.inPath = t.path;
+      r.landing = a.to.kind === 'stair' ? freeBox(ig, ifr, iW, [tx - 8, ty + 5, tx + 8, ty + 21]) : true; // le pied des limons dépasse de 4 px
+    }
+    results.push(r);
+  }
+  console.log('\n  Les accès (solution 1 ; chemin depuis les rues, largeur la plus étroite ; au-delà de 2 m, « 2 m ou plus »)');
+  console.log('  bâtiment | porte | chemin depuis le rond | accès au logis | verdict');
+  for (const r of results) {
+    const okOut = r.outW >= 19 && r.seuil, okIn = !r.a.to || ((r.inW ?? -1) >= 15 && r.landing); // à 1 px près (la grille de 5 cm)
+    console.log(`  ${r.a.name} | ${r.a.door.wall}, x ${r.a.door.x0}-${r.a.door.x1}, y ${r.a.door.y} | ${fmtW(r.outW, 40)}${r.seuil ? '' : ' (seuil encombré)'} | ${r.a.to ? `${r.a.to.label} : ${fmtW(r.inW ?? -1, 32)}${r.landing ? '' : ' (pied de l’escalier encombré)'}` : 'le logis lui-même'} | ${okOut && okIn ? 'OK' : 'À CORRIGER'}`);
+  }
+  // les rues : la plus longue course libre, colonne par colonne
+  WHO_GRID = outWho;
+  if (process.env.PLACE_BOX) freeBox(g, fr, W, process.env.PLACE_BOX.split(',').map(Number) as Rect);
+  for (const s of STREET_BANDS) {
+    let min = Infinity, at = 0, span: [number, number] = [0, 0];
+    for (let x = s.x0; x < s.x1; x++) {
+      // la course libre qui contient la ligne de la rue (`line`), du nord au sud
+      let a = s.line, b = s.line;
+      if (g[(s.line - fr[1]) * W + (x - fr[0])]) { if (min > 0) { min = 0; at = x; span = [s.line, s.line]; } continue; }
+      while (a > s.y0 && !g[(a - 1 - fr[1]) * W + (x - fr[0])]) a--;
+      while (b < s.y1 && !g[(b + 1 - fr[1]) * W + (x - fr[0])]) b++;
+      if (b + 1 - a < min) { min = b + 1 - a; at = x; span = [a, b + 1]; }
+    }
+    if (process.env.PLACE_DEBUG) freeBox(g, fr, W, [at - 2, span[0] - 3, at + 3, span[0]]);
+    console.log(`  ${s.name} : passage le plus étroit ${fmtM(min)} m (x ${at}, y ${span[0]}-${span[1]})`);
+    STREET_MIN.push({ name: s.name, x: at, span });
+  }
+  // la planche : la solution 1 en x1, les gênes en rouge, les chemins en vert, les seuils et les pieds d'escalier
+  const L = render(placeScene(1, []), fr, { grass: ground, floor: ground });
+  const img = blank(W + 48, H + 120, BG);
+  say(img, 'Les accès de la place (solution 1) : en rouge ce qui gêne au sol, en vert le chemin le plus large depuis les rues jusqu’à chaque porte', 24, 16, S, GOLD);
+  say(img, 'en bleu les rues (le passage le plus étroit) ; x1, 5 cm par px', 24, 16 + LH, S, GREY);
+  const oy = 16 + 2 * LH + 16;
+  blitLayer(img, L, 24, oy, 1, [fr[0] - L.x, fr[1] - L.y, fr[2] - L.x, fr[3] - L.y]);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y * W + x]) {
+    const q = ((oy + y) * img.w + 24 + x) * 4;
+    img.data[q] = Math.min(255, img.data[q] * 0.5 + 120); img.data[q + 1] *= 0.55; img.data[q + 2] *= 0.55;
+  }
+  for (const r of results) for (const [x, y] of r.outPath) rect(img, 24 + x - fr[0], oy + y - fr[1], 1, 1, GREEN);
+  for (const r of results) { const m = (r.a.door.x0 + r.a.door.x1) / 2; rect(img, 24 + m - 3 - fr[0], oy + r.a.door.y - 3 - fr[1], 6, 6, r.outW >= 20 && r.seuil ? GOLD : RED); }
+  for (const s of STREET_MIN) rect(img, 24 + s.x - fr[0], oy + s.span[0] - fr[1], 2, s.span[1] - s.span[0], [90, 160, 255, 255]);
+  save(img, 'place-acces.png');
+  // les dedans : chaque chemin de la porte à l'escalier
+  const blocks: Block[] = results.filter((r) => r.a.to).map((r) => {
+    const a = r.a, b = ofId(a.id, 1);
+    const ifr: Rect = [Math.min(a.inside[0], a.to!.at[0]) - 60, Math.min(a.inside[1], a.to!.at[1]) - 90, Math.max(a.inside[0], a.to!.at[0]) + 60, Math.max(a.inside[1], a.to!.at[1]) + 50];
+    const l = render(b.inside(b.at, 0), ifr, { grass: ground, floor: floorTile });
+    const K = 2, w = (ifr[2] - ifr[0]) * K, h = (ifr[3] - ifr[1]) * K;
+    return {
+      title: [{ s: a.name, c: GOLD }], notes: lines(`${a.to!.label} : ${fmtW(r.inW ?? -1, 32)}`, Math.max(w, 400), (r.inW ?? -1) >= 16 && r.landing ? GREEN : RED), w, h,
+      draw: (im, x, y) => {
+        blitLayer(im, l, x, y, K, [ifr[0] - l.x, ifr[1] - l.y, ifr[2] - l.x, ifr[3] - l.y]);
+        for (const [px, py] of r.inPath ?? []) if (px >= ifr[0] && px < ifr[2] && py >= ifr[1] && py < ifr[3]) rect(im, x + (px - ifr[0]) * K, y + (py - ifr[1]) * K, K, K, GREEN);
+      },
+    };
+  });
+  save(sheet(blocks, ['Les accès de la place : de la porte à l’escalier du logis (dedans, x2)', 'en vert le chemin le plus large entre les meubles, de l’entrée au pied de l’escalier (ou à la porte intérieure)'], 2800), 'place-acces-dedans.png');
+}
+const STREET_MIN: { name: string; x: number; span: [number, number] }[] = [];
+
+// =====================================================================================================================
+// =====================================================================================================================
 
 function main(): void {
   const only = process.argv[2];
@@ -852,6 +1062,7 @@ function main(): void {
     'x2 ; toits effacés, mur sud coupé comme le jeu, meubles du jeu et pièces nouvelles à leur place ; le rez et l’étage côte à côte',
   ], 2800), 'place-batiments-dedans.png');
   if (!only || only === 'pieces') piecesSheets();
+  if (!only || only === 'acces') acces();
   if (offGauge.length) console.log(`  hors gabarit (rouge) :\n    ${offGauge.join('\n    ')}`);
   if (missing.size) console.log(`  ATTENTION, signes absents de la police (écrits « ? ») : ${[...missing].join(' ')}`);
 }

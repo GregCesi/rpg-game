@@ -341,18 +341,6 @@ const windowLaundry = (): Quad[] => {
   cloth(15, 23, 1, [C.paper, C.paperShade, '#9f9479'], 633);
   return Q;
 };
-/** L'échelle appuyée contre un mur (50 × 80 × 290) : deux montants, neuf barreaux ; le pied à 80 cm du mur. */
-const leaningLadder = (): Quad[] => {
-  const Q: Quad[] = [], P = WP('échelle', 5, '&');
-  const y0 = 15.5, y1 = 0.6, H = 57;
-  for (const x of [1, 9]) Q.push(...bar([x, y0, 0], [x, y1, H], 1.2, P, W(641 + x)));
-  for (let k = 1; k <= 9; k++) {
-    const f = k / 10.2, y = y0 + (y1 - y0) * f, z = H * f;
-    Q.push(...bar([1.6, y, z], [8.4, y, z], 0.8, part('barreau', 5.5, '&', 'full'), W(651 + k)));
-  }
-  return Q;
-};
-
 // =====================================================================================================================
 // 14.3 Le bûcheron : les outils du bois, les bottes de bardeaux
 // =====================================================================================================================
@@ -837,10 +825,9 @@ const DEFS: Def[] = [
   { key: 'cheese-stack', name: 'Pile de meules', dims: { w: 50, d: 50, h: 60 }, buildings: ['p-ferme-riche'], n: 1, k: 0.5, shadow: true, note: 'cinq meules affinées de 12 cm, la croûte lavée', model: cheeseStack },
   { key: 'wax-stack', name: 'Pains de cire en pile', dims: { w: 50, d: 30, h: 40 }, buildings: ['p-ferme-riche'], n: 2, k: 0.5, shadow: true, note: 'quatorze pains de 25 x 15 x 10 en quatre lits', model: waxStack },
   { key: 'candle-bunch', name: 'Botte de cierges', dims: { w: 30, d: 10, h: 50 }, buildings: ['p-ferme-riche'], n: 2, k: 0.5, shadow: false, form: 'hanging', note: 'six cierges pendus par les mèches, sous la traverse de l\'auvent ; de côté (R1), la botte se voit par la tranche', model: candleBunch },
-  // 14.1 la vie : les jardinières, le linge, l'échelle
+  // 14.1 la vie : les jardinières, le linge (l'échelle est celle du centre : art/proposals/place-centre-pieces.ts)
   { key: 'flower-box', name: 'Jardinière d\'appui', dims: { w: 60, d: 20, h: 40 }, buildings: ['p-ferme-riche', 'p-bucheron'], n: 2, k: 0.5, shadow: false, form: 'hanging', note: 'terre cuite, géraniums, soucis, giroflées ; posée sur l\'appui d\'une fenêtre d\'étage', model: flowerBox },
   { key: 'window-laundry', name: 'Linge à la fenêtre', dims: { w: 120, d: 10, h: 60 }, buildings: ['p-ferme-riche', 'p-bucheron'], n: 2, k: 0.5, shadow: false, form: 'hanging', note: 'une perche, une chemise, un chaperon de guède, un drap ; pend en hauteur ; de côté (R1) le linge est vu par la tranche (une face est ou ouest ne se voit pas : CADRAGE 8.1)', model: windowLaundry },
-  { key: 'leaning-ladder', name: 'Échelle appuyée', dims: { w: 50, d: 80, h: 290 }, buildings: ['p-ferme-riche'], n: 4, k: 0.5, shadow: true, note: 'deux montants, neuf barreaux, le pied à 80 cm du mur ; vue de dos (R2) l\'échelle penche vers le nord : moins haute que sa boîte, c\'est la projection', model: leaningLadder },
   // 13.9 l'enseigne, ses cinq motifs (un tirage par métier)
   ...MOTIFS.map((m, i): Def => ({
     key: i === 0 ? 'hanging-sign' : `hanging-sign-${m.key}`, name: `Enseigne pendue à sa potence (${m.name})`, dims: SIGN_DIMS,

@@ -1294,3 +1294,46 @@ les bancs, l'abreuvoir, les charrettes, le linge, les pots, tout ce qui remplit)
     au dessin si elle gêne en jeu.
 26. **Le commerce** (14.4) : un chantier à part, après les maisons de bois ? *Recommandé : oui*, avec la monnaie, les prix, les
     vendeurs et leurs horaires.
+
+### 14.9 Les réponses de Grégoire (la place validée : « c'est le genre qu'il faudrait »)
+
+- **23 : oui**, la solution 1 au sud (l'appentis bas et les étals en avant), plus la boutique transparente quand Xéros est devant la
+  porte (le fondu de la solution 2).
+- **24 : oui**, les étals du sud reculent pour laisser 3 m de passage dans les rues de l'ouest et de l'est.
+- **25 : oui**, l'ombre du tilleul se reverra en jeu si elle gêne.
+- **26 : oui**, le commerce dans un chantier à part, après les maisons de bois.
+
+### 14.10 On entre partout : la vérification des accès (5 novembre)
+
+Calculée, pas estimée : `npx tsx tools/essai-place.ts acces` pose chaque image avec son emprise au sol réelle sur une grille de 5 cm,
+cherche le chemin le plus large depuis les quatre rues jusqu'à chaque porte, puis de l'entrée au pied de l'escalier, et mesure les
+rues de l'ouest et de l'est colonne par colonne (planches `.art-preview/place-acces.png` et `place-acces-dedans.png` : en rouge ce
+qui gêne, en vert les chemins). Solution 1 au sud ; Xéros fait 60 cm, une porte 90 cm.
+
+| Bâtiment | Porte | Chemin depuis le rond (le plus étroit) | Accès au logis | OK ou corrigé |
+| --- | --- | --- | --- | --- |
+| Boutique du riche | façade sud, sur le rond | 2 m ou plus | escalier au nord-est de la boutique : 1,60 m | OK |
+| Logis-réserve du riche | façade sud, bout est, rue de l'ouest | 2 m ou plus | escalier contre le mur est, à côté de l'entrée : 1,60 m | **corrigé** : il n'y avait pas d'escalier vers l'étage ; ajouté, la table et le banc déplacés |
+| Boutique du bûcheron | façade sud, entre les devantures | 1,25 m (0,85 m avant) | escalier contre le mur est du magasin : 1,60 m | **corrigé** : pas d'escalier, ajouté ; billot, chevalet et fagots décalés ; un banc du centre retiré, le chemin jusqu'au rond gardé libre |
+| Boutique abandonnée, atelier | porte à deux battants, façade sud, rue de l'est | 2 m ou plus | porte de la cloison, logis de plain-pied : 0,85 m | OK (la porte reste barrée d'une planche clouée : voulu) |
+| Boutique abandonnée, logis | porte du logis, façade sud | 2 m ou plus | le logis lui-même | **corrigé** : les planches oubliées étaient sur le seuil |
+| Tailleuse, vêtements | façade nord, sous l'appentis, sur le rond | 2 m ou plus | escalier dans la boutique, contre le mur est : 1,15 m | **corrigé** : l'escalier était dans la réserve, son pied contre un mur ; déplacé, un portemanteau et un mannequin aussi |
+| Tailleuse, cuir et armes | façade nord, sous l'appentis | 2 m ou plus | escalier dans la réserve, par la porte de cloison : 0,75 m | **corrigé** : l'escalier traversait une cloison ; les peaux pendues barraient la porte de cloison |
+| Mercière | façade nord, sous l'appentis | 2 m ou plus, par le bout est de son étal | escalier de la cuisine, par la porte de cloison : 0,75 m | OK |
+| Ferme rivale | façade nord, sous l'appentis | 2 m ou plus, par la rue du sud à l'ouest de l'étal | escalier de la réserve : 0,85 m | OK |
+
+Les 0,75 m sont les portes de cloison de 80 cm, comptées à un pixel près.
+
+**Les rues** (réponse 24) : **3 m** de passage dans la rue de l'ouest (les perches à habits et le mannequin reculés, ce qui bordait le
+logis du riche collé à son mur, l'échelle contre son pignon) ; **3,05 m** dans la rue de l'est (l'étal long de la mercière reculé, et
+avec lui **la façade nord de la mercière**, de 2240 à 2252 : 16,80 × 7,40 m ; sans cela, son toit cachait l'étal).
+
+**L'amas du sud-est posé à la main** (`fixed` dans `place-centre.ts` : le montage ne le déplace plus) : un banc tourné vers l'arbre,
+deux caisses empilées, le tas de tonneaux couchés, deux piles de cageots, deux tonneaux debout, des sacs, un panier, la paille,
+l'abreuvoir et ses deux seaux ; 1 m entre les tonneaux et l'abreuvoir ; les bouches des rues du sud et de l'est, le tour du banc et
+1,10 m devant les étals de la ferme rivale restent libres. Le nord-est aussi est posé à la main.
+
+**Une seule échelle** : celle du centre (mieux éclairée, barreaux lisibles) ; celle du nord est retirée de son module.
+
+**Ce qui reste** : les nouveaux escaliers ne percent pas encore le plancher dans la vue de l'étage ; l'échelle gardée penche à 63° ;
+le montage déplace encore 12 petites choses du centre hors des zones posées à la main.

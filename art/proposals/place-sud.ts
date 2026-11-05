@@ -27,7 +27,7 @@ import {
 } from '../lib/volumes';
 import { daub } from '../lib/volumes';
 import type { Layer } from './maison-xeros';
-import type { PlaceBuilding, PlaceBuildingId } from './place-types';
+import { withFoot, type PlaceAccess, type PlaceBuilding, type PlaceBuildingId } from './place-types';
 import type { Rect } from './village-plan-data';
 import {
   VOID, boards, dimmed, furnWood, leaded, limeMasonry, limePlaster, palette, planks, rendered, rubble, rubbleSection, withBays,
@@ -59,21 +59,21 @@ export { palette };
 /** Une pièce nouvelle (meuble) posée comme un objet du jeu : son emprise au coin nord-ouest (x, y) en px, dans sa vue, à la hauteur z. */
 function piece(key: string, x: number, y: number, view = 0, z = 0): Board {
   const m = pieceModel(key), [w, d] = view % 2 ? [m.dims.d / 5, m.dims.w / 5] : [m.dims.w / 5, m.dims.d / 5];
-  return placeImg({ grid: pieceGrid(m, view), pal: palette }, x, x + w, y + d, z);
+  return withFoot(placeImg({ grid: pieceGrid(m, view), pal: palette }, x, x + w, y + d, z), x, x + w, d);
 }
 /** Un meuble d'un modèle quelconque (la table de la tailleuse, un coupon), son emprise w × d px. */
 function furniture(q: Quad[], x: number, y: number, w: number, d: number, z = 0, view = 0): Board {
-  return placeImg({ grid: furnitureGrid(q, view), pal: palette }, x, x + w, y + d, z);
+  return withFoot(placeImg({ grid: furnitureGrid(q, view), pal: palette }, x, x + w, y + d, z), x, x + w, d);
 }
 /** Une pièce des maisons de pierre (la chaise). */
 function stonePiece(key: string, x: number, y: number, view = 0, z = 0): Board {
   const m = stonePieceModel(key), [w, d] = view % 2 ? [m.dims.d / 5, m.dims.w / 5] : [m.dims.w / 5, m.dims.d / 5];
-  return placeImg({ grid: stonePieceGrid(m, view), pal: palette }, x, x + w, y + d, z);
+  return withFoot(placeImg({ grid: stonePieceGrid(m, view), pal: palette }, x, x + w, y + d, z), x, x + w, d);
 }
 /** Une pièce des maisons de bois (le rouet, le chevalet). */
 function woodPiece(key: string, w: number, d: number, x: number, y: number, view = 0, z = 0): Board {
   const [ww, dd] = view % 2 ? [d, w] : [w, d];
-  return placeImg({ grid: woodPieceGrid(key, view), pal: PIECE_PAL }, x, x + ww / 5, y + dd / 5, z);
+  return withFoot(placeImg({ grid: woodPieceGrid(key, view), pal: PIECE_PAL }, x, x + ww / 5, y + dd / 5, z), x, x + ww / 5, dd / 5);
 }
 /** L'âtre du jeu tourné le dos au sud (contre le mur sud, la souche au-dessus) : son dos en (x .. x + 44, ySouth). */
 function hearthNorth(frame: number, x: number, ySouth: number, z: number): Quad[] {
@@ -462,7 +462,9 @@ const TA_S: Wing = {
 };
 
 const tailleuse: Def = {
-  id: 'p-tailleuse', at: TA_AT, size: [576, 656], wings: [TA_W, TA_S], stairs: [[326, 272], [362, 450]],
+  // les escaliers du logis : dans la boutique des vêtements contre le mur est (dans la réserve, son pied touchait le mur sud) ; dans la
+  // réserve de l'aile du cuir (il traversait la cloison de l'atelier)
+  id: 'p-tailleuse', at: TA_AT, size: [576, 656], wings: [TA_W, TA_S], stairs: [[330, 184], [362, 490]],
   yard(Q, B) {
     // la cour dans l'équerre : la palissade à l'ouest (sur la ruelle) et au sud, le portail sur la ruelle des quarts
     Q.push(...fenceY(338, 654, 2, 1571), ...fenceX(0, 132, 654, 1573), ...fenceX(188, 352, 654, 1575));
@@ -488,9 +490,9 @@ const tailleuse: Def = {
     // les vêtements et les étoffes, sur le bord sud de la rue de l'ouest (au-delà de 5,35 m du mur : le toit ne les cache pas)
     B.push(
       piece('cloth-table', 36, 50), piece('cloth-table', 106, 50),
-      piece('clothes-rack', 46, 34), piece('clothes-rack', 92, 32), piece('clothes-rack', 138, 34),
+      piece('clothes-rack', 46, 40), piece('clothes-rack', 92, 40), piece('clothes-rack', 138, 40),
       piece('clothes-rack', 178, 56), piece('clothes-rack', 222, 58),
-      piece('dress-form', 268, 56), piece('dress-form', 282, 59), piece('hat-stand', 298, 54), piece('dress-form', 186, 36),
+      piece('dress-form', 268, 56), piece('dress-form', 282, 59), piece('hat-stand', 298, 54), piece('dress-form', 186, 40),
       boltBoard('red', 316, 60), boltBoard('blue', 318, 58, 2), piece('bread-basket', 330, 62),
     );
     postSign(Q, B, 's3', 330, 70);
@@ -519,8 +521,8 @@ const tailleuse: Def = {
         furniture(tailorTableQuads(), 90, 230, 28, 14), woodPiece('spinning-wheel', 90, 40, 40, 290), piece('dress-form', 150, 220), prop('stool', 100, 250),
         boltBoard('red', 40, 200), boltBoard('blue', 40, 206), boltBoard('linen', 48, 204), prop('chest', 140, 300), piece('cloth-table', 40, 250, 0),
         // la boutique des vêtements
-        piece('clothes-rack', 198, 182), piece('clothes-rack', 240, 182), piece('dress-form', 200, 228), piece('hat-stand', 334, 186),
-        piece('cloth-table', 210, 246), piece('shop-counter', 286, 228, 1), piece('dress-form', 318, 240),
+        piece('clothes-rack', 198, 182), piece('clothes-rack', 240, 182), piece('dress-form', 200, 228), piece('hat-stand', 200, 194),
+        piece('cloth-table', 210, 246), piece('shop-counter', 286, 228, 1), piece('dress-form', 222, 228),
         // la réserve
         prop('chest', 200, 280), prop('chest', 200, 300), prop('crate', 240, 300), prop('crate', 254, 304), boltBoard('red', 280, 300), boltBoard('blue', 288, 306),
       );
@@ -531,7 +533,7 @@ const tailleuse: Def = {
         piece('gear-rack', 420, 228), piece('weapon-rack', 470, 228), piece('shield-stand', 548, 250, 1), piece('armor-form', 360, 280), piece('armor-form-s1', 378, 282),
         piece('saddle-stand', 410, 290), piece('knife-display', 450, 296), piece('shop-counter', 500, 300, 1), piece('gear-rack', 360, 340 - 8),
         prop('lantern', 506, 304, 0, 19), prop('rope-coil', 440, 330), prop('rope-coil', 446, 336),
-        piece('saddler-bench', 370, 372), piece('leather-hides', 440, 362), prop('grindstone', 520, 384, 1), prop('barrel', 520, 440), prop('stool', 386, 392), prop('chest', 470, 440),
+        piece('saddler-bench', 370, 372), piece('leather-hides', 500, 362), prop('grindstone', 520, 384, 1), prop('barrel', 520, 440), prop('stool', 386, 392), prop('chest', 470, 440),
         prop('sack', 400, 500), prop('sack', 412, 502), prop('barrel', 520, 500), prop('barrel', 520, 514), prop('crate', 420, 560), prop('crate', 434, 562),
       );
       return;
@@ -563,20 +565,21 @@ const tailleuse: Def = {
 // La mercière (huitième sud-est, le long de la rue de l'est) : rez de pierre enduite, étage de pan de bois chaulé, tuiles plates
 // =====================================================================================================================
 //
-// Zone village : murs 3536-3872 × 2240-2400 (16,80 × 8 m), reculés de 2,40 m sur la proposition (2192) pour que l'étal long tienne sur le
-// bord sud de la rue de l'est (2116-2130) en laissant 2,60 m de passage devant le bûcheron et la boutique abandonnée. La porte de la
+// Zone village : murs 3536-3872 × 2252-2400 (16,80 × 7,40 m), reculés de 3 m sur la proposition (2192) pour que l'étal long tienne sur
+// le bord sud de la rue de l'est (2128-2142) en laissant 3 m de passage devant le mur de la boutique abandonnée (réponse 24 de Grégoire),
+// hors de la bande que cache le toit (5,35 m au nord du mur : 2145). La porte de la
 // boutique au nord, à l'ouest, sur le rond. Sa cour au sud (3576-3936 × 2400-2560), où sèche le linge. Scène : coin en (3520, 2080).
 
 const ME_AT: [number, number] = [3520, 2080];
 const ME_W: Wing = {
-  x0: 16, x1: 352, y0: 160, y1: 320, axis: 'x', mat: 'merc', cover: 'tiles', pitch: 45, seed: 1301,
+  x0: 16, x1: 352, y0: 172, y1: 320, axis: 'x', mat: 'merc', cover: 'tiles', pitch: 45, seed: 1301,
   south: [
     { a0: 40, a1: 60, z0: 16, z1: 36, kind: 'leaded' }, { a0: 150, a1: 168, z0: 0, z1: 36, kind: 'door' },
     { a0: 236, a1: 256, z0: 16, z1: 36, kind: 'leaded' },
   ],
   up: ['cross', 'window', 'plain', 'window', 'window', 'cross'],
   northDoor: [30, 48],
-  stack: [270, 286, 156, 168],
+  stack: [270, 286, 168, 180],
 };
 const merciere: Def = {
   id: 'p-merciere', at: ME_AT, size: [416, 480], wings: [ME_W], stairs: [[316, 220]],
@@ -591,37 +594,37 @@ const merciere: Def = {
   stallsS1(Q, B) {
     // l'étal long sur le bord sud de la rue de l'est, au-delà de la bande cachée (5,35 m du mur) ; le présentoir à rubans, les paniers
     B.push(
-      piece('haberdashery-stall', 36, 36), piece('haberdashery-stall', 104, 36), piece('ribbon-rack', 174, 40),
-      piece('vegetable-basket', 22, 42), prop('crate', 198, 42), lift(prop('crate', 198, 42), 13), piece('bread-basket', 210, 44), prop('sack', 222, 42),
+      piece('haberdashery-stall', 36, 48), piece('haberdashery-stall', 104, 48), piece('ribbon-rack', 174, 52),
+      piece('vegetable-basket', 22, 54), prop('crate', 198, 54), lift(prop('crate', 198, 54), 13), piece('bread-basket', 210, 56), prop('sack', 222, 54),
     );
-    postSign(Q, B, 's2', 8, 50);
+    postSign(Q, B, 's2', 8, 62);
   },
   stallsS2(Q, B) {
-    B.push(prop('bench', 60, 40), piece('vegetable-basket', 80, 44));
-    postSign(Q, B, 's2', 8, 50);
+    B.push(prop('bench', 60, 52), piece('vegetable-basket', 80, 56));
+    postSign(Q, B, 's2', 8, 62);
   },
   furnish(Q, B, level, frame) {
     if (level === 0) {
       // la boutique à l'ouest (la porte au nord), la cuisine et l'escalier à l'est
-      partition(Q, false, 168, 312, 200, 0, [[280, 296]], 1361);
+      partition(Q, false, 180, 312, 200, 0, [[280, 296]], 1361);
       partition(Q, true, 24, 200, 240, 0, [[150, 166]], 1363);
-      Q.push(...hearth(frame, 250, 168));
+      Q.push(...hearth(frame, 250, 180));
       B.push(
-        piece('haberdashery-cabinet', 24, 196, 1), piece('haberdashery-cabinet', 90, 168), piece('shop-counter', 64, 222), stonePiece('chair', 84, 212),
-        piece('ribbon-rack', 150, 172), piece('ribbon-rack', 176, 200, 1), prop('lantern', 70, 226, 0, 19),
+        piece('haberdashery-cabinet', 24, 196, 1), piece('haberdashery-cabinet', 90, 180), piece('shop-counter', 64, 222), stonePiece('chair', 84, 212),
+        piece('ribbon-rack', 150, 184), piece('ribbon-rack', 176, 200, 1), prop('lantern', 70, 226, 0, 19),
         piece('haberdashery-stall', 40, 290), boltBoard('blue', 30, 260), boltBoard('red', 40, 266), prop('chest', 140, 260),
-        prop('table', 240, 230), prop('bench', 241, 250), prop('barrel', 210, 180), prop('jar', 210, 200), prop('sack', 220, 290), prop('chest', 280, 290), prop('bucket-water', 300, 180),
+        prop('table', 240, 230), prop('bench', 241, 250), prop('barrel', 210, 188), prop('jar', 210, 200), prop('sack', 220, 290), prop('chest', 280, 290), prop('bucket-water', 300, 180),
       );
       return;
     }
     const up = (b: Board) => lift(b, H.floor);
-    partition(Q, false, 163, 317, 180, 1, [[240, 256]], 1371);
+    partition(Q, false, 175, 317, 180, 1, [[240, 256]], 1371);
     B.push(...[
-      prop('table', 220, 220), stonePiece('chair', 230, 208), prop('chest', 200, 170), prop('stool', 260, 260),
+      prop('table', 220, 220), stonePiece('chair', 230, 208), prop('chest', 200, 182), prop('stool', 260, 260),
       prop('bed', 30, 180), prop('chest', 60, 260), prop('bed', 120, 250), prop('chest', 140, 180), stonePiece('chair', 100, 200),
     ].map(up));
   },
-  shops: [{ name: 'la boutique de la mercière', room: [24, 168, 200, 240], door: [55, 152] }],
+  shops: [{ name: 'la boutique de la mercière', room: [24, 180, 200, 240], door: [55, 164] }],
   pieces: ['shop-lean-to', 'haberdashery-stall', 'shop-counter', 'haberdashery-cabinet', 'ribbon-rack', 'yard-fence', 'hanging-sign-s2'],
 };
 
@@ -798,3 +801,15 @@ export const NOTES: Partial<Record<PlaceBuildingId, PlaceNotes>> = {
 };
 
 export type { PlaceBuildingId, Scene };
+
+/** Les portes de boutique (au nord, sur le rond) et l'escalier du logis de chaque aile (px de la zone), pour tools/essai-place.ts acces. */
+export const ACCESS: PlaceAccess[] = DEFS.flatMap((d) => d.wings.filter((w) => w.northDoor).map((w, i): PlaceAccess => {
+  const [ax, ay] = d.at, nd = w.northDoor!, st = d.stairs.find(([sx, sy]) => sx >= w.x0 && sx < w.x1 && sy >= w.y0 && sy < w.y1);
+  const name = d.id === 'p-tailleuse' ? (i === 0 ? 'La tailleuse (vêtements)' : 'La tailleuse (cuir et armes)') : NOTES[d.id]!.title;
+  return {
+    id: d.id, name,
+    door: { x0: ax + w.x0 + nd[0], x1: ax + w.x0 + nd[1], y: ay + w.y0, out: 'N', wall: 'façade nord, sous l’appentis, sur le rond' },
+    inside: [ax + w.x0 + (nd[0] + nd[1]) / 2, ay + w.y0 + thick(w.mat) + 12],
+    to: st ? { kind: 'stair', at: [ax + st[0] + STAIR.w / 2, ay + st[1] + STAIR.d], label: 'escalier du logis (à l’étage)' } : undefined,
+  };
+}));
