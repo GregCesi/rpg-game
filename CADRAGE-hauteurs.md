@@ -40,7 +40,7 @@ seul contour du bas du rondin du dessus (1 px). C'est l'objet de la planche (sec
 La montée d'une couche est le pas au sol × (hauteur / largeur de la section). Je prends la **section vraie des deux côtés** (pas un
 mélange vrai / dessiné) :
 - **bille, rondin, poutre** : rapport 1 avant comme après, **les tas ne bougent pas** (le tas de billes de la planche est identique) ;
-- **demi-bille, quartier, planche, latte** : leurs couches se serrent (demi-bille du normal : 0,625 → 0,5 ; planche : la couche
+- **demi-bille, quartier, planche, latte** : leurs couches se serrent (demi-bille du gros, la seule qui existe : 0,58 → 0,51 ; planche : la couche
   monte de ses 3 cm, le tas de planches devient plat comme il l'est en vrai). À voir sur `.art-preview/piles.png`.
 
 ## 3. Le recalage des cinq plans
@@ -54,7 +54,7 @@ lancé : les plans « après » sont dans `.art-preview/hauteurs/` ; aucun jour 
   sont posés sur la traverse basse (poutre couchée, qui perd 10 cm), les baies de porte (huisseries de 180 sur le seuil de pierre,
   tête de 50) non. **Proposition : le solin passe de 40 à 50 cm** (`rough-sill-wall`, `narrow-sill-wall`) : la traverse basse va de
   50 à 70 au lieu de 40 à 70, et tout ce qui est au-dessus reste à sa hauteur. Le toit (sur la sablière, poutre couchée) descend de
-  10 cm. 24 pièces bougent. Le dessin du solin (calculé par walls.ts) monte de 2 px : à voir sur la planche. (Autres voies : la tête
+  10 cm. 24 pièces bougent. Le dessin du solin (calculé par walls.ts) monte de 2 px et se dessine bien (planche) ; `SILL_FACE` (8, en dur dans src/world/walls.ts) devient lu dans la hauteur du mur. (Autres voies : la tête
   de baie de 50 à 40 cm, ou des huisseries et des portes de 170 : plus de dessins, Q3.)
 - **cabane** : la descente seule casse la cabane : la porte (2 m) et le volet (40 cm) ont été calés sur des rondins de 40.
   **Proposition : la remonter à 30 cm par rondin, 7 assises au lieu de 5**, la même hauteur de murs (2,52 m), le même toit, les mêmes
@@ -82,6 +82,17 @@ Avant / après, en x2 et en x4 : la cabane en rondins (proposition 3 : 7 assises
 poutres de la maison de Xéros (un angle : solin, traverse basse, poteau, sablière, entrait, le solin de 50 cm), un tas de billes (et
 de demi-billes, qui changent), la forge. Avec Xéros pour l'échelle et la proposition pour que le recouvrement se lise.
 
+### Ce que montre la planche (pixel-artist, `tools/essai-hauteurs.ts`)
+- Aucun jour, aucune pièce mal triée dans les plans « après ». Un jour d'un pixel existait déjà sous le pignon de la cabane : il disparaît.
+- La fenêtre de la cabane ne se lit qu'en coupe (les assises nord-sud se couvrent en règle D, déjà le cas aujourd'hui) : entre le volet
+  actuel (A) et le volet de cabane (B), la différence ne se voit presque qu'en coupe.
+- Les bouts sud des murs nord-sud de la cabane font 14 marches de pixel au lieu de 10 (7 assises).
+- **Le recouvrement, trois façons** : A brut (il reste le contour du bas du rondin du dessus : les rondins paraissent plats), B une
+  ombre douce d'une rangée (la teinte d'ombre translucide) sur le rondin du dessous, juste sous celui du dessus, C la même ombre
+  opaque (le mur devient rayé). **Recommandé : B**, calculée par le jeu à l'affichage (jamais peinte) : sous chaque pièce couchée
+  posée sur une autre pièce couchée, là où celle du dessous se voit encore (`jointShade`, dans le dessin des pièces posées).
+- Dessins proposés : `art/proposals/cabane-hauteurs.ts` (porte de 2,10 m, volet de cabane 60 × 60), `art/proposals/walls-solin-50.ts`.
+
 ## 6. Scénarios et tests touchés
 
 - tests rapides : test-build (la cabane, ses intérieurs), test-contrats (`woodDims`), test-poteaux, les tas (test-matiere), validate
@@ -108,5 +119,5 @@ pas tu.
   à 40 cm (le toit descend de 10), ou les huisseries et les portes à 170 ?
 - **Q4. La porte de la cabane** à 2,10 m (proposé), ou un jour de 10 cm sous le linteau ?
 - **Q5. La fenêtre de la cabane** : le volet actuel avec un jour de 20 cm, ou un volet de cabane de 60 × 60 (nouvel objet) ?
-- **Q6. Le recouvrement** : la proposition de la planche (section 5).
+- **Q6. Le recouvrement** : A brut, B ombre douce calculée par le jeu (recommandé), ou C ombre franche ?
 - **Q7. Les sauvegardes** : `SAVE_VERSION` (proposé) ?
