@@ -26,7 +26,7 @@ la fin (section 11), chacune avec ma recommandation.
 
 - **Les cartes** (une case = 32 px = 1,60 m ; 5 cm par pixel) :
   - `village.tmj` (600-800 m × 200-400 m du monde) : la rue est-ouest en y 2080-2176 (cases 65-67, 4,80 m), la rue nord-sud en
-    x 3264-3360 (cases 102-104), la **place ronde** de 30 m centrée en (3312, 2128) et ses **huit étals** (rectangles `Plan`
+    x 3264-3360 (cases 102-104), la **place ronde** de 30,40 m centrée en (3312, 2128) et ses **huit étals** (rectangles `Plan`
     `etal`) ; la **forge** (plan `forge`) sur sa parcelle `smithy` et la **fonderie** réservée ; cinq parcelles `cottage` de 24 × 24 m
     le long de la rue de l'ouest ; quatre parcelles `rich-house` (32 × 41,6 et 28,8 × 41,6 m) le long de la rue du nord ; dix
     parcelles `house` de 19,2 × 12,8 m le long de la rue du sud. 151 arbres, têtards, buissons, rochers.
@@ -176,7 +176,7 @@ Coordonnées en px de la zone (x0-x1 × y0-y1) ; dimensions est-ouest × nord-su
 | Les deux parcelles réservées au sud de la route | L'une devient « à décider », l'autre est **retirée** (pré). |
 | La maison du coq (cadrage `maison-coq` : à l'ouest de la rue, dans la bande de la ferme du riche) | **Passée à l'est de la rue**, dans la même bande, le jardin devant elle jusque dans le village (question 2). La parcelle « Logis du riche » de la cour reste. |
 | La ferme du riche, la ferme rivale | **Gardées.** Leurs étables dans leurs cours (proposition). |
-| Les objets des cartes | **41 arbres, têtards, buissons et rochers** sont sous une maison ou une ruelle (le compte de `village-plan-data.ts` contre les cartes) : à retirer à l'intégration. Les autres restent et donnent leurs arbres aux jardins. |
+| Les objets des cartes | **24 arbres, têtards, buissons et rochers** ont leur pied sous une maison ou une ruelle nouvelle (croix rouges de la planche) ; **41** en gardant une case de passage autour des maisons : à retirer à l'intégration. Les autres restent et donnent leurs arbres aux jardins. |
 | Les destinations (`parcels.json`) | À l'intégration : `shop` (boutique), `public` (le sire, la taverne), `garden`, `free` ; `house` et `rich-house` restent. |
 
 ### 2.5 Les distances (Xéros marche à 2 m/s)
@@ -667,7 +667,34 @@ il faudrait **des pans de toit de toute longueur**, comme les morceaux de mur, p
 
 ## 9. Les suppositions (ce que j'ai décidé sans Grégoire)
 
-*(Complétées à la fin de la nuit.)*
+1. **La demande écrite l'emporte sur le plan de travail** là où ils diffèrent (section 1) : le quart nord-ouest entier à la ferme du
+   riche, la tailleuse et son mari au sud-ouest, la guérisseuse hors du village, la corderie devenue « à décider ».
+2. **La maison du coq passe à l'est de la rue du nord**, comme sur le plan de travail, dans la même bande au bas de la ferme du riche
+   que le cadrage `maison-coq` ; son jardin descend devant elle jusque dans le village, la clôture de fer le long de la rue.
+3. **Les mesures du découpage** : des quarts de 28,80 m, des ruelles de 3,20 m (2 cases), posées sur les bords de zone quand elles en
+   longent un ; des parcelles de 8 à 10 m sur la rue au sud (un village dense), de 24 m à l'ouest (les parcelles `cottage` gardées),
+   de 30 à 40 m au quartier aisé.
+4. **La taverne** à l'est de la rue du sud, juste après le quart sud-est, sur un bloc entier de 28,80 m, la cour en terrasse à l'est
+   (le plan de travail) ; elle n'est pas dessinée cette nuit (ce n'est pas une maison d'habitation).
+5. **Le sire** reprend la parcelle `Mairie` (au nord de la route, à 55 m de la place), ses réserves dans un grenier à côté ; la
+   parcelle « à décider » est celle d'en face, au sud de la route.
+6. **La guérisseuse** dans la lisière du bois du sud, rive est, à 120 m au sud du chemin (section 2.3).
+7. **Le moulin** sur la rivière dans le bois du nord (ta note du plan de travail) ; **la carrière** sur le plateau et **le four à
+   chaux** sur la rive est, de part et d'autre du chemin creux (le plateau borde toute la rive ouest : c'est là qu'est la pierre, et
+   le chemin creux est le seul passage) ; **la cabane du bûcheron** en lisière dans le bois du nord, sa famille au village ;
+   **les étables** dans les cours des deux fermes.
+8. **Les foyers sans maison dessinée** ont des métiers que j'ai proposés pour que le village tienne debout (le potier, le cordonnier,
+   la lavandière, le tonnelier, la fileuse, le scieur de long, le jeune couple, le charretier, le vieux soldat, la sage-femme et le
+   sabotier, le charron, le sergent du sire) ; les noms sont à toi.
+9. **La boutique de la ferme du riche** est tenue par un commis qui n'y dort pas ; **le dépôt de la ferme rivale** n'a personne la
+   nuit.
+10. **Chaque maison est dessinée dans le sens de sa parcelle** (un plan ne tourne pas encore au jeu), son faîtage et sa porte notés.
+11. **Le bois est patiné** dans toutes les maisons habitées, vieux chez les vieux (h3) et à la boutique abandonnée.
+12. **La rue de la planche** `village-rue.png` est le deuxième tronçon de la rue du sud (entre la ruelle du milieu et la ruelle du
+    bord) : le charpentier, le tisserand, les vieux à l'ouest, le couvreur à l'est.
+13. **La onzième maison** : la demande en voulait une dizaine ; j'en ai fait onze, pour avoir deux « pas à plaindre » de formes
+    différentes (le pignon sur rue du charpentier, la longère du laboureur), la longère étant la forme que la conception réservait
+    à des voisins plus aisés.
 
 ---
 
@@ -679,4 +706,41 @@ il faudrait **des pans de toit de toute longueur**, comme les morceaux de mur, p
 
 ## 11. Les questions (chacune avec ma recommandation)
 
-*(Complétées à la fin de la nuit.)*
+**Le plan**
+
+1. **Le découpage** : des quarts de 28,80 m autour de la place, une ruelle qui en fait le tour, des parcelles de 8 à 10 m sur la rue
+   du sud et un second rang derrière la ruelle de l'ouest : est-ce la densité que tu veux ? *Recommandé : oui ; on pourra serrer
+   encore le second rang si le village paraît vide en jeu.*
+2. **La maison du coq** : à l'est de la rue du nord (ton plan de travail, ce que je propose) ou à l'ouest (le cadrage `maison-coq`) ?
+   *Recommandé : à l'est*, comme tu l'as dessinée : son jardin descend vers la place, et le quartier aisé est en face, à l'ouest.
+3. **La parcelle « à décider »**, au sud de la route : la corderie de ton plan de travail (un cordier, son allée de 60 m où l'on tord
+   les cordes ; la corde existe au jeu) ? *Recommandé : la corderie*, avec son foyer, ce qui ferait 32 foyers.
+4. **La guérisseuse** : dans la lisière du bois du sud, rive est, à 120 m au sud du chemin (ce que je propose), ou sur le chemin lui-même,
+   juste avant le chemin creux, où tout le monde passe devant chez elle ? *Recommandé : la lisière* : on va la voir exprès.
+5. **La carrière et le four à chaux** de part et d'autre du chemin creux (le plateau est la seule pierre du monde) ? *Recommandé : oui.*
+6. **La troisième maison aisée** (à l'est de la rue du nord, sous le jardin du coq) : pour qui ? Un intendant du sire, un notaire, la
+   veuve d'un marchand, le curé si le village a une église ? *Recommandé : la laisser réservée* jusqu'à ce que l'histoire en
+   demande une.
+7. **Ce qui manque peut-être au village** : une **église** ou une chapelle, un **four banal** (le pain : plus de boulanger depuis que
+   les étals disparaissent), un **puits commun**, un **lavoir**. *Recommandé : le four banal et le puits commun, près du sire (ils
+   sont à lui, on paie pour cuire) ; l'église, à toi de dire si le monde en a une.*
+8. **Le frère du forgeron** (CADRAGE-forge, question 10) devait vendre sur un étal de la place, et les étals disparaissent : il vend
+   à la forge, sous l'auvent sur la rue, ou il reprend la boutique abandonnée du menuisier ? *Recommandé : à la forge.*
+
+**Les maisons**
+
+9. **Les onze maisons** : la répartition des foyers, des formes et des matières (section 3.1) te va-t-elle ? Laquelle refaire en
+   premier ? *Recommandé : les garder toutes, et retoucher d'après tes remarques sur les planches.*
+10. **L'ordre d'intégration** : les maisons de bois et de torchis (h1, h3, h4, h5, h6, h7, h11) ne demandent presque rien au moteur
+    (des pans de toit d'une autre longueur, quelques meubles) ; celles de pierre attendent le mur haut, et celles à étage l'étage du
+    coq. *Recommandé : intégrer d'abord le coq (l'étage, la pierre taillée), puis les maisons de bois une par une, puis le mur de
+    pierre haut et les maisons de pierre.*
+11. **Les pans de toit de toute longueur** (section 5) : une pièce de toit qui se pose de la longueur voulue, comme les morceaux de mur,
+    plutôt qu'une clé par longueur ? *Recommandé : oui*, c'est le même dessin.
+12. **La girouette du forgeron** : un coq de fer (mais le coq du village pourrait s'en vexer…) ou un fer à cheval ? *Recommandé : le
+    fer à cheval.*
+13. **Les boutiques** (la ferme du riche, le bûcheron, la boutique abandonnée, la mercière, la tailleuse, le dépôt et son étal, le
+    boucher, la taverne, le sire) : un chantier par bâtiment, après les maisons ? *Recommandé : oui, la taverne d'abord* (le lieu où
+    l'on apprend les nouvelles).
+14. **Les noms** des trente et un foyers : à toi, ou je propose une liste dans la tonalité du jeu ? *Recommandé : je propose, tu
+    tranches.*
