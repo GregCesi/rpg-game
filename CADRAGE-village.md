@@ -1119,3 +1119,25 @@ qui restent pleine hauteur. Les couleurs nouvelles (toile guède et garance, mie
 19. **Les jours de marché** : les étals ouverts un jour par semaine (la ferme rivale, l'étal luxueux), les boutiques tous les jours ?
     *Recommandé : oui, plus tard*, quand les gens auront leurs horaires.
 20. **Les feuillets du panneau** : les quêtes du village viendront-elles de là ? *Recommandé : oui*, avec les avis du sire.
+21. **La place est trop grande et trop vide** (ce que montre `place-ensemble.png`) : 30 m de terre battue, les bâtiments repoussés au
+    fond des quarts de 28,80 m ; la vue de départ au milieu de la place ne montre que de la terre et le panneau. Deux façons de la
+    resserrer : (a) **rapprocher les bâtiments de la place**, leurs façades sur le bord du rond (les quarts plus petits, 20 m) ;
+    (b) **réduire la place** à 20 m. *Recommandé : (a)*, la place garde sa taille de marché, et les boutiques la bordent vraiment.
+22. **Meubler la place** : un grand arbre au bord (le tilleul ou l'orme de la place, où l'on s'assoit), des bancs, un abreuvoir, et
+    les jours de marché des étals volants ? *Recommandé : l'arbre et deux bancs* tout de suite (des objets qui existent presque :
+    le gros arbre du jeu, le banc), les étals volants avec les jours de marché (question 19).
+
+### 13.12 Ce que montre la vue d'ensemble (`place-ensemble.png`)
+
+- **Ce qui marche** : on lit une place de village, le rond de terre battue, les quatre quarts bâtis autour, les ruelles qui ferment le
+  cadre ; les étals regardent la place (l'auvent rayé du riche, les planches de la ferme rivale) ; les cours palissadées du sud et le
+  chantier du bûcheron se lisent.
+- **Ce qui ne marche pas** :
+  - **le vide** : le centre (la vue 1 n'est que terre), la prairie entre le bûcheron et le menuisier, la cour vide derrière la
+    boutique du riche, le dépôt seul dans l'herbe (questions 21 et 22) ;
+  - **les hauteurs des quarts sud** : le toit de la tailleuse et sa souche montent à l'écran par-dessus la rue de l'ouest, jusque
+    devant la boutique du riche ; la souche de la mercière de même. C'est la vraie projection, mais elle surprend : des souches au mur
+    sud (ou à cheval sur le faîte, comme le riche) l'atténueraient.
+- **Les arbres** : quatorze retirés (sous un bâtiment, une cour ou une ruelle), cinq gardés autour de la place.
+- **À corriger à l'intégration** : les enseignes de la mercière et de la tailleuse ne sont pas dans les `pieces` de leurs bâtiments ;
+  quelques vues de pièces hors gabarit, de forme (nommées sur la planche).
