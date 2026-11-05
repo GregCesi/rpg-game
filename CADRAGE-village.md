@@ -619,7 +619,7 @@ porte intérieure (`inner-door`), **#** mur de pierre, **=** banc, **▭** table
 | `.art-preview/village-maisons-dehors.png` | Les onze maisons vues de dehors, chacune dans la vue de départ du jeu (palier 3 : 427 × 240 px du monde, environ 21 × 12 m), en x2, Xéros à côté, le foyer écrit dessous | `npx tsx tools/essai-village-maisons.ts` |
 | `.art-preview/village-maisons-dedans.png` | Les intérieurs, toit effacé, mur sud coupé, en x2 ; le rez et l'étage côte à côte pour h8 et h10 | idem |
 | `.art-preview/village-rue.png` | La rue du sud, deuxième tronçon (24 m) : le charpentier, le tisserand, les vieux à l'ouest, le couvreur à l'est, en x2 | idem |
-| `.art-preview/village-pieces.png` | Les pièces nouvelles, une par une, toutes leurs vues, en x4, à côté de Xéros | idem |
+| `.art-preview/village-pieces-1.png`, `village-pieces-2.png` | Les 52 pièces nouvelles, une par une, toutes leurs vues, en x4, à côté de Xéros (en deux fichiers : une seule planche dépassait 8 000 px) | idem |
 
 ---
 
@@ -661,7 +661,59 @@ il faudrait **des pans de toit de toute longueur**, comme les morceaux de mur, p
 
 ## 8. Ce que les planches ont montré
 
-*(Rempli à la fin de la nuit, après les planches.)*
+### 8.1 La leçon principale : on ne voit que les faces sud
+
+Dans la projection du jeu (x, y − z), **une face tournée vers l'est ou l'ouest n'est qu'une bande vue de dessus** : une porte, une
+fenêtre, un pignon tournés vers une rue nord-sud ne se voient jamais en jeu. Or la rue du sud et la rue du nord courent nord-sud, et
+j'avais tourné plusieurs façades vers elles. Les deux dessinateurs l'ont vu chacun de son côté et ont fait la même chose : **ils ont
+mis au sud ce qui doit se voir** (h2, h6, h10), et laissé à l'est ou à l'ouest ce qui ne compte que dedans. C'est la question 15 :
+le plan doit-il, partout, tourner la face qui compte vers le sud ?
+
+### 8.2 Ce qui a changé, maison par maison
+
+| Maison | Changé par rapport à la section 3.2 | Pourquoi |
+| --- | --- | --- |
+| h1 couvreur | une fenêtre à volet ajoutée au pignon sud (la réserve) ; l'appentis de 1,90 m à 1,40 m de haut | le pignon sud est ce qu'on voit ; l'appentis passe sous l'égout du chaume |
+| h2 tisserand | **l'atelier et sa grande baie de toile huilée passent au pignon sud**, l'âtre au pignon nord ; la porte reste sur la rue (invisible du jeu) | la baie est la réclame du tisserand : elle doit se voir |
+| h3 vieux | murs de 2,40 m ; chaume en 6 m ; le trou de fumée au pignon ouest, au-dessus du bûcher | |
+| h4 berger | un pan d'appentis neuf à 25° (`shingle-shed-roof-low`) au lieu de celui du jeu (35°) ; la cabane de 1,65 m au sud à 2,75 m au nord ; porte de 1,50 m | à 35°, le mur nord montait à 3,50 m ; à 14°, les bardeaux ne tiennent pas l'eau |
+| h5 journaliers | deux trous de fumée, un au-dessus de chaque foyer | |
+| h6 charpentier | **la porte d'atelier à deux battants passe au mur sud**, à l'angle de la rue ; une croix de Saint-André dans la première travée sud ; le pignon est garde ses croix et l'avancée | dans le pignon est, la porte ne se voyait pas |
+| h7 laboureur | l'âtre contre le mur nord de la salle, au ras du refend ; pas de bêtes (des créatures, plus tard) ; la gerbière au pignon est ne se voit pas | la cheminée du jeu est faite pour un mur nord |
+| h8 meunier | plancher de l'étage à 2,85 m (comme le coq), faîte à 9,05 m ; le porche dans le mur est de la cour ne se voit que par son toit | 45° sur 7,60 m de large ; la règle des faces sud |
+| h9 forgeron | pas de râtelier à habits ; le reste comme prévu | |
+| h10 maquignon | **les deux fenêtres vitrées au sud de l'étage**, faîte à 10,25 m ; l'escalier arrive dans la chambre des parents ; l'écurie de la cour bâtie avec la maison (4 stalles) | la règle des faces sud ; 50° sur les 8,40 m de l'étage en encorbellement |
+| h11 guérisseuse | murs de 2 m (porte de 1,50 m, on se baisse) ; le chaume relevé d'aplomb au-dessus de la porte et de la fenêtre ; pas de trou de fumée ; la crémaillère sur un trépied ; la petite table de h3 | sinon l'égout cachait la porte et la fenêtre |
+
+### 8.3 La rue (`village-rue.png`)
+
+La rue montée telle que le plan la donne (les quatre maisons à leur place, rendues dans une seule scène) montre ce qui marche et ce
+qui ne marche pas :
+
+- **ce qui marche** : les matières disent le rang d'un coup d'œil (les bardeaux du charpentier, la pierre du tisserand, le chaume
+  moussu des vieux, le beau chaume du couvreur) ; la rue de 4,80 m est à la bonne échelle ; les potagers en lanières font l'arrière
+  d'un village ;
+- **ce qui ne marche pas** : on voit **une suite de toits et de pignons sud, pas des façades** (section 8.1) ; à l'ouest, sur des
+  parcelles de 8 m, **les trois maisons sont collées** (4 px entre le charpentier et le tisserand) et **le grand toit du tisserand,
+  faîtage nord-sud, cache la moitié de la façade du charpentier** : c'est la vraie projection, un toit haut cache ce qui est au nord
+  de lui ; à l'est, la parcelle du couvreur est surtout de l'herbe, et rien devant les portes (pas de cour).
+- **Ce que j'en tire** (question 15) : au premier rang des rues nord-sud, **des maisons basses, le faîtage est-ouest, le pignon sur
+  la rue et la façade au sud**, sur des parcelles de 10 à 12 m le long de la rue, avec une petite cour au sud de chaque maison : on
+  verrait alors chaque façade, la cour devant, et le pignon du voisin du sud ne cacherait que son toit. Je n'ai pas refait le plan
+  cette nuit : c'est à toi de choisir.
+
+### 8.4 Les pièces nouvelles : 52
+
+31 pour les maisons de bois (dont les pans de chaume percé, moussu, à croupes, d'appentis bas ; les remplissages écaillé et à croix ;
+les pignons en torchis, à croix, à gerbière ; la porte à deux battants, la porte d'étable ; le berceau, les bottes de chaume,
+l'échelle, le rouet, la petite table, la claie, la niche, la mangeoire, le fumier, la charrue, la perche debout, la crémaillère, le
+chaudron, l'étagère à pots, le mortier, les bouquets, le plessis, la ruche, le chevalet), 21 pour les maisons de pierre (la toile
+huilée, le métier à tisser, le dévidoir, le mur enduit, l'escalier de bois, le porche, le mur de cour, l'écurie en appentis, la porte à
+pentures, la grille, la souche au pignon, l'anneau, le grattoir, la girouette, la cloison de planches, la chaise, le remplissage de
+colombage serré, la solive d'encorbellement, le coffre ferré, la stalle, l'abreuvoir). Toutes sont sur `village-pieces.png`, avec
+leurs dimensions, leurs vues et le contrôle du gabarit. **Repris du coq sans changement** : la lave et sa faîtière, les pierres
+d'angle et de tableau, les encadrements de baie, le vitrail en losanges, le dallage, le plancher, le pétrin, la chaise à haut
+dossier, l'écritoire (copiés dans le module de pierre, l'origine écrite en tête de fichier : à réunir quand le coq s'intégrera).
 
 ---
 
@@ -700,7 +752,24 @@ il faudrait **des pans de toit de toute longueur**, comme les morceaux de mur, p
 
 ## 10. Ce qui ne va pas encore
 
-*(Complété à la fin de la nuit.)*
+- **Les façades sur les rues nord-sud ne se voient pas** (section 8.1) : la porte du couvreur, du tisserand, le porche du meunier.
+  C'est le plan qui est à revoir (question 15), pas les dessins.
+- **L'âtre contre un pignon** (h8, h9, h10), vu de côté, se lit mal : la cheminée du jeu tournée montre ses marches et sa hotte, pas
+  le feu. Il faudrait une cheminée de pignon dessinée pour cette vue.
+- **Les écarts au gabarit** sont tous nommés sur la planche des pièces (un pignon de chant, un pan vu de dos, des pièces qui
+  n'emplissent pas leur boîte, des débords de toit, l'escalier vu de côté) : aucun n'est une faute de dessin, mais `validate.ts` les
+  refuserait tels quels ; il faudra décider pièce par pièce à l'intégration.
+- **Des petits dessins faibles à cette échelle** : la charrue (maigre), le rouet (le bas de la roue caché), la girouette et l'anneau
+  (à peine lisibles), le chaume moussu (encore tacheté).
+- **Le chaume à croupes de la guérisseuse**, vu du sud, se lit encore comme un bloc carré : les croupes de l'est et de l'ouest se voient mal ; à reprendre.
+- **Ce qui n'est montré nulle part** : la façade ouest du couvreur, les pignons est du charpentier et du laboureur (la gerbière, les
+  croix), l'intérieur de l'écurie du meunier. Le modèle sait les rendre (une rotation), les planches ne les montrent pas.
+- **Les pans de toit à leur longueur** n'existent que dans les maisons, pas comme pièces (question 11) ; le faîtage de terre
+  interrompu au trou de fumée non plus.
+- **L'ombre sous l'avant-toit** n'assombrit pas le bois vieux (h3) : une teinte de la palette à ajouter.
+- **Deux modules pour un même modèle** : le bois et la pierre ont chacun généralisé la maison de Xéros à leur façon
+  (`village-maisons-bois-lib.ts`, `village-maisons-pierre-matieres.ts`) ; à l'intégration, une seule source.
+- **La taverne, les boutiques, le sire** ne sont pas dessinés : ce ne sont pas des maisons d'habitation (question 13).
 
 ---
 
@@ -744,3 +813,8 @@ il faudrait **des pans de toit de toute longueur**, comme les morceaux de mur, p
     l'on apprend les nouvelles).
 14. **Les noms** des trente et un foyers : à toi, ou je propose une liste dans la tonalité du jeu ? *Recommandé : je propose, tu
     tranches.*
+15. **La face qui compte au sud** (section 8.1) : le jeu ne montre que les faces sud. Faut-il, au plan, tourner toutes les maisons
+    des rues nord-sud **le pignon sur la rue et la façade au sud** (comme le charpentier et le maquignon), ce qui donne une rue de
+    pignons, très village ; ou garder des façades sur la rue qu'on ne voit qu'une fois dedans ? *Recommandé : le pignon sur la rue,
+    la façade au sud*, partout où la rue court nord-sud ; je reprendrai le découpage des parcelles du sud dans ce sens (des parcelles
+    plus profondes que larges, comme elles le sont déjà).
