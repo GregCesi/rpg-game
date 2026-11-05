@@ -782,13 +782,19 @@ export const PropDefSchema = z.strictObject({
    * des morceaux de même manière, à la même hauteur, alignés et jointifs, forment un tronçon dessiné d'un seul tenant
    * (world/wallRuns.ts, world/walls.ts) ; deux tronçons à angle droit forment un angle ; un tronçon qui s'arrête montre une tête.
    */
-  wall: z.enum(['rough', 'dressed']).optional(),
+  wall: z.enum(['rough', 'dressed', 'ashlar', 'string', 'flagstone']).optional(),
   /**
    * Son dessus se marche (la dalle de sol, la marche de pierre : chantier « maison du coq », CONCEPTION « L'étage ») : posé, il
    * porte Xéros à la hauteur de son dessus (world/decks.ts : le plus haut dessus qu'il atteint d'un pas). Il n'a pas de corps : on le
    * franchit par la règle du pas (`step`, `drop` de mobility.json), jamais en s'y heurtant (validate.ts).
    */
   walk: z.literal(true).optional(),
+  /**
+   * Une marche d'escalier (la marche de pierre de la maison du coq) : `tread`, son giron (cm). En mode construction, une marche visée
+   * juste après une marche pareille se pose sur elle, un giron plus loin dans le sens où monte l'escalier (R0 : vers le nord) ; elle la
+   * recouvre de sa profondeur moins le giron (world/build.ts, `aimAt`).
+   */
+  stair: z.strictObject({ tread: z.number().int().positive() }).optional(),
   /**
    * Pan de toit (le pan de toit en planches) : le côté de sa rive basse dans la vue 0 (`south`) ; un quart de tour de plus à chaque
    * vue (ouest, nord, est). En mode construction, il se pose sur ce qui porte sa rive basse et ne se heurte pas à ce qui est sous sa

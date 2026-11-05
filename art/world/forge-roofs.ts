@@ -16,7 +16,9 @@
 // - tuiles plates : rangs de 3 px, tuiles de 5 px à joints croisés, quelques-unes plus cuites, un peu de mousse ; la rampe `terracotta` ;
 // - bardeaux : rangs de 4 px, écailles de 2 à 4 px décalées, le bout au jour, l'ombre sur le rang du dessous ; le bois travaillé
 //   (`woodAges`, dessiné neuf : le build tire le patiné et le vieux, gris, celui de l'atelier) ;
-// - lauzes : dalles irrégulières, rangs de 6 px à l'égout à 3 au faîte, bords inégaux, lichens ; la rampe du calcaire (! + = ; ~).
+// - lauzes : la lave, seule lauze du jeu (chantier « maison du coq », réponse 26 de Grégoire) : le pan est celui de
+//   art/world/coq-lave.ts (`lavePanModel` : nos laves, rangs comptés le long de la pente, 3 px d'égout, faîtières de pierre), la
+//   rampe `lave` d'art/palette.ts ; même emprise, même pente qu'avant, l'aspect seul a changé.
 //
 // Le pan percé (`<couverture>-roof-large-pierced`) : le pan nord de l'atelier, posé en r2, emprise x −40…920, y −40…300 (cm, repère de
 // l'atelier : x = 0, y = 0 au coin nord-ouest de l'emprise du poteau nord-ouest), percé au droit du conduit de la forge (`chimney-flue`,
@@ -31,11 +33,12 @@
 import { Canvas, type Grid, type Palette } from '../lib/canvas';
 import type { ImageSource } from '../lib/types';
 import { stonePalette } from '../items/stones';
-import { terracotta, world } from '../palette';
+import { lave, terracotta, world } from '../palette';
 import { boardsInside, boardsOutside, edgeView, type Edge, type Panel } from '../lib/board-wall';
-import { box, hash, part, polyPrism, renderPiece, rotP, rotQuads, rotRect, unit, type Quad, type Rot, type Tex, type V3 } from '../lib/volumes';
+import { hash, part, polyPrism, renderPiece, rotP, rotQuads, rotRect, unit, type Quad, type Rot, type Tex, type V3 } from '../lib/volumes';
+import { lavePanModel } from './coq-lave';
 
-const PAL: Palette = { ...stonePalette, ...terracotta };
+const PAL: Palette = { ...stonePalette, ...terracotta, ...lave };
 
 /** Les vues du jeu (r0 à r3) dans les rotations du modèle. */
 const VIEW_ROT: Rot[] = [0, 3, 2, 1];
@@ -48,7 +51,7 @@ export type Cover = 'tiles' | 'shingles' | 'slates';
 // =====================================================================================================================
 
 /** Un pan : `w` le long de l'égout, `d` la profondeur au sol de l'égout au faîte, `h` la montée (cm, la boîte de props.json). */
-interface PanDims { w: number; d: number; h: number }
+export interface PanDims { w: number; d: number; h: number }
 export const LARGE_45: PanDims = { w: 960, d: 340, h: 340 };
 export const LARGE_55: PanDims = { w: 960, d: 340, h: 486 };
 export const SHED: PanDims = { w: 380, d: 320, h: 232 };
@@ -64,9 +67,9 @@ export const STACK_ABOVE_RIDGE = 100;
 const CAP_OVER = { x: 20, y: 10, h: 10 };
 
 /** L'épaisseur de la couverture vue à l'égout (px). */
-const EAVE_H: Record<Cover, number> = { tiles: 1.5, shingles: 1.5, slates: 2.5 };
+const EAVE_H: Record<Cover, number> = { tiles: 1.5, shingles: 1.5, slates: 3 };
 /** Le contour côté lumière de la couverture. */
-const DARK: Record<Cover, string> = { tiles: '?', shingles: '@', slates: '~' };
+const DARK: Record<Cover, string> = { tiles: '?', shingles: '@', slates: 'κ' };
 
 // =====================================================================================================================
 // Les matières (des signes de la palette)
@@ -110,51 +113,20 @@ function shinglesTex(K: number): Tex {
   };
 }
 
-/** Les rangs des lauzes : du pureau de 6 px à l'égout à 3 px au faîte (à l'écran). */
-const SLATE_ROWS: number[] = (() => {
-  const out = [0];
-  while (out[out.length - 1] < 400) {
-    const d = out[out.length - 1];
-    out.push(d + Math.max(3, Math.round(6 - (d / 120) * 3)));
-  }
-  return out;
-})();
-function slatesTex(K: number): Tex {
-  return (s, t) => {
-    const d = t * K, i = Math.floor(s);
-    let r = SLATE_ROWS.findIndex((a, n) => d >= a && d < SLATE_ROWS[n + 1]);
-    if (r < 0) r = SLATE_ROWS.length - 2;
-    const rh = SLATE_ROWS[r + 1] - SLATE_ROWS[r];
-    let a = -Math.floor(hash(421, r) * 8), k = 0;
-    while (a + 5 + Math.floor(hash(422, r, k) * 6) <= i) { a += 5 + Math.floor(hash(422, r, k) * 6); k++; }
-    const ragged = hash(423, r, k, Math.floor(i / 2)) < 0.3 ? 1 : 0;
-    const yy = d - SLATE_ROWS[r] - ragged;
-    const h = hash(424, r, k);
-    if (yy >= rh - 1) return '~'; // l'ombre portée du rang du dessus
-    if (i === a) return ';';
-    if (yy < 0.9) return '!'; // la tranche de la dalle, au jour
-    if (h < 0.08 && hash(425, i, Math.floor(d)) < 0.5) return hash(426, i) < 0.5 ? 'y' : 'G'; // lichen
-    if (h < 0.3) return yy > rh - 2 ? '=' : '+';
-    if (h < 0.42) return ';';
-    return yy > rh - 2 && hash(427, i, r) < 0.5 ? ';' : '=';
-  };
-}
-
-const PAN_TEX: Record<Cover, (K: number) => Tex> = { tiles: tilesTex, shingles: shinglesTex, slates: slatesTex };
+const PAN_TEX: Record<'tiles' | 'shingles', (K: number) => Tex> = { tiles: tilesTex, shingles: shinglesTex };
 
 /** La tranche de l'égout et des rives : le bout des tuiles, des bardeaux, des lauzes. */
 function edgeTex(cover: Cover): Tex {
-  return (s, t) => {
+  return (s) => {
     const i = Math.floor(s);
     if (cover === 'tiles') return i % 5 === 4 ? '?' : '\\';
-    if (cover === 'shingles') return hash(431, i) < 0.3 ? '@' : '&';
-    return t < 1 ? '=' : hash(432, i >> 1) < 0.3 ? '~' : ';';
+    return hash(431, i) < 0.3 ? '@' : '&';
   };
 }
 
 /** Le dessous du pan : les lattes en travers, la couverture entre elles, dans l'ombre. */
 function underTex(cover: Cover): Tex {
-  const [lath, back] = cover === 'tiles' ? ['%', '?'] : cover === 'shingles' ? ['%', '@'] : ['%', '~'];
+  const [lath, back] = cover === 'tiles' ? ['%', '?'] : ['%', '@'];
   return (_s, t) => (Math.floor(t) % 4 === 0 ? lath : back);
 }
 
@@ -163,7 +135,7 @@ function underTex(cover: Cover): Tex {
 // =====================================================================================================================
 
 /** La hauteur de la moitié de faîtage au-dessus du pan (px) : la pente s'arrête dessous, au faîte, à H − CAP_H. */
-const CAP_H: Record<Cover, number> = { tiles: 3.2, shingles: 2.2, slates: 2.5 };
+const CAP_H: Record<Cover, number> = { tiles: 3.2, shingles: 2.2, slates: 3 };
 
 function ridgeQuads(cover: Cover, W: number, H: number, zs: (y: number) => number): Quad[] {
   const P = part('faîtage', 9, DARK[cover], 'full', { roof: true });
@@ -190,16 +162,8 @@ function ridgeQuads(cover: Cover, W: number, H: number, zs: (y: number) => numbe
     };
     return polyPrism(0, W, sec, P, tex);
   }
-  // les lauzes de faîtage : de grosses dalles posées à cheval, irrégulières
-  const tex: Tex = (s, t, c) => {
-    const i = Math.floor(s);
-    let a = 0, k = 0;
-    while (a + 7 + Math.floor(hash(431, k) * 5) <= i) { a += 7 + Math.floor(hash(431, k) * 5); k++; }
-    if (i === a) return '~';
-    if (c.face === 'top') return hash(432, k) < 0.3 ? '=' : '+';
-    return Math.floor(t) >= 2 ? '!' : ';';
-  };
-  return box(0, W, 0, 3, zs(3) - 0.5, H, P, tex).filter((q) => q.face !== 'N');
+  // les lauzes : la moitié de faîtage est dans le modèle de la lave (`lavePanModel`)
+  return [];
 }
 
 // =====================================================================================================================
@@ -207,9 +171,11 @@ function ridgeQuads(cover: Cover, W: number, H: number, zs: (y: number) => numbe
 // =====================================================================================================================
 
 interface Stack { x0: number; x1: number; y0: number; y1: number; z0: number; z1: number }
+/** Le trou d'un pan percé, dans le repère du modèle (r0, px) : le conduit (ou la souche) et son couronnement. */
+export interface PanHole { flue: Stack; cap: Stack }
 
 /** Le trou dans le repère du modèle (r0, px) : le pan nord posé en r2 a tourné d'un demi-tour. */
-export function holeInPan(dims: PanDims): { flue: Stack; cap: Stack } {
+export function holeInPan(dims: PanDims): PanHole {
   const W = dims.w / 5, D = dims.d / 5, H = dims.h / 5;
   const px = (cm: number) => cm / 5;
   const toPan = (x: number, y: number): [number, number] => [W - (px(x) - px(PIERCED_PAN_AT.x)), D - (px(y) - px(PIERCED_PAN_AT.y))];
@@ -224,8 +190,9 @@ export function holeInPan(dims: PanDims): { flue: Stack; cap: Stack } {
 /**
  * Un pan dans une couverture, dans la vue v (la vue choisit le rapport écran / pente des rangs) : la pente, l'égout, les rives, le
  * dessous, la moitié du faîtage (`ridge` : non pour l'appentis, dont la haute rive prend un rang de bardeaux croisés quand même).
+ * `pierced` : le trou de la forge (`true`, `holeInPan`), ou un autre trou (la souche de la maison du coq, art/world/coq.ts).
  */
-function panModel(cover: Cover, dims: PanDims, v: number, pierced: boolean, ridge = true): Quad[] {
+function panModel(cover: Cover, dims: PanDims, v: number, pierced: boolean | PanHole, ridge = true): Quad[] {
   const W = dims.w / 5, D = dims.d / 5, H = dims.h / 5, Eh = EAVE_H[cover], capH = ridge ? CAP_H[cover] : 0;
   const Hs = H - capH;
   const zs = (y: number) => Eh + ((D - y) * (Hs - Eh)) / D; // le dessus du pan à la profondeur y
@@ -234,7 +201,7 @@ function panModel(cover: Cover, dims: PanDims, v: number, pierced: boolean, ridg
   const P = part('pan', 8, DARK[cover], 'full', { roof: true });
   const nrm = unit([0, Hs - Eh, D]);
   const slopeV: V3 = [0, -D, Hs - Eh];
-  const Q: Quad[] = [
+  const Q: Quad[] = cover === 'slates' ? lavePanModel(dims, 5, ridge) : [
     { o: [0, D, Eh], u: [W, 0, 0], v: slopeV, n: nrm, part: P, tex: PAN_TEX[cover](K), face: 'slope' },
     { o: [0, D, 0], u: [W, 0, 0], v: [0, 0, Eh], n: [0, 1, 0], part: P, tex: edgeTex(cover), face: 'S' },
     { o: [0, D, 0], u: [W, 0, 0], v: slopeV, n: [0, -nrm[1], -nrm[2]], part: P, tex: underTex(cover), face: 'under' },
@@ -245,7 +212,7 @@ function panModel(cover: Cover, dims: PanDims, v: number, pierced: boolean, ridg
   if (!pierced) return Q;
   // le pan percé : tout ce que la souche cache, dans la vue, est vide ; le solin de mortier autour du conduit
   const r = VIEW_ROT[v];
-  const { flue, cap } = holeInPan(dims);
+  const { flue, cap } = pierced === true ? holeInPan(dims) : pierced;
   const boxes = [flue, cap].map((b) => {
     const [x0, x1, y0, y1] = rotRect([b.x0, b.x1, b.y0, b.y1], r, [0, 0]);
     return { x0, x1, y0, y1, z0: b.z0, z1: b.z1 };
@@ -271,7 +238,7 @@ function panModel(cover: Cover, dims: PanDims, v: number, pierced: boolean, ridg
 }
 
 /** Un pan dans la vue v (`ridge` : sa moitié de faîtage ; l'appentis n'en a pas, sa haute rive montre la tranche des bardeaux). */
-export function panImage(cover: Cover, dims: PanDims, v: number, pierced = false, ridge = true): Grid {
+export function panImage(cover: Cover, dims: PanDims, v: number, pierced: boolean | PanHole = false, ridge = true): Grid {
   return renderPiece(rotQuads(panModel(cover, dims, v, pierced, ridge), VIEW_ROT[v], [0, 0]), { k: 1 });
 }
 

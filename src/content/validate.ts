@@ -1095,6 +1095,8 @@ function validateCreatures(c: Content, cat: Catalog): string[] {
  * (arbre, rocher, buisson) aura le sien (la nature, ou le cueilleur) ; les meubles et les lumières, celui qui les fabrique.
  */
 const TRADE_TODO = new Set([
+  // les étoffes de la maison du coq : achetées à la ville, tissées par un métier qui n'existe pas encore au village
+  'cloth-bolt', 'verdure-tapestry', 'wall-hanging',
   'big-tree', 'big-pollard', 'big-tree-stump', 'normal-tree', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-piece', 'normal-tree-stump',
   'rock', 'bush', 'bush-berries', 'rock-rubble', 'warren-hole', 'cottage', 'chopping-block', 'chopping-block-rope', 'rope-coil', 'faggot',
   'chopping-block-axe', 'fireplace', 'worktable', 'workbench', 'stove', 'bed', 'pallet', 'sack', 'jar', 'sunpatch', 'lantern', 'wall-torch',
@@ -1532,7 +1534,10 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.take && ((p.harvest && !p.harvest.tool) || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
     addAll(validateRope(key, p, c));
     // un morceau de mur qui se raccorde (le solin) : couché à quatre vues (est-ouest, nord-sud), plus long qu'épais
-    if (p.wall && p.dims.h !== wallsJson.piece.height) err(`props.json '${key}' : un mur a la hauteur d'un morceau de walls.json (${wallsJson.piece.height} cm), pas ${p.dims.h}`);
+    // la hauteur d'un morceau : celle de sa manière (`heights` de walls.json : l'assise de pierre de taille, le cordon, la rangée de
+    // dalles), sinon celle du solin
+    const wallHeight = p.wall ? ((wallsJson as { heights?: Record<string, number> }).heights?.[p.wall] ?? wallsJson.piece.height) : 0;
+    if (p.wall && p.dims.h !== wallHeight) err(`props.json '${key}' : un mur a la hauteur d'un morceau de sa manière (walls.json : ${wallHeight} cm), pas ${p.dims.h}`);
     if (p.wall && (p.views !== 'four' || !p.lying || p.dims.shape !== 'box' || p.dims.w <= p.dims.d)) err(`props.json '${key}' : 'wall' demande un morceau couché à quatre vues ('four', 'lying'), une boîte plus longue qu'épaisse`);
   }
 

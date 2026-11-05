@@ -62,6 +62,9 @@ import chimney from './world/chimney';
 // la forge du village : les pièces de l'atelier, les trois couvertures et leurs pignons (chantier « forge »)
 import forge from './world/forge';
 import forgeRoofs from './world/forge-roofs';
+// la maison du coq : les pierres de taille, le bois, les meubles et les tentures, la cloison chaulée, le pan de mur et de dallage du
+// catalogue, la lave (deux pans et le faîtage), le pignon découvert (chantier « maison du coq », art/world/coq.ts)
+import coq from './world/coq';
 // le lapin de garenne (la créature, le lapin mort au sol, l'entrée de garenne, fx-fur) ; le lapin mort en main et son icône
 import rabbit from './world/rabbit';
 import deadRabbit from './items/dead-rabbit';
@@ -76,6 +79,6 @@ import { reliefImages, shimmerSheet } from './world/relief';
 import { gradinImages } from './world/relief-gradins';
 import { agedSources } from './lib/ages';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, smith, smithPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...minimap, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...cabinShutter, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...forge, ...forgeRoofs, ...rabbit, ...deadRabbit, ...boar, ...xerosDown, ...storm, ...reliefImages(), ...gradinImages(), shimmerSheet(), shimmerSheet(true)];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, smith, smithPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...minimap, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...cabinShutter, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...forge, ...forgeRoofs, ...coq, ...rabbit, ...deadRabbit, ...boar, ...xerosDown, ...storm, ...reliefImages(), ...gradinImages(), shimmerSheet(), shimmerSheet(true)];
 // le bois travaillé à ses autres âges (patiné, vieux), tiré des images neuves
 sources.push(...agedSources(sources));

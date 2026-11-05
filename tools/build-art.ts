@@ -31,6 +31,8 @@ import { treeLayouts } from '../art/world/trees';
 import { withTreeLayout } from '../src/content/treeLayout';
 import { combatPreview } from './lib/combat-preview';
 import { COMBAT_POSES } from '../art/characters/xeros-combat';
+import { ashlarData } from '../art/world/coq-wall';
+import { FLAGSTONES } from '../art/world/coq-floor';
 import combatJson from '../src/content/combat.json';
 import { sectionsPreview, woodPreview } from './lib/wood-preview';
 import { hewPreview } from './lib/hew-preview';
@@ -354,6 +356,33 @@ writeFileSync(
     `export const wallStones: Record<string, string[]> = ${JSON.stringify(wallStones)};\n` +
     `export const wallPalette: Record<string, string> = ${JSON.stringify(stonePalette)};\n`,
 );
+// le mur de pierre de taille et le dallage de la maison du coq (art/world/coq-wall.ts, coq-floor.ts) : les pierres une à une, l'enduit
+// du dedans et la fourrure de l'arase en tuiles, les dalles d'un pan de dallage, leur palette ; le jeu ne lit pas art/, il lit ceci
+{
+  const a = ashlarData();
+  writeFileSync(
+    join(OUT, 'ashlarStones.ts'),
+    `// GÉNÉRÉ par tools/build-art.ts à partir de art/world/coq-wall.ts et coq-floor.ts. Ne pas modifier à la main.\n` +
+      `// Le mur de pierre de taille (une assise de 30 cm) et le dallage de la maison du coq : ce que le jeu pose (src/world/walls.ts).\n` +
+      `/** Les pierres d'une assise : sa sorte, sa largeur de face (px), sa face dans le mur (6 rangées : la rangée du bas est le lit de\n` +
+      ` * chaux, la colonne de gauche le joint montant) dans ses trois tons (θ = λ) ou ses deux parités (paire, impaire), son lit vu sur l'arase. */\n` +
+      `export const ashlarStones: { kind: string; label: string; w: number; faces: string[][]; bed: string[] }[] = ${JSON.stringify(a.stones)};\n` +
+      `/** Les trois tons d'un carreau (30 %, 55 %, 15 %), et la rampe : un cran plus clair (la ciselure), un cran plus sombre (le layage). */\n` +
+      `export const ashlarTones: readonly string[] = ${JSON.stringify(a.tones)};\n` +
+      `export const ashlarLighter: Record<string, string> = ${JSON.stringify(a.lighter)};\n` +
+      `export const ashlarDarker: Record<string, string> = ${JSON.stringify(a.darker)};\n` +
+      `/** L'enduit de chaux de la face du dedans (réponse 31), une tuile : plaster[Y % h][X % w], Y la hauteur au-dessus du pied du mur\n` +
+      ` * (px, 0 en bas : 6 k + 5 − r pour la rangée r, du haut, de l'assise k), X la place est-ouest dans le monde (px). */\n` +
+      `export const ashlarPlaster: string[] = ${JSON.stringify(a.plaster)};\n` +
+      `/** La fourrure de l'arase (moellons et mortier entre les parements), une tuile : fill[Y % h][X % w], Y = 7 k + y. */\n` +
+      `export const ashlarFill: string[] = ${JSON.stringify(a.fill)};\n` +
+      `/** Les dalles d'un pan de dallage : le dessus (12 × 8 : le joint au nord et à l'ouest) et le chant (12 × 2), trois tons. */\n` +
+      `/** La pierre de cordon dans le pan de cordon : sa face (12 × 4, la moulure, le joint à gauche) et son lit (12 × 3, raccourci). */\n` +
+      `export const stringCourse: { face: string[]; bed: string[] } = ${JSON.stringify(a.stringCourse)};\n` +
+      `export const flagStones: { label: string; top: string[]; edge: string[] }[] = ${JSON.stringify(FLAGSTONES)};\n` +
+      `export const ashlarPalette: Record<string, string> = ${JSON.stringify(a.palette)};\n`,
+  );
+}
 // les gestes de combat (art/characters/xeros-combat.ts) : par geste, par direction, chaque image (durée, mains, épaules, arme,
 // traînée, éclat, frappe) ; le jeu ne lit pas art/, il lit ceci (systems/combat.ts, world/strike.ts)
 writeFileSync(

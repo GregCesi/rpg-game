@@ -302,7 +302,7 @@ export class BuildSystem {
       // pose sur le faîte des pans (et se dessine après eux)
       const pitch = 'prop' in t.piece && props[t.piece.prop].pitch;
       const ridge = 'prop' in t.piece && !!props[t.piece.prop].roof && !pitch;
-      let b = aimAt(this.shown.filter((q) => (ridge || !isRoof(q)) && this.belowCeiling(q)), sizeOf(t.piece, t.view), cx, cy, this.step, aimOnGrid(t.piece));
+      let b = aimAt(this.shown.filter((q) => (ridge || !isRoof(q)) && this.belowCeiling(q)), sizeOf(t.piece, t.view), cx, cy, this.step, aimOnGrid(t.piece), t.piece, t.view);
       // un pan de toit : sa base est le dessus de ce qui porte sa rive basse (une bande de 60 cm le long du côté bas)
       if (pitch) {
         const low = (['south', 'west', 'north', 'east'] as const)[t.view % 4];

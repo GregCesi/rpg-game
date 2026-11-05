@@ -41,7 +41,7 @@ export function wallOf(p: BuildPiece): WallKind | undefined {
 /** Graine stable d'un tronçon : sa manière, son sens, son coin nord-ouest et sa hauteur. */
 function seedOf(kind: WallKind, axis: 'ew' | 'ns', b: Box3): number {
   let h = 2166136261;
-  for (const n of [kind === 'rough' ? 1 : 2, axis === 'ew' ? 3 : 4, b.x, b.y, b.z]) {
+  for (const n of [{ rough: 1, dressed: 2, ashlar: 5, string: 6, flagstone: 7 }[kind], axis === 'ew' ? 3 : 4, b.x, b.y, b.z]) {
     h ^= n & 0xffff;
     h = Math.imul(h, 16777619);
     h ^= n >>> 16;

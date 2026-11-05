@@ -61,7 +61,11 @@ export interface WallSize {
   axis?: 'ew' | 'ns';
 }
 
-export type WallKind = 'rough' | 'dressed';
+/**
+ * La manière d'un mur : le solin brut ou taillé ; l'assise de pierre de taille, le cordon et la rangée de dalles de la maison du coq
+ * (chantier « maison du coq » : `world/ashlarWalls.ts`).
+ */
+export type WallKind = 'rough' | 'dressed' | 'ashlar' | 'string' | 'flagstone';
 /**
  * Un bout de tronçon : `head` tête de mur finie ; `abut` contre le flanc d'un tronçon perpendiculaire ; `corner-<côté>` ce
  * tronçon tient l'angle (il en dessine le carré), un tronçon perpendiculaire en part vers ce côté (`n`, `s` sur un est-ouest).

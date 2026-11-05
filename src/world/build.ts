@@ -160,7 +160,22 @@ export function supportAt(pieces: readonly BuildPlaced[], foot: { x: number; y: 
  * ajoutés (monter, descendre), d'une grille chacun, jamais sous le sol. `grid` : la pièce reste sur la grille, sans aimant (le poteau,
  * `aimOnGrid`).
  */
-export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: number, step = 0, grid = false): Box3 {
+export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: number, step = 0, grid = false, ref?: BuildRef, view = 0): Box3 {
+  // une marche visée juste après une marche pareille (`stair` de props.json : l'escalier de la maison du coq) : sur elle, un giron plus
+  // loin dans le sens où monte l'escalier, quelle que soit la grille (un giron de 26 cm recouvre de 4 cm une marche de 30)
+  const flight = ref && 'prop' in ref ? props[ref.prop]?.stair : undefined;
+  if (flight && ref && 'prop' in ref) {
+    const [dx, dy] = STAIR_UP[view % 4];
+    const next = all
+      .filter((p) => 'prop' in p.piece && p.piece.prop === ref.prop && (p.view ?? 0) % 4 === view % 4)
+      .map((p) => {
+        const b = boxOf(p);
+        return { x: b.x + dx * flight.tread, y: b.y + dy * flight.tread, z: topOf(b) };
+      })
+      .filter((b) => cx >= b.x && cx < b.x + size.w && cy + b.z >= b.y && cy + b.z < b.y + size.d)
+      .sort((a, b) => b.z - a.z)[0];
+    if (next) return { ...next, z: Math.max(0, next.z + step * BUILD.grid), ...size };
+  }
   // une porte, un volet pendent à leurs gonds : ils ne portent rien (le rondin au-dessus de la fenêtre de la cabane ne vise pas le haut
   // du volet de 60 cm qui le dépasse ; chantier « hauteurs »)
   const pieces = all.filter((p) => !hangs(p));
@@ -202,6 +217,14 @@ export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: 
   }
   return { ...base, z: Math.max(0, base.z + step * BUILD.grid), ...size };
 }
+
+/** Le sens où monte un escalier, par vue (R0 : vu du sud, il monte vers le nord ; un quart de tour de plus à chaque vue). */
+const STAIR_UP: readonly [number, number][] = [
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0],
+];
 
 /**
  * L'emprise aimantée aux bords de ses voisines : un bord à moins d'une demi-grille (10 cm) d'un bord d'une pièce proche (bout à bout,

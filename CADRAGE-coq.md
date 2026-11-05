@@ -1062,3 +1062,58 @@ se voit entière, comme un mur de côté.
 **Décision de Grégoire (5 novembre)** : le défaut est corrigé dans **un chantier séparé, « hauteurs »**, qui passe **avant** la maison
 du coq. Rien n'en est corrigé ici. Quand il sera dans main : fusionner origin/main, puis l'intégration des dessins validés, les fiches,
 le plan de la maison bâti par un scénario directement sur les hauteurs vraies, `test:etage`, les contrats et la fusion.
+
+### 12.17 Le chantier « hauteurs » fusionné ; l'intégration (5 novembre)
+
+- **origin/main (b9cc596, le bois à sa hauteur vraie) est fusionné** dans maison-coq : `test-etage`, `test:fast`, `check`, et les
+  scénarios `test:portes`, `test:relief`, `test:interieur` passent avec le moteur de l'étage.
+- **Les dessins validés sont au jeu** (pixel-artist, au pixel près : 162 vues), déclarés dans `art/index.ts` (`art/world/coq.ts`,
+  `coq-*.ts` déplacés de `art/proposals/`) ; **la lave est la seule lauze** (`lauze-roof-large` et son état percé ont pris notre
+  lave, les tuiles et les bardeaux de la forge n'ont pas bougé) ; les pierres du mur, le cordon et les dalles en données
+  (`src/generated/ashlarStones.ts`) ; leurs objets dans `props.json`, leurs fiches de groupe dans `docs/objets/` (`ashlar-wall`,
+  `flagstone`, `stone-step`, `stone-window`, `arch-door`, `coq-fireplaces`, `lave-roof`, `coq-furniture`, `coq-hangings`, `lime-rail`).
+- **Ce que le moteur impose au montage** (le plan de la maison, `tools/lib/maison-coq.ts`, éprouvé en Node avec la visée, les
+  collisions et le porte-à-faux du mode construction) :
+  - un pan ne s'encastre pas dans un autre : les baies se posent en **pièces assemblées** tirées des assemblages validés (la
+    croisée, la demi-croisée, l'arc de la porte, la plate-bande du manteau), le linteau à part sur les tableaux ; pour tomber sur les
+    assises de 30 cm, **le jour de la croisée passe de 1,60 à 1,65 m et celui de la demi-croisée de 1,40 à 1,35 m** ;
+  - **la retraite** : au rez-de-chaussée, 8 assises de 60 cm (0-240) ; à l'étage, les murs nord et sud n'ont plus que 40 cm, et la
+    retraite de 20 cm porte les muraillères (240-260), les solives (260-280) et les planches (280-283) : **le plancher est à 2,83 m**,
+    sur les hauteurs vraies. Les corbeaux ne sont pas posés (la retraite les remplace) ;
+  - **le cordon** devient un pan de 20 cm (`string-course-wall`, 40 et 60 cm d'épais) ; les murs : le cordon à 270-290, 8 assises,
+    l'arase à 530, la sablière à 550 (réponse 28) ;
+  - **l'escalier** : une marche visée juste après une marche pareille se pose sur elle, un giron plus loin (`stair.tread` : 26 cm, une
+    capacité en données, `aimAt` de world/build.ts) ; sans elle, l'aimant du mode construction collait chaque marche au bout de la
+    précédente, et elle tombait au sol ;
+  - **la porte de la salle** passe sous le palier, au nord du refend est (le pied de l'escalier occupe le sud) ; on y marche la tête
+    libre sous les marches hautes ;
+  - **la charpente est dans le pan** de laves (comme le chevronnage du chaume de la maison de Xéros) : ni ferme, ni pannes, ni
+    chevrons posés à part ; **la lucarne et sa potence** viendront avec le grenier.
+- **À finir après l'accord** : l'ordre du montage (le rez-de-chaussée meublé avant le plancher, l'étage avant le toit), le dessin des
+  pans dans le jeu (`world/walls.ts` : les assises, le cordon, le dallage, tirés des données), le scénario `test:maison-coq`, le plan
+  enregistré et posé dans `ferme-du-riche.tmj`, `test:etage`, les contrats, la fusion.
+
+### 12.18 Les dessins nouveaux de l'intégration : à valider
+
+Les dessins validés n'ont pas bougé. Ceux-ci sont **neufs** : tirés de pièces validées, mais leur assemblage ou leurs hauteurs
+changent. Planches (pixel-artist) : `.art-preview/coq-jeu-assemblages.png`, `coq-jeu-pignon.png`, `coq-jeu-toits.png`,
+`coq-jeu-cordon.png` (et `coq-jeu-pierres.png`, `coq-jeu-bois.png` pour les pièces validées au jeu).
+
+- `cross-window` (la croisée, 100 × 30 × 180 : l'appui et un jour de 1,65 m) et `half-cross-window` (100 × 30 × 150 : un jour de
+  1,35 m), recadrées au jour ; `stone-arch` (les sommiers, six claveaux et la clef au coq, 170 × 60 × 120) ; `mantel-lintel` (la
+  plate-bande du manteau d'un seul tenant) ;
+- `string-course-wall` et `string-course-wall-40` (le pan de cordon de toute longueur) ; `flagstone-row` vu du côté (r1, r3 : la
+  règle D) ;
+- `lave-ridge` (le faîtage de faîtières de pierre en bâtière, sur toute la longueur) ; `ashlar-gable` (le pignon découvert : les
+  assises, les blocs biais et les dalles de rampant à 45°) ; les pans `lave-roof` et `lave-roof-pierced` de la maison (la souche de la
+  salle à 10,40 m du bout ouest).
+
+Questions :
+
+33. **Ces dessins** (ci-dessus) : bons pour le jeu ?
+34. **Les écarts au gabarit** que la boîte ne suit pas (des formes, pas des tailles) : la console de hotte vue du sud (sa gorge,
+    déjà sur la planche validée), la porte en arc vue de chant (déjà sur la planche), l'arc et le pignon vus de chant (l'arc et le
+    triangle). On les met dans `EXCEPTIONS` de validate.ts, avec leur raison ? *Recommandation : oui*, ce sont des formes.
+35. **Ce que le moteur impose** (12.17) : le plancher à 2,83 m sur une retraite (sans corbeaux), les jours de 1,65 et 1,35 m, le
+    cordon en pan, la porte de la salle sous le palier, la charpente dans le pan, la lucarne plus tard : d'accord ?
+    *Recommandation : oui* ; les corbeaux et la lucarne restent au catalogue, pour plus tard.
