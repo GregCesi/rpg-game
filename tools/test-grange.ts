@@ -41,11 +41,12 @@ const beam = (axis: 'ew' | 'ns' | 'up', length: number) => ({ wood: { size: 'nor
 await playtest('grange', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   await load('?construire&dieu&reset');
+  // B lu avant la suite (une commande de carte est refusée en mode construction), attendu sur l'état du jeu, jamais une pause fixe
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
   await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'build');
   const notices: string[] = [];
   await page.exposeFunction('noticed', (t: string) => notices.push(t));
   await page.evaluate(() => (window as any).game.events.on('notice', (t: string) => (window as any).noticed(t)));

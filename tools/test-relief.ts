@@ -74,7 +74,7 @@ await playtest('relief', async ({ page, load }) => {
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
         await (window as any).__frames(2);
         const said = [...(window as any).notices] as string[];
-        return { x: a.x, y: a.y, said, notice: said.find((t) => /pour lui|nager/.test(t)), wet, lift: w.lifts.liftAt(a.x, a.y - 3) as number };
+        return { x: a.x, y: a.y, said, notice: said.find((t) => /pour lui|nager/.test(t)), wet, lift: w.lifts.liftAt(a.x, a.y - 3) as number, steps, still, mode: w.mode as string, z: a.mobility?.z ?? w.player.mobility?.z };
       },
       { code, stop },
     );
@@ -83,7 +83,7 @@ await playtest('relief', async ({ page, load }) => {
   await place(63 * T, 66 * T);
   let r = await walk('KeyA', `x < ${6 * T}`);
   assert.ok(r.x < 6.5 * T, `il traverse le chemin creux jusqu'au plateau (arrêté en ${Math.round(r.x)}, ${Math.round(r.y)} : ${r.notice})`);
-  assert.ok(Math.abs(r.lift - 100) <= 3, `en haut, sur le plateau, à 5 m (soulevé de ${r.lift} px)`);
+  assert.ok(Math.abs(r.lift - 100) <= 3, `en haut, sur le plateau, à 5 m (soulevé de ${r.lift} px ; arrêté en ${r.x.toFixed(1)}, ${r.y.toFixed(1)} après ${r.steps} pas, immobile ${r.still} pas, ${r.mode} ; dit : ${r.said.join(' | ')})`);
   assert.ok(!r.wet, "jamais d'eau sous ses pieds dans le couloir");
   r = await walk('KeyD', `x > ${61 * T}`);
   assert.ok(r.x > 61 * T, `il revient à la ferme (arrêté en ${Math.round(r.x)}, ${Math.round(r.y)} : ${r.notice})`);

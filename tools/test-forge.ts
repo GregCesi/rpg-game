@@ -35,15 +35,16 @@ const START = Date.now();
 
 await playtest('forge', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-  // deux pas de jeu joués : ce qu'on vient de faire (la souris, une touche) est lu et le fantôme suit ; sous la charge, une pause fixe
-  // peut passer sans qu'aucun pas ne soit joué (le pas de jeu fixe, src/world/timeStep.ts)
-  const stepped = () => page.evaluate(() => (window as any).__steps(2));
+  // un pas dessiné joué : ce qu'on vient de faire (la souris, une touche) est lu et le fantôme suit (il n'est recalculé qu'au pas
+  // dessiné) ; sous la charge, une pause fixe peut passer sans qu'aucun pas ne soit joué (le pas de jeu fixe, src/world/timeStep.ts)
+  const stepped = () => page.evaluate(() => (window as any).__drawn(1));
   await load('?construire&dieu&reset');
+  // B lu avant la suite (une commande de carte est refusée en mode construction), attendu sur l'état du jeu, jamais une pause fixe
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
   await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'build');
   const notices: string[] = [];
   await page.exposeFunction('noticed', (t: string) => notices.push(t));
   await page.evaluate(() => (window as any).game.events.on('notice', (t: string) => (window as any).noticed(t)));
@@ -387,7 +388,7 @@ await playtest('forge', async ({ page, errors, load }) => {
 
   // hors du mode construction : l'atelier est un abri ouvert, pas un bâtiment où l'on entre
   await page.keyboard.press('KeyB');
-  await page.waitForFunction(() => (window as any).game.scene.getScene('world').mode === 'play', null, { timeout: 5000 });
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
   const mine = (x: number, y: number) => x >= O!.x - 100 && x <= O!.x + 1600 && y >= O!.y - 100 && y <= O!.y + 900;
   const buildings: any[] = ((await page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').interiors.buildings())))) as any[]).filter((q) => mine(q.room.x, q.room.y));
   assert.equal(buildings.length, 0, `l'atelier est ouvert au sud : pas un bâtiment où l'on entre (${JSON.stringify(buildings.map((q) => q.room))})`);

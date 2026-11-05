@@ -32,7 +32,10 @@ export const ALONE = ['construction'];
  */
 export const HEAVY = ['maison', 'cabane', 'grange', 'etal', 'construction', 'forge'];
 const ALL = process.argv.includes('--all') || !!process.env.SCENARIOS_ALL;
-const RUN = SCENARIOS.filter((n) => ALL || !HEAVY.includes(n));
+// SCENARIOS_ONLY (noms séparés par des virgules) : ceux-là seuls, ensemble, sur le banc partagé (reproduire un échec de la suite
+// dans ses conditions : le même navigateur, le même serveur, la même charge)
+const ONLY = (process.env.SCENARIOS_ONLY ?? '').split(',').map((n) => n.trim()).filter(Boolean);
+const RUN = ONLY.length ? SCENARIOS.filter((n) => ONLY.includes(n)) : SCENARIOS.filter((n) => ALL || !HEAVY.includes(n));
 
 const jobs = Math.max(1, Number(process.env.SCENARIOS_JOBS) || 4);
 /**

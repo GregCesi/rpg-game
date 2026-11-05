@@ -37,11 +37,12 @@ const beam = (axis: 'ew' | 'ns' | 'up', length: number) => ({ wood: { size: 'nor
 await playtest('etal', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   await load('?construire&dieu&reset');
+  // B lu avant la suite (une commande de carte est refusée en mode construction), attendu sur l'état du jeu, jamais une pause fixe
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
   await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'build');
   const notices: string[] = [];
   await page.exposeFunction('noticed', (t: string) => notices.push(t));
   await page.evaluate(() => (window as any).game.events.on('notice', (t: string) => (window as any).noticed(t)));
@@ -255,7 +256,7 @@ await playtest('etal', async ({ page, errors, load }) => {
   // 5. en jeu : hors du mode construction, Xéros devant l'étal, tourné vers lui ; E rabat le volet en comptoir (contre la face du
   // dehors, son dessus à 1 m), E le relève
   await page.keyboard.press('KeyB');
-  await page.waitForFunction(() => (window as any).game.scene.getScene('world').mode === 'play', null, { timeout: 5000 });
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
   const shutterOf = async () => (await pieces()).find((q: any) => q.id === shutter.id);
   /** Xéros tourné vers le nord, le point qu'il regarde sur ce point (cm) du sol. */
   const faceAt = async (x: number, y: number) => {

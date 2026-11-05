@@ -12,6 +12,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildRef, JointType, Natural, WoodAge } from '../content/types';
 import type { BuildCommand, BuildStatus } from '../events';
 import type { Player } from '../entities/Player';
+import { drawnStep } from './simSpeed';
 import { addBuildPieces, addJoints, game, mapState, moveBuildPiece, removeBuildPieces, removeJoints, revisionOf, type BuildPiece, type Joint } from '../state';
 import { aimAt, aimOnGrid, centerOnFace, supportAt, solidOf, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, withAge, type Area, type Box3 } from '../world/build';
 import { buildLook } from '../world/buildView';
@@ -210,10 +211,11 @@ export class BuildSystem {
     const clicked = this.clicks.length > 0;
     this.flushClicks();
     // la visée (l'accrochage parmi toutes les pièces posées) et le fantôme ne dépendent que du point visé, de l'outil, du cran, de
-    // l'âge, de la sélection et de la partie (son compteur de changements) : recalculés seulement quand l'un d'eux change, jamais à
-    // chaque pas de jeu pour rien (une machine lente fait plusieurs pas par image, world/timeStep.ts)
+    // l'âge, de la sélection et de la partie (son compteur de changements) : recalculés seulement quand l'un d'eux change, et au pas
+    // qui sera dessiné (une machine lente fait plusieurs pas par image, world/timeStep.ts : le fantôme ne se voit qu'à celui-là ; un
+    // clic, lui, vise toujours à son point, flushClicks)
     const key = [at.x, at.y, this.step, this.age, revisionOf(), JSON.stringify(this.tool), JSON.stringify(this.selection), this.dragFrom?.x, this.dragFrom?.y].join('|');
-    if (!clicked && key === this.aimedFor) return;
+    if (!clicked && (key === this.aimedFor || !drawnStep())) return;
     this.aimedFor = key;
     this.updateAim(at.x, at.y);
     this.draw(at);
