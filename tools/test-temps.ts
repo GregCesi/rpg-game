@@ -141,15 +141,25 @@ await playtest('temps', async ({ page, errors, load }) => {
     const g0 = gameMs;
     let frames = 0;
     const tf = performance.now();
-    while (performance.now() - tf < 4000) {
+    // jusqu'à cinq coups joués (un état, jamais une durée : une machine chargée joue x5 plus lentement, en pas fixes) ; à chaque image,
+    // le temps vrai écoulé et les pas joués : le temps de jeu que permet le pas fixe, cinq fois le temps vrai au plus, et au plus
+    // max(maxPerImage, 5) pas par image (world/timeStep.ts)
+    let prevT = performance.now();
+    let prevS = steps;
+    const images: { dt: number; n: number }[] = [];
+    while (fast.length < 5 && performance.now() - tf < 60000) {
       const d = w().works.active ? w().works.done : -1;
       if (d >= 0 && d !== fast.at(-1)?.done) fast.push({ t: gameMs, done: d });
       frames++;
       await frame();
+      const now = performance.now();
+      images.push({ dt: now - prevT, n: steps - prevS });
+      [prevT, prevS] = [now, steps];
     }
     out.stepsPerFrame = (steps - f0) / frames;
-    // le temps de jeu joué pour le temps vrai écoulé (5 à x5, moins si la machine n'y arrive pas : le plafond de pas par image)
-    out.ratio = (gameMs - g0) / (performance.now() - tf);
+    out.images = images;
+    out.real = performance.now() - tf;
+    out.game = gameMs - g0;
     out.sizes = [...sizes];
     g.events.off('prestep', count);
     await send({ kind: 'sim-speed', factor: 1 }, 0);
@@ -161,7 +171,7 @@ await playtest('temps', async ({ page, errors, load }) => {
     out.tree = { id: tree.id, x: Math.round(tree.aimX - 14), y: Math.round(tree.aimY) };
     return out;
   })) as Record<string, any>;
-  console.log(JSON.stringify(first));
+  console.log(JSON.stringify({ ...first, images: first.images?.length }));
   assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
   assert.equal(first.accelerate, true, 'la vitesse du temps du joueur est active (time.json)');
   assert.equal(first.x1.speed, 1, 'le temps va à x1');
@@ -194,15 +204,19 @@ await playtest('temps', async ({ page, errors, load }) => {
   assert.ok(first.strong.per > 2 * m.per, `avec la force du bûcheron fort, plus de deux fois moins de coups (${(first.strong.per / m.per).toFixed(2)} fois la part)`);
   // la vitesse de simulation x5
   const fastSteps = intervals(first.fast);
-  assert.ok(fastSteps.length >= 3, `à x5, des coups serrés (${fastSteps.length + 1} en 4 s réelles)`);
+  assert.ok(fastSteps.length >= 3, `à x5, des coups joués (${fastSteps.length + 1} en ${(first.real / 1000).toFixed(1)} s réelles)`);
   // des pas de jeu de durée fixe (src/world/timeStep.ts), cinq fois plus nombreux qu'à x1 : le jeu joue cinq fois le temps vrai, ou
   // moins si la machine n'y arrive pas (le plafond de pas par image est atteint), jamais par un pas plus grand ; en temps de jeu, un
   // coup garde sa durée
   const { STEP } = await import('../src/config');
   const { STEP_MS } = await import('../src/world/timeStep');
   assert.deepEqual(first.sizes, [STEP_MS], `à x5, des pas de jeu de ${STEP_MS.toFixed(2)} ms (${first.sizes.join(', ')})`);
-  const capped = first.stepsPerFrame >= Math.max(STEP.maxPerImage, 5) - 0.5;
-  assert.ok(first.ratio <= 5.2 && (capped || first.ratio >= 4.6), `à x5, cinq fois le temps vrai (${first.ratio.toFixed(2)}, ${first.stepsPerFrame.toFixed(1)} pas par image)`);
+  // le temps de jeu joué : jamais plus de cinq fois le temps vrai ; au moins ce que permet le plafond de pas par image, image par image
+  // (cinq fois le temps vrai sur une machine qui suit)
+  const cap = Math.max(STEP.maxPerImage, 5);
+  const allowed = (first.images as { dt: number; n: number }[]).reduce((a, im) => a + Math.min(5 * im.dt, cap * STEP_MS), 0);
+  assert.ok(first.game <= 5 * first.real * 1.05 + 5 * STEP_MS, `à x5, jamais plus de cinq fois le temps vrai (${Math.round(first.game)} ms de jeu en ${Math.round(first.real)} ms)`);
+  assert.ok(first.game >= 0.85 * allowed - 5 * STEP_MS, `à x5, le temps de jeu que permettent la machine et le plafond (${Math.round(first.game)} ms de jeu, ${Math.round(allowed)} permis, ${first.stepsPerFrame.toFixed(1)} pas par image)`);
   // (une marge large : sous forte charge, Phaser n'avance une animation que d'une image par pas, et un geste dont les images sont plus
   // courtes qu'un pas s'étire un peu, à x5 comme à x1 ; l'essentiel, cinq pas de taille normale par image, est vérifié juste au-dessus)
   for (const st of fastSteps) assert.ok(Math.abs(st.dt / 1000 - m.cycle) < 0.45 * m.cycle, `à x5, un coup dure en temps de jeu ce qu'il dure à x1 : ${(st.dt / 1000).toFixed(2)} s pour ${m.cycle.toFixed(2)} s`);

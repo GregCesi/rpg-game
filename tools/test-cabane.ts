@@ -108,7 +108,8 @@ await playtest('cabane', async ({ page, errors, load }) => {
   const put = async (what: string, x: number, y: number, w: number, d: number, z?: number, aimY?: number) => {
     const S = await page.evaluate(async ([x, y, w, d]) => {
       const url = '/src/world/build.ts';
-      const b = await import(url);
+      // le module gardé dans la page (un import() refait coûte près de 100 ms au serveur de Vite)
+      const b = (((window as any).__mods ??= {})[url] ??= await import(url));
       const m = (window as any).game.scene.getScene('world').map;
       return b.supportAt(m.builds.map((q: any) => q.piece).filter((q: any) => !('prop' in q.piece && q.piece.prop === 'plank-roof')), { x, y, w, d });
     }, [O!.x + x, O!.y + y, w, d] as const);
@@ -131,7 +132,8 @@ await playtest('cabane', async ({ page, errors, load }) => {
     await send({ kind: 'pick-joint', joint: type });
     const pt = await page.evaluate(async ([ia, ib]) => {
       const url = '/src/world/joints.ts';
-      const J = await import(url);
+      // le module gardé dans la page (un import() refait coûte près de 100 ms au serveur de Vite)
+      const J = (((window as any).__mods ??= {})[url] ??= await import(url));
       const m = (window as any).game.scene.getScene('world').map;
       const ps = m.builds.map((q: any) => q.piece);
       const all = J.junctions(ps, (q: any) => m.shownOffset(q));

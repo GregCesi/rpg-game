@@ -196,7 +196,8 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
       // \`__drawn(n)\` : n pas dessinés joués à partir de maintenant (le dernier pas de chaque image : ce qui ne sert qu'à l'affichage,
       // le fantôme du mode construction, n'est recalculé qu'à ce pas-là)
       window.__drawn = async (n = 1) => {
-        const sim = await import('/src/systems/simSpeed.ts');
+        // le module importé une fois et gardé (un import() refait coûte près de 100 ms au serveur de Vite)
+        const sim = (window.__simModule ??= await import('/src/systems/simSpeed.ts'));
         await new Promise((done) => {
           let k = 0;
           const tick = () => {

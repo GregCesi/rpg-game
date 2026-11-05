@@ -137,7 +137,8 @@ await playtest('forge', async ({ page, errors, load }) => {
     const S = await page.evaluate(
       async ([b, ridge]) => {
         const url = '/src/world/build.ts';
-        const B = await import(url);
+        // le module gardé dans la page (un import() refait coûte près de 100 ms au serveur de Vite)
+        const B = (((window as any).__mods ??= {})[url] ??= await import(url));
         const m = (window as any).game.scene.getScene('world').map;
         const roof = (q: any) => 'prop' in q.piece && /-roof/.test(q.piece.prop);
         return B.supportAt(m.builds.map((q: any) => q.piece).filter((q: any) => ridge || !roof(q)), b);
@@ -252,7 +253,8 @@ await playtest('forge', async ({ page, errors, load }) => {
     await send({ kind: 'pick-joint', joint: type });
     const pt = await page.evaluate(async ([ia, ib]) => {
       const url = '/src/world/joints.ts';
-      const J = await import(url);
+      // le module gardé dans la page (un import() refait coûte près de 100 ms au serveur de Vite)
+      const J = (((window as any).__mods ??= {})[url] ??= await import(url));
       const m = (window as any).game.scene.getScene('world').map;
       const ps = m.builds.map((q: any) => q.piece);
       const shift = (q: any) => m.shownOffset(q);
