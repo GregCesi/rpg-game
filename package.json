@@ -9,6 +9,7 @@
     "maps": "tsx tools/build-maps.ts",
     "capacites": "tsx tools/capacites.ts --md docs/CAPACITES.md",
     "audit": "knip --no-exit-code; depcruise src art tools vite.config.ts --config .dependency-cruiser.cjs --output-type err-long",
+    "carte": "tsx tools/carte.ts",
     "check": "npm run art && npm run maps && tsx tools/check.ts",
     "dev": "npm run art && npm run maps && vite",
     "typecheck": "npm run art && npm run maps && tsc --noEmit",
