@@ -231,8 +231,16 @@ export interface StepPlace {
   steps: Steps;
 }
 
-/** Le point (x, y) d'un couloir en gradins, avec ses valeurs interpolées, ou undefined (hors d'un couloir en gradins). */
-export function stepsAt(f: ReliefField, x: number, y: number): StepPlace | undefined {
+/** Bilinéaire d'un tableau aux nœuds de la grille (sans fermeture : appelée pour chaque pixel peint). */
+function lerp4(a: Float32Array, i00: number, W: number, u: number, v: number): number {
+  return (a[i00] * (1 - u) + a[i00 + 1] * u) * (1 - v) + (a[i00 + W] * (1 - u) + a[i00 + W + 1] * u) * v;
+}
+
+/**
+ * Le point (x, y) d'un couloir en gradins, avec ses valeurs interpolées, ou undefined (hors d'un couloir en gradins). Appelée pour
+ * chaque pixel du terrain peint : `out`, s'il est donné, est rempli et rendu (aucun objet créé).
+ */
+export function stepsAt(f: ReliefField, x: number, y: number, out?: StepPlace): StepPlace | undefined {
   const st = f.steps;
   if (!st || !f.lanes) return undefined;
   const fx = Math.max(0, Math.min(f.cols, x / RELIEF_CELL));
@@ -245,21 +253,28 @@ export function stepsAt(f: ReliefField, x: number, y: number): StepPlace | undef
   if (li < 0 || st.idx[i00 + 1] !== li || st.idx[i00 + W] !== li || st.idx[i00 + W + 1] !== li) return undefined;
   const u = fx - c;
   const v = fy - r;
-  const lerp = (a: Float32Array) => (a[i00] * (1 - u) + a[i00 + 1] * u) * (1 - v) + (a[i00 + W] * (1 - u) + a[i00 + W + 1] * u) * v;
   const ln = f.lanes[li];
   const steps = ln.steps!;
-  const sd = lerp(st.sd);
+  const sd = lerp4(st.sd, i00, W, u, v);
   const e = Math.abs(sd) - ln.width / 2;
-  const floor = lerp(st.floor);
-  const around = lerp(st.around);
-  const k = e < 0 ? 0 : Math.min(steps.count + 1, Math.floor(e / steps.tread) + 1);
-  return { lane: li, side: sd >= 0 ? 1 : -1, e, floor, around, k, steps };
+  const o = out ?? ({} as StepPlace);
+  o.lane = li;
+  o.side = sd >= 0 ? 1 : -1;
+  o.e = e;
+  o.floor = lerp4(st.floor, i00, W, u, v);
+  o.around = lerp4(st.around, i00, W, u, v);
+  o.k = e < 0 ? 0 : Math.min(steps.count + 1, Math.floor(e / steps.tread) + 1);
+  o.steps = steps;
+  return o;
 }
+
+/** Le point de travail de `fieldHeight` (rempli à chaque appel, jamais gardé). */
+const SCRATCH = {} as StepPlace;
 
 /** La hauteur d'un champ en (x, y) (cm). */
 export function fieldHeight(f: ReliefField, x: number, y: number): number {
   if (f.flat) return f.base;
-  const sp = stepsAt(f, x, y);
+  const sp = stepsAt(f, x, y, SCRATCH);
   if (sp) return stepHeight(sp.steps, sp.e, sp.floor, sp.around);
   const fx = Math.max(0, Math.min(f.cols, x / RELIEF_CELL));
   const fy = Math.max(0, Math.min(f.rows, y / RELIEF_CELL));

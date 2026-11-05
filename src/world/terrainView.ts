@@ -122,7 +122,24 @@ function at(m: Matter, x: number, y: number): Rgb | undefined {
 }
 
 /** Ce qu'un morceau peint a produit (gardé dans le registre : une fois par carte). */
-type Made = { top: number; h: number; bands: { key: string; x: number; y: number; depth: number }[]; cut?: string };
+type Made = { top: number; h: number; bands: { key: string; x: number; y: number; depth: number }[]; cut?: { key: string; x: number; y: number } };
+
+/** Le rectangle des pixels peints (alpha non nul) d'une image, ou undefined si elle est vide. */
+function paintedBox(buf: Uint8ClampedArray, w: number, h: number): { x: number; y: number; w: number; h: number } | undefined {
+  let x0 = w;
+  let y0 = h;
+  let x1 = -1;
+  let y1 = -1;
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++)
+      if (buf[(y * w + x) * 4 + 3] !== 0) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+  return x1 < 0 ? undefined : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
 
 /**
  * Le terrain d'une carte (ou de la part d'une voisine qu'on voit dans la bande, posée à (ox, oy)), cases [x0, x1[ × [y0, y1[. Les
@@ -193,7 +210,7 @@ export class TerrainView {
     if (!meta) scene.registry.set(base, made);
     this.parts.push(scene.add.image(this.ox + x0, this.oy + made.top, base).setOrigin(0, 0).setDepth(DEPTH.ground).setData('noLift', true));
     // la terre en coupe, cachée tant que Xéros n'est pas sous la voûte (systems/laneFade.ts la montre)
-    if (made.cut) this.parts.push(scene.add.image(this.ox + x0, this.oy + made.top, made.cut).setOrigin(0, 0).setDepth(DEPTH.ground + 0.05).setAlpha(0).setData('noLift', true).setData('cut', true));
+    if (made.cut) this.parts.push(scene.add.image(this.ox + made.cut.x, this.oy + made.cut.y, made.cut.key).setOrigin(0, 0).setDepth(DEPTH.ground + 0.05).setAlpha(0).setData('noLift', true).setData('cut', true));
     for (const b of made.bands) this.parts.push(scene.add.image(this.ox + b.x, this.oy + b.y, b.key).setOrigin(0, 0).setDepth(this.oy + b.depth).setData('noLift', true));
   }
 
@@ -236,8 +253,8 @@ export class TerrainView {
     const top = y0 - max - 2;
     const H = y1 - top + 2;
     const out = new Uint8ClampedArray(W * H * 4);
-    const cutBuf = new Uint8ClampedArray(W * H * 4);
-    let cutUsed = false;
+    // la terre en coupe : allouée au premier point (la plupart des morceaux n'en ont pas)
+    let cutBuf: Uint8ClampedArray<ArrayBuffer> | undefined;
     const bands = new Map<number, Uint8ClampedArray<ArrayBuffer>>();
     const bandTop = (b: number) => y0 + b * BAND - max - 2;
     const bandH = BAND + max + 4;
@@ -253,13 +270,15 @@ export class TerrainView {
     const banks = [0, 1, 2, 3].map((k) => named[`bank-${k}`]).filter((n) => n !== undefined);
     // les parois en gradins : où en est le point (le gradin, la marche), lu une fois par point
     const field = reliefOf(def);
-    const place = (x: number, y: number): StepPlace | undefined => stepsAt(field, x, y);
+    // trois points de travail, remplis à chaque appel (un par usage : le sol, la marche, la coupe), jamais gardés d'un pixel à l'autre
+    const scratch = { ground: {} as StepPlace, riser: {} as StepPlace, cut: {} as StepPlace, plant: {} as StepPlace };
+    const place = (x: number, y: number, out: StepPlace): StepPlace | undefined => stepsAt(field, x, y, out);
     // les arbres des gradins dont les racines descendent la marche sous eux (`roots` de props.json) : leur pied et leur gradin
     const rooted: { x: number; k: number; m: Matter }[] = [];
     for (const o of def.objects) {
       if (!props[o.type]?.roots || o.x < x0 - 64 || o.x > x1 + 64) continue;
       const fx = o.x + scene.textures.get(props[o.type].image).getSourceImage().width / 2;
-      const sp = place(fx, o.y - 1);
+      const sp = place(fx, o.y - 1, scratch.plant);
       if (sp && sp.side < 0 && sp.k >= 1) rooted.push({ x: fx, k: sp.k, m: matter(choose(MATTER.roots, o.id)) });
     }
     /** Le dessus d'un gradin : sa rangée 0 contre la marche du dessus, sa rangée 9 sur l'arête au-dessus de la marche du dessous. */
@@ -269,7 +288,7 @@ export class TerrainView {
       return at(m, ((x % TREAD.w) + TREAD.w) % TREAD.w, row);
     };
     const ground = (x: number, y: number): Rgb => {
-      const sp = place(x, y);
+      const sp = place(x, y, scratch.ground);
       if (sp && sp.k >= 1 && sp.k < sp.steps.count && L(x, y) * CM_PER_PX > sp.floor + 1) {
         const c = treadAt(x, sp);
         if (c) return c;
@@ -333,7 +352,7 @@ export class TerrainView {
         const wet = footWet[y - y0] === 1;
         // (au pied d'une marche des gradins, le point reste le sol : la marche se peint au-dessus de lui)
         const atRiser = (sp0: StepPlace | undefined) => !!sp0 && sp0.side < 0 && sp0.e < sp0.steps.count * sp0.steps.tread;
-        const c = shade(x, y, h, steepFace && !atRiser(place(x, y)) ? face(x, footSy[y - y0] - sy, sy - faceTop - 1, wet) : ground(x, y));
+        const c = shade(x, y, h, steepFace && !atRiser(place(x, y, scratch.riser)) ? face(x, footSy[y - y0] - sy, sy - faceTop - 1, wet) : ground(x, y));
         // le trou entre le sol d'avant et celui-ci : une pente tournée vers le sud (un trou de 1 ou 2 px : le sol s'étire), ou une face
         // (plus raide : la terre de la face)
         const gap = sy - Math.round(prev) - 1;
@@ -353,7 +372,7 @@ export class TerrainView {
         };
         // une marche des gradins (tournée vers le sud, au nord du chemin) : sa matière, accrochée par le haut (une marche enterrée
         // à moitié garde ce qui pend du gradin du dessus)
-        const sp = gap > 2 ? place(x, y) : undefined;
+        const sp = gap > 2 ? place(x, y, scratch.riser) : undefined;
         const riser = sp && atRiser(sp) ? matter(choose(MATTER.riser, Math.floor(x / RISER.w) * 7 + sp.k)) : undefined;
         for (let fy = Math.round(prev) + 1; fy < sy; fy++) {
           const row = Math.min(RISER.h - 1, fy - Math.round(prev) - 1);
@@ -369,7 +388,7 @@ export class TerrainView {
         }
         paint(sy, c);
         // la terre en coupe : la masse au sud d'un chemin en gradins, tranchée au ras de son sol (ce que voit Xéros sous la voûte)
-        const cp = place(x, y);
+        const cp = place(x, y, scratch.cut);
         if (cp && cp.side > 0 && h * CM_PER_PX > cp.floor + 2) {
           const fy = Math.round(y - cp.floor / CM_PER_PX);
           const iy = fy - top;
@@ -377,8 +396,8 @@ export class TerrainView {
             const m = matter(MATTER.cut[cutVariant(Math.floor(x / CUT), Math.floor(fy / CUT))]);
             const cc = at(m, ((x % CUT) + CUT) % CUT, ((fy % CUT) + CUT) % CUT);
             if (cc) {
+              cutBuf ??= new Uint8ClampedArray(W * H * 4);
               put(cutBuf, W, lx, iy, cc);
-              cutUsed = true;
             }
           }
         }
@@ -414,19 +433,25 @@ export class TerrainView {
     canvas.context.putImageData(new ImageData(out, W, H), 0, 0);
     canvas.refresh();
     const made: Made = { top, h: H, bands: [] };
-    if (cutUsed) {
-      const k = `${base}:cut`;
-      const t = scene.textures.createCanvas(k, W, H)!;
-      t.context.putImageData(new ImageData(cutBuf, W, H), 0, 0);
+    // chaque image recadrée sur ses pixels peints (une bande est surtout transparente : la mémoire de la page reste basse)
+    const texture = (k: string, buf: Uint8ClampedArray<ArrayBuffer>, w: number, h: number): { x: number; y: number } | undefined => {
+      const box = paintedBox(buf, w, h);
+      if (!box) return undefined;
+      const data = new Uint8ClampedArray(box.w * box.h * 4);
+      for (let y = 0; y < box.h; y++) data.set(buf.subarray(((box.y + y) * w + box.x) * 4, ((box.y + y) * w + box.x + box.w) * 4), y * box.w * 4);
+      const t = scene.textures.createCanvas(k, box.w, box.h)!;
+      t.context.putImageData(new ImageData(data, box.w, box.h), 0, 0);
       t.refresh();
-      made.cut = k;
+      return { x: box.x, y: box.y };
+    };
+    if (cutBuf) {
+      const at0 = texture(`${base}:cut`, cutBuf, W, H);
+      if (at0) made.cut = { key: `${base}:cut`, x: x0 + at0.x, y: top + at0.y };
     }
     for (const [b, buf] of bands) {
       const k = `${base}:b${b}`;
-      const t = scene.textures.createCanvas(k, W, bandH)!;
-      t.context.putImageData(new ImageData(buf, W, bandH), 0, 0);
-      t.refresh();
-      made.bands.push({ key: k, x: x0, y: bandTop(b), depth: y0 + b * BAND - 0.5 });
+      const at0 = texture(k, buf, W, bandH);
+      if (at0) made.bands.push({ key: k, x: x0 + at0.x, y: bandTop(b) + at0.y, depth: y0 + b * BAND - 0.5 });
     }
     return made;
   }
