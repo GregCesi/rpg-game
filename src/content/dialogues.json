@@ -61,5 +61,14 @@
         "text": "Je t'ai trouvé par terre dans la forêt et je t'ai ramené. Repose-toi, et ne retourne pas seul dans les bois profonds."
       }
     ]
+  },
+  "smith-greeting": {
+    "lines": [
+      {
+        "speaker": "smith",
+        "expression": "smile",
+        "text": "Tiens, le petit de la ferme. Fais attention, le fer est chaud. Si tu as besoin d'un outil, tu sais où me trouver."
+      }
+    ]
   }
 }

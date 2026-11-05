@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { FEET } from '../config';
+import { characters } from '../content';
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 
@@ -26,9 +27,11 @@ export class Actor extends Phaser.Physics.Arcade.Sprite {
     // Origine aux pieds : y est la position au sol, utilisée pour l'ordre d'affichage.
     this.setOrigin(0.5, 1);
     // Collision limitée aux pieds, comme dans Stardew : on peut passer "derrière" un arbre. 10 × 8 px = 50 × 40 cm
-    // (le corps fait 12 px de large, 60 cm bras compris), centrée sous lui, au bas de la frame.
-    this.body.setSize(FEET.w, FEET.h);
-    this.body.setOffset((this.width - FEET.w) / 2, this.height - FEET.h - FEET.gap);
+    // (le corps fait 12 px de large, 60 cm bras compris), centrée sous lui, au bas de la frame ; un personnage plus large en a une à
+    // lui (`feet` de characters.json : le forgeron, 14 × 8).
+    const feet = characters[skin]?.feet ?? FEET;
+    this.body.setSize(feet.w, feet.h);
+    this.body.setOffset((this.width - feet.w) / 2, this.height - feet.h - FEET.gap);
     this.body.setCollideWorldBounds(true);
     this.play(this.animKey('idle'));
   }
