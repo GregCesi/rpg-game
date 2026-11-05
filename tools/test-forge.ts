@@ -95,6 +95,9 @@ await playtest('forge', async ({ page, errors, load }) => {
     await sleep(60);
     await page.mouse.click(s.x, s.y, { button });
     await sleep(110);
+    // le clic joué : la file des clics du mode construction (systems/build.ts) vidée par un pas de jeu ; sous la charge, ce pas peut venir
+    // après la pause (un clic n'est jamais perdu, il attend son pas)
+    await page.evaluate(() => (window as any).__until(() => !(window as any).game.scene.getScene('world').builder?.clicks?.length, 'le clic joué'));
   };
   const send = (cmd: object) => page.evaluate((c) => (window as any).game.events.emit('build', c), cmd);
   // les pièces déjà posées sur la ferme à l'arrivée (la cabane du chasseur, posée depuis son plan) ne comptent pas
