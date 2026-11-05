@@ -11,6 +11,12 @@ let factor = 1;
 /** Le facteur de simulation en ce moment. */
 export const simSpeed = (): number => factor;
 
+/** Le pas en cours sera-t-il dessiné ? (le dernier de chaque image ; les autres se jouent sans rendu, `headlessStep`) */
+let drawing = true;
+
+/** Vrai pendant le pas de jeu qui sera dessiné : ce qui ne sert qu'à l'affichage peut attendre ce pas-là. */
+export const drawnStep = (): boolean => drawing;
+
 type Looping = Phaser.Game & { __simStep?: (time: number, delta: number) => void; __timeStep?: TimeStep };
 
 /**
@@ -31,7 +37,9 @@ export function startTimeStep(game: Phaser.Game): void {
   const steps = (g.__timeStep = new TimeStep());
   loop.callback = (time: number) => {
     const at = steps.image(time, factor);
+    drawing = false;
     for (let i = 0; i < at.length - 1; i++) game.headlessStep(at[i], STEP_MS);
+    drawing = true;
     // une image trop tôt pour un pas : rien ne bouge, rien n'est redessiné
     if (at.length) step(at[at.length - 1], STEP_MS);
   };
