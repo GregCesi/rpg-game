@@ -185,5 +185,9 @@
   "lane-overhang-2": {"name": "avancée de feuillage", "family": "nature", "image": "lane-overhang-2", "views": "four", "dims": {"w": 640, "d": 120, "h": 270, "shape": "box"}, "vault": true},
   "lane-overhang-3": {"name": "avancée de feuillage", "family": "nature", "image": "lane-overhang-3", "views": "four", "dims": {"w": 520, "d": 100, "h": 190, "shape": "box"}, "vault": true},
   "water-cut": {"name": "liseré de l'eau", "gender": "m", "family": "nature", "image": "water-cut", "views": "four", "layer": "floor", "dims": {"w": 160, "d": 20, "h": 0, "shape": "flat"}},
-  "shimmer": {"name": "miroitement", "gender": "m", "family": "nature", "image": "shimmer", "views": "symmetric", "layer": "floor", "anim": "shimmer", "dims": {"w": 160, "d": 15, "h": 0, "shape": "flat"}}
+  "shimmer": {"name": "miroitement", "gender": "m", "family": "nature", "image": "shimmer", "views": "symmetric", "layer": "floor", "anim": "shimmer", "dims": {"w": 160, "d": 15, "h": 0, "shape": "flat"}},
+  "hazel": {"name": "noisetier", "gender": "m", "family": "nature", "image": "hazel", "views": "round", "dims": {"w": 220, "d": 150, "h": 380, "shape": "box"}, "roots": true},
+  "young-ash": {"name": "jeune frêne", "gender": "m", "family": "nature", "image": "young-ash", "views": "round", "dims": {"w": 160, "d": 140, "h": 420, "shape": "box"}, "roots": true},
+  "long-bush": {"name": "buisson long", "gender": "m", "family": "nature", "image": "long-bush", "views": "symmetric", "dims": {"w": 150, "d": 50, "h": 90, "shape": "box"}},
+  "briar": {"name": "églantier", "gender": "m", "family": "nature", "image": "briar", "views": "round", "dims": {"w": 90, "d": 50, "h": 70, "shape": "box"}}
 }

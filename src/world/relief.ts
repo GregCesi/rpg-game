@@ -18,6 +18,8 @@ export const RELIEF_CELL = 8;
 const PROBE = 2;
 /** Jusqu'où l'on suit une marche raide pour en mesurer la hauteur (px) : 20 m. */
 const RUN_REACH = 400;
+/** Jusqu'où, depuis le bord du sol d'un couloir en gradins, on connaît ce couloir (cm) : la masse en coupe remplit le bas de l'écran. */
+const STEPS_REACH = 1000;
 
 export interface ReliefField {
   /** Hauteur de fond, partout où aucune forme ne monte ni ne creuse (cm). */
@@ -30,6 +32,29 @@ export interface ReliefField {
   readonly rows: number;
   /** Hauteurs aux nœuds de la grille (cm), ligne par ligne : (cols + 1) × (rows + 1). */
   readonly data: Float32Array;
+  /**
+   * Les couloirs en gradins (`steps` d'un `Lane`) : à chaque nœud proche d'un tel couloir, son numéro (`idx`, −1 ailleurs), la distance
+   * à son axe (`sd`, cm, négative au nord), son sol (`floor`) et la hauteur de ce qui l'entoure avant qu'on le creuse (`around`). Ces
+   * trois valeurs varient doucement : interpolées entre les nœuds, puis passées par la règle des gradins, elles donnent des marches
+   * droites et des gradins plats au pixel près (la grille seule, de 40 cm, ferait des pentes d'un gradin de 50 cm).
+   */
+  readonly steps?: { readonly idx: Int16Array; readonly sd: Float32Array; readonly floor: Float32Array; readonly around: Float32Array };
+  readonly lanes?: Relief['lanes'];
+}
+
+type Steps = { rise: number; tread: number; count: number };
+
+/**
+ * La hauteur d'une paroi en gradins à `e` cm du bord du sol (`e` < 0 : sur le sol), pour un sol à `floor` et ce qui l'entoure à
+ * `around` : la marche k (de 1 à count) a son pied à (k − 1) × tread et monte à around − (count − k) × rise ; au-delà de la dernière,
+ * le dessus. Quand le sol monte, les marches du bas s'enterrent une à une (le sol les recouvre et s'élargit d'autant).
+ */
+export function stepHeight(st: Steps, e: number, floor: number, around: number): number {
+  if (around <= floor) return around;
+  if (e < 0) return floor;
+  const k = Math.floor(e / st.tread) + 1;
+  if (k > st.count) return around;
+  return Math.max(floor, around - (st.count - k) * st.rise);
 }
 
 const fields = new WeakMap<MapData, ReliefField>();
@@ -57,6 +82,7 @@ export function rasterize(relief: Relief | undefined, width: number, height: num
   const base = relief?.base ?? 0;
   const flat = !relief || (relief.levels.length === 0 && relief.ridges.length === 0 && relief.lanes.length === 0);
   const data = new Float32Array(flat ? 0 : (cols + 1) * (rows + 1)).fill(base);
+  let steps: ReliefField['steps'];
   if (relief && !flat) {
     const W = cols + 1;
     // les niveaux plats : remplissage par lignes (pair-impair), le plus haut l'emporte
@@ -88,8 +114,29 @@ export function rasterize(relief: Relief | undefined, width: number, height: num
         if (data[i] < h) data[i] = h;
       });
     }
+    // les couloirs en gradins : la règle des gradins à chaque nœud, et ce qu'il faut pour l'interpoler (`steps` du champ)
+    relief.lanes.forEach((ln, li) => {
+      const st = ln.steps;
+      if (!st) return;
+      const n = (cols + 1) * (rows + 1);
+      steps ??= { idx: new Int16Array(n).fill(-1), sd: new Float32Array(n), floor: new Float32Array(n), around: new Float32Array(n) };
+      // au-delà des gradins, jusqu'à STEPS_REACH : la masse qu'on voit en coupe sous la voûte (son sol, `floor`, y est connu)
+      const reach = (ln.width / 2 + Math.max(st.count * st.tread, STEPS_REACH)) / CM_PER_PX + 3 * RELIEF_CELL;
+      eachNear(ln.points, reach, cols, rows, (i, near) => {
+        const p = lerpPoint(ln.points, near);
+        const r = Math.floor(i / (cols + 1));
+        const side = r * RELIEF_CELL >= p.y ? 1 : -1;
+        const around = data[i];
+        steps!.idx[i] = li;
+        steps!.sd[i] = side * near.d * CM_PER_PX;
+        steps!.floor[i] = p.h;
+        steps!.around[i] = around;
+        data[i] = stepHeight(st, near.d * CM_PER_PX - ln.width / 2, p.h, around);
+      });
+    });
     // les couloirs : le sol à sa hauteur, le talus intérieur qui le raccorde à ce qui l'entoure
     for (const ln of relief.lanes) {
+      if (ln.steps) continue;
       let top = base;
       for (const v of data) if (v > top) top = v;
       const reach = (ln.width / 2 + ln.inner + ln.innerSlope * top) / CM_PER_PX;
@@ -109,7 +156,7 @@ export function rasterize(relief: Relief | undefined, width: number, height: num
   }
   let max = base;
   for (const v of data) if (v > max) max = v;
-  return { base, flat, max, cols, rows, data };
+  return { base, flat, max, cols, rows, data, ...(steps ? { steps, lanes: relief!.lanes } : {}) };
 }
 
 interface Near {
@@ -167,9 +214,68 @@ export function heightAt(map: MapData, x: number, y: number): number {
   return fieldHeight(reliefOf(map), x, y);
 }
 
+/** Ce qu'est un point d'un couloir en gradins (`stepsAt`). */
+export interface StepPlace {
+  /** Le couloir (son rang dans `relief.lanes`). */
+  lane: number;
+  /** Au sud de l'axe (1) ou au nord (−1). */
+  side: 1 | -1;
+  /** La distance au bord du sol (cm ; négative sur le sol). */
+  e: number;
+  /** Le sol du couloir et ce qui l'entoure (cm). */
+  floor: number;
+  around: number;
+  /** 0 sur le sol, k sur le gradin k (au pied de la marche k + 1 ; le gradin `count` est le dessus), count + 1 au-delà. */
+  k: number;
+  /** Les gradins du couloir. */
+  steps: Steps;
+}
+
+/** Bilinéaire d'un tableau aux nœuds de la grille (sans fermeture : appelée pour chaque pixel peint). */
+function lerp4(a: Float32Array, i00: number, W: number, u: number, v: number): number {
+  return (a[i00] * (1 - u) + a[i00 + 1] * u) * (1 - v) + (a[i00 + W] * (1 - u) + a[i00 + W + 1] * u) * v;
+}
+
+/**
+ * Le point (x, y) d'un couloir en gradins, avec ses valeurs interpolées, ou undefined (hors d'un couloir en gradins). Appelée pour
+ * chaque pixel du terrain peint : `out`, s'il est donné, est rempli et rendu (aucun objet créé).
+ */
+export function stepsAt(f: ReliefField, x: number, y: number, out?: StepPlace): StepPlace | undefined {
+  const st = f.steps;
+  if (!st || !f.lanes) return undefined;
+  const fx = Math.max(0, Math.min(f.cols, x / RELIEF_CELL));
+  const fy = Math.max(0, Math.min(f.rows, y / RELIEF_CELL));
+  const c = Math.min(f.cols - 1, Math.floor(fx));
+  const r = Math.min(f.rows - 1, Math.floor(fy));
+  const W = f.cols + 1;
+  const i00 = r * W + c;
+  const li = st.idx[i00];
+  if (li < 0 || st.idx[i00 + 1] !== li || st.idx[i00 + W] !== li || st.idx[i00 + W + 1] !== li) return undefined;
+  const u = fx - c;
+  const v = fy - r;
+  const ln = f.lanes[li];
+  const steps = ln.steps!;
+  const sd = lerp4(st.sd, i00, W, u, v);
+  const e = Math.abs(sd) - ln.width / 2;
+  const o = out ?? ({} as StepPlace);
+  o.lane = li;
+  o.side = sd >= 0 ? 1 : -1;
+  o.e = e;
+  o.floor = lerp4(st.floor, i00, W, u, v);
+  o.around = lerp4(st.around, i00, W, u, v);
+  o.k = e < 0 ? 0 : Math.min(steps.count + 1, Math.floor(e / steps.tread) + 1);
+  o.steps = steps;
+  return o;
+}
+
+/** Le point de travail de `fieldHeight` (rempli à chaque appel, jamais gardé). */
+const SCRATCH = {} as StepPlace;
+
 /** La hauteur d'un champ en (x, y) (cm). */
 export function fieldHeight(f: ReliefField, x: number, y: number): number {
   if (f.flat) return f.base;
+  const sp = stepsAt(f, x, y, SCRATCH);
+  if (sp) return stepHeight(sp.steps, sp.e, sp.floor, sp.around);
   const fx = Math.max(0, Math.min(f.cols, x / RELIEF_CELL));
   const fy = Math.max(0, Math.min(f.rows, y / RELIEF_CELL));
   const c = Math.min(f.cols - 1, Math.floor(fx));
@@ -240,6 +346,11 @@ export function stepRefusal(map: MapData, from: { x: number; y: number }, to: { 
     while (a > -RUN_REACH && steep(a - PROBE) === sign) a -= PROBE;
     let b = s;
     while (b < RUN_REACH && steep(b + PROBE) === sign) b += PROBE;
+    // la vraie hauteur, d'un replat à l'autre : la grille arrondit les coins d'une marche sur une case ; on suit encore, sur une case
+    // au plus, le sol qui continue de monter (ou de descendre) moins raide
+    const goes = (p: number) => (at(p + PROBE) - at(p)) * sign > 0.01;
+    for (let k = 0; k < RELIEF_CELL && goes(a - PROBE); k += PROBE) a -= PROBE;
+    for (let k = 0; k < RELIEF_CELL && goes(b + PROBE); k += PROBE) b += PROBE;
     // déjà debout sur la partie raide (une partie d'avant le relief, posé là) : il en redescend toujours, et ne compte en montant
     // que ce qui reste devant lui
     const on = a < 0;
@@ -251,12 +362,15 @@ export function stepRefusal(map: MapData, from: { x: number; y: number }, to: { 
   return swim;
 }
 
-/** Une hauteur dite à un joueur, comme on l'estime à l'œil : « 80 cm », « 1,2 m », au-delà de 2 m au demi-mètre (« 2,5 m », « 5 m »). */
+/**
+ * Une hauteur dite à un joueur, la vraie, au centimètre (décision de Grégoire : « Trop haute pour lui (1,25 m). », jamais arrondie à
+ * l'œil) : « 80 cm » sous 1 m, en mètres au-delà, sans zéro inutile (« 1 m », « 1,2 m », « 1,25 m », « 5 m »).
+ */
 export function heightText(cm: number): string {
-  // arrondi d'abord : 99,8 cm se dit « 1 m », pas « 100 cm »
-  if (Math.round(cm / 10) * 10 < 100) return `${Math.round(cm / 10) * 10} cm`;
-  const m = cm < 200 ? Math.round(cm / 10) / 10 : Math.round(cm / 50) / 2;
-  return `${String(m).replace('.', ',')} m`;
+  // au centimètre d'abord : 99,8 cm se dit « 1 m », pas « 100 cm »
+  const c = Math.round(cm);
+  if (c < 100) return `${c} cm`;
+  return `${String(c / 100).replace('.', ',')} m`;
 }
 
 /** Le refus dit par ce qui manque au personnage (docs/CONCEPTION.md, « Le monde ne limite pas »). */
@@ -297,35 +411,4 @@ export function wallAt(map: MapData, x: number, y: number, mob: Mobility): boole
     if (r) return true;
   }
   return false;
-}
-
-/** Sur combien de pixels, depuis l'eau, le flanc planté d'un talus passe à la terre sombre (64 px = 3,2 m, la rive est). */
-export const PLANTED_EDGE = 64;
-
-/**
- * La matière d'une face de relief au point (x, y) du sol de la carte (CADRAGE 12.11) : 1 pour le flanc planté (herbe, broussailles),
- * 0 pour la terre sombre (racines, lierre), entre les deux sur les premiers mètres de la rive. Terre sombre : la paroi intérieure d'un
- * couloir, le flanc au-dessus de l'eau, le bord d'un niveau (la falaise). Planté : le flanc extérieur d'un talus sur la terre ferme.
- * Prête pour la correction proposée (le flanc planté, art/proposals/relief-final.ts), À REVOIR AVEC GRÉGOIRE (CADRAGE.md 12.12) : le
- * rendu ne s'en sert pas encore.
- */
-export function plantedAt(map: MapData, x: number, y: number): number {
-  const relief = map.relief;
-  if (!relief || deepAt(map, x, y)) return 0;
-  const f = reliefOf(map);
-  for (const ln of relief.lanes) {
-    const reach = (ln.width / 2 + ln.inner + ln.innerSlope * f.max) / CM_PER_PX;
-    if (nearest(ln.points, x, y).d <= reach) return 0;
-  }
-  let flank = false;
-  for (const rg of relief.ridges) {
-    const near = nearest(rg.points, x, y);
-    const p = lerpPoint(rg.points, near);
-    if (near.d * CM_PER_PX <= p.crest / 2 + p.flank) flank = true;
-  }
-  if (!flank) return 0;
-  // la distance à l'eau la plus proche sur la même ligne (de part et d'autre)
-  for (let d = TILE / 4; d <= PLANTED_EDGE; d += TILE / 4)
-    if (deepAt(map, x - d, y) || deepAt(map, x + d, y)) return d / PLANTED_EDGE;
-  return 1;
 }

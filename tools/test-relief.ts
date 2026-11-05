@@ -1,7 +1,9 @@
 // Le relief dans le vrai jeu (chantier « relief », CONCEPTION « Le relief »), au vrai clavier, depuis une partie neuve :
 //   - Xéros va de la ferme au plateau par le chemin creux (de la case 63 à la case 6), puis revient ; à aucun moment il n'a d'eau sous les
 //     pieds ;
-//   - il est refusé sur le flanc d'un talus et au bord du plateau, avec « Trop haute pour lui (5 m). » ;
+//   - dans le chemin creux, il ne monte pas sur les gradins, ni au nord ni au sud : « Trop haute pour lui (1,25 m). » (la marche de
+//     1,25 m, CADRAGE 13.0) ;
+//   - il est refusé sur le flanc de la masse de terre et au bord du plateau, avec « Trop haute pour lui (5 m). » ;
 //   - il est refusé au bord de la rivière et au bord de l'étang, avec « Il ne sait pas nager. » ;
 //   - sur des marches d'essai (posées pour le test dans le relief de la carte, sur un pré libre) : il monte 50 cm, ne monte pas 1 m,
 //     saute 1 m pour descendre et refuse 1,2 m, avec la hauteur dans le refus.
@@ -72,7 +74,7 @@ await playtest('relief', async ({ page, load }) => {
         window.dispatchEvent(new KeyboardEvent('keyup', { code }));
         await (window as any).__frames(2);
         const said = [...(window as any).notices] as string[];
-        return { x: a.x, y: a.y, said, notice: said.find((t) => /pour lui|nager/.test(t)), wet, lift: w.lifts.liftAt(a.x, a.y) as number };
+        return { x: a.x, y: a.y, said, notice: said.find((t) => /pour lui|nager/.test(t)), wet, lift: w.lifts.liftAt(a.x, a.y - 3) as number };
       },
       { code, stop },
     );
@@ -87,17 +89,29 @@ await playtest('relief', async ({ page, load }) => {
   assert.ok(r.x > 61 * T, `il revient à la ferme (arrêté en ${Math.round(r.x)}, ${Math.round(r.y)} : ${r.notice})`);
   assert.ok(!r.wet, "jamais d'eau sous ses pieds au retour");
 
-  // 2. le flanc d'un talus, le bord du plateau
+  // 2. les gradins : du chemin, il ne monte ni au nord ni au sud (la marche de 1,25 m), le chemin creux reste le seul passage
+  for (const [code, far] of [
+    ['KeyW', `y < ${60 * T}`],
+    ['KeyS', `y > ${72 * T}`],
+  ] as const) {
+    await place(52 * T, 65.9 * T);
+    r = await walk(code, far);
+    assert.ok(r.y > 64.5 * T && r.y < 67.5 * T, `les gradins l'arrêtent (${code} : ${Math.round(r.x)}, ${Math.round(r.y)})`);
+    assert.ok(Math.abs(r.lift) <= 1, `il reste sur le chemin (soulevé de ${r.lift} px ; ${code} : ${JSON.stringify(r)})`);
+    assert.equal(r.notice, 'Trop haute pour lui (1,25 m).', `le refus aux gradins dit la hauteur de la marche (${code} : ${JSON.stringify(r)})`);
+  }
+
+  // 3. le flanc de la masse, le bord du plateau
   await place(47.4 * T, 57 * T);
   r = await walk('KeyS', `y > ${66 * T}`);
-  assert.ok(r.y < 64 * T, `le flanc nord du talus l'arrête (${Math.round(r.y)})`);
+  assert.ok(r.y < 61 * T, `le flanc nord de la masse l'arrête (${Math.round(r.y)})`);
   assert.equal(r.notice, 'Trop haute pour lui (5 m).', `le refus au flanc dit la hauteur (${JSON.stringify(r)})`);
   await place(39 * T, 30 * T);
   r = await walk('KeyD', `x > ${44 * T}`);
   assert.ok(r.x < 42.5 * T, `le bord du plateau l'arrête (${Math.round(r.x)})`);
   assert.equal(r.notice, 'Trop haute pour lui (5 m).', 'le refus au bord du plateau dit la hauteur');
 
-  // 3. la rivière, l'étang
+  // 4. la rivière, l'étang
   await place(52 * T, 40 * T);
   r = await walk('KeyA', `x < ${40 * T}`);
   assert.ok(r.x > 46 * T, `la rivière l'arrête (${Math.round(r.x)})`);
@@ -107,7 +121,7 @@ await playtest('relief', async ({ page, load }) => {
   assert.ok(r.x > 85 * T, `l'étang l'arrête (${Math.round(r.x)})`);
   assert.equal(r.notice, 'Il ne sait pas nager.');
 
-  // 4. les marches d'essai : 50 cm, 1 m, 1,2 m, posées dans le relief de la carte sur un pré libre, puis la carte rechargée
+  // 5. les marches d'essai : 50 cm, 1 m, 1,2 m, posées dans le relief de la carte sur un pré libre, puis la carte rechargée
   const site = await page.evaluate(async () => {
     const content = await import(/* @vite-ignore */ String('/src/content/index.ts'));
     const w = (window as any).game.scene.getScene('world');
@@ -148,5 +162,5 @@ await playtest('relief', async ({ page, load }) => {
   r = await walk('KeyA', `x < ${X + 280}`);
   assert.ok(r.x > X + 316, `il ne saute pas de 1,2 m (${Math.round(r.x - X)})`);
   assert.equal(r.notice, 'Trop haute pour lui (1,2 m).');
-  console.log('  ✓ relief : le chemin creux aller et retour sans eau, la falaise et les talus (5 m), la rivière et l’étang, les marches de 50 cm, 1 m, 1,2 m');
+  console.log('  ✓ relief : le chemin creux aller et retour sans eau, les gradins (1,25 m), la falaise et la masse (5 m), la rivière et l’étang, les marches de 50 cm, 1 m, 1,2 m');
 });

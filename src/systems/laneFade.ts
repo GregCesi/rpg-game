@@ -4,16 +4,20 @@ import type { MapData } from '../content/types';
 import type { Player } from '../entities/Player';
 import { worldHeight } from '../world/terrainView';
 
-/** Jusqu'où, au sud de Xéros, ce qui est plus haut que lui peut le cacher (px du monde) : le bord sud d'un chemin creux et ses feuillages. */
-const SOUTH = 200;
+/**
+ * Jusqu'où, au sud de Xéros, ce qui est plus haut que lui peut le cacher (px du monde) : la masse sud d'un chemin creux, ses plantes et
+ * les grands arbres de son dessus, qui montent de 5 m (100 px) et de leur hauteur (jusqu'à 170 px) dans l'écran (120 px sous lui).
+ */
+const SOUTH = 400;
 /** Plus haut que le sol de Xéros de tant (cm), le terrain au sud le cache. */
 const HIDES = 100;
 
 /**
- * Sous la voûte (chantier « relief », CADRAGE.md 12.4) : quand Xéros est dans un creux dont le bord sud le cache (le terrain juste au
- * sud de lui est plus haut que lui de HIDES cm), ce qui le cache s'efface comme un toit, à RELIEF.lane, sur la largeur de l'écran autour
- * de lui seulement : les bandes du terrain qui passent devant (world/terrainView.ts) et ce qui est posé sur ce bord, plus haut que lui
- * (les arbres de la lèvre), et les pièces de la voûte (`vault` de props.json : le rideau, les avancées). Xéros reste net. Le fondu dure RELIEF.fadeMs.
+ * Sous la voûte (chantier « relief », CADRAGE.md 12.4 et 13) : quand Xéros est dans un creux dont le bord sud le cache (le terrain juste
+ * au sud de lui est plus haut que lui de HIDES cm), la masse sud est tranchée au ras du chemin : la terre en coupe (les images `cut` de
+ * world/terrainView.ts) apparaît, et ce qui la surmonte s'efface comme un toit, à RELIEF.lane, sur la largeur de l'écran autour de lui
+ * seulement : les bandes du terrain qui passent devant et ce qui est posé plus haut que lui (les plantes des gradins sud, les grands
+ * arbres du dessus), et les pièces de la voûte (`vault` de props.json). Xéros reste net. Le fondu dure RELIEF.fadeMs.
  */
 export class LaneFade {
   private readonly faded = new Set<Phaser.GameObjects.Image>();
@@ -50,6 +54,16 @@ export class LaneFade {
       }
     }
     const step = (1 - RELIEF.lane) * (delta / RELIEF.fadeMs);
+    // la terre en coupe (world/terrainView.ts) : la masse sud tranchée au ras du chemin apparaît pendant que ce qui la surmonte s'efface
+    const under = this.hidden(a.x, a.y);
+    const half = VIEW.width / 2 + 32;
+    const show = delta / RELIEF.fadeMs;
+    for (const obj of this.scene.children.list) {
+      const o = obj as Phaser.GameObjects.Image;
+      if (!o.getData?.('cut')) continue;
+      const near = under && o.x + o.displayWidth >= a.x - half && o.x <= a.x + half;
+      o.setAlpha(near ? Math.min(1, o.alpha + show) : Math.max(0, o.alpha - show));
+    }
     for (const o of want) {
       this.faded.add(o);
       o.setAlpha(Math.max(RELIEF.lane, o.alpha - step));
