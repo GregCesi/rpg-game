@@ -1088,3 +1088,34 @@ Une seule pièce, `hanging-sign` : une potence de fer forgé (du forgeron) et un
 métier** (des `variants`) : le pot de miel au coq (ferme du riche), la hache (bûcheron), l'aiguille (mercière), les ciseaux (la
 tailleuse), le sac (son mari) ; tombée, celle du menuisier (`fallen-sign`, un rabot). Pas d'enseigne à la ferme rivale ni au panneau.
 
+### 13.10 Ce que les dessins ont changé (pixel-artist)
+
+| Bâtiment | Changé | Pourquoi |
+| --- | --- | --- |
+| Ferme du riche | l'étal décalé de 40 cm vers l'est (x 2968-3064), l'auvent sur **quatre** poteaux tournés, indépendant de la boutique ; murs de 3 m, laves à 45°, faîte à 7,15 m ; la souche à cheval sur le faîte (conduit dévoyé dans le comble) ; l'âtre de la chambre du commis dos au mur nord | l'enseigne pend entre la boutique et l'auvent ; une souche posée au mur nord montait à l'écran comme une colonne dans la cour |
+| Les enseignes | la potence fixée sur une face est ou ouest (pignon, poteau d'angle), le bras le long de la façade | une potence perpendiculaire au mur montrerait le panneau de chant (la règle des faces sud) |
+| Bûcheron | sablière à 2,80 m, bardeaux à 40° ; l'enseigne au poteau d'angle | |
+| Ferme rivale | l'étal et le dépôt à leur place ; le toit du dépôt monte à l'écran jusqu'en y 2483, l'étal finit en y 2448 : il reste visible | la règle 13.1 |
+| Mercière | toutes les portes au sud sur sa cour (ouverte à l'est sur la ruelle) ; l'ouvroir au nord, sur la rue, ne se voit que toit effacé ; l'enseigne à l'aiguille sur un poteau planté dans la cour | la question 16 |
+| Tailleuse | **la galerie fait 1 m au lieu de 1,60 m**, sans toit ; les portes de 1,80 m ; bardeaux à 40° (faîte à 9,40 m) ; la cour jusqu'en x 3248, le portail dans la palissade est (montré ouvert) ; les deux enseignes dos à dos au poteau du milieu de la galerie | à 1,60 m, le plancher de la galerie cachait les boutiques ; à 45°, le faîte montait à 10,10 m |
+| Les cours | une **palissade de planches** (`yard-fence`, pièce ajoutée) | il fallait clore les cours |
+
+42 pièces nouvelles (18 au nord, dont l'enseigne et ses cinq motifs ; 24 au sud), sur `place-pieces.png`. Ce qui reste faible : les petites
+marchandises (pots de miel, pains de cire, boîtes d'épices : 4 à 5 px, des taches), le coq de l'enseigne du riche et le rabot de
+l'enseigne tombée (illisibles à 14 × 10 px), la chaise pas finie (une échelle), l'herbe haute (des joncs), les carottes (les teintes
+du feu), le dedans des abris (le toit cache presque tout ce qu'il couvre : c'est la projection), les cloisons nord-sud du dedans
+qui restent pleine hauteur. Les couleurs nouvelles (toile guède et garance, miel, cire, fromage, grès, papier, encre, rouille) sont
+à ajouter à `art/palette.ts` si la place entre au jeu.
+
+### 13.11 Les questions de la place (chacune avec ma recommandation)
+
+16. **Les quarts sud ouvrent-ils au sud** (sur une cour ou une galerie, où l'on entre par la rue du sud ou la ruelle de l'est), pour
+    qu'on voie leurs boutiques, ou **sur la rue** (comme dans une vraie ville, mais on ne verrait que leur dos et leur toit) ?
+    *Recommandé : au sud*, avec un ouvroir ou une fenêtre côté rue ; la place garde son étal de légumes dégagé à la pointe.
+17. **L'étal luxueux de la ferme du riche aux couleurs du coq** (une toile rayée guède et garance), seule toile de couleur de la place ?
+    *Recommandé : oui*, c'est ce qui le dit luxueux de loin.
+18. **La boutique abandonnée du menuisier** : une boutique que Xéros pourra reprendre un jour (une quête), ou un décor ? *Recommandé :
+    garder l'idée*, rien à faire maintenant.
+19. **Les jours de marché** : les étals ouverts un jour par semaine (la ferme rivale, l'étal luxueux), les boutiques tous les jours ?
+    *Recommandé : oui, plus tard*, quand les gens auront leurs horaires.
+20. **Les feuillets du panneau** : les quêtes du village viendront-elles de là ? *Recommandé : oui*, avec les avis du sire.
