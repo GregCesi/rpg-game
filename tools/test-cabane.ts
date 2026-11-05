@@ -103,7 +103,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
    * Pose une pièce (déjà prise au catalogue) pour que son emprise ait ce coin nord-ouest (cm, depuis O) : la souris vise le milieu de
    * l'emprise vu à la hauteur où elle se posera (le plus haut dessus sous elle, comme le fantôme), puis clic gauche. Renvoie la pièce.
    */
-  const put = async (what: string, x: number, y: number, w: number, d: number, z?: number) => {
+  const put = async (what: string, x: number, y: number, w: number, d: number, z?: number, aimY?: number) => {
     const S = await page.evaluate(async ([x, y, w, d]) => {
       const url = '/src/world/build.ts';
       const b = await import(url);
@@ -111,7 +111,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
       return b.supportAt(m.builds.map((q: any) => q.piece).filter((q: any) => !('prop' in q.piece && q.piece.prop === 'plank-roof')), { x, y, w, d });
     }, [O!.x + x, O!.y + y, w, d] as const);
     const before = (await pieces()).length;
-    await click((O!.x + x + w / 2) / 5, (O!.y + y + d / 2 - S) / 5);
+    await click((O!.x + x + w / 2) / 5, (O!.y + (aimY ?? y + d / 2) - S) / 5);
     const list = await pieces();
     assert.equal(list.length, before + 1, `${what} : posée (${notices.at(-1) ?? ''})`);
     const p = list.at(-1);
@@ -120,9 +120,9 @@ await playtest('cabane', async ({ page, errors, load }) => {
     return p;
   };
   /** Pose un rondin (pris au catalogue avec ses réglages). */
-  const putLog = async (what: string, axis: 'ew' | 'ns', length: number, x: number, y: number, z: number) => {
+  const putLog = async (what: string, axis: 'ew' | 'ns', length: number, x: number, y: number, z: number, aimY?: number) => {
     await send({ kind: 'pick', piece: log(axis, length) });
-    return put(what, x, y, axis === 'ew' ? length : 40, axis === 'ew' ? 40 : length, z);
+    return put(what, x, y, axis === 'ew' ? length : 40, axis === 'ew' ? 40 : length, z, aimY);
   };
   /** L'assemblage `type` posé d'un clic sur la jonction de deux pièces, là où on la voit. */
   const joint = async (type: string, a: any, b: any) => {
@@ -132,13 +132,14 @@ await playtest('cabane', async ({ page, errors, load }) => {
       const J = await import(url);
       const m = (window as any).game.scene.getScene('world').map;
       const ps = m.builds.map((q: any) => q.piece);
-      const j = J.junctions(ps, (q: any) => m.shownOffset(q)).find((q: any) => (q.a.id === ia && q.b.id === ib) || (q.a.id === ib && q.b.id === ia));
-      return j && { x: j.x, y: j.y };
+      const all = J.junctions(ps, (q: any) => m.shownOffset(q));
+      const j = all.find((q: any) => (q.a.id === ia && q.b.id === ib) || (q.a.id === ib && q.b.id === ia));
+      return j && { x: j.x, y: j.y, near: all.filter((q: any) => q !== j && Math.hypot(q.x - j.x, q.y - j.y) < 3).map((q: any) => `${q.a.id}-${q.b.id} (${q.x}, ${q.y})`) };
     }, [a.id, b.id] as const);
     assert.ok(pt, `${type} : une jonction entre ${a.id} et ${b.id}`);
     const n = (await joints()).length;
     await click(pt!.x, pt!.y);
-    assert.equal((await joints()).length, n + 1, `${type} entre ${a.id} et ${b.id} : posé (${notices.at(-1) ?? ''})`);
+    assert.equal((await joints()).length, n + 1, `${type} entre ${a.id} et ${b.id} (${pt!.x}, ${pt!.y}) : posé (${notices.at(-1) ?? ''}) ; jonctions voisines : ${pt!.near.join(', ') || 'aucune'}`);
   };
   const zOf = async (p: any) => (await pieces()).find((q: any) => q.id === p.id).z;
 

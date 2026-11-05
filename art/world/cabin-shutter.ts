@@ -3,8 +3,7 @@
 // (art/world/cabin-closing.ts, `plank-shutter`, 60 × 40, qui reste celui des fenêtres de la maison) : trois planches debout dans la
 // rampe du bois travaillé (^ * %, l'ombre des traverses &, joints et têtes de chevilles @ ; art/palette.ts `woodAges`, le patiné
 // et le vieux tirés au build pour un objet `aged`), contour K en haut et à gauche, OUTLINE (o) en bas et à droite. Lumière
-// nord-ouest. PROPOSITION : prêt à intégrer tel quel (le déplacer dans art/world/ et le déclarer dans art/index.ts) ; rien ici
-// n'entre dans le jeu tant qu'il est dans art/proposals/.
+// nord-ouest. Validé par Grégoire le 5 novembre 2026 (planche .art-preview/volet-cabane.png ; fiche docs/objets/cabin-shutter.md).
 //
 // Gabarit (docs/STYLE.md, section 8), 5 cm par pixel, boîte debout à quatre vues (`views: four`, `dims` 60 × 4 × 60, `box`) :
 // - De face (r0 le dehors, r2 le dedans) : W × (H + D/2) = 12 × (12 + 0,4) → 12 × 12 px, le dessus de 4 cm dans le contour ; plus

@@ -51,6 +51,7 @@ import sillWalls from './world/sill-walls';
 import joints from './world/joints';
 import cabin from './world/cabin';
 import cabinClosing from './world/cabin-closing';
+import cabinShutter from './world/cabin-shutter';
 import barn from './world/barn';
 import stall from './world/stall';
 import signpost from './world/signpost';
@@ -73,6 +74,6 @@ import { reliefImages, shimmerSheet } from './world/relief';
 import { gradinImages } from './world/relief-gradins';
 import { agedSources } from './lib/ages';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...minimap, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...forge, ...forgeRoofs, ...rabbit, ...deadRabbit, ...boar, ...xerosDown, ...storm, ...reliefImages(), ...gradinImages(), shimmerSheet(), shimmerSheet(true)];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...minimap, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...cabinShutter, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...forge, ...forgeRoofs, ...rabbit, ...deadRabbit, ...boar, ...xerosDown, ...storm, ...reliefImages(), ...gradinImages(), shimmerSheet(), shimmerSheet(true)];
 // le bois travaillé à ses autres âges (patiné, vieux), tiré des images neuves
 sources.push(...agedSources(sources));

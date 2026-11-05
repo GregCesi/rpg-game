@@ -168,10 +168,24 @@ export function aimAt(pieces: readonly BuildPlaced[], size: Size3, cx: number, c
   });
   let base: { x: number; y: number; z: number } | undefined;
   let first: { x: number; y: number; z: number } | undefined;
+  // de plusieurs hauteurs qui se tiennent sans que le point visé soit sur l'une d'elles : celle qui porte le plus de l'emprise (le
+  // rondin de la cabane au-dessus de sa fenêtre repose sur le rondin est-ouest, pas sur le coin du volet de 60 cm qui le dépasse ;
+  // chantier « hauteurs ») ; à porter égal, la plus haute
+  let carried = 0;
+  const carriedAt = (f: { x: number; y: number; w: number; d: number }, t: number) =>
+    pieces.reduce((sum, p) => {
+      const b = solidOf(p);
+      if (topOf(b) !== t || !overlaps(b, f)) return sum;
+      return sum + (Math.min(b.x + b.w, f.x + f.w) - Math.max(b.x, f.x)) * (Math.min(b.y + b.d, f.y + f.d) - Math.max(b.y, f.y));
+    }, 0);
   for (const t of tops) {
     const f = at(t);
     if (supportAt(pieces, f) === t) {
-      first ??= { x: f.x, y: f.y, z: t };
+      const c = carriedAt(f, t);
+      if (!first || c > carried) {
+        first = { x: f.x, y: f.y, z: t };
+        carried = c;
+      }
       // de plusieurs hauteurs qui se tiennent, celle dont le dessus est sous le point visé : le remplissage visé sur la traverse, entre
       // deux poteaux, ne monte pas sur la tête du poteau suivant (à sa hauteur, l'emprise glisse jusqu'à lui) ; sinon la plus haute (la
       // sablière visée entre deux poteaux)

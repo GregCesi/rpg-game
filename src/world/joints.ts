@@ -135,18 +135,29 @@ export function junctions(pieces: readonly BuildPiece[], shift?: Shift): Junctio
   return out;
 }
 
-/** La jonction la plus proche du point (px du monde), à moins de `reach` px. */
-export function junctionAt(pieces: readonly BuildPiece[], px: number, py: number, reach = 8, shift?: Shift): Junction | undefined {
+/**
+ * La jonction la plus proche du point (px du monde), à moins de `reach` px. `open` : celles qui comptent d'abord (une jonction pas
+ * encore assemblée, pour l'outil d'assemblage) ; à défaut, la plus proche de toutes. Deux jonctions d'une même pièce peuvent tomber à
+ * un pixel l'une de l'autre à l'écran (les rondins de la cabane, 15 cm entre deux croisements : chantier « hauteurs ») : le clic va
+ * à celle qui reste à faire.
+ */
+export function junctionAt(pieces: readonly BuildPiece[], px: number, py: number, reach = 8, shift?: Shift, open?: (j: Junction) => boolean): Junction | undefined {
   let best: Junction | undefined;
+  let bestOpen: Junction | undefined;
   let d = reach;
+  let dOpen = reach;
   for (const j of junctions(pieces, shift)) {
     const dd = Math.hypot(j.x - px, j.y - py);
     if (dd <= d) {
       d = dd;
       best = j;
     }
+    if (open?.(j) && dd <= dOpen) {
+      dOpen = dd;
+      bestOpen = j;
+    }
   }
-  return best;
+  return bestOpen ?? best;
 }
 
 /** Le point à l'écran d'un assemblage posé (px), ou rien si ses pièces ne se touchent plus. */
