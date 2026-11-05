@@ -40,6 +40,9 @@ const START = Date.now();
 
 await playtest('maison', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  // deux pas de jeu joués : ce qu'on vient de faire (la souris, une touche) est lu et le fantôme suit ; sous la charge, une pause fixe
+  // peut passer sans qu'aucun pas ne soit joué (le pas de jeu fixe, src/world/timeStep.ts)
+  const stepped = () => page.evaluate(() => (window as any).__steps(2));
   await load('?construire&dieu&reset');
   await page.keyboard.press('KeyB');
   await sleep(150);
@@ -129,10 +132,12 @@ await playtest('maison', async ({ page, errors, load }) => {
     for (let i = 0; i < (s.up ?? 0); i++) {
       await page.keyboard.press('KeyT');
       await sleep(30);
+      await stepped();
     }
     for (let i = 0; i < (s.down ?? 0); i++) {
       await page.keyboard.press('KeyG');
       await sleep(30);
+      await stepped();
     }
     // la hauteur où on la voit : le dessus de ce qui la porte (les pans de toit ne portent que le faîtage)
     const ridge = 'prop' in s.ref && s.ref.prop === 'earth-ridge';
@@ -154,6 +159,7 @@ await playtest('maison', async ({ page, errors, load }) => {
     let sp = await screen(px, py);
     await page.mouse.move(sp.x, sp.y);
     await sleep(40);
+    await stepped();
     // la souris là où on la veut : l'écart mesuré dans le monde, rattrapé
     for (let i = 0; i < 3; i++) {
       const e = await page.evaluate(([x, y]) => {
@@ -169,8 +175,10 @@ await playtest('maison', async ({ page, errors, load }) => {
       sp = { x: sp.x + e.dx, y: sp.y + e.dy };
       await page.mouse.move(sp.x, sp.y);
       await sleep(40);
+      await stepped();
     }
     await sleep(40);
+    await stepped();
     // ce que montre le fantôme (pour le message, si la pièce n'est pas où elle doit)
     const readGhost = () =>
       page.evaluate(() => {
@@ -203,10 +211,12 @@ await playtest('maison', async ({ page, errors, load }) => {
         for (let i = 0; i < Math.abs(crans); i++) {
           await page.keyboard.press(key);
           await sleep(30);
+          await stepped();
         }
         for (const [dx, dy] of tries) {
           await page.mouse.move(sp.x + dx * k, sp.y + dy * k);
           await sleep(40);
+          await stepped();
           const g = await readGhost();
           seenGhosts.add(JSON.stringify([crans, g.aim?.[0]]));
           if (right(g)) {
@@ -220,12 +230,16 @@ await playtest('maison', async ({ page, errors, load }) => {
         for (let i = 0; i < Math.abs(crans); i++) {
           await page.keyboard.press(crans < 0 ? 'KeyT' : 'KeyG');
           await sleep(30);
+          await stepped();
         }
       }
       if (!found) await page.mouse.move(sp.x, sp.y);
     }
     await page.mouse.click(sp.x, sp.y);
     await sleep(110);
+    // le clic joué : la file des clics du mode construction vidée par un pas de jeu
+    await page.evaluate(() => (window as any).__until(() => !(window as any).game.scene.getScene('world').builder?.clicks?.length, 'le clic joué'));
+    await stepped();
     const list = await pieces();
     const p = list.find((q: any) => !before.some((o: any) => o.id === q.id));
     const seen = () => `visé en (${px * 5 - O!.x}, ${py * 5 - O!.y}), S ${S} ; souris ${ghost.pointer.map((v: number, i: number) => Math.round(v - (i ? O!.y : O!.x)))} ; fantôme ${JSON.stringify(ghost.aim?.map((q: number[]) => [q[0] - O!.x, q[1] - O!.y, q[2]]))} ${ghost.why ?? ''}`;

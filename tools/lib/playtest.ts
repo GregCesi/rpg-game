@@ -181,6 +181,18 @@ export async function playtest(name: string, body: (t: Playtest) => Promise<void
       window.__frames = async (n = 1) => {
         for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r));
       };
+      // \`__steps(n)\` : n pas de jeu joués à partir de maintenant (un mouvement de souris, une touche, lus par le jeu au pas suivant) ;
+      // une image peut en faire plusieurs ou aucun (le pas de jeu fixe, src/world/timeStep.ts) : jamais une pause fixe à la place
+      window.__steps = (n = 1) =>
+        new Promise((done) => {
+          let k = 0;
+          const tick = () => {
+            if (++k < n) return;
+            window.game.events.off('poststep', tick);
+            done();
+          };
+          window.game.events.on('poststep', tick);
+        });
       window.__restart = async (command) => {
         const g = window.game;
         const old = g.scene.getScene('world').map;
