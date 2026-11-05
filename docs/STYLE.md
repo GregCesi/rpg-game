@@ -71,6 +71,7 @@ Règle de dimensions et de perspective, tirée des billes (la pièce de bois du 
 - Un dessus (face horizontale) et une face vue en raccourci (la face est ou ouest, le bout d'une bille est-ouest) se dessinent à la moitié de leur profondeur : coefficient ½.
 - Ancrage : le bas de la silhouette est le bord sud de l'objet, posé au sol. L'ombre portée (`x`) est en dessous et ne compte pas dans la taille.
 - Une taille se mesure sur la silhouette : pixels opaques, contour compris, ombre et lueurs exclues. Les dimensions réelles se comptent aussi contour compris : la bille fait 95 cm de long et 65 de diamètre. Tolérance : 2 px.
+- **La pièce de bois, une exception pour la physique** (chantier « hauteurs », 5 novembre 2026) : sa hauteur physique est sa section vraie (une bille du normal 30 cm, une poutre 20, une planche 3 : `woodDims`), jamais son dessin ; son dessin garde son contour (`woodDrawnDims`, la hauteur plus 10 cm, pour le seul gabarit). Posées l'une sur l'autre, deux pièces de bois se recouvrent donc de 2 px ; le jeu pose une ombre douce d'une rangée sur celle du dessous, juste sous celle du dessus (`world/jointShade.ts`, `JOINT_SHADE` de config.ts) : elle se calcule, ne se peint jamais. L'emprise au sol (la largeur en travers) compte encore le contour (chantier « emprises » à venir).
 
 **Trois exceptions.**
 

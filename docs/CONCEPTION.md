@@ -583,6 +583,13 @@ d'autres pièces. Ni force, ni aide de la mère, ni ordre de chantier. Plan d'or
   faîtage, cheminée, cloison) et leur rang d'affichage pour ce qui est en pente ; les portes dans les collisions ; poser un plan
   depuis Tiled ; le chantier guidé tiré d'un plan du bac à sable.
 
+- **La hauteur physique vient des données, jamais du dessin** (chantier « hauteurs », 5 novembre 2026, règle de Grégoire : une seule
+  physique, réaliste) : ce qu'une pièce porte, la visée, les encoches, les dessus qui se marchent, les couches des tas et l'arme
+  improvisée lisent la hauteur vraie de la pièce de bois couchée (sa section : `woodDims`, src/world/woodPiece.ts) ; son dessin, plus
+  haut de son contour, ne sert qu'au gabarit (`woodDrawnDims`). Les cinq plans du monde ont été recalés (la cabane à sept assises,
+  le solin de la maison à 50 cm ; CADRAGE-hauteurs.md) ; `SAVE_VERSION` 32. Reste à faire : l'emprise en travers, qui compte encore
+  le contour (chantier « emprises »).
+
 ### Les assemblages (décidé le 31 octobre 2026, chantier « assemblages »)
 
 En mode construction, deux poteaux posés bout à bout restaient deux pièces séparées, avec un trait à la jonction, et rien ne disait
@@ -634,7 +641,8 @@ uniquement avec les pièces du catalogue, puis à l'enregistrer comme plan.** Un
 Grégoire.
 
 - **La cabane de bûcheron** (`npm run test:cabane`, plan `src/content/plans/cabane.json`, aperçu `.art-preview/cabane.png`) : 3,40 ×
-  4 m au sol entre les faces des murs ; quatre dalles aux angles ; cinq assises de rondins du normal (30 cm de bois ; écorcés et le
+  4 m au sol entre les faces des murs ; quatre dalles aux angles ; cinq assises de rondins du normal (30 cm de bois ; **sept depuis
+  le chantier « hauteurs »**, voir plus bas ; écorcés et le
   bois patiné depuis « L'âge du bois »), est-ouest puis
   nord-sud, croisés aux angles par une **encoche** ([fiche](objets/notch-joint.md)), 20 cm de dépassement, puis une sixième
   assise est-ouest (le linteau) ; une porte d'un mètre au sud (les rondins des cinq premières assises recoupés de part et d'autre :
@@ -643,6 +651,12 @@ Grégoire.
   rondin nord-sud encoché dans les pignons, à 1,80 m du bord ouest : le milieu exact, 1,70 m, n'est pas sur la grille) ; les deux
   **pans de toit en planches** ([fiche](objets/plank-roof.md)) posés sur le rondin de rive. 38 pièces, 42 assemblages (avant la
   finition ci-dessous).
+- **La cabane à sa hauteur vraie** (chantier « hauteurs », 5 novembre 2026, CADRAGE-hauteurs.md, réponses de Grégoire) : le rondin
+  du normal compte ses 30 cm de bois, plus les 40 de son dessin ; l'encoche l'enfonce de 15 cm. La cabane monte **sept assises**
+  (est-ouest à 12 + 30 k cm, nord-sud 15 cm plus haut) et le linteau, **les murs à 2,52 m comme avant**, le même toit, les mêmes
+  pignons et la même faîtière ; la **porte en planches fait 2,10 m** (du seuil de 12 cm au linteau, à 2,22 m) ; la **fenêtre** s'ouvre
+  sur les quatrième et cinquième assises (60 × 60 cm) et prend le **volet de cabane** ([fiche](objets/cabin-shutter.md)) de 60 × 60.
+  54 pièces, 56 encoches. Posés à leur hauteur vraie, deux rondins se recouvrent de 2 px ; une ombre douce calculée les sépare.
 - **Ce qui a manqué et a été créé** : l'encoche (assemblage, règle, dessin du croisement) ; la porte en planches et le pan de toit en
   planches (objets, fiches, dessins). **Ce qui existait** : le rondin recoupé (une pièce de bois de toute longueur sur la grille),
   les rondins de pignon et la faîtière (des rondins).
@@ -885,8 +899,9 @@ génération plus aisée l'a bâtie, loin du centre du village, là où la terre
 
 - **Emprise** : axes des poteaux **12,80 × 6,40 m** (8 travées de 1,60 m sur 4) ; avec le solin, environ **13,30 × 6,90 m** au sol ;
   environ 80 m² au dedans.
-- **Hauteurs** (celles du plan bâti) : solin 0–40, traverse basse 40–70, poteaux 70–250, sablière 250–280 (une poutre fait 20 cm,
-  30 avec son contour). **La pente passe à 45°** sur cette portée de 6,40 m : à 50°, le faîte du chaume monterait vers 7,2 m et le
+- **Hauteurs** (celles du plan bâti) : solin 0–50, traverse basse 50–70, poteaux 70–250, sablière 250–270 (une poutre fait 20 cm ;
+  le solin a 50 cm depuis le chantier « hauteurs », 5 novembre 2026 : la traverse basse, comptée à sa hauteur vraie, garde son dessus
+  à 70 cm et tout ce qui est au-dessus ses hauteurs ; le toit, posé sur la sablière, est descendu de 10 cm). **La pente passe à 45°** sur cette portée de 6,40 m : à 50°, le faîte du chaume monterait vers 7,2 m et le
   toit écraserait la maison ; à 45°, le faîte de la charpente est vers 5,80 m, celui du chaume à 6,58 m (Grégoire avait dit 45 à 55°).
 - **Poteaux** : au sud et au nord, x = 0 à 1280 tous les 1,60 m ; à l'est et à l'ouest, y = 0 à 640 ; et ceux des cloisons. Les deux
   cloisons pleines (x = 320 et x = 960) portent chacune une ferme (l'entrait, les arbalétriers) : le toit de 12,80 m a ses appuis.
