@@ -344,7 +344,10 @@ await playtest('maison', async ({ page, errors, load }) => {
   // l'âge du bois, réglé au catalogue (patiné) : toutes les pièces de bois le prennent, le plan le fixe
   await send({ kind: 'age', age: 'worn' });
 
+  // la progression, toutes les 20 étapes (un scénario arrêté au bout de sa limite dit où il en était)
+  let done = 0;
   for (const s of maisonSteps()) {
+    if (++done % 20 === 0) console.log(`  [maison] ${done} étapes en ${Math.round((Date.now() - START) / 1000)} s`);
     if (s.kind === 'piece') await put(s);
     else if (s.kind === 'joint') await joint(s.type, s.a, s.b);
     else if (s.kind === 'remove') await remove(s.name);

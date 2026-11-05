@@ -25,6 +25,12 @@ export const SCENARIOS = ['maison', 'monde', 'noeud', 'grange', 'equarrissage', 
 export const ALONE = ['construction'];
 
 /**
+ * Ceux qui tournent seuls à la fin, sur le banc partagé, une fois les autres finis : maison (171 pièces) prend 6 min seule, mais dépasse
+ * la limite de 15 min quand trois autres pages se partagent tout le temps avec elle l'unique rendu logiciel du banc (sur main aussi).
+ */
+export const LAST = ['maison'];
+
+/**
  * Les scénarios lourds : ceux qui bâtissent dans le mode construction (les bâtiments du catalogue, le mode lui-même). Ils ne tournent
  * qu'avant une fusion qui touche la construction (src/build/, src/world/build.ts, src/systems/build.ts, les plans, les pièces du
  * catalogue) : `npm run test:scenarios:all` (ou SCENARIOS_ALL=1, `--all`) les lance avec les autres ; sans, ils sont sautés et le
@@ -108,7 +114,7 @@ function envOf(name: string): NodeJS.ProcessEnv {
 
 const t0 = Date.now();
 const results: Result[] = [];
-const queue = RUN.filter((n) => !ALONE.includes(n));
+const queue = RUN.filter((n) => !ALONE.includes(n) && !LAST.includes(n));
 const done = (r: Result) => {
   console.log(`${r.ok ? '✓' : '✗'} ${r.name} (${(r.ms / 1000).toFixed(0)} s)`);
   results.push(r);
@@ -145,6 +151,7 @@ await Promise.all(
     }
   }),
 );
+for (const name of LAST.filter((n) => RUN.includes(n))) done(await run(name));
 await rig?.close();
 if (plansOut) rmSync(plansOut, { recursive: true, force: true });
 for (const name of ALONE.filter((n) => RUN.includes(n))) done(await run(name));
