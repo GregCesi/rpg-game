@@ -94,24 +94,34 @@ const FRAME = 16;
 }
 console.log("✓ clavier : un appui plus court qu'une image est lu, une tape déplace d'une image, un appui court reste court après une image longue");
 
-// la vitesse de simulation (src/systems/simSpeed.ts) : à x10, l'horloge des pas (le `time` de chaque pas, `time.now` des scènes, que
-// lisent les verrous après une action) reste croissante d'un pas à l'autre et d'une image à l'autre, même quand les images s'allongent
-// (le jeu qui rame), et ne recule pas quand on revient à x1
+// la vitesse de simulation et le pas de jeu fixe (src/systems/simSpeed.ts, src/world/timeStep.ts) : chaque pas dure STEP_MS, quelle
+// que soit la durée des images (le jeu qui rame fait plusieurs pas par image, jamais un plus grand) ; à x10, dix fois plus de pas ;
+// l'horloge des pas (le `time` de chaque pas, `time.now` des scènes, que lisent les verrous après une action) reste croissante d'un pas
+// à l'autre et d'une image à l'autre, et ne recule pas quand on revient à x1
 {
   const { setSimSpeed } = await import('../src/systems/simSpeed');
+  const { STEP_MS } = await import('../src/world/timeStep');
   const times: number[] = [];
-  const game = {
-    loop: { callback: (t: number) => void times.push(t) },
-    headlessStep: (t: number) => void times.push(t),
-  } as any;
+  const deltas: number[] = [];
+  const record = (t: number, d: number) => void (times.push(t), deltas.push(d));
+  const game = { loop: { callback: record }, headlessStep: record } as any;
   setSimSpeed(game, 10);
-  let t = 0;
-  for (const d of [16, 16, 100, 250, 16, 100]) game.loop.callback((t += d), d);
+  let t = 1000;
+  game.loop.callback(t, 16);
+  const first = times.length;
+  for (const d of [16, 16, 100, 50, 16, 100]) game.loop.callback((t += d), d);
+  const at10 = times.length - first;
   setSimSpeed(game, 1);
   for (const d of [16, 100, 16]) game.loop.callback((t += d), d);
   for (let i = 1; i < times.length; i++) assert.ok(times[i] > times[i - 1], `l'horloge du jeu recule au pas ${i} : ${times[i - 1]} puis ${times[i]}`);
-  assert.equal(times.length, 6 * 10 + 3, 'x10 : dix pas par image ; x1 : un');
-  console.log("✓ vitesse de simulation : l'horloge du jeu ne recule jamais, à x10 comme au retour à x1");
+  assert.ok(deltas.every((d) => d === STEP_MS), `chaque pas dure ${STEP_MS} ms (${[...new Set(deltas)].join(', ')})`);
+  // à x10, chaque image fait ses pas de 1/60 s (le temps vrai × 10), au plus max(maxPerImage, 10) : le temps accéléré ralentit plutôt
+  // que de s'emballer
+  const { STEP } = await import('../src/config');
+  const cap = Math.max(STEP.maxPerImage, 10);
+  const want = [16, 16, 100, 50, 16, 100].reduce((a, d) => a + Math.min(cap, (d * 10) / STEP_MS), 0);
+  assert.ok(Math.abs(at10 - want) <= 3, `x10 : des pas fixes, au plus ${cap} par image (${at10}, attendu près de ${Math.round(want)})`);
+  console.log("✓ vitesse de simulation : des pas fixes, dix fois plus nombreux à x10 ; l'horloge du jeu ne recule jamais, au retour à x1 non plus");
 }
 
 // E maintenu et F (src/input/PlayerInput.ts, src/systems/longPress.ts) : F se lit une fois par appui ; Maj + E est noté sous son propre

@@ -1,7 +1,7 @@
 // Marcher comme un joueur, au vrai clavier, dans les scénarios (tools/lib/playtest.ts) : `goTo` conduit Xéros jusqu'à un point du
 // monde, une touche de direction à la fois, au rythme du jeu ; `routeTo` cherche un chemin libre sur la carte en cours (une grille de
 // 4 px) et marque, devant chaque porte fermée que le chemin traverse (ou devant la porte `target`), un arrêt pour l'ouvrir avec E.
-// Repris de tools/test-monde.ts (la même marche, partagée par test-portes). Rien n'y contourne le jeu : pas de téléportation, pas
+// La même marche pour tous les scénarios qui marchent (test-monde, test-portes, test-forge-visite, test-forgeron). Rien n'y contourne le jeu : pas de téléportation, pas
 // d'appui répété « au cas où » ; Xéros bloqué fait échouer le scénario en disant où.
 
 import type { Page } from 'playwright-core';
@@ -52,12 +52,15 @@ export function walker(page: Page) {
 
   /**
    * Marche jusqu'au point du monde (wx, wy) : d'abord le long d'un axe puis de l'autre (`first`), à `tol` px près ; un passage (une
-   * porte, un bord de zone) pris en route arrête la marche (on est arrivé ailleurs). La marche se conduit dans la page, au rythme du
-   * jeu ; elle échoue (Xéros bloqué) en bornes d'images, jamais en durée.
+   * porte, un bord de zone) pris en route arrête la marche (on est arrivé ailleurs) ; `zones` : partie d'une zone, la marche passe
+   * les bords et les portes sans s'arrêter (seule la sortie d'un intérieur arrête). La marche se conduit dans la page, à chaque pas de jeu (l'événement `poststep`
+   * du jeu, qui survit aux changements de zone) : chaque décision suit l'état du jeu au pas même, jamais à l'image (à x10, une image
+   * fait au moins dix pas de jeu, plus sous la charge : décidée à l'image, la marche dépasse le but d'autant et oscille autour). Elle
+   * échoue (Xéros bloqué) en bornes de pas de jeu, jamais en durée.
    */
-  const goTo = async (wx: number, wy: number, first: 'x' | 'y', tol = 6): Promise<void> => {
+  const goTo = async (wx: number, wy: number, first: 'x' | 'y', tol = 6, zones = false): Promise<void> => {
     const r = await page.evaluate(
-      async ({ wx, wy, first, tol }) => {
+      async ({ wx, wy, first, tol, zones }) => {
         const g = (window as any).game;
         const world = () => g.scene.getScene('world');
         const key = (type: 'keydown' | 'keyup', code: string) => window.dispatchEvent(new KeyboardEvent(type, { code }));
@@ -67,15 +70,6 @@ export function walker(page: Page) {
           for (const k of keys) if (!held.has(k)) (key('keydown', k), held.add(k));
         };
         const frame = () => new Promise((res) => requestAnimationFrame(res));
-        const steps = async (n: number) => {
-          const pw = world()?.physics?.world;
-          if (!pw) return;
-          let k = 0;
-          const tick = () => void k++;
-          pw.on('worldstep', tick);
-          while (k < n && world()?.physics?.world === pw) await frame();
-          pw.off('worldstep', tick);
-        };
         const at = () => {
           const w = world();
           const a = w?.player?.actor;
@@ -85,79 +79,94 @@ export function walker(page: Page) {
         };
         let start = at();
         while (!start) (await frame(), (start = at()));
+        const from = start;
         let axis = first;
-        let last = { wx: start.wx, wy: start.wy };
+        // l'ancre : là où il était quand il a bougé de plus de 2 px pour la dernière fois ; `still` : les pas depuis
+        let last = { wx: from.wx, wy: from.wy };
         let still = 0;
+        // hors du mode `play` trop longtemps (un dialogue ouvert en route), ou plus aucun progrès vers le but (une approche qui
+        // oscille) : le test échoue en le disant, au lieu d'attendre sans fin
         let away = 0;
         let best = Infinity;
         let stale = 0;
-        let minMove = Infinity;
+        // un pas de côté en cours (buté sur un coin, ou recalé sur l'autre axe tout près du but) : la touche, et les pas qu'il dure encore
+        let side = 0;
+        let sideKey = '';
+        let prev = { wx: from.wx, wy: from.wy };
         let dead = 0;
-        for (;;) {
-          await frame();
+        type Result = { ok: boolean; p: NonNullable<ReturnType<typeof at>>; why?: string };
+        let done: (r: Result) => void = () => undefined;
+        const result = new Promise<Result>((res) => (done = res));
+        let over = false;
+        const finish = (r: Result) => {
+          over = true;
+          g.events.off('poststep', decide);
+          hold([]);
+          done(r);
+        };
+        const decide = () => {
+          if (over) return;
           const p = at();
-          if (!p) continue;
-          if (p.id !== start.id) return (hold([]), { ok: true, p });
+          if (!p) return;
+          // un passage pris en route (la porte de la maison, un bord de zone si `zones` ne le laisse pas passer) : on est arrivé ailleurs
+          if (p.id !== from.id && (!zones || !from.zone)) return finish({ ok: true, p });
           if (p.mode !== 'play') {
-            if (++away > 1200) return (hold([]), { ok: false, p, why: `mode ${p.mode} depuis 1200 images` });
-            continue;
+            if (++away > 12000) finish({ ok: false, p, why: `mode ${p.mode} depuis 12000 pas` });
+            return;
           }
           away = 0;
           const dx = wx - p.wx;
           const dy = wy - p.wy;
-          const near = minMove === Infinity || !start.zone ? tol : Math.max(tol, minMove / 2);
-          if (Math.abs(dx) <= near && Math.abs(dy) <= near) return (hold([]), { ok: true, p });
+          const moved = Math.hypot(p.wx - prev.wx, p.wy - prev.wy);
+          prev = { wx: p.wx, wy: p.wy };
+          if (Math.abs(dx) <= tol && Math.abs(dy) <= tol) return finish({ ok: true, p });
           const dist = Math.abs(dx) + Math.abs(dy);
           if (dist < best - 1) (best = dist), (stale = 0);
-          else if (++stale > 1500) return (hold([]), { ok: false, p, why: `plus de progrès depuis 1500 images (au plus près : ${best.toFixed(1)} px)` });
-          if (axis === 'x' && Math.abs(dx) <= near) axis = 'y';
-          if (axis === 'y' && Math.abs(dy) <= near) axis = 'x';
+          else if (++stale > 15000) return finish({ ok: false, p, why: `plus de progrès depuis 15000 pas (au plus près : ${best.toFixed(1)} px)` });
+          if (side > 0) {
+            side--;
+            hold([sideKey]);
+            return;
+          }
+          if (axis === 'x' && Math.abs(dx) <= tol) axis = 'y';
+          if (axis === 'y' && Math.abs(dy) <= tol) axis = 'x';
           const dir = axis === 'x' ? (dx > 0 ? 'KeyD' : 'KeyA') : dy > 0 ? 'KeyS' : 'KeyW';
           const d = axis === 'x' ? Math.abs(dx) : Math.abs(dy);
-          if (d < 12) {
-            hold([]);
-            hold([dir]);
-            await steps(2);
-            hold([]);
-            await steps(3);
-            const q = at();
-            const moved = q ? Math.hypot(q.wx - p.wx, q.wy - p.wy) : 0;
-            if (moved > 0.5) minMove = Math.min(minMove, moved);
-            // trois petits appuis sans effet (buté contre un coin, un peu hors de l'axe du chemin) : l'autre axe d'abord, comme un
-            // joueur qui se recale
-            if (moved < 0.3) {
-              if (++dead >= 3) {
-                // un appui sur l'autre axe, vers le but (même dans la tolérance : c'est ce petit écart qui le fait buter)
-                const off = axis === 'x' ? dy : dx;
-                if (Math.abs(off) > 0.2) {
-                  hold([axis === 'x' ? (off > 0 ? 'KeyS' : 'KeyW') : off > 0 ? 'KeyD' : 'KeyA']);
-                  await steps(2);
-                  hold([]);
-                  await steps(3);
-                }
-                dead = 0;
+          // de près, à la marche (moins d'un pixel par pas) ; de loin, en courant
+          hold(tol < 6 || d < 24 ? [dir] : ['ShiftLeft', dir]);
+          // tout près, buté sans bouger (contre un coin, un peu hors de l'axe du chemin) : un petit appui sur l'autre axe vers le but
+          // (même dans la tolérance : c'est ce petit écart qui le fait buter), comme un joueur qui se recale
+          if (d < 12 && moved < 0.05) {
+            if (++dead >= 30) {
+              dead = 0;
+              const off = axis === 'x' ? dy : dx;
+              if (Math.abs(off) > 0.2) {
+                sideKey = axis === 'x' ? (off > 0 ? 'KeyS' : 'KeyW') : off > 0 ? 'KeyD' : 'KeyA';
+                side = 3;
               }
-            } else dead = 0;
-          } else hold(tol < 6 || d < 24 ? [dir] : ['ShiftLeft', dir]);
+            }
+          } else dead = 0;
+          // buté sur un coin de loin (un piquet de clôture, l'angle d'un mur) : un petit pas de côté, d'un côté puis de l'autre, et on
+          // reprend ; bloqué pour de bon : des milliers de pas sans bouger
           if (Math.hypot(p.wx - last.wx, p.wy - last.wy) > 2) (last = { wx: p.wx, wy: p.wy }, (still = 0));
-          else if (++still > 600) return (hold([]), { ok: false, p });
-          else if (still % 60 === 0 && d >= 12) {
-            const side = (still / 60) % 2 === 1 ? 1 : -1;
-            const across = axis === 'x' ? (side > 0 ? 'KeyS' : 'KeyW') : side > 0 ? 'KeyD' : 'KeyA';
-            hold([across]);
-            await steps(6 * Math.ceil(still / 120));
-            hold([]);
+          else if (++still > 6000) finish({ ok: false, p });
+          else if (still % 600 === 0 && d >= 12) {
+            const s = (still / 600) % 2 === 1 ? 1 : -1;
+            sideKey = axis === 'x' ? (s > 0 ? 'KeyS' : 'KeyW') : s > 0 ? 'KeyD' : 'KeyA';
+            side = 60 * Math.ceil(still / 1200);
           }
-        }
+        };
+        g.events.on('poststep', decide);
+        return await result;
       },
-      { wx, wy, first, tol },
+      { wx, wy, first, tol, zones },
     );
     if (!r.ok) throw new Error(`Xéros est bloqué en route vers (${wx}, ${wy}) : ${(r as any).why ?? 'il ne bouge plus'} ; ${JSON.stringify(r.p)}`);
   };
 
   /**
    * Un chemin sans obstacle sur la carte en cours (recherche en largeur sur une grille de 4 px, la place de ses pieds libre à chaque
-   * pas, hors des personnages), de Xéros jusqu'au but : devant la porte d'entrée de la maison (la sortie de l'intérieur), ou le point `to` (px de la carte).
+   * pas, hors des personnages), de Xéros jusqu'au but : devant la porte d'entrée de la maison (la sortie de l'intérieur), ou le point `to` (px de la carte),
    * Les portes fermées ne barrent pas le chemin : devant chacune, un arrêt pour l'ouvrir (E) ; de même devant `target`, ouverte ou non.
    */
   const routeTo = (to?: { x: number; y: number }, target?: DoorZone): Promise<Corner[]> =>
@@ -175,7 +184,8 @@ export function walker(page: Page) {
           .filter((o: any) => o !== w.player.actor && o.skin && o.body?.immovable)
           .map((o: any) => ({ left: o.body.x, top: o.body.y, right: o.body.x + o.body.width, bottom: o.body.y + o.body.height }));
         const free = (x: number, y: number) => {
-          const box = { left: x - 5 - margin, top: y - 8 - margin, right: x + 5 + margin, bottom: y + margin };
+          // le corps de ses pieds, tel que la physique le pose (FEET de config.ts : 10 × 8, 2 px au-dessus du point des pieds)
+          const box = { left: x - 5 - margin, top: y - 10 - margin, right: x + 5 + margin, bottom: y - 2 + margin };
           if (people.some((b: any) => box.left < b.right && box.right > b.left && box.top < b.bottom && box.bottom > b.top)) return false;
           return m.areaFree(box, [], closed);
         };

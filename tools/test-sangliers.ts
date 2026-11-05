@@ -126,10 +126,66 @@ await playtest('sangliers', async ({ page, load }) => {
     out.axeHeld = !!gs.game.both;
     const id2 = await summon(-7.5, -2 / 20);
     const seen2: string[] = [];
+    const members = () => (Object.values(gs.game.maps['foret-profonde'].warrens) as { members: unknown[] }[]).reduce((n, q) => n + q.members.length, 0);
+    const hits: number[] = [];
+    const deadAt = { x: 0, y: 0 };
+    // sonné, Xéros court jusqu'à lui, au nord de son flanc (Maj et les flèches, droit vers lui), puis le frappe sans relâche (un clic
+    // pendant le geste enchaîne le coup suivant : la taille, puis le coup d'en haut), comme un joueur : tout se décide à chaque pas de
+    // jeu (postupdate), dès le pas du choc, jamais à la lecture du test (à x10 sous la charge, une image vaut jusqu'à 80 pas de jeu,
+    // plus d'une seconde : un joueur ne laisse pas passer une seconde de jeu entre voir la bête sonnée, arriver et frapper)
+    let clicks = 0;
+    let fighting = false;
+    let goal: { x: number; y: number } | undefined;
+    const held = new Set<string>();
+    let last = -1;
+    const button = () => (['left', 'right'] as const).find((b) => w().keys?.clicks[b].short.kind === 'strike') ?? 'left';
+    const click = (q: Beast) => {
+      W.__aim(q.x, q.y - 4);
+      const b = button();
+      W.__press(b);
+      W.__release(b);
+      clicks++;
+    };
+    const fighter = () => {
+      const q = find(id2);
+      // sa vie après chaque coup qui porte
+      if (q && q.hp < def.target.hp && q.hp !== hits[hits.length - 1]) hits.push(q.hp);
+      if (!q || w().player.down || clicks >= 24) return;
+      [deadAt.x, deadAt.y] = [q.x, q.y];
+      if (!goal || held.size) {
+        goal ??= { x: q.x, y: q.y - 22 };
+        const dx = goal.x - me().x;
+        const dy = goal.y - me().y;
+        const reached = Math.hypot(dx, dy) <= 4 || q.mode !== 'stunned';
+        const want = new Set(reached ? [] : ['ShiftLeft', ...(dx > 3 ? ['KeyD'] : dx < -3 ? ['KeyA'] : []), ...(dy > 3 ? ['KeyS'] : dy < -3 ? ['KeyW'] : [])]);
+        if (want.size === 1) want.clear();
+        for (const k of held) if (!want.has(k)) (key('keyup', k), held.delete(k));
+        for (const k of want) if (!held.has(k)) (key('keydown', k), held.add(k));
+        if (!reached) return;
+        out.reached = Math.hypot(dx, dy);
+      }
+      if (w().mode === 'play' && !w().combat.busy) {
+        out.modesWhileHit = [...(out.modesWhileHit ?? []), q.mode];
+        click(q);
+      } else if (w().mode === 'use' && w().combat.log.length !== last) {
+        // pendant le geste : un clic, et le coup suivant partira à sa fin
+        last = w().combat.log.length;
+        click(q);
+      }
+    };
     let dodge = 0;
     const watch2 = (_t: number, delta: number) => {
       const q = find(id2);
-      if (q && seen2[seen2.length - 1]?.split('@')[0] !== q.mode) seen2.push(`${q.mode}@${Math.round(q.x)},${Math.round(q.y)} X${Math.round(me().x)},${Math.round(me().y)}`);
+      if (!fighting && q && seen2[seen2.length - 1]?.split('@')[0] !== q.mode) seen2.push(`${q.mode}@${Math.round(q.x)},${Math.round(q.y)} X${Math.round(me().x)},${Math.round(me().y)}`);
+      if (fighting) return fighter();
+      // la charge finie contre le tronc : sonné, au pas même, Xéros va le frapper
+      if (q?.mode === 'stunned' && !w().player.down) {
+        fighting = true;
+        for (const k of ['KeyA', 'KeyW', 'ShiftLeft']) key('keyup', k);
+        out.stunned = true;
+        out.membersBefore = members();
+        return fighter();
+      }
       // le joueur voit la charge partir : il lâche A et court vers le nord, un tiers de seconde
       if (q?.mode === 'charge' && !dodge) {
         key('keyup', 'KeyA');
@@ -148,64 +204,15 @@ await playtest('sangliers', async ({ page, load }) => {
     w().events.on('postupdate', watch2);
     // un pas vers lui, à la marche : il le voit
     key('keydown', 'KeyA');
-    await W.__until(() => find(id2)?.mode === 'stunned' || w().player.down, `la charge finit contre le tronc (le sanglier : ${seen2.join(' > ')}, à (${Math.round(find(id2)?.x ?? 0)}, ${Math.round(find(id2)?.y ?? 0)}) ; Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}))`);
-    key('keyup', 'KeyA');
-    key('keyup', 'KeyW');
-    key('keyup', 'ShiftLeft');
-    w().events.off('postupdate', watch2);
+    await W.__until(() => fighting || w().player.down, `la charge finit contre le tronc (le sanglier : ${seen2.join(' > ')}, à (${Math.round(find(id2)?.x ?? 0)}, ${Math.round(find(id2)?.y ?? 0)}) ; Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}))`);
     out.seen2 = seen2;
-    out.stunned = find(id2)?.mode === 'stunned';
     out.gored2 = w().player.down;
+    if (!fighting) for (const k of ['KeyA', 'KeyW', 'ShiftLeft']) key('keyup', k);
     // les coups de hache, tant qu'il vit
-    const members = () => (Object.values(gs.game.maps['foret-profonde'].warrens) as { members: unknown[] }[]).reduce((n, q) => n + q.members.length, 0);
-    out.membersBefore = members();
-    const hits: number[] = [];
-    const deadAt = { x: 0, y: 0 };
-    // il court jusqu'à la bête sonnée, au nord de son flanc, comme un joueur (Maj et les flèches, droit vers elle)
-    {
-      const q = find(id2)!;
-      const goal = { x: q.x, y: q.y - 22 };
-      const held = new Set<string>();
-      const steer = () => {
-        const dx = goal.x - me().x;
-        const dy = goal.y - me().y;
-        const want = new Set(['ShiftLeft', ...(dx > 3 ? ['KeyD'] : dx < -3 ? ['KeyA'] : []), ...(dy > 3 ? ['KeyS'] : dy < -3 ? ['KeyW'] : [])]);
-        if (want.size === 1) want.clear();
-        for (const k of held) if (!want.has(k)) (key('keyup', k), held.delete(k));
-        for (const k of want) if (!held.has(k)) (key('keydown', k), held.add(k));
-      };
-      w().events.on('postupdate', steer);
-      await W.__until(() => Math.hypot(goal.x - me().x, goal.y - me().y) <= 4 || find(id2)?.mode !== 'stunned', `Xéros court jusqu'au sanglier sonné (${Math.round(me().x)}, ${Math.round(me().y)})`);
-      w().events.off('postupdate', steer);
-      for (const k of held) key('keyup', k);
-      out.reached = Math.hypot(goal.x - me().x, goal.y - me().y);
-    }
-    // il frappe sans relâche, comme un joueur : un clic pendant le geste enchaîne le coup suivant (la taille, puis le coup d'en haut)
-    let clicks = 0;
-    let last = -1;
-    while (find(id2) && !w().player.down && clicks < 24) {
-      const q = find(id2)!;
-      [deadAt.x, deadAt.y] = [q.x, q.y];
-      if (w().mode === 'play' && !w().combat.busy) {
-        out.modesWhileHit = [...(out.modesWhileHit ?? []), q.mode];
-        try {
-          await W.__do('strike', { at: { x: q.x, y: q.y - 4 } });
-        } catch (e) {
-          throw new Error(`${(e as Error).message} ; le sanglier ${q.mode} en (${Math.round(q.x)}, ${Math.round(q.y)}), le tronc ${JSON.stringify(T.box)}, la ligne y ${T.y} ; avant : ${seen2.join(' > ')} ; à terre ${out.gored2} ; clics ${JSON.stringify(w().keys?.clicks)} ; tenu ${JSON.stringify(gs.game.both ?? gs.game.hands)}`);
-        }
-        clicks++;
-      } else if (w().mode === 'use' && w().combat.log.length !== last) {
-        // pendant le geste : un clic, et le coup suivant partira à sa fin
-        last = w().combat.log.length;
-        W.__aim(q.x, q.y - 4);
-        W.__press('left');
-        await W.__frames(2);
-        W.__release('left');
-        clicks++;
-      }
-      await W.__frames(2);
-      if (find(id2) && find(id2)!.hp !== hits[hits.length - 1]) hits.push(find(id2)!.hp);
-    }
+    await W.__until(() => !find(id2) || w().player.down || clicks >= 24, `Xéros frappe le sanglier sonné (vies après chaque coup : ${hits.join(', ')} ; modes : ${(out.modesWhileHit ?? []).join(', ')} ; avant : ${seen2.join(' > ')})`);
+    w().events.off('postupdate', watch2);
+    for (const k of held) key('keyup', k);
+    W.__leave();
     await W.__resume();
     out.hits = hits;
     await W.__until(() => (gs.game.maps['foret-profonde'].ground as { item: string }[]).some((o) => o.item === 'dead-boar'), `le sanglier mort au sol, après sa bascule (vies après chaque coup : ${hits.join(', ')} ; modes : ${(out.modesWhileHit ?? []).join(', ')} ; avant : ${seen2.join(' > ')} ; le sanglier : ${JSON.stringify(find(id2))})`);

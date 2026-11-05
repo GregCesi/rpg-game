@@ -41,11 +41,12 @@ const beam = (axis: 'ew' | 'ns' | 'up', length: number) => ({ wood: { size: 'nor
 await playtest('grange', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   await load('?construire&dieu&reset');
+  // B lu avant la suite (une commande de carte est refusée en mode construction), attendu sur l'état du jeu, jamais une pause fixe
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
   await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'build');
   const notices: string[] = [];
   await page.exposeFunction('noticed', (t: string) => notices.push(t));
   await page.evaluate(() => (window as any).game.events.on('notice', (t: string) => (window as any).noticed(t)));
@@ -80,9 +81,10 @@ await playtest('grange', async ({ page, errors, load }) => {
   const click = async (x: number, y: number) => {
     const s = await screen(x, y);
     await page.mouse.move(s.x, s.y);
-    await sleep(60);
     await page.mouse.click(s.x, s.y);
-    await sleep(110);
+    // le clic joué : la file des clics du mode construction (systems/build.ts) vidée par un pas de jeu, jamais une pause fixe (un
+    // clic n'est jamais perdu, il attend son pas : sous la charge, une pause passerait avant lui)
+    await page.evaluate(() => (window as any).__until(() => !(window as any).game.scene.getScene('world').builder?.clicks?.length, 'le clic joué'));
   };
   const send = (cmd: object) => page.evaluate((c) => (window as any).game.events.emit('build', c), cmd);
   // les pièces déjà posées sur la ferme à l'arrivée (la cabane du chasseur, posée depuis son plan : chantier « monde ») ne comptent pas
@@ -111,7 +113,8 @@ await playtest('grange', async ({ page, errors, load }) => {
   const put = async (what: string, x: number, y: number, w: number, d: number, z?: number, at?: [number, number]) => {
     const S = await page.evaluate(async ([x, y, w, d]) => {
       const url = '/src/world/build.ts';
-      const b = await import(url);
+      // le module gardé dans la page (un import() refait coûte près de 100 ms au serveur de Vite)
+      const b = (((window as any).__mods ??= {})[url] ??= await import(url));
       const m = (window as any).game.scene.getScene('world').map;
       return b.supportAt(m.builds.map((q: any) => q.piece).filter((q: any) => !('prop' in q.piece && /plank-roof/.test(q.piece.prop))), { x, y, w, d });
     }, [O!.x + x, O!.y + y, w, d] as const);
@@ -136,7 +139,8 @@ await playtest('grange', async ({ page, errors, load }) => {
     await send({ kind: 'pick-joint', joint: type });
     const pt = await page.evaluate(async ([ia, ib]) => {
       const url = '/src/world/joints.ts';
-      const J = await import(url);
+      // le module gardé dans la page (un import() refait coûte près de 100 ms au serveur de Vite)
+      const J = (((window as any).__mods ??= {})[url] ??= await import(url));
       const m = (window as any).game.scene.getScene('world').map;
       const ps = m.builds.map((q: any) => q.piece);
       const j = J.junctions(ps, (q: any) => m.shownOffset(q)).find((q: any) => (q.a.id === ia && q.b.id === ib) || (q.a.id === ib && q.b.id === ia));

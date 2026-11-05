@@ -123,10 +123,10 @@
       "tests": ["npm run test:combat", "tools/test-lancer.ts"] },
     { "id": "temps", "nom": "Le temps, l'endurance et la lumière", "x": 2, "y": 3,
       "role": "L'horloge du jeu et sa vitesse (V : x1 à x20), le jour et la nuit, le sommeil. L'endurance en trois niveaux : le souffle, le plafond du jour, le maximum ; chaque effort se paie.",
-      "fichiers": ["src/systems/clock.ts", "src/world/clock.ts", "src/world/clockFace.ts", "src/systems/simSpeed.ts", "src/systems/daylight.ts", "src/world/daylight.ts", "src/world/sleep.ts", "src/systems/effort.ts", "src/entities/Stamina.ts", "src/entities/Breath.ts"],
+      "fichiers": ["src/systems/clock.ts", "src/world/clock.ts", "src/world/clockFace.ts", "src/systems/simSpeed.ts", "src/world/timeStep.ts", "src/systems/daylight.ts", "src/world/daylight.ts", "src/world/sleep.ts", "src/systems/effort.ts", "src/entities/Stamina.ts", "src/entities/Breath.ts"],
       "donnees": ["time.json", "stamina.json", "world.json (daylight)"],
-      "regles": ["Le travail au coup se paie au joule.", "Plafond à zéro : « Xéros est épuisé. Il faut dormir. »"],
-      "tests": ["tools/test-clock.ts", "tools/test-stamina.ts", "tools/test-sleep.ts", "tools/test-daylight.ts", "npm run test:temps"] },
+      "regles": ["Le pas de jeu est fixe (1/60 s) : une machine lente fait plusieurs pas par image, jamais un plus grand ; le même résultat sur toutes les machines.", "Le travail au coup se paie au joule.", "Plafond à zéro : « Xéros est épuisé. Il faut dormir. »"],
+      "tests": ["tools/test-cadence.ts", "tools/test-clock.ts", "tools/test-stamina.ts", "tools/test-sleep.ts", "tools/test-daylight.ts", "npm run test:temps"] },
     { "id": "personnages", "nom": "Les personnages et les dialogues", "x": 4, "y": 0,
       "role": "Les PNJ (la mère, le forgeron) : posés depuis Tiled ou depuis le plan de leur bâtiment, ils jouent leur pose et parlent. La scène de dialogue affiche le texte, le portrait et les choix (dormir…).",
       "fichiers": ["src/entities/Npc.ts", "src/scenes/DialogueScene.ts"],
@@ -158,7 +158,8 @@
     "src/config.ts": "Les constantes globales du jeu : taille de l'écran, vitesses, réglages de chaque mécanique. Tout réglage de gameplay passe par ici.",
     "src/scenes/HudScene.ts": "La scène du HUD, dessinée par-dessus le monde : les deux cases de main, la barre d'endurance, le cadran du temps, la petite carte et les messages. Elle est prévenue des changements par les événements de events.ts.",
     "src/systems/exits.ts": "Les sorties posées dans Tiled : laquelle Xéros franchit, testée depuis la position de ses pieds à l'image d'avant (crossing.ts), pour qu'un jeu qui rame ne la saute pas.",
-    "src/systems/simSpeed.ts": "La vitesse de simulation : x1 à x20 pour le joueur (V, time.json), x50 dans ?dieu. Le jeu fait alors plusieurs pas de taille normale par image, jamais un grand pas.",
+    "src/systems/simSpeed.ts": "La boucle du jeu et sa vitesse : x1 à x20 pour le joueur (V, time.json), x50 dans ?dieu. Chaque image fait autant de pas de jeu fixes que le temps vrai écoulé (× la vitesse) en demande (world/timeStep.ts), jamais un grand pas.",
+    "src/world/timeStep.ts": "Le pas de jeu fixe, sans Phaser : combien de pas de 1/60 s une image doit faire. Une machine lente en fait plusieurs, une rapide un seul : le jeu, ses bêtes et leurs tirages au hasard voient la même suite de pas, donc le même résultat (tools/test-cadence.ts).",
     "src/systems/speeds.ts": "Les vitesses de marche et de course, la seule source (PLAYER.walk, PLAYER.run en m/s), réglables dans ?dieu et retenues hors de la sauvegarde ; chargé, fatigué ou poussant une bille, Xéros va à une part de la marche."
   },
   "parcours": [

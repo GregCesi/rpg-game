@@ -12,7 +12,8 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildRef, JointType, Natural, WoodAge } from '../content/types';
 import type { BuildCommand, BuildStatus } from '../events';
 import type { Player } from '../entities/Player';
-import { addBuildPieces, addJoints, game, mapState, moveBuildPiece, removeBuildPieces, removeJoints, type BuildPiece, type Joint } from '../state';
+import { drawnStep } from './simSpeed';
+import { addBuildPieces, addJoints, game, mapState, moveBuildPiece, removeBuildPieces, removeJoints, revisionOf, type BuildPiece, type Joint } from '../state';
 import { aimAt, aimOnGrid, centerOnFace, supportAt, solidOf, boxOf, carriedBy, overlaps, planOf, planPieces, planSize, refName, sizeOf, turned, withAbove, withAge, type Area, type Box3 } from '../world/build';
 import { buildLook } from '../world/buildView';
 import { viewDrawn } from '../content/views';
@@ -207,10 +208,21 @@ export class BuildSystem {
     const pointer = this.scene.input.activePointer;
     const seen = cam.getWorldPoint(pointer.x, pointer.y);
     const at = pick(this.map.def, seen.x, seen.y);
+    const clicked = this.clicks.length > 0;
     this.flushClicks();
+    // la visée (l'accrochage parmi toutes les pièces posées) et le fantôme ne dépendent que du point visé, de l'outil, du cran, de
+    // l'âge, de la sélection et de la partie (son compteur de changements) : recalculés seulement quand l'un d'eux change, et au pas
+    // qui sera dessiné (une machine lente fait plusieurs pas par image, world/timeStep.ts : le fantôme ne se voit qu'à celui-là ; un
+    // clic, lui, vise toujours à son point, flushClicks)
+    const key = [at.x, at.y, this.step, this.age, revisionOf(), JSON.stringify(this.tool), JSON.stringify(this.selection), this.dragFrom?.x, this.dragFrom?.y].join('|');
+    if (!clicked && (key === this.aimedFor || !drawnStep())) return;
+    this.aimedFor = key;
     this.updateAim(at.x, at.y);
     this.draw(at);
   }
+
+  /** Ce que visaient la dernière visée et le dernier fantôme (update). */
+  private aimedFor?: string;
 
   /** Les clics en file, joués dans l'ordre avec l'outil en main (pose au clic gauche, retrait au clic droit). */
   private flushClicks(): void {

@@ -65,25 +65,29 @@ await playtest('relief', async ({ page, load }) => {
             last = { x: a.x, y: a.y };
             if (done(a.x, a.y) || still > 20 || steps > 60000) {
               pw.off('worldstep', tick);
+              // relâchée au pas même : après la promesse, la touche ne le serait qu'à la fin de l'image (à x10 sous la charge, des
+              // dizaines de pas plus loin)
+              window.dispatchEvent(new KeyboardEvent('keyup', { code }));
               resolve();
             }
           };
           pw.on('worldstep', tick);
           window.dispatchEvent(new KeyboardEvent('keydown', { code }));
         });
-        window.dispatchEvent(new KeyboardEvent('keyup', { code }));
         await (window as any).__frames(2);
         const said = [...(window as any).notices] as string[];
-        return { x: a.x, y: a.y, said, notice: said.find((t) => /pour lui|nager/.test(t)), wet, lift: w.lifts.liftAt(a.x, a.y - 3) as number };
+        return { x: a.x, y: a.y, said, notice: said.find((t) => /pour lui|nager/.test(t)), wet, lift: w.lifts.liftAt(a.x, a.y - 3) as number, steps, still, mode: w.mode as string, z: a.mobility?.z ?? w.player.mobility?.z };
       },
       { code, stop },
     );
 
   // 1. de la ferme au plateau par le chemin creux, puis retour
   await place(63 * T, 66 * T);
-  let r = await walk('KeyA', `x < ${6 * T}`);
+  // jusqu'au haut du plateau (il monte en pente douce : 4,8 m à 6 cases du bord, 5 m à partir de 4,6) ; arrêté au pas même où il y
+  // arrive (avant, la touche relâchée à la fin de l'image le menait plus loin, et le seuil de 6 cases tombait sur la pente)
+  let r = await walk('KeyA', `x < ${4.5 * T}`);
   assert.ok(r.x < 6.5 * T, `il traverse le chemin creux jusqu'au plateau (arrêté en ${Math.round(r.x)}, ${Math.round(r.y)} : ${r.notice})`);
-  assert.ok(Math.abs(r.lift - 100) <= 3, `en haut, sur le plateau, à 5 m (soulevé de ${r.lift} px)`);
+  assert.ok(Math.abs(r.lift - 100) <= 3, `en haut, sur le plateau, à 5 m (soulevé de ${r.lift} px ; arrêté en ${r.x.toFixed(1)}, ${r.y.toFixed(1)} après ${r.steps} pas, immobile ${r.still} pas, ${r.mode} ; dit : ${r.said.join(' | ')})`);
   assert.ok(!r.wet, "jamais d'eau sous ses pieds dans le couloir");
   r = await walk('KeyD', `x > ${61 * T}`);
   assert.ok(r.x > 61 * T, `il revient à la ferme (arrêté en ${Math.round(r.x)}, ${Math.round(r.y)} : ${r.notice})`);

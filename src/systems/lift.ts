@@ -4,6 +4,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { MapData } from '../content/types';
 import type { Actor } from '../entities/Actor';
 import { hasRelief, worldHeight } from '../world/terrainView';
+import { drawnStep } from './simSpeed';
 
 /**
  * Le soulèvement (chantier « relief », projection A) : tout ce qui est posé à une hauteur h s'affiche h / 5 cm plus haut, sans que rien
@@ -35,8 +36,14 @@ export class LiftPass {
     return Math.round(worldHeight(this.def, x, y) / CM_PER_PX);
   }
 
+  /**
+   * Après chaque pas de jeu. Au pas qui sera dessiné, tout ce qui est affiché ; aux autres (une image lente fait plusieurs pas,
+   * world/timeStep.ts), seuls les corps qui bougent (le corps des pieds d'un personnage est recalé : la physique en dépend) ; une image
+   * fixe n'a besoin de son soulèvement qu'au moment d'être dessinée.
+   */
   update(): void {
-    for (const obj of this.scene.children.list) this.lift(obj);
+    if (drawnStep()) for (const obj of this.scene.children.list) this.lift(obj);
+    else for (const body of this.scene.physics.world.bodies.entries) if (body.gameObject) this.lift(body.gameObject);
   }
 
   private lift(obj: Phaser.GameObjects.GameObject): void {
