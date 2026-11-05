@@ -157,7 +157,7 @@ export function walker(page: Page) {
 
   /**
    * Un chemin sans obstacle sur la carte en cours (recherche en largeur sur une grille de 4 px, la place de ses pieds libre à chaque
-   * pas), de Xéros jusqu'au but : devant la porte d'entrée de la maison (la sortie de l'intérieur), ou le point `to` (px de la carte).
+   * pas, hors des personnages), de Xéros jusqu'au but : devant la porte d'entrée de la maison (la sortie de l'intérieur), ou le point `to` (px de la carte).
    * Les portes fermées ne barrent pas le chemin : devant chacune, un arrêt pour l'ouvrir (E) ; de même devant `target`, ouverte ou non.
    */
   const routeTo = (to?: { x: number; y: number }, target?: DoorZone): Promise<Corner[]> =>
@@ -170,7 +170,15 @@ export function walker(page: Page) {
         const S = 4;
         const closed = m.builds.filter((b: any) => b.zone && /door$/.test(b.piece.piece.prop ?? '')).map((b: any) => b.zone);
         let margin = w.interior ? 2 : 0;
-        const free = (x: number, y: number) => m.areaFree({ left: x - 5 - margin, top: y - 8 - margin, right: x + 5 + margin, bottom: y + margin }, [], closed);
+        // les personnages (le forgeron à son enclume) barrent le passage par leur collision aux pieds, comme dans le jeu : on les contourne
+        const people = w.children.list
+          .filter((o: any) => o !== w.player.actor && o.skin && o.body?.immovable)
+          .map((o: any) => ({ left: o.body.x, top: o.body.y, right: o.body.x + o.body.width, bottom: o.body.y + o.body.height }));
+        const free = (x: number, y: number) => {
+          const box = { left: x - 5 - margin, top: y - 8 - margin, right: x + 5 + margin, bottom: y + margin };
+          if (people.some((b: any) => box.left < b.right && box.right > b.left && box.top < b.bottom && box.bottom > b.top)) return false;
+          return m.areaFree(box, [], closed);
+        };
         const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
         const goal = to
           ? (x: number, y: number) => Math.abs(x * S - to.x) <= S / 2 && Math.abs(y * S - to.y) <= S / 2
