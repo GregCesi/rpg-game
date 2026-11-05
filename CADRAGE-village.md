@@ -1240,3 +1240,26 @@ boutique ; les solutions 1 et 2 des bâtiments du sud côte à côte), `place-ba
 les pièces nouvelles (`place-pieces*.png`). Par le pixel-artist : `place-nord.ts` (la ferme du riche, le bûcheron, la boutique
 abandonnée), `place-sud.ts` (la tailleuse et le frère du forgeron, la mercière, la ferme rivale), `place-centre.ts` (le grand arbre,
 les bancs, l'abreuvoir, les charrettes, le linge, les pots, tout ce qui remplit), monté par `tools/essai-place.ts`.
+
+### 14.6 Ce que les dessins ont changé (pixel-artist)
+
+**Les emprises finales** (px de la zone village, hors œuvre) :
+
+| Bâtiment | Emprise | Taille | Remarque |
+| --- | --- | --- | --- |
+| Boutique de la ferme du riche, à étage | 3040-3256 × 1744-1928 | 10,8 × 9,2 m | 80 cm plus étroite : le logis, plus au sud, cachait sa façade |
+| Logis-réserve du riche, à étage | 2784-3072 × 1936-2064 | 14,4 × 6,4 m | |
+| Étal luxueux | 3088-3224 × 1984-2064 | 6,4 × 4 m | à 2,80 m de la façade ; l'auvent rayé sur six poteaux tournés (6,40 × 3 m) |
+| Boutique du bûcheron, à étage | 3368-3584 × 1744-1928 | 10,8 × 9,2 m | trois devantures à volet-tablette, les tas qui débordent jusque sur le rond |
+| Boutique abandonnée | 3576-3864 × 1936-2064 | 14,4 × 6,4 m | 2 m plus à l'est : son toit cachait la devanture du bûcheron ; de plain-pied |
+| La tailleuse et le frère du forgeron | aile des vêtements 2720-3040 × 2272-2432 ; aile du cuir 3040-3248 × 2320-2704 | 16 × 8 m et 10,4 × 19,2 m | l'aile des vêtements reculée de 4 m, ses étals sur le bord sud de la rue de l'ouest (3,30 m de passage) ; la cour dans l'équerre |
+| La mercière | 3536-3872 × 2240-2400 | 16,8 × 8 m | reculée de 2,40 m, son étal long sur le bord de la rue de l'est (2,60 m devant la boutique abandonnée) |
+| La ferme rivale | 3376-3568 × 2408-2672 | 9,6 × 13,2 m | à 40 cm de la mercière ; son grand étal en équerre, quatre travées, sur le bord du rond et contre le pignon de la mercière |
+| Le panneau | 3234-3266 × 2172-2178 | 1,6 × 0,3 m | au sud-ouest du tilleul (au nord, le houppier le cachait) |
+
+**Ce que les dessins ont appris** :
+- **Solution 1** : sur un bâtiment à étage, l'égout est à 5,25 m et cache 5,35 m de sol au nord de son mur ; un appentis bas de 2,80 m tombe tout entier dans cette bande : **il ne se voit jamais du dehors**, seulement quand son toit s'efface au-dessus de Xéros. Les étals doivent commencer **2,55 m au-delà de l'égout de l'appentis** (pas 2 m) ; ils se voient alors bien, et font un front serré tout autour du sud du rond.
+- **Une croupe au nord** sur l'aile du cuir et la ferme rivale (le faîtage nord-sud) : un pignon de 9,40 m tourné vers le rond cachait tout le recoin.
+- **Solution 2** : de loin, trois toits ; devant la porte, la boutique fondue montre bien les comptoirs, une pièce à la fois. **Recommandation des dessinateurs et la mienne : la solution 1, complétée du fondu de la solution 2 quand on entre** (le fondu ne coûte presque rien : le jeu sait déjà le faire pour une fenêtre).
+- **Le centre** : le tilleul (6,50 m de houppier, 7,50 m de haut) et son banc rond au milieu, son ombre ; l'échelle de la cueillette contre le tronc ; l'abreuvoir de pierre à la bouche de la rue du sud ; une charrette à deux roues dételée chargée de bûches au nord-est ; une charrette à bras au sud-ouest ; des tas de tonneaux couchés en pyramide, de la paille, des cageots, des sacs, des bancs, des pots de fleurs, du linge ; les quatre bouches de rue libres sur 4 m, un tour de 3 m autour du banc.
+- **Ce qui reste à trancher au montage** : les choses du centre qui chevauchent les étals du sud (le centre a été composé avant que le sud ne recule), le linge et les jardinières dessinés deux fois, les rues de l'ouest et de l'est qui se resserrent à 2,60-3,30 m de passage.
