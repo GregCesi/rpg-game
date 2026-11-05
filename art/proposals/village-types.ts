@@ -17,7 +17,7 @@ export type HouseId =
   | 'h3-vieux'
   | 'h4-berger'
   | 'h5-journaliers'
-  | 'h6-charpentier'
+  | 'h6-vannier'
   | 'h7-laboureur'
   | 'h8-meunier'
   | 'h9-forgeron'
@@ -27,11 +27,11 @@ export type HouseId =
 /** Le foyer écrit sous chaque maison sur les planches (court), et la parcelle du plan (art/proposals/village-plan-data.ts). */
 export const HOUSE_META: Record<HouseId, { foyer: string; parcel: string; module: 'bois' | 'pierre' }> = {
   'h1-couvreur': { foyer: 'Le couvreur, sa femme, six enfants, la grand-mère', parcel: 's2-e1', module: 'bois' },
-  'h2-tisserand': { foyer: 'Le tisserand et sa femme (sans enfants)', parcel: 's2-o2', module: 'pierre' },
-  'h3-vieux': { foyer: "Les vieux : l'ancien bouvier et la fileuse", parcel: 's2-o3', module: 'bois' },
+  'h2-tisserand': { foyer: 'Le tisserand et sa femme (sans enfants)', parcel: 's2-o1', module: 'pierre' },
+  'h3-vieux': { foyer: "Les vieux : l'ancien bouvier et la fileuse", parcel: 's2-o2', module: 'bois' },
   'h4-berger': { foyer: 'Le berger, seul avec ses chiens', parcel: 's3-e2', module: 'bois' },
   'h5-journaliers': { foyer: 'Deux familles de journaliers', parcel: 'r2-1', module: 'bois' },
-  'h6-charpentier': { foyer: 'Le charpentier et sa famille (pas à plaindre)', parcel: 's2-o1', module: 'bois' },
+  'h6-vannier': { foyer: 'Le vannier et sa famille (pas à plaindre)', parcel: 's1-o2', module: 'bois' },
   'h7-laboureur': { foyer: 'Le laboureur, ses bœufs (pas à plaindre)', parcel: 'o-s1', module: 'bois' },
   'h8-meunier': { foyer: 'Le meunier et sa famille (aisés)', parcel: 'aise-o1', module: 'pierre' },
   'h9-forgeron': { foyer: 'Le forgeron, célibataire', parcel: 'o-n2', module: 'pierre' },

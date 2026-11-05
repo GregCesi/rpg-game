@@ -161,7 +161,7 @@ const SHOW: Record<string, Show> = {
     notes: ['axes 9,60 x 3,20 m, deux logis de 4,80 x 3,20 separes par une cloison pleine ; murs de 2,40 m', 'deux portes, deux fenetres, deux foyers au sol contre la cloison, deux trous de fumee'],
     xeros: [96, 86], inXeros: [40, 40], yards: [[-40, 240, 90, 140]],
   },
-  'h6-charpentier': {
+  'h6-vannier': {
     title: 'H6 LE CHARPENTIER : LE PIGNON SUR LA RUE (A L EST), LES CROIX, LA PORTE D ATELIER, LES BARDEAUX',
     notes: ['axes 9,60 x 4,80 m, bardeaux a 45 deg, le toit avance de 80 cm sur la rue ; la cheminee du jeu dans la salle', 'la porte d atelier a deux battants et une croix de saint-andre sur le sud (le cote vu du jeu), une autre au pignon est'],
     xeros: [170, 124], inXeros: [100, 60], yards: [[200, 300, -60, 160], [-40, 300, 110, 150]],

@@ -1,5 +1,5 @@
 // PROPOSITION (hors jeu, jamais chargée par le jeu) : les sept maisons de pan de bois, de torchis et de planches du village
-// (CADRAGE-village.md, section 3.2) : h1 le couvreur, h3 les vieux, h4 le berger, h5 les journaliers, h6 le charpentier, h7 le
+// (CADRAGE-village.md, section 3.2) : h1 le couvreur, h3 les vieux, h4 le berger, h5 les journaliers, h6 le vannier (ex-charpentier), h7 le
 // laboureur, h11 la guérisseuse. Planches : npx tsx tools/essai-village-bois.ts (.art-preview/village-bois-dehors.png,
 // village-bois-dedans.png, village-bois-pieces.png).
 //
@@ -330,7 +330,7 @@ const h5: HouseDef = {
 };
 
 // =====================================================================================================================
-// h6. Le charpentier : le pignon sur la rue (à l'est), les croix de Saint-André, la porte d'atelier, les bardeaux
+// h6. Le vannier (dessinée pour un charpentier, qui n'existe pas au village : la maison reste, le foyer change) : le pignon sur la rue (à l'est), les croix de Saint-André, la porte d'atelier, les bardeaux
 // =====================================================================================================================
 
 const H6: HouseSpec = {
@@ -347,7 +347,7 @@ const H6: HouseSpec = {
 };
 const H6_HEARTH = 74;
 const h6: HouseDef = {
-  id: 'h6-charpentier', spec: H6, rot: 0,
+  id: 'h6-vannier', spec: H6, rot: 0,
   pieces: ['lime-cross-panel', 'lime-gable-cross', 'twin-plank-door', 'sawhorse'],
   smoke: [[H6_HEARTH + 22, 14, 134]],
   extra: ({ cut, frame }) => {

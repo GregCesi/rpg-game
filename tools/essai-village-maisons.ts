@@ -43,7 +43,7 @@ const VIEW_W = 427, VIEW_H = 240;
 // Les maisons : ce que la planche écrit (le tableau 3.1 du cadrage) et où se tient Xéros
 // =====================================================================================================================
 
-const ORDER: HouseId[] = ['h1-couvreur', 'h2-tisserand', 'h3-vieux', 'h4-berger', 'h5-journaliers', 'h6-charpentier', 'h7-laboureur', 'h8-meunier', 'h9-forgeron', 'h10-maquignon', 'h11-guerisseuse'];
+const ORDER: HouseId[] = ['h1-couvreur', 'h2-tisserand', 'h3-vieux', 'h4-berger', 'h5-journaliers', 'h6-vannier', 'h7-laboureur', 'h8-meunier', 'h9-forgeron', 'h10-maquignon', 'h11-guerisseuse'];
 
 /** Le nom court, le rang, la forme ; murs ; couverture (CADRAGE-village.md, tableau de la section 3.1). */
 const TABLE: Record<HouseId, { name: string; line: string; floor: string }> = {
@@ -52,7 +52,7 @@ const TABLE: Record<HouseId, { name: string; line: string; floor: string }> = {
   'h3-vieux': { name: 'Les vieux', line: 'Chaumière et appentis ; pan de bois vieux, chaux écaillée ; chaume vieux, moussu', floor: '15 m²' },
   'h4-berger': { name: 'Le berger', line: 'Cabane en appentis ; planches debout ; bardeaux, une pente', floor: '8 m²' },
   'h5-journaliers': { name: 'Les journaliers', line: 'Maison double ; pan de bois, torchis brut ; chaume en une couche', floor: '2 x 15 m²' },
-  'h6-charpentier': { name: 'Le charpentier', line: 'Pignon sur rue ; pan de bois chaulé, croix de Saint-André ; bardeaux', floor: '46 m²' },
+  'h6-vannier': { name: 'Le vannier', line: 'Pignon sur rue ; pan de bois chaulé, croix de Saint-André ; bardeaux', floor: '46 m²' },
   'h7-laboureur': { name: 'Le laboureur', line: 'Longère (logis et étable) ; torchis chaulé sur solin haut, étable en pierre brute ; chaume', floor: '102 m², dont 51 d’étable' },
   'h8-meunier': { name: 'Le meunier', line: 'Maison-bloc à étage, cour fermée ; moellons enduits, pierre taillée aux angles et aux baies ; laves', floor: '2 x 69 m²' },
   'h9-forgeron': { name: 'Le forgeron', line: 'Maison-bloc ; pierre brute à la chaux ; tuiles plates', floor: '48 m²' },
@@ -69,7 +69,7 @@ const BOIS_SHOW: Partial<Record<HouseId, { xeros: [number, number]; inXeros: [nu
   'h3-vieux': { xeros: [40, 92], inXeros: [70, 40], yards: [[110, 200, -40, 140]] },
   'h4-berger': { xeros: [20, 76], inXeros: [30, 34], yards: [] },
   'h5-journaliers': { xeros: [96, 86], inXeros: [40, 40], yards: [[-40, 240, 90, 140]] },
-  'h6-charpentier': { xeros: [170, 124], inXeros: [100, 60], yards: [[200, 300, -60, 160], [-40, 300, 110, 150]] },
+  'h6-vannier': { xeros: [170, 124], inXeros: [100, 60], yards: [[200, 300, -60, 160], [-40, 300, 110, 150]] },
   'h7-laboureur': { xeros: [140, 160], inXeros: [90, 80], yards: [[-40, 360, 140, 220]] },
   'h11-guerisseuse': { xeros: [70, 100], inXeros: [30, 40], yards: [] },
 };
@@ -364,7 +364,7 @@ function streetImage(): { img: Img; notes: string[] } {
     if (isBois(id)) smoke.push(...(Bois.SMOKE[id]?.(o) ?? []));
     notes.push(`${short(id)} (${p.id}) : emprise du plan ${u[0]}-${u[2]} x ${u[1]}-${u[3]}, scène ${o[0]}-${o[0] + h.size[0]} x ${o[1]}-${o[1] + h.size[1]}`);
   }
-  // trois Xéros : dans la rue devant le tisserand, devant les vieux, et dans la ruelle du milieu
+  // trois Xéros : dans la rue et dans la ruelle du milieu
   const people: Board[] = [xerosAt(3300, 3640), xerosAt(3330, 3884), xerosAt(2960, 3436)];
   const scene: Scene = { quads: scenes.flatMap((s) => s.quads), boards: [...scenes.flatMap((s) => s.boards), ...people] };
   const b = bounds(scene, [0, 0, 0, 0]);
@@ -372,7 +372,7 @@ function streetImage(): { img: Img; notes: string[] } {
   const ways = WAYS.filter((w) => w.zone === 'village').map((w) => w.rect);
   // les jardins en lanières : un potager par maison de l'ouest, des rangs de terre, un liseré d'herbe entre eux
   const gj = rectOf('s2-jardins');
-  const gardens: Rect[] = ['s2-o1', 's2-o2', 's2-o3'].map((id) => { const r = rectOf(id); return [gj[0] + 24, r[1] + 16, gj[2] - 16, r[3] - 16]; });
+  const gardens: Rect[] = ['s2-o1', 's2-o2'].map((id) => { const r = rectOf(id); return [gj[0] + 24, r[1] + 16, gj[2] - 16, r[3] - 16]; });
   const g = groundOf(ways, gardens);
   const yard15 = worldTiles.tiles['yard-15'];
   const ground = (x: number, y: number) => (yards.some((r) => x >= r[0] && x < r[2] && y >= r[1] && y < r[3]) ? tileColor(yard15, worldTiles.palette, x, y) : g(x, y));
@@ -383,7 +383,7 @@ function streetImage(): { img: Img; notes: string[] } {
   const PAD = 24, HEAD = 4 * LH + 16, FOOT = 3 * LH + 16;
   const img = blank(l.w * K + PAD * 2, l.h * K + PAD * 2 + HEAD + FOOT, BG);
   const X = (x: number) => PAD + (x - bd[0]) * K, Y = (y: number) => PAD + HEAD + (y - bd[1]) * K;
-  writeText(img, 'La rue du sud, deuxième tronçon : le charpentier, le tisserand, les vieux à l’ouest, le couvreur à l’est', PAD, PAD, S, GOLD, null);
+  writeText(img, 'La rue du sud, deuxième tronçon : le tisserand et les vieux à l’ouest, le couvreur et le tonnelier à l’est (parcelles de 12 m ; les maisons pas encore tournées, question 15)', PAD, PAD, S, GOLD, null);
   writeText(img, 'x2 ; zone village, x 2624-4000, y 3392-4000 (69 x 30 m), de la ruelle de l’ouest à celle de l’est, de la ruelle du milieu à celle du bord', PAD, PAD + LH, S, GREY, null);
   writeText(img, 'Chaque maison centrée sur l’emprise de ses bâtiments du plan (art/proposals/village-plan-data.ts), toutes rendues en une seule scène', PAD, PAD + 2 * LH, S, GREY, null);
   writeText(img, 'La rue et les ruelles en terre battue (la tuile yard du jeu), les potagers en lanières à l’ouest, l’herbe ailleurs ; trois Xéros pour l’échelle', PAD, PAD + 3 * LH, S, GREY, null);
@@ -401,14 +401,14 @@ function streetImage(): { img: Img; notes: string[] } {
   label('et leur fils', X(tc[0]), Y(tc[1]) + 32, 1, GREY);
 
   // les noms des foyers au sol devant chaque parcelle : dans la rue pour ceux de l'ouest, au sud de la maison pour le couvreur
-  const front: Record<string, [number, number]> = { 's2-o1': [3312, 3520], 's2-o2': [3312, 3676], 's2-o3': [3312, 3800] };
+  const front: Record<string, [number, number]> = { 's2-o1': [3312, 3540], 's2-o2': [3312, 3780] };
   for (const [pid, [x, y]] of Object.entries(front)) {
     const id = parcel(pid).house as HouseId;
     label(TABLE[id].name, X(x), Y(y), 2, WHITE);
     wrap(HOUSE_META[id].foyer, 30).forEach((s, i) => label(s, X(x), Y(y) + 26 + i * 13, 1, GREY));
   }
-  label(TABLE['h1-couvreur'].name, X(3477), Y(3800), 2, WHITE);
-  wrap(HOUSE_META['h1-couvreur'].foyer, 40).forEach((s, i) => label(s, X(3477), Y(3800) + 26 + i * 13, 1, GREY));
+  label(TABLE['h1-couvreur'].name, X(3560), Y(3650), 2, WHITE);
+  wrap(HOUSE_META['h1-couvreur'].foyer, 40).forEach((s, i) => label(s, X(3560), Y(3650) + 26 + i * 13, 1, GREY));
   label('jardins', X(2784), Y(3460), 1, GREY);
 
   // les noms des voies

@@ -443,10 +443,10 @@ const DEFS: Def[] = [
   // h5
   { key: 'daub-gable', name: 'Pignon en torchis brut (3,20 m)', dims: { w: 320, d: 15, h: 190 }, houses: ['h5-journaliers'], n: 4, k: bld, ground: true, model: gablePiece(64, 38, 'daub') },
   // h6
-  { key: 'lime-cross-panel', name: 'Remplissage chaule a croix de Saint-Andre', dims: { w: 140, d: 15, h: 180 }, houses: ['h6-charpentier'], n: 4, k: bld, ground: true, model: panel(crossTex(551, 'worn')) },
-  { key: 'lime-gable-cross', name: 'Pignon chaule a croix (4,80 m)', dims: { w: 480, d: 15, h: 240 }, houses: ['h6-charpentier'], n: 4, k: bld, ground: true, model: gablePiece(96, 48, 'cross') },
-  { key: 'twin-plank-door', name: 'Porte d atelier a deux battants', dims: { w: 160, d: 5, h: 190 }, houses: ['h6-charpentier'], n: 4, k: bld, ground: true, model: twinDoor },
-  { key: 'sawhorse', name: 'Chevalet', dims: { w: 100, d: 50, h: 80 }, houses: ['h6-charpentier'], n: 2, k: furn, model: sawhorse },
+  { key: 'lime-cross-panel', name: 'Remplissage chaule a croix de Saint-Andre', dims: { w: 140, d: 15, h: 180 }, houses: ['h6-vannier'], n: 4, k: bld, ground: true, model: panel(crossTex(551, 'worn')) },
+  { key: 'lime-gable-cross', name: 'Pignon chaule a croix (4,80 m)', dims: { w: 480, d: 15, h: 240 }, houses: ['h6-vannier'], n: 4, k: bld, ground: true, model: gablePiece(96, 48, 'cross') },
+  { key: 'twin-plank-door', name: 'Porte d atelier a deux battants', dims: { w: 160, d: 5, h: 190 }, houses: ['h6-vannier'], n: 4, k: bld, ground: true, model: twinDoor },
+  { key: 'sawhorse', name: 'Chevalet', dims: { w: 100, d: 50, h: 80 }, houses: ['h6-vannier'], n: 2, k: furn, model: sawhorse },
   // h7
   { key: 'manger', name: 'Mangeoire et ratelier', dims: { w: 240, d: 60, h: 120 }, houses: ['h7-laboureur'], n: 4, k: furn, model: manger },
   { key: 'stable-door', name: 'Porte d etable coupee en deux', dims: { w: 140, d: 5, h: 180 }, houses: ['h7-laboureur'], n: 4, k: bld, ground: true, model: stableDoor },

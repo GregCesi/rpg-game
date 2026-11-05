@@ -87,11 +87,11 @@ aucun bâtiment hors de sa parcelle, sur la place, sur une voie, ni à moins d'u
 | Quart | Huitième | Qui, quoi | Forme |
 | --- | --- | --- | --- |
 | **Nord-ouest** | tout le quart | **La ferme du riche** : sa boutique sur la rue de l'ouest (12,80 × 8 m), l'**étal luxueux** sous un auvent à la pointe, tourné vers la place (miel, fromages affinés, épices venues de la ville, cire) ; derrière, une cour et une petite réserve. Un commis de la ferme la tient. | carré de 28,8 m moins la place |
-| **Nord-est** | côté rue du nord | **Le bûcheron**, sa femme, trois enfants : sa maison au fond (9,60 × 6,40 m), son chantier le long de la rue (les tas de bois qu'il vend : bûches, quartiers, perches, fagots), un appentis, la place d'une fosse de scieur de long. | triangle de 28,8 m de côté |
+| **Nord-est** | côté rue du nord | **La boutique du bûcheron**, qui vend son bois (il vit dans sa cabane en lisière : ici, il n'a que sa boutique) : le magasin au fond, dans le large du huitième, le chantier de vente le long de la rue (bûches, quartiers, perches, fagots, planches) sous un appentis. | triangle de 28,8 m de côté |
 | | côté rue de l'est | **La boutique abandonnée de l'ancien menuisier** (11,20 × 6,40 m) : volets cloués, l'enseigne tombée, le bois vieux, l'herbe haute. Personne n'y vit. | triangle |
 | **Sud-est** | côté rue du sud | **La ferme rivale** : une maison simple qui sert de dépôt (8 × 6,40 m) et, tourné vers la place, **un grand étal de légumes** qui ne paie pas de mine (deux travées d'étal, 4,80 m, des cageots à terre devant). Personne n'y dort. | triangle |
-| | côté rue de l'est | **La mercière**, veuve, et sa fille : la boutique au rez-de-chaussée (fils, aiguilles, rubans, boutons), le logis à l'étage (9,60 × 8 m). | triangle |
-| **Sud-ouest** | tout le quart | **La tailleuse et son mari** : un seul grand bâtiment **tout en bois, à étage, sans étal** (14,40 × 9,60 m) ; au rez-de-chaussée la boutique de vêtements et la boutique d'équipement d'aventure (sacs, cordes, lanternes, outres, couteaux, bottes) ; leur logis à l'étage ; une cour derrière. La fille du coq y est apprentie. | carré moins la place |
+| | côté rue de l'est | **La mercière**, sœur du coq, veuve, et sa fille : la boutique au rez-de-chaussée (fils, aiguilles, rubans, boutons), le logis à l'étage (9,60 × 8 m). | triangle |
+| **Sud-ouest** | tout le quart | **La tailleuse et son mari, le frère du forgeron** (il travaille le cuir et vend l'équipement d'aventure, avec ce que fait son frère) : un seul grand bâtiment **tout en bois, à étage, sans étal** (14,40 × 9,60 m) ; au rez-de-chaussée la boutique de vêtements et la boutique d'équipement d'aventure (sacs, cordes, lanternes, outres, couteaux, bottes) ; leur logis à l'étage ; une cour derrière. La fille du coq y est apprentie. | carré moins la place |
 | **Le milieu** | | **Le panneau des nouvelles** (1,60 × 0,30 m, 2 m de haut : deux poteaux, un tableau de planches, un petit toit de bardeaux), au centre de la place. | pièce nouvelle |
 
 ### 2.3 Toutes les parcelles
@@ -103,25 +103,25 @@ Coordonnées en px de la zone (x0-x1 × y0-y1) ; dimensions est-ouest × nord-su
 | Parcelle | Zone, place (px) | Dimensions | Qui y vit, ce qu'on y fait | Maison |
 | --- | --- | --- | --- | --- |
 | `taverne` | village 3360-3936 × 2816-3392 | 28,8 × 28,8 m | **La taverne** : le tavernier, sa femme, leur fils, une servante. Grande, tout en bois, à étage (la salle en bas, deux chambres à louer en haut) ; à l'est, la **cour en terrasse** sous une treille ; derrière, l'écurie des voyageurs. | (à venir) |
-| `s1-o1` | village 2880-3264 × 2816-3008 | 19,2 × 9,6 m | Le potier, sa femme, deux enfants ; son tour et son petit four dans la cour. | |
-| `s1-o2` | village 2880-3264 × 3008-3200 | 19,2 × 9,6 m | Le cordonnier et sa femme, un apprenti. | |
-| `s1-o3` | village 2880-3264 × 3200-3392 | 19,2 × 9,6 m | Une veuve lavandière et ses trois filles ; les draps du village sèchent dans sa cour. | |
-| `s1-jardins` | village 2688-2880 × 2816-3392 | 9,6 × 28,8 m | Les potagers des trois maisons, en lanières jusqu'à la ruelle. | |
-| `s2-o1` | village 2880-3264 × 3456-3616 | 19,2 × 8 m | **Le charpentier**, sa femme, leur fils apprenti, leur fille. | **h6** |
-| `s2-o2` | village 2880-3264 × 3616-3776 | 19,2 × 8 m | **Le tisserand et sa femme**, sans enfants. | **h2** |
-| `s2-o3` | village 2880-3264 × 3776-3936 | 19,2 × 8 m | **Les vieux** : l'ancien bouvier de la ferme du riche et sa femme, fileuse. | **h3** |
+| `s1-o1` | village 2880-3264 × 2816-3056 | 19,2 × 12 m | Le potier, sa femme, deux enfants ; son tour et son petit four dans la cour. | |
+| `s1-o2` | village 2880-3264 × 3056-3296 | 19,2 × 12 m | **Le vannier**, sa femme, leur fils : paniers, hottes, cageots (ceux de la ferme rivale), claies, ruches de paille. | **h6** |
+| passage | village 2688-3264 × 3296-3392 | 28,8 × 4,8 m | Un passage de la rue aux jardins et à la ruelle de l'ouest. | |
+| `s1-jardins` | village 2688-2880 × 2816-3296 | 9,6 × 24 m | Les potagers des deux maisons. | |
+| `s2-o1` | village 2880-3264 × 3456-3696 | 19,2 × 12 m | **Le tisserand et sa femme**, sans enfants. | **h2** |
+| `s2-o2` | village 2880-3264 × 3696-3936 | 19,2 × 12 m | **Les vieux** : l'ancien bouvier de la ferme du riche et sa femme, fileuse. | **h3** |
 | `s2-jardins` | village 2688-2880 × 3456-3936 | 9,6 × 24 m | Leurs potagers. | |
-| `s2-e1` | village 3360-3744 × 3456-3936 | 19,2 × 24 m | **Le couvreur**, sa femme, leurs six enfants et la grand-mère. | **h1** |
-| `s2-e2` | village 3744-3936 × 3456-3936 | 9,6 × 24 m | Le tonnelier et sa femme, âgés, et leur fils qui reprend l'atelier. | |
+| `s2-e1` | village 3360-3936 × 3456-3696 | 28,8 × 12 m | **Le couvreur**, sa femme, leurs six enfants et la grand-mère. | **h1** |
+| `s2-e2` | village 3360-3936 × 3696-3936 | 28,8 × 12 m | Le tonnelier et sa femme, âgés, et leur fils qui reprend l'atelier. | |
 | `r2-1` | village 2112-2624 × 2816-3104 | 25,6 × 14,4 m | **Deux familles de journaliers** sous un même toit. | **h5** |
 | `r2-2` | village 2112-2624 × 3104-3392 | 25,6 × 14,4 m | Une fileuse, veuve, et sa vieille mère. | |
 | `r2-3` | village 2112-2624 × 3456-3712 | 25,6 × 12,8 m | Le scieur de long (il travaille avec le bûcheron), sa femme, quatre enfants. | |
 | `r2-4` | village 2112-2624 × 3712-3936 | 25,6 × 11,2 m | Le fils du laboureur et sa jeune femme. | |
-| `s3-o1` | quartier sud 2880-3264 × 0-288 | 19,2 × 14,4 m | Le charretier, sa femme, deux enfants ; la charrette et le cheval sous l'appentis. | |
-| `s3-o2` | quartier sud 2880-3264 × 288-576 | 19,2 × 14,4 m | Un vieux soldat revenu des guerres, qui vit seul et raconte. | |
-| `s3-jardins` | quartier sud 2688-2880 × 0-576 | 9,6 × 28,8 m | Potagers. | |
-| `s3-e1` | quartier sud 3360-3648 × 0-576 | 14,4 × 28,8 m | La sage-femme et son mari le sabotier, leurs deux grands enfants. | |
-| `s3-e2` | quartier sud 3648-3936 × 0-576 | 14,4 × 28,8 m | **Le berger** du village, seul avec ses chiens, au bout du village, près des prés. | **h4** |
+| `s3-o1` | quartier sud 2880-3264 × 0-240 | 19,2 × 12 m | Une veuve lavandière et ses trois filles ; les draps du village sèchent dans sa cour. | |
+| `s3-o2` | quartier sud 2880-3264 × 240-480 | 19,2 × 12 m | Un vieux soldat revenu des guerres, qui vit seul et raconte. | |
+| passage | quartier sud 2688-3264 × 480-576 | 28,8 × 4,8 m | Le passage du bout, vers les jardins. | |
+| `s3-jardins` | quartier sud 2688-2880 × 0-480 | 9,6 × 24 m | Potagers. | |
+| `s3-e1` | quartier sud 3360-3936 × 0-240 | 28,8 × 12 m | La sage-femme et son mari le sabotier, leurs deux grands enfants. | |
+| `s3-e2` | quartier sud 3360-3936 × 240-480 | 28,8 × 12 m | **Le berger** du village, seul avec ses chiens, au bout du village, près des prés. | **h4** |
 
 **À l'ouest, la rue de la forge** (village) :
 
@@ -129,10 +129,10 @@ Coordonnées en px de la zone (x0-x1 × y0-y1) ; dimensions est-ouest × nord-su
 | --- | --- | --- | --- | --- |
 | `forge` (existe) | 1024-1504 × 1536-2016 | 24 × 24 m | **La forge** (plan `forge`) et la fonderie réservée. Rien ne bouge. | |
 | `o-n2` (était `cottage`) | 1568-2048 × 1536-2016 | 24 × 24 m | **Le forgeron**, célibataire, à côté de sa forge. | **h9** |
-| `o-n3` (était `cottage`) | 2112-2592 × 1536-2016 | 24 × 24 m | **Le boucher**, sa femme, leur fils : l'étal et la boutique au rez-de-chaussée sur la rue, le logis au-dessus ; l'échaudoir et le saloir dans la cour. | (à venir) |
+| `o-n3` (était `cottage`) | 2112-2592 × 1536-2016 | 24 × 24 m | **Le boucher**, sa femme, leur fils (il vend aussi la viande du chasseur) : l'étal et la boutique au rez-de-chaussée sur la rue, le logis au-dessus ; l'échaudoir et le saloir dans la cour. | (à venir) |
 | `o-s1` (était `cottage`) | 1024-1504 × 2240-2720 | 24 × 24 m | **Le laboureur**, sa femme, leurs deux filles ; deux bœufs et une vache. À l'entrée du village, au plus près des champs. | **h7** |
-| `o-s2` (était `cottage`) | 1568-2048 × 2240-2720 | 24 × 24 m | Le charron, sa femme, trois enfants. | |
-| `o-s3` (était `cottage`) | 2112-2592 × 2240-2720 | 24 × 24 m | Le sergent du sire (il garde la paix et les réserves), sa femme, deux enfants. | |
+| `o-s2` (était `cottage`) | 1568-2048 × 2240-2720 | 24 × 24 m | Le bouvier de la ferme du riche (il mène les bœufs du coq), sa femme, trois enfants. | |
+| `o-s3` (était `cottage`) | 2112-2592 × 2240-2720 | 24 × 24 m | La veuve de l'ancien menuisier et leurs deux enfants : la boutique de la place est fermée depuis sa mort. | |
 
 **Au nord** :
 
@@ -148,18 +148,18 @@ Coordonnées en px de la zone (x0-x1 × y0-y1) ; dimensions est-ouest × nord-su
 
 | Parcelle | Place (px) | Dimensions | Qui, quoi |
 | --- | --- | --- | --- |
-| `sire` (était `Mairie`) | 32-608 × 1568-2048 | 28,8 × 24 m | **Le sire** : le lieu officiel au rez-de-chaussée (la salle où il rend la justice, reçoit les redevances), son logis à l'étage ; les **réserves du village** (grain, sel) dans un grenier à côté. |
-| `a-decider` (était réservée) | 32-608 × 2240-2688 | 28,8 × 22,4 m | **Libre, à décider** (le plan de travail y dessine une corderie et son allée : question 3). |
+| `sire` (était `Mairie`) | 32-608 × 1568-2048 | 28,8 × 24 m | **Le sire** : le lieu officiel au rez-de-chaussée (la salle où il rend la justice, reçoit les redevances), son logis à l'étage, **son intendant** qui loge chez lui ; les **réserves du village** (grain, sel) dans un grenier à côté ; **le four banal** et **le puits** du village au bord de la route. |
+| `a-decider` (était réservée) | 32-608 × 2240-2688 | 28,8 × 22,4 m | **Libre, à décider** (la corderie refusée par Grégoire). |
 
 **Hors du village** :
 
 | Lieu | Zone, place (px) | Pourquoi là |
 | --- | --- | --- |
-| **La guérisseuse** | bois du sud 1664-2048 × 448-832 (19,2 × 19,2 m) | Côté forêt, dans la lisière, sur la rive est de la rivière (l'eau, les plantes de la forêt et des berges), à 120 m au sud du chemin : un sentier part du cabanon du chasseur et longe la lisière. À 160 m de la maison de Xéros, 480 m de la place. Personne ne passe devant sa porte par hasard. |
+| **La guérisseuse** | bois du sud 1664-2048 × 448-832 (19,2 × 19,2 m) | Elle vit seule ; elle et le chasseur ont une histoire qui n'est pas officielle. Côté forêt, dans la lisière, sur la rive est de la rivière (l'eau, les plantes de la forêt et des berges), à 120 m au sud du chemin : un sentier part du cabanon du chasseur et longe la lisière. À 160 m de la maison de Xéros, 480 m de la place. Personne ne passe devant sa porte par hasard. |
 | **Le moulin** | bois du nord 1504-1888 × 2400-2720 | Sur la rive est de la rivière, sa roue dans l'eau, son bief ; 150 m au nord du chemin, par un sentier qui part de la ferme de Xéros. Le meunier n'y dort pas. |
 | **La carrière** | ferme 1000-1280 × 1650-1950 | Sur le plateau (5 m plus haut), rive ouest, au nord du chemin creux : la pierre descend par le chemin. |
 | **Le four à chaux** | ferme 1600-1800 × 1700-1900 | Rive est, au bord du chemin, en face de la carrière : la pierre de l'autre côté du chemin creux, le bois de la lisière tout autour. |
-| **La cabane du bûcheron** | bois du nord 2000-2240 × 3300-3540 | En lisière, près de l'eau, à 25 m du chemin : il y range ses outils et y dort quand il coupe loin (la cabane en rondins du jeu). Sa famille vit au village. |
+| **La cabane du bûcheron** | bois du nord 2000-2240 × 3300-3540 | En lisière, près de l'eau : **il y vit** (la cabane en rondins du jeu) ; sur la place, il n'a que sa boutique. |
 | **Les étables** | ferme du riche 3104-3424 × 2560-2720 | Dans la cour de la ferme du riche, à côté de la grange ; la ferme rivale de même dans sa cour. |
 
 ### 2.4 Ce qui bouge
@@ -184,18 +184,18 @@ Coordonnées en px de la zone (x0-x1 × y0-y1) ; dimensions est-ouest × nord-su
 De la place : à la forge, 110 m ; au bout sud (le chemin des jardins), 125 m ; à la maison du coq, 125 m ; au sire, 55 m. Le village
 fait environ **230 × 250 m**, jardins compris. De la maison de Xéros à la place : 410 m (3 min 25 s).
 
-### 2.6 Le compte des foyers : 31
+### 2.6 Le compte des foyers : 29 (corrigé le 5 novembre)
 
 | Où | Foyers |
 | --- | --- |
-| La place | le bûcheron, la mercière, la tailleuse et son mari (3) |
-| La rue de la forge | le forgeron, le boucher, le laboureur, le charron, le sergent (5) |
-| Le sud | le tavernier, le potier, le cordonnier, la lavandière, le charpentier, le tisserand, les vieux, le couvreur, le tonnelier, les deux familles de journaliers, la fileuse, le scieur de long, le jeune couple, le charretier, le vieux soldat, la sage-femme, le berger (18) |
+| La place | la mercière, la tailleuse et le frère du forgeron (2) ; le bûcheron n'y a que sa boutique |
+| La rue de la forge | le forgeron, le boucher, le laboureur, le bouvier, la veuve du menuisier (5) |
+| Le sud | le tavernier, le potier, le vannier, le tisserand, les vieux, le couvreur, le tonnelier, les deux familles de journaliers, la fileuse, le scieur de long, le jeune couple, la lavandière, le vieux soldat, la sage-femme et le sabotier, le berger (16) |
 | Le nord | le coq, le meunier, le maquignon (3) ; une parcelle aisée réservée |
 | L'est | le sire (1) |
-| Dehors | la guérisseuse (1) |
+| Dehors | la guérisseuse, le bûcheron dans sa cabane, le chasseur dans son cabanon (3) |
 
-**31 foyers**, sans la maison de Xéros ni les deux fermes (leurs familles vivent dans leurs cours). Les noms des gens sont à Grégoire.
+**29 foyers** (le sire compté avec son intendant), sans la maison de Xéros ni les deux fermes. Pas de charpentier (le fils aîné de la ferme rivale dépanne), pas de cordonnier (les chaussures viennent de la ville), pas de charron (les roues sont importées), pas de milice ni de sergent. **On nomme les gens par leur métier** : Grégoire donnera les noms en dernier, après les personnalités.
 
 ---
 
@@ -397,7 +397,9 @@ porte intérieure (`inner-door`), **#** mur de pierre, **=** banc, **▭** table
 - **Nouveau** : `daub-gable` (le pignon en torchis brut : l'étape d'avant le pignon chaulé) ; les pans en 10,60 m.
 - **Place** : `r2-1`, au second rang, au bord de la venelle.
 
-#### h6. Le charpentier (pas à plaindre, sans plus) : le pignon sur rue
+#### h6. Le vannier (pas à plaindre, sans plus) : le pignon sur rue
+
+> **Corrigé le 5 novembre** : il n'y a pas de charpentier au village (le fils aîné de la ferme rivale fait ce travail). La maison reste ; elle est au **vannier** (paniers, hottes, cageots de la ferme rivale, claies, ruches de paille), sa femme, leur fils, sur la parcelle `s1-o2`. L'atelier sur la rue devient l'atelier de vannerie (l'osier trempe dans la cour) ; les croix de Saint-André restent, la maison ayant été bâtie par le père de l'ancien menuisier. Le texte ci-dessous est celui d'avant.
 
 - **Qui** : le charpentier (les charpentes, les portes, les volets, les bardeaux du village ; depuis la mort du menuisier, il fait
   aussi les meubles, mal), sa femme, leur fils apprenti, leur fille.
@@ -818,3 +820,49 @@ dossier, l'écritoire (copiés dans le module de pierre, l'origine écrite en t�
     pignons, très village ; ou garder des façades sur la rue qu'on ne voit qu'une fois dedans ? *Recommandé : le pignon sur la rue,
     la façade au sud*, partout où la rue court nord-sud ; je reprendrai le découpage des parcelles du sud dans ce sens (des parcelles
     plus profondes que larges, comme elles le sont déjà).
+
+---
+
+## 12. Les réponses de Grégoire (5 novembre)
+
+« C'est très bien, c'est beau. » **Le plan et les onze maisons sont validés comme base**, à retoucher plus tard.
+
+| Question | Réponse |
+| --- | --- |
+| 1. Le découpage | oui |
+| 2. La maison du coq | à l'est de la rue du nord |
+| 3. La parcelle « à décider » | **pas de corderie** : elle reste à décider |
+| 4. La guérisseuse | en lisière |
+| 5. La carrière et le four à chaux | oui, près du chemin creux |
+| 6. La troisième maison aisée | réservée |
+| 7. Ce qui manque | **pas d'église** (la religion, proche de la nature, se dégagera plus tard) ; **oui au four banal et au puits près du sire** |
+| 8. Le frère du forgeron | il est le mari de la tailleuse (voir plus bas) |
+| 9. Les onze maisons | gardées, à retoucher |
+| 10. L'ordre | le chantier « hauteurs » (en cours), puis la maison du coq, puis les maisons de bois, puis celles de pierre |
+| 11. Les pans de toit de toute longueur | oui |
+| 12. La girouette du forgeron | un fer à cheval |
+| 13. Les boutiques | oui, la taverne d'abord |
+| 14. Les noms | pas de noms pour l'instant : Grégoire les donne en dernier, après les personnalités ; on nomme les gens par leur métier |
+| 15. Les façades | **oui** : pignon sur la rue, façade au sud, parcelles de 10 à 12 m avec une petite cour |
+
+**Ce qui était déjà décidé sur les gens du village** (corrigé dans le plan et ce cadrage) :
+
+- **Pas de charpentier officiel** : c'est le fils aîné de la ferme rivale, le dépanneur du village, qui fait ce travail. La maison h6
+  passe au **vannier**.
+- **Pas de cordonnier** (les chaussures viennent de la ville), **pas de charron** (les roues sont importées) : la parcelle du
+  cordonnier disparaît dans le nouveau découpage, celle du charron va au **bouvier de la ferme du riche**.
+- **Pas de milice, pas de sergent** : le village est trop isolé. Le sire a **un intendant**, qui loge chez lui (proposé) ; la parcelle
+  du sergent va à **la veuve de l'ancien menuisier** et leurs deux enfants (la boutique de la place est fermée depuis sa mort).
+- **La tailleuse a pour mari le frère du forgeron**, qui travaille le cuir et vend l'équipement d'aventure avec ce que fait son frère :
+  ils tiennent ensemble le grand bâtiment de bois du quart sud-ouest.
+- **La mercière est la sœur du coq.** **Le bûcheron vit dans sa cabane** en lisière : sur la place, il n'a que sa boutique. **Le
+  boucher vend la viande**, dont celle du chasseur. **La guérisseuse vit seule** ; elle et le chasseur ont une histoire qui n'est pas
+  officielle.
+- **Le charbon vient d'un village du nord, le métal de la ville.**
+
+**Le découpage du sud, refait selon la question 15** : au premier rang de la rue du sud, des parcelles de **12 m le long de la rue**
+(au lieu de 8 à 9,60 m), deux par bloc, avec un **passage de 4,80 m** vers les jardins là où le bloc fait 28,80 m. Les maisons s'y
+posent faîtage est-ouest, pignon sur la rue, façade au sud sur une petite cour. Le charpentier, le cordonnier et le charretier
+disparaissent du sud ; la lavandière passe au bout sud. **h1 et h2** (faîtage nord-sud aujourd'hui) **tourneront** à leur retouche ;
+la rue (`village-rue.png`) est remontée sur ce découpage, les maisons pas encore tournées (le couvreur déborde encore sur la ruelle).
+29 foyers.
