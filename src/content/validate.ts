@@ -10,7 +10,8 @@ import { agedKey, framesOf, lookOf, WEDGE_FRAMES, woodSheets } from '../world/wo
 import { formImage } from '../world/natural';
 import { warrenHoles } from '../world/warren';
 import { balance, partMass, partName } from '../world/transform';
-import { woodDims } from '../world/woodPiece';
+import { woodDims, woodDrawnDims } from '../world/woodPiece';
+import wallsJson from './walls.json';
 import { planPieces, planProblems } from '../world/build';
 import { overhangs } from '../world/overhang';
 import { bundleImage } from '../world/pileShape';
@@ -190,6 +191,9 @@ function validateMaps(
         for (const dir of DIRECTIONS) {
           if (!cat.animations.get(n.character)?.has(`idle-${dir}`)) err(`${at} : animation 'idle-${dir}' manquante dans le sprite '${n.character}'`);
         }
+        // sa pose, dans sa direction (le forgeron au travail, de face : `work-down`)
+        const pose = n.pose && `${n.pose}-${n.facing ?? 'down'}`;
+        if (pose && !cat.animations.get(n.character)?.has(pose)) err(`${at} : pose '${n.pose}' sans l'animation '${pose}' dans le sprite '${n.character}'`);
       }
       if (!dialogues[n.dialogue]) err(`${at} : dialogue '${n.dialogue}' introuvable`);
       if (n.x < 0 || n.y < 0 || n.x >= W || n.y >= H) err(`${at} : hors de la carte`);
@@ -376,7 +380,7 @@ export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
 function validateGabarit(c: Content, cat: Catalog): string[] {
   const errors: string[] = [];
   for (const key of Object.keys(EXCEPTIONS)) if (!c.props[key]) errors.push(`validate.ts EXCEPTIONS : '${key}' absent de props.json`);
-  // les pièces de bois assemblées : est-ouest, leur silhouette a la taille de leurs dimensions (woodDims), à toute longueur ;
+  // les pièces de bois assemblées : est-ouest, leur silhouette a la taille de leurs dimensions (woodDrawnDims : la hauteur couchée contour compris), à toute longueur ;
   // nord-sud, celle de la même pièce est-ouest, inversée, à 1 px près (règle D : une pièce tournée garde sa taille)
   for (const { piece, w, h } of cat.woodSilhouettes) {
     if (piece.axis === 'ns') {
@@ -399,7 +403,7 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
     }
     // les faces dressées en cours (f1 à f3) sont entre le rond et la poutre : pas de forme de base, seul leur nord-sud se contrôle
     if (['f1', 'f2', 'f3'].includes(lookOf(piece))) continue;
-    const want = expectedSize(woodDims(piece));
+    const want = expectedSize(woodDrawnDims(piece));
     const ok = (n: number, lo: number, hi: number) => n >= lo - TOLERANCE && n <= hi + TOLERANCE;
     if (ok(w, want.w, want.wMax) && ok(h, want.h, want.hMax)) continue;
     const f = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
@@ -1096,7 +1100,7 @@ const TRADE_TODO = new Set([
   'chopping-block-axe', 'fireplace', 'worktable', 'workbench', 'stove', 'bed', 'pallet', 'sack', 'jar', 'sunpatch', 'lantern', 'wall-torch',
   'candle', 'barrel', 'crate', 'hay-bale', 'chest', 'table', 'stool', 'shed-plate-north', 'shed-plate-south', 'shed-plate-side', 'shed-rafter',
   'shed-roof', 'maul-ground', 'splitting-wedge-ground', 'well', 'planted-stake', 'plan-tablet', 'hatchet-ground', 'broadaxe-ground',
-  'lane-curtain', 'lane-overhang-1', 'lane-overhang-2', 'lane-overhang-3', 'water-cut', 'shimmer',
+  'lane-curtain', 'lane-overhang-1', 'lane-overhang-2', 'lane-overhang-3', 'water-cut', 'shimmer', 'hazel', 'young-ash', 'long-bush', 'briar',
   'stone', 'iron-ore', 'wheat', 'seeds', 'berries', 'mushroom', 'egg', 'apple', 'wool', 'pickaxe', 'hoe', 'sickle', 'watering-can', 'fishing-rod', 'sword',
 ]);
 
@@ -1361,6 +1365,10 @@ export function validateBuildPlans(plans: Record<string, BuildPlan>): string[] {
   for (const [key, plan] of Object.entries(plans)) {
     if (!KEBAB_CASE.test(key)) errors.push(`plans/${key}.json : le nom doit être en kebab-case (minuscules sans accent, chiffres, tirets)`);
     for (const p of planProblems(plan)) errors.push(`plans/${key}.json : ${p}`);
+    // ses personnages (le forgeron) : dans son emprise ; le reste se vérifie sur la carte où le plan est posé (validateMaps)
+    for (const n of plan.npcs ?? []) {
+      if (n.x > plan.size.w || n.y > plan.size.d) errors.push(`plans/${key}.json : personnage « ${n.character} » en (${n.x}, ${n.y}) cm, hors de l'emprise du plan (${plan.size.w} × ${plan.size.d})`);
+    }
   }
   return errors;
 }
@@ -1524,6 +1532,7 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.take && ((p.harvest && !p.harvest.tool) || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
     addAll(validateRope(key, p, c));
     // un morceau de mur qui se raccorde (le solin) : couché à quatre vues (est-ouest, nord-sud), plus long qu'épais
+    if (p.wall && p.dims.h !== wallsJson.piece.height) err(`props.json '${key}' : un mur a la hauteur d'un morceau de walls.json (${wallsJson.piece.height} cm), pas ${p.dims.h}`);
     if (p.wall && (p.views !== 'four' || !p.lying || p.dims.shape !== 'box' || p.dims.w <= p.dims.d)) err(`props.json '${key}' : 'wall' demande un morceau couché à quatre vues ('four', 'lying'), une boîte plus longue qu'épaisse`);
   }
 

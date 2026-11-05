@@ -5,11 +5,11 @@
 //   - quatre dalles aux angles, la première assise de rondins est-ouest posée dessus ; deux dalles en seuil, dans l'ouverture de la
 //     porte ;
 //   - le bois patiné (l'âge réglé au catalogue, fixé par le plan) ;
-//   - cinq assises de rondins écorcés du normal (30 cm de bois, 40 cm contour compris), est-ouest puis nord-sud, croisés aux angles par une
-//     encoche (le rondin du dessus s'enfonce de 20 cm), 20 cm de dépassement ;
-//   - la porte : au sud, les rondins des cinq premières assises recoupés de part et d'autre d'une ouverture d'un mètre ; la fenêtre : à
-//     l'est, le rondin de la troisième assise recoupé (60 cm), et son volet en planches ; une dernière assise est-ouest (le linteau de
-//     la porte) ;
+//   - sept assises de rondins écorcés du normal (30 cm, leur hauteur vraie : chantier « hauteurs »), est-ouest puis nord-sud, croisés
+//     aux angles par une encoche (le rondin du dessus s'enfonce de 15 cm), 20 cm de dépassement ;
+//   - la porte : au sud, les rondins des sept premières assises recoupés de part et d'autre d'une ouverture d'un mètre ; la fenêtre : à
+//     l'est, les rondins des quatrième et cinquième assises recoupés (60 × 60 cm), et le volet de cabane ; une dernière assise
+//     est-ouest (le linteau de la porte, à 2,22 m : la porte de 2,10 m sur son seuil de 12 cm) ; les murs à 2,52 m, comme avant ;
 //   - les pignons en planches fendues (un sur chaque mur de bout), la faîtière (un rondin nord-sud posé sur leurs sommets) ;
 //   - la porte en planches dans son ouverture, sur le seuil ; les deux pans de toit en planches ;
 //   - en jeu (hors du mode construction), E devant le volet : il s'ouvre à l'équerre du mur, puis se referme ;
@@ -103,7 +103,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
    * Pose une pièce (déjà prise au catalogue) pour que son emprise ait ce coin nord-ouest (cm, depuis O) : la souris vise le milieu de
    * l'emprise vu à la hauteur où elle se posera (le plus haut dessus sous elle, comme le fantôme), puis clic gauche. Renvoie la pièce.
    */
-  const put = async (what: string, x: number, y: number, w: number, d: number, z?: number) => {
+  const put = async (what: string, x: number, y: number, w: number, d: number, z?: number, aimY?: number) => {
     const S = await page.evaluate(async ([x, y, w, d]) => {
       const url = '/src/world/build.ts';
       const b = await import(url);
@@ -111,7 +111,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
       return b.supportAt(m.builds.map((q: any) => q.piece).filter((q: any) => !('prop' in q.piece && q.piece.prop === 'plank-roof')), { x, y, w, d });
     }, [O!.x + x, O!.y + y, w, d] as const);
     const before = (await pieces()).length;
-    await click((O!.x + x + w / 2) / 5, (O!.y + y + d / 2 - S) / 5);
+    await click((O!.x + x + w / 2) / 5, (O!.y + (aimY ?? y + d / 2) - S) / 5);
     const list = await pieces();
     assert.equal(list.length, before + 1, `${what} : posée (${notices.at(-1) ?? ''})`);
     const p = list.at(-1);
@@ -120,9 +120,9 @@ await playtest('cabane', async ({ page, errors, load }) => {
     return p;
   };
   /** Pose un rondin (pris au catalogue avec ses réglages). */
-  const putLog = async (what: string, axis: 'ew' | 'ns', length: number, x: number, y: number, z: number) => {
+  const putLog = async (what: string, axis: 'ew' | 'ns', length: number, x: number, y: number, z: number, aimY?: number) => {
     await send({ kind: 'pick', piece: log(axis, length) });
-    return put(what, x, y, axis === 'ew' ? length : 40, axis === 'ew' ? 40 : length, z);
+    return put(what, x, y, axis === 'ew' ? length : 40, axis === 'ew' ? 40 : length, z, aimY);
   };
   /** L'assemblage `type` posé d'un clic sur la jonction de deux pièces, là où on la voit. */
   const joint = async (type: string, a: any, b: any) => {
@@ -132,13 +132,14 @@ await playtest('cabane', async ({ page, errors, load }) => {
       const J = await import(url);
       const m = (window as any).game.scene.getScene('world').map;
       const ps = m.builds.map((q: any) => q.piece);
-      const j = J.junctions(ps, (q: any) => m.shownOffset(q)).find((q: any) => (q.a.id === ia && q.b.id === ib) || (q.a.id === ib && q.b.id === ia));
-      return j && { x: j.x, y: j.y };
+      const all = J.junctions(ps, (q: any) => m.shownOffset(q));
+      const j = all.find((q: any) => (q.a.id === ia && q.b.id === ib) || (q.a.id === ib && q.b.id === ia));
+      return j && { x: j.x, y: j.y, near: all.filter((q: any) => q !== j && Math.hypot(q.x - j.x, q.y - j.y) < 3).map((q: any) => `${q.a.id}-${q.b.id} (${q.x}, ${q.y})`) };
     }, [a.id, b.id] as const);
     assert.ok(pt, `${type} : une jonction entre ${a.id} et ${b.id}`);
     const n = (await joints()).length;
     await click(pt!.x, pt!.y);
-    assert.equal((await joints()).length, n + 1, `${type} entre ${a.id} et ${b.id} : posé (${notices.at(-1) ?? ''})`);
+    assert.equal((await joints()).length, n + 1, `${type} entre ${a.id} et ${b.id} (${pt!.x}, ${pt!.y}) : posé (${notices.at(-1) ?? ''}) ; jonctions voisines : ${pt!.near.join(', ') || 'aucune'}`);
   };
   const zOf = async (p: any) => (await pieces()).find((q: any) => q.id === p.id).z;
 
@@ -188,13 +189,17 @@ await playtest('cabane', async ({ page, errors, load }) => {
   }
   await frame('les dalles');
 
-  // 2. les cinq assises : est-ouest (au nord, au sud : recoupé à la porte), puis nord-sud (à l'ouest, à l'est : recoupé à la fenêtre)
-  const EW = (k: number) => 12 + 40 * k;
-  const NS = (k: number) => 32 + 40 * k;
+  // 2. les sept assises : est-ouest (au nord, au sud : recoupé à la porte), puis nord-sud (à l'ouest, à l'est : recoupé à la fenêtre) ;
+  // un rondin a 30 cm de haut (sa hauteur vraie), celui du dessus s'enfonce de 15 cm dans l'encoche
+  const R = 30;
+  const COURSES = 7;
+  const WINDOW = [3, 4];
+  const EW = (k: number) => 12 + R * k;
+  const NS = (k: number) => 12 + R / 2 + R * k;
   let west: any;
   let east: any[] = [];
-  for (let k = 0; k < 5; k++) {
-    const pre = k === 0 ? EW(0) : NS(k - 1) + 40;
+  for (let k = 0; k < COURSES; k++) {
+    const pre = k === 0 ? EW(0) : NS(k - 1) + R;
     const north = await putLog(`rondin nord ${k}`, 'ew', 380, 0, 20, pre);
     const southL = await putLog(`rondin sud ${k} (ouest de la porte)`, 'ew', 140, 0, 380, pre);
     const southR = await putLog(`rondin sud ${k} (est de la porte)`, 'ew', 140, 240, 380, pre);
@@ -206,28 +211,30 @@ await playtest('cabane', async ({ page, errors, load }) => {
       await joint('notch', southR, east.at(-1));
       for (const p of [north, southL, southR]) assert.equal(await zOf(p), EW(k), `assise ${k} est-ouest : enfoncée à ${EW(k)} cm`);
     }
-    west = await putLog(`rondin ouest ${k}`, 'ns', 440, 20, 0, EW(k) + 40);
-    // la fenêtre, à l'est, dans la troisième assise : deux rondins de part et d'autre d'une ouverture de 60 cm
-    // et le volet dans l'ouverture (au milieu du mur, sur le rondin de la deuxième assise, sa face du dehors à l'est : R trois fois),
-    // posé entre les deux : la visée prend le plus haut dessus qu'elle trouve, et elle tomberait sur le rondin sud déjà posé
-    if (k === 2) {
-      const northOf = await putLog('rondin est 2 (nord de la fenêtre)', 'ns', 180, 320, 0, EW(k) + 40);
-      await send({ kind: 'pick', piece: { prop: 'plank-shutter' } });
-      for (let i = 0; i < 3; i++) {
-        await page.keyboard.press('KeyR');
-        await sleep(80);
+    west = await putLog(`rondin ouest ${k}`, 'ns', 440, 20, 0, EW(k) + R);
+    // la fenêtre, à l'est, sur deux assises : deux rondins de part et d'autre d'une ouverture de 60 cm ; à la première, le volet de
+    // cabane (60 × 60) dans l'ouverture (au milieu du mur, sur le rondin de l'assise d'en dessous, sa face du dehors à l'est : R trois
+    // fois), posé entre les deux : la visée prend le plus haut dessus qu'elle trouve, et elle tomberait sur le rondin sud déjà posé
+    if (WINDOW.includes(k)) {
+      const northOf = await putLog(`rondin est ${k} (nord de la fenêtre)`, 'ns', 180, 320, 0, EW(k) + R);
+      if (k === WINDOW[0]) {
+        await send({ kind: 'pick', piece: { prop: 'cabin-shutter' } });
+        for (let i = 0; i < 3; i++) {
+          await page.keyboard.press('KeyR');
+          await sleep(80);
+        }
+        const shutter = await put('volet', 340, 180, 4, 60, NS(k - 1) + R);
+        assert.equal(shutter.view, 3, "le volet tourné vers l'est");
       }
-      const shutter = await put('volet', 340, 180, 4, 60, NS(1) + 40);
-      assert.equal(shutter.view, 3, "le volet tourné vers l'est");
-      east = [northOf, await putLog('rondin est 2 (sud de la fenêtre)', 'ns', 200, 320, 240, EW(k) + 40)];
-    } else east = [await putLog(`rondin est ${k}`, 'ns', 440, 320, 0, EW(k) + 40)];
+      east = [northOf, await putLog(`rondin est ${k} (sud de la fenêtre)`, 'ns', 200, 320, 240, EW(k) + R)];
+    } else east = [await putLog(`rondin est ${k}`, 'ns', 440, 320, 0, EW(k) + R)];
     await joint('notch', west, north);
     await joint('notch', west, southL);
     await joint('notch', east[0], north);
     await joint('notch', east.at(-1), southR);
     assert.equal(await zOf(west), NS(k), `assise ${k} nord-sud : enfoncée à ${NS(k)} cm`);
     if (k === 0) await frame('la première assise');
-    if (k === 2) await frame('trois assises, la fenêtre');
+    if (k === WINDOW[1]) await frame('cinq assises, la fenêtre');
   }
   // le seuil : deux dalles dans l'ouverture, chacune contre un rondin de la porte (l'aimant des bords), un joint de 10 cm entre elles
   // (la porte pend à ses gonds, elle ne repose pas sur le seuil) ; posées une fois les murs montés (posées avant, elles
@@ -236,18 +243,21 @@ await playtest('cabane', async ({ page, errors, load }) => {
     await send({ kind: 'pick', piece: { prop: 'slab' }, natural: { form: 0, size: 100 } });
     await put(`seuil ${x}`, x, 380, 45, 40, 0);
   }
-  // la porte en planches dans son ouverture, sur le seuil (12 cm : son haut touche le dessous du linteau), avant le linteau qui passe
-  // au-dessus (la visée prendrait le dessus du linteau)
+  // la porte en planches (2,10 m) dans son ouverture, sur le seuil (12 cm : son haut touche le dessous du linteau, à 2,22 m), avant
+  // le linteau qui passe au-dessus (la visée prendrait le dessus du linteau)
   await send({ kind: 'pick', piece: { prop: 'plank-door' } });
   await put('porte', 140, 400, 100, 6, 12);
   // la dernière assise est-ouest, pleine : le linteau de la porte
-  const topN = await putLog('rondin nord 5', 'ew', 380, 0, 20, NS(4) + 40);
-  const topS = await putLog('rondin sud 5 (linteau)', 'ew', 380, 0, 380, NS(4) + 40);
+  const topN = await putLog(`rondin nord ${COURSES}`, 'ew', 380, 0, 20, NS(COURSES - 1) + R);
+  const topS = await putLog(`rondin sud ${COURSES} (linteau)`, 'ew', 380, 0, 380, NS(COURSES - 1) + R);
   for (const p of [topN, topS]) {
     await joint('notch', p, west);
     await joint('notch', p, east[0]);
-    assert.equal(await zOf(p), EW(5), 'la dernière assise enfoncée');
+    assert.equal(await zOf(p), EW(COURSES), 'la dernière assise enfoncée');
   }
+  assert.equal(EW(COURSES), 12 + 210, 'le linteau sur la porte de 2,10 m');
+  const WALL = EW(COURSES) + R;
+  assert.equal(WALL, 252, 'les murs à 2,52 m, comme avant');
   await frame('les murs, la porte, la fenêtre');
 
   // 3. les pignons en planches fendues, sur le dernier rondin de chaque mur de bout, entre les murs nord-sud (au nord : la face du
@@ -257,13 +267,13 @@ await playtest('cabane', async ({ page, errors, load }) => {
     await page.keyboard.press('KeyR');
     await sleep(80);
   }
-  const gableN = await put('pignon nord', 60, 40, 260, 6, EW(5) + 40);
+  const gableN = await put('pignon nord', 60, 40, 260, 6, WALL);
   await send({ kind: 'pick', piece: { prop: 'plank-gable' } });
-  const gableS = await put('pignon sud', 60, 400, 260, 6, EW(5) + 40);
+  const gableS = await put('pignon sud', 60, 400, 260, 6, WALL);
   assert.deepEqual([gableN.view, gableS.view], [2, 0]);
   // visée à 1,80 m du bord ouest (sur la grille ; le milieu exact, 1,70 m, n'y est pas), elle s'aimante à 1,85 m : au bord de la dalle
   // ouest du seuil, loin dessous (l'aimant des bords ne regarde pas la hauteur) ; 5 cm, un pixel, sous les pans
-  await putLog('faîtière', 'ns', 440, 185, 0, EW(5) + 100);
+  await putLog('faîtière', 'ns', 440, 185, 0, WALL + 60);
   await frame('les pignons en planches et la faîtière');
 
   // 4. les deux pans de toit (côté bas à l'ouest : r1 ; à l'est : r3), posés sur le rondin de rive
@@ -277,7 +287,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
     await sleep(80);
   }
   const panE = await put('pan est', 180, -20, 200, 480);
-  for (const p of [panW, panE]) assert.equal(p.z, EW(5) + 40, 'un pan sur le rondin de rive (2,52 m)');
+  for (const p of [panW, panE]) assert.equal(p.z, WALL, 'un pan sur le rondin de rive (2,52 m)');
   assert.deepEqual([panW.view, panE.view], [1, 3]);
   await frame('la cabane finie');
   const built = await pieces();
@@ -302,7 +312,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
   assert.equal(plan.pieces.length, all.length, 'toutes les pièces sont dans le plan');
   assert.equal(plan.joints.length, (await joints()).length, 'et tous les assemblages');
   // seulement des pièces du catalogue : des rondins du normal, des dalles, la porte, les pans
-  for (const p of plan.pieces) assert.ok(('wood' in p.piece && p.piece.wood.size === 'normal') || ['slab', 'plank-door', 'plank-roof', 'plank-gable', 'plank-shutter'].includes(p.piece.prop), JSON.stringify(p.piece));
+  for (const p of plan.pieces) assert.ok(('wood' in p.piece && p.piece.wood.size === 'normal') || ['slab', 'plank-door', 'plank-roof', 'plank-gable', 'cabin-shutter'].includes(p.piece.prop), JSON.stringify(p.piece));
   // un seul âge, patiné, fixé par le plan ; des rondins écorcés
   assert.equal(plan.age, 'worn', 'le plan fixe l’âge de toutes ses pièces : patiné');
   for (const p of plan.pieces) assert.ok(!p.age && !('wood' in p.piece && p.piece.wood.age), `l'âge est celui du plan, pas de la pièce : ${JSON.stringify(p)}`);
@@ -313,7 +323,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
   // son gond, au bout sud de sa face du dehors : ouvert, il sort du mur vers l'est, sa face du dehors au sud), E le referme
   await page.keyboard.press('KeyB');
   await page.waitForFunction(() => (window as any).game.scene.getScene('world').mode === 'play', null, { timeout: 5000 });
-  const shutterOf = async () => (await pieces()).find((q: any) => 'prop' in q.piece && /^plank-shutter/.test(q.piece.prop));
+  const shutterOf = async () => (await pieces()).find((q: any) => 'prop' in q.piece && /^cabin-shutter/.test(q.piece.prop));
   const before = await shutterOf();
   await page.evaluate(([x, y]) => {
     const w = (window as any).game.scene.getScene('world');
@@ -326,7 +336,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
   await page.keyboard.press('KeyE');
   await sleep(250);
   const open = await shutterOf();
-  assert.equal(open.piece.prop, 'plank-shutter-open', `E ouvre le volet (${notices.at(-1) ?? ''})`);
+  assert.equal(open.piece.prop, 'cabin-shutter-open', `E ouvre le volet (${notices.at(-1) ?? ''})`);
   assert.deepEqual([open.x - O!.x, open.y - O!.y, open.z, open.view], [344, 236, before.z, 0], 'ouvert à l\'équerre du mur, vers l\'est');
   // la capture : de près, sur la cabane, Xéros revenu à côté (assez loin pour que le toit ne s'efface pas)
   await page.evaluate(([ox, oy]) => {
@@ -362,7 +372,7 @@ await playtest('cabane', async ({ page, errors, load }) => {
   await page.keyboard.press('KeyE');
   await sleep(250);
   const closed = await shutterOf();
-  assert.deepEqual([closed.piece.prop, closed.x, closed.y, closed.view], ['plank-shutter', before.x, before.y, 3], 'E le referme, à sa place');
+  assert.deepEqual([closed.piece.prop, closed.x, closed.y, closed.view], ['cabin-shutter', before.x, before.y, 3], 'E le referme, à sa place');
 
   // 7. la cabane entière dans les trois âges, pour .art-preview/bois-ages-court.png : toutes ses pièces de bois retintées (le même
   // réglage que le catalogue), redessinées, capturées comme les couches

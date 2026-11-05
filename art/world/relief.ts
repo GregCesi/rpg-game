@@ -19,7 +19,8 @@
 //     l'un pour l'autre comme voisins ;
 //   - objets : `lane-curtain`, `lane-overhang-1..3`, `water-cut` (+ `-r1..-r3`), `shimmer` (+ `-ns`, animation de 4 images).
 // Déclarés : les tuiles dans le jeu de tuiles `world` (art/world/tiles.ts), les images et le miroitement dans art/index.ts. Les deux
-// corrections proposées ensuite (flanc planté côté ferme, sol clair : art/proposals/relief-final.ts) sont à revoir avec Grégoire.
+// corrections proposées ensuite (flanc planté côté ferme, sol clair : art/proposals/relief-final.ts) n'ont plus lieu d'être : les talus
+// ont laissé place aux gradins (art/world/relief-gradins.ts). Le rideau et les avancées restent au catalogue, hors des cartes.
 // Planche d'avant / après : tools/essai-relief-final-corrections.ts (scène art/proposals/relief-final-v1-scene.ts).
 
 import { Canvas, rng, type Grid } from '../lib/canvas';

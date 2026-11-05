@@ -54,7 +54,7 @@ export type Step =
   | { kind: 'remove'; name: string }
   | { kind: 'frame'; name: string };
 
-/** Une poutre du normal équarrie (20 × 20 cm, 30 avec son contour), de cette longueur, dans ce sens. */
+/** Une poutre du normal équarrie (20 × 20 cm ; son emprise compte encore le contour : 30), de cette longueur, dans ce sens. */
 export const beam = (axis: 'ew' | 'ns' | 'up', length: number): Ref => ({ wood: { size: 'normal', length, shape: 'round', hewn: 12, axis } });
 
 /** Les étapes d'un remplissage, de la première couche à la chaux. */
@@ -253,7 +253,7 @@ export function maisonSteps(): Step[] {
   // dessus, à la hauteur où l'emprise glisse jusqu'à elle) : on monte du nord au sud, et chaque porte intérieure, au sol, avant ce qui
   // est au sud d'elle ; un poteau avant la porte qui est au sud de lui, sur son axe.
   const T = (name: string, axis: 'ew' | 'ns', len: number, x: number, y: number, more: Partial<PieceStep> = {}) =>
-    piece(name, beam(axis, len), x, y, axis === 'ew' ? len : 30, axis === 'ew' ? 30 : len, { z: 40, ...more });
+    piece(name, beam(axis, len), x, y, axis === 'ew' ? len : 30, axis === 'ew' ? 30 : len, { z: 50, ...more });
   const post = (x: number, y: number, under: string, aimX = 0) => {
     piece(`poteau ${x},${y}`, beam('up', 180), x - 20, y - 20, 40, 40, { z: 70, ...(aimX ? { aimX } : {}) });
     joint('mortise', `poteau ${x},${y}`, under);
@@ -400,8 +400,8 @@ export function maisonSteps(): Step[] {
   // 7. les fermes des cloisons : un entrait (deux poutres entées) sur la sablière de chaque cloison, entre les sablières des longs
   // murs (au-delà, le pan de toit s'y poserait)
   for (const x of [300, 940]) {
-    piece(`entrait ${x} nord`, beam('ns', 240), x, 0, 30, 240, { z: 280 });
-    piece(`entrait ${x} sud`, beam('ns', 380), x, 240, 30, 380, { z: 280 });
+    piece(`entrait ${x} nord`, beam('ns', 240), x, 0, 30, 240, { z: 270 });
+    piece(`entrait ${x} sud`, beam('ns', 380), x, 240, 30, 380, { z: 270 });
     joint('scarf', `entrait ${x} nord`, `entrait ${x} sud`);
   }
   frame('les fermes des cloisons');
@@ -419,15 +419,15 @@ export function maisonSteps(): Step[] {
       const key = prop === 'thatch-roof' && n === 'pan nord' ? 'thatch-roof-pierced' : prop;
       const was = (k: number) => `${layers[k]} ${n}`;
       // le pan nord : l'aimant le tire de 5 cm au nord (le bord de la porte du coin de Xéros, au sol, est à portée de son bord sud)
-      piece(`${prop} ${n}`, { prop: key }, -40, y, 1380, prop === 'thatch-roof' ? 390 : 410, { view, z: 280, ...(n === 'pan nord' ? { at: [-40, -65] } : {}), ...(i ? { replaces: was(i - 1) } : {}) });
+      piece(`${prop} ${n}`, { prop: key }, -40, y, 1380, prop === 'thatch-roof' ? 390 : 410, { view, z: 270, ...(n === 'pan nord' ? { at: [-40, -65] } : {}), ...(i ? { replaces: was(i - 1) } : {}) });
     }
     if (i === 0) {
-      piece('pignon ouest', { prop: 'lime-gable' }, -20, 0, 15, 640, { view: 1, z: 280, at: [-20, -5] });
-      piece('pignon est', { prop: 'lime-gable' }, 1280, 0, 15, 640, { view: 3, z: 280, at: [1285, -5] });
+      piece('pignon ouest', { prop: 'lime-gable' }, -20, 0, 15, 640, { view: 1, z: 270, at: [-20, -5] });
+      piece('pignon est', { prop: 'lime-gable' }, 1280, 0, 15, 640, { view: 3, z: 270, at: [1285, -5] });
     }
     frame(['le chevronnage et le lattis, les pignons', 'le chaume à demi', 'le chaume'][i]);
   }
-  piece('faîtage', { prop: 'earth-ridge' }, -40, 300, 1385, 50, { z: 725 });
+  piece('faîtage', { prop: 'earth-ridge' }, -40, 300, 1385, 50, { z: 715 });
   frame('le faîtage');
 
   // 9. la cheminée paysanne où l'on cuisine, adossée au mur nord de la salle, centrée en x = 770 (son axe d'avant, 780, n'est pas sur la

@@ -134,6 +134,11 @@ export function overlaps(a: { x: number; y: number; w: number; d: number }, b: {
   return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.d && b.y < a.y + a.d;
 }
 
+/** Une pièce qui pend à ses gonds (une porte, un volet : `swing` de props.json) : elle ne porte rien. */
+export function hangs(p: BuildPlaced): boolean {
+  return 'prop' in p.piece && !!props[p.piece.prop]?.swing;
+}
+
 /** Le dessus d'une boîte (cm). */
 const topOf = (b: Box3) => b.z + b.h;
 
@@ -155,11 +160,15 @@ export function supportAt(pieces: readonly BuildPlaced[], foot: { x: number; y: 
  * ajoutés (monter, descendre), d'une grille chacun, jamais sous le sol. `grid` : la pièce reste sur la grille, sans aimant (le poteau,
  * `aimOnGrid`).
  */
-export function aimAt(pieces: readonly BuildPlaced[], size: Size3, cx: number, cy: number, step = 0, grid = false): Box3 {
+export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: number, step = 0, grid = false): Box3 {
+  // une porte, un volet pendent à leurs gonds : ils ne portent rien (le rondin au-dessus de la fenêtre de la cabane ne vise pas le haut
+  // du volet de 60 cm qui le dépasse ; chantier « hauteurs »)
+  const pieces = all.filter((p) => !hangs(p));
   const tops = [...new Set(pieces.map((p) => topOf(boxOf(p))))].sort((a, b) => b - a);
   const at = (t: number) => {
     const f = { x: onGrid(cx - size.w / 2), y: onGrid(cy + t - size.d / 2), w: size.w, d: size.d };
-    return grid ? f : magnet(pieces, f, t, size.h);
+    // l'aimant prend tous les bords, une porte aussi (le remplissage contre l'huisserie et la porte de la maison)
+    return grid ? f : magnet(all, f, t, size.h);
   };
   // le point visé, vu à la hauteur t, est-il sur un dessus à cette hauteur (on le voit sur ce dessus) ?
   const seenOn = (t: number) => pieces.some((p) => {

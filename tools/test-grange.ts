@@ -215,15 +215,15 @@ await playtest('grange', async ({ page, errors, load }) => {
   };
   const [n1, n2] = await plate('n');
   const [s1, s2] = await plate('s');
-  // les sablières des murs de bout : deux poutres de 3 m entées, posées sur les longues (3,42 m), puis à mi-bois aux angles : elles
+  // les sablières des murs de bout : deux poutres de 3 m entées, posées sur les longues (3,32 m : une poutre a 20 cm de haut), puis à mi-bois aux angles : elles
   // descendent à leur niveau ; à l'est, au ras du dedans des poteaux (visée au ras du dehors, elle s'aimanterait au bord des dalles,
   // qui débordent de 5 cm, et passerait sous le bardage)
   const end = async (side: 'w' | 'e') => {
     const x = side === 'w' ? 0 : 840;
     const at = (y: number): [number, number] => [x, y];
-    const a = await putBeam(`sablière ${side} nord`, 'ns', 300, x, 0, 342, at(0));
+    const a = await putBeam(`sablière ${side} nord`, 'ns', 300, x, 0, 332, at(0));
     await joint('halving', a, side === 'w' ? n1 : n2);
-    const b = await putBeam(`sablière ${side} sud`, 'ns', 300, x, 300, 342, at(300));
+    const b = await putBeam(`sablière ${side} sud`, 'ns', 300, x, 300, 332, at(300));
     await joint('halving', b, side === 'w' ? s1 : s2);
     for (const p of [a, b]) assert.equal(await zOf(p), 312, `sablière ${side} : à mi-bois, au niveau des longues`);
     await joint('scarf', a, b);
@@ -234,9 +234,9 @@ await playtest('grange', async ({ page, errors, load }) => {
   // les entraits : sur les poteaux de 2,80 et 5,60 m, d'une sablière à l'autre (6 m : deux poutres de 3 m entées), à mi-bois
   const ties: any[] = [];
   for (const x of [280, 560]) {
-    const a = await putBeam(`entrait ${x} nord`, 'ns', 300, x, 0, 342);
+    const a = await putBeam(`entrait ${x} nord`, 'ns', 300, x, 0, 332);
     await joint('halving', a, x === 280 ? n1 : n2);
-    const b = await putBeam(`entrait ${x} sud`, 'ns', 300, x, 300, 342);
+    const b = await putBeam(`entrait ${x} sud`, 'ns', 300, x, 300, 332);
     await joint('halving', b, x === 280 ? s1 : s2);
     for (const p of [a, b]) assert.equal(await zOf(p), 312, `entrait ${x} : à mi-bois`);
     await joint('scarf', a, b);
@@ -263,32 +263,32 @@ await playtest('grange', async ({ page, errors, load }) => {
   await frame('le bardage et la porte charretière');
 
   // 4. les poinçons (poutres de 2,20 m dressées) sur les entraits, les pignons sur les sablières des murs de bout (au ras de leur
-  // face du dehors), le faîtage (deux poutres entées, la jonction sur le poinçon de 2,80 m) sur leurs sommets (3,42 + 2,20 = 5,62 m)
+  // face du dehors), le faîtage (deux poutres entées, la jonction sur le poinçon de 2,80 m) sur leurs sommets (3,32 + 2,20 = 5,52 m)
   const kings: any[] = [];
   for (const [i, x] of [280, 560].entries()) {
-    const k = await putBeam(`poinçon ${x}`, 'up', 220, x, 280, 342);
+    const k = await putBeam(`poinçon ${x}`, 'up', 220, x, 280, 332);
     await joint('mortise', k, ties[i]);
     kings.push(k);
   }
   for (const [what, view, x] of [['pignon ouest', 1, 0], ['pignon est', 3, 860]] as const) {
     await send({ kind: 'pick', piece: { prop: 'board-gable' } });
     await keys('KeyR', view);
-    const g = await put(what, x, 40, 20, 520, 342);
+    const g = await put(what, x, 40, 20, 520, 332);
     assert.equal(g.view, view, `${what} : sa face du dehors`);
   }
-  const r1 = await putBeam('faîtage ouest', 'ew', 300, 0, 280, 562);
-  const r2 = await putBeam('faîtage est', 'ew', 580, 300, 280, 562);
+  const r1 = await putBeam('faîtage ouest', 'ew', 300, 0, 280, 552);
+  const r2 = await putBeam('faîtage est', 'ew', 580, 300, 280, 552);
   await joint('scarf', r1, r2);
   await joint('mortise', kings[0], r1);
   await joint('mortise', kings[1], r2);
   await frame('les poinçons, les pignons, le faîtage');
 
-  // 5. les deux grands pans (rive basse au sud : vue 0 ; au nord : R deux fois), sur les sablières (3,42 m)
+  // 5. les deux grands pans (rive basse au sud : vue 0 ; au nord : R deux fois), sur les sablières (3,32 m)
   await send({ kind: 'pick', piece: { prop: 'plank-roof-large' } });
-  const south = await put('pan sud', -40, 300, 960, 340, 342);
+  const south = await put('pan sud', -40, 300, 960, 340, 332);
   await send({ kind: 'pick', piece: { prop: 'plank-roof-large' } });
   await keys('KeyR', 2);
-  const north = await put('pan nord', -40, -40, 960, 340, 342);
+  const north = await put('pan nord', -40, -40, 960, 340, 332);
   assert.deepEqual([south.view, north.view], [0, 2]);
   await frame('la grange finie');
 

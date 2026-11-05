@@ -5,6 +5,8 @@ import { combatEffects } from './characters/xeros-combat';
 import xerosPortraits from './portraits/xeros';
 import mother from './characters/mother';
 import motherPortrait from './portraits/mother';
+import smith from './characters/smith';
+import smithPortrait from './portraits/smith';
 import worldTiles, { worldDecals } from './world/tiles';
 import props from './world/props';
 import trees from './world/big-tree';
@@ -51,6 +53,7 @@ import sillWalls from './world/sill-walls';
 import joints from './world/joints';
 import cabin from './world/cabin';
 import cabinClosing from './world/cabin-closing';
+import cabinShutter from './world/cabin-shutter';
 import barn from './world/barn';
 import stall from './world/stall';
 import signpost from './world/signpost';
@@ -69,8 +72,10 @@ import storm from './world/storm';
 // le relief : les matières des faces (terre, au-dessus de l'eau, lèvre, raccourcis), la voûte du chemin creux (rideau, avancées), le
 // liseré et le miroitement de l'eau coupée (art/world/relief.ts ; ses tuiles sont dans le jeu de tuiles `world`)
 import { reliefImages, shimmerSheet } from './world/relief';
+// les gradins du chemin creux : leurs matières (dessus, marche, racines, terre en coupe) et leurs plantes (art/world/relief-gradins.ts)
+import { gradinImages } from './world/relief-gradins';
 import { agedSources } from './lib/ages';
 
-export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...minimap, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...forge, ...forgeRoofs, ...rabbit, ...deadRabbit, ...boar, ...xerosDown, ...storm, ...reliefImages(), shimmerSheet(), shimmerSheet(true)];
+export const sources: ArtSource[] = [xeros, ...xerosPortraits, mother, motherPortrait, smith, smithPortrait, worldTiles, ...worldDecals, ...props, ...trees, ...pollard, ...normalTree, ...fellable, ...rocksBushes, ...farm, ...house, interiorTiles, ...interiorDecals, ...furniture, ...lights, ...ui, ...staminaBar, ...workBar, ...clock, ...minimap, ...breath, ...resources, ...tools, ...heldTools, ...carried, ...fx, ...piles, ...rope, ...faggot, ...building, ...splittingTools, ...stake, ...implantation, ...hatchet, ...broadaxe, ...woodPieces, ...stones, ...masonTools, ...earth, ...lime, ...fibres, ...woodSmall, ...sillWalls, ...joints, ...cabin, ...cabinClosing, ...cabinShutter, ...barn, ...stall, ...signpost, ...weapons, ...trainingDummy, ...combatEffects, ...xerosHouse, ...chimney, ...forge, ...forgeRoofs, ...rabbit, ...deadRabbit, ...boar, ...xerosDown, ...storm, ...reliefImages(), ...gradinImages(), shimmerSheet(), shimmerSheet(true)];
 // le bois travaillé à ses autres âges (patiné, vieux), tiré des images neuves
 sources.push(...agedSources(sources));

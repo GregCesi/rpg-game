@@ -761,6 +761,11 @@ export const PropDefSchema = z.strictObject({
    */
   vault: z.literal(true).optional(),
   /**
+   * Un arbre des gradins (CONCEPTION « Le relief ») : ses racines (`relief-roots-*`) descendent la marche sous lui, peintes par le terrain
+   * (`world/terrainView.ts`) à l'aplomb de son pied.
+   */
+  roots: z.literal(true).optional(),
+  /**
    * Ombre portée d'un toit (la couverture, pièce `roof` et `ground`), calculée par le jeu (`world/roofShadow.ts`) : son
    * emprise au sol (largeur `dims.w`, profondeur `dims.d`, bord sud au bas de l'image) projetée sur le sol, décalée selon
    * la lumière (`SHADOW` de config.ts). `south`, `north` : hauteur du dessus du toit à son bord sud et à son bord nord, en cm.
@@ -949,6 +954,12 @@ export const BuildPlanSchema = z.strictObject({
    * seul âge. Absent : chaque pièce garde le sien.
    */
   age: z.lazy(() => WoodAgeSchema).optional(),
+  /**
+   * Les personnages qui vivent dans le bâtiment (le forgeron à son enclume) : leurs pieds en cm depuis le coin nord-ouest du plan,
+   * comme ses pièces. Posé sur une carte (un rectangle `Plan` de Tiled), le plan les y amène (tools/build-maps.ts, avec les
+   * personnages de la carte) ; un plan posé à la main en mode construction ne les amène pas. Dehors seulement (un abri ouvert).
+   */
+  npcs: z.array(z.lazy(() => PlanNpcSchema)).optional(),
 });
 
 /**
@@ -1623,8 +1634,16 @@ export const TransformSchema = z.strictObject({
   gesture: TransformGestureSchema,
 });
 
-/** Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config). */
-export const CharacterDefSchema = z.strictObject({ name: id, portrait: id });
+/**
+ * Un personnage qui parle : son nom affiché et son portrait (sans la taille, ajoutée selon la config) ; `feet`, sa collision aux pieds
+ * en px (largeur, profondeur), centrée sous lui au bas de sa frame : absente, celle de tous (`FEET` de config.ts, 10 × 8) ; le
+ * forgeron, plus large d'épaules, a 14 × 8 (on ne le traverse pas par les épaules).
+ */
+export const CharacterDefSchema = z.strictObject({
+  name: id,
+  portrait: id,
+  feet: z.strictObject({ w: z.number().int().positive(), h: z.number().int().positive() }).optional(),
+});
 
 /** Ce qu'un choix de dialogue peut déclencher quand le dialogue se ferme : `sleep`, passer la nuit, `help`, dresser avec l'aide de la mère la poutre d'un chantier (WorldScene). */
 const DialogueActionSchema = z.enum(['sleep', 'help']);
@@ -1687,6 +1706,19 @@ const ExitSchema = z.strictObject({
   facing: FacingSchema.optional(),
 });
 
+/** La pose d'un personnage non joueur (`pose` de NpcSchema). */
+export const NpcPoseSchema = z.enum(['sit', 'work']);
+
+/** Un personnage d'un plan (`npcs` de BuildPlanSchema) : (x, y) = ses pieds en cm depuis le coin nord-ouest du plan. */
+const PlanNpcSchema = z.strictObject({
+  x: z.number().nonnegative(),
+  y: z.number().nonnegative(),
+  character: id,
+  facing: FacingSchema.optional(),
+  dialogue: id,
+  pose: NpcPoseSchema.optional(),
+});
+
 /** Personnage non joueur : (x, y) = position de ses pieds. `character` = clé de characters.json, qui est aussi la clé de son sprite. */
 const NpcSchema = z.strictObject({
   x: px,
@@ -1697,8 +1729,12 @@ const NpcSchema = z.strictObject({
   dialogue: id,
   /** Dans un bâtiment posé (un Plan) : il n'est que dans son intérieur calculé (la mère, chez elle), à sa place. */
   inside: z.literal(true).optional(),
-  /** Sa pose : `sit`, assis (l'animation `sit-<direction>` de son sprite). */
-  pose: z.enum(['sit']).optional(),
+  /**
+   * Sa pose, l'animation `<pose>-<direction>` de son sprite jouée en boucle à sa place : `sit`, assis (la mère sur le banc) ; `work`, au
+   * travail (le forgeron à l'enclume). Il la quitte pour parler (`talk-<direction>` s'il l'a, sinon `idle-`) et la reprend après ;
+   * assis, il reste assis.
+   */
+  pose: NpcPoseSchema.optional(),
 });
 
 /**
@@ -1792,6 +1828,11 @@ export const ReliefSchema = z.strictObject({
       width: z.number().positive(),
       inner: z.number().nonnegative(),
       innerSlope: z.number().nonnegative(),
+      /**
+       * Les parois en gradins (chantier « relief », CADRAGE 13.0) : `count` marches de `rise` cm, séparées par des gradins de `tread` cm,
+       * du bord du sol jusqu'au dessus ; les marches du bas s'enterrent une à une quand le sol monte. Sans `steps`, le talus intérieur.
+       */
+      steps: z.strictObject({ rise: z.number().positive(), tread: z.number().positive(), count: z.number().int().positive() }).optional(),
       points: z.array(ReliefPointSchema.extend({ h: z.number().nonnegative() })).min(2),
     }),
   ),
@@ -1919,6 +1960,7 @@ export type MapObject = z.infer<typeof MapObjectSchema>;
 export type Spawn = z.infer<typeof SpawnSchema>;
 export type Exit = z.infer<typeof ExitSchema>;
 export type Npc = z.infer<typeof NpcSchema>;
+export type NpcPose = z.infer<typeof NpcPoseSchema>;
 export type MapData = z.infer<typeof MapSchema>;
 export type Parcel = z.infer<typeof ParcelSchema>;
 export type MapPlan = z.infer<typeof MapPlanSchema>;

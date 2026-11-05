@@ -24,7 +24,10 @@ const DAMAGED_KEY = 'xeros-partie-abimee';
 // les seuils, la cheminée où l'on cuisine) : une partie d'avant garderait l'ancienne maison, posée une fois (accord de Grégoire : une
 // partie neuve).
 // 31 (chantier « sangliers ») : la vie de Xéros (`health`) ; une partie d'avant la reçoit pleine.
-export const SAVE_VERSION = 31;
+// 32 (chantier « hauteurs ») : la pièce de bois couchée à sa hauteur vraie (sans le contour de son dessin) ; les cinq plans du monde
+// recalés (la cabane à 7 assises, le solin de la maison à 50 cm) : les bâtiments posés d'une partie d'avant flotteraient (accord de
+// Grégoire : une partie neuve).
+export const SAVE_VERSION = 32;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
 /** Où reprendre : la carte, les pieds (px), le sens ; `z`, sa hauteur (cm) dans une maison à étages (absent : le sol le plus bas). */

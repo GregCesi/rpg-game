@@ -1,7 +1,7 @@
 import { deckField, NO_DECKS, topBelow, type DeckField } from './decks';
 import Phaser from 'phaser';
 import { viewImage } from '../content/views';
-import { DEPTH, GLOW, INTERIOR, RELIEF, SHADOW, TILE } from '../config';
+import { DEPTH, GLOW, INTERIOR, JOINT_SHADE, RELIEF, SHADOW, TILE } from '../config';
 import { deepAt, heightAt } from './relief';
 import { hasRelief, TerrainView } from './terrainView';
 import { roofShadow } from './roofShadow';
@@ -17,6 +17,7 @@ import { woodDef, woodOf } from './woodPiece';
 import { agedKey, lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
 import { blocks, boxOf, depthsOf, overlaps, sliceHits, sliceOf, solidOf, supportsOf, type BuildPiece } from './build';
+import { shadedPairs, shadePixels, type ShownImage } from './jointShade';
 import type { BuildPlaced } from '../content/types';
 import { lookDef, lookOf as woodLookOf } from './woodShape';
 import { buildLook } from './buildView';
@@ -332,6 +333,8 @@ export class GameMap {
   decks: DeckField = NO_DECKS;
   /** Les croisements des mi-bois, posés par-dessus leurs deux pièces (redessinés à chaque changement). */
   private overlays: Phaser.GameObjects.Image[] = [];
+  /** Les ombres de joint des pièces de bois posées l'une sur l'autre (world/jointShade.ts), refaites à chaque `sortBuilds`. */
+  private jointShades: Phaser.GameObjects.Graphics[] = [];
   /**
    * Le décalage d'affichage de chaque pièce posée (px) : une pièce se cale sur le dessus *dessiné* de ce qui la porte. En règle D, une
    * pièce couchée nord-sud (le solin, la poutre) n'est pas relevée de sa hauteur à l'écran : ce qui repose dessus descend d'autant
@@ -908,10 +911,51 @@ export class GameMap {
       this.placeParts(b);
       if (!floor) this.sideSlices(b);
     }
+    this.drawJointShades(pieces);
     for (const o of this.overlays) o.destroy();
     this.overlays = halvingOverlays(this.scene, this.builds, joints).map((o) =>
       this.scene.add.image(o.x, o.y, o.key).setOrigin(0, 0).setDepth(o.depth).setAlpha(1),
     );
+  }
+
+  /**
+   * L'ombre de joint (chantier « hauteurs ») : sous chaque pièce de bois couchée posée sur une autre, une rangée assombrie sur celle du
+   * dessous, là où elle se voit (world/jointShade.ts), juste avant la pièce du dessus dans l'ordre d'affichage.
+   */
+  private drawJointShades(pieces: readonly BuildPiece[]): void {
+    for (const g of this.jointShades) g.destroy();
+    this.jointShades = [];
+    const textures = this.scene.textures;
+    const shown = (id: number): ShownImage | undefined => {
+      const b = this.builds.find((q) => q.piece.id === id);
+      if (!b) return undefined;
+      const img = b.image;
+      const key = img.texture.key;
+      const frame = img.frame;
+      return {
+        x: img.x - img.displayOriginX,
+        y: img.y - img.displayOriginY,
+        w: frame.width,
+        h: frame.height,
+        opaque: (x, y) => (textures.getPixelAlpha(x, y, key, frame.name) ?? 0) > 0,
+      };
+    };
+    for (const [upper, under] of shadedPairs(pieces)) {
+      const a = shown(upper.id);
+      const b = shown(under.id);
+      const top = this.builds.find((q) => q.piece.id === upper.id);
+      if (!a || !b || !top) continue;
+      const px = shadePixels(a, b);
+      if (!px.length) continue;
+      // posée au point de la pièce du dessus (son bas gauche), pour que le relèvement du relief (systems/lift.ts) la suive
+      const ox = top.image.x;
+      const oy = top.image.y;
+      const g = this.scene.add.graphics({ x: ox, y: oy }).fillStyle(JOINT_SHADE.color, JOINT_SHADE.alpha);
+      for (const p of px) g.fillRect(p.x - ox, p.y - oy, 1, 1);
+      // entre les deux : la pièce du dessus est toujours après celle qui la porte (depthsOf : au moins 0,001 de plus)
+      g.setDepth(top.image.depth - 0.0005);
+      this.jointShades.push(g);
+    }
   }
 
   /**

@@ -1,5 +1,6 @@
 // Captures du relief dans le vrai jeu (chantier « relief », pour regarder, pas un test) : npx tsx tools/essai-relief-jeu.ts
-// Xéros est posé (par ?dieu et la scène, sans marcher) à quelques points du chemin creux et du bord du plateau ; une capture par point,
+// Xéros est posé (par ?dieu et la scène, sans marcher) à quelques points du chemin creux, du bord du plateau et, dehors, au sud de
+// la masse de terre ; une capture par point,
 // au zoom de départ : .art-preview/relief-jeu-<nom>.png.
 import { playtest } from './lib/playtest';
 
@@ -12,6 +13,7 @@ const SPOTS: { name: string; x: number; y: number }[] = [
   { name: '5-sortie', x: 6 * T, y: 66 * T },
   { name: '6-falaise', x: 52 * T, y: 40 * T },
   { name: '7-plateau', x: 30 * T, y: 40 * T },
+  { name: '8-dehors', x: 53 * T, y: 77 * T },
 ];
 
 await playtest('essai-relief-jeu', async ({ page, load }) => {

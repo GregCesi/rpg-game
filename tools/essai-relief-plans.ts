@@ -1,6 +1,6 @@
-// Planche des plans du chemin creux (chantier « relief », CADRAGE.md section 13.1 à 13.5, hors jeu) :
+// Planche des plans du chemin creux (chantier « relief », CADRAGE.md section 13.1 à 13.5, troisièmes plans : les gradins, hors jeu) :
 //   npx tsx tools/essai-relief-plans.ts  écrit  .art-preview/relief-plans.png
-// Des schémas en gros aplats (deux coupes, la vue de dessus, trois écrans du jeu) : art/proposals/relief-plans.ts.
+// Des schémas en gros aplats (deux coupes en gradins, deux écrans du jeu) : art/proposals/relief-plans.ts.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

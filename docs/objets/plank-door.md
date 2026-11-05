@@ -12,13 +12,14 @@ le mur sud (rondins recoupés de part et d'autre).
 - Âge : bois travaillé, il prend l'âge du bois (`"aged": true` : neuf, patiné, vieux ; ses images à trois âges, la même grille peinte de la rampe de l'âge ; CONCEPTION « L'âge du bois »).
 
 ## Masse
-- Par la matière : `{"matter": "wood", "fill": 0.5}` sur la boîte de ses `dims` (100 × 6 × 200 cm : la moitié de la boîte est du
-  bois, les planches de 3 cm et les traverses), bois vert 900 kg/m³ : **54 kg**. Portée, lentement (au-dessus de 25 kg).
+- Par la matière : `{"matter": "wood", "fill": 0.5}` sur la boîte de ses `dims` (100 × 6 × 210 cm : la moitié de la boîte est du
+  bois, les planches de 3 cm et les traverses), bois vert 900 kg/m³ : **56,7 kg**. Portée, lentement (au-dessus de 25 kg).
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
-- 100 cm de large, 200 cm de haut, 6 cm d'épaisseur (3 de planches, 3 de traverses) : boîte debout.
-- À l'écran, face (r0, r2) : 20 × (40 + 0,6) ≈ **20 × 41 px** ; de chant (r1, r3) : 1,2 px de large, agrandi au plancher de
-  lisibilité, environ 3 × 50 px.
+- 100 cm de large, 210 cm de haut, 6 cm d'épaisseur (3 de planches, 3 de traverses) : boîte debout. 2,10 m depuis le chantier
+  « hauteurs » (5 novembre 2026, réponse 4 de Grégoire) : du seuil (12 cm) au linteau de la cabane, la 8e assise de rondins de 30 cm.
+- À l'écran, face (r0, r2) : 20 × (42 + 0,6) ≈ **20 × 43 px** ; de chant (r1, r3) : 1,2 px de large, agrandi au plancher de
+  lisibilité, environ 3 × 52 px.
 
 ## Vues
 - Quatre (`four`), debout :

@@ -131,18 +131,18 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   const { judge } = await import('../src/world/joints');
   const { alignOnWall } = await import('../src/world/wallRuns');
   const beamOf = (axis: 'ew' | 'ns', size = 'normal') => ({ wood: { size, length: 300, shape: 'round' as const, hewn: size === 'normal' ? 12 : undefined, axis } });
-  const E: BuildPiece = { id: 1, piece: beamOf('ew'), x: 0, y: 0, z: 40, view: 0 };
+  const E: BuildPiece = { id: 1, piece: beamOf('ew'), x: 0, y: 0, z: 50, view: 0 };
   const N: BuildPiece = { id: 2, piece: beamOf('ns'), x: 0, y: 0, z: 70, view: 0 };
   assert.deepEqual(judge(E, N), { type: 'halving' }, "l'une sur l'autre, à angle droit : un mi-bois");
-  assert.deepEqual(judge(E, { ...N, z: 40 }), { type: 'halving' }, "l'une dans l'autre, à la même hauteur : toujours le mi-bois");
+  assert.deepEqual(judge(E, { ...N, z: 50 }), { type: 'halving' }, "l'une dans l'autre, à la même hauteur : toujours le mi-bois");
   assert.match(judge(E, { ...N, piece: { wood: { size: 'pole', length: 300, shape: 'round', axis: 'ns' } } })!.why!, /même section/);
   assert.match(judge(E, { ...E, id: 3, y: 0, z: 70 })!.why!, /angle droit/);
   // le solin : un angle (nord-sud qui part vers le sud du bout ouest) ; la sablière est-ouest affleure le nord, la nord-sud l'ouest
   const sill = (id: number, x: number, y: number, view = 0): BuildPiece => ({ id, piece: { prop: 'rough-sill-wall' }, x, y, z: 0, view });
   const walls = [sill(10, 0, 0), sill(11, 160, 0), sill(12, 0, 50, 1), sill(13, 0, 210, 1)];
-  const onEw = alignOnWall(walls, { x: 0, y: 10, z: 40, w: 300, d: 30, h: 30 });
+  const onEw = alignOnWall(walls, { x: 0, y: 10, z: 50, w: 300, d: 30, h: 20 });
   assert.equal(onEw.y, 0, 'la sablière est-ouest affleure la face nord (dehors)');
-  const onNs = alignOnWall(walls, { x: 10, y: 60, z: 40, w: 30, d: 300, h: 30 });
+  const onNs = alignOnWall(walls, { x: 10, y: 60, z: 50, w: 30, d: 300, h: 20 });
   assert.equal(onNs.x, 0, 'la sablière nord-sud affleure la face ouest (dehors)');
   console.log('✓ test-build : mi-bois (croisement, section, sens), sablière alignée sur la face extérieure du solin');
 }
@@ -152,10 +152,10 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   const { judge } = await import('../src/world/joints');
   const log = (axis: 'ew' | 'ns', length = 380) => ({ wood: { size: 'normal', length, shape: 'round' as const, axis } });
   const A: BuildPiece = { id: 1, piece: log('ew'), x: 0, y: 20, z: 12, view: 0 };
-  const B: BuildPiece = { id: 2, piece: log('ns', 440), x: 20, y: 0, z: 52, view: 0 };
+  const B: BuildPiece = { id: 2, piece: log('ns', 440), x: 20, y: 0, z: 42, view: 0 };
   assert.deepEqual(judge(A, B), { type: 'notch' }, 'deux rondins croisés, l’un sur l’autre : une encoche');
-  assert.deepEqual(judge(A, { ...B, z: 32 }), { type: 'notch' }, 'enfoncé de la moitié : toujours l’encoche');
-  assert.match(judge(A, { ...B, z: 42 })!.why!, /reposer/);
+  assert.deepEqual(judge(A, { ...B, z: 27 }), { type: 'notch' }, 'enfoncé de la moitié : toujours l’encoche');
+  assert.match(judge(A, { ...B, z: 32 })!.why!, /reposer/);
   const hewn = { wood: { size: 'normal', length: 440, shape: 'round' as const, hewn: 12, axis: 'ns' as const } };
   assert.match(judge(A, { ...B, piece: hewn })!.why!, /même état/);
   console.log('✓ test-build : encoche (rondins croisés, enfoncés de moitié, refus)');
@@ -188,7 +188,7 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   assert.match(judge(beam(0, 'worn'), { ...beam(200), id: 1 })!.why!, /même âge/, 'deux âges ne s’entent pas');
   assert.deepEqual(judge(beam(0, 'worn'), { ...beam(200, 'worn'), id: 1 }), { type: 'scarf' });
   const log = (axis: 'ew' | 'ns', length: number) => ({ wood: { size: 'normal', length, shape: 'round' as const, peeled: true as const, axis } });
-  assert.deepEqual(judge({ id: 1, piece: log('ew', 380), x: 0, y: 20, z: 12, view: 0 }, { id: 2, piece: log('ns', 440), x: 20, y: 0, z: 52, view: 0 }), { type: 'notch' }, 'deux rondins écorcés : une encoche');
+  assert.deepEqual(judge({ id: 1, piece: log('ew', 380), x: 0, y: 20, z: 12, view: 0 }, { id: 2, piece: log('ns', 440), x: 20, y: 0, z: 42, view: 0 }), { type: 'notch' }, 'deux rondins écorcés : une encoche');
   console.log('✓ test-build : âge du bois (pièce, objet, plan, enture), rondin écorcé');
 }
 
@@ -293,9 +293,9 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
 {
   const { WALL_PIECE } = await import('../src/world/walls');
   const { wallRuns, runPx } = await import('../src/world/wallRuns');
-  assert.deepEqual(WALL_PIECE, { grid: 10, min: 40 });
-  assert.deepEqual(sizeOf({ prop: 'rough-sill-wall', length: 70 }), { w: 70, d: 50, h: 40 });
-  assert.deepEqual(sizeOf({ prop: 'rough-sill-wall', length: 70 }, 1), { w: 50, d: 70, h: 40 });
+  assert.deepEqual(WALL_PIECE, { grid: 10, min: 40, height: 50 });
+  assert.deepEqual(sizeOf({ prop: 'rough-sill-wall', length: 70 }), { w: 70, d: 50, h: 50 });
+  assert.deepEqual(sizeOf({ prop: 'rough-sill-wall', length: 70 }, 1), { w: 50, d: 70, h: 50 });
   const mixed: BuildPiece[] = [
     { id: 1, piece: { prop: 'rough-sill-wall', length: 70 }, x: 0, y: 0, z: 0, view: 0 },
     { id: 2, piece: { prop: 'rough-sill-wall' }, x: 70, y: 0, z: 0, view: 0 },
@@ -319,7 +319,7 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
   const beam = (length: number, axis: 'ew' | 'ns' | 'up') => ({ wood: { size: 'normal', length, shape: 'round' as const, hewn: 12, axis } });
   const sill = (x: number, length: number) => ({ piece: { prop: 'rough-sill-wall', length }, x, y: 0, z: 0, view: 0 });
   // une traverse sur deux morceaux de solin, avec un trou d'un mètre entre eux ; un poteau au-dessus du trou
-  const ps: BuildPiece[] = [sill(0, 200), sill(300, 200), { piece: beam(500, 'ew'), x: 0, y: 10, z: 40, view: 0 }, { piece: beam(180, 'up'), x: 240, y: 5, z: 70, view: 0 }].map((p, i) => ({ ...p, id: i }));
+  const ps: BuildPiece[] = [sill(0, 200), sill(300, 200), { piece: beam(500, 'ew'), x: 0, y: 10, z: 50, view: 0 }, { piece: beam(180, 'up'), x: 240, y: 5, z: 70, view: 0 }].map((p, i) => ({ ...p, id: i }));
   const found = overhangs(ps);
   assert.ok(found.some((m) => m.startsWith('n° 3')), `le poteau au-dessus du trou du solin est signalé (${found.join(' ; ')})`);
   const fixed = overhangs([...ps.slice(0, 3), { ...ps[3], x: 100 }]);
@@ -335,4 +335,21 @@ console.log('✓ test-build : boîtes, hauteur accrochée, porteurs, ordre, plan
     n++;
   }
   console.log(`✓ test-build : le porte-à-faux (un poteau au-dessus d'un trou du solin, une dalle en l'air) ; ${n} plans du dépôt sans pièce au-dessus du vide`);
+}
+
+// l'ombre de joint (chantier « hauteurs ») : sous un rondin posé sur un autre, une rangée sur celui du dessous, là où il se voit ;
+// pas entre un rondin et une dalle, ni sous un poteau
+{
+  const { shadedPairs, shadePixels } = await import('../src/world/jointShade');
+  const log = (axis: 'ew' | 'ns', length = 200) => ({ wood: { size: 'normal', length, shape: 'round' as const, axis } });
+  const lower: BuildPiece = { id: 1, piece: log('ew'), x: 0, y: 0, z: 0, view: 0 };
+  const upper: BuildPiece = { id: 2, piece: log('ew'), x: 0, y: 0, z: 30, view: 0 };
+  const slab: BuildPiece = { id: 3, piece: { prop: 'slab' }, x: 300, y: 0, z: 0, view: 0 };
+  const onSlab: BuildPiece = { id: 4, piece: log('ew', 40), x: 300, y: 0, z: 12, view: 0 };
+  assert.deepEqual(shadedPairs([lower, upper, slab, onSlab]).map(([a, b]) => [a.id, b.id]), [[2, 1]], 'seul le rondin posé sur un rondin');
+  // deux images de 4 × 3 px : celle du dessus 2 px plus haut (le recouvrement), sa colonne 3 vide
+  const box = (x: number, y: number, holes: number[] = []) => ({ x, y, w: 4, h: 3, opaque: (i: number, _j: number) => !holes.includes(i) });
+  assert.deepEqual(shadePixels(box(0, 0, [3]), box(0, 1)), [{ x: 0, y: 3 }, { x: 1, y: 3 }, { x: 2, y: 3 }], 'une rangée sous le bas de celui du dessus');
+  assert.deepEqual(shadePixels(box(0, 0), box(0, 4)), [], 'rien là où il n’y a pas de pièce dessous');
+  console.log('✓ test-build : ombre de joint (paires, une rangée sous la pièce du dessus)');
 }

@@ -36,14 +36,15 @@ const WALLS = wallsJson as {
   /** La pierre recoupée : un moellon (`image`) recoupé à la largeur qui manque pour finir une assise juste au bout (au moins `min` px). */
   closer: { label: string; image: string; min: number };
   chips: { label: string; image: string };
-  piece: { grid: number; min: number };
+  /** La hauteur d'un morceau (cm) : celle de `dims` de chaque mur de props.json (validate.ts). */
+  piece: { grid: number; min: number; height: number };
 };
 
 /**
  * La longueur d'un morceau de mur (chantier « maison-2 », Grégoire : une seule règle, comme le bois) : toute longueur sur la grille
  * de `grid` cm, au moins `min` cm (walls.json, `piece`) ; ses tronçons restent calculés ici, pour toute longueur.
  */
-export const WALL_PIECE: { grid: number; min: number } = WALLS.piece;
+export const WALL_PIECE: { grid: number; min: number; height: number } = WALLS.piece;
 
 /** Les images des pierres dont l'algorithme se sert (images au sol du jeu, ombre comprise, palette `stonePalette`). */
 export const WALL_STONES: readonly string[] = [...WALLS.rough.map((p) => p.image), ...WALLS.rubble.map((p) => p.image), ...WALLS.ns, WALLS.chips.image];
@@ -100,10 +101,10 @@ export const MORTAR = 'n'; // mortier de terre, sur la face
 const MORTAR_TOP = 'u'; // le même au soleil, sur le dessus du mur
 const MORTAR_DARK = 'e'; // contour du mortier côté lumière
 
-/** Longueur d'un morceau de solin (1,60 m), profondeur de son dessus (50 cm en raccourci), hauteur de sa face (40 cm). */
+/** Longueur d'un morceau de solin (1,60 m), profondeur de son dessus (50 cm en raccourci), hauteur de sa face (`piece.height` de walls.json, 50 cm). */
 export const PIECE_PX = 32;
 const SILL_TOP = 5;
-const SILL_FACE = 8;
+const SILL_FACE = Math.round(WALLS.piece.height / 5);
 /** Largeur du mur nord-sud à l'écran (règle D : dessus et face de l'est-ouest, tournés) : le carré d'angle se dessine sur elle. */
 export const NS_WIDTH = SILL_TOP + SILL_FACE;
 /** Ce qu'on monte en plus au bout qui vient contre un autre mur, puis qu'on coupe. */

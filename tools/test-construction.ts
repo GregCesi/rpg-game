@@ -403,9 +403,9 @@ await playtest('construction', async ({ page, errors, load }) => {
     assert.ok(left.includes(beamPiece.id) && left.includes(polePiece.id), 'le reste ne bouge pas');
     assert.equal((await jointsNow()).length, 0);
 
-    // 13. l'angle d'une maison : un angle de solin brut ; une sablière est-ouest posée dessus s'accroche sur son dessus (40 cm) et
-    // affleure sa face extérieure (le nord) ; une sablière nord-sud la croise au coin (posée dessus, 70 cm) et affleure l'ouest ; le
-    // mi-bois les croise à la même hauteur (la nord-sud descend à 40 cm), un seul dessin au croisement ; le poteau d'angle au-dessus
+    // 13. l'angle d'une maison : un angle de solin brut ; une sablière est-ouest posée dessus s'accroche sur son dessus (50 cm) et
+    // affleure sa face extérieure (le nord) ; une sablière nord-sud la croise au coin (posée dessus, 70 cm : une poutre a 20 cm de
+    // haut) et affleure l'ouest ; le mi-bois les croise à la même hauteur (la nord-sud descend à 50 cm), un seul dessin au croisement ; le poteau d'angle au-dessus
     const spot4 = await page.evaluate(() => {
       const w = (window as any).game.scene.getScene('world');
       const m = w.map;
@@ -431,9 +431,9 @@ await playtest('construction', async ({ page, errors, load }) => {
     assert.deepEqual([s1.view, s1.x, s1.y], [1, w1.x, w1.y + 50], 'le solin nord-sud sous le bout ouest : un angle');
     const plateBeam = (axis: string) => ({ size: 'normal', length: 300, shape: 'round', hewn: 12, axis });
     await send({ kind: 'pick', piece: { wood: plateBeam('ew') } });
-    await click((w1.x + 150) / 5, (w1.y + 25 - 40) / 5);
+    await click((w1.x + 150) / 5, (w1.y + 25 - 50) / 5);
     const pe = (await pieces()).at(-1);
-    assert.equal(pe.z, 40, 'la sablière est-ouest sur le dessus du solin (40 cm)');
+    assert.equal(pe.z, 50, 'la sablière est-ouest sur le dessus du solin (50 cm)');
     assert.equal(pe.y, w1.y, 'elle affleure la face extérieure (le nord)');
     assert.equal(pe.x, w1.x, 'elle part du coin');
     await send({ kind: 'pick', piece: { wood: plateBeam('ns') } });
@@ -447,7 +447,7 @@ await playtest('construction', async ({ page, errors, load }) => {
     const halving = (await jointsNow()).find((j: any) => j.type === 'halving');
     assert.ok(halving, 'le mi-bois est posé');
     const after = await pieces();
-    assert.equal(after.find((p: any) => p.id === pn.id).z, 40, 'les deux sablières à la même hauteur, l’une dans l’autre');
+    assert.equal(after.find((p: any) => p.id === pn.id).z, 50, 'les deux sablières à la même hauteur, l’une dans l’autre');
     // ce que l'œil voit : la sablière nord-sud sur le solin nord-sud ne déborde pas de son image et n'est pas décalée vers le nord
     const seenOn = await page.evaluate(([pid, sid]) => {
       const m = (window as any).game.scene.getScene('world').map;
@@ -465,7 +465,7 @@ await playtest('construction', async ({ page, errors, load }) => {
     await send({ kind: 'pick', piece: { wood: upBeam(180) } });
     await click((w1.x + 15) / 5, (w1.y + 20 - 70) / 5);
     const corner = (await pieces()).at(-1);
-    assert.equal(corner.z, 70, 'le poteau d’angle sur le croisement (40 + 30 cm)');
+    assert.equal(corner.z, 70, 'le poteau d’angle sur le croisement (50 + 20 cm)');
     await shot('11-mi-bois');
     // une enture refusée là : deux pièces croisées ; et retirer le mi-bois est refusé tant que le poteau repose sur le croisement
     await send({ kind: 'none' });

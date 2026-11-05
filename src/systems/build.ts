@@ -285,7 +285,10 @@ export class BuildSystem {
     const before = sign(this.jointAim);
     this.jointAim = undefined;
     if (t?.kind === 'joint') {
-      const junction = junctionAt(this.pieces, px, py, 8, (q) => this.map.shownOffset(q));
+      // une jonction déjà assemblée passe après celle qui reste à faire (deux croisements de rondins à un pixel l'un de l'autre)
+      const joined = this.joints;
+      const open = (j: Junction) => !joined.some((k) => (k.a === j.a.id && k.b === j.b.id) || (k.a === j.b.id && k.b === j.a.id));
+      const junction = junctionAt(this.pieces, px, py, 8, (q) => this.map.shownOffset(q), open);
       this.jointAim = { junction, why: jointRefusal(junction, t.type, this.joints) };
       if (sign(this.jointAim) !== before) this.status();
       return;

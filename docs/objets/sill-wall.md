@@ -16,18 +16,20 @@ avec les dessins mêmes des pierres du jeu (`art/items/stones.ts`). Les deux cl�
 
 ## Masse
 - Par la matière : `{"matter": "stone", "fill": 0.8}` (brut : des joints de terre) et `0.9` (taillé : des joints fins), sur la boîte
-  de ses `dims` (les 40 cm visibles) : environ **614 kg** (brut) et **691 kg** (taillé) ; avec les 20 cm enterrés, environ 920 et
-  1 040 kg. Ni porté, ni roulé : il se pose en mode construction seulement.
+  de ses `dims` (les 50 cm visibles) : environ **768 kg** (brut) et **864 kg** (taillé) ; avec les 20 cm enterrés, environ 1 075 et
+  1 210 kg. Ni porté, ni roulé : il se pose en mode construction seulement.
 
 ## Dimensions (gabarit, docs/STYLE.md section 8)
 
 **Toute longueur** (chantier « maison-2 », Grégoire : une seule règle, comme le bois) : un morceau se pose de toute longueur sur la
 grille de 10 cm, à partir de 40 cm (`piece` de `src/content/walls.json`, `length` de la pièce posée ; la ligne « longueur » du
 catalogue) ; ses tronçons se calculent pour toute longueur (`src/world/walls.ts`), sa vignette reste le morceau de 1,60 m ci-dessous.
-- 1,60 m de long, 50 cm d'épaisseur, environ 60 cm de haut, dont **40 cm visibles** (20 cm enterrés, non dessinés) :
-  `dims` 160 × 50 × 40 cm, boîte.
-- À l'écran, est-ouest : W = 32 px ; H + D/2 = 8 + 5 = **32 × 13** px (5 rangées de dessus, 8 de face), ombre portée en plus.
-- Nord-sud (règle D) : **13 × 32** px.
+- 1,60 m de long, 50 cm d'épaisseur, environ 70 cm de haut, dont **50 cm visibles** (20 cm enterrés, non dessinés) :
+  `dims` 160 × 50 × 50 cm, boîte. 50 cm depuis le chantier « hauteurs » (5 novembre 2026, réponse 3 de Grégoire : la traverse
+  basse de 20 cm de la maison de Xéros garde son dessus à 70 cm) ; la hauteur est `piece.height` de walls.json, la même pour
+  tous les murs (validate.ts), et la face du dessin en découle (`SILL_FACE`, src/world/walls.ts).
+- À l'écran, est-ouest : W = 32 px ; H + D/2 = 10 + 5 = **32 × 15** px (5 rangées de dessus, 10 de face), ombre portée en plus.
+- Nord-sud (règle D) : **15 × 32** px.
 - Collision : l'emprise au sol en vraie grandeur, 32 × 10 px (`body`), tournée en mode construction (le moteur prend l'emprise
   de la boîte dans son sens).
 
@@ -63,7 +65,7 @@ de terre, au chantier de la maison.
 
 ## Devenir
 Il reste où on le pose. Il porte la sablière basse du pan de bois (en mode construction, une pièce posée dessus prend son dessus,
-40 cm).
+50 cm).
 
 ## Transformations
 Aucune pour l'instant (le montage pierre à pierre viendra avec le chantier guidé).
@@ -75,7 +77,7 @@ Le maçon (`trade: "mason"`).
 - Aperçu : `.art-preview/solins.png` (`npx tsx tools/essai-murs.ts` : les deux solins, 8 tirages × r0 à r3, Xéros au bout de chaque
   rangée), `.art-preview/rough-sill-wall*.png`, `dressed-sill-wall*.png` (`npm run art:preview`).
 - `npm run check` : chaque vue de chaque tirage à la règle D.
-- En jeu (`?construire`) : famille « éléments », le poser, le tourner, poser une poutre dessus (elle prend 40 cm), le retirer ;
+- En jeu (`?construire`) : famille « éléments », le poser, le tourner, poser une poutre dessus (elle prend 50 cm), le retirer ;
   `npm run test:construction` en pose un et vérifie qu'il garde son tirage au rechargement.
 - Raccord : `wall` (`rough`, `dressed`) dans props.json ; posés bout à bout, en angle, ou arrêtés à une porte, les morceaux forment
   des tronçons dessinés d'un seul tenant (CONCEPTION, *Le mode construction* ; `world/wallRuns.ts`, `world/walls.ts` `run`).
