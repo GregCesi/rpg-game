@@ -81,11 +81,9 @@ await playtest('grange', async ({ page, errors, load }) => {
   const click = async (x: number, y: number) => {
     const s = await screen(x, y);
     await page.mouse.move(s.x, s.y);
-    await sleep(60);
     await page.mouse.click(s.x, s.y);
-    await sleep(110);
-    // le clic joué : la file des clics du mode construction (systems/build.ts) vidée par un pas de jeu ; sous la charge, ce pas peut venir
-    // après la pause (un clic n'est jamais perdu, il attend son pas)
+    // le clic joué : la file des clics du mode construction (systems/build.ts) vidée par un pas de jeu, jamais une pause fixe (un
+    // clic n'est jamais perdu, il attend son pas : sous la charge, une pause passerait avant lui)
     await page.evaluate(() => (window as any).__until(() => !(window as any).game.scene.getScene('world').builder?.clicks?.length, 'le clic joué'));
   };
   const send = (cmd: object) => page.evaluate((c) => (window as any).game.events.emit('build', c), cmd);

@@ -100,11 +100,9 @@ await playtest('maison', async ({ page, errors, load }) => {
     await look(x, y);
     const s = await screen(x, y);
     await page.mouse.move(s.x, s.y);
-    await sleep(60);
     await page.mouse.click(s.x, s.y, { button });
-    await sleep(110);
-    // le clic joué : la file des clics du mode construction (systems/build.ts) vidée par un pas de jeu ; sous la charge, ce pas peut venir
-    // après la pause (un clic n'est jamais perdu, il attend son pas)
+    // le clic joué : la file des clics du mode construction (systems/build.ts) vidée par un pas de jeu, jamais une pause fixe (un
+    // clic n'est jamais perdu, il attend son pas : sous la charge, une pause passerait avant lui)
     await page.evaluate(() => (window as any).__until(() => !(window as any).game.scene.getScene('world').builder?.clicks?.length, 'le clic joué'));
   };
   const send = (cmd: object) => page.evaluate((c) => (window as any).game.events.emit('build', c), cmd);
@@ -132,12 +130,10 @@ await playtest('maison', async ({ page, errors, load }) => {
     await send({ kind: 'pick', piece: s.ref, ...(s.view ? { view: s.view } : {}) });
     for (let i = 0; i < (s.up ?? 0); i++) {
       await page.keyboard.press('KeyT');
-      await sleep(30);
       await stepped();
     }
     for (let i = 0; i < (s.down ?? 0); i++) {
       await page.keyboard.press('KeyG');
-      await sleep(30);
       await stepped();
     }
     // la hauteur où on la voit : le dessus de ce qui la porte (les pans de toit ne portent que le faîtage)
@@ -159,7 +155,6 @@ await playtest('maison', async ({ page, errors, load }) => {
     await look(px, py, 6);
     let sp = await screen(px, py);
     await page.mouse.move(sp.x, sp.y);
-    await sleep(40);
     await stepped();
     // la souris là où on la veut : l'écart mesuré dans le monde, rattrapé
     for (let i = 0; i < 3; i++) {
@@ -175,10 +170,8 @@ await playtest('maison', async ({ page, errors, load }) => {
       if (Math.abs(e.dx) < 0.5 && Math.abs(e.dy) < 0.5) break;
       sp = { x: sp.x + e.dx, y: sp.y + e.dy };
       await page.mouse.move(sp.x, sp.y);
-      await sleep(40);
       await stepped();
     }
-    await sleep(40);
     await stepped();
     // ce que montre le fantôme (pour le message, si la pièce n'est pas où elle doit)
     const readGhost = () =>
@@ -211,12 +204,10 @@ await playtest('maison', async ({ page, errors, load }) => {
         const key = crans < 0 ? 'KeyG' : 'KeyT';
         for (let i = 0; i < Math.abs(crans); i++) {
           await page.keyboard.press(key);
-          await sleep(30);
           await stepped();
         }
         for (const [dx, dy] of tries) {
           await page.mouse.move(sp.x + dx * k, sp.y + dy * k);
-          await sleep(40);
           await stepped();
           const g = await readGhost();
           seenGhosts.add(JSON.stringify([crans, g.aim?.[0]]));
@@ -230,14 +221,12 @@ await playtest('maison', async ({ page, errors, load }) => {
         if (found) break;
         for (let i = 0; i < Math.abs(crans); i++) {
           await page.keyboard.press(crans < 0 ? 'KeyT' : 'KeyG');
-          await sleep(30);
           await stepped();
         }
       }
       if (!found) await page.mouse.move(sp.x, sp.y);
     }
     await page.mouse.click(sp.x, sp.y);
-    await sleep(110);
     // le clic joué : la file des clics du mode construction vidée par un pas de jeu
     await page.evaluate(() => (window as any).__until(() => !(window as any).game.scene.getScene('world').builder?.clicks?.length, 'le clic joué'));
     await stepped();

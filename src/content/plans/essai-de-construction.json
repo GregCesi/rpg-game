@@ -1,0 +1,53 @@
+{
+  "name": "Essai de construction",
+  "size": {
+    "w": 200,
+    "d": 40
+  },
+  "age": "new",
+  "pieces": [
+    {
+      "piece": {
+        "prop": "slab"
+      },
+      "x": 80,
+      "y": 0,
+      "z": 0,
+      "view": 0,
+      "natural": {
+        "form": 0,
+        "size": 100
+      }
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 180,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "up"
+        }
+      },
+      "x": 80,
+      "y": 0,
+      "z": 12,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 200,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 0,
+      "y": 0,
+      "z": 192,
+      "view": 0
+    }
+  ]
+}
