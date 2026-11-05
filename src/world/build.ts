@@ -167,7 +167,8 @@ export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: 
   const tops = [...new Set(pieces.map((p) => topOf(boxOf(p))))].sort((a, b) => b - a);
   const at = (t: number) => {
     const f = { x: onGrid(cx - size.w / 2), y: onGrid(cy + t - size.d / 2), w: size.w, d: size.d };
-    return grid ? f : magnet(pieces, f, t, size.h);
+    // l'aimant prend tous les bords, une porte aussi (le remplissage contre l'huisserie et la porte de la maison)
+    return grid ? f : magnet(all, f, t, size.h);
   };
   // le point visé, vu à la hauteur t, est-il sur un dessus à cette hauteur (on le voit sur ce dessus) ?
   const seenOn = (t: number) => pieces.some((p) => {
