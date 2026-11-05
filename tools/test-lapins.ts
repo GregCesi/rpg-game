@@ -94,8 +94,15 @@ await playtest('lapins', async ({ page, load }) => {
     const approach = async (id: string, keys: string[]) => {
       const c = find(id)!;
       await stand(c.x - 400, c.y, 'right');
-      await W.__until(() => find(id)?.mode === 'calm', `le lapin ${id} calme, Xéros à 20 m`);
+      // calme, ou rentré au terrier (l'alerte d'un autre lapin qui tambourine l'y a fait fuir pendant que Xéros reculait) : un autre
+      // lapin sortira (measure)
+      try {
+        await W.__until(() => !find(id) || find(id)?.mode === 'calm', `le lapin ${id} calme, Xéros à 20 m`);
+      } catch (e) {
+        throw new Error(`${(e as Error).message} ; au bout : le lapin ${JSON.stringify(find(id))}, Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}), ${w().mode}`);
+      }
       const seen: { alert?: number; flee?: number; why?: string; min: number } = { min: Infinity };
+      if (!find(id)) return { ...seen, why: 'alarm' };
       const watch = () => {
         const q = find(id);
         if (!q) return;

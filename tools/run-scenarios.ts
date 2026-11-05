@@ -113,9 +113,36 @@ const done = (r: Result) => {
   console.log(`${r.ok ? '✓' : '✗'} ${r.name} (${(r.ms / 1000).toFixed(0)} s)`);
   results.push(r);
 };
+/**
+ * Au plus SCENARIOS_HEAVY scénarios lourds à la fois (2 par défaut) : les pages du banc partagé se partagent un seul processus de rendu
+ * logiciel, et plusieurs bâtiments rendus ensemble l'étouffent (maison, 6 à 7 min seule ou avec un autre lourd, dépassait la limite de
+ * 15 min avec trois lourds autour, sur main comme ailleurs) ; les places libres vont aux légers. Rien n'attend de plus dans un scénario.
+ */
+const heavyJobs = Math.max(1, Number(process.env.SCENARIOS_HEAVY) || 2);
+let heavyRunning = 0;
+/** Les travailleurs qui attendent qu'un lourd finisse : tous réveillés, chacun regarde de nouveau la file. */
+const waiting: (() => void)[] = [];
+const next = async (): Promise<string | undefined> => {
+  for (;;) {
+    const i = queue.findIndex((n) => !HEAVY.includes(n) || heavyRunning < heavyJobs);
+    if (i >= 0) return queue.splice(i, 1)[0];
+    if (!queue.length) return undefined;
+    // il ne reste que des lourds, et assez tournent : la place du prochain qui finit
+    await new Promise<void>((r) => waiting.push(r));
+  }
+};
 await Promise.all(
   Array.from({ length: Math.min(jobs, queue.length) }, async () => {
-    for (let name = queue.shift(); name; name = queue.shift()) done(await run(name));
+    for (let name = await next(); name; name = await next()) {
+      const heavy = HEAVY.includes(name);
+      if (heavy) heavyRunning++;
+      const r = await run(name);
+      if (heavy) {
+        heavyRunning--;
+        for (const wake of waiting.splice(0)) wake();
+      }
+      done(r);
+    }
   }),
 );
 await rig?.close();
