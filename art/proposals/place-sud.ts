@@ -1,41 +1,51 @@
-// PROPOSITION (hors jeu, jamais chargée par le jeu) : les bâtiments des quarts sud de la place du village (CADRAGE-village.md, section
-// 13 : 13.5 le dépôt et l'étal de la ferme rivale, 13.6 la mercière, 13.7 la tailleuse et le frère du forgeron). Planches de contrôle :
+// PROPOSITION (hors jeu, jamais chargée par le jeu) : les bâtiments des quarts sud de la place resserrée (CADRAGE-village.md, section
+// 14 : le rond de 20 m, les bâtiments en équerre serrés autour, leurs portes sur le rond ; 14.2 : les deux solutions des bâtiments qui
+// tournent le dos au joueur ; 14.3 : chaque bâtiment est le commerce et le logis de quelqu'un). Planches de contrôle :
 // npx tsx tools/essai-place-sud.ts (.art-preview/place-sud-dehors.png, place-sud-dedans.png, place-sud-pieces.png).
 //
-// La règle qui commande (13.1) : le jeu ne montre que les faces sud, et un bâtiment haut cache le sol juste au nord de lui. Les trois
-// bâtiments ouvrent donc au sud, sur leur cour (la mercière, la tailleuse) ou sur la ruelle des quarts (le dépôt) ; l'étal de la ferme
-// rivale est à la pointe du huitième, sur le bord de la place, à 5,60 m au nord du dépôt (son toit ne le cache pas : voir NOTES).
+// Les trois bâtiments ont leur entrée au nord, sur le rond : le jeu ne montre que les faces sud, on n'en voit que le toit. Ce que la
+// géométrie du jeu impose (projection (x, y − z), vue à 45°) : un pan tourné vers le nord à moins de 45° se voit ; un bâtiment à étage
+// (égout à 5,25 m) cache le sol au nord de lui sur la hauteur de son égout, plus son débord : 5,35 m. Un appentis bas (égout à 1,90 m,
+// 2,80 m de profondeur) se trouve donc tout entier dans cette bande : on ne le voit pas du dehors, seulement quand le toit s'efface
+// au-dessus de Xéros. Ce qui se voit, c'est ce qui est à plus de 5,35 m du mur, soit 2,55 m au-delà de l'égout de l'appentis (14.2 en
+// demandait 2 au moins) : c'est là que sont les étals de la solution 1. Les deux ailes « le long d'une rue nord-sud » (l'aile du cuir,
+// la ferme rivale) ont leur faîtage nord-sud et une croupe au nord : un pignon tourné vers le rond, haut de 9,40 m, cacherait 9,40 m de
+// place (tout le recoin et le bord du rond).
 //
-// Le modèle est celui des maisons du village, validé par Grégoire : le dépôt est une maison de bois (art/proposals/village-maisons-bois-lib.ts,
-// `frameScene` : le pan de bois de la maison de Xéros, torchis chaulé, chaume) ; la mercière reprend la maison de pierre à étage du
-// meunier (enduit, pierres d'angle et de baie du coq, vitraux) avec un étage de pan de bois chaulé (les croix de Saint-André du vannier)
-// et les tuiles plates du forgeron ; la tailleuse est neuve : ossature de bois, bardage à clins, bardeaux, la galerie. Les aides copiées
-// sont dans place-sud-lib.ts, les pièces nouvelles dans place-sud-pieces.ts.
+//   - Solution 1 (`BUILDINGS`) : l'appentis ouvert contre la façade nord, les grands étals à ciel ouvert devant lui, dans la bande qui
+//     se voit (sur la rue de l'ouest, sur la rue de l'est, dans le recoin et sur le bord du rond).
+//   - Solution 2 (`BUILDINGS_S2`) : la façade nord sans appentis, la boutique meublée dedans ; dehors, peu de choses. `S2_SHOPS` donne
+//     les pièces de boutique, `s2Reveal` la scène nue (toit et étage ôtés, murs coupés) et `fadeHoles` le fondu du jeu (toit et mur nord
+//     de la pièce à 0,35, comme `windowFade` et `windowHole` de src/world/roofView.ts) : ce que voit le joueur debout devant la porte.
 //
-// Repère de chaque bâtiment : px du jeu (5 cm), x vers l'est, y vers le sud, z vers le haut ; les murs sont décrits dans leur repère
-// (l'origine au coin nord-ouest des murs), puis décalés de `AT` dans l'emprise ; l'emprise (`size`) a son coin nord-ouest en `at` dans
-// la zone village (px), d'après les emprises de art/proposals/village-plan-data.ts.
+// Le modèle est celui des maisons du village, validé par Grégoire ; les aides copiées sont dans place-sud-lib.ts, les pièces nouvelles
+// dans place-sud-pieces.ts. Repère de chaque bâtiment : px du jeu (5 cm), x vers l'est, y vers le sud, z vers le haut, l'origine au
+// coin nord-ouest de son emprise (`size`), posée en `at` dans la zone village.
 
 import {
-  box, daub, doorTex, part, timber, voidTex, type Board, type Part, type Quad, type Scene, type Tex,
+  box, doorTex, part, timber, type Board, type Part, type Quad, type Scene, type Tex,
 } from '../lib/volumes';
+import { daub } from '../lib/volumes';
+import type { Layer } from './maison-xeros';
 import type { PlaceBuilding, PlaceBuildingId } from './place-types';
 import type { Rect } from './village-plan-data';
 import {
-  VOID, boards, dimmed, flagstones, furnWood, leaded, limeMasonry, limePlaster, palette, planks, rendered, rubble, rubbleSection, withBays,
+  VOID, boards, dimmed, furnWood, leaded, limeMasonry, limePlaster, palette, planks, rendered, rubble, rubbleSection, withBays,
   type StoneBay,
 } from './village-maisons-pierre-matieres';
 import { STAIR, pieceGrid as stonePieceGrid, pieceModel as stonePieceModel, stairModel } from './village-maisons-pierre-pieces';
-import { crossTex, frameScene, moveScene, type HouseSpec } from './village-maisons-bois-lib';
+import { crossTex } from './village-maisons-bois-lib';
 import {
-  bracketQuads, clapboard, darkBay, doorPlane, gableRoof, hearth, lift, moveBoard, moved, onFace, openShutter, place, placeImg, prop,
-  quad, ridgeZ, shell, sill, stack, threshold, turned, wallRun, type Built, type Hole, type RoofSpec,
+  bar, clapboard, darkBay, doorPlane, flowerPot, gableRoof, gableYS, hearth, ladder, leanToX, lift, moved, onFace, openShutter, place,
+  placeImg, prop, ridgeZ, ridgeZY, roofY, stack, threshold, turned, wallRun, washingLine, type Built, type Cover, type Hole,
+  type RoofSpec, type RoofYSpec,
 } from './place-sud-lib';
 import {
-  AWNING, GALLERY, PIECES as PIECE_LIST, awningModel, clothBoltQuads, fenceModel, furnitureGrid, galleryModel, gateModel, pieceGrid, pieceModel,
+  GALLERY, PIECES as PIECE_LIST, clothBoltQuads, fenceModel, furnitureGrid, galleryModel, gateModel, pieceGrid, pieceModel,
   tailorTableQuads,
 } from './place-sud-pieces';
 import { pieceGrid as woodPieceGrid } from './village-maisons-bois-pieces';
+import { HEARTH, hearthModel } from '../world/chimney';
 import { PIECE_PAL } from './village-maisons-bois-lib';
 import { hangingSign } from './place-nord-pieces';
 
@@ -65,18 +75,32 @@ function woodPiece(key: string, w: number, d: number, x: number, y: number, view
   const [ww, dd] = view % 2 ? [d, w] : [w, d];
   return placeImg({ grid: woodPieceGrid(key, view), pal: PIECE_PAL }, x, x + ww / 5, y + dd / 5, z);
 }
+/** L'âtre du jeu tourné le dos au sud (contre le mur sud, la souche au-dessus) : son dos en (x .. x + 44, ySouth). */
+function hearthNorth(frame: number, x: number, ySouth: number, z: number): Quad[] {
+  return moved(turned(hearthModel(frame)(), 2, HEARTH.w, HEARTH.d), [x, ySouth - HEARTH.d, z]);
+}
 const boltBoard = (kind: 'red' | 'blue' | 'linen', x: number, y: number, z = 0) => furniture(clothBoltQuads(kind), x, y, 8, 6, z);
-/** Le poteau planté qui porte une enseigne (son pied en (x, y), 2,60 m). */
-const signPost = (x: number, y: number) => moved(bracketQuads(52, 0).filter((q) => ['dé', 'poteau'].includes(q.part.name)), [x, y, 0]);
+
+/** Le poteau planté qui porte une enseigne (2,60 m, sur un dé), son pied en (x, y). */
+function signPost(x: number, y: number): Quad[] {
+  const Q: Quad[] = [];
+  Q.push(...box(x - 2.5, x + 2.5, y - 2, y + 2, 0, 3, part('dé', 2, '~', 'full'), (_s, _t, c) => (c.face === 'top' ? '+' : '=')));
+  Q.push(...box(x - 1.5, x + 1.5, y - 1.5, y + 1.5, 3, 52, part('poteau', 5, 'K', 'full'), timber(907)));
+  return Q;
+}
 /**
  * L'enseigne `hanging-sign` (dessinée par l'autre module, art/proposals/place-nord-pieces.ts : la potence de fer, le panneau peint, un
- * motif par métier) fixée par sa platine à une face tournée vers l'est (R0, le bras vers l'est, depuis x) ou vers l'ouest (R2, le bras
- * vers l'ouest, jusqu'à x) ; son bras à `armZ` px du sol, son panneau dans le plan est-ouest à y.
+ * motif par métier) fixée à une face tournée vers l'est (R0, le bras vers l'est, depuis x) ou vers l'ouest (R2) ; son bras à `armZ` px.
  */
 function sign(motif: 's2' | 's3' | 's4', x: number, y: number, armZ: number, west = false): Board {
   const im = hangingSign(motif, west ? 2 : 0);
   const [x0, x1] = west ? [x - 20, x] : [x, x + 20];
   return placeImg(im, x0, x1, y, armZ - 16, y);
+}
+/** Une enseigne sur son poteau planté : le poteau en (x, y), l'enseigne vers l'est. */
+function postSign(Q: Quad[], B: Board[], motif: 's2' | 's3' | 's4', x: number, y: number): void {
+  Q.push(...signPost(x, y));
+  B.push(sign(motif, x + 1.5, y + 0.5, 48));
 }
 /** Une palissade le long de x (de x0 à x1, sur y) ou le long de y (de y0 à y1, sur x). */
 const fenceX = (x0: number, x1: number, y: number, seed: number) => moved(fenceModel(x1 - x0, seed), [x0, y - 2, 0]);
@@ -84,119 +108,119 @@ const fenceY = (y0: number, y1: number, x: number, seed: number) => moved(turned
 
 /** Le bois d'une cloison ou d'un mur de planches vu du dedans. */
 const plankInner = (seed: number): Tex => boards(seed, 5, [2]);
-const W_ = (seed: number) => furnWood(seed);
-
-/** Ce que la planche écrit et montre de chaque bâtiment (coordonnées de la scène posée en (0, 0)). */
-export interface PlaceNotes {
-  lines: string[];
-  inside: string[];
-  xeros: [number, number][];
-  inXeros0?: [number, number];
-  /** Xéros à l'étage : ses pieds sur le plancher (relevé de 2,85 m par l'outil). */
-  inXeros1?: [number, number];
-  /** La terre battue (cours, devant de porte), [x0, y0, x1, y1] de la scène. */
-  yards: Rect[];
-}
+const steps = (a: number, b: number, n: number) => Array.from({ length: n + 1 }, (_, i) => Math.round(a + ((b - a) * i) / n));
 
 // =====================================================================================================================
-// 13.5 La ferme rivale : l'étal de légumes à la pointe, le dépôt au large du huitième
+// Le modèle commun : des ailes (un corps de bâtiment à étage, son toit), assemblées
 // =====================================================================================================================
-//
-// Emprises du plan (zone village) : l'étal 3392-3520 × 2400-2448 (6,40 × 2,40 m), le dépôt 3392-3552 × 2560-2688 (8 × 6,40 m). La scène
-// a son coin en (3376, 2380) ; l'étal y est en x 16-144, y 20-68, les murs du dépôt en x 16-176, y 180-308. Le toit du dépôt (chaume à
-// 50°, faîte à 6,40 m) monte à l'écran jusqu'à y 103 de la scène : l'étal (son bas en y 68, son auvent jusqu'à y 23) reste dégagé.
 
-const FR_AT: [number, number] = [3376, 2380];
-const ST = { x: 16, y: 20 }; // le coin nord-ouest de l'étal
-const DEP = { x: 16, y: 180 }; // l'axe du poteau nord-ouest du dépôt
-const steps = (n: number, k = 32) => Array.from({ length: n + 1 }, (_, i) => i * k);
-const DEPOT: HouseSpec = {
-  L: 160, D: 128, T: 48, sill: 16, doorW: 18, innerDoorW: 16, age: 'worn', fill: 'lime',
-  walls: [
-    { side: 'S', ew: true, c: 128, posts: steps(5), out: 1, bays: ['window', 'plain', 'door', 'plain', 'window'] },
-    { side: 'N', ew: true, c: 0, posts: steps(5), out: -1, bays: ['plain', 'plain', 'plain', 'plain', 'plain'] },
-    { side: 'W', ew: false, c: 0, posts: steps(4), out: -1, bays: ['plain', 'plain', 'plain', 'plain'], ends: [true, true] },
-    { side: 'E', ew: false, c: 160, posts: steps(4), out: 1, bays: ['plain', 'window', 'plain', 'plain'], ends: [true, true] },
-  ],
-  roof: { cover: 'thatch', pitch: 50, gables: ['lime', 'lime'] },
-};
+/** Les hauteurs de tous les bâtiments : le rez à 2,60 m, le plancher à 2,85 m, l'égout à 5,25 m. */
+const H = { rez: 52, floor: 57, top: 105, solin: 6 };
 
-/** L'étal : l'auvent, deux travées garnies, les cageots et les paniers à terre devant (au nord, vers la place), la balance, l'ardoise. */
-function stallScene(roof: boolean): Built {
-  const Q: Quad[] = [], B: Board[] = [];
-  const aw = moved(awningModel(), [ST.x, ST.y, 0]);
-  Q.push(...(roof ? aw : aw.filter((q) => !q.part.roof)));
-  B.push(piece('rough-stall', ST.x, ST.y + 20), piece('rough-stall-s1', ST.x + 64, ST.y + 20));
-  B.push(piece('scale', ST.x + 117, ST.y + 23, 0, 16));
-  B.push(piece('price-slate', ST.x + 4, ST.y + 6));
-  // à terre devant l'étal (au nord, vers la place) : les cageots du vannier, les paniers
-  for (const [x, k] of [[16, 0], [27, 2], [40, 1], [74, 0], [96, 2], [107, 1]] as const) B.push(piece(k ? `vegetable-crate-s${k}` : 'vegetable-crate', ST.x + x, ST.y + 9));
-  for (const x of [56, 86, 120]) B.push(piece('vegetable-basket', ST.x + x, ST.y + 8));
-  // derrière, du côté des filles : des cageots vides empilés, un sac de pommes de terre, un panier
-  B.push(prop('crate', ST.x + 2, ST.y + 37), lift(prop('crate', ST.x + 2, ST.y + 37), 13), prop('sack', ST.x + 118, ST.y + 37), piece('vegetable-basket', ST.x + 108, ST.y + 39));
-  return { quads: Q, boards: B };
+type Mat = 'clap' | 'merc' | 'rival';
+type BayKind = 'door' | 'window' | 'shop' | 'leaded';
+interface Bay { a0: number; a1: number; z0: number; z1: number; kind: BayKind }
+type UpBay = 'plain' | 'cross' | 'window';
+interface Wing {
+  /** Les murs, dans le repère de la scène. */
+  x0: number; x1: number; y0: number; y1: number;
+  /** Le faîtage : le long de x (est-ouest) ou de y (nord-sud, croupe au nord, pignon au sud). */
+  axis: 'x' | 'y';
+  mat: Mat;
+  cover: Cover; pitch: number; seed: number;
+  /** Les baies de la face sud (la seule qu'on voit) ; a depuis x0. Pour `merc` et `rival`, celles du rez. */
+  south: Bay[];
+  /** L'étage de pan de bois (`merc`, `rival`) : les travées entre les poteaux. */
+  up?: UpBay[];
+  /** La porte de la boutique au nord, sur le rond (a depuis x0). */
+  northDoor?: [number, number];
+  /** La souche de cheminée : x0, x1, y0, y1 (repère de la scène). */
+  stack?: [number, number, number, number];
+  /** La galerie de bois sur la face sud : ses poteaux (x de la scène). */
+  gallery?: number[];
 }
+/** L'épaisseur des murs : les planches 15 cm, la pierre 50. */
+const thick = (m: Mat) => (m === 'clap' ? 3 : 8);
 
-/** Le dépôt : la maison de bois (le kit de Xéros), dedans les cageots, les paniers, les sacs, les tonneaux. */
-function depotScene(cut: boolean, frame: number): Built {
-  const sc = moveScene(frameScene(DEPOT, { cut, roof: !cut, rot: 0 }), DEP.x, DEP.y);
-  const B = [...sc.boards];
-  if (!cut) B.push(piece('vegetable-crate-s2', DEP.x + 52, DEP.y + 134), piece('vegetable-basket', DEP.x + 102, DEP.y + 136));
-  if (cut) {
-    const at = (b: Board) => moveBoard(b, DEP.x, DEP.y);
-    B.push(...[
-      prop('crate', 8, 8), lift(prop('crate', 8, 8), 13), prop('crate', 22, 8), prop('crate', 36, 8), lift(prop('crate', 36, 8), 13),
-      piece('vegetable-crate', 52, 10), piece('vegetable-crate-s1', 64, 10), piece('vegetable-crate-s2', 76, 10),
-      prop('sack', 100, 8), prop('sack', 111, 9), prop('sack', 122, 8), prop('sack', 105, 20), prop('sack', 117, 21),
-      prop('barrel', 140, 8), prop('barrel', 140, 22),
-      piece('vegetable-basket', 10, 40), piece('vegetable-basket', 20, 42), piece('vegetable-basket', 12, 52),
-      prop('table', 46, 52), piece('scale', 52, 58, 0, 16), prop('stool', 70, 74), prop('bucket-water', 140, 100),
-      lift(piece('vegetable-crate', 8, 100), 0), piece('vegetable-crate', 20, 100), piece('vegetable-crate-s1', 8, 108),
-    ].map(at));
+const roofX = (w: Wing): RoofSpec => ({
+  axis: 'x', a0: w.x0, a1: w.x1, b0: w.y0, b1: w.y1, z: H.top, pitch: w.pitch, eave: 6, gable: [4, 4], thick: 2, cover: w.cover, seed: w.seed,
+  holes: w.stack ? [w.stack] : undefined,
+});
+const roofYOf = (w: Wing): RoofYSpec => ({
+  x0: w.x0, x1: w.x1, y0: w.y0, y1: w.y1, z: H.top, pitch: w.pitch, eave: 6, gableS: 4, thick: 2, cover: w.cover, seed: w.seed, hipN: true,
+  holes: w.stack ? [w.stack] : undefined,
+});
+const ridgeOf = (w: Wing) => (w.axis === 'x' ? ridgeZ({ pitch: w.pitch, b0: w.y0, b1: w.y1, z: H.top, thick: 2 }) : ridgeZY(roofYOf(w)));
+const abs = (w: Wing, b: Bay): Hole => ({ a0: w.x0 + b.a0, a1: w.x0 + b.a1, z0: b.z0, z1: b.z1 });
+
+/** La matière d'un mur de face (s le long du mur depuis a0, t depuis le pied), selon la matière de l'aile. */
+function faceTex(w: Wing, ew: boolean, a0: number, len: number, seed: number): Tex {
+  if (w.mat === 'clap') return (_s, _t, c) => (c.face === 'top' ? '%' : clapboard(seed)((ew ? c.p[0] : c.p[1]) - a0, c.p[2] - H.solin, c));
+  if (w.mat === 'merc') {
+    const bays: StoneBay[] = w.south.filter((b) => b.kind !== 'door').map((b, i) => ({ s0: b.a0, s1: b.a1, t0: b.z0, t1: b.z1, seed: i }));
+    return onFace(withBays(rendered(seed, len, ['left', 'right']), ew && a0 === w.x0 ? bays : []), ew, a0, len, H.rez);
   }
-  void frame;
-  return { quads: sc.quads, boards: B, floor: sc.floor };
+  const holes = ew ? w.south.map((b) => ({ s0: b.a0, s1: b.a1, t0: b.z0, t1: b.z1, kind: 'lintel' as const })) : [];
+  return onFace(rubble(seed, len, H.rez, 'lime', holes), ew, a0, len, H.rez, 0, rubbleSection(seed + 1, 'lime'));
 }
 
-function fermeRivale(cut: boolean, frame: number): Built {
-  const a = stallScene(!cut), b = depotScene(cut, frame);
-  return { quads: [...a.quads, ...b.quads], boards: [...a.boards, ...b.boards], floor: b.floor };
-}
-
-const fermeRivaleBuilding: PlaceBuilding = {
-  id: 'p-ferme-rivale', size: [200, 336], at: FR_AT, levels: 1, palette,
-  pieces: ['rough-stall', 'rough-stall-s1', 'plank-awning-poles', 'vegetable-crate', 'vegetable-crate-s1', 'vegetable-crate-s2', 'vegetable-basket', 'scale', 'price-slate'],
-  outside: (o, frame = 0) => place(fermeRivale(false, frame), [0, 0], o),
-  inside: (o, _level = 0, frame = 0) => place(fermeRivale(true, frame), [0, 0], o),
-};
-
-// =====================================================================================================================
-// 13.6 La mercière : rez de pierre enduite, étage de pan de bois chaulé, tuiles plates ; la boutique au sud sur sa cour
-// =====================================================================================================================
-//
-// Murs (px, repère des murs) : x 0-192 (9,60 m), y 0-160 (8 m) ; le rez de moellons enduits, 50 cm d'épais, jusqu'à 52 (2,60 m), les
-// solives et le plancher à 57 (2,85 m), l'étage de pan de bois jusqu'à 105 (5,25 m), tuiles plates à 45°, faîte à 9,35 m. Le plan met
-// les murs en (3712, 2208) de la zone ; la scène a son coin 8 px à l'ouest et 12 au nord (le débord du toit). La cour (3792-3936 ×
-// 2368-2600) : x 80-224, y 160-392 du repère des murs.
-
-const ME = { W: 192, D: 160, t: 10, rez: 52, floor: 57, top: 105, pitch: 45, AT: [8, 12] as [number, number] };
-const ME_AT: [number, number] = [3712 - 8, 2208 - 12];
-const ME_ROOF: RoofSpec = { axis: 'x', a0: 0, a1: ME.W, b0: 0, b1: ME.D, z: ME.top, pitch: ME.pitch, eave: 6, gable: [4, 4], thick: 2, cover: 'tiles', seed: 1301, holes: [[40, 56, -1, 11]] };
-/** Les baies du rez au sud : deux fenêtres vitrées (la boutique), la porte de la boutique ; au nord, sur la rue : une fenêtre, l'ouvroir. */
-const ME_S: (Hole & { kind: 'leaded' | 'door' })[] = [
-  { a0: 22, a1: 42, z0: 16, z1: 36, kind: 'leaded' },
-  { a0: 96, a1: 114, z0: 0, z1: 36, kind: 'door' },
-  { a0: 150, a1: 170, z0: 16, z1: 36, kind: 'leaded' },
-];
-const ME_N: Hole[] = [{ a0: 30, a1: 42, z0: 16, z1: 24 }, { a0: 116, a1: 148, z0: 18, z1: 34 }];
-const ME_STAIR = { x: 164, y: 14 };
-const meSouthTex = () => withBays(rendered(1311, ME.W, ['left', 'right']), ME_S.map((h, i) => ({ s0: h.a0, s1: h.a1, t0: h.z0, t1: h.z1, seed: i }) as StoneBay));
-
-type UpBay = 'plain' | 'cross' | 'window' | 'door';
 /**
- * Une façade de pan de bois chaulé (l'étage de la mercière) : sablières, poteaux aux `posts`, travée par travée : `plain` (une
- * entretoise, deux panneaux chaulés), `cross` (la croix de Saint-André du vannier), `window` (appui, linteau, deux montants, le jour
- * et son volet ouvert). `cut` : coupée à cette hauteur (le dedans).
+ * Les murs d'une aile. `cut` : la vue de dedans (le rez coupé à 70 cm, ou l'étage coupé à 70 cm au-dessus de son plancher) ; sinon
+ * tout le volume, l'étage de pan de bois des ailes de pierre compris.
+ */
+function wingWalls(Q: Quad[], B: Board[], w: Wing, view: 'out' | 'in0' | 'in1'): void {
+  const t = thick(w.mat), W = w.x1 - w.x0, D = w.y1 - w.y0;
+  const P = part('mur', 2, w.mat === 'clap' ? 'K' : '~', 'full', { eave: true });
+  const S = part('solin', 2, '~', 'full');
+  const stone = w.mat !== 'clap';
+  // la hauteur des murs de chaque vue
+  const [z0, z1] = view === 'out' ? [0, stone ? H.rez : H.top] : view === 'in0' ? [0, 14] : [H.floor, H.floor + 14];
+  const inner = (seed: number): Tex => (_s, _t, c) => (c.face === 'top' ? (stone && view !== 'in1' ? rubbleSection(seed, 'lime')(_s, _t, c) : '%') : stone && view !== 'in1' ? limePlaster(seed)(c.p[0] + c.p[1], c.p[2], c) : plankInner(seed)(c.p[0] + c.p[1], c.p[2], c));
+  const sHoles = w.south.map((b) => abs(w, b));
+  const nHoles: Hole[] = w.northDoor ? [{ a0: w.x0 + w.northDoor[0], a1: w.x0 + w.northDoor[1], z0: 0, z1: 36 }] : [];
+  if (view === 'in1' && stone) {
+    // l'étage des ailes de pierre est de pan de bois : coupé à 70 cm, ses poteaux et ses panneaux chaulés
+    const posts = steps(w.x0, w.x1, w.up!.length);
+    halfTimber(Q, B, w.y1, posts, w.up!, H.floor, H.top, w.seed + 30, H.floor + 14);
+    const wt: Tex = (s, tt, c) => (c.face === 'top' ? '*' : Math.floor(c.p[0] + c.p[1]) % 32 < 4 ? timber(w.seed + 31)(s, tt, c) : limePlaster(w.seed + 32)(c.p[0] + c.p[1], c.p[2], c));
+    const wp = part('pan de bois', 3, 'K', 'full');
+    Q.push(...box(w.x0, w.x1, w.y0, w.y0 + 3, z0, z1, wp, wt), ...box(w.x0, w.x0 + 3, w.y0 + 3, w.y1 - 3, z0, z1, wp, wt), ...box(w.x1 - 3, w.x1, w.y0 + 3, w.y1 - 3, z0, z1, wp, wt));
+    return;
+  }
+  const lo = w.mat === 'clap' ? Math.max(z0, H.solin) : z0;
+  if (w.mat === 'clap' && z0 === 0) {
+    const r = (seed: number, len: number) => onFace(rubble(seed, len, H.solin, 'lime'), true, 0, len, H.solin, 0, rubbleSection(seed + 1, 'lime'));
+    const doors = w.south.filter((b) => b.kind === 'door').map((b) => ({ ...abs(w, b), z0: 0, z1: H.solin }));
+    wallRun(Q, true, w.x0 - 1, w.x1 + 1, w.y1 - t - 1, w.y1 + 1, 0, H.solin, doors, S, r(w.seed + 21, W + 2));
+    wallRun(Q, true, w.x0 - 1, w.x1 + 1, w.y0 - 1, w.y0 + t + 1, 0, H.solin, nHoles.map((h) => ({ ...h, z1: H.solin })), S, r(w.seed + 23, W + 2));
+    Q.push(...box(w.x0 - 1, w.x0 + t + 1, w.y0 + t + 1, w.y1 - t - 1, 0, H.solin, S, r(w.seed + 25, D)), ...box(w.x1 - t - 1, w.x1 + 1, w.y0 + t + 1, w.y1 - t - 1, 0, H.solin, S, r(w.seed + 27, D)));
+  }
+  const out = view === 'out';
+  wallRun(Q, true, w.x0, w.x1, w.y1 - t, w.y1, lo, z1, sHoles, P, out ? faceTex(w, true, w.x0, W, w.seed + 1) : inner(w.seed + 1));
+  wallRun(Q, true, w.x0, w.x1, w.y0, w.y0 + t, lo, z1, nHoles, P, out ? faceTex(w, true, w.x0, W, w.seed + 3) : inner(w.seed + 3));
+  wallRun(Q, false, w.y0 + t, w.y1 - t, w.x0, w.x0 + t, lo, z1, [], P, out ? faceTex(w, false, w.y0, D, w.seed + 5) : inner(w.seed + 5));
+  wallRun(Q, false, w.y0 + t, w.y1 - t, w.x1 - t, w.x1, lo, z1, [], P, out ? faceTex(w, false, w.y0, D, w.seed + 7) : inner(w.seed + 7));
+  if (!out) return;
+  const T = (n: string, p = 4) => part(n, p, 'K', 'full', { eave: true });
+  if (w.mat === 'clap') {
+    // les planches d'angle debout, la ceinture entre les deux niveaux (sur la face sud)
+    for (const x of [w.x0, w.x1 - 3]) Q.push(...box(x, x + 3, w.y1 - t - 0.4, w.y1 + 0.4, lo, z1, T('planche d angle'), timber(w.seed + 41 + x)));
+    Q.push(...box(w.x0 - 0.4, w.x1 + 0.4, w.y1 - t - 0.4, w.y1 + 0.6, H.rez, H.floor, T('ceinture', 4.5), timber(w.seed + 43)));
+    return;
+  }
+  // les ailes de pierre : la ceinture de bois (les bouts des solives), l'étage de pan de bois chaulé
+  Q.push(...box(w.x0, w.x1, w.y1 - 3, w.y1, H.rez, H.floor, part('ceinture', 6, 'K', 'full', { eave: true }), (s, tt, c) => (c.face === 'S' ? (Math.floor(s) % 8 < 3 && tt < 3.5 ? '&' : '%') : '*')));
+  halfTimber(Q, B, w.y1, steps(w.x0, w.x1, w.up!.length), w.up!, H.floor, H.top, w.seed + 30);
+  const wp = part('pan de bois', 3, 'K', 'full');
+  const W_ = furnWood(w.seed + 33);
+  Q.push(...box(w.x0, w.x1, w.y0, w.y0 + 3, H.floor - 5, H.top, wp, W_), ...box(w.x0, w.x0 + 3, w.y0 + 3, w.y1 - 3, H.floor - 5, H.top, wp, W_), ...box(w.x1 - 3, w.x1, w.y0 + 3, w.y1 - 3, H.floor - 5, H.top, wp, W_));
+  Q.push(...box(w.x0, w.x1, w.y0, w.y1 - 3, H.rez, H.floor - 5, wp, W_));
+}
+
+/**
+ * Une façade de pan de bois chaulé (l'étage de la mercière et de la ferme rivale) le long de x, au nu y1 : sablières, poteaux aux
+ * `posts`, travée par travée : `plain` (une entretoise, deux panneaux chaulés), `cross` (la croix de Saint-André du vannier), `window`
+ * (appui, linteau, deux montants, le jour et son volet ouvert). `cut` : coupée à cette hauteur (le dedans).
  */
 function halfTimber(Q: Quad[], B: Board[], y1: number, posts: number[], bays: UpBay[], z0: number, z1: number, seed: number, cut?: number): void {
   const top = cut ?? z1, y0 = y1 - 3;
@@ -220,374 +244,557 @@ function halfTimber(Q: Quad[], B: Board[], y1: number, posts: number[], bays: Up
     panel(a, b, z0 + 4, w0 - 2, sd + 2); panel(a, b, w1 + 2, z1 - 4, sd + 3);
     put(m - 8, m - 6, w0, w1, T('montant', 6), timber(sd + 4)); put(m + 6, m + 8, w0, w1, T('montant', 6), timber(sd + 5));
     panel(a, m - 8, w0, w1, sd + 6); panel(m + 8, b, w0, w1, sd + 7);
-    if (cut && w0 >= cut) return;
-    if (!cut) { darkBay(Q, m - 6, m + 6, y0 + 1, w0, w1); B.push(openShutter(m - 6, y1, w0)); }
-  });
-}
-const ME_POSTS = steps(6);
-const ME_UP: UpBay[] = ['cross', 'window', 'plain', 'plain', 'window', 'cross'];
-
-function meRez(Q: Quad[], cut?: number): void {
-  const { W, D, t, rez } = ME;
-  const plaster = limePlaster(1315);
-  const inner: Tex = (_s, _t, c) => plaster(c.p[0] + c.p[1], c.p[2], c);
-  const south = onFace(meSouthTex(), true, 0, W, rez);
-  const outerN = onFace(rendered(1317, W, ['left', 'right']), true, 0, W, rez);
-  shell(Q, {
-    W, D, t, z0: 0, z1: rez, cut, south, north: cut !== undefined ? inner : outerN, inner: cut !== undefined ? inner : outerN,
-    top: rubbleSection(1319, 'lime'), part: part('mur', 2, '~', 'full'),
-    holes: { S: ME_S, N: ME_N, W: [], E: [] },
+    if (cut) return;
+    darkBay(Q, m - 6, m + 6, y0 + 1, w0, w1); B.push(openShutter(m - 6, y1, w0));
+    // un pot de fleurs sur l'appui d'une fenêtre sur deux
+    if ((k + seed) % 2 === 0) flowerPot(Q, m - 2, y1 + 1.5, w0, sd);
   });
 }
 
-/** La cour : la palissade au sud et à l'ouest, l'entrée à l'est sur la ruelle ; la potence de l'enseigne près de la porte. */
-function meYard(Q: Quad[], B: Board[]): void {
-  Q.push(...fenceX(80, 224, 392, 1351), ...fenceY(178, 392, 80, 1353), ...fenceY(178, 300, 222, 1355));
-  Q.push(...signPost(124, 176));
-  B.push(sign('s2', 125.5, 176.5, 48));
-  B.push(prop('bench', 130, 192), prop('bucket-water', 200, 200), piece('vegetable-basket', 186, 196));
+/** Les baies de la face sud d'une aile, du dehors : chambranle ou pierre, porte, jour, volet ouvert, vitrail, appui fleuri. */
+function wingBays(Q: Quad[], B: Board[], w: Wing): void {
+  const y = w.y1;
+  const T = (n: string) => part(n, 5, 'K', 'full', { eave: true });
+  w.south.forEach((b, k) => {
+    const h = abs(w, b), sd = w.seed + 51 + k;
+    if (w.mat === 'clap') {
+      Q.push(...box(h.a0 - 2, h.a0, y - 0.5, y + 1, h.z0, h.z1 + 2, T('chambranle'), timber(sd)));
+      Q.push(...box(h.a1, h.a1 + 2, y - 0.5, y + 1, h.z0, h.z1 + 2, T('chambranle'), timber(sd + 1)));
+      Q.push(...box(h.a0 - 2, h.a1 + 2, y - 0.5, y + 1, h.z1, h.z1 + 2, T('chambranle'), timber(sd + 2)));
+    } else if (w.mat === 'rival') {
+      Q.push(...box(h.a0 - 2, h.a1 + 2, y - 0.5, y + 0.6, h.z1, h.z1 + 3, T('linteau'), timber(sd + 2)));
+    }
+    if (b.kind === 'door') {
+      doorPlane(Q, h.a0, h.a1, y - 2, h.z1 - h.z0, doorTex(sd, h.a1 - h.a0), h.z0);
+      if (w.mat !== 'clap') B.push(threshold(h.a0 - 3, h.a1 + 3, y));
+      return;
+    }
+    if (b.kind === 'leaded') {
+      Q.push(...box(h.a0 - 2, h.a1 + 2, y - 0.5, y + 0.7, h.z0 - 1.5, h.z0, part('appui', 4, '~', 'full'), (_s, _t, c) => (c.face === 'top' ? '!' : '=')));
+      Q.push(...box(h.a0, h.a1, y - 4, y - 3, h.z0, h.z1, part('vitrail', 1, '`', 'none'), (s, tt) => leaded(h.a1 - h.a0, h.z1 - h.z0, s, tt)));
+      flowerPot(Q, h.a0 + 1, y + 0.5, h.z0, sd); flowerPot(Q, h.a1 - 5, y + 0.5, h.z0, sd + 3);
+      return;
+    }
+    darkBay(Q, h.a0, h.a1, y - 2, h.z0, h.z1);
+    if (b.kind === 'window') {
+      B.push(openShutter(h.a0, y, h.z0));
+      Q.push(...box(h.a0 - 2, h.a1 + 2, y - 0.5, y + 1.5, h.z0 - 1.5, h.z0, T('appui'), timber(sd + 3)));
+      if (k % 2 === 0) flowerPot(Q, (h.a0 + h.a1) / 2 - 2, y + 1.2, h.z0, sd);
+    }
+  });
 }
 
-function merciereOutside(frame: number): Built {
-  const Q: Quad[] = [], B: Board[] = [], { W, D, t, rez, floor, top } = ME;
-  meRez(Q);
-  for (const [k, h] of ME_S.entries()) {
-    if (h.kind === 'door') { doorPlane(Q, h.a0, h.a1, D - 3, h.z1, doorTex(1321, h.a1 - h.a0)); B.push(threshold(h.a0 - 3, h.a1 + 3, D)); continue; }
-    sill(Q, h.a0 - 2, h.a1 + 2, D, h.z0);
-    Q.push(...box(h.a0, h.a1, D - 4, D - 3, h.z0, h.z1, part('vitrail', 1, '`', 'none'), (s, tt) => leaded(h.a1 - h.a0, h.z1 - h.z0, s, tt)));
-    void k;
-  }
-  // le plancher entre les deux : la ceinture de bois (les bouts des solives sous la sablière de l'étage)
-  Q.push(...box(0, W, D - 3, D, rez, floor, part('ceinture', 6, 'K', 'full', { eave: true }), (s, tt, c) => (c.face === 'S' ? (Math.floor(s) % 8 < 3 && tt < 3.5 ? '&' : '%') : '*')));
-  halfTimber(Q, B, D, ME_POSTS, ME_UP, floor, top, 1331);
-  // l'étage, au nord et aux pignons : on n'en voit que la tranche
-  const wp = part('pan de bois', 3, 'K', 'full');
-  Q.push(...box(0, W, 0, 3, floor, top, wp, W_(1341)), ...box(0, 3, 3, D - 3, floor, top, wp, W_(1343)), ...box(W - 3, W, 3, D - 3, floor, top, wp, W_(1345)));
-  // la cuisine, sous ses solives, au rez : on n'en voit rien ; le toit, la souche (le conduit de la cuisine monte dans le mur nord)
-  gableRoof(Q, ME_ROOF);
-  stack(Q, 40, 56, -1, 11, 130, ridgeZ(ME_ROOF) + 12, onFace(rendered(1347, 16, ['left', 'right']), true, 40, 16, 200));
-  // l'ouvroir sur la rue (au nord) : rabattu en comptoir les jours de marché, caché par le toit dans la vue du jeu (13.1)
-  Q.push(...moved(turned(pieceModel('shop-flap-open').model(), 2, 32, 16), [116, -16, 0]));
-  meYard(Q, B);
-  void t; void frame;
-  return { quads: Q, boards: B, floor: [80, 224, D, 392] };
+/** Le pignon sud d'une aile à faîtage nord-sud : bardage à clins (la tailleuse) ou planches debout (la ferme rivale), une lucarne. */
+function wingGable(Q: Quad[], w: Wing): void {
+  const r = roofYOf(w);
+  const P = part('pignon', 2, 'K', 'full', { eave: true });
+  const tex: Tex = w.mat === 'clap'
+    ? (_s, _t, c) => clapboard(w.seed + 61)(c.p[0] - w.x0, c.p[2] - H.solin, c)
+    : (_s, _t, c) => { const i = Math.floor(c.p[0] - w.x0), j = Math.floor(c.p[2]); return i % 5 === 0 ? '&' : j % 23 === 0 ? '%' : (i + j) % 11 === 0 ? '%' : i % 5 === 1 ? '^' : '*'; };
+  gableYS(Q, r, tex, P);
+  const m = (w.x0 + w.x1) / 2;
+  darkBay(Q, m - 5, m + 5, w.y1 + 0.2, H.top + 10, H.top + 22);
+  Q.push(...box(m - 6, m + 6, w.y1, w.y1 + 1.2, H.top + 8.5, H.top + 10, part('appui', 5, 'K', 'full'), timber(w.seed + 63)));
 }
 
-/** Le dedans de la mercière, un niveau. */
-function merciereInside(level: 0 | 1, frame: number): Built {
-  const Q: Quad[] = [], B: Board[] = [], { W, D, t, rez, floor, top } = ME;
-  const sx = ME_STAIR.x, sy = ME_STAIR.y;
-  const plaster = limePlaster(1361);
-  if (level === 0) {
-    meRez(Q, 14);
-    // la cloison de planches entre l'arrière-boutique et la boutique (y 76), ses deux portes ; est-ouest, coupée à 70 cm comme le jeu
-    const pp = part('cloison', 3, '&', 'full');
-    wallRun(Q, true, t, W - t, 76, 78, 0, 14, [{ a0: 96, a1: 112, z0: 0, z1: 36 }, { a0: sx, a1: sx + STAIR.w, z0: 0, z1: 36 }], pp, { top: () => '%', side: plankInner(1363) });
-    // l'arrière-boutique : la cuisine (l'âtre au mur nord, sa hotte), la table, la réserve ; l'escalier à l'est
-    Q.push(...hearth(frame, 26, t));
-    Q.push(...box(25, 71, t + 16, t + 22, 30, 34, part('manteau', 7, 'K', 'full'), timber(1365)));
-    Q.push(...box(28, 68, t, t + 16, 34, rez, part('hotte', 6, '~', 'full'), limePlaster(1367)));
-    Q.push(...moved(stairModel(), [sx, sy, 0]));
-    Q.push(quad([t, 78, 0.02], [W - 2 * t, 0, 0], [0, D - t - 78, 0], [0, 0, 1], part('dalles', 0, '~', 'none', { cast: false }), flagstones(13), 'top'));
-    // l'ouvroir, fermé de l'intérieur (son volet rabattu dehors se voit par la baie)
-    Q.push(...box(116, 148, 4, 5, 18, 34, part('volet', 2, '&', 'full'), boards(1369, 4, [2, 13])));
-    B.push(
-      prop('table', 84, 34), prop('bench', 85, 54), stonePiece('chair', 100, 22), prop('jar', 12, 50), prop('jar', 20, 58), prop('barrel', 136, 12),
-      prop('sack', 12, 64), prop('bucket-water', 74, 14), prop('chest', 128, 50),
-      // la boutique : le casier contre la cloison, le comptoir, le présentoir à rubans, une chaise derrière le comptoir
-      piece('haberdashery-cabinet', 14, 79), piece('shop-counter', 64, 102), stonePiece('chair', 82, 90), piece('ribbon-rack', 150, 104),
-      prop('chest', 14, 128, 1), prop('lantern', 102, 104, 0, 19),
-    );
-    return { quads: Q, boards: B, floor: [t, W - t, t, D - t] };
+/** Le toit d'une aile et sa souche. */
+function wingRoof(Q: Quad[], w: Wing): void {
+  if (w.axis === 'x') gableRoof(Q, roofX(w));
+  else { roofY(Q, roofYOf(w)); wingGable(Q, w); }
+  if (w.stack) {
+    const [a, b, c, d] = w.stack;
+    stack(Q, a, b, c, d, H.top - 5, ridgeOf(w) + 12, w.mat === 'merc' ? onFace(rendered(w.seed + 71, b - a, ['left', 'right']), true, a, b - a, 300) : limeMasonry(w.seed + 71, () => [true, true]));
   }
-  // l'étage : le plancher percé de la trémie, l'escalier dans la pénombre dessous, le vide sous la coupe
-  const pp = part('plancher', 1, '&', 'full'), pl = { top: planks(), side: planks() };
-  const [wx0, wx1, wy0, wy1] = [sx, sx + STAIR.w, sy, sy + STAIR.d];
-  Q.push(...box(0, W, 0, wy0, rez, floor, pp, pl), ...box(0, W, wy1, D, rez, floor, pp, pl));
-  Q.push(...box(0, wx0, wy0, wy1, rez, floor, pp, pl), ...box(wx1, W, wy0, wy1, rez, floor, pp, pl));
-  Q.push(...box(0, W, D - t, D, 0, rez, part('vide', 3, 'o', 'none', { cast: false }), () => VOID));
-  Q.push(...dimmed(moved(stairModel(), [sx, sy, 0])));
-  const UB: Board[] = [];
-  halfTimber(Q, UB, D, ME_POSTS, ME_UP, floor, top, 1331, floor + 14);
-  const wallTex: Tex = (s, tt, c) => (c.face === 'top' ? '*' : Math.floor(c.p[0] + c.p[1]) % 32 < 4 ? timber(1371)(s, tt, c) : plaster(c.p[0] + c.p[1], c.p[2], c));
-  const wp = part('pan de bois', 3, 'K', 'full');
-  Q.push(...box(0, W, 0, 3, floor, top, wp, wallTex), ...box(0, 3, 3, D - 3, floor, top, wp, wallTex), ...box(W - 3, W, 3, D - 3, floor, top, wp, wallTex));
-  // les cloisons : est-ouest à y 80 (la salle au nord ; coupée à 70 cm comme le jeu), nord-sud à x 96 (les deux chambres au sud) ; leurs portes
-  const cp = part('cloison', 3, 'K', 'full');
-  wallRun(Q, true, 3, W - 3, 80, 82, floor, floor + 14, [{ a0: 40, a1: 56, z0: floor, z1: floor + 36 }, { a0: 132, a1: 148, z0: floor, z1: floor + 36 }], cp, wallTex);
-  wallRun(Q, false, 82, D - 3, 95, 97, floor, top, [], cp, wallTex);
-  // le conduit de la cuisine qui monte dans le mur nord de la salle
-  Q.push(...box(40, 56, 3, 11, floor, top, part('conduit', 4, '~', 'full'), limePlaster(1373)));
-  // le garde-corps de la trémie
-  const gp = part('garde-corps', 8, 'K', 'thin'), fw = furnWood(1375);
-  Q.push(...box(wx0 - 1, wx0 + 1, wy0, wy1, floor + 17, floor + 19, gp, fw), ...box(wx0 - 1, wx1, wy1 - 1, wy1 + 1, floor + 17, floor + 19, gp, fw));
-  for (let y = wy0 + 2; y < wy1; y += 6) Q.push(...box(wx0 - 0.5, wx0 + 0.5, y, y + 1, floor, floor + 17, gp, fw));
-  const up = (b: Board) => lift(b, floor);
-  B.push(...[
-    // la salle : la table, deux chaises, le coffre, le coupon en cours sur la table
-    prop('table', 70, 30), stonePiece('chair', 80, 18), stonePiece('chair', 120, 18), prop('chest', 12, 14), prop('stool', 20, 50),
-    // la chambre de la mercière (ouest), celle de sa fille (est)
-    prop('bed', 10, 90), prop('chest', 50, 86), stonePiece('chair', 70, 120),
-    prop('bed', 150, 104), prop('chest', 104, 86), prop('stool', 120, 130),
-  ].map(up), boltBoard('blue', 90, 36, floor + 16), boltBoard('red', 100, 38, floor + 16), ...UB);
+}
+
+/** L'appentis ouvert de la solution 1 contre la façade nord d'une aile (2,80 m, égout à 1,90 m). */
+const LEAN = { depth: 56, zE: 38, zW: 50 };
+function wingLeanTo(Q: Quad[], w: Wing, x0 = w.x0, x1 = w.x1): void {
+  leanToX(Q, x0, x1, w.y0, LEAN.depth, LEAN.zE, LEAN.zW, w.seed + 81, 64);
+}
+
+/** Le dehors d'un bâtiment : ses ailes, leurs baies, leurs toits ; la galerie ; les appentis (solution 1). */
+function shellOutside(Q: Quad[], B: Board[], wings: Wing[], lean: boolean): void {
+  for (const w of wings) {
+    wingWalls(Q, B, w, 'out');
+    wingBays(Q, B, w);
+    if (w.gallery) Q.push(...moved(galleryModel(w.x0 - 2, w.x1 + 2, w.gallery), [0, w.y1, 0]));
+    wingRoof(Q, w);
+    if (lean && w.northDoor) wingLeanTo(Q, w);
+  }
+}
+
+/** Le dedans : le rez coupé à 70 cm (`level` 0), ou l'étage sur son plancher, l'escalier dans la pénombre (`level` 1). */
+function shellInside(Q: Quad[], B: Board[], wings: Wing[], level: 0 | 1, stairs: [number, number][]): void {
+  for (const w of wings) {
+    if (level === 1) {
+      const pp = part('plancher', 1, '&', 'full'), pl = { top: planks(), side: planks() };
+      const holes = stairs.filter(([sx, sy]) => sx >= w.x0 && sx < w.x1 && sy >= w.y0 && sy < w.y1);
+      if (!holes.length) Q.push(...box(w.x0, w.x1, w.y0, w.y1, H.rez, H.floor, pp, pl));
+      else {
+        const [sx, sy] = holes[0], [a, b, c, d] = [sx, sx + STAIR.w, sy, sy + STAIR.d];
+        Q.push(...box(w.x0, w.x1, w.y0, c, H.rez, H.floor, pp, pl), ...box(w.x0, w.x1, d, w.y1, H.rez, H.floor, pp, pl));
+        Q.push(...box(w.x0, a, c, d, H.rez, H.floor, pp, pl), ...box(b, w.x1, c, d, H.rez, H.floor, pp, pl));
+        const gp = part('garde-corps', 8, 'K', 'thin'), fw = furnWood(w.seed + 91);
+        Q.push(...box(a - 1, a + 1, c, d, H.floor + 17, H.floor + 19, gp, fw), ...box(a - 1, b, d - 1, d + 1, H.floor + 17, H.floor + 19, gp, fw));
+        for (let y = c + 2; y < d; y += 6) Q.push(...box(a - 0.5, a + 0.5, y, y + 1, H.floor, H.floor + 17, gp, fw));
+        Q.push(...dimmed(moved(stairModel(), [sx, sy, 0])));
+      }
+      Q.push(...box(w.x0, w.x1, w.y1 - thick(w.mat), w.y1, 0, H.rez, part('vide', 3, 'o', 'none', { cast: false }), () => VOID));
+    }
+    wingWalls(Q, B, w, level === 0 ? 'in0' : 'in1');
+    if (w.stack) {
+      const [a, b, c, d] = w.stack;
+      Q.push(...box(a, b, Math.max(c, w.y0), d, level ? H.floor : 0, level ? H.floor + 30 : H.rez, part('souche', 4, '~', 'full'), limeMasonry(w.seed + 93, () => [true, true])));
+    }
+  }
+  if (level === 0) for (const [sx, sy] of stairs) Q.push(...moved(stairModel(), [sx, sy, 0]));
+}
+
+/** Une cloison de planches (coupée à 70 cm au-dessus de son niveau), le long de x ou de y, ses portes [a0, a1]. */
+function partition(Q: Quad[], ew: boolean, a0: number, a1: number, c: number, level: 0 | 1, doors: [number, number][], seed: number): void {
+  const z0 = level ? H.floor : 0;
+  wallRun(Q, ew, a0, a1, c, c + 2, z0, z0 + 14, doors.map(([d0, d1]) => ({ a0: d0, a1: d1, z0, z1: z0 + 36 })), part('cloison', 3, '&', 'full'),
+    { top: () => '%', side: (_s, _t, cx) => plankInner(seed)(cx.p[0] + cx.p[1], cx.p[2], cx) });
+}
+
+/** Ce que la planche écrit et montre de chaque bâtiment (coordonnées de la scène posée en (0, 0)). */
+export interface PlaceNotes {
+  /** Le titre et qui y vit (PLACE_META de place-types.ts date de la section 13). */
+  title: string;
+  who: string;
+  lines: string[];
+  /** Ce que montre la solution 2. */
+  s2: string[];
+  inside: string[];
+  xeros: [number, number][];
+  inXeros0?: [number, number];
+  /** Xéros à l'étage : ses pieds sur le plancher (relevé de 2,85 m par l'outil). */
+  inXeros1?: [number, number];
+  /** La terre battue (cours, devant de porte), [x0, y0, x1, y1] de la scène. */
+  yards: Rect[];
+}
+/** Une pièce de boutique de la solution 2 : son rectangle au sol (scène) et Xéros debout devant sa porte, sur le rond. */
+export interface ShopRoom { name: string; room: Rect; door: [number, number] }
+
+interface Def {
+  id: PlaceBuildingId;
+  at: [number, number];
+  size: [number, number];
+  wings: Wing[];
+  stairs: [number, number][];
+  /** Le dehors propre au bâtiment (cour, palissades, vie) : commun aux deux solutions. */
+  yard(Q: Quad[], B: Board[]): void;
+  /** Les étals de la solution 1, devant les appentis. */
+  stallsS1(Q: Quad[], B: Board[]): void;
+  /** Le peu qui est dehors dans la solution 2. */
+  stallsS2(Q: Quad[], B: Board[]): void;
+  /** Les cloisons et les meubles d'un niveau. */
+  furnish(Q: Quad[], B: Board[], level: 0 | 1, frame: number): void;
+  shops: ShopRoom[];
+  pieces: string[];
+}
+
+function outsideOf(d: Def, sol: 1 | 2, frame: number): Built {
+  const Q: Quad[] = [], B: Board[] = [];
+  shellOutside(Q, B, d.wings, sol === 1);
+  d.yard(Q, B);
+  (sol === 1 ? d.stallsS1 : d.stallsS2)(Q, B);
+  void frame;
   return { quads: Q, boards: B };
 }
-
-const merciereBuilding: PlaceBuilding = {
-  id: 'p-merciere', size: [ME.W + 16 + 40, 410], at: ME_AT, levels: 2, palette,
-  pieces: ['shop-counter', 'haberdashery-cabinet', 'ribbon-rack', 'shop-flap', 'shop-flap-open', 'yard-fence'],
-  outside: (o, frame = 0) => place(merciereOutside(frame), ME.AT, o),
-  inside: (o, level = 0, frame = 0) => place(level ? merciereInside(1, frame) : { ...merciereInside(0, frame), quads: [...merciereInside(0, frame).quads, ...yardOnly(merciereOutside(frame))] }, ME.AT, o),
-};
-/** Ce qui est dans la cour (la palissade, le poteau de l'enseigne) : on le voit aussi toit effacé. */
-function yardOnly(b: Built): Quad[] {
-  return b.quads.filter((q) => ['palissade', 'lisse', 'poteau', 'dé', 'bras', 'jambe de force', 'crochet', 'battant', 'chapeau'].includes(q.part.name) && q.o[1] > ME.D - 2);
+function insideOf(d: Def, level: 0 | 1, frame: number, sol: 1 | 2 = 1): Built {
+  const Q: Quad[] = [], B: Board[] = [];
+  shellInside(Q, B, d.wings, level, d.stairs);
+  d.furnish(Q, B, level, frame);
+  if (level === 0) {
+    d.yard(Q, B);
+    (sol === 1 ? d.stallsS1 : d.stallsS2)(Q, B);
+    // les appentis de la solution 1 gardent leurs poteaux, leur toit effacé
+    if (sol === 1) for (const w of d.wings) if (w.northDoor) { const L: Quad[] = []; wingLeanTo(L, w); Q.push(...L.filter((q) => !q.part.roof)); }
+    // la galerie : ses poteaux seuls
+    for (const w of d.wings) if (w.gallery) Q.push(...moved(galleryModel(w.x0 - 2, w.x1 + 2, w.gallery), [0, w.y1, 0]).filter((q) => q.part.name === 'poteau'));
+  }
+  return { quads: Q, boards: B };
+}
+function buildingOf(d: Def, sol: 1 | 2): PlaceBuilding {
+  return {
+    id: d.id, size: d.size, at: d.at, levels: 2, palette,
+    pieces: d.pieces.filter((k) => sol === 1 || k !== 'shop-lean-to'),
+    outside: (o, frame = 0) => place(outsideOf(d, sol, frame), [0, 0], o),
+    inside: (o, level = 0, frame = 0) => place(insideOf(d, level, frame, sol), [0, 0], o),
+  };
 }
 
 // =====================================================================================================================
-// 13.7 La tailleuse et le frère du forgeron : le grand bâtiment de bois à étage, la galerie, la cour et son portail
+// La tailleuse et le frère du forgeron (quart sud-ouest) : un seul bâtiment de bois à étage, en équerre
 // =====================================================================================================================
 //
-// Murs (px, repère des murs) : x 0-288 (14,40 m), y 0-192 (9,60 m) ; ossature de bois sur un solin de pierre de 30 cm, bardage à clins ;
-// le rez jusqu'à 52 (2,60 m), le plancher à 57, l'étage jusqu'à 105 (5,25 m) ; bardeaux à 40° (45 ferait un faîte à 10,10 m), faîte à
-// 9,40 m. La galerie : y 192-212 (1 m ; le cadrage disait 1,60 m, mais son plancher cachait alors tout le haut des boutiques), son plancher à 2,85 m. La cour, x 0-528, y 224-512 : le plan la donnait jusqu'en 3200 de la zone ; elle
-// va ici jusqu'en 3248 (x 528), pour que le portail ouvre sur la rue du sud (qui commence en 3264), dans la palissade est.
-// Le dedans : au rez, l'atelier de couture (nord-ouest) et la boutique de vêtements (sud-ouest), l'atelier du cuir (nord-est) et la
-// boutique d'aventure (sud-est), au milieu l'escalier (x 136-154) qui monte vers le nord, sa porte au sud ; à l'étage, la cuisine (nord-
-// ouest, l'âtre contre la souche), la chambre (nord-est), la réserve d'étoffes et de cuirs (sud-ouest), la salle (sud-est), le palier et
-// la porte de la galerie au milieu.
+// Zone village : l'aile des vêtements, murs 2720-3040 × 2272-2432 (16 × 8 m), le long de la rue de l'ouest ; l'aile du cuir et des
+// armes, murs 3040-3248 × 2320-2704 (10,40 × 19,20 m), le long de la rue du sud. D'un seul tenant (le mur de l'une contre celui de
+// l'autre), les deux portes de boutique dans l'angle, sur le rond (au nord). L'aile des vêtements est reculée de 4 m sur la proposition
+// (2192) : ses étals (solution 1) tiennent alors sur le bord sud de la rue de l'ouest en lui laissant 3,30 m. La cour au sud-ouest, dans
+// l'équerre, fermée de palissades, le portail sur la ruelle des quarts. Scène : son coin en (2688, 2096).
 
-const TA = { W: 288, D: 192, t: 3, solin: 6, rez: 52, floor: 57, top: 105, pitch: 40, AT: [8, 12] as [number, number] };
-const TA_AT: [number, number] = [2720 - 8, 2208 - 12];
-const TA_ROOF: RoofSpec = { axis: 'x', a0: 0, a1: TA.W, b0: 0, b1: TA.D, z: TA.top, pitch: TA.pitch, eave: 6, gable: [4, 4], thick: 2, cover: 'shingles', seed: 1501, holes: [[40, 60, -4, 10]] };
-const TA_STAIR = { x: 136, y: 100 };
-type Op = Hole & { kind: 'door' | 'shop' | 'window' | 'gallery-door' };
-const TA_S: Op[] = [
-  { a0: 16, a1: 48, z0: 18, z1: 38, kind: 'shop' }, { a0: 60, a1: 78, z0: 0, z1: 36, kind: 'door' },
-  { a0: 136, a1: 154, z0: 0, z1: 36, kind: 'door' },
-  { a0: 210, a1: 228, z0: 0, z1: 36, kind: 'door' }, { a0: 240, a1: 272, z0: 18, z1: 38, kind: 'shop' },
-  { a0: 28, a1: 40, z0: 73, z1: 89, kind: 'window' }, { a0: 96, a1: 108, z0: 73, z1: 89, kind: 'window' },
-  { a0: 136, a1: 154, z0: 57, z1: 95, kind: 'gallery-door' },
-  { a0: 180, a1: 192, z0: 73, z1: 89, kind: 'window' }, { a0: 248, a1: 260, z0: 73, z1: 89, kind: 'window' },
-];
-const TA_N: Hole[] = [{ a0: 100, a1: 112, z0: 18, z1: 30 }, { a0: 200, a1: 212, z0: 18, z1: 30 }, { a0: 200, a1: 212, z0: 73, z1: 85 }, { a0: 100, a1: 112, z0: 73, z1: 85 }];
-const STACK: [number, number, number, number] = [40, 60, -4, 10];
+const TA_AT: [number, number] = [2688, 2096];
+const TA_W: Wing = {
+  x0: 32, x1: 352, y0: 176, y1: 336, axis: 'x', mat: 'clap', cover: 'shingles', pitch: 40, seed: 1501,
+  south: [
+    { a0: 20, a1: 32, z0: 18, z1: 30, kind: 'window' }, { a0: 66, a1: 84, z0: 0, z1: 36, kind: 'door' },
+    { a0: 120, a1: 132, z0: 18, z1: 30, kind: 'window' }, { a0: 184, a1: 196, z0: 18, z1: 30, kind: 'window' },
+    { a0: 250, a1: 268, z0: 0, z1: 36, kind: 'door' }, { a0: 290, a1: 302, z0: 18, z1: 30, kind: 'window' },
+    { a0: 36, a1: 48, z0: 73, z1: 89, kind: 'window' }, { a0: 104, a1: 116, z0: 73, z1: 89, kind: 'window' },
+    { a0: 150, a1: 168, z0: 57, z1: 95, kind: 'door' }, { a0: 204, a1: 216, z0: 73, z1: 89, kind: 'window' },
+    { a0: 272, a1: 284, z0: 73, z1: 89, kind: 'window' },
+  ],
+  northDoor: [266, 284],
+  stack: [92, 110, 318, 333],
+  gallery: [32, 96, 160, 224, 288, 350],
+};
+const TA_S: Wing = {
+  x0: 352, x1: 560, y0: 224, y1: 608, axis: 'y', mat: 'clap', cover: 'shingles', pitch: 40, seed: 1601,
+  south: [
+    { a0: 22, a1: 38, z0: 18, z1: 32, kind: 'window' }, { a0: 95, a1: 113, z0: 0, z1: 36, kind: 'door' },
+    { a0: 170, a1: 186, z0: 18, z1: 32, kind: 'window' },
+    { a0: 36, a1: 48, z0: 73, z1: 89, kind: 'window' }, { a0: 160, a1: 172, z0: 73, z1: 89, kind: 'window' },
+  ],
+  northDoor: [40, 58],
+};
 
-/** Les murs de bois : le solin, la sole, le bardage à clins (dehors), les planches (dedans), les planches d'angle, la ceinture du plancher. */
-function taWalls(Q: Quad[], cut?: number, level: 0 | 1 = 0): void {
-  const { W, D, t, solin, rez, floor, top } = TA;
-  const z1 = cut === undefined ? top : level ? top : rez;
-  const z0 = cut !== undefined && level ? floor : 0;
-  const zs = cut ?? z1;
-  const P = part('bardage', 2, 'K', 'full', { eave: true });
-  const S = part('solin', 2, '~', 'full');
-  const out = (seed: number): Tex => clapboard(seed);
-  const outer = (ew: boolean, a0: number, seed: number): Tex => (_s, _tt, c) => (c.face === 'top' ? '%' : out(seed)((ew ? c.p[0] : c.p[1]) - a0, c.p[2] - solin, c));
-  const inner = (seed: number): Tex => (_s, _tt, c) => (c.face === 'top' ? '%' : plankInner(seed)(c.p[0] + c.p[1], c.p[2], c));
-  const sTex = cut !== undefined ? outer(true, 0, 1511) : outer(true, 0, 1511);
-  const nTex = cut !== undefined ? inner(1513) : outer(true, 0, 1513);
-  const ewTex = cut !== undefined ? inner(1515) : outer(false, 0, 1515);
-  const lo = Math.max(z0, solin);
-  // le solin de pierre (au rez seulement)
-  if (z0 === 0) {
-    const r = (seed: number, len: number) => onFace(rubble(seed, len, solin, 'lime'), true, 0, len, solin, 0, rubbleSection(seed + 1, 'lime'));
-    // devant, coupé aux portes (le seuil de la porte est au ras du sol)
-    const doors = TA_S.filter((h) => h.kind === 'door').map((h) => ({ a0: h.a0, a1: h.a1, z0: 0, z1: solin }));
-    wallRun(Q, true, -1, W + 1, D - t - 1, D + 1, 0, solin, doors, S, r(1521, W + 2));
-    Q.push(...box(-1, W + 1, -1, t + 1, 0, solin, S, r(1523, W + 2)));
-    Q.push(...box(-1, t + 1, t + 1, D - t - 1, 0, solin, S, r(1525, D)), ...box(W - t - 1, W + 1, t + 1, D - t - 1, 0, solin, S, r(1527, D)));
-  }
-  const sHoles = TA_S.map(({ a0, a1, z0: a, z1: b }) => ({ a0, a1, z0: a, z1: b }));
-  wallRun(Q, true, 0, W, D - t, D, lo, Math.min(zs, z1), sHoles, P, sTex);
-  wallRun(Q, true, 0, W, 0, t, lo, z1, TA_N, P, nTex);
-  wallRun(Q, false, t, D - t, 0, t, lo, z1, [], P, ewTex);
-  wallRun(Q, false, t, D - t, W - t, W, lo, z1, [], P, ewTex);
-  // les planches d'angle debout, la ceinture entre les deux niveaux (sur la face sud)
-  const T = (n: string, p = 4) => part(n, p, 'K', 'full', { eave: true });
-  for (const x of [0, W - 3]) Q.push(...box(x, x + 3, D - t - 0.4, D + 0.4, lo, Math.min(zs, z1), T('planche d angle'), timber(1531 + x)));
-  if (cut === undefined) Q.push(...box(-0.4, W + 0.4, D - t - 0.4, D + 0.6, rez, floor, T('ceinture', 4.5), timber(1535)));
-}
-
-/** Une baie de la face sud, du dehors : chambranle, porte, jour, volet ouvert, comptoir de boutique. */
-function taBays(Q: Quad[], B: Board[]): void {
-  const { D } = TA;
-  const T = (n: string) => part(n, 5, 'K', 'full', { eave: true });
-  for (const [k, h] of TA_S.entries()) {
-    // le chambranle : deux montants, la traverse du haut (des planches de 10 cm, en saillie de 5 cm)
-    Q.push(...box(h.a0 - 2, h.a0, D - 0.5, D + 1, h.z0, h.z1 + 2, T('chambranle'), timber(1541 + k)));
-    Q.push(...box(h.a1, h.a1 + 2, D - 0.5, D + 1, h.z0, h.z1 + 2, T('chambranle'), timber(1542 + k)));
-    Q.push(...box(h.a0 - 2, h.a1 + 2, D - 0.5, D + 1, h.z1, h.z1 + 2, T('chambranle'), timber(1543 + k)));
-    if (h.kind === 'door' || h.kind === 'gallery-door') doorPlane(Q, h.a0, h.a1, D - 2, h.z1 - h.z0, doorTex(1551 + k, h.a1 - h.a0), h.z0);
-    else {
-      darkBay(Q, h.a0, h.a1, D - 2, h.z0, h.z1);
-      if (h.kind === 'window') B.push(openShutter(h.a0, D, h.z0));
-      if (h.kind === 'window') Q.push(...box(h.a0 - 2, h.a1 + 2, D - 0.5, D + 1.5, h.z0 - 1.5, h.z0, T('appui'), timber(1561 + k)));
-    }
-    if (h.kind === 'shop') {
-      // le volet de boutique rabattu en comptoir (l'image du jeu `stall-shutter-open`), à 90 cm
-      B.push(prop('stall-shutter-open', h.a0, D, 0, h.z0 - 1));
-    }
-  }
-}
-
-function taYard(Q: Quad[], B: Board[], open = true): void {
-  // la palissade : au nord de la cour à l'est du bâtiment, à l'ouest, au sud, à l'est avec le portail (ouvert : la boutique est ouverte)
-  Q.push(...fenceX(290, 528, 212, 1571), ...fenceY(212, 512, 0, 1573), ...fenceX(0, 528, 512, 1575));
-  Q.push(...fenceY(212, 340, 526, 1577), ...fenceY(396, 512, 526, 1579));
-  Q.push(...moved(turned(gateModel(open), 3, 56, 4), [524, 340, 0]));
-  // les deux enseignes (les ciseaux, le sac), dos à dos au poteau du milieu de la galerie, sous sa sablière,
-  // chacune du côté de sa boutique (pendues ailleurs, elles cachaient le haut des portes)
-  B.push(sign('s3', 142, TA.D + GALLERY.d - 2, 48, true), sign('s4', 146, TA.D + GALLERY.d - 2, 48));
-  B.push(prop('bench', 8, 230), prop('barrel', 236, 228), prop('barrel', 248, 230), prop('crate', 296, 240), prop('rope-coil', 266, 236), woodPiece('sawhorse', 100, 50, 330, 300),
-    // les peaux qui sèchent au soleil, des caisses, un second banc contre la palissade
-    piece('leather-hides', 380, 260), prop('crate', 440, 236), lift(prop('crate', 440, 236), 13), prop('crate', 454, 238), prop('bench', 200, 500));
-}
-
-function tailleuseOutside(frame: number): Built {
-  const Q: Quad[] = [], B: Board[] = [], { W } = TA;
-  taWalls(Q);
-  taBays(Q, B);
-  Q.push(...moved(galleryModel(-2, W + 2, [2, 72, 144, 216, W - 2]), [0, TA.D, 0]));
-  gableRoof(Q, TA_ROOF);
-  stack(Q, STACK[0], STACK[1], STACK[2], STACK[3], 100, ridgeZ(TA_ROOF) + 12, limeMasonry(1581, () => [true, true]));
-  // devant les boutiques : les coupons sur le comptoir de la tailleuse, la corde et la lanterne sur celui de son mari
-  B.push(boltBoard('red', 20, TA.D + 4, 18), boltBoard('blue', 30, TA.D + 3, 18), boltBoard('linen', 38, TA.D + 6, 18));
-  B.push(prop('rope-coil', 246, TA.D + 4, 0, 18), prop('lantern', 262, TA.D + 3, 0, 18));
-  taYard(Q, B);
-  void frame;
-  return { quads: Q, boards: B, floor: [0, 528, TA.D, 512] };
-}
-
-function tailleuseInside(level: 0 | 1, frame: number): Built {
-  const Q: Quad[] = [], B: Board[] = [], { W, D, t, rez, floor, top } = TA;
-  const sx = TA_STAIR.x, sy = TA_STAIR.y;
-  const cp = part('cloison', 3, '&', 'full');
-  const inner = (seed: number): Tex => (_s, _tt, c) => (c.face === 'top' ? '%' : plankInner(seed)(c.p[0] + c.p[1], c.p[2], c));
-  const masonry = limeMasonry(1581, () => [true, true]);
-  if (level === 0) {
-    taWalls(Q, 14, 0);
-    // la cage de l'escalier (x 134-136 et 154-156) et les cloisons entre ateliers et boutiques (y 84)
-    wallRun(Q, false, t, D - t, 134, 136, 0, rez, [{ a0: 20, a1: 36, z0: 0, z1: 36 }], cp, inner(1601));
-    wallRun(Q, false, t, D - t, 154, 156, 0, rez, [{ a0: 20, a1: 36, z0: 0, z1: 36 }], cp, inner(1603));
-    wallRun(Q, true, t, 134, 84, 86, 0, 14, [{ a0: 96, a1: 112, z0: 0, z1: 36 }], cp, inner(1605));
-    wallRun(Q, true, 156, W - t, 84, 86, 0, 14, [{ a0: 180, a1: 196, z0: 0, z1: 36 }], cp, inner(1607));
-    Q.push(...moved(stairModel(), [sx, sy, 0]));
-    // la souche dans le mur nord de l'atelier de couture, l'âtre devant (les fers à repasser chauffent), sa hotte
-    Q.push(...box(STACK[0], STACK[1], STACK[2], t + 4, 0, rez, part('souche', 4, '~', 'full'), masonry));
-    Q.push(...hearth(frame, 28, t + 4));
-    Q.push(...box(27, 73, t + 20, t + 26, 30, 34, part('manteau', 7, 'K', 'full'), timber(1609)));
-    Q.push(...box(30, 70, t + 4, t + 20, 34, rez, part('hotte', 6, '~', 'full'), limePlaster(1611)));
+const tailleuse: Def = {
+  id: 'p-tailleuse', at: TA_AT, size: [576, 656], wings: [TA_W, TA_S], stairs: [[326, 272], [362, 450]],
+  yard(Q, B) {
+    // la cour dans l'équerre : la palissade à l'ouest (sur la ruelle) et au sud, le portail sur la ruelle des quarts
+    Q.push(...fenceY(338, 654, 2, 1571), ...fenceX(0, 132, 654, 1573), ...fenceX(188, 352, 654, 1575));
+    Q.push(...moved(gateModel(false), [132, 650, 0]));
+    // le linge qui sèche entre deux fenêtres de l'étage, sous l'égout ; le linge de la cour, sur sa corde entre deux perches
+    washingLine(Q, TA_W.x0 + 50, TA_W.x0 + 102, TA_W.y1 + 2, 94, 1581);
+    washingLine(Q, TA_W.x0 + 218, TA_W.x0 + 270, TA_W.y1 + 2, 94, 1583);
+    for (const x of [40, 150]) Q.push(...box(x - 1, x + 1, 470, 472, 0, 36, part('perche', 5, 'K', 'full'), timber(1585 + x)));
+    washingLine(Q, 41, 149, 471, 35, 1587);
+    // des pots de fleurs sur la main courante de la galerie
+    for (const x of [60, 132, 196, 316]) flowerPot(Q, TA_W.x0 + x - 32, TA_W.y1 + GALLERY.d - 1, GALLERY.floor + GALLERY.rail, x);
+    // l'échelle contre le pignon de l'aile du cuir, des tonneaux, la meule, les peaux qui sèchent, le chevalet, des caisses
+    ladder(Q, 536, TA_S.y1, 62, 1589);
     B.push(
-      // l'atelier de couture
-      furniture(tailorTableQuads(), 82, 30, 28, 14), woodPiece('spinning-wheel', 90, 40, 8, 60), piece('dress-form', 118, 60), prop('stool', 92, 48),
-      boltBoard('red', 10, 40), boltBoard('blue', 10, 46), boltBoard('linen', 18, 44), prop('chest', 100, 8),
-      // la boutique de vêtements
-      piece('clothes-rack', 8, 90), piece('clothes-rack', 60, 90), piece('shop-counter', 50, 140, 0), piece('dress-form', 110, 128), prop('stool', 70, 130),
-      // l'atelier du cuir
-      piece('saddler-bench', 170, 14), piece('leather-hides', 230, 4), prop('grindstone', 250, 50, 1), prop('barrel', 166, 56), prop('stool', 186, 30), prop('chest', 210, 60),
-      // la boutique d'aventure
-      piece('gear-rack', 162, 89), piece('gear-rack', 236, 89), piece('knife-display', 196, 120), piece('shop-counter', 230, 150, 0),
-      prop('barrel', 270, 120), prop('rope-coil', 164, 150), prop('rope-coil', 168, 156), prop('lantern', 240, 152, 0, 19),
-      prop('inner-door', 134, 20, 1), prop('inner-door', 154, 20, 1),
+      prop('barrel', 210, 352), prop('barrel', 222, 354), prop('bench', 40, 352), prop('bucket-water', 300, 356),
+      piece('leather-hides', 220, 520), woodPiece('sawhorse', 100, 50, 260, 580), prop('grindstone', 300, 470, 0),
+      prop('crate', 312, 600), lift(prop('crate', 312, 600), 13), prop('crate', 326, 602), prop('rope-coil', 296, 612),
+      prop('chopping-block', 80, 600), prop('sack', 20, 600), prop('sack', 30, 602), piece('egg-basket', 60, 380),
+      prop('barrel', 382, 616), prop('bucket', 460, 618),
     );
-    // la cour, toit effacé comme dehors
-    const yQ: Quad[] = [], yB: Board[] = [];
-    taYard(yQ, yB);
-    Q.push(...yQ, ...moved(galleryModel(-2, W + 2, [2, 72, 144, 216, W - 2]), [0, TA.D, 0]).filter((q) => q.o[2] < floor - 1 && q.part.name === 'poteau'));
-    B.push(...yB);
-    return { quads: Q, boards: B, floor: [t, W - t, t, D - t] };
-  }
-  // l'étage : le plancher percé de la trémie, l'escalier dans la pénombre, la galerie au sud (coupée comme le mur)
-  const pp = part('plancher', 1, '&', 'full'), pl = { top: planks(), side: planks() };
-  const [wx0, wx1, wy0, wy1] = [sx, sx + STAIR.w, sy, sy + STAIR.d];
-  Q.push(...box(0, W, 0, wy0, rez, floor, pp, pl), ...box(0, W, wy1, D, rez, floor, pp, pl));
-  Q.push(...box(0, wx0, wy0, wy1, rez, floor, pp, pl), ...box(wx1, W, wy0, wy1, rez, floor, pp, pl));
-  Q.push(...box(0, W, D - t, D, 0, rez, part('vide', 3, 'o', 'none', { cast: false }), () => VOID));
-  Q.push(...dimmed(moved(stairModel(), [sx, sy, 0])));
-  taWalls(Q, floor + 14, 1);
-  Q.push(...moved(galleryModel(-2, W + 2, [2, 72, 144, 216, W - 2]), [0, TA.D, 0]).filter((q) => q.o[2] >= floor - 6));
-  // les cloisons de l'étage : est-ouest à y 96 (au nord la cuisine et la chambre), la cage au milieu ; leurs portes
-  wallRun(Q, true, t, 134, 96, 98, floor, floor + 14, [{ a0: 96, a1: 112, z0: floor, z1: floor + 36 }], cp, inner(1621));
-  wallRun(Q, true, 156, W - t, 96, 98, floor, floor + 14, [{ a0: 176, a1: 192, z0: floor, z1: floor + 36 }], cp, inner(1623));
-  wallRun(Q, false, t, 96, 134, 136, floor, top, [], cp, inner(1625));
-  wallRun(Q, false, t, 96, 154, 156, floor, top, [], cp, inner(1627));
-  wallRun(Q, false, 98, D - t, 134, 136, floor, top, [{ a0: 160, a1: 176, z0: floor, z1: floor + 36 }], cp, inner(1629));
-  wallRun(Q, false, 98, D - t, 154, 156, floor, top, [{ a0: 160, a1: 176, z0: floor, z1: floor + 36 }], cp, inner(1631));
-  // la cuisine : l'âtre contre la souche, sa hotte jusqu'au plafond
-  Q.push(...box(STACK[0], STACK[1], STACK[2], t + 4, floor, top, part('souche', 4, '~', 'full'), masonry));
-  Q.push(...hearth(frame, 28, t + 4, floor));
-  Q.push(...box(27, 73, t + 20, t + 26, floor + 30, floor + 34, part('manteau', 7, 'K', 'full'), timber(1633)));
-  Q.push(...box(30, 70, t + 4, t + 20, floor + 34, top, part('hotte', 6, '~', 'full'), limePlaster(1635)));
-  // le garde-corps de la trémie
-  const gp = part('garde-corps', 8, 'K', 'thin'), fw = furnWood(1637);
-  Q.push(...box(wx0 - 1, wx0 + 1, wy0, wy1, floor + 17, floor + 19, gp, fw), ...box(wx1 - 1, wx1 + 1, wy0, wy1, floor + 17, floor + 19, gp, fw));
-  for (let y = wy0 + 2; y < wy1; y += 6) Q.push(...box(wx0 - 0.5, wx0 + 0.5, y, y + 1, floor, floor + 17, gp, fw), ...box(wx1 - 0.5, wx1 + 0.5, y, y + 1, floor, floor + 17, gp, fw));
-  const up = (b: Board) => lift(b, floor);
-  B.push(...[
-    // la cuisine
-    prop('table', 70, 50), prop('bench', 71, 70), prop('barrel', 8, 60), prop('jar', 8, 76), prop('bucket-water', 80, 14), prop('jar', 112, 14),
-    // la chambre
-    prop('bed', 240, 12), prop('chest', 196, 12), prop('stool', 220, 70),
-    // la réserve d'étoffes et de cuirs
-    prop('chest', 8, 110), prop('chest', 8, 130), prop('crate', 60, 104), piece('leather-hides', 70, 100),
-    // la salle
-    prop('table', 190, 130), prop('bench', 191, 150), prop('chest', 250, 106, 1),
-  ].map(up),
-  ...[[10, 150, 'red'], [20, 150, 'blue'], [30, 150, 'linen'], [10, 160, 'blue'], [20, 162, 'red'], [40, 152, 'linen']].map(([x, y, k]) => boltBoard(k as 'red', x as number, y as number, floor)),
-  ...[[16, 112], [26, 112]].map(([x, y]) => boltBoard('red', x, y, floor + 11)),
-  );
-  void top;
-  return { quads: Q, boards: B };
-}
+  },
+  stallsS1(Q, B) {
+    // les vêtements et les étoffes, sur le bord sud de la rue de l'ouest (au-delà de 5,35 m du mur : le toit ne les cache pas)
+    B.push(
+      piece('cloth-table', 36, 50), piece('cloth-table', 106, 50),
+      piece('clothes-rack', 46, 34), piece('clothes-rack', 92, 32), piece('clothes-rack', 138, 34),
+      piece('clothes-rack', 178, 56), piece('clothes-rack', 222, 58),
+      piece('dress-form', 268, 56), piece('dress-form', 282, 59), piece('hat-stand', 298, 54), piece('dress-form', 186, 36),
+      boltBoard('red', 316, 60), boltBoard('blue', 318, 58, 2), piece('bread-basket', 330, 62),
+    );
+    postSign(Q, B, 's3', 330, 70);
+    // le cuir, les armures, les armes, l'équipement d'aventure : dans le recoin devant l'aile du cuir, sur le bord du rond
+    B.push(
+      piece('weapon-rack', 358, 106), piece('shield-stand', 394, 106), piece('armor-form', 436, 104), piece('armor-form-s1', 452, 105),
+      piece('saddle-stand', 358, 84), piece('gear-rack', 380, 80), piece('knife-display', 424, 84), prop('rope-coil', 450, 90), prop('lantern', 456, 94),
+      prop('barrel', 470, 100), prop('sack', 478, 106),
+    );
+    postSign(Q, B, 's4', 486, 112);
+    // contre le mur est de l'aile du cuir, sur la rue du sud (à l'est d'un bâtiment, rien n'est caché)
+    B.push(piece('armor-form', 566, 250), piece('saddle-stand', 566, 270, 1), piece('armor-form-s1', 566, 300), prop('barrel', 566, 320));
+  },
+  stallsS2(Q, B) {
+    B.push(piece('dress-form', 286, 58), prop('bench', 230, 60), piece('armor-form', 420, 104), prop('barrel', 440, 106));
+    postSign(Q, B, 's3', 330, 70);
+    postSign(Q, B, 's4', 486, 112);
+  },
+  furnish(Q, B, level, frame) {
+    if (level === 0) {
+      // l'aile des vêtements : l'atelier de couture à l'ouest, la boutique au nord-est, la réserve et l'escalier au sud-est
+      partition(Q, false, 179, 333, 192, 0, [[210, 226]], 1601);
+      partition(Q, true, 194, 349, 270, 0, [[286, 302]], 1603);
+      Q.push(...hearthNorth(frame, 79, 333, 0));
+      B.push(
+        furniture(tailorTableQuads(), 90, 230, 28, 14), woodPiece('spinning-wheel', 90, 40, 40, 290), piece('dress-form', 150, 220), prop('stool', 100, 250),
+        boltBoard('red', 40, 200), boltBoard('blue', 40, 206), boltBoard('linen', 48, 204), prop('chest', 140, 300), piece('cloth-table', 40, 250, 0),
+        // la boutique des vêtements
+        piece('clothes-rack', 198, 182), piece('clothes-rack', 240, 182), piece('dress-form', 200, 228), piece('hat-stand', 334, 186),
+        piece('cloth-table', 210, 246), piece('shop-counter', 286, 228, 1), piece('dress-form', 318, 240),
+        // la réserve
+        prop('chest', 200, 280), prop('chest', 200, 300), prop('crate', 240, 300), prop('crate', 254, 304), boltBoard('red', 280, 300), boltBoard('blue', 288, 306),
+      );
+      // l'aile du cuir : la boutique au nord, l'atelier, la réserve et l'escalier au sud
+      partition(Q, true, 355, 557, 352, 0, [[450, 466]], 1611);
+      partition(Q, true, 355, 557, 480, 0, [[450, 466]], 1613);
+      B.push(
+        piece('gear-rack', 420, 228), piece('weapon-rack', 470, 228), piece('shield-stand', 548, 250, 1), piece('armor-form', 360, 280), piece('armor-form-s1', 378, 282),
+        piece('saddle-stand', 410, 290), piece('knife-display', 450, 296), piece('shop-counter', 500, 300, 1), piece('gear-rack', 360, 340 - 8),
+        prop('lantern', 506, 304, 0, 19), prop('rope-coil', 440, 330), prop('rope-coil', 446, 336),
+        piece('saddler-bench', 370, 372), piece('leather-hides', 440, 362), prop('grindstone', 520, 384, 1), prop('barrel', 520, 440), prop('stool', 386, 392), prop('chest', 470, 440),
+        prop('sack', 400, 500), prop('sack', 412, 502), prop('barrel', 520, 500), prop('barrel', 520, 514), prop('crate', 420, 560), prop('crate', 434, 562),
+      );
+      return;
+    }
+    const up = (b: Board) => lift(b, H.floor);
+    partition(Q, false, 179, 333, 192, 1, [[290, 306]], 1621);
+    partition(Q, true, 355, 557, 400, 1, [[450, 466]], 1623);
+    Q.push(...hearthNorth(frame, 79, 333, H.floor));
+    B.push(...[
+      // la cuisine et la salle (l'aile des vêtements, à l'ouest)
+      prop('table', 70, 240), prop('bench', 71, 260), prop('barrel', 40, 200), prop('jar', 40, 216), prop('bucket-water', 130, 200), stonePiece('chair', 100, 228),
+      // leur chambre (à l'est de la cloison)
+      prop('bed', 260, 190), prop('chest', 220, 190), prop('stool', 236, 260),
+      // la chambre de l'apprentie et la réserve d'étoffes et de cuirs (l'aile du cuir)
+      prop('bed', 500, 240), prop('chest', 470, 240), prop('chest', 370, 420), prop('chest', 370, 440), prop('crate', 420, 420), piece('leather-hides', 470, 420),
+    ].map(up), ...[[380, 480, 'red'], [390, 480, 'blue'], [400, 482, 'linen']].map(([x, y, k]) => boltBoard(k as 'red', x as number, y as number, H.floor)));
+  },
+  shops: [
+    { name: 'la boutique des vêtements', room: [195, 179, 349, 270], door: [307, 168] },
+    { name: 'la boutique du cuir et des armes', room: [355, 227, 557, 352], door: [401, 216] },
+  ],
+  pieces: [
+    'shop-lean-to', 'clapboard-wall', 'timber-gallery', 'yard-fence', 'cloth-table', 'clothes-rack', 'dress-form', 'hat-stand', 'gear-rack', 'knife-display',
+    'armor-form', 'armor-form-s1', 'shield-stand', 'weapon-rack', 'saddle-stand', 'saddler-bench', 'leather-hides', 'shop-counter', 'hanging-sign-s3', 'hanging-sign-s4',
+  ],
+};
 
-const tailleuseBuilding: PlaceBuilding = {
-  id: 'p-tailleuse', size: [540, 530], at: TA_AT, levels: 2, palette,
-  pieces: ['clapboard-wall', 'timber-gallery', 'yard-gate', 'yard-fence', 'clothes-rack', 'dress-form', 'gear-rack', 'knife-display', 'saddler-bench', 'leather-hides', 'shop-counter'],
-  outside: (o, frame = 0) => place(tailleuseOutside(frame), TA.AT, o),
-  inside: (o, level = 0, frame = 0) => place(tailleuseInside(level, frame), TA.AT, o),
+// =====================================================================================================================
+// La mercière (huitième sud-est, le long de la rue de l'est) : rez de pierre enduite, étage de pan de bois chaulé, tuiles plates
+// =====================================================================================================================
+//
+// Zone village : murs 3536-3872 × 2240-2400 (16,80 × 8 m), reculés de 2,40 m sur la proposition (2192) pour que l'étal long tienne sur le
+// bord sud de la rue de l'est (2116-2130) en laissant 2,60 m de passage devant le bûcheron et la boutique abandonnée. La porte de la
+// boutique au nord, à l'ouest, sur le rond. Sa cour au sud (3576-3936 × 2400-2560), où sèche le linge. Scène : coin en (3520, 2080).
+
+const ME_AT: [number, number] = [3520, 2080];
+const ME_W: Wing = {
+  x0: 16, x1: 352, y0: 160, y1: 320, axis: 'x', mat: 'merc', cover: 'tiles', pitch: 45, seed: 1301,
+  south: [
+    { a0: 40, a1: 60, z0: 16, z1: 36, kind: 'leaded' }, { a0: 150, a1: 168, z0: 0, z1: 36, kind: 'door' },
+    { a0: 236, a1: 256, z0: 16, z1: 36, kind: 'leaded' },
+  ],
+  up: ['cross', 'window', 'plain', 'window', 'window', 'cross'],
+  northDoor: [30, 48],
+  stack: [270, 286, 156, 168],
+};
+const merciere: Def = {
+  id: 'p-merciere', at: ME_AT, size: [416, 480], wings: [ME_W], stairs: [[316, 220]],
+  yard(Q, B) {
+    Q.push(...fenceY(322, 478, 58, 1351), ...fenceX(58, 416, 478, 1353));
+    // le linge entre deux fenêtres de l'étage (la 2e et la 4e travée), sous l'égout
+    washingLine(Q, ME_W.x0 + 70, ME_W.x0 + 210, ME_W.y1 + 2, 95, 1355);
+    ladder(Q, 326, ME_W.y1, 50, 1357);
+    B.push(prop('bench', 200, 336), prop('bucket-water', 120, 338), piece('vegetable-basket', 140, 340), prop('barrel', 340, 330), prop('barrel', 352, 334),
+      prop('crate', 260, 400), prop('chopping-block', 300, 420), prop('sack', 90, 440));
+  },
+  stallsS1(Q, B) {
+    // l'étal long sur le bord sud de la rue de l'est, au-delà de la bande cachée (5,35 m du mur) ; le présentoir à rubans, les paniers
+    B.push(
+      piece('haberdashery-stall', 36, 36), piece('haberdashery-stall', 104, 36), piece('ribbon-rack', 174, 40),
+      piece('vegetable-basket', 22, 42), prop('crate', 198, 42), lift(prop('crate', 198, 42), 13), piece('bread-basket', 210, 44), prop('sack', 222, 42),
+    );
+    postSign(Q, B, 's2', 8, 50);
+  },
+  stallsS2(Q, B) {
+    B.push(prop('bench', 60, 40), piece('vegetable-basket', 80, 44));
+    postSign(Q, B, 's2', 8, 50);
+  },
+  furnish(Q, B, level, frame) {
+    if (level === 0) {
+      // la boutique à l'ouest (la porte au nord), la cuisine et l'escalier à l'est
+      partition(Q, false, 168, 312, 200, 0, [[280, 296]], 1361);
+      partition(Q, true, 24, 200, 240, 0, [[150, 166]], 1363);
+      Q.push(...hearth(frame, 250, 168));
+      B.push(
+        piece('haberdashery-cabinet', 24, 196, 1), piece('haberdashery-cabinet', 90, 168), piece('shop-counter', 64, 222), stonePiece('chair', 84, 212),
+        piece('ribbon-rack', 150, 172), piece('ribbon-rack', 176, 200, 1), prop('lantern', 70, 226, 0, 19),
+        piece('haberdashery-stall', 40, 290), boltBoard('blue', 30, 260), boltBoard('red', 40, 266), prop('chest', 140, 260),
+        prop('table', 240, 230), prop('bench', 241, 250), prop('barrel', 210, 180), prop('jar', 210, 200), prop('sack', 220, 290), prop('chest', 280, 290), prop('bucket-water', 300, 180),
+      );
+      return;
+    }
+    const up = (b: Board) => lift(b, H.floor);
+    partition(Q, false, 163, 317, 180, 1, [[240, 256]], 1371);
+    B.push(...[
+      prop('table', 220, 220), stonePiece('chair', 230, 208), prop('chest', 200, 170), prop('stool', 260, 260),
+      prop('bed', 30, 180), prop('chest', 60, 260), prop('bed', 120, 250), prop('chest', 140, 180), stonePiece('chair', 100, 200),
+    ].map(up));
+  },
+  shops: [{ name: 'la boutique de la mercière', room: [24, 168, 200, 240], door: [55, 152] }],
+  pieces: ['shop-lean-to', 'haberdashery-stall', 'shop-counter', 'haberdashery-cabinet', 'ribbon-rack', 'yard-fence', 'hanging-sign-s2'],
+};
+
+// =====================================================================================================================
+// La ferme rivale (huitième sud-est, le long de la rue du sud) : rez de moellons, étage de pan de bois, laves ; croupe au nord
+// =====================================================================================================================
+//
+// Zone village : murs 3376-3568 × 2408-2672 (9,60 × 13,20 m) : à 40 cm de la mercière (presque collés). Sa fille aînée et son mari
+// tiennent la boutique et logent à l'étage. Le grand étal (deux fois plus long : quatre travées de 3,20 m) en équerre dans le recoin
+// sud-est du rond : deux travées est-ouest sur le bord du rond (3376-3504 × 2284-2298), deux nord-sud contre le pignon de la mercière
+// (3506-3520 × 2154-2282). Scène : coin en (3360, 2140).
+
+const FR_AT: [number, number] = [3360, 2140];
+const FR_W: Wing = {
+  x0: 16, x1: 208, y0: 268, y1: 532, axis: 'y', mat: 'rival', cover: 'laves', pitch: 40, seed: 1701,
+  south: [
+    { a0: 22, a1: 36, z0: 16, z1: 30, kind: 'window' }, { a0: 88, a1: 106, z0: 0, z1: 36, kind: 'door' },
+    { a0: 156, a1: 170, z0: 16, z1: 30, kind: 'window' },
+  ],
+  up: ['window', 'plain', 'cross', 'window'],
+  northDoor: [88, 106],
+  stack: [150, 166, 380, 396],
+};
+const fermeRivale: Def = {
+  id: 'p-ferme-rivale', at: FR_AT, size: [224, 612], wings: [FR_W], stairs: [[180, 440]],
+  yard(Q, B) {
+    Q.push(...fenceX(16, 208, 610, 1751));
+    ladder(Q, 186, FR_W.y1, 48, 1753);
+    B.push(prop('hay-bale', 30, 560), prop('hay-bale', 52, 562), prop('bucket-water', 120, 548), piece('vegetable-crate', 140, 556), piece('vegetable-crate-s1', 152, 558),
+      lift(piece('vegetable-crate', 140, 556), 8), prop('barrel', 180, 552), prop('chopping-block', 90, 580));
+    // contre le flanc ouest, sur la rue du sud (rien n'est caché à l'ouest d'un bâtiment) : des cageots empilés, des sacs, un tas de citrouilles
+    B.push(piece('vegetable-crate', 0, 300), lift(piece('vegetable-crate', 0, 300), 8), piece('vegetable-crate-s3', 0, 310), piece('pumpkin-pile', -10, 330, 1), prop('sack', 1, 360), prop('sack', 1, 372));
+  },
+  stallsS1(_Q, B) {
+    B.push(
+      // les deux travées est-ouest sur le bord du rond, les deux nord-sud contre le pignon de la mercière
+      piece('rough-stall', 16, 144), piece('rough-stall-s2', 80, 144),
+      piece('rough-stall-s1', 146, 14, 1), piece('rough-stall-s3', 146, 78, 1),
+      piece('scale', 66, 145, 0, 16), piece('price-slate', 4, 150), piece('price-slate', 150, 4),
+      // à terre devant (au nord, vers la place) : cageots, paniers, citrouilles
+      piece('vegetable-crate', 18, 132), piece('vegetable-crate-s2', 30, 133), piece('vegetable-crate-s3', 42, 132), piece('egg-basket', 56, 133),
+      piece('vegetable-crate-s1', 84, 132), piece('bread-basket', 98, 133), piece('apple-basket', 108, 132), piece('vegetable-basket', 118, 133),
+      piece('pumpkin-pile', 120, 100), piece('vegetable-crate', 130, 20), lift(piece('vegetable-crate', 130, 20), 8), piece('apple-basket', 134, 34),
+      piece('vegetable-crate-s2', 132, 52), piece('vegetable-crate-s1', 132, 64), piece('egg-basket', 136, 78), piece('vegetable-basket', 136, 88),
+      // derrière l'étal, dans la bande cachée : les sacs de pommes de terre, des cageots vides
+      prop('sack', 20, 170), prop('sack', 32, 172), prop('crate', 100, 170),
+    );
+  },
+  stallsS2(_Q, B) {
+    B.push(piece('rough-stall', 16, 144), piece('vegetable-crate', 18, 132), piece('vegetable-basket', 34, 133), piece('pumpkin-pile', 120, 100));
+  },
+  furnish(Q, B, level, _frame) {
+    if (level === 0) {
+      partition(Q, true, 24, 200, 380, 0, [[100, 116]], 1761);
+      B.push(
+        // la boutique : deux étals le long des murs, le comptoir et la balance, les cageots et les paniers à terre
+        piece('rough-stall', 24, 290, 1), piece('rough-stall-s2', 182, 290, 1), piece('shop-counter', 70, 350), piece('scale', 80, 352, 0, 19),
+        piece('vegetable-crate', 50, 290), piece('vegetable-crate-s2', 62, 290), piece('egg-basket', 140, 292), piece('bread-basket', 150, 300), piece('apple-basket', 130, 310),
+        piece('pumpkin-pile', 60, 320), piece('vegetable-crate-s1', 140, 330), piece('price-slate', 112, 292),
+        // la réserve
+        prop('sack', 30, 400), prop('sack', 42, 402), prop('sack', 30, 414), prop('barrel', 60, 400), prop('barrel', 74, 402), prop('crate', 100, 420), lift(prop('crate', 100, 420), 13),
+        prop('crate', 114, 422), prop('table', 60, 470), prop('stool', 80, 490), prop('hay-bale', 30, 500),
+      );
+      return;
+    }
+    const up = (b: Board) => lift(b, H.floor);
+    partition(Q, true, 24, 200, 400, 1, [[100, 116]], 1771);
+    Q.push(...hearth(0, 140, 384, H.floor));
+    B.push(...[
+      prop('bed', 30, 290), prop('chest', 70, 290), prop('chest', 140, 300), stonePiece('chair', 120, 340),
+      prop('table', 60, 450), prop('bench', 61, 470), prop('barrel', 30, 420), prop('jar', 30, 440), prop('bucket-water', 120, 420),
+    ].map(up));
+  },
+  shops: [{ name: 'la boutique de la ferme', room: [24, 276, 200, 380], door: [113, 260] }],
+  pieces: ['shop-lean-to', 'rough-stall', 'rough-stall-s1', 'rough-stall-s2', 'rough-stall-s3', 'vegetable-crate', 'vegetable-crate-s1', 'vegetable-crate-s2', 'vegetable-crate-s3',
+    'vegetable-basket', 'egg-basket', 'bread-basket', 'apple-basket', 'pumpkin-pile', 'scale', 'price-slate', 'shop-counter', 'yard-fence'],
 };
 
 // =====================================================================================================================
 // Les exports
 // =====================================================================================================================
 
-export const BUILDINGS: PlaceBuilding[] = [fermeRivaleBuilding, merciereBuilding, tailleuseBuilding];
+const DEFS: Def[] = [fermeRivale, merciere, tailleuse];
+/** Solution 1 (recommandée par le cadrage) : l'appentis bas, les étals à ciel ouvert devant lui. */
+export const BUILDINGS: PlaceBuilding[] = DEFS.map((d) => buildingOf(d, 1));
+/** Solution 2 : la façade sur le rond sans appentis, la boutique meublée dedans, peu de choses dehors. */
+export const BUILDINGS_S2: PlaceBuilding[] = DEFS.map((d) => buildingOf(d, 2));
+/** Les pièces de boutique de la solution 2 (coordonnées de la scène) et la place de Xéros devant leur porte. */
+export const S2_SHOPS: Partial<Record<PlaceBuildingId, ShopRoom[]>> = Object.fromEntries(DEFS.map((d) => [d.id, d.shops]));
+
+/**
+ * Ce que voit le joueur devant la porte d'une boutique (solution 2) : `full`, le dehors (toit posé) ; `bare`, la même vue sans toit ni
+ * étage, les murs coupés à 70 cm, la boutique meublée ; `holes`, les trous à l'écran (px de la scène posée en `o`), ceux de
+ * `windowHole` (src/world/roofView.ts) : la largeur de la pièce, de 3 m au-dessus de son mur nord à son mur sud et l'avant-toit.
+ */
+export function s2Reveal(id: PlaceBuildingId, o: [number, number], frame = 0): { full: Scene; bare: Scene; holes: Rect[] } {
+  const d = DEFS.find((x) => x.id === id)!;
+  const full = place(outsideOf(d, 2, frame), [0, 0], o);
+  const bare = place(insideOf(d, 0, frame, 2), [0, 0], o);
+  const holes = d.shops.map((s) => [s.room[0] + o[0] - 3, s.room[1] + o[1] - 60, s.room[2] + o[0] + 3, s.room[3] + o[1] + 6] as Rect);
+  return { full, bare, holes };
+}
+/** Le fondu du jeu dans les trous : le toit et le mur nord de la pièce à `alpha` (ROOF.alpha : 0,35) sur la vue nue. */
+export function fadeHoles(full: Layer, bare: Layer, holes: Rect[], alpha = 0.35): Layer {
+  const rgba = full.rgba.slice();
+  for (const [x0, y0, x1, y1] of holes) {
+    for (let Y = Math.max(0, y0 - full.y); Y < Math.min(full.h, y1 - full.y); Y++) for (let X = Math.max(0, x0 - full.x); X < Math.min(full.w, x1 - full.x); X++) {
+      const i = (Y * full.w + X) * 4, bx = X + full.x - bare.x, by = Y + full.y - bare.y;
+      if (bx < 0 || by < 0 || bx >= bare.w || by >= bare.h) continue;
+      const j = (by * bare.w + bx) * 4;
+      for (let k = 0; k < 3; k++) rgba[i + k] = full.rgba[i + k] * alpha + bare.rgba[j + k] * (1 - alpha);
+    }
+  }
+  return { ...full, rgba };
+}
+
+/**
+ * La terre battue de la place entre le rond (rayon 200 px) et les façades des quarts sud, et les rues qui y mènent (px de la zone) :
+ * le rond lui-même et les cours de chaque bâtiment s'y ajoutent.
+ */
+export const PLACE_SUD_DIRT: Rect[] = [
+  [2688, 2064, 3160, 2272], [3040, 2176, 3264, 2330], [3264, 2176, 3360, 2752],
+  [3360, 2064, 3936, 2240], [3360, 2176, 3536, 2408], [2624, 2752, 4000, 2816],
+];
+export const PLACE_RADIUS = 200;
+/** Les murs de chaque bâtiment (scène) : le plancher de la vue nue. */
+export const FOOTPRINTS: Partial<Record<PlaceBuildingId, Rect[]>> = Object.fromEntries(DEFS.map((d) => [d.id, d.wings.map((w) => [w.x0, w.y0, w.x1, w.y1] as Rect)]));
 
 const sh = (r: Rect, [dx, dy]: [number, number]): Rect => [r[0] + dx, r[1] + dy, r[2] + dx, r[3] + dy];
+void sh; void bar;
 export const NOTES: Partial<Record<PlaceBuildingId, PlaceNotes>> = {
   'p-ferme-rivale': {
+    title: 'La boutique de la ferme rivale',
+    who: 'Sa fille aînée et son mari tiennent la boutique et logent à l’étage',
     lines: [
-      'L’étal à la pointe, sur le bord de la place : deux travées de planches sur tréteaux sous un auvent de planches mal jointes sur quatre perches, sans fond ; les légumes en tas, les cageots et les paniers à terre devant, au nord (vers la place) ; la balance, l’ardoise.',
-      'Le dépôt, à 5,60 m au sud de l’étal : la maison de Xéros en 8 x 6,40 m (pan de bois, torchis chaulé, chaume à 50°), façade au sud sur la ruelle des quarts.',
+      'Rez de moellons, étage de pan de bois chaulé, laves ; le faîtage nord-sud et la croupe au nord (un pignon de 9,40 m face au rond cacherait tout le recoin). Le pignon sud sur la cour : la porte de la réserve, la lucarne du grenier, une échelle.',
+      'Solution 1 : l’appentis contre la façade nord (caché sous l’égout) ; le grand étal en équerre, quatre travées : légumes, pain et œufs sur le bord du rond, fruits et oignons contre le pignon de la mercière ; cageots, paniers, citrouilles à terre devant ; la balance, deux ardoises.',
     ],
-    inside: ['Le dépôt : cageots vides et pleins, paniers, sacs de pommes de terre, tonneaux ; la table et la seconde balance. L’étal sans son auvent.'],
-    xeros: [[170, 64], [100, 350]],
-    inXeros0: [110, 300],
-    yards: [[DEP.x - 6, DEP.y + 128, DEP.x + 166, 380]],
+    s2: ['Solution 2 : une travée dehors ; dedans, deux étals le long des murs, le comptoir et la balance, les cageots et les paniers.'],
+    inside: ['Au rez : la boutique au nord (sa porte sur le rond), la réserve au sud (sacs, tonneaux, cageots). À l’étage : la chambre de la fille aînée et de son mari, la salle et l’âtre.'],
+    xeros: [[100, 124], [60, 590]],
+    inXeros0: [110, 370],
+    inXeros1: [100, 380],
+    yards: [[16, 532, 208, 612], [0, 268, 16, 532]],
   },
   'p-merciere': {
+    title: 'La mercière',
+    who: 'La mercière, sœur du coq, veuve, et sa fille, à l’étage',
     lines: [
-      'Rez de moellons enduits (les pierres d’angle et de baie du coq), deux fenêtres vitrées de boutique et la porte au sud sur la cour ; étage de pan de bois chaulé, deux croix de Saint-André, deux fenêtres à volet ; tuiles plates à 45°.',
-      'La cour fermée d’une palissade, l’entrée à l’est sur la ruelle ; l’enseigne à l’aiguille (le dessin de place-nord.ts) sur son poteau près de la porte. L’ouvroir est au nord, sur la rue : le toit le cache dans la vue du jeu (13.1).',
+      'Rez de moellons enduits (les pierres d’angle et de baie du coq), deux fenêtres vitrées fleuries et la porte de la cour au sud ; étage de pan de bois chaulé, deux croix de Saint-André, trois fenêtres à volet ; tuiles plates à 45° ; le linge entre deux fenêtres de l’étage.',
+      'Solution 1 : l’appentis contre la façade nord (caché sous l’égout) ; l’étal long (deux travées) sur le bord de la rue de l’est, le présentoir à rubans, les paniers du vannier ; l’enseigne à l’aiguille sur son poteau.',
     ],
-    inside: ['Au rez : la cuisine et l’arrière-boutique au nord (l’âtre, la table, la réserve, l’escalier), la boutique au sud (le casier à tiroirs, le comptoir, le présentoir à rubans). À l’étage : la salle au nord, la chambre de la mercière et celle de sa fille au sud.'],
-    xeros: [[ME.AT[0] + 140, ME.AT[1] + 230]],
-    inXeros0: [ME.AT[0] + 120, ME.AT[1] + 136],
-    inXeros1: [ME.AT[0] + 60, ME.AT[1] + 136],
-    yards: [sh([80, 160, 224, 392], ME.AT)],
+    s2: ['Solution 2 : dedans, les deux casiers à tiroirs, le comptoir, le présentoir à rubans, un étal ; dehors, un banc.'],
+    inside: ['Au rez : la boutique à l’ouest (sa porte sur le rond), la cuisine et l’escalier à l’est. À l’étage : la chambre de la mercière et celle de sa fille, la salle.'],
+    xeros: [[250, 60], [180, 380]],
+    inXeros0: [120, 300],
+    inXeros1: [200, 300],
+    yards: [[58, 320, 416, 480]],
   },
   'p-tailleuse': {
+    title: 'La tailleuse et le frère du forgeron',
+    who: 'La tailleuse (les vêtements, les étoffes) et son mari (le cuir, les armes, l’équipement d’aventure), à l’étage des deux ailes',
     lines: [
-      'Ossature de bois sur un solin de pierre, bardage à clins, bardeaux à 40°, bois patiné. Au sud, sous la galerie de l’étage (1 m) : la boutique de vêtements et la boutique d’aventure, chacune sa porte et son volet rabattu en comptoir ; au milieu, la porte de l’escalier du logis.',
-      'La cour fermée d’une palissade ; le portail à l’est, ouvert, sur la rue du sud ; les deux enseignes (les ciseaux, le sac : les dessins de place-nord.ts) pendues dos à dos au poteau du milieu de la galerie.',
+      'Un seul bâtiment de bois à étage, en équerre : l’aile des vêtements (16 x 8 m) le long de la rue de l’ouest, l’aile du cuir et des armes (10,40 x 19,20 m, faîtage nord-sud, croupe au nord) le long de la rue du sud ; bardage à clins, bardeaux, bois patiné ; la galerie au sud sur la cour, le linge entre deux fenêtres.',
+      'Solution 1 : les appentis contre les façades nord (cachés sous l’égout) ; devant, les vêtements et les étoffes sur le bord de la rue de l’ouest (deux longues tables, cinq perches, trois mannequins, le portemanteau) ; le cuir et les armes dans le recoin (râteliers, boucliers, gambison et cotte de cuir, selle, couteaux) ; boucliers et lances contre le mur est, sur la rue du sud.',
     ],
-    inside: ['Au rez : l’atelier de couture (la table, le rouet, le mannequin, l’âtre des fers) et la boutique de vêtements à l’ouest ; l’atelier du cuir (l’établi, les peaux, la meule) et la boutique d’aventure (les râteliers, le présentoir à couteaux, le comptoir) à l’est. À l’étage : la cuisine, la chambre, la réserve d’étoffes et de cuirs, la salle.'],
-    xeros: [[TA.AT[0] + 120, TA.AT[1] + 262], [TA.AT[0] + 560, TA.AT[1] + 370]],
-    inXeros0: [TA.AT[0] + 100, TA.AT[1] + 170],
-    inXeros1: [TA.AT[0] + 220, TA.AT[1] + 170],
-    yards: [sh([0, 192, 528, 512], TA.AT)],
+    s2: ['Solution 2 : dedans, les deux boutiques meublées (perches, mannequins, table des étoffes ; râteliers, boucliers, armures, selle, présentoir) ; dehors, un mannequin, un banc, les deux enseignes.'],
+    inside: ['Au rez : l’atelier de couture (l’âtre des fers, la table, le rouet), la boutique des vêtements et sa réserve ; la boutique du cuir et des armes, l’atelier du cuir, la réserve. À l’étage : la cuisine et la salle, leur chambre, la chambre de l’apprentie, la réserve d’étoffes et de cuirs.'],
+    xeros: [[250, 30], [500, 70], [100, 420]],
+    inXeros0: [250, 260],
+    inXeros1: [150, 300],
+    yards: [[0, 336, 352, 656]],
   },
 };
 
 export type { PlaceBuildingId, Scene };
-void AWNING; void voidTex;

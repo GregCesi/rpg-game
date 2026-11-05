@@ -108,7 +108,11 @@ const luxuryCounter = (): Quad[] => {
   return Q;
 };
 
-/** Le présentoir à gradins (120 × 60 × 100) : trois gradins de planches sous une nappe de lin, les produits en pyramide. */
+/**
+ * Le présentoir à gradins (160 × 70 × 110) : trois gradins de planches sous une nappe de lin, chargés à ras bord (14.3 : des tas
+ * plutôt que l'unité) : en bas une rangée de meules entamées, au milieu les pots de miel serrés deux par deux et les pains de cire
+ * en pile, en haut les boîtes d'épices et deux pots de confiture.
+ */
 const tieredDisplay = (): Quad[] => {
   const Q: Quad[] = [];
   const cloth: Tex = (s, t, c) => {
@@ -118,12 +122,12 @@ const tieredDisplay = (): Quad[] => {
     return c.face === 'W' ? '+' : '=';
   };
   const N = part('nappe', 3, '=', 'full');
-  const steps: [number, number, number][] = [[8, 12, 7], [4, 8, 13], [0, 4, 19]];
-  for (const [y0, y1, z] of steps) Q.push(...box(0, 24, y0, y1, 0, z, N, cloth));
-  // la pyramide : en bas les fromages, au milieu les pots de miel et la cire, en haut les boîtes d'épices
-  for (let k = 0; k < 6; k++) Q.push(...cheese(2.5 + k * 3.8, 10, 7, 1.5, 1.4));
-  for (let k = 0; k < 5; k++) Q.push(...(k % 2 ? waxCake(3.2 + k * 4, 5.2, 13) : honeyPot(4.4 + k * 4, 6, 13)));
-  for (let k = 0; k < 4; k++) Q.push(...spiceBox(3.5 + k * 4.6, 1.2, 19, k % 2 ? C.redOchre : C.ochre));
+  const steps: [number, number, number][] = [[9, 14, 8], [4.5, 9, 14], [0, 4.5, 20]];
+  for (const [y0, y1, z] of steps) Q.push(...box(0, 32, y0, y1, 0, z, N, cloth));
+  for (let k = 0; k < 6; k++) Q.push(...cheese(3 + k * 5.2, 11.5, 8, 2.4, 1.8));
+  for (let k = 0; k < 4; k++) Q.push(...cheese(5.6 + k * 6.6, 11.5, 9.8, 2.1, 1.4));
+  for (let k = 0; k < 7; k++) Q.push(...(k % 3 === 2 ? waxCake(2.4 + k * 4.2, 5.6, 14).concat(waxCake(2.6 + k * 4.2, 5.6, 15.1)) : honeyPot(3.6 + k * 4.2, 6.8, 14, 1.5, 3)));
+  for (let k = 0; k < 6; k++) Q.push(...(k === 2 || k === 4 ? honeyPot(4 + k * 4.8, 2.4, 20, 1.3, 2.6) : spiceBox(2.6 + k * 4.8, 1.2, 20, k % 2 ? C.redOchre : C.ochre)));
   return Q;
 };
 
@@ -186,7 +190,7 @@ const spiceBoxPiece = (): Quad[] => [
  * L'auvent de toile rayée (480 × 300 × 260) : quatre poteaux tournés, deux traverses, la toile rayée guède et garance qui descend
  * vers le sud, le lambrequin festonné devant. Pièce de bâtiment (ses poteaux posés au sol à leur place : la profondeur entière).
  */
-export const AWNING = { w: 96, d: 60, back: 52, front: 44, valance: 5 };
+export const AWNING = { w: 128, d: 60, back: 56, front: 48, valance: 5 };
 const turnedPost = (x: number, y: number, h: number, seed: number): Quad[] => {
   const Q: Quad[] = [], P = WP('poteau tourné', 5, '&');
   const wood: Tex = (_s, t, c) => {
@@ -213,7 +217,8 @@ const stripes = (light: boolean): Tex => (s, t, c) => {
 };
 const stripedAwning = (): Quad[] => {
   const Q: Quad[] = [], { w, d, back, front, valance } = AWNING;
-  for (const [x, y] of [[2, 2], [w - 2, 2], [2, d - 2], [w - 2, d - 2]]) Q.push(...turnedPost(x, y, (y < 10 ? back : front) - 1.5, 381 + x + y));
+  // six poteaux tournés : les quatre coins et le milieu de chaque traverse (6,40 m de portée)
+  for (const [x, y] of [[2, 2], [w / 2, 2], [w - 2, 2], [2, d - 2], [w / 2, d - 2], [w - 2, d - 2]]) Q.push(...turnedPost(x, y, (y < 10 ? back : front) - 1.5, 381 + x + y));
   // les traverses et les longerons, sous la toile
   const T = WP('traverse', 6, '&');
   Q.push(...box(0, w, 1, 3, back - 3.5, back - 1.5, T, timber(391)));
@@ -231,6 +236,180 @@ const stripedAwning = (): Quad[] => {
   Q.push({ o: [-1, d + 0.6, zf - valance + 0.2], u: [w + 2, 0, 0], v: [0, 0, valance], n: [0, 1, 0], part: part('lambrequin', 9.5, C.woadDeep, 'full', { roof: true }), tex: fest, face: 'S' });
   return Q;
 };
+
+// =====================================================================================================================
+// 14.3 Les marchandises en tas (lisibles à la taille du jeu : des pyramides et des piles, pas l'unité)
+// =====================================================================================================================
+
+/** Les pots de miel en pyramide (100 × 30 × 100) : quatre rangs de pots de grès vernissé (Ø 25 cm), une planchette entre chaque rang. */
+const honeyPyramid = (): Quad[] => {
+  const Q: Quad[] = [];
+  const PL = WP('planchette', 4);
+  for (let k = 0; k < 4; k++) {
+    const n = 4 - k, z = k * 5, w = n * 5;
+    Q.push(...box(10 - w / 2, 10 + w / 2, 0.5, 5.5, z, z + 0.7, PL, W(601 + k)));
+    for (let i = 0; i < n; i++) Q.push(...honeyPot(10 + (i - (n - 1) / 2) * 5, 3, z + 0.7, 2.3, 4.1));
+  }
+  return Q;
+};
+/** La pile de meules (Ø 50 cm, 60 de haut) : cinq meules affinées, un peu décalées l'une sur l'autre, la croûte lavée. */
+const cheeseStack = (): Quad[] => {
+  const Q: Quad[] = [];
+  const off = [0, 0.4, -0.3, 0.3, -0.2];
+  for (let k = 0; k < 5; k++) Q.push(...cheese(5 + off[k], 5 + off[(k + 2) % 5], k * 2.4, 4.8 - (k === 4 ? 0.4 : 0), 2.3));
+  return Q;
+};
+/** Les pains de cire en pile (50 × 30 × 40) : des pains de 25 × 15 × 10, quatre lits croisés, le dernier de deux pains. */
+const waxStack = (): Quad[] => {
+  const Q: Quad[] = [];
+  const P = part('cire', 4.5, C.waxShade, 'full');
+  const tex: Tex = (s, t, c) => {
+    if (c.face === 'top') return Math.floor(s) === 0 || Math.floor(t) === 0 ? C.waxLight : hash(361, Math.floor(s), Math.floor(t)) < 0.2 ? C.wax : C.waxLight;
+    return c.face === 'S' ? (Math.floor(t) === 1 ? C.wax : C.waxShade) : c.face === 'W' ? C.wax : C.waxShade;
+  };
+  for (let k = 0; k < 4; k++) {
+    const z = k * 2, top = k === 3;
+    for (const [x0, y0] of (top ? [[0.4, 1.6], [5.2, 1.6]] : [[0, 0], [5, 0], [0, 3], [5, 3]]) as [number, number][]) Q.push(...box(x0 + (k % 2) * 0.3, x0 + 4.8 + (k % 2) * 0.3, y0, y0 + 2.8, z, z + 1.9, P, tex));
+  }
+  return Q;
+};
+/** Une botte de cierges (30 × 10 × 50) pendue par les mèches : six cierges de cire jaune, la ficelle. */
+const candleBunch = (): Quad[] => {
+  const Q: Quad[] = [];
+  Q.push(...box(1, 5, 0.8, 1.6, 9, 10, part('ficelle', 6, '#7c6a4f', 'thin'), () => '#b49a6c'));
+  const lens = [7.6, 8.4, 7.2, 8.8, 7.8, 8.2];
+  lens.forEach((l, i) => Q.push(...box(0.2 + i, 1.1 + i, 0.6 + (i % 2) * 0.6, 1.5 + (i % 2) * 0.6, 9 - l, 9, part('cierge', 5 + i * 0.01, C.waxShade, 'full'), (_s, t, c) => (c.face === 'W' || c.face === 'top' ? C.waxLight : c.face === 'S' ? (Math.floor(t) % 4 === 0 ? C.wax : C.waxLight) : C.wax))));
+  return Q;
+};
+/**
+ * Le comptoir sculpté chargé (pas une pièce : une mise en place, le comptoir et ce qui est posé dessus) : les pots de miel serrés en
+ * deux rangs, deux piles de meules, la pyramide de pains de cire, les boîtes d'épices.
+ */
+export function ladenCounterModel(): Quad[] {
+  const Q = luxuryCounter(), z = 19;
+  for (let i = 0; i < 4; i++) Q.push(...honeyPot(3 + i * 3.6, 4, z, 1.7, 3.2));
+  for (let i = 0; i < 3; i++) Q.push(...honeyPot(4.8 + i * 3.6, 9.5, z, 1.7, 3.2));
+  for (const [x, n] of [[21, 3], [28.5, 2]] as const) for (let k = 0; k < n; k++) Q.push(...cheese(x, 7, z + k * 1.9, 3.4, 1.8));
+  for (let k = 0; k < 3; k++) for (let i = 0; i < 3 - k; i++) Q.push(...waxCake(34 + i * 2.6 + k * 1.3, 4 + k * 0.4, z + k * 1.1));
+  for (let i = 0; i < 3; i++) Q.push(...spiceBox(35 + i * 3.4, 9.6, z, i % 2 ? C.redOchre : C.ochre));
+  return Q;
+}
+
+// =====================================================================================================================
+// 14.1 La vie autour des maisons : les pots de fleurs, le linge, l'échelle
+// =====================================================================================================================
+
+/** La jardinière de terre cuite (60 × 20 × 30) posée sur un appui d'étage : géraniums de garance, soucis, giroflées blanches. */
+const flowerBox = (): Quad[] => {
+  const Q: Quad[] = [];
+  Q.push(...box(0, 12, 0, 4, 0, 3, part('jardinière', 4, C.terraDeep, 'full'), (_s, t, c) => {
+    if (c.face === 'top') return C.terraLight;
+    if (c.face === 'W') return C.terraLight;
+    if (c.face === 'S') return Math.floor(t) === 2 ? C.terraLight : C.terra;
+    return C.terraShade;
+  }));
+  // les feuilles en trois touffes, les fleurs dessus (un pixel voulu par fleur)
+  const leaf = part('feuilles', 5, 'k', 'full');
+  for (const [x0, x1, h] of [[0.4, 4.4, 3.2], [4, 8.4, 3.8], [8, 11.6, 2.9]] as const) Q.push(...box(x0, x1, 0.6, 3.4, 3, 3 + h, leaf, (s, t, c) => {
+    if (c.face === 'top') return hash(611, Math.floor(s), Math.floor(t)) < 0.5 ? 'L' : 'l';
+    return c.face === 'W' ? 'l' : Math.floor(t) > c.h - 2 ? 'l' : 'k';
+  }));
+  const fl = part('fleur', 6, C.madderDeep, 'none');
+  const heads: [number, number, number, string][] = [[1, 1.4, 6.5, C.madderLight], [3, 2.2, 6.4, C.madder], [5.2, 1.2, 7.2, C.paper], [7, 2.4, 7.1, C.honeyLight], [9, 1.4, 6.2, C.madderLight], [10.6, 2.2, 6.1, C.paper], [2.2, 3, 5.6, C.honeyLight], [6, 3, 6.2, C.madder]];
+  for (const [x, y, z, col] of heads) Q.push(...box(x, x + 1, y, y + 1, z - 1, z, fl, () => col));
+  return Q;
+};
+/**
+ * Le linge à la fenêtre (120 × 10 × 60) : une perche passée dans le chambranle, une chemise de lin, un chaperon de guède, un drap
+ * plié en deux ; pend en hauteur (pas d'ombre au sol).
+ */
+const windowLaundry = (): Quad[] => {
+  const Q: Quad[] = [];
+  Q.push(...box(0, 24, 0.5, 1.5, 11, 12, WP('perche', 6), W(621)));
+  const cloth = (x0: number, x1: number, z0: number, col: [string, string, string], seed: number, shirt = false): void => {
+    const tex: Tex = (s, t, c) => {
+      const i = Math.floor(s), j = Math.floor(t), h = Math.round(c.h);
+      if (c.face !== 'S') return col[2];
+      if (shirt && j < h - 3 && (i === 0 || i === Math.round(c.w) - 1) && j < h - 6) return null; // les manches pendent, le corps s'arrête
+      if (j === h - 1) return col[1];
+      return (i + seed) % 3 === 0 ? col[1] : dash(seed, i, j, 0.25) ? col[1] : col[0];
+    };
+    Q.push(...box(x0, x1, 1.6, 2.2, z0, 11, part('linge', 5 + seed * 0.01, col[2], 'full'), tex));
+  };
+  cloth(1, 8, 3, [C.paper, C.paperShade, '#9f9479'], 631, true);
+  cloth(9, 14, 5, [C.woadLight, C.woad, C.woadShade], 632);
+  cloth(15, 23, 1, [C.paper, C.paperShade, '#9f9479'], 633);
+  return Q;
+};
+/** L'échelle appuyée contre un mur (50 × 80 × 290) : deux montants, neuf barreaux ; le pied à 80 cm du mur. */
+const leaningLadder = (): Quad[] => {
+  const Q: Quad[] = [], P = WP('échelle', 5, '&');
+  const y0 = 15.5, y1 = 0.6, H = 57;
+  for (const x of [1, 9]) Q.push(...bar([x, y0, 0], [x, y1, H], 1.2, P, W(641 + x)));
+  for (let k = 1; k <= 9; k++) {
+    const f = k / 10.2, y = y0 + (y1 - y0) * f, z = H * f;
+    Q.push(...bar([1.6, y, z], [8.4, y, z], 0.8, part('barreau', 5.5, '&', 'full'), W(651 + k)));
+  }
+  return Q;
+};
+
+// =====================================================================================================================
+// 14.3 Le bûcheron : les outils du bois, les bottes de bardeaux
+// =====================================================================================================================
+
+/**
+ * Le râtelier d'outils du bois (200 × 30 × 160), sous l'avant-toit : deux montants, la planche du fond, les chevilles ; deux cognées
+ * et une hache pendues tête en haut, le passe-partout (150 cm) en travers, la scie à cadre, une tablette basse avec les coins de
+ * fer et deux maillets.
+ */
+const toolRack = (): Quad[] => {
+  const Q: Quad[] = [];
+  for (const x of [0.5, 37.5]) Q.push(...box(x, x + 2, 0, 2, 0, 32, WP('montant', 5), W(661 + x)));
+  Q.push(...box(2.5, 37.5, 0, 1, 7, 31, WP('fond', 2), (s, t, c) => (c.face === 'S' ? (Math.floor(s) % 6 === 0 ? '&' : dash(662, Math.floor(s), Math.floor(t), 0.4) ? '&' : '%') : '%')));
+  Q.push(...box(0, 40, 0, 6, 5, 6, WP('tablette', 4), W(663)));
+  const I = IRON('fer', 7), it = ironTex();
+  const H = WP('manche', 6.5, '&');
+  const handle: Tex = (_s, _t, c) => (c.face === 'W' || c.face === 'top' ? '^' : c.face === 'S' ? '*' : '%');
+  // les cognées et la hache : manche de 90 cm, tête de fer en haut, le tranchant vers l'est (la hache, plus petite, vers l'ouest)
+  for (const [x, z1, blade, big] of [[4.5, 29, 1, true], [9, 29, 1, true], [34, 27, -1, false]] as const) {
+    Q.push(...box(x, x + 1, 1.2, 2.2, z1 - 17, z1, H, handle));
+    const w = big ? 3.2 : 2.4, hh = big ? 2.6 : 2;
+    if (blade > 0) Q.push(...box(x - 0.6, x + w, 1, 2.4, z1 - hh, z1 + 0.4, I, it), ...box(x + w - 0.6, x + w + 0.4, 1, 2.4, z1 - hh - 0.8, z1 + 1, I, it));
+    else Q.push(...box(x + 1.6 - w, x + 1.6, 1, 2.4, z1 - hh, z1 + 0.4, I, it), ...box(x + 1.6 - w - 0.4, x + 1.6 - w + 0.6, 1, 2.4, z1 - hh - 0.8, z1 + 1, I, it));
+  }
+  // le passe-partout : la lame de 150 cm, les dents en bas, une poignée de bois à chaque bout
+  const teeth: Tex = (s, t, c) => {
+    if (c.face !== 'S') return C.ironShade;
+    const i = Math.floor(s), j = Math.floor(t);
+    if (j === 0) return i % 2 ? C.ironShade : null;
+    return j === Math.round(c.h) - 1 ? C.ironLight : C.iron;
+  };
+  Q.push(...box(13, 31, 1.4, 1.8, 21, 23.6, part('lame', 7.2, C.ironDeep, 'full'), teeth));
+  for (const x of [12, 31]) Q.push(...box(x, x + 1, 1.2, 2.2, 20, 25.5, H, handle));
+  // la scie à cadre : deux bras, la traverse, la lame en bas, la corde tordue en haut
+  for (const x of [14, 29]) Q.push(...box(x, x + 1, 1.2, 2.2, 8, 18.5, H, handle));
+  Q.push(...box(15, 29, 1.3, 2.1, 13, 14, H, handle));
+  Q.push(...box(14.5, 29.5, 1.5, 1.9, 8.6, 9.8, part('lame', 7.2, C.ironDeep, 'full'), teeth));
+  Q.push(...box(15, 29, 1.5, 1.9, 17.4, 18, part('corde', 7, '#7c6a4f', 'thin'), () => '#b49a6c'));
+  // la tablette : les coins de fer, deux maillets couchés
+  for (let k = 0; k < 4; k++) Q.push(...box(3 + k * 2.4, 4.6 + k * 2.4, 2, 4.4, 6, 7.4, I, it));
+  for (const x of [17, 26]) {
+    Q.push(...box(x, x + 3, 1.6, 4.4, 6, 8.2, WP('maillet', 6.6, 'K'), (_s, _t, c) => (c.face === 'top' ? 'M' : c.face === 'W' ? 'm' : c.face === 'S' ? '*' : 'N')));
+    Q.push(...box(x + 3, x + 7, 2.6, 3.4, 6, 6.8, H, handle));
+  }
+  return Q;
+};
+/** La botte de bardeaux (50 × 25 × 30) : les bardeaux de chêne fendus, couchés en paquet, liés de deux harts d'osier. */
+const shingleBundle = (): Quad[] => [
+  ...box(0, 10, 0, 5, 0, 6, WP('bardeaux', 5), (s, t, c) => {
+    const i = Math.floor(s), j = Math.floor(t);
+    if (i === 2 || i === 7) return c.face === 'W' || c.face === 'E' ? '%' : 'Q';
+    if (c.face === 'top') return dash(671, j, i, 0.4) ? '*' : '^';
+    if (c.face === 'S') return j % 2 ? '*' : '%';
+    if (c.face === 'W') return j % 2 ? '^' : '*';
+    return '&';
+  }),
+];
 
 // =====================================================================================================================
 // L'enseigne (13.9) : la potence de fer forgé, le panneau peint, les motifs
@@ -647,13 +826,21 @@ const SIGN_DIMS = { w: 100, d: 10, h: 100 };
 const DEFS: Def[] = [
   // 13.2 la ferme du riche
   { key: 'luxury-counter', name: 'Comptoir de chêne sculpté', dims: { w: 240, d: 70, h: 95 }, buildings: ['p-ferme-riche'], n: 4, k: 0.5, shadow: true, note: 'plateau mouluré, frise de rinceaux, quatre panneaux à plis de serviette au sud', model: luxuryCounter },
-  { key: 'striped-awning', name: 'Auvent de toile rayée', dims: { w: 480, d: 300, h: 260 }, buildings: ['p-ferme-riche'], n: 4, k: 1, shadow: false, form: 'ground', note: 'quatre poteaux tournés, la toile guède et garance (lés de 20 cm), le lambrequin festonné au sud', model: stripedAwning },
-  { key: 'tiered-display', name: 'Présentoir à gradins', dims: { w: 120, d: 60, h: 100 }, buildings: ['p-ferme-riche'], n: 4, k: 0.5, shadow: true, note: 'trois gradins sous une nappe : fromages, miel et cire, épices en boîtes', model: tieredDisplay },
+  { key: 'striped-awning', name: 'Auvent de toile rayée', dims: { w: 640, d: 300, h: 285 }, buildings: ['p-ferme-riche'], n: 4, k: 1, shadow: false, form: 'ground', note: 'six poteaux tournés, la toile guède et garance (lés de 20 cm), le lambrequin festonné au sud ; vu de dos (R2), le haut de la toile est au sud : moins haut que la boîte, c\'est la projection', model: stripedAwning },
+  { key: 'tiered-display', name: 'Présentoir à gradins', dims: { w: 160, d: 70, h: 110 }, buildings: ['p-ferme-riche'], n: 4, k: 0.5, shadow: true, note: 'trois gradins sous une nappe, chargés : meules, pots de miel et cire, épices en boîtes ; de dos (R2), le gradin haut est devant : moins haut que la boîte', model: tieredDisplay },
   { key: 'shop-shelves', name: 'Étagères de boutique', dims: { w: 200, d: 40, h: 180 }, buildings: ['p-ferme-riche'], n: 4, k: 0.5, shadow: true, note: 'cinq rayons : jarres, fromages, pots de miel, pains de cire', model: shopShelves },
   { key: 'cheese-rack', name: 'Claie à fromages', dims: { w: 120, d: 50, h: 160 }, buildings: ['p-ferme-riche'], n: 2, k: 0.5, shadow: true, note: 'cinq claies d\'osier, vingt fromages qui s\'affinent', model: cheeseRack },
   { key: 'honey-pot', name: 'Pot de miel', dims: { w: 20, d: 20, h: 25 }, buildings: ['p-ferme-riche'], n: 1, k: 0.5, shadow: true, note: 'grès, le linge noué d\'une ficelle rouge ; à sa taille réelle (4 px)', model: honeyPotPiece },
   { key: 'wax-cake', name: 'Pain de cire', dims: { w: 25, d: 15, h: 10 }, buildings: ['p-ferme-riche'], n: 2, k: 0.5, shadow: true, note: 'à sa taille réelle (5 px)', model: waxCakePiece },
   { key: 'spice-box', name: 'Boîte d\'épices', dims: { w: 25, d: 15, h: 12 }, buildings: ['p-ferme-riche'], n: 2, k: 0.5, shadow: true, note: 'le couvercle peint à la garance ; à sa taille réelle (5 px)', model: spiceBoxPiece },
+  { key: 'honey-pyramid', name: 'Pots de miel en pyramide', dims: { w: 100, d: 30, h: 100 }, buildings: ['p-ferme-riche'], n: 2, k: 0.5, shadow: true, note: 'quatre rangs de pots de grès de 25 cm, 4-3-2-1, une planchette entre chaque ; de côté, la pyramide montre moins que sa boîte (le sommet est au milieu)', model: honeyPyramid },
+  { key: 'cheese-stack', name: 'Pile de meules', dims: { w: 50, d: 50, h: 60 }, buildings: ['p-ferme-riche'], n: 1, k: 0.5, shadow: true, note: 'cinq meules affinées de 12 cm, la croûte lavée', model: cheeseStack },
+  { key: 'wax-stack', name: 'Pains de cire en pile', dims: { w: 50, d: 30, h: 40 }, buildings: ['p-ferme-riche'], n: 2, k: 0.5, shadow: true, note: 'quatorze pains de 25 x 15 x 10 en quatre lits', model: waxStack },
+  { key: 'candle-bunch', name: 'Botte de cierges', dims: { w: 30, d: 10, h: 50 }, buildings: ['p-ferme-riche'], n: 2, k: 0.5, shadow: false, form: 'hanging', note: 'six cierges pendus par les mèches, sous la traverse de l\'auvent ; de côté (R1), la botte se voit par la tranche', model: candleBunch },
+  // 14.1 la vie : les jardinières, le linge, l'échelle
+  { key: 'flower-box', name: 'Jardinière d\'appui', dims: { w: 60, d: 20, h: 40 }, buildings: ['p-ferme-riche', 'p-bucheron'], n: 2, k: 0.5, shadow: false, form: 'hanging', note: 'terre cuite, géraniums, soucis, giroflées ; posée sur l\'appui d\'une fenêtre d\'étage', model: flowerBox },
+  { key: 'window-laundry', name: 'Linge à la fenêtre', dims: { w: 120, d: 10, h: 60 }, buildings: ['p-ferme-riche', 'p-bucheron'], n: 2, k: 0.5, shadow: false, form: 'hanging', note: 'une perche, une chemise, un chaperon de guède, un drap ; pend en hauteur ; de côté (R1) le linge est vu par la tranche (une face est ou ouest ne se voit pas : CADRAGE 8.1)', model: windowLaundry },
+  { key: 'leaning-ladder', name: 'Échelle appuyée', dims: { w: 50, d: 80, h: 290 }, buildings: ['p-ferme-riche'], n: 4, k: 0.5, shadow: true, note: 'deux montants, neuf barreaux, le pied à 80 cm du mur ; vue de dos (R2) l\'échelle penche vers le nord : moins haute que sa boîte, c\'est la projection', model: leaningLadder },
   // 13.9 l'enseigne, ses cinq motifs (un tirage par métier)
   ...MOTIFS.map((m, i): Def => ({
     key: i === 0 ? 'hanging-sign' : `hanging-sign-${m.key}`, name: `Enseigne pendue à sa potence (${m.name})`, dims: SIGN_DIMS,
@@ -662,6 +849,8 @@ const DEFS: Def[] = [
   })),
   // 13.3 le bûcheron
   { key: 'plank-counter', name: 'Comptoir sur billots', dims: { w: 200, d: 50, h: 90 }, buildings: ['p-bucheron'], n: 2, k: 0.5, shadow: true, note: 'une planche de 10 cm sur deux billots de 45 cm de diamètre', model: plankCounter },
+  { key: 'tool-rack', name: 'Râtelier d\'outils du bois', dims: { w: 200, d: 30, h: 160 }, buildings: ['p-bucheron'], n: 4, k: 0.5, shadow: true, note: 'deux cognées, une hache, le passe-partout, la scie à cadre ; les coins et les maillets sur la tablette', model: toolRack },
+  { key: 'shingle-bundle', name: 'Botte de bardeaux', dims: { w: 50, d: 25, h: 30 }, buildings: ['p-bucheron'], n: 2, k: 0.5, shadow: true, note: 'bardeaux de chêne fendus, liés de deux harts', model: shingleBundle },
   { key: 'wood-rack', name: 'Râtelier à perches et planches', dims: { w: 300, d: 60, h: 290 }, buildings: ['p-bucheron'], n: 4, k: 0.5, shadow: true, note: 'deux poteaux, deux lisses ; perches et planches debout, penchées contre la lisse haute', model: woodRack },
   // 13.4 le menuisier
   { key: 'nailed-shutter', name: 'Volet cloué', dims: { w: 70, d: 15, h: 55 }, buildings: ['p-menuisier'], n: 4, k: 1, shadow: false, form: 'ground', note: 'bois vieux, deux planches clouées en croix', model: nailedShutter },
@@ -694,6 +883,13 @@ export function pieceModel(key: string, v = 0): Quad[] {
   const d = DEFS.find((x) => x.key === key);
   if (!d) throw new Error(`place-nord : pas de pièce « ${key} »`);
   return v ? rotQuads(d.model(), VIEW_ROT[v % 4], [0, 0]) : d.model();
+}
+/** Le comptoir sculpté chargé dans sa vue (R0 : le long des clients au sud ; R1 et R3 : nord-sud, pour l'équerre). */
+export function ladenCounter(v = 0): Img {
+  const id = `laden:${v}`;
+  let r = cache.get(id);
+  if (!r) { r = pieceImg(rotQuads(ladenCounterModel(), VIEW_ROT[v % 4], [0, 0]), { k: 0.5, shadow: true }); cache.set(id, r); }
+  return r;
 }
 /** L'enseigne d'un motif (s0 à s4) dans sa vue : la seule source des enseignes de la place (le module du sud s'en sert). */
 export function hangingSign(motif: 's0' | 's1' | 's2' | 's3' | 's4', v = 0): Img {

@@ -18,7 +18,7 @@
 
 import type { Grid, Palette } from '../lib/canvas';
 import { sources } from '../index';
-import { woodAges, iron, woad, world } from '../palette';
+import { woodAges, iron, terracotta, woad, world } from '../palette';
 import { composeWood } from '../world/wood-pieces';
 import {
   add, box, dot, len, mul, part, polyPrism, unit, voidTex,
@@ -60,6 +60,8 @@ export const C = {
   // le fer (art/palette.ts `iron`) et le fer rouillé de l'atelier abandonné : NOUVEAU (la rouille)
   ironLight: iron['('], iron: iron[')'], ironShade: iron['<'], ironDeep: iron['>'],
   rust: '#8c4f30', rustLight: '#a8673e',
+  // la terre cuite des jardinières (art/palette.ts `terracotta`, les tuiles de la forge) : déjà dans la palette du jeu
+  terraLight: terracotta["'"], terra: terracotta['"'], terraShade: terracotta['\\'], terraDeep: terracotta['?'],
 } as const;
 
 // =====================================================================================================================

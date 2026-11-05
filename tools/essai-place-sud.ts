@@ -1,7 +1,9 @@
-// Planches de contrôle des quarts sud de la place du village (chantier « village », CADRAGE-village.md section 13 ; hors jeu : rien ici
+// Planches de contrôle des quarts sud de la place resserrée (chantier « village », CADRAGE-village.md section 14 ; hors jeu : rien ici
 // n'entre dans le jeu) : npx tsx tools/essai-place-sud.ts [dehors|dedans|pieces] écrit (sans argument : tout)
-//   .art-preview/place-sud-dehors.png  les trois bâtiments dehors, toit posé, x2, à leur place de la zone (la place, les rues, les cours
-//                                      en terre battue autour), Xéros à côté, le titre et qui y vit et travaille dessous ;
+//   .art-preview/place-sud-dehors.png  d'abord les trois bâtiments ensemble à leur place autour du rond (x1 : la solution 1 à gauche,
+//                                      la solution 2 à droite) ; puis chaque bâtiment en x2 : la solution 1 (l'appentis et les étals),
+//                                      la solution 2 toit plein, la solution 2 devant la porte (la boutique fondue à 0,35 comme le jeu),
+//                                      Xéros à côté, le titre et qui y vit et travaille dessous ;
 //   .art-preview/place-sud-dedans.png  toit effacé, mur sud coupé comme le jeu, x2 ; la mercière et la tailleuse : le rez et l'étage côte
 //                                      à côte ;
 //   .art-preview/place-sud-pieces.png  chaque pièce nouvelle, toutes ses vues, x4, à côté de Xéros, nom, dimensions et gabarit dessous.
@@ -18,10 +20,11 @@ import { sources } from '../art/index';
 import worldTiles from '../art/world/tiles';
 import { interiorTiles } from '../art/interior/house';
 import { bounds, hash, render, type Bounds, type Layer } from '../art/proposals/maison-xeros';
-import { BUILDINGS, NOTES } from '../art/proposals/place-sud';
+import { BUILDINGS, BUILDINGS_S2, FOOTPRINTS, NOTES, PLACE_RADIUS, PLACE_SUD_DIRT, S2_SHOPS, fadeHoles, s2Reveal } from '../art/proposals/place-sud';
 import { PIECES, PIECE_MODELS, PIECE_USERS } from '../art/proposals/place-sud-pieces';
 import { PLACE_META, type PlaceBuildingId } from '../art/proposals/place-types';
 import { PLACE, WAYS, type Rect } from '../art/proposals/village-plan-data';
+import type { PlaceBuilding } from '../art/proposals/place-types';
 import { fontWidth, write as writeText, wrap } from '../art/proposals/village-plan-font';
 import { blank, rect, toPng, type Img, type RGBA } from './lib/world-render';
 import { expectedSize, silhouette, TOLERANCE } from '../src/content/gabarit';
@@ -64,7 +67,8 @@ function groundAround(at: [number, number], yards: Rect[]): (x: number, y: numbe
   const [cx, cy] = PLACE.center;
   return (x, y) => {
     const zx = x + at[0], zy = y + at[1];
-    const dirt = Math.hypot(zx - cx, zy - cy) <= PLACE.radius || ways.some((r) => zx >= r[0] && zx < r[2] && zy >= r[1] && zy < r[3])
+    const dirt = Math.hypot(zx - cx, zy - cy) <= PLACE_RADIUS || ways.some((r) => zx >= r[0] && zx < r[2] && zy >= r[1] && zy < r[3])
+      || PLACE_SUD_DIRT.some((r) => zx >= r[0] && zx < r[2] && zy >= r[1] && zy < r[3])
       || yards.some((r) => x >= r[0] && x < r[2] && y >= r[1] && y < r[3]);
     if (dirt) return tileColor(yard15, worldTiles.palette, x + at[0], y + at[1]);
     const tx = Math.floor((x + at[0]) / 32), ty = Math.floor((y + at[1]) / 32);
@@ -144,24 +148,99 @@ const fmt = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',');
 
 const O: [number, number] = [0, 0];
 const byId = (id: PlaceBuildingId) => BUILDINGS.find((b) => b.id === id)!;
+const byId2 = (id: PlaceBuildingId) => BUILDINGS_S2.find((b) => b.id === id)!;
+
+/** Une scène rendue sur son sol, dans un cadre qui couvre au moins l'emprise ; `extra` : des scènes de plus (la vue nue du fondu). */
+function frameOf2(b: PlaceBuilding, scene: Scene): Bounds {
+  const bb = bounds(scene, [16, 16, 16, 16]);
+  return [Math.min(bb[0], -16), Math.min(bb[1], -16), Math.max(bb[2], b.size[0] + 16), Math.max(bb[3], b.size[1] + 16)];
+}
+function withXeros(sc: Scene, xs: [number, number][]): Scene {
+  return { ...sc, boards: [...sc.boards, ...xs.map(([x, y]) => xerosAt(x, y))], floor: undefined };
+}
+type View = 's1' | 's2' | 's2-fondu';
+function viewLayer(id: PlaceBuildingId, v: View): { l: Layer; bd: Bounds } {
+  const n = NOTES[id]!, b = byId(id);
+  const g = groundAround(b.at, n.yards);
+  if (v === 's1') {
+    const sc = withXeros(b.outside(O, 0), n.xeros);
+    const bd = frameOf2(b, sc);
+    return { l: render(sc, bd, { grass: g, floor: g }), bd };
+  }
+  const shops = S2_SHOPS[id]!;
+  if (v === 's2') {
+    const sc = withXeros(byId2(id).outside(O, 0), n.xeros);
+    const bd = frameOf2(b, sc);
+    return { l: render(sc, bd, { grass: g, floor: g }), bd };
+  }
+  const r = s2Reveal(id, O, 0), xs = shops.map((s) => s.door);
+  const full = withXeros(r.full, xs), bare = withXeros(r.bare, xs);
+  const bd = frameOf2(b, full);
+  const lf = render(full, bd, { grass: g, floor: g });
+  const inB = (x: number, y: number) => FOOTPRINTS[id]!.some((r) => x >= r[0] && x < r[2] && y >= r[1] && y < r[3]);
+  const fl = (x: number, y: number) => (inB(x, y) ? floorTile(x, y) : g(x, y));
+  const lb = render(bare, bd, { grass: fl, floor: fl });
+  return { l: fadeHoles(lf, lb, r.holes), bd };
+}
 
 function outsideBlock(id: PlaceBuildingId): Block {
   const K = 2, b = byId(id), meta = PLACE_META[id], n = NOTES[id]!;
-  const sc = b.outside(O, 0);
-  const scene: Scene = { ...sc, boards: [...sc.boards, ...n.xeros.map(([x, y]) => xerosAt(x, y))], floor: undefined };
-  const bb = bounds(scene, [16, 16, 16, 16]);
-  const bd: Bounds = [Math.min(bb[0], -16), Math.min(bb[1], -16), Math.max(bb[2], b.size[0] + 16), Math.max(bb[3], b.size[1] + 16)];
-  const g = groundAround(b.at, n.yards);
-  const l = render(scene, bd, { grass: g, floor: g });
-  const w = l.w * K;
+  const vs: View[] = ['s1', 's2', 's2-fondu'];
+  const ls = vs.map((v) => viewLayer(id, v).l);
+  const GAP = 24;
+  const w = ls.reduce((s, l) => s + l.w * K + GAP, 0) - GAP, hh = Math.max(...ls.map((l) => l.h * K));
+  const cap = ['Solution 1 : l’appentis, les étals devant', 'Solution 2 : toit plein', 'Solution 2 : Xéros devant la porte, la boutique fondue à 0,35'];
   return {
-    title: [{ s: meta.title, c: GOLD }, ...lines(meta.who, w, WHITE)],
+    title: [{ s: n.title, c: GOLD }, ...lines(n.who, w, WHITE)],
     notes: [
       ...n.lines.flatMap((s) => lines(s, w, GREY)),
-      ...lines(`Emprise ${fmt(b.size[0] * 0.05)} x ${fmt(b.size[1] * 0.05)} m (débords et cour compris) ; posé en (${b.at[0]}, ${b.at[1]}) de la zone village ; parcelle ${meta.parcel}`, w, DIM),
+      ...n.s2.flatMap((s) => lines(s, w, GREY)),
+      ...lines(`Emprise ${fmt(b.size[0] * 0.05)} x ${fmt(b.size[1] * 0.05)} m (étals et cour compris) ; posé en (${b.at[0]}, ${b.at[1]}) de la zone village ; parcelle ${meta.parcel}`, w, DIM),
     ],
-    w, h: l.h * K,
-    draw: (img, x, y) => blitLayer(img, l, x, y, K),
+    w, h: hh + LH,
+    draw: (img, x, y) => {
+      let cx = x;
+      ls.forEach((l, i) => {
+        writeText(img, cap[i], cx, y, S, GOLD, null);
+        blitLayer(img, l, cx, y + LH + hh - l.h * K, K);
+        cx += l.w * K + GAP;
+      });
+    },
+  };
+}
+
+/** Les trois bâtiments ensemble à leur place autour du rond, une solution ; le rond pointillé. */
+function ensembleLayer(sol: 1 | 2): Layer {
+  const OX = 2640, OY = 1900, list = sol === 1 ? BUILDINGS : BUILDINGS_S2;
+  const quads: Scene['quads'] = [], boards: Scene['boards'] = [];
+  const yards: Rect[] = [];
+  for (const b of list) {
+    const o: [number, number] = [b.at[0] - OX, b.at[1] - OY];
+    const sc = b.outside(o, 0);
+    quads.push(...sc.quads); boards.push(...sc.boards);
+    for (const r of NOTES[b.id]!.yards) yards.push([r[0] + o[0], r[1] + o[1], r[2] + o[0], r[3] + o[1]]);
+    const xs = sol === 1 ? NOTES[b.id]!.xeros.slice(0, 1) : S2_SHOPS[b.id]!.map((s) => s.door);
+    boards.push(...xs.map(([x, y]) => xerosAt(x + o[0], y + o[1])));
+  }
+  const g = groundAround([OX, OY], yards);
+  const l = render({ quads, boards }, [-10, -10, 1310, 870], { grass: g, floor: g });
+  // le rond (rayon 10 m), en pointillé
+  const [cx, cy] = [PLACE.center[0] - OX + 10, PLACE.center[1] - OY + 10];
+  for (let a = 0; a < 720; a++) {
+    if (a % 6 > 2) continue;
+    const X = Math.round(cx + Math.cos((a / 720) * Math.PI * 2) * PLACE_RADIUS), Y = Math.round(cy + Math.sin((a / 720) * Math.PI * 2) * PLACE_RADIUS);
+    if (X >= 0 && Y >= 0 && X < l.w && Y < l.h) l.rgba.set([245, 215, 120, 255], (Y * l.w + X) * 4);
+  }
+  return l;
+}
+function ensembleBlock(): Block {
+  const ls = [ensembleLayer(1), ensembleLayer(2)], GAP = 24;
+  const w = ls.reduce((s, l) => s + l.w + GAP, 0) - GAP, hh = Math.max(...ls.map((l) => l.h));
+  return {
+    title: [{ s: 'Les quarts sud en place autour du rond (x1) : à gauche la solution 1, à droite la solution 2', c: GOLD }],
+    notes: lines('Le rond de 20 m en pointillé (le grand arbre, les bancs, le panneau, l’abreuvoir : place-centre.ts) ; la terre battue jusqu’aux façades ; la tailleuse au sud-ouest, la ferme rivale et la mercière au sud-est. Xéros : à gauche devant les étals, à droite devant chaque porte de boutique (cachée sous le toit).', w, GREY),
+    w, h: hh,
+    draw: (img, x, y) => { let cx = x; for (const l of ls) { blitLayer(img, l, cx, y, 1); cx += l.w + GAP; } },
   };
 }
 
@@ -177,19 +256,20 @@ function insideLayer(id: PlaceBuildingId, level: 0 | 1): Layer {
   const xb = xs ? [{ ...xerosAt(xs[0], xs[1]), y: xerosAt(xs[0], xs[1]).y - (level ? 57 : 0) }] : [];
   const sc: Scene = { ...sc0, boards: [...sc0.boards, ...xb] };
   const bd = bounds(sc, [12, 12, 12, 12]);
-  const g = groundAround(b.at, n.yards), fl = sc.floor;
-  return render(sc, bd, { grass: g, floor: (x, y) => (fl && x >= fl[0] && x < fl[1] && y >= fl[2] && y < fl[3] ? floorTile(x, y) : g(x, y)) });
+  const g = groundAround(b.at, n.yards);
+  const fl = (x: number, y: number) => (FOOTPRINTS[id]!.some((r) => x >= r[0] && x < r[2] && y >= r[1] && y < r[3]) ? floorTile(x, y) : g(x, y));
+  return render(sc, bd, { grass: fl, floor: fl });
 }
 
 function insideBlock(id: PlaceBuildingId): Block {
-  const K = 2, b = byId(id), meta = PLACE_META[id], n = NOTES[id]!;
+  const K = 2, b = byId(id), n = NOTES[id]!;
   const levels: (0 | 1)[] = b.levels === 2 ? [0, 1] : [0];
   const ls = levels.map((lv) => insideLayer(id, lv));
   const GAP = 24;
   const w = ls.reduce((s, l) => s + l.w * K + GAP, 0) - GAP;
   const hh = Math.max(...ls.map((l) => l.h * K));
   return {
-    title: [{ s: `${meta.title} : le dedans`, c: GOLD }, ...lines(meta.who, w, WHITE)],
+    title: [{ s: `${n.title} : le dedans`, c: GOLD }, ...lines(n.who, w, WHITE)],
     notes: [
       ...(b.levels === 2 ? [{ s: 'à gauche le rez-de-chaussée, à droite l’étage (le rez omis, l’escalier dans la pénombre sous la trémie)', c: GREY }] : []),
       ...n.inside.flatMap((s) => lines(s, w, GREY)),
@@ -252,10 +332,10 @@ function main(): void {
     'La place du village, quarts sud : les pièces nouvelles, x4 (essai hors jeu)',
     'Toutes leurs vues R0 à R3 selon leur symétrie, Xéros à droite (1,60 m) ; dessous : le nom, les dimensions (est-ouest x nord-sud x hauteur), ce qui la distingue, qui s’en sert, le gabarit de chaque vue (docs/STYLE.md section 8, tolérance 2 px)',
   ], 2600), 'place-sud-pieces.png');
-  if (!only || only === 'dehors') save(sheet(ids.map(outsideBlock), [
-    'La place du village, quarts sud, dehors (essai hors jeu)',
-    'x2 ; 5 cm par px, projection du jeu (x, y - z) ; chaque bâtiment à sa place de la zone village : la place, les rues et les cours en terre battue autour ; Xéros pour l’échelle',
-  ], 2600), 'place-sud-dehors.png');
+  if (!only || only === 'dehors') save(sheet([ensembleBlock(), ...ids.map(outsideBlock)], [
+    'La place resserrée, quarts sud, dehors : les deux solutions de 14.2 (essai hors jeu)',
+    'x1 puis x2 ; 5 cm par px, projection du jeu (x, y - z) ; chaque bâtiment à sa place de la zone village : le rond, les rues et les cours en terre battue autour ; Xéros pour l’échelle',
+  ], 3000), 'place-sud-dehors.png');
   if (!only || only === 'dedans') save(sheet(ids.map(insideBlock), [
     'La place du village, quarts sud, dedans (essai hors jeu)',
     'x2 ; toits effacés, mur sud coupé comme le jeu, meubles du jeu et pièces nouvelles à leur place',

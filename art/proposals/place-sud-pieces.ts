@@ -20,7 +20,7 @@ import {
 import type { HouseId, Img, VillagePiece } from './village-types';
 import { boards, furnWood, palette } from './village-maisons-pierre-matieres';
 import { bark, boardsTex, cylinder, face, leafInsideTex, leafTex } from './village-maisons-bois-lib';
-import { ball, ballHeap, bar, clapboard, quad } from './place-sud-lib';
+import { ball, ballHeap, bar, clapboard, leanToX, quad } from './place-sud-lib';
 
 const P = (name: string, prio = 3, dark = 'K', outline: 'full' | 'thin' | 'none' = 'full', extra: Partial<Part> = {}) => part(name, prio, dark, outline, extra);
 const W = (seed: number) => furnWood(seed);
@@ -45,7 +45,43 @@ export const VEG = {
   apple2: 'ccστ',
   onion: 'UunN', // l'oignon : la terre claire
   carrot: 'hiστ', // la carotte : les lueurs du feu (h, i), seules teintes orangées de la palette
+  pear: 'pyGv', // la poire : le jaune-vert
+  plum: 'βγδ_', // la prune : la guède sombre
+  plum2: 'γδδ_',
+  pumpkin: 'Hhiσ', // la citrouille : les lueurs du feu
 };
+/** Le pain : la croûte dorée (le chaume du monde, Y t T P). */
+export const BREAD = { loaf: 'YtTP', loaf2: 'tTTP' };
+/** Des volumes déplacés (sans recaler la matière : ce sont des boules et des boîtes à leur couleur). */
+const moved0 = (qs: Quad[], [dx, dy, dz]: V3): Quad[] => qs.map((q) => ({ ...q, o: [q.o[0] + dx, q.o[1] + dy, q.o[2] + dz] as V3, tex: (s, t, c) => q.tex(s, t, { ...c, p: [c.p[0] - dx, c.p[1] - dy, c.p[2] - dz] }) }));
+/** Une couronne de pain (Ø 30 cm) posée à plat : un anneau de huit morceaux. */
+function crown(cx: number, cy: number, z: number, r: number): Quad[] {
+  const Q: Quad[] = [];
+  for (let k = 0; k < 8; k++) {
+    const a = (k / 8) * Math.PI * 2;
+    Q.push(...ball(cx + Math.cos(a) * r * 0.7, cy + Math.sin(a) * r * 0.7, z, 1.1, BREAD.loaf, 1.6, 'couronne'));
+  }
+  return Q;
+}
+/** Une citrouille côtelée (Ø 2r px), la queue verte. */
+export function pumpkin(cx: number, cy: number, z: number, r: number): Quad[] {
+  const R = VEG.pumpkin, P0 = P('citrouille', 3, R[3]);
+  const tex: Tex = (s, t, c) => {
+    if (c.face === 'top') {
+      const dx = (s - r) / r, dy = (t - r) / r;
+      if (dx * dx + dy * dy > 1.05) return null;
+      if (Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2) return 'l';
+      return Math.floor(s) % 3 === 0 ? R[2] : dx < -0.1 ? R[0] : R[1];
+    }
+    if (c.face === 'S') {
+      const dx = (s - r) / r, dz = (t - r * 0.7) / (r * 0.7);
+      if (dx * dx + dz * dz > 1.2) return null;
+      return Math.floor(s) % 3 === 0 ? R[3] : dz > 0.1 ? R[1] : R[2];
+    }
+    return null;
+  };
+  return box(cx - r, cx + r, cy - r, cy + r, z, z + r * 1.4, P0, tex);
+}
 
 /** Des poireaux couchés nord-sud côte à côte : le blanc au sud, le vert au nord ; deux rangs. */
 function leeks(x0: number, x1: number, y0: number, y1: number, z0: number): Quad[] {
@@ -70,6 +106,19 @@ function stallLoad(mix: number, z: number): Quad[] {
     ...ballHeap(16, 30, 1, 13, z, 1.6, [VEG.turnip], 12, 2),
     ...leeks(31, 46, 1, 13, z),
     ...ballHeap(47, 63.5, 0.5, 13.5, z, 1.4, [VEG.apple, VEG.apple2], 13, 3),
+  ];
+  if (mix === 2) return [
+    // le pain de la ferme : des miches en tas, deux couronnes ; les œufs en paniers ; trois citrouilles
+    ...ballHeap(0.5, 17, 0.5, 13.5, z, 2.2, [BREAD.loaf, BREAD.loaf2], 31, 2),
+    ...crown(21, 4.5, z, 3.2), ...crown(21, 10, z, 3.2),
+    ...moved0(basketModel('eggs'), [27, 1, z]), ...moved0(basketModel('eggs'), [36, 5, z]),
+    ...[[48, 4], [55, 9], [58, 3.5]].flatMap(([x, y]) => pumpkin(x, y, z, 3)),
+  ];
+  if (mix === 3) return [
+    // les fruits : pommes, poires, prunes, en tas
+    ...ballHeap(0.5, 21, 0.5, 13.5, z, 1.4, [VEG.apple, VEG.apple2], 41, 3),
+    ...ballHeap(22, 42, 0.5, 13.5, z, 1.4, [VEG.pear], 42, 3),
+    ...ballHeap(43, 63.5, 0.5, 13.5, z, 1.2, [VEG.plum, VEG.plum2], 43, 3),
   ];
   return [
     ...ballHeap(0.5, 18, 0.5, 13.5, z, 1.5, [VEG.onion], 21, 3),
@@ -157,6 +206,11 @@ export function crateModel(mix: number): Quad[] {
     Q.push(...leeks(0.5, 5, 0.5, 6.5, 5.5));
     for (const [x, y] of [[6.6, 2], [8.6, 2], [7.6, 4.8]]) Q.push(...ball(x, y, 5.5, 1.5, VEG.turnip));
   }
+  if (mix === 3) for (let x = 0.8; x + 1.4 <= 9.4; x += 1.5) {
+    // des carottes en bottes, les fanes au nord
+    const tex: Tex = (_s, _t, c) => (c.p[1] < 3 ? (c.face === 'top' ? 'L' : 'l') : c.face === 'top' ? (Math.floor(c.p[1] * 2) % 3 === 0 ? 'h' : 'i') : 'σ');
+    Q.push(...box(x, x + 1.4, 0.6 + hash(7, x) * 1.2, 6.6, 5.5, 6.8, P('carotte', 3, 'σ'), tex));
+  }
   if (mix === 2) for (const [x, y, z] of [[2, 2, 5.4], [5, 2, 5.4], [8, 2, 5.4], [2, 5, 5.4], [5, 5, 5.4], [8, 5, 5.4], [3.5, 3.5, 6.6], [6.5, 3.5, 6.6]]) Q.push(...ball(x, y, z, 1.4, (x + y) % 3 < 1.5 ? VEG.apple : VEG.apple2));
   return Q;
 }
@@ -171,12 +225,23 @@ const wicker: Tex = (s, t, c) => {
   if (lit < 0) return weave ? 'C' : 'X';
   return weave ? 'O' : 'C';
 };
-/** Le panier d'osier (Ø 40 × 30 cm), plein d'oignons. */
-export function basketModel(): Quad[] {
+export type BasketFill = 'onions' | 'eggs' | 'bread' | 'apples';
+/** Le panier d'osier (Ø 40 × 30 cm), plein : d'oignons, d'œufs (crème et roux), de petits pains, de pommes. */
+export function basketModel(fill: BasketFill = 'onions'): Quad[] {
   const Q: Quad[] = [];
-  Q.push(...cylinder([4, 4, 0], [4, 4, 6], 4, P('panier', 3, 'X'), wicker, () => 'n', 12));
-  for (const [x, y] of [[2.6, 3], [5.4, 3], [4, 5.2], [2.8, 5.6], [5.4, 5.6]]) Q.push(...ball(x, y, 5.6, 1.5, VEG.onion));
-  Q.push(...ball(4, 4, 7.2, 1.5, VEG.onion));
+  Q.push(...cylinder([4, 4, 0], [4, 4, 6], 4, P('panier', 3, 'X'), wicker, () => (fill === 'eggs' ? 'D' : 'n'), 12));
+  if (fill === 'eggs') {
+    // l'anse, les œufs (de 6 cm : 1,2 px) en tas : des grains crème et roux sur la paille
+    Q.push(...bar([0.6, 4, 6], [4, 4, 10], 0.7, P('anse', 2.5, 'X', 'thin'), wicker), ...bar([4, 4, 10], [7.4, 4, 6], 0.7, P('anse', 2.5, 'X', 'thin'), wicker));
+    for (const [x, y, z] of [[2, 2.6, 6], [3.6, 2.2, 6], [5.4, 2.8, 6], [2.4, 4.4, 6], [4.2, 4.2, 6], [5.8, 4.6, 6], [3, 6, 6], [4.8, 6, 6], [3.2, 3.4, 7], [4.8, 3.6, 7], [4, 5, 7]]) {
+      Q.push(...ball(x, y, z, 0.9, (x * 7 + y) % 3 < 1 ? 'adDE' : '!adD', 1.3, 'œuf'));
+    }
+    return Q;
+  }
+  const R = fill === 'bread' ? [BREAD.loaf, BREAD.loaf2] : fill === 'apples' ? [VEG.apple, VEG.apple2] : [VEG.onion];
+  const r = fill === 'bread' ? 1.8 : 1.5;
+  for (const [x, y] of [[2.6, 3], [5.4, 3], [4, 5.2], [2.8, 5.6], [5.4, 5.6]]) Q.push(...ball(x, y, 5.6, r, R[Math.floor(x + y) % R.length]));
+  Q.push(...ball(4, 4, 7.2, r, R[0]));
   return Q;
 }
 
@@ -582,6 +647,253 @@ export function hidesModel(): Quad[] {
   return Q;
 }
 
+
+// =====================================================================================================================
+// 14 La place resserrée : l'appentis, et les étalages chargés des quatre boutiques du sud
+// =====================================================================================================================
+
+/** L'appentis ouvert de boutique (une travée de 3,20 m, 2,90 m de profondeur) : deux poteaux, la sablière, le pan de bardeaux à 12°. */
+export function leanToModel(): Quad[] {
+  const Q: Quad[] = [];
+  leanToX(Q, 0, 64, 58, 56, 38, 50, 611, 62);
+  return Q;
+}
+
+/** La couleur d'un coupon : [lumière, teinte, ombre, contour]. */
+const CLOTH = ['ρστσ', 'αβγδ', 'adDE', 'LlkV', 'JOCX', 'βγδδ', 'bOCX', '!adD'];
+/** Une pile de coupons pliés (40 × 30 cm, 10 cm chacun) : `n` coupons de couleurs tirées. */
+function boltPile(x: number, y: number, z: number, n: number, seed: number): Quad[] {
+  const Q: Quad[] = [];
+  for (let k = 0; k < n; k++) {
+    const R = CLOTH[Math.floor(hash(seed, k) * CLOTH.length)];
+    const dx = (hash(seed, k, 2) - 0.5) * 0.8;
+    Q.push(...box(x + dx, x + dx + 8, y, y + 6, z + k * 2, z + k * 2 + 2, P('coupon', 4 + k * 0.01, R[3]), (s, t, c) => {
+      if (c.face === 'top') return Math.floor(s) % 4 === 3 ? R[1] : R[0];
+      if (c.face !== 'S') return R[2];
+      return Math.floor(t * 2) % 2 ? R[1] : Math.floor(s) === 0 ? R[0] : R[2];
+    }));
+  }
+  return Q;
+}
+/** Un rouleau d'étoffe couché nord-sud (Ø 20 cm, 60 cm). */
+function clothRoll(x: number, y: number, z: number, R: string): Quad[] {
+  return cylinder([x, y, z + 2], [x, y + 12, z + 2], 2, P('rouleau', 4, R[3]), (_s, _t, c) => (c.n[2] > 0.5 ? R[0] : c.n[0] < 0 ? R[1] : R[2]), (s, t) => (Math.hypot(s - 2, t - 2) < 0.8 ? '%' : R[1]), 8);
+}
+/** La longue table des étoffes, 320 × 80 × 105 cm : planches rabotées sur tréteaux, les coupons en piles, deux rouleaux, les rubans. */
+export function clothTableModel(): Quad[] {
+  const Q: Quad[] = [];
+  for (const x of [5, 57]) {
+    Q.push(...box(x, x + 2, 0.5, 15.5, 14, 16, P('tréteau', 3), W(621 + x)));
+    for (const [yt, yb] of [[2, 0.3], [14, 15.7]] as const) for (const dx of [-1.6, 1.6]) Q.push(...bar([x + 1, yt, 14], [x + 1 + dx, yb, 0], 1.2, P('pied', 2.5), W(623 + x)));
+  }
+  Q.push(...box(0, 64, 0, 16, 16, 17, P('plateau', 4, '&'), W(625)));
+  // une toile de garance qui pend devant (le bord de la table, à franges)
+  Q.push(...box(0, 64, 15.9, 16.4, 11, 17, P('tenture', 4.5, 'τ'), (s, t, c) => {
+    if (c.face !== 'S') return 'σ';
+    const i = Math.floor(s), j = Math.floor(t);
+    if (j === 0) return i % 2 ? null : 'σ';
+    if (j >= 5) return 'ρ';
+    return i % 8 < 4 ? 'ρ' : 'σ';
+  }));
+  [[1, 2, 4], [10, 1.5, 3], [19, 2.5, 5], [40, 2, 3], [49, 1, 4], [56, 2.5, 2], [1, 9, 2], [10, 9, 3]].forEach(([x, y, n], k) => Q.push(...boltPile(x, y, 17, n, 631 + k)));
+  Q.push(...clothRoll(30, 2, 17, 'αβγδ'), ...clothRoll(35, 2, 17, 'adDE'));
+  // les rubans roulés, en rang devant
+  for (let k = 0; k < 7; k++) {
+    const R = CLOTH[(k * 3) % CLOTH.length];
+    Q.push(...cylinder([20 + k * 2.6, 12, 17], [20 + k * 2.6, 12, 18.4], 1.1, P('ruban', 5, R[3]), (_s, _t, c) => (c.n[0] < -0.2 ? R[0] : R[1]), () => R[0], 8));
+  }
+  Q.push(...box(40, 52, 10, 13, 17, 17.6, P('galon', 5, 'X'), (s) => (Math.floor(s) % 2 ? 'b' : 'J')));
+  return Q;
+}
+
+/** Le portemanteau à chapeaux et à capes, Ø 60 × 185 cm : le pied en croix, le mât, quatre patères, trois chapeaux, une cape. */
+export function hatStandModel(): Quad[] {
+  const Q: Quad[] = [], c = 6;
+  for (const [dx, dy] of [[-5, 0], [5, 0], [0, -5], [0, 5]]) Q.push(...bar([c, c, 2], [c + dx, c + dy, 0], 1, P('pied', 3), W(641)));
+  Q.push(...box(c - 0.7, c + 0.7, c - 0.7, c + 0.7, 0, 36, P('mât', 4), W(642)));
+  // la cape pendue au sud-ouest
+  Q.push(...box(c - 8, c + 1, c + 1, c + 2, 12, 32, P('cape', 4.5, 'δ'), (s, t, cx) => {
+    if (cx.face !== 'S') return cx.face === 'top' ? null : 'γ';
+    const u = 1 - t / 20, hw = 1.6 + u * 3, dx = s - 4.5;
+    if (Math.abs(dx) > hw) return null;
+    if (u < 0.12) return 'δ';
+    return Math.floor(s) % 3 === 1 ? 'γ' : dx < -0.5 ? 'α' : 'β';
+  }));
+  const hat = (x: number, y: number, z: number, R: string, tall: number) => {
+    Q.push(...cylinder([x, y, z], [x, y, z + 0.6], 4.2, P('bord', 5, R[3]), (_s, _t, cx) => (cx.n[0] < 0 ? R[1] : R[2]), () => R[1], 12));
+    Q.push(...cylinder([x, y, z + 0.6], [x, y, z + 0.6 + tall], 2, P('calotte', 5.1, R[3]), (_s, t, cx) => (t < 0.8 ? 'b' : cx.n[0] < -0.2 ? R[0] : R[1]), () => R[0], 10));
+  };
+  hat(c, c, 36, 'MmNK', 2.6);
+  hat(c - 3, c - 1, 30, 'ρστσ', 2);
+  hat(c + 3.5, c + 1, 27, 'Uune', 2.2);
+  return Q;
+}
+
+/** Un mannequin d'armure, Ø 50 × 160 cm : le pied, la colonne, le buste d'homme ; habillé d'un gambison piqué (`kind` 0) ou d'une cotte de cuir clouté (1). */
+export function armorFormModel(kind: 0 | 1): Quad[] {
+  const Q: Quad[] = [], c: V3 = [5, 5, 0];
+  for (let k = 0; k < 3; k++) {
+    const a = (k / 3) * Math.PI * 2 + 0.5;
+    Q.push(...bar([c[0], c[1], 6], [c[0] + Math.cos(a) * 4.4, c[1] + Math.sin(a) * 4.4, 0], 1, P('pied', 3), W(651 + k)));
+  }
+  Q.push(...box(4.5, 5.5, 4.5, 5.5, 0, 12, P('colonne', 4), W(654)));
+  const R = kind === 0 ? 'adDE' : 'UunN';
+  // le buste : large aux épaules, la taille, le bas de la cotte évasé ; deux moignons de manches
+  const rad = (z: number) => (z < 14 ? 4.2 : z < 18 ? 3.9 : z < 22 ? 3.6 : z < 27 ? 4.2 : z < 29 ? 4.6 : 0);
+  const cloth: Tex = (s, _t, cx) => {
+    if (cx.face === 'cap') return R[1];
+    const z = cx.p[2], i = Math.floor(s);
+    if (kind === 0 && Math.floor(z * 1.4) % 3 === 0) return R[2];
+    if (kind === 1 && (i + Math.floor(z)) % 4 === 0 && Math.floor(z) % 3 === 1) return '-';
+    if (kind === 1 && Math.abs(z - 20) < 0.6) return 'K';
+    return cx.n[0] < -0.3 ? R[0] : cx.n[0] > 0.4 ? R[2] : R[1];
+  };
+  for (let z = 12; z < 29; z += 1.5) Q.push(...cylinder([5, 5, z], [5, 5, z + 1.5], rad(z), P('buste', 4, R[3]), cloth, () => R[1], 12));
+  for (const dx of [-5.2, 5.2]) Q.push(...cylinder([5 + dx * 0.8, 5, 27.5], [5 + dx, 5, 23], 1.5, P('manche', 4.2, R[3]), cloth, () => R[2], 8));
+  Q.push(...cylinder([5, 5, 29], [5, 5, 30.5], 1.2, P('col', 4.4, R[3]), cloth, () => R[1], 8));
+  Q.push(...box(4.5, 5.5, 4.5, 5.5, 30.5, 32, P('pommeau', 5), W(655)));
+  if (kind === 1) Q.push(...box(1, 9, 3, 7, 19.4, 20.4, P('ceinture', 4.6, 'K'), (_s, _t, cx) => (cx.face === 'top' ? 'N' : 'K')));
+  return Q;
+}
+
+/** Un bouclier rond (Ø 60 cm, 12 px) vu de face, debout en (x, y), son bas à z : planches peintes en quartiers, le bord de cuir, l'umbo de fer. */
+function shield(x: number, y: number, z: number, R: [string, string], seed: number): Quad[] {
+  const r = 6;
+  const tex: Tex = (s, t, c) => {
+    const dx = s - r, dz = t - r, d = Math.hypot(dx, dz);
+    if (c.face !== 'S') return c.face === 'top' ? (Math.abs(s - r) < r - 1 ? 'N' : null) : 'N';
+    if (d > r) return null;
+    if (d < 1.6) return d < 0.8 ? '!' : '-';
+    if (d > r - 1) return dz > 0 && dx < 0 ? 'u' : 'n';
+    const q = (dx < 0) === (dz < 0) ? 0 : 1;
+    const k = R[q];
+    // le jour en haut à gauche, les joints des planches
+    if (Math.floor(s + seed) % 4 === 0) return k[2];
+    return dx < -1 && dz > 1 ? k[0] : k[1];
+  };
+  return box(x, x + 2 * r, y, y + 1, z, z + 2 * r, P('bouclier', 5, 'K'), tex);
+}
+/** Le chevalet à boucliers, 200 × 40 × 110 cm : une barre sur deux pieds, trois boucliers ronds appuyés, un casque de cuir dessus. */
+export function shieldStandModel(): Quad[] {
+  const Q: Quad[] = [];
+  for (const x of [0, 38]) {
+    Q.push(...box(x, x + 2, 3, 5, 0, 18, P('pied', 3), W(661 + x)));
+    Q.push(...box(x - 0.5, x + 2.5, 0, 8, 0, 1.2, P('patin', 3), W(662 + x)));
+  }
+  Q.push(...box(0, 40, 3, 5, 16, 18, P('barre', 3.5), W(663)));
+  Q.push(...shield(1.5, 5, 1, ['ρστ', 'adD'], 1), ...shield(14, 5.3, 1, ['αβγ', 'JOC'], 2), ...shield(26.5, 5, 1, ['ρστ', 'βγδ'], 3));
+  // le casque de cuir bouilli, posé sur la barre
+  Q.push(...cylinder([20, 4, 18], [20, 4, 21], 2.6, P('casque', 5, 'N'), (_s, t, c) => (t < 0.8 ? 'K' : c.n[0] < -0.2 ? 'U' : 'u'), () => 'U', 10));
+  return Q;
+}
+
+/** Le râtelier d'armes, 160 × 40 × 250 cm : le bâti, deux barres percées ; quatre lances, deux haches, deux épées. */
+export function weaponRackModel(): Quad[] {
+  const Q: Quad[] = [];
+  for (const x of [0, 30.5]) {
+    Q.push(...box(x, x + 1.5, 3, 4.5, 0, 26, P('montant', 4), W(671 + x)));
+    Q.push(...box(x - 0.5, x + 2, 0, 8, 0, 1.2, P('patin', 3), W(672 + x)));
+  }
+  Q.push(...box(0, 32, 2.6, 5, 4, 5.4, P('barre basse', 3.5), W(673)), ...box(0, 32, 3, 4.5, 24, 25.5, P('barre haute', 5.5), W(674)));
+  const shaft = (x: number, h: number) => Q.push(...box(x, x + 0.8, 3.4, 4.2, 1, h, P('hampe', 5, 'K', 'thin'), (_s, _t, c) => (c.face === 'top' ? '^' : '*')));
+  // les lances : la hampe de frêne, le fer en feuille de laurier
+  for (const x of [3, 6.5, 10]) {
+    shaft(x, 44);
+    Q.push(...box(x - 0.6, x + 1.4, 3.3, 4.3, 44, 48.5, P('fer de lance', 6, '_', 'thin'), (s, t, c) => (c.face !== 'S' ? '-' : t > 3.5 && (s < 0.5 || s > 1.5) ? null : s < 1 ? '!' : '-')));
+  }
+  // les haches : le manche, le fer à l'est
+  for (const x of [14, 18]) {
+    shaft(x, 32);
+    Q.push(...box(x + 0.8, x + 3.6, 3.2, 4.4, 27, 31.5, P('fer de hache', 6, '_', 'thin'), (s, t, c) => (c.face !== 'S' ? '-' : s > 2 && (t < 0.5 || t > 4) ? null : s > 2 ? '!' : '-')));
+  }
+  // les épées, pointe en bas : la lame, la garde, la poignée, le pommeau
+  for (const x of [23, 26.5]) {
+    Q.push(...box(x, x + 1, 3.4, 4.2, 2, 20, P('lame', 6, '_', 'thin'), (s, _t, c) => (c.face !== 'S' ? '-' : s < 0.5 ? '!' : '-')));
+    Q.push(...box(x - 1.4, x + 2.4, 3.3, 4.3, 20, 21, P('garde', 6.2, '_', 'thin'), () => '_'));
+    Q.push(...box(x, x + 1, 3.4, 4.2, 21, 24, P('poignée', 6.1, 'K', 'thin'), () => 'N'));
+    Q.push(...box(x - 0.2, x + 1.2, 3.3, 4.3, 24, 25, P('pommeau', 6.3, '_', 'thin'), () => '-'));
+  }
+  return Q;
+}
+
+/** Le chevalet à selle, 90 × 50 × 110 cm : quatre pieds écartés, la poutre ; la selle de cuir, ses étriers ; une paire de bottes au pied. */
+export function saddleStandModel(): Quad[] {
+  const Q: Quad[] = [];
+  for (const x of [2, 16]) for (const dy of [-2.5, 2.5]) Q.push(...bar([x, 5, 14], [x, 5 + dy, 0], 1.1, P('pied', 3), W(681 + x)));
+  Q.push(...box(0.5, 17.5, 4.2, 5.8, 13.5, 15, P('poutre', 3.5), W(682)));
+  // la selle : le siège creusé, le pommeau devant (à l'ouest), le troussequin, les quartiers qui tombent sur les flancs
+  const leather: Tex = (s, t, c) => (c.face === 'top' ? (Math.floor(s) % 5 === 0 ? 'u' : 'U') : c.face === 'S' ? (t > c.h - 1 ? 'U' : Math.floor(s) % 4 === 0 ? 'n' : 'u') : 'n');
+  Q.push(...box(3, 15, 1.5, 8.5, 15, 16.5, P('siège', 4.5, 'N'), leather));
+  Q.push(...box(3, 5, 2.5, 7.5, 16.5, 19, P('pommeau', 4.6, 'N'), leather), ...box(13, 15, 2, 8, 16.5, 18.5, P('troussequin', 4.6, 'N'), leather));
+  Q.push(...box(5, 13, 8.4, 9, 9, 15, P('quartier', 4.4, 'N'), leather));
+  for (const x of [7, 10.5]) {
+    Q.push(...box(x, x + 0.5, 9, 9.4, 4, 9, P('étrivière', 4.7, 'K', 'thin'), () => 'N'));
+    Q.push(...box(x - 0.6, x + 1.1, 9, 9.6, 2.6, 4, P('étrier', 4.8, '_', 'thin'), (s, t) => (t > 1 && s > 0.5 && s < 1.2 ? null : '-')));
+  }
+  // les bottes, debout côte à côte
+  for (const [x, R] of [[2.5, 'MmNK'], [5.5, 'MmNK']] as const) {
+    Q.push(...box(x, x + 2.4, 9, 11.5, 0, 7, P('botte', 5, R[3]), (s, t, c) => (c.face === 'top' ? R[2] : c.face !== 'S' ? R[2] : t < 1 ? R[3] : s < 1 ? R[0] : R[1])));
+    Q.push(...box(x, x + 2.4, 11.5, 13, 0, 2, P('pied de botte', 5.1, R[3]), (_s, _t, c) => (c.face === 'top' ? R[1] : R[2])));
+  }
+  return Q;
+}
+
+/** L'étal long de la mercière, 320 × 70 × 100 cm : la table sur tréteaux, le tapis de guède qui pend à franges ; bobines, rubans, boutons, savons, chandelles, peignes, petits paniers. */
+export function haberdasheryStallModel(): Quad[] {
+  const Q: Quad[] = [];
+  for (const x of [5, 57]) {
+    Q.push(...box(x, x + 2, 0.5, 13.5, 13, 15, P('tréteau', 3), W(691 + x)));
+    for (const [yt, yb] of [[2, 0.3], [12, 13.7]] as const) for (const dx of [-1.6, 1.6]) Q.push(...bar([x + 1, yt, 13], [x + 1 + dx, yb, 0], 1.2, P('pied', 2.5), W(693 + x)));
+  }
+  Q.push(...box(0, 64, 0, 14, 15, 16, P('tapis', 4, 'δ'), (_s, _t, c) => (c.face === 'top' ? (Math.floor(c.p[0]) % 16 === 0 ? 'b' : 'β') : 'γ')));
+  Q.push(...box(0, 64, 13.9, 14.4, 10, 16, P('tapis', 4.5, 'δ'), (s, t, c) => {
+    if (c.face !== 'S') return 'γ';
+    const i = Math.floor(s), j = Math.floor(t);
+    if (j === 0) return i % 2 ? null : 'b';
+    if (j === 4) return 'b';
+    return i % 8 < 4 ? 'β' : 'γ';
+  }));
+  const z = 16;
+  // les bobines de fil, en rangs
+  for (let k = 0; k < 10; k++) {
+    const R = CLOTH[k % CLOTH.length], x = 1.5 + (k % 5) * 2.4, y = 2 + Math.floor(k / 5) * 2.6;
+    Q.push(...cylinder([x, y, z], [x, y, z + 1.8], 0.9, P('bobine', 5, R[3]), (_s, _t, c) => (c.n[0] < -0.2 ? R[0] : R[1]), () => R[0], 8));
+  }
+  // les rubans roulés
+  for (let k = 0; k < 6; k++) {
+    const R = CLOTH[(k * 5 + 1) % CLOTH.length];
+    Q.push(...cylinder([15 + k * 2.4, 10, z], [15 + k * 2.4, 10, z + 1.2], 1.1, P('ruban', 5, R[3]), (_s, _t, c) => (c.n[0] < -0.2 ? R[0] : R[1]), () => R[0], 8));
+  }
+  // la boîte à boutons, ouverte
+  Q.push(...box(15, 23, 2, 7, z, z + 1.6, P('boîte à boutons', 5, '&'), (s, t, c) => {
+    if (c.face !== 'top') return '%';
+    const i = Math.floor(s), j = Math.floor(t);
+    if (i === 0 || j === 0 || i === 7 || j === 4) return '^';
+    return hash(701, i, j) < 0.4 ? 'a' : hash(702, i, j) < 0.5 ? 'C' : '@';
+  }));
+  // les pains de savon, empilés
+  for (const [x, y, zz] of [[27, 2, 0], [30.5, 2, 0], [34, 2, 0], [28.7, 2.3, 1.5], [32.2, 2.3, 1.5], [27, 6, 0], [30.5, 6, 0]] as const) {
+    Q.push(...box(x, x + 3, y, y + 3, z + zz, z + zz + 1.5, P('savon', 5 + zz * 0.01, 'E'), (_s, t, c) => (c.face === 'top' ? 'a' : t > 1 ? 'd' : 'D')));
+  }
+  // les chandelles de suif, en bottes pendues par la mèche et debout
+  for (let k = 0; k < 6; k++) Q.push(...box(39 + k * 1.2, 39.8 + k * 1.2, 4, 4.8, z, z + 4.5, P('chandelle', 5, 'E'), (_s, t, c) => (c.face === 'top' ? 'a' : t > 3.9 ? 'X' : k % 2 ? 'd' : '!')));
+  for (let k = 0; k < 5; k++) Q.push(...box(39 + k * 1.4, 39.8 + k * 1.4, 9, 9.8, z, z + 3.5, P('chandelle', 5, 'E'), (_s, t, c) => (c.face === 'top' ? 'a' : t > 2.9 ? 'X' : '!')));
+  // les peignes de buis, en rang
+  for (let k = 0; k < 3; k++) Q.push(...box(48, 52, 2 + k * 2, 3 + k * 2, z, z + 0.8, P('peigne', 5, 'X'), (s, _t, c) => (c.face === 'top' ? (Math.floor(s * 2) % 2 ? 'J' : 'O') : 'C')));
+  // les petits paniers du vannier, emboîtés
+  Q.push(...cylinder([58, 4, z], [58, 4, z + 3], 2.6, P('panier', 4.8, 'X'), wicker, () => 'n', 10), ...cylinder([58, 4, z + 3], [58, 4, z + 4], 2.2, P('panier', 4.9, 'X'), wicker, () => 'n', 10));
+  Q.push(...cylinder([55.5, 10, z], [55.5, 10, z + 2.5], 2.2, P('panier', 4.8, 'X'), wicker, () => 'n', 10));
+  return Q;
+}
+
+/** Un tas de citrouilles sur la paille (100 × 60 × 45 cm). */
+export function pumpkinPileModel(): Quad[] {
+  const Q: Quad[] = [];
+  Q.push(...box(0, 20, 0, 12, 0, 0.6, P('paille', 1, 'P'), (s, t) => (hash(711, Math.floor(s), Math.floor(t)) < 0.4 ? 'Y' : 't')));
+  for (const [x, y, z, r] of [[3.5, 3.5, 0.6, 3.2], [10, 3.2, 0.6, 3.4], [16.5, 4, 0.6, 3], [6.5, 8.5, 0.6, 3.2], [13.5, 8.6, 0.6, 3.2], [8, 5.5, 4.2, 3]] as const) Q.push(...pumpkin(x, y, z, r));
+  return Q;
+}
+
 // =====================================================================================================================
 // COPIÉ de maison-coq:art/proposals/coq-catalogue-bois.ts : la table de la tailleuse, le coupon d'étoffe (pièces existantes du coq)
 // =====================================================================================================================
@@ -637,31 +949,44 @@ export interface PieceModel {
 }
 
 export const PIECE_MODELS: PieceModel[] = [
+  // ce que partagent les trois bâtiments (solution 1 de 14.2)
+  { key: 'shop-lean-to', name: 'Appentis ouvert de boutique (une travée)', dims: { w: 340, d: 290, h: 250 }, users: ['p-ferme-rivale', 'p-merciere', 'p-tailleuse'], views: 4, ground: true, note: 'deux poteaux de 15 cm, la sablière, le pan de bardeaux à 12° : égout à 1,90 m, 2,50 m contre le mur ; posé sous l’égout du bâtiment', form: 'le pan descend vers le nord : son bord haut est contre le mur', model: leanToModel },
   // la ferme rivale
-  { key: 'rough-stall', name: 'Étal de planches sur tréteaux (une travée, garni)', dims: { w: 320, d: 70, h: 95 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'planches brutes sur deux tréteaux ; choux, raves, poireaux, pommes en tas (80 cm, 95 avec les légumes)', model: () => roughStallModel(0) },
+  { key: 'rough-stall', name: 'Étal de planches sur tréteaux (légumes)', dims: { w: 320, d: 70, h: 95 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'planches brutes sur deux tréteaux ; choux, raves, poireaux, pommes en tas (80 cm, 95 avec les légumes)', model: () => roughStallModel(0) },
   { key: 'rough-stall-s1', name: 'Étal de planches sur tréteaux (second tirage)', dims: { w: 320, d: 70, h: 95 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'oignons, carottes en bottes, choux', model: () => roughStallModel(1) },
-  { key: 'plank-awning-poles', name: 'Auvent de planches sur perches', dims: { w: 660, d: 270, h: 245 }, users: ['p-ferme-rivale'], views: 4, ground: true, note: 'quatre perches, deux pannes, planches mal jointes ; 2 m au nord, 2,40 m au sud (débords compris)', form: 'le pan penche vers le nord : son bord nord est à 2 m, pas au haut de la boîte', model: awningModel },
+  { key: 'rough-stall-s2', name: 'Étal de planches sur tréteaux (pain, œufs)', dims: { w: 320, d: 70, h: 110 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'le pain de la ferme : miches en tas, deux couronnes ; deux paniers d’œufs ; trois citrouilles', form: 'les marchandises en tas : vue par le bout, le haut de la boîte n’est atteint qu’en un point', model: () => roughStallModel(2) },
+  { key: 'rough-stall-s3', name: 'Étal de planches sur tréteaux (fruits)', dims: { w: 320, d: 70, h: 105 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'pommes, poires, prunes en tas', form: 'les marchandises en tas : vue par le bout, le haut de la boîte n’est atteint qu’en un point', model: () => roughStallModel(3) },
   { key: 'vegetable-crate', name: 'Cageot de légumes : choux', dims: { w: 50, d: 35, h: 40 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'lattes du vannier, deux choux', model: () => crateModel(0) },
   { key: 'vegetable-crate-s1', name: 'Cageot de légumes : raves et poireaux', dims: { w: 50, d: 35, h: 40 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'second tirage', model: () => crateModel(1) },
   { key: 'vegetable-crate-s2', name: 'Cageot de légumes : pommes', dims: { w: 50, d: 35, h: 40 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'troisième tirage', model: () => crateModel(2) },
-  { key: 'vegetable-basket', name: 'Panier d’oignons', dims: { w: 40, d: 40, h: 45 }, users: ['p-ferme-rivale'], views: 1, ground: false, note: 'osier tressé, plein d’oignons (30 cm, 45 avec le tas)', model: basketModel },
+  { key: 'vegetable-crate-s3', name: 'Cageot de légumes : carottes', dims: { w: 50, d: 35, h: 35 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'quatrième tirage : les bottes de carottes, fanes au nord', model: () => crateModel(3) },
+  { key: 'vegetable-basket', name: 'Panier d’oignons', dims: { w: 40, d: 40, h: 45 }, users: ['p-ferme-rivale'], views: 1, ground: false, note: 'osier tressé, plein d’oignons (30 cm, 45 avec le tas)', model: () => basketModel('onions') },
+  { key: 'egg-basket', name: 'Panier d’œufs', dims: { w: 40, d: 40, h: 50 }, users: ['p-ferme-rivale'], views: 1, ground: false, note: 'l’anse, les œufs crème et roux sur la paille', model: () => basketModel('eggs') },
+  { key: 'bread-basket', name: 'Panier de petits pains', dims: { w: 40, d: 40, h: 50 }, users: ['p-ferme-rivale'], views: 1, ground: false, note: 'les petits pains de la ferme', model: () => basketModel('bread') },
+  { key: 'apple-basket', name: 'Panier de pommes', dims: { w: 40, d: 40, h: 45 }, users: ['p-ferme-rivale'], views: 1, ground: false, note: 'pommes jaunes et rouges', model: () => basketModel('apples') },
+  { key: 'pumpkin-pile', name: 'Tas de citrouilles', dims: { w: 100, d: 60, h: 45 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'six citrouilles côtelées sur la paille', form: 'les marchandises en tas : vue par le bout, le haut de la boîte n’est atteint qu’en un point', model: pumpkinPileModel },
   { key: 'scale', name: 'Balance à plateaux', dims: { w: 50, d: 20, h: 45 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'colonne de bois, fléau de fer, plateaux de laiton', model: scaleModel },
   { key: 'price-slate', name: 'Ardoise des prix', dims: { w: 40, d: 10, h: 72 }, users: ['p-ferme-rivale'], views: 2, ground: false, note: 'sur son piquet, écrite des deux côtés', model: slateModel },
   // la mercière
+  { key: 'haberdashery-stall', name: 'Étal long de la mercière', dims: { w: 320, d: 70, h: 105 }, users: ['p-merciere'], views: 2, ground: false, note: 'le tapis de guède à franges ; bobines, rubans, boutons, savons, chandelles, peignes, petits paniers du vannier', form: 'les marchandises en tas : vue par le bout, le haut de la boîte n’est atteint qu’en un point', model: haberdasheryStallModel },
   { key: 'shop-counter', name: 'Comptoir simple', dims: { w: 200, d: 60, h: 95 }, users: ['p-merciere', 'p-tailleuse'], views: 4, ground: false, note: 'à panneaux ; dessus, des bobines, un ruban, un coffret', model: () => counterModel('haberdashery') },
   { key: 'haberdashery-cabinet', name: 'Casier à tiroirs', dims: { w: 160, d: 60, h: 175 }, users: ['p-merciere'], views: 4, ground: false, note: '24 tiroirs à bouton, la corniche ; un tiroir tiré (45 cm de fond, 60 avec le tiroir), des boutons', model: cabinetModel },
   { key: 'ribbon-rack', name: 'Présentoir à rubans', dims: { w: 100, d: 40, h: 150 }, users: ['p-merciere'], views: 4, ground: false, note: 'trois barres de rubans, des bobines', model: ribbonRackModel },
-  { key: 'shop-flap', name: 'Ouvroir (volet fermé)', dims: { w: 160, d: 10, h: 80 }, users: ['p-merciere'], views: 4, ground: false, note: 'le volet de planches, ses pentures en bas, ses pieds repliés', model: flapClosedModel },
-  { key: 'shop-flap-open', name: 'Ouvroir rabattu en comptoir', dims: { w: 160, d: 80, h: 90 }, users: ['p-merciere'], views: 4, ground: false, note: 'à 90 cm sur ses deux pieds dépliés ; deux pots de pommade', form: 'de dos (R2), les pieds sont au fond : le bord sud de la boîte est en l’air', model: flapOpenModel },
-  // la tailleuse
+  // la tailleuse et le frère du forgeron
   { key: 'clapboard-wall', name: 'Bardage à clins', dims: { w: 160, d: 17, h: 260 }, users: ['p-tailleuse'], views: 4, ground: true, note: 'planches horizontales de 20 cm qui se recouvrent, planches d’angle', model: clapboardWallModel },
-  { key: 'timber-gallery', name: 'Galerie de bois (une travée)', dims: { w: 380, d: 100, h: 390 }, users: ['p-tailleuse'], views: 4, ground: true, note: '1 m de large (1,60 m cachait les boutiques), poteaux de 20 cm, plancher à 2,85 m, garde-corps à balustres de 1 m', form: 'le plancher et le garde-corps sont au sud, le haut de la boîte n’est pas au nord', model: () => galleryModel(-2, 74, [0, 72]) },
-  { key: 'yard-gate', name: 'Portail de cour', dims: { w: 280, d: 20, h: 211 }, users: ['p-tailleuse'], views: 4, ground: true, note: 'deux battants de 1,20 m, poteaux coiffés', model: () => gateModel(false) },
-  { key: 'yard-fence', name: 'Palissade de planches', dims: { w: 160, d: 18, h: 165 }, users: ['p-tailleuse', 'p-merciere'], views: 2, ground: true, note: 'planches debout, deux lisses au revers', model: () => fenceModel() },
+  { key: 'timber-gallery', name: 'Galerie de bois (une travée)', dims: { w: 380, d: 100, h: 390 }, users: ['p-tailleuse'], views: 4, ground: true, note: '1 m de large, poteaux de 20 cm, plancher à 2,85 m, garde-corps à balustres de 1 m', form: 'le plancher et le garde-corps sont au sud, le haut de la boîte n’est pas au nord', model: () => galleryModel(-2, 74, [0, 72]) },
+  { key: 'yard-fence', name: 'Palissade de planches', dims: { w: 160, d: 18, h: 165 }, users: ['p-tailleuse', 'p-merciere', 'p-ferme-rivale'], views: 2, ground: true, note: 'planches debout, deux lisses au revers', model: () => fenceModel() },
+  { key: 'cloth-table', name: 'Longue table des étoffes', dims: { w: 320, d: 80, h: 135 }, users: ['p-tailleuse'], views: 2, ground: false, note: 'planches rabotées sur tréteaux, la tenture de garance à franges ; coupons en piles (jusqu’à cinq), deux rouleaux, rubans, un galon', form: 'les marchandises en tas : vue par le bout, le haut de la boîte n’est atteint qu’en un point', model: clothTableModel },
   { key: 'clothes-rack', name: 'Perche à habits', dims: { w: 200, d: 40, h: 170 }, users: ['p-tailleuse'], views: 4, ground: false, note: 'chemise, cotte de guède, chaperon de garance, cape, tunique', model: clothesRackModel },
   { key: 'dress-form', name: 'Mannequin d’osier', dims: { w: 45, d: 45, h: 155 }, users: ['p-tailleuse'], views: 1, ground: false, note: 'sur son trépied, habillé d’une robe de garance', model: dressFormModel },
+  { key: 'hat-stand', name: 'Portemanteau à chapeaux', dims: { w: 80, d: 60, h: 195 }, users: ['p-tailleuse'], views: 1, ground: false, note: 'le mât sur son pied en croix ; trois chapeaux de feutre (brun, garance, fauve), une cape de guède', model: hatStandModel },
   { key: 'gear-rack', name: 'Râtelier d’équipement', dims: { w: 200, d: 40, h: 180 }, users: ['p-tailleuse'], views: 4, ground: false, note: 'sacs, besaces, outres, ceintures, fourreaux, corde, lanternes', form: 'de dos, le bâti est devant les sacs', model: gearRackModel },
   { key: 'knife-display', name: 'Présentoir à couteaux et à haches', dims: { w: 120, d: 50, h: 100 }, users: ['p-tailleuse'], views: 4, ground: false, note: 'pupitre incliné : cinq couteaux, deux hachettes (le forgeron)', form: 'de dos, le haut du pupitre est devant', model: knifeDisplayModel },
+  { key: 'armor-form', name: 'Mannequin d’armure : gambison', dims: { w: 65, d: 50, h: 150 }, users: ['p-tailleuse'], views: 1, ground: false, note: 'le buste d’homme sur son pied ; le gambison de lin piqué en bandes', model: () => armorFormModel(0) },
+  { key: 'armor-form-s1', name: 'Mannequin d’armure : cotte de cuir', dims: { w: 65, d: 50, h: 150 }, users: ['p-tailleuse'], views: 1, ground: false, note: 'second tirage : la cotte de cuir bouilli cloutée, sa ceinture', model: () => armorFormModel(1) },
+  { key: 'shield-stand', name: 'Chevalet à boucliers', dims: { w: 200, d: 40, h: 105 }, users: ['p-tailleuse'], views: 4, ground: false, note: 'trois boucliers ronds de 60 cm peints en quartiers (garance, guède, lin), l’umbo de fer ; un casque de cuir', form: 'de côté, les boucliers se voient par la tranche', model: shieldStandModel },
+  { key: 'weapon-rack', name: 'Râtelier d’armes', dims: { w: 160, d: 40, h: 245 }, users: ['p-tailleuse'], views: 4, ground: false, note: 'trois lances (2,40 m), deux haches, deux épées pointe en bas (le forgeron)', form: 'de côté, les hampes se voient par la tranche ; vue de l’est (R3), la lance la plus haute est cachée par le montant', model: weaponRackModel },
+  { key: 'saddle-stand', name: 'Chevalet à selle', dims: { w: 90, d: 65, h: 95 }, users: ['p-tailleuse'], views: 4, ground: false, note: 'la selle de cuir, ses étriers ; une paire de bottes au pied', form: 'de dos et de l’est, le pommeau et l’étrier sont plus bas que le haut de la boîte', model: saddleStandModel },
   { key: 'saddler-bench', name: 'Établi du cuir', dims: { w: 180, d: 60, h: 135 }, users: ['p-tailleuse'], views: 4, ground: false, note: 'plateau à 85 cm, la pince de bourrelier dressée (1,35 m), cuir, alêne, tranchet', form: 'vue de l’ouest (R1), la pince haute est devant, pas au fond de la boîte', model: saddlerBenchModel },
   { key: 'leather-hides', name: 'Peaux pendues', dims: { w: 200, d: 25, h: 150 }, users: ['p-tailleuse'], views: 2, ground: false, note: 'trois peaux tannées sur une perche', model: hidesModel },
 ];

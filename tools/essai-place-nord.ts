@@ -1,7 +1,8 @@
 // Planches de contrôle des bâtiments des quarts nord de la place (chantier « village », hors jeu : rien ici n'entre dans le jeu) :
 // npx tsx tools/essai-place-nord.ts [dehors|dedans|pieces] écrit (sans argument : tout)
-//   .art-preview/place-nord-dehors.png  chaque bâtiment dehors, toit posé, x2, Xéros à côté, le titre, qui y vit et travaille dessous ;
-//   .art-preview/place-nord-dedans.png  les mêmes, toit effacé, mur sud coupé comme le jeu, x2 ;
+//   .art-preview/place-nord-dehors.png  les quarts nord ensemble autour du rond (x2), puis chaque bâtiment dehors, toit posé, x2,
+//                                        Xéros à côté, le titre, qui y vit et travaille dessous ;
+//   .art-preview/place-nord-dedans.png  les mêmes, toit effacé, mur sud coupé comme le jeu, x2 (le rez, puis l'étage) ;
 //   .art-preview/place-nord-pieces.png  chaque pièce nouvelle, toutes ses vues, x4, à côté de Xéros, le nom et les dimensions dessous,
 //                                        la taille de chaque vue comparée au gabarit (docs/STYLE.md section 8).
 // Rien n'est redessiné ici : l'outil monte les exports de art/proposals/place-nord.ts, rendus par le `render` de l'essai de la maison
@@ -16,9 +17,9 @@ import { sources } from '../art/index';
 import worldTiles from '../art/world/tiles';
 import { interiorTiles } from '../art/interior/house';
 import { bounds, hash, render, type Bounds, type Layer } from '../art/proposals/maison-xeros';
-import { BUILDINGS, PIECES, PIECE_INFO, PIECE_USES, PLACE_META, SHOW } from '../art/proposals/place-nord';
+import { BUILDINGS, FOOTPRINTS, NORD_YARDS, PIECES, PIECE_INFO, PIECE_USES, PLACE_META, ROND, SHOW, WHO } from '../art/proposals/place-nord';
 import type { PlaceBuilding, PlaceBuildingId, VillagePiece } from '../art/proposals/place-types';
-import { WAYS, PLACE, type Rect } from '../art/proposals/village-plan-data';
+import { WAYS, type Rect } from '../art/proposals/village-plan-data';
 import { fontWidth, write as writeText, wrap } from '../art/proposals/village-plan-font';
 import { blank, rect, toPng, type Img, type RGBA } from './lib/world-render';
 import { silhouette } from '../src/content/gabarit';
@@ -51,7 +52,8 @@ const GRASS = ['grass', 'grass2', 'grass3', 'grass4', 'grass5', 'grass6'];
 const FLOOR = ['floor', 'floor2', 'floor3', 'floor4'];
 const tileColor = (t: Grid, pal: Palette, x: number, y: number) => pal[t[((y % 32) + 32) % 32][((x % 32) + 32) % 32]];
 function groundOf(yards: Rect[]): (x: number, y: number) => string {
-  const inPlace = (x: number, y: number) => Math.hypot(x - PLACE.center[0], y - PLACE.center[1]) < PLACE.radius;
+  // le rond resserré de la section 14 (20 m), pas celui de village-plan-data.ts (30,40 m)
+  const inPlace = (x: number, y: number) => Math.hypot(x - ROND.center[0], y - ROND.center[1]) < ROND.radius;
   const isYard = (cx: number, cy: number) => {
     const X = cx * 32 + 16, Y = cy * 32 + 16;
     return inPlace(X, Y) || yards.some((r) => X >= r[0] && X < r[2] && Y >= r[1] && Y < r[3]);
@@ -148,26 +150,53 @@ const fmt = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',');
 
 const ORDER: PlaceBuildingId[] = ['p-ferme-riche', 'p-bucheron', 'p-menuisier', 'p-panneau'];
 const NOTES: Partial<Record<PlaceBuildingId, string>> = {
-  'p-ferme-riche': 'Boutique de pierre enduite, angles et baies de pierre de taille, laves, vitrail ; étal sous l’auvent de toile rayée guède et garance ; réserve au fond',
-  'p-bucheron': 'Magasin de poteaux et de bardage, ouvert au sud, bardeaux ; appentis des fagots ; chantier de vente : les tas du jeu, le comptoir sur billots',
-  'p-menuisier': 'Pan de bois vieux, chaux écaillée, bardeaux troués, volets cloués, enseigne tombée et potence vide, herbe haute',
+  'p-ferme-riche': 'La boutique au rond et le logis-réserve sur la rue de l’ouest, à étage : pierre enduite, pierre de taille, cordon, laves, deux vitraux ; l’étal sous l’auvent rayé guède et garance : deux comptoirs sculptés en équerre, présentoirs, claies, pots en pyramide, meules',
+  'p-bucheron': 'La boutique au rond, à étage : rez de bardage, trois devantures à volet-tablette, avant-toit, râtelier d’outils ; étage de pan de bois chaulé (le neveu et sa femme) ; les tas qui débordent sur le recoin, le comptoir sur billots',
+  'p-menuisier': 'Pan de bois vieux, chaux écaillée, bardeaux troués, volets cloués, enseigne tombée et potence vide, herbe haute, planches oubliées : la future menuiserie de la mère',
   'p-panneau': 'Deux poteaux, le tableau de planches, un toit de bardeaux, les feuillets ; la pierre au pied pour monter lire',
 };
 const of = (id: PlaceBuildingId): PlaceBuilding => BUILDINGS.find((b) => b.id === id)!;
 
-function sceneBlock(id: PlaceBuildingId, inside: boolean): Block {
+/** Les quarts nord ensemble, chacun à sa place, autour du rond (la terre battue jusqu'aux façades) ; Xéros devant chaque boutique. */
+function ensembleBlock(): Block {
+  const K = 2;
+  const scs = ORDER.map((id) => of(id).outside(of(id).at, 1));
+  const xs = ORDER.map((id) => xerosAt(...SHOW[id]!.xeros));
+  const sc: Scene = { quads: scs.flatMap((s) => s.quads), boards: [...scs.flatMap((s) => s.boards), ...xs] };
+  const bd: Bounds = bounds(sc, [24, 16, 24, 90]);
+  const g = groundOf([...WAYS_RECTS, ...NORD_YARDS]);
+  const l = render(sc, bd, { grass: g, floor: g });
+  const w = l.w * K;
+  // le bord du rond, tracé en pointillé sur la planche (il n'existe pas dans le jeu : la terre battue continue jusqu'aux façades)
+  const ring = (img: Img, ox: number, oy: number) => {
+    for (let a = 0; a < 720; a++) {
+      if (a % 6 > 2) continue;
+      const t = (a / 720) * Math.PI * 2, X = ROND.center[0] + Math.cos(t) * ROND.radius - bd[0], Y = ROND.center[1] + Math.sin(t) * ROND.radius - bd[1];
+      if (X >= 0 && Y >= 0 && X < l.w && Y < l.h) rect(img, ox + Math.round(X) * K, oy + Math.round(Y) * K, K, K, [240, 230, 200, 255]);
+    }
+  };
+  const fp = Object.entries(FOOTPRINTS).map(([k, r]) => `${k} x ${r[0]}-${r[1]}, y ${r[2]}-${r[3]}`).join(' ; ');
+  return {
+    title: [{ s: 'Les quarts nord autour du rond (le centre et le sud se posent avec eux)', c: GOLD }, ...lines('Le pointillé : le bord du rond de 20 m (centre 3312, 2128) ; la terre battue va du rond aux façades', w, WHITE)],
+    notes: [...lines(`Emprises hors œuvre (px de la zone village) : ${fp}`, w, DIM)],
+    w, h: l.h * K,
+    draw: (img, x, y) => { blitLayer(img, l, x, y, K); ring(img, x, y); },
+  };
+}
+
+function sceneBlock(id: PlaceBuildingId, inside: boolean, level: 0 | 1 = 0): Block {
   const K = 2, b = of(id), meta = PLACE_META[id], show = SHOW[id]!;
   // la scène posée à sa place dans la zone (o = at) : le sol de la zone se lit tel quel
-  const sc0 = inside ? b.inside(b.at, 0, 1) : b.outside(b.at, 1);
+  const sc0 = inside ? b.inside(b.at, level, 1) : b.outside(b.at, 1);
   const xp = inside ? show.inXeros : show.xeros;
-  const sc: Scene = { ...sc0, boards: [...sc0.boards, xerosAt(xp[0], xp[1])] };
+  const sc: Scene = { ...sc0, boards: [...sc0.boards, xerosAt(xp[0], level ? xp[1] - 57 : xp[1])] };
   const bd: Bounds = bounds(sc, [16, 16, 16, 16]);
   const g = groundOf([...WAYS_RECTS, ...show.yards]);
   const fl = sc.floor;
   const l = render(inside ? sc : { ...sc, floor: undefined }, bd, { grass: g, floor: (x, y) => (inside && fl && x >= fl[0] && x < fl[1] && y >= fl[2] && y < fl[3] ? floorTile(x, y) : g(x, y)) });
   const w = l.w * K;
   return {
-    title: [{ s: `${meta.title}${inside ? ' : le dedans' : ''}`, c: GOLD }, ...lines(meta.who, w, WHITE)],
+    title: [{ s: `${meta.title}${inside ? (level ? ' : l’étage' : ' : le rez') : ''}`, c: GOLD }, ...lines(WHO[id] ?? meta.who, w, WHITE)],
     notes: [
       ...lines(inside ? 'Toit effacé, mur sud coupé à 70 cm comme le jeu ; l’étal et les abris : leur vue toit effacé' : NOTES[id] ?? '', w, GREY),
       ...lines(`emprise ${fmt(b.size[0] * 0.05)} x ${fmt(b.size[1] * 0.05)} m (tout ce qui est posé compris), à (${b.at[0]}, ${b.at[1]}) de la zone village ; parcelle ${meta.parcel}`, w, DIM),
@@ -223,11 +252,11 @@ function pieceBlock(p: VillagePiece): Block {
 
 function main(): void {
   const only = process.argv[2];
-  if (!only || only === 'dehors') save(sheet(ORDER.map((id) => sceneBlock(id, false)), [
+  if (!only || only === 'dehors') save(sheet([ensembleBlock(), ...ORDER.map((id) => sceneBlock(id, false))], [
     'La place du village, les quarts nord : dehors (essai hors jeu)',
     'x2 ; 5 cm par px, projection du jeu (x, y - z) ; chaque bâtiment à sa place de la zone village (la terre battue des voies, des cours et de la place autour) ; Xéros pour l’échelle',
-  ], 3000), 'place-nord-dehors.png');
-  if (!only || only === 'dedans') save(sheet(ORDER.map((id) => sceneBlock(id, true)), [
+  ], 3200), 'place-nord-dehors.png');
+  if (!only || only === 'dedans') save(sheet(ORDER.flatMap((id) => (of(id).levels === 2 ? [sceneBlock(id, true, 0), sceneBlock(id, true, 1)] : [sceneBlock(id, true, 0)])), [
     'La place du village, les quarts nord : dedans (essai hors jeu)',
     'x2 ; toits effacés, mur sud coupé comme le jeu, meubles du jeu et pièces nouvelles à leur place ; Xéros pour l’échelle',
   ], 3000), 'place-nord-dedans.png');

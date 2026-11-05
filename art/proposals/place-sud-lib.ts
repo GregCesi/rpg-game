@@ -308,3 +308,153 @@ export function bracketQuads(h = 52, arm = 16): Quad[] {
 
 /** Une grille couleur de la palette (pour la planche). */
 export type { Grid };
+
+// =====================================================================================================================
+// NOUVEAU (la place resserrée, CADRAGE section 14) : le toit le long de y à croupe au nord, le pignon au sud, l'appentis, la vie
+// =====================================================================================================================
+
+export interface RoofYSpec {
+  /** Les murs (px) : x0-x1 en travers, y0 (nord) à y1 (sud). */
+  x0: number; x1: number; y0: number; y1: number;
+  /** Le haut des murs, la pente (°), le débord des égouts (est, ouest, nord) et du pignon sud, l'épaisseur. */
+  z: number; pitch: number; eave: number; gableS: number; thick: number;
+  cover: Cover; seed: number;
+  /** La croupe au nord (le toit ne monte pas en pignon face au rond : il cacherait 9 m de place). */
+  hipN: boolean;
+  /** Un trou pour une souche : [x0, x1, y0, y1]. */
+  holes?: [number, number, number, number][];
+}
+/** Le faîte d'un toit le long de y. */
+export const ridgeZY = (r: RoofYSpec) => r.z + r.thick + ((r.x1 - r.x0) / 2) * Math.tan((r.pitch * Math.PI) / 180);
+
+/**
+ * Le toit à deux pans, faîtage le long de y (nord-sud) : les pans est et ouest, la croupe au nord (un pan triangulaire tourné vers le
+ * rond, moins de 45° : il se voit), le faîtage, les arêtiers ; au sud, le pignon reste ouvert (sa planche de rive : `gableYS`).
+ */
+export function roofY(Q: Quad[], r: RoofYSpec): void {
+  const tan = Math.tan((r.pitch * Math.PI) / 180), H2 = (r.x1 - r.x0) / 2, mid = r.x0 + H2;
+  const run = H2 + r.eave, zE = r.z + r.thick - r.eave * tan, zR = r.z + r.thick + H2 * tan;
+  const len = Math.hypot(run, run * tan), sn = (run * tan) / len, cs = run / len, K = cs + sn;
+  const X0 = r.x0 - r.eave, X1 = r.x1 + r.eave, Y0 = r.y0 - r.eave, Y1 = r.y1 + r.gableS;
+  const P = part('pan', 9, r.cover === 'tiles' ? 'π' : r.cover === 'shingles' ? '&' : '"', 'full', { roof: true });
+  const hole = (x: number, y: number) => r.holes?.some(([a, b, c, d]) => x > a - 0.3 && x < b + 0.3 && y > c - 0.3 && y < d + 0.3);
+  const hipEdge = r.cover === 'tiles' ? 'κ' : r.cover === 'shingles' ? '^' : '+';
+  const side = (west: boolean): Tex => {
+    const base = coverTex(r.cover, K, r.seed + (west ? 0 : 1));
+    return (s, t, c) => {
+      const [x, y] = c.p;
+      if (hole(x, y)) return null;
+      const dSide = west ? x - X0 : X1 - x, dN = y - Y0;
+      if (r.hipN && dN < dSide - 0.01) return null;
+      if (r.hipN && dN < dSide + 1) return hipEdge;
+      return base(s, t, c);
+    };
+  };
+  Q.push(quad([X0, Y0, zE], [0, Y1 - Y0, 0], [run, 0, run * tan], [-sn, 0, cs], P, side(true), 'slope'));
+  Q.push(quad([X1, Y1, zE], [0, Y0 - Y1, 0], [-run, 0, run * tan], [sn, 0, cs], P, side(false), 'slope'));
+  if (r.hipN) {
+    const base = coverTex(r.cover, K, r.seed + 2);
+    const hip: Tex = (s, t, c) => {
+      const [x, y] = c.p, dN = y - Y0, m = Math.min(x - X0, X1 - x);
+      if (dN > m + 0.01) return null;
+      if (dN > m - 1) return hipEdge;
+      return base(s, t, c);
+    };
+    Q.push(quad([X0, Y0, zE], [X1 - X0, 0, 0], [0, run, run * tan], [0, -sn, cs], P, hip, 'slope'));
+  }
+  // le faîtage, de la pointe de la croupe au pignon
+  const yA = r.hipN ? Y0 + run : Y0;
+  const RP = RIDGE_P(r.cover);
+  const rt = r.cover === 'laves' ? lavesRidge() : ridgeTex(r.cover);
+  const rtex: Tex = (s, t, c) => (c.face === 'top' ? rt(s, t, { ...c, n: [0, 0, 1] }) : c.face === 'S' ? (r.cover === 'tiles' ? 'ν' : '%') : rt(s, t, c));
+  Q.push(...box(mid - 2.5, mid + 2.5, yA, Y1, zR - 1, zR + 1.6, RP, rtex));
+}
+
+/**
+ * Le pignon sud d'un toit le long de y : le triangle du mur (`tex`, lu en coordonnées de la face) au-dessus de `z`, et ses deux
+ * planches de rive sous le débord du toit.
+ */
+export function gableYS(Q: Quad[], r: RoofYSpec, tex: Tex, p: Part): void {
+  const tan = Math.tan((r.pitch * Math.PI) / 180), H2 = (r.x1 - r.x0) / 2, mid = r.x0 + H2, zR = r.z + H2 * tan;
+  const tri: Tex = (s, t, c) => {
+    const x = c.p[0], zz = c.p[2];
+    if (zz > r.z + (H2 - Math.abs(x - mid)) * tan) return null;
+    return tex(s, t, c);
+  };
+  Q.push(quad([r.x0, r.y1, r.z], [r.x1 - r.x0, 0, 0], [0, 0, zR - r.z], [0, 1, 0], p, tri, 'S'));
+  // les planches de rive : une bande de 25 cm sous le pan, au nu du débord
+  const Y = r.y1 + r.gableS, X0 = r.x0 - r.eave, X1 = r.x1 + r.eave, zE = r.z + r.thick - r.eave * tan, zTop = r.z + r.thick + H2 * tan;
+  const barge: Tex = (_s, _t, c) => {
+    const x = c.p[0], zz = c.p[2], under = r.z + r.thick + (H2 - Math.abs(x - mid)) * tan + (Math.abs(x - mid) > H2 ? 0 : 0);
+    const roofAt = zE + (Math.min(x - X0, X1 - x)) * tan;
+    if (zz > roofAt || zz < roofAt - 2.6) return null;
+    void under;
+    return zz > roofAt - 1 ? '^' : '%';
+  };
+  Q.push(quad([X0, Y, zE - 3], [X1 - X0, 0, 0], [0, 0, zTop - zE + 3], [0, 1, 0], part('rive', 9.5, '&', 'full', { roof: true }), barge, 'S'));
+}
+
+/**
+ * L'appentis ouvert (solution 1 de 14.2) le long de x, au nord d'un mur en `yWall`, de x0 à x1 : profond de `depth`, son égout bas à
+ * `zE` (1,90 m), son haut à `zW` contre le mur ; des poteaux de 15 cm tous les `bay` px, la sablière, le pan de bardeaux peu pentu.
+ */
+export function leanToX(Q: Quad[], x0: number, x1: number, yWall: number, depth: number, zE: number, zW: number, seed: number, bay = 64, cover: Cover = 'shingles'): void {
+  const yE = yWall - depth;
+  const T = (n: string, prio = 5) => part(n, prio, 'K', 'full', { eave: true });
+  const xs: number[] = [];
+  for (let x = x0 + 1.5; x < x1 - 2; x += bay) xs.push(x);
+  xs.push(x1 - 1.5);
+  for (const x of xs) Q.push(...box(x - 1.5, x + 1.5, yE + 1, yE + 4, 0, zE - 2, T('poteau d appentis'), timber(seed + Math.round(x))));
+  Q.push(...box(x0, x1, yE + 1, yE + 4, zE - 2.5, zE, T('sablière d appentis', 6), timber(seed + 1)));
+  const dy = depth + 2, dz = zW - zE, l = Math.hypot(dy, dz);
+  const P = part('appentis', 9, cover === 'tiles' ? 'π' : '&', 'full', { roof: true });
+  const K = (dy + dz) / l;
+  Q.push(quad([x0 - 2, yE - 2, zE], [x1 - x0 + 4, 0, 0], [0, dy, dz], [0, -dz / l, dy / l], P, coverTex(cover, K, seed + 2), 'slope'));
+}
+
+/** Une corde à linge entre deux points (même y), le linge qui sèche (chemises, draps, langes), de la couleur de chacun. */
+export function washingLine(Q: Quad[], x0: number, x1: number, y: number, z: number, seed: number): void {
+  const rope = part('corde à linge', 7, 'X', 'thin');
+  Q.push(...box(x0, x1, y - 0.3, y + 0.3, z - 0.6, z, rope, () => 'C'));
+  const kinds: [number, number, string][] = [[6, 9, 'a!dD'], [5, 7, 'αβγδ'], [9, 11, 'a!dD'], [4, 5, 'ρσττ'], [6, 8, 'J OC'.replace(' ', 'O')], [7, 10, 'a!dD'], [5, 6, 'βγδδ']];
+  let x = x0 + 2, k = 0;
+  while (x + 4 < x1 - 2) {
+    const [w, h, R] = kinds[Math.floor(hash(seed, k) * kinds.length)];
+    const ww = Math.min(w, x1 - 2 - x);
+    if (ww < 3) break;
+    const tex: Tex = (s, t, c) => {
+      if (c.face !== 'S') return c.face === 'top' ? R[1] : R[2];
+      const i = Math.floor(s), j = Math.floor(c.h - t);
+      if (j === 0) return R[3] === R[2] ? R[2] : '%';
+      if (i === 0) return R[0];
+      return (i + k) % 3 === 0 ? R[2] : j < 2 ? R[0] : R[1];
+    };
+    Q.push(...box(x, x + ww, y - 0.4, y + 0.4, z - 0.6 - h, z - 0.6, part('linge', 6.8, R[3], 'full'), tex));
+    x += ww + 1 + Math.floor(hash(seed, k, 2) * 2);
+    k++;
+  }
+}
+
+/** Un pot de fleurs (terre cuite, géraniums de garance ou soucis jaunes) posé sur un appui en (x, y, z). */
+export function flowerPot(Q: Quad[], x: number, y: number, z: number, seed: number): void {
+  Q.push(...box(x, x + 4, y - 2, y, z, z + 2.5, part('pot', 5, 'π', 'full'), (_s, t, c) => (c.face === 'top' ? 'X' : t > 2 ? 'κ' : c.face === 'S' ? 'μ' : 'ν')));
+  const fl = hash(seed, 1) < 0.5 ? 'cb' : 'bc';
+  Q.push(...box(x - 0.5, x + 4.5, y - 2.5, y + 0.3, z + 2.5, z + 5, part('fleurs', 5.2, 'k', 'full'), (s, t, c) => {
+    const i = Math.floor(s), j = Math.floor(t);
+    if (c.face === 'top') return hash(seed, i, j) < 0.45 ? fl[0] : 'L';
+    if (c.face !== 'S') return 'l';
+    if (j === Math.floor(c.h) - 1 && hash(seed, i, 3) < 0.4) return null;
+    return hash(seed, i, j, 5) < 0.35 ? fl[i % 2] : j > 1 ? 'L' : 'l';
+  }));
+}
+
+/** Une échelle appuyée contre une face sud (y), de (x, y) au sol jusqu'à la hauteur h : deux montants, des barreaux tous les 30 cm. */
+export function ladder(Q: Quad[], x: number, y: number, h: number, seed: number): void {
+  const lean = h * 0.18, W = timber(seed);
+  const P = part('échelle', 7.5, 'K', 'full');
+  for (const dx of [0, 7]) Q.push(...bar([x + dx, y + lean, 0], [x + dx, y + 0.5, h], 1, P, W));
+  for (let z = 4; z < h - 1; z += 6) {
+    const yy = y + lean * (1 - z / h);
+    Q.push(...box(x, x + 7, yy - 0.3, yy + 0.3, z, z + 0.8, part('barreau', 7.6, 'K', 'thin'), () => '*'));
+  }
+}
