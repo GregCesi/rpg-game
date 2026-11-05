@@ -19,6 +19,7 @@ npm run art:monde      # .art-preview/monde.png : tout le monde vu de très haut
 npx tsx tools/render-zone.ts <carte> [réduction]  # une zone en PNG, sans lancer le jeu (.art-preview/zone-<carte>.png)
 npm run art:touche     # .art-preview/carte-touche.png : où chaque coup touche, au sol, autour de Xéros (chaque arme, chaque geste, chaque direction, une couleur par image active ; tools/carte-touche.ts)
 npm run check          # art, maps, puis vérifie tout le contenu sans lancer le jeu (formats + références croisées)
+npm run carte          # la carte du code : recalcule le graphe des imports (dependency-cruiser) et régénère docs/carte/index.html à partir des textes de docs/carte/carte.json ; signale un fichier ou une flèche disparus (à ouvrir dans le navigateur, sans serveur)
 npm run build          # check, tests rapides (test:fast), TypeScript, puis build web dans dist/ : quelques secondes ; les scénarios à part (test:scenarios)
 npm run build:single   # un seul fichier HTML autonome dans dist-single/
 npx tsx tools/preview-module.ts <module d'art> <dossier>  # aperçu x4 d'un seul module de dessin, sans importer tout art/ (quand plusieurs dessinateurs travaillent ensemble)

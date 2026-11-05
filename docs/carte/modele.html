@@ -1,0 +1,530 @@
+<!doctype html>
+<!-- Modèle de la carte du code. Ne pas ouvrir celui-ci : npm run carte en tire docs/carte/index.html (les données remplacent la marque). -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carte du code</title>
+<style>
+:root {
+  --fond: #f6f4ef; --papier: #ffffff; --encre: #22201c; --doux: #6b665c; --trait: #d9d4c8;
+  --accent: #b5521b; --accent-doux: #f6e3d6; --lien: #2f5d8a; --l: 93%; --s: 50%; --lb: 42%;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #1b1a18; --papier: #24221f; --encre: #ece8df; --doux: #a29c90; --trait: #3c3934;
+    --accent: #e98a4f; --accent-doux: #3e2a1e; --lien: #8db8e6; --l: 22%; --s: 30%; --lb: 62%;
+  }
+}
+:root[data-theme="dark"] {
+  --fond: #1b1a18; --papier: #24221f; --encre: #ece8df; --doux: #a29c90; --trait: #3c3934;
+  --accent: #e98a4f; --accent-doux: #3e2a1e; --lien: #8db8e6; --l: 22%; --s: 30%; --lb: 62%;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fond); color: var(--encre); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 20px; border-bottom: 1px solid var(--trait); background: var(--papier); }
+header h1 { font-size: 18px; margin: 0; font-weight: 650; }
+nav.onglets { display: flex; gap: 4px; flex-wrap: wrap; }
+nav.onglets a { padding: 5px 12px; border-radius: 6px; color: var(--encre); text-decoration: none; }
+nav.onglets a.actif { background: var(--accent-doux); color: var(--accent); font-weight: 600; }
+#recherche { margin-left: auto; padding: 6px 10px; border: 1px solid var(--trait); border-radius: 6px; background: var(--fond); color: var(--encre); width: 260px; max-width: 100%; }
+#ariane { padding: 10px 20px 0; font-size: 14px; color: var(--doux); }
+#ariane a { color: var(--lien); text-decoration: none; }
+#ariane a:hover { text-decoration: underline; }
+#ariane .ici { color: var(--encre); font-weight: 600; }
+.geste { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 20px; font-size: 14px; }
+.geste .titre { color: var(--doux); margin-right: 4px; }
+button { font: inherit; font-size: 13px; padding: 4px 10px; border: 1px solid var(--trait); background: var(--papier); color: var(--encre); border-radius: 999px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .4; cursor: default; }
+button.actif { background: var(--accent); color: #fff; border-color: var(--accent); }
+#etape { margin: 0 20px 4px; padding: 10px 14px; border-left: 4px solid var(--accent); background: var(--accent-doux); border-radius: 6px; display: none; }
+#etape .ligne { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+#etape .num { font-weight: 700; color: var(--accent); }
+#etape p { margin: 6px 0 0; font-size: 15.5px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 10px 20px 30px; align-items: start; }
+@media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+#dessin { background: var(--papier); border: 1px solid var(--trait); border-radius: 10px; padding: 10px; overflow: auto; min-height: 300px; }
+#dessin svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+#panneau { background: var(--papier); border: 1px solid var(--trait); border-radius: 10px; padding: 16px 18px; position: sticky; top: 10px; max-height: calc(100vh - 20px); overflow: auto; }
+#panneau h2 { font-size: 17px; margin: 0 0 6px; }
+#panneau h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--doux); margin: 16px 0 4px; }
+#panneau ul, #panneau ol { margin: 0; padding-left: 18px; }
+#panneau li { margin: 2px 0; }
+.regle { border-left: 3px solid var(--accent); padding-left: 8px; margin: 4px 0; }
+code, .f { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+a.f { color: var(--lien); text-decoration: none; cursor: pointer; }
+a.f:hover { text-decoration: underline; }
+.discret { color: var(--doux); font-size: 13px; }
+.pastille { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; border: 1px solid hsl(var(--h) 45% var(--lb)); background: hsl(var(--h) var(--s) var(--l)); }
+svg text { fill: var(--encre); font-family: system-ui, -apple-system, sans-serif; }
+svg .bloc { cursor: pointer; outline: none; }
+svg .bloc rect.fond { fill: hsl(var(--h) var(--s) var(--l)); stroke: hsl(var(--h) 45% var(--lb)); stroke-width: 1.5; transition: stroke-width .15s; }
+svg .bloc:hover rect.fond, svg .bloc:focus rect.fond { stroke-width: 3; }
+svg .bloc.neutre rect.fond { fill: var(--papier); stroke: var(--doux); }
+svg .bloc.jeu rect.fond { fill: var(--accent-doux); stroke: var(--accent); stroke-width: 2.5; }
+svg .bloc .sous { fill: var(--doux); font-size: 11px; }
+svg .bloc.eteint { opacity: .25; }
+svg .bloc.vu rect.fond { stroke: var(--accent); stroke-width: 3; }
+svg .bloc.courant rect.fond { stroke: var(--accent); stroke-width: 5; filter: drop-shadow(0 0 7px var(--accent)); }
+svg path.fl { fill: none; stroke: var(--doux); opacity: .35; }
+svg path.fl.sort { stroke: var(--lien); opacity: .95; }
+svg path.fl.entre { stroke: var(--accent); opacity: .95; }
+svg path.fl.eteinte { opacity: .05; }
+svg path.fl.geste { stroke: var(--accent); opacity: 1; }
+svg text.etiq { font-size: 11px; fill: var(--doux); }
+svg .groupe rect { stroke: hsl(var(--h) 45% var(--lb)); stroke-dasharray: 4 3; }
+svg .lignef { cursor: pointer; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; }
+svg .lignef:hover { fill: var(--lien); text-decoration: underline; }
+.page { grid-column: 1 / -1; background: var(--papier); border: 1px solid var(--trait); border-radius: 10px; padding: 20px 26px; }
+.page dl { display: grid; grid-template-columns: 220px 1fr; gap: 10px 20px; margin: 0; }
+@media (max-width: 700px) { .page dl { grid-template-columns: 1fr; } }
+.page dt { font-weight: 650; }
+.page dd { margin: 0; }
+.cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.cartes div { border: 1px solid var(--trait); border-radius: 8px; padding: 12px 14px; }
+.cartes h3 { margin: 0 0 6px; font-size: 15px; }
+.alerte { margin-top: 14px; font-size: 13px; }
+.alerte summary { cursor: pointer; color: var(--accent); }
+.legende { font-size: 12.5px; color: var(--doux); margin-top: 8px; }
+.legende span { white-space: nowrap; margin-right: 12px; }
+.legende i { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="titre"></h1>
+  <nav class="onglets">
+    <a href="#/" data-onglet="carte">La carte</a>
+    <a href="#/lexique" data-onglet="lexique">Lexique</a>
+    <a href="#/travail" data-onglet="travail">Comment on travaille</a>
+  </nav>
+  <input id="recherche" list="tout" placeholder="Aller à un fichier ou un système…">
+  <datalist id="tout"></datalist>
+</header>
+<div id="ariane"></div>
+<div class="geste" id="gestes"></div>
+<div id="etape"></div>
+<main id="principal"></main>
+<script>
+const D = /*__DONNEES__*/null;
+const NS = 'http://www.w3.org/2000/svg';
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const SYS = {};
+D.systemes.forEach((s, i) => { SYS[s.id] = s; s.h = Math.round((i * 360) / D.systemes.length + 20) % 360; });
+const F = D.fichiers;
+const court = (f) => f.replace(/^src\//, '');
+const nomCourt = (f) => f.split('/').pop();
+const etat = { parcours: null, etape: 0, lecture: null };
+const parcoursActif = () => (etat.parcours ? D.parcours.find((x) => x.id === etat.parcours) : null);
+
+// ---------- petits outils SVG ----------
+function el(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) if (v !== undefined && v !== null) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function couper(t, max) {
+  const lignes = []; let l = '';
+  for (const m of t.split(' ')) { if ((l + ' ' + m).trim().length > max && l) { lignes.push(l); l = m; } else l = (l + ' ' + m).trim(); }
+  if (l) lignes.push(l);
+  return lignes;
+}
+function texte(g, x, y, lignes, attrs = {}, pas = 16) {
+  const t = el('text', { x, y, 'text-anchor': 'middle', ...attrs }, g);
+  lignes.forEach((l, i) => { const s = el('tspan', { x, dy: i ? pas : 0 }, t); s.textContent = l; });
+  return t;
+}
+function bord(r, vers) { // le point du bord du rectangle r sur la droite qui va de son centre vers `vers`
+  const cx = r.x + r.w / 2, cy = r.y + r.h / 2, dx = vers.x - cx, dy = vers.y - cy;
+  if (!dx && !dy) return { x: cx, y: cy };
+  const t = Math.min(Math.abs(r.w / 2 / (dx || 1e-9)), Math.abs(r.h / 2 / (dy || 1e-9)));
+  return { x: cx + dx * t, y: cy + dy * t };
+}
+const centre = (r) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
+function fleche(svg, a, b, o = {}) {
+  const p1 = bord(a, centre(b)), p2 = bord(b, centre(a));
+  const dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy) || 1, dec = o.decale || 0;
+  const mx = (p1.x + p2.x) / 2 - (dy / len) * dec, my = (p1.y + p2.y) / 2 + (dx / len) * dec;
+  const p = el('path', { d: `M${p1.x},${p1.y} Q${mx},${my} ${p2.x},${p2.y}`, class: 'fl ' + (o.classe || ''), 'stroke-width': o.epais || 1.5, 'marker-end': `url(#${o.marque || 'pointe'})` }, svg);
+  if (o.etiquette) { const t = el('text', { x: mx, y: my - 5, 'text-anchor': 'middle', class: 'etiq' }, svg); t.textContent = o.etiquette; }
+  return p;
+}
+function nouveauSvg(w, h) {
+  const svg = el('svg', { viewBox: `0 0 ${w} ${h}`, width: w, height: h, role: 'img' });
+  const defs = el('defs', {}, svg);
+  for (const [id, coul] of [['pointe', 'var(--doux)'], ['pointe-s', 'var(--lien)'], ['pointe-e', 'var(--accent)']]) {
+    const m = el('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, defs);
+    el('path', { d: 'M0,0 L10,5 L0,10 z', style: `fill:${coul}` }, m);
+  }
+  return svg;
+}
+function bloc(svg, r, o) {
+  const g = el('g', { class: 'bloc ' + (o.classe || ''), style: o.h !== undefined ? `--h:${o.h}` : '', tabindex: 0 }, svg);
+  el('rect', { x: r.x, y: r.y, width: r.w, height: r.h, rx: 8, class: 'fond' }, g);
+  const lignes = couper(o.nom, o.max || 24);
+  const haut = lignes.length * 16 + (o.sous ? 16 : 0);
+  const y = r.y + r.h / 2 - haut / 2 + 12;
+  texte(g, r.x + r.w / 2, y, lignes, { 'font-weight': 600, 'font-size': o.taille || 13.5 });
+  if (o.sous) texte(g, r.x + r.w / 2, y + lignes.length * 16 + 1, [o.sous], { class: 'sous' });
+  if (o.clic) { g.addEventListener('click', o.clic); g.addEventListener('keydown', (e) => { if (e.key === 'Enter') o.clic(); }); }
+  if (o.survol) { g.addEventListener('mouseenter', () => o.survol(true)); g.addEventListener('mouseleave', () => o.survol(false)); }
+  return g;
+}
+function badge(svg, x, y, txt) {
+  const w = Math.max(20, txt.length * 7 + 10);
+  el('rect', { x: x - w / 2, y: y - 10, width: w, height: 20, rx: 10, style: 'fill:var(--accent)' }, svg);
+  texte(svg, x, y + 4, [txt], { style: 'fill:#fff;font-size:11.5px;font-weight:700' });
+}
+function allumer(traits, sur) { // sur(e) -> 'sort' | 'entre' | 'eteinte' | ''
+  for (const { e, t } of traits) {
+    const c = sur ? sur(e) : '';
+    t.setAttribute('class', 'fl ' + c);
+    t.setAttribute('marker-end', `url(#${c === 'sort' ? 'pointe-s' : c === 'entre' ? 'pointe-e' : 'pointe'})`);
+  }
+}
+
+// ---------- navigation ----------
+function route() {
+  const h = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
+  if (h.startsWith('s/')) return { niveau: 3, sys: h.slice(2) };
+  if (h.startsWith('f/')) return { niveau: 4, fichier: h.slice(2) };
+  if (h.startsWith('b/')) return { niveau: 1, bloc: h.slice(2) };
+  if (h === 'jeu') return { niveau: 2 };
+  if (h === 'lexique' || h === 'travail') return { page: h };
+  return { niveau: 1 };
+}
+const aller = (h) => { location.hash = h; };
+const lienF = (f) => (F[f] ? `<a class="f" href="#/f/${encodeURIComponent(f)}" title="${esc(F[f].role)}">${esc(court(f))}</a>` : `<code>${esc(f)}</code>`);
+const lienS = (id) => `<a class="f" style="font-family:inherit;font-size:inherit" href="#/s/${id}"><span class="pastille" style="--h:${SYS[id].h}"></span>${esc(SYS[id].nom)}</a>`;
+
+function ariane(r) {
+  const p = [['#/', "Le jeu et ce qui l'entoure"]];
+  if (r.niveau >= 2) p.push(['#/jeu', 'Les grands systèmes']);
+  if (r.niveau === 3 && SYS[r.sys]) p.push(['#/s/' + r.sys, SYS[r.sys].nom]);
+  if (r.niveau === 4 && F[r.fichier]) { const s = F[r.fichier].sys; p.push(['#/s/' + s, SYS[s].nom], ['#/f/' + encodeURIComponent(r.fichier), nomCourt(r.fichier)]); }
+  if (r.page) p.push(['#/' + r.page, r.page === 'lexique' ? 'Lexique' : 'Comment on travaille']);
+  $('#ariane').innerHTML = p.map(([h, t], i) => `<a href="${h}" class="${i === p.length - 1 ? 'ici' : ''}">${esc(t)}</a>`).join(' › ') + (r.niveau ? ` <span class="discret">— niveau ${r.niveau} sur 4</span>` : '');
+}
+
+// ---------- niveau 1 : le jeu et ce qui l'entoure ----------
+function niveau1(r) {
+  const W = 250, H = 96, GX = 120, GY = 70, pos = {};
+  for (const b of D.niveau1.blocs) pos[b.id] = { x: 20 + b.x * (W + GX), y: 20 + b.y * (H + GY), w: W, h: H };
+  const cols = Math.max(...D.niveau1.blocs.map((b) => b.x)) + 1, rows = Math.max(...D.niveau1.blocs.map((b) => b.y)) + 1;
+  const svg = nouveauSvg(40 + cols * W + (cols - 1) * GX, 40 + rows * H + (rows - 1) * GY);
+  const cles = new Set(D.niveau1.fleches.map(([a, b]) => a + '>' + b));
+  for (const [a, b, lib] of D.niveau1.fleches) fleche(svg, pos[a], pos[b], { etiquette: lib, decale: cles.has(b + '>' + a) ? 16 : 0, classe: 'sort', marque: 'pointe-s' });
+  for (const b of D.niveau1.blocs) {
+    const n = b.liste ? b.liste.length : 0;
+    const sous = b.sorte === 'jeu' ? `${D.meta.nbFichiers} fichiers · clic pour entrer` : n ? `${n} fichier${n > 1 ? 's' : ''}` : '';
+    bloc(svg, pos[b.id], { nom: b.nom, sous, classe: (b.sorte === 'jeu' ? 'jeu ' : 'neutre ') + (r.bloc === b.id ? 'vu' : ''),
+      clic: () => aller(b.sorte === 'jeu' ? '#/jeu' : '#/b/' + b.id),
+      survol: (on) => panneau(on ? { niveau: 1, bloc: b.id } : route()) });
+  }
+  return svg;
+}
+function panneauN1(r) {
+  const b = D.niveau1.blocs.find((x) => x.id === r.bloc);
+  if (!b) {
+    const al = D.alertes.length ? `<details class="alerte"><summary>La carte signale ${D.alertes.length} chose${D.alertes.length > 1 ? 's' : ''}</summary><ul>${D.alertes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></details>` : '';
+    return `<h2>${esc(D.titre)}</h2><p>${esc(D.intro)}</p>
+      <h3>Les quatre niveaux</h3><ol><li>Le jeu et ce qui l'entoure (ici).</li><li>Les grands systèmes du jeu.</li><li>Les fichiers d'un système.</li><li>Un fichier : son rôle, ce qu'il utilise, qui l'utilise.</li></ol>
+      <h3>Suivre un geste</h3><p>Les boutons au-dessus de la carte suivent une action du joueur à travers le code, étape par étape (flèches ← → du clavier).</p>
+      <p class="discret">Calculée le ${D.meta.genere} (commit ${esc(D.meta.commit)}) : ${D.meta.nbFichiers} fichiers, ${D.meta.nbFleches} imports. Pour la mettre à jour : <code>npm run carte</code>.</p>${al}`;
+  }
+  let liste = '';
+  if (b.id === 'donnees') {
+    const lecteurs = {};
+    for (const [f, i] of Object.entries(F)) for (const j of i.donnees) (lecteurs[j] ||= []).push(f);
+    liste = `<h3>Les fichiers de données (${b.liste.length})</h3><ul>${b.liste.map((j) => `<li><code>${esc(j.replace('src/content/', ''))}</code>${lecteurs[j] ? ` <span class="discret">— importé par ${lecteurs[j].map(lienF).join(', ')}</span>` : ''}</li>`).join('')}</ul>`;
+  } else if (b.liste && b.liste.length) {
+    liste = `<h3>Les fichiers (${b.liste.length})</h3><ul>${b.liste.slice(0, 80).map((f) => `<li><code>${esc(f)}</code></li>`).join('')}${b.liste.length > 80 ? `<li class="discret">… et ${b.liste.length - 80} autres</li>` : ''}</ul>`;
+  }
+  return `<h2>${esc(b.nom)}</h2><p>${esc(b.role)}</p>${b.regle ? `<h3>La règle</h3><p class="regle">${esc(b.regle)}</p>` : ''}${b.sorte === 'jeu' ? `<p><a class="f" style="font-size:15px" href="#/jeu">Entrer dans le jeu ›</a></p>` : ''}${liste}`;
+}
+
+// ---------- niveau 2 : les grands systèmes ----------
+function niveau2() {
+  const W = 214, H = 76, GX = 58, GY = 66, pos = {};
+  for (const s of D.systemes) pos[s.id] = { x: 24 + s.x * (W + GX), y: 24 + s.y * (H + GY), w: W, h: H };
+  const cols = Math.max(...D.systemes.map((s) => s.x)) + 1, rows = Math.max(...D.systemes.map((s) => s.y)) + 1;
+  const svg = nouveauSvg(48 + cols * W + (cols - 1) * GX, 48 + rows * H + (rows - 1) * GY);
+  const p = parcoursActif();
+  const cles = new Set(D.fleches.map((e) => e.de + '>' + e.vers));
+  const traits = D.fleches.map((e) => {
+    const t = fleche(svg, pos[e.de], pos[e.vers], { decale: cles.has(e.vers + '>' + e.de) ? 10 : 0, epais: Math.min(4, 0.8 + Math.log2(e.n + 1) * 0.6), classe: p ? 'eteinte' : '' });
+    el('title', {}, t).textContent = `${SYS[e.de].nom} utilise ${SYS[e.vers].nom} (${e.n} import${e.n > 1 ? 's' : ''})`;
+    return { e, t };
+  });
+  const vus = {};
+  if (p) p.etapes.slice(0, etat.etape + 1).forEach((st, i) => (vus[st.s] ||= []).push(i + 1));
+  const courant = p ? p.etapes[etat.etape].s : null;
+  for (const s of D.systemes) {
+    const n = s.fichiers.length;
+    bloc(svg, pos[s.id], { nom: s.nom, sous: `${n} fichier${n > 1 ? 's' : ''}`, h: s.h, max: 24, taille: 15,
+      classe: p ? (s.id === courant ? 'courant' : vus[s.id] ? 'vu' : 'eteint') : '',
+      clic: () => aller('#/s/' + s.id),
+      survol: (on) => {
+        if (p) return;
+        allumer(traits, on ? (e) => (e.de === s.id ? 'sort' : e.vers === s.id ? 'entre' : 'eteinte') : null);
+        panneau(on ? { niveau: 3, sys: s.id } : route());
+      } });
+  }
+  if (p) {
+    for (let i = 1; i <= etat.etape; i++) {
+      const a = p.etapes[i - 1].s, b = p.etapes[i].s;
+      if (a !== b) fleche(svg, pos[a], pos[b], { classe: 'geste', marque: 'pointe-e', epais: i === etat.etape ? 4 : 2, decale: 22 });
+    }
+    for (const [id, nums] of Object.entries(vus)) badge(svg, pos[id].x + pos[id].w - 8, pos[id].y, nums.join('·'));
+  }
+  return svg;
+}
+function panneauN2() {
+  return `<h2>Les grands systèmes du jeu</h2><p>Chaque bloc est un système : un groupe de fichiers qui portent une même partie du jeu. Une flèche de A vers B veut dire « A utilise B » : un fichier de A importe un fichier de B. Plus elle est épaisse, plus il y a d'imports.</p>
+    <p>Passe la souris sur un bloc pour ne voir que ses flèches et lire ce qu'il fait ; clique pour entrer.</p>
+    <div class="legende"><span><i style="background:var(--lien)"></i>ce qu'il utilise</span><span><i style="background:var(--accent)"></i>ce qui l'utilise</span></div>
+    <h3>Les systèmes</h3><ul>${D.systemes.map((s) => `<li>${lienS(s.id)} <span class="discret">(${s.fichiers.length})</span></li>`).join('')}</ul>`;
+}
+
+// ---------- niveau 3 : l'intérieur d'un système ----------
+function niveau3(r) {
+  const s = SYS[r.sys]; if (!s) return null;
+  const dans = new Set(s.fichiers), prof = {};
+  const calc = (f, chemin = new Set()) => { // la profondeur : la plus longue chaîne d'imports internes sous le fichier
+    if (prof[f] !== undefined) return prof[f];
+    if (chemin.has(f)) return 0;
+    chemin.add(f);
+    let d = 0;
+    for (const u of F[f].utilise) if (dans.has(u)) d = Math.max(d, 1 + calc(u, chemin));
+    chemin.delete(f);
+    return (prof[f] = d);
+  };
+  s.fichiers.forEach((f) => calc(f));
+  const max = Math.max(0, ...Object.values(prof)), rangs = [];
+  for (const f of s.fichiers) (rangs[max - prof[f]] ||= []).push(f);
+  const PAR = 4, W = 196, H = 58, GX = 34, GY = 52, COTE = 262, lignes = [];
+  for (const rg of rangs.filter(Boolean)) for (let i = 0; i < rg.length; i += PAR) lignes.push(rg.slice(i, i + PAR));
+  const larg = PAR * W + (PAR - 1) * GX, pos = {};
+  lignes.forEach((l, j) => { const x0 = COTE + 50 + (larg - (l.length * W + (l.length - 1) * GX)) / 2; l.forEach((f, i) => { pos[f] = { x: x0 + i * (W + GX), y: 44 + j * (H + GY), w: W, h: H }; }); });
+  const appelants = {}, appeles = {};
+  for (const f of s.fichiers) {
+    for (const u of F[f].utilise) if (!dans.has(u)) appeles[F[u].sys] = (appeles[F[u].sys] || 0) + 1;
+    for (const u of F[f].utilisePar) if (!dans.has(u)) appelants[F[u].sys] = (appelants[F[u].sys] || 0) + 1;
+  }
+  const svg = nouveauSvg(COTE * 2 + 100 + larg, Math.max(90 + lignes.length * (H + GY), 70 + Math.max(Object.keys(appelants).length, Object.keys(appeles).length) * 34));
+  const colonne = (obj, x, titre) => {
+    el('text', { x: x + COTE / 2, y: 24, 'text-anchor': 'middle', class: 'etiq' }, svg).textContent = titre;
+    const items = {};
+    Object.entries(obj).sort((a, b) => b[1] - a[1]).forEach(([id, n], i) => {
+      items[id] = bloc(svg, { x, y: 36 + i * 34, w: COTE, h: 26 }, { nom: `${SYS[id].nom} (${n})`, h: SYS[id].h, taille: 11, max: 60, clic: () => aller('#/s/' + id) });
+      items[id].querySelector('text').setAttribute('y', 36 + i * 34 + 17);
+    });
+    return items;
+  };
+  const gauche = colonne(appelants, 10, Object.keys(appelants).length ? 'utilisé par les systèmes' : '');
+  const droite = colonne(appeles, COTE + 90 + larg, Object.keys(appeles).length ? 'utilise les systèmes' : '');
+  const traits = [];
+  for (const f of s.fichiers) for (const u of F[f].utilise) if (dans.has(u)) traits.push({ e: { de: f, vers: u }, t: fleche(svg, pos[f], pos[u], { decale: F[u].utilise.includes(f) ? 10 : 0, epais: 1.8 }) });
+  traits.forEach(({ t }) => t.style.opacity = '.7');
+  const allumer3 = (sur) => { allumer(traits, sur); traits.forEach(({ t }) => t.style.opacity = sur ? '' : '.7'); };
+  const p = parcoursActif(), numeros = {};
+  if (p) p.etapes.forEach((st, i) => { if (dans.has(st.f) && i <= etat.etape) (numeros[st.f] ||= []).push(i + 1); });
+  const courant = p ? p.etapes[etat.etape].f : null;
+  for (const f of s.fichiers) {
+    bloc(svg, pos[f], { nom: nomCourt(f), sous: `${court(f).replace(/[^/]+$/, '')} · ${F[f].lignes} lignes`, h: s.h, max: 26,
+      classe: p ? (f === courant ? 'courant' : numeros[f] ? 'vu' : '') : '',
+      clic: () => aller('#/f/' + encodeURIComponent(f)),
+      survol: (on) => {
+        allumer3(on ? (e) => (e.de === f ? 'sort' : e.vers === f ? 'entre' : 'eteinte') : null);
+        const touche = new Set([...F[f].utilise, ...F[f].utilisePar].map((u) => F[u].sys));
+        for (const [id, g] of [...Object.entries(gauche), ...Object.entries(droite)]) g.classList.toggle('eteint', on && !touche.has(id));
+        panneau(on ? { niveau: 4, fichier: f } : route());
+      } });
+  }
+  for (const [f, nums] of Object.entries(numeros)) badge(svg, pos[f].x + pos[f].w - 8, pos[f].y, nums.join('·'));
+  return svg;
+}
+function panneauN3(r) {
+  const s = SYS[r.sys]; if (!s) return '<p>Système inconnu.</p>';
+  const uses = D.fleches.filter((e) => e.de === s.id), par = D.fleches.filter((e) => e.vers === s.id);
+  const liste = (a) => (a.length ? `<ul>${a.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="discret">—</p>');
+  return `<h2><span class="pastille" style="--h:${s.h}"></span>${esc(s.nom)}</h2><p>${esc(s.role)}</p>
+    ${s.regles && s.regles.length ? `<h3>La règle du jeu qu'il porte</h3>${s.regles.map((x) => `<p class="regle">${esc(x)}</p>`).join('')}` : ''}
+    <h3>Les données qu'il lit</h3>${liste(s.donnees || [])}
+    <h3>Les tests qui le vérifient</h3>${liste(s.tests || [])}
+    <h3>Ses fichiers (${s.fichiers.length})</h3><ul>${s.fichiers.map((f) => `<li>${lienF(f)}</li>`).join('')}</ul>
+    <h3>Il utilise</h3>${uses.length ? `<ul>${uses.map((e) => `<li>${lienS(e.vers)} <span class="discret">(${e.n})</span></li>`).join('')}</ul>` : '<p class="discret">aucun autre système</p>'}
+    <h3>Il est utilisé par</h3>${par.length ? `<ul>${par.map((e) => `<li>${lienS(e.de)} <span class="discret">(${e.n})</span></li>`).join('')}</ul>` : '<p class="discret">aucun autre système</p>'}`;
+}
+
+// ---------- niveau 4 : un fichier ----------
+function niveau4(r) {
+  const f = r.fichier, info = F[f]; if (!info) return null;
+  const grouper = (l) => { const g = {}; for (const u of l) (g[F[u].sys] ||= []).push(u); return Object.entries(g).sort((a, b) => b[1].length - a[1].length); };
+  const autres = [...info.donnees.map((d) => '◆ ' + d.replace('src/content/', '')), ...info.externes.map((x) => '▣ ' + (x === 'phaser' ? 'Phaser' : 'src/generated (npm run art, maps)'))];
+  const GW = 230, LH = 16, MAXH = 560, GAP = 14;
+  const placer = (groupes) => {
+    const cols = []; let y = 0;
+    for (const [id, fs] of groupes) {
+      const h = 30 + fs.length * LH + 4;
+      if (!cols.length || (y + h > MAXH && cols[cols.length - 1].length)) { cols.push([]); y = 0; }
+      cols[cols.length - 1].push({ id, fs, h, y }); y += h + GAP;
+    }
+    return cols;
+  };
+  const cg = placer(grouper(info.utilisePar)), cd = placer(grouper(info.utilise));
+  const hCol = (cols) => Math.max(0, ...cols.map((c) => c.reduce((a, g) => a + g.h + GAP, 0)));
+  const hAutres = autres.length ? 34 + autres.length * 20 : 0;
+  const H = Math.max(180, hCol(cg), hCol(cd) + hAutres) + 60;
+  const nG = cg.length, nD = Math.max(cd.length, autres.length ? 1 : 0), CW = 260;
+  const x0 = 20, xc = x0 + nG * (GW + 24) + (nG ? 70 : 20), xd = xc + CW + 90;
+  const svg = nouveauSvg(Math.max(xd + nD * (GW + 24) + 10, 640), H);
+  const rc = { x: xc, y: Math.min(H / 2 - 50, 200), w: CW, h: 100 };
+  if (nG) el('text', { x: x0 + (nG * (GW + 24)) / 2, y: 22, 'text-anchor': 'middle', class: 'etiq' }, svg).textContent = `← les ${info.utilisePar.length} fichiers qui l’utilisent`;
+  if (nD) el('text', { x: xd + (nD * (GW + 24)) / 2, y: 22, 'text-anchor': 'middle', class: 'etiq' }, svg).textContent = `ce qu’il utilise : ${info.utilise.length} fichiers →`;
+  const groupes = (cols, xBase, versCentre) => cols.forEach((col, ci) => col.forEach((g) => {
+    const rr = { x: xBase + ci * (GW + 24), y: 36 + g.y, w: GW, h: g.h };
+    const grp = el('g', { class: 'groupe', style: `--h:${SYS[g.id].h}` }, svg);
+    el('rect', { x: rr.x, y: rr.y, width: rr.w, height: rr.h, rx: 8, style: `fill:hsl(${SYS[g.id].h} var(--s) var(--l))` }, grp);
+    const tt = el('text', { x: rr.x + 10, y: rr.y + 19, 'font-weight': 600, 'font-size': 12, style: 'cursor:pointer' }, grp);
+    tt.textContent = SYS[g.id].nom; tt.addEventListener('click', () => aller('#/s/' + g.id));
+    g.fs.forEach((u, i) => {
+      const t = el('text', { x: rr.x + 14, y: rr.y + 38 + i * LH, class: 'lignef' }, grp);
+      t.textContent = nomCourt(u);
+      el('title', {}, t).textContent = court(u) + ' — ' + F[u].role;
+      t.addEventListener('click', () => aller('#/f/' + encodeURIComponent(u)));
+    });
+    // une flèche par groupe, seulement quand ils tiennent dans une colonne : au-delà, elles traverseraient les autres groupes
+    if (cols.length > 1) return;
+    if (versCentre) fleche(svg, rr, rc, { classe: 'entre', marque: 'pointe-e', etiquette: String(g.fs.length) });
+    else fleche(svg, rc, rr, { classe: 'sort', marque: 'pointe-s', etiquette: String(g.fs.length) });
+  }));
+  groupes(cg, x0, true);
+  groupes(cd, xd, false);
+  if (autres.length) {
+    const rr = { x: xd, y: 36 + hCol(cd), w: GW, h: hAutres - 10 };
+    el('rect', { x: rr.x, y: rr.y, width: rr.w, height: rr.h, rx: 8, style: 'fill:var(--papier);stroke:var(--doux);stroke-dasharray:4 3' }, svg);
+    el('text', { x: rr.x + 10, y: rr.y + 19, 'font-weight': 600, 'font-size': 12 }, svg).textContent = 'Données et hors du code';
+    autres.forEach((n, i) => { el('text', { x: rr.x + 14, y: rr.y + 40 + i * 20, class: 'lignef', style: 'cursor:default' }, svg).textContent = n; });
+    if (cd.length <= 1) fleche(svg, rc, rr, { classe: 'sort', marque: 'pointe-s' });
+  }
+  const p = parcoursActif();
+  bloc(svg, rc, { nom: nomCourt(f), sous: `${info.lignes} lignes`, h: SYS[info.sys].h, classe: p && p.etapes[etat.etape].f === f ? 'courant' : 'vu', max: 30, taille: 15 });
+  return svg;
+}
+function panneauN4(r) {
+  const f = r.fichier, info = F[f]; if (!info) return '<p>Fichier inconnu : il n’existe plus dans le code.</p>';
+  const s = SYS[info.sys], etapes = [];
+  for (const p of D.parcours) p.etapes.forEach((st, i) => { if (st.f === f) etapes.push(`<li><b>${esc(p.nom)}</b>, étape ${i + 1} : ${esc(st.t)}</li>`); });
+  return `<h2 class="f" style="font-size:15px">${esc(court(f))}</h2><p class="discret">Système : ${lienS(info.sys)} · ${info.lignes} lignes · <a class="f" href="../../${esc(f)}">voir le code</a></p>
+    <h3>Son rôle</h3><p>${esc(info.role)}</p>
+    ${s.regles && s.regles.length ? `<h3>La règle de son système</h3>${s.regles.map((x) => `<p class="regle">${esc(x)}</p>`).join('')}` : ''}
+    ${etapes.length ? `<h3>Dans les parcours</h3><ul>${etapes.join('')}</ul>` : ''}
+    <h3>Il utilise (${info.utilise.length})</h3>${info.utilise.length ? `<ul>${info.utilise.map((u) => `<li>${lienF(u)}</li>`).join('')}</ul>` : '<p class="discret">aucun autre fichier du jeu</p>'}
+    ${info.donnees.length ? `<h3>Les données qu'il importe</h3><ul>${info.donnees.map((d) => `<li><code>${esc(d)}</code></li>`).join('')}</ul>` : ''}
+    ${info.externes.length ? `<h3>Hors du code</h3><ul>${info.externes.map((d) => `<li><code>${esc(d)}</code></li>`).join('')}</ul>` : ''}
+    <h3>Il est utilisé par (${info.utilisePar.length})</h3>${info.utilisePar.length ? `<ul>${info.utilisePar.map((u) => `<li>${lienF(u)}</li>`).join('')}</ul>` : '<p class="discret">aucun fichier : c’est un point d’entrée</p>'}`;
+}
+
+// ---------- les parcours ----------
+function barreGestes(r) {
+  const b = $('#gestes');
+  if (r.page) { b.innerHTML = ''; return; }
+  b.innerHTML = `<span class="titre">Suivre un geste :</span>` + D.parcours.map((p) => `<button data-p="${p.id}" class="${etat.parcours === p.id ? 'actif' : ''}">${esc(p.nom)}</button>`).join('');
+  b.querySelectorAll('button').forEach((x) => x.addEventListener('click', () => {
+    if (etat.parcours === x.dataset.p) return arreter();
+    arreterLecture(); etat.parcours = x.dataset.p; etat.etape = 0;
+    if (location.hash === '#/jeu') rendre(); else aller('#/jeu');
+  }));
+}
+function carteEtape(r) {
+  const box = $('#etape'), p = parcoursActif();
+  if (!p || r.page) { box.style.display = 'none'; return; }
+  const st = p.etapes[etat.etape];
+  box.style.display = 'block';
+  box.innerHTML = `<div class="ligne"><span class="num">Étape ${etat.etape + 1} sur ${p.etapes.length}</span> · ${lienS(st.s)} · ${lienF(st.f)}
+    <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap"><button id="prec" ${etat.etape ? '' : 'disabled'}>◀ Avant</button><button id="lect">${etat.lecture ? '⏸ Pause' : '⏵ Lecture'}</button><button id="suiv" ${etat.etape < p.etapes.length - 1 ? '' : 'disabled'}>Après ▶</button><button id="fin" title="Quitter le parcours">✕</button></span></div><p>${esc(st.t)}</p>`;
+  $('#prec').onclick = () => { arreterLecture(); pas(-1); };
+  $('#suiv').onclick = () => { arreterLecture(); pas(1); };
+  $('#fin').onclick = arreter;
+  $('#lect').onclick = () => {
+    if (etat.lecture) { arreterLecture(); rendre(); return; }
+    if (etat.etape >= p.etapes.length - 1) etat.etape = -1;
+    etat.lecture = setInterval(() => { if (etat.etape >= parcoursActif().etapes.length - 1) { arreterLecture(); rendre(); } else pas(1); }, 2600);
+    pas(1);
+  };
+}
+function pas(d) {
+  const p = parcoursActif(); if (!p) return;
+  etat.etape = Math.max(0, Math.min(p.etapes.length - 1, etat.etape + d));
+  rendre();
+}
+function arreterLecture() { if (etat.lecture) clearInterval(etat.lecture); etat.lecture = null; }
+function arreter() { arreterLecture(); etat.parcours = null; etat.etape = 0; rendre(); }
+function panneauParcours() {
+  const p = parcoursActif();
+  return `<h2>${esc(p.nom)}</h2><p class="discret">Les systèmes traversés s'allument un par un ; leur numéro dit à quelle étape. Clique une étape pour y aller, un fichier pour l'ouvrir (le parcours reste actif : reviens par « Les grands systèmes »).</p>
+    <ol>${p.etapes.map((st, i) => `<li style="margin:8px 0;${i === etat.etape ? 'font-weight:600' : i > etat.etape ? 'opacity:.55' : ''}"><a class="f" data-e="${i}" style="font-family:inherit;font-size:14px;color:inherit">${esc(st.t)}</a><br>${lienF(st.f)}</li>`).join('')}</ol>`;
+}
+
+// ---------- les pages ----------
+function pageLexique() {
+  return `<div class="page"><h2>Lexique</h2><p class="discret">Les mots du projet, dans le sens où on les emploie ici.</p><input id="filtre" placeholder="Filtrer…" style="padding:6px 10px;border:1px solid var(--trait);border-radius:6px;background:var(--fond);color:var(--encre);margin-bottom:14px"><dl id="lex">${D.lexique.map(([m, d]) => `<dt>${esc(m)}</dt><dd>${esc(d)}</dd>`).join('')}</dl></div>`;
+}
+function pageTravail() {
+  return `<div class="page"><h2>Comment on travaille</h2><p class="discret">Les habitudes du projet : comment un changement passe de l'idée à la branche main.</p><div class="cartes">${D.travail.map(([t, d]) => `<div><h3>${esc(t)}</h3><p>${esc(d)}</p></div>`).join('')}</div></div>`;
+}
+
+// ---------- le rendu ----------
+function panneau(r) {
+  const box = $('#panneau'); if (!box) return;
+  if (parcoursActif() && r.niveau === 2) box.innerHTML = panneauParcours();
+  else if (r.niveau === 1) box.innerHTML = panneauN1(r);
+  else if (r.niveau === 2) box.innerHTML = panneauN2();
+  else if (r.niveau === 3) box.innerHTML = panneauN3(r);
+  else if (r.niveau === 4) box.innerHTML = panneauN4(r);
+  box.querySelectorAll('[data-e]').forEach((a) => a.addEventListener('click', () => { arreterLecture(); etat.etape = +a.dataset.e; rendre(); }));
+}
+function rendre() {
+  const r = route();
+  document.querySelectorAll('nav.onglets a').forEach((a) => a.classList.toggle('actif', (r.page || 'carte') === a.dataset.onglet));
+  ariane(r); barreGestes(r); carteEtape(r);
+  const main = $('#principal');
+  if (r.page) {
+    main.innerHTML = r.page === 'lexique' ? pageLexique() : pageTravail();
+    const fi = $('#filtre');
+    if (fi) fi.addEventListener('input', () => {
+      const q = fi.value.toLowerCase();
+      document.querySelectorAll('#lex dt').forEach((dt) => { const dd = dt.nextElementSibling; const ok = (dt.textContent + dd.textContent).toLowerCase().includes(q); dt.style.display = dd.style.display = ok ? '' : 'none'; });
+    });
+    return;
+  }
+  if (!$('#dessin')) main.innerHTML = '<div id="dessin"></div><aside id="panneau"></aside>';
+  const svg = r.niveau === 1 ? niveau1(r) : r.niveau === 2 ? niveau2() : r.niveau === 3 ? niveau3(r) : niveau4(r);
+  const d = $('#dessin'); d.innerHTML = '';
+  if (svg) d.appendChild(svg); else d.innerHTML = '<p>Rien ici : ce système ou ce fichier n’existe pas (ou plus).</p>';
+  panneau(r);
+}
+
+document.title = D.titre;
+$('#titre').textContent = D.titre;
+$('#tout').innerHTML = [...D.systemes.map((s) => `<option value="${esc(s.nom)}">`), ...Object.keys(F).map((f) => `<option value="${esc(court(f))}">`)].join('');
+$('#recherche').addEventListener('change', (e) => {
+  const v = e.target.value.trim(), s = D.systemes.find((x) => x.nom === v);
+  if (s) aller('#/s/' + s.id); else if (F['src/' + v]) aller('#/f/' + encodeURIComponent('src/' + v));
+  e.target.value = '';
+});
+window.addEventListener('hashchange', () => { arreterLecture(); rendre(); });
+document.addEventListener('keydown', (e) => {
+  if (!etat.parcours || e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') { arreterLecture(); pas(1); }
+  if (e.key === 'ArrowLeft') { arreterLecture(); pas(-1); }
+  if (e.key === 'Escape') arreter();
+});
+rendre();
+</script>
+</body>
+</html>
