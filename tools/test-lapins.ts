@@ -165,13 +165,44 @@ await playtest('lapins', async ({ page, load }) => {
     const members = () => (Object.values(gs.game.maps.ferme.warrens) as { members: unknown[] }[]).reduce((n, g) => n + g.members.length, 0);
     out.membersBefore = members();
     const c = await spawnAt(X0 + 200);
-    const q = find(c)!;
-    await stand(q.x - 22, q.y, 'right');
-    const at = find(c)!;
-    // la branche est dans la main droite (clic gauche) : contre ce qui encaisse un coup, une ressource frappe
-    const button = await W.__do('strike', { at: { x: at.x, y: at.y - 3 } });
+    const q0 = find(c)!;
+    await stand(q0.x - 22, q0.y, 'right');
+    // Xéros le suit à sa gauche (il broute et sautille) et frappe dès qu'il y est, comme un joueur : tout se décide à chaque pas de
+    // jeu (postupdate), jamais à la lecture du test (à x10 sous la charge, une image vaut jusqu'à 80 pas de jeu, plus d'une seconde :
+    // le lapin aurait le temps de s'éloigner entre le pas où Xéros arrive et le clic)
+    const at = { x: q0.x, y: q0.y };
+    const held = new Set<string>();
+    let clicks = 0;
+    let button: 'left' | 'right' | undefined;
+    // le journal des coups au dernier clic : un nouveau clic attend que le précédent ait donné son coup
+    let logged = -1;
+    const hunter = () => {
+      const q = find(c);
+      if (!q || clicks >= 6) return;
+      const dx = q.x - 22 - me().x;
+      const dy = q.y - me().y;
+      const there = Math.abs(dx) <= 3 && Math.abs(dy) <= 3;
+      const want = new Set(there ? [] : [...(dx > 1 ? ['KeyD'] : dx < -1 ? ['KeyA'] : []), ...(dy > 1 ? ['KeyS'] : dy < -1 ? ['KeyW'] : [])]);
+      for (const k of held) if (!want.has(k)) (key('keyup', k), held.delete(k));
+      for (const k of want) if (!held.has(k)) (key('keydown', k), held.add(k));
+      if (!there || w().mode !== 'play' || w().combat.busy || w().combat.log.length === logged) return;
+      // la branche est dans la main droite (clic gauche) : contre ce qui encaisse un coup, une ressource frappe
+      button = (['left', 'right'] as const).find((b) => w().keys?.clicks[b].short.kind === 'strike') ?? 'left';
+      [at.x, at.y] = [q.x, q.y];
+      W.__aim(q.x, q.y - 3);
+      W.__press(button);
+      W.__release(button);
+      logged = w().combat.log.length;
+      clicks++;
+    };
+    w().events.on('postupdate', hunter);
+    await W.__until(() => !find(c) || clicks >= 6, `le lapin tué disparaît (coup : ${JSON.stringify(button)}, ${clicks} clics ; le lapin ${JSON.stringify(find(c))} ; Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}))`);
+    w().events.off('postupdate', hunter);
+    for (const k of held) key('keyup', k);
+    W.__leave();
     out.button = button;
-    await W.__until(() => !find(c), `le lapin tué disparaît (coup : ${JSON.stringify(button)} ; le lapin ${JSON.stringify(find(c))} ; Xéros en (${Math.round(me().x)}, ${Math.round(me().y)}))`);
+    out.clicks = clicks;
+    if (find(c)) throw new Error(`le lapin n'est pas mort en ${clicks} coups (${JSON.stringify(find(c))})`);
     await W.__settle();
     const ground = gs.game.maps.ferme.ground as { item?: string; x: number; y: number }[];
     const dead = ground.find((o) => o.item === def.becomes);
@@ -198,6 +229,7 @@ await playtest('lapins', async ({ page, load }) => {
   assert.ok(r.walkEntered, 'il entre au terrier');
   assert.ok(sneak.min < senses.walk.near - 1, `en marche discrète, Xéros approche à ${sneak.min.toFixed(1)} m sans le faire fuir (à la marche, ${senses.walk.near} m)`);
   assert.ok(sneak.flee === undefined || sneak.flee < senses.sneak.near, `en marche discrète, il fuit en deçà de ${senses.sneak.near} m (${sneak.flee})`);
+  assert.equal(r.clicks, 1, `la force au maximum, un seul coup de branche le tue (${r.clicks} clics)`);
   assert.ok(r.dead, 'un lapin mort au sol');
   assert.ok(Math.hypot(r.dead.x - r.dead.from.x, r.dead.y - r.dead.from.y) < 40, `le lapin mort là où le lapin est mort (${JSON.stringify(r.dead)})`);
   assert.equal(r.deadCount, 1, 'un seul lapin mort');
