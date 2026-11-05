@@ -90,7 +90,7 @@ const rows: Row[] = [
       { grid: smithFinal('up'), pal: finalPalette, label: 'DOS APRES' },
       { grid: smithV1('right'), pal: finalPalette, label: 'PROFIL AVANT' },
       { grid: smithFinal('right'), pal: finalPalette, label: 'PROFIL APRES' },
-      { grid: smithFinal('down'), pal: finalPalette, label: 'FACE (INCHANGEE)' },
+      { grid: smithFinal('down'), pal: finalPalette, label: 'FACE' },
     ],
   },
   ...GROUPS.map((g): Row => ({

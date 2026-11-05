@@ -146,7 +146,7 @@ function layer(c: Canvas, m: Canvas): void {
 /** Le masque d'un bras : le bras, l'avant-bras avec son brassard (le tiers du milieu), le poing (un carré de 4 px). */
 function armMask(a: Arm): Canvas {
   const m = new Canvas(W, H);
-  const ru = (a.upper ?? 6) / 2, rf = (a.fore ?? 5) / 2;
+  const ru = (a.upper ?? 5) / 2, rf = (a.fore ?? 4) / 2;
   thick(m, a.shoulder, a.elbow, ru, 'a');
   thick(m, a.elbow, a.hand, rf, 'a');
   const lerp = (t: number): P => [a.elbow[0] + (a.hand[0] - a.elbow[0]) * t, a.elbow[1] + (a.hand[1] - a.elbow[1]) * t];
@@ -197,7 +197,7 @@ function breath(f: Facing, b: number, pose?: (c: Canvas) => void): Grid {
 /** De face et de dos : les jambes (y=34 à 44), gauche x=8 à 15, droite x=16 à 23. */
 const LEG_L: [number, number] = [8, 15];
 const LEG_R: [number, number] = [16, 23];
-/** Les avant-bras et les poings (y=26 à 33), à gauche x ≤ 8, à droite x ≥ 23. */
+/** Les avant-bras et les poings (y=26 à 33), à gauche x ≤ 8, à droite x ≥ 23 (les bras de 4 px : x=5 à 8 et 23 à 26). */
 const HAND_L: [number, number] = [0, 8];
 const HAND_R: [number, number] = [23, 31];
 
@@ -241,8 +241,8 @@ function sideLeg(c: Canvas, hip: number, foot: number, near: boolean, lift = 0):
 function walkSide(far: [number, number, number], near: [number, number, number], arm: number, bob: number, lag: number): Grid {
   const base = canvasOf('right');
   for (let y = 34; y <= 44; y++) for (let x = 0; x < W; x++) base.set(x, y, '.');
-  // l'avant-bras et le poing (x=13 à 22, y=27 à 33) avancent ou reculent ; derrière eux, le tablier et le pantalon
-  if (arm) move(base, 13, 27, 22, 33, arm, 0, (_x, y) => base.get(arm > 0 ? 12 : 23, y));
+  // l'avant-bras et le poing (x=13 à 19, y=27 à 33) avancent ou reculent ; derrière eux, le tablier et le pantalon
+  if (arm) move(base, 13, 27, 19, 33, arm, 0, (_x, y) => base.get(arm > 0 ? 12 : 20, y));
   const c = new Canvas(W, H);
   sideLeg(c, far[0], far[1], false, far[2]);
   sideLeg(c, near[0], near[1], true, near[2]);
@@ -281,23 +281,23 @@ interface Strike {
   spark?: boolean;
 }
 
-// Le bras droit du forgeron est à gauche de l'image (il nous fait face). Épaule à (5, 24) ; le deltoïde reste dessiné.
-const SHOULDER_R: P = [5, 24];
+// Le bras droit du forgeron est à gauche de l'image (il nous fait face). Épaule à (6, 24) ; le deltoïde reste dessiné.
+const SHOULDER_R: P = [6, 24];
 const STRIKES: Strike[] = [
   // 1. levé haut : le coude en dehors, le poing au-dessus de l'épaule, le marteau dressé, sa tête au niveau du front
-  { arm: { shoulder: SHOULDER_R, elbow: [2, 19], hand: [5, 14] }, dir: [0.15, -1] },
+  { arm: { shoulder: SHOULDER_R, elbow: [3, 19], hand: [6, 14] }, dir: [0.15, -1] },
   // 2. l'abattu : le bras descend devant l'épaule, le marteau encore dressé, sa tête passe à côté de la joue
-  { arm: { shoulder: SHOULDER_R, elbow: [2, 26], hand: [6, 23] }, dir: [0.1, -1] },
+  { arm: { shoulder: SHOULDER_R, elbow: [3, 26], hand: [7, 23] }, dir: [0.1, -1] },
   // 3. le coup : le poing devant le ventre, la tête du marteau sur le fer ; le corps se tasse, l'étincelle jaillit
-  { arm: { shoulder: SHOULDER_R, elbow: [4, 28], hand: [10, 29] }, dir: [0.75, 1], squash: true, spark: true },
+  { arm: { shoulder: SHOULDER_R, elbow: [5, 28], hand: [10, 29] }, dir: [0.75, 1], squash: true, spark: true },
   // 4. le rebond : le marteau remonte de lui-même, le poignet souple, la tête au-dessus du fer
-  { arm: { shoulder: SHOULDER_R, elbow: [3, 28], hand: [8, 28] }, dir: [0.5, -1] },
+  { arm: { shoulder: SHOULDER_R, elbow: [4, 28], hand: [9, 28] }, dir: [0.5, -1] },
   // 5. le retour : le bras remonte, le coude s'ouvre, le marteau repart vers le haut
-  { arm: { shoulder: SHOULDER_R, elbow: [2, 22], hand: [5, 19] }, dir: [0, -1] },
+  { arm: { shoulder: SHOULDER_R, elbow: [3, 22], hand: [6, 19] }, dir: [0, -1] },
 ];
 
 /** La main gauche (à droite de l'image) tient la pince : le fer rouge posé sur la table, au milieu. */
-const TONGS_ARM: Arm = { shoulder: [26, 25], elbow: [27, 29], hand: [22, 31], upper: 5, fore: 5 };
+const TONGS_ARM: Arm = { shoulder: [25, 25], elbow: [25, 29], hand: [21, 31], upper: 4, fore: 4 };
 const IRON_AT: P = [13, ANVIL_TABLE_Y];
 
 function work(s: Strike): Grid {
@@ -340,12 +340,12 @@ export const WORK_DURATIONS = [420, 90, 160, 150, 260];
 /** De face : le poing droit (à gauche de l'image) sur la hanche, le coude en dehors. */
 function akimboDown(c: Canvas): void {
   for (let y = 25; y <= 33; y++) for (let x = 0; x <= 8; x++) c.set(x, y, '.');
-  layer(c, armMask({ shoulder: [5, 24], elbow: [1, 28], hand: [9, 31], upper: 5, fore: 4 }));
+  layer(c, armMask({ shoulder: [6, 24], elbow: [3, 28], hand: [10, 31], upper: 4, fore: 4 }));
 }
 /** De dos : le bras droit est à droite de l'image. */
 function akimboUp(c: Canvas): void {
   for (let y = 25; y <= 33; y++) for (let x = 23; x < W; x++) c.set(x, y, '.');
-  layer(c, armMask({ shoulder: [26, 24], elbow: [30, 28], hand: [22, 31], upper: 5, fore: 4 }));
+  layer(c, armMask({ shoulder: [25, 24], elbow: [28, 28], hand: [21, 31], upper: 4, fore: 4 }));
 }
 
 // ---------- La planche ----------

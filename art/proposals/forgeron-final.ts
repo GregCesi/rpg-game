@@ -25,6 +25,11 @@
 // (son bord du haut au jour, la lanière du cou) et le poing rentre dans la largeur du bras. La version d'avant :
 // forgeron-final-v1.ts. La matière de chaque vue (`matter`) sert aux animations (forgeron-anim.ts). Le portrait a deux humeurs :
 // `portraitFinal('neutral')`, `portraitFinal('smile')`.
+// La carrure réduite (retour de Grégoire : « trop large, surtout de profil » ; le dessin d'avant : forgeron-final-v2.ts) : de
+// face et de dos 24 px contour compris (1,20 m d'épaule à épaule, au lieu de 28 px, 1,40 m), les bras de 4 px décollés du torse
+// par un pixel d'air, la taille de 12 px (le V reste) ; de profil, le torse et le bras 14 px à la taille et 15 px au plus fort
+// de la poitrine (au lieu de 21 px, 1,05 m), le bras de 5 px au lieu de 8. La tête, les cheveux, le visage, le portrait, la
+// hauteur et les jambes ne changent pas (les mesures plus haut, pour la face, le dos et le profil, sont celles d'avant).
 // Toutes les vues tiennent dans 30 px de large (frame de 32). La collision visée : 14 × 8 px aux pieds (70 × 40 cm), centrée
 // sous lui (x=9 à 22, y=38 à 45 de la frame), comme les bottes de face (x=8 à 23 contour compris).
 //
@@ -53,6 +58,25 @@ export const DARK: Record<string, string> = {
 
 /** Les jambes et les bottes de face et de dos (y=34 à 44), celles de A et de C. */
 const LEGS_FRONT: Spec = SPECS['C-down-loose'].slice(26);
+// ---------- De face : la carrure réduite (retour de Grégoire : 28 px, 1,40 m d'épaule à épaule, c'était trop) ----------
+// Matière x=5 à 26 (22 px, 24 contour compris : 1,20 m). Le V reste : les deltoïdes ronds débordent de 5 px de chaque côté de
+// la taille (le tablier, x=10 à 21, 12 px) ; les bras de 4 px (deltoïde, biceps, brassard, poing), décollés du torse par un
+// pixel d'air (x=9 et x=22) ; le poignet rentre d'un pixel. La tête, le cou et les pointes des cheveux (y=8 à 22) ne changent pas.
+const FRONT_BODY: Spec = [
+  [5, 'swhHdwsAQQQQQaqShddSSD'], // y=23 : les deltoïdes ; les pointes des cheveux ; l'ombre du menton sur la bavette (M2)
+  [5, 'ssSSoDDAaaaaaaqDDoSSSD'], // l'aisselle, le dessous des pectoraux
+  [5, 'ssSS.sSAaaaaaaqSD.SSSD'], // y=25 : le biceps ; un pixel d'air sous l'aisselle
+  [5, 'sSSD.QQAaaaaaaqQQ.SSSD'], // y=26 : le coude ; la lanière de la taille
+  [5, 'wsSS.AaaaaaaaaqqQ.sSSD'], // l'avant-bras
+  [5, 'AAqQ.AaaaaqaaaqqQ.aaqQ'], // y=28 : les brassards
+  [5, 'wsSD.AaaaaqaaaqqQ.sSSD'],
+  [6, 'sSD.AaaaaqaaaaqQ.SSD'], // y=30 : les poignets, plus fins
+  [5, 'wssS.qqqqqqqqqqqQ.sSSD'], // y=31 : les poings ; l'ourlet
+  [5, 'sssS.ppppP..pPPPn.sSSD'], // y=32 : le pantalon entre les poings
+  [5, 'SSSD.ppppP..pPPPn.SDDD'],
+  ...LEGS_FRONT,
+];
+
 /** Les jambes et les bottes de profil (y=34 à 44), celles de A. */
 const LEGS_SIDE: Spec = SPECS['A-right-loose'].slice(26);
 
@@ -71,9 +95,9 @@ const BACK_BASE: Spec = [
   ...Array.from({ length: 11 }, (): [number, string] => [9, 'hhhhhhhhhhhhh']), // y=10 à 20
   [11, 'sssssSSSS'], // y=21 : la nuque
   [6, 'wsssQssssssSSSSQSSSD'], // y=22 : les trapèzes ; les lanières montent vers le cou (x=10 et 21)
-  [3, 'swwwssssQssssSSSSQSSSSSSSD'], // y=23 : les deltoïdes de C
-  [3, 'sssSSosssQsssSSSQSSSoSSSSD'], // y=24 : les lanières (x=12 et 19)
-  [3, 'sssSS.ssswQsSSSQSSSD.SSSSD'], // y=25 : le V des lanières ; un pixel d'air aux aisselles, comme de face
+  [5, 'swwsssQssssSSSSQSSSSSD'], // y=23 : les deltoïdes, ronds (x=5 à 26 : la carrure réduite)
+  [5, 'ssSSossQsssSSSQSSoSSSD'], // y=24 : les lanières (x=12 et 19) ; l'ombre des aisselles
+  [5, 'ssSS.sswQsSSSQSSD.SSSD'], // y=25 : le V des lanières ; un pixel d'air aux aisselles, comme de face
 ];
 
 /**
@@ -154,13 +178,13 @@ function backHair(c: Canvas): void {
 }
 
 const BACK_BODY: Spec = [
-  [4, 'sSSD..QQQQQAqQQQQQ..SSSD'], // y=26 : le nœud aux reins, sur la lanière de la taille (x=10 à 21)
-  [3, 'wsssSS.aaaqPqQPqqqQ.ssSSSD'], // les pans du nœud ; le fond du pantalon entre les bords du tablier
-  [3, 'aAAaqQ.aaaqPqQPqqqQ.aaaqqQ'], // y=28 : les brassards, aux deux avant-bras
-  [3, 'wsssSD.aaaqPPPPqqqQ.sSSSSD'],
-  [3, '.sSSD.aaaqPPPPPPqqqQ.SSSD.'], // les poignets
-  [3, 'wsssS.qqqqPPPPPPqqqQ.ssSSD'], // y=31 : les poings ; l'ourlet
-  ...SPECS['C-down-loose'].slice(24, 26), // y=32-33 : les poings, le haut du pantalon (le même de dos)
+  [5, 'sSSD.QQQQQAqQQQQQ.SSSD'], // y=26 : le nœud aux reins, sur la lanière de la taille (x=10 à 21)
+  [5, 'wsSS.aaaqPqQPqqqQ.sSSD'], // les pans du nœud ; le fond du pantalon entre les bords du tablier
+  [5, 'AAqQ.aaaqPqQPqqqQ.aaqQ'], // y=28 : les brassards, aux deux avant-bras
+  [5, 'wsSD.aaaqPPPPqqqQ.sSSD'],
+  [6, 'sSD.aaqPPPPPPqqQ.SSD'], // les poignets
+  [5, 'wssS.qqqPPPPPPqqQ.sSSD'], // y=31 : les poings ; l'ourlet
+  ...FRONT_BODY.slice(9, 11), // y=32-33 : les poings, le haut du pantalon (le même de dos)
 ];
 
 // ---------- De profil (vers la droite) ----------
@@ -183,24 +207,25 @@ const SIDE_HEAD: Spec = [
   [10, 'hYhdhsSSDDQQSSs'], // y=22 : le dessous du menton, son ombre sur le cou ; la lanière du cou (x=20-21) descend vers la bavette
 ];
 
-// Le corps de profil à la carrure de C. Colonnes : x=9 à 12 le dos (et les pointes des cheveux en haut), x=13 le bord arrière
-// du bras (ombre D), x=14 à 21 le bras côté spectateur (8 px : le deltoïde, le biceps, l'avant-bras et son brassard), x=22 son
-// bord avant, x=23-24 la poitrine, x=25 à 27 la bavette du tablier.
+// Le corps de profil, à la carrure réduite (retour de Grégoire : 21 px de profil, 1,05 m de torse, c'était un tonneau). Le torse
+// a la profondeur de la tête : x=12 (le dos) à 22 (la bavette à la taille), 11 px, 13 contour compris ; seules les pointes des
+// cheveux passent derrière le dos (x=11, y=23). Colonnes : x=12 le dos (et sous la lanière, le tablier qui
+// enveloppe la hanche), x=13 le bord arrière du bras (ombre D), x=14 à 18 le bras côté spectateur (5 px : le deltoïde, qui
+// déborde d'un pixel devant à y=23-24, le biceps, l'avant-bras et son brassard), x=19 son bord avant, x=20 à 23 la poitrine
+// sous la bavette, qui bombe (x=24 à y=24-25 : 15 px contour compris, au plus fort de la poitrine) puis rentre d'un pixel par
+// rangée jusqu'à la taille (x=22, 14 px). Le poing, plus étroit que le bras.
 const SIDE_BODY: Spec = [
-  // Corrigé (retour de Grégoire : « de profil, il paraît torse nu ») : la bavette couvre la poitrine devant le bras (x=22 à 27),
-  // son bord du haut au jour (A, y=23), la lanière du cou qui y arrive (x=22, y=23 ; x=20-21, y=22), son devant à l'ombre ; le
-  // poing rentre dans la largeur du bras (x=15 à 19) au lieu de déborder devant la cuisse : le pantalon se voit devant lui.
-  [9, 'dhYhDwwwwsssSQAAAq'], // y=23 : le haut du deltoïde, rond, jusqu'aux trapèzes ; le bord du haut de la bavette
-  [9, 'hdssDwwsssssSqaaaqQ'], // y=24 : la poitrine haute pousse la bavette en avant (x=27)
-  [9, 'sssSDwssssSSDqaaaqQ'], // le pectoral sous le cuir ; le bras, son bord avant dans l'ombre
-  [9, 'QQQQDwsssSSSSDQaAq'], // y=26 : la lanière de la taille passe derrière le bras et devant la bavette ; le ventre rentre
-  [9, 'aaaqDwssssssSDqaAq'], // l'avant-bras de 8 px ; le tablier enveloppe la hanche
-  [9, 'aaaqQaAAaaaqqQqaAq'], // y=28 : le brassard
-  [9, 'aaaqDssssssSSDqaAq'],
-  [9, 'aaaqqDsssSSSDqqaAq'], // le poignet
-  [9, 'qqqqqDwssssSSDqqqQ'], // y=31 : le poing ; l'ourlet
-  [12, 'pPDssSSDPPPn'], // y=32 : le poing, dans la largeur du bras ; la cuisse devant lui
-  [12, 'pPPDSSDpPPPn'],
+  [11, 'hYDwwwssSQAAq'], // y=23 : les pointes des cheveux sur le dos ; le deltoïde rond ; le bord du haut de la bavette
+  [12, 'hDwwsssSqaaAQ'], // y=24 : la poitrine bombée pousse la bavette d'un pixel en avant (x=24)
+  [12, 'sDwsssSDqaaaQ'], // le pectoral sous le cuir ; le bras, son bord avant dans l'ombre
+  [12, 'QDwsssSDQaAq'], // y=26 : la lanière de la taille passe derrière le bras ; la poitrine rentre
+  [12, 'aDwsssSDqAq'], // l'avant-bras ; le tablier enveloppe la hanche
+  [12, 'aQAAaaqQqAq'], // y=28 : le brassard
+  [12, 'aDssssSDqAq'],
+  [12, 'aqDssSDqqAq'], // le poignet
+  [12, 'qqDwsSSDqqQ'], // y=31 : le poing ; l'ourlet
+  [12, 'pPDsSSSDPPn'], // y=32 : le poing ; la cuisse devant lui
+  [12, 'pPPDSSDPPPn'],
 ];
 
 function rows(facing: Exclude<Facing, 'down'>): Spec {
@@ -214,7 +239,7 @@ function rows(facing: Exclude<Facing, 'down'>): Spec {
  * avant de finir l'image par `finishMatter`.
  */
 export function matter(facing: Facing): Grid {
-  const s = facing === 'down' ? headSpec('T1', 'down', 'M2') : rows(facing);
+  const s = facing === 'down' ? [...headSpec('T1', 'down', 'M2').slice(0, 15), ...FRONT_BODY] : rows(facing);
   const c = new Canvas(W, H);
   s.forEach(([x, row], i) => c.stamp([row], x, TOP + i));
   if (facing === 'up') backHair(c);
