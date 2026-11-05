@@ -287,6 +287,15 @@ export const ZONES = {
   edge: 8,
 };
 
+/**
+ * Le pas de jeu (docs/CONCEPTION.md, « Le temps ») : le jeu avance toujours par pas de la même durée, `1000 / fps` ms (celle des pas de
+ * la physique d'Arcade, `physics.arcade.fps` de main.ts), quelle que soit la machine : une image du navigateur fait autant de pas que le
+ * temps vrai écoulé en demande (une machine lente en fait plusieurs, jamais un plus grand), au plus `maxPerImage` à x1 (en dessous de
+ * 60 / 8 = 7,5 images par seconde, le jeu ralentit plutôt que de sauter) ; `slack` (ms) : l'écart toléré pour qu'un écran à 60 Hz,
+ * dont les images ne tombent jamais tout à fait sur 16,67 ms, fasse un pas par image, sans image vide ni double (world/timeStep.ts).
+ */
+export const STEP = { fps: 60, maxPerImage: 8, slack: 2 };
+
 /** La pénombre du sous-bois (`gloom` de world.json) : sa couleur, et la largeur des bandes où elle varie (px). */
 export const GLOOM = { color: 0x0b1611, strip: 64 };
 
