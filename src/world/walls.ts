@@ -46,6 +46,14 @@ const WALLS = wallsJson as {
  */
 export const WALL_PIECE: { grid: number; min: number; height: number } = WALLS.piece;
 
+/**
+ * La plus courte longueur d'un morceau de cette manière (cm) : `mins` de walls.json (un trumeau de pierre de taille de 30 cm, un bout de
+ * cordon de 20 entre deux poches de poutre ; chantier « maison du coq »), sinon celle du solin.
+ */
+export function wallMin(kind: string): number {
+  return (wallsJson as { mins?: Record<string, number> }).mins?.[kind] ?? WALLS.piece.min;
+}
+
 /** Les images des pierres dont l'algorithme se sert (images au sol du jeu, ombre comprise, palette `stonePalette`). */
 export const WALL_STONES: readonly string[] = [...WALLS.rough.map((p) => p.image), ...WALLS.rubble.map((p) => p.image), ...WALLS.ns, WALLS.chips.image];
 
@@ -65,7 +73,7 @@ export interface WallSize {
  * La manière d'un mur : le solin brut ou taillé ; l'assise de pierre de taille, le cordon et la rangée de dalles de la maison du coq
  * (chantier « maison du coq » : `world/ashlarWalls.ts`).
  */
-export type WallKind = 'rough' | 'dressed' | 'ashlar' | 'string' | 'flagstone';
+export type WallKind = 'rough' | 'dressed' | 'coursed' | 'string' | 'flagstone';
 /**
  * Un bout de tronçon : `head` tête de mur finie ; `abut` contre le flanc d'un tronçon perpendiculaire ; `corner-<côté>` ce
  * tronçon tient l'angle (il en dessine le carré), un tronçon perpendiculaire en part vers ce côté (`n`, `s` sur un est-ouest).

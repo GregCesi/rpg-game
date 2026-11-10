@@ -20,7 +20,7 @@ import type { Facing } from '../content/types';
 import { boxOf, OUTWARD, solidOf, swung, type Box3, type BuildPiece } from './build';
 import { CM_PER_PX } from '../content/gabarit';
 import { mobility } from '../content';
-import { deckField, decksAt, storeyHeights } from './decks';
+import { deckField, decksAt, openDecks, storeyHeights } from './decks';
 
 /** Un rectangle au sol, en cm (coin nord-ouest, largeur est-ouest, profondeur nord-sud). */
 export interface Rect {
@@ -508,7 +508,7 @@ export function buildingsOf(pieces: readonly BuildPiece[]): Building[] {
 function storeysAround(pieces: readonly BuildPiece[], room: Rect): number[] {
   const r = INTERIOR.reach;
   const around = { x: room.x - r, y: room.y - r, w: room.w + 2 * r, d: room.d + 2 * r };
-  const decks = deckField(pieces).decks.filter((k) => cross(around, k));
+  const decks = openDecks(pieces).filter((k) => cross(around, k));
   return storeyHeights(decks, INTERIOR.storey, mobility.step);
 }
 

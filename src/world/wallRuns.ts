@@ -31,7 +31,15 @@ export interface WallRun {
    * épaisseur) et le nord-sud ne le dessine pas (− l'épaisseur). Le dessin d'un angle ne dépend donc pas de l'ordre de pose.
    */
   extra?: { start?: number; end?: number };
+  /**
+   * La vue de ses morceaux (la pierre de taille de la maison du coq : un mur est-ouest vu par sa face du dehors, vue 0, ou du dedans,
+   * vue 2, enduite ; un nord-sud, vue 1 ou 3) ; pour le solin, 0 ou 1.
+   */
+  view: number;
 }
+
+/** Les manières de mur de la maison du coq (world/ashlarWalls.ts) : leur face du dedans diffère de celle du dehors. */
+export const COQ_WALLS: ReadonlySet<WallKind> = new Set(['coursed', 'string', 'flagstone']);
 
 /** La manière de mur d'une pièce posée, si c'est un morceau qui se raccorde. */
 export function wallOf(p: BuildPiece): WallKind | undefined {
@@ -41,7 +49,7 @@ export function wallOf(p: BuildPiece): WallKind | undefined {
 /** Graine stable d'un tronçon : sa manière, son sens, son coin nord-ouest et sa hauteur. */
 function seedOf(kind: WallKind, axis: 'ew' | 'ns', b: Box3): number {
   let h = 2166136261;
-  for (const n of [{ rough: 1, dressed: 2, ashlar: 5, string: 6, flagstone: 7 }[kind], axis === 'ew' ? 3 : 4, b.x, b.y, b.z]) {
+  for (const n of [{ rough: 1, dressed: 2, coursed: 5, string: 6, flagstone: 7 }[kind], axis === 'ew' ? 3 : 4, b.x, b.y, b.z]) {
     h ^= n & 0xffff;
     h = Math.imul(h, 16777619);
     h ^= n >>> 16;
@@ -70,11 +78,11 @@ export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
     const axis = p.view % 2 ? 'ns' : 'ew';
     const line = axis === 'ew' ? b.y : b.x;
     // un tronçon ne mêle pas deux épaisseurs (le solin des murs, celui des cloisons)
-    const k = `${kind}|${axis}|${b.z}|${line}|${axis === 'ew' ? b.d : b.w}`;
+    const k = `${kind}|${axis}|${b.z}|${line}|${axis === 'ew' ? b.d : b.w}|${COQ_WALLS.has(kind) ? p.view % 4 : p.view % 2}`;
     (groups.get(k) ?? groups.set(k, []).get(k)!).push({ p, b });
   }
   for (const [k, list] of groups) {
-    const [kind, axis, , , thick] = k.split('|') as [WallKind, 'ew' | 'ns', string, string, string];
+    const [kind, axis, , , thick, view] = k.split('|') as [WallKind, 'ew' | 'ns', string, string, string, string];
     const along = (b: Box3) => (axis === 'ew' ? b.x : b.y);
     const size = (b: Box3) => (axis === 'ew' ? b.w : b.d);
     list.sort((a, b) => along(a.b) - along(b.b));
@@ -84,7 +92,7 @@ export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
       const first = cur[0].b;
       const last = cur[cur.length - 1].b;
       const box = axis === 'ew' ? { ...first, w: last.x + last.w - first.x } : { ...first, d: last.y + last.d - first.y };
-      runs.push({ kind, axis, thick: Number(thick), pieces: cur.map((c) => c.p), box, start: 'head', end: 'head', seed: seedOf(kind, axis, box) });
+      runs.push({ kind, axis, thick: Number(thick), pieces: cur.map((c) => c.p), box, start: 'head', end: 'head', seed: seedOf(kind, axis, box), view: Number(view) });
       cur = [];
     };
     for (const c of list) {
@@ -102,7 +110,8 @@ export function wallRuns(pieces: readonly BuildPiece[]): WallRun[] {
       for (const e of ['start', 'end'] as const) {
         // le carré d'angle de ce bout : la largeur du tronçon nord-sud est l'épaisseur du mur
         const sq = e === 'start' ? R.x : R.x + R.w - N.w;
-        if (N.x === sq && N.w === R.d) {
+        // la pierre de taille : un pignon de 60 cm contre un mur de 40 à l'étage fait encore un angle
+        if (N.x === sq && (N.w === R.d || COQ_WALLS.has(r.kind))) {
           if (N.y + N.d === R.y) {
             r[e] = 'corner-n';
             n.end = 'abut';
@@ -145,7 +154,9 @@ export function runPx(r: WallRun): number {
 
 /** Le tronçon dessiné : la clé de sa texture (tout ce qui change son dessin). */
 export function runKey(r: WallRun): string {
-  return ['wall', r.kind, r.axis, r.thick, runPx(r), r.start, r.end, r.extra?.start ?? 0, r.extra?.end ?? 0, r.seed].join(':');
+  // la pierre de taille : ses joints sont ancrés au monde (sa place) et à la parité de son assise (sa hauteur)
+  const at = COQ_WALLS.has(r.kind) ? [r.view, r.box.x, r.box.y, r.box.z] : [];
+  return ['wall', r.kind, r.axis, r.thick, runPx(r), r.start, r.end, r.extra?.start ?? 0, r.extra?.end ?? 0, r.seed, ...at].join(':');
 }
 
 /**

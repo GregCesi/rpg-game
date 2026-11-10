@@ -7,7 +7,7 @@
 import Phaser from 'phaser';
 import { BUILD, DEPTH, INTERIOR, RENDER } from '../config';
 import { items, mobility, props } from '../content';
-import { deckField, storeyHeights } from '../world/decks';
+import { openDecks, storeyHeights } from '../world/decks';
 import { buildPlans, putBuildPlan } from '../content/buildPlans';
 import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildRef, JointType, Natural, WoodAge } from '../content/types';
@@ -668,7 +668,7 @@ export class BuildSystem {
 
   /** Les niveaux des pièces posées (les planchers : world/decks.ts). */
   private levels(): number[] {
-    return storeyHeights(deckField(this.shown).decks, INTERIOR.storey, mobility.step);
+    return storeyHeights(openDecks(this.shown), INTERIOR.storey, mobility.step);
   }
 
   /** N : tout, puis chaque niveau, puis tout. Une maison d'un seul niveau : toujours tout. */

@@ -171,6 +171,15 @@ export function storeyHeights(decks: readonly Deck[], area: number, merge: numbe
   return out;
 }
 
+/**
+ * Les dessus où l'on se tient : ceux sur lesquels rien n'est posé (une assise de cordon sous l'assise suivante n'est pas un plancher ;
+ * seulement son bout dégagé, le seuil d'une porte). Pour chercher les niveaux d'un bâtiment (`storeyHeights`).
+ */
+export function openDecks(pieces: readonly BuildPlaced[]): Deck[] {
+  const boxes = pieces.map(boxOf);
+  return deckField(pieces).decks.filter((k) => !boxes.some((o) => o.z === k.top && o.x < k.x + k.w && k.x < o.x + o.w && o.y < k.y + k.d && k.y < o.y + o.d));
+}
+
 /** Le niveau où sont des pieds à la hauteur `z` : le plus haut dont le plancher est au plus à mi-hauteur au-dessus d'eux. */
 export function storeyOf(levels: readonly number[], z: number): number {
   let k = 0;

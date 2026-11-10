@@ -6,9 +6,11 @@
 //     volet) pend à ses gonds et n'a qu'à toucher ce qui le porte ;
 //  C. une pièce qui enjambe (le bois couché ; les pentes des toits sont laissées au moteur) a un appui à chacun de ses bouts (à
 //     max(`END` cm, ¼ de sa longueur) près) ; des pièces entées comptent pour une seule ;
-//  D. une charge sur un vide : une pièce rigide posée sur une pièce qui enjambe et qui repose sur de la maçonnerie (la traverse basse sur
-//     le solin) a un appui sous elle, au droit de la charge (le poteau au-dessus d'un trou du solin) ;
-//  E. l'enture d'une pièce portée par plus de deux poteaux (la sablière, le long d'un mur) tombe sur un poteau.
+//  D. une charge sur un vide : une pièce rigide posée sur une pièce de bois qui enjambe et qui repose sur de la maçonnerie (la traverse
+//     basse sur le solin) a un appui sous elle, au droit de la charge (le poteau au-dessus d'un trou du solin) ; une pièce de pierre qui
+//     enjambe (l'arc, le linteau de pierre) porte ce qu'on pose dessus ;
+//  E. l'enture d'une pièce portée par plus de deux poteaux (la sablière, le long d'un mur) tombe sur un poteau ;
+//  F. ce qui est fixé au mur (`mount: "wall"` : une tenture, une console scellée) est porté par la maçonnerie dont il touche la face.
 
 import { props } from '../content';
 import type { BuildPlan } from '../content/types';
@@ -76,6 +78,18 @@ export function overhangs(pieces: readonly BuildPiece[], joints: readonly Joint[
     const b = S[i];
     return S.some((o, j) => j !== i && o.z < b.z + b.h && b.z < o.z + o.h && (((o.y === b.y + b.d || o.y + o.d === b.y) && o.x < b.x + b.w && b.x < o.x + o.w) || ((o.x === b.x + b.w || o.x + o.w === b.x) && o.y < b.y + b.d && b.y < o.y + o.d)));
   };
+  /** Fixée au mur (`mount` de props.json) : sa face contre la face d'une maçonnerie, à sa hauteur (à GAP cm près). */
+  const mounted = (i: number) => {
+    if (propOf(pieces[i])?.mount !== 'wall') return false;
+    const b = S[i];
+    const near = (a: number, c: number) => Math.abs(a - c) <= GAP;
+    return S.some((o, j) => {
+      if (j === i || !masonry(pieces[j]) || !(o.z < b.z + b.h && b.z < o.z + o.h)) return false;
+      const alongX = o.x < b.x + b.w && b.x < o.x + o.w;
+      const alongY = o.y < b.y + b.d && b.y < o.y + o.d;
+      return (alongX && (near(o.y + o.d, b.y) || near(o.y, b.y + b.d))) || (alongY && (near(o.x + o.w, b.x) || near(o.x, b.x + b.w)));
+    });
+  };
   const chainOf = (i: number) => {
     const chain = [i];
     for (let k = 0; k < chain.length; k++) for (const j of joints) if (j.type === 'scarf') for (const [a, c] of [[j.a, j.b], [j.b, j.a]]) if (a === chain[k] && !chain.includes(c)) chain.push(c);
@@ -84,7 +98,7 @@ export function overhangs(pieces: readonly BuildPiece[], joints: readonly Joint[
   const out: string[] = [];
   pieces.forEach((p, i) => {
     const b = S[i];
-    if (b.z === 0) return;
+    if (b.z === 0 || mounted(i)) return;
     const sup = supportsOf(i);
     if (!sup.length) {
       if (!hangs(i)) out.push(`${at(i)} : en l'air, rien dessous`);
@@ -112,7 +126,8 @@ export function overhangs(pieces: readonly BuildPiece[], joints: readonly Joint[
     const h = holes(lo, hi, sup.map((j) => proj(j))).filter(([a, c]) => c - a > GAP && !(ledge && c - a <= ledge && (a === lo || c === hi)));
     if (h.length) out.push(`${at(i)} : au-dessus du vide en ${h.map(([a, c]) => `${a}–${c}`).join(', ')} (${ew ? 'x' : 'y'})`);
     // une charge sur une pièce qui enjambe et repose sur de la maçonnerie : un appui sous elle, au droit de la charge
-    for (const j of sup.filter((k) => spans(pieces[k]) && supportsOf(k).length > 0 && supportsOf(k).every((m) => masonry(pieces[m])))) {
+    // (une pièce de pierre qui enjambe, l'arc de la porte, le linteau de pierre d'une baie, porte ce qu'on pose dessus : c'est son office)
+    for (const j of sup.filter((k) => spans(pieces[k]) && !masonry(pieces[k]) && supportsOf(k).length > 0 && supportsOf(k).every((m) => masonry(pieces[m])))) {
       const sEw = S[j].w >= S[j].d;
       const [l3, h3] = sEw ? [Math.max(b.x, S[j].x), Math.min(b.x + b.w, S[j].x + S[j].w)] : [Math.max(b.y, S[j].y), Math.min(b.y + b.d, S[j].y + S[j].d)];
       const hv = holes(l3, h3, supportsOf(j).map((k) => proj(k, sEw))).filter(([a, c]) => c - a > GAP);

@@ -17,5 +17,6 @@
   "closer": {"label": "moellon recoupe", "image": "long-rubble-stone-ground", "min": 3},
   "chips": {"label": "eclats", "image": "stone-chips"},
   "piece": {"grid": 10, "min": 40, "height": 50},
-  "heights": {"ashlar": 30, "string": 20, "flagstone": 8}
+  "heights": {"coursed": 30, "string": 20, "flagstone": 8},
+  "mins": {"coursed": 30, "string": 20}
 }

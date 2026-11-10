@@ -1117,3 +1117,11 @@ Questions :
 35. **Ce que le moteur impose** (12.17) : le plancher à 2,83 m sur une retraite (sans corbeaux), les jours de 1,65 et 1,35 m, le
     cordon en pan, la porte de la salle sous le palier, la charpente dans le pan, la lucarne plus tard : d'accord ?
     *Recommandation : oui* ; les corbeaux et la lucarne restent au catalogue, pour plus tard.
+
+### 12.19 Les réponses de Grégoire (10 novembre) : les dessins neufs validés
+
+- **33 : oui**, les dessins neufs de l'intégration. **34 : oui**, l'arc et le pignon vus de chant, la porte en arc et la console de
+  hotte vont dans `EXCEPTIONS` (des formes, pas des tailles). **35 : oui**, les écarts au cadrage de 12.17.
+- **Aucun porte-à-faux toléré** : chaque pièce a un vrai appui. Le bord de la trémie a ses chevêtres ; ce qui porte les solives
+  au-dessus de l'arc est vérifié ; les tentures et les consoles du manteau sont **fixées au mur** (une règle en données pour tout ce
+  qui s'accroche). L'ordre du montage rend chaque pièce atteignable : zéro pièce injoignable, zéro porte-à-faux.

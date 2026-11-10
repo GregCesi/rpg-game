@@ -13,7 +13,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildPlan, BuildRef, JointType, WoodAge, WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { woodDims } from './woodPiece';
-import { WALL_PIECE } from './walls';
+import { WALL_PIECE, wallMin } from './walls';
 import { lookDef, lookOf, turnedWood, upOf } from './woodShape';
 
 /** Une pièce posée en mode construction, telle que GameState la garde : son identifiant propre, et ce que dit `BuildPlaced`. */
@@ -183,7 +183,7 @@ export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: 
   const at = (t: number) => {
     const f = { x: onGrid(cx - size.w / 2), y: onGrid(cy + t - size.d / 2), w: size.w, d: size.d };
     // l'aimant prend tous les bords, une porte aussi (le remplissage contre l'huisserie et la porte de la maison)
-    return grid ? f : magnet(all, f, t, size.h);
+    return grid ? f : magnet(all, f, t, size.h, t > 0 ? (g) => supportAt(pieces, g) === t : undefined);
   };
   // le point visé, vu à la hauteur t, est-il sur un dessus à cette hauteur (on le voit sur ce dessus) ?
   const seenOn = (t: number) => pieces.some((p) => {
@@ -235,29 +235,53 @@ const STAIR_UP: readonly [number, number][] = [
  * le bord le plus proche où elle tient (le jambage d'une porte contre son poteau, pas sur lui), en x puis en y ; à défaut, comme sans
  * heurt.
  */
-function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F, z = 0, h = 0): F {
+function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F, z = 0, h = 0, keep?: (f: F) => boolean): F {
   const reach = BUILD.grid / 2;
   // ce qui heurte : la section réelle ; les bords qui aimantent : la boîte et, pour un poteau, sa section aussi
   const boxes = pieces.map(solidOf);
-  const edges = pieces.flatMap((p) => {
+  // seulement ce qui est à la hauteur de la pièce (son dessus au moins à sa base, sa base au plus à son dessus) : une solive posée à
+  // 2,60 m ne colle pas au bord de la table qui est dessous (chantier « maison du coq ») ; sans hauteur, tout
+  // ni le sol sur lequel on la pose (le plancher, le dallage : on ne s'aligne pas sur le joint de deux planches)
+  const level = (p: BuildPlaced) => {
+    const b = boxOf(p);
+    if (h <= 0) return true;
+    if (b.z + b.h === z && 'prop' in p.piece && props[p.piece.prop]?.walk && !props[p.piece.prop]?.wall) return false;
+    if (b.z + b.h === z && 'wood' in p.piece && p.piece.wood.shape === 'plank') return false;
+    return b.z + b.h >= z && b.z <= z + h;
+  };
+  // les bords, chacun avec sa priorité : d'abord ceux des voisines à la même hauteur, puis ceux de ce qui porte (à égalité de distance,
+  // la planche s'aligne sur la rangée voisine plutôt que sur le bout d'une solive dessous ; chantier « maison du coq »)
+  const edges = pieces.filter(level).flatMap((p) => {
     const [b, s] = [boxOf(p), solidOf(p)];
-    return s.w === b.w && s.d === b.d ? [b] : [b, s];
+    const below = h > 0 && b.z + b.h === z ? 1 : 0;
+    return (s.w === b.w && s.d === b.d ? [b] : [b, s]).map((e) => ({ ...e, below }));
   });
   const hits = (b: { x: number; y: number; w: number; d: number }) => h > 0 && boxes.some((o) => overlaps(o, b) && o.z < z + h && z < o.z + o.h);
-  // les décalages possibles, du plus petit au plus grand ; sans bord à portée, aucun
-  const nearest = (deltas: number[]) => {
-    const near = deltas.filter((d) => Math.abs(d) <= reach).sort((a, b) => Math.abs(a) - Math.abs(b));
-    return near.length ? near : [0];
+  // les décalages possibles, du plus petit au plus grand (à égalité, la voisine d'abord) ; sans bord à portée, aucun
+  const nearest = (deltas: [number, number][]) => {
+    const near = deltas.filter(([d]) => Math.abs(d) <= reach).sort((a, b) => Math.abs(a[0]) - Math.abs(b[0]) || a[1] - b[1]);
+    return near.length ? near.map(([d]) => d) : [0];
   };
   // en x : les pièces à moins d'une grille en y ; puis en y : à moins d'une grille en x, une fois décalée en x
   const xs = nearest(
-    edges.filter((o) => o.y < f.y + f.d + BUILD.grid && f.y < o.y + o.d + BUILD.grid).flatMap((o) => [o.x + o.w - f.x, o.x - (f.x + f.w), o.x - f.x, o.x + o.w - (f.x + f.w)]),
+    edges
+      .filter((o) => o.y < f.y + f.d + BUILD.grid && f.y < o.y + o.d + BUILD.grid)
+      .flatMap((o) => [o.x + o.w - f.x, o.x - (f.x + f.w), o.x - f.x, o.x + o.w - (f.x + f.w)].map((d) => [d, o.below] as [number, number])),
   );
   const ys = (g: F) =>
-    nearest(edges.filter((o) => o.x < g.x + g.w + BUILD.grid && g.x < o.x + o.w + BUILD.grid).flatMap((o) => [o.y + o.d - g.y, o.y - (g.y + g.d), o.y - g.y, o.y + o.d - (g.y + g.d)]));
+    nearest(
+      edges
+        .filter((o) => o.x < g.x + g.w + BUILD.grid && g.x < o.x + o.w + BUILD.grid)
+        .flatMap((o) => [o.y + o.d - g.y, o.y - (g.y + g.d), o.y - g.y, o.y + o.d - (g.y + g.d)].map((d) => [d, o.below] as [number, number])),
+    );
   const at = (dx: number, dy: number) => ({ ...f, x: f.x + dx, y: f.y + dy });
   const ysAt = (dx: number) => ys({ ...f, x: f.x + dx });
-  const first = at(xs[0], ysAt(xs[0])[0]);
+  // l'aimant ne décroche pas la pièce de ce qui la porte (`keep` : la muraillère sur la retraite du mur, pas collée au bord d'à côté)
+  let first = at(xs[0], ysAt(xs[0])[0]);
+  if (keep && !keep(first)) {
+    const held = xs.flatMap((dx) => ysAt(dx).map((dy) => at(dx, dy))).find((c) => keep(c) && !hits(c));
+    if (held) first = held;
+  }
   if (!hits(first)) return first;
   // une pièce trapue (la bande de 10 cm entre un poteau et une huisserie, chantier « maison-2 ») : la place qui tient la moins éloignée,
   // dans un sens ou dans l'autre, de préférence encore portée à la hauteur visée (glisser hors de ce qui la porte la ferait tomber)
@@ -365,7 +389,7 @@ export function blocks(p: BuildPlaced): boolean {
   if ('item' in p.piece) return false;
   if ('wood' in p.piece) return !(p.piece.wood.axis !== 'up' && lookDef(p.piece.wood.size, lookOf(p.piece.wood)).walk);
   const def = props[p.piece.prop];
-  return !!(def.body || def.bodies) && def.layer !== 'floor' && !def.walk;
+  return !!(def.body || def.bodies) && def.layer !== 'floor' && (!def.walk || !!def.wall);
 }
 
 /** La tranche de hauteur où une pièce bloque (cm) : de sa base à son dessus. */
@@ -560,7 +584,8 @@ export function planProblems(plan: BuildPlan): string[] {
     if (p.age && !('wood' in p.piece) && !ageable(p.piece)) out.push(`${at} : un âge (${p.age}), mais ce n'est pas un objet de bois (\`aged\`)`);
     if ('wood' in p.piece && p.age) out.push(`${at} : la pièce de bois garde son âge dans \`wood.age\`, pas dans \`age\``);
     if ('prop' in p.piece && p.piece.length !== undefined) {
-      const { grid, min } = WALL_PIECE;
+      const { grid } = WALL_PIECE;
+      const min = wallMin(props[p.piece.prop].wall ?? '');
       if (!props[p.piece.prop].wall) out.push(`${at} : une longueur (${p.piece.length} cm), mais ce n'est pas un morceau de mur (\`wall\`)`);
       else if (p.piece.length % grid || p.piece.length < min) out.push(`${at} : un morceau de mur de ${p.piece.length} cm, hors de la grille (multiple de ${grid}, au moins ${min})`);
     }
