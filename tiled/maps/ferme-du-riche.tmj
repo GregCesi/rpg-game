@@ -4147,9 +4147,9 @@
           "name": "maison-coq",
           "type": "Plan",
           "x": 2624,
-          "y": 3640,
+          "y": 3639,
           "width": 328,
-          "height": 150,
+          "height": 151,
           "properties": [
             {
               "name": "plan",

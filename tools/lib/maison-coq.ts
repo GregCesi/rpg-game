@@ -231,7 +231,8 @@ export function coqSteps(): Step[] {
   for (const x of [0, 1580]) put(`pignon découvert ${x}`, P('ashlar-gable'), x, 0, 60, 680, 530, 1);
   // les pans avant les souches (un pan prend pour base l'appui de sa rive basse : la sablière, pas la souche qui le traverse)
   put('pan sud', P('lave-roof'), 60, 340, 1520, 370, 550);
-  put('pan nord', P('lave-roof-pierced'), 60, -40, 1520, 370, 550, 2);
+  // à -45 : l'aimant des pans de toit (celui de toujours) le cale là ; le trou de la souche (de 30 à 130 cm de sa rive) reste au droit du conduit
+  put('pan nord', P('lave-roof-pierced'), 60, -45, 1520, 370, 550, 2);
   // le faîtage sur le faîte des pans, avant les souches (le couronnement de celle de l'ouest déborde sur son emprise)
   put('faîtage', P('lave-ridge'), 60, 300, 1520, 60, 920);
   // la souche de la salle et de la chambre, dans le trou du pan nord (centré à 10,40 m du pignon ouest : le conduit dévie dans le mur)
@@ -310,7 +311,8 @@ export function upperInside(): Step[] {
   }
   put('porte de la fille', 'inner-door', 1300, 210, 5, 90, 283, 1);
   put('lisse chaulée', 'lime-rail', 1300, 55, 25, 560, 463, 1);
-  for (const y of [55, 320, 460]) put(`remplissage haut ${y}`, 'lime-panel-low', 1300, y, 15, 140, 478, 1);
+  // au droit des remplissages du bas (55, 315), le dernier jointif (455 : la visée l'aimante au bout du précédent), sous la lisse (55 à 615)
+  for (const y of [55, 315, 455]) put(`remplissage haut ${y}`, 'lime-panel-low', 1300, y, 15, 140, 478, 1);
   put('garde-corps', 'stair-railing', 660, 140, 10, 280, 283, 1);
   put('garde-corps court', 'stair-railing-short', 670, 420, 100, 10, 283);
   put("lit de l'aîné", 'bed', 80, 40, 150, 200, 283);

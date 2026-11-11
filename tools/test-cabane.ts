@@ -275,9 +275,9 @@ await playtest('cabane', async ({ page, errors, load }) => {
   await send({ kind: 'pick', piece: { prop: 'plank-gable' } });
   const gableS = await put('pignon sud', 60, 400, 260, 6, WALL);
   assert.deepEqual([gableN.view, gableS.view], [2, 0]);
-  // visée à 1,80 m du bord ouest (sur la grille ; le milieu exact, 1,70 m, n'y est pas), elle s'aimante à 1,85 m : au bord de la dalle
-  // ouest du seuil, loin dessous (l'aimant des bords ne regarde pas la hauteur) ; 5 cm, un pixel, sous les pans
-  await putLog('faîtière', 'ns', 440, 185, 0, WALL + 60);
+  // visée à 1,80 m du bord ouest (sur la grille ; le milieu exact, 1,70 m, n'y est pas), elle y reste : l'aimant ne regarde que les
+  // pièces à sa hauteur (chantier « maison du coq » ; avant, il la tirait à 1,85 m, au bord de la dalle ouest du seuil, loin dessous)
+  await putLog('faîtière', 'ns', 440, 180, 0, WALL + 60);
   await frame('les pignons en planches et la faîtière');
 
   // 4. les deux pans de toit (côté bas à l'ouest : r1 ; à l'est : r3), posés sur le rondin de rive

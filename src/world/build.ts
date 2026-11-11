@@ -183,7 +183,19 @@ export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: 
   const at = (t: number) => {
     const f = { x: onGrid(cx - size.w / 2), y: onGrid(cy + t - size.d / 2), w: size.w, d: size.d };
     // l'aimant prend tous les bords, une porte aussi (le remplissage contre l'huisserie et la porte de la maison)
-    return grid ? f : magnet(all, f, t, size.h, t > 0 ? (g) => supportAt(pieces, g) === t : undefined);
+    // l'aimant ne fait pas tomber de ce qui la porte la pièce qui y est déjà, de plus que sa hauteur (la muraillère sur la retraite du
+    // mur, à 2,40 m) ; d'une dalle de 12 cm, elle descend au sol contre le poteau (l'étal) ; il ne cherche pas d'appui à une pièce qui
+    // n'en a pas à cette hauteur (la planche de bardage visée devant la sablière)
+    const held = t > size.h && supportAt(pieces, f) === t;
+    if (grid) return f;
+    // d'abord les seules pièces à sa hauteur ; si elle ne tient pas ainsi à cette hauteur, tous les bords, comme avant (la traverse
+    // amenée sur le solin, le pan de toit, visé au dessus du pignon, aligné sur les sablières)
+    const keep = held ? (g: typeof f) => supportAt(pieces, g) >= t - size.h : undefined;
+    // un pan de toit est visé au-dessus de son pignon, pas à sa hauteur (sa base vient de sa rive basse, systems/build.ts) : l'aimant
+    // de toujours
+    if (ref && 'prop' in ref && props[ref.prop]?.pitch) return magnet(all, f, t, size.h, keep, false);
+    const levelled = magnet(all, f, t, size.h, keep, true, ref && kindOf(ref));
+    return supportAt(pieces, levelled) === t ? levelled : magnet(all, f, t, size.h, keep, false);
   };
   // le point visé, vu à la hauteur t, est-il sur un dessus à cette hauteur (on le voit sur ce dessus) ?
   const seenOn = (t: number) => pieces.some((p) => {
@@ -235,25 +247,45 @@ const STAIR_UP: readonly [number, number][] = [
  * le bord le plus proche où elle tient (le jambage d'une porte contre son poteau, pas sur lui), en x puis en y ; à défaut, comme sans
  * heurt.
  */
-function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F, z = 0, h = 0, keep?: (f: F) => boolean): F {
+/** La sorte d'une pièce, pour l'aimant : l'objet, ou le bois par sa grosseur et sa forme (deux planches du gros sont pareilles). */
+function kindOf(ref: BuildRef): string {
+  return 'prop' in ref ? ref.prop : 'wood' in ref ? `wood:${ref.wood.size}:${ref.wood.shape ?? ''}` : `item:${ref.item}`;
+}
+
+function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F, z = 0, h = 0, keep?: (f: F) => boolean, levelled = true, kind?: string): F {
   const reach = BUILD.grid / 2;
   // ce qui heurte : la section réelle ; les bords qui aimantent : la boîte et, pour un poteau, sa section aussi
   const boxes = pieces.map(solidOf);
   // seulement ce qui est à la hauteur de la pièce (son dessus au moins à sa base, sa base au plus à son dessus) : une solive posée à
-  // 2,60 m ne colle pas au bord de la table qui est dessous (chantier « maison du coq ») ; sans hauteur, tout
+  // 2,60 m ne colle pas au bord de la table qui est dessous (chantier « maison du coq ») ; un poteau dont la tête est au plus
+  // `BUILD.under` sous elle compte encore (une sablière posée sur une autre s'aligne sur le poteau dessous : la grange) ; sans hauteur, tout
   // ni le sol sur lequel on la pose (le plancher, le dallage : on ne s'aligne pas sur le joint de deux planches)
+  // les planchers (un dessus qui se marche, la planche couchée) : ce qui est dessous est caché à ce qu'on pose dessus
+  const floors = pieces.filter((p) => ('prop' in p.piece && props[p.piece.prop]?.walk && !props[p.piece.prop]?.wall) || ('wood' in p.piece && p.piece.wood.shape === 'plank')).map(boxOf);
   const level = (p: BuildPlaced) => {
     const b = boxOf(p);
-    if (h <= 0) return true;
+    if (h <= 0 || !levelled) return true;
     if (b.z + b.h === z && 'prop' in p.piece && props[p.piece.prop]?.walk && !props[p.piece.prop]?.wall) return false;
     if (b.z + b.h === z && 'wood' in p.piece && p.piece.wood.shape === 'plank') return false;
-    return b.z + b.h >= z && b.z <= z + h;
+    // un poteau dressé (une pièce de bois debout) dont la tête est à peine sous elle compte encore
+    const post = 'wood' in p.piece && p.piece.wood.axis === 'up' && b.z + b.h >= z - BUILD.under;
+    // une pièce plus basse juste dessous, dans le même sens (la poutre nord-sud sous l'entrait nord-sud, le mur sous le pignon : on
+    // aligne ce qu'on monte sur ce qu'il surmonte) ; sous une pièce de bois, seulement du bois (jamais la table sous la solive, ni la
+    // solive sous les planches qui la croisent) ; jamais ce qu'un plancher cache (le meuble de l'étage et la solive sous le plancher)
+    const under =
+      !!kind &&
+      (!kind.startsWith('wood:') || 'wood' in p.piece) &&
+      b.w !== b.d &&
+      (b.w > b.d) === (f.w > f.d) &&
+      overlaps(b, f) &&
+      !floors.some((o) => o.z + o.h <= z && o.z + o.h >= b.z + b.h && overlaps(o, f));
+    return (b.z + b.h >= z || post || under) && b.z <= z + h;
   };
-  // les bords, chacun avec sa priorité : d'abord ceux des voisines à la même hauteur, puis ceux de ce qui porte (à égalité de distance,
-  // la planche s'aligne sur la rangée voisine plutôt que sur le bout d'une solive dessous ; chantier « maison du coq »)
+  // les bords, chacun avec sa priorité : à égalité de distance, d'abord ceux d'une pareille voisine à sa hauteur (la planche s'aligne sur
+  // la rangée voisine plutôt que sur le bout d'une solive dessous ; chantier « maison du coq »), puis les autres dans l'ordre de pose
   const edges = pieces.filter(level).flatMap((p) => {
     const [b, s] = [boxOf(p), solidOf(p)];
-    const below = h > 0 && b.z + b.h === z ? 1 : 0;
+    const below = kind && b.z + b.h > z && kindOf(p.piece) === kind ? 0 : 1;
     return (s.w === b.w && s.d === b.d ? [b] : [b, s]).map((e) => ({ ...e, below }));
   });
   const hits = (b: { x: number; y: number; w: number; d: number }) => h > 0 && boxes.some((o) => overlaps(o, b) && o.z < z + h && z < o.z + o.h);
