@@ -29,7 +29,7 @@
           "ew": {"h": 13, "start": 5, "end": 5, "body": {"h": 9, "bottom": 2}}, "ns": {"w": 12, "extra": 2, "back": 0, "start": 5, "end": 8, "bottom": 2}},
         "plank": {"name": "planche", "gender": "f", "icon": "item-wood-big-plank", "held": "held-wood-big-plank",
           "section": {"shape": "rect", "bark": "none", "heart": "none", "rests": "face", "faces": "split"},
-          "ew": {"h": 7, "start": 2, "end": 3, "body": {"h": 5, "bottom": 1}}, "ns": {"w": 7, "extra": 2, "back": 0, "start": 3, "end": 4, "bottom": 2}}
+          "ew": {"h": 7, "start": 2, "end": 3, "body": {"h": 5, "bottom": 1}}, "ns": {"w": 7, "extra": 2, "back": 0, "start": 3, "end": 4, "bottom": 2}, "walk": true}
       }
     },
     "pole": {

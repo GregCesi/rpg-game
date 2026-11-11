@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 330,
+  "nextobjectid": 332,
   "properties": [
     {
       "name": "name",
@@ -3982,18 +3982,6 @@
           "gid": 1003
         },
         {
-          "id": 318,
-          "rotation": 0,
-          "visible": true,
-          "name": "",
-          "type": "normal-tree",
-          "x": 2835,
-          "y": 3853,
-          "width": 48,
-          "height": 168,
-          "gid": 1057
-        },
-        {
           "id": 319,
           "rotation": 0,
           "visible": true,
@@ -4133,6 +4121,44 @@
       "x": 0,
       "y": 0,
       "objects": [
+        {
+          "id": 330,
+          "rotation": 0,
+          "visible": true,
+          "name": "Maison du coq",
+          "type": "Parcel",
+          "x": 2560,
+          "y": 3392,
+          "width": 704,
+          "height": 608,
+          "properties": [
+            {
+              "name": "use",
+              "type": "string",
+              "propertytype": "ParcelUse",
+              "value": "rich-house"
+            }
+          ]
+        },
+        {
+          "id": 331,
+          "rotation": 0,
+          "visible": true,
+          "name": "maison-coq",
+          "type": "Plan",
+          "x": 2624,
+          "y": 3639,
+          "width": 328,
+          "height": 151,
+          "properties": [
+            {
+              "name": "plan",
+              "type": "string",
+              "propertytype": "PlanName",
+              "value": "maison-coq"
+            }
+          ]
+        },
         {
           "id": 328,
           "rotation": 0,

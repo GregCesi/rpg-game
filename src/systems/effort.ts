@@ -1,5 +1,6 @@
 // L'effort de Xéros : ce que coûtent la course et le fardeau, et ce qu'on dit quand l'endurance manque. Sans lire le clavier : la
 // scène dit quand. Les prix sont dans stamina.json ; le composant `Stamina` (entities/) tient les trois niveaux.
+import { stamina } from '../content';
 import type { Player } from '../entities/Player';
 import type { Effort } from '../entities/Stamina';
 
@@ -24,10 +25,12 @@ export class EffortSystem {
   ) {}
 
   /** À appeler après `Player.update`, à chaque image. `active` = false pendant un geste, un dialogue ou un changement de carte. */
-  update(player: Player, delta: number, active: boolean): void {
+  update(player: Player, delta: number, active: boolean, risen = 0): void {
     const s = player.stamina;
     s.recover(delta);
     if (!active) return s.flush();
+    // monter chargé (chantier « maison du coq ») : au kilo porté et au mètre de montée ; à vide, rien
+    if (risen > 0 && player.strength.load > 0) s.drain(0, 1000, stamina.breath.climbPerKgM * player.strength.load * (risen / 100));
     if (player.running) s.drain(s.costs.runPerSec, delta, s.runBreath);
     // porter se paie en marchant ; la bille qu'on pousse a son prix (systems/roll.ts), il ne porte alors rien
     const walking = player.dir.lengthSq() > 0 && !player.pushing;

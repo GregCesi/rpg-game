@@ -35,6 +35,8 @@ export class Player {
    * créatures (systems/creatures.ts : discret, il approche plus près). Vrai tant que la touche est tenue, même à l'arrêt.
    */
   sneaking = false;
+  /** Il monte une marche (posé par la scène d'après systems/footing.ts) : il va moins vite. */
+  climbing = false;
   /** Il pousse une bille qui roule (posé par systems/roll.ts à chaque image) : posture `push`. */
   pushing = false;
   /** Renversé par une charge (systems/knockdown.ts) : il tombe, glisse et se relève ; ni le clavier ni la marche ne le mènent. */
@@ -93,7 +95,8 @@ export class Player {
     // au-delà de ce qu'il porte sans peine, il ne court pas et marche de moins en moins vite (Strength) ; la marche
     // portée garde sa cadence de dessin, accélérée ou ralentie d'autant (sans dépasser une foulée vive).
     // Fatigué (sous le seuil de stamina.json), il marche moins vite et ne court plus.
-    const factor = this.strength.walkFactor() * this.stamina.walkFactor();
+    // sur une marche qui monte, une part de la marche (PLAYER.climb), comme chargé : jamais une vitesse à part
+    const factor = this.strength.walkFactor() * this.stamina.walkFactor() * (this.climbing ? PLAYER.climb : 1);
     // discret : la même part de la marche d'alors (chargé, fatigué), la cadence du dessin ralentie d'autant
     const part = sneaking ? SPEEDS.sneak : 1;
     if (this.hold.loaded) this.actor.move(dir, SPEEDS.walk * factor * part, Math.max(PLAYER.carryCadence, (SPEEDS.walk * factor) / PLAYER.carryStride));

@@ -19,6 +19,8 @@ import { props } from '../content';
 import type { Facing } from '../content/types';
 import { boxOf, OUTWARD, solidOf, swung, type Box3, type BuildPiece } from './build';
 import { CM_PER_PX } from '../content/gabarit';
+import { mobility } from '../content';
+import { deckField, decksAt, openDecks, storeyHeights, walkable } from './decks';
 
 /** Un rectangle au sol, en cm (coin nord-ouest, largeur est-ouest, profondeur nord-sud). */
 export interface Rect {
@@ -72,6 +74,25 @@ export interface Building {
   south: Rect[];
   southPieces: BuildPiece[];
   windows: Window[];
+  /**
+   * Ses niveaux, s'il en a plus d'un (chantier « maison du coq », CONCEPTION « L'étage ») : le rez-de-chaussée d'abord (les mêmes
+   * `shell`, `south`, `southPieces`, `windows` que ci-dessus), puis chaque étage. Un seul niveau (toutes les maisons d'avant) : absent.
+   */
+  storeys?: Storey[];
+}
+
+/** Un niveau d'un bâtiment à étages : son plancher (cm), ses pièces closes, ce qu'on en voit, la coupe de son mur sud, ses fenêtres. */
+export interface Storey {
+  z: number;
+  rooms: Rect[];
+  /** L'emprise de ses pièces. */
+  room: Rect;
+  shell: BuildPiece[];
+  south: Rect[];
+  southPieces: BuildPiece[];
+  windows: Window[];
+  /** Les trous de son plancher (la trémie), où l'on voit le niveau d'en dessous : rien pour le rez-de-chaussée. */
+  holes: Rect[];
 }
 
 const FACING: Record<Side, Facing> = { south: 'up', north: 'down', east: 'left', west: 'right' };
@@ -365,8 +386,9 @@ function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly
       }
       continue;
     }
-    // ce qui passe au-dessus de la pièce (faîtière, entraits, poinçons) : seulement ce qui est dans la bande d'un mur
-    if (cross(room, b) && b.z >= INTERIOR.headroom && !wallSide(room, b)) continue;
+    // ce qui passe au-dessus de la pièce (faîtière, entraits, poinçons) : seulement ce qui est dans la bande d'un mur ; une marche
+    // d'escalier (`stair` de props.json) n'est jamais au-dessus de la pièce, même haute : on y monte
+    if (cross(room, b) && b.z >= INTERIOR.headroom && !wallSide(room, b) && !('prop' in p.piece && props[p.piece.prop].stair)) continue;
     shell.push(p);
   }
   // la coupe s'arrête aux passages du mur sud
@@ -464,9 +486,119 @@ export function buildingsOf(pieces: readonly BuildPiece[]): Building[] {
     const y0 = Math.min(...gr.rooms.map((r) => r.y));
     const room = { x: x0, y: y0, w: Math.max(...gr.rooms.map((r) => r.x + r.w)) - x0, d: Math.max(...gr.rooms.map((r) => r.y + r.d)) - y0 };
     const entrances = gr.entrances.map((e) => entranceOf(room, e.gap, e.ox, e.oy, e.open, e.door));
-    out.push({ key: keyOf(room), room, entrances, rooms: gr.rooms, ...contents(room, pieces, entrances, gr.rooms) });
+    const levels = storeysAround(pieces, room);
+    if (levels.length < 2) {
+      out.push({ key: keyOf(room), room, entrances, rooms: gr.rooms, ...contents(room, pieces, entrances, gr.rooms) });
+      continue;
+    }
+    const storeys = levels.map((_, k) => storeyOf(pieces, levels, k, room, gr.rooms, entrances)).filter((st): st is Storey => !!st);
+    const ground = storeys[0];
+    // l'emprise de l'intérieur : toutes les pièces de tous les niveaux
+    const all = storeys.flatMap((st) => st.rooms);
+    const wx = Math.min(...all.map((r) => r.x));
+    const wy = Math.min(...all.map((r) => r.y));
+    const whole = { x: wx, y: wy, w: Math.max(...all.map((r) => r.x + r.w)) - wx, d: Math.max(...all.map((r) => r.y + r.d)) - wy };
+    out.push({ key: keyOf(room), room: whole, entrances, rooms: ground.rooms, shell: ground.shell, south: ground.south, southPieces: ground.southPieces, windows: ground.windows, storeys });
   }
   return out;
+}
+
+// --- Les niveaux (chantier « maison du coq », CONCEPTION « L'étage ») ---
+
+/** Les niveaux d'un bâtiment : les hauteurs de ses dessus qui se marchent assez grands pour être un plancher (world/decks.ts). */
+function storeysAround(pieces: readonly BuildPiece[], room: Rect): number[] {
+  const r = INTERIOR.reach;
+  const around = { x: room.x - r, y: room.y - r, w: room.w + 2 * r, d: room.d + 2 * r };
+  const decks = openDecks(pieces).filter((k) => cross(around, k));
+  return storeyHeights(decks, INTERIOR.storey, mobility.step);
+}
+
+/**
+ * Ce qui compte pour le niveau `k` (de plancher `levels[k]`, sous le plancher du niveau d'au-dessus) : ce qui monte au moins jusqu'à
+ * son plancher (au rez-de-chaussée : tout) et commence sous le plancher d'au-dessus, ramené à la hauteur de ce plancher. Les règles
+ * d'un bâtiment d'un seul niveau valent alors telles quelles.
+ */
+function levelPieces(pieces: readonly BuildPiece[], levels: readonly number[], k: number): BuildPiece[] {
+  const z = levels[k];
+  const ceiling = levels[k + 1] ?? Infinity;
+  return pieces
+    .filter((p) => {
+      const b = boxOf(p);
+      // au-dessus du rez-de-chaussée, aussi les dessus d'où l'on y monte d'un pas (le seuil d'une porte de refend, les hautes marches) :
+      // sous son plancher, ils ne sont à aucun autre niveau
+      const step = k > 0 && walkable(p) && b.z + b.h < z && b.z + b.h >= z - mobility.step;
+      return (k === 0 || b.z + b.h >= z || step) && b.z < ceiling;
+    })
+    .map((p) => (z ? { ...p, z: p.z - z } : p));
+}
+
+/** Le niveau `k` d'un bâtiment : ses pièces closes (au rez-de-chaussée, celles des portes ; au-dessus, celles de ses planchers). */
+function storeyOf(pieces: readonly BuildPiece[], levels: readonly number[], k: number, room: Rect, groundRooms: readonly Rect[], entrances: readonly Entrance[]): Storey | undefined {
+  const z = levels[k];
+  const sel = levelPieces(pieces, levels, k);
+  const byId = new Map(pieces.map((p) => [p.id, p]));
+  const back = (list: readonly BuildPiece[]) => list.map((p) => byId.get(p.id) ?? p);
+  let rooms: Rect[];
+  let holes: Rect[] = [];
+  if (k === 0) rooms = [...groundRooms];
+  else {
+    const g = gridOf(sel);
+    if (!g) return undefined;
+    const r = INTERIOR.reach;
+    const around = { x: room.x - r, y: room.y - r, w: room.w + 2 * r, d: room.d + 2 * r };
+    // chaque plancher de ce niveau dans l'emprise du bâtiment : la pièce close où il est
+    const floors = deckField(pieces).decks.filter((d) => d.top === z && cross(around, d));
+    const found = new Map<string, Rect>();
+    for (const f of floors) {
+      const cx = f.x + f.w / 2;
+      const cy = f.y + f.d / 2;
+      if ([...found.values()].some((q) => cx >= q.x && cx < q.x + q.w && cy >= q.y && cy < q.y + q.d)) continue;
+      const q = g.flood(g.cellAt(cx, cy));
+      if (q) found.set(keyOf(q), q);
+    }
+    rooms = [...found.values()];
+    if (!rooms.length) return undefined;
+    holes = holesOf(rooms, pieces, z);
+  }
+  const x0 = Math.min(...rooms.map((q) => q.x));
+  const y0 = Math.min(...rooms.map((q) => q.y));
+  const span = { x: x0, y: y0, w: Math.max(...rooms.map((q) => q.x + q.w)) - x0, d: Math.max(...rooms.map((q) => q.y + q.d)) - y0 };
+  const c = contents(span, sel, k === 0 ? entrances : [], rooms);
+  return { z, rooms, room: span, shell: back(c.shell), south: c.south, southPieces: back(c.southPieces), windows: c.windows, holes };
+}
+
+/** Les trous du plancher `z` dans ses pièces (la trémie) : les bandes de INTERIOR.holeCell cm qu'aucun dessus de ce niveau ne couvre. */
+function holesOf(rooms: readonly Rect[], pieces: readonly BuildPiece[], z: number): Rect[] {
+  const f = deckField(pieces);
+  const c = INTERIOR.holeCell;
+  const out: Rect[] = [];
+  for (const q of rooms) {
+    for (let y = q.y; y < q.y + q.d; y += c) {
+      const dy = Math.min(c, q.y + q.d - y);
+      let run: Rect | undefined;
+      for (let x = q.x; x < q.x + q.w; x += c) {
+        const dx = Math.min(c, q.x + q.w - x);
+        const open = !decksAt(f, x + dx / 2, y + dy / 2).some((d) => Math.abs(d.top - z) < 1);
+        if (open) {
+          if (run) run.w += dx;
+          else run = { x, y, w: dx, d: dy };
+        } else if (run) {
+          out.push(run);
+          run = undefined;
+        }
+      }
+      if (run) out.push(run);
+    }
+  }
+  return out;
+}
+
+/** Le niveau d'un bâtiment où sont des pieds à la hauteur `z` (cm) : 0 sans étage. */
+export function storeyIndex(b: { storeys?: readonly { z: number }[] }, z: number): number {
+  const levels = b.storeys?.map((st) => st.z) ?? [0];
+  let k = 0;
+  for (let i = 1; i < levels.length; i++) if (z >= levels[i] - (levels[i] - levels[i - 1]) / 2) k = i;
+  return k;
 }
 
 // --- L'identifiant d'un intérieur : la carte du dehors et la clé de sa pièce ---

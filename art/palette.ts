@@ -207,6 +207,19 @@ export const terracotta = {
 };
 
 /**
+ * La lave (chantier « maison du coq », réponse 26 de Grégoire : la seule lauze du jeu, art/world/coq-lave.ts) : le calcaire des murs
+ * en dalles naturelles posées à sec, plus gris et plus sombre que le calcaire taillé (! + = ; ~), lavé par la pluie et la mousse ;
+ * la lumière glisse vers le jaune, l'ombre vers le brun-violet. Du plus clair au plus sombre. Lettres grecques : libres dans toute la
+ * palette du monde (les signes de l'essai, `( ) ? "`, sont pris par le fer et la terre cuite).
+ */
+export const lave = {
+  'ε': '#a8a194', // lave au soleil
+  'ζ': '#8a8379', // lave
+  'η': '#6a625b', // lave à l'ombre, chant d'une lave
+  'κ': '#463d3e', // creux sous une lave, joint du faîtage, contour côté lumière
+};
+
+/**
  * Le forgeron du village (chantier « forgeron », validé par Grégoire le 5 novembre 2026 ; art/characters/smith.ts,
  * art/portraits/smith.ts). Du plus clair au plus sombre dans chaque rampe ; la lumière glisse vers le jaune, l'ombre vers le
  * brun-violet. Le fer de ses outils, le manche du marteau, le fer rouge et l'étincelle ne sont pas ici : ce sont le fer (`iron`), le

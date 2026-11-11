@@ -30,7 +30,8 @@ const DAMAGED_KEY = 'xeros-partie-abimee';
 export const SAVE_VERSION = 32;
 
 /** Où est Xéros : la carte, ses pieds (x, y), sa direction. */
-const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema });
+/** Où reprendre : la carte, les pieds (px), le sens ; `z`, sa hauteur (cm) dans une maison à étages (absent : le sol le plus bas). */
+const WhereSchema = z.strictObject({ map: z.string().min(1), x: z.number(), y: z.number(), facing: FacingSchema, z: z.number().optional() });
 
 const SaveSchema = z.strictObject({
   version: z.literal(SAVE_VERSION),

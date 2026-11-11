@@ -1,5 +1,9 @@
 # Grand pan de lauzes (`lauze-roof-large`, `lauze-roof-large-pierced`)
 
+**Le 10 novembre 2026 (chantier « maison du coq », réponse 26 de Grégoire)** : ses lauzes sont devenues **notre lave**, la seule lauze du
+jeu (plus sombre, moussue, des dalles plus étroites vers le faîte, 3 px à l'égout ; `art/world/coq-lave.ts`, sa fiche : [le toit de
+laves](lave-roof.md)). Ses tailles n'ont pas changé.
+
 Décidé le 4 novembre 2026 (chantier « forge », `CADRAGE-forge.md` ; décisions de Grégoire : l'atelier de la forge, version A, la
 charpente de la grange ouverte au sud, en bois vieux, sur la première parcelle au nord de la rue, à l'entrée ouest du village ; ses
 pièces validées ; le toit de la forge en [bardeaux](shingle-roof-large.md)) : **les trois couvertures restent des pièces du jeu pour

@@ -105,7 +105,7 @@ function problems(spec: RunSpec, g: Grid): string[] {
 const KINDS: WallKind[] = ['rough', 'dressed'];
 const AXES = ['ew', 'ns'] as const;
 const TOPS = [5, 3];
-const NAME: Record<WallKind, string> = { rough: 'BRUT', dressed: 'TAILLE' };
+const NAME: Partial<Record<WallKind, string>> = { rough: 'BRUT', dressed: 'TAILLE' };
 let worst = 0;
 let worstAt = '';
 const failures: string[] = [];

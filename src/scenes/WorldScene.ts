@@ -22,6 +22,7 @@ import { AutoSave } from '../systems/autosave';
 import { EffortSystem } from '../systems/effort';
 import { findExit } from '../systems/exits';
 import { ZoneCrossing } from '../systems/zones';
+import { Storeys } from '../systems/storeys';
 import { Footing } from '../systems/footing';
 import { LiftPass } from '../systems/lift';
 import { LaneFade } from '../systems/laneFade';
@@ -87,7 +88,7 @@ import {
   type Hand,
   type Held,
 } from '../state';
-import { blocks, boxOf, overlaps, swung } from '../world/build';
+import { blocks, boxOf, overlaps, sliceHits, sliceOf, swung } from '../world/build';
 import { CM_PER_PX } from '../content/gabarit';
 import { GameMap } from '../world/GameMap';
 import { buildingsOf, interiorId, parseInteriorId } from '../world/interior';
@@ -141,7 +142,8 @@ interface Flight {
 export type WorldStart = {
   mapId: string;
   spawn?: string;
-  at?: { x: number; y: number; facing: Facing };
+  /** Où il arrive (pieds, px) ; `z` : sa hauteur gardée (cm), dans une maison à étages (la page rechargée à l'étage). */
+  at?: { x: number; y: number; facing: Facing; z?: number };
   wake?: boolean;
   /** Il se réveille d'un évanouissement : la mère l'a trouvé et ramené (sa ligne, `faint.dialogue` de health.json). */
   fainted?: boolean;
@@ -236,6 +238,8 @@ export class WorldScene extends Phaser.Scene {
   private lifts!: LiftPass;
   /** Sous la voûte d'un chemin creux, le bord sud s'efface autour de Xéros (systems/laneFade.ts). */
   private laneFade?: LaneFade;
+  /** Dans une maison à étages : le niveau affiché (systems/storeys.ts). */
+  storeys?: Storeys;
   /** ?dieu « escalade » : gardée d'une carte à l'autre, comme la force. */
   private climber = false;
   private effort!: EffortSystem;
@@ -355,7 +359,8 @@ export class WorldScene extends Phaser.Scene {
     this.player = new Player(this, arrival.x, arrival.y);
     if (sp.facing) this.player.actor.face(sp.facing);
     this.physics.add.collider(this.player.actor, this.map.floor);
-    this.physics.add.collider(this.player.actor, this.map.obstacles);
+    // un corps de pièce posée ne bloque qu'à sa hauteur (sa tranche : le lit de l'étage ne barre pas la salle dessous)
+    this.physics.add.collider(this.player.actor, this.map.obstacles, undefined, (_a, zone) => sliceHits((zone as Phaser.GameObjects.Zone).getData('slice'), this.map.standZ));
 
     // dehors, ceux qui sont dans un bâtiment (`inside`) n'y sont pas : ils sont dans son intérieur calculé
     const npcs = def.npcs.filter((n) => !n.inside).map((n) => new Npc(this, n));
@@ -412,8 +417,10 @@ export class WorldScene extends Phaser.Scene {
     this.player.stamina.infinite = this.infinite;
     this.player.health.infinite = this.healthInfinite;
     this.player.mobility.climber = this.climber;
-    this.footing = new Footing(this, def, this.player, (t) => this.notice(t));
-    this.lifts = new LiftPass(this, def, !this.interior && neighborsOf(maps, def, 1).some((n) => hasRelief(n.map)));
+    this.footing = new Footing(this, def, this.player, (t) => this.notice(t), () => this.map.decks);
+    this.footing.placeAt(this.at?.z);
+    this.storeys = this.interior?.storeys ? new Storeys(this, this.map, this.interior, this.inside, this.at?.z ?? 0) : undefined;
+    this.lifts = new LiftPass(this, def, !this.interior && neighborsOf(maps, def, 1).some((n) => hasRelief(n.map)), !!this.interior);
     this.laneFade = hasRelief(def) ? new LaneFade(this, def) : undefined;
     // éveillé la nuit, Xéros s'use : la veille se paie (stamina.json, `sleep`)
     const night = stamina.sleep;
@@ -511,10 +518,18 @@ export class WorldScene extends Phaser.Scene {
     this.player.cursor = seen && this.lifts.active ? pick(this.map.def, seen.x, seen.y) : seen;
     this.player.update(this.mode === 'play');
     this.footing.update();
-    if (this.lifts.active) this.cameras.main.followOffset.set(0, this.lifts.liftAt(this.player.actor.x, this.player.actor.y));
+    this.player.climbing = this.footing.climbing;
+    this.storeys?.update(this.player);
+    // la hauteur où il se tient au-dessus du terrain : celle des pièces posées (le mode construction), des corps par tranche, de ce qu'on pose
+    this.map.standZ = this.player.mobility.z - heightAt(this.map.def, this.player.actor.x, this.player.actor.y - FEET.point);
+    // sur les dessus d'une maison à étages, son image monte de sa hauteur à lui (systems/lift.ts), pas de celle du sol sous lui
+    if (this.map.decks.empty) this.player.actor.data?.remove('z');
+    else this.player.actor.setData('z', this.player.mobility.z);
+    // la caméra suit l'image de Xéros, soulevée de sa hauteur (le relief, une marche, l'étage)
+    if (this.lifts.active) this.cameras.main.followOffset.set(0, Math.round(this.player.mobility.z / CM_PER_PX));
     this.laneFade?.update(this.player, delta);
     // courir et porter puisent dans l'endurance
-    this.effort.update(this.player, delta, this.mode === 'play');
+    this.effort.update(this.player, delta, this.mode === 'play', this.footing.takeRisen());
     // pousser une bille : après le clavier, il reprend la main sur la vitesse et la posture de Xéros
     this.roll.update(this.player, delta, this.mode === 'play');
     // le toit sous lequel (ou derrière lequel) est Xéros s'efface, dans tous les modes ; en mode construction, rien ne s'efface
@@ -1071,7 +1086,7 @@ export class WorldScene extends Phaser.Scene {
     const here = { ...next, x: next.x + shift.x, y: next.y + shift.y };
     const body = this.player.actor.body as Phaser.Physics.Arcade.Body;
     const feet = { x: body.left * CM_PER_PX, y: body.top * CM_PER_PX, w: body.width * CM_PER_PX, d: body.height * CM_PER_PX };
-    if (blocks(here) && overlaps(boxOf(here), feet)) return this.notice('Xéros est dans le passage.');
+    if (blocks(here) && sliceHits(sliceOf(here), this.map.standZ) && overlaps(boxOf(here), feet)) return this.notice('Xéros est dans le passage.');
     const [piece] = addBuildPieces(game, owner, [{ ...next, id }]);
     this.map.removeBuild(id);
     this.map.placeBuild({ ...piece, x: piece.x + shift.x, y: piece.y + shift.y }, fixed);

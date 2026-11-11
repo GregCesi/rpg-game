@@ -374,6 +374,18 @@ export const EXCEPTIONS: Record<string, { w: number; h: number }> = {
   // taille dessinée ; en commentaire, la taille attendue (de la taille réelle au plancher de lisibilité) et l'écart
   // (dessiné − attendu, hors de cette plage, largeur × hauteur)
   'big-pollard': { w: 54, h: 79 }, // attendu 54 × 86 : 0 × -7 px ; tête stylisée, choix de Grégoire
+  'fireplace-console': { w: 8, h: 9 }, // attendu 8 × 12 : la gorge sous le dessus, une forme que la boîte ne suit pas (Grégoire, 10 novembre 2026)
+};
+
+/**
+ * Les vues de côté qui ne suivent pas la boîte de leurs dimensions, parce que c'est leur forme (Grégoire, chantier « maison du coq »,
+ * 10 novembre 2026) : la clé de l'objet et la raison. Leur vue de face suit le gabarit.
+ */
+export const SIDE_EXCEPTIONS: Record<string, string> = {
+  'oak-arch-door': "vue de chant, le plein cintre n'a pas toute sa hauteur sur toute sa largeur",
+  'oak-arch-door-open': "vue de chant, le plein cintre n'a pas toute sa hauteur sur toute sa largeur",
+  'stone-arch': "l'arc vu de chant : ses claveaux ne remplissent pas la boîte",
+  'ashlar-gable': 'le pignon vu de chant : le triangle ne remplit pas la boîte',
 };
 
 /** Gabarit : la silhouette de l'image d'un objet a la taille que donnent ses dimensions réelles, à TOLERANCE px près. */
@@ -442,6 +454,11 @@ function validateGabarit(c: Content, cat: Catalog): string[] {
       // ouverts, les deux battants laissent le passage libre : pas de collision
       else if (p.swing.passage && p.swing.open && p.swing.hinge === 'double' && (p.body || p.bodies)) errors.push(`${at} : ouverts, les deux battants laissent le passage libre (pas de 'body')`);
     }
+    // un dessus qui se marche (CONCEPTION « L'étage ») : on le franchit par la règle du pas, jamais en s'y heurtant ; une boîte pleine
+    // (un morceau de mur peut se marcher et avoir un corps : son corps ne bloque qu'à sa hauteur, on marche sur son dessus, le seuil d'une
+    // porte de l'étage sur l'assise de cordon du refend)
+    if (p.walk && (p.body || p.bodies) && !p.wall) errors.push(`props.json '${key}' : un dessus qui se marche ('walk') n'a pas de collision ('body'), sauf un morceau de mur`);
+    if (p.walk && (p.roof || p.dims.shape !== 'box')) errors.push(`props.json '${key}' : un dessus qui se marche ('walk') est une boîte ('dims.shape' : box), pas un toit`);
     const drawn = cat.silhouettes.get(p.image);
     if (!drawn) continue; // image non dessinée : signalé ailleurs
     const want = expectedSize(p.dims);
@@ -559,7 +576,7 @@ function objectViews(c: Content, cat: Catalog): ObjectViews[] {
         if (Math.abs(s.w - w) > 1 || Math.abs(s.h - h) > 1) {
           wrong.push({ image: img, message: `vue '${img}' de ${s.w} × ${s.h} px, attendu ${w} × ${h} (${cross ? "l'image tournée d'un quart de tour, dimensions inversées" : "l'image retournée, mêmes dimensions"}, règle D, à 1 px près)` });
         }
-      } else if (e.dims && cross && !EXCEPTIONS[e.key]) {
+      } else if (e.dims && cross && !EXCEPTIONS[e.key] && !SIDE_EXCEPTIONS[e.key]) {
         const want = expectedSize({ ...e.dims, w: e.dims.d, d: e.dims.w });
         const within = (n: number, lo: number, hi: number) => n >= lo - TOLERANCE && n <= hi + TOLERANCE;
         if (!within(s.w, want.w, want.wMax) || !within(s.h, want.h, want.hMax)) {
@@ -1092,6 +1109,8 @@ function validateCreatures(c: Content, cat: Catalog): string[] {
  * (arbre, rocher, buisson) aura le sien (la nature, ou le cueilleur) ; les meubles et les lumières, celui qui les fabrique.
  */
 const TRADE_TODO = new Set([
+  // les étoffes de la maison du coq : achetées à la ville, tissées par un métier qui n'existe pas encore au village
+  'cloth-bolt', 'verdure-tapestry', 'wall-hanging',
   'big-tree', 'big-pollard', 'big-tree-stump', 'normal-tree', 'big-felled-tree', 'big-pollard-felled-tree', 'wood-piece', 'normal-tree-stump',
   'rock', 'bush', 'bush-berries', 'rock-rubble', 'warren-hole', 'cottage', 'chopping-block', 'chopping-block-rope', 'rope-coil', 'faggot',
   'chopping-block-axe', 'fireplace', 'worktable', 'workbench', 'stove', 'bed', 'pallet', 'sack', 'jar', 'sunpatch', 'lantern', 'wall-torch',
@@ -1529,7 +1548,10 @@ export function validateContent(c: Content, cat: Catalog): string[] {
     if (p.take && ((p.harvest && !p.harvest.tool) || p.interact)) err(`props.json '${key}' : 'take' avec '${p.harvest ? 'harvest' : 'interact'}' (E ne peut faire qu'une chose)`);
     addAll(validateRope(key, p, c));
     // un morceau de mur qui se raccorde (le solin) : couché à quatre vues (est-ouest, nord-sud), plus long qu'épais
-    if (p.wall && p.dims.h !== wallsJson.piece.height) err(`props.json '${key}' : un mur a la hauteur d'un morceau de walls.json (${wallsJson.piece.height} cm), pas ${p.dims.h}`);
+    // la hauteur d'un morceau : celle de sa manière (`heights` de walls.json : l'assise de pierre de taille, le cordon, la rangée de
+    // dalles), sinon celle du solin
+    const wallHeight = p.wall ? ((wallsJson as { heights?: Record<string, number> }).heights?.[p.wall] ?? wallsJson.piece.height) : 0;
+    if (p.wall && p.dims.h !== wallHeight) err(`props.json '${key}' : un mur a la hauteur d'un morceau de sa manière (walls.json : ${wallHeight} cm), pas ${p.dims.h}`);
     if (p.wall && (p.views !== 'four' || !p.lying || p.dims.shape !== 'box' || p.dims.w <= p.dims.d)) err(`props.json '${key}' : 'wall' demande un morceau couché à quatre vues ('four', 'lying'), une boîte plus longue qu'épaisse`);
   }
 

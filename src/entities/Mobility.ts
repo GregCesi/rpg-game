@@ -10,6 +10,12 @@ import type { Mobility as MobilityDef } from '../content/types';
 export class Mobility {
   /** ?dieu « escalade » : il monte et descend toute hauteur. */
   climber = false;
+  /**
+   * Sa hauteur (cm) : celle du sol sous ses pieds, suivie pas de physique par pas de physique (systems/footing.ts). Sur le relief, la
+   * hauteur du terrain ; dans une maison à étages, le dessus où il est (le plancher de l'étage, une marche : world/decks.ts), car deux
+   * sols peuvent être au même point (CONCEPTION « L'étage »).
+   */
+  z = 0;
 
   get def(): MobilityDef {
     return this.climber ? { ...base, step: Infinity, drop: Infinity, slope: Infinity } : base;

@@ -13,7 +13,7 @@ import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPlaced, BuildPlan, BuildRef, JointType, WoodAge, WoodPiece } from '../content/types';
 import { viewCount } from '../content/views';
 import { woodDims } from './woodPiece';
-import { WALL_PIECE } from './walls';
+import { WALL_PIECE, wallMin } from './walls';
 import { lookDef, lookOf, turnedWood, upOf } from './woodShape';
 
 /** Une pièce posée en mode construction, telle que GameState la garde : son identifiant propre, et ce que dit `BuildPlaced`. */
@@ -160,7 +160,22 @@ export function supportAt(pieces: readonly BuildPlaced[], foot: { x: number; y: 
  * ajoutés (monter, descendre), d'une grille chacun, jamais sous le sol. `grid` : la pièce reste sur la grille, sans aimant (le poteau,
  * `aimOnGrid`).
  */
-export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: number, step = 0, grid = false): Box3 {
+export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: number, step = 0, grid = false, ref?: BuildRef, view = 0): Box3 {
+  // une marche visée juste après une marche pareille (`stair` de props.json : l'escalier de la maison du coq) : sur elle, un giron plus
+  // loin dans le sens où monte l'escalier, quelle que soit la grille (un giron de 26 cm recouvre de 4 cm une marche de 30)
+  const flight = ref && 'prop' in ref ? props[ref.prop]?.stair : undefined;
+  if (flight && ref && 'prop' in ref) {
+    const [dx, dy] = STAIR_UP[view % 4];
+    const next = all
+      .filter((p) => 'prop' in p.piece && p.piece.prop === ref.prop && (p.view ?? 0) % 4 === view % 4)
+      .map((p) => {
+        const b = boxOf(p);
+        return { x: b.x + dx * flight.tread, y: b.y + dy * flight.tread, z: topOf(b) };
+      })
+      .filter((b) => cx >= b.x && cx < b.x + size.w && cy + b.z >= b.y && cy + b.z < b.y + size.d)
+      .sort((a, b) => b.z - a.z)[0];
+    if (next) return { ...next, z: Math.max(0, next.z + step * BUILD.grid), ...size };
+  }
   // une porte, un volet pendent à leurs gonds : ils ne portent rien (le rondin au-dessus de la fenêtre de la cabane ne vise pas le haut
   // du volet de 60 cm qui le dépasse ; chantier « hauteurs »)
   const pieces = all.filter((p) => !hangs(p));
@@ -168,7 +183,19 @@ export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: 
   const at = (t: number) => {
     const f = { x: onGrid(cx - size.w / 2), y: onGrid(cy + t - size.d / 2), w: size.w, d: size.d };
     // l'aimant prend tous les bords, une porte aussi (le remplissage contre l'huisserie et la porte de la maison)
-    return grid ? f : magnet(all, f, t, size.h);
+    // l'aimant ne fait pas tomber de ce qui la porte la pièce qui y est déjà, de plus que sa hauteur (la muraillère sur la retraite du
+    // mur, à 2,40 m) ; d'une dalle de 12 cm, elle descend au sol contre le poteau (l'étal) ; il ne cherche pas d'appui à une pièce qui
+    // n'en a pas à cette hauteur (la planche de bardage visée devant la sablière)
+    const held = t > size.h && supportAt(pieces, f) === t;
+    if (grid) return f;
+    // d'abord les seules pièces à sa hauteur ; si elle ne tient pas ainsi à cette hauteur, tous les bords, comme avant (la traverse
+    // amenée sur le solin, le pan de toit, visé au dessus du pignon, aligné sur les sablières)
+    const keep = held ? (g: typeof f) => supportAt(pieces, g) >= t - size.h : undefined;
+    // un pan de toit est visé au-dessus de son pignon, pas à sa hauteur (sa base vient de sa rive basse, systems/build.ts) : l'aimant
+    // de toujours
+    if (ref && 'prop' in ref && props[ref.prop]?.pitch) return magnet(all, f, t, size.h, keep, false);
+    const levelled = magnet(all, f, t, size.h, keep, true, ref && kindOf(ref));
+    return supportAt(pieces, levelled) === t ? levelled : magnet(all, f, t, size.h, keep, false);
   };
   // le point visé, vu à la hauteur t, est-il sur un dessus à cette hauteur (on le voit sur ce dessus) ?
   const seenOn = (t: number) => pieces.some((p) => {
@@ -203,6 +230,14 @@ export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: 
   return { ...base, z: Math.max(0, base.z + step * BUILD.grid), ...size };
 }
 
+/** Le sens où monte un escalier, par vue (R0 : vu du sud, il monte vers le nord ; un quart de tour de plus à chaque vue). */
+const STAIR_UP: readonly [number, number][] = [
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0],
+];
+
 /**
  * L'emprise aimantée aux bords de ses voisines : un bord à moins d'une demi-grille (10 cm) d'un bord d'une pièce proche (bout à bout,
  * ou alignés) s'y colle, en x puis en y. Ce qui n'est pas sur la grille (le morceau de solin, 50 cm d'épaisseur) se joint ainsi
@@ -212,29 +247,95 @@ export function aimAt(all: readonly BuildPlaced[], size: Size3, cx: number, cy: 
  * le bord le plus proche où elle tient (le jambage d'une porte contre son poteau, pas sur lui), en x puis en y ; à défaut, comme sans
  * heurt.
  */
-function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F, z = 0, h = 0): F {
+/** La sorte d'une pièce, pour l'aimant : l'objet, ou le bois par sa grosseur et sa forme (deux planches du gros sont pareilles). */
+function kindOf(ref: BuildRef): string {
+  return 'prop' in ref ? ref.prop : 'wood' in ref ? `wood:${ref.wood.size}:${ref.wood.shape ?? ''}` : `item:${ref.item}`;
+}
+
+function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces: readonly BuildPlaced[], f: F, z = 0, h = 0, keep?: (f: F) => boolean, levelled = true, kind?: string): F {
   const reach = BUILD.grid / 2;
   // ce qui heurte : la section réelle ; les bords qui aimantent : la boîte et, pour un poteau, sa section aussi
   const boxes = pieces.map(solidOf);
+  // seulement ce qui est à la hauteur de la pièce (son dessus au moins à sa base, sa base au plus à son dessus) : une solive posée à
+  // 2,60 m ne colle pas au bord de la table qui est dessous (chantier « maison du coq ») ; ce qui est au plus `BUILD.under` sous elle
+  // compte encore (la sablière posée sur une autre s'aligne sur le poteau dessous : la grange) ; sans hauteur, tout
+  // ni le sol sur lequel on la pose (le plancher, le dallage : on ne s'aligne pas sur le joint de deux planches)
+  // les planchers (un dessus qui se marche, la planche couchée) : ce qui est dessous est caché à ce qu'on pose dessus
+  const floors = pieces.filter((p) => ('prop' in p.piece && props[p.piece.prop]?.walk && !props[p.piece.prop]?.wall) || ('wood' in p.piece && p.piece.wood.shape === 'plank')).map(boxOf);
+  // 'at' : elle aimante ; 'low' : plus basse, elle ne fait que retenir (écart nul) quand aucune voisine à sa hauteur n'est à portée (le
+  // couronnement centré sur son conduit) ; rien : ni le plancher dessous, ni ce qu'il cache
+  const level = (p: BuildPlaced): 'at' | 'low' | undefined => {
+    const b = boxOf(p);
+    if (h <= 0 || !levelled) return 'at';
+    if (b.z + b.h === z && 'prop' in p.piece && props[p.piece.prop]?.walk && !props[p.piece.prop]?.wall) return undefined;
+    if (b.z + b.h === z && 'wood' in p.piece && p.piece.wood.shape === 'plank') return undefined;
+    // ce qui est à peine sous elle (au plus `BUILD.under`) compte encore : sous un objet, toute pièce (le pignon aligné sur le
+    // remplissage du mur, dessous) ; sous une pièce de bois, un poteau dressé (la sablière sur le poteau)
+    // ce qu'un plancher cache (entre elle et lui) ne compte jamais : le meuble de l'étage ne voit pas la solive sous le plancher
+    const hidden = floors.some((o) => o.z + o.h <= z && o.z + o.h >= b.z + b.h && overlaps(o, f));
+    const post = !hidden && b.z + b.h >= z - BUILD.under && (!kind?.startsWith('wood:') || ('wood' in p.piece && p.piece.wood.axis === 'up'));
+    // une pièce de bois plus basse juste sous une pièce de bois, dans le même sens (la poutre nord-sud sous l'entrait nord-sud : on aligne
+    // une charpente sur ce qu'elle surmonte ; jamais la table sous la solive, ni la solive sous les planches qui la croisent), sauf ce
+    // qu'un plancher cache
+    const under =
+      !!kind &&
+      kind.startsWith('wood:') &&
+      'wood' in p.piece &&
+      b.w !== b.d &&
+      (b.w > b.d) === (f.w > f.d) &&
+      overlaps(b, f) &&
+      !hidden;
+    if (b.z > z + h) return undefined;
+    if (b.z + b.h >= z || post || under) return 'at';
+    return hidden ? undefined : 'low';
+  };
+  // les bords, chacun avec sa priorité : à égalité de distance, d'abord ceux d'une pareille voisine à sa hauteur (la planche s'aligne sur
+  // la rangée voisine plutôt que sur le bout d'une solive dessous ; chantier « maison du coq »), puis les autres dans l'ordre de pose
   const edges = pieces.flatMap((p) => {
+    const lv = level(p);
+    if (!lv) return [];
     const [b, s] = [boxOf(p), solidOf(p)];
-    return s.w === b.w && s.d === b.d ? [b] : [b, s];
+    const below = kind && b.z + b.h > z && kindOf(p.piece) === kind ? 0 : 1;
+    // une voisine : à sa hauteur, ou à sa base à côté d'elle, ou, pour du bois, le bois qui la porte (la solive suit le joint de la
+    // muraillère) ; pas ce qui porte un objet, dessous (le conduit sous le couronnement)
+    const beside = lv === 'at' && h > 0 && (b.z + b.h > z || !overlaps(b, f) || (!!kind?.startsWith('wood:') && 'wood' in p.piece));
+    return (s.w === b.w && s.d === b.d ? [b] : [b, s]).map((e) => ({ ...e, below, low: lv === 'low', beside }));
   });
+  // les écarts vers les bords d'un axe : ceux qui aimantent ; un bord plus bas, seulement nul et sans voisine à portée
+  const deltas = (list: { d: number[]; below: number; low: boolean; beside: boolean }[]): [number, number][] => {
+    const near = list.some((o) => o.beside && o.d.some((d) => Math.abs(d) <= reach));
+    return list.flatMap((o) => (o.low ? (near ? [] : o.d.filter((d) => d === 0)) : o.d).map((d) => [d, o.below] as [number, number]));
+  };
   const hits = (b: { x: number; y: number; w: number; d: number }) => h > 0 && boxes.some((o) => overlaps(o, b) && o.z < z + h && z < o.z + o.h);
-  // les décalages possibles, du plus petit au plus grand ; sans bord à portée, aucun
-  const nearest = (deltas: number[]) => {
-    const near = deltas.filter((d) => Math.abs(d) <= reach).sort((a, b) => Math.abs(a) - Math.abs(b));
-    return near.length ? near : [0];
+  // les décalages possibles, du plus petit au plus grand (à égalité, la voisine d'abord) ; sans bord à portée, aucun
+  const nearest = (deltas: [number, number][]) => {
+    const near = deltas.filter(([d]) => Math.abs(d) <= reach).sort((a, b) => Math.abs(a[0]) - Math.abs(b[0]) || a[1] - b[1]);
+    return near.length ? near.map(([d]) => d) : [0];
   };
   // en x : les pièces à moins d'une grille en y ; puis en y : à moins d'une grille en x, une fois décalée en x
   const xs = nearest(
-    edges.filter((o) => o.y < f.y + f.d + BUILD.grid && f.y < o.y + o.d + BUILD.grid).flatMap((o) => [o.x + o.w - f.x, o.x - (f.x + f.w), o.x - f.x, o.x + o.w - (f.x + f.w)]),
+    deltas(
+      edges
+        .filter((o) => o.y < f.y + f.d + BUILD.grid && f.y < o.y + o.d + BUILD.grid)
+        .map((o) => ({ ...o, d: [o.x + o.w - f.x, o.x - (f.x + f.w), o.x - f.x, o.x + o.w - (f.x + f.w)] })),
+    ),
   );
   const ys = (g: F) =>
-    nearest(edges.filter((o) => o.x < g.x + g.w + BUILD.grid && g.x < o.x + o.w + BUILD.grid).flatMap((o) => [o.y + o.d - g.y, o.y - (g.y + g.d), o.y - g.y, o.y + o.d - (g.y + g.d)]));
+    nearest(
+      deltas(
+        edges
+          .filter((o) => o.x < g.x + g.w + BUILD.grid && g.x < o.x + o.w + BUILD.grid)
+          .map((o) => ({ ...o, d: [o.y + o.d - g.y, o.y - (g.y + g.d), o.y - g.y, o.y + o.d - (g.y + g.d)] })),
+      ),
+    );
   const at = (dx: number, dy: number) => ({ ...f, x: f.x + dx, y: f.y + dy });
   const ysAt = (dx: number) => ys({ ...f, x: f.x + dx });
-  const first = at(xs[0], ysAt(xs[0])[0]);
+  // l'aimant ne décroche pas la pièce de ce qui la porte (`keep` : la muraillère sur la retraite du mur, pas collée au bord d'à côté)
+  let first = at(xs[0], ysAt(xs[0])[0]);
+  if (keep && !keep(first)) {
+    const held = xs.flatMap((dx) => ysAt(dx).map((dy) => at(dx, dy))).find((c) => keep(c) && !hits(c));
+    if (held) first = held;
+  }
   if (!hits(first)) return first;
   // une pièce trapue (la bande de 10 cm entre un poteau et une huisserie, chantier « maison-2 ») : la place qui tient la moins éloignée,
   // dans un sens ou dans l'autre, de préférence encore portée à la hauteur visée (glisser hors de ce qui la porte la ferait tomber)
@@ -333,13 +434,27 @@ export function depthsOf(pieces: readonly BuildPiece[], caps?: ReadonlyMap<numbe
   return out;
 }
 
-/** Une pièce bloque Xéros : un objet du monde qui a une collision (ou une pièce de bois), posé sous BUILD.high. */
+/**
+ * Une pièce a un corps : un objet du monde qui a une collision (ou une pièce de bois), sauf un dessus qui se marche (la planche du
+ * plancher, la dalle, la marche : on le franchit par la règle du pas, world/decks.ts). Son corps ne bloque qu'à sa hauteur, de sa base
+ * à son dessus (`sliceOf`, `sliceHits`) : le lit de l'étage ne barre pas la salle dessous (chantier « maison du coq »).
+ */
 export function blocks(p: BuildPlaced): boolean {
-  if (p.z >= BUILD.high) return false;
-  if ('wood' in p.piece) return true;
   if ('item' in p.piece) return false;
+  if ('wood' in p.piece) return !(p.piece.wood.axis !== 'up' && lookDef(p.piece.wood.size, lookOf(p.piece.wood)).walk);
   const def = props[p.piece.prop];
-  return !!(def.body || def.bodies) && def.layer !== 'floor';
+  return !!(def.body || def.bodies) && def.layer !== 'floor' && (!def.walk || !!def.wall);
+}
+
+/** La tranche de hauteur où une pièce bloque (cm) : de sa base à son dessus. */
+export function sliceOf(p: BuildPlaced): [number, number] {
+  const b = solidOf(p);
+  return [b.z, b.z + b.h];
+}
+
+/** Une tranche [base, dessus] croise-t-elle le corps de qui a les pieds à `z` (cm) et `height` de haut ? */
+export function sliceHits(slice: readonly [number, number] | undefined, z: number, height = BUILD.head): boolean {
+  return !slice || (slice[0] < z + height && z < slice[1]);
 }
 
 /** Une pièce s'efface au-dessus de Xéros : sa base au-dessus de sa tête (BUILD.head) et son emprise, à `margin` cm près, sur ses pieds. */
@@ -523,7 +638,8 @@ export function planProblems(plan: BuildPlan): string[] {
     if (p.age && !('wood' in p.piece) && !ageable(p.piece)) out.push(`${at} : un âge (${p.age}), mais ce n'est pas un objet de bois (\`aged\`)`);
     if ('wood' in p.piece && p.age) out.push(`${at} : la pièce de bois garde son âge dans \`wood.age\`, pas dans \`age\``);
     if ('prop' in p.piece && p.piece.length !== undefined) {
-      const { grid, min } = WALL_PIECE;
+      const { grid } = WALL_PIECE;
+      const min = wallMin(props[p.piece.prop].wall ?? '');
       if (!props[p.piece.prop].wall) out.push(`${at} : une longueur (${p.piece.length} cm), mais ce n'est pas un morceau de mur (\`wall\`)`);
       else if (p.piece.length % grid || p.piece.length < min) out.push(`${at} : un morceau de mur de ${p.piece.length} cm, hors de la grille (multiple de ${grid}, au moins ${min})`);
     }

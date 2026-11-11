@@ -36,7 +36,8 @@ export class Hold {
     /** Vrai pendant un geste : l'outil du geste remplace ce qui est tenu. */
     private readonly hidden: () => boolean,
   ) {
-    const image = () => scene.add.image(0, 0, '__DEFAULT').setVisible(false);
+    // soulevé de la hauteur de Xéros (systems/lift.ts : `liftOf`), pas de celle du sol sous l'image
+    const image = () => scene.add.image(0, 0, '__DEFAULT').setVisible(false).setData('liftOf', actor);
     this.images = { left: image(), right: image() };
     // après la physique, juste avant l'affichage : le corps est à sa place de l'image
     scene.events.on(Phaser.Scenes.Events.PRE_RENDER, this.place, this);

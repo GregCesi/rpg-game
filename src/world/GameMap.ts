@@ -1,10 +1,11 @@
+import { deckField, NO_DECKS, topBelow, type DeckField } from './decks';
 import Phaser from 'phaser';
 import { viewImage } from '../content/views';
 import { DEPTH, GLOW, INTERIOR, JOINT_SHADE, RELIEF, SHADOW, TILE } from '../config';
 import { deepAt, heightAt } from './relief';
 import { hasRelief, TerrainView } from './terrainView';
 import { roofShadow } from './roofShadow';
-import { items, props as propDefs, tiles as tileCatalog } from '../content';
+import { items, mobility, props as propDefs, tiles as tileCatalog } from '../content';
 import type { Corner, MapData, MapObject, PropDef } from '../content/types';
 import { drawOrder, stateImage, kindOf, pileBlocks, pileDefOf, placeAim, shapeOf, tieImages, topPieces, type PileShape, type ShapePlace } from './pileShape';
 import { formImage, naturalGround, stableNatural } from './natural';
@@ -15,7 +16,7 @@ import type { Natural, WoodPiece } from '../content/types';
 import { woodDef, woodOf } from './woodPiece';
 import { agedKey, lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
-import { blocks, boxOf, depthsOf, overlaps, solidOf, supportsOf, type BuildPiece } from './build';
+import { blocks, boxOf, depthsOf, overlaps, sliceHits, sliceOf, solidOf, supportsOf, type BuildPiece } from './build';
 import { shadedPairs, shadePixels, type ShownImage } from './jointShade';
 import type { BuildPlaced } from '../content/types';
 import { lookDef, lookOf as woodLookOf } from './woodShape';
@@ -139,6 +140,8 @@ export function drawDecals(scene: Phaser.Scene, def: MapData, ox: number, oy: nu
 export interface PlacedProp {
   /** Identifiant de l'objet dans Tiled (clé des changements dans GameState), ou de l'objet né si `spawned`. */
   id: number;
+  /** Posé sur le plancher d'un étage : sa hauteur (cm). */
+  z?: number;
   /** Objet né pendant la partie (pièce de l'arbre couché) : ses changements vont dans la liste des objets nés. */
   spawned: boolean;
   /**
@@ -306,6 +309,8 @@ export interface Interactable {
   y: number;
   top: number;
   action: Action;
+  /** Sa hauteur (cm), s'il n'est pas au sol (une pièce posée à l'étage) : il ne se vise que de ce niveau. */
+  z?: number;
 }
 
 /**
@@ -324,6 +329,8 @@ export class GameMap {
   readonly piles: PlacedPile[] = [];
   /** Les pièces posées en mode construction. */
   readonly builds: PlacedBuild[] = [];
+  /** Les dessus qui se marchent parmi les pièces posées (world/decks.ts), refaits à chaque pose ou retrait (`sortBuilds`). */
+  decks: DeckField = NO_DECKS;
   /** Les croisements des mi-bois, posés par-dessus leurs deux pièces (redessinés à chaque changement). */
   private overlays: Phaser.GameObjects.Image[] = [];
   /** Les ombres de joint des pièces de bois posées l'une sur l'autre (world/jointShade.ts), refaites à chaque `sortBuilds`. */
@@ -443,9 +450,16 @@ export class GameMap {
     for (const b of this.builds) {
       if (!('prop' in b.piece.piece) || !propDefs[b.piece.piece.prop].swing) continue;
       const box = boxOf(b.piece);
-      list.push({ x: (box.x + box.w / 2) / CM_PER_PX, y: (box.y + box.d / 2) / CM_PER_PX, top: b.image.y - b.image.displayHeight, action: { kind: 'swing', id: b.piece.id } });
+      list.push({ x: (box.x + box.w / 2) / CM_PER_PX, y: (box.y + box.d / 2) / CM_PER_PX, top: b.image.y - b.image.displayHeight, action: { kind: 'swing', id: b.piece.id }, z: b.piece.z });
     }
-    // un objet encore caché (il attend la fin d'une chute) ne se ramasse pas
+    // un objet encore caché (il attend la fin d'une chute) ne se ramasse pas ; ce qui est à un autre niveau, non plus
+    if (this.decks.empty) return list.concat(this.groundTargets());
+    return list.filter((t) => this.reachable(targetZ(t))).concat(this.groundTargets().filter((t) => this.reachable(targetZ(t))));
+  }
+
+  /** Les objets au sol, à ramasser. */
+  private groundTargets(): Interactable[] {
+    const list: Interactable[] = [];
     for (const g of this.ground) if (g.image.visible) list.push({ x: g.item.x, y: g.item.y - 4, top: g.image.y - g.image.height, action: { kind: 'pickup', ground: g } });
     return list;
   }
@@ -470,8 +484,9 @@ export class GameMap {
    * Le rectangle (repère de la carte) est libre : dans la carte, sur aucune case bloquante ni dans l'eau profonde (rien ne s'y pose),
    * pas à cheval sur une marche du relief (`RELIEF.straddle`), sur aucune collision d'objet ni sur l'un des corps `others` (les
    * personnages). Les collisions de `ignore` ne comptent pas (le tas qui grandit). `overWater` : l'eau ne compte pas (ce qui vole au-dessus).
+   * `z` : la hauteur où l'on pose (cm ; par défaut, celle où se tient Xéros, `standZ`) ; un corps de pièce posée ne compte qu'à sa hauteur (`slice`).
    */
-  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = [], ignore: readonly Phaser.GameObjects.GameObject[] = [], opts: { overWater?: boolean } = {}): boolean {
+  areaFree(b: Box, others: Phaser.Physics.Arcade.Body[] = [], ignore: readonly Phaser.GameObjects.GameObject[] = [], opts: { overWater?: boolean; z?: number } = {}): boolean {
     if (b.left < 0 || b.top < 0 || b.right > this.width || b.bottom > this.height) return false;
     for (let ty = Math.floor(b.top / TILE); ty <= Math.floor((b.bottom - 0.01) / TILE); ty++) {
       for (let tx = Math.floor(b.left / TILE); tx <= Math.floor((b.right - 0.01) / TILE); tx++) {
@@ -485,7 +500,7 @@ export class GameMap {
     const near = this.scene.physics.overlapRect(b.left - 1, b.top - 1, b.right - b.left + 2, b.bottom - b.top + 2, false, true) as Phaser.Physics.Arcade.StaticBody[];
     const zones = near
       .map((body) => body.gameObject as Phaser.GameObjects.Zone)
-      .filter((z) => z && this.obstacles.contains(z) && !ignore.includes(z));
+      .filter((z) => z && this.obstacles.contains(z) && !ignore.includes(z) && sliceHits(z.getData('slice'), opts.z ?? this.standZ));
     if (zones.some((z) => overlaps(z.x - z.width / 2, z.y - z.height / 2, z.x + z.width / 2, z.y + z.height / 2))) return false;
     return !others.some((o) => overlaps(o.left, o.top, o.right, o.bottom));
   }
@@ -520,7 +535,7 @@ export class GameMap {
     let soft = false;
     for (const body of near) {
       const z = body.gameObject as Phaser.GameObjects.Zone;
-      if (!z || !this.obstacles.contains(z)) continue;
+      if (!z || !this.obstacles.contains(z) || !sliceHits(z.getData('slice'), 0)) continue;
       if (x < z.x - z.width / 2 || x >= z.x + z.width / 2 || y < z.y - z.height / 2 || y >= z.y + z.height / 2) continue;
       if (!z.getData('soft')) return 'solid';
       soft = true;
@@ -591,6 +606,7 @@ export class GameMap {
   placeGround(item: GroundItem): PlacedGround {
     const key = naturalGround(items[item.item], item.view, item.natural, (k) => this.scene.textures.exists(k));
     const image = this.scene.add.image(item.x, item.y, key).setOrigin(0.5, 1).setDepth(item.y);
+    if (item.z) this.raise([image], item.z, 0);
     const g = { item, image };
     this.ground.push(g);
     return g;
@@ -626,6 +642,7 @@ export class GameMap {
     for (const t of ties) parts.push(this.scene.add.image(pile.x + t.x, pile.y + t.y, t.image).setOrigin(0, 1).setDepth(depth));
     const zones = pileBlocks(def, pile.places) ? ground.map((q) => this.addObstacle(pile.x + q.body!.x + q.body!.w / 2, pile.y + q.body!.y + q.body!.h / 2, q.body!.w, q.body!.h)) : [];
     parts.push(...zones);
+    if (pile.z) this.raise(parts, pile.z, 200);
     const placed = { pile, def, zones, depth, parts };
     this.piles.push(placed);
     return placed;
@@ -696,6 +713,9 @@ export class GameMap {
       baseY = Math.max(baseY, oy + b.y + b.h / 2);
     }
     const zones = parts.filter((q): q is Phaser.GameObjects.Zone => q instanceof Phaser.GameObjects.Zone);
+    // posé sur le plancher d'un étage (chantier « maison du coq ») : son image monte de sa hauteur, son corps ne bloque qu'à elle
+    const height = (o as { z?: number }).z;
+    if (height) this.raise(parts, height, p.dims?.h ?? 100);
     const box = zones.length
       ? {
           left: Math.min(...zones.map((z) => z.x - z.width / 2)),
@@ -706,6 +726,7 @@ export class GameMap {
       : undefined;
     const placed: PlacedProp = {
       id: o.id,
+      ...(height ? { z: height } : {}),
       spawned: !!opts.spawned,
       flip,
       type: o.type,
@@ -763,7 +784,7 @@ export class GameMap {
 
   /**
    * Affiche une pièce posée en mode construction : son image (relevée de sa hauteur), et sa collision, son emprise au sol en vraie
-   * grandeur, si elle bloque (posée sous BUILD.high). Appeler `sortBuilds` ensuite pour l'ordre d'affichage.
+   * grandeur, si elle a un corps (`blocks`), avec sa tranche de hauteur (`slice` : il ne bloque qu'à sa hauteur). Appeler `sortBuilds` ensuite pour l'ordre d'affichage.
    */
   placeBuild(piece: BuildPiece, fixed = false): PlacedBuild {
     const look = buildLook(this.scene, piece);
@@ -774,7 +795,7 @@ export class GameMap {
     let zone: Phaser.GameObjects.Zone | undefined;
     if (blocks(piece)) {
       const b = boxOf(piece);
-      zone = this.addObstacle((b.x + b.w / 2) / CM_PER_PX, (b.y + b.d / 2) / CM_PER_PX, b.w / CM_PER_PX, b.d / CM_PER_PX);
+      zone = this.addObstacle((b.x + b.w / 2) / CM_PER_PX, (b.y + b.d / 2) / CM_PER_PX, b.w / CM_PER_PX, b.d / CM_PER_PX).setData('slice', sliceOf(piece));
     }
     const placed: PlacedBuild = { piece, image, zone, ...(fixed ? { fixed } : {}) };
     if (def) placed.parts = this.buildParts(def, piece.view ?? 0, image);
@@ -869,6 +890,7 @@ export class GameMap {
       b.image.setPosition(look.x, look.y);
     }
     this.buildsVersion++;
+    this.decks = deckField(this.builds.map((b) => b.piece));
     const joints = [...this.shellJoints, ...this.changes.joints];
     this.drawWalls();
     drawJoints(this.scene, this.builds, joints);
@@ -1001,6 +1023,35 @@ export class GameMap {
     this.shade?.setFillStyle(0x1a0e06, alpha);
   }
 
+  /**
+   * Ce qui est posé sur le plancher d'un étage (chantier « maison du coq », CONCEPTION « L'étage ») : ses images montent de sa hauteur
+   * (systems/lift.ts lit `z`), ses corps ne bloquent qu'à sa hauteur (`slice`, sur `h` cm).
+   */
+  private raise(parts: readonly Phaser.GameObjects.GameObject[], z: number, h: number): void {
+    for (const part of parts) {
+      if (part instanceof Phaser.GameObjects.Zone) part.setData('slice', [z, z + Math.max(1, h)]);
+      else part.setData('z', z);
+    }
+  }
+
+  /**
+   * La hauteur où se tient Xéros en ce moment (cm) : posée par la scène à chaque image ; ce qu'on pose, ce qu'on vise, la place libre
+   * se jugent à cette hauteur (chantier « maison du coq »).
+   */
+  standZ = 0;
+
+  /** La hauteur où se pose ce qui est lâché au point (x, y) (px) : le plus haut dessus qu'atteint Xéros d'un pas, sinon le sol (undefined). */
+  dropZ(x: number, y: number): number | undefined {
+    if (this.decks.empty) return undefined;
+    const z = topBelow(this.decks, 0, x * CM_PER_PX, (y - 1) * CM_PER_PX, this.standZ + mobility.step);
+    return z > 0 ? z : undefined;
+  }
+
+  /** Ce qui est à la hauteur `z` (cm) se vise et se prend de la hauteur où est Xéros (à hauteur d'homme près). */
+  private reachable(z: number | undefined): boolean {
+    return Math.abs((z ?? 0) - this.standZ) < INTERIOR.headroom;
+  }
+
   /** Une collision de plus, un rectangle au sol en cm (la coupe du mur sud d'un intérieur). */
   addBlock(r: { x: number; y: number; w: number; d: number }): Phaser.GameObjects.Zone {
     return this.addObstacle((r.x + r.w / 2) / CM_PER_PX, (r.y + r.d / 2) / CM_PER_PX, r.w / CM_PER_PX, r.d / CM_PER_PX);
@@ -1011,4 +1062,10 @@ export class GameMap {
     this.obstacles.add(zone);
     return zone;
   }
+}
+
+/** La hauteur (cm) de ce que vise une cible (un objet né ou posé, un tas, une pièce posée, un objet au sol), 0 au sol. */
+function targetZ(t: Interactable): number {
+  const a = t.action as { prop?: { z?: number }; pile?: { pile: { z?: number } }; ground?: { item: { z?: number } }; kind: string };
+  return t.z ?? a.prop?.z ?? a.pile?.pile.z ?? a.ground?.item.z ?? 0;
 }

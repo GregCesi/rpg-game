@@ -269,6 +269,109 @@ Le monde n'est plus plat. **Tout l'ouest de la rivière est un plateau 5 m plus 
   `npm run test:relief` (le chemin creux aller et retour, les gradins qu'il ne monte pas, les refus, les marches d'essai), le contrat du relief dans `test:contrats` ;
   captures en jeu : `npx tsx tools/essai-relief-jeu.ts` (`.art-preview/relief-jeu-*.png`).
 
+## L'étage (décidé le 4 novembre 2026, chantier « maison du coq » ; CADRAGE-coq.md de la branche, section 12)
+
+Une maison peut avoir des étages : deux sols au même point (la salle à 0, la chambre au-dessus). Le moteur est général ; la maison du
+coq est la première à s'en servir.
+
+- **Les dessus qui se marchent** : une capacité en données, `walk: true` dans props.json (la dalle de sol, la marche de pierre) ou dans
+  l'aspect d'une pièce de bois (`walk` de la planche, wood.json). Leur boîte exacte, jamais rastérisée (`src/world/decks.ts`) : un giron
+  de 26 cm reste une marche de 19 cm. Un dessus n'a pas de corps : on le franchit par la règle du pas de mobility.json (`step`, `drop`),
+  jamais en s'y heurtant (validate.ts). La planche couchée par terre se marche donc aussi (elle ne barre plus le passage).
+- **La hauteur propre de Xéros** : `z` du composant Mobility, tenue à chaque pas de la physique (`systems/footing.ts`) : près des
+  dessus, le sol sous ses pieds est le plus haut dessus qu'il atteint d'un pas et devant lui (sa base sous sa tête), où son corps tient ;
+  sous le plancher il reste en bas, sur la marche il monte d'une marche ; une marche vue de côté lui barre le passage ; le bord de la
+  trémie est refusé par ce qui lui manque (« Trop haute pour lui (2,9 m). ») ; de côté, depuis une marche basse, il saute. Ailleurs, la
+  règle du relief seule, et `z` est la hauteur du terrain. Les pièces posées ont leur hauteur au-dessus du terrain (le mode construction) :
+  ce qui se juge contre elles prend la hauteur de Xéros au-dessus du terrain (`standZ` de GameMap).
+- **Les corps par tranche** : un corps de pièce posée ne bloque qu'à sa hauteur, de sa base à son dessus (`sliceOf`, `sliceHits` de
+  world/build.ts, le `processCallback` de la collision de Xéros) : le lit de l'étage ne barre pas la salle, la pierre d'échiffre pas
+  l'étage, un mur qui monte de fond barre les deux. (Avant, une pièce posée bloquait à toute hauteur sous 2 m et jamais au-dessus.) Les
+  objets de Tiled n'ont pas de tranche : ils bloquent à toute hauteur.
+- **Ce qu'on pose à l'étage y reste** : `z` (optionnel) de ce qui est au sol, né ou en tas dans GameState ; posé sur le plus haut dessus
+  qu'atteint Xéros d'un pas (`dropZ`), son image monte de sa hauteur, son corps ne bloque qu'à elle, et ce qui est à un autre niveau ne
+  se vise pas (`reachable` de GameMap, à hauteur d'homme près).
+- **Le dessin** : Xéros, ce qu'il tient et ce qui est posé à l'étage montent de **leur** hauteur (`z`, `liftOf` : systems/lift.ts,
+  actif dans tout intérieur), et la caméra suit sa hauteur à chaque image.
+- **Monter** : sur une marche qui monte, la marche × `PLAYER.climb` (0,75 ; jamais une vitesse à part) ; chargé, le souffle au kilo
+  porté et au mètre de montée (`breath.climbPerKgM` de stamina.json) ; à vide, rien.
+- **Les niveaux d'un bâtiment** (`world/interior.ts`) : les hauteurs de ses dessus qui couvrent au moins 4 m² (`INTERIOR.storey`), deux
+  hauteurs à moins de `step` n'en faisant qu'une (la dalle et la terre battue : le rez-de-chaussée) ; les marches n'en sont pas. Pour
+  chaque niveau, ce qui monte jusqu'à son plancher et commence sous le plancher d'au-dessus, ramené à ce plancher : les règles d'un
+  bâtiment d'un seul niveau valent alors telles quelles (la recherche des pièces, ce qu'on voit dedans, la coupe du mur sud et des
+  cloisons est-ouest, les fenêtres). Au-dessus du rez-de-chaussée, les pièces sont celles qui ont un plancher ; ses trous (la trémie)
+  se calculent ; chaque niveau prend aussi les dessus d'où l'on y monte d'un pas, sous son plancher (le seuil d'une porte de refend,
+  les hautes marches), et une marche d'escalier n'est jamais prise pour ce qui passe au-dessus d'une pièce (on y monte). Un bâtiment d'un seul niveau (toutes les maisons d'avant) : rien ne change, vérifié pièce par pièce sur leurs plans.
+- **Un seul niveau affiché à la fois** (`systems/storeys.ts`) : dans l'intérieur (une seule carte pour tous les niveaux), le niveau où
+  est Xéros, qui change à mi-hauteur entre deux planchers (la 8ᵉ marche de la maison du coq), lu de sa hauteur, tenue pas de physique
+  par pas de physique (une machine lente ne la saute pas) ; un fondu de `ROOF.fadeMs`, sans changer de carte ni d'écran noir, sans
+  verrou. En haut, le niveau d'en dessous ne se voit que par les trous du plancher, dans l'ombre ; ailleurs le vide de l'intérieur cache
+  le sol d'en bas. Chaque niveau a sa coupe, sa lumière, sa pénombre (ses volets). Quand l'étage s'affiche, le bord du plancher cache les
+  jambes de Xéros dans la trémie (le rendu exact, décidé par Grégoire). On entre et on sort par les portes du rez-de-chaussée.
+- **Le mode construction** : N (ou le bouton « Niveau ») montre tout, puis chaque niveau (les autres presque effacés, `BUILD.otherLevel`),
+  vise sous le plancher d'au-dessus et à la hauteur du niveau (le point vu, soulevé).
+- **Sauvegarde** : la hauteur de Xéros (`z` de `where`) et celle de ce qui est posé, optionnelles ; une ancienne sauvegarde se lit telle
+  quelle.
+- **Limites en attente** : le grenier (un deuxième étage sous le toit) ne se visite pas ; pas de cave ; les PNJ à l'étage (`z` d'un point
+  `Npc`) viendront avec la famille du coq ; les créatures restent au sol ; un dessus posé dehors (un dallage) porte Xéros mais seul le
+  dedans montre les niveaux.
+- Tests : `tools/test-etage-moteur.ts` (test:fast : une maison d'essai à deux niveaux, les pas, l'escalier à 1, 3 et 8 pas par image, les
+  niveaux, les pièces par niveau, la trémie, les tranches, les maisons d'avant sans étage, les 14 marches et les seuils de la maison du
+  coq dans son intérieur) ; le scénario dans la maison du coq : `npm run test:etage` (`tools/test-etage.ts`, à x1 : des gestes fins
+  dans un palier d'un mètre).
+
+## La maison du coq (décidé du 4 au 10 novembre 2026, chantier « maison du coq » ; CADRAGE-coq.md de la branche)
+
+La maison du maître de la ferme du riche, sa femme et leurs quatre enfants : la plus grande et la plus chère du village, **en pierre
+de taille**, avec **un étage** (le moteur : « L'étage », plus haut). Elle est posée au bas de la ferme du riche, entre le quartier riche
+et la cour de la ferme (la parcelle « Maison du coq », `ferme-du-riche.tmj` ; un rectangle `Plan`, plan `maison-coq`), façade au sud.
+
+- **Les dimensions** : 16,40 × 6,80 m hors œuvre ; au rez-de-chaussée, la cuisine (le domaine de la femme du coq, l'âtre au pignon
+  ouest), le passage et l'escalier, la salle (43 m², la plus grande pièce du village : la cheminée à hotte de pierre, la grande table,
+  la chaise du coq, le dressoir, la verdure au coq) ; à l'étage (le plancher à **2,83 m**), la chambre des garçons (le lit fait de
+  l'aîné parti à l'armée, celui du fainéant, l'écritoire de l'intellectuel), le palier et la trémie bordée de son garde-corps, la
+  chambre du coq et de sa femme (le lit à courtines, la cheminée, la tenture) et, derrière elle (on y passe par la chambre des
+  parents), celle de la fille, apprentie tailleuse (sa table sous la croisée, ses coupons). Le grenier, sous les laves, ne se visite
+  pas.
+- **La pierre** : le moyen appareil de calcaire, layé et ciselé, la face du dedans enduite de chaux. **Un pan de mur = une assise de
+  30 cm de toute longueur** (`wall: "coursed"` : `ashlar-wall`, 60 cm ; `ashlar-wall-40`, les refends et les murs nord et sud de l'étage),
+  dessiné par le jeu à partir des pierres en données (carreaux de 50, 70, 90, boutisse de 40, pierres d'angle et de tableau, joints
+  décalés d'au moins 15 cm d'une assise à l'autre : `src/world/ashlarWalls.ts`, le même code que le dessinateur, vérifié pixel pour
+  pixel par `tools/test-murs-coq.ts`) ; le cordon (`string-course-wall`, 20 cm) au niveau de l'étage ; le dallage de la salle et du
+  passage par rangées de dalles (`flagstone-row`) ; les baies assemblées (la croisée, la demi-croisée, l'arc de la porte à la clef au
+  coq) sous leur linteau ; les murs de l'étage s'arrêtent à 5,30 m, la sablière à 5,50 m.
+- **Le plancher** porte sur une retraite : au-dessus du rez-de-chaussée (8 assises), les murs nord et sud n'ont plus que 40 cm, et la
+  retraite de 20 cm porte les muraillères (2,40 m), les solives (2,60 m), les planches (2,80 m). La trémie a ses chevêtres, posés dans
+  les poches des refends, comme la poutre de rive qui porte les solives du passage au-dessus de l'arc de la porte. **Aucune pièce
+  n'est au-dessus du vide** : chaque pièce a un appui (world/overhang.ts) ; ce qui s'accroche (les tentures, les consoles du manteau) est
+  **fixé au mur** (`mount: "wall"` de props.json) ; une pièce de pierre qui enjambe (l'arc, le linteau de pierre) porte ce qu'on pose
+  dessus.
+- **L'escalier** : 14 marches de pierre de 19 cm, giron de 26, chacune posée sur la précédente (`stair.tread` de props.json : en mode
+  construction, une marche visée après une marche pareille se pose un giron plus loin, sur elle). Le seuil des portes de l'étage est
+  l'assise de cordon du refend : un pan de mur peut se marcher (`walk`) et garder son corps (il ne bloque qu'à sa hauteur). Les portes
+  du palier ont leur jour de 2,60 à 4,70 m (1,87 m au-dessus du plancher : la tête de Xéros passe) et s'ouvrent sur le palier : on les
+  ouvre depuis la dernière marche, hors du battant ; la porte de la fille s'ouvre dans la chambre des parents ; le lit à courtines
+  laisse 80 cm le long du refend. Les linteaux de pierre font 1,40 m (20 cm d'appui de chaque côté du jour), la porte d'entrée est
+  centrée sous son arc : tous les pans de mur tombent sur la grille de 10 cm.
+- **Le toit** : notre lave, **la seule lauze du jeu** (elle a aussi remplacé celle de la forge, `lauze-roof-large`), deux pans à 45°
+  (`lave-roof`, le pan nord percé pour la souche), le faîtage de pierre, les pignons découverts (`ashlar-gable`) ; la charpente est dans
+  le pan, comme le chevronnage du chaume de la maison de Xéros.
+- **Le mode construction**, revu pour elle : l'aimant colle une pièce aux pièces à sa hauteur et à ce qui est à peine dessous (le pignon
+  sur le remplissage du mur, la sablière sur le poteau ; du bois sur le bois qu'il surmonte dans son sens), jamais à ce qu'un plancher
+  cache ni au joint des planches sous le meuble, ni à la table sous la solive ; une pièce plus basse ne fait que la retenir là où on la
+  vise, si aucune voisine n'est à portée (le couronnement centré sur son conduit) ; si elle ne tient pas ainsi à sa hauteur, l'aimant de
+  toujours (un pan de toit, visé au-dessus de son pignon : toujours) ; à égalité, sa pareille voisine d'abord (la planche, la rangée
+  voisine) ; il ne fait pas tomber de son appui une pièce qui y est. Les bâtiments d'avant se bâtissent comme avant, sauf la faîtière de la cabane, centrée à
+  1,80 m (l'ancien aimant la tirait à 1,85 m, au bord d'une dalle trois mètres plus bas).
+- **Bâtie dans le mode construction** par un scénario (`npm run test:maison-coq`, la liste de montage : `tools/lib/maison-coq.ts`, 438
+  pièces, dans l'ordre : le rez-de-chaussée et ses sols, ses meubles, ses murs, le plancher, l'étage meublé, ses murs, le toit),
+  enregistrée comme plan (`src/content/plans/maison-coq.json`) ; visitée par `npm run test:etage` (entrer, monter, la chambre de la fille
+  par celle des parents, la page rechargée en haut, redescendre, ressortir).
+- **Limites en attente** : le grenier ne se visite pas (un deuxième étage, sous le toit) ; pas de cave ; ni la famille ni les gens de
+  maison (servante, valets) : un autre chantier ; la lucarne et sa potence, les corbeaux, les pierres une à une qu'on porte (leur icône
+  et leur vue portée), Xéros qui bâtirait la maison lui-même (un chantier de `plans.json`, la chèvre pour lever les blocs de plus de
+  140 kg) viendront plus tard.
+
 ## La petite carte (décidé les 3 et 4 novembre 2026, chantier « petite carte »)
 
 Décidé par Grégoire : **une petite carte ronde en haut à gauche de l'écran**, nord en haut, centrée sur Xéros, **calculée et jamais

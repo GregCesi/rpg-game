@@ -56,7 +56,8 @@ export type BuildCommand =
   | { kind: 'age'; age: WoodAge }
   | { kind: 'save-plan'; name: string }
   | { kind: 'undo' }
-  | { kind: 'redo' };
+  | { kind: 'redo' }
+  | { kind: 'level' };
 
 /** Ce que montre le catalogue : le mode est-il ouvert, ce qu'on a en main, le cran, la zone choisie, le nombre de pièces posées. */
 export interface BuildStatus {
@@ -71,6 +72,8 @@ export interface BuildStatus {
   redo: number;
   /** Ce que dit la visée d'un assemblage : il va, ou pourquoi pas. */
   hint?: string;
+  /** Le niveau affiché d'une maison à étages (N) : « Tout », « Rez-de-chaussée », « Étage 1 »... */
+  level: string;
 }
 
 /**

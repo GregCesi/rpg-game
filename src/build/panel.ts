@@ -292,7 +292,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
       button('Rien en main', () => ((chosen = undefined), send({ kind: 'none' }), render())),
       button('Choisir une zone', () => ((chosen = undefined), send({ kind: 'select' }), render())),
     ]),
-    el('div', { className: 'row' }, [button('Annuler', () => send({ kind: 'undo' })), button('Refaire', () => send({ kind: 'redo' }))]),
+    el('div', { className: 'row' }, [button('Annuler', () => send({ kind: 'undo' })), button('Refaire', () => send({ kind: 'redo' })), button('Niveau (N)', () => send({ kind: 'level' }))]),
     planName,
     button('Enregistrer comme plan', () => send({ kind: 'save-plan', name: planName.value })),
   ]);
@@ -301,7 +301,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
     '<kbd>B</kbd> entrer, sortir · <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches : caméra (<kbd>Maj</kbd> plus vite) · molette : zoom<br>' +
     'clic gauche : poser · clic droit : retirer (<kbd>Maj</kbd> : avec ce qui est dessus et assemblé)<br>' +
     'assemblage : clic gauche sur la jonction de deux pièces ; clic droit sur la jonction le retire<br>' +
-    '<kbd>R</kbd> tourner · <kbd>T</kbd> monter d’un cran · <kbd>G</kbd> descendre (20 cm)<br>' +
+    '<kbd>R</kbd> tourner · <kbd>T</kbd> monter d’un cran · <kbd>G</kbd> descendre (20 cm) · <kbd>N</kbd> niveau affiché (maison à étages)<br>' +
     '<kbd>Ctrl</kbd>+<kbd>Z</kbd> annuler · <kbd>Ctrl</kbd>+<kbd>Y</kbd> refaire';
 
   const panel = el('div', { id: 'construire' }, [el('h2', { textContent: 'Construire' }), ageBox, tools, statusBox, settings, tabs, search, list, keys]);
@@ -316,7 +316,7 @@ export function mountBuildPanel(send: (cmd: BuildCommand) => void): { status: (s
         age = s.age;
         render();
       }
-      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool} (bois ${wood.ages[s.age]})${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * BUILD.grid} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo}${s.hint ? `\n${s.hint}` : ''}`;
+      statusBox.textContent = `${s.active ? 'Mode construction' : 'En jeu'}\nen main : ${s.tool} (bois ${wood.ages[s.age]})${s.step ? ` (${s.step > 0 ? '+' : ''}${s.step * BUILD.grid} cm)` : ''}\n${s.count} pièces posées · ${sel}\nannuler : ${s.undo} · refaire : ${s.redo} · niveau : ${s.level}${s.hint ? `\n${s.hint}` : ''}`;
     },
   };
 }

@@ -3,8 +3,10 @@
 // tronçon différent (manière, sens, longueur, bouts, graine), gardée tant que le jeu tourne.
 
 import type Phaser from 'phaser';
+import { ashlarPalette } from '../generated/ashlarStones';
 import { wallPalette, wallStones } from '../generated/wallStones';
-import { runKey, runPx, type WallRun } from './wallRuns';
+import { coqRunImage } from './ashlarWalls';
+import { COQ_WALLS, runKey, runPx, type WallRun } from './wallRuns';
 import { wallKit, type WallKit } from './walls';
 
 let kit: WallKit | undefined;
@@ -28,7 +30,9 @@ function rgba(hex: string): [number, number, number, number] {
 export function wallTexture(scene: Phaser.Scene, run: WallRun): string {
   const key = runKey(run);
   if (scene.textures.exists(key)) return key;
-  const grid = theKit().run({ kind: run.kind, axis: run.axis, length: runPx(run), start: run.start, end: run.end, seed: run.seed, top: Math.round(run.thick / 10), ...(run.extra ? { extra: run.extra } : {}) });
+  const coq = COQ_WALLS.has(run.kind);
+  const grid = coq ? coqRunImage(run) : theKit().run({ kind: run.kind, axis: run.axis, length: runPx(run), start: run.start, end: run.end, seed: run.seed, top: Math.round(run.thick / 10), ...(run.extra ? { extra: run.extra } : {}) });
+  const palette = coq ? ashlarPalette : wallPalette;
   const h = grid.length;
   const w = grid[0].length;
   const canvas = scene.textures.createCanvas(key, w, h)!;
@@ -38,7 +42,7 @@ export function wallTexture(scene: Phaser.Scene, run: WallRun): string {
     for (let x = 0; x < w; x++) {
       const ch = row[x];
       if (ch === '.' || ch === undefined) continue;
-      const c = wallPalette[ch];
+      const c = palette[ch];
       if (!c) throw new Error(`Mur : couleur « ${ch} » absente de la palette des pierres`);
       img.data.set(rgba(c), (y * w + x) * 4);
     }

@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { sharedRig } from './lib/playtest';
 
 /** Les scénarios, les plus longs d'abord (pour finir plus tôt quand ils tournent à plusieurs). */
-export const SCENARIOS = ['maison', 'monde', 'noeud', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'lapins', 'sangliers', 'vie', 'relief', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective', 'portes', 'forge', 'forge-visite', 'forgeron'];
+export const SCENARIOS = ['maison', 'monde', 'noeud', 'grange', 'equarrissage', 'fendage', 'cabane', 'etal', 'combat', 'lapins', 'sangliers', 'vie', 'relief', 'temps', 'reset', 'vitesses', 'etapes', 'interieur', 'construction', 'tas', 'poteaux', 'implantation', 'briques', 'perspective', 'portes', 'forge', 'forge-visite', 'forgeron', 'maison-coq', 'etage'];
 
 /**
  * Ceux qui tournent seuls, après les autres : ils effacent un fichier que tous lisent au démarrage (construction écrit puis efface
@@ -36,7 +36,7 @@ export const LAST = ['maison'];
  * catalogue) : `npm run test:scenarios:all` (ou SCENARIOS_ALL=1, `--all`) les lance avec les autres ; sans, ils sont sautés et le
  * tableau le dit.
  */
-export const HEAVY = ['maison', 'cabane', 'grange', 'etal', 'construction', 'forge'];
+export const HEAVY = ['maison', 'cabane', 'grange', 'etal', 'construction', 'forge', 'maison-coq'];
 const ALL = process.argv.includes('--all') || !!process.env.SCENARIOS_ALL;
 // SCENARIOS_ONLY (noms séparés par des virgules) : ceux-là seuls, ensemble, sur le banc partagé (reproduire un échec de la suite
 // dans ses conditions : le même navigateur, le même serveur, la même charge)

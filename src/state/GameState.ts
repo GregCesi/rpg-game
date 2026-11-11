@@ -70,10 +70,12 @@ const SpawnedSchema = z.strictObject({
   natural,
   /** Un fagot posé seul : son nombre de branches (absent : le fagot plein), que le dénouer rend exactement. */
   bundle: z.number().int().min(1).optional(),
+  /** Posé sur un dessus qui se marche (le plancher d'un étage : chantier « maison du coq ») : sa hauteur, en cm ; absent, au sol. */
+  z: z.number().nonnegative().optional(),
 });
 
 /** Un objet possédable posé au sol : (x, y) = son point au sol ; `view` : sa vue (le sens où il est couché). */
-const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number(), view, natural });
+const GroundItemSchema = z.strictObject({ id: z.number().int().nonnegative(), item: id, x: z.number(), y: z.number(), view, natural, z: z.number().nonnegative().optional() });
 
 /**
  * Un tas posé pendant la partie : un seul objet du monde, ce qu'il entrepose, son point au sol (x, y : l'origine du repère de
@@ -94,6 +96,8 @@ const PileSchema = z
     tie: z.boolean().optional(),
     /** Un tas de fagots : le nombre de branches de chacun (ils sont tous pareils ; absent : un fagot plein, toutes ses branches). */
     bundle: z.number().int().min(1).optional(),
+    /** Posé sur un dessus qui se marche (le plancher d'un étage : chantier « maison du coq ») : sa hauteur, en cm ; absent, au sol. */
+    z: z.number().nonnegative().optional(),
   })
   .refine((p) => p.places.length > 0 || p.tie, { message: 'un tas sans pièce ni lien' })
   .refine((p) => !p.pile !== !p.wood, { message: "un tas entrepose un genre ('pile') ou une pièce de bois ('wood'), l'un ou l'autre" });
@@ -419,8 +423,8 @@ export function changeObject(s: GameState, mapId: string, objectId: number, chan
 }
 
 /** Pose un objet possédable au sol, dans sa vue `view`, avec sa forme et sa taille s'il est naturel ; renvoie ce qui a été posé. */
-export function dropItem(s: GameState, mapId: string, item: string, x: number, y: number, view?: number, nat?: Natural): GroundItem {
-  const g = { id: s.nextGroundId++, item, x, y, ...(view ? { view } : {}), ...(nat ? { natural: { ...nat } } : {}) };
+export function dropItem(s: GameState, mapId: string, item: string, x: number, y: number, view?: number, nat?: Natural, height?: number): GroundItem {
+  const g = { id: s.nextGroundId++, item, x, y, ...(view ? { view } : {}), ...(nat ? { natural: { ...nat } } : {}), ...(height ? { z: height } : {}) };
   mapState(s, mapId).ground.push(g);
   revision++;
   return g;
@@ -440,11 +444,13 @@ export interface SpawnOpts {
   wood?: WoodPiece;
   natural?: Natural;
   bundle?: number;
+  /** Sa hauteur (cm), posé sur le plancher d'un étage. */
+  z?: number;
 }
 
 /** Fait naître un objet sur une carte ; renvoie ce qui a été noté. */
 export function spawnObject(s: GameState, mapId: string, type: string, x: number, y: number, opts: SpawnOpts = {}): Spawned {
-  const { flip, length, wood, natural: nat, bundle } = opts;
+  const { flip, length, wood, natural: nat, bundle, z: height } = opts;
   const o = {
     id: s.nextSpawnId++,
     type,
@@ -455,6 +461,7 @@ export function spawnObject(s: GameState, mapId: string, type: string, x: number
     ...(wood ? { wood: structuredClone(wood) } : {}),
     ...(nat ? { natural: { ...nat } } : {}),
     ...(bundle ? { bundle } : {}),
+    ...(height ? { z: height } : {}),
   };
   mapState(s, mapId).spawned.push(o);
   revision++;
@@ -526,6 +533,7 @@ export function addPile(s: GameState, mapId: string, pile: Omit<Pile, 'id'>): Pi
     places: [...pile.places],
     ...(pile.turned ? { turned: true } : {}),
     ...(pile.tie ? { tie: true } : {}),
+    ...(pile.z ? { z: pile.z } : {}),
   };
   mapState(s, mapId).piles.push(p);
   revision++;
