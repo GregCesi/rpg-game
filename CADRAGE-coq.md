@@ -417,7 +417,7 @@ Tout dépend du relief : `lift.ts`, la règle de pas et `pick`. **Rien ne peut c
 
 1. les pièces et leurs dessins, une à la fois (fiche, vues, masse, accord de Grégoire) ;
 2. le moteur de l'étage, sans dessin : `decks.ts`, le `z` de Mobility, les collisions par tranche, les niveaux de `interior.ts`, le
-   niveau affiché, la sauvegarde ; `tools/test-etage.ts` dans `test:fast` (les dessus, le pas, la trémie refusée, le changement de
+   niveau affiché, la sauvegarde ; `tools/test-etage-moteur.ts` dans `test:fast` (les dessus, le pas, la trémie refusée, le changement de
    niveau au franchissement, les pièces trouvées par niveau) ;
 3. la maison bâtie dans le mode construction par un scénario (`npm run test:maison-coq`, comme la cabane, la grange et la maison de
    Xéros), enregistrée comme plan (`src/content/plans/maison-coq.json`), puis posée dans la cour par un rectangle `Plan` ;
@@ -940,7 +940,7 @@ Champs optionnels : **une ancienne sauvegarde se lit telle quelle**, `SAVE_VERSI
 
 1. **Le moteur de l'étage, testé seul, sans dessin** (sur des pièces d'essai : une dalle, une planche, une marche qui existent en
    données avec un dessin provisoire hors jeu, ou des pièces existantes marquées `walk` dans le seul banc de test) :
-   - nouveaux : `src/world/decks.ts`, `src/systems/storeys.ts`, `tools/test-etage.ts` (dans `test:fast`) ;
+   - nouveaux : `src/world/decks.ts`, `src/systems/storeys.ts`, `tools/test-etage-moteur.ts` (dans `test:fast`) ;
    - touchés : `src/entities/Mobility.ts` (`z`), `src/systems/footing.ts` (le pas sur les dessus, `z`), `src/systems/lift.ts`
      (actif dans un intérieur à étages, la hauteur propre), `src/world/build.ts` (`blocks` sans `BUILD.high`, la tranche, `aimAt`
      borné au niveau), `src/world/GameMap.ts` (le `processCallback` des obstacles, la tranche de chaque zone), `src/world/interior.ts`
@@ -973,7 +973,7 @@ Champs optionnels : **une ancienne sauvegarde se lit telle quelle**, `SAVE_VERSI
 
 ### 12.12 Les tests prévus
 
-- **`tools/test-etage.ts`** (sans navigateur, dans `test:fast`) : `floorAt` (sous le plancher on reste en bas ; sur la marche on monte
+- **`tools/test-etage-moteur.ts`** (sans navigateur, dans `test:fast`) : `floorAt` (sous le plancher on reste en bas ; sur la marche on monte
   de 19 cm ; la tête libre) ; `deckRefusal` (une marche de 60 cm refusée, la trémie sans garde-corps refusée « Trop haut pour lui
   (2,9 m). », le saut de côté depuis la 4ᵉ marche permis) ; le changement de niveau à la 8ᵉ marche à 1, 3 et 8 pas de physique par
   image ; la tranche (le lit de l'étage ne bloque pas la salle, la pierre d'échiffre pas l'étage, le mur les deux) ; `storeysOf` (0 et
@@ -1009,7 +1009,7 @@ Champs optionnels : **une ancienne sauvegarde se lit telle quelle**, `SAVE_VERSI
 
 ### 12.15 Les dessins d'intégration (pixel-artist, hors jeu) : à valider
 
-Le moteur de l'étage est fait et testé seul, sans dessin (commits « Étage, moteur (1) » et « (2) », `tools/test-etage.ts` dans
+Le moteur de l'étage est fait et testé seul, sans dessin (commits « Étage, moteur (1) » et « (2) », `tools/test-etage-moteur.ts` dans
 `test:fast`, CONCEPTION « L'étage »). La parcelle « Maison du coq » est posée dans `ferme-du-riche.tmj`, le normal de la case
 (88, 120) retiré (réponse 20). Rien d'autre ne s'intègre avant l'accord de Grégoire sur ces planches (refaire :
 `npx tsx tools/essai-coq-integration.ts`) :
@@ -1125,3 +1125,25 @@ Questions :
 - **Aucun porte-à-faux toléré** : chaque pièce a un vrai appui. Le bord de la trémie a ses chevêtres ; ce qui porte les solives
   au-dessus de l'arc est vérifié ; les tentures et les consoles du manteau sont **fixées au mur** (une règle en données pour tout ce
   qui s'accroche). L'ordre du montage rend chaque pièce atteignable : zéro pièce injoignable, zéro porte-à-faux.
+
+### 12.20 Ce que l'exécution a demandé (10 novembre)
+
+- **Les appuis** : les chevêtres de la trémie et la poutre de rive au-dessus de l'arc reposent dans des poches des refends (une assise
+  de 20 cm, le pan de cordon, à 240-260 dans les refends : les poutres la complètent exactement) ; le seuil des portes de l'étage est le
+  dessus de cette assise (un pan de mur peut se marcher et garder son corps) ; « fixé au mur » (`mount`) pour les tentures, la tringle,
+  les consoles ; une pièce de pierre qui enjambe porte ce qu'on pose dessus.
+- **Le mode construction** : l'aimant ne prend que les pièces à la hauteur de celle qu'on pose (jamais le sol sous elle), préfère la
+  voisine à égalité, ne décroche pas une pièce de ce qui la porte ; l'affleurement au parement du dehors (`alignOnWall`) ne vaut que
+  pour le solin, pas pour la pierre de taille (une muraillère reste sur la retraite, un volet dans le jour).
+- **L'ordre du montage** (438 pièces, toutes atteignables, aucune au-dessus du vide, vérifié en Node avec la visée du jeu puis dans le
+  vrai jeu) : les sols, les portes et la première marche, la première assise, les meubles, les assises suivantes (les volets puis la
+  baie, une fois les tableaux montés ; le linteau avant les pans de son assise), les poutres dans leurs poches, les muraillères (de la
+  voisine posée vers l'autre), l'assise 240 de l'étage, les solives (une sous le milieu de chaque planche, là où on la vise), les
+  planches, l'arc, l'escalier de la 2e à la 14e marche, l'étage meublé, ses murs, le toit.
+- **Ce que les scénarios ont trouvé** (11 novembre) : les pans de mur hors de la grille de 10 cm (la porte d'entrée à 615, les
+  linteaux de 1,45 m) : la porte d'entrée passe à 610-720, centrée sous son arc, les linteaux à 1,40 m (28 px pour un dessin de 29 :
+  dans le gabarit), le jour de la porte de la salle à 90-190 (un pan de 30 cm sous le linteau) ; la cloison de l'étage s'arrêtait à
+  15 cm du mur sud (un poteau d'about de plus : quatre pièces en haut) ; les marches hautes et le seuil des portes du palier sortaient
+  de l'intérieur (pris pour ce qui passe au-dessus de la pièce : corrigé dans world/interior.ts, vérifié par test-etage-moteur) ; le
+  linteau des portes du palier, à 4,40 m, ne laissait que 1,57 m au-dessus du plancher : il passe à 4,70 m ; le lit à courtines
+  barrait la chambre des parents (40 cm le long du refend) : il passe à 80 cm du refend ; le faîtage est posé avant les souches.

@@ -300,7 +300,8 @@ coq est la première à s'en servir.
   chaque niveau, ce qui monte jusqu'à son plancher et commence sous le plancher d'au-dessus, ramené à ce plancher : les règles d'un
   bâtiment d'un seul niveau valent alors telles quelles (la recherche des pièces, ce qu'on voit dedans, la coupe du mur sud et des
   cloisons est-ouest, les fenêtres). Au-dessus du rez-de-chaussée, les pièces sont celles qui ont un plancher ; ses trous (la trémie)
-  se calculent. Un bâtiment d'un seul niveau (toutes les maisons d'avant) : rien ne change, vérifié pièce par pièce sur leurs plans.
+  se calculent ; chaque niveau prend aussi les dessus d'où l'on y monte d'un pas, sous son plancher (le seuil d'une porte de refend,
+  les hautes marches), et une marche d'escalier n'est jamais prise pour ce qui passe au-dessus d'une pièce (on y monte). Un bâtiment d'un seul niveau (toutes les maisons d'avant) : rien ne change, vérifié pièce par pièce sur leurs plans.
 - **Un seul niveau affiché à la fois** (`systems/storeys.ts`) : dans l'intérieur (une seule carte pour tous les niveaux), le niveau où
   est Xéros, qui change à mi-hauteur entre deux planchers (la 8ᵉ marche de la maison du coq), lu de sa hauteur, tenue pas de physique
   par pas de physique (une machine lente ne la saute pas) ; un fondu de `ROOF.fadeMs`, sans changer de carte ni d'écran noir, sans
@@ -314,9 +315,57 @@ coq est la première à s'en servir.
 - **Limites en attente** : le grenier (un deuxième étage sous le toit) ne se visite pas ; pas de cave ; les PNJ à l'étage (`z` d'un point
   `Npc`) viendront avec la famille du coq ; les créatures restent au sol ; un dessus posé dehors (un dallage) porte Xéros mais seul le
   dedans montre les niveaux.
-- Tests : `tools/test-etage.ts` (test:fast : une maison d'essai à deux niveaux, les pas, l'escalier à 1, 3 et 8 pas par image, les
-  niveaux, les pièces par niveau, la trémie, les tranches, les maisons d'avant sans étage) ; le scénario dans la maison du coq viendra
-  avec elle.
+- Tests : `tools/test-etage-moteur.ts` (test:fast : une maison d'essai à deux niveaux, les pas, l'escalier à 1, 3 et 8 pas par image, les
+  niveaux, les pièces par niveau, la trémie, les tranches, les maisons d'avant sans étage, les 14 marches et les seuils de la maison du
+  coq dans son intérieur) ; le scénario dans la maison du coq : `npm run test:etage` (`tools/test-etage.ts`, à x1 : des gestes fins
+  dans un palier d'un mètre).
+
+## La maison du coq (décidé du 4 au 10 novembre 2026, chantier « maison du coq » ; CADRAGE-coq.md de la branche)
+
+La maison du maître de la ferme du riche, sa femme et leurs quatre enfants : la plus grande et la plus chère du village, **en pierre
+de taille**, avec **un étage** (le moteur : « L'étage », plus haut). Elle est posée au bas de la ferme du riche, entre le quartier riche
+et la cour de la ferme (la parcelle « Maison du coq », `ferme-du-riche.tmj` ; un rectangle `Plan`, plan `maison-coq`), façade au sud.
+
+- **Les dimensions** : 16,40 × 6,80 m hors œuvre ; au rez-de-chaussée, la cuisine (le domaine de la femme du coq, l'âtre au pignon
+  ouest), le passage et l'escalier, la salle (43 m², la plus grande pièce du village : la cheminée à hotte de pierre, la grande table,
+  la chaise du coq, le dressoir, la verdure au coq) ; à l'étage (le plancher à **2,83 m**), la chambre des garçons (le lit fait de
+  l'aîné parti à l'armée, celui du fainéant, l'écritoire de l'intellectuel), le palier et la trémie bordée de son garde-corps, la
+  chambre du coq et de sa femme (le lit à courtines, la cheminée, la tenture) et, derrière elle (on y passe par la chambre des
+  parents), celle de la fille, apprentie tailleuse (sa table sous la croisée, ses coupons). Le grenier, sous les laves, ne se visite
+  pas.
+- **La pierre** : le moyen appareil de calcaire, layé et ciselé, la face du dedans enduite de chaux. **Un pan de mur = une assise de
+  30 cm de toute longueur** (`wall: "coursed"` : `ashlar-wall`, 60 cm ; `ashlar-wall-40`, les refends et les murs nord et sud de l'étage),
+  dessiné par le jeu à partir des pierres en données (carreaux de 50, 70, 90, boutisse de 40, pierres d'angle et de tableau, joints
+  décalés d'au moins 15 cm d'une assise à l'autre : `src/world/ashlarWalls.ts`, le même code que le dessinateur, vérifié pixel pour
+  pixel par `tools/test-murs-coq.ts`) ; le cordon (`string-course-wall`, 20 cm) au niveau de l'étage ; le dallage de la salle et du
+  passage par rangées de dalles (`flagstone-row`) ; les baies assemblées (la croisée, la demi-croisée, l'arc de la porte à la clef au
+  coq) sous leur linteau ; les murs de l'étage s'arrêtent à 5,30 m, la sablière à 5,50 m.
+- **Le plancher** porte sur une retraite : au-dessus du rez-de-chaussée (8 assises), les murs nord et sud n'ont plus que 40 cm, et la
+  retraite de 20 cm porte les muraillères (2,40 m), les solives (2,60 m), les planches (2,80 m). La trémie a ses chevêtres, posés dans
+  les poches des refends, comme la poutre de rive qui porte les solives du passage au-dessus de l'arc de la porte. **Aucune pièce
+  n'est au-dessus du vide** : chaque pièce a un appui (world/overhang.ts) ; ce qui s'accroche (les tentures, les consoles du manteau) est
+  **fixé au mur** (`mount: "wall"` de props.json) ; une pièce de pierre qui enjambe (l'arc, le linteau de pierre) porte ce qu'on pose
+  dessus.
+- **L'escalier** : 14 marches de pierre de 19 cm, giron de 26, chacune posée sur la précédente (`stair.tread` de props.json : en mode
+  construction, une marche visée après une marche pareille se pose un giron plus loin, sur elle). Le seuil des portes de l'étage est
+  l'assise de cordon du refend : un pan de mur peut se marcher (`walk`) et garder son corps (il ne bloque qu'à sa hauteur). Les portes
+  du palier ont leur jour de 2,60 à 4,70 m (1,87 m au-dessus du plancher : la tête de Xéros passe) et s'ouvrent sur le palier : on les
+  ouvre depuis la dernière marche, hors du battant ; la porte de la fille s'ouvre dans la chambre des parents ; le lit à courtines
+  laisse 80 cm le long du refend. Les linteaux de pierre font 1,40 m (20 cm d'appui de chaque côté du jour), la porte d'entrée est
+  centrée sous son arc : tous les pans de mur tombent sur la grille de 10 cm.
+- **Le toit** : notre lave, **la seule lauze du jeu** (elle a aussi remplacé celle de la forge, `lauze-roof-large`), deux pans à 45°
+  (`lave-roof`, le pan nord percé pour la souche), le faîtage de pierre, les pignons découverts (`ashlar-gable`) ; la charpente est dans
+  le pan, comme le chevronnage du chaume de la maison de Xéros.
+- **Le mode construction**, revu pour elle : l'aimant ne colle une pièce qu'aux pièces à sa hauteur (ni à la table sous la solive, ni
+  au joint des planches sous le meuble), préfère la voisine à égalité, et ne décroche jamais une pièce de ce qui la porte.
+- **Bâtie dans le mode construction** par un scénario (`npm run test:maison-coq`, la liste de montage : `tools/lib/maison-coq.ts`, 438
+  pièces, dans l'ordre : le rez-de-chaussée et ses sols, ses meubles, ses murs, le plancher, l'étage meublé, ses murs, le toit),
+  enregistrée comme plan (`src/content/plans/maison-coq.json`) ; visitée par `npm run test:etage` (entrer, monter, la chambre de la fille
+  par celle des parents, la page rechargée en haut, redescendre, ressortir).
+- **Limites en attente** : le grenier ne se visite pas (un deuxième étage, sous le toit) ; pas de cave ; ni la famille ni les gens de
+  maison (servante, valets) : un autre chantier ; la lucarne et sa potence, les corbeaux, les pierres une à une qu'on porte (leur icône
+  et leur vue portée), Xéros qui bâtirait la maison lui-même (un chantier de `plans.json`, la chèvre pour lever les blocs de plus de
+  140 kg) viendront plus tard.
 
 ## La petite carte (décidé les 3 et 4 novembre 2026, chantier « petite carte »)
 

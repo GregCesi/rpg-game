@@ -98,6 +98,13 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
   /** Les pièces posées, par leur nom dans la liste. */
   const named = new Map<string, any>();
   const box = (s: PieceStep) => ({ x: O!.x + s.x, y: O!.y + s.y, w: s.w, d: s.d });
+  /** Un pan de toit : sa base est le dessus de ce qui porte sa rive basse (une bande de 60 cm du côté bas), comme le mode construction. */
+  const roofStrip = (s: PieceStep) => {
+    if (!('prop' in s.ref) || !/^lave-roof/.test(s.ref.prop)) return undefined;
+    const b = box(s);
+    const low = (['south', 'west', 'north', 'east'] as const)[(s.view ?? 0) % 4];
+    return low === 'south' ? { ...b, y: b.y + b.d - 60, d: 60 } : low === 'north' ? { ...b, d: 60 } : low === 'west' ? { ...b, w: 60 } : { ...b, x: b.x + b.w - 60, w: 60 };
+  };
 
   /**
    * Pose une pièce : prise au catalogue dans son sens, les crans montés (T), la souris sur le milieu de l'emprise visée (4 cm plus au
@@ -136,12 +143,15 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
         void mid;
         return { S, x: cx, y: cy };
       },
-      [box(s), ridge, stair ? s.z : null] as const,
+      [roofStrip(s) ?? box(s), ridge, stair ? s.z : null] as const,
     );
     const S = aimed.S;
     const before = await pieces();
-    const px = aimed.x / 5;
-    const py = (aimed.y - S - 4) / 5;
+    // la souris au milieu de l'emprise (pour un pan de toit aussi : la bande de sa rive basse ne donne que sa hauteur)
+    const B0 = box(s);
+    const px = (B0.x + B0.w / 2) / 5;
+    const py = (B0.y + B0.d / 2 - S - 4) / 5;
+    void aimed.x;
     // de près (zoom 6), pour que la souris tombe au centimètre près : la visée d'une pièce de 15 cm se joue à quelques centimètres
     await look(px, py, 6);
     let sp = await screen(px, py);

@@ -20,7 +20,7 @@ import type { Facing } from '../content/types';
 import { boxOf, OUTWARD, solidOf, swung, type Box3, type BuildPiece } from './build';
 import { CM_PER_PX } from '../content/gabarit';
 import { mobility } from '../content';
-import { deckField, decksAt, openDecks, storeyHeights } from './decks';
+import { deckField, decksAt, openDecks, storeyHeights, walkable } from './decks';
 
 /** Un rectangle au sol, en cm (coin nord-ouest, largeur est-ouest, profondeur nord-sud). */
 export interface Rect {
@@ -386,8 +386,9 @@ function contents(room: Rect, pieces: readonly BuildPiece[], entrances: readonly
       }
       continue;
     }
-    // ce qui passe au-dessus de la pièce (faîtière, entraits, poinçons) : seulement ce qui est dans la bande d'un mur
-    if (cross(room, b) && b.z >= INTERIOR.headroom && !wallSide(room, b)) continue;
+    // ce qui passe au-dessus de la pièce (faîtière, entraits, poinçons) : seulement ce qui est dans la bande d'un mur ; une marche
+    // d'escalier (`stair` de props.json) n'est jamais au-dessus de la pièce, même haute : on y monte
+    if (cross(room, b) && b.z >= INTERIOR.headroom && !wallSide(room, b) && !('prop' in p.piece && props[p.piece.prop].stair)) continue;
     shell.push(p);
   }
   // la coupe s'arrête aux passages du mur sud
@@ -523,7 +524,10 @@ function levelPieces(pieces: readonly BuildPiece[], levels: readonly number[], k
   return pieces
     .filter((p) => {
       const b = boxOf(p);
-      return (k === 0 || b.z + b.h >= z) && b.z < ceiling;
+      // au-dessus du rez-de-chaussée, aussi les dessus d'où l'on y monte d'un pas (le seuil d'une porte de refend, les hautes marches) :
+      // sous son plancher, ils ne sont à aucun autre niveau
+      const step = k > 0 && walkable(p) && b.z + b.h < z && b.z + b.h >= z - mobility.step;
+      return (k === 0 || b.z + b.h >= z || step) && b.z < ceiling;
     })
     .map((p) => (z ? { ...p, z: p.z - z } : p));
 }

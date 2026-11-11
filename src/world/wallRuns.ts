@@ -196,7 +196,9 @@ export function runLayout(r: WallRun, w: number, h: number): { x: number; y: num
  */
 export function alignOnWall<B extends Box3>(pieces: readonly BuildPiece[], box: B): B {
   const ew = box.w >= box.d;
-  const walls = pieces.filter((p) => wallOf(p));
+  // le solin seulement (la traverse basse affleure son parement du dehors) : sur la pierre de taille de la maison du coq, une muraillère
+  // reste sur la retraite, un volet dans le jour
+  const walls = pieces.filter((p) => { const k = wallOf(p); return !!k && !COQ_WALLS.has(k); });
   const under = walls.find((p) => {
     const b = boxOf(p);
     const parallel = (p.view % 2 === 0) === ew;

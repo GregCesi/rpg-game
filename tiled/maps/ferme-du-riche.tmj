@@ -10,7 +10,7 @@
   "tilewidth": 32,
   "tileheight": 32,
   "nextlayerid": 5,
-  "nextobjectid": 331,
+  "nextobjectid": 332,
   "properties": [
     {
       "name": "name",
@@ -4137,6 +4137,25 @@
               "type": "string",
               "propertytype": "ParcelUse",
               "value": "rich-house"
+            }
+          ]
+        },
+        {
+          "id": 331,
+          "rotation": 0,
+          "visible": true,
+          "name": "maison-coq",
+          "type": "Plan",
+          "x": 2624,
+          "y": 3640,
+          "width": 328,
+          "height": 150,
+          "properties": [
+            {
+              "name": "plan",
+              "type": "string",
+              "propertytype": "PlanName",
+              "value": "maison-coq"
             }
           ]
         },

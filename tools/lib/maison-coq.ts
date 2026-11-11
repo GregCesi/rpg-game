@@ -38,13 +38,13 @@ export const REFENDS = [520, 780] as const;
 /** Le milieu du jour des baies du mur sud, au rez-de-chaussée et à l'étage. */
 export const WINDOWS = [290, 1010, 1390] as const;
 /** La porte d'entrée (son jour), l'arc au-dessus (posé à 240 sur ses tableaux). */
-export const DOOR = { x0: 615, x1: 725, arch: [580, 750] as [number, number] };
+export const DOOR = { x0: 610, x1: 720, arch: [580, 750] as [number, number] };
 /**
  * Les portes des refends (y du jour) : au rez-de-chaussée, la cuisine (ouest) et la salle (est : sous le palier, la tête libre sous
  * les marches hautes) ; à l'étage, sur le palier.
  */
-export const GROUND_DOORS: Record<number, [number, number]> = { 520: [300, 400], 780: [100, 200] };
-/** Leurs linteaux de pierre (1,45 m), sur la grille : du nord au sud (celui de la salle contre le mur nord). */
+export const GROUND_DOORS: Record<number, [number, number]> = { 520: [300, 400], 780: [90, 190] };
+/** Leurs linteaux de pierre (1,40 m), sur la grille : du nord au sud (celui de la salle contre le mur nord). */
 const GROUND_LINTELS: Record<number, number> = { 520: 280, 780: 60 };
 export const UPPER_DOOR: [number, number] = [100, 200];
 /** L'escalier : 14 marches de 19 cm (giron 26), de la 1re (y 470-500) à la 14e (y 132-162), dans la colonne x 680-780. */
@@ -80,7 +80,7 @@ export function coqSteps(): Step[] {
     if (to > a) (along === 'ew' ? ew : ns)(`${name} ${a}`, prop, a, to, line, t, z);
   };
   const jour = (cx: number): [number, number] => [cx - 50, cx + 50];
-  const lintelHole = (cx: number): [number, number] => [cx - 70, cx + 75];
+  const lintelHole = (cx: number): [number, number] => [cx - 70, cx + 70];
   const inside = (list: Step[]) => S.push(...list);
 
   // 1. Les murs du rez-de-chaussée : 8 assises (0 à 240), murs de 60, refends de 40 ; les portes des refends (1,80 m) et leurs
@@ -97,20 +97,24 @@ export function coqSteps(): Step[] {
     run('ns', `pignon ouest ${k}`, 'ashlar-wall', 60, 620, [], 0, 60, z);
     for (const x of REFENDS) {
       const [a, b] = GROUND_DOORS[x];
-      // le linteau (1,45 m) déborde le jour de 20 et de 25 cm
-      const holes: [number, number][] = k < 6 ? [[a, b]] : k === 6 ? [[GROUND_LINTELS[x], GROUND_LINTELS[x] + 145]] : [];
+      // le linteau (1,40 m) déborde le jour de 20 cm de chaque côté (de 30 et de 10 pour celui de la salle, contre le mur nord)
+      const holes: [number, number][] = k < 6 ? [[a, b]] : k === 6 ? [[GROUND_LINTELS[x], GROUND_LINTELS[x] + 140]] : [];
       // le linteau de la porte, posé sur ses tableaux (le haut de l'assise 5), avant les pans de son assise
-      if (k === 6) put(`linteau refend ${x}`, P('window-lintel'), x, GROUND_LINTELS[x], 30, 145, 180, 1);
+      if (k === 6) put(`linteau refend ${x}`, P('window-lintel'), x, GROUND_LINTELS[x], 30, 140, 180, 1);
       run('ns', `refend ${x} ${k}`, 'ashlar-wall-40', 60, 620, holes.map(([p, q]) => [Math.max(60, p), Math.min(620, q)] as [number, number]), x, 40, z);
     }
     run('ns', `pignon est ${k}`, 'ashlar-wall', 60, 620, [], 1580, 60, z);
     const south: [number, number][] = [[DOOR.x0, DOOR.x1], ...(k >= 3 ? WINDOWS.map(jour) : [])];
     run('ew', `mur sud ${k}`, 'ashlar-wall', 0, HOUSE.w, south, 620, 60, z);
-    if (k === 2) for (const cx of WINDOWS) put(`demi-croisée ${cx}`, P('half-cross-window'), cx - 50, 650, 100, 30, 90);
+    // une fois les tableaux montés (ils aimantent les volets) : les volets des demi-croisées (dedans, contre le jour, pendus aux
+    // tableaux), posés avant la baie (contre elle, ils se centreraient sur elle), puis la baie dans son jour
+    if (k === 7)
+      for (const cx of WINDOWS) {
+        for (const dx of [-50, 5]) put(`volet bas ${cx} ${dx}`, P('casement-shutter'), cx + dx, 640, 45, 3, 90);
+        put(`demi-croisée ${cx}`, P('half-cross-window'), cx - 50, 650, 100, 30, 90);
+      }
   }
   put("porte d'entrée", P('oak-arch-door'), DOOR.x0, 640, 110, 8, 0);
-  // les volets des demi-croisées (dedans, contre le jour, pendus aux tableaux), avant le plancher qui les cacherait à la visée
-  for (const cx of WINDOWS) for (const dx of [-50, 5]) put(`volet bas ${cx} ${dx}`, P('casement-shutter'), cx + dx, dx < 0 ? 647 : 644, 45, 3, 90);
   frame('le rez-de-chaussée');
 
   // 3. Le plancher : les linteaux et l'arc sur les tableaux (240) ; l'assise 240-270 de l'étage (les murs nord et sud de 40 : la
@@ -144,7 +148,7 @@ export function coqSteps(): Step[] {
     [1330, 1580],
   ])
     put(`muraillère sud ${a}`, beam('ew', b - a), a, 610, b - a, 30, 240);
-  for (const cx of WINDOWS) put(`linteau demi-croisée ${cx}`, P('window-lintel'), cx - 70, 650, 145, 30, 240);
+  for (const cx of WINDOWS) put(`linteau demi-croisée ${cx}`, P('window-lintel'), cx - 70, 650, 140, 30, 240);
   upperRow('240', 'ashlar-wall-40', 'ashlar-wall', 240, [DOOR.arch, ...WINDOWS.map(lintelHole)]);
   // une solive sous le milieu de chaque planche (on la vise là) : la cuisine de 100 à 460, la planche de 4,60 m portée à moins d'un
   // quart de sa longueur de ses bouts
@@ -182,16 +186,17 @@ export function coqSteps(): Step[] {
   // croisées
   upperRow('cordon', 'string-course-wall-40', 'string-course-wall', 270, [DOOR.arch]);
   // les refends de l'étage : 9 assises de 260 à 530 ; la porte du palier sur l'assise de cordon (on marche sur son dessus, à 260 : le
-  // seuil), de 260 à 440, son linteau de pierre sur elle et sur les tableaux, à 440
+  // seuil), son jour de 260 à 470 (1,87 m au-dessus du plancher, à 283 : la tête de Xéros passe), son linteau de pierre sur les
+  // tableaux, à 470
   for (let z = 260; z < 530; z += 30) {
     for (const x of REFENDS) {
       const [a, b] = UPPER_DOOR;
-      const holes: [number, number][] = z < 440 ? [[a, b]] : z === 440 ? [[a - 20, b + 25]] : [];
-      if (z === 440) {
+      const holes: [number, number][] = z < 470 ? [[a, b]] : z === 470 ? [[a - 20, b + 20]] : [];
+      if (z === 470) {
         // le pan du nord, le linteau, puis le pan du sud (visé sur le linteau, chacun tomberait sur l'autre)
         ns(`refend ${x} ${z} 40`, 'ashlar-wall-40', 40, a - 20, x, 40, z);
-        put(`linteau du palier ${x}`, P('window-lintel'), x, a - 20, 30, 145, 440, 1);
-        ns(`refend ${x} ${z} ${b + 25}`, 'ashlar-wall-40', b + 25, 640, x, 40, z);
+        put(`linteau du palier ${x}`, P('window-lintel'), x, a - 20, 30, 140, 470, 1);
+        ns(`refend ${x} ${z} ${b + 20}`, 'ashlar-wall-40', b + 20, 640, x, 40, z);
       } else run('ns', `refend ${x} ${z}`, 'ashlar-wall-40', 40, 640, holes, x, 40, z);
       if (z === 260) put(`porte du palier ${x}`, P('inner-door'), x + 20, a, 5, 90, 260, 1);
     }
@@ -205,11 +210,13 @@ export function coqSteps(): Step[] {
     upperRow(String(z), 'ashlar-wall-40', 'ashlar-wall', z, holes);
     // sur la clef de l'arc (360), un pan de cordon de 20 cm referme l'assise 350-380
     if (c === 2) put("cordon sur l'arc", P('string-course-wall-40', DOOR.arch[1] - DOOR.arch[0]), DOOR.arch[0], 640, DOOR.arch[1] - DOOR.arch[0], 40, 360);
-    if (c === 0) for (const cx of WINDOWS) put(`croisée ${cx}`, P('cross-window'), cx - 50, 650, 100, 30, 320);
-    if (c === 6) for (const cx of WINDOWS) put(`linteau croisée ${cx}`, P('window-lintel'), cx - 70, 650, 145, 30, 500);
+    if (c === 6)
+      for (const cx of WINDOWS) {
+        for (const dx of [-50, 5]) put(`volet haut ${cx} ${dx}`, P('casement-shutter'), cx + dx, 640, 45, 3, 320);
+        put(`croisée ${cx}`, P('cross-window'), cx - 50, 650, 100, 30, 320);
+        put(`linteau croisée ${cx}`, P('window-lintel'), cx - 70, 650, 140, 30, 500);
+      }
   }
-  // les volets des croisées (dedans, contre le jour)
-  for (const cx of WINDOWS) for (const dx of [-50, 5]) put(`volet haut ${cx} ${dx}`, P('casement-shutter'), cx + dx, 640, 45, 3, 320);
   frame("l'étage");
 
   // 6. Le toit : les sablières (530), les souches, les pignons découverts (530), les pans de laves (550), le faîtage (920)
@@ -222,13 +229,16 @@ export function coqSteps(): Step[] {
     put(`sablière sud ${x}`, beam('ew', len), x, 640, len, 30, 530);
   }
   for (const x of [0, 1580]) put(`pignon découvert ${x}`, P('ashlar-gable'), x, 0, 60, 680, 530, 1);
-  for (let i = 0; i < 4; i++) put(`conduit nord ${i}`, P('chimney-flue'), 1060, 0, 100, 80, 550 + 100 * i);
-  put('couronnement nord', P('chimney-cap'), 1040, 0, 140, 100, 950);
+  // les pans avant les souches (un pan prend pour base l'appui de sa rive basse : la sablière, pas la souche qui le traverse)
+  put('pan sud', P('lave-roof'), 60, 340, 1520, 370, 550);
+  put('pan nord', P('lave-roof-pierced'), 60, -40, 1520, 370, 550, 2);
+  // le faîtage sur le faîte des pans, avant les souches (le couronnement de celle de l'ouest déborde sur son emprise)
+  put('faîtage', P('lave-ridge'), 60, 300, 1520, 60, 920);
+  // la souche de la salle et de la chambre, dans le trou du pan nord (centré à 10,40 m du pignon ouest : le conduit dévie dans le mur)
+  for (let i = 0; i < 4; i++) put(`conduit nord ${i}`, P('chimney-flue'), 1000, 0, 100, 80, 550 + 100 * i);
+  put('couronnement nord', P('chimney-cap'), 980, 0, 140, 100, 950);
   for (let i = 0; i < 2; i++) put(`conduit ouest ${i}`, P('chimney-flue'), 0, 300, 80, 100, 890 + 100 * i, 1);
   put('couronnement ouest', P('chimney-cap'), 0, 280, 100, 140, 1090, 1);
-  put('pan sud', P('lave-roof'), 60, 340, 1520, 370, 550);
-  put('pan nord', P('lave-roof-pierced'), 60, -30, 1520, 370, 550, 2);
-  put('faîtage', P('lave-ridge'), 60, 310, 1520, 60, 920);
   frame('le toit');
   return S;
 }
@@ -292,6 +302,8 @@ export function upperInside(): Step[] {
     [300, 315],
     [455, 470],
     [610, undefined],
+    // le poteau d'about, contre le mur sud (640) : la cloison ferme la chambre de la fille jusqu'au mur
+    [625, undefined],
   ] as const) {
     put(`poteau de cloison ${post}`, 'door-frame', 1300, post, 15, 15, 283, 1);
     if (panel) put(`remplissage ${panel}`, 'lime-panel', 1300, panel, 15, 140, 283, 1);
@@ -303,8 +315,9 @@ export function upperInside(): Step[] {
   put('garde-corps court', 'stair-railing-short', 670, 420, 100, 10, 283);
   put("lit de l'aîné", 'bed', 80, 40, 150, 200, 283);
   put('lit du fainéant', 'unmade-bed', 300, 40, 150, 200, 283);
-  put('écritoire', 'writing-desk', 240, 580, 90, 60, 283);
-  put('lit à courtines', 'canopy-bed', 860, 60, 160, 210, 283);
+  put('écritoire', 'writing-desk', 240, 560, 90, 60, 283);
+  // le lit à courtines à 80 cm du refend : le passage depuis la porte du palier (Xéros fait 50 cm de large)
+  put('lit à courtines', 'canopy-bed', 900, 60, 160, 210, 283);
   put('coffre du linge', 'chest', 1060, 560, 90, 50, 283);
   put('tenture', 'wall-hanging', 820, 320, 5, 160, 403, 1);
   put('lit de la fille', 'bed', 1400, 40, 150, 200, 283);

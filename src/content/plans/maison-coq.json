@@ -1,0 +1,4769 @@
+{
+  "name": "Maison coq",
+  "size": {
+    "w": 1640,
+    "d": 750
+  },
+  "age": "worn",
+  "pieces": [
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 0,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 0,
+      "y": 100,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "kneading-trough"
+      },
+      "x": 260,
+      "y": 100,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 520,
+      "y": 100,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 100,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 30
+      },
+      "x": 780,
+      "y": 100,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 100,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 1580,
+      "y": 100,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "inner-door"
+      },
+      "x": 800,
+      "y": 130,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 140,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 140,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 180,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 180,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 220,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 220,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 430
+      },
+      "x": 780,
+      "y": 230,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "stone-hearth"
+      },
+      "x": 60,
+      "y": 260,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 260,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 260,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 300,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 300,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "inner-door"
+      },
+      "x": 540,
+      "y": 340,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 340,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 340,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 380,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 380,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "table"
+      },
+      "x": 240,
+      "y": 420,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 420,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 420,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 520,
+      "y": 440,
+      "z": 0,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 460,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 460,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 500,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 500,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 510,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 120
+      },
+      "x": 560,
+      "y": 540,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 540,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 220
+      },
+      "x": 560,
+      "y": 580,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 580,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 220
+      },
+      "x": 560,
+      "y": 620,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "flagstone-row",
+        "length": 760
+      },
+      "x": 820,
+      "y": 620,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 610
+      },
+      "x": 0,
+      "y": 660,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 920
+      },
+      "x": 720,
+      "y": 660,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "oak-arch-door"
+      },
+      "x": 610,
+      "y": 680,
+      "z": 0,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "fireplace-jamb"
+      },
+      "x": 1060,
+      "y": 100,
+      "z": 8,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "fireback"
+      },
+      "x": 1120,
+      "y": 100,
+      "z": 8,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "fireplace-jamb"
+      },
+      "x": 1260,
+      "y": 100,
+      "z": 8,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "dresser"
+      },
+      "x": 1535,
+      "y": 180,
+      "z": 8,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "table"
+      },
+      "x": 1000,
+      "y": 340,
+      "z": 8,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "table"
+      },
+      "x": 1210,
+      "y": 340,
+      "z": 8,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "high-chair"
+      },
+      "x": 1440,
+      "y": 365,
+      "z": 8,
+      "view": 3
+    },
+    {
+      "piece": {
+        "prop": "chest"
+      },
+      "x": 860,
+      "y": 610,
+      "z": 8,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 484,
+      "z": 19,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 30,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 0,
+      "y": 100,
+      "z": 30,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 520,
+      "y": 100,
+      "z": 30,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 30
+      },
+      "x": 780,
+      "y": 100,
+      "z": 30,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 1580,
+      "y": 100,
+      "z": 30,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 430
+      },
+      "x": 780,
+      "y": 230,
+      "z": 30,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 520,
+      "y": 440,
+      "z": 30,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 610
+      },
+      "x": 0,
+      "y": 660,
+      "z": 30,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 920
+      },
+      "x": 720,
+      "y": 660,
+      "z": 30,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 458,
+      "z": 38,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 432,
+      "z": 57,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 60,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 0,
+      "y": 100,
+      "z": 60,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 520,
+      "y": 100,
+      "z": 60,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 30
+      },
+      "x": 780,
+      "y": 100,
+      "z": 60,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 1580,
+      "y": 100,
+      "z": 60,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 430
+      },
+      "x": 780,
+      "y": 230,
+      "z": 60,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 520,
+      "y": 440,
+      "z": 60,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 610
+      },
+      "x": 0,
+      "y": 660,
+      "z": 60,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 920
+      },
+      "x": 720,
+      "y": 660,
+      "z": 60,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "verdure-tapestry"
+      },
+      "x": 1340,
+      "y": 100,
+      "z": 68,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 406,
+      "z": 76,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 90,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 0,
+      "y": 100,
+      "z": 90,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 520,
+      "y": 100,
+      "z": 90,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 30
+      },
+      "x": 780,
+      "y": 100,
+      "z": 90,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 1580,
+      "y": 100,
+      "z": 90,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 430
+      },
+      "x": 780,
+      "y": 230,
+      "z": 90,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 520,
+      "y": 440,
+      "z": 90,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 0,
+      "y": 660,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 270
+      },
+      "x": 340,
+      "y": 660,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 720,
+      "y": 660,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 660,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 660,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 240,
+      "y": 680,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 295,
+      "y": 680,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 960,
+      "y": 680,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 1015,
+      "y": 680,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 1340,
+      "y": 680,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 1395,
+      "y": 680,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "half-cross-window"
+      },
+      "x": 240,
+      "y": 690,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "half-cross-window"
+      },
+      "x": 960,
+      "y": 690,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "half-cross-window"
+      },
+      "x": 1340,
+      "y": 690,
+      "z": 90,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 380,
+      "z": 95,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 354,
+      "z": 114,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "fireplace-console"
+      },
+      "x": 1060,
+      "y": 100,
+      "z": 118,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "fireplace-console"
+      },
+      "x": 1260,
+      "y": 100,
+      "z": 118,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 120,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 0,
+      "y": 100,
+      "z": 120,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 520,
+      "y": 100,
+      "z": 120,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 30
+      },
+      "x": 780,
+      "y": 100,
+      "z": 120,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 1580,
+      "y": 100,
+      "z": 120,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 430
+      },
+      "x": 780,
+      "y": 230,
+      "z": 120,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 520,
+      "y": 440,
+      "z": 120,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 0,
+      "y": 660,
+      "z": 120,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 270
+      },
+      "x": 340,
+      "y": 660,
+      "z": 120,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 720,
+      "y": 660,
+      "z": 120,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 660,
+      "z": 120,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 660,
+      "z": 120,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 328,
+      "z": 133,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "mantel-lintel"
+      },
+      "x": 1060,
+      "y": 100,
+      "z": 148,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 150,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 0,
+      "y": 100,
+      "z": 150,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 520,
+      "y": 100,
+      "z": 150,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 30
+      },
+      "x": 780,
+      "y": 100,
+      "z": 150,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 1580,
+      "y": 100,
+      "z": 150,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 430
+      },
+      "x": 780,
+      "y": 230,
+      "z": 150,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 520,
+      "y": 440,
+      "z": 150,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 0,
+      "y": 660,
+      "z": 150,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 270
+      },
+      "x": 340,
+      "y": 660,
+      "z": 150,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 720,
+      "y": 660,
+      "z": 150,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 660,
+      "z": 150,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 660,
+      "z": 150,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 302,
+      "z": 152,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 276,
+      "z": 171,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 180,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 0,
+      "y": 100,
+      "z": 180,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 520,
+      "y": 100,
+      "z": 180,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 780,
+      "y": 100,
+      "z": 180,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 1580,
+      "y": 100,
+      "z": 180,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 420
+      },
+      "x": 780,
+      "y": 240,
+      "z": 180,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 520,
+      "y": 320,
+      "z": 180,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 200
+      },
+      "x": 520,
+      "y": 460,
+      "z": 180,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 0,
+      "y": 660,
+      "z": 180,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 270
+      },
+      "x": 340,
+      "y": 660,
+      "z": 180,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 720,
+      "y": 660,
+      "z": 180,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 660,
+      "z": 180,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 660,
+      "z": 180,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 250,
+      "z": 190,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 224,
+      "z": 209,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 210,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 0,
+      "y": 100,
+      "z": 210,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 560
+      },
+      "x": 520,
+      "y": 100,
+      "z": 210,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 560
+      },
+      "x": 780,
+      "y": 100,
+      "z": 210,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 560
+      },
+      "x": 1580,
+      "y": 100,
+      "z": 210,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 0,
+      "y": 660,
+      "z": 210,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 270
+      },
+      "x": 340,
+      "y": 660,
+      "z": 210,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 240
+      },
+      "x": 720,
+      "y": 660,
+      "z": 210,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 660,
+      "z": 210,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 660,
+      "z": 210,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 198,
+      "z": 228,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 240,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 460,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 80,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 60
+      },
+      "x": 520,
+      "y": 80,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 220,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 80,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 60
+      },
+      "x": 780,
+      "y": 80,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 80,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 380,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1200,
+      "y": 80,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 280,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 540,
+      "y": 140,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 290
+      },
+      "x": 520,
+      "y": 170,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 290
+      },
+      "x": 780,
+      "y": 170,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 280,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 540,
+      "y": 460,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 140
+      },
+      "x": 520,
+      "y": 490,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 140
+      },
+      "x": 780,
+      "y": 490,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 280,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 540,
+      "y": 630,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 220,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 650,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 240,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 280,
+      "y": 650,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 260,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 650,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 250,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1080,
+      "y": 650,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 250,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1330,
+      "y": 650,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 20
+      },
+      "x": 520,
+      "y": 660,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "stone-arch"
+      },
+      "x": 580,
+      "y": 660,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 20
+      },
+      "x": 780,
+      "y": 660,
+      "z": 240,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 0,
+      "y": 680,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 360,
+      "y": 680,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 190
+      },
+      "x": 750,
+      "y": 680,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 1080,
+      "y": 680,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 180
+      },
+      "x": 1460,
+      "y": 680,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 220,
+      "y": 690,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 940,
+      "y": 690,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 1320,
+      "y": 690,
+      "z": 240,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stone-step"
+      },
+      "x": 680,
+      "y": 172,
+      "z": 247,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 100,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 160,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 220,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 280,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 340,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 400,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 460,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 520,
+      "y": 80,
+      "z": 260,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 570,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 560,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 570,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 620,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 570,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 650,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 80,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 750,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 780,
+      "y": 80,
+      "z": 260,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 820,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 880,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 940,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1000,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1050,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1120,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1170,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1240,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1300,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1360,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1420,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1480,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 580,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 1550,
+      "y": 80,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "inner-door"
+      },
+      "x": 540,
+      "y": 140,
+      "z": 260,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "inner-door"
+      },
+      "x": 800,
+      "y": 140,
+      "z": 260,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 520,
+      "y": 240,
+      "z": 260,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 780,
+      "y": 240,
+      "z": 260,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 190,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ns"
+        }
+      },
+      "x": 750,
+      "y": 460,
+      "z": 260,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 270,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 270,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 270,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 580
+      },
+      "x": 0,
+      "y": 680,
+      "z": 270,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 890
+      },
+      "x": 750,
+      "y": 680,
+      "z": 270,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 80,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 220,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 80,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 80,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 80,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 115,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 220,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 115,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 115,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 115,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 150,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 220,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 150,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 150,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 150,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 185,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 120,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 185,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 185,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 185,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 220,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 120,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 220,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 220,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 220,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 255,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 120,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 255,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 255,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 255,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 290,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 120,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 290,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 290,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 290,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 325,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 120,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 325,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 325,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 325,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 360,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 120,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 360,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 360,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 360,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 395,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 120,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 395,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 395,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 395,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 430,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 120,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 430,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 430,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 430,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 465,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 220,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 465,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 465,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 465,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 500,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 220,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 500,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 500,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 500,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 535,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 220,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 535,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 535,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 535,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 570,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 220,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 570,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 570,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 570,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 605,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 220,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 560,
+      "y": 605,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 605,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 605,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 460,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 640,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 360,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 820,
+      "y": 640,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "big",
+          "length": 400,
+          "shape": "plank",
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 640,
+      "z": 280,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "bed"
+      },
+      "x": 80,
+      "y": 80,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "unmade-bed"
+      },
+      "x": 300,
+      "y": 80,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "small-fireplace-jamb"
+      },
+      "x": 1100,
+      "y": 80,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "small-fireplace-jamb"
+      },
+      "x": 1240,
+      "y": 80,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "door-frame"
+      },
+      "x": 1300,
+      "y": 80,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "bed"
+      },
+      "x": 1400,
+      "y": 80,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 1300,
+      "y": 95,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "canopy-bed"
+      },
+      "x": 900,
+      "y": 100,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "stair-railing"
+      },
+      "x": 660,
+      "y": 180,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "door-frame"
+      },
+      "x": 1300,
+      "y": 235,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "inner-door"
+      },
+      "x": 1300,
+      "y": 250,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "door-frame"
+      },
+      "x": 1300,
+      "y": 340,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 1300,
+      "y": 355,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "stair-railing-short"
+      },
+      "x": 670,
+      "y": 460,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "door-frame"
+      },
+      "x": 1300,
+      "y": 495,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-panel"
+      },
+      "x": 1300,
+      "y": 510,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "writing-desk"
+      },
+      "x": 240,
+      "y": 600,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chest"
+      },
+      "x": 1060,
+      "y": 600,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "tailor-table"
+      },
+      "x": 1340,
+      "y": 600,
+      "z": 283,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "door-frame"
+      },
+      "x": 1300,
+      "y": 650,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "door-frame"
+      },
+      "x": 1300,
+      "y": 665,
+      "z": 283,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 290,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 290,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 520,
+      "y": 80,
+      "z": 290,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 780,
+      "y": 80,
+      "z": 290,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 290,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 520,
+      "y": 240,
+      "z": 290,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 780,
+      "y": 240,
+      "z": 290,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 580
+      },
+      "x": 0,
+      "y": 680,
+      "z": 290,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 890
+      },
+      "x": 750,
+      "y": 680,
+      "z": 290,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 320,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 320,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 520,
+      "y": 80,
+      "z": 320,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 780,
+      "y": 80,
+      "z": 320,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 320,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 520,
+      "y": 240,
+      "z": 320,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 780,
+      "y": 240,
+      "z": 320,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 0,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 240,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 295,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 340,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 210
+      },
+      "x": 750,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 960,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 1015,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 1340,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "casement-shutter"
+      },
+      "x": 1395,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 680,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "cross-window"
+      },
+      "x": 240,
+      "y": 690,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "cross-window"
+      },
+      "x": 960,
+      "y": 690,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "cross-window"
+      },
+      "x": 1340,
+      "y": 690,
+      "z": 320,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 350,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 350,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 520,
+      "y": 80,
+      "z": 350,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 780,
+      "y": 80,
+      "z": 350,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 350,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 520,
+      "y": 240,
+      "z": 350,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 780,
+      "y": 240,
+      "z": 350,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 0,
+      "y": 680,
+      "z": 350,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 340,
+      "y": 680,
+      "z": 350,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 210
+      },
+      "x": 750,
+      "y": 680,
+      "z": 350,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 680,
+      "z": 350,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 680,
+      "z": 350,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "cloth-bolt"
+      },
+      "x": 1360,
+      "y": 620,
+      "z": 358,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "string-course-wall-40",
+        "length": 170
+      },
+      "x": 580,
+      "y": 680,
+      "z": 360,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 380,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 380,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 520,
+      "y": 80,
+      "z": 380,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 780,
+      "y": 80,
+      "z": 380,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 380,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 520,
+      "y": 240,
+      "z": 380,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 780,
+      "y": 240,
+      "z": 380,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 0,
+      "y": 680,
+      "z": 380,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 620
+      },
+      "x": 340,
+      "y": 680,
+      "z": 380,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 680,
+      "z": 380,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 680,
+      "z": 380,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "small-fireplace-lintel"
+      },
+      "x": 1100,
+      "y": 80,
+      "z": 383,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "wall-hanging"
+      },
+      "x": 820,
+      "y": 360,
+      "z": 403,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 410,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 410,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 520,
+      "y": 80,
+      "z": 410,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 780,
+      "y": 80,
+      "z": 410,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 410,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 520,
+      "y": 240,
+      "z": 410,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 780,
+      "y": 240,
+      "z": 410,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 0,
+      "y": 680,
+      "z": 410,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 620
+      },
+      "x": 340,
+      "y": 680,
+      "z": 410,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 680,
+      "z": 410,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 680,
+      "z": 410,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 440,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 440,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 520,
+      "y": 80,
+      "z": 440,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 60
+      },
+      "x": 780,
+      "y": 80,
+      "z": 440,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 440,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 520,
+      "y": 240,
+      "z": 440,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 440
+      },
+      "x": 780,
+      "y": 240,
+      "z": 440,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 0,
+      "y": 680,
+      "z": 440,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 620
+      },
+      "x": 340,
+      "y": 680,
+      "z": 440,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 680,
+      "z": 440,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 680,
+      "z": 440,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-rail"
+      },
+      "x": 1300,
+      "y": 95,
+      "z": 463,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 470,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 470,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 40
+      },
+      "x": 520,
+      "y": 80,
+      "z": 470,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 40
+      },
+      "x": 780,
+      "y": 80,
+      "z": 470,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 470,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 520,
+      "y": 120,
+      "z": 470,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 780,
+      "y": 120,
+      "z": 470,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 420
+      },
+      "x": 520,
+      "y": 260,
+      "z": 470,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 420
+      },
+      "x": 780,
+      "y": 260,
+      "z": 470,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 0,
+      "y": 680,
+      "z": 470,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 620
+      },
+      "x": 340,
+      "y": 680,
+      "z": 470,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 280
+      },
+      "x": 1060,
+      "y": 680,
+      "z": 470,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 200
+      },
+      "x": 1440,
+      "y": 680,
+      "z": 470,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lime-panel-low"
+      },
+      "x": 1300,
+      "y": 95,
+      "z": 478,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-panel-low"
+      },
+      "x": 1300,
+      "y": 360,
+      "z": 478,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lime-panel-low"
+      },
+      "x": 1300,
+      "y": 500,
+      "z": 478,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 1640
+      },
+      "x": 0,
+      "y": 40,
+      "z": 500,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 0,
+      "y": 80,
+      "z": 500,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 600
+      },
+      "x": 520,
+      "y": 80,
+      "z": 500,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 600
+      },
+      "x": 780,
+      "y": 80,
+      "z": 500,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall",
+        "length": 600
+      },
+      "x": 1580,
+      "y": 80,
+      "z": 500,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 220
+      },
+      "x": 0,
+      "y": 680,
+      "z": 500,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 580
+      },
+      "x": 360,
+      "y": 680,
+      "z": 500,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 240
+      },
+      "x": 1080,
+      "y": 680,
+      "z": 500,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-wall-40",
+        "length": 180
+      },
+      "x": 1460,
+      "y": 680,
+      "z": 500,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 220,
+      "y": 690,
+      "z": 500,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 940,
+      "y": 690,
+      "z": 500,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "window-lintel"
+      },
+      "x": 1320,
+      "y": 690,
+      "z": 500,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-gable"
+      },
+      "x": 0,
+      "y": 40,
+      "z": 530,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 560,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 40,
+      "z": 530,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 560,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 620,
+      "y": 40,
+      "z": 530,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 400,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 40,
+      "z": 530,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "ashlar-gable"
+      },
+      "x": 1580,
+      "y": 40,
+      "z": 530,
+      "view": 1
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 560,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 60,
+      "y": 680,
+      "z": 530,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 560,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 620,
+      "y": 680,
+      "z": 530,
+      "view": 0
+    },
+    {
+      "piece": {
+        "wood": {
+          "size": "normal",
+          "length": 400,
+          "shape": "round",
+          "hewn": 12,
+          "axis": "ew"
+        }
+      },
+      "x": 1180,
+      "y": 680,
+      "z": 530,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lave-roof-pierced"
+      },
+      "x": 60,
+      "y": 0,
+      "z": 550,
+      "view": 2
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 1000,
+      "y": 40,
+      "z": 550,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "lave-roof"
+      },
+      "x": 60,
+      "y": 380,
+      "z": 550,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 1000,
+      "y": 40,
+      "z": 650,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 1000,
+      "y": 40,
+      "z": 750,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 1000,
+      "y": 40,
+      "z": 850,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 0,
+      "y": 340,
+      "z": 890,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "lave-ridge"
+      },
+      "x": 60,
+      "y": 340,
+      "z": 920,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-cap"
+      },
+      "x": 980,
+      "y": 40,
+      "z": 950,
+      "view": 0
+    },
+    {
+      "piece": {
+        "prop": "chimney-flue"
+      },
+      "x": 0,
+      "y": 340,
+      "z": 990,
+      "view": 1
+    },
+    {
+      "piece": {
+        "prop": "chimney-cap"
+      },
+      "x": 0,
+      "y": 320,
+      "z": 1090,
+      "view": 1
+    }
+  ]
+}

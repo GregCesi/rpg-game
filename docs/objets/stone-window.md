@@ -14,7 +14,7 @@ Par la matière (`mass` : `matter`, `fill` ; calcaire 2 400 kg/m³, bois 900, fe
 | Clé | Nom | Dimensions (cm) | Masse | Vues |
 | --- | --- | --- | --- | --- |
 | `window-sill` | appui de baie | 125 × 30 × 15 | 135 kg | quatre (`four` : R0 à R3) |
-| `window-lintel` | linteau de baie | 145 × 30 × 30 | 313 kg | quatre (`four` : R0 à R3) |
+| `window-lintel` | linteau de baie | 140 × 30 × 30 | 302 kg | quatre (`four` : R0 à R3) |
 | `mullion-low` | meneau du bas | 15 × 20 × 90 | 65 kg | deux (`symmetric` : est-ouest et `-ns`) |
 | `mullion-high` | meneau du haut | 15 × 20 × 55 | 40 kg | deux (`symmetric` : est-ouest et `-ns`) |
 | `transom` | traverse | 105 × 20 × 15 | 76 kg | deux (`symmetric` : est-ouest et `-ns`) |
