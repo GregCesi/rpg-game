@@ -45,11 +45,11 @@ await playtest('construction', async ({ page, errors, load }) => {
 
     // sur la ferme : on sort du mode (B), on change de carte par le panneau ?dieu, on y rentre (B)
     await page.keyboard.press('KeyB');
-    await sleep(150);
+    await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
     assert.equal(await mode(), 'play', 'B sort du mode');
     await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
     await page.keyboard.press('KeyB');
-    await sleep(150);
+    await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'build');
     assert.equal(await mode(), 'build', 'B rentre dans le mode');
 
     // un coin dégagé de la ferme, loin de Xéros, la caméra centrée dessus
@@ -84,9 +84,10 @@ await playtest('construction', async ({ page, errors, load }) => {
     const click = async (x: number, y: number, button: 'left' | 'right' = 'left') => {
       const s = await screen(x, y);
       await page.mouse.move(s.x, s.y);
-      await sleep(80);
       await page.mouse.click(s.x, s.y, { button });
-      await sleep(150);
+      // le clic joué : la file des clics du mode construction (systems/build.ts) vidée par un pas de jeu, jamais une pause fixe (un
+      // clic n'est jamais perdu, il attend son pas : sous la charge, une pause passerait avant lui)
+      await page.evaluate(() => (window as any).__until(() => !(window as any).game.scene.getScene('world').builder?.clicks?.length, 'le clic joué'));
     };
     const send = (cmd: object) => page.evaluate((c) => (window as any).game.events.emit('build', c), cmd);
     // les pièces déjà posées sur la ferme à l'arrivée (la cabane du chasseur, posée depuis son plan : chantier « monde ») ne comptent pas
@@ -473,7 +474,7 @@ await playtest('construction', async ({ page, errors, load }) => {
     assert.ok((await jointsNow()).some((j: any) => j.type === 'halving'), 'le mi-bois reste sous le poteau');
 
     await page.keyboard.press('KeyB');
-    await sleep(150);
+    await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
     assert.equal(await mode(), 'play', 'B rend le jeu');
     assert.deepEqual(errors, [], `erreurs de la page : ${errors.join(' | ')}`);
     console.log('  ✓ construction : dalle, poteau à 12 cm, sablière à 192 cm, refus, annuler, refaire, plan écrit et reposé, solin, cran, rechargé ; tronçon de trois sans contour intérieur, angle, coupure ; enture des poteaux, enture refusée, tenon, rechargés, retrait refusé puis l’ensemble ; angle de solin, sablières alignées dehors, mi-bois, poteau d’angle');

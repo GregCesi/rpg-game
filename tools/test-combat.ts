@@ -19,7 +19,6 @@ import { playtest } from './lib/playtest';
 await playtest('combat', async ({ page, errors, load }) => {
   await load('?dieu&reset&debug');
   const r = (await page.evaluate(async () => {
-    const sleep = (t: number) => new Promise((res) => setTimeout(res, t));
     const g = (window as any).game;
     const w = () => g.scene.getScene('world');
     // chemins dans une variable : ce sont des modules de la page (servis par Vite), pas du test
@@ -43,8 +42,9 @@ await playtest('combat', async ({ page, errors, load }) => {
       const p = aimAt ?? W.__front();
       W.__aim(p.x, p.y);
       await W.__frames(1);
+      // un clic court : enfoncé puis relâché aussitôt (le jeu le garde jusqu'à le lire) ; jamais une pause fixe entre les deux, qu'une
+      // page chargée allonge au-delà du seuil d'un appui maintenu (500 ms de temps vrai) : le clic deviendrait un lancer
       W.__press(button);
-      await sleep(40);
       W.__release(button);
       await W.__frames(2);
       W.__leave();
@@ -415,7 +415,6 @@ await playtest('combat', async ({ page, errors, load }) => {
   // frapper le mannequin posé : l'épée en main, droit devant lui, au sud ; rend les coups qui l'ont touché
   const hitBuilt = () =>
     page.evaluate(async () => {
-      const sleep = (t: number) => new Promise((res) => setTimeout(res, t));
       const g = (window as any).game;
       const w = g.scene.getScene('world');
       const built = w.map.builds.find((b: any) => 'prop' in b.piece.piece && b.piece.piece.prop === 'training-dummy');
@@ -435,7 +434,6 @@ await playtest('combat', async ({ page, errors, load }) => {
       W.__aim(f.x, f.y);
       await W.__frames(1);
       W.__press('left');
-      await sleep(40);
       W.__release('left');
       await (window as any).__frames(2);
       await (window as any).__until(() => w.mode === 'play' && !w.combat.busy, 'le coup fini');

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import '@fontsource/pixelify-sans/latin-400.css';
-import { CONSTRUIRE, DEBUG, DIEU, RENDER, UI, VIEW, ZOOM } from './config';
+import { CONSTRUIRE, DEBUG, DIEU, RENDER, STEP, UI, VIEW, ZOOM } from './config';
 import * as content from './content';
 import { buildPlans } from './content/buildPlans';
 import { catalogFrom, validateBuildPlans, validateContent } from './content/validate';
@@ -12,6 +12,7 @@ import { BootScene } from './scenes/BootScene';
 import { DialogueScene } from './scenes/DialogueScene';
 import { HudScene } from './scenes/HudScene';
 import { WorldScene } from './scenes/WorldScene';
+import { startTimeStep } from './systems/simSpeed';
 
 async function start() {
   // Même vérification que `npm run check` : en dev, une erreur de contenu s'affiche à l'écran au lieu d'un plantage obscur.
@@ -47,11 +48,16 @@ async function start() {
     pixelArt: true,
     roundPixels: true,
     backgroundColor: '#14110d',
-    physics: { default: 'arcade', arcade: { debug: DEBUG } },
+    // la physique au pas de jeu (STEP de config.ts) : un pas de physique par pas de jeu
+    physics: { default: 'arcade', arcade: { debug: DEBUG, fps: STEP.fps } },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     // ordre d'affichage : le monde, la barre d'objets par-dessus, puis le dialogue
     scene: [BootScene, WorldScene, HudScene, DialogueScene],
   });
+
+  // le pas de jeu fixe (systems/simSpeed.ts) : la boucle de Phaser est remplacée après son premier pas (elle n'existe qu'une fois lancée)
+  const g = game;
+  g.events.once(Phaser.Core.Events.POST_STEP, () => startTimeStep(g));
 
   if (build) game.events.on(GameEvent.BuildStatus, build.status);
 

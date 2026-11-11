@@ -34,12 +34,16 @@ const START = Date.now();
 
 await playtest('maison-coq', async ({ page, errors, load }) => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  // un pas dessiné joué : ce qu'on vient de faire (la souris, une touche) est lu et le fantôme suit (il n'est recalculé qu'au pas
+  // dessiné) ; sous la charge, une pause fixe peut passer sans qu'aucun pas ne soit joué (le pas de jeu fixe, src/world/timeStep.ts)
+  const stepped = () => page.evaluate(() => (window as any).__drawn(1));
   await load('?construire&dieu&reset');
+  // B lu avant la suite (une commande de carte est refusée en mode construction), attendu sur l'état du jeu, jamais une pause fixe
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
   await page.evaluate(() => (window as any).__restart({ kind: 'map', map: 'ferme' }));
   await page.keyboard.press('KeyB');
-  await sleep(150);
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'build');
   const notices: string[] = [];
   await page.exposeFunction('noticed', (t: string) => notices.push(t));
   await page.evaluate(() => (window as any).game.events.on('notice', (t: string) => (window as any).noticed(t)));
@@ -113,14 +117,6 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
    */
   const put = async (s: PieceStep) => {
     await send({ kind: 'pick', piece: s.ref, ...(s.view ? { view: s.view } : {}) });
-    for (let i = 0; i < 0; i++) {
-      await page.keyboard.press('KeyT');
-      await sleep(30);
-    }
-    for (let i = 0; i < 0; i++) {
-      await page.keyboard.press('KeyG');
-      await sleep(30);
-    }
     // la hauteur où on la voit : le dessus de ce qui la porte (les pans de toit ne portent que le faîtage)
     const ridge = 'prop' in s.ref && s.ref.prop === 'lave-ridge';
     // la hauteur où on la voit : le dessus de ce qui la porte (les pans de toit ne portent que le faîtage ; une marche, la précédente)
@@ -128,7 +124,8 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
     const aimed = await page.evaluate(
       async ([b, ridge, stairZ]) => {
         const url = '/src/world/build.ts';
-        const B = await import(url);
+        // le module gardé dans la page (un import() refait coûte près de 100 ms au serveur de Vite)
+        const B = (((window as any).__mods ??= {})[url] ??= await import(url));
         const m = (window as any).game.scene.getScene('world').map;
         const roof = (q: any) => 'prop' in q.piece && /lave-roof|lave-ridge/.test(q.piece.prop);
         const ps = m.builds.map((q: any) => q.piece).filter((q: any) => ridge || !roof(q));
@@ -156,7 +153,7 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
     await look(px, py, 6);
     let sp = await screen(px, py);
     await page.mouse.move(sp.x, sp.y);
-    await sleep(40);
+    await stepped();
     // la souris là où on la veut : l'écart mesuré dans le monde, rattrapé
     for (let i = 0; i < 3; i++) {
       const e = await page.evaluate(([x, y]) => {
@@ -171,9 +168,9 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
       if (Math.abs(e.dx) < 0.5 && Math.abs(e.dy) < 0.5) break;
       sp = { x: sp.x + e.dx, y: sp.y + e.dy };
       await page.mouse.move(sp.x, sp.y);
-      await sleep(40);
+      await stepped();
     }
-    await sleep(40);
+    await stepped();
     // ce que montre le fantôme (pour le message, si la pièce n'est pas où elle doit)
     const readGhost = () =>
       page.evaluate(() => {
@@ -207,11 +204,11 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
         const key = crans < 0 ? 'KeyG' : 'KeyT';
         for (let i = 0; i < Math.abs(crans); i++) {
           await page.keyboard.press(key);
-          await sleep(30);
+          await stepped();
         }
         for (const [dx, dy] of tries) {
           await page.mouse.move(sp.x + dx * k, sp.y + dy * k);
-          await sleep(40);
+          await stepped();
           const g = await readGhost();
           seenGhosts.add(JSON.stringify([crans, g.aim?.[0]]));
           if (right(g)) {
@@ -224,13 +221,15 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
         if (found) break;
         for (let i = 0; i < Math.abs(crans); i++) {
           await page.keyboard.press(crans < 0 ? 'KeyT' : 'KeyG');
-          await sleep(30);
+          await stepped();
         }
       }
       if (!found) await page.mouse.move(sp.x, sp.y);
     }
     await page.mouse.click(sp.x, sp.y);
-    await sleep(110);
+    // le clic joué : la file des clics du mode construction vidée par un pas de jeu
+    await page.evaluate(() => (window as any).__until(() => !(window as any).game.scene.getScene('world').builder?.clicks?.length, 'le clic joué'));
+    await stepped();
     const list = await pieces();
     const p = list.find((q: any) => !before.some((o: any) => o.id === q.id));
     const seen = () => `visé en (${px * 5 - O!.x}, ${py * 5 - O!.y}), S ${S} ; souris ${ghost.pointer.map((v: number, i: number) => Math.round(v - (i ? O!.y : O!.x)))} ; fantôme ${JSON.stringify(ghost.aim?.map((q: number[]) => [q[0] - O!.x, q[1] - O!.y, q[2]]))} ${ghost.why ?? ''}`;
@@ -290,7 +289,10 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
   // l'âge du bois, réglé au catalogue (patiné) : toutes les pièces de bois le prennent, le plan le fixe
   await send({ kind: 'age', age: 'worn' });
 
+  // la progression, toutes les 20 étapes (un scénario arrêté au bout de sa limite dit où il en était)
+  let done = 0;
   for (const s of coqSteps()) {
+    if (++done % 20 === 0) console.log(`  [maison-coq] ${done} étapes en ${Math.round((Date.now() - START) / 1000)} s`);
     if (s.kind === 'piece') await put(s);
     else await frame(s.name);
   }
@@ -323,7 +325,7 @@ await playtest('maison-coq', async ({ page, errors, load }) => {
 
   // l'intérieur : un bâtiment, deux niveaux, une entrée (la porte en arc)
   await page.keyboard.press('KeyB');
-  await page.waitForFunction(() => (window as any).game.scene.getScene('world').mode === 'play', null, { timeout: 5000 });
+  await page.evaluate((m) => (window as any).__until(() => (window as any).game.scene.getScene('world').mode === m, `B lu : le mode ${m}`), 'play');
   const mine = (x: number, y: number) => x >= O!.x - 100 && x <= O!.x + 1700 && y >= O!.y - 100 && y <= O!.y + 760;
   const buildings: any[] = ((await page.evaluate(() => JSON.parse(JSON.stringify((window as any).game.scene.getScene('world').interiors.buildings())))) as any[]).filter((q) => mine(q.room.x, q.room.y));
   assert.equal(buildings.length, 1, 'la maison est un bâtiment où l’on entre');

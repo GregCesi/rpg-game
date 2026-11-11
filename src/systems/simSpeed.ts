@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { time } from '../content';
+import { STEP_MS, TimeStep } from '../world/timeStep';
 
 /** Les vitesses de simulation proposées dans ?dieu : les paliers du joueur (time.json), et celui de ?dieu. */
 export const SIM_SPEEDS: readonly number[] = [...time.speeds, time.dieuSpeed];
@@ -10,28 +11,46 @@ let factor = 1;
 /** Le facteur de simulation en ce moment. */
 export const simSpeed = (): number => factor;
 
+/** Le pas en cours sera-t-il dessiné ? (le dernier de chaque image ; les autres se jouent sans rendu, `headlessStep`) */
+let drawing = true;
+
+/** Vrai pendant le pas de jeu qui sera dessiné : ce qui ne sert qu'à l'affichage peut attendre ce pas-là. */
+export const drawnStep = (): boolean => drawing;
+
+type Looping = Phaser.Game & { __simStep?: (time: number, delta: number) => void; __timeStep?: TimeStep };
+
 /**
- * La vitesse de simulation (docs/CONCEPTION.md, « Le temps » : à ne pas confondre avec la vitesse du temps, en pause à x1) : un outil
- * de ?dieu pour regarder un travail plus vite. À xN, chaque image du navigateur fait N pas de jeu complets, chacun de la durée normale
- * d'une image (la physique, les gestes, les pauses, la marche, l'horloge : tout avance d'autant), jamais un pas plus grand ; seul le
- * dernier est dessiné (Phaser `headlessStep` pour les autres). Rien n'est sauvegardé : la page rechargée repart à x1.
+ * Le pas de jeu fixe (world/timeStep.ts, docs/CONCEPTION.md « Le temps ») : la boucle de Phaser donne à chaque pas le temps vrai de
+ * l'image (lissé), plus long sur une machine lente ; elle est remplacée, une fois, par une boucle qui fait à chaque image autant de pas
+ * de `STEP_MS` que le temps vrai écoulé (× la vitesse de simulation) en demande, jamais un pas plus grand. Tout ce qui avance au pas de
+ * jeu (la physique, les bêtes et leurs tirages au hasard, les gestes et leurs animations, les délais, l'horloge) voit donc la même suite
+ * de pas sur toutes les machines : un jeu qui rame en fait plusieurs par image. Seul le dernier pas d'une image est dessiné (Phaser
+ * `headlessStep` pour les autres). L'horloge des pas (le `time` de chaque pas, que Phaser recopie dans `time.now` de chaque scène : les
+ * verrous après une action, le combat) avance de `STEP_MS` à chaque pas, jamais en arrière.
+ */
+export function startTimeStep(game: Phaser.Game): void {
+  const g = game as Looping;
+  if (g.__simStep) return;
+  const loop = game.loop as Phaser.Core.TimeStep & { callback: (time: number, delta: number) => void };
+  // la boucle d'origine, gardée une fois
+  const step = (g.__simStep = loop.callback);
+  const steps = (g.__timeStep = new TimeStep());
+  loop.callback = (time: number) => {
+    const at = steps.image(time, factor);
+    drawing = false;
+    for (let i = 0; i < at.length - 1; i++) game.headlessStep(at[i], STEP_MS);
+    drawing = true;
+    // une image trop tôt pour un pas : rien ne bouge, rien n'est redessiné
+    if (at.length) step(at[at.length - 1], STEP_MS);
+  };
+}
+
+/**
+ * La vitesse de simulation (docs/CONCEPTION.md, « Le temps » : à ne pas confondre avec la vitesse du temps, en pause à x1) : à xN, le
+ * jeu avance de N fois le temps vrai, en pas de jeu de durée normale (startTimeStep : N fois plus de pas par image, jamais un pas plus
+ * grand). Rien n'est sauvegardé : la page rechargée repart à x1.
  */
 export function setSimSpeed(game: Phaser.Game, n: number): void {
   factor = Math.max(1, Math.round(n));
-  const loop = game.loop as Phaser.Core.TimeStep & { callback: (time: number, delta: number) => void };
-  const g = game as Phaser.Game & { __simStep?: (time: number, delta: number) => void; __simAhead?: number };
-  // la boucle d'origine, gardée une fois
-  g.__simStep ??= loop.callback;
-  g.__simAhead ??= 0;
-  const step = g.__simStep;
-  // l'horloge du jeu (le `time` de chaque pas, que Phaser recopie dans `time.now` de chaque scène : les verrous après une action, le
-  // combat) avance de la durée de chaque pas, et reste croissante d'un pas à l'autre et d'une image à l'autre : les pas de plus d'une
-  // image se placent après ceux de l'image d'avant, jamais avant (`__simAhead` : l'avance prise sur le temps vrai, gardée quand on
-  // revient à x1, pour que l'horloge ne recule jamais)
-  loop.callback = (time: number, delta: number) => {
-    g.__simAhead! += (factor - 1) * delta;
-    const now = time + g.__simAhead!;
-    for (let i = factor - 1; i > 0; i--) game.headlessStep(now - i * delta, delta);
-    step(now, delta);
-  };
+  startTimeStep(game);
 }

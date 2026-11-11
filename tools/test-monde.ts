@@ -12,10 +12,12 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { playtest } from './lib/playtest';
+import { walker } from './lib/walk';
 
 execFileSync('npx', ['tsx', 'tools/world-preview.ts'], { stdio: 'inherit' });
 
 await playtest('monde', async ({ page, errors, load }) => {
+  const walk = walker(page);
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   await load('?dieu&reset');
   const emit = (cmd: object) => page.evaluate((c) => (window as any).game.events.emit('dieu', c), cmd);
@@ -82,103 +84,8 @@ await playtest('monde', async ({ page, errors, load }) => {
    */
   const goTo = async (wx: number, wy: number, first: 'x' | 'y', tol = 6) => {
     await press([]);
-    // la marche se conduit dans la page, au rythme du jeu : chaque décision suit l'état du jeu à l'image même (ses pieds, son mode),
-    // si bien qu'un jeu ralenti (les scénarios tournent à plusieurs) ne fait ni dépasser le but ni échouer sur une durée ; de très
-    // près, un appui ne dure qu'un pas de la physique (un ou deux pixels)
-    const r = await page.evaluate(
-      async ({ wx, wy, first, tol }) => {
-        const g = (window as any).game;
-        const world = () => g.scene.getScene('world');
-        const key = (type: 'keydown' | 'keyup', code: string) => window.dispatchEvent(new KeyboardEvent(type, { code }));
-        const held = new Set<string>();
-        const hold = (keys: string[]) => {
-          for (const k of [...held]) if (!keys.includes(k)) (key('keyup', k), held.delete(k));
-          for (const k of keys) if (!held.has(k)) (key('keydown', k), held.add(k));
-        };
-        const frame = () => new Promise((res) => requestAnimationFrame(res));
-        /**
-         * Attend `n` pas de la physique du monde (une image peut en contenir plusieurs), image après image ; un bord de zone passé en
-         * route redémarre la scène, dont l'ancien monde physique ne fera plus de pas : l'attente s'arrête alors (on est arrivé ailleurs).
-         */
-        const steps = async (n: number) => {
-          const pw = world()?.physics?.world;
-          if (!pw) return;
-          let k = 0;
-          const tick = () => void k++;
-          pw.on('worldstep', tick);
-          while (k < n && world()?.physics?.world === pw) await frame();
-          pw.off('worldstep', tick);
-        };
-        const at = () => {
-          const w = world();
-          const a = w?.player?.actor;
-          if (!a || !w.map) return undefined;
-          const o = w.map.def.world ?? { x: 0, y: 0 };
-          return { id: w.map.def.id as string, wx: o.x + a.x, wy: o.y + a.y, mode: w.mode as string, zone: !!w.map.def.world };
-        };
-        let start = at();
-        while (!start) (await frame(), (start = at()));
-        let axis = first;
-        let last = { wx: start.wx, wy: start.wy };
-        let still = 0;
-        // bornes en images, jamais en durée : hors du mode `play` trop longtemps (un dialogue ouvert en route), ou plus aucun progrès
-        // vers le but (une approche qui oscille) ; le test échoue alors en le disant, au lieu d'attendre sans fin
-        let away = 0;
-        let best = Infinity;
-        let stale = 0;
-        // le plus petit pas obtenu d'un appui bref (sous la charge, une image d'appui fait plusieurs pas de la physique : un joueur ne
-        // s'approche pas plus près que la moitié de ce pas ; la tolérance demandée ne descend jamais sous elle)
-        let minMove = Infinity;
-        for (;;) {
-          await frame();
-          const p = at();
-          if (!p) continue;
-          // une sortie prise en route (la porte de la maison) : on est arrivé ailleurs
-          if (!start.zone && p.id !== start.id) return (hold([]), { ok: true, p });
-          if (p.mode !== 'play') {
-            if (++away > 1200) return (hold([]), { ok: false, p, why: `mode ${p.mode} depuis 1200 images` });
-            continue;
-          }
-          away = 0;
-          const dx = wx - p.wx;
-          const dy = wy - p.wy;
-          // dans la maison, la précision demandée (passer une porte) ; dehors, jamais plus près que la moitié d'un pas d'image
-          const near = minMove === Infinity || !start.zone ? tol : Math.max(tol, minMove / 2);
-          if (Math.abs(dx) <= near && Math.abs(dy) <= near) return (hold([]), { ok: true, p });
-          const dist = Math.abs(dx) + Math.abs(dy);
-          if (dist < best - 1) (best = dist), (stale = 0);
-          else if (++stale > 1500) return (hold([]), { ok: false, p, why: `plus de progrès depuis 1500 images (au plus près : ${best.toFixed(1)} px)` });
-          if (axis === 'x' && Math.abs(dx) <= near) axis = 'y';
-          if (axis === 'y' && Math.abs(dy) <= near) axis = 'x';
-          const dir = axis === 'x' ? (dx > 0 ? 'KeyD' : 'KeyA') : dy > 0 ? 'KeyS' : 'KeyW';
-          const d = axis === 'x' ? Math.abs(dx) : Math.abs(dy);
-          if (d < 12) {
-            // de très près, au pas de la physique : appuyer le temps d'un pas, relâcher, laisser s'arrêter
-            hold([]);
-            hold([dir]);
-            await steps(2);
-            hold([]);
-            await steps(3);
-            const q = at();
-            const moved = q ? Math.hypot(q.wx - p.wx, q.wy - p.wy) : 0;
-            if (moved > 0.5) minMove = Math.min(minMove, moved);
-          } else hold(tol < 6 || d < 24 ? [dir] : ['ShiftLeft', dir]);
-          // buté sur un coin (un piquet de clôture, l'angle d'un mur) : un petit pas de côté, d'un côté puis de l'autre, et on reprend ;
-          // bloqué pour de bon : des centaines d'images sans bouger (et non une durée)
-          if (Math.hypot(p.wx - last.wx, p.wy - last.wy) > 2) (last = { wx: p.wx, wy: p.wy }, (still = 0));
-          else if (++still > 600) return (hold([]), { ok: false, p });
-          else if (still % 60 === 0 && d >= 12) {
-            const side = (still / 60) % 2 === 1 ? 1 : -1;
-            const across = axis === 'x' ? (side > 0 ? 'KeyS' : 'KeyW') : side > 0 ? 'KeyD' : 'KeyA';
-            hold([across]);
-            await steps(6 * Math.ceil(still / 120));
-            hold([]);
-          }
-        }
-      },
-      { wx, wy, first, tol },
-    );
-    if (!r.ok) throw new Error(`Xéros est bloqué en route vers (${wx}, ${wy}) : ${(r as any).why ?? 'il ne bouge plus'} ; ${JSON.stringify(r.p)}`);
+    // la marche partagée (tools/lib/walk.ts), conduite à chaque pas de jeu ; les bords de zone se passent en route
+    await walk.goTo(wx, wy, first, tol, true);
   };
 
   // 1. le réveil dans son coin de la maison (l'intérieur calculé de la maison bâtie sur la ferme), puis la sortie : un chemin calculé
@@ -202,7 +109,8 @@ await playtest('monde', async ({ page, errors, load }) => {
       // dans la maison, comme un joueur, par le milieu des passages : 2 px de marge autour du corps quand il y a la place (une porte de
       // 90 cm laisse 18 px à un corps de 10 : collé à une huisserie, le moindre écart sous la charge l'y arrête) ; sinon au plus juste
       let margin = w.interior ? 2 : 0;
-      const free = (x: number, y: number) => m.areaFree({ left: x - 5 - margin, top: y - 8 - margin, right: x + 5 + margin, bottom: y + margin }, [], doors);
+      // le corps de ses pieds, tel que la physique le pose (FEET de config.ts : 10 × 8, 2 px au-dessus du point des pieds)
+      const free = (x: number, y: number) => m.areaFree({ left: x - 5 - margin, top: y - 10 - margin, right: x + 5 + margin, bottom: y - 2 + margin }, [], doors);
       const start = [Math.round(w.player.actor.x / S), Math.round(w.player.actor.y / S)];
       const goal = to
         ? (x: number, y: number) => Math.abs(x * S - to.x) <= S / 2 && Math.abs(y * S - to.y) <= S / 2

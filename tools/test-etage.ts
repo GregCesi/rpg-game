@@ -123,8 +123,7 @@ await playtest('etage', async ({ page, errors, load }) => {
   assert.ok(s.x > s.ox + 1315 / 5 && s.storey === 1 && s.z >= 280, `dans la chambre de la fille, à l'étage (${JSON.stringify(s)})`);
 
   // 3. la page rechargée : il est toujours en haut, l'étage affiché
-  await W(`window.__settle()`);
-  await page.waitForTimeout(400);
+  await W(`window.__idle('avant de recharger')`);
   await load('?dieu');
   await W(`window.__idle('rechargé')`);
   s = await state();
