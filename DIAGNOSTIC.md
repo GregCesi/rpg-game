@@ -422,7 +422,7 @@ Branche `corrections`, partie de `diagnostic`. Les étapes 1 à 3 de l'ordre rec
 Mêmes chemins, même machine (Apple M3, vrai Chrome), en dev. L'outil a été corrigé pendant ce chantier :
 - le profileur de Chrome démarre avant l'enregistrement des images (son démarrage figeait la première, d'où les maxima de 50 à 170 ms des tableaux de la section 1, même loin du coq) ;
 - chaque arrivée dit sa pire image, de la commande jusqu'à 1,5 s après le monde prêt ;
-- la tournée des zones attend la fin de la préparation d'avance, comme un joueur qui marche d'une zone à l'autre (323 ms après le réveil).
+- la tournée des zones attend la fin de la préparation d'avance, comme un joueur qui marche d'une zone à l'autre (387 ms après le réveil).
 
 Les deux références ont donc été **remesurées avec le même outil** : `docs/diagnostic/avant-dev.json`, `apres-dev.json`, `corrige-dev.json` (les rapports d'origine sont dans l'historique, commit 06ae941).
 
@@ -430,53 +430,62 @@ Les deux références ont donc été **remesurées avec le même outil** : `docs
 
 | zone | b9cc596 1re | b9cc596 2e | 1e3e36c 1re | 1e3e36c 2e | corrigé 1re | corrigé 2e |
 |---|---|---|---|---|---|---|
-| foret-profonde-nord | 879 (851) | 73 (44) | 872 (843) | 65 (37) | 85 (47) | 69 (40) |
-| bois-du-nord | 709 (673) | 71 (34) | 666 (634) | 62 (32) | 90 (33) | 61 (28) |
-| pres-du-nord | 57 (30) | 46 (21) | 66 (39) | 54 (29) | 43 (17) | 34 (10) |
-| **ferme-du-riche** | 45 (20) | 37 (14) | **13 053** (13 015) | **13 284** (13 258) | **96** (60) | **60** (32) |
-| champs-du-riche | 36 (12) | 39 (15) | 53 (23) | 47 (19) | 38 (7) | 36 (6) |
-| foret-profonde | 541 (514) | 70 (45) | 550 (523) | 78 (46) | 77 (46) | 61 (34) |
-| **ferme** | 2 165 (2 124) | 1 063 (1 026) | 2 402 (2 364) | 1 124 (1 089) | **89** (52) | **80** (44) |
-| chemin | 50 (20) | 49 (19) | 61 (31) | 61 (29) | 67 (12) | 40 (11) |
-| village | 65 (40) | 53 (29) | 77 (51) | 69 (46) | 56 (33) | 42 (16) |
-| route-de-la-ville | 41 (15) | 39 (12) | 54 (27) | 43 (20) | 37 (11) | 35 (9) |
-| foret-profonde-sud | 406 (379) | 65 (39) | 402 (376) | 68 (41) | 75 (42) | 70 (41) |
-| bois-du-sud | 446 (412) | 71 (37) | 455 (423) | 74 (39) | 93 (31) | 65 (29) |
-| pres-du-sud | 51 (23) | 49 (22) | 46 (20) | 52 (24) | 42 (15) | 38 (13) |
-| quartier-sud | 40 (16) | 42 (18) | 40 (17) | 39 (15) | 36 (13) | 35 (11) |
-| pres-de-l-est | 37 (12) | 35 (11) | 34 (10) | 31 (10) | 37 (11) | 33 (8) |
-| foret-des-ronces | 655 (628) | 63 (36) | 677 (649) | 70 (41) | 73 (40) | 65 (37) |
-| bois-de-la-riviere | 443 (412) | 62 (29) | 451 (420) | 62 (30) | 83 (28) | 60 (29) |
-| friches | 40 (12) | 35 (11) | 36 (11) | 41 (12) | 34 (9) | 38 (12) |
-| ferme-rivale | 29 (6) | 28 (6) | 31 (7) | 29 (7) | 30 (7) | 26 (5) |
-| champs-rivaux | 30 (8) | 32 (9) | 33 (9) | 29 (7) | 27 (6) | 27 (6) |
-| **arrivées au-dessus de 100 ms** | **9 sur 40** | | **11 sur 40** | | **0 sur 40** (la pire : 96) | |
+| foret-profonde-nord | 879 (851) | 73 (44) | 872 (843) | 65 (37) | 86 (48) | 67 (36) |
+| bois-du-nord | 709 (673) | 71 (34) | 666 (634) | 62 (32) | 91 (33) | 60 (26) |
+| pres-du-nord | 57 (30) | 46 (21) | 66 (39) | 54 (29) | 41 (17) | 42 (12) |
+| **ferme-du-riche** | 45 (20) | 37 (14) | **13 053** (13 015) | **13 284** (13 258) | **84** (47) | **57** (29) |
+| champs-du-riche | 36 (12) | 39 (15) | 53 (23) | 47 (19) | 40 (8) | 35 (6) |
+| foret-profonde | 541 (514) | 70 (45) | 550 (523) | 78 (46) | 81 (50) | 77 (47) |
+| **ferme** | 2 165 (2 124) | 1 063 (1 026) | **2 402** (2 364) | **1 124** (1 089) | **87** (47) | **82** (46) |
+| chemin | 50 (20) | 49 (19) | 61 (31) | 61 (29) | 67 (11) | 41 (11) |
+| village | 65 (40) | 53 (29) | 77 (51) | 69 (46) | 56 (33) | 36 (13) |
+| route-de-la-ville | 41 (15) | 39 (12) | 54 (27) | 43 (20) | 36 (11) | 36 (9) |
+| foret-profonde-sud | 406 (379) | 65 (39) | 402 (376) | 68 (41) | 73 (39) | 65 (37) |
+| bois-du-sud | 446 (412) | 71 (37) | 455 (423) | 74 (39) | 94 (32) | 63 (28) |
+| pres-du-sud | 51 (23) | 49 (22) | 46 (20) | 52 (24) | 43 (14) | 36 (12) |
+| quartier-sud | 40 (16) | 42 (18) | 40 (17) | 39 (15) | 33 (10) | 36 (11) |
+| pres-de-l-est | 37 (12) | 35 (11) | 34 (10) | 31 (10) | 30 (7) | 30 (7) |
+| foret-des-ronces | 655 (628) | 63 (36) | 677 (649) | 70 (41) | 75 (39) | 65 (37) |
+| bois-de-la-riviere | 443 (412) | 62 (29) | 451 (420) | 62 (30) | 83 (28) | 62 (30) |
+| friches | 40 (12) | 35 (11) | 36 (11) | 41 (12) | 34 (9) | 39 (12) |
+| ferme-rivale | 29 (6) | 28 (6) | 31 (7) | 29 (7) | 30 (7) | 28 (6) |
+| champs-rivaux | 30 (8) | 32 (9) | 33 (9) | 29 (7) | 25 (6) | 33 (9) |
+| **arrivées au-dessus de 100 ms** | **9 sur 40** | | **11 sur 40** | | **0 sur 40** (la pire : 94) | |
 
 **Les gestes** (la pire image, ms) :
 
 | geste | b9cc596 | 1e3e36c | corrigé |
 |---|---|---|---|
 | ouvrir la porte en arc | — (pas de maison) | **13 899** | **18** |
-| entrer dans la maison du coq | — | 827 (create 790) | **46** (create 14) |
+| entrer dans la maison du coq | — | 827 (create 790) | **44** (create 13) |
 | ouvrir une porte du palier | — | 600 | **34** |
-| ressortir sur la ferme du riche | — | **12 932** | **74** (create 43) |
+| ressortir sur la ferme du riche | — | **12 932** | **68** (create 37) |
 | passer le bord vers le village | 59 | 73 | 45 |
-| revenir du village par le bord | 41 | **12 956** | **60** |
+| revenir du village par le bord | 41 | **12 956** | **62** |
 
 **En régime calme** (corrigé, dev) :
 
 | situation | images/s | image p50 / p95 / max (ms) | appels de dessin |
 |---|---|---|---|
-| dehors loin du coq (ferme), immobile et en marchant | 60,2 | 16,7 / 17,6 / 17,8 | 46 |
+| dehors loin du coq (ferme), immobile et en marchant | 60,2 | 16,7 / 17,5 / 17,7 | 46 |
 | devant le coq, immobile et en marchant | 60,2 | 16,7 / 17,5 / 17,7 | 166 |
-| dedans en bas, immobile et en marchant | 60,2 à 60,3 | 16,7 / 17,5 / 17,7 | 85 (163 avant : l'étage n'est plus dessiné en bas) |
-| dedans en haut | 48,7 à 55,6 | 16,7 / 33,2 / 34 à 50 | 500 (les masques : la cuisson) |
+| dedans en bas, immobile et en marchant | 60,2 | 16,7 / 17,4 / 17,8 | 85 (163 avant : l’étage n’est plus dessiné en bas) |
+| dedans en haut | 51,2 | 16,8 / 33,6 / 49,6 | 500 (les masques : la cuisson) |
 
 Aucune perte du contexte WebGL, aucune erreur de la page. La mémoire après tout le parcours : 3 573 textures, 111 Mo (113 Mo avant ; la libération des zones quittées est l'étape 6).
+
+**En build** (`corrige-build.json`, commit be6e778) : démarrage en 1 814 ms ; aucune arrivée au-dessus de 100 ms (la pire : 96) ; la porte en arc 18 ms, l'entrée 45, la sortie 70. Dans cette passe, quelques périodes calmes n'ont compté que 43 à 58 images dessinées par seconde, l'écran tenant 60 : le pas de jeu fixe (`world/timeStep.ts`) tombait parfois à zéro pas dans une image, puis deux à la suivante. Refaite aussitôt, la même mesure donne 60,2 partout : un phénomène du pas fixe d'avant, vu une fois, à surveiller.
+
+**Les captures** (vrai Chrome, midi, partie neuve), regardées une à une :
+- `docs/diagnostic/corrige-coq-sud.png`, `-nord`, `-ouest`, `-est` : la maison entière des quatre côtés, plus de barres dans l'herbe, ni de pignon ou de cheminée dans le champ ;
+- `corrige-coq-porte-ouverte.png` : la porte en arc ouverte vers l'intérieur, plus de poteau devant la façade ;
+- `corrige-coq-dedans-bas.png` : le rez-de-chaussée sans rien de l'étage ;
+- `corrige-coq-dedans-haut.png` : le plancher continu, ses planches jointes, le bas seulement par la trémie de l'escalier ;
+- `corrige-ferme-xeros.png` : la ferme de Xéros, inchangée.
 
 **Les seuils de Grégoire sont tenus** :
 - aucune arrivée, porte, entrée ni sortie au-dessus de 100 ms ;
 - 60 images par seconde dehors et en bas du coq.
 
-L'étage reste à une image sur vingt de 33 ms, jusqu'à la cuisson.
+L'étage reste à 51 à 56 images par seconde (une image sur vingt de 33 ms), jusqu'à la cuisson.
 

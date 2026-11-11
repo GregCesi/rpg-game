@@ -1,32 +1,32 @@
 {
  "label": "corrige",
- "commit": "ed493bb",
+ "commit": "be6e778",
  "mode": "build",
  "root": "/Users/gregoiremarchand/Code/rpg-game-coq",
- "date": "2026-11-11T12:31:33.918Z",
+ "date": "2026-11-11T12:39:18.457Z",
  "zones": [
   {
    "zone": "foret-profonde-nord",
    "pass": 1,
-   "ready": 301,
-   "drawn": 326,
-   "create": 48,
-   "worst": 88,
+   "ready": 306,
+   "drawn": 331,
+   "create": 52,
+   "worst": 93,
    "top": [
     [
-     88,
-     69,
+     93,
+     74,
      4,
      1
     ],
     [
-     40,
-     6,
-     2,
+     18,
+     7,
+     3,
      1
     ],
     [
-     19,
+     18,
      6,
      2,
      1
@@ -38,26 +38,26 @@
    "canvases": 0,
    "textures": 2558,
    "biggest": [],
-   "heapMB": 45.5,
+   "heapMB": 51.7,
    "objects": 8439,
    "statics": 1753
   },
   {
    "zone": "bois-du-nord",
    "pass": 1,
-   "ready": 202,
-   "drawn": 271,
-   "create": 32,
-   "worst": 90,
+   "ready": 198,
+   "drawn": 268,
+   "create": 30,
+   "worst": 89,
    "top": [
     [
-     90,
-     80,
+     89,
+     77,
      2,
      1
     ],
     [
-     35,
+     36,
      33,
      2,
      4
@@ -66,7 +66,7 @@
      34,
      32,
      2,
-     3
+     2
     ]
    ],
    "over100": 0,
@@ -75,16 +75,16 @@
    "canvases": 0,
    "textures": 2707,
    "biggest": [],
-   "heapMB": 74.1,
+   "heapMB": 68.4,
    "objects": 5684,
    "statics": 453
   },
   {
    "zone": "pres-du-nord",
    "pass": 1,
-   "ready": 157,
-   "drawn": 172,
-   "create": 15,
+   "ready": 152,
+   "drawn": 167,
+   "create": 16,
    "worst": 41,
    "top": [
     [
@@ -96,12 +96,12 @@
     [
      18,
      5,
-     1,
+     2,
      1
     ],
     [
      18,
-     1,
+     5,
      2,
      1
     ]
@@ -112,38 +112,38 @@
    "canvases": 0,
    "textures": 2814,
    "biggest": [],
-   "heapMB": 43.5,
+   "heapMB": 47.3,
    "objects": 4598,
    "statics": 202
   },
   {
    "zone": "ferme-du-riche",
    "pass": 1,
-   "ready": 219,
-   "drawn": 244,
-   "create": 63,
-   "worst": 105,
+   "ready": 204,
+   "drawn": 227,
+   "create": 52,
+   "worst": 90,
    "top": [
     [
-     105,
-     80,
-     11,
+     90,
+     70,
+     7,
      1
     ],
     [
-     21,
+     18,
      1,
-     11,
+     4,
      1
     ],
     [
-     19,
-     3,
-     8,
+     18,
+     1,
+     4,
      1
     ]
    ],
-   "over100": 1,
+   "over100": 0,
    "born": 15,
    "bornMB": 0,
    "canvases": 16,
@@ -170,34 +170,34 @@
      122
     ]
    ],
-   "heapMB": 56.1,
+   "heapMB": 64.5,
    "objects": 10649,
    "statics": 675
   },
   {
    "zone": "champs-du-riche",
    "pass": 1,
-   "ready": 144,
-   "drawn": 153,
+   "ready": 146,
+   "drawn": 154,
    "create": 7,
-   "worst": 37,
+   "worst": 38,
    "top": [
     [
-     37,
-     23,
+     38,
+     25,
      2,
      1
     ],
     [
      18,
      1,
-     2,
+     3,
      1
     ],
     [
      18,
      1,
-     1,
+     3,
      1
     ]
    ],
@@ -207,21 +207,64 @@
    "canvases": 0,
    "textures": 3113,
    "biggest": [],
-   "heapMB": 74.7,
+   "heapMB": 57.1,
    "objects": 3219,
    "statics": 288
   },
   {
    "zone": "foret-profonde",
    "pass": 1,
-   "ready": 182,
-   "drawn": 204,
-   "create": 40,
-   "worst": 71,
+   "ready": 187,
+   "drawn": 209,
+   "create": 47,
+   "worst": 79,
    "top": [
     [
-     71,
-     52,
+     79,
+     61,
+     3,
+     1
+    ],
+    [
+     19,
+     7,
+     2,
+     1
+    ],
+    [
+     18,
+     6,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3113,
+   "biggest": [],
+   "heapMB": 75.3,
+   "objects": 8828,
+   "statics": 1790
+  },
+  {
+   "zone": "ferme",
+   "pass": 1,
+   "ready": 192,
+   "drawn": 214,
+   "create": 47,
+   "worst": 81,
+   "top": [
+    [
+     81,
+     70,
+     3,
+     1
+    ],
+    [
+     18,
+     7,
      3,
      1
     ],
@@ -230,56 +273,13 @@
      6,
      3,
      1
-    ],
-    [
-     18,
-     7,
-     2,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3113,
-   "biggest": [],
-   "heapMB": 71.3,
-   "objects": 8828,
-   "statics": 1790
-  },
-  {
-   "zone": "ferme",
-   "pass": 1,
-   "ready": 205,
-   "drawn": 231,
-   "create": 52,
-   "worst": 89,
-   "top": [
-    [
-     89,
-     77,
-     4,
-     1
-    ],
-    [
-     18,
-     7,
-     3,
-     1
-    ],
-    [
-     18,
-     7,
-     3,
-     1
     ]
    ],
    "over100": 0,
    "born": 7,
    "bornMB": 0,
    "canvases": 7,
-   "textures": 3147,
+   "textures": 3148,
    "biggest": [
     [
      "wood:normal:round:ew:200::::::new",
@@ -302,7 +302,7 @@
      126
     ]
    ],
-   "heapMB": 66,
+   "heapMB": 53.3,
    "objects": 8995,
    "statics": 667
   },
@@ -310,8 +310,8 @@
    "zone": "chemin",
    "pass": 1,
    "ready": 183,
-   "drawn": 224,
-   "create": 12,
+   "drawn": 225,
+   "create": 11,
    "worst": 68,
    "top": [
     [
@@ -321,7 +321,7 @@
      1
     ],
     [
-     33,
+     34,
      32,
      2,
      3
@@ -329,7 +329,7 @@
     [
      18,
      6,
-     1,
+     2,
      1
     ]
    ],
@@ -337,9 +337,9 @@
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
-   "textures": 3278,
+   "textures": 3279,
    "biggest": [],
-   "heapMB": 79.3,
+   "heapMB": 59.4,
    "objects": 4882,
    "statics": 198
   },
@@ -347,26 +347,26 @@
    "zone": "village",
    "pass": 1,
    "ready": 169,
-   "drawn": 175,
-   "create": 35,
+   "drawn": 174,
+   "create": 37,
    "worst": 62,
    "top": [
     [
      62,
-     43,
-     4,
+     45,
+     3,
      1
     ],
     [
      18,
      1,
-     3,
+     4,
      1
     ],
     [
      18,
-     0,
-     3,
+     2,
+     2,
      1
     ]
    ],
@@ -397,20 +397,20 @@
      43
     ]
    ],
-   "heapMB": 85.7,
+   "heapMB": 68.1,
    "objects": 6060,
    "statics": 295
   },
   {
    "zone": "route-de-la-ville",
    "pass": 1,
-   "ready": 146,
-   "drawn": 157,
+   "ready": 147,
+   "drawn": 158,
    "create": 11,
-   "worst": 39,
+   "worst": 37,
    "top": [
     [
-     39,
+     37,
      22,
      2,
      1
@@ -423,8 +423,8 @@
     ],
     [
      18,
-     1,
-     2,
+     0,
+     3,
      1
     ]
    ],
@@ -435,54 +435,54 @@
    "textures": 3378,
    "biggest": [
     [
-     "65c941cb-8e08-4771-88ca-5fdad8399b5e",
+     "b4ecba71-056b-44fd-82d5-9317482bb213",
      1,
      1
     ],
     [
-     "5bab4272-b39d-4d64-8f17-df73c793a34d",
+     "0fee0533-d15b-43ba-9ffc-ad309a630e0f",
      1,
      1
     ],
     [
-     "61d2b071-d4ff-4890-aa34-ab5bb743302f",
+     "4080b2a7-5334-47f3-b9a1-1b1f470e0a18",
      1,
      1
     ],
     [
-     "5ddbd85a-3e28-47df-954b-1a3659effde8",
+     "74b8f471-6458-4316-a0c8-dff5d6f1864a",
      1,
      1
     ]
    ],
-   "heapMB": 74.7,
+   "heapMB": 83.7,
    "objects": 4378,
    "statics": 163
   },
   {
    "zone": "foret-profonde-sud",
    "pass": 1,
-   "ready": 183,
-   "drawn": 204,
-   "create": 40,
-   "worst": 73,
+   "ready": 184,
+   "drawn": 206,
+   "create": 41,
+   "worst": 76,
    "top": [
     [
-     73,
-     56,
+     76,
+     59,
+     3,
+     1
+    ],
+    [
+     19,
+     6,
      3,
      1
     ],
     [
      18,
-     6,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     2,
+     3,
+     3,
      1
     ]
    ],
@@ -492,32 +492,32 @@
    "canvases": 0,
    "textures": 3374,
    "biggest": [],
-   "heapMB": 100.8,
+   "heapMB": 99.2,
    "objects": 8925,
    "statics": 1826
   },
   {
    "zone": "bois-du-sud",
    "pass": 1,
-   "ready": 201,
-   "drawn": 270,
-   "create": 27,
-   "worst": 90,
+   "ready": 205,
+   "drawn": 275,
+   "create": 29,
+   "worst": 96,
    "top": [
     [
-     90,
-     76,
-     2,
+     96,
+     81,
+     3,
      1
     ],
     [
-     35,
+     36,
      33,
      2,
-     4
+     5
     ],
     [
-     35,
+     34,
      32,
      2,
      2
@@ -529,33 +529,33 @@
    "canvases": 0,
    "textures": 3390,
    "biggest": [],
-   "heapMB": 111.9,
+   "heapMB": 106.8,
    "objects": 5888,
    "statics": 431
   },
   {
    "zone": "pres-du-sud",
    "pass": 1,
-   "ready": 153,
+   "ready": 147,
    "drawn": 159,
-   "create": 15,
-   "worst": 42,
+   "create": 11,
+   "worst": 36,
    "top": [
     [
-     42,
-     27,
+     36,
+     22,
      2,
      1
     ],
     [
-     19,
+     18,
+     1,
      2,
-     3,
      1
     ],
     [
-     19,
-     3,
+     18,
+     2,
      2,
      1
     ]
@@ -566,21 +566,27 @@
    "canvases": 0,
    "textures": 3483,
    "biggest": [],
-   "heapMB": 130.2,
+   "heapMB": 126.9,
    "objects": 4887,
    "statics": 221
   },
   {
    "zone": "quartier-sud",
    "pass": 1,
-   "ready": 148,
-   "drawn": 158,
+   "ready": 147,
+   "drawn": 159,
    "create": 14,
-   "worst": 38,
+   "worst": 37,
    "top": [
     [
-     38,
-     24,
+     37,
+     23,
+     2,
+     1
+    ],
+    [
+     19,
+     1,
      2,
      1
     ],
@@ -588,12 +594,6 @@
      18,
      1,
      2,
-     1
-    ],
-    [
-     18,
-     0,
-     3,
      1
     ]
    ],
@@ -604,52 +604,52 @@
    "textures": 3496,
    "biggest": [
     [
-     "9cbc8c36-b49e-43df-b593-a04a08e712f5",
+     "fc431f89-b8a4-4e77-8ca5-649eb78acc63",
      1,
      1
     ],
     [
-     "af7baad8-b4a1-406b-92cb-e6360d15d95c",
+     "7246f7e8-e69e-4e84-9844-d56fdd1f045b",
      1,
      1
     ],
     [
-     "d97b5aff-0f15-476b-8b2d-bf02fdf9f570",
+     "3d9645e5-e3ca-4166-8373-44c3f103bb83",
      1,
      1
     ],
     [
-     "e8f90f62-2bda-405f-bd50-14cecf10fb2d",
+     "9db9340c-1078-4366-ad04-e0d8d8f07deb",
      1,
      1
     ]
    ],
-   "heapMB": 47.3,
+   "heapMB": 33,
    "objects": 4613,
    "statics": 260
   },
   {
    "zone": "pres-de-l-est",
    "pass": 1,
-   "ready": 142,
-   "drawn": 159,
-   "create": 8,
-   "worst": 33,
+   "ready": 145,
+   "drawn": 157,
+   "create": 10,
+   "worst": 38,
    "top": [
     [
-     33,
-     16,
+     38,
+     21,
      2,
      1
     ],
     [
-     18,
+     20,
      1,
-     3,
+     4,
      1
     ],
     [
-     18,
+     20,
      1,
      3,
      1
@@ -661,32 +661,32 @@
    "canvases": 0,
    "textures": 3484,
    "biggest": [],
-   "heapMB": 47.3,
+   "heapMB": 39.2,
    "objects": 3829,
    "statics": 227
   },
   {
    "zone": "foret-des-ronces",
    "pass": 1,
-   "ready": 179,
-   "drawn": 201,
-   "create": 39,
-   "worst": 73,
+   "ready": 171,
+   "drawn": 189,
+   "create": 29,
+   "worst": 62,
    "top": [
     [
-     73,
-     55,
+     62,
+     45,
      3,
      1
     ],
     [
-     18,
+     19,
      7,
      2,
      1
     ],
     [
-     17,
+     18,
      6,
      2,
      1
@@ -698,35 +698,35 @@
    "canvases": 0,
    "textures": 3484,
    "biggest": [],
-   "heapMB": 63.9,
+   "heapMB": 64.6,
    "objects": 8300,
    "statics": 1769
   },
   {
    "zone": "bois-de-la-riviere",
    "pass": 1,
-   "ready": 194,
-   "drawn": 262,
+   "ready": 193,
+   "drawn": 263,
    "create": 24,
-   "worst": 79,
+   "worst": 81,
    "top": [
     [
-     79,
+     81,
      69,
      2,
      1
     ],
     [
-     34,
-     32,
-     2,
-     4
-    ],
-    [
-     34,
-     32,
+     35,
+     33,
      2,
      2
+    ],
+    [
+     35,
+     33,
+     2,
+     4
     ]
    ],
    "over100": 0,
@@ -735,34 +735,34 @@
    "canvases": 0,
    "textures": 3507,
    "biggest": [],
-   "heapMB": 51.2,
-   "objects": 5623,
+   "heapMB": 91.6,
+   "objects": 5622,
    "statics": 481
   },
   {
    "zone": "friches",
    "pass": 1,
-   "ready": 144,
-   "drawn": 157,
+   "ready": 139,
+   "drawn": 155,
    "create": 10,
-   "worst": 36,
+   "worst": 33,
    "top": [
     [
-     36,
-     21,
-     2,
+     33,
+     19,
+     1,
      1
     ],
     [
-     28,
+     18,
      1,
-     13,
+     2,
      1
     ],
     [
      18,
      2,
-     3,
+     2,
      1
     ]
    ],
@@ -772,7 +772,7 @@
    "canvases": 0,
    "textures": 3570,
    "biggest": [],
-   "heapMB": 74.3,
+   "heapMB": 100.1,
    "objects": 4468,
    "statics": 175
   },
@@ -780,20 +780,20 @@
    "zone": "ferme-rivale",
    "pass": 1,
    "ready": 139,
-   "drawn": 157,
+   "drawn": 158,
    "create": 6,
-   "worst": 28,
+   "worst": 29,
    "top": [
     [
-     28,
+     29,
      14,
      1,
      1
     ],
     [
-     21,
-     2,
-     4,
+     20,
+     1,
+     3,
      1
     ],
     [
@@ -809,15 +809,829 @@
    "canvases": 0,
    "textures": 3570,
    "biggest": [],
-   "heapMB": 65.8,
+   "heapMB": 91.7,
    "objects": 2812,
    "statics": 369
   },
   {
    "zone": "champs-rivaux",
    "pass": 1,
-   "ready": 140,
+   "ready": 145,
+   "drawn": 162,
+   "create": 10,
+   "worst": 33,
+   "top": [
+    [
+     33,
+     17,
+     2,
+     1
+    ],
+    [
+     20,
+     1,
+     3,
+     1
+    ],
+    [
+     19,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 107.5,
+   "objects": 3023,
+   "statics": 250
+  },
+  {
+   "zone": "foret-profonde-nord",
+   "pass": 2,
+   "ready": 174,
+   "drawn": 194,
+   "create": 37,
+   "worst": 64,
+   "top": [
+    [
+     64,
+     48,
+     4,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 114.1,
+   "objects": 8572,
+   "statics": 1753
+  },
+  {
+   "zone": "bois-du-nord",
+   "pass": 2,
+   "ready": 168,
+   "drawn": 176,
+   "create": 26,
+   "worst": 57,
+   "top": [
+    [
+     57,
+     45,
+     2,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 144.6,
+   "objects": 5778,
+   "statics": 453
+  },
+  {
+   "zone": "pres-du-nord",
+   "pass": 2,
+   "ready": 147,
+   "drawn": 159,
+   "create": 12,
+   "worst": 38,
+   "top": [
+    [
+     38,
+     23,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 53.4,
+   "objects": 4598,
+   "statics": 202
+  },
+  {
+   "zone": "ferme-du-riche",
+   "pass": 2,
+   "ready": 169,
+   "drawn": 179,
+   "create": 33,
+   "worst": 60,
+   "top": [
+    [
+     60,
+     42,
+     6,
+     1
+    ],
+    [
+     18,
+     1,
+     5,
+     1
+    ],
+    [
+     18,
+     1,
+     5,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 3,
+   "textures": 3572,
+   "biggest": [
+    [
+     "3254d009-908c-46bd-b5e9-2ab435fe2469",
+     1,
+     1
+    ],
+    [
+     "84e1e3c2-8b14-4e11-9ed4-079366ab3f8b",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 70,
+   "objects": 10649,
+   "statics": 675
+  },
+  {
+   "zone": "champs-du-riche",
+   "pass": 2,
+   "ready": 141,
+   "drawn": 153,
+   "create": 5,
+   "worst": 36,
+   "top": [
+    [
+     36,
+     22,
+     1,
+     1
+    ],
+    [
+     19,
+     1,
+     2,
+     1
+    ],
+    [
+     19,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 79,
+   "objects": 3219,
+   "statics": 288
+  },
+  {
+   "zone": "foret-profonde",
+   "pass": 2,
+   "ready": 176,
+   "drawn": 196,
+   "create": 36,
+   "worst": 65,
+   "top": [
+    [
+     65,
+     48,
+     3,
+     1
+    ],
+    [
+     22,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 44,
+   "objects": 8831,
+   "statics": 1790
+  },
+  {
+   "zone": "ferme",
+   "pass": 2,
+   "ready": 191,
+   "drawn": 210,
+   "create": 45,
+   "worst": 82,
+   "top": [
+    [
+     82,
+     67,
+     5,
+     1
+    ],
+    [
+     18,
+     3,
+     4,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 83.9,
+   "objects": 9086,
+   "statics": 667
+  },
+  {
+   "zone": "chemin",
+   "pass": 2,
+   "ready": 151,
+   "drawn": 156,
+   "create": 10,
+   "worst": 42,
+   "top": [
+    [
+     42,
+     28,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 86.9,
+   "objects": 4882,
+   "statics": 198
+  },
+  {
+   "zone": "village",
+   "pass": 2,
+   "ready": 154,
+   "drawn": 160,
+   "create": 18,
+   "worst": 43,
+   "top": [
+    [
+     43,
+     28,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 19,
+   "textures": 3591,
+   "biggest": [
+    [
+     "47fe6d83-abcf-4965-923f-72c0f72a6b9c",
+     1,
+     1
+    ],
+    [
+     "e9664e53-f4ec-4229-8db6-7e455b617e27",
+     1,
+     1
+    ],
+    [
+     "912171b2-d821-4be6-bd9b-24a13bde819b",
+     1,
+     1
+    ],
+    [
+     "e7c72bc5-51e7-4b96-acd9-a81cafc07fbb",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 92.6,
+   "objects": 6060,
+   "statics": 295
+  },
+  {
+   "zone": "route-de-la-ville",
+   "pass": 2,
+   "ready": 145,
+   "drawn": 157,
+   "create": 10,
+   "worst": 37,
+   "top": [
+    [
+     37,
+     22,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 4,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3574,
+   "biggest": [
+    [
+     "70599c52-4c6b-47cc-9bcf-14c1cd6bc4ac",
+     1,
+     1
+    ],
+    [
+     "4d9554e5-7e40-4844-a585-30eadd2d3728",
+     1,
+     1
+    ],
+    [
+     "643cea09-78f5-4546-9477-d29513b22991",
+     1,
+     1
+    ],
+    [
+     "30434d9f-c60d-45c5-936c-cb59c4ca95ce",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 102.6,
+   "objects": 4378,
+   "statics": 163
+  },
+  {
+   "zone": "foret-profonde-sud",
+   "pass": 2,
+   "ready": 181,
+   "drawn": 196,
+   "create": 39,
+   "worst": 70,
+   "top": [
+    [
+     70,
+     53,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 122.9,
+   "objects": 8925,
+   "statics": 1826
+  },
+  {
+   "zone": "bois-du-sud",
+   "pass": 2,
+   "ready": 172,
+   "drawn": 191,
+   "create": 30,
+   "worst": 63,
+   "top": [
+    [
+     63,
+     49,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 134.7,
+   "objects": 5888,
+   "statics": 431
+  },
+  {
+   "zone": "pres-du-sud",
+   "pass": 2,
+   "ready": 149,
+   "drawn": 157,
+   "create": 13,
+   "worst": 40,
+   "top": [
+    [
+     40,
+     26,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 153.2,
+   "objects": 4887,
+   "statics": 221
+  },
+  {
+   "zone": "quartier-sud",
+   "pass": 2,
+   "ready": 147,
+   "drawn": 159,
+   "create": 11,
+   "worst": 35,
+   "top": [
+    [
+     35,
+     21,
+     2,
+     1
+    ],
+    [
+     18,
+     0,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 13,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3583,
+   "biggest": [
+    [
+     "44c9ab0f-5124-47c1-b96e-f7e629c2c81a",
+     1,
+     1
+    ],
+    [
+     "ef9ebd86-b664-4e55-969e-0c1f4ba4f76f",
+     1,
+     1
+    ],
+    [
+     "bb19d091-1c34-4dde-8563-33bbcb7ea0f7",
+     1,
+     1
+    ],
+    [
+     "8e20d679-3767-4476-82f0-b2f6f159a3eb",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 157.5,
+   "objects": 4613,
+   "statics": 260
+  },
+  {
+   "zone": "pres-de-l-est",
+   "pass": 2,
+   "ready": 145,
+   "drawn": 160,
+   "create": 9,
+   "worst": 34,
+   "top": [
+    [
+     34,
+     18,
+     2,
+     1
+    ],
+    [
+     19,
+     1,
+     3,
+     1
+    ],
+    [
+     19,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 156.1,
+   "objects": 3829,
+   "statics": 227
+  },
+  {
+   "zone": "foret-des-ronces",
+   "pass": 2,
+   "ready": 168,
+   "drawn": 179,
+   "create": 34,
+   "worst": 62,
+   "top": [
+    [
+     62,
+     44,
+     3,
+     1
+    ],
+    [
+     19,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 41.2,
+   "objects": 8311,
+   "statics": 1769
+  },
+  {
+   "zone": "bois-de-la-riviere",
+   "pass": 2,
+   "ready": 179,
+   "drawn": 200,
+   "create": 29,
+   "worst": 62,
+   "top": [
+    [
+     62,
+     48,
+     2,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 72.4,
+   "objects": 5624,
+   "statics": 481
+  },
+  {
+   "zone": "friches",
+   "pass": 2,
+   "ready": 146,
    "drawn": 158,
+   "create": 11,
+   "worst": 36,
+   "top": [
+    [
+     36,
+     22,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 85.5,
+   "objects": 4468,
+   "statics": 175
+  },
+  {
+   "zone": "ferme-rivale",
+   "pass": 2,
+   "ready": 138,
+   "drawn": 158,
+   "create": 5,
+   "worst": 28,
+   "top": [
+    [
+     28,
+     13,
+     1,
+     1
+    ],
+    [
+     19,
+     1,
+     3,
+     1
+    ],
+    [
+     19,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 77.2,
+   "objects": 2812,
+   "statics": 369
+  },
+  {
+   "zone": "champs-rivaux",
+   "pass": 2,
+   "ready": 141,
+   "drawn": 161,
    "create": 8,
    "worst": 31,
    "top": [
@@ -834,639 +1648,10 @@
      1
     ],
     [
-     18,
-     1,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 81.7,
-   "objects": 3023,
-   "statics": 250
-  },
-  {
-   "zone": "foret-profonde-nord",
-   "pass": 2,
-   "ready": 179,
-   "drawn": 196,
-   "create": 39,
-   "worst": 67,
-   "top": [
-    [
-     67,
-     51,
-     3,
-     1
-    ],
-    [
-     18,
-     0,
-     3,
-     1
-    ],
-    [
-     18,
-     3,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 86.8,
-   "objects": 8572,
-   "statics": 1753
-  },
-  {
-   "zone": "bois-du-nord",
-   "pass": 2,
-   "ready": 168,
-   "drawn": 176,
-   "create": 26,
-   "worst": 59,
-   "top": [
-    [
-     59,
-     45,
-     2,
-     1
-    ],
-    [
-     18,
-     3,
-     3,
-     1
-    ],
-    [
-     18,
-     3,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 118.1,
-   "objects": 5778,
-   "statics": 453
-  },
-  {
-   "zone": "pres-du-nord",
-   "pass": 2,
-   "ready": 144,
-   "drawn": 156,
-   "create": 11,
-   "worst": 37,
-   "top": [
-    [
-     37,
-     22,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     2,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 107,
-   "objects": 4598,
-   "statics": 202
-  },
-  {
-   "zone": "ferme-du-riche",
-   "pass": 2,
-   "ready": 171,
-   "drawn": 181,
-   "create": 33,
-   "worst": 62,
-   "top": [
-    [
-     62,
-     43,
-     6,
-     1
-    ],
-    [
-     18,
-     1,
-     5,
-     1
-    ],
-    [
-     18,
-     1,
-     4,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 2,
-   "bornMB": 0,
-   "canvases": 3,
-   "textures": 3572,
-   "biggest": [
-    [
-     "32311ce4-cfa1-466c-8d24-6ab10ece3e8f",
-     1,
-     1
-    ],
-    [
-     "899f18ca-ca2a-4291-987a-a0308da7daed",
-     1,
-     1
-    ]
-   ],
-   "heapMB": 118.9,
-   "objects": 10649,
-   "statics": 675
-  },
-  {
-   "zone": "champs-du-riche",
-   "pass": 2,
-   "ready": 153,
-   "drawn": 162,
-   "create": 7,
-   "worst": 37,
-   "top": [
-    [
-     37,
-     24,
-     1,
-     1
-    ],
-    [
-     18,
-     1,
-     3,
-     1
-    ],
-    [
-     18,
-     1,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 124.6,
-   "objects": 3219,
-   "statics": 288
-  },
-  {
-   "zone": "foret-profonde",
-   "pass": 2,
-   "ready": 176,
-   "drawn": 192,
-   "create": 41,
-   "worst": 69,
-   "top": [
-    [
-     69,
-     51,
-     3,
-     1
-    ],
-    [
-     18,
-     3,
-     3,
-     1
-    ],
-    [
-     18,
-     2,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 144.2,
-   "objects": 8831,
-   "statics": 1790
-  },
-  {
-   "zone": "ferme",
-   "pass": 2,
-   "ready": 189,
-   "drawn": 211,
-   "create": 41,
-   "worst": 80,
-   "top": [
-    [
-     80,
-     63,
-     4,
-     1
-    ],
-    [
-     18,
-     3,
-     3,
-     1
-    ],
-    [
-     18,
-     3,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 168.1,
-   "objects": 9086,
-   "statics": 667
-  },
-  {
-   "zone": "chemin",
-   "pass": 2,
-   "ready": 150,
-   "drawn": 157,
-   "create": 10,
-   "worst": 40,
-   "top": [
-    [
-     40,
-     27,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 41.4,
-   "objects": 4882,
-   "statics": 198
-  },
-  {
-   "zone": "village",
-   "pass": 2,
-   "ready": 154,
-   "drawn": 159,
-   "create": 19,
-   "worst": 45,
-   "top": [
-    [
-     45,
-     29,
-     3,
-     1
-    ],
-    [
-     18,
-     0,
-     2,
-     1
-    ],
-    [
-     18,
-     0,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 21,
-   "bornMB": 0,
-   "canvases": 19,
-   "textures": 3591,
-   "biggest": [
-    [
-     "c48c397b-13b9-41ae-b766-8f18ef9d47df",
-     1,
-     1
-    ],
-    [
-     "6011e6f8-6d2c-4aba-85fb-1a76b2262c7d",
-     1,
-     1
-    ],
-    [
-     "4eefabc9-9de5-4af6-9848-c549c2746d46",
-     1,
-     1
-    ],
-    [
-     "bd1bc05a-cd9e-4d85-8c27-bdb4aaa17bcd",
-     1,
-     1
-    ]
-   ],
-   "heapMB": 45.1,
-   "objects": 6060,
-   "statics": 295
-  },
-  {
-   "zone": "route-de-la-ville",
-   "pass": 2,
-   "ready": 136,
-   "drawn": 157,
-   "create": 7,
-   "worst": 29,
-   "top": [
-    [
-     29,
-     14,
-     2,
-     1
-    ],
-    [
-     18,
-     1,
-     4,
-     1
-    ],
-    [
-     18,
-     0,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 4,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3574,
-   "biggest": [
-    [
-     "6b3c00c3-8958-44d5-985f-8dc434621544",
-     1,
-     1
-    ],
-    [
-     "3de093aa-a9cb-4432-9260-3321eb4bfd65",
-     1,
-     1
-    ],
-    [
-     "b91bedae-ba5f-4558-bc53-d06e65ab9b21",
-     1,
-     1
-    ],
-    [
-     "67912730-4797-4f33-9739-3a1544b76e4c",
-     1,
-     1
-    ]
-   ],
-   "heapMB": 62.7,
-   "objects": 4378,
-   "statics": 163
-  },
-  {
-   "zone": "foret-profonde-sud",
-   "pass": 2,
-   "ready": 178,
-   "drawn": 194,
-   "create": 39,
-   "worst": 69,
-   "top": [
-    [
-     69,
-     52,
-     3,
-     1
-    ],
-    [
-     18,
-     3,
-     3,
-     1
-    ],
-    [
-     18,
-     3,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 84.8,
-   "objects": 8925,
-   "statics": 1826
-  },
-  {
-   "zone": "bois-du-sud",
-   "pass": 2,
-   "ready": 171,
-   "drawn": 190,
-   "create": 30,
-   "worst": 63,
-   "top": [
-    [
-     63,
-     49,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     2,
-     1
-    ],
-    [
-     17,
-     2,
-     2,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 97.3,
-   "objects": 5888,
-   "statics": 431
-  },
-  {
-   "zone": "pres-du-sud",
-   "pass": 2,
-   "ready": 146,
-   "drawn": 158,
-   "create": 13,
-   "worst": 38,
-   "top": [
-    [
-     38,
-     23,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 116,
-   "objects": 4887,
-   "statics": 221
-  },
-  {
-   "zone": "quartier-sud",
-   "pass": 2,
-   "ready": 145,
-   "drawn": 159,
-   "create": 11,
-   "worst": 35,
-   "top": [
-    [
-     35,
-     19,
-     2,
-     1
-    ],
-    [
      19,
      1,
      3,
      1
-    ],
-    [
-     18,
-     1,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 13,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3583,
-   "biggest": [
-    [
-     "dec74374-8d03-4deb-ab6b-01901da81c9b",
-     1,
-     1
-    ],
-    [
-     "12916ed3-ae63-4f07-83ed-2a30f781719f",
-     1,
-     1
-    ],
-    [
-     "424765a9-09e9-4b35-a180-6d612ba010f5",
-     1,
-     1
-    ],
-    [
-     "a53f0ea2-19dd-4453-89ee-62daa2acb52b",
-     1,
-     1
-    ]
-   ],
-   "heapMB": 119.9,
-   "objects": 4613,
-   "statics": 260
-  },
-  {
-   "zone": "pres-de-l-est",
-   "pass": 2,
-   "ready": 145,
-   "drawn": 160,
-   "create": 10,
-   "worst": 34,
-   "top": [
-    [
-     34,
-     18,
-     2,
-     1
-    ],
-    [
-     18,
-     0,
-     2,
-     1
-    ],
-    [
-     18,
-     0,
-     3,
-     1
     ]
    ],
    "over100": 0,
@@ -1475,192 +1660,7 @@
    "canvases": 0,
    "textures": 3570,
    "biggest": [],
-   "heapMB": 118.9,
-   "objects": 3829,
-   "statics": 227
-  },
-  {
-   "zone": "foret-des-ronces",
-   "pass": 2,
-   "ready": 175,
-   "drawn": 194,
-   "create": 39,
-   "worst": 67,
-   "top": [
-    [
-     67,
-     50,
-     3,
-     1
-    ],
-    [
-     18,
-     2,
-     3,
-     1
-    ],
-    [
-     18,
-     2,
-     2,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 126.6,
-   "objects": 8311,
-   "statics": 1769
-  },
-  {
-   "zone": "bois-de-la-riviere",
-   "pass": 2,
-   "ready": 171,
-   "drawn": 192,
-   "create": 29,
-   "worst": 62,
-   "top": [
-    [
-     62,
-     48,
-     2,
-     1
-    ],
-    [
-     18,
-     1,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     2,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 157.9,
-   "objects": 5624,
-   "statics": 481
-  },
-  {
-   "zone": "friches",
-   "pass": 2,
-   "ready": 147,
-   "drawn": 158,
-   "create": 11,
-   "worst": 38,
-   "top": [
-    [
-     38,
-     23,
-     2,
-     1
-    ],
-    [
-     18,
-     3,
-     2,
-     1
-    ],
-    [
-     18,
-     2,
-     2,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 53.3,
-   "objects": 4468,
-   "statics": 175
-  },
-  {
-   "zone": "ferme-rivale",
-   "pass": 2,
-   "ready": 139,
-   "drawn": 156,
-   "create": 7,
-   "worst": 30,
-   "top": [
-    [
-     30,
-     16,
-     1,
-     1
-    ],
-    [
-     20,
-     1,
-     4,
-     1
-    ],
-    [
-     20,
-     2,
-     2,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 44.7,
-   "objects": 2812,
-   "statics": 369
-  },
-  {
-   "zone": "champs-rivaux",
-   "pass": 2,
-   "ready": 146,
-   "drawn": 161,
-   "create": 10,
-   "worst": 35,
-   "top": [
-    [
-     35,
-     18,
-     2,
-     1
-    ],
-    [
-     18,
-     0,
-     2,
-     1
-    ],
-    [
-     18,
-     1,
-     3,
-     1
-    ]
-   ],
-   "over100": 0,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570,
-   "biggest": [],
-   "heapMB": 60.3,
+   "heapMB": 93,
    "objects": 3023,
    "statics": 250
   }
@@ -1670,63 +1670,64 @@
    "map": "ferme",
    "seconds": 5,
    "rafPerSec": 60,
-   "imagesPerSec": 60.2,
+   "imagesPerSec": 58.2,
    "image": {
     "avg": 16.7,
     "p50": 16.7,
-    "p95": 17.6,
+    "p95": 17.4,
     "p99": 17.6,
-    "max": 17.8,
+    "max": 17.6,
     "over20": 0,
     "over33": 0,
     "over50": 0,
-    "count": 299
+    "count": 300
    },
    "cpuPerImage": {
-    "step": 2.3,
+    "step": 2.2,
     "physics": 0,
     "world": 0.7,
     "hud": 0,
     "sort": 0,
-    "render": 2.7,
-    "renderP95": 2.9,
+    "render": 2.8,
+    "renderP95": 3,
     "stepP95": 2.7,
     "busyP95": 5.6
    },
    "stepsPerImage": {
     "avg": 1,
-    "max": 1,
+    "max": 2,
     "dist": {
-     "1": 300
+     "1": 281,
+     "2": 10
     }
    },
-   "stepCost": 2.3,
+   "stepCost": 2.1,
    "gl": {
-    "draws": 46.2,
-    "binds": 697.7,
+    "draws": 46,
+    "binds": 701.3,
     "uploads": 0,
     "uploadKpx": 0
    },
    "subsystems": {
-    "lifts": 1.6,
-    "laneFade": 0.4,
+    "lifts": 1.4,
+    "laneFade": 0.3,
     "daylight": 0.1,
     "roofs": 0.1,
     "interaction": 0,
     "creatures": 0,
     "player": 0,
     "site": 0,
-    "autosave": 0,
-    "clock": 0,
-    "prompts": 0,
+    "tweens": 0,
+    "interiors": 0,
     "zones": 0,
-    "time": 0,
-    "footing": 0
+    "autosave": 0,
+    "prompts": 0,
+    "clock": 0
    },
    "census": {
     "all": 9086,
     "visible": 8391,
-    "inView": 851,
+    "inView": 854,
     "containers": 1,
     "zones": 667,
     "images": 8358,
@@ -1757,12 +1758,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -1810,146 +1811,146 @@
    },
    "memory": {
     "before": {
-     "heapMB": 82.8,
-     "heapTotalMB": 163.1,
-     "nodes": 6243,
-     "listeners": 4825
+     "heapMB": 168.3,
+     "heapTotalMB": 219.1,
+     "nodes": 6471,
+     "listeners": 4862
     },
     "after": {
-     "heapMB": 82.6,
-     "heapTotalMB": 163.1,
-     "nodes": 6327,
-     "listeners": 4825
+     "heapMB": 172.3,
+     "heapTotalMB": 219.1,
+     "nodes": 6555,
+     "listeners": 4862
     }
    },
    "profile": {
     "ms": 5022,
-    "idleMs": 3459,
-    "gcMs": 4,
+    "idleMs": 3520,
+    "gcMs": 6,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 265,
-      "share": 5.3
-     },
-     {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 243,
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 241,
       "share": 4.8
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 221,
-      "share": 4.4
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 241,
+      "share": 4.8
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 219,
-      "share": 4.4
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 199,
+      "share": 4
+     },
+     {
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 197,
+      "share": 3.9
      },
      {
       "fn": "w",
-      "ms": 74,
-      "share": 1.5
-     },
-     {
-      "fn": "get assets/index-cIyCPcy9.js:23",
       "ms": 65,
       "share": 1.3
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 63,
-      "share": 1.3
-     },
-     {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 55,
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 53,
       "share": 1.1
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 31,
-      "share": 0.6
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 53,
+      "share": 1.1
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 28,
-      "share": 0.6
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 52,
+      "share": 1
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 28,
-      "share": 0.6
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 51,
+      "share": 1
      },
      {
-      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 39,
+      "share": 0.8
+     },
+     {
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 26,
+      "share": 0.5
+     },
+     {
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 23,
       "share": 0.5
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "fn": "getData assets/index-pbwgHm-F.js:18",
       "ms": 21,
       "share": 0.4
      },
      {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
       "ms": 18,
       "share": 0.4
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
+      "ms": 17,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 16,
       "share": 0.3
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
-      "ms": 14,
-      "share": 0.3
-     },
-     {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 10,
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 12,
       "share": 0.2
      },
      {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
-      "ms": 9,
+      "fn": "willRender assets/index-pbwgHm-F.js:18",
+      "ms": 8,
       "share": 0.2
      },
      {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "fn": "interactables assets/index-pbwgHm-F.js:868",
       "ms": 7,
       "share": 0.1
      },
      {
-      "fn": "bufferData",
-      "ms": 7,
+      "fn": "(garbage collector)",
+      "ms": 6,
       "share": 0.1
      },
      {
-      "fn": "bindTexture",
-      "ms": 7,
-      "share": 0.1
-     },
-     {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
-      "ms": 5,
-      "share": 0.1
-     },
-     {
-      "fn": "target assets/index-cIyCPcy9.js:868",
-      "ms": 5,
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
+      "ms": 6,
       "share": 0.1
      },
      {
       "fn": "activeTexture",
-      "ms": 5,
+      "ms": 6,
       "share": 0.1
      },
      {
-      "fn": "getVisibleChildren assets/index-cIyCPcy9.js:1",
-      "ms": 4,
+      "fn": "Noe assets/index-pbwgHm-F.js:868",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "builds assets/index-pbwgHm-F.js:868",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "bufferData",
+      "ms": 5,
       "share": 0.1
      }
     ],
@@ -1960,66 +1961,67 @@
    "map": "ferme",
    "seconds": 5,
    "rafPerSec": 60,
-   "imagesPerSec": 60.2,
+   "imagesPerSec": 56,
    "image": {
     "avg": 16.7,
     "p50": 16.7,
-    "p95": 17.6,
+    "p95": 17.4,
     "p99": 17.7,
     "max": 17.7,
     "over20": 0,
     "over33": 0,
     "over50": 0,
-    "count": 300
+    "count": 299
    },
    "cpuPerImage": {
-    "step": 2.3,
+    "step": 2.4,
     "physics": 0,
-    "world": 0.7,
+    "world": 0.8,
     "hud": 0,
     "sort": 0,
-    "render": 2.7,
-    "renderP95": 3,
-    "stepP95": 2.7,
-    "busyP95": 5.7
+    "render": 2.8,
+    "renderP95": 3.1,
+    "stepP95": 3,
+    "busyP95": 6
    },
    "stepsPerImage": {
-    "avg": 1,
-    "max": 1,
+    "avg": 1.1,
+    "max": 2,
     "dist": {
-     "1": 301
+     "1": 258,
+     "2": 21
     }
    },
-   "stepCost": 2.3,
+   "stepCost": 2.2,
    "gl": {
-    "draws": 46.1,
-    "binds": 699.5,
+    "draws": 46,
+    "binds": 708.6,
     "uploads": 0,
     "uploadKpx": 1
    },
    "subsystems": {
     "lifts": 1.5,
-    "laneFade": 0.4,
+    "laneFade": 0.3,
     "daylight": 0.1,
     "roofs": 0.1,
+    "creatures": 0.1,
     "interaction": 0,
-    "creatures": 0,
     "roll": 0,
     "player": 0,
     "effort": 0,
     "zones": 0,
+    "pileCount": 0,
     "interiors": 0,
     "clock": 0,
-    "prompts": 0,
     "site": 0
    },
    "census": {
-    "all": 9086,
-    "visible": 8391,
-    "inView": 844,
+    "all": 9080,
+    "visible": 8385,
+    "inView": 842,
     "containers": 1,
     "zones": 667,
-    "images": 8358,
+    "images": 8352,
     "graphics": 43,
     "tilemaps": 13,
     "texts": 0,
@@ -2027,7 +2029,7 @@
     "bodies": 1,
     "statics": 667,
     "colliders": 2,
-    "renderList": 9046,
+    "renderList": 9040,
     "tweens": 1
    },
    "textures": {
@@ -2047,12 +2049,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -2100,146 +2102,146 @@
    },
    "memory": {
     "before": {
-     "heapMB": 79.9,
-     "heapTotalMB": 163.1,
-     "nodes": 6331,
-     "listeners": 4825
+     "heapMB": 171.2,
+     "heapTotalMB": 219.1,
+     "nodes": 6559,
+     "listeners": 4862
     },
     "after": {
-     "heapMB": 82,
-     "heapTotalMB": 163.1,
-     "nodes": 6413,
-     "listeners": 4825
+     "heapMB": 162.7,
+     "heapTotalMB": 219.6,
+     "nodes": 6641,
+     "listeners": 4862
     }
    },
    "profile": {
-    "ms": 5031,
-    "idleMs": 3444,
-    "gcMs": 6,
+    "ms": 5022,
+    "idleMs": 3513,
+    "gcMs": 7,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 309,
-      "share": 6.1
-     },
-     {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 251,
-      "share": 5
-     },
-     {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 213,
-      "share": 4.2
-     },
-     {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 166,
-      "share": 3.3
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 234,
+      "share": 4.6
      },
      {
       "fn": "w",
-      "ms": 82,
-      "share": 1.6
+      "ms": 233,
+      "share": 4.6
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 69,
-      "share": 1.4
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 198,
+      "share": 3.9
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 63,
-      "share": 1.3
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 191,
+      "share": 3.8
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 62,
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 89,
+      "share": 1.8
+     },
+     {
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 58,
       "share": 1.2
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 37,
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 51,
+      "share": 1
+     },
+     {
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 49,
+      "share": 1
+     },
+     {
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 47,
+      "share": 0.9
+     },
+     {
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 33,
       "share": 0.7
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
+      "fn": "getData assets/index-pbwgHm-F.js:18",
+      "ms": 27,
+      "share": 0.5
+     },
+     {
+      "fn": "render assets/index-pbwgHm-F.js:43",
       "ms": 26,
       "share": 0.5
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 24,
-      "share": 0.5
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
+      "ms": 22,
+      "share": 0.4
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
-      "ms": 23,
-      "share": 0.5
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
+      "ms": 17,
+      "share": 0.3
      },
      {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 16,
       "share": 0.3
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 14,
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
+      "ms": 13,
       "share": 0.3
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:1",
-      "ms": 12,
+      "fn": "willRender assets/index-pbwgHm-F.js:18",
+      "ms": 8,
       "share": 0.2
-     },
-     {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 11,
-      "share": 0.2
-     },
-     {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
-      "ms": 10,
-      "share": 0.2
-     },
-     {
-      "fn": "getData assets/index-cIyCPcy9.js:18",
-      "ms": 10,
-      "share": 0.2
-     },
-     {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
-      "ms": 9,
-      "share": 0.2
-     },
-     {
-      "fn": "activeTexture",
-      "ms": 7,
-      "share": 0.1
-     },
-     {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
-      "ms": 7,
-      "share": 0.1
      },
      {
       "fn": "bufferData",
-      "ms": 7,
-      "share": 0.1
+      "ms": 8,
+      "share": 0.2
      },
      {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
-      "ms": 7,
-      "share": 0.1
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 8,
+      "share": 0.2
      },
      {
       "fn": "(garbage collector)",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
       "ms": 6,
       "share": 0.1
      },
      {
-      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "fn": "interactables assets/index-pbwgHm-F.js:868",
       "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "builds assets/index-pbwgHm-F.js:868",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 4,
       "share": 0.1
      }
     ],
@@ -2250,11 +2252,11 @@
    "map": "ferme-du-riche",
    "seconds": 5,
    "rafPerSec": 60,
-   "imagesPerSec": 60.2,
+   "imagesPerSec": 50.6,
    "image": {
     "avg": 16.7,
     "p50": 16.7,
-    "p95": 17.5,
+    "p95": 17.6,
     "p99": 17.7,
     "max": 17.7,
     "over20": 0,
@@ -2263,21 +2265,22 @@
     "count": 299
    },
    "cpuPerImage": {
-    "step": 0.6,
+    "step": 0.7,
     "physics": 0,
-    "world": 0.5,
+    "world": 0.6,
     "hud": 0,
     "sort": 0,
-    "render": 3.7,
-    "renderP95": 4.1,
-    "stepP95": 0.9,
-    "busyP95": 4.9
+    "render": 3.8,
+    "renderP95": 4.3,
+    "stepP95": 1.1,
+    "busyP95": 5.3
    },
    "stepsPerImage": {
-    "avg": 1,
-    "max": 1,
+    "avg": 1.2,
+    "max": 2,
     "dist": {
-     "1": 300
+     "1": 204,
+     "2": 48
     }
    },
    "stepCost": 0.6,
@@ -2293,15 +2296,15 @@
     "interaction": 0,
     "player": 0,
     "prompts": 0,
-    "site": 0,
-    "creatures": 0,
     "clock": 0,
+    "creatures": 0,
+    "site": 0,
     "zones": 0,
-    "pileCount": 0,
+    "interiors": 0,
     "effort": 0,
-    "roll": 0,
+    "pileCount": 0,
     "footing": 0,
-    "tweens": 0
+    "roll": 0
    },
    "census": {
     "all": 10649,
@@ -2337,12 +2340,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -2390,115 +2393,115 @@
    },
    "memory": {
     "before": {
-     "heapMB": 94.1,
-     "heapTotalMB": 163.1,
-     "nodes": 6467,
-     "listeners": 4831
+     "heapMB": 58.7,
+     "heapTotalMB": 194,
+     "nodes": 6219,
+     "listeners": 4828
     },
     "after": {
-     "heapMB": 95.8,
-     "heapTotalMB": 163.1,
-     "nodes": 6551,
-     "listeners": 4831
+     "heapMB": 46.3,
+     "heapTotalMB": 194.7,
+     "nodes": 6301,
+     "listeners": 4828
     }
    },
    "profile": {
-    "ms": 5017,
-    "idleMs": 3671,
+    "ms": 5018,
+    "idleMs": 3817,
     "gcMs": 6,
     "self": [
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 323,
-      "share": 6.4
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 255,
+      "share": 5.1
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 266,
-      "share": 5.3
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 226,
+      "share": 4.5
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 100,
-      "share": 2
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 89,
+      "share": 1.8
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 93,
-      "share": 1.9
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 81,
+      "share": 1.6
      },
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 67,
-      "share": 1.3
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 50,
+      "share": 1
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 39,
-      "share": 0.8
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 48,
+      "share": 1
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 36,
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 48,
+      "share": 1
+     },
+     {
+      "fn": "builds assets/index-pbwgHm-F.js:868",
+      "ms": 37,
       "share": 0.7
      },
      {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
-      "ms": 34,
-      "share": 0.7
-     },
-     {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 32,
       "share": 0.6
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 29,
-      "share": 0.6
-     },
-     {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
-      "ms": 27,
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
+      "ms": 23,
       "share": 0.5
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 26,
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 23,
       "share": 0.5
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 20,
-      "share": 0.4
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 19,
       "share": 0.4
      },
      {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 19,
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 18,
       "share": 0.4
-     },
-     {
-      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 12,
-      "share": 0.2
      },
      {
       "fn": "bindTexture",
+      "ms": 17,
+      "share": 0.3
+     },
+     {
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 17,
+      "share": 0.3
+     },
+     {
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
+      "ms": 15,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
       "ms": 12,
       "share": 0.2
      },
      {
-      "fn": "activeTexture",
-      "ms": 11,
+      "fn": "Noe assets/index-pbwgHm-F.js:868",
+      "ms": 10,
       "share": 0.2
      },
      {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
       "ms": 10,
       "share": 0.2
      },
@@ -2508,17 +2511,17 @@
       "share": 0.2
      },
      {
-      "fn": "lights assets/index-cIyCPcy9.js:868",
+      "fn": "willRender assets/index-pbwgHm-F.js:18",
       "ms": 9,
       "share": 0.2
      },
      {
-      "fn": "joe assets/index-cIyCPcy9.js:868",
+      "fn": "activeTexture",
       "ms": 8,
       "share": 0.2
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "fn": "lights assets/index-pbwgHm-F.js:868",
       "ms": 7,
       "share": 0.1
      },
@@ -2528,7 +2531,7 @@
       "share": 0.1
      },
      {
-      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "fn": "Moe assets/index-pbwgHm-F.js:868",
       "ms": 5,
       "share": 0.1
      }
@@ -2540,63 +2543,64 @@
    "map": "ferme-du-riche",
    "seconds": 5,
    "rafPerSec": 60,
-   "imagesPerSec": 60.2,
+   "imagesPerSec": 48.6,
    "image": {
     "avg": 16.7,
     "p50": 16.7,
-    "p95": 17.5,
+    "p95": 17.6,
     "p99": 17.7,
-    "max": 17.7,
+    "max": 17.8,
     "over20": 0,
     "over33": 0,
     "over50": 0,
-    "count": 300
+    "count": 299
    },
    "cpuPerImage": {
-    "step": 0.6,
+    "step": 0.7,
     "physics": 0,
-    "world": 0.5,
+    "world": 0.6,
     "hud": 0,
     "sort": 0,
-    "render": 3.7,
-    "renderP95": 4.1,
-    "stepP95": 0.8,
-    "busyP95": 4.9
+    "render": 3.9,
+    "renderP95": 4.3,
+    "stepP95": 1.2,
+    "busyP95": 5.3
    },
    "stepsPerImage": {
-    "avg": 1,
-    "max": 1,
+    "avg": 1.2,
+    "max": 2,
     "dist": {
-     "1": 301
+     "1": 183,
+     "2": 59
     }
    },
    "stepCost": 0.6,
    "gl": {
     "draws": 166.1,
-    "binds": 2612.5,
+    "binds": 2612.6,
     "uploads": 0,
-    "uploadKpx": 1
+    "uploadKpx": 1.2
    },
    "subsystems": {
     "roofs": 0.2,
     "daylight": 0.2,
     "interaction": 0,
-    "roll": 0,
     "player": 0,
-    "clock": 0,
-    "site": 0,
-    "zones": 0,
-    "effort": 0,
+    "roll": 0,
+    "creatures": 0,
     "interiors": 0,
+    "site": 0,
+    "clock": 0,
+    "zones": 0,
     "prompts": 0,
-    "pileCount": 0,
     "autosave": 0,
-    "creatures": 0
+    "effort": 0,
+    "pileCount": 0
    },
    "census": {
     "all": 10649,
     "visible": 9955,
-    "inView": 6393,
+    "inView": 6394,
     "containers": 1,
     "zones": 675,
     "images": 9549,
@@ -2627,12 +2631,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -2680,121 +2684,111 @@
    },
    "memory": {
     "before": {
-     "heapMB": 86.9,
-     "heapTotalMB": 163.1,
-     "nodes": 6555,
-     "listeners": 4831
+     "heapMB": 65,
+     "heapTotalMB": 194.7,
+     "nodes": 6303,
+     "listeners": 4828
     },
     "after": {
-     "heapMB": 91.2,
-     "heapTotalMB": 163.1,
-     "nodes": 6637,
-     "listeners": 4831
+     "heapMB": 46.5,
+     "heapTotalMB": 194.7,
+     "nodes": 6385,
+     "listeners": 4828
     }
    },
    "profile": {
-    "ms": 5030,
-    "idleMs": 3679,
-    "gcMs": 8,
+    "ms": 5024,
+    "idleMs": 3850,
+    "gcMs": 6,
     "self": [
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 310,
-      "share": 6.2
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 248,
+      "share": 4.9
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 275,
-      "share": 5.5
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 218,
+      "share": 4.3
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 94,
-      "share": 1.9
-     },
-     {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 86,
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 85,
       "share": 1.7
      },
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 68,
-      "share": 1.4
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 73,
+      "share": 1.5
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 39,
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 54,
+      "share": 1.1
+     },
+     {
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 50,
+      "share": 1
+     },
+     {
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 42,
       "share": 0.8
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 38,
-      "share": 0.7
+      "fn": "builds assets/index-pbwgHm-F.js:868",
+      "ms": 40,
+      "share": 0.8
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
-      "ms": 37,
-      "share": 0.7
-     },
-     {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
-      "ms": 34,
-      "share": 0.7
-     },
-     {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 27,
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
+      "ms": 26,
       "share": 0.5
      },
      {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
-      "ms": 27,
-      "share": 0.5
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:43",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 25,
       "share": 0.5
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 24,
-      "share": 0.5
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "render assets/index-pbwgHm-F.js:43",
       "ms": 20,
       "share": 0.4
      },
      {
-      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "fn": "get assets/index-pbwgHm-F.js:23",
       "ms": 18,
       "share": 0.3
      },
      {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 16,
-      "share": 0.3
-     },
-     {
-      "fn": "bufferData",
-      "ms": 14,
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
+      "ms": 17,
       "share": 0.3
      },
      {
       "fn": "bindTexture",
-      "ms": 12,
-      "share": 0.2
+      "ms": 15,
+      "share": 0.3
      },
      {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
-      "ms": 12,
-      "share": 0.2
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
+      "ms": 15,
+      "share": 0.3
      },
      {
-      "fn": "joe assets/index-cIyCPcy9.js:868",
-      "ms": 10,
+      "fn": "Noe assets/index-pbwgHm-F.js:868",
+      "ms": 15,
+      "share": 0.3
+     },
+     {
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 14,
+      "share": 0.3
+     },
+     {
+      "fn": "bufferData",
+      "ms": 11,
       "share": 0.2
      },
      {
@@ -2803,22 +2797,32 @@
       "share": 0.2
      },
      {
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "willRender assets/index-pbwgHm-F.js:18",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "lights assets/index-pbwgHm-F.js:868",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
       "fn": "(garbage collector)",
-      "ms": 8,
-      "share": 0.2
-     },
-     {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
-      "ms": 8,
-      "share": 0.2
-     },
-     {
-      "fn": "c.<computed>",
-      "ms": 7,
+      "ms": 6,
       "share": 0.1
      },
      {
-      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "now",
       "ms": 6,
       "share": 0.1
      }
@@ -2833,11 +2837,11 @@
    "map": "ferme-du-riche",
    "seconds": 2.5,
    "rafPerSec": 60,
-   "imagesPerSec": 60.4,
+   "imagesPerSec": 43.9,
    "image": {
     "avg": 16.7,
     "p50": 16.7,
-    "p95": 17.6,
+    "p95": 17.5,
     "p99": 17.7,
     "max": 17.7,
     "over20": 0,
@@ -2846,27 +2850,28 @@
     "count": 149
    },
    "cpuPerImage": {
-    "step": 0.7,
+    "step": 0.9,
     "physics": 0,
-    "world": 0.6,
+    "world": 0.8,
     "hud": 0,
     "sort": 0,
-    "render": 3.5,
-    "renderP95": 3.9,
-    "stepP95": 0.8,
-    "busyP95": 4.7
+    "render": 4.2,
+    "renderP95": 4.8,
+    "stepP95": 1.4,
+    "busyP95": 6
    },
    "stepsPerImage": {
-    "avg": 1,
-    "max": 1,
+    "avg": 1.4,
+    "max": 2,
     "dist": {
-     "1": 150
+     "1": 68,
+     "2": 41
     }
    },
    "stepCost": 0.7,
    "gl": {
     "draws": 166.9,
-    "binds": 2622.6,
+    "binds": 2622.8,
     "uploads": 0,
     "uploadKpx": 0.2
    },
@@ -2875,16 +2880,16 @@
     "daylight": 0.2,
     "interaction": 0,
     "player": 0,
-    "autosave": 0,
-    "creatures": 0,
     "prompts": 0,
-    "roll": 0,
     "site": 0,
-    "cameras": 0,
+    "autosave": 0,
+    "clock": 0,
     "effort": 0,
     "zones": 0,
-    "interiors": 0,
-    "time": 0
+    "cameras": 0,
+    "creatures": 0,
+    "time": 0,
+    "pileCount": 0
    },
    "census": {
     "all": 10679,
@@ -2920,12 +2925,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -2973,145 +2978,145 @@
    },
    "memory": {
     "before": {
-     "heapMB": 95.6,
-     "heapTotalMB": 163.6,
-     "nodes": 6701,
-     "listeners": 4837
+     "heapMB": 57.6,
+     "heapTotalMB": 194.7,
+     "nodes": 6449,
+     "listeners": 4834
     },
     "after": {
-     "heapMB": 95.6,
-     "heapTotalMB": 163.8,
-     "nodes": 6743,
-     "listeners": 4837
+     "heapMB": 53.5,
+     "heapTotalMB": 195,
+     "nodes": 6491,
+     "listeners": 4834
     }
    },
    "profile": {
-    "ms": 2525,
-    "idleMs": 1862,
-    "gcMs": 3,
+    "ms": 2517,
+    "idleMs": 1922,
+    "gcMs": 4,
     "self": [
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 146,
-      "share": 5.8
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 121,
+      "share": 4.8
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 130,
-      "share": 5.2
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 111,
+      "share": 4.4
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 53,
-      "share": 2.1
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 44,
+      "share": 1.7
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 42,
-      "share": 1.6
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 33,
+      "share": 1.3
      },
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 29,
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 30,
       "share": 1.2
      },
      {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
-      "ms": 23,
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 24,
+      "share": 1
+     },
+     {
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 22,
       "share": 0.9
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 21,
+      "fn": "builds assets/index-pbwgHm-F.js:868",
+      "ms": 20,
       "share": 0.8
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 18,
-      "share": 0.7
-     },
-     {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
-      "ms": 15,
-      "share": 0.6
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 14,
-      "share": 0.6
-     },
-     {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
-      "ms": 14,
-      "share": 0.6
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "render assets/index-pbwgHm-F.js:43",
       "ms": 12,
       "share": 0.5
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 12,
       "share": 0.5
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
+      "ms": 11,
+      "share": 0.4
+     },
+     {
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
+      "ms": 10,
+      "share": 0.4
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
       "ms": 9,
       "share": 0.4
      },
      {
-      "fn": "bufferData",
+      "fn": "get assets/index-pbwgHm-F.js:23",
       "ms": 8,
       "share": 0.3
      },
      {
-      "fn": "bindTexture",
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 8,
+      "share": 0.3
+     },
+     {
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
       "ms": 7,
       "share": 0.3
      },
      {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "fn": "bindTexture",
       "ms": 6,
       "share": 0.2
      },
      {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "fn": "lights assets/index-pbwgHm-F.js:868",
       "ms": 5,
       "share": 0.2
      },
      {
-      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 5,
-      "share": 0.2
-     },
-     {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "fn": "bufferData",
       "ms": 5,
       "share": 0.2
      },
      {
       "fn": "activeTexture",
+      "ms": 5,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
       "ms": 4,
       "share": 0.2
      },
      {
-      "fn": "(anonyme)",
-      "ms": 4,
-      "share": 0.1
-     },
-     {
-      "fn": "interactables assets/index-cIyCPcy9.js:868",
+      "fn": "Noe assets/index-pbwgHm-F.js:868",
       "ms": 4,
       "share": 0.1
      },
      {
       "fn": "(garbage collector)",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "flood assets/index-pbwgHm-F.js:867",
       "ms": 3,
       "share": 0.1
      },
      {
-      "fn": "Mf assets/index-cIyCPcy9.js:867",
+      "fn": "jf assets/index-pbwgHm-F.js:867",
       "ms": 3,
       "share": 0.1
      }
@@ -3121,9 +3126,9 @@
   },
   "porteDehorsOuverte": true,
   "entrer": {
-   "ready": 295,
-   "create": 12,
-   "worst": 43,
+   "ready": 322,
+   "create": 13,
+   "worst": 45,
    "born": 1,
    "bornMB": 0,
    "canvases": 0,
@@ -3136,62 +3141,82 @@
     ]
    ],
    "profile": {
-    "ms": 1302,
-    "idleMs": 1041,
+    "ms": 1334,
+    "idleMs": 1086,
     "gcMs": 4,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 38,
-      "share": 3
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 31,
+      "share": 2.3
      },
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 33,
-      "share": 2.6
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 25,
+      "share": 1.9
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 22,
-      "share": 1.7
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 24,
+      "share": 1.8
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 22,
-      "share": 1.7
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 21,
+      "share": 1.5
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 12,
-      "share": 0.9
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 11,
+      "share": 0.8
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 9,
-      "share": 0.7
-     },
-     {
-      "fn": "get assets/index-cIyCPcy9.js:23",
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
       "ms": 8,
-      "share": 0.7
+      "share": 0.6
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 6,
-      "share": 0.5
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 8,
+      "share": 0.6
      },
      {
-      "fn": "exists assets/index-cIyCPcy9.js:808",
+      "fn": "render assets/index-pbwgHm-F.js:1",
       "ms": 6,
       "share": 0.4
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
+      "fn": "step assets/index-pbwgHm-F.js:1",
       "ms": 5,
       "share": 0.4
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
+      "fn": "e.72905.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "exists assets/index-pbwgHm-F.js:808",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
       "ms": 4,
       "share": 0.3
      },
@@ -3201,42 +3226,32 @@
       "share": 0.3
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 4,
-      "share": 0.3
-     },
-     {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
-      "ms": 3,
-      "share": 0.3
-     },
-     {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "fn": "builds assets/index-pbwgHm-F.js:868",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "e.72905.e.exports assets/index-cIyCPcy9.js:810",
+      "fn": "flood assets/index-pbwgHm-F.js:867",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:1",
+      "fn": "getData assets/index-pbwgHm-F.js:18",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "shutdown assets/index-cIyCPcy9.js:18",
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
       "ms": 2,
       "share": 0.2
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "fn": "shutdown assets/index-pbwgHm-F.js:18",
       "ms": 2,
       "share": 0.2
      },
@@ -3246,22 +3261,12 @@
       "share": 0.1
      },
      {
-      "fn": "w",
+      "fn": "c.<computed>",
       "ms": 2,
       "share": 0.1
      },
      {
-      "fn": "lights assets/index-cIyCPcy9.js:868",
-      "ms": 2,
-      "share": 0.1
-     },
-     {
-      "fn": "flood assets/index-cIyCPcy9.js:867",
-      "ms": 2,
-      "share": 0.1
-     },
-     {
-      "fn": "activeTexture",
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:23",
       "ms": 2,
       "share": 0.1
      }
@@ -3274,7 +3279,7 @@
    "storey": 0,
    "seconds": 5,
    "rafPerSec": 60,
-   "imagesPerSec": 60.2,
+   "imagesPerSec": 46.4,
    "image": {
     "avg": 16.7,
     "p50": 16.7,
@@ -3287,24 +3292,25 @@
     "count": 299
    },
    "cpuPerImage": {
-    "step": 1.3,
+    "step": 1.5,
     "physics": 0,
-    "world": 0.2,
+    "world": 0.3,
     "hud": 0,
     "sort": 0,
-    "render": 1.1,
-    "renderP95": 1.3,
-    "stepP95": 1.7,
-    "busyP95": 3
+    "render": 1.2,
+    "renderP95": 1.5,
+    "stepP95": 2,
+    "busyP95": 3.4
    },
    "stepsPerImage": {
-    "avg": 1,
-    "max": 1,
+    "avg": 1.3,
+    "max": 2,
     "dist": {
-     "1": 300
+     "1": 161,
+     "2": 70
     }
    },
-   "stepCost": 1.3,
+   "stepCost": 1.2,
    "gl": {
     "draws": 85,
     "binds": 1314,
@@ -3312,20 +3318,20 @@
     "uploadKpx": 0
    },
    "subsystems": {
-    "lifts": 1,
+    "lifts": 0.9,
     "daylight": 0.1,
     "roofs": 0,
     "interaction": 0,
-    "storeys": 0,
     "player": 0,
-    "effort": 0,
-    "creatures": 0,
+    "storeys": 0,
     "site": 0,
-    "prompts": 0,
+    "creatures": 0,
+    "clock": 0,
+    "pileCount": 0,
+    "roll": 0,
     "cameras": 0,
-    "autosave": 0,
-    "interiors": 0,
-    "pileCount": 0
+    "effort": 0,
+    "interiors": 0
    },
    "census": {
     "all": 4536,
@@ -3361,12 +3367,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -3414,80 +3420,85 @@
    },
    "memory": {
     "before": {
-     "heapMB": 99.2,
-     "heapTotalMB": 164.3,
-     "nodes": 6793,
-     "listeners": 4843
+     "heapMB": 83,
+     "heapTotalMB": 195,
+     "nodes": 6543,
+     "listeners": 4840
     },
     "after": {
-     "heapMB": 94,
-     "heapTotalMB": 164.3,
-     "nodes": 6877,
-     "listeners": 4843
+     "heapMB": 72.1,
+     "heapTotalMB": 195,
+     "nodes": 6625,
+     "listeners": 4840
     }
    },
    "profile": {
-    "ms": 5011,
-    "idleMs": 4245,
+    "ms": 5022,
+    "idleMs": 4339,
     "gcMs": 3,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 196,
-      "share": 3.9
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 151,
+      "share": 3
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 107,
-      "share": 2.1
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 121,
+      "share": 2.4
      },
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 95,
-      "share": 1.9
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 71,
+      "share": 1.4
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 46,
-      "share": 0.9
-     },
-     {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 39,
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 38,
       "share": 0.8
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 35,
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 34,
       "share": 0.7
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 15,
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 28,
+      "share": 0.6
+     },
+     {
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 17,
       "share": 0.3
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "fn": "step assets/index-pbwgHm-F.js:1",
       "ms": 14,
       "share": 0.3
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 11,
+      "fn": "getData assets/index-pbwgHm-F.js:18",
+      "ms": 13,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
+      "ms": 12,
       "share": 0.2
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
+      "fn": "render assets/index-pbwgHm-F.js:1",
       "ms": 10,
       "share": 0.2
      },
      {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 9,
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 8,
       "share": 0.2
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "fn": "flush assets/index-pbwgHm-F.js:43",
       "ms": 8,
       "share": 0.2
      },
@@ -3497,62 +3508,57 @@
       "share": 0.1
      },
      {
-      "fn": "getData assets/index-cIyCPcy9.js:18",
-      "ms": 6,
-      "share": 0.1
-     },
-     {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
-      "ms": 6,
-      "share": 0.1
-     },
-     {
-      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 5,
-      "share": 0.1
-     },
-     {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
-      "ms": 5,
-      "share": 0.1
-     },
-     {
-      "fn": "get assets/index-cIyCPcy9.js:1",
-      "ms": 5,
-      "share": 0.1
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
-      "ms": 4,
-      "share": 0.1
-     },
-     {
-      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
-      "ms": 4,
-      "share": 0.1
-     },
-     {
-      "fn": "now",
-      "ms": 4,
-      "share": 0.1
-     },
-     {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
-      "ms": 4,
-      "share": 0.1
-     },
-     {
-      "fn": "w",
-      "ms": 4,
-      "share": 0.1
-     },
-     {
       "fn": "activeTexture",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "willRender assets/index-pbwgHm-F.js:18",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "applyITRS assets/index-pbwgHm-F.js:23",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "pushBatch assets/index-pbwgHm-F.js:43",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
       "ms": 3,
       "share": 0.1
      },
      {
-      "fn": "lights assets/index-cIyCPcy9.js:868",
+      "fn": "interactables assets/index-pbwgHm-F.js:868",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "e.72249.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
       "ms": 3,
       "share": 0.1
      }
@@ -3565,58 +3571,59 @@
    "storey": 0,
    "seconds": 4,
    "rafPerSec": 60,
-   "imagesPerSec": 60.2,
+   "imagesPerSec": 42.7,
    "image": {
     "avg": 16.7,
     "p50": 16.7,
     "p95": 17.5,
     "p99": 17.6,
-    "max": 17.6,
+    "max": 17.7,
     "over20": 0,
     "over33": 0,
     "over50": 0,
-    "count": 239
+    "count": 240
    },
    "cpuPerImage": {
-    "step": 1.3,
+    "step": 1.6,
     "physics": 0,
-    "world": 0.2,
+    "world": 0.3,
     "hud": 0,
     "sort": 0,
-    "render": 1.1,
-    "renderP95": 1.3,
-    "stepP95": 1.8,
-    "busyP95": 3
+    "render": 1.2,
+    "renderP95": 1.5,
+    "stepP95": 2.2,
+    "busyP95": 3.6
    },
    "stepsPerImage": {
-    "avg": 1,
-    "max": 1,
+    "avg": 1.4,
+    "max": 2,
     "dist": {
-     "1": 240
+     "1": 102,
+     "2": 69
     }
    },
-   "stepCost": 1.3,
+   "stepCost": 1.2,
    "gl": {
     "draws": 85,
     "binds": 1314.1,
-    "uploads": 0,
-    "uploadKpx": 1
+    "uploads": 0.1,
+    "uploadKpx": 1.4
    },
    "subsystems": {
-    "lifts": 1,
+    "lifts": 0.8,
     "daylight": 0.1,
     "roofs": 0,
     "interaction": 0,
     "player": 0,
     "storeys": 0,
     "site": 0,
-    "clock": 0,
-    "time": 0,
-    "interiors": 0,
-    "creatures": 0,
-    "autosave": 0,
     "effort": 0,
-    "tweens": 0
+    "prompts": 0,
+    "interiors": 0,
+    "clock": 0,
+    "creatures": 0,
+    "pileCount": 0,
+    "cameras": 0
    },
    "census": {
     "all": 4536,
@@ -3652,12 +3659,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -3705,131 +3712,136 @@
    },
    "memory": {
     "before": {
-     "heapMB": 111.5,
-     "heapTotalMB": 164.6,
-     "nodes": 6891,
-     "listeners": 4843
+     "heapMB": 82.6,
+     "heapTotalMB": 195.2,
+     "nodes": 6639,
+     "listeners": 4840
     },
     "after": {
-     "heapMB": 108.3,
-     "heapTotalMB": 164.8,
-     "nodes": 6957,
-     "listeners": 4843
+     "heapMB": 64.3,
+     "heapTotalMB": 195.5,
+     "nodes": 6705,
+     "listeners": 4840
     }
    },
    "profile": {
-    "ms": 4013,
-    "idleMs": 3395,
-    "gcMs": 3,
+    "ms": 4012,
+    "idleMs": 3479,
+    "gcMs": 2,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 151,
-      "share": 3.8
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 99,
+      "share": 2.5
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 91,
-      "share": 2.3
+      "fn": "w",
+      "ms": 68,
+      "share": 1.7
      },
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 71,
-      "share": 1.8
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 53,
+      "share": 1.3
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 42,
-      "share": 1.1
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 48,
+      "share": 1.2
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 30,
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 28,
       "share": 0.7
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
       "ms": 25,
       "share": 0.6
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 12,
-      "share": 0.3
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 16,
+      "share": 0.4
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 11,
-      "share": 0.3
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 16,
+      "share": 0.4
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 9,
       "share": 0.2
      },
      {
+      "fn": "getData assets/index-pbwgHm-F.js:18",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "lights assets/index-pbwgHm-F.js:868",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
       "fn": "bindTexture",
-      "ms": 7,
-      "share": 0.2
-     },
-     {
-      "fn": "getData assets/index-cIyCPcy9.js:18",
-      "ms": 7,
-      "share": 0.2
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 6,
-      "share": 0.2
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 6,
-      "share": 0.2
-     },
-     {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
-      "ms": 6,
-      "share": 0.2
-     },
-     {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
-      "ms": 6,
-      "share": 0.1
-     },
-     {
-      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
       "ms": 5,
       "share": 0.1
      },
      {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 5,
-      "share": 0.1
-     },
-     {
-      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 5,
-      "share": 0.1
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "render assets/index-pbwgHm-F.js:43",
       "ms": 4,
       "share": 0.1
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:1",
+      "fn": "flush assets/index-pbwgHm-F.js:43",
       "ms": 4,
       "share": 0.1
      },
      {
-      "fn": "lights assets/index-cIyCPcy9.js:868",
-      "ms": 4,
+      "fn": "e.72249.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
+      "ms": 3,
       "share": 0.1
      },
      {
       "fn": "(anonyme)",
-      "ms": 4,
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "pushBatch assets/index-pbwgHm-F.js:43",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "requestAnimationFrame",
+      "ms": 3,
       "share": 0.1
      },
      {
@@ -3838,12 +3850,7 @@
       "share": 0.1
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
-      "ms": 3,
-      "share": 0.1
-     },
-     {
-      "fn": "(garbage collector)",
+      "fn": "willRender assets/index-pbwgHm-F.js:18",
       "ms": 3,
       "share": 0.1
      }
@@ -3855,60 +3862,60 @@
    "map": "interieur:ferme-du-riche:13180,18300",
    "storey": 1,
    "seconds": 6,
-   "rafPerSec": 55,
-   "imagesPerSec": 55.1,
+   "rafPerSec": 60,
+   "imagesPerSec": 45.3,
    "image": {
-    "avg": 18.2,
+    "avg": 16.7,
     "p50": 16.7,
-    "p95": 33.2,
-    "p99": 33.7,
-    "max": 34.1,
-    "over20": 30,
-    "over33": 9,
+    "p95": 17.5,
+    "p99": 17.7,
+    "max": 17.7,
+    "over20": 0,
+    "over33": 0,
     "over50": 0,
-    "count": 329
+    "count": 359
    },
    "cpuPerImage": {
-    "step": 1.5,
+    "step": 1.6,
     "physics": 0,
-    "world": 0.3,
+    "world": 0.4,
     "hud": 0,
     "sort": 0,
     "render": 2.4,
-    "renderP95": 2.9,
-    "stepP95": 1.8,
-    "busyP95": 4.6
+    "renderP95": 3.1,
+    "stepP95": 2.1,
+    "busyP95": 5.1
    },
    "stepsPerImage": {
-    "avg": 1.1,
+    "avg": 1.3,
     "max": 2,
     "dist": {
-     "1": 300,
-     "2": 30
+     "1": 183,
+     "2": 88
     }
    },
-   "stepCost": 1.3,
+   "stepCost": 1.2,
    "gl": {
-    "draws": 412,
-    "binds": 2418.3,
+    "draws": 421.9,
+    "binds": 2451.9,
     "uploads": 0,
-    "uploadKpx": 0.3
+    "uploadKpx": 0.4
    },
    "subsystems": {
-    "lifts": 0.9,
+    "lifts": 0.8,
     "daylight": 0.2,
     "roofs": 0,
     "interaction": 0,
     "player": 0,
-    "site": 0,
     "storeys": 0,
     "clock": 0,
+    "site": 0,
     "effort": 0,
     "prompts": 0,
     "creatures": 0,
-    "roll": 0,
     "pileCount": 0,
-    "footing": 0
+    "interiors": 0,
+    "roll": 0
    },
    "census": {
     "all": 4535,
@@ -3944,12 +3951,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -3997,146 +4004,146 @@
    },
    "memory": {
     "before": {
-     "heapMB": 106.6,
-     "heapTotalMB": 164.8,
-     "nodes": 6965,
-     "listeners": 4843
+     "heapMB": 85.4,
+     "heapTotalMB": 195.5,
+     "nodes": 6711,
+     "listeners": 4840
     },
     "after": {
-     "heapMB": 110.6,
-     "heapTotalMB": 165.6,
-     "nodes": 7065,
-     "listeners": 4843
+     "heapMB": 75.3,
+     "heapTotalMB": 196,
+     "nodes": 6811,
+     "listeners": 4840
     }
    },
    "profile": {
-    "ms": 6020,
-    "idleMs": 4637,
-    "gcMs": 7,
+    "ms": 6014,
+    "idleMs": 4845,
+    "gcMs": 9,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 232,
-      "share": 3.9
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 158,
+      "share": 2.6
      },
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 205,
-      "share": 3.4
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 126,
+      "share": 2.1
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 118,
-      "share": 2
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 124,
+      "share": 2.1
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 97,
-      "share": 1.6
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 79,
+      "share": 1.3
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
       "ms": 54,
       "share": 0.9
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 52,
-      "share": 0.9
+      "fn": "w",
+      "ms": 50,
+      "share": 0.8
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 47,
-      "share": 0.8
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 38,
+      "share": 0.6
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 35,
+      "share": 0.6
      },
      {
       "fn": "bufferSubData",
-      "ms": 45,
-      "share": 0.8
+      "ms": 30,
+      "share": 0.5
      },
      {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 40,
-      "share": 0.7
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 29,
+      "share": 0.5
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "fn": "step assets/index-pbwgHm-F.js:1",
       "ms": 24,
       "share": 0.4
      },
      {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
-      "ms": 21,
-      "share": 0.3
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
+      "ms": 23,
+      "share": 0.4
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 20,
-      "share": 0.3
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 23,
+      "share": 0.4
      },
      {
-      "fn": "activeTexture",
-      "ms": 20,
-      "share": 0.3
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 19,
-      "share": 0.3
-     },
-     {
-      "fn": "bindTexture",
-      "ms": 19,
-      "share": 0.3
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
       "ms": 16,
       "share": 0.3
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
+      "fn": "activeTexture",
+      "ms": 16,
+      "share": 0.3
+     },
+     {
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
       "ms": 15,
       "share": 0.2
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 14,
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
+      "ms": 13,
       "share": 0.2
      },
      {
-      "fn": "(anonyme)",
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 13,
+      "share": 0.2
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "pushBatch assets/index-pbwgHm-F.js:43",
       "ms": 11,
       "share": 0.2
      },
      {
-      "fn": "c.<computed>",
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "getData assets/index-pbwgHm-F.js:18",
       "ms": 9,
       "share": 0.2
      },
      {
-      "fn": "e.50792.s.emit assets/index-cIyCPcy9.js:1",
+      "fn": "(garbage collector)",
       "ms": 9,
-      "share": 0.2
+      "share": 0.1
      },
      {
-      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
-      "ms": 9,
-      "share": 0.2
-     },
-     {
-      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
       "ms": 8,
       "share": 0.1
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
-      "ms": 7,
-      "share": 0.1
-     },
-     {
-      "fn": "(garbage collector)",
-      "ms": 7,
+      "fn": "(anonyme)",
+      "ms": 6,
       "share": 0.1
      }
     ],
@@ -4145,61 +4152,619 @@
   },
   "escalierLongues": [
    {
+    "dt": 34,
+    "step": 2,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 1,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 1,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 1,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 34,
+    "step": 1,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 34,
+    "step": 2,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 34,
+    "step": 2,
+    "render": 1,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 1,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 1,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 34,
+    "step": 2,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 34,
+    "step": 2,
+    "render": 1,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 35,
+    "step": 2,
+    "render": 2,
+    "steps": 1,
+    "subs": {}
+   },
+   {
     "dt": 28,
-    "step": 8,
+    "step": 9,
     "render": 5,
-    "steps": 1,
-    "subs": {
-     "lifts": 3
-    }
+    "steps": 2,
+    "subs": {}
    },
    {
-    "dt": 26,
-    "step": 3,
-    "render": 14,
+    "dt": 41,
+    "step": 2,
+    "render": 3,
     "steps": 1,
     "subs": {}
    },
    {
-    "dt": 26,
+    "dt": 35,
+    "step": 2,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
     "step": 2,
     "render": 3,
     "steps": 2,
     "subs": {}
    },
    {
-    "dt": 25,
-    "step": 1,
-    "render": 3,
-    "steps": 2,
-    "subs": {}
-   },
-   {
-    "dt": 28,
+    "dt": 34,
     "step": 2,
     "render": 3,
     "steps": 2,
     "subs": {}
    },
    {
-    "dt": 25,
+    "dt": 32,
+    "step": 1,
+    "render": 2,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
     "step": 1,
     "render": 3,
     "steps": 1,
     "subs": {}
    },
    {
-    "dt": 28,
+    "dt": 33,
+    "step": 2,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 31,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
     "step": 1,
     "render": 3,
     "steps": 2,
     "subs": {}
    },
    {
-    "dt": 27,
+    "dt": 34,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
     "step": 1,
     "render": 3,
     "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 2,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 34,
+    "step": 2,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 2,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 34,
+    "step": 2,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 34,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 34,
+    "step": 2,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 2,
+    "render": 2,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 33,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 32,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
     "subs": {}
    }
   ],
@@ -4207,18 +4772,18 @@
    "map": "interieur:ferme-du-riche:13180,18300",
    "storey": 1,
    "seconds": 5,
-   "rafPerSec": 52.6,
-   "imagesPerSec": 52.8,
+   "rafPerSec": 60,
+   "imagesPerSec": 45.4,
    "image": {
-    "avg": 19,
+    "avg": 16.7,
     "p50": 16.7,
-    "p95": 33.6,
-    "p99": 34.2,
-    "max": 34.3,
-    "over20": 37,
-    "over33": 17,
+    "p95": 17.5,
+    "p99": 17.6,
+    "max": 17.7,
+    "over20": 0,
+    "over33": 0,
     "over50": 0,
-    "count": 263
+    "count": 299
    },
    "cpuPerImage": {
     "step": 1.4,
@@ -4226,20 +4791,20 @@
     "world": 0.3,
     "hud": 0,
     "sort": 0,
-    "render": 2.7,
-    "renderP95": 2.9,
-    "stepP95": 1.6,
-    "busyP95": 4.4
+    "render": 2.6,
+    "renderP95": 3,
+    "stepP95": 1.7,
+    "busyP95": 4.6
    },
    "stepsPerImage": {
-    "avg": 1.1,
+    "avg": 1.3,
     "max": 2,
     "dist": {
-     "1": 227,
-     "2": 37
+     "1": 152,
+     "2": 74
     }
    },
-   "stepCost": 1.3,
+   "stepCost": 1.1,
    "gl": {
     "draws": 500,
     "binds": 2716,
@@ -4247,19 +4812,19 @@
     "uploadKpx": 0
    },
    "subsystems": {
-    "lifts": 0.9,
+    "lifts": 0.7,
     "daylight": 0.2,
     "roofs": 0,
     "interaction": 0,
     "player": 0,
-    "storeys": 0,
     "clock": 0,
-    "site": 0,
-    "creatures": 0,
-    "pileCount": 0,
-    "interiors": 0,
-    "cameras": 0,
     "prompts": 0,
+    "site": 0,
+    "pileCount": 0,
+    "creatures": 0,
+    "storeys": 0,
+    "effort": 0,
+    "roll": 0,
     "autosave": 0
    },
    "census": {
@@ -4296,12 +4861,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -4349,145 +4914,145 @@
    },
    "memory": {
     "before": {
-     "heapMB": 108.5,
-     "heapTotalMB": 165.6,
-     "nodes": 7093,
-     "listeners": 4843
+     "heapMB": 84.1,
+     "heapTotalMB": 196,
+     "nodes": 6839,
+     "listeners": 4840
     },
     "after": {
-     "heapMB": 106.6,
-     "heapTotalMB": 165.6,
-     "nodes": 7177,
-     "listeners": 4843
+     "heapMB": 80,
+     "heapTotalMB": 196,
+     "nodes": 6923,
+     "listeners": 4840
     }
    },
    "profile": {
-    "ms": 5026,
-    "idleMs": 3837,
-    "gcMs": 8,
+    "ms": 5010,
+    "idleMs": 4008,
+    "gcMs": 7,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 192,
-      "share": 3.8
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 156,
+      "share": 3.1
      },
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 178,
-      "share": 3.5
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 138,
+      "share": 2.8
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 94,
-      "share": 1.9
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 98,
+      "share": 2
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 89,
-      "share": 1.8
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 72,
+      "share": 1.4
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 59,
-      "share": 1.2
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 49,
+      "share": 1
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 44,
-      "share": 0.9
-     },
-     {
-      "fn": "bufferSubData",
-      "ms": 44,
-      "share": 0.9
-     },
-     {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 39,
-      "share": 0.8
-     },
-     {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 34,
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 37,
       "share": 0.7
      },
      {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
-      "ms": 24,
-      "share": 0.5
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 33,
+      "share": 0.7
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "fn": "bufferSubData",
+      "ms": 31,
+      "share": 0.6
+     },
+     {
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 28,
+      "share": 0.6
+     },
+     {
+      "fn": "render assets/index-pbwgHm-F.js:1",
       "ms": 22,
       "share": 0.4
      },
      {
-      "fn": "activeTexture",
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
       "ms": 20,
       "share": 0.4
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 18,
-      "share": 0.4
-     },
-     {
-      "fn": "bindTexture",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 17,
       "share": 0.3
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 16,
-      "share": 0.3
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 16,
-      "share": 0.3
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "step assets/index-pbwgHm-F.js:1",
       "ms": 15,
       "share": 0.3
      },
      {
-      "fn": "(anonyme)",
+      "fn": "activeTexture",
       "ms": 13,
       "share": 0.3
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 12,
-      "share": 0.2
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
+      "ms": 13,
+      "share": 0.3
      },
      {
-      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "fn": "render assets/index-pbwgHm-F.js:43",
       "ms": 11,
       "share": 0.2
      },
      {
+      "fn": "bindTexture",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "getData assets/index-pbwgHm-F.js:18",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "pushBatch assets/index-pbwgHm-F.js:43",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
       "fn": "(garbage collector)",
-      "ms": 8,
-      "share": 0.2
+      "ms": 7,
+      "share": 0.1
      },
      {
-      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 8,
-      "share": 0.2
-     },
-     {
-      "fn": "isCurrent assets/index-cIyCPcy9.js:38",
+      "fn": "isCurrent assets/index-pbwgHm-F.js:38",
       "ms": 6,
       "share": 0.1
      },
      {
-      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
-      "ms": 6,
-      "share": 0.1
-     },
-     {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "fn": "applyITRS assets/index-pbwgHm-F.js:23",
       "ms": 6,
       "share": 0.1
      }
@@ -4499,60 +5064,60 @@
    "map": "interieur:ferme-du-riche:13180,18300",
    "storey": 1,
    "seconds": 2.5,
-   "rafPerSec": 51.9,
-   "imagesPerSec": 52.3,
+   "rafPerSec": 60,
+   "imagesPerSec": 44.8,
    "image": {
-    "avg": 19.3,
-    "p50": 16.8,
-    "p95": 33.5,
-    "p99": 33.8,
-    "max": 34,
-    "over20": 20,
-    "over33": 7,
+    "avg": 16.7,
+    "p50": 16.7,
+    "p95": 17.4,
+    "p99": 17.6,
+    "max": 17.6,
+    "over20": 0,
+    "over33": 0,
     "over50": 0,
-    "count": 129
+    "count": 150
    },
    "cpuPerImage": {
-    "step": 1.4,
+    "step": 1.5,
     "physics": 0,
-    "world": 0.3,
+    "world": 0.4,
     "hud": 0,
     "sort": 0,
-    "render": 2.7,
-    "renderP95": 2.9,
-    "stepP95": 1.7,
-    "busyP95": 4.5
+    "render": 2.6,
+    "renderP95": 3.1,
+    "stepP95": 2.1,
+    "busyP95": 5
    },
    "stepsPerImage": {
-    "avg": 1.2,
+    "avg": 1.3,
     "max": 2,
     "dist": {
-     "1": 110,
-     "2": 20
+     "1": 74,
+     "2": 38
     }
    },
-   "stepCost": 1.3,
+   "stepCost": 1.1,
    "gl": {
-    "draws": 502.6,
+    "draws": 502.7,
     "binds": 2718.8,
     "uploads": 0,
     "uploadKpx": 0.2
    },
    "subsystems": {
-    "lifts": 0.9,
+    "lifts": 0.8,
     "daylight": 0.2,
     "roofs": 0,
     "interaction": 0,
     "player": 0,
-    "prompts": 0,
     "storeys": 0,
-    "site": 0,
     "autosave": 0,
+    "creatures": 0,
+    "site": 0,
+    "prompts": 0,
     "clock": 0,
     "roll": 0,
-    "cameras": 0,
-    "interiors": 0,
-    "pileCount": 0
+    "effort": 0,
+    "interiors": 0
    },
    "census": {
     "all": 4509,
@@ -4588,12 +5153,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -4641,100 +5206,85 @@
    },
    "memory": {
     "before": {
-     "heapMB": 122.4,
-     "heapTotalMB": 165.6,
-     "nodes": 7181,
-     "listeners": 4843
+     "heapMB": 87.3,
+     "heapTotalMB": 196,
+     "nodes": 6929,
+     "listeners": 4840
     },
     "after": {
-     "heapMB": 117.4,
-     "heapTotalMB": 165.6,
-     "nodes": 7223,
-     "listeners": 4843
+     "heapMB": 69.3,
+     "heapTotalMB": 196,
+     "nodes": 6969,
+     "listeners": 4840
     }
    },
    "profile": {
-    "ms": 2514,
-    "idleMs": 1920,
+    "ms": 2535,
+    "idleMs": 2002,
     "gcMs": 3,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 98,
-      "share": 3.9
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 70,
+      "share": 2.8
      },
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 93,
-      "share": 3.7
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 67,
+      "share": 2.7
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 44,
-      "share": 1.8
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 65,
+      "share": 2.6
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 41,
-      "share": 1.6
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 48,
+      "share": 1.9
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
       "ms": 31,
       "share": 1.2
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "fn": "render assets/index-pbwgHm-F.js:1",
       "ms": 23,
       "share": 0.9
      },
      {
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 16,
+      "share": 0.6
+     },
+     {
       "fn": "bufferSubData",
-      "ms": 22,
-      "share": 0.9
+      "ms": 13,
+      "share": 0.5
      },
      {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 17,
-      "share": 0.7
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 12,
+      "share": 0.5
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 17,
-      "share": 0.7
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
-      "ms": 9,
+      "fn": "now",
+      "ms": 11,
       "share": 0.4
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
-      "ms": 9,
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 10,
       "share": 0.4
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 9,
-      "share": 0.4
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:1",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 8,
       "share": 0.3
      },
      {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
-      "ms": 7,
-      "share": 0.3
-     },
-     {
-      "fn": "bindTexture",
-      "ms": 7,
-      "share": 0.3
-     },
-     {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "fn": "step assets/index-pbwgHm-F.js:1",
       "ms": 7,
       "share": 0.3
      },
@@ -4744,42 +5294,57 @@
       "share": 0.3
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
       "ms": 6,
-      "share": 0.3
+      "share": 0.2
      },
      {
-      "fn": "isCurrent assets/index-cIyCPcy9.js:38",
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
+      "ms": 6,
+      "share": 0.2
+     },
+     {
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 6,
+      "share": 0.2
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
       "ms": 5,
       "share": 0.2
      },
      {
-      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
-      "ms": 5,
-      "share": 0.2
-     },
-     {
-      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 5,
-      "share": 0.2
-     },
-     {
-      "fn": "now",
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 4,
       "share": 0.2
      },
      {
-      "fn": "(anonyme)",
+      "fn": "e.50792.s.emit assets/index-pbwgHm-F.js:1",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "getData assets/index-pbwgHm-F.js:18",
       "ms": 4,
       "share": 0.1
      },
      {
-      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "fn": "applyITRS assets/index-pbwgHm-F.js:23",
       "ms": 3,
       "share": 0.1
      },
      {
-      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "fn": "(anonyme)",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
       "ms": 3,
       "share": 0.1
      }
@@ -4791,60 +5356,60 @@
    "map": "interieur:ferme-du-riche:13180,18300",
    "storey": 1,
    "seconds": 4,
-   "rafPerSec": 54.5,
-   "imagesPerSec": 54.7,
+   "rafPerSec": 60,
+   "imagesPerSec": 45.7,
    "image": {
-    "avg": 18.4,
+    "avg": 16.7,
     "p50": 16.7,
-    "p95": 33.1,
-    "p99": 34,
-    "max": 34.3,
-    "over20": 22,
-    "over33": 6,
+    "p95": 17.6,
+    "p99": 17.7,
+    "max": 17.7,
+    "over20": 0,
+    "over33": 0,
     "over50": 0,
-    "count": 218
+    "count": 239
    },
    "cpuPerImage": {
-    "step": 1.6,
+    "step": 1.5,
     "physics": 0,
     "world": 0.3,
     "hud": 0,
     "sort": 0,
-    "render": 2.7,
-    "renderP95": 2.9,
-    "stepP95": 2,
+    "render": 2.6,
+    "renderP95": 3,
+    "stepP95": 1.9,
     "busyP95": 4.7
    },
    "stepsPerImage": {
-    "avg": 1.1,
+    "avg": 1.3,
     "max": 2,
     "dist": {
-     "1": 197,
-     "2": 22
+     "1": 124,
+     "2": 58
     }
    },
-   "stepCost": 1.4,
+   "stepCost": 1.2,
    "gl": {
-    "draws": 491.2,
-    "binds": 2712.7,
+    "draws": 503.7,
+    "binds": 2719.2,
     "uploads": 0.1,
-    "uploadKpx": 1.3
+    "uploadKpx": 1.7
    },
    "subsystems": {
-    "lifts": 0.9,
+    "lifts": 0.8,
     "daylight": 0.2,
     "roofs": 0,
     "interaction": 0,
     "player": 0,
-    "storeys": 0,
-    "roll": 0,
-    "site": 0,
     "prompts": 0,
-    "interiors": 0,
-    "pileCount": 0,
-    "clock": 0,
+    "site": 0,
+    "storeys": 0,
     "effort": 0,
-    "creatures": 0
+    "roll": 0,
+    "clock": 0,
+    "creatures": 0,
+    "tweens": 0,
+    "autosave": 0
    },
    "census": {
     "all": 4509,
@@ -4880,12 +5445,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -4933,101 +5498,86 @@
    },
    "memory": {
     "before": {
-     "heapMB": 104.9,
-     "heapTotalMB": 165.6,
-     "nodes": 7227,
-     "listeners": 4843
+     "heapMB": 62.9,
+     "heapTotalMB": 196,
+     "nodes": 6973,
+     "listeners": 4840
     },
     "after": {
-     "heapMB": 113.1,
-     "heapTotalMB": 165.8,
-     "nodes": 7293,
-     "listeners": 4843
+     "heapMB": 67.7,
+     "heapTotalMB": 196.5,
+     "nodes": 7039,
+     "listeners": 4840
     }
    },
    "profile": {
-    "ms": 4025,
-    "idleMs": 3018,
+    "ms": 4026,
+    "idleMs": 3199,
     "gcMs": 6,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 150,
-      "share": 3.7
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 130,
+      "share": 3.2
      },
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 146,
-      "share": 3.6
-     },
-     {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 81,
+      "fn": "w",
+      "ms": 79,
       "share": 2
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 70,
-      "share": 1.7
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 76,
+      "share": 1.9
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 50,
-      "share": 1.2
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 72,
+      "share": 1.8
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 36,
-      "share": 0.9
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 46,
+      "share": 1.1
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 33,
-      "share": 0.8
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 39,
+      "share": 1
      },
      {
       "fn": "bufferSubData",
-      "ms": 32,
-      "share": 0.8
-     },
-     {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
       "ms": 28,
       "share": 0.7
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 27,
+      "share": 0.7
+     },
+     {
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 22,
+      "share": 0.5
+     },
+     {
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 20,
+      "share": 0.5
+     },
+     {
+      "fn": "step assets/index-pbwgHm-F.js:1",
       "ms": 19,
       "share": 0.5
      },
      {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
-      "ms": 19,
-      "share": 0.5
-     },
-     {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 16,
-      "share": 0.4
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:1",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 15,
       "share": 0.4
      },
      {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "render assets/index-pbwgHm-F.js:1",
       "ms": 13,
-      "share": 0.3
-     },
-     {
-      "fn": "bindTexture",
-      "ms": 13,
-      "share": 0.3
-     },
-     {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 12,
       "share": 0.3
      },
      {
@@ -5036,43 +5586,58 @@
       "share": 0.3
      },
      {
-      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "fn": "getData assets/index-pbwgHm-F.js:18",
+      "ms": 11,
+      "share": 0.3
+     },
+     {
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
       "ms": 10,
       "share": 0.2
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 10,
-      "share": 0.2
-     },
-     {
-      "fn": "(anonyme)",
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
       "ms": 9,
       "share": 0.2
      },
      {
-      "fn": "setAlpha assets/index-cIyCPcy9.js:23",
-      "ms": 8,
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 9,
       "share": 0.2
      },
      {
-      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
       "ms": 7,
       "share": 0.2
      },
      {
-      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
+      "fn": "bindTexture",
       "ms": 7,
       "share": 0.2
      },
      {
-      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 6,
       "share": 0.2
      },
      {
       "fn": "(garbage collector)",
       "ms": 6,
+      "share": 0.2
+     },
+     {
+      "fn": "pushBatch assets/index-pbwgHm-F.js:43",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "c.<computed>",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 4,
       "share": 0.1
      }
     ],
@@ -5083,60 +5648,60 @@
    "map": "interieur:ferme-du-riche:13180,18300",
    "storey": 0,
    "seconds": 6,
-   "rafPerSec": 58.7,
-   "imagesPerSec": 58.8,
+   "rafPerSec": 60,
+   "imagesPerSec": 47.8,
    "image": {
-    "avg": 17,
+    "avg": 16.7,
     "p50": 16.7,
-    "p95": 17.6,
-    "p99": 33.3,
-    "max": 34.2,
-    "over20": 8,
-    "over33": 3,
+    "p95": 17.5,
+    "p99": 17.6,
+    "max": 17.7,
+    "over20": 0,
+    "over33": 0,
     "over50": 0,
-    "count": 352
+    "count": 360
    },
    "cpuPerImage": {
-    "step": 1.3,
+    "step": 1.5,
     "physics": 0,
-    "world": 0.2,
+    "world": 0.3,
     "hud": 0,
     "sort": 0,
-    "render": 1.3,
-    "renderP95": 2.7,
-    "stepP95": 1.6,
+    "render": 1.4,
+    "renderP95": 2.6,
+    "stepP95": 1.9,
     "busyP95": 4.2
    },
    "stepsPerImage": {
-    "avg": 1,
+    "avg": 1.3,
     "max": 2,
     "dist": {
-     "1": 345,
-     "2": 8
+     "1": 214,
+     "2": 73
     }
    },
-   "stepCost": 1.3,
+   "stepCost": 1.2,
    "gl": {
-    "draws": 146.1,
-    "binds": 1558.5,
+    "draws": 151.5,
+    "binds": 1568.7,
     "uploads": 0,
-    "uploadKpx": 0.3
+    "uploadKpx": 0.4
    },
    "subsystems": {
-    "lifts": 1,
+    "lifts": 0.9,
     "daylight": 0.1,
     "roofs": 0,
     "interaction": 0,
     "player": 0,
     "storeys": 0,
-    "interiors": 0,
     "site": 0,
-    "autosave": 0,
-    "roll": 0,
+    "clock": 0,
+    "interiors": 0,
     "effort": 0,
-    "pileCount": 0,
+    "creatures": 0,
     "cameras": 0,
-    "time": 0
+    "pileCount": 0,
+    "prompts": 0
    },
    "census": {
     "all": 4510,
@@ -5172,12 +5737,12 @@
       960
      ],
      [
-      "tool-hatchet",
+      "tool-broadaxe",
       640,
       960
      ],
      [
-      "tool-broadaxe",
+      "tool-hatchet",
       640,
       960
      ],
@@ -5225,146 +5790,146 @@
    },
    "memory": {
     "before": {
-     "heapMB": 118.9,
-     "heapTotalMB": 165.8,
-     "nodes": 7305,
-     "listeners": 4843
+     "heapMB": 86.1,
+     "heapTotalMB": 196.5,
+     "nodes": 7051,
+     "listeners": 4840
     },
     "after": {
-     "heapMB": 121.4,
-     "heapTotalMB": 165.8,
-     "nodes": 7405,
-     "listeners": 4843
+     "heapMB": 81.2,
+     "heapTotalMB": 196.5,
+     "nodes": 7151,
+     "listeners": 4840
     }
    },
    "profile": {
-    "ms": 6013,
-    "idleMs": 4995,
-    "gcMs": 5,
+    "ms": 6022,
+    "idleMs": 5097,
+    "gcMs": 4,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 218,
-      "share": 3.6
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 154,
+      "share": 2.6
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 140,
-      "share": 2.3
-     },
-     {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "fn": "update assets/index-pbwgHm-F.js:868",
       "ms": 137,
       "share": 2.3
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 71,
-      "share": 1.2
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 108,
+      "share": 1.8
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 45,
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 58,
+      "share": 1
+     },
+     {
+      "fn": "w",
+      "ms": 46,
       "share": 0.8
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
       "ms": 38,
       "share": 0.6
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 29,
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 31,
       "share": 0.5
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 20,
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 25,
+      "share": 0.4
+     },
+     {
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 25,
+      "share": 0.4
+     },
+     {
+      "fn": "getData assets/index-pbwgHm-F.js:18",
+      "ms": 19,
       "share": 0.3
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 18,
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 16,
       "share": 0.3
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 15,
-      "share": 0.2
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 15,
-      "share": 0.2
-     },
-     {
-      "fn": "bindTexture",
-      "ms": 12,
-      "share": 0.2
-     },
-     {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 12,
-      "share": 0.2
-     },
-     {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "fn": "flush assets/index-pbwgHm-F.js:43",
       "ms": 11,
       "share": 0.2
      },
      {
-      "fn": "activeTexture",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
       "ms": 10,
       "share": 0.2
      },
      {
-      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "bufferSubData",
       "ms": 9,
       "share": 0.2
      },
      {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "render assets/index-pbwgHm-F.js:43",
       "ms": 8,
       "share": 0.1
      },
      {
-      "fn": "bufferSubData",
-      "ms": 8,
-      "share": 0.1
-     },
-     {
-      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
-      "ms": 8,
-      "share": 0.1
-     },
-     {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
-      "ms": 7,
-      "share": 0.1
-     },
-     {
-      "fn": "get assets/index-cIyCPcy9.js:1",
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
       "ms": 6,
       "share": 0.1
      },
      {
-      "fn": "(anonyme)",
-      "ms": 5,
+      "fn": "activeTexture",
+      "ms": 6,
       "share": 0.1
      },
      {
-      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 5,
+      "fn": "willRender assets/index-pbwgHm-F.js:18",
+      "ms": 6,
       "share": 0.1
      },
      {
-      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "fn": "isCurrent assets/index-pbwgHm-F.js:38",
       "ms": 5,
       "share": 0.1
      },
      {
       "fn": "(garbage collector)",
-      "ms": 5,
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "lights assets/index-pbwgHm-F.js:868",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 4,
       "share": 0.1
      }
     ],
@@ -5372,79 +5937,69 @@
    }
   },
   "sortir": {
-   "ready": 395,
-   "create": 38,
-   "worst": 69,
+   "ready": 454,
+   "create": 41,
+   "worst": 70,
    "born": 2,
    "bornMB": 0,
    "canvases": 0,
    "textures": 3573,
    "biggest": [
     [
-     "46a5b060-a16e-4050-a71a-bb68c6f78707",
+     "1ae2b32d-8316-4817-ad85-642196ed87a5",
      1,
      1
     ],
     [
-     "43613b0e-1cfe-4cf5-aeda-648925945b92",
+     "1d6eab31-531c-4e24-94b9-89c472dcb845",
      1,
      1
     ]
    ],
    "profile": {
-    "ms": 1399,
-    "idleMs": 1020,
+    "ms": 1458,
+    "idleMs": 1082,
     "gcMs": 7,
     "self": [
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 69,
-      "share": 4.9
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 70,
+      "share": 4.8
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 37,
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 38,
       "share": 2.6
      },
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 30,
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 32,
       "share": 2.2
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 22,
-      "share": 1.5
-     },
-     {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 18,
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 19,
       "share": 1.3
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 11,
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 17,
+      "share": 1.2
+     },
+     {
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 13,
+      "share": 0.9
+     },
+     {
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 12,
       "share": 0.8
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "fn": "lift assets/index-pbwgHm-F.js:868",
       "ms": 8,
       "share": 0.6
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 8,
-      "share": 0.5
-     },
-     {
-      "fn": "setAlpha assets/index-cIyCPcy9.js:23",
-      "ms": 7,
-      "share": 0.5
-     },
-     {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 7,
-      "share": 0.5
      },
      {
       "fn": "(garbage collector)",
@@ -5452,72 +6007,82 @@
       "share": 0.5
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
+      "fn": "setAlpha assets/index-pbwgHm-F.js:23",
       "ms": 7,
       "share": 0.5
      },
      {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
-      "ms": 6,
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:23",
+      "ms": 7,
       "share": 0.5
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:23",
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
+      "ms": 7,
+      "share": 0.5
+     },
+     {
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 6,
       "share": 0.4
      },
      {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
-      "ms": 6,
-      "share": 0.4
-     },
-     {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 6,
-      "share": 0.4
-     },
-     {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "fn": "pushBatch assets/index-pbwgHm-F.js:43",
       "ms": 5,
       "share": 0.4
      },
      {
-      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "builds assets/index-pbwgHm-F.js:868",
+      "ms": 5,
+      "share": 0.3
+     },
+     {
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
       "ms": 4,
       "share": 0.3
      },
      {
       "fn": "bindTexture",
-      "ms": 4,
-      "share": 0.3
-     },
-     {
-      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
-      "ms": 4,
-      "share": 0.3
-     },
-     {
-      "fn": "initialize assets/index-cIyCPcy9.js:23",
-      "ms": 4,
-      "share": 0.3
-     },
-     {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "isCurrent assets/index-cIyCPcy9.js:38",
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "set assets/index-cIyCPcy9.js:23",
+      "fn": "activeTexture",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "bufferData",
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "set assets/index-pbwgHm-F.js:23",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "lights assets/index-pbwgHm-F.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "applyITRS assets/index-pbwgHm-F.js:23",
       "ms": 3,
       "share": 0.2
      }
@@ -5538,33 +6103,33 @@
   "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36"
  },
  "boot": {
-  "readyMs": 1880,
-  "idleMs": 1915,
-  "domContentLoaded": 339,
+  "readyMs": 1814,
+  "idleMs": 1848,
+  "domContentLoaded": 305,
   "requests": 144,
   "png": 139,
   "pngKB": 2393,
-  "pngFirst": 567,
-  "pngLast": 1676,
+  "pngFirst": 519,
+  "pngLast": 1621,
   "js": 2,
   "jsKB": 1746,
-  "jsLast": 357,
+  "jsLast": 340,
   "biggestJs": [
    [
-    "assets/index-cIyCPcy9.js",
+    "assets/index-pbwgHm-F.js",
     1741,
-    162
+    141
    ],
    [
-    "assets/panel-Xab4zO8H.js",
+    "assets/panel-vtE8tBZ-.js",
     4,
-    14
+    5
    ]
   ],
   "firstCreate": {
    "map": "interieur:ferme:15470,7695",
-   "at": 1741.7000000476837,
-   "ms": 87,
+   "at": 1678,
+   "ms": 87.70000004768372,
    "born": 38,
    "bornMB": 0.13542938232421875,
    "biggest": [
@@ -5614,11 +6179,11 @@
   },
   "longTasks": [],
   "textures": {
-   "keys": 2299,
-   "sources": 2299,
-   "MB": 34.735809326171875,
-   "canvas": 64,
-   "canvasMB": 0.34287261962890625,
+   "keys": 2297,
+   "sources": 2297,
+   "MB": 34.72541046142578,
+   "canvas": 62,
+   "canvasMB": 0.3324737548828125,
    "biggest": [
     [
      "tool-axe",
@@ -5631,12 +6196,12 @@
      960
     ],
     [
-     "tool-hatchet",
+     "tool-broadaxe",
      640,
      960
     ],
     [
-     "tool-broadaxe",
+     "tool-hatchet",
      640,
      960
     ],
@@ -5683,35 +6248,35 @@
    ]
   },
   "memory": {
-   "heapMB": 25.3,
+   "heapMB": 33.2,
    "heapTotalMB": 56.7,
-   "nodes": 4880,
-   "listeners": 4845
+   "nodes": 4878,
+   "listeners": 4850
   }
  },
- "preparedMs": 279,
+ "preparedMs": 422,
  "chargements": {
   "ferme": {
-   "ready": 55,
-   "drawn": 71,
-   "create": 38,
-   "worst": 55,
+   "ready": 57,
+   "drawn": 72,
+   "create": 37,
+   "worst": 58,
    "top": [
     [
-     55,
-     51,
+     58,
+     53,
      4,
-     10
+     11
     ],
     [
      18,
-     2,
+     3,
      3,
      1
     ],
     [
      18,
-     2,
+     3,
      3,
      1
     ]
@@ -5723,29 +6288,34 @@
    "textures": 3570,
    "biggest": [],
    "profile": {
-    "ms": 1574,
-    "idleMs": 1053,
-    "gcMs": 6,
+    "ms": 1575,
+    "idleMs": 1035,
+    "gcMs": 5,
     "self": [
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 82,
-      "share": 5.2
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 93,
+      "share": 5.9
      },
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 71,
-      "share": 4.5
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 79,
+      "share": 5
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 66,
-      "share": 4.2
+      "fn": "lift assets/index-pbwgHm-F.js:868",
+      "ms": 64,
+      "share": 4.1
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
-      "ms": 59,
-      "share": 3.8
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 62,
+      "share": 3.9
+     },
+     {
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 33,
+      "share": 2.1
      },
      {
       "fn": "w",
@@ -5753,102 +6323,97 @@
       "share": 1.4
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
+      "fn": "get assets/index-pbwgHm-F.js:23",
       "ms": 19,
       "share": 1.2
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
       "ms": 18,
       "share": 1.2
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 18,
-      "share": 1.1
-     },
-     {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
-      "ms": 18,
-      "share": 1.1
-     },
-     {
-      "fn": "p7 assets/index-cIyCPcy9.js:868",
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
       "ms": 15,
+      "share": 1
+     },
+     {
+      "fn": "f7 assets/index-pbwgHm-F.js:868",
+      "ms": 14,
       "share": 0.9
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 9,
+      "share": 0.6
+     },
+     {
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 8,
       "share": 0.5
      },
      {
-      "fn": "activeTexture",
-      "ms": 6,
-      "share": 0.4
-     },
-     {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 6,
-      "share": 0.4
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
+      "ms": 7,
+      "share": 0.5
      },
      {
       "fn": "(garbage collector)",
-      "ms": 6,
-      "share": 0.4
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
-      "ms": 6,
-      "share": 0.4
-     },
-     {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
-      "ms": 6,
-      "share": 0.4
-     },
-     {
-      "fn": "getData assets/index-cIyCPcy9.js:18",
-      "ms": 6,
-      "share": 0.4
-     },
-     {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
       "ms": 5,
       "share": 0.3
      },
      {
-      "fn": "bufferData",
+      "fn": "getData assets/index-pbwgHm-F.js:18",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 4,
       "share": 0.2
      },
      {
-      "fn": "Q7 assets/index-cIyCPcy9.js:868",
+      "fn": "initialize assets/index-pbwgHm-F.js:23",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:1",
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:23",
+      "fn": "j7 assets/index-pbwgHm-F.js:868",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "M7 assets/index-cIyCPcy9.js:868",
-      "ms": 3,
+      "fn": "Noe assets/index-pbwgHm-F.js:868",
+      "ms": 2,
       "share": 0.2
      },
      {
-      "fn": "joe assets/index-cIyCPcy9.js:868",
-      "ms": 3,
-      "share": 0.2
+      "fn": "flush assets/index-pbwgHm-F.js:43",
+      "ms": 2,
+      "share": 0.1
      },
      {
-      "fn": "G5 assets/index-cIyCPcy9.js:868",
+      "fn": "W5 assets/index-pbwgHm-F.js:868",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:23",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:1",
       "ms": 2,
       "share": 0.1
      }
@@ -5857,20 +6422,20 @@
    }
   },
   "ferme-du-riche": {
-   "ready": 129,
-   "drawn": 140,
-   "create": 23,
-   "worst": 55,
+   "ready": 107,
+   "drawn": 120,
+   "create": 26,
+   "worst": 57,
    "top": [
     [
-     55,
-     37,
-     5,
+     57,
+     40,
+     6,
      1
     ],
     [
      18,
-     0,
+     1,
      4,
      1
     ],
@@ -5888,143 +6453,143 @@
    "textures": 3572,
    "biggest": [
     [
-     "3c48dca9-3f42-464d-8b20-27012ae1c80c",
+     "208fc6f4-ec9e-4867-8616-033980ba7c98",
      1,
      1
     ],
     [
-     "19ccd760-b573-413d-b11d-1c6d3ff252a0",
+     "ef9099bc-42b1-49d4-8b10-525a182700ea",
      1,
      1
     ]
    ],
    "profile": {
-    "ms": 1647,
-    "idleMs": 1166,
-    "gcMs": 4,
+    "ms": 1628,
+    "idleMs": 1135,
+    "gcMs": 6,
     "self": [
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 109,
-      "share": 6.6
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 95,
+      "share": 5.8
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 80,
-      "share": 4.9
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 75,
+      "share": 4.6
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 29,
-      "share": 1.8
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 42,
+      "share": 2.6
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
       "ms": 28,
       "share": 1.7
      },
      {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
       "ms": 27,
       "share": 1.7
      },
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 22,
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 21,
       "share": 1.3
      },
      {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
+      "ms": 18,
+      "share": 1.1
+     },
+     {
+      "fn": "builds assets/index-pbwgHm-F.js:868",
       "ms": 11,
       "share": 0.7
      },
      {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
-      "ms": 11,
-      "share": 0.7
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 10,
+      "share": 0.6
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 9,
       "share": 0.6
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
+      "fn": "flush assets/index-pbwgHm-F.js:43",
       "ms": 9,
       "share": 0.5
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 9,
+      "share": 0.5
+     },
+     {
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 8,
       "share": 0.5
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
-      "ms": 8,
-      "share": 0.5
-     },
-     {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
-      "ms": 7,
-      "share": 0.5
-     },
-     {
-      "fn": "bufferData",
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
       "ms": 6,
-      "share": 0.3
-     },
-     {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:23",
-      "ms": 5,
-      "share": 0.3
-     },
-     {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 5,
-      "share": 0.3
+      "share": 0.4
      },
      {
       "fn": "(garbage collector)",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "bufferData",
+      "ms": 5,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:23",
+      "ms": 5,
+      "share": 0.3
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 5,
+      "share": 0.3
+     },
+     {
+      "fn": "removeFromDisplayList assets/index-pbwgHm-F.js:18",
+      "ms": 5,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:1",
       "ms": 4,
       "share": 0.3
      },
      {
-      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "fn": "activeTexture",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "lift assets/index-pbwgHm-F.js:868",
       "ms": 4,
       "share": 0.2
      },
      {
-      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 4,
-      "share": 0.2
-     },
-     {
-      "fn": "remove assets/index-cIyCPcy9.js:808",
-      "ms": 4,
-      "share": 0.2
-     },
-     {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:1",
+      "fn": "remove assets/index-pbwgHm-F.js:808",
       "ms": 3,
       "share": 0.2
      },
      {
       "fn": "w",
-      "ms": 3,
-      "share": 0.2
-     },
-     {
-      "fn": "bindTexture",
-      "ms": 3,
-      "share": 0.2
-     },
-     {
-      "fn": "removeFromDisplayList assets/index-cIyCPcy9.js:18",
-      "ms": 3,
-      "share": 0.2
-     },
-     {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
       "ms": 3,
       "share": 0.2
      }
@@ -6033,27 +6598,27 @@
    }
   },
   "village": {
-   "ready": 99,
-   "drawn": 105,
-   "create": 13,
+   "ready": 84,
+   "drawn": 90,
+   "create": 12,
    "worst": 43,
    "top": [
     [
      43,
-     28,
-     3,
-     1
-    ],
-    [
-     18,
-     0,
+     27,
      2,
      1
     ],
     [
      18,
-     0,
+     1,
      3,
+     1
+    ],
+    [
+     18,
+     1,
+     2,
      1
     ]
    ],
@@ -6064,120 +6629,110 @@
    "textures": 3591,
    "biggest": [
     [
-     "d02af16d-0627-4d3b-bd8e-fb2d8045dfff",
+     "ba1c79a8-d1f9-4542-9282-c9f41af0df82",
      1,
      1
     ],
     [
-     "b19ff8c5-1384-4237-a3e8-cb3ca6141c46",
+     "be2ec963-a599-4927-bda4-bc1242cd5112",
      1,
      1
     ],
     [
-     "baed05bc-e259-4b8e-a4a4-92e7f851a32f",
+     "53b95271-2b9c-4e80-9bf5-1a0ebe2161b3",
      1,
      1
     ],
     [
-     "1cf75163-ac96-4c07-954a-d79d148ab321",
+     "1c26be0f-cd8f-406d-af52-7ec61f3d8ffd",
      1,
      1
     ]
    ],
    "profile": {
-    "ms": 1611,
-    "idleMs": 1304,
-    "gcMs": 2,
+    "ms": 1596,
+    "idleMs": 1288,
+    "gcMs": 3,
     "self": [
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 69,
-      "share": 4.3
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 64,
+      "share": 4
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 56,
-      "share": 3.5
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 59,
+      "share": 3.7
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 18,
-      "share": 1.1
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 26,
+      "share": 1.6
      },
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 16,
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 15,
       "share": 1
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 16,
-      "share": 1
-     },
-     {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
       "ms": 15,
       "share": 0.9
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 8,
-      "share": 0.5
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 14,
+      "share": 0.8
      },
      {
-      "fn": "exists assets/index-cIyCPcy9.js:808",
+      "fn": "render assets/index-pbwgHm-F.js:43",
       "ms": 6,
       "share": 0.4
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 6,
       "share": 0.4
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "fn": "get assets/index-pbwgHm-F.js:23",
       "ms": 6,
       "share": 0.4
      },
      {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
-      "ms": 4,
+      "fn": "exists assets/index-pbwgHm-F.js:808",
+      "ms": 5,
       "share": 0.3
      },
      {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 4,
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 5,
       "share": 0.3
      },
      {
-      "fn": "e.72905.e.exports assets/index-cIyCPcy9.js:810",
+      "fn": "builds assets/index-pbwgHm-F.js:868",
       "ms": 4,
-      "share": 0.2
-     },
-     {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
-      "ms": 3,
-      "share": 0.2
-     },
-     {
-      "fn": "joe assets/index-cIyCPcy9.js:868",
-      "ms": 3,
-      "share": 0.2
-     },
-     {
-      "fn": "Q7 assets/index-cIyCPcy9.js:868",
-      "ms": 3,
       "share": 0.2
      },
      {
       "fn": "(garbage collector)",
-      "ms": 2,
+      "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 2,
-      "share": 0.1
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "Noe assets/index-pbwgHm-F.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "e.72905.e.exports assets/index-pbwgHm-F.js:810",
+      "ms": 3,
+      "share": 0.2
      },
      {
       "fn": "bufferData",
@@ -6185,32 +6740,42 @@
       "share": 0.1
      },
      {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "fn": "Xf assets/index-pbwgHm-F.js:867",
       "ms": 2,
       "share": 0.1
      },
      {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "fn": "Z7 assets/index-pbwgHm-F.js:868",
       "ms": 2,
       "share": 0.1
      },
      {
-      "fn": "bindTexture",
+      "fn": "shutdown assets/index-pbwgHm-F.js:18",
       "ms": 2,
       "share": 0.1
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "fn": "initialize assets/index-pbwgHm-F.js:23",
       "ms": 2,
       "share": 0.1
      },
      {
-      "fn": "batchTexture assets/index-cIyCPcy9.js:43",
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 2,
       "share": 0.1
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:1",
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "interactables assets/index-pbwgHm-F.js:868",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:1",
       "ms": 2,
       "share": 0.1
      }
@@ -6219,25 +6784,25 @@
    }
   },
   "ferme-du-riche (retour)": {
-   "ready": 109,
-   "drawn": 125,
-   "create": 24,
-   "worst": 53,
+   "ready": 99,
+   "drawn": 116,
+   "create": 25,
+   "worst": 54,
    "top": [
     [
-     53,
+     54,
      32,
-     5,
+     6,
      1
+    ],
+    [
+     34,
+     1,
+     3,
+     2
     ],
     [
      19,
-     1,
-     4,
-     1
-    ],
-    [
-     18,
      1,
      4,
      1
@@ -6250,103 +6815,113 @@
    "textures": 3572,
    "biggest": [
     [
-     "e2eceb60-d126-4280-9169-461cfa8d434f",
+     "2fbdd9c6-bb26-4c0b-997a-830e0ade2aab",
      1,
      1
     ],
     [
-     "eba37230-4428-4dcc-bd56-1326a96f3f1c",
+     "d2a96e29-a2cc-4d1d-af5a-e3f9e3083d2e",
      1,
      1
     ]
    ],
    "profile": {
-    "ms": 1629,
-    "idleMs": 1170,
-    "gcMs": 15,
+    "ms": 1619,
+    "idleMs": 1168,
+    "gcMs": 7,
     "self": [
      {
-      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
-      "ms": 95,
-      "share": 5.8
+      "fn": "e.99517.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 101,
+      "share": 6.3
      },
      {
-      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
-      "ms": 77,
-      "share": 4.7
+      "fn": "batchSprite assets/index-pbwgHm-F.js:43",
+      "ms": 82,
+      "share": 5.1
      },
      {
-      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
-      "ms": 29,
-      "share": 1.8
-     },
-     {
-      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "fn": "e.19186.e.exports assets/index-pbwgHm-F.js:810",
       "ms": 28,
       "share": 1.7
      },
      {
-      "fn": "update assets/index-cIyCPcy9.js:868",
-      "ms": 21,
-      "share": 1.3
+      "fn": "batchQuad assets/index-pbwgHm-F.js:43",
+      "ms": 24,
+      "share": 1.5
      },
      {
-      "fn": "(garbage collector)",
-      "ms": 15,
+      "fn": "render assets/index-pbwgHm-F.js:1",
+      "ms": 18,
+      "share": 1.1
+     },
+     {
+      "fn": "update assets/index-pbwgHm-F.js:868",
+      "ms": 16,
+      "share": 1
+     },
+     {
+      "fn": "step assets/index-pbwgHm-F.js:1",
+      "ms": 14,
       "share": 0.9
      },
      {
-      "fn": "setQuad assets/index-cIyCPcy9.js:23",
-      "ms": 15,
-      "share": 0.9
-     },
-     {
-      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "fn": "builds assets/index-pbwgHm-F.js:868",
       "ms": 13,
       "share": 0.8
      },
      {
-      "fn": "render assets/index-cIyCPcy9.js:43",
-      "ms": 12,
-      "share": 0.8
-     },
-     {
-      "fn": "step assets/index-cIyCPcy9.js:1",
-      "ms": 10,
-      "share": 0.6
-     },
-     {
-      "fn": "render assets/index-cIyCPcy9.js:1",
-      "ms": 10,
-      "share": 0.6
-     },
-     {
-      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "fn": "setQuad assets/index-pbwgHm-F.js:23",
       "ms": 9,
       "share": 0.6
      },
      {
-      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "fn": "render assets/index-pbwgHm-F.js:43",
+      "ms": 9,
+      "share": 0.5
+     },
+     {
+      "fn": "sortByDepth assets/index-pbwgHm-F.js:18",
       "ms": 8,
       "share": 0.5
      },
      {
-      "fn": "get assets/index-cIyCPcy9.js:23",
-      "ms": 8,
-      "share": 0.5
+      "fn": "get assets/index-pbwgHm-F.js:23",
+      "ms": 7,
+      "share": 0.4
      },
      {
-      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "fn": "batchFillRect assets/index-pbwgHm-F.js:43",
+      "ms": 7,
+      "share": 0.4
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 7,
+      "share": 0.4
+     },
+     {
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:23",
       "ms": 5,
       "share": 0.3
      },
      {
-      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "fn": "flush assets/index-pbwgHm-F.js:43",
       "ms": 4,
       "share": 0.3
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:23",
+      "fn": "Noe assets/index-pbwgHm-F.js:868",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "bufferData",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "multiply assets/index-pbwgHm-F.js:23",
       "ms": 4,
       "share": 0.3
      },
@@ -6356,37 +6931,27 @@
       "share": 0.2
      },
      {
-      "fn": "joe assets/index-cIyCPcy9.js:868",
+      "fn": "e.77545.e.exports assets/index-pbwgHm-F.js:23",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "willRender assets/index-pbwgHm-F.js:18",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "fn": "c.<computed>",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "fn": "(anonyme) assets/index-pbwgHm-F.js:868",
       "ms": 3,
       "share": 0.2
      },
      {
-      "fn": "activeTexture",
-      "ms": 3,
-      "share": 0.2
-     },
-     {
-      "fn": "bufferData",
-      "ms": 3,
-      "share": 0.2
-     },
-     {
-      "fn": "flush assets/index-cIyCPcy9.js:43",
-      "ms": 3,
-      "share": 0.2
-     },
-     {
-      "fn": "lights assets/index-cIyCPcy9.js:868",
+      "fn": "eoe assets/index-pbwgHm-F.js:868",
       "ms": 3,
       "share": 0.2
      }
@@ -6396,10 +6961,10 @@
   }
  },
  "memoire": {
-  "heapMB": 60.3,
-  "heapTotalMB": 177.7,
-  "nodes": 6173,
-  "listeners": 4829,
+  "heapMB": 41,
+  "heapTotalMB": 132.7,
+  "nodes": 6175,
+  "listeners": 4834,
   "textures": {
    "keys": 3573,
    "sources": 3573,
@@ -6418,12 +6983,12 @@
      960
     ],
     [
-     "tool-hatchet",
+     "tool-broadaxe",
      640,
      960
     ],
     [
-     "tool-broadaxe",
+     "tool-hatchet",
      640,
      960
     ],
@@ -6474,7 +7039,7 @@
  "creates": [
   {
    "map": "interieur:ferme:15470,7695",
-   "ms": 87,
+   "ms": 88,
    "born": 38,
    "bornMB": 0.1,
    "canvases": 38,
@@ -6482,7 +7047,7 @@
   },
   {
    "map": "foret-profonde-nord",
-   "ms": 48,
+   "ms": 52,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6490,7 +7055,7 @@
   },
   {
    "map": "bois-du-nord",
-   "ms": 32,
+   "ms": 30,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6498,7 +7063,7 @@
   },
   {
    "map": "pres-du-nord",
-   "ms": 15,
+   "ms": 16,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6506,7 +7071,7 @@
   },
   {
    "map": "ferme-du-riche",
-   "ms": 63,
+   "ms": 52,
    "born": 15,
    "bornMB": 0,
    "canvases": 16,
@@ -6522,7 +7087,7 @@
   },
   {
    "map": "foret-profonde",
-   "ms": 40,
+   "ms": 47,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6530,23 +7095,23 @@
   },
   {
    "map": "ferme",
-   "ms": 52,
+   "ms": 47,
    "born": 7,
    "bornMB": 0,
    "canvases": 7,
-   "textures": 3147
+   "textures": 3148
   },
   {
    "map": "chemin",
-   "ms": 12,
+   "ms": 11,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
-   "textures": 3278
+   "textures": 3279
   },
   {
    "map": "village",
-   "ms": 35,
+   "ms": 37,
    "born": 25,
    "bornMB": 0,
    "canvases": 26,
@@ -6562,7 +7127,7 @@
   },
   {
    "map": "foret-profonde-sud",
-   "ms": 40,
+   "ms": 41,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6570,7 +7135,7 @@
   },
   {
    "map": "bois-du-sud",
-   "ms": 27,
+   "ms": 29,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6578,7 +7143,7 @@
   },
   {
    "map": "pres-du-sud",
-   "ms": 15,
+   "ms": 11,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6594,7 +7159,7 @@
   },
   {
    "map": "pres-de-l-est",
-   "ms": 8,
+   "ms": 10,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6602,7 +7167,7 @@
   },
   {
    "map": "foret-des-ronces",
-   "ms": 39,
+   "ms": 29,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6634,7 +7199,7 @@
   },
   {
    "map": "champs-rivaux",
-   "ms": 8,
+   "ms": 10,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6642,7 +7207,7 @@
   },
   {
    "map": "foret-profonde-nord",
-   "ms": 39,
+   "ms": 37,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6658,7 +7223,7 @@
   },
   {
    "map": "pres-du-nord",
-   "ms": 11,
+   "ms": 12,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6674,7 +7239,7 @@
   },
   {
    "map": "champs-du-riche",
-   "ms": 7,
+   "ms": 5,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6682,7 +7247,7 @@
   },
   {
    "map": "foret-profonde",
-   "ms": 41,
+   "ms": 36,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6690,7 +7255,7 @@
   },
   {
    "map": "ferme",
-   "ms": 41,
+   "ms": 45,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6706,7 +7271,7 @@
   },
   {
    "map": "village",
-   "ms": 19,
+   "ms": 18,
    "born": 21,
    "bornMB": 0,
    "canvases": 19,
@@ -6714,7 +7279,7 @@
   },
   {
    "map": "route-de-la-ville",
-   "ms": 7,
+   "ms": 10,
    "born": 4,
    "bornMB": 0,
    "canvases": 0,
@@ -6754,7 +7319,7 @@
   },
   {
    "map": "pres-de-l-est",
-   "ms": 10,
+   "ms": 9,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6762,7 +7327,7 @@
   },
   {
    "map": "foret-des-ronces",
-   "ms": 39,
+   "ms": 34,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6786,7 +7351,7 @@
   },
   {
    "map": "ferme-rivale",
-   "ms": 7,
+   "ms": 5,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
@@ -6794,43 +7359,11 @@
   },
   {
    "map": "champs-rivaux",
-   "ms": 10,
+   "ms": 8,
    "born": 0,
    "bornMB": 0,
    "canvases": 0,
    "textures": 3570
-  },
-  {
-   "map": "ferme",
-   "ms": 38,
-   "born": 0,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3570
-  },
-  {
-   "map": "ferme-du-riche",
-   "ms": 23,
-   "born": 2,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3572
-  },
-  {
-   "map": "village",
-   "ms": 13,
-   "born": 21,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3591
-  },
-  {
-   "map": "ferme-du-riche",
-   "ms": 24,
-   "born": 2,
-   "bornMB": 0,
-   "canvases": 0,
-   "textures": 3572
   },
   {
    "map": "ferme",
@@ -6842,11 +7375,35 @@
   },
   {
    "map": "ferme-du-riche",
+   "ms": 26,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3572
+  },
+  {
+   "map": "village",
+   "ms": 12,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3591
+  },
+  {
+   "map": "ferme-du-riche",
    "ms": 25,
    "born": 2,
    "bornMB": 0,
    "canvases": 0,
    "textures": 3572
+  },
+  {
+   "map": "ferme",
+   "ms": 38,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
   },
   {
    "map": "ferme-du-riche",
@@ -6857,8 +7414,16 @@
    "textures": 3572
   },
   {
+   "map": "ferme-du-riche",
+   "ms": 26,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3572
+  },
+  {
    "map": "interieur:ferme-du-riche:13180,18300",
-   "ms": 12,
+   "ms": 13,
    "born": 1,
    "bornMB": 0,
    "canvases": 0,
@@ -6866,7 +7431,7 @@
   },
   {
    "map": "ferme-du-riche",
-   "ms": 38,
+   "ms": 41,
    "born": 2,
    "bornMB": 0,
    "canvases": 0,
@@ -6876,16 +7441,16 @@
  "contextLost": [],
  "longTasks": [
   [
-   189,
-   150
+   168,
+   137
   ],
   [
-   358,
-   147
+   340,
+   121
   ],
   [
-   1741,
-   135
+   1677,
+   133
   ]
  ],
  "errors": [],
