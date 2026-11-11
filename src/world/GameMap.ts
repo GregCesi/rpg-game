@@ -16,7 +16,8 @@ import type { Natural, WoodPiece } from '../content/types';
 import { woodDef, woodOf } from './woodPiece';
 import { agedKey, lookOf, sizeOf, woodBody, woodSize } from './woodShape';
 import { woodTexture } from './woodTexture';
-import { blocks, boxOf, depthsOf, overlaps, sliceHits, sliceOf, solidOf, supportsOf, type BuildPiece } from './build';
+import { blocks, boxOf, depthsOf, hangs, overlaps, sliceHits, sliceOf, solidOf, SupportIndex, type Box3, type BuildPiece } from './build';
+import { alphaAt } from './alphaMask';
 import { shadedPairs, shadePixels, type ShownImage } from './jointShade';
 import type { BuildPlaced } from '../content/types';
 import { lookDef, lookOf as woodLookOf } from './woodShape';
@@ -24,7 +25,7 @@ import { buildLook } from './buildView';
 import { runLayout, wallOf, wallRuns } from './wallRuns';
 import { wallTexture } from './wallTexture';
 import { drawJoints, halvingOverlays } from './jointView';
-import { backCaps, buildingsOf, type Building, type Rect } from './interior';
+import { backCaps, buildingsOf, swungIn, type Building, type Rect } from './interior';
 
 /**
  * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois, celle de ses réglages
@@ -334,7 +335,7 @@ export class GameMap {
   /** Les croisements des mi-bois, posés par-dessus leurs deux pièces (redessinés à chaque changement). */
   private overlays: Phaser.GameObjects.Image[] = [];
   /** Les ombres de joint des pièces de bois posées l'une sur l'autre (world/jointShade.ts), refaites à chaque `sortBuilds`. */
-  private jointShades: Phaser.GameObjects.Graphics[] = [];
+  private readonly jointShades = new Map<string, Phaser.GameObjects.Graphics>();
   /**
    * Le décalage d'affichage de chaque pièce posée (px) : une pièce se cale sur le dessus *dessiné* de ce qui la porte. En règle D, une
    * pièce couchée nord-sud (le solin, la poutre) n'est pas relevée de sa hauteur à l'écran : ce qui repose dessus descend d'autant
@@ -800,6 +801,8 @@ export class GameMap {
     const placed: PlacedBuild = { piece, image, zone, ...(fixed ? { fixed } : {}) };
     if (def) placed.parts = this.buildParts(def, piece.view ?? 0, image);
     this.builds.push(placed);
+    // le prochain `sortBuilds` ne refait que ses alentours
+    if (!this.dirty.has(piece.id)) this.dirty.set(piece.id, undefined);
     return placed;
   }
 
@@ -866,10 +869,11 @@ export class GameMap {
     );
   }
 
-  /** Retire une pièce posée en mode construction (image et collision). */
+  /** Retire une pièce posée en mode construction (image et collision) ; le prochain `sortBuilds` ne refait que ses alentours. */
   removeBuild(id: number): void {
     const i = this.builds.findIndex((b) => b.piece.id === id);
     if (i < 0) return;
+    if (!this.dirty.has(id)) this.dirty.set(id, boxOf(this.builds[i].piece));
     for (const s of this.builds[i].slices ?? []) s.destroy();
     this.builds[i].image.destroy();
     this.builds[i].zone?.destroy();
@@ -877,57 +881,152 @@ export class GameMap {
     this.builds.splice(i, 1);
   }
 
+  /** Le nombre de reclassements complets depuis la création de la carte (les tests vérifient qu'une porte n'en fait pas). */
+  fullSorts = 0;
+  /** Le nombre de pièces reclassées au dernier `sortBuilds` (toutes, ou seulement les alentours de ce qui a changé). */
+  lastSorted = 0;
+
   /**
-   * Après une pose ou un retrait : les tronçons de mur sont recalculés (chaque morceau montre sa part du dessin de son tronçon :
-   * world/wallRuns.ts), puis chaque pièce posée est remise à sa profondeur (bord sud, puis hauteur, et toujours après ce qui la
-   * porte : world/build.ts).
+   * Après une pose, un retrait, une porte qui tourne : les pièces posées reprennent leur place, leurs tronçons de mur (chaque morceau
+   * montre sa part du dessin de son tronçon : world/wallRuns.ts), leurs assemblages, leur calage, leur profondeur (bord sud, puis
+   * hauteur, et toujours après ce qui les porte : world/build.ts), leurs tranches, leurs ombres de joint. La première fois, toute la
+   * carte ; ensuite seulement les alentours de ce qui a changé (chantier « corrections », DIAGNOSTIC.md étape 3) : les pièces
+   * posées, retirées ou tournées depuis (`placeBuild`, `removeBuild`), et `changed` (une pièce montée ou descendue, un assemblage posé).
    */
-  sortBuilds(): void {
+  sortBuilds(changed: Iterable<number> = []): void {
+    for (const id of changed) if (!this.dirty.has(id)) this.dirty.set(id, undefined);
+    const byId = new Map(this.builds.map((b) => [b.piece.id, b]));
+    const pieces = this.builds.map((b) => b.piece);
+    const joints = [...this.shellJoints, ...this.changes.joints];
+    this.index = new SupportIndex(pieces);
+    this.buildsVersion++;
+    const full = this.fullSorts === 0 || !this.dirty.size;
+    // une porte, un volet qui a seulement tourné : il ne touche ni les tronçons de mur ni ce qui l'entoure, et rien ne repose sur lui
+    const turnedOnly = !full && [...this.dirty.keys()].every((id) => pieces.some((p) => p.id === id && hangs(p)));
+    const affected = full ? new Set(pieces.map((p) => p.id)) : turnedOnly ? new Set(this.dirty.keys()) : this.around(pieces, joints);
+    const dirty = new Map(this.dirty);
+    this.dirty.clear();
+    const mine = this.builds.filter((b) => affected.has(b.piece.id));
+    this.lastSorted = mine.length;
+    if (full) this.fullSorts++;
     // chaque pièce reprend sa place calculée (les murs et le bois sont replacés par leur dessin commun), puis son calage
-    for (const b of this.builds) {
+    for (const b of mine) {
       if ('wood' in b.piece.piece || wallOf(b.piece)) continue;
       const look = buildLook(this.scene, b.piece);
       b.image.setPosition(look.x, look.y);
     }
-    this.buildsVersion++;
-    this.decks = deckField(this.builds.map((b) => b.piece));
-    const joints = [...this.shellJoints, ...this.changes.joints];
-    this.drawWalls();
-    drawJoints(this.scene, this.builds, joints);
-    this.shown.clear();
-    for (const b of [...this.builds].sort((a, c) => a.piece.z - c.piece.z)) {
+    // les dessus qui se marchent : seulement si une pièce changée en est un (ou en était un)
+    const isDeck = (p: BuildPiece) => !deckField([p]).empty;
+    if (full || [...dirty.keys()].some((id) => this.deckIds.has(id) || (byId.has(id) && isDeck(byId.get(id)!.piece)))) {
+      this.decks = deckField(pieces);
+      this.deckIds = new Set(pieces.filter(isDeck).map((p) => p.id));
+    }
+    this.drawWalls(full ? undefined : affected);
+    drawJoints(this.scene, mine, full ? joints : joints.filter((j) => affected.has(j.a) || affected.has(j.b)), pieces);
+    for (const b of [...mine].sort((a, c) => a.piece.z - c.piece.z)) {
       const o = this.offsetOf(b.piece);
       this.shown.set(b.piece.id, o);
       if (o.dx || o.down) b.image.setPosition(b.image.x + o.dx, b.image.y + o.down);
     }
+    for (const id of dirty.keys()) if (!byId.has(id)) this.shown.delete(id);
+    // les bâtiments : une porte ou un volet qui a seulement tourné change son passage (`swungIn`) ; toute autre pièce les recalcule
+    const swungOnly = !full && [...dirty.keys()].every((id) => byId.has(id) && hangs(byId.get(id)!.piece));
+    if (this.shellRooms) this.buildings = [];
+    else if (swungOnly) for (const id of dirty.keys()) this.buildings = swungIn(this.buildings, pieces, byId.get(id)!.piece);
+    else this.buildings = buildingsOf(pieces);
     // le mur du fond de chaque pièce close reste derrière ce qui est dans la pièce, dedans comme dehors (world/interior.ts)
-    const pieces = this.builds.map((b) => b.piece);
-    this.buildings = this.shellRooms ? [] : buildingsOf(pieces);
-    const rooms = this.shellRooms ?? this.buildings.flatMap((q) => q.rooms);
-    const depths = depthsOf(pieces, rooms.length ? backCaps(pieces, rooms) : undefined);
-    for (const b of this.builds) {
+    if (full || !swungOnly) {
+      const rooms = this.shellRooms ?? this.buildings.flatMap((q) => q.rooms);
+      this.caps = rooms.length ? backCaps(pieces, rooms) : undefined;
+    }
+    if (full || !swungOnly) this.depths = depthsOf(pieces, this.caps, this.index);
+    else {
+      // seulement les pièces touchées, dans l'ordre des hauteurs (ce qui les porte est déjà à sa profondeur)
+      for (const p of mine.map((b) => b.piece).sort((a, c) => a.z - c.z)) {
+        const b = boxOf(p);
+        let d = (b.y + b.d) / CM_PER_PX + b.z / 100000;
+        for (const s of this.index.supportsOf(p)) d = Math.max(d, (this.depths.get(s.id) ?? 0) + 0.001);
+        const cap = this.caps?.get(p.id);
+        this.depths.set(p.id, cap !== undefined && d > cap ? cap + d / 10000 : d);
+      }
+    }
+    for (const b of mine) {
       const floor = b.piece.z === 0 && 'prop' in b.piece.piece && propDefs[b.piece.piece.prop].layer === 'floor';
-      b.image.setDepth(floor ? DEPTH.floor : depths.get(b.piece.id)!);
+      b.image.setDepth(floor ? DEPTH.floor : this.depths.get(b.piece.id)!);
       this.placeParts(b);
       if (!floor) this.sideSlices(b);
     }
-    this.drawJointShades(pieces);
-    for (const o of this.overlays) o.destroy();
-    this.overlays = halvingOverlays(this.scene, this.builds, joints).map((o) =>
-      this.scene.add.image(o.x, o.y, o.key).setOrigin(0, 0).setDepth(o.depth).setAlpha(1),
-    );
+    this.drawJointShades(full ? undefined : affected, dirty.keys());
+    // les croisements des mi-bois (peu nombreux) : refaits si l'un touche une pièce reclassée
+    if (full || joints.some((j) => (j.type === 'halving' || j.type === 'notch') && (affected.has(j.a) || affected.has(j.b)))) {
+      for (const o of this.overlays) o.destroy();
+      this.overlays = halvingOverlays(this.scene, this.builds, joints).map((o) =>
+        this.scene.add.image(o.x, o.y, o.key).setOrigin(0, 0).setDepth(o.depth).setAlpha(1),
+      );
+    }
+  }
+
+  /** Les pièces posées, retirées ou tournées depuis le dernier reclassement, avec leur emprise d'avant (retirées). */
+  private readonly dirty = new Map<number, Box3 | undefined>();
+  /** Les pièces rangées par leur dessus, refaites à chaque reclassement (`supportsOf` rapide). */
+  private index?: SupportIndex;
+  /** La profondeur de chaque pièce posée, et le plafond du mur du fond (gardés d'un reclassement à l'autre). */
+  private depths = new Map<number, number>();
+  private caps?: ReadonlyMap<number, number>;
+  /** Les pièces qui sont des dessus qui se marchent (refaire `decks` quand l'une change). */
+  private deckIds = new Set<number>();
+
+  /**
+   * Les alentours de ce qui a changé : les pièces dont l'emprise touche celle, d'avant ou d'après, d'une pièce changée (à toute
+   * hauteur) ; ce qui leur est assemblé (les entures de proche en proche) ; les tronçons de mur où elles sont ; puis tout ce qui repose
+   * sur elles, de proche en proche (leur calage et leur profondeur en découlent).
+   */
+  private around(pieces: readonly BuildPiece[], joints: readonly Joint[]): Set<number> {
+    const boxes: Box3[] = [];
+    const byId = new Map(pieces.map((p) => [p.id, p]));
+    for (const [id, old] of this.dirty) {
+      if (old) boxes.push(old);
+      const p = byId.get(id);
+      if (p) boxes.push(boxOf(p));
+    }
+    const touches = (a: Box3) => boxes.some((z) => a.x <= z.x + z.w && z.x <= a.x + a.w && a.y <= z.y + z.d && z.y <= a.y + a.d);
+    const out = new Set<number>();
+    for (const p of pieces) if (this.dirty.has(p.id) || touches(boxOf(p))) out.add(p.id);
+    // les assemblages, de proche en proche (une chaîne d'entures se dessine d'un seul tenant)
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const j of joints)
+        if (out.has(j.a) !== out.has(j.b) && byId.has(j.a) && byId.has(j.b)) {
+          out.add(j.a);
+          out.add(j.b);
+          grew = true;
+        }
+    }
+    // les tronçons de mur : tous leurs morceaux se partagent un dessin
+    for (const run of wallRuns(pieces)) if (run.pieces.some((p) => out.has(p.id))) for (const p of run.pieces) out.add(p.id);
+    // ce qui repose dessus, de proche en proche (du bas vers le haut : ce qui porte est vu avant)
+    for (const p of [...pieces].sort((a, c) => a.z - c.z)) if (!out.has(p.id) && this.index!.supportsOf(p).some((s) => out.has(s.id))) out.add(p.id);
+    return out;
   }
 
   /**
    * L'ombre de joint (chantier « hauteurs ») : sous chaque pièce de bois couchée posée sur une autre, une rangée assombrie sur celle du
-   * dessous, là où elle se voit (world/jointShade.ts), juste avant la pièce du dessus dans l'ordre d'affichage.
+   * dessous, là où elle se voit (world/jointShade.ts), juste avant la pièce du dessus dans l'ordre d'affichage. `only` : seulement les
+   * paires dont la pièce du dessus a été reclassée (celle du dessous touchée l'a fait reclasser) ; les ombres des pièces retirées s'en vont.
    */
-  private drawJointShades(pieces: readonly BuildPiece[]): void {
-    for (const g of this.jointShades) g.destroy();
-    this.jointShades = [];
+  private drawJointShades(only?: ReadonlySet<number>, gone: Iterable<number> = []): void {
+    const drop = new Set(gone);
+    for (const [k, g] of this.jointShades) {
+      const [u, d] = k.split('>').map(Number);
+      if (!only || only.has(u) || only.has(d) || drop.has(u) || drop.has(d)) {
+        g.destroy();
+        this.jointShades.delete(k);
+      }
+    }
     const textures = this.scene.textures;
+    const byId = new Map(this.builds.map((b) => [b.piece.id, b]));
     const shown = (id: number): ShownImage | undefined => {
-      const b = this.builds.find((q) => q.piece.id === id);
+      const b = byId.get(id);
       if (!b) return undefined;
       const img = b.image;
       const key = img.texture.key;
@@ -937,13 +1036,15 @@ export class GameMap {
         y: img.y - img.displayOriginY,
         w: frame.width,
         h: frame.height,
-        opaque: (x, y) => (textures.getPixelAlpha(x, y, key, frame.name) ?? 0) > 0,
+        // le masque d'opacité de l'image, lu une seule fois (world/alphaMask.ts), jamais un pixel à la fois
+        opaque: (x, y) => alphaAt(textures, key, frame.name, x, y) > 0,
       };
     };
-    for (const [upper, under] of shadedPairs(pieces)) {
+    const uppers = only ? this.builds.filter((b) => only.has(b.piece.id)).map((b) => b.piece) : this.builds.map((b) => b.piece);
+    for (const [upper, under] of shadedPairs(uppers, this.index)) {
       const a = shown(upper.id);
       const b = shown(under.id);
-      const top = this.builds.find((q) => q.piece.id === upper.id);
+      const top = byId.get(upper.id);
       if (!a || !b || !top) continue;
       const px = shadePixels(a, b);
       if (!px.length) continue;
@@ -954,8 +1055,15 @@ export class GameMap {
       for (const p of px) g.fillRect(p.x - ox, p.y - oy, 1, 1);
       // entre les deux : la pièce du dessus est toujours après celle qui la porte (depthsOf : au moins 0,001 de plus)
       g.setDepth(top.image.depth - 0.0005);
-      this.jointShades.push(g);
+      // la pièce du dessus : les niveaux d'un intérieur (systems/storeys.ts) montrent son ombre avec elle
+      g.setData('piece', upper.id);
+      this.jointShades.set(`${upper.id}>${under.id}`, g);
     }
+  }
+
+  /** Les ombres de joint de la carte, avec la pièce du dessus de chacune (systems/storeys.ts les montre avec son niveau). */
+  get shades(): Phaser.GameObjects.Graphics[] {
+    return [...this.jointShades.values()];
   }
 
   /**
@@ -964,8 +1072,7 @@ export class GameMap {
    * au ras d'un angle.
    */
   offsetOf(p: BuildPlaced): { dx: number; down: number } {
-    const pieces = this.builds.map((b) => b.piece);
-    const supports = supportsOf(pieces, p);
+    const supports = (this.index ?? new SupportIndex(this.builds.map((b) => b.piece))).supportsOf(p);
     if (!supports.length) return { dx: 0, down: 0 };
     const pb = boxOf(p);
     const area = (q: BuildPiece) => {
@@ -985,8 +1092,9 @@ export class GameMap {
       const drawn = 'wood' in s.piece ? lookDef(s.piece.wood.size, woodLookOf(s.piece.wood)).ns.extra : wallOf(s) ? 1 : Math.max(0, placed.image.height - Math.round(sb.d / CM_PER_PX));
       down += Math.round(sb.h / CM_PER_PX) - drawn;
     }
-    // un mur nord-sud dont l'image n'est pas centrée sur son emprise (calée au ras d'un angle)
-    if (wallOf(s) && s.view % 2) dx += placed.image.x - Math.round((sb.x + sb.w / 2) / CM_PER_PX - placed.image.width / 2);
+    // un mur nord-sud dont l'image n'est pas centrée sur son emprise (calée au ras d'un angle) : l'écart de son dessin à sa place
+    // centrée, mesuré sans son propre décalage (déjà dans `base`, sinon compté deux fois : il doublait à chaque assise, DIAGNOSTIC.md 2.3)
+    if (wallOf(s) && s.view % 2) dx += placed.image.x - base.dx - Math.round((sb.x + sb.w / 2) / CM_PER_PX - placed.image.width / 2);
     return { dx, down };
   }
 
@@ -1003,9 +1111,10 @@ export class GameMap {
   }
 
   /** Les tronçons de mur : chaque morceau prend l'image de son tronçon, placée pour le tronçon, rognée à sa part. */
-  private drawWalls(): void {
+  private drawWalls(only?: ReadonlySet<number>): void {
     const byId = new Map(this.builds.map((b) => [b.piece.id, b]));
     for (const run of wallRuns(this.builds.map((b) => b.piece))) {
+      if (only && !run.pieces.some((p) => only.has(p.id))) continue;
       const key = wallTexture(this.scene, run);
       const f = this.scene.textures.getFrame(key);
       const lay = runLayout(run, f.width, f.height);

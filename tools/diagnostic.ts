@@ -380,13 +380,15 @@ async function main() {
 
   /** Une période mesurée : `ms` ms d'images, pendant que `during` agit ; le profil CPU en même temps. */
   const sample = async (name: string, ms: number, during?: () => Promise<void>) => {
-    await E(() => {
+    // le profileur d'abord : son démarrage fige une image, qui ne doit pas compter dans la période (deux images passent avant)
+    await cdp.send('Profiler.start');
+    await E(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       const D = (window as any).__diag;
       D.images = [];
       D.frames = [];
       D.recording = true;
     });
-    await cdp.send('Profiler.start');
     const t0 = Date.now();
     const m0 = await metrics();
     if (during) await during();
@@ -463,6 +465,9 @@ async function main() {
       const D = (window as any).__diag;
       const n = D.creates.length;
       const old = g.scene.getScene('world').map;
+      // les images de toute l'arrivée : de la commande à 1,5 s après le monde prêt (la peinture du terrain par petits pas comprise)
+      D.images = [];
+      D.recording = true;
       const t = performance.now();
       g.events.emit('dieu', cmd);
       await (window as any).__diagUntil(() => {
@@ -471,8 +476,14 @@ async function main() {
       }, 'la carte ' + (cmd.map ?? cmd.kind));
       const ready = performance.now() - t;
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const drawn = performance.now() - t;
+      await new Promise((r) => setTimeout(r, 1500));
+      D.recording = false;
+      const gaps = D.images.map((i: any) => i.dt).filter((x: number) => x > 0);
       const c = D.creates.at(-1);
-      return { ready: Math.round(ready), drawn: Math.round(performance.now() - t), create: Math.round(c.ms), born: c.born, bornMB: Math.round(c.bornMB * 10) / 10, canvases: c.canvases, textures: c.textures, biggest: c.biggest.slice(0, 4) };
+      // les trois pires images : leur durée, le temps du pas de jeu (la création de la scène y est), du dessin, le nombre de pas
+      const top = [...D.images].sort((a: any, b: any) => b.dt - a.dt).slice(0, 3).map((i: any) => [Math.round(i.dt), Math.round(i.stepMs), Math.round(i.renderMs), i.steps]);
+      return { ready: Math.round(ready), drawn: Math.round(drawn), create: Math.round(c.ms), worst: Math.round(Math.max(0, ...gaps)), top, over100: gaps.filter((x: number) => x > 100).length, born: c.born, bornMB: Math.round(c.bornMB * 10) / 10, canvases: c.canvases, textures: c.textures, biggest: c.biggest.slice(0, 4) };
     }, cmd);
 
   // --- 1. Le démarrage
@@ -517,7 +528,11 @@ async function main() {
     console.log(`  démarrage : monde prêt en ${bootReady} ms (${out.boot.requests} requêtes, ${out.boot.png} png, ${out.boot.js} scripts)`);
   }
 
-  // --- 2. Chaque zone, la première fois puis la suivante
+  // --- 2. Chaque zone, la première fois puis la suivante ; d'abord, ce que le jeu prépare d'avance (les textures des pièces posées
+  // d'alentour, systems/prewarm.ts) a fini, comme pour un joueur qui marche d'une zone à l'autre (les versions d'avant n'en ont pas)
+  const prepared = Date.now();
+  await E(`window.__diagUntil(() => !window.game.scene.getScene('world').preparing, 'la préparation d’avance')`);
+  out.preparedMs = Date.now() - prepared;
   const ZONES = [...readFileSync(join(root, 'tiled/maps/monde.world'), 'utf8').matchAll(/"fileName": "([^"]+)\.tmj"/g)].map((m) => m[1]);
   if (only.has('zones')) {
     for (const pass of [1, 2]) {
@@ -527,7 +542,7 @@ async function main() {
         const m = await metrics();
         const census = await E(() => (window as any).__diag.census());
         out.zones.push({ zone: z, pass, ...r, heapMB: m.heapMB, objects: census.all, statics: census.statics });
-        console.log(`  zone ${z} (${pass}) : ${r.ready} ms (create ${r.create} ms, ${r.born} textures nées, ${r.bornMB} Mo, ${r.canvases} canevas), ${census.all} objets, tas ${m.heapMB} Mo`);
+        console.log(`  zone ${z} (${pass}) : ${r.ready} ms (pire image ${r.worst} ms ${JSON.stringify(r.top)}, create ${r.create} ms, ${r.born} textures nées, ${r.bornMB} Mo, ${r.canvases} canevas), ${census.all} objets, tas ${m.heapMB} Mo`);
       }
     }
   }
@@ -601,18 +616,24 @@ async function main() {
           const n = D.creates.length;
           const t = performance.now();
           const ok = new Function('id', `return ${test}`);
+          D.images = [];
+          D.recording = true;
           (window as any).__diagKey('keydown', code);
           await (window as any).__diagUntil(() => ok(g.scene.getScene('world').map?.def?.id ?? '') && D.creates.length > n && !!g.scene.getScene('world').player, 'passer ' + test);
           (window as any).__diagKey('keyup', code);
           const ready = performance.now() - t;
-          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+          await new Promise((r) => setTimeout(r, 1000));
+          D.recording = false;
           const c = D.creates.at(-1);
-          return { ready: Math.round(ready), create: Math.round(c.ms), born: c.born, bornMB: Math.round(c.bornMB * 10) / 10, canvases: c.canvases, textures: c.textures, biggest: c.biggest };
+          const worst = Math.round(Math.max(0, ...D.images.map((i: any) => i.dt)));
+          return { ready: Math.round(ready), create: Math.round(c.ms), worst, born: c.born, bornMB: Math.round(c.bornMB * 10) / 10, canvases: c.canvases, textures: c.textures, biggest: c.biggest };
         },
         [code, test],
       );
+    await cdp.send('Profiler.start');
     out.maison.entrer = await passage('KeyW', `id.startsWith('interieur:')`);
-    console.log(`  entrer : ${out.maison.entrer.ready} ms (create ${out.maison.entrer.create} ms, ${out.maison.entrer.born} textures nées, ${out.maison.entrer.bornMB} Mo)`);
+    out.maison.entrer.profile = summarizeProfile((await cdp.send('Profiler.stop')).profile as any);
+    console.log(`  entrer : ${out.maison.entrer.ready} ms (pire image ${out.maison.entrer.worst} ms, create ${out.maison.entrer.create} ms, ${out.maison.entrer.born} textures nées, ${out.maison.entrer.bornMB} Mo)`);
     await idle('dedans');
     await pause(1500);
     out.maison.basImmobile = await sample('dedans en bas, immobile', 5000);
@@ -660,8 +681,10 @@ async function main() {
     await idle('en bas');
     const exit = at(670, 600);
     await goTo(exit.x, exit.y, 'x', 2);
+    await cdp.send('Profiler.start');
     out.maison.sortir = await passage('KeyS', `id === 'ferme-du-riche'`);
-    console.log(`  sortir : ${out.maison.sortir.ready} ms (create ${out.maison.sortir.create} ms)`);
+    out.maison.sortir.profile = summarizeProfile((await cdp.send('Profiler.stop')).profile as any);
+    console.log(`  sortir : ${out.maison.sortir.ready} ms (pire image ${out.maison.sortir.worst} ms, create ${out.maison.sortir.create} ms)`);
   }
 
   // --- 5. Le bord : passer à pied de la ferme du riche (la maison au sud) au village, puis revenir

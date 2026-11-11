@@ -87,6 +87,21 @@ await playtest('etage', async ({ page, errors, load }) => {
   s = await state();
   assert.equal(s.id, inside, 'la même carte : on monte sans changer de carte');
   assert.equal(s.storey, 1, "en haut : l'étage");
+  // en haut, le rez-de-chaussée ne se voit que par la trémie (DIAGNOSTIC.md 2.1 : les toits le remettaient tout entier à l'opaque) :
+  // une seconde de jeu plus tard, toute pièce d'en bas visible porte le masque de la trémie
+  await W(`window.__steps(60)`);
+  const below = await page.evaluate(() => {
+    const w = (window as any).game.scene.getScene('world');
+    let bare = 0;
+    let masked = 0;
+    for (const b of w.map.builds) {
+      if (w.storeys['storeysOf'](b).includes(1)) continue;
+      if (b.image.alpha > 0 && !b.image.mask) bare++;
+      else if (b.image.alpha > 0) masked++;
+    }
+    return { bare, masked };
+  });
+  assert.equal(below.bare, 0, `en haut, le rez-de-chaussée ne se voit que par la trémie (${below.bare} pièces d'en bas visibles sans elle)`);
 
   // 2. la chambre du coq : la porte du palier (refend est, y 100-190, gond au nord : elle s'ouvre sur le palier), ouverte depuis la
   // 14e marche, hors de son battant (les pieds 15 cm au nord du point visé : entre y 141 et 162) ; puis la chambre, entre le refend et le lit à courtines (x 900-1060, y 60-270), la cloison et la chambre de

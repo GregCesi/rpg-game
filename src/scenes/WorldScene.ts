@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { MINUTES_PER_DAY, clockLabel, nextSpeed } from '../world/clock';
 import { nightMinutes } from '../world/sleep';
 import { stateImage } from '../world/pileShape';
-import { CONSTRUIRE, DEPTH, FEET, HELP, INTERACT, LOCKS, HUD, START, VIEW, ZONES } from '../config';
+import { CONSTRUIRE, DEPTH, FEET, HELP, INTERACT, LOCKS, HUD, PREPARE, START, TERRAIN, VIEW, ZONES } from '../config';
 import { combat as combatDef, creatures, gestures, health, items, maps, props, stamina, strength, time, time as timeDef, transforms, work, worksWith } from '../content';
 import { heldMass, itemMass, pieceMass, propMass } from '../content/mass';
 import type { DialogueAction, Exit, Facing, Stance } from '../content/types';
@@ -28,7 +28,7 @@ import { LiftPass } from '../systems/lift';
 import { LaneFade } from '../systems/laneFade';
 import { neighborsOf } from '../world/zones';
 import { heightAt, pick, reliefOf } from '../world/relief';
-import { hasRelief } from '../world/terrainView';
+import { hasRelief, paintTerrain, terrainPending } from '../world/terrainView';
 import { Parcels } from '../systems/parcels';
 import { Interiors, resolveInterior } from '../systems/interiors';
 import { HarvestSystem, effortOf, wields, type HitResult } from '../systems/harvest';
@@ -55,7 +55,8 @@ import { FACING_VECTOR } from '../world/aim';
 import { crossed } from '../world/crossing';
 import { attackCost, impactDamage } from '../world/strike';
 import { pxPerSec, setSpeeds, SPEEDS } from '../systems/speeds';
-import { setSimSpeed, simSpeed } from '../systems/simSpeed';
+import { drawnStep, setSimSpeed, simSpeed } from '../systems/simSpeed';
+import { prepare, prepareAround, preparing } from '../systems/prewarm';
 import { Daylight } from '../systems/daylight';
 import { WorkBar } from '../entities/WorkBar';
 import { splitHits } from '../world/woodShape';
@@ -307,6 +308,7 @@ export class WorldScene extends Phaser.Scene {
     this.edge = data.edge;
     this.mode = 'play';
     this.talking = undefined;
+    this.waitTerrain = false;
   }
 
   create(): void {
@@ -407,7 +409,7 @@ export class WorldScene extends Phaser.Scene {
     this.ePress = new LongPress();
     this.prompts = new KeyPrompts(this);
     this.pileCount = new PileCount(this, this.map);
-    this.roofs = new Roofs(this.map, this);
+    this.roofs = new Roofs(this.map, this, !!this.interior);
     this.effort = new EffortSystem((t) => this.notice(t), () => this.game.events.emit(GameEvent.StaminaDenied));
     this.works = new WorkSystem(this.player, this.effort, bar, (m) => this.clock.work(m));
     this.roll = new RollSystem(this.map, npcs.map((n) => n.actor.body), (t) => this.notice(t), () => this.effort.exhausted());
@@ -464,8 +466,16 @@ export class WorldScene extends Phaser.Scene {
     cam.setFollowOffset(0, lifted);
     // passé le bord d'une zone : la vue reprend où elle était, sans fondu (la voisine était déjà là)
     if (this.edge) cam.centerOn(this.player.actor.x + this.edge.view.dx, this.player.actor.y + this.edge.view.dy - lifted);
-    else cam.fadeIn(LOCKS.fadeIn, 20, 14, 8);
+    else if (terrainPending(this.viewRect())) {
+      // la vue n'est pas encore peinte (une première visite) : l'écran reste noir, le jeu tourne, le fondu attend (`update`)
+      this.waitTerrain = true;
+      cam.fadeOut(1, 20, 14, 8);
+    } else cam.fadeIn(LOCKS.fadeIn, 20, 14, 8);
     if (CONSTRUIRE && this.building) this.enterBuild();
+
+    // ce qu'il faudra pour les intérieurs et les cartes d'alentour : préparé d'avance, peu à chaque image
+    prepareAround(this, def, !this.interior);
+    this.bornAt = this.time.now;
 
     // la partie est écrite à l'arrivée sur la carte, puis à chaque changement, et quand la page se cache ou se ferme
     this.autosave = new AutoSave(def, this.player);
@@ -574,6 +584,19 @@ export class WorldScene extends Phaser.Scene {
     // les objets lancés volent dans tous les modes (le temps du jeu)
     this.updateFlights(delta);
     this.daylight.update();
+    // le terrain peint par petits pas (world/terrainView.ts) : une fois par image dessinée, le plus près de la vue d'abord ; à l'arrivée,
+    // le fondu s'ouvre quand la vue est peinte
+    // (jamais dans l'image même de l'arrivée : la création de la scène a pris son temps)
+    if (drawnStep() && this.time.now > this.bornAt) {
+      const cam = this.cameras.main;
+      paintTerrain(this.waitTerrain ? TERRAIN.waiting : TERRAIN.budget, cam.midPoint);
+      // les textures des pièces posées d'alentour, préparées d'avance (systems/prewarm.ts)
+      if (!this.waitTerrain) prepare(PREPARE.budget);
+      if (this.waitTerrain && !terrainPending(this.viewRect())) {
+        this.waitTerrain = false;
+        cam.fadeIn(LOCKS.fadeIn, 20, 14, 8);
+      }
+    }
     this.announceCell();
     // V : la vitesse du temps du joueur, la vitesse de simulation (tout le jeu plus vite), au palier suivant, en boucle
     if (input.speedPressed() && timeDef.accelerate && (this.mode === 'play' || this.mode === 'work' || this.mode === 'rail')) {
@@ -1521,6 +1544,22 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     return { x, y };
+  }
+
+  /** L'écran attend que la vue soit peinte pour s'ouvrir (une première visite d'une carte au terrain peint). */
+  private waitTerrain = false;
+  /** L'horloge du jeu à la création de la scène : rien de long ne s'ajoute à cette image-là. */
+  private bornAt = 0;
+
+  /** Des textures d'alentour restent-elles à préparer, ou du terrain à peindre (systems/prewarm.ts ; npm run diagnostic l'attend) ? */
+  get preparing(): boolean {
+    return preparing() || terrainPending();
+  }
+
+  /** Ce que montre la caméra autour de Xéros, avec une marge d'une demi-vue (px de la scène ; à l'arrivée, la caméra n'est pas encore sur lui). */
+  private viewRect(): { x: number; y: number; w: number; h: number } {
+    const a = this.player.actor;
+    return { x: a.x - VIEW.width, y: a.y - VIEW.height, w: VIEW.width * 2, h: VIEW.height * 2 };
   }
 
   /** Une sortie est prise : la carte d'arrivée, à son point d'apparition. */

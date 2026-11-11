@@ -435,6 +435,25 @@ const keyOf = (room: Rect) => `${room.x},${room.y}`;
  * Les bâtiments où l'on entre, parmi les pièces posées d'une carte : chaque porte et chaque ouverture sans porte qui mène à une pièce
  * close ; deux entrées de la même pièce font un seul bâtiment.
  */
+/**
+ * Les bâtiments après qu'une porte ou un volet a tourné (chantier « corrections » : ouvrir une porte ne recalcule plus toute la carte) :
+ * seul le bâtiment qui le contient est recalculé, de ses seules pièces (celles de ses alentours, `SWUNG_REACH`) ; les autres restent
+ * tels quels. Même résultat que `buildingsOf` sur toute la carte (tools/test-recalcul-pur.ts).
+ */
+export function swungIn(buildings: readonly Building[], pieces: readonly BuildPiece[], p: BuildPiece): Building[] {
+  const pb = boxOf(p);
+  const r = SWUNG_REACH;
+  const near = (a: Rect, b: Rect) => a.x - r < b.x + b.w && b.x < a.x + a.w + r && a.y - r < b.y + b.d && b.y < a.y + a.d + r;
+  return buildings.map((b) => {
+    if (!near(b.room, pb)) return b;
+    const local = pieces.filter((q) => near(b.room, boxOf(q)));
+    return buildingsOf(local).find((x) => x.key === b.key) ?? b;
+  });
+}
+
+/** Ce qui compte autour d'un bâtiment pour le recalculer seul (cm) : ses murs, ses pignons, son toit qui déborde, ses abords. */
+const SWUNG_REACH = 400;
+
 export function buildingsOf(pieces: readonly BuildPiece[]): Building[] {
   const g = gridOf(pieces);
   if (!g) return [];

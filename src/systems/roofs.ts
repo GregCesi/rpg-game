@@ -33,6 +33,11 @@ export class Roofs {
   constructor(
     private readonly map: GameMap,
     private readonly scene?: Phaser.Scene,
+    /**
+     * Dans un intérieur, ce qui se voit des pièces posées n'est pas l'affaire des toits : un seul système en décide, celui des niveaux
+     * (systems/storeys.ts ; chantier « corrections », DIAGNOSTIC.md 2.1 : les toits remettaient chaque pièce de l'étage à l'opaque).
+     */
+    private readonly interior = false,
   ) {}
 
   /**
@@ -75,6 +80,10 @@ export class Roofs {
    */
   private builds(player: Player, delta: number, on: boolean, buildings: readonly Building[]): void {
     if (!this.map.builds.length) return;
+    if (this.interior) {
+      this.lights();
+      return;
+    }
     const pieces = this.map.builds.map((b) => b.piece);
     const fx = player.actor.x * CM_PER_PX;
     const fy = player.actor.y * CM_PER_PX;

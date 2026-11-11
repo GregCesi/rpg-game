@@ -824,10 +824,11 @@ export const PropDefSchema = z.strictObject({
    * `double`, deux battants sur des gonds aux deux bords de l'ouverture (la porte charretière : ouverte, chaque battant a tourné d'un
    * quart vers le dehors, l'objet ouvert est la boîte des deux battants, de la largeur du fermé, contre sa face du dehors) ;
    * `open` : cet état est l'ouvert ; `passage` : on passe par là quand il est ouvert (une porte : chantier « intérieurs », entrer dans
-   * un bâtiment). La face du dehors est au sud dans la vue 0 (`world/build.ts`, `swung`).
+   * un bâtiment) ; `inward` (une porte d'entrée, chantier « corrections ») : `side` tourne vers le dedans, autour du même montant,
+   * comme une vraie porte d'entrée (tools/test-portes-sens.ts). La face du dehors est au sud dans la vue 0 (`world/build.ts`, `swung`).
    */
   swing: z
-    .strictObject({ into: z.string(), hinge: z.enum(['side', 'bottom', 'double']), open: z.literal(true).optional(), passage: z.literal(true).optional() })
+    .strictObject({ into: z.string(), hinge: z.enum(['side', 'bottom', 'double']), open: z.literal(true).optional(), passage: z.literal(true).optional(), inward: z.literal(true).optional() })
     .optional(),
   /** Ce qu'on frappe avec une arme (le mannequin) : voir TargetSchema. */
   target: z.lazy(() => TargetSchema).optional(),

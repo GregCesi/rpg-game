@@ -384,6 +384,32 @@ export function supportsOf(pieces: readonly BuildPiece[], p: BuildPlaced): Build
   return pieces.filter((q) => q !== p && topOf(boxOf(q)) === b.z && overlaps(boxOf(q), b));
 }
 
+/**
+ * Les pièces rangées par la hauteur de leur dessus (chantier « corrections ») : `supportsOf` sans parcourir toutes les pièces pour
+ * chacune (une maison de 500 pièces : 250 000 boîtes à chaque reclassement). Même résultat que `supportsOf` ; à refaire quand les pièces
+ * changent.
+ */
+export class SupportIndex {
+  private readonly byTop = new Map<number, { p: BuildPiece; b: Box3 }[]>();
+
+  constructor(pieces: readonly BuildPiece[]) {
+    for (const p of pieces) {
+      const b = boxOf(p);
+      const t = topOf(b);
+      let list = this.byTop.get(t);
+      if (!list) this.byTop.set(t, (list = []));
+      list.push({ p, b });
+    }
+  }
+
+  /** Les pièces sur lesquelles repose `p` (comme `supportsOf`). */
+  supportsOf(p: BuildPlaced): BuildPiece[] {
+    const b = boxOf(p);
+    if (b.z === 0) return [];
+    return (this.byTop.get(b.z) ?? []).filter((e) => e.p !== p && overlaps(e.b, b)).map((e) => e.p);
+  }
+}
+
 /** Les pièces qui reposent directement sur celle-ci. */
 export function carriedBy(pieces: readonly BuildPiece[], id: number): BuildPiece[] {
   const p = pieces.find((q) => q.id === id);
@@ -416,13 +442,13 @@ export function withAbove(pieces: readonly BuildPiece[], id: number): BuildPiece
  * est ramenée, juste derrière la face intérieure du mur, en gardant l'ordre de ce qui porte et de ce qui est porté (la profondeur
  * relevée ne fait plus que départager, au dix-millième).
  */
-export function depthsOf(pieces: readonly BuildPiece[], caps?: ReadonlyMap<number, number>): Map<number, number> {
+export function depthsOf(pieces: readonly BuildPiece[], caps?: ReadonlyMap<number, number>, index: SupportIndex = new SupportIndex(pieces)): Map<number, number> {
   const out = new Map<number, number>();
   const sorted = [...pieces].sort((a, b) => a.z - b.z);
   for (const p of sorted) {
     const b = boxOf(p);
     let d = (b.y + b.d) / CM_PER_PX + b.z / 100000;
-    for (const s of supportsOf(pieces, p)) d = Math.max(d, (out.get(s.id) ?? 0) + 0.001);
+    for (const s of index.supportsOf(p)) d = Math.max(d, (out.get(s.id) ?? 0) + 0.001);
     out.set(p.id, d);
   }
   if (caps?.size) {
@@ -518,22 +544,28 @@ export function swung(p: BuildPlaced): BuildPlaced | undefined {
   const n = viewsOf(p.piece);
   const b = boxOf(p);
   if (s.hinge === 'side') {
-    const open = (q: BuildPlaced): BuildPlaced => {
+    // `inward` (une porte d'entrée, chantier « corrections ») : elle tourne vers le dedans, autour du même montant, le gond au bout de sa
+    // face du dedans ; sinon vers le dehors, le gond au bout de sa face du dehors
+    const open = (q: BuildPlaced, inward: boolean): BuildPlaced => {
       const qb = boxOf(q);
       const [qx, qy] = OUTWARD[q.view % 4];
-      // le gond : au bout gauche de la face du dehors (vu du dehors, la gauche est (−qy, qx))
-      const fx = qb.x + qb.w / 2 + (qx * qb.w) / 2;
-      const fy = qb.y + qb.d / 2 + (qy * qb.d) / 2;
+      const k = inward ? -1 : 1;
+      // le gond : au bout gauche (vu du dehors, la gauche est (−qy, qx)) de la face du dehors, ou de celle du dedans
+      const fx = qb.x + qb.w / 2 + (k * qx * qb.w) / 2;
+      const fy = qb.y + qb.d / 2 + (k * qy * qb.d) / 2;
       const half = qx ? qb.d / 2 : qb.w / 2;
-      return { ...q, ...quarterBox(qb, fx - qy * half, fy + qx * half, true), view: (q.view + 1) % n };
+      return { ...q, ...quarterBox(qb, fx - qy * half, fy + qx * half, !inward), view: (q.view + (inward ? n - 1 : 1)) % n };
     };
-    if (!s.open) return { ...open(p), piece: into };
-    // fermer : le coin de la boîte ouverte autour duquel elle se referme
-    for (const [cx, cy] of [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.d], [b.x + b.w, b.y + b.d]]) {
-      const closed: BuildPlaced = { ...p, piece: into, ...quarterBox(b, cx, cy, false), view: (p.view + n - 1) % n };
-      const again = open({ ...closed, piece: p.piece });
-      if (again.x === p.x && again.y === p.y) return closed;
-    }
+    const inward = !!s.inward;
+    if (!s.open) return { ...open(p, inward), piece: into };
+    // fermer : le coin de la boîte ouverte autour duquel elle se referme ; dans son sens, puis dans l'autre (une porte ouverte avant que
+    // son sens ne change, gardée telle quelle par une sauvegarde, se referme quand même)
+    for (const dir of [inward, !inward])
+      for (const [cx, cy] of [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.d], [b.x + b.w, b.y + b.d]]) {
+        const closed: BuildPlaced = { ...p, piece: into, ...quarterBox(b, cx, cy, dir), view: (p.view + (dir ? 1 : n - 1)) % n };
+        const again = open({ ...closed, piece: p.piece }, dir);
+        if (again.x === p.x && again.y === p.y) return closed;
+      }
     return undefined;
   }
   const [ox, oy] = OUTWARD[p.view % 4];

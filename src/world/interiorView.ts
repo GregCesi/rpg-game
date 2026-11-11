@@ -5,6 +5,7 @@
 
 import Phaser from 'phaser';
 import { DEPTH, INTERIOR } from '../config';
+import { framePixels } from './alphaMask';
 import { sunImages } from '../content';
 import { CM_PER_PX } from '../content/gabarit';
 import { buildLook } from './buildView';
@@ -15,17 +16,17 @@ import type { Rect, Window } from './interior';
 /** Les angles de la tache de lumière (l'image `sunpatch` a son grand côté en bas, contre la fenêtre sud). */
 const ANGLE = { south: 0, north: 180, east: -90, west: 90 } as const;
 
-/** La teinte moyenne des pixels opaques d'une image (une pièce de mur) : la matière et l'âge de la coupe. */
+/** La teinte moyenne des pixels opaques d'une image (une pièce de mur) : la matière et l'âge de la coupe. Ses pixels lus une fois. */
 function meanColor(scene: Phaser.Scene, key: string, frame?: string): Phaser.Display.Color {
-  const f = scene.textures.getFrame(key, frame);
+  const p = framePixels(scene.textures, key, frame);
   let [r, g, b, n] = [0, 0, 0, 0];
-  for (let y = 1; y < f.height; y += 2) {
-    for (let x = 1; x < f.width; x += 2) {
-      const c = scene.textures.getPixel(x, y, key, frame);
-      if (!c || c.alpha < 200) continue;
-      r += c.red;
-      g += c.green;
-      b += c.blue;
+  for (let y = 1; p && y < p.h; y += 2) {
+    for (let x = 1; x < p.w; x += 2) {
+      const i = (y * p.w + x) * 4;
+      if (p.data[i + 3] < 200) continue;
+      r += p.data[i];
+      g += p.data[i + 1];
+      b += p.data[i + 2];
       n++;
     }
   }

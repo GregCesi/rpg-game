@@ -286,6 +286,19 @@ export const INTERIOR = {
 export const START = { map: 'ferme', spawn: 'reveil' };
 
 /**
+ * Le terrain peint (world/terrainView.ts, chantier « corrections ») : ses morceaux se peignent par petits pas, `budget` ms par image
+ * dessinée en jouant (aucune image n'attend un morceau entier), `waiting` ms tant que l'écran reste noir à l'arrivée sur une carte (le
+ * fondu attend que la vue soit peinte : on n'y voit jamais un trou).
+ */
+export const TERRAIN = { budget: 4, waiting: 30 };
+
+/**
+ * La préparation d'avance des textures des pièces posées (systems/prewarm.ts, chantier « corrections ») : `budget` ms par image
+ * dessinée, les intérieurs de la carte, puis les cartes voisines, puis les autres.
+ */
+export const PREPARE = { budget: 4 };
+
+/**
  * Les zones du monde (chantier « monde », systems/zones.ts) : `band`, ce qu'on voit des voisines par-delà le bord, en cases, tirée de la
  * moitié de la vue au palier de zoom le plus bas (`ZOOM_STEPS.min`), plus une case (la caméra ne montre jamais le vide près d'un bord ouvert) ; `reach`, en cases, ce
  * qu'on prend d'objets au-delà de la bande (un arbre planté plus bas qui dépasse vers le haut) ; `edge`, en px, ce dont les pieds de

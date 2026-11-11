@@ -8,6 +8,8 @@ import { CM_PER_PX } from '../content/gabarit';
 import { boxOf, type Box3, type BuildPiece } from './build';
 import { buildLook } from './buildView';
 import { scarfChains, woodOfPiece, type JointRef } from './joints';
+import { jointiveSpans } from './jointShade';
+import { framePixels } from './alphaMask';
 import { agedKey, lookOf, upOf } from './woodShape';
 
 /** Une pièce affichée, telle que GameMap la tient. */
@@ -59,10 +61,51 @@ function marked(scene: Phaser.Scene, key: string, frame: string | undefined, mar
 }
 
 /**
- * Redessine les pièces de bois : chacune seule, ou dans sa suite entée, avec les marques de ses assemblages. Les pièces qui ne sont
- * pas du bois ne changent pas (les morceaux de mur ont leur propre dessin commun).
+ * La texture d'une planche dont une voisine jointive touche le bord sud (`jointiveSpans`) : dans ces colonnes, la rangée d'ombre au sol
+ * (ses pixels translucides, sous l'arête) prend la couleur du contour de la planche (son premier pixel opaque en haut de la colonne) :
+ * le joint de deux planches, jamais un jour sur ce qui est dessous. Peinte une fois par clé (une lecture de l'image), gardée.
  */
-export function drawJoints(scene: Phaser.Scene, shown: readonly ShownPiece[], joints: readonly JointRef[]): void {
+function joined(scene: Phaser.Scene, key: string, frame: string | undefined, spans: readonly [number, number][]): { key: string; frame?: string } {
+  if (!spans.length) return { key, frame };
+  const id = `${key}#${frame ?? ''}#joined:${spans.map((s) => s.join('-')).join(',')}`;
+  if (!scene.textures.exists(id)) {
+    const f = scene.textures.getFrame(key, frame);
+    // les pixels de la planche, lus une fois (world/alphaMask.ts) : jamais de relecture d'un canevas neuf
+    const p = framePixels(scene.textures, key, frame)!;
+    const canvas = scene.textures.createCanvas(id, f.width, f.height)!;
+    const ctx = canvas.getContext();
+    const img = new ImageData(new Uint8ClampedArray(p.data), p.w, p.h);
+    const d = img.data;
+    const W = p.w;
+    for (const [a, b] of spans)
+      for (let x = Math.max(0, a); x < Math.min(W, b); x++) {
+        let top = -1;
+        for (let y = 0; y < f.height && top < 0; y++) if (d[(y * W + x) * 4 + 3] === 255) top = y;
+        if (top < 0) continue;
+        const t = (top * W + x) * 4;
+        // du bas vers le haut, les pixels translucides (l'ombre au sol) jusqu'au premier opaque (l'arête)
+        for (let y = f.height - 1; y > top; y--) {
+          const i = (y * W + x) * 4;
+          if (d[i + 3] === 255) break;
+          if (d[i + 3] === 0) continue;
+          d[i] = d[t];
+          d[i + 1] = d[t + 1];
+          d[i + 2] = d[t + 2];
+          d[i + 3] = 255;
+        }
+      }
+    ctx.putImageData(img, 0, 0);
+    canvas.refresh();
+  }
+  return { key: id };
+}
+
+/**
+ * Redessine les pièces de bois : chacune seule, ou dans sa suite entée, avec les marques de ses assemblages ; une planche jointive
+ * d'une autre, avec leur joint (`joined`). Les pièces qui ne sont pas du bois ne changent pas (les morceaux de mur ont leur propre
+ * dessin commun). `all` : toutes les pièces posées (les voisines d'une planche, quand on n'en redessine qu'une partie).
+ */
+export function drawJoints(scene: Phaser.Scene, shown: readonly ShownPiece[], joints: readonly JointRef[], all: readonly BuildPiece[] = shown.map((s) => s.piece)): void {
   const pieces = shown.map((s) => s.piece);
   const byId = new Map(shown.map((s) => [s.piece.id, s]));
   const units: Unit[] = [];
@@ -122,7 +165,8 @@ export function drawJoints(scene: Phaser.Scene, shown: readonly ShownPiece[], jo
       if (u.axis === 'ew') u.marks.push({ key: peg, x: px - 1, y: Math.round(look.h * 0.6) - 1 });
       else u.marks.push({ key: peg, x: Math.floor(look.w / 2) - 1, y: Math.round((pb.y + pb.d / 2 - u.box.y) / CM_PER_PX) - 1 });
     }
-    const tex = marked(scene, look.key, look.frame, u.marks);
+    const m = marked(scene, look.key, look.frame, u.marks);
+    const tex = u.pieces.length === 1 ? joined(scene, m.key, m.frame, jointiveSpans(u.pieces[0], all)) : m;
     const n = u.pieces.length;
     u.pieces.forEach((p, i) => {
       const s = byId.get(p.id)!;

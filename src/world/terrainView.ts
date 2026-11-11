@@ -121,6 +121,51 @@ function at(m: Matter, x: number, y: number): Rgb | undefined {
   return m.data[i + 3] < 128 ? undefined : [m.data[i], m.data[i + 1], m.data[i + 2]];
 }
 
+/**
+ * Les morceaux du terrain à peindre (chantier « corrections », DIAGNOSTIC.md : la ferme gelait 1,2 s à sa première visite, une forêt
+ * jusqu'à 0,9 s) : chacun sa peinture en cours, ceux qui l'attendent, sa place (le plus près de la caméra d'abord). La file survit aux
+ * changements de scène : les textures et le registre sont au jeu.
+ */
+interface PaintJob {
+  steps: Generator<void, Made, void>;
+  done: ((made: Made) => void)[];
+  at: { x: number; y: number };
+  registry: Phaser.Data.DataManager;
+}
+const jobs = new Map<string, PaintJob>();
+
+/**
+ * Avance la peinture des morceaux en attente pendant `budgetMs` ms au plus (le plus proche de `focus` d'abord, px de la scène) ; un
+ * morceau fini est gardé et posé là où on l'attend. À appeler une fois par image dessinée (WorldScene.update).
+ */
+export function paintTerrain(budgetMs: number, focus: { x: number; y: number }): void {
+  const t0 = performance.now();
+  while (jobs.size && performance.now() - t0 < budgetMs) {
+    let best: [string, PaintJob] | undefined;
+    let d = Infinity;
+    for (const e of jobs) {
+      const dd = (e[1].at.x - focus.x) ** 2 + (e[1].at.y - focus.y) ** 2;
+      if (dd < d) [d, best] = [dd, e];
+    }
+    const [base, job] = best!;
+    // un pas, puis le temps est relu : un pas ne dure qu'une colonne ou une rangée
+    for (let k = 0; k < 8; k++) {
+      const r = job.steps.next();
+      if (!r.done) continue;
+      jobs.delete(base);
+      job.registry.set(base, r.value);
+      for (const f of job.done) f(r.value);
+      break;
+    }
+  }
+}
+
+/** Des morceaux attendent-ils d'être peints dans ce rectangle (px de la scène) ? Sans rectangle : où que ce soit. */
+export function terrainPending(r?: { x: number; y: number; w: number; h: number }): boolean {
+  for (const j of jobs.values()) if (!r || (j.at.x > r.x - CHUNK && j.at.x < r.x + r.w + CHUNK && j.at.y > r.y - CHUNK && j.at.y < r.y + r.h + CHUNK)) return true;
+  return false;
+}
+
 /** Ce qu'un morceau peint a produit (gardé dans le registre : une fois par carte). */
 type Made = { top: number; h: number; bands: { key: string; x: number; y: number; depth: number }[]; cut?: { key: string; x: number; y: number } };
 
@@ -198,23 +243,47 @@ export class TerrainView {
     }
     // les morceaux peints, du nord au sud (ce qui est au sud passe par-dessus)
     painted.sort((a, b) => a.cy - b.cy || a.cx - b.cx);
-    for (const c of painted) this.paint(tileset.key, c.cx, c.cy, Math.min(px1, c.cx + CHUNK), Math.min(py1, c.cy + CHUNK), Math.max(px0, c.cx), Math.max(py0, c.cy), L, max);
+    // (un morceau entier, borné à la carte : le même pour la carte et pour la bande d'une voisine, peint une seule fois)
+    const mw = def.width * TILE;
+    const mh = def.height * TILE;
+    for (const c of painted) this.paint(tileset.key, c.cx, c.cy, Math.min(mw, c.cx + CHUNK), Math.min(mh, c.cy + CHUNK), Math.max(0, c.cx), Math.max(0, c.cy), L, max);
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => (this.alive = false));
   }
 
-  /** Un morceau peint : sa texture (gardée), son image au sol et ses bandes de ce qui passe devant. */
+  /** La scène qui montre ce terrain tourne encore (un morceau peint plus tard n'est posé que dans une scène vivante). */
+  private alive = true;
+
+  /**
+   * Un morceau peint : sa texture (gardée), son image au sol et ses bandes de ce qui passe devant. Déjà peint (une visite d'avant, la
+   * bande d'une voisine) : posé tout de suite ; sinon confié à la file des morceaux à peindre (`paintTerrain`, quelques ms par image,
+   * jamais d'un coup : chantier « corrections »), et posé quand il est prêt, si la scène tourne encore.
+   */
   private paint(key: string, _cx: number, _cy: number, x1: number, y1: number, x0: number, y0: number, L: (x: number, y: number) => number, max: number): void {
     const scene = this.scene;
     const base = `terrain:${this.def.id}:${x0},${y0}`;
     const meta = scene.registry.get(base) as Made | undefined;
-    const made = meta ?? this.render(key, base, x0, y0, x1, y1, L, max);
-    if (!meta) scene.registry.set(base, made);
+    if (meta) return this.place(base, meta, x0);
+    const at = { x: this.ox + (x0 + x1) / 2, y: this.oy + (y0 + y1) / 2 };
+    let job = jobs.get(base);
+    if (!job) jobs.set(base, (job = { steps: this.renderSteps(key, base, x0, y0, x1, y1, L, max), done: [], at, registry: scene.registry }));
+    job.at = at;
+    job.done.push((made) => this.alive && this.place(base, made, x0));
+  }
+
+  /** Les images d'un morceau peint : le sol, la terre en coupe, les bandes de ce qui passe devant. */
+  private place(base: string, made: Made, x0: number): void {
+    const scene = this.scene;
     this.parts.push(scene.add.image(this.ox + x0, this.oy + made.top, base).setOrigin(0, 0).setDepth(DEPTH.ground).setData('noLift', true));
     // la terre en coupe, cachée tant que Xéros n'est pas sous la voûte (systems/laneFade.ts la montre)
     if (made.cut) this.parts.push(scene.add.image(this.ox + made.cut.x, this.oy + made.cut.y, made.cut.key).setOrigin(0, 0).setDepth(DEPTH.ground + 0.05).setAlpha(0).setData('noLift', true).setData('cut', true));
     for (const b of made.bands) this.parts.push(scene.add.image(this.ox + b.x, this.oy + b.y, b.key).setOrigin(0, 0).setDepth(this.oy + b.depth).setData('noLift', true));
   }
 
-  private render(key: string, base: string, x0: number, y0: number, x1: number, y1: number, Lw: (x: number, y: number) => number, max: number) {
+  /**
+   * La peinture d'un morceau, par petits pas (un générateur : il rend la main après chaque rangée de la grille des hauteurs, chaque
+   * colonne, chaque image produite), pour qu'aucune image du jeu n'attende tout le morceau ; son résultat : ce qui a été produit.
+   */
+  private *renderSteps(key: string, base: string, x0: number, y0: number, x1: number, y1: number, Lw: (x: number, y: number) => number, max: number): Generator<void, Made, void> {
     const scene = this.scene;
     // les hauteurs du morceau et de ses abords, lues une fois (px d'écran, au pixel près)
     const gx0 = x0 - Math.ceil(SHADOW.dx * max) - 2;
@@ -223,7 +292,10 @@ export class TerrainView {
     const gy1 = y1 + 64;
     const gw = gx1 - gx0;
     const grid = new Float32Array(gw * (gy1 - gy0));
-    for (let y = gy0; y < gy1; y++) for (let x = gx0; x < gx1; x++) grid[(y - gy0) * gw + (x - gx0)] = Lw(x, y);
+    for (let y = gy0; y < gy1; y++) {
+      for (let x = gx0; x < gx1; x++) grid[(y - gy0) * gw + (x - gx0)] = Lw(x, y);
+      yield;
+    }
     const L = (x: number, y: number) => {
       const ix = Math.round(x) - gx0;
       const iy = Math.round(y) - gy0;
@@ -404,6 +476,7 @@ export class TerrainView {
         prev = sy;
         if (sy > lowest) lowest = sy;
       }
+      yield;
     }
     // les faces est et ouest, en raccourci : au pied d'un bord (la hauteur tombe de plus de 20 px sur une case de la grille, puis ne
     // tombe plus), une bande sombre du côté bas, de FACE.raked px pour 5 m
@@ -428,6 +501,7 @@ export class TerrainView {
           }
         }
       }
+      yield;
     }
     const canvas = scene.textures.createCanvas(base, W, H)!;
     canvas.context.putImageData(new ImageData(out, W, H), 0, 0);
@@ -444,6 +518,7 @@ export class TerrainView {
       t.refresh();
       return { x: box.x, y: box.y };
     };
+    yield;
     if (cutBuf) {
       const at0 = texture(`${base}:cut`, cutBuf, W, H);
       if (at0) made.cut = { key: `${base}:cut`, x: x0 + at0.x, y: top + at0.y };
@@ -452,6 +527,7 @@ export class TerrainView {
       const k = `${base}:b${b}`;
       const at0 = texture(k, buf, W, bandH);
       if (at0) made.bands.push({ key: k, x: x0 + at0.x, y: bandTop(b) + at0.y, depth: y0 + b * BAND - 0.5 });
+      yield;
     }
     return made;
   }

@@ -99,7 +99,7 @@
       "tests": ["tools/test-arbres.ts", "tools/test-work.ts", "tools/test-swing.ts", "npm run test:etapes"] },
     { "id": "construction", "nom": "La construction et les plans", "x": 3, "y": 1,
       "role": "Bâtir : un bâtiment est un plan (plans.json) fait de vraies pièces. On trace au piquet, on pose pièce après pièce. Le mode construction (?construire, B) permet de tout poser librement et d'enregistrer un plan. Murs, assemblages, rien au-dessus du vide.",
-      "fichiers": ["src/world/build.ts", "src/systems/build.ts", "src/world/buildView.ts", "src/build/catalog.ts", "src/build/panel.ts", "src/systems/site.ts", "src/world/sitePlan.ts", "src/world/joints.ts", "src/world/jointView.ts", "src/world/jointShade.ts", "src/world/overhang.ts", "src/world/walls.ts", "src/world/wallRuns.ts", "src/world/wallTexture.ts", "src/world/ashlarWalls.ts"],
+      "fichiers": ["src/world/build.ts", "src/systems/build.ts", "src/world/buildView.ts", "src/build/catalog.ts", "src/build/panel.ts", "src/systems/site.ts", "src/world/sitePlan.ts", "src/world/joints.ts", "src/world/jointView.ts", "src/world/jointShade.ts", "src/world/alphaMask.ts", "src/systems/prewarm.ts", "src/world/overhang.ts", "src/world/walls.ts", "src/world/wallRuns.ts", "src/world/wallTexture.ts", "src/world/ashlarWalls.ts"],
       "donnees": ["plans.json", "src/content/plans/*.json", "props.json", "walls.json"],
       "regles": ["Un nouveau bâtiment = un plan dans plans.json, sans code nouveau.", "Un chantier montre les vraies pièces posées.", "Aucune pièce au-dessus du vide."],
       "tests": ["npm run test:construction", "npm run test:cabane", "npm run test:maison", "npm run test:forge", "tools/test-build.ts"] },

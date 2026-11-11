@@ -127,6 +127,17 @@ export class Storeys {
         }
       }
     }
+    // les ombres de joint suivent la pièce du dessus (le plancher de l'étage sur ses solives : avec l'étage)
+    const byId = new Map(this.map.builds.map((b) => [b.piece.id, b]));
+    for (const g of this.map.shades) {
+      const b = byId.get(g.getData('piece') as number);
+      if (!b) continue;
+      const mine = this.storeysOf(b);
+      const below = k > 0 && !!mask && mine.includes(k - 1) && !mine.includes(k);
+      g.setAlpha(below ? 1 : Math.max(0, ...mine.map((i) => this.shown[i] ?? 0)));
+      if (below) g.setMask(mask!);
+      else if (g.mask) g.clearMask();
+    }
     this.view?.cuts.forEach((list, i) => list.forEach((g) => g.setAlpha(this.shown[i] ?? 0)));
     this.underlays.forEach((g, i) => g?.setAlpha(this.shown[i] ?? 0));
   }

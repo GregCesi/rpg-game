@@ -24,6 +24,7 @@ import type { GameMap } from '../world/GameMap';
 import { drawNatural } from '../world/natural';
 import { Ghosts } from './ghost';
 import { pick } from '../world/relief';
+import { alphaAt } from '../world/alphaMask';
 
 /** Ce qu'on a en main : une pièce (avec son sens, ses réglages de forme naturelle et son tirage), un plan, ou l'outil de zone. */
 type Tool =
@@ -450,7 +451,8 @@ export class BuildSystem {
       this.move(moves, true);
     }
     const added = addJoints(game, this.map.def.id, [{ type, a: pa.id, b: pb.id, ...(top !== undefined ? { top } : {}) }]);
-    this.map.sortBuilds();
+    // seulement les alentours des deux pièces assemblées (GameMap.sortBuilds)
+    this.map.sortBuilds([pa.id, pb.id]);
     this.push({ kind: 'add', pieces: [], joints: structuredClone(added), moves });
     this.notice(`${JOINT_NAMES[type][0].toUpperCase()}${JOINT_NAMES[type].slice(1)} posé${type === 'scarf' ? 'e' : ''}.`);
     this.status();
@@ -484,7 +486,7 @@ export class BuildSystem {
       // un morceau de mur ne montre que sa part du tronçon
       const c = b.crop;
       if (c && (lx < c.x || ly < c.y || lx >= c.x + c.w || ly >= c.y + c.h)) continue;
-      const alpha = this.scene.textures.getPixelAlpha(lx, ly, img.texture.key, img.frame.name);
+      const alpha = alphaAt(this.scene.textures, img.texture.key, img.frame.name, lx, ly);
       if (alpha && alpha > 0) return b.piece;
     }
     return undefined;
@@ -548,21 +550,22 @@ export class BuildSystem {
     const ids = pieces.map((p) => p.id);
     if (ids.length) removeBuildPieces(game, this.map.def.id, ids);
     for (const id of ids) this.map.removeBuild(id);
-    this.map.sortBuilds();
+    // seulement les alentours des pièces retirées et des assemblages défaits (GameMap.sortBuilds)
+    this.map.sortBuilds(joints.flatMap((j) => [j.a, j.b]));
   }
 
   /** Remet ces pièces et ces assemblages (avec leur identifiant) dans la partie et sur la carte. */
   private restore(pieces: BuildPiece[], joints: Joint[] = []): void {
     for (const p of addBuildPieces(game, this.map.def.id, pieces)) this.map.placeBuild(p);
     if (joints.length) addJoints(game, this.map.def.id, joints);
-    this.map.sortBuilds();
+    this.map.sortBuilds(joints.flatMap((j) => [j.a, j.b]));
   }
 
   /** Change la hauteur des pièces d'un geste (dans son sens, ou à rebours pour annuler). */
   private move(moves: Move[] | undefined, forward: boolean): void {
     if (!moves?.length) return;
     for (const m of moves) moveBuildPiece(game, this.map.def.id, m.id, forward ? m.to : m.from);
-    this.map.sortBuilds();
+    this.map.sortBuilds(moves.map((m) => m.id));
   }
 
   private push(op: Op): void {

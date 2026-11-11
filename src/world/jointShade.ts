@@ -3,8 +3,9 @@
 // dessus, colonne par colonne, là seulement où celle du dessous se voit. Calculée à l'affichage, jamais peinte dans un dessin
 // (GameMap.sortBuilds ; teinte et opacité : `JOINT_SHADE` de config.ts).
 
+import { CM_PER_PX } from '../content/gabarit';
 import type { BuildPiece } from './build';
-import { supportsOf } from './build';
+import { boxOf, SupportIndex } from './build';
 
 /** Une image affichée : son coin haut gauche à l'écran (px du monde), sa taille, et l'opacité de ses pixels (dans son cadre). */
 export interface ShownImage {
@@ -21,11 +22,11 @@ export function lyingWood(p: BuildPiece): boolean {
 }
 
 /** Les paires (dessus, dessous) qui prennent une ombre de joint : deux pièces de bois couchées, l'une posée sur l'autre. */
-export function shadedPairs(pieces: readonly BuildPiece[]): [BuildPiece, BuildPiece][] {
+export function shadedPairs(pieces: readonly BuildPiece[], index: SupportIndex = new SupportIndex(pieces)): [BuildPiece, BuildPiece][] {
   const out: [BuildPiece, BuildPiece][] = [];
   for (const p of pieces) {
     if (!lyingWood(p)) continue;
-    for (const s of supportsOf(pieces, p)) if (lyingWood(s)) out.push([p, s]);
+    for (const s of index.supportsOf(p)) if (lyingWood(s)) out.push([p, s]);
   }
   return out;
 }
@@ -53,4 +54,26 @@ export function shadePixels(upper: ShownImage, under: ShownImage): { x: number; 
     out.push({ x, y });
   }
   return out;
+}
+
+/**
+ * Les planches jointives (chantier « corrections », DIAGNOSTIC.md 2.2) : une planche couchée est-ouest dont une autre planche
+ * est-ouest, à la même hauteur, touche le bord sud. Sous ces colonnes (px depuis le bord ouest de son image, [début, fin[), son ombre au
+ * sol ne se voit pas : la rangée d'ombre devient le joint des deux planches, de la couleur de son contour (jointView.ts, `joined`).
+ * Seuls les planchers est-ouest existent (l'étage du coq) ; le nord-sud attendra d'en avoir un.
+ */
+export function jointiveSpans(p: BuildPiece, pieces: readonly BuildPiece[]): [number, number][] {
+  const plankEw = (q: BuildPiece) => 'wood' in q.piece && q.piece.wood.shape === 'plank' && q.piece.wood.axis === 'ew';
+  if (!plankEw(p)) return [];
+  const b = boxOf(p);
+  const out: [number, number][] = [];
+  for (const q of pieces) {
+    if (q === p || q.z !== p.z || !plankEw(q)) continue;
+    const c = boxOf(q);
+    if (c.y !== b.y + b.d) continue;
+    const x0 = Math.max(b.x, c.x);
+    const x1 = Math.min(b.x + b.w, c.x + c.w);
+    if (x1 > x0) out.push([Math.round((x0 - b.x) / CM_PER_PX), Math.round((x1 - b.x) / CM_PER_PX)]);
+  }
+  return out.sort((a, c) => a[0] - c[0]);
 }
