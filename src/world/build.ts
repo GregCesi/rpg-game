@@ -257,37 +257,55 @@ function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces
   // ce qui heurte : la section réelle ; les bords qui aimantent : la boîte et, pour un poteau, sa section aussi
   const boxes = pieces.map(solidOf);
   // seulement ce qui est à la hauteur de la pièce (son dessus au moins à sa base, sa base au plus à son dessus) : une solive posée à
-  // 2,60 m ne colle pas au bord de la table qui est dessous (chantier « maison du coq ») ; un poteau dont la tête est au plus
-  // `BUILD.under` sous elle compte encore (une sablière posée sur une autre s'aligne sur le poteau dessous : la grange) ; sans hauteur, tout
+  // 2,60 m ne colle pas au bord de la table qui est dessous (chantier « maison du coq ») ; ce qui est au plus `BUILD.under` sous elle
+  // compte encore (la sablière posée sur une autre s'aligne sur le poteau dessous : la grange) ; sans hauteur, tout
   // ni le sol sur lequel on la pose (le plancher, le dallage : on ne s'aligne pas sur le joint de deux planches)
   // les planchers (un dessus qui se marche, la planche couchée) : ce qui est dessous est caché à ce qu'on pose dessus
   const floors = pieces.filter((p) => ('prop' in p.piece && props[p.piece.prop]?.walk && !props[p.piece.prop]?.wall) || ('wood' in p.piece && p.piece.wood.shape === 'plank')).map(boxOf);
-  const level = (p: BuildPlaced) => {
+  // 'at' : elle aimante ; 'low' : plus basse, elle ne fait que retenir (écart nul) quand aucune voisine à sa hauteur n'est à portée (le
+  // couronnement centré sur son conduit) ; rien : ni le plancher dessous, ni ce qu'il cache
+  const level = (p: BuildPlaced): 'at' | 'low' | undefined => {
     const b = boxOf(p);
-    if (h <= 0 || !levelled) return true;
-    if (b.z + b.h === z && 'prop' in p.piece && props[p.piece.prop]?.walk && !props[p.piece.prop]?.wall) return false;
-    if (b.z + b.h === z && 'wood' in p.piece && p.piece.wood.shape === 'plank') return false;
-    // un poteau dressé (une pièce de bois debout) dont la tête est à peine sous elle compte encore
-    const post = 'wood' in p.piece && p.piece.wood.axis === 'up' && b.z + b.h >= z - BUILD.under;
-    // une pièce plus basse juste dessous, dans le même sens (la poutre nord-sud sous l'entrait nord-sud, le mur sous le pignon : on
-    // aligne ce qu'on monte sur ce qu'il surmonte) ; sous une pièce de bois, seulement du bois (jamais la table sous la solive, ni la
-    // solive sous les planches qui la croisent) ; jamais ce qu'un plancher cache (le meuble de l'étage et la solive sous le plancher)
+    if (h <= 0 || !levelled) return 'at';
+    if (b.z + b.h === z && 'prop' in p.piece && props[p.piece.prop]?.walk && !props[p.piece.prop]?.wall) return undefined;
+    if (b.z + b.h === z && 'wood' in p.piece && p.piece.wood.shape === 'plank') return undefined;
+    // ce qui est à peine sous elle (au plus `BUILD.under`) compte encore : sous un objet, toute pièce (le pignon aligné sur le
+    // remplissage du mur, dessous) ; sous une pièce de bois, un poteau dressé (la sablière sur le poteau)
+    // ce qu'un plancher cache (entre elle et lui) ne compte jamais : le meuble de l'étage ne voit pas la solive sous le plancher
+    const hidden = floors.some((o) => o.z + o.h <= z && o.z + o.h >= b.z + b.h && overlaps(o, f));
+    const post = !hidden && b.z + b.h >= z - BUILD.under && (!kind?.startsWith('wood:') || ('wood' in p.piece && p.piece.wood.axis === 'up'));
+    // une pièce de bois plus basse juste sous une pièce de bois, dans le même sens (la poutre nord-sud sous l'entrait nord-sud : on aligne
+    // une charpente sur ce qu'elle surmonte ; jamais la table sous la solive, ni la solive sous les planches qui la croisent), sauf ce
+    // qu'un plancher cache
     const under =
       !!kind &&
-      (!kind.startsWith('wood:') || 'wood' in p.piece) &&
+      kind.startsWith('wood:') &&
+      'wood' in p.piece &&
       b.w !== b.d &&
       (b.w > b.d) === (f.w > f.d) &&
       overlaps(b, f) &&
-      !floors.some((o) => o.z + o.h <= z && o.z + o.h >= b.z + b.h && overlaps(o, f));
-    return (b.z + b.h >= z || post || under) && b.z <= z + h;
+      !hidden;
+    if (b.z > z + h) return undefined;
+    if (b.z + b.h >= z || post || under) return 'at';
+    return hidden ? undefined : 'low';
   };
   // les bords, chacun avec sa priorité : à égalité de distance, d'abord ceux d'une pareille voisine à sa hauteur (la planche s'aligne sur
   // la rangée voisine plutôt que sur le bout d'une solive dessous ; chantier « maison du coq »), puis les autres dans l'ordre de pose
-  const edges = pieces.filter(level).flatMap((p) => {
+  const edges = pieces.flatMap((p) => {
+    const lv = level(p);
+    if (!lv) return [];
     const [b, s] = [boxOf(p), solidOf(p)];
     const below = kind && b.z + b.h > z && kindOf(p.piece) === kind ? 0 : 1;
-    return (s.w === b.w && s.d === b.d ? [b] : [b, s]).map((e) => ({ ...e, below }));
+    // une voisine : à sa hauteur, ou à sa base à côté d'elle, ou, pour du bois, le bois qui la porte (la solive suit le joint de la
+    // muraillère) ; pas ce qui porte un objet, dessous (le conduit sous le couronnement)
+    const beside = lv === 'at' && h > 0 && (b.z + b.h > z || !overlaps(b, f) || (!!kind?.startsWith('wood:') && 'wood' in p.piece));
+    return (s.w === b.w && s.d === b.d ? [b] : [b, s]).map((e) => ({ ...e, below, low: lv === 'low', beside }));
   });
+  // les écarts vers les bords d'un axe : ceux qui aimantent ; un bord plus bas, seulement nul et sans voisine à portée
+  const deltas = (list: { d: number[]; below: number; low: boolean; beside: boolean }[]): [number, number][] => {
+    const near = list.some((o) => o.beside && o.d.some((d) => Math.abs(d) <= reach));
+    return list.flatMap((o) => (o.low ? (near ? [] : o.d.filter((d) => d === 0)) : o.d).map((d) => [d, o.below] as [number, number]));
+  };
   const hits = (b: { x: number; y: number; w: number; d: number }) => h > 0 && boxes.some((o) => overlaps(o, b) && o.z < z + h && z < o.z + o.h);
   // les décalages possibles, du plus petit au plus grand (à égalité, la voisine d'abord) ; sans bord à portée, aucun
   const nearest = (deltas: [number, number][]) => {
@@ -296,15 +314,19 @@ function magnet<F extends { x: number; y: number; w: number; d: number }>(pieces
   };
   // en x : les pièces à moins d'une grille en y ; puis en y : à moins d'une grille en x, une fois décalée en x
   const xs = nearest(
-    edges
-      .filter((o) => o.y < f.y + f.d + BUILD.grid && f.y < o.y + o.d + BUILD.grid)
-      .flatMap((o) => [o.x + o.w - f.x, o.x - (f.x + f.w), o.x - f.x, o.x + o.w - (f.x + f.w)].map((d) => [d, o.below] as [number, number])),
+    deltas(
+      edges
+        .filter((o) => o.y < f.y + f.d + BUILD.grid && f.y < o.y + o.d + BUILD.grid)
+        .map((o) => ({ ...o, d: [o.x + o.w - f.x, o.x - (f.x + f.w), o.x - f.x, o.x + o.w - (f.x + f.w)] })),
+    ),
   );
   const ys = (g: F) =>
     nearest(
-      edges
-        .filter((o) => o.x < g.x + g.w + BUILD.grid && g.x < o.x + o.w + BUILD.grid)
-        .flatMap((o) => [o.y + o.d - g.y, o.y - (g.y + g.d), o.y - g.y, o.y + o.d - (g.y + g.d)].map((d) => [d, o.below] as [number, number])),
+      deltas(
+        edges
+          .filter((o) => o.x < g.x + g.w + BUILD.grid && g.x < o.x + o.w + BUILD.grid)
+          .map((o) => ({ ...o, d: [o.y + o.d - g.y, o.y - (g.y + g.d), o.y - g.y, o.y + o.d - (g.y + g.d)] })),
+      ),
     );
   const at = (dx: number, dy: number) => ({ ...f, x: f.x + dx, y: f.y + dy });
   const ysAt = (dx: number) => ys({ ...f, x: f.x + dx });

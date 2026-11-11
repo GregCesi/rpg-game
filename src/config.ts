@@ -239,8 +239,8 @@ export const XEROS_HEIGHT = 170;
  * hauteur de son corps (un corps de pièce posée ne bloque qu'à sa tranche de hauteur : `sliceHits`) ; `camera` : vitesse de la caméra
  * libre (px/s, Maj : `fast` fois plus) ; `ghost` : opacité du fantôme (`refused` : quand la pose est refusée) ; `otherLevel` : celle des
  * pièces des autres niveaux quand un niveau est affiché (N, une maison à étages : chantier « maison du coq ») ; `under` : l'aimant colle une
- * pièce aux pièces à sa hauteur, et aux poteaux dont la tête est au plus `under` cm sous sa base (une poutre posée sur une autre s'aligne
- * encore sur le poteau dessous).
+ * pièce aux pièces à sa hauteur, et à celles dont le dessus est au plus `under` cm sous sa base (un objet : toutes ; une pièce de bois :
+ * les poteaux ; la poutre posée sur une autre s'aligne encore sur le poteau dessous, le pignon sur le remplissage du mur).
  */
 export const BUILD = { grid: 20, head: XEROS_HEIGHT, camera: 260, fast: 3, ghost: 0.6, refused: 0.25, otherLevel: 0.12, under: 20 };
 

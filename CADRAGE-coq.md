@@ -1149,9 +1149,10 @@ Questions :
   barrait la chambre des parents (40 cm le long du refend) : il passe à 80 cm du refend ; le faîtage est posé avant les souches.
 - **L'aimant, revu après la fusion de main** (11 novembre) : la suite des scénarios a montré que le filtre « à sa hauteur » changeait
   les bâtiments d'avant (la sablière de la grange sur son poteau, le pan de la forge, l'entrait et le pignon de la maison de Xéros, le
-  côté de l'étal). L'aimant d'aujourd'hui : d'abord les pièces à sa hauteur et ce qu'elle surmonte dans son sens (jamais ce qu'un
-  plancher cache) ; si elle ne tient pas ainsi, l'aimant de toujours ; un pan de toit, toujours l'aimant de toujours ; à égalité, sa
-  pareille voisine ; le maintien sur l'appui seulement pour une pièce déjà dessus. Les bâtiments d'avant se bâtissent à l'identique,
+  côté de l'étal, le pignon et le couronnement de la maison de Xéros). L'aimant d'aujourd'hui : d'abord les pièces à sa hauteur et ce
+  qui est à peine dessous (BUILD.under ; pour du bois, les poteaux et le bois qu'il surmonte dans son sens), jamais ce qu'un plancher
+  cache ; une pièce plus basse retient seulement, sans voisine à portée ; si elle ne tient pas ainsi, l'aimant de toujours ; un pan de
+  toit, toujours l'aimant de toujours ; à égalité, sa pareille voisine ; le maintien sur l'appui seulement pour une pièce déjà dessus. Les bâtiments d'avant se bâtissent à l'identique,
   sauf la faîtière de la cabane (1,80 m au lieu de 1,85 : le plan réécrit) ; les remplissages hauts de la cloison au droit de ceux du
   bas (315 au lieu de 320) ; le pan nord à -45 (l’aimant de toujours, celui des pans, l’y cale ; le trou de la souche reste au droit du
   conduit), le rectangle Plan de la ferme du riche recalé d’autant.

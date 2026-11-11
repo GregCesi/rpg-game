@@ -356,11 +356,12 @@ et la cour de la ferme (la parcelle « Maison du coq », `ferme-du-riche.tmj` ; 
 - **Le toit** : notre lave, **la seule lauze du jeu** (elle a aussi remplacé celle de la forge, `lauze-roof-large`), deux pans à 45°
   (`lave-roof`, le pan nord percé pour la souche), le faîtage de pierre, les pignons découverts (`ashlar-gable`) ; la charpente est dans
   le pan, comme le chevronnage du chaume de la maison de Xéros.
-- **Le mode construction**, revu pour elle : l'aimant colle une pièce aux pièces à sa hauteur et à ce qu'elle surmonte dans son sens
-  (la poutre sous l'entrait, le mur sous le pignon ; sous du bois, seulement du bois), jamais à ce qu'un plancher cache ni au joint des
-  planches sous le meuble, ni à la table sous la solive ; si elle ne tient pas ainsi à sa hauteur, l'aimant de toujours (un pan de toit,
-  visé au-dessus de son pignon, toujours) ; à égalité, sa pareille voisine d'abord (la planche, la rangée voisine) ; il ne fait pas
-  tomber de son appui une pièce qui y est. Les bâtiments d'avant se bâtissent comme avant, sauf la faîtière de la cabane, centrée à
+- **Le mode construction**, revu pour elle : l'aimant colle une pièce aux pièces à sa hauteur et à ce qui est à peine dessous (le pignon
+  sur le remplissage du mur, la sablière sur le poteau ; du bois sur le bois qu'il surmonte dans son sens), jamais à ce qu'un plancher
+  cache ni au joint des planches sous le meuble, ni à la table sous la solive ; une pièce plus basse ne fait que la retenir là où on la
+  vise, si aucune voisine n'est à portée (le couronnement centré sur son conduit) ; si elle ne tient pas ainsi à sa hauteur, l'aimant de
+  toujours (un pan de toit, visé au-dessus de son pignon : toujours) ; à égalité, sa pareille voisine d'abord (la planche, la rangée
+  voisine) ; il ne fait pas tomber de son appui une pièce qui y est. Les bâtiments d'avant se bâtissent comme avant, sauf la faîtière de la cabane, centrée à
   1,80 m (l'ancien aimant la tirait à 1,85 m, au bord d'une dalle trois mètres plus bas).
 - **Bâtie dans le mode construction** par un scénario (`npm run test:maison-coq`, la liste de montage : `tools/lib/maison-coq.ts`, 438
   pièces, dans l'ordre : le rez-de-chaussée et ses sols, ses meubles, ses murs, le plancher, l'étage meublé, ses murs, le toit),
