@@ -13,6 +13,8 @@ import type { MapData } from '../content/types';
 import { game } from '../state';
 import { planPieces, type BuildPiece } from '../world/build';
 import { buildLook } from '../world/buildView';
+import { framePixels } from '../world/alphaMask';
+import { lyingWood } from '../world/jointShade';
 import { buildingsCached, interiorId, parseInteriorId } from '../world/interior';
 import { reliefOf } from '../world/relief';
 import { wallOf, wallRuns } from '../world/wallRuns';
@@ -64,7 +66,9 @@ function* warm(scene: Phaser.Scene, pieces: () => readonly BuildPiece[]): Genera
   }
   for (const p of list) {
     if (wallOf(p)) continue;
-    buildLook(scene, p);
+    const look = buildLook(scene, p);
+    // le bois couché : ses pixels aussi (les ombres de joint les lisent à l'arrivée)
+    if (lyingWood(p)) framePixels(scene.textures, look.key, look.frame);
     yield;
   }
 }

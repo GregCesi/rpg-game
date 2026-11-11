@@ -12,6 +12,8 @@ Trois versions comparées :
 
 Chaque version a été mesurée en dev (`vite`, comme Grégoire joue), et « avant » et « après » aussi en build (`vite build` + `vite preview`).
 
+> **Corrections faites** (chantier « corrections », branche `corrections`) : les étapes 1 à 3 de l'ordre recommandé, avec leurs mesures comparées, sont en **section 5**. Les sections 1 à 4 sont le diagnostic d'origine.
+
 ---
 
 ## L'essentiel en dix lignes
@@ -394,3 +396,87 @@ npm run diagnostic -- --report docs/diagnostic/avant-dev.json docs/diagnostic/ap
 - la ferme du riche en 13 s (12 998 ms, 13 439 ms au retour) contre 112 ms avant ;
 - la porte en arc : une image de 12 816 ms ;
 - l'étage : p95 de 33,5 ms et 500 appels de dessin, comme en dev.
+
+---
+
+## 5. Les corrections (chantier « corrections », 11 novembre 2026)
+
+Branche `corrections`, partie de `diagnostic`. Les étapes 1 à 3 de l'ordre recommandé (3.6), et ce qu'il fallait de plus pour les seuils de Grégoire : **plus aucune image de plus de 100 ms à l'arrivée sur une zone, en ouvrant une porte, en entrant ou en sortant ; 60 images par seconde dehors et en bas du coq.**
+
+### 5.1 Ce qui a changé
+
+| défaut | correction | test qui l'aurait attrapé |
+|---|---|---|
+| les gels de 13 s (ombres de joint) | chaque image n'est lue qu'une fois, un seul `getImageData` par cadre, gardé (`src/world/alphaMask.ts`) ; de même pour la teinte de la coupe d'un intérieur (`meanColor`) et la visée du mode construction ; plus aucune lecture pixel par pixel dans `src/` | `npm run test:recalcul` : mêmes pixels d'ombre que `getPixelAlpha` sur 32 paires, chaque image lue une fois |
+| tout refaire à chaque porte | `GameMap.sortBuilds` ne refait que les alentours de ce qui a changé (l'emprise d'avant et d'après, les entures, le tronçon de mur, ce qui repose dessus) ; une porte ou un volet ne refait que lui, et seul son bâtiment (`swungIn`) ; `SupportIndex` trouve les porteurs sans tout parcourir ; le recalcul complet n'est que pour l'arrivée | `test:recalcul` : la porte, une pièce posée puis retirée, comparées au recalcul complet, pièce par pièce ; `tools/test-recalcul-pur.ts` (test:fast) : l'index et `swungIn` égaux au calcul complet sur tous les plans, et deux bâtiments voisins |
+| l'étage vu d'en bas (2.1) | dans un intérieur, seul `systems/storeys.ts` décide de ce qui se voit ; les toits n'y touchent plus ; les ombres de joint suivent le niveau de leur pièce | `test:recalcul` (en bas, une seconde après l'entrée) et `test:etage` (en haut, le bas seulement par la trémie) |
+| les jours du plancher (2.2) | une planche dont une autre touche le bord sud, à la même hauteur : sa rangée d'ombre devient le joint, de la couleur de son contour (`jointiveSpans`, texture `#joined`), sans nouveau dessin | `test:recalcul` : 60 planches jointives sur 64, aucun pixel translucide ; `test-recalcul-pur` |
+| les pièces loin de leur place (2.3) | `offsetOf` mesure l'écart de calage d'un mur sans son propre décalage : il n'est plus compté deux fois | `test:recalcul` : toutes les pièces posées de toutes les cartes à bâtiments (la ferme, la ferme du riche, le village, le quartier sud) et de la maison du coq, à 4 px au plus de leur place (un calage au ras d'un angle en fait 1 à 3) |
+| le poteau sous la porte en arc (2.4) | les portes d'entrée s'ouvrent vers l'intérieur (`swing.inward` de props.json : la porte en arc, la porte de la chaumière, la porte en planches) ; une porte restée ouverte vers le dehors dans une ancienne sauvegarde se referme quand même | `tools/test-portes-sens.ts` (test:fast) : chaque porte d'entrée de chaque plan ; il a trouvé **trois** portes ouvertes vers le dehors (la cabane, la maison de Xéros, la maison du coq). La porte charretière de la grange, à deux battants, s'ouvre vers le dehors, comme celles des granges : dite, pas changée |
+| les premières visites (le terrain, les murs) | le terrain se peint par petits pas, le plus près de la vue d'abord, dans le budget de l'image (`TERRAIN` de config.ts) ; le fondu d'arrivée attend que la vue soit peinte ; la zone et la bande de ses voisines partagent leurs morceaux. Les textures des pièces posées, le relief et les bâtiments des cartes d'alentour se préparent d'avance, peu à chaque image (`systems/prewarm.ts`, `PREPARE`) ; un morceau de mur ne dessine plus son propre tronçon, jeté aussitôt ; les bâtiments d'une carte sont gardés tant que ses pièces ne changent pas (`buildingsCached`) | `npm run diagnostic` : la pire image de chaque arrivée |
+
+**Pas dans ce chantier, réservé à la cuisson des bâtiments (3.3)** : les tranches de 2 px des pièces nord-sud (6 508 objets devant le coq, 166 appels de dessin au lieu de 6) et les masques de l'étage (une pièce du rez-de-chaussée vue par la trémie, un passage au stencil : 500 appels de dessin, une image sur vingt à 33 ms en haut). Ils viendront avec la coque cuite par niveau et par bande de profondeur.
+
+### 5.2 Les mesures comparées
+
+Mêmes chemins, même machine (Apple M3, vrai Chrome), en dev. L'outil a été corrigé pendant ce chantier :
+- le profileur de Chrome démarre avant l'enregistrement des images (son démarrage figeait la première, d'où les maxima de 50 à 170 ms des tableaux de la section 1, même loin du coq) ;
+- chaque arrivée dit sa pire image, de la commande jusqu'à 1,5 s après le monde prêt ;
+- la tournée des zones attend la fin de la préparation d'avance, comme un joueur qui marche d'une zone à l'autre (323 ms après le réveil).
+
+Les deux références ont donc été **remesurées avec le même outil** : `docs/diagnostic/avant-dev.json`, `apres-dev.json`, `corrige-dev.json` (les rapports d'origine sont dans l'historique, commit 06ae941).
+
+**La pire image de chaque arrivée** (ms), entre parenthèses le `create` de la scène :
+
+| zone | b9cc596 1re | b9cc596 2e | 1e3e36c 1re | 1e3e36c 2e | corrigé 1re | corrigé 2e |
+|---|---|---|---|---|---|---|
+| foret-profonde-nord | 879 (851) | 73 (44) | 872 (843) | 65 (37) | 85 (47) | 69 (40) |
+| bois-du-nord | 709 (673) | 71 (34) | 666 (634) | 62 (32) | 90 (33) | 61 (28) |
+| pres-du-nord | 57 (30) | 46 (21) | 66 (39) | 54 (29) | 43 (17) | 34 (10) |
+| **ferme-du-riche** | 45 (20) | 37 (14) | **13 053** (13 015) | **13 284** (13 258) | **96** (60) | **60** (32) |
+| champs-du-riche | 36 (12) | 39 (15) | 53 (23) | 47 (19) | 38 (7) | 36 (6) |
+| foret-profonde | 541 (514) | 70 (45) | 550 (523) | 78 (46) | 77 (46) | 61 (34) |
+| **ferme** | 2 165 (2 124) | 1 063 (1 026) | 2 402 (2 364) | 1 124 (1 089) | **89** (52) | **80** (44) |
+| chemin | 50 (20) | 49 (19) | 61 (31) | 61 (29) | 67 (12) | 40 (11) |
+| village | 65 (40) | 53 (29) | 77 (51) | 69 (46) | 56 (33) | 42 (16) |
+| route-de-la-ville | 41 (15) | 39 (12) | 54 (27) | 43 (20) | 37 (11) | 35 (9) |
+| foret-profonde-sud | 406 (379) | 65 (39) | 402 (376) | 68 (41) | 75 (42) | 70 (41) |
+| bois-du-sud | 446 (412) | 71 (37) | 455 (423) | 74 (39) | 93 (31) | 65 (29) |
+| pres-du-sud | 51 (23) | 49 (22) | 46 (20) | 52 (24) | 42 (15) | 38 (13) |
+| quartier-sud | 40 (16) | 42 (18) | 40 (17) | 39 (15) | 36 (13) | 35 (11) |
+| pres-de-l-est | 37 (12) | 35 (11) | 34 (10) | 31 (10) | 37 (11) | 33 (8) |
+| foret-des-ronces | 655 (628) | 63 (36) | 677 (649) | 70 (41) | 73 (40) | 65 (37) |
+| bois-de-la-riviere | 443 (412) | 62 (29) | 451 (420) | 62 (30) | 83 (28) | 60 (29) |
+| friches | 40 (12) | 35 (11) | 36 (11) | 41 (12) | 34 (9) | 38 (12) |
+| ferme-rivale | 29 (6) | 28 (6) | 31 (7) | 29 (7) | 30 (7) | 26 (5) |
+| champs-rivaux | 30 (8) | 32 (9) | 33 (9) | 29 (7) | 27 (6) | 27 (6) |
+| **arrivées au-dessus de 100 ms** | **9 sur 40** | | **11 sur 40** | | **0 sur 40** (la pire : 96) | |
+
+**Les gestes** (la pire image, ms) :
+
+| geste | b9cc596 | 1e3e36c | corrigé |
+|---|---|---|---|
+| ouvrir la porte en arc | — (pas de maison) | **13 899** | **18** |
+| entrer dans la maison du coq | — | 827 (create 790) | **46** (create 14) |
+| ouvrir une porte du palier | — | 600 | **34** |
+| ressortir sur la ferme du riche | — | **12 932** | **74** (create 43) |
+| passer le bord vers le village | 59 | 73 | 45 |
+| revenir du village par le bord | 41 | **12 956** | **60** |
+
+**En régime calme** (corrigé, dev) :
+
+| situation | images/s | image p50 / p95 / max (ms) | appels de dessin |
+|---|---|---|---|
+| dehors loin du coq (ferme), immobile et en marchant | 60,2 | 16,7 / 17,6 / 17,8 | 46 |
+| devant le coq, immobile et en marchant | 60,2 | 16,7 / 17,5 / 17,7 | 166 |
+| dedans en bas, immobile et en marchant | 60,2 à 60,3 | 16,7 / 17,5 / 17,7 | 85 (163 avant : l'étage n'est plus dessiné en bas) |
+| dedans en haut | 48,7 à 55,6 | 16,7 / 33,2 / 34 à 50 | 500 (les masques : la cuisson) |
+
+Aucune perte du contexte WebGL, aucune erreur de la page. La mémoire après tout le parcours : 3 573 textures, 111 Mo (113 Mo avant ; la libération des zones quittées est l'étape 6).
+
+**Les seuils de Grégoire sont tenus** :
+- aucune arrivée, porte, entrée ni sortie au-dessus de 100 ms ;
+- 60 images par seconde dehors et en bas du coq.
+
+L'étage reste à une image sur vingt de 33 ms, jusqu'à la cuisson.
+

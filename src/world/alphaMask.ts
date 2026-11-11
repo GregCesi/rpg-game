@@ -69,6 +69,13 @@ export function framePixels(textures: Phaser.Textures.TextureManager, key: strin
   return p;
 }
 
+/**
+ * Les pixels d'une texture que le jeu vient de peindre lui-même (une planche jointive) : gardés tels quels, sans relire le canevas.
+ */
+export function rememberPixels(key: string, frame: string | number | undefined, w: number, h: number, data: Uint8ClampedArray): void {
+  pixels.set(`${key}|${frame ?? '__BASE'}`, { w, h, data });
+}
+
 /** Le masque d'opacité du cadre `frame` de la texture `key`, tiré de ses pixels lus une fois ; undefined si le cadre n'existe pas. */
 export function alphaMask(textures: Phaser.Textures.TextureManager, key: string, frame?: string | number): AlphaMask | undefined {
   const id = `${key}|${frame ?? '__BASE'}`;

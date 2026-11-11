@@ -9,7 +9,7 @@ import { boxOf, type Box3, type BuildPiece } from './build';
 import { buildLook } from './buildView';
 import { scarfChains, woodOfPiece, type JointRef } from './joints';
 import { jointiveSpans } from './jointShade';
-import { framePixels } from './alphaMask';
+import { framePixels, rememberPixels } from './alphaMask';
 import { agedKey, lookOf, upOf } from './woodShape';
 
 /** Une pièce affichée, telle que GameMap la tient. */
@@ -96,6 +96,8 @@ function joined(scene: Phaser.Scene, key: string, frame: string | undefined, spa
       }
     ctx.putImageData(img, 0, 0);
     canvas.refresh();
+    // ses pixels sont connus : les ombres de joint les liront sans relire le canevas
+    rememberPixels(id, undefined, W, f.height, d);
   }
   return { key: id };
 }

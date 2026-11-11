@@ -1,0 +1,6895 @@
+{
+ "label": "corrige",
+ "commit": "ed493bb",
+ "mode": "build",
+ "root": "/Users/gregoiremarchand/Code/rpg-game-coq",
+ "date": "2026-11-11T12:31:33.918Z",
+ "zones": [
+  {
+   "zone": "foret-profonde-nord",
+   "pass": 1,
+   "ready": 301,
+   "drawn": 326,
+   "create": 48,
+   "worst": 88,
+   "top": [
+    [
+     88,
+     69,
+     4,
+     1
+    ],
+    [
+     40,
+     6,
+     2,
+     1
+    ],
+    [
+     19,
+     6,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2558,
+   "biggest": [],
+   "heapMB": 45.5,
+   "objects": 8439,
+   "statics": 1753
+  },
+  {
+   "zone": "bois-du-nord",
+   "pass": 1,
+   "ready": 202,
+   "drawn": 271,
+   "create": 32,
+   "worst": 90,
+   "top": [
+    [
+     90,
+     80,
+     2,
+     1
+    ],
+    [
+     35,
+     33,
+     2,
+     4
+    ],
+    [
+     34,
+     32,
+     2,
+     3
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2707,
+   "biggest": [],
+   "heapMB": 74.1,
+   "objects": 5684,
+   "statics": 453
+  },
+  {
+   "zone": "pres-du-nord",
+   "pass": 1,
+   "ready": 157,
+   "drawn": 172,
+   "create": 15,
+   "worst": 41,
+   "top": [
+    [
+     41,
+     30,
+     2,
+     1
+    ],
+    [
+     18,
+     5,
+     1,
+     1
+    ],
+    [
+     18,
+     1,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2814,
+   "biggest": [],
+   "heapMB": 43.5,
+   "objects": 4598,
+   "statics": 202
+  },
+  {
+   "zone": "ferme-du-riche",
+   "pass": 1,
+   "ready": 219,
+   "drawn": 244,
+   "create": 63,
+   "worst": 105,
+   "top": [
+    [
+     105,
+     80,
+     11,
+     1
+    ],
+    [
+     21,
+     1,
+     11,
+     1
+    ],
+    [
+     19,
+     3,
+     8,
+     1
+    ]
+   ],
+   "over100": 1,
+   "born": 15,
+   "bornMB": 0,
+   "canvases": 16,
+   "textures": 2974,
+   "biggest": [
+    [
+     "wood:normal:beam:ew:880::::::old",
+     177,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:880::::::old#0#joint-scarf-normal-ew-old@53,0;joint-peg-old@3,5;joint-peg-old@59,5;joint-peg-old@115,5;joint-peg-old@171,5",
+     177,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:880::::::old#0#joint-scarf-normal-ew-old@53,0;joint-peg-old@59,5;joint-peg-old@115,5",
+     177,
+     10
+    ],
+    [
+     "wood:normal:beam:ns:600::::::old",
+     10,
+     122
+    ]
+   ],
+   "heapMB": 56.1,
+   "objects": 10649,
+   "statics": 675
+  },
+  {
+   "zone": "champs-du-riche",
+   "pass": 1,
+   "ready": 144,
+   "drawn": 153,
+   "create": 7,
+   "worst": 37,
+   "top": [
+    [
+     37,
+     23,
+     2,
+     1
+    ],
+    [
+     18,
+     1,
+     2,
+     1
+    ],
+    [
+     18,
+     1,
+     1,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3113,
+   "biggest": [],
+   "heapMB": 74.7,
+   "objects": 3219,
+   "statics": 288
+  },
+  {
+   "zone": "foret-profonde",
+   "pass": 1,
+   "ready": 182,
+   "drawn": 204,
+   "create": 40,
+   "worst": 71,
+   "top": [
+    [
+     71,
+     52,
+     3,
+     1
+    ],
+    [
+     18,
+     6,
+     3,
+     1
+    ],
+    [
+     18,
+     7,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3113,
+   "biggest": [],
+   "heapMB": 71.3,
+   "objects": 8828,
+   "statics": 1790
+  },
+  {
+   "zone": "ferme",
+   "pass": 1,
+   "ready": 205,
+   "drawn": 231,
+   "create": 52,
+   "worst": 89,
+   "top": [
+    [
+     89,
+     77,
+     4,
+     1
+    ],
+    [
+     18,
+     7,
+     3,
+     1
+    ],
+    [
+     18,
+     7,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 7,
+   "bornMB": 0,
+   "canvases": 7,
+   "textures": 3147,
+   "biggest": [
+    [
+     "wood:normal:round:ew:200::::::new",
+     164,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:680::::::worn",
+     137,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:680::::::worn#0#joint-scarf-normal-ew-worn@69,0;joint-peg-worn@3,5;joint-peg-worn@35,5;joint-peg-worn@67,5;joint-peg-worn@99,5;joint-peg-worn@131,5",
+     137,
+     10
+    ],
+    [
+     "wood:normal:beam:ns:620::::::worn#0#joint-scarf-normal-ns-worn@0,41",
+     10,
+     126
+    ]
+   ],
+   "heapMB": 66,
+   "objects": 8995,
+   "statics": 667
+  },
+  {
+   "zone": "chemin",
+   "pass": 1,
+   "ready": 183,
+   "drawn": 224,
+   "create": 12,
+   "worst": 68,
+   "top": [
+    [
+     68,
+     58,
+     2,
+     1
+    ],
+    [
+     33,
+     32,
+     2,
+     3
+    ],
+    [
+     18,
+     6,
+     1,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3278,
+   "biggest": [],
+   "heapMB": 79.3,
+   "objects": 4882,
+   "statics": 198
+  },
+  {
+   "zone": "village",
+   "pass": 1,
+   "ready": 169,
+   "drawn": 175,
+   "create": 35,
+   "worst": 62,
+   "top": [
+    [
+     62,
+     43,
+     4,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ],
+    [
+     18,
+     0,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 25,
+   "bornMB": 0,
+   "canvases": 26,
+   "textures": 3395,
+   "biggest": [
+    [
+     "wood:normal:beam:ew:340::::::old#0#joint-peg-old@3,5;joint-peg-old@63,5",
+     69,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:240::::::worn#0#joint-peg-worn@3,5;joint-peg-worn@43,5",
+     49,
+     10
+    ],
+    [
+     "wood:normal:beam:up:260::::::worn",
+     8,
+     59
+    ],
+    [
+     "wood:normal:beam:up:180::::::old",
+     8,
+     43
+    ]
+   ],
+   "heapMB": 85.7,
+   "objects": 6060,
+   "statics": 295
+  },
+  {
+   "zone": "route-de-la-ville",
+   "pass": 1,
+   "ready": 146,
+   "drawn": 157,
+   "create": 11,
+   "worst": 39,
+   "top": [
+    [
+     39,
+     22,
+     2,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 4,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3378,
+   "biggest": [
+    [
+     "65c941cb-8e08-4771-88ca-5fdad8399b5e",
+     1,
+     1
+    ],
+    [
+     "5bab4272-b39d-4d64-8f17-df73c793a34d",
+     1,
+     1
+    ],
+    [
+     "61d2b071-d4ff-4890-aa34-ab5bb743302f",
+     1,
+     1
+    ],
+    [
+     "5ddbd85a-3e28-47df-954b-1a3659effde8",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 74.7,
+   "objects": 4378,
+   "statics": 163
+  },
+  {
+   "zone": "foret-profonde-sud",
+   "pass": 1,
+   "ready": 183,
+   "drawn": 204,
+   "create": 40,
+   "worst": 73,
+   "top": [
+    [
+     73,
+     56,
+     3,
+     1
+    ],
+    [
+     18,
+     6,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3374,
+   "biggest": [],
+   "heapMB": 100.8,
+   "objects": 8925,
+   "statics": 1826
+  },
+  {
+   "zone": "bois-du-sud",
+   "pass": 1,
+   "ready": 201,
+   "drawn": 270,
+   "create": 27,
+   "worst": 90,
+   "top": [
+    [
+     90,
+     76,
+     2,
+     1
+    ],
+    [
+     35,
+     33,
+     2,
+     4
+    ],
+    [
+     35,
+     32,
+     2,
+     2
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3390,
+   "biggest": [],
+   "heapMB": 111.9,
+   "objects": 5888,
+   "statics": 431
+  },
+  {
+   "zone": "pres-du-sud",
+   "pass": 1,
+   "ready": 153,
+   "drawn": 159,
+   "create": 15,
+   "worst": 42,
+   "top": [
+    [
+     42,
+     27,
+     2,
+     1
+    ],
+    [
+     19,
+     2,
+     3,
+     1
+    ],
+    [
+     19,
+     3,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3483,
+   "biggest": [],
+   "heapMB": 130.2,
+   "objects": 4887,
+   "statics": 221
+  },
+  {
+   "zone": "quartier-sud",
+   "pass": 1,
+   "ready": 148,
+   "drawn": 158,
+   "create": 14,
+   "worst": 38,
+   "top": [
+    [
+     38,
+     24,
+     2,
+     1
+    ],
+    [
+     18,
+     1,
+     2,
+     1
+    ],
+    [
+     18,
+     0,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 13,
+   "bornMB": 0,
+   "canvases": 14,
+   "textures": 3496,
+   "biggest": [
+    [
+     "9cbc8c36-b49e-43df-b593-a04a08e712f5",
+     1,
+     1
+    ],
+    [
+     "af7baad8-b4a1-406b-92cb-e6360d15d95c",
+     1,
+     1
+    ],
+    [
+     "d97b5aff-0f15-476b-8b2d-bf02fdf9f570",
+     1,
+     1
+    ],
+    [
+     "e8f90f62-2bda-405f-bd50-14cecf10fb2d",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 47.3,
+   "objects": 4613,
+   "statics": 260
+  },
+  {
+   "zone": "pres-de-l-est",
+   "pass": 1,
+   "ready": 142,
+   "drawn": 159,
+   "create": 8,
+   "worst": 33,
+   "top": [
+    [
+     33,
+     16,
+     2,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3484,
+   "biggest": [],
+   "heapMB": 47.3,
+   "objects": 3829,
+   "statics": 227
+  },
+  {
+   "zone": "foret-des-ronces",
+   "pass": 1,
+   "ready": 179,
+   "drawn": 201,
+   "create": 39,
+   "worst": 73,
+   "top": [
+    [
+     73,
+     55,
+     3,
+     1
+    ],
+    [
+     18,
+     7,
+     2,
+     1
+    ],
+    [
+     17,
+     6,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3484,
+   "biggest": [],
+   "heapMB": 63.9,
+   "objects": 8300,
+   "statics": 1769
+  },
+  {
+   "zone": "bois-de-la-riviere",
+   "pass": 1,
+   "ready": 194,
+   "drawn": 262,
+   "create": 24,
+   "worst": 79,
+   "top": [
+    [
+     79,
+     69,
+     2,
+     1
+    ],
+    [
+     34,
+     32,
+     2,
+     4
+    ],
+    [
+     34,
+     32,
+     2,
+     2
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3507,
+   "biggest": [],
+   "heapMB": 51.2,
+   "objects": 5623,
+   "statics": 481
+  },
+  {
+   "zone": "friches",
+   "pass": 1,
+   "ready": 144,
+   "drawn": 157,
+   "create": 10,
+   "worst": 36,
+   "top": [
+    [
+     36,
+     21,
+     2,
+     1
+    ],
+    [
+     28,
+     1,
+     13,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 74.3,
+   "objects": 4468,
+   "statics": 175
+  },
+  {
+   "zone": "ferme-rivale",
+   "pass": 1,
+   "ready": 139,
+   "drawn": 157,
+   "create": 6,
+   "worst": 28,
+   "top": [
+    [
+     28,
+     14,
+     1,
+     1
+    ],
+    [
+     21,
+     2,
+     4,
+     1
+    ],
+    [
+     19,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 65.8,
+   "objects": 2812,
+   "statics": 369
+  },
+  {
+   "zone": "champs-rivaux",
+   "pass": 1,
+   "ready": 140,
+   "drawn": 158,
+   "create": 8,
+   "worst": 31,
+   "top": [
+    [
+     31,
+     15,
+     2,
+     1
+    ],
+    [
+     19,
+     1,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 81.7,
+   "objects": 3023,
+   "statics": 250
+  },
+  {
+   "zone": "foret-profonde-nord",
+   "pass": 2,
+   "ready": 179,
+   "drawn": 196,
+   "create": 39,
+   "worst": 67,
+   "top": [
+    [
+     67,
+     51,
+     3,
+     1
+    ],
+    [
+     18,
+     0,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 86.8,
+   "objects": 8572,
+   "statics": 1753
+  },
+  {
+   "zone": "bois-du-nord",
+   "pass": 2,
+   "ready": 168,
+   "drawn": 176,
+   "create": 26,
+   "worst": 59,
+   "top": [
+    [
+     59,
+     45,
+     2,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 118.1,
+   "objects": 5778,
+   "statics": 453
+  },
+  {
+   "zone": "pres-du-nord",
+   "pass": 2,
+   "ready": 144,
+   "drawn": 156,
+   "create": 11,
+   "worst": 37,
+   "top": [
+    [
+     37,
+     22,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 107,
+   "objects": 4598,
+   "statics": 202
+  },
+  {
+   "zone": "ferme-du-riche",
+   "pass": 2,
+   "ready": 171,
+   "drawn": 181,
+   "create": 33,
+   "worst": 62,
+   "top": [
+    [
+     62,
+     43,
+     6,
+     1
+    ],
+    [
+     18,
+     1,
+     5,
+     1
+    ],
+    [
+     18,
+     1,
+     4,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 3,
+   "textures": 3572,
+   "biggest": [
+    [
+     "32311ce4-cfa1-466c-8d24-6ab10ece3e8f",
+     1,
+     1
+    ],
+    [
+     "899f18ca-ca2a-4291-987a-a0308da7daed",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 118.9,
+   "objects": 10649,
+   "statics": 675
+  },
+  {
+   "zone": "champs-du-riche",
+   "pass": 2,
+   "ready": 153,
+   "drawn": 162,
+   "create": 7,
+   "worst": 37,
+   "top": [
+    [
+     37,
+     24,
+     1,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 124.6,
+   "objects": 3219,
+   "statics": 288
+  },
+  {
+   "zone": "foret-profonde",
+   "pass": 2,
+   "ready": 176,
+   "drawn": 192,
+   "create": 41,
+   "worst": 69,
+   "top": [
+    [
+     69,
+     51,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 144.2,
+   "objects": 8831,
+   "statics": 1790
+  },
+  {
+   "zone": "ferme",
+   "pass": 2,
+   "ready": 189,
+   "drawn": 211,
+   "create": 41,
+   "worst": 80,
+   "top": [
+    [
+     80,
+     63,
+     4,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 168.1,
+   "objects": 9086,
+   "statics": 667
+  },
+  {
+   "zone": "chemin",
+   "pass": 2,
+   "ready": 150,
+   "drawn": 157,
+   "create": 10,
+   "worst": 40,
+   "top": [
+    [
+     40,
+     27,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 41.4,
+   "objects": 4882,
+   "statics": 198
+  },
+  {
+   "zone": "village",
+   "pass": 2,
+   "ready": 154,
+   "drawn": 159,
+   "create": 19,
+   "worst": 45,
+   "top": [
+    [
+     45,
+     29,
+     3,
+     1
+    ],
+    [
+     18,
+     0,
+     2,
+     1
+    ],
+    [
+     18,
+     0,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 19,
+   "textures": 3591,
+   "biggest": [
+    [
+     "c48c397b-13b9-41ae-b766-8f18ef9d47df",
+     1,
+     1
+    ],
+    [
+     "6011e6f8-6d2c-4aba-85fb-1a76b2262c7d",
+     1,
+     1
+    ],
+    [
+     "4eefabc9-9de5-4af6-9848-c549c2746d46",
+     1,
+     1
+    ],
+    [
+     "bd1bc05a-cd9e-4d85-8c27-bdb4aaa17bcd",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 45.1,
+   "objects": 6060,
+   "statics": 295
+  },
+  {
+   "zone": "route-de-la-ville",
+   "pass": 2,
+   "ready": 136,
+   "drawn": 157,
+   "create": 7,
+   "worst": 29,
+   "top": [
+    [
+     29,
+     14,
+     2,
+     1
+    ],
+    [
+     18,
+     1,
+     4,
+     1
+    ],
+    [
+     18,
+     0,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 4,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3574,
+   "biggest": [
+    [
+     "6b3c00c3-8958-44d5-985f-8dc434621544",
+     1,
+     1
+    ],
+    [
+     "3de093aa-a9cb-4432-9260-3321eb4bfd65",
+     1,
+     1
+    ],
+    [
+     "b91bedae-ba5f-4558-bc53-d06e65ab9b21",
+     1,
+     1
+    ],
+    [
+     "67912730-4797-4f33-9739-3a1544b76e4c",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 62.7,
+   "objects": 4378,
+   "statics": 163
+  },
+  {
+   "zone": "foret-profonde-sud",
+   "pass": 2,
+   "ready": 178,
+   "drawn": 194,
+   "create": 39,
+   "worst": 69,
+   "top": [
+    [
+     69,
+     52,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ],
+    [
+     18,
+     3,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 84.8,
+   "objects": 8925,
+   "statics": 1826
+  },
+  {
+   "zone": "bois-du-sud",
+   "pass": 2,
+   "ready": 171,
+   "drawn": 190,
+   "create": 30,
+   "worst": 63,
+   "top": [
+    [
+     63,
+     49,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ],
+    [
+     17,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 97.3,
+   "objects": 5888,
+   "statics": 431
+  },
+  {
+   "zone": "pres-du-sud",
+   "pass": 2,
+   "ready": 146,
+   "drawn": 158,
+   "create": 13,
+   "worst": 38,
+   "top": [
+    [
+     38,
+     23,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 116,
+   "objects": 4887,
+   "statics": 221
+  },
+  {
+   "zone": "quartier-sud",
+   "pass": 2,
+   "ready": 145,
+   "drawn": 159,
+   "create": 11,
+   "worst": 35,
+   "top": [
+    [
+     35,
+     19,
+     2,
+     1
+    ],
+    [
+     19,
+     1,
+     3,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 13,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3583,
+   "biggest": [
+    [
+     "dec74374-8d03-4deb-ab6b-01901da81c9b",
+     1,
+     1
+    ],
+    [
+     "12916ed3-ae63-4f07-83ed-2a30f781719f",
+     1,
+     1
+    ],
+    [
+     "424765a9-09e9-4b35-a180-6d612ba010f5",
+     1,
+     1
+    ],
+    [
+     "a53f0ea2-19dd-4453-89ee-62daa2acb52b",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 119.9,
+   "objects": 4613,
+   "statics": 260
+  },
+  {
+   "zone": "pres-de-l-est",
+   "pass": 2,
+   "ready": 145,
+   "drawn": 160,
+   "create": 10,
+   "worst": 34,
+   "top": [
+    [
+     34,
+     18,
+     2,
+     1
+    ],
+    [
+     18,
+     0,
+     2,
+     1
+    ],
+    [
+     18,
+     0,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 118.9,
+   "objects": 3829,
+   "statics": 227
+  },
+  {
+   "zone": "foret-des-ronces",
+   "pass": 2,
+   "ready": 175,
+   "drawn": 194,
+   "create": 39,
+   "worst": 67,
+   "top": [
+    [
+     67,
+     50,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 126.6,
+   "objects": 8311,
+   "statics": 1769
+  },
+  {
+   "zone": "bois-de-la-riviere",
+   "pass": 2,
+   "ready": 171,
+   "drawn": 192,
+   "create": 29,
+   "worst": 62,
+   "top": [
+    [
+     62,
+     48,
+     2,
+     1
+    ],
+    [
+     18,
+     1,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 157.9,
+   "objects": 5624,
+   "statics": 481
+  },
+  {
+   "zone": "friches",
+   "pass": 2,
+   "ready": 147,
+   "drawn": 158,
+   "create": 11,
+   "worst": 38,
+   "top": [
+    [
+     38,
+     23,
+     2,
+     1
+    ],
+    [
+     18,
+     3,
+     2,
+     1
+    ],
+    [
+     18,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 53.3,
+   "objects": 4468,
+   "statics": 175
+  },
+  {
+   "zone": "ferme-rivale",
+   "pass": 2,
+   "ready": 139,
+   "drawn": 156,
+   "create": 7,
+   "worst": 30,
+   "top": [
+    [
+     30,
+     16,
+     1,
+     1
+    ],
+    [
+     20,
+     1,
+     4,
+     1
+    ],
+    [
+     20,
+     2,
+     2,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 44.7,
+   "objects": 2812,
+   "statics": 369
+  },
+  {
+   "zone": "champs-rivaux",
+   "pass": 2,
+   "ready": 146,
+   "drawn": 161,
+   "create": 10,
+   "worst": 35,
+   "top": [
+    [
+     35,
+     18,
+     2,
+     1
+    ],
+    [
+     18,
+     0,
+     2,
+     1
+    ],
+    [
+     18,
+     1,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "heapMB": 60.3,
+   "objects": 3023,
+   "statics": 250
+  }
+ ],
+ "situations": {
+  "loin": {
+   "map": "ferme",
+   "seconds": 5,
+   "rafPerSec": 60,
+   "imagesPerSec": 60.2,
+   "image": {
+    "avg": 16.7,
+    "p50": 16.7,
+    "p95": 17.6,
+    "p99": 17.6,
+    "max": 17.8,
+    "over20": 0,
+    "over33": 0,
+    "over50": 0,
+    "count": 299
+   },
+   "cpuPerImage": {
+    "step": 2.3,
+    "physics": 0,
+    "world": 0.7,
+    "hud": 0,
+    "sort": 0,
+    "render": 2.7,
+    "renderP95": 2.9,
+    "stepP95": 2.7,
+    "busyP95": 5.6
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 300
+    }
+   },
+   "stepCost": 2.3,
+   "gl": {
+    "draws": 46.2,
+    "binds": 697.7,
+    "uploads": 0,
+    "uploadKpx": 0
+   },
+   "subsystems": {
+    "lifts": 1.6,
+    "laneFade": 0.4,
+    "daylight": 0.1,
+    "roofs": 0.1,
+    "interaction": 0,
+    "creatures": 0,
+    "player": 0,
+    "site": 0,
+    "autosave": 0,
+    "clock": 0,
+    "prompts": 0,
+    "zones": 0,
+    "time": 0,
+    "footing": 0
+   },
+   "census": {
+    "all": 9086,
+    "visible": 8391,
+    "inView": 851,
+    "containers": 1,
+    "zones": 667,
+    "images": 8358,
+    "graphics": 43,
+    "tilemaps": 13,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 667,
+    "colliders": 2,
+    "renderList": 9046,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3570,
+    "MB": 111.3,
+    "canvas": 1335,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 82.8,
+     "heapTotalMB": 163.1,
+     "nodes": 6243,
+     "listeners": 4825
+    },
+    "after": {
+     "heapMB": 82.6,
+     "heapTotalMB": 163.1,
+     "nodes": 6327,
+     "listeners": 4825
+    }
+   },
+   "profile": {
+    "ms": 5022,
+    "idleMs": 3459,
+    "gcMs": 4,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 265,
+      "share": 5.3
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 243,
+      "share": 4.8
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 221,
+      "share": 4.4
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 219,
+      "share": 4.4
+     },
+     {
+      "fn": "w",
+      "ms": 74,
+      "share": 1.5
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 65,
+      "share": 1.3
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 63,
+      "share": 1.3
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 55,
+      "share": 1.1
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 31,
+      "share": 0.6
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 28,
+      "share": 0.6
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 28,
+      "share": 0.6
+     },
+     {
+      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "ms": 23,
+      "share": 0.5
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 21,
+      "share": 0.4
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 18,
+      "share": 0.4
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 16,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 14,
+      "share": 0.3
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "bufferData",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "target assets/index-cIyCPcy9.js:868",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "getVisibleChildren assets/index-cIyCPcy9.js:1",
+      "ms": 4,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "loinMarche": {
+   "map": "ferme",
+   "seconds": 5,
+   "rafPerSec": 60,
+   "imagesPerSec": 60.2,
+   "image": {
+    "avg": 16.7,
+    "p50": 16.7,
+    "p95": 17.6,
+    "p99": 17.7,
+    "max": 17.7,
+    "over20": 0,
+    "over33": 0,
+    "over50": 0,
+    "count": 300
+   },
+   "cpuPerImage": {
+    "step": 2.3,
+    "physics": 0,
+    "world": 0.7,
+    "hud": 0,
+    "sort": 0,
+    "render": 2.7,
+    "renderP95": 3,
+    "stepP95": 2.7,
+    "busyP95": 5.7
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 301
+    }
+   },
+   "stepCost": 2.3,
+   "gl": {
+    "draws": 46.1,
+    "binds": 699.5,
+    "uploads": 0,
+    "uploadKpx": 1
+   },
+   "subsystems": {
+    "lifts": 1.5,
+    "laneFade": 0.4,
+    "daylight": 0.1,
+    "roofs": 0.1,
+    "interaction": 0,
+    "creatures": 0,
+    "roll": 0,
+    "player": 0,
+    "effort": 0,
+    "zones": 0,
+    "interiors": 0,
+    "clock": 0,
+    "prompts": 0,
+    "site": 0
+   },
+   "census": {
+    "all": 9086,
+    "visible": 8391,
+    "inView": 844,
+    "containers": 1,
+    "zones": 667,
+    "images": 8358,
+    "graphics": 43,
+    "tilemaps": 13,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 667,
+    "colliders": 2,
+    "renderList": 9046,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3570,
+    "MB": 111.3,
+    "canvas": 1335,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 79.9,
+     "heapTotalMB": 163.1,
+     "nodes": 6331,
+     "listeners": 4825
+    },
+    "after": {
+     "heapMB": 82,
+     "heapTotalMB": 163.1,
+     "nodes": 6413,
+     "listeners": 4825
+    }
+   },
+   "profile": {
+    "ms": 5031,
+    "idleMs": 3444,
+    "gcMs": 6,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 309,
+      "share": 6.1
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 251,
+      "share": 5
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 213,
+      "share": 4.2
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 166,
+      "share": 3.3
+     },
+     {
+      "fn": "w",
+      "ms": 82,
+      "share": 1.6
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 69,
+      "share": 1.4
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 63,
+      "share": 1.3
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 62,
+      "share": 1.2
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 37,
+      "share": 0.7
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 26,
+      "share": 0.5
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 24,
+      "share": 0.5
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 23,
+      "share": 0.5
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 16,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 14,
+      "share": 0.3
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:1",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "bufferData",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "devant": {
+   "map": "ferme-du-riche",
+   "seconds": 5,
+   "rafPerSec": 60,
+   "imagesPerSec": 60.2,
+   "image": {
+    "avg": 16.7,
+    "p50": 16.7,
+    "p95": 17.5,
+    "p99": 17.7,
+    "max": 17.7,
+    "over20": 0,
+    "over33": 0,
+    "over50": 0,
+    "count": 299
+   },
+   "cpuPerImage": {
+    "step": 0.6,
+    "physics": 0,
+    "world": 0.5,
+    "hud": 0,
+    "sort": 0,
+    "render": 3.7,
+    "renderP95": 4.1,
+    "stepP95": 0.9,
+    "busyP95": 4.9
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 300
+    }
+   },
+   "stepCost": 0.6,
+   "gl": {
+    "draws": 166,
+    "binds": 2612,
+    "uploads": 0,
+    "uploadKpx": 0
+   },
+   "subsystems": {
+    "roofs": 0.2,
+    "daylight": 0.2,
+    "interaction": 0,
+    "player": 0,
+    "prompts": 0,
+    "site": 0,
+    "creatures": 0,
+    "clock": 0,
+    "zones": 0,
+    "pileCount": 0,
+    "effort": 0,
+    "roll": 0,
+    "footing": 0,
+    "tweens": 0
+   },
+   "census": {
+    "all": 10649,
+    "visible": 9956,
+    "inView": 6393,
+    "containers": 1,
+    "zones": 675,
+    "images": 9549,
+    "graphics": 411,
+    "tilemaps": 6,
+    "texts": 2,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 675,
+    "colliders": 2,
+    "renderList": 10625,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3572,
+    "MB": 111.3,
+    "canvas": 1337,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 94.1,
+     "heapTotalMB": 163.1,
+     "nodes": 6467,
+     "listeners": 4831
+    },
+    "after": {
+     "heapMB": 95.8,
+     "heapTotalMB": 163.1,
+     "nodes": 6551,
+     "listeners": 4831
+    }
+   },
+   "profile": {
+    "ms": 5017,
+    "idleMs": 3671,
+    "gcMs": 6,
+    "self": [
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 323,
+      "share": 6.4
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 266,
+      "share": 5.3
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 100,
+      "share": 2
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 93,
+      "share": 1.9
+     },
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 67,
+      "share": 1.3
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 39,
+      "share": 0.8
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 36,
+      "share": 0.7
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 34,
+      "share": 0.7
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 32,
+      "share": 0.6
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 29,
+      "share": 0.6
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 27,
+      "share": 0.5
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 26,
+      "share": 0.5
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 20,
+      "share": 0.4
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 19,
+      "share": 0.4
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 19,
+      "share": 0.4
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "bufferData",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "lights assets/index-cIyCPcy9.js:868",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "joe assets/index-cIyCPcy9.js:868",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "devantMarche": {
+   "map": "ferme-du-riche",
+   "seconds": 5,
+   "rafPerSec": 60,
+   "imagesPerSec": 60.2,
+   "image": {
+    "avg": 16.7,
+    "p50": 16.7,
+    "p95": 17.5,
+    "p99": 17.7,
+    "max": 17.7,
+    "over20": 0,
+    "over33": 0,
+    "over50": 0,
+    "count": 300
+   },
+   "cpuPerImage": {
+    "step": 0.6,
+    "physics": 0,
+    "world": 0.5,
+    "hud": 0,
+    "sort": 0,
+    "render": 3.7,
+    "renderP95": 4.1,
+    "stepP95": 0.8,
+    "busyP95": 4.9
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 301
+    }
+   },
+   "stepCost": 0.6,
+   "gl": {
+    "draws": 166.1,
+    "binds": 2612.5,
+    "uploads": 0,
+    "uploadKpx": 1
+   },
+   "subsystems": {
+    "roofs": 0.2,
+    "daylight": 0.2,
+    "interaction": 0,
+    "roll": 0,
+    "player": 0,
+    "clock": 0,
+    "site": 0,
+    "zones": 0,
+    "effort": 0,
+    "interiors": 0,
+    "prompts": 0,
+    "pileCount": 0,
+    "autosave": 0,
+    "creatures": 0
+   },
+   "census": {
+    "all": 10649,
+    "visible": 9955,
+    "inView": 6393,
+    "containers": 1,
+    "zones": 675,
+    "images": 9549,
+    "graphics": 411,
+    "tilemaps": 6,
+    "texts": 2,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 675,
+    "colliders": 2,
+    "renderList": 10624,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3572,
+    "MB": 111.3,
+    "canvas": 1337,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 86.9,
+     "heapTotalMB": 163.1,
+     "nodes": 6555,
+     "listeners": 4831
+    },
+    "after": {
+     "heapMB": 91.2,
+     "heapTotalMB": 163.1,
+     "nodes": 6637,
+     "listeners": 4831
+    }
+   },
+   "profile": {
+    "ms": 5030,
+    "idleMs": 3679,
+    "gcMs": 8,
+    "self": [
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 310,
+      "share": 6.2
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 275,
+      "share": 5.5
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 94,
+      "share": 1.9
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 86,
+      "share": 1.7
+     },
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 68,
+      "share": 1.4
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 39,
+      "share": 0.8
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 38,
+      "share": 0.7
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 37,
+      "share": 0.7
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 34,
+      "share": 0.7
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 27,
+      "share": 0.5
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 27,
+      "share": 0.5
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 25,
+      "share": 0.5
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 24,
+      "share": 0.5
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 20,
+      "share": 0.4
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 18,
+      "share": 0.3
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 16,
+      "share": 0.3
+     },
+     {
+      "fn": "bufferData",
+      "ms": 14,
+      "share": 0.3
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "joe assets/index-cIyCPcy9.js:868",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "c.<computed>",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 6,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  }
+ },
+ "maison": {
+  "present": true,
+  "porteDehors": {
+   "map": "ferme-du-riche",
+   "seconds": 2.5,
+   "rafPerSec": 60,
+   "imagesPerSec": 60.4,
+   "image": {
+    "avg": 16.7,
+    "p50": 16.7,
+    "p95": 17.6,
+    "p99": 17.7,
+    "max": 17.7,
+    "over20": 0,
+    "over33": 0,
+    "over50": 0,
+    "count": 149
+   },
+   "cpuPerImage": {
+    "step": 0.7,
+    "physics": 0,
+    "world": 0.6,
+    "hud": 0,
+    "sort": 0,
+    "render": 3.5,
+    "renderP95": 3.9,
+    "stepP95": 0.8,
+    "busyP95": 4.7
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 150
+    }
+   },
+   "stepCost": 0.7,
+   "gl": {
+    "draws": 166.9,
+    "binds": 2622.6,
+    "uploads": 0,
+    "uploadKpx": 0.2
+   },
+   "subsystems": {
+    "roofs": 0.3,
+    "daylight": 0.2,
+    "interaction": 0,
+    "player": 0,
+    "autosave": 0,
+    "creatures": 0,
+    "prompts": 0,
+    "roll": 0,
+    "site": 0,
+    "cameras": 0,
+    "effort": 0,
+    "zones": 0,
+    "interiors": 0,
+    "time": 0
+   },
+   "census": {
+    "all": 10679,
+    "visible": 9986,
+    "inView": 6424,
+    "containers": 1,
+    "zones": 675,
+    "images": 9579,
+    "graphics": 411,
+    "tilemaps": 6,
+    "texts": 2,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 675,
+    "colliders": 2,
+    "renderList": 10655,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3572,
+    "MB": 111.3,
+    "canvas": 1337,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 95.6,
+     "heapTotalMB": 163.6,
+     "nodes": 6701,
+     "listeners": 4837
+    },
+    "after": {
+     "heapMB": 95.6,
+     "heapTotalMB": 163.8,
+     "nodes": 6743,
+     "listeners": 4837
+    }
+   },
+   "profile": {
+    "ms": 2525,
+    "idleMs": 1862,
+    "gcMs": 3,
+    "self": [
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 146,
+      "share": 5.8
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 130,
+      "share": 5.2
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 53,
+      "share": 2.1
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 42,
+      "share": 1.6
+     },
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 29,
+      "share": 1.2
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 23,
+      "share": 0.9
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 21,
+      "share": 0.8
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 18,
+      "share": 0.7
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 15,
+      "share": 0.6
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 14,
+      "share": 0.6
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 14,
+      "share": 0.6
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 12,
+      "share": 0.5
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 12,
+      "share": 0.5
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 9,
+      "share": 0.4
+     },
+     {
+      "fn": "bufferData",
+      "ms": 8,
+      "share": 0.3
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 7,
+      "share": 0.3
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 6,
+      "share": 0.2
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 5,
+      "share": 0.2
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 5,
+      "share": 0.2
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "interactables assets/index-cIyCPcy9.js:868",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "Mf assets/index-cIyCPcy9.js:867",
+      "ms": 3,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "porteDehorsOuverte": true,
+  "entrer": {
+   "ready": 295,
+   "create": 12,
+   "worst": 43,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3571,
+   "biggest": [
+    [
+     "wall:coursed:ew:60:122:head:head:0:0:990240:0:100:1220:30",
+     123,
+     13
+    ]
+   ],
+   "profile": {
+    "ms": 1302,
+    "idleMs": 1041,
+    "gcMs": 4,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 38,
+      "share": 3
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 33,
+      "share": 2.6
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 22,
+      "share": 1.7
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 22,
+      "share": 1.7
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 12,
+      "share": 0.9
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 9,
+      "share": 0.7
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 8,
+      "share": 0.7
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 6,
+      "share": 0.5
+     },
+     {
+      "fn": "exists assets/index-cIyCPcy9.js:808",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 3,
+      "share": 0.3
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "e.72905.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:1",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "shutdown assets/index-cIyCPcy9.js:18",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "w",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "lights assets/index-cIyCPcy9.js:868",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "flood assets/index-cIyCPcy9.js:867",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 2,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "basImmobile": {
+   "map": "interieur:ferme-du-riche:13180,18300",
+   "storey": 0,
+   "seconds": 5,
+   "rafPerSec": 60,
+   "imagesPerSec": 60.2,
+   "image": {
+    "avg": 16.7,
+    "p50": 16.7,
+    "p95": 17.5,
+    "p99": 17.6,
+    "max": 17.7,
+    "over20": 0,
+    "over33": 0,
+    "over50": 0,
+    "count": 299
+   },
+   "cpuPerImage": {
+    "step": 1.3,
+    "physics": 0,
+    "world": 0.2,
+    "hud": 0,
+    "sort": 0,
+    "render": 1.1,
+    "renderP95": 1.3,
+    "stepP95": 1.7,
+    "busyP95": 3
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 300
+    }
+   },
+   "stepCost": 1.3,
+   "gl": {
+    "draws": 85,
+    "binds": 1314,
+    "uploads": 0,
+    "uploadKpx": 0
+   },
+   "subsystems": {
+    "lifts": 1,
+    "daylight": 0.1,
+    "roofs": 0,
+    "interaction": 0,
+    "storeys": 0,
+    "player": 0,
+    "effort": 0,
+    "creatures": 0,
+    "site": 0,
+    "prompts": 0,
+    "cameras": 0,
+    "autosave": 0,
+    "interiors": 0,
+    "pileCount": 0
+   },
+   "census": {
+    "all": 4536,
+    "visible": 1897,
+    "inView": 1866,
+    "containers": 1,
+    "zones": 226,
+    "images": 4222,
+    "graphics": 83,
+    "tilemaps": 1,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 226,
+    "colliders": 2,
+    "renderList": 2122,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3571,
+    "MB": 111.3,
+    "canvas": 1336,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 99.2,
+     "heapTotalMB": 164.3,
+     "nodes": 6793,
+     "listeners": 4843
+    },
+    "after": {
+     "heapMB": 94,
+     "heapTotalMB": 164.3,
+     "nodes": 6877,
+     "listeners": 4843
+    }
+   },
+   "profile": {
+    "ms": 5011,
+    "idleMs": 4245,
+    "gcMs": 3,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 196,
+      "share": 3.9
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 107,
+      "share": 2.1
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 95,
+      "share": 1.9
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 46,
+      "share": 0.9
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 39,
+      "share": 0.8
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 35,
+      "share": 0.7
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 15,
+      "share": 0.3
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 14,
+      "share": 0.3
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:1",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "now",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "w",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "lights assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "basMarche": {
+   "map": "interieur:ferme-du-riche:13180,18300",
+   "storey": 0,
+   "seconds": 4,
+   "rafPerSec": 60,
+   "imagesPerSec": 60.2,
+   "image": {
+    "avg": 16.7,
+    "p50": 16.7,
+    "p95": 17.5,
+    "p99": 17.6,
+    "max": 17.6,
+    "over20": 0,
+    "over33": 0,
+    "over50": 0,
+    "count": 239
+   },
+   "cpuPerImage": {
+    "step": 1.3,
+    "physics": 0,
+    "world": 0.2,
+    "hud": 0,
+    "sort": 0,
+    "render": 1.1,
+    "renderP95": 1.3,
+    "stepP95": 1.8,
+    "busyP95": 3
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 240
+    }
+   },
+   "stepCost": 1.3,
+   "gl": {
+    "draws": 85,
+    "binds": 1314.1,
+    "uploads": 0,
+    "uploadKpx": 1
+   },
+   "subsystems": {
+    "lifts": 1,
+    "daylight": 0.1,
+    "roofs": 0,
+    "interaction": 0,
+    "player": 0,
+    "storeys": 0,
+    "site": 0,
+    "clock": 0,
+    "time": 0,
+    "interiors": 0,
+    "creatures": 0,
+    "autosave": 0,
+    "effort": 0,
+    "tweens": 0
+   },
+   "census": {
+    "all": 4536,
+    "visible": 1897,
+    "inView": 1866,
+    "containers": 1,
+    "zones": 226,
+    "images": 4222,
+    "graphics": 83,
+    "tilemaps": 1,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 226,
+    "colliders": 2,
+    "renderList": 2122,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3571,
+    "MB": 111.3,
+    "canvas": 1336,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 111.5,
+     "heapTotalMB": 164.6,
+     "nodes": 6891,
+     "listeners": 4843
+    },
+    "after": {
+     "heapMB": 108.3,
+     "heapTotalMB": 164.8,
+     "nodes": 6957,
+     "listeners": 4843
+    }
+   },
+   "profile": {
+    "ms": 4013,
+    "idleMs": 3395,
+    "gcMs": 3,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 151,
+      "share": 3.8
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 91,
+      "share": 2.3
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 71,
+      "share": 1.8
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 42,
+      "share": 1.1
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 30,
+      "share": 0.7
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 25,
+      "share": 0.6
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 12,
+      "share": 0.3
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 11,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 7,
+      "share": 0.2
+     },
+     {
+      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "ms": 7,
+      "share": 0.2
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 6,
+      "share": 0.2
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 6,
+      "share": 0.2
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 6,
+      "share": 0.2
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:1",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "lights assets/index-cIyCPcy9.js:868",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "c.<computed>",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 3,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "escalier": {
+   "map": "interieur:ferme-du-riche:13180,18300",
+   "storey": 1,
+   "seconds": 6,
+   "rafPerSec": 55,
+   "imagesPerSec": 55.1,
+   "image": {
+    "avg": 18.2,
+    "p50": 16.7,
+    "p95": 33.2,
+    "p99": 33.7,
+    "max": 34.1,
+    "over20": 30,
+    "over33": 9,
+    "over50": 0,
+    "count": 329
+   },
+   "cpuPerImage": {
+    "step": 1.5,
+    "physics": 0,
+    "world": 0.3,
+    "hud": 0,
+    "sort": 0,
+    "render": 2.4,
+    "renderP95": 2.9,
+    "stepP95": 1.8,
+    "busyP95": 4.6
+   },
+   "stepsPerImage": {
+    "avg": 1.1,
+    "max": 2,
+    "dist": {
+     "1": 300,
+     "2": 30
+    }
+   },
+   "stepCost": 1.3,
+   "gl": {
+    "draws": 412,
+    "binds": 2418.3,
+    "uploads": 0,
+    "uploadKpx": 0.3
+   },
+   "subsystems": {
+    "lifts": 0.9,
+    "daylight": 0.2,
+    "roofs": 0,
+    "interaction": 0,
+    "player": 0,
+    "site": 0,
+    "storeys": 0,
+    "clock": 0,
+    "effort": 0,
+    "prompts": 0,
+    "creatures": 0,
+    "roll": 0,
+    "pileCount": 0,
+    "footing": 0
+   },
+   "census": {
+    "all": 4535,
+    "visible": 4266,
+    "inView": 4211,
+    "containers": 1,
+    "zones": 226,
+    "images": 4221,
+    "graphics": 83,
+    "tilemaps": 1,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 226,
+    "colliders": 2,
+    "renderList": 4649,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3571,
+    "MB": 111.3,
+    "canvas": 1336,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 106.6,
+     "heapTotalMB": 164.8,
+     "nodes": 6965,
+     "listeners": 4843
+    },
+    "after": {
+     "heapMB": 110.6,
+     "heapTotalMB": 165.6,
+     "nodes": 7065,
+     "listeners": 4843
+    }
+   },
+   "profile": {
+    "ms": 6020,
+    "idleMs": 4637,
+    "gcMs": 7,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 232,
+      "share": 3.9
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 205,
+      "share": 3.4
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 118,
+      "share": 2
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 97,
+      "share": 1.6
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 54,
+      "share": 0.9
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 52,
+      "share": 0.9
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 47,
+      "share": 0.8
+     },
+     {
+      "fn": "bufferSubData",
+      "ms": 45,
+      "share": 0.8
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 40,
+      "share": 0.7
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 24,
+      "share": 0.4
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 21,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 20,
+      "share": 0.3
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 20,
+      "share": 0.3
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 19,
+      "share": 0.3
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 19,
+      "share": 0.3
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 16,
+      "share": 0.3
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 15,
+      "share": 0.2
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 14,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "c.<computed>",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "e.50792.s.emit assets/index-cIyCPcy9.js:1",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
+      "ms": 8,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 7,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "escalierLongues": [
+   {
+    "dt": 28,
+    "step": 8,
+    "render": 5,
+    "steps": 1,
+    "subs": {
+     "lifts": 3
+    }
+   },
+   {
+    "dt": 26,
+    "step": 3,
+    "render": 14,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 26,
+    "step": 2,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 25,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 28,
+    "step": 2,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 25,
+    "step": 1,
+    "render": 3,
+    "steps": 1,
+    "subs": {}
+   },
+   {
+    "dt": 28,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   },
+   {
+    "dt": 27,
+    "step": 1,
+    "render": 3,
+    "steps": 2,
+    "subs": {}
+   }
+  ],
+  "hautImmobile": {
+   "map": "interieur:ferme-du-riche:13180,18300",
+   "storey": 1,
+   "seconds": 5,
+   "rafPerSec": 52.6,
+   "imagesPerSec": 52.8,
+   "image": {
+    "avg": 19,
+    "p50": 16.7,
+    "p95": 33.6,
+    "p99": 34.2,
+    "max": 34.3,
+    "over20": 37,
+    "over33": 17,
+    "over50": 0,
+    "count": 263
+   },
+   "cpuPerImage": {
+    "step": 1.4,
+    "physics": 0,
+    "world": 0.3,
+    "hud": 0,
+    "sort": 0,
+    "render": 2.7,
+    "renderP95": 2.9,
+    "stepP95": 1.6,
+    "busyP95": 4.4
+   },
+   "stepsPerImage": {
+    "avg": 1.1,
+    "max": 2,
+    "dist": {
+     "1": 227,
+     "2": 37
+    }
+   },
+   "stepCost": 1.3,
+   "gl": {
+    "draws": 500,
+    "binds": 2716,
+    "uploads": 0,
+    "uploadKpx": 0
+   },
+   "subsystems": {
+    "lifts": 0.9,
+    "daylight": 0.2,
+    "roofs": 0,
+    "interaction": 0,
+    "player": 0,
+    "storeys": 0,
+    "clock": 0,
+    "site": 0,
+    "creatures": 0,
+    "pileCount": 0,
+    "interiors": 0,
+    "cameras": 0,
+    "prompts": 0,
+    "autosave": 0
+   },
+   "census": {
+    "all": 4535,
+    "visible": 4266,
+    "inView": 4211,
+    "containers": 1,
+    "zones": 226,
+    "images": 4221,
+    "graphics": 83,
+    "tilemaps": 1,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 226,
+    "colliders": 2,
+    "renderList": 4649,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3571,
+    "MB": 111.3,
+    "canvas": 1336,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 108.5,
+     "heapTotalMB": 165.6,
+     "nodes": 7093,
+     "listeners": 4843
+    },
+    "after": {
+     "heapMB": 106.6,
+     "heapTotalMB": 165.6,
+     "nodes": 7177,
+     "listeners": 4843
+    }
+   },
+   "profile": {
+    "ms": 5026,
+    "idleMs": 3837,
+    "gcMs": 8,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 192,
+      "share": 3.8
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 178,
+      "share": 3.5
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 94,
+      "share": 1.9
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 89,
+      "share": 1.8
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 59,
+      "share": 1.2
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 44,
+      "share": 0.9
+     },
+     {
+      "fn": "bufferSubData",
+      "ms": 44,
+      "share": 0.9
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 39,
+      "share": 0.8
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 34,
+      "share": 0.7
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 24,
+      "share": 0.5
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 22,
+      "share": 0.4
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 20,
+      "share": 0.4
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 18,
+      "share": 0.4
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 17,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 16,
+      "share": 0.3
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 16,
+      "share": 0.3
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 15,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 13,
+      "share": 0.3
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "isCurrent assets/index-cIyCPcy9.js:38",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 6,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "portePalier": {
+   "map": "interieur:ferme-du-riche:13180,18300",
+   "storey": 1,
+   "seconds": 2.5,
+   "rafPerSec": 51.9,
+   "imagesPerSec": 52.3,
+   "image": {
+    "avg": 19.3,
+    "p50": 16.8,
+    "p95": 33.5,
+    "p99": 33.8,
+    "max": 34,
+    "over20": 20,
+    "over33": 7,
+    "over50": 0,
+    "count": 129
+   },
+   "cpuPerImage": {
+    "step": 1.4,
+    "physics": 0,
+    "world": 0.3,
+    "hud": 0,
+    "sort": 0,
+    "render": 2.7,
+    "renderP95": 2.9,
+    "stepP95": 1.7,
+    "busyP95": 4.5
+   },
+   "stepsPerImage": {
+    "avg": 1.2,
+    "max": 2,
+    "dist": {
+     "1": 110,
+     "2": 20
+    }
+   },
+   "stepCost": 1.3,
+   "gl": {
+    "draws": 502.6,
+    "binds": 2718.8,
+    "uploads": 0,
+    "uploadKpx": 0.2
+   },
+   "subsystems": {
+    "lifts": 0.9,
+    "daylight": 0.2,
+    "roofs": 0,
+    "interaction": 0,
+    "player": 0,
+    "prompts": 0,
+    "storeys": 0,
+    "site": 0,
+    "autosave": 0,
+    "clock": 0,
+    "roll": 0,
+    "cameras": 0,
+    "interiors": 0,
+    "pileCount": 0
+   },
+   "census": {
+    "all": 4509,
+    "visible": 4241,
+    "inView": 4186,
+    "containers": 1,
+    "zones": 226,
+    "images": 4195,
+    "graphics": 83,
+    "tilemaps": 1,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 226,
+    "colliders": 2,
+    "renderList": 4625,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3571,
+    "MB": 111.3,
+    "canvas": 1336,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 122.4,
+     "heapTotalMB": 165.6,
+     "nodes": 7181,
+     "listeners": 4843
+    },
+    "after": {
+     "heapMB": 117.4,
+     "heapTotalMB": 165.6,
+     "nodes": 7223,
+     "listeners": 4843
+    }
+   },
+   "profile": {
+    "ms": 2514,
+    "idleMs": 1920,
+    "gcMs": 3,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 98,
+      "share": 3.9
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 93,
+      "share": 3.7
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 44,
+      "share": 1.8
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 41,
+      "share": 1.6
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 31,
+      "share": 1.2
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 23,
+      "share": 0.9
+     },
+     {
+      "fn": "bufferSubData",
+      "ms": 22,
+      "share": 0.9
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 17,
+      "share": 0.7
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 17,
+      "share": 0.7
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 9,
+      "share": 0.4
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 9,
+      "share": 0.4
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 9,
+      "share": 0.4
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 8,
+      "share": 0.3
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 7,
+      "share": 0.3
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 7,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 7,
+      "share": 0.3
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 7,
+      "share": 0.3
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 6,
+      "share": 0.3
+     },
+     {
+      "fn": "isCurrent assets/index-cIyCPcy9.js:38",
+      "ms": 5,
+      "share": 0.2
+     },
+     {
+      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.2
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.2
+     },
+     {
+      "fn": "now",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "ms": 3,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "hautMarche": {
+   "map": "interieur:ferme-du-riche:13180,18300",
+   "storey": 1,
+   "seconds": 4,
+   "rafPerSec": 54.5,
+   "imagesPerSec": 54.7,
+   "image": {
+    "avg": 18.4,
+    "p50": 16.7,
+    "p95": 33.1,
+    "p99": 34,
+    "max": 34.3,
+    "over20": 22,
+    "over33": 6,
+    "over50": 0,
+    "count": 218
+   },
+   "cpuPerImage": {
+    "step": 1.6,
+    "physics": 0,
+    "world": 0.3,
+    "hud": 0,
+    "sort": 0,
+    "render": 2.7,
+    "renderP95": 2.9,
+    "stepP95": 2,
+    "busyP95": 4.7
+   },
+   "stepsPerImage": {
+    "avg": 1.1,
+    "max": 2,
+    "dist": {
+     "1": 197,
+     "2": 22
+    }
+   },
+   "stepCost": 1.4,
+   "gl": {
+    "draws": 491.2,
+    "binds": 2712.7,
+    "uploads": 0.1,
+    "uploadKpx": 1.3
+   },
+   "subsystems": {
+    "lifts": 0.9,
+    "daylight": 0.2,
+    "roofs": 0,
+    "interaction": 0,
+    "player": 0,
+    "storeys": 0,
+    "roll": 0,
+    "site": 0,
+    "prompts": 0,
+    "interiors": 0,
+    "pileCount": 0,
+    "clock": 0,
+    "effort": 0,
+    "creatures": 0
+   },
+   "census": {
+    "all": 4509,
+    "visible": 4241,
+    "inView": 4186,
+    "containers": 1,
+    "zones": 226,
+    "images": 4195,
+    "graphics": 83,
+    "tilemaps": 1,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 226,
+    "colliders": 2,
+    "renderList": 4625,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3571,
+    "MB": 111.3,
+    "canvas": 1336,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 104.9,
+     "heapTotalMB": 165.6,
+     "nodes": 7227,
+     "listeners": 4843
+    },
+    "after": {
+     "heapMB": 113.1,
+     "heapTotalMB": 165.8,
+     "nodes": 7293,
+     "listeners": 4843
+    }
+   },
+   "profile": {
+    "ms": 4025,
+    "idleMs": 3018,
+    "gcMs": 6,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 150,
+      "share": 3.7
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 146,
+      "share": 3.6
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 81,
+      "share": 2
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 70,
+      "share": 1.7
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 50,
+      "share": 1.2
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 36,
+      "share": 0.9
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 33,
+      "share": 0.8
+     },
+     {
+      "fn": "bufferSubData",
+      "ms": 32,
+      "share": 0.8
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 28,
+      "share": 0.7
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 19,
+      "share": 0.5
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 19,
+      "share": 0.5
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 16,
+      "share": 0.4
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 15,
+      "share": 0.4
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 13,
+      "share": 0.3
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 13,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 12,
+      "share": 0.3
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 12,
+      "share": 0.3
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "setAlpha assets/index-cIyCPcy9.js:23",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "ms": 7,
+      "share": 0.2
+     },
+     {
+      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
+      "ms": 7,
+      "share": 0.2
+     },
+     {
+      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "ms": 6,
+      "share": 0.2
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 6,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "descendre": {
+   "map": "interieur:ferme-du-riche:13180,18300",
+   "storey": 0,
+   "seconds": 6,
+   "rafPerSec": 58.7,
+   "imagesPerSec": 58.8,
+   "image": {
+    "avg": 17,
+    "p50": 16.7,
+    "p95": 17.6,
+    "p99": 33.3,
+    "max": 34.2,
+    "over20": 8,
+    "over33": 3,
+    "over50": 0,
+    "count": 352
+   },
+   "cpuPerImage": {
+    "step": 1.3,
+    "physics": 0,
+    "world": 0.2,
+    "hud": 0,
+    "sort": 0,
+    "render": 1.3,
+    "renderP95": 2.7,
+    "stepP95": 1.6,
+    "busyP95": 4.2
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 2,
+    "dist": {
+     "1": 345,
+     "2": 8
+    }
+   },
+   "stepCost": 1.3,
+   "gl": {
+    "draws": 146.1,
+    "binds": 1558.5,
+    "uploads": 0,
+    "uploadKpx": 0.3
+   },
+   "subsystems": {
+    "lifts": 1,
+    "daylight": 0.1,
+    "roofs": 0,
+    "interaction": 0,
+    "player": 0,
+    "storeys": 0,
+    "interiors": 0,
+    "site": 0,
+    "autosave": 0,
+    "roll": 0,
+    "effort": 0,
+    "pileCount": 0,
+    "cameras": 0,
+    "time": 0
+   },
+   "census": {
+    "all": 4510,
+    "visible": 1897,
+    "inView": 1866,
+    "containers": 1,
+    "zones": 226,
+    "images": 4196,
+    "graphics": 83,
+    "tilemaps": 1,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 226,
+    "colliders": 2,
+    "renderList": 2122,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 3571,
+    "MB": 111.3,
+    "canvas": 1336,
+    "canvasMB": 76.9,
+    "biggest": [
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 118.9,
+     "heapTotalMB": 165.8,
+     "nodes": 7305,
+     "listeners": 4843
+    },
+    "after": {
+     "heapMB": 121.4,
+     "heapTotalMB": 165.8,
+     "nodes": 7405,
+     "listeners": 4843
+    }
+   },
+   "profile": {
+    "ms": 6013,
+    "idleMs": 4995,
+    "gcMs": 5,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 218,
+      "share": 3.6
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 140,
+      "share": 2.3
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 137,
+      "share": 2.3
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 71,
+      "share": 1.2
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 45,
+      "share": 0.8
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 38,
+      "share": 0.6
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 29,
+      "share": 0.5
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 20,
+      "share": 0.3
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 18,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 15,
+      "share": 0.2
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 15,
+      "share": 0.2
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 8,
+      "share": 0.1
+     },
+     {
+      "fn": "bufferSubData",
+      "ms": 8,
+      "share": 0.1
+     },
+     {
+      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
+      "ms": 8,
+      "share": 0.1
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:1",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 5,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "sortir": {
+   "ready": 395,
+   "create": 38,
+   "worst": 69,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3573,
+   "biggest": [
+    [
+     "46a5b060-a16e-4050-a71a-bb68c6f78707",
+     1,
+     1
+    ],
+    [
+     "43613b0e-1cfe-4cf5-aeda-648925945b92",
+     1,
+     1
+    ]
+   ],
+   "profile": {
+    "ms": 1399,
+    "idleMs": 1020,
+    "gcMs": 7,
+    "self": [
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 69,
+      "share": 4.9
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 37,
+      "share": 2.6
+     },
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 30,
+      "share": 2.2
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 22,
+      "share": 1.5
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 18,
+      "share": 1.3
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 11,
+      "share": 0.8
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 8,
+      "share": 0.6
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 8,
+      "share": 0.5
+     },
+     {
+      "fn": "setAlpha assets/index-cIyCPcy9.js:23",
+      "ms": 7,
+      "share": 0.5
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 7,
+      "share": 0.5
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 7,
+      "share": 0.5
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 7,
+      "share": 0.5
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 6,
+      "share": 0.5
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:23",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "pushBatch assets/index-cIyCPcy9.js:43",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "applyITRS assets/index-cIyCPcy9.js:23",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "initialize assets/index-cIyCPcy9.js:23",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "isCurrent assets/index-cIyCPcy9.js:38",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "set assets/index-cIyCPcy9.js:23",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "bufferData",
+      "ms": 3,
+      "share": 0.2
+     }
+    ],
+    "gameTotal": []
+   }
+  }
+ },
+ "gpu": {
+  "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "maxTexture": 16384,
+  "units": 16,
+  "canvas": [
+   1280,
+   720
+  ],
+  "dpr": 1,
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36"
+ },
+ "boot": {
+  "readyMs": 1880,
+  "idleMs": 1915,
+  "domContentLoaded": 339,
+  "requests": 144,
+  "png": 139,
+  "pngKB": 2393,
+  "pngFirst": 567,
+  "pngLast": 1676,
+  "js": 2,
+  "jsKB": 1746,
+  "jsLast": 357,
+  "biggestJs": [
+   [
+    "assets/index-cIyCPcy9.js",
+    1741,
+    162
+   ],
+   [
+    "assets/panel-Xab4zO8H.js",
+    4,
+    14
+   ]
+  ],
+  "firstCreate": {
+   "map": "interieur:ferme:15470,7695",
+   "at": 1741.7000000476837,
+   "ms": 87,
+   "born": 38,
+   "bornMB": 0.13542938232421875,
+   "biggest": [
+    [
+     "wall:rough:ew:50:264:corner-s:corner-s:0:0:343226",
+     265,
+     16
+    ],
+    [
+     "wood:normal:beam:ew:1320::::::worn",
+     265,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:1320::::::worn#0#joint-scarf-normal-ew-worn@109,0;joint-scarf-normal-ew-worn@225,0;joint-peg-worn@3,5;joint-peg-worn@35,5;joint-peg-worn@67,5;joint-peg-worn@99,5;joint-peg-worn@131,5;joint-peg-worn@163,5;joint-peg-worn@195,5;joint-peg-worn@227,5;joint-peg-worn@259,5",
+     265,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:1320::::::worn#0#joint-scarf-normal-ew-worn@93,0;joint-scarf-normal-ew-worn@189,0;joint-peg-worn@3,5;joint-peg-worn@67,5;joint-peg-worn@195,5;joint-peg-worn@259,5",
+     265,
+     10
+    ],
+    [
+     "wall:rough:ns:50:116:abut:head:0:0:326271",
+     16,
+     117
+    ],
+    [
+     "wall:rough:ns:50:116:abut:head:0:0:724933",
+     16,
+     117
+    ],
+    [
+     "wood:normal:beam:ns:620::::::worn",
+     10,
+     126
+    ],
+    [
+     "wood:normal:beam:ns:620::::::worn#0#joint-scarf-normal-ns-worn@0,41;joint-peg-worn@4,29;joint-peg-worn@4,61;joint-peg-worn@4,93",
+     10,
+     126
+    ]
+   ],
+   "canvases": 38,
+   "textures": 2274
+  },
+  "longTasks": [],
+  "textures": {
+   "keys": 2299,
+   "sources": 2299,
+   "MB": 34.735809326171875,
+   "canvas": 64,
+   "canvasMB": 0.34287261962890625,
+   "biggest": [
+    [
+     "tool-axe",
+     640,
+     960
+    ],
+    [
+     "tool-maul",
+     640,
+     960
+    ],
+    [
+     "tool-hatchet",
+     640,
+     960
+    ],
+    [
+     "tool-broadaxe",
+     640,
+     960
+    ],
+    [
+     "xeros",
+     256,
+     1728
+    ],
+    [
+     "boar",
+     368,
+     640
+    ],
+    [
+     "world",
+     256,
+     864
+    ],
+    [
+     "normal-tree-fall",
+     960,
+     168
+    ],
+    [
+     "normal-tree-fall-left",
+     960,
+     168
+    ],
+    [
+     "big-tree-fall",
+     800,
+     160
+    ],
+    [
+     "big-tree-fall-left",
+     800,
+     160
+    ],
+    [
+     "xeros-down",
+     512,
+     192
+    ]
+   ]
+  },
+  "memory": {
+   "heapMB": 25.3,
+   "heapTotalMB": 56.7,
+   "nodes": 4880,
+   "listeners": 4845
+  }
+ },
+ "preparedMs": 279,
+ "chargements": {
+  "ferme": {
+   "ready": 55,
+   "drawn": 71,
+   "create": 38,
+   "worst": 55,
+   "top": [
+    [
+     55,
+     51,
+     4,
+     10
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ],
+    [
+     18,
+     2,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570,
+   "biggest": [],
+   "profile": {
+    "ms": 1574,
+    "idleMs": 1053,
+    "gcMs": 6,
+    "self": [
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 82,
+      "share": 5.2
+     },
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 71,
+      "share": 4.5
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 66,
+      "share": 4.2
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 59,
+      "share": 3.8
+     },
+     {
+      "fn": "w",
+      "ms": 23,
+      "share": 1.4
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 19,
+      "share": 1.2
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 18,
+      "share": 1.2
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 18,
+      "share": 1.1
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 18,
+      "share": 1.1
+     },
+     {
+      "fn": "p7 assets/index-cIyCPcy9.js:868",
+      "ms": 15,
+      "share": 0.9
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 8,
+      "share": 0.5
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "getData assets/index-cIyCPcy9.js:18",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.3
+     },
+     {
+      "fn": "bufferData",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "Q7 assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:1",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:23",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "M7 assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "joe assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "G5 assets/index-cIyCPcy9.js:868",
+      "ms": 2,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "ferme-du-riche": {
+   "ready": 129,
+   "drawn": 140,
+   "create": 23,
+   "worst": 55,
+   "top": [
+    [
+     55,
+     37,
+     5,
+     1
+    ],
+    [
+     18,
+     0,
+     4,
+     1
+    ],
+    [
+     18,
+     1,
+     4,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3572,
+   "biggest": [
+    [
+     "3c48dca9-3f42-464d-8b20-27012ae1c80c",
+     1,
+     1
+    ],
+    [
+     "19ccd760-b573-413d-b11d-1c6d3ff252a0",
+     1,
+     1
+    ]
+   ],
+   "profile": {
+    "ms": 1647,
+    "idleMs": 1166,
+    "gcMs": 4,
+    "self": [
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 109,
+      "share": 6.6
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 80,
+      "share": 4.9
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 29,
+      "share": 1.8
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 28,
+      "share": 1.7
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 27,
+      "share": 1.7
+     },
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 22,
+      "share": 1.3
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 11,
+      "share": 0.7
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 11,
+      "share": 0.7
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 9,
+      "share": 0.6
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 9,
+      "share": 0.5
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 8,
+      "share": 0.5
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 8,
+      "share": 0.5
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 7,
+      "share": 0.5
+     },
+     {
+      "fn": "bufferData",
+      "ms": 6,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.3
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 5,
+      "share": 0.3
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "lift assets/index-cIyCPcy9.js:868",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "remove assets/index-cIyCPcy9.js:808",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:1",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "w",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "removeFromDisplayList assets/index-cIyCPcy9.js:18",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "village": {
+   "ready": 99,
+   "drawn": 105,
+   "create": 13,
+   "worst": 43,
+   "top": [
+    [
+     43,
+     28,
+     3,
+     1
+    ],
+    [
+     18,
+     0,
+     2,
+     1
+    ],
+    [
+     18,
+     0,
+     3,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3591,
+   "biggest": [
+    [
+     "d02af16d-0627-4d3b-bd8e-fb2d8045dfff",
+     1,
+     1
+    ],
+    [
+     "b19ff8c5-1384-4237-a3e8-cb3ca6141c46",
+     1,
+     1
+    ],
+    [
+     "baed05bc-e259-4b8e-a4a4-92e7f851a32f",
+     1,
+     1
+    ],
+    [
+     "1cf75163-ac96-4c07-954a-d79d148ab321",
+     1,
+     1
+    ]
+   ],
+   "profile": {
+    "ms": 1611,
+    "idleMs": 1304,
+    "gcMs": 2,
+    "self": [
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 69,
+      "share": 4.3
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 56,
+      "share": 3.5
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 18,
+      "share": 1.1
+     },
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 16,
+      "share": 1
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 16,
+      "share": 1
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 15,
+      "share": 0.9
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 8,
+      "share": 0.5
+     },
+     {
+      "fn": "exists assets/index-cIyCPcy9.js:808",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 6,
+      "share": 0.4
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "e.72905.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "joe assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "Q7 assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "e.72249.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "bufferData",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "batchTexture assets/index-cIyCPcy9.js:43",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:1",
+      "ms": 2,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": []
+   }
+  },
+  "ferme-du-riche (retour)": {
+   "ready": 109,
+   "drawn": 125,
+   "create": 24,
+   "worst": 53,
+   "top": [
+    [
+     53,
+     32,
+     5,
+     1
+    ],
+    [
+     19,
+     1,
+     4,
+     1
+    ],
+    [
+     18,
+     1,
+     4,
+     1
+    ]
+   ],
+   "over100": 0,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3572,
+   "biggest": [
+    [
+     "e2eceb60-d126-4280-9169-461cfa8d434f",
+     1,
+     1
+    ],
+    [
+     "eba37230-4428-4dcc-bd56-1326a96f3f1c",
+     1,
+     1
+    ]
+   ],
+   "profile": {
+    "ms": 1629,
+    "idleMs": 1170,
+    "gcMs": 15,
+    "self": [
+     {
+      "fn": "e.99517.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 95,
+      "share": 5.8
+     },
+     {
+      "fn": "batchSprite assets/index-cIyCPcy9.js:43",
+      "ms": 77,
+      "share": 4.7
+     },
+     {
+      "fn": "batchQuad assets/index-cIyCPcy9.js:43",
+      "ms": 29,
+      "share": 1.8
+     },
+     {
+      "fn": "e.19186.e.exports assets/index-cIyCPcy9.js:810",
+      "ms": 28,
+      "share": 1.7
+     },
+     {
+      "fn": "update assets/index-cIyCPcy9.js:868",
+      "ms": 21,
+      "share": 1.3
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 15,
+      "share": 0.9
+     },
+     {
+      "fn": "setQuad assets/index-cIyCPcy9.js:23",
+      "ms": 15,
+      "share": 0.9
+     },
+     {
+      "fn": "builds assets/index-cIyCPcy9.js:868",
+      "ms": 13,
+      "share": 0.8
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:43",
+      "ms": 12,
+      "share": 0.8
+     },
+     {
+      "fn": "step assets/index-cIyCPcy9.js:1",
+      "ms": 10,
+      "share": 0.6
+     },
+     {
+      "fn": "render assets/index-cIyCPcy9.js:1",
+      "ms": 10,
+      "share": 0.6
+     },
+     {
+      "fn": "sortByDepth assets/index-cIyCPcy9.js:18",
+      "ms": 9,
+      "share": 0.6
+     },
+     {
+      "fn": "batchFillRect assets/index-cIyCPcy9.js:43",
+      "ms": 8,
+      "share": 0.5
+     },
+     {
+      "fn": "get assets/index-cIyCPcy9.js:23",
+      "ms": 8,
+      "share": 0.5
+     },
+     {
+      "fn": "multiply assets/index-cIyCPcy9.js:23",
+      "ms": 5,
+      "share": 0.3
+     },
+     {
+      "fn": "willRender assets/index-cIyCPcy9.js:18",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:23",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "bindTexture",
+      "ms": 4,
+      "share": 0.2
+     },
+     {
+      "fn": "joe assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "e.77545.e.exports assets/index-cIyCPcy9.js:23",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "bufferData",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "flush assets/index-cIyCPcy9.js:43",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "lights assets/index-cIyCPcy9.js:868",
+      "ms": 3,
+      "share": 0.2
+     }
+    ],
+    "gameTotal": []
+   }
+  }
+ },
+ "memoire": {
+  "heapMB": 60.3,
+  "heapTotalMB": 177.7,
+  "nodes": 6173,
+  "listeners": 4829,
+  "textures": {
+   "keys": 3573,
+   "sources": 3573,
+   "MB": 111.2829818725586,
+   "canvas": 1338,
+   "canvasMB": 76.89004516601562,
+   "biggest": [
+    [
+     "tool-axe",
+     640,
+     960
+    ],
+    [
+     "tool-maul",
+     640,
+     960
+    ],
+    [
+     "tool-hatchet",
+     640,
+     960
+    ],
+    [
+     "tool-broadaxe",
+     640,
+     960
+    ],
+    [
+     "xeros",
+     256,
+     1728
+    ],
+    [
+     "boar",
+     368,
+     640
+    ],
+    [
+     "world",
+     256,
+     864
+    ],
+    [
+     "normal-tree-fall",
+     960,
+     168
+    ],
+    [
+     "normal-tree-fall-left",
+     960,
+     168
+    ],
+    [
+     "big-tree-fall",
+     800,
+     160
+    ],
+    [
+     "big-tree-fall-left",
+     800,
+     160
+    ],
+    [
+     "xeros-down",
+     512,
+     192
+    ]
+   ]
+  },
+  "creates": 50
+ },
+ "creates": [
+  {
+   "map": "interieur:ferme:15470,7695",
+   "ms": 87,
+   "born": 38,
+   "bornMB": 0.1,
+   "canvases": 38,
+   "textures": 2274
+  },
+  {
+   "map": "foret-profonde-nord",
+   "ms": 48,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2558
+  },
+  {
+   "map": "bois-du-nord",
+   "ms": 32,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2707
+  },
+  {
+   "map": "pres-du-nord",
+   "ms": 15,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2814
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 63,
+   "born": 15,
+   "bornMB": 0,
+   "canvases": 16,
+   "textures": 2974
+  },
+  {
+   "map": "champs-du-riche",
+   "ms": 7,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3113
+  },
+  {
+   "map": "foret-profonde",
+   "ms": 40,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3113
+  },
+  {
+   "map": "ferme",
+   "ms": 52,
+   "born": 7,
+   "bornMB": 0,
+   "canvases": 7,
+   "textures": 3147
+  },
+  {
+   "map": "chemin",
+   "ms": 12,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3278
+  },
+  {
+   "map": "village",
+   "ms": 35,
+   "born": 25,
+   "bornMB": 0,
+   "canvases": 26,
+   "textures": 3395
+  },
+  {
+   "map": "route-de-la-ville",
+   "ms": 11,
+   "born": 4,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3378
+  },
+  {
+   "map": "foret-profonde-sud",
+   "ms": 40,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3374
+  },
+  {
+   "map": "bois-du-sud",
+   "ms": 27,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3390
+  },
+  {
+   "map": "pres-du-sud",
+   "ms": 15,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3483
+  },
+  {
+   "map": "quartier-sud",
+   "ms": 14,
+   "born": 13,
+   "bornMB": 0,
+   "canvases": 14,
+   "textures": 3496
+  },
+  {
+   "map": "pres-de-l-est",
+   "ms": 8,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3484
+  },
+  {
+   "map": "foret-des-ronces",
+   "ms": 39,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3484
+  },
+  {
+   "map": "bois-de-la-riviere",
+   "ms": 24,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3507
+  },
+  {
+   "map": "friches",
+   "ms": 10,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "ferme-rivale",
+   "ms": 6,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "champs-rivaux",
+   "ms": 8,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "foret-profonde-nord",
+   "ms": 39,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "bois-du-nord",
+   "ms": 26,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "pres-du-nord",
+   "ms": 11,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 33,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 3,
+   "textures": 3572
+  },
+  {
+   "map": "champs-du-riche",
+   "ms": 7,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "foret-profonde",
+   "ms": 41,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "ferme",
+   "ms": 41,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "chemin",
+   "ms": 10,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "village",
+   "ms": 19,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 19,
+   "textures": 3591
+  },
+  {
+   "map": "route-de-la-ville",
+   "ms": 7,
+   "born": 4,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3574
+  },
+  {
+   "map": "foret-profonde-sud",
+   "ms": 39,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "bois-du-sud",
+   "ms": 30,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "pres-du-sud",
+   "ms": 13,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "quartier-sud",
+   "ms": 11,
+   "born": 13,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3583
+  },
+  {
+   "map": "pres-de-l-est",
+   "ms": 10,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "foret-des-ronces",
+   "ms": 39,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "bois-de-la-riviere",
+   "ms": 29,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "friches",
+   "ms": 11,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "ferme-rivale",
+   "ms": 7,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "champs-rivaux",
+   "ms": 10,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "ferme",
+   "ms": 38,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 23,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3572
+  },
+  {
+   "map": "village",
+   "ms": 13,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3591
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 24,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3572
+  },
+  {
+   "map": "ferme",
+   "ms": 37,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3570
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 25,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3572
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 23,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3572
+  },
+  {
+   "map": "interieur:ferme-du-riche:13180,18300",
+   "ms": 12,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3571
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 38,
+   "born": 2,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 3573
+  }
+ ],
+ "contextLost": [],
+ "longTasks": [
+  [
+   189,
+   150
+  ],
+  [
+   358,
+   147
+  ],
+  [
+   1741,
+   135
+  ]
+ ],
+ "errors": [],
+ "console": [
+  "log: %c %c %c %c %c Phaser v3.90.0 (WebGL | Web Audio) %c https://phaser.io/v390 background: #ff0000 background: #ffff00 background: #00ff00 background: #00ffff color: #ffffff; background: #000000 background: transparent"
+ ]
+}

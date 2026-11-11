@@ -117,8 +117,9 @@ await playtest('recalcul', async ({ page, errors, load }) => {
   });
   assert.ok(shades.pairs > 400 && shades.compared >= 10, `des paires d'ombre à comparer (${shades.pairs}, ${shades.compared} comparées)`);
   assert.deepEqual(shades.diff, [], 'les ombres de joint : les mêmes pixels que getPixelAlpha');
-  assert.equal(shades.reads, shades.kept, `chaque image lue une seule fois (${shades.reads} lectures, ${shades.kept} images)`);
-  console.log(`  ✓ ombres de joint : ${shades.pairs} paires, ${shades.compared} comparées pixel pour pixel, ${shades.reads} images lues une fois chacune`);
+  // au plus une lecture par image gardée (une planche jointive dépose ses pixels sans lecture) : aucune image n'est relue
+  assert.ok(shades.reads <= shades.kept, `chaque image lue une seule fois (${shades.reads} lectures, ${shades.kept} images)`);
+  console.log(`  ✓ ombres de joint : ${shades.pairs} paires, ${shades.compared} comparées pixel pour pixel, ${shades.reads} lectures pour ${shades.kept} images`);
 
   // 3. la porte en arc : ouverte par E, elle seule est reclassée ; le résultat est celui d'un reclassement complet
   const house = () =>
