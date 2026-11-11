@@ -454,6 +454,22 @@ export function swungIn(buildings: readonly Building[], pieces: readonly BuildPi
 /** Ce qui compte autour d'un bâtiment pour le recalculer seul (cm) : ses murs, ses pignons, son toit qui déborde, ses abords. */
 const SWUNG_REACH = 400;
 
+/** Les bâtiments déjà calculés, par carte, avec l'empreinte des pièces qui les ont donnés. */
+const builtCache = new Map<string, { print: string; buildings: Building[] }>();
+
+/**
+ * Les bâtiments d'une carte (`buildingsOf`), gardés tant que ses pièces ne changent pas (leur empreinte : chaque pièce, sa place, son
+ * sens, ce qu'elle est) : l'arrivée sur une carte les retrouve, préparés d'avance (systems/prewarm.ts) ou d'une visite d'avant.
+ */
+export function buildingsCached(mapId: string, pieces: readonly BuildPiece[]): Building[] {
+  const print = pieces.map((p) => `${p.id}|${p.x}|${p.y}|${p.z}|${p.view}|${JSON.stringify(p.piece)}`).join(';');
+  const kept = builtCache.get(mapId);
+  if (kept?.print === print) return kept.buildings;
+  const buildings = buildingsOf(pieces);
+  builtCache.set(mapId, { print, buildings });
+  return buildings;
+}
+
 export function buildingsOf(pieces: readonly BuildPiece[]): Building[] {
   const g = gridOf(pieces);
   if (!g) return [];

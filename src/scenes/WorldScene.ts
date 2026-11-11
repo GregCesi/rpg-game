@@ -92,7 +92,7 @@ import {
 import { blocks, boxOf, overlaps, sliceHits, sliceOf, swung } from '../world/build';
 import { CM_PER_PX } from '../content/gabarit';
 import { GameMap } from '../world/GameMap';
-import { buildingsOf, interiorId, parseInteriorId } from '../world/interior';
+import { buildingsCached, interiorId, parseInteriorId } from '../world/interior';
 import type { InteriorMap } from '../world/interiorMap';
 import { InteriorView } from '../world/interiorView';
 import { ZoneBand } from '../world/zoneBand';
@@ -317,7 +317,7 @@ export class WorldScene extends Phaser.Scene {
     const hostSpawn = !this.at && maps[this.mapId]?.spawns[this.spawn];
     if (hostSpawn && hostSpawn.inside) {
       seedMap(maps[this.mapId]);
-      const b = buildingsOf(mapState(game, this.mapId).builds).find((q) => {
+      const b = buildingsCached(this.mapId, mapState(game, this.mapId).builds).find((q) => {
         const x = hostSpawn.x * CM_PER_PX;
         const y = hostSpawn.y * CM_PER_PX;
         return x >= q.room.x && x < q.room.x + q.room.w && y >= q.room.y && y < q.room.y + q.room.d;

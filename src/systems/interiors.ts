@@ -12,7 +12,7 @@ import type { Player } from '../entities/Player';
 import { game, mapState } from '../state';
 import { tilesets } from '../generated/assets';
 import type { GameMap } from '../world/GameMap';
-import { buildingsOf, interiorId, parseInteriorId, type Building, type Rect } from '../world/interior';
+import { buildingsCached, interiorId, parseInteriorId, type Building, type Rect } from '../world/interior';
 import { interiorOf, type InteriorMap } from '../world/interiorMap';
 
 /** Où va Xéros : la carte et la position de ses pieds (px). */
@@ -47,7 +47,7 @@ export function resolveInterior(id: string): InteriorMap | undefined {
   const r = parseInteriorId(id);
   if (!r || !maps[r.host]) return undefined;
   const st = mapState(game, r.host);
-  const b = buildingsOf(st.builds).find((q) => q.key === r.key);
+  const b = buildingsCached(r.host, st.builds).find((q) => q.key === r.key);
   return b && interiorOf(r.host, b, st.joints, interiorTiles());
 }
 

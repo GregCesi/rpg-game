@@ -25,7 +25,7 @@ import { buildLook } from './buildView';
 import { runLayout, wallOf, wallRuns } from './wallRuns';
 import { wallTexture } from './wallTexture';
 import { drawJoints, halvingOverlays } from './jointView';
-import { backCaps, buildingsOf, swungIn, type Building, type Rect } from './interior';
+import { backCaps, buildingsCached, swungIn, type Building, type Rect } from './interior';
 
 /**
  * Taille de l'image d'un objet de props.json : celle de son image dessinée, ou, pour une pièce de bois, celle de ses réglages
@@ -788,7 +788,8 @@ export class GameMap {
    * grandeur, si elle a un corps (`blocks`), avec sa tranche de hauteur (`slice` : il ne bloque qu'à sa hauteur). Appeler `sortBuilds` ensuite pour l'ordre d'affichage.
    */
   placeBuild(piece: BuildPiece, fixed = false): PlacedBuild {
-    const look = buildLook(this.scene, piece);
+    // un morceau de mur prend le dessin de son tronçon au reclassement qui suit (`drawWalls`) : pas de dessin à lui seul, jeté aussitôt
+    const look = wallOf(piece) ? { key: '__DEFAULT', x: 0, y: 0, frame: undefined } : buildLook(this.scene, piece);
     const def = 'prop' in piece.piece ? propDefs[piece.piece.prop] : undefined;
     // une pièce qui s'anime (le feu de l'âtre) : sa planche jouée, comme un objet posé depuis Tiled
     const anim = def?.anim && this.scene.anims.exists(`${look.key}-${def.anim}`) ? `${look.key}-${def.anim}` : undefined;
@@ -933,7 +934,7 @@ export class GameMap {
     const swungOnly = !full && [...dirty.keys()].every((id) => byId.has(id) && hangs(byId.get(id)!.piece));
     if (this.shellRooms) this.buildings = [];
     else if (swungOnly) for (const id of dirty.keys()) this.buildings = swungIn(this.buildings, pieces, byId.get(id)!.piece);
-    else this.buildings = buildingsOf(pieces);
+    else this.buildings = buildingsCached(this.def.id, pieces);
     // le mur du fond de chaque pièce close reste derrière ce qui est dans la pièce, dedans comme dehors (world/interior.ts)
     if (full || !swungOnly) {
       const rooms = this.shellRooms ?? this.buildings.flatMap((q) => q.rooms);

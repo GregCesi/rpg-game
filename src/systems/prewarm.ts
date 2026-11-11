@@ -13,7 +13,8 @@ import type { MapData } from '../content/types';
 import { game } from '../state';
 import { planPieces, type BuildPiece } from '../world/build';
 import { buildLook } from '../world/buildView';
-import { buildingsOf, interiorId, parseInteriorId } from '../world/interior';
+import { buildingsCached, interiorId, parseInteriorId } from '../world/interior';
+import { reliefOf } from '../world/relief';
 import { wallOf, wallRuns } from '../world/wallRuns';
 import { wallTexture } from '../world/wallTexture';
 import { resolveInterior } from './interiors';
@@ -37,6 +38,21 @@ function piecesOf(def: MapData): BuildPiece[] {
     for (const q of planPieces({ ...plan, ...(p.age ? { age: p.age } : {}) }, at)) out.push({ ...q, id: id-- });
   }
   return out;
+}
+
+/**
+ * Ce qu'une carte calcule à l'arrivée : son relief (`reliefOf`, gardé par carte), ses bâtiments (`buildingsCached`, s'ils sont déjà
+ * dans la partie), puis les textures de ses pièces.
+ */
+function* warmMap(scene: Phaser.Scene, def: MapData): Generator<void, void, void> {
+  reliefOf(def);
+  yield;
+  const st = game.maps[def.id];
+  if (st?.builds.length) {
+    buildingsCached(def.id, st.builds);
+    yield;
+  }
+  yield* warm(scene, () => piecesOf(def));
 }
 
 /** Les textures d'un ensemble de pièces : chaque tronçon de mur, chaque autre pièce (son dessin, son bois). */
@@ -66,7 +82,7 @@ export function prepareAround(scene: Phaser.Scene, def: MapData, outside: boolea
   // (les bâtiments se calculent dans la file, pas à l'arrivée)
   if (outside)
     add(`interieurs:${def.id}`, function* () {
-      for (const b of buildingsOf(game.maps[def.id]?.builds ?? [])) {
+      for (const b of buildingsCached(def.id, game.maps[def.id]?.builds ?? [])) {
         const id = interiorId(def.id, b.key);
         if (queued.has(id)) continue;
         queued.add(id);
@@ -78,9 +94,9 @@ export function prepareAround(scene: Phaser.Scene, def: MapData, outside: boolea
   const host = parseInteriorId(def.id)?.host;
   const here = def.world ?? (host ? maps[host]?.world : undefined);
   const others = Object.values(maps)
-    .filter((m) => m.world && m.id !== def.id && m.plans.length)
+    .filter((m) => m.world && m.id !== def.id && (m.plans.length || game.maps[m.id]?.builds.length || m.relief))
     .sort((a, b) => (here ? Math.hypot(a.world!.x - here.x, a.world!.y - here.y) - Math.hypot(b.world!.x - here.x, b.world!.y - here.y) : 0));
-  for (const m of others) add(m.id, () => warm(scene, () => piecesOf(m)));
+  for (const m of others) add(m.id, () => warmMap(scene, m));
 }
 
 /** Avance la préparation pendant `budgetMs` ms au plus (à appeler une fois par image dessinée). */
