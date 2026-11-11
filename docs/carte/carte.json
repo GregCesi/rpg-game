@@ -31,8 +31,8 @@
         "role": "Les commandes npm : build-art, build-maps, build-trees, build-minimap (fabriquer), check (vérifier le contenu), sketch (esquisser une carte), carte (cette page).",
         "glob": "tools/{build-*,check,sketch,carte,capacites,make-artifact}.ts" },
       { "id": "tests", "nom": "Les tests et les scénarios", "x": 2, "y": 0, "sorte": "outil",
-        "role": "Deux sortes de vérifications. Les tests rapides (npm run test:fast) calculent sans navigateur : arbres, relief, créatures, matière… Les scénarios jouent le vrai jeu dans un Chromium sans écran (tools/lib/playtest.ts) : marcher, abattre, bâtir, se battre.",
-        "glob": "tools/{test-*,run-scenarios,scenarios-bg,lib/playtest}.ts",
+        "role": "Deux sortes de vérifications. Les tests rapides (npm run test:fast) calculent sans navigateur : arbres, relief, créatures, matière… Les scénarios jouent le vrai jeu dans un Chromium sans écran (tools/lib/playtest.ts) : marcher, abattre, bâtir, se battre. Le diagnostic des lenteurs (npm run diagnostic, DIAGNOSTIC.md) mesure le vrai jeu dans le vrai Chrome.",
+        "glob": "tools/{test-*,run-scenarios,scenarios-bg,lib/playtest,diagnostic}.ts",
         "regle": "Un test ne contourne jamais un défaut du jeu ; un scénario attend un état, jamais un délai fixe." }
     ],
     "fleches": [

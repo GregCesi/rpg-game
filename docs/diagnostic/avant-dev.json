@@ -1,0 +1,5032 @@
+{
+ "label": "avant",
+ "commit": "b9cc596",
+ "mode": "dev",
+ "root": "/private/tmp/claude-501/-Users-gregoiremarchand-Code-rpg-game-coq/d2edb72c-7033-4895-a193-6fa6121df664/scratchpad/avant",
+ "date": "2026-11-11T11:05:17.342Z",
+ "zones": [
+  {
+   "zone": "foret-profonde-nord",
+   "pass": 1,
+   "ready": 1111,
+   "drawn": 1151,
+   "create": 867,
+   "born": 278,
+   "bornMB": 13.2,
+   "canvases": 279,
+   "textures": 2277,
+   "biggest": [
+    [
+     "terrain:foret-profonde-nord:0,0",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-profonde-nord:256,0",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-profonde-nord:512,0",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-profonde-nord:768,0",
+     256,
+     360
+    ]
+   ],
+   "heapMB": 74.4,
+   "objects": 8572,
+   "statics": 1753
+  },
+  {
+   "zone": "bois-du-nord",
+   "pass": 1,
+   "ready": 765,
+   "drawn": 774,
+   "create": 624,
+   "born": 147,
+   "bornMB": 10.2,
+   "canvases": 160,
+   "textures": 2424,
+   "biggest": [
+    [
+     "terrain:bois-du-nord:512,0",
+     256,
+     360
+    ],
+    [
+     "terrain:bois-du-nord:768,0",
+     256,
+     360
+    ],
+    [
+     "terrain:bois-du-nord:1024,0",
+     256,
+     360
+    ],
+    [
+     "terrain:bois-du-nord:1280,0",
+     256,
+     360
+    ]
+   ],
+   "heapMB": 96.2,
+   "objects": 5778,
+   "statics": 453
+  },
+  {
+   "zone": "pres-du-nord",
+   "pass": 1,
+   "ready": 158,
+   "drawn": 176,
+   "create": 23,
+   "born": 9,
+   "bornMB": 0,
+   "canvases": 9,
+   "textures": 2433,
+   "biggest": [
+    [
+     "wood:normal:beam:ew:580::::::old",
+     117,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:340::::::old",
+     69,
+     10
+    ],
+    [
+     "wood:normal:beam:ns:300::::::old",
+     10,
+     62
+    ],
+    [
+     "wood:normal:beam:ew:300::::::old",
+     61,
+     10
+    ]
+   ],
+   "heapMB": 98,
+   "objects": 4598,
+   "statics": 202
+  },
+  {
+   "zone": "ferme-du-riche",
+   "pass": 1,
+   "ready": 158,
+   "drawn": 162,
+   "create": 22,
+   "born": 8,
+   "bornMB": 0,
+   "canvases": 9,
+   "textures": 2441,
+   "biggest": [
+    [
+     "wood:normal:beam:ew:880::::::old",
+     177,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:880::::::old#0#joint-scarf-normal-ew-old@53,0;joint-peg-old@3,5;joint-peg-old@59,5;joint-peg-old@115,5;joint-peg-old@171,5",
+     177,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:880::::::old#0#joint-scarf-normal-ew-old@53,0;joint-peg-old@59,5;joint-peg-old@115,5",
+     177,
+     10
+    ],
+    [
+     "wood:normal:beam:ns:600::::::old",
+     10,
+     122
+    ]
+   ],
+   "heapMB": 111.6,
+   "objects": 3597,
+   "statics": 355
+  },
+  {
+   "zone": "champs-du-riche",
+   "pass": 1,
+   "ready": 147,
+   "drawn": 162,
+   "create": 12,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2441,
+   "biggest": [],
+   "heapMB": 116.7,
+   "objects": 3219,
+   "statics": 288
+  },
+  {
+   "zone": "foret-profonde",
+   "pass": 1,
+   "ready": 619,
+   "drawn": 631,
+   "create": 496,
+   "born": 28,
+   "bornMB": 6.7,
+   "canvases": 38,
+   "textures": 2469,
+   "biggest": [
+    [
+     "terrain:foret-profonde:0,256",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-profonde:0,512",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-profonde:0,768",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-profonde:0,1024",
+     256,
+     360
+    ]
+   ],
+   "heapMB": 125.7,
+   "objects": 8829,
+   "statics": 1790
+  },
+  {
+   "zone": "ferme",
+   "pass": 1,
+   "ready": 2205,
+   "drawn": 2218,
+   "create": 2073,
+   "born": 254,
+   "bornMB": 16.1,
+   "canvases": 263,
+   "textures": 2723,
+   "biggest": [
+    [
+     "terrain:ferme:1024,256",
+     256,
+     360
+    ],
+    [
+     "terrain:ferme:1280,256",
+     256,
+     360
+    ],
+    [
+     "terrain:ferme:1280,512",
+     256,
+     360
+    ],
+    [
+     "terrain:ferme:1280,768",
+     256,
+     360
+    ]
+   ],
+   "heapMB": 156.5,
+   "objects": 9060,
+   "statics": 643
+  },
+  {
+   "zone": "chemin",
+   "pass": 1,
+   "ready": 165,
+   "drawn": 179,
+   "create": 20,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2725,
+   "biggest": [],
+   "heapMB": 150.8,
+   "objects": 4882,
+   "statics": 198
+  },
+  {
+   "zone": "village",
+   "pass": 1,
+   "ready": 156,
+   "drawn": 170,
+   "create": 36,
+   "born": 25,
+   "bornMB": 0,
+   "canvases": 26,
+   "textures": 2750,
+   "biggest": [
+    [
+     "wood:normal:beam:ew:340::::::old#0#joint-peg-old@3,5;joint-peg-old@63,5",
+     69,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:240::::::worn#0#joint-peg-worn@3,5;joint-peg-worn@43,5",
+     49,
+     10
+    ],
+    [
+     "wood:normal:beam:up:260::::::worn",
+     8,
+     59
+    ],
+    [
+     "wood:normal:beam:up:180::::::old",
+     8,
+     43
+    ]
+   ],
+   "heapMB": 60.6,
+   "objects": 6035,
+   "statics": 270
+  },
+  {
+   "zone": "route-de-la-ville",
+   "pass": 1,
+   "ready": 121,
+   "drawn": 136,
+   "create": 11,
+   "born": 4,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2733,
+   "biggest": [
+    [
+     "14f4c7f1-eeb7-4827-97a7-279f3178ce12",
+     1,
+     1
+    ],
+    [
+     "4cdaf042-c432-4047-bde5-7ed3098bf5d6",
+     1,
+     1
+    ],
+    [
+     "a3c6ab3f-35e1-449c-86dc-8ef64658b35b",
+     1,
+     1
+    ],
+    [
+     "33058b96-4556-41ab-b92c-33e74d26cc36",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 68.4,
+   "objects": 4378,
+   "statics": 163
+  },
+  {
+   "zone": "foret-profonde-sud",
+   "pass": 1,
+   "ready": 512,
+   "drawn": 532,
+   "create": 373,
+   "born": 17,
+   "bornMB": 5.7,
+   "canvases": 0,
+   "textures": 2746,
+   "biggest": [
+    [
+     "terrain:foret-profonde-sud:0,256",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-profonde-sud:0,512",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-profonde-sud:0,768",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-profonde-sud:0,1024",
+     256,
+     360
+    ]
+   ],
+   "heapMB": 93.6,
+   "objects": 8925,
+   "statics": 1826
+  },
+  {
+   "zone": "bois-du-sud",
+   "pass": 1,
+   "ready": 540,
+   "drawn": 547,
+   "create": 414,
+   "born": 94,
+   "bornMB": 7,
+   "canvases": 89,
+   "textures": 2840,
+   "biggest": [
+    [
+     "terrain:bois-du-sud:1024,256",
+     256,
+     360
+    ],
+    [
+     "terrain:bois-du-sud:1024,512",
+     256,
+     360
+    ],
+    [
+     "terrain:bois-du-sud:1280,512",
+     256,
+     360
+    ],
+    [
+     "terrain:bois-du-sud:1024,768",
+     256,
+     360
+    ]
+   ],
+   "heapMB": 109.5,
+   "objects": 5888,
+   "statics": 431
+  },
+  {
+   "zone": "pres-du-sud",
+   "pass": 1,
+   "ready": 157,
+   "drawn": 175,
+   "create": 22,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2840,
+   "biggest": [],
+   "heapMB": 110.8,
+   "objects": 4887,
+   "statics": 221
+  },
+  {
+   "zone": "quartier-sud",
+   "pass": 1,
+   "ready": 136,
+   "drawn": 145,
+   "create": 16,
+   "born": 13,
+   "bornMB": 0,
+   "canvases": 14,
+   "textures": 2853,
+   "biggest": [
+    [
+     "0de3d4ef-3906-4e32-aaaa-c68e4b68605a",
+     1,
+     1
+    ],
+    [
+     "117184ec-5efd-4183-9ee3-624778ae5c51",
+     1,
+     1
+    ],
+    [
+     "e1d243ad-8cf9-486b-a3f1-be553cb9f2e6",
+     1,
+     1
+    ],
+    [
+     "57f1b901-d7c8-4e6e-a5ad-56a7d9b57134",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 121.1,
+   "objects": 4597,
+   "statics": 244
+  },
+  {
+   "zone": "pres-de-l-est",
+   "pass": 1,
+   "ready": 144,
+   "drawn": 159,
+   "create": 12,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2841,
+   "biggest": [],
+   "heapMB": 123.3,
+   "objects": 3829,
+   "statics": 227
+  },
+  {
+   "zone": "foret-des-ronces",
+   "pass": 1,
+   "ready": 747,
+   "drawn": 764,
+   "create": 626,
+   "born": 33,
+   "bornMB": 9.5,
+   "canvases": 20,
+   "textures": 2874,
+   "biggest": [
+    [
+     "terrain:foret-des-ronces:0,256",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-des-ronces:0,512",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-des-ronces:0,768",
+     256,
+     360
+    ],
+    [
+     "terrain:foret-des-ronces:0,1024",
+     256,
+     360
+    ]
+   ],
+   "heapMB": 138.2,
+   "objects": 8311,
+   "statics": 1769
+  },
+  {
+   "zone": "bois-de-la-riviere",
+   "pass": 1,
+   "ready": 557,
+   "drawn": 578,
+   "create": 414,
+   "born": 56,
+   "bornMB": 6.6,
+   "canvases": 56,
+   "textures": 2930,
+   "biggest": [
+    [
+     "terrain:bois-de-la-riviere:1280,256",
+     256,
+     360
+    ],
+    [
+     "terrain:bois-de-la-riviere:1280,512",
+     256,
+     360
+    ],
+    [
+     "terrain:bois-de-la-riviere:1280,768",
+     256,
+     360
+    ],
+    [
+     "terrain:bois-de-la-riviere:1280,1024",
+     256,
+     360
+    ]
+   ],
+   "heapMB": 158,
+   "objects": 5624,
+   "statics": 481
+  },
+  {
+   "zone": "friches",
+   "pass": 1,
+   "ready": 128,
+   "drawn": 143,
+   "create": 9,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 152.5,
+   "objects": 4468,
+   "statics": 175
+  },
+  {
+   "zone": "ferme-rivale",
+   "pass": 1,
+   "ready": 119,
+   "drawn": 144,
+   "create": 5,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 155.3,
+   "objects": 2812,
+   "statics": 369
+  },
+  {
+   "zone": "champs-rivaux",
+   "pass": 1,
+   "ready": 137,
+   "drawn": 164,
+   "create": 5,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 170.1,
+   "objects": 3023,
+   "statics": 250
+  },
+  {
+   "zone": "foret-profonde-nord",
+   "pass": 2,
+   "ready": 150,
+   "drawn": 165,
+   "create": 31,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 178.3,
+   "objects": 8572,
+   "statics": 1753
+  },
+  {
+   "zone": "bois-du-nord",
+   "pass": 2,
+   "ready": 155,
+   "drawn": 161,
+   "create": 30,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 196.9,
+   "objects": 5778,
+   "statics": 453
+  },
+  {
+   "zone": "pres-du-nord",
+   "pass": 2,
+   "ready": 132,
+   "drawn": 139,
+   "create": 19,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 204.8,
+   "objects": 4598,
+   "statics": 202
+  },
+  {
+   "zone": "ferme-du-riche",
+   "pass": 2,
+   "ready": 132,
+   "drawn": 145,
+   "create": 14,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 2,
+   "textures": 2931,
+   "biggest": [
+    [
+     "4442405d-f8cc-4abb-8586-39a12b0ca280",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 211.3,
+   "objects": 3597,
+   "statics": 355
+  },
+  {
+   "zone": "champs-du-riche",
+   "pass": 2,
+   "ready": 147,
+   "drawn": 162,
+   "create": 12,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 210.5,
+   "objects": 3219,
+   "statics": 288
+  },
+  {
+   "zone": "foret-profonde",
+   "pass": 2,
+   "ready": 185,
+   "drawn": 198,
+   "create": 42,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 221.5,
+   "objects": 8829,
+   "statics": 1790
+  },
+  {
+   "zone": "ferme",
+   "pass": 2,
+   "ready": 1163,
+   "drawn": 1182,
+   "create": 1049,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 72.3,
+   "objects": 9060,
+   "statics": 643
+  },
+  {
+   "zone": "chemin",
+   "pass": 2,
+   "ready": 143,
+   "drawn": 160,
+   "create": 19,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 84.3,
+   "objects": 4882,
+   "statics": 198
+  },
+  {
+   "zone": "village",
+   "pass": 2,
+   "ready": 146,
+   "drawn": 161,
+   "create": 30,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 20,
+   "textures": 2951,
+   "biggest": [
+    [
+     "69c49f9f-fb45-4989-beab-c1e0c1769104",
+     1,
+     1
+    ],
+    [
+     "0adab15e-8d57-4402-9060-25b309f9800e",
+     1,
+     1
+    ],
+    [
+     "1b1cc2d7-bf68-4c16-9728-e671bf96f536",
+     1,
+     1
+    ],
+    [
+     "5f0c22b7-867e-4fbd-8200-681fdb50d4be",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 95.9,
+   "objects": 6035,
+   "statics": 270
+  },
+  {
+   "zone": "route-de-la-ville",
+   "pass": 2,
+   "ready": 130,
+   "drawn": 144,
+   "create": 10,
+   "born": 4,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2934,
+   "biggest": [
+    [
+     "ad258a6b-3ecb-4329-b164-4d30ee4adbae",
+     1,
+     1
+    ],
+    [
+     "dccdb2b9-24ae-4f9a-9ac5-31eab7176189",
+     1,
+     1
+    ],
+    [
+     "b6a40291-54db-4c4f-b686-109738ab6be1",
+     1,
+     1
+    ],
+    [
+     "ffbdf20c-d065-4e2f-8269-f1b24ec93421",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 99.9,
+   "objects": 4378,
+   "statics": 163
+  },
+  {
+   "zone": "foret-profonde-sud",
+   "pass": 2,
+   "ready": 176,
+   "drawn": 189,
+   "create": 36,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 113.7,
+   "objects": 8925,
+   "statics": 1826
+  },
+  {
+   "zone": "bois-du-sud",
+   "pass": 2,
+   "ready": 165,
+   "drawn": 182,
+   "create": 35,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 131.6,
+   "objects": 5888,
+   "statics": 431
+  },
+  {
+   "zone": "pres-du-sud",
+   "pass": 2,
+   "ready": 120,
+   "drawn": 126,
+   "create": 19,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 132.9,
+   "objects": 4887,
+   "statics": 221
+  },
+  {
+   "zone": "quartier-sud",
+   "pass": 2,
+   "ready": 130,
+   "drawn": 144,
+   "create": 12,
+   "born": 13,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2943,
+   "biggest": [
+    [
+     "a0a159b7-830b-41b7-8bc7-9b7065080c66",
+     1,
+     1
+    ],
+    [
+     "23a0655f-88b6-4bc3-b869-a5c13ae87ac6",
+     1,
+     1
+    ],
+    [
+     "425e40b7-99ba-425d-9ec6-9201459ac3ee",
+     1,
+     1
+    ],
+    [
+     "aefe35f6-b58a-4336-96ad-1f3b160d1b3b",
+     1,
+     1
+    ]
+   ],
+   "heapMB": 141.4,
+   "objects": 4597,
+   "statics": 244
+  },
+  {
+   "zone": "pres-de-l-est",
+   "pass": 2,
+   "ready": 124,
+   "drawn": 144,
+   "create": 8,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 145.6,
+   "objects": 3829,
+   "statics": 227
+  },
+  {
+   "zone": "foret-des-ronces",
+   "pass": 2,
+   "ready": 172,
+   "drawn": 183,
+   "create": 32,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 167,
+   "objects": 8311,
+   "statics": 1769
+  },
+  {
+   "zone": "bois-de-la-riviere",
+   "pass": 2,
+   "ready": 151,
+   "drawn": 160,
+   "create": 28,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 180.9,
+   "objects": 5624,
+   "statics": 481
+  },
+  {
+   "zone": "friches",
+   "pass": 2,
+   "ready": 128,
+   "drawn": 143,
+   "create": 9,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 180.4,
+   "objects": 4468,
+   "statics": 175
+  },
+  {
+   "zone": "ferme-rivale",
+   "pass": 2,
+   "ready": 139,
+   "drawn": 161,
+   "create": 5,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 183.5,
+   "objects": 2812,
+   "statics": 369
+  },
+  {
+   "zone": "champs-rivaux",
+   "pass": 2,
+   "ready": 142,
+   "drawn": 164,
+   "create": 7,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "heapMB": 198.2,
+   "objects": 3023,
+   "statics": 250
+  }
+ ],
+ "situations": {
+  "loin": {
+   "map": "ferme",
+   "seconds": 5.1,
+   "rafPerSec": 58.6,
+   "imagesPerSec": 58.8,
+   "image": {
+    "avg": 17.1,
+    "p50": 16.7,
+    "p95": 17.5,
+    "p99": 17.7,
+    "max": 133,
+    "over20": 1,
+    "over33": 1,
+    "over50": 1,
+    "count": 301
+   },
+   "cpuPerImage": {
+    "step": 2,
+    "physics": 0,
+    "world": 0.7,
+    "hud": 0,
+    "sort": 0,
+    "render": 2.7,
+    "renderP95": 3,
+    "stepP95": 2.3,
+    "busyP95": 5.2
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 302
+    }
+   },
+   "stepCost": 2,
+   "gl": {
+    "draws": 46,
+    "binds": 695,
+    "uploads": 0,
+    "uploadKpx": 0
+   },
+   "subsystems": {
+    "lifts": 1.3,
+    "laneFade": 0.3,
+    "roofs": 0.1,
+    "daylight": 0.1,
+    "interaction": 0,
+    "creatures": 0,
+    "player": 0,
+    "clock": 0,
+    "effort": 0,
+    "prompts": 0,
+    "pileCount": 0,
+    "autosave": 0,
+    "zones": 0,
+    "interiors": 0
+   },
+   "census": {
+    "all": 9060,
+    "visible": 8389,
+    "inView": 851,
+    "containers": 1,
+    "zones": 643,
+    "images": 8356,
+    "graphics": 43,
+    "tilemaps": 13,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 643,
+    "colliders": 2,
+    "renderList": 9020,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 2930,
+    "MB": 108.4,
+    "canvas": 997,
+    "canvasMB": 75.6,
+    "biggest": [
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 240.6,
+     "heapTotalMB": 307.6,
+     "nodes": 5231,
+     "listeners": 6088
+    },
+    "after": {
+     "heapMB": 245.8,
+     "heapTotalMB": 308.1,
+     "nodes": 5319,
+     "listeners": 6088
+    }
+   },
+   "profile": {
+    "ms": 5002,
+    "idleMs": 3533,
+    "gcMs": 6,
+    "self": [
+     {
+      "fn": "ImageWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40237",
+      "ms": 261,
+      "share": 5.2
+     },
+     {
+      "fn": "batchSprite http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133047",
+      "ms": 190,
+      "share": 3.8
+     },
+     {
+      "fn": "update src/systems/lift.ts:32",
+      "ms": 173,
+      "share": 3.5
+     },
+     {
+      "fn": "lift src/systems/lift.ts:35",
+      "ms": 152,
+      "share": 3
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8633",
+      "ms": 89,
+      "share": 1.8
+     },
+     {
+      "fn": "w",
+      "ms": 67,
+      "share": 1.3
+     },
+     {
+      "fn": "batchQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:127465",
+      "ms": 61,
+      "share": 1.2
+     },
+     {
+      "fn": "StableSort http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:174410",
+      "ms": 53,
+      "share": 1.1
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 39,
+      "share": 0.8
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:130338",
+      "ms": 31,
+      "share": 0.6
+     },
+     {
+      "fn": "update src/systems/laneFade.ts:31",
+      "ms": 28,
+      "share": 0.6
+     },
+     {
+      "fn": "setQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:34106",
+      "ms": 22,
+      "share": 0.4
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:32296",
+      "ms": 21,
+      "share": 0.4
+     },
+     {
+      "fn": "sortByDepth http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:24733",
+      "ms": 14,
+      "share": 0.3
+     },
+     {
+      "fn": "multiply http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33716",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "bufferData",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:31387",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33021",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) src/scenes/WorldScene.ts:306",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33039",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/roofs.ts:37",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:30033",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "flush http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:127183",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "batchFillRect http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133266",
+      "ms": 7,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": [
+     {
+      "fn": "onPost src/systems/lift.ts:18",
+      "ms": 364,
+      "share": 7.3
+     },
+     {
+      "fn": "update src/systems/lift.ts:32",
+      "ms": 361,
+      "share": 7.2
+     },
+     {
+      "fn": "update src/scenes/WorldScene.ts:446",
+      "ms": 197,
+      "share": 3.9
+     },
+     {
+      "fn": "lift src/systems/lift.ts:35",
+      "ms": 191,
+      "share": 3.8
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 39,
+      "share": 0.8
+     },
+     {
+      "fn": "update src/systems/laneFade.ts:31",
+      "ms": 28,
+      "share": 0.6
+     },
+     {
+      "fn": "update src/systems/roofs.ts:37",
+      "ms": 25,
+      "share": 0.5
+     },
+     {
+      "fn": "builds src/systems/roofs.ts:70",
+      "ms": 17,
+      "share": 0.3
+     },
+     {
+      "fn": "update src/systems/InteractionSystem.ts:25",
+      "ms": 14,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) src/scenes/WorldScene.ts:306",
+      "ms": 13,
+      "share": 0.3
+     },
+     {
+      "fn": "roofView src/world/roofView.ts:79",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/creatures.ts:130",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "refreshAim src/scenes/WorldScene.ts:597",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "target src/systems/turnLog.ts:31",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "boxOf src/world/build.ts:101",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "draw src/systems/creatures.ts:149",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "interactables src/world/GameMap.ts:301",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "step src/world/warren.ts:181",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "lights src/systems/roofs.ts:95",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "step src/world/creature.ts:319",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "graze src/world/creature.ts:268",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "advance src/world/creature.ts:64",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "blocked src/systems/creatures.ts:105",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "touching src/systems/roll.ts:119",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "areaFree src/world/GameMap.ts:442",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "roofOf src/world/roofView.ts:63",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "actPressed src/input/PlayerInput.ts:188",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "take src/input/keyLatch.ts:40",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/scenes/HudScene.ts:137",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "announceCell src/scenes/WorldScene.ts:427",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/pileCount.ts:16",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/entities/Player.ts:64",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "eTarget src/systems/InteractionSystem.ts:29",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "showPrompts src/scenes/WorldScene.ts:697",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "isPutAction src/systems/InteractionSystem.ts:6",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "simSpeed src/systems/simSpeed.ts:7",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "aimed src/systems/site.ts:123",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/site.ts:57",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "worldCell src/world/minimap.ts:192",
+      "ms": 0,
+      "share": 0
+     }
+    ]
+   }
+  },
+  "loinMarche": {
+   "map": "ferme",
+   "seconds": 5.2,
+   "rafPerSec": 58.3,
+   "imagesPerSec": 58.5,
+   "image": {
+    "avg": 17.2,
+    "p50": 16.7,
+    "p95": 17.5,
+    "p99": 17.7,
+    "max": 167.2,
+    "over20": 1,
+    "over33": 1,
+    "over50": 1,
+    "count": 301
+   },
+   "cpuPerImage": {
+    "step": 2,
+    "physics": 0,
+    "world": 0.7,
+    "hud": 0,
+    "sort": 0,
+    "render": 2.8,
+    "renderP95": 3.2,
+    "stepP95": 2.4,
+    "busyP95": 5.6
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 302
+    }
+   },
+   "stepCost": 2,
+   "gl": {
+    "draws": 46,
+    "binds": 695.1,
+    "uploads": 0,
+    "uploadKpx": 1
+   },
+   "subsystems": {
+    "lifts": 1.3,
+    "laneFade": 0.3,
+    "daylight": 0.1,
+    "roofs": 0.1,
+    "interaction": 0,
+    "creatures": 0,
+    "roll": 0,
+    "player": 0,
+    "effort": 0,
+    "clock": 0,
+    "site": 0,
+    "interiors": 0,
+    "pileCount": 0,
+    "autosave": 0
+   },
+   "census": {
+    "all": 9060,
+    "visible": 8389,
+    "inView": 846,
+    "containers": 1,
+    "zones": 643,
+    "images": 8356,
+    "graphics": 43,
+    "tilemaps": 13,
+    "texts": 0,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 643,
+    "colliders": 2,
+    "renderList": 9020,
+    "tweens": 1
+   },
+   "textures": {
+    "keys": 2930,
+    "MB": 108.4,
+    "canvas": 997,
+    "canvasMB": 75.6,
+    "biggest": [
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 264.7,
+     "heapTotalMB": 308.1,
+     "nodes": 5319,
+     "listeners": 6088
+    },
+    "after": {
+     "heapMB": 244.3,
+     "heapTotalMB": 308.1,
+     "nodes": 5405,
+     "listeners": 6088
+    }
+   },
+   "profile": {
+    "ms": 5008,
+    "idleMs": 3499,
+    "gcMs": 7,
+    "self": [
+     {
+      "fn": "ImageWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40237",
+      "ms": 258,
+      "share": 5.1
+     },
+     {
+      "fn": "batchSprite http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133047",
+      "ms": 213,
+      "share": 4.2
+     },
+     {
+      "fn": "update src/systems/lift.ts:32",
+      "ms": 168,
+      "share": 3.4
+     },
+     {
+      "fn": "lift src/systems/lift.ts:35",
+      "ms": 153,
+      "share": 3.1
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8633",
+      "ms": 78,
+      "share": 1.6
+     },
+     {
+      "fn": "w",
+      "ms": 70,
+      "share": 1.4
+     },
+     {
+      "fn": "batchQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:127465",
+      "ms": 64,
+      "share": 1.3
+     },
+     {
+      "fn": "StableSort http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:174410",
+      "ms": 59,
+      "share": 1.2
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 39,
+      "share": 0.8
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:130338",
+      "ms": 30,
+      "share": 0.6
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:32296",
+      "ms": 25,
+      "share": 0.5
+     },
+     {
+      "fn": "update src/systems/laneFade.ts:31",
+      "ms": 22,
+      "share": 0.4
+     },
+     {
+      "fn": "setQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:34106",
+      "ms": 17,
+      "share": 0.3
+     },
+     {
+      "fn": "flush http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:127183",
+      "ms": 15,
+      "share": 0.3
+     },
+     {
+      "fn": "multiply http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33716",
+      "ms": 13,
+      "share": 0.3
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33021",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "sortByDepth http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:24733",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "bufferData",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:31387",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/roll.ts:52",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "batchFillRect http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133266",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8659",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33039",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) src/scenes/WorldScene.ts:306",
+      "ms": 7,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": [
+     {
+      "fn": "update src/systems/lift.ts:32",
+      "ms": 366,
+      "share": 7.3
+     },
+     {
+      "fn": "onPost src/systems/lift.ts:18",
+      "ms": 366,
+      "share": 7.3
+     },
+     {
+      "fn": "lift src/systems/lift.ts:35",
+      "ms": 199,
+      "share": 4
+     },
+     {
+      "fn": "update src/scenes/WorldScene.ts:446",
+      "ms": 199,
+      "share": 4
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 40,
+      "share": 0.8
+     },
+     {
+      "fn": "update src/systems/laneFade.ts:31",
+      "ms": 22,
+      "share": 0.4
+     },
+     {
+      "fn": "update src/systems/roofs.ts:37",
+      "ms": 22,
+      "share": 0.4
+     },
+     {
+      "fn": "builds src/systems/roofs.ts:70",
+      "ms": 17,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) src/scenes/WorldScene.ts:306",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/InteractionSystem.ts:25",
+      "ms": 12,
+      "share": 0.2
+     },
+     {
+      "fn": "roofView src/world/roofView.ts:79",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/creatures.ts:130",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/roll.ts:52",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "refreshAim src/scenes/WorldScene.ts:597",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "step src/world/warren.ts:181",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "interactables src/world/GameMap.ts:301",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "target src/systems/turnLog.ts:31",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "step src/world/creature.ts:319",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "update src/scenes/HudScene.ts:137",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "draw src/systems/creatures.ts:149",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "graze src/world/creature.ts:268",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "feetOf src/systems/creatures.ts:16",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "lights src/systems/roofs.ts:95",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "touching src/systems/roll.ts:119",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "blocked src/systems/creatures.ts:105",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "advance src/world/creature.ts:64",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/minimap.ts:112",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "onStep src/systems/footing.ts:23",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "areaFree src/world/GameMap.ts:442",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "nearest src/systems/InteractionSystem.ts:45",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/entities/Player.ts:64",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "drawWindow src/world/minimap.ts:204",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "(anonyme) src/systems/creatures.ts:16",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "roofOf src/world/roofView.ts:63",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "putTarget src/systems/InteractionSystem.ts:33",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "step src/systems/footing.ts:34",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "isPutAction src/systems/InteractionSystem.ts:6",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/site.ts:57",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/interiors.ts:66",
+      "ms": 1,
+      "share": 0
+     }
+    ]
+   }
+  },
+  "devant": {
+   "map": "ferme-du-riche",
+   "seconds": 5.2,
+   "rafPerSec": 58.3,
+   "imagesPerSec": 58.5,
+   "image": {
+    "avg": 17.2,
+    "p50": 16.7,
+    "p95": 17.6,
+    "p99": 17.7,
+    "max": 165.7,
+    "over20": 1,
+    "over33": 1,
+    "over50": 1,
+    "count": 301
+   },
+   "cpuPerImage": {
+    "step": 0.3,
+    "physics": 0,
+    "world": 0.2,
+    "hud": 0,
+    "sort": 0,
+    "render": 1.6,
+    "renderP95": 2,
+    "stepP95": 0.5,
+    "busyP95": 2.4
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 302
+    }
+   },
+   "stepCost": 0.3,
+   "gl": {
+    "draws": 6,
+    "binds": 85,
+    "uploads": 0,
+    "uploadKpx": 0
+   },
+   "subsystems": {
+    "daylight": 0.1,
+    "roofs": 0.1,
+    "interaction": 0,
+    "player": 0,
+    "site": 0,
+    "creatures": 0,
+    "effort": 0,
+    "clock": 0,
+    "pileCount": 0,
+    "zones": 0,
+    "cameras": 0,
+    "tweens": 0,
+    "autosave": 0,
+    "interiors": 0
+   },
+   "census": {
+    "all": 3597,
+    "visible": 3225,
+    "inView": 73,
+    "containers": 1,
+    "zones": 355,
+    "images": 3230,
+    "graphics": 2,
+    "tilemaps": 6,
+    "texts": 1,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 355,
+    "colliders": 2,
+    "renderList": 3574,
+    "tweens": 0
+   },
+   "textures": {
+    "keys": 2931,
+    "MB": 108.4,
+    "canvas": 998,
+    "canvasMB": 75.6,
+    "biggest": [
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 258.8,
+     "heapTotalMB": 317.4,
+     "nodes": 5435,
+     "listeners": 6094
+    },
+    "after": {
+     "heapMB": 273.4,
+     "heapTotalMB": 317.4,
+     "nodes": 5521,
+     "listeners": 6094
+    }
+   },
+   "profile": {
+    "ms": 5003,
+    "idleMs": 4356,
+    "gcMs": 4,
+    "self": [
+     {
+      "fn": "ImageWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40237",
+      "ms": 163,
+      "share": 3.3
+     },
+     {
+      "fn": "batchSprite http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133047",
+      "ms": 117,
+      "share": 2.3
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8633",
+      "ms": 43,
+      "share": 0.9
+     },
+     {
+      "fn": "StableSort http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:174410",
+      "ms": 39,
+      "share": 0.8
+     },
+     {
+      "fn": "batchQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:127465",
+      "ms": 31,
+      "share": 0.6
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 26,
+      "share": 0.5
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:130338",
+      "ms": 13,
+      "share": 0.3
+     },
+     {
+      "fn": "setQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:34106",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "bufferSubData",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "multiply http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33716",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) src/scenes/WorldScene.ts:306",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/roofs.ts:37",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "sortByDepth http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:24733",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:31369",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "target src/systems/turnLog.ts:31",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8659",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "now",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "batchTexture http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133161",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "TilemapLayerWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:161244",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "ContainerWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:35582",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33021",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "builds src/systems/roofs.ts:70",
+      "ms": 2,
+      "share": 0
+     }
+    ],
+    "gameTotal": [
+     {
+      "fn": "update src/scenes/WorldScene.ts:446",
+      "ms": 67,
+      "share": 1.3
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 27,
+      "share": 0.5
+     },
+     {
+      "fn": "update src/systems/roofs.ts:37",
+      "ms": 13,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) src/scenes/WorldScene.ts:306",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/InteractionSystem.ts:25",
+      "ms": 10,
+      "share": 0.2
+     },
+     {
+      "fn": "builds src/systems/roofs.ts:70",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "refreshAim src/scenes/WorldScene.ts:597",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "target src/systems/turnLog.ts:31",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "roofView src/world/roofView.ts:79",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "update src/entities/Player.ts:64",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "interactables src/world/GameMap.ts:301",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "touching src/systems/roll.ts:119",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "place src/entities/Hold.ts:51",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "actPressed src/input/PlayerInput.ts:188",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "roofOf src/world/roofView.ts:63",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "lights src/systems/roofs.ts:95",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "nearest src/systems/InteractionSystem.ts:45",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "(anonyme) src/input/PlayerInput.ts:46",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "lightAt src/world/daylight.ts:11",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/effort.ts:20",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "downOrTapped src/input/keyLatch.ts:59",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "down src/input/PlayerInput.ts:263",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "read src/input/PlayerInput.ts:262",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "move src/entities/Actor.ts:35",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "probe src/entities/Player.ts:116",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "eTarget src/systems/InteractionSystem.ts:29",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/keyPrompts.ts:41",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "showPrompts src/scenes/WorldScene.ts:697",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/site.ts:57",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "updatePrompt src/systems/wood.ts:488",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "stop src/systems/roll.ts:166",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "get human src/entities/Strength.ts:19",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "walkFactor src/entities/Strength.ts:56",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "putTarget src/systems/InteractionSystem.ts:33",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "clickDown src/input/PlayerInput.ts:280",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/minimap.ts:112",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/clock.ts:15",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "recover src/entities/Stamina.ts:165",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "draw src/systems/creatures.ts:149",
+      "ms": 0,
+      "share": 0
+     }
+    ]
+   }
+  },
+  "devantMarche": {
+   "map": "ferme-du-riche",
+   "seconds": 5.1,
+   "rafPerSec": 58.6,
+   "imagesPerSec": 58.8,
+   "image": {
+    "avg": 17.1,
+    "p50": 16.7,
+    "p95": 17.6,
+    "p99": 17.7,
+    "max": 133.3,
+    "over20": 1,
+    "over33": 1,
+    "over50": 1,
+    "count": 302
+   },
+   "cpuPerImage": {
+    "step": 0.3,
+    "physics": 0,
+    "world": 0.2,
+    "hud": 0,
+    "sort": 0,
+    "render": 1.6,
+    "renderP95": 2,
+    "stepP95": 0.6,
+    "busyP95": 2.5
+   },
+   "stepsPerImage": {
+    "avg": 1,
+    "max": 1,
+    "dist": {
+     "1": 303
+    }
+   },
+   "stepCost": 0.3,
+   "gl": {
+    "draws": 6,
+    "binds": 85.1,
+    "uploads": 0,
+    "uploadKpx": 1.3
+   },
+   "subsystems": {
+    "daylight": 0.1,
+    "roofs": 0,
+    "interaction": 0,
+    "roll": 0,
+    "player": 0,
+    "clock": 0,
+    "effort": 0,
+    "site": 0,
+    "zones": 0,
+    "interiors": 0,
+    "autosave": 0,
+    "pileCount": 0,
+    "tweens": 0,
+    "creatures": 0
+   },
+   "census": {
+    "all": 3597,
+    "visible": 3225,
+    "inView": 72,
+    "containers": 1,
+    "zones": 355,
+    "images": 3230,
+    "graphics": 2,
+    "tilemaps": 6,
+    "texts": 1,
+    "renderTextures": 0,
+    "bodies": 1,
+    "statics": 355,
+    "colliders": 2,
+    "renderList": 3574,
+    "tweens": 0
+   },
+   "textures": {
+    "keys": 2931,
+    "MB": 108.4,
+    "canvas": 998,
+    "canvasMB": 75.6,
+    "biggest": [
+     [
+      "tool-maul",
+      640,
+      960
+     ],
+     [
+      "tool-axe",
+      640,
+      960
+     ],
+     [
+      "tool-hatchet",
+      640,
+      960
+     ],
+     [
+      "tool-broadaxe",
+      640,
+      960
+     ],
+     [
+      "xeros",
+      256,
+      1728
+     ],
+     [
+      "boar",
+      368,
+      640
+     ],
+     [
+      "world",
+      256,
+      864
+     ],
+     [
+      "normal-tree-fall",
+      960,
+      168
+     ],
+     [
+      "normal-tree-fall-left",
+      960,
+      168
+     ],
+     [
+      "big-tree-fall",
+      800,
+      160
+     ],
+     [
+      "big-tree-fall-left",
+      800,
+      160
+     ],
+     [
+      "xeros-down",
+      512,
+      192
+     ]
+    ]
+   },
+   "memory": {
+    "before": {
+     "heapMB": 252.8,
+     "heapTotalMB": 317.4,
+     "nodes": 5521,
+     "listeners": 6094
+    },
+    "after": {
+     "heapMB": 271.6,
+     "heapTotalMB": 317.4,
+     "nodes": 5609,
+     "listeners": 6094
+    }
+   },
+   "profile": {
+    "ms": 5004,
+    "idleMs": 4364,
+    "gcMs": 3,
+    "self": [
+     {
+      "fn": "ImageWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40237",
+      "ms": 152,
+      "share": 3
+     },
+     {
+      "fn": "batchSprite http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133047",
+      "ms": 116,
+      "share": 2.3
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8633",
+      "ms": 42,
+      "share": 0.8
+     },
+     {
+      "fn": "StableSort http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:174410",
+      "ms": 37,
+      "share": 0.7
+     },
+     {
+      "fn": "batchQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:127465",
+      "ms": 32,
+      "share": 0.6
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 29,
+      "share": 0.6
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:130338",
+      "ms": 16,
+      "share": 0.3
+     },
+     {
+      "fn": "setQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:34106",
+      "ms": 15,
+      "share": 0.3
+     },
+     {
+      "fn": "bufferSubData",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "sortByDepth http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:24733",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "multiply http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33716",
+      "ms": 7,
+      "share": 0.1
+     },
+     {
+      "fn": "batchTexture http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133161",
+      "ms": 6,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) src/scenes/WorldScene.ts:306",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "now",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "ContainerWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:35582",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme)",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "builds src/systems/roofs.ts:70",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:31369",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8659",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "flush http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:127183",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "activeTexture",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33083",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33039",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "touching src/systems/roll.ts:119",
+      "ms": 2,
+      "share": 0
+     }
+    ],
+    "gameTotal": [
+     {
+      "fn": "update src/scenes/WorldScene.ts:446",
+      "ms": 69,
+      "share": 1.4
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 30,
+      "share": 0.6
+     },
+     {
+      "fn": "update src/systems/roofs.ts:37",
+      "ms": 11,
+      "share": 0.2
+     },
+     {
+      "fn": "builds src/systems/roofs.ts:70",
+      "ms": 9,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/InteractionSystem.ts:25",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "(anonyme) src/scenes/WorldScene.ts:306",
+      "ms": 8,
+      "share": 0.2
+     },
+     {
+      "fn": "refreshAim src/scenes/WorldScene.ts:597",
+      "ms": 5,
+      "share": 0.1
+     },
+     {
+      "fn": "update src/scenes/HudScene.ts:137",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "target src/systems/turnLog.ts:31",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "roofView src/world/roofView.ts:79",
+      "ms": 4,
+      "share": 0.1
+     },
+     {
+      "fn": "update src/systems/minimap.ts:112",
+      "ms": 3,
+      "share": 0.1
+     },
+     {
+      "fn": "touching src/systems/roll.ts:119",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "update src/entities/Player.ts:64",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "interactables src/world/GameMap.ts:301",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "onStep src/systems/footing.ts:23",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "lights src/systems/roofs.ts:95",
+      "ms": 2,
+      "share": 0
+     },
+     {
+      "fn": "step src/systems/footing.ts:34",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "drawWindow src/world/minimap.ts:204",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "interactables src/systems/site.ts:71",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/roll.ts:52",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "lightAt src/world/daylight.ts:11",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "roofOf src/world/roofView.ts:63",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "stepRefusal src/world/relief.ts:275",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/site.ts:57",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/interiors.ts:66",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/creatures.ts:130",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "downOrTapped src/input/keyLatch.ts:59",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "down src/input/PlayerInput.ts:263",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "read src/input/PlayerInput.ts:262",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "updateFlights src/scenes/WorldScene.ts:972",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "actPressed src/input/PlayerInput.ts:188",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "nearest src/systems/InteractionSystem.ts:45",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "eTarget src/systems/InteractionSystem.ts:29",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "place src/entities/Hold.ts:51",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "announceCell src/scenes/WorldScene.ts:427",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "target src/systems/wood.ts:70",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "deepAt src/world/relief.ts:255",
+      "ms": 1,
+      "share": 0
+     },
+     {
+      "fn": "update src/systems/footing.ts:69",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "ePlan src/world/actionPlan.ts:50",
+      "ms": 0,
+      "share": 0
+     }
+    ]
+   }
+  }
+ },
+ "maison": {
+  "present": false
+ },
+ "gpu": {
+  "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "maxTexture": 16384,
+  "units": 16,
+  "canvas": [
+   1280,
+   720
+  ],
+  "dpr": 1,
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36"
+ },
+ "boot": {
+  "readyMs": 3142,
+  "idleMs": 3146,
+  "domContentLoaded": 1557,
+  "requests": 250,
+  "png": 121,
+  "pngKB": 52,
+  "pngFirst": 350,
+  "pngLast": 1038,
+  "js": 127,
+  "jsKB": 35678,
+  "jsLast": 996,
+  "biggestJs": [
+   [
+    "http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js",
+    19865,
+    909
+   ],
+   [
+    "src/generated/maps.ts",
+    7799,
+    706
+   ],
+   [
+    "http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/zod.js",
+    2300,
+    477
+   ],
+   [
+    "src/generated/assets.ts",
+    1652,
+    294
+   ],
+   [
+    "src/content/types.ts",
+    319,
+    505
+   ],
+   [
+    "src/content/validate.ts",
+    316,
+    131
+   ]
+  ],
+  "firstCreate": {
+   "map": "interieur:ferme:15470,7695",
+   "at": 2910.100000023842,
+   "ms": 205.59999990463257,
+   "born": 48,
+   "bornMB": 0.17121124267578125,
+   "biggest": [
+    [
+     "wall:rough:ew:50:264:corner-s:corner-s:0:0:343226",
+     265,
+     16
+    ],
+    [
+     "wood:normal:beam:ew:1320::::::worn",
+     265,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:1320::::::worn#0#joint-scarf-normal-ew-worn@109,0;joint-scarf-normal-ew-worn@225,0;joint-peg-worn@3,5;joint-peg-worn@35,5;joint-peg-worn@67,5;joint-peg-worn@99,5;joint-peg-worn@131,5;joint-peg-worn@163,5;joint-peg-worn@195,5;joint-peg-worn@227,5;joint-peg-worn@259,5",
+     265,
+     10
+    ],
+    [
+     "wood:normal:beam:ew:1320::::::worn#0#joint-scarf-normal-ew-worn@93,0;joint-scarf-normal-ew-worn@189,0;joint-peg-worn@3,5;joint-peg-worn@67,5;joint-peg-worn@195,5;joint-peg-worn@259,5",
+     265,
+     10
+    ],
+    [
+     "wall:rough:ns:50:116:abut:head:0:0:326271",
+     16,
+     117
+    ],
+    [
+     "wall:rough:ns:50:116:abut:head:0:0:724933",
+     16,
+     117
+    ],
+    [
+     "wood:normal:beam:ns:620::::::worn",
+     10,
+     126
+    ],
+    [
+     "wood:normal:beam:ns:620::::::worn#0#joint-scarf-normal-ns-worn@0,41;joint-peg-worn@4,29;joint-peg-worn@4,61;joint-peg-worn@4,93",
+     10,
+     126
+    ]
+   ],
+   "canvases": 48,
+   "textures": 1982
+  },
+  "longTasks": [
+   [
+    2909,
+    227
+   ]
+  ],
+  "textures": {
+   "keys": 1999,
+   "sources": 1999,
+   "MB": 33.13007354736328,
+   "canvas": 66,
+   "canvasMB": 0.3365020751953125,
+   "biggest": [
+    [
+     "tool-maul",
+     640,
+     960
+    ],
+    [
+     "tool-axe",
+     640,
+     960
+    ],
+    [
+     "tool-hatchet",
+     640,
+     960
+    ],
+    [
+     "tool-broadaxe",
+     640,
+     960
+    ],
+    [
+     "xeros",
+     256,
+     1728
+    ],
+    [
+     "boar",
+     368,
+     640
+    ],
+    [
+     "world",
+     256,
+     864
+    ],
+    [
+     "normal-tree-fall",
+     960,
+     168
+    ],
+    [
+     "normal-tree-fall-left",
+     960,
+     168
+    ],
+    [
+     "big-tree-fall",
+     800,
+     160
+    ],
+    [
+     "big-tree-fall-left",
+     800,
+     160
+    ],
+    [
+     "xeros-down",
+     512,
+     192
+    ]
+   ]
+  },
+  "memory": {
+   "heapMB": 54,
+   "heapTotalMB": 85.5,
+   "nodes": 4274,
+   "listeners": 11729
+  }
+ },
+ "chargements": {
+  "ferme": {
+   "ready": 1141,
+   "drawn": 1158,
+   "create": 1028,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930,
+   "biggest": [],
+   "profile": {
+    "ms": 1161,
+    "idleMs": 99,
+    "gcMs": 3,
+    "self": [
+     {
+      "fn": "getImageData",
+      "ms": 949,
+      "share": 81.7
+     },
+     {
+      "fn": "worldHeight src/world/terrainView.ts:16",
+      "ms": 13,
+      "share": 1.2
+     },
+     {
+      "fn": "drawImage",
+      "ms": 10,
+      "share": 0.9
+     },
+     {
+      "fn": "(anonyme) src/world/build.ts:329",
+      "ms": 6,
+      "share": 0.5
+     },
+     {
+      "fn": "TerrainView src/world/terrainView.ts:193",
+      "ms": 5,
+      "share": 0.5
+     },
+     {
+      "fn": "clearRect",
+      "ms": 4,
+      "share": 0.4
+     },
+     {
+      "fn": "ImageWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40237",
+      "ms": 4,
+      "share": 0.4
+     },
+     {
+      "fn": "getPixelAlpha http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:154973",
+      "ms": 4,
+      "share": 0.4
+     },
+     {
+      "fn": "buildingsOf src/world/interior.ts:437",
+      "ms": 4,
+      "share": 0.3
+     },
+     {
+      "fn": "Add http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:173053",
+      "ms": 3,
+      "share": 0.3
+     },
+     {
+      "fn": "batchSprite http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133047",
+      "ms": 3,
+      "share": 0.3
+     },
+     {
+      "fn": "supportsOf src/world/build.ts:326",
+      "ms": 3,
+      "share": 0.3
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 3,
+      "share": 0.3
+     },
+     {
+      "fn": "lift src/systems/lift.ts:35",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8633",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "update src/systems/lift.ts:32",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "batchQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:127465",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "stepsAt src/world/relief.ts:204",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "drawDecals src/world/GameMap.ts:110",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:130338",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) src/world/GameMap.ts:937",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "StableSort http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:174410",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "flood src/world/interior.ts:105",
+      "ms": 1,
+      "share": 0.1
+     }
+    ],
+    "gameTotal": [
+     {
+      "fn": "create src/scenes/WorldScene.ts:228",
+      "ms": 1025,
+      "share": 88.2
+     },
+     {
+      "fn": "GameMap src/world/GameMap.ts:220",
+      "ms": 1014,
+      "share": 87.3
+     },
+     {
+      "fn": "sortBuilds src/world/GameMap.ts:844",
+      "ms": 993,
+      "share": 85.5
+     },
+     {
+      "fn": "drawJointShades src/world/GameMap.ts:880",
+      "ms": 972,
+      "share": 83.7
+     },
+     {
+      "fn": "shadePixels src/world/jointShade.ts:19",
+      "ms": 968,
+      "share": 83.4
+     },
+     {
+      "fn": "TerrainView src/world/terrainView.ts:193",
+      "ms": 22,
+      "share": 1.9
+     },
+     {
+      "fn": "worldHeight src/world/terrainView.ts:16",
+      "ms": 16,
+      "share": 1.3
+     },
+     {
+      "fn": "supportsOf src/world/build.ts:326",
+      "ms": 12,
+      "share": 1
+     },
+     {
+      "fn": "ZoneBand src/world/zoneBand.ts:26",
+      "ms": 9,
+      "share": 0.8
+     },
+     {
+      "fn": "(anonyme) src/world/build.ts:329",
+      "ms": 9,
+      "share": 0.8
+     },
+     {
+      "fn": "ground src/world/zoneBand.ts:54",
+      "ms": 9,
+      "share": 0.7
+     },
+     {
+      "fn": "offsetOf src/world/GameMap.ts:923",
+      "ms": 7,
+      "share": 0.6
+     },
+     {
+      "fn": "depthsOf src/world/build.ts:361",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "onPost src/systems/lift.ts:18",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "buildingsOf src/world/interior.ts:437",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "update src/scenes/WorldScene.ts:446",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "update src/systems/lift.ts:32",
+      "ms": 5,
+      "share": 0.4
+     },
+     {
+      "fn": "drawDecals src/world/GameMap.ts:110",
+      "ms": 3,
+      "share": 0.3
+     },
+     {
+      "fn": "sideSlices src/world/GameMap.ts:803",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "lift src/systems/lift.ts:35",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 3,
+      "share": 0.2
+     },
+     {
+      "fn": "shadedPairs src/world/jointShade.ts:7",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "stepsAt src/world/relief.ts:204",
+      "ms": 2,
+      "share": 0.2
+     },
+     {
+      "fn": "placeProp src/world/GameMap.ts:617",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 2,
+      "share": 0.1
+     },
+     {
+      "fn": "(anonyme) src/world/GameMap.ts:937",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "flood src/world/interior.ts:105",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "roomBehind src/world/interior.ts:162",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "passage src/world/interior.ts:457",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "placeBuild src/world/GameMap.ts:725",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "drawJoints src/world/jointView.ts:33",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "update src/systems/laneFade.ts:31",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "update src/systems/creatures.ts:130",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "update src/systems/roofs.ts:37",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "boxOf src/world/build.ts:101",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "prop src/world/zoneBand.ts:116",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "objects src/world/zoneBand.ts:79",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "draw src/systems/creatures.ts:149",
+      "ms": 1,
+      "share": 0.1
+     },
+     {
+      "fn": "inside src/systems/roofs.ts:166",
+      "ms": 0,
+      "share": 0
+     },
+     {
+      "fn": "showEnergy src/scenes/HudScene.ts:185",
+      "ms": 0,
+      "share": 0
+     }
+    ]
+   }
+  },
+  "ferme-du-riche": {
+   "ready": 77,
+   "drawn": 87,
+   "create": 9,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2931,
+   "biggest": [
+    [
+     "e3f59c55-8cf5-424e-b463-1dbca8080312",
+     1,
+     1
+    ]
+   ],
+   "profile": {
+    "ms": 93,
+    "idleMs": 37,
+    "gcMs": 3,
+    "self": [
+     {
+      "fn": "removeFromDisplayList http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:25421",
+      "ms": 6,
+      "share": 6.8
+     },
+     {
+      "fn": "ImageWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40237",
+      "ms": 5,
+      "share": 5.8
+     },
+     {
+      "fn": "batchSprite http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133047",
+      "ms": 5,
+      "share": 5.1
+     },
+     {
+      "fn": "lift src/systems/lift.ts:35",
+      "ms": 4,
+      "share": 4.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 3,
+      "share": 3.5
+     },
+     {
+      "fn": "supportsOf src/world/build.ts:326",
+      "ms": 3,
+      "share": 3.4
+     },
+     {
+      "fn": "update src/systems/lift.ts:32",
+      "ms": 2,
+      "share": 2
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8633",
+      "ms": 2,
+      "share": 2
+     },
+     {
+      "fn": "destroy http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:25492",
+      "ms": 2,
+      "share": 1.7
+     },
+     {
+      "fn": "Add http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:173053",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "StableSort http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:174410",
+      "ms": 1,
+      "share": 1.3
+     },
+     {
+      "fn": "shutdown http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:24757",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "remove http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:39161",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "update src/systems/laneFade.ts:31",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "multiply http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33716",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "destroy http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:16892",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "w",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "getTextureKeys http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:154919",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "(anonyme) http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40197",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "update http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:106666",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:32296",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "sortByDepth http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:24733",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "emit http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:130",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 1,
+      "share": 0.7
+     }
+    ],
+    "gameTotal": [
+     {
+      "fn": "create src/scenes/WorldScene.ts:228",
+      "ms": 9,
+      "share": 10.2
+     },
+     {
+      "fn": "update src/systems/lift.ts:32",
+      "ms": 6,
+      "share": 6.8
+     },
+     {
+      "fn": "onPost src/systems/lift.ts:18",
+      "ms": 6,
+      "share": 6.8
+     },
+     {
+      "fn": "GameMap src/world/GameMap.ts:220",
+      "ms": 4,
+      "share": 4.7
+     },
+     {
+      "fn": "lift src/systems/lift.ts:35",
+      "ms": 4,
+      "share": 4.7
+     },
+     {
+      "fn": "update src/scenes/WorldScene.ts:446",
+      "ms": 4,
+      "share": 4.7
+     },
+     {
+      "fn": "ZoneBand src/world/zoneBand.ts:26",
+      "ms": 4,
+      "share": 4.4
+     },
+     {
+      "fn": "supportsOf src/world/build.ts:326",
+      "ms": 4,
+      "share": 4.1
+     },
+     {
+      "fn": "depthsOf src/world/build.ts:361",
+      "ms": 3,
+      "share": 3.7
+     },
+     {
+      "fn": "objects src/world/zoneBand.ts:79",
+      "ms": 3,
+      "share": 3.4
+     },
+     {
+      "fn": "sortBuilds src/world/GameMap.ts:844",
+      "ms": 2,
+      "share": 1.7
+     },
+     {
+      "fn": "drawDecals src/world/GameMap.ts:110",
+      "ms": 2,
+      "share": 1.7
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "update src/systems/laneFade.ts:31",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "ground src/world/zoneBand.ts:54",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "placeProp src/world/GameMap.ts:617",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "sideSlices src/world/GameMap.ts:803",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "Parcels src/systems/parcels.ts:11",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "move src/entities/Actor.ts:35",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "update src/entities/Player.ts:64",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "buildingsOf src/world/interior.ts:437",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "step src/world/creature.ts:319",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "step src/world/warren.ts:181",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "update src/systems/creatures.ts:130",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "lights src/systems/roofs.ts:95",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "builds src/systems/roofs.ts:70",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "update src/systems/roofs.ts:37",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "neighborsOf src/world/zones.ts:30",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "offsetOf src/world/GameMap.ts:923",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "placeBuild src/world/GameMap.ts:725",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "clickDown src/input/PlayerInput.ts:280",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "writeSave src/state/save.ts:212",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "update src/systems/autosave.ts:17",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) src/entities/Breath.ts:14",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "doorways src/world/interior.ts:224",
+      "ms": 0,
+      "share": 0.2
+     },
+     {
+      "fn": "flood src/world/interior.ts:105",
+      "ms": 0,
+      "share": 0.1
+     },
+     {
+      "fn": "roomBehind src/world/interior.ts:162",
+      "ms": 0,
+      "share": 0.1
+     },
+     {
+      "fn": "passage src/world/interior.ts:457",
+      "ms": 0,
+      "share": 0.1
+     }
+    ]
+   }
+  },
+  "village": {
+   "ready": 84,
+   "drawn": 89,
+   "create": 23,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2951,
+   "biggest": [
+    [
+     "20589b10-bf60-4a12-99db-bda440a20e58",
+     1,
+     1
+    ],
+    [
+     "7cf0d9ab-de14-4194-923d-a07b4a01c294",
+     1,
+     1
+    ],
+    [
+     "d5a93300-1083-4320-b4ba-33592fe07472",
+     1,
+     1
+    ],
+    [
+     "22aaff99-3ea6-4222-818a-d75caa84674f",
+     1,
+     1
+    ]
+   ],
+   "profile": {
+    "ms": 92,
+    "idleMs": 50,
+    "gcMs": 2,
+    "self": [
+     {
+      "fn": "supportsOf src/world/build.ts:326",
+      "ms": 4,
+      "share": 4.5
+     },
+     {
+      "fn": "doorways src/world/interior.ts:224",
+      "ms": 4,
+      "share": 4.2
+     },
+     {
+      "fn": "ImageWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40237",
+      "ms": 4,
+      "share": 3.8
+     },
+     {
+      "fn": "batchSprite http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133047",
+      "ms": 3,
+      "share": 3.1
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 2,
+      "share": 2.5
+     },
+     {
+      "fn": "removeFromDisplayList http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:25421",
+      "ms": 2,
+      "share": 2.1
+     },
+     {
+      "fn": "GameMap src/world/GameMap.ts:220",
+      "ms": 2,
+      "share": 2.1
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 2,
+      "share": 1.7
+     },
+     {
+      "fn": "StableSort http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:174410",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "drawDecals src/world/GameMap.ts:110",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "Add http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:173053",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "save",
+      "ms": 1,
+      "share": 1.1
+     },
+     {
+      "fn": "boxOf src/world/build.ts:101",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "offsetOf src/world/GameMap.ts:923",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "ContainerWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:35582",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "getTextureKeys http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:154919",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8633",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "(anonyme) http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8659",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "drawWindow src/world/minimap.ts:204",
+      "ms": 0,
+      "share": 0.4
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:130338",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "sortByDepth http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:24733",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "sceneUpdate http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:26057",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33021",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40197",
+      "ms": 0,
+      "share": 0.3
+     }
+    ],
+    "gameTotal": [
+     {
+      "fn": "create src/scenes/WorldScene.ts:228",
+      "ms": 21,
+      "share": 23.1
+     },
+     {
+      "fn": "GameMap src/world/GameMap.ts:220",
+      "ms": 16,
+      "share": 17.9
+     },
+     {
+      "fn": "sortBuilds src/world/GameMap.ts:844",
+      "ms": 13,
+      "share": 13.8
+     },
+     {
+      "fn": "supportsOf src/world/build.ts:326",
+      "ms": 6,
+      "share": 6.6
+     },
+     {
+      "fn": "buildingsOf src/world/interior.ts:437",
+      "ms": 4,
+      "share": 4.8
+     },
+     {
+      "fn": "doorways src/world/interior.ts:224",
+      "ms": 4,
+      "share": 4.2
+     },
+     {
+      "fn": "depthsOf src/world/build.ts:361",
+      "ms": 3,
+      "share": 3.8
+     },
+     {
+      "fn": "offsetOf src/world/GameMap.ts:923",
+      "ms": 3,
+      "share": 3.1
+     },
+     {
+      "fn": "ZoneBand src/world/zoneBand.ts:26",
+      "ms": 2,
+      "share": 2.4
+     },
+     {
+      "fn": "Parcels src/systems/parcels.ts:11",
+      "ms": 2,
+      "share": 2.1
+     },
+     {
+      "fn": "update src/scenes/WorldScene.ts:446",
+      "ms": 2,
+      "share": 2.1
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 2,
+      "share": 1.7
+     },
+     {
+      "fn": "drawDecals src/world/GameMap.ts:110",
+      "ms": 2,
+      "share": 1.7
+     },
+     {
+      "fn": "ground src/world/zoneBand.ts:54",
+      "ms": 2,
+      "share": 1.7
+     },
+     {
+      "fn": "boxOf src/world/build.ts:101",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "sideSlices src/world/GameMap.ts:803",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "objects src/world/zoneBand.ts:79",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "placeBuild src/world/GameMap.ts:725",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "drawJoints src/world/jointView.ts:33",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "shadedPairs src/world/jointShade.ts:7",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "drawJointShades src/world/GameMap.ts:880",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "drawWindow src/world/minimap.ts:204",
+      "ms": 0,
+      "share": 0.4
+     },
+     {
+      "fn": "update src/systems/minimap.ts:112",
+      "ms": 0,
+      "share": 0.4
+     },
+     {
+      "fn": "update src/scenes/HudScene.ts:137",
+      "ms": 0,
+      "share": 0.4
+     },
+     {
+      "fn": "scarfChains src/world/joints.ts:232",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "addObstacle src/world/GameMap.ts:994",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "PlayerInput src/input/PlayerInput.ts:130",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "Player src/entities/Player.ts:56",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "(anonyme) src/world/jointView.ts:139",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "placeProp src/world/GameMap.ts:617",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "writeSave src/state/save.ts:212",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "update src/systems/autosave.ts:17",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "Grid src/world/interior.ts:70",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "gridOf src/world/interior.ts:149",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "flood src/world/interior.ts:105",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "roomBehind src/world/interior.ts:162",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "passage src/world/interior.ts:457",
+      "ms": 0,
+      "share": 0.3
+     }
+    ]
+   }
+  },
+  "ferme-du-riche (retour)": {
+   "ready": 73,
+   "drawn": 89,
+   "create": 10,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2931,
+   "biggest": [
+    [
+     "3ce8b91c-bdae-4fce-864c-873ccaec8a9a",
+     1,
+     1
+    ]
+   ],
+   "profile": {
+    "ms": 92,
+    "idleMs": 56,
+    "gcMs": 0,
+    "self": [
+     {
+      "fn": "ImageWebGLRenderer http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:40237",
+      "ms": 5,
+      "share": 5.2
+     },
+     {
+      "fn": "removeFromDisplayList http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:25421",
+      "ms": 3,
+      "share": 3.1
+     },
+     {
+      "fn": "batchSprite http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:133047",
+      "ms": 3,
+      "share": 2.8
+     },
+     {
+      "fn": "(anonyme) src/world/build.ts:329",
+      "ms": 2,
+      "share": 2.4
+     },
+     {
+      "fn": "StableSort http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:174410",
+      "ms": 2,
+      "share": 1.7
+     },
+     {
+      "fn": "shutdown http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:24757",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 1,
+      "share": 1.3
+     },
+     {
+      "fn": "Add http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:173053",
+      "ms": 1,
+      "share": 1.2
+     },
+     {
+      "fn": "builds src/systems/roofs.ts:70",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "drawDecals src/world/GameMap.ts:110",
+      "ms": 1,
+      "share": 1
+     },
+     {
+      "fn": "multiply http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33716",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "supportsOf src/world/build.ts:326",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:130338",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "batchQuad http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:127465",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "setData http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:25088",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "addChildCallback http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:24662",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "(anonyme) http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:20439",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "GameMap src/world/GameMap.ts:220",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "get http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:33021",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "render http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:8633",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "(garbage collector)",
+      "ms": 0,
+      "share": 0.4
+     },
+     {
+      "fn": "disable http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:20575",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "w",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "preUpdate http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:47524",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "setAlpha http://localhost:62241/@fs/var/folders/nm/hghcbqwx10dcz_g1xcg5p_d80000gn/T/xeros-diag-BDqbs4/deps/phaser.js:29498",
+      "ms": 0,
+      "share": 0.3
+     }
+    ],
+    "gameTotal": [
+     {
+      "fn": "create src/scenes/WorldScene.ts:228",
+      "ms": 10,
+      "share": 11
+     },
+     {
+      "fn": "GameMap src/world/GameMap.ts:220",
+      "ms": 6,
+      "share": 6.2
+     },
+     {
+      "fn": "ZoneBand src/world/zoneBand.ts:26",
+      "ms": 3,
+      "share": 3.8
+     },
+     {
+      "fn": "objects src/world/zoneBand.ts:79",
+      "ms": 3,
+      "share": 3.4
+     },
+     {
+      "fn": "supportsOf src/world/build.ts:326",
+      "ms": 3,
+      "share": 3.4
+     },
+     {
+      "fn": "sortBuilds src/world/GameMap.ts:844",
+      "ms": 3,
+      "share": 3.2
+     },
+     {
+      "fn": "depthsOf src/world/build.ts:361",
+      "ms": 3,
+      "share": 3.1
+     },
+     {
+      "fn": "update src/scenes/WorldScene.ts:446",
+      "ms": 3,
+      "share": 3
+     },
+     {
+      "fn": "(anonyme) src/world/build.ts:329",
+      "ms": 3,
+      "share": 2.7
+     },
+     {
+      "fn": "(anonyme) src/world/GameMap.ts:827",
+      "ms": 2,
+      "share": 1.8
+     },
+     {
+      "fn": "sideSlices src/world/GameMap.ts:803",
+      "ms": 2,
+      "share": 1.8
+     },
+     {
+      "fn": "builds src/systems/roofs.ts:70",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "update src/systems/roofs.ts:37",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "drawDecals src/world/GameMap.ts:110",
+      "ms": 1,
+      "share": 1.4
+     },
+     {
+      "fn": "update src/systems/daylight.ts:20",
+      "ms": 1,
+      "share": 1.3
+     },
+     {
+      "fn": "buildingsOf src/world/interior.ts:437",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "placeProp src/world/GameMap.ts:617",
+      "ms": 1,
+      "share": 0.7
+     },
+     {
+      "fn": "Parcels src/systems/parcels.ts:11",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "showEnergy src/scenes/HudScene.ts:185",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "flood src/world/interior.ts:105",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "roomBehind src/world/interior.ts:162",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "passage src/world/interior.ts:457",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "contents src/world/interior.ts:311",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "prop src/world/zoneBand.ts:116",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "placeBuild src/world/GameMap.ts:725",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "writeSave src/state/save.ts:212",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "update src/systems/autosave.ts:17",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "woodDims src/world/woodPiece.ts:36",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "shadedPairs src/world/jointShade.ts:7",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "drawJointShades src/world/GameMap.ts:880",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "ground src/world/zoneBand.ts:54",
+      "ms": 0,
+      "share": 0.3
+     },
+     {
+      "fn": "offsetOf src/world/GameMap.ts:923",
+      "ms": 0,
+      "share": 0.3
+     }
+    ]
+   }
+  }
+ },
+ "bord": {
+  "colonne": 134,
+  "versVillage": {
+   "ready": 921,
+   "create": 36,
+   "born": 21,
+   "bornMB": 0,
+   "textures": 2951,
+   "worstImage": 61
+  },
+  "versFerme": {
+   "ready": 521,
+   "create": 14,
+   "born": 1,
+   "bornMB": 0,
+   "textures": 2931,
+   "worstImage": 41
+  }
+ },
+ "memoire": {
+  "heapMB": 81,
+  "heapTotalMB": 276.4,
+  "nodes": 5147,
+  "listeners": 6026,
+  "textures": {
+   "keys": 2931,
+   "sources": 2931,
+   "MB": 108.40531158447266,
+   "canvas": 998,
+   "canvasMB": 75.61174011230469,
+   "biggest": [
+    [
+     "tool-maul",
+     640,
+     960
+    ],
+    [
+     "tool-axe",
+     640,
+     960
+    ],
+    [
+     "tool-hatchet",
+     640,
+     960
+    ],
+    [
+     "tool-broadaxe",
+     640,
+     960
+    ],
+    [
+     "xeros",
+     256,
+     1728
+    ],
+    [
+     "boar",
+     368,
+     640
+    ],
+    [
+     "world",
+     256,
+     864
+    ],
+    [
+     "normal-tree-fall",
+     960,
+     168
+    ],
+    [
+     "normal-tree-fall-left",
+     960,
+     168
+    ],
+    [
+     "big-tree-fall",
+     800,
+     160
+    ],
+    [
+     "big-tree-fall-left",
+     800,
+     160
+    ],
+    [
+     "xeros-down",
+     512,
+     192
+    ]
+   ]
+  },
+  "creates": 51
+ },
+ "creates": [
+  {
+   "map": "interieur:ferme:15470,7695",
+   "ms": 206,
+   "born": 48,
+   "bornMB": 0.2,
+   "canvases": 48,
+   "textures": 1982
+  },
+  {
+   "map": "foret-profonde-nord",
+   "ms": 867,
+   "born": 278,
+   "bornMB": 13.2,
+   "canvases": 279,
+   "textures": 2277
+  },
+  {
+   "map": "bois-du-nord",
+   "ms": 624,
+   "born": 147,
+   "bornMB": 10.2,
+   "canvases": 160,
+   "textures": 2424
+  },
+  {
+   "map": "pres-du-nord",
+   "ms": 23,
+   "born": 9,
+   "bornMB": 0,
+   "canvases": 9,
+   "textures": 2433
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 22,
+   "born": 8,
+   "bornMB": 0,
+   "canvases": 9,
+   "textures": 2441
+  },
+  {
+   "map": "champs-du-riche",
+   "ms": 12,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2441
+  },
+  {
+   "map": "foret-profonde",
+   "ms": 496,
+   "born": 28,
+   "bornMB": 6.7,
+   "canvases": 38,
+   "textures": 2469
+  },
+  {
+   "map": "ferme",
+   "ms": 2073,
+   "born": 254,
+   "bornMB": 16.1,
+   "canvases": 263,
+   "textures": 2723
+  },
+  {
+   "map": "chemin",
+   "ms": 20,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2725
+  },
+  {
+   "map": "village",
+   "ms": 36,
+   "born": 25,
+   "bornMB": 0,
+   "canvases": 26,
+   "textures": 2750
+  },
+  {
+   "map": "route-de-la-ville",
+   "ms": 11,
+   "born": 4,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2733
+  },
+  {
+   "map": "foret-profonde-sud",
+   "ms": 373,
+   "born": 17,
+   "bornMB": 5.7,
+   "canvases": 0,
+   "textures": 2746
+  },
+  {
+   "map": "bois-du-sud",
+   "ms": 414,
+   "born": 94,
+   "bornMB": 7,
+   "canvases": 89,
+   "textures": 2840
+  },
+  {
+   "map": "pres-du-sud",
+   "ms": 22,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2840
+  },
+  {
+   "map": "quartier-sud",
+   "ms": 16,
+   "born": 13,
+   "bornMB": 0,
+   "canvases": 14,
+   "textures": 2853
+  },
+  {
+   "map": "pres-de-l-est",
+   "ms": 12,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2841
+  },
+  {
+   "map": "foret-des-ronces",
+   "ms": 626,
+   "born": 33,
+   "bornMB": 9.5,
+   "canvases": 20,
+   "textures": 2874
+  },
+  {
+   "map": "bois-de-la-riviere",
+   "ms": 414,
+   "born": 56,
+   "bornMB": 6.6,
+   "canvases": 56,
+   "textures": 2930
+  },
+  {
+   "map": "friches",
+   "ms": 9,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "ferme-rivale",
+   "ms": 5,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "champs-rivaux",
+   "ms": 5,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "foret-profonde-nord",
+   "ms": 31,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "bois-du-nord",
+   "ms": 30,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "pres-du-nord",
+   "ms": 19,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 14,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 2,
+   "textures": 2931
+  },
+  {
+   "map": "champs-du-riche",
+   "ms": 12,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "foret-profonde",
+   "ms": 42,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "ferme",
+   "ms": 1049,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "chemin",
+   "ms": 19,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "village",
+   "ms": 30,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 20,
+   "textures": 2951
+  },
+  {
+   "map": "route-de-la-ville",
+   "ms": 10,
+   "born": 4,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2934
+  },
+  {
+   "map": "foret-profonde-sud",
+   "ms": 36,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "bois-du-sud",
+   "ms": 35,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "pres-du-sud",
+   "ms": 19,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "quartier-sud",
+   "ms": 12,
+   "born": 13,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2943
+  },
+  {
+   "map": "pres-de-l-est",
+   "ms": 8,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "foret-des-ronces",
+   "ms": 32,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "bois-de-la-riviere",
+   "ms": 28,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "friches",
+   "ms": 9,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "ferme-rivale",
+   "ms": 5,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "champs-rivaux",
+   "ms": 7,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "ferme",
+   "ms": 1028,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 9,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2931
+  },
+  {
+   "map": "village",
+   "ms": 23,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2951
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 10,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2931
+  },
+  {
+   "map": "ferme",
+   "ms": 1035,
+   "born": 0,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2930
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 9,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2931
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 11,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2931
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 12,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2931
+  },
+  {
+   "map": "village",
+   "ms": 36,
+   "born": 21,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2951
+  },
+  {
+   "map": "ferme-du-riche",
+   "ms": 14,
+   "born": 1,
+   "bornMB": 0,
+   "canvases": 0,
+   "textures": 2931
+  }
+ ],
+ "contextLost": [],
+ "longTasks": [
+  [
+   1453,
+   104
+  ],
+  [
+   1567,
+   138
+  ],
+  [
+   2909,
+   227
+  ],
+  [
+   3376,
+   885
+  ],
+  [
+   4442,
+   645
+  ],
+  [
+   5726,
+   508
+  ],
+  [
+   6359,
+   2097
+  ],
+  [
+   9126,
+   384
+  ],
+  [
+   9643,
+   432
+  ],
+  [
+   10692,
+   637
+  ],
+  [
+   11476,
+   432
+  ],
+  [
+   13493,
+   1071
+  ],
+  [
+   17225,
+   1038
+  ],
+  [
+   19092,
+   1048
+  ]
+ ],
+ "errors": [],
+ "console": [
+  "log: %c %c %c %c %c Phaser v3.90.0 (WebGL | Web Audio) %c https://phaser.io/v390 background: #ff0000 background: #ffff00 background: #00ff00 background: #00ffff color: #ffffff; background: #000000 background: transparent"
+ ]
+}

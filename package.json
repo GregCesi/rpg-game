@@ -40,6 +40,7 @@
     "test:forge-visite": "npm run art && npm run maps && tsx tools/test-forge-visite.ts",
     "test:forgeron": "npm run art && npm run maps && tsx tools/test-forgeron.ts",
     "test:mesure": "npm run art && npm run maps && tsx tools/mesure-scenarios.ts",
+    "diagnostic": "npm run art && npm run maps && tsx tools/diagnostic.ts",
     "test:noeud": "npm run art && npm run maps && tsx tools/test-noeud.ts",
     "test:interieur": "npm run art && npm run maps && tsx tools/test-interieur.ts",
     "test:monde": "npm run art && npm run maps && tsx tools/test-monde.ts",
